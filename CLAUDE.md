@@ -7,9 +7,11 @@
 **Aiget** 是一个统一平台，采用「核心产品 + 原子能力」架构：
 
 **核心产品**：
+
 - **Flowx** - 笔记 AI 工作流 + 网站发布（调用下层原子能力）
 
 **原子能力**：
+
 - **Fetchx** - 网页数据 API（抓取、爬取、数据提取）
 - **Memox** - AI 记忆 API（为 AI 应用提供长期记忆）
 - **Sandx** - Agent 沙盒（安全隔离的代码执行环境，规划中）
@@ -22,11 +24,11 @@
 
 以下是正在迁移到此 Monorepo 的原始仓库：
 
-| 产品 | 绝对路径 | 说明 |
-|------|----------|------|
-| Fetchx (原 AIGET) | `/Users/bowling/code/me/fetchx` | 网页抓取与数据提取平台（仓库已更名） |
-| Memox (原 MEMAI) | `/Users/bowling/code/me/memai` | AI 记忆与知识图谱服务 |
-| Flowx (原 MORYFLOW) | `/Users/bowling/code/me/moryflow` | 工作流自动化与 Agent 框架 |
+| 产品                | 绝对路径                          | 说明                                 |
+| ------------------- | --------------------------------- | ------------------------------------ |
+| Fetchx (原 AIGET)   | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
+| Memox (原 MEMAI)    | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
+| Flowx (原 MORYFLOW) | `/Users/bowling/code/me/moryflow` | 工作流自动化与 Agent 框架            |
 
 ---
 
@@ -48,28 +50,28 @@
 
 所有产品统一使用 `aiget.dev` 子域名：
 
-| 服务 | 域名 | 说明 |
-|------|------|------|
-| **主站** | aiget.dev | 平台主入口 |
-| **统一控制台** | console.aiget.dev | 用户管理所有产品 |
-| **统一管理后台** | admin.aiget.dev | 运营管理 |
-| **统一文档** | docs.aiget.dev | 文档站 |
-| **Flowx** | flowx.aiget.dev | 核心产品：笔记 AI 工作流 |
-| **Fetchx** | fetchx.aiget.dev | 原子能力：网页抓取 |
-| **Memox** | memox.aiget.dev | 原子能力：AI 记忆 |
-| **Sandx** | sandx.aiget.dev | 原子能力：Agent 沙盒 |
+| 服务             | 域名              | 说明                     |
+| ---------------- | ----------------- | ------------------------ |
+| **主站**         | aiget.dev         | 平台主入口               |
+| **统一控制台**   | console.aiget.dev | 用户管理所有产品         |
+| **统一管理后台** | admin.aiget.dev   | 运营管理                 |
+| **统一文档**     | docs.aiget.dev    | 文档站                   |
+| **Flowx**        | flowx.aiget.dev   | 核心产品：笔记 AI 工作流 |
+| **Fetchx**       | fetchx.aiget.dev  | 原子能力：网页抓取       |
+| **Memox**        | memox.aiget.dev   | 原子能力：AI 记忆        |
+| **Sandx**        | sandx.aiget.dev   | 原子能力：Agent 沙盒     |
 
 > API 路径规范：`api.{product}.aiget.dev/v1/...`（无 `/api` 前缀）
 
 ### API Key 前缀
 
-| 类型 | 前缀 | 说明 |
-|------|------|------|
-| 平台 Key | `ag_` | 可访问所有产品 API |
-| Flowx Key | `lx_` | 核心产品 |
-| Fetchx Key | `fx_` | 原子能力：网页抓取 |
-| Memox Key | `mx_` | 原子能力：AI 记忆 |
-| Sandx Key | `sx_` | 原子能力：Agent 沙盒 |
+| 类型       | 前缀  | 说明                 |
+| ---------- | ----- | -------------------- |
+| 平台 Key   | `ag_` | 可访问所有产品 API   |
+| Flowx Key  | `lx_` | 核心产品             |
+| Fetchx Key | `fx_` | 原子能力：网页抓取   |
+| Memox Key  | `mx_` | 原子能力：AI 记忆    |
+| Sandx Key  | `sx_` | 原子能力：Agent 沙盒 |
 
 ### 目标 Monorepo 结构
 
@@ -153,21 +155,21 @@ Aiget/
 
 ### 技术栈速查
 
-| 层级 | 技术 |
-| --- | --- |
-| 包管理 | pnpm workspace + Turborepo |
-| 后端 | NestJS 11 + Prisma 7 + PostgreSQL 16 + Redis 7 + BullMQ |
-| 前端 | React 19 + Vite + TailwindCSS v4 + shadcn/ui (Radix) |
-| 移动端 | Expo + React Native |
-| 桌面端 | Electron + React |
-| 认证 | Better Auth |
-| 支付 | Creem.io |
-| AI/LLM | OpenAI / Anthropic / Google（通过 Vercel AI SDK）|
-| 向量数据库 | pgvector（PostgreSQL 扩展）|
-| 浏览器自动化 | Playwright |
-| 数据校验 | Zod |
-| 邮件 | Resend |
-| 日志 | Pino |
+| 层级         | 技术                                                    |
+| ------------ | ------------------------------------------------------- |
+| 包管理       | pnpm workspace + Turborepo                              |
+| 后端         | NestJS 11 + Prisma 7 + PostgreSQL 16 + Redis 7 + BullMQ |
+| 前端         | React 19 + Vite + TailwindCSS v4 + shadcn/ui (Radix)    |
+| 移动端       | Expo + React Native                                     |
+| 桌面端       | Electron + React                                        |
+| 认证         | Better Auth                                             |
+| 支付         | Creem.io                                                |
+| AI/LLM       | OpenAI / Anthropic / Google（通过 Vercel AI SDK）       |
+| 向量数据库   | pgvector（PostgreSQL 扩展）                             |
+| 浏览器自动化 | Playwright                                              |
+| 数据校验     | Zod                                                     |
+| 邮件         | Resend                                                  |
+| 日志         | Pino                                                    |
 
 ---
 
@@ -177,19 +179,19 @@ Aiget/
 
 ### 订阅等级
 
-| 等级 | 月付 | 年付 | 每月积分 | 产品权限 |
-|------|------|------|----------|----------|
-| FREE | $0 | - | 100 | 所有产品基础功能 |
-| STARTER | $9 | $99 | 1,000 | 所有产品基础功能 |
-| PRO | $29 | $299 | 5,000 | 所有产品高级功能 |
-| MAX | $99 | - | 20,000 | 所有产品全部功能 + 优先支持 |
+| 等级    | 月付 | 年付 | 每月积分 | 产品权限                    |
+| ------- | ---- | ---- | -------- | --------------------------- |
+| FREE    | $0   | -    | 100      | 所有产品基础功能            |
+| STARTER | $9   | $99  | 1,000    | 所有产品基础功能            |
+| PRO     | $29  | $299 | 5,000    | 所有产品高级功能            |
+| MAX     | $99  | -    | 20,000   | 所有产品全部功能 + 优先支持 |
 
 ### 积分加油包（按需购买）
 
-| 套餐 | 价格 | 积分 |
-|------|------|------|
-| 小包 | $10 | 1,000 |
-| 中包 | $30 | 3,000 |
+| 套餐 | 价格 | 积分   |
+| ---- | ---- | ------ |
+| 小包 | $10  | 1,000  |
+| 中包 | $30  | 3,000  |
 | 大包 | $100 | 10,000 |
 
 ### 业务规则
@@ -203,11 +205,11 @@ Aiget/
 
 ## 文档索引
 
-| 文档 | 说明 |
-|------|------|
+| 文档                                                             | 说明                           |
+| ---------------------------------------------------------------- | ------------------------------ |
 | [`unified-identity-platform.md`](./unified-identity-platform.md) | 统一身份平台架构设计与迁移计划 |
-| `apps/*/CLAUDE.md` | 各应用的详细文档 |
-| `packages/*/CLAUDE.md` | 各包的详细文档 |
+| `apps/*/CLAUDE.md`                                               | 各应用的详细文档               |
+| `packages/*/CLAUDE.md`                                           | 各包的详细文档                 |
 
 ---
 
@@ -227,8 +229,21 @@ Aiget/
 
 1. **计划**：改动前给出最小范围 plan，说明动机与风险
 2. **实施**：聚焦单一问题，不盲改
-3. **校验**：本地跑 lint/typecheck（`pnpm typecheck`），通过再提交
-4. **同步**：更新相关 CLAUDE.md（本条强制）
+3. **测试**：新功能必须编写单元测试，修复 bug 需补充回归测试
+4. **校验**：完成后必须运行以下命令全部通过：
+   ```bash
+   pnpm lint        # 代码规范检查
+   pnpm typecheck   # 类型检查
+   pnpm test:unit   # 单元测试
+   ```
+5. **同步**：更新相关 CLAUDE.md（本条强制）
+
+### 测试要求（强制）
+
+- **新功能**：必须编写对应的单元测试
+- **Bug 修复**：必须补充回归测试，防止问题复现
+- **重构**：确保现有测试全部通过
+- **测试覆盖**：核心业务逻辑覆盖率 > 80%
 
 ---
 
@@ -262,16 +277,16 @@ git commit -m "feat: 添加全页选项、修复配额bug、更新文档"
 
 #### 类型
 
-| 类型 | 说明 |
-|------|------|
-| `feat` | 新功能 |
-| `fix` | Bug 修复 |
-| `docs` | 仅文档 |
-| `style` | 代码风格（格式化，无逻辑变更）|
-| `refactor` | 代码重构（无功能/修复）|
-| `perf` | 性能优化 |
-| `test` | 添加或更新测试 |
-| `chore` | 构建、CI、依赖 |
+| 类型       | 说明                           |
+| ---------- | ------------------------------ |
+| `feat`     | 新功能                         |
+| `fix`      | Bug 修复                       |
+| `docs`     | 仅文档                         |
+| `style`    | 代码风格（格式化，无逻辑变更） |
+| `refactor` | 代码重构（无功能/修复）        |
+| `perf`     | 性能优化                       |
+| `test`     | 添加或更新测试                 |
+| `chore`    | 构建、CI、依赖                 |
 
 #### 作用域
 
@@ -283,12 +298,12 @@ git commit -m "feat: 添加全页选项、修复配额bug、更新文档"
 
 关键文件需在开头添加注释：
 
-| 文件类型 | 格式 |
-| --- | --- |
-| 服务/逻辑 | `[INPUT]` / `[OUTPUT]` / `[POS]` |
-| React 组件 | `[PROPS]` / `[EMITS]` / `[POS]` |
+| 文件类型   | 格式                                 |
+| ---------- | ------------------------------------ |
+| 服务/逻辑  | `[INPUT]` / `[OUTPUT]` / `[POS]`     |
+| React 组件 | `[PROPS]` / `[EMITS]` / `[POS]`      |
 | 工具函数集 | `[PROVIDES]` / `[DEPENDS]` / `[POS]` |
-| 类型定义 | `[DEFINES]` / `[USED_BY]` / `[POS]` |
+| 类型定义   | `[DEFINES]` / `[USED_BY]` / `[POS]`  |
 
 示例：
 
@@ -354,10 +369,12 @@ import { z } from 'zod';
 import { createZodDto } from '@wahyubucil/nestjs-zod-openapi';
 
 // Schema 定义
-export const CreateMemorySchema = z.object({
-  content: z.string().min(1).max(10000),
-  metadata: z.record(z.unknown()).optional(),
-}).openapi('CreateMemoryRequest');
+export const CreateMemorySchema = z
+  .object({
+    content: z.string().min(1).max(10000),
+    metadata: z.record(z.unknown()).optional(),
+  })
+  .openapi('CreateMemoryRequest');
 
 // 类型推断（单一数据源）
 export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
@@ -370,8 +387,10 @@ export class CreateMemoryDto extends createZodDto(CreateMemorySchema) {}
 
 ```typescript
 // ❌ 错误：重复类型定义
-export interface CreateMemoryInput { content: string; }  // types.ts
-export const CreateMemorySchema = z.object({ content: z.string() });  // schema.ts
+export interface CreateMemoryInput {
+  content: string;
+} // types.ts
+export const CreateMemorySchema = z.object({ content: z.string() }); // schema.ts
 // 现在有两个数据源了！
 
 // ✅ 正确：单一数据源
@@ -411,14 +430,14 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 
 ## 命名规范
 
-| 类型 | 规范 | 示例 |
-| --- | --- | --- |
-| 组件/类型 | PascalCase | `ScreenshotService` |
-| 函数/变量 | camelCase | `handleScreenshot` |
-| 常量 | UPPER_SNAKE_CASE | `MAX_CONCURRENT` |
-| 组件文件夹 | PascalCase | `ApiKeyCard/` |
-| 工具文件 | camelCase | `urlValidator.ts` |
-| API Key 前缀 | 产品特定 | `lx_`（flowx）、`fx_`（fetchx）、`mx_`（memox）、`sx_`（sandx）|
+| 类型         | 规范             | 示例                                                            |
+| ------------ | ---------------- | --------------------------------------------------------------- |
+| 组件/类型    | PascalCase       | `ScreenshotService`                                             |
+| 函数/变量    | camelCase        | `handleScreenshot`                                              |
+| 常量         | UPPER_SNAKE_CASE | `MAX_CONCURRENT`                                                |
+| 组件文件夹   | PascalCase       | `ApiKeyCard/`                                                   |
+| 工具文件     | camelCase        | `urlValidator.ts`                                               |
+| API Key 前缀 | 产品特定         | `lx_`（flowx）、`fx_`（fetchx）、`mx_`（memox）、`sx_`（sandx） |
 
 ---
 
@@ -438,11 +457,11 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 
 ```css
 /* 侧边栏 */
---sidebar-foreground: oklch(0.35 0 0);      /* 未选中文字：深灰 */
---sidebar-primary: oklch(0.65 0.18 45);     /* 选中文字：橙色 */
+--sidebar-foreground: oklch(0.35 0 0); /* 未选中文字：深灰 */
+--sidebar-primary: oklch(0.65 0.18 45); /* 选中文字：橙色 */
 
 /* 强调色 */
---primary: oklch(0.25 0 0);                 /* 主色：深灰/黑 */
+--primary: oklch(0.25 0 0); /* 主色：深灰/黑 */
 ```
 
 ### Tailwind CSS v4 注意事项
@@ -484,14 +503,14 @@ pnpm lint
 
 ## 包命名规范
 
-| 类型 | 模式 | 示例 |
-|------|------|------|
-| 应用包 | `@aiget/{product}-{app}` | `@aiget/fetchx-server` |
-| 共享包 | `@aiget/{name}` | `@aiget/types`、`@aiget/api`、`@aiget/auth` |
-| UI 包 | `@aiget/ui` | 唯一 |
-| 配置包 | `@aiget/{name}-config` | `@aiget/eslint-config` |
-| Agent 包 | `@aiget/agents-{name}` | `@aiget/agents-core` |
+| 类型     | 模式                     | 示例                                        |
+| -------- | ------------------------ | ------------------------------------------- |
+| 应用包   | `@aiget/{product}-{app}` | `@aiget/fetchx-server`                      |
+| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/auth` |
+| UI 包    | `@aiget/ui`              | 唯一                                        |
+| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                      |
+| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                        |
 
 ---
 
-*版本: 1.0 | 创建日期: 2026-01-04*
+_版本: 1.0 | 创建日期: 2026-01-04_

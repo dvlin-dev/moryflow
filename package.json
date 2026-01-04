@@ -2,6 +2,7 @@
   "name": "aiget",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "description": "Aiget - Unified Platform (Flowx + Fetchx + Memox + Sandx)",
   "scripts": {
     "dev:flowx": "pnpm --filter @aiget/flowx-server start:dev",
@@ -23,10 +24,17 @@
     "test:unit": "turbo run test:unit",
     "test:e2e": "turbo run test:e2e",
     "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.3.0",
+    "@commitlint/config-conventional": "^20.3.0",
     "@types/node": "^22.18.12",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
     "turbo": "^2.4.4",
     "typescript": "^5.9.3"
