@@ -1,0 +1,11 @@
+{
+  "name": "@aiget/typescript-config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./base.json": "./base.json",
+    "./nestjs.json": "./nestjs.json",
+    "./react.json": "./react.json",
+    "./react-native.json": "./react-native.json"
+  }
+}

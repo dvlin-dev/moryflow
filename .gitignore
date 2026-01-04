@@ -1,0 +1,62 @@
+# 环境变量
+.env
+.env.local
+.env.local*
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.oss
+
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建产物
+dist/
+build/
+.next/
+out/
+
+# Turborepo
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Expo / React Native
+.expo/
+*.app/
+*.ipa
+*.apk
+
+# 调试日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 操作系统
+.DS_Store
+THUMBS_DB
+thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 数据库
+pg-data/
+
+# 测试覆盖率
+coverage/
+
+# Prisma
+prisma/migrations/.migration_lock.toml
+
+# 临时文件
+*.tmp
+*.temp
+sandbox-runtime/

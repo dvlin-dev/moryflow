@@ -855,21 +855,28 @@ Authorization: Bearer {service_api_key}
 
 #### 第二阶段：产品接入
 
+> **试点选择**：Flowx 作为第一个接入的产品，因为：
+> 1. 核心产品，优先验证平台稳定性
+> 2. 目前独立运行，未耦合其他应用
+> 3. 干净的接入环境，便于发现问题
+
 ```
-Fetchx 接入:
+Flowx 接入（试点）:
 ├── 将认证模块替换为身份平台客户端
 ├── 迁移现有用户到身份平台
+├── 迁移积分到统一钱包
+├── 验证 SSO 和积分扣减流程
+└── 完善接入文档和最佳实践
+
+Fetchx 接入:
+├── 复用 Flowx 接入经验
+├── 迁移现有用户（可能与 Flowx 用户合并）
 ├── 将配额系统替换为钱包 API 调用
-└── 测试跨产品单点登录
+└── 验证跨产品单点登录
 
 Memox 接入:
 ├── 同 Fetchx 的接入步骤
 └── 验证跨产品积分共享
-
-Flowx 接入:
-├── 同上接入步骤
-├── 迁移积分到统一钱包
-└── 最终跨产品测试
 ```
 
 #### 数据迁移方案
@@ -1009,8 +1016,8 @@ Token 类型：
 1. 评审并批准架构设计
 2. 创建统一身份平台代码仓库
 3. 实现核心服务（认证、钱包、订阅）
-4. 接入第一个产品（建议以 Fetchx 为试点）
-5. 逐步迁移其余产品
+4. **Flowx 试点接入**（核心产品，目前独立无耦合）
+5. Fetchx / Memox 逐步接入
 
 ---
 
@@ -1257,11 +1264,12 @@ Aiget/                               # Monorepo 根目录
 #### 第三阶段：迁移产品应用
 
 ```
-1. 迁移 Fetchx（原 AIGET）
-   - 移动 apps/server → apps/fetchx/server
-   - 移动 apps/www → apps/fetchx/www
+1. 迁移 Flowx（核心产品优先，目前独立无耦合）
+   - 移动 apps/server → apps/flowx/server
+   - 移动 apps/mobile → apps/flowx/mobile
+   - 移动 apps/pc → apps/flowx/pc
 
-2. 迁移 Memox / Flowx（同上）
+2. 迁移 Fetchx / Memox（复用 Flowx 接入经验）
 ```
 
 #### 第四阶段：创建统一服务
@@ -1699,23 +1707,23 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 > 说明：每完成一步，将该项标记为 `[x]` 完成状态，并记录完成日期。
 
-### 第一阶段：Monorepo 基础设施
+### 第一阶段：Monorepo 基础设施 ✅ (2026-01-05)
 
-- [ ] **1.1 初始化 Monorepo 结构**
-  - [ ] 创建 `pnpm-workspace.yaml` 配置
-  - [ ] 创建 `turbo.json` Turborepo 配置
-  - [ ] 创建根目录 `package.json`
-  - [ ] 配置 `.gitignore` 和 `.npmrc`
+- [x] **1.1 初始化 Monorepo 结构** (2026-01-05)
+  - [x] 创建 `pnpm-workspace.yaml` 配置
+  - [x] 创建 `turbo.json` Turborepo 配置
+  - [x] 创建根目录 `package.json`
+  - [x] 配置 `.gitignore` 和 `.npmrc`
 
-- [ ] **1.2 创建工具配置包**
-  - [ ] `tooling/eslint-config/` - 统一 ESLint 配置
-  - [ ] `tooling/typescript-config/` - 统一 TypeScript 配置
-  - [ ] `tooling/tailwind-config/` - 统一 Tailwind 配置
+- [x] **1.2 创建工具配置包** (2026-01-05)
+  - [x] `tooling/eslint-config/` - 统一 ESLint 配置（base, nestjs, react 三套配置）
+  - [x] `tooling/typescript-config/` - 统一 TypeScript 配置（base, nestjs, react, react-native）
+  - [x] `tooling/tailwind-config/` - 统一 Tailwind 配置（含 shadcn/ui 主题变量）
 
-- [ ] **1.3 配置 CI/CD**
-  - [ ] GitHub Actions 工作流
-  - [ ] 增量构建配置（Turborepo cache）
-  - [ ] 测试自动化
+- [x] **1.3 配置 CI/CD** (2026-01-05)
+  - [x] GitHub Actions 工作流（ci.yml，部署由 Dokploy 管理）
+  - [x] 增量构建配置（Turborepo cache）
+  - [x] 测试自动化（lint → typecheck → test → build 流水线）
 
 ### 第二阶段：合并共享包
 
@@ -1741,82 +1749,84 @@ SANDX_API_URL=https://api.sandx.aiget.dev
   - [ ] `packages/api/` - API 客户端工具
   - [ ] `packages/auth/` - 认证客户端
 
-### 第三阶段：迁移 Fetchx 应用
+### 第三阶段：迁移 Flowx 应用（核心产品优先）
 
-- [ ] **3.1 迁移 Fetchx Server**
-  - [ ] 移动 `apps/server/` → `apps/fetchx/server/`
-  - [ ] 更新 package.json 名称为 `@aiget/fetchx-server`
-  - [ ] 更新 import 路径（UI, shared-types）
-  - [ ] 验证 typecheck 通过
-  - [ ] 验证测试通过
+> **为什么先迁移 Flowx**：核心产品，目前独立运行未耦合其他应用，干净的接入环境便于验证平台。
 
-- [ ] **3.2 迁移 Fetchx WWW**
-  - [ ] 移动 `apps/www/` → `apps/fetchx/www/`
-  - [ ] 更新 package.json 名称
-  - [ ] 更新 import 路径
-  - [ ] 验证构建通过
-
-- [ ] **3.3 提取 Fetchx 核心模块**
-  - [ ] 从 server 提取 scraper 核心 → `packages/scraper-core/`
-  - [ ] 更新依赖关系
-
-- [ ] **3.4 迁移 Fetchx 嵌入包**
-  - [ ] 迁移 `packages/embed/` → `packages/embed/`
-  - [ ] 迁移 `packages/embed-react/` → `packages/embed-react/`
-  - [ ] 更新 package.json 名称为 `@aiget/embed` 和 `@aiget/embed-react`
-  - [ ] 验证构建通过
-
-### 第四阶段：迁移 Memox 应用
-
-- [ ] **4.1 迁移 Memox Server**
-  - [ ] 移动 `apps/server/` → `apps/memox/server/`
-  - [ ] 更新 package.json 名称为 `@aiget/memox-server`
-  - [ ] 更新 import 路径
-  - [ ] 验证 typecheck 通过
-  - [ ] 验证测试通过
-
-- [ ] **4.2 迁移 Memox WWW**
-  - [ ] 移动 `apps/www/` → `apps/memox/www/`
-  - [ ] 更新 package.json 名称
-  - [ ] 更新 import 路径
-  - [ ] 验证构建通过
-
-- [ ] **4.3 提取 Memox 核心模块**
-  - [ ] 从 server 提取 memory 核心 → `packages/memory-core/`
-  - [ ] 提取 embedding 模块 → `packages/embedding/`
-  - [ ] 更新依赖关系
-
-### 第五阶段：迁移 Flowx 应用
-
-- [ ] **5.1 迁移 Flowx Server**
+- [ ] **3.1 迁移 Flowx Server**
   - [ ] 移动 `apps/server/` → `apps/flowx/server/`
   - [ ] 更新 package.json 名称为 `@aiget/flowx-server`
   - [ ] 更新 import 路径
   - [ ] 验证 typecheck 通过
   - [ ] 验证测试通过
 
-- [ ] **5.2 迁移 Flowx Mobile**
+- [ ] **3.2 迁移 Flowx Mobile**
   - [ ] 移动 `apps/mobile/` → `apps/flowx/mobile/`
   - [ ] 更新 package.json 名称
   - [ ] 更新 import 路径
   - [ ] 验证 Expo 构建通过
 
-- [ ] **5.3 迁移 Flowx PC**
+- [ ] **3.3 迁移 Flowx PC**
   - [ ] 移动 `apps/pc/` → `apps/flowx/pc/`
   - [ ] 更新 package.json 名称
   - [ ] 更新 Electron 配置
   - [ ] 验证构建通过
 
-- [ ] **5.4 迁移 Flowx 站点模板**
+- [ ] **3.4 迁移 Flowx 站点模板**
   - [ ] 迁移 `apps/site-template/` → `apps/flowx/site-template/`
   - [ ] 更新 package.json 名称
 
-- [ ] **5.5 迁移 Flowx 特有包**
+- [ ] **3.5 迁移 Flowx 特有包**
   - [ ] 迁移 `packages/tiptap/` → `packages/tiptap/`
   - [ ] 迁移 `packages/shared-api/` → `packages/api/`（合并到统一 api 包）
   - [ ] 迁移 `packages/shared-sync/` → `packages/sync/`
   - [ ] 更新 package.json 名称
   - [ ] 验证构建通过
+
+### 第四阶段：迁移 Fetchx 应用
+
+- [ ] **4.1 迁移 Fetchx Server**
+  - [ ] 移动 `apps/server/` → `apps/fetchx/server/`
+  - [ ] 更新 package.json 名称为 `@aiget/fetchx-server`
+  - [ ] 更新 import 路径（UI, shared-types）
+  - [ ] 验证 typecheck 通过
+  - [ ] 验证测试通过
+
+- [ ] **4.2 迁移 Fetchx WWW**
+  - [ ] 移动 `apps/www/` → `apps/fetchx/www/`
+  - [ ] 更新 package.json 名称
+  - [ ] 更新 import 路径
+  - [ ] 验证构建通过
+
+- [ ] **4.3 提取 Fetchx 核心模块**
+  - [ ] 从 server 提取 scraper 核心 → `packages/scraper-core/`
+  - [ ] 更新依赖关系
+
+- [ ] **4.4 迁移 Fetchx 嵌入包**
+  - [ ] 迁移 `packages/embed/` → `packages/embed/`
+  - [ ] 迁移 `packages/embed-react/` → `packages/embed-react/`
+  - [ ] 更新 package.json 名称为 `@aiget/embed` 和 `@aiget/embed-react`
+  - [ ] 验证构建通过
+
+### 第五阶段：迁移 Memox 应用
+
+- [ ] **5.1 迁移 Memox Server**
+  - [ ] 移动 `apps/server/` → `apps/memox/server/`
+  - [ ] 更新 package.json 名称为 `@aiget/memox-server`
+  - [ ] 更新 import 路径
+  - [ ] 验证 typecheck 通过
+  - [ ] 验证测试通过
+
+- [ ] **5.2 迁移 Memox WWW**
+  - [ ] 移动 `apps/www/` → `apps/memox/www/`
+  - [ ] 更新 package.json 名称
+  - [ ] 更新 import 路径
+  - [ ] 验证构建通过
+
+- [ ] **5.3 提取 Memox 核心模块**
+  - [ ] 从 server 提取 memory 核心 → `packages/memory-core/`
+  - [ ] 提取 embedding 模块 → `packages/embedding/`
+  - [ ] 更新依赖关系
 
 ### 第六阶段：创建统一认证服务
 
@@ -1894,11 +1904,11 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 | 日期 | 阶段 | 完成内容 | 执行者 |
 |------|------|----------|--------|
 | 2026-01-04 | 准备 | 创建新仓库，编写 CLAUDE.md 和架构文档 | Claude |
-| | | | |
+| 2026-01-05 | 第一阶段 | 初始化 Monorepo 基础设施（pnpm-workspace、turbo.json、工具配置包、CI/CD） | Claude |
 
 ---
 
-*文档版本: 1.1*
+*文档版本: 1.2*
 *创建日期: 2026-01-04*
-*最后更新: 2026-01-04*
+*最后更新: 2026-01-05*
 *作者: Claude (AI 助手)*

@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'apps/*/server'
+  - 'apps/*/www'
+  - 'apps/*/mobile'
+  - 'apps/*/pc'
+  - 'packages/*'
+  - 'tooling/*'
