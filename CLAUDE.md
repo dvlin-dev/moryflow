@@ -513,4 +513,116 @@ pnpm lint
 
 ---
 
+## 包构建规范
+
+### 构建工具：tsc-multi
+
+所有 `packages/` 下的共享包使用 [tsc-multi](https://www.npmjs.com/package/tsc-multi) 构建，支持 ESM/CJS 双格式输出。
+
+### 核心优势
+
+- **自动路径重写**：编译时自动将 `import './foo'` 转换为 `import './foo.js'`
+- **双格式输出**：同时生成 `.mjs`（ESM）和 `.cjs`（CJS）
+- **无需手写后缀**：源码中保持简洁的无后缀导入
+
+### 配置文件：tsc-multi.json
+
+每个需要构建的包在根目录创建 `tsc-multi.json`：
+
+```json
+{
+  "targets": [
+    { "extname": ".mjs", "module": "ESNext", "moduleResolution": "Bundler" },
+    {
+      "extname": ".cjs",
+      "module": "CommonJS",
+      "moduleResolution": "Node",
+      "verbatimModuleSyntax": false
+    }
+  ]
+}
+```
+
+### package.json 配置
+
+```json
+{
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc-multi",
+    "typecheck": "tsc --noEmit"
+  }
+}
+```
+
+### tsconfig.json 配置
+
+```json
+{
+  "extends": "@aiget/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### 导入规范
+
+```typescript
+// ✅ 正确：源码中不带后缀
+export * from './common';
+import { ApiError } from './client';
+
+// ❌ 错误：不要手动添加 .js 后缀
+export * from './common.js';
+import { ApiError } from './client.js';
+```
+
+### 包类型分类
+
+| 类型                | 构建方式  | 说明                            |
+| ------------------- | --------- | ------------------------------- |
+| `packages/types`    | tsc-multi | 纯类型包，需要构建供外部使用    |
+| `packages/api`      | tsc-multi | API 客户端，需要 ESM/CJS 双格式 |
+| `packages/auth`     | tsc-multi | 认证客户端，需要 ESM/CJS 双格式 |
+| `packages/config`   | tsc-multi | 配置工具，需要 ESM/CJS 双格式   |
+| `packages/ui`       | 无需构建  | React 组件，由消费方打包        |
+| `packages/agents-*` | tsc-multi | Agent 相关包                    |
+| `tooling/*`         | 无需构建  | 配置包，直接使用源码            |
+
+### 开发命令
+
+```bash
+# 构建单个包
+pnpm --filter @aiget/types build
+
+# 构建所有包
+pnpm -r build
+
+# 类型检查（不构建）
+pnpm typecheck
+```
+
+---
+
 _版本: 1.0 | 创建日期: 2026-01-04_

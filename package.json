@@ -36,6 +36,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
+    "tsc-multi": "^1.1.0",
     "turbo": "^2.4.4",
     "typescript": "^5.9.3"
   },

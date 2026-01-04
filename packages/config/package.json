@@ -1,0 +1,49 @@
+{
+  "name": "@aiget/config",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./env": {
+      "import": {
+        "types": "./dist/env.d.ts",
+        "default": "./dist/env.mjs"
+      },
+      "require": {
+        "types": "./dist/env.d.cts",
+        "default": "./dist/env.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc-multi",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.25.40"
+  },
+  "devDependencies": {
+    "@aiget/eslint-config": "workspace:*",
+    "@aiget/typescript-config": "workspace:*",
+    "tsc-multi": "^1.1.0",
+    "typescript": "~5.9.3"
+  }
+}

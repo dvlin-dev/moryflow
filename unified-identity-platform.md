@@ -9,6 +9,7 @@
 **架构名称：统一身份平台 (Unified Identity Platform, UIP)**
 
 该架构在业界也被称为：
+
 - **身份即服务 (Identity as a Service, IDaaS)** - 将身份管理作为独立服务提供
 - **集中式身份管理 (Centralized Identity Management)** - 统一管理所有产品的用户身份
 - **单点登录平台 (Single Sign-On Platform)** - 一次登录，全平台通用
@@ -42,15 +43,18 @@
 ```
 
 **产品矩阵定位**：
+
 - **Flowx**（核心产品）：笔记 AI 工作流 + 网站发布，调用下层原子能力
 - **原子能力**：Fetchx（网页抓取）、Memox（AI 记忆）、Sandx（Agent 沙盒）
 
 **核心思想**：将用户身份、积分钱包、资源配额从各个业务系统中抽离出来，形成一个独立的「身份平台」。各业务系统通过统一的网关 API 来：
+
 1. 验证用户身份（这个用户是谁？）
 2. 查询用户权益（这个用户能用什么功能？）
 3. 扣减/查询积分（这个用户还有多少积分？）
 
 > **命名说明**：
+>
 > - **Fetchx**：原名 AIGET，因与公司名 Aiget 冲突而更名
 > - **Memox**：原名 MEMAI，统一为 `*x` 品牌风格
 > - **Flowx**：原名 MORYFLOW，统一为 `*x` 品牌风格
@@ -60,43 +64,43 @@
 
 所有产品统一使用 `aiget.dev` 子域名，无需注册多个独立域名：
 
-| 服务 | 域名 | 说明 |
-|------|------|------|
-| **主站** | aiget.dev | 平台主入口 |
-| **统一控制台** | console.aiget.dev | 用户管理所有产品 |
-| **统一管理后台** | admin.aiget.dev | 运营管理 |
-| **统一文档** | docs.aiget.dev | 文档站 |
-| **Flowx 落地页** | flowx.aiget.dev | 核心产品：笔记 AI 工作流 |
-| **Flowx API** | api.flowx.aiget.dev | 路径: `/v1/...` |
-| **Fetchx 落地页** | fetchx.aiget.dev | 原子能力：网页抓取 |
-| **Fetchx API** | api.fetchx.aiget.dev | 路径: `/v1/...` |
-| **Memox 落地页** | memox.aiget.dev | 原子能力：AI 记忆 |
-| **Memox API** | api.memox.aiget.dev | 路径: `/v1/...` |
-| **Sandx 落地页** | sandx.aiget.dev | 原子能力：Agent 沙盒（规划中） |
-| **Sandx API** | api.sandx.aiget.dev | 路径: `/v1/...` |
+| 服务              | 域名                 | 说明                           |
+| ----------------- | -------------------- | ------------------------------ |
+| **主站**          | aiget.dev            | 平台主入口                     |
+| **统一控制台**    | console.aiget.dev    | 用户管理所有产品               |
+| **统一管理后台**  | admin.aiget.dev      | 运营管理                       |
+| **统一文档**      | docs.aiget.dev       | 文档站                         |
+| **Flowx 落地页**  | flowx.aiget.dev      | 核心产品：笔记 AI 工作流       |
+| **Flowx API**     | api.flowx.aiget.dev  | 路径: `/v1/...`                |
+| **Fetchx 落地页** | fetchx.aiget.dev     | 原子能力：网页抓取             |
+| **Fetchx API**    | api.fetchx.aiget.dev | 路径: `/v1/...`                |
+| **Memox 落地页**  | memox.aiget.dev      | 原子能力：AI 记忆              |
+| **Memox API**     | api.memox.aiget.dev  | 路径: `/v1/...`                |
+| **Sandx 落地页**  | sandx.aiget.dev      | 原子能力：Agent 沙盒（规划中） |
+| **Sandx API**     | api.sandx.aiget.dev  | 路径: `/v1/...`                |
 
 > **路径规范**：API 子域名已表明是接口服务，因此路径无需 `/api` 前缀。
 > 例如：`api.fetchx.aiget.dev/v1/scrape` 而非 `api.fetchx.aiget.dev/api/v1/scrape`
 
 #### API Key 前缀
 
-| 前缀 | 产品 | 访问范围 |
-|------|------|----------|
+| 前缀  | 产品   | 访问范围                     |
+| ----- | ------ | ---------------------------- |
 | `ag_` | 全平台 | 所有产品（Flowx + 原子能力） |
-| `lx_` | Flowx | 核心产品：笔记 AI 工作流 |
-| `fx_` | Fetchx | 原子能力：网页抓取 |
-| `mx_` | Memox | 原子能力：AI 记忆 |
-| `sx_` | Sandx | 原子能力：Agent 沙盒 |
+| `lx_` | Flowx  | 核心产品：笔记 AI 工作流     |
+| `fx_` | Fetchx | 原子能力：网页抓取           |
+| `mx_` | Memox  | 原子能力：AI 记忆            |
+| `sx_` | Sandx  | 原子能力：Agent 沙盒         |
 
 #### 架构分层
 
-| 层级 | 职责 | 核心组件 |
-|------|------|----------|
-| **身份层** | 用户认证、会话管理、个人资料 | User（用户）、Session（会话）、Account（账号）、Profile（资料） |
-| **钱包层** | 通用积分/Credits 管理 | Wallet（钱包）、WalletTransaction（交易记录）、PurchaseOrder（购买订单） |
-| **权益层** | 订阅权益、产品授权 | Subscription（订阅）、ProductEntitlement（产品权益）、License（许可证） |
-| **网关层** | 对外 API、Token 校验 | 认证 API、资源 API、Webhook |
-| **产品层** | 各业务系统 | Flowx（核心）、Fetchx、Memox、Sandx（原子能力） |
+| 层级       | 职责                         | 核心组件                                                                 |
+| ---------- | ---------------------------- | ------------------------------------------------------------------------ |
+| **身份层** | 用户认证、会话管理、个人资料 | User（用户）、Session（会话）、Account（账号）、Profile（资料）          |
+| **钱包层** | 通用积分/Credits 管理        | Wallet（钱包）、WalletTransaction（交易记录）、PurchaseOrder（购买订单） |
+| **权益层** | 订阅权益、产品授权           | Subscription（订阅）、ProductEntitlement（产品权益）、License（许可证）  |
+| **网关层** | 对外 API、Token 校验         | 认证 API、资源 API、Webhook                                              |
+| **产品层** | 各业务系统                   | Flowx（核心）、Fetchx、Memox、Sandx（原子能力）                          |
 
 ### 1.2 核心优势分析
 
@@ -117,6 +121,7 @@
 ```
 
 **具体收益**：
+
 - 用户只需注册一次，即可使用所有产品
 - 积分/Credits 跨产品共享，可在任意产品消费
 - 统一的支付入口，简化财务对账
@@ -124,13 +129,13 @@
 
 #### 优势二：运营效率提升
 
-| 场景 | 改造前（分散式） | 改造后（统一式） |
-|------|-----------------|-----------------|
+| 场景     | 改造前（分散式）               | 改造后（统一式）     |
+| -------- | ------------------------------ | -------------------- |
 | 用户注册 | 每个产品单独注册，记住多套账号 | 一次注册，全平台通用 |
-| 密码重置 | 每个产品单独处理 | 统一入口处理 |
-| 积分充值 | 每个产品单独充值，不能互通 | 统一钱包，跨产品使用 |
-| 订阅管理 | 每个产品单独订阅 | 统一订阅中心 |
-| 用户支持 | 客服需要登录多系统查询用户状态 | 单一控制台查看全貌 |
+| 密码重置 | 每个产品单独处理               | 统一入口处理         |
+| 积分充值 | 每个产品单独充值，不能互通     | 统一钱包，跨产品使用 |
+| 订阅管理 | 每个产品单独订阅               | 统一订阅中心         |
+| 用户支持 | 客服需要登录多系统查询用户状态 | 单一控制台查看全貌   |
 
 #### 优势三：产品协同与交叉销售
 
@@ -148,6 +153,7 @@
 ```
 
 **交叉销售收益**：
+
 - 用户在一个产品购买的积分，可以吸引其尝试其他产品
 - 降低新产品的获客成本（已有用户直接使用）
 - 提高用户粘性（积分余额激励持续使用）
@@ -155,13 +161,13 @@
 
 #### 优势四：技术收益
 
-| 收益 | 说明 |
-|------|------|
-| **代码复用** | Auth（认证）、Payment（支付）、Quota（配额）逻辑只需维护一份 |
-| **安全集中化** | 安全漏洞修复一处，全平台生效 |
-| **独立扩展** | 身份服务可独立扩展，不受业务服务影响 |
-| **审计追踪** | 统一的操作日志，便于合规审计 |
-| **A/B 测试** | 可在平台层面实施跨产品实验 |
+| 收益           | 说明                                                         |
+| -------------- | ------------------------------------------------------------ |
+| **代码复用**   | Auth（认证）、Payment（支付）、Quota（配额）逻辑只需维护一份 |
+| **安全集中化** | 安全漏洞修复一处，全平台生效                                 |
+| **独立扩展**   | 身份服务可独立扩展，不受业务服务影响                         |
+| **审计追踪**   | 统一的操作日志，便于合规审计                                 |
+| **A/B 测试**   | 可在平台层面实施跨产品实验                                   |
 
 #### 优势五：商业模式灵活性
 
@@ -215,6 +221,7 @@
 ```
 
 **关键点**：
+
 1. 用户从任意产品入口注册，都会跳转到统一的登录/注册页面
 2. 注册成功后自动创建钱包（余额为0）和免费订阅
 3. 携带认证 Token 跳转回原产品，实现无缝登录
@@ -246,6 +253,7 @@
 ```
 
 **会话策略**：
+
 - **共享 Cookie**（同域名）：`*.yourdomain.com` 共享 session cookie
 - **Token 交换**（跨域名）：产品 A 的 token 换取产品 B 的 session
 
@@ -287,6 +295,7 @@
 ```
 
 **积分扣减规则**：
+
 1. **预扣减**：操作前先扣减积分
 2. **失败退还**：操作失败自动退还
 3. **扣减优先级**：免费积分 → 订阅积分 → 购买积分
@@ -328,6 +337,7 @@
 ```
 
 **权益检查流程**：
+
 ```
 产品请求：
 ┌─────────┐     ┌─────────┐     ┌──────────────────┐
@@ -704,13 +714,13 @@ Fetchx 的 metadata 示例:
 
 #### 前缀规则
 
-| 前缀 | 产品范围 | 使用场景 |
-|------|----------|----------|
-| `ag_` | 全平台（Flowx + 所有原子能力） | 跨产品集成 |
-| `lx_` | 仅 Flowx | 核心产品专用 |
-| `fx_` | 仅 Fetchx | 网页抓取专用 |
-| `mx_` | 仅 Memox | AI 记忆专用 |
-| `sx_` | 仅 Sandx | Agent 沙盒专用 |
+| 前缀  | 产品范围                       | 使用场景       |
+| ----- | ------------------------------ | -------------- |
+| `ag_` | 全平台（Flowx + 所有原子能力） | 跨产品集成     |
+| `lx_` | 仅 Flowx                       | 核心产品专用   |
+| `fx_` | 仅 Fetchx                      | 网页抓取专用   |
+| `mx_` | 仅 Memox                       | AI 记忆专用    |
+| `sx_` | 仅 Sandx                       | Agent 沙盒专用 |
 
 #### API Key 数据结构
 
@@ -828,6 +838,7 @@ Authorization: Bearer {service_api_key}
 ```
 
 **架构优势**：
+
 - 每个服务可独立部署到任意位置（不同云、不同区域）
 - 无内网依赖，简化运维复杂度
 - 天然支持多租户和白标部署
@@ -856,6 +867,7 @@ Authorization: Bearer {service_api_key}
 #### 第二阶段：产品接入
 
 > **试点选择**：Flowx 作为第一个接入的产品，因为：
+>
 > 1. 核心产品，优先验证平台稳定性
 > 2. 目前独立运行，未耦合其他应用
 > 3. 干净的接入环境，便于发现问题
@@ -945,11 +957,11 @@ Memox 接入:
 
 ### 3.2 数据库策略选项
 
-| 方案 | 说明 | 优点 | 缺点 |
-|------|------|------|------|
-| **共享数据库** | 所有服务使用同一个 PostgreSQL | 简单，易于跨表查询 | 耦合，扩展受限 |
-| **Schema 隔离** | 同一数据库，不同 Schema | 逻辑隔离 | 仍在数据库层面耦合 |
-| **独立数据库** | 每个服务独立数据库 | 真正隔离 | 跨服务查询困难 |
+| 方案            | 说明                          | 优点               | 缺点               |
+| --------------- | ----------------------------- | ------------------ | ------------------ |
+| **共享数据库**  | 所有服务使用同一个 PostgreSQL | 简单，易于跨表查询 | 耦合，扩展受限     |
+| **Schema 隔离** | 同一数据库，不同 Schema       | 逻辑隔离           | 仍在数据库层面耦合 |
+| **独立数据库**  | 每个服务独立数据库            | 真正隔离           | 跨服务查询困难     |
 
 **建议**：先采用 **Schema 隔离**，待规模需要时再迁移到 **独立数据库**。
 
@@ -996,13 +1008,13 @@ Token 类型：
 
 ### 架构选择理由
 
-| 考虑因素 | 决策 |
-|----------|------|
-| 用户体验 | 一个账号，无缝跨产品访问 |
-| 开发体验 | 只需维护一套认证/支付集成 |
+| 考虑因素 | 决策                           |
+| -------- | ------------------------------ |
+| 用户体验 | 一个账号，无缝跨产品访问       |
+| 开发体验 | 只需维护一套认证/支付集成      |
 | 商业灵活 | 积分模式支持交叉销售和套餐捆绑 |
-| 技术扩展 | 身份层独立扩展 |
-| 安全 | 集中式安全控制和审计 |
+| 技术扩展 | 身份层独立扩展                 |
+| 安全     | 集中式安全控制和审计           |
 
 ### 关键成功指标
 
@@ -1078,20 +1090,20 @@ Token 类型：
 
 #### 技术栈重合度
 
-| 技术层 | Fetchx | Memox | Flowx | 重合度 |
-|--------|-------|-------|----------|--------|
-| 包管理器 | pnpm workspace | pnpm workspace | pnpm workspace | 100% |
-| 后端框架 | NestJS 11 | NestJS 11 | NestJS 11 | 100% |
-| 数据库 | Prisma + PostgreSQL | Prisma + PostgreSQL | Prisma + PostgreSQL | 100% |
-| 认证 | Better Auth | Better Auth | Better Auth | 100% |
-| 队列 | BullMQ + Redis | BullMQ + Redis | BullMQ + Redis | 100% |
-| 支付 | Creem | Creem | Creem | 100% |
-| 前端框架 | React 19 | React 19 | React 19 | 100% |
-| 样式 | TailwindCSS v4 | TailwindCSS v4 | TailwindCSS v4 | 100% |
-| UI 组件 | shadcn/ui (Radix) | shadcn/ui (Radix) | shadcn/ui (Radix) | ~90% |
-| 类型校验 | Zod | Zod | Zod | 100% |
-| 邮件 | Resend | Resend | Resend | 100% |
-| 日志 | Pino | Pino | Pino | 100% |
+| 技术层   | Fetchx              | Memox               | Flowx               | 重合度 |
+| -------- | ------------------- | ------------------- | ------------------- | ------ |
+| 包管理器 | pnpm workspace      | pnpm workspace      | pnpm workspace      | 100%   |
+| 后端框架 | NestJS 11           | NestJS 11           | NestJS 11           | 100%   |
+| 数据库   | Prisma + PostgreSQL | Prisma + PostgreSQL | Prisma + PostgreSQL | 100%   |
+| 认证     | Better Auth         | Better Auth         | Better Auth         | 100%   |
+| 队列     | BullMQ + Redis      | BullMQ + Redis      | BullMQ + Redis      | 100%   |
+| 支付     | Creem               | Creem               | Creem               | 100%   |
+| 前端框架 | React 19            | React 19            | React 19            | 100%   |
+| 样式     | TailwindCSS v4      | TailwindCSS v4      | TailwindCSS v4      | 100%   |
+| UI 组件  | shadcn/ui (Radix)   | shadcn/ui (Radix)   | shadcn/ui (Radix)   | ~90%   |
+| 类型校验 | Zod                 | Zod                 | Zod                 | 100%   |
+| 邮件     | Resend              | Resend              | Resend              | 100%   |
+| 日志     | Pino                | Pino                | Pino                | 100%   |
 
 #### 共享依赖分析
 
@@ -1132,24 +1144,24 @@ Flowx 特有:
 
 #### 合并收益
 
-| 收益 | 说明 |
-|------|------|
-| **依赖去重** | node_modules 大小可减少 40-60%，安装速度提升 |
-| **UI 组件统一** | Fetchx 和 Memox 的 UI 包几乎相同，可直接合并 |
-| **共享模块复用** | auth、payment、quota 等核心模块只需维护一份 |
-| **类型安全** | 跨产品类型共享，编译时发现问题 |
-| **原子变更** | 跨产品重构可在一个 PR 内完成 |
-| **CI/CD 简化** | 统一的构建和部署流程 |
-| **开发体验** | 一个仓库，一个 IDE 窗口，统一的开发环境 |
+| 收益             | 说明                                         |
+| ---------------- | -------------------------------------------- |
+| **依赖去重**     | node_modules 大小可减少 40-60%，安装速度提升 |
+| **UI 组件统一**  | Fetchx 和 Memox 的 UI 包几乎相同，可直接合并 |
+| **共享模块复用** | auth、payment、quota 等核心模块只需维护一份  |
+| **类型安全**     | 跨产品类型共享，编译时发现问题               |
+| **原子变更**     | 跨产品重构可在一个 PR 内完成                 |
+| **CI/CD 简化**   | 统一的构建和部署流程                         |
+| **开发体验**     | 一个仓库，一个 IDE 窗口，统一的开发环境      |
 
 #### 风险与挑战
 
-| 风险 | 缓解措施 |
-|------|----------|
+| 风险         | 缓解措施                                 |
+| ------------ | ---------------------------------------- |
 | 仓库体积增大 | 使用 Git LFS 管理大文件，配置 .gitignore |
-| CI 时间增长 | 使用 Turborepo 增量构建，只构建变更的包 |
-| 权限管理复杂 | 使用 CODEOWNERS 按目录分配审核权限 |
-| 迁移工作量 | 分阶段迁移，先合并共享包，再合并应用 |
+| CI 时间增长  | 使用 Turborepo 增量构建，只构建变更的包  |
+| 权限管理复杂 | 使用 CODEOWNERS 按目录分配审核权限       |
+| 迁移工作量   | 分阶段迁移，先合并共享包，再合并应用     |
 
 ### 6.3 推荐的 Monorepo 结构
 
@@ -1318,12 +1330,12 @@ Aiget/                               # Monorepo 根目录
 ```yaml
 # pnpm-workspace.yaml
 packages:
-  - "apps/*"
-  - "apps/*/server"
-  - "apps/*/console"
-  - "apps/*/www"
-  - "packages/*"
-  - "tooling/*"
+  - 'apps/*'
+  - 'apps/*/server'
+  - 'apps/*/console'
+  - 'apps/*/www'
+  - 'packages/*'
+  - 'tooling/*'
 ```
 
 ### 6.6 部署架构设计
@@ -1431,7 +1443,7 @@ services:
     networks:
       - fetchx-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fetchx}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-fetchx}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1446,7 +1458,7 @@ services:
     networks:
       - fetchx-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1471,7 +1483,7 @@ services:
     networks:
       - fetchx-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1501,8 +1513,8 @@ services:
     container_name: fetchx-nginx
     restart: unless-stopped
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
+      - '${HTTP_PORT:-80}:80'
+      - '${HTTPS_PORT:-443}:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
@@ -1565,24 +1577,24 @@ http {
 
 **各子服务包含的组件：**
 
-| 子服务 | 组件 | 域名 |
-|--------|------|------|
-| **console** | postgres、redis、server、nginx | console.aiget.dev |
-| **admin** | server、nginx | admin.aiget.dev |
-| **fetchx** | postgres、redis、server、www、nginx | fetchx.aiget.dev, api.fetchx.aiget.dev |
-| **memox** | postgres(+pgvector)、redis、server、www、nginx | memox.aiget.dev, api.memox.aiget.dev |
-| **flowx** | postgres、redis、server、www、nginx | flowx.aiget.dev, api.flowx.aiget.dev |
-| **docs** | static-site、nginx | docs.aiget.dev |
+| 子服务      | 组件                                           | 域名                                   |
+| ----------- | ---------------------------------------------- | -------------------------------------- |
+| **console** | postgres、redis、server、nginx                 | console.aiget.dev                      |
+| **admin**   | server、nginx                                  | admin.aiget.dev                        |
+| **fetchx**  | postgres、redis、server、www、nginx            | fetchx.aiget.dev, api.fetchx.aiget.dev |
+| **memox**   | postgres(+pgvector)、redis、server、www、nginx | memox.aiget.dev, api.memox.aiget.dev   |
+| **flowx**   | postgres、redis、server、www、nginx            | flowx.aiget.dev, api.flowx.aiget.dev   |
+| **docs**    | static-site、nginx                             | docs.aiget.dev                         |
 
 > **注意**：Console 和 Admin 现在是统一的，不再按产品分散。所有产品共享一个 Console（用户控制台）和一个 Admin（管理后台）。
 
 #### 部署模式
 
-| 模式 | 说明 | 使用场景 |
-|------|------|----------|
-| **单机全量** | `docker-compose.all.yml` | 开发环境、测试环境 |
-| **单机分离** | 各服务独立 compose，同一机器 | 小规模生产 |
-| **多机分布** | 各服务部署到不同机器 | 大规模生产 |
+| 模式         | 说明                         | 使用场景           |
+| ------------ | ---------------------------- | ------------------ |
+| **单机全量** | `docker-compose.all.yml`     | 开发环境、测试环境 |
+| **单机分离** | 各服务独立 compose，同一机器 | 小规模生产         |
+| **多机分布** | 各服务部署到不同机器         | 大规模生产         |
 
 #### 多机部署示例
 
@@ -1628,6 +1640,7 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 ```
 
 **架构优势**：
+
 - 每个服务可独立部署到任意位置（不同云、不同区域）
 - 无内网依赖，简化运维复杂度
 - 天然支持多租户和白标部署
@@ -1635,13 +1648,13 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 ### 6.7 命名规范建议
 
-| 类型 | 命名模式 | 示例 |
-|------|----------|------|
-| 应用包 | `@aiget/{product}-{app}` | `@aiget/fetchx-server` |
-| 共享包 | `@aiget/{name}` | `@aiget/types`、`@aiget/api` |
-| UI 包 | `@aiget/ui` | 唯一 |
-| 工具包 | `@aiget/{name}-config` | `@aiget/eslint-config` |
-| Agent 包 | `@aiget/agents-{name}` | `@aiget/agents-core` |
+| 类型     | 命名模式                 | 示例                         |
+| -------- | ------------------------ | ---------------------------- |
+| 应用包   | `@aiget/{product}-{app}` | `@aiget/fetchx-server`       |
+| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api` |
+| UI 包    | `@aiget/ui`              | 唯一                         |
+| 工具包   | `@aiget/{name}-config`   | `@aiget/eslint-config`       |
+| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`         |
 
 ---
 
@@ -1649,11 +1662,11 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 以下是需要迁移到 Monorepo 的三个源仓库的绝对路径：
 
-| 产品 | 绝对路径 | 说明 |
-|------|----------|------|
-| Fetchx (原 AIGET) | `/Users/bowling/code/me/fetchx` | 网页抓取与数据提取平台（仓库已更名） |
-| Memox (原 MEMAI) | `/Users/bowling/code/me/memai` | AI 记忆与知识图谱服务 |
-| Flowx (原 MORYFLOW) | `/Users/bowling/code/me/moryflow` | 工作流自动化与 Agent 框架 |
+| 产品                | 绝对路径                          | 说明                                 |
+| ------------------- | --------------------------------- | ------------------------------------ |
+| Fetchx (原 AIGET)   | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
+| Memox (原 MEMAI)    | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
+| Flowx (原 MORYFLOW) | `/Users/bowling/code/me/moryflow` | 工作流自动化与 Agent 框架            |
 
 ### 各仓库主要目录结构
 
@@ -1727,27 +1740,25 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 ### 第二阶段：合并共享包
 
-- [ ] **2.1 合并 UI 组件库**
-  - [ ] 以 Flowx 的 `packages/ui/` 为基础（功能最全）
-  - [ ] 合并 AIGET 特有组件
-  - [ ] 合并 Memox 特有组件
-  - [ ] 统一导出为 `@aiget/ui`
-  - [ ] 更新所有 import 路径
+- [x] **2.1 合并 UI 组件库** (2026-01-05)
+  - [x] 以 Fetchx 的 `packages/ui/` 为基础（primitives/composed 结构更清晰）
+  - [x] 统一导出为 `@aiget/ui`
+  - [ ] Flowx AI/animate/icons 组件待第三阶段迁移时添加
 
-- [ ] **2.2 创建统一共享类型包**
-  - [ ] 合并三个 `shared-types` 包
-  - [ ] 定义跨产品通用类型（User, Wallet, Subscription）
-  - [ ] 导出为 `@aiget/types`
+- [x] **2.2 创建统一共享类型包** (2026-01-05)
+  - [x] 创建 `packages/types/` 包含 common/ 和 products/ 目录
+  - [x] 定义跨产品通用类型（User, Wallet, Subscription, Product）
+  - [x] 导出为 `@aiget/types`
 
-- [ ] **2.3 迁移 Flowx 的 Agent 包**
-  - [ ] `packages/agents-core/` → `packages/agents-core/`
-  - [ ] `packages/agents-openai/` → `packages/agents-openai/`
-  - [ ] 更新内部依赖路径
+- [x] **2.3 迁移 Flowx 的 Agent 包** (2026-01-05)
+  - [x] `packages/agents-core/` → `packages/agents-core/`
+  - [x] `packages/agents-openai/` → `packages/agents-openai/`
+  - [x] 更新包名为 `@aiget/agents-*`
 
-- [ ] **2.4 创建共享配置包**
-  - [ ] `packages/config/` - 共享配置
-  - [ ] `packages/api/` - API 客户端工具
-  - [ ] `packages/auth/` - 认证客户端
+- [x] **2.4 创建共享配置包** (2026-01-05)
+  - [x] `packages/config/` - 环境变量验证
+  - [x] `packages/api/` - API 客户端工具
+  - [x] `packages/auth/` - 认证客户端（占位）
 
 ### 第三阶段：迁移 Flowx 应用（核心产品优先）
 
@@ -1901,14 +1912,15 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 > 每次完成迁移步骤后，在此记录进度。
 
-| 日期 | 阶段 | 完成内容 | 执行者 |
-|------|------|----------|--------|
-| 2026-01-04 | 准备 | 创建新仓库，编写 CLAUDE.md 和架构文档 | Claude |
-| 2026-01-05 | 第一阶段 | 初始化 Monorepo 基础设施（pnpm-workspace、turbo.json、工具配置包、CI/CD） | Claude |
+| 日期       | 阶段     | 完成内容                                                                                        | 执行者 |
+| ---------- | -------- | ----------------------------------------------------------------------------------------------- | ------ |
+| 2026-01-04 | 准备     | 创建新仓库，编写 CLAUDE.md 和架构文档                                                           | Claude |
+| 2026-01-05 | 第一阶段 | 初始化 Monorepo 基础设施（pnpm-workspace、turbo.json、工具配置包、CI/CD）                       | Claude |
+| 2026-01-05 | 第二阶段 | 合并共享包（@aiget/ui、@aiget/types、@aiget/agents-\*、@aiget/config、@aiget/api、@aiget/auth） | Claude |
 
 ---
 
-*文档版本: 1.2*
-*创建日期: 2026-01-04*
-*最后更新: 2026-01-05*
-*作者: Claude (AI 助手)*
+_文档版本: 1.3_
+_创建日期: 2026-01-04_
+_最后更新: 2026-01-05_
+_作者: Claude (AI 助手)_
