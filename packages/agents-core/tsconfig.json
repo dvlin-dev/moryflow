@@ -4,8 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
-      "@moryflow/agents-core": ["./src/index.ts"],
-      "@moryflow/agents-core/_shims": ["./src/shims/shims-node.ts"]
+      "@aiget/agents-core": ["./src/index.ts"],
+      "@aiget/agents-core/_shims": ["./src/shims/shims-node.ts"]
     }
   },
   "exclude": ["dist/**", "test/**"]

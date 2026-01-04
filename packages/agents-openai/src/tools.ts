@@ -1,4 +1,4 @@
-import { HostedTool } from '@moryflow/agents-core';
+import { HostedTool } from '@aiget/agents-core';
 import type OpenAI from 'openai';
 import { z } from 'zod';
 import * as ProviderData from './types/providerData';

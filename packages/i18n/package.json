@@ -1,0 +1,41 @@
+{
+  "name": "@aiget/i18n",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsc-multi",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "jest"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "i18next": "^25.5.0",
+    "react-i18next": "^15.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "~19.1.17",
+    "react": "^19.1.0",
+    "react-native": "^0.81.5",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native": {
+      "optional": true
+    }
+  }
+}

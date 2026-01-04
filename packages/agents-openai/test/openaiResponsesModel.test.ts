@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { OpenAIResponsesModel } from '../src/openaiResponsesModel';
 import { HEADERS } from '../src/defaults';
 import type OpenAI from 'openai';
-import { setTracingDisabled, withTrace, type ResponseStreamEvent } from '@moryflow/agents-core';
+import { setTracingDisabled, withTrace, type ResponseStreamEvent } from '@aiget/agents-core';
 import type { ResponseStreamEvent as OpenAIResponseStreamEvent } from 'openai/resources/responses/responses';
 
 describe('OpenAIResponsesModel', () => {

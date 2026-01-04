@@ -6,7 +6,7 @@ import {
   getInputItems,
   convertToOutputItem,
 } from '../src/openaiResponsesModel';
-import { UserError } from '@moryflow/agents-core';
+import { UserError } from '@aiget/agents-core';
 
 describe('getToolChoice', () => {
   it('returns default choices', () => {

@@ -5,7 +5,7 @@ import {
   RuntimeEventEmitter,
   EventEmitter,
   EventEmitterEvents,
-} from '@moryflow/agents-core/_shims';
+} from '@aiget/agents-core/_shims';
 import { TextOutput, UnknownContext } from './types';
 import * as protocol from './types/protocol';
 

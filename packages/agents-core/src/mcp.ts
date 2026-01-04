@@ -4,7 +4,7 @@ import {
   MCPServerStdio as UnderlyingMCPServerStdio,
   MCPServerStreamableHttp as UnderlyingMCPServerStreamableHttp,
   MCPServerSSE as UnderlyingMCPServerSSE,
-} from '@moryflow/agents-core/_shims';
+} from '@aiget/agents-core/_shims';
 import {
   getCurrentSpan,
   getCurrentTrace,

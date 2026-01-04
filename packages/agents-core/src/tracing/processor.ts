@@ -2,7 +2,7 @@
 import { Span as TSpan } from './spans';
 import { Trace } from './traces';
 import logger from '../logger';
-import { timer as _timer, isTracingLoopRunningByDefault } from '@moryflow/agents-core/_shims';
+import { timer as _timer, isTracingLoopRunningByDefault } from '@aiget/agents-core/_shims';
 import type { Timeout, Timer } from '../shims/interface';
 import { tracing } from '../config';
 

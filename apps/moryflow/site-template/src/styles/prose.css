@@ -1,0 +1,369 @@
+/**
+ * Moryflow Site Template - Prose Styles
+ * Markdown content typography based on Notion design
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Prose Container
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose {
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  max-width: var(--content-width);
+}
+
+.prose > *:first-child {
+  margin-top: 0;
+}
+
+.prose > *:last-child {
+  margin-bottom: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Headings
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose h1 {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+  margin-top: var(--space-12);
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.prose h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.prose h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+.prose h4 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-tight);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+.prose h5,
+.prose h6 {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-tight);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  color: var(--text-secondary);
+}
+
+/* Heading anchors */
+.prose h1 > a,
+.prose h2 > a,
+.prose h3 > a,
+.prose h4 > a,
+.prose h5 > a,
+.prose h6 > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.prose h1 > a:hover,
+.prose h2 > a:hover,
+.prose h3 > a:hover,
+.prose h4 > a:hover,
+.prose h5 > a:hover,
+.prose h6 > a:hover {
+  color: var(--text-link);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Paragraph
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose p {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Links
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose a {
+  color: var(--text-link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: var(--transition-colors);
+}
+
+.prose a:hover {
+  border-bottom-color: var(--text-link);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Strong & Emphasis
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose strong {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Code
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Inline code */
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+/* Code block */
+.prose pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+.prose pre code {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Blockquote
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose blockquote {
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--border);
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: var(--space-4) 0;
+}
+
+.prose blockquote p {
+  margin-bottom: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Lists
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose ul,
+.prose ol {
+  padding-left: var(--space-6);
+  margin: var(--space-4) 0;
+}
+
+.prose li {
+  margin: var(--space-2) 0;
+  line-height: var(--leading-normal);
+}
+
+.prose li::marker {
+  color: var(--text-tertiary);
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* Task lists */
+.prose ul.task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.prose ul.task-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.prose ul.task-list input[type='checkbox'] {
+  margin-top: 0.4em;
+  accent-color: var(--text-link);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Table
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-4) 0;
+  font-size: var(--text-sm);
+}
+
+.prose th,
+.prose td {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.prose th {
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+.prose tr:hover td {
+  background: var(--bg-tertiary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Horizontal Rule
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-8) 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Images
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  margin: var(--space-4) 0;
+}
+
+.prose figure {
+  margin: var(--space-6) 0;
+}
+
+.prose figcaption {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: var(--space-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Definition List
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose dl {
+  margin: var(--space-4) 0;
+}
+
+.prose dt {
+  font-weight: var(--font-semibold);
+  margin-top: var(--space-4);
+}
+
+.prose dd {
+  margin-left: var(--space-4);
+  color: var(--text-secondary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Keyboard
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose kbd {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Footnotes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose .footnotes {
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.prose .footnotes ol {
+  padding-left: var(--space-4);
+}
+
+.prose sup a {
+  font-size: 0.75em;
+  color: var(--text-link);
+  text-decoration: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Callout / Admonition
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.prose .callout {
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin: var(--space-4) 0;
+  display: flex;
+  gap: var(--space-3);
+}
+
+.prose .callout-icon {
+  flex-shrink: 0;
+  font-size: var(--text-lg);
+}
+
+.prose .callout-content {
+  flex: 1;
+}
+
+.prose .callout-content > *:last-child {
+  margin-bottom: 0;
+}

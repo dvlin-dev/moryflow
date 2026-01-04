@@ -17,37 +17,46 @@ type EventMap = Record<string, any[]>;
 /**
  * 轻量级 EventEmitter 实现，不依赖 node:events
  */
-export class RNEventEmitter<
-  EventTypes extends EventMap = Record<string, any[]>,
-> implements EventEmitter<EventTypes> {
-  private listeners = new Map<keyof EventTypes, Set<(...args: unknown[]) => void>>();
+export class RNEventEmitter<EventTypes extends EventMap = Record<string, any[]>>
+  implements EventEmitter<EventTypes>
+{
+  private listeners = new Map<keyof EventTypes, Set<Function>>()
 
-  on<K extends keyof EventTypes>(type: K, listener: (...args: EventTypes[K]) => void): this {
+  on<K extends keyof EventTypes>(
+    type: K,
+    listener: (...args: EventTypes[K]) => void
+  ): this {
     if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
+      this.listeners.set(type, new Set())
     }
-    this.listeners.get(type)!.add(listener);
-    return this;
+    this.listeners.get(type)!.add(listener)
+    return this
   }
 
-  off<K extends keyof EventTypes>(type: K, listener: (...args: EventTypes[K]) => void): this {
-    this.listeners.get(type)?.delete(listener);
-    return this;
+  off<K extends keyof EventTypes>(
+    type: K,
+    listener: (...args: EventTypes[K]) => void
+  ): this {
+    this.listeners.get(type)?.delete(listener)
+    return this
   }
 
   emit<K extends keyof EventTypes>(type: K, ...args: EventTypes[K]): boolean {
-    const listeners = this.listeners.get(type);
-    if (!listeners || listeners.size === 0) return false;
-    listeners.forEach((listener) => listener(...args));
-    return true;
+    const listeners = this.listeners.get(type)
+    if (!listeners || listeners.size === 0) return false
+    listeners.forEach((listener) => listener(...args))
+    return true
   }
 
-  once<K extends keyof EventTypes>(type: K, listener: (...args: EventTypes[K]) => void): this {
+  once<K extends keyof EventTypes>(
+    type: K,
+    listener: (...args: EventTypes[K]) => void
+  ): this {
     const onceListener = (...args: EventTypes[K]) => {
-      this.off(type, onceListener as any);
-      listener(...args);
-    };
-    return this.on(type, onceListener as any);
+      this.off(type, onceListener as any)
+      listener(...args)
+    }
+    return this.on(type, onceListener as any)
   }
 }
 

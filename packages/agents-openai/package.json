@@ -20,7 +20,7 @@
     "openai": "^6"
   },
   "scripts": {
-    "prebuild": "node ../../scripts/embedMeta.js",
+    "prebuild": "node ../../scripts/embedMeta.cjs",
     "build-check": "tsc --noEmit -p ./tsconfig.test.json"
   },
   "keywords": [

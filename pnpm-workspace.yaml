@@ -4,5 +4,6 @@ packages:
   - 'apps/*/www'
   - 'apps/*/mobile'
   - 'apps/*/pc'
+  - 'apps/*/site-template'
   - 'packages/*'
   - 'tooling/*'

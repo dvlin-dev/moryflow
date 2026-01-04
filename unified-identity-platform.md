@@ -27,7 +27,7 @@
                               │
                               ▼
                 ┌─────────────────────────┐
-                │      Flowx (核心产品)    │
+                │    Moryflow (核心产品)   │
                 │   笔记 AI 工作流 + 发布  │
                 └─────────────────────────┘
                               │
@@ -44,7 +44,7 @@
 
 **产品矩阵定位**：
 
-- **Flowx**（核心产品）：笔记 AI 工作流 + 网站发布，调用下层原子能力
+- **Moryflow**（核心产品）：笔记 AI 工作流 + 网站发布，调用下层原子能力
 - **原子能力**：Fetchx（网页抓取）、Memox（AI 记忆）、Sandx（Agent 沙盒）
 
 **核心思想**：将用户身份、积分钱包、资源配额从各个业务系统中抽离出来，形成一个独立的「身份平台」。各业务系统通过统一的网关 API 来：
@@ -55,42 +55,40 @@
 
 > **命名说明**：
 >
+> - **Moryflow**：核心产品名称，保持不变（主域名 moryflow.com / moryflow.app）
 > - **Fetchx**：原名 AIGET，因与公司名 Aiget 冲突而更名
 > - **Memox**：原名 MEMAI，统一为 `*x` 品牌风格
-> - **Flowx**：原名 MORYFLOW，统一为 `*x` 品牌风格
 > - **Sandx**：Agent Sandbox 简化，规划中的 Agent 沙盒服务
+> - **Aiget**：统一平台基础设施（API 服务统一使用 *.aiget.dev 子域名）
 
-#### 统一域名规划
+#### 域名规划
 
-所有产品统一使用 `aiget.dev` 子域名，无需注册多个独立域名：
+| 服务                | 域名                  | 说明                               |
+| ------------------- | --------------------- | ---------------------------------- |
+| **Moryflow 主站**   | moryflow.com          | 核心产品主入口                     |
+| **Moryflow 发布站** | moryflow.app          | 用户发布的网站                     |
+| **Aiget 平台**      | aiget.dev             | 统一平台入口                       |
+| **统一控制台**      | console.aiget.dev     | 用户管理所有产品                   |
+| **统一管理后台**    | admin.aiget.dev       | 运营管理                           |
+| **统一文档**        | docs.aiget.dev        | 文档站                             |
+| **Moryflow API**    | moryflow.aiget.dev    | 核心产品 API 服务                  |
+| **Fetchx API**      | fetchx.aiget.dev      | 原子能力：网页抓取（路径 `/v1/...`）|
+| **Memox API**       | memox.aiget.dev       | 原子能力：AI 记忆（路径 `/v1/...`）|
+| **Sandx API**       | sandx.aiget.dev       | 原子能力：Agent 沙盒（规划中）     |
 
-| 服务              | 域名                 | 说明                           |
-| ----------------- | -------------------- | ------------------------------ |
-| **主站**          | aiget.dev            | 平台主入口                     |
-| **统一控制台**    | console.aiget.dev    | 用户管理所有产品               |
-| **统一管理后台**  | admin.aiget.dev      | 运营管理                       |
-| **统一文档**      | docs.aiget.dev       | 文档站                         |
-| **Flowx 落地页**  | flowx.aiget.dev      | 核心产品：笔记 AI 工作流       |
-| **Flowx API**     | api.flowx.aiget.dev  | 路径: `/v1/...`                |
-| **Fetchx 落地页** | fetchx.aiget.dev     | 原子能力：网页抓取             |
-| **Fetchx API**    | api.fetchx.aiget.dev | 路径: `/v1/...`                |
-| **Memox 落地页**  | memox.aiget.dev      | 原子能力：AI 记忆              |
-| **Memox API**     | api.memox.aiget.dev  | 路径: `/v1/...`                |
-| **Sandx 落地页**  | sandx.aiget.dev      | 原子能力：Agent 沙盒（规划中） |
-| **Sandx API**     | api.sandx.aiget.dev  | 路径: `/v1/...`                |
-
-> **路径规范**：API 子域名已表明是接口服务，因此路径无需 `/api` 前缀。
-> 例如：`api.fetchx.aiget.dev/v1/scrape` 而非 `api.fetchx.aiget.dev/api/v1/scrape`
+> - **Moryflow** 是核心产品，拥有独立域名 moryflow.com / moryflow.app
+> - **Aiget** 是基础设施平台，所有 API 服务统一使用 *.aiget.dev 子域名
+> - **路径规范**：`{product}.aiget.dev/v1/...`（无 `/api` 前缀）
 
 #### API Key 前缀
 
-| 前缀  | 产品   | 访问范围                     |
-| ----- | ------ | ---------------------------- |
-| `ag_` | 全平台 | 所有产品（Flowx + 原子能力） |
-| `lx_` | Flowx  | 核心产品：笔记 AI 工作流     |
-| `fx_` | Fetchx | 原子能力：网页抓取           |
-| `mx_` | Memox  | 原子能力：AI 记忆            |
-| `sx_` | Sandx  | 原子能力：Agent 沙盒         |
+| 前缀  | 产品     | 访问范围                        |
+| ----- | -------- | ------------------------------- |
+| `ag_` | 全平台   | 所有产品（Moryflow + 原子能力） |
+| `mf_` | Moryflow | 核心产品：笔记 AI 工作流        |
+| `fx_` | Fetchx   | 原子能力：网页抓取              |
+| `mx_` | Memox    | 原子能力：AI 记忆               |
+| `sx_` | Sandx    | 原子能力：Agent 沙盒            |
 
 #### 架构分层
 
@@ -100,7 +98,7 @@
 | **钱包层** | 通用积分/Credits 管理        | Wallet（钱包）、WalletTransaction（交易记录）、PurchaseOrder（购买订单） |
 | **权益层** | 订阅权益、产品授权           | Subscription（订阅）、ProductEntitlement（产品权益）、License（许可证）  |
 | **网关层** | 对外 API、Token 校验         | 认证 API、资源 API、Webhook                                              |
-| **产品层** | 各业务系统                   | Flowx（核心）、Fetchx、Memox、Sandx（原子能力）                          |
+| **产品层** | 各业务系统                   | Moryflow（核心）、Fetchx、Memox、Sandx（原子能力）                       |
 
 ### 1.2 核心优势分析
 
@@ -109,7 +107,7 @@
 ```
 改造前（分散式）：                    改造后（统一式）：
 ┌─────────┐ ┌─────────┐ ┌─────────┐  ┌─────────────────────┐
-│ Fetchx  │ │ Memox   │ │ Flowx   │  │     统一身份平台     │
+│ Fetchx  │ │ Memox   │ │Moryflow │  │     统一身份平台     │
 │ ─────── │ │ ─────── │ │ ─────── │  │   ─────────────────  │
 │ 用户表  │ │ 用户表  │ │ 用户表  │  │   用户表（唯一）     │
 │ 配额表  │ │ 配额表  │ │ 积分表  │  │   钱包（统一）       │
@@ -147,7 +145,7 @@
 │  3. 使用 3,000 积分进行网页抓取                             │
 │  4. 发现 Memox（AI记忆）→ 已自动登录（单点登录）            │
 │  5. 使用剩余 7,000 积分存储记忆数据                         │
-│  6. 发现 Flowx（工作流）→ 已自动登录                        │
+│  6. 发现 Moryflow（工作流）→ 已自动登录                     │
 │  7. 积分余额在所有产品中统一显示                            │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -457,7 +455,7 @@
 │  amount        : int (正数为充值，负数为扣减)               │
 │  balanceAfter  : int (交易后余额)                           │
 │  ──────────────── 上下文 ────────────────                   │
-│  product       : string? (产品：flowx/fetchx/memox/sandx)│
+│  product       : string? (产品：moryflow/fetchx/memox/sandx)│
 │  operation     : string? (操作：scrape/memory_store 等)     │
 │  referenceId   : string? (关联ID：job_id/order_id 等)       │
 │  description   : string? (描述)                             │
@@ -609,7 +607,7 @@ FREE 层各产品权限边界:
 ┌──────────┬────────────────────────────────────────────┐
 │  产品    │  FREE 层限制                                │
 ├──────────┼────────────────────────────────────────────┤
-│ Flowx    │ 最多发布 1 个网站；不能使用高级模型         │
+│ Moryflow    │ 最多发布 1 个网站；不能使用高级模型         │
 │ (核心)   │ （笔记、工作流数量不限制）                  │
 ├──────────┼────────────────────────────────────────────┤
 │ Fetchx   │ 最多 2 并发；其他功能不限制                 │
@@ -642,7 +640,7 @@ FREE 层各产品权限边界:
 features JSON 示例（全产品统一解锁）:
 {
   "products": {
-    "flowx": { "enabled": true },
+    "moryflow": { "enabled": true },
     "fetchx": { "enabled": true },
     "memox": { "enabled": true },
     "sandx": { "enabled": true }
@@ -701,13 +699,13 @@ Fetchx 的 metadata 示例:
 │  1. 平台级 Key（ag_）                                        │
 │     - 由 Auth 服务统一颁发                                   │
 │     - 可访问所有产品 API                                     │
-│     - scope: ["flowx", "fetchx", "memox", "sandx"]        │
+│     - scope: ["moryflow", "fetchx", "memox", "sandx"]        │
 │     - 适合：跨产品集成、自动化工作流                         │
 │                                                             │
 │  2. 产品级 Key（lx_ / fx_ / mx_ / sx_）                     │
 │     - 由 Auth 服务统一颁发（数据集中管理）                   │
 │     - 只能访问特定产品 API                                   │
-│     - scope: ["flowx"] 或 ["fetchx"] 或 ["sandx"] 等      │
+│     - scope: ["moryflow"] 或 ["fetchx"] 或 ["sandx"] 等      │
 │     - 适合：单产品用户、最小权限原则                         │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -716,8 +714,8 @@ Fetchx 的 metadata 示例:
 
 | 前缀  | 产品范围                       | 使用场景       |
 | ----- | ------------------------------ | -------------- |
-| `ag_` | 全平台（Flowx + 所有原子能力） | 跨产品集成     |
-| `lx_` | 仅 Flowx                       | 核心产品专用   |
+| `ag_` | 全平台（Moryflow + 所有原子能力） | 跨产品集成     |
+| `mf_` | 仅 Moryflow                       | 核心产品专用   |
 | `fx_` | 仅 Fetchx                      | 网页抓取专用   |
 | `mx_` | 仅 Memox                       | AI 记忆专用    |
 | `sx_` | 仅 Sandx                       | Agent 沙盒专用 |
@@ -736,7 +734,7 @@ Fetchx 的 metadata 示例:
 │  prefix        : enum (类型：AG / LX / FX / MX / SX)        │
 │  name          : string (用户自定义名称)                    │
 │  ──────────────── 权限范围 ────────────────                 │
-│  scope         : string[] (如：["flowx", "fetchx", "sandx"]) │
+│  scope         : string[] (如：["moryflow", "fetchx", "sandx"]) │
 │  permissions   : json? (细粒度权限，可选)                   │
 │  ──────────────── 状态 ────────────────                     │
 │  isActive      : boolean (是否启用)                         │
@@ -866,14 +864,14 @@ Authorization: Bearer {service_api_key}
 
 #### 第二阶段：产品接入
 
-> **试点选择**：Flowx 作为第一个接入的产品，因为：
+> **试点选择**：Moryflow 作为第一个接入的产品，因为：
 >
 > 1. 核心产品，优先验证平台稳定性
 > 2. 目前独立运行，未耦合其他应用
 > 3. 干净的接入环境，便于发现问题
 
 ```
-Flowx 接入（试点）:
+Moryflow 接入（试点）:
 ├── 将认证模块替换为身份平台客户端
 ├── 迁移现有用户到身份平台
 ├── 迁移积分到统一钱包
@@ -881,8 +879,8 @@ Flowx 接入（试点）:
 └── 完善接入文档和最佳实践
 
 Fetchx 接入:
-├── 复用 Flowx 接入经验
-├── 迁移现有用户（可能与 Flowx 用户合并）
+├── 复用 Moryflow 接入经验
+├── 迁移现有用户（可能与 Moryflow 用户合并）
 ├── 将配额系统替换为钱包 API 调用
 └── 验证跨产品单点登录
 
@@ -929,8 +927,8 @@ Memox 接入:
          ┌──────────────────────────┼──────────────────────────┐
          ▼                          ▼                          ▼
 ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-│  统一身份平台   │      │  Flowx (核心)   │      │     Console     │
-│ auth.aiget.dev  │      │ flowx.aiget.dev │      │console.aiget.dev│
+│  统一身份平台   │      │  Moryflow (核心)   │      │     Console     │
+│ auth.aiget.dev  │      │ moryflow.aiget.dev │      │console.aiget.dev│
 │                 │      │                 │      │                 │
 │ - 认证服务      │      │ - 笔记工作流    │      │ - 用户控制台    │
 │ - 钱包服务      │      │ - 网站发布      │      │ - 仪表盘        │
@@ -1028,7 +1026,7 @@ Token 类型：
 1. 评审并批准架构设计
 2. 创建统一身份平台代码仓库
 3. 实现核心服务（认证、钱包、订阅）
-4. **Flowx 试点接入**（核心产品，目前独立无耦合）
+4. **Moryflow 试点接入**（核心产品，目前独立无耦合）
 5. Fetchx / Memox 逐步接入
 
 ---
@@ -1071,7 +1069,7 @@ Token 类型：
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                       Flowx                               │
+│                       Moryflow                               │
 ├─────────────────────────────────────────────────────────────┤
 │  apps/                                                       │
 │  ├── server      NestJS 后端 (工作流引擎)                    │
@@ -1090,7 +1088,7 @@ Token 类型：
 
 #### 技术栈重合度
 
-| 技术层   | Fetchx              | Memox               | Flowx               | 重合度 |
+| 技术层   | Fetchx              | Memox               | Moryflow               | 重合度 |
 | -------- | ------------------- | ------------------- | ------------------- | ------ |
 | 包管理器 | pnpm workspace      | pnpm workspace      | pnpm workspace      | 100%   |
 | 后端框架 | NestJS 11           | NestJS 11           | NestJS 11           | 100%   |
@@ -1128,7 +1126,7 @@ Fetchx 特有:
 ├── jsdom (DOM 解析)
 └── @mozilla/readability (正文提取)
 
-Flowx 特有:
+Moryflow 特有:
 ├── @ai-sdk/* (anthropic, openai, google)
 ├── ai (Vercel AI SDK)
 ├── agents-* 包 (自研 Agent 框架)
@@ -1174,7 +1172,7 @@ Aiget/                               # Monorepo 根目录
 │   │       │   ├── dashboard/       # 统一仪表盘
 │   │       │   ├── fetchx/          # Fetchx 功能模块
 │   │       │   ├── memox/           # Memox 功能模块
-│   │       │   ├── flowx/           # Flowx 功能模块
+│   │       │   ├── moryflow/           # Moryflow 功能模块
 │   │       │   ├── wallet/          # 钱包管理
 │   │       │   ├── subscription/    # 订阅管理
 │   │       │   ├── api-keys/        # API Key 管理
@@ -1195,7 +1193,7 @@ Aiget/                               # Monorepo 根目录
 │   ├── memox/                       # Memox 产品
 │   │   ├── server/                  # AI 记忆服务后端
 │   │   └── www/                     # 落地页
-│   ├── flowx/                       # Flowx 产品
+│   ├── moryflow/                       # Moryflow 产品
 │   │   ├── server/                  # 工作流服务后端
 │   │   ├── mobile/                  # 移动端（Expo）
 │   │   ├── pc/                      # 桌面端（Electron）
@@ -1207,7 +1205,7 @@ Aiget/                               # Monorepo 根目录
 │   ├── api/                         # API 客户端
 │   ├── auth/                        # 身份认证客户端
 │   ├── config/                      # 共享配置
-│   ├── agents-core/                 # Agent 核心（来自 flowx）
+│   ├── agents-core/                 # Agent 核心（来自 moryflow）
 │   ├── agents-*/                    # Agent 相关包
 │   └── scraper-core/                # 抓取核心（来自 fetchx）
 ├── tooling/
@@ -1236,7 +1234,7 @@ Aiget/                               # Monorepo 根目录
 │   │   ├── Dockerfile
 │   │   ├── docker-compose.yml
 │   │   └── .env.example
-│   ├── flowx/                       # Flowx 服务部署
+│   ├── moryflow/                       # Moryflow 服务部署
 │   │   ├── Dockerfile
 │   │   ├── docker-compose.yml
 │   │   └── .env.example
@@ -1270,18 +1268,18 @@ Aiget/                               # Monorepo 根目录
 ```
 1. 合并三个 UI 包为统一的 @aiget/ui
 2. 创建 @aiget/types（合并三个 types 包）
-3. 迁移 Flowx 的 agents-* 包
+3. 迁移 Moryflow 的 agents-* 包
 ```
 
 #### 第三阶段：迁移产品应用
 
 ```
-1. 迁移 Flowx（核心产品优先，目前独立无耦合）
-   - 移动 apps/server → apps/flowx/server
-   - 移动 apps/mobile → apps/flowx/mobile
-   - 移动 apps/pc → apps/flowx/pc
+1. 迁移 Moryflow（核心产品优先，目前独立无耦合）
+   - 移动 apps/server → apps/moryflow/server
+   - 移动 apps/mobile → apps/moryflow/mobile
+   - 移动 apps/pc → apps/moryflow/pc
 
-2. 迁移 Fetchx / Memox（复用 Flowx 接入经验）
+2. 迁移 Fetchx / Memox（复用 Moryflow 接入经验）
 ```
 
 #### 第四阶段：创建统一服务
@@ -1374,7 +1372,7 @@ deploy/
 │   ├── docker-compose.yml
 │   ├── nginx.conf
 │   └── .env.example
-├── flowx/                       # Flowx 工作流服务
+├── moryflow/                       # Moryflow 工作流服务
 │   ├── Dockerfile.server       # 后端
 │   ├── Dockerfile.www          # 落地页
 │   ├── docker-compose.yml
@@ -1583,7 +1581,7 @@ http {
 | **admin**   | server、nginx                                  | admin.aiget.dev                        |
 | **fetchx**  | postgres、redis、server、www、nginx            | fetchx.aiget.dev, api.fetchx.aiget.dev |
 | **memox**   | postgres(+pgvector)、redis、server、www、nginx | memox.aiget.dev, api.memox.aiget.dev   |
-| **flowx**   | postgres、redis、server、www、nginx            | flowx.aiget.dev, api.flowx.aiget.dev   |
+| **moryflow**   | postgres、redis、server、www、nginx            | moryflow.aiget.dev, api.moryflow.aiget.dev   |
 | **docs**    | static-site、nginx                             | docs.aiget.dev                         |
 
 > **注意**：Console 和 Admin 现在是统一的，不再按产品分散。所有产品共享一个 Console（用户控制台）和一个 Admin（管理后台）。
@@ -1614,8 +1612,8 @@ http {
 ├── PostgreSQL (向量数据 + pgvector)
 └── Redis (缓存)
 
-机器 D（Flowx 服务）:
-├── Flowx Server
+机器 D（Moryflow 服务）:
+├── Moryflow Server
 ├── PostgreSQL (工作流数据)
 └── Redis (任务队列)
 
@@ -1633,7 +1631,7 @@ http {
 ```yaml
 # 各服务通过公网域名互相调用（非内网地址）
 AUTH_API_URL=https://auth.aiget.dev
-FLOWX_API_URL=https://api.flowx.aiget.dev
+FLOWX_API_URL=https://api.moryflow.aiget.dev
 FETCHX_API_URL=https://api.fetchx.aiget.dev
 MEMOX_API_URL=https://api.memox.aiget.dev
 SANDX_API_URL=https://api.sandx.aiget.dev
@@ -1662,11 +1660,11 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 以下是需要迁移到 Monorepo 的三个源仓库的绝对路径：
 
-| 产品                | 绝对路径                          | 说明                                 |
-| ------------------- | --------------------------------- | ------------------------------------ |
-| Fetchx (原 AIGET)   | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
-| Memox (原 MEMAI)    | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
-| Flowx (原 MORYFLOW) | `/Users/bowling/code/me/moryflow` | 工作流自动化与 Agent 框架            |
+| 产品              | 绝对路径                          | 说明                                 |
+| ----------------- | --------------------------------- | ------------------------------------ |
+| Fetchx (原 AIGET) | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
+| Memox (原 MEMAI)  | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
+| Moryflow          | `/Users/bowling/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品）|
 
 ### 各仓库主要目录结构
 
@@ -1697,7 +1695,7 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 │   └── shared-types/   # 共享类型（迁移后改为 types）
 └── docs/               # 技术文档
 
-/Users/bowling/code/me/moryflow/    # 原 MORYFLOW，迁移后更名为 Flowx
+/Users/bowling/code/me/moryflow/    # Moryflow 核心产品（保持原名）
 ├── apps/
 │   ├── server/         # NestJS 后端（工作流核心）
 │   ├── admin/          # 管理后台
@@ -1743,14 +1741,14 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 - [x] **2.1 合并 UI 组件库** (2026-01-05)
   - [x] 以 Fetchx 的 `packages/ui/` 为基础（primitives/composed 结构更清晰）
   - [x] 统一导出为 `@aiget/ui`
-  - [ ] Flowx AI/animate/icons 组件待第三阶段迁移时添加
+  - [ ] Moryflow AI/animate/icons 组件待第三阶段迁移时添加
 
 - [x] **2.2 创建统一共享类型包** (2026-01-05)
   - [x] 创建 `packages/types/` 包含 common/ 和 products/ 目录
   - [x] 定义跨产品通用类型（User, Wallet, Subscription, Product）
   - [x] 导出为 `@aiget/types`
 
-- [x] **2.3 迁移 Flowx 的 Agent 包** (2026-01-05)
+- [x] **2.3 迁移 Moryflow 的 Agent 包** (2026-01-05)
   - [x] `packages/agents-core/` → `packages/agents-core/`
   - [x] `packages/agents-openai/` → `packages/agents-openai/`
   - [x] 更新包名为 `@aiget/agents-*`
@@ -1760,38 +1758,38 @@ SANDX_API_URL=https://api.sandx.aiget.dev
   - [x] `packages/api/` - API 客户端工具
   - [x] `packages/auth/` - 认证客户端（占位）
 
-### 第三阶段：迁移 Flowx 应用（核心产品优先）
+### 第三阶段：迁移 Moryflow 应用（核心产品优先）
 
-> **为什么先迁移 Flowx**：核心产品，目前独立运行未耦合其他应用，干净的接入环境便于验证平台。
+> **为什么先迁移 Moryflow**：核心产品，目前独立运行未耦合其他应用，干净的接入环境便于验证平台。
 
-- [ ] **3.1 迁移 Flowx Server**
-  - [ ] 移动 `apps/server/` → `apps/flowx/server/`
-  - [ ] 更新 package.json 名称为 `@aiget/flowx-server`
-  - [ ] 更新 import 路径
+- [x] **3.1 迁移 Moryflow Server**
+  - [x] 移动 `apps/server/` → `apps/moryflow/server/`
+  - [x] 更新 package.json 名称为 `@aiget/moryflow-server`
+  - [x] 更新 import 路径
   - [ ] 验证 typecheck 通过
   - [ ] 验证测试通过
 
-- [ ] **3.2 迁移 Flowx Mobile**
-  - [ ] 移动 `apps/mobile/` → `apps/flowx/mobile/`
-  - [ ] 更新 package.json 名称
-  - [ ] 更新 import 路径
+- [x] **3.2 迁移 Moryflow Mobile**
+  - [x] 移动 `apps/mobile/` → `apps/moryflow/mobile/`
+  - [x] 更新 package.json 名称
+  - [x] 更新 import 路径
   - [ ] 验证 Expo 构建通过
 
-- [ ] **3.3 迁移 Flowx PC**
-  - [ ] 移动 `apps/pc/` → `apps/flowx/pc/`
-  - [ ] 更新 package.json 名称
-  - [ ] 更新 Electron 配置
+- [x] **3.3 迁移 Moryflow PC**
+  - [x] 移动 `apps/pc/` → `apps/moryflow/pc/`
+  - [x] 更新 package.json 名称
+  - [x] 更新 Electron 配置
   - [ ] 验证构建通过
 
-- [ ] **3.4 迁移 Flowx 站点模板**
-  - [ ] 迁移 `apps/site-template/` → `apps/flowx/site-template/`
-  - [ ] 更新 package.json 名称
+- [x] **3.4 迁移 Moryflow 站点模板**
+  - [x] 迁移 `apps/site-template/` → `apps/moryflow/site-template/`
+  - [x] 更新 package.json 名称
 
-- [ ] **3.5 迁移 Flowx 特有包**
-  - [ ] 迁移 `packages/tiptap/` → `packages/tiptap/`
-  - [ ] 迁移 `packages/shared-api/` → `packages/api/`（合并到统一 api 包）
-  - [ ] 迁移 `packages/shared-sync/` → `packages/sync/`
-  - [ ] 更新 package.json 名称
+- [x] **3.5 迁移 Moryflow 特有包**
+  - [x] 迁移 `packages/tiptap/` → `packages/tiptap/`
+  - [ ] 迁移 `packages/shared-api/` → `packages/api/`（合并到统一 api 包，待后续处理）
+  - [x] 迁移 `packages/shared-sync/` → `packages/sync/`
+  - [x] 更新 package.json 名称
   - [ ] 验证构建通过
 
 ### 第四阶段：迁移 Fetchx 应用
@@ -1863,7 +1861,7 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 - [ ] **6.3 产品接入认证服务**
   - [ ] Fetchx 接入 Auth API
   - [ ] Memox 接入 Auth API
-  - [ ] Flowx 接入 Auth API
+  - [ ] Moryflow 接入 Auth API
   - [ ] 测试单点登录（SSO）
   - [ ] 测试跨产品积分共享
 
@@ -1912,11 +1910,12 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 > 每次完成迁移步骤后，在此记录进度。
 
-| 日期       | 阶段     | 完成内容                                                                                        | 执行者 |
-| ---------- | -------- | ----------------------------------------------------------------------------------------------- | ------ |
-| 2026-01-04 | 准备     | 创建新仓库，编写 CLAUDE.md 和架构文档                                                           | Claude |
-| 2026-01-05 | 第一阶段 | 初始化 Monorepo 基础设施（pnpm-workspace、turbo.json、工具配置包、CI/CD）                       | Claude |
-| 2026-01-05 | 第二阶段 | 合并共享包（@aiget/ui、@aiget/types、@aiget/agents-\*、@aiget/config、@aiget/api、@aiget/auth） | Claude |
+| 日期       | 阶段     | 完成内容                                                                                                                                     | 执行者 |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 2026-01-04 | 准备     | 创建新仓库，编写 CLAUDE.md 和架构文档                                                                                                        | Claude |
+| 2026-01-05 | 第一阶段 | 初始化 Monorepo 基础设施（pnpm-workspace、turbo.json、工具配置包、CI/CD）                                                                    | Claude |
+| 2026-01-05 | 第二阶段 | 合并共享包（@aiget/ui、@aiget/types、@aiget/agents-\*、@aiget/config、@aiget/api、@aiget/auth）                                              | Claude |
+| 2026-01-05 | 第三阶段 | 迁移 Moryflow 应用（server、mobile、pc、site-template）→ apps/moryflow/\*，迁移 @aiget/tiptap、@aiget/sync 包，更新所有 @moryflow 引用为 @aiget | Claude |
 
 ---
 

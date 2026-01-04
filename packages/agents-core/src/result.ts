@@ -8,7 +8,7 @@ import {
   ReadableStream as _ReadableStream,
   TransformStream,
   Readable,
-} from '@moryflow/agents-core/_shims';
+} from '@aiget/agents-core/_shims';
 import { ReadableStream } from './shims/interface';
 import { RunStreamEvent } from './events';
 import { getTurnInput } from './run';

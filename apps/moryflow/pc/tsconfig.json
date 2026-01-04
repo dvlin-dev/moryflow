@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "baseUrl": "./",
+    "paths": {
+      "@pc/*": ["src/renderer/*"],
+      "@/*": ["src/renderer/*"],
+      "@shared/*": ["src/shared/*"],
+      "@aiget/ui/*": ["../../packages/ui/src/*"],
+      "@aiget/tiptap/*": ["../../packages/tiptap/src/*"],
+      "react/jsx-runtime.js": ["src/types/react/jsx-runtime.js"]
+    }
+  },
+  "include": [
+    "src/renderer/**/*",
+    "src/renderer/global.d.ts",
+    "src/shared/**/*",
+    "src/types/**/*",
+    "electron.vite.config.ts"
+  ]
+}

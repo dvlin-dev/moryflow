@@ -8,7 +8,7 @@ import {
   resetCurrentSpan,
   protocol,
   UserError,
-} from '@moryflow/agents-core';
+} from '@aiget/agents-core';
 import type {
   SerializedHandoff,
   SerializedTool,
@@ -17,7 +17,7 @@ import type {
   ModelSettingsToolChoice,
   ResponseStreamEvent,
   SerializedOutputType,
-} from '@moryflow/agents-core';
+} from '@aiget/agents-core';
 import OpenAI from 'openai';
 import type { Stream } from 'openai/streaming';
 import logger from './logger';
@@ -35,8 +35,8 @@ import {
   WebSearchStatus,
 } from './tools';
 import { camelOrSnakeToSnakeCase } from './utils/providerData';
-import { ProviderData } from '@moryflow/agents-core/types';
-import { encodeUint8ArrayToBase64 } from '@moryflow/agents-core/utils';
+import { ProviderData } from '@aiget/agents-core/types';
+import { encodeUint8ArrayToBase64 } from '@aiget/agents-core/utils';
 
 type ToolChoice =
   | ToolChoiceOptions

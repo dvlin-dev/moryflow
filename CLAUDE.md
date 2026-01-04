@@ -8,7 +8,7 @@
 
 **核心产品**：
 
-- **Flowx** - 笔记 AI 工作流 + 网站发布（调用下层原子能力）
+- **Moryflow** - 笔记 AI 工作流 + 网站发布（调用下层原子能力）
 
 **原子能力**：
 
@@ -24,11 +24,11 @@
 
 以下是正在迁移到此 Monorepo 的原始仓库：
 
-| 产品                | 绝对路径                          | 说明                                 |
-| ------------------- | --------------------------------- | ------------------------------------ |
-| Fetchx (原 AIGET)   | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
-| Memox (原 MEMAI)    | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
-| Flowx (原 MORYFLOW) | `/Users/bowling/code/me/moryflow` | 工作流自动化与 Agent 框架            |
+| 产品              | 绝对路径                          | 说明                                 |
+| ----------------- | --------------------------------- | ------------------------------------ |
+| Fetchx (原 AIGET) | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
+| Memox (原 MEMAI)  | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
+| Moryflow          | `/Users/bowling/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品）|
 
 ---
 
@@ -48,30 +48,32 @@
 
 ### 域名规划
 
-所有产品统一使用 `aiget.dev` 子域名：
+| 服务                | 域名                  | 说明                         |
+| ------------------- | --------------------- | ---------------------------- |
+| **Moryflow 主站**   | moryflow.com          | 核心产品主入口               |
+| **Moryflow 发布站** | moryflow.app          | 用户发布的网站               |
+| **Aiget 平台**      | aiget.dev             | 统一平台入口                 |
+| **统一控制台**      | console.aiget.dev     | 用户管理所有产品             |
+| **统一管理后台**    | admin.aiget.dev       | 运营管理                     |
+| **统一文档**        | docs.aiget.dev        | 文档站                       |
+| **Moryflow API**    | moryflow.aiget.dev    | 核心产品 API 服务            |
+| **Fetchx API**      | fetchx.aiget.dev      | 原子能力：网页抓取           |
+| **Memox API**       | memox.aiget.dev       | 原子能力：AI 记忆            |
+| **Sandx API**       | sandx.aiget.dev       | 原子能力：Agent 沙盒         |
 
-| 服务             | 域名              | 说明                     |
-| ---------------- | ----------------- | ------------------------ |
-| **主站**         | aiget.dev         | 平台主入口               |
-| **统一控制台**   | console.aiget.dev | 用户管理所有产品         |
-| **统一管理后台** | admin.aiget.dev   | 运营管理                 |
-| **统一文档**     | docs.aiget.dev    | 文档站                   |
-| **Flowx**        | flowx.aiget.dev   | 核心产品：笔记 AI 工作流 |
-| **Fetchx**       | fetchx.aiget.dev  | 原子能力：网页抓取       |
-| **Memox**        | memox.aiget.dev   | 原子能力：AI 记忆        |
-| **Sandx**        | sandx.aiget.dev   | 原子能力：Agent 沙盒     |
-
-> API 路径规范：`api.{product}.aiget.dev/v1/...`（无 `/api` 前缀）
+> - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
+> - Aiget 是基础设施平台，所有 API 服务统一使用 *.aiget.dev 子域名
+> - API 路径规范：`{product}.aiget.dev/v1/...`（无 `/api` 前缀）
 
 ### API Key 前缀
 
-| 类型       | 前缀  | 说明                 |
-| ---------- | ----- | -------------------- |
-| 平台 Key   | `ag_` | 可访问所有产品 API   |
-| Flowx Key  | `lx_` | 核心产品             |
-| Fetchx Key | `fx_` | 原子能力：网页抓取   |
-| Memox Key  | `mx_` | 原子能力：AI 记忆    |
-| Sandx Key  | `sx_` | 原子能力：Agent 沙盒 |
+| 类型          | 前缀  | 说明                 |
+| ------------- | ----- | -------------------- |
+| 平台 Key      | `ag_` | 可访问所有产品 API   |
+| Moryflow Key  | `mf_` | 核心产品             |
+| Fetchx Key    | `fx_` | 原子能力：网页抓取   |
+| Memox Key     | `mx_` | 原子能力：AI 记忆    |
+| Sandx Key     | `sx_` | 原子能力：Agent 沙盒 |
 
 ### 目标 Monorepo 结构
 
@@ -84,7 +86,7 @@ Aiget/
 │   │   └── src/
 │   │       ├── modules/
 │   │       │   ├── dashboard/       # 统一仪表盘
-│   │       │   ├── flowx/           # Flowx 功能模块（核心）
+│   │       │   ├── moryflow/        # Moryflow 功能模块（核心）
 │   │       │   ├── fetchx/          # Fetchx 功能模块
 │   │       │   ├── memox/           # Memox 功能模块
 │   │       │   ├── sandx/           # Sandx 功能模块
@@ -99,17 +101,18 @@ Aiget/
 │   │       │   ├── users/           # 用户管理
 │   │       │   ├── subscriptions/   # 订阅管理
 │   │       │   ├── credits/         # 积分管理
-│   │       │   ├── flowx/           # Flowx 运营（核心）
+│   │       │   ├── moryflow/        # Moryflow 运营（核心）
 │   │       │   ├── fetchx/          # Fetchx 运营
 │   │       │   ├── memox/           # Memox 运营
 │   │       │   ├── sandx/           # Sandx 运营
 │   │       │   └── analytics/       # 数据分析
 │   │       └── ...
-│   ├── flowx/                       # Flowx 核心产品（笔记 AI 工作流）
+│   ├── moryflow/                    # Moryflow 核心产品（笔记 AI 工作流）
 │   │   ├── server/                  # 工作流服务
 │   │   ├── mobile/                  # 移动端应用
 │   │   ├── pc/                      # 桌面端应用
-│   │   └── www/                     # 落地页
+│   │   ├── site-template/           # SSG 网站模板
+│   │   └── www/                     # 落地页（moryflow.com）
 │   ├── fetchx/                      # 原子能力：网页抓取
 │   │   ├── server/                  # 网页抓取服务
 │   │   └── www/                     # 落地页
@@ -126,7 +129,9 @@ Aiget/
 │   ├── api/                         # API 客户端工具
 │   ├── auth/                        # 认证客户端
 │   ├── config/                      # 共享配置
-│   ├── agents-core/                 # Agent 核心（来自 Flowx）
+│   ├── sync/                        # 云同步工具（来自 Moryflow）
+│   ├── tiptap/                      # Tiptap 编辑器（来自 Moryflow）
+│   ├── agents-core/                 # Agent 核心（来自 Moryflow）
 │   ├── agents-*/                    # Agent 相关包
 │   └── scraper-core/                # 抓取核心（来自 Fetchx）
 ├── tooling/
@@ -138,7 +143,7 @@ Aiget/
 │   ├── auth/                        # Auth 认证服务部署
 │   ├── console/                     # Console 部署
 │   ├── admin/                       # Admin 部署
-│   ├── flowx/                       # Flowx 服务部署（核心）
+│   ├── moryflow/                    # Moryflow 服务部署（核心）
 │   ├── fetchx/                      # Fetchx 服务部署
 │   ├── memox/                       # Memox 服务部署
 │   ├── sandx/                       # Sandx 服务部署
@@ -290,7 +295,7 @@ git commit -m "feat: 添加全页选项、修复配额bug、更新文档"
 
 #### 作用域
 
-使用产品/模块名：`auth`、`fetchx/server`、`memox/console`、`flowx/mobile`、`ui`、`types` 等。
+使用产品/模块名：`auth`、`fetchx/server`、`memox/console`、`moryflow/mobile`、`ui`、`types` 等。
 
 ---
 
@@ -437,7 +442,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 | 常量         | UPPER_SNAKE_CASE | `MAX_CONCURRENT`                                                |
 | 组件文件夹   | PascalCase       | `ApiKeyCard/`                                                   |
 | 工具文件     | camelCase        | `urlValidator.ts`                                               |
-| API Key 前缀 | 产品特定         | `lx_`（flowx）、`fx_`（fetchx）、`mx_`（memox）、`sx_`（sandx） |
+| API Key 前缀 | 产品特定         | `mf_`（moryflow）、`fx_`（fetchx）、`mx_`（memox）、`sx_`（sandx） |
 
 ---
 
@@ -487,7 +492,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 pnpm test
 
 # 运行特定产品测试
-pnpm --filter @aiget/flowx-server test
+pnpm --filter @aiget/moryflow-server test
 pnpm --filter @aiget/fetchx-server test
 pnpm --filter @aiget/memox-server test
 pnpm --filter @aiget/sandx-server test
@@ -503,13 +508,13 @@ pnpm lint
 
 ## 包命名规范
 
-| 类型     | 模式                     | 示例                                        |
-| -------- | ------------------------ | ------------------------------------------- |
-| 应用包   | `@aiget/{product}-{app}` | `@aiget/fetchx-server`                      |
-| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/auth` |
-| UI 包    | `@aiget/ui`              | 唯一                                        |
-| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                      |
-| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                        |
+| 类型     | 模式                     | 示例                                                   |
+| -------- | ------------------------ | ------------------------------------------------------ |
+| 应用包   | `@aiget/{product}-{app}` | `@aiget/moryflow-server`、`@aiget/fetchx-server`       |
+| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/sync`            |
+| UI 包    | `@aiget/ui`              | 唯一                                                   |
+| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                                 |
+| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                                   |
 
 ---
 

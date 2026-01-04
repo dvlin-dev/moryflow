@@ -1,4 +1,4 @@
-import { getLogger } from '@moryflow/agents-core';
+import { getLogger } from '@aiget/agents-core';
 
 const logger = getLogger('openai-agents:openai');
 

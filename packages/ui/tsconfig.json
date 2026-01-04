@@ -1,11 +1,24 @@
 {
-  "extends": "@aiget/typescript-config/react.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "declaration": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"]
+      "@moryflow/ui/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }

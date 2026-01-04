@@ -1,6 +1,6 @@
-import { TracingExporter, BatchTraceProcessor, setTraceProcessors } from '@moryflow/agents-core';
-import type { Span } from '@moryflow/agents-core/dist/tracing/spans';
-import type { Trace } from '@moryflow/agents-core/dist/tracing/traces';
+import { TracingExporter, BatchTraceProcessor, setTraceProcessors } from '@aiget/agents-core';
+import type { Span } from '@aiget/agents-core/dist/tracing/spans';
+import type { Trace } from '@aiget/agents-core/dist/tracing/traces';
 import { getTracingExportApiKey, HEADERS } from './defaults';
 import logger from './logger';
 

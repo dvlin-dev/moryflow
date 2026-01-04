@@ -5,13 +5,13 @@ import {
   resetCurrentSpan,
   createGenerationSpan,
   setCurrentSpan,
-} from '@moryflow/agents-core';
+} from '@aiget/agents-core';
 import type {
   ModelRequest,
   ModelResponse,
   ResponseStreamEvent,
   SerializedOutputType,
-} from '@moryflow/agents-core';
+} from '@aiget/agents-core';
 import OpenAI from 'openai';
 import type { Stream } from 'openai/streaming';
 import logger from './logger';
@@ -22,8 +22,8 @@ import type {
   ResponseFormatJSONSchema,
   ResponseFormatJSONObject,
 } from 'openai/resources/shared';
-import { Span } from '@moryflow/agents-core/dist/tracing/spans';
-import { GenerationSpanData } from '@moryflow/agents-core/dist/tracing/spans';
+import { Span } from '@aiget/agents-core/dist/tracing/spans';
+import { GenerationSpanData } from '@aiget/agents-core/dist/tracing/spans';
 import { convertChatCompletionsStreamToResponses } from './openaiChatCompletionsStreaming';
 import {
   convertToolChoice,
@@ -31,7 +31,7 @@ import {
   convertHandoffTool,
   itemsToMessages,
 } from './openaiChatCompletionsConverter';
-import { protocol } from '@moryflow/agents-core';
+import { protocol } from '@aiget/agents-core';
 
 export const FAKE_ID = 'FAKE_ID';
 

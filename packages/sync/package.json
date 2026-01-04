@@ -1,0 +1,26 @@
+{
+  "name": "@aiget/sync",
+  "version": "1.0.0",
+  "description": "Cloud sync shared utilities: vector clock, DTO, types",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": ["dist"],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc-multi",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -11,7 +11,7 @@ import {
   ModelRequest,
   protocol,
   UserError,
-} from '@moryflow/agents-core';
+} from '@aiget/agents-core';
 
 export function convertToolChoice(
   toolChoice: 'auto' | 'required' | 'none' | string | undefined | null

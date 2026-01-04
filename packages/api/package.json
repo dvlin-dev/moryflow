@@ -1,49 +1,36 @@
 {
   "name": "@aiget/api",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "version": "1.0.0",
+  "description": "共享 API 类型和常量，供 PC 和 Mobile 共用",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
     },
     "./client": {
-      "import": {
-        "types": "./dist/client.d.ts",
-        "default": "./dist/client.mjs"
-      },
-      "require": {
-        "types": "./dist/client.d.cts",
-        "default": "./dist/client.cjs"
-      }
+      "types": "./dist/client/index.d.ts",
+      "require": "./dist/client/index.js",
+      "import": "./dist/client/index.mjs"
+    },
+    "./cloud-sync": {
+      "types": "./dist/cloud-sync/index.d.ts",
+      "require": "./dist/cloud-sync/index.js",
+      "import": "./dist/cloud-sync/index.mjs"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
+  "license": "MIT",
   "scripts": {
     "build": "tsc-multi",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aiget/types": "workspace:*"
+    "@aiget/sync": "workspace:*"
   },
   "devDependencies": {
-    "@aiget/eslint-config": "workspace:*",
-    "@aiget/typescript-config": "workspace:*",
-    "tsc-multi": "^1.1.0",
-    "typescript": "~5.9.3"
+    "typescript": "^5.9.3"
   }
 }

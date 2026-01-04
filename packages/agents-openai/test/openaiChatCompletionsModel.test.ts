@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { withTrace, setTracingDisabled } from '@moryflow/agents-core';
+import { withTrace, setTracingDisabled } from '@aiget/agents-core';
 import { OpenAIChatCompletionsModel } from '../src/openaiChatCompletionsModel';
 import { HEADERS } from '../src/defaults';
 
@@ -21,7 +21,7 @@ vi.mock('openai/helpers/zod', async () => {
 });
 
 import { convertChatCompletionsStreamToResponses } from '../src/openaiChatCompletionsStreaming';
-import type { SerializedOutputType } from '@moryflow/agents-core';
+import type { SerializedOutputType } from '@aiget/agents-core';
 
 class FakeClient {
   chat = { completions: { create: vi.fn() } };

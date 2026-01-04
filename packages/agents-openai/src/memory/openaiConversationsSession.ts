@@ -1,8 +1,8 @@
 import OpenAI from 'openai';
-import type { AgentInputItem, Session } from '@moryflow/agents-core';
+import type { AgentInputItem, Session } from '@aiget/agents-core';
 import { getDefaultOpenAIClient, getDefaultOpenAIKey } from '../defaults';
 import { convertToOutputItem, getInputItems } from '../openaiResponsesModel';
-import { protocol } from '@moryflow/agents-core';
+import { protocol } from '@aiget/agents-core';
 import type { ConversationItem as APIConversationItem } from 'openai/resources/conversations/items';
 import type { Message as APIConversationMessage } from 'openai/resources/conversations/conversations';
 

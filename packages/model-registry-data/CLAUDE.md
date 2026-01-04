@@ -1,0 +1,71 @@
+# model-registry-data
+
+> LiteLLM 模型数据注册表，提供模型搜索和自动填充功能
+
+## 概述
+
+从 LiteLLM 开源数据源同步 1700+ 个 AI 模型的元数据，提供：
+- 构建时数据同步（prebuild 钩子）
+- 模糊搜索（Fuse.js）
+- 模型参数自动填充
+
+## 目录结构
+
+```
+packages/model-registry-data/
+├── scripts/
+│   └── sync.ts          # 构建时同步脚本
+├── src/
+│   ├── types.ts         # 类型定义
+│   ├── transformer.ts   # 数据转换
+│   ├── search.ts        # 搜索功能
+│   ├── index.ts         # 导出入口
+│   └── data/            # 同步生成的数据（gitignore）
+│       ├── models.json
+│       ├── providers.json
+│       └── meta.json
+└── package.json
+```
+
+## 使用方式
+
+```typescript
+import { searchModels, getModelById, getProviders } from '@moryflow/model-registry-data'
+
+// 搜索模型
+const results = searchModels({ query: 'gpt-4', limit: 10 })
+
+// 获取单个模型
+const model = getModelById('gpt-4o')
+
+// 获取所有服务商
+const providers = getProviders()
+```
+
+## 数据同步
+
+```bash
+# 手动同步
+pnpm --filter @moryflow/model-registry-data sync
+
+# 构建时自动同步（prebuild 钩子）
+pnpm --filter @moryflow/model-registry-data build
+```
+
+## 数据源
+
+- **上游**: [LiteLLM model_prices_and_context_window.json](https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json)
+- **更新频率**: 每次构建时同步
+
+## 集成位置
+
+| 位置 | 用途 |
+|------|------|
+| `apps/pc/.../add-model-dialog.tsx` | PC 端添加模型时搜索和自动填充 |
+| `apps/admin/.../ModelFormDialog.tsx` | Admin 后台添加模型时搜索和自动填充 |
+
+## 依赖
+
+- `fuse.js` - 模糊搜索
+- `tsx` - 运行同步脚本
+- `tsup` - 构建打包

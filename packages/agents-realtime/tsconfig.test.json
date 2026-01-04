@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.agents.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "paths": {
+      "@aiget/agents-realtime": ["./src/index.ts"],
+      "@aiget/agents-realtime/_shims": ["./src/shims/shims-node.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["dist/**"]
+}

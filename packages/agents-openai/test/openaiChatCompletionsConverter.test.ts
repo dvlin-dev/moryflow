@@ -7,12 +7,12 @@ import {
   toolToOpenAI,
   convertHandoffTool,
 } from '../src/openaiChatCompletionsConverter';
-import { protocol, UserError } from '@moryflow/agents-core';
+import { protocol, UserError } from '@aiget/agents-core';
 import type {
   SerializedFunctionTool,
   SerializedHandoff,
   SerializedTool,
-} from '@moryflow/agents-core/model';
+} from '@aiget/agents-core/model';
 
 /**
  * Tests around the helpers converting internal protocol structures to the

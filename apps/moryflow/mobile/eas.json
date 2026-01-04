@@ -1,0 +1,108 @@
+{
+  "cli": {
+    "version": ">= 3.14.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development:simulator": {
+      "distribution": "internal",
+      "developmentClient": true,
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development"
+        // "EXPO_PUBLIC_URL": "https://unistack-next-delta.vercel.app",
+      },
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      }
+    },
+    "development:device": {
+      "distribution": "internal",
+      "developmentClient": true,
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_URL": "https://unistack-next-delta.vercel.app"
+      },
+      "ios": {
+        "image": "latest"
+      }
+    },
+    "development": {
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development",
+        "NODE_ENV": "development",
+        "EXPO_PUBLIC_URL": "https://unistack-next-delta.vercel.app"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "image": "latest"
+      }
+    },
+    "staging": {
+      "distribution": "store",
+      "channel": "staging",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "staging",
+        "EXPO_PUBLIC_URL": "https://unistack-next-delta.vercel.app"
+      },
+      "ios": {
+        "image": "latest",
+        "resourceClass": "m-medium"
+      },
+      "autoIncrement": true
+    },
+    "staging:device": {
+      "distribution": "internal",
+      "channel": "staging",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_URL": "https://unistack-next-delta.vercel.app"
+      },
+      "ios": {
+        "image": "latest"
+      },
+      "autoIncrement": true
+    },
+    "production": {
+      "env": {
+        "APP_ENV": "production",
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_URL": "https://unistack-next-delta.vercel.app"
+      },
+      "channel": "production",
+      "ios": {
+        "image": "latest",
+        "resourceClass": "m-medium"
+      },
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "您的Apple ID邮箱",
+        "ascAppId": "App Store Connect中的应用ID",
+        "appleTeamId": "您的Apple开发者团队ID"
+      }
+    },
+    "staging": {
+      "ios": {
+        "appleId": "zhangbaolin.work@foxmail.com"
+        // "ascAppId": "App Store Connect中的应用ID",
+        // "appleTeamId": "您的Apple开发者团队ID"
+      }
+    }
+  }
+}

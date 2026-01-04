@@ -8,7 +8,7 @@
 import { addTraceProcessor } from './tracing';
 import { defaultProcessor } from './tracing/processor';
 
-export { RuntimeEventEmitter } from '@moryflow/agents-core/_shims';
+export { RuntimeEventEmitter } from '@aiget/agents-core/_shims';
 export {
   Agent,
   AgentConfiguration,
