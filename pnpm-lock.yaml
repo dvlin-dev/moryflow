@@ -16,6 +16,9 @@ importers:
       '@rollup/rollup-linux-x64-gnu':
         specifier: 4.54.0
         version: 4.54.0
+      lightningcss-linux-x64-gnu:
+        specifier: 1.30.1
+        version: 1.30.1
     devDependencies:
       '@commitlint/cli':
         specifier: ^20.3.0
