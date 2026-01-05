@@ -10,6 +10,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import type { Page } from 'playwright';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import { BrowserPool } from '../browser/browser-pool';
 import { SCRAPE_QUEUE } from '../queue/queue.constants';
 import { PageConfigHandler } from './handlers/page-config.handler';
@@ -207,8 +208,7 @@ export class ScraperProcessor extends WorkerHost {
       where: { id: jobId },
       data: {
         status: 'COMPLETED',
-
-        result: JSON.parse(JSON.stringify(result)),
+        result: JSON.parse(JSON.stringify(result)) as Prisma.InputJsonValue,
         ...(screenshotData && {
           screenshotUrl: screenshotData.url,
           screenshotBase64: screenshotData.base64,

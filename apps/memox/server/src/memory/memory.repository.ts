@@ -16,9 +16,9 @@ export interface MemoryWithSimilarity extends Memory {
 }
 
 @Injectable()
-export class MemoryRepository extends BaseRepository<'Memory'> {
+export class MemoryRepository extends BaseRepository<Memory> {
   constructor(prisma: PrismaService) {
-    super(prisma, prisma.memory as unknown as any);
+    super(prisma, prisma.memory);
   }
 
   /**

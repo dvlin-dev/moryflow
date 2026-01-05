@@ -86,7 +86,7 @@ export class UrlFrontier {
     );
     if (!result || result.length === 0) return null;
 
-    return JSON.parse(result[0]);
+    return JSON.parse(result[0]) as { url: string; depth: number };
   }
 
   /**
@@ -105,7 +105,8 @@ export class UrlFrontier {
     // zpopmin 返回 [member1, score1, member2, score2, ...]
     const items: Array<{ url: string; depth: number }> = [];
     for (let i = 0; i < result.length; i += 2) {
-      items.push(JSON.parse(result[i]));
+      const parsed = JSON.parse(result[i]) as { url: string; depth: number };
+      items.push(parsed);
     }
     return items;
   }

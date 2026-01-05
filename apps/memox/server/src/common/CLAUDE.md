@@ -16,7 +16,7 @@ Shared utilities for the server application. Provides guards, decorators, interc
 - Shared decorators
 - Utility functions (pagination, HTTP helpers)
 - JSON 工具（JsonValueSchema + JSON 输出转换）
-- Base repository class（集中实现 apiKeyId 数据隔离；当前在做更严格的 Prisma 类型推断重构）
+- Base repository class（集中实现 apiKeyId 数据隔离，使用显式模型类型泛型策略）
 
 **Does NOT:**
 

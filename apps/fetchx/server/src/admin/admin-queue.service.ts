@@ -167,8 +167,7 @@ export class AdminQueueService {
       state,
       logs: logs.logs,
       stacktrace: job.stacktrace,
-
-      returnvalue: job.returnvalue,
+      returnvalue: job.returnvalue as unknown,
     };
   }
 
@@ -238,8 +237,7 @@ export class AdminQueueService {
     return {
       id: job.id,
       name: job.name,
-
-      data: job.data,
+      data: job.data as unknown,
       opts: {
         attempts: job.opts.attempts,
         delay: job.opts.delay,

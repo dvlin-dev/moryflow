@@ -9,6 +9,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { CRAWL_QUEUE } from '../queue/queue.constants';
 import type { CrawlOptions } from './dto/crawl.dto';
@@ -40,7 +41,6 @@ export class CrawlerService {
         startUrl: options.url,
         status: 'PENDING',
         webhookUrl: options.webhookUrl,
-
         options: JSON.parse(
           JSON.stringify({
             maxDepth: options.maxDepth || 3,
@@ -51,7 +51,7 @@ export class CrawlerService {
             scrapeOptions: options.scrapeOptions || {},
             webhookUrl: options.webhookUrl,
           }),
-        ),
+        ) as Prisma.InputJsonValue,
       },
     });
 

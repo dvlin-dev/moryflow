@@ -24,6 +24,7 @@
     "fuse.js": "^7.0.0"
   },
   "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.54.0",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

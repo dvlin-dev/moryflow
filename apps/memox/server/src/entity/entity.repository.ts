@@ -11,9 +11,9 @@ import type { CreateEntityInput } from './dto';
 export type Entity = PrismaEntity;
 
 @Injectable()
-export class EntityRepository extends BaseRepository<'Entity'> {
+export class EntityRepository extends BaseRepository<Entity> {
   constructor(prisma: PrismaService) {
-    super(prisma, prisma.entity as unknown as any);
+    super(prisma, prisma.entity);
   }
 
   /**

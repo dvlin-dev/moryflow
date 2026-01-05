@@ -9,6 +9,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
 import type { BatchScrapeOptions } from './dto/batch-scrape.dto';
@@ -44,8 +45,9 @@ export class BatchScrapeService {
         status: 'PENDING',
         totalUrls: urls.length,
         webhookUrl,
-
-        options: JSON.parse(JSON.stringify(scrapeOptions || {})),
+        options: JSON.parse(
+          JSON.stringify(scrapeOptions || {}),
+        ) as Prisma.InputJsonValue,
       },
     });
 
