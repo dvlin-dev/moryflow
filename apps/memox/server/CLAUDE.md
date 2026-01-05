@@ -70,14 +70,18 @@ apps/server/
 ## Development Commands
 
 ```bash
-pnpm --filter server dev          # Start with watch mode
-pnpm --filter server build        # Build for production
-pnpm --filter server typecheck    # Type checking
-pnpm --filter server test         # Run unit tests
-pnpm --filter server test:cov     # With coverage
-pnpm --filter server prisma:studio # Prisma GUI
-pnpm --filter server prisma:migrate dev # Create migration
+pnpm --filter @aiget/memox-server start:dev          # Start with watch mode
+pnpm --filter @aiget/memox-server build              # Build for production
+pnpm --filter @aiget/memox-server typecheck          # Type checking
+pnpm --filter @aiget/memox-server test:unit          # Unit tests (pass-with-no-tests)
+pnpm --filter @aiget/memox-server test:cov           # With coverage
+pnpm --filter @aiget/memox-server prisma:studio      # Prisma GUI
+pnpm --filter @aiget/memox-server prisma:migrate     # Create migration
 ```
+
+## Testing Notes
+
+- 当前 `test:unit` 使用 `vitest run --passWithNoTests`，避免在尚未补齐单测前阻塞仓库校验；新增/修复业务逻辑时必须补充单元测试。
 
 ## API Structure
 

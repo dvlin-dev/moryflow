@@ -39,6 +39,7 @@
 3. **分形自治**：任何子目录的 CLAUDE.md 都应让 AI 能独立理解该模块的上下文
 4. **禁止历史包袱**：不做向后兼容，无用代码直接删除/重构，不保留废弃注释
 5. **零兼容原则**：除非直接影响用户已有数据，否则一律不兼容旧代码/旧数据结构，按最佳实践重构
+6. **CLAUDE.md 创建门槛**：仅当“当前目录（包含所有子目录）”文件数 **> 10** 时，才允许新增 `CLAUDE.md` 及其 `AGENTS.md` 软链接；否则禁止创建，避免文档层级过度碎片化。
 
 > **命名约定**：`CLAUDE.md` 是主文件，`AGENTS.md` 是指向 `CLAUDE.md` 的软链接，用于兼容 agents.md 规范。
 
@@ -52,14 +53,14 @@
 | ------------------- | ------------------ | -------------------- |
 | **Moryflow 主站**   | moryflow.com       | 核心产品主入口       |
 | **Moryflow 发布站** | moryflow.app       | 用户发布的网站       |
+| **Moryflow 应用**   | moryflow.aiget.dev | 主应用（Web + API）  |
 | **Aiget 平台**      | aiget.dev          | 统一平台入口         |
 | **统一控制台**      | console.aiget.dev  | 用户管理所有产品     |
 | **统一管理后台**    | admin.aiget.dev    | 运营管理             |
 | **统一文档**        | docs.aiget.dev     | 文档站               |
-| **Moryflow API**    | moryflow.aiget.dev | 核心产品 API 服务    |
-| **Fetchx API**      | fetchx.aiget.dev   | 原子能力：网页抓取   |
-| **Memox API**       | memox.aiget.dev    | 原子能力：AI 记忆    |
-| **Sandx API**       | sandx.aiget.dev    | 原子能力：Agent 沙盒 |
+| **Fetchx 应用**     | fetchx.aiget.dev   | 原子能力：网页抓取   |
+| **Memox 应用**      | memox.aiget.dev    | 原子能力：AI 记忆    |
+| **Sandx 应用**      | sandx.aiget.dev    | 原子能力：Agent 沙盒 |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
 > - Aiget 是基础设施平台，所有 API 服务统一使用 \*.aiget.dev 子域名
@@ -155,7 +156,7 @@ Aiget/
 ├── package.json
 ├── CLAUDE.md                        # 本文件
 ├── AGENTS.md                        # 指向 CLAUDE.md 的软链接
-└── unified-identity-platform.md     # 架构设计文档
+└── docs/architecture/               # 架构文档（含 UIP）
 ```
 
 ### 技术栈速查
@@ -212,10 +213,17 @@ Aiget/
 
 | 文档                                                                           | 说明                           |
 | ------------------------------------------------------------------------------ | ------------------------------ |
-| [`unified-identity-platform.md`](./unified-identity-platform.md)               | 统一身份平台架构设计与迁移计划 |
-| [`unified-identity-platform-review.md`](./unified-identity-platform-review.md) | 统一身份平台评估与建议         |
+| [`docs/architecture/unified-identity-platform.md`](./docs/architecture/unified-identity-platform.md) | 统一身份平台（UIP）入口与关键约束 |
+| [`docs/architecture/subdomain-uip-architecture.md`](./docs/architecture/subdomain-uip-architecture.md) | 子域名统一用户系统架构（当前默认） |
+| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md) | 功能：统一用户系统（注册/登录/会话/Token 策略） |
 | `apps/*/CLAUDE.md`                                                             | 各应用的详细文档               |
 | `packages/*/CLAUDE.md`                                                         | 各包的详细文档                 |
+
+## 外部仓库快照（仅查阅）
+
+- `archive/external-repos/moryflow/`：原 `/Users/bowling/code/me/moryflow`
+- `archive/external-repos/fetchx/`：原 `/Users/bowling/code/me/fetchx`
+- `archive/external-repos/memai/`：原 `/Users/bowling/code/me/memai`
 
 ---
 

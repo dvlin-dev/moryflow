@@ -21,6 +21,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection
 - Quota deduction before any scrape operation
+- `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 
 ## Module Structure
 
