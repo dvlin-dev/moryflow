@@ -126,6 +126,7 @@ export class BatchScrapeProcessor extends WorkerHost {
         where: { id: itemId },
         data: {
           status: 'COMPLETED',
+
           result: JSON.parse(JSON.stringify(scrapeResult)),
           completedAt: new Date(),
         },

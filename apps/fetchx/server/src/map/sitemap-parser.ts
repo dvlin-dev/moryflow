@@ -4,7 +4,11 @@
  * [POS]: Sitemap parser supporting index files and robots.txt references
  *
  * [PROTOCOL]: When this file changes, update this header and src/map/CLAUDE.md
+ *
+ * 注意：此文件解析动态 XML 结构，fast-xml-parser 返回动态类型
+ * 这是库设计限制，无法完全类型化
  */
+
 import { Injectable, Logger } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
 import type { SitemapEntry } from './dto/map.dto';

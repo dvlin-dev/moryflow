@@ -13,6 +13,7 @@ export class LinksTransformer {
   /**
    * 提取页面中的所有链接
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async extract(page: Page, baseUrl: string): Promise<string[]> {
     const links = await page.$$eval(
       'a[href]',

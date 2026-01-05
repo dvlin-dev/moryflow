@@ -55,7 +55,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         // 处理 NestJS 验证管道错误 / Zod 验证错误
         if (Array.isArray(obj.message)) {
-          message = obj.message[0];
+          message = String(obj.message[0]);
           details = obj.message;
           code = 'VALIDATION_ERROR';
         } else if (obj.errors) {

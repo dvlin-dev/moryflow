@@ -131,7 +131,7 @@ export class DemoService {
         },
       );
 
-      const data = await response.json();
+      const data = (await response.json()) as { success?: boolean };
       return data.success === true;
     } catch (error) {
       this.logger.error('Turnstile verification failed', error);

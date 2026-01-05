@@ -85,6 +85,7 @@ export class UrlFrontier {
       this.getQueueKey(crawlJobId),
     );
     if (!result || result.length === 0) return null;
+
     return JSON.parse(result[0]);
   }
 

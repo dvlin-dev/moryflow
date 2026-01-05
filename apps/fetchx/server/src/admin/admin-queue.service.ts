@@ -21,7 +21,6 @@ const QUEUE_NAMES = [
   CRAWL_QUEUE,
   BATCH_SCRAPE_QUEUE,
 ] as const;
-type QueueName = (typeof QUEUE_NAMES)[number];
 
 @Injectable()
 export class AdminQueueService {
@@ -168,6 +167,7 @@ export class AdminQueueService {
       state,
       logs: logs.logs,
       stacktrace: job.stacktrace,
+
       returnvalue: job.returnvalue,
     };
   }
@@ -238,6 +238,7 @@ export class AdminQueueService {
     return {
       id: job.id,
       name: job.name,
+
       data: job.data,
       opts: {
         attempts: job.opts.attempts,

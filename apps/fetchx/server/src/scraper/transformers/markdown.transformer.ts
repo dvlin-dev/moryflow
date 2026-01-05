@@ -59,7 +59,7 @@ export class MarkdownTransformer {
     });
   }
 
-  async convert(html: string, options: MarkdownOptions = {}): Promise<string> {
+  convert(html: string, options: MarkdownOptions = {}): string {
     // 1. 解析 HTML
     const dom = new JSDOM(html);
     const document = dom.window.document;
@@ -149,7 +149,7 @@ export class MarkdownTransformer {
     if (baseUrl) {
       result = result.replace(
         /\[([^\]]+)\]\((?!http|mailto|#)([^)]+)\)/g,
-        (match, text, url) => {
+        (match, text: string, url: string) => {
           try {
             const absoluteUrl = new URL(url, baseUrl).href;
             return `[${text}](${absoluteUrl})`;

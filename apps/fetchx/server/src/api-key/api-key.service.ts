@@ -259,7 +259,7 @@ export class ApiKeyService {
         where: { id: keyId },
         data: { lastUsedAt: new Date() },
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         this.logger.error(`Failed to update lastUsedAt: ${err.message}`);
       });
   }

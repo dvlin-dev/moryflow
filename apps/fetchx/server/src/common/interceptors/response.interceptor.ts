@@ -7,6 +7,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
+import type { Response } from 'express';
 
 export const SKIP_RESPONSE_WRAP = 'skipResponseWrap';
 
@@ -32,10 +33,10 @@ export class ResponseInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const response = context.switchToHttp().getResponse();
+    const response = context.switchToHttp().getResponse<Response>();
 
     return next.handle().pipe(
-      map((data) => {
+      map((data: unknown) => {
         // 204 No Content
         if (response.statusCode === 204) {
           return undefined;

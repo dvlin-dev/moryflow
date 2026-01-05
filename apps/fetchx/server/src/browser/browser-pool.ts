@@ -117,6 +117,7 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
     if (failed > 0) {
       const errors = results
         .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+
         .map((r) => r.reason);
       this.logger.warn(
         `Browser warmup: ${succeeded} succeeded, ${failed} failed`,

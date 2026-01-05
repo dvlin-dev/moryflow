@@ -11,7 +11,7 @@ import type { PageMetadata } from '../scraper.types';
 
 @Injectable()
 export class MetadataTransformer {
-  async extract(html: string, url: string): Promise<PageMetadata> {
+  extract(html: string, url: string): PageMetadata {
     const dom = new JSDOM(html, { url });
     const document = dom.window.document;
     const baseUrl = new URL(url);
@@ -54,7 +54,7 @@ export class MetadataTransformer {
 
     // 清理 undefined 值
     return Object.fromEntries(
-      Object.entries(metadata).filter(([_, v]) => v !== undefined),
+      Object.entries(metadata).filter(([, v]) => v !== undefined),
     ) as PageMetadata;
   }
 

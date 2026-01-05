@@ -39,7 +39,7 @@ export class ImageProcessor {
 
     // 添加水印（免费版）
     if (options.addWatermark) {
-      pipeline = await this.addWatermark(pipeline, width, height);
+      pipeline = this.addWatermark(pipeline, width, height);
     }
 
     // 格式转换和质量压缩
@@ -61,11 +61,11 @@ export class ImageProcessor {
   /**
    * 添加水印
    */
-  private async addWatermark(
+  private addWatermark(
     pipeline: sharp.Sharp,
     width: number,
     height: number,
-  ): Promise<sharp.Sharp> {
+  ): sharp.Sharp {
     try {
       // 创建水印 SVG
       const watermarkSvg = this.createWatermarkSvg(width);

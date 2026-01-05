@@ -1825,20 +1825,23 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 ### 第五阶段：迁移 Memox 应用
 
-- [ ] **5.1 迁移 Memox Server**
-  - [ ] 移动 `apps/server/` → `apps/memox/server/`
-  - [ ] 更新 package.json 名称为 `@aiget/memox-server`
-  - [ ] 更新 import 路径
-  - [ ] 验证 typecheck 通过
-  - [ ] 验证测试通过
+- [x] **5.1 迁移 Memox Server**
+  - [x] 移动 `apps/server/` → `apps/memox/server/`
+  - [x] 更新 package.json 名称为 `@aiget/memox-server`
+  - [x] 更新 import 路径（@memai/_ → @aiget/_）
+  - [x] 更新品牌引用（Memai → Memox、域名 → aiget.dev）
+  - [x] 配置 eslint 规则与 Fetchx 一致（类型问题设为 warning）
+  - [x] 验证 typecheck 通过
+  - [x] 验证 lint 通过（93 warnings，0 errors）
 
-- [ ] **5.2 迁移 Memox WWW**
-  - [ ] 移动 `apps/www/` → `apps/memox/www/`
-  - [ ] 更新 package.json 名称
-  - [ ] 更新 import 路径
-  - [ ] 验证构建通过
+- [x] **5.2 迁移 Memox WWW**
+  - [x] 移动 `apps/www/` → `apps/memox/www/`
+  - [x] 更新 package.json 名称为 `@aiget/memox-www`
+  - [x] 更新 import 路径（@memai/ui → @aiget/ui）
+  - [x] 更新示例代码中的 API 域名
+  - [x] 验证 typecheck 通过
 
-- [ ] **5.3 提取 Memox 核心模块**
+- [ ] **5.3 提取 Memox 核心模块**（后续阶段）
   - [ ] 从 server 提取 memory 核心 → `packages/memory-core/`
   - [ ] 提取 embedding 模块 → `packages/embedding/`
   - [ ] 更新依赖关系
@@ -1923,6 +1926,7 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 | 2026-01-05 | 第二阶段 | 合并共享包（@aiget/ui、@aiget/types、@aiget/agents-\*、@aiget/config、@aiget/api、@aiget/auth）                                                 | Claude |
 | 2026-01-05 | 第三阶段 | 迁移 Moryflow 应用（server、mobile、pc、site-template）→ apps/moryflow/\*，迁移 @aiget/tiptap、@aiget/sync 包，更新所有 @moryflow 引用为 @aiget | Claude |
 | 2026-01-05 | 第四阶段 | 迁移 Fetchx 应用（server、www）→ apps/fetchx/\*，迁移 @aiget/embed、@aiget/embed-react 包，合并 UI primitives/composed 组件                     | Claude |
+| 2026-01-05 | 第五阶段 | 迁移 Memox 应用（server、www）→ apps/memox/\*，更新品牌引用（Memai→Memox），配置 eslint 规则与 Fetchx 一致                                      | Claude |
 
 ---
 
@@ -1958,9 +1962,30 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 3. 删除未使用的变量
 4. 移除不必要的 async 声明
 
+### Memox Server Lint 警告 (93 warnings)
+
+**来源**：源仓库已有的类型安全问题，迁移时暂时设置为 warning。
+
+| 规则                      | 数量 | 说明                  | 优先级 |
+| ------------------------- | ---- | --------------------- | ------ |
+| `no-unsafe-assignment`    | ~30  | 把 `any` 赋值给变量   | 低     |
+| `no-unsafe-member-access` | ~25  | 访问 `any` 类型的属性 | 低     |
+| `no-unsafe-return`        | ~10  | 返回 `any` 类型       | 低     |
+| `no-unused-vars`          | ~8   | 定义但未使用的变量    | 中     |
+| `require-await`           | ~5   | async 函数没有 await  | 低     |
+| `no-unsafe-argument`      | ~5   | 传入 `any` 类型的参数 | 低     |
+| 其他                      | ~10  | no-unsafe-call 等     | 低     |
+
+**主要涉及文件**：
+
+- `llm/llm.service.ts` - LLM API 响应类型
+- `quota/quota.guard.ts` - 请求上下文类型
+- `entity/entity.repository.ts` - 数据库操作
+- `relation/relation.repository.ts` - 数据库操作
+
 ---
 
-_文档版本: 1.4_
+_文档版本: 1.5_
 _创建日期: 2026-01-04_
 _更新日期: 2026-01-05_
 _最后更新: 2026-01-05_

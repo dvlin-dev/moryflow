@@ -164,16 +164,14 @@ export class ScraperProcessor extends WorkerHost {
     // 提取主内容 HTML
     let processedHtml = rawHtml;
     if (options.onlyMainContent) {
-      processedHtml = await this.readabilityTransformer.extract(rawHtml, url, {
+      processedHtml = this.readabilityTransformer.extract(rawHtml, url, {
         includeTags: options.includeTags,
         excludeTags: options.excludeTags,
         baseUrl: url,
       });
     }
 
-    // 并行处理各种格式
-    const tasks: Promise<void>[] = [];
-
+    // 处理各种格式
     if (formats.includes('rawHtml')) {
       result.rawHtml = rawHtml;
     }
@@ -181,30 +179,17 @@ export class ScraperProcessor extends WorkerHost {
       result.html = processedHtml;
     }
     if (formats.includes('markdown')) {
-      tasks.push(
-        this.markdownTransformer
-          .convert(processedHtml, { baseUrl: url })
-          .then((md) => {
-            result.markdown = md;
-          }),
-      );
+      result.markdown = this.markdownTransformer.convert(processedHtml, {
+        baseUrl: url,
+      });
     }
     if (formats.includes('links')) {
-      tasks.push(
-        this.linksTransformer.extract(page, url).then((links) => {
-          result.links = links;
-        }),
-      );
+      result.links = await this.linksTransformer.extract(page, url);
     }
 
     // 始终提取元数据
-    tasks.push(
-      this.metadataTransformer.extract(rawHtml, url).then((meta) => {
-        result.metadata = meta;
-      }),
-    );
+    result.metadata = this.metadataTransformer.extract(rawHtml, url);
 
-    await Promise.all(tasks);
     return result;
   }
 
@@ -222,6 +207,7 @@ export class ScraperProcessor extends WorkerHost {
       where: { id: jobId },
       data: {
         status: 'COMPLETED',
+
         result: JSON.parse(JSON.stringify(result)),
         ...(screenshotData && {
           screenshotUrl: screenshotData.url,

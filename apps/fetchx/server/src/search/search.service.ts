@@ -147,7 +147,7 @@ export class SearchService {
     return this.fetchWithRetry(
       `${this.searxngUrl}/search?${params}`,
       async (response) => {
-        const data: SearXNGResponse = await response.json();
+        const data = (await response.json()) as SearXNGResponse;
 
         // 转换并限制结果数量
         const results: SearchResult[] = data.results
@@ -211,7 +211,9 @@ export class SearchService {
     this.logger.error(
       `SearXNG search failed after ${this.retryCount} attempts`,
     );
-    throw lastError;
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('SearXNG search failed');
   }
 
   /**
@@ -283,8 +285,8 @@ export class SearchService {
         return [];
       }
 
-      const data = await response.json();
-      return (data[1] as string[]) || []; // SearXNG 返回 [query, suggestions]
+      const data = (await response.json()) as [string, string[]];
+      return data[1] || []; // SearXNG 返回 [query, suggestions]
     } catch {
       return [];
     }

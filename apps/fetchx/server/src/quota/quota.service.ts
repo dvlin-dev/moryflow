@@ -10,7 +10,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { QuotaRepository } from './quota.repository';
 import { RedisService } from '../redis/redis.service';
 import type { SubscriptionTier } from '../types/tier.types';
-import type { QuotaSource } from '../../generated/prisma/client';
 import type {
   QuotaStatus,
   DeductQuotaResult,

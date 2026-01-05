@@ -36,11 +36,7 @@ export class ReadabilityTransformer {
    * 6. Fallback to semantic selectors
    * 7. Return cleaned body as last resort
    */
-  async extract(
-    html: string,
-    url: string,
-    options?: ExtractOptions,
-  ): Promise<string> {
+  extract(html: string, url: string, options?: ExtractOptions): string {
     // Validate URL for JSDOM (falls back to empty document context if invalid)
     let validatedUrl: string;
     try {

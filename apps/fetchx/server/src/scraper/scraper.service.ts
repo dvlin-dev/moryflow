@@ -32,7 +32,8 @@ export class ScraperService {
     this.cacheTtlMs = config.get('SCRAPE_CACHE_TTL_MS') || 3600000;
 
     // 用于等待任务完成 - 解析 REDIS_URL
-    const redisUrl = config.get('REDIS_URL') || 'redis://localhost:6379';
+    const redisUrl =
+      config.get<string>('REDIS_URL') || 'redis://localhost:6379';
     const parsed = new URL(redisUrl);
     this.queueEvents = new QueueEvents(SCRAPE_QUEUE, {
       connection: {
@@ -89,6 +90,7 @@ export class ScraperService {
         apiKeyId,
         url: options.url,
         requestHash,
+
         options: JSON.parse(JSON.stringify(options)),
         status: 'PENDING',
       },

@@ -6,7 +6,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import type {
-  PaginationQuery,
   UserQuery,
   UpdateUserDto,
   SubscriptionQuery,

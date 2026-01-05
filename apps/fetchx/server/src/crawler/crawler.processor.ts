@@ -210,6 +210,7 @@ export class CrawlerProcessor extends WorkerHost {
         where: { id: page.id },
         data: {
           status: 'COMPLETED',
+
           result: JSON.parse(JSON.stringify(scrapeResult)),
           completedAt: new Date(),
         },

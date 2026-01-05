@@ -63,7 +63,7 @@ export class ActionExecutorHandler {
         break;
 
       default:
-        throw new Error(`Unknown action type: ${action.type}`);
+        throw new Error(`Unknown action type: ${String(action.type)}`);
     }
 
     // 每个操作后短暂等待，确保页面稳定

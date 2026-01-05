@@ -1,0 +1,341 @@
+// Prisma Schema for Memory SaaS Platform
+// 语义记忆 API 服务
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  outputType = "commonjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================
+// 用户系统（Better Auth 核心表）
+// =============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // 软删除时间戳，null 表示未删除
+
+  sessions              Session[]
+  accounts              Account[]
+  subscription          Subscription?
+  quota                 Quota?
+  apiKeys               ApiKey[]
+  webhooks              Webhook[]
+  usageRecords          UsageRecord[]
+  accountDeletionRecord AccountDeletionRecord?
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// =============================================
+// 订阅系统 (3 层: FREE / HOBBY / ENTERPRISE)
+// =============================================
+
+enum SubscriptionTier {
+  FREE
+  HOBBY
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  tier                SubscriptionTier   @default(FREE)
+  status              SubscriptionStatus @default(ACTIVE)
+  creemCustomerId     String?
+  creemSubscriptionId String?            @unique
+  periodStartAt       DateTime           @default(now())
+  periodEndAt         DateTime?
+  cancelAtPeriodEnd   Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// =============================================
+// 配额系统 (FREE/HOBBY 使用)
+// =============================================
+
+model Quota {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+
+  // 月度 API 调用配额
+  monthlyApiLimit Int     @default(1000)
+  monthlyApiUsed  Int     @default(0)
+  periodStartAt   DateTime @default(now())
+  periodEndAt     DateTime
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// =============================================
+// 用量记录 (Enterprise 按量计费)
+// =============================================
+
+enum UsageType {
+  MEMORY
+  API_CALL
+}
+
+model UsageRecord {
+  id            String    @id @default(cuid())
+  userId        String
+  type          UsageType
+  quantity      Int       @default(1)
+  billingPeriod String    // 格式: "2026-01"
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, billingPeriod])
+  @@index([billingPeriod])
+}
+
+// =============================================
+// 支付订单
+// =============================================
+
+model PaymentOrder {
+  id           String   @id @default(cuid())
+  userId       String
+  creemOrderId String   @unique
+  type         String   // subscription | usage_billing
+  amount       Int      // 金额（分）
+  currency     String   @default("USD")
+  status       String   // pending | completed | failed | refunded
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// =============================================
+// API Key (用于数据隔离)
+// =============================================
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  keyPrefix  String    // 展示用，如 "mk_abc1"
+  keyHash    String    @unique // SHA256(完整key)
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memories  Memory[]
+  entities  Entity[]
+  relations Relation[]
+
+  @@index([userId])
+  @@index([keyHash])
+}
+
+// =============================================
+// Memory 核心表
+// =============================================
+
+model Memory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  apiKeyId  String
+  userId    String   // 调用方的用户ID (非平台用户)
+  agentId   String?
+  sessionId String?
+  content   String
+  embedding Unsupported("vector(1024)")?
+  metadata  Json?
+  source    String?
+  importance Float?  @default(0.5)
+  tags      String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, userId, agentId])
+  @@index([apiKeyId, createdAt])
+}
+
+// =============================================
+// Entity 实体表
+// =============================================
+
+model Entity {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  apiKeyId   String
+  userId     String
+  type       String   @db.VarChar(100)
+  name       String   @db.VarChar(500)
+  properties Json?
+  embedding  Unsupported("vector(1024)")?
+  confidence Float?   @default(1.0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  apiKey          ApiKey     @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  sourceRelations Relation[] @relation("SourceEntity")
+  targetRelations Relation[] @relation("TargetEntity")
+
+  @@unique([apiKeyId, userId, type, name])
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, userId, type])
+}
+
+// =============================================
+// Relation 关系表
+// =============================================
+
+model Relation {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  apiKeyId   String
+  userId     String
+  sourceId   String    @db.Uuid
+  targetId   String    @db.Uuid
+  type       String    @db.VarChar(100)
+  properties Json?
+  confidence Float?    @default(1.0)
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  source Entity @relation("SourceEntity", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Entity @relation("TargetEntity", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, userId])
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([apiKeyId, userId, type])
+}
+
+// =============================================
+// Webhook 配置
+// =============================================
+
+model Webhook {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  url       String
+  secret    String
+  events    String[] @default(["memory.created", "memory.deleted"])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     Json
+  statusCode  Int?
+  response    String?
+  error       String?
+  attempts    Int       @default(1)
+  success     Boolean   @default(false)
+  latencyMs   Int?
+  createdAt   DateTime  @default(now())
+  deliveredAt DateTime?
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([createdAt])
+}
+
+// =============================================
+// 账户删除记录
+// =============================================
+
+model AccountDeletionRecord {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  email     String   // 删除时的邮箱（保留用于记录）
+  reason    String   // 删除原因代码
+  feedback  String?  // 用户可选的详细反馈
+  deletedAt DateTime @default(now()) // 删除时间
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reason])
+  @@index([deletedAt])
+}

@@ -40,6 +40,7 @@ export class CrawlerService {
         startUrl: options.url,
         status: 'PENDING',
         webhookUrl: options.webhookUrl,
+
         options: JSON.parse(
           JSON.stringify({
             maxDepth: options.maxDepth || 3,

@@ -101,8 +101,10 @@ export abstract class BaseOembedProvider {
 
   /** 子类可覆盖添加额外参数 */
   protected appendExtraParams(
-    _params: URLSearchParams,
-    _options?: OembedOptions,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    params: URLSearchParams,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    options?: OembedOptions,
   ): void {
     // 默认不添加额外参数
   }

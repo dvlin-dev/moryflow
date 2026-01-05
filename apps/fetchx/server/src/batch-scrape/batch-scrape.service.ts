@@ -12,10 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UrlValidator } from '../common/validators/url.validator';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
 import type { BatchScrapeOptions } from './dto/batch-scrape.dto';
-import type {
-  BatchScrapeStatus,
-  BatchScrapeItemResult,
-} from './batch-scrape.types';
+import type { BatchScrapeStatus } from './batch-scrape.types';
 
 @Injectable()
 export class BatchScrapeService {
@@ -47,6 +44,7 @@ export class BatchScrapeService {
         status: 'PENDING',
         totalUrls: urls.length,
         webhookUrl,
+
         options: JSON.parse(JSON.stringify(scrapeOptions || {})),
       },
     });
