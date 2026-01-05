@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   profile: 'الملف الشخصي',
@@ -23,7 +23,8 @@ const ar = {
   usernameRequired: 'اسم المستخدم لا يمكن أن يكون فارغاً',
   usernameTooShort: 'اسم المستخدم يجب أن يكون على الأقل 3 أحرف',
   usernameTooLong: 'اسم المستخدم لا يمكن أن يتجاوز 20 حرفاً',
-  usernameInvalidFormat: 'اسم المستخدم يمكن أن يحتوي فقط على أحرف وأرقام وعلامة الشرطة السفلية والواصلة',
+  usernameInvalidFormat:
+    'اسم المستخدم يمكن أن يحتوي فقط على أحرف وأرقام وعلامة الشرطة السفلية والواصلة',
   currentPasswordRequired: 'يرجى إدخال كلمة المرور الحالية',
   newPasswordRequired: 'يرجى إدخال كلمة مرور جديدة',
   confirmPasswordRequired: 'يرجى تأكيد كلمة المرور الجديدة',
@@ -50,6 +51,6 @@ const ar = {
   usernameFormatHint: 'يدعم الأحرف والأرقام وعلامة الشرطة السفلية والواصلة',
   emailNotEditable: 'لا يمكن تعديل عنوان البريد الإلكتروني',
   username: 'اسم المستخدم',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

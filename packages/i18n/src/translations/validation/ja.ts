@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   required: 'この項目は必須です',
@@ -26,6 +26,6 @@ const ja = {
   enterCommand: 'コマンドを入力してください',
   invalidUrlFormat: 'URLの形式が無効です',
   emailMismatch: 'メールアドレスが一致しません',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

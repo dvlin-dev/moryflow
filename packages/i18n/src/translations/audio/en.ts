@@ -50,6 +50,6 @@ const en = {
   recordingResumeError: 'Failed to resume recording',
   recordingStopError: 'Failed to stop recording',
   recordingCancelError: 'Failed to clean up during recording cancellation',
-} as const
+} as const;
 
-export default en
+export default en;

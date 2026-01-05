@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   online: '在线',
@@ -14,6 +14,6 @@ const zhCN = {
   uploading: '上传中',
   downloading: '下载中',
   processing: '处理中',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

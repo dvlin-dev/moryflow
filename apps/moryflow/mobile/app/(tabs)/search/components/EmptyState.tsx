@@ -21,7 +21,7 @@ export function EmptyState({ hasQuery, query }: EmptyStateProps) {
         <>
           <SearchIcon size={48} color={colors.textTertiary} />
           <Text className="text-secondary-foreground mt-4 text-center text-[16px]">
-            未找到 &ldquo;{query}&rdquo; 相关结果
+            未找到 "{query}" 相关结果
           </Text>
         </>
       ) : (

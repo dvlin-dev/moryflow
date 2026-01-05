@@ -25,7 +25,10 @@ export const CreateSiteSchema = z.object({
         .min(3, 'Subdomain must be at least 3 characters')
         .max(32, 'Subdomain must be at most 32 characters')
         .regex(SUBDOMAIN_REGEX, 'Invalid subdomain format')
-        .refine((v) => !RESERVED_SUBDOMAINS.includes(v), 'Subdomain is reserved'),
+        .refine(
+          (v) => !RESERVED_SUBDOMAINS.includes(v),
+          'Subdomain is reserved',
+        ),
     ),
   type: z.nativeEnum(SiteType),
   title: z.string().max(100).optional(),

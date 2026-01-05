@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   profile: 'プロフィール',
@@ -50,6 +50,6 @@ const ja = {
   usernameFormatHint: '文字、数字、アンダースコア、ハイフンが使用可能',
   emailNotEditable: 'メールアドレスは変更できません',
   username: 'ユーザー名',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

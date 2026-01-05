@@ -24,11 +24,11 @@
 
 以下是正在迁移到此 Monorepo 的原始仓库：
 
-| 产品              | 绝对路径                          | 说明                                 |
-| ----------------- | --------------------------------- | ------------------------------------ |
-| Fetchx (原 AIGET) | `/Users/zhangbaolin/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
-| Memox (原 MEMAI)  | `/Users/zhangbaolin/code/me/memai`    | AI 记忆与知识图谱服务                |
-| Moryflow          | `/Users/zhangbaolin/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品）|
+| 产品              | 绝对路径                              | 说明                                  |
+| ----------------- | ------------------------------------- | ------------------------------------- |
+| Fetchx (原 AIGET) | `/Users/zhangbaolin/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名）  |
+| Memox (原 MEMAI)  | `/Users/zhangbaolin/code/me/memai`    | AI 记忆与知识图谱服务                 |
+| Moryflow          | `/Users/zhangbaolin/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品） |
 
 ---
 
@@ -48,32 +48,32 @@
 
 ### 域名规划
 
-| 服务                | 域名                  | 说明                         |
-| ------------------- | --------------------- | ---------------------------- |
-| **Moryflow 主站**   | moryflow.com          | 核心产品主入口               |
-| **Moryflow 发布站** | moryflow.app          | 用户发布的网站               |
-| **Aiget 平台**      | aiget.dev             | 统一平台入口                 |
-| **统一控制台**      | console.aiget.dev     | 用户管理所有产品             |
-| **统一管理后台**    | admin.aiget.dev       | 运营管理                     |
-| **统一文档**        | docs.aiget.dev        | 文档站                       |
-| **Moryflow API**    | moryflow.aiget.dev    | 核心产品 API 服务            |
-| **Fetchx API**      | fetchx.aiget.dev      | 原子能力：网页抓取           |
-| **Memox API**       | memox.aiget.dev       | 原子能力：AI 记忆            |
-| **Sandx API**       | sandx.aiget.dev       | 原子能力：Agent 沙盒         |
+| 服务                | 域名               | 说明                 |
+| ------------------- | ------------------ | -------------------- |
+| **Moryflow 主站**   | moryflow.com       | 核心产品主入口       |
+| **Moryflow 发布站** | moryflow.app       | 用户发布的网站       |
+| **Aiget 平台**      | aiget.dev          | 统一平台入口         |
+| **统一控制台**      | console.aiget.dev  | 用户管理所有产品     |
+| **统一管理后台**    | admin.aiget.dev    | 运营管理             |
+| **统一文档**        | docs.aiget.dev     | 文档站               |
+| **Moryflow API**    | moryflow.aiget.dev | 核心产品 API 服务    |
+| **Fetchx API**      | fetchx.aiget.dev   | 原子能力：网页抓取   |
+| **Memox API**       | memox.aiget.dev    | 原子能力：AI 记忆    |
+| **Sandx API**       | sandx.aiget.dev    | 原子能力：Agent 沙盒 |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
-> - Aiget 是基础设施平台，所有 API 服务统一使用 *.aiget.dev 子域名
+> - Aiget 是基础设施平台，所有 API 服务统一使用 \*.aiget.dev 子域名
 > - API 路径规范：`{product}.aiget.dev/v1/...`（无 `/api` 前缀）
 
 ### API Key 前缀
 
-| 类型          | 前缀  | 说明                 |
-| ------------- | ----- | -------------------- |
-| 平台 Key      | `ag_` | 可访问所有产品 API   |
-| Moryflow Key  | `mf_` | 核心产品             |
-| Fetchx Key    | `fx_` | 原子能力：网页抓取   |
-| Memox Key     | `mx_` | 原子能力：AI 记忆    |
-| Sandx Key     | `sx_` | 原子能力：Agent 沙盒 |
+| 类型         | 前缀  | 说明                 |
+| ------------ | ----- | -------------------- |
+| 平台 Key     | `ag_` | 可访问所有产品 API   |
+| Moryflow Key | `mf_` | 核心产品             |
+| Fetchx Key   | `fx_` | 原子能力：网页抓取   |
+| Memox Key    | `mx_` | 原子能力：AI 记忆    |
+| Sandx Key    | `sx_` | 原子能力：Agent 沙盒 |
 
 ### 目标 Monorepo 结构
 
@@ -165,7 +165,7 @@ Aiget/
 | 包管理       | pnpm workspace + Turborepo                              |
 | 后端         | NestJS 11 + Prisma 7 + PostgreSQL 16 + Redis 7 + BullMQ |
 | 前端         | React 19 + Vite + TailwindCSS v4 + shadcn/ui (Radix)    |
-| 移动端       | Expo + React Native                                     |
+| 移动端       | Expo + React Native + uniwind（非 nativewind/tailwind） |
 | 桌面端       | Electron + React                                        |
 | 认证         | Better Auth                                             |
 | 支付         | Creem.io                                                |
@@ -435,13 +435,13 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 
 ## 命名规范
 
-| 类型         | 规范             | 示例                                                            |
-| ------------ | ---------------- | --------------------------------------------------------------- |
-| 组件/类型    | PascalCase       | `ScreenshotService`                                             |
-| 函数/变量    | camelCase        | `handleScreenshot`                                              |
-| 常量         | UPPER_SNAKE_CASE | `MAX_CONCURRENT`                                                |
-| 组件文件夹   | PascalCase       | `ApiKeyCard/`                                                   |
-| 工具文件     | camelCase        | `urlValidator.ts`                                               |
+| 类型         | 规范             | 示例                                                               |
+| ------------ | ---------------- | ------------------------------------------------------------------ |
+| 组件/类型    | PascalCase       | `ScreenshotService`                                                |
+| 函数/变量    | camelCase        | `handleScreenshot`                                                 |
+| 常量         | UPPER_SNAKE_CASE | `MAX_CONCURRENT`                                                   |
+| 组件文件夹   | PascalCase       | `ApiKeyCard/`                                                      |
+| 工具文件     | camelCase        | `urlValidator.ts`                                                  |
 | API Key 前缀 | 产品特定         | `mf_`（moryflow）、`fx_`（fetchx）、`mx_`（memox）、`sx_`（sandx） |
 
 ---
@@ -508,13 +508,13 @@ pnpm lint
 
 ## 包命名规范
 
-| 类型     | 模式                     | 示例                                                   |
-| -------- | ------------------------ | ------------------------------------------------------ |
-| 应用包   | `@aiget/{product}-{app}` | `@aiget/moryflow-server`、`@aiget/fetchx-server`       |
-| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/sync`            |
-| UI 包    | `@aiget/ui`              | 唯一                                                   |
-| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                                 |
-| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                                   |
+| 类型     | 模式                     | 示例                                             |
+| -------- | ------------------------ | ------------------------------------------------ |
+| 应用包   | `@aiget/{product}-{app}` | `@aiget/moryflow-server`、`@aiget/fetchx-server` |
+| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/sync`      |
+| UI 包    | `@aiget/ui`              | 唯一                                             |
+| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                           |
+| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                             |
 
 ---
 

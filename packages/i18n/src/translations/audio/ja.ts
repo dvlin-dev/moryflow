@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   // 録音状態
@@ -52,6 +52,6 @@ const ja = {
   recordingResumeError: '録音の再開に失敗しました',
   recordingStopError: '録音の停止に失敗しました',
   recordingCancelError: '録音キャンセル時のクリーンアップに失敗しました',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

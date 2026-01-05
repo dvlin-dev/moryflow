@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   online: 'オンライン',
@@ -14,6 +14,6 @@ const ja = {
   uploading: 'アップロード中',
   downloading: 'ダウンロード中',
   processing: '処理中',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

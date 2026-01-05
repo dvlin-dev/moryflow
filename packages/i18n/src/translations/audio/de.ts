@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   // Aufnahmestatus
@@ -52,6 +52,6 @@ const de = {
   recordingResumeError: 'Fortsetzen der Aufnahme fehlgeschlagen',
   recordingStopError: 'Stoppen der Aufnahme fehlgeschlagen',
   recordingCancelError: 'Bereinigung beim Abbrechen der Aufnahme fehlgeschlagen',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

@@ -54,7 +54,7 @@ export class AlertNotificationService {
     }
 
     // 生成邮件内容
-    const subject = this.buildSubject(rule, context);
+    const subject = this.buildSubject(rule);
     const html = this.buildEmailContent(rule, context);
 
     // 发送邮件
@@ -71,10 +71,7 @@ export class AlertNotificationService {
   /**
    * 构建邮件主题
    */
-  private buildSubject(
-    rule: { name: string; level: AlertLevel },
-    context: AlertContext,
-  ): string {
+  private buildSubject(rule: { name: string; level: AlertLevel }): string {
     const levelEmoji = rule.level === AlertLevel.critical ? '🚨' : '⚠️';
     const levelText =
       rule.level === AlertLevel.critical ? 'CRITICAL' : 'WARNING';

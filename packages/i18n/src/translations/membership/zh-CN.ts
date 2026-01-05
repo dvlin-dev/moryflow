@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   // 会员卡片
@@ -26,6 +26,6 @@ const zhCN = {
   viewPlans: '查看升级方案',
   loginNow: '立即登录',
   later: '以后再说',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

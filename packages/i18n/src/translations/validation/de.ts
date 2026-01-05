@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   required: 'Dieses Feld ist erforderlich',
@@ -19,13 +19,14 @@ const de = {
   emailInvalid: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
   passwordMinLength: 'Passwort muss mindestens {{min}} Zeichen lang sein',
   passwordMismatch: 'Passwörter stimmen nicht überein',
-  usernameMinLengthError: 'Benutzername muss mindestens {{min}} Zeichen lang sein (aktuell {{current}})',
+  usernameMinLengthError:
+    'Benutzername muss mindestens {{min}} Zeichen lang sein (aktuell {{current}})',
 
   // ========== MCP/Provider Validierung ==========
   enterName: 'Bitte geben Sie einen Namen ein',
   enterCommand: 'Bitte geben Sie einen Befehl ein',
   invalidUrlFormat: 'Ungültiges URL-Format',
   emailMismatch: 'E-Mail stimmt nicht überein',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   profile: '个人资料',
@@ -51,6 +51,6 @@ const zhCN = {
   usernameFormatHint: '支持字母、数字、下划线和连字符',
   emailNotEditable: '邮箱地址暂不支持修改',
   username: '用户名',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

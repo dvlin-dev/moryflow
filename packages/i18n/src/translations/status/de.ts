@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   online: 'Online',
@@ -14,6 +14,6 @@ const de = {
   uploading: 'Hochladen',
   downloading: 'Herunterladen',
   processing: 'Verarbeiten',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

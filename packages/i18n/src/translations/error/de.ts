@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   generic: 'Ein Fehler ist aufgetreten',
@@ -14,7 +14,8 @@ const de = {
   maintenance: 'Service unter Wartung',
   unknown: 'Unbekannter Fehler',
   // UI-Fehlergrenze Ergänzungen
-  appErrorDescription: 'Entschuldigung, die Anwendung hat einen unerwarteten Fehler festgestellt. Wir haben dieses Problem protokolliert.',
+  appErrorDescription:
+    'Entschuldigung, die Anwendung hat einen unerwarteten Fehler festgestellt. Wir haben dieses Problem protokolliert.',
   devErrorDetails: 'Fehlerdetails (Entwicklung):',
   viewStackTrace: 'Stack-Trace anzeigen',
   viewComponentStack: 'Komponenten-Stack anzeigen',
@@ -28,6 +29,6 @@ const de = {
   ossSecretNotConfigured: 'EXPO_PUBLIC_OSS_SECRET nicht konfiguriert',
   uploadFailed: 'Upload fehlgeschlagen',
   transferFailed: 'Übertragung fehlgeschlagen',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   newConversation: 'Neues Gespräch',
@@ -30,13 +30,16 @@ const de = {
   // Benutzeroberfläche und Dialoge
   renameConversationTitle: 'Gespräch umbenennen',
   deleteConfirmTitle: 'Löschbestätigung',
-  deleteConfirmDescription: 'Diese Aktion kann nicht rückgängig gemacht werden. Sind Sie sicher, dass Sie dieses Gespräch löschen möchten?',
-  deleteConfirmWithTitle: 'Sind Sie sicher, dass Sie das Gespräch "{{title}}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+  deleteConfirmDescription:
+    'Diese Aktion kann nicht rückgängig gemacht werden. Sind Sie sicher, dass Sie dieses Gespräch löschen möchten?',
+  deleteConfirmWithTitle:
+    'Sind Sie sicher, dass Sie das Gespräch "{{title}}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
   titleLabel: 'Titel',
   newTitlePlaceholder: 'Neuen Gesprächstitel eingeben',
   // Fehlergrenze
   chatErrorTitle: 'Chat hat ein Problem festgestellt',
-  chatErrorDescription: 'Entschuldigung, die Chat-Komponente hat einen Fehler festgestellt. Sie können die folgenden Aktionen versuchen, um zu wiederherstellen.',
+  chatErrorDescription:
+    'Entschuldigung, die Chat-Komponente hat einen Fehler festgestellt. Sie können die folgenden Aktionen versuchen, um zu wiederherstellen.',
   reloadChat: 'Chat neu laden',
   backToChatList: 'Zurück zur Chat-Liste',
   chatSeoDescription: 'Chat mit dem KI-Assistenten',
@@ -136,6 +139,6 @@ const de = {
   notConnected: 'Nicht verbunden',
   manageServer: 'Diesen Server verwalten',
   addMcpServer: 'MCP-Server hinzufügen',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

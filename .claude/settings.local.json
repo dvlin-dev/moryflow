@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(pnpm --filter @aiget/i18n lint:fix:*)",
+      "Bash(echo:*)",
+      "Bash(npx prettier:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm install)",
+      "Bash(pnpm run generate:tokens:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm --filter @aiget/moryflow-server lint:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm --filter @aiget/moryflow-server typecheck:*)"
+    ]
+  }
+}

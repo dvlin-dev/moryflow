@@ -50,7 +50,7 @@ export class VectorizeClient implements OnModuleInit {
       },
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as T | ApiErrorResponse;
 
     if (!response.ok) {
       const errorData = data as ApiErrorResponse;

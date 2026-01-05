@@ -12,7 +12,6 @@ const en = {
   uploading: 'Uploading',
   downloading: 'Downloading',
   processing: 'Processing',
-} as const
+} as const;
 
-export default en
-
+export default en;

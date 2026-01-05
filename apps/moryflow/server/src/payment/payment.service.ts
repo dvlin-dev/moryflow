@@ -226,16 +226,17 @@ export class PaymentService {
    * 处理 refund.created 事件
    * 记录退款，可能需要撤销权益
    */
-  async handleRefundCreated(params: {
+  handleRefundCreated(params: {
     refundId: string;
     amount: number;
     currency: string;
     subscriptionId?: string;
     orderId?: string;
     userId: string;
-  }): Promise<void> {
-    const { refundId, amount, currency, subscriptionId, orderId, userId } =
-      params;
+  }): void {
+    const { refundId, amount, currency, subscriptionId, userId } = params;
+    // orderId 未使用，但保留在参数定义中以便将来扩展
+    void params.orderId;
 
     this.logger.log(`Refund created: ${refundId} for ${amount} ${currency}`);
 
@@ -258,14 +259,16 @@ export class PaymentService {
    * 处理 dispute.created 事件
    * 争议/拒付，需要记录并可能暂停账户
    */
-  async handleDisputeCreated(params: {
+  handleDisputeCreated(params: {
     disputeId: string;
     amount: number;
     currency: string;
     subscriptionId?: string;
     userId: string;
-  }): Promise<void> {
-    const { disputeId, amount, currency, subscriptionId, userId } = params;
+  }): void {
+    const { disputeId, amount, currency, userId } = params;
+    // subscriptionId 未使用，但保留在参数定义中以便将来扩展
+    void params.subscriptionId;
 
     this.logger.warn(
       `Dispute created: ${disputeId} for ${amount} ${currency} by user ${userId}`,

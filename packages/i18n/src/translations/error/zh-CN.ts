@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   generic: '发生错误',
@@ -28,6 +28,6 @@ const zhCN = {
   ossSecretNotConfigured: '未配置 EXPO_PUBLIC_OSS_SECRET',
   uploadFailed: '上传失败',
   transferFailed: '转存失败',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

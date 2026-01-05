@@ -145,7 +145,7 @@ export class PaymentWebhookController {
 
         case 'refund.created':
           // refund.created 的 object 结构不同，需要从嵌套属性获取
-          await this.paymentService.handleRefundCreated({
+          this.paymentService.handleRefundCreated({
             refundId: object.id,
             amount: object.order?.amount || 0,
             currency: object.order?.currency || 'USD',
@@ -160,7 +160,7 @@ export class PaymentWebhookController {
 
         case 'dispute.created':
           // dispute.created 的 object 结构类似 refund
-          await this.paymentService.handleDisputeCreated({
+          this.paymentService.handleDisputeCreated({
             disputeId: object.id,
             amount: object.order?.amount || 0,
             currency: object.order?.currency || 'USD',

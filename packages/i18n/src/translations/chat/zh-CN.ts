@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   newConversation: '新会话',
@@ -136,6 +136,6 @@ const zhCN = {
   notConnected: '未连接',
   manageServer: '管理此服务器',
   addMcpServer: '添加 MCP 服务器',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

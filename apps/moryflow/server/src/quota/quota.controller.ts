@@ -31,7 +31,9 @@ export class QuotaController {
   @Get()
   @ApiOperation({ summary: '获取用户用量和额度' })
   @ApiOkResponse({ description: '用量和额度信息' })
-  async getUsage(@CurrentUser() user: CurrentUserDto): Promise<UsageResponseDto> {
+  async getUsage(
+    @CurrentUser() user: CurrentUserDto,
+  ): Promise<UsageResponseDto> {
     return this.quotaService.getUsage(user.id, user.tier);
   }
 }

@@ -147,23 +147,27 @@ async function bootstrap() {
   });
 
   // 设置 OpenAPI 文档
-  await setupOpenAPI(app, isDev);
+  setupOpenAPI(app, isDev);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   logger.log(`🚀 Application running on port ${port}`);
   logger.log(`📊 Health check: http://localhost:${port}/health`);
-  logger.log(`📚 API Reference: http://localhost:${port}${SCALAR_CONFIG.PUBLIC_DOCS_PATH}`);
+  logger.log(
+    `📚 API Reference: http://localhost:${port}${SCALAR_CONFIG.PUBLIC_DOCS_PATH}`,
+  );
   if (isDev) {
-    logger.log(`📚 Internal API Reference: http://localhost:${port}${SCALAR_CONFIG.INTERNAL_DOCS_PATH}`);
+    logger.log(
+      `📚 Internal API Reference: http://localhost:${port}${SCALAR_CONFIG.INTERNAL_DOCS_PATH}`,
+    );
   }
 }
 
 /**
  * 设置 OpenAPI 文档（Scalar UI）
  */
-async function setupOpenAPI(app: INestApplication, isDev: boolean) {
+function setupOpenAPI(app: INestApplication, isDev: boolean) {
   const openApiService = app.get(OpenApiService);
 
   // === 公开 API 文档 ===
@@ -189,8 +193,9 @@ async function setupOpenAPI(app: INestApplication, isDev: boolean) {
       include: INTERNAL_API_MODULES,
     });
 
-    app.use(SCALAR_CONFIG.INTERNAL_OPENAPI_JSON_PATH, (_: Request, res: Response) =>
-      res.json(internalDoc),
+    app.use(
+      SCALAR_CONFIG.INTERNAL_OPENAPI_JSON_PATH,
+      (_: Request, res: Response) => res.json(internalDoc),
     );
     app.use(
       SCALAR_CONFIG.INTERNAL_DOCS_PATH,

@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   today: '今日',
@@ -10,6 +10,6 @@ const ja = {
   thisMonth: '今月',
   lastMonth: '先月',
   nextMonth: '来月',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

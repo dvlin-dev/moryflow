@@ -174,6 +174,6 @@ const ja = {
   dangerZone: '危険な操作',
   deleteAccount: 'アカウントを削除',
   deleteAccountWarning: '削除後、すべてのデータは永久に消去され、復元できません',
-} as const
+} as const;
 
-export default ja
+export default ja;

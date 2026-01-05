@@ -1,4 +1,4 @@
-import type en from './en'
+import type en from './en';
 
 const ar: Record<keyof typeof en, string> = {
   // محدد Vault
@@ -190,6 +190,6 @@ const ar: Record<keyof typeof en, string> = {
 
   // الحالة الفارغة
   startWriting: 'اكتب شيئاً؟',
-}
+};
 
-export default ar
+export default ar;

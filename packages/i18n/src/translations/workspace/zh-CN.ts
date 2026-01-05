@@ -1,4 +1,4 @@
-import type en from './en'
+import type en from './en';
 
 const zhCN: Record<keyof typeof en, string> = {
   // Vault 选择器
@@ -190,6 +190,6 @@ const zhCN: Record<keyof typeof en, string> = {
 
   // 空状态
   startWriting: '写点什么？',
-}
+};
 
-export default zhCN
+export default zhCN;

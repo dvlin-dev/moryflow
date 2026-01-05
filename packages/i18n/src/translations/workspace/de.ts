@@ -1,4 +1,4 @@
-import type en from './en'
+import type en from './en';
 
 const de: Record<keyof typeof en, string> = {
   // Vault-Auswahl
@@ -61,7 +61,8 @@ const de: Record<keyof typeof en, string> = {
   invalidNewName: 'Ungültiger Name, / \\ nicht erlaubt',
   pleaseSelectToDelete: 'Bitte wählen Sie eine Datei oder einen Ordner zum Löschen',
   pleaseSelectToRename: 'Bitte wählen Sie eine Datei oder einen Ordner zum Umbenennen',
-  confirmDeleteEntry: 'Möchten Sie "{{name}}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.',
+  confirmDeleteEntry:
+    'Möchten Sie "{{name}}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.',
   renameFile: 'Datei umbenennen',
   renameFolder: 'Ordner umbenennen',
   enterNewFileName: 'Neuen Dateinamen eingeben (ohne Erweiterung)',
@@ -123,7 +124,8 @@ const de: Record<keyof typeof en, string> = {
   deleteWorkspace: 'Arbeitsbereich löschen',
   enterNewWorkspaceName: 'Neuen Namen eingeben',
   enterWorkspaceName: 'Arbeitsbereichnamen eingeben',
-  confirmDeleteWorkspace: 'Möchten Sie "{{name}}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.',
+  confirmDeleteWorkspace:
+    'Möchten Sie "{{name}}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.',
   syncSettings: 'Sync-Einstellungen',
   workspaceLoadError: 'Fehler beim Laden des Arbeitsbereichs',
 
@@ -190,6 +192,6 @@ const de: Record<keyof typeof en, string> = {
 
   // Leerer Zustand
   startWriting: 'Schreiben Sie etwas?',
-}
+};
 
-export default de
+export default de;

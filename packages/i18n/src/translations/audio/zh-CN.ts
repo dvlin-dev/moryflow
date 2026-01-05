@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   // 录制状态
@@ -52,6 +52,6 @@ const zhCN = {
   recordingResumeError: '恢复录音失败',
   recordingStopError: '停止录音失败',
   recordingCancelError: '取消录音时清理失败',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

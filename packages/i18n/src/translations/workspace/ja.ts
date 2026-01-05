@@ -1,4 +1,4 @@
-import type en from './en'
+import type en from './en';
 
 const ja: Record<keyof typeof en, string> = {
   // Vault セレクター
@@ -190,6 +190,6 @@ const ja: Record<keyof typeof en, string> = {
 
   // 空の状態
   startWriting: '何か書いてみませんか？',
-}
+};
 
-export default ja
+export default ja;

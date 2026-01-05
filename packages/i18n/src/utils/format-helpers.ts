@@ -39,7 +39,7 @@ export function formatSmartRelativeTime(
     const locale = getDateLocale(currentLanguage);
     return formatDistance(dateObj, now, {
       addSuffix: true,
-      locale
+      locale,
     });
   } catch {
     return '';

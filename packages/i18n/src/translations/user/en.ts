@@ -49,6 +49,6 @@ const en = {
   usernameFormatHint: 'Supports letters, numbers, underscores and hyphens',
   emailNotEditable: 'Email address cannot be modified',
   username: 'Username',
-} as const
+} as const;
 
-export default en
+export default en;

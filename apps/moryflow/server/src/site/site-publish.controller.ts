@@ -122,10 +122,12 @@ export class SitePublishController {
 
     try {
       if (body.pages) {
-        pages = JSON.parse(body.pages);
+        pages = JSON.parse(body.pages) as PublishSiteDto['pages'];
       }
       if (body.navigation) {
-        navigation = JSON.parse(body.navigation);
+        navigation = JSON.parse(
+          body.navigation,
+        ) as PublishSiteDto['navigation'];
       }
     } catch {
       throw new BadRequestException('Invalid pages or navigation format');

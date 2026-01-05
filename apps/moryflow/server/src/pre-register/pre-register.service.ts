@@ -128,7 +128,7 @@ export class PreRegisterService {
         throw new BadRequestException('Verification code has expired');
       }
 
-      const data: StoredOtpData = JSON.parse(stored);
+      const data = JSON.parse(stored) as StoredOtpData;
 
       // 3. 检查尝试次数
       if (data.attempts >= MAX_ATTEMPTS) {

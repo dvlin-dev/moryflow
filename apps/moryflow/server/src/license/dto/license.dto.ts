@@ -39,7 +39,9 @@ export const DeactivateLicenseSchema = z.object({
   instanceId: z.string().min(1, 'instanceId is required'),
 });
 
-export class DeactivateLicenseDto extends createZodDto(DeactivateLicenseSchema) {}
+export class DeactivateLicenseDto extends createZodDto(
+  DeactivateLicenseSchema,
+) {}
 
 // ==================== Response Schemas ====================
 

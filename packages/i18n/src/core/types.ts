@@ -69,7 +69,11 @@ export interface LanguageDetectorModule {
   async?: boolean; // 支持异步检测
   // 简化init方法，实际使用中i18next会注入这些参数，我们不需要严格类型化
   init?: (...args: unknown[]) => void;
-  detect?: () => string | readonly string[] | undefined | Promise<string | readonly string[] | undefined>;
+  detect?: () =>
+    | string
+    | readonly string[]
+    | undefined
+    | Promise<string | readonly string[] | undefined>;
   cacheUserLanguage?: (lng: string) => void;
 }
 
@@ -123,9 +127,7 @@ export type TranslationKeys<NS extends TranslationNamespace> = TranslationNamesp
 
 // 综合 Hook 返回类型
 export interface UseI18nReturn<Keys extends string>
-  extends UseTranslationReturn<Keys>,
-          UseLanguageReturn,
-          UseFormatterReturn {}
+  extends UseTranslationReturn<Keys>, UseLanguageReturn, UseFormatterReturn {}
 
 // Provider Props
 export interface I18nProviderProps {

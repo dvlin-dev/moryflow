@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   today: '今天',
@@ -10,6 +10,6 @@ const zhCN = {
   thisMonth: '本月',
   lastMonth: '上月',
   nextMonth: '下月',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

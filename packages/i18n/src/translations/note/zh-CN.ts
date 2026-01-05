@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   // 页面基础
@@ -231,6 +231,6 @@ const zhCN = {
   transcriptionFailedMessage: '语音转文字失败，是否保存原始音频？',
   duration: '时长',
   audioFile: '音频文件',
-} as const satisfies Record<keyof typeof en, any>
+} as const satisfies Record<keyof typeof en, any>;
 
-export default zhCN
+export default zhCN;

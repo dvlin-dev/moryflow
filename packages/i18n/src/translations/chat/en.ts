@@ -28,13 +28,16 @@ const en = {
   // 界面与对话框
   renameConversationTitle: 'Rename Conversation',
   deleteConfirmTitle: 'Delete Confirmation',
-  deleteConfirmDescription: 'This action cannot be undone. Are you sure you want to delete this conversation?',
-  deleteConfirmWithTitle: 'Are you sure you want to delete conversation "{{title}}"? This action cannot be undone.',
+  deleteConfirmDescription:
+    'This action cannot be undone. Are you sure you want to delete this conversation?',
+  deleteConfirmWithTitle:
+    'Are you sure you want to delete conversation "{{title}}"? This action cannot be undone.',
   titleLabel: 'Title',
   newTitlePlaceholder: 'Enter new conversation title',
   // 错误边界
   chatErrorTitle: 'Chat encountered a problem',
-  chatErrorDescription: 'Sorry, the chat component has encountered an error. You can try the following actions to recover.',
+  chatErrorDescription:
+    'Sorry, the chat component has encountered an error. You can try the following actions to recover.',
   reloadChat: 'Reload Chat',
   backToChatList: 'Back to chat list',
   chatSeoDescription: 'Chat with the AI assistant',
@@ -134,6 +137,6 @@ const en = {
   notConnected: 'Not connected',
   manageServer: 'Manage this server',
   addMcpServer: 'Add MCP Server',
-} as const
+} as const;
 
-export default en
+export default en;

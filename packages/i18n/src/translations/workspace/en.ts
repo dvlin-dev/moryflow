@@ -131,7 +131,8 @@ const en = {
   deleteWorkspace: 'Delete Workspace',
   enterNewWorkspaceName: 'Enter a new name',
   enterWorkspaceName: 'Enter workspace name',
-  confirmDeleteWorkspace: 'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
+  confirmDeleteWorkspace:
+    'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
   syncSettings: 'Sync Settings',
   workspaceLoadError: 'Error loading workspace',
 
@@ -186,6 +187,6 @@ const en = {
 
   // 空状态
   startWriting: 'Start writing something?',
-} as const
+} as const;
 
-export default en
+export default en;

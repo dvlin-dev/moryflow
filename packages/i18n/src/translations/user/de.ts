@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   profile: 'Profil',
@@ -23,7 +23,8 @@ const de = {
   usernameRequired: 'Benutzername darf nicht leer sein',
   usernameTooShort: 'Benutzername muss mindestens 3 Zeichen lang sein',
   usernameTooLong: 'Benutzername darf maximal 20 Zeichen lang sein',
-  usernameInvalidFormat: 'Benutzername kann nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten',
+  usernameInvalidFormat:
+    'Benutzername kann nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten',
   currentPasswordRequired: 'Bitte geben Sie das aktuelle Passwort ein',
   newPasswordRequired: 'Bitte geben Sie ein neues Passwort ein',
   confirmPasswordRequired: 'Bitte bestätigen Sie das neue Passwort',
@@ -31,7 +32,8 @@ const de = {
   passwordMismatch: 'Passwörter stimmen nicht überein',
   verificationCodeRequired: 'Bitte geben Sie den Bestätigungscode ein',
   verificationCodeInvalidLength: 'Bestätigungscode muss 6 Stellen haben',
-  verificationCodeSendFailed: 'Bestätigungscode konnte nicht gesendet werden, bitte versuchen Sie es erneut',
+  verificationCodeSendFailed:
+    'Bestätigungscode konnte nicht gesendet werden, bitte versuchen Sie es erneut',
   passwordChangeFailed: 'Passwort konnte nicht geändert werden, bitte versuchen Sie es erneut',
   emailUnavailable: 'E-Mail-Adresse ist nicht verfügbar',
   emailInvalid: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
@@ -46,10 +48,11 @@ const de = {
 
   // Ergänzende fehlende Schlüssel
   usernameInputPlaceholder: 'Benutzername eingeben ({{min}}-{{max}} Zeichen)',
-  usernameMinLengthError: 'Benutzername muss mindestens {{min}} Zeichen lang sein (aktuell {{current}})',
+  usernameMinLengthError:
+    'Benutzername muss mindestens {{min}} Zeichen lang sein (aktuell {{current}})',
   usernameFormatHint: 'Unterstützt Buchstaben, Zahlen, Unterstriche und Bindestriche',
   emailNotEditable: 'E-Mail-Adresse kann nicht geändert werden',
   username: 'Benutzername',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

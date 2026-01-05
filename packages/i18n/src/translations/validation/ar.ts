@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   required: 'هذا الحقل مطلوب',
@@ -26,6 +26,6 @@ const ar = {
   enterCommand: 'يرجى إدخال الأمر',
   invalidUrlFormat: 'تنسيق URL غير صالح',
   emailMismatch: 'البريد الإلكتروني غير متطابق',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

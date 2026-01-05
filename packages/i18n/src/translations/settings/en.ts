@@ -383,6 +383,6 @@ const en = {
   sandboxRemovePath: 'Remove',
   sandboxClearAllPaths: 'Clear All',
   sandboxClearAllConfirm: 'Are you sure you want to clear all authorized paths?',
-} as const
+} as const;
 
-export default en
+export default en;

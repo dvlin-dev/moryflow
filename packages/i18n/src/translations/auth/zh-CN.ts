@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   signIn: '登录',
@@ -178,6 +178,6 @@ const zhCN = {
   dangerZone: '危险区域',
   deleteAccount: '删除账户',
   deleteAccountWarning: '删除后所有数据将被永久清除，无法恢复',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

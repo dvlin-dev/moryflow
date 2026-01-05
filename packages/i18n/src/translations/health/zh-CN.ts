@@ -1,13 +1,13 @@
-import en from './en'
+import en from './en';
 
-type HealthTranslation = typeof en
+type HealthTranslation = typeof en;
 type DeepStringShape<T> = {
   [K in keyof T]: T[K] extends string
     ? string
     : T[K] extends Record<string, unknown>
       ? DeepStringShape<T[K]>
-      : T[K]
-}
+      : T[K];
+};
 
 const zhCN = {
   status: {
@@ -112,6 +112,6 @@ const zhCN = {
   moodClassificationNegative: '偏低',
   moodClassificationUnknown: '未记录',
   moodScore: '分数 {{value}}',
-} as const satisfies DeepStringShape<HealthTranslation>
+} as const satisfies DeepStringShape<HealthTranslation>;
 
-export default zhCN
+export default zhCN;

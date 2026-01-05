@@ -93,7 +93,9 @@ export const GetAlertRulesQuerySchema = z.object({
     ),
 });
 
-export class GetAlertRulesQueryDto extends createZodDto(GetAlertRulesQuerySchema) {}
+export class GetAlertRulesQueryDto extends createZodDto(
+  GetAlertRulesQuerySchema,
+) {}
 
 export const GetAlertHistoryQuerySchema = z.object({
   ruleId: z.string().optional(),
@@ -110,7 +112,9 @@ export const GetAlertHistoryQuerySchema = z.object({
     .transform((v) => (v ? Math.max(parseInt(v, 10), 0) : 0)),
 });
 
-export class GetAlertHistoryQueryDto extends createZodDto(GetAlertHistoryQuerySchema) {}
+export class GetAlertHistoryQueryDto extends createZodDto(
+  GetAlertHistoryQuerySchema,
+) {}
 
 // ==========================================
 // Alert Context

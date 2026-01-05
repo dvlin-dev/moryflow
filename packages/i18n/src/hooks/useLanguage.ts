@@ -38,12 +38,9 @@ export function useLanguage(): UseLanguageReturn & {
     [i18n]
   );
 
-  const getLanguageInfo = useCallback(
-    (language: SupportedLanguage): LanguageConfig => {
-      return SUPPORTED_LANGUAGES[language];
-    },
-    []
-  );
+  const getLanguageInfo = useCallback((language: SupportedLanguage): LanguageConfig => {
+    return SUPPORTED_LANGUAGES[language];
+  }, []);
 
   const supportedLanguages = useMemo(
     () => Object.keys(SUPPORTED_LANGUAGES) as SupportedLanguage[],

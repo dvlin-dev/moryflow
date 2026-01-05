@@ -80,10 +80,14 @@ export const GetFailedToolsQuerySchema = z.object({
   offset: z.coerce.number().optional(),
 });
 
-export class GetFailedToolsQueryDto extends createZodDto(GetFailedToolsQuerySchema) {}
+export class GetFailedToolsQueryDto extends createZodDto(
+  GetFailedToolsQuerySchema,
+) {}
 
 export const GetToolStatsQuerySchema = z.object({
   days: z.coerce.number().optional(),
 });
 
-export class GetToolStatsQueryDto extends createZodDto(GetToolStatsQuerySchema) {}
+export class GetToolStatsQueryDto extends createZodDto(
+  GetToolStatsQuerySchema,
+) {}

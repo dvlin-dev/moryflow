@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   // Titel und Menüs
@@ -48,7 +48,8 @@ const de = {
   languageDescription: 'Interface-Anzeigesprache auswählen',
   english: 'Englisch',
   simplifiedChinese: 'Vereinfachtes Chinesisch',
-  languageFeatureInDevelopment: 'Hinweis: Die Sprachumschaltfunktion ist in Entwicklung, erscheint bald',
+  languageFeatureInDevelopment:
+    'Hinweis: Die Sprachumschaltfunktion ist in Entwicklung, erscheint bald',
   selectLanguage: 'Sprache auswählen',
   selectLanguageMessage: 'Wählen Sie Ihre bevorzugte Sprache',
   languageChangeNote: 'Die Interface-Sprache wird sofort nach der Auswahl geändert',
@@ -80,12 +81,15 @@ const de = {
 
   // Passwortregeln und Hinweise
   passwordMinLength: 'Passwort muss mindestens {length} Zeichen lang sein',
-  passwordStrengthTips: '• Passwortlänge mindestens 6 Zeichen\n• Empfohlen: Buchstaben, Zahlen und Sonderzeichen\n• Nächster Schritt sendet Bestätigungscode an Ihre E-Mail',
-  verificationTips: '• Bestätigungscode ist 10 Minuten gültig\n• Falls Sie den Code nicht erhalten, prüfen Sie Ihren Spam-Ordner\n• Nach Passwort-Änderung müssen Sie sich erneut anmelden',
+  passwordStrengthTips:
+    '• Passwortlänge mindestens 6 Zeichen\n• Empfohlen: Buchstaben, Zahlen und Sonderzeichen\n• Nächster Schritt sendet Bestätigungscode an Ihre E-Mail',
+  verificationTips:
+    '• Bestätigungscode ist 10 Minuten gültig\n• Falls Sie den Code nicht erhalten, prüfen Sie Ihren Spam-Ordner\n• Nach Passwort-Änderung müssen Sie sich erneut anmelden',
 
   // Benutzername-Validierung
   usernameMinLength: 'Benutzername muss mindestens {min} Zeichen lang sein (aktuell {current})',
-  usernameOnlyAllowedChars: 'Benutzername kann nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten',
+  usernameOnlyAllowedChars:
+    'Benutzername kann nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten',
   usernamePlaceholder: 'Benutzername eingeben ({min}-{max} Zeichen)',
 
   // Passwort-Eingabehinweise
@@ -118,14 +122,17 @@ const de = {
   pendingWrites: '{{count}} ausstehende Schreibvorgänge',
   backToEdit: 'Zurück zum Bearbeiten',
   confirmChanges: 'Änderungen bestätigen',
-  verificationCodeHints: '• Bestätigungscode ist 10 Minuten gültig\n• Falls Sie den Code nicht erhalten, prüfen Sie Ihren Spam-Ordner\n• Nach Passwort-Änderung müssen Sie sich erneut anmelden',
-  passwordHints: '• Passwortlänge mindestens 6 Zeichen\n• Empfohlen: Buchstaben, Zahlen und Sonderzeichen\n• Nächster Schritt sendet Bestätigungscode an Ihre E-Mail',
+  verificationCodeHints:
+    '• Bestätigungscode ist 10 Minuten gültig\n• Falls Sie den Code nicht erhalten, prüfen Sie Ihren Spam-Ordner\n• Nach Passwort-Änderung müssen Sie sich erneut anmelden',
+  passwordHints:
+    '• Passwortlänge mindestens 6 Zeichen\n• Empfohlen: Buchstaben, Zahlen und Sonderzeichen\n• Nächster Schritt sendet Bestätigungscode an Ihre E-Mail',
   status: 'Status',
 
   // Konto löschen
   deleteAccount: 'Konto löschen',
   deleteAccountTitle: 'Konto löschen',
-  deleteAccountWarning: 'Nach dem Löschen Ihres Kontos werden alle Ihre Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+  deleteAccountWarning:
+    'Nach dem Löschen Ihres Kontos werden alle Ihre Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
   selectDeleteReason: 'Bitte wählen Sie einen Grund für die Löschung',
   deleteReasonNotUseful: 'Benötige dieses Produkt nicht mehr',
   deleteReasonFoundAlternative: 'Bessere Alternative gefunden',
@@ -142,8 +149,10 @@ const de = {
 
   // PC Einstellungen zurücksetzen
   resetSettings: 'Einstellungen zurücksetzen',
-  resetSettingsDescription: 'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Vault-Dateien bleiben unberührt. Neustart erforderlich.',
-  resetSettingsConfirm: 'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Vault-Dateien bleiben unberührt). Änderungen werden nach dem Neustart wirksam.',
+  resetSettingsDescription:
+    'Alle Konfigurationsdaten löschen und auf den Ausgangszustand zurücksetzen. Vault-Dateien bleiben unberührt. Neustart erforderlich.',
+  resetSettingsConfirm:
+    'Möchten Sie die Einstellungen wirklich zurücksetzen?\n\nAlle Konfigurationsdaten werden gelöscht (Vault-Dateien bleiben unberührt). Änderungen werden nach dem Neustart wirksam.',
   resetSettingsSuccess: 'Zurückgesetzt, bitte starten Sie die App neu',
   resetSettingsFailed: 'Zurücksetzen fehlgeschlagen, bitte später erneut versuchen',
   resetSettingsNotSupported: 'Dieser Vorgang wird in der aktuellen Umgebung nicht unterstützt',
@@ -168,8 +177,10 @@ const de = {
 
   // ========== Modellkonfiguration ==========
   defaultModelLabel: 'Standardmodell (Optional)',
-  defaultModelFormatHint: 'Format: anbieter_id/modell_id. Bei leer wird das Standardmodell des ersten aktivierten Anbieters verwendet.',
-  defaultModelConfigDescription: 'Bitte konfigurieren Sie Anbieter und Modelle auf der Seite "KI-Anbieter" und legen Sie hier das globale Standardmodell fest.',
+  defaultModelFormatHint:
+    'Format: anbieter_id/modell_id. Bei leer wird das Standardmodell des ersten aktivierten Anbieters verwendet.',
+  defaultModelConfigDescription:
+    'Bitte konfigurieren Sie Anbieter und Modelle auf der Seite "KI-Anbieter" und legen Sie hier das globale Standardmodell fest.',
 
   // ========== KI-Anbieter ==========
   sdkTypeOpenAICompatible: 'OpenAI-kompatibel',
@@ -235,10 +246,12 @@ const de = {
   cloudSyncNeedLogin: 'Anmeldung erforderlich',
   cloudSyncNeedLoginDescription: 'Melden Sie sich an, um die Cloud-Synchronisierung zu nutzen',
   cloudSyncNeedVault: 'Bitte öffnen Sie zuerst einen Vault',
-  cloudSyncNeedVaultDescription: 'Öffnen Sie einen Vault, um die Cloud-Synchronisierung zu konfigurieren',
+  cloudSyncNeedVaultDescription:
+    'Öffnen Sie einen Vault, um die Cloud-Synchronisierung zu konfigurieren',
   cloudSyncEnabled: 'Cloud-Synchronisierung aktiviert',
   cloudSyncDisabled: 'Cloud-Synchronisierung deaktiviert',
-  cloudSyncEnableFailed: 'Aktivierung der Cloud-Synchronisierung fehlgeschlagen. Bitte später erneut versuchen',
+  cloudSyncEnableFailed:
+    'Aktivierung der Cloud-Synchronisierung fehlgeschlagen. Bitte später erneut versuchen',
   cloudSyncSyncing: 'Synchronisiere...',
   cloudSyncSynced: 'Synchronisiert',
   cloudSyncFailed: 'Synchronisierung fehlgeschlagen',
@@ -315,7 +328,8 @@ const de = {
   ollamaModelExample: 'z.B. qwen2.5:7b',
 
   // ========== Kauf ==========
-  createPaymentLinkFailed: 'Zahlungslink konnte nicht erstellt werden, bitte später erneut versuchen',
+  createPaymentLinkFailed:
+    'Zahlungslink konnte nicht erstellt werden, bitte später erneut versuchen',
 
   // ========== Zahlungsdialog ==========
   completePayment: 'Zahlung abschließen',
@@ -345,7 +359,8 @@ const de = {
   monthly: 'Monatlich',
   yearly: 'Jährlich',
   savePercent: '{{percent}}% sparen',
-  subscriptionNote: 'Sparen Sie 2 Monate mit jährlicher Abrechnung. Credits bleiben gleich. Jederzeit kündbar.',
+  subscriptionNote:
+    'Sparen Sie 2 Monate mit jährlicher Abrechnung. Credits bleiben gleich. Jederzeit kündbar.',
 
   // ========== MCP-Konfiguration Ergänzung ==========
   loadingConfig: 'Konfiguration wird geladen...',
@@ -364,6 +379,6 @@ const de = {
   sandboxRemovePath: 'Entfernen',
   sandboxClearAllPaths: 'Alle löschen',
   sandboxClearAllConfirm: 'Sind Sie sicher, dass Sie alle autorisierten Pfade löschen möchten?',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

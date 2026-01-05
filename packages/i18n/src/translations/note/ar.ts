@@ -230,6 +230,6 @@ const ar = {
   transcriptionFailedMessage: 'فشل في تحويل الصوت إلى نص. حفظ الصوت الأصلي؟',
   duration: 'المدة',
   audioFile: 'ملف صوتي',
-} as const
+} as const;
 
-export default ar
+export default ar;

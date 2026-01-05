@@ -155,7 +155,7 @@ export class ActivityLogController {
         if (value === null || value === undefined) return '';
         if (typeof value === 'object')
           return JSON.stringify(value).replace(/"/g, '""');
-        return String(value).replace(/"/g, '""');
+        return String(value as string | number | boolean).replace(/"/g, '""');
       }),
     );
 

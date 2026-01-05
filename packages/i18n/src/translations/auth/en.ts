@@ -175,7 +175,8 @@ const en = {
   upgrade: 'Upgrade',
   dangerZone: 'Danger Zone',
   deleteAccount: 'Delete Account',
-  deleteAccountWarning: 'After deletion, all data will be permanently erased and cannot be recovered',
-} as const
+  deleteAccountWarning:
+    'After deletion, all data will be permanently erased and cannot be recovered',
+} as const;
 
-export default en
+export default en;

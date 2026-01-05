@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   // 标题和菜单
@@ -82,8 +82,10 @@ const zhCN = {
 
   // 密码规则和提示
   passwordMinLength: '密码至少需要 {length} 个字符',
-  passwordStrengthTips: '• 密码长度至少6位\n• 建议包含字母、数字和特殊字符\n• 下一步将发送验证码到您的邮箱',
-  verificationTips: '• 验证码有效期为10分钟\n• 如未收到验证码，请检查垃圾邮件\n• 修改密码后需要重新登录',
+  passwordStrengthTips:
+    '• 密码长度至少6位\n• 建议包含字母、数字和特殊字符\n• 下一步将发送验证码到您的邮箱',
+  verificationTips:
+    '• 验证码有效期为10分钟\n• 如未收到验证码，请检查垃圾邮件\n• 修改密码后需要重新登录',
 
   // 用户名验证
   usernameMinLength: '用户名至少需要{min}个字符（当前{current}个）',
@@ -120,8 +122,10 @@ const zhCN = {
   pendingWrites: '{{count}} 个待写入',
   backToEdit: '返回修改',
   confirmChanges: '确认修改',
-  verificationCodeHints: '• 验证码有效期为10分钟\n• 如未收到验证码，请检查垃圾邮件\n• 修改密码后需要重新登录',
-  passwordHints: '• 密码长度至少6位\n• 建议包含字母、数字和特殊字符\n• 下一步将发送验证码到您的邮箱',
+  verificationCodeHints:
+    '• 验证码有效期为10分钟\n• 如未收到验证码，请检查垃圾邮件\n• 修改密码后需要重新登录',
+  passwordHints:
+    '• 密码长度至少6位\n• 建议包含字母、数字和特殊字符\n• 下一步将发送验证码到您的邮箱',
   status: '状态',
 
   // 删除账户
@@ -144,8 +148,10 @@ const zhCN = {
 
   // PC 重置设置
   resetSettings: '重置软件设置',
-  resetSettingsDescription: '清除所有配置数据并恢复到初始状态，不会删除 Vault 中的文件。重启后生效。',
-  resetSettingsConfirm: '确定要重置软件设置吗？\n\n此操作将删除所有配置数据（不影响 Vault 中的文件），重启后生效。',
+  resetSettingsDescription:
+    '清除所有配置数据并恢复到初始状态，不会删除 Vault 中的文件。重启后生效。',
+  resetSettingsConfirm:
+    '确定要重置软件设置吗？\n\n此操作将删除所有配置数据（不影响 Vault 中的文件），重启后生效。',
   resetSettingsSuccess: '已重置，请重启应用',
   resetSettingsFailed: '重置失败，稍后再试',
   resetSettingsNotSupported: '当前环境暂不支持此操作',
@@ -172,7 +178,8 @@ const zhCN = {
   // ========== 模型配置 ==========
   defaultModelLabel: '默认模型（可选）',
   defaultModelFormatHint: '格式：服务商ID/模型ID。留空时会自动使用第一个启用的服务商的默认模型。',
-  defaultModelConfigDescription: '请在「AI 服务商」页面配置服务商和模型，然后在此处设置全局默认模型。',
+  defaultModelConfigDescription:
+    '请在「AI 服务商」页面配置服务商和模型，然后在此处设置全局默认模型。',
 
   // ========== AI 服务商 ==========
   // SDK 类型
@@ -376,6 +383,6 @@ const zhCN = {
   sandboxRemovePath: '移除',
   sandboxClearAllPaths: '清除全部',
   sandboxClearAllConfirm: '确定要清除所有已授权路径吗？',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

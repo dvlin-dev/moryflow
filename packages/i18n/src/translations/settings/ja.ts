@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   // タイトルとメニュー
@@ -80,8 +80,10 @@ const ja = {
 
   // パスワードルールとヒント
   passwordMinLength: 'パスワードは最低{length}文字である必要があります',
-  passwordStrengthTips: '• パスワードは最低6文字\n• 文字、数字、特殊文字を含むことを推奨\n• 次のステップでメールに認証コードを送信します',
-  verificationTips: '• 認証コードは10分間有効です\n• コードが届かない場合は、スパムフォルダーをご確認ください\n• パスワード変更後は再ログインが必要です',
+  passwordStrengthTips:
+    '• パスワードは最低6文字\n• 文字、数字、特殊文字を含むことを推奨\n• 次のステップでメールに認証コードを送信します',
+  verificationTips:
+    '• 認証コードは10分間有効です\n• コードが届かない場合は、スパムフォルダーをご確認ください\n• パスワード変更後は再ログインが必要です',
 
   // ユーザー名検証
   usernameMinLength: 'ユーザー名は最低{min}文字必要です（現在{current}文字）',
@@ -118,14 +120,17 @@ const ja = {
   pendingWrites: '{{count}}件の保留中の書き込み',
   backToEdit: '編集に戻る',
   confirmChanges: '変更を確認',
-  verificationCodeHints: '• 認証コードは10分間有効です\n• コードが届かない場合は、スパムフォルダーをご確認ください\n• パスワード変更後は再ログインが必要です',
-  passwordHints: '• パスワードは最低6文字\n• 文字、数字、特殊文字を含むことを推奨\n• 次のステップでメールに認証コードを送信します',
+  verificationCodeHints:
+    '• 認証コードは10分間有効です\n• コードが届かない場合は、スパムフォルダーをご確認ください\n• パスワード変更後は再ログインが必要です',
+  passwordHints:
+    '• パスワードは最低6文字\n• 文字、数字、特殊文字を含むことを推奨\n• 次のステップでメールに認証コードを送信します',
   status: 'ステータス',
 
   // アカウント削除
   deleteAccount: 'アカウントを削除',
   deleteAccountTitle: 'アカウントを削除',
-  deleteAccountWarning: 'アカウントを削除すると、すべてのデータが永久に消去されます。この操作は取り消せません。',
+  deleteAccountWarning:
+    'アカウントを削除すると、すべてのデータが永久に消去されます。この操作は取り消せません。',
   selectDeleteReason: 'アカウントを削除する理由を選択してください',
   deleteReasonNotUseful: 'この製品はもう必要ない',
   deleteReasonFoundAlternative: 'より良い代替品を見つけた',
@@ -142,8 +147,10 @@ const ja = {
 
   // PC 重置設定
   resetSettings: '設定をリセット',
-  resetSettingsDescription: 'すべての設定データを削除して初期状態に戻します。Vaultのファイルには影響しません。再起動が必要です。',
-  resetSettingsConfirm: '設定をリセットしますか？\n\nすべての設定データが削除されます（Vaultのファイルには影響しません）。再起動後に反映されます。',
+  resetSettingsDescription:
+    'すべての設定データを削除して初期状態に戻します。Vaultのファイルには影響しません。再起動が必要です。',
+  resetSettingsConfirm:
+    '設定をリセットしますか？\n\nすべての設定データが削除されます（Vaultのファイルには影響しません）。再起動後に反映されます。',
   resetSettingsSuccess: 'リセット完了、アプリを再起動してください',
   resetSettingsFailed: 'リセットに失敗しました。後でもう一度お試しください',
   resetSettingsNotSupported: 'この環境ではこの操作はサポートされていません',
@@ -168,8 +175,10 @@ const ja = {
 
   // ========== モデル設定 ==========
   defaultModelLabel: 'デフォルトモデル（任意）',
-  defaultModelFormatHint: '形式：プロバイダーID/モデルID。空の場合、最初に有効なプロバイダーのデフォルトモデルが使用されます。',
-  defaultModelConfigDescription: '「AIプロバイダー」ページでプロバイダーとモデルを設定してから、ここでグローバルデフォルトモデルを設定してください。',
+  defaultModelFormatHint:
+    '形式：プロバイダーID/モデルID。空の場合、最初に有効なプロバイダーのデフォルトモデルが使用されます。',
+  defaultModelConfigDescription:
+    '「AIプロバイダー」ページでプロバイダーとモデルを設定してから、ここでグローバルデフォルトモデルを設定してください。',
 
   // ========== AIプロバイダー ==========
   sdkTypeOpenAICompatible: 'OpenAI互換',
@@ -255,7 +264,8 @@ const ja = {
   syncNow: '今すぐ同期',
   enableCloudSync: 'クラウド同期を有効にする',
   smartIndex: 'スマートインデックス',
-  smartIndexDescription: 'Markdownファイルのセマンティックインデックスを作成してスマート検索を有効にする',
+  smartIndexDescription:
+    'Markdownファイルのセマンティックインデックスを作成してスマート検索を有効にする',
   enableSmartIndex: 'スマートインデックスを有効にする',
   smartIndexAIDescription: 'AIを使用したセマンティック検索',
   indexedFiles: 'インデックス済みファイル',
@@ -364,6 +374,6 @@ const ja = {
   sandboxRemovePath: '削除',
   sandboxClearAllPaths: 'すべてクリア',
   sandboxClearAllConfirm: 'すべての承認済みパスをクリアしてよろしいですか？',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

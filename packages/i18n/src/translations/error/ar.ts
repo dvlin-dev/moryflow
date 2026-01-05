@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   generic: 'حدث خطأ',
@@ -28,6 +28,6 @@ const ar = {
   ossSecretNotConfigured: 'لم يتم توفير EXPO_PUBLIC_OSS_SECRET',
   uploadFailed: 'فشل الرفع',
   transferFailed: 'فشل النقل',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

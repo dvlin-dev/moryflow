@@ -230,6 +230,6 @@ const ja = {
   transcriptionFailedMessage: '音声転写に失敗しました。元の音声を保存しますか？',
   duration: '再生時間',
   audioFile: '音声ファイル',
-} as const
+} as const;
 
-export default ja
+export default ja;

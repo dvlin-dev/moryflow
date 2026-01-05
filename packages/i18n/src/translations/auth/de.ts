@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const de = {
   signIn: 'Anmelden',
@@ -169,7 +169,8 @@ const de = {
   upgrade: 'Upgrade',
   dangerZone: 'Gefahrenbereich',
   deleteAccount: 'Konto löschen',
-  deleteAccountWarning: 'Nach dem Löschen werden alle Daten dauerhaft gelöscht und können nicht wiederhergestellt werden',
-} as const satisfies Record<keyof typeof en, string>
+  deleteAccountWarning:
+    'Nach dem Löschen werden alle Daten dauerhaft gelöscht und können nicht wiederhergestellt werden',
+} as const satisfies Record<keyof typeof en, string>;
 
-export default de
+export default de;

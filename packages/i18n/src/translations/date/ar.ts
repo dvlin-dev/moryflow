@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   today: 'اليوم',
@@ -10,6 +10,6 @@ const ar = {
   thisMonth: 'هذا الشهر',
   lastMonth: 'الشهر الماضي',
   nextMonth: 'الشهر القادم',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

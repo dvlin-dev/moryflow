@@ -85,7 +85,9 @@ export const SyncCommitRequestSchema = z.object({
   vectorizeEnabled: z.boolean().optional().default(false),
 });
 
-export class SyncCommitRequestDto extends createZodDto(SyncCommitRequestSchema) {}
+export class SyncCommitRequestDto extends createZodDto(
+  SyncCommitRequestSchema,
+) {}
 
 // ==================== Response Schemas ====================
 

@@ -110,7 +110,9 @@ export class AdminController {
   @Public()
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const sessionToken = req.cookies?.[SESSION_COOKIE_NAME];
+    const sessionToken = (req.cookies as Record<string, string> | undefined)?.[
+      SESSION_COOKIE_NAME
+    ];
 
     if (sessionToken) {
       await this.adminService.adminLogout(sessionToken);
@@ -130,7 +132,7 @@ export class AdminController {
   @ApiResponse({ status: 401, description: '未认证' })
   @ApiResponse({ status: 403, description: '无管理员权限' })
   @Get('me')
-  async getCurrentUser(@CurrentUser() user: CurrentUserDto) {
+  getCurrentUser(@CurrentUser() user: CurrentUserDto) {
     return { user };
   }
 

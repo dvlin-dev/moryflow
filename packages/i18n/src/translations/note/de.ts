@@ -231,6 +231,6 @@ const de = {
   transcriptionFailedMessage: 'Sprachtranskription fehlgeschlagen. Original-Audio speichern?',
   duration: 'Dauer',
   audioFile: 'Audio-Datei',
-} as const
+} as const;
 
-export default de
+export default de;

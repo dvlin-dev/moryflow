@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ja = {
   newConversation: '新しい会話',
@@ -36,7 +36,8 @@ const ja = {
   newTitlePlaceholder: '新しい会話タイトルを入力',
   // エラー境界
   chatErrorTitle: 'チャットに問題が発生しました',
-  chatErrorDescription: 'チャットコンポーネントでエラーが発生しました。以下の操作で回復を試してください。',
+  chatErrorDescription:
+    'チャットコンポーネントでエラーが発生しました。以下の操作で回復を試してください。',
   reloadChat: 'チャットを再読み込み',
   backToChatList: 'チャットリストに戻る',
   chatSeoDescription: 'AIアシスタントとチャット',
@@ -117,7 +118,8 @@ const ja = {
   // ツール操作
   fileWritten: 'ファイルに書き込みました',
   targetFile: '対象ファイル：',
-  contentTooLong: '内容が長すぎるため切り捨てられました。ローカルファイルで全文を確認してください。',
+  contentTooLong:
+    '内容が長すぎるため切り捨てられました。ローカルファイルで全文を確認してください。',
   written: '書き込み済み',
   applyToFile: 'ファイルに適用',
   noTasks: 'タスクがありません',
@@ -136,6 +138,6 @@ const ja = {
   notConnected: '未接続',
   manageServer: 'このサーバーを管理',
   addMcpServer: 'MCPサーバーを追加',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ja
+export default ja;

@@ -43,7 +43,9 @@ export const SetAdminPermissionSchema = z.object({
   isAdmin: z.boolean(),
 });
 
-export class SetAdminPermissionDto extends createZodDto(SetAdminPermissionSchema) {}
+export class SetAdminPermissionDto extends createZodDto(
+  SetAdminPermissionSchema,
+) {}
 
 /**
  * 分页查询参数 - M7 Fix: 添加上限保护

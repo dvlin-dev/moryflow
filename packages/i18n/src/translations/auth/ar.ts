@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   signIn: 'تسجيل الدخول',
@@ -167,6 +167,6 @@ const ar = {
   dangerZone: 'منطقة الخطر',
   deleteAccount: 'حذف الحساب',
   deleteAccountWarning: 'بعد الحذف، سيتم مسح جميع البيانات نهائياً ولا يمكن استعادتها',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

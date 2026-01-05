@@ -24,7 +24,6 @@ const en = {
   enterCommand: 'Please enter a command',
   invalidUrlFormat: 'Invalid URL format',
   emailMismatch: 'Email does not match',
-} as const
+} as const;
 
-export default en
-
+export default en;

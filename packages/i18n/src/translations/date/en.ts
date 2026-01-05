@@ -8,7 +8,6 @@ const en = {
   thisMonth: 'This Month',
   lastMonth: 'Last Month',
   nextMonth: 'Next Month',
-} as const
+} as const;
 
-export default en
-
+export default en;

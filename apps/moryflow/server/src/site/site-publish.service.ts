@@ -335,7 +335,7 @@ export class SitePublishService {
 
       // 解析并更新字段
       const bodyStr = await getResult.Body.transformToString();
-      const meta: SiteMeta = JSON.parse(bodyStr);
+      const meta = JSON.parse(bodyStr) as SiteMeta;
 
       if (updates.status !== undefined) meta.status = updates.status;
       if (updates.title !== undefined) meta.title = updates.title;

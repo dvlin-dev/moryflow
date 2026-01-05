@@ -73,7 +73,8 @@ const ar = {
   resetDatabase: 'إعادة تعيين قاعدة البيانات',
   resetDatabaseTitle: 'إعادة تعيين قاعدة البيانات',
   resetDatabaseConfirm: 'هل أنت متأكد من أنك تريد إعادة تعيين قاعدة البيانات المحلية؟',
-  resetDatabaseWarning: 'سيؤدي هذا إلى مسح جميع البيانات المحلية بما في ذلك المحادثات والملاحظات وغيرها.',
+  resetDatabaseWarning:
+    'سيؤدي هذا إلى مسح جميع البيانات المحلية بما في ذلك المحادثات والملاحظات وغيرها.',
   resetDatabaseHint: 'سيتم مسح البيانات المحلية، لكن البيانات السحابية لن تتأثر',
   dangerousOperation: 'عملية خطيرة',
   resetting: 'جاري إعادة التعيين...',
@@ -176,6 +177,6 @@ const ar = {
   requestTimeout: 'انتهت مهلة الطلب، يرجى التحقق من الشبكة',
   networkError: 'فشل اتصال الشبكة، يرجى التحقق من إعدادات الشبكة',
   transcriptionFailed: 'فشل التحويل النصي، يرجى المحاولة مرة أخرى لاحقاً',
-} as const
+} as const;
 
-export default ar
+export default ar;

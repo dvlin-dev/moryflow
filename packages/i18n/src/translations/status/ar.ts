@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   online: 'متصل',
@@ -14,6 +14,6 @@ const ar = {
   uploading: 'جاري الرفع',
   downloading: 'جاري التحميل',
   processing: 'جاري المعالجة',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

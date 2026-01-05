@@ -5,7 +5,8 @@ const en = {
     notSupportedDescription: 'Apple Health is unavailable on this device.',
     notSupportedHint: 'Please use a supported iPhone or check the system settings.',
     permissionsTitle: 'Setup required',
-    permissionsDescription: 'Grant access so we can sync your activity. All data stays on this device.',
+    permissionsDescription:
+      'Grant access so we can sync your activity. All data stays on this device.',
     partiallyConnectedTitle: 'Partial access',
     connectedDescription: 'Syncing {{count}} health metrics from Apple Health.',
     connectedTitle: 'All set',
@@ -101,6 +102,6 @@ const en = {
   moodClassificationNegative: 'Low',
   moodClassificationUnknown: 'Unknown',
   moodScore: 'Score {{value}}',
-} as const
+} as const;
 
-export default en
+export default en;

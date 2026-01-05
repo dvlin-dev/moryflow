@@ -103,7 +103,7 @@ const translations = {
     membership: membershipZhCN,
     workspace: workspaceZhCN,
   },
-  'ja': {
+  ja: {
     common: commonJa,
     auth: authJa,
     chat: chatJa,
@@ -119,7 +119,7 @@ const translations = {
     membership: membershipEn,
     workspace: workspaceJa,
   },
-  'de': {
+  de: {
     common: commonDe,
     auth: authDe,
     chat: chatDe,
@@ -135,7 +135,7 @@ const translations = {
     membership: membershipEn,
     workspace: workspaceDe,
   },
-  'ar': {
+  ar: {
     common: commonAr,
     auth: authAr,
     chat: chatAr,

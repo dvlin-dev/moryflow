@@ -212,6 +212,7 @@ export class AiAdminService {
         maxContextTokens: data.maxContextTokens,
         maxOutputTokens: data.maxOutputTokens,
         // 使用 JSON.parse/stringify 确保类型兼容
+
         capabilitiesJson: JSON.parse(JSON.stringify(capabilitiesJson)),
         sortOrder: data.sortOrder,
       },

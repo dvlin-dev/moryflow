@@ -81,6 +81,8 @@ export class AdminPaymentService {
    * 注意：需要调用 Creem SDK 来实际取消
    */
   async cancelSubscription(id: string, dto: CancelSubscriptionDto) {
+    // dto 参数保留用于将来 Creem SDK 集成
+    void dto;
     const subscription = await this.prisma.subscription.findUnique({
       where: { id },
     });

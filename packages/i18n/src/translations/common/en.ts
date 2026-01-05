@@ -176,6 +176,6 @@ const en = {
   requestTimeout: 'Request timeout, please check your network',
   networkError: 'Network connection failed, please check your network settings',
   transcriptionFailed: 'Transcription failed, please try again later',
-} as const
+} as const;
 
-export default en
+export default en;

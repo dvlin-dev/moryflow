@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   newConversation: 'محادثة جديدة',
@@ -30,8 +30,10 @@ const ar = {
   // الواجهة والحوارات
   renameConversationTitle: 'إعادة تسمية المحادثة',
   deleteConfirmTitle: 'تأكيد الحذف',
-  deleteConfirmDescription: 'هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد من أنك تريد حذف هذه المحادثة؟',
-  deleteConfirmWithTitle: 'هل أنت متأكد من أنك تريد حذف المحادثة "{{title}}"؟ هذا الإجراء لا يمكن التراجع عنه.',
+  deleteConfirmDescription:
+    'هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد من أنك تريد حذف هذه المحادثة؟',
+  deleteConfirmWithTitle:
+    'هل أنت متأكد من أنك تريد حذف المحادثة "{{title}}"؟ هذا الإجراء لا يمكن التراجع عنه.',
   titleLabel: 'العنوان',
   newTitlePlaceholder: 'أدخل عنوان المحادثة الجديد',
   // حدود الخطأ
@@ -136,6 +138,6 @@ const ar = {
   notConnected: 'غير متصل',
   manageServer: 'إدارة هذا الخادم',
   addMcpServer: 'إضافة خادم MCP',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

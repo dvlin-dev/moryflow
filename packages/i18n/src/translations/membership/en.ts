@@ -24,6 +24,6 @@ const en = {
   viewPlans: 'View Plans',
   loginNow: 'Login Now',
   later: 'Maybe Later',
-} as const
+} as const;
 
-export default en
+export default en;

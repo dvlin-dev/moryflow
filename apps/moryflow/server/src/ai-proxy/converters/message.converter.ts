@@ -70,7 +70,9 @@ export class MessageConverter {
         return this.convertToolMessage(msg, toolCallMap);
       default:
         // TypeScript 确保这里不会到达
-        throw new Error(`Unknown message role: ${msg.role}`);
+        throw new Error(
+          `Unknown message role: ${(msg as { role: string }).role}`,
+        );
     }
   }
 

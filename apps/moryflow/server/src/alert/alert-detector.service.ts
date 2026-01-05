@@ -15,7 +15,6 @@ import { AlertNotificationService } from './alert-notification.service';
 import {
   AlertRuleType,
   AlertLevel,
-  AgentSpanStatus,
   AgentTraceStatus,
 } from '../../generated/prisma/client';
 import type { AlertRuleCondition, AlertContext } from './dto';

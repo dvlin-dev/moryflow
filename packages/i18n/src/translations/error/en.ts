@@ -12,7 +12,8 @@ const en = {
   maintenance: 'Service under maintenance',
   unknown: 'Unknown error',
   // UI error boundary additions
-  appErrorDescription: 'Sorry, the application encountered an unexpected error. We have logged this issue.',
+  appErrorDescription:
+    'Sorry, the application encountered an unexpected error. We have logged this issue.',
   devErrorDetails: 'Error details (development):',
   viewStackTrace: 'View stack trace',
   viewComponentStack: 'View component stack',
@@ -26,6 +27,6 @@ const en = {
   ossSecretNotConfigured: 'EXPO_PUBLIC_OSS_SECRET not configured',
   uploadFailed: 'Upload failed',
   transferFailed: 'Transfer failed',
-} as const
+} as const;
 
-export default en
+export default en;

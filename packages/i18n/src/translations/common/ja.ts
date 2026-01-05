@@ -176,6 +176,6 @@ const ja = {
   requestTimeout: 'リクエストがタイムアウトしました。ネットワークを確認してください',
   networkError: 'ネットワーク接続に失敗しました。ネットワーク設定を確認してください',
   transcriptionFailed: '文字起こしに失敗しました。後でもう一度お試しください',
-} as const
+} as const;
 
-export default ja
+export default ja;

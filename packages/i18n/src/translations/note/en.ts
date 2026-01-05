@@ -230,6 +230,6 @@ const en = {
   transcriptionFailedMessage: 'Voice transcription failed. Save original audio?',
   duration: 'Duration',
   audioFile: 'Audio File',
-} as const
+} as const;
 
-export default en
+export default en;

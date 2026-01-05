@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const ar = {
   // حالة التسجيل
@@ -52,6 +52,6 @@ const ar = {
   recordingResumeError: 'فشل في استئناف التسجيل',
   recordingStopError: 'فشل في إيقاف التسجيل',
   recordingCancelError: 'فشل في التنظيف أثناء إلغاء التسجيل',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default ar
+export default ar;

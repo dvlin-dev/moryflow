@@ -1,4 +1,4 @@
-import en from './en'
+import en from './en';
 
 const zhCN = {
   ok: '确定',
@@ -178,6 +178,6 @@ const zhCN = {
   requestTimeout: '请求超时，请检查网络后重试',
   networkError: '网络连接失败，请检查网络设置',
   transcriptionFailed: '转录失败，请稍后重试',
-} as const satisfies Record<keyof typeof en, string>
+} as const satisfies Record<keyof typeof en, string>;
 
-export default zhCN
+export default zhCN;

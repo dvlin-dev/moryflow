@@ -78,8 +78,16 @@ export class SyncController {
   @ApiOperation({ summary: '获取 Vault 文件列表' })
   @ApiOkResponse({ description: '文件列表' })
   @ApiParam({ name: 'vaultId', description: 'Vault ID' })
-  @ApiQuery({ name: 'limit', required: false, description: '每页数量（默认 100）' })
-  @ApiQuery({ name: 'offset', required: false, description: '偏移量（默认 0）' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '每页数量（默认 100）',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: '偏移量（默认 0）',
+  })
   async listFiles(
     @CurrentUser() user: CurrentUserDto,
     @Param('vaultId') vaultId: string,

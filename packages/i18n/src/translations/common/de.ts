@@ -158,7 +158,8 @@ const de = {
   renameTitle: 'Umbenennen',
   renamePrompt: 'Neuen Namen eingeben',
   deleteTitle: '{{type}} löschen',
-  deleteFileConfirm: 'Sind Sie sicher, dass Sie "{{name}}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+  deleteFileConfirm:
+    'Sind Sie sicher, dass Sie "{{name}}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
   renameFailed: 'Umbenennen fehlgeschlagen',
   renameFailedMessage: 'Umbenennen nicht möglich, bitte versuchen Sie es erneut',
   deleteFailed: 'Löschen fehlgeschlagen',
@@ -174,8 +175,9 @@ const de = {
   notLoggedIn: 'Nicht eingeloggt, bitte melden Sie sich zuerst an',
   sessionExpired: 'Sitzung abgelaufen, bitte erneut anmelden',
   requestTimeout: 'Anfrage-Timeout, bitte überprüfen Sie Ihr Netzwerk',
-  networkError: 'Netzwerkverbindung fehlgeschlagen, bitte überprüfen Sie Ihre Netzwerkeinstellungen',
+  networkError:
+    'Netzwerkverbindung fehlgeschlagen, bitte überprüfen Sie Ihre Netzwerkeinstellungen',
   transcriptionFailed: 'Transkription fehlgeschlagen, bitte versuchen Sie es später erneut',
-} as const
+} as const;
 
-export default de
+export default de;

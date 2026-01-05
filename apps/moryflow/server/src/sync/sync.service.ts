@@ -456,7 +456,7 @@ export class SyncService {
 
       default: {
         const _exhaustive: never = relation;
-        throw new Error(`Unknown clock relation: ${_exhaustive}`);
+        throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
       }
     }
   }
@@ -491,7 +491,7 @@ export class SyncService {
 
       default: {
         const _exhaustive: never = relation;
-        throw new Error(`Unknown clock relation: ${_exhaustive}`);
+        throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
       }
     }
   }
@@ -532,7 +532,7 @@ export class SyncService {
 
       default: {
         const _exhaustive: never = relation;
-        throw new Error(`Unknown clock relation: ${_exhaustive}`);
+        throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
       }
     }
   }
