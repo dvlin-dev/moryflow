@@ -64,7 +64,7 @@
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
 > - Aiget 是基础设施平台，所有 API 服务统一使用 \*.aiget.dev 子域名
-> - API 路径规范：`{product}.aiget.dev/v1/...`（无 `/api` 前缀）
+> - API 路径规范：`{product}.aiget.dev/api/v1/...`（带 `/api` 前缀）
 
 ### API Key 前缀
 
@@ -211,13 +211,13 @@ Aiget/
 
 ## 文档索引
 
-| 文档                                                                           | 说明                           |
-| ------------------------------------------------------------------------------ | ------------------------------ |
-| [`docs/architecture/unified-identity-platform.md`](./docs/architecture/unified-identity-platform.md) | 统一身份平台（UIP）入口与关键约束 |
-| [`docs/architecture/subdomain-uip-architecture.md`](./docs/architecture/subdomain-uip-architecture.md) | 子域名统一用户系统架构（当前默认） |
-| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md) | 功能：统一用户系统（注册/登录/会话/Token 策略） |
-| `apps/*/CLAUDE.md`                                                             | 各应用的详细文档               |
-| `packages/*/CLAUDE.md`                                                         | 各包的详细文档                 |
+| 文档                                                                                                   | 说明                                            |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| [`docs/architecture/unified-identity-platform.md`](./docs/architecture/unified-identity-platform.md)   | 统一身份平台（UIP）入口与关键约束               |
+| [`docs/architecture/subdomain-uip-architecture.md`](./docs/architecture/subdomain-uip-architecture.md) | 子域名统一用户系统架构（当前默认）              |
+| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                     | 功能：统一用户系统（注册/登录/会话/Token 策略） |
+| `apps/*/CLAUDE.md`                                                                                     | 各应用的详细文档                                |
+| `packages/*/CLAUDE.md`                                                                                 | 各包的详细文档                                  |
 
 ## 外部仓库快照（仅查阅）
 
