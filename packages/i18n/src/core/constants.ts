@@ -6,7 +6,7 @@ import type { SupportedLanguage, LanguageConfig, TranslationNamespace } from './
 
 // 支持的语言配置
 export const SUPPORTED_LANGUAGES: Record<SupportedLanguage, LanguageConfig> = {
-  'en': {
+  en: {
     code: 'en',
     name: 'English',
     nativeName: 'English',
@@ -22,7 +22,7 @@ export const SUPPORTED_LANGUAGES: Record<SupportedLanguage, LanguageConfig> = {
     dateLocale: 'zhCN',
     direction: 'ltr',
   },
-  'ja': {
+  ja: {
     code: 'ja',
     name: 'Japanese',
     nativeName: '日本語',
@@ -30,7 +30,7 @@ export const SUPPORTED_LANGUAGES: Record<SupportedLanguage, LanguageConfig> = {
     dateLocale: 'ja',
     direction: 'ltr',
   },
-  'de': {
+  de: {
     code: 'de',
     name: 'German',
     nativeName: 'Deutsch',
@@ -38,7 +38,7 @@ export const SUPPORTED_LANGUAGES: Record<SupportedLanguage, LanguageConfig> = {
     dateLocale: 'de',
     direction: 'ltr',
   },
-  'ar': {
+  ar: {
     code: 'ar',
     name: 'Arabic',
     nativeName: 'العربية',
@@ -147,11 +147,11 @@ export const DATE_FORMAT_PATTERNS_AR = {
 
 // 货币代码映射
 export const CURRENCY_CODES: Record<SupportedLanguage, string> = {
-  'en': 'USD',
+  en: 'USD',
   'zh-CN': 'CNY',
-  'ja': 'JPY',
-  'de': 'EUR',
-  'ar': 'SAR',
+  ja: 'JPY',
+  de: 'EUR',
+  ar: 'SAR',
 };
 
 // 插值占位符模式
@@ -162,6 +162,5 @@ export const NAMESPACE_SEPARATOR = '.';
 
 // 开发环境标志（兼容 React Native）
 declare const __DEV__: boolean | undefined;
-export const IS_DEV = typeof __DEV__ !== 'undefined'
-  ? __DEV__
-  : process.env.NODE_ENV === 'development';
+export const IS_DEV =
+  typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV === 'development';

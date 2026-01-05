@@ -18,8 +18,8 @@
       "@pc/*": ["src/renderer/*"],
       "@/*": ["src/renderer/*"],
       "@shared/*": ["src/shared/*"],
-      "@aiget/ui/*": ["../../packages/ui/src/*"],
-      "@aiget/tiptap/*": ["../../packages/tiptap/src/*"],
+      "@aiget/ui/*": ["../../../packages/ui/src/*"],
+      "@aiget/tiptap/*": ["../../../packages/tiptap/src/*"],
       "react/jsx-runtime.js": ["src/types/react/jsx-runtime.js"]
     }
   },
