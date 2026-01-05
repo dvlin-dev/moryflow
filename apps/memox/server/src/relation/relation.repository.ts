@@ -15,9 +15,9 @@ export type RelationWithEntities = Relation & {
 };
 
 @Injectable()
-export class RelationRepository extends BaseRepository<'Relation'> {
+export class RelationRepository extends BaseRepository<Relation> {
   constructor(prisma: PrismaService) {
-    super(prisma, prisma.relation as unknown as any);
+    super(prisma, prisma.relation);
   }
 
   /**

@@ -1,95 +1,72 @@
 /**
- * [INPUT]: apiKeyId + Prisma 模型 Delegate（MemoryDelegate/EntityDelegate/RelationDelegate...）
- * [OUTPUT]: 带 apiKeyId 隔离的 CRUD 结果（类型由 Prisma 推断）
+ * [INPUT]: apiKeyId + Prisma 模型 Delegate
+ * [OUTPUT]: 带 apiKeyId 隔离的 CRUD 结果（类型由具体 Repository 指定）
  * [POS]: 带数据隔离的基础 Repository（所有带 apiKeyId 的核心表应继承）
  *
  * 职责：提供带 apiKeyId 隔离的基础 CRUD 操作
  * 所有核心数据表的 Repository 应继承此类
  *
- * 注意：通过 Prisma.Args / Prisma.Result 推断参数与返回，避免 unknown/any
+ * 设计策略（方案 A）：使用显式模型类型泛型，而非 Prisma TypeMap 抽象
+ * - TModel：具体模型类型（如 Entity, Memory, Relation）
+ * - 避免 TypeMap 推断导致字段变成 optional 的问题
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及 apps/memox/server/src/common/CLAUDE.md
  */
 
 import { NotFoundException } from '@nestjs/common';
-import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-type ModelName = keyof Prisma.TypeMap['model'];
-type ModelTypeMap<TModel extends ModelName> = Prisma.TypeMap['model'][TModel];
+/**
+ * 基础模型约束：必须有 id 和 apiKeyId 字段
+ */
+interface BaseModel {
+  id: string;
+  apiKeyId: string;
+}
 
-type OperationArgs<
-  TModel extends ModelName,
-  TOperation extends keyof ModelTypeMap<TModel>['operations'],
-> = ModelTypeMap<TModel>['operations'][TOperation]['args'];
+/**
+ * Prisma Delegate 接口（简化版，使用 any 类型处理复杂的 Prisma 泛型）
+ */
+interface PrismaDelegate {
+  findMany(args: unknown): Promise<unknown[]>;
+  findFirst(args: unknown): Promise<unknown>;
+  create(args: unknown): Promise<unknown>;
+  createMany(args: unknown): Promise<{ count: number }>;
+  update(args: unknown): Promise<unknown>;
+  deleteMany(args: unknown): Promise<{ count: number }>;
+  count(args: unknown): Promise<number>;
+}
 
-type OperationResult<
-  TModel extends ModelName,
-  TOperation extends keyof ModelTypeMap<TModel>['operations'],
-> = ModelTypeMap<TModel>['operations'][TOperation]['result'];
+/**
+ * 查询选项类型（不含 select/include/omit）
+ */
+export interface FindManyOptions<TWhere = Record<string, unknown>> {
+  where?: TWhere;
+  orderBy?: unknown;
+  take?: number;
+  skip?: number;
+  cursor?: unknown;
+}
 
-type WithoutSelectIncludeOmit<TArgs> = Omit<
-  TArgs,
-  'select' | 'include' | 'omit'
->;
-type WhereInput<TArgs> = TArgs extends { where?: infer W } ? W : never;
-type EnsureHasApiKeyId<TWhere> = TWhere extends { apiKeyId?: unknown }
-  ? TWhere
-  : never;
-type DataInput<TArgs> = TArgs extends { data: infer D } ? D : never;
-type ArrayElement<T> =
-  T extends ReadonlyArray<infer U> ? U : T extends (infer U)[] ? U : T;
-type WithoutApiKeyId<T> = T extends object ? Omit<T, 'apiKeyId'> : T;
-
-type FindManyArgs<TModel extends ModelName> = WithoutSelectIncludeOmit<
-  OperationArgs<TModel, 'findMany'>
->;
-type FindFirstArgs<TModel extends ModelName> = WithoutSelectIncludeOmit<
-  OperationArgs<TModel, 'findFirst'>
->;
-type CreateArgs<TModel extends ModelName> = WithoutSelectIncludeOmit<
-  OperationArgs<TModel, 'create'>
->;
-type CreateManyArgs<TModel extends ModelName> = WithoutSelectIncludeOmit<
-  OperationArgs<TModel, 'createMany'>
->;
-type UpdateArgs<TModel extends ModelName> = WithoutSelectIncludeOmit<
-  OperationArgs<TModel, 'update'>
->;
-type DeleteManyArgs<TModel extends ModelName> = WithoutSelectIncludeOmit<
-  OperationArgs<TModel, 'deleteMany'>
+/**
+ * 创建数据类型（不含 apiKeyId）
+ */
+export type CreateData<TModel> = Omit<
+  TModel,
+  'id' | 'apiKeyId' | 'createdAt' | 'updatedAt'
 >;
 
-type ModelRecord<TModel extends ModelName> = NonNullable<
-  OperationResult<TModel, 'findFirst'>
-> & { id: string };
+/**
+ * 更新数据类型（部分字段，不含 apiKeyId）
+ */
+export type UpdateData<TModel> = Partial<
+  Omit<TModel, 'id' | 'apiKeyId' | 'createdAt' | 'updatedAt'>
+>;
 
-type CrudDelegate<TModel extends ModelName> = {
-  findMany(
-    args: FindManyArgs<TModel>,
-  ): Prisma.PrismaPromise<OperationResult<TModel, 'findMany'>>;
-  findFirst(
-    args: FindFirstArgs<TModel>,
-  ): Prisma.PrismaPromise<OperationResult<TModel, 'findFirst'>>;
-  create(
-    args: CreateArgs<TModel>,
-  ): Prisma.PrismaPromise<OperationResult<TModel, 'create'>>;
-  createMany(
-    args: CreateManyArgs<TModel>,
-  ): Prisma.PrismaPromise<OperationResult<TModel, 'createMany'>>;
-  update(
-    args: UpdateArgs<TModel>,
-  ): Prisma.PrismaPromise<OperationResult<TModel, 'update'>>;
-  deleteMany(
-    args: DeleteManyArgs<TModel>,
-  ): Prisma.PrismaPromise<OperationResult<TModel, 'deleteMany'>>;
-  count(args: { where?: unknown; select: true }): Prisma.PrismaPromise<number>;
-};
-
-export abstract class BaseRepository<TModel extends ModelName> {
+export abstract class BaseRepository<TModel extends BaseModel> {
   constructor(
     protected readonly prisma: PrismaService,
-    protected readonly delegate: CrudDelegate<TModel>,
+    protected readonly delegate: PrismaDelegate,
   ) {}
 
   /**
@@ -102,11 +79,11 @@ export abstract class BaseRepository<TModel extends ModelName> {
   /**
    * 自动添加 apiKeyId 过滤条件
    */
-  protected withApiKeyFilter<TWhere extends { apiKeyId?: unknown }>(
+  protected withApiKeyFilter<TWhere extends Record<string, unknown>>(
     apiKeyId: string,
     where?: TWhere,
-  ): TWhere {
-    return { ...(where ?? {}), apiKeyId } as TWhere;
+  ): TWhere & { apiKeyId: string } {
+    return { ...(where ?? ({} as TWhere)), apiKeyId };
   }
 
   /**
@@ -114,20 +91,15 @@ export abstract class BaseRepository<TModel extends ModelName> {
    */
   async findMany(
     apiKeyId: string,
-    options?: FindManyArgs<TModel>,
-  ): Promise<OperationResult<TModel, 'findMany'>> {
-    type TWhere = EnsureHasApiKeyId<WhereInput<FindManyArgs<TModel>>>;
-
-    const resolvedOptions = (options ?? {}) as FindManyArgs<TModel>;
+    options?: FindManyOptions,
+  ): Promise<TModel[]> {
+    const resolvedOptions = options ?? {};
     const payload = {
       ...resolvedOptions,
-      where: this.withApiKeyFilter(
-        apiKeyId,
-        resolvedOptions.where as TWhere | undefined,
-      ),
-    } as FindManyArgs<TModel>;
+      where: this.withApiKeyFilter(apiKeyId, resolvedOptions.where),
+    };
 
-    return this.delegate.findMany(payload);
+    return this.delegate.findMany(payload) as Promise<TModel[]>;
   }
 
   /**
@@ -135,54 +107,46 @@ export abstract class BaseRepository<TModel extends ModelName> {
    */
   async findOne(
     apiKeyId: string,
-    where: EnsureHasApiKeyId<WhereInput<FindFirstArgs<TModel>>>,
-  ): Promise<OperationResult<TModel, 'findFirst'>> {
+    where: Record<string, unknown>,
+  ): Promise<TModel | null> {
     const payload = {
       where: this.withApiKeyFilter(apiKeyId, where),
-    } as FindFirstArgs<TModel>;
+    };
 
-    return this.delegate.findFirst(payload);
+    return this.delegate.findFirst(payload) as Promise<TModel | null>;
   }
 
   /**
    * 根据 ID 查询单条记录（带数据隔离）
    */
-  async findById(
-    apiKeyId: string,
-    id: string,
-  ): Promise<OperationResult<TModel, 'findFirst'>> {
-    return this.findOne(apiKeyId, { id } as unknown as EnsureHasApiKeyId<
-      WhereInput<FindFirstArgs<TModel>>
-    >);
+  async findById(apiKeyId: string, id: string): Promise<TModel | null> {
+    return this.findOne(apiKeyId, { id });
   }
 
   /**
    * 创建记录（自动注入 apiKeyId）
    */
-  async create(
-    apiKeyId: string,
-    data: WithoutApiKeyId<DataInput<CreateArgs<TModel>>>,
-  ): Promise<OperationResult<TModel, 'create'>> {
+  async create(apiKeyId: string, data: CreateData<TModel>): Promise<TModel> {
     const payload = {
       data: { ...(data as Record<string, unknown>), apiKeyId },
-    } as CreateArgs<TModel>;
+    };
 
-    return this.delegate.create(payload);
+    return this.delegate.create(payload) as Promise<TModel>;
   }
 
   /**
    * 批量创建记录（自动注入 apiKeyId）
    */
-  createMany(
+  async createMany(
     apiKeyId: string,
-    data: WithoutApiKeyId<ArrayElement<DataInput<CreateManyArgs<TModel>>>>[],
-  ): Promise<OperationResult<TModel, 'createMany'>> {
+    data: CreateData<TModel>[],
+  ): Promise<{ count: number }> {
     const payload = {
       data: data.map((item) => ({
         ...(item as Record<string, unknown>),
         apiKeyId,
       })),
-    } as CreateManyArgs<TModel>;
+    };
 
     return this.delegate.createMany(payload);
   }
@@ -192,22 +156,21 @@ export abstract class BaseRepository<TModel extends ModelName> {
    */
   async update(
     apiKeyId: string,
-    where: EnsureHasApiKeyId<WhereInput<FindFirstArgs<TModel>>>,
-    data: WithoutApiKeyId<DataInput<UpdateArgs<TModel>>>,
-  ): Promise<OperationResult<TModel, 'update'>> {
+    where: Record<string, unknown>,
+    data: UpdateData<TModel>,
+  ): Promise<TModel> {
     // 先验证记录属于该 apiKeyId
     const existing = await this.findOne(apiKeyId, where);
     if (!existing) {
       throw new NotFoundException('Record not found');
     }
-    const record = existing as ModelRecord<TModel>;
 
     const payload = {
-      where: { id: record.id },
+      where: { id: existing.id },
       data,
-    } as UpdateArgs<TModel>;
+    };
 
-    return this.delegate.update(payload);
+    return this.delegate.update(payload) as Promise<TModel>;
   }
 
   /**
@@ -216,13 +179,9 @@ export abstract class BaseRepository<TModel extends ModelName> {
   async updateById(
     apiKeyId: string,
     id: string,
-    data: WithoutApiKeyId<DataInput<UpdateArgs<TModel>>>,
-  ): Promise<OperationResult<TModel, 'update'>> {
-    return this.update(
-      apiKeyId,
-      { id } as unknown as EnsureHasApiKeyId<WhereInput<FindFirstArgs<TModel>>>,
-      data,
-    );
+    data: UpdateData<TModel>,
+  ): Promise<TModel> {
+    return this.update(apiKeyId, { id }, data);
   }
 
   /**
@@ -230,11 +189,11 @@ export abstract class BaseRepository<TModel extends ModelName> {
    */
   async delete(
     apiKeyId: string,
-    where: EnsureHasApiKeyId<WhereInput<DeleteManyArgs<TModel>>>,
+    where: Record<string, unknown>,
   ): Promise<void> {
     const payload = {
-      where: this.withApiKeyFilter(apiKeyId, where ?? {}),
-    } as DeleteManyArgs<TModel>;
+      where: this.withApiKeyFilter(apiKeyId, where),
+    };
 
     await this.delegate.deleteMany(payload);
   }
@@ -243,22 +202,21 @@ export abstract class BaseRepository<TModel extends ModelName> {
    * 根据 ID 删除记录（带数据隔离）
    */
   async deleteById(apiKeyId: string, id: string): Promise<void> {
-    await this.delete(apiKeyId, { id } as unknown as EnsureHasApiKeyId<
-      WhereInput<DeleteManyArgs<TModel>>
-    >);
+    await this.delete(apiKeyId, { id });
   }
 
   /**
    * 统计记录数（带数据隔离）
    */
-  count(
+  async count(
     apiKeyId: string,
-    where?: EnsureHasApiKeyId<WhereInput<OperationArgs<TModel, 'count'>>>,
+    where?: Record<string, unknown>,
   ): Promise<number> {
-    return this.delegate.count({
+    const payload = {
       where: this.withApiKeyFilter(apiKeyId, where ?? {}),
-      select: true,
-    });
+    };
+
+    return this.delegate.count(payload);
   }
 
   /**
@@ -266,7 +224,7 @@ export abstract class BaseRepository<TModel extends ModelName> {
    */
   async exists(
     apiKeyId: string,
-    where: EnsureHasApiKeyId<WhereInput<OperationArgs<TModel, 'count'>>>,
+    where: Record<string, unknown>,
   ): Promise<boolean> {
     const count = await this.count(apiKeyId, where);
     return count > 0;

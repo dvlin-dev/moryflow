@@ -29,7 +29,7 @@ export class RelationService {
       sourceId: dto.sourceId,
       targetId: dto.targetId,
       type: dto.type,
-      properties: dto.properties,
+      properties: dto.properties ?? null,
       confidence: dto.confidence ?? 1.0,
       validFrom: dto.validFrom ? new Date(dto.validFrom) : null,
       validTo: dto.validTo ? new Date(dto.validTo) : null,

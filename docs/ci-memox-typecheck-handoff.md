@@ -2,7 +2,7 @@
 title: CI Handoff - memox-server typecheck failures
 date: 2026-01-05
 scope: memox-server, model-registry-data
-status: in-progress (typecheck still failing)
+status: ✅ completed
 ---
 
 # 背景
@@ -128,3 +128,47 @@ pnpm --filter @aiget/memox-server typecheck 2>&1 | rg "error TS" | wc -l
    - `pnpm lint`
    - `pnpm typecheck`
 4. 最后再处理 warn（当前可以先不处理 warn）
+
+---
+
+# Progress Log
+
+## 2026-01-05 - 完成修复
+
+**执行者**: Claude (claude/fix-memox-typecheck-7Gz8p)
+
+**修复前**: 24 个 TypeScript 错误
+
+**采用方案**: 方案 A - 显式模型类型泛型
+
+**改动摘要**:
+
+1. **重写 `BaseRepository`** (`apps/memox/server/src/common/base.repository.ts`)
+   - 移除 Prisma TypeMap 抽象，改用简化的 `TModel extends BaseModel` 泛型
+   - 使用 `PrismaDelegate` 接口处理 CRUD 操作
+   - 返回类型由具体 Repository 传入的模型类型决定，避免字段被推成 optional
+
+2. **更新各 Repository 继承方式**:
+   - `EntityRepository extends BaseRepository<Entity>` (原 `BaseRepository<'Entity'>`)
+   - `MemoryRepository extends BaseRepository<Memory>` (原 `BaseRepository<'Memory'>`)
+   - `RelationRepository extends BaseRepository<Relation>` (原 `BaseRepository<'Relation'>`)
+   - 移除 `as unknown as any` 类型断言
+
+3. **修复 properties 字段类型**:
+   - `entity.service.ts`: `properties: dto.properties ?? null`
+   - `relation.service.ts`: `properties: dto.properties ?? null`
+   - 将 `undefined` 转换为 `null` 以匹配 Prisma JSON 类型
+
+4. **修复 lint 错误**:
+   - 移除 `Promise<unknown | null>` 中的冗余 `| null`（`unknown` 已包含 `null`）
+
+**修复后**: 0 个 TypeScript 错误，lint 通过
+
+**验证命令**:
+
+```bash
+pnpm --filter @aiget/memox-server typecheck  # ✅ 通过
+pnpm --filter @aiget/memox-server lint       # ✅ 通过
+pnpm lint                                     # ✅ 通过
+pnpm typecheck                                # ✅ 通过
+```

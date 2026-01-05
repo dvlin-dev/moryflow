@@ -42,7 +42,7 @@ export class EntityService {
       userId: dto.userId,
       type: dto.type,
       name: dto.name,
-      properties: dto.properties,
+      properties: dto.properties ?? null,
       confidence: dto.confidence ?? 1.0,
     });
 
