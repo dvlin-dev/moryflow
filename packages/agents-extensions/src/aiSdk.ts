@@ -54,16 +54,12 @@ function extractTokenCounts(usage: LanguageModelV3Usage): {
 // ============ 类型守卫函数 ============
 
 /** 检查 LanguageModelV3Content 是否为 tool-call 类型 */
-function isToolCallContent(
-  content: LanguageModelV3Content,
-): content is LanguageModelV3ToolCall {
+function isToolCallContent(content: LanguageModelV3Content): content is LanguageModelV3ToolCall {
   return content.type === 'tool-call';
 }
 
 /** 检查 LanguageModelV3Content 是否为 text 类型 */
-function isTextContent(
-  content: LanguageModelV3Content,
-): content is LanguageModelV3Text {
+function isTextContent(content: LanguageModelV3Content): content is LanguageModelV3Text {
   return content.type === 'text';
 }
 
@@ -71,10 +67,7 @@ function isTextContent(
 
 type TextDeltaPart = Extract<LanguageModelV3StreamPart, { type: 'text-delta' }>;
 type ToolCallPart = Extract<LanguageModelV3StreamPart, { type: 'tool-call' }>;
-type ResponseMetadataPart = Extract<
-  LanguageModelV3StreamPart,
-  { type: 'response-metadata' }
->;
+type ResponseMetadataPart = Extract<LanguageModelV3StreamPart, { type: 'response-metadata' }>;
 type FinishPart = Extract<LanguageModelV3StreamPart, { type: 'finish' }>;
 
 /**
@@ -85,7 +78,7 @@ type FinishPart = Extract<LanguageModelV3StreamPart, { type: 'finish' }>;
  * @returns The list of language model messages.
  */
 export function itemsToLanguageModelMessages(
-  items: protocol.ModelItem[],
+  items: protocol.ModelItem[]
 ): LanguageModelV3Message[] {
   const messages: LanguageModelV3Message[] = [];
   let currentAssistantMessage: LanguageModelV3Message | undefined;
@@ -124,7 +117,7 @@ export function itemsToLanguageModelMessages(
                   if (c.type === 'input_image') {
                     if (typeof c.image !== 'string') {
                       throw new UserError(
-                        'Only image URLs/base64 strings are supported for user inputs.',
+                        'Only image URLs/base64 strings are supported for user inputs.'
                       );
                     }
 
@@ -304,9 +297,7 @@ export function itemsToLanguageModelMessages(
  *
  * @param handoff - The handoff to convert.
  */
-function handoffToLanguageModelTool(
-  handoff: SerializedHandoff,
-): LanguageModelV3FunctionTool {
+function handoffToLanguageModelTool(handoff: SerializedHandoff): LanguageModelV3FunctionTool {
   return {
     type: 'function',
     name: handoff.toolName,
@@ -316,7 +307,7 @@ function handoffToLanguageModelTool(
 }
 
 function convertToAiSdkOutput(
-  output: protocol.FunctionCallResultItem['output'],
+  output: protocol.FunctionCallResultItem['output']
 ): LanguageModelV3ToolResultPart['output'] {
   if (typeof output === 'string') {
     return { type: 'text', value: output };
@@ -330,7 +321,7 @@ function convertToAiSdkOutput(
     }
     if (output.type === 'image' || output.type === 'file') {
       const structuredOutputs = convertLegacyToolOutputContent(
-        output as protocol.ToolCallOutputContent,
+        output as protocol.ToolCallOutputContent
       );
       return convertStructuredOutputsToAiSdkOutput(structuredOutputs);
     }
@@ -343,7 +334,7 @@ function convertToAiSdkOutput(
  * bridge can treat all tool results uniformly.
  */
 function convertLegacyToolOutputContent(
-  output: protocol.ToolCallOutputContent,
+  output: protocol.ToolCallOutputContent
 ): protocol.ToolCallStructuredOutput[] {
   if (output.type === 'text') {
     const structured: protocol.InputText = {
@@ -370,14 +361,10 @@ function convertLegacyToolOutputContent(
       if ('url' in output.image && typeof output.image.url === 'string') {
         structured.image = output.image.url;
       } else if ('data' in output.image) {
-        const mediaType =
-          'mediaType' in output.image ? output.image.mediaType : undefined;
+        const mediaType = 'mediaType' in output.image ? output.image.mediaType : undefined;
         if (typeof output.image.data === 'string' && output.image.data.length > 0) {
           structured.image = formatInlineData(output.image.data, mediaType);
-        } else if (
-          output.image.data instanceof Uint8Array &&
-          output.image.data.length > 0
-        ) {
+        } else if (output.image.data instanceof Uint8Array && output.image.data.length > 0) {
           structured.image = formatInlineData(output.image.data, mediaType);
         }
       } else if ('fileId' in output.image && typeof output.image.fileId === 'string') {
@@ -393,9 +380,7 @@ function convertLegacyToolOutputContent(
   if (output.type === 'file') {
     return [];
   }
-  throw new UserError(
-    `Unsupported tool output type: ${JSON.stringify(output)}`,
-  );
+  throw new UserError(`Unsupported tool output type: ${JSON.stringify(output)}`);
 }
 
 function schemaAcceptsObject(schema: JSONSchema7 | undefined): boolean {
@@ -413,9 +398,7 @@ function schemaAcceptsObject(schema: JSONSchema7 | undefined): boolean {
   return Boolean(schema.properties || schema.additionalProperties);
 }
 
-function expectsObjectArguments(
-  tool: SerializedTool | SerializedHandoff | undefined,
-): boolean {
+function expectsObjectArguments(tool: SerializedTool | SerializedHandoff | undefined): boolean {
   if (!tool) {
     return false;
   }
@@ -434,11 +417,10 @@ function expectsObjectArguments(
  * items accordingly.
  */
 function convertStructuredOutputsToAiSdkOutput(
-  outputs: protocol.ToolCallStructuredOutput[],
+  outputs: protocol.ToolCallStructuredOutput[]
 ): LanguageModelV3ToolResultPart['output'] {
   const textParts: string[] = [];
-  const mediaParts: Array<{ type: 'image-data'; data: string; mediaType: string }> =
-    [];
+  const mediaParts: Array<{ type: 'image-data'; data: string; mediaType: string }> = [];
 
   for (const item of outputs) {
     if (item.type === 'input_text') {
@@ -478,8 +460,7 @@ function convertStructuredOutputsToAiSdkOutput(
   }
 
   const value: Array<
-    | { type: 'text'; text: string }
-    | { type: 'image-data'; data: string; mediaType: string }
+    { type: 'text'; text: string } | { type: 'image-data'; data: string; mediaType: string }
   > = [];
 
   if (textParts.length > 0) {
@@ -493,12 +474,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function formatInlineData(
-  data: string | Uint8Array,
-  mediaType?: string,
-): string {
-  const base64 =
-    typeof data === 'string' ? data : encodeUint8ArrayToBase64(data);
+function formatInlineData(data: string | Uint8Array, mediaType?: string): string {
+  const base64 = typeof data === 'string' ? data : encodeUint8ArrayToBase64(data);
   return mediaType ? `data:${mediaType};base64,${base64}` : base64;
 }
 
@@ -511,7 +488,7 @@ function formatInlineData(
  */
 export function toolToLanguageModelTool(
   model: LanguageModelV3,
-  tool: SerializedTool,
+  tool: SerializedTool
 ): LanguageModelV3FunctionTool | LanguageModelV3ProviderTool {
   if (tool.type === 'function') {
     return {
@@ -555,7 +532,7 @@ export function toolToLanguageModelTool(
  * @returns The language model V2 response format.
  */
 export function getResponseFormat(
-  outputType: SerializedOutputType,
+  outputType: SerializedOutputType
 ): LanguageModelV3CallOptions['responseFormat'] {
   if (outputType === 'text') {
     return {
@@ -630,9 +607,7 @@ export class AiSdkModel implements Model {
           ];
         }
 
-        const tools = request.tools.map((tool) =>
-          toolToLanguageModelTool(this.#model, tool),
-        );
+        const tools = request.tools.map((tool) => toolToLanguageModelTool(this.#model, tool));
 
         request.handoffs.forEach((handoff) => {
           tools.push(handoffToLanguageModelTool(handoff));
@@ -646,14 +621,13 @@ export class AiSdkModel implements Model {
           throw new UserError('Zod output type is not yet supported');
         }
 
-        const responseFormat: LanguageModelV3CallOptions['responseFormat'] =
-          getResponseFormat(request.outputType);
+        const responseFormat: LanguageModelV3CallOptions['responseFormat'] = getResponseFormat(
+          request.outputType
+        );
 
         const aiSdkRequest: LanguageModelV3CallOptions = {
           tools,
-          toolChoice: toolChoiceToLanguageModelFormat(
-            request.modelSettings.toolChoice,
-          ),
+          toolChoice: toolChoiceToLanguageModelFormat(request.modelSettings.toolChoice),
           prompt: input,
           temperature: request.modelSettings.temperature,
           topP: request.modelSettings.topP,
@@ -680,10 +654,9 @@ export class AiSdkModel implements Model {
         const toolCalls = resultContent.filter(isToolCallContent);
         const hasToolCalls = toolCalls.length > 0;
 
-        const toolsNameToToolMap = new Map<
-          string,
-          SerializedTool | SerializedHandoff
-        >(request.tools.map((tool) => [tool.name, tool] as const));
+        const toolsNameToToolMap = new Map<string, SerializedTool | SerializedHandoff>(
+          request.tools.map((tool) => [tool.name, tool] as const)
+        );
 
         for (const handoff of request.handoffs) {
           toolsNameToToolMap.set(handoff.toolName, handoff);
@@ -692,9 +665,7 @@ export class AiSdkModel implements Model {
           const requestedTool = toolsNameToToolMap.get(toolCall.toolName);
 
           if (!requestedTool && toolCall.toolName) {
-            this.#logger.warn(
-              `Received tool call for unknown tool '${toolCall.toolName}'.`,
-            );
+            this.#logger.warn(`Received tool call for unknown tool '${toolCall.toolName}'.`);
           }
 
           let toolCallArguments: string;
@@ -714,8 +685,7 @@ export class AiSdkModel implements Model {
             arguments: toolCallArguments,
             status: 'completed',
             providerData:
-              toolCall.providerMetadata ??
-              (hasToolCalls ? result.providerMetadata : undefined),
+              toolCall.providerMetadata ?? (hasToolCalls ? result.providerMetadata : undefined),
           });
         }
 
@@ -800,9 +770,7 @@ export class AiSdkModel implements Model {
     });
   }
 
-  async *getStreamedResponse(
-    request: ModelRequest,
-  ): AsyncIterable<ResponseStreamEvent> {
+  async *getStreamedResponse(request: ModelRequest): AsyncIterable<ResponseStreamEvent> {
     const span = request.tracing ? createGenerationSpan() : undefined;
     try {
       if (span) {
@@ -838,9 +806,7 @@ export class AiSdkModel implements Model {
         ];
       }
 
-      const tools = request.tools.map((tool) =>
-        toolToLanguageModelTool(this.#model, tool),
-      );
+      const tools = request.tools.map((tool) => toolToLanguageModelTool(this.#model, tool));
 
       request.handoffs.forEach((handoff) => {
         tools.push(handoffToLanguageModelTool(handoff));
@@ -850,8 +816,9 @@ export class AiSdkModel implements Model {
         span.spanData.input = input;
       }
 
-      const responseFormat: LanguageModelV3CallOptions['responseFormat'] =
-        getResponseFormat(request.outputType);
+      const responseFormat: LanguageModelV3CallOptions['responseFormat'] = getResponseFormat(
+        request.outputType
+      );
 
       const aiSdkRequest: LanguageModelV3CallOptions = {
         tools,
@@ -869,10 +836,7 @@ export class AiSdkModel implements Model {
       if (this.#logger.dontLogModelData) {
         this.#logger.debug('Request received (streamed)');
       } else {
-        this.#logger.debug(
-          'Request (streamed):',
-          JSON.stringify(aiSdkRequest, null, 2),
-        );
+        this.#logger.debug('Request (streamed):', JSON.stringify(aiSdkRequest, null, 2));
       }
 
       const { stream } = await this.#model.doStream(aiSdkRequest);
@@ -884,65 +848,72 @@ export class AiSdkModel implements Model {
       const functionCalls: Record<string, protocol.FunctionCallItem> = {};
       let textOutput: protocol.OutputText | undefined;
 
-      for await (const part of stream) {
-        if (!started) {
-          started = true;
-          yield { type: 'response_started' };
-        }
+      // 使用 getReader() 迭代 ReadableStream，兼容不支持 asyncIterator 的环境
+      const reader = stream.getReader();
+      try {
+        while (true) {
+          const { done, value: part } = await reader.read();
+          if (done) break;
 
-        yield { type: 'model', event: part };
+          if (!started) {
+            started = true;
+            yield { type: 'response_started' };
+          }
 
-        switch (part.type) {
-          case 'text-delta': {
-            const textDeltaPart = part as TextDeltaPart;
-            if (!textOutput) {
-              textOutput = { type: 'output_text', text: '' };
+          yield { type: 'model', event: part };
+
+          switch (part.type) {
+            case 'text-delta': {
+              const textDeltaPart = part as TextDeltaPart;
+              if (!textOutput) {
+                textOutput = { type: 'output_text', text: '' };
+              }
+              textOutput.text += textDeltaPart.delta;
+              yield { type: 'output_text_delta', delta: textDeltaPart.delta };
+              break;
             }
-            textOutput.text += textDeltaPart.delta;
-            yield { type: 'output_text_delta', delta: textDeltaPart.delta };
-            break;
-          }
-          case 'tool-call': {
-            const toolCallPart = part as ToolCallPart;
-            const toolCallId = toolCallPart.toolCallId;
-            if (toolCallId) {
-              // AI SDK v6 的 input 是 string 类型
-              const toolCallArguments = toolCallPart.input;
-              functionCalls[toolCallId] = {
-                type: 'function_call',
-                callId: toolCallId,
-                name: toolCallPart.toolName,
-                arguments: toolCallArguments,
-                status: 'completed',
-                ...(toolCallPart.providerMetadata
-                  ? { providerData: toolCallPart.providerMetadata }
-                  : {}),
-              };
+            case 'tool-call': {
+              const toolCallPart = part as ToolCallPart;
+              const toolCallId = toolCallPart.toolCallId;
+              if (toolCallId) {
+                // AI SDK v6 的 input 是 string 类型
+                const toolCallArguments = toolCallPart.input;
+                functionCalls[toolCallId] = {
+                  type: 'function_call',
+                  callId: toolCallId,
+                  name: toolCallPart.toolName,
+                  arguments: toolCallArguments,
+                  status: 'completed',
+                  ...(toolCallPart.providerMetadata
+                    ? { providerData: toolCallPart.providerMetadata }
+                    : {}),
+                };
+              }
+              break;
             }
-            break;
-          }
-          case 'response-metadata': {
-            const metadataPart = part as ResponseMetadataPart;
-            if (metadataPart.id) {
-              responseId = metadataPart.id;
+            case 'response-metadata': {
+              const metadataPart = part as ResponseMetadataPart;
+              if (metadataPart.id) {
+                responseId = metadataPart.id;
+              }
+              break;
             }
-            break;
+            case 'finish': {
+              const finishPart = part as FinishPart;
+              const { inputTokens, outputTokens } = extractTokenCounts(finishPart.usage);
+              usagePromptTokens = inputTokens;
+              usageCompletionTokens = outputTokens;
+              break;
+            }
+            case 'error': {
+              throw part.error;
+            }
+            default:
+              break;
           }
-          case 'finish': {
-            const finishPart = part as FinishPart;
-            const { inputTokens, outputTokens } = extractTokenCounts(
-              finishPart.usage,
-            );
-            usagePromptTokens = inputTokens;
-            usageCompletionTokens = outputTokens;
-            break;
-          }
-          case 'error': {
-            throw part.error;
-          }
-          default:
-            break;
         }
+      } finally {
+        reader.releaseLock();
       }
 
       const outputs: protocol.OutputModelItem[] = [];
@@ -984,10 +955,7 @@ export class AiSdkModel implements Model {
       if (this.#logger.dontLogModelData) {
         this.#logger.debug('Response ready (streamed)');
       } else {
-        this.#logger.debug(
-          'Response (streamed):',
-          JSON.stringify(finalEvent.response, null, 2),
-        );
+        this.#logger.debug('Response (streamed):', JSON.stringify(finalEvent.response, null, 2));
       }
 
       yield finalEvent;
@@ -1056,7 +1024,7 @@ export function parseArguments(args: string | undefined | null): unknown {
 }
 
 export function toolChoiceToLanguageModelFormat(
-  toolChoice: ModelSettingsToolChoice | undefined,
+  toolChoice: ModelSettingsToolChoice | undefined
 ): LanguageModelV3ToolChoice | undefined {
   if (!toolChoice) {
     return undefined;

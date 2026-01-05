@@ -11,7 +11,29 @@
       "Bash(cat:*)",
       "Bash(pnpm --filter @aiget/moryflow-server lint:*)",
       "Bash(pnpm typecheck:*)",
-      "Bash(pnpm --filter @aiget/moryflow-server typecheck:*)"
+      "Bash(pnpm --filter @aiget/moryflow-server typecheck:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)",
+      "Bash(grep:*)",
+      "Bash(for:*)",
+      "Bash(do sed -i '' 's|../../lib/utils|../lib/utils|g' \"$f\")",
+      "Bash(done)",
+      "Bash(pnpm --filter @aiget/ui typecheck:*)",
+      "Bash(pnpm --filter @aiget/embed typecheck:*)",
+      "Bash(pnpm --filter @aiget/embed-react typecheck:*)",
+      "Bash(pnpm --filter @aiget/fetchx-server typecheck:*)",
+      "Bash(pnpm --filter @aiget/fetchx-www typecheck:*)",
+      "Bash(pnpm --filter @aiget/www typecheck:*)",
+      "Bash(pnpm --filter @aiget/server lint:*)",
+      "Bash(pnpm --filter @aiget/fetchx-server lint:*)",
+      "Bash(pnpm prisma:generate:*)",
+      "Bash(curl:*)",
+      "Bash(pnpm exec playwright install:*)",
+      "Bash(npx prisma db execute --stdin)",
+      "Bash(npx eslint:*)",
+      "Bash(pnpm ls:*)",
+      "Bash(pnpm run build:agents:*)"
     ]
   }
 }

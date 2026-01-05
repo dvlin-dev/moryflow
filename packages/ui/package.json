@@ -9,9 +9,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./components/*": "./src/components/*",
+    "./primitives": "./src/primitives/index.ts",
+    "./primitives/*": "./src/primitives/*",
+    "./composed": "./src/composed/index.ts",
+    "./composed/*": "./src/composed/*",
     "./icons/*": "./src/icons/*",
     "./animate/*": "./src/animate/*",
     "./ai/*": "./src/ai/*",
+    "./lib": "./src/lib/index.ts",
     "./lib/*": "./src/lib/*",
     "./hooks/*": "./src/hooks/*",
     "./styles/*": "./styles/*"
@@ -31,6 +36,10 @@
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.7",
+    "@hugeicons/core-free-icons": "^3.1.1",
+    "@hugeicons/react": "^1.1.4",
+    "next-themes": "^0.4.6",
+    "radix-ui": "^1.4.3",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",

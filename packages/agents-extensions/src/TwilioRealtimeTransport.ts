@@ -7,25 +7,18 @@ import {
   RealtimeSessionConfig,
 } from '@aiget/agents/realtime';
 import { getLogger } from '@aiget/agents';
-import type {
-  WebSocket as NodeWebSocket,
-  MessageEvent as NodeMessageEvent,
-  ErrorEvent as NodeErrorEvent,
-} from 'ws';
-
-import type { ErrorEvent } from 'undici-types';
+import type { WebSocket as NodeWebSocket, MessageEvent as NodeMessageEvent } from 'ws';
 
 /**
  * The options for the Twilio Realtime Transport Layer.
  */
-export type TwilioRealtimeTransportLayerOptions =
-  OpenAIRealtimeWebSocketOptions & {
-    /**
-     * The websocket that is receiving messages from Twilio's Media Streams API. Typically the
-     * connection gets passed into your request handler when running your WebSocket server.
-     */
-    twilioWebSocket: WebSocket | NodeWebSocket;
-  };
+export type TwilioRealtimeTransportLayerOptions = OpenAIRealtimeWebSocketOptions & {
+  /**
+   * The websocket that is receiving messages from Twilio's Media Streams API. Typically the
+   * connection gets passed into your request handler when running your WebSocket server.
+   */
+  twilioWebSocket: WebSocket | NodeWebSocket;
+};
 
 /**
  * An adapter to connect a websocket that is receiving messages from Twilio's Media Streams API to
@@ -66,9 +59,7 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
     this.#twilioWebSocket = options.twilioWebSocket;
   }
 
-  _setInputAndOutputAudioFormat(
-    partialConfig?: Partial<RealtimeSessionConfig>,
-  ) {
+  _setInputAndOutputAudioFormat(partialConfig?: Partial<RealtimeSessionConfig>) {
     let newConfig: Partial<RealtimeSessionConfig> = {};
     if (!partialConfig) {
       // @ts-expect-error - this is a valid config
@@ -88,9 +79,7 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
   }
 
   async connect(options: RealtimeTransportLayerConnectOptions) {
-    options.initialSessionConfig = this._setInputAndOutputAudioFormat(
-      options.initialSessionConfig,
-    );
+    options.initialSessionConfig = this._setInputAndOutputAudioFormat(options.initialSessionConfig);
     // listen to Twilio messages as quickly as possible
     this.#twilioWebSocket.addEventListener(
       'message',
@@ -113,19 +102,13 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
               }
               break;
             case 'mark':
-              if (
-                !data.mark.name.startsWith('done:') &&
-                data.mark.name.includes(':')
-              ) {
+              if (!data.mark.name.startsWith('done:') && data.mark.name.includes(':')) {
                 // keeping track of what the last chunk was that the user heard fully
                 const count = Number(data.mark.name.split(':')[1]);
                 if (Number.isFinite(count)) {
                   this.#lastPlayedChunkCount = count;
                 } else {
-                  this.#logger.warn(
-                    'Invalid mark name received:',
-                    data.mark.name,
-                  );
+                  this.#logger.warn('Invalid mark name received:', data.mark.name);
                 }
               } else if (data.mark.name.startsWith('done:')) {
                 this.#lastPlayedChunkCount = 0;
@@ -138,34 +121,27 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
               break;
           }
         } catch (error) {
-          this.#logger.error(
-            'Error parsing message:',
-            error,
-            'Message:',
-            message,
-          );
+          this.#logger.error('Error parsing message:', error, 'Message:', message);
           this.emit('error', {
             type: 'error',
             error,
           });
         }
-      },
+      }
     );
     this.#twilioWebSocket.addEventListener('close', () => {
       if (this.status !== 'disconnected') {
         this.close();
       }
     });
-    this.#twilioWebSocket.addEventListener(
-      'error',
-      (error: ErrorEvent | NodeErrorEvent) => {
-        this.emit('error', {
-          type: 'error',
-          error,
-        });
-        this.close();
-      },
-    );
+    // 使用 onerror 属性替代 addEventListener，避免类型兼容问题
+    this.#twilioWebSocket.onerror = (event: Event) => {
+      this.emit('error', {
+        type: 'error',
+        error: event,
+      });
+      this.close();
+    };
     this.on('audio_done', () => {
       this.#twilioWebSocket.send(
         JSON.stringify({
@@ -174,7 +150,7 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
             name: `done:${this.currentItemId}`,
           },
           streamSid: this.#streamSid,
-        }),
+        })
       );
     });
     await super.connect(options);
@@ -188,20 +164,20 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
   _interrupt(_elapsedTime: number, cancelOngoingResponse: boolean = true) {
     const elapsedTime = this.#lastPlayedChunkCount + 50; /* 50ms buffer */
     this.#logger.debug(
-      `Interruption detected, clearing Twilio audio and truncating OpenAI audio after ${elapsedTime}ms`,
+      `Interruption detected, clearing Twilio audio and truncating OpenAI audio after ${elapsedTime}ms`
     );
     this.#twilioWebSocket.send(
       JSON.stringify({
         event: 'clear',
         streamSid: this.#streamSid,
-      }),
+      })
     );
     super._interrupt(elapsedTime, cancelOngoingResponse);
   }
 
   protected _onAudio(audioEvent: TransportLayerAudio) {
     this.#logger.debug(
-      `Sending audio to Twilio ${audioEvent.responseId}: (${audioEvent.data.byteLength} bytes)`,
+      `Sending audio to Twilio ${audioEvent.responseId}: (${audioEvent.data.byteLength} bytes)`
     );
     const audioDelta = {
       event: 'media',
@@ -223,7 +199,7 @@ export class TwilioRealtimeTransportLayer extends OpenAIRealtimeWebSocket {
         mark: {
           name: `${this.currentItemId}:${this.#audioChunkCount}`,
         },
-      }),
+      })
     );
     this.emit('audio', audioEvent);
   }

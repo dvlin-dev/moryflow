@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dynamic test page with JavaScript">
+  <title>Dynamic Test Page</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      color: white;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    p {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+    .counter {
+      font-size: 72px;
+      margin: 30px 0;
+      font-weight: bold;
+    }
+    .status {
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      display: inline-block;
+    }
+    .loaded {
+      background: rgba(0,255,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Dynamic Test Page</h1>
+    <p>This page uses JavaScript to update content</p>
+    <div class="counter" id="counter">0</div>
+    <div class="status" id="status">Loading...</div>
+  </div>
+
+  <script>
+    // 模拟异步加载
+    let count = 0;
+    const counter = document.getElementById('counter');
+    const status = document.getElementById('status');
+
+    function updateCounter() {
+      count++;
+      counter.textContent = count;
+      if (count >= 3) {
+        status.textContent = 'Loaded!';
+        status.classList.add('loaded');
+        // 设置标记供 waitFor 使用
+        window.__PAGE_LOADED__ = true;
+      }
+    }
+
+    // 每 100ms 更新一次，共 3 次
+    const interval = setInterval(() => {
+      updateCounter();
+      if (count >= 3) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    // 初始化完成标记
+    window.__PAGE_READY__ = true;
+  </script>
+</body>
+</html>
