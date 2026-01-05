@@ -49,6 +49,9 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: ^0.7.2
         version: 0.7.2(prettier@3.7.4)
+      sass-embedded-linux-x64:
+        specifier: 1.97.1
+        version: 1.97.1
       tsc-multi:
         specifier: ^1.1.0
         version: 1.1.0(typescript@5.9.3)
@@ -7213,7 +7216,6 @@ packages:
   '@swc/core-linux-x64-gnu@1.15.8':
     resolution: {integrity: sha512-4p6lOMU3bC+Vd5ARtKJ/FxpIC5G8v3XLoPEZ5s7mLR8h7411HWC/LmTXDHcrSXRC55zvAVia1eldy6zDLz8iFQ==}
     engines: {node: '>=10'}
-    cpu: [x64]
     os: [linux]
 
   '@swc/core-linux-x64-musl@1.15.8':
@@ -33154,8 +33156,7 @@ snapshots:
   sass-embedded-linux-riscv64@1.97.1:
     optional: true
 
-  sass-embedded-linux-x64@1.97.1:
-    optional: true
+  sass-embedded-linux-x64@1.97.1: {}
 
   sass-embedded-unknown-all@1.97.1:
     dependencies:
