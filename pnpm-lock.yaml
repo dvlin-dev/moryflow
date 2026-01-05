@@ -22,6 +22,9 @@ importers:
       '@rollup/rollup-linux-x64-gnu':
         specifier: 4.54.0
         version: 4.54.0
+      '@swc/core-linux-x64-gnu':
+        specifier: 1.15.8
+        version: 1.15.8
       '@types/node':
         specifier: ^22.18.12
         version: 22.19.3
@@ -23451,8 +23454,7 @@ snapshots:
   '@swc/core-linux-arm64-musl@1.15.8':
     optional: true
 
-  '@swc/core-linux-x64-gnu@1.15.8':
-    optional: true
+  '@swc/core-linux-x64-gnu@1.15.8': {}
 
   '@swc/core-linux-x64-musl@1.15.8':
     optional: true

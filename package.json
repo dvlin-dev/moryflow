@@ -39,6 +39,7 @@
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
     "@rollup/rollup-linux-x64-gnu": "4.54.0",
+    "@swc/core-linux-x64-gnu": "1.15.8",
     "@types/node": "^22.18.12",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
