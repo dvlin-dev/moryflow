@@ -4,14 +4,34 @@
  * [POS]: Sitemap parser supporting index files and robots.txt references
  *
  * [PROTOCOL]: When this file changes, update this header and src/map/CLAUDE.md
- *
- * 注意：此文件解析动态 XML 结构，fast-xml-parser 返回动态类型
- * 这是库设计限制，无法完全类型化
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
 import type { SitemapEntry } from './dto/map.dto';
+
+/**
+ * fast-xml-parser 解析结果的类型定义
+ */
+interface SitemapUrl {
+  loc?: string;
+  lastmod?: string;
+  changefreq?: string;
+  priority?: string;
+}
+
+interface SitemapIndexEntry {
+  loc?: string;
+}
+
+interface ParsedSitemap {
+  sitemapindex?: {
+    sitemap?: SitemapIndexEntry | SitemapIndexEntry[];
+  };
+  urlset?: {
+    url?: SitemapUrl | SitemapUrl[];
+  };
+}
 
 @Injectable()
 export class SitemapParser {
@@ -106,7 +126,7 @@ export class SitemapParser {
    * 解析 XML 内容
    */
   private async parseXml(xml: string): Promise<SitemapEntry[]> {
-    const result = this.parser.parse(xml);
+    const result = this.parser.parse(xml) as ParsedSitemap;
     const entries: SitemapEntry[] = [];
 
     // 处理 sitemap index
@@ -118,7 +138,7 @@ export class SitemapParser {
       // 递归解析子 sitemap（限制并发）
       const childPromises = sitemaps
         .slice(0, 10) // 限制最多解析 10 个子 sitemap
-        .map(async (sitemap: { loc?: string }) => {
+        .map(async (sitemap) => {
           if (sitemap.loc) {
             try {
               return await this.parseSitemapUrl(sitemap.loc);

@@ -10,6 +10,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
@@ -126,8 +127,9 @@ export class BatchScrapeProcessor extends WorkerHost {
         where: { id: itemId },
         data: {
           status: 'COMPLETED',
-
-          result: JSON.parse(JSON.stringify(scrapeResult)),
+          result: JSON.parse(
+            JSON.stringify(scrapeResult),
+          ) as Prisma.InputJsonValue,
           completedAt: new Date(),
         },
       });

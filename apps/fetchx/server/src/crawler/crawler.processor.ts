@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import { UrlFrontier } from './url-frontier';
 import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
@@ -210,8 +211,9 @@ export class CrawlerProcessor extends WorkerHost {
         where: { id: page.id },
         data: {
           status: 'COMPLETED',
-
-          result: JSON.parse(JSON.stringify(scrapeResult)),
+          result: JSON.parse(
+            JSON.stringify(scrapeResult),
+          ) as Prisma.InputJsonValue,
           completedAt: new Date(),
         },
       });

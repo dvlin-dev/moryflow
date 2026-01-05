@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, QueueEvents } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { SCRAPE_QUEUE } from '../queue/queue.constants';
 import { createHash } from 'crypto';
@@ -90,8 +91,7 @@ export class ScraperService {
         apiKeyId,
         url: options.url,
         requestHash,
-
-        options: JSON.parse(JSON.stringify(options)),
+        options: JSON.parse(JSON.stringify(options)) as Prisma.InputJsonValue,
         status: 'PENDING',
       },
     });
