@@ -12,10 +12,6 @@ overrides:
 importers:
 
   .:
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.54.0
-        version: 4.54.0
     devDependencies:
       '@commitlint/cli':
         specifier: ^20.3.0
@@ -23,6 +19,12 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^20.3.0
         version: 20.3.0
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.54.0
+        version: 4.54.0
+      '@swc/core-linux-x64-gnu':
+        specifier: 1.15.8
+        version: 1.15.8
       '@types/node':
         specifier: ^22.18.12
         version: 22.19.3
@@ -35,6 +37,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      lightningcss-linux-x64-gnu:
+        specifier: 1.30.1
+        version: 1.30.1
       lint-staged:
         specifier: ^16.2.7
         version: 16.2.7
@@ -44,6 +49,9 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: ^0.7.2
         version: 0.7.2(prettier@3.7.4)
+      sass-embedded-linux-x64:
+        specifier: 1.97.1
+        version: 1.97.1
       tsc-multi:
         specifier: ^1.1.0
         version: 1.1.0(typescript@5.9.3)
@@ -6856,7 +6864,6 @@ packages:
 
   '@rollup/rollup-linux-x64-gnu@4.54.0':
     resolution: {integrity: sha512-WGt5J8Ij/rvyqpFexxk3ffKqqbLf9AqrTBbWDk7ApGUzaIs6V+s2s84kAxklFwmMF/vBNGrVdYgbblCOFFezMQ==}
-    cpu: [x64]
     os: [linux]
 
   '@rollup/rollup-linux-x64-musl@4.54.0':
@@ -7209,7 +7216,6 @@ packages:
   '@swc/core-linux-x64-gnu@1.15.8':
     resolution: {integrity: sha512-4p6lOMU3bC+Vd5ARtKJ/FxpIC5G8v3XLoPEZ5s7mLR8h7411HWC/LmTXDHcrSXRC55zvAVia1eldy6zDLz8iFQ==}
     engines: {node: '>=10'}
-    cpu: [x64]
     os: [linux]
 
   '@swc/core-linux-x64-musl@1.15.8':
@@ -12360,7 +12366,6 @@ packages:
   lightningcss-linux-x64-gnu@1.30.1:
     resolution: {integrity: sha512-piWx3z4wN8J8z3+O5kO74+yr6ze/dKmPnI7vLqfSqI8bccaTGY5xiSGVIJBDd5K5BHlvVLpUB3S2YCfelyJ1bw==}
     engines: {node: '>= 12.0.0'}
-    cpu: [x64]
     os: [linux]
 
   lightningcss-linux-x64-musl@1.30.1:
@@ -23451,8 +23456,7 @@ snapshots:
   '@swc/core-linux-arm64-musl@1.15.8':
     optional: true
 
-  '@swc/core-linux-x64-gnu@1.15.8':
-    optional: true
+  '@swc/core-linux-x64-gnu@1.15.8': {}
 
   '@swc/core-linux-x64-musl@1.15.8':
     optional: true
@@ -30090,8 +30094,7 @@ snapshots:
   lightningcss-linux-arm64-musl@1.30.1:
     optional: true
 
-  lightningcss-linux-x64-gnu@1.30.1:
-    optional: true
+  lightningcss-linux-x64-gnu@1.30.1: {}
 
   lightningcss-linux-x64-musl@1.30.1:
     optional: true
@@ -33153,8 +33156,7 @@ snapshots:
   sass-embedded-linux-riscv64@1.97.1:
     optional: true
 
-  sass-embedded-linux-x64@1.97.1:
-    optional: true
+  sass-embedded-linux-x64@1.97.1: {}
 
   sass-embedded-unknown-all@1.97.1:
     dependencies:
