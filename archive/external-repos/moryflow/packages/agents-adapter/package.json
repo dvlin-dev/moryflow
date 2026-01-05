@@ -1,0 +1,19 @@
+{
+  "name": "@moryflow/agents-adapter",
+  "version": "0.1.0",
+  "description": "Platform adapter interfaces for Moryflow Agent Runtime",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": ["dist"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

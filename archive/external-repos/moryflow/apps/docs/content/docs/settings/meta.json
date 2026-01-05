@@ -1,0 +1,9 @@
+{
+  "title": "Settings",
+  "pages": [
+    "ai-models",
+    "ollama",
+    "custom-provider",
+    "theme"
+  ]
+}

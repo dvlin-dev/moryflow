@@ -1,0 +1,69 @@
+---
+title: Introduction
+description: Memai - Memory as a Service for AI applications
+---
+
+# Introduction
+
+Memai is a **Memory as a Service** platform that provides semantic memory storage and retrieval APIs for AI applications. Enable your AI agents with long-term memory capabilities, vector-based semantic search, entity extraction, and knowledge graphs.
+
+## What is Memai?
+
+Memai allows AI applications to:
+
+- **Store memories** - Persist conversations, facts, and context with automatic vector embeddings
+- **Search semantically** - Find relevant memories using natural language queries
+- **Extract entities** - Automatically identify and track people, places, and concepts
+- **Build relationships** - Create knowledge graphs connecting entities
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Semantic Search** | Vector-based similarity search using state-of-the-art embeddings |
+| **Entity Extraction** | Automatic identification of entities from memory content |
+| **Relationship Graphs** | Connect entities with typed relationships |
+| **Webhooks** | Real-time notifications for memory events |
+| **Multi-tenant** | Isolated data per API key |
+
+## Use Cases
+
+### AI Assistants
+Give your AI assistants the ability to remember past conversations, user preferences, and learned facts.
+
+### Customer Support
+Build support bots that remember customer history and context across sessions.
+
+### Knowledge Management
+Create searchable knowledge bases with semantic understanding.
+
+### Research Tools
+Build research assistants that can store and retrieve information contextually.
+
+## Quick Example
+
+```bash
+# Create a memory
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "The user prefers dark mode and uses vim keybindings",
+    "userId": "user_123"
+  }'
+
+# Search memories
+curl -X POST https://api.memai.dev/v1/memories/search \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the user preferences?",
+    "userId": "user_123"
+  }'
+```
+
+## Next Steps
+
+- [Quickstart](/docs/getting-started/quickstart) - Get up and running in 5 minutes
+- [Authentication](/docs/getting-started/authentication) - Learn about API keys
+- [API Reference](/docs/api-reference) - Explore the full API

@@ -1,0 +1,66 @@
+.env
+
+/node_modules
+.yarn/*
+server/.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# expo
+**/.expo/*
+**/*.app/
+**/*.ipa
+**/*.apk
+
+# next.js
+**/.next/*
+/out/
+
+# tamagui
+**/.tamagui/*
+
+# production
+/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+.env
+.env.local
+.env.local*
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.oss
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# os
+.DS_Store
+THUMBS_DB
+thumbs.db
+
+**/node_modules/*
+
+# intellij
+.idea
+
+# Turborepo
+.turbo
+
+**/dist/*
+**/pg-data/*
+
+sandbox-runtime

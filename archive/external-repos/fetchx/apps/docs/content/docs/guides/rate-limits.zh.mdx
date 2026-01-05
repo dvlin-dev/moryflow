@@ -1,0 +1,217 @@
+---
+title: 速率限制
+description: 了解您套餐的配额和并发限制
+---
+
+# 速率限制
+
+AIGet 使用速率限制来确保公平使用和服务可靠性。了解这些限制有助于您构建健壮的集成。
+
+## 限制类型
+
+### 请求速率限制
+
+每个 API 密钥每分钟的最大请求数：
+
+| 套餐 | 请求数/分钟 |
+|------|-------------|
+| 免费版 | 10 |
+| 基础版 | 30 |
+| 专业版 | 60 |
+| 团队版 | 120 |
+
+### 并发限制
+
+同时处理的最大操作数：
+
+| 套餐 | 并发数 |
+|------|--------|
+| 免费版 | 2 |
+| 基础版 | 5 |
+| 专业版 | 10 |
+| 团队版 | 20 |
+
+### 月度配额
+
+每个计费周期的 API 调用总数（包括所有 API 类型）：
+
+| 套餐 | 月度配额 |
+|------|----------|
+| 免费版 | 100 |
+| 基础版 | 5,000 |
+| 专业版 | 20,000 |
+| 团队版 | 60,000 |
+
+## API 特定限制
+
+不同 API 有不同的资源消耗：
+
+| API | 每次调用消耗 | 说明 |
+|-----|--------------|------|
+| Scrape | 1 | 每抓取一个页面 |
+| Crawl | 每页 1 | 爬取的页面总数 |
+| Map | 1 | 每次站点地图请求 |
+| Batch Scrape | 每 URL 1 | 批量中的 URL 总数 |
+| Extract | 2-5 | 根据复杂度变化 |
+| Search | 1 | 每次搜索查询 |
+| Search + Scrape | 1 + 每结果 1 | 当 `scrapeResults: true` 时 |
+
+### 爬取限制
+
+| 套餐 | 每次爬取最大页数 | 最大深度 |
+|------|------------------|----------|
+| 免费版 | 10 | 2 |
+| 基础版 | 100 | 3 |
+| 专业版 | 500 | 5 |
+| 团队版 | 2,000 | 10 |
+
+### 批量抓取限制
+
+| 套餐 | 每批最大 URL 数 |
+|------|-----------------|
+| 免费版 | 5 |
+| 基础版 | 20 |
+| 专业版 | 50 |
+| 团队版 | 100 |
+
+## 速率限制响应头
+
+每个响应都包含速率限制信息：
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1704067200
+```
+
+| 响应头 | 描述 |
+|--------|------|
+| `X-RateLimit-Limit` | 时间窗口内的最大请求数 |
+| `X-RateLimit-Remaining` | 剩余请求数 |
+| `X-RateLimit-Reset` | 限制重置的 Unix 时间戳 |
+
+## 处理速率限制
+
+当速率受限时，您将收到：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "请求过于频繁。请稍后再试。",
+    "retryAfter": 15
+  }
+}
+```
+
+### 最佳实践
+
+1. **检查响应头** - 主动监控剩余配额
+2. **实现退避机制** - 在 429 错误时使用指数退避
+3. **请求排队** - 在高负载时缓冲请求
+4. **使用 webhooks** - 使用 webhook 回调避免轮询 Crawl 和 Batch API
+5. **利用缓存** - 缓存响应不计入配额
+
+### 示例：指数退避
+
+```javascript
+async function scrapeWithRetry(url, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch('https://api.aiget.dev/api/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    if (response.status !== 429) {
+      return response.json();
+    }
+
+    const retryAfter = response.headers.get('Retry-After') || Math.pow(2, i);
+    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+  }
+
+  throw new Error('超过最大重试次数');
+}
+```
+
+## 配额管理
+
+### 检查剩余配额
+
+在 [AIGet 控制台](https://console.aiget.dev) 查看当前配额使用情况。仪表板显示：
+
+- 当前套餐和月度配额
+- 已使用和剩余额度
+- 按 API 类型的使用明细
+- 配额重置日期
+
+### 缓存命中不计数
+
+当内容从缓存提供时，不计入配额。检查响应中的 `fromCache` 字段：
+
+```json
+{
+  "data": {
+    "id": "scrape_abc123",
+    "fromCache": true
+  }
+}
+```
+
+### 失败请求退还
+
+如果请求失败（超时、URL 被阻止等），配额会自动退还。
+
+## 优化使用
+
+### 使用适当的 API
+
+根据用例选择正确的 API：
+
+| 使用场景 | 推荐 API |
+|----------|----------|
+| 单页内容 | Scrape API |
+| 多个已知 URL | Batch Scrape API |
+| 发现所有站点 URL | Map API |
+| 爬取并提取 | Crawl API |
+| 结构化数据提取 | Extract API |
+| 在网上查找内容 | Search API |
+
+### 批量处理相似请求
+
+不要使用多个 Scrape 调用：
+
+```javascript
+// 低效：10 次独立调用
+for (const url of urls) {
+  await scrape(url);
+}
+
+// 高效：1 次批量调用
+await batchScrape(urls);
+```
+
+### 利用缓存
+
+默认缓存时间为 1 小时。在此窗口内的相同请求将从缓存提供，不产生费用。
+
+## 需要更高的限制？
+
+- **升级套餐** - 更高级别的套餐有更高的限制
+- **联系销售** - 获取自定义企业级限制
+- **优化使用** - 批量处理相似 URL，利用缓存
+
+## 错误码
+
+| 错误 | HTTP 状态 | 描述 |
+|------|-----------|------|
+| `RATE_LIMITED` | 429 | 每分钟请求过多 |
+| `QUOTA_EXCEEDED` | 429 | 月度配额已用完 |
+| `CONCURRENCY_EXCEEDED` | 429 | 并发操作过多 |
+
+重试策略请参阅[错误处理](/zh/docs/guides/error-handling)。

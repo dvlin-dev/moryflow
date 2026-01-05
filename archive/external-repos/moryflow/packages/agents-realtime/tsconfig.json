@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.agents.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "paths": {
+      "@moryflow/agents-realtime": ["./src/index.ts"],
+      "@moryflow/agents-realtime/_shims": ["./src/shims/shims-node.ts"]
+    }
+  },
+  "exclude": ["dist/**", "test/**"]
+}

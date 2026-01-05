@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build output (we build in Docker)
+dist
+**/dist
+
+# Development
+.git
+.gitignore
+*.md
+!README.md
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Environment files (should be provided at runtime)
+.env
+.env.*
+!.env.example
+
+# Test files
+coverage
+**/*.spec.ts
+**/*.test.ts
+**/test
+**/tests
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Playwright cache (we install fresh in Docker)
+playwright-report
+test-results
+
+# 每个 Dockerfile 只需要特定的 app 和依赖
+# Dockerfile (server): apps/server + 无其他 app
+# Dockerfile.console: apps/console + packages/ui
+# Dockerfile.admin: apps/admin + packages/ui

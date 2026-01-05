@@ -1,0 +1,187 @@
+---
+title: 速率限制与配额
+description: 了解 API 速率限制和使用配额
+---
+
+# 速率限制与配额
+
+Memai 使用速率限制和配额来确保公平使用并为所有用户维护服务质量。
+
+## 速率限制
+
+速率限制控制您在时间窗口内可以向 API 发送的请求数量。
+
+### 默认限制
+
+| 端点类型 | 限制 |
+|---------|------|
+| 读取操作 | 100 请求/分钟 |
+| 写入操作 | 50 请求/分钟 |
+| 搜索操作 | 30 请求/分钟 |
+
+### 速率限制响应头
+
+每个 API 响应都包含显示当前速率限制状态的头：
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1705312800
+```
+
+| 响应头 | 描述 |
+|--------|------|
+| `X-RateLimit-Limit` | 窗口内允许的最大请求数 |
+| `X-RateLimit-Remaining` | 当前窗口剩余请求数 |
+| `X-RateLimit-Reset` | 窗口重置的 Unix 时间戳 |
+
+### 处理速率限制
+
+当超过速率限制时，您会收到 `429 Too Many Requests` 响应：
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "请求过多。请稍后再试。",
+    "retryAfter": 30
+  }
+}
+```
+
+**最佳实践**：收到 429 响应时实现指数退避：
+
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After') || Math.pow(2, i);
+      await sleep(retryAfter * 1000);
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new Error('超过最大重试次数');
+}
+```
+
+## 使用配额
+
+配额限制您在计费周期内可以执行的 API 操作总数。
+
+### 套餐与配额
+
+| 套餐 | 月度配额 | 价格 |
+|------|---------|------|
+| **免费** | 1,000 次操作 | $0 |
+| **业余** | 50,000 次操作 | $19/月 |
+| **企业** | 无限制 | 定制 |
+
+### 什么算作一次操作？
+
+| 操作 | 次数 |
+|------|------|
+| 创建记忆 | 1 |
+| 搜索记忆 | 1 |
+| 获取记忆 | 1 |
+| 删除记忆 | 1 |
+| 列出记忆 | 1 |
+| 创建/获取/删除实体 | 1 |
+| 创建/获取/删除关系 | 1 |
+
+### 检查使用量
+
+在 Memai 控制台的 **使用量** 中查看当前使用情况。
+
+API 也会在响应头中返回使用信息：
+
+```
+X-Quota-Limit: 50000
+X-Quota-Used: 12500
+X-Quota-Reset: 2024-02-01T00:00:00Z
+```
+
+### 配额超限
+
+超过配额时，您会收到 `403 Forbidden` 响应：
+
+```json
+{
+  "error": {
+    "code": "QUOTA_EXCEEDED",
+    "message": "月度配额已超限。请升级您的套餐。",
+    "currentUsage": 50000,
+    "limit": 50000,
+    "resetAt": "2024-02-01T00:00:00Z"
+  }
+}
+```
+
+## 优化使用量
+
+### 尽可能批量处理
+
+不要在循环中逐条创建记忆，考虑合并相关内容：
+
+```javascript
+// 效率较低：10 次操作
+for (const item of items) {
+  await createMemory({ content: item.content });
+}
+
+// 更高效：1 次操作，合并内容
+await createMemory({
+  content: items.map(i => i.content).join('\n\n')
+});
+```
+
+### 缓存搜索结果
+
+缓存常用的搜索结果以避免重复 API 调用：
+
+```javascript
+const cache = new Map();
+
+async function searchWithCache(query, userId) {
+  const cacheKey = `${userId}:${query}`;
+
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey);
+  }
+
+  const results = await searchMemories({ query, userId });
+  cache.set(cacheKey, results);
+
+  // 5 分钟后过期缓存
+  setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000);
+
+  return results;
+}
+```
+
+### 使用适当的限制
+
+只请求您需要的数据：
+
+```bash
+# 不要获取所有记忆
+curl "https://api.memai.dev/v1/memories?userId=user_123"
+
+# 只获取需要的数量
+curl "https://api.memai.dev/v1/memories?userId=user_123&limit=5"
+```
+
+## 升级套餐
+
+如需更高限制：
+
+1. 登录 [Memai 控制台](https://console.memai.dev)
+2. 进入 **设置** > **账单**
+3. 选择更高的套餐
+4. 完成升级
+
+如需自定义限制的企业套餐，请联系 sales@memai.dev。

@@ -1,0 +1,146 @@
+---
+title: API Reference
+description: Complete API documentation for AIGet Web Scraper
+---
+
+# API Reference
+
+AIGet provides a comprehensive REST API for web scraping and content extraction. All endpoints use JSON for requests and responses.
+
+## Base URL
+
+```
+https://api.aiget.dev
+```
+
+## Authentication
+
+All API requests require authentication via Bearer token:
+
+```bash
+Authorization: Bearer lk_your_api_key
+```
+
+Get your API key from the [Console](https://console.aiget.dev/api-keys).
+
+## Available APIs
+
+### Core APIs
+
+<Cards>
+  <Card title="Scrape API" href="/docs/api/scrape">
+    Extract content from any webpage in multiple formats (Markdown, HTML, screenshot, links)
+  </Card>
+  <Card title="Crawl API" href="/docs/api/crawl">
+    Crawl multiple pages from a website with depth and path controls
+  </Card>
+  <Card title="Map API" href="/docs/api/map">
+    Discover all URLs on a website via sitemap or browser crawling
+  </Card>
+  <Card title="Batch Scrape API" href="/docs/api/batch-scrape">
+    Scrape multiple URLs in parallel (1-100 URLs per request)
+  </Card>
+</Cards>
+
+### Advanced APIs
+
+<Cards>
+  <Card title="Extract API" href="/docs/api/extract">
+    AI-powered structured data extraction using LLM
+  </Card>
+  <Card title="Search API" href="/docs/api/search">
+    Web search with optional result content scraping
+  </Card>
+</Cards>
+
+## Quick Start
+
+Here's a simple example to get you started:
+
+```bash
+curl -X POST https://api.aiget.dev/api/v1/scrape \
+  -H "Authorization: Bearer lk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"]
+  }'
+```
+
+## Response Format
+
+All API responses follow a consistent format:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": {
+    // Response data
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message"
+  }
+}
+```
+
+## Common Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `RATE_LIMITED` | 429 | Too many requests |
+| `QUOTA_EXCEEDED` | 429 | Monthly quota exhausted |
+| `INVALID_URL` | 400 | URL format is invalid |
+| `URL_NOT_ALLOWED` | 400 | URL blocked by SSRF protection |
+| `PAGE_TIMEOUT` | 504 | Page took too long to load |
+| `BROWSER_ERROR` | 500 | Browser error occurred |
+
+## Rate Limits
+
+Rate limits are applied per API key:
+
+| Plan | Requests/minute | Concurrent |
+|------|-----------------|------------|
+| Free | 10 | 2 |
+| Basic | 30 | 5 |
+| Pro | 60 | 10 |
+| Team | 120 | 20 |
+
+When rate limited, you'll receive a `429` response with rate limit headers:
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1705320600
+Retry-After: 30
+```
+
+## Webhooks
+
+For long-running operations (Crawl, Batch Scrape), you can configure webhooks to receive notifications:
+
+```json
+{
+  "event": "crawl.completed",
+  "data": {
+    "id": "crawl_abc123",
+    "status": "COMPLETED",
+    "totalPages": 150,
+    "completedPages": 150
+  },
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+See individual API documentation for webhook configuration details.

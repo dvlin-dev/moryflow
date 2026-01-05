@@ -1,0 +1,23 @@
+{
+  "title": "文档",
+  "pages": [
+    "index",
+    "---快速开始---",
+    "getting-started",
+    "getting-started/...",
+    "---功能详解---",
+    "features",
+    "features/...",
+    "---使用指南---",
+    "guides",
+    "guides/...",
+    "---设置配置---",
+    "settings",
+    "settings/...",
+    "---进阶使用---",
+    "advanced",
+    "advanced/...",
+    "---",
+    "faq"
+  ]
+}

@@ -1,0 +1,185 @@
+---
+title: "Ollama 本地模型"
+description: "Ollama 让你在自己电脑上跑 AI 模型，完全离线、完全隐私。"
+---
+
+# Ollama 本地模型
+
+Ollama 让你在自己电脑上跑 AI 模型，完全离线、完全隐私。
+
+## 什么是 Ollama
+
+[Ollama](https://ollama.ai) 是个开源工具，可以在本地跑大语言模型。
+
+**好处：**
+- 完全离线，不需要网
+- 数据不离开你的电脑
+- 免费用，不需要 API Key
+- 支持很多开源模型
+
+**局限：**
+- 需要电脑配置好一点
+- 模型能力一般比云端的弱
+- 第一次用要下载模型
+
+## 安装 Ollama
+
+### macOS
+
+```bash
+# 用 Homebrew
+brew install ollama
+
+# 或者去官网下载安装包
+# https://ollama.ai/download
+```
+
+### Windows
+
+1. 去 [ollama.ai/download](https://ollama.ai/download)
+2. 下载 Windows 安装包
+3. 运行安装
+
+### 确认装好了
+
+```bash
+ollama --version
+```
+
+安装后，Ollama 会作为后台服务运行。
+
+## 下载模型
+
+### 在终端下载
+
+```bash
+# 下载 Llama 3
+ollama pull llama3
+
+# 下载 Mistral
+ollama pull mistral
+
+# 下载 Qwen（中文好）
+ollama pull qwen2
+```
+
+### 在 MoryFlow 里下载
+
+1. 打开设置 → 模型管理
+2. 找到 Ollama 部分
+3. 浏览可用模型
+4. 点下载
+
+
+## 推荐模型
+
+### 综合使用
+
+| 模型 | 大小 | 特点 | 命令 |
+|------|------|------|------|
+| **Llama 3 8B** | ~4GB | 各方面平衡 | `ollama pull llama3` |
+| **Mistral 7B** | ~4GB | 推理能力强 | `ollama pull mistral` |
+| **Qwen2 7B** | ~4GB | 中文好 | `ollama pull qwen2` |
+
+### 电脑配置一般的
+
+| 模型 | 大小 | 特点 | 命令 |
+|------|------|------|------|
+| **Phi-3 Mini** | ~2GB | 微软出品，轻量 | `ollama pull phi3` |
+| **Gemma 2B** | ~1.5GB | Google出品 | `ollama pull gemma:2b` |
+
+### 电脑配置好的
+
+| 模型 | 大小 | 特点 | 命令 |
+|------|------|------|------|
+| **Llama 3 70B** | ~40GB | 接近 GPT-4 | `ollama pull llama3:70b` |
+| **Mixtral 8x7B** | ~26GB | 混合专家模型 | `ollama pull mixtral` |
+
+## 在 MoryFlow 里配置
+
+### 1. 配置连接
+
+1. 打开设置 → 模型管理
+2. 找到 Ollama 部分
+3. 确认端点地址（默认 `http://localhost:11434`）
+
+
+### 2. 选模型
+
+配置好后，聊天面板的模型选择器里就能看到下载好的 Ollama 模型了。
+
+### 3. 开始用
+
+选个 Ollama 模型，就能开始聊了。所有处理都在本地完成。
+
+## 电脑配置要求
+
+### 最低配置
+
+- 8GB 内存
+- 用 7B 以下的模型
+
+### 推荐配置
+
+- 16GB 内存
+- 用 7B-13B 的模型
+
+### 高性能配置
+
+- 32GB+ 内存
+- Apple Silicon（M1/M2/M3）或 NVIDIA 显卡
+- 可以跑 70B 模型
+
+## 怎么跑得更快
+
+### macOS（Apple 芯片）
+
+Apple Silicon 对 Ollama 支持很好，推荐使用。
+
+### Windows（NVIDIA 显卡）
+
+装好最新的 NVIDIA 驱动，Ollama 会自动用 GPU 加速。
+
+### 内存不够用
+
+可以试试：
+1. 换个小一点的模型
+2. 关掉其他程序
+3. 设置 `OLLAMA_NUM_PARALLEL=1` 限制并发
+
+## 常见问题
+
+### Ollama 服务没启动
+
+```bash
+# 启动服务
+ollama serve
+```
+
+### 模型下载失败
+
+1. 检查网络
+2. 试试用代理
+3. 手动下载模型文件
+
+### 响应很慢
+
+1. 换个小一点的模型
+2. 检查有没有 GPU 加速
+3. 关掉其他占资源的程序
+
+### 中文乱码
+
+推荐用 Qwen2 模型，中文支持更好。
+
+## 本地 vs 云端
+
+| 方面 | Ollama 本地 | 云端模型 |
+|------|-------------|----------|
+| 隐私 | 完全本地 | 数据要上传 |
+| 花费 | 免费 | 按量付费 |
+| 速度 | 看电脑配置 | 一般更快 |
+| 能力 | 中等 | 更强 |
+| 离线 | 可以 | 需要网 |
+
+**建议**：隐私敏感的内容用 Ollama，复杂任务用云端模型。
