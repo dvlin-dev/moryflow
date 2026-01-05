@@ -12,13 +12,6 @@ overrides:
 importers:
 
   .:
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu':
-        specifier: 4.54.0
-        version: 4.54.0
-      lightningcss-linux-x64-gnu:
-        specifier: 1.30.1
-        version: 1.30.1
     devDependencies:
       '@commitlint/cli':
         specifier: ^20.3.0
@@ -26,6 +19,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^20.3.0
         version: 20.3.0
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.54.0
+        version: 4.54.0
       '@types/node':
         specifier: ^22.18.12
         version: 22.19.3
@@ -38,6 +34,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      lightningcss-linux-x64-gnu:
+        specifier: 1.30.1
+        version: 1.30.1
       lint-staged:
         specifier: ^16.2.7
         version: 16.2.7
@@ -6859,7 +6858,6 @@ packages:
 
   '@rollup/rollup-linux-x64-gnu@4.54.0':
     resolution: {integrity: sha512-WGt5J8Ij/rvyqpFexxk3ffKqqbLf9AqrTBbWDk7ApGUzaIs6V+s2s84kAxklFwmMF/vBNGrVdYgbblCOFFezMQ==}
-    cpu: [x64]
     os: [linux]
 
   '@rollup/rollup-linux-x64-musl@4.54.0':
@@ -12363,7 +12361,6 @@ packages:
   lightningcss-linux-x64-gnu@1.30.1:
     resolution: {integrity: sha512-piWx3z4wN8J8z3+O5kO74+yr6ze/dKmPnI7vLqfSqI8bccaTGY5xiSGVIJBDd5K5BHlvVLpUB3S2YCfelyJ1bw==}
     engines: {node: '>= 12.0.0'}
-    cpu: [x64]
     os: [linux]
 
   lightningcss-linux-x64-musl@1.30.1:
@@ -30093,8 +30090,7 @@ snapshots:
   lightningcss-linux-arm64-musl@1.30.1:
     optional: true
 
-  lightningcss-linux-x64-gnu@1.30.1:
-    optional: true
+  lightningcss-linux-x64-gnu@1.30.1: {}
 
   lightningcss-linux-x64-musl@1.30.1:
     optional: true
