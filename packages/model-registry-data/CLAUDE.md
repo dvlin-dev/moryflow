@@ -30,7 +30,7 @@ packages/model-registry-data/
 ## 使用方式
 
 ```typescript
-import { searchModels, getModelById, getProviders } from '@moryflow/model-registry-data'
+import { searchModels, getModelById, getProviders } from '@aiget/model-registry-data'
 
 // 搜索模型
 const results = searchModels({ query: 'gpt-4', limit: 10 })
@@ -46,11 +46,13 @@ const providers = getProviders()
 
 ```bash
 # 手动同步
-pnpm --filter @moryflow/model-registry-data sync
+pnpm --filter @aiget/model-registry-data sync
 
 # 构建时自动同步（prebuild 钩子）
-pnpm --filter @moryflow/model-registry-data build
+pnpm --filter @aiget/model-registry-data build
 ```
+
+- 同步脚本通过 `node --import tsx scripts/sync.ts` 运行；在网络受限/上游不可用时应使用缓存数据继续构建（不要让构建因同步失败而失败）。
 
 ## 数据源
 
