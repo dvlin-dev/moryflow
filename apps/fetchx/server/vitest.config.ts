@@ -5,13 +5,18 @@
 import { defineConfig } from 'vitest/config';
 import swc from 'unplugin-swc';
 
+const shouldRunIntegrationTests = process.env.RUN_INTEGRATION_TESTS === '1';
+
 export default defineConfig({
   plugins: [swc.vite()],
   test: {
     globals: true,
     root: './',
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
-    exclude: ['**/*.render.spec.ts'], // 渲染测试默认排除，仅 CI 运行
+    exclude: [
+      '**/*.render.spec.ts', // 渲染测试默认排除，仅 CI 运行
+      ...(shouldRunIntegrationTests ? [] : ['**/*.integration.spec.ts', '**/*.e2e.spec.ts']),
+    ],
     setupFiles: ['./test/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
