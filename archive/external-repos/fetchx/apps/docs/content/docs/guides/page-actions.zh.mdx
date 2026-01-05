@@ -1,0 +1,213 @@
+---
+title: 页面交互
+description: 在抓取前执行页面交互操作
+---
+
+# 页面交互
+
+页面交互允许你在抓取前与网页进行交互。适用于：
+- 加载动态内容（点击"加载更多"）
+- 填写表单
+- 切换标签页
+- 滚动触发懒加载
+
+## 可用操作
+
+| 操作 | 描述 | 参数 |
+|------|------|------|
+| `wait` | 等待指定时间 | `milliseconds` |
+| `click` | 点击元素 | `selector` |
+| `type` | 在输入框中输入文本 | `selector`, `text` |
+| `press` | 按下键盘按键 | `key` |
+| `scroll` | 滚动页面 | `direction`, `amount` |
+| `screenshot` | 拍摄中间截图 | - |
+
+## 使用操作
+
+在抓取请求中添加 `actions` 数组：
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["markdown"],
+  "actions": [
+    {"type": "wait", "milliseconds": 1000},
+    {"type": "click", "selector": "#load-more"},
+    {"type": "wait", "milliseconds": 500}
+  ]
+}
+```
+
+操作按顺序执行，在提取页面内容之前完成。
+
+## 等待操作
+
+暂停执行指定时间。
+
+```json
+{"type": "wait", "milliseconds": 2000}
+```
+
+**参数：**
+- `milliseconds`：等待时间（1-30000）
+
+**使用场景：**
+- 等待动画完成
+- 等待 AJAX 内容加载
+- 操作之间的延迟
+
+## 点击操作
+
+点击页面上的元素。
+
+```json
+{"type": "click", "selector": "#submit-button"}
+```
+
+**参数：**
+- `selector`：元素的 CSS 选择器
+
+**使用场景：**
+- 点击"加载更多"按钮
+- 打开下拉菜单
+- 切换标签页
+- 接受 Cookie 横幅
+
+## 输入操作
+
+在输入框中输入文本。
+
+```json
+{"type": "type", "selector": "#search-input", "text": "搜索内容"}
+```
+
+**参数：**
+- `selector`：输入框的 CSS 选择器
+- `text`：要输入的文本
+
+**使用场景：**
+- 填写搜索表单
+- 输入登录凭据（用于认证抓取）
+- 筛选内容
+
+## 按键操作
+
+按下键盘按键。
+
+```json
+{"type": "press", "key": "Enter"}
+```
+
+**参数：**
+- `key`：按键名称（如 "Enter"、"Tab"、"Escape"、"ArrowDown"）
+
+**常用按键：**
+- `Enter` - 提交表单
+- `Tab` - 移动到下一个字段
+- `Escape` - 关闭模态框
+- `ArrowDown` / `ArrowUp` - 导航列表
+
+## 滚动操作
+
+滚动页面。
+
+```json
+{"type": "scroll", "direction": "down", "amount": 500}
+```
+
+**参数：**
+- `direction`：`"up"` 或 `"down"`
+- `amount`：滚动像素（可选）
+
+**使用场景：**
+- 触发图片懒加载
+- 加载无限滚动内容
+- 到达页面下方的元素
+
+## 截图操作
+
+在操作执行过程中拍摄中间截图。
+
+```json
+{"type": "screenshot"}
+```
+
+用于调试操作序列。
+
+## 完整示例
+
+### 加载更多内容
+
+```json
+{
+  "url": "https://example.com/blog",
+  "formats": ["markdown"],
+  "actions": [
+    {"type": "wait", "milliseconds": 1000},
+    {"type": "click", "selector": ".load-more-btn"},
+    {"type": "wait", "milliseconds": 2000},
+    {"type": "click", "selector": ".load-more-btn"},
+    {"type": "wait", "milliseconds": 2000}
+  ]
+}
+```
+
+### 搜索并抓取结果
+
+```json
+{
+  "url": "https://example.com/search",
+  "formats": ["markdown", "links"],
+  "actions": [
+    {"type": "type", "selector": "#search-box", "text": "网页抓取"},
+    {"type": "press", "key": "Enter"},
+    {"type": "wait", "milliseconds": 3000}
+  ]
+}
+```
+
+### 无限滚动
+
+```json
+{
+  "url": "https://example.com/feed",
+  "formats": ["markdown"],
+  "actions": [
+    {"type": "scroll", "direction": "down"},
+    {"type": "wait", "milliseconds": 1500},
+    {"type": "scroll", "direction": "down"},
+    {"type": "wait", "milliseconds": 1500},
+    {"type": "scroll", "direction": "down"},
+    {"type": "wait", "milliseconds": 1500}
+  ]
+}
+```
+
+### 关闭 Cookie 横幅
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["screenshot"],
+  "actions": [
+    {"type": "wait", "milliseconds": 1000},
+    {"type": "click", "selector": "#accept-cookies"},
+    {"type": "wait", "milliseconds": 500}
+  ]
+}
+```
+
+## 最佳实践
+
+1. **点击后添加等待** - 给页面响应的时间
+2. **使用精确的选择器** - 避免可能匹配多个元素的通用选择器
+3. **增量测试** - 从一个操作开始，逐步添加更多
+4. **优雅处理失败** - 操作失败不会阻止抓取
+5. **考虑超时** - 总操作时间计入请求超时
+
+## 调试技巧
+
+1. **使用中间截图** - 添加 `{"type": "screenshot"}` 操作查看页面状态
+2. **检查选择器有效性** - 先在浏览器开发者工具中测试选择器
+3. **增加等待时间** - 慢速页面可能需要更长的等待
+4. **检查动态选择器** - 某些网站会生成随机类名

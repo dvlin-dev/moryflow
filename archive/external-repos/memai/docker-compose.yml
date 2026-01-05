@@ -1,0 +1,116 @@
+# Memory SaaS Platform - Docker Compose Configuration
+# For local development and self-hosting
+
+services:
+  # PostgreSQL with pgvector extension
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: memory
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and job queues
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Server
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/memory?schema=public
+      REDIS_URL: redis://redis:6379
+      PORT: 3000
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3001,http://localhost:3002}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost:3001,http://localhost:3002}
+      SERVER_URL: ${SERVER_URL:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-Memory <noreply@example.com>}
+      CREEM_API_KEY: ${CREEM_API_KEY}
+      CREEM_WEBHOOK_SECRET: ${CREEM_WEBHOOK_SECRET}
+      CREEM_TEST_MODE: ${CREEM_TEST_MODE:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Console (User Dashboard)
+  console:
+    build:
+      context: .
+      dockerfile: apps/console/Dockerfile
+    ports:
+      - "3001:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    depends_on:
+      - server
+
+  # Admin Dashboard
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    ports:
+      - "3002:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    depends_on:
+      - server
+
+  # WWW (Landing Page)
+  www:
+    build:
+      context: .
+      dockerfile: apps/www/Dockerfile
+    ports:
+      - "3003:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+
+  # Docs (Documentation)
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    ports:
+      - "3004:3000"
+
+volumes:
+  postgres_data:
+  redis_data:

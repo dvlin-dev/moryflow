@@ -1,0 +1,226 @@
+---
+title: Crawl API
+description: 爬取网站多个页面，支持深度和路径控制
+---
+
+# Crawl API
+
+Crawl API 支持多页面网站爬取，包括深度控制、路径过滤和 Webhook 通知。适用于抓取整个网站或特定部分。
+
+## 接口端点
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| POST | `/api/v1/crawl` | 创建爬取任务 |
+| GET | `/api/v1/crawl/:id` | 获取爬取状态和结果 |
+| DELETE | `/api/v1/crawl/:id` | 取消爬取任务 |
+| GET | `/api/v1/crawl` | 获取爬取历史 |
+
+## 创建爬取任务
+
+```http
+POST /api/v1/crawl
+```
+
+### 请求参数
+
+| 参数 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `url` | string | 必填 | 爬取起始 URL |
+| `maxDepth` | number | 3 | 最大链接深度（1-10） |
+| `limit` | number | 100 | 最大爬取页面数（1-1000） |
+| `includePaths` | string[] | - | 要包含的 URL 模式（glob 模式） |
+| `excludePaths` | string[] | - | 要排除的 URL 模式（glob 模式） |
+| `allowExternalLinks` | boolean | `false` | 是否跟踪外部域名链接 |
+| `scrapeOptions` | object | - | 每个页面的抓取选项（参见 Scrape API） |
+| `webhookUrl` | string | - | 完成时的 Webhook 通知 URL |
+
+### 请求示例
+
+```bash
+curl -X POST https://api.aiget.dev/api/v1/crawl \
+  -H "Authorization: Bearer lk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://docs.example.com",
+    "maxDepth": 3,
+    "limit": 50,
+    "includePaths": ["/docs/*", "/guides/*"],
+    "excludePaths": ["/api/*"],
+    "scrapeOptions": {
+      "formats": ["markdown"],
+      "onlyMainContent": true
+    },
+    "webhookUrl": "https://your-app.com/webhooks/crawl"
+  }'
+```
+
+### 响应
+
+API 返回任务 ID。通过轮询 `GET /api/v1/crawl/:id` 获取状态和结果。
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "crawl_abc123",
+    "status": "PENDING"
+  }
+}
+```
+
+## 获取爬取状态
+
+```http
+GET /api/v1/crawl/:id
+```
+
+获取爬取任务的状态和结果。
+
+### 响应（进行中）
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "crawl_abc123",
+    "status": "PROCESSING",
+    "startUrl": "https://docs.example.com",
+    "totalUrls": 45,
+    "completedUrls": 32,
+    "failedUrls": 2,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "startedAt": "2024-01-15T10:30:01.000Z"
+  }
+}
+```
+
+### 响应（已完成）
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "crawl_abc123",
+    "status": "COMPLETED",
+    "startUrl": "https://docs.example.com",
+    "totalUrls": 45,
+    "completedUrls": 43,
+    "failedUrls": 2,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "startedAt": "2024-01-15T10:30:01.000Z",
+    "completedAt": "2024-01-15T10:32:15.000Z",
+    "data": [
+      {
+        "url": "https://docs.example.com/intro",
+        "depth": 1,
+        "markdown": "# 简介\n\n欢迎使用...",
+        "metadata": {
+          "title": "简介",
+          "description": "入门指南"
+        },
+        "links": ["https://docs.example.com/setup", "..."]
+      }
+    ]
+  }
+}
+```
+
+**状态值：**
+
+| 状态 | 描述 |
+|------|------|
+| `PENDING` | 任务已排队 |
+| `PROCESSING` | 爬取进行中 |
+| `COMPLETED` | 爬取成功完成 |
+| `FAILED` | 爬取失败 |
+| `CANCELLED` | 爬取已取消 |
+
+## 取消爬取任务
+
+```http
+DELETE /api/v1/crawl/:id
+```
+
+取消正在运行的爬取任务。
+
+### 响应
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "crawl_abc123",
+    "status": "CANCELLED"
+  }
+}
+```
+
+## 获取爬取历史
+
+```http
+GET /api/v1/crawl
+```
+
+### 查询参数
+
+| 参数 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `limit` | number | 20 | 最大结果数（1-100） |
+| `offset` | number | 0 | 跳过的结果数，用于分页 |
+
+### 响应
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "crawl_abc123",
+      "status": "COMPLETED",
+      "startUrl": "https://docs.example.com",
+      "totalUrls": 45,
+      "completedUrls": 43,
+      "failedUrls": 2,
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+## Webhook 负载
+
+爬取任务完成时，Webhook 接收：
+
+```json
+{
+  "event": "crawl.completed",
+  "data": {
+    "id": "crawl_abc123",
+    "status": "COMPLETED",
+    "startUrl": "https://docs.example.com",
+    "totalUrls": 45,
+    "completedUrls": 43,
+    "failedUrls": 2
+  },
+  "timestamp": "2024-01-15T10:32:15.000Z"
+}
+```
+
+## 路径过滤
+
+`includePaths` 和 `excludePaths` 使用 glob 模式：
+
+| 模式 | 匹配 |
+|------|------|
+| `/docs/*` | `/docs/intro`、`/docs/guide` |
+| `/docs/**` | `/docs/intro`、`/docs/api/reference` |
+| `*.pdf` | 任何 PDF 文件 |
+| `/blog/2024-*` | `/blog/2024-01-post`、`/blog/2024-02-news` |
+
+## 最佳实践
+
+1. **从小规模开始** - 先用较低的 `limit`（10-20）测试，再爬取整个网站
+2. **使用路径过滤** - 通过 `includePaths` 聚焦相关内容
+3. **设置 Webhook** - 对于 `limit > 50` 的爬取，使用 Webhook 而非轮询
+4. **注意速率限制** - 大规模爬取消耗更多配额，可能需要更长时间

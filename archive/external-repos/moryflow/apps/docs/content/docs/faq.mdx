@@ -1,0 +1,250 @@
+---
+title: "FAQ"
+description: "Common questions and solutions."
+---
+
+# FAQ
+
+Common questions and solutions.
+
+## Installation & Startup
+
+### macOS Says "Developer Cannot Be Verified"
+
+**Problem**: First time opening MoryFlow, system says it can't verify the developer.
+
+**Solution**:
+1. Open System Settings → Privacy & Security
+2. Under "Security," click "Open Anyway"
+3. Or right-click the app and select "Open"
+
+### Windows Won't Open After Installation
+
+**Problem**: Installed, but clicking the icon does nothing.
+
+**Solution**:
+1. Check if antivirus software is blocking it
+2. Try running as administrator
+3. Re-download the installer and reinstall
+
+### Stuck on Loading Screen
+
+**Problem**: Opens but keeps showing loading.
+
+**Solution**:
+1. Wait a bit—first launch may take 10-20 seconds
+2. If it never loads, restart the app
+3. Check if you have enough disk space
+4. Delete config files and try again (paths below)
+
+**Config file locations**:
+- macOS: `~/Library/Application Support/MoryFlow/`
+- Windows: `%APPDATA%/MoryFlow/`
+
+## AI Configuration
+
+### API Key Invalid
+
+**Problem**: Configured API Key, but says it's invalid.
+
+**Solution**:
+1. Make sure you copied the full key without extra spaces
+2. Check if the key has expired
+3. Confirm your account balance is sufficient
+4. Confirm you selected the right provider
+
+### AI Not Responding
+
+**Problem**: Sent a message, but AI doesn't respond at all.
+
+**Solution**:
+1. Check your network connection
+2. Confirm you've configured an API Key
+3. Confirm you selected an available model
+4. Look for any error messages
+
+### Response Cut Off
+
+**Problem**: AI response stops mid-way.
+
+**Possible causes**:
+- Unstable network
+- Hit the model's output length limit
+- Provider having temporary issues
+
+**Solution**:
+1. Try again
+2. Simplify your question
+3. Try a different model
+
+### Do I Need a VPN?
+
+**Answer**: Depends on your provider.
+
+| Provider | VPN Needed? |
+|----------|-------------|
+| OpenAI, Anthropic, Google | May need depending on region |
+| DeepSeek, Zhipu, Moonshot | Generally no |
+| OpenRouter | Varies by region |
+| Ollama | No (runs locally) |
+
+## Editor
+
+### Input Method Issues
+
+**Problem**: Issues with non-English input (e.g., duplicate characters).
+
+**Solution**:
+1. Make sure your input method is up to date
+2. Try a different input method
+3. Restart MoryFlow
+
+### Save Failed
+
+**Problem**: Edited but says save failed.
+
+**Possible causes**:
+- File is being used by another program
+- Not enough disk space
+- No write permission
+
+**Solution**:
+1. Close other programs that might be using the file
+2. Check disk space
+3. Confirm you have write permission to the notes folder
+
+### Formatting Display Issues
+
+**Problem**: Markdown formatting not displaying correctly.
+
+**Solution**:
+1. Check if Markdown syntax is correct
+2. Refresh the page
+3. Restart the app
+
+## File Management
+
+### Can't Find My Notes
+
+**Problem**: Notes I created before are gone.
+
+**Troubleshooting steps**:
+1. Use the search feature
+2. Check if they're in another folder
+3. Confirm the notes folder path is correct
+4. Check if cloud sync is complete
+5. Check system trash/recycle bin
+
+### File Conflicts
+
+**Problem**: Conflict files appeared after cloud sync.
+
+**Solution**:
+1. Compare the content of conflict files
+2. Manually merge what you need
+3. Delete the conflict copy
+4. See [Multi-device Sync](/docs/advanced/sync) for more
+
+### Can't Delete File
+
+**Problem**: Delete operation failed.
+
+**Solution**:
+1. Confirm file isn't being used by another program
+2. Check write permissions
+3. Delete manually in file manager
+
+## Performance Issues
+
+### App Is Laggy
+
+**Problem**: Feels slow to use.
+
+**Solution**:
+1. Close unnecessary other apps
+2. Reduce open tabs
+3. If you have too many files, archive old ones
+4. Restart the app
+
+### High Memory Usage
+
+**Problem**: MoryFlow using too much memory.
+
+**Solution**:
+1. Close unneeded tabs
+2. Restart the app
+3. Check if you have many unclosed conversations
+
+### Ollama Model Loading Slow
+
+**Problem**: First response is very slow when using Ollama.
+
+**This is normal**: The model needs to load into memory.
+
+**How to optimize**:
+1. Use a smaller model
+2. Keep Ollama service running
+3. Add more RAM
+
+## Privacy & Security
+
+### Is My Data Safe?
+
+**Answer**: Yes, we take data security seriously.
+
+- **Note data**: Stored completely locally, never uploaded
+- **AI conversations**: Sent to AI provider when using cloud models
+- **Configuration**: Stored locally
+- **Usage data**: We don't collect any usage data
+
+### Will My API Key Leak?
+
+**Answer**: No.
+
+- API Keys are stored in local config files
+- Not uploaded to our servers
+- Only used when calling the corresponding AI service
+
+### How to Use Completely Offline?
+
+**Solution**: Use Ollama local models.
+
+1. Install Ollama
+2. Download a local model
+3. Select Ollama model in MoryFlow
+4. Works offline
+
+## Other Questions
+
+### How to Report Issues?
+
+**Channels**:
+- GitHub Issues: [github.com/dvlin-dev/moryflow-meta/issues](https://github.com/dvlin-dev/moryflow-meta/issues)
+- Email: hello@moryflow.com
+
+**Please include**:
+- Operating system and version
+- MoryFlow version
+- Detailed problem description
+- Steps to reproduce (if possible)
+- Screenshots or screen recording (if convenient)
+
+### How to Check Version Number?
+
+Open Settings → About, and you'll see it there.
+
+### How Often Are Updates?
+
+MoryFlow is continuously updated with new features and bug fixes. We recommend enabling auto-update, or periodically downloading the latest version from the website.
+
+### What Languages Are Supported?
+
+Currently the interface supports:
+- Simplified Chinese
+
+Planned:
+- English (in progress)
+
+---
+
+If your question isn't listed above, feel free to report it via [GitHub Issues](https://github.com/dvlin-dev/moryflow-meta/issues).

@@ -1,0 +1,331 @@
+---
+title: Best Practices
+description: Recommendations for building effective memory-powered applications
+---
+
+# Best Practices
+
+Follow these best practices to build effective and efficient applications with Memai.
+
+## Memory Content
+
+### Write Clear, Descriptive Content
+
+Memory content should be clear and self-contained for better semantic search:
+
+```javascript
+// Good: Clear and descriptive
+await createMemory({
+  content: "User John prefers dark mode and uses VS Code as his primary IDE",
+  userId: "user_123"
+});
+
+// Avoid: Vague or context-dependent
+await createMemory({
+  content: "He likes dark mode",
+  userId: "user_123"
+});
+```
+
+### Include Relevant Context
+
+Add context that helps with retrieval:
+
+```javascript
+await createMemory({
+  content: "During the onboarding call on January 15, the user mentioned they need integration with Slack and GitHub for their development workflow",
+  userId: "user_123",
+  tags: ["onboarding", "integrations"]
+});
+```
+
+### Use Tags for Organization
+
+Tags help filter and organize memories:
+
+```javascript
+await createMemory({
+  content: "User's favorite programming language is Python",
+  userId: "user_123",
+  tags: ["preference", "programming", "profile"]
+});
+
+// Later, filter by tags
+await searchMemories({
+  query: "programming preferences",
+  userId: "user_123",
+  tags: ["preference"]  // Only search preference-tagged memories
+});
+```
+
+## Search Optimization
+
+### Write Natural Queries
+
+Memai uses semantic search, so natural language queries work best:
+
+```javascript
+// Good: Natural language
+await searchMemories({
+  query: "What are the user's communication preferences?"
+});
+
+// Less effective: Keyword-style
+await searchMemories({
+  query: "communication preferences user"
+});
+```
+
+### Set Appropriate Thresholds
+
+Use the `threshold` parameter to filter out low-relevance results:
+
+```javascript
+// High threshold for precise matches
+await searchMemories({
+  query: "What is the user's email?",
+  threshold: 0.8,  // Only highly relevant results
+  limit: 3
+});
+
+// Lower threshold for broader search
+await searchMemories({
+  query: "Tell me about the user's background",
+  threshold: 0.5,  // Include somewhat related results
+  limit: 10
+});
+```
+
+### Scope Searches Appropriately
+
+Always scope searches to the relevant user/agent:
+
+```javascript
+// Good: Scoped to specific user
+await searchMemories({
+  query: "project deadlines",
+  userId: "user_123"
+});
+
+// Good: Scoped to specific agent
+await searchMemories({
+  query: "conversation context",
+  agentId: "support_bot"
+});
+```
+
+## Entity & Relation Management
+
+### Extract Meaningful Entities
+
+Create entities for important, reusable concepts:
+
+```javascript
+// Good: Important entity worth tracking
+await createEntity({
+  name: "Acme Corporation",
+  type: "ORGANIZATION",
+  description: "User's employer, a Fortune 500 tech company"
+});
+
+// Avoid: Transient or unimportant entities
+await createEntity({
+  name: "today",
+  type: "OTHER"  // Too generic
+});
+```
+
+### Use Consistent Relationship Types
+
+Establish a vocabulary of relationship types for your application:
+
+```javascript
+// Define your relationship vocabulary
+const RELATIONSHIP_TYPES = {
+  WORKS_FOR: 'WORKS_FOR',
+  MANAGES: 'MANAGES',
+  KNOWS: 'KNOWS',
+  INTERESTED_IN: 'INTERESTED_IN',
+  LOCATED_IN: 'LOCATED_IN'
+};
+
+// Use consistently
+await createRelation({
+  sourceId: personEntity.id,
+  targetId: companyEntity.id,
+  type: RELATIONSHIP_TYPES.WORKS_FOR
+});
+```
+
+## Error Handling
+
+### Handle Errors Gracefully
+
+Always implement proper error handling:
+
+```javascript
+async function searchUserMemories(userId, query) {
+  try {
+    const results = await searchMemories({ userId, query });
+    return results;
+  } catch (error) {
+    if (error.code === 'QUOTA_EXCEEDED') {
+      // Handle quota exceeded
+      logWarning('Quota exceeded, using cached results');
+      return getCachedResults(userId, query);
+    }
+
+    if (error.code === 'RATE_LIMIT_EXCEEDED') {
+      // Implement retry with backoff
+      await sleep(error.retryAfter * 1000);
+      return searchUserMemories(userId, query);
+    }
+
+    // Log and rethrow unknown errors
+    logError('Memory search failed', error);
+    throw error;
+  }
+}
+```
+
+### Validate Input Before Sending
+
+Validate data before making API calls:
+
+```javascript
+function validateMemoryContent(content) {
+  if (!content || typeof content !== 'string') {
+    throw new Error('Content must be a non-empty string');
+  }
+
+  if (content.length > 10000) {
+    throw new Error('Content exceeds maximum length of 10,000 characters');
+  }
+
+  return content.trim();
+}
+
+async function createMemorySafe(data) {
+  const content = validateMemoryContent(data.content);
+  return createMemory({ ...data, content });
+}
+```
+
+## Performance
+
+### Implement Caching
+
+Cache frequently accessed data:
+
+```javascript
+class MemoryCache {
+  constructor(ttlMs = 5 * 60 * 1000) {
+    this.cache = new Map();
+    this.ttlMs = ttlMs;
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.value;
+  }
+
+  set(key, value) {
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + this.ttlMs
+    });
+  }
+}
+
+const memoryCache = new MemoryCache();
+
+async function getMemory(id) {
+  const cached = memoryCache.get(id);
+  if (cached) return cached;
+
+  const memory = await fetchMemory(id);
+  memoryCache.set(id, memory);
+  return memory;
+}
+```
+
+### Use Pagination
+
+When listing memories, use pagination to avoid loading too much data:
+
+```javascript
+async function* getAllMemories(userId) {
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await listMemories({
+      userId,
+      page,
+      limit: 100
+    });
+
+    for (const memory of response.items) {
+      yield memory;
+    }
+
+    hasMore = page < response.pagination.totalPages;
+    page++;
+  }
+}
+
+// Usage
+for await (const memory of getAllMemories('user_123')) {
+  processMemory(memory);
+}
+```
+
+## Security
+
+### Never Expose API Keys
+
+Keep API keys server-side:
+
+```javascript
+// Good: Server-side API call
+// server.js
+app.post('/api/memories/search', async (req, res) => {
+  const results = await memaiClient.searchMemories({
+    query: req.body.query,
+    userId: req.user.id
+  });
+  res.json(results);
+});
+
+// Bad: Client-side API key exposure
+// client.js (DON'T DO THIS)
+fetch('https://api.memai.dev/v1/memories/search', {
+  headers: {
+    'Authorization': 'Bearer mm_exposed_key'  // NEVER DO THIS
+  }
+});
+```
+
+### Validate User Access
+
+Always verify users can only access their own data:
+
+```javascript
+app.get('/api/memories/:id', async (req, res) => {
+  const memory = await memaiClient.getMemory(req.params.id);
+
+  // Verify ownership
+  if (memory.userId !== req.user.id) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  res.json(memory);
+});
+```

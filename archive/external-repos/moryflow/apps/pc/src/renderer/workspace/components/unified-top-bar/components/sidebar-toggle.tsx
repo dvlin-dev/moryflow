@@ -1,0 +1,39 @@
+/**
+ * [PROPS]: { collapsed, onToggle }
+ * [EMITS]: onToggle - 切换侧边栏
+ * [POS]: 侧边栏切换按钮
+ */
+
+import { PanelLeft } from 'lucide-react'
+import { Button } from '@moryflow/ui/components/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@moryflow/ui/components/tooltip'
+import { useTranslation } from '@/lib/i18n'
+
+type SidebarToggleProps = {
+  collapsed: boolean
+  onToggle: () => void
+}
+
+export const SidebarToggle = ({ collapsed, onToggle }: SidebarToggleProps) => {
+  const { t } = useTranslation('workspace')
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="size-7 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            onClick={onToggle}
+          >
+            <PanelLeft className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {collapsed ? t('expandSidebar') : t('collapseSidebar')}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}

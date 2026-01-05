@@ -1,0 +1,21 @@
+# Cloudflare Worker 配置
+# 站点发布服务 - 处理 *.moryflow.app 的请求
+
+name = "publish-worker"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# 路由配置
+routes = [
+  { pattern = "moryflow.app/*", zone_name = "moryflow.app" },
+  { pattern = "*.moryflow.app/*", zone_name = "moryflow.app" }
+]
+
+# R2 存储桶绑定
+[[r2_buckets]]
+binding = "SITE_BUCKET"
+bucket_name = "moryflow-sites"
+
+# 环境变量
+[vars]
+SITE_DOMAIN = "moryflow.app"

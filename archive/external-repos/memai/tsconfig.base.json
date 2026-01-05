@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@memai/shared-types/*": [
+        "packages/shared-types/src/*",
+        "packages/shared-types/dist/*"
+      ],
+      "@memai/shared-types": [
+        "packages/shared-types/src/index.ts",
+        "packages/shared-types/dist/index.d.ts"
+      ],
+      "@memai/ui/*": ["packages/ui/src/*"],
+      "@memai/ui": ["packages/ui/src/index.ts"]
+    }
+  }
+}

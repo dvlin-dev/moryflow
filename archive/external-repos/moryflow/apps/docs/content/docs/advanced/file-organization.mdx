@@ -1,0 +1,264 @@
+---
+title: "File Organization Best Practices"
+description: "A sensible file organization makes your notes easier to find and manage."
+---
+
+# File Organization Best Practices
+
+A sensible file organization makes your notes easier to find and manage.
+
+## Why It Matters
+
+- **Find things quickly**: No more hunting around
+- **Avoid duplicates**: Clear structure prevents redundancy
+- **Mory understands better**: Structured content is easier for Mory to work with
+- **Easier maintenance**: Regular cleanup becomes painless
+
+## How to Design Your Structure
+
+### Organize by Domain
+
+A basic structure that works for most people:
+
+```
+Notes/
+├── Work/
+│   ├── Projects/
+│   ├── Logs/
+│   └── Summaries/
+├── Study/
+│   ├── Programming/
+│   ├── English/
+│   └── Reading/
+├── Life/
+│   ├── Travel/
+│   ├── Health/
+│   └── Finance/
+└── Archive/
+```
+
+### PARA Method
+
+For people juggling multiple projects:
+
+```
+Notes/
+├── Projects/       # Active projects
+│   ├── ProjectA/
+│   └── ProjectB/
+├── Areas/          # Long-term responsibilities
+│   ├── Health/
+│   ├── Finance/
+│   └── Career/
+├── Resources/      # Topics of interest
+│   ├── Tech/
+│   ├── Design/
+│   └── Writing/
+└── Archives/       # Completed/inactive
+```
+
+### Zettelkasten Method
+
+For those focused on knowledge connections:
+
+```
+Notes/
+├── Inbox/          # Quick capture
+├── Notes/          # Permanent notes
+├── Literature/     # Literature notes
+└── Projects/       # Project-related
+```
+
+## Naming Conventions
+
+### File Naming
+
+**Recommended format:**
+
+```
+2024-01-15 Meeting Notes - Product Review.md
+ProjectA-Requirements-v2.md
+"Atomic Habits" Reading Notes.md
+```
+
+**Naming principles:**
+
+| Principle | Description | Example |
+|-----------|-------------|---------|
+| Date prefix | Easy chronological sorting | `2024-01-15 xxx.md` |
+| Descriptive names | Know what it is at a glance | `Meeting Notes - Product Review.md` |
+| Avoid special characters | Better compatibility | Don't use `/ \ : * ?` |
+| Moderate length | Not too short or long | 10-30 characters |
+
+### Folder Naming
+
+**Recommended:**
+```
+Work/
+Study/
+2024-Projects/
+```
+
+**Avoid:**
+```
+New Folder/
+Temp/
+asdf/
+```
+
+## Content Organization
+
+### Use Templates
+
+Create templates for common note types:
+
+**Daily log template:**
+```markdown
+# {{date}}
+
+## What I Did Today
+-
+
+## In Progress
+-
+
+## Tomorrow's Plan
+-
+
+## Random Thoughts
+```
+
+**Meeting notes template:**
+```markdown
+# {{meeting topic}}
+
+**Date**:
+**Attendees**:
+**Meeting Goal**:
+
+## Discussion Points
+-
+
+## Decisions
+-
+
+## Action Items
+| Task | Owner | Due Date |
+|------|-------|----------|
+|      |       |          |
+```
+
+### Use Heading Levels Well
+
+Use headings to make structure clear:
+
+```markdown
+# Level 1 (Document Topic)
+
+## Level 2 (Main Sections)
+
+### Level 3 (Subsections)
+
+Body content...
+```
+
+### Link Related Notes
+
+Build connections between notes:
+
+```markdown
+This idea came from [[Book Notes - Atomic Habits]],
+and relates to [[Time Management Methods]].
+```
+
+## Regular Maintenance
+
+### Daily: Process Inbox
+
+- Move quick captures to proper locations
+- Flesh out temporary notes
+
+### Weekly: Review and Archive
+
+- Check this week's notes
+- Archive completed projects
+- Delete what's not needed
+
+### Monthly: Optimize Structure
+
+- Review overall folder structure
+- Merge similar content
+- Update indexes
+
+## Let Mory Help Organize
+
+### Auto-categorize
+
+```
+Help me sort the notes in my Inbox folder into appropriate locations
+```
+
+### Find Duplicates
+
+```
+Check if there's any duplicate or similar content in my notes
+```
+
+### Generate Index
+
+```
+Help me create an index of my notes
+```
+
+### Cleanup Suggestions
+
+```
+Find notes that haven't been updated in 6 months, see if they should be archived
+```
+
+## Common Issues
+
+### Folder Hierarchy Too Deep
+
+**Problem**: More than 3-4 levels deep, hard to find things
+
+**Solution**:
+- Flatten the structure
+- Use naming instead of nesting
+- Use search instead of browsing
+
+### Don't Know Which Folder
+
+**Problem**: Decision paralysis on categorization
+
+**Solution**:
+- Put in Inbox first, organize later
+- Create a "To Sort" folder
+- Rely on search instead of precise categorization
+
+### Historical Notes Are a Mess
+
+**Problem**: Old notes were never organized
+
+**Solution**:
+- Don't try to fix everything at once
+- Organize as you use them
+- Have Mory help with batch processing
+
+## Pro Tips
+
+### Search Is King
+
+Don't rely too much on folder browsing, use search:
+
+- MoryFlow's built-in search
+- Ask Mory with natural language
+- Use tags as helpers
+
+### Progressive Organization
+
+Don't aim for perfection, let organization evolve with your needs:
+
+1. Capture quickly first
+2. Organize when you have time
+3. Optimize structure periodically

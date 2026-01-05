@@ -1,0 +1,130 @@
+---
+title: 快速入门
+description: 5 分钟内开始使用 Memai
+---
+
+# 快速入门
+
+本指南将带您完成创建第一条记忆并使用 Memai API 进行搜索的过程。
+
+## 第 1 步：获取 API 密钥
+
+1. 在 [console.memai.dev](https://console.memai.dev) 注册或登录
+2. 在侧边栏中导航至 **API 密钥**
+3. 点击 **创建 API 密钥**
+4. 复制您的 API 密钥（以 `mm_` 开头）
+
+> **重要**：您的 API 密钥只会显示一次。请妥善保存。
+
+## 第 2 步：创建第一条记忆
+
+使用以下 curl 命令创建一条记忆：
+
+```bash
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "张三是一名软件工程师，热爱 TypeScript 和 React",
+    "userId": "user_123",
+    "tags": ["个人资料", "技能"]
+  }'
+```
+
+响应：
+
+```json
+{
+  "id": "mem_abc123",
+  "content": "张三是一名软件工程师，热爱 TypeScript 和 React",
+  "userId": "user_123",
+  "tags": ["个人资料", "技能"],
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+
+## 第 3 步：添加更多记忆
+
+让我们添加更多记忆以便进行有趣的搜索：
+
+```bash
+# 关于偏好的记忆
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "张三偏好深色模式，使用 VS Code 作为 IDE",
+    "userId": "user_123",
+    "tags": ["偏好"]
+  }'
+
+# 关于对话的记忆
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "张三提到他正在使用 Next.js 开发一个新的电商项目",
+    "userId": "user_123",
+    "tags": ["项目", "对话"]
+  }'
+```
+
+## 第 4 步：搜索记忆
+
+现在让我们使用自然语言搜索相关记忆：
+
+```bash
+curl -X POST https://api.memai.dev/v1/memories/search \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "张三会哪些编程语言？",
+    "userId": "user_123",
+    "limit": 5
+  }'
+```
+
+响应：
+
+```json
+{
+  "results": [
+    {
+      "id": "mem_abc123",
+      "content": "张三是一名软件工程师，热爱 TypeScript 和 React",
+      "score": 0.89,
+      "userId": "user_123",
+      "tags": ["个人资料", "技能"],
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "mem_def456",
+      "content": "张三提到他正在使用 Next.js 开发一个新的电商项目",
+      "score": 0.72,
+      "userId": "user_123",
+      "tags": ["项目", "对话"],
+      "createdAt": "2024-01-15T10:32:00Z"
+    }
+  ]
+}
+```
+
+搜索使用语义相似性，因此即使确切的词语不匹配，也能找到相关记忆。
+
+## 第 5 步：列出记忆
+
+您还可以列出用户的所有记忆：
+
+```bash
+curl -X GET "https://api.memai.dev/v1/memories?userId=user_123&limit=10" \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+## 下一步
+
+现在您已经创建并搜索了记忆，探索更多功能：
+
+- [身份验证](/zh/docs/getting-started/authentication) - 了解 API 密钥管理
+- [记忆 API](/zh/docs/api-reference/memories) - 完整 API 参考
+- [实体](/zh/docs/api-reference/entities) - 提取和管理实体
+- [Webhooks](/zh/docs/api-reference/webhooks) - 获取实时通知

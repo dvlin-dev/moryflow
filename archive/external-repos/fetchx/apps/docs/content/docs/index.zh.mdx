@@ -1,0 +1,89 @@
+---
+title: 简介
+description: AIGet - 专为开发者打造的网页抓取 API
+---
+
+# 欢迎使用 AIGet
+
+AIGet 是一款 **网页抓取 API**，让你可以即时从任意网页提取内容。专为需要从网络获取可靠、结构化数据的开发者打造。
+
+## 什么是 AIGet？
+
+AIGet 提供简单的 REST API 来抓取网页并提取多种格式的内容。发送一个 URL，即可获取干净的 Markdown、HTML、链接或截图。
+
+```bash
+curl -X POST https://api.aiget.dev/api/v1/scrape \
+  -H "Authorization: Bearer lk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown", "links"]
+  }'
+```
+
+## 核心功能
+
+### 内容提取
+从任意网页提取干净、结构化的内容，输出为 Markdown 或 HTML。非常适合用于 LLM 输入、构建知识库或内容迁移。
+
+### 多页面爬取
+支持深度控制、路径过滤和并行处理的网站爬取。几分钟内即可从数百个页面提取内容。
+
+### URL 发现
+通过 Sitemap 解析或浏览器爬取发现网站的所有 URL。非常适合 SEO 分析和站点地图构建。
+
+### AI 结构化提取
+使用 LLM 提取符合 JSON Schema 的结构化数据。提取产品信息、文章元数据或任何自定义数据结构。
+
+### Web 搜索
+搜索网络并可选择性地抓取搜索结果内容。构建研究工具、监控竞争对手或聚合内容。
+
+### 截图
+捕获高质量的 PNG、JPEG 或 WebP 格式截图。支持全页面、视口或特定元素截图。
+
+## 快速开始
+
+<Cards>
+  <Card title="开始使用" href="/zh/docs/getting-started">
+    创建账号并发起你的第一个 API 请求
+  </Card>
+  <Card title="API 参考" href="/zh/docs/api">
+    探索完整的 API 文档
+  </Card>
+  <Card title="价格方案" href="/zh/docs/pricing">
+    选择适合你的价格方案
+  </Card>
+</Cards>
+
+## 使用场景
+
+- **LLM 训练数据** - 为 AI 模型训练和 RAG 应用提取干净的文本
+- **内容迁移** - 使用结构化数据在 CMS 平台之间迁移内容
+- **SEO 分析** - 分析竞争对手网站、提取元数据、发现站点结构
+- **价格监控** - 跨电商网站追踪产品价格和库存
+- **研究与聚合** - 从多个来源构建知识库
+- **视觉测试** - 为回归测试和文档捕获截图
+
+## 可用 API
+
+| API | 描述 |
+|-----|------|
+| [Scrape](/zh/docs/api/scrape) | 从单个 URL 提取内容 |
+| [Crawl](/zh/docs/api/crawl) | 从网站爬取多个页面 |
+| [Map](/zh/docs/api/map) | 发现网站的所有 URL |
+| [Batch Scrape](/zh/docs/api/batch-scrape) | 并行抓取多个 URL |
+| [Extract](/zh/docs/api/extract) | AI 驱动的结构化数据提取 |
+| [Search](/zh/docs/api/search) | 带内容抓取的 Web 搜索 |
+
+## 为什么选择 AIGet？
+
+| 特性 | AIGet | 传统爬虫 |
+|------|----------|----------|
+| 配置时间 | 几分钟 | 几小时/几天 |
+| JavaScript 渲染 | 完整 Chromium | 通常有限 |
+| 输出格式 | Markdown、HTML、链接、截图 | 通常只有原始 HTML |
+| AI 提取 | 内置 LLM 支持 | 需要自定义集成 |
+| 基础设施 | 托管、可扩展 | 自托管复杂性 |
+| 速率限制 | 自动处理 | 手动实现 |
+
+准备好开始了吗？[创建你的账号](/zh/docs/getting-started)，几分钟内即可提取你的第一个网页。

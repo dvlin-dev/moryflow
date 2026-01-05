@@ -1,0 +1,56 @@
+name: Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 当推送 v1.0.0 这样的标签时触发
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Package application (macOS)
+        if: matrix.os == 'macos-latest'
+        run: pnpm dist:mac
+
+      - name: Package application (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm dist:win
+
+      - name: Package application (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm dist:linux
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/**/*.dmg
+            release/**/*.exe
+            release/**/*.AppImage
+            release/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

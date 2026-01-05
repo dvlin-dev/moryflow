@@ -1,0 +1,260 @@
+---
+title: 记忆 API
+description: 创建、搜索和管理记忆
+---
+
+# 记忆 API
+
+记忆 API 允许您存储、搜索和管理语义记忆。
+
+## 创建记忆
+
+创建一条新记忆，自动生成向量嵌入。
+
+```
+POST /v1/memories
+```
+
+### 请求体
+
+| 字段 | 类型 | 必需 | 描述 |
+|------|------|------|------|
+| `content` | string | 是 | 记忆内容（最多 10,000 字符） |
+| `userId` | string | 是 | 用户标识符 |
+| `agentId` | string | 否 | 代理标识符 |
+| `tags` | string[] | 否 | 用于分类的标签数组 |
+| `metadata` | object | 否 | 自定义元数据对象 |
+
+### 请求示例
+
+```bash
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "用户提到他们偏好用 Python 做数据科学工作",
+    "userId": "user_123",
+    "agentId": "agent_456",
+    "tags": ["偏好", "编程"],
+    "metadata": {
+      "source": "chat",
+      "sessionId": "sess_789"
+    }
+  }'
+```
+
+### 响应
+
+```json
+{
+  "id": "mem_abc123def456",
+  "content": "用户提到他们偏好用 Python 做数据科学工作",
+  "userId": "user_123",
+  "agentId": "agent_456",
+  "tags": ["偏好", "编程"],
+  "metadata": {
+    "source": "chat",
+    "sessionId": "sess_789"
+  },
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+## 搜索记忆
+
+使用语义相似性搜索相关记忆。
+
+```
+POST /v1/memories/search
+```
+
+### 请求体
+
+| 字段 | 类型 | 必需 | 描述 |
+|------|------|------|------|
+| `query` | string | 是 | 自然语言搜索查询 |
+| `userId` | string | 否 | 按用户 ID 过滤 |
+| `agentId` | string | 否 | 按代理 ID 过滤 |
+| `tags` | string[] | 否 | 按标签过滤（AND 逻辑） |
+| `limit` | number | 否 | 最大结果数（默认：10，最大：100） |
+| `threshold` | number | 否 | 最小相似度分数（0-1，默认：0.5） |
+
+### 请求示例
+
+```bash
+curl -X POST https://api.memai.dev/v1/memories/search \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "用户偏好什么编程语言？",
+    "userId": "user_123",
+    "limit": 5,
+    "threshold": 0.6
+  }'
+```
+
+### 响应
+
+```json
+{
+  "results": [
+    {
+      "id": "mem_abc123def456",
+      "content": "用户提到他们偏好用 Python 做数据科学工作",
+      "score": 0.87,
+      "userId": "user_123",
+      "agentId": "agent_456",
+      "tags": ["偏好", "编程"],
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "mem_xyz789",
+      "content": "用户说他们用 JavaScript 做 Web 开发",
+      "score": 0.74,
+      "userId": "user_123",
+      "tags": ["编程"],
+      "createdAt": "2024-01-14T15:20:00Z"
+    }
+  ]
+}
+```
+
+`score` 字段表示语义相似度（0-1，越高越相关）。
+
+---
+
+## 列出记忆
+
+获取分页的记忆列表。
+
+```
+GET /v1/memories
+```
+
+### 查询参数
+
+| 参数 | 类型 | 必需 | 描述 |
+|------|------|------|------|
+| `userId` | string | 否 | 按用户 ID 过滤 |
+| `agentId` | string | 否 | 按代理 ID 过滤 |
+| `tags` | string | 否 | 逗号分隔的标签进行过滤 |
+| `page` | number | 否 | 页码（默认：1） |
+| `limit` | number | 否 | 每页数量（默认：20，最大：100） |
+
+### 请求示例
+
+```bash
+curl -X GET "https://api.memai.dev/v1/memories?userId=user_123&limit=10" \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 响应
+
+```json
+{
+  "items": [
+    {
+      "id": "mem_abc123def456",
+      "content": "用户提到他们偏好用 Python 做数据科学工作",
+      "userId": "user_123",
+      "agentId": "agent_456",
+      "tags": ["偏好", "编程"],
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 45,
+    "totalPages": 5
+  }
+}
+```
+
+---
+
+## 获取记忆
+
+通过 ID 获取特定记忆。
+
+```
+GET /v1/memories/:id
+```
+
+### 路径参数
+
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `id` | string | 记忆 ID |
+
+### 请求示例
+
+```bash
+curl -X GET https://api.memai.dev/v1/memories/mem_abc123def456 \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 响应
+
+```json
+{
+  "id": "mem_abc123def456",
+  "content": "用户提到他们偏好用 Python 做数据科学工作",
+  "userId": "user_123",
+  "agentId": "agent_456",
+  "tags": ["偏好", "编程"],
+  "metadata": {
+    "source": "chat",
+    "sessionId": "sess_789"
+  },
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+## 删除记忆
+
+永久删除一条记忆���
+
+```
+DELETE /v1/memories/:id
+```
+
+### 路径参数
+
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `id` | string | 记忆 ID |
+
+### 请求示例
+
+```bash
+curl -X DELETE https://api.memai.dev/v1/memories/mem_abc123def456 \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 响应
+
+```json
+{
+  "success": true,
+  "id": "mem_abc123def456"
+}
+```
+
+---
+
+## 错误码
+
+| 错误码 | 描述 |
+|--------|------|
+| `MEMORY_NOT_FOUND` | 指定的记忆不存在 |
+| `CONTENT_TOO_LONG` | 内容超过 10,000 字符 |
+| `INVALID_USER_ID` | 需要用户 ID |
+| `QUOTA_EXCEEDED` | 月度配额已超限 |

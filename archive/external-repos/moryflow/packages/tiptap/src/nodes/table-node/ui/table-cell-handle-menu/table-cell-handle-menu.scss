@@ -1,0 +1,121 @@
+.expandable-menu-button {
+  --button-size: 16px;
+  --button-offset: -8px;
+  --dot-size-small: 8px;
+  --dot-size-large: 16px;
+  --dot-offset-small: 3px;
+  --dot-offset-large: 0;
+  --border-radius-full: 9999px;
+  --transition-duration: 0.05s;
+  --transition-timing: ease;
+  --icon-scale-small: 0.9;
+  --icon-scale-large: 1;
+
+  position: absolute;
+  top: 50%;
+  right: var(--button-offset);
+  transform: translateY(-50%);
+
+  width: var(--button-size);
+  height: var(--button-size);
+
+  background: transparent;
+  border-radius: var(--border-radius-full);
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: auto;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: var(--dot-offset-small);
+
+    width: var(--dot-size-small);
+    height: var(--dot-size-small);
+
+    background: var(--tt-brand-color-600);
+    border-radius: var(--border-radius-full);
+    transform: translateY(-50%);
+
+    transition:
+      width var(--transition-duration) var(--transition-timing),
+      height var(--transition-duration) var(--transition-timing),
+      right var(--transition-duration) var(--transition-timing),
+      background var(--transition-duration) var(--transition-timing);
+  }
+
+  svg {
+    position: relative;
+    z-index: 1;
+
+    width: var(--button-size);
+    height: var(--button-size);
+    color: var(--white);
+
+    opacity: 0;
+    transform: scale(var(--icon-scale-small));
+
+    transition:
+      opacity var(--transition-duration) var(--transition-timing),
+      transform var(--transition-duration) var(--transition-timing);
+
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    &::before {
+      width: var(--dot-size-large);
+      height: var(--dot-size-large);
+      right: var(--dot-offset-large);
+    }
+
+    svg {
+      opacity: 1;
+      transform: scale(var(--icon-scale-large));
+    }
+  }
+
+  &:hover,
+  &:focus-visible,
+  &.menu-opened {
+    @media (hover: hover) {
+      &::before {
+        width: var(--dot-size-large);
+        height: var(--dot-size-large);
+        right: var(--dot-offset-large);
+      }
+
+      svg {
+        opacity: 1;
+        transform: scale(var(--icon-scale-large));
+      }
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tt-brand-color-600);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+
+    &::before {
+      background: var(--tt-disabled-color, #ccc);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before,
+    svg {
+      transition: none;
+    }
+  }
+}

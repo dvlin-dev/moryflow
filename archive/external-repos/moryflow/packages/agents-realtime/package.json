@@ -1,0 +1,79 @@
+{
+  "name": "@moryflow/agents-realtime",
+  "repository": "https://github.com/openai/openai-agents-js",
+  "homepage": "https://openai.github.io/openai-agents-js/",
+  "version": "0.3.3",
+  "description": "The OpenAI Agents SDK is a lightweight yet powerful framework for building multi-agent workflows. This package contains the logic for building realtime voice agents on the server or in the browser.",
+  "author": "OpenAI <support@openai.com>",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "browser": "./dist/bundle/openai-realtime-agents.umd.cjs",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/index.d.ts",
+        "require": "./dist/index.js",
+        "import": "./dist/index.mjs"
+      },
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./_shims": {
+      "workerd": {
+        "types": "./dist/shims/shims-workerd.d.ts",
+        "require": "./dist/shims/shims-workerd.js",
+        "import": "./dist/shims/shims-workerd.mjs"
+      },
+      "browser": {
+        "types": "./dist/shims/shims-browser.d.ts",
+        "require": "./dist/shims/shims-browser.js",
+        "import": "./dist/shims/shims-browser.mjs"
+      },
+      "node": {
+        "types": "./dist/shims/shims-node.d.ts",
+        "require": "./dist/shims/shims-node.js",
+        "import": "./dist/shims/shims-node.mjs"
+      },
+      "types": "./dist/shims/shims.d.ts",
+      "require": "./dist/shims/shims.js",
+      "import": "./dist/shims/shims.mjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "_shims": [
+        "dist/shims/shims-node.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "prebuild": "node ../../scripts/embedMeta.js",
+    "build-check": "tsc --noEmit -p ./tsconfig.test.json",
+    "bundle": "vite build"
+  },
+  "dependencies": {
+    "@moryflow/agents-core": "workspace:*",
+    "@types/ws": "^8.18.1",
+    "debug": "^4.4.0",
+    "ws": "^8.18.1"
+  },
+  "keywords": [
+    "openai",
+    "agents",
+    "ai",
+    "agentic"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "zod": "^3.25.40 || ^4.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "vite": "^6.4.1",
+    "zod": "^3.25.40 || ^4.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
