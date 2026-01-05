@@ -24,11 +24,11 @@
 
 以下是正在迁移到此 Monorepo 的原始仓库：
 
-| 产品              | 绝对路径                              | 说明                                  |
-| ----------------- | ------------------------------------- | ------------------------------------- |
-| Fetchx (原 AIGET) | `/Users/zhangbaolin/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名）  |
-| Memox (原 MEMAI)  | `/Users/zhangbaolin/code/me/memai`    | AI 记忆与知识图谱服务                 |
-| Moryflow          | `/Users/zhangbaolin/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品） |
+| 产品              | 绝对路径                          | 说明                                  |
+| ----------------- | --------------------------------- | ------------------------------------- |
+| Fetchx (原 AIGET) | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名）  |
+| Memox (原 MEMAI)  | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                 |
+| Moryflow          | `/Users/bowling/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品） |
 
 ---
 
