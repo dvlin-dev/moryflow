@@ -19,6 +19,10 @@
     "./lib": "./src/lib/index.ts",
     "./lib/*": "./src/lib/*",
     "./hooks/*": "./src/hooks/*",
+    "./styles": {
+      "style": "./styles/index.css",
+      "default": "./styles/index.css"
+    },
     "./styles/*": "./styles/*"
   },
   "files": [
