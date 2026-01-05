@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "moryflow-vectorize",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-12-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "ai": { "binding": "AI" },
+  "vectorize": [{ "binding": "VECTOR_INDEX", "index_name": "moryflow-embeddings" }],
+  "vars": {
+    "EMBEDDING_MODEL": "@cf/qwen/qwen3-embedding-0.6b",
+    "VECTOR_DIMENSIONS": "1024"
+  },
+  "observability": {
+    "logs": { "enabled": false, "head_sampling_rate": 1, "invocation_logs": true, "persist": true }
+  }
+}
+
