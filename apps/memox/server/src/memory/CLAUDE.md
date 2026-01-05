@@ -58,9 +58,9 @@ Console API - SessionGuard:
 // Create memory
 CreateMemorySchema = {
   content: string,           // Required, 1-10000 chars
-  userId?: string,           // Optional user context
+  userId: string,            // Required user context
   agentId?: string,          // Optional agent context
-  metadata?: Record<string, unknown>,
+  metadata?: Record<string, JsonValue>,
   tags?: string[],
   importance?: number        // 0-1 scale
 }
@@ -70,7 +70,7 @@ SearchMemorySchema = {
   query: string,             // Search query
   limit?: number,            // Default 10, max 100
   threshold?: number,        // Similarity threshold 0-1
-  userId?: string,           // Filter by user
+  userId: string,            // Filter by user
   tags?: string[]            // Filter by tags
 }
 ```

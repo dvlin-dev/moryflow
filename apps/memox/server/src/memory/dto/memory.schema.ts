@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
+import { JsonValueSchema } from '../../common/utils/json.zod';
 
 // ========== Field Schemas ==========
 
@@ -16,7 +17,7 @@ const ContentSchema = z
   .min(1, 'Content is required')
   .max(50000, 'Content too long (max 50000 characters)');
 
-const MetadataSchema = z.record(z.string(), z.unknown()).optional();
+const MetadataSchema = z.record(z.string(), JsonValueSchema).optional();
 
 const ImportanceSchema = z.number().min(0).max(1).optional();
 
@@ -61,7 +62,7 @@ export const MemorySchema = z.object({
   agentId: z.string().nullable(),
   sessionId: z.string().nullable(),
   content: z.string(),
-  metadata: z.record(z.string(), z.unknown()).nullable(),
+  metadata: z.record(z.string(), JsonValueSchema).nullable(),
   source: z.string().nullable(),
   importance: z.number().nullable(),
   tags: z.array(z.string()),

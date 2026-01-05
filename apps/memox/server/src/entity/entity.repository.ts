@@ -3,25 +3,17 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import type { Entity as PrismaEntity } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BaseRepository } from '../common/base.repository';
+import type { CreateEntityInput } from './dto';
 
-export interface Entity {
-  id: string;
-  apiKeyId: string;
-  userId: string;
-  type: string;
-  name: string;
-  properties?: Record<string, any> | null;
-  confidence?: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type Entity = PrismaEntity;
 
 @Injectable()
-export class EntityRepository extends BaseRepository<Entity> {
+export class EntityRepository extends BaseRepository<'Entity'> {
   constructor(prisma: PrismaService) {
-    super(prisma, 'entity');
+    super(prisma, prisma.entity as unknown as any);
   }
 
   /**
@@ -55,9 +47,9 @@ export class EntityRepository extends BaseRepository<Entity> {
    */
   async upsert(
     apiKeyId: string,
-    data: Omit<Entity, 'id' | 'apiKeyId' | 'createdAt' | 'updatedAt'>,
+    data: CreateEntityInput & { confidence?: number },
   ): Promise<Entity> {
-    return (await this.prisma.entity.upsert({
+    return this.prisma.entity.upsert({
       where: {
         apiKeyId_userId_type_name: {
           apiKeyId,
@@ -78,6 +70,6 @@ export class EntityRepository extends BaseRepository<Entity> {
         properties: data.properties ?? undefined,
         confidence: data.confidence,
       },
-    })) as unknown as Entity;
+    });
   }
 }

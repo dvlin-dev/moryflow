@@ -8,6 +8,7 @@
 
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { asRecordOrNull } from '../common/utils';
 import {
   MemoryRepository,
   Memory,
@@ -19,9 +20,10 @@ import { UsageService, UsageType } from '../usage/usage.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { CreateMemoryDto, SearchMemoryDto } from './dto';
 
-export interface MemoryWithApiKeyName extends Memory {
+export type MemoryWithApiKeyName = Omit<Memory, 'metadata'> & {
+  metadata: Record<string, unknown> | null;
   apiKeyName: string;
-}
+};
 
 export interface ListMemoriesByUserOptions {
   apiKeyId?: string;
@@ -84,12 +86,12 @@ export class MemoryService {
       apiKeyId,
       {
         userId: dto.userId,
-        agentId: dto.agentId,
-        sessionId: dto.sessionId,
+        agentId: dto.agentId ?? null,
+        sessionId: dto.sessionId ?? null,
         content: dto.content,
-        metadata: dto.metadata,
-        source: dto.source,
-        importance: dto.importance,
+        metadata: dto.metadata ?? null,
+        source: dto.source ?? null,
+        importance: dto.importance ?? null,
         tags: dto.tags ?? [],
       },
       embeddingResult.embedding,
@@ -224,7 +226,7 @@ export class MemoryService {
         agentId: m.agentId,
         sessionId: m.sessionId,
         content: m.content,
-        metadata: m.metadata as Record<string, unknown> | null,
+        metadata: asRecordOrNull(m.metadata),
         source: m.source,
         importance: m.importance,
         tags: m.tags,

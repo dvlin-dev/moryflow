@@ -210,11 +210,12 @@ Aiget/
 
 ## 文档索引
 
-| 文档                                                             | 说明                           |
-| ---------------------------------------------------------------- | ------------------------------ |
-| [`unified-identity-platform.md`](./unified-identity-platform.md) | 统一身份平台架构设计与迁移计划 |
-| `apps/*/CLAUDE.md`                                               | 各应用的详细文档               |
-| `packages/*/CLAUDE.md`                                           | 各包的详细文档                 |
+| 文档                                                                           | 说明                           |
+| ------------------------------------------------------------------------------ | ------------------------------ |
+| [`unified-identity-platform.md`](./unified-identity-platform.md)               | 统一身份平台架构设计与迁移计划 |
+| [`unified-identity-platform-review.md`](./unified-identity-platform-review.md) | 统一身份平台评估与建议         |
+| `apps/*/CLAUDE.md`                                                             | 各应用的详细文档               |
+| `packages/*/CLAUDE.md`                                                         | 各包的详细文档                 |
 
 ---
 
@@ -529,6 +530,10 @@ pnpm lint
 - **自动路径重写**：编译时自动将 `import './foo'` 转换为 `import './foo.js'`
 - **双格式输出**：同时生成 `.mjs`（ESM）和 `.cjs`（CJS）
 - **无需手写后缀**：源码中保持简洁的无后缀导入
+
+### CI 依赖说明
+
+`@aiget/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
 
 ### 配置文件：tsc-multi.json
 

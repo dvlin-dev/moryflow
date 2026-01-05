@@ -3,17 +3,20 @@
  * [OUTPUT]: Entity, EntityWithApiKeyName[], pagination data
  * [POS]: Entity business logic layer - CRUD operations for knowledge graph entities
  *
- * [PROTOCOL]: When modifying this file, you MUST update this header and apps/server/src/entity/CLAUDE.md
+ * [PROTOCOL]: When modifying this file, you MUST update this header and apps/memox/server/src/entity/CLAUDE.md
  */
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { asRecordOrNull } from '../common/utils';
 import { EntityRepository, Entity } from './entity.repository';
 import { CreateEntityDto } from './dto';
 
-export interface EntityWithApiKeyName extends Entity {
+export type EntityWithApiKeyName = Omit<Entity, 'properties'> & {
+  properties: Record<string, unknown> | null;
   apiKeyName: string;
-}
+};
 
 export interface ListEntitiesByUserOptions {
   type?: string;
@@ -83,10 +86,10 @@ export class EntityService {
     userId: string,
     options: { type?: string; limit?: number; offset?: number } = {},
   ): Promise<Entity[]> {
-    const where: Record<string, any> = { userId };
-    if (options.type) {
-      where.type = options.type;
-    }
+    const where: Prisma.EntityWhereInput = {
+      userId,
+      ...(options.type ? { type: options.type } : {}),
+    };
 
     return this.repository.findMany(apiKeyId, {
       where,
@@ -131,7 +134,7 @@ export class EntityService {
   ): Promise<{ entities: EntityWithApiKeyName[]; total: number }> {
     const { type, apiKeyId, limit = 20, offset = 0 } = options;
 
-    const where: Record<string, unknown> = {
+    const where: Prisma.EntityWhereInput = {
       apiKey: { userId },
     };
 
@@ -165,7 +168,7 @@ export class EntityService {
         userId: e.userId,
         type: e.type,
         name: e.name,
-        properties: e.properties as Record<string, unknown> | null,
+        properties: asRecordOrNull(e.properties),
         confidence: e.confidence,
         createdAt: e.createdAt,
         updatedAt: e.updatedAt,

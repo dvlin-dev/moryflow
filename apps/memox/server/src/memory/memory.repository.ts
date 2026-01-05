@@ -5,32 +5,20 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import type { Memory as PrismaMemory } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BaseRepository } from '../common/base.repository';
 
-export interface Memory {
-  id: string;
-  apiKeyId: string;
-  userId: string;
-  agentId?: string | null;
-  sessionId?: string | null;
-  content: string;
-  metadata?: Record<string, any> | null;
-  source?: string | null;
-  importance?: number | null;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type Memory = PrismaMemory;
 
 export interface MemoryWithSimilarity extends Memory {
   similarity: number;
 }
 
 @Injectable()
-export class MemoryRepository extends BaseRepository<Memory> {
+export class MemoryRepository extends BaseRepository<'Memory'> {
   constructor(prisma: PrismaService) {
-    super(prisma, 'memory');
+    super(prisma, prisma.memory as unknown as any);
   }
 
   /**

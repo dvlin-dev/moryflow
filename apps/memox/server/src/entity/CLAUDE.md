@@ -14,6 +14,7 @@ Entity extraction and management. Extracts named entities (people, places, conce
 - Entity CRUD operations
 - Entity linking across memories
 - Entity type classification
+- Entity properties JSON 字段：输入使用 `JsonValueSchema`，Console 输出使用 `asRecordOrNull` 收敛为对象或 null
 
 **Does NOT:**
 

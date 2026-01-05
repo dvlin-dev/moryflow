@@ -3,10 +3,11 @@
  * [OUTPUT]: GraphData { nodes: GraphNode[], edges: GraphEdge[] }
  * [POS]: Graph traversal service - navigates and queries the knowledge graph structure
  *
- * [PROTOCOL]: When modifying this file, you MUST update this header and apps/server/src/graph/CLAUDE.md
+ * [PROTOCOL]: When modifying this file, you MUST update this header and apps/memox/server/src/graph/CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+import { asRecordOrNull } from '../common/utils';
 import { EntityRepository } from '../entity/entity.repository';
 import { RelationRepository } from '../relation/relation.repository';
 
@@ -14,7 +15,7 @@ export interface GraphNode {
   id: string;
   type: string;
   name: string;
-  properties?: Record<string, any> | null;
+  properties?: Record<string, unknown> | null;
 }
 
 export interface GraphEdge {
@@ -22,7 +23,7 @@ export interface GraphEdge {
   type: string;
   sourceId: string;
   targetId: string;
-  properties?: Record<string, any> | null;
+  properties?: Record<string, unknown> | null;
   confidence?: number | null;
 }
 
@@ -75,7 +76,7 @@ export class GraphService {
       id: e.id,
       type: e.type,
       name: e.name,
-      properties: e.properties,
+      properties: asRecordOrNull(e.properties),
     }));
 
     const edges: GraphEdge[] = relations.map((r) => ({
@@ -83,7 +84,7 @@ export class GraphService {
       type: r.type,
       sourceId: r.sourceId,
       targetId: r.targetId,
-      properties: r.properties as Record<string, any> | null,
+      properties: asRecordOrNull(r.properties),
       confidence: r.confidence,
     }));
 
@@ -130,7 +131,7 @@ export class GraphService {
         id: entity.id,
         type: entity.type,
         name: entity.name,
-        properties: entity.properties,
+        properties: asRecordOrNull(entity.properties),
       });
 
       // 如果还没到最大深度，获取关联关系
@@ -154,7 +155,7 @@ export class GraphService {
             type: rel.type,
             sourceId: rel.sourceId,
             targetId: rel.targetId,
-            properties: rel.properties,
+            properties: asRecordOrNull(rel.properties),
             confidence: rel.confidence,
           });
 
@@ -223,7 +224,7 @@ export class GraphService {
               type: rel.type,
               sourceId: rel.sourceId,
               targetId: rel.targetId,
-              properties: rel.properties,
+              properties: asRecordOrNull(rel.properties),
               confidence: rel.confidence,
             },
           });
@@ -277,14 +278,14 @@ export class GraphService {
           id: neighbor.id,
           type: neighbor.type,
           name: neighbor.name,
-          properties: neighbor.properties,
+          properties: asRecordOrNull(neighbor.properties),
         },
         relation: {
           id: rel.id,
           type: rel.type,
           sourceId: rel.sourceId,
           targetId: rel.targetId,
-          properties: rel.properties,
+          properties: asRecordOrNull(rel.properties),
           confidence: rel.confidence,
         },
       });
@@ -313,7 +314,7 @@ export class GraphService {
           id: entity.id,
           type: entity.type,
           name: entity.name,
-          properties: entity.properties,
+          properties: asRecordOrNull(entity.properties),
         });
       }
 
@@ -334,7 +335,7 @@ export class GraphService {
         id: sourceEntity.id,
         type: sourceEntity.type,
         name: sourceEntity.name,
-        properties: sourceEntity.properties,
+        properties: asRecordOrNull(sourceEntity.properties),
       });
     }
 

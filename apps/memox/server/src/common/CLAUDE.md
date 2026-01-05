@@ -15,7 +15,8 @@ Shared utilities for the server application. Provides guards, decorators, interc
 - Exception filters (error handling)
 - Shared decorators
 - Utility functions (pagination, HTTP helpers)
-- Base repository class
+- JSON 工具（JsonValueSchema + JSON 输出转换）
+- Base repository class（集中实现 apiKeyId 数据隔离；当前在做更严格的 Prisma 类型推断重构）
 
 **Does NOT:**
 
@@ -39,6 +40,8 @@ Shared utilities for the server application. Provides guards, decorators, interc
 | `filters/index.ts`                              | Export      | Filters exports                     |
 | `utils/pagination.utils.ts`                     | Utility     | Pagination helpers                  |
 | `utils/http.utils.ts`                           | Utility     | HTTP utility functions              |
+| `utils/json.zod.ts`                             | Utility     | JsonValueSchema (Zod)               |
+| `utils/json.utils.ts`                           | Utility     | asRecordOrNull JSON converter       |
 | `utils/index.ts`                                | Export      | Utils exports                       |
 | `base.repository.ts`                            | Class       | Base repository with common methods |
 | `index.ts`                                      | Export      | Public module exports               |

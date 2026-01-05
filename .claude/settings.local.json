@@ -33,7 +33,9 @@
       "Bash(npx prisma db execute --stdin)",
       "Bash(npx eslint:*)",
       "Bash(pnpm ls:*)",
-      "Bash(pnpm run build:agents:*)"
+      "Bash(pnpm run build:agents:*)",
+      "Bash(codex --version:*)",
+      "Bash(brew list:*)"
     ]
   }
 }

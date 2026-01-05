@@ -14,6 +14,7 @@ Knowledge graph operations. Provides graph traversal and querying capabilities o
 - Path finding between entities
 - Subgraph extraction
 - Graph visualization data
+- Graph node/edge 的 properties 字段输出：使用 `asRecordOrNull` 收敛 JSON
 
 **Does NOT:**
 

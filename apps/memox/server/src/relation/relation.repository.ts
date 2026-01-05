@@ -3,33 +3,21 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import type { Relation as PrismaRelation } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BaseRepository } from '../common/base.repository';
 
-export interface Relation {
-  id: string;
-  apiKeyId: string;
-  userId: string;
-  sourceId: string;
-  targetId: string;
-  type: string;
-  properties?: Record<string, any> | null;
-  confidence?: number | null;
-  validFrom?: Date | null;
-  validTo?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type Relation = PrismaRelation;
 
-export interface RelationWithEntities extends Relation {
+export type RelationWithEntities = Relation & {
   source: { id: string; type: string; name: string };
   target: { id: string; type: string; name: string };
-}
+};
 
 @Injectable()
-export class RelationRepository extends BaseRepository<Relation> {
+export class RelationRepository extends BaseRepository<'Relation'> {
   constructor(prisma: PrismaService) {
-    super(prisma, 'relation');
+    super(prisma, prisma.relation as unknown as any);
   }
 
   /**
@@ -39,7 +27,7 @@ export class RelationRepository extends BaseRepository<Relation> {
     apiKeyId: string,
     entityId: string,
   ): Promise<RelationWithEntities[]> {
-    return (await this.prisma.relation.findMany({
+    return this.prisma.relation.findMany({
       where: {
         apiKeyId,
         OR: [{ sourceId: entityId }, { targetId: entityId }],
@@ -48,7 +36,7 @@ export class RelationRepository extends BaseRepository<Relation> {
         source: { select: { id: true, type: true, name: true } },
         target: { select: { id: true, type: true, name: true } },
       },
-    })) as unknown as RelationWithEntities[];
+    });
   }
 
   /**
@@ -77,13 +65,13 @@ export class RelationRepository extends BaseRepository<Relation> {
     userId: string,
     type: string,
   ): Promise<RelationWithEntities[]> {
-    return (await this.prisma.relation.findMany({
+    return this.prisma.relation.findMany({
       where: { apiKeyId, userId, type },
       include: {
         source: { select: { id: true, type: true, name: true } },
         target: { select: { id: true, type: true, name: true } },
       },
-    })) as unknown as RelationWithEntities[];
+    });
   }
 
   /**
@@ -94,7 +82,7 @@ export class RelationRepository extends BaseRepository<Relation> {
     userId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<RelationWithEntities[]> {
-    return (await this.prisma.relation.findMany({
+    return this.prisma.relation.findMany({
       where: { apiKeyId, userId },
       include: {
         source: { select: { id: true, type: true, name: true } },
@@ -103,6 +91,6 @@ export class RelationRepository extends BaseRepository<Relation> {
       orderBy: { createdAt: 'desc' },
       take: options.limit ?? 100,
       skip: options.offset ?? 0,
-    })) as unknown as RelationWithEntities[];
+    });
   }
 }

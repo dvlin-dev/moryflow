@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
+import { JsonValueSchema } from '../../common/utils/json.zod';
 
 // ========== Field Schemas ==========
 
@@ -15,7 +16,7 @@ const EntityTypeSchema = z.string().min(1, 'type is required');
 
 const EntityNameSchema = z.string().min(1, 'name is required');
 
-const PropertiesSchema = z.record(z.string(), z.unknown()).optional();
+const PropertiesSchema = z.record(z.string(), JsonValueSchema).optional();
 
 const ConfidenceSchema = z.number().min(0).max(1).optional();
 
@@ -46,7 +47,7 @@ export const EntitySchema = z.object({
   userId: z.string(),
   type: z.string(),
   name: z.string(),
-  properties: z.record(z.string(), z.unknown()).nullable(),
+  properties: z.record(z.string(), JsonValueSchema).nullable(),
   confidence: z.number().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),

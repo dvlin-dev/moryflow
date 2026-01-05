@@ -10,6 +10,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { JsonValue } from '../common/utils';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -30,7 +31,7 @@ export interface ExtractedEntity {
   name: string;
   type: string;
   confidence?: number;
-  properties?: Record<string, unknown>;
+  properties?: Record<string, JsonValue>;
 }
 
 export interface ExtractedRelation {
@@ -38,7 +39,7 @@ export interface ExtractedRelation {
   target: string;
   type: string;
   confidence?: number;
-  properties?: Record<string, unknown>;
+  properties?: Record<string, JsonValue>;
 }
 
 @Injectable()

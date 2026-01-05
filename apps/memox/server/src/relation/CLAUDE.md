@@ -14,6 +14,7 @@ Entity relation management. Creates and manages relationships between entities t
 - Relation type management
 - Relation querying and filtering
 - Bidirectional relation handling
+- Relation properties JSON 字段：输入使用 `JsonValueSchema`
 
 **Does NOT:**
 
