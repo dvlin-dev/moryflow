@@ -1662,14 +1662,14 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 
 | 产品              | 绝对路径                          | 说明                                 |
 | ----------------- | --------------------------------- | ------------------------------------ |
-| Fetchx (原 AIGET) | `/Users/bowling/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
-| Memox (原 MEMAI)  | `/Users/bowling/code/me/memai`    | AI 记忆与知识图谱服务                |
-| Moryflow          | `/Users/bowling/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品）|
+| Fetchx (原 AIGET) | `/Users/zhangbaolin/code/me/fetchx`   | 网页抓取与数据提取平台（仓库已更名） |
+| Memox (原 MEMAI)  | `/Users/zhangbaolin/code/me/memai`    | AI 记忆与知识图谱服务                |
+| Moryflow          | `/Users/zhangbaolin/code/me/moryflow` | 笔记 AI 工作流 + 网站发布（核心产品）|
 
 ### 各仓库主要目录结构
 
 ```
-/Users/bowling/code/me/fetchx/    # 原 aiget，仓库已更名
+/Users/zhangbaolin/code/me/fetchx/    # 原 aiget，仓库已更名
 ├── apps/
 │   ├── server/         # NestJS 后端（网页抓取核心）
 │   ├── console/        # 用户控制台
@@ -1683,7 +1683,7 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 │   └── embed-react/    # React 嵌入组件
 └── docs/               # 技术文档
 
-/Users/bowling/code/me/memai/    # 原 MEMAI，迁移后更名为 Memox
+/Users/zhangbaolin/code/me/memai/    # 原 MEMAI，迁移后更名为 Memox
 ├── apps/
 │   ├── server/         # NestJS 后端（AI 记忆核心）
 │   ├── console/        # 用户控制台
@@ -1695,7 +1695,7 @@ SANDX_API_URL=https://api.sandx.aiget.dev
 │   └── shared-types/   # 共享类型（迁移后改为 types）
 └── docs/               # 技术文档
 
-/Users/bowling/code/me/moryflow/    # Moryflow 核心产品（保持原名）
+/Users/zhangbaolin/code/me/moryflow/    # Moryflow 核心产品（保持原名）
 ├── apps/
 │   ├── server/         # NestJS 后端（工作流核心）
 │   ├── admin/          # 管理后台
