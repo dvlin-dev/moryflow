@@ -1,0 +1,60 @@
+/**
+ * useEmbed hook - 获取 oEmbed 数据
+ */
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { EmbedData, EmbedOptions, EmbedError } from '@aiget/embed';
+import { useEmbedContext } from './useEmbedContext.ts';
+
+export interface UseEmbedOptions extends EmbedOptions {
+  /** 是否启用请求，默认 true */
+  enabled?: boolean;
+}
+
+export interface UseEmbedResult {
+  data: EmbedData | null;
+  isLoading: boolean;
+  error: EmbedError | null;
+  refetch: () => void;
+}
+
+export function useEmbed(url: string | undefined, options?: UseEmbedOptions): UseEmbedResult {
+  const { client, theme: globalTheme } = useEmbedContext();
+  const [data, setData] = useState<EmbedData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<EmbedError | null>(null);
+
+  const { enabled = true, theme, maxWidth, maxHeight } = options || {};
+  const effectiveTheme = theme ?? globalTheme;
+
+  // 使用 ref 避免 fetchData 依赖变化导致的重复请求
+  const optionsRef = useRef({ maxWidth, maxHeight, effectiveTheme });
+  optionsRef.current = { maxWidth, maxHeight, effectiveTheme };
+
+  const fetchData = useCallback(async () => {
+    if (!url || !client || !enabled) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { maxWidth, maxHeight, effectiveTheme } = optionsRef.current;
+      const result = await client.fetch(url, {
+        maxWidth,
+        maxHeight,
+        theme: effectiveTheme,
+      });
+      setData(result);
+    } catch (err) {
+      setError(err as EmbedError);
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [url, client, enabled]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, isLoading, error, refetch: fetchData };
+}
