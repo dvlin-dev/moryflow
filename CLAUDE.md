@@ -89,32 +89,27 @@ pnpm --filter @aiget/admin test:e2e
 
 ### 域名规划
 
-| 服务                | 域名               | 说明                 |
-| ------------------- | ------------------ | -------------------- |
-| **Moryflow 主站**   | moryflow.com       | 核心产品主入口       |
-| **Moryflow 发布站** | moryflow.app       | 用户发布的网站       |
-| **Moryflow 应用**   | moryflow.aiget.dev | 主应用（Web + API）  |
-| **Aiget 平台**      | aiget.dev          | 统一平台入口         |
-| **统一控制台**      | console.aiget.dev  | 用户管理所有产品     |
-| **统一管理后台**    | admin.aiget.dev    | 运营管理             |
-| **统一文档**        | docs.aiget.dev     | 文档站               |
-| **Fetchx 应用**     | fetchx.aiget.dev   | 原子能力：网页抓取   |
-| **Memox 应用**      | memox.aiget.dev    | 原子能力：AI 记忆    |
-| **Sandx 应用**      | sandx.aiget.dev    | 原子能力：Agent 沙盒 |
+| 服务                | 域名              | 说明                           |
+| ------------------- | ----------------- | ------------------------------ |
+| **Moryflow 主站**   | www.moryflow.com  | 核心产品主入口                 |
+| **Moryflow 应用**   | app.moryflow.com  | 主应用（Web + API）            |
+| **Moryflow 发布站** | moryflow.app      | 用户发布的网站                 |
+| **Aiget 平台**      | aiget.dev         | 统一平台入口                   |
+| **统一控制台**      | console.aiget.dev | Aiget Dev 控制台（Web + API）  |
+| **统一管理后台**    | admin.aiget.dev   | 运营管理                       |
+| **统一文档**        | docs.aiget.dev    | 文档站                         |
+| **Agentsbox 官网**  | (待定)            | 独立营销域名，统一导向 console |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
-> - Aiget 是基础设施平台，所有 API 服务统一使用 \*.aiget.dev 子域名
-> - API 路径规范：`{product}.aiget.dev/api/v1/...`（带 `/api` 前缀）
+> - Aiget Dev 是开发者工具平台，统一入口为 `console.aiget.dev`
+> - API 路径规范：`{host}/api/v1/...`（带 `/api` 前缀；Web 与 API 同源）
 
 ### API Key 前缀
 
-| 类型         | 前缀  | 说明                 |
-| ------------ | ----- | -------------------- |
-| 平台 Key     | `ag_` | 可访问所有产品 API   |
-| Moryflow Key | `mf_` | 核心产品             |
-| Fetchx Key   | `fx_` | 原子能力：网页抓取   |
-| Memox Key    | `mx_` | 原子能力：AI 记忆    |
-| Sandx Key    | `sx_` | 原子能力：Agent 沙盒 |
+| 类型          | 前缀  | 说明                                                   |
+| ------------- | ----- | ------------------------------------------------------ |
+| Moryflow Key  | `mf_` | Moryflow（app.moryflow.com）                           |
+| Aiget Dev Key | `ag_` | Aiget Dev（console.aiget.dev；Agentsbox/Memox 等能力） |
 
 ### 目标 Monorepo 结构
 
@@ -196,7 +191,7 @@ Aiget/
 ├── package.json
 ├── CLAUDE.md                        # 本文件
 ├── AGENTS.md                        # 指向 CLAUDE.md 的软链接
-└── docs/architecture/               # 架构文档（含 UIP）
+└── docs/architecture/               # 架构文档（Auth/域名/部署）
 ```
 
 ### 技术栈速查
@@ -209,7 +204,7 @@ Aiget/
 | 移动端       | Expo + React Native + uniwind（非 nativewind/tailwind） |
 | 桌面端       | Electron + React                                        |
 | 认证         | Better Auth                                             |
-| 支付         | Creem.io                                                |
+| 支付         | TBD（当前不作为默认约束）                               |
 | AI/LLM       | OpenAI / Anthropic / Google（通过 Vercel AI SDK）       |
 | 向量数据库   | pgvector（PostgreSQL 扩展）                             |
 | 浏览器自动化 | Playwright                                              |
@@ -219,45 +214,27 @@ Aiget/
 
 ---
 
-## 统一身份平台
+## Auth 与配额（当前约束）
 
-所有产品共享统一的身份层：
+当前架构为 **两条业务线**，永不互通（不共享账号/Token/数据库）：
 
-### 订阅等级
+- **Moryflow**：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）
+- **Aiget Dev**：`console.aiget.dev`（控制台+API；Agentsbox/Memox 等能力）
 
-| 等级    | 月付 | 年付 | 每月积分 | 产品权限                    |
-| ------- | ---- | ---- | -------- | --------------------------- |
-| FREE    | $0   | -    | 100      | 所有产品基础功能            |
-| STARTER | $9   | $99  | 1,000    | 所有产品基础功能            |
-| PRO     | $29  | $299 | 5,000    | 所有产品高级功能            |
-| MAX     | $99  | -    | 20,000   | 所有产品全部功能 + 优先支持 |
-
-### 积分加油包（按需购买）
-
-| 套餐 | 价格 | 积分   |
-| ---- | ---- | ------ |
-| 小包 | $10  | 1,000  |
-| 中包 | $30  | 3,000  |
-| 大包 | $100 | 10,000 |
-
-### 业务规则
-
-- **单点登录**：一个账号可访问所有产品
-- **统一钱包**：积分可在任意产品使用
-- **积分优先级**：免费积分 → 订阅积分 → 购买积分
-- **预扣机制**：操作前扣除积分，失败时退还
+计费/订阅暂不作为默认架构约束；Aiget Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/architecture/auth/quota-and-api-keys.md`）。
 
 ---
 
 ## 文档索引
 
-| 文档                                                                                                   | 说明                                            |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| [`docs/architecture/unified-identity-platform.md`](./docs/architecture/unified-identity-platform.md)   | 统一身份平台（UIP）入口与关键约束               |
-| [`docs/architecture/subdomain-uip-architecture.md`](./docs/architecture/subdomain-uip-architecture.md) | 子域名统一用户系统架构（当前默认）              |
-| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                     | 功能：统一用户系统（注册/登录/会话/Token 策略） |
-| `apps/*/CLAUDE.md`                                                                                     | 各应用的详细文档                                |
-| `packages/*/CLAUDE.md`                                                                                 | 各包的详细文档                                  |
+| 文档                                                                                               | 说明                                        |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                         | Auth 系统入口与关键约束（两条业务线）       |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)     | 域名与三机部署架构（megaboxpro/4c6g/8c16g） |
+| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md) | 改造步骤与部署 checklist                    |
+| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                 | 功能：用户系统（两套 Auth）总览             |
+| `apps/*/CLAUDE.md`                                                                                 | 各应用的详细文档                            |
+| `packages/*/CLAUDE.md`                                                                             | 各包的详细文档                              |
 
 ## 外部仓库快照（仅查阅）
 

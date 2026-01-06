@@ -3,7 +3,7 @@
  * [OUTPUT]: Response（站点内容/状态页面）
  * [POS]: moryflow.app 发布站点核心请求处理器
  *
- * [PROTOCOL]: 本文件变更时，需同步更新 docs/architecture/subdomain-uip-architecture.md 中的发布站点约定。
+ * [PROTOCOL]: 本文件变更时，需同步更新 docs/architecture/domains-and-deployment.md 中的发布站点约定。
  */
 
 import type { Env, SiteMeta } from './types';
@@ -17,7 +17,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   const hostname = url.hostname;
 
   if (hostname === env.SITE_DOMAIN) {
-    const redirectUrl = `https://moryflow.com${url.pathname}${url.search}`;
+    const redirectUrl = `https://www.moryflow.com${url.pathname}${url.search}`;
     return Response.redirect(redirectUrl, 301);
   }
 
@@ -200,4 +200,3 @@ function renderExpiredPage(subdomain: string, siteDomain: string): Response {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
 }
-

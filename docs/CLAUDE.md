@@ -19,6 +19,6 @@
 ## 目录结构
 
 - `docs/architecture/`：架构与部署设计（当前阶段的“最终真相”优先写在这里）。
-- `docs/architecture/uip/`：统一身份平台（UIP）的拆分设计文档。
+- `docs/architecture/auth/`：Auth（两套业务线）拆分设计文档。
 - `docs/features/`：功能层设计（用户系统、订阅/钱包、API Key 等可复用能力）。
 - `docs/*.md`：一次性记录、handoff、复盘等。

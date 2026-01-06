@@ -1,7 +1,7 @@
 ---
 title: 用户系统（统一）- 总览
 date: 2026-01-06
-scope: aiget.dev
+scope: moryflow.com, aiget.dev
 status: active
 ---
 
@@ -10,12 +10,12 @@ status: active
 [OUTPUT]: 统一用户系统的核心流程（注册/登录/刷新/登出/账号绑定）与接口约定
 [POS]: Feature 文档：用户系统，供后端实现与前端接入对齐
 
-[PROTOCOL]: 本文件变更若影响 UIP 全局约束，需同步更新 `docs/architecture/unified-identity-platform.md`。
+[PROTOCOL]: 本文件变更若影响全局约束，需同步更新 `docs/architecture/auth.md`。
 -->
 
-# 统一用户系统（User System）
+# 用户系统（两套 Auth）
 
-本功能是 UIP 的 identity 层落地规范：让所有产品共用 **同一套用户数据** 与 **同一套 token/session 策略**，同时保持每个产品独立部署与独立子域名访问。
+本功能约定当前仓库的用户系统落地方式：**两条业务线各自独立 Auth**，不做跨域互通、不做 OAuth。
 
 更详细、可直接落地的技术方案见：`docs/features/user-system/tech-spec.md`。
 
@@ -30,13 +30,16 @@ status: active
 
 ## 服务形态（如何“复用但不复杂”）
 
-- **建议形态**：每个产品的 Server 都提供同一套 `/api/v1/auth/*` 路由，但底层复用同一份 `@aiget/auth-server` 代码与同一个 `identity` schema。
-  - 优点：同域名同 origin（`https://{product}.aiget.dev`），Web 不需要额外 CORS/反向代理。
-  - 结果：用户在 `moryflow.aiget.dev` 登录后，`Domain=.aiget.dev` 的 refresh cookie 也能被 `fetchx.aiget.dev` 使用，从而“免重复登录”。
+- **Moryflow Auth**：只服务 `app.moryflow.com`（cookie `Domain=.moryflow.com`）。
+- **Aiget Dev Auth**：只服务 `console.aiget.dev`（cookie `Domain=.aiget.dev`，平台内模块共享）。
+- 两条 Auth **共享代码**（抽到 `packages/*`），但 **不共享数据库/密钥**。
 
 ## 统一接口规范（v1）
 
-> 这些路由在每个产品域名下保持一致：`https://{product}.aiget.dev/api/v1/auth/*`
+> 这些路由在各自业务线的应用域名下保持一致：
+>
+> - Moryflow：`https://app.moryflow.com/api/v1/auth/*`
+> - Aiget Dev：`https://console.aiget.dev/api/v1/auth/*`
 
 - `POST /api/v1/auth/register`
   - 输入：name、email、password
@@ -47,10 +50,6 @@ status: active
 - `POST /api/v1/auth/login`
   - 输入：email、password
   - 输出：同上
-- `POST /api/v1/auth/google/start`（规划中）
-  - 行为：Google OAuth（Web）
-- `POST /api/v1/auth/google/token`（规划中）
-  - 行为：Google OAuth（Native）；使用 Google idToken 直接登录
 - `POST /api/v1/auth/refresh`
   - 行为：校验 refresh token → 轮换（rotation）→ 发新 access token（+ 新 refresh）
 - `POST /api/v1/auth/logout`
@@ -80,13 +79,10 @@ status: active
 2. 若 `identity.user.email` 已存在：绑定 Google account 到该 user（不新建 user）
 3. 若不存在：创建 user 并绑定
 
-### 4) Web 端跨子域免登录（`*.aiget.dev`）
+### 4) Aiget Dev 平台内免重复登录
 
-- `refreshToken` cookie 的 `Domain=.aiget.dev` 让浏览器在访问 `fetchx.aiget.dev` 时也会带上同一个 refresh token。
-- 应用启动时：
-  1. 前端调用 `POST /api/v1/auth/refresh`（无需显式携带 refresh，浏览器自动带 cookie）
-  2. 服务器轮换 refresh → 返回 access token
-  3. 前端把 access token 放内存，之后所有 API 请求 `Authorization: Bearer <access>`
+- Aiget Dev 已收敛为单入口 `console.aiget.dev`；平台内模块共享登录态无需跨子域方案。
+- Moryflow 与 Aiget Dev **永不互通**，因此不设计跨域免登录。
 
 ### 5) 原生端免登录
 
@@ -97,4 +93,4 @@ status: active
 - Web：access token 不落 localStorage；refresh token 必须 `HttpOnly` cookie。
 - Refresh rotation 开启：refresh 一旦使用就轮换，旧 token 立即失效。
 - Token 泄露处置：支持按 session 粒度 revoke（登出/强制下线）。
-- 账号唯一性：以 `email` 作为唯一用户键（注册/Google OAuth 均以此合并）。
+- 账号唯一性：以 `email` 作为唯一用户键（仅邮箱/密码/OTP）。

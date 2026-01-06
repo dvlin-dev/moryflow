@@ -1,14 +1,14 @@
 ---
-title: UIP - 认证与 Token
+title: Auth - 认证与 Token
 date: 2026-01-05
-scope: web, electron, react-native
+scope: web
 status: active
 ---
 
 <!--
-[INPUT]: 邮箱验证码注册/登录 + 密码 + Google OAuth；多端（Web/Electron/RN）
+[INPUT]: 邮箱验证码注册/登录 + 密码；Web refresh cookie + access memory；不做 OAuth
 [OUTPUT]: Token 模型、存储方式、刷新流程与校验方式
-[POS]: UIP 的认证与会话策略（Token-only for API）
+[POS]: 两套 Auth 的认证与会话策略（Token-only for API）
 -->
 
 # 认证与 Token
@@ -17,7 +17,8 @@ status: active
 
 - 邮箱验证码：注册/登录
 - 邮箱 + 密码：登录
-- Google OAuth：登录（按 email 自动绑定到同一 user）
+
+不做 OAuth。
 
 ## Token 规则（固定参数）
 
@@ -28,11 +29,13 @@ status: active
 ## Token 存储（固定规则）
 
 - Web（SPA/SSR）：
-  - refreshToken：`HttpOnly; Secure; SameSite=Lax; Domain=.aiget.dev` Cookie
+  - refreshToken：`HttpOnly; Secure; SameSite=Lax` Cookie
   - accessToken：内存（页面刷新后通过 refresh 重新获取）
-- Electron / React Native：
-  - refreshToken：Secure Storage（Keychain/Keystore）
-  - accessToken：内存
+
+Cookie domain 规则：
+
+- Moryflow：`Domain=.moryflow.com`
+- Aiget Dev：`Domain=.aiget.dev`
 
 ## 刷新主流程（必须实现）
 
@@ -49,9 +52,11 @@ status: active
 
 - 只允许 `POST`
 - 要求 `Content-Type: application/json`
-- 校验 `Origin` 必须是 `https://*.aiget.dev`
+- 校验 `Origin` 必须是：
+  - Moryflow：`https://app.moryflow.com`
+  - Aiget Dev：`https://console.aiget.dev`
 
 ## 产品服务端校验 accessToken（固定规则）
 
-- UIP 暴露 JWKS：`GET /api/v1/auth/jwks`
-- 各产品服务离线验签 JWT（缓存 JWKS，按 `kid` 自动更新）
+- Auth 服务暴露 JWKS：`GET /api/v1/auth/jwks`
+- 业务服务离线验签 JWT（缓存 JWKS，按 `kid` 自动更新）

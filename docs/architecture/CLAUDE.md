@@ -15,8 +15,9 @@
 
 ## 文档清单
 
-- `subdomain-uip-architecture.md`：主域名 + 子域名（`*.aiget.dev`）统一用户系统与计费的推荐落地方案。
-  - 默认鉴权：Token 优先（Web 使用 refresh cookie + access token）
-  - 发布站点：`moryflow.app` 由 Cloudflare Worker + R2 按子域名提供静态站点
-- `unified-identity-platform.md`：统一身份平台（UIP）入口与关键约束（短文档，指向 uip/ 拆分文档）。
-- `uip/`：UIP 拆分文档目录（见 `uip/index.md`）。
+- `domains-and-deployment.md`：域名职责 + 三机部署（megaboxpro/4c6g/8c16g）+ 反代路由的可执行方案。
+  - Moryflow：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
+  - Aiget Dev：`console.aiget.dev`（控制台+API，包含 Agentsbox/Memox 等能力）
+- `auth.md`：Auth 系统入口（不做 OAuth、不做跨域互通），指向 `auth/` 拆分文档。
+- `auth/`：Auth 拆分文档目录（见 `auth/index.md`）。
+- `refactor-and-deploy-plan.md`：从现有项目到目标架构的改造步骤与部署 checklist。
