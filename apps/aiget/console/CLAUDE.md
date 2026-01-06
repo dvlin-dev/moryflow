@@ -21,7 +21,7 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - API 调用统一走 `/api/v1/*`，401 时触发 refresh 重试一次
 - Zustand 管理登录状态，React Query 管理数据
 - UI 风格：直角组件 + 橙色强调
-- UI 组件若同时导出多个成员，需要加 `react-refresh/only-export-components` 禁用注释
+- `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 
 ## 目录结构
 
