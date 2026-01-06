@@ -2,22 +2,9 @@
  * Admin Dashboard - 系统统计概览
  */
 import { useDashboardStats, useChartData } from '@/features/dashboard';
-import {
-  Skeleton,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@aiget/ui/primitives';
+import { Skeleton, ChartContainer, ChartTooltip, ChartTooltipContent } from '@aiget/ui/primitives';
 import { Users, CreditCard, Camera, DollarSign } from 'lucide-react';
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { ChartConfig } from '@aiget/ui/primitives';
 
 function formatNumber(num: number): string {
@@ -96,10 +83,7 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-none border border-border bg-card p-6"
-          >
+          <div key={stat.label} className="rounded-none border border-border bg-card p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <div className={`p-2 rounded-none ${stat.bgColor}`}>
@@ -142,9 +126,7 @@ export default function DashboardPage() {
                 <YAxis tickLine={false} axisLine={false} />
                 <ChartTooltip
                   content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => formatDate(value as string)}
-                    />
+                    <ChartTooltipContent labelFormatter={(value) => formatDate(value as string)} />
                   }
                 />
                 <Area
@@ -188,11 +170,7 @@ export default function DashboardPage() {
                     />
                   }
                 />
-                <Bar
-                  dataKey="value"
-                  fill="var(--color-value)"
-                  radius={0}
-                />
+                <Bar dataKey="value" fill="var(--color-value)" radius={0} />
               </BarChart>
             </ChartContainer>
           )}

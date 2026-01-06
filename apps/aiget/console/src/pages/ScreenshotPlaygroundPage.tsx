@@ -2,68 +2,64 @@
  * Screenshot Playground 页面
  * 交互式测试截图 API
  */
-import { useState, useEffect } from 'react'
-import { PageHeader } from '@aiget/ui/composed'
-import { Card, CardContent, Skeleton, Alert, AlertDescription } from '@aiget/ui/primitives'
-import { AlertTriangle } from 'lucide-react'
-import { useApiKeys } from '@/features/api-keys'
+import { useMemo, useState } from 'react';
+import { PageHeader } from '@aiget/ui/composed';
+import { Card, CardContent, Skeleton, Alert, AlertDescription } from '@aiget/ui/primitives';
+import { AlertTriangle } from 'lucide-react';
+import { useApiKeys } from '@/features/api-keys';
 import {
   ScreenshotForm,
   ScreenshotResult,
   useTakeScreenshot,
   isScreenshotSuccess,
-} from '@/features/playground'
-import type { ScreenshotRequest, ScreenshotData } from '@/features/playground'
+} from '@/features/playground';
+import type { ScreenshotRequest, ScreenshotData } from '@/features/playground';
 
 export default function ScreenshotPlaygroundPage() {
-  const { data: apiKeys, isLoading: keysLoading } = useApiKeys()
-  const [selectedKeyId, setSelectedKeyId] = useState<string>('')
-  const [result, setResult] = useState<ScreenshotData | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { data: apiKeys, isLoading: keysLoading } = useApiKeys();
+  const [selectedKeyId, setSelectedKeyId] = useState<string>('');
+  const [result, setResult] = useState<ScreenshotData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const { mutate: takeScreenshot, isPending } = useTakeScreenshot()
+  const { mutate: takeScreenshot, isPending } = useTakeScreenshot();
 
-  // 自动选择第一个可用的 API Key
-  useEffect(() => {
-    if (apiKeys?.length && !selectedKeyId) {
-      const firstActiveKey = apiKeys.find((k) => k.isActive) || apiKeys[0]
-      setSelectedKeyId(firstActiveKey.id)
-    }
-  }, [apiKeys, selectedKeyId])
+  const defaultKeyId = useMemo(() => {
+    const firstActiveKey = apiKeys?.find((k) => k.isActive) || apiKeys?.[0];
+    return firstActiveKey?.id ?? '';
+  }, [apiKeys]);
+
+  const activeKeyId = selectedKeyId || defaultKeyId;
 
   const handleSubmit = (request: ScreenshotRequest) => {
-    if (!selectedKeyId) return
+    if (!activeKeyId) return;
 
-    setResult(null)
-    setError(null)
+    setResult(null);
+    setError(null);
 
     takeScreenshot(
       {
-        apiKeyId: selectedKeyId,
+        apiKeyId: activeKeyId,
         request,
       },
       {
         onSuccess: (response) => {
           if (isScreenshotSuccess(response)) {
-            setResult(response.data)
+            setResult(response.data);
           } else {
-            setError(response.error.message)
+            setError(response.error.message);
           }
         },
         onError: (err) => {
-          setError(err.message || 'Screenshot failed')
+          setError(err.message || 'Screenshot failed');
         },
       }
-    )
-  }
+    );
+  };
 
   if (keysLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title="Screenshot"
-          description="Interactive screenshot API testing"
-        />
+        <PageHeader title="Screenshot" description="Interactive screenshot API testing" />
         <Card>
           <CardContent className="py-6">
             <div className="space-y-4">
@@ -74,16 +70,13 @@ export default function ScreenshotPlaygroundPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!apiKeys?.length) {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title="Screenshot"
-          description="Interactive screenshot API testing"
-        />
+        <PageHeader title="Screenshot" description="Interactive screenshot API testing" />
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
@@ -95,7 +88,7 @@ export default function ScreenshotPlaygroundPage() {
           </AlertDescription>
         </Alert>
       </div>
-    )
+    );
   }
 
   return (
@@ -112,7 +105,7 @@ export default function ScreenshotPlaygroundPage() {
             <CardContent className="pt-6">
               <ScreenshotForm
                 apiKeys={apiKeys}
-                selectedKeyId={selectedKeyId}
+                selectedKeyId={activeKeyId}
                 onKeyChange={setSelectedKeyId}
                 onSubmit={handleSubmit}
                 isLoading={isPending}
@@ -142,5 +135,5 @@ export default function ScreenshotPlaygroundPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -11,7 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@aiget/shared-types": "workspace:*",
+    "@aiget/auth-client": "workspace:*",
+    "@aiget/types": "workspace:*",
     "@aiget/ui": "workspace:*",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-table": "^8.21.3",

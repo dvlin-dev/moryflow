@@ -1,52 +1,62 @@
 /**
- * 认证状态管理
- * Admin 使用 Bearer Token 认证
+ * [PROVIDES]: useAuthStore, getAuthUser, getAccessToken
+ * [DEPENDS]: zustand
+ * [POS]: Admin 端认证状态管理（内存 access token）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  isAdmin: boolean;
-}
+import type { AuthUser } from '@aiget/auth-client';
 
 interface AuthState {
-  user: User | null;
-  token: string | null;
+  user: AuthUser | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, token: string) => void;
-  logout: () => void;
+  isBootstrapped: boolean;
+  setSession: (user: AuthUser, accessToken: string) => void;
+  setAccessToken: (accessToken: string | null) => void;
+  setUser: (user: AuthUser | null) => void;
+  clearSession: () => void;
+  setBootstrapped: (value: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      setAuth: (user, token) =>
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-        }),
-      logout: () =>
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-        }),
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
+  isBootstrapped: false,
+  setSession: (user, accessToken) =>
+    set({
+      user,
+      accessToken,
+      isAuthenticated: true,
+      isBootstrapped: true,
     }),
-    {
-      name: 'aiget-admin-auth',
-    },
-  ),
-);
+  setAccessToken: (accessToken) =>
+    set((state) => ({
+      accessToken,
+      isAuthenticated: Boolean(accessToken),
+      user: accessToken ? state.user : null,
+      isBootstrapped: true,
+    })),
+  setUser: (user) =>
+    set((state) => ({
+      user,
+      isAuthenticated: Boolean(state.accessToken),
+      isBootstrapped: true,
+    })),
+  clearSession: () =>
+    set({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      isBootstrapped: true,
+    }),
+  setBootstrapped: (value) => set({ isBootstrapped: value }),
+}));
 
 /** 获取当前用户 */
 export const getAuthUser = () => useAuthStore.getState().user;
 
-/** 获取当前 token */
-export const getAuthToken = () => useAuthStore.getState().token;
+/** 获取当前 access token */
+export const getAccessToken = () => useAuthStore.getState().accessToken;

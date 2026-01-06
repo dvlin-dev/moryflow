@@ -1,14 +1,12 @@
 # Console Features
 
-> This folder structure changes require updating this document.
+> ⚠️ 本目录结构变更时，必须同步更新此文档。
 
-## Overview
+## 概览
 
-Feature modules for the user console. Each feature is self-contained with its own API calls, hooks, types, and components.
+控制台功能模块集合，每个功能模块自包含 API、hooks、类型与组件。
 
-## Feature Module Pattern
-
-Each feature follows this structure:
+## 模块结构
 
 ```
 feature-name/
@@ -16,62 +14,29 @@ feature-name/
 ├── hooks.ts         # React Query queries
 ├── types.ts         # Feature-specific types
 ├── components/      # Feature components
-└── index.ts         # Barrel exports
+└── index.ts         # Exports
 ```
 
-## Features
+## 功能清单
 
-| Feature             | Description           | API Endpoint                  |
-| ------------------- | --------------------- | ----------------------------- |
-| `api-keys/`         | API key CRUD          | `/api/v1/console/api-keys`    |
-| `auth/`             | Login/logout flow     | `/api/auth/*`                 |
-| `playground/`       | Screenshot testing    | `/api/v1/demo/scrape`         |
-| `screenshots/`      | Screenshot history    | `/api/v1/console/screenshots` |
-| `settings/`         | User profile settings | `/api/v1/console/user`        |
-| `webhooks/`         | Webhook management    | `/api/v1/console/webhooks`    |
-| `embed-playground/` | Embed script testing  | Demo only                     |
+| 功能                | 说明          | API 入口                      |
+| ------------------- | ------------- | ----------------------------- |
+| `api-keys/`         | API Key 管理  | `/api/v1/console/api-keys`    |
+| `auth/`             | 登录表单      | `/api/v1/auth/*`（Auth SDK）  |
+| `playground/`       | 抓取/截图测试 | `/api/v1/console/*`           |
+| `screenshots/`      | 截图历史      | `/api/v1/console/screenshots` |
+| `settings/`         | 账户设置      | `/api/v1/console/*`           |
+| `webhooks/`         | Webhook 管理  | `/api/v1/console/webhooks`    |
+| `embed-playground/` | Embed 测试    | Demo-only                     |
 
-## Key Files Per Feature
-
-### api-keys/
-
-- `components/create-api-key-dialog.tsx` - Key creation modal
-- `components/api-key-table.tsx` - Key list with actions
-- `hooks.ts` - useApiKeys, useCreateApiKey, useDeleteApiKey
-
-### playground/
-
-- `components/playground-form.tsx` - URL input and options
-- `components/result-preview.tsx` - Scrape result display
-- `components/format-tabs.tsx` - Output format selection
-- `hooks.ts` - useScrape mutation
-
-### webhooks/
-
-- `components/webhook-table.tsx` - Webhook list
-- `components/create-webhook-dialog.tsx` - Create modal
-- `components/edit-webhook-dialog.tsx` - Edit modal
-- `hooks.ts` - useWebhooks, useCreateWebhook, useUpdateWebhook
-
-### settings/
-
-- `components/profile-form.tsx` - User profile editor
-- `components/password-form.tsx` - Password change
-- `components/danger-zone.tsx` - Account deletion
-
-## Common Patterns
+## 常用模式
 
 ### API Mutation
 
 ```typescript
-// api.ts
 export function useCreateApiKey() {
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateApiKeyInput) => apiClient.post(CONSOLE_API.API_KEYS, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-    },
+    mutationFn: (data) => apiClient.post(CONSOLE_API.API_KEYS, data),
   });
 }
 ```
@@ -79,30 +44,18 @@ export function useCreateApiKey() {
 ### Query Hook
 
 ```typescript
-// hooks.ts
 export function useApiKeys() {
   return useQuery({
     queryKey: ['api-keys'],
-    queryFn: () => apiClient.get<ApiKey[]>(CONSOLE_API.API_KEYS),
+    queryFn: () => apiClient.get(CONSOLE_API.API_KEYS),
   });
 }
 ```
 
-## Common Modification Scenarios
+## 依赖
 
-| Scenario      | Files to Modify                            | Notes                    |
-| ------------- | ------------------------------------------ | ------------------------ |
-| Add feature   | Create new directory                       | Follow module pattern    |
-| Add API call  | `api.ts`                                   | Use apiClient from lib/  |
-| Add component | `components/`                              | Import UI from @aiget/ui |
-| Add form      | `components/`, parent's `lib/validations/` | Use Zod schema           |
-
-## Dependencies
-
-All features use:
-
-- `@tanstack/react-query` - Data fetching
-- `@aiget/ui` - UI components
-- `../lib/api-client` - HTTP client
-- `../lib/api-paths` - Endpoint constants
-- `zod` - Form validation
+- `@tanstack/react-query` - 数据请求
+- `@aiget/ui` - UI 组件
+- `../lib/api-client` - HTTP 客户端
+- `../lib/api-paths` - API 常量
+- `@aiget/auth-client` - Auth SDK

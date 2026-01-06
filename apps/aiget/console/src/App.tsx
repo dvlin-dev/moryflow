@@ -1,20 +1,26 @@
 /**
- * Aiget Console - 应用入口
- * 路由配置和全局 Provider
+ * [PROPS]: 无
+ * [EMITS]: route change
+ * [POS]: Console 应用入口与路由保护
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'sonner'
-import { useAuthStore } from './stores/auth'
-import { MainLayout } from './components/layout'
-import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import ScreenshotPlaygroundPage from './pages/ScreenshotPlaygroundPage'
-import EmbedPlaygroundPage from './pages/EmbedPlaygroundPage'
-import ApiKeysPage from './pages/ApiKeysPage'
-import ScreenshotsPage from './pages/ScreenshotsPage'
-import WebhooksPage from './pages/WebhooksPage'
-import SettingsPage from './pages/SettingsPage'
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+import { useAuthStore } from './stores/auth';
+import { authClient } from './lib/auth-client';
+import { toAuthUser } from './lib/auth-utils';
+import { MainLayout } from './components/layout';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ScreenshotPlaygroundPage from './pages/ScreenshotPlaygroundPage';
+import EmbedPlaygroundPage from './pages/EmbedPlaygroundPage';
+import ApiKeysPage from './pages/ApiKeysPage';
+import ScreenshotsPage from './pages/ScreenshotsPage';
+import WebhooksPage from './pages/WebhooksPage';
+import SettingsPage from './pages/SettingsPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -24,20 +30,68 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 /** 受保护路由 */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+  if (!isBootstrapped) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
+    );
   }
 
-  return <>{children}</>
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 function App() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const setSession = useAuthStore((state) => state.setSession);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const setBootstrapped = useAuthStore((state) => state.setBootstrapped);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (isBootstrapped || isAuthenticated) {
+      if (!isBootstrapped && isAuthenticated) {
+        setBootstrapped(true);
+      }
+      return;
+    }
+
+    const bootstrap = async () => {
+      try {
+        const refresh = await authClient.refresh();
+        const me = await authClient.me(refresh.accessToken);
+        if (!isActive) return;
+        setSession(toAuthUser(me), refresh.accessToken);
+      } catch {
+        if (!isActive) return;
+        clearSession();
+      } finally {
+        if (isActive) {
+          setBootstrapped(true);
+        }
+      }
+    };
+
+    bootstrap();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated, isBootstrapped, setBootstrapped, setSession, clearSession]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -77,7 +131,7 @@ function App() {
       </BrowserRouter>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;

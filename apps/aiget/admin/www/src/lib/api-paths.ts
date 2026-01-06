@@ -1,16 +1,12 @@
 /**
- * Admin API 路径常量
+ * [DEFINES]: ADMIN_API
+ * [USED_BY]: features/*, lib/api-client
+ * [POS]: Admin API 路径常量定义
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
-export const AUTH_API = {
-  SIGN_IN: '/api/auth/sign-in/email',
-  SIGN_OUT: '/api/auth/sign-out',
-  SESSION: '/api/auth/get-session',
-} as const;
-
 export const ADMIN_API = {
-  LOGIN: '/api/v1/admin/login',
-  LOGOUT: '/api/v1/admin/logout',
   USERS: '/api/v1/admin/users',
   SUBSCRIPTIONS: '/api/v1/admin/subscriptions',
   ORDERS: '/api/v1/admin/orders',

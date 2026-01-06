@@ -17,8 +17,10 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 
 ## 约束
 
-- 仅管理员可访问（SessionGuard + AdminGuard）
-- API 调用统一走 `/api/v1/admin/*`
+- 仅管理员可访问（Auth Facade + isAdmin）
+- Auth 统一使用 `@aiget/auth-client`（`/api/v1/auth/*`）
+- Web：access token 仅内存；refresh token 由 HttpOnly Cookie 承载
+- API 调用统一走 `/api/v1/admin/*`，401 时触发 refresh 重试一次
 - 监控页面需要定时刷新
 - UI 风格：直角组件 + 橙色强调
 
@@ -57,13 +59,15 @@ feature-name/
 
 ## Key Files
 
-| File                               | Description                    |
-| ---------------------------------- | ------------------------------ |
-| `lib/api-client.ts`                | HTTP client with admin auth    |
-| `lib/api-paths.ts`                 | Admin API endpoint constants   |
-| `lib/job-utils.tsx`                | Job status rendering utilities |
-| `stores/auth.store.ts`             | Admin auth state               |
-| `components/layout/MainLayout.tsx` | Admin shell layout             |
+| File                               | Description                     |
+| ---------------------------------- | ------------------------------- |
+| `lib/api-client.ts`                | HTTP client with auth + refresh |
+| `lib/api-paths.ts`                 | Admin API endpoint constants    |
+| `lib/auth-client.ts`               | Auth SDK instance               |
+| `lib/auth-utils.ts`                | Auth user mapping helpers       |
+| `lib/job-utils.tsx`                | Job status rendering utilities  |
+| `stores/auth.ts`                   | Admin auth state                |
+| `components/layout/MainLayout.tsx` | Admin shell layout              |
 
 ## Pages
 
@@ -115,6 +119,7 @@ export function useJobs() {
 ```
 admin/
 ├── @aiget/ui - UI components
+├── @aiget/auth-client - Auth SDK
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

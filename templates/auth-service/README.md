@@ -49,6 +49,19 @@ pnpm dev
 3. 准备数据库并同步 schema（详见下方“数据库”）。
 4. 配置 `.env` 后启动服务。
 
+## 环境变量（最小集）
+
+- `BETTER_AUTH_SECRET`：至少 32 位字符
+- `IDENTITY_DATABASE_URL`：Postgres 连接字符串
+- `TRUSTED_ORIGINS`：允许的前端域名（逗号分隔）
+- `BETTER_AUTH_URL`：Auth 服务完整地址（默认 `http://localhost:3000/api/v1/auth`）
+- `COOKIE_DOMAIN`：生产环境跨子域 Cookie 域名
+
+可选：
+
+- `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
+- `APPLE_CLIENT_ID` + `APPLE_CLIENT_SECRET`
+
 ## 数据库
 
 - 使用 `@aiget/identity-db` 的 schema。

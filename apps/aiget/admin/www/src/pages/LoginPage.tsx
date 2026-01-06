@@ -1,5 +1,9 @@
 /**
- * Admin 登录页面
+ * [PROPS]: 无
+ * [EMITS]: submit (form)
+ * [POS]: Admin 登录页面（Auth Facade）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,22 +20,11 @@ import {
   AlertDescription,
 } from '@aiget/ui/primitives';
 import { useAuthStore } from '@/stores/auth';
-import { apiClient } from '@/lib/api-client';
-import { ADMIN_API } from '@/lib/api-paths';
-
-interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string | null;
-    isAdmin: boolean;
-  };
-  token: string;
-}
+import { authClient } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setSession = useAuthStore((state) => state.setSession);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -43,16 +36,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await apiClient.post<LoginResponse>(ADMIN_API.LOGIN, {
-        email,
-        password,
-      });
+      const data = await authClient.login({ email, password });
 
       if (!data.user.isAdmin) {
         throw new Error('Admin access required');
       }
 
-      setAuth(data.user, data.token);
+      setSession(data.user, data.accessToken);
       navigate('/');
     } catch (err) {
       setError((err as Error).message);
@@ -66,9 +56,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Aiget Admin</CardTitle>
-          <CardDescription>
-            Sign in to access the admin panel
-          </CardDescription>
+          <CardDescription>Sign in to access the admin panel</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

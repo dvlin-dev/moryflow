@@ -182,10 +182,7 @@ export default function JobsPage() {
                     >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span
-                            className="font-mono text-sm"
-                            title={job.url}
-                          >
+                          <span className="font-mono text-sm" title={job.url}>
                             {truncateUrl(job.url)}
                           </span>
                           {job.fromCache && (

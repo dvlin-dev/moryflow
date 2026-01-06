@@ -139,7 +139,8 @@ function ConfigurationCard({ status }: { status: BrowserPoolDetailedStatus }) {
 
 function SystemResourcesCard({ status }: { status: BrowserPoolDetailedStatus }) {
   const memoryUsagePercent =
-    ((status.system.totalMemoryGB - status.system.freeMemoryGB) / status.system.totalMemoryGB) * 100;
+    ((status.system.totalMemoryGB - status.system.freeMemoryGB) / status.system.totalMemoryGB) *
+    100;
 
   return (
     <div className="rounded-none border border-border bg-card p-6">

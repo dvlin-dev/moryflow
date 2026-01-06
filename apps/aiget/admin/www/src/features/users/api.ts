@@ -13,9 +13,7 @@ import type {
 } from './types';
 
 /** 获取用户列表 */
-export async function getUsers(
-  query: UserQuery = {},
-): Promise<PaginatedResponse<UserListItem>> {
+export async function getUsers(query: UserQuery = {}): Promise<PaginatedResponse<UserListItem>> {
   const url = buildUrl(ADMIN_API.USERS, {
     page: query.page,
     limit: query.limit,
@@ -31,10 +29,7 @@ export async function getUser(id: string): Promise<UserDetail> {
 }
 
 /** 更新用户 */
-export async function updateUser(
-  id: string,
-  data: UpdateUserRequest,
-): Promise<UserListItem> {
+export async function updateUser(id: string, data: UpdateUserRequest): Promise<UserListItem> {
   return apiClient.patch<UserListItem>(`${ADMIN_API.USERS}/${id}`, data);
 }
 

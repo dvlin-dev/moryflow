@@ -1,5 +1,9 @@
 /**
- * Admin 主布局
+ * [PROPS]: 无
+ * [EMITS]: logout (click)
+ * [POS]: Admin 主布局与导航壳
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
@@ -18,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@aiget/ui/lib';
 import { useAuthStore } from '@/stores/auth';
+import { authClient } from '@/lib/auth-client';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,8 +37,17 @@ const navItems = [
 
 export function MainLayout() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, clearSession } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await authClient.logout();
+    } catch {
+      // 即使后端调用失败，也要清除前端状态
+    }
+    clearSession();
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -49,15 +63,12 @@ export function MainLayout() {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar transition-transform lg:static lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-border px-6">
           <span className="text-lg font-bold">Aiget Admin</span>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden"
-          >
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -72,7 +83,7 @@ export function MainLayout() {
                     'flex items-center gap-3 rounded-none px-3 py-2 text-sm transition-colors',
                     location.pathname === item.path
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50',
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -89,10 +100,7 @@ export function MainLayout() {
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden"
-            >
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
               <Menu className="h-5 w-5" />
             </button>
             <h1 className="text-lg font-semibold">Admin Panel</h1>
@@ -100,7 +108,7 @@ export function MainLayout() {
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user?.email}</span>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm text-destructive hover:underline"
             >
               <LogOut className="h-3.5 w-3.5" />

@@ -15,9 +15,7 @@ import type {
 } from './types';
 
 /** 获取任务列表 */
-export async function getJobs(
-  query: JobsQuery = {},
-): Promise<PaginatedResponse<JobListItem>> {
+export async function getJobs(query: JobsQuery = {}): Promise<PaginatedResponse<JobListItem>> {
   const url = buildUrl(ADMIN_API.JOBS, {
     page: query.page,
     limit: query.limit,
@@ -80,14 +78,12 @@ export interface CleanupStaleJobsResult {
 
 /** 清理卡住的任务 */
 export async function cleanupStaleJobs(
-  query: CleanupStaleJobsQuery = {},
+  query: CleanupStaleJobsQuery = {}
 ): Promise<CleanupStaleJobsResult> {
   const params = new URLSearchParams();
   if (query.maxAgeMinutes) params.set('maxAgeMinutes', String(query.maxAgeMinutes));
   if (query.dryRun !== undefined) params.set('dryRun', String(query.dryRun));
   const qs = params.toString();
-  const url = qs
-    ? `${ADMIN_API.JOBS}/cleanup-stale?${qs}`
-    : `${ADMIN_API.JOBS}/cleanup-stale`;
+  const url = qs ? `${ADMIN_API.JOBS}/cleanup-stale?${qs}` : `${ADMIN_API.JOBS}/cleanup-stale`;
   return apiClient.post<CleanupStaleJobsResult>(url);
 }

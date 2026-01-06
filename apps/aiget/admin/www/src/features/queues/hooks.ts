@@ -58,8 +58,7 @@ export function useQueueJobs(name: string, query: QueueJobsQuery = {}) {
 export function useRetryJob() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, jobId }: { name: string; jobId: string }) =>
-      retryJob(name, jobId),
+    mutationFn: ({ name, jobId }: { name: string; jobId: string }) => retryJob(name, jobId),
     onSuccess: () => {
       toast.success('任务已重新加入队列');
       queryClient.invalidateQueries({ queryKey: queueKeys.all });

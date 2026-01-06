@@ -117,13 +117,7 @@ function QueueCard({
 }
 
 /** 队列任务列表 */
-function QueueJobList({
-  queueName,
-  status,
-}: {
-  queueName: QueueName;
-  status: QueueJobStatus;
-}) {
+function QueueJobList({ queueName, status }: { queueName: QueueName; status: QueueJobStatus }) {
   const { data, isLoading } = useQueueJobs(queueName, { status, limit: 20 });
 
   if (isLoading) {
@@ -236,25 +230,19 @@ export default function QueuesPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-yellow-600">
-                {data.summary.totalWaiting}
-              </div>
+              <div className="text-3xl font-bold text-yellow-600">{data.summary.totalWaiting}</div>
               <p className="text-sm text-muted-foreground">总等待任务</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-blue-600">
-                {data.summary.totalActive}
-              </div>
+              <div className="text-3xl font-bold text-blue-600">{data.summary.totalActive}</div>
               <p className="text-sm text-muted-foreground">正在处理</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-red-600">
-                {data.summary.totalFailed}
-              </div>
+              <div className="text-3xl font-bold text-red-600">{data.summary.totalFailed}</div>
               <p className="text-sm text-muted-foreground">失败任务</p>
             </CardContent>
           </Card>
@@ -323,9 +311,7 @@ export default function QueuesPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setConfirmDialog({ open: true, action: 'clean-completed' })
-                }
+                onClick={() => setConfirmDialog({ open: true, action: 'clean-completed' })}
                 disabled={isCleaning}
               >
                 <Trash2 className="mr-2 h-4 w-4" />

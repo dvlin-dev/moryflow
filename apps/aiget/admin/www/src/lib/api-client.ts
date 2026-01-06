@@ -1,9 +1,14 @@
 /**
- * API 客户端
- * 自动解包响应数据，统一错误处理
+ * [PROVIDES]: apiClient, ApiError
+ * [DEPENDS]: fetch, zustand store, @aiget/auth-client
+ * [POS]: Admin API 请求封装（含 refresh 重试）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { useAuthStore, getAuthToken } from '@/stores/auth';
-import type { PaginationMeta, ApiErrorResponse } from '@aiget/shared-types';
+import { authClient } from './auth-client';
+import { toAuthUser } from './auth-utils';
+import { useAuthStore, getAccessToken } from '@/stores/auth';
+import type { PaginationMeta, ApiErrorResponse } from '@aiget/types';
 
 // 开发环境使用空字符串走 Vite 代理，生产环境使用完整 URL
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -58,7 +63,7 @@ class ApiClient {
    * 构建请求头
    */
   private buildHeaders(additionalHeaders?: HeadersInit): HeadersInit {
-    const token = getAuthToken();
+    const token = getAccessToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(additionalHeaders as Record<string, string>),
@@ -76,7 +81,7 @@ class ApiClient {
    */
   private handleAuthError(status: number): void {
     if (status === 401 || status === 403) {
-      useAuthStore.getState().logout();
+      useAuthStore.getState().clearSession();
     }
   }
 
@@ -100,7 +105,7 @@ class ApiClient {
       status,
       errorResponse.error?.code || 'UNKNOWN_ERROR',
       errorResponse.error?.message || `请求失败 (${status})`,
-      errorResponse.error?.details,
+      errorResponse.error?.details
     );
   }
 
@@ -137,11 +142,52 @@ class ApiClient {
   /**
    * 发送请求
    */
+  private refreshPromise: Promise<string | null> | null = null;
+
+  private async refreshAccessToken(): Promise<string | null> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = authClient
+      .refresh()
+      .then(async (result) => {
+        useAuthStore.getState().setAccessToken(result.accessToken);
+        if (!useAuthStore.getState().user) {
+          const me = await authClient.me(result.accessToken);
+          useAuthStore.getState().setUser(toAuthUser(me));
+        }
+        return result.accessToken;
+      })
+      .catch(() => {
+        useAuthStore.getState().clearSession();
+        return null;
+      })
+      .finally(() => {
+        this.refreshPromise = null;
+      });
+
+    return this.refreshPromise;
+  }
+
+  private async fetchWithRefresh(fetcher: () => Promise<Response>): Promise<Response> {
+    const response = await fetcher();
+    if (response.status === 401) {
+      const refreshed = await this.refreshAccessToken();
+      if (refreshed) {
+        return fetcher();
+      }
+    }
+    return response;
+  }
+
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      ...options,
-      headers: this.buildHeaders(options?.headers),
-    });
+    const response = await this.fetchWithRefresh(() =>
+      fetch(`${this.baseURL}${endpoint}`, {
+        ...options,
+        headers: this.buildHeaders(options?.headers),
+      })
+    );
 
     return this.handleResponse<T>(response);
   }
@@ -174,9 +220,11 @@ class ApiClient {
    * GET 分页请求 - 返回 data + meta
    */
   async getPaginated<T>(endpoint: string): Promise<PaginatedResult<T>> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      headers: this.buildHeaders(),
-    });
+    const response = await this.fetchWithRefresh(() =>
+      fetch(`${this.baseURL}${endpoint}`, {
+        headers: this.buildHeaders(),
+      })
+    );
 
     this.handleAuthError(response.status);
 
@@ -196,28 +244,21 @@ class ApiClient {
   /**
    * 构建 Blob 请求头（不含 Content-Type，除非是 POST）
    */
-  private buildBlobHeaders(includeContentType = false): Record<string, string> {
-    const token = getAuthToken();
-    const headers: Record<string, string> = {};
-
-    if (includeContentType) {
-      headers['Content-Type'] = 'application/json';
-    }
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
-  }
-
   /**
-   * 发送 Blob 请求
+   * GET Blob 请求（用于文件下载）
    */
-  private async requestBlob(
-    endpoint: string,
-    options?: RequestInit,
-  ): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, options);
+  async getBlob(endpoint: string): Promise<Blob> {
+    const token = getAccessToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await this.fetchWithRefresh(() =>
+      fetch(`${this.baseURL}${endpoint}`, {
+        headers,
+      })
+    );
 
     if (!response.ok) {
       this.handleAuthError(response.status);
@@ -228,23 +269,23 @@ class ApiClient {
   }
 
   /**
-   * GET Blob 请求（用于文件下载）
-   */
-  async getBlob(endpoint: string): Promise<Blob> {
-    return this.requestBlob(endpoint, {
-      headers: this.buildBlobHeaders(),
-    });
-  }
-
-  /**
    * POST Blob 请求（用于导出等需要 POST 请求的文件下载）
    */
   async postBlob(endpoint: string, data?: unknown): Promise<Blob> {
-    return this.requestBlob(endpoint, {
-      method: 'POST',
-      headers: this.buildBlobHeaders(true),
-      body: data ? JSON.stringify(data) : undefined,
-    });
+    const response = await this.fetchWithRefresh(() =>
+      fetch(`${this.baseURL}${endpoint}`, {
+        method: 'POST',
+        headers: this.buildHeaders(),
+        body: data ? JSON.stringify(data) : undefined,
+      })
+    );
+
+    if (!response.ok) {
+      this.handleAuthError(response.status);
+      throw new ApiError(response.status, 'DOWNLOAD_ERROR', 'Download failed');
+    }
+
+    return response.blob();
   }
 }
 

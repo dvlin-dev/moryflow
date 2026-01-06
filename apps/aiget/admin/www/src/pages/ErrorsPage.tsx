@@ -55,16 +55,18 @@ export default function ErrorsPage() {
   const { data, isLoading } = useErrorStats({ days });
 
   // Prepare chart data
-  const pieData = data?.byCode.map((item) => ({
-    name: ERROR_LABELS[item.code] || item.code,
-    value: item.count,
-    code: item.code,
-  })) ?? [];
+  const pieData =
+    data?.byCode.map((item) => ({
+      name: ERROR_LABELS[item.code] || item.code,
+      value: item.count,
+      code: item.code,
+    })) ?? [];
 
-  const lineData = data?.byDay.map((item) => ({
-    date: item.date.slice(5), // MM-DD
-    count: item.count,
-  })) ?? [];
+  const lineData =
+    data?.byDay.map((item) => ({
+      date: item.date.slice(5), // MM-DD
+      count: item.count,
+    })) ?? [];
 
   const totalErrors = pieData.reduce((sum, item) => sum + item.value, 0);
 
@@ -94,16 +96,12 @@ export default function ErrorsPage() {
               <AlertTriangle className="h-5 w-5 text-red-500" />
               <span className="text-3xl font-bold text-red-600">{totalErrors}</span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {days} 天内总错误数
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{days} 天内总错误数</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold">
-              {pieData[0]?.name || '-'}
-            </div>
+            <div className="text-3xl font-bold">{pieData[0]?.name || '-'}</div>
             <p className="mt-1 text-sm text-muted-foreground">最常见错误类型</p>
           </CardContent>
         </Card>
@@ -147,15 +145,10 @@ export default function ErrorsPage() {
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
-                      }
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
                       {pieData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={ERROR_COLORS[entry.code] || '#888'}
-                        />
+                        <Cell key={`cell-${index}`} fill={ERROR_COLORS[entry.code] || '#888'} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -279,9 +272,7 @@ export default function ErrorsPage() {
                             : undefined,
                         }}
                       >
-                        {error.errorCode
-                          ? ERROR_LABELS[error.errorCode] || error.errorCode
-                          : '-'}
+                        {error.errorCode ? ERROR_LABELS[error.errorCode] || error.errorCode : '-'}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-sm">

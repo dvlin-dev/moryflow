@@ -159,9 +159,7 @@ export default function UsersPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getTierBadgeVariant(user.tier)}>
-                          {user.tier}
-                        </Badge>
+                        <Badge variant={getTierBadgeVariant(user.tier)}>{user.tier}</Badge>
                         {user.subscriptionStatus && user.subscriptionStatus !== 'ACTIVE' && (
                           <Badge variant="secondary" className="ml-1 text-xs">
                             {user.subscriptionStatus}

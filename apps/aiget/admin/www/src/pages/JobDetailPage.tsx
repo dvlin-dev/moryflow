@@ -76,10 +76,7 @@ function JsonDisplay({ data, maxHeight = 300 }: { data: unknown; maxHeight?: num
 
   return (
     <div className="overflow-x-auto">
-      <pre
-        className="min-w-0 overflow-auto rounded-md bg-muted p-4 text-xs"
-        style={{ maxHeight }}
-      >
+      <pre className="min-w-0 overflow-auto rounded-md bg-muted p-4 text-xs" style={{ maxHeight }}>
         {JSON.stringify(data, null, 2)}
       </pre>
     </div>
@@ -136,12 +133,8 @@ export default function JobDetailPage() {
           <CardContent>
             <div className="flex items-center gap-4">
               {getStatusBadge(job.status)}
-              {job.fromCache && (
-                <Badge variant="outline">缓存命中</Badge>
-              )}
-              {job.quotaDeducted && (
-                <Badge variant="secondary">已扣配额</Badge>
-              )}
+              {job.fromCache && <Badge variant="outline">缓存命中</Badge>}
+              {job.quotaDeducted && <Badge variant="secondary">已扣配额</Badge>}
             </div>
           </CardContent>
         </Card>
@@ -197,9 +190,7 @@ export default function JobDetailPage() {
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground break-all">
-            Hash: {job.requestHash}
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground break-all">Hash: {job.requestHash}</p>
         </CardContent>
       </Card>
 
@@ -207,9 +198,7 @@ export default function JobDetailPage() {
       {job.status === 'FAILED' && job.error && (
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-destructive">
-              错误信息
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-destructive">错误信息</CardTitle>
           </CardHeader>
           <CardContent>
             <Badge variant="destructive" className="mb-2">

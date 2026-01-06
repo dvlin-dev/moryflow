@@ -12,7 +12,7 @@
  * @returns 查询字符串（不含 ?）
  */
 export function buildQueryString(
-  params: Record<string, string | number | boolean | undefined>,
+  params: Record<string, string | number | boolean | undefined>
 ): string {
   const urlParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -31,7 +31,7 @@ export function buildQueryString(
  */
 export function buildUrl(
   baseUrl: string,
-  params: Record<string, string | number | boolean | undefined>,
+  params: Record<string, string | number | boolean | undefined>
 ): string {
   const qs = buildQueryString(params);
   return qs ? `${baseUrl}?${qs}` : baseUrl;

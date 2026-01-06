@@ -1,8 +1,8 @@
 /**
  * Settings 页面 - 账户设置
  */
-import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
+import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -18,18 +18,15 @@ import {
   TabsList,
   TabsTrigger,
   Skeleton,
-} from '@aiget/ui/primitives'
-import { PageHeader } from '@aiget/ui/composed'
-import { User, Key, Shield } from 'lucide-react'
-import { useProfile, useUpdateProfile, useChangePassword } from '@/features/settings'
+} from '@aiget/ui/primitives';
+import { PageHeader } from '@aiget/ui/composed';
+import { User, Key, Shield } from 'lucide-react';
+import { useProfile, useUpdateProfile, useChangePassword } from '@/features/settings';
 
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Settings"
-        description="Manage your account settings and preferences"
-      />
+      <PageHeader title="Settings" description="Manage your account settings and preferences" />
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
@@ -52,31 +49,27 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
 
 function ProfileSettings() {
-  const { data: profile, isLoading } = useProfile()
-  const updateProfile = useUpdateProfile()
-  const [name, setName] = useState('')
-
-  // 初始化表单
-  useEffect(() => {
-    if (profile?.name) {
-      setName(profile.name)
-    }
-  }, [profile?.name])
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const [nameOverride, setNameOverride] = useState<string | null>(null);
+  const nameValue = nameOverride ?? profile?.name ?? '';
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      await updateProfile.mutateAsync({ name: name || undefined })
-      toast.success('Profile updated')
+      const trimmedName = nameValue.trim();
+      await updateProfile.mutateAsync({ name: trimmedName || undefined });
+      toast.success('Profile updated');
+      setNameOverride(null);
     } catch {
-      toast.error('Update failed')
+      toast.error('Update failed');
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -90,7 +83,7 @@ function ProfileSettings() {
           <Skeleton className="h-10 w-full" />
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -117,8 +110,8 @@ function ProfileSettings() {
             <Label htmlFor="name">Display Name</Label>
             <Input
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={nameValue}
+              onChange={(e) => setNameOverride(e.target.value)}
               placeholder="Enter your name"
             />
           </div>
@@ -136,41 +129,41 @@ function ProfileSettings() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function SecuritySettings() {
-  const changePassword = useChangePassword()
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const changePassword = useChangePassword();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match')
-      return
+      toast.error('Passwords do not match');
+      return;
     }
 
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters')
-      return
+      toast.error('Password must be at least 8 characters');
+      return;
     }
 
     try {
       await changePassword.mutateAsync({
         currentPassword,
         newPassword,
-      })
-      toast.success('Password changed successfully')
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      });
+      toast.success('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch {
-      toast.error('Failed to change password')
+      toast.error('Failed to change password');
     }
-  }
+  };
 
   return (
     <Card>
@@ -179,7 +172,9 @@ function SecuritySettings() {
           <Key className="h-5 w-5" />
           Change Password
         </CardTitle>
-        <CardDescription>Regularly changing your password improves account security</CardDescription>
+        <CardDescription>
+          Regularly changing your password improves account security
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -226,5 +221,5 @@ function SecuritySettings() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

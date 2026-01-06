@@ -109,8 +109,7 @@ export const createAuthClient = (options: AuthClientOptions): AuthClient => {
   };
 
   return {
-    register: (input: RegisterInput) =>
-      request<RegisterResponse>('/register', { body: input }),
+    register: (input: RegisterInput) => request<RegisterResponse>('/register', { body: input }),
     verifyEmailOtp: (input: VerifyEmailOtpInput) =>
       request<AuthResponse>('/verify-email-otp', { body: input }),
     login: (input: LoginInput) => request<AuthResponse>('/login', { body: input }),
@@ -138,7 +137,6 @@ export const createAuthClient = (options: AuthClientOptions): AuthClient => {
       request<AuthResponse>('/google/token', { body: input }),
     appleStart: (input?: OAuthStartInput) =>
       request<OAuthStartResponse>('/apple/start', { body: input ?? {} }),
-    appleToken: (input: OAuthTokenInput) =>
-      request<AuthResponse>('/apple/token', { body: input }),
+    appleToken: (input: OAuthTokenInput) => request<AuthResponse>('/apple/token', { body: input }),
   };
 };

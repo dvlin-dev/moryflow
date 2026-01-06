@@ -33,10 +33,7 @@ import {
 } from '@aiget/ui/primitives';
 import { formatRelativeTime } from '@aiget/ui/lib';
 import { Search, Pencil } from 'lucide-react';
-import {
-  useSubscriptions,
-  useUpdateSubscription,
-} from '@/features/subscriptions';
+import { useSubscriptions, useUpdateSubscription } from '@/features/subscriptions';
 import type {
   SubscriptionListItem,
   SubscriptionQuery,
@@ -51,8 +48,9 @@ export default function SubscriptionsPage() {
   const [query, setQuery] = useState<SubscriptionQuery>({ page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedSubscription, setSelectedSubscription] =
-    useState<SubscriptionListItem | null>(null);
+  const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionListItem | null>(
+    null
+  );
   const [editTier, setEditTier] = useState<SubscriptionTier>('FREE');
   const [editStatus, setEditStatus] = useState<SubscriptionStatus>('ACTIVE');
 
@@ -105,7 +103,7 @@ export default function SubscriptionsPage() {
         },
         {
           onSuccess: () => setEditDialogOpen(false),
-        },
+        }
       );
     }
   };
@@ -214,12 +212,8 @@ export default function SubscriptionsPage() {
                     <TableRow key={subscription.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">
-                            {subscription.userName || '未设置'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {subscription.userEmail}
-                          </p>
+                          <p className="font-medium">{subscription.userName || '未设置'}</p>
+                          <p className="text-sm text-muted-foreground">{subscription.userEmail}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -235,8 +229,7 @@ export default function SubscriptionsPage() {
                       <TableCell className="text-sm">
                         {subscription.currentPeriodEnd ? (
                           <span>
-                            {new Date(subscription.currentPeriodStart).toLocaleDateString()}{' '}
-                            -{' '}
+                            {new Date(subscription.currentPeriodStart).toLocaleDateString()} -{' '}
                             {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                           </span>
                         ) : (

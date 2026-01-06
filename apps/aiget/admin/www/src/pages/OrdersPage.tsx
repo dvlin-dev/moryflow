@@ -184,9 +184,7 @@ export default function OrdersPage() {
                       <TableCell>
                         <div>
                           <p className="font-medium">{order.userName || '未设置'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {order.userEmail || '-'}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{order.userEmail || '-'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -198,9 +196,7 @@ export default function OrdersPage() {
                         {formatAmount(order.amount, order.currency)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(order.status)}>
-                          {order.status}
-                        </Badge>
+                        <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
                       </TableCell>
                       <TableCell>
                         {order.quotaAmount ? (

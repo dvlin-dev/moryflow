@@ -1,62 +1,52 @@
 /**
- * LoginForm - 管理员登录表单组件
- * 使用 Bearer Token 认证，登录成功后保存 token 到 localStorage
+ * [PROPS]: LoginFormProps
+ * [EMITS]: submit (form)
+ * [POS]: Console 登录表单（Auth Facade）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth'
-import { apiClient } from '@/lib/api-client'
-import { ADMIN_API } from '@/lib/api-paths'
-import { cn } from '@aiget/ui/lib'
-import { Button, Card, CardContent, Input, Label } from '@aiget/ui/primitives'
-import { Link2, Loader2 } from 'lucide-react'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/auth';
+import { authClient } from '@/lib/auth-client';
+import { cn } from '@aiget/ui/lib';
+import { Button, Card, CardContent, Input, Label } from '@aiget/ui/primitives';
+import { Link2, Loader2 } from 'lucide-react';
 
-interface LoginResponse {
-  user: {
-    id: string
-    email: string
-    name?: string | null
-    isAdmin: boolean
-  }
-  token: string
-}
-
-export type LoginFormProps = React.ComponentProps<'div'>
+export type LoginFormProps = React.ComponentProps<'div'>;
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const setAuth = useAuthStore((state) => state.setAuth)
-  const navigate = useNavigate()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const setSession = useAuthStore((state) => state.setSession);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      toast.error('Please enter email and password')
-      return
+      toast.error('Please enter email and password');
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const data = await apiClient.post<LoginResponse>(ADMIN_API.LOGIN, {
-        email,
-        password,
-      })
-
-      setAuth(data.user, data.token)
-      toast.success('Login successful')
-      navigate('/')
+      const data = await authClient.login({ email, password });
+      setSession(data.user, data.accessToken);
+      toast.success('Login successful');
+      navigate('/');
     } catch (error) {
-      console.error('Login error:', error)
-      toast.error(error instanceof Error ? error.message : 'Login failed, please check your credentials')
+      console.error('Login error:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Login failed, please check your credentials'
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -68,9 +58,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
                 <Link2 className="size-8" />
                 <h1 className="text-2xl font-bold">Aiget</h1>
               </div>
-              <p className="text-muted-foreground text-balance text-sm">
-                Sign in to your account
-              </p>
+              <p className="text-muted-foreground text-balance text-sm">Sign in to your account</p>
             </div>
 
             <div className="space-y-4">
@@ -115,5 +103,5 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

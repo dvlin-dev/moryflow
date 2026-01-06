@@ -13,8 +13,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aiget/auth-client": "workspace:*",
     "@aiget/embed-react": "workspace:*",
-    "@aiget/shared-types": "workspace:*",
+    "@aiget/types": "workspace:*",
     "@aiget/ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@tiptap/react": "^2.11.5",

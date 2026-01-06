@@ -14,7 +14,7 @@ import type {
 
 /** 获取订阅列表 */
 export async function getSubscriptions(
-  query: SubscriptionQuery = {},
+  query: SubscriptionQuery = {}
 ): Promise<PaginatedResponse<SubscriptionListItem>> {
   const url = buildUrl(ADMIN_API.SUBSCRIPTIONS, {
     page: query.page,
@@ -34,10 +34,7 @@ export async function getSubscription(id: string): Promise<SubscriptionDetail> {
 /** 更新订阅 */
 export async function updateSubscription(
   id: string,
-  data: UpdateSubscriptionRequest,
+  data: UpdateSubscriptionRequest
 ): Promise<SubscriptionListItem> {
-  return apiClient.patch<SubscriptionListItem>(
-    `${ADMIN_API.SUBSCRIPTIONS}/${id}`,
-    data,
-  );
+  return apiClient.patch<SubscriptionListItem>(`${ADMIN_API.SUBSCRIPTIONS}/${id}`, data);
 }

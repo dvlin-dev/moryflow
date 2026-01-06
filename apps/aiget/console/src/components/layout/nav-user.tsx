@@ -1,12 +1,14 @@
 /**
- * NavUser - 用户菜单组件
- * 登出时调用后端 API 清除 Session Cookie
+ * [PROPS]: NavUserProps
+ * [EMITS]: logout (click)
+ * [POS]: Console 用户菜单与登出入口
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { LogOut, MoreVertical } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/auth'
-import { apiClient } from '@/lib/api-client'
-import { ADMIN_API } from '@/lib/api-paths'
+import { LogOut, MoreVertical } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/auth';
+import { authClient } from '@/lib/auth-client';
 
 import {
   Avatar,
@@ -22,31 +24,31 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@aiget/ui/primitives'
+} from '@aiget/ui/primitives';
 
 export interface NavUserProps {
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
+    name: string;
+    email: string;
+    avatar: string;
+  };
 }
 
 export function NavUser({ user }: NavUserProps) {
-  const { isMobile } = useSidebar()
-  const navigate = useNavigate()
-  const logout = useAuthStore((state) => state.logout)
+  const { isMobile } = useSidebar();
+  const navigate = useNavigate();
+  const clearSession = useAuthStore((state) => state.clearSession);
 
   const handleLogout = async () => {
     try {
       // 调用后端清除 Session Cookie
-      await apiClient.post(ADMIN_API.LOGOUT)
+      await authClient.logout();
     } catch {
       // 即使后端调用失败，也要清除前端状态
     }
-    logout()
-    navigate('/login')
-  }
+    clearSession();
+    navigate('/login');
+  };
 
   // 获取用户名首字母作为头像 fallback
   const initials = user.name
@@ -54,7 +56,7 @@ export function NavUser({ user }: NavUserProps) {
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2);
 
   return (
     <SidebarMenu>
@@ -71,9 +73,7 @@ export function NavUser({ user }: NavUserProps) {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
-                </span>
+                <span className="text-muted-foreground truncate text-xs">{user.email}</span>
               </div>
               <MoreVertical className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -92,9 +92,7 @@ export function NavUser({ user }: NavUserProps) {
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
-                  </span>
+                  <span className="text-muted-foreground truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -107,5 +105,5 @@ export function NavUser({ user }: NavUserProps) {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

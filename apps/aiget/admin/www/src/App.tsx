@@ -1,11 +1,17 @@
 /**
- * Aiget Admin - 管理后台入口
- * 路由配置和全局 Provider
+ * [PROPS]: 无
+ * [EMITS]: route change
+ * [POS]: Admin 应用入口与路由保护
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
+import { authClient } from './lib/auth-client';
+import { toAuthUser } from './lib/auth-utils';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -30,7 +36,15 @@ const queryClient = new QueryClient({
 
 /** 受保护路由（需要登录 + isAdmin） */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isBootstrapped } = useAuthStore();
+
+  if (!isBootstrapped) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -44,6 +58,45 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const setSession = useAuthStore((state) => state.setSession);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const setBootstrapped = useAuthStore((state) => state.setBootstrapped);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (isBootstrapped || isAuthenticated) {
+      if (!isBootstrapped && isAuthenticated) {
+        setBootstrapped(true);
+      }
+      return;
+    }
+
+    const bootstrap = async () => {
+      try {
+        const refresh = await authClient.refresh();
+        const me = await authClient.me(refresh.accessToken);
+        if (!isActive) return;
+        setSession(toAuthUser(me), refresh.accessToken);
+      } catch {
+        if (!isActive) return;
+        clearSession();
+      } finally {
+        if (isActive) {
+          setBootstrapped(true);
+        }
+      }
+    };
+
+    bootstrap();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated, isBootstrapped, setBootstrapped, setSession, clearSession]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -96,9 +149,7 @@ function UnauthorizedPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-destructive">403 Unauthorized</h1>
-        <p className="mt-2 text-muted-foreground">
-          You don't have permission to access this page.
-        </p>
+        <p className="mt-2 text-muted-foreground">You don't have permission to access this page.</p>
       </div>
     </div>
   );
