@@ -21,6 +21,7 @@ export default function UserDetailPage() {
   const queryClient = useQueryClient();
 
   const [newTier, setNewTier] = useState<SubscriptionTier>('FREE');
+  const [tierReason, setTierReason] = useState('');
   const [creditsAmount, setCreditsAmount] = useState('');
   const [creditsReason, setCreditsReason] = useState('');
 
@@ -31,9 +32,11 @@ export default function UserDetailPage() {
   });
 
   const setTierMutation = useMutation({
-    mutationFn: (tier: SubscriptionTier) => api.post(`/admin/users/${id}/tier`, { tier }),
+    mutationFn: (data: { tier: SubscriptionTier; reason: string }) =>
+      api.post(`/admin/users/${id}/tier`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', id] });
+      setTierReason('');
       toast.success('Tier updated successfully');
     },
     onError: () => toast.error('Failed to update tier'),
@@ -174,9 +177,17 @@ export default function UserDetailPage() {
                   </Button>
                 ))}
               </div>
+              <div className="space-y-2">
+                <Label>Reason</Label>
+                <Input
+                  value={tierReason}
+                  onChange={(e) => setTierReason(e.target.value)}
+                  placeholder="Upgrade reason"
+                />
+              </div>
               <Button
-                onClick={() => setTierMutation.mutate(newTier)}
-                disabled={setTierMutation.isPending}
+                onClick={() => setTierMutation.mutate({ tier: newTier, reason: tierReason })}
+                disabled={setTierMutation.isPending || !tierReason}
               >
                 Update Tier
               </Button>

@@ -95,7 +95,7 @@ export class AuthFacadeService {
     // 获取 access token
     const accessToken = await this.getAccessToken(result.token);
 
-    return this.buildAuthResponse(result.user, accessToken, clientType, result.token);
+    return await this.buildAuthResponse(result.user, accessToken, clientType, result.token);
   }
 
   /**
@@ -125,7 +125,7 @@ export class AuthFacadeService {
     // 获取 access token
     const accessToken = await this.getAccessToken(result.token);
 
-    return this.buildAuthResponse(result.user, accessToken, clientType, result.token);
+    return await this.buildAuthResponse(result.user, accessToken, clientType, result.token);
   }
 
   /**
@@ -173,7 +173,7 @@ export class AuthFacadeService {
     // 获取 access token
     const accessToken = await this.getAccessToken(result.token);
 
-    return this.buildAuthResponse(result.user, accessToken, clientType, result.token);
+    return await this.buildAuthResponse(result.user, accessToken, clientType, result.token);
   }
 
   /**
@@ -281,12 +281,18 @@ export class AuthFacadeService {
   /**
    * 构建认证响应
    */
-  private buildAuthResponse(
+  private async buildAuthResponse(
     user: { id: string; email: string; name?: string | null; emailVerified?: boolean },
     accessToken: string,
     clientType: ClientTypeValue,
     sessionToken?: string
-  ): AuthResponse {
+  ): Promise<AuthResponse> {
+    // 从数据库获取用户的 tier 和 isAdmin
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { tier: true, isAdmin: true },
+    });
+
     const response: AuthResponse = {
       accessToken,
       user: {
@@ -294,8 +300,8 @@ export class AuthFacadeService {
         email: user.email,
         name: user.name ?? null,
         emailVerified: user.emailVerified ?? false,
-        tier: 'FREE', // 从数据库获取实际值
-        isAdmin: false,
+        tier: dbUser?.tier ?? 'FREE',
+        isAdmin: dbUser?.isAdmin ?? false,
       },
     };
 

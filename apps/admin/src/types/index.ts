@@ -109,12 +109,15 @@ export interface PaginatedResponse<T> {
 
 // 统计数据
 export interface Stats {
-  usersByTier: Record<SubscriptionTier, number>;
-  userGrowth: Array<{ date: string; count: number }>;
-  revenueByMonth: Array<{ month: string; amount: number }>;
   totalUsers: number;
+  activeUsers: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  newUsersThisMonth: number;
+  tierDistribution: Record<SubscriptionTier, number>;
   totalRevenue: number;
-  activeSubscriptions: number;
+  totalCreditsGranted: number;
+  totalCreditsConsumed: number;
 }
 
 // 当前管理员
