@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@moryflow/shared-core/*": ["packages/shared-core/src/*"],
+      "@moryflow/shared-api/*": ["packages/shared-api/src/*"],
+      "@moryflow/shared-utils/*": ["packages/shared-utils/src/*"],
+      "@moryflow/shared-storage/*": ["packages/shared-storage/src/*"],
+      "@moryflow/shared-types/*": [
+        "packages/shared-types/src/*",
+        "packages/shared-types/dist/*"
+      ],
+      "@moryflow/shared-types": [
+        "packages/shared-types/src/index.ts",
+        "packages/shared-types/dist/index.d.ts"
+      ],
+      "@moryflow/crypto-kit/*": ["packages/crypto-kit/src/*"],
+      "@moryflow/storage-ports/*": ["packages/storage-ports/src/*"],
+      "@moryflow/yjs-kit/*": ["packages/yjs-kit/src/*"],
+      "@moryflow/agents-core": ["packages/agents-core/src/index.ts"],
+      "@moryflow/agents-core/*": ["packages/agents-core/src/*"],
+      "@moryflow/agents-openai": ["packages/agents-openai/src/index.ts"],
+      "@moryflow/agents-openai/*": ["packages/agents-openai/src/*"],
+      "@moryflow/agents-realtime": ["packages/agents-realtime/src/index.ts"],
+      "@moryflow/agents-realtime/*": ["packages/agents-realtime/src/*"],
+      "@moryflow/agents-extensions": ["packages/agents-extensions/src/index.ts"],
+      "@moryflow/agents-extensions/*": ["packages/agents-extensions/src/*"],
+      "@moryflow/agents": ["packages/agents/src/index.ts"],
+      "@moryflow/agents/*": ["packages/agents/src/*"]
+    }
+  }
+}

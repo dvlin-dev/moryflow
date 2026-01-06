@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "sync": "tsx scripts/sync.ts",
+    "sync": "node --import tsx scripts/sync.ts",
     "prebuild": "pnpm sync",
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "clean": "rm -rf dist"

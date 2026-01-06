@@ -1,0 +1,130 @@
+---
+title: Quickstart
+description: Get up and running with Memai in 5 minutes
+---
+
+# Quickstart
+
+This guide will walk you through creating your first memory and searching for it using the Memai API.
+
+## Step 1: Get Your API Key
+
+1. Sign up or log in at [console.memai.dev](https://console.memai.dev)
+2. Navigate to **API Keys** in the sidebar
+3. Click **Create API Key**
+4. Copy your API key (it starts with `mm_`)
+
+> **Important**: Your API key is only shown once. Store it securely.
+
+## Step 2: Create Your First Memory
+
+Use the following curl command to create a memory:
+
+```bash
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "John is a software engineer who loves TypeScript and React",
+    "userId": "user_123",
+    "tags": ["profile", "skills"]
+  }'
+```
+
+Response:
+
+```json
+{
+  "id": "mem_abc123",
+  "content": "John is a software engineer who loves TypeScript and React",
+  "userId": "user_123",
+  "tags": ["profile", "skills"],
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+
+## Step 3: Add More Memories
+
+Let's add a few more memories to make searching interesting:
+
+```bash
+# Memory about preferences
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "John prefers dark mode and uses VS Code as his IDE",
+    "userId": "user_123",
+    "tags": ["preferences"]
+  }'
+
+# Memory about a conversation
+curl -X POST https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "John mentioned he is working on a new e-commerce project using Next.js",
+    "userId": "user_123",
+    "tags": ["project", "conversation"]
+  }'
+```
+
+## Step 4: Search Memories
+
+Now let's search for relevant memories using natural language:
+
+```bash
+curl -X POST https://api.memai.dev/v1/memories/search \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What programming languages does John know?",
+    "userId": "user_123",
+    "limit": 5
+  }'
+```
+
+Response:
+
+```json
+{
+  "results": [
+    {
+      "id": "mem_abc123",
+      "content": "John is a software engineer who loves TypeScript and React",
+      "score": 0.89,
+      "userId": "user_123",
+      "tags": ["profile", "skills"],
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "mem_def456",
+      "content": "John mentioned he is working on a new e-commerce project using Next.js",
+      "score": 0.72,
+      "userId": "user_123",
+      "tags": ["project", "conversation"],
+      "createdAt": "2024-01-15T10:32:00Z"
+    }
+  ]
+}
+```
+
+The search uses semantic similarity, so it finds relevant memories even when the exact words don't match.
+
+## Step 5: List Memories
+
+You can also list all memories for a user:
+
+```bash
+curl -X GET "https://api.memai.dev/v1/memories?userId=user_123&limit=10" \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+## Next Steps
+
+Now that you've created and searched memories, explore more features:
+
+- [Authentication](/docs/getting-started/authentication) - Learn about API key management
+- [Memories API](/docs/api-reference/memories) - Full API reference
+- [Entities](/docs/api-reference/entities) - Extract and manage entities
+- [Webhooks](/docs/api-reference/webhooks) - Get real-time notifications

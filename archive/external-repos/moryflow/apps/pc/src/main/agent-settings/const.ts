@@ -1,0 +1,124 @@
+import { z } from 'zod'
+import type { AgentSettings } from '../../shared/ipc.js'
+
+// MCP 服务器配置 Schema
+export const stdioSchema = z.object({
+  id: z.string(),
+  enabled: z.boolean().default(true),
+  name: z.string().default('Stdio MCP'),
+  command: z.string(),
+  args: z.array(z.string()).default([]),
+  cwd: z.string().optional(),
+  env: z.record(z.string(), z.string()).optional(),
+  autoApprove: z.boolean().optional(),
+})
+
+export const streamableHttpSchema = z.object({
+  id: z.string(),
+  enabled: z.boolean().default(true),
+  name: z.string().default('HTTP MCP'),
+  url: z.string(),
+  authorizationHeader: z.string().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  autoApprove: z.boolean().optional(),
+})
+
+export const mcpSchema = z.object({
+  stdio: z.array(stdioSchema).default([]),
+  streamableHttp: z.array(streamableHttpSchema).default([]),
+})
+
+// 全局模型设置 Schema
+export const modelSchema = z.object({
+  defaultModel: z.string().nullable().default(null),
+})
+
+// UI 设置 Schema
+export const uiSchema = z.object({
+  theme: z.enum(['light', 'dark', 'system']).default('system'),
+})
+
+// 自定义模型能力 Schema
+export const customModelCapabilitiesSchema = z.object({
+  attachment: z.boolean().optional(),
+  reasoning: z.boolean().optional(),
+  temperature: z.boolean().optional(),
+  toolCall: z.boolean().optional(),
+})
+
+// 输入模态 Schema
+export const modelModalitySchema = z.enum(['text', 'image', 'audio', 'video', 'pdf'])
+
+// 用户模型配置 Schema
+export const userModelConfigSchema = z.object({
+  id: z.string(),
+  enabled: z.boolean(),
+  isCustom: z.boolean().optional(),
+  customName: z.string().optional(),
+  customContext: z.number().optional(),
+  customOutput: z.number().optional(),
+  customCapabilities: customModelCapabilitiesSchema.optional(),
+  customInputModalities: z.array(modelModalitySchema).optional(),
+})
+
+// 预设服务商用户配置 Schema
+export const userProviderConfigSchema = z.object({
+  providerId: z.string(),
+  enabled: z.boolean().default(false),
+  apiKey: z.string().nullable().default(null),
+  baseUrl: z.string().nullable().default(null),
+  models: z.array(userModelConfigSchema).default([]),
+  defaultModelId: z.string().nullable().default(null),
+})
+
+// 自定义服务商配置 Schema
+export const customProviderConfigSchema = z.object({
+  providerId: z.string().startsWith('custom-'),
+  name: z.string().min(1),
+  enabled: z.boolean().default(false),
+  apiKey: z.string().nullable().default(null),
+  baseUrl: z.string().nullable().default(null),
+  sdkType: z
+    .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
+    .default('openai-compatible'),
+  models: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        enabled: z.boolean().default(true),
+      })
+    )
+    .default([]),
+  defaultModelId: z.string().nullable().default(null),
+})
+
+// Agent 设置 Schema
+export const agentSettingsSchema = z.object({
+  model: modelSchema,
+  mcp: mcpSchema,
+  providers: z.array(userProviderConfigSchema).default([]),
+  customProviders: z.array(customProviderConfigSchema).default([]),
+  ui: uiSchema,
+})
+
+/**
+ * 创建默认 Agent 设置
+ */
+export const createDefaultAgentSettings = (): AgentSettings =>
+  agentSettingsSchema.parse({
+    model: {
+      defaultModel: null,
+    },
+    mcp: {
+      stdio: [],
+      streamableHttp: [],
+    },
+    providers: [],
+    customProviders: [],
+    ui: {
+      theme: 'system',
+    },
+  }) as AgentSettings
+
+export const defaultAgentSettings = createDefaultAgentSettings()

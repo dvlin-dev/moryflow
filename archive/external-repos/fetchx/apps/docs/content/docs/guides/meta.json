@@ -1,0 +1,10 @@
+{
+  "title": "Guides",
+  "pages": [
+    "output-formats",
+    "page-actions",
+    "webhooks",
+    "rate-limits",
+    "error-handling"
+  ]
+}

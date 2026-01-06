@@ -1,0 +1,42 @@
+---
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'Moryflow - 你的 AI 知识助手',
+  description = '不是聊天机器人，是会思考的伙伴。你说想做什么，Mory 会自己想办法帮你完成。',
+} = Astro.props
+---
+
+<!doctype html>
+<html lang='zh-CN'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <meta name='description' content={description} />
+    <link rel='icon' type='image/svg+xml' href='/favicon.ico' />
+    <title>{title}</title>
+
+    <!-- Open Graph -->
+    <meta property='og:title' content={title} />
+    <meta property='og:description' content={description} />
+    <meta property='og:type' content='website' />
+    <meta property='og:image' content='/og-image.svg' />
+
+    <!-- Twitter -->
+    <meta name='twitter:card' content='summary_large_image' />
+    <meta name='twitter:title' content={title} />
+    <meta name='twitter:description' content={description} />
+  </head>
+  <body
+    class='min-h-screen bg-mory-bg text-mory-text-primary antialiased font-sans overflow-x-hidden selection:bg-mory-orange/20 selection:text-mory-orange'
+  >
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>

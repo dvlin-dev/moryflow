@@ -1,0 +1,130 @@
+---
+title: Authentication
+description: Learn how to authenticate with the Memai API
+---
+
+# Authentication
+
+All Memai API requests require authentication using an API key.
+
+## API Keys
+
+API keys are used to authenticate requests to the Memai API. Each API key:
+
+- Starts with the prefix `mm_`
+- Is associated with your account
+- Has its own quota and rate limits
+- Provides isolated data access
+
+## Getting Your API Key
+
+1. Log in to the [Memai Console](https://console.memai.dev)
+2. Navigate to **API Keys** in the sidebar
+3. Click **Create API Key**
+4. Give your key a descriptive name
+5. Copy the key immediately
+
+> **Security Note**: Your API key is only displayed once at creation. If you lose it, you'll need to create a new one.
+
+## Using Your API Key
+
+Include your API key in the `Authorization` header of every request:
+
+```bash
+curl -X GET https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### Header Format
+
+```
+Authorization: Bearer mm_your_api_key
+```
+
+## Security Best Practices
+
+### Keep Keys Secret
+
+- Never commit API keys to version control
+- Use environment variables to store keys
+- Don't share keys in public forums or documentation
+
+```bash
+# Good: Use environment variables
+export MEMAI_API_KEY="mm_your_api_key"
+curl -H "Authorization: Bearer $MEMAI_API_KEY" ...
+```
+
+### Rotate Keys Regularly
+
+- Create new keys periodically
+- Delete old keys after transitioning to new ones
+- Monitor key usage in the console
+
+### Use Separate Keys for Environments
+
+- Create different keys for development, staging, and production
+- This makes it easier to track usage and revoke access if needed
+
+## Managing API Keys
+
+### View Keys
+
+In the Console, go to **API Keys** to see all your keys with:
+
+- Key name
+- Creation date
+- Last used timestamp
+- Status (active/revoked)
+
+### Revoke Keys
+
+If a key is compromised:
+
+1. Go to **API Keys** in the Console
+2. Find the compromised key
+3. Click the **Delete** button
+4. Confirm deletion
+
+The key is immediately invalidated and cannot be used for future requests.
+
+## Error Responses
+
+### Missing Authorization Header
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authorization header is required"
+  }
+}
+```
+
+### Invalid API Key
+
+```json
+{
+  "error": {
+    "code": "INVALID_API_KEY",
+    "message": "The provided API key is invalid"
+  }
+}
+```
+
+### Revoked API Key
+
+```json
+{
+  "error": {
+    "code": "API_KEY_REVOKED",
+    "message": "This API key has been revoked"
+  }
+}
+```
+
+## Next Steps
+
+- [Quickstart](/docs/getting-started/quickstart) - Make your first API call
+- [Rate Limits](/docs/guides/rate-limits) - Understand usage limits
+- [API Reference](/docs/api-reference) - Explore all endpoints

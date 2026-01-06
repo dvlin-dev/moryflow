@@ -1,0 +1,172 @@
+:root {
+  --tt-table-border-color: var(--tt-gray-light-a-300);
+  --tt-table-selected-bg: rgba(195, 189, 255, 0.4);
+  --tt-table-selected-stroke: var(--tt-brand-color-400);
+  --tt-table-column-resize-handle-bg: var(--tt-brand-color-400);
+
+  --tt-table-cell-padding: 0.5rem;
+  --tt-table-margin-block: 1.25rem;
+
+  --tt-table-pad-block-start: 1rem; /* 8px */
+  --tt-table-pad-block-end: 1.5rem; /* 24px */
+  --tt-table-pad-inline-start: 1rem; /* 8px */
+  --tt-table-pad-inline-end: 1.5rem; /* 24px */
+}
+
+.dark {
+  --tt-table-border-color: var(--tt-gray-dark-a-300);
+  --tt-table-selected-bg: rgba(195, 189, 255, 0.2);
+  --tt-table-selected-stroke: var(--tt-brand-color-400);
+  --tt-table-column-resize-handle-bg: var(--tt-brand-color-400);
+}
+
+.tiptap [data-content-type="table"] {
+  margin-block: var(--tt-table-margin-block);
+}
+
+.tiptap [data-content-type="table"] .tableWrapper {
+  padding-block-start: var(--tt-table-pad-block-start);
+  padding-inline-start: var(--tt-table-pad-inline-start);
+  padding-inline-end: var(--tt-table-pad-inline-end);
+  padding-block-end: var(--tt-table-pad-block-end);
+  margin-left: -1rem;
+  overflow-y: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.tiptap table {
+  width: auto !important;
+  word-break: break-word;
+}
+
+.tiptap th,
+.tiptap td {
+  border: 1px solid var(--tt-table-border-color);
+  padding: var(--tt-table-cell-padding);
+}
+
+.tiptap table th {
+  background-color: var(--tt-gray-light-a-100);
+  font-weight: 700;
+  text-align: left;
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  margin-inline-start: -1px;
+  margin-top: -1px;
+  height: calc(100% + 2px);
+  background: var(--tt-table-column-resize-handle-bg);
+  cursor: col-resize;
+  transition: background 150ms 50ms;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* ================================================================================================
+ * TABLE CELL ALIGNMENT STYLES
+ * ================================================================================================ */
+
+.tiptap td[data-text-align="left"],
+.tiptap th[data-text-align="left"] {
+  text-align: left;
+}
+
+.tiptap td[data-text-align="center"],
+.tiptap th[data-text-align="center"] {
+  text-align: center;
+}
+
+.tiptap td[data-text-align="right"],
+.tiptap th[data-text-align="right"] {
+  text-align: right;
+}
+
+.tiptap td[data-text-align="justify"],
+.tiptap th[data-text-align="justify"] {
+  text-align: justify;
+}
+
+.tiptap td[data-vertical-align="top"],
+.tiptap th[data-vertical-align="top"] {
+  vertical-align: top;
+}
+
+.tiptap td[data-vertical-align="middle"],
+.tiptap th[data-vertical-align="middle"] {
+  vertical-align: middle;
+}
+
+.tiptap td[data-vertical-align="bottom"],
+.tiptap th[data-vertical-align="bottom"] {
+  vertical-align: bottom;
+}
+
+.tiptap [data-content-type="table"] td[data-text-align="left"],
+.tiptap [data-content-type="table"] th[data-text-align="left"] {
+  text-align: left;
+}
+
+.tiptap [data-content-type="table"] td[data-text-align="center"],
+.tiptap [data-content-type="table"] th[data-text-align="center"] {
+  text-align: center;
+}
+
+.tiptap [data-content-type="table"] td[data-text-align="right"],
+.tiptap [data-content-type="table"] th[data-text-align="right"] {
+  text-align: right;
+}
+
+.tiptap [data-content-type="table"] td[data-text-align="justify"],
+.tiptap [data-content-type="table"] th[data-text-align="justify"] {
+  text-align: justify;
+}
+
+.tiptap [data-content-type="table"] td[data-vertical-align="top"],
+.tiptap [data-content-type="table"] th[data-vertical-align="top"] {
+  vertical-align: top;
+}
+
+.tiptap [data-content-type="table"] td[data-vertical-align="middle"],
+.tiptap [data-content-type="table"] th[data-vertical-align="middle"] {
+  vertical-align: middle;
+}
+
+.tiptap [data-content-type="table"] td[data-vertical-align="bottom"],
+.tiptap [data-content-type="table"] th[data-vertical-align="bottom"] {
+  vertical-align: bottom;
+}
+
+/* tiptap uses colwidth instead of data-colwidth, se we need to adjust this style from prosemirror-tables */
+.ProseMirror td,
+.ProseMirror th {
+  min-width: auto !important;
+}
+.ProseMirror td:not([colwidth]):not(.column-resize-dragging),
+.ProseMirror th:not([colwidth]):not(.column-resize-dragging) {
+  /* if there's no explicit width set and the column is not being resized, set a default width */
+  min-width: var(--default-cell-min-width) !important;
+}
+
+.tiptap-table-dropcursor {
+  position: absolute;
+  z-index: 20;
+  background-color: var(--tt-table-column-resize-handle-bg);
+  pointer-events: none;
+}
+
+.table-cell-dragging-source {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(200, 200, 255, 0.4);
+}

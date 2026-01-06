@@ -1,0 +1,130 @@
+---
+title: 身份验证
+description: 了解如何使用 Memai API 进行身份验证
+---
+
+# 身份验证
+
+所有 Memai API 请求都需要使用 API 密钥进行身份验证。
+
+## API 密钥
+
+API 密钥用于对 Memai API 的请求进行身份验证。每个 API 密钥：
+
+- 以 `mm_` 前缀开头
+- 与您的账户关联
+- 有自己的配额和速率限制
+- 提供隔离的数据访问
+
+## 获取 API 密钥
+
+1. 登录 [Memai 控制台](https://console.memai.dev)
+2. 在侧边栏中导航至 **API 密钥**
+3. 点击 **创建 API 密钥**
+4. 为密钥起一个描述性名称
+5. 立即复制密钥
+
+> **安全提示**：您的 API 密钥只在创建时显示一次。如果丢失，您需要创建一个新的。
+
+## 使用 API 密钥
+
+在每个请求的 `Authorization` 头中包含您的 API 密钥：
+
+```bash
+curl -X GET https://api.memai.dev/v1/memories \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 头部格式
+
+```
+Authorization: Bearer mm_your_api_key
+```
+
+## 安全最佳实践
+
+### 保密密钥
+
+- 永远不要将 API 密钥提交到版本控制
+- 使用环境变量存储密钥
+- 不要在公共论坛或文档中分享密钥
+
+```bash
+# 推荐：使用环境变量
+export MEMAI_API_KEY="mm_your_api_key"
+curl -H "Authorization: Bearer $MEMAI_API_KEY" ...
+```
+
+### 定期轮换密钥
+
+- 定期创建新密钥
+- 过渡到新密钥后删除旧密钥
+- 在控制台监控密钥使用情况
+
+### 为不同环境使用不同密钥
+
+- 为开发、测试和生产环境创建不同的密钥
+- 这样更容易追踪使用情况和在需要时撤销访问权限
+
+## 管理 API 密钥
+
+### 查看密钥
+
+在控制台中，进入 **API 密钥** 查看所有密钥，包括：
+
+- 密钥名称
+- 创建日期
+- 最后使用时间戳
+- 状态（活跃/已撤销）
+
+### 撤销密钥
+
+如果密钥被泄露：
+
+1. 在控制台中进入 **API 密钥**
+2. 找到被泄露的密钥
+3. 点击 **删除** 按钮
+4. 确认删除
+
+密钥会立即失效，无法用于后续请求。
+
+## 错误响应
+
+### 缺少 Authorization 头
+
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "需要 Authorization 头"
+  }
+}
+```
+
+### 无效的 API 密钥
+
+```json
+{
+  "error": {
+    "code": "INVALID_API_KEY",
+    "message": "提供的 API 密钥无效"
+  }
+}
+```
+
+### 已撤销的 API 密钥
+
+```json
+{
+  "error": {
+    "code": "API_KEY_REVOKED",
+    "message": "此 API 密钥已被撤销"
+  }
+}
+```
+
+## 下一步
+
+- [快速入门](/zh/docs/getting-started/quickstart) - 发起首次 API 调用
+- [速率限制](/zh/docs/guides/rate-limits) - 了解使用限制
+- [API 参考](/zh/docs/api-reference) - 探索所有端点

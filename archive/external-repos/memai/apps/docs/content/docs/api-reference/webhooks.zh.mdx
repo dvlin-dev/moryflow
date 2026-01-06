@@ -1,0 +1,192 @@
+---
+title: Webhooks
+description: 接收记忆事件的实时通知
+---
+
+# Webhooks
+
+Webhooks 允许您在 Memai 账户中发生事件时接收实时 HTTP 通知。
+
+## 概述
+
+当您配置了 webhook 后，Memai 会在订阅的事件发生时向您指定的 URL 发送 HTTP POST 请求。这使得无需轮询 API 即可实现实时集成。
+
+## Webhook 事件
+
+| 事件 | 描述 |
+|------|------|
+| `memory.created` | 创建了新记忆 |
+| `memory.updated` | 更新了记忆 |
+| `memory.deleted` | 删除了记忆 |
+
+## Webhook 载荷
+
+所有 webhook 载荷遵循以下结构：
+
+```json
+{
+  "id": "wh_delivery_abc123",
+  "event": "memory.created",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "data": {
+    "id": "mem_abc123",
+    "content": "用户提到...",
+    "userId": "user_123",
+    "createdAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## 设置 Webhooks
+
+### 1. 创建 Webhook 端点
+
+首先，在您的服务器上创建一个可以接收 POST 请求的端点：
+
+```javascript
+// Express.js 示例
+app.post('/webhooks/memai', (req, res) => {
+  const signature = req.headers['x-memai-signature'];
+  const payload = req.body;
+
+  // 验证签名
+  if (!verifySignature(payload, signature, webhookSecret)) {
+    return res.status(401).send('签名无效');
+  }
+
+  // 处理事件
+  switch (payload.event) {
+    case 'memory.created':
+      handleMemoryCreated(payload.data);
+      break;
+    case 'memory.updated':
+      handleMemoryUpdated(payload.data);
+      break;
+    case 'memory.deleted':
+      handleMemoryDeleted(payload.data);
+      break;
+  }
+
+  res.status(200).send('OK');
+});
+```
+
+### 2. 注册 Webhook
+
+在 Memai 控制台中：
+
+1. 在侧边栏中进入 **Webhooks**
+2. 点击 **创建 Webhook**
+3. 输入您的端点 URL
+4. 选择要接收的事件
+5. 保存 webhook
+
+### 3. 验证签名
+
+每个 webhook 请求都包含用于验证的签名头：
+
+```
+X-Memai-Signature: sha256=abc123...
+```
+
+使用 HMAC-SHA256 验证签名：
+
+```javascript
+const crypto = require('crypto');
+
+function verifySignature(payload, signature, secret) {
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(JSON.stringify(payload))
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
+}
+```
+
+## Webhook 重试
+
+如果您的端点返回错误（非 2xx 状态码），Memai 会重试投递：
+
+| 尝试次数 | 延迟 |
+|---------|------|
+| 1 | 立即 |
+| 2 | 1 分钟 |
+| 3 | 5 分钟 |
+| 4 | 30 分钟 |
+| 5 | 2 小时 |
+
+5 次失败后，webhook 投递被标记为失败。
+
+## 最佳实践
+
+### 快速响应
+
+尽快返回 200 响应。异步处理 webhook 数据：
+
+```javascript
+app.post('/webhooks/memai', async (req, res) => {
+  // 验证签名
+  if (!verifySignature(req.body, req.headers['x-memai-signature'], secret)) {
+    return res.status(401).send('签名无效');
+  }
+
+  // 加入队列处理
+  await queue.add('process-webhook', req.body);
+
+  // 立即返回
+  res.status(200).send('OK');
+});
+```
+
+### 处理重复
+
+Webhook 投递可能会发送多次。使用投递 ID 进行去重：
+
+```javascript
+async function processWebhook(payload) {
+  const deliveryId = payload.id;
+
+  // 检查是否已处理
+  if (await isDeliveryProcessed(deliveryId)) {
+    return;
+  }
+
+  // 处理 webhook
+  await handleWebhookEvent(payload);
+
+  // 标记为已处理
+  await markDeliveryProcessed(deliveryId);
+}
+```
+
+### 使用 HTTPS
+
+始终使用 HTTPS 端点以确保 webhook 数据在传输中加密。
+
+## 查看 Webhook 日志
+
+在 Memai 控制台中，您可以查看 webhook 投递日志：
+
+1. 进入 **Webhooks**
+2. 点击某个 webhook
+3. 查看 **投递日志** 标签
+
+每条日志显示：
+
+- 投递时间戳
+- 事件类型
+- 响应状态码
+- 响应时间
+- 请求/响应体（用于调试）
+
+## 错误码
+
+| 错误码 | 描述 |
+|--------|------|
+| `WEBHOOK_NOT_FOUND` | 指定的 webhook 不存在 |
+| `INVALID_WEBHOOK_URL` | webhook URL 无效 |
+| `WEBHOOK_DELIVERY_FAILED` | 所有重试后 webhook 投递失败 |

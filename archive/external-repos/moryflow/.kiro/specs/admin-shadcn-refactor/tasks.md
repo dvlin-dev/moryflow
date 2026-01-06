@@ -1,0 +1,269 @@
+# 实现计划
+
+- [x] 1. 项目基础设施搭建
+  - [x] 1.1 初始化 shadcn/ui 并下载全量组件
+    - 运行 `npx shadcn@latest init` 初始化配置
+    - 运行 `npx shadcn@latest add --all` 下载全量组件到 `src/components/ui/`
+    - 确保 components.json 配置正确
+    - _需求: 1.1, 1.2_
+  - [x] 1.2 清理旧组件并重组目录结构
+    - 删除 `src/components/Button.tsx`
+    - 删除 `src/components/Card.tsx`
+    - 删除 `src/components/Dialog.tsx`
+    - 删除 `src/components/Form.tsx`
+    - 删除 `src/components/Pagination.tsx`
+    - 删除 `src/components/Layout.tsx`
+    - 删除 `src/components/index.ts`
+    - 创建 `src/components/layout/` 目录
+    - 创建 `src/components/shared/` 目录
+    - _需求: 1.2, 1.3_
+  - [x] 1.3 配置 shadcn 主题样式
+    - 更新 tailwind 配置以符合 Arc + Notion 风格
+    - 配置圆角、颜色、阴影等设计 token
+    - _需求: 1.4_
+
+- [x] 2. 添加 shadcn blocks 模板
+  - [x] 2.1 添加 dashboard-01 block
+    - 运行 `npx shadcn@latest add dashboard-01`
+    - 将生成的组件移动到 `src/components/layout/`
+    - _需求: 3.4, 4.1_
+  - [x] 2.2 添加 login-04 block
+    - 运行 `npx shadcn@latest add login-04`
+    - 将生成的组件作为登录页面模板
+    - _需求: 2.5_
+
+- [x] 3. 共享组件重构
+  - [x] 3.1 重构 TierBadge 组件
+    - 创建 `src/components/shared/tier-badge.tsx`
+    - 使用 shadcn Badge 组件重写
+    - 定义 TierBadgeProps 接口
+    - _需求: 1.3_
+  - [x] 3.2 重构 DataTable 组件
+    - 创建 `src/components/shared/data-table.tsx`
+    - 使用 shadcn Table 组件重写
+    - 支持分页、排序、筛选功能
+    - 定义泛型 DataTableProps 接口
+    - _需求: 1.3, 5.1_
+  - [x] 3.3 重构 PageHeader 组件
+    - 创建 `src/components/shared/page-header.tsx`
+    - 使用 shadcn 组件重写
+    - 定义 PageHeaderProps 接口
+    - _需求: 1.3_
+
+- [x] 4. 类型定义与验证模式
+  - [x] 4.1 创建 API 类型定义
+    - 创建 `src/types/api.ts`
+    - 定义 User、Provider、Model、AdminLog 等类型
+    - 定义 API 响应类型
+    - _需求: 5.1, 6.1, 7.1, 8.1, 9.1_
+  - [x] 4.2 创建 Zod 验证模式
+    - 创建 `src/lib/validations/auth.ts`
+    - 创建 `src/lib/validations/user.ts`
+    - 创建 `src/lib/validations/provider.ts`
+    - 创建 `src/lib/validations/model.ts`
+    - _需求: 10.4_
+  - [x] 4.3 编写属性测试 - 表单验证正确性
+    - **属性 5: 表单验证正确性**
+    - **验证: 需求 10.1, 10.4**
+
+- [x] 5. API 客户端重构
+  - [x] 5.1 重构 API 客户端
+    - 更新 `src/lib/api-client.ts`
+    - 实现 ApiError 类
+    - 实现统一的错误处理
+    - 实现 401 自动登出逻辑
+    - _需求: 10.2, 10.3_
+  - [x] 5.2 编写属性测试 - API 错误处理一致性
+    - **属性 6: API 错误处理一致性**
+    - **验证: 需求 2.3, 10.2**
+
+- [x] 6. 认证模块重构
+  - [x] 6.1 重构认证状态管理
+    - 更新 `src/stores/auth.ts`
+    - 实现 setAuth、logout 方法
+    - 实现 token 持久化
+    - _需求: 2.2, 4.3_
+  - [x] 6.2 创建 LoginForm 组件（已在任务 2.2 中完成）
+    - 创建 `src/features/auth/components/login-form.tsx`
+    - 使用 login-04 block 模板
+    - 实现加载状态和错误处理
+    - _需求: 2.1, 2.2, 2.3, 2.4_
+  - [x] 6.3 更新登录页面使用新组件
+    - 更新 `src/pages/LoginPage.tsx` 使用 LoginForm 组件
+    - _需求: 2.1_
+  - [x] 6.4 编写属性测试 - 认证状态一致性
+    - **属性 1: 认证状态一致性**
+    - **验证: 需求 2.2, 4.3**
+
+- [x] 7. 检查点 - 确保所有测试通过
+  - 确保所有测试通过，如有问题请询问用户。
+
+- [x] 8. 布局组件集成与路由配置
+  - [x] 8.1 实现 AppSidebar 组件（已在任务 2.1 中完成）
+    - 创建 `src/components/layout/app-sidebar.tsx`
+    - 基于 dashboard-01 模板的侧边栏组件
+    - 实现导航项配置
+    - _需求: 4.1, 4.4_
+  - [x] 8.2 实现 NavMain 组件（已在任务 2.1 中完成）
+    - 创建 `src/components/layout/nav-main.tsx`
+    - 实现导航项渲染和高亮逻辑
+    - _需求: 4.2_
+  - [x] 8.3 实现 NavUser 组件（已在任务 2.1 中完成）
+    - 创建 `src/components/layout/nav-user.tsx`
+    - 实现用户信息显示和退出功能
+    - _需求: 4.3, 4.4_
+  - [x] 8.4 创建主布局组件并更新 App.tsx
+    - 创建 `src/components/layout/main-layout.tsx` 包装 SidebarProvider
+    - 更新 `src/App.tsx` 使用新的布局组件
+    - _需求: 4.1_
+  - [x] 8.5 编写属性测试 - 导航高亮正确性
+    - **属性 8: 导航高亮正确性**
+    - **验证: 需求 4.2**
+
+- [x] 9. 仪表盘模块重构
+  - [x] 9.1 重构仪表盘 API 和 Hooks
+    - 更新 `src/features/dashboard/api.ts`
+    - 更新 `src/features/dashboard/hooks/use-stats.ts`
+    - 更新 `src/features/dashboard/hooks/use-health.ts`
+    - 实现 30 秒自动刷新健康状态
+    - _需求: 3.1, 3.2, 12.1_
+  - [x] 9.2 重构仪表盘页面
+    - 重写 `src/pages/DashboardPage.tsx`
+    - 使用 shadcn Card 组件显示统计卡片
+    - 实现健康状态颜色指示器
+    - 实现骨架加载状态
+    - _需求: 3.1, 3.2, 3.3, 3.5_
+  - [x] 9.3 编写属性测试 - 健康状态显示正确性
+    - **属性 3: 健康状态显示正确性**
+    - **验证: 需求 3.2**
+
+- [x] 10. 用户管理模块重构
+  - [x] 10.1 重构用户管理 API 和类型
+    - 更新 `src/features/users/types.ts`
+    - 更新 `src/features/users/api.ts`
+    - _需求: 5.1, 6.1_
+  - [x] 10.2 重构用户管理 Hooks
+    - 更新 `src/features/users/hooks/use-users.ts`
+    - 更新 `src/features/users/hooks/use-user-detail.ts`
+    - 创建 `src/features/users/hooks/use-user-mutations.ts`
+    - 实现缓存失效逻辑
+    - _需求: 5.1, 6.4, 6.5, 12.2_
+  - [x] 10.3 重构用户列表页面
+    - 重写 `src/pages/UsersPage.tsx`
+    - 使用 DataTable 组件
+    - 实现搜索和等级筛选
+    - 实现骨架加载状态
+    - _需求: 5.1, 5.2, 5.3, 5.5_
+  - [x] 10.4 重构用户详情页面
+    - 重写 `src/pages/UserDetailPage.tsx`
+    - 显示用户完整信息
+    - _需求: 6.1_
+  - [x] 10.5 实现设置等级对话框
+    - 创建 `src/features/users/components/set-tier-dialog.tsx`
+    - 使用 shadcn Dialog 和 Select 组件
+    - 使用 React Hook Form + Zod 验证
+    - _需求: 6.2, 6.4_
+  - [x] 10.6 实现发放积分对话框
+    - 创建 `src/features/users/components/grant-credits-dialog.tsx`
+    - 使用 shadcn Dialog、Select、Input 组件
+    - 使用 React Hook Form + Zod 验证
+    - _需求: 6.3, 6.5_
+  - [x] 10.7 编写属性测试 - 列表过滤正确性
+    - **属性 2: 列表过滤正确性**
+    - **验证: 需求 5.2, 5.3, 9.2, 9.3**
+  - [x] 10.8 编写属性测试 - 等级变更正确性
+    - **属性 10: 等级变更正确性**
+    - **验证: 需求 6.4**
+  - [x] 10.9 编写属性测试 - 积分发放正确性
+    - **属性 11: 积分发放正确性**
+    - **验证: 需求 6.5**
+
+- [x] 11. 检查点 - 确保所有测试通过
+  - 确保所有测试通过，如有问题请询问用户。
+
+- [x] 12. 提供商管理模块实现
+  - [x] 12.1 创建提供商管理类型和 API
+    - 创建 `src/features/providers/types.ts`
+    - 创建 `src/features/providers/api.ts`
+    - _需求: 7.1, 7.5_
+  - [x] 12.2 创建提供商管理 Hooks
+    - 创建 `src/features/providers/hooks/use-providers.ts`
+    - 创建 `src/features/providers/hooks/use-provider-mutations.ts`
+    - 实现缓存失效逻辑
+    - _需求: 7.1, 7.4, 12.2_
+  - [x] 12.3 实现提供商列表页面
+    - 重写 `src/pages/ProvidersPage.tsx`
+    - 使用 shadcn Card 组件显示提供商卡片
+    - 实现状态切换开关
+    - _需求: 7.1, 7.4_
+  - [x] 12.4 实现添加/编辑提供商对话框
+    - 创建 `src/features/providers/components/provider-form-dialog.tsx`
+    - 使用 React Hook Form + Zod 验证
+    - _需求: 7.2, 7.3_
+  - [x] 12.5 编写属性测试 - 状态切换一致性（提供商）
+    - **属性 9: 状态切换一致性**
+    - **验证: 需求 7.4, 8.4**
+
+- [x] 13. 模型管理模块实现
+  - [x] 13.1 创建模型管理类型和 API
+    - 创建 `src/features/models/types.ts`
+    - 创建 `src/features/models/api.ts`
+    - _需求: 8.1, 8.5_
+  - [x] 13.2 创建模型管理 Hooks
+    - 创建 `src/features/models/hooks/use-models.ts`
+    - 创建 `src/features/models/hooks/use-model-mutations.ts`
+    - 实现缓存失效逻辑
+    - _需求: 8.1, 8.4, 12.2_
+  - [x] 13.3 实现模型列表页面
+    - 重写 `src/pages/ModelsPage.tsx`
+    - 使用 DataTable 组件
+    - 实现状态切换开关
+    - _需求: 8.1, 8.4_
+  - [x] 13.4 实现添加/编辑模型对话框
+    - 创建 `src/features/models/components/model-form-dialog.tsx`
+    - 使用 React Hook Form + Zod 验证
+    - 实现提供商选择下拉框
+    - _需求: 8.2, 8.3_
+  - [x] 13.5 编写属性测试 - 数据渲染完整性
+    - **属性 4: 数据渲染完整性**
+    - **验证: 需求 5.1, 6.1, 7.1, 8.1, 9.1**
+
+- [x] 14. 操作日志模块重构
+  - [x] 14.1 重构操作日志类型和 API
+    - 更新 `src/features/admin-logs/types.ts`
+    - 更新 `src/features/admin-logs/api.ts`
+    - _需求: 9.1, 9.5_
+  - [x] 14.2 重构操作日志 Hooks
+    - 更新 `src/features/admin-logs/hooks/use-logs.ts`
+    - 支持分页和筛选参数
+    - _需求: 9.1, 9.2, 9.3_
+  - [x] 14.3 重构操作日志页面
+    - 重写 `src/pages/LogsPage.tsx`
+    - 使用 DataTable 组件
+    - 实现操作类型筛选
+    - 实现日期范围筛选（使用 shadcn DatePicker）
+    - _需求: 9.1, 9.2, 9.3_
+  - [x] 14.4 实现日志详情对话框
+    - 创建 `src/features/admin-logs/components/log-detail-dialog.tsx`
+    - 显示完整 JSON 详情
+    - _需求: 9.4_
+
+- [x] 15. 响应式布局优化
+  - [x] 15.1 实现移动端侧边栏
+    - 使用 shadcn Sheet 组件实现移动端菜单
+    - 在视口宽度小于 768px 时折叠侧边栏
+    - _需求: 11.1_
+  - [x] 15.2 优化表格响应式
+    - 在移动端使用水平滚动
+    - 优化表格列显示
+    - _需求: 11.2_
+  - [x] 15.3 优化卡片网格布局
+    - 使用响应式 grid 布局
+    - 适配不同屏幕尺寸
+    - _需求: 11.4_
+
+- [x] 16. 最终检查点 - 确保所有测试通过
+  - 确保所有测试通过，如有问题请询问用户。
+  - [x] 16.1 编写属性测试 - API 成功反馈一致性
+    - **属性 7: API 成功反馈一致性**
+    - **验证: 需求 10.3, 12.2**

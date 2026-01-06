@@ -1,0 +1,25 @@
+{
+  "name": "@moryflow/agents-mcp",
+  "version": "0.1.0",
+  "description": "MCP server management for agent runtime",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "@moryflow/agents": "workspace:*",
+    "@moryflow/agents-core": "workspace:*",
+    "@moryflow/agents-runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist"
+  ]
+}

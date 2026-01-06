@@ -1,0 +1,10 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "index",
+    "memories",
+    "entities",
+    "relations",
+    "webhooks"
+  ]
+}

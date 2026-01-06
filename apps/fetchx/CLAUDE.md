@@ -50,7 +50,7 @@ pnpm --filter @aiget/fetchx-www typecheck
 
 ## 迁移来源
 
-从 `/Users/zhangbaolin/code/me/fetchx` 迁移。
+从 `/Users/bowling/code/me/fetchx` 迁移。
 
 ---
 

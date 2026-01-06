@@ -1,0 +1,33 @@
+@import "@aiget/ui/styles";
+@import "tw-animate-css";
+
+/* 扫描本地组件和 UI 库 */
+@source "../**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+
+/* E2B 风格扩展 */
+@theme inline {
+  /* Geist 字体系列 - E2B 同款 */
+  --font-mono: 'JetBrains Mono Variable', 'Geist Mono', ui-monospace, monospace;
+  --font-sans: 'JetBrains Mono Variable', 'Geist Sans', ui-sans-serif, sans-serif;
+}
+
+/* E2B 风格标题装饰类 */
+@layer utilities {
+  .heading-underline {
+    text-decoration: underline;
+    text-decoration-thickness: 4px;
+    text-underline-offset: 8px;
+  }
+
+  .heading-strikethrough {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+  }
+
+  .heading-double-underline {
+    text-decoration: underline;
+    text-decoration-style: double;
+    text-underline-offset: 6px;
+  }
+}

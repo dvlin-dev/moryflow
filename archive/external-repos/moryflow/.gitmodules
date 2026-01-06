@@ -1,0 +1,4 @@
+[submodule "moryflow-meta"]
+	path = moryflow-meta
+	url = https://github.com/dvlin-dev/moryflow-meta.git
+

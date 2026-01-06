@@ -1,0 +1,7 @@
+# 自动生成的数据文件（构建时同步）
+src/data/models.json
+src/data/providers.json
+src/data/meta.json
+
+# 构建产物
+dist/

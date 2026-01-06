@@ -1,0 +1,267 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (如 0.1.0，不带 v 前缀)'
+        required: true
+      draft:
+        description: '是否为草稿发布'
+        type: boolean
+        default: false
+
+env:
+  R2_BUCKET: moryflow-releases
+
+# 权限设置
+permissions:
+  contents: write
+
+jobs:
+  # ============================================
+  # 构建任务 - 多平台并行构建
+  # ============================================
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14 # Apple Silicon runner
+            platform: mac
+            arch: arm64
+          - os: windows-latest
+            platform: win
+            arch: x64
+          # - os: ubuntu-latest   # 暂时禁用 Linux
+          #   platform: linux
+          #   arch: x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies (only apps/pc)
+        run: pnpm install --filter @moryflow/pc... --frozen-lockfile --ignore-scripts
+
+      - name: Build workspace packages
+        run: pnpm run build:packages
+
+      - name: Build Electron app
+        working-directory: apps/pc
+        run: pnpm build && npx electron-builder --${{ matrix.platform }} --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build outputs
+        shell: bash
+        run: |
+          echo "=== Build outputs ==="
+          find apps/pc/release -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.yml" -o -name "*.yaml" \) 2>/dev/null || echo "No release files found"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            apps/pc/release/**/*.dmg
+            apps/pc/release/**/*.exe
+            apps/pc/release/**/*.AppImage
+            apps/pc/release/**/*.blockmap
+            apps/pc/release/**/latest*.yml
+          if-no-files-found: error
+          retention-days: 7
+
+  # ============================================
+  # 发布任务 - 上传到 GitHub Releases 和 Cloudflare R2
+  # ============================================
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release-files
+          find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.blockmap" -o -name "*.yml" \) -exec cp {} release-files/ \;
+          echo "=== Release files ==="
+          ls -la release-files/
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Version: $VERSION"
+
+      - name: Check R2 configuration
+        id: r2_check
+        run: |
+          if [ -n "$R2_ACCOUNT_ID" ] && [ -n "$R2_ACCESS_KEY_ID" ] && [ -n "$R2_SECRET_ACCESS_KEY" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+            echo "✅ R2 配置已检测到"
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "⚠️ R2 未配置，将跳过国内镜像上传"
+          fi
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      # ============================================
+      # GitHub Release
+      # ============================================
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: MoryFlow ${{ steps.version.outputs.version }}
+          draft: ${{ github.event.inputs.draft || false }}
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          generate_release_notes: true
+          files: release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ============================================
+      # Cloudflare R2 上传（可选，需配置 R2 secrets）
+      # ============================================
+      - name: Install rclone
+        if: steps.r2_check.outputs.configured == 'true'
+        run: |
+          curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip
+          unzip rclone-current-linux-amd64.zip
+          sudo cp rclone-*-linux-amd64/rclone /usr/local/bin/
+          rclone version
+
+      - name: Upload to Cloudflare R2
+        if: steps.r2_check.outputs.configured == 'true'
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "📤 Uploading to R2: $VERSION"
+
+          # 上传到版本目录
+          rclone copy release-files/ r2:${{ env.R2_BUCKET }}/$VERSION/ \
+            --progress \
+            --transfers 4
+
+          # 更新 latest 目录（用于自动更新检测）
+          rclone copy release-files/ r2:${{ env.R2_BUCKET }}/latest/ \
+            --progress \
+            --transfers 4
+
+          echo "✅ R2 upload complete"
+
+      - name: Generate and upload manifest
+        if: steps.r2_check.outputs.configured == 'true'
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # 获取实际文件名（使用 find 正确处理空格）
+          MAC_DMG=$(find release-files -maxdepth 1 -name "*.dmg" ! -name "*.blockmap" -printf "%f\n" 2>/dev/null | head -1 || echo "")
+          # Windows: 优先 Setup 安装程序，排除 elevate.exe 等辅助文件
+          WIN_EXE=$(find release-files -maxdepth 1 -name "*Setup*.exe" -printf "%f\n" 2>/dev/null | head -1 || echo "")
+          LINUX_APPIMAGE=$(find release-files -maxdepth 1 -name "*.AppImage" -printf "%f\n" 2>/dev/null | head -1 || echo "")
+
+          echo "=== Detected files ==="
+          echo "MAC_DMG: $MAC_DMG"
+          echo "WIN_EXE: $WIN_EXE"
+          echo "LINUX_APPIMAGE: $LINUX_APPIMAGE"
+
+          # URL 编码空格
+          MAC_DMG_URL="${MAC_DMG// /%20}"
+          WIN_EXE_URL="${WIN_EXE// /%20}"
+          LINUX_APPIMAGE_URL="${LINUX_APPIMAGE// /%20}"
+
+          cat > manifest.json << EOF
+          {
+            "version": "$VERSION",
+            "releaseDate": "$DATE",
+            "downloads": {
+              "mac-arm64": {
+                "filename": "$MAC_DMG",
+                "cloudflare": "https://download.moryflow.com/latest/$MAC_DMG_URL"
+              },
+              "win-x64": {
+                "filename": "$WIN_EXE",
+                "cloudflare": "https://download.moryflow.com/latest/$WIN_EXE_URL"
+              },
+              "linux-x64": {
+                "filename": "$LINUX_APPIMAGE",
+                "cloudflare": "https://download.moryflow.com/latest/$LINUX_APPIMAGE_URL"
+              }
+            }
+          }
+          EOF
+
+          echo "=== manifest.json ==="
+          cat manifest.json
+
+          rclone copyto manifest.json r2:${{ env.R2_BUCKET }}/manifest.json
+          rclone copyto manifest.json r2:${{ env.R2_BUCKET }}/$VERSION/manifest.json
+
+          echo "✅ Manifest uploaded"
+
+      - name: Summary
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "## 🎉 Release $VERSION Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Download Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**GitHub (海外)**" >> $GITHUB_STEP_SUMMARY
+          echo "- https://github.com/dvlin-dev/moryflow/releases/tag/v$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.r2_check.outputs.configured }}" = "true" ]; then
+            echo "**Cloudflare (国内加速)**" >> $GITHUB_STEP_SUMMARY
+            echo "- https://download.moryflow.com/$VERSION/" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Manifest**" >> $GITHUB_STEP_SUMMARY
+            echo "- https://download.moryflow.com/manifest.json" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Note:** Cloudflare R2 未配置，跳过国内镜像上传" >> $GITHUB_STEP_SUMMARY
+          fi

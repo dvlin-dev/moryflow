@@ -1,0 +1,53 @@
+# Dockerfile for @aiget/www (TanStack Start SSR)
+# 构建上下文：根目录 (.)
+# Dockerfile 路径：Dockerfile.www
+
+FROM node:22-slim AS base
+
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# 依赖安装阶段
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/www/package.json ./apps/www/
+COPY packages/ui/package.json ./packages/ui/
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/www...
+
+# 构建阶段
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/www/node_modules ./apps/www/node_modules
+COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
+COPY apps/www ./apps/www
+COPY packages/ui ./packages/ui
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+
+WORKDIR /app/apps/www
+
+# 构建时注入环境变量（客户端 bundle）
+ARG VITE_API_URL=https://server.aiget.dev
+ARG VITE_TURNSTILE_SITE_KEY
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
+
+RUN pnpm build
+
+# 生产运行阶段 - Node.js SSR 服务器（Nitro 输出是自包含的）
+FROM node:22-slim AS runner
+
+WORKDIR /app
+
+# 复制构建产物（Nitro 输出是自包含的，不需要 node_modules）
+COPY --from=builder /app/apps/www/.output ./.output
+
+# 运行时环境变量
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+# 启动 SSR 服务器 (TanStack Start + Nitro)
+CMD ["node", ".output/server/index.mjs"]

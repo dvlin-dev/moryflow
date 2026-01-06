@@ -1,0 +1,146 @@
+---
+title: API 参考
+description: AIGet Web Scraper 完整 API 文档
+---
+
+# API 参考
+
+AIGet 提供全面的 REST API，用于网页抓取和内容提取。所有接口使用 JSON 格式进行请求和响应。
+
+## 基础 URL
+
+```
+https://api.aiget.dev
+```
+
+## 认证
+
+所有 API 请求需要通过 Bearer Token 认证：
+
+```bash
+Authorization: Bearer lk_your_api_key
+```
+
+在 [控制台](https://console.aiget.dev/api-keys) 获取 API Key。
+
+## 可用 API
+
+### 核心 API
+
+<Cards>
+  <Card title="Scrape API" href="/zh/docs/api/scrape">
+    从任意网页提取多种格式的内容（Markdown、HTML、截图、链接）
+  </Card>
+  <Card title="Crawl API" href="/zh/docs/api/crawl">
+    爬取网站多个页面，支持深度和路径控制
+  </Card>
+  <Card title="Map API" href="/zh/docs/api/map">
+    通过 Sitemap 或浏览器爬取发现网站所有 URL
+  </Card>
+  <Card title="Batch Scrape API" href="/zh/docs/api/batch-scrape">
+    并行抓取多个 URL（每次请求 1-100 个）
+  </Card>
+</Cards>
+
+### 高级 API
+
+<Cards>
+  <Card title="Extract API" href="/zh/docs/api/extract">
+    使用 LLM 进行 AI 驱动的结构化数据提取
+  </Card>
+  <Card title="Search API" href="/zh/docs/api/search">
+    网页搜索，可选抓取搜索结果内容
+  </Card>
+</Cards>
+
+## 快速开始
+
+以下是一个简单示例：
+
+```bash
+curl -X POST https://api.aiget.dev/api/v1/scrape \
+  -H "Authorization: Bearer lk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "formats": ["markdown"]
+  }'
+```
+
+## 响应格式
+
+所有 API 响应遵循统一格式：
+
+### 成功响应
+
+```json
+{
+  "success": true,
+  "data": {
+    // 响应数据
+  }
+}
+```
+
+### 错误响应
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "可读的错误信息"
+  }
+}
+```
+
+## 通用错误码
+
+| 错误码 | 状态码 | 描述 |
+|--------|--------|------|
+| `UNAUTHORIZED` | 401 | API Key 缺失或无效 |
+| `RATE_LIMITED` | 429 | 请求过于频繁 |
+| `QUOTA_EXCEEDED` | 429 | 月度配额已用完 |
+| `INVALID_URL` | 400 | URL 格式无效 |
+| `URL_NOT_ALLOWED` | 400 | URL 被 SSRF 防护阻止 |
+| `PAGE_TIMEOUT` | 504 | 页面加载超时 |
+| `BROWSER_ERROR` | 500 | 浏览器错误 |
+
+## 速率限制
+
+速率限制按 API Key 计算：
+
+| 套餐 | 请求/分钟 | 并发数 |
+|------|-----------|--------|
+| Free | 10 | 2 |
+| Basic | 30 | 5 |
+| Pro | 60 | 10 |
+| Team | 120 | 20 |
+
+达到速率限制时，将收到 `429` 响应及相关请求头：
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1705320600
+Retry-After: 30
+```
+
+## Webhooks
+
+对于长时间运行的操作（Crawl、Batch Scrape），可以配置 Webhook 接收通知：
+
+```json
+{
+  "event": "crawl.completed",
+  "data": {
+    "id": "crawl_abc123",
+    "status": "COMPLETED",
+    "totalPages": 150,
+    "completedPages": 150
+  },
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+详见各 API 文档了解 Webhook 配置详情。

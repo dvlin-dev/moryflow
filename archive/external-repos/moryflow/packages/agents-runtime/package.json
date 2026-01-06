@@ -1,0 +1,34 @@
+{
+  "name": "@moryflow/agents-runtime",
+  "version": "0.1.0",
+  "description": "Core runtime for Moryflow Agent",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": ["dist"],
+  "license": "MIT",
+  "dependencies": {
+    "@moryflow/agents-adapter": "workspace:*",
+    "@moryflow/agents": "workspace:*",
+    "@moryflow/agents-core": "workspace:*",
+    "@moryflow/agents-extensions": "workspace:*",
+    "@moryflow/shared-api": "workspace:*",
+    "@ai-sdk/openai": "^3.0.1",
+    "@ai-sdk/anthropic": "^3.0.1",
+    "@ai-sdk/google": "^3.0.1",
+    "@ai-sdk/xai": "^3.0.1",
+    "@ai-sdk/openai-compatible": "^2.0.1",
+    "@ai-sdk/provider": "^3.0.0",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
+    "zod": "^3.25.40"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,224 @@
+---
+title: 实体 API
+description: 从记忆中提取和管理实体
+---
+
+# 实体 API
+
+实体 API 允许您创建、列出和管理从记忆中提取的实体。实体代表人物、地点、组织和其他命名概念。
+
+## 实体对象
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `id` | string | 唯一实体标识符 |
+| `name` | string | 实体名称 |
+| `type` | string | 实体类型（PERSON、ORGANIZATION、LOCATION 等） |
+| `description` | string | 可选描述 |
+| `metadata` | object | 自定义元数据 |
+| `createdAt` | string | ISO 8601 时间戳 |
+| `updatedAt` | string | ISO 8601 时间戳 |
+
+## 实体类型
+
+| 类型 | 描述 |
+|------|------|
+| `PERSON` | 个人 |
+| `ORGANIZATION` | 公司、机构或团体 |
+| `LOCATION` | 地点或地理位置 |
+| `PRODUCT` | 产品或服务 |
+| `EVENT` | 事件或活动 |
+| `CONCEPT` | 抽象概念或想法 |
+| `OTHER` | 其他实体类型 |
+
+---
+
+## 创建实体
+
+创建一个新实体。
+
+```
+POST /v1/entities
+```
+
+### 请求体
+
+| 字段 | 类型 | 必需 | 描述 |
+|------|------|------|------|
+| `name` | string | 是 | 实体名称 |
+| `type` | string | 是 | 实体类型 |
+| `description` | string | 否 | 实体描述 |
+| `metadata` | object | 否 | 自定义元数据 |
+
+### 请求示例
+
+```bash
+curl -X POST https://api.memai.dev/v1/entities \
+  -H "Authorization: Bearer mm_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "张三",
+    "type": "PERSON",
+    "description": "软件工程师，TypeScript 爱好者",
+    "metadata": {
+      "department": "工程部",
+      "role": "高级开发者"
+    }
+  }'
+```
+
+### 响应
+
+```json
+{
+  "id": "ent_abc123",
+  "name": "张三",
+  "type": "PERSON",
+  "description": "软件工程师，TypeScript 爱好者",
+  "metadata": {
+    "department": "工程部",
+    "role": "高级开发者"
+  },
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+## 列出实体
+
+获取分页的实体列表。
+
+```
+GET /v1/entities
+```
+
+### 查询参数
+
+| 参数 | 类型 | 必需 | 描述 |
+|------|------|------|------|
+| `type` | string | 否 | 按实体类型过滤 |
+| `search` | string | 否 | 按名称搜索 |
+| `page` | number | 否 | 页码（默认：1） |
+| `limit` | number | 否 | 每页数量（默认：20，最大：100） |
+
+### 请求示例
+
+```bash
+curl -X GET "https://api.memai.dev/v1/entities?type=PERSON&limit=10" \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 响应
+
+```json
+{
+  "items": [
+    {
+      "id": "ent_abc123",
+      "name": "张三",
+      "type": "PERSON",
+      "description": "软件工程师，TypeScript 爱好者",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "ent_def456",
+      "name": "李四",
+      "type": "PERSON",
+      "description": "产品经理",
+      "createdAt": "2024-01-14T09:00:00Z",
+      "updatedAt": "2024-01-14T09:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
+```
+
+---
+
+## 获取实体
+
+通过 ID 获取特定实体。
+
+```
+GET /v1/entities/:id
+```
+
+### 路径参数
+
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `id` | string | 实体 ID |
+
+### 请求示例
+
+```bash
+curl -X GET https://api.memai.dev/v1/entities/ent_abc123 \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 响应
+
+```json
+{
+  "id": "ent_abc123",
+  "name": "张三",
+  "type": "PERSON",
+  "description": "软件工程师，TypeScript 爱好者",
+  "metadata": {
+    "department": "工程部",
+    "role": "高级开发者"
+  },
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+## 删除实体
+
+永久删除一个实体。
+
+```
+DELETE /v1/entities/:id
+```
+
+### 路径参数
+
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `id` | string | 实体 ID |
+
+### 请求示例
+
+```bash
+curl -X DELETE https://api.memai.dev/v1/entities/ent_abc123 \
+  -H "Authorization: Bearer mm_your_api_key"
+```
+
+### 响应
+
+```json
+{
+  "success": true,
+  "id": "ent_abc123"
+}
+```
+
+---
+
+## 错误码
+
+| 错误码 | 描述 |
+|--------|------|
+| `ENTITY_NOT_FOUND` | 指定的实体不存在 |
+| `INVALID_ENTITY_TYPE` | 实体类型无效 |
+| `NAME_REQUIRED` | 需要实体名称 |

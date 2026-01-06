@@ -1,0 +1,1098 @@
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import { z } from 'zod';
+import {
+  Agent,
+  AgentInputItem,
+  run,
+  Runner,
+  setDefaultModelProvider,
+  setTracingDisabled,
+  Usage,
+  RunStreamEvent,
+  RunAgentUpdatedStreamEvent,
+  RunItemStreamEvent,
+  StreamedRunResult,
+  handoff,
+  Model,
+  ModelRequest,
+  ModelResponse,
+  StreamEvent,
+  FunctionCallItem,
+  tool,
+  user,
+  Session,
+  InputGuardrailTripwireTriggered,
+} from '../src';
+import { FakeModel, FakeModelProvider, fakeModelMessage } from './stubs';
+import * as protocol from '../src/types/protocol';
+import * as runImplementation from '../src/runImplementation';
+
+function getFirstTextContent(item: AgentInputItem): string | undefined {
+  if (item.type !== 'message') {
+    return undefined;
+  }
+  if (typeof item.content === 'string') {
+    return item.content;
+  }
+  if (Array.isArray(item.content)) {
+    const first = item.content[0] as { text?: string };
+    return first?.text;
+  }
+  return undefined;
+}
+
+// Test for unhandled rejection when stream loop throws
+
+describe('Runner.run (streaming)', () => {
+  beforeAll(() => {
+    setTracingDisabled(true);
+    setDefaultModelProvider(new FakeModelProvider());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('does not emit unhandled rejection when stream loop fails', async () => {
+    const agent = new Agent({ name: 'StreamFail', model: new FakeModel() });
+
+    const rejections: unknown[] = [];
+    const handler = (err: unknown) => {
+      rejections.push(err);
+    };
+    process.on('unhandledRejection', handler);
+
+    const result = await run(agent, 'hi', { stream: true });
+    await expect(result.completed).rejects.toBeInstanceOf(Error);
+
+    // allow queued events to fire
+    await new Promise((r) => setImmediate(r));
+    process.off('unhandledRejection', handler);
+
+    expect(rejections).toHaveLength(0);
+    expect(result.error).toBeInstanceOf(Error);
+  });
+
+  it('exposes model error to the consumer', async () => {
+    const agent = new Agent({ name: 'StreamError', model: new FakeModel() });
+
+    const result = await run(agent, 'hi', { stream: true });
+    await expect(result.completed).rejects.toThrow('Not implemented');
+
+    expect((result.error as Error).message).toBe('Not implemented');
+  });
+
+  it('emits agent_updated_stream_event with new agent on handoff', async () => {
+    class SimpleStreamingModel implements Model {
+      constructor(private resp: ModelResponse) {}
+      async getResponse(_req: ModelRequest): Promise<ModelResponse> {
+        return this.resp;
+      }
+      async *getStreamedResponse(): AsyncIterable<StreamEvent> {
+        yield {
+          type: 'response_done',
+          response: {
+            id: 'r',
+            usage: {
+              requests: 1,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+            },
+            output: this.resp.output,
+          },
+        } as any;
+      }
+    }
+
+    const agentB = new Agent({
+      name: 'B',
+      model: new SimpleStreamingModel({
+        output: [fakeModelMessage('done B')],
+        usage: new Usage(),
+      }),
+    });
+
+    const callItem: FunctionCallItem = {
+      id: 'h1',
+      type: 'function_call',
+      name: handoff(agentB).toolName,
+      callId: 'c1',
+      status: 'completed',
+      arguments: '{}',
+    };
+
+    const agentA = new Agent({
+      name: 'A',
+      model: new SimpleStreamingModel({
+        output: [callItem],
+        usage: new Usage(),
+      }),
+      handoffs: [handoff(agentB)],
+    });
+
+    const result = await run(agentA, 'hi', { stream: true });
+    const events: RunStreamEvent[] = [];
+    for await (const e of result.toStream()) {
+      events.push(e);
+    }
+    await result.completed;
+
+    const update = events.find(
+      (e): e is RunAgentUpdatedStreamEvent =>
+        e.type === 'agent_updated_stream_event',
+    );
+    expect(update?.agent).toBe(agentB);
+  });
+
+  it('emits agent_end lifecycle event for streaming agents', async () => {
+    class SimpleStreamingModel implements Model {
+      constructor(private resp: ModelResponse) {}
+      async getResponse(_req: ModelRequest): Promise<ModelResponse> {
+        return this.resp;
+      }
+      async *getStreamedResponse(): AsyncIterable<StreamEvent> {
+        yield {
+          type: 'response_done',
+          response: {
+            id: 'r',
+            usage: {
+              requests: 1,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+            },
+            output: this.resp.output,
+          },
+        } as any;
+      }
+    }
+
+    const agent = new Agent({
+      name: 'TestAgent',
+      model: new SimpleStreamingModel({
+        output: [fakeModelMessage('Final output')],
+        usage: new Usage(),
+      }),
+    });
+
+    // Track agent_end events on both the agent and runner
+    const agentEndEvents: Array<{ context: any; output: string }> = [];
+    const runnerEndEvents: Array<{ context: any; agent: any; output: string }> =
+      [];
+
+    agent.on('agent_end', (context, output) => {
+      agentEndEvents.push({ context, output });
+    });
+
+    // Create a runner instance to listen for events
+    const runner = new Runner();
+    runner.on('agent_end', (context, agent, output) => {
+      runnerEndEvents.push({ context, agent, output });
+    });
+
+    const result = await runner.run(agent, 'test input', { stream: true });
+
+    // Consume the stream
+    const events: RunStreamEvent[] = [];
+    for await (const e of result.toStream()) {
+      events.push(e);
+    }
+    await result.completed;
+
+    // Verify agent_end was called on both agent and runner
+    expect(agentEndEvents).toHaveLength(1);
+    expect(agentEndEvents[0].output).toBe('Final output');
+
+    expect(runnerEndEvents).toHaveLength(1);
+    expect(runnerEndEvents[0].agent).toBe(agent);
+    expect(runnerEndEvents[0].output).toBe('Final output');
+  });
+
+  it('streams tool_called before the tool finishes executing', async () => {
+    let releaseTool: (() => void) | undefined;
+    const toolExecuted = vi.fn();
+
+    const blockingTool = tool({
+      name: 'blocker',
+      description: 'blocks until released',
+      parameters: z.object({ value: z.string() }),
+      execute: async ({ value }) => {
+        toolExecuted(value);
+        await new Promise<void>((resolve) => {
+          releaseTool = resolve;
+        });
+        return `result:${value}`;
+      },
+    });
+
+    const functionCall: FunctionCallItem = {
+      id: 'call-1',
+      type: 'function_call',
+      name: blockingTool.name,
+      callId: 'c1',
+      status: 'completed',
+      arguments: JSON.stringify({ value: 'test' }),
+    };
+
+    const toolResponse: ModelResponse = {
+      output: [functionCall],
+      usage: new Usage(),
+    };
+
+    const finalMessageResponse: ModelResponse = {
+      output: [fakeModelMessage('done')],
+      usage: new Usage(),
+    };
+
+    class BlockingStreamModel implements Model {
+      #callCount = 0;
+
+      async getResponse(_req: ModelRequest): Promise<ModelResponse> {
+        return this.#callCount === 0 ? toolResponse : finalMessageResponse;
+      }
+
+      async *getStreamedResponse(
+        _req: ModelRequest,
+      ): AsyncIterable<StreamEvent> {
+        const currentCall = this.#callCount++;
+        const response =
+          currentCall === 0 ? toolResponse : finalMessageResponse;
+        yield {
+          type: 'response_done',
+          response: {
+            id: `resp-${currentCall}`,
+            usage: {
+              requests: 1,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+            },
+            output: response.output,
+          },
+        } as any;
+      }
+    }
+
+    const agent = new Agent({
+      name: 'BlockingAgent',
+      model: new BlockingStreamModel(),
+      tools: [blockingTool],
+    });
+
+    const runner = new Runner();
+    const result = await runner.run(agent, 'hello', { stream: true });
+    const iterator = result.toStream()[Symbol.asyncIterator]();
+
+    const collected: RunStreamEvent[] = [];
+    const firstRunItemPromise: Promise<RunItemStreamEvent> = (async () => {
+      while (true) {
+        const next = await iterator.next();
+        if (next.done) {
+          throw new Error('Stream ended before emitting a run item event');
+        }
+        collected.push(next.value);
+        if (next.value.type === 'run_item_stream_event') {
+          return next.value;
+        }
+      }
+    })();
+
+    let firstRunItemResolved = false;
+    void firstRunItemPromise.then(() => {
+      firstRunItemResolved = true;
+    });
+
+    // Allow the tool execution to start.
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(toolExecuted).toHaveBeenCalledWith('test');
+    expect(releaseTool).toBeDefined();
+    expect(firstRunItemResolved).toBe(true);
+
+    const firstRunItem = await firstRunItemPromise;
+    expect(firstRunItem.name).toBe('tool_called');
+
+    releaseTool?.();
+
+    while (true) {
+      const next = await iterator.next();
+      if (next.done) {
+        break;
+      }
+      collected.push(next.value);
+    }
+
+    await result.completed;
+
+    const toolCalledIndex = collected.findIndex(
+      (event) =>
+        event.type === 'run_item_stream_event' && event.name === 'tool_called',
+    );
+    const toolOutputIndex = collected.findIndex(
+      (event) =>
+        event.type === 'run_item_stream_event' && event.name === 'tool_output',
+    );
+
+    expect(toolCalledIndex).toBeGreaterThan(-1);
+    expect(toolOutputIndex).toBeGreaterThan(-1);
+    expect(toolCalledIndex).toBeLessThan(toolOutputIndex);
+  });
+
+  it('emits run item events in the order items are generated', async () => {
+    const sequenceTool = tool({
+      name: 'report',
+      description: 'Generate a report',
+      parameters: z.object({}),
+      execute: async () => 'report ready',
+    });
+
+    const functionCall: FunctionCallItem = {
+      id: 'call-1',
+      type: 'function_call',
+      name: sequenceTool.name,
+      callId: 'c1',
+      status: 'completed',
+      arguments: '{}',
+    };
+
+    const firstTurnResponse: ModelResponse = {
+      output: [fakeModelMessage('Starting work'), functionCall],
+      usage: new Usage(),
+    };
+
+    const secondTurnResponse: ModelResponse = {
+      output: [fakeModelMessage('All done')],
+      usage: new Usage(),
+    };
+
+    class SequencedStreamModel implements Model {
+      #turn = 0;
+
+      async getResponse(_req: ModelRequest): Promise<ModelResponse> {
+        return this.#turn === 0 ? firstTurnResponse : secondTurnResponse;
+      }
+
+      async *getStreamedResponse(
+        _req: ModelRequest,
+      ): AsyncIterable<StreamEvent> {
+        const response =
+          this.#turn === 0 ? firstTurnResponse : secondTurnResponse;
+        this.#turn += 1;
+        yield {
+          type: 'response_done',
+          response: {
+            id: `resp-${this.#turn}`,
+            usage: {
+              requests: 1,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+            },
+            output: response.output,
+          },
+        } as any;
+      }
+    }
+
+    const agent = new Agent({
+      name: 'SequencedAgent',
+      model: new SequencedStreamModel(),
+      tools: [sequenceTool],
+    });
+
+    const runner = new Runner();
+    const result = await runner.run(agent, 'begin', { stream: true });
+
+    const itemEventNames: string[] = [];
+    for await (const event of result.toStream()) {
+      if (event.type === 'run_item_stream_event') {
+        itemEventNames.push(event.name);
+      }
+    }
+    await result.completed;
+
+    expect(itemEventNames).toEqual([
+      'message_output_created',
+      'tool_called',
+      'tool_output',
+      'message_output_created',
+    ]);
+  });
+
+  describe('server-managed conversation state', () => {
+    type Turn = { output: protocol.ModelItem[]; responseId?: string };
+
+    class TrackingStreamingModel implements Model {
+      public requests: ModelRequest[] = [];
+      public firstRequest: ModelRequest | undefined;
+      public lastRequest: ModelRequest | undefined;
+
+      constructor(private readonly turns: Turn[]) {}
+
+      private recordRequest(request: ModelRequest) {
+        const clonedInput: string | AgentInputItem[] =
+          typeof request.input === 'string'
+            ? request.input
+            : (JSON.parse(JSON.stringify(request.input)) as AgentInputItem[]);
+
+        const recorded: ModelRequest = {
+          ...request,
+          input: clonedInput,
+        };
+
+        this.requests.push(recorded);
+        this.lastRequest = recorded;
+        this.firstRequest ??= recorded;
+      }
+
+      async getResponse(_request: ModelRequest): Promise<ModelResponse> {
+        throw new Error('Not implemented');
+      }
+
+      async *getStreamedResponse(
+        request: ModelRequest,
+      ): AsyncIterable<StreamEvent> {
+        this.recordRequest(request);
+        const turn = this.turns.shift();
+        if (!turn) {
+          throw new Error('No response configured');
+        }
+
+        const responseId = turn.responseId ?? `resp-${this.requests.length}`;
+        yield {
+          type: 'response_done',
+          response: {
+            id: responseId,
+            usage: {
+              requests: 1,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+            },
+            output: JSON.parse(
+              JSON.stringify(turn.output),
+            ) as protocol.ModelItem[],
+          },
+        } as StreamEvent;
+      }
+    }
+
+    const buildTurn = (
+      items: protocol.ModelItem[],
+      responseId?: string,
+    ): Turn => ({
+      output: JSON.parse(JSON.stringify(items)) as protocol.ModelItem[],
+      responseId,
+    });
+
+    const buildToolCall = (callId: string, arg: string): FunctionCallItem => ({
+      id: callId,
+      type: 'function_call',
+      name: 'test',
+      callId,
+      status: 'completed',
+      arguments: JSON.stringify({ test: arg }),
+    });
+
+    const serverTool = tool({
+      name: 'test',
+      description: 'test tool',
+      parameters: z.object({ test: z.string() }),
+      execute: async ({ test }) => `result:${test}`,
+    });
+
+    async function drain<TOutput, TAgent extends Agent<any, any>>(
+      result: StreamedRunResult<TOutput, TAgent>,
+    ) {
+      for await (const _ of result.toStream()) {
+        // drain
+      }
+      await result.completed;
+    }
+
+    it('only sends new items when using conversationId across turns', async () => {
+      const model = new TrackingStreamingModel([
+        buildTurn(
+          [fakeModelMessage('a_message'), buildToolCall('call-1', 'foo')],
+          'resp-1',
+        ),
+        buildTurn(
+          [fakeModelMessage('b_message'), buildToolCall('call-2', 'bar')],
+          'resp-2',
+        ),
+        buildTurn([fakeModelMessage('done')], 'resp-3'),
+      ]);
+
+      const agent = new Agent({
+        name: 'StreamTest',
+        model,
+        tools: [serverTool],
+      });
+
+      const runner = new Runner();
+      const result = await runner.run(agent, 'user_message', {
+        stream: true,
+        conversationId: 'conv-test-123',
+      });
+
+      await drain(result);
+
+      expect(result.finalOutput).toBe('done');
+      expect(model.requests).toHaveLength(3);
+      expect(model.requests.map((req) => req.conversationId)).toEqual([
+        'conv-test-123',
+        'conv-test-123',
+        'conv-test-123',
+      ]);
+
+      const firstInput = model.requests[0].input;
+      expect(Array.isArray(firstInput)).toBe(true);
+      expect(firstInput as AgentInputItem[]).toHaveLength(1);
+      const userMessage = (firstInput as AgentInputItem[])[0] as any;
+      expect(userMessage.role).toBe('user');
+      expect(userMessage.content).toBe('user_message');
+
+      const secondItems = model.requests[1].input as AgentInputItem[];
+      expect(secondItems).toHaveLength(1);
+      expect(secondItems[0]).toMatchObject({
+        type: 'function_call_result',
+        callId: 'call-1',
+      });
+
+      const thirdItems = model.requests[2].input as AgentInputItem[];
+      expect(thirdItems).toHaveLength(1);
+      expect(thirdItems[0]).toMatchObject({
+        type: 'function_call_result',
+        callId: 'call-2',
+      });
+    });
+
+    it('keeps server tracker aligned with filtered inputs when streaming', async () => {
+      const model = new TrackingStreamingModel([
+        buildTurn(
+          [fakeModelMessage('call the tool'), buildToolCall('call-1', 'value')],
+          'resp-1',
+        ),
+        buildTurn([fakeModelMessage('all done')], 'resp-2'),
+      ]);
+
+      let filterCalls = 0;
+      const runner = new Runner({
+        callModelInputFilter: ({ modelData }) => {
+          filterCalls += 1;
+          if (filterCalls === 1) {
+            return {
+              instructions: modelData.instructions,
+              input: modelData.input
+                .slice(1)
+                .map((item) => structuredClone(item)),
+            };
+          }
+          return modelData;
+        },
+      });
+
+      const agent = new Agent({
+        name: 'StreamTrackerFilter',
+        model,
+        tools: [serverTool],
+      });
+
+      const result = await runner.run(
+        agent,
+        [user('First input'), user('Second input')],
+        {
+          stream: true,
+          conversationId: 'conv-filter-stream',
+        },
+      );
+
+      await drain(result);
+
+      expect(result.finalOutput).toBe('all done');
+      expect(filterCalls).toBe(2);
+      expect(model.requests).toHaveLength(2);
+
+      const firstInput = model.requests[0].input as AgentInputItem[];
+      expect(Array.isArray(firstInput)).toBe(true);
+      expect(firstInput).toHaveLength(1);
+      expect(getFirstTextContent(firstInput[0])).toBe('Second input');
+
+      const secondInput = model.requests[1].input as AgentInputItem[];
+      expect(Array.isArray(secondInput)).toBe(true);
+      expect(
+        secondInput.some(
+          (item) =>
+            item.type === 'message' &&
+            getFirstTextContent(item) === 'First input',
+        ),
+      ).toBe(true);
+      expect(
+        secondInput.some(
+          (item) =>
+            item.type === 'function_call_result' &&
+            (item as protocol.FunctionCallResultItem).callId === 'call-1',
+        ),
+      ).toBe(true);
+    });
+
+    it('only sends new items and updates previousResponseId across turns', async () => {
+      const model = new TrackingStreamingModel([
+        buildTurn(
+          [fakeModelMessage('a_message'), buildToolCall('call-1', 'foo')],
+          'resp-789',
+        ),
+        buildTurn([fakeModelMessage('done')], 'resp-900'),
+      ]);
+
+      const agent = new Agent({
+        name: 'StreamPrev',
+        model,
+        tools: [serverTool],
+      });
+
+      const runner = new Runner();
+      const result = await runner.run(agent, 'user_message', {
+        stream: true,
+        previousResponseId: 'initial-response-123',
+      });
+
+      await drain(result);
+
+      expect(result.finalOutput).toBe('done');
+      expect(model.requests).toHaveLength(2);
+      expect(model.requests[0].previousResponseId).toBe('initial-response-123');
+
+      const secondRequest = model.requests[1];
+      expect(secondRequest.previousResponseId).toBe('resp-789');
+      const secondItems = secondRequest.input as AgentInputItem[];
+      expect(secondItems).toHaveLength(1);
+      expect(secondItems[0]).toMatchObject({
+        type: 'function_call_result',
+        callId: 'call-1',
+      });
+    });
+
+    it('does not resend prior items when resuming a streamed run with conversationId', async () => {
+      const approvalTool = tool({
+        name: 'test',
+        description: 'approval tool',
+        parameters: z.object({ test: z.string() }),
+        needsApproval: async () => true,
+        execute: async ({ test }) => `result:${test}`,
+      });
+
+      const model = new TrackingStreamingModel([
+        buildTurn([buildToolCall('call-stream', 'foo')], 'resp-stream-1'),
+        buildTurn([fakeModelMessage('done')], 'resp-stream-2'),
+      ]);
+
+      const agent = new Agent({
+        name: 'StreamApprovalAgent',
+        model,
+        tools: [approvalTool],
+      });
+
+      const runner = new Runner();
+      const firstResult = await runner.run(agent, 'user_message', {
+        stream: true,
+        conversationId: 'conv-stream-approval',
+      });
+
+      await drain(firstResult);
+
+      expect(firstResult.interruptions).toHaveLength(1);
+      const approvalItem = firstResult.interruptions[0];
+      firstResult.state.approve(approvalItem);
+
+      const secondResult = await runner.run(agent, firstResult.state, {
+        stream: true,
+        conversationId: 'conv-stream-approval',
+      });
+
+      await drain(secondResult);
+
+      expect(secondResult.finalOutput).toBe('done');
+      expect(model.requests).toHaveLength(2);
+      expect(model.requests.map((req) => req.conversationId)).toEqual([
+        'conv-stream-approval',
+        'conv-stream-approval',
+      ]);
+
+      const firstInput = model.requests[0].input as AgentInputItem[];
+      expect(firstInput).toHaveLength(1);
+      expect(firstInput[0]).toMatchObject({
+        role: 'user',
+        content: 'user_message',
+      });
+
+      const secondInput = model.requests[1].input as AgentInputItem[];
+      expect(secondInput).toHaveLength(1);
+      expect(secondInput[0]).toMatchObject({
+        type: 'function_call_result',
+        callId: 'call-stream',
+      });
+    });
+
+    it('sends full history when no server-managed state is provided', async () => {
+      const model = new TrackingStreamingModel([
+        buildTurn(
+          [fakeModelMessage('a_message'), buildToolCall('call-1', 'foo')],
+          'resp-789',
+        ),
+        buildTurn([fakeModelMessage('done')], 'resp-900'),
+      ]);
+
+      const agent = new Agent({
+        name: 'StreamDefault',
+        model,
+        tools: [serverTool],
+      });
+
+      const runner = new Runner();
+      const result = await runner.run(agent, 'user_message', { stream: true });
+
+      await drain(result);
+
+      expect(result.finalOutput).toBe('done');
+      expect(model.requests).toHaveLength(2);
+
+      const secondItems = model.requests[1].input as AgentInputItem[];
+      expect(secondItems).toHaveLength(4);
+      expect(secondItems[0]).toMatchObject({ role: 'user' });
+      expect(secondItems[1]).toMatchObject({ role: 'assistant' });
+      expect(secondItems[2]).toMatchObject({
+        type: 'function_call',
+        name: 'test',
+      });
+      expect(secondItems[3]).toMatchObject({
+        type: 'function_call_result',
+        callId: 'call-1',
+      });
+    });
+  });
+
+  it('persists streaming input only after the run completes successfully', async () => {
+    const saveInputSpy = vi
+      .spyOn(runImplementation, 'saveStreamInputToSession')
+      .mockResolvedValue();
+
+    const session = createSessionMock();
+
+    const agent = new Agent({
+      name: 'StreamSuccess',
+      model: new ImmediateStreamingModel({
+        output: [fakeModelMessage('done')],
+        usage: new Usage(),
+      }),
+    });
+
+    const runner = new Runner();
+
+    const result = await runner.run(agent, 'hello world', {
+      stream: true,
+      session,
+    });
+
+    await result.completed;
+
+    expect(saveInputSpy).toHaveBeenCalledTimes(1);
+    const [sessionArg, persistedItems] = saveInputSpy.mock.calls[0];
+    expect(sessionArg).toBe(session);
+    if (!Array.isArray(persistedItems)) {
+      throw new Error('Expected persisted session items to be an array.');
+    }
+    expect(persistedItems).toHaveLength(1);
+    expect(persistedItems[0]).toMatchObject({
+      role: 'user',
+      content: 'hello world',
+    });
+  });
+
+  it('persists streaming input when the model stream rejects before completion', async () => {
+    const saveInputSpy = vi
+      .spyOn(runImplementation, 'saveStreamInputToSession')
+      .mockResolvedValue();
+
+    const session = createSessionMock();
+    const streamError = new Error('model stream failed');
+
+    const agent = new Agent({
+      name: 'StreamFailurePersistsInput',
+      model: new RejectingStreamingModel(streamError),
+    });
+
+    const runner = new Runner();
+
+    const result = await runner.run(agent, 'save me please', {
+      stream: true,
+      session,
+    });
+
+    await expect(result.completed).rejects.toThrow('model stream failed');
+
+    expect(saveInputSpy).toHaveBeenCalledTimes(1);
+    const [, persistedItems] = saveInputSpy.mock.calls[0];
+    if (!Array.isArray(persistedItems)) {
+      throw new Error('Expected persisted session items to be an array.');
+    }
+    expect(persistedItems).toHaveLength(1);
+    expect(persistedItems[0]).toMatchObject({
+      role: 'user',
+      content: 'save me please',
+    });
+  });
+
+  it('persists filtered streaming input instead of the raw turn payload', async () => {
+    const saveInputSpy = vi
+      .spyOn(runImplementation, 'saveStreamInputToSession')
+      .mockResolvedValue();
+
+    const session = createSessionMock();
+
+    const agent = new Agent({
+      name: 'StreamFiltered',
+      model: new ImmediateStreamingModel({
+        output: [fakeModelMessage('done')],
+        usage: new Usage(),
+      }),
+    });
+
+    const runner = new Runner();
+
+    const secretInput = 'super secret';
+    const redactedContent = '[filtered]';
+
+    const result = await runner.run(agent, secretInput, {
+      stream: true,
+      session,
+      callModelInputFilter: ({ modelData }) => {
+        const sanitizedInput = modelData.input.map((item) => {
+          if (
+            item.type === 'message' &&
+            'role' in item &&
+            item.role === 'user'
+          ) {
+            return {
+              ...item,
+              content: redactedContent,
+            };
+          }
+          return item;
+        });
+
+        return {
+          ...modelData,
+          input: sanitizedInput,
+        };
+      },
+    });
+
+    await result.completed;
+
+    expect(saveInputSpy).toHaveBeenCalledTimes(1);
+    const [, persistedItems] = saveInputSpy.mock.calls[0];
+    if (!Array.isArray(persistedItems)) {
+      throw new Error('Expected persisted session items to be an array.');
+    }
+    expect(persistedItems).toHaveLength(1);
+    expect(persistedItems[0]).toMatchObject({
+      role: 'user',
+      content: redactedContent,
+    });
+    expect(JSON.stringify(persistedItems)).not.toContain(secretInput);
+  });
+
+  it('skips streaming session persistence when the server manages the conversation', async () => {
+    const saveInputSpy = vi
+      .spyOn(runImplementation, 'saveStreamInputToSession')
+      .mockResolvedValue();
+    const saveResultSpy = vi
+      .spyOn(runImplementation, 'saveStreamResultToSession')
+      .mockResolvedValue();
+
+    const session = createSessionMock();
+
+    const agent = new Agent({
+      name: 'StreamServerManaged',
+      model: new ImmediateStreamingModel({
+        output: [fakeModelMessage('done')],
+        usage: new Usage(),
+      }),
+    });
+
+    const runner = new Runner();
+
+    // Session is still supplied alongside conversationId to confirm we suppress duplicate persistence while preserving session-based hooks.
+    const result = await runner.run(agent, 'hello world', {
+      stream: true,
+      session,
+      conversationId: 'conv-server-managed',
+    });
+
+    await result.completed;
+
+    expect(saveInputSpy).not.toHaveBeenCalled();
+    expect(saveResultSpy).not.toHaveBeenCalled();
+  });
+
+  it('skips persisting streaming input when an input guardrail triggers', async () => {
+    const saveInputSpy = vi
+      .spyOn(runImplementation, 'saveStreamInputToSession')
+      .mockResolvedValue();
+
+    const guardrail = {
+      name: 'block',
+      runInParallel: false,
+      execute: vi.fn().mockResolvedValue({
+        tripwireTriggered: true,
+        outputInfo: { reason: 'blocked' },
+      }),
+    };
+
+    const session = createSessionMock();
+
+    const agent = new Agent({
+      name: 'StreamGuardrail',
+      model: new ImmediateStreamingModel({
+        output: [fakeModelMessage('should not run')],
+        usage: new Usage(),
+      }),
+    });
+
+    const runner = new Runner({ inputGuardrails: [guardrail] });
+
+    const result = await runner.run(agent, 'blocked input', {
+      stream: true,
+      session,
+    });
+
+    await expect(result.completed).rejects.toBeInstanceOf(
+      InputGuardrailTripwireTriggered,
+    );
+
+    expect(saveInputSpy).not.toHaveBeenCalled();
+  });
+
+  it('runs blocking input guardrails before streaming starts', async () => {
+    let guardrailFinished = false;
+
+    const guardrail = {
+      name: 'blocking',
+      runInParallel: false,
+      execute: vi.fn(async () => {
+        await Promise.resolve();
+        guardrailFinished = true;
+        return {
+          tripwireTriggered: false,
+          outputInfo: { ok: true },
+        };
+      }),
+    };
+
+    class ExpectGuardrailBeforeStreamModel implements Model {
+      getResponse(_request: ModelRequest): Promise<ModelResponse> {
+        throw new Error('Unexpected call to getResponse');
+      }
+
+      async *getStreamedResponse(
+        _request: ModelRequest,
+      ): AsyncIterable<StreamEvent> {
+        expect(guardrailFinished).toBe(true);
+        yield {
+          type: 'response_done',
+          response: {
+            id: 'stream1',
+            usage: {
+              requests: 1,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+            },
+            output: [fakeModelMessage('ok')],
+          },
+        } satisfies StreamEvent;
+      }
+    }
+
+    const agent = new Agent({
+      name: 'BlockingStreamAgent',
+      model: new ExpectGuardrailBeforeStreamModel(),
+      inputGuardrails: [guardrail],
+    });
+
+    const runner = new Runner();
+    const result = await runner.run(agent, 'hi', { stream: true });
+
+    for await (const _ of result.toStream()) {
+      // consume
+    }
+    await result.completed;
+
+    expect(result.finalOutput).toBe('ok');
+    expect(result.inputGuardrailResults).toHaveLength(1);
+    expect(guardrail.execute).toHaveBeenCalledTimes(1);
+  });
+});
+
+class ImmediateStreamingModel implements Model {
+  constructor(private readonly response: ModelResponse) {}
+
+  async getResponse(_request: ModelRequest): Promise<ModelResponse> {
+    return this.response;
+  }
+
+  async *getStreamedResponse(
+    _request: ModelRequest,
+  ): AsyncIterable<StreamEvent> {
+    const usage = this.response.usage;
+    const output = this.response.output.map((item) =>
+      protocol.OutputModelItem.parse(item),
+    );
+    yield {
+      type: 'response_done',
+      response: {
+        id: 'r',
+        usage: {
+          requests: usage.requests,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          totalTokens: usage.totalTokens,
+        },
+        output,
+      },
+    } satisfies StreamEvent;
+  }
+}
+
+class RejectingStreamingModel implements Model {
+  constructor(private readonly error: Error) {}
+
+  async getResponse(_request: ModelRequest): Promise<ModelResponse> {
+    throw this.error;
+  }
+
+  getStreamedResponse(_request: ModelRequest): AsyncIterable<StreamEvent> {
+    const error = this.error;
+    return {
+      [Symbol.asyncIterator]() {
+        return {
+          async next() {
+            throw error;
+          },
+        } satisfies AsyncIterator<StreamEvent>;
+      },
+    } satisfies AsyncIterable<StreamEvent>;
+  }
+}
+
+function createSessionMock(): Session {
+  return {
+    getSessionId: vi.fn().mockResolvedValue('session-id'),
+    getItems: vi.fn().mockResolvedValue([]),
+    addItems: vi.fn().mockResolvedValue(undefined),
+    popItem: vi.fn().mockResolvedValue(undefined),
+    clearSession: vi.fn().mockResolvedValue(undefined),
+  };
+}

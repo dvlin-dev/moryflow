@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run --passWithNoTests",
     "test:integration": "RUN_INTEGRATION_TESTS=1 vitest run",
     "test:e2e": "RUN_INTEGRATION_TESTS=1 vitest run",
     "test:render": "vitest run",

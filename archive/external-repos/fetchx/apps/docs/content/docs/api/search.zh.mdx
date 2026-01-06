@@ -1,0 +1,255 @@
+---
+title: Search API
+description: 网页搜索，可选抓取搜索结果内容
+---
+
+# Search API
+
+Search API 提供网页搜索功能。可选择抓取搜索结果页面内容以进行深入分析。
+
+## 接口端点
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| POST | `/api/v1/search` | 执行搜索 |
+| GET | `/api/v1/search/autocomplete` | 获取搜索建议 |
+
+## 执行搜索
+
+```http
+POST /api/v1/search
+```
+
+### 请求参数
+
+| 参数 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `query` | string | 必填 | 搜索查询（最多 500 字符） |
+| `limit` | number | 10 | 结果数量（1-100） |
+| `categories` | string[] | - | 搜索类别 |
+| `engines` | string[] | - | 指定搜索引擎 |
+| `language` | string | - | 语言代码（如 "en"、"zh"） |
+| `timeRange` | string | - | 时间过滤：`day`、`week`、`month`、`year` |
+| `safeSearch` | number | - | 安全搜索：`0`（关闭）、`1`（中等）、`2`（严格） |
+| `scrapeResults` | boolean | `false` | 抓取结果页面内容 |
+| `scrapeOptions` | object | - | 结果抓取选项 |
+
+### 搜索类别
+
+| 类别 | 描述 |
+|------|------|
+| `general` | 网页（默认） |
+| `images` | 图片搜索 |
+| `news` | 新闻文章 |
+| `videos` | 视频内容 |
+| `music` | 音乐和音频 |
+| `files` | 可下载文件 |
+| `it` | IT 和编程 |
+| `science` | 科学内容 |
+| `social media` | 社交媒体帖子 |
+
+### 请求示例
+
+```bash
+curl -X POST https://api.aiget.dev/api/v1/search \
+  -H "Authorization: Bearer lk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "网页抓取最佳实践",
+    "limit": 10,
+    "categories": ["general"],
+    "timeRange": "month",
+    "safeSearch": 1
+  }'
+```
+
+### 响应
+
+```json
+{
+  "success": true,
+  "data": {
+    "query": "网页抓取最佳实践",
+    "numberOfResults": 10,
+    "results": [
+      {
+        "title": "网页抓取最佳实践指南",
+        "url": "https://example.com/guide",
+        "description": "学习合规网页抓取的最佳实践...",
+        "engine": "google",
+        "score": 0.95,
+        "publishedDate": "2024-01-10"
+      },
+      {
+        "title": "如何负责任地抓取网站",
+        "url": "https://example.org/scraping",
+        "description": "负责任网页抓取的全面指南...",
+        "engine": "bing",
+        "score": 0.92
+      }
+    ],
+    "suggestions": [
+      "网页抓取 python",
+      "网页抓取工具",
+      "网页抓取合法性"
+    ]
+  }
+}
+```
+
+## 搜索并抓取内容
+
+启用 `scrapeResults` 以获取并包含每个结果页面的内容：
+
+```bash
+curl -X POST https://api.aiget.dev/api/v1/search \
+  -H "Authorization: Bearer lk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "网页抓取教程",
+    "limit": 5,
+    "scrapeResults": true,
+    "scrapeOptions": {
+      "formats": ["markdown"],
+      "onlyMainContent": true
+    }
+  }'
+```
+
+### 包含内容的响应
+
+```json
+{
+  "success": true,
+  "data": {
+    "query": "网页抓取教程",
+    "numberOfResults": 5,
+    "results": [
+      {
+        "title": "网页抓取教程",
+        "url": "https://example.com/tutorial",
+        "description": "分步网页抓取指南...",
+        "engine": "google",
+        "content": "# 网页抓取教程\n\n在本教程中，你将学习..."
+      }
+    ]
+  }
+}
+```
+
+## 自动补全
+
+```http
+GET /api/v1/search/autocomplete?q=网页抓取
+```
+
+### 响应
+
+```json
+{
+  "success": true,
+  "data": {
+    "suggestions": [
+      "网页抓取",
+      "网页抓取 python",
+      "网页抓取工具",
+      "网页抓取器"
+    ]
+  }
+}
+```
+
+## 代码示例
+
+### Node.js
+
+```javascript
+// 基础搜索
+const response = await fetch('https://api.aiget.dev/api/v1/search', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    query: '机器学习教程',
+    limit: 10,
+    timeRange: 'month',
+  }),
+});
+
+const { data } = await response.json();
+console.log(`找到 ${data.numberOfResults} 个结果`);
+data.results.forEach(r => console.log(r.title, r.url));
+```
+
+### Python
+
+```python
+import requests
+
+# 搜索并抓取内容
+response = requests.post(
+    'https://api.aiget.dev/api/v1/search',
+    headers={
+        'Authorization': 'Bearer lk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'query': '机器学习教程',
+        'limit': 5,
+        'scrapeResults': True,
+        'scrapeOptions': {
+            'formats': ['markdown'],
+        },
+    },
+)
+
+results = response.json()['data']['results']
+for r in results:
+    print(f"标题: {r['title']}")
+    print(f"内容预览: {r.get('content', '')[:200]}...")
+    print()
+```
+
+## 使用场景
+
+### 新闻聚合
+
+```json
+{
+  "query": "AI 技术新闻",
+  "categories": ["news"],
+  "timeRange": "day",
+  "limit": 20
+}
+```
+
+### 研究
+
+```json
+{
+  "query": "气候变化研究论文",
+  "categories": ["science"],
+  "scrapeResults": true,
+  "scrapeOptions": {
+    "formats": ["markdown"],
+    "onlyMainContent": true
+  }
+}
+```
+
+### 竞争分析
+
+```json
+{
+  "query": "site:competitor.com 产品功能",
+  "scrapeResults": true
+}
+```
+
+## 注意事项
+
+- `scrapeResults: true` 会增加响应时间和配额消耗
+- 使用特定类别可提高结果相关性
+- 时间范围过滤有助于找到最新内容

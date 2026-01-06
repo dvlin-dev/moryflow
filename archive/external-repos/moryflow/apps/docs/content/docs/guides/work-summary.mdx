@@ -1,0 +1,290 @@
+---
+title: "Work Summaries with MoryFlow"
+description: "Let Mory transform your daily work logs into professional summaries."
+---
+
+# Work Summaries with MoryFlow
+
+Let Mory transform your daily work logs into professional summaries.
+
+## When to Use This
+
+You need to write work summaries (weekly, monthly, annual) and want to:
+
+- Not miss important work items
+- Clear structure, highlighted key points
+- Quickly generate professional formats
+- Save time
+
+## Preparation
+
+### 1. Build a Logging Habit
+
+During work, jot things down. Doesn't need to be complete—just keywords are fine.
+
+**Work directory structure:**
+```
+Work/
+├── Logs/
+│   ├── 2024-01-15.md
+│   ├── 2024-01-16.md
+│   └── ...
+├── Projects/
+│   ├── ProjectA/
+│   └── ProjectB/
+└── Summaries/
+    ├── Weekly/
+    └── Monthly/
+```
+
+### 2. Daily Log Template
+
+**Example log (2024-01-15.md):**
+```markdown
+# 2024-01-15 Monday
+
+## What I Did Today
+- Completed code review for user management module
+- Fixed 3 bugs (#123, #124, #125)
+- Attended product requirements review meeting
+
+## In Progress
+- Order system refactoring, 60% done
+
+## Issues Encountered
+- Database query performance issue, needs optimization
+
+## Tomorrow's Plan
+- Continue order system refactoring
+- Research performance optimization solutions
+```
+
+## Real Examples
+
+### Weekly Report
+
+**You say:**
+```
+Help me write this week's report, first look at my work logs this week.
+```
+
+**Mory will:**
+```
+OK, let me check this week's records...
+
+[Reading] Work/Logs/2024-01-15.md
+[Reading] Work/Logs/2024-01-16.md
+[Reading] Work/Logs/2024-01-17.md
+[Reading] Work/Logs/2024-01-18.md
+[Reading] Work/Logs/2024-01-19.md
+
+Based on your logs, here's the weekly report:
+
+---
+
+# Weekly Report
+**Name**: XXX
+**Period**: January 15-19, 2024
+
+## I. This Week's Work
+
+### 1. Order System Refactoring (Key Focus)
+- Progress: 60% → 85%
+- Main work:
+  - Completed core order processing logic refactoring
+  - Designed new order state machine
+  - Unit test coverage reached 80%
+- Issue encountered: Database query performance bottleneck
+- Solution: Introduced caching layer, optimized indexes
+
+### 2. Code Quality
+- Completed 5 code reviews
+- Fixed 8 bugs (#123-#130)
+- Helped new team member with technical issues (2 times)
+
+### 3. Meetings
+- Product requirements review (2 times)
+- Technical proposal review (1 time)
+
+## II. Next Week's Plan
+
+1. Complete order system refactoring (remaining 15%)
+2. Deploy performance optimization
+3. Write technical documentation
+
+## III. Support Needed
+
+- Need DBA to review SQL optimization proposal
+
+---
+
+Want me to save this? Or any changes needed?
+```
+
+### Monthly Report
+
+**You say:**
+```
+Help me write the January monthly report. Highlight the wins, suitable for leadership review.
+```
+
+**Mory will:**
+```
+OK, let me compile January's work records...
+
+[Searching] Work/Logs/2024-01-*.md
+[Reading] (all matching files)
+[Reading] Work/Projects/order-system/README.md
+
+Here's your monthly summary:
+
+---
+
+# January Work Report
+
+## Key Highlights
+
+### Order System Refactoring (100% Complete)
+**Background**: Original system had performance bottlenecks, slow response with 100K+ daily orders
+
+**Results**:
+- System response time reduced from 2s to 200ms (**90% improvement**)
+- Capacity increased from 100K to 500K daily orders
+- Code maintainability significantly improved, 85% unit test coverage
+
+**Impact**: Estimated annual server cost savings of **$30,000**
+
+### Bug Fixes & Quality Improvement
+- Fixed **23** production issues, including 2 P0-level
+- Led code reviews **18 times**
+- Drove team coding standards adoption
+
+## Data Overview
+
+| Metric | Value |
+|--------|-------|
+| Code commits | 156 |
+| Bugs fixed | 23 |
+| Code reviews | 18 |
+| Documentation | 5 articles |
+
+## Next Month's Plan
+
+1. Start user system optimization
+2. Push automated test coverage
+3. Complete Q1 technical planning
+
+---
+
+This report emphasizes quantified results and business value—suitable for leadership review. Any adjustments?
+```
+
+### Annual Summary
+
+**You say:**
+```
+It's year-end, help me write an annual summary. Include yearly highlights, growth, and next year's plans.
+```
+
+**Mory will:**
+```
+OK, let me compile the full year's work records...
+
+[Searching] Work/Logs/2024-*.md
+[Searching] Work/Summaries/Monthly/*.md
+[Reading] (reading full year records)
+
+---
+
+# 2024 Annual Work Summary
+
+## I. Key Highlights
+
+### Led Order System Refactoring
+- **Project timeline**: 3 months (Sep-Nov)
+- **Core results**:
+  - 90% performance improvement
+  - 5x capacity increase
+  - $30K annual server cost savings
+- **My contribution**: Technical design, core development, team coordination
+
+### Established Code Review Process
+- Drove team to establish code review standards
+- Completed 200+ reviews throughout the year
+- Significant improvement in team code quality
+
+### Technical Sharing & Mentoring
+- Delivered 6 technical presentations
+- Wrote 20+ technical documents
+- Mentored 3 new hires
+
+## II. Year in Numbers
+
+| Metric | Value | YoY Change |
+|--------|-------|------------|
+| Code commits | 1,856 | +30% |
+| Bugs fixed | 267 | - |
+| Technical docs | 23 | +50% |
+| Tech talks | 6 | +100% |
+
+## III. Personal Growth
+
+### Technical
+- Mastered distributed system design
+- Learned and practiced Domain-Driven Design
+- Significantly improved performance optimization skills
+
+### Soft Skills
+- Better cross-team communication
+- Stronger technical writing and presenting
+- Increased project management awareness
+
+## IV. Areas for Improvement
+
+- Time management could be better
+- Need deeper technical expertise
+- Should focus more on business understanding
+
+## V. 2025 Plans
+
+1. **Technical goal**: Deep dive into cloud-native technologies
+2. **Project goal**: Lead user system upgrade
+3. **Team goal**: Develop 2 technical leads
+4. **Personal goal**: Obtain architecture certification
+
+---
+
+This annual summary has highlights, data, growth, and planning. Any changes needed?
+```
+
+## More Tips
+
+### Comparative Analysis
+
+```
+Compare my output this month vs last month
+```
+
+### Extract Highlights
+
+```
+Find the 3 most report-worthy highlights from this week's work
+```
+
+### Format Conversion
+
+```
+Convert the weekly report to PPT outline format
+```
+
+## Key Takeaways
+
+1. **Log daily**: Even just keywords is better than nothing
+2. **Organize weekly**: Don't wait until year-end to scramble
+3. **Use numbers**: Quantify your work's value
+4. **Emphasize impact**: Focus on effects, not just what you did
+
+## What's Next
+
+- [Building Your Knowledge Base](/docs/guides/knowledge-base) - Turn work experience into knowledge
+- [File Organization](/docs/advanced/file-organization) - Better organize work notes

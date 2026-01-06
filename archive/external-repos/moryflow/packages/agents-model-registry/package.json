@@ -1,0 +1,20 @@
+{
+  "name": "@moryflow/agents-model-registry",
+  "version": "0.1.0",
+  "description": "Shared model and provider registry for agent runtime",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist"
+  ]
+}
