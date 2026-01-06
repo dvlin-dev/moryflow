@@ -1,0 +1,48 @@
+{
+  "name": "@aiget/admin-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@aiget/auth-server": "workspace:*",
+    "@aiget/identity-db": "workspace:*",
+    "@nestjs/common": "^11.1.11",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.11",
+    "@nestjs/platform-express": "^11.1.11",
+    "@prisma/adapter-pg": "^7.2.0",
+    "better-auth": "^1.4.5",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@aiget/eslint-config": "workspace:*",
+    "@aiget/typescript-config": "workspace:*",
+    "@nestjs/cli": "^11.0.6",
+    "@nestjs/schematics": "^11.0.2",
+    "@nestjs/testing": "^11.1.11",
+    "@swc/cli": "^0.6.0",
+    "@swc/core": "^1.11.31",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.15.30",
+    "@vitest/coverage-v8": "^4.0.16",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

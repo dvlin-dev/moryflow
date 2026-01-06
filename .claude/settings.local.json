@@ -35,7 +35,8 @@
       "Bash(pnpm ls:*)",
       "Bash(pnpm run build:agents:*)",
       "Bash(codex --version:*)",
-      "Bash(brew list:*)"
+      "Bash(brew list:*)",
+      "Bash(pnpm --filter @aiget/auth-server typecheck:*)"
     ]
   }
 }

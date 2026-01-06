@@ -20,6 +20,46 @@
 
 ---
 
+## 测试要求（强制）
+
+### 后端测试
+
+1. **单元测试**：使用 Vitest 编写单元测试，覆盖核心业务逻辑
+2. **集成测试**：配合本地 Docker 启动的数据库（PostgreSQL、Redis 等）进行测试
+3. **测试数据库**：使用 `docker-compose` 启动测试环境
+
+```bash
+# 启动测试数据库
+docker compose -f deploy/infra/docker-compose.test.yml up -d
+
+# 运行测试
+pnpm --filter @aiget/admin-server test
+pnpm --filter @aiget/admin-server test:e2e
+```
+
+### 前端测试
+
+1. **单元测试**：使用 Vitest + Testing Library 测试组件和 hooks
+2. **E2E 测试**：使用 **Playwright** 无头浏览器进行端到端测试
+3. **测试覆盖**：核心用户流程必须有 E2E 测试覆盖
+
+```bash
+# 运行单元测试
+pnpm --filter @aiget/admin test
+
+# 运行 Playwright E2E 测试
+pnpm --filter @aiget/admin test:e2e
+```
+
+### 测试环境 Docker Compose
+
+测试用 Docker Compose 文件位于 `deploy/infra/docker-compose.test.yml`，包含：
+
+- PostgreSQL 16（测试数据库）
+- Redis 7（测试缓存）
+
+---
+
 ## 源仓库地址（迁移参考）
 
 以下是正在迁移到此 Monorepo 的原始仓库：

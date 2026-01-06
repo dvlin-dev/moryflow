@@ -1,0 +1,38 @@
+# Aiget 测试环境 - Docker Compose 配置
+# 用于本地单元测试和集成测试
+
+services:
+  # PostgreSQL with pgvector extension
+  postgres-test:
+    image: pgvector/pgvector:pg16
+    container_name: aiget-postgres-test
+    ports:
+      - "5433:5432"  # 使用 5433 避免与本地 PostgreSQL 冲突
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: aiget_test
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data  # 使用内存存储加速测试
+
+  # Redis for caching and session storage
+  redis-test:
+    image: redis:7-alpine
+    container_name: aiget-redis-test
+    ports:
+      - "6380:6379"  # 使用 6380 避免与本地 Redis 冲突
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_test_data:

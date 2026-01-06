@@ -1,0 +1,41 @@
+{
+  "name": "@aiget/identity-db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./generated/prisma/client.mjs",
+  "module": "./generated/prisma/client.mjs",
+  "types": "./generated/prisma/client.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./generated/prisma/client.d.ts",
+        "default": "./generated/prisma/client.mjs"
+      },
+      "require": {
+        "types": "./generated/prisma/client.d.ts",
+        "default": "./generated/prisma/client.cjs"
+      }
+    }
+  },
+  "files": [
+    "generated"
+  ],
+  "scripts": {
+    "build": "echo 'identity-db uses Prisma generated client, no separate build needed'",
+    "lint": "eslint . --max-warnings 0",
+    "clean": "rm -rf generated",
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema=prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.1.0"
+  },
+  "devDependencies": {
+    "@aiget/eslint-config": "workspace:*",
+    "dotenv": "^17.2.3",
+    "prisma": "^7.1.0"
+  }
+}
