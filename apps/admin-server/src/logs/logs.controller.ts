@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { SessionGuard } from '@aiget/auth-server';
+import { JwtGuard } from '@aiget/auth-server';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { LogsService } from './logs.service';
 import { ListLogsQuerySchema } from './dto';
 
 @Controller('admin/logs')
-@UseGuards(SessionGuard, AdminGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class LogsController {
   constructor(private readonly logsService: LogsService) {}
 

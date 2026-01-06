@@ -18,7 +18,10 @@ export const ListUsersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
   tier: SubscriptionTierSchema.optional(),
-  isAdmin: z.coerce.boolean().optional(),
+  isAdmin: z.preprocess(
+    (v) => (v === 'true' ? true : v === 'false' ? false : v),
+    z.boolean().optional()
+  ),
 });
 export type ListUsersQuery = z.infer<typeof ListUsersQuerySchema>;
 

@@ -101,6 +101,7 @@ export const MeResponseSchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string().nullable(),
+  image: z.string().nullable().optional(),
   emailVerified: z.boolean(),
   tier: z.enum(['FREE', 'STARTER', 'PRO', 'MAX']),
   creditBalance: z.number(),

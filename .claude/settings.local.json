@@ -45,7 +45,10 @@
       "Bash(pnpm --filter @aiget/identity-db exec prisma:*)",
       "Bash(IDENTITY_DATABASE_URL=\"postgresql://dummy:dummy@localhost:5432/dummy\" pnpm --filter @aiget/identity-db prisma:generate:*)",
       "Bash(pnpm --filter @aiget/identity-db build:*)",
-      "Bash(pnpm --filter @aiget/admin-server typecheck:*)"
+      "Bash(pnpm --filter @aiget/admin-server typecheck:*)",
+      "Bash(gh pr view:*)",
+      "Bash(pnpm --filter @aiget/admin typecheck:*)",
+      "Bash(git restore:*)"
     ]
   }
 }

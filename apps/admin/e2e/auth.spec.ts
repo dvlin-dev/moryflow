@@ -20,7 +20,7 @@ test.describe('Authentication', () => {
     await page.goto('/login');
 
     // 验证登录表单元素
-    await expect(page.getByRole('heading', { name: /admin login/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /aiget admin/i })).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/password/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();

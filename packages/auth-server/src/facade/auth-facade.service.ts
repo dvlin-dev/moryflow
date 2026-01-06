@@ -76,10 +76,7 @@ export class AuthFacadeService {
   /**
    * 验证邮箱 OTP
    */
-  async verifyEmailOTP(
-    input: VerifyEmailOTPInput,
-    clientType: ClientTypeValue
-  ): Promise<AuthResponse> {
+  async verifyEmailOTP(input: VerifyEmailOTPInput): Promise<AuthResponse> {
     // 调用 Better Auth 验证 OTP
     const result = await this.auth.api.verifyEmailOTP({
       body: {
@@ -95,13 +92,13 @@ export class AuthFacadeService {
     // 获取 access token
     const accessToken = await this.getAccessToken(result.token);
 
-    return await this.buildAuthResponse(result.user, accessToken, clientType, result.token);
+    return await this.buildAuthResponse(result.user, accessToken, result.token);
   }
 
   /**
    * 邮箱密码登录
    */
-  async login(input: LoginInput, clientType: ClientTypeValue): Promise<AuthResponse> {
+  async login(input: LoginInput): Promise<AuthResponse> {
     const result = await this.auth.api.signInEmail({
       body: {
         email: input.email,
@@ -125,7 +122,7 @@ export class AuthFacadeService {
     // 获取 access token
     const accessToken = await this.getAccessToken(result.token);
 
-    return await this.buildAuthResponse(result.user, accessToken, clientType, result.token);
+    return await this.buildAuthResponse(result.user, accessToken, result.token);
   }
 
   /**
@@ -150,7 +147,7 @@ export class AuthFacadeService {
   /**
    * Google OAuth idToken 登录（Native）
    */
-  async googleToken(input: GoogleTokenInput, clientType: ClientTypeValue): Promise<AuthResponse> {
+  async googleToken(input: GoogleTokenInput): Promise<AuthResponse> {
     const result = await this.auth.api.signInSocial({
       body: {
         provider: 'google',
@@ -173,7 +170,7 @@ export class AuthFacadeService {
     // 获取 access token
     const accessToken = await this.getAccessToken(result.token);
 
-    return await this.buildAuthResponse(result.user, accessToken, clientType, result.token);
+    return await this.buildAuthResponse(result.user, accessToken, result.token);
   }
 
   /**
@@ -263,6 +260,7 @@ export class AuthFacadeService {
       id: user.id,
       email: user.email,
       name: user.name,
+      image: user.image,
       emailVerified: user.emailVerified,
       tier: user.tier,
       creditBalance: user.creditBalance,
@@ -284,7 +282,6 @@ export class AuthFacadeService {
   private async buildAuthResponse(
     user: { id: string; email: string; name?: string | null; emailVerified?: boolean },
     accessToken: string,
-    clientType: ClientTypeValue,
     sessionToken?: string
   ): Promise<AuthResponse> {
     // 从数据库获取用户的 tier 和 isAdmin
@@ -305,8 +302,8 @@ export class AuthFacadeService {
       },
     };
 
-    // Native 返回 refresh token
-    if (clientType === 'native' && sessionToken) {
+    // internal: 带上 session token（controller 会在 web 场景剥离）
+    if (sessionToken) {
       response.refreshToken = sessionToken;
     }
 
@@ -317,19 +314,31 @@ export class AuthFacadeService {
    * 获取 Access Token（JWT）
    */
   private async getAccessToken(sessionToken: string): Promise<string> {
-    // 使用 Better Auth 的 token endpoint 获取 JWT
-    // 验证 session 有效性
-    await this.auth.api.getSession({
+    const baseURL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000/api/auth';
+
+    const req = new Request(`${baseURL}/token`, {
+      method: 'GET',
       headers: new Headers({
         cookie: `${AUTH_COOKIE_NAME}=${sessionToken}`,
       }),
     });
 
-    // 从 Better Auth JWT 插件获取 token
-    // 注意：实际实现可能需要调用 /api/auth/token 端点
-    // 这里简化处理，直接使用 session token 作为临时方案
-    // TODO: 实现正确的 JWT token 获取
-    return sessionToken;
+    const res = await this.auth.handler(req);
+    if (!res.ok) {
+      throw new UnauthorizedException('Failed to issue access token');
+    }
+
+    const data = (await res.json().catch(() => null)) as {
+      token?: unknown;
+      accessToken?: unknown;
+    } | null;
+
+    const token = data?.token ?? data?.accessToken;
+    if (typeof token !== 'string' || token.length === 0) {
+      throw new UnauthorizedException('Invalid access token response');
+    }
+
+    return token;
   }
 
   /**
@@ -346,7 +355,7 @@ export class AuthFacadeService {
    */
   createSessionCookieOptions(): {
     name: string;
-    domain: string;
+    domain?: string;
     httpOnly: boolean;
     secure: boolean;
     sameSite: 'lax' | 'strict' | 'none';

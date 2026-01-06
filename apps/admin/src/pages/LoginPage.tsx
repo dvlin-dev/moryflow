@@ -5,16 +5,28 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth';
-import { api } from '@/lib/api';
+import { api, setApiAccessToken } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CurrentAdmin } from '@/types';
 
+type LoginResponse = {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    emailVerified: boolean;
+    tier: 'FREE' | 'STARTER' | 'PRO' | 'MAX';
+    isAdmin: boolean;
+  };
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const setAdmin = useAuthStore((state) => state.setAdmin);
+  const { setAdmin, setAccessToken } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +43,10 @@ export default function LoginPage() {
 
     try {
       // 登录
-      await api.post('/v1/auth/login', { email, password });
+      const result = await api.post<LoginResponse>('/v1/auth/login', { email, password });
+
+      setApiAccessToken(result.accessToken);
+      setAccessToken(result.accessToken);
 
       // 获取当前用户信息
       const user = await api.get<CurrentAdmin>('/v1/auth/me');
@@ -39,6 +54,8 @@ export default function LoginPage() {
       if (!user.isAdmin) {
         toast.error('Access denied. Admin privileges required.');
         await api.post('/v1/auth/logout');
+        setApiAccessToken(null);
+        setAccessToken(null);
         setIsLoading(false);
         return;
       }
@@ -47,6 +64,8 @@ export default function LoginPage() {
       toast.success('Login successful');
       navigate('/');
     } catch (error) {
+      setApiAccessToken(null);
+      setAccessToken(null);
       const message = error instanceof Error ? error.message : 'Login failed';
       toast.error(message);
     } finally {

@@ -10,6 +10,8 @@ import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import type { Auth } from '../better-auth';
 import { AUTH_INSTANCE } from './session.guard';
+import type { PrismaClient } from '@aiget/identity-db';
+import { IDENTITY_PRISMA } from '../facade/auth-facade.service';
 
 /**
  * JWT Access Token Guard
@@ -19,7 +21,10 @@ import { AUTH_INSTANCE } from './session.guard';
  */
 @Injectable()
 export class JwtGuard implements CanActivate {
-  constructor(@Inject(AUTH_INSTANCE) private readonly auth: Auth) {}
+  constructor(
+    @Inject(AUTH_INSTANCE) private readonly auth: Auth,
+    @Inject(IDENTITY_PRISMA) private readonly prisma: PrismaClient
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -36,27 +41,44 @@ export class JwtGuard implements CanActivate {
     }
 
     try {
-      // 使用 Better Auth JWT 插件验证 token
-      // 注意：这里需要使用 Better Auth 的 JWT 验证方法
-      const result = await this.auth.api.getSession({
-        headers: new Headers({
-          authorization: `Bearer ${accessToken}`,
-        }),
+      // 先用 Better Auth JWT 插件验证 token，再从 DB hydrate 用户（isAdmin/tier/credits 等）
+      const verified = await this.auth.api.verifyJWT({
+        body: { token: accessToken },
       });
 
-      if (!result?.user) {
+      const userId = verified?.payload?.sub;
+      if (typeof userId !== 'string' || userId.length === 0) {
+        throw new UnauthorizedException('Invalid access token');
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+          emailVerified: true,
+          tier: true,
+          creditBalance: true,
+          isAdmin: true,
+          deletedAt: true,
+        },
+      });
+
+      if (!user || user.deletedAt) {
         throw new UnauthorizedException('Invalid access token');
       }
 
       // 将用户信息附加到请求
       request.user = {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        emailVerified: result.user.emailVerified,
-        tier: (result.user as { tier?: string }).tier ?? 'FREE',
-        creditBalance: (result.user as { creditBalance?: number }).creditBalance ?? 0,
-        isAdmin: (result.user as { isAdmin?: boolean }).isAdmin ?? false,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        tier: user.tier,
+        creditBalance: user.creditBalance,
+        isAdmin: user.isAdmin,
       };
 
       return true;

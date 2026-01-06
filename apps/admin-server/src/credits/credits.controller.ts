@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { SessionGuard } from '@aiget/auth-server';
+import { JwtGuard } from '@aiget/auth-server';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { CreditsService } from './credits.service';
 import { ListCreditsQuerySchema } from './dto';
 
 @Controller('admin/credits')
-@UseGuards(SessionGuard, AdminGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class CreditsController {
   constructor(private readonly creditsService: CreditsService) {}
 

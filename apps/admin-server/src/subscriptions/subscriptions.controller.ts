@@ -5,13 +5,13 @@
  */
 
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { SessionGuard } from '@aiget/auth-server';
+import { JwtGuard } from '@aiget/auth-server';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { SubscriptionsService } from './subscriptions.service';
 import { ListSubscriptionsQuerySchema } from './dto';
 
 @Controller('admin/subscriptions')
-@UseGuards(SessionGuard, AdminGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 

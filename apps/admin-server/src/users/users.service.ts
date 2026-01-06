@@ -178,54 +178,56 @@ export class UsersService {
     input: GrantCreditsInput,
     admin: RequestUser
   ): Promise<UserDetail> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, creditBalance: true },
+      });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-    const oldBalance = user.creditBalance;
-    const newBalance = oldBalance + input.amount;
+      const oldBalance = user.creditBalance;
 
-    // 更新用户积分余额
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { creditBalance: newBalance },
-    });
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { creditBalance: { increment: input.amount } },
+        select: { creditBalance: true },
+      });
 
-    // 创建积分流水记录
-    await this.prisma.creditTransaction.create({
-      data: {
-        userId,
-        type: 'BONUS',
-        amount: input.amount,
-        balance: newBalance,
-        reason: input.reason,
-        metadata: {
-          grantedBy: admin.id,
-          grantedByEmail: admin.email,
-        },
-      },
-    });
-
-    // 记录管理日志
-    await this.prisma.adminLog.create({
-      data: {
-        adminId: admin.id,
-        adminEmail: admin.email,
-        targetUserId: userId,
-        targetUserEmail: user.email,
-        action: 'GRANT_CREDITS',
-        level: 'INFO',
-        details: {
+      // 创建积分流水记录（balance 使用事务内的最新值，避免并发丢更新）
+      await tx.creditTransaction.create({
+        data: {
+          userId,
+          type: 'BONUS',
           amount: input.amount,
-          oldBalance,
-          newBalance,
+          balance: updated.creditBalance,
           reason: input.reason,
+          metadata: {
+            grantedBy: admin.id,
+            grantedByEmail: admin.email,
+          },
         },
-      },
+      });
+
+      // 记录管理日志
+      await tx.adminLog.create({
+        data: {
+          adminId: admin.id,
+          adminEmail: admin.email,
+          targetUserId: userId,
+          targetUserEmail: user.email,
+          action: 'GRANT_CREDITS',
+          level: 'INFO',
+          details: {
+            amount: input.amount,
+            oldBalance,
+            newBalance: updated.creditBalance,
+            reason: input.reason,
+          },
+        },
+      });
     });
 
     return this.getUserById(userId);

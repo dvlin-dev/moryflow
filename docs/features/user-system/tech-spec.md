@@ -246,6 +246,9 @@ PostgreSQL Database: aiget
 
 ## 1. 最终形态（你要搭建出来的“东西”）
 
+> **MVP 范围（本次实现）**：只闭环 Email + OTP（register / verify-email-otp / login / refresh / logout / me）。
+> Google OAuth（`google/start`、`google/token`）属于后续迭代，本阶段不要求上线可用。
+
 ### 1.1 统一的入口
 
 对每个产品域名都提供同一套认证 API：
@@ -671,8 +674,8 @@ Facade 就是为了解决这个差异。
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/verify-email-otp`
 - `POST /api/v1/auth/login`
-- `POST /api/v1/auth/google/start`（web）
-- `POST /api/v1/auth/google/token`（native：idToken）
+- `POST /api/v1/auth/google/start`（web，规划中）
+- `POST /api/v1/auth/google/token`（native：idToken，规划中）
 - `POST /api/v1/auth/refresh`（refresh rotation + 返回 access）
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`

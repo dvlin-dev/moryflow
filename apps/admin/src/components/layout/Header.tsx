@@ -3,7 +3,7 @@
  */
 import { LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
-import { api } from '@/lib/api';
+import { api, setApiAccessToken } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
@@ -15,6 +15,7 @@ export function Header() {
     } catch {
       // 忽略错误
     }
+    setApiAccessToken(null);
     logout();
   };
 

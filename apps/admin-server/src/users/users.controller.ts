@@ -18,7 +18,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { SessionGuard, CurrentUser, type RequestUser } from '@aiget/auth-server';
+import { JwtGuard, CurrentUser, type RequestUser } from '@aiget/auth-server';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { UsersService } from './users.service';
 import {
@@ -30,7 +30,7 @@ import {
 } from './dto';
 
 @Controller('admin/users')
-@UseGuards(SessionGuard, AdminGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

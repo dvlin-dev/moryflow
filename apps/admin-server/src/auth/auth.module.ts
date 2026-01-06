@@ -6,13 +6,14 @@
  * [PROTOCOL]: 本文件变更时，需同步更新 CLAUDE.md
  */
 
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import {
   AuthFacadeController,
   AuthFacadeService,
   createBetterAuth,
   AUTH_INSTANCE,
   IDENTITY_PRISMA as AUTH_IDENTITY_PRISMA,
+  JwtGuard,
 } from '@aiget/auth-server';
 import { PrismaClient } from '@aiget/identity-db';
 import { IDENTITY_PRISMA } from '../prisma/prisma.module';
@@ -36,10 +37,12 @@ function createAuthInstance(prisma: PrismaClient) {
   return authInstance;
 }
 
+@Global()
 @Module({
   controllers: [AuthFacadeController],
   providers: [
     AuthFacadeService,
+    JwtGuard,
     {
       provide: AUTH_INSTANCE,
       useFactory: (prisma: PrismaClient) => createAuthInstance(prisma),
@@ -50,5 +53,6 @@ function createAuthInstance(prisma: PrismaClient) {
       useExisting: IDENTITY_PRISMA,
     },
   ],
+  exports: [AUTH_INSTANCE, AUTH_IDENTITY_PRISMA, JwtGuard],
 })
 export class AuthModule {}

@@ -30,7 +30,7 @@ UIP（Unified Identity Platform）是 Aiget 平台的“统一用户系统 + 统
   - 主应用：`moryflow.aiget.dev`
   - 发布站：`moryflow.app`（Cloudflare Worker + R2，按 `*.moryflow.app` 映射）
 - API：同域名同 origin（避免 CORS）：
-  - `https://{product}.aiget.dev/v1/...`
+  - `https://{product}.aiget.dev/api/v1/...`（各服务 `app.setGlobalPrefix('api')`）
 - Token：
   - `accessTokenTtl=6h`
   - `refreshTokenTtl=90d`
@@ -39,7 +39,7 @@ UIP（Unified Identity Platform）是 Aiget 平台的“统一用户系统 + 统
   - Electron/RN：refreshToken 存 Secure Storage；accessToken 存内存
 - 订阅等级：`FREE/STARTER/PRO/MAX`（无企业版；如需仅做前端展示与私聊，不落真实订阅）
 - 数据库：共享 Postgres，schema 隔离（identity/billing/各产品 schema）
-- 支付：Creem；Webhook 走 `https://{product}.aiget.dev/v1/webhooks/payments` → 网关 → UIP（网关到 UIP 走 Tailscale）
+- 支付：Creem；Webhook 走 `https://{product}.aiget.dev/api/v1/webhooks/payments` → 网关 → UIP（网关到 UIP 走 Tailscale）
 - 账号合并：以 `email` 为唯一用户键；Google OAuth 登录若 email 已存在则绑定到同一 user
 
 ## 文档拆分

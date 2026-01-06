@@ -8,14 +8,14 @@ Aiget 统一管理后台的后端服务，为 admin.aiget.dev 提供 API 支持�
 
 ## 职责
 
-- 提供管理员认证（基于 Better Auth Session）
+- 提供管理员认证（Access Token / JWT）
 - 提供用户管理 API（查询、设置等级、发放积分）
 - 提供订阅、订单、积分管理 API
 - 提供统计和管理日志 API
 
 ## 约束
 
-- 所有 API 需要管理员权限（SessionGuard + AdminGuard）
+- 所有 API 需要管理员权限（JwtGuard + AdminGuard）
 - 只读访问 identity schema 数据
 - 写操作需记录到 AdminLog
 
@@ -178,8 +178,8 @@ pnpm --filter @aiget/admin-server test:watch
 
 ## 认证流程
 
-1. 管理员通过 `/api/v1/auth/login` 登录（Better Auth Session）
-2. Session Token 存入 HttpOnly Cookie（Domain=.aiget.dev）
-3. 后续请求自动携带 Cookie
-4. SessionGuard 验证 Session 有效性
-5. AdminGuard 检查 `user.isAdmin === true`
+1. 管理员通过 `/api/v1/auth/login` 登录
+2. 服务端写入 refresh cookie（Web），并返回 `accessToken`（JWT）
+3. 前端把 `accessToken` 存内存，并在后续请求带 `Authorization: Bearer <accessToken>`
+4. access 过期时，前端调用 `/api/v1/auth/refresh`（浏览器自动带 refresh cookie）换新 access（refresh rotation 开启）
+5. JwtGuard 校验 access token，AdminGuard 检查 `user.isAdmin === true`

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AdminGuard } from '../admin.guard';
 import { createMockExecutionContext } from '../../../../test/helpers/mock.factory';
 
@@ -33,17 +33,17 @@ describe('AdminGuard', () => {
     expect(() => guard.canActivate(context as any)).toThrow('Admin access required');
   });
 
-  it('should throw ForbiddenException when no user is present', () => {
+  it('should throw UnauthorizedException when no user is present', () => {
     const context = createMockExecutionContext({});
 
-    expect(() => guard.canActivate(context as any)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context as any)).toThrow(UnauthorizedException);
     expect(() => guard.canActivate(context as any)).toThrow('Authentication required');
   });
 
-  it('should throw ForbiddenException when user is undefined', () => {
+  it('should throw UnauthorizedException when user is undefined', () => {
     const context = createMockExecutionContext({ user: undefined });
 
-    expect(() => guard.canActivate(context as any)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context as any)).toThrow(UnauthorizedException);
     expect(() => guard.canActivate(context as any)).toThrow('Authentication required');
   });
 });

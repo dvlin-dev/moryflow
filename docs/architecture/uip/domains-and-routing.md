@@ -23,23 +23,22 @@ status: active
 
 所有产品统一：
 
-- API base：`https://{product}.aiget.dev/v1`
+- API base：`https://{product}.aiget.dev/api/v1`（各服务 `app.setGlobalPrefix('api')`）
 - 浏览器端只请求同源 API（不做跨域 CORS 方案）
 
 ## 网关转发（固定）
 
 每个产品在 `{product}.aiget.dev` 前置 Nginx，按路径转发：
 
-- `/v1/auth/*` → UIP
-- `/v1/users/*` → UIP
-- `/v1/subscriptions/*` → UIP
-- `/v1/wallet/*` → UIP
-- `/v1/entitlements/*` → UIP
-- `/v1/payments/*` → UIP
-- `/v1/webhooks/*` → UIP
-- 其它 `/v1/*` → 产品业务服务
+- `/api/v1/auth/*` → UIP
+- `/api/v1/users/*` → UIP
+- `/api/v1/subscriptions/*` → UIP
+- `/api/v1/wallet/*` → UIP
+- `/api/v1/entitlements/*` → UIP
+- `/api/v1/payments/*` → UIP
+- `/api/v1/webhooks/*` → UIP
+- 其它 `/api/v1/*` → 产品业务服务
 
 Nginx 必须为转发到 UIP 的请求注入并固定校验的产品标识：
 
 - `X-Aiget-Product: moryflow|fetchx|memox|...`
-

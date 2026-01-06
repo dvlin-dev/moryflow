@@ -127,6 +127,7 @@ pnpm --filter @aiget/admin test:e2e:debug
 认证流程：
 
 1. 管理员通过 `/api/v1/auth/login` 登录
-2. Cookie 自动存储在浏览器
-3. 后续请求自动携带 Cookie（credentials: 'include'）
-4. 需要验证 `isAdmin === true`
+2. 服务端写入 refresh cookie（Web），并返回 `accessToken`（JWT）
+3. 前端把 `accessToken` 存内存，并在后续请求带 `Authorization: Bearer <accessToken>`
+4. access 过期时调用 `/api/v1/auth/refresh`（浏览器自动带 refresh cookie）换新 access（refresh rotation 开启）
+5. 需要验证 `isAdmin === true`

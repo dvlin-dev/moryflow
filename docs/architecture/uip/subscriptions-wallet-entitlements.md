@@ -32,7 +32,7 @@ status: active
 
 ### 扣减（固定）
 
-- 产品服务在执行计费动作前调用：`POST /v1/wallet/deduct`
+- 产品服务在执行计费动作前调用：`POST /api/v1/wallet/deduct`
 - 必须携带：
   - `userId`
   - `amount`
@@ -42,6 +42,5 @@ status: active
 
 ## 权益（固定）
 
-- 产品服务调用：`POST /v1/entitlements/check`
+- 产品服务调用：`POST /api/v1/entitlements/check`
 - UIP 返回：是否允许 + 限制参数（并发/容量/速率等）
-

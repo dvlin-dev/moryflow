@@ -11,18 +11,38 @@ async function mockAuthenticatedUser(page: Page) {
     // 模拟 Zustand auth store 的持久化状态
     const authState = {
       state: {
-        user: {
+        admin: {
           id: 'test-admin-id',
           email: 'admin@example.com',
           name: 'Test Admin',
           isAdmin: true,
         },
         isAuthenticated: true,
-        isLoading: false,
       },
       version: 0,
     };
     localStorage.setItem('admin-auth', JSON.stringify(authState));
+  });
+
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ accessToken: 'test-access-token' }),
+    });
+  });
+
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'test-admin-id',
+        email: 'admin@example.com',
+        name: 'Test Admin',
+        isAdmin: true,
+      }),
+    });
   });
 }
 

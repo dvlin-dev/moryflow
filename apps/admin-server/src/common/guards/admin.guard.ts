@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，需同步更新 CLAUDE.md
  */
 
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import type { RequestUser } from '@aiget/auth-server';
 
@@ -23,7 +23,7 @@ export class AdminGuard implements CanActivate {
     const user = request.user as RequestUser | undefined;
 
     if (!user) {
-      throw new ForbiddenException('Authentication required');
+      throw new UnauthorizedException('Authentication required');
     }
 
     if (!user.isAdmin) {

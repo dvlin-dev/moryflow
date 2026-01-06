@@ -10,9 +10,11 @@ import type { CurrentAdmin } from '@/types';
 
 interface AuthState {
   admin: CurrentAdmin | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   setAdmin: (admin: CurrentAdmin | null) => void;
+  setAccessToken: (accessToken: string | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
 }
@@ -21,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       admin: null,
+      accessToken: null,
       isAuthenticated: false,
       isLoading: true,
       setAdmin: (admin) =>
@@ -29,10 +32,12 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: !!admin,
           isLoading: false,
         }),
+      setAccessToken: (accessToken) => set({ accessToken }),
       setLoading: (isLoading) => set({ isLoading }),
       logout: () =>
         set({
           admin: null,
+          accessToken: null,
           isAuthenticated: false,
           isLoading: false,
         }),

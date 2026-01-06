@@ -15,7 +15,7 @@ status: active
 
 ## Checkout（固定）
 
-- `{product}.aiget.dev` 定价页调用：`POST /v1/payments/checkout`
+- `{product}.aiget.dev` 定价页调用：`POST /api/v1/payments/checkout`
 - UIP 创建 Creem checkout，并在 metadata 记录：
   - `userId`
   - `product`
@@ -23,7 +23,7 @@ status: active
 
 ## Webhook（固定）
 
-- Creem 回调：`POST https://{product}.aiget.dev/v1/webhooks/payments`
+- Creem 回调：`POST https://{product}.aiget.dev/api/v1/webhooks/payments`
 - 产品网关转发到 UIP（网关到 UIP 走 Tailscale）
 
 UIP webhook 处理必须：
@@ -33,4 +33,3 @@ UIP webhook 处理必须：
   - 更新订阅状态
   - 发放订阅/购买积分
   - 写入钱包账本
-

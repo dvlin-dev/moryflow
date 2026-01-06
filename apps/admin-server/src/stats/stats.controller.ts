@@ -1,10 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { SessionGuard } from '@aiget/auth-server';
+import { JwtGuard } from '@aiget/auth-server';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { StatsService } from './stats.service';
 
 @Controller('admin/stats')
-@UseGuards(SessionGuard, AdminGuard)
+@UseGuards(JwtGuard, AdminGuard)
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 

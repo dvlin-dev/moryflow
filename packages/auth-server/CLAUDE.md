@@ -36,16 +36,16 @@ Aiget 统一身份平台的服务端认证核心，为所有产品提供统一�
 
 ## API 路由
 
-| 方法 | 路径                            | 说明                |
-| ---- | ------------------------------- | ------------------- |
-| POST | `/api/v1/auth/register`         | 注册                |
-| POST | `/api/v1/auth/verify-email-otp` | 验证邮箱 OTP        |
-| POST | `/api/v1/auth/login`            | 登录                |
-| POST | `/api/v1/auth/google/start`     | Google OAuth 启动   |
-| POST | `/api/v1/auth/google/token`     | Google idToken 登录 |
-| POST | `/api/v1/auth/refresh`          | 刷新 Token          |
-| POST | `/api/v1/auth/logout`           | 登出                |
-| GET  | `/api/v1/auth/me`               | 当前用户信息        |
+| 方法 | 路径                            | 说明                          |
+| ---- | ------------------------------- | ----------------------------- |
+| POST | `/api/v1/auth/register`         | 注册                          |
+| POST | `/api/v1/auth/verify-email-otp` | 验证邮箱 OTP                  |
+| POST | `/api/v1/auth/login`            | 登录                          |
+| POST | `/api/v1/auth/google/start`     | Google OAuth 启动（规划中）   |
+| POST | `/api/v1/auth/google/token`     | Google idToken 登录（规划中） |
+| POST | `/api/v1/auth/refresh`          | 刷新 Token                    |
+| POST | `/api/v1/auth/logout`           | 登出                          |
+| GET  | `/api/v1/auth/me`               | 当前用户信息                  |
 
 ## 使用方式
 
@@ -125,6 +125,9 @@ BETTER_AUTH_SECRET=your-secret-key-at-least-32-characters
 # Better Auth URL（各产品不同）
 BETTER_AUTH_URL=https://moryflow.aiget.dev/api/auth
 
+# Cookie Domain（生产环境建议 .aiget.dev；本地可不设）
+COOKIE_DOMAIN=.aiget.dev
+
 # 信任的来源（逗号分隔）
 TRUSTED_ORIGINS=https://moryflow.aiget.dev,https://console.aiget.dev
 
@@ -138,7 +141,7 @@ GOOGLE_CLIENT_SECRET=xxx
 | Token 类型    | 存储位置（Web） | 存储位置（Native） | TTL    |
 | ------------- | --------------- | ------------------ | ------ |
 | Refresh Token | HttpOnly Cookie | Secure Storage     | 90 天  |
-| Access Token  | 内存            | 内存               | 6 小时 |
+| Access Token  | 内存（Bearer）  | 内存（Bearer）     | 6 小时 |
 
 ## X-Client-Type Header
 

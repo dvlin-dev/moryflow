@@ -30,43 +30,48 @@ status: active
 
 ## 服务形态（如何“复用但不复杂”）
 
-- **建议形态**：每个产品的 Server 都提供同一套 `/v1/auth/*` 路由，但底层复用同一份 `@aiget/auth` 代码与同一个 `identity` schema。
+- **建议形态**：每个产品的 Server 都提供同一套 `/api/v1/auth/*` 路由，但底层复用同一份 `@aiget/auth-server` 代码与同一个 `identity` schema。
   - 优点：同域名同 origin（`https://{product}.aiget.dev`），Web 不需要额外 CORS/反向代理。
   - 结果：用户在 `moryflow.aiget.dev` 登录后，`Domain=.aiget.dev` 的 refresh cookie 也能被 `fetchx.aiget.dev` 使用，从而“免重复登录”。
 
 ## 统一接口规范（v1）
 
-> 这些路由在每个产品域名下保持一致：`https://{product}.aiget.dev/v1/auth/*`
+> 这些路由在每个产品域名下保持一致：`https://{product}.aiget.dev/api/v1/auth/*`
 
-- `POST /v1/auth/register`
-  - 输入：email、password、verifyCode（邮箱验证码）
+- `POST /api/v1/auth/register`
+  - 输入：name、email、password
+  - 输出：返回 `next=VERIFY_EMAIL_OTP`（注册后需要验证码完成登录态建立）
+- `POST /api/v1/auth/verify-email-otp`
+  - 输入：email、otp
   - 输出：设置 refresh cookie（Web）或返回 refresh token（原生），并返回 access token
-- `POST /v1/auth/login`
+- `POST /api/v1/auth/login`
   - 输入：email、password
   - 输出：同上
-- `POST /v1/auth/google/start` 与 `GET /v1/auth/google/callback`
-  - 行为：Google OAuth；callback 后与 email 对齐并绑定到同一 User
-- `POST /v1/auth/refresh`
+- `POST /api/v1/auth/google/start`（规划中）
+  - 行为：Google OAuth（Web）
+- `POST /api/v1/auth/google/token`（规划中）
+  - 行为：Google OAuth（Native）；使用 Google idToken 直接登录
+- `POST /api/v1/auth/refresh`
   - 行为：校验 refresh token → 轮换（rotation）→ 发新 access token（+ 新 refresh）
-- `POST /v1/auth/logout`
+- `POST /api/v1/auth/logout`
   - 行为：失效当前 session/refresh；清理 Web refresh cookie
-- `GET /v1/auth/me`
-  - 行为：返回当前用户（需 access token）
+- `GET /api/v1/auth/me`
+  - 行为：返回当前用户（需已登录；Web 用 refresh cookie，原生用 Bearer token）
 
 ## 核心流程
 
 ### 1) 邮箱注册（必须验证码）
 
-1. `POST /v1/auth/register`（携带邮箱验证码）
-2. 创建 `identity.user` + `identity.profile`
+1. `POST /api/v1/auth/register`（创建用户，进入验证码验证阶段）
+2. 用户输入 OTP → `POST /api/v1/auth/verify-email-otp`
 3. 创建 `identity.session`
-4. 下发 token
+4. 下发 token（refresh rotation 开启）
    - Web：写入 refresh `HttpOnly Cookie`（`Domain=.aiget.dev`）；返回 access token
    - 原生：返回 refresh token + access token（由客户端写入 Secure Storage/内存）
 
 ### 2) 邮箱登录
 
-1. `POST /v1/auth/login`
+1. `POST /api/v1/auth/login`
 2. 校验密码 → 创建/更新 session → 下发 token（同上）
 
 ### 3) Google 登录（账号合并）
@@ -79,13 +84,13 @@ status: active
 
 - `refreshToken` cookie 的 `Domain=.aiget.dev` 让浏览器在访问 `fetchx.aiget.dev` 时也会带上同一个 refresh token。
 - 应用启动时：
-  1. 前端调用 `POST /v1/auth/refresh`（无需显式携带 refresh，浏览器自动带 cookie）
+  1. 前端调用 `POST /api/v1/auth/refresh`（无需显式携带 refresh，浏览器自动带 cookie）
   2. 服务器轮换 refresh → 返回 access token
   3. 前端把 access token 放内存，之后所有 API 请求 `Authorization: Bearer <access>`
 
 ### 5) 原生端免登录
 
-- App 启动从 Secure Storage 取 refresh token，走 `POST /v1/auth/refresh` 换取新 access（并轮换 refresh）。
+- App 启动从 Secure Storage 取 refresh token，走 `POST /api/v1/auth/refresh` 换取新 access（并轮换 refresh）。
 
 ## 安全约束（必须）
 

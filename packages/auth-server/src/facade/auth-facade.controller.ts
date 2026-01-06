@@ -16,10 +16,12 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { AuthFacadeService } from './auth-facade.service';
-import { SessionGuard } from '../guards/session.guard';
+import { JwtGuard } from '../guards/jwt.guard';
 import { CurrentUser, type RequestUser } from '../decorators/current-user.decorator';
 import { ClientType, type ClientTypeValue } from '../decorators/client-type.decorator';
 import { AUTH_COOKIE_NAME } from '../constants';
@@ -64,7 +66,7 @@ export class AuthFacadeController {
     @ClientType() clientType: ClientTypeValue,
     @Res({ passthrough: true }) res: Response
   ) {
-    const result = await this.authFacadeService.verifyEmailOTP(body, clientType);
+    const result = await this.authFacadeService.verifyEmailOTP(body);
 
     // Web: 设置 session cookie（不返回 refreshToken）
     if (clientType === 'web' && result.refreshToken) {
@@ -88,7 +90,7 @@ export class AuthFacadeController {
     @ClientType() clientType: ClientTypeValue,
     @Res({ passthrough: true }) res: Response
   ) {
-    const result = await this.authFacadeService.login(body, clientType);
+    const result = await this.authFacadeService.login(body);
 
     // Web: 设置 session cookie（不返回 refreshToken）
     if (clientType === 'web' && result.refreshToken) {
@@ -121,7 +123,7 @@ export class AuthFacadeController {
     @ClientType() clientType: ClientTypeValue,
     @Res({ passthrough: true }) res: Response
   ) {
-    const result = await this.authFacadeService.googleToken(body, clientType);
+    const result = await this.authFacadeService.googleToken(body);
 
     // Web: 设置 session cookie
     if (clientType === 'web' && result.refreshToken) {
@@ -147,15 +149,12 @@ export class AuthFacadeController {
     @ClientType() clientType: ClientTypeValue,
     @Res({ passthrough: true }) res: Response
   ) {
+    this.enforceWebCsrf(req, clientType);
+
     const sessionToken = this.extractRefreshToken(req, clientType);
 
     if (!sessionToken) {
-      return {
-        error: {
-          code: 'NO_REFRESH_TOKEN',
-          message: 'No refresh token provided',
-        },
-      };
+      throw new UnauthorizedException('No refresh token provided');
     }
 
     const result = await this.authFacadeService.refresh(sessionToken, clientType);
@@ -181,6 +180,8 @@ export class AuthFacadeController {
     @ClientType() clientType: ClientTypeValue,
     @Res({ passthrough: true }) res: Response
   ) {
+    this.enforceWebCsrf(req, clientType);
+
     const sessionToken = this.extractRefreshToken(req, clientType);
 
     if (sessionToken) {
@@ -200,7 +201,7 @@ export class AuthFacadeController {
    * 需要 access token（JWT）
    */
   @Get('me')
-  @UseGuards(SessionGuard)
+  @UseGuards(JwtGuard)
   async me(@CurrentUser() user: RequestUser) {
     return this.authFacadeService.me(user.id);
   }
@@ -249,5 +250,32 @@ export class AuthFacadeController {
       secure: options.secure,
       sameSite: options.sameSite,
     });
+  }
+
+  /**
+   * Web Cookie 模式下的 CSRF 防护（refresh/logout）
+   */
+  private enforceWebCsrf(req: Request, clientType: ClientTypeValue): void {
+    if (clientType !== 'web') return;
+
+    const contentType = req.headers['content-type'];
+    if (typeof contentType !== 'string' || !contentType.includes('application/json')) {
+      throw new ForbiddenException('Invalid content type');
+    }
+
+    const origin = req.headers.origin;
+    if (typeof origin !== 'string' || origin.length === 0) {
+      throw new ForbiddenException('Origin required');
+    }
+
+    const trustedOrigins = process.env.TRUSTED_ORIGINS?.split(',').filter(Boolean) ?? [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
+
+    if (!trustedOrigins.includes(origin) && !origin.endsWith('.aiget.dev')) {
+      throw new ForbiddenException('Untrusted origin');
+    }
   }
 }

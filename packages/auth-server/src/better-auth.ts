@@ -7,7 +7,7 @@
  */
 
 import { betterAuth, APIError } from 'better-auth';
-import { bearer, jwt, emailOTP } from 'better-auth/plugins';
+import { jwt, emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { PrismaClient } from '@aiget/identity-db';
 import {
@@ -57,7 +57,6 @@ export interface CreateBetterAuthOptions {
  * - Session TTL = 90 天
  * - Access JWT TTL = 6 小时
  * - Email OTP 验证码注册
- * - Bearer Token 支持（移动端/API）
  * - Google OAuth 支持
  */
 export function createBetterAuth(
@@ -81,9 +80,6 @@ export function createBetterAuth(
 
   // 基础插件
   const plugins = [
-    // Bearer Token 插件：支持 Authorization: Bearer <token>
-    bearer(),
-
     // JWT 插件：生成 Access Token
     jwt({
       jwt: {
@@ -129,10 +125,14 @@ export function createBetterAuth(
 
     // 跨子域 Cookie 配置
     advanced: {
-      crossSubDomainCookies: {
-        enabled: true,
-        domain: COOKIE_DOMAIN,
-      },
+      ...(COOKIE_DOMAIN
+        ? {
+            crossSubDomainCookies: {
+              enabled: true,
+              domain: COOKIE_DOMAIN,
+            },
+          }
+        : {}),
       // 允许无 Origin 的请求（移动端需要）
       disableCSRFCheck: process.env.NODE_ENV !== 'production',
     },

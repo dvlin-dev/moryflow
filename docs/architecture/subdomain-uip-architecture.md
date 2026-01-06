@@ -60,7 +60,7 @@ status: active
 **统一约定：API 与 Web 同域**：
 
 - Web：`https://{product}.aiget.dev`
-- API：`https://{product}.aiget.dev/v1/...`
+- API：`https://{product}.aiget.dev/api/v1/...`（各服务 `app.setGlobalPrefix('api')`）
 
 收益（直接减少运维与前端复杂度）：
 
@@ -97,16 +97,16 @@ UIP 不承载产品业务逻辑；产品业务只通过 UIP API 读写身份与�
 
 ## 路由分发（固定规则）
 
-在 `https://{product}.aiget.dev`：
+在 `https://{product}.aiget.dev`（对外统一前缀为 `/api/v1`）：
 
-- `/v1/auth/*` → UIP
-- `/v1/users/*` → UIP
-- `/v1/wallet/*` → UIP
-- `/v1/subscriptions/*` → UIP
-- `/v1/entitlements/*` → UIP
-- `/v1/payments/*` → UIP
-- `/v1/webhooks/*` → UIP（支付回调/邮件回调等）
-- `/v1/*`（其它）→ 产品业务服务
+- `/api/v1/auth/*` → UIP
+- `/api/v1/users/*` → UIP
+- `/api/v1/wallet/*` → UIP
+- `/api/v1/subscriptions/*` → UIP
+- `/api/v1/entitlements/*` → UIP
+- `/api/v1/payments/*` → UIP
+- `/api/v1/webhooks/*` → UIP（支付回调/邮件回调等）
+- `/api/v1/*`（其它）→ 产品业务服务
 
 网关必须向 UIP 注入并由 UIP 校验的“产品标识”，用于多品牌配置选择（邮件模板、OAuth 回调、费率/计划展示等）：
 
@@ -137,8 +137,11 @@ UIP 不承载产品业务逻辑；产品业务只通过 UIP API 读写身份与�
 
 1. 正常业务请求只带 `accessToken`
 2. `accessToken` 过期/收到 `401 token_expired`：
-   - 调用 `POST /v1/auth/refresh`
-   - 成功后更新内存中的 `accessToken`（同时更新 refreshToken：Web 写 Cookie；Electron/RN 写 Secure Storage）
+
+- 调用 `POST /v1/auth/refresh`
+  - 调用 `POST /api/v1/auth/refresh`
+  - 成功后更新内存中的 `accessToken`（同时更新 refreshToken：Web 写 Cookie；Electron/RN 写 Secure Storage）
+
 3. 自动重放原请求（只重试一次）
 
 ### Web（SPA）刷新请求的安全约束（UIP 必须做）
@@ -154,10 +157,12 @@ UIP 不承载产品业务逻辑；产品业务只通过 UIP API 读写身份与�
 - 邮箱验证码：`/v1/auth/email/start` → 发码；`/v1/auth/email/verify` → 建立会话
 - 密码：`/v1/auth/password/login`
 - Google OAuth：`/v1/auth/oauth/google` 与回调 `/v1/auth/oauth/google/callback`（每个 `{product}.aiget.dev` 都是一条回调 URL，统一由 UIP 处理）
+  （对外路径统一为 `/api/v1/...`，上述示例中的 `/v1` 统一替换为 `/api/v1`）
 
 ### 产品服务端如何验证 Token（两种方式）
 
 - UIP 提供 JWKS：`GET /v1/auth/jwks`
+- UIP 提供 JWKS：`GET /api/v1/auth/jwks`
 - 各产品服务离线验签 JWT（缓存 JWKS，按 `kid` 自动更新）
 
 ## 计费与权益（统一到 UIP）
@@ -165,6 +170,7 @@ UIP 不承载产品业务逻辑；产品业务只通过 UIP API 读写身份与�
 ### 钱包扣减（强制幂等）
 
 - 产品业务服务在执行计费动作前调用：`POST /v1/wallet/deduct`
+- 产品业务服务在执行计费动作前调用：`POST /api/v1/wallet/deduct`
 - 必须携带：
   - `userId`
   - `amount`
@@ -175,6 +181,7 @@ UIP 不承载产品业务逻辑；产品业务只通过 UIP API 读写身份与�
 ### 权益检查
 
 - 产品业务服务调用：`POST /v1/entitlements/check`
+- 产品业务服务调用：`POST /api/v1/entitlements/check`
 - UIP 返回是否允许与限制参数（例如额度/并发/速率等）。
 
 ## 支付（统一收口，品牌化展示）
@@ -182,11 +189,12 @@ UIP 不承载产品业务逻辑；产品业务只通过 UIP API 读写身份与�
 ### Checkout
 
 - `{product}.aiget.dev` 的定价页请求：`POST /v1/payments/checkout`
+- `{product}.aiget.dev` 的定价页请求：`POST /api/v1/payments/checkout`
 - UIP 创建支付会话（Creem），metadata 记录 `product/userId/planId`
 
 ### Webhook
 
-- 支付提供商回调：`POST https://{product}.aiget.dev/v1/webhooks/payments`
+- 支付提供商回调：`POST https://{product}.aiget.dev/api/v1/webhooks/payments`
 - 网关转发到 UIP；UIP 完成：
   - 订阅状态更新
   - 发放订阅积分/购买积分
@@ -273,7 +281,7 @@ Tailscale 让所有机器加入同一个私有网络（tailnet），彼此用内
    - 代码里所有“服务端 → UIP”的调用都用 `UIP_INTERNAL_URL`。
 
 2. **网关（Nginx）转发到 UIP 也走内网**
-   - `/{product}.aiget.dev/v1/auth/*` 等转发目标使用 `http://uip-1:3000`。
+   - `/{product}.aiget.dev/api/v1/auth/*` 等转发目标使用 `http://uip-1:3000`。
 
 ### 安全边界（必须落实）
 

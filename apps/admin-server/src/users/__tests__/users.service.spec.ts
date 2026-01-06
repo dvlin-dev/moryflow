@@ -252,7 +252,7 @@ describe('UsersService', () => {
         profile: null,
         _count: { sessions: 0, subscriptions: 0, orders: 0, credits: 0 },
       });
-      mockPrisma.user.update.mockResolvedValue({ ...user, creditBalance: 600 });
+      mockPrisma.user.update.mockResolvedValue({ creditBalance: 600 });
       mockPrisma.creditTransaction.create.mockResolvedValue({});
       mockPrisma.adminLog.create.mockResolvedValue({});
 
@@ -265,7 +265,8 @@ describe('UsersService', () => {
       expect(result.creditBalance).toBe(600);
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: user.id },
-        data: { creditBalance: 600 },
+        data: { creditBalance: { increment: 500 } },
+        select: { creditBalance: true },
       });
       expect(mockPrisma.creditTransaction.create).toHaveBeenCalledWith({
         data: expect.objectContaining({

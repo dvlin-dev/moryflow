@@ -9,7 +9,7 @@ import { vi } from 'vitest';
  * 创建 Mock Prisma Client
  */
 export function createMockPrismaClient() {
-  return {
+  const client = {
     user: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -47,9 +47,14 @@ export function createMockPrismaClient() {
     },
     $queryRaw: vi.fn(),
     $executeRaw: vi.fn(),
+    $transaction: vi.fn(),
     $connect: vi.fn(),
     $disconnect: vi.fn(),
   };
+
+  client.$transaction.mockImplementation(async (fn: (tx: typeof client) => unknown) => fn(client));
+
+  return client;
 }
 
 /**

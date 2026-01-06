@@ -44,7 +44,8 @@ export type ClientType = (typeof ClientType)[keyof typeof ClientType];
 /**
  * 跨子域 Cookie 域名
  */
-export const COOKIE_DOMAIN = '.aiget.dev';
+export const COOKIE_DOMAIN =
+  process.env.COOKIE_DOMAIN ?? (process.env.NODE_ENV === 'production' ? '.aiget.dev' : undefined);
 
 /**
  * JWT 配置
