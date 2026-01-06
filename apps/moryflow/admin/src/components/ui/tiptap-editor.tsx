@@ -1,18 +1,20 @@
 /**
- * TipTap 编辑器组件
- * 支持 Markdown 快捷输入
+ * [PROPS]: TiptapEditorProps - 编辑器值与回调
+ * [EMITS]: onChange
+ * [POS]: TipTap 编辑器与空内容判断工具
  */
-import { useEffect } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import { cn } from '@/lib/utils'
+
+import { useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { cn } from '@/lib/utils';
 
 interface TiptapEditorProps {
-  value?: string
-  onChange?: (html: string) => void
-  placeholder?: string
-  className?: string
-  disabled?: boolean
+  value?: string;
+  onChange?: (html: string) => void;
+  placeholder?: string;
+  className?: string;
+  disabled?: boolean;
 }
 
 export function TiptapEditor({
@@ -33,22 +35,22 @@ export function TiptapEditor({
           '[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_blockquote]:my-2',
           '[&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg',
           '[&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded',
-          '[&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md',
+          '[&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md'
         ),
         'data-placeholder': placeholder,
       },
     },
     onUpdate: ({ editor }) => {
-      onChange?.(editor.getHTML())
+      onChange?.(editor.getHTML());
     },
-  })
+  });
 
   // 同步外部 value 变化（用于重置表单）
   useEffect(() => {
     if (editor && value === '' && editor.getHTML() !== '<p></p>') {
-      editor.commands.clearContent()
+      editor.commands.clearContent();
     }
-  }, [editor, value])
+  }, [editor, value]);
 
   return (
     <div
@@ -56,12 +58,12 @@ export function TiptapEditor({
         'rounded-md border border-input bg-background',
         'focus-within:ring-1 focus-within:ring-ring',
         disabled && 'opacity-50 cursor-not-allowed',
-        className,
+        className
       )}
     >
       <EditorContent editor={editor} />
     </div>
-  )
+  );
 }
 
 /**
@@ -69,5 +71,5 @@ export function TiptapEditor({
  */
 export function isEditorEmpty(html: string): boolean {
   // TipTap 空编辑器返回 <p></p>
-  return !html || html === '<p></p>' || html.trim() === ''
+  return !html || html === '<p></p>' || html.trim() === '';
 }

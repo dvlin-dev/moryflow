@@ -4,46 +4,57 @@
  * [POS]: 模型选择器，iOS 使用 ContextMenu，其他平台显示静态文本
  */
 
-import { View, Platform } from 'react-native'
-import { ChevronDownIcon } from 'lucide-react-native'
-import { useThemeColors } from '@/lib/theme'
-import { Text } from '@/components/ui/text'
-import type { ModelOption } from '../const'
+import { View, Platform, type StyleProp, type ViewStyle } from 'react-native';
+import type React from 'react';
+import { ChevronDownIcon } from 'lucide-react-native';
+import { useThemeColors } from '@/lib/theme';
+import { Text } from '@/components/ui/text';
+import type { ModelOption } from '../const';
 
 // iOS SwiftUI ContextMenu 动态加载
-let ContextMenu: any = null
-let Host: any = null
-let Button: any = null
+type SwiftUIContextMenuComponent = React.ComponentType<React.PropsWithChildren> & {
+  Items: React.ComponentType<React.PropsWithChildren>;
+  Trigger: React.ComponentType<React.PropsWithChildren>;
+};
+type SwiftUIHostComponent = React.ComponentType<{
+  style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}>;
+type SwiftUIButtonComponent = React.ComponentType<{
+  systemImage?: string;
+  onPress?: () => void;
+  children?: React.ReactNode;
+}>;
+
+let ContextMenu: SwiftUIContextMenuComponent | null = null;
+let Host: SwiftUIHostComponent | null = null;
+let Button: SwiftUIButtonComponent | null = null;
 
 if (Platform.OS === 'ios') {
   try {
-    const swiftUI = require('@expo/ui/swift-ui')
-    ContextMenu = swiftUI.ContextMenu
-    Host = swiftUI.Host
-    Button = swiftUI.Button
+    const swiftUI = require('@expo/ui/swift-ui');
+    ContextMenu = swiftUI.ContextMenu;
+    Host = swiftUI.Host;
+    Button = swiftUI.Button;
   } catch {
     // ContextMenu 不可用
   }
 }
 
 interface ModelSelectorProps {
-  models?: ModelOption[]
-  currentModel?: string
-  onModelChange?: (modelId: string) => void
+  models?: ModelOption[];
+  currentModel?: string;
+  onModelChange?: (modelId: string) => void;
 }
 
-export function ModelSelector({
-  models = [],
-  currentModel,
-  onModelChange,
-}: ModelSelectorProps) {
-  const colors = useThemeColors()
+export function ModelSelector({ models = [], currentModel, onModelChange }: ModelSelectorProps) {
+  const colors = useThemeColors();
 
   const handleModelSelect = (index: number) => {
     if (models[index] && onModelChange) {
-      onModelChange(models[index].id)
+      onModelChange(models[index].id);
     }
-  }
+  };
 
   // iOS 使用原生 ContextMenu
   if (Platform.OS === 'ios' && ContextMenu && Host && Button && models.length > 0) {
@@ -65,8 +76,7 @@ export function ModelSelector({
                 paddingHorizontal: 4,
                 paddingVertical: 6,
                 gap: 2,
-              }}
-            >
+              }}>
               <Text
                 style={{
                   fontSize: 14,
@@ -74,8 +84,7 @@ export function ModelSelector({
                   maxWidth: 120,
                   color: colors.iconMuted,
                 }}
-                numberOfLines={1}
-              >
+                numberOfLines={1}>
                 {currentModel || '选择模型'}
               </Text>
               <ChevronDownIcon size={14} color={colors.iconMuted} />
@@ -83,7 +92,7 @@ export function ModelSelector({
           </ContextMenu.Trigger>
         </ContextMenu>
       </Host>
-    )
+    );
   }
 
   // 其他平台显示静态文本
@@ -95,8 +104,7 @@ export function ModelSelector({
         paddingHorizontal: 4,
         paddingVertical: 6,
         gap: 2,
-      }}
-    >
+      }}>
       <Text
         style={{
           fontSize: 14,
@@ -104,11 +112,10 @@ export function ModelSelector({
           maxWidth: 120,
           color: colors.iconMuted,
         }}
-        numberOfLines={1}
-      >
+        numberOfLines={1}>
         {currentModel || '选择模型'}
       </Text>
       <ChevronDownIcon size={14} color={colors.iconMuted} />
     </View>
-  )
+  );
 }

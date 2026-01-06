@@ -1,4 +1,4 @@
-import { Stack, router, useSegments } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -15,31 +15,23 @@ function HeaderSaveButton() {
   const theme = useThemeColors();
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onPress={onSave}
-      disabled={!canSave || isLoading}
-    >
+    <Button variant="ghost" size="sm" onPress={onSave} disabled={!canSave || isLoading}>
       {isLoading ? (
         <ActivityIndicator size="small" color={theme.primary} />
       ) : (
-        <Text className={canSave ? 'text-primary' : 'text-muted-foreground'}>
-          {t('save')}
-        </Text>
+        <Text className={canSave ? 'text-primary' : 'text-muted-foreground'}>{t('save')}</Text>
       )}
     </Button>
   );
 }
 
 function StackScreens() {
-  const { t } = useTranslation('common');
   const { t: tSettings } = useTranslation('settings');
   const colors = useThemeColors();
 
   // uniwind: @variant 语法自动处理 Modal 视图层的主题，无需手动注入 CSS 变量
   return (
-    <View className="flex-1 bg-background">
+    <View className="bg-background flex-1">
       <Stack
         screenOptions={{
           headerShown: true,
@@ -53,16 +45,11 @@ function StackScreens() {
           headerTintColor: colors.foreground,
           // 子页面显示返回按钮
           headerLeft: () => (
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={() => router.back()}
-            >
+            <Button variant="ghost" size="icon" onPress={() => router.back()}>
               <Icon as={ChevronLeftIcon} className="size-6" />
             </Button>
           ),
-        }}
-      >
+        }}>
         <Stack.Screen
           name="index"
           options={{

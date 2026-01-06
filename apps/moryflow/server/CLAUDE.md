@@ -48,6 +48,11 @@ module-name/
 | `*.errors.ts`     | 错误处理    | Custom `HttpException` subclasses                        |
 | `*.types.ts`      | 仅外部类型  | 第三方 API 响应结构（不用于验证）                        |
 
+## 近期变更
+
+- 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
+- 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
+
 ## 错误信息规范
 
 ### 原则

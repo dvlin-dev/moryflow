@@ -1,13 +1,15 @@
 /**
- * 云同步管理页面
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: 云同步管理页面
  */
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { PageHeader, SimplePagination } from '@/components/shared'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Search, X } from 'lucide-react'
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { PageHeader, SimplePagination } from '@/components/shared';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, X } from 'lucide-react';
 import {
   useStorageStats,
   useVaultList,
@@ -18,84 +20,75 @@ import {
   VaultListTable,
   VaultDetailDialog,
   DeleteVaultDialog,
-} from '@/features/storage'
-import type { VaultListItem } from '@/types/storage'
+} from '@/features/storage';
+import type { VaultListItem } from '@/types/storage';
 
 export default function StoragePage() {
   // URL 参数
-  const [searchParams, setSearchParams] = useSearchParams()
-  const urlUserId = searchParams.get('userId')
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlUserId = searchParams.get('userId') ?? undefined;
 
   // 状态
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [userId, setUserId] = useState<string | undefined>(urlUserId ?? undefined)
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [selectedVault, setSelectedVault] = useState<VaultListItem | null>(null)
-
-  // 同步 URL 参数到状态
-  useEffect(() => {
-    if (urlUserId) {
-      setUserId(urlUserId)
-    }
-  }, [urlUserId])
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedVault, setSelectedVault] = useState<VaultListItem | null>(null);
 
   // 清除用户筛选
   const clearUserFilter = () => {
-    setUserId(undefined)
-    setSearchParams({})
-    setPage(1)
-  }
+    setSearchParams({});
+    setPage(1);
+  };
 
   // 数据查询
-  const { data: stats, isLoading: statsLoading } = useStorageStats()
+  const { data: stats, isLoading: statsLoading } = useStorageStats();
   const { data: vaultData, isLoading: vaultLoading } = useVaultList({
     page,
     pageSize: DEFAULT_PAGE_SIZE,
     search: search || undefined,
-    userId,
-  })
+    userId: urlUserId,
+  });
   const { data: vaultDetail, isLoading: detailLoading } = useVaultDetail(
-    detailOpen ? selectedVault?.id ?? null : null
-  )
-  const deleteMutation = useDeleteVault()
+    detailOpen ? (selectedVault?.id ?? null) : null
+  );
+  const deleteMutation = useDeleteVault();
 
-  const vaults = vaultData?.vaults ?? []
-  const total = vaultData?.total ?? 0
-  const totalPages = Math.ceil(total / DEFAULT_PAGE_SIZE)
+  const vaults = vaultData?.vaults ?? [];
+  const total = vaultData?.total ?? 0;
+  const totalPages = Math.ceil(total / DEFAULT_PAGE_SIZE);
 
   // 搜索处理
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSearch(searchInput)
-    setPage(1)
-  }
+    e.preventDefault();
+    setSearch(searchInput);
+    setPage(1);
+  };
 
   // 查看详情
   const handleViewDetail = (vault: VaultListItem) => {
-    setSelectedVault(vault)
-    setDetailOpen(true)
-  }
+    setSelectedVault(vault);
+    setDetailOpen(true);
+  };
 
   // 删除
   const handleDelete = (vault: VaultListItem) => {
-    setSelectedVault(vault)
-    setDeleteOpen(true)
-  }
+    setSelectedVault(vault);
+    setDeleteOpen(true);
+  };
 
   const confirmDelete = () => {
     if (selectedVault) {
       deleteMutation.mutate(selectedVault.id, {
         onSuccess: () => {
-          setDeleteOpen(false)
-          setDetailOpen(false)
-          setSelectedVault(null)
+          setDeleteOpen(false);
+          setDetailOpen(false);
+          setSelectedVault(null);
         },
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -105,10 +98,10 @@ export default function StoragePage() {
       <StorageStatsCards data={stats} isLoading={statsLoading} />
 
       {/* 筛选提示 */}
-      {userId && (
+      {urlUserId && (
         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
           <span className="text-sm text-muted-foreground">
-            当前筛选：用户 ID <code className="px-1 bg-background rounded">{userId}</code>
+            当前筛选：用户 ID <code className="px-1 bg-background rounded">{urlUserId}</code>
           </span>
           <Button variant="ghost" size="sm" onClick={clearUserFilter}>
             <X className="h-4 w-4 mr-1" />
@@ -142,11 +135,7 @@ export default function StoragePage() {
 
       {/* 分页 */}
       {totalPages > 1 && (
-        <SimplePagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
+        <SimplePagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 
       {/* Vault 详情弹窗 */}
@@ -156,8 +145,8 @@ export default function StoragePage() {
         data={vaultDetail ?? null}
         isLoading={detailLoading}
         onDelete={() => {
-          setDetailOpen(false)
-          setDeleteOpen(true)
+          setDetailOpen(false);
+          setDeleteOpen(true);
         }}
       />
 
@@ -170,5 +159,5 @@ export default function StoragePage() {
         isDeleting={deleteMutation.isPending}
       />
     </div>
-  )
+  );
 }

@@ -15,6 +15,7 @@ import {
 import { PrismaService } from '../../prisma';
 import { SitePublishService } from '../../site/site-publish.service';
 import { SiteStatus } from '../../../generated/prisma/enums';
+import type { Prisma } from '../../../generated/prisma/client';
 import { SITE_DOMAIN } from '../../site/site.constants';
 import type {
   AdminSiteListQueryDto,
@@ -45,9 +46,8 @@ export class AdminSiteService {
 
     // 构建 WHERE 条件
 
-    const where: any = {};
-
-    const userWhere: any = {};
+    const where: Prisma.SiteWhereInput = {};
+    const userWhere: Prisma.UserWhereInput = {};
 
     // 状态筛选
     if (status) {
@@ -89,7 +89,7 @@ export class AdminSiteService {
 
     // 合并用户条件
     if (Object.keys(userWhere).length > 0) {
-      where.user = { ...where.user, ...userWhere };
+      where.user = userWhere;
     }
 
     // 并行查询：数据 + 总数
@@ -273,7 +273,7 @@ export class AdminSiteService {
       throw new NotFoundException('Site not found');
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.SiteUpdateInput = {};
 
     if (dto.expiresAt !== undefined) {
       updateData.expiresAt = dto.expiresAt;

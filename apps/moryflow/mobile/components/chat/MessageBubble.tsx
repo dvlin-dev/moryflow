@@ -9,36 +9,36 @@
  * - AI 占位消息使用简单的 loading 指示器
  */
 
-import * as React from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import * as React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   runOnJS,
   Easing,
-} from 'react-native-reanimated'
-import { isTextUIPart, isToolUIPart, isReasoningUIPart } from 'ai'
-import type { UIMessage, ToolUIPart, ReasoningUIPart } from 'ai'
-import { Text } from '@/components/ui/text'
-import { useThemeColors } from '@/lib/theme'
-import { MessageContent } from './MessageContent'
-import { MessageAttachments } from './MessageAttachments'
-import { Tool, Reasoning, type ToolState } from '@/components/ai-elements'
-import { extractTextFromParts } from '@/lib/chat'
-import { getMessageMeta, cleanFileRefMarker } from './ChatInputBar'
-import { useMessageAnimation } from './contexts'
+} from 'react-native-reanimated';
+import { isTextUIPart, isToolUIPart, isReasoningUIPart } from 'ai';
+import type { UIMessage, ToolUIPart, ReasoningUIPart } from 'ai';
+import { Text } from '@/components/ui/text';
+import { useThemeColors } from '@/lib/theme';
+import { MessageContent } from './MessageContent';
+import { MessageAttachments } from './MessageAttachments';
+import { Tool, Reasoning, type ToolState } from '@/components/ai-elements';
+import { extractTextFromParts } from '@/lib/chat';
+import { getMessageMeta, cleanFileRefMarker } from './ChatInputBar';
+import { useMessageAnimation } from './contexts';
 
 // 动画配置
-const USER_ANIMATION_DURATION = 300
-const ASSISTANT_ANIMATION_DURATION = 350
-const SLIDE_DISTANCE = 30
+const USER_ANIMATION_DURATION = 300;
+const ASSISTANT_ANIMATION_DURATION = 350;
+const SLIDE_DISTANCE = 30;
 
 interface MessageBubbleProps {
-  message: UIMessage
-  isStreaming?: boolean
+  message: UIMessage;
+  isStreaming?: boolean;
   /** 是否是最后一条消息 */
-  isLastMessage?: boolean
+  isLastMessage?: boolean;
 }
 
 export const MessageBubble = React.memo(function MessageBubble({
@@ -46,60 +46,49 @@ export const MessageBubble = React.memo(function MessageBubble({
   isStreaming = false,
   isLastMessage = false,
 }: MessageBubbleProps) {
-  const isUser = message.role === 'user'
+  const isUser = message.role === 'user';
 
   if (isUser) {
-    return <UserMessage message={message} />
+    return <UserMessage message={message} />;
   }
 
   return (
-    <AssistantMessage
-      message={message}
-      isStreaming={isStreaming}
-      isLastMessage={isLastMessage}
-    />
-  )
-})
+    <AssistantMessage message={message} isStreaming={isStreaming} isLastMessage={isLastMessage} />
+  );
+});
 
 // ============ 用户消息 ============
 
 interface UserMessageProps {
-  message: UIMessage
+  message: UIMessage;
 }
 
 function UserMessage({ message }: UserMessageProps) {
-  const rawContent = extractTextFromParts(message.parts)
-  const { shouldAnimate, markAnimated, setLastUserMessageAnimated } =
-    useMessageAnimation()
+  const rawContent = extractTextFromParts(message.parts);
+  const { shouldAnimate, markAnimated, setLastUserMessageAnimated } = useMessageAnimation();
 
   // 从 metadata 读取附件，清理文本中的文件引用标记
-  const attachments = React.useMemo(
-    () => getMessageMeta(message).attachments ?? [],
-    [message]
-  )
-  const cleanText = React.useMemo(
-    () => cleanFileRefMarker(rawContent),
-    [rawContent]
-  )
+  const attachments = React.useMemo(() => getMessageMeta(message).attachments ?? [], [message]);
+  const cleanText = React.useMemo(() => cleanFileRefMarker(rawContent), [rawContent]);
 
   // 在首次渲染时捕获是否需要动画
-  const messageIdRef = React.useRef(message.id)
-  const needsAnimationRef = React.useRef(shouldAnimate(message.id))
+  const messageIdRef = React.useRef(message.id);
+  const needsAnimationRef = React.useRef(shouldAnimate(message.id));
 
   // 动画值
-  const opacity = useSharedValue(needsAnimationRef.current ? 0 : 1)
-  const translateX = useSharedValue(needsAnimationRef.current ? SLIDE_DISTANCE : 0)
+  const opacity = useSharedValue(needsAnimationRef.current ? 0 : 1);
+  const translateX = useSharedValue(needsAnimationRef.current ? SLIDE_DISTANCE : 0);
 
   // 触发入场动画
   React.useEffect(() => {
     if (needsAnimationRef.current) {
-      const msgId = messageIdRef.current
-      setLastUserMessageAnimated(false)
+      const msgId = messageIdRef.current;
+      setLastUserMessageAnimated(false);
 
       opacity.value = withTiming(1, {
         duration: USER_ANIMATION_DURATION,
         easing: Easing.out(Easing.cubic),
-      })
+      });
       translateX.value = withTiming(
         0,
         {
@@ -108,70 +97,66 @@ function UserMessage({ message }: UserMessageProps) {
         },
         (finished) => {
           if (finished) {
-            runOnJS(markAnimated)(msgId)
-            runOnJS(setLastUserMessageAnimated)(true)
+            runOnJS(markAnimated)(msgId);
+            runOnJS(setLastUserMessageAnimated)(true);
           }
         }
-      )
+      );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ translateX: translateX.value }],
     marginBottom: 16,
-  }))
+  }));
 
   return (
     <Animated.View style={animatedStyle}>
       <View className="flex-row justify-end">
         <View className="max-w-[85%]">
-          <View className="border border-border rounded-3xl rounded-br-[10px] px-4 py-[5px] min-h-7 bg-background dark:bg-neutral-900">
+          <View className="border-border bg-background min-h-7 rounded-3xl rounded-br-[10px] border px-4 py-[5px] dark:bg-neutral-900">
             <MessageContent content={cleanText} />
           </View>
-          {attachments.length > 0 && (
-            <MessageAttachments attachments={attachments} />
-          )}
+          {attachments.length > 0 && <MessageAttachments attachments={attachments} />}
         </View>
       </View>
     </Animated.View>
-  )
+  );
 }
 
 // ============ 助手消息 ============
 
 interface AssistantMessageProps {
-  message: UIMessage
-  isStreaming: boolean
-  isLastMessage?: boolean
+  message: UIMessage;
+  isStreaming: boolean;
+  isLastMessage?: boolean;
 }
 
 function AssistantMessage({
   message,
-  isStreaming,
-  isLastMessage = false,
+  isStreaming: _isStreaming,
+  isLastMessage: _isLastMessage = false,
 }: AssistantMessageProps) {
-  const parts = message.parts ?? []
-  const { shouldAnimate, markAnimated, lastUserMessageAnimated } =
-    useMessageAnimation()
+  const parts = message.parts ?? [];
+  const { shouldAnimate, markAnimated, lastUserMessageAnimated } = useMessageAnimation();
 
   // 在首次渲染时捕获是否需要动画
-  const messageIdRef = React.useRef(message.id)
-  const needsAnimationRef = React.useRef(shouldAnimate(message.id))
-  const hasAnimated = React.useRef(false)
+  const messageIdRef = React.useRef(message.id);
+  const needsAnimationRef = React.useRef(shouldAnimate(message.id));
+  const hasAnimated = React.useRef(false);
 
   // 动画值
-  const opacity = useSharedValue(needsAnimationRef.current ? 0 : 1)
+  const opacity = useSharedValue(needsAnimationRef.current ? 0 : 1);
 
   // 触发入场动画
   React.useEffect(() => {
     if (needsAnimationRef.current && !hasAnimated.current) {
-      const msgId = messageIdRef.current
+      const msgId = messageIdRef.current;
 
       const startAnimation = () => {
-        if (hasAnimated.current) return
-        hasAnimated.current = true
+        if (hasAnimated.current) return;
+        hasAnimated.current = true;
 
         opacity.value = withTiming(
           1,
@@ -181,26 +166,25 @@ function AssistantMessage({
           },
           (finished) => {
             if (finished) {
-              runOnJS(markAnimated)(msgId)
+              runOnJS(markAnimated)(msgId);
             }
           }
-        )
-      }
+        );
+      };
 
       if (lastUserMessageAnimated.value) {
-        startAnimation()
+        startAnimation();
       } else {
-        const timeout = setTimeout(startAnimation, USER_ANIMATION_DURATION + 50)
-        return () => clearTimeout(timeout)
+        const timeout = setTimeout(startAnimation, USER_ANIMATION_DURATION + 50);
+        return () => clearTimeout(timeout);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     marginBottom: 16,
-  }))
+  }));
 
   // 无内容时显示加载指示器
   if (parts.length === 0) {
@@ -212,7 +196,7 @@ function AssistantMessage({
           </View>
         </View>
       </Animated.View>
-    )
+    );
   }
 
   return (
@@ -225,35 +209,33 @@ function AssistantMessage({
         </View>
       </View>
     </Animated.View>
-  )
+  );
 }
 
 // ============ 消息部分渲染 ============
 
 interface MessagePartProps {
-  part: UIMessage['parts'][number]
+  part: UIMessage['parts'][number];
 }
 
 function MessagePart({ part }: MessagePartProps) {
   if (isTextUIPart(part)) {
-    return <MessageContent content={part.text ?? ''} />
+    return <MessageContent content={part.text ?? ''} />;
   }
 
   if (isReasoningUIPart(part)) {
-    const reasoningPart = part as ReasoningUIPart
+    const reasoningPart = part as ReasoningUIPart;
     return (
       <Reasoning
         content={reasoningPart.text ?? ''}
         isStreaming={reasoningPart.state === 'streaming'}
       />
-    )
+    );
   }
 
   if (isToolUIPart(part)) {
-    const toolPart = part as ToolUIPart
-    const toolName = toolPart.type.startsWith('tool-')
-      ? toolPart.type.slice(5)
-      : toolPart.type
+    const toolPart = part as ToolUIPart;
+    const toolName = toolPart.type.startsWith('tool-') ? toolPart.type.slice(5) : toolPart.type;
     return (
       <Tool
         type={toolName}
@@ -262,20 +244,20 @@ function MessagePart({ part }: MessagePartProps) {
         output={toolPart.output}
         errorText={toolPart.errorText}
       />
-    )
+    );
   }
 
-  return null
+  return null;
 }
 
 // ============ 流式加载指示器 ============
 
 function StreamingIndicator() {
-  const colors = useThemeColors()
+  const colors = useThemeColors();
   return (
     <View className="flex-row items-center py-2">
       <ActivityIndicator size="small" color={colors.spinner} />
-      <Text className="ml-2 text-muted-foreground">思考中...</Text>
+      <Text className="text-muted-foreground ml-2">思考中...</Text>
     </View>
-  )
+  );
 }

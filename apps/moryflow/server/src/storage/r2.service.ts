@@ -285,7 +285,7 @@ export class R2Service {
     const { stream } = await this.downloadStream(userId, vaultId, fileId);
 
     const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
+    for await (const chunk of stream as AsyncIterable<Uint8Array>) {
       chunks.push(Buffer.from(chunk));
     }
 

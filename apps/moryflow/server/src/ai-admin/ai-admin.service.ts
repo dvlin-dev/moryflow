@@ -5,6 +5,7 @@
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
+import type { Prisma } from '../../generated/prisma/client';
 import type {
   CreateProviderDto,
   UpdateProviderDto,
@@ -199,6 +200,10 @@ export class AiAdminService {
       reasoning: data.reasoning ?? { enabled: false },
     };
 
+    const capabilitiesJsonValue = JSON.parse(
+      JSON.stringify(capabilitiesJson),
+    ) as Prisma.InputJsonValue;
+
     const model = await this.prisma.aiModel.create({
       data: {
         providerId: data.providerId,
@@ -212,8 +217,7 @@ export class AiAdminService {
         maxContextTokens: data.maxContextTokens,
         maxOutputTokens: data.maxOutputTokens,
         // 使用 JSON.parse/stringify 确保类型兼容
-
-        capabilitiesJson: JSON.parse(JSON.stringify(capabilitiesJson)),
+        capabilitiesJson: capabilitiesJsonValue,
         sortOrder: data.sortOrder,
       },
     });
@@ -251,7 +255,9 @@ export class AiAdminService {
         ...(data.reasoning && { reasoning: data.reasoning }),
       };
       // 使用 JSON.parse/stringify 确保类型兼容
-      updateData.capabilitiesJson = JSON.parse(JSON.stringify(newCaps));
+      updateData.capabilitiesJson = JSON.parse(
+        JSON.stringify(newCaps),
+      ) as Prisma.InputJsonValue;
     }
 
     const model = await this.prisma.aiModel.update({

@@ -2,45 +2,45 @@
  * 告警规则创建/编辑对话框
  */
 
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { useCreateAlertRule, useUpdateAlertRule } from '../hooks'
-import type { AlertRule, AlertRuleType, AlertLevel, CreateAlertRuleDto } from '../types'
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useCreateAlertRule, useUpdateAlertRule } from '../hooks';
+import type { AlertRule, AlertRuleType, AlertLevel, CreateAlertRuleDto } from '../types';
 
 interface AlertRuleDialogProps {
-  rule: AlertRule | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  rule: AlertRule | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 interface FormData {
-  name: string
-  type: AlertRuleType
-  level: AlertLevel
-  threshold: number
-  timeWindow: number
-  minCount: number
-  cooldown: number
-  email: string
-  enabled: boolean
+  name: string;
+  type: AlertRuleType;
+  level: AlertLevel;
+  threshold: number;
+  timeWindow: number;
+  minCount: number;
+  cooldown: number;
+  email: string;
+  enabled: boolean;
 }
 
 const TYPE_OPTIONS: { value: AlertRuleType; label: string; description: string }[] = [
@@ -59,12 +59,12 @@ const TYPE_OPTIONS: { value: AlertRuleType; label: string; description: string }
     label: '系统失败率',
     description: '当系统整体失败率超过阈值时告警',
   },
-]
+];
 
 const LEVEL_OPTIONS: { value: AlertLevel; label: string }[] = [
   { value: 'warning', label: '警告' },
   { value: 'critical', label: '严重' },
-]
+];
 
 const COOLDOWN_OPTIONS = [
   { value: 300, label: '5 分钟' },
@@ -73,7 +73,7 @@ const COOLDOWN_OPTIONS = [
   { value: 3600, label: '1 小时' },
   { value: 7200, label: '2 小时' },
   { value: 86400, label: '24 小时' },
-]
+];
 
 const TIME_WINDOW_OPTIONS = [
   { value: 300, label: '5 分钟' },
@@ -81,19 +81,19 @@ const TIME_WINDOW_OPTIONS = [
   { value: 1800, label: '30 分钟' },
   { value: 3600, label: '1 小时' },
   { value: 7200, label: '2 小时' },
-]
+];
 
 export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogProps) {
-  const createMutation = useCreateAlertRule()
-  const updateMutation = useUpdateAlertRule()
-  const isEdit = !!rule
+  const createMutation = useCreateAlertRule();
+  const updateMutation = useUpdateAlertRule();
+  const isEdit = !!rule;
 
   const {
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -107,9 +107,9 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
       email: 'zhangbaolin.work@foxmail.com',
       enabled: true,
     },
-  })
+  });
 
-  const ruleType = watch('type')
+  const ruleType = useWatch({ control, name: 'type' });
 
   useEffect(() => {
     if (rule) {
@@ -123,7 +123,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
         cooldown: rule.cooldown,
         email: rule.actions[0]?.target ?? 'zhangbaolin.work@foxmail.com',
         enabled: rule.enabled,
-      })
+      });
     } else {
       reset({
         name: '',
@@ -135,9 +135,9 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
         cooldown: 3600,
         email: 'zhangbaolin.work@foxmail.com',
         enabled: true,
-      })
+      });
     }
-  }, [rule, reset])
+  }, [rule, reset]);
 
   const onSubmit = async (data: FormData) => {
     const dto: CreateAlertRuleDto = {
@@ -145,8 +145,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
       type: data.type,
       level: data.level,
       condition: {
-        metric:
-          data.type === 'agent_consecutive' ? 'consecutive_failures' : 'failure_rate',
+        metric: data.type === 'agent_consecutive' ? 'consecutive_failures' : 'failure_rate',
         operator: 'gt',
         threshold: data.threshold,
         timeWindow: data.timeWindow,
@@ -155,18 +154,18 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
       actions: [{ channel: 'email', target: data.email }],
       cooldown: data.cooldown,
       enabled: data.enabled,
-    }
+    };
 
     if (isEdit) {
-      await updateMutation.mutateAsync({ id: rule.id, dto })
+      await updateMutation.mutateAsync({ id: rule.id, dto });
     } else {
-      await createMutation.mutateAsync(dto)
+      await createMutation.mutateAsync(dto);
     }
 
-    onOpenChange(false)
-  }
+    onOpenChange(false);
+  };
 
-  const isPending = createMutation.isPending || updateMutation.isPending
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -184,9 +183,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
               placeholder="例如：Tool 失败率告警"
               {...register('name', { required: '请输入规则名称' })}
             />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
           {/* Type */}
@@ -234,9 +231,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
 
           {/* Threshold */}
           <div className="space-y-2">
-            <Label htmlFor="threshold">
-              阈值 {ruleType.includes('rate') ? '(%)' : '(次数)'}
-            </Label>
+            <Label htmlFor="threshold">阈值 {ruleType.includes('rate') ? '(%)' : '(次数)'}</Label>
             <Input
               id="threshold"
               type="number"
@@ -277,9 +272,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
                 type="number"
                 {...register('minCount', { min: 1, valueAsNumber: true })}
               />
-              <p className="text-xs text-muted-foreground">
-                只有调用次数超过此值时才会触发告警
-              </p>
+              <p className="text-xs text-muted-foreground">只有调用次数超过此值时才会触发告警</p>
             </div>
           )}
 
@@ -301,9 +294,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              在此时间段内相同告警不会重复发送
-            </p>
+            <p className="text-xs text-muted-foreground">在此时间段内相同告警不会重复发送</p>
           </div>
 
           {/* Email */}
@@ -338,5 +329,5 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
