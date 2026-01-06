@@ -1,7 +1,7 @@
 /**
  * [INPUT]: IdentityPrismaClient, sendOTP 回调
  * [OUTPUT]: Better Auth 实例
- * [POS]: 统一 Better Auth 配置（跨子域 cookie、JWT 插件、emailOTP）
+ * [POS]: 通用 Better Auth 配置（跨子域 cookie、JWT 插件、email OTP）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 CLAUDE.md
  */
@@ -33,7 +33,7 @@ export type SendOTPFunction = (
  */
 export interface CreateBetterAuthOptions {
   /**
-   * Base URL（如 https://moryflow.aiget.dev/api/auth）
+   * Base URL（如 https://app.moryflow.com/api/v1/auth）
    */
   baseURL?: string;
   /**
@@ -47,17 +47,26 @@ export interface CreateBetterAuthOptions {
     clientId: string;
     clientSecret: string;
   };
+  /**
+   * Apple OAuth 配置（可选）
+   */
+  apple?: {
+    clientId: string;
+    clientSecret: string;
+    appBundleIdentifier?: string;
+    audience?: string | string[];
+  };
 }
 
 /**
- * 创建统一 Better Auth 实例
+ * 创建可复用 Better Auth 实例
  *
  * 功能特性：
- * - 跨子域 Cookie（.aiget.dev）
+ * - 跨子域 Cookie（按业务线域名注入）
  * - Session TTL = 90 天
  * - Access JWT TTL = 6 小时
  * - Email OTP 验证码注册
- * - Google OAuth 支持
+ * - 支持第三方登录（Google/Apple）
  */
 export function createBetterAuth(
   prisma: PrismaClient,
@@ -102,18 +111,32 @@ export function createBetterAuth(
     }),
   ];
 
-  // 社交登录配置
+  // 第三方登录配置
   const socialProviders: Record<string, unknown> = {};
-  if (options.google) {
-    socialProviders.google = {
-      clientId: options.google.clientId,
-      clientSecret: options.google.clientSecret,
-    };
-  } else if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    socialProviders.google = {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    };
+  const googleConfig =
+    options.google ??
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }
+      : undefined);
+
+  if (googleConfig) {
+    socialProviders.google = googleConfig;
+  }
+
+  const appleConfig =
+    options.apple ??
+    (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET
+      ? {
+          clientId: process.env.APPLE_CLIENT_ID,
+          clientSecret: process.env.APPLE_CLIENT_SECRET,
+        }
+      : undefined);
+
+  if (appleConfig) {
+    socialProviders.apple = appleConfig;
   }
 
   return betterAuth({

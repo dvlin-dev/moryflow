@@ -1,7 +1,7 @@
 /**
  * [DEFINES]: 产品标识类型
  * [USED_BY]: 所有产品
- * [POS]: 统一身份平台核心类型
+ * [POS]: 跨业务线共享类型（不代表账号/数据互通）
  */
 
 export const ProductId = {

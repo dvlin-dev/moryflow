@@ -64,7 +64,7 @@ export const AuthResponseSchema = z.object({
 
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 
-// ========== Google OAuth ==========
+// ========== OAuth 登录（Google/Apple） ==========
 
 export const GoogleStartSchema = z.object({
   callbackURL: z.string().url('Invalid callback URL').optional(),
@@ -83,6 +83,24 @@ export const GoogleTokenSchema = z.object({
 });
 
 export type GoogleTokenInput = z.infer<typeof GoogleTokenSchema>;
+
+export const AppleStartSchema = z.object({
+  callbackURL: z.string().url('Invalid callback URL').optional(),
+});
+
+export type AppleStartInput = z.infer<typeof AppleStartSchema>;
+
+export const AppleStartResponseSchema = z.object({
+  url: z.string().url(),
+});
+
+export type AppleStartResponse = z.infer<typeof AppleStartResponseSchema>;
+
+export const AppleTokenSchema = z.object({
+  idToken: z.string().min(1, 'ID token is required'),
+});
+
+export type AppleTokenInput = z.infer<typeof AppleTokenSchema>;
 
 // ========== Refresh ==========
 

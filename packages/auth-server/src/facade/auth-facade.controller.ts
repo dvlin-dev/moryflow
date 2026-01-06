@@ -31,12 +31,14 @@ import type {
   LoginInput,
   GoogleStartInput,
   GoogleTokenInput,
+  AppleStartInput,
+  AppleTokenInput,
 } from '../dto';
 
 /**
  * Auth Facade Controller
  *
- * 统一用户系统 Facade 路由（/api/v1/auth/*）
+ * 认证 Facade 路由（/api/v1/auth/*）
  * 负责抹平 Web/Native 差异：
  * - Web: refresh token 放 HttpOnly Cookie
  * - Native: refresh token 放响应体
@@ -103,7 +105,7 @@ export class AuthFacadeController {
   }
 
   /**
-   * Google OAuth 启动（Web）
+   * Google 登录启动（Web，预留）
    * POST /api/v1/auth/google/start
    */
   @Post('google/start')
@@ -113,7 +115,17 @@ export class AuthFacadeController {
   }
 
   /**
-   * Google OAuth idToken 登录（Native）
+   * Apple 登录启动（Web，预留）
+   * POST /api/v1/auth/apple/start
+   */
+  @Post('apple/start')
+  @HttpCode(HttpStatus.OK)
+  async appleStart(@Body() body: AppleStartInput) {
+    return this.authFacadeService.appleStart(body);
+  }
+
+  /**
+   * Google idToken 登录（Native，预留）
    * POST /api/v1/auth/google/token
    */
   @Post('google/token')
@@ -124,6 +136,29 @@ export class AuthFacadeController {
     @Res({ passthrough: true }) res: Response
   ) {
     const result = await this.authFacadeService.googleToken(body);
+
+    // Web: 设置 session cookie
+    if (clientType === 'web' && result.refreshToken) {
+      this.setSessionCookie(res, result.refreshToken);
+      const { refreshToken: _unused, ...webResponse } = result;
+      return webResponse;
+    }
+
+    return result;
+  }
+
+  /**
+   * Apple idToken 登录（Native，预留）
+   * POST /api/v1/auth/apple/token
+   */
+  @Post('apple/token')
+  @HttpCode(HttpStatus.OK)
+  async appleToken(
+    @Body() body: AppleTokenInput,
+    @ClientType() clientType: ClientTypeValue,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authFacadeService.appleToken(body);
 
     // Web: 设置 session cookie
     if (clientType === 'web' && result.refreshToken) {

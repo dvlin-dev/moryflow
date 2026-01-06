@@ -9,8 +9,8 @@ export default [
       '**/.turbo/**',
       'pnpm-lock.yaml',
       '**/generated/**',
-      'apps/fetchx/server/test/**',
-      'apps/fetchx/server/src/**/__tests__/**',
+      'apps/aiget/fetchx/server/test/**',
+      'apps/aiget/fetchx/server/src/**/__tests__/**',
     ],
   },
 ];

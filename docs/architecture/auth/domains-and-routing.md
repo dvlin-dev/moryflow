@@ -34,7 +34,7 @@ status: active
 约束：
 
 - Web 端只请求同源 API（不做跨域 CORS 方案）。
-- Auth 路由固定：`/api/v1/auth/*`（不做 OAuth）。
+- Auth 路由固定：`/api/v1/auth/*`（包含 Google/Apple 登录）。
 - Aiget Dev 能力路由建议按模块分前缀：
   - Memox：`/api/v1/memox/*`
   - Agentsbox：`/api/v1/agentsbox/*`

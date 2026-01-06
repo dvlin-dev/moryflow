@@ -1,10 +1,10 @@
 # Identity DB
 
-> 统一身份数据库包 - 提供 Prisma schema 和 client
+> 认证数据库 schema 包 - 提供 Prisma schema 和 client
 
 ## 定位
 
-Aiget 统一身份平台的数据层，所有产品共享的用户、会话、订阅、积分数据。
+为两条业务线提供可复用的数据模型与 Prisma Client，各自独立数据库与密钥，不做跨业务线共享。
 
 ## 职责
 
@@ -16,7 +16,7 @@ Aiget 统一身份平台的数据层，所有产品共享的用户、会话、�
 
 - 仅包含 identity schema 相关表
 - 不包含业务逻辑，纯数据层
-- 所有产品服务共享同一个 identity schema
+- 每条业务线单独部署 identity schema（独立数据库/密钥）
 
 ## 成员清单
 
@@ -34,11 +34,11 @@ Aiget 统一身份平台的数据层，所有产品共享的用户、会话、�
 | -------------- | --------------------- |
 | `user`         | 用户主体              |
 | `session`      | 会话（refresh token） |
-| `account`      | 账号绑定（OAuth）     |
+| `account`      | 账号绑定（预留）      |
 | `verification` | 验证码/验证数据       |
 | `jwks`         | JWT 公钥/私钥存储     |
 
-### 统一业务表
+### 业务线内通用表
 
 | 表                   | 说明         |
 | -------------------- | ------------ |
@@ -75,7 +75,7 @@ const subscription = await prisma.subscription.create({
 ## 环境变量
 
 ```bash
-# identity schema 数据库连接（必须带 ?schema=identity）
+# identity schema 数据库连接（各业务线分别配置）
 IDENTITY_DATABASE_URL=postgresql://user:pass@localhost:5432/aiget?schema=identity
 ```
 

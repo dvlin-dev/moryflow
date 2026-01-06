@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: 邮箱验证码注册/登录 + 密码；Web refresh cookie + access memory；不做 OAuth
+[INPUT]: 邮箱验证码注册/登录 + 密码；Google/Apple 登录；Web refresh cookie + access memory
 [OUTPUT]: Token 模型、存储方式、刷新流程与校验方式
 [POS]: 两套 Auth 的认证与会话策略（Token-only for API）
 -->
@@ -17,8 +17,7 @@ status: active
 
 - 邮箱验证码：注册/登录
 - 邮箱 + 密码：登录
-
-不做 OAuth。
+- 第三方登录：Google / Apple（OAuth/OIDC）
 
 ## Token 规则（固定参数）
 

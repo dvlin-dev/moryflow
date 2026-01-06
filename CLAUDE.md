@@ -16,7 +16,7 @@
 - **Memox** - AI 记忆 API（为 AI 应用提供长期记忆）
 - **Sandx** - Agent 沙盒（安全隔离的代码执行环境，规划中）
 
-所有产品共享统一的身份系统、积分钱包和订阅管理。
+两条业务线分别拥有身份系统、积分钱包和订阅管理（不共享账号/Token/数据库），仅共享 `packages/*` 代码基础设施。
 
 ---
 
@@ -89,16 +89,16 @@ pnpm --filter @aiget/admin test:e2e
 
 ### 域名规划
 
-| 服务                | 域名              | 说明                           |
-| ------------------- | ----------------- | ------------------------------ |
-| **Moryflow 主站**   | www.moryflow.com  | 核心产品主入口                 |
-| **Moryflow 应用**   | app.moryflow.com  | 主应用（Web + API）            |
-| **Moryflow 发布站** | moryflow.app      | 用户发布的网站                 |
-| **Aiget 平台**      | aiget.dev         | 统一平台入口                   |
-| **统一控制台**      | console.aiget.dev | Aiget Dev 控制台（Web + API）  |
-| **统一管理后台**    | admin.aiget.dev   | 运营管理                       |
-| **统一文档**        | docs.aiget.dev    | 文档站                         |
-| **Agentsbox 官网**  | (待定)            | 独立营销域名，统一导向 console |
+| 服务                 | 域名              | 说明                           |
+| -------------------- | ----------------- | ------------------------------ |
+| **Moryflow 主站**    | www.moryflow.com  | 核心产品主入口                 |
+| **Moryflow 应用**    | app.moryflow.com  | 主应用（Web + API）            |
+| **Moryflow 发布站**  | moryflow.app      | 用户发布的网站                 |
+| **Aiget 平台**       | aiget.dev         | 统一平台入口                   |
+| **Aiget Dev 控制台** | console.aiget.dev | Aiget Dev 控制台（Web + API）  |
+| **统一管理后台**     | admin.aiget.dev   | 运营管理                       |
+| **统一文档**         | docs.aiget.dev    | 文档站                         |
+| **Agentsbox 官网**   | (待定)            | 独立营销域名，统一导向 console |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
 > - Aiget Dev 是开发者工具平台，统一入口为 `console.aiget.dev`
@@ -116,54 +116,32 @@ pnpm --filter @aiget/admin test:e2e
 ```
 Aiget/
 ├── apps/
-│   ├── auth/                        # 统一认证服务
-│   │   └── server/                  # 认证服务后端
-│   ├── console/                     # 统一用户控制台 ⭐
-│   │   └── src/
-│   │       ├── modules/
-│   │       │   ├── dashboard/       # 统一仪表盘
-│   │       │   ├── moryflow/        # Moryflow 功能模块（核心）
-│   │       │   ├── fetchx/          # Fetchx 功能模块
-│   │       │   ├── memox/           # Memox 功能模块
-│   │       │   ├── sandx/           # Sandx 功能模块
-│   │       │   ├── wallet/          # 钱包管理
-│   │       │   ├── subscription/    # 订阅管理
-│   │       │   ├── api-keys/        # API Key 管理
-│   │       │   └── settings/        # 账户设置
-│   │       └── ...
-│   ├── admin/                       # 统一管理后台 ⭐
-│   │   └── src/
-│   │       ├── modules/
-│   │       │   ├── users/           # 用户管理
-│   │       │   ├── subscriptions/   # 订阅管理
-│   │       │   ├── credits/         # 积分管理
-│   │       │   ├── moryflow/        # Moryflow 运营（核心）
-│   │       │   ├── fetchx/          # Fetchx 运营
-│   │       │   ├── memox/           # Memox 运营
-│   │       │   ├── sandx/           # Sandx 运营
-│   │       │   └── analytics/       # 数据分析
-│   │       └── ...
-│   ├── moryflow/                    # Moryflow 核心产品（笔记 AI 工作流）
-│   │   ├── server/                  # 工作流服务
-│   │   ├── mobile/                  # 移动端应用
-│   │   ├── pc/                      # 桌面端应用
-│   │   ├── site-template/           # SSG 网站模板
-│   │   └── www/                     # 落地页（moryflow.com）
-│   ├── fetchx/                      # 原子能力：网页抓取
-│   │   ├── server/                  # 网页抓取服务
-│   │   └── www/                     # 落地页
-│   ├── memox/                       # 原子能力：AI 记忆
-│   │   ├── server/                  # AI 记忆服务
-│   │   └── www/                     # 落地页
-│   ├── sandx/                       # 原子能力：Agent 沙盒（规划中）
-│   │   ├── server/                  # 沙盒执行服务
-│   │   └── www/                     # 落地页
-│   └── docs/                        # 统一文档站
+│   ├── aiget/                       # Aiget Dev 业务线
+│   │   ├── console/                 # Aiget Dev 控制台（Web）
+│   │   ├── admin/                   # Aiget Dev 管理后台
+│   │   │   ├── www/                 # 管理后台前端
+│   │   │   └── server/              # 管理后台后端
+│   │   ├── fetchx/                  # 原子能力：网页抓取
+│   │   │   ├── server/              # 网页抓取服务
+│   │   │   └── www/                 # 落地页（fetchx.aiget.dev）
+│   │   ├── memox/                   # 原子能力：AI 记忆
+│   │   │   ├── server/              # AI 记忆服务
+│   │   │   └── www/                 # 落地页
+│   │   └── sandx/                   # 原子能力：Agent 沙盒（规划中）
+│   │       ├── server/              # 沙盒执行服务
+│   │       └── www/                 # 落地页
+│   └── moryflow/                    # Moryflow 核心产品（笔记 AI 工作流）
+│       ├── server/                  # 工作流服务
+│       ├── mobile/                  # 移动端应用
+│       ├── pc/                      # 桌面端应用
+│       ├── site-template/           # SSG 网站模板
+│       ├── admin/                   # Moryflow 管理后台（Web）
+│       └── www/                     # 落地页（moryflow.com）
 ├── packages/
 │   ├── ui/                          # 统一 UI 组件库（shadcn/ui）
 │   ├── types/                       # 跨产品共享类型
 │   ├── api/                         # API 客户端工具
-│   ├── auth/                        # 认证客户端
+│   ├── auth-client/                 # 认证客户端
 │   ├── config/                      # 共享配置
 │   ├── sync/                        # 云同步工具（来自 Moryflow）
 │   ├── tiptap/                      # Tiptap 编辑器（来自 Moryflow）
@@ -227,14 +205,18 @@ Aiget/
 
 ## 文档索引
 
-| 文档                                                                                               | 说明                                        |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                         | Auth 系统入口与关键约束（两条业务线）       |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)     | 域名与三机部署架构（megaboxpro/4c6g/8c16g） |
-| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md) | 改造步骤与部署 checklist                    |
-| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                 | 功能：用户系统（两套 Auth）总览             |
-| `apps/*/CLAUDE.md`                                                                                 | 各应用的详细文档                            |
-| `packages/*/CLAUDE.md`                                                                             | 各包的详细文档                              |
+| 文档                                                                                                             | 说明                                                      |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
+| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                  |
+| [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                              |
+| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                               | 功能：用户系统（总览 + 技术方案 + OAuth 登录）            |
+| [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                         |
+| [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                         |
+| [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点                  |
+| `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                          |
+| `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                            |
 
 ## 外部仓库快照（仅查阅）
 
@@ -635,15 +617,15 @@ import { ApiError } from './client.js';
 
 ### 包类型分类
 
-| 类型                | 构建方式  | 说明                            |
-| ------------------- | --------- | ------------------------------- |
-| `packages/types`    | tsc-multi | 纯类型包，需要构建供外部使用    |
-| `packages/api`      | tsc-multi | API 客户端，需要 ESM/CJS 双格式 |
-| `packages/auth`     | tsc-multi | 认证客户端，需要 ESM/CJS 双格式 |
-| `packages/config`   | tsc-multi | 配置工具，需要 ESM/CJS 双格式   |
-| `packages/ui`       | 无需构建  | React 组件，由消费方打包        |
-| `packages/agents-*` | tsc-multi | Agent 相关包                    |
-| `tooling/*`         | 无需构建  | 配置包，直接使用源码            |
+| 类型                   | 构建方式  | 说明                            |
+| ---------------------- | --------- | ------------------------------- |
+| `packages/types`       | tsc-multi | 纯类型包，需要构建供外部使用    |
+| `packages/api`         | tsc-multi | API 客户端，需要 ESM/CJS 双格式 |
+| `packages/auth-client` | tsc-multi | 认证客户端，需要 ESM/CJS 双格式 |
+| `packages/config`      | tsc-multi | 配置工具，需要 ESM/CJS 双格式   |
+| `packages/ui`          | 无需构建  | React 组件，由消费方打包        |
+| `packages/agents-*`    | tsc-multi | Agent 相关包                    |
+| `tooling/*`            | 无需构建  | 配置包，直接使用源码            |
 
 ### 开发命令
 

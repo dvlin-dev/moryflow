@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: 两条业务线（Moryflow / Aiget Dev）；不做 OAuth；不共享账号/Token/数据库；三机部署
+[INPUT]: 两条业务线（Moryflow / Aiget Dev）；支持 Google/Apple 登录；不共享账号/Token/数据库；三机部署
 [OUTPUT]: Auth 相关文档入口与“已定稿”的关键约束
 [POS]: Auth 的总入口文档，所有实现与讨论应以此为准
 
@@ -22,7 +22,7 @@ status: active
 
 两条业务线：
 
-- **不共享账号/Token/数据库**（永不互通、无 OAuth）
+- **不共享账号/Token/数据库**（永不互通；OAuth 仅限业务线内）
 - **只共享代码**（抽到 `packages/*` 复用后端基础设施）
 
 ## 已定稿的关键约束（不要再发散）
@@ -37,7 +37,7 @@ status: active
   - `accessTokenTtl=6h`，`refreshTokenTtl=90d`，`refreshRotation=on`
   - Web：refreshToken 存 `HttpOnly Cookie`（Moryflow：`Domain=.moryflow.com`；Aiget Dev：`Domain=.aiget.dev`）
   - Web：accessToken 仅放内存（刷新页面后走 refresh 获取）
-- OAuth：**不做**
+- OAuth：**支持 Google/Apple 登录**（每条业务线独立配置与回调）
 - 内网（Tailscale）：**不引入**；服务间走公网 HTTPS + 鉴权（详见部署文档）
 - Aiget Dev API Key：`Authorization: Bearer <apiKey>`（用于调用 Memox/Agentsbox API）
 - Memox 多租户数据模型（最小可用）：
@@ -53,5 +53,10 @@ status: active
 ## 文档拆分
 
 - 域名与部署（反代/三机拓扑）：`docs/architecture/domains-and-deployment.md`
-- Auth 拆分文档入口：`docs/architecture/auth/index.md`
+- Auth 详细文档：
+  - 域名与路由：`docs/architecture/auth/domains-and-routing.md`
+  - 服务与网络：`docs/architecture/auth/services-and-network.md`
+  - 认证与 Token：`docs/architecture/auth/auth-and-tokens.md`
+  - 数据库：`docs/architecture/auth/database.md`
+  - 配额与 API Keys：`docs/architecture/auth/quota-and-api-keys.md`
 - 改造与部署步骤：`docs/architecture/refactor-and-deploy-plan.md`

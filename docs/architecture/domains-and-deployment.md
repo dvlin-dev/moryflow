@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: 两条业务线（Moryflow / Aiget Dev）；三机部署（megaboxpro/4c6g/8c16g）；不做 OAuth；只共享代码
+[INPUT]: 两条业务线（Moryflow / Aiget Dev）；三机部署（megaboxpro/4c6g/8c16g）；支持 Google/Apple 登录；只共享代码
 [OUTPUT]: 域名职责、入口反代、服务分层与部署边界的可执行方案
 [POS]: 当前阶段的“默认架构真相”，实现与部署应以此为准
 
@@ -15,14 +15,15 @@ status: active
 
 # 域名与部署架构（两条业务线）
 
-本方案的目标是：在不引入 OAuth、不做跨域账号互通的前提下，把域名与部署复杂度压到个人可维护，同时保留未来扩展空间（主要通过 `packages/*` 复用代码）。
+本方案的目标是：在不做跨域账号互通的前提下支持 Google/Apple 登录，把域名与部署复杂度压到个人可维护，同时保留未来扩展空间（主要通过 `packages/*` 复用代码）。
 
 ## 核心原则（固定）
 
 1. **两条业务线互不互通**：不共享账号/Token/数据库。
 2. **只共享代码**：后端基础设施抽到 `packages/*` 复用；部署互不影响。
 3. **Web 与 API 同源**：避免 CORS 和跨站 Cookie 复杂度。
-4. **不引入 Tailscale**：服务间走公网 HTTPS；安全依靠鉴权 + 限流 + 最小暴露面。
+4. **OAuth 登录**：支持 Google/Apple；每条业务线独立配置与回调域名。
+5. **不引入 Tailscale**：服务间走公网 HTTPS；安全依靠鉴权 + 限流 + 最小暴露面。
 
 ## 域名职责（固定）
 
@@ -57,7 +58,7 @@ status: active
 约定：
 
 - `app.setGlobalPrefix('api')`；对外统一 `/api/v1/...`
-- Auth：`/api/v1/auth/*`（不做 OAuth）
+- Auth：`/api/v1/auth/*`（支持 Google/Apple 登录）
 - Aiget Dev API Key：`Authorization: Bearer <apiKey>`
 
 ## 三机部署拓扑（当前默认）

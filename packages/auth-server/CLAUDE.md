@@ -4,20 +4,22 @@
 
 ## 定位
 
-Aiget 统一身份平台的服务端认证核心，为所有产品提供统一的认证实现。
+为 Moryflow 与 Aiget Dev 提供可复用的服务端认证基础设施，各自独立部署与配置。
 
 ## 职责
 
-- 提供统一的 Better Auth 配置（跨子域 cookie、JWT、emailOTP）
+- 提供可复用的 Better Auth 配置（cookie domain、JWT、emailOTP 由调用方注入）
+- 提供 Google/Apple OAuth 登录能力（按业务线独立配置）
 - 提供 Facade Controller 抹平 Web/Native 差异
 - 提供 SessionGuard 和 JwtGuard 用于请求验证
 - 提供 CurrentUser 和 ClientType 装饰器
 
 ## 约束
 
-- 所有产品服务必须使用此包的 createBetterAuth 创建 auth 实例
+- 各业务线 Auth 服务使用此包的 createBetterAuth 创建实例
 - Web 端 refresh token 只能存 HttpOnly Cookie
 - Native 端 refresh token 返回响应体，由客户端存 Secure Storage
+- OAuth 仅支持 Google/Apple，且仅在业务线内生效
 
 ## 成员清单
 
@@ -36,16 +38,18 @@ Aiget 统一身份平台的服务端认证核心，为所有产品提供统一�
 
 ## API 路由
 
-| 方法 | 路径                            | 说明                          |
-| ---- | ------------------------------- | ----------------------------- |
-| POST | `/api/v1/auth/register`         | 注册                          |
-| POST | `/api/v1/auth/verify-email-otp` | 验证邮箱 OTP                  |
-| POST | `/api/v1/auth/login`            | 登录                          |
-| POST | `/api/v1/auth/google/start`     | Google OAuth 启动（规划中）   |
-| POST | `/api/v1/auth/google/token`     | Google idToken 登录（规划中） |
-| POST | `/api/v1/auth/refresh`          | 刷新 Token                    |
-| POST | `/api/v1/auth/logout`           | 登出                          |
-| GET  | `/api/v1/auth/me`               | 当前用户信息                  |
+| 方法 | 路径                            | 说明                |
+| ---- | ------------------------------- | ------------------- |
+| POST | `/api/v1/auth/register`         | 注册                |
+| POST | `/api/v1/auth/verify-email-otp` | 验证邮箱 OTP        |
+| POST | `/api/v1/auth/login`            | 登录                |
+| POST | `/api/v1/auth/google/start`     | Google 登录启动     |
+| POST | `/api/v1/auth/google/token`     | Google idToken 登录 |
+| POST | `/api/v1/auth/apple/start`      | Apple 登录启动      |
+| POST | `/api/v1/auth/apple/token`      | Apple idToken 登录  |
+| POST | `/api/v1/auth/refresh`          | 刷新 Token          |
+| POST | `/api/v1/auth/logout`           | 登出                |
+| GET  | `/api/v1/auth/me`               | 当前用户信息        |
 
 ## 使用方式
 
@@ -62,10 +66,14 @@ const auth = createBetterAuth(
     await sendEmail(email, otp, type);
   },
   {
-    baseURL: 'https://moryflow.aiget.dev/api/auth',
+    baseURL: 'https://app.moryflow.com/api/v1/auth',
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+    apple: {
+      clientId: process.env.APPLE_CLIENT_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET,
     },
   }
 );
@@ -119,21 +127,25 @@ export class UsersController {
 ## 环境变量
 
 ```bash
-# Better Auth 密钥（>=32 字符，所有产品必须一致）
+# Better Auth 密钥（>=32 字符，各业务线独立）
 BETTER_AUTH_SECRET=your-secret-key-at-least-32-characters
 
-# Better Auth URL（各产品不同）
-BETTER_AUTH_URL=https://moryflow.aiget.dev/api/auth
+# Better Auth URL（按业务线配置）
+BETTER_AUTH_URL=https://app.moryflow.com/api/v1/auth
 
-# Cookie Domain（生产环境建议 .aiget.dev；本地可不设）
-COOKIE_DOMAIN=.aiget.dev
+# Cookie Domain（生产环境按业务线域名）
+COOKIE_DOMAIN=.moryflow.com
 
 # 信任的来源（逗号分隔）
-TRUSTED_ORIGINS=https://moryflow.aiget.dev,https://console.aiget.dev
+TRUSTED_ORIGINS=https://app.moryflow.com,https://console.aiget.dev
 
-# Google OAuth（可选）
+# Google OAuth
 GOOGLE_CLIENT_ID=xxx
 GOOGLE_CLIENT_SECRET=xxx
+
+# Apple OAuth（JWT client secret）
+APPLE_CLIENT_ID=xxx
+APPLE_CLIENT_SECRET=xxx
 ```
 
 ## Token 策略

@@ -6,11 +6,11 @@ status: active
 ---
 
 <!--
-[INPUT]: Aiget Dev 单入口（console.aiget.dev）；Memox/Agentsbox 等能力对外提供 API；不做 OAuth；动态可调限流策略
+[INPUT]: Aiget Dev 单入口（console.aiget.dev）；Memox/Agentsbox 等能力对外提供 API；支持 Google/Apple 登录；动态可调限流策略
 [OUTPUT]: API Key、tenant、多租户隔离、namespace/metadata 约定与最小限流模型
 [POS]: Aiget Dev 对外能力的安全与计量基座（不引入复杂计费）
 
-[PROTOCOL]: 本文件变更时，需同步更新 `docs/architecture/auth.md` 与 `docs/architecture/auth/index.md`（索引与约束）。
+[PROTOCOL]: 本文件变更时，需同步更新 `docs/architecture/auth.md`（索引与约束）。
 -->
 
 # 配额与 API Keys

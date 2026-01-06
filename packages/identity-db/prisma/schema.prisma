@@ -1,5 +1,5 @@
-// Aiget Unified Identity Database Schema
-// 统一身份数据库（Better Auth 核心表 + 统一业务表）
+// Aiget Auth Database Schema
+// 认证数据库（Better Auth 核心表 + 业务线内通用表）
 
 generator client {
   provider   = "prisma-client"

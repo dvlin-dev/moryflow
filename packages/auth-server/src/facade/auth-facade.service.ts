@@ -20,6 +20,9 @@ import type {
   GoogleStartInput,
   GoogleStartResponse,
   GoogleTokenInput,
+  AppleStartInput,
+  AppleStartResponse,
+  AppleTokenInput,
   RefreshResponse,
   MeResponse,
 } from '../dto';
@@ -35,7 +38,6 @@ export const IDENTITY_PRISMA = Symbol('IDENTITY_PRISMA');
  *
  * 处理所有认证相关的业务逻辑，包括：
  * - 注册/验证/登录
- * - OAuth（Google）
  * - Token 刷新（带 rotation）
  * - 登出
  */
@@ -126,7 +128,7 @@ export class AuthFacadeService {
   }
 
   /**
-   * Google OAuth 启动（Web）
+   * Google 登录启动（Web，预留）
    */
   async googleStart(input: GoogleStartInput): Promise<GoogleStartResponse> {
     const result = await this.auth.api.signInSocial({
@@ -138,14 +140,14 @@ export class AuthFacadeService {
     });
 
     if (!result?.url) {
-      throw new Error('Failed to initiate Google OAuth');
+      throw new Error('Failed to initiate Google sign-in');
     }
 
     return { url: result.url };
   }
 
   /**
-   * Google OAuth idToken 登录（Native）
+   * Google idToken 登录（Native，预留）
    */
   async googleToken(input: GoogleTokenInput): Promise<AuthResponse> {
     const result = await this.auth.api.signInSocial({
@@ -168,6 +170,53 @@ export class AuthFacadeService {
     }
 
     // 获取 access token
+    const accessToken = await this.getAccessToken(result.token);
+
+    return await this.buildAuthResponse(result.user, accessToken, result.token);
+  }
+
+  /**
+   * Apple 登录启动（Web，预留）
+   */
+  async appleStart(input: AppleStartInput): Promise<AppleStartResponse> {
+    const result = await this.auth.api.signInSocial({
+      body: {
+        provider: 'apple',
+        callbackURL: input.callbackURL,
+        disableRedirect: true,
+      },
+    });
+
+    if (!result?.url) {
+      throw new Error('Failed to initiate Apple sign-in');
+    }
+
+    return { url: result.url };
+  }
+
+  /**
+   * Apple idToken 登录（Native，预留）
+   */
+  async appleToken(input: AppleTokenInput): Promise<AuthResponse> {
+    const result = await this.auth.api.signInSocial({
+      body: {
+        provider: 'apple',
+        idToken: { token: input.idToken },
+      },
+    });
+
+    // Type guard: redirect flow has `url`, token flow has `user` and `token`
+    if (
+      !result ||
+      result.redirect ||
+      !('user' in result) ||
+      !result.user ||
+      !('token' in result) ||
+      !result.token
+    ) {
+      throw new UnauthorizedException('Invalid Apple ID token');
+    }
+
     const accessToken = await this.getAccessToken(result.token);
 
     return await this.buildAuthResponse(result.user, accessToken, result.token);

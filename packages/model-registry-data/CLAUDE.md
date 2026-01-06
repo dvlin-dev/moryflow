@@ -5,6 +5,7 @@
 ## 概述
 
 从 LiteLLM 开源数据源同步 1700+ 个 AI 模型的元数据，提供：
+
 - 构建时数据同步（prebuild 钩子）
 - 模糊搜索（Fuse.js）
 - 模型参数自动填充
@@ -30,16 +31,16 @@ packages/model-registry-data/
 ## 使用方式
 
 ```typescript
-import { searchModels, getModelById, getProviders } from '@aiget/model-registry-data'
+import { searchModels, getModelById, getProviders } from '@aiget/model-registry-data';
 
 // 搜索模型
-const results = searchModels({ query: 'gpt-4', limit: 10 })
+const results = searchModels({ query: 'gpt-4', limit: 10 });
 
 // 获取单个模型
-const model = getModelById('gpt-4o')
+const model = getModelById('gpt-4o');
 
 // 获取所有服务商
-const providers = getProviders()
+const providers = getProviders();
 ```
 
 ## 数据同步
@@ -61,10 +62,10 @@ pnpm --filter @aiget/model-registry-data build
 
 ## 集成位置
 
-| 位置 | 用途 |
-|------|------|
-| `apps/pc/.../add-model-dialog.tsx` | PC 端添加模型时搜索和自动填充 |
-| `apps/admin/.../ModelFormDialog.tsx` | Admin 后台添加模型时搜索和自动填充 |
+| 位置                                          | 用途                               |
+| --------------------------------------------- | ---------------------------------- |
+| `apps/pc/.../add-model-dialog.tsx`            | PC 端添加模型时搜索和自动填充      |
+| `apps/moryflow/admin/.../ModelFormDialog.tsx` | Admin 后台添加模型时搜索和自动填充 |
 
 ## 依赖
 

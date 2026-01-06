@@ -18,7 +18,10 @@
 
 ## 目录结构
 
-- `docs/architecture/`：架构与部署设计（当前阶段的“最终真相”优先写在这里）。
+- `docs/architecture/`：架构与部署设计（当前阶段的“最终真相”优先写在这里，含 OAuth 登录与 Auth 数据库隔离等关键约束）。
 - `docs/architecture/auth/`：Auth（两套业务线）拆分设计文档。
-- `docs/features/`：功能层设计（用户系统、订阅/钱包、API Key 等可复用能力）。
+- `docs/features/`：功能层设计（用户系统两套 Auth + Google/Apple 登录、改造计划、订阅/钱包、API Key 等可复用能力）。
+- `docs/features/index.md`：功能层文档索引。
+- `docs/features/user-system/quick-start.md`：Auth 服务模板的快速接入说明。
+- `docs/features/user-system/fetchx-integration-plan.md`：Fetchx 试点接入方案（官网/console/admin）。
 - `docs/*.md`：一次性记录、handoff、复盘等。

@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: 不同云、多台机器部署；希望服务间走内网调用
+[INPUT]: 不同云、多台机器部署；服务间走公网 HTTPS 调用
 [OUTPUT]: 服务边界与公网调用（megaboxpro 反代）规范
 [POS]: 两套 Auth 与对外能力的网络与安全约束
 -->

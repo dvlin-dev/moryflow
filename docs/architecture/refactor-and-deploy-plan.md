@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: 现状为单仓库多应用；三台机器（megaboxpro 入口反代、4c6g 主业务、8c16g 重服务）；不做 OAuth；两条业务线永不互通
+[INPUT]: 现状为单仓库多应用；三台机器（megaboxpro 入口反代、4c6g 主业务、8c16g 重服务）；支持 Google/Apple 登录；两条业务线永不互通
 [OUTPUT]: 按步骤推进的改造计划 + 三机部署 checklist（含反代路由与环境变量）
 [POS]: 从“文档定案”到“可上线运行”的执行手册
 
@@ -19,7 +19,7 @@ status: active
 
 - Moryflow：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
 - Aiget Dev：`console.aiget.dev`（控制台+API；模块：Agentsbox、Memox）
-- 两条业务线：不共享账号/Token/数据库；不做 OAuth；只共享 `packages/*` 代码
+- 两条业务线：不共享账号/Token/数据库；支持 Google/Apple 登录；只共享 `packages/*` 代码
 - 网络：不引入 Tailscale；公网 HTTPS + API key/JWT + 限流
 - 数据库：
   - 4c6g：`moryflow-postgres` + `moryflow-redis`
@@ -29,7 +29,7 @@ status: active
 
 ### Milestone 0：文档与边界定稿（1 天内）
 
-- [ ] 以 `docs/architecture/auth.md` 为唯一架构入口，确认无 UIP/OAuth/Tailscale 遗留表述
+- [ ] 以 `docs/architecture/auth.md` 为唯一架构入口，确认 OAuth 方案为 Google/Apple 且仅限业务线内
 - [ ] 统一 API 规范：
   - Moryflow：`https://app.moryflow.com/api/v1`
   - Aiget Dev：`https://console.aiget.dev/api/v1`
@@ -50,6 +50,9 @@ status: active
 ### Milestone 2：Moryflow Auth 落地（2-4 天）
 
 - [ ] 在 `app.moryflow.com` 落地 `POST /api/v1/auth/*`（OTP + password）
+- [ ] 支持 Google/Apple 登录（Web + Native）：
+  - [ ] `POST /api/v1/auth/google/start`、`POST /api/v1/auth/google/token`
+  - [ ] `POST /api/v1/auth/apple/start`、`POST /api/v1/auth/apple/token`
 - [ ] 配置 cookie：`Domain=.moryflow.com`；refresh rotation 开启
 - [ ] `GET /api/v1/auth/jwks` 提供 JWKS，业务服务离线验签
 - [ ] refresh CSRF：校验 `Origin=https://app.moryflow.com`
@@ -57,6 +60,9 @@ status: active
 ### Milestone 3：Aiget Dev Auth + Console 落地（2-4 天）
 
 - [ ] 在 `console.aiget.dev` 落地 `POST /api/v1/auth/*`（OTP + password）
+- [ ] 支持 Google/Apple 登录（Web + Native）：
+  - [ ] `POST /api/v1/auth/google/start`、`POST /api/v1/auth/google/token`
+  - [ ] `POST /api/v1/auth/apple/start`、`POST /api/v1/auth/apple/token`
 - [ ] 配置 cookie：`Domain=.aiget.dev`
 - [ ] refresh CSRF：校验 `Origin=https://console.aiget.dev`
 - [ ] 控制台功能最小化：
