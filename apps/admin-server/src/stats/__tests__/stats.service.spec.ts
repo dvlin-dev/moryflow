@@ -2,7 +2,7 @@
  * StatsService 单元测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StatsService } from '../stats.service';
 import { IDENTITY_PRISMA } from '../../prisma/prisma.module';

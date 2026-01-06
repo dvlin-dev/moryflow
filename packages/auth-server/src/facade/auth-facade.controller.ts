@@ -70,7 +70,7 @@ export class AuthFacadeController {
     if (clientType === 'web' && result.refreshToken) {
       this.setSessionCookie(res, result.refreshToken);
       // 从响应中移除 refreshToken
-      const { refreshToken: _, ...webResponse } = result;
+      const { refreshToken: _unused, ...webResponse } = result;
       return webResponse;
     }
 
@@ -93,7 +93,7 @@ export class AuthFacadeController {
     // Web: 设置 session cookie（不返回 refreshToken）
     if (clientType === 'web' && result.refreshToken) {
       this.setSessionCookie(res, result.refreshToken);
-      const { refreshToken: _, ...webResponse } = result;
+      const { refreshToken: _unused, ...webResponse } = result;
       return webResponse;
     }
 
@@ -126,7 +126,7 @@ export class AuthFacadeController {
     // Web: 设置 session cookie
     if (clientType === 'web' && result.refreshToken) {
       this.setSessionCookie(res, result.refreshToken);
-      const { refreshToken: _, ...webResponse } = result;
+      const { refreshToken: _unused, ...webResponse } = result;
       return webResponse;
     }
 
@@ -166,7 +166,7 @@ export class AuthFacadeController {
     }
 
     // 移除内部字段
-    const { newSessionToken: _, ...response } = result;
+    const { newSessionToken: _unused, ...response } = result;
     return response;
   }
 

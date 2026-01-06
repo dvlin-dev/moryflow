@@ -2,7 +2,7 @@
  * UsersService 单元测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users.service';
@@ -181,7 +181,15 @@ describe('UsersService', () => {
   });
 
   describe('setTier', () => {
-    const adminUser = { id: testUsers.admin.id, email: testUsers.admin.email, isAdmin: true };
+    const adminUser = {
+      id: testUsers.admin.id,
+      email: testUsers.admin.email,
+      name: testUsers.admin.name,
+      emailVerified: testUsers.admin.emailVerified,
+      tier: testUsers.admin.tier as 'FREE' | 'STARTER' | 'PRO' | 'MAX',
+      creditBalance: testUsers.admin.creditBalance,
+      isAdmin: true,
+    };
 
     it('should update user tier', async () => {
       const user = { ...testUsers.normalUser };
@@ -219,14 +227,22 @@ describe('UsersService', () => {
     it('should throw NotFoundException if user not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.setTier('non-existent', { tier: 'PRO' }, adminUser)).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        service.setTier('non-existent', { tier: 'PRO', reason: 'Test' }, adminUser)
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('grantCredits', () => {
-    const adminUser = { id: testUsers.admin.id, email: testUsers.admin.email, isAdmin: true };
+    const adminUser = {
+      id: testUsers.admin.id,
+      email: testUsers.admin.email,
+      name: testUsers.admin.name,
+      emailVerified: testUsers.admin.emailVerified,
+      tier: testUsers.admin.tier as 'FREE' | 'STARTER' | 'PRO' | 'MAX',
+      creditBalance: testUsers.admin.creditBalance,
+      isAdmin: true,
+    };
 
     it('should add credits to user balance', async () => {
       const user = { ...testUsers.normalUser, creditBalance: 100 };
@@ -265,13 +281,21 @@ describe('UsersService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.grantCredits('non-existent', { amount: 100 }, adminUser)
+        service.grantCredits('non-existent', { amount: 100, reason: 'Test' }, adminUser)
       ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('deleteUser', () => {
-    const adminUser = { id: testUsers.admin.id, email: testUsers.admin.email, isAdmin: true };
+    const adminUser = {
+      id: testUsers.admin.id,
+      email: testUsers.admin.email,
+      name: testUsers.admin.name,
+      emailVerified: testUsers.admin.emailVerified,
+      tier: testUsers.admin.tier as 'FREE' | 'STARTER' | 'PRO' | 'MAX',
+      creditBalance: testUsers.admin.creditBalance,
+      isAdmin: true,
+    };
 
     it('should soft delete user and remove sessions', async () => {
       const user = { ...testUsers.normalUser };
@@ -307,7 +331,15 @@ describe('UsersService', () => {
   });
 
   describe('restoreUser', () => {
-    const adminUser = { id: testUsers.admin.id, email: testUsers.admin.email, isAdmin: true };
+    const adminUser = {
+      id: testUsers.admin.id,
+      email: testUsers.admin.email,
+      name: testUsers.admin.name,
+      emailVerified: testUsers.admin.emailVerified,
+      tier: testUsers.admin.tier as 'FREE' | 'STARTER' | 'PRO' | 'MAX',
+      creditBalance: testUsers.admin.creditBalance,
+      isAdmin: true,
+    };
 
     it('should restore soft-deleted user', async () => {
       const deletedUser = { ...testUsers.normalUser, deletedAt: new Date() };

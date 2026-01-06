@@ -3,26 +3,20 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "main": "./generated/prisma/client.mjs",
-  "module": "./generated/prisma/client.mjs",
-  "types": "./generated/prisma/client.d.ts",
+  "main": "./generated/prisma/client.ts",
+  "types": "./generated/prisma/client.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./generated/prisma/client.d.ts",
-        "default": "./generated/prisma/client.mjs"
-      },
-      "require": {
-        "types": "./generated/prisma/client.d.ts",
-        "default": "./generated/prisma/client.cjs"
-      }
+      "types": "./generated/prisma/client.ts",
+      "import": "./generated/prisma/client.ts",
+      "require": "./generated/prisma/client.ts"
     }
   },
   "files": [
     "generated"
   ],
   "scripts": {
-    "build": "echo 'identity-db uses Prisma generated client, no separate build needed'",
+    "build": "IDENTITY_DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate --schema=prisma/schema.prisma",
     "lint": "eslint . --max-warnings 0",
     "clean": "rm -rf generated",
     "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
