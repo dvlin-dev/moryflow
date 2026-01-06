@@ -24,4 +24,5 @@
 - `docs/features/index.md`：功能层文档索引。
 - `docs/features/user-system/quick-start.md`：Auth 服务模板的快速接入说明。
 - `docs/features/user-system/fetchx-integration-plan.md`：Fetchx 试点接入方案（官网/console/admin，含 Auth Client 接入细节）。
+- `docs/progress.md`：改造进度记录与下一步清单。
 - `docs/*.md`：一次性记录、handoff、复盘等。

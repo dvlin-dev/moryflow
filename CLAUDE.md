@@ -211,6 +211,7 @@ Aiget/
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）   |
 | [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                   |
 | [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                               |
+| [`docs/progress.md`](./docs/progress.md)                                                                         | 改造进度记录与下一步清单                                   |
 | [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                               | 功能：用户系统（总览 + 技术方案 + OAuth 登录）             |
 | [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                          |
 | [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                          |
