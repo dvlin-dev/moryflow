@@ -43,6 +43,7 @@
     "@types/node": "^22.18.12",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "husky": "^9.1.7",
     "lightningcss-linux-x64-gnu": "1.30.1",
