@@ -205,18 +205,18 @@ Aiget/
 
 ## 文档索引
 
-| 文档                                                                                                             | 说明                                                      |
-| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
-| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                  |
-| [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                              |
-| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                               | 功能：用户系统（总览 + 技术方案 + OAuth 登录）            |
-| [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                         |
-| [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                         |
-| [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点                  |
-| `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                          |
-| `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                            |
+| 文档                                                                                                             | 说明                                                       |
+| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）  |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）   |
+| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                   |
+| [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                               |
+| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                               | 功能：用户系统（总览 + 技术方案 + OAuth 登录）             |
+| [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                          |
+| [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                          |
+| [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点（含 Auth Client） |
+| `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                           |
+| `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                             |
 
 ## 外部仓库快照（仅查阅）
 

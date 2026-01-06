@@ -23,3 +23,7 @@ status: active
 - 用户系统（改造计划）：`docs/features/user-system/refactor-plan.md`
 - 用户系统（快速接入）：`docs/features/user-system/quick-start.md`
 - 用户系统（Fetchx 接入方案）：`docs/features/user-system/fetchx-integration-plan.md`
+
+## 最近更新
+
+- Fetchx 接入方案已补充 console/admin 使用 `@aiget/auth-client` 的落地细节。

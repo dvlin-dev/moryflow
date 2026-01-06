@@ -87,10 +87,12 @@ apps/
 
 ### Phase 2：Console 接入（用户控制台）
 
-- `apps/aiget/console` 已完成迁入。
-- 统一使用 `@aiget/auth-client`：
+- `apps/aiget/console` 已完成迁入并接入 `@aiget/auth-client`。
+- 认证细节（已落地）：
   - `baseUrl=https://console.aiget.dev/api/v1/auth`
   - `clientType=web`
+  - access token 仅内存，refresh token 走 HttpOnly Cookie
+  - 401 时触发 refresh 重试一次
 - 连接 Fetchx API：
   - `https://console.aiget.dev/api/v1/fetchx/*`（通过反代到 fetchx-server）
 - 控制台能力优先级：
@@ -100,8 +102,13 @@ apps/
 
 ### Phase 3：Admin 接入（管理后台）
 
-- `apps/aiget/admin/www` 与 `apps/aiget/admin/server` 已完成迁入。
-- 接入 `@aiget/auth-client`（仅管理员用户）。
+- `apps/aiget/admin/www` 与 `apps/aiget/admin/server` 已完成迁入并接入 `@aiget/auth-client`。
+- 认证细节（已落地）：
+  - `baseUrl=https://admin.aiget.dev/api/v1/auth`
+  - `clientType=web`
+  - access token 仅内存，refresh token 走 HttpOnly Cookie
+  - 401 时触发 refresh 重试一次
+  - 登录需 `isAdmin=true`
 - 管理功能优先级：
   - 用户管理
   - API Key 管理
