@@ -17,16 +17,42 @@ status: active
 
 ## 目标架构（摘要）
 
-- Moryflow：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
+- Moryflow：`www.moryflow.com`（营销）+ `docs.moryflow.com`（文档）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
 - Aiget Dev：
   - `aiget.dev`：官网 + 统一 API（`/api/v1`；模块：Fetchx、Memox）
+  - `docs.aiget.dev`：文档站（独立项目）
   - `console.aiget.dev`：控制台前端（Web）
   - `admin.aiget.dev`：管理后台前端（Web）
 - 两条业务线：不共享账号/Token/数据库；支持 Google/Apple 登录；只共享 `packages/*` 代码
 - 网络：不引入 Tailscale；公网 HTTPS + API key/JWT + 限流
 - 数据库：
   - 4c6g：`moryflow-postgres` + `moryflow-redis`
-  - 8c16g：`aigetdev-postgres` + `aigetdev-redis` + `memox-vector-postgres(pgvector)`
+  - 8c16g：`aiget-postgres` + `aiget-redis`（完全独立，不与 Moryflow 共享）
+
+## 部署原则（已确认）
+
+1. **一套 = 一份 docker compose**：Moryflow 一套（4c6g）、Aiget 一套（8c16g）。
+2. **对外只暴露 `IP:端口`**：4c6g/8c16g 不处理域名与证书。
+3. **域名反代在 megaboxpro（1panel）**：由 1panel 统一 TLS 与反向代理到 `IP:端口`。
+4. **DB/Redis 需要暴露端口**：便于你从外部直连调试（安全由你在 1panel/防火墙层面控制）。
+
+## 端口分配（固定）
+
+### 8c16g：Aiget（`deploy/aiget/docker-compose.yml`）
+
+- `3100`：`aiget-server`（API）
+- `3103`：`aiget-www`（aiget.dev 官网）
+- `3102`：`aiget-console`（console.aiget.dev）
+- `3101`：`aiget-admin`（admin.aiget.dev）
+- `3110`：`aiget-docs`（docs.aiget.dev）
+
+### 4c6g：Moryflow（`deploy/moryflow/docker-compose.yml`）
+
+- `3100`：`moryflow-server`（API）
+- `3102`：`moryflow-www`（www.moryflow.com，占位页）
+- `3103`：`moryflow-docs`（docs.moryflow.com）
+- `3101`：`moryflow-admin`（后台）
+- `3105`：`moryflow-app`（app.moryflow.com，占位页，未来 Web App）
 
 ## 改造计划（按里程碑）
 
@@ -105,18 +131,25 @@ status: active
 - [ ] TLS 证书：
   - `www.moryflow.com`、`app.moryflow.com`、`aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`
 - [ ] 反代规则（按 Host）：
-  - `www.moryflow.com` → `http://<4c6g-ip>:<moryflow-www-port>`
-  - `app.moryflow.com` → `http://<4c6g-ip>:<moryflow-app-port>`
-  - `aiget.dev` → `http://<8c16g-ip>:<aiget-api-port>`（官网 + `/api/v1`）
-  - `console.aiget.dev` → `http://<8c16g-ip>:<aiget-console-port>`（Web）
-  - `admin.aiget.dev` → `http://<8c16g-ip>:<aiget-admin-port>`（Web）
+  - `www.moryflow.com` → `http://<4c6g-ip>:3102`
+  - `docs.moryflow.com` → `http://<4c6g-ip>:3103`
+  - `app.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
+  - `aiget.dev` → `http://<8c16g-ip>:3103`（官网）
+  - `aiget.dev` 的 `/api/*` → `http://<8c16g-ip>:3100`（API）
+  - `docs.aiget.dev` → `http://<8c16g-ip>:3110`
+  - `console.aiget.dev` → `http://<8c16g-ip>:3102`
+  - `admin.aiget.dev` → `http://<8c16g-ip>:3101`
 
 > Cloudflare 仅做 DNS（不开橙云），因此 origin 必须自己扛流量与防护；务必启用限流与鉴权。
 
-### 2) 4c6g（Dokploy）：Moryflow
+### 2) 4c6g：Moryflow（docker compose）
 
 - [ ] 部署容器：
-  - `moryflow-app`（包含 web + api）
+  - `moryflow-server`（API）
+  - `moryflow-www`（www 占位页）
+  - `moryflow-docs`
+  - `moryflow-admin`
+  - `moryflow-app`（app 占位页）
   - `moryflow-postgres`
   - `moryflow-redis`
 - [ ] 必备环境变量（示例命名）：
@@ -129,17 +162,16 @@ status: active
   - `MEMOX_BASE_URL=https://aiget.dev/api/v1/memox`
   - `MEMOX_API_KEY=...`（moryflow tenant 的 apiKey）
 
-### 3) 8c16g（Dokploy）：Aiget Dev + Memox
+### 3) 8c16g：Aiget（docker compose）
 
 - [ ] 部署容器：
-  - `aiget-api`（`aiget.dev`，包含 `/api/v1`）
-  - `aiget-console-web`（`console.aiget.dev`）
-  - `aiget-admin-web`（`admin.aiget.dev`）
-  - `aigetdev-postgres`
-  - `aigetdev-redis`
-  - `memox-vector-postgres`（pgvector）
-  - `memox-worker`
-  - `agentsbox-worker`（如有）
+  - `aiget-server`（API）
+  - `aiget-www`
+  - `aiget-docs`
+  - `aiget-console`
+  - `aiget-admin`
+  - `aiget-postgres`
+  - `aiget-redis`
 - [ ] 必备环境变量（示例命名）：
   - `PUBLIC_BASE_URL=https://aiget.dev`
   - `COOKIE_DOMAIN=.aiget.dev`
@@ -151,7 +183,7 @@ status: active
 
 ## 验收标准（上线前）
 
-- [ ] `app.moryflow.com` 注册/登录/refresh/logout 全流程通过
+- [ ] `app.moryflow.com`（占位）可访问
 - [ ] `console.aiget.dev` / `admin.aiget.dev` 注册/登录/refresh/logout 全流程通过（API 走 `aiget.dev/api/v1`）
 - [ ] 控制台可创建 tenant + apiKey，并能调限流策略
 - [ ] memox：

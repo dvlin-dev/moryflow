@@ -24,6 +24,7 @@ status: active
 3. **Aiget Dev API 统一入口**：Aiget Dev 对外 API 固定 `https://aiget.dev/api/v1`；控制台/后台为独立 Web 应用，需按 Origin 配置 CORS 与 CSRF。
 4. **OAuth 登录**：支持 Google/Apple；每条业务线独立配置与回调域名。
 5. **不引入 Tailscale**：服务间走公网 HTTPS；安全依靠鉴权 + 限流 + 最小暴露面。
+6. **服务机只暴露 `IP:端口`**：4c6g/8c16g 不处理域名与证书；域名反代统一在 megaboxpro（1panel）。
 
 ## 域名职责（固定）
 
@@ -71,40 +72,64 @@ status: active
 你当前机器分工建议固化为：
 
 1. **megaboxpro（2c2g，中国大陆优化）**：只做入口反代（1panel/Nginx），不承载核心业务。
-2. **4c6g（主服务稳定性）**：只跑 Moryflow 业务与数据库。
-3. **8c16g（重服务）**：跑 Aiget Dev（console + API）、Memox、Agentsbox，以及所有重任务 worker；向量库单独 Postgres。
+2. **4c6g（主服务稳定性）**：只跑 Moryflow 一套（单份 docker compose）+ 独立 DB/Redis。
+3. **8c16g（重服务）**：只跑 Aiget Dev 一套（单份 docker compose）+ 独立 DB/Redis。
 
-### 服务清单（建议）
+### 服务清单（固定）
 
-**4c6g：Moryflow**
+> 说明：本仓库把“上线可跑”的默认落点固化为两份 compose：
+>
+> - `deploy/moryflow/docker-compose.yml`（4c6g）
+> - `deploy/aiget/docker-compose.yml`（8c16g）
 
-- `moryflow-web`（`app.moryflow.com`）
-- `moryflow-api`（同域，或与 web 同服务）
-- `moryflow-postgres`
-- `moryflow-redis`
+**4c6g：Moryflow（`deploy/moryflow/docker-compose.yml`）**
 
-**8c16g：Aiget Dev + Memox**
+- `moryflow-server`：API（对外通过反代暴露）
+- `moryflow-www`：`www.moryflow.com`（占位页）
+- `moryflow-docs`：`docs.moryflow.com`（Docs 项目）
+- `moryflow-admin`：后台（独立 Web 前端）
+- `moryflow-app`：`app.moryflow.com`（占位页；未来 Web App）
+- `moryflow-postgres` / `moryflow-redis`：仅服务于 Moryflow 这一套
 
-- `aiget-web`（`aiget.dev`，官网）
-- `aiget-api`（`aiget.dev`，包含 `/api/v1`）
-- `aiget-console-web`（`console.aiget.dev`，控制台前端）
-- `aiget-admin-web`（`admin.aiget.dev`，管理后台前端）
-- `aigetdev-postgres`（Auth/Console/Agentsbox/Memox 元数据）
-- `aigetdev-redis`（队列/限流/缓存）
-- `memox-vector-postgres`（pgvector，独立实例，避免膨胀拖垮主库）
-- `agentsbox-worker`（无头浏览器/抓取等重任务）
-- `memox-worker`（embedding 计算、批量写入等）
+端口分配（固定）：
+
+- `3100`：`moryflow-server`（API）
+- `3102`：`moryflow-www`（www，占位页）
+- `3103`：`moryflow-docs`
+- `3101`：`moryflow-admin`
+- `3105`：`moryflow-app`（app，占位页；未来 Web App）
+
+**8c16g：Aiget Dev（`deploy/aiget/docker-compose.yml`）**
+
+- `aiget-server`：统一 API（Fetchx/Memox 等全部挂载于此）
+- `aiget-www`：`aiget.dev` 官网（模块路由：`/fetchx`、`/memox`）
+- `aiget-console`：`console.aiget.dev`（独立 Web 前端）
+- `aiget-admin`：`admin.aiget.dev`（独立 Web 前端）
+- `aiget-docs`：`docs.aiget.dev`（Docs 项目）
+- `aiget-postgres` / `aiget-redis`：仅服务于 Aiget Dev 这一套（不与 Moryflow 共享）
+
+端口分配（固定）：
+
+- `3100`：`aiget-server`（API）
+- `3103`：`aiget-www`（官网）
+- `3102`：`aiget-console`
+- `3101`：`aiget-admin`
+- `3110`：`aiget-docs`
 
 ## 入口反代（megaboxpro / 1panel）建议
 
 你已确认：Cloudflare 仅做 DNS，不开橙云；所有用户先到 megaboxpro，再反代到 4c6g/8c16g。
 
-建议按 Host 直接分流：
+建议按 Host + Path 分流（服务机只暴露 `IP:端口`）：
 
-- `www.moryflow.com` → 4c6g（营销站）
-- `app.moryflow.com` → 4c6g（应用+API）
-- `aiget.dev` → 8c16g（官网 + API）
-- `console.aiget.dev` → 8c16g（控制台前端）
-- `admin.aiget.dev` → 8c16g（管理后台前端）
+- `www.moryflow.com` → `http://<4c6g-ip>:3102`
+- `docs.moryflow.com` → `http://<4c6g-ip>:3103`
+- `app.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
+- `app.moryflow.com` 的 `/api/*` → `http://<4c6g-ip>:3100`（API，占位页不影响 API）
+- `aiget.dev` → `http://<8c16g-ip>:3103`（官网）
+- `aiget.dev` 的 `/api/*` → `http://<8c16g-ip>:3100`（统一 API）
+- `docs.aiget.dev` → `http://<8c16g-ip>:3110`
+- `console.aiget.dev` → `http://<8c16g-ip>:3102`
+- `admin.aiget.dev` → `http://<8c16g-ip>:3101`
 
 > 具体 Nginx 示例与部署 checklist 见：`docs/architecture/refactor-and-deploy-plan.md`。

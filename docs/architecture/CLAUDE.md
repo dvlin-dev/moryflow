@@ -21,3 +21,4 @@
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `refactor-and-deploy-plan.md`：从现有项目到目标架构的改造步骤与部署 checklist。
+  - 端口与两份 compose（`deploy/moryflow/docker-compose.yml`、`deploy/aiget/docker-compose.yml`）以此文档为准。

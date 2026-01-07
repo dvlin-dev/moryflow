@@ -156,17 +156,9 @@ Aiget/
 │   ├── typescript-config/           # TypeScript 配置
 │   └── tailwind-config/             # Tailwind 配置
 ├── deploy/                          # 部署配置目录
-│   ├── templates/                   # Docker/Nginx 模板
-│   ├── auth/                        # Auth 认证服务部署
-│   ├── console/                     # Console 部署
-│   ├── admin/                       # Admin 部署
-│   ├── moryflow/                    # Moryflow 服务部署（核心）
-│   ├── fetchx/                      # Fetchx 服务部署
-│   ├── memox/                       # Memox 服务部署
-│   ├── sandx/                       # Sandx 服务部署
-│   ├── docs/                        # 文档站部署
-│   ├── infra/                       # 基础设施（DB、Redis）
-│   └── docker-compose.all.yml       # 全量部署（开发环境）
+│   ├── infra/                       # 基础设施（DB、Redis；含测试环境）
+│   ├── aiget/                       # Aiget Dev 一套 docker compose（8c16g）
+│   └── moryflow/                    # Moryflow 一套 docker compose（4c6g）
 ├── turbo.json                       # Turborepo 配置
 ├── pnpm-workspace.yaml
 ├── package.json
