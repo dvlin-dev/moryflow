@@ -1,0 +1,117 @@
+name: moryflow
+
+services:
+  moryflow-postgres:
+    image: postgres:16
+    container_name: moryflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-moryflow}
+      POSTGRES_USER: ${POSTGRES_USER:-moryflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    ports:
+      - "${MORYFLOW_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - moryflow-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moryflow} -d ${POSTGRES_DB:-moryflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  moryflow-redis:
+    image: redis:7-alpine
+    container_name: moryflow-redis
+    restart: unless-stopped
+    ports:
+      - "${MORYFLOW_REDIS_PORT:-6379}:6379"
+    volumes:
+      - moryflow-redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  moryflow-server:
+    build:
+      context: ../..
+      dockerfile: apps/moryflow/server/Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL:-postgresql://moryflow:change_me@moryflow-postgres:5432/moryflow?schema=public}
+    container_name: moryflow-server
+    restart: unless-stopped
+    depends_on:
+      moryflow-postgres:
+        condition: service_healthy
+      moryflow-redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://moryflow:change_me@moryflow-postgres:5432/moryflow?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://moryflow-redis:6379}
+    ports:
+      - "${MORYFLOW_SERVER_PORT:-3100}:3000"
+
+  # www.moryflow.com (当前占位，后续替换为真实营销站)
+  moryflow-www:
+    image: nginx:alpine
+    container_name: moryflow-www
+    restart: unless-stopped
+    volumes:
+      - ./placeholders/www:/usr/share/nginx/html:ro
+    ports:
+      - "${MORYFLOW_WWW_PORT:-3102}:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # docs.moryflow.com
+  moryflow-docs:
+    build:
+      context: ../..
+      dockerfile: apps/moryflow/docs/Dockerfile
+    container_name: moryflow-docs
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "${MORYFLOW_DOCS_PORT:-3103}:3000"
+
+  # admin.moryflow.com（或内部后台）
+  moryflow-admin:
+    build:
+      context: ../..
+      dockerfile: apps/moryflow/admin/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://app.moryflow.com}
+    container_name: moryflow-admin
+    restart: unless-stopped
+    ports:
+      - "${MORYFLOW_ADMIN_PORT:-3101}:80"
+
+  # app.moryflow.com（当前占位，后续替换为 Web App）
+  moryflow-app:
+    image: nginx:alpine
+    container_name: moryflow-app
+    restart: unless-stopped
+    volumes:
+      - ./placeholders/app:/usr/share/nginx/html:ro
+    ports:
+      - "${MORYFLOW_APP_PORT:-3105}:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  moryflow-postgres-data:
+  moryflow-redis-data:
+
