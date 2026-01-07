@@ -19,6 +19,7 @@ Moryflow 后端服务，基于 NestJS 构建的 RESTful API 服务。
 
 - 使用 NestJS 模块化架构
 - 数据库操作使用 Prisma ORM
+- `build` / `lint` / `typecheck` / `test*` 会通过 `pre*` scripts 自动执行 `prisma:generate`（不需要本地 DB），确保 Prisma Client 与 schema 同步
 - 敏感配置通过环境变量管理
 - API 需要做权限校验（使用 Guard）
 

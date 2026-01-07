@@ -79,6 +79,8 @@ pnpm --filter @aiget/memox-server prisma:studio      # Prisma GUI
 pnpm --filter @aiget/memox-server prisma:migrate     # Create migration
 ```
 
+Note: `build` / `lint` / `typecheck` / `test*` run `prisma:generate` automatically via `pre*` scripts; `prisma:generate` uses a dummy `DATABASE_URL` so it can run without a local DB connection. If you modify `prisma/schema.prisma`, run `pnpm --filter @aiget/memox-server prisma:generate` to regenerate immediately.
+
 ## Testing Notes
 
 - 当前 `test:unit` 使用 `vitest run --passWithNoTests`，避免在尚未补齐单测前阻塞仓库校验；新增/修复业务逻辑时必须补充单元测试。

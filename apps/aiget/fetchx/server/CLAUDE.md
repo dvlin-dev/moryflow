@@ -119,7 +119,7 @@ pnpm install
 cp .env.example .env
 # 编辑 .env 填入数据库、Redis 等配置
 
-# 3. 生成 Prisma Client
+# 3. 生成 Prisma Client（可选：`build` / `lint` / `typecheck` / `test*` 会自动生成；不需要本地 DB）
 pnpm --filter @aiget/fetchx-server prisma:generate
 
 # 4. 安装 Playwright 浏览器（必须，用于网页抓取）
