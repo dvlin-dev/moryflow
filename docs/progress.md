@@ -57,9 +57,9 @@ status: active
 
 - [x] 合并官网代码到 `apps/aiget/www`，通过导航栏路由切换模块页（`/fetchx`、`/memox`）
 - [x] 清理旧官网目录与引用（不再保留 `fetchx.aiget.dev` / `memox.aiget.dev`）
-- [ ] Console/Admin 全量改为调用 `https://aiget.dev/api/v1`（不依赖同源 `/api/v1`）
-- [ ] 统一 API key 文案与示例：`ag_` + `X-API-Key`（或最终统一成 `Authorization: Bearer`，二选一）
-- [ ] 统一对外文档入口：`https://docs.aiget.dev`（产品文档），`https://aiget.dev/api-docs`（Swagger）
+- [x] Console/Admin 全量改为调用 `https://aiget.dev/api/v1`（生产默认；开发可用 Vite proxy）
+- [x] 统一 API key 文案与示例：`ag_` + `Authorization: Bearer <apiKey>`
+- [x] 统一对外文档入口：`https://docs.aiget.dev`（产品文档），`https://aiget.dev/api-docs`（Swagger）
 
 **验证清单**
 

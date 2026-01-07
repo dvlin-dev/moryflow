@@ -1,7 +1,7 @@
 /**
- * [INPUT]: Request with X-API-Key header
+ * [INPUT]: Request with Authorization Bearer apiKey (preferred) or X-API-Key (legacy)
  * [OUTPUT]: Boolean (allowed/denied), attaches ApiKeyValidationResult to request
- * [POS]: Authentication guard for public API endpoints, validates API keys
+ * [POS]: Authentication guard for public API endpoints, validates API keys (非全局 guard)
  *
  * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
  */
@@ -11,35 +11,39 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { ApiKeyService } from './api-key.service';
-import { USE_API_KEY } from './api-key.decorators';
 import type { ApiKeyValidationResult } from './api-key.types';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  constructor(
-    private readonly apiKeyService: ApiKeyService,
-    private readonly reflector: Reflector,
-  ) {}
+  constructor(private readonly apiKeyService: ApiKeyService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    // 检查路由是否需要 API Key 认证
-    const useApiKey = this.reflector.getAllAndOverride<boolean>(USE_API_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (!useApiKey) {
-      return true; // 非 API Key 路由，交给其他 guard 处理
+  private getApiKeyFromHeaders(request: Request): string | null {
+    const authorization = request.headers.authorization;
+    if (authorization && typeof authorization === 'string') {
+      const [scheme, token] = authorization.split(' ');
+      if (scheme?.toLowerCase() === 'bearer' && token) {
+        return token;
+      }
     }
 
-    const request = context.switchToHttp().getRequest<Request>();
     const apiKey = request.headers['x-api-key'];
+    if (apiKey && typeof apiKey === 'string') {
+      return apiKey;
+    }
 
-    if (!apiKey || typeof apiKey !== 'string') {
-      throw new ForbiddenException('Missing X-API-Key header');
+    return null;
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const apiKey = this.getApiKeyFromHeaders(request);
+
+    if (!apiKey) {
+      throw new ForbiddenException(
+        'Missing API key (use Authorization: Bearer <apiKey>)',
+      );
     }
 
     // 验证 API Key

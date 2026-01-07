@@ -14,7 +14,7 @@ const apiLabels: Record<Api, string> = {
 const codeExamples: Record<Api, string> = {
   scrape: `# Scrape a webpage to Markdown
 curl -X POST https://aiget.dev/api/v1/scrape \\
-  -H "X-API-Key: ag_your_api_key" \\
+  -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "url": "https://example.com",
@@ -33,7 +33,7 @@ curl -X POST https://aiget.dev/api/v1/scrape \\
 }`,
   crawl: `# Crawl an entire website
 curl -X POST https://aiget.dev/api/v1/crawl \\
-  -H "X-API-Key: ag_your_api_key" \\
+  -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "url": "https://docs.example.com",
@@ -53,7 +53,7 @@ curl -X POST https://aiget.dev/api/v1/crawl \\
 }`,
   extract: `# Extract structured data with AI
 curl -X POST https://aiget.dev/api/v1/extract \\
-  -H "X-API-Key: ag_your_api_key" \\
+  -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "urls": ["https://example.com/product"],

@@ -111,13 +111,18 @@ async function bootstrap() {
     .setDescription('Aiget 截图服务 API 文档')
     .setVersion('1.0')
     .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'APIKey' },
+      'apiKey',
+    )
+    .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'bearer',
     )
-    .addCookieAuth('better-auth.session_token', {
-      type: 'apiKey',
-      in: 'cookie',
-    })
+    .addCookieAuth(
+      'better-auth.session_token',
+      { type: 'apiKey', in: 'cookie' },
+      'session',
+    )
     .addTag('Health', '健康检查')
     .addTag('Admin', '管理员功能')
     .addTag('Payment', '支付相关')

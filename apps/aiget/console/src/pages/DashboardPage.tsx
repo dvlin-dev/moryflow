@@ -127,7 +127,7 @@ export default function DashboardPage() {
               </p>
               <pre className="mt-2 p-3 bg-muted rounded-none text-xs overflow-x-auto">
                 {`curl -X POST https://aiget.dev/api/v1/scrape \\
-  -H "X-API-Key: ag_your_api_key" \\
+  -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{"url": "https://example.com", "formats": ["markdown", "screenshot"]}'`}
               </pre>

@@ -1,5 +1,5 @@
 /**
- * [INPUT]: API 请求 (X-API-Key 认证)
+ * [INPUT]: API 请求 (Authorization: Bearer apiKey 认证)
  * [OUTPUT]: QuotaStatusResponseDto
  * [POS]: 配额模块 API 路由，提供公开 API 端点
  */
@@ -7,7 +7,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { QuotaService } from './quota.service';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
-import { UseApiKey, CurrentApiKey } from '../api-key/api-key.decorators';
+import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 
 @Controller({ path: 'quota', version: '1' })
@@ -19,10 +19,9 @@ export class QuotaController {
    * 查询当前配额状态
    * GET /api/v1/quota
    *
-   * 需要 X-API-Key 认证
+   * 需要 apiKey 认证（Authorization: Bearer <apiKey>）
    */
   @Get()
-  @UseApiKey()
   async getQuotaStatus(@CurrentApiKey() apiKey: ApiKeyValidationResult) {
     const status = await this.quotaService.getStatus(apiKey.userId);
 

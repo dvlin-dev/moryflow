@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
-import { UseApiKey } from '../api-key/api-key.decorators';
 import { oembedRequestSchema } from './dto/oembed-request.dto';
 import { FormatNotSupportedError } from './oembed.errors';
 import { OembedService } from './oembed.service';
@@ -20,7 +19,6 @@ import { OembedService } from './oembed.service';
 @ApiTags('Oembed')
 @Controller({ path: 'oembed', version: '1' })
 @UseGuards(ApiKeyGuard)
-@UseApiKey()
 export class OembedController {
   constructor(private readonly oembedService: OembedService) {}
 

@@ -134,7 +134,6 @@ apps/
 - 移除 `apps/aiget/server/src/auth`，切到新 Auth/JWKS。
 - 内部接口：`JwtGuard`（Auth Service 签发 access token）
 - 对外能力：API Key (`Authorization: Bearer <apiKey>`) + 限流
-  - 当前实现使用 `X-API-Key: <apiKey>`（后续如需统一成 `Authorization: Bearer`，应同步收口）
 
 ## 五、删除清单（零兼容）
 

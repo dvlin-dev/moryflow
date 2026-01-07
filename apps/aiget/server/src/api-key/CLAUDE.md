@@ -46,7 +46,7 @@ Example: ag_abc123def456ghi789jkl012mno345pq
 ## Authentication Flow
 
 ```
-Request with X-API-Key header
+Request with Authorization: Bearer <apiKey>
     ↓
 ApiKeyGuard extracts key
     ↓

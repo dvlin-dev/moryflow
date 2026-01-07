@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: apiClient, ApiError
- * [DEPENDS]: fetch, zustand store, @aiget/auth-client
+ * [DEPENDS]: fetch, import.meta.env, zustand store, @aiget/auth-client
  * [POS]: Console API 请求封装（含 refresh 重试）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
@@ -10,8 +10,19 @@ import { toAuthUser } from './auth-utils';
 import { useAuthStore, getAccessToken } from '../stores/auth';
 import type { PaginationMeta, ApiErrorResponse } from '@aiget/types';
 
-// 开发环境使用空字符串走 Vite 代理，生产环境使用完整 URL
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
+const normalizeApiOrigin = (value: string) => value.replace(/\/+$/, '');
+
+/**
+ * 生产环境默认走 `https://aiget.dev`，避免误走 console 同源 `/api/v1/*`。
+ * 本地开发默认走空字符串，让 Vite proxy 代理 `/api/*` 到后端。
+ */
+export const API_BASE_URL = (() => {
+  const explicit = (import.meta.env.VITE_API_URL ?? '').trim();
+  if (explicit) {
+    return normalizeApiOrigin(explicit);
+  }
+  return import.meta.env.DEV ? '' : 'https://aiget.dev';
+})();
 
 /**
  * API 错误类
