@@ -109,7 +109,11 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
     },
   });
 
-  const ruleType = useWatch({ control, name: 'type' });
+  const ruleType = useWatch({ control, name: 'type' }) ?? 'tool_failure_rate';
+  const level = useWatch({ control, name: 'level' }) ?? 'warning';
+  const timeWindow = useWatch({ control, name: 'timeWindow' }) ?? 3600;
+  const cooldown = useWatch({ control, name: 'cooldown' }) ?? 3600;
+  const enabled = useWatch({ control, name: 'enabled' }) ?? true;
 
   useEffect(() => {
     if (rule) {
@@ -189,10 +193,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
           {/* Type */}
           <div className="space-y-2">
             <Label>规则类型</Label>
-            <Select
-              value={watch('type')}
-              onValueChange={(v) => setValue('type', v as AlertRuleType)}
-            >
+            <Select value={ruleType} onValueChange={(v) => setValue('type', v as AlertRuleType)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -212,10 +213,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
           {/* Level */}
           <div className="space-y-2">
             <Label>告警级别</Label>
-            <Select
-              value={watch('level')}
-              onValueChange={(v) => setValue('level', v as AlertLevel)}
-            >
+            <Select value={level} onValueChange={(v) => setValue('level', v as AlertLevel)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -247,7 +245,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
           <div className="space-y-2">
             <Label>时间窗口</Label>
             <Select
-              value={String(watch('timeWindow'))}
+              value={String(timeWindow)}
               onValueChange={(v) => setValue('timeWindow', Number(v))}
             >
               <SelectTrigger>
@@ -279,10 +277,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
           {/* Cooldown */}
           <div className="space-y-2">
             <Label>冷却时间</Label>
-            <Select
-              value={String(watch('cooldown'))}
-              onValueChange={(v) => setValue('cooldown', Number(v))}
-            >
+            <Select value={String(cooldown)} onValueChange={(v) => setValue('cooldown', Number(v))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -313,7 +308,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
             <Label htmlFor="enabled">启用规则</Label>
             <Switch
               id="enabled"
-              checked={watch('enabled')}
+              checked={enabled}
               onCheckedChange={(v) => setValue('enabled', v)}
             />
           </div>
