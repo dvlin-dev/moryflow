@@ -14,7 +14,7 @@ API key management for the Memox platform. Handles key generation, validation, a
 - Key validation and lookup
 - API key guard for public endpoints
 - Key hash storage (SHA256, plaintext never stored)
-- Key prefix handling (`mm_` prefix)
+- Key prefix handling (`ag_` prefix)
 - Key expiration management
 
 **Does NOT:**
@@ -49,7 +49,7 @@ export class MemoryController { ... }
 ## Key Format
 
 ```
-mm_<32-char-random-string>
+ag_<32-char-random-string>
 │  └── 32 character secure random token
 └── Prefix identifying Memox keys
 ```
@@ -58,7 +58,7 @@ mm_<32-char-random-string>
 
 - **Storage**: Only SHA256 hash stored in database
 - **Display**: Full key shown only once at creation
-- **Prefix**: Visible `mm_...` prefix for identification
+- **Prefix**: Visible `ag_...` prefix for identification
 - **Expiration**: Optional expiration date support
 
 ## API Endpoints

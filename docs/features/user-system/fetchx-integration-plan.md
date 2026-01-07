@@ -15,15 +15,22 @@ status: draft
 
 # Fetchx 接入方案（Aiget Dev 试点）
 
-> 目标：以 Fetchx 为试点，先落地 `fetchx.aiget.dev` 官网 + `console.aiget.dev` 用户控制台 + `admin.aiget.dev` 管理后台。**不做历史兼容与迁移**，Memox 暂不接入。
+> 目标：以 Fetchx 为试点，先落地 Aiget Dev 的统一口径：
+>
+> - 官网：`aiget.dev`（模块页：`/fetchx`）
+> - 控制台：`console.aiget.dev`
+> - 管理后台：`admin.aiget.dev`
+> - API：`https://aiget.dev/api/v1/*`
+>
+> **不做历史兼容与迁移**，Memox 暂不接入。
 
 ## 一、调研结论（现状）
 
 ### 1) 当前 monorepo 结构（已分层）
 
 - 已存在：
-  - `apps/aiget/fetchx/www`：Fetchx 官网前端
-  - `apps/aiget/fetchx/server`：Fetchx API 服务（含自建 Auth 模块）
+  - `apps/aiget/www`：Aiget Dev 官网（模块页：`/fetchx`、`/memox`）
+  - `apps/aiget/server`：Aiget Dev 统一后端（包含 Fetchx API，含自建 Auth 模块）
   - `apps/aiget/console`：Aiget Dev 用户控制台（来自 Fetchx console）
   - `apps/aiget/admin/www`：Aiget Dev 管理后台前端（来自 Fetchx admin）
   - `apps/aiget/admin/server`：Aiget Dev 管理后台后端
@@ -35,12 +42,12 @@ status: draft
 
 - `archive/external-repos/fetchx/apps/console`：Fetchx 控制台（可作为 console 基础模板）
 - `archive/external-repos/fetchx/apps/admin`：Fetchx 管理后台（已迁入 `apps/aiget/admin/www`）
-- `archive/external-repos/fetchx/apps/www`：Fetchx 官网（已迁入 `apps/aiget/fetchx/www`）
-- `archive/external-repos/fetchx/apps/server`：Fetchx 服务端（已迁入 `apps/aiget/fetchx/server`）
+- `archive/external-repos/fetchx/apps/www`：Fetchx 官网（已合并到 `apps/aiget/www`）
+- `archive/external-repos/fetchx/apps/server`：Fetchx 服务端（已迁入 `apps/aiget/server`）
 
 ### 3) 风险提示（当前差距）
 
-- Fetchx 现有 Auth 与新方案冲突：`apps/aiget/fetchx/server/src/auth` 需删除并切到 `@aiget/auth-server` + Auth Service。
+- Fetchx 现有 Auth 与新方案冲突：`apps/aiget/server/src/auth` 需删除并切到 `@aiget/auth-server` + Auth Service。
 - console/admin 已迁入，但需改造接入 Auth Client 与新域名。
 - apps 目录重构会影响 workspace 匹配规则与构建脚本。
 
@@ -49,25 +56,24 @@ status: draft
 ```
 apps/
 ├── aiget/
-│   ├── fetchx/
-│   │   ├── server/       # Fetchx API 服务
-│   │   └── www/          # fetchx.aiget.dev 官网
+│   ├── server/           # Aiget Dev 统一后端（aiget.dev/api/v1）
+│   ├── www/              # Aiget Dev 官网（aiget.dev；/fetchx、/memox）
 │   ├── console/          # console.aiget.dev 用户控制台（Web）
 │   └── admin/
 │       ├── www/          # admin.aiget.dev 管理后台（Web）
-│       └── server/       # admin.aiget.dev 后端（API）
+│       └── server/       # （迁移中）将并入 aiget/server
 └── moryflow/
     └── ...               # 现有 Moryflow 结构原样迁移
 ```
 
-> 说明：console/admin 是否需要独立 server 以 BFF 方式接入，按实际需求决定，但 **Auth 必须由独立 Auth Service 提供**。
+> 说明：Aiget Dev 统一 API 入口固定 `https://aiget.dev/api/v1`；console/admin 作为独立 Web 前端跨域调用该 API。
 
 ## 三、接入目标（本次只做 Fetchx）
 
-- 官网：`fetchx.aiget.dev` → `apps/aiget/fetchx/www`
+- 官网模块页：`aiget.dev/fetchx` → `apps/aiget/www`
 - 用户控制台：`console.aiget.dev` → `apps/aiget/console`
 - 管理后台：`admin.aiget.dev` → `apps/aiget/admin/www` + `apps/aiget/admin/server`
-- Auth：Aiget Dev 独立 Auth Service（`/api/v1/auth/*`）
+- API：Aiget Dev 统一后端（`https://aiget.dev/api/v1/*`）
 - Memox：暂不接入
 
 ## 四、接入方案（不兼容、从新方案落地）
@@ -81,20 +87,20 @@ apps/
 
 ### Phase 1：Fetchx 官网接入（已迁入）
 
-- `apps/aiget/fetchx/www` 已完成迁入。
+- Fetchx 官网已合并进 `apps/aiget/www`（路由：`/fetchx`）。
 - 待补 `PUBLIC_BASE_URL` / API 基础地址配置。
-- 待部署到 `fetchx.aiget.dev`。
+- 待部署到 `aiget.dev/fetchx`。
 
 ### Phase 2：Console 接入（用户控制台）
 
 - `apps/aiget/console` 已完成迁入并接入 `@aiget/auth-client`。
 - 认证细节（已落地）：
-  - `baseUrl=https://console.aiget.dev/api/v1/auth`
+  - `baseUrl=https://aiget.dev/api/v1/auth`
   - `clientType=web`
   - access token 仅内存，refresh token 走 HttpOnly Cookie
   - 401 时触发 refresh 重试一次
 - 连接 Fetchx API：
-  - `https://console.aiget.dev/api/v1/fetchx/*`（通过反代到 fetchx-server）
+  - `https://aiget.dev/api/v1/*`（如 `/scrape`、`/crawl`、`/extract`、`/search`）
 - 控制台能力优先级：
   - 注册/登录/退出
   - API Key 管理（生成/轮换/禁用）
@@ -104,7 +110,7 @@ apps/
 
 - `apps/aiget/admin/www` 与 `apps/aiget/admin/server` 已完成迁入并接入 `@aiget/auth-client`。
 - 认证细节（已落地）：
-  - `baseUrl=https://admin.aiget.dev/api/v1/auth`
+  - `baseUrl=https://aiget.dev/api/v1/auth`
   - `clientType=web`
   - access token 仅内存，refresh token 走 HttpOnly Cookie
   - 401 时触发 refresh 重试一次
@@ -117,7 +123,7 @@ apps/
 ### Phase 4：Auth Service 落地
 
 - 使用 `templates/auth-service` 部署 Aiget Dev 的 Auth：
-  - `BETTER_AUTH_URL=https://console.aiget.dev/api/v1/auth`
+  - `BETTER_AUTH_URL=https://aiget.dev/api/v1/auth`
   - `COOKIE_DOMAIN=.aiget.dev`
   - `TRUSTED_ORIGINS=https://console.aiget.dev,https://admin.aiget.dev`
 - Google/Apple 登录按 Aiget Dev 独立配置。
@@ -125,9 +131,10 @@ apps/
 
 ### Phase 5：Fetchx Server 与权限切换
 
-- 移除 `apps/aiget/fetchx/server/src/auth`，切到新 Auth/JWKS。
+- 移除 `apps/aiget/server/src/auth`，切到新 Auth/JWKS。
 - 内部接口：`JwtGuard`（Auth Service 签发 access token）
 - 对外能力：API Key (`Authorization: Bearer <apiKey>`) + 限流
+  - 当前实现使用 `X-API-Key: <apiKey>`（后续如需统一成 `Authorization: Bearer`，应同步收口）
 
 ## 五、删除清单（零兼容）
 
@@ -136,11 +143,12 @@ apps/
 
 ## 六、部署与路由
 
-- `fetchx.aiget.dev` → Fetchx 官网（静态站）
-- `console.aiget.dev` → Console 前端 + `/api/v1` 反代到后端服务
-- `admin.aiget.dev` → Admin 前端 + `/api/v1` 反代到 admin-server
-- `/api/v1/auth/*` → Auth Service（独立部署）
-- `/api/v1/fetchx/*` → Fetchx Server
+- `aiget.dev` → 官网（静态站）+ 统一 API（`/api/v1`）
+- `aiget.dev/fetchx` → Fetchx 模块页（`apps/aiget/www`）
+- `console.aiget.dev` → Console 前端（Web）
+- `admin.aiget.dev` → Admin 前端（Web）
+- `aiget.dev/api/v1/auth/*` → Auth Service（同域挂载）
+- `aiget.dev/api/v1/*` → Aiget Server（Fetchx 模块）
 
 ## 七、验收标准
 

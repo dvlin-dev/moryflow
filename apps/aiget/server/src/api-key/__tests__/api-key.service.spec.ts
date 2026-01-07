@@ -27,7 +27,7 @@ describe('ApiKeyService', () => {
     del: Mock;
   };
 
-  // 有效 API Key (lk_ + 64 hex chars)
+  // 有效 API Key (ag_ + 64 hex chars)
   const validApiKey = `${API_KEY_PREFIX}${'a'.repeat(64)}`;
 
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.create.mockResolvedValue({
         id: 'key_1',
         name: 'Test Key',
-        keyPrefix: 'lk_abcd1234',
+        keyPrefix: 'ag_abcd1234',
       });
 
       const result = await service.create('user_1', {
@@ -67,7 +67,7 @@ describe('ApiKeyService', () => {
         expiresAt: undefined,
       });
 
-      expect(result.key).toMatch(/^lk_[a-f0-9]{64}$/);
+      expect(result.key).toMatch(/^ag_[a-f0-9]{64}$/);
       expect(result.id).toBe('key_1');
       expect(result.name).toBe('Test Key');
     });
@@ -76,7 +76,7 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.create.mockResolvedValue({
         id: 'key_1',
         name: 'Test Key',
-        keyPrefix: 'lk_abcd1234',
+        keyPrefix: 'ag_abcd1234',
       });
 
       await service.create('user_1', {
@@ -89,7 +89,7 @@ describe('ApiKeyService', () => {
           userId: 'user_1',
           name: 'Test Key',
           keyHash: expect.stringMatching(/^[a-f0-9]{64}$/), // SHA256 hash
-          keyPrefix: expect.stringMatching(/^lk_.{8}$/),
+          keyPrefix: expect.stringMatching(/^ag_.{8}$/),
         }),
       });
     });
@@ -99,7 +99,7 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.create.mockResolvedValue({
         id: 'key_1',
         name: 'Test Key',
-        keyPrefix: 'lk_abcd1234',
+        keyPrefix: 'ag_abcd1234',
         expiresAt,
       });
 
@@ -118,8 +118,8 @@ describe('ApiKeyService', () => {
   describe('findAllByUser', () => {
     it('should return all keys for user', async () => {
       const keys = [
-        { id: 'key_1', name: 'Key 1', keyPrefix: 'lk_abc' },
-        { id: 'key_2', name: 'Key 2', keyPrefix: 'lk_def' },
+        { id: 'key_1', name: 'Key 1', keyPrefix: 'ag_abc' },
+        { id: 'key_2', name: 'Key 2', keyPrefix: 'ag_def' },
       ];
       mockPrisma.apiKey.findMany.mockResolvedValue(keys);
 

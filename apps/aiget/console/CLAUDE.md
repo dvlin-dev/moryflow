@@ -11,6 +11,7 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - 用量与额度概览
 - API Key 管理（创建/删除/查看）
 - 抓取/截图测试（Playground）
+- 文档入口（外链：`https://docs.aiget.dev`）
 - Webhook 配置
 - 账户设置
 

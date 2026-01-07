@@ -36,7 +36,7 @@ import { EmbedProvider, useEmbed } from '@aiget/embed-react';
 
 function App() {
   return (
-    <EmbedProvider apiKey="fx_xxx">
+    <EmbedProvider apiKey="ag_xxx">
       <MyComponent />
     </EmbedProvider>
   );

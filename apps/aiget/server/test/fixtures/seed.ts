@@ -80,9 +80,10 @@ export async function seedTestData(prisma: PrismaClient): Promise<SeedData> {
       id: 'apikey_free_test',
       userId: freeUser.id,
       name: 'Free Test Key',
-      // SHA256 of 'lk_free_test_key'
-      keyHash: 'a1b2c3d4e5f6g7h8i9j0',
-      keyPrefix: 'lk_free',
+      // SHA256 of 'ag_free_test_key'
+      keyHash:
+        '8d6c7b0457cce713a045fcf1290c66e209ea30fef199c12f33f57ddd7c00e2aa',
+      keyPrefix: 'ag_free',
     },
   });
 
@@ -92,9 +93,10 @@ export async function seedTestData(prisma: PrismaClient): Promise<SeedData> {
       id: 'apikey_pro_test',
       userId: proUser.id,
       name: 'Pro Test Key',
-      // SHA256 of 'lk_pro_test_key'
-      keyHash: 'z9y8x7w6v5u4t3s2r1q0',
-      keyPrefix: 'lk_pro',
+      // SHA256 of 'ag_pro_test_key'
+      keyHash:
+        '95e1d8dd816d29311afa14236b7cfa86abe53e86851d40d3b19a65bbf7a5dd21',
+      keyPrefix: 'ag_pro',
     },
   });
 

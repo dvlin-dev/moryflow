@@ -1,6 +1,6 @@
-# Fetchx Server
+# Aiget Server
 
-> @aiget/fetchx-server - 网页数据 API 服务
+> @aiget/aiget-server - Aiget Dev unified API server
 
 ## Overview
 
@@ -120,13 +120,13 @@ cp .env.example .env
 # 编辑 .env 填入数据库、Redis 等配置
 
 # 3. 生成 Prisma Client（可选：`build` / `lint` / `typecheck` / `test*` 会自动生成；不需要本地 DB）
-pnpm --filter @aiget/fetchx-server prisma:generate
+pnpm --filter @aiget/aiget-server prisma:generate
 
 # 4. 安装 Playwright 浏览器（必须，用于网页抓取）
 pnpm exec playwright install chromium
 
 # 5. 启动开发服务器
-pnpm dev:fetchx
+pnpm dev:aiget
 ```
 
 ### Playwright 浏览器说明
@@ -173,7 +173,7 @@ browserType.launch: Executable doesn't exist at /Users/.../chromium_headless_she
 
 ```bash
 # 1. 启动服务
-pnpm dev:fetchx
+pnpm dev:aiget
 
 # 2. 检查健康状态
 curl http://localhost:3000/health
@@ -199,10 +199,10 @@ open http://localhost:3000/api-docs
 ## Test Commands
 
 ```bash
-pnpm --filter @aiget/fetchx-server test        # All tests
-pnpm --filter @aiget/fetchx-server test:unit   # Unit tests only
-pnpm --filter @aiget/fetchx-server test:cov    # With coverage
-pnpm --filter @aiget/fetchx-server test:ci     # CI full test (需要 Docker)
+pnpm --filter @aiget/aiget-server test        # All tests
+pnpm --filter @aiget/aiget-server test:unit   # Unit tests only
+pnpm --filter @aiget/aiget-server test:cov    # With coverage
+pnpm --filter @aiget/aiget-server test:ci     # CI full test (需要 Docker)
 ```
 
 ### 测试类型
@@ -224,7 +224,7 @@ pnpm --filter @aiget/fetchx-server test:ci     # CI full test (需要 Docker)
 
 ```bash
 # 运行集成测试（自动启动容器）
-RUN_INTEGRATION_TESTS=1 pnpm --filter @aiget/fetchx-server test
+RUN_INTEGRATION_TESTS=1 pnpm --filter @aiget/aiget-server test
 ```
 
 ---

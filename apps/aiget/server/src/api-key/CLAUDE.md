@@ -8,7 +8,7 @@ API key management for authenticating public API requests. Handles creation, val
 
 ## Responsibilities
 
-- Generate secure API keys with `lk_` prefix
+- Generate secure API keys with `ag_` prefix
 - Hash and store keys securely (SHA256)
 - Validate API keys on requests
 - Track key usage and last used timestamp
@@ -18,7 +18,7 @@ API key management for authenticating public API requests. Handles creation, val
 
 - Plaintext key shown only once on creation
 - Store only SHA256 hash in database
-- Keys must have `lk_` prefix
+- Keys must have `ag_` prefix
 - One key per scope per user (optional)
 
 ## File Structure
@@ -39,8 +39,8 @@ API key management for authenticating public API requests. Handles creation, val
 ## Key Format
 
 ```
-lk_[32 random chars]
-Example: lk_abc123def456ghi789jkl012mno345pq
+ag_[32 random chars]
+Example: ag_abc123def456ghi789jkl012mno345pq
 ```
 
 ## Authentication Flow

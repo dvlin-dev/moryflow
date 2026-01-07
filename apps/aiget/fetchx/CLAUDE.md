@@ -8,10 +8,10 @@ Fetchx 是 Aiget 平台的网页数据服务，为 LLM 和 AI 应用提供网页
 
 ## 应用结构
 
-| 应用   | 路径      | 说明                     |
-| ------ | --------- | ------------------------ |
-| Server | `server/` | NestJS 后端 API          |
-| WWW    | `www/`    | 落地页（TanStack Start） |
+| 应用   | 路径         | 说明                                   |
+| ------ | ------------ | -------------------------------------- |
+| Server | `../server/` | Aiget Dev 统一后端（包含 Fetchx 模块） |
+| WWW    | `../www/`    | Aiget Dev 官网（模块页：`/fetchx`）    |
 
 ## 核心功能
 
@@ -25,27 +25,27 @@ Fetchx 是 Aiget 平台的网页数据服务，为 LLM 和 AI 应用提供网页
 
 ## API Key 前缀
 
-`fx_` - Fetchx 专用 API Key
+`ag_` - Aiget Dev 统一 API Key
 
 ## 域名
 
-| 服务   | 域名                 |
-| ------ | -------------------- |
-| API    | fetchx.aiget.dev     |
-| 落地页 | fetchx.com（规划中） |
+| 服务   | 域名             |
+| ------ | ---------------- |
+| API    | aiget.dev/api/v1 |
+| 落地页 | aiget.dev/fetchx |
 
 ## 开发命令
 
 ```bash
-# 启动 Server 开发
-pnpm dev:fetchx
+# 启动 Aiget Server 开发
+pnpm dev:aiget
 
 # 启动 WWW 开发
-pnpm dev:fetchx:www
+pnpm dev:aiget:www
 
 # 类型检查
-pnpm --filter @aiget/fetchx-server typecheck
-pnpm --filter @aiget/fetchx-www typecheck
+pnpm --filter @aiget/aiget-server typecheck
+pnpm --filter @aiget/aiget-www typecheck
 ```
 
 ## 迁移来源

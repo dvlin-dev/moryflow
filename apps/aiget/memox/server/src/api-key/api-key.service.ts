@@ -43,7 +43,7 @@ export class ApiKeyService {
 
   /**
    * 生成新的 API Key
-   * 格式: mm_<64 hex chars>
+   * 格式: ag_<64 hex chars>
    */
   private generateKey(): string {
     const bytes = randomBytes(API_KEY_LENGTH);

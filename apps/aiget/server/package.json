@@ -1,7 +1,7 @@
 {
-  "name": "@aiget/fetchx-server",
+  "name": "@aiget/aiget-server",
   "version": "0.0.1",
-  "description": "Fetchx Web Data API Server",
+  "description": "Aiget Dev Unified API Server",
   "author": "",
   "private": true,
   "license": "UNLICENSED",

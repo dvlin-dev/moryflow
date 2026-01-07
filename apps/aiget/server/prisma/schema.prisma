@@ -197,7 +197,7 @@ model ApiKey {
   id         String    @id @default(cuid())
   userId     String
   name       String
-  keyPrefix  String    // 展示用，如 "lk_abc1"
+  keyPrefix  String    // 展示用，如 "ag_abc1"
   keyHash    String    @unique // SHA256(完整key)
   isActive   Boolean   @default(true)
   lastUsedAt DateTime?

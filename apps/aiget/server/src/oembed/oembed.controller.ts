@@ -26,7 +26,7 @@ export class OembedController {
 
   /**
    * 获取 oEmbed 数据
-   * POST /api/oembed
+   * POST /api/v1/oembed
    */
   @Post()
   @HttpCode(HttpStatus.OK)

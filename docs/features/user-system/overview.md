@@ -29,7 +29,7 @@ status: active
 ## 服务形态（如何“复用但不复杂”）
 
 - **Moryflow Auth**：只服务 `app.moryflow.com`（cookie `Domain=.moryflow.com`）。
-- **Aiget Dev Auth**：只服务 `console.aiget.dev`（cookie `Domain=.aiget.dev`，平台内模块共享）。
+- **Aiget Dev Auth**：只服务 `aiget.dev`（cookie `Domain=.aiget.dev`，平台内模块共享；console/admin 为独立 Web 前端）。
 - 两条 Auth **共享代码**（抽到 `packages/*`），但 **不共享数据库/密钥**。
 - User/Profile/Session 等核心数据各自独立，禁止跨业务线关联。
 
@@ -38,7 +38,7 @@ status: active
 > 这些路由在各自业务线的应用域名下保持一致：
 >
 > - Moryflow：`https://app.moryflow.com/api/v1/auth/*`
-> - Aiget Dev：`https://console.aiget.dev/api/v1/auth/*`
+> - Aiget Dev：`https://aiget.dev/api/v1/auth/*`（console/admin 跨域调用）
 
 - `POST /api/v1/auth/register`
   - 输入：name、email、password
@@ -94,7 +94,7 @@ status: active
 
 ### 4) Aiget Dev 平台内免重复登录
 
-- Aiget Dev 已收敛为单入口 `console.aiget.dev`；平台内模块共享登录态无需跨子域方案。
+- Aiget Dev 的登录态通过 `Domain=.aiget.dev` Cookie 在 `aiget.dev` / `console.aiget.dev` / `admin.aiget.dev` 共享；不做旧子域名兼容。
 - Moryflow 与 Aiget Dev **永不互通**，因此不设计跨域免登录。
 
 ### 5) 原生端免登录
@@ -114,14 +114,15 @@ status: active
 
 1. **两套 Auth**：
    - Moryflow Auth：仅服务 `app.moryflow.com`
-   - Aiget Dev Auth：仅服务 `console.aiget.dev`
+   - Aiget Dev Auth：仅服务 `aiget.dev`
 2. **永不互通**：不共享账号/Token/数据库；OAuth 仅限业务线内。
-3. **Web 与 API 同源**：避免 CORS 与跨站 Cookie 复杂度。
+3. **Aiget Dev API 固定入口**：`https://aiget.dev/api/v1`；console/admin 为独立 Web，需要 CORS 与 CSRF 白名单。
 
 ### 域名与路由
 
 - Moryflow（应用 + API）：`https://app.moryflow.com/api/v1/...`
-- Aiget Dev（控制台 + API）：`https://console.aiget.dev/api/v1/...`
+- Aiget Dev（API）：`https://aiget.dev/api/v1/...`
+- Aiget Dev（Web）：`https://console.aiget.dev`、`https://admin.aiget.dev`
 
 ### 第三方登录（OAuth/OIDC）
 
@@ -153,7 +154,7 @@ status: active
 - 要求 `Content-Type: application/json`
 - 校验 `Origin`：
   - Moryflow：必须是 `https://app.moryflow.com`
-  - Aiget Dev：必须是 `https://console.aiget.dev`
+  - Aiget Dev：必须是 `https://console.aiget.dev` / `https://admin.aiget.dev`
 
 ### 服务端鉴权（JWT）
 

@@ -51,13 +51,10 @@ const req: fetchx.ScreenshotRequest = { url: '...' };
 
 ## API Key 前缀
 
-| 类型       | 前缀  |
-| ---------- | ----- |
-| 平台 Key   | `ag_` |
-| Flowx Key  | `lx_` |
-| Fetchx Key | `fx_` |
-| Memox Key  | `mx_` |
-| Sandx Key  | `sx_` |
+| 类型          | 前缀  |
+| ------------- | ----- |
+| Aiget Dev Key | `ag_` |
+| Moryflow Key  | `mf_` |
 
 ---
 

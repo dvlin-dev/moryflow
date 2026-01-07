@@ -5,7 +5,8 @@
  */
 
 export const ProductId = {
-  FLOWX: 'flowx',
+  AIGET_DEV: 'aiget-dev',
+  MORYFLOW: 'moryflow',
   FETCHX: 'fetchx',
   MEMOX: 'memox',
   SANDX: 'sandx',
@@ -17,37 +18,56 @@ export interface ProductInfo {
   id: ProductId;
   name: string;
   description: string;
-  domain: string;
-  apiDomain: string;
+  websiteBaseUrl: string;
+  websitePath: string;
+  apiBaseUrl: string;
+  apiKeyPrefix: string;
 }
 
 export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
-  [ProductId.FLOWX]: {
-    id: ProductId.FLOWX,
-    name: 'Flowx',
+  [ProductId.AIGET_DEV]: {
+    id: ProductId.AIGET_DEV,
+    name: 'Aiget Dev',
+    description: 'Developer platform for AI agents (Fetchx, Memox, ...)',
+    websiteBaseUrl: 'https://aiget.dev',
+    websitePath: '/',
+    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiKeyPrefix: 'ag_',
+  },
+  [ProductId.MORYFLOW]: {
+    id: ProductId.MORYFLOW,
+    name: 'Moryflow',
     description: 'Note-based AI workflow with website publishing',
-    domain: 'flowx.aiget.dev',
-    apiDomain: 'api.flowx.aiget.dev',
+    websiteBaseUrl: 'https://www.moryflow.com',
+    websitePath: '/',
+    apiBaseUrl: 'https://app.moryflow.com/api/v1',
+    apiKeyPrefix: 'mf_',
   },
   [ProductId.FETCHX]: {
     id: ProductId.FETCHX,
     name: 'Fetchx',
     description: 'Web data API (scrape, crawl, extract)',
-    domain: 'fetchx.aiget.dev',
-    apiDomain: 'api.fetchx.aiget.dev',
+    websiteBaseUrl: 'https://aiget.dev',
+    websitePath: '/fetchx',
+    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiKeyPrefix: 'ag_',
   },
   [ProductId.MEMOX]: {
     id: ProductId.MEMOX,
     name: 'Memox',
     description: 'AI memory API for long-term memory',
-    domain: 'memox.aiget.dev',
-    apiDomain: 'api.memox.aiget.dev',
+    websiteBaseUrl: 'https://aiget.dev',
+    websitePath: '/memox',
+    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiKeyPrefix: 'ag_',
   },
   [ProductId.SANDX]: {
     id: ProductId.SANDX,
     name: 'Sandx',
     description: 'Agent sandbox for secure code execution',
-    domain: 'sandx.aiget.dev',
-    apiDomain: 'api.sandx.aiget.dev',
+    websiteBaseUrl: 'https://aiget.dev',
+    websitePath: '/sandx',
+    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiKeyPrefix: 'ag_',
   },
 };

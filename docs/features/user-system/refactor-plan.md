@@ -89,7 +89,7 @@ templates/
 - OAuth 仅支持 Google/Apple（每条业务线独立 clientId/回调域名）。
 - Token 规则：`access=6h`、`refresh=90d`、rotation=on。
 - Web：refresh 存 `HttpOnly Cookie`；access 仅内存。
-- CSRF：refresh 必须校验 `Origin`（`app.moryflow.com` / `console.aiget.dev`）。
+- CSRF：refresh 必须校验 `Origin`（`app.moryflow.com` / `console.aiget.dev` / `admin.aiget.dev`）。
 - JWKS：业务服务通过 `/api/v1/auth/jwks` 离线验签。
 - Aiget Dev 对外能力使用 API key（`Authorization: Bearer <apiKey>`）。
 

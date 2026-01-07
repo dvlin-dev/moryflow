@@ -69,9 +69,7 @@ export const EMAIL_OTP_CONFIG = {
  * 信任的子域名（生产环境应从环境变量读取）
  */
 export const DEFAULT_TRUSTED_ORIGINS = [
-  'https://moryflow.aiget.dev',
-  'https://fetchx.aiget.dev',
-  'https://memox.aiget.dev',
+  'https://aiget.dev',
   'https://console.aiget.dev',
   'https://admin.aiget.dev',
   // 开发环境

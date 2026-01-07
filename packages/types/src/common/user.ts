@@ -29,11 +29,8 @@ export interface User {
 // ============ API Key ============
 
 export const ApiKeyPrefix = {
-  PLATFORM: 'ag_', // Aiget 平台通用
-  FLOWX: 'lx_', // Flowx
-  FETCHX: 'fx_', // Fetchx
-  MEMOX: 'mx_', // Memox
-  SANDX: 'sx_', // Sandx
+  AIGET_DEV: 'ag_', // Aiget Dev（aiget.dev）
+  MORYFLOW: 'mf_', // Moryflow（app.moryflow.com）
 } as const;
 
 export type ApiKeyPrefix = (typeof ApiKeyPrefix)[keyof typeof ApiKeyPrefix];

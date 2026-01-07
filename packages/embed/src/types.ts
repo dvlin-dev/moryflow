@@ -15,7 +15,7 @@ export type EmbedTheme = 'light' | 'dark';
 export interface EmbedClientConfig {
   /** API Key */
   apiKey: string;
-  /** API 基础 URL，默认为 https://api.aiget.dev */
+  /** API 基础 URL，默认为 https://aiget.dev */
   baseUrl?: string;
   /** 请求超时时间（毫秒），默认 30000 */
   timeout?: number;

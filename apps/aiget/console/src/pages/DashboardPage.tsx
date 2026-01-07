@@ -1,16 +1,26 @@
 /**
- * Aiget Dashboard 页面
- * 显示配额使用和快速入门
+ * [PROPS]: None
+ * [EMITS]: Navigation to external docs
+ * [POS]: 控制台 Dashboard（配额概览 + 快速上手）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 apps/aiget/console/CLAUDE.md。
  */
-import { PageHeader } from '@aiget/ui/composed'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Skeleton } from '@aiget/ui/primitives'
-import { Progress } from '@aiget/ui/primitives'
-import { Button } from '@aiget/ui/primitives'
-import { Camera, Key, Book, ExternalLink } from 'lucide-react'
-import { useProfile } from '@/features/settings'
+import { PageHeader } from '@aiget/ui/composed';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@aiget/ui/primitives';
+import { Progress } from '@aiget/ui/primitives';
+import { Button } from '@aiget/ui/primitives';
+import { Camera, Key, Book, ExternalLink } from 'lucide-react';
+import { useProfile } from '@/features/settings';
 
 export default function DashboardPage() {
-  const { data: profile, isLoading } = useProfile()
+  const { data: profile, isLoading } = useProfile();
 
   const quota = profile?.quota ?? {
     monthlyLimit: 0,
@@ -18,16 +28,13 @@ export default function DashboardPage() {
     monthlyRemaining: 0,
     purchasedQuota: 0,
     periodEndAt: new Date().toISOString(),
-  }
+  };
 
-  const usagePercent = quota.monthlyLimit > 0 ? (quota.monthlyUsed / quota.monthlyLimit) * 100 : 0
+  const usagePercent = quota.monthlyLimit > 0 ? (quota.monthlyUsed / quota.monthlyLimit) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Welcome to Aiget Web Screenshot API"
-      />
+      <PageHeader title="Dashboard" description="Welcome to Aiget Web Screenshot API" />
 
       {/* 配额卡片 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -66,9 +73,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Pay-as-you-go quota, never expires
-            </p>
+            <p className="text-sm text-muted-foreground">Pay-as-you-go quota, never expires</p>
           </CardContent>
         </Card>
 
@@ -84,9 +89,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Monthly quota resets on this date
-            </p>
+            <p className="text-sm text-muted-foreground">Monthly quota resets on this date</p>
           </CardContent>
         </Card>
       </div>
@@ -118,15 +121,15 @@ export default function DashboardPage() {
               <Camera className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium">2. Call Screenshot API</h4>
+              <h4 className="font-medium">2. Call Scrape API</h4>
               <p className="text-sm text-muted-foreground">
-                Make screenshot requests using your API Key
+                Make scrape requests using your API Key (supports screenshots)
               </p>
               <pre className="mt-2 p-3 bg-muted rounded-none text-xs overflow-x-auto">
-{`curl -X POST https://api.aiget.dev/v1/screenshot \\
-  -H "X-API-Key: lk_your_api_key" \\
+                {`curl -X POST https://aiget.dev/api/v1/scrape \\
+  -H "X-API-Key: ag_your_api_key" \\
   -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com"}'`}
+  -d '{"url": "https://example.com", "formats": ["markdown", "screenshot"]}'`}
               </pre>
             </div>
           </div>
@@ -150,5 +153,5 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
