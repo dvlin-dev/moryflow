@@ -94,12 +94,12 @@ export class InvalidRefundError extends QuotaError {
 
 /** 重复返还错误 */
 export class DuplicateRefundError extends QuotaError {
-  constructor(screenshotId: string) {
+  constructor(referenceId: string) {
     super(
       QuotaErrorCode.DUPLICATE_REFUND,
-      `Refund already processed for this screenshot`,
+      `Refund already processed for this reference`,
       HttpStatus.CONFLICT,
-      { screenshotId },
+      { referenceId },
     );
   }
 }

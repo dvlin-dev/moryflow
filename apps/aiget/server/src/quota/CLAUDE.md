@@ -74,11 +74,16 @@ Failure? → Refund Quota
 // Check if user has quota
 await quotaService.hasQuota(userId, amount);
 
-// Deduct quota (returns DeductResult)
-const result = await quotaService.deduct(userId, amount, reason);
+// Deduct quota (throws on insufficient)
+const result = await quotaService.deductOrThrow(userId, amount, reason);
 
 // Refund on failure
-await quotaService.refund(userId, deductResult);
+await quotaService.refund({
+  userId,
+  referenceId: reason, // 幂等性 key（不再使用 screenshotId）
+  source: result.source,
+  amount,
+});
 
 // Get current status
 const status = await quotaService.getStatus(userId);

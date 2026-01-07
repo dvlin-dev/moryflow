@@ -111,10 +111,10 @@ describe('Quota Errors', () => {
       expect(error.code).toBe(QuotaErrorCode.DUPLICATE_REFUND);
     });
 
-    it('should include screenshotId in details', () => {
-      const error = new DuplicateRefundError('ss_456');
+    it('should include referenceId in details', () => {
+      const error = new DuplicateRefundError('ref_456');
 
-      expect(error.details).toEqual({ screenshotId: 'ss_456' });
+      expect(error.details).toEqual({ referenceId: 'ref_456' });
     });
   });
 

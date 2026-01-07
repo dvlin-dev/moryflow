@@ -42,15 +42,15 @@ export class QuotaRepository {
   /**
    * 查询用户是否有返还记录（用于幂等性检查）
    */
-  async hasRefundForScreenshot(
+  async hasRefundForReference(
     userId: string,
-    screenshotId: string,
+    referenceId: string,
   ): Promise<boolean> {
     const count = await this.prisma.quotaTransaction.count({
       where: {
         userId,
         type: 'REFUND',
-        reason: screenshotId,
+        reason: referenceId,
       },
     });
     return count > 0;

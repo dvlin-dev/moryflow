@@ -91,20 +91,20 @@ describe('QuotaRepository', () => {
     });
   });
 
-  // ============ hasRefundForScreenshot ============
+  // ============ hasRefundForReference ============
 
-  describe('hasRefundForScreenshot', () => {
+  describe('hasRefundForReference', () => {
     it('should return true when refund exists', async () => {
       mockPrisma.quotaTransaction.count.mockResolvedValue(1);
 
-      const result = await repository.hasRefundForScreenshot('user_1', 'ss_1');
+      const result = await repository.hasRefundForReference('user_1', 'ref_1');
 
       expect(result).toBe(true);
       expect(mockPrisma.quotaTransaction.count).toHaveBeenCalledWith({
         where: {
           userId: 'user_1',
           type: 'REFUND',
-          reason: 'ss_1',
+          reason: 'ref_1',
         },
       });
     });
@@ -112,7 +112,7 @@ describe('QuotaRepository', () => {
     it('should return false when refund not exists', async () => {
       mockPrisma.quotaTransaction.count.mockResolvedValue(0);
 
-      const result = await repository.hasRefundForScreenshot('user_1', 'ss_1');
+      const result = await repository.hasRefundForReference('user_1', 'ref_1');
 
       expect(result).toBe(false);
     });

@@ -24,7 +24,7 @@ describe('QuotaService', () => {
     create: Mock;
     deductMonthlyInTransaction: Mock;
     deductPurchasedInTransaction: Mock;
-    hasRefundForScreenshot: Mock;
+    hasRefundForReference: Mock;
     refundInTransaction: Mock;
     resetPeriodInTransaction: Mock;
     addPurchasedInTransaction: Mock;
@@ -62,7 +62,7 @@ describe('QuotaService', () => {
       create: vi.fn(),
       deductMonthlyInTransaction: vi.fn(),
       deductPurchasedInTransaction: vi.fn(),
-      hasRefundForScreenshot: vi.fn(),
+      hasRefundForReference: vi.fn(),
       refundInTransaction: vi.fn(),
       resetPeriodInTransaction: vi.fn(),
       addPurchasedInTransaction: vi.fn(),
@@ -280,7 +280,7 @@ describe('QuotaService', () => {
   describe('refund', () => {
     it('should refund successfully', async () => {
       mockRepository.findByUserId.mockResolvedValue(createValidQuota());
-      mockRepository.hasRefundForScreenshot.mockResolvedValue(false);
+      mockRepository.hasRefundForReference.mockResolvedValue(false);
       mockRepository.refundInTransaction.mockResolvedValue({
         quota: createValidQuota({ monthlyUsed: 99 }),
         transaction: { id: 'tx_refund', balanceBefore: 899, balanceAfter: 900 },
@@ -288,7 +288,7 @@ describe('QuotaService', () => {
 
       const result = await service.refund({
         userId: 'user_1',
-        screenshotId: 'ss_1',
+        referenceId: 'ss_1',
         source: 'MONTHLY',
         amount: 1,
       });
@@ -298,12 +298,12 @@ describe('QuotaService', () => {
     });
 
     it('should throw DuplicateRefundError for duplicate refund', async () => {
-      mockRepository.hasRefundForScreenshot.mockResolvedValue(true);
+      mockRepository.hasRefundForReference.mockResolvedValue(true);
 
       await expect(
         service.refund({
           userId: 'user_1',
-          screenshotId: 'ss_1',
+          referenceId: 'ss_1',
           source: 'MONTHLY',
           amount: 1,
         }),
@@ -311,12 +311,12 @@ describe('QuotaService', () => {
     });
 
     it('should throw InvalidRefundError for non-positive amount', async () => {
-      mockRepository.hasRefundForScreenshot.mockResolvedValue(false);
+      mockRepository.hasRefundForReference.mockResolvedValue(false);
 
       await expect(
         service.refund({
           userId: 'user_1',
-          screenshotId: 'ss_1',
+          referenceId: 'ss_1',
           source: 'MONTHLY',
           amount: 0,
         }),
@@ -325,7 +325,7 @@ describe('QuotaService', () => {
       await expect(
         service.refund({
           userId: 'user_1',
-          screenshotId: 'ss_1',
+          referenceId: 'ss_1',
           source: 'MONTHLY',
           amount: -1,
         }),
@@ -333,14 +333,14 @@ describe('QuotaService', () => {
     });
 
     it('should return failure when refund transaction fails', async () => {
-      mockRepository.hasRefundForScreenshot.mockResolvedValue(false);
+      mockRepository.hasRefundForReference.mockResolvedValue(false);
       mockRepository.refundInTransaction.mockRejectedValue(
         new Error('DB error'),
       );
 
       const result = await service.refund({
         userId: 'user_1',
-        screenshotId: 'ss_1',
+        referenceId: 'ss_1',
         source: 'MONTHLY',
         amount: 1,
       });

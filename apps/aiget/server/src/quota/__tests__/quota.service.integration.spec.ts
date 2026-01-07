@@ -99,7 +99,7 @@ describe('QuotaService (Integration)', () => {
 
       const refundResult = await service.refund({
         userId: testUserId,
-        screenshotId: 'test_screenshot_2',
+        referenceId: 'test_screenshot_2',
         source: 'MONTHLY',
         amount: 1,
       });
@@ -173,7 +173,7 @@ describe('QuotaService (Integration)', () => {
       // 第一次返还成功
       await service.refund({
         userId: testUserId,
-        screenshotId: 'ss_dup',
+        referenceId: 'ss_dup',
         source: 'MONTHLY',
         amount: 1,
       });
@@ -182,7 +182,7 @@ describe('QuotaService (Integration)', () => {
       await expect(
         service.refund({
           userId: testUserId,
-          screenshotId: 'ss_dup',
+          referenceId: 'ss_dup',
           source: 'MONTHLY',
           amount: 1,
         }),

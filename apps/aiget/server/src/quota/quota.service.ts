@@ -187,24 +187,24 @@ export class QuotaService {
 
   /**
    * 返还配额
-   * 幂等操作：同一 screenshotId 只能返还一次
+   * 幂等操作：同一 referenceId 只能返还一次
    *
    * @param params 返还参数
    * @returns 返还结果
    */
   async refund(params: RefundParams): Promise<RefundResult> {
-    const { userId, screenshotId, source, amount } = params;
+    const { userId, referenceId, source, amount } = params;
 
     // 幂等性检查：是否已返还
-    const hasRefund = await this.repository.hasRefundForScreenshot(
+    const hasRefund = await this.repository.hasRefundForReference(
       userId,
-      screenshotId,
+      referenceId,
     );
     if (hasRefund) {
       this.logger.warn(
-        `Duplicate refund attempt for screenshot ${screenshotId}, user ${userId}`,
+        `Duplicate refund attempt for reference ${referenceId}, user ${userId}`,
       );
-      throw new DuplicateRefundError(screenshotId);
+      throw new DuplicateRefundError(referenceId);
     }
 
     // 验证参数
@@ -217,11 +217,11 @@ export class QuotaService {
         userId,
         amount,
         source,
-        screenshotId,
+        referenceId,
       );
 
       this.logger.log(
-        `Refunded ${amount} to ${source} quota for user ${userId}, screenshot ${screenshotId}`,
+        `Refunded ${amount} to ${source} quota for user ${userId}, reference ${referenceId}`,
       );
 
       return {

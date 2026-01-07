@@ -56,8 +56,8 @@ export type DeductQuotaResult = DeductResult | InsufficientQuotaResult;
 /** 返还配额参数 */
 export interface RefundParams {
   userId: string;
-  /** 关联的 screenshot ID */
-  screenshotId: string;
+  /** 关联的业务引用 ID（用于幂等性退款） */
+  referenceId: string;
   /** 原扣减来源 */
   source: QuotaSource;
   /** 返还数量 */
