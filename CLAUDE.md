@@ -211,6 +211,7 @@ Aiget/
 | [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                          |
 | [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                          |
 | [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点（含 Auth Client） |
+| [`docs/features/scheduled-digest/overview.md`](./docs/features/scheduled-digest/overview.md)                     | 功能：定时内容订阅（Email Digest）需求方案                 |
 | `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                           |
 | `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                             |
 
