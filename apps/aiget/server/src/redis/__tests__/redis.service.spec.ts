@@ -3,7 +3,7 @@
  * 测试 Redis 操作封装
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RedisService } from '../redis.service';
+import type { RedisService as RedisServiceType } from '../redis.service';
 import type { ConfigService } from '@nestjs/config';
 
 // Mock Redis methods
@@ -32,16 +32,18 @@ vi.mock('ioredis', () => {
 });
 
 describe('RedisService', () => {
-  let service: RedisService;
+  let service: RedisServiceType;
   let mockConfig: { get: ReturnType<typeof vi.fn> };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    vi.resetModules();
 
     mockConfig = {
       get: vi.fn().mockReturnValue('redis://localhost:6379'),
     };
 
+    const { RedisService } = await import('../redis.service');
     service = new RedisService(mockConfig as unknown as ConfigService);
   });
 
