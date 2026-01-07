@@ -38,6 +38,7 @@ import { Highlight } from '@aiget/ui/animate/primitives/effects/highlight';
 
 // 工具
 import { cn } from '@aiget/ui/lib';
+import { formatRelativeTime } from '@aiget/ui/lib';
 
 // Hooks
 import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
