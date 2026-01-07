@@ -12,11 +12,13 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
+import { Public } from '../auth';
 import { oembedRequestSchema } from './dto/oembed-request.dto';
 import { FormatNotSupportedError } from './oembed.errors';
 import { OembedService } from './oembed.service';
 
 @ApiTags('Oembed')
+@Public()
 @Controller({ path: 'oembed', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class OembedController {

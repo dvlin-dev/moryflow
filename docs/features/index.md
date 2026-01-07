@@ -26,4 +26,4 @@ status: active
 
 ## 最近更新
 
-- Fetchx 接入方案已补充 console/admin 使用 `@aiget/auth-client` 的落地细节。
+- Fetchx 接入方案已更新：Admin 后端已并入 `apps/aiget/server`（不再保留 `apps/aiget/admin/server`）。

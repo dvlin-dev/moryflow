@@ -50,6 +50,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://www.moryflow.com,https://admin.moryflow.com,https://app.moryflow.com}
       DATABASE_URL: ${DATABASE_URL:-postgresql://moryflow:change_me@moryflow-postgres:5432/moryflow?schema=public}
       REDIS_URL: ${REDIS_URL:-redis://moryflow-redis:6379}
     ports:
@@ -114,4 +115,3 @@ services:
 volumes:
   moryflow-postgres-data:
   moryflow-redis-data:
-

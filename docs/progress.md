@@ -79,12 +79,12 @@ status: active
 
 **任务清单**
 
-- [ ] 迁移/合并 `apps/aiget/memox/server` 的业务模块到 `apps/aiget/server`
+- [x] 迁移/合并 Memox 模块到 `apps/aiget/server`（memory/entity/relation/graph/embedding）
   - 记忆/实体/关系/图谱/embedding 等模块
-  - Prisma schema 合并（或拆分成多 datasource，但仍在一个 NestJS app 内）
-- [ ] 合并/替换 `apps/aiget/admin/server` 的运营接口到 `apps/aiget/server`（或直接删除）
-- [ ] 统一 CORS/CSRF：生产环境 `ALLOWED_ORIGINS` 包含 `https://console.aiget.dev`、`https://admin.aiget.dev`
-- [ ] 清理并删除多余后端包（`apps/aiget/memox/server`、`apps/aiget/admin/server` 等）
+  - Prisma schema 合并（仍在一个 NestJS app 内）
+- [x] 删除多余后端包（`apps/aiget/memox/server`、`apps/aiget/admin/server`）
+- [x] 确认 Admin API 以 `apps/aiget/server` 为唯一入口（`/api/v1/admin/*`）
+- [x] 生产环境 CORS：`ALLOWED_ORIGINS` 覆盖 `https://console.aiget.dev`、`https://admin.aiget.dev`、`https://aiget.dev`
 
 **验证清单**
 

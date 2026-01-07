@@ -33,7 +33,6 @@ status: draft
   - `apps/aiget/server`：Aiget Dev 统一后端（包含 Fetchx API，含自建 Auth 模块）
   - `apps/aiget/console`：Aiget Dev 用户控制台（来自 Fetchx console）
   - `apps/aiget/admin/www`：Aiget Dev 管理后台前端（来自 Fetchx admin）
-  - `apps/aiget/admin/server`：Aiget Dev 管理后台后端
   - `apps/moryflow/admin`：Moryflow 管理后台前端
 - 约束：
   - `pnpm-workspace.yaml` 已支持 `apps/*/*/server`、`apps/*/*/www` 等路径
@@ -60,8 +59,7 @@ apps/
 │   ├── www/              # Aiget Dev 官网（aiget.dev；/fetchx、/memox）
 │   ├── console/          # console.aiget.dev 用户控制台（Web）
 │   └── admin/
-│       ├── www/          # admin.aiget.dev 管理后台（Web）
-│       └── server/       # （迁移中）将并入 aiget/server
+│       └── www/          # admin.aiget.dev 管理后台（Web；API 复用 aiget/server）
 └── moryflow/
     └── ...               # 现有 Moryflow 结构原样迁移
 ```
@@ -72,7 +70,7 @@ apps/
 
 - 官网模块页：`aiget.dev/fetchx` → `apps/aiget/www`
 - 用户控制台：`console.aiget.dev` → `apps/aiget/console`
-- 管理后台：`admin.aiget.dev` → `apps/aiget/admin/www` + `apps/aiget/admin/server`
+- 管理后台：`admin.aiget.dev` → `apps/aiget/admin/www`（API 走 `apps/aiget/server` 的 `/api/v1/admin/*`）
 - API：Aiget Dev 统一后端（`https://aiget.dev/api/v1/*`）
 - Memox：暂不接入
 
@@ -108,7 +106,7 @@ apps/
 
 ### Phase 3：Admin 接入（管理后台）
 
-- `apps/aiget/admin/www` 与 `apps/aiget/admin/server` 已完成迁入并接入 `@aiget/auth-client`。
+- `apps/aiget/admin/www` 已完成迁入并接入 `@aiget/auth-client`（管理端 API 统一由 `apps/aiget/server` 提供）。
 - 认证细节（已落地）：
   - `baseUrl=https://aiget.dev/api/v1/auth`
   - `clientType=web`

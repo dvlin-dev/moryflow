@@ -208,9 +208,87 @@ model ApiKey {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   screenshots Screenshot[]
   scrapeJobs  ScrapeJob[]
+  memories    Memory[]
+  entities    Entity[]
+  relations   Relation[]
 
   @@index([userId])
   @@index([keyHash])
+}
+
+// =============================================
+// Memox - 语义记忆与知识图谱
+// =============================================
+
+model Memory {
+  id        String   @id @default(cuid())
+  apiKeyId  String
+
+  // 调用方的用户 ID（非平台用户）
+  userId    String
+  agentId   String?
+  sessionId String?
+
+  content   String
+  embedding Unsupported("vector(1536)")?
+  metadata  Json?
+  source    String?
+  importance Float?  @default(0.5)
+  tags      String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, userId, agentId])
+  @@index([apiKeyId, createdAt])
+}
+
+model Entity {
+  id         String   @id @default(cuid())
+  apiKeyId   String
+  userId     String
+  type       String   @db.VarChar(100)
+  name       String   @db.VarChar(500)
+  properties Json?
+  embedding  Unsupported("vector(1536)")?
+  confidence Float?   @default(1.0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  apiKey          ApiKey     @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  sourceRelations Relation[] @relation("SourceEntity")
+  targetRelations Relation[] @relation("TargetEntity")
+
+  @@unique([apiKeyId, userId, type, name])
+  @@index([apiKeyId, userId])
+  @@index([apiKeyId, userId, type])
+}
+
+model Relation {
+  id         String    @id @default(cuid())
+  apiKeyId   String
+  userId     String
+  sourceId   String
+  targetId   String
+  type       String    @db.VarChar(100)
+  properties Json?
+  confidence Float?    @default(1.0)
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  source Entity @relation("SourceEntity", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Entity @relation("TargetEntity", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, userId])
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([apiKeyId, userId, type])
 }
 
 // =============================================

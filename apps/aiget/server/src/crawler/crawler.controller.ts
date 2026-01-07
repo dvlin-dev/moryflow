@@ -32,12 +32,13 @@ import {
   historyQuerySchema,
   type HistoryQuery,
 } from '../common';
-import { CurrentUser } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
 
 @ApiTags('Crawl')
 @ApiSecurity('apiKey')
+@Public()
 @Controller({ path: 'crawl', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class CrawlerController {

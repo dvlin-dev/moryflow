@@ -31,7 +31,7 @@ import {
   historyQuerySchema,
   type HistoryQuery,
 } from '../common';
-import { CurrentUser } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { CurrentUserDto } from '../types';
@@ -39,6 +39,7 @@ import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 
 @ApiTags('Scrape')
 @ApiSecurity('apiKey')
+@Public()
 @Controller({ path: 'scrape', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class ScraperController {

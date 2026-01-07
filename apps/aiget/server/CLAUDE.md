@@ -9,6 +9,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ## Responsibilities
 
 - Handle API requests for scraping, crawling, map, extract, search, batch-scrape
+- Provide Memox APIs for semantic memory and knowledge graph
 - Manage browser pool for rendering pages
 - Process async jobs via BullMQ
 - Quota and API key management
@@ -17,7 +18,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ## Constraints
 
 - All controllers must use `version: '1'` for API versioning
-- Use `ApiKeyGuard` for public API endpoints
+- Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection
 - Quota deduction before any scrape operation
@@ -25,33 +26,38 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## Module Structure
 
-| Module          | Files | Description                                  | CLAUDE.md               |
-| --------------- | ----- | -------------------------------------------- | ----------------------- |
-| `scraper/`      | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md` |
-| `common/`       | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`  |
-| `admin/`        | 16    | Admin dashboard APIs                         | -                       |
-| `oembed/`       | 18    | oEmbed provider support                      | -                       |
-| `quota/`        | 14    | Quota management                             | `src/quota/CLAUDE.md`   |
-| `api-key/`      | 13    | API key management                           | `src/api-key/CLAUDE.md` |
-| `crawler/`      | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md` |
-| `auth/`         | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`    |
-| `payment/`      | 10    | Payment processing (Creem)                   | -                       |
-| `webhook/`      | 10    | Webhook notifications                        | -                       |
-| `extract/`      | 9     | AI-powered data extraction                   | -                       |
-| `batch-scrape/` | 9     | Bulk URL processing                          | -                       |
-| `user/`         | 9     | User management                              | -                       |
-| `map/`          | 8     | URL discovery                                | -                       |
-| `storage/`      | 7     | Cloudflare R2 storage                        | -                       |
-| `search/`       | 6     | Web search API                               | -                       |
-| `browser/`      | 5     | Browser pool management                      | -                       |
-| `demo/`         | 5     | Playground demo API                          | -                       |
-| `redis/`        | 4     | Redis caching                                | -                       |
-| `health/`       | 3     | Health check endpoints                       | -                       |
-| `email/`        | 3     | Email service                                | -                       |
-| `queue/`        | 3     | BullMQ queue config                          | -                       |
-| `prisma/`       | 3     | Database access                              | -                       |
-| `config/`       | 2     | Pricing configuration                        | -                       |
-| `types/`        | 6     | Shared type definitions                      | -                       |
+| Module          | Files | Description                                  | CLAUDE.md                 |
+| --------------- | ----- | -------------------------------------------- | ------------------------- |
+| `scraper/`      | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
+| `common/`       | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
+| `admin/`        | 16    | Admin dashboard APIs                         | -                         |
+| `oembed/`       | 18    | oEmbed provider support                      | -                         |
+| `quota/`        | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
+| `api-key/`      | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
+| `memory/`       | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
+| `entity/`       | 10    | Knowledge graph entities (Memox)             | `src/entity/CLAUDE.md`    |
+| `relation/`     | 9     | Knowledge graph relations (Memox)            | `src/relation/CLAUDE.md`  |
+| `graph/`        | 7     | Knowledge graph traversal (Memox)            | `src/graph/CLAUDE.md`     |
+| `embedding/`    | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md` |
+| `crawler/`      | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`   |
+| `auth/`         | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`      |
+| `payment/`      | 10    | Payment processing (Creem)                   | -                         |
+| `webhook/`      | 10    | Webhook notifications                        | -                         |
+| `extract/`      | 9     | AI-powered data extraction                   | -                         |
+| `batch-scrape/` | 9     | Bulk URL processing                          | -                         |
+| `user/`         | 9     | User management                              | -                         |
+| `map/`          | 8     | URL discovery                                | -                         |
+| `storage/`      | 7     | Cloudflare R2 storage                        | -                         |
+| `search/`       | 6     | Web search API                               | -                         |
+| `browser/`      | 5     | Browser pool management                      | -                         |
+| `demo/`         | 5     | Playground demo API                          | -                         |
+| `redis/`        | 4     | Redis caching                                | -                         |
+| `health/`       | 3     | Health check endpoints                       | -                         |
+| `email/`        | 3     | Email service                                | -                         |
+| `queue/`        | 3     | BullMQ queue config                          | -                         |
+| `prisma/`       | 3     | Database access                              | -                         |
+| `config/`       | 2     | Pricing configuration                        | -                         |
+| `types/`        | 6     | Shared type definitions                      | -                         |
 
 ## Common Patterns
 

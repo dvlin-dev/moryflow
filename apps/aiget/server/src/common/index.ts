@@ -14,3 +14,4 @@ export * from './interceptors';
 export * from './filters';
 export * from './decorators';
 export * from './controllers';
+export * from './base.repository';

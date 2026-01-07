@@ -15,12 +15,13 @@ import {
 import { ExtractService } from './extract.service';
 import { ExtractOptionsSchema } from './dto/extract.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { CurrentUser } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
 
 @ApiTags('Extract')
 @ApiSecurity('apiKey')
+@Public()
 @Controller({ path: 'extract', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class ExtractController {

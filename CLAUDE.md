@@ -33,8 +33,8 @@
 docker compose -f deploy/infra/docker-compose.test.yml up -d
 
 # 运行测试
-pnpm --filter @aiget/admin-server test
-pnpm --filter @aiget/admin-server test:e2e
+pnpm --filter @aiget/aiget-server test
+pnpm --filter @aiget/aiget-server test:e2e
 ```
 
 ### 前端测试

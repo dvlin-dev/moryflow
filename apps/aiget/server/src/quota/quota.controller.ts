@@ -9,7 +9,9 @@ import { QuotaService } from './quota.service';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
+import { Public } from '../auth';
 
+@Public()
 @Controller({ path: 'quota', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class QuotaController {

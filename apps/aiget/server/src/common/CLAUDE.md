@@ -13,7 +13,8 @@ Shared infrastructure components used across all modules. Contains guards, decor
 - URL security validation (SSRF protection)
 - Response transformation
 - Rate limiting
-- Shared utilities (crypto, HTTP)
+- Shared utilities (crypto, HTTP, JSON, pagination)
+- BaseRepository for apiKey-isolated tables
 
 ## Constraints
 
@@ -39,18 +40,22 @@ Shared infrastructure components used across all modules. Contains guards, decor
 
 ## Key Files
 
-| File                               | Type      | Description                     |
-| ---------------------------------- | --------- | ------------------------------- |
-| `pipes/zod-validation.pipe.ts`     | Pipe      | Global Zod schema validation    |
-| `filters/http-exception.filter.ts` | Filter    | Unified error response format   |
-| `validators/url.validator.ts`      | Validator | SSRF protection, URL validation |
-| `guards/user-throttler.guard.ts`   | Guard     | User-based rate limiting        |
-| `decorators/response.decorator.ts` | Decorator | Response transformation         |
-| `utils/crypto.utils.ts`            | Utility   | Hash, encryption functions      |
-| `utils/http.utils.ts`              | Utility   | HTTP client helpers             |
-| `schemas/pagination.schema.ts`     | Schema    | Shared pagination schema        |
-| `constants/error-codes.ts`         | Constants | Unified error code definitions  |
-| `services/webhook.service.ts`      | Service   | Webhook dispatch utility        |
+| File                               | Type      | Description                             |
+| ---------------------------------- | --------- | --------------------------------------- |
+| `base.repository.ts`               | Utility   | Base repository with apiKeyId isolation |
+| `pipes/zod-validation.pipe.ts`     | Pipe      | Global Zod schema validation            |
+| `filters/http-exception.filter.ts` | Filter    | Unified error response format           |
+| `validators/url.validator.ts`      | Validator | SSRF protection, URL validation         |
+| `guards/user-throttler.guard.ts`   | Guard     | User-based rate limiting                |
+| `decorators/response.decorator.ts` | Decorator | Response transformation                 |
+| `utils/crypto.utils.ts`            | Utility   | Hash, encryption functions              |
+| `utils/http.utils.ts`              | Utility   | HTTP client helpers                     |
+| `utils/json.utils.ts`              | Utility   | Prisma JSON → Record conversion         |
+| `utils/json.zod.ts`                | Schema    | JsonValueSchema                         |
+| `utils/pagination.utils.ts`        | Utility   | Pagination helpers                      |
+| `schemas/pagination.schema.ts`     | Schema    | Shared pagination schema                |
+| `constants/error-codes.ts`         | Constants | Unified error code definitions          |
+| `services/webhook.service.ts`      | Service   | Webhook dispatch utility                |
 
 ## URL Validator (Critical)
 

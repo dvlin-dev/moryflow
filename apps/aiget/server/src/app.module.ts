@@ -24,6 +24,11 @@ import { WebhookModule } from './webhook';
 import { AdminModule } from './admin';
 import { OembedModule } from './oembed';
 import { DemoModule } from './demo/demo.module';
+import { EmbeddingModule } from './embedding';
+import { MemoryModule } from './memory';
+import { EntityModule } from './entity';
+import { RelationModule } from './relation';
+import { GraphModule } from './graph';
 import { CommonModule } from './common';
 import { NotFoundModule } from './not-found';
 
@@ -56,6 +61,11 @@ import { NotFoundModule } from './not-found';
     AdminModule,
     OembedModule,
     DemoModule,
+    EmbeddingModule,
+    MemoryModule,
+    EntityModule,
+    RelationModule,
+    GraphModule,
     // NotFoundModule must be LAST to catch all unmatched routes
     NotFoundModule,
   ],

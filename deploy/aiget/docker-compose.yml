@@ -51,6 +51,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://aiget.dev}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://console.aiget.dev,https://admin.aiget.dev,https://aiget.dev}
       DATABASE_URL: ${DATABASE_URL:-postgresql://aiget:change_me@aiget-postgres:5432/aiget?schema=public}
       REDIS_URL: ${REDIS_URL:-redis://aiget-redis:6379}
     ports:
@@ -111,4 +112,3 @@ services:
 volumes:
   aiget-postgres-data:
   aiget-redis-data:
-

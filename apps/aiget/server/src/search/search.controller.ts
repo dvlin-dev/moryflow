@@ -16,12 +16,13 @@ import {
 import { SearchService } from './search.service';
 import { SearchOptionsSchema } from './dto/search.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { CurrentUser } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
 
 @ApiTags('Search')
 @ApiSecurity('apiKey')
+@Public()
 @Controller({ path: 'search', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class SearchController {

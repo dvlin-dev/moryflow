@@ -8,10 +8,10 @@ Memox 是 Aiget 平台的 AI 记忆服务，为 AI 应用提供长期记忆能�
 
 ## 应用结构
 
-| 应用   | 路径      | 说明                                  |
-| ------ | --------- | ------------------------------------- |
-| Server | `server/` | Memox 后端 API（待并入 `../server/`） |
-| WWW    | `../www/` | Aiget Dev 官网（模块页：`/memox`）    |
+| 应用   | 路径         | 说明                                    |
+| ------ | ------------ | --------------------------------------- |
+| Server | `../server/` | Memox 后端 API（已并入 Aiget 统一后端） |
+| WWW    | `../www/`    | Aiget Dev 官网（模块页：`/memox`）      |
 
 ## 域名规划（统一口径）
 
@@ -37,19 +37,19 @@ Memox 是 Aiget 平台的 AI 记忆服务，为 AI 应用提供长期记忆能�
 ## 开发命令
 
 ```bash
-# 启动 Memox Server 开发（待合并到 Aiget Server）
-pnpm --filter @aiget/memox-server start:dev
+# 启动 Aiget Server（包含 Memox 模块）
+pnpm --filter @aiget/aiget-server start:dev
 
 # 启动 WWW 开发
 pnpm dev:aiget:www
 
 # 类型检查
-pnpm --filter @aiget/memox-server typecheck
+pnpm --filter @aiget/aiget-server typecheck
 pnpm --filter @aiget/aiget-www typecheck
 
 # 数据库
-pnpm --filter @aiget/memox-server prisma:generate
-pnpm --filter @aiget/memox-server prisma:migrate
+pnpm --filter @aiget/aiget-server prisma:generate
+pnpm --filter @aiget/aiget-server prisma:migrate
 ```
 
 ## 技术栈
@@ -68,16 +68,14 @@ pnpm --filter @aiget/memox-server prisma:migrate
 ## 模块概览
 
 ```
-server/src/
-├── memory/      # 核心记忆服务
-├── entity/      # 实体提取
-├── relation/    # 实体关系
-├── graph/       # 知识图谱
-├── embedding/   # 向量嵌入
-├── extract/     # LLM 提取
-├── llm/         # LLM 抽象层
-├── auth/        # Better Auth
-├── api-key/     # API Key 管理
+apps/aiget/server/src/
+├── memory/      # 核心记忆服务（公开 API：/api/v1/memories）
+├── entity/      # 实体（公开 API：/api/v1/entities）
+├── relation/    # 关系（公开 API：/api/v1/relations）
+├── graph/       # 图谱（公开 API：/api/v1/graph）
+├── embedding/   # 向量嵌入（内部依赖）
+├── auth/        # Better Auth（console/admin）
+├── api-key/     # API Key 管理（Authorization: Bearer <ag_...>）
 ├── quota/       # 配额管理
 ├── payment/     # Creem 支付
 ├── webhook/     # Webhook 通知

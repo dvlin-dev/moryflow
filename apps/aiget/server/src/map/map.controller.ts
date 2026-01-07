@@ -15,10 +15,12 @@ import {
 import { MapService } from './map.service';
 import { MapOptionsSchema } from './dto/map.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 
 @ApiTags('Map')
 @ApiSecurity('apiKey')
+@Public()
 @Controller({ path: 'map', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class MapController {

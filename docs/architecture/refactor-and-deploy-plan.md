@@ -154,6 +154,7 @@ status: active
   - `moryflow-redis`
 - [ ] 必备环境变量（示例命名）：
   - `PUBLIC_BASE_URL=https://app.moryflow.com`
+  - `ALLOWED_ORIGINS=https://www.moryflow.com,https://admin.moryflow.com,https://app.moryflow.com`
   - `COOKIE_DOMAIN=.moryflow.com`
   - `AUTH_JWT_ISSUER=app.moryflow.com`
   - `AUTH_JWT_PRIVATE_KEY=...`
@@ -174,6 +175,7 @@ status: active
   - `aiget-redis`
 - [ ] 必备环境变量（示例命名）：
   - `PUBLIC_BASE_URL=https://aiget.dev`
+  - `ALLOWED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
   - `COOKIE_DOMAIN=.aiget.dev`
   - `AUTH_JWT_ISSUER=aiget.dev`
   - `AUTH_JWT_PRIVATE_KEY=...`
