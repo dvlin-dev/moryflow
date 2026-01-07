@@ -34,6 +34,7 @@ import {
 import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Batch Scrape')
 @ApiSecurity('apiKey')
@@ -46,6 +47,7 @@ export class BatchScrapeController {
   @Post()
   @ApiOperation({ summary: 'Start a batch scrape job' })
   @ApiOkResponse({ description: 'Batch scrape job created' })
+  @BillingKey('fetchx.batchScrape')
   async batchScrape(
     @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(BatchScrapeOptionsSchema)) options: unknown,

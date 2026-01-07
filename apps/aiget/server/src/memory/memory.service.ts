@@ -4,6 +4,8 @@
  * [POS]: Memory 业务逻辑层
  *
  * 职责：Memory 的 CRUD 和语义搜索
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -15,8 +17,9 @@ import {
   MemoryWithSimilarity,
 } from './memory.repository';
 import { EmbeddingService } from '../embedding/embedding.service';
-import { QuotaService } from '../quota/quota.service';
+import { BillingService } from '../billing/billing.service';
 import type { CreateMemoryInput, SearchMemoryInput } from './dto';
+import { randomUUID } from 'crypto';
 
 export type MemoryWithApiKeyName = Omit<Memory, 'metadata'> & {
   metadata: Record<string, unknown> | null;
@@ -59,7 +62,7 @@ export class MemoryService {
     private readonly repository: MemoryRepository,
     private readonly prisma: PrismaService,
     private readonly embeddingService: EmbeddingService,
-    private readonly quotaService: QuotaService,
+    private readonly billingService: BillingService,
   ) {}
 
   /**
@@ -70,35 +73,50 @@ export class MemoryService {
     apiKeyId: string,
     dto: CreateMemoryInput,
   ): Promise<Memory> {
-    await this.quotaService.deductOrThrow(
-      platformUserId,
-      1,
-      'memox.memory.create',
-    );
+    const billingKey = 'memox.memory.create' as const;
+    const referenceId = randomUUID();
+    const billing = await this.billingService.deductOrThrow({
+      userId: platformUserId,
+      billingKey,
+      referenceId,
+    });
 
-    // 生成向量
-    const embeddingResult = await this.embeddingService.generateEmbedding(
-      dto.content,
-    );
+    try {
+      // 生成向量
+      const embeddingResult = await this.embeddingService.generateEmbedding(
+        dto.content,
+      );
 
-    // 创建 Memory
-    const memory = await this.repository.createWithEmbedding(
-      apiKeyId,
-      {
-        userId: dto.userId,
-        agentId: dto.agentId ?? null,
-        sessionId: dto.sessionId ?? null,
-        content: dto.content,
-        metadata: dto.metadata ?? null,
-        source: dto.source ?? null,
-        importance: dto.importance ?? null,
-        tags: dto.tags ?? [],
-      },
-      embeddingResult.embedding,
-    );
+      // 创建 Memory
+      const memory = await this.repository.createWithEmbedding(
+        apiKeyId,
+        {
+          userId: dto.userId,
+          agentId: dto.agentId ?? null,
+          sessionId: dto.sessionId ?? null,
+          content: dto.content,
+          metadata: dto.metadata ?? null,
+          source: dto.source ?? null,
+          importance: dto.importance ?? null,
+          tags: dto.tags ?? [],
+        },
+        embeddingResult.embedding,
+      );
 
-    this.logger.log(`Created memory ${memory.id} for user ${dto.userId}`);
-    return memory;
+      this.logger.log(`Created memory ${memory.id} for user ${dto.userId}`);
+      return memory;
+    } catch (error) {
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId: platformUserId,
+          billingKey,
+          referenceId,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+      throw error;
+    }
   }
 
   /**
@@ -109,29 +127,44 @@ export class MemoryService {
     apiKeyId: string,
     dto: SearchMemoryInput,
   ): Promise<MemoryWithSimilarity[]> {
-    await this.quotaService.deductOrThrow(
-      platformUserId,
-      1,
-      'memox.memory.search',
-    );
+    const billingKey = 'memox.memory.search' as const;
+    const referenceId = randomUUID();
+    const billing = await this.billingService.deductOrThrow({
+      userId: platformUserId,
+      billingKey,
+      referenceId,
+    });
 
-    // 生成查询向量
-    const embeddingResult = await this.embeddingService.generateEmbedding(
-      dto.query,
-    );
+    try {
+      // 生成查询向量
+      const embeddingResult = await this.embeddingService.generateEmbedding(
+        dto.query,
+      );
 
-    // 搜索相似 Memory
-    const memories = await this.repository.searchSimilar(
-      apiKeyId,
-      dto.userId,
-      embeddingResult.embedding,
-      dto.limit,
-      dto.threshold,
-      dto.agentId,
-      dto.sessionId,
-    );
+      // 搜索相似 Memory
+      const memories = await this.repository.searchSimilar(
+        apiKeyId,
+        dto.userId,
+        embeddingResult.embedding,
+        dto.limit,
+        dto.threshold,
+        dto.agentId,
+        dto.sessionId,
+      );
 
-    return memories;
+      return memories;
+    } catch (error) {
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId: platformUserId,
+          billingKey,
+          referenceId,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+      throw error;
+    }
   }
 
   /**

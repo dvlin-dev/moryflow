@@ -324,7 +324,7 @@ describe('DemoService', () => {
     it('should pass options', async () => {
       await service.map('https://example.com', 'blog', true);
 
-      expect(mockMapService.map).toHaveBeenCalledWith({
+      expect(mockMapService.map).toHaveBeenCalledWith('demo-playground-user', {
         url: 'https://example.com',
         search: 'blog',
         includeSubdomains: true,

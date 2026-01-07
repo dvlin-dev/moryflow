@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { CRAWL_QUEUE } from '../queue/queue.constants';
+import { BillingService } from '../billing/billing.service';
 import type { CrawlOptions } from './dto/crawl.dto';
 import type { CrawlStatus, CrawlPageResult } from './crawler.types';
 
@@ -23,6 +24,7 @@ export class CrawlerService {
     private prisma: PrismaService,
     private urlValidator: UrlValidator,
     @InjectQueue(CRAWL_QUEUE) private crawlQueue: Queue,
+    private billingService: BillingService,
   ) {}
 
   /**
@@ -55,20 +57,60 @@ export class CrawlerService {
       },
     });
 
-    // 创建起始页面
-    await this.prisma.crawlPage.create({
-      data: {
-        crawlJobId: job.id,
-        url: options.url,
-        depth: 0,
-        status: 'PENDING',
-      },
-    });
+    const billingKey = 'fetchx.crawl' as const;
+    let billing: Awaited<ReturnType<typeof this.billingService.deductOrThrow>> =
+      null;
 
-    // 加入队列
-    await this.crawlQueue.add('crawl-start', {
-      crawlJobId: job.id,
-    });
+    try {
+      // 创建起始页面
+      await this.prisma.crawlPage.create({
+        data: {
+          crawlJobId: job.id,
+          url: options.url,
+          depth: 0,
+          status: 'PENDING',
+        },
+      });
+
+      // 扣费（用于失败全退）
+      billing = await this.billingService.deductOrThrow({
+        userId,
+        billingKey,
+        referenceId: job.id,
+      });
+
+      if (billing) {
+        await this.prisma.crawlJob.update({
+          where: { id: job.id },
+          data: {
+            quotaDeducted: true,
+            quotaSource: billing.deduct.source,
+            quotaAmount: billing.amount,
+            quotaTransactionId: billing.deduct.transactionId,
+            billingKey,
+          },
+        });
+      }
+
+      // 加入队列
+      await this.crawlQueue.add('crawl-start', {
+        crawlJobId: job.id,
+      });
+    } catch (error) {
+      // 初始化失败：尽量回滚并退费
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId,
+          billingKey,
+          referenceId: job.id,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+
+      await this.prisma.crawlJob.delete({ where: { id: job.id } });
+      throw error;
+    }
 
     this.logger.log(`Crawl job started: ${job.id} for ${options.url}`);
 

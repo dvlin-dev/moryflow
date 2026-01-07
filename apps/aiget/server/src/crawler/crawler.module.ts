@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { CRAWL_QUEUE } from '../queue/queue.constants';
 import { ScraperModule } from '../scraper';
 import { ApiKeyModule } from '../api-key';
+import { BillingModule } from '../billing/billing.module';
 
 import { CrawlerService } from './crawler.service';
 import { CrawlerProcessor } from './crawler.processor';
@@ -17,6 +18,7 @@ import { UrlFrontier } from './url-frontier';
     }),
     ScraperModule,
     ApiKeyModule,
+    BillingModule,
   ],
   controllers: [CrawlerController],
   providers: [CrawlerService, CrawlerProcessor, UrlFrontier],

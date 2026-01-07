@@ -7,6 +7,7 @@ import { CrawlerService } from '../crawler.service';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type { UrlValidator } from '../../common/validators/url.validator';
 import type { Queue } from 'bullmq';
+import type { BillingService } from '../../billing/billing.service';
 
 describe('CrawlerService', () => {
   let service: CrawlerService;
@@ -27,6 +28,10 @@ describe('CrawlerService', () => {
   };
   let mockQueue: {
     add: ReturnType<typeof vi.fn>;
+  };
+  let mockBillingService: {
+    deductOrThrow: ReturnType<typeof vi.fn>;
+    refundOnFailure: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -51,10 +56,16 @@ describe('CrawlerService', () => {
       add: vi.fn().mockResolvedValue({ id: 'queue_job_1' }),
     };
 
+    mockBillingService = {
+      deductOrThrow: vi.fn().mockResolvedValue(null),
+      refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
+    };
+
     service = new CrawlerService(
       mockPrisma as unknown as PrismaService,
       mockUrlValidator as unknown as UrlValidator,
       mockQueue as unknown as Queue,
+      mockBillingService as unknown as BillingService,
     );
   });
 

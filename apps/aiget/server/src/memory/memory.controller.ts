@@ -38,6 +38,7 @@ import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public, CurrentUser } from '../auth';
 import type { CurrentUserDto } from '../types';
 import { ZodValidationPipe } from '../common';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Memory')
 @ApiSecurity('apiKey')
@@ -53,6 +54,7 @@ export class MemoryController {
   @Post()
   @ApiOperation({ summary: 'Create a memory' })
   @ApiOkResponse({ description: 'Memory created successfully' })
+  @BillingKey('memox.memory.create')
   async create(
     @CurrentUser() user: CurrentUserDto,
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
@@ -67,6 +69,7 @@ export class MemoryController {
   @Post('search')
   @ApiOperation({ summary: 'Search memories by semantic similarity' })
   @ApiOkResponse({ description: 'Search results returned' })
+  @BillingKey('memox.memory.search')
   async search(
     @CurrentUser() user: CurrentUserDto,
     @CurrentApiKey() apiKey: ApiKeyValidationResult,

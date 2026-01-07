@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { SCRAPE_QUEUE } from '../queue/queue.constants';
 import { StorageModule } from '../storage/storage.module';
 import { ApiKeyModule } from '../api-key';
+import { BillingModule } from '../billing/billing.module';
 
 // Service & Processor
 import { ScraperService } from './scraper.service';
@@ -31,6 +32,7 @@ import { LinksTransformer } from './transformers/links.transformer';
     }),
     StorageModule,
     ApiKeyModule,
+    BillingModule,
   ],
   controllers: [ScraperController],
   providers: [

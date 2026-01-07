@@ -9,11 +9,14 @@ import type { Prisma } from '../../generated/prisma/client';
 import { UrlFrontier } from './url-frontier';
 import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
+import { BillingService } from '../billing/billing.service';
+import { BILLING_KEYS, type BillingKey } from '../billing/billing.rules';
 import { CRAWL_QUEUE } from '../queue/queue.constants';
 import type { CrawlJobData, FrontierOptions } from './crawler.types';
 
 /** 默认批量大小 */
 const DEFAULT_BATCH_SIZE = 10;
+const BILLING_KEY_SET = new Set<string>(BILLING_KEYS);
 
 @Processor(CRAWL_QUEUE)
 export class CrawlerProcessor extends WorkerHost {
@@ -25,6 +28,7 @@ export class CrawlerProcessor extends WorkerHost {
     private urlFrontier: UrlFrontier,
     private scraperService: ScraperService,
     private webhookService: WebhookService,
+    private billingService: BillingService,
     private config: ConfigService,
     @InjectQueue(CRAWL_QUEUE) private crawlQueue: Queue,
   ) {
@@ -250,17 +254,48 @@ export class CrawlerProcessor extends WorkerHost {
       // 还有 URL 或正在处理，继续爬取
       await this.crawlQueue.add('crawl-batch', { crawlJobId });
     } else {
-      // 完成爬取
+      const snapshot = await this.prisma.crawlJob.findUnique({
+        where: { id: crawlJobId },
+        select: {
+          completedUrls: true,
+          failedUrls: true,
+        },
+      });
+
+      const finalStatus =
+        snapshot && snapshot.completedUrls === 0 && snapshot.failedUrls > 0
+          ? 'FAILED'
+          : 'COMPLETED';
+
+      // 完成爬取（全失败则标记 FAILED）
       const crawlJob = await this.prisma.crawlJob.update({
         where: { id: crawlJobId },
         data: {
-          status: 'COMPLETED',
+          status: finalStatus,
           completedAt: new Date(),
         },
       });
 
       // 清理 Redis
       await this.urlFrontier.cleanup(crawlJobId);
+
+      // 全失败：失败退款（幂等）
+      if (
+        crawlJob.status === 'FAILED' &&
+        crawlJob.quotaDeducted &&
+        crawlJob.quotaSource &&
+        crawlJob.quotaAmount &&
+        crawlJob.billingKey &&
+        BILLING_KEY_SET.has(crawlJob.billingKey)
+      ) {
+        await this.billingService.refundOnFailure({
+          userId: crawlJob.userId,
+          billingKey: crawlJob.billingKey as BillingKey,
+          referenceId: crawlJob.id,
+          source: crawlJob.quotaSource,
+          amount: crawlJob.quotaAmount,
+        });
+      }
 
       // 触发 Webhook
       if (crawlJob.webhookUrl) {

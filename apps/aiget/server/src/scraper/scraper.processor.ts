@@ -28,6 +28,10 @@ import { LinksTransformer } from './transformers/links.transformer';
 import { ScrapeErrorCode } from '../common/constants/error-codes';
 import type { ScrapeOptions, ScrapeFormat } from './dto/scrape.dto';
 import type { ScrapeJobData } from './scraper.types';
+import { BillingService } from '../billing/billing.service';
+import { BILLING_KEYS, type BillingKey } from '../billing/billing.rules';
+
+const BILLING_KEY_SET = new Set<string>(BILLING_KEYS);
 
 @Processor(SCRAPE_QUEUE)
 export class ScraperProcessor extends WorkerHost {
@@ -36,6 +40,7 @@ export class ScraperProcessor extends WorkerHost {
   constructor(
     private prisma: PrismaService,
     private browserPool: BrowserPool,
+    private billingService: BillingService,
     // Handlers（单一职责）
     private pageConfigHandler: PageConfigHandler,
     private waitStrategyHandler: WaitStrategyHandler,
@@ -250,6 +255,18 @@ export class ScraperProcessor extends WorkerHost {
 
     this.logger.error(`Scrape job failed: ${jobId}`, errorMessage);
 
+    // 失败退款（仅对实际扣费的任务）
+    const billing = await this.prisma.scrapeJob.findUnique({
+      where: { id: jobId },
+      select: {
+        userId: true,
+        quotaDeducted: true,
+        quotaSource: true,
+        quotaAmount: true,
+        billingKey: true,
+      },
+    });
+
     await this.prisma.scrapeJob.update({
       where: { id: jobId },
       data: {
@@ -259,6 +276,23 @@ export class ScraperProcessor extends WorkerHost {
         totalMs: Date.now() - startTime,
       },
     });
+
+    if (
+      billing?.quotaDeducted &&
+      billing.quotaSource &&
+      billing.quotaAmount &&
+      billing.billingKey &&
+      BILLING_KEY_SET.has(billing.billingKey)
+    ) {
+      const billingKey = billing.billingKey as BillingKey;
+      await this.billingService.refundOnFailure({
+        userId: billing.userId,
+        billingKey,
+        referenceId: jobId,
+        source: billing.quotaSource,
+        amount: billing.quotaAmount,
+      });
+    }
   }
 
   /**

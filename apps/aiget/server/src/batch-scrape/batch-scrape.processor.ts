@@ -13,11 +13,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma/client';
 import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
+import { BillingService } from '../billing/billing.service';
+import { BILLING_KEYS, type BillingKey } from '../billing/billing.rules';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
 import type { BatchScrapeJobData } from './batch-scrape.types';
 
 /** 默认并发数 */
 const DEFAULT_CONCURRENCY = 5;
+const BILLING_KEY_SET = new Set<string>(BILLING_KEYS);
 
 @Processor(BATCH_SCRAPE_QUEUE)
 export class BatchScrapeProcessor extends WorkerHost {
@@ -28,6 +31,7 @@ export class BatchScrapeProcessor extends WorkerHost {
     private prisma: PrismaService,
     private scraperService: ScraperService,
     private webhookService: WebhookService,
+    private billingService: BillingService,
     private config: ConfigService,
   ) {
     super();
@@ -90,6 +94,24 @@ export class BatchScrapeProcessor extends WorkerHost {
         completedAt: new Date(),
       },
     });
+
+    // 全失败：失败退款（幂等）
+    if (
+      updatedBatch.status === 'FAILED' &&
+      updatedBatch.quotaDeducted &&
+      updatedBatch.quotaSource &&
+      updatedBatch.quotaAmount &&
+      updatedBatch.billingKey &&
+      BILLING_KEY_SET.has(updatedBatch.billingKey)
+    ) {
+      await this.billingService.refundOnFailure({
+        userId: updatedBatch.userId,
+        billingKey: updatedBatch.billingKey as BillingKey,
+        referenceId: updatedBatch.id,
+        source: updatedBatch.quotaSource,
+        amount: updatedBatch.quotaAmount,
+      });
+    }
 
     // 触发 Webhook
     if (updatedBatch.webhookUrl) {

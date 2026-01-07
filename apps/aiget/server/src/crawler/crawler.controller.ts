@@ -35,6 +35,7 @@ import {
 import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Crawl')
 @ApiSecurity('apiKey')
@@ -47,6 +48,7 @@ export class CrawlerController {
   @Post()
   @ApiOperation({ summary: 'Start a crawl job' })
   @ApiOkResponse({ description: 'Crawl job created' })
+  @BillingKey('fetchx.crawl')
   async startCrawl(
     @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(CrawlOptionsSchema)) options: unknown,

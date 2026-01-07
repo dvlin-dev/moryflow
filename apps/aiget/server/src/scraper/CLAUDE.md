@@ -19,7 +19,7 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 ## Constraints
 
 - URL must pass SSRF validation before scraping
-- Quota must be deducted before scraping
+- 触发实际抓取前必须先扣费（通过 `BillingService` + `@BillingKey(...)`）
 - Browser pool concurrency limits apply
 - Cache hits don't consume quota
 
@@ -81,7 +81,7 @@ Response (markdown, screenshot, links, metadata)
 ```
 scraper/
 ├── browser/ - Browser pool management
-├── quota/ - Quota deduction/refund
+├── billing/ - Quota deduction/refund rules
 ├── storage/ - Screenshot storage (R2)
 ├── redis/ - Cache operations
 └── common/ - URL validation, guards

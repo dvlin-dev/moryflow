@@ -284,7 +284,7 @@ export class DemoService {
     const startTime = Date.now();
 
     try {
-      const result = await this.mapService.map({
+      const result = await this.mapService.map(DEMO_USER_ID, {
         url,
         search,
         includeSubdomains: includeSubdomains ?? false,
@@ -320,7 +320,7 @@ export class DemoService {
 
     try {
       // 先获取 Map 来发现 URL
-      const mapResult = await this.mapService.map({
+      const mapResult = await this.mapService.map(DEMO_USER_ID, {
         url,
         limit: limit,
         includeSubdomains: false,

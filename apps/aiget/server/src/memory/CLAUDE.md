@@ -89,7 +89,7 @@ SearchMemorySchema = {
 memory/
 ├── depends on → embedding/ (vector generation)
 ├── depends on → prisma/ (database)
-└── depends on → quota/ (quota deduction)
+└── depends on → billing/ (quota deduction/refund rules)
 ```
 
 ---

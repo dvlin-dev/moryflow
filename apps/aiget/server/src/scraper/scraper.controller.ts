@@ -36,6 +36,7 @@ import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { CurrentUserDto } from '../types';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Scrape')
 @ApiSecurity('apiKey')
@@ -50,6 +51,7 @@ export class ScraperController {
   @ApiOkResponse({
     description: 'Scrape job created or cached result returned',
   })
+  @BillingKey('fetchx.scrape')
   async scrape(
     @CurrentUser() user: CurrentUserDto,
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
@@ -59,6 +61,7 @@ export class ScraperController {
       user.id,
       options as Parameters<typeof this.scraperService.scrape>[1],
       apiKey.id,
+      { bill: true },
     );
 
     // 如果是缓存命中，直接返回完整结果

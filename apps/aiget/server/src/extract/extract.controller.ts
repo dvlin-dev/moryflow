@@ -18,6 +18,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Extract')
 @ApiSecurity('apiKey')
@@ -30,6 +31,7 @@ export class ExtractController {
   @Post()
   @ApiOperation({ summary: 'Extract structured data from URLs using AI' })
   @ApiOkResponse({ description: 'Extracted data' })
+  @BillingKey('fetchx.extract')
   async extract(
     @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(ExtractOptionsSchema)) options: unknown,

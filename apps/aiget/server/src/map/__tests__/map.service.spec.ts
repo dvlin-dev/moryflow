@@ -7,6 +7,7 @@ import { MapService } from '../map.service';
 import type { SitemapParser } from '../sitemap-parser';
 import type { BrowserPool } from '../../browser/browser-pool';
 import type { UrlValidator } from '../../common/validators/url.validator';
+import type { BillingService } from '../../billing/billing.service';
 import type { ConfigService } from '@nestjs/config';
 import type { MapOptions } from '../dto/map.dto';
 
@@ -17,6 +18,8 @@ const baseOptions: Omit<MapOptions, 'url'> = {
   includeSubdomains: false,
 };
 
+const TEST_USER_ID = 'user_1';
+
 describe('MapService', () => {
   let service: MapService;
   let mockSitemapParser: { fetchAndParse: Mock };
@@ -26,6 +29,7 @@ describe('MapService', () => {
   };
   let mockUrlValidator: { isAllowed: Mock };
   let mockConfig: { get: Mock };
+  let mockBillingService: { deductOrThrow: Mock; refundOnFailure: Mock };
   let mockPage: {
     goto: Mock;
     $$eval: Mock;
@@ -61,11 +65,17 @@ describe('MapService', () => {
       get: vi.fn().mockReturnValue(100),
     };
 
+    mockBillingService = {
+      deductOrThrow: vi.fn().mockResolvedValue(null),
+      refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
+    };
+
     service = new MapService(
       mockSitemapParser as unknown as SitemapParser,
       mockBrowserPool as unknown as BrowserPool,
       mockUrlValidator as unknown as UrlValidator,
       mockConfig as unknown as ConfigService,
+      mockBillingService as unknown as BillingService,
     );
   });
 
@@ -76,7 +86,10 @@ describe('MapService', () => {
       mockUrlValidator.isAllowed.mockReturnValue(false);
 
       await expect(
-        service.map({ ...baseOptions, url: 'http://169.254.169.254' }),
+        service.map(TEST_USER_ID, {
+          ...baseOptions,
+          url: 'http://169.254.169.254',
+        }),
       ).rejects.toThrow('URL not allowed');
     });
 
@@ -84,7 +97,7 @@ describe('MapService', () => {
       mockUrlValidator.isAllowed.mockReturnValue(false);
 
       await expect(
-        service.map({ ...baseOptions, url: 'http://localhost:3000' }),
+        service.map(TEST_USER_ID, { ...baseOptions, url: 'http://localhost:3000' }),
       ).rejects.toThrow('SSRF');
     });
 
@@ -92,7 +105,7 @@ describe('MapService', () => {
       mockUrlValidator.isAllowed.mockReturnValue(false);
 
       await expect(
-        service.map({ ...baseOptions, url: 'http://192.168.1.1' }),
+        service.map(TEST_USER_ID, { ...baseOptions, url: 'http://192.168.1.1' }),
       ).rejects.toThrow('SSRF');
     });
   });
@@ -107,7 +120,7 @@ describe('MapService', () => {
         { url: 'https://example.com/page3' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -120,7 +133,7 @@ describe('MapService', () => {
     });
 
     it('should ignore sitemap when ignoreSitemap is true', async () => {
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
         ignoreSitemap: true,
@@ -134,7 +147,7 @@ describe('MapService', () => {
         new Error('Sitemap not found'),
       );
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -149,7 +162,7 @@ describe('MapService', () => {
         { url: 'https://example.com/blog/post2' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
         search: 'blog',
@@ -167,7 +180,7 @@ describe('MapService', () => {
         })),
       );
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
         limit: 10,
@@ -191,7 +204,7 @@ describe('MapService', () => {
         'https://example.com/crawled-page2',
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
         limit: 10,
@@ -206,7 +219,7 @@ describe('MapService', () => {
       mockPage.goto.mockResolvedValue(undefined);
       mockPage.$$eval.mockResolvedValue([]);
 
-      await service.map({ ...baseOptions, url: 'https://example.com' });
+      await service.map(TEST_USER_ID, { ...baseOptions, url: 'https://example.com' });
 
       expect(mockBrowserPool.releaseContext).toHaveBeenCalledWith(mockContext);
     });
@@ -214,7 +227,7 @@ describe('MapService', () => {
     it('should close page after crawling', async () => {
       mockSitemapParser.fetchAndParse.mockResolvedValue([]);
 
-      await service.map({ ...baseOptions, url: 'https://example.com' });
+      await service.map(TEST_USER_ID, { ...baseOptions, url: 'https://example.com' });
 
       expect(mockPage.close).toHaveBeenCalled();
     });
@@ -223,7 +236,7 @@ describe('MapService', () => {
       mockSitemapParser.fetchAndParse.mockResolvedValue([]);
       mockPage.goto.mockRejectedValue(new Error('Page load failed'));
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -242,7 +255,7 @@ describe('MapService', () => {
         { url: 'mailto:test@example.com' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -261,7 +274,7 @@ describe('MapService', () => {
         { url: 'https://example.com/font.woff2' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -279,7 +292,7 @@ describe('MapService', () => {
         { url: 'https://sub.example.com/page' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
         includeSubdomains: false,
@@ -298,7 +311,7 @@ describe('MapService', () => {
         { url: 'https://other.com/page' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
         includeSubdomains: true,
@@ -317,7 +330,7 @@ describe('MapService', () => {
         { url: 'https://example.com/page' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -338,7 +351,7 @@ describe('MapService', () => {
         })),
       );
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -347,7 +360,7 @@ describe('MapService', () => {
     });
 
     it('should use ignoreSitemap=false by default', async () => {
-      await service.map({ ...baseOptions, url: 'https://example.com' });
+      await service.map(TEST_USER_ID, { ...baseOptions, url: 'https://example.com' });
 
       expect(mockSitemapParser.fetchAndParse).toHaveBeenCalled();
     });
@@ -358,7 +371,7 @@ describe('MapService', () => {
         { url: 'https://sub.example.com/page' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });
@@ -376,7 +389,7 @@ describe('MapService', () => {
         { url: 'https://example.com/page2' },
       ]);
 
-      const result = await service.map({
+      const result = await service.map(TEST_USER_ID, {
         ...baseOptions,
         url: 'https://example.com',
       });

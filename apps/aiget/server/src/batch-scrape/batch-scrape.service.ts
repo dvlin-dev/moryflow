@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
+import { BillingService } from '../billing/billing.service';
 import type { BatchScrapeOptions } from './dto/batch-scrape.dto';
 import type { BatchScrapeStatus } from './batch-scrape.types';
 
@@ -23,6 +24,7 @@ export class BatchScrapeService {
     private prisma: PrismaService,
     private urlValidator: UrlValidator,
     @InjectQueue(BATCH_SCRAPE_QUEUE) private batchQueue: Queue,
+    private billingService: BillingService,
   ) {}
 
   /**
@@ -51,21 +53,60 @@ export class BatchScrapeService {
       },
     });
 
-    // 创建每个 URL 的子任务
-    await this.prisma.batchScrapeItem.createMany({
-      data: urls.map((url, index) => ({
-        batchJobId: batch.id,
-        url,
-        order: index,
-        status: 'PENDING',
-      })),
-    });
+    const billingKey = 'fetchx.batchScrape' as const;
+    let billing: Awaited<ReturnType<typeof this.billingService.deductOrThrow>> =
+      null;
+    try {
+      // 创建每个 URL 的子任务
+      await this.prisma.batchScrapeItem.createMany({
+        data: urls.map((url, index) => ({
+          batchJobId: batch.id,
+          url,
+          order: index,
+          status: 'PENDING',
+        })),
+      });
 
-    // 启动批次处理
-    await this.batchQueue.add('batch-start', {
-      batchJobId: batch.id,
-      options: scrapeOptions || {},
-    });
+      // 扣费（用于失败全退）
+      billing = await this.billingService.deductOrThrow({
+        userId,
+        billingKey,
+        referenceId: batch.id,
+      });
+
+      if (billing) {
+        await this.prisma.batchScrapeJob.update({
+          where: { id: batch.id },
+          data: {
+            quotaDeducted: true,
+            quotaSource: billing.deduct.source,
+            quotaAmount: billing.amount,
+            quotaTransactionId: billing.deduct.transactionId,
+            billingKey,
+          },
+        });
+      }
+
+      // 启动批次处理
+      await this.batchQueue.add('batch-start', {
+        batchJobId: batch.id,
+        options: scrapeOptions || {},
+      });
+    } catch (error) {
+      // 队列/扣费/创建失败：尽量回滚并退费
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId,
+          billingKey,
+          referenceId: batch.id,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+
+      await this.prisma.batchScrapeJob.delete({ where: { id: batch.id } });
+      throw error;
+    }
 
     this.logger.log(
       `Batch scrape job started: ${batch.id} with ${urls.length} URLs`,

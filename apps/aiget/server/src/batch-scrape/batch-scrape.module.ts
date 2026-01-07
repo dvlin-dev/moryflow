@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
 import { ScraperModule } from '../scraper';
 import { ApiKeyModule } from '../api-key';
+import { BillingModule } from '../billing/billing.module';
 
 import { BatchScrapeService } from './batch-scrape.service';
 import { BatchScrapeProcessor } from './batch-scrape.processor';
@@ -16,6 +17,7 @@ import { BatchScrapeController } from './batch-scrape.controller';
     }),
     ScraperModule,
     ApiKeyModule,
+    BillingModule,
   ],
   controllers: [BatchScrapeController],
   providers: [BatchScrapeService, BatchScrapeProcessor],

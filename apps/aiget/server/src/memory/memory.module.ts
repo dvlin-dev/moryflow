@@ -5,11 +5,11 @@ import { MemoryService } from './memory.service';
 import { MemoryRepository } from './memory.repository';
 import { PrismaModule } from '../prisma';
 import { EmbeddingModule } from '../embedding';
-import { QuotaModule } from '../quota';
+import { BillingModule } from '../billing/billing.module';
 import { ApiKeyModule } from '../api-key';
 
 @Module({
-  imports: [PrismaModule, EmbeddingModule, QuotaModule, ApiKeyModule],
+  imports: [PrismaModule, EmbeddingModule, BillingModule, ApiKeyModule],
   controllers: [MemoryController, ConsoleMemoryController],
   providers: [MemoryService, MemoryRepository],
   exports: [MemoryService, MemoryRepository],

@@ -19,6 +19,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import type { CurrentUserDto } from '../types';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Search')
 @ApiSecurity('apiKey')
@@ -31,6 +32,7 @@ export class SearchController {
   @Post()
   @ApiOperation({ summary: 'Search the web' })
   @ApiOkResponse({ description: 'Search results' })
+  @BillingKey('fetchx.search')
   async search(
     @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(SearchOptionsSchema)) options: unknown,

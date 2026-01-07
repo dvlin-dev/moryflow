@@ -16,6 +16,7 @@ import { SCRAPE_QUEUE } from '../queue/queue.constants';
 import { createHash } from 'crypto';
 import type { ScrapeOptions } from './dto/scrape.dto';
 import type { ScrapeResult } from './scraper.types';
+import { BillingService } from '../billing/billing.service';
 
 @Injectable()
 export class ScraperService {
@@ -28,6 +29,7 @@ export class ScraperService {
     private config: ConfigService,
     private urlValidator: UrlValidator,
     @InjectQueue(SCRAPE_QUEUE) private scrapeQueue: Queue,
+    private billingService: BillingService,
   ) {
     // 可配置的缓存 TTL，默认 1 小时
     this.cacheTtlMs = config.get('SCRAPE_CACHE_TTL_MS') || 3600000;
@@ -56,7 +58,12 @@ export class ScraperService {
   /**
    * 异步抓取 - 返回任务 ID，客户端轮询获取结果
    */
-  async scrape(userId: string, options: ScrapeOptions, apiKeyId?: string) {
+  async scrape(
+    userId: string,
+    options: ScrapeOptions,
+    apiKeyId?: string,
+    billingOptions?: { bill?: boolean },
+  ) {
     // 1. SSRF 防护 - 验证 URL
     if (!this.urlValidator.isAllowed(options.url)) {
       throw new Error('URL not allowed: possible SSRF attack');
@@ -96,22 +103,78 @@ export class ScraperService {
       },
     });
 
-    // 5. 加入队列（包含 userId 和 tier）
-    await this.scrapeQueue.add(
-      'scrape',
-      {
-        jobId: job.id,
-        userId,
-        url: options.url,
-        options,
-        tier,
-      },
-      {
-        jobId: job.id,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 2000 },
-      },
-    );
+    const billingKey = 'fetchx.scrape' as const;
+    let billing: Awaited<ReturnType<typeof this.billingService.deductOrThrow>> =
+      null;
+    if (billingOptions?.bill) {
+      try {
+        billing = await this.billingService.deductOrThrow({
+          userId,
+          billingKey,
+          referenceId: job.id,
+          fromCache: false,
+        });
+      } catch (error) {
+        // 扣费失败：清理任务记录，避免产生无效任务
+        await this.prisma.scrapeJob.delete({ where: { id: job.id } });
+        throw error;
+      }
+
+      // 5. 记录扣费信息（用于失败退款）
+      if (billing) {
+        await this.prisma.scrapeJob.update({
+          where: { id: job.id },
+          data: {
+            quotaDeducted: true,
+            quotaSource: billing.deduct.source,
+            quotaAmount: billing.amount,
+            quotaTransactionId: billing.deduct.transactionId,
+            billingKey,
+          },
+        });
+      }
+    }
+
+    try {
+      // 6. 加入队列（包含 userId 和 tier）
+      await this.scrapeQueue.add(
+        'scrape',
+        {
+          jobId: job.id,
+          userId,
+          url: options.url,
+          options,
+          tier,
+        },
+        {
+          jobId: job.id,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+        },
+      );
+    } catch (error) {
+      // 队列失败：标记任务失败并退费（幂等）
+      await this.prisma.scrapeJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'FAILED',
+          error: error instanceof Error ? error.message : String(error),
+          errorCode: 'BROWSER_ERROR',
+        },
+      });
+
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId,
+          billingKey,
+          referenceId: job.id,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+
+      throw error;
+    }
 
     return job;
   }
@@ -125,7 +188,7 @@ export class ScraperService {
     options: ScrapeOptions,
     apiKeyId?: string,
   ): Promise<ScrapeResult> {
-    const job = await this.scrape(userId, options, apiKeyId);
+    const job = await this.scrape(userId, options, apiKeyId, { bill: false });
 
     // 如果命中缓存，直接返回
     if ('fromCache' in job && job.fromCache) {

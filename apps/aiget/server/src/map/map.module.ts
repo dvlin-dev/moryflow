@@ -4,9 +4,10 @@ import { MapService } from './map.service';
 import { MapController } from './map.controller';
 import { SitemapParser } from './sitemap-parser';
 import { ApiKeyModule } from '../api-key';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
-  imports: [ApiKeyModule],
+  imports: [ApiKeyModule, BillingModule],
   controllers: [MapController],
   providers: [MapService, SitemapParser],
   exports: [MapService],

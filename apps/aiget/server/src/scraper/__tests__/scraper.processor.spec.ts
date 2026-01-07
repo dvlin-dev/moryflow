@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ScraperProcessor } from '../scraper.processor';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type { BrowserPool } from '../../browser/browser-pool';
+import type { BillingService } from '../../billing/billing.service';
 import type { PageConfigHandler } from '../handlers/page-config.handler';
 import type { WaitStrategyHandler } from '../handlers/wait-strategy.handler';
 import type { ScreenshotHandler } from '../handlers/screenshot.handler';
@@ -35,6 +36,7 @@ describe('ScraperProcessor', () => {
   let processor: ScraperProcessor;
   let mockPrisma: {
     scrapeJob: {
+      findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
     };
   };
@@ -42,6 +44,7 @@ describe('ScraperProcessor', () => {
     acquireContext: ReturnType<typeof vi.fn>;
     releaseContext: ReturnType<typeof vi.fn>;
   };
+  let mockBillingService: { refundOnFailure: ReturnType<typeof vi.fn> };
   let mockPageConfigHandler: { configure: ReturnType<typeof vi.fn> };
   let mockWaitStrategyHandler: {
     waitForPageReady: ReturnType<typeof vi.fn>;
@@ -76,6 +79,7 @@ describe('ScraperProcessor', () => {
 
     mockPrisma = {
       scrapeJob: {
+        findUnique: vi.fn().mockResolvedValue(null),
         update: vi.fn().mockResolvedValue({}),
       },
     };
@@ -83,6 +87,10 @@ describe('ScraperProcessor', () => {
     mockBrowserPool = {
       acquireContext: vi.fn().mockResolvedValue(mockContext),
       releaseContext: vi.fn().mockResolvedValue(undefined),
+    };
+
+    mockBillingService = {
+      refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
     };
 
     mockPageConfigHandler = {
@@ -148,6 +156,7 @@ describe('ScraperProcessor', () => {
     processor = new ScraperProcessor(
       mockPrisma as unknown as PrismaService,
       mockBrowserPool as unknown as BrowserPool,
+      mockBillingService as unknown as BillingService,
       mockPageConfigHandler as unknown as PageConfigHandler,
       mockWaitStrategyHandler as unknown as WaitStrategyHandler,
       mockScreenshotHandler as unknown as ScreenshotHandler,

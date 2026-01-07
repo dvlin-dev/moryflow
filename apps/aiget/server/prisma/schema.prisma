@@ -489,6 +489,9 @@ model ScrapeJob {
   // 配额
   quotaDeducted Boolean      @default(false)
   quotaSource   QuotaSource?
+  quotaAmount   Int?
+  quotaTransactionId String?
+  billingKey    String?
 
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -527,6 +530,13 @@ model BatchScrapeJob {
 
   options       Json         // 通用抓取选项
   webhookUrl    String?      // 完成后回调 URL
+
+  // 配额（每次创建任务扣 1，失败全退）
+  quotaDeducted Boolean      @default(false)
+  quotaSource   QuotaSource?
+  quotaAmount   Int?
+  quotaTransactionId String?
+  billingKey    String?
 
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -589,6 +599,13 @@ model CrawlJob {
 
   // Webhook
   webhookUrl  String?
+
+  // 配额（每次创建任务扣 1，失败全退）
+  quotaDeducted Boolean      @default(false)
+  quotaSource   QuotaSource?
+  quotaAmount   Int?
+  quotaTransactionId String?
+  billingKey    String?
 
   // 时间
   startedAt   DateTime?

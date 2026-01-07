@@ -9,6 +9,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { UrlValidator } from '../../common/validators/url.validator';
 import type { Queue } from 'bullmq';
 import type { ScrapeOptions } from '../dto/scrape.dto';
+import type { BillingService } from '../../billing/billing.service';
 
 // 共享的有效选项（用于所有测试）
 const validOptions: ScrapeOptions = {
@@ -43,6 +44,7 @@ describe('ScraperService', () => {
   let mockConfig: {
     get: Mock;
   };
+  let mockBillingService: { deductOrThrow: Mock; refundOnFailure: Mock };
 
   beforeEach(() => {
     mockPrisma = {
@@ -71,11 +73,17 @@ describe('ScraperService', () => {
       }),
     };
 
+    mockBillingService = {
+      deductOrThrow: vi.fn().mockResolvedValue(null),
+      refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
+    };
+
     service = new ScraperService(
       mockPrisma as unknown as PrismaService,
       mockConfig as unknown as ConfigService,
       mockUrlValidator as unknown as UrlValidator,
       mockQueue as unknown as Queue,
+      mockBillingService as unknown as BillingService,
     );
   });
 

@@ -7,6 +7,7 @@ import { ExtractService } from '../extract.service';
 import type { ScraperService } from '../../scraper/scraper.service';
 import type { LlmClient } from '../llm.client';
 import type { ConfigService } from '@nestjs/config';
+import type { BillingService } from '../../billing/billing.service';
 
 describe('ExtractService', () => {
   let service: ExtractService;
@@ -18,6 +19,7 @@ describe('ExtractService', () => {
     completeParsed: Mock;
   };
   let mockConfig: { get: Mock };
+  let mockBillingService: { deductOrThrow: Mock; refundOnFailure: Mock };
 
   beforeEach(() => {
     mockScraperService = {
@@ -39,10 +41,16 @@ describe('ExtractService', () => {
       get: vi.fn().mockReturnValue(5), // EXTRACT_CONCURRENCY
     };
 
+    mockBillingService = {
+      deductOrThrow: vi.fn().mockResolvedValue(null),
+      refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
+    };
+
     service = new ExtractService(
       mockScraperService as unknown as ScraperService,
       mockLlmClient as unknown as LlmClient,
       mockConfig as unknown as ConfigService,
+      mockBillingService as unknown as BillingService,
     );
   });
 
@@ -269,6 +277,7 @@ describe('ExtractService', () => {
         mockScraperService as unknown as ScraperService,
         mockLlmClient as unknown as LlmClient,
         mockConfig as unknown as ConfigService,
+        mockBillingService as unknown as BillingService,
       );
 
       const urls = Array.from(

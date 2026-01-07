@@ -11,6 +11,8 @@ import { SitemapParser } from './sitemap-parser';
 import { BrowserPool } from '../browser/browser-pool';
 import { UrlValidator } from '../common/validators/url.validator';
 import type { MapOptions, MapResult } from './dto/map.dto';
+import { BillingService } from '../billing/billing.service';
+import { randomUUID } from 'crypto';
 
 /** 默认最大爬取页面数 */
 const DEFAULT_MAX_CRAWL_PAGES = 100;
@@ -25,6 +27,7 @@ export class MapService {
     private browserPool: BrowserPool,
     private urlValidator: UrlValidator,
     private config: ConfigService,
+    private billingService: BillingService,
   ) {
     this.maxCrawlPages =
       config.get('MAP_MAX_CRAWL_PAGES') || DEFAULT_MAX_CRAWL_PAGES;
@@ -33,7 +36,7 @@ export class MapService {
   /**
    * 映射网站 URL
    */
-  async map(options: MapOptions): Promise<MapResult> {
+  async map(userId: string, options: MapOptions): Promise<MapResult> {
     const {
       url,
       search,
@@ -47,50 +50,71 @@ export class MapService {
       throw new Error('URL not allowed: possible SSRF attack');
     }
 
+    const billingKey = 'fetchx.map' as const;
+    const referenceId = randomUUID();
+    const billing = await this.billingService.deductOrThrow({
+      userId,
+      billingKey,
+      referenceId,
+    });
+
     const baseUrl = new URL(url);
     const baseHost = baseUrl.hostname;
     const seen = new Set<string>();
     const results: string[] = [];
 
-    // 1. 从 sitemap 获取 URL
-    if (!ignoreSitemap) {
-      try {
-        const sitemapUrls = await this.sitemapParser.fetchAndParse(
-          baseUrl.origin,
-        );
-        this.logger.debug(`Found ${sitemapUrls.length} URLs from sitemap`);
+    try {
+      // 1. 从 sitemap 获取 URL
+      if (!ignoreSitemap) {
+        try {
+          const sitemapUrls = await this.sitemapParser.fetchAndParse(
+            baseUrl.origin,
+          );
+          this.logger.debug(`Found ${sitemapUrls.length} URLs from sitemap`);
 
-        for (const entry of sitemapUrls) {
-          if (results.length >= limit) break;
-          if (
-            this.isValidUrl(entry.url, baseHost, includeSubdomains) &&
-            !seen.has(entry.url)
-          ) {
+          for (const entry of sitemapUrls) {
+            if (results.length >= limit) break;
             if (
-              !search ||
-              entry.url.toLowerCase().includes(search.toLowerCase())
+              this.isValidUrl(entry.url, baseHost, includeSubdomains) &&
+              !seen.has(entry.url)
             ) {
-              seen.add(entry.url);
-              results.push(entry.url);
+              if (
+                !search ||
+                entry.url.toLowerCase().includes(search.toLowerCase())
+              ) {
+                seen.add(entry.url);
+                results.push(entry.url);
+              }
             }
           }
+        } catch (error) {
+          this.logger.warn(`Failed to parse sitemap: ${error}`);
         }
-      } catch (error) {
-        this.logger.warn(`Failed to parse sitemap: ${error}`);
       }
-    }
 
-    // 2. 如果 sitemap 不够，通过爬取发现更多
-    if (results.length < limit) {
-      const crawledUrls = await this.crawlForUrls(
-        url,
-        limit - results.length,
-        seen,
-        baseHost,
-        includeSubdomains,
-        search,
-      );
-      results.push(...crawledUrls);
+      // 2. 如果 sitemap 不够，通过爬取发现更多
+      if (results.length < limit) {
+        const crawledUrls = await this.crawlForUrls(
+          url,
+          limit - results.length,
+          seen,
+          baseHost,
+          includeSubdomains,
+          search,
+        );
+        results.push(...crawledUrls);
+      }
+    } catch (error) {
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId,
+          billingKey,
+          referenceId,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+      throw error;
     }
 
     return {

@@ -8,12 +8,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScraperService } from '../scraper/scraper.service';
+import { BillingService } from '../billing/billing.service';
 import type { SearchOptions } from './dto/search.dto';
 import type {
   SearchResult,
   SearchResponse,
   SearXNGResponse,
 } from './search.types';
+import { randomUUID } from 'crypto';
 
 /** 默认重试次数 */
 const DEFAULT_RETRY_COUNT = 3;
@@ -35,6 +37,7 @@ export class SearchService {
   constructor(
     private config: ConfigService,
     private scraperService: ScraperService,
+    private billingService: BillingService,
   ) {
     this.searxngUrl = config.get('SEARXNG_URL') || 'http://localhost:8080';
     this.retryCount = config.get('SEARCH_RETRY_COUNT') || DEFAULT_RETRY_COUNT;
@@ -61,33 +64,54 @@ export class SearchService {
       scrapeOptions,
     } = options;
 
-    // 1. 调用 SearXNG API
-    const searchResults = await this.performSearch({
-      query,
-      limit,
-      categories,
-      engines,
-      language,
-      timeRange,
-      safeSearch,
+    const billingKey = 'fetchx.search' as const;
+    const referenceId = randomUUID();
+    const billing = await this.billingService.deductOrThrow({
+      userId,
+      billingKey,
+      referenceId,
     });
 
-    // 2. 如果需要抓取结果页面
-    if (scrapeResults && searchResults.results.length > 0) {
-      const enrichedResults = await this.enrichWithContent(
-        userId,
-        searchResults.results,
-        scrapeOptions,
-      );
-      return {
-        query: searchResults.query,
-        numberOfResults: searchResults.numberOfResults,
-        results: enrichedResults,
-        suggestions: searchResults.suggestions,
-      };
-    }
+    try {
+      // 1. 调用 SearXNG API
+      const searchResults = await this.performSearch({
+        query,
+        limit,
+        categories,
+        engines,
+        language,
+        timeRange,
+        safeSearch,
+      });
 
-    return searchResults;
+      // 2. 如果需要抓取结果页面
+      if (scrapeResults && searchResults.results.length > 0) {
+        const enrichedResults = await this.enrichWithContent(
+          userId,
+          searchResults.results,
+          scrapeOptions,
+        );
+        return {
+          query: searchResults.query,
+          numberOfResults: searchResults.numberOfResults,
+          results: enrichedResults,
+          suggestions: searchResults.suggestions,
+        };
+      }
+
+      return searchResults;
+    } catch (error) {
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId,
+          billingKey,
+          referenceId,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+      throw error;
+    }
   }
 
   /**

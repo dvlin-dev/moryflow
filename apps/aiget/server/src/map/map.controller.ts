@@ -15,8 +15,10 @@ import {
 import { MapService } from './map.service';
 import { MapOptionsSchema } from './dto/map.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { Public } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
+import type { CurrentUserDto } from '../types';
+import { BillingKey } from '../billing/billing.decorators';
 
 @ApiTags('Map')
 @ApiSecurity('apiKey')
@@ -29,9 +31,14 @@ export class MapController {
   @Post()
   @ApiOperation({ summary: 'Discover URLs on a website' })
   @ApiOkResponse({ description: 'List of discovered URLs' })
-  async map(@Body(new ZodValidationPipe(MapOptionsSchema)) options: unknown) {
+  @BillingKey('fetchx.map')
+  async map(
+    @CurrentUser() user: CurrentUserDto,
+    @Body(new ZodValidationPipe(MapOptionsSchema)) options: unknown,
+  ) {
     return this.mapService.map(
-      options as Parameters<typeof this.mapService.map>[0],
+      user.id,
+      options as Parameters<typeof this.mapService.map>[1],
     );
   }
 }

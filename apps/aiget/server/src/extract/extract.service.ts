@@ -12,6 +12,8 @@ import { LlmClient } from './llm.client';
 import { z } from 'zod';
 import type { ExtractOptions } from './dto/extract.dto';
 import type { ExtractResult, ExtractResponse } from './extract.types';
+import { BillingService } from '../billing/billing.service';
+import { randomUUID } from 'crypto';
 
 /** 默认并发数 */
 const DEFAULT_CONCURRENCY = 5;
@@ -78,6 +80,7 @@ export class ExtractService {
     private scraperService: ScraperService,
     private llmClient: LlmClient,
     private config: ConfigService,
+    private billingService: BillingService,
   ) {
     this.concurrency = config.get('EXTRACT_CONCURRENCY') || DEFAULT_CONCURRENCY;
   }
@@ -91,6 +94,14 @@ export class ExtractService {
   ): Promise<ExtractResponse> {
     const { urls, prompt, schema, systemPrompt, model } = options;
 
+    const billingKey = 'fetchx.extract' as const;
+    const referenceId = randomUUID();
+    const billing = await this.billingService.deductOrThrow({
+      userId,
+      billingKey,
+      referenceId,
+    });
+
     // 将 JSON Schema 转换为 Zod Schema（如果提供）
     const zodSchema = schema ? jsonSchemaToZod(schema) : null;
 
@@ -98,15 +109,35 @@ export class ExtractService {
       `Extracting from ${urls.length} URLs with concurrency ${this.concurrency}${model ? `, model=${model}` : ''}`,
     );
 
-    // 并发处理（带限流）
-    const results = await this.processWithConcurrency(
-      urls,
-      (url) =>
-        this.extractSingle(userId, url, prompt, systemPrompt, zodSchema, model),
-      this.concurrency,
-    );
+    try {
+      // 并发处理（带限流）
+      const results = await this.processWithConcurrency(
+        urls,
+        (url) =>
+          this.extractSingle(
+            userId,
+            url,
+            prompt,
+            systemPrompt,
+            zodSchema,
+            model,
+          ),
+        this.concurrency,
+      );
 
-    return { results };
+      return { results };
+    } catch (error) {
+      if (billing) {
+        await this.billingService.refundOnFailure({
+          userId,
+          billingKey,
+          referenceId,
+          source: billing.deduct.source,
+          amount: billing.amount,
+        });
+      }
+      throw error;
+    }
   }
 
   /**
