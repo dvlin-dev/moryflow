@@ -1,13 +1,15 @@
 /**
  * Users 类型定义
  */
-export type {
+import type {
   ApiResponse,
   Pagination,
   PaginatedResponse,
   SubscriptionTier,
   SubscriptionStatus,
 } from '@/lib/types';
+
+export type { ApiResponse, Pagination, PaginatedResponse, SubscriptionTier, SubscriptionStatus };
 
 /** 用户配额信息 */
 export interface UserQuota {

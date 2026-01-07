@@ -1,13 +1,15 @@
 /**
  * Subscriptions 类型定义
  */
-export type {
+import type {
   ApiResponse,
   Pagination,
   PaginatedResponse,
   SubscriptionTier,
   SubscriptionStatus,
 } from '@/lib/types';
+
+export type { ApiResponse, Pagination, PaginatedResponse, SubscriptionTier, SubscriptionStatus };
 
 /** 订阅列表项 */
 export interface SubscriptionListItem {

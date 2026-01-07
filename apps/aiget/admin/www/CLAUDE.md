@@ -24,6 +24,7 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空），401 时触发 refresh 重试一次
 - 监控页面需要定时刷新
 - UI 风格：直角组件 + 橙色强调
+- 时间展示统一使用 `@aiget/ui/lib` 的 `formatRelativeTime`
 
 ## 目录结构
 
