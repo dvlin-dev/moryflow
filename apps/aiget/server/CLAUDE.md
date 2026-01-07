@@ -21,7 +21,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection
-- Quota deduction before any scrape operation
+- 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 
 ## Module Structure
@@ -32,6 +32,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 | `common/`       | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
 | `admin/`        | 16    | Admin dashboard APIs                         | -                         |
 | `oembed/`       | 18    | oEmbed provider support                      | -                         |
+| `billing/`      | 5     | Billing rules + deduct/refund                | -                         |
 | `quota/`        | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
 | `api-key/`      | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
 | `memory/`       | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
@@ -191,14 +192,15 @@ open http://localhost:3000/api-docs
 
 ### 环境变量说明
 
-| 变量                 | 必需 | 说明                  |
-| -------------------- | ---- | --------------------- |
-| `DATABASE_URL`       | ✅   | PostgreSQL 连接字符串 |
-| `REDIS_URL`          | ✅   | Redis 连接字符串      |
-| `BETTER_AUTH_SECRET` | ✅   | Better Auth 密钥      |
-| `BETTER_AUTH_URL`    | ✅   | 服务公网 URL          |
-| `OPENAI_API_KEY`     | ❌   | AI 提取功能（可选）   |
-| `R2_*`               | ❌   | 云存储配置（可选）    |
+| 变量                          | 必需 | 说明                                                      |
+| ----------------------------- | ---- | --------------------------------------------------------- |
+| `DATABASE_URL`                | ✅   | PostgreSQL 连接字符串                                     |
+| `REDIS_URL`                   | ✅   | Redis 连接字符串                                          |
+| `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                          |
+| `BETTER_AUTH_URL`             | ✅   | 服务公网 URL                                              |
+| `OPENAI_API_KEY`              | ❌   | AI 提取功能（可选）                                       |
+| `R2_*`                        | ❌   | 云存储配置（可选）                                        |
+| `BILLING_RULE_OVERRIDES_JSON` | ❌   | 扣费规则覆盖（JSON，对应 `src/billing/billing.rules.ts`） |
 
 ---
 
