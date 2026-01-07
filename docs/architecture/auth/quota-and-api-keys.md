@@ -1,12 +1,12 @@
 ---
 title: Aiget Dev - 配额与 API Keys（tenantId + policy）
 date: 2026-01-06
-scope: console.aiget.dev
+scope: aiget.dev
 status: active
 ---
 
 <!--
-[INPUT]: Aiget Dev 单入口（console.aiget.dev）；Memox/Agentsbox 等能力对外提供 API；支持 Google/Apple 登录；动态可调限流策略
+[INPUT]: Aiget Dev 统一 API（aiget.dev/api/v1）；控制台（console.aiget.dev）管理策略；Memox/Agentsbox 等能力对外提供 API；支持 Google/Apple 登录；动态可调限流策略
 [OUTPUT]: API Key、tenant、多租户隔离、namespace/metadata 约定与最小限流模型
 [POS]: Aiget Dev 对外能力的安全与计量基座（不引入复杂计费）
 

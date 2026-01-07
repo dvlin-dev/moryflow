@@ -18,7 +18,7 @@ status: active
 本仓库不再使用 “UIP（统一身份平台，跨产品统一账号/计费）” 作为默认目标；当前架构明确为 **两条互不互通的业务线**：
 
 1. **Moryflow（主产品）**：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用 + API）
-2. **Aiget Dev（开发者平台）**：`console.aiget.dev`（控制台 + API；包含 Agentsbox、Memox 等能力）
+2. **Aiget Dev（开发者平台）**：`aiget.dev`（官网 + API；模块：Fetchx、Memox）+ `console.aiget.dev` / `admin.aiget.dev`（Web 前端）
 
 两条业务线：
 
@@ -29,10 +29,10 @@ status: active
 
 - 域名：
   - Moryflow：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用 + API）+ `moryflow.app`（发布站）
-  - Aiget Dev：`console.aiget.dev`（唯一入口；Agentsbox 官网独立域名仅做跳转）
-- API：Web 与 API 同源（避免 CORS）：
+  - Aiget Dev：`aiget.dev`（官网 + API；不做旧子域名兼容）
+- API：
   - Moryflow：`https://app.moryflow.com/api/v1/...`
-  - Aiget Dev：`https://console.aiget.dev/api/v1/...`
+  - Aiget Dev：`https://aiget.dev/api/v1/...`（console/admin 为独立 Web，需要 CORS/CSRF 白名单）
 - Token（两套 Auth，各自独立）：
   - `accessTokenTtl=6h`，`refreshTokenTtl=90d`，`refreshRotation=on`
   - Web：refreshToken 存 `HttpOnly Cookie`（Moryflow：`Domain=.moryflow.com`；Aiget Dev：`Domain=.aiget.dev`）

@@ -18,7 +18,10 @@ status: active
 ## 目标架构（摘要）
 
 - Moryflow：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
-- Aiget Dev：`console.aiget.dev`（控制台+API；模块：Agentsbox、Memox）
+- Aiget Dev：
+  - `aiget.dev`：官网 + 统一 API（`/api/v1`；模块：Fetchx、Memox）
+  - `console.aiget.dev`：控制台前端（Web）
+  - `admin.aiget.dev`：管理后台前端（Web）
 - 两条业务线：不共享账号/Token/数据库；支持 Google/Apple 登录；只共享 `packages/*` 代码
 - 网络：不引入 Tailscale；公网 HTTPS + API key/JWT + 限流
 - 数据库：
@@ -32,7 +35,7 @@ status: active
 - [ ] 以 `docs/architecture/auth.md` 为唯一架构入口，确认 OAuth 方案为 Google/Apple 且仅限业务线内
 - [ ] 统一 API 规范：
   - Moryflow：`https://app.moryflow.com/api/v1`
-  - Aiget Dev：`https://console.aiget.dev/api/v1`
+  - Aiget Dev：`https://aiget.dev/api/v1`
 - [ ] 统一 API key 规范：`Authorization: Bearer <apiKey>`
 - [ ] Memox 数据模型定案：`tenantId + namespace + externalUserId + metadata`
 
@@ -59,12 +62,12 @@ status: active
 
 ### Milestone 3：Aiget Dev Auth + Console 落地（2-4 天）
 
-- [ ] 在 `console.aiget.dev` 落地 `POST /api/v1/auth/*`（OTP + password）
+- [ ] 在 `aiget.dev` 落地 `POST /api/v1/auth/*`（OTP + password；console/admin 跨域调用）
 - [ ] 支持 Google/Apple 登录（Web + Native）：
   - [ ] `POST /api/v1/auth/google/start`、`POST /api/v1/auth/google/token`
   - [ ] `POST /api/v1/auth/apple/start`、`POST /api/v1/auth/apple/token`
 - [ ] 配置 cookie：`Domain=.aiget.dev`
-- [ ] refresh CSRF：校验 `Origin=https://console.aiget.dev`
+- [ ] refresh CSRF：校验 `Origin` 白名单（`https://console.aiget.dev`、`https://admin.aiget.dev`）
 - [ ] 控制台功能最小化：
   - [ ] 创建 tenant
   - [ ] 创建/禁用/轮换 API key
@@ -72,7 +75,7 @@ status: active
 
 ### Milestone 4：Memox 作为 Aiget Dev 模块对外（3-7 天）
 
-- [ ] API 入口：`/api/v1/memox/*`（挂在 `console.aiget.dev`）
+- [ ] API 入口：`/api/v1/memox/*`（挂在 `aiget.dev`）
 - [ ] 鉴权：仅 API key（`Authorization: Bearer <apiKey>`）
 - [ ] tenant 推导：从 apiKey 推导 `tenantId`，请求体不允许传 `tenantId`
 - [ ] 存储拆分：
@@ -87,7 +90,7 @@ status: active
 ### Milestone 5：Moryflow 调用 Memox（1-2 天）
 
 - [ ] Moryflow 后端通过公网调用：
-  - `https://console.aiget.dev/api/v1/memox/*`
+  - `https://aiget.dev/api/v1/memox/*`
   - `Authorization: Bearer <moryflow-tenant-apiKey>`
 - [ ] moryflow 侧设置超时与降级（召回失败不阻塞主流程）
 - [ ] namespace 约定（推荐）：
@@ -100,11 +103,13 @@ status: active
 目标：按 Host 转发到 4c6g/8c16g，不做复杂网关拆分。
 
 - [ ] TLS 证书：
-  - `www.moryflow.com`、`app.moryflow.com`、`console.aiget.dev`
+  - `www.moryflow.com`、`app.moryflow.com`、`aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`
 - [ ] 反代规则（按 Host）：
   - `www.moryflow.com` → `http://<4c6g-ip>:<moryflow-www-port>`
   - `app.moryflow.com` → `http://<4c6g-ip>:<moryflow-app-port>`
-  - `console.aiget.dev` → `http://<8c16g-ip>:<aiget-console-port>`
+  - `aiget.dev` → `http://<8c16g-ip>:<aiget-api-port>`（官网 + `/api/v1`）
+  - `console.aiget.dev` → `http://<8c16g-ip>:<aiget-console-port>`（Web）
+  - `admin.aiget.dev` → `http://<8c16g-ip>:<aiget-admin-port>`（Web）
 
 > Cloudflare 仅做 DNS（不开橙云），因此 origin 必须自己扛流量与防护；务必启用限流与鉴权。
 
@@ -121,22 +126,24 @@ status: active
   - `AUTH_JWT_PRIVATE_KEY=...`
   - `POSTGRES_URL=...`
   - `REDIS_URL=...`
-  - `MEMOX_BASE_URL=https://console.aiget.dev/api/v1/memox`
+  - `MEMOX_BASE_URL=https://aiget.dev/api/v1/memox`
   - `MEMOX_API_KEY=...`（moryflow tenant 的 apiKey）
 
 ### 3) 8c16g（Dokploy）：Aiget Dev + Memox
 
 - [ ] 部署容器：
-  - `aiget-console`（web + api）
+  - `aiget-api`（`aiget.dev`，包含 `/api/v1`）
+  - `aiget-console-web`（`console.aiget.dev`）
+  - `aiget-admin-web`（`admin.aiget.dev`）
   - `aigetdev-postgres`
   - `aigetdev-redis`
   - `memox-vector-postgres`（pgvector）
   - `memox-worker`
   - `agentsbox-worker`（如有）
 - [ ] 必备环境变量（示例命名）：
-  - `PUBLIC_BASE_URL=https://console.aiget.dev`
+  - `PUBLIC_BASE_URL=https://aiget.dev`
   - `COOKIE_DOMAIN=.aiget.dev`
-  - `AUTH_JWT_ISSUER=console.aiget.dev`
+  - `AUTH_JWT_ISSUER=aiget.dev`
   - `AUTH_JWT_PRIVATE_KEY=...`
   - `POSTGRES_URL=...`
   - `REDIS_URL=...`
@@ -145,8 +152,8 @@ status: active
 ## 验收标准（上线前）
 
 - [ ] `app.moryflow.com` 注册/登录/refresh/logout 全流程通过
-- [ ] `console.aiget.dev` 注册/登录/refresh/logout 全流程通过
-- [ ] `console.aiget.dev` 可创建 tenant + apiKey，并能调限流策略
+- [ ] `console.aiget.dev` / `admin.aiget.dev` 注册/登录/refresh/logout 全流程通过（API 走 `aiget.dev/api/v1`）
+- [ ] 控制台可创建 tenant + apiKey，并能调限流策略
 - [ ] memox：
   - [ ] 写入走队列 + worker，向量写入成功
   - [ ] 召回按 `namespace + externalUserId` 正确隔离

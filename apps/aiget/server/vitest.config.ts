@@ -15,7 +15,9 @@ export default defineConfig({
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
     exclude: [
       '**/*.render.spec.ts', // 渲染测试默认排除，仅 CI 运行
-      ...(shouldRunIntegrationTests ? [] : ['**/*.integration.spec.ts', '**/*.e2e.spec.ts']),
+      ...(shouldRunIntegrationTests
+        ? []
+        : ['**/*.integration.spec.ts', '**/*.e2e.spec.ts']),
     ],
     setupFiles: ['./test/setup.ts'],
     testTimeout: 30000,

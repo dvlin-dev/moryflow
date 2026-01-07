@@ -21,7 +21,7 @@ status: active
 
 1. **两条业务线互不互通**：不共享账号/Token/数据库。
 2. **只共享代码**：后端基础设施抽到 `packages/*` 复用；部署互不影响。
-3. **Web 与 API 同源**：避免 CORS 和跨站 Cookie 复杂度。
+3. **Aiget Dev API 统一入口**：Aiget Dev 对外 API 固定 `https://aiget.dev/api/v1`；控制台/后台为独立 Web 应用，需按 Origin 配置 CORS 与 CSRF。
 4. **OAuth 登录**：支持 Google/Apple；每条业务线独立配置与回调域名。
 5. **不引入 Tailscale**：服务间走公网 HTTPS；安全依靠鉴权 + 限流 + 最小暴露面。
 
@@ -29,7 +29,8 @@ status: active
 
 ### Moryflow（主产品）
 
-- `www.moryflow.com`：营销入口（文档/落地页）。
+- `www.moryflow.com`：营销入口（落地页）。
+- `docs.moryflow.com`：产品文档（独立 Docs 项目）。
 - `app.moryflow.com`：主应用（Web UI）+ API（同域，`/api/v1`）。
 - `moryflow.app`：用户发布站（Cloudflare Worker + R2，按 `*.moryflow.app` 映射）。
 
@@ -46,14 +47,18 @@ status: active
 
 ### Aiget Dev（开发者平台）
 
-- `console.aiget.dev`：控制台（Web UI）+ API（同域，`/api/v1`）。
-  - Agentsbox / Memox 等能力均作为模块在此域名下提供 API。
-- Agentsbox/Memox 官网：独立域名，仅做营销与跳转到 `console.aiget.dev`（不承载登录态）。
+- `aiget.dev`：官网 + 统一 API（`/api/v1`）。
+  - 模块入口：`/fetchx`、`/memox`
+- `console.aiget.dev`：控制台（Web UI，仅前端）。
+- `admin.aiget.dev`：管理后台（Web UI，仅前端）。
+- `docs.aiget.dev`：产品文档（独立 Docs 项目）。
+
+> 不做旧域名兼容：不再使用 `fetchx.aiget.dev`、`memox.aiget.dev` 等子域名（文档域名固定为 `docs.aiget.dev`）。
 
 ## 对外 API 规范（固定）
 
 - Moryflow API base：`https://app.moryflow.com/api/v1`
-- Aiget Dev API base：`https://console.aiget.dev/api/v1`
+- Aiget Dev API base：`https://aiget.dev/api/v1`
 
 约定：
 
@@ -80,8 +85,10 @@ status: active
 
 **8c16g：Aiget Dev + Memox**
 
-- `aiget-console-web`（`console.aiget.dev`）
-- `aiget-console-api`（同域，或与 web 同服务）
+- `aiget-web`（`aiget.dev`，官网）
+- `aiget-api`（`aiget.dev`，包含 `/api/v1`）
+- `aiget-console-web`（`console.aiget.dev`，控制台前端）
+- `aiget-admin-web`（`admin.aiget.dev`，管理后台前端）
 - `aigetdev-postgres`（Auth/Console/Agentsbox/Memox 元数据）
 - `aigetdev-redis`（队列/限流/缓存）
 - `memox-vector-postgres`（pgvector，独立实例，避免膨胀拖垮主库）
@@ -96,6 +103,8 @@ status: active
 
 - `www.moryflow.com` → 4c6g（营销站）
 - `app.moryflow.com` → 4c6g（应用+API）
-- `console.aiget.dev` → 8c16g（控制台+API）
+- `aiget.dev` → 8c16g（官网 + API）
+- `console.aiget.dev` → 8c16g（控制台前端）
+- `admin.aiget.dev` → 8c16g（管理后台前端）
 
 > 具体 Nginx 示例与部署 checklist 见：`docs/architecture/refactor-and-deploy-plan.md`。

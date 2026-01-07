@@ -89,20 +89,21 @@ pnpm --filter @aiget/admin test:e2e
 
 ### 域名规划
 
-| 服务                 | 域名              | 说明                           |
-| -------------------- | ----------------- | ------------------------------ |
-| **Moryflow 主站**    | www.moryflow.com  | 核心产品主入口                 |
-| **Moryflow 应用**    | app.moryflow.com  | 主应用（Web + API）            |
-| **Moryflow 发布站**  | moryflow.app      | 用户发布的网站                 |
-| **Aiget 平台**       | aiget.dev         | 统一平台入口                   |
-| **Aiget Dev 控制台** | console.aiget.dev | Aiget Dev 控制台（Web + API）  |
-| **统一管理后台**     | admin.aiget.dev   | 运营管理                       |
-| **统一文档**         | docs.aiget.dev    | 文档站                         |
-| **Agentsbox 官网**   | (待定)            | 独立营销域名，统一导向 console |
+| 服务                   | 域名              | 说明                       |
+| ---------------------- | ----------------- | -------------------------- |
+| **Moryflow 主站**      | www.moryflow.com  | 核心产品主入口             |
+| **Moryflow Docs**      | docs.moryflow.com | 产品文档（独立 Docs 项目） |
+| **Moryflow 应用**      | app.moryflow.com  | 主应用（Web + API）        |
+| **Moryflow 发布站**    | moryflow.app      | 用户发布的网站             |
+| **Aiget 官网**         | aiget.dev         | Aiget Dev 官网（模块导航） |
+| **Aiget Dev API**      | aiget.dev         | 统一 API 入口（`/api/v1`） |
+| **Aiget Docs**         | docs.aiget.dev    | 产品文档（独立 Docs 项目） |
+| **Aiget Dev 控制台**   | console.aiget.dev | Aiget Dev 控制台（Web）    |
+| **Aiget Dev 管理后台** | admin.aiget.dev   | 运营管理（Web）            |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
-> - Aiget Dev 是开发者工具平台，统一入口为 `console.aiget.dev`
-> - API 路径规范：`{host}/api/v1/...`（带 `/api` 前缀；Web 与 API 同源）
+> - Aiget Dev 是开发者平台：官网与 API 统一在 `aiget.dev`，控制台/后台分别在 `console.aiget.dev`、`admin.aiget.dev`
+> - API 路径规范：`https://aiget.dev/api/v1/...`（带 `/api` 前缀；不做旧域名兼容/跳转）
 
 ### API Key 前缀
 
@@ -117,16 +118,17 @@ pnpm --filter @aiget/admin test:e2e
 Aiget/
 ├── apps/
 │   ├── aiget/                       # Aiget Dev 业务线
+│   │   ├── www/                     # Aiget Dev 官网（aiget.dev；模块导航：/fetchx、/memox）
+│   │   ├── docs/                    # Aiget Dev 文档站（docs.aiget.dev）
+│   │   ├── server/                  # Aiget Dev 统一后端（aiget.dev/api/v1）
 │   │   ├── console/                 # Aiget Dev 控制台（Web）
 │   │   ├── admin/                   # Aiget Dev 管理后台
 │   │   │   ├── www/                 # 管理后台前端
-│   │   │   └── server/              # 管理后台后端
+│   │   │   └── server/              # （迁移中）将并入 aiget/server
 │   │   ├── fetchx/                  # 原子能力：网页抓取
-│   │   │   ├── server/              # 网页抓取服务
-│   │   │   └── www/                 # 落地页（fetchx.aiget.dev）
+│   │   │   └── (docs only)          # 模块文档与边界说明
 │   │   ├── memox/                   # 原子能力：AI 记忆
-│   │   │   ├── server/              # AI 记忆服务
-│   │   │   └── www/                 # 落地页
+│   │   │   └── server/              # （迁移中）将并入 aiget/server
 │   │   └── sandx/                   # 原子能力：Agent 沙盒（规划中）
 │   │       ├── server/              # 沙盒执行服务
 │   │       └── www/                 # 落地页
@@ -136,6 +138,7 @@ Aiget/
 │       ├── pc/                      # 桌面端应用
 │       ├── site-template/           # SSG 网站模板
 │       ├── admin/                   # Moryflow 管理后台（Web）
+│       ├── docs/                    # Moryflow 文档站（docs.moryflow.com）
 │       └── www/                     # 落地页（moryflow.com）
 ├── packages/
 │   ├── ui/                          # 统一 UI 组件库（shadcn/ui）
@@ -502,8 +505,7 @@ pnpm test
 
 # 运行特定产品测试
 pnpm --filter @aiget/moryflow-server test
-pnpm --filter @aiget/fetchx-server test
-pnpm --filter @aiget/memox-server test
+pnpm --filter @aiget/aiget-server test
 pnpm --filter @aiget/sandx-server test
 
 # 类型检查
@@ -517,13 +519,13 @@ pnpm lint
 
 ## 包命名规范
 
-| 类型     | 模式                     | 示例                                             |
-| -------- | ------------------------ | ------------------------------------------------ |
-| 应用包   | `@aiget/{product}-{app}` | `@aiget/moryflow-server`、`@aiget/fetchx-server` |
-| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/sync`      |
-| UI 包    | `@aiget/ui`              | 唯一                                             |
-| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                           |
-| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                             |
+| 类型     | 模式                     | 示例                                            |
+| -------- | ------------------------ | ----------------------------------------------- |
+| 应用包   | `@aiget/{product}-{app}` | `@aiget/moryflow-server`、`@aiget/aiget-server` |
+| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/sync`     |
+| UI 包    | `@aiget/ui`              | 唯一                                            |
+| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                          |
+| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                            |
 
 ---
 

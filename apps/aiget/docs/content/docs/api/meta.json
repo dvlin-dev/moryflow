@@ -1,0 +1,14 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "index",
+    "---Core APIs---",
+    "scrape",
+    "crawl",
+    "map",
+    "batch-scrape",
+    "---Advanced APIs---",
+    "extract",
+    "search"
+  ]
+}

@@ -53,7 +53,7 @@ Cookie domain 规则：
 - 要求 `Content-Type: application/json`
 - 校验 `Origin` 必须是：
   - Moryflow：`https://app.moryflow.com`
-  - Aiget Dev：`https://console.aiget.dev`
+  - Aiget Dev：`https://console.aiget.dev` / `https://admin.aiget.dev`
 
 ## 产品服务端校验 accessToken（固定规则）
 

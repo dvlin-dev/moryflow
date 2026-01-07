@@ -10,6 +10,11 @@
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
+> 说明：对外文档站点是**独立项目**（不与官网耦合）：
+>
+> - Aiget Dev Docs：`apps/aiget/docs` → `docs.aiget.dev`
+> - Moryflow Docs：`apps/moryflow/docs` → `docs.moryflow.com`
+
 ## 写作约束
 
 - 开发者相关内容使用中文；用户可见文案（若出现）使用英文。

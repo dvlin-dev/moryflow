@@ -16,8 +16,8 @@ status: active
 ## 服务边界
 
 - **Moryflow Auth**：只服务 `app.moryflow.com`（不与 Aiget Dev 互通）。
-- **Aiget Dev Auth**：只服务 `console.aiget.dev`（平台内模块共享登录态）。
-- **Aiget Dev API（Memox/Agentsbox）**：统一在 `console.aiget.dev/api/v1/*` 下暴露，对外通过 API key 鉴权。
+- **Aiget Dev Auth**：只服务 `aiget.dev`（平台内模块共享登录态；console/admin 为独立 Web 前端）。
+- **Aiget Dev API（Memox/Agentsbox）**：统一在 `aiget.dev/api/v1/*` 下暴露，对外通过 API key 鉴权。
 - **入口反代（megaboxpro/1panel）**：对外收敛域名入口，按 Host 转发到 4c6g/8c16g。
 
 ## 网络与安全（不引入 Tailscale）
@@ -30,13 +30,13 @@ status: active
   - 用户登录态：`Authorization: Bearer <accessToken>`
   - 开发者调用：`Authorization: Bearer <apiKey>`
 - 默认限流必须启用（动态可调，按 `tenantId`）。
-- 管理接口只允许从 `console.aiget.dev` 侧访问（后端强制校验权限）。
+- 管理接口只允许从 `console.aiget.dev` / `admin.aiget.dev` 侧访问（后端强制校验权限）。
 
 ## 机器拓扑（当前默认）
 
 - megaboxpro（入口反代，1panel/Nginx）：
   - `www.moryflow.com`、`app.moryflow.com` → 4c6g
-  - `console.aiget.dev` → 8c16g
+  - `aiget.dev`、`console.aiget.dev`、`admin.aiget.dev` → 8c16g
 - 4c6g（Moryflow 线）：
   - moryflow app/api + moryflow-postgres + moryflow-redis
 - 8c16g（Aiget Dev + 重服务）：
@@ -48,7 +48,7 @@ status: active
 
 Moryflow 后端调用 Memox 时不走“内部专线”，直接调用 Aiget Dev 的公网 API：
 
-- Base URL：`https://console.aiget.dev/api/v1/memox`
+- Base URL：`https://aiget.dev/api/v1/memox`
 - 鉴权：`Authorization: Bearer <apiKey>`
 - 隔离：`tenantId` 从 apiKey 推导；按 `namespace + externalUserId` 划分数据域
 

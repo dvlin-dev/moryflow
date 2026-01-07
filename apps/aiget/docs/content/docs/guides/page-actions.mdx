@@ -1,0 +1,213 @@
+---
+title: Page Actions
+description: Execute interactions on pages before scraping
+---
+
+# Page Actions
+
+Page actions allow you to interact with a webpage before scraping. This is useful for:
+- Loading dynamic content (clicking "Load More")
+- Filling forms
+- Navigating through tabs
+- Scrolling to trigger lazy loading
+
+## Available Actions
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `wait` | Wait for specified time | `milliseconds` |
+| `click` | Click an element | `selector` |
+| `type` | Type text into an input | `selector`, `text` |
+| `press` | Press a keyboard key | `key` |
+| `scroll` | Scroll the page | `direction`, `amount` |
+| `screenshot` | Take intermediate screenshot | - |
+
+## Using Actions
+
+Add an `actions` array to your scrape request:
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["markdown"],
+  "actions": [
+    {"type": "wait", "milliseconds": 1000},
+    {"type": "click", "selector": "#load-more"},
+    {"type": "wait", "milliseconds": 500}
+  ]
+}
+```
+
+Actions execute in order before the page content is extracted.
+
+## Wait Action
+
+Pause execution for a specified time.
+
+```json
+{"type": "wait", "milliseconds": 2000}
+```
+
+**Parameters:**
+- `milliseconds`: Time to wait (1-30000)
+
+**Use cases:**
+- Wait for animations to complete
+- Wait for AJAX content to load
+- Delay between actions
+
+## Click Action
+
+Click an element on the page.
+
+```json
+{"type": "click", "selector": "#submit-button"}
+```
+
+**Parameters:**
+- `selector`: CSS selector for the element
+
+**Use cases:**
+- Click "Load More" buttons
+- Open dropdowns
+- Navigate through tabs
+- Accept cookie banners
+
+## Type Action
+
+Type text into an input field.
+
+```json
+{"type": "type", "selector": "#search-input", "text": "search query"}
+```
+
+**Parameters:**
+- `selector`: CSS selector for the input
+- `text`: Text to type
+
+**Use cases:**
+- Fill search forms
+- Enter login credentials (for authenticated scraping)
+- Filter content
+
+## Press Action
+
+Press a keyboard key.
+
+```json
+{"type": "press", "key": "Enter"}
+```
+
+**Parameters:**
+- `key`: Key name (e.g., "Enter", "Tab", "Escape", "ArrowDown")
+
+**Common keys:**
+- `Enter` - Submit forms
+- `Tab` - Move to next field
+- `Escape` - Close modals
+- `ArrowDown` / `ArrowUp` - Navigate lists
+
+## Scroll Action
+
+Scroll the page.
+
+```json
+{"type": "scroll", "direction": "down", "amount": 500}
+```
+
+**Parameters:**
+- `direction`: `"up"` or `"down"`
+- `amount`: Pixels to scroll (optional)
+
+**Use cases:**
+- Trigger lazy loading of images
+- Load infinite scroll content
+- Reach elements below the fold
+
+## Screenshot Action
+
+Take an intermediate screenshot during action execution.
+
+```json
+{"type": "screenshot"}
+```
+
+Useful for debugging action sequences.
+
+## Complete Examples
+
+### Load More Content
+
+```json
+{
+  "url": "https://example.com/blog",
+  "formats": ["markdown"],
+  "actions": [
+    {"type": "wait", "milliseconds": 1000},
+    {"type": "click", "selector": ".load-more-btn"},
+    {"type": "wait", "milliseconds": 2000},
+    {"type": "click", "selector": ".load-more-btn"},
+    {"type": "wait", "milliseconds": 2000}
+  ]
+}
+```
+
+### Search and Scrape Results
+
+```json
+{
+  "url": "https://example.com/search",
+  "formats": ["markdown", "links"],
+  "actions": [
+    {"type": "type", "selector": "#search-box", "text": "web scraping"},
+    {"type": "press", "key": "Enter"},
+    {"type": "wait", "milliseconds": 3000}
+  ]
+}
+```
+
+### Infinite Scroll
+
+```json
+{
+  "url": "https://example.com/feed",
+  "formats": ["markdown"],
+  "actions": [
+    {"type": "scroll", "direction": "down"},
+    {"type": "wait", "milliseconds": 1500},
+    {"type": "scroll", "direction": "down"},
+    {"type": "wait", "milliseconds": 1500},
+    {"type": "scroll", "direction": "down"},
+    {"type": "wait", "milliseconds": 1500}
+  ]
+}
+```
+
+### Close Cookie Banner
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["screenshot"],
+  "actions": [
+    {"type": "wait", "milliseconds": 1000},
+    {"type": "click", "selector": "#accept-cookies"},
+    {"type": "wait", "milliseconds": 500}
+  ]
+}
+```
+
+## Best Practices
+
+1. **Add waits after clicks** - Give the page time to respond
+2. **Use specific selectors** - Avoid generic selectors that might match multiple elements
+3. **Test incrementally** - Start with one action and add more
+4. **Handle failures gracefully** - Actions that fail won't stop the scrape
+5. **Consider timeouts** - Total action time counts toward the request timeout
+
+## Debugging Tips
+
+1. **Use intermediate screenshots** - Add `{"type": "screenshot"}` actions to see page state
+2. **Check selector validity** - Test selectors in browser DevTools first
+3. **Increase wait times** - Slow pages may need longer waits
+4. **Check for dynamic selectors** - Some sites generate random class names
