@@ -537,6 +537,8 @@ pnpm lint
 
 `@aiget/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
 
+Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接依赖 `@electron/node-gyp`；为避免 CI 走 `git@github.com` 的 SSH clone（无 key 会失败），根 `pnpm.overrides` 固定 `@electron/node-gyp=10.2.0-electron.1`（从 npm registry 安装）。
+
 ### 配置文件：tsc-multi.json
 
 每个需要构建的包在根目录创建 `tsc-multi.json`：
