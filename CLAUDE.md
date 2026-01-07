@@ -204,6 +204,7 @@ Aiget/
 | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）  |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）   |
+| [`docs/architecture/open-source-package.md`](./docs/architecture/open-source-package.md)                         | 从 Monorepo 拆分并开源单个包的方案（Git Subtree 双向同步） |
 | [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                   |
 | [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                               |
 | [`docs/progress.md`](./docs/progress.md)                                                                         | 改造进度记录与下一步清单                                   |
