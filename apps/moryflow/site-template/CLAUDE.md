@@ -86,7 +86,7 @@ apps/site-template/
 
 | 命令         | 作用     | 输入                       | 输出                  |
 | ------------ | -------- | -------------------------- | --------------------- |
-| `pnpm build` | 构建 CSS | `src/styles/*.css`         | `dist/styles.min.css` |
+| `pnpm build` | 构建模板 + CSS | `src/build.ts` + `src/styles/*.css` | `dist/*.html` + `dist/styles.min.css` |
 | `pnpm sync`  | 同步模板 | `dist/` + `src/templates/` | `template/*.ts`       |
 
 ### 开发流程
