@@ -75,12 +75,13 @@ SearchMemorySchema = {
 
 ## Common Modification Scenarios
 
-| Scenario               | Files                                          | Notes                   |
-| ---------------------- | ---------------------------------------------- | ----------------------- |
-| Add search filter      | `memory.repository.ts`, `dto/memory.schema.ts` | Add to schema first     |
-| Change embedding logic | `memory.service.ts`                            | Calls embedding.service |
-| Add new endpoint       | `memory.controller.ts`, `dto/memory.schema.ts` | Add schema + controller |
-| Add error type         | `memory.errors.ts`                             | Extend MemoryError base |
+| Scenario               | Files                                          | Notes                                                              |
+| ---------------------- | ---------------------------------------------- | ------------------------------------------------------------------ |
+| Add search filter      | `memory.repository.ts`, `dto/memory.schema.ts` | Add to schema first                                                |
+| Change embedding logic | `memory.service.ts`                            | Calls embedding.service                                            |
+| Add new endpoint       | `memory.controller.ts`, `dto/memory.schema.ts` | Add schema + controller                                            |
+| Add error type         | `memory.errors.ts`                             | Extend MemoryError base                                            |
+| Edit raw SQL           | `memory.repository.ts`                         | Use Prisma column names (`"apiKeyId"`, `"userId"`), not snake_case |
 
 ## Dependencies
 

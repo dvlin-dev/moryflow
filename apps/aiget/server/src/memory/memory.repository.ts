@@ -1,7 +1,11 @@
 /**
+ * [INPUT]: apiKeyId, userId, embedding, agentId/sessionId filters
+ * [OUTPUT]: Memory, MemoryWithSimilarity[]
  * [POS]: Memory Repository
  *
  * 职责：Memory 数据访问层，包含向量搜索
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
@@ -38,30 +42,30 @@ export class MemoryRepository extends BaseRepository<Memory> {
     // 构建额外的过滤条件
     let extraConditions = '';
     if (agentId) {
-      extraConditions += ` AND agent_id = '${agentId}'`;
+      extraConditions += ` AND "agentId" = '${agentId}'`;
     }
     if (sessionId) {
-      extraConditions += ` AND session_id = '${sessionId}'`;
+      extraConditions += ` AND "sessionId" = '${sessionId}'`;
     }
 
     const result = await this.prisma.$queryRawUnsafe<MemoryWithSimilarity[]>(`
       SELECT
         id::text,
-        api_key_id as "apiKeyId",
-        user_id as "userId",
-        agent_id as "agentId",
-        session_id as "sessionId",
+        "apiKeyId",
+        "userId",
+        "agentId",
+        "sessionId",
         content,
         metadata,
         source,
         importance,
         tags,
-        created_at as "createdAt",
-        updated_at as "updatedAt",
+        "createdAt",
+        "updatedAt",
         1 - (embedding <=> '${embeddingStr}'::vector) as similarity
       FROM "Memory"
-      WHERE api_key_id = '${apiKeyId}'
-        AND user_id = '${userId}'
+      WHERE "apiKeyId" = '${apiKeyId}'
+        AND "userId" = '${userId}'
         AND embedding IS NOT NULL
         AND 1 - (embedding <=> '${embeddingStr}'::vector) > ${threshold}
         ${extraConditions}
@@ -84,7 +88,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
 
     const result = await this.prisma.$queryRawUnsafe<Memory[]>(`
       INSERT INTO "Memory" (
-        api_key_id, user_id, agent_id, session_id, content, metadata, source, importance, tags, embedding, created_at, updated_at
+        "apiKeyId", "userId", "agentId", "sessionId", content, metadata, source, importance, tags, embedding, "createdAt", "updatedAt"
       ) VALUES (
         '${apiKeyId}',
         '${data.userId}',
@@ -101,17 +105,17 @@ export class MemoryRepository extends BaseRepository<Memory> {
       )
       RETURNING
         id::text,
-        api_key_id as "apiKeyId",
-        user_id as "userId",
-        agent_id as "agentId",
-        session_id as "sessionId",
+        "apiKeyId",
+        "userId",
+        "agentId",
+        "sessionId",
         content,
         metadata,
         source,
         importance,
         tags,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
+        "createdAt",
+        "updatedAt"
     `);
 
     return result[0];
