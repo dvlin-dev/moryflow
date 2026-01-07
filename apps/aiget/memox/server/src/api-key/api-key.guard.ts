@@ -1,7 +1,7 @@
 /**
  * API Key Guard
  *
- * [INPUT]: Request with X-API-Key header
+ * [INPUT]: Request with Authorization: Bearer <apiKey>
  * [OUTPUT]: Validated API Key attached to request
  * [POS]: Guard for public API endpoints (/api/v1/*)
  */
@@ -37,10 +37,22 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const apiKey = request.headers['x-api-key'];
+    const authorization = request.headers.authorization;
+    const apiKey = (() => {
+      if (!authorization || typeof authorization !== 'string') {
+        return null;
+      }
+      const [scheme, token] = authorization.split(' ');
+      if (scheme?.toLowerCase() !== 'bearer' || !token) {
+        return null;
+      }
+      return token;
+    })();
 
-    if (!apiKey || typeof apiKey !== 'string') {
-      throw new ForbiddenException('Missing X-API-Key header');
+    if (!apiKey) {
+      throw new ForbiddenException(
+        'Missing API key (use Authorization: Bearer <apiKey>)',
+      );
     }
 
     // 验证 API Key

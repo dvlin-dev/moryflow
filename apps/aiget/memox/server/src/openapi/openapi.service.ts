@@ -19,7 +19,10 @@ export class OpenApiService {
       .setDescription('Memory as a Service - AI-Powered Memory Management')
       .setVersion('1.0.0')
       .setContact('Memox', 'https://aiget.dev', 'support@aiget.dev')
-      .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'apiKey')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'APIKey' },
+        'apiKey',
+      )
       .addTag('Memory', 'Memory CRUD operations')
       .addTag('Entity', 'Entity management')
       .addTag('Relation', 'Relationship management')
@@ -38,7 +41,10 @@ export class OpenApiService {
       .setDescription('Memory as a Service - Full API Reference')
       .setVersion('1.0.0')
       .setContact('Memox', 'https://aiget.dev', 'support@aiget.dev')
-      .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'apiKey')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'APIKey' },
+        'apiKey',
+      )
       .addBearerAuth(
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
         'bearer',

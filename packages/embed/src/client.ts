@@ -33,7 +33,7 @@ export function createEmbedClient(config: EmbedClientConfig): EmbedClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': apiKey,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           url,

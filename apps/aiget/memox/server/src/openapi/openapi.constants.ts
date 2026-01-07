@@ -18,6 +18,6 @@ export const SCALAR_CONFIG = {
 export const AUTH_CONFIG = {
   preferredSecurityScheme: 'apiKey',
   securitySchemes: {
-    apiKey: { name: 'X-API-Key', in: 'header' as const, value: '' },
+    apiKey: { name: 'Authorization', in: 'header' as const, value: 'Bearer ' },
   },
 } as const;

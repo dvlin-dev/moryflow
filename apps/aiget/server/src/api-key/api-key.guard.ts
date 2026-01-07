@@ -1,5 +1,5 @@
 /**
- * [INPUT]: Request with Authorization Bearer apiKey (preferred) or X-API-Key (legacy)
+ * [INPUT]: Request with Authorization: Bearer <apiKey>
  * [OUTPUT]: Boolean (allowed/denied), attaches ApiKeyValidationResult to request
  * [POS]: Authentication guard for public API endpoints, validates API keys (非全局 guard)
  *
@@ -26,11 +26,6 @@ export class ApiKeyGuard implements CanActivate {
       if (scheme?.toLowerCase() === 'bearer' && token) {
         return token;
       }
-    }
-
-    const apiKey = request.headers['x-api-key'];
-    if (apiKey && typeof apiKey === 'string') {
-      return apiKey;
     }
 
     return null;

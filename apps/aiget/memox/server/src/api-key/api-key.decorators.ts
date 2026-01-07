@@ -18,7 +18,7 @@ export const USE_API_KEY = 'useApiKey';
 
 /**
  * 标记路由需要 API Key 认证
- * 使用此装饰器的路由将通过 X-API-Key 头验证
+ * 使用此装饰器的路由将通过 Authorization: Bearer <apiKey> 验证
  */
 export const UseApiKey = () => SetMetadata(USE_API_KEY, true);
 
