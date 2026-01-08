@@ -23,15 +23,16 @@ const resolveAuthBaseUrl = () => {
     return normalizeBaseUrl(explicit);
   }
 
+  // Better Auth 使用 /api/auth（不带版本号），因为它有自己的路由结构
   const normalized = resolveApiOrigin();
   if (!normalized) {
-    return '/api/v1/auth';
+    return '/api/auth';
   }
-  if (normalized.endsWith('/api/v1/auth')) {
+  if (normalized.endsWith('/api/auth')) {
     return normalized;
   }
 
-  return `${normalized}/api/v1/auth`;
+  return `${normalized}/api/auth`;
 };
 
 export const authClient = createAuthClient({
