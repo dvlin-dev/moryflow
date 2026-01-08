@@ -2,7 +2,7 @@
  * Payment 模块常量配置
  */
 
-import type { SubscriptionTier } from '../../generated/prisma/client';
+import type { SubscriptionTier } from '../../generated/prisma-main/client';
 
 /** 套餐对应的月度配额 */
 export const TIER_MONTHLY_QUOTA: Record<SubscriptionTier, number> = {

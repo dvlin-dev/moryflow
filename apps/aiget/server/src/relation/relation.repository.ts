@@ -1,10 +1,12 @@
 /**
- * [POS]: Relation Repository
+ * [POS]: Relation Repository（向量数据库）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
-import type { Relation as PrismaRelation } from '../../generated/prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import type { Relation as PrismaRelation } from '../../generated/prisma-vector/client';
+import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { BaseRepository } from '../common/base.repository';
 
 export type Relation = PrismaRelation;
@@ -16,8 +18,8 @@ export type RelationWithEntities = Relation & {
 
 @Injectable()
 export class RelationRepository extends BaseRepository<Relation> {
-  constructor(prisma: PrismaService) {
-    super(prisma, prisma.relation);
+  constructor(private readonly vectorPrisma: VectorPrismaService) {
+    super(vectorPrisma, vectorPrisma.relation);
   }
 
   /**
@@ -27,7 +29,7 @@ export class RelationRepository extends BaseRepository<Relation> {
     apiKeyId: string,
     entityId: string,
   ): Promise<RelationWithEntities[]> {
-    return this.prisma.relation.findMany({
+    return this.vectorPrisma.relation.findMany({
       where: {
         apiKeyId,
         OR: [{ sourceId: entityId }, { targetId: entityId }],
@@ -65,7 +67,7 @@ export class RelationRepository extends BaseRepository<Relation> {
     userId: string,
     type: string,
   ): Promise<RelationWithEntities[]> {
-    return this.prisma.relation.findMany({
+    return this.vectorPrisma.relation.findMany({
       where: { apiKeyId, userId, type },
       include: {
         source: { select: { id: true, type: true, name: true } },
@@ -82,7 +84,7 @@ export class RelationRepository extends BaseRepository<Relation> {
     userId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<RelationWithEntities[]> {
-    return this.prisma.relation.findMany({
+    return this.vectorPrisma.relation.findMany({
       where: { apiKeyId, userId },
       include: {
         source: { select: { id: true, type: true, name: true } },
@@ -91,6 +93,20 @@ export class RelationRepository extends BaseRepository<Relation> {
       orderBy: { createdAt: 'desc' },
       take: options.limit ?? 100,
       skip: options.offset ?? 0,
+    });
+  }
+
+  /**
+   * 按用户列出所有关系（不带实体信息，用于图谱查询）
+   */
+  async findByUser(
+    apiKeyId: string,
+    userId: string,
+    options: { limit?: number } = {},
+  ): Promise<Relation[]> {
+    return this.vectorPrisma.relation.findMany({
+      where: { apiKeyId, userId },
+      take: options.limit ?? 1000,
     });
   }
 }

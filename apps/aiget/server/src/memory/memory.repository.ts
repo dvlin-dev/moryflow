@@ -1,7 +1,7 @@
 /**
  * [INPUT]: apiKeyId, userId, embedding, agentId/sessionId filters
  * [OUTPUT]: Memory, MemoryWithSimilarity[]
- * [POS]: Memory Repository
+ * [POS]: Memory Repository（向量数据库）
  *
  * 职责：Memory 数据访问层，包含向量搜索
  *
@@ -9,8 +9,8 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import type { Memory as PrismaMemory } from '../../generated/prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import type { Memory as PrismaMemory } from '../../generated/prisma-vector/client';
+import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { BaseRepository } from '../common/base.repository';
 
 export type Memory = PrismaMemory;
@@ -21,8 +21,8 @@ export interface MemoryWithSimilarity extends Memory {
 
 @Injectable()
 export class MemoryRepository extends BaseRepository<Memory> {
-  constructor(prisma: PrismaService) {
-    super(prisma, prisma.memory);
+  constructor(private readonly vectorPrisma: VectorPrismaService) {
+    super(vectorPrisma, vectorPrisma.memory);
   }
 
   /**
@@ -48,7 +48,9 @@ export class MemoryRepository extends BaseRepository<Memory> {
       extraConditions += ` AND "sessionId" = '${sessionId}'`;
     }
 
-    const result = await this.prisma.$queryRawUnsafe<MemoryWithSimilarity[]>(`
+    const result = await this.vectorPrisma.$queryRawUnsafe<
+      MemoryWithSimilarity[]
+    >(`
       SELECT
         id::text,
         "apiKeyId",
@@ -86,7 +88,7 @@ export class MemoryRepository extends BaseRepository<Memory> {
   ): Promise<Memory> {
     const embeddingStr = `[${embedding.join(',')}]`;
 
-    const result = await this.prisma.$queryRawUnsafe<Memory[]>(`
+    const result = await this.vectorPrisma.$queryRawUnsafe<Memory[]>(`
       INSERT INTO "Memory" (
         "apiKeyId", "userId", "agentId", "sessionId", content, metadata, source, importance, tags, embedding, "createdAt", "updatedAt"
       ) VALUES (

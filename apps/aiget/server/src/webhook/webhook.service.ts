@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma';
-import type { Webhook } from '../../generated/prisma/client';
+import type { Webhook } from '../../generated/prisma-main/client';
 import type { CreateWebhookDto, UpdateWebhookDto } from './dto';
 import { MAX_WEBHOOKS_PER_USER } from './webhook.constants';
 

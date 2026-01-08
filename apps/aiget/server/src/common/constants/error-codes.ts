@@ -1,7 +1,7 @@
 // apps/server/src/common/constants/error-codes.ts
 
 // Import and re-export Prisma-generated ScrapeErrorCode as single source of truth
-import { ScrapeErrorCode as PrismaScrapeErrorCode } from '../../../generated/prisma/enums';
+import { ScrapeErrorCode as PrismaScrapeErrorCode } from '../../../generated/prisma-main/enums';
 
 // Re-export for external use
 export const ScrapeErrorCode = PrismaScrapeErrorCode;

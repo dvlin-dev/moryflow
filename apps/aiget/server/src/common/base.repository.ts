@@ -15,6 +15,12 @@
 
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
+
+/**
+ * 支持主库和向量库的 Prisma 服务类型
+ */
+type AnyPrismaService = PrismaService | VectorPrismaService;
 
 /**
  * 基础模型约束：必须有 id 和 apiKeyId 字段
@@ -65,14 +71,14 @@ export type UpdateData<TModel> = Partial<
 
 export abstract class BaseRepository<TModel extends BaseModel> {
   constructor(
-    protected readonly prisma: PrismaService,
+    protected readonly prisma: AnyPrismaService,
     protected readonly delegate: PrismaDelegate,
   ) {}
 
   /**
    * 获取 Prisma 服务实例（只读访问）
    */
-  getPrisma(): PrismaService {
+  getPrisma(): AnyPrismaService {
     return this.prisma;
   }
 

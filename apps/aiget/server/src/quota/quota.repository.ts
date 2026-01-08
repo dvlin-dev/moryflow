@@ -11,7 +11,7 @@ import type {
   QuotaTransaction,
   QuotaSource,
   Prisma,
-} from '../../generated/prisma/client';
+} from '../../generated/prisma-main/client';
 import { calculatePeriodEnd, DEFAULT_MONTHLY_QUOTA } from './quota.constants';
 
 @Injectable()

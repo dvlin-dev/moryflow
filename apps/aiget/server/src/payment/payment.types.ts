@@ -2,7 +2,7 @@
  * Payment 模块类型定义
  */
 
-import type { SubscriptionTier } from '../../generated/prisma/client';
+import type { SubscriptionTier } from '../../generated/prisma-main/client';
 
 /** 订阅激活参数 */
 export interface SubscriptionActivatedParams {

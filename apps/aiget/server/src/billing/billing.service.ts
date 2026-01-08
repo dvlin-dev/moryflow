@@ -10,7 +10,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { getBillingRule, type BillingKey } from './billing.rules';
 import { QuotaService } from '../quota/quota.service';
 import type { DeductResult, RefundResult } from '../quota/quota.types';
-import type { QuotaSource } from '../../generated/prisma/client';
+import type { QuotaSource } from '../../generated/prisma-main/client';
 import { DuplicateRefundError } from '../quota/quota.errors';
 
 export interface BillingDeductParams {

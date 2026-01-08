@@ -9,7 +9,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Prisma } from '../../generated/prisma/client';
+import type { Prisma } from '../../generated/prisma-main/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
 import { BillingService } from '../billing/billing.service';

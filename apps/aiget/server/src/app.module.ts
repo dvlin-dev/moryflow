@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { json, urlencoded, type Request, type Response } from 'express';
 import { PrismaModule } from './prisma';
+import { VectorPrismaModule } from './vector-prisma';
 import { RedisModule } from './redis';
 import { QueueModule } from './queue';
 import { EmailModule } from './email';
@@ -39,6 +40,7 @@ import { NotFoundModule } from './not-found';
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    VectorPrismaModule,
     RedisModule,
     QueueModule,
     CommonModule,

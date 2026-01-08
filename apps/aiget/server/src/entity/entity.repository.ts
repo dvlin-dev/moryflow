@@ -1,10 +1,12 @@
 /**
- * [POS]: Entity Repository
+ * [POS]: Entity Repository（向量数据库）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
-import type { Entity as PrismaEntity } from '../../generated/prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import type { Entity as PrismaEntity } from '../../generated/prisma-vector/client';
+import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { BaseRepository } from '../common/base.repository';
 import type { CreateEntityInput } from './dto';
 
@@ -12,8 +14,8 @@ export type Entity = PrismaEntity;
 
 @Injectable()
 export class EntityRepository extends BaseRepository<Entity> {
-  constructor(prisma: PrismaService) {
-    super(prisma, prisma.entity);
+  constructor(private readonly vectorPrisma: VectorPrismaService) {
+    super(vectorPrisma, vectorPrisma.entity);
   }
 
   /**
@@ -49,7 +51,7 @@ export class EntityRepository extends BaseRepository<Entity> {
     apiKeyId: string,
     data: CreateEntityInput & { confidence?: number },
   ): Promise<Entity> {
-    return this.prisma.entity.upsert({
+    return this.vectorPrisma.entity.upsert({
       where: {
         apiKeyId_userId_type_name: {
           apiKeyId,

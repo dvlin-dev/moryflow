@@ -6,6 +6,8 @@
 
 Core memory service for the Memox platform. Handles memory CRUD operations, semantic search, and embedding generation.
 
+**数据存储**：向量库（`VectorPrismaService`）
+
 ## Responsibilities
 
 **Does:**
@@ -14,6 +16,7 @@ Core memory service for the Memox platform. Handles memory CRUD operations, sema
 - Semantic search using pgvector similarity
 - Memory listing, retrieval, and deletion
 - Console export as JSON/CSV
+- 跨库查询：Console 接口从主库查 ApiKey，从向量库查 Memory，应用层组装
 
 **Does NOT:**
 
@@ -88,7 +91,8 @@ SearchMemorySchema = {
 ```
 memory/
 ├── depends on → embedding/ (vector generation)
-├── depends on → prisma/ (database)
+├── depends on → vector-prisma/ (向量库 - Memory 存储)
+├── depends on → prisma/ (主库 - Console 跨库查询 ApiKey)
 └── depends on → billing/ (quota deduction/refund rules)
 ```
 

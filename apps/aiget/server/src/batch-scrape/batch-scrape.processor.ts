@@ -10,7 +10,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Prisma } from '../../generated/prisma/client';
+import type { Prisma } from '../../generated/prisma-main/client';
 import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
 import { BillingService } from '../billing/billing.service';

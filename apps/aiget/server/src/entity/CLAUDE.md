@@ -6,6 +6,8 @@
 
 实体管理模块。为 Memox 知识图谱提供 Entity 的 CRUD 与查询能力。
 
+**数据存储**：向量库（`VectorPrismaService`）
+
 ## 职责
 
 **包含：**
@@ -15,6 +17,7 @@
 - 跨记忆实体关联
 - 实体类型分类
 - `properties` 字段输入使用 `JsonValueSchema`，输出使用 `asRecordOrNull` 收敛为对象或 null
+- 跨库查询：Console 接口从主库查 ApiKey，从向量库查 Entity，应用层组装
 
 **不包含：**
 
@@ -39,7 +42,8 @@
 
 ```
 entity/
-├── 依赖 → prisma/（数据库）
+├── 依赖 → vector-prisma/（向量库 - Entity 存储）
+├── 依赖 → prisma/（主库 - Console 跨库查询 ApiKey）
 └── 被依赖 ← graph/（知识图谱）
 ```
 

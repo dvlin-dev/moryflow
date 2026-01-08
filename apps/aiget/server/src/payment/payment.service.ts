@@ -12,7 +12,7 @@ import {
   SubscriptionStatus,
   QuotaTransactionType,
   QuotaSource,
-} from '../../generated/prisma/client';
+} from '../../generated/prisma-main/client';
 import { TIER_MONTHLY_QUOTA, addOneMonth } from './payment.constants';
 import type {
   SubscriptionActivatedParams,

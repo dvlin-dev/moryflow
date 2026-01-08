@@ -29,10 +29,17 @@
     "test:e2e": "RUN_INTEGRATION_TESTS=1 vitest run",
     "test:render": "vitest run",
     "test:ci": "RUN_INTEGRATION_TESTS=1 vitest run --coverage",
-    "prisma:generate": "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate",
-    "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:generate": "pnpm prisma:generate:main && pnpm prisma:generate:vector",
+    "prisma:generate:main": "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate --schema=prisma/main/schema.prisma",
+    "prisma:generate:vector": "VECTOR_DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate --schema=prisma/vector/schema.prisma",
+    "prisma:push": "pnpm prisma:push:main && pnpm prisma:push:vector",
+    "prisma:push:main": "prisma db push --schema=prisma/main/schema.prisma",
+    "prisma:push:vector": "prisma db push --schema=prisma/vector/schema.prisma",
+    "prisma:migrate": "pnpm prisma:migrate:main && pnpm prisma:migrate:vector",
+    "prisma:migrate:main": "prisma migrate dev --schema=prisma/main/schema.prisma",
+    "prisma:migrate:vector": "prisma migrate dev --schema=prisma/vector/schema.prisma",
+    "prisma:studio": "prisma studio --schema=prisma/main/schema.prisma",
+    "prisma:studio:vector": "prisma studio --schema=prisma/vector/schema.prisma"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.700.0",

@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, QueueEvents } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Prisma } from '../../generated/prisma/client';
+import type { Prisma } from '../../generated/prisma-main/client';
 import { UrlValidator } from '../common/validators/url.validator';
 import { SCRAPE_QUEUE } from '../queue/queue.constants';
 import { createHash } from 'crypto';

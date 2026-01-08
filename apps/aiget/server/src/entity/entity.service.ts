@@ -2,13 +2,15 @@
  * [INPUT]: apiKeyId, CreateEntityInput, ListEntitiesByUserOptions
  * [OUTPUT]: Entity, EntityWithApiKeyName[], pagination data
  * [POS]: Entity business logic layer - CRUD operations for knowledge graph entities
+ *        跨库查询：主库 ApiKey + 向量库 Entity
  *
  * [PROTOCOL]: When modifying this file, you MUST update this header and src/entity/CLAUDE.md
  */
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '../../generated/prisma/client';
+import type { Prisma } from '../../generated/prisma-vector/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { asRecordOrNull } from '../common/utils';
 import { EntityRepository, Entity } from './entity.repository';
 import type { CreateEntityInput } from './dto';
@@ -32,7 +34,25 @@ export class EntityService {
   constructor(
     private readonly repository: EntityRepository,
     private readonly prisma: PrismaService,
+    private readonly vectorPrisma: VectorPrismaService,
   ) {}
+
+  /**
+   * 从 Map 中获取 ApiKey 名称，找不到时记录告警
+   */
+  private resolveApiKeyName(
+    apiKeyId: string,
+    resourceId: string,
+    map: Map<string, string>,
+  ): string {
+    const name = map.get(apiKeyId);
+    if (!name) {
+      this.logger.warn(
+        `Entity ${resourceId} references unknown apiKeyId: ${apiKeyId}`,
+      );
+    }
+    return name ?? 'Unknown';
+  }
 
   /**
    * 创建实体
@@ -127,6 +147,7 @@ export class EntityService {
 
   /**
    * 获取用户所有 API Keys 下的 Entities（Console 用）
+   * 跨库查询：主库查 ApiKey，向量库查 Entity
    */
   async listByUser(
     userId: string,
@@ -134,33 +155,39 @@ export class EntityService {
   ): Promise<{ entities: EntityWithApiKeyName[]; total: number }> {
     const { type, apiKeyId, limit = 20, offset = 0 } = options;
 
+    // 1. 从主库获取用户的 ApiKey 列表
+    const apiKeys = await this.prisma.apiKey.findMany({
+      where: apiKeyId ? { id: apiKeyId, userId } : { userId },
+      select: { id: true, name: true },
+    });
+
+    if (apiKeys.length === 0) {
+      return { entities: [], total: 0 };
+    }
+
+    const apiKeyIds = apiKeys.map((k) => k.id);
+    const apiKeyNameMap = new Map(apiKeys.map((k) => [k.id, k.name]));
+
+    // 2. 从向量库查询 Entity
     const where: Prisma.EntityWhereInput = {
-      apiKey: { userId },
+      apiKeyId: { in: apiKeyIds },
     };
 
     if (type) {
       where.type = type;
     }
 
-    if (apiKeyId) {
-      where.apiKeyId = apiKeyId;
-    }
-
     const [entities, total] = await Promise.all([
-      this.prisma.entity.findMany({
+      this.vectorPrisma.entity.findMany({
         where,
-        include: {
-          apiKey: {
-            select: { name: true },
-          },
-        },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      this.prisma.entity.count({ where }),
+      this.vectorPrisma.entity.count({ where }),
     ]);
 
+    // 3. 应用层组装 apiKeyName
     return {
       entities: entities.map((e) => ({
         id: e.id,
@@ -172,7 +199,7 @@ export class EntityService {
         confidence: e.confidence,
         createdAt: e.createdAt,
         updatedAt: e.updatedAt,
-        apiKeyName: e.apiKey.name,
+        apiKeyName: this.resolveApiKeyName(e.apiKeyId, e.id, apiKeyNameMap),
       })),
       total,
     };
@@ -180,20 +207,30 @@ export class EntityService {
 
   /**
    * 按 ID 删除实体（Console 用，验证归属）
+   * 跨库查询：主库验证 ApiKey 归属，向量库删除 Entity
    */
   async deleteByUser(userId: string, entityId: string): Promise<void> {
-    const entity = await this.prisma.entity.findFirst({
-      where: {
-        id: entityId,
-        apiKey: { userId },
-      },
+    // 1. 从向量库查找 Entity
+    const entity = await this.vectorPrisma.entity.findUnique({
+      where: { id: entityId },
+      select: { id: true, apiKeyId: true },
     });
 
     if (!entity) {
       throw new NotFoundException('Entity not found');
     }
 
-    await this.prisma.entity.delete({
+    // 2. 从主库验证 ApiKey 归属（用 count 减少数据传输）
+    const apiKeyBelongsToUser = await this.prisma.apiKey.count({
+      where: { id: entity.apiKeyId, userId },
+    });
+
+    if (apiKeyBelongsToUser === 0) {
+      throw new NotFoundException('Entity not found');
+    }
+
+    // 3. 从向量库删除 Entity
+    await this.vectorPrisma.entity.delete({
       where: { id: entityId },
     });
 
@@ -202,12 +239,24 @@ export class EntityService {
 
   /**
    * 获取用户的所有 Entity 类型（Console 用）
+   * 跨库查询：主库查 ApiKey，向量库查 Entity
    */
   async getTypesByUser(userId: string): Promise<string[]> {
-    const types = await this.prisma.entity.findMany({
-      where: {
-        apiKey: { userId },
-      },
+    // 1. 从主库获取用户的 ApiKey 列表
+    const apiKeys = await this.prisma.apiKey.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (apiKeys.length === 0) {
+      return [];
+    }
+
+    const apiKeyIds = apiKeys.map((k) => k.id);
+
+    // 2. 从向量库查询 Entity 类型
+    const types = await this.vectorPrisma.entity.findMany({
+      where: { apiKeyId: { in: apiKeyIds } },
       select: { type: true },
       distinct: ['type'],
       orderBy: { type: 'asc' },

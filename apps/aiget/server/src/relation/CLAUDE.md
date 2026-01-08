@@ -6,6 +6,8 @@
 
 Entity relation management. Creates and manages relationships between entities to build knowledge graphs.
 
+**数据存储**：向量库（`VectorPrismaService`）
+
 ## Responsibilities
 
 **Does:**
@@ -40,7 +42,7 @@ Entity relation management. Creates and manages relationships between entities t
 ```
 relation/
 ├── depends on → entity/ (entity references)
-├── depends on → prisma/ (database)
+├── depends on → vector-prisma/ (向量库 - Relation 存储)
 └── depended by ← graph/ (knowledge graph)
 ```
 

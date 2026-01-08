@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import { PrismaService } from '../prisma';
-import type { User, Subscription, Quota } from '../../generated/prisma/client';
+import type {
+  User,
+  Subscription,
+  Quota,
+} from '../../generated/prisma-main/client';
 import type { SubscriptionTier } from '../types';
 import type {
   DeleteAccountDto,

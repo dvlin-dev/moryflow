@@ -4,7 +4,7 @@
  * [POS]: 配额模块核心类型，定义配额操作的输入输出结构
  */
 
-import type { QuotaSource } from '../../generated/prisma/client';
+import type { QuotaSource } from '../../generated/prisma-main/client';
 
 // ============ 配额状态 ============
 

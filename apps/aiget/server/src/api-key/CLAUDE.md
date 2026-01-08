@@ -13,6 +13,7 @@ API key management for authenticating public API requests. Handles creation, val
 - Validate API keys on requests
 - Track key usage and last used timestamp
 - Support key revocation and rotation
+- 删除 ApiKey 时异步清理向量库关联数据（Memory、Entity、Relation）
 
 ## Constraints
 
@@ -99,7 +100,8 @@ export class ScrapeController {
 
 ```
 api-key/
-├── prisma/ - Database storage
+├── prisma/ - 主库存储（ApiKey 表）
+├── vector-prisma/ - 向量库（删除时清理 Memory/Entity/Relation）
 ├── common/utils/crypto - Hashing
 └── auth/ - User context
 ```

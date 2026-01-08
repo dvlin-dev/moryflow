@@ -6,26 +6,41 @@ import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ApiKeyService } from '../api-key.service';
 import type { PrismaService } from '../../prisma/prisma.service';
+import type { VectorPrismaService } from '../../vector-prisma/vector-prisma.service';
 import type { RedisService } from '../../redis/redis.service';
 import { API_KEY_PREFIX } from '../api-key.constants';
 
+/**
+ * Mock 类型定义
+ */
+type MockPrisma = {
+  apiKey: {
+    create: Mock;
+    findMany: Mock;
+    findFirst: Mock;
+    findUnique: Mock;
+    update: Mock;
+    delete: Mock;
+  };
+};
+
+type MockVectorPrisma = {
+  memory: { deleteMany: Mock };
+  entity: { deleteMany: Mock };
+  relation: { deleteMany: Mock };
+};
+
+type MockRedis = {
+  get: Mock;
+  set: Mock;
+  del: Mock;
+};
+
 describe('ApiKeyService', () => {
   let service: ApiKeyService;
-  let mockPrisma: {
-    apiKey: {
-      create: Mock;
-      findMany: Mock;
-      findFirst: Mock;
-      findUnique: Mock;
-      update: Mock;
-      delete: Mock;
-    };
-  };
-  let mockRedis: {
-    get: Mock;
-    set: Mock;
-    del: Mock;
-  };
+  let mockPrisma: MockPrisma;
+  let mockVectorPrisma: MockVectorPrisma;
+  let mockRedis: MockRedis;
 
   // 有效 API Key (ag_ + 64 hex chars)
   const validApiKey = `${API_KEY_PREFIX}${'a'.repeat(64)}`;
@@ -41,6 +56,11 @@ describe('ApiKeyService', () => {
         delete: vi.fn(),
       },
     };
+    mockVectorPrisma = {
+      memory: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      entity: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      relation: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    };
     mockRedis = {
       get: vi.fn().mockResolvedValue(null),
       set: vi.fn().mockResolvedValue(undefined),
@@ -48,6 +68,7 @@ describe('ApiKeyService', () => {
     };
     service = new ApiKeyService(
       mockPrisma as unknown as PrismaService,
+      mockVectorPrisma as unknown as VectorPrismaService,
       mockRedis as unknown as RedisService,
     );
   });

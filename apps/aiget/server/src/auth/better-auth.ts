@@ -2,11 +2,11 @@ import { betterAuth, APIError } from 'better-auth';
 import { bearer, emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { createHash, randomBytes } from 'crypto';
-import type { PrismaClient } from '../../generated/prisma/client';
+import type { PrismaClient } from '../../generated/prisma-main/client';
 import {
   SubscriptionTier,
   SubscriptionStatus,
-} from '../../generated/prisma/client';
+} from '../../generated/prisma-main/client';
 import { isDisposableEmail } from './email-validator';
 import {
   API_KEY_PREFIX,

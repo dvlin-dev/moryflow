@@ -1,7 +1,7 @@
 /**
  * [INPUT]: platformUserId, apiKeyId, CreateMemoryInput, SearchMemoryInput
  * [OUTPUT]: Memory, MemoryWithSimilarity[]
- * [POS]: Memory 业务逻辑层
+ * [POS]: Memory 业务逻辑层（跨库查询：主库 ApiKey + 向量库 Memory）
  *
  * 职责：Memory 的 CRUD 和语义搜索
  *
@@ -10,6 +10,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { asRecordOrNull } from '../common/utils';
 import {
   MemoryRepository,
@@ -61,9 +62,27 @@ export class MemoryService {
   constructor(
     private readonly repository: MemoryRepository,
     private readonly prisma: PrismaService,
+    private readonly vectorPrisma: VectorPrismaService,
     private readonly embeddingService: EmbeddingService,
     private readonly billingService: BillingService,
   ) {}
+
+  /**
+   * 从 Map 中获取 ApiKey 名称，找不到时记录告警
+   */
+  private resolveApiKeyName(
+    apiKeyId: string,
+    resourceId: string,
+    map: Map<string, string>,
+  ): string {
+    const name = map.get(apiKeyId);
+    if (!name) {
+      this.logger.warn(
+        `Memory ${resourceId} references unknown apiKeyId: ${apiKeyId}`,
+      );
+    }
+    return name ?? 'Unknown';
+  }
 
   /**
    * 创建 Memory
@@ -221,6 +240,7 @@ export class MemoryService {
 
   /**
    * 获取用户所有 API Keys 下的 Memories（Console 用）
+   * 跨库查询：主库查 ApiKey，向量库查 Memory
    */
   async listByUser(
     userId: string,
@@ -228,29 +248,33 @@ export class MemoryService {
   ): Promise<{ memories: MemoryWithApiKeyName[]; total: number }> {
     const { apiKeyId, limit = 20, offset = 0 } = options;
 
-    const where: Record<string, unknown> = {
-      apiKey: { userId },
-    };
+    // 1. 从主库获取用户的 ApiKey 列表（用于过滤和获取名称）
+    const apiKeys = await this.prisma.apiKey.findMany({
+      where: apiKeyId ? { id: apiKeyId, userId } : { userId },
+      select: { id: true, name: true },
+    });
 
-    if (apiKeyId) {
-      where.apiKeyId = apiKeyId;
+    if (apiKeys.length === 0) {
+      return { memories: [], total: 0 };
     }
 
+    const apiKeyIds = apiKeys.map((k) => k.id);
+    const apiKeyNameMap = new Map(apiKeys.map((k) => [k.id, k.name]));
+
+    // 2. 从向量库查询 Memory
+    const where = { apiKeyId: { in: apiKeyIds } };
+
     const [memories, total] = await Promise.all([
-      this.prisma.memory.findMany({
+      this.vectorPrisma.memory.findMany({
         where,
-        include: {
-          apiKey: {
-            select: { name: true },
-          },
-        },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      this.prisma.memory.count({ where }),
+      this.vectorPrisma.memory.count({ where }),
     ]);
 
+    // 3. 应用层组装 apiKeyName
     return {
       memories: memories.map((m) => ({
         id: m.id,
@@ -265,7 +289,7 @@ export class MemoryService {
         tags: m.tags,
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
-        apiKeyName: m.apiKey.name,
+        apiKeyName: this.resolveApiKeyName(m.apiKeyId, m.id, apiKeyNameMap),
       })),
       total,
     };
@@ -273,6 +297,7 @@ export class MemoryService {
 
   /**
    * 导出用户的 Memories（Console 用）
+   * 跨库查询：主库查 ApiKey，向量库查 Memory
    */
   async exportByUser(
     userId: string,
@@ -280,26 +305,39 @@ export class MemoryService {
   ): Promise<{ data: string; contentType: string; filename: string }> {
     const { apiKeyId, format } = options;
 
-    const where: Record<string, unknown> = {
-      apiKey: { userId },
-    };
-
-    if (apiKeyId) {
-      where.apiKeyId = apiKeyId;
-    }
-
-    const memories = await this.prisma.memory.findMany({
-      where,
-      include: {
-        apiKey: {
-          select: { name: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+    // 1. 从主库获取用户的 ApiKey 列表
+    const apiKeys = await this.prisma.apiKey.findMany({
+      where: apiKeyId ? { id: apiKeyId, userId } : { userId },
+      select: { id: true, name: true },
     });
 
     const timestamp = new Date().toISOString().split('T')[0];
 
+    if (apiKeys.length === 0) {
+      if (format === 'csv') {
+        return {
+          data: 'id,userId,agentId,sessionId,content,source,importance,tags,apiKeyName,createdAt',
+          contentType: 'text/csv',
+          filename: `memories-export-${timestamp}.csv`,
+        };
+      }
+      return {
+        data: '[]',
+        contentType: 'application/json',
+        filename: `memories-export-${timestamp}.json`,
+      };
+    }
+
+    const apiKeyIds = apiKeys.map((k) => k.id);
+    const apiKeyNameMap = new Map(apiKeys.map((k) => [k.id, k.name]));
+
+    // 2. 从向量库查询 Memory
+    const memories = await this.vectorPrisma.memory.findMany({
+      where: { apiKeyId: { in: apiKeyIds } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 3. 应用层组装并导出
     if (format === 'csv') {
       const headers = [
         'id',
@@ -323,7 +361,7 @@ export class MemoryService {
         escapeCsvField(m.source),
         escapeCsvField(m.importance?.toString()),
         escapeCsvField(m.tags.join(';')),
-        escapeCsvField(m.apiKey.name),
+        escapeCsvField(this.resolveApiKeyName(m.apiKeyId, m.id, apiKeyNameMap)),
         escapeCsvField(m.createdAt.toISOString()),
       ]);
 
@@ -349,7 +387,7 @@ export class MemoryService {
       source: m.source,
       importance: m.importance,
       tags: m.tags,
-      apiKeyName: m.apiKey.name,
+      apiKeyName: this.resolveApiKeyName(m.apiKeyId, m.id, apiKeyNameMap),
       createdAt: m.createdAt.toISOString(),
       updatedAt: m.updatedAt.toISOString(),
     }));

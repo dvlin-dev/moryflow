@@ -24,41 +24,72 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 
+## 数据库架构（双库分离）
+
+采用**主库 + 向量库**分离架构，实现性能隔离和独立扩展：
+
+| 数据库 | 连接变量              | Schema 路径      | 用途                                   |
+| ------ | --------------------- | ---------------- | -------------------------------------- |
+| 主库   | `DATABASE_URL`        | `prisma/main/`   | 业务数据（User、ApiKey、Job 等）       |
+| 向量库 | `VECTOR_DATABASE_URL` | `prisma/vector/` | Memox 数据（Memory、Entity、Relation） |
+
+### 关键设计
+
+- **软引用**：向量库中的 `apiKeyId` 无外键约束，通过应用层保证一致性
+- **跨库查询**：Console 接口需要跨库查询（主库 ApiKey + 向量库 Memox），在应用层组装
+- **删除清理**：删除 ApiKey 时异步清理向量库关联数据（fail-safe）
+
+### Prisma 命令
+
+```bash
+# 生成两个库的 Client
+pnpm --filter @aiget/aiget-server prisma:generate
+
+# 分别推送 Schema
+pnpm --filter @aiget/aiget-server prisma:push:main
+pnpm --filter @aiget/aiget-server prisma:push:vector
+
+# 打开 Studio（默认主库）
+pnpm --filter @aiget/aiget-server prisma:studio
+pnpm --filter @aiget/aiget-server prisma:studio:vector
+```
+
 ## Module Structure
 
-| Module          | Files | Description                                  | CLAUDE.md                 |
-| --------------- | ----- | -------------------------------------------- | ------------------------- |
-| `scraper/`      | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
-| `common/`       | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
-| `admin/`        | 16    | Admin dashboard APIs                         | -                         |
-| `oembed/`       | 18    | oEmbed provider support                      | -                         |
-| `billing/`      | 5     | Billing rules + deduct/refund                | -                         |
-| `quota/`        | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
-| `api-key/`      | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
-| `memory/`       | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
-| `entity/`       | 10    | Knowledge graph entities (Memox)             | `src/entity/CLAUDE.md`    |
-| `relation/`     | 9     | Knowledge graph relations (Memox)            | `src/relation/CLAUDE.md`  |
-| `graph/`        | 7     | Knowledge graph traversal (Memox)            | `src/graph/CLAUDE.md`     |
-| `embedding/`    | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md` |
-| `crawler/`      | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`   |
-| `auth/`         | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`      |
-| `payment/`      | 10    | Payment processing (Creem)                   | -                         |
-| `webhook/`      | 10    | Webhook notifications                        | -                         |
-| `extract/`      | 9     | AI-powered data extraction                   | -                         |
-| `batch-scrape/` | 9     | Bulk URL processing                          | -                         |
-| `user/`         | 9     | User management                              | -                         |
-| `map/`          | 8     | URL discovery                                | -                         |
-| `storage/`      | 7     | Cloudflare R2 storage                        | -                         |
-| `search/`       | 6     | Web search API                               | -                         |
-| `browser/`      | 5     | Browser pool management                      | -                         |
-| `demo/`         | 5     | Playground demo API                          | -                         |
-| `redis/`        | 4     | Redis caching                                | -                         |
-| `health/`       | 3     | Health check endpoints                       | -                         |
-| `email/`        | 3     | Email service                                | -                         |
-| `queue/`        | 3     | BullMQ queue config                          | -                         |
-| `prisma/`       | 3     | Database access                              | -                         |
-| `config/`       | 2     | Pricing configuration                        | -                         |
-| `types/`        | 6     | Shared type definitions                      | -                         |
+| Module           | Files | Description                                  | CLAUDE.md                 |
+| ---------------- | ----- | -------------------------------------------- | ------------------------- |
+| `scraper/`       | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
+| `common/`        | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
+| `admin/`         | 16    | Admin dashboard APIs                         | -                         |
+| `oembed/`        | 18    | oEmbed provider support                      | -                         |
+| `billing/`       | 5     | Billing rules + deduct/refund                | -                         |
+| `quota/`         | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
+| `api-key/`       | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
+| `memory/`        | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
+| `entity/`        | 10    | Knowledge graph entities (Memox)             | `src/entity/CLAUDE.md`    |
+| `relation/`      | 9     | Knowledge graph relations (Memox)            | `src/relation/CLAUDE.md`  |
+| `graph/`         | 7     | Knowledge graph traversal (Memox)            | `src/graph/CLAUDE.md`     |
+| `embedding/`     | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md` |
+| `crawler/`       | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`   |
+| `auth/`          | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`      |
+| `payment/`       | 10    | Payment processing (Creem)                   | -                         |
+| `webhook/`       | 10    | Webhook notifications                        | -                         |
+| `extract/`       | 9     | AI-powered data extraction                   | -                         |
+| `batch-scrape/`  | 9     | Bulk URL processing                          | -                         |
+| `user/`          | 9     | User management                              | -                         |
+| `map/`           | 8     | URL discovery                                | -                         |
+| `storage/`       | 7     | Cloudflare R2 storage                        | -                         |
+| `search/`        | 6     | Web search API                               | -                         |
+| `browser/`       | 5     | Browser pool management                      | -                         |
+| `demo/`          | 5     | Playground demo API                          | -                         |
+| `redis/`         | 4     | Redis caching                                | -                         |
+| `health/`        | 3     | Health check endpoints                       | -                         |
+| `email/`         | 3     | Email service                                | -                         |
+| `queue/`         | 3     | BullMQ queue config                          | -                         |
+| `prisma/`        | 3     | 主库连接（PrismaService）                    | -                         |
+| `vector-prisma/` | 3     | 向量库连接（VectorPrismaService）            | -                         |
+| `config/`        | 2     | Pricing configuration                        | -                         |
+| `types/`         | 6     | Shared type definitions                      | -                         |
 
 ## Common Patterns
 
@@ -194,7 +225,8 @@ open http://localhost:3000/api-docs
 
 | 变量                          | 必需 | 说明                                                      |
 | ----------------------------- | ---- | --------------------------------------------------------- |
-| `DATABASE_URL`                | ✅   | PostgreSQL 连接字符串                                     |
+| `DATABASE_URL`                | ✅   | 主库 PostgreSQL 连接字符串                                |
+| `VECTOR_DATABASE_URL`         | ✅   | 向量库 PostgreSQL（pgvector）连接字符串                   |
 | `REDIS_URL`                   | ✅   | Redis 连接字符串                                          |
 | `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                          |
 | `BETTER_AUTH_URL`             | ✅   | 服务公网 URL                                              |
@@ -266,4 +298,4 @@ RUN_INTEGRATION_TESTS=1 pnpm --filter @aiget/aiget-server test
 
 ---
 
-_版本: 2.0 | 更新日期: 2026-01-05_
+_版本: 2.1 | 更新日期: 2026-01-08_

@@ -9,7 +9,7 @@ import type { ConfigService } from '@nestjs/config';
 import {
   SubscriptionTier,
   SubscriptionStatus,
-} from '../../../generated/prisma/client';
+} from '../../../generated/prisma-main/client';
 import { TIER_MONTHLY_QUOTA } from '../payment.constants';
 
 describe('PaymentService', () => {

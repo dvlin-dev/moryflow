@@ -19,6 +19,24 @@ services:
       timeout: 5s
       retries: 10
 
+  aiget-vector-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: aiget-vector-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${VECTOR_POSTGRES_DB:-aiget_vector}
+      POSTGRES_USER: ${VECTOR_POSTGRES_USER:-aiget_vector}
+      POSTGRES_PASSWORD: ${VECTOR_POSTGRES_PASSWORD:-change_me}
+    ports:
+      - "${AIGET_VECTOR_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - aiget-vector-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${VECTOR_POSTGRES_USER:-aiget_vector} -d ${VECTOR_POSTGRES_DB:-aiget_vector}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   aiget-redis:
     image: redis:7-alpine
     container_name: aiget-redis
@@ -40,10 +58,13 @@ services:
       dockerfile: apps/aiget/server/Dockerfile
       args:
         DATABASE_URL: ${DATABASE_URL:-postgresql://aiget:change_me@aiget-postgres:5432/aiget?schema=public}
+        VECTOR_DATABASE_URL: ${VECTOR_DATABASE_URL:-postgresql://aiget_vector:change_me@aiget-vector-postgres:5432/aiget_vector?schema=public}
     container_name: aiget-server
     restart: unless-stopped
     depends_on:
       aiget-postgres:
+        condition: service_healthy
+      aiget-vector-postgres:
         condition: service_healthy
       aiget-redis:
         condition: service_healthy
@@ -53,6 +74,7 @@ services:
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://aiget.dev}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://console.aiget.dev,https://admin.aiget.dev,https://aiget.dev}
       DATABASE_URL: ${DATABASE_URL:-postgresql://aiget:change_me@aiget-postgres:5432/aiget?schema=public}
+      VECTOR_DATABASE_URL: ${VECTOR_DATABASE_URL:-postgresql://aiget_vector:change_me@aiget-vector-postgres:5432/aiget_vector?schema=public}
       REDIS_URL: ${REDIS_URL:-redis://aiget-redis:6379}
     ports:
       - "${AIGET_SERVER_PORT:-3100}:3000"
@@ -111,4 +133,5 @@ services:
 
 volumes:
   aiget-postgres-data:
+  aiget-vector-postgres-data:
   aiget-redis-data:

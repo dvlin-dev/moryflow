@@ -6,6 +6,8 @@
 
 知识图谱相关操作，提供实体/关系的遍历与查询能力。
 
+**数据来源**：通过 Repository 层查询向量库
+
 ## 职责
 
 **包含：**
@@ -36,9 +38,8 @@
 
 ```
 graph/
-├── 依赖 → entity/（实体数据）
-├── 依赖 → relation/（关系数据）
-└── 依赖 → prisma/（数据库）
+├── 依赖 → entity/（EntityRepository - 向量库）
+└── 依赖 → relation/（RelationRepository - 向量库）
 ```
 
 ---

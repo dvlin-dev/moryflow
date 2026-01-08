@@ -20,7 +20,7 @@ import { Public } from '../auth';
 import { SkipResponseWrap } from '../common/decorators';
 import { PaymentService } from './payment.service';
 import { CreemWebhookSchema, type CreemWebhookPayload } from './dto';
-import { SubscriptionTier } from '../../generated/prisma/client';
+import { SubscriptionTier } from '../../generated/prisma-main/client';
 
 // Creem 产品 ID 到套餐的映射（需要根据实际配置调整）
 const PRODUCT_TO_TIER: Record<string, SubscriptionTier> = {

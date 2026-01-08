@@ -2,6 +2,7 @@
  * [INPUT]: apiKeyId, entityId, TraversalOptions
  * [OUTPUT]: GraphData { nodes: GraphNode[], edges: GraphEdge[] }
  * [POS]: Graph traversal service - navigates and queries the knowledge graph structure
+ *        通过 Repository 查询 Entity 和 Relation
  *
  * [PROTOCOL]: When modifying this file, you MUST update this header and src/graph/CLAUDE.md
  */
@@ -58,19 +59,14 @@ export class GraphService {
   ): Promise<GraphData> {
     const limit = options.limit ?? 1000;
 
-    // 获取所有实体
-    const entities = await this.entityRepository.findMany(apiKeyId, {
-      where: { userId },
-      take: limit,
-    });
-
-    // 获取所有关系
-    const relations = await this.relationRepository
-      .getPrisma()
-      .relation.findMany({
-        where: { apiKeyId, userId },
+    // 获取所有实体和关系
+    const [entities, relations] = await Promise.all([
+      this.entityRepository.findMany(apiKeyId, {
+        where: { userId },
         take: limit,
-      });
+      }),
+      this.relationRepository.findByUser(apiKeyId, userId, { limit }),
+    ]);
 
     const nodes: GraphNode[] = entities.map((e) => ({
       id: e.id,

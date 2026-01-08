@@ -10,7 +10,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import type { Page } from 'playwright';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Prisma } from '../../generated/prisma/client';
+import type { Prisma } from '../../generated/prisma-main/client';
 import { BrowserPool } from '../browser/browser-pool';
 import { SCRAPE_QUEUE } from '../queue/queue.constants';
 import { PageConfigHandler } from './handlers/page-config.handler';
