@@ -131,13 +131,15 @@ export class UsersController {
 BETTER_AUTH_SECRET=your-secret-key-at-least-32-characters
 
 # Better Auth URL（按业务线配置）
+# - Moryflow: https://app.moryflow.com/api/v1/auth
+# - Aiget Dev: https://server.aiget.dev/api/v1/auth
 BETTER_AUTH_URL=https://app.moryflow.com/api/v1/auth
 
 # Cookie Domain（生产环境按业务线域名）
 COOKIE_DOMAIN=.moryflow.com
 
 # 信任的来源（逗号分隔）
-TRUSTED_ORIGINS=https://app.moryflow.com,https://console.aiget.dev
+TRUSTED_ORIGINS=https://app.moryflow.com,https://console.aiget.dev,https://admin.aiget.dev
 
 # Google OAuth
 GOOGLE_CLIENT_ID=xxx
@@ -149,6 +151,8 @@ APPLE_CLIENT_SECRET=xxx
 ```
 
 ## Token 策略
+
+- JWT issuer/audience 默认 `https://server.aiget.dev`（需要时在 `src/constants.ts` 调整）。
 
 | Token 类型    | 存储位置（Web） | 存储位置（Native） | TTL    |
 | ------------- | --------------- | ------------------ | ------ |

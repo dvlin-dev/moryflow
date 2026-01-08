@@ -37,7 +37,7 @@ export function HeroSection() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
-            <a href="https://aiget.dev/api-docs" target="_blank" rel="noopener noreferrer">
+            <a href="https://server.aiget.dev/api-docs" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="lg" className="font-mono">
                 Read the Docs
               </Button>

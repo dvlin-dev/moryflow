@@ -1,7 +1,7 @@
 ---
 title: 域名与部署架构（两条业务线）
 date: 2026-01-06
-scope: moryflow.com, aiget.dev
+scope: moryflow.com, aiget.dev, server.aiget.dev
 status: active
 ---
 
@@ -21,7 +21,7 @@ status: active
 
 1. **两条业务线互不互通**：不共享账号/Token/数据库。
 2. **只共享代码**：后端基础设施抽到 `packages/*` 复用；部署互不影响。
-3. **Aiget Dev API 统一入口**：Aiget Dev 对外 API 固定 `https://aiget.dev/api/v1`；控制台/后台为独立 Web 应用，需按 Origin 配置 CORS 与 CSRF。
+3. **Aiget Dev API 统一入口**：Aiget Dev 对外 API 固定 `https://server.aiget.dev/api/v1`；控制台/后台为独立 Web 应用，需按 Origin 配置 CORS 与 CSRF。
    - 服务端生产环境强制要求配置 `ALLOWED_ORIGINS`（逗号分隔），至少包含 `https://aiget.dev`、`https://console.aiget.dev`、`https://admin.aiget.dev`。
 4. **OAuth 登录**：支持 Google/Apple；每条业务线独立配置与回调域名。
 5. **不引入 Tailscale**：服务间走公网 HTTPS；安全依靠鉴权 + 限流 + 最小暴露面。
@@ -49,8 +49,8 @@ status: active
 
 ### Aiget Dev（开发者平台）
 
-- `aiget.dev`：官网 + 统一 API（`/api/v1`）。
-  - 模块入口：`/fetchx`、`/memox`
+- `aiget.dev`：官网（模块入口：`/fetchx`、`/memox`）
+- `server.aiget.dev`：统一 API（`/api/v1`）。
 - `console.aiget.dev`：控制台（Web UI，仅前端）。
 - `admin.aiget.dev`：管理后台（Web UI，仅前端）。
 - `docs.aiget.dev`：产品文档（独立 Docs 项目）。
@@ -60,7 +60,7 @@ status: active
 ## 对外 API 规范（固定）
 
 - Moryflow API base：`https://app.moryflow.com/api/v1`
-- Aiget Dev API base：`https://aiget.dev/api/v1`
+- Aiget Dev API base：`https://server.aiget.dev/api/v1`
 
 约定：
 
@@ -128,7 +128,7 @@ status: active
 - `app.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
 - `app.moryflow.com` 的 `/api/*` → `http://<4c6g-ip>:3100`（API，占位页不影响 API）
 - `aiget.dev` → `http://<8c16g-ip>:3103`（官网）
-- `aiget.dev` 的 `/api/*` → `http://<8c16g-ip>:3100`（统一 API）
+- `server.aiget.dev` → `http://<8c16g-ip>:3100`（统一 API）
 - `docs.aiget.dev` → `http://<8c16g-ip>:3110`
 - `console.aiget.dev` → `http://<8c16g-ip>:3102`
 - `admin.aiget.dev` → `http://<8c16g-ip>:3101`

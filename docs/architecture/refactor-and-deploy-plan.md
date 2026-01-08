@@ -19,7 +19,8 @@ status: active
 
 - Moryflow：`www.moryflow.com`（营销）+ `docs.moryflow.com`（文档）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
 - Aiget Dev：
-  - `aiget.dev`：官网 + 统一 API（`/api/v1`；模块：Fetchx、Memox）
+  - `aiget.dev`：官网（模块：Fetchx、Memox）
+  - `server.aiget.dev`：统一 API（`/api/v1`）
   - `docs.aiget.dev`：文档站（独立项目）
   - `console.aiget.dev`：控制台前端（Web）
   - `admin.aiget.dev`：管理后台前端（Web）
@@ -61,7 +62,7 @@ status: active
 - [ ] 以 `docs/architecture/auth.md` 为唯一架构入口，确认 OAuth 方案为 Google/Apple 且仅限业务线内
 - [ ] 统一 API 规范：
   - Moryflow：`https://app.moryflow.com/api/v1`
-  - Aiget Dev：`https://aiget.dev/api/v1`
+  - Aiget Dev：`https://server.aiget.dev/api/v1`
 - [ ] 统一 API key 规范：`Authorization: Bearer <apiKey>`
 - [ ] Memox 数据模型定案：`tenantId + namespace + externalUserId + metadata`
 
@@ -88,7 +89,7 @@ status: active
 
 ### Milestone 3：Aiget Dev Auth + Console 落地（2-4 天）
 
-- [ ] 在 `aiget.dev` 落地 `POST /api/v1/auth/*`（OTP + password；console/admin 跨域调用）
+- [ ] 在 `server.aiget.dev` 落地 `POST /api/v1/auth/*`（OTP + password；console/admin 跨域调用）
 - [ ] 支持 Google/Apple 登录（Web + Native）：
   - [ ] `POST /api/v1/auth/google/start`、`POST /api/v1/auth/google/token`
   - [ ] `POST /api/v1/auth/apple/start`、`POST /api/v1/auth/apple/token`
@@ -101,7 +102,7 @@ status: active
 
 ### Milestone 4：Memox 作为 Aiget Dev 模块对外（3-7 天）
 
-- [ ] API 入口：`/api/v1/memox/*`（挂在 `aiget.dev`）
+- [ ] API 入口：`/api/v1/memox/*`（挂在 `server.aiget.dev`）
 - [ ] 鉴权：仅 API key（`Authorization: Bearer <apiKey>`）
 - [ ] tenant 推导：从 apiKey 推导 `tenantId`，请求体不允许传 `tenantId`
 - [ ] 存储拆分：
@@ -116,7 +117,7 @@ status: active
 ### Milestone 5：Moryflow 调用 Memox（1-2 天）
 
 - [ ] Moryflow 后端通过公网调用：
-  - `https://aiget.dev/api/v1/memox/*`
+  - `https://server.aiget.dev/api/v1/memox/*`
   - `Authorization: Bearer <moryflow-tenant-apiKey>`
 - [ ] moryflow 侧设置超时与降级（召回失败不阻塞主流程）
 - [ ] namespace 约定（推荐）：
@@ -129,13 +130,13 @@ status: active
 目标：按 Host 转发到 4c6g/8c16g，不做复杂网关拆分。
 
 - [ ] TLS 证书：
-  - `www.moryflow.com`、`app.moryflow.com`、`aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`
+  - `www.moryflow.com`、`app.moryflow.com`、`aiget.dev`、`server.aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`
 - [ ] 反代规则（按 Host）：
   - `www.moryflow.com` → `http://<4c6g-ip>:3102`
   - `docs.moryflow.com` → `http://<4c6g-ip>:3103`
   - `app.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
   - `aiget.dev` → `http://<8c16g-ip>:3103`（官网）
-  - `aiget.dev` 的 `/api/*` → `http://<8c16g-ip>:3100`（API）
+  - `server.aiget.dev` → `http://<8c16g-ip>:3100`（API）
   - `docs.aiget.dev` → `http://<8c16g-ip>:3110`
   - `console.aiget.dev` → `http://<8c16g-ip>:3102`
   - `admin.aiget.dev` → `http://<8c16g-ip>:3101`
@@ -160,7 +161,7 @@ status: active
   - `AUTH_JWT_PRIVATE_KEY=...`
   - `POSTGRES_URL=...`
   - `REDIS_URL=...`
-  - `MEMOX_BASE_URL=https://aiget.dev/api/v1/memox`
+  - `MEMOX_BASE_URL=https://server.aiget.dev/api/v1/memox`
   - `MEMOX_API_KEY=...`（moryflow tenant 的 apiKey）
 
 ### 3) 8c16g：Aiget（Dokploy 多项目）
@@ -178,29 +179,29 @@ status: active
     - `VECTOR_DATABASE_URL=...`
     - `REDIS_URL=...`
     - `BETTER_AUTH_SECRET=...`
-    - `BETTER_AUTH_URL=https://aiget.dev`
+    - `BETTER_AUTH_URL=https://server.aiget.dev`
     - `ADMIN_PASSWORD=...`
     - `ALLOWED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
     - `TRUSTED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
-    - `SERVER_URL=https://aiget.dev`
+    - `SERVER_URL=https://server.aiget.dev`
   - `aiget-www`：
-    - `VITE_API_URL=https://aiget.dev`
+    - `VITE_API_URL=https://server.aiget.dev`
     - `VITE_TURNSTILE_SITE_KEY=...`（可选）
   - `aiget-console` / `aiget-admin`：
-    - `VITE_API_URL=https://aiget.dev`
-    - `VITE_AUTH_URL=https://aiget.dev`
+    - `VITE_API_URL=https://server.aiget.dev`
+    - `VITE_AUTH_URL=https://server.aiget.dev`
 
 ### 8c16g：Aiget 部署顺序（建议）
 
 1. 启动基础设施：`aiget-postgres`、`aiget-vector-postgres`、`aiget-redis`
-2. 部署 `aiget-server`（自动执行 Prisma 双库 `db push`）
+2. 部署 `aiget-server`（自动执行 Prisma 双库 `migrate deploy`）
 3. 部署 `aiget-www`、`aiget-docs`、`aiget-console`、`aiget-admin`
 4. 校验：`/health`、登录/刷新 token、控制台与后台核心流程
 
 ## 验收标准（上线前）
 
 - [ ] `app.moryflow.com`（占位）可访问
-- [ ] `console.aiget.dev` / `admin.aiget.dev` 注册/登录/refresh/logout 全流程通过（API 走 `aiget.dev/api/v1`）
+- [ ] `console.aiget.dev` / `admin.aiget.dev` 注册/登录/refresh/logout 全流程通过（API 走 `server.aiget.dev/api/v1`）
 - [ ] 控制台可创建 tenant + apiKey，并能调限流策略
 - [ ] memox：
   - [ ] 写入走队列 + worker，向量写入成功

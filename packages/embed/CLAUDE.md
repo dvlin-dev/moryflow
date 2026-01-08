@@ -31,7 +31,7 @@ src/
 ```typescript
 const client = createEmbedClient({
   apiKey: 'ag_xxx',
-  baseUrl: 'https://aiget.dev',
+  baseUrl: 'https://server.aiget.dev',
 });
 
 const result = await client.fetch({

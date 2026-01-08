@@ -51,7 +51,7 @@ POST /api/v1/search
 ### 请求示例
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/search \
+curl -X POST https://server.aiget.dev/api/v1/search \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -102,7 +102,7 @@ curl -X POST https://api.aiget.dev/api/v1/search \
 启用 `scrapeResults` 以获取并包含每个结果页面的内容：
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/search \
+curl -X POST https://server.aiget.dev/api/v1/search \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -165,7 +165,7 @@ GET /api/v1/search/autocomplete?q=网页抓取
 
 ```javascript
 // 基础搜索
-const response = await fetch('https://api.aiget.dev/api/v1/search', {
+const response = await fetch('https://server.aiget.dev/api/v1/search', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer lk_your_api_key',
@@ -190,7 +190,7 @@ import requests
 
 # 搜索并抓取内容
 response = requests.post(
-    'https://api.aiget.dev/api/v1/search',
+    'https://server.aiget.dev/api/v1/search',
     headers={
         'Authorization': 'Bearer lk_your_api_key',
         'Content-Type': 'application/json',

@@ -111,7 +111,7 @@ app.post('/webhooks/aiget', (req, res) => {
 async function handleCrawlComplete(data) {
   // 获取完整结果
   const response = await fetch(
-    `https://api.aiget.dev/api/v1/crawl/${data.id}`,
+    `https://server.aiget.dev/api/v1/crawl/${data.id}`,
     { headers: { 'Authorization': 'Bearer lk_your_api_key' } }
   );
   const result = await response.json();
@@ -147,7 +147,7 @@ def handle_webhook():
 def handle_crawl_complete(data):
     # 获取完整结果
     response = requests.get(
-        f"https://api.aiget.dev/api/v1/crawl/{data['id']}",
+        f"https://server.aiget.dev/api/v1/crawl/{data['id']}",
         headers={'Authorization': 'Bearer lk_your_api_key'}
     )
     result = response.json()
@@ -198,7 +198,7 @@ def handle_crawl_complete(data):
 
 ```javascript
 // 1. 启动带 webhook 的爬取
-const crawlResponse = await fetch('https://api.aiget.dev/api/v1/crawl', {
+const crawlResponse = await fetch('https://server.aiget.dev/api/v1/crawl', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer lk_your_api_key',

@@ -32,7 +32,7 @@ POST /api/v1/map
 ### 请求示例
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -82,12 +82,12 @@ curl -X POST https://api.aiget.dev/api/v1/map \
 
 ```bash
 # 首先，发现所有 URL
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{"url": "https://docs.example.com"}'
 
 # 然后，爬取特定部分
-curl -X POST https://api.aiget.dev/api/v1/crawl \
+curl -X POST https://server.aiget.dev/api/v1/crawl \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{
     "url": "https://docs.example.com",
@@ -99,7 +99,7 @@ curl -X POST https://api.aiget.dev/api/v1/crawl \
 
 ```bash
 # 查找所有价格相关页面
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{
     "url": "https://example.com",
@@ -111,7 +111,7 @@ curl -X POST https://api.aiget.dev/api/v1/map \
 
 ```bash
 # 获取所有子域名的 URL
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{
     "url": "https://example.com",

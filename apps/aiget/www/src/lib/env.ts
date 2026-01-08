@@ -9,7 +9,7 @@ export interface PublicEnv {
  */
 export function getPublicEnv(): PublicEnv {
   return {
-    apiUrl: process.env.VITE_API_URL || 'https://aiget.dev',
+    apiUrl: process.env.VITE_API_URL || 'https://server.aiget.dev',
     turnstileSiteKey: process.env.VITE_TURNSTILE_SITE_KEY || '',
   };
 }

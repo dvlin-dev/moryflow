@@ -19,7 +19,7 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 
 - Auth 统一使用 `@aiget/auth-client`（`/api/v1/auth/*`）
 - Web：access token 仅内存；refresh token 由 HttpOnly Cookie 承载
-- API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://aiget.dev`（可用 `VITE_API_URL` 覆盖）
+- API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空），401 时触发 refresh 重试一次
 - Zustand 管理登录状态，React Query 管理数据
 - UI 风格：直角组件 + 橙色强调

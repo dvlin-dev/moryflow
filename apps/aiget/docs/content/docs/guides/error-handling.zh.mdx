@@ -121,7 +121,7 @@ description: 理解错误码和实现重试策略
 async function scrapeWithRetry(url, options, maxRetries = 3) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch('https://api.aiget.dev/api/v1/scrape', {
+      const response = await fetch('https://server.aiget.dev/api/v1/scrape', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer lk_your_api_key',
@@ -188,7 +188,7 @@ def scrape_with_retry(
     for attempt in range(max_retries + 1):
         try:
             response = requests.post(
-                'https://api.aiget.dev/api/v1/scrape',
+                'https://server.aiget.dev/api/v1/scrape',
                 headers={
                     'Authorization': 'Bearer lk_your_api_key',
                     'Content-Type': 'application/json',
@@ -328,7 +328,7 @@ async function scrapeBatchWithFallback(urls) {
 ### 启用详细日志
 
 ```javascript
-const response = await fetch('https://api.aiget.dev/api/v1/scrape', {
+const response = await fetch('https://server.aiget.dev/api/v1/scrape', {
   // ...
 });
 

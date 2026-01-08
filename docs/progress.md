@@ -1,7 +1,7 @@
 ---
 title: 改造进度记录
 date: 2026-01-07
-scope: moryflow.com, aiget.dev
+scope: moryflow.com, aiget.dev, server.aiget.dev
 status: active
 ---
 
@@ -49,7 +49,7 @@ status: active
 **目标**
 
 - Aiget Dev 官网统一为 `aiget.dev`（模块页：`/fetchx`、`/memox`）
-- API 固定为 `https://aiget.dev/api/v1/*`
+- API 固定为 `https://server.aiget.dev/api/v1/*`
 - `console.aiget.dev`、`admin.aiget.dev` 保持独立 Web 项目（跨域调用 API）
 - API Key 前缀统一为 `ag_`
 
@@ -57,24 +57,24 @@ status: active
 
 - [x] 合并官网代码到 `apps/aiget/www`，通过导航栏路由切换模块页（`/fetchx`、`/memox`）
 - [x] 清理旧官网目录与引用（不再保留 `fetchx.aiget.dev` / `memox.aiget.dev`）
-- [x] Console/Admin 全量改为调用 `https://aiget.dev/api/v1`（生产默认；开发可用 Vite proxy）
+- [x] Console/Admin 全量改为调用 `https://server.aiget.dev/api/v1`（生产默认；开发可用 Vite proxy）
 - [x] 统一 API key 文案与示例：`ag_` + `Authorization: Bearer <apiKey>`
-- [x] 统一对外文档入口：`https://docs.aiget.dev`（产品文档），`https://aiget.dev/api-docs`（Swagger）
+- [x] 统一对外文档入口：`https://docs.aiget.dev`（产品文档），`https://server.aiget.dev/api-docs`（Swagger）
 
 **验证清单**
 
 - [ ] `pnpm lint`
 - [ ] `pnpm typecheck`
 - [ ] `pnpm test:unit`
-- [ ] 手动验证：`console.aiget.dev` 登录/refresh/logout 全流程（API 走 `aiget.dev/api/v1`）
-- [ ] 手动验证：`admin.aiget.dev` 登录/refresh/logout 全流程（API 走 `aiget.dev/api/v1`）
+- [ ] 手动验证：`console.aiget.dev` 登录/refresh/logout 全流程（API 走 `server.aiget.dev/api/v1`）
+- [ ] 手动验证：`admin.aiget.dev` 登录/refresh/logout 全流程（API 走 `server.aiget.dev/api/v1`）
 - [ ] 手动验证：`aiget.dev/fetchx` Demo Playground 可用（验证码/限流/抓取结果展示）
 
 ### P2：后端收口为单服务（准备部署）
 
 **目标**
 
-- Aiget Dev 只保留一个后端：`apps/aiget/server`（最终成为 `aiget.dev` 的唯一 API 服务）
+- Aiget Dev 只保留一个后端：`apps/aiget/server`（最终成为 `server.aiget.dev` 的唯一 API 服务）
 - Memox/Fetchx/Console/Admin 的 API 统一挂载在同一进程与同一 DB 连接策略下（不做兼容层）
 
 **任务清单**
@@ -92,4 +92,4 @@ status: active
 - [ ] `pnpm typecheck`
 - [ ] `pnpm test:unit`
 - [ ] （可选）Docker：起 `deploy/infra/docker-compose.test.yml` 后跑集成测试
-- [ ] Swagger UI：`https://aiget.dev/api-docs` 能看到 Fetchx + Memox 的公开 API
+- [ ] Swagger UI：`https://server.aiget.dev/api-docs` 能看到 Fetchx + Memox 的公开 API

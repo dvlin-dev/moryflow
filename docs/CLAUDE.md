@@ -20,6 +20,7 @@
 - 开发者相关内容使用中文；用户可见文案（若出现）使用英文。
 - 以“可执行”为目标：域名、路由、职责边界、流程与配置要能落地。
 - Markdown 文档建议包含 YAML Frontmatter（`title/date/scope/status`），便于后续文档站或索引生成。
+- Aiget Dev API 域名统一使用 `server.aiget.dev`（不再使用 `aiget.dev` 作为 API 域名）。
 
 ## 目录结构
 

@@ -51,8 +51,8 @@ export const COOKIE_DOMAIN =
  * JWT 配置
  */
 export const JWT_CONFIG = {
-  issuer: 'https://aiget.dev',
-  audience: 'https://aiget.dev',
+  issuer: 'https://server.aiget.dev',
+  audience: 'https://server.aiget.dev',
   expirationTime: ACCESS_TOKEN_TTL,
 } as const;
 
@@ -70,6 +70,7 @@ export const EMAIL_OTP_CONFIG = {
  */
 export const DEFAULT_TRUSTED_ORIGINS = [
   'https://aiget.dev',
+  'https://server.aiget.dev',
   'https://console.aiget.dev',
   'https://admin.aiget.dev',
   // 开发环境

@@ -32,7 +32,7 @@ POST /api/v1/extract
 ### 请求示例
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/extract \
+curl -X POST https://server.aiget.dev/api/v1/extract \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -174,7 +174,7 @@ curl -X POST https://api.aiget.dev/api/v1/extract \
 ### Node.js
 
 ```javascript
-const response = await fetch('https://api.aiget.dev/api/v1/extract', {
+const response = await fetch('https://server.aiget.dev/api/v1/extract', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer lk_your_api_key',
@@ -204,7 +204,7 @@ console.log(data.results[0].data);
 import requests
 
 response = requests.post(
-    'https://api.aiget.dev/api/v1/extract',
+    'https://server.aiget.dev/api/v1/extract',
     headers={
         'Authorization': 'Bearer lk_your_api_key',
         'Content-Type': 'application/json',

@@ -13,7 +13,7 @@ const apiLabels: Record<Api, string> = {
 
 const codeExamples: Record<Api, string> = {
   scrape: `# Scrape a webpage to Markdown
-curl -X POST https://aiget.dev/api/v1/scrape \\
+curl -X POST https://server.aiget.dev/api/v1/scrape \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -32,7 +32,7 @@ curl -X POST https://aiget.dev/api/v1/scrape \\
   "timestamp": "2026-01-07T00:00:00.000Z"
 }`,
   crawl: `# Crawl an entire website
-curl -X POST https://aiget.dev/api/v1/crawl \\
+curl -X POST https://server.aiget.dev/api/v1/crawl \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -52,7 +52,7 @@ curl -X POST https://aiget.dev/api/v1/crawl \\
   "timestamp": "2026-01-07T00:00:00.000Z"
 }`,
   extract: `# Extract structured data with AI
-curl -X POST https://aiget.dev/api/v1/extract \\
+curl -X POST https://server.aiget.dev/api/v1/extract \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{

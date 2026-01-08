@@ -20,7 +20,7 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 - 仅管理员可访问（Auth Facade + isAdmin）
 - Auth 统一使用 `@aiget/auth-client`（`/api/v1/auth/*`）
 - Web：access token 仅内存；refresh token 由 HttpOnly Cookie 承载
-- API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://aiget.dev`（可用 `VITE_API_URL` 覆盖）
+- API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空），401 时触发 refresh 重试一次
 - 监控页面需要定时刷新
 - UI 风格：直角组件 + 橙色强调

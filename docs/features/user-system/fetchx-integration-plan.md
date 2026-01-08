@@ -1,7 +1,7 @@
 ---
 title: Fetchx 接入方案（Aiget Dev 试点）
 date: 2026-01-06
-scope: aiget.dev
+scope: aiget.dev, server.aiget.dev
 status: draft
 ---
 
@@ -20,7 +20,7 @@ status: draft
 > - 官网：`aiget.dev`（模块页：`/fetchx`）
 > - 控制台：`console.aiget.dev`
 > - 管理后台：`admin.aiget.dev`
-> - API：`https://aiget.dev/api/v1/*`
+> - API：`https://server.aiget.dev/api/v1/*`
 >
 > **不做历史兼容与迁移**，Memox 暂不接入。
 
@@ -55,7 +55,7 @@ status: draft
 ```
 apps/
 ├── aiget/
-│   ├── server/           # Aiget Dev 统一后端（aiget.dev/api/v1）
+│   ├── server/           # Aiget Dev 统一后端（server.aiget.dev/api/v1）
 │   ├── www/              # Aiget Dev 官网（aiget.dev；/fetchx、/memox）
 │   ├── console/          # console.aiget.dev 用户控制台（Web）
 │   └── admin/
@@ -64,14 +64,14 @@ apps/
     └── ...               # 现有 Moryflow 结构原样迁移
 ```
 
-> 说明：Aiget Dev 统一 API 入口固定 `https://aiget.dev/api/v1`；console/admin 作为独立 Web 前端跨域调用该 API。
+> 说明：Aiget Dev 统一 API 入口固定 `https://server.aiget.dev/api/v1`；console/admin 作为独立 Web 前端跨域调用该 API。
 
 ## 三、接入目标（本次只做 Fetchx）
 
 - 官网模块页：`aiget.dev/fetchx` → `apps/aiget/www`
 - 用户控制台：`console.aiget.dev` → `apps/aiget/console`
 - 管理后台：`admin.aiget.dev` → `apps/aiget/admin/www`（API 走 `apps/aiget/server` 的 `/api/v1/admin/*`）
-- API：Aiget Dev 统一后端（`https://aiget.dev/api/v1/*`）
+- API：Aiget Dev 统一后端（`https://server.aiget.dev/api/v1/*`）
 - Memox：暂不接入
 
 ## 四、接入方案（不兼容、从新方案落地）
@@ -93,12 +93,12 @@ apps/
 
 - `apps/aiget/console` 已完成迁入并接入 `@aiget/auth-client`。
 - 认证细节（已落地）：
-  - `baseUrl=https://aiget.dev/api/v1/auth`
+  - `baseUrl=https://server.aiget.dev/api/v1/auth`
   - `clientType=web`
   - access token 仅内存，refresh token 走 HttpOnly Cookie
   - 401 时触发 refresh 重试一次
 - 连接 Fetchx API：
-  - `https://aiget.dev/api/v1/*`（如 `/scrape`、`/crawl`、`/extract`、`/search`）
+  - `https://server.aiget.dev/api/v1/*`（如 `/scrape`、`/crawl`、`/extract`、`/search`）
 - 控制台能力优先级：
   - 注册/登录/退出
   - API Key 管理（生成/轮换/禁用）
@@ -108,7 +108,7 @@ apps/
 
 - `apps/aiget/admin/www` 已完成迁入并接入 `@aiget/auth-client`（管理端 API 统一由 `apps/aiget/server` 提供）。
 - 认证细节（已落地）：
-  - `baseUrl=https://aiget.dev/api/v1/auth`
+  - `baseUrl=https://server.aiget.dev/api/v1/auth`
   - `clientType=web`
   - access token 仅内存，refresh token 走 HttpOnly Cookie
   - 401 时触发 refresh 重试一次
@@ -121,7 +121,7 @@ apps/
 ### Phase 4：Auth Service 落地
 
 - 使用 `templates/auth-service` 部署 Aiget Dev 的 Auth：
-  - `BETTER_AUTH_URL=https://aiget.dev/api/v1/auth`
+  - `BETTER_AUTH_URL=https://server.aiget.dev/api/v1/auth`
   - `COOKIE_DOMAIN=.aiget.dev`
   - `TRUSTED_ORIGINS=https://console.aiget.dev,https://admin.aiget.dev`
 - Google/Apple 登录按 Aiget Dev 独立配置。
@@ -140,12 +140,13 @@ apps/
 
 ## 六、部署与路由
 
-- `aiget.dev` → 官网（静态站）+ 统一 API（`/api/v1`）
+- `aiget.dev` → 官网（静态站）
+- `server.aiget.dev` → 统一 API（`/api/v1`）
 - `aiget.dev/fetchx` → Fetchx 模块页（`apps/aiget/www`）
 - `console.aiget.dev` → Console 前端（Web）
 - `admin.aiget.dev` → Admin 前端（Web）
-- `aiget.dev/api/v1/auth/*` → Auth Service（同域挂载）
-- `aiget.dev/api/v1/*` → Aiget Server（Fetchx 模块）
+- `server.aiget.dev/api/v1/auth/*` → Auth Service（同域挂载）
+- `server.aiget.dev/api/v1/*` → Aiget Server（Fetchx 模块）
 
 ## 七、验收标准
 

@@ -91,7 +91,7 @@ Execute interactions before scraping:
 ### Example Request
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/scrape \
+curl -X POST https://server.aiget.dev/api/v1/scrape \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -242,7 +242,7 @@ List your recent scrape jobs.
 
 ```javascript
 // Start scrape job
-const response = await fetch('https://api.aiget.dev/api/v1/scrape', {
+const response = await fetch('https://server.aiget.dev/api/v1/scrape', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer lk_your_api_key',
@@ -268,7 +268,7 @@ if (data.fromCache) {
 
 async function pollForResult(id) {
   while (true) {
-    const res = await fetch(`https://api.aiget.dev/api/v1/scrape/${id}`, {
+    const res = await fetch(`https://server.aiget.dev/api/v1/scrape/${id}`, {
       headers: { 'Authorization': 'Bearer lk_your_api_key' },
     });
     const { data } = await res.json();
@@ -287,7 +287,7 @@ import time
 
 # Start scrape job
 response = requests.post(
-    'https://api.aiget.dev/api/v1/scrape',
+    'https://server.aiget.dev/api/v1/scrape',
     headers={
         'Authorization': 'Bearer lk_your_api_key',
         'Content-Type': 'application/json',
@@ -308,7 +308,7 @@ else:
     # Poll for results
     while True:
         res = requests.get(
-            f"https://api.aiget.dev/api/v1/scrape/{data['id']}",
+            f"https://server.aiget.dev/api/v1/scrape/{data['id']}",
             headers={'Authorization': 'Bearer lk_your_api_key'}
         )
         result = res.json()['data']
@@ -323,7 +323,7 @@ else:
 ### With Page Actions
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/scrape \
+curl -X POST https://server.aiget.dev/api/v1/scrape \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{

@@ -13,7 +13,7 @@ import type { PaginationMeta, ApiErrorResponse } from '@aiget/types';
 const normalizeApiOrigin = (value: string) => value.replace(/\/+$/, '');
 
 /**
- * 生产环境默认走 `https://aiget.dev`，避免误走 console 同源 `/api/v1/*`。
+ * 生产环境默认走 `https://server.aiget.dev`，避免误走 console 同源 `/api/v1/*`。
  * 本地开发默认走空字符串，让 Vite proxy 代理 `/api/*` 到后端。
  */
 export const API_BASE_URL = (() => {
@@ -21,7 +21,7 @@ export const API_BASE_URL = (() => {
   if (explicit) {
     return normalizeApiOrigin(explicit);
   }
-  return import.meta.env.DEV ? '' : 'https://aiget.dev';
+  return import.meta.env.DEV ? '' : 'https://server.aiget.dev';
 })();
 
 /**

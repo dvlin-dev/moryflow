@@ -7,7 +7,7 @@ type Language = (typeof languages)[number];
 
 const codeExamples: Record<Language, string> = {
   curl: `# Store a memory
-curl -X POST https://aiget.dev/api/v1/memories \\
+curl -X POST https://server.aiget.dev/api/v1/memories \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -17,7 +17,7 @@ curl -X POST https://aiget.dev/api/v1/memories \\
   }'
 
 # Search memories
-curl -X POST https://aiget.dev/api/v1/memories/search \\
+curl -X POST https://server.aiget.dev/api/v1/memories/search \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -d '{ "query": "user preferences", "limit": 5 }'`,
   typescript: `import { Memox } from '@aiget/memox-sdk';

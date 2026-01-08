@@ -38,7 +38,7 @@ RUN pnpm build
 
 WORKDIR /app/apps/aiget/console
 
-ARG VITE_API_URL=https://aiget.dev
+ARG VITE_API_URL=https://server.aiget.dev
 ARG VITE_AUTH_URL=
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_AUTH_URL=$VITE_AUTH_URL
@@ -58,4 +58,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-

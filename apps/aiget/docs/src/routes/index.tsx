@@ -83,7 +83,7 @@ function HomePage() {
               <span className="ml-2 text-sm text-muted-foreground">Terminal</span>
             </div>
             <pre className="p-4 text-sm overflow-x-auto">
-              <code className="text-green-600 dark:text-green-400">{`curl -X POST https://api.aiget.dev/v1/screenshots \\
+              <code className="text-green-600 dark:text-green-400">{`curl -X POST https://server.aiget.dev/api/v1/screenshots \\
   -H "Authorization: Bearer lk_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{"url": "https://example.com"}'`}</code>

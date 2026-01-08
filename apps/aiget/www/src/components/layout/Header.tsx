@@ -43,7 +43,7 @@ export function Header() {
               Docs
             </a>
             <a
-              href="https://aiget.dev/api-docs"
+              href="https://server.aiget.dev/api-docs"
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-sm text-muted-foreground transition-colors hover:text-foreground"

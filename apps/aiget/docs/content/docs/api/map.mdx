@@ -32,7 +32,7 @@ POST /api/v1/map
 ### Example Request
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -82,12 +82,12 @@ curl -X POST https://api.aiget.dev/api/v1/map \
 
 ```bash
 # First, discover all URLs
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{"url": "https://docs.example.com"}'
 
 # Then, crawl specific sections
-curl -X POST https://api.aiget.dev/api/v1/crawl \
+curl -X POST https://server.aiget.dev/api/v1/crawl \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{
     "url": "https://docs.example.com",
@@ -99,7 +99,7 @@ curl -X POST https://api.aiget.dev/api/v1/crawl \
 
 ```bash
 # Find all pricing-related pages
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{
     "url": "https://example.com",
@@ -111,7 +111,7 @@ curl -X POST https://api.aiget.dev/api/v1/map \
 
 ```bash
 # Get URLs from all subdomains
-curl -X POST https://api.aiget.dev/api/v1/map \
+curl -X POST https://server.aiget.dev/api/v1/map \
   -H "Authorization: Bearer lk_your_api_key" \
   -d '{
     "url": "https://example.com",

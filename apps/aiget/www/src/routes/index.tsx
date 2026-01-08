@@ -28,7 +28,11 @@ function HomePage() {
                   </a>
                 </Button>
                 <Button asChild variant="outline" className="font-mono">
-                  <a href="https://aiget.dev/api-docs" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://server.aiget.dev/api-docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     API Docs
                   </a>
                 </Button>

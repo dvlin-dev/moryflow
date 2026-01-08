@@ -1,7 +1,7 @@
 ---
 title: 定时内容订阅（Email Digest）- 需求方案
 date: 2026-01-07
-scope: aiget.dev
+scope: aiget.dev, server.aiget.dev
 status: draft
 ---
 
@@ -179,7 +179,7 @@ status: draft
 
 ## 7. 接口建议（Aiget Dev Console）
 
-> 以 `/api/v1` 为前缀（aiget.dev），鉴权走 SessionGuard（Console）或内部服务账户。
+> 以 `/api/v1` 为前缀（server.aiget.dev），鉴权走 SessionGuard（Console）或内部服务账户。
 
 - `POST /api/v1/digests/subscriptions` 创建订阅
 - `GET /api/v1/digests/subscriptions` 列表

@@ -31,7 +31,7 @@ export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
     description: 'Developer platform for AI agents (Fetchx, Memox, ...)',
     websiteBaseUrl: 'https://aiget.dev',
     websitePath: '/',
-    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiBaseUrl: 'https://server.aiget.dev/api/v1',
     apiKeyPrefix: 'ag_',
   },
   [ProductId.MORYFLOW]: {
@@ -49,7 +49,7 @@ export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
     description: 'Web data API (scrape, crawl, extract)',
     websiteBaseUrl: 'https://aiget.dev',
     websitePath: '/fetchx',
-    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiBaseUrl: 'https://server.aiget.dev/api/v1',
     apiKeyPrefix: 'ag_',
   },
   [ProductId.MEMOX]: {
@@ -58,7 +58,7 @@ export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
     description: 'AI memory API for long-term memory',
     websiteBaseUrl: 'https://aiget.dev',
     websitePath: '/memox',
-    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiBaseUrl: 'https://server.aiget.dev/api/v1',
     apiKeyPrefix: 'ag_',
   },
   [ProductId.SANDX]: {
@@ -67,7 +67,7 @@ export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
     description: 'Agent sandbox for secure code execution',
     websiteBaseUrl: 'https://aiget.dev',
     websitePath: '/sandx',
-    apiBaseUrl: 'https://aiget.dev/api/v1',
+    apiBaseUrl: 'https://server.aiget.dev/api/v1',
     apiKeyPrefix: 'ag_',
   },
 };

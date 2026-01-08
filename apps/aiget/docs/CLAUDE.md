@@ -117,3 +117,4 @@ This is a standalone app, no exports to other packages.
 ## Notes
 
 - `content-collections` 是构建期生成的虚拟模块；TypeScript 类型通过本仓库的 `src/content-collections.d.ts` 提供（不依赖生成目录）。
+- API 示例统一使用 `https://server.aiget.dev/api/v1` 作为 Base URL。

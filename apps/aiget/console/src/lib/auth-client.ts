@@ -14,7 +14,7 @@ const resolveApiOrigin = () => {
   if (explicit) {
     return normalizeBaseUrl(explicit);
   }
-  return import.meta.env.DEV ? '' : 'https://aiget.dev';
+  return import.meta.env.DEV ? '' : 'https://server.aiget.dev';
 };
 
 const resolveAuthBaseUrl = () => {

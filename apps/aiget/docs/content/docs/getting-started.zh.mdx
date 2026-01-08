@@ -29,7 +29,7 @@ description: 创建账号并发起你的第一个 API 请求
 使用 curl 或你喜欢的 HTTP 客户端来抓取网页：
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/scrape \
+curl -X POST https://server.aiget.dev/api/v1/scrape \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -90,7 +90,7 @@ curl -X POST https://api.aiget.dev/api/v1/scrape \
 ### Node.js
 
 ```javascript
-const response = await fetch('https://api.aiget.dev/api/v1/scrape', {
+const response = await fetch('https://server.aiget.dev/api/v1/scrape', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${process.env.AIGET_API_KEY}`,
@@ -114,7 +114,7 @@ console.log(data.links);
 import requests
 
 response = requests.post(
-    'https://api.aiget.dev/api/v1/scrape',
+    'https://server.aiget.dev/api/v1/scrape',
     headers={
         'Authorization': f'Bearer {API_KEY}',
         'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ func main() {
     }
 
     body, _ := json.Marshal(payload)
-    req, _ := http.NewRequest("POST", "https://api.aiget.dev/api/v1/scrape", bytes.NewBuffer(body))
+    req, _ := http.NewRequest("POST", "https://server.aiget.dev/api/v1/scrape", bytes.NewBuffer(body))
     req.Header.Set("Authorization", "Bearer "+apiKey)
     req.Header.Set("Content-Type", "application/json")
 
@@ -206,7 +206,7 @@ func main() {
 爬取整个网站以从多个页面提取内容：
 
 ```bash
-curl -X POST https://api.aiget.dev/api/v1/crawl \
+curl -X POST https://server.aiget.dev/api/v1/crawl \
   -H "Authorization: Bearer lk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{

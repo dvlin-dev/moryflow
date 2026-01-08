@@ -126,7 +126,7 @@ export default function DashboardPage() {
                 Make scrape requests using your API Key (supports screenshots)
               </p>
               <pre className="mt-2 p-3 bg-muted rounded-none text-xs overflow-x-auto">
-                {`curl -X POST https://aiget.dev/api/v1/scrape \\
+                {`curl -X POST https://server.aiget.dev/api/v1/scrape \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{"url": "https://example.com", "formats": ["markdown", "screenshot"]}'`}

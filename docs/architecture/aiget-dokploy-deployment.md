@@ -1,7 +1,7 @@
 ---
 title: Aiget Dokploy 多项目部署清单
 date: 2026-01-08
-scope: aiget.dev, dokploy, deployment
+scope: aiget.dev, server.aiget.dev, dokploy, deployment
 status: active
 ---
 
@@ -20,7 +20,7 @@ status: active
 - PostgreSQL 主库（业务数据）
 - PostgreSQL 向量库（pgvector）
 - Redis（队列/缓存）
-- 域名与证书：`aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`、`docs.aiget.dev`
+- 域名与证书：`aiget.dev`、`server.aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`、`docs.aiget.dev`
 
 ## 基础设施配置
 
@@ -32,20 +32,20 @@ status: active
 
 ## Dokploy 项目配置表
 
-| 项目          | Dockerfile                        | 端口 | 域名/路由                  | 必填变量                                                                                                                                                                          | Watch Paths（建议）                                                                                                                                                                                                                                                                |
-| ------------- | --------------------------------- | ---- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| aiget-server  | `apps/aiget/server/Dockerfile`    | 3000 | `aiget.dev` 的 `/api/v1/*` | `DATABASE_URL`<br>`VECTOR_DATABASE_URL`<br>`REDIS_URL`<br>`BETTER_AUTH_SECRET`<br>`BETTER_AUTH_URL`<br>`ADMIN_PASSWORD`<br>`ALLOWED_ORIGINS`<br>`TRUSTED_ORIGINS`<br>`SERVER_URL` | `apps/aiget/server/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`<br>`tsconfig.base.json`                                                                                                                                                                      |
-| aiget-www     | `apps/aiget/www/Dockerfile`       | 3000 | `aiget.dev`                | `VITE_API_URL`<br>`VITE_TURNSTILE_SITE_KEY`（可选）                                                                                                                               | `apps/aiget/www/**`<br>`packages/ui/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`                                                                                                                                                                             |
-| aiget-console | `apps/aiget/console/Dockerfile`   | 80   | `console.aiget.dev`        | Build Args：`VITE_API_URL`<br>`VITE_AUTH_URL`                                                                                                                                     | `apps/aiget/console/**`<br>`packages/types/**`<br>`packages/auth-client/**`<br>`packages/ui/**`<br>`packages/embed/**`<br>`packages/embed-react/**`<br>`tooling/typescript-config/**`<br>`tooling/eslint-config/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml` |
-| aiget-admin   | `apps/aiget/admin/www/Dockerfile` | 80   | `admin.aiget.dev`          | Build Args：`VITE_API_URL`<br>`VITE_AUTH_URL`                                                                                                                                     | `apps/aiget/admin/www/**`<br>`packages/types/**`<br>`packages/auth-client/**`<br>`packages/ui/**`<br>`tooling/typescript-config/**`<br>`tooling/eslint-config/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`                                                   |
-| aiget-docs    | `apps/aiget/docs/Dockerfile`      | 3000 | `docs.aiget.dev`           | 无必填                                                                                                                                                                            | `apps/aiget/docs/**`<br>`scripts/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`                                                                                                                                                                                |
+| 项目          | Dockerfile                        | 端口 | 域名/路由                   | 必填变量                                                                                                                                                                          | Watch Paths（建议）                                                                                                                                                                                                                                                                |
+| ------------- | --------------------------------- | ---- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| aiget-server  | `apps/aiget/server/Dockerfile`    | 3000 | `server.aiget.dev/api/v1/*` | `DATABASE_URL`<br>`VECTOR_DATABASE_URL`<br>`REDIS_URL`<br>`BETTER_AUTH_SECRET`<br>`BETTER_AUTH_URL`<br>`ADMIN_PASSWORD`<br>`ALLOWED_ORIGINS`<br>`TRUSTED_ORIGINS`<br>`SERVER_URL` | `apps/aiget/server/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`<br>`tsconfig.base.json`                                                                                                                                                                      |
+| aiget-www     | `apps/aiget/www/Dockerfile`       | 3000 | `aiget.dev`                 | `VITE_API_URL`<br>`VITE_TURNSTILE_SITE_KEY`（可选）                                                                                                                               | `apps/aiget/www/**`<br>`packages/ui/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`                                                                                                                                                                             |
+| aiget-console | `apps/aiget/console/Dockerfile`   | 80   | `console.aiget.dev`         | Build Args：`VITE_API_URL`<br>`VITE_AUTH_URL`                                                                                                                                     | `apps/aiget/console/**`<br>`packages/types/**`<br>`packages/auth-client/**`<br>`packages/ui/**`<br>`packages/embed/**`<br>`packages/embed-react/**`<br>`tooling/typescript-config/**`<br>`tooling/eslint-config/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml` |
+| aiget-admin   | `apps/aiget/admin/www/Dockerfile` | 80   | `admin.aiget.dev`           | Build Args：`VITE_API_URL`<br>`VITE_AUTH_URL`                                                                                                                                     | `apps/aiget/admin/www/**`<br>`packages/types/**`<br>`packages/auth-client/**`<br>`packages/ui/**`<br>`tooling/typescript-config/**`<br>`tooling/eslint-config/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`                                                   |
+| aiget-docs    | `apps/aiget/docs/Dockerfile`      | 3000 | `docs.aiget.dev`            | 无必填                                                                                                                                                                            | `apps/aiget/docs/**`<br>`scripts/**`<br>`pnpm-lock.yaml`<br>`package.json`<br>`pnpm-workspace.yaml`                                                                                                                                                                                |
 
 > `aiget-console`/`aiget-admin` 使用 **Build Args**，其余服务使用 **Env**。
 
 ## 部署顺序（建议）
 
 1. 启动基础设施：主库、向量库、Redis
-2. 部署 `aiget-server`（启动时会执行双库 `prisma db push`）
+2. 部署 `aiget-server`（启动时会执行双库 `prisma migrate deploy`）
 3. 部署 `aiget-www`、`aiget-docs`、`aiget-console`、`aiget-admin`
 4. 验收：`/health`、登录/刷新 token、Console/Admin 核心流程
 
@@ -72,5 +72,5 @@ pnpm exec prisma migrate deploy --config prisma.vector.config.ts
 
 - `ALLOWED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
 - `TRUSTED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
-- `BETTER_AUTH_URL=https://aiget.dev`
-- `SERVER_URL=https://aiget.dev`
+- `BETTER_AUTH_URL=https://server.aiget.dev`
+- `SERVER_URL=https://server.aiget.dev`

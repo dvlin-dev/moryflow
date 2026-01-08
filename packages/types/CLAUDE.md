@@ -2,6 +2,8 @@
 
 > Aiget 跨业务线共享类型定义（不代表账号/数据互通）
 
+- Aiget Dev API base 默认指向 `https://server.aiget.dev/api/v1`（见 `src/common/product.ts`）。
+
 ## 目录结构
 
 ```

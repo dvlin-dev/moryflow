@@ -96,14 +96,14 @@ pnpm --filter @aiget/admin test:e2e
 | **Moryflow 应用**      | app.moryflow.com  | 主应用（Web + API）        |
 | **Moryflow 发布站**    | moryflow.app      | 用户发布的网站             |
 | **Aiget 官网**         | aiget.dev         | Aiget Dev 官网（模块导航） |
-| **Aiget Dev API**      | aiget.dev         | 统一 API 入口（`/api/v1`） |
+| **Aiget Dev API**      | server.aiget.dev  | 统一 API 入口（`/api/v1`） |
 | **Aiget Docs**         | docs.aiget.dev    | 产品文档（独立 Docs 项目） |
 | **Aiget Dev 控制台**   | console.aiget.dev | Aiget Dev 控制台（Web）    |
 | **Aiget Dev 管理后台** | admin.aiget.dev   | 运营管理（Web）            |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
-> - Aiget Dev 是开发者平台：官网与 API 统一在 `aiget.dev`，控制台/后台分别在 `console.aiget.dev`、`admin.aiget.dev`
-> - API 路径规范：`https://aiget.dev/api/v1/...`（带 `/api` 前缀；不做旧域名兼容/跳转）
+> - Aiget Dev 是开发者平台：官网在 `aiget.dev`，API 在 `server.aiget.dev`，控制台/后台分别在 `console.aiget.dev`、`admin.aiget.dev`
+> - API 路径规范：`https://server.aiget.dev/api/v1/...`（带 `/api` 前缀；不做旧域名兼容/跳转）
 
 ### API Key 前缀
 
@@ -120,7 +120,7 @@ Aiget/
 │   ├── aiget/                       # Aiget Dev 业务线
 │   │   ├── www/                     # Aiget Dev 官网（aiget.dev；模块导航：/fetchx、/memox）
 │   │   ├── docs/                    # Aiget Dev 文档站（docs.aiget.dev）
-│   │   ├── server/                  # Aiget Dev 统一后端（aiget.dev/api/v1）
+│   │   ├── server/                  # Aiget Dev 统一后端（server.aiget.dev/api/v1）
 │   │   ├── console/                 # Aiget Dev 控制台（Web）
 │   │   ├── admin/                   # Aiget Dev 管理后台
 │   │   │   ├── www/                 # 管理后台前端

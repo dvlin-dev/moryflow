@@ -17,7 +17,7 @@
 
 - `domains-and-deployment.md`：域名职责 + 三机部署（megaboxpro/4c6g/8c16g）+ 反代路由的可执行方案（含 OAuth 登录）。
   - Moryflow：`www.moryflow.com`（营销）+ `docs.moryflow.com`（文档）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
-  - Aiget Dev：`aiget.dev`（官网 + `/api/v1` 统一 API）+ `docs.aiget.dev`（文档）+ `console.aiget.dev` / `admin.aiget.dev`（Web 前端）
+  - Aiget Dev：`aiget.dev`（官网）+ `server.aiget.dev`（API `/api/v1`）+ `docs.aiget.dev`（文档）+ `console.aiget.dev` / `admin.aiget.dev`（Web 前端）
 - `aiget-dokploy-deployment.md`：Aiget Dev Dokploy 多项目部署清单（可直接照填）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
