@@ -1,14 +1,14 @@
 /**
  * [PROPS]: LoginFormProps
  * [EMITS]: submit (form)
- * [POS]: Console 登录表单（Auth Facade）
+ * [POS]: Console 登录表单（Better Auth）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, type AuthUser } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
 import { cn } from '@aiget/ui/lib';
 import { Button, Card, CardContent, Input, Label } from '@aiget/ui/primitives';
@@ -20,7 +20,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,10 +34,17 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      const data = await authClient.login({ email, password });
-      setSession(data.user, data.accessToken);
-      toast.success('Login successful');
-      navigate('/');
+      const { data, error } = await authClient.signIn.email({ email, password });
+
+      if (error) {
+        throw new Error(error.message ?? 'Login failed');
+      }
+
+      if (data?.user) {
+        setUser(data.user as AuthUser);
+        toast.success('Login successful');
+        navigate('/');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error(

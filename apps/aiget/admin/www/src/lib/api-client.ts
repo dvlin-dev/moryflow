@@ -1,13 +1,11 @@
 /**
  * [PROVIDES]: apiClient, ApiError
- * [DEPENDS]: fetch, import.meta.env, zustand store, @aiget/auth-client
- * [POS]: Admin API 请求封装（含 refresh 重试）
+ * [DEPENDS]: fetch, import.meta.env, zustand store
+ * [POS]: Admin API 请求封装（Better Auth Cookie 模式）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { authClient } from './auth-client';
-import { toAuthUser } from './auth-utils';
-import { useAuthStore, getAccessToken } from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 import type { PaginationMeta, ApiErrorResponse } from '@aiget/types';
 
 const normalizeApiOrigin = (value: string) => value.replace(/\/+$/, '');
@@ -71,20 +69,13 @@ class ApiClient {
   }
 
   /**
-   * 构建请求头
+   * 构建请求头（Better Auth 使用 Cookie，不需要 Bearer Token）
    */
   private buildHeaders(additionalHeaders?: HeadersInit): HeadersInit {
-    const token = getAccessToken();
-    const headers: Record<string, string> = {
+    return {
       'Content-Type': 'application/json',
       ...(additionalHeaders as Record<string, string>),
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
   }
 
   /**
@@ -115,7 +106,7 @@ class ApiClient {
     throw new ApiError(
       status,
       errorResponse.error?.code || 'UNKNOWN_ERROR',
-      errorResponse.error?.message || `请求失败 (${status})`,
+      errorResponse.error?.message || `Request failed (${status})`,
       errorResponse.error?.details
     );
   }
@@ -151,54 +142,19 @@ class ApiClient {
   }
 
   /**
-   * 发送请求
+   * 发送请求（Better Auth 使用 Cookie，credentials: include 自动携带）
    */
-  private refreshPromise: Promise<string | null> | null = null;
-
-  private async refreshAccessToken(): Promise<string | null> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = authClient
-      .refresh()
-      .then(async (result) => {
-        useAuthStore.getState().setAccessToken(result.accessToken);
-        if (!useAuthStore.getState().user) {
-          const me = await authClient.me(result.accessToken);
-          useAuthStore.getState().setUser(toAuthUser(me));
-        }
-        return result.accessToken;
-      })
-      .catch(() => {
-        useAuthStore.getState().clearSession();
-        return null;
-      })
-      .finally(() => {
-        this.refreshPromise = null;
-      });
-
-    return this.refreshPromise;
-  }
-
-  private async fetchWithRefresh(fetcher: () => Promise<Response>): Promise<Response> {
-    const response = await fetcher();
-    if (response.status === 401) {
-      const refreshed = await this.refreshAccessToken();
-      if (refreshed) {
-        return fetcher();
-      }
-    }
-    return response;
-  }
-
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await this.fetchWithRefresh(() =>
-      fetch(`${this.baseURL}${endpoint}`, {
-        ...options,
-        headers: this.buildHeaders(options?.headers),
-      })
-    );
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      ...options,
+      headers: this.buildHeaders(options?.headers),
+      credentials: 'include',
+    });
+
+    // 401 时清除 session（Cookie 失效）
+    if (response.status === 401) {
+      this.handleAuthError(response.status);
+    }
 
     return this.handleResponse<T>(response);
   }
@@ -231,11 +187,10 @@ class ApiClient {
    * GET 分页请求 - 返回 data + meta
    */
   async getPaginated<T>(endpoint: string): Promise<PaginatedResult<T>> {
-    const response = await this.fetchWithRefresh(() =>
-      fetch(`${this.baseURL}${endpoint}`, {
-        headers: this.buildHeaders(),
-      })
-    );
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      headers: this.buildHeaders(),
+      credentials: 'include',
+    });
 
     this.handleAuthError(response.status);
 
@@ -253,23 +208,12 @@ class ApiClient {
   }
 
   /**
-   * 构建 Blob 请求头（不含 Content-Type，除非是 POST）
-   */
-  /**
    * GET Blob 请求（用于文件下载）
    */
   async getBlob(endpoint: string): Promise<Blob> {
-    const token = getAccessToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await this.fetchWithRefresh(() =>
-      fetch(`${this.baseURL}${endpoint}`, {
-        headers,
-      })
-    );
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       this.handleAuthError(response.status);
@@ -283,13 +227,12 @@ class ApiClient {
    * POST Blob 请求（用于导出等需要 POST 请求的文件下载）
    */
   async postBlob(endpoint: string, data?: unknown): Promise<Blob> {
-    const response = await this.fetchWithRefresh(() =>
-      fetch(`${this.baseURL}${endpoint}`, {
-        method: 'POST',
-        headers: this.buildHeaders(),
-        body: data ? JSON.stringify(data) : undefined,
-      })
-    );
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: 'POST',
+      headers: this.buildHeaders(),
+      credentials: 'include',
+      body: data ? JSON.stringify(data) : undefined,
+    });
 
     if (!response.ok) {
       this.handleAuthError(response.status);

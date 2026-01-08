@@ -17,10 +17,10 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 
 ## 约束
 
-- Auth 统一使用 `@aiget/auth-client`（`/api/v1/auth/*`）
-- Web：access token 仅内存；refresh token 由 HttpOnly Cookie 承载
+- Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
+- 认证通过 HttpOnly Cookie 承载，无需前端存储 token
 - API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
-- 本地开发默认走 Vite proxy（`VITE_API_URL` 留空），401 时触发 refresh 重试一次
+- 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - Zustand 管理登录状态，React Query 管理数据
 - UI 风格：直角组件 + 橙色强调
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
@@ -68,15 +68,14 @@ feature-name/
 
 ## Key Files
 
-| File                               | Description                              |
-| ---------------------------------- | ---------------------------------------- |
-| `lib/api-client.ts`                | HTTP client with auth + refresh handling |
-| `lib/api-paths.ts`                 | Centralized API endpoint constants       |
-| `lib/auth-client.ts`               | Auth SDK instance                        |
-| `lib/auth-utils.ts`                | Auth user mapping helpers                |
-| `stores/auth.ts`                   | Zustand auth state                       |
-| `components/layout/MainLayout.tsx` | App shell with sidebar                   |
-| `components/layout/AppSidebar.tsx` | Navigation sidebar                       |
+| File                               | Description                        |
+| ---------------------------------- | ---------------------------------- |
+| `lib/api-client.ts`                | HTTP client with cookie auth       |
+| `lib/api-paths.ts`                 | Centralized API endpoint constants |
+| `lib/auth-client.ts`               | Better Auth client instance        |
+| `stores/auth.ts`                   | Zustand auth state                 |
+| `components/layout/MainLayout.tsx` | App shell with sidebar             |
+| `components/layout/AppSidebar.tsx` | Navigation sidebar                 |
 
 ## Common Modification Scenarios
 
@@ -122,7 +121,7 @@ export function useCreateApiKey() {
 ```
 console/
 ├── @aiget/ui - UI components
-├── @aiget/auth-client - Auth SDK
+├── better-auth - Official Better Auth client
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

@@ -1,11 +1,11 @@
 /**
  * [PROVIDES]: authClient
- * [DEPENDS]: @aiget/auth-client, import.meta.env, VITE_API_URL/VITE_AUTH_URL
- * [POS]: Console 端 Auth SDK 初始化入口
+ * [DEPENDS]: better-auth/react, import.meta.env
+ * [POS]: Console 端 Better Auth 客户端初始化
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { createAuthClient } from '@aiget/auth-client';
+import { createAuthClient } from 'better-auth/react';
 
 const normalizeBaseUrl = (baseUrl: string) => baseUrl.replace(/\/+$/, '');
 
@@ -36,6 +36,5 @@ const resolveAuthBaseUrl = () => {
 };
 
 export const authClient = createAuthClient({
-  baseUrl: resolveAuthBaseUrl(),
-  clientType: 'web',
+  baseURL: resolveAuthBaseUrl(),
 });

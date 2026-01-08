@@ -17,11 +17,11 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 
 ## 约束
 
-- 仅管理员可访问（Auth Facade + isAdmin）
-- Auth 统一使用 `@aiget/auth-client`（`/api/v1/auth/*`）
-- Web：access token 仅内存；refresh token 由 HttpOnly Cookie 承载
+- 仅管理员可访问
+- Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
+- 认证通过 HttpOnly Cookie 承载，无需前端存储 token
 - API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
-- 本地开发默认走 Vite proxy（`VITE_API_URL` 留空），401 时触发 refresh 重试一次
+- 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - 监控页面需要定时刷新
 - UI 风格：直角组件 + 橙色强调
 - 时间展示统一使用 `@aiget/ui/lib` 的 `formatRelativeTime`
@@ -67,15 +67,14 @@ feature-name/
 
 ## Key Files
 
-| File                               | Description                     |
-| ---------------------------------- | ------------------------------- |
-| `lib/api-client.ts`                | HTTP client with auth + refresh |
-| `lib/api-paths.ts`                 | Admin API endpoint constants    |
-| `lib/auth-client.ts`               | Auth SDK instance               |
-| `lib/auth-utils.ts`                | Auth user mapping helpers       |
-| `lib/job-utils.tsx`                | Job status rendering utilities  |
-| `stores/auth.ts`                   | Admin auth state                |
-| `components/layout/MainLayout.tsx` | Admin shell layout              |
+| File                               | Description                          |
+| ---------------------------------- | ------------------------------------ |
+| `lib/api-client.ts`                | HTTP client with cookie credentials  |
+| `lib/api-paths.ts`                 | Admin API endpoint constants         |
+| `lib/auth-client.ts`               | Better Auth official client instance |
+| `lib/job-utils.tsx`                | Job status rendering utilities       |
+| `stores/auth.ts`                   | Admin auth state (Zustand)           |
+| `components/layout/MainLayout.tsx` | Admin shell layout                   |
 
 ## Pages
 
@@ -127,7 +126,7 @@ export function useJobs() {
 ```
 admin/
 ├── @aiget/ui - UI components
-├── @aiget/auth-client - Auth SDK
+├── better-auth - Official Better Auth client
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

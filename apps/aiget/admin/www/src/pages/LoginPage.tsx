@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: submit (form)
- * [POS]: Admin 登录页面（Auth Facade）
+ * [POS]: Admin 登录页面（Better Auth）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -19,12 +19,12 @@ import {
   Alert,
   AlertDescription,
 } from '@aiget/ui/primitives';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, type AuthUser } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,14 +36,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await authClient.login({ email, password });
+      const { data, error: signInError } = await authClient.signIn.email({ email, password });
 
-      if (!data.user.isAdmin) {
-        throw new Error('Admin access required');
+      if (signInError) {
+        throw new Error(signInError.message ?? 'Login failed');
       }
 
-      setSession(data.user, data.accessToken);
-      navigate('/');
+      if (data?.user) {
+        setUser(data.user as AuthUser);
+        navigate('/');
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {

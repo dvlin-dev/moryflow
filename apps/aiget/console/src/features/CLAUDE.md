@@ -22,7 +22,7 @@ feature-name/
 | 功能                | 说明          | API 入口                      |
 | ------------------- | ------------- | ----------------------------- |
 | `api-keys/`         | API Key 管理  | `/api/v1/console/api-keys`    |
-| `auth/`             | 登录表单      | `/api/v1/auth/*`（Auth SDK）  |
+| `auth/`             | 登录表单      | `/api/auth/*`（Better Auth）  |
 | `playground/`       | 抓取/截图测试 | `/api/v1/console/*`           |
 | `screenshots/`      | 截图历史      | `/api/v1/console/screenshots` |
 | `settings/`         | 账户设置      | `/api/v1/console/*`           |
@@ -58,4 +58,4 @@ export function useApiKeys() {
 - `@aiget/ui` - UI 组件
 - `../lib/api-client` - HTTP 客户端
 - `../lib/api-paths` - API 常量
-- `@aiget/auth-client` - Auth SDK
+- `better-auth` - Better Auth 官方客户端
