@@ -51,7 +51,8 @@
       "Bash(git restore:*)",
       "Bash(pnpm --filter @aiget/aiget-server prisma:generate:*)",
       "Bash(pnpm --filter @aiget/aiget-server typecheck:*)",
-      "Bash(pnpm --filter @aiget/aiget-server lint:*)"
+      "Bash(pnpm --filter @aiget/aiget-server lint:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
