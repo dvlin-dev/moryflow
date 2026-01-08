@@ -1,4 +1,4 @@
-import { All, Controller, Req, Res } from '@nestjs/common';
+import { All, Controller, Req, Res, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
 import type {
   Request as ExpressRequest,
@@ -10,17 +10,17 @@ import { SkipResponseWrap } from '../common/decorators';
 
 /**
  * Better Auth 路由控制器
- * 处理 /api/v1/auth/* 的所有请求
+ * 处理 /api/auth/* 的所有请求（不带版本号，因为 Better Auth 使用固定路径）
  */
 @ApiTags('Auth')
-@Controller({ path: 'auth', version: '1' })
+@Controller({ path: 'auth', version: VERSION_NEUTRAL })
 @SkipResponseWrap()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiExcludeEndpoint()
   @Public()
-  @All('*path')
+  @All('*')
   async handleAuth(
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
