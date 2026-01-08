@@ -20,7 +20,7 @@ export class AuthController {
 
   @ApiExcludeEndpoint()
   @Public()
-  @All('*')
+  @All('*path')
   async handleAuth(
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
