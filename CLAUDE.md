@@ -157,7 +157,6 @@ Aiget/
 │   └── tailwind-config/             # Tailwind 配置
 ├── deploy/                          # 部署配置目录
 │   ├── infra/                       # 基础设施（DB、Redis；含测试环境）
-│   ├── aiget/                       # Aiget Dev 一套 docker compose（8c16g）
 │   └── moryflow/                    # Moryflow 一套 docker compose（4c6g）
 ├── turbo.json                       # Turborepo 配置
 ├── pnpm-workspace.yaml
@@ -204,6 +203,7 @@ Aiget/
 | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）  |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）   |
+| [`docs/architecture/aiget-dokploy-deployment.md`](./docs/architecture/aiget-dokploy-deployment.md)               | Aiget Dev Dokploy 多项目部署清单                           |
 | [`docs/architecture/open-source-package.md`](./docs/architecture/open-source-package.md)                         | 从 Monorepo 拆分并开源单个包的方案（Git Subtree 双向同步） |
 | [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                   |
 | [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                               |

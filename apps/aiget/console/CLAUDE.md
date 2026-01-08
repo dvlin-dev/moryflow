@@ -25,6 +25,12 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - UI 风格：直角组件 + 橙色强调
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 
+## 环境变量
+
+- `VITE_API_URL`：后端 API 地址（生产必填）
+- `VITE_AUTH_URL`：Auth 服务地址（生产必填）
+- 示例文件：`.env.example`
+
 ## 目录结构
 
 | 目录          | 说明                             |

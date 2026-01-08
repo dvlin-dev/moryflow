@@ -26,6 +26,12 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 - UI 风格：直角组件 + 橙色强调
 - 时间展示统一使用 `@aiget/ui/lib` 的 `formatRelativeTime`
 
+## 环境变量
+
+- `VITE_API_URL`：后端 API 地址（生产必填）
+- `VITE_AUTH_URL`：Auth 服务地址（生产必填）
+- 示例文件：`.env.example`
+
 ## 目录结构
 
 | 目录          | 说明                             |

@@ -26,7 +26,8 @@
 - `docs/architecture/`：架构与部署设计（当前阶段的“最终真相”优先写在这里，含 OAuth 登录与 Auth 数据库隔离等关键约束）。
 - `docs/architecture/open-source-package.md`：把 Monorepo 内单个包拆分为开源仓库的可复用方案（Git Subtree 双向同步）。
 - `docs/architecture/auth/`：Auth（两套业务线）拆分设计文档。
-- 部署落点与端口分配：以 `docs/architecture/domains-and-deployment.md` 与 `docs/architecture/refactor-and-deploy-plan.md` 为准（两份 compose + megaboxpro 反代到 `IP:端口`）。
+- `docs/architecture/aiget-dokploy-deployment.md`：Aiget Dev Dokploy 多项目部署清单。
+- 部署落点与端口分配：以 `docs/architecture/domains-and-deployment.md` 与 `docs/architecture/refactor-and-deploy-plan.md` 为准（Moryflow compose + Aiget Dokploy 多项目 + megaboxpro 反代到 `IP:端口`）。
 - `docs/features/`：功能层设计（用户系统两套 Auth + Google/Apple 登录、改造计划、订阅/钱包、API Key 等可复用能力）。
 - `docs/features/index.md`：功能层文档索引。
 - `docs/features/user-system/quick-start.md`：Auth 服务模板的快速接入说明。

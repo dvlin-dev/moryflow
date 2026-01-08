@@ -24,7 +24,7 @@ status: active
 - Aiget Dev Console/Admin 已接入 `@aiget/auth-client`（含 refresh 流程与用户态映射）
 - 迁移 Docs 项目：Aiget（`apps/aiget/docs` → `docs.aiget.dev`）、Moryflow（`apps/moryflow/docs` → `docs.moryflow.com`）
 - 清理旧版后台：删除 `apps/aiget/admin/www-old`
-- 两套部署 compose 已落地：`deploy/aiget/docker-compose.yml`、`deploy/moryflow/docker-compose.yml`（端口分配与占位页已固化）
+- Aiget Dev 部署切换为 Dokploy 多项目，Moryflow 保持 compose（端口分配与反代口径已固化）
 - ESLint 体系收口：根配置补齐 react-refresh/react-hooks 插件，console/admin 组件目录允许多导出
 - Moryflow 侧 lint/type 修复（admin/server/mobile）
 
@@ -33,7 +33,7 @@ status: active
 - `pnpm lint`（通过，mobile 仍有 warning）
 - `pnpm typecheck`（通过）
 - `pnpm test:unit`（通过，Redis/网络相关日志为测试噪音）
-- `docker compose ... config`（通过，compose 文件可解析）
+- `docker compose -f deploy/moryflow/docker-compose.yml config`（通过）
 
 ## 当前风险与待处理
 

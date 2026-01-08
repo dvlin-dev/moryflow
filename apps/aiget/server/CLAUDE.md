@@ -230,9 +230,14 @@ open http://localhost:3000/api-docs
 | `REDIS_URL`                   | ✅   | Redis 连接字符串                                          |
 | `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                          |
 | `BETTER_AUTH_URL`             | ✅   | 服务公网 URL                                              |
+| `ADMIN_PASSWORD`              | ✅   | 管理后台登录密码                                          |
+| `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                 |
+| `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                          |
+| `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址）                 |
 | `OPENAI_API_KEY`              | ❌   | AI 提取功能（可选）                                       |
 | `R2_*`                        | ❌   | 云存储配置（可选）                                        |
 | `BILLING_RULE_OVERRIDES_JSON` | ❌   | 扣费规则覆盖（JSON，对应 `src/billing/billing.rules.ts`） |
+| `BROWSER_*`                   | ❌   | 浏览器池配置（池大小/预热/空闲回收）                      |
 
 ---
 

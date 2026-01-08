@@ -27,18 +27,18 @@ status: active
 - 网络：不引入 Tailscale；公网 HTTPS + API key/JWT + 限流
 - 数据库：
   - 4c6g：`moryflow-postgres` + `moryflow-redis`
-  - 8c16g：`aiget-postgres` + `aiget-redis`（完全独立，不与 Moryflow 共享）
+  - 8c16g：`aiget-postgres` + `aiget-vector-postgres` + `aiget-redis`（完全独立，不与 Moryflow 共享）
 
 ## 部署原则（已确认）
 
-1. **一套 = 一份 docker compose**：Moryflow 一套（4c6g）、Aiget 一套（8c16g）。
+1. **部署方式固定**：Moryflow 使用单份 docker compose（4c6g），Aiget Dev 使用 Dokploy 多项目（8c16g）。
 2. **对外只暴露 `IP:端口`**：4c6g/8c16g 不处理域名与证书。
 3. **域名反代在 megaboxpro（1panel）**：由 1panel 统一 TLS 与反向代理到 `IP:端口`。
 4. **DB/Redis 需要暴露端口**：便于你从外部直连调试（安全由你在 1panel/防火墙层面控制）。
 
 ## 端口分配（固定）
 
-### 8c16g：Aiget（`deploy/aiget/docker-compose.yml`）
+### 8c16g：Aiget（Dokploy 多项目）
 
 - `3100`：`aiget-server`（API）
 - `3103`：`aiget-www`（aiget.dev 官网）
@@ -163,25 +163,39 @@ status: active
   - `MEMOX_BASE_URL=https://aiget.dev/api/v1/memox`
   - `MEMOX_API_KEY=...`（moryflow tenant 的 apiKey）
 
-### 3) 8c16g：Aiget（docker compose）
+### 3) 8c16g：Aiget（Dokploy 多项目）
 
-- [ ] 部署容器：
+- [ ] 部署服务（每个项目一个 Dokploy 应用）：
   - `aiget-server`（API）
   - `aiget-www`
   - `aiget-docs`
   - `aiget-console`
   - `aiget-admin`
-  - `aiget-postgres`
-  - `aiget-redis`
-- [ ] 必备环境变量（示例命名）：
-  - `PUBLIC_BASE_URL=https://aiget.dev`
-  - `ALLOWED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
-  - `COOKIE_DOMAIN=.aiget.dev`
-  - `AUTH_JWT_ISSUER=aiget.dev`
-  - `AUTH_JWT_PRIVATE_KEY=...`
-  - `POSTGRES_URL=...`
-  - `REDIS_URL=...`
-  - `MEMOX_VECTOR_POSTGRES_URL=...`
+- [ ] 配置清单：参考 `docs/architecture/aiget-dokploy-deployment.md`
+- [ ] 必备环境变量（按服务拆分）：
+  - `aiget-server`：
+    - `DATABASE_URL=...`
+    - `VECTOR_DATABASE_URL=...`
+    - `REDIS_URL=...`
+    - `BETTER_AUTH_SECRET=...`
+    - `BETTER_AUTH_URL=https://aiget.dev`
+    - `ADMIN_PASSWORD=...`
+    - `ALLOWED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
+    - `TRUSTED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`
+    - `SERVER_URL=https://aiget.dev`
+  - `aiget-www`：
+    - `VITE_API_URL=https://aiget.dev`
+    - `VITE_TURNSTILE_SITE_KEY=...`（可选）
+  - `aiget-console` / `aiget-admin`：
+    - `VITE_API_URL=https://aiget.dev`
+    - `VITE_AUTH_URL=https://aiget.dev`
+
+### 8c16g：Aiget 部署顺序（建议）
+
+1. 启动基础设施：`aiget-postgres`、`aiget-vector-postgres`、`aiget-redis`
+2. 部署 `aiget-server`（自动执行 Prisma 双库 `db push`）
+3. 部署 `aiget-www`、`aiget-docs`、`aiget-console`、`aiget-admin`
+4. 校验：`/health`、登录/刷新 token、控制台与后台核心流程
 
 ## 验收标准（上线前）
 

@@ -77,14 +77,11 @@ status: active
 
 1. **megaboxpro（2c2g，中国大陆优化）**：只做入口反代（1panel/Nginx），不承载核心业务。
 2. **4c6g（主服务稳定性）**：只跑 Moryflow 一套（单份 docker compose）+ 独立 DB/Redis。
-3. **8c16g（重服务）**：只跑 Aiget Dev 一套（单份 docker compose）+ 独立 DB/Redis。
+3. **8c16g（重服务）**：只跑 Aiget Dev 多项目（Dokploy）+ 独立 DB/Redis。
 
 ### 服务清单（固定）
 
-> 说明：本仓库把“上线可跑”的默认落点固化为两份 compose：
->
-> - `deploy/moryflow/docker-compose.yml`（4c6g）
-> - `deploy/aiget/docker-compose.yml`（8c16g）
+> 说明：Moryflow 使用单份 compose；Aiget Dev 采用 Dokploy 多项目部署（每个服务一个项目）。
 
 **4c6g：Moryflow（`deploy/moryflow/docker-compose.yml`）**
 
@@ -103,16 +100,16 @@ status: active
 - `3101`：`moryflow-admin`
 - `3105`：`moryflow-app`（app，占位页；未来 Web App）
 
-**8c16g：Aiget Dev（`deploy/aiget/docker-compose.yml`）**
+**8c16g：Aiget Dev（Dokploy 多项目）**
 
 - `aiget-server`：统一 API（Fetchx/Memox 等全部挂载于此）
 - `aiget-www`：`aiget.dev` 官网（模块路由：`/fetchx`、`/memox`）
 - `aiget-console`：`console.aiget.dev`（独立 Web 前端）
 - `aiget-admin`：`admin.aiget.dev`（独立 Web 前端）
 - `aiget-docs`：`docs.aiget.dev`（Docs 项目）
-- `aiget-postgres` / `aiget-redis`：仅服务于 Aiget Dev 这一套（不与 Moryflow 共享）
+- `aiget-postgres` / `aiget-redis` / `aiget-vector-postgres`：仅服务于 Aiget Dev 这一套（不与 Moryflow 共享）
 
-端口分配（固定）：
+端口分配（建议固定，便于 megaboxpro 反代）：
 
 - `3100`：`aiget-server`（API）
 - `3103`：`aiget-www`（官网）

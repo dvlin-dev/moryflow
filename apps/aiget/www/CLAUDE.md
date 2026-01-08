@@ -21,6 +21,12 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Cloudflare Turnstile for captcha
 - Demo API has rate limits
 
+## 环境变量
+
+- `VITE_API_URL`：后端 API 地址（生产必填）
+- `VITE_TURNSTILE_SITE_KEY`：Turnstile Site Key（可选）
+- 示例文件：`.env.example`
+
 ## Directory Structure
 
 | Directory                | Description                   |

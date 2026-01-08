@@ -22,6 +22,11 @@ API documentation and usage guides. Built with TanStack Start + Fumadocs.
 - Source content in `/content/docs/`
 - `strictNullChecks` must be enabled (TanStack Router requirement)
 
+## 环境变量
+
+- 默认无必填环境变量
+- 示例文件：`.env.example`
+
 ## Directory Structure
 
 | Directory     | Description                   |

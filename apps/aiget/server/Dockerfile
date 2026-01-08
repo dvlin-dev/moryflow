@@ -66,7 +66,6 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/dist ./apps/aig
 COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/generated ./apps/aiget/server/generated
 COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/prisma ./apps/aiget/server/prisma
 COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/package.json ./apps/aiget/server/
-COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/prisma.config.ts ./apps/aiget/server/
 COPY --chown=nestjs:nodejs apps/aiget/server/docker-entrypoint.sh ./apps/aiget/server/
 
 WORKDIR /app/apps/aiget/server
@@ -77,4 +76,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health/live || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
-
