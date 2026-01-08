@@ -1,0 +1,55 @@
+# Aiget 测试环境 - Docker Compose 配置
+# 用于本地单元测试和集成测试
+#
+# 包含两个 PostgreSQL 实例：
+# - postgres-test: 主库（业务数据）
+# - vector-postgres-test: 向量库（Memox 数据：Memory/Entity/Relation）
+
+services:
+  # PostgreSQL 主库（业务数据）
+  postgres-test:
+    image: postgres:16
+    container_name: aiget-postgres-test
+    ports:
+      - "5433:5432"  # 使用 5433 避免与本地 PostgreSQL 冲突
+    environment:
+      POSTGRES_USER: ${POSTGRES_TEST_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-testpassword}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-aiget_test}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data  # 使用内存存储加速测试
+
+  # PostgreSQL 向量库（Memox 数据：Memory/Entity/Relation）
+  vector-postgres-test:
+    image: pgvector/pgvector:pg16
+    container_name: aiget-vector-postgres-test
+    ports:
+      - "5434:5432"  # 使用 5434 避免与其他 PostgreSQL 冲突
+    environment:
+      POSTGRES_USER: ${VECTOR_POSTGRES_TEST_USER:-postgres}
+      POSTGRES_PASSWORD: ${VECTOR_POSTGRES_TEST_PASSWORD:-testpassword}
+      POSTGRES_DB: ${VECTOR_POSTGRES_TEST_DB:-aiget_vector_test}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data  # 使用内存存储加速测试
+
+  # Redis for caching and session storage
+  redis-test:
+    image: redis:7-alpine
+    container_name: aiget-redis-test
+    ports:
+      - "6380:6379"  # 使用 6380 避免与本地 Redis 冲突
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

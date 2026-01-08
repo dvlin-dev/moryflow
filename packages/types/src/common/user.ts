@@ -1,7 +1,7 @@
 /**
- * [DEFINES]: 统一用户类型、API Key 类型
+ * [DEFINES]: 用户与 API Key 通用类型
  * [USED_BY]: 所有产品的服务端和客户端
- * [POS]: 统一身份平台核心类型
+ * [POS]: 跨业务线共享类型（不代表账号/数据互通）
  */
 
 // ============ 用户角色 ============
@@ -29,11 +29,8 @@ export interface User {
 // ============ API Key ============
 
 export const ApiKeyPrefix = {
-  PLATFORM: 'ag_', // Aiget 平台通用
-  FLOWX: 'lx_', // Flowx
-  FETCHX: 'fx_', // Fetchx
-  MEMOX: 'mx_', // Memox
-  SANDX: 'sx_', // Sandx
+  AIGET_DEV: 'ag_', // Aiget Dev（aiget.dev）
+  MORYFLOW: 'mf_', // Moryflow（app.moryflow.com）
 } as const;
 
 export type ApiKeyPrefix = (typeof ApiKeyPrefix)[keyof typeof ApiKeyPrefix];

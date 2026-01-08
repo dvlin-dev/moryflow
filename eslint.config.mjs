@@ -1,7 +1,21 @@
 import baseConfig from '@aiget/eslint-config/base';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   ...baseConfig,
+  {
+    plugins: {
+      'react-refresh': reactRefresh,
+      'react-hooks': reactHooks,
+    },
+  },
+  {
+    files: ['apps/moryflow/mobile/**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
   {
     ignores: [
       '**/dist/**',
@@ -9,8 +23,8 @@ export default [
       '**/.turbo/**',
       'pnpm-lock.yaml',
       '**/generated/**',
-      'apps/fetchx/server/test/**',
-      'apps/fetchx/server/src/**/__tests__/**',
+      'apps/aiget/server/test/**',
+      'apps/aiget/server/src/**/__tests__/**',
     ],
   },
 ];

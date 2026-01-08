@@ -4,31 +4,46 @@
  * [POS]: 附件按钮，iOS 使用 ContextMenu，其他平台使用 Pressable
  */
 
-import { View, Pressable, Platform } from 'react-native'
-import { PaperclipIcon } from 'lucide-react-native'
-import { useThemeColors } from '@/lib/theme'
+import { View, Pressable, Platform, type StyleProp, type ViewStyle } from 'react-native';
+import type React from 'react';
+import { PaperclipIcon } from 'lucide-react-native';
+import { useThemeColors } from '@/lib/theme';
 
 // iOS SwiftUI ContextMenu 动态加载
-let ContextMenu: any = null
-let Host: any = null
-let Button: any = null
+type SwiftUIContextMenuComponent = React.ComponentType<React.PropsWithChildren> & {
+  Items: React.ComponentType<React.PropsWithChildren>;
+  Trigger: React.ComponentType<React.PropsWithChildren>;
+};
+type SwiftUIHostComponent = React.ComponentType<{
+  style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}>;
+type SwiftUIButtonComponent = React.ComponentType<{
+  systemImage?: string;
+  onPress?: () => void;
+  children?: React.ReactNode;
+}>;
+
+let ContextMenu: SwiftUIContextMenuComponent | null = null;
+let Host: SwiftUIHostComponent | null = null;
+let Button: SwiftUIButtonComponent | null = null;
 
 if (Platform.OS === 'ios') {
   try {
-    const swiftUI = require('@expo/ui/swift-ui')
-    ContextMenu = swiftUI.ContextMenu
-    Host = swiftUI.Host
-    Button = swiftUI.Button
+    const swiftUI = require('@expo/ui/swift-ui');
+    ContextMenu = swiftUI.ContextMenu;
+    Host = swiftUI.Host;
+    Button = swiftUI.Button;
   } catch {
     // ContextMenu 不可用
   }
 }
 
 interface AttachmentButtonProps {
-  disabled?: boolean
-  onPhotoLibrary?: () => void
-  onCamera?: () => void
-  onFileSelect?: () => void
+  disabled?: boolean;
+  onPhotoLibrary?: () => void;
+  onCamera?: () => void;
+  onFileSelect?: () => void;
 }
 
 export function AttachmentButton({
@@ -37,7 +52,7 @@ export function AttachmentButton({
   onCamera,
   onFileSelect,
 }: AttachmentButtonProps) {
-  const colors = useThemeColors()
+  const colors = useThemeColors();
 
   // iOS 使用原生 ContextMenu
   if (Platform.OS === 'ios' && ContextMenu && Host && Button) {
@@ -48,8 +63,7 @@ export function AttachmentButton({
           height: 36,
           alignItems: 'center',
           justifyContent: 'center',
-        }}
-      >
+        }}>
         <ContextMenu>
           <ContextMenu.Items>
             <Button systemImage="photo.on.rectangle" onPress={onPhotoLibrary}>
@@ -69,14 +83,13 @@ export function AttachmentButton({
                 height: 36,
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}
-            >
+              }}>
               <PaperclipIcon size={20} color={colors.iconMuted} />
             </View>
           </ContextMenu.Trigger>
         </ContextMenu>
       </Host>
-    )
+    );
   }
 
   // 其他平台使用 Pressable
@@ -89,9 +102,8 @@ export function AttachmentButton({
         justifyContent: 'center',
       }}
       onPress={onFileSelect}
-      disabled={disabled}
-    >
+      disabled={disabled}>
       <PaperclipIcon size={20} color={colors.iconMuted} />
     </Pressable>
-  )
+  );
 }

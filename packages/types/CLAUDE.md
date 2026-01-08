@@ -1,12 +1,12 @@
 # @aiget/types
 
-> Aiget 统一平台共享类型定义
+> Aiget 跨业务线共享类型定义（不代表账号/数据互通）
 
 ## 目录结构
 
 ```
 src/
-├── common/              # 平台通用类型
+├── common/              # 通用基础类型
 │   ├── api.ts           # API 响应格式
 │   ├── product.ts       # 产品标识
 │   ├── subscription.ts  # 订阅等级
@@ -16,6 +16,8 @@ src/
     └── fetchx/
         └── screenshot.ts # 截图 API 类型
 ```
+
+> 类型可在 Moryflow 与 Aiget Dev 复用，但业务数据严格隔离。
 
 ## 导入方式
 
@@ -49,13 +51,10 @@ const req: fetchx.ScreenshotRequest = { url: '...' };
 
 ## API Key 前缀
 
-| 类型       | 前缀  |
-| ---------- | ----- |
-| 平台 Key   | `ag_` |
-| Flowx Key  | `lx_` |
-| Fetchx Key | `fx_` |
-| Memox Key  | `mx_` |
-| Sandx Key  | `sx_` |
+| 类型          | 前缀  |
+| ------------- | ----- |
+| Aiget Dev Key | `ag_` |
+| Moryflow Key  | `mf_` |
 
 ---
 

@@ -3,7 +3,7 @@
 [OUTPUT]: 从 R2 读取并返回站点静态内容（含站点状态/过期/水印）
 [POS]: Moryflow 发布站点边缘服务，承载 `moryflow.app` 的内容分发
 
-[PROTOCOL]: 本目录变更需同步更新本文件与上层架构文档（docs/architecture/subdomain-uip-architecture.md）。
+[PROTOCOL]: 本目录变更需同步更新本文件与上层架构文档（docs/architecture/domains-and-deployment.md）。
 -->
 
 # Moryflow Publish Worker
@@ -26,4 +26,3 @@
 - 部署使用 `wrangler`。
 - R2 bucket 绑定：`SITE_BUCKET`。
 - 环境变量：`SITE_DOMAIN=moryflow.app`。
-

@@ -17,12 +17,12 @@ export class UserThrottlerGuard extends ThrottlerGuard {
    * 获取限流追踪标识
    * 优先使用用户 ID，否则回退到 IP 地址
    */
-  protected async getTracker(req: Request): Promise<string> {
+  protected getTracker(req: Request): Promise<string> {
     const user = req.user;
     if (user?.id) {
-      return `user:${user.id}`;
+      return Promise.resolve(`user:${user.id}`);
     }
     // 未登录用户使用 IP
-    return `ip:${req.ip}`;
+    return Promise.resolve(`ip:${req.ip}`);
   }
 }

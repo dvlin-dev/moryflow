@@ -19,6 +19,7 @@ Moryflow 后端服务，基于 NestJS 构建的 RESTful API 服务。
 
 - 使用 NestJS 模块化架构
 - 数据库操作使用 Prisma ORM
+- `build` / `lint` / `typecheck` / `test*` 会通过 `pre*` scripts 自动执行 `prisma:generate`（不需要本地 DB），确保 Prisma Client 与 schema 同步
 - 敏感配置通过环境变量管理
 - API 需要做权限校验（使用 Guard）
 
@@ -41,12 +42,17 @@ module-name/
 
 ### 文件职责
 
-| 文件 | 用途 | 包含内容 |
-|------|------|----------|
+| 文件              | 用途        | 包含内容                                                 |
+| ----------------- | ----------- | -------------------------------------------------------- |
 | `dto/*.schema.ts` | 验证 + 类型 | Zod schemas, `z.infer<>` types, `createZodDto()` classes |
-| `*.constants.ts` | 配置 | Enums, config values, error codes |
-| `*.errors.ts` | 错误处理 | Custom `HttpException` subclasses |
-| `*.types.ts` | 仅外部类型 | 第三方 API 响应结构（不用于验证） |
+| `*.constants.ts`  | 配置        | Enums, config values, error codes                        |
+| `*.errors.ts`     | 错误处理    | Custom `HttpException` subclasses                        |
+| `*.types.ts`      | 仅外部类型  | 第三方 API 响应结构（不用于验证）                        |
+
+## 近期变更
+
+- 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
+- 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
 
 ## 错误信息规范
 
@@ -75,11 +81,11 @@ if (!user) {
 
 ```typescript
 // ✅ 正确
-z.string().email('Invalid email address')
-z.string().min(1, 'Password is required')
+z.string().email('Invalid email address');
+z.string().min(1, 'Password is required');
 
 // ❌ 错误
-z.string().email('请输入有效的邮箱')
+z.string().email('请输入有效的邮箱');
 ```
 
 ### 邮件/通知内容
@@ -106,7 +112,10 @@ const ContentSchema = z
   .string()
   .min(1, 'Content is required')
   .max(10000, 'Content too long')
-  .openapi({ description: 'Memory content', example: 'User prefers dark mode' });
+  .openapi({
+    description: 'Memory content',
+    example: 'User prefers dark mode',
+  });
 
 const MetadataSchema = z
   .record(z.unknown())
@@ -169,7 +178,12 @@ export interface CreateMemoryRequest { ... }  // 不要这样做
 
 ```typescript
 // memory.controller.ts
-import { ApiTags, ApiOperation, ApiOkResponse, ApiSecurity } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { CreateMemoryDto, MemoryDto } from './dto';
 
 @ApiTags('Memory')
@@ -177,7 +191,6 @@ import { CreateMemoryDto, MemoryDto } from './dto';
 @Controller({ path: 'memories', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class MemoryController {
-
   @Post()
   @ApiOperation({ summary: 'Create a memory' })
   @ApiOkResponse({ type: MemoryDto })
@@ -209,7 +222,9 @@ export abstract class MemoryError extends HttpException {
 
 export class MemoryNotFoundError extends MemoryError {
   constructor(id: string) {
-    super('MEMORY_NOT_FOUND', `Memory not found: ${id}`, HttpStatus.NOT_FOUND, { id });
+    super('MEMORY_NOT_FOUND', `Memory not found: ${id}`, HttpStatus.NOT_FOUND, {
+      id,
+    });
   }
 }
 ```
@@ -246,53 +261,53 @@ export type Theme = z.infer<typeof ThemeSchema>;  // 派生，不重复
 
 ## 技术栈
 
-| 技术 | 用途 |
-|------|------|
-| NestJS | Web 框架 |
-| Prisma | ORM |
-| PostgreSQL | 主数据库 |
-| Redis | 缓存与会话 |
-| Creem | 支付网关 |
+| 技术       | 用途       |
+| ---------- | ---------- |
+| NestJS     | Web 框架   |
+| Prisma     | ORM        |
+| PostgreSQL | 主数据库   |
+| Redis      | 缓存与会话 |
+| Creem      | 支付网关   |
 
 ## 成员清单
 
-| 文件/目录 | 类型 | 说明 |
-|-----------|------|------|
-| `src/main.ts` | 入口 | 应用启动入口 |
-| `src/app.module.ts` | 模块 | 根模块，注册所有子模块 |
-| `src/auth/` | 模块 | 认证与授权（JWT、OAuth） |
-| `src/user/` | 模块 | 用户管理 |
-| `src/ai-proxy/` | 模块 | AI 模型代理服务 |
-| `src/payment/` | 模块 | 支付与订阅 |
-| `src/credit/` | 模块 | 积分管理 |
-| `src/quota/` | 模块 | 配额管理 |
-| `src/sync/` | 模块 | 云同步服务 |
-| `src/storage/` | 模块 | 文件存储服务 |
-| `src/speech/` | 模块 | 语音转写服务 |
-| `src/search/` | 模块 | 搜索服务 |
-| `src/vault/` | 模块 | 知识库服务 |
-| `src/vectorize/` | 模块 | 向量化服务 |
-| `src/email/` | 模块 | 邮件服务 |
-| `src/activity-log/` | 模块 | 活动日志 |
-| `src/license/` | 模块 | 许可证管理 |
-| `src/admin/` | 模块 | 管理后台 API |
-| `src/common/` | 目录 | 通用工具、装饰器、Guard |
-| `src/config/` | 目录 | 配置管理 |
-| `src/prisma/` | 目录 | Prisma 服务 |
-| `src/redis/` | 目录 | Redis 服务 |
-| `src/types/` | 目录 | 类型定义 |
-| `prisma/` | 目录 | 数据库 Schema 与迁移 |
+| 文件/目录           | 类型 | 说明                                          |
+| ------------------- | ---- | --------------------------------------------- |
+| `src/main.ts`       | 入口 | 应用启动入口                                  |
+| `src/app.module.ts` | 模块 | 根模块，注册所有子模块                        |
+| `src/auth/`         | 模块 | 认证与授权（JWT、OTP、OAuth（Google/Apple）） |
+| `src/user/`         | 模块 | 用户管理                                      |
+| `src/ai-proxy/`     | 模块 | AI 模型代理服务                               |
+| `src/payment/`      | 模块 | 支付与订阅                                    |
+| `src/credit/`       | 模块 | 积分管理                                      |
+| `src/quota/`        | 模块 | 配额管理                                      |
+| `src/sync/`         | 模块 | 云同步服务                                    |
+| `src/storage/`      | 模块 | 文件存储服务                                  |
+| `src/speech/`       | 模块 | 语音转写服务                                  |
+| `src/search/`       | 模块 | 搜索服务                                      |
+| `src/vault/`        | 模块 | 知识库服务                                    |
+| `src/vectorize/`    | 模块 | 向量化服务                                    |
+| `src/email/`        | 模块 | 邮件服务                                      |
+| `src/activity-log/` | 模块 | 活动日志                                      |
+| `src/license/`      | 模块 | 许可证管理                                    |
+| `src/admin/`        | 模块 | 管理后台 API                                  |
+| `src/common/`       | 目录 | 通用工具、装饰器、Guard                       |
+| `src/config/`       | 目录 | 配置管理                                      |
+| `src/prisma/`       | 目录 | Prisma 服务                                   |
+| `src/redis/`        | 目录 | Redis 服务                                    |
+| `src/types/`        | 目录 | 类型定义                                      |
+| `prisma/`           | 目录 | 数据库 Schema 与迁移                          |
 
 ## 常见修改场景
 
-| 场景 | 涉及文件 | 注意事项 |
-|------|----------|----------|
-| 新增 API | 对应模块的 controller/service | 添加 Guard 权限校验 |
-| 修改数据模型 | `prisma/schema.prisma` | 需运行 migrate |
-| 新增模块 | `src/xxx/`, `app.module.ts` | 在根模块注册 |
-| 修改 AI 代理 | `src/ai-proxy/` | 注意积分消耗计算 |
-| 修改支付逻辑 | `src/payment/` | 参考 docs/features/credits-system/ |
-| 修改云同步 | `src/sync/` | 参考 docs/features/cloud-sync/ |
+| 场景         | 涉及文件                      | 注意事项                           |
+| ------------ | ----------------------------- | ---------------------------------- |
+| 新增 API     | 对应模块的 controller/service | 添加 Guard 权限校验                |
+| 修改数据模型 | `prisma/schema.prisma`        | 需运行 migrate                     |
+| 新增模块     | `src/xxx/`, `app.module.ts`   | 在根模块注册                       |
+| 修改 AI 代理 | `src/ai-proxy/`               | 注意积分消耗计算                   |
+| 修改支付逻辑 | `src/payment/`                | 参考 docs/features/credits-system/ |
+| 修改云同步   | `src/sync/`                   | 参考 docs/features/cloud-sync/     |
 
 ## 依赖关系
 

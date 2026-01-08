@@ -1,0 +1,245 @@
+// Aiget Auth Database Schema
+// 认证数据库（Better Auth 核心表 + 业务线内通用表）
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  outputType = "commonjs"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url 从 prisma.config.ts 读取，不在这里写
+}
+
+// ==================== Enums ====================
+
+/// 订阅等级（与 CLAUDE.md 定义一致）
+enum SubscriptionTier {
+  FREE
+  STARTER
+  PRO
+  MAX
+}
+
+/// 订阅状态
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PAST_DUE
+}
+
+/// 订单状态
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+/// 订单类型
+enum OrderType {
+  SUBSCRIPTION   // 订阅付款
+  CREDIT_BOOST   // 积分加油包
+}
+
+/// 积分类型
+enum CreditType {
+  SUBSCRIPTION   // 订阅赠送
+  PURCHASED      // 购买的
+  BONUS          // 奖励/补偿
+  CONSUMPTION    // 消费（负数）
+}
+
+/// 管理日志级别
+enum AdminLogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
+// ==================== Better Auth 核心表 ====================
+
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  emailVerified Boolean          @default(false)
+  name          String?
+  image         String?
+  tier          SubscriptionTier @default(FREE)  // 当前订阅等级（冗余快照，订阅变更时同步）
+  creditBalance Int              @default(0)     // 当前积分余额（冗余快照，积分变动时同步）
+  isAdmin       Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+
+  sessions      Session[]
+  accounts      Account[]
+  profile       UserProfile?
+  subscriptions Subscription[]
+  orders        Order[]
+  credits       CreditTransaction[]
+
+  @@index([tier])
+  @@index([createdAt])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verification")
+}
+
+model Jwks {
+  id         String    @id @default(cuid())
+  publicKey  String
+  privateKey String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@map("jwks")
+}
+
+// ==================== 统一业务表 ====================
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  nickname  String?
+  avatar    String?
+  bio       String?
+  locale    String   @default("en")
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profile")
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  tier                   SubscriptionTier
+  status                 SubscriptionStatus @default(ACTIVE)
+  provider               String             @default("creem") // creem / stripe / etc
+  providerSubscriptionId String?            @unique
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  canceledAt             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscription")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  subscriptionId  String?
+  type            OrderType
+  status          OrderStatus @default(PENDING)
+  amount          Int         // 金额（分）
+  currency        String      @default("USD")
+  provider        String      @default("creem")
+  providerOrderId String?     @unique
+  metadata        Json?       // 额外信息（如积分数量）
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("order")
+}
+
+model CreditTransaction {
+  id        String     @id @default(cuid())
+  userId    String
+  type      CreditType
+  amount    Int        // 正数=增加，负数=消费
+  balance   Int        // 变动后余额
+  reason    String?    // 变动原因
+  metadata  Json?      // 额外信息（如关联的 API 调用 ID）
+  createdAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("credit_transaction")
+}
+
+model AdminLog {
+  id              String        @id @default(cuid())
+  adminId         String        // 操作者 ID
+  adminEmail      String        // 操作者邮箱
+  targetUserId    String?       // 目标用户 ID（可选）
+  targetUserEmail String?       // 目标用户邮箱（可选）
+  action          String        // 操作类型（如 SET_TIER, GRANT_CREDITS）
+  level           AdminLogLevel @default(INFO)
+  details         Json?         // 操作详情
+  ip              String?
+  userAgent       String?
+  createdAt       DateTime      @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@map("admin_log")
+}

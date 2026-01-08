@@ -4,17 +4,17 @@
  * 显示在首页头部下方，横向滚动展示最近打开的文档
  */
 
-import React, { useCallback } from 'react'
-import { View, ScrollView, Pressable } from 'react-native'
-import { useRouter } from 'expo-router'
-import { Text } from '@/components/ui/text'
-import { useThemeColors } from '@/lib/theme'
-import { FileTextIcon } from 'lucide-react-native'
-import { useRecentlyOpened, type RecentlyOpenedItem } from '@/lib/vault/recently-opened'
+import React, { useCallback } from 'react';
+import { View, ScrollView, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Text } from '@/components/ui/text';
+import { useThemeColors } from '@/lib/theme';
+import { FileTextIcon } from 'lucide-react-native';
+import { useRecentlyOpened, type RecentlyOpenedItem } from '@/lib/vault/recently-opened';
 
 interface RecentlyOpenedProps {
   /** 点击卡片后的回调（可选，用于外部跟踪） */
-  onItemPress?: (item: RecentlyOpenedItem) => void
+  onItemPress?: (item: RecentlyOpenedItem) => void;
 }
 
 /**
@@ -24,18 +24,17 @@ const RecentCard = React.memo(function RecentCard({
   item,
   onPress,
 }: {
-  item: RecentlyOpenedItem
-  onPress: () => void
+  item: RecentlyOpenedItem;
+  onPress: () => void;
 }) {
-  const colors = useThemeColors()
+  const colors = useThemeColors();
 
   return (
     <Pressable
       onPress={onPress}
-      className="w-[140px] h-[100px] mr-3 rounded-xl bg-card border border-border p-3 justify-between"
-    >
+      className="bg-card border-border mr-3 h-[100px] w-[140px] justify-between rounded-xl border p-3">
       {/* 图标 */}
-      <View className="w-8 h-8 rounded-lg bg-muted items-center justify-center">
+      <View className="bg-muted h-8 w-8 items-center justify-center rounded-lg">
         {item.icon ? (
           <Text className="text-[18px]">{item.icon}</Text>
         ) : (
@@ -44,38 +43,38 @@ const RecentCard = React.memo(function RecentCard({
       </View>
 
       {/* 标题 */}
-      <Text className="text-[14px] font-medium text-foreground" numberOfLines={2}>
+      <Text className="text-foreground text-[14px] font-medium" numberOfLines={2}>
         {item.title}
       </Text>
     </Pressable>
-  )
-})
+  );
+});
 
 /**
  * 最近打开的文档横向滚动区域
  */
 export function RecentlyOpened({ onItemPress }: RecentlyOpenedProps) {
-  const router = useRouter()
-  const { items, isLoading } = useRecentlyOpened()
+  const router = useRouter();
+  const { items, isLoading } = useRecentlyOpened();
 
   const handlePress = useCallback(
     (item: RecentlyOpenedItem) => {
-      onItemPress?.(item)
+      onItemPress?.(item);
       // 使用 fileId 导航
-      router.push(`/(editor)/${item.fileId}` as any)
+      router.push({ pathname: '/(editor)/[fileId]', params: { fileId: item.fileId } });
     },
     [router, onItemPress]
-  )
+  );
 
   // 不显示：正在加载或没有数据
   if (isLoading || items.length === 0) {
-    return null
+    return null;
   }
 
   return (
     <View className="mb-4">
       {/* Section 标题 */}
-      <Text className="text-[13px] font-semibold text-secondary-foreground mb-3 px-4">
+      <Text className="text-secondary-foreground mb-3 px-4 text-[13px] font-semibold">
         最近打开
       </Text>
 
@@ -83,16 +82,11 @@ export function RecentlyOpened({ onItemPress }: RecentlyOpenedProps) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-      >
+        contentContainerStyle={{ paddingHorizontal: 16 }}>
         {items.map((item) => (
-          <RecentCard
-            key={item.path}
-            item={item}
-            onPress={() => handlePress(item)}
-          />
+          <RecentCard key={item.path} item={item} onPress={() => handlePress(item)} />
         ))}
       </ScrollView>
     </View>
-  )
+  );
 }

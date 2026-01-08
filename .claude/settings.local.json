@@ -35,7 +35,24 @@
       "Bash(pnpm ls:*)",
       "Bash(pnpm run build:agents:*)",
       "Bash(codex --version:*)",
-      "Bash(brew list:*)"
+      "Bash(brew list:*)",
+      "Bash(pnpm --filter @aiget/auth-server typecheck:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm --filter @aiget/auth-server lint:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(pnpm --filter @aiget/identity-db prisma:generate:*)",
+      "Bash(pnpm --filter @aiget/identity-db exec prisma:*)",
+      "Bash(IDENTITY_DATABASE_URL=\"postgresql://dummy:dummy@localhost:5432/dummy\" pnpm --filter @aiget/identity-db prisma:generate:*)",
+      "Bash(pnpm --filter @aiget/identity-db build:*)",
+      "Bash(pnpm --filter @aiget/admin-server typecheck:*)",
+      "Bash(gh pr view:*)",
+      "Bash(pnpm --filter @aiget/admin typecheck:*)",
+      "Bash(git restore:*)",
+      "Bash(pnpm --filter @aiget/aiget-server prisma:generate:*)",
+      "Bash(pnpm --filter @aiget/aiget-server typecheck:*)",
+      "Bash(pnpm --filter @aiget/aiget-server lint:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

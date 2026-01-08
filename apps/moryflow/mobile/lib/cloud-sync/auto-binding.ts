@@ -6,58 +6,60 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Paths } from 'expo-file-system'
-import { cloudSyncApi, CloudSyncApiError } from './api-client'
-import { readBinding, writeBinding, readSettings } from './store'
-import type { VaultBinding } from './const'
+import { Paths } from 'expo-file-system';
+import { createLogger } from '@/lib/agent-runtime';
+import { cloudSyncApi, CloudSyncApiError } from './api-client';
+import { readBinding, writeBinding, readSettings } from './store';
+import type { VaultBinding } from './const';
 
 // ── 常量 ────────────────────────────────────────────────────
 
-const MAX_RETRY_COUNT = 3
-const RETRY_BASE_DELAY = 2000
+const MAX_RETRY_COUNT = 3;
+const RETRY_BASE_DELAY = 2000;
+const logger = createLogger('[CloudSync]');
 
 // ── 重试状态 ────────────────────────────────────────────────
 
 interface RetryState {
-  count: number
-  timer: ReturnType<typeof setTimeout> | null
+  count: number;
+  timer: ReturnType<typeof setTimeout> | null;
 }
 
-const retryState = new Map<string, RetryState>()
+const retryState = new Map<string, RetryState>();
 
 // 重试回调（由 sync-engine 注入）
-let onRetryCallback: (() => void) | null = null
+let onRetryCallback: (() => void) | null = null;
 
 /**
  * 设置重试回调
  */
 export function setRetryCallback(callback: () => void): void {
-  onRetryCallback = callback
+  onRetryCallback = callback;
 }
 
 // ── 错误判断 ────────────────────────────────────────────────
 
 const isNetworkError = (error: unknown): boolean => {
   if (error instanceof Error) {
-    const msg = error.message.toLowerCase()
+    const msg = error.message.toLowerCase();
     return (
       msg.includes('network') ||
       msg.includes('timeout') ||
       msg.includes('failed to fetch') ||
       msg.includes('network request failed') ||
       msg.includes('abort')
-    )
+    );
   }
-  return false
-}
+  return false;
+};
 
 const shouldRetry = (error: unknown): boolean => {
-  if (isNetworkError(error)) return true
+  if (isNetworkError(error)) return true;
   if (error instanceof CloudSyncApiError) {
-    return error.isServerError
+    return error.isServerError;
   }
-  return false
-}
+  return false;
+};
 
 // ── 核心函数 ────────────────────────────────────────────────
 
@@ -65,100 +67,100 @@ const shouldRetry = (error: unknown): boolean => {
  * 尝试自动绑定 Vault
  */
 export async function tryAutoBinding(vaultPath: string): Promise<VaultBinding | null> {
-  const existing = await readBinding(vaultPath)
+  const existing = await readBinding(vaultPath);
   if (existing) {
-    console.log('[CloudSync] Vault already bound:', vaultPath)
-    return existing
+    logger.info('Vault already bound:', vaultPath);
+    return existing;
   }
 
   try {
-    return await performAutoBinding(vaultPath)
+    return await performAutoBinding(vaultPath);
   } catch (error) {
-    console.error('[CloudSync] Auto binding failed:', error)
+    logger.error('Auto binding failed:', error);
 
-    let state = retryState.get(vaultPath)
+    let state = retryState.get(vaultPath);
     if (!state) {
-      state = { count: 0, timer: null }
-      retryState.set(vaultPath, state)
+      state = { count: 0, timer: null };
+      retryState.set(vaultPath, state);
     }
-    state.count++
+    state.count++;
 
     if (state.count < MAX_RETRY_COUNT && shouldRetry(error)) {
-      console.log(`[CloudSync] Scheduling retry ${state.count}/${MAX_RETRY_COUNT}`)
-      scheduleRetry(vaultPath, state.count)
+      logger.info(`Scheduling retry ${state.count}/${MAX_RETRY_COUNT}`);
+      scheduleRetry(vaultPath, state.count);
     } else {
-      console.warn('[CloudSync] Max retry reached or non-retryable error')
-      clearRetryState(vaultPath)
+      logger.warn('Max retry reached or non-retryable error');
+      clearRetryState(vaultPath);
     }
 
-    return null
+    return null;
   }
 }
 
 async function performAutoBinding(vaultPath: string): Promise<VaultBinding> {
-  const settings = await readSettings()
-  const localVaultName = Paths.basename(vaultPath)
+  const settings = await readSettings();
+  const localVaultName = Paths.basename(vaultPath);
 
-  console.log('[CloudSync] Attempting auto binding:', { vaultPath, localVaultName })
+  logger.info('Attempting auto binding:', { vaultPath, localVaultName });
 
-  const { vaults } = await cloudSyncApi.listVaults()
-  const matched = vaults.find((v) => v.name === localVaultName)
+  const { vaults } = await cloudSyncApi.listVaults();
+  const matched = vaults.find((v) => v.name === localVaultName);
 
-  let vaultId: string
-  let vaultName: string
+  let vaultId: string;
+  let vaultName: string;
 
   if (matched) {
-    console.log('[CloudSync] Matched existing vault:', matched.id, matched.name)
-    vaultId = matched.id
-    vaultName = matched.name
+    logger.info('Matched existing vault:', matched.id, matched.name);
+    vaultId = matched.id;
+    vaultName = matched.name;
   } else {
-    console.log('[CloudSync] Creating new vault:', localVaultName)
-    const created = await cloudSyncApi.createVault(localVaultName)
-    vaultId = created.id
-    vaultName = created.name
+    logger.info('Creating new vault:', localVaultName);
+    const created = await cloudSyncApi.createVault(localVaultName);
+    vaultId = created.id;
+    vaultName = created.name;
   }
 
-  await cloudSyncApi.registerDevice(vaultId, settings.deviceId, settings.deviceName)
+  await cloudSyncApi.registerDevice(vaultId, settings.deviceId, settings.deviceName);
 
   const binding: VaultBinding = {
     localPath: vaultPath,
     vaultId,
     vaultName,
     boundAt: Date.now(),
-  }
-  await writeBinding(binding)
+  };
+  await writeBinding(binding);
 
-  console.log('[CloudSync] Auto binding succeeded:', { vaultId, vaultName, isNewVault: !matched })
-  clearRetryState(vaultPath)
+  logger.info('Auto binding succeeded:', { vaultId, vaultName, isNewVault: !matched });
+  clearRetryState(vaultPath);
 
-  return binding
+  return binding;
 }
 
 function scheduleRetry(vaultPath: string, retryCount: number): void {
-  const state = retryState.get(vaultPath)
-  if (!state) return
+  const state = retryState.get(vaultPath);
+  if (!state) return;
 
   if (state.timer) {
-    clearTimeout(state.timer)
+    clearTimeout(state.timer);
   }
 
-  const delay = RETRY_BASE_DELAY * retryCount
+  const delay = RETRY_BASE_DELAY * retryCount;
 
   state.timer = setTimeout(() => {
     if (onRetryCallback) {
-      onRetryCallback()
+      onRetryCallback();
     }
-  }, delay)
+  }, delay);
 
-  retryState.set(vaultPath, state)
+  retryState.set(vaultPath, state);
 }
 
 function clearRetryState(vaultPath: string): void {
-  const state = retryState.get(vaultPath)
+  const state = retryState.get(vaultPath);
   if (state?.timer) {
-    clearTimeout(state.timer)
+    clearTimeout(state.timer);
   }
-  retryState.delete(vaultPath)
+  retryState.delete(vaultPath);
 }
 
 /**
@@ -166,7 +168,7 @@ function clearRetryState(vaultPath: string): void {
  */
 export function resetAutoBindingState(): void {
   for (const [, state] of retryState) {
-    if (state.timer) clearTimeout(state.timer)
+    if (state.timer) clearTimeout(state.timer);
   }
-  retryState.clear()
+  retryState.clear();
 }

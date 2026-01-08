@@ -3,13 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Aiget - Unified Platform (Flowx + Fetchx + Memox + Sandx)",
+  "description": "Aiget - Unified Platform (Aiget Dev + Moryflow)",
   "scripts": {
-    "dev:flowx": "pnpm --filter @aiget/flowx-server start:dev",
-    "dev:fetchx": "pnpm --filter @aiget/fetchx-server start:dev",
-    "dev:fetchx:www": "pnpm --filter @aiget/fetchx-www dev",
-    "dev:memox": "pnpm --filter @aiget/memox-server start:dev",
-    "dev:memox:www": "pnpm --filter @aiget/memox-www dev",
+    "dev:aiget": "pnpm --filter @aiget/aiget-server start:dev",
+    "dev:aiget:www": "pnpm --filter @aiget/aiget-www dev",
     "dev:auth": "pnpm --filter @aiget/auth-server start:dev",
     "dev:console": "pnpm --filter @aiget/console dev",
     "dev:admin": "pnpm --filter @aiget/admin dev",
@@ -19,10 +16,8 @@
     "build:agents": "pnpm run build:agents:prebuild && tsc-multi",
     "build:packages": "pnpm run build:agents",
     "postinstall": "pnpm run build:packages",
-    "build:flowx": "pnpm --filter @aiget/flowx-server build",
-    "build:fetchx": "pnpm --filter @aiget/fetchx-server build",
-    "build:memox": "pnpm --filter @aiget/memox-server build",
-    "build:memox:www": "pnpm --filter @aiget/memox-www build",
+    "build:aiget": "pnpm --filter @aiget/aiget-server build",
+    "build:aiget:www": "pnpm --filter @aiget/aiget-www build",
     "build:auth": "pnpm --filter @aiget/auth-server build",
     "build:console": "pnpm --filter @aiget/console build",
     "build:admin": "pnpm --filter @aiget/admin build",
@@ -43,6 +38,8 @@
     "@types/node": "^22.18.12",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
     "husky": "^9.1.7",
     "lightningcss-linux-x64-gnu": "1.30.1",
     "lint-staged": "^16.2.7",
@@ -63,7 +60,8 @@
       "esbuild": "0.25.12",
       "lightningcss": "1.30.1",
       "@types/react": "19.1.17",
-      "@types/react-dom": "19.1.9"
+      "@types/react-dom": "19.1.9",
+      "@electron/node-gyp": "10.2.0-electron.1"
     },
     "supportedArchitectures": {
       "os": [

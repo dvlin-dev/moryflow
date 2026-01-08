@@ -1,16 +1,16 @@
 /**
  * 液态玻璃导航栏组件
- * 
+ *
  * 使用 expo-glass-effect 实现 iOS 26 原生液态玻璃效果
  * - 左侧：3个导航按钮组（首页、搜索、草稿）- 液态玻璃背景
  * - 右侧：AI 按钮 - 液态玻璃 + 主色调
- * 
+ *
  * 降级处理：iOS 26- 或其他平台使用 BlurView fallback
  */
 
 import React, { useMemo } from 'react';
 import { View, Pressable, Platform } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, usePathname, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { GlassView, GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -23,17 +23,11 @@ import Animated, {
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { GlassButtonContainer } from '@/components/ui/glass-button-container';
-import {
-  HomeIcon,
-  SearchIcon,
-  SquarePenIcon,
-  SparklesIcon,
-  LucideIcon,
-} from 'lucide-react-native';
+import { HomeIcon, SearchIcon, SquarePenIcon, SparklesIcon, LucideIcon } from 'lucide-react-native';
 
 interface TabItem {
   name: string;
-  route: string;
+  route: Href;
   icon: LucideIcon;
 }
 
@@ -50,10 +44,7 @@ interface LiquidGlassTabBarProps {
   onAIPress?: () => void;
 }
 
-export function LiquidGlassTabBar({
-  visible = true,
-  onAIPress,
-}: LiquidGlassTabBarProps) {
+export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -91,8 +82,8 @@ export function LiquidGlassTabBar({
     return pathname.includes(route.replace('/(tabs)', ''));
   };
 
-  const handleTabPress = (route: string) => {
-    router.push(route as any);
+  const handleTabPress = (route: Href) => {
+    router.push(route);
   };
 
   const handleAIPress = () => {
@@ -101,7 +92,14 @@ export function LiquidGlassTabBar({
 
   // 渲染导航组的玻璃背景
   const renderNavGlassContent = () => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, gap: 6 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        gap: 6,
+      }}>
       {TAB_ITEMS.map((tab) => {
         const isActive = getIsActive(tab.route);
         const IconComponent = tab.icon;
@@ -109,8 +107,7 @@ export function LiquidGlassTabBar({
           <Pressable
             key={tab.name}
             onPress={() => handleTabPress(tab.route)}
-            style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
-          >
+            style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
             <IconComponent
               size={24}
               color={isActive ? colors.icon : colors.iconMuted}
@@ -126,12 +123,17 @@ export function LiquidGlassTabBar({
   const renderNavGlass = () => {
     if (glassAvailable) {
       return (
-        <View style={{ borderRadius: 9999, overflow: 'hidden', borderWidth: 1, borderColor: colors.glassNavBorder }}>
+        <View
+          style={{
+            borderRadius: 9999,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: colors.glassNavBorder,
+          }}>
           <GlassView
             style={{ borderRadius: 9999 }}
             glassEffectStyle="regular"
-            isInteractive={false}
-          >
+            isInteractive={false}>
             {renderNavGlassContent()}
           </GlassView>
         </View>
@@ -140,12 +142,17 @@ export function LiquidGlassTabBar({
 
     // Fallback: 使用 BlurView
     return (
-      <View style={{ borderRadius: 9999, overflow: 'hidden', borderWidth: 1, borderColor: colors.glassNavBorder }}>
+      <View
+        style={{
+          borderRadius: 9999,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: colors.glassNavBorder,
+        }}>
         <BlurView
           intensity={isDark ? 40 : 60}
           tint={isDark ? 'dark' : 'light'}
-          style={{ borderRadius: 9999, overflow: 'hidden' }}
-        >
+          style={{ borderRadius: 9999, overflow: 'hidden' }}>
           <View style={{ borderRadius: 9999, backgroundColor: colors.glassNavBackground }}>
             {renderNavGlassContent()}
           </View>
@@ -160,8 +167,7 @@ export function LiquidGlassTabBar({
       <GlassButtonContainer
         size={48}
         tintColor={colors.glassAiButton}
-        fallbackColor={colors.glassAiButton}
-      >
+        fallbackColor={colors.glassAiButton}>
         <SparklesIcon size={20} color={colors.glassAiButtonIcon} strokeWidth={2} />
       </GlassButtonContainer>
     </Pressable>
@@ -199,8 +205,7 @@ export function LiquidGlassTabBar({
           paddingBottom: insets.bottom + 12,
         },
         animatedStyle,
-      ]}
-    >
+      ]}>
       {renderContent()}
     </Animated.View>
   );

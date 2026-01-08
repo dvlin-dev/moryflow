@@ -4,8 +4,8 @@
  */
 import React, { useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import { initI18n } from './init'
-import { getI18nInstance } from '@aiget/i18n'
+import { initI18n } from './init';
+import { getI18nInstance } from '@aiget/i18n';
 import { View, ActivityIndicator } from 'react-native';
 
 interface I18nProviderProps {
@@ -35,12 +35,12 @@ export function I18nProvider({ children }: I18nProviderProps) {
     };
 
     initialize();
-  }, []); // 移除 i18nInstance 依赖，避免无限循环
+  }, [i18nInstance]);
 
   if (!isInitialized || !i18nInstance) {
     // 显示加载指示器
     return (
-      <View className="flex-1 justify-center items-center">
+      <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" />
       </View>
     );

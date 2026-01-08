@@ -6,29 +6,29 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import React, { useCallback, useMemo } from 'react'
-import { View } from 'react-native'
+import React, { useCallback } from 'react';
+import { View } from 'react-native';
 import {
   BottomSheetModal,
   BottomSheetBackdrop,
   BottomSheetScrollView,
   type BottomSheetBackdropProps,
-} from '@gorhom/bottom-sheet'
-import { RefreshCwIcon, SettingsIcon, PlusIcon } from 'lucide-react-native'
-import { Text } from '@/components/ui/text'
+} from '@gorhom/bottom-sheet';
+import { RefreshCwIcon, SettingsIcon, PlusIcon } from 'lucide-react-native';
+import { Text } from '@/components/ui/text';
 
 import {
   SHEET_SNAP_POINTS,
   SHEET_STYLES,
   CARD_BACKGROUND,
   type WorkspaceSheetProps,
-} from './const'
-import { useWorkspaceSheet } from './hooks/use-workspace-sheet'
-import { VaultItem } from './components/vault-item'
-import { ActionButton } from './components/action-button'
-import { Separator } from './components/separator'
-import { SyncStatus } from './components/sync-status'
-import { WorkspaceSheetErrorBoundary } from './components/error-boundary'
+} from './const';
+import { useWorkspaceSheet } from './hooks/use-workspace-sheet';
+import { VaultItem } from './components/vault-item';
+import { ActionButton } from './components/action-button';
+import { Separator } from './components/separator';
+import { SyncStatus } from './components/sync-status';
+import { WorkspaceSheetErrorBoundary } from './components/error-boundary';
 
 // ── 内部组件 ─────────────────────────────────────────────────────
 
@@ -51,10 +51,10 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
     handleRenameVault,
     handleDeleteVault,
     handleCreateVault,
-  } = useWorkspaceSheet(props)
+  } = useWorkspaceSheet(props);
 
   // 背景色
-  const sheetBackground = isDark ? 'rgb(28, 28, 30)' : colors.background
+  const sheetBackground = isDark ? 'rgb(28, 28, 30)' : colors.background;
 
   // 自定义背景遮罩
   const renderBackdrop = useCallback(
@@ -68,7 +68,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
       />
     ),
     [isDark]
-  )
+  );
 
   // 自定义背景组件
   const renderBackground = useCallback(
@@ -87,10 +87,10 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
       />
     ),
     [sheetBackground]
-  )
+  );
 
   // 卡片背景
-  const cardBackground = isDark ? CARD_BACKGROUND.dark : CARD_BACKGROUND.light
+  const cardBackground = isDark ? CARD_BACKGROUND.dark : CARD_BACKGROUND.light;
 
   return (
     <BottomSheetModal
@@ -111,15 +111,13 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 20,
-      }}
-    >
+      }}>
       <BottomSheetScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
           paddingHorizontal: SHEET_STYLES.contentPaddingHorizontal,
           paddingBottom: SHEET_STYLES.contentPaddingBottom,
-        }}
-      >
+        }}>
         {/* 标题 */}
         <Text
           style={{
@@ -128,8 +126,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
             color: colors.textPrimary,
             marginBottom: 16,
             marginTop: 8,
-          }}
-        >
+          }}>
           {t('workspaceTitle')}
         </Text>
 
@@ -140,10 +137,9 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
             borderRadius: SHEET_STYLES.cardBorderRadius,
             overflow: 'hidden',
             marginBottom: 16,
-          }}
-        >
+          }}>
           {sortedVaults.map((vault, index) => {
-            const isCurrent = vault.id === currentVault?.id
+            const isCurrent = vault.id === currentVault?.id;
             return (
               <React.Fragment key={vault.id}>
                 {index > 0 && <Separator isDark={isDark} />}
@@ -169,7 +165,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
                   )}
                 </View>
               </React.Fragment>
-            )
+            );
           })}
         </View>
 
@@ -179,8 +175,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
             backgroundColor: cardBackground,
             borderRadius: SHEET_STYLES.cardBorderRadius,
             overflow: 'hidden',
-          }}
-        >
+          }}>
           {/* 立即同步 */}
           <ActionButton
             icon={RefreshCwIcon}
@@ -219,7 +214,7 @@ function WorkspaceSheetContent(props: WorkspaceSheetProps) {
         </View>
       </BottomSheetScrollView>
     </BottomSheetModal>
-  )
+  );
 }
 
 // ── 导出组件（带错误边界） ───────────────────────────────────────
@@ -229,8 +224,8 @@ export function WorkspaceSheet(props: WorkspaceSheetProps) {
     <WorkspaceSheetErrorBoundary>
       <WorkspaceSheetContent {...props} />
     </WorkspaceSheetErrorBoundary>
-  )
+  );
 }
 
 // 类型导出
-export type { WorkspaceSheetProps } from './const'
+export type { WorkspaceSheetProps } from './const';

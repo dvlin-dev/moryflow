@@ -1,0 +1,185 @@
+---
+title: "Ollama Local Models"
+description: "Ollama lets you run AI models on your own computer—fully offline, fully private."
+---
+
+# Ollama Local Models
+
+Ollama lets you run AI models on your own computer—fully offline, fully private.
+
+## What is Ollama
+
+[Ollama](https://ollama.ai) is an open-source tool for running large language models locally.
+
+**Benefits:**
+- Completely offline, no internet needed
+- Data never leaves your computer
+- Free to use, no API key needed
+- Supports many open-source models
+
+**Limitations:**
+- Requires decent hardware
+- Models generally less capable than cloud ones
+- First use requires downloading models
+
+## Installing Ollama
+
+### macOS
+
+```bash
+# Using Homebrew
+brew install ollama
+
+# Or download installer from
+# https://ollama.ai/download
+```
+
+### Windows
+
+1. Go to [ollama.ai/download](https://ollama.ai/download)
+2. Download Windows installer
+3. Run installation
+
+### Verify Installation
+
+```bash
+ollama --version
+```
+
+After installation, Ollama runs as a background service.
+
+## Downloading Models
+
+### From Terminal
+
+```bash
+# Download Llama 3
+ollama pull llama3
+
+# Download Mistral
+ollama pull mistral
+
+# Download Qwen (good for Chinese)
+ollama pull qwen2
+```
+
+### From MoryFlow
+
+1. Open Settings → Model Management
+2. Find the Ollama section
+3. Browse available models
+4. Click download
+
+
+## Recommended Models
+
+### General Use
+
+| Model | Size | Features | Command |
+|-------|------|----------|---------|
+| **Llama 3 8B** | ~4GB | Well-balanced | `ollama pull llama3` |
+| **Mistral 7B** | ~4GB | Strong reasoning | `ollama pull mistral` |
+| **Qwen2 7B** | ~4GB | Good Chinese | `ollama pull qwen2` |
+
+### Lower-end Hardware
+
+| Model | Size | Features | Command |
+|-------|------|----------|---------|
+| **Phi-3 Mini** | ~2GB | Microsoft, lightweight | `ollama pull phi3` |
+| **Gemma 2B** | ~1.5GB | Google | `ollama pull gemma:2b` |
+
+### Powerful Hardware
+
+| Model | Size | Features | Command |
+|-------|------|----------|---------|
+| **Llama 3 70B** | ~40GB | Near GPT-4 level | `ollama pull llama3:70b` |
+| **Mixtral 8x7B** | ~26GB | Mixture of experts | `ollama pull mixtral` |
+
+## Configuring in MoryFlow
+
+### 1. Configure Connection
+
+1. Open Settings → Model Management
+2. Find Ollama section
+3. Confirm endpoint address (default `http://localhost:11434`)
+
+
+### 2. Select Model
+
+Once configured, downloaded Ollama models appear in the model selector on the chat panel.
+
+### 3. Start Using
+
+Select an Ollama model and start chatting. All processing happens locally.
+
+## Hardware Requirements
+
+### Minimum
+
+- 8GB RAM
+- Use 7B or smaller models
+
+### Recommended
+
+- 16GB RAM
+- Use 7B-13B models
+
+### High Performance
+
+- 32GB+ RAM
+- Apple Silicon (M1/M2/M3) or NVIDIA GPU
+- Can run 70B models
+
+## Performance Tips
+
+### macOS (Apple Silicon)
+
+Apple Silicon works great with Ollama—highly recommended.
+
+### Windows (NVIDIA GPU)
+
+Install the latest NVIDIA drivers and Ollama will automatically use GPU acceleration.
+
+### Not Enough RAM
+
+Try:
+1. Switch to a smaller model
+2. Close other programs
+3. Set `OLLAMA_NUM_PARALLEL=1` to limit concurrency
+
+## Common Issues
+
+### Ollama Service Not Running
+
+```bash
+# Start service
+ollama serve
+```
+
+### Model Download Failed
+
+1. Check network connection
+2. Try using a proxy
+3. Manually download model files
+
+### Response Is Slow
+
+1. Switch to smaller model
+2. Check if GPU acceleration is working
+3. Close resource-heavy programs
+
+### Chinese Characters Display Wrong
+
+Use Qwen2 model for better Chinese support.
+
+## Local vs Cloud
+
+| Aspect | Ollama Local | Cloud Models |
+|--------|--------------|--------------|
+| Privacy | Fully local | Data uploaded |
+| Cost | Free | Pay per use |
+| Speed | Depends on hardware | Generally faster |
+| Capability | Medium | Stronger |
+| Offline | Yes | Needs internet |
+
+**Recommendation**: Use Ollama for privacy-sensitive content, cloud models for complex tasks.

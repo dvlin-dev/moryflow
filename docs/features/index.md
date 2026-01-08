@@ -1,7 +1,7 @@
 ---
 title: Features - 文档入口
 date: 2026-01-06
-scope: aiget.dev
+scope: moryflow.com, aiget.dev
 status: active
 ---
 
@@ -19,5 +19,13 @@ status: active
 
 ## 功能列表
 
-- 用户系统：`docs/features/user-system/overview.md`
-- 用户系统（技术方案，详细版）：`docs/features/user-system/tech-spec.md`
+- 用户系统（总览 + 技术方案）：`docs/features/user-system/overview.md`
+- 用户系统（改造计划）：`docs/features/user-system/refactor-plan.md`
+- 用户系统（快速接入）：`docs/features/user-system/quick-start.md`
+- 用户系统（Fetchx 接入方案）：`docs/features/user-system/fetchx-integration-plan.md`
+- 定时内容订阅（Email Digest）：`docs/features/scheduled-digest/overview.md`
+
+## 最近更新
+
+- Fetchx 接入方案已更新：Admin 后端已并入 `apps/aiget/server`（不再保留 `apps/aiget/admin/server`）。
+- 新增需求方案：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）。

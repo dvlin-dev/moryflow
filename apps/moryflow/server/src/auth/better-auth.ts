@@ -11,7 +11,7 @@ import { isDisposableEmail } from './email-validator';
  * - Email/Password 认证
  * - Email OTP 验证
  * - Session 管理
- * - OAuth 支持 (可扩展)
+ * - 支持第三方登录（Google/Apple）
  *
  * 认证方式：
  * - Web 端：Cookie（HttpOnly, Secure, SameSite 保护）

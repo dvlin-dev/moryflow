@@ -29,14 +29,14 @@ src/
 ## 使用方式
 
 ```typescript
-const client = new EmbedClient({
-  apiKey: 'fx_xxx',
-  baseUrl: 'https://fetchx.aiget.dev',
+const client = createEmbedClient({
+  apiKey: 'ag_xxx',
+  baseUrl: 'https://aiget.dev',
 });
 
-const result = await client.scrape({
+const result = await client.fetch({
   url: 'https://example.com',
-  formats: ['markdown'],
+  maxWidth: 640,
 });
 ```
 

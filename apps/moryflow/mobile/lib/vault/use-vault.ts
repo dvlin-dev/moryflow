@@ -6,13 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { VaultTreeNode, VaultInfo } from './types';
-import {
-  readTree,
-  readFile,
-  writeFile,
-  fileExists,
-  onVaultChange,
-} from './vault-service';
+import { readTree, readFile, writeFile, fileExists, onVaultChange } from './vault-service';
 import { initVaultManager } from './vault-manager';
 
 // ============ useVault Hook ============
@@ -101,7 +95,7 @@ export function useVaultTree(initialPath: string = ''): UseVaultTreeReturn {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [currentPath]);
+  }, []);
 
   // 初始加载
   useEffect(() => {
@@ -117,10 +111,13 @@ export function useVaultTree(initialPath: string = ''): UseVaultTreeReturn {
     return unsubscribe;
   }, [refresh]);
 
-  const navigateTo = useCallback((path: string) => {
-    setPathHistory((prev) => [...prev, currentPath]);
-    setCurrentPath(path);
-  }, [currentPath]);
+  const navigateTo = useCallback(
+    (path: string) => {
+      setPathHistory((prev) => [...prev, currentPath]);
+      setCurrentPath(path);
+    },
+    [currentPath]
+  );
 
   const goBack = useCallback(() => {
     if (pathHistory.length > 0) {

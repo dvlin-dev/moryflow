@@ -1,0 +1,139 @@
+---
+title: "Custom Providers"
+description: "If the AI service you use isn't in MoryFlow's preset list, you can add it yourself."
+---
+
+# Custom Providers
+
+If the AI service you use isn't in MoryFlow's preset list, you can add it yourself.
+
+## When to Use This
+
+- Using third-party services compatible with OpenAI protocol
+- Connecting to your company's internal AI service
+- Using other aggregation platforms
+- Trying new AI services
+
+## OpenAI Compatible Protocol
+
+Most AI services are compatible with OpenAI's API protocol, meaning you just need:
+
+1. **API Endpoint** (Base URL)
+2. **API Key**
+3. **Model Name**
+
+And you can use it in MoryFlow.
+
+## Adding a Provider
+
+### How to Add
+
+1. Open Settings → Model Management
+2. Scroll to "Custom Providers"
+3. Click "Add Provider"
+
+
+### What to Fill In
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Name** | Display name | My AI Service |
+| **Base URL** | API endpoint | `https://api.example.com/v1` |
+| **API Key** | Authentication key | `sk-xxxxx` |
+| **Model List** | Available models | `gpt-4, gpt-3.5-turbo` |
+
+## Common Provider Configurations
+
+### Azure OpenAI
+
+```
+Base URL: https://{your-resource}.openai.azure.com/openai/deployments/{deployment-name}
+API Key: Your Azure API Key
+```
+
+### Groq
+
+```
+Base URL: https://api.groq.com/openai/v1
+API Key: Your Groq API Key
+Models: llama-3.1-70b-versatile, mixtral-8x7b-32768
+```
+
+### Together AI
+
+```
+Base URL: https://api.together.xyz/v1
+API Key: Your Together API Key
+Models: meta-llama/Llama-3-70b-chat-hf
+```
+
+### Perplexity
+
+```
+Base URL: https://api.perplexity.ai
+API Key: Your Perplexity API Key
+Models: llama-3.1-sonar-large-128k-online
+```
+
+### Local LM Studio
+
+```
+Base URL: http://localhost:1234/v1
+API Key: Leave empty or any value
+Models: Name of model loaded in LM Studio
+```
+
+### Local vLLM
+
+```
+Base URL: http://localhost:8000/v1
+API Key: Leave empty
+Models: Your deployed model name
+```
+
+## Adding Custom Models
+
+After configuring a provider, add available models:
+
+1. Click "Add Model" in provider settings
+2. Fill in model info:
+   - **Model ID**: Name used in API calls
+   - **Display Name**: Name shown in interface
+   - **Context Window**: Maximum tokens supported
+   - **Capability Tags**: Mark what features the model supports
+
+
+## Test It
+
+After configuration, test it:
+
+1. Select the new model in chat panel
+2. Send a simple message
+3. Check if it responds normally
+
+## Troubleshooting
+
+### Connection Failed
+
+1. Check Base URL is correct (usually ends with `/v1`)
+2. Confirm API Key is valid
+3. Check if your network can reach the service
+
+### Model Not Working
+
+1. Confirm model ID spelling is correct
+2. Confirm the model is available in your account
+3. Check if provider has regional restrictions
+
+### Response Format Wrong
+
+Some providers may not be fully OpenAI compatible. You might need to:
+- Check the provider's documentation
+- Adjust request parameters
+- Contact the provider
+
+## Security Notes
+
+- API Keys are stored locally, not uploaded
+- When using self-hosted services, ensure encrypted communication (HTTPS)
+- Rotate API Keys periodically

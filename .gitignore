@@ -56,6 +56,9 @@ coverage/
 
 # Prisma
 prisma/migrations/.migration_lock.toml
+**/generated/prisma/
+**/generated/prisma-main/
+**/generated/prisma-vector/
 
 # 临时文件
 *.tmp

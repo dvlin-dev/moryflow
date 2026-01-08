@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
+  type GestureResponderEvent,
 } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
@@ -37,9 +38,20 @@ import { readTree, onVaultChange, moveFile, deleteFile } from '@/lib/vault';
 import { getFileExtension } from '@/lib/utils/format';
 
 // iOS 原生组件
-let ContextMenu: any = null;
-let Host: any = null;
-let Button: any = null;
+type SwiftUIContextMenuComponent = React.ComponentType<React.PropsWithChildren> & {
+  Items: React.ComponentType<React.PropsWithChildren>;
+  Trigger: React.ComponentType<React.PropsWithChildren>;
+};
+type SwiftUIHostComponent = React.ComponentType<React.PropsWithChildren & { className?: string }>;
+type SwiftUIButtonComponent = React.ComponentType<{
+  systemImage?: string;
+  onPress?: () => void;
+  children?: React.ReactNode;
+}>;
+
+let ContextMenu: SwiftUIContextMenuComponent | null = null;
+let Host: SwiftUIHostComponent | null = null;
+let Button: SwiftUIButtonComponent | null = null;
 
 if (Platform.OS === 'ios') {
   try {
@@ -47,7 +59,7 @@ if (Platform.OS === 'ios') {
     ContextMenu = swiftUI.ContextMenu;
     Host = swiftUI.Host;
     Button = swiftUI.Button;
-  } catch (error) {
+  } catch {
     console.warn('[@expo/ui/swift-ui] ContextMenu failed to load');
   }
 }
@@ -123,7 +135,6 @@ interface FileItemProps {
   item: VaultTreeNode;
   depth: number;
   isExpanded: boolean;
-  isLoading: boolean;
   onPress: () => void;
   onLongPress?: () => void;
   onCreateFile?: (parentPath: string) => Promise<void>;
@@ -140,7 +151,6 @@ const FileItem = React.memo(function FileItem({
   item,
   depth,
   isExpanded,
-  isLoading,
   onPress,
   onLongPress,
   onCreateFile,
@@ -191,18 +201,14 @@ const FileItem = React.memo(function FileItem({
   // 处理删除
   const handleDelete = useCallback(() => {
     const typeName = isDirectory ? t('folder') : t('file');
-    Alert.alert(
-      t('deleteTitle', { type: typeName }),
-      t('deleteFileConfirm', { name: item.name }),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('delete'),
-          style: 'destructive',
-          onPress: () => onDelete?.(item),
-        },
-      ]
-    );
+    Alert.alert(t('deleteTitle', { type: typeName }), t('deleteFileConfirm', { name: item.name }), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('delete'),
+        style: 'destructive',
+        onPress: () => onDelete?.(item),
+      },
+    ]);
   }, [item, isDirectory, onDelete, t]);
 
   // 处理修改图标（占位）
@@ -214,8 +220,8 @@ const FileItem = React.memo(function FileItem({
   const renderPlusButton = () => {
     if (!isDirectory) return null;
 
-    const stopPropagation = (e: any) => {
-      e?.stopPropagation?.();
+    const stopPropagation = (event: GestureResponderEvent) => {
+      event.stopPropagation?.();
     };
 
     if (Platform.OS === 'ios' && ContextMenu && Host && Button) {
@@ -232,7 +238,7 @@ const FileItem = React.memo(function FileItem({
                 </Button>
               </ContextMenu.Items>
               <ContextMenu.Trigger>
-                <View className="w-10 h-10 items-center justify-center">
+                <View className="h-10 w-10 items-center justify-center">
                   <PlusIcon size={22} color={colors.iconMuted} />
                 </View>
               </ContextMenu.Trigger>
@@ -244,12 +250,11 @@ const FileItem = React.memo(function FileItem({
 
     return (
       <Pressable
-        className="w-10 h-10 items-center justify-center"
+        className="h-10 w-10 items-center justify-center"
         onPress={(e) => {
           stopPropagation(e);
           handleCreateFile();
-        }}
-      >
+        }}>
         <PlusIcon size={22} color={colors.iconMuted} />
       </Pressable>
     );
@@ -258,7 +263,7 @@ const FileItem = React.memo(function FileItem({
   // 文件项内容
   const itemContent = (
     // paddingLeft 是动态计算的（依赖 depth），需保留 style
-    <View className="flex-row items-center pr-3 py-3" style={{ paddingLeft }}>
+    <View className="flex-row items-center py-3 pr-3" style={{ paddingLeft }}>
       {/* 展开/收起箭头（仅文件夹） */}
       {isDirectory ? (
         <View className="mr-1">
@@ -269,13 +274,10 @@ const FileItem = React.memo(function FileItem({
       )}
 
       {/* 类型图标 */}
-      <IconComponent
-        size={22}
-        color={isDirectory ? colors.textSecondary : colors.textTertiary}
-      />
+      <IconComponent size={22} color={isDirectory ? colors.textSecondary : colors.textTertiary} />
 
       {/* 文件名 */}
-      <Text className="flex-1 ml-2.5 text-[17px] text-foreground" numberOfLines={1}>
+      <Text className="text-foreground ml-2.5 flex-1 text-[17px]" numberOfLines={1}>
         {getDisplayName(item)}
       </Text>
 
@@ -288,16 +290,13 @@ const FileItem = React.memo(function FileItem({
   return (
     <ZeegoContextMenu.Root>
       <ZeegoContextMenu.Trigger>
-        <Pressable onPress={onPress}>
+        <Pressable onPress={onPress} onLongPress={onLongPress}>
           {itemContent}
         </Pressable>
       </ZeegoContextMenu.Trigger>
       <ZeegoContextMenu.Content>
         <ZeegoContextMenu.Item key="rename" onSelect={handleRename}>
-          <ZeegoContextMenu.ItemIcon
-            ios={{ name: 'pencil' }}
-            androidIconName="ic_menu_edit"
-          />
+          <ZeegoContextMenu.ItemIcon ios={{ name: 'pencil' }} androidIconName="ic_menu_edit" />
           <ZeegoContextMenu.ItemTitle>{t('rename')}</ZeegoContextMenu.ItemTitle>
         </ZeegoContextMenu.Item>
         <ZeegoContextMenu.Item key="change-icon" onSelect={handleChangeIcon}>
@@ -308,10 +307,7 @@ const FileItem = React.memo(function FileItem({
           <ZeegoContextMenu.ItemTitle>{t('changeIcon')}</ZeegoContextMenu.ItemTitle>
         </ZeegoContextMenu.Item>
         <ZeegoContextMenu.Item key="delete" destructive onSelect={handleDelete}>
-          <ZeegoContextMenu.ItemIcon
-            ios={{ name: 'trash' }}
-            androidIconName="ic_menu_delete"
-          />
+          <ZeegoContextMenu.ItemIcon ios={{ name: 'trash' }} androidIconName="ic_menu_delete" />
           <ZeegoContextMenu.ItemTitle>{t('delete')}</ZeegoContextMenu.ItemTitle>
         </ZeegoContextMenu.Item>
       </ZeegoContextMenu.Content>
@@ -355,7 +351,6 @@ const TreeNode = React.memo(function TreeNode({
 }: TreeNodeProps) {
   const isDirectory = node.type === 'directory';
   const isExpanded = expandedPaths.has(node.path);
-  const isLoading = loadingPaths.has(node.path);
   const children = childrenMap.get(node.path);
 
   const handlePress = useCallback(() => {
@@ -381,7 +376,6 @@ const TreeNode = React.memo(function TreeNode({
         item={node}
         depth={depth}
         isExpanded={isExpanded}
-        isLoading={isLoading}
         onPress={handlePress}
         onLongPress={handleLongPress}
         onCreateFile={onCreateFile}
@@ -390,24 +384,26 @@ const TreeNode = React.memo(function TreeNode({
         onDelete={onDelete}
         onChangeIcon={onChangeIcon}
       />
-      {isDirectory && isExpanded && sortedChildren.map((child) => (
-        <TreeNode
-          key={child.path}
-          node={child}
-          depth={depth + 1}
-          expandedPaths={expandedPaths}
-          loadingPaths={loadingPaths}
-          childrenMap={childrenMap}
-          onToggleExpand={onToggleExpand}
-          onFilePress={onFilePress}
-          onItemLongPress={onItemLongPress}
-          onCreateFile={onCreateFile}
-          onCreateFolder={onCreateFolder}
-          onRename={onRename}
-          onDelete={onDelete}
-          onChangeIcon={onChangeIcon}
-        />
-      ))}
+      {isDirectory &&
+        isExpanded &&
+        sortedChildren.map((child) => (
+          <TreeNode
+            key={child.path}
+            node={child}
+            depth={depth + 1}
+            expandedPaths={expandedPaths}
+            loadingPaths={loadingPaths}
+            childrenMap={childrenMap}
+            onToggleExpand={onToggleExpand}
+            onFilePress={onFilePress}
+            onItemLongPress={onItemLongPress}
+            onCreateFile={onCreateFile}
+            onCreateFolder={onCreateFolder}
+            onRename={onRename}
+            onDelete={onDelete}
+            onChangeIcon={onChangeIcon}
+          />
+        ))}
     </>
   );
 });
@@ -468,32 +464,35 @@ export function FileList({
   const [childrenMap, setChildrenMap] = useState<Map<string, VaultTreeNode[]>>(new Map());
 
   // 切换展开状态
-  const handleToggleExpand = useCallback(async (path: string) => {
-    if (expandedPaths.has(path)) {
-      setExpandedPaths((prev) => {
-        const next = new Set(prev);
-        next.delete(path);
-        return next;
-      });
-    } else {
-      if (!childrenMap.has(path)) {
-        setLoadingPaths((prev) => new Set(prev).add(path));
-        try {
-          const children = await readTree(path);
-          setChildrenMap((prev) => new Map(prev).set(path, children));
-        } catch (error) {
-          console.error('[FileList] Failed to load children:', error);
-        } finally {
-          setLoadingPaths((prev) => {
-            const next = new Set(prev);
-            next.delete(path);
-            return next;
-          });
+  const handleToggleExpand = useCallback(
+    async (path: string) => {
+      if (expandedPaths.has(path)) {
+        setExpandedPaths((prev) => {
+          const next = new Set(prev);
+          next.delete(path);
+          return next;
+        });
+      } else {
+        if (!childrenMap.has(path)) {
+          setLoadingPaths((prev) => new Set(prev).add(path));
+          try {
+            const children = await readTree(path);
+            setChildrenMap((prev) => new Map(prev).set(path, children));
+          } catch (error) {
+            console.error('[FileList] Failed to load children:', error);
+          } finally {
+            setLoadingPaths((prev) => {
+              const next = new Set(prev);
+              next.delete(path);
+              return next;
+            });
+          }
         }
+        setExpandedPaths((prev) => new Set(prev).add(path));
       }
-      setExpandedPaths((prev) => new Set(prev).add(path));
-    }
-  }, [expandedPaths, childrenMap]);
+    },
+    [expandedPaths, childrenMap]
+  );
 
   // 处理文件点击
   const handleFilePress = useCallback(
@@ -525,7 +524,7 @@ export function FileList({
       };
 
       const parentPath = getParentPath(event.path);
-      
+
       if (childrenMap.has(parentPath)) {
         reloadFolder(parentPath);
       }
@@ -542,51 +541,66 @@ export function FileList({
   }, [childrenMap, reloadFolder]);
 
   // 包装创建文件回调
-  const handleCreateFile = useCallback(async (parentPath: string) => {
-    await onCreateFile?.(parentPath);
-    await reloadFolder(parentPath);
-    if (!expandedPaths.has(parentPath)) {
-      setExpandedPaths((prev) => new Set(prev).add(parentPath));
-    }
-  }, [onCreateFile, reloadFolder, expandedPaths]);
+  const handleCreateFile = useCallback(
+    async (parentPath: string) => {
+      await onCreateFile?.(parentPath);
+      await reloadFolder(parentPath);
+      if (!expandedPaths.has(parentPath)) {
+        setExpandedPaths((prev) => new Set(prev).add(parentPath));
+      }
+    },
+    [onCreateFile, reloadFolder, expandedPaths]
+  );
 
   // 包装创建文件夹回调
-  const handleCreateFolder = useCallback(async (parentPath: string) => {
-    await onCreateFolder?.(parentPath);
-    await reloadFolder(parentPath);
-    if (!expandedPaths.has(parentPath)) {
-      setExpandedPaths((prev) => new Set(prev).add(parentPath));
-    }
-  }, [onCreateFolder, reloadFolder, expandedPaths]);
+  const handleCreateFolder = useCallback(
+    async (parentPath: string) => {
+      await onCreateFolder?.(parentPath);
+      await reloadFolder(parentPath);
+      if (!expandedPaths.has(parentPath)) {
+        setExpandedPaths((prev) => new Set(prev).add(parentPath));
+      }
+    },
+    [onCreateFolder, reloadFolder, expandedPaths]
+  );
 
   // 重命名处理
-  const handleRename = useCallback(async (item: VaultTreeNode, newName: string) => {
-    try {
-      const parentPath = item.path.split('/').slice(0, -1).join('/');
-      const newPath = parentPath ? `${parentPath}/${newName}` : newName;
-      await moveFile(item.path, newPath);
-      onRefresh?.();
-    } catch (error) {
-      console.error('[FileList] Failed to rename:', error);
-      Alert.alert(t('renameFailed'), t('renameFailedMessage'));
-    }
-  }, [onRefresh, t]);
+  const handleRename = useCallback(
+    async (item: VaultTreeNode, newName: string) => {
+      try {
+        const parentPath = item.path.split('/').slice(0, -1).join('/');
+        const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+        await moveFile(item.path, newPath);
+        onRefresh?.();
+      } catch (error) {
+        console.error('[FileList] Failed to rename:', error);
+        Alert.alert(t('renameFailed'), t('renameFailedMessage'));
+      }
+    },
+    [onRefresh, t]
+  );
 
   // 删除处理
-  const handleDelete = useCallback(async (item: VaultTreeNode) => {
-    try {
-      await deleteFile(item.path);
-      onRefresh?.();
-    } catch (error) {
-      console.error('[FileList] Failed to delete:', error);
-      Alert.alert(t('deleteFailed'), t('deleteFailedMessage'));
-    }
-  }, [onRefresh, t]);
+  const handleDelete = useCallback(
+    async (item: VaultTreeNode) => {
+      try {
+        await deleteFile(item.path);
+        onRefresh?.();
+      } catch (error) {
+        console.error('[FileList] Failed to delete:', error);
+        Alert.alert(t('deleteFailed'), t('deleteFailedMessage'));
+      }
+    },
+    [onRefresh, t]
+  );
 
   // 修改图标（占位 - 功能开发中）
-  const handleChangeIcon = useCallback((item: VaultTreeNode) => {
-    Alert.alert(t('featureDeveloping'), t('iconPickerComingSoon'));
-  }, [t]);
+  const handleChangeIcon = useCallback(
+    (_item: VaultTreeNode) => {
+      Alert.alert(t('featureDeveloping'), t('iconPickerComingSoon'));
+    },
+    [t]
+  );
 
   // 刷新时清除缓存
   const handleRefresh = useCallback(() => {
@@ -640,8 +654,7 @@ export function FileList({
             tintColor={colors.spinner}
           />
         ) : undefined
-      }
-    >
+      }>
       {treeContent}
     </ScrollView>
   );

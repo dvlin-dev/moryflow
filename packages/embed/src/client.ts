@@ -10,7 +10,7 @@ import type {
 } from './types.ts';
 import { ApiError, NetworkError } from './errors.ts';
 
-const DEFAULT_BASE_URL = 'https://api.aiget.dev';
+const DEFAULT_BASE_URL = 'https://aiget.dev';
 const DEFAULT_TIMEOUT = 30000;
 
 /** Embed 客户端接口 */
@@ -29,7 +29,7 @@ export function createEmbedClient(config: EmbedClientConfig): EmbedClient {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const response = await fetch(`${baseUrl}/api/oembed`, {
+      const response = await fetch(`${baseUrl}/api/v1/oembed`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
