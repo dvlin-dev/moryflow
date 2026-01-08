@@ -49,6 +49,25 @@ status: active
 3. 部署 `aiget-www`、`aiget-docs`、`aiget-console`、`aiget-admin`
 4. 验收：`/health`、登录/刷新 token、Console/Admin 核心流程
 
+## 数据库初始化（Prisma Migrate）
+
+初始化时使用 Prisma Migrate 生成 `migration.sql` 并部署：
+
+```bash
+# 生成迁移（空库初始化，create-only）
+pnpm exec prisma migrate dev --config prisma.main.config.ts --name init --create-only
+pnpm exec prisma migrate dev --config prisma.vector.config.ts --name init --create-only
+
+# 部署迁移
+pnpm exec prisma migrate deploy --config prisma.main.config.ts
+pnpm exec prisma migrate deploy --config prisma.vector.config.ts
+```
+
+迁移文件位置：
+
+- `apps/aiget/server/prisma/main/migrations/*/migration.sql`
+- `apps/aiget/server/prisma/vector/migrations/*/migration.sql`
+
 ## 变量示例（建议）
 
 - `ALLOWED_ORIGINS=https://aiget.dev,https://console.aiget.dev,https://admin.aiget.dev`

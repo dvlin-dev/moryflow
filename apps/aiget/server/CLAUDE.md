@@ -23,6 +23,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
+- Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 
 ## 数据库架构（双库分离）
 
@@ -42,8 +43,20 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ### Prisma 命令
 
 ```bash
+# Migrate 使用的配置文件：
+# - prisma.main.config.ts
+# - prisma.vector.config.ts
+
 # 生成两个库的 Client
 pnpm --filter @aiget/aiget-server prisma:generate
+
+# 生成迁移（空库初始化，create-only）
+pnpm exec prisma migrate dev --config prisma.main.config.ts --name init --create-only
+pnpm exec prisma migrate dev --config prisma.vector.config.ts --name init --create-only
+
+# 部署迁移（生产/CI）
+pnpm exec prisma migrate deploy --config prisma.main.config.ts
+pnpm exec prisma migrate deploy --config prisma.vector.config.ts
 
 # 分别推送 Schema
 pnpm --filter @aiget/aiget-server prisma:push:main

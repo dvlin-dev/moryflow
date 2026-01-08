@@ -48,14 +48,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-ENV PNPM_HOME="/home/nestjs/.local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN mkdir -p $PNPM_HOME && chown -R nestjs:nodejs $PNPM_HOME
-
 USER nestjs
-
-# entrypoint uses `prisma db push`
-RUN pnpm add -g prisma
 
 WORKDIR /app
 
@@ -66,6 +59,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/dist ./apps/aig
 COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/generated ./apps/aiget/server/generated
 COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/prisma ./apps/aiget/server/prisma
 COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/package.json ./apps/aiget/server/
+COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/prisma.main.config.ts ./apps/aiget/server/
+COPY --from=builder --chown=nestjs:nodejs /app/apps/aiget/server/prisma.vector.config.ts ./apps/aiget/server/
 COPY --chown=nestjs:nodejs apps/aiget/server/docker-entrypoint.sh ./apps/aiget/server/
 
 WORKDIR /app/apps/aiget/server
