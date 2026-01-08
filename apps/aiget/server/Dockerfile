@@ -35,11 +35,11 @@ WORKDIR /app/apps/aiget/server
 ARG DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
 ENV DATABASE_URL=$DATABASE_URL
 
-RUN pnpm exec prisma generate
+RUN pnpm prisma:generate
 RUN pnpm build
 
 # =============================================================================
-# runner: minimal runtime + prisma cli for db push
+# runner: minimal runtime + prisma cli for migrations
 # =============================================================================
 FROM node:20-alpine AS runner
 
