@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: ADMIN_API
+ * [DEFINES]: ADMIN_API, USER_API
  * [USED_BY]: features/*, lib/api-client
  * [POS]: Admin API 路径常量定义
  *
@@ -14,4 +14,8 @@ export const ADMIN_API = {
   JOBS: '/api/v1/admin/jobs',
   QUEUES: '/api/v1/admin/queues',
   BROWSER: '/api/v1/admin/browser',
+} as const;
+
+export const USER_API = {
+  ME: '/api/v1/user/me',
 } as const;

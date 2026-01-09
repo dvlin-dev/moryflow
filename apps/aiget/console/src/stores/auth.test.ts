@@ -1,7 +1,7 @@
 /**
  * [INPUT]: 认证状态变更
  * [OUTPUT]: 状态一致性断言
- * [POS]: Console Auth Store 属性测试
+ * [POS]: Console Auth Store 属性测试（setUser/clearSession）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -14,34 +14,30 @@ describe('属性 1: 认证状态一致性', () => {
     // 重置 store 状态
     useAuthStore.setState({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       isBootstrapped: false,
     });
   });
 
-  it('对于任意有效用户信息，setSession 后 isAuthenticated 应为 true', () => {
+  it('对于任意有效用户信息，setUser 后 isAuthenticated 应为 true', () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1, maxLength: 50 }),
         fc.emailAddress(),
+        fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
         fc.boolean(),
-        fc.string({ minLength: 10, maxLength: 120 }),
-        (userId, email, isAdmin, accessToken) => {
-          const { setSession } = useAuthStore.getState();
+        fc.constantFrom('FREE', 'BASIC', 'PRO', 'TEAM'),
+        (userId, email, name, isAdmin, tier) => {
+          const { setUser } = useAuthStore.getState();
 
           // 执行登录
-          setSession(
-            {
-              id: userId,
-              email,
-              name: null,
-              emailVerified: true,
-              tier: 'FREE',
-              isAdmin,
-            },
-            accessToken
-          );
+          setUser({
+            id: userId,
+            email,
+            name,
+            tier,
+            isAdmin,
+          });
 
           // 获取更新后的状态
           const state = useAuthStore.getState();
@@ -50,8 +46,8 @@ describe('属性 1: 认证状态一致性', () => {
             state.isAuthenticated === true &&
             state.user?.id === userId &&
             state.user?.email === email &&
+            state.user?.name === name &&
             state.user?.isAdmin === isAdmin &&
-            state.accessToken === accessToken &&
             state.isBootstrapped === true
           );
         }
@@ -65,23 +61,20 @@ describe('属性 1: 认证状态一致性', () => {
       fc.property(
         fc.string({ minLength: 1, maxLength: 50 }),
         fc.emailAddress(),
+        fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
         fc.boolean(),
-        fc.string({ minLength: 10, maxLength: 120 }),
-        (userId, email, isAdmin, accessToken) => {
-          const { setSession, clearSession } = useAuthStore.getState();
+        fc.constantFrom('FREE', 'BASIC', 'PRO', 'TEAM'),
+        (userId, email, name, isAdmin, tier) => {
+          const { setUser, clearSession } = useAuthStore.getState();
 
           // 先登录
-          setSession(
-            {
-              id: userId,
-              email,
-              name: null,
-              emailVerified: true,
-              tier: 'FREE',
-              isAdmin,
-            },
-            accessToken
-          );
+          setUser({
+            id: userId,
+            email,
+            name,
+            tier,
+            isAdmin,
+          });
 
           // 确认已登录
           const loggedInState = useAuthStore.getState();
@@ -94,10 +87,7 @@ describe('属性 1: 认证状态一致性', () => {
           const state = useAuthStore.getState();
 
           return (
-            state.isAuthenticated === false &&
-            state.user === null &&
-            state.accessToken === null &&
-            state.isBootstrapped === true
+            state.isAuthenticated === false && state.user === null && state.isBootstrapped === true
           );
         }
       ),
@@ -114,8 +104,9 @@ describe('属性 1: 认证状态一致性', () => {
               fc.constant('login'),
               fc.string({ minLength: 1, maxLength: 20 }),
               fc.emailAddress(),
+              fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
               fc.boolean(),
-              fc.string({ minLength: 10, maxLength: 120 })
+              fc.constantFrom('FREE', 'BASIC', 'PRO', 'TEAM')
             ),
             fc.tuple(fc.constant('logout'))
           ),
@@ -123,37 +114,37 @@ describe('属性 1: 认证状态一致性', () => {
         ),
         (operations) => {
           let expectedAuthenticated = false;
-          let expectedUser: { id: string; email: string; isAdmin: boolean } | null = null;
-          let expectedToken: string | null = null;
+          let expectedUser: {
+            id: string;
+            email: string;
+            name: string | null;
+            isAdmin: boolean;
+            tier: string;
+          } | null = null;
 
           for (const op of operations) {
             if (op[0] === 'login') {
-              const [, userId, email, isAdmin, accessToken] = op as [
+              const [, userId, email, name, isAdmin, tier] = op as [
                 string,
                 string,
                 string,
+                string | null,
                 boolean,
                 string,
               ];
-              useAuthStore.getState().setSession(
-                {
-                  id: userId,
-                  email,
-                  name: null,
-                  emailVerified: true,
-                  tier: 'FREE',
-                  isAdmin,
-                },
-                accessToken
-              );
+              useAuthStore.getState().setUser({
+                id: userId,
+                email,
+                name,
+                tier,
+                isAdmin,
+              });
               expectedAuthenticated = true;
-              expectedUser = { id: userId, email, isAdmin };
-              expectedToken = accessToken;
+              expectedUser = { id: userId, email, name, isAdmin, tier };
             } else {
               useAuthStore.getState().clearSession();
               expectedAuthenticated = false;
               expectedUser = null;
-              expectedToken = null;
             }
           }
 
@@ -164,8 +155,9 @@ describe('属性 1: 认证状态一致性', () => {
               ? state.user === null
               : state.user?.id === expectedUser.id &&
                 state.user?.email === expectedUser.email &&
-                state.user?.isAdmin === expectedUser.isAdmin) &&
-            state.accessToken === expectedToken
+                state.user?.name === expectedUser.name &&
+                state.user?.isAdmin === expectedUser.isAdmin &&
+                state.user?.tier === expectedUser.tier)
           );
         }
       ),

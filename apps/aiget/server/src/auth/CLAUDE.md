@@ -20,6 +20,7 @@ Authentication module using Better Auth. Handles user sessions, login/logout, an
 - Sessions stored in database
 - Admin check via user role
 - Email validation required for signup
+- Auth routes are VERSION_NEUTRAL and routed via `/api/auth/*` catch-all
 
 ## File Structure
 

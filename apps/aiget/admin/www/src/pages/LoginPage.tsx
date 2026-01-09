@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: submit (form)
- * [POS]: Admin 登录页面（Better Auth）
+ * [POS]: Admin 登录页面（Better Auth + 管理员校验）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -19,8 +19,18 @@ import {
   Alert,
   AlertDescription,
 } from '@aiget/ui/primitives';
-import { useAuthStore, type AuthUser } from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
+import { apiClient } from '@/lib/api-client';
+import { USER_API } from '@/lib/api-paths';
+
+type UserProfile = {
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  isAdmin: boolean;
+};
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -42,10 +52,23 @@ export default function LoginPage() {
         throw new Error(signInError.message ?? 'Login failed');
       }
 
-      if (data?.user) {
-        setUser(data.user as AuthUser);
-        navigate('/');
+      if (!data?.user) {
+        throw new Error('Login failed');
       }
+
+      const profile = await apiClient.get<UserProfile>(USER_API.ME);
+
+      if (!profile.isAdmin) {
+        try {
+          await authClient.signOut();
+        } catch {
+          // 忽略登出失败
+        }
+        throw new Error('Admin access required');
+      }
+
+      setUser(profile);
+      navigate('/');
     } catch (err) {
       setError((err as Error).message);
     } finally {

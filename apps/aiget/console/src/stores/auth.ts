@@ -1,21 +1,19 @@
 /**
  * [PROVIDES]: useAuthStore, getAuthUser
- * [DEPENDS]: zustand, better-auth
- * [POS]: Console 端认证状态管理（Better Auth Cookie 模式）
+ * [DEPENDS]: zustand
+ * [POS]: Console 端认证状态管理（Better Auth Cookie 模式 + 用户档案）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { create } from 'zustand';
 
-/** Better Auth 用户类型 */
+/** Console 用户信息（来自 /api/v1/user/me） */
 export interface AuthUser {
   id: string;
   email: string;
-  name: string;
-  emailVerified: boolean;
-  image?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  name: string | null;
+  tier: string;
+  isAdmin: boolean;
 }
 
 /** 认证状态 */

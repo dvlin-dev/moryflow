@@ -1,20 +1,30 @@
 /**
  * [PROPS]: LoginFormProps
  * [EMITS]: submit (form)
- * [POS]: Console 登录表单（Better Auth）
+ * [POS]: Console 登录表单（Better Auth + 用户档案）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuthStore, type AuthUser } from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
+import { apiClient } from '@/lib/api-client';
+import { USER_API } from '@/lib/api-paths';
 import { cn } from '@aiget/ui/lib';
 import { Button, Card, CardContent, Input, Label } from '@aiget/ui/primitives';
 import { Link2, Loader2 } from 'lucide-react';
 
 export type LoginFormProps = React.ComponentProps<'div'>;
+
+type UserProfile = {
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  isAdmin: boolean;
+};
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
   const [email, setEmail] = useState('');
@@ -40,11 +50,14 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
         throw new Error(error.message ?? 'Login failed');
       }
 
-      if (data?.user) {
-        setUser(data.user as AuthUser);
-        toast.success('Login successful');
-        navigate('/');
+      if (!data?.user) {
+        throw new Error('Login failed');
       }
+
+      const profile = await apiClient.get<UserProfile>(USER_API.ME);
+      setUser(profile);
+      toast.success('Login successful');
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       toast.error(

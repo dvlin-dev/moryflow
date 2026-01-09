@@ -1,7 +1,7 @@
 /**
  * [PROPS]: NavUserProps
  * [EMITS]: logout (click)
- * [POS]: Console 用户菜单与登出入口
+ * [POS]: Console 用户菜单与登出入口（Better Auth）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -42,7 +42,7 @@ export function NavUser({ user }: NavUserProps) {
   const handleLogout = async () => {
     try {
       // 调用后端清除 Session Cookie
-      await authClient.logout();
+      await authClient.signOut();
     } catch {
       // 即使后端调用失败，也要清除前端状态
     }

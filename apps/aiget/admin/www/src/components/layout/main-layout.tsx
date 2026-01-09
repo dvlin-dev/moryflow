@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: logout (click)
- * [POS]: Admin 主布局与导航壳
+ * [POS]: Admin 主布局与导航壳（Better Auth 登出）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -42,7 +42,7 @@ export function MainLayout() {
 
   const handleLogout = async () => {
     try {
-      await authClient.logout();
+      await authClient.signOut();
     } catch {
       // 即使后端调用失败，也要清除前端状态
     }

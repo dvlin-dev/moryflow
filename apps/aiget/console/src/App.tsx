@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: route change
- * [POS]: Console 应用入口与路由保护
+ * [POS]: Console 应用入口与路由保护（基于 /api/v1/user/me 进行会话引导）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -10,8 +10,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
-import { authClient } from './lib/auth-client';
-import { toAuthUser } from './lib/auth-utils';
+import { apiClient } from './lib/api-client';
+import { USER_API } from './lib/api-paths';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -52,10 +52,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+type UserProfile = {
+  id: string;
+  email: string;
+  name: string | null;
+  tier: string;
+  isAdmin: boolean;
+};
+
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
   const clearSession = useAuthStore((state) => state.clearSession);
   const setBootstrapped = useAuthStore((state) => state.setBootstrapped);
 
@@ -71,10 +79,9 @@ function App() {
 
     const bootstrap = async () => {
       try {
-        const refresh = await authClient.refresh();
-        const me = await authClient.me(refresh.accessToken);
+        const profile = await apiClient.get<UserProfile>(USER_API.ME);
         if (!isActive) return;
-        setSession(toAuthUser(me), refresh.accessToken);
+        setUser(profile);
       } catch {
         if (!isActive) return;
         clearSession();
@@ -90,7 +97,7 @@ function App() {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isBootstrapped, setBootstrapped, setSession, clearSession]);
+  }, [isAuthenticated, isBootstrapped, setBootstrapped, setUser, clearSession]);
 
   return (
     <QueryClientProvider client={queryClient}>

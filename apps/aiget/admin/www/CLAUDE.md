@@ -20,6 +20,7 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 - 仅管理员可访问
 - Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
 - 认证通过 HttpOnly Cookie 承载，无需前端存储 token
+- 登录与启动时通过 `/api/v1/user/me` 同步用户档案（含 isAdmin）
 - API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - 监控页面需要定时刷新
@@ -70,7 +71,7 @@ feature-name/
 | File                               | Description                          |
 | ---------------------------------- | ------------------------------------ |
 | `lib/api-client.ts`                | HTTP client with cookie credentials  |
-| `lib/api-paths.ts`                 | Admin API endpoint constants         |
+| `lib/api-paths.ts`                 | Admin/user API endpoint constants    |
 | `lib/auth-client.ts`               | Better Auth official client instance |
 | `lib/job-utils.tsx`                | Job status rendering utilities       |
 | `stores/auth.ts`                   | Admin auth state (Zustand)           |
