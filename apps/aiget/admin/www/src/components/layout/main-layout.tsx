@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Alert01Icon,
+  AiBrowserIcon,
   Cancel01Icon,
   CreditCardIcon,
   DashboardSquare01Icon,
@@ -16,7 +17,6 @@ import {
   ListTodo,
   Logout01Icon,
   Menu01Icon,
-  Monitor01Icon,
   Receipt,
   UserGroupIcon,
 } from '@hugeicons/core-free-icons';
@@ -33,7 +33,7 @@ const navItems: { path: string; label: string; icon: HugeIcon }[] = [
   { path: '/jobs', label: 'Jobs', icon: ListTodo },
   { path: '/queues', label: 'Queues', icon: LayersIcon },
   { path: '/errors', label: 'Errors', icon: Alert01Icon },
-  { path: '/browser', label: 'Browser Pool', icon: Monitor01Icon },
+  { path: '/browser', label: 'Browser Pool', icon: AiBrowserIcon },
 ];
 
 export function MainLayout() {

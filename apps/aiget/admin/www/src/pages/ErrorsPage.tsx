@@ -6,9 +6,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert01Icon,
+  AnalyticsDownIcon,
   ArrowUpRight01Icon,
   PieChart01Icon,
-  TrendingDown01Icon,
 } from '@hugeicons/core-free-icons';
 import { PageHeader } from '@aiget/ui';
 import {
@@ -168,7 +168,7 @@ export default function ErrorsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <Icon icon={TrendingDown01Icon} className="h-4 w-4" />
+                <Icon icon={AnalyticsDownIcon} className="h-4 w-4" />
                 错误趋势
               </CardTitle>
             </CardHeader>

@@ -7,7 +7,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
+    tsconfigPaths({
+      ignoreConfigErrors: true,
+      skip: (dir) => dir.includes('archive/external-repos'),
+    }),
     tailwindcss(),
     tanstackStart({
       // 禁用预渲染（SSR 会在运行时渲染）

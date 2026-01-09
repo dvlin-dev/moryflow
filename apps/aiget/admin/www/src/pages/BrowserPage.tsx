@@ -6,10 +6,10 @@ import {
   Activity01Icon,
   AlertCircleIcon,
   Clock01Icon,
+  ComputerIcon,
   CpuIcon,
   HardDriveIcon,
-  Monitor01Icon,
-  Server01Icon,
+  ServerStack01Icon,
 } from '@hugeicons/core-free-icons';
 import { Icon, Progress, Skeleton } from '@aiget/ui';
 
@@ -68,7 +68,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
       label: 'Active Instances',
       value: `${status.total} / ${status.config.maxPoolSize}`,
       subValue: `${status.healthy} healthy`,
-      icon: Monitor01Icon,
+      icon: ComputerIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
@@ -84,7 +84,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
       label: 'Pool Utilization',
       value: `${status.utilization.poolUtilization}%`,
       subValue: `Page: ${status.utilization.pageUtilization}%`,
-      icon: Server01Icon,
+      icon: ServerStack01Icon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },
@@ -185,7 +185,7 @@ function InstancesCard({ status }: { status: BrowserPoolDetailedStatus }) {
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h3 className="font-semibold flex items-center gap-2 mb-4">
-        <Icon icon={Monitor01Icon} className="h-4 w-4" />
+        <Icon icon={ComputerIcon} className="h-4 w-4" />
         Browser Instances ({status.instances.length})
       </h3>
       {status.instances.length === 0 ? (

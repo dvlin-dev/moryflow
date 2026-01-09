@@ -30,6 +30,7 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 - UI 风格：Moryflow 圆角 + 柔和层级
 - 组件统一从 `@aiget/ui` 导入
 - 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
+- 图标名称必须来自 Hugeicons 实际导出（避免不存在的 Icon 名称）
 - 时间展示统一使用 `@aiget/ui/lib` 的 `formatRelativeTime`
 
 ## 环境变量
