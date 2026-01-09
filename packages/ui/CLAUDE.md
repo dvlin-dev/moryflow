@@ -34,6 +34,10 @@ import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
 - 禁止使用 `lucide-react`、`@tabler/icons-react`
 - 组件内默认使用 `Icon` 封装（`size=18`，`strokeWidth=1.5`）
 
+## 约束
+
+- `verbatimModuleSyntax` 开启时，类型必须使用 `import type`
+
 ## 技术栈
 
 - React 19
@@ -57,4 +61,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.0 | 更新日期: 2026-01-09_
+_版本: 4.1 | 更新日期: 2026-01-09_

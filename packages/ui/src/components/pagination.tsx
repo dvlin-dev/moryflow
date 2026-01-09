@@ -2,7 +2,7 @@ import * as React from 'react';
 import { ArrowLeft01Icon, ArrowRight01Icon, More01Icon } from '@hugeicons/core-free-icons';
 
 import { cn } from '../lib/utils';
-import { ButtonProps, buttonVariants } from './button';
+import { buttonVariants, type ButtonProps } from './button';
 import { Icon } from './icon';
 
 const Pagination = ({ className, ...props }: React.ComponentProps<'nav'>) => (
