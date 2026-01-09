@@ -1,19 +1,17 @@
 'use client';
 
+import {
+  Add01Icon,
+  ArrowTurnDownIcon,
+  Cancel01Icon,
+  Loading01Icon,
+  StopIcon,
+} from '@hugeicons/core-free-icons';
 import type { ChatStatus } from 'ai';
-import {
-  type ComponentProps,
-  Children,
-} from 'react';
-import {
-  CornerDownLeftIcon,
-  Loader2Icon,
-  PlusIcon,
-  SquareIcon,
-  XIcon,
-} from 'lucide-react';
+import { type ComponentProps, Children } from 'react';
 
 import { InputGroupButton } from '../../components/input-group';
+import { Icon } from '../../components/icon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,8 +29,7 @@ export const PromptInputButton = ({
   children,
   ...props
 }: PromptInputButtonProps) => {
-  const newSize =
-    size ?? (Children.count(children) > 1 ? 'sm' : 'icon-sm');
+  const newSize = size ?? (Children.count(children) > 1 ? 'sm' : 'icon-sm');
 
   return (
     <InputGroupButton
@@ -62,14 +59,12 @@ export const PromptInputActionMenuTrigger = ({
 }: PromptInputActionMenuTriggerProps) => (
   <DropdownMenuTrigger asChild>
     <PromptInputButton className={className} {...props}>
-      {children ?? <PlusIcon className="size-4" />}
+      {children ?? <Icon icon={Add01Icon} className="size-4" />}
     </PromptInputButton>
   </DropdownMenuTrigger>
 );
 
-export type PromptInputActionMenuContentProps = ComponentProps<
-  typeof DropdownMenuContent
->;
+export type PromptInputActionMenuContentProps = ComponentProps<typeof DropdownMenuContent>;
 
 export const PromptInputActionMenuContent = ({
   className,
@@ -78,16 +73,12 @@ export const PromptInputActionMenuContent = ({
   <DropdownMenuContent align="start" className={cn(className)} {...props} />
 );
 
-export type PromptInputActionMenuItemProps = ComponentProps<
-  typeof DropdownMenuItem
->;
+export type PromptInputActionMenuItemProps = ComponentProps<typeof DropdownMenuItem>;
 
 export const PromptInputActionMenuItem = ({
   className,
   ...props
-}: PromptInputActionMenuItemProps) => (
-  <DropdownMenuItem className={cn(className)} {...props} />
-);
+}: PromptInputActionMenuItemProps) => <DropdownMenuItem className={cn(className)} {...props} />;
 
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
   status?: ChatStatus;
@@ -101,14 +92,14 @@ export const PromptInputSubmit = ({
   children,
   ...props
 }: PromptInputSubmitProps) => {
-  let Icon = <CornerDownLeftIcon className="size-4" />;
+  let iconNode = <Icon icon={ArrowTurnDownIcon} className="size-4" />;
 
   if (status === 'submitted') {
-    Icon = <Loader2Icon className="size-4 animate-spin" />;
+    iconNode = <Icon icon={Loading01Icon} className="size-4 animate-spin" />;
   } else if (status === 'streaming') {
-    Icon = <SquareIcon className="size-4" />;
+    iconNode = <Icon icon={StopIcon} className="size-4" />;
   } else if (status === 'error') {
-    Icon = <XIcon className="size-4" />;
+    iconNode = <Icon icon={Cancel01Icon} className="size-4" />;
   }
 
   return (
@@ -120,7 +111,7 @@ export const PromptInputSubmit = ({
       variant={variant}
       {...props}
     >
-      {children ?? Icon}
+      {children ?? iconNode}
     </InputGroupButton>
   );
 };

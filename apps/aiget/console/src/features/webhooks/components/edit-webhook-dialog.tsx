@@ -13,7 +13,7 @@ import {
   Input,
   Label,
   Checkbox,
-} from '@aiget/ui/primitives';
+} from '@aiget/ui';
 import { useUpdateWebhook } from '../hooks';
 import { WEBHOOK_EVENTS } from '../constants';
 import type { Webhook, WebhookEvent } from '../types';

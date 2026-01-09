@@ -3,9 +3,8 @@
  * 交互式测试 oEmbed API
  */
 import { useMemo, useState } from 'react';
-import { PageHeader } from '@aiget/ui/composed';
-import { Card, CardContent, Skeleton, Alert, AlertDescription } from '@aiget/ui/primitives';
-import { AlertTriangle } from 'lucide-react';
+import { Alert01Icon } from '@hugeicons/core-free-icons';
+import { PageHeader, Card, CardContent, Skeleton, Alert, AlertDescription, Icon } from '@aiget/ui';
 import { useApiKeys } from '@/features/api-keys';
 import {
   EmbedForm,
@@ -74,7 +73,7 @@ export default function EmbedPlaygroundPage() {
       <div className="space-y-6">
         <PageHeader title="Embed" description="Interactive oEmbed API testing" />
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <Icon icon={Alert01Icon} className="h-4 w-4" />
           <AlertDescription>
             You haven't created any API Keys yet. Please create one on the{' '}
             <a href="/api-keys" className="underline font-medium text-orange-500">
@@ -114,7 +113,7 @@ export default function EmbedPlaygroundPage() {
         <div>
           {error ? (
             <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
+              <Icon icon={Alert01Icon} className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : result ? (

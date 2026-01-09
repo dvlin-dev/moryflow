@@ -213,6 +213,7 @@ Aiget/
 | [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                          |
 | [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点（含 Auth Client） |
 | [`docs/features/scheduled-digest/overview.md`](./docs/features/scheduled-digest/overview.md)                     | 功能：定时内容订阅（Email Digest）需求方案                 |
+| [`docs/ui-migration-moryflow.md`](./docs/ui-migration-moryflow.md)                                               | UI 统一迁移方案（Moryflow 风格 + Hugeicons）               |
 | `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                           |
 | `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                             |
 
@@ -463,6 +464,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 - 留白即设计，避免拥挤
 - 阴影微妙克制
 - 动效自然流畅
+- 图标统一使用 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`），禁止 `lucide-react` / `@tabler/icons-react`
 
 ### 主题色变量
 

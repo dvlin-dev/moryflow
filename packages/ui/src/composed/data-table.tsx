@@ -3,9 +3,9 @@
  * 支持加载状态、空状态、行点击
  */
 import type { ReactNode } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../primitives/table';
-import { Skeleton } from '../primitives/skeleton';
-import { Empty } from '../primitives/empty';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/table';
+import { Skeleton } from '../components/skeleton';
+import { Empty } from '../components/empty';
 
 export interface Column<T> {
   key: string;
@@ -49,7 +49,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="rounded-none border">
+      <div className="rounded-xl border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -70,7 +70,7 @@ export function DataTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className="rounded-none border">
+      <div className="rounded-xl border">
         <Empty className="py-12">
           <span className="text-muted-foreground text-sm">{emptyMessage}</span>
         </Empty>
@@ -79,7 +79,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="rounded-none border">
+    <div className="rounded-xl border">
       <Table>
         <TableHeader>
           <TableRow>

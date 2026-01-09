@@ -1,6 +1,6 @@
+import { ArrowRight01Icon, BrainIcon, GithubIcon } from '@hugeicons/core-free-icons';
 import { Container } from '@/components/layout';
-import { Button } from '@aiget/ui/primitives';
-import { ArrowRight, Brain, Github } from 'lucide-react';
+import { Button, Icon } from '@aiget/ui';
 
 export function HeroSection() {
   return (
@@ -12,7 +12,7 @@ export function HeroSection() {
         <div className="flex flex-col items-center py-24 text-center md:py-32 lg:py-40">
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 border border-border bg-muted/50 px-3 py-1 font-mono text-xs">
-            <Brain className="h-3 w-3" />
+            <Icon icon={BrainIcon} className="h-3 w-3" />
             <span>Semantic Memory API for AI Agents</span>
           </div>
 
@@ -34,7 +34,7 @@ export function HeroSection() {
             <a href="https://console.aiget.dev/signup">
               <Button size="lg" className="font-mono">
                 Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <a href="https://server.aiget.dev/api-docs" target="_blank" rel="noopener noreferrer">
@@ -52,7 +52,7 @@ export function HeroSection() {
               rel="noopener noreferrer"
               className="flex items-center gap-2 transition-colors hover:text-foreground"
             >
-              <Github className="h-4 w-4" />
+              <Icon icon={GithubIcon} className="h-4 w-4" />
               <span className="font-mono">Open Source</span>
             </a>
             <div className="flex items-center gap-2">

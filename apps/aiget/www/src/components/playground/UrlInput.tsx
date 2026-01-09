@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button } from '@aiget/ui/primitives';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
+import { Button, Icon } from '@aiget/ui';
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -42,11 +42,11 @@ export function UrlInput({ onSubmit, isLoading, disabled }: UrlInputProps) {
         className="h-11 font-mono"
       >
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
         ) : (
           <>
             Capture
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
           </>
         )}
       </Button>

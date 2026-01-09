@@ -47,3 +47,4 @@ export function useJobs() {
 - `@aiget/ui` - UI 组件
 - `../lib/api-client` - HTTP 客户端
 - `../lib/api-paths` - API 常量
+- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）

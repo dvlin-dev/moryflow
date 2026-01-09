@@ -5,18 +5,24 @@
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 apps/aiget/console/CLAUDE.md。
  */
-import { PageHeader } from '@aiget/ui/composed';
 import {
+  ArrowUpRight01Icon,
+  Book01Icon,
+  Camera01Icon,
+  Key01Icon,
+} from '@hugeicons/core-free-icons';
+import { PageHeader } from '@aiget/ui';
+import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Icon,
+  Progress,
   Skeleton,
-} from '@aiget/ui/primitives';
-import { Progress } from '@aiget/ui/primitives';
-import { Button } from '@aiget/ui/primitives';
-import { Camera, Key, Book, ExternalLink } from 'lucide-react';
+} from '@aiget/ui';
 import { useProfile } from '@/features/settings';
 
 export default function DashboardPage() {
@@ -101,9 +107,9 @@ export default function DashboardPage() {
           <CardDescription>Get started with Aiget API in minutes</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-start gap-4 p-4 border rounded-none">
+          <div className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="p-2">
-              <Key className="h-5 w-5 text-primary" />
+              <Icon icon={Key01Icon} className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <h4 className="font-medium">1. Create API Key</h4>
@@ -116,16 +122,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-start gap-4 p-4 border rounded-none">
+          <div className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="p-2">
-              <Camera className="h-5 w-5 text-primary" />
+              <Icon icon={Camera01Icon} className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <h4 className="font-medium">2. Call Scrape API</h4>
               <p className="text-sm text-muted-foreground">
                 Make scrape requests using your API Key (supports screenshots)
               </p>
-              <pre className="mt-2 p-3 bg-muted rounded-none text-xs overflow-x-auto">
+              <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-x-auto">
                 {`curl -X POST https://server.aiget.dev/api/v1/scrape \\
   -H "Authorization: Bearer ag_your_api_key" \\
   -H "Content-Type: application/json" \\
@@ -134,9 +140,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-start gap-4 p-4 border rounded-none">
+          <div className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="p-2">
-              <Book className="h-5 w-5 text-primary" />
+              <Icon icon={Book01Icon} className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <h4 className="font-medium">3. Read Documentation</h4>
@@ -145,7 +151,7 @@ export default function DashboardPage() {
               </p>
               <Button variant="link" className="px-0 h-auto mt-1" asChild>
                 <a href="https://docs.aiget.dev" target="_blank" rel="noopener noreferrer">
-                  View docs <ExternalLink className="h-3 w-3 ml-1" />
+                  View docs <Icon icon={ArrowUpRight01Icon} className="h-3 w-3 ml-1" />
                 </a>
               </Button>
             </div>

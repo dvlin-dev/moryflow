@@ -59,3 +59,4 @@ export function useApiKeys() {
 - `../lib/api-client` - HTTP 客户端
 - `../lib/api-paths` - API 常量
 - `better-auth` - Better Auth 官方客户端
+- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）

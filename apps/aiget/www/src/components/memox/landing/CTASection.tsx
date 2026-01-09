@@ -1,6 +1,6 @@
 import { Container } from '@/components/layout';
-import { Button } from '@aiget/ui/primitives';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { Button, Icon } from '@aiget/ui';
 
 export function CTASection() {
   return (
@@ -17,7 +17,7 @@ export function CTASection() {
             <a href="https://console.aiget.dev/signup">
               <Button size="lg" className="font-mono">
                 Create Free Account
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <a href="https://server.aiget.dev/api-docs" target="_blank" rel="noopener noreferrer">

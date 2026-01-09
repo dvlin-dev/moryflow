@@ -1,7 +1,7 @@
 /**
  * StatusBadge - 状态徽章组件
  */
-import { Badge } from '../primitives/badge';
+import { Badge } from '../components/badge';
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 

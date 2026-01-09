@@ -3,7 +3,20 @@
  * 队列监控
  */
 import { useState } from 'react';
-import { PageHeader } from '@aiget/ui/composed';
+import {
+  Alert01Icon,
+  CancelCircleIcon,
+  CheckmarkCircle01Icon,
+  Clock01Icon,
+  Delete02Icon,
+  Loading01Icon,
+  PauseIcon,
+  PlayIcon,
+  RefreshIcon,
+  RotateLeft01Icon,
+  Timer01Icon,
+} from '@hugeicons/core-free-icons';
+import { PageHeader } from '@aiget/ui';
 import {
   Card,
   CardContent,
@@ -18,6 +31,7 @@ import {
   Badge,
   Skeleton,
   Button,
+  Icon,
   Tabs,
   TabsContent,
   TabsList,
@@ -30,20 +44,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/primitives';
-import {
-  RefreshCw,
-  Trash2,
-  RotateCcw,
-  Pause,
-  Play,
-  Clock,
-  Loader2,
-  CheckCircle,
-  XCircle,
-  Timer,
-  AlertTriangle,
-} from 'lucide-react';
+} from '@aiget/ui';
 import {
   useAllQueueStats,
   useQueueJobs,
@@ -62,11 +63,15 @@ const QUEUE_LABELS: Record<QueueName, string> = {
 };
 
 const STATUS_TABS: { value: QueueJobStatus; label: string; icon: React.ReactNode }[] = [
-  { value: 'waiting', label: '等待中', icon: <Clock className="h-4 w-4" /> },
-  { value: 'active', label: '处理中', icon: <Loader2 className="h-4 w-4" /> },
-  { value: 'completed', label: '已完成', icon: <CheckCircle className="h-4 w-4" /> },
-  { value: 'failed', label: '失败', icon: <XCircle className="h-4 w-4" /> },
-  { value: 'delayed', label: '延迟', icon: <Timer className="h-4 w-4" /> },
+  { value: 'waiting', label: '等待中', icon: <Icon icon={Clock01Icon} className="h-4 w-4" /> },
+  { value: 'active', label: '处理中', icon: <Icon icon={Loading01Icon} className="h-4 w-4" /> },
+  {
+    value: 'completed',
+    label: '已完成',
+    icon: <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4" />,
+  },
+  { value: 'failed', label: '失败', icon: <Icon icon={CancelCircleIcon} className="h-4 w-4" /> },
+  { value: 'delayed', label: '延迟', icon: <Icon icon={Timer01Icon} className="h-4 w-4" /> },
 ];
 
 /** 队列状态卡片 */
@@ -215,11 +220,11 @@ export default function QueuesPage() {
             onClick={() => setConfirmDialog({ open: true, action: 'cleanup-stale' })}
             disabled={isCleaningStale}
           >
-            <AlertTriangle className="mr-2 h-4 w-4" />
+            <Icon icon={Alert01Icon} className="mr-2 h-4 w-4" />
             清理卡住任务
           </Button>
           <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <Icon icon={RefreshIcon} className="mr-2 h-4 w-4" />
             刷新
           </Button>
         </div>
@@ -289,12 +294,12 @@ export default function QueuesPage() {
               >
                 {isPaused ? (
                   <>
-                    <Play className="mr-2 h-4 w-4" />
+                    <Icon icon={PlayIcon} className="mr-2 h-4 w-4" />
                     恢复
                   </>
                 ) : (
                   <>
-                    <Pause className="mr-2 h-4 w-4" />
+                    <Icon icon={PauseIcon} className="mr-2 h-4 w-4" />
                     暂停
                   </>
                 )}
@@ -305,7 +310,7 @@ export default function QueuesPage() {
                 onClick={() => setConfirmDialog({ open: true, action: 'retry' })}
                 disabled={isRetrying || (selectedStats?.failed ?? 0) === 0}
               >
-                <RotateCcw className="mr-2 h-4 w-4" />
+                <Icon icon={RotateLeft01Icon} className="mr-2 h-4 w-4" />
                 重试全部失败
               </Button>
               <Button
@@ -314,7 +319,7 @@ export default function QueuesPage() {
                 onClick={() => setConfirmDialog({ open: true, action: 'clean-completed' })}
                 disabled={isCleaning}
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Icon icon={Delete02Icon} className="mr-2 h-4 w-4" />
                 清理已完成
               </Button>
             </div>

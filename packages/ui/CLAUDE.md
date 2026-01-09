@@ -1,6 +1,6 @@
 # @aiget/ui
 
-> 统一 UI 组件库，整合 Moryflow 和 Fetchx 项目
+> 统一 UI 组件库，采用 Moryflow 风格与 Hugeicons
 
 ## 目录结构
 
@@ -9,8 +9,7 @@ src/
 ├── ai/                 # AI 相关组件（代码块、消息等）- 来自 Moryflow
 ├── animate/            # 动画组件和效果 - 来自 Moryflow
 ├── components/         # Moryflow 风格基础 UI 组件
-├── primitives/         # Fetchx 风格基础 UI 组件（radix-lyra 风格）
-├── composed/           # Fetchx 组合组件
+├── composed/           # 组合组件（基于 components）
 ├── hooks/              # 通用 Hooks
 ├── icons/              # 图标组件
 ├── lib/                # 工具函数
@@ -21,28 +20,19 @@ styles/                 # 全局样式
 ## 导入方式
 
 ```tsx
-// Moryflow 风格组件
-import { Button, Card } from '@aiget/ui/components/button';
-
-// Fetchx 风格组件（radix-lyra 风格，方角设计）
-import { Button, Card } from '@aiget/ui/primitives';
-
-// Fetchx 组合组件
+import { Button, Card, Icon } from '@aiget/ui';
 import { DataTable, PageHeader } from '@aiget/ui/composed';
-
-// AI 组件
 import { CodeBlock } from '@aiget/ui/ai/code-block';
-
-// 动画
 import { Highlight } from '@aiget/ui/animate/primitives/effects/highlight';
-
-// 工具
 import { cn } from '@aiget/ui/lib';
-import { formatRelativeTime } from '@aiget/ui/lib';
-
-// Hooks
 import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
 ```
+
+## 图标规范
+
+- 统一使用 `@hugeicons/react` + `@hugeicons/core-free-icons`
+- 禁止使用 `lucide-react`、`@tabler/icons-react`
+- 组件内默认使用 `Icon` 封装（`size=18`，`strokeWidth=1.5`）
 
 ## 技术栈
 
@@ -63,8 +53,8 @@ pnpm typecheck
 ## 来源说明
 
 - `components/`、`ai/`、`animate/`、`icons/` - 来自 Moryflow
-- `primitives/`、`composed/` - 来自 Fetchx
+- `composed/` - 来自 Fetchx（已统一基于 components）
 
 ---
 
-_版本: 3.0 | 更新日期: 2026-01-05_
+_版本: 4.0 | 更新日期: 2026-01-09_

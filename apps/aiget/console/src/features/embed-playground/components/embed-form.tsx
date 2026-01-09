@@ -8,9 +8,11 @@
  * - Spotify:   https://open.spotify.com/track/2plbrEY59IikOBgBGLjaoe
  * - SoundCloud: https://soundcloud.com/flume/smoke-and-retribution-feat-vince-staples-kucka
  */
-import { useState } from 'react'
+import { useState } from 'react';
+import { Link01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
 import {
   Button,
+  Icon,
   Input,
   Label,
   Select,
@@ -18,18 +20,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@aiget/ui/primitives'
-import { Link, Loader2 } from 'lucide-react'
-import type { ApiKey } from '@/features/api-keys'
-import type { EmbedFormData } from '../types'
-import type { EmbedTheme } from '@aiget/embed-react'
+} from '@aiget/ui';
+import type { ApiKey } from '@/features/api-keys';
+import type { EmbedFormData } from '../types';
+import type { EmbedTheme } from '@aiget/embed-react';
 
 interface EmbedFormProps {
-  apiKeys: ApiKey[]
-  selectedKeyId: string
-  onKeyChange: (keyId: string) => void
-  onSubmit: (data: EmbedFormData) => void
-  isLoading?: boolean
+  apiKeys: ApiKey[];
+  selectedKeyId: string;
+  onKeyChange: (keyId: string) => void;
+  onSubmit: (data: EmbedFormData) => void;
+  isLoading?: boolean;
 }
 
 export function EmbedForm({
@@ -39,22 +40,22 @@ export function EmbedForm({
   onSubmit,
   isLoading,
 }: EmbedFormProps) {
-  const [url, setUrl] = useState('')
-  const [maxWidth, setMaxWidth] = useState<number | undefined>(550)
-  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined)
-  const [theme, setTheme] = useState<EmbedTheme | 'auto'>('auto')
+  const [url, setUrl] = useState('');
+  const [maxWidth, setMaxWidth] = useState<number | undefined>(550);
+  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined);
+  const [theme, setTheme] = useState<EmbedTheme | 'auto'>('auto');
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!url.trim()) return
+    e.preventDefault();
+    if (!url.trim()) return;
 
     onSubmit({
       url: url.trim(),
       maxWidth,
       maxHeight,
       theme: theme === 'auto' ? undefined : theme,
-    })
-  }
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -103,9 +104,7 @@ export function EmbedForm({
             max={4096}
             placeholder="550"
             value={maxWidth ?? ''}
-            onChange={(e) =>
-              setMaxWidth(e.target.value ? Number(e.target.value) : undefined)
-            }
+            onChange={(e) => setMaxWidth(e.target.value ? Number(e.target.value) : undefined)}
           />
         </div>
         <div className="space-y-2">
@@ -117,9 +116,7 @@ export function EmbedForm({
             max={4096}
             placeholder="Optional"
             value={maxHeight ?? ''}
-            onChange={(e) =>
-              setMaxHeight(e.target.value ? Number(e.target.value) : undefined)
-            }
+            onChange={(e) => setMaxHeight(e.target.value ? Number(e.target.value) : undefined)}
           />
         </div>
       </div>
@@ -127,10 +124,7 @@ export function EmbedForm({
       {/* 主题选择 */}
       <div className="space-y-2">
         <Label htmlFor="theme">Theme (Twitter only)</Label>
-        <Select
-          value={theme}
-          onValueChange={(v) => setTheme(v as EmbedTheme | 'auto')}
-        >
+        <Select value={theme} onValueChange={(v) => setTheme(v as EmbedTheme | 'auto')}>
           <SelectTrigger id="theme">
             <SelectValue placeholder="Auto" />
           </SelectTrigger>
@@ -146,16 +140,16 @@ export function EmbedForm({
       <Button type="submit" className="w-full" disabled={isLoading || !url.trim()}>
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
             Fetching...
           </>
         ) : (
           <>
-            <Link className="mr-2 h-4 w-4" />
+            <Icon icon={Link01Icon} className="mr-2 h-4 w-4" />
             Fetch Embed
           </>
         )}
       </Button>
     </form>
-  )
+  );
 }

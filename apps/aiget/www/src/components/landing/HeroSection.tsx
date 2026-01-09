@@ -1,6 +1,7 @@
+import { Globe02Icon } from '@hugeicons/core-free-icons';
 import { Container } from '@/components/layout';
 import { HeroPlayground } from '@/components/playground/HeroPlayground';
-import { Globe } from 'lucide-react';
+import { Icon } from '@aiget/ui';
 
 export function HeroSection() {
   return (
@@ -12,7 +13,7 @@ export function HeroSection() {
         <div className="flex flex-col items-center py-16 text-center md:py-20 lg:py-24">
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 border border-border bg-muted/50 px-3 py-1 font-mono text-xs">
-            <Globe className="h-3 w-3" />
+            <Icon icon={Globe02Icon} className="h-3 w-3" />
             <span>Get anything for AI.</span>
           </div>
 

@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { ArrowRight01Icon, Database01Icon, Globe02Icon } from '@hugeicons/core-free-icons';
 import { Header, Footer } from '@/components/layout';
 import { Container } from '@/components/layout';
-import { Button } from '@aiget/ui/primitives';
-import { ArrowRight, Database, Globe } from 'lucide-react';
+import { Button, Icon } from '@aiget/ui';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -24,7 +24,7 @@ function HomePage() {
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Button asChild className="font-mono">
                   <a href="https://console.aiget.dev" target="_blank" rel="noopener noreferrer">
-                    Open Console <ArrowRight className="ml-2 h-4 w-4" />
+                    Open Console <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
                 <Button asChild variant="outline" className="font-mono">
@@ -46,7 +46,7 @@ function HomePage() {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="border border-border bg-card p-6">
                 <div className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
-                  <Globe className="h-4 w-4" />
+                  <Icon icon={Globe02Icon} className="h-4 w-4" />
                   <span>Fetchx</span>
                 </div>
                 <h2 className="mt-4 font-mono text-2xl font-bold">Web data for AI</h2>
@@ -56,7 +56,7 @@ function HomePage() {
                 <div className="mt-6">
                   <Button asChild variant="outline" className="font-mono">
                     <a href="/fetchx">
-                      Explore Fetchx <ArrowRight className="ml-2 h-4 w-4" />
+                      Explore Fetchx <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
                     </a>
                   </Button>
                 </div>
@@ -64,7 +64,7 @@ function HomePage() {
 
               <div className="border border-border bg-card p-6">
                 <div className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
-                  <Database className="h-4 w-4" />
+                  <Icon icon={Database01Icon} className="h-4 w-4" />
                   <span>Memox</span>
                 </div>
                 <h2 className="mt-4 font-mono text-2xl font-bold">Long-term memory</h2>
@@ -74,7 +74,7 @@ function HomePage() {
                 <div className="mt-6">
                   <Button asChild variant="outline" className="font-mono">
                     <a href="/memox">
-                      Explore Memox <ArrowRight className="ml-2 h-4 w-4" />
+                      Explore Memox <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
                     </a>
                   </Button>
                 </div>

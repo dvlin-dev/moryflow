@@ -8,17 +8,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
   Input,
   Label,
-  Alert,
-  AlertDescription,
-} from '@aiget/ui/primitives';
+} from '@aiget/ui';
 import { useAuthStore } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
 import { apiClient } from '@/lib/api-client';

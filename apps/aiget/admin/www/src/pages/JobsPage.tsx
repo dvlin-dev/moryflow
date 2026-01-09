@@ -4,7 +4,8 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader, SimplePagination } from '@aiget/ui/composed';
+import { ArrowUpRight01Icon, Search01Icon, ZapIcon } from '@hugeicons/core-free-icons';
+import { PageHeader, SimplePagination } from '@aiget/ui';
 import {
   Card,
   CardContent,
@@ -18,6 +19,7 @@ import {
   TableRow,
   Badge,
   Skeleton,
+  Icon,
   Input,
   Button,
   Select,
@@ -25,9 +27,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@aiget/ui/primitives';
+} from '@aiget/ui';
 import { formatRelativeTime } from '@aiget/ui/lib';
-import { Search, ExternalLink, Zap } from 'lucide-react';
 import { useJobs, useJobStats } from '@/features/jobs';
 import type { JobsQuery, JobStatus, JobListItem } from '@/features/jobs';
 import { formatMs, truncateUrl, getStatusBadge } from '@/lib/job-utils';
@@ -109,7 +110,7 @@ export default function JobsPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-1 text-2xl font-bold">
-                <Zap className="h-5 w-5 text-yellow-500" />
+                <Icon icon={ZapIcon} className="h-5 w-5 text-yellow-500" />
                 {formatMs(stats.avgProcessingMs)}
               </div>
               <p className="text-xs text-muted-foreground">平均耗时</p>
@@ -144,7 +145,7 @@ export default function JobsPage() {
                 className="w-64"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Search className="h-4 w-4" />
+                <Icon icon={Search01Icon} className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -221,7 +222,7 @@ export default function JobsPage() {
                             navigate(`/jobs/${job.id}`);
                           }}
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <Icon icon={ArrowUpRight01Icon} className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

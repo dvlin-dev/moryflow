@@ -2,18 +2,19 @@
  * AppSidebar - Aiget 控制台侧边栏
  */
 import {
-  LayoutDashboard,
-  Play,
-  Key,
-  Image,
-  Webhook,
-  Settings,
-  Link2,
-} from 'lucide-react'
+  DashboardSquare01Icon,
+  PlayIcon,
+  Key01Icon,
+  Image01Icon,
+  WebhookIcon,
+  Settings01Icon,
+  Link02Icon,
+} from '@hugeicons/core-free-icons';
 
-import { NavMain, type NavGroup } from '@/components/layout/nav-main'
-import { NavUser } from '@/components/layout/nav-user'
+import { NavMain, type NavGroup } from '@/components/layout/nav-main';
+import { NavUser } from '@/components/layout/nav-user';
 import {
+  Icon,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -21,17 +22,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@aiget/ui/primitives'
+} from '@aiget/ui';
 
 // 导航分组配置
 const navGroups: NavGroup[] = [
   {
     // 概览 - 无分组标签
     items: [
-      { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+      { title: 'Dashboard', url: '/', icon: DashboardSquare01Icon },
       {
         title: 'Playground',
-        icon: Play,
+        icon: PlayIcon,
         items: [
           { title: 'Screenshot', url: '/playground/screenshot' },
           { title: 'Embed', url: '/playground/embed' },
@@ -42,24 +43,24 @@ const navGroups: NavGroup[] = [
   {
     label: 'API',
     items: [
-      { title: 'API Keys', url: '/api-keys', icon: Key },
-      { title: 'Screenshots', url: '/screenshots', icon: Image },
-      { title: 'Webhooks', url: '/webhooks', icon: Webhook },
+      { title: 'API Keys', url: '/api-keys', icon: Key01Icon },
+      { title: 'Screenshots', url: '/screenshots', icon: Image01Icon },
+      { title: 'Webhooks', url: '/webhooks', icon: WebhookIcon },
     ],
   },
   {
     label: 'Account',
-    items: [{ title: 'Settings', url: '/settings', icon: Settings }],
+    items: [{ title: 'Settings', url: '/settings', icon: Settings01Icon }],
   },
-]
+];
 
 export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user?: {
-    id: string
-    email: string
-    name?: string
-    avatar?: string
-  }
+    id: string;
+    email: string;
+    name?: string;
+    avatar?: string;
+  };
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
@@ -68,12 +69,9 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
+            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="/">
-                <Link2 className="!size-5" />
+                <Icon icon={Link02Icon} className="!size-5" />
                 <span className="text-base font-semibold">Aiget</span>
               </a>
             </SidebarMenuButton>
@@ -95,5 +93,5 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         )}
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

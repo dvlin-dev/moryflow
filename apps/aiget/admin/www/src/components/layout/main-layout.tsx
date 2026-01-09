@@ -8,31 +8,32 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Users,
-  Receipt,
-  CreditCard,
-  LogOut,
+  Alert01Icon,
+  Cancel01Icon,
+  CreditCardIcon,
+  DashboardSquare01Icon,
+  LayersIcon,
   ListTodo,
-  Layers,
-  AlertTriangle,
-  Monitor,
-  Menu,
-  X,
-} from 'lucide-react';
+  Logout01Icon,
+  Menu01Icon,
+  Monitor01Icon,
+  Receipt,
+  UserGroupIcon,
+} from '@hugeicons/core-free-icons';
 import { cn } from '@aiget/ui/lib';
+import { Icon, type HugeIcon } from '@aiget/ui';
 import { useAuthStore } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
 
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/users', label: 'Users', icon: Users },
+const navItems: { path: string; label: string; icon: HugeIcon }[] = [
+  { path: '/', label: 'Dashboard', icon: DashboardSquare01Icon },
+  { path: '/users', label: 'Users', icon: UserGroupIcon },
   { path: '/orders', label: 'Orders', icon: Receipt },
-  { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard },
+  { path: '/subscriptions', label: 'Subscriptions', icon: CreditCardIcon },
   { path: '/jobs', label: 'Jobs', icon: ListTodo },
-  { path: '/queues', label: 'Queues', icon: Layers },
-  { path: '/errors', label: 'Errors', icon: AlertTriangle },
-  { path: '/browser', label: 'Browser Pool', icon: Monitor },
+  { path: '/queues', label: 'Queues', icon: LayersIcon },
+  { path: '/errors', label: 'Errors', icon: Alert01Icon },
+  { path: '/browser', label: 'Browser Pool', icon: Monitor01Icon },
 ];
 
 export function MainLayout() {
@@ -69,7 +70,7 @@ export function MainLayout() {
         <div className="flex h-16 items-center justify-between border-b border-border px-6">
           <span className="text-lg font-bold">Aiget Admin</span>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
-            <X className="h-5 w-5" />
+            <Icon icon={Cancel01Icon} className="h-5 w-5" />
           </button>
         </div>
         <nav className="p-4">
@@ -80,13 +81,13 @@ export function MainLayout() {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-none px-3 py-2 text-sm transition-colors',
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                     location.pathname === item.path
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <Icon icon={item.icon} className="h-4 w-4" />
                   {item.label}
                 </Link>
               </li>
@@ -101,7 +102,7 @@ export function MainLayout() {
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
-              <Menu className="h-5 w-5" />
+              <Icon icon={Menu01Icon} className="h-5 w-5" />
             </button>
             <h1 className="text-lg font-semibold">Admin Panel</h1>
           </div>
@@ -111,7 +112,7 @@ export function MainLayout() {
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm text-destructive hover:underline"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <Icon icon={Logout01Icon} className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>

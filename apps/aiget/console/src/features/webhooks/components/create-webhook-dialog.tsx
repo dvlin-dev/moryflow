@@ -1,7 +1,7 @@
 /**
  * 创建 Webhook 对话框
  */
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,55 +13,52 @@ import {
   Input,
   Label,
   Checkbox,
-} from '@aiget/ui/primitives'
-import { useCreateWebhook } from '../hooks'
-import { WEBHOOK_EVENTS, DEFAULT_WEBHOOK_EVENTS } from '../constants'
-import type { WebhookEvent } from '../types'
+} from '@aiget/ui';
+import { useCreateWebhook } from '../hooks';
+import { WEBHOOK_EVENTS, DEFAULT_WEBHOOK_EVENTS } from '../constants';
+import type { WebhookEvent } from '../types';
 
 interface CreateWebhookDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function CreateWebhookDialog({
-  open,
-  onOpenChange,
-}: CreateWebhookDialogProps) {
-  const [name, setName] = useState('')
-  const [url, setUrl] = useState('')
-  const [events, setEvents] = useState<WebhookEvent[]>(DEFAULT_WEBHOOK_EVENTS)
+export function CreateWebhookDialog({ open, onOpenChange }: CreateWebhookDialogProps) {
+  const [name, setName] = useState('');
+  const [url, setUrl] = useState('');
+  const [events, setEvents] = useState<WebhookEvent[]>(DEFAULT_WEBHOOK_EVENTS);
 
-  const { mutate: create, isPending } = useCreateWebhook()
+  const { mutate: create, isPending } = useCreateWebhook();
 
   const handleEventToggle = (event: WebhookEvent, checked: boolean) => {
     if (checked) {
-      setEvents((prev) => [...prev, event])
+      setEvents((prev) => [...prev, event]);
     } else {
-      setEvents((prev) => prev.filter((e) => e !== event))
+      setEvents((prev) => prev.filter((e) => e !== event));
     }
-  }
+  };
 
   const handleCreate = () => {
-    if (!name.trim() || !url.trim() || events.length === 0) return
+    if (!name.trim() || !url.trim() || events.length === 0) return;
 
     create(
       { name: name.trim(), url: url.trim(), events },
       {
         onSuccess: () => {
-          handleClose()
+          handleClose();
         },
       }
-    )
-  }
+    );
+  };
 
   const handleClose = () => {
-    setName('')
-    setUrl('')
-    setEvents(DEFAULT_WEBHOOK_EVENTS)
-    onOpenChange(false)
-  }
+    setName('');
+    setUrl('');
+    setEvents(DEFAULT_WEBHOOK_EVENTS);
+    onOpenChange(false);
+  };
 
-  const isValid = name.trim() && url.trim() && events.length > 0
+  const isValid = name.trim() && url.trim() && events.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -95,9 +92,7 @@ export function CreateWebhookDialog({
               onChange={(e) => setUrl(e.target.value)}
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground">
-              Must be an HTTPS URL
-            </p>
+            <p className="text-xs text-muted-foreground">Must be an HTTPS URL</p>
           </div>
 
           <div className="space-y-2">
@@ -112,14 +107,9 @@ export function CreateWebhookDialog({
                       handleEventToggle(event.value, checked as boolean)
                     }
                   />
-                  <label
-                    htmlFor={event.value}
-                    className="text-sm cursor-pointer"
-                  >
+                  <label htmlFor={event.value} className="text-sm cursor-pointer">
                     {event.label}
-                    <span className="text-muted-foreground ml-1">
-                      ({event.value})
-                    </span>
+                    <span className="text-muted-foreground ml-1">({event.value})</span>
                   </label>
                 </div>
               ))}
@@ -140,5 +130,5 @@ export function CreateWebhookDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

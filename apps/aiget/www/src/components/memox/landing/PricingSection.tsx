@@ -1,6 +1,6 @@
 import { Container } from '@/components/layout';
-import { Button } from '@aiget/ui/primitives';
-import { Check } from 'lucide-react';
+import { Tick02Icon } from '@hugeicons/core-free-icons';
+import { Button, Icon } from '@aiget/ui';
 import { cn } from '@aiget/ui/lib';
 
 const tiers = [
@@ -93,7 +93,7 @@ export function PricingSection() {
               <ul className="mt-6 flex-1 space-y-3">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                    <Icon icon={Tick02Icon} className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}

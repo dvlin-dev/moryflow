@@ -8,7 +8,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { Container } from './Container';
-import { Button } from '@aiget/ui/primitives';
+import { Button } from '@aiget/ui';
 
 export function Header() {
   return (

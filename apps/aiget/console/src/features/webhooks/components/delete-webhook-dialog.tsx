@@ -10,33 +10,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/primitives'
-import { useDeleteWebhook } from '../hooks'
-import type { Webhook } from '../types'
+} from '@aiget/ui';
+import { useDeleteWebhook } from '../hooks';
+import type { Webhook } from '../types';
 
 interface DeleteWebhookDialogProps {
-  webhook: Webhook | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  webhook: Webhook | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function DeleteWebhookDialog({
-  webhook,
-  open,
-  onOpenChange,
-}: DeleteWebhookDialogProps) {
-  const { mutate: deleteWebhook, isPending } = useDeleteWebhook()
+export function DeleteWebhookDialog({ webhook, open, onOpenChange }: DeleteWebhookDialogProps) {
+  const { mutate: deleteWebhook, isPending } = useDeleteWebhook();
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault()
-    if (!webhook) return
+    e.preventDefault();
+    if (!webhook) return;
 
     deleteWebhook(webhook.id, {
       onSuccess: () => {
-        onOpenChange(false)
+        onOpenChange(false);
       },
-    })
-  }
+    });
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -44,8 +40,8 @@ export function DeleteWebhookDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Webhook?</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete <strong>{webhook?.name}</strong>?
-            This action cannot be undone. Notifications will no longer be sent to this URL.
+            Are you sure you want to delete <strong>{webhook?.name}</strong>? This action cannot be
+            undone. Notifications will no longer be sent to this URL.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -60,5 +56,5 @@ export function DeleteWebhookDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

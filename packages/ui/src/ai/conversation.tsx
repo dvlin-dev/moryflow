@@ -1,12 +1,13 @@
-'use client'
+'use client';
 
-import { Button } from '../components/button'
-import { cn } from '../lib/utils'
-import { ArrowDownIcon } from 'lucide-react'
-import type { ComponentProps } from 'react'
-import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom'
+import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { Button } from '../components/button';
+import { Icon } from '../components/icon';
+import { cn } from '../lib/utils';
+import type { ComponentProps } from 'react';
+import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
-export type ConversationProps = ComponentProps<typeof StickToBottom>
+export type ConversationProps = ComponentProps<typeof StickToBottom>;
 
 export const Conversation = ({ className, ...props }: ConversationProps) => (
   <StickToBottom
@@ -16,19 +17,19 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
     role="log"
     {...props}
   />
-)
+);
 
-export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>
+export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>;
 
 export const ConversationContent = ({ className, ...props }: ConversationContentProps) => (
   <StickToBottom.Content className={cn('flex flex-col gap-1 p-4 h-full', className)} {...props} />
-)
+);
 
 export type ConversationEmptyStateProps = ComponentProps<'div'> & {
-  title?: string
-  description?: string
-  icon?: React.ReactNode
-}
+  title?: string;
+  description?: string;
+  icon?: React.ReactNode;
+};
 
 export const ConversationEmptyState = ({
   className,
@@ -55,15 +56,15 @@ export const ConversationEmptyState = ({
       </>
     )}
   </div>
-)
+);
 
-export type ConversationScrollButtonProps = ComponentProps<typeof Button>
+export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
 
 export const ConversationScrollButton = ({
   className,
   ...props
 }: ConversationScrollButtonProps) => {
-  const { isAtBottom, scrollToBottom } = useStickToBottomContext()
+  const { isAtBottom, scrollToBottom } = useStickToBottomContext();
 
   return (
     !isAtBottom && (
@@ -75,8 +76,8 @@ export const ConversationScrollButton = ({
         variant="outline"
         {...props}
       >
-        <ArrowDownIcon className="size-4" />
+        <Icon icon={ArrowDown01Icon} className="size-4" />
       </Button>
     )
-  )
-}
+  );
+};

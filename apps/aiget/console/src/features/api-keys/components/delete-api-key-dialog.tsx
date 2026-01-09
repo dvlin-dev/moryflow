@@ -10,33 +10,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/primitives'
-import { useDeleteApiKey } from '../hooks'
-import type { ApiKey } from '../types'
+} from '@aiget/ui';
+import { useDeleteApiKey } from '../hooks';
+import type { ApiKey } from '../types';
 
 interface DeleteApiKeyDialogProps {
-  apiKey: ApiKey | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  apiKey: ApiKey | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function DeleteApiKeyDialog({
-  apiKey,
-  open,
-  onOpenChange,
-}: DeleteApiKeyDialogProps) {
-  const { mutate: deleteKey, isPending } = useDeleteApiKey()
+export function DeleteApiKeyDialog({ apiKey, open, onOpenChange }: DeleteApiKeyDialogProps) {
+  const { mutate: deleteKey, isPending } = useDeleteApiKey();
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault() // 阻止对话框自动关闭
-    if (!apiKey) return
+    e.preventDefault(); // 阻止对话框自动关闭
+    if (!apiKey) return;
 
     deleteKey(apiKey.id, {
       onSuccess: () => {
-        onOpenChange(false)
+        onOpenChange(false);
       },
-    })
-  }
+    });
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -60,5 +56,5 @@ export function DeleteApiKeyDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

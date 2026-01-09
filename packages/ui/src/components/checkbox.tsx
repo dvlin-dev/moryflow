@@ -1,8 +1,9 @@
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check } from "lucide-react"
+import * as React from 'react';
+import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
+import { Tick02Icon } from '@hugeicons/core-free-icons';
 
-import { cn } from "../lib/utils"
+import { cn } from '../lib/utils';
+import { Icon } from './icon';
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
@@ -11,18 +12,18 @@ const Checkbox = React.forwardRef<
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(
-      "grid place-content-center peer size-4 shrink-0 rounded-md border border-border hover:border-primary transition-all duration-fast ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:text-primary-foreground",
+      'grid place-content-center peer size-4 shrink-0 rounded-md border border-border hover:border-primary transition-all duration-fast ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:text-primary-foreground',
       className
     )}
     {...props}
   >
     <CheckboxPrimitive.Indicator
-      className={cn("grid place-content-center text-current animate-scale-in")}
+      className={cn('grid place-content-center text-current animate-scale-in')}
     >
-      <Check className="size-3.5" strokeWidth={3} />
+      <Icon icon={Tick02Icon} className="size-3.5" strokeWidth={2} />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
-export { Checkbox }
+export { Checkbox };

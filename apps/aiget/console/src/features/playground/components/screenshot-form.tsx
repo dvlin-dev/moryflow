@@ -1,9 +1,11 @@
 /**
  * 截图参数表单组件
  */
-import { useState } from 'react'
+import { useState } from 'react';
+import { Camera01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
 import {
   Button,
+  Icon,
   Input,
   Label,
   Select,
@@ -13,25 +15,30 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from '@aiget/ui/primitives'
-import { Camera, Loader2 } from 'lucide-react'
-import type { ScreenshotRequest, DevicePreset, ImageFormat, ResponseType, RenderMode } from '../types'
-import type { ApiKey } from '@/features/api-keys'
-import { CollapsibleSection } from './collapsible-section'
+} from '@aiget/ui';
+import type {
+  ScreenshotRequest,
+  DevicePreset,
+  ImageFormat,
+  ResponseType,
+  RenderMode,
+} from '../types';
+import type { ApiKey } from '@/features/api-keys';
+import { CollapsibleSection } from './collapsible-section';
 
 // 设备预设的默认尺寸
 const DEVICE_PRESETS: Record<DevicePreset, { width: number; height: number }> = {
   desktop: { width: 1280, height: 720 },
   tablet: { width: 768, height: 1024 },
   mobile: { width: 375, height: 667 },
-}
+};
 
 interface ScreenshotFormProps {
-  apiKeys: ApiKey[]
-  selectedKeyId: string
-  onKeyChange: (keyId: string) => void
-  onSubmit: (request: ScreenshotRequest) => void
-  isLoading?: boolean
+  apiKeys: ApiKey[];
+  selectedKeyId: string;
+  onKeyChange: (keyId: string) => void;
+  onSubmit: (request: ScreenshotRequest) => void;
+  isLoading?: boolean;
 }
 
 export function ScreenshotForm({
@@ -42,54 +49,54 @@ export function ScreenshotForm({
   isLoading,
 }: ScreenshotFormProps) {
   // 基础参数
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState('');
 
   // 视口设置
-  const [device, setDevice] = useState<DevicePreset | 'custom'>('desktop')
-  const [width, setWidth] = useState(1280)
-  const [height, setHeight] = useState(720)
+  const [device, setDevice] = useState<DevicePreset | 'custom'>('desktop');
+  const [width, setWidth] = useState(1280);
+  const [height, setHeight] = useState(720);
 
   // 输出设置
-  const [format, setFormat] = useState<ImageFormat>('png')
-  const [quality, setQuality] = useState(80)
-  const [responseType, setResponseType] = useState<ResponseType>('url')
-  const [includeTimings, setIncludeTimings] = useState(true)
+  const [format, setFormat] = useState<ImageFormat>('png');
+  const [quality, setQuality] = useState(80);
+  const [responseType, setResponseType] = useState<ResponseType>('url');
+  const [includeTimings, setIncludeTimings] = useState(true);
 
   // 页面选项
-  const [fullPage, setFullPage] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
-  const [renderMode, setRenderMode] = useState<RenderMode>('fast')
+  const [fullPage, setFullPage] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [renderMode, setRenderMode] = useState<RenderMode>('fast');
 
   // 等待选项
-  const [delay, setDelay] = useState(0)
-  const [timeout, setTimeout] = useState(30000)
-  const [waitFor, setWaitFor] = useState('')
+  const [delay, setDelay] = useState(0);
+  const [timeout, setTimeout] = useState(30000);
+  const [waitFor, setWaitFor] = useState('');
 
   // 高级选项
-  const [clip, setClip] = useState('')
-  const [hide, setHide] = useState('')
-  const [userAgent, setUserAgent] = useState('')
-  const [scripts, setScripts] = useState('')
+  const [clip, setClip] = useState('');
+  const [hide, setHide] = useState('');
+  const [userAgent, setUserAgent] = useState('');
+  const [scripts, setScripts] = useState('');
 
   // 折叠状态
-  const [viewportOpen, setViewportOpen] = useState(true)
-  const [outputOpen, setOutputOpen] = useState(true)
-  const [pageOpen, setPageOpen] = useState(false)
-  const [waitOpen, setWaitOpen] = useState(false)
-  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [viewportOpen, setViewportOpen] = useState(true);
+  const [outputOpen, setOutputOpen] = useState(true);
+  const [pageOpen, setPageOpen] = useState(false);
+  const [waitOpen, setWaitOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const handleDeviceChange = (value: string) => {
-    setDevice(value as DevicePreset | 'custom')
+    setDevice(value as DevicePreset | 'custom');
     if (value !== 'custom' && value in DEVICE_PRESETS) {
-      const preset = DEVICE_PRESETS[value as DevicePreset]
-      setWidth(preset.width)
-      setHeight(preset.height)
+      const preset = DEVICE_PRESETS[value as DevicePreset];
+      setWidth(preset.width);
+      setHeight(preset.height);
     }
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!url.trim()) return
+    e.preventDefault();
+    if (!url.trim()) return;
 
     const request: ScreenshotRequest = {
       url: url.trim(),
@@ -105,32 +112,35 @@ export function ScreenshotForm({
       timeout,
       sync: true,
       includeTimings,
-    }
+    };
 
     // 可选参数
     if (device !== 'custom') {
-      request.device = device
+      request.device = device;
     }
     if (waitFor.trim()) {
-      request.waitFor = waitFor.trim()
+      request.waitFor = waitFor.trim();
     }
     if (clip.trim()) {
-      request.clip = clip.trim()
+      request.clip = clip.trim();
     }
     if (hide.trim()) {
-      request.hide = hide.split(',').map((s) => s.trim()).filter(Boolean)
+      request.hide = hide
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
     if (userAgent.trim()) {
-      request.userAgent = userAgent.trim()
+      request.userAgent = userAgent.trim();
     }
     if (scripts.trim()) {
-      request.scripts = scripts.trim()
+      request.scripts = scripts.trim();
     }
 
-    onSubmit(request)
-  }
+    onSubmit(request);
+  };
 
-  const selectedKey = apiKeys.find((k) => k.id === selectedKeyId)
+  const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,9 +159,7 @@ export function ScreenshotForm({
                   <span className="text-muted-foreground font-mono text-xs">
                     {key.keyPrefix}...
                   </span>
-                  {!key.isActive && (
-                    <span className="text-destructive text-xs">(Disabled)</span>
-                  )}
+                  {!key.isActive && <span className="text-destructive text-xs">(Disabled)</span>}
                 </span>
               </SelectItem>
             ))}
@@ -174,9 +182,9 @@ export function ScreenshotForm({
           />
           <Button type="submit" disabled={isLoading || !url.trim() || !selectedKey?.isActive}>
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
             ) : (
-              <Camera className="h-4 w-4" />
+              <Icon icon={Camera01Icon} className="h-4 w-4" />
             )}
             <span className="ml-2">Screenshot</span>
           </Button>
@@ -213,8 +221,8 @@ export function ScreenshotForm({
               max={3840}
               value={width}
               onChange={(e) => {
-                setWidth(Number(e.target.value))
-                setDevice('custom')
+                setWidth(Number(e.target.value));
+                setDevice('custom');
               }}
             />
           </div>
@@ -227,8 +235,8 @@ export function ScreenshotForm({
               max={2160}
               value={height}
               onChange={(e) => {
-                setHeight(Number(e.target.value))
-                setDevice('custom')
+                setHeight(Number(e.target.value));
+                setDevice('custom');
               }}
             />
           </div>
@@ -236,11 +244,7 @@ export function ScreenshotForm({
       </CollapsibleSection>
 
       {/* 输出设置 */}
-      <CollapsibleSection
-        title="Output Settings"
-        open={outputOpen}
-        onOpenChange={setOutputOpen}
-      >
+      <CollapsibleSection title="Output Settings" open={outputOpen} onOpenChange={setOutputOpen}>
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
@@ -269,7 +273,10 @@ export function ScreenshotForm({
             </div>
             <div className="space-y-2">
               <Label>Response Type</Label>
-              <Select value={responseType} onValueChange={(v) => setResponseType(v as ResponseType)}>
+              <Select
+                value={responseType}
+                onValueChange={(v) => setResponseType(v as ResponseType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -292,11 +299,7 @@ export function ScreenshotForm({
       </CollapsibleSection>
 
       {/* 页面选项 */}
-      <CollapsibleSection
-        title="Page Options"
-        open={pageOpen}
-        onOpenChange={setPageOpen}
-      >
+      <CollapsibleSection title="Page Options" open={pageOpen} onOpenChange={setPageOpen}>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Render Mode</Label>
@@ -315,19 +318,11 @@ export function ScreenshotForm({
           </div>
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-2">
-              <Switch
-                id="fullPage"
-                checked={fullPage}
-                onCheckedChange={setFullPage}
-              />
+              <Switch id="fullPage" checked={fullPage} onCheckedChange={setFullPage} />
               <Label htmlFor="fullPage">Full Page Screenshot</Label>
             </div>
             <div className="flex items-center gap-2">
-              <Switch
-                id="darkMode"
-                checked={darkMode}
-                onCheckedChange={setDarkMode}
-              />
+              <Switch id="darkMode" checked={darkMode} onCheckedChange={setDarkMode} />
               <Label htmlFor="darkMode">Dark Mode</Label>
             </div>
           </div>
@@ -335,11 +330,7 @@ export function ScreenshotForm({
       </CollapsibleSection>
 
       {/* 等待选项 */}
-      <CollapsibleSection
-        title="Wait Options"
-        open={waitOpen}
-        onOpenChange={setWaitOpen}
-      >
+      <CollapsibleSection title="Wait Options" open={waitOpen} onOpenChange={setWaitOpen}>
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="delay">Delay (ms)</Label>
@@ -433,5 +424,5 @@ export function ScreenshotForm({
         </div>
       </CollapsibleSection>
     </form>
-  )
+  );
 }

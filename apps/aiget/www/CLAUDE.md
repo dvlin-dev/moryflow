@@ -20,6 +20,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Public access (no auth)
 - Cloudflare Turnstile for captcha
 - Demo API has rate limits
+- 组件统一从 `@aiget/ui` 导入，图标统一 Hugeicons
 
 ## 环境变量
 
@@ -108,6 +109,7 @@ User enters URL → Captcha verification → Demo API call → Display result
 www/
 ├── @tanstack/start - SSR framework
 ├── @aiget/ui - UI components
+├── @hugeicons/core-free-icons - Icon library
 ├── turnstile - Cloudflare captcha
 └── tailwindcss - Styling
 ```

@@ -1,8 +1,8 @@
 /**
  * TableSkeleton - 表格骨架屏组件
  */
-import { TableRow, TableCell } from '../primitives/table';
-import { Skeleton } from '../primitives/skeleton';
+import { TableRow, TableCell } from '../components/table';
+import { Skeleton } from '../components/skeleton';
 
 export interface ColumnConfig {
   width: string;

@@ -1,39 +1,47 @@
+import {
+  Camera01Icon,
+  Globe02Icon,
+  LayersIcon,
+  MapsGlobal01Icon,
+  Search01Icon,
+  SparklesIcon,
+} from '@hugeicons/core-free-icons';
 import { Container } from '@/components/layout';
-import { Globe, Layers, Map, Sparkles, Search, Camera } from 'lucide-react';
+import { Icon } from '@aiget/ui';
 
 const useCases = [
   {
-    icon: Globe,
+    icon: Globe02Icon,
     title: 'Web Scraping',
     description:
       'Convert any webpage to clean Markdown or HTML. Perfect for building knowledge bases, training data, and content aggregation.',
   },
   {
-    icon: Layers,
+    icon: LayersIcon,
     title: 'Site Crawling',
     description:
       'Crawl entire websites with depth control and path filtering. Ideal for indexing documentation, blogs, and e-commerce catalogs.',
   },
   {
-    icon: Map,
+    icon: MapsGlobal01Icon,
     title: 'URL Discovery',
     description:
       'Map all URLs on a website via sitemap parsing or link extraction. Great for SEO audits and competitive analysis.',
   },
   {
-    icon: Sparkles,
+    icon: SparklesIcon,
     title: 'AI Extraction',
     description:
       'Extract structured data using LLMs with custom prompts and JSON schemas. Build product catalogs, contact lists, and more.',
   },
   {
-    icon: Search,
+    icon: Search01Icon,
     title: 'Web Search',
     description:
       'Search the web and optionally scrape results. Power your RAG pipelines with fresh, relevant content from across the internet.',
   },
   {
-    icon: Camera,
+    icon: Camera01Icon,
     title: 'Screenshots',
     description:
       'Capture webpage screenshots in PNG, JPEG, or WebP. Support for full-page, viewport, and custom dimensions.',
@@ -60,7 +68,7 @@ export function UseCasesSection() {
               className="group border border-border bg-card p-6 transition-colors hover:border-foreground/20 hover:bg-muted/50"
             >
               <div className="mb-4 inline-flex h-10 w-10 items-center justify-center border border-border bg-background">
-                <useCase.icon className="h-5 w-5" />
+                <Icon icon={useCase.icon} className="h-5 w-5" />
               </div>
               <h3 className="font-mono text-lg font-semibold">{useCase.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{useCase.description}</p>

@@ -1,7 +1,13 @@
 /**
  * 截图结果展示组件
  */
-import { useState } from 'react'
+import { useState } from 'react';
+import {
+  ArrowUpRight01Icon,
+  CheckmarkCircle01Icon,
+  Globe02Icon,
+  Timer01Icon,
+} from '@hugeicons/core-free-icons';
 import {
   Card,
   CardContent,
@@ -10,23 +16,23 @@ import {
   Dialog,
   DialogContent,
   Badge,
-} from '@aiget/ui/primitives'
-import { CheckCircle, Globe, ExternalLink, Timer } from 'lucide-react'
-import type { ScreenshotData } from '../types'
+  Icon,
+} from '@aiget/ui';
+import type { ScreenshotData } from '../types';
 
 interface ScreenshotResultProps {
-  data: ScreenshotData
+  data: ScreenshotData;
 }
 
 // 格式化文件大小
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 export function ScreenshotResult({ data }: ScreenshotResultProps) {
-  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   return (
     <>
@@ -35,26 +41,20 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
               Screenshot Successful
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div
-              className="relative cursor-zoom-in border rounded-none overflow-hidden bg-muted"
+              className="relative cursor-zoom-in border rounded-lg overflow-hidden bg-muted"
               onClick={() => setPreviewOpen(true)}
             >
-              <img
-                src={data.url}
-                alt="Screenshot"
-                className="w-full h-auto"
-              />
+              <img src={data.url} alt="Screenshot" className="w-full h-auto" />
               <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
             </div>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-muted-foreground">
-                Click image to enlarge
-              </p>
+              <p className="text-xs text-muted-foreground">Click image to enlarge</p>
               {!data.url.startsWith('data:') && (
                 <a
                   href={data.url}
@@ -62,7 +62,7 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs text-primary hover:underline"
                 >
-                  <ExternalLink className="h-3 w-3" />
+                  <Icon icon={ArrowUpRight01Icon} className="h-3 w-3" />
                   Open in new tab
                 </a>
               )}
@@ -76,11 +76,15 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground text-xs">Dimensions</span>
-                <p className="font-medium">{data.width} × {data.height}</p>
+                <p className="font-medium">
+                  {data.width} × {data.height}
+                </p>
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">Format</span>
-                <p><Badge variant="secondary">{data.format.toUpperCase()}</Badge></p>
+                <p>
+                  <Badge variant="secondary">{data.format.toUpperCase()}</Badge>
+                </p>
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">Size</span>
@@ -100,7 +104,9 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">ID</span>
-                <p className="font-mono text-xs truncate" title={data.id}>{data.id}</p>
+                <p className="font-mono text-xs truncate" title={data.id}>
+                  {data.id}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -111,7 +117,7 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Timer className="h-4 w-4" />
+                <Icon icon={Timer01Icon} className="h-4 w-4" />
                 Timing Breakdown
                 <span className="text-muted-foreground font-normal text-sm ml-auto">
                   Total: {data.timings.totalMs}ms
@@ -160,7 +166,7 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Globe className="h-4 w-4" />
+                <Icon icon={Globe02Icon} className="h-4 w-4" />
                 Page Info
               </CardTitle>
             </CardHeader>
@@ -189,15 +195,11 @@ export function ScreenshotResult({ data }: ScreenshotResultProps) {
       {/* 全屏预览对话框 */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 overflow-auto">
-          <img
-            src={data.url}
-            alt="Screenshot Preview"
-            className="w-full h-auto"
-          />
+          <img src={data.url} alt="Screenshot Preview" className="w-full h-auto" />
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
 
 // 时间统计条组件
@@ -207,14 +209,14 @@ function TimingBar({
   total,
   color,
 }: {
-  label: string
-  value?: number
-  total: number
-  color: string
+  label: string;
+  value?: number;
+  total: number;
+  color: string;
 }) {
-  if (value === undefined || value === null) return null
+  if (value === undefined || value === null) return null;
 
-  const percentage = total > 0 ? Math.min((value / total) * 100, 100) : 0
+  const percentage = total > 0 ? Math.min((value / total) * 100, 100) : 0;
 
   return (
     <div className="space-y-1">
@@ -222,12 +224,12 @@ function TimingBar({
         <span className="text-muted-foreground">{label}</span>
         <span className="font-mono">{value}ms</span>
       </div>
-      <div className="h-2 bg-muted rounded-none overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
-          className={`h-full ${color} rounded-none transition-all`}
+          className={`h-full ${color} rounded-full transition-all`}
           style={{ width: `${percentage}%` }}
         />
       </div>
     </div>
-  )
+  );
 }

@@ -2,10 +2,21 @@
  * Admin Dashboard - 系统统计概览
  */
 import { useDashboardStats, useChartData } from '@/features/dashboard';
-import { Skeleton, ChartContainer, ChartTooltip, ChartTooltipContent } from '@aiget/ui/primitives';
-import { Users, CreditCard, Camera, DollarSign } from 'lucide-react';
+import {
+  Camera01Icon,
+  CreditCardIcon,
+  Dollar01Icon,
+  UserGroupIcon,
+} from '@hugeicons/core-free-icons';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  Icon,
+  Skeleton,
+  type ChartConfig,
+} from '@aiget/ui';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import type { ChartConfig } from '@aiget/ui/primitives';
 
 function formatNumber(num: number): string {
   return num.toLocaleString('en-US');
@@ -43,7 +54,7 @@ export default function DashboardPage() {
       label: 'Total Users',
       value: statsData?.totalUsers ?? 0,
       format: formatNumber,
-      icon: Users,
+      icon: UserGroupIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
@@ -51,7 +62,7 @@ export default function DashboardPage() {
       label: 'Active Subscriptions',
       value: statsData?.activeSubscriptions ?? 0,
       format: formatNumber,
-      icon: CreditCard,
+      icon: CreditCardIcon,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
@@ -59,7 +70,7 @@ export default function DashboardPage() {
       label: 'Screenshots Today',
       value: statsData?.screenshotsToday ?? 0,
       format: formatNumber,
-      icon: Camera,
+      icon: Camera01Icon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },
@@ -67,7 +78,7 @@ export default function DashboardPage() {
       label: 'Revenue (MTD)',
       value: statsData?.revenueMTD ?? 0,
       format: formatCurrency,
-      icon: DollarSign,
+      icon: Dollar01Icon,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
     },
@@ -83,11 +94,11 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="rounded-none border border-border bg-card p-6">
+          <div key={stat.label} className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <div className={`p-2 rounded-none ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <Icon icon={stat.icon} className={`h-4 w-4 ${stat.color}`} />
               </div>
             </div>
             {statsLoading ? (
@@ -102,7 +113,7 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Screenshots Chart */}
-        <div className="rounded-none border border-border bg-card p-6">
+        <div className="rounded-xl border border-border bg-card p-6">
           <h3 className="font-semibold">Screenshots Over Time</h3>
           <p className="text-sm text-muted-foreground">Last 7 days</p>
           {chartLoading ? (
@@ -142,7 +153,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Revenue Chart */}
-        <div className="rounded-none border border-border bg-card p-6">
+        <div className="rounded-xl border border-border bg-card p-6">
           <h3 className="font-semibold">Revenue Over Time</h3>
           <p className="text-sm text-muted-foreground">Last 7 days</p>
           {chartLoading ? (
@@ -170,7 +181,7 @@ export default function DashboardPage() {
                     />
                   }
                 />
-                <Bar dataKey="value" fill="var(--color-value)" radius={0} />
+                <Bar dataKey="value" fill="var(--color-value)" radius={6} />
               </BarChart>
             </ChartContainer>
           )}

@@ -3,7 +3,13 @@
  * 用户管理
  */
 import { useState } from 'react';
-import { PageHeader, SimplePagination } from '@aiget/ui/composed';
+import {
+  Delete02Icon,
+  MoreHorizontalIcon,
+  Search01Icon,
+  Shield01Icon,
+} from '@hugeicons/core-free-icons';
+import { PageHeader, SimplePagination } from '@aiget/ui';
 import {
   Card,
   CardContent,
@@ -17,6 +23,7 @@ import {
   TableRow,
   Badge,
   Skeleton,
+  Icon,
   Input,
   Button,
   Switch,
@@ -33,9 +40,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/primitives';
+} from '@aiget/ui';
 import { formatRelativeTime } from '@aiget/ui/lib';
-import { Search, MoreHorizontal, Shield, Trash2 } from 'lucide-react';
 import { useUsers, useUpdateUser, useDeleteUser } from '@/features/users';
 import type { UserListItem, UserQuery } from '@/features/users';
 
@@ -112,7 +118,7 @@ export default function UsersPage() {
                 className="w-64"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Search className="h-4 w-4" />
+                <Icon icon={Search01Icon} className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -195,12 +201,12 @@ export default function UsersPage() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
+                              <Icon icon={MoreHorizontalIcon} className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
-                              <Shield className="h-4 w-4 mr-2" />
+                              <Icon icon={Shield01Icon} className="h-4 w-4 mr-2" />
                               {user.isAdmin ? '移除管理员' : '设为管理员'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -208,7 +214,7 @@ export default function UsersPage() {
                               onClick={() => handleDelete(user)}
                               className="text-destructive focus:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
+                              <Icon icon={Delete02Icon} className="h-4 w-4 mr-2" />
                               删除用户
                             </DropdownMenuItem>
                           </DropdownMenuContent>

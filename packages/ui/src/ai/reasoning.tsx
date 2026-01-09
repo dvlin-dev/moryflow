@@ -1,17 +1,14 @@
-"use client";
+'use client';
 
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../components/collapsible";
-import { cn } from "../lib/utils";
-import { BrainIcon, ChevronDownIcon } from "lucide-react";
-import type { ComponentProps } from "react";
-import { createContext, memo, useContext, useEffect, useState } from "react";
-import { Streamdown } from "streamdown";
-import { Shimmer } from "./shimmer";
+import { BrainIcon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
+import { Icon } from '../components/icon';
+import { cn } from '../lib/utils';
+import type { ComponentProps } from 'react';
+import { createContext, memo, useContext, useEffect, useState } from 'react';
+import { Streamdown } from 'streamdown';
+import { Shimmer } from './shimmer';
 
 type ReasoningContextValue = {
   isStreaming: boolean;
@@ -25,7 +22,7 @@ const ReasoningContext = createContext<ReasoningContextValue | null>(null);
 const useReasoning = () => {
   const context = useContext(ReasoningContext);
   if (!context) {
-    throw new Error("Reasoning components must be used within Reasoning");
+    throw new Error('Reasoning components must be used within Reasoning');
   }
   return context;
 };
@@ -97,11 +94,9 @@ export const Reasoning = memo(
     };
 
     return (
-      <ReasoningContext.Provider
-        value={{ isStreaming, isOpen, setIsOpen, duration }}
-      >
+      <ReasoningContext.Provider value={{ isStreaming, isOpen, setIsOpen, duration }}>
         <Collapsible
-          className={cn("not-prose mb-4", className)}
+          className={cn('not-prose mb-4', className)}
           onOpenChange={handleOpenChange}
           open={isOpen}
           {...props}
@@ -121,8 +116,8 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
 const getThinkingMessage = (
   isStreaming: boolean,
   duration?: number,
-  thinkingLabel = "Thinking...",
-  thoughtLabel = "Thought for"
+  thinkingLabel = 'Thinking...',
+  thoughtLabel = 'Thought for'
 ) => {
   if (isStreaming || duration === 0) {
     return <Shimmer duration={1}>{thinkingLabel}</Shimmer>;
@@ -130,7 +125,11 @@ const getThinkingMessage = (
   if (duration === undefined) {
     return <p>{thoughtLabel} a few seconds</p>;
   }
-  return <p>{thoughtLabel} {duration} seconds</p>;
+  return (
+    <p>
+      {thoughtLabel} {duration} seconds
+    </p>
+  );
 };
 
 export const ReasoningTrigger = memo(
@@ -140,19 +139,20 @@ export const ReasoningTrigger = memo(
     return (
       <CollapsibleTrigger
         className={cn(
-          "flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors duration-fast hover:text-foreground",
+          'flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors duration-fast hover:text-foreground',
           className
         )}
         {...props}
       >
         {children ?? (
           <>
-            <BrainIcon className="size-4" />
+            <Icon icon={BrainIcon} className="size-4" />
             {getThinkingMessage(isStreaming, duration, thinkingLabel, thoughtLabel)}
-            <ChevronDownIcon
+            <Icon
+              icon={ArrowDown01Icon}
               className={cn(
-                "size-4 transition-transform duration-fast",
-                isOpen ? "rotate-180" : "rotate-0"
+                'size-4 transition-transform duration-fast',
+                isOpen ? 'rotate-180' : 'rotate-0'
               )}
             />
           </>
@@ -162,27 +162,23 @@ export const ReasoningTrigger = memo(
   }
 );
 
-export type ReasoningContentProps = ComponentProps<
-  typeof CollapsibleContent
-> & {
+export type ReasoningContentProps = ComponentProps<typeof CollapsibleContent> & {
   children: string;
 };
 
-export const ReasoningContent = memo(
-  ({ className, children, ...props }: ReasoningContentProps) => (
-    <CollapsibleContent
-      className={cn(
-        "mt-4 text-sm",
-        "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in",
-        className
-      )}
-      {...props}
-    >
-      <Streamdown {...props}>{children}</Streamdown>
-    </CollapsibleContent>
-  )
-);
+export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => (
+  <CollapsibleContent
+    className={cn(
+      'mt-4 text-sm',
+      'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
+      className
+    )}
+    {...props}
+  >
+    <Streamdown {...props}>{children}</Streamdown>
+  </CollapsibleContent>
+));
 
-Reasoning.displayName = "Reasoning";
-ReasoningTrigger.displayName = "ReasoningTrigger";
-ReasoningContent.displayName = "ReasoningContent";
+Reasoning.displayName = 'Reasoning';
+ReasoningTrigger.displayName = 'ReasoningTrigger';
+ReasoningContent.displayName = 'ReasoningContent';

@@ -13,8 +13,8 @@ import { authClient } from '@/lib/auth-client';
 import { apiClient } from '@/lib/api-client';
 import { USER_API } from '@/lib/api-paths';
 import { cn } from '@aiget/ui/lib';
-import { Button, Card, CardContent, Input, Label } from '@aiget/ui/primitives';
-import { Link2, Loader2 } from 'lucide-react';
+import { Link02Icon, Loading01Icon } from '@hugeicons/core-free-icons';
+import { Button, Card, CardContent, Icon, Input, Label } from '@aiget/ui';
 
 export type LoginFormProps = React.ComponentProps<'div'>;
 
@@ -75,7 +75,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex flex-col items-center gap-2 text-center">
               <div className="flex items-center gap-2">
-                <Link2 className="size-8" />
+                <Icon icon={Link02Icon} className="size-8" />
                 <h1 className="text-2xl font-bold">Aiget</h1>
               </div>
               <p className="text-muted-foreground text-balance text-sm">Sign in to your account</p>
@@ -111,7 +111,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
                     Signing in...
                   </>
                 ) : (

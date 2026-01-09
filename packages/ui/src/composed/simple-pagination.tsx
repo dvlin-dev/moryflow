@@ -8,7 +8,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '../primitives/pagination';
+} from '../components/pagination';
 
 export interface SimplePaginationProps {
   page: number;

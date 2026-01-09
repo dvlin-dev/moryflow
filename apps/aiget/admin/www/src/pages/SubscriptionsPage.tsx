@@ -3,7 +3,8 @@
  * 订阅管理
  */
 import { useState } from 'react';
-import { PageHeader, SimplePagination } from '@aiget/ui/composed';
+import { Edit01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { PageHeader, SimplePagination } from '@aiget/ui';
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import {
   TableRow,
   Badge,
   Skeleton,
+  Icon,
   Input,
   Button,
   Select,
@@ -30,9 +32,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@aiget/ui/primitives';
+} from '@aiget/ui';
 import { formatRelativeTime } from '@aiget/ui/lib';
-import { Search, Pencil } from 'lucide-react';
 import { useSubscriptions, useUpdateSubscription } from '@/features/subscriptions';
 import type {
   SubscriptionListItem,
@@ -177,7 +178,7 @@ export default function SubscriptionsPage() {
                 className="w-48"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Search className="h-4 w-4" />
+                <Icon icon={Search01Icon} className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -252,7 +253,7 @@ export default function SubscriptionsPage() {
                           size="icon"
                           onClick={() => handleEdit(subscription)}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Icon icon={Edit01Icon} className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

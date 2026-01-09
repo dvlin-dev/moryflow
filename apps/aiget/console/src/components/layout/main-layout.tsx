@@ -2,18 +2,13 @@
  * MainLayout - 主布局组件
  * 包装 SidebarProvider 和 AppSidebar，支持响应式布局
  */
-import { Outlet } from 'react-router-dom'
-import { useAuthStore } from '@/stores/auth'
-import { AppSidebar } from './app-sidebar'
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  Separator,
-} from '@aiget/ui/primitives'
+import { Outlet } from 'react-router-dom';
+import { useAuthStore } from '@/stores/auth';
+import { AppSidebar } from './app-sidebar';
+import { SidebarInset, SidebarProvider, SidebarTrigger, Separator } from '@aiget/ui';
 
 export function MainLayout() {
-  const user = useAuthStore((state) => state.user)
+  const user = useAuthStore((state) => state.user);
 
   // 转换 user 类型以匹配 AppSidebar 的期望
   const sidebarUser = user
@@ -22,7 +17,7 @@ export function MainLayout() {
         email: user.email,
         name: user.name ?? undefined, // null -> undefined
       }
-    : undefined
+    : undefined;
 
   return (
     <SidebarProvider>
@@ -40,5 +35,5 @@ export function MainLayout() {
         </main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

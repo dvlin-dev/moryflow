@@ -1,8 +1,13 @@
 /**
  * Job 相关共享工具函数和组件
  */
-import { Badge } from '@aiget/ui/primitives';
-import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import {
+  CancelCircleIcon,
+  CheckmarkCircle01Icon,
+  Clock01Icon,
+  Loading01Icon,
+} from '@hugeicons/core-free-icons';
+import { Badge, Icon } from '@aiget/ui';
 import type { JobStatus, JobErrorCode } from '@/features/jobs';
 
 /**
@@ -30,28 +35,28 @@ export function getStatusBadge(status: JobStatus) {
     case 'PENDING':
       return (
         <Badge variant="outline" className="gap-1">
-          <Clock className="h-3 w-3" />
+          <Icon icon={Clock01Icon} className="h-3 w-3" />
           等待中
         </Badge>
       );
     case 'PROCESSING':
       return (
         <Badge variant="secondary" className="gap-1">
-          <Loader2 className="h-3 w-3 animate-spin" />
+          <Icon icon={Loading01Icon} className="h-3 w-3 animate-spin" />
           处理中
         </Badge>
       );
     case 'COMPLETED':
       return (
         <Badge variant="default" className="gap-1 bg-green-600">
-          <CheckCircle className="h-3 w-3" />
+          <Icon icon={CheckmarkCircle01Icon} className="h-3 w-3" />
           成功
         </Badge>
       );
     case 'FAILED':
       return (
         <Badge variant="destructive" className="gap-1">
-          <XCircle className="h-3 w-3" />
+          <Icon icon={CancelCircleIcon} className="h-3 w-3" />
           失败
         </Badge>
       );

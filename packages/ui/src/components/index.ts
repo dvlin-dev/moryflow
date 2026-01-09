@@ -1,8 +1,3 @@
-/**
- * Primitives - shadcn/ui 基础组件
- * radix-lyra 风格
- */
-
 export * from './accordion';
 export * from './alert';
 export * from './alert-dialog';
@@ -25,13 +20,16 @@ export * from './drawer';
 export * from './dropdown-menu';
 export * from './empty';
 export * from './field';
+export * from './form';
 export * from './hover-card';
+export * from './icon';
 export * from './input';
 export * from './input-group';
 export * from './input-otp';
 export * from './item';
 export * from './kbd';
 export * from './label';
+export * from './live-waveform';
 export * from './menubar';
 export * from './navigation-menu';
 export * from './pagination';

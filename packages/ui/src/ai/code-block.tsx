@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { Button } from "../components/button";
-import { cn } from "../lib/utils";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { Button } from '../components/button';
+import { Icon } from '../components/icon';
+import { cn } from '../lib/utils';
 import {
   type ComponentProps,
   createContext,
@@ -10,37 +11,37 @@ import {
   useContext,
   useEffect,
   useState,
-} from "react";
+} from 'react';
 import {
   createHighlighter,
   type BundledLanguage,
   type Highlighter,
   type ShikiTransformer,
-} from "shiki";
+} from 'shiki';
 
 export const SHIKI_CHUNK_HASH =
-  typeof import.meta.url === "string"
+  typeof import.meta.url === 'string'
     ? import.meta.url.match(/([A-Za-z0-9]{8,})\.(?:m?js|js)/)?.[1]
     : undefined;
 
 // 常用语言列表 - 只预加载这些语言，其他语言按需加载
 const PRELOAD_LANGUAGES: BundledLanguage[] = [
-  "javascript",
-  "typescript",
-  "jsx",
-  "tsx",
-  "json",
-  "markdown",
-  "html",
-  "css",
-  "python",
-  "bash",
-  "shell",
-  "diff",
+  'javascript',
+  'typescript',
+  'jsx',
+  'tsx',
+  'json',
+  'markdown',
+  'html',
+  'css',
+  'python',
+  'bash',
+  'shell',
+  'diff',
 ];
 
 // 预加载的主题
-const THEMES = ["one-light", "one-dark-pro"] as const;
+const THEMES = ['one-light', 'one-dark-pro'] as const;
 
 // 单例 highlighter 实例
 let highlighterPromise: Promise<Highlighter> | null = null;
@@ -61,10 +62,7 @@ async function getHighlighter(): Promise<Highlighter> {
 /**
  * 确保语言已加载，未知语言回退到 plaintext
  */
-async function ensureLanguage(
-  highlighter: Highlighter,
-  lang: string
-): Promise<BundledLanguage> {
+async function ensureLanguage(highlighter: Highlighter, lang: string): Promise<BundledLanguage> {
   const loadedLangs = highlighter.getLoadedLanguages();
   if (loadedLangs.includes(lang as BundledLanguage)) {
     return lang as BundledLanguage;
@@ -76,10 +74,10 @@ async function ensureLanguage(
     return lang as BundledLanguage;
   } catch {
     // 语言不存在，回退到 plaintext
-    if (!loadedLangs.includes("plaintext")) {
-      await highlighter.loadLanguage("plaintext");
+    if (!loadedLangs.includes('plaintext')) {
+      await highlighter.loadLanguage('plaintext');
     }
-    return "plaintext" as BundledLanguage;
+    return 'plaintext' as BundledLanguage;
   }
 }
 
@@ -94,26 +92,26 @@ type CodeBlockContextType = {
 };
 
 const CodeBlockContext = createContext<CodeBlockContextType>({
-  code: "",
+  code: '',
 });
 
 const lineNumberTransformer: ShikiTransformer = {
-  name: "line-numbers",
+  name: 'line-numbers',
   line(node, line) {
     node.children.unshift({
-      type: "element",
-      tagName: "span",
+      type: 'element',
+      tagName: 'span',
       properties: {
         className: [
-          "inline-block",
-          "min-w-10",
-          "mr-4",
-          "text-right",
-          "select-none",
-          "text-muted-foreground",
+          'inline-block',
+          'min-w-10',
+          'mr-4',
+          'text-right',
+          'select-none',
+          'text-muted-foreground',
         ],
       },
-      children: [{ type: "text", value: String(line) }],
+      children: [{ type: 'text', value: String(line) }],
     });
   },
 };
@@ -125,19 +123,17 @@ export async function highlightCode(
 ): Promise<[string, string]> {
   const highlighter = await getHighlighter();
   const effectiveLang = await ensureLanguage(highlighter, language);
-  const transformers: ShikiTransformer[] = showLineNumbers
-    ? [lineNumberTransformer]
-    : [];
+  const transformers: ShikiTransformer[] = showLineNumbers ? [lineNumberTransformer] : [];
 
   const lightHtml = highlighter.codeToHtml(code, {
     lang: effectiveLang,
-    theme: "one-light",
+    theme: 'one-light',
     transformers,
   });
 
   const darkHtml = highlighter.codeToHtml(code, {
     lang: effectiveLang,
-    theme: "one-dark-pro",
+    theme: 'one-dark-pro',
     transformers,
   });
 
@@ -152,8 +148,8 @@ export const CodeBlock = ({
   children,
   ...props
 }: CodeBlockProps) => {
-  const [html, setHtml] = useState<string>("");
-  const [darkHtml, setDarkHtml] = useState<string>("");
+  const [html, setHtml] = useState<string>('');
+  const [darkHtml, setDarkHtml] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -174,7 +170,7 @@ export const CodeBlock = ({
     <CodeBlockContext.Provider value={{ code }}>
       <div
         className={cn(
-          "group relative w-full overflow-hidden rounded-lg border border-border-muted bg-background text-foreground",
+          'group relative w-full overflow-hidden rounded-lg border border-border-muted bg-background text-foreground',
           className
         )}
         {...props}
@@ -191,9 +187,7 @@ export const CodeBlock = ({
             dangerouslySetInnerHTML={{ __html: darkHtml }}
           />
           {children && (
-            <div className="absolute top-2 right-2 flex items-center gap-2">
-              {children}
-            </div>
+            <div className="absolute top-2 right-2 flex items-center gap-2">{children}</div>
           )}
         </div>
       </div>
@@ -219,8 +213,8 @@ export const CodeBlockCopyButton = ({
   const { code } = useContext(CodeBlockContext);
 
   const copyToClipboard = async () => {
-    if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      onError?.(new Error("Clipboard API not available"));
+    if (typeof window === 'undefined' || !navigator?.clipboard?.writeText) {
+      onError?.(new Error('Clipboard API not available'));
       return;
     }
 
@@ -234,17 +228,17 @@ export const CodeBlockCopyButton = ({
     }
   };
 
-  const Icon = isCopied ? CheckIcon : CopyIcon;
+  const icon = isCopied ? Tick02Icon : Copy01Icon;
 
   return (
     <Button
-      className={cn("shrink-0", className)}
+      className={cn('shrink-0', className)}
       onClick={copyToClipboard}
       size="icon"
       variant="ghost"
       {...props}
     >
-      {children ?? <Icon size={14} />}
+      {children ?? <Icon icon={icon} className="size-3.5" />}
     </Button>
   );
 };

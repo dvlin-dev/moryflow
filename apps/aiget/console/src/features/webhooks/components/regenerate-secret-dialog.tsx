@@ -10,14 +10,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/primitives'
-import { useRegenerateWebhookSecret } from '../hooks'
-import type { Webhook } from '../types'
+} from '@aiget/ui';
+import { useRegenerateWebhookSecret } from '../hooks';
+import type { Webhook } from '../types';
 
 interface RegenerateSecretDialogProps {
-  webhook: Webhook | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  webhook: Webhook | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function RegenerateSecretDialog({
@@ -25,18 +25,18 @@ export function RegenerateSecretDialog({
   open,
   onOpenChange,
 }: RegenerateSecretDialogProps) {
-  const { mutate: regenerate, isPending } = useRegenerateWebhookSecret()
+  const { mutate: regenerate, isPending } = useRegenerateWebhookSecret();
 
   const handleRegenerate = (e: React.MouseEvent) => {
-    e.preventDefault()
-    if (!webhook) return
+    e.preventDefault();
+    if (!webhook) return;
 
     regenerate(webhook.id, {
       onSuccess: () => {
-        onOpenChange(false)
+        onOpenChange(false);
       },
-    })
-  }
+    });
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -44,8 +44,8 @@ export function RegenerateSecretDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Regenerate Secret?</AlertDialogTitle>
           <AlertDialogDescription>
-            Once regenerated, the old secret will immediately become invalid.
-            You'll need to update the secret on your receiving end to continue verifying signatures.
+            Once regenerated, the old secret will immediately become invalid. You'll need to update
+            the secret on your receiving end to continue verifying signatures.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -56,5 +56,5 @@ export function RegenerateSecretDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

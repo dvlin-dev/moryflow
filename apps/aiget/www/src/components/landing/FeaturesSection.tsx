@@ -1,53 +1,54 @@
-import { Container } from '@/components/layout';
 import {
-  FileText,
-  BookOpen,
-  Tags,
-  MousePointer,
-  Zap,
-  GitBranch,
-  Webhook,
-  Shield,
-} from 'lucide-react';
+  Book01Icon,
+  Cursor01Icon,
+  File01Icon,
+  GitBranchIcon,
+  Shield01Icon,
+  Tag01Icon,
+  WebhookIcon,
+  ZapIcon,
+} from '@hugeicons/core-free-icons';
+import { Container } from '@/components/layout';
+import { Icon } from '@aiget/ui';
 
 const features = [
   {
-    icon: FileText,
+    icon: File01Icon,
     title: 'HTML to Markdown',
     description: 'Convert HTML to clean GitHub-flavored Markdown with code blocks preserved.',
   },
   {
-    icon: BookOpen,
+    icon: Book01Icon,
     title: 'Content Extraction',
     description: 'Extract main content using Readability, filtering ads and navigation.',
   },
   {
-    icon: Tags,
+    icon: Tag01Icon,
     title: 'Metadata Parsing',
     description: 'Extract Open Graph, Twitter Cards, favicon, and structured data.',
   },
   {
-    icon: MousePointer,
+    icon: Cursor01Icon,
     title: 'Page Actions',
     description: 'Click, scroll, type, and wait before scraping for dynamic content.',
   },
   {
-    icon: Zap,
+    icon: ZapIcon,
     title: 'Smart Caching',
     description: 'Configurable caching with SHA-256 request hashing for fast repeats.',
   },
   {
-    icon: GitBranch,
+    icon: GitBranchIcon,
     title: 'Async Processing',
     description: 'BullMQ-powered queue with retries and exponential backoff.',
   },
   {
-    icon: Webhook,
+    icon: WebhookIcon,
     title: 'Webhook Callbacks',
     description: 'Get notified when crawl and batch jobs complete via webhooks.',
   },
   {
-    icon: Shield,
+    icon: Shield01Icon,
     title: 'SSRF Protection',
     description: 'Built-in URL validation prevents internal network access.',
   },
@@ -73,7 +74,7 @@ export function FeaturesSection() {
               className="border border-border bg-card p-5 transition-colors hover:border-foreground/20"
             >
               <div className="mb-3 inline-flex h-9 w-9 items-center justify-center border border-border bg-background">
-                <feature.icon className="h-4 w-4" />
+                <Icon icon={feature.icon} className="h-4 w-4" />
               </div>
               <h3 className="font-mono text-sm font-semibold">{feature.title}</h3>
               <p className="mt-1.5 text-xs text-muted-foreground">{feature.description}</p>

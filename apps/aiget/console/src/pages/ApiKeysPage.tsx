@@ -2,8 +2,9 @@
  * API Keys 页面
  * P0 MVP 核心功能 - 管理 API 密钥
  */
-import { useState } from 'react'
-import { PageHeader } from '@aiget/ui/composed'
+import { useState } from 'react';
+import { Add01Icon, Copy01Icon, Delete02Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { PageHeader } from '@aiget/ui';
 import {
   Button,
   Card,
@@ -11,6 +12,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Icon,
   Table,
   TableBody,
   TableCell,
@@ -20,52 +22,47 @@ import {
   Badge,
   Skeleton,
   Switch,
-} from '@aiget/ui/primitives'
-import {
-  formatRelativeTime,
-  isExpiringSoon,
-  isExpired,
-} from '@aiget/ui/lib'
-import { Plus, Trash2, Copy, Check } from 'lucide-react'
-import { toast } from 'sonner'
+} from '@aiget/ui';
+import { formatRelativeTime, isExpiringSoon, isExpired } from '@aiget/ui/lib';
+import { toast } from 'sonner';
 import {
   useApiKeys,
   useUpdateApiKey,
   CreateApiKeyDialog,
   DeleteApiKeyDialog,
-} from '@/features/api-keys'
-import type { ApiKey } from '@/features/api-keys'
+} from '@/features/api-keys';
+import type { ApiKey } from '@/features/api-keys';
 
 export default function ApiKeysPage() {
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const { data: apiKeys, isLoading } = useApiKeys()
-  const { mutate: updateKey } = useUpdateApiKey()
+  const { data: apiKeys, isLoading } = useApiKeys();
+  const { mutate: updateKey } = useUpdateApiKey();
 
   const handleCopyPrefix = async (apiKey: ApiKey) => {
     try {
-      await navigator.clipboard.writeText(apiKey.keyPrefix)
-      setCopiedId(apiKey.id)
-      setTimeout(() => setCopiedId(null), 2000)
+      await navigator.clipboard.writeText(apiKey.keyPrefix);
+      setCopiedId(apiKey.id);
+      setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      toast.error('Copy failed, please copy manually')
+      toast.error('Copy failed, please copy manually');
     }
-  }
+  };
 
   const handleToggleActive = (apiKey: ApiKey) => {
     updateKey({
       id: apiKey.id,
       data: { isActive: !apiKey.isActive },
-    })
-  }
+    });
+  };
 
   const handleDelete = (apiKey: ApiKey) => {
-    setSelectedKey(apiKey)
-    setDeleteDialogOpen(true)
-  }
+    setSelectedKey(apiKey);
+    setDeleteDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -74,7 +71,7 @@ export default function ApiKeysPage() {
         description="Manage your API keys for calling the Aiget Screenshot API"
         action={
           <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
             Create API Key
           </Button>
         }
@@ -96,11 +93,9 @@ export default function ApiKeysPage() {
             </div>
           ) : !apiKeys?.length ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                You haven't created any API Keys yet
-              </p>
+              <p className="text-muted-foreground mb-4">You haven't created any API Keys yet</p>
               <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
                 Create your first API Key
               </Button>
             </div>
@@ -127,9 +122,9 @@ export default function ApiKeysPage() {
                       >
                         {apiKey.keyPrefix}...
                         {copiedId === apiKey.id ? (
-                          <Check className="h-3.5 w-3.5 text-green-600" />
+                          <Icon icon={Tick02Icon} className="h-3.5 w-3.5 text-green-600" />
                         ) : (
-                          <Copy className="h-3.5 w-3.5 opacity-50" />
+                          <Icon icon={Copy01Icon} className="h-3.5 w-3.5 opacity-50" />
                         )}
                       </button>
                     </TableCell>
@@ -176,7 +171,7 @@ export default function ApiKeysPage() {
                         onClick={() => handleDelete(apiKey)}
                         className="text-destructive hover:text-destructive"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Icon icon={Delete02Icon} className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -187,10 +182,7 @@ export default function ApiKeysPage() {
         </CardContent>
       </Card>
 
-      <CreateApiKeyDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
+      <CreateApiKeyDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
 
       <DeleteApiKeyDialog
         apiKey={selectedKey}
@@ -198,5 +190,5 @@ export default function ApiKeysPage() {
         onOpenChange={setDeleteDialogOpen}
       />
     </div>
-  )
+  );
 }

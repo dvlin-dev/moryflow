@@ -4,7 +4,13 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '@aiget/ui/composed';
+import {
+  Alert01Icon,
+  ArrowUpRight01Icon,
+  PieChart01Icon,
+  TrendingDown01Icon,
+} from '@hugeicons/core-free-icons';
+import { PageHeader } from '@aiget/ui';
 import {
   Card,
   CardContent,
@@ -18,15 +24,15 @@ import {
   TableRow,
   Badge,
   Skeleton,
+  Icon,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Button,
-} from '@aiget/ui/primitives';
+} from '@aiget/ui';
 import { formatRelativeTime } from '@aiget/ui/lib';
-import { AlertTriangle, ExternalLink, TrendingDown, PieChart } from 'lucide-react';
 import {
   PieChart as RechartsPC,
   Pie,
@@ -93,7 +99,7 @@ export default function ErrorsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <Icon icon={Alert01Icon} className="h-5 w-5 text-red-500" />
               <span className="text-3xl font-bold text-red-600">{totalErrors}</span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{days} 天内总错误数</p>
@@ -125,7 +131,7 @@ export default function ErrorsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <PieChart className="h-4 w-4" />
+                <Icon icon={PieChart01Icon} className="h-4 w-4" />
                 错误分布
               </CardTitle>
             </CardHeader>
@@ -162,7 +168,7 @@ export default function ErrorsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <TrendingDown className="h-4 w-4" />
+                <Icon icon={TrendingDown01Icon} className="h-4 w-4" />
                 错误趋势
               </CardTitle>
             </CardHeader>
@@ -290,7 +296,7 @@ export default function ErrorsPage() {
                         size="icon"
                         onClick={() => navigate(`/jobs/${error.id}`)}
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <Icon icon={ArrowUpRight01Icon} className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

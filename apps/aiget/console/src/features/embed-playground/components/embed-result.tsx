@@ -1,7 +1,8 @@
 /**
  * Embed 结果展示组件
  */
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react';
+import { CodeIcon, ViewIcon } from '@hugeicons/core-free-icons';
 import {
   Card,
   CardContent,
@@ -12,20 +13,20 @@ import {
   TabsList,
   TabsTrigger,
   Badge,
-} from '@aiget/ui/primitives'
-import { Code, Eye } from 'lucide-react'
-import type { EmbedResult } from '../types'
+  Icon,
+} from '@aiget/ui';
+import type { EmbedResult } from '../types';
 
 // Twitter widgets.js 类型声明
 declare global {
   interface Window {
     twttr?: {
       widgets: {
-        load: (element?: HTMLElement) => void
-      }
-      ready: (callback: () => void) => void
-      _e: Array<() => void>
-    }
+        load: (element?: HTMLElement) => void;
+      };
+      ready: (callback: () => void) => void;
+      _e: Array<() => void>;
+    };
   }
 }
 
@@ -34,61 +35,61 @@ function loadTwitterWidgets(): Promise<void> {
   return new Promise((resolve) => {
     // 如果已加载，直接返回
     if (window.twttr?.widgets) {
-      resolve()
-      return
+      resolve();
+      return;
     }
 
     // 如果 script 标签已存在但还在加载中
     if (document.getElementById('twitter-wjs')) {
-      window.twttr?.ready(() => resolve())
-      return
+      window.twttr?.ready(() => resolve());
+      return;
     }
 
     // 按官方推荐方式加载
     window.twttr = (function (d, s, id) {
-      const fjs = d.getElementsByTagName(s)[0]
+      const fjs = d.getElementsByTagName(s)[0];
       const t: Window['twttr'] = window.twttr || {
         _e: [],
         ready(f) {
-          this._e.push(f)
+          this._e.push(f);
         },
         widgets: { load: () => {} },
-      }
+      };
 
-      if (d.getElementById(id)) return t
+      if (d.getElementById(id)) return t;
 
-      const js = d.createElement(s) as HTMLScriptElement
-      js.id = id
-      js.src = 'https://platform.twitter.com/widgets.js'
-      js.onload = () => resolve()
-      fjs?.parentNode?.insertBefore(js, fjs)
+      const js = d.createElement(s) as HTMLScriptElement;
+      js.id = id;
+      js.src = 'https://platform.twitter.com/widgets.js';
+      js.onload = () => resolve();
+      fjs?.parentNode?.insertBefore(js, fjs);
 
-      return t
-    })(document, 'script', 'twitter-wjs')
-  })
+      return t;
+    })(document, 'script', 'twitter-wjs');
+  });
 }
 
 interface EmbedResultProps {
-  result: EmbedResult
+  result: EmbedResult;
 }
 
 export function EmbedResultDisplay({ result }: EmbedResultProps) {
-  const [activeTab, setActiveTab] = useState('preview')
-  const { data, provider, cached } = result
-  const embedContainerRef = useRef<HTMLDivElement>(null)
+  const [activeTab, setActiveTab] = useState('preview');
+  const { data, provider, cached } = result;
+  const embedContainerRef = useRef<HTMLDivElement>(null);
 
   // 处理 Twitter 嵌入
   useEffect(() => {
-    const isTwitterEmbed = data.html?.includes('twitter-tweet')
-    if (!isTwitterEmbed || !embedContainerRef.current) return
+    const isTwitterEmbed = data.html?.includes('twitter-tweet');
+    if (!isTwitterEmbed || !embedContainerRef.current) return;
 
     loadTwitterWidgets().then(() => {
       // 等待 DOM 更新后再调用 load
       requestAnimationFrame(() => {
-        window.twttr?.widgets.load(embedContainerRef.current!)
-      })
-    })
-  }, [data.html])
+        window.twttr?.widgets.load(embedContainerRef.current!);
+      });
+    });
+  }, [data.html]);
 
   return (
     <Card>
@@ -111,9 +112,7 @@ export function EmbedResultDisplay({ result }: EmbedResultProps) {
         {/* 元信息 */}
         {(data.title || data.author_name) && (
           <div className="space-y-1 text-sm">
-            {data.title && (
-              <p className="font-medium line-clamp-2">{data.title}</p>
-            )}
+            {data.title && <p className="font-medium line-clamp-2">{data.title}</p>}
             {data.author_name && (
               <p className="text-muted-foreground">
                 by{' '}
@@ -138,11 +137,11 @@ export function EmbedResultDisplay({ result }: EmbedResultProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="preview" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
+              <Icon icon={ViewIcon} className="h-4 w-4" />
               Preview
             </TabsTrigger>
             <TabsTrigger value="html" className="flex items-center gap-2">
-              <Code className="h-4 w-4" />
+              <Icon icon={CodeIcon} className="h-4 w-4" />
               HTML
             </TabsTrigger>
           </TabsList>
@@ -156,16 +155,10 @@ export function EmbedResultDisplay({ result }: EmbedResultProps) {
               />
             ) : data.url ? (
               <div className="rounded-lg overflow-hidden border">
-                <img
-                  src={data.url}
-                  alt={data.title || 'Embed preview'}
-                  className="w-full h-auto"
-                />
+                <img src={data.url} alt={data.title || 'Embed preview'} className="w-full h-auto" />
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No preview available
-              </div>
+              <div className="text-center py-8 text-muted-foreground">No preview available</div>
             )}
           </TabsContent>
 
@@ -175,9 +168,7 @@ export function EmbedResultDisplay({ result }: EmbedResultProps) {
                 <code>{data.html}</code>
               </pre>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No HTML content
-              </div>
+              <div className="text-center py-8 text-muted-foreground">No HTML content</div>
             )}
           </TabsContent>
         </Tabs>
@@ -223,5 +214,5 @@ export function EmbedResultDisplay({ result }: EmbedResultProps) {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

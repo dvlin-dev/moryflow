@@ -3,6 +3,7 @@
  */
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Key01Icon, Shield01Icon, UserIcon } from '@hugeicons/core-free-icons';
 import {
   Card,
   CardContent,
@@ -10,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
   Button,
+  Icon,
   Input,
   Label,
   Separator,
@@ -18,9 +20,8 @@ import {
   TabsList,
   TabsTrigger,
   Skeleton,
-} from '@aiget/ui/primitives';
-import { PageHeader } from '@aiget/ui/composed';
-import { User, Key, Shield } from 'lucide-react';
+} from '@aiget/ui';
+import { PageHeader } from '@aiget/ui';
 import { useProfile, useUpdateProfile, useChangePassword } from '@/features/settings';
 
 export default function SettingsPage() {
@@ -31,11 +32,11 @@ export default function SettingsPage() {
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
           <TabsTrigger value="profile" className="gap-2">
-            <User className="h-4 w-4" />
+            <Icon icon={UserIcon} className="h-4 w-4" />
             Profile
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
-            <Shield className="h-4 w-4" />
+            <Icon icon={Shield01Icon} className="h-4 w-4" />
             Security
           </TabsTrigger>
         </TabsList>
@@ -169,7 +170,7 @@ function SecuritySettings() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Key className="h-5 w-5" />
+          <Icon icon={Key01Icon} className="h-5 w-5" />
           Change Password
         </CardTitle>
         <CardDescription>

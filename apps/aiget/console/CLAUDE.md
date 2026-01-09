@@ -24,7 +24,9 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - Zustand 管理登录状态，React Query 管理数据
-- UI 风格：直角组件 + 橙色强调
+- UI 风格：Moryflow 圆角 + 柔和层级
+- 组件统一从 `@aiget/ui` 导入
+- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 
 ## 环境变量
@@ -123,6 +125,7 @@ export function useCreateApiKey() {
 ```
 console/
 ├── @aiget/ui - UI components
+├── @hugeicons/core-free-icons - Icon library
 ├── better-auth - Official Better Auth client
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
