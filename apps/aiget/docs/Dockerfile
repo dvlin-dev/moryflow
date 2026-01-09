@@ -16,7 +16,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/docs/package.json ./apps/aiget/docs/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/docs...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @aiget/docs...
 
 # =============================================================================
 # builder
@@ -42,7 +42,7 @@ FROM base AS prod-deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/docs/package.json ./apps/aiget/docs/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --filter @aiget/docs...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --config.node-linker=hoisted --config.shamefully-hoist=false --filter @aiget/docs...
 
 # =============================================================================
 # runner

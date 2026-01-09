@@ -16,7 +16,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/server/package.json ./apps/aiget/server/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/aiget-server...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @aiget/aiget-server...
 
 # =============================================================================
 # builder: prisma generate + nest build

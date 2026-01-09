@@ -22,6 +22,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Demo API has rate limits
 - 组件统一从 `@aiget/ui` 导入，图标统一 Hugeicons
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
+- Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 
 ## 环境变量
 

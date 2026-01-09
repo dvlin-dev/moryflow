@@ -17,7 +17,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/www/package.json ./apps/aiget/www/
 COPY packages/ui/package.json ./packages/ui/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/aiget-www...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @aiget/aiget-www...
 
 # =============================================================================
 # builder
@@ -45,7 +45,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/www/package.json ./apps/aiget/www/
 COPY packages/ui/package.json ./packages/ui/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --filter @aiget/aiget-www...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --config.node-linker=hoisted --config.shamefully-hoist=false --filter @aiget/aiget-www...
 
 # =============================================================================
 # runner

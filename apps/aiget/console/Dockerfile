@@ -17,7 +17,7 @@ COPY packages/embed-react/package.json ./packages/embed-react/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 COPY tooling/eslint-config/package.json ./tooling/eslint-config/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/console...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @aiget/console...
 
 COPY apps/aiget/console ./apps/aiget/console
 COPY packages/types ./packages/types

@@ -22,6 +22,7 @@ API documentation and usage guides. Built with TanStack Start + Fumadocs.
 - Source content in `/content/docs/`
 - `strictNullChecks` must be enabled (TanStack Router requirement)
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
+- Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 
 ## 环境变量
 
