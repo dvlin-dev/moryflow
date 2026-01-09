@@ -11,7 +11,6 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/console/package.json ./apps/aiget/console/
 COPY packages/types/package.json ./packages/types/
-COPY packages/auth-client/package.json ./packages/auth-client/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/embed/package.json ./packages/embed/
 COPY packages/embed-react/package.json ./packages/embed-react/
@@ -22,7 +21,6 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/console..
 
 COPY apps/aiget/console ./apps/aiget/console
 COPY packages/types ./packages/types
-COPY packages/auth-client ./packages/auth-client
 COPY packages/ui ./packages/ui
 COPY packages/embed ./packages/embed
 COPY packages/embed-react ./packages/embed-react
@@ -31,9 +29,6 @@ COPY tooling/eslint-config ./tooling/eslint-config
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 
 WORKDIR /app/packages/types
-RUN pnpm build
-
-WORKDIR /app/packages/auth-client
 RUN pnpm build
 
 WORKDIR /app/apps/aiget/console

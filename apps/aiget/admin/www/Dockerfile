@@ -11,7 +11,6 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/aiget/admin/www/package.json ./apps/aiget/admin/www/
 COPY packages/types/package.json ./packages/types/
-COPY packages/auth-client/package.json ./packages/auth-client/
 COPY packages/ui/package.json ./packages/ui/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 COPY tooling/eslint-config/package.json ./tooling/eslint-config/
@@ -20,16 +19,12 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/admin...
 
 COPY apps/aiget/admin/www ./apps/aiget/admin/www
 COPY packages/types ./packages/types
-COPY packages/auth-client ./packages/auth-client
 COPY packages/ui ./packages/ui
 COPY tooling/typescript-config ./tooling/typescript-config
 COPY tooling/eslint-config ./tooling/eslint-config
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 
 WORKDIR /app/packages/types
-RUN pnpm build
-
-WORKDIR /app/packages/auth-client
 RUN pnpm build
 
 WORKDIR /app/apps/aiget/admin/www

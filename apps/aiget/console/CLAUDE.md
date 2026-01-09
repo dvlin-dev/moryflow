@@ -20,6 +20,7 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
 - 认证通过 HttpOnly Cookie 承载，无需前端存储 token
 - 登录与启动时通过 `/api/v1/user/me` 同步用户档案
+- Docker 构建依赖 `packages/types`、`packages/ui`、`packages/embed`、`packages/embed-react`
 - API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - Zustand 管理登录状态，React Query 管理数据
