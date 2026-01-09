@@ -34,6 +34,11 @@ import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
 - 禁止使用 `lucide-react`、`@tabler/icons-react`
 - 组件内默认使用 `Icon` 封装（`size=18`，`strokeWidth=1.5`）
 
+## 主题与样式
+
+- 统一 Token 来源为 `styles/index.css`，与 Moryflow 保持一致
+- UI 组件依赖 `border-border-muted`、`shadow-float`、`duration-fast` 等 Token
+
 ## 约束
 
 - `verbatimModuleSyntax` 开启时，类型必须使用 `import type`
@@ -61,4 +66,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.1 | 更新日期: 2026-01-09_
+_版本: 4.2 | 更新日期: 2026-01-09_
