@@ -21,7 +21,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Cloudflare Turnstile for captcha
 - Demo API has rate limits
 - 组件统一从 `@aiget/ui` 导入，图标统一 Hugeicons
-- Docker 构建固定使用 pnpm@9.14.4（避免 corepack pnpm@9.15.4 在容器内出现 depNode.fetching 报错）
+- Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 
 ## 环境变量
 
