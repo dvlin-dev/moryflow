@@ -4,7 +4,7 @@
 
 FROM node:22-slim AS base
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.14.4 --activate
 
 WORKDIR /app
 

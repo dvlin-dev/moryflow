@@ -184,6 +184,8 @@ Aiget/
 | 邮件         | Resend                                                  |
 | 日志         | Pino                                                    |
 
+- pnpm 版本固定为 `9.14.4`（Docker/CI 避免 corepack pnpm@9.15.4 的 depNode.fetching 报错）
+
 ---
 
 ## Auth 与配额（当前约束）
