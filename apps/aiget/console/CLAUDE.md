@@ -29,6 +29,7 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - UI 风格：Moryflow 圆角 + 柔和层级
 - 组件统一从 `@aiget/ui` 导入
 - 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
+- 全局样式仅引入 `@aiget/ui/styles`，`@source` 只扫描本应用源码
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - Vite 需 `resolve.dedupe` React 依赖，避免生产环境 hooks 异常
 

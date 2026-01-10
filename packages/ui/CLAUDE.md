@@ -36,8 +36,9 @@ import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
 
 ## 主题与样式
 
-- 统一 Token 来源为 `styles/index.css`，与 Moryflow 保持一致
-- UI 组件依赖 `border-border-muted`、`shadow-float`、`duration-fast` 等 Token
+- 统一 Token 与基础样式来自 `styles/index.css`（含 `tailwindcss` + `tw-animate-css`）
+- 业务侧只需 `@import '@aiget/ui/styles'`，再为自身代码声明 `@source`
+- 应用专属样式（Electron/编辑器等）仅放在应用内，不放入 UI 包
 
 ## 约束
 
@@ -66,4 +67,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.2 | 更新日期: 2026-01-09_
+_版本: 4.3 | 更新日期: 2026-01-09_

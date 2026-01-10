@@ -2,4 +2,3 @@
 
 /* 扫描源文件中的 class（Tailwind v4 需要此配置） */
 @source "../**/*.{ts,tsx}";
-@source "../../../../packages/ui/src/**/*.{ts,tsx}";

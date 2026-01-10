@@ -485,6 +485,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 1. **Data 属性变体**：Radix UI 使用 `data-[state=active]:` 而非 `data-active:`
 2. **颜色透明度**：oklch 修饰符可能不生效，使用内联样式
 3. **CSS 变量配置**：在 `globals.css` 的 `@theme inline` 块中定义
+4. **样式入口**：应用统一 `@import '@aiget/ui/styles'`，并在应用内补充 `@source` 扫描路径
 
 ---
 
