@@ -18,6 +18,9 @@ const prisma = new PrismaClient({ adapter });
  * pnpm exec prisma db seed
  *
  * ⚠️ 警告：此脚本会插入测试数据，请勿在生产环境使用！
+ *
+ * 📌 注意：Demo Playground 用户（demo-playground-user）在生产环境通过数据库迁移创建，
+ *    参见 prisma/main/migrations/20260110122405_add_demo_user/migration.sql
  */
 
 async function main() {
