@@ -62,7 +62,8 @@
       "Bash(pnpm --filter @aiget/aiget-server build:*)",
       "Bash(pnpm info:*)",
       "Bash(npm view:*)",
-      "Bash(pnpm why:*)"
+      "Bash(pnpm why:*)",
+      "Bash(pnpm --filter @aiget/console why:*)"
     ]
   }
 }
