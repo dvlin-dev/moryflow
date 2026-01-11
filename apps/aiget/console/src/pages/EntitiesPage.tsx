@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { UserMultiple01Icon, Delete01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
+import { Group01Icon, Delete01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -140,7 +140,7 @@ export default function EntitiesPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Icon icon={UserMultiple01Icon} className="h-6 w-6" />
+          <Icon icon={Group01Icon} className="h-6 w-6" />
           Entities
         </h1>
         <p className="text-muted-foreground mt-1">View and manage your knowledge graph entities.</p>
@@ -225,10 +225,7 @@ export default function EntitiesPage() {
       ) : data?.items.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <Icon
-              icon={UserMultiple01Icon}
-              className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4"
-            />
+            <Icon icon={Group01Icon} className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <CardDescription>No entities found.</CardDescription>
             <p className="text-sm text-muted-foreground mt-2">
               Entities are extracted from memories via the Memox API.

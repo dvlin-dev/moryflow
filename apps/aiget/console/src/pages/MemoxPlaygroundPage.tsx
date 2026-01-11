@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod/v4';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import {

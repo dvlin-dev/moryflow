@@ -7,10 +7,14 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod/v4';
 import { z } from 'zod';
 import ForceGraph2D, { type ForceGraphMethods, type NodeObject } from 'react-force-graph-2d';
-import { Diagram01Icon, Loading03Icon, InformationCircleIcon } from '@hugeicons/core-free-icons';
+import {
+  FlowConnectionIcon,
+  Loading03Icon,
+  InformationCircleIcon,
+} from '@hugeicons/core-free-icons';
 import {
   Card,
   CardContent,
@@ -211,7 +215,7 @@ export default function GraphPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Icon icon={Diagram01Icon} className="h-6 w-6" />
+          <Icon icon={FlowConnectionIcon} className="h-6 w-6" />
           Knowledge Graph
         </h1>
         <p className="text-muted-foreground mt-1">Visualize entities and their relationships.</p>
@@ -434,12 +438,18 @@ export default function GraphPage() {
                 />
               ) : forceGraphData && forceGraphData.nodes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Icon icon={Diagram01Icon} className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                  <Icon
+                    icon={FlowConnectionIcon}
+                    className="h-16 w-16 text-muted-foreground/30 mb-4"
+                  />
                   <p className="text-muted-foreground">No graph data found for this user.</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Icon icon={Diagram01Icon} className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                  <Icon
+                    icon={FlowConnectionIcon}
+                    className="h-16 w-16 text-muted-foreground/30 mb-4"
+                  />
                   <p className="text-muted-foreground max-w-md">
                     Select an API Key, enter a User ID, and click "Load Graph" to visualize the
                     knowledge graph.

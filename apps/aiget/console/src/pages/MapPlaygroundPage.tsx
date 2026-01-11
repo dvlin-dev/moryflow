@@ -5,10 +5,10 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod/v4';
 import { toast } from 'sonner';
 import {
-  Map01Icon,
+  MapsGlobal01Icon,
   Loading01Icon,
   Link01Icon,
   CheckmarkCircle01Icon,
@@ -146,7 +146,7 @@ export default function MapPlaygroundPage() {
                             {isPending ? (
                               <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Icon icon={Map01Icon} className="h-4 w-4" />
+                              <Icon icon={MapsGlobal01Icon} className="h-4 w-4" />
                             )}
                             <span className="ml-2">Map</span>
                           </Button>
