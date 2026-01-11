@@ -1,34 +1,60 @@
 /**
- * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, PUBLIC_API, HEALTH_API
+ * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, HEALTH_API
  * [USED_BY]: features/*, lib/api-client
  * [POS]: Console API 路径常量定义
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
+// 用户 API
 export const USER_API = {
   ME: '/api/v1/user/me',
 } as const;
 
+// 支付 API
 export const PAYMENT_API = {
   SUBSCRIPTION: '/api/v1/payment/subscription',
   QUOTA: '/api/v1/payment/quota',
 } as const;
 
+// Console 管理 API（Session 认证）
 export const CONSOLE_API = {
   API_KEYS: '/api/v1/console/api-keys',
-  SCREENSHOTS: '/api/v1/console/screenshots',
   WEBHOOKS: '/api/v1/console/webhooks',
-  STATS: '/api/v1/console/stats',
-  SCREENSHOT: '/api/v1/console/screenshot',
   OEMBED: '/api/v1/console/oembed',
 } as const;
 
-export const PUBLIC_API = {
-  SCREENSHOT: '/api/v1/screenshot',
-  QUOTA: '/api/v1/quota',
+// Fetchx 核心 API（API Key 认证）
+export const FETCHX_API = {
+  SCRAPE: '/api/v1/scrape',
+  CRAWL: '/api/v1/crawl',
+  MAP: '/api/v1/map',
+  EXTRACT: '/api/v1/extract',
+  SEARCH: '/api/v1/search',
+  BATCH_SCRAPE: '/api/v1/batch/scrape',
 } as const;
 
+// Memox API（API Key 认证）
+export const MEMOX_API = {
+  MEMORIES: '/api/v1/memories',
+  MEMORIES_SEARCH: '/api/v1/memories/search',
+  ENTITIES: '/api/v1/entities',
+  RELATIONS: '/api/v1/relations',
+  GRAPH: '/api/v1/graph',
+} as const;
+
+// Memox Console API（Session 认证）
+export const MEMOX_CONSOLE_API = {
+  MEMORIES: '/api/console/memories',
+  ENTITIES: '/api/console/entities',
+} as const;
+
+// 健康检查
 export const HEALTH_API = {
   BASE: '/health',
+} as const;
+
+// 配额 API
+export const QUOTA_API = {
+  STATUS: '/api/v1/quota',
 } as const;

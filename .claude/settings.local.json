@@ -53,7 +53,9 @@
       "Bash(pnpm --filter @aiget/aiget-server typecheck:*)",
       "Bash(pnpm --filter @aiget/aiget-server lint:*)",
       "Bash(git rm:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(pnpm --filter @aiget/console lint:*)"
     ]
   }
 }

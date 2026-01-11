@@ -32,6 +32,11 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 - 全局样式仅引入 `@aiget/ui/styles`，`@source` 只扫描本应用源码
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - Vite 需 `resolve.dedupe` React 依赖，避免生产环境 hooks 异常
+- 使用 TailwindCSS 4 + shadcn/ui 组件库
+- 状态管理使用 Zustand
+- 数据获取使用 TanStack Query
+- 路由使用 TanStack Router
+- 表单使用 react-hook-form + zod
 
 ## 环境变量
 
@@ -53,15 +58,18 @@ Aiget Dev 用户控制台，用于管理 API Key、查看用量、测试抓取�
 
 ## 功能列表
 
-| 功能                | 路径                | 说明           |
-| ------------------- | ------------------- | -------------- |
-| `api-keys/`         | `/api-keys`         | API Key 管理   |
-| `playground/`       | `/playground`       | 抓取/截图测试  |
-| `screenshots/`      | `/screenshots`      | 截图历史       |
-| `webhooks/`         | `/webhooks`         | Webhook 配置   |
-| `settings/`         | `/settings`         | 账户设置       |
-| `embed-playground/` | `/embed-playground` | Embed 脚本测试 |
-| `auth/`             | `/login`            | 登录表单       |
+| 功能                  | 路径                  | 说明            |
+| --------------------- | --------------------- | --------------- |
+| `api-keys/`           | `/api-keys`           | API Key 管理    |
+| `scrape-playground/`  | `/playground/scrape`  | 单页抓取测试    |
+| `crawl-playground/`   | `/playground/crawl`   | 多页爬取测试    |
+| `map-playground/`     | `/playground/map`     | URL 发现测试    |
+| `extract-playground/` | `/playground/extract` | AI 数据提取测试 |
+| `search-playground/`  | `/playground/search`  | 网页搜索测试    |
+| `embed-playground/`   | `/playground/embed`   | Embed 脚本测试  |
+| `webhooks/`           | `/webhooks`           | Webhook 配置    |
+| `settings/`           | `/settings`           | 账户设置        |
+| `auth/`               | `/login`              | 登录表单        |
 
 ## Feature Module Structure
 
@@ -110,17 +118,36 @@ feature-name/
 
 ```typescript
 // lib/api-paths.ts
+// Console 管理 API（Session 认证）
 export const CONSOLE_API = {
   API_KEYS: '/api/v1/console/api-keys',
   WEBHOOKS: '/api/v1/console/webhooks',
-  ...
-} as const
+} as const;
 
-// features/api-keys/api.ts
+// Fetchx 核心 API（API Key 认证）
+export const FETCHX_API = {
+  SCRAPE: '/api/v1/scrape',
+  CRAWL: '/api/v1/crawl',
+  MAP: '/api/v1/map',
+  EXTRACT: '/api/v1/extract',
+  SEARCH: '/api/v1/search',
+} as const;
+
+// features/api-keys/api.ts - Session 认证
 export function useCreateApiKey() {
   return useMutation({
-    mutationFn: (data) => apiClient.post(CONSOLE_API.API_KEYS, data)
-  })
+    mutationFn: (data) => apiClient.post(CONSOLE_API.API_KEYS, data),
+  });
+}
+
+// features/scrape-playground/api.ts - API Key 认证
+export function useScrape(apiKey: string) {
+  return useMutation({
+    mutationFn: (request) => {
+      const client = new ApiKeyClient({ apiKey });
+      return client.post(FETCHX_API.SCRAPE, request);
+    },
+  });
 }
 ```
 

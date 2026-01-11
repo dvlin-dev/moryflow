@@ -15,10 +15,13 @@ import { USER_API } from './lib/api-paths';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import ScreenshotPlaygroundPage from './pages/ScreenshotPlaygroundPage';
+import ScrapePlaygroundPage from './pages/ScrapePlaygroundPage';
+import CrawlPlaygroundPage from './pages/CrawlPlaygroundPage';
+import MapPlaygroundPage from './pages/MapPlaygroundPage';
+import ExtractPlaygroundPage from './pages/ExtractPlaygroundPage';
+import SearchPlaygroundPage from './pages/SearchPlaygroundPage';
 import EmbedPlaygroundPage from './pages/EmbedPlaygroundPage';
 import ApiKeysPage from './pages/ApiKeysPage';
-import ScreenshotsPage from './pages/ScreenshotsPage';
 import WebhooksPage from './pages/WebhooksPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -115,18 +118,19 @@ function App() {
             {/* Dashboard - 用量概览 */}
             <Route index element={<DashboardPage />} />
 
-            {/* Playground - API 测试 */}
+            {/* Playground - Fetchx API 测试 */}
             <Route path="playground">
-              <Route index element={<Navigate to="/playground/screenshot" replace />} />
-              <Route path="screenshot" element={<ScreenshotPlaygroundPage />} />
+              <Route index element={<Navigate to="/playground/scrape" replace />} />
+              <Route path="scrape" element={<ScrapePlaygroundPage />} />
+              <Route path="crawl" element={<CrawlPlaygroundPage />} />
+              <Route path="map" element={<MapPlaygroundPage />} />
+              <Route path="extract" element={<ExtractPlaygroundPage />} />
+              <Route path="search" element={<SearchPlaygroundPage />} />
               <Route path="embed" element={<EmbedPlaygroundPage />} />
             </Route>
 
             {/* API Keys - 密钥管理 */}
             <Route path="api-keys" element={<ApiKeysPage />} />
-
-            {/* Screenshots - 截图历史 */}
-            <Route path="screenshots" element={<ScreenshotsPage />} />
 
             {/* Webhooks - 通知配置 */}
             <Route path="webhooks" element={<WebhooksPage />} />

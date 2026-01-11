@@ -5,7 +5,6 @@ import {
   DashboardSquare01Icon,
   PlayIcon,
   Key01Icon,
-  Image01Icon,
   WebhookIcon,
   Settings01Icon,
   Link02Icon,
@@ -34,7 +33,11 @@ const navGroups: NavGroup[] = [
         title: 'Playground',
         icon: PlayIcon,
         items: [
-          { title: 'Screenshot', url: '/playground/screenshot' },
+          { title: 'Scrape', url: '/playground/scrape' },
+          { title: 'Crawl', url: '/playground/crawl' },
+          { title: 'Map', url: '/playground/map' },
+          { title: 'Extract', url: '/playground/extract' },
+          { title: 'Search', url: '/playground/search' },
           { title: 'Embed', url: '/playground/embed' },
         ],
       },
@@ -44,7 +47,6 @@ const navGroups: NavGroup[] = [
     label: 'API',
     items: [
       { title: 'API Keys', url: '/api-keys', icon: Key01Icon },
-      { title: 'Screenshots', url: '/screenshots', icon: Image01Icon },
       { title: 'Webhooks', url: '/webhooks', icon: WebhookIcon },
     ],
   },

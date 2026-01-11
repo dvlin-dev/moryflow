@@ -173,6 +173,7 @@ Aiget/
 | 包管理       | pnpm workspace + Turborepo                              |
 | 后端         | NestJS 11 + Prisma 7 + PostgreSQL 16 + Redis 7 + BullMQ |
 | 前端         | React 19 + Vite + TailwindCSS v4 + shadcn/ui (Radix)    |
+| 表单         | react-hook-form + zod（@hookform/resolvers）            |
 | 移动端       | Expo + React Native + uniwind（非 nativewind/tailwind） |
 | 桌面端       | Electron + React                                        |
 | 认证         | Better Auth                                             |
@@ -379,6 +380,61 @@ ComponentName/
 ├── components/           # 子组件
 └── hooks/                # 组件专属 Hooks
 ```
+
+### 前端表单规范（强制）
+
+**所有表单必须使用 `react-hook-form` + `zod` 组合**，禁止使用多个 `useState` 管理表单状态。
+
+```typescript
+// ✅ 正确：使用 react-hook-form + zod
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const formSchema = z.object({
+  url: z.string().url('Please enter a valid URL'),
+  limit: z.coerce.number().min(1).max(100).default(10),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+function MyForm() {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { url: '', limit: 10 },
+  });
+
+  const onSubmit = (values: FormValues) => { /* ... */ };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField control={form.control} name="url" render={({ field }) => (
+          <FormItem>
+            <FormLabel>URL</FormLabel>
+            <FormControl><Input {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </form>
+    </Form>
+  );
+}
+
+// ❌ 错误：使用多个 useState 管理表单
+function BadForm() {
+  const [url, setUrl] = useState('');
+  const [limit, setLimit] = useState(10);
+  // ... 难以维护，无类型安全
+}
+```
+
+**核心原则**：
+
+1. Schema 定义在独立文件（如 `schemas.ts`），类型通过 `z.infer<>` 派生
+2. 使用 `@aiget/ui` 的 Form 组件（Form, FormField, FormItem, FormLabel, FormControl, FormMessage）
+3. 数字字段使用 `z.coerce.number()` 自动转换
+4. 折叠状态等 UI 状态可以单独用 `useState`，但表单数据必须走 react-hook-form
 
 ---
 
