@@ -117,8 +117,8 @@ RUN chmod +x ./apps/aiget/server/docker-entrypoint.sh
 
 WORKDIR /app/apps/aiget/server
 
-# 安装 Playwright 浏览器（仅 chromium）
-RUN npx playwright install chromium
+# 安装 Playwright 浏览器（chromium + headless shell）
+RUN npx playwright install chromium chromium-headless-shell
 
 EXPOSE 3000
 
