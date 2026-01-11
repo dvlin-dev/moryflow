@@ -307,6 +307,16 @@ git commit -m "feat: 添加全页选项、修复配额bug、更新文档"
 
 使用产品/模块名：`auth`、`fetchx/server`、`memox/console`、`moryflow/mobile`、`ui`、`types` 等。
 
+### 可提交的配置文件
+
+以下配置文件应随代码提交，确保团队协作一致性：
+
+| 文件                          | 说明                                             |
+| ----------------------------- | ------------------------------------------------ |
+| `.claude/settings.local.json` | Claude Code 本地权限配置，可随需求提交或单独提交 |
+| `.claude/commands/*.md`       | 自定义 Claude 命令                               |
+| `.claude/agents/*.md`         | 自定义 Agent 配置                                |
+
 ---
 
 ## 文件头注释规范
