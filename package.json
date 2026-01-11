@@ -61,7 +61,8 @@
       "lightningcss": "1.30.1",
       "@types/react": "19.1.17",
       "@types/react-dom": "19.1.9",
-      "@electron/node-gyp": "10.2.0-electron.1"
+      "@electron/node-gyp": "10.2.0-electron.1",
+      "zod-validation-error": "5.0.0"
     },
     "supportedArchitectures": {
       "os": [
