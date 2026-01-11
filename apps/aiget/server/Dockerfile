@@ -3,7 +3,7 @@
 # Dockerfile 路径：apps/aiget/server/Dockerfile
 
 # 使用 slim 而非 alpine，因为 Playwright 需要 glibc
-FROM node:20-slim AS base
+FROM node:22-slim AS base
 
 RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
@@ -54,7 +54,7 @@ RUN pnpm build
 # =============================================================================
 # runner: minimal runtime + playwright
 # =============================================================================
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 ENV NODE_ENV=production
 
@@ -117,8 +117,8 @@ RUN chmod +x ./apps/aiget/server/docker-entrypoint.sh
 
 WORKDIR /app/apps/aiget/server
 
-# 安装 Playwright 浏览器（chromium + headless shell）
-RUN npx playwright install chromium chromium-headless-shell
+# 安装 Playwright 浏览器
+RUN npx playwright install chromium
 
 EXPOSE 3000
 
