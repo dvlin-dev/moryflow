@@ -56,7 +56,8 @@
       "Bash(git pull:*)",
       "Bash(npx playwright install:*)",
       "Bash(pnpm --filter @aiget/console lint:*)",
-      "Bash(pnpm --filter @aiget/console add:*)"
+      "Bash(pnpm --filter @aiget/console add:*)",
+      "Bash(node -e:*)"
     ]
   }
 }
