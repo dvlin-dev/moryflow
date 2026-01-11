@@ -63,7 +63,7 @@ const createMemorySchema = z.object({
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
   source: z.string().optional(),
-  importance: z.coerce.number().min(0).max(1).optional(),
+  importance: z.number().min(0).max(1).optional(),
   tags: z.string().optional(),
 });
 
@@ -73,11 +73,19 @@ type CreateMemoryFormValues = z.infer<typeof createMemorySchema>;
 const searchMemorySchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   query: z.string().min(1, 'Query is required'),
-  limit: z.coerce.number().min(1).max(100).default(10),
-  threshold: z.coerce.number().min(0).max(1).default(0.5),
+  limit: z.number().min(1).max(100),
+  threshold: z.number().min(0).max(1),
 });
 
 type SearchMemoryFormValues = z.infer<typeof searchMemorySchema>;
+
+// 搜索记忆表单默认值
+const searchMemoryDefaults: SearchMemoryFormValues = {
+  userId: '',
+  query: '',
+  limit: 10,
+  threshold: 0.5,
+};
 
 export default function MemoxPlaygroundPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
@@ -119,12 +127,7 @@ export default function MemoxPlaygroundPage() {
   // 搜索记忆表单
   const searchForm = useForm<SearchMemoryFormValues>({
     resolver: zodResolver(searchMemorySchema),
-    defaultValues: {
-      userId: '',
-      query: '',
-      limit: 10,
-      threshold: 0.5,
-    },
+    defaultValues: searchMemoryDefaults,
   });
 
   // 创建记忆提交

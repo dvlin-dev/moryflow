@@ -42,6 +42,7 @@ import {
   CodeExample,
   CollapsibleSection,
   extractFormSchema,
+  extractFormDefaults,
   type ExtractFormValues,
 } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
@@ -72,11 +73,7 @@ export default function ExtractPlaygroundPage() {
 
   const form = useForm<ExtractFormValues>({
     resolver: zodResolver(extractFormSchema),
-    defaultValues: {
-      url: '',
-      prompt: '',
-      schemaText: '',
-    },
+    defaultValues: extractFormDefaults,
   });
 
   const handleFormSubmit = (values: ExtractFormValues) => {

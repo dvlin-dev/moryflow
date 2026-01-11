@@ -45,10 +45,16 @@ import { useGraph, type GraphNode, type GraphEdge } from '@/features/memox';
 // 表单 Schema
 const graphFormSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
-  limit: z.coerce.number().min(1).max(1000).default(100),
+  limit: z.number().min(1).max(1000),
 });
 
 type GraphFormValues = z.infer<typeof graphFormSchema>;
+
+// 表单默认值
+const graphFormDefaults: GraphFormValues = {
+  userId: '',
+  limit: 100,
+};
 
 // 节点类型颜色映射
 const NODE_COLORS: Record<string, string> = {
@@ -150,10 +156,7 @@ export default function GraphPage() {
   // 表单
   const form = useForm<GraphFormValues>({
     resolver: zodResolver(graphFormSchema),
-    defaultValues: {
-      userId: '',
-      limit: 100,
-    },
+    defaultValues: graphFormDefaults,
   });
 
   const onSubmit = (values: GraphFormValues) => {

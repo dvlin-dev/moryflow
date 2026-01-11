@@ -38,6 +38,7 @@ import {
   CodeExample,
   CollapsibleSection,
   searchFormSchema,
+  searchFormDefaults,
   type SearchFormValues,
 } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
@@ -57,10 +58,7 @@ export default function SearchPlaygroundPage() {
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
-    defaultValues: {
-      query: '',
-      limit: 5,
-    },
+    defaultValues: searchFormDefaults,
   });
 
   const handleFormSubmit = (values: SearchFormValues) => {

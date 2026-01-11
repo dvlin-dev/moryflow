@@ -32,6 +32,7 @@ import {
   CollapsibleSection,
   DEVICE_PRESETS,
   scrapeFormSchema,
+  scrapeFormDefaults,
   type ScrapeFormValues,
   type ScrapeFormat,
   type ScrapeRequest,
@@ -72,24 +73,7 @@ export function ScrapeForm({
 
   const form = useForm<ScrapeFormValues>({
     resolver: zodResolver(scrapeFormSchema),
-    defaultValues: {
-      url: '',
-      formats: ['markdown'],
-      device: 'desktop',
-      width: 1280,
-      height: 800,
-      mobile: false,
-      darkMode: false,
-      onlyMainContent: true,
-      includeTags: '',
-      excludeTags: '',
-      waitFor: '',
-      timeout: 30000,
-      screenshotFullPage: false,
-      screenshotFormat: 'png',
-      screenshotQuality: 80,
-      screenshotResponse: 'url',
-    },
+    defaultValues: scrapeFormDefaults,
   });
 
   const formats = form.watch('formats');

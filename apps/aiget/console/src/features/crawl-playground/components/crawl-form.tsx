@@ -24,6 +24,7 @@ import {
   ApiKeySelector,
   CollapsibleSection,
   crawlFormSchema,
+  crawlFormDefaults,
   type CrawlFormValues,
   type CrawlRequest,
 } from '@/features/playground-shared';
@@ -48,14 +49,7 @@ export function CrawlForm({
 
   const form = useForm<CrawlFormValues>({
     resolver: zodResolver(crawlFormSchema),
-    defaultValues: {
-      url: '',
-      maxDepth: 2,
-      limit: 10,
-      includePaths: '',
-      excludePaths: '',
-      allowExternalLinks: false,
-    },
+    defaultValues: crawlFormDefaults,
   });
 
   const handleFormSubmit = (values: CrawlFormValues) => {

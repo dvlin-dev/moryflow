@@ -39,6 +39,7 @@ import {
   CodeExample,
   CollapsibleSection,
   mapFormSchema,
+  mapFormDefaults,
   type MapFormValues,
 } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
@@ -58,12 +59,7 @@ export default function MapPlaygroundPage() {
 
   const form = useForm<MapFormValues>({
     resolver: zodResolver(mapFormSchema),
-    defaultValues: {
-      url: '',
-      search: '',
-      includeSubdomains: false,
-      limit: 100,
-    },
+    defaultValues: mapFormDefaults,
   });
 
   const handleFormSubmit = (values: MapFormValues) => {
