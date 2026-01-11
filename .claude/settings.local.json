@@ -58,7 +58,9 @@
       "Bash(pnpm --filter @aiget/console lint:*)",
       "Bash(pnpm --filter @aiget/console add:*)",
       "Bash(node -e:*)",
-      "Bash(pnpm --filter @aiget/console list:*)"
+      "Bash(pnpm --filter @aiget/console list:*)",
+      "Bash(pnpm --filter @aiget/aiget-server build:*)",
+      "Bash(pnpm info:*)"
     ]
   }
 }
