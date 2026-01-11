@@ -1,10 +1,11 @@
 /**
  * Scrape Playground Hooks
+ * 使用 apiKeyId 调用 Console Playground 代理接口
  */
 
 import { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { scrape, pollScrapeUntilComplete } from './api';
+import { scrape } from './api';
 import type { ScrapeRequest, ScrapeResponse } from '@/features/playground-shared';
 
 interface UseScrapeOptions {
@@ -12,23 +13,19 @@ interface UseScrapeOptions {
   onError?: (error: Error) => void;
 }
 
-export function useScrape(apiKey: string, options: UseScrapeOptions = {}) {
+/**
+ * Scrape hook
+ * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ */
+export function useScrape(apiKeyId: string, options: UseScrapeOptions = {}) {
   const [progress, setProgress] = useState<ScrapeResponse | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (request: ScrapeRequest) => {
-      // 首先提交抓取请求
-      const initialResponse = await scrape(apiKey, request);
-
-      // 如果是缓存命中，直接返回
-      if (initialResponse.fromCache || initialResponse.status === 'COMPLETED') {
-        return initialResponse;
-      }
-
-      // 否则轮询直到完成
-      return pollScrapeUntilComplete(apiKey, initialResponse.id, {
-        onProgress: setProgress,
-      });
+      // Console Playground 代理是同步的，直接返回结果
+      const response = await scrape(apiKeyId, request);
+      setProgress(response);
+      return response;
     },
     onSuccess: options.onSuccess,
     onError: options.onError,

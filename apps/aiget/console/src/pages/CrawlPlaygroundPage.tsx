@@ -21,21 +21,18 @@ export default function CrawlPlaygroundPage() {
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
 
-  const { crawl, isLoading, data, error, progress, reset } = useCrawl(
-    selectedKey?.keyPrefix || '',
-    {
-      onSuccess: (result: CrawlResponse) => {
-        if (result.status === 'COMPLETED') {
-          toast.success(`Crawl completed: ${result.pages?.length || 0} pages`);
-        } else if (result.status === 'FAILED') {
-          toast.error(`Crawl failed: ${result.error?.message}`);
-        }
-      },
-      onError: (err: Error) => {
-        toast.error(`Request failed: ${err.message}`);
-      },
-    }
-  );
+  const { crawl, isLoading, data, error, progress, reset } = useCrawl(effectiveKeyId, {
+    onSuccess: (result: CrawlResponse) => {
+      if (result.status === 'COMPLETED') {
+        toast.success(`Crawl completed: ${result.pages?.length || 0} pages`);
+      } else if (result.status === 'FAILED') {
+        toast.error(`Crawl failed: ${result.error?.message}`);
+      }
+    },
+    onError: (err: Error) => {
+      toast.error(`Request failed: ${err.message}`);
+    },
+  });
 
   const handleSubmit = (request: CrawlRequest) => {
     setLastRequest(request);

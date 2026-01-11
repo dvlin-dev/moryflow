@@ -1,5 +1,6 @@
 /**
  * Crawl Playground Hooks
+ * 使用 apiKeyId 调用 Console Playground 代理接口
  */
 
 import { useState, useCallback } from 'react';
@@ -12,18 +13,22 @@ interface UseCrawlOptions {
   onError?: (error: Error) => void;
 }
 
-export function useCrawl(apiKey: string, options: UseCrawlOptions = {}) {
+/**
+ * Crawl hook
+ * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ */
+export function useCrawl(apiKeyId: string, options: UseCrawlOptions = {}) {
   const [progress, setProgress] = useState<CrawlResponse | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (request: CrawlRequest) => {
-      const initialResponse = await crawl(apiKey, request);
+      const initialResponse = await crawl(apiKeyId, request);
 
       if (initialResponse.status === 'COMPLETED') {
         return initialResponse;
       }
 
-      return pollCrawlUntilComplete(apiKey, initialResponse.id, {
+      return pollCrawlUntilComplete(apiKeyId, initialResponse.id, {
         onProgress: setProgress,
       });
     },

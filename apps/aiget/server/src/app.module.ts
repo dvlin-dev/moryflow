@@ -30,6 +30,7 @@ import { MemoryModule } from './memory';
 import { EntityModule } from './entity';
 import { RelationModule } from './relation';
 import { GraphModule } from './graph';
+import { ConsolePlaygroundModule } from './console-playground';
 import { CommonModule } from './common';
 import { NotFoundModule } from './not-found';
 
@@ -68,6 +69,7 @@ import { NotFoundModule } from './not-found';
     EntityModule,
     RelationModule,
     GraphModule,
+    ConsolePlaygroundModule,
     // NotFoundModule must be LAST to catch all unmatched routes
     NotFoundModule,
   ],

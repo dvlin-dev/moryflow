@@ -54,7 +54,7 @@ export default function MapPlaygroundPage() {
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
 
-  const { mutate, isPending, data, error, reset } = useMap(selectedKey?.keyPrefix || '');
+  const { mutate, isPending, data, error, reset } = useMap(effectiveKeyId);
 
   const form = useForm<MapFormValues>({
     resolver: zodResolver(mapFormSchema),

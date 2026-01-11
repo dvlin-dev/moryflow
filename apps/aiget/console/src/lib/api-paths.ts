@@ -24,6 +24,15 @@ export const CONSOLE_API = {
   OEMBED: '/api/v1/console/oembed',
 } as const;
 
+// Console Playground API（Session 认证，代理到实际服务）
+export const CONSOLE_PLAYGROUND_API = {
+  SCRAPE: '/api/console/playground/scrape',
+  CRAWL: '/api/console/playground/crawl',
+  MAP: '/api/console/playground/map',
+  EXTRACT: '/api/console/playground/extract',
+  SEARCH: '/api/console/playground/search',
+} as const;
+
 // Fetchx 核心 API（API Key 认证）
 export const FETCHX_API = {
   SCRAPE: '/api/v1/scrape',

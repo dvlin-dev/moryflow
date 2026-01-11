@@ -21,7 +21,7 @@ export default function ScrapePlaygroundPage() {
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
 
-  const { scrape, isLoading, data, error, reset } = useScrape(selectedKey?.keyPrefix || '', {
+  const { scrape, isLoading, data, error, reset } = useScrape(effectiveKeyId, {
     onSuccess: (result: ScrapeResponse) => {
       if (result.status === 'COMPLETED') {
         toast.success('Scrape completed successfully');

@@ -68,7 +68,7 @@ export default function ExtractPlaygroundPage() {
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
 
-  const { mutate, isPending, data, error, reset } = useExtract(selectedKey?.keyPrefix || '');
+  const { mutate, isPending, data, error, reset } = useExtract(effectiveKeyId);
 
   const form = useForm<ExtractFormValues>({
     resolver: zodResolver(extractFormSchema),

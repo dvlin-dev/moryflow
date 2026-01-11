@@ -53,7 +53,7 @@ export default function SearchPlaygroundPage() {
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
 
-  const { mutate, isPending, data, error, reset } = useSearch(selectedKey?.keyPrefix || '');
+  const { mutate, isPending, data, error, reset } = useSearch(effectiveKeyId);
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
