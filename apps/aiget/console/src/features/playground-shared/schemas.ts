@@ -8,7 +8,7 @@
  *   表单字段应使用 valueAsNumber 处理数字输入
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v3'; // 使用 v3 兼容层，解决 @hookform/resolvers 类型兼容问题
 
 // ========== Crawl Form Schema ==========
 export const crawlFormSchema = z.object({
