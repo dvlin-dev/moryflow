@@ -99,6 +99,9 @@ RUN mkdir -p $PNPM_HOME /home/nestjs/.cache \
 
 USER nestjs
 
+# 以 nestjs 用户安装 prisma CLI（用于入口脚本迁移）
+RUN pnpm add -g prisma
+
 WORKDIR /app
 
 # 复制生产依赖（从 prod-deps）
