@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod/v4';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import ForceGraph2D, { type ForceGraphMethods, type NodeObject } from 'react-force-graph-2d';
 import {
@@ -103,7 +103,7 @@ export default function GraphPage() {
   const [queryParams, setQueryParams] = useState<{ userId: string; limit: number } | null>(null);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
 
-  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>(null);
+  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 

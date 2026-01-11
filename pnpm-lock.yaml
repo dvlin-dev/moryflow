@@ -273,8 +273,8 @@ importers:
         specifier: ^9.39.1
         version: 9.39.2
       '@hookform/resolvers':
-        specifier: ^5.2.1
-        version: 5.2.2(react-hook-form@7.70.0(react@19.2.3))
+        specifier: ^5.2.0
+        version: 5.2.0(react-hook-form@7.70.0(react@19.2.3))
       '@tailwindcss/postcss':
         specifier: ^4.1.17
         version: 4.1.18
@@ -4687,6 +4687,11 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
+
+  '@hookform/resolvers@5.2.0':
+    resolution: {integrity: sha512-3YI+VqxJQH6ryRWG+j3k+M19Wf37LeSKJDg6Vdjq6makLOqZGYn77iTaYLMLpVi/uHc1N6OTCmcxJwhOQV979g==}
+    peerDependencies:
+      react-hook-form: ^7.55.0
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -21089,6 +21094,11 @@ snapshots:
   '@hono/node-server@1.19.7(hono@4.10.6)':
     dependencies:
       hono: 4.10.6
+
+  '@hookform/resolvers@5.2.0(react-hook-form@7.70.0(react@19.2.3))':
+    dependencies:
+      '@standard-schema/utils': 0.3.0
+      react-hook-form: 7.70.0(react@19.2.3)
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.70.0(react@19.1.0))':
     dependencies:
