@@ -7,12 +7,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import {
-  AiCloud02Icon,
-  Loading01Icon,
-  CheckmarkCircle01Icon,
-  Cancel01Icon,
-} from '@hugeicons/core-free-icons';
+import { AiCloud02Icon, Loading01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import {
   Button,
   Card,
@@ -32,11 +27,7 @@ import {
   Textarea,
 } from '@aiget/ui';
 import { useApiKeys } from '@/features/api-keys';
-import {
-  useExtract,
-  type ExtractRequest,
-  type ExtractResponse,
-} from '@/features/extract-playground';
+import { useExtract, type ExtractRequest } from '@/features/extract-playground';
 import {
   ApiKeySelector,
   CodeExample,
@@ -95,15 +86,11 @@ export default function ExtractPlaygroundPage() {
     setLastRequest(request);
     reset();
     mutate(request, {
-      onSuccess: (result: ExtractResponse) => {
-        if (result.success) {
-          toast.success('Data extracted successfully');
-        } else {
-          toast.error(`Extract failed: ${result.error?.message}`);
-        }
+      onSuccess: () => {
+        toast.success('Data extracted successfully');
       },
       onError: (err: Error) => {
-        toast.error(`Request failed: ${err.message}`);
+        toast.error(`Extract failed: ${err.message}`);
       },
     });
   };
@@ -285,31 +272,14 @@ export default function ExtractPlaygroundPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  {data.success ? (
-                    <>
-                      <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
-                      Extraction Successful
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon={Cancel01Icon} className="h-5 w-5 text-destructive" />
-                      Extraction Failed
-                    </>
-                  )}
+                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+                  Extraction Successful
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {data.success && data.data ? (
-                  <pre className="overflow-auto max-h-[500px] p-4 bg-muted rounded-lg text-xs font-mono whitespace-pre-wrap">
-                    {JSON.stringify(data.data, null, 2)}
-                  </pre>
-                ) : data.error ? (
-                  <div className="rounded-lg bg-destructive/10 p-4">
-                    <p className="font-mono text-sm">
-                      {data.error.code}: {data.error.message}
-                    </p>
-                  </div>
-                ) : null}
+                <pre className="overflow-auto max-h-[500px] p-4 bg-muted rounded-lg text-xs font-mono whitespace-pre-wrap">
+                  {JSON.stringify(data.data, null, 2)}
+                </pre>
               </CardContent>
             </Card>
           )}

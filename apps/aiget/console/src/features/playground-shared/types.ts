@@ -145,13 +145,13 @@ export interface MapRequest {
   limit?: number;
 }
 
+/**
+ * Map 响应
+ * 注意：apiClient 会自动解包 data，所以这里不包含 success 字段
+ * 错误情况由 apiClient 抛出异常处理
+ */
 export interface MapResponse {
-  success: boolean;
-  links?: string[];
-  error?: {
-    code: string;
-    message: string;
-  };
+  links: string[];
 }
 
 // ========== Extract 请求/响应 ==========
@@ -162,13 +162,13 @@ export interface ExtractRequest {
   scrapeOptions?: Omit<ScrapeRequest, 'url'>;
 }
 
+/**
+ * Extract 响应
+ * 注意：apiClient 会自动解包 data，所以这里不包含 success 字段
+ * 错误情况由 apiClient 抛出异常处理
+ */
 export interface ExtractResponse {
-  success: boolean;
-  data?: Record<string, unknown>;
-  error?: {
-    code: string;
-    message: string;
-  };
+  data: Record<string, unknown>;
 }
 
 // ========== Search 请求/响应 ==========
@@ -183,15 +183,23 @@ export interface SearchResult {
   url: string;
   description?: string;
   markdown?: string;
+  content?: string;
+  engine?: string;
+  score?: number;
+  publishedDate?: string | null;
+  thumbnail?: string;
 }
 
+/**
+ * Search 响应
+ * 注意：apiClient 会自动解包 data，所以这里不包含 success 字段
+ * 错误情况由 apiClient 抛出异常处理
+ */
 export interface SearchResponse {
-  success: boolean;
-  results?: SearchResult[];
-  error?: {
-    code: string;
-    message: string;
-  };
+  query: string;
+  numberOfResults: number;
+  results: SearchResult[];
+  suggestions?: string[];
 }
 
 // ========== 设备预设配置 ==========

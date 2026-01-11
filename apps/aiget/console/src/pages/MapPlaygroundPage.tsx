@@ -12,7 +12,6 @@ import {
   Loading01Icon,
   Link01Icon,
   CheckmarkCircle01Icon,
-  Cancel01Icon,
 } from '@hugeicons/core-free-icons';
 import {
   Button,
@@ -74,14 +73,10 @@ export default function MapPlaygroundPage() {
     reset();
     mutate(request, {
       onSuccess: (result: MapResponse) => {
-        if (result.success) {
-          toast.success(`Found ${result.links?.length || 0} URLs`);
-        } else {
-          toast.error(`Map failed: ${result.error?.message}`);
-        }
+        toast.success(`Found ${result.links.length} URLs`);
       },
       onError: (err: Error) => {
-        toast.error(`Request failed: ${err.message}`);
+        toast.error(`Map failed: ${err.message}`);
       },
     });
   };
@@ -248,21 +243,12 @@ export default function MapPlaygroundPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  {data.success ? (
-                    <>
-                      <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
-                      Found {data.links?.length || 0} URLs
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon={Cancel01Icon} className="h-5 w-5 text-destructive" />
-                      Map Failed
-                    </>
-                  )}
+                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+                  Found {data.links.length} URLs
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {data.success && data.links && data.links.length > 0 ? (
+                {data.links.length > 0 ? (
                   <div className="overflow-auto max-h-[500px] space-y-1">
                     {data.links.map((link, i) => (
                       <a
@@ -276,12 +262,6 @@ export default function MapPlaygroundPage() {
                         <span className="truncate">{link}</span>
                       </a>
                     ))}
-                  </div>
-                ) : data.error ? (
-                  <div className="rounded-lg bg-destructive/10 p-4">
-                    <p className="font-mono text-sm">
-                      {data.error.code}: {data.error.message}
-                    </p>
                   </div>
                 ) : (
                   <p className="text-muted-foreground">No URLs found</p>

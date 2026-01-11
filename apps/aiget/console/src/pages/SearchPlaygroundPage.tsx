@@ -11,7 +11,6 @@ import {
   Search01Icon,
   Loading01Icon,
   CheckmarkCircle01Icon,
-  Cancel01Icon,
   Globe02Icon,
 } from '@hugeicons/core-free-icons';
 import {
@@ -71,14 +70,10 @@ export default function SearchPlaygroundPage() {
     reset();
     mutate(request, {
       onSuccess: (result: SearchResponse) => {
-        if (result.success) {
-          toast.success(`Found ${result.results?.length || 0} results`);
-        } else {
-          toast.error(`Search failed: ${result.error?.message}`);
-        }
+        toast.success(`Found ${result.results.length} results`);
       },
       onError: (err: Error) => {
-        toast.error(`Request failed: ${err.message}`);
+        toast.error(`Search failed: ${err.message}`);
       },
     });
   };
@@ -206,21 +201,12 @@ export default function SearchPlaygroundPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  {data.success ? (
-                    <>
-                      <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
-                      {data.results?.length || 0} Results
-                    </>
-                  ) : (
-                    <>
-                      <Icon icon={Cancel01Icon} className="h-5 w-5 text-destructive" />
-                      Search Failed
-                    </>
-                  )}
+                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+                  {data.results.length} Results
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {data.success && data.results && data.results.length > 0 ? (
+                {data.results.length > 0 ? (
                   <div className="space-y-4 max-h-[500px] overflow-auto">
                     {data.results.map((result, i) => (
                       <div key={i} className="p-4 rounded-lg border space-y-2">
@@ -241,25 +227,19 @@ export default function SearchPlaygroundPage() {
                             {result.description}
                           </p>
                         )}
-                        {result.markdown && (
+                        {(result.markdown || result.content) && (
                           <details className="text-xs">
                             <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
                               View scraped content
                             </summary>
                             <pre className="mt-2 p-2 bg-muted rounded overflow-auto max-h-32 whitespace-pre-wrap">
-                              {result.markdown.slice(0, 1000)}
-                              {result.markdown.length > 1000 && '...'}
+                              {(result.markdown || result.content || '').slice(0, 1000)}
+                              {(result.markdown || result.content || '').length > 1000 && '...'}
                             </pre>
                           </details>
                         )}
                       </div>
                     ))}
-                  </div>
-                ) : data.error ? (
-                  <div className="rounded-lg bg-destructive/10 p-4">
-                    <p className="font-mono text-sm">
-                      {data.error.code}: {data.error.message}
-                    </p>
                   </div>
                 ) : (
                   <p className="text-muted-foreground">No results found</p>
