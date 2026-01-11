@@ -21,6 +21,10 @@ import MapPlaygroundPage from './pages/MapPlaygroundPage';
 import ExtractPlaygroundPage from './pages/ExtractPlaygroundPage';
 import SearchPlaygroundPage from './pages/SearchPlaygroundPage';
 import EmbedPlaygroundPage from './pages/EmbedPlaygroundPage';
+import MemoriesPage from './pages/MemoriesPage';
+import EntitiesPage from './pages/EntitiesPage';
+import GraphPage from './pages/GraphPage';
+import MemoxPlaygroundPage from './pages/MemoxPlaygroundPage';
 import ApiKeysPage from './pages/ApiKeysPage';
 import WebhooksPage from './pages/WebhooksPage';
 import SettingsPage from './pages/SettingsPage';
@@ -127,6 +131,15 @@ function App() {
               <Route path="extract" element={<ExtractPlaygroundPage />} />
               <Route path="search" element={<SearchPlaygroundPage />} />
               <Route path="embed" element={<EmbedPlaygroundPage />} />
+            </Route>
+
+            {/* Memox - AI 记忆管理 */}
+            <Route path="memox">
+              <Route index element={<Navigate to="/memox/playground" replace />} />
+              <Route path="playground" element={<MemoxPlaygroundPage />} />
+              <Route path="memories" element={<MemoriesPage />} />
+              <Route path="entities" element={<EntitiesPage />} />
+              <Route path="graph" element={<GraphPage />} />
             </Route>
 
             {/* API Keys - 密钥管理 */}

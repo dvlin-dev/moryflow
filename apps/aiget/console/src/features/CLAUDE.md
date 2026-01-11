@@ -30,6 +30,7 @@ feature-name/
 | `extract-playground/` | AI 数据提取测试     | `/api/v1/extract`            |
 | `search-playground/`  | 网页搜索测试        | `/api/v1/search`             |
 | `embed-playground/`   | Embed 测试          | Demo-only                    |
+| `memox/`              | Memox 记忆管理      | `/api/console/memories`      |
 | `settings/`           | 账户设置            | `/api/v1/console/*`          |
 | `webhooks/`           | Webhook 管理        | `/api/v1/console/webhooks`   |
 

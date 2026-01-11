@@ -8,6 +8,7 @@ import {
   WebhookIcon,
   Settings01Icon,
   Link02Icon,
+  Brain02Icon,
 } from '@hugeicons/core-free-icons';
 
 import { NavMain, type NavGroup } from '@/components/layout/nav-main';
@@ -39,6 +40,16 @@ const navGroups: NavGroup[] = [
           { title: 'Extract', url: '/playground/extract' },
           { title: 'Search', url: '/playground/search' },
           { title: 'Embed', url: '/playground/embed' },
+        ],
+      },
+      {
+        title: 'Memox',
+        icon: Brain02Icon,
+        items: [
+          { title: 'Playground', url: '/memox/playground' },
+          { title: 'Memories', url: '/memox/memories' },
+          { title: 'Entities', url: '/memox/entities' },
+          { title: 'Graph', url: '/memox/graph' },
         ],
       },
     ],

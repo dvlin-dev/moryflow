@@ -396,12 +396,24 @@ Settings
   - Playground 下级：Scrape / Crawl / Map / Extract / Search / Embed
   - 移除 Screenshots 入口
 
-### 阶段三：Memox 集成（待开发）
+### 阶段三：Memox 集成（已完成 ✅）
 
-- [ ] 新增 Memories 页面
-- [ ] 新增 Entities 页面
-- [ ] 新增 Graph 可视化页面
-- [ ] 新增 Memox Playground
+- [x] 新增 Memories 页面
+  - 记忆列表（分页）
+  - API Key 筛选
+  - JSON/CSV 导出
+- [x] 新增 Entities 页面
+  - 实体列表（分页）
+  - 类型筛选
+  - 删除功能
+- [x] 新增 Graph 页面（占位版）
+  - API 端点文档
+  - 完整可视化待后续增强
+- [x] 新增 features/memox 模块
+  - types.ts - 类型定义
+  - api.ts - API 调用
+  - hooks.ts - React Query hooks
+- [x] 更新路由和侧边栏导航
 
 ---
 
