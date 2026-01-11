@@ -19,7 +19,7 @@ import { ExtractOptionsSchema } from '../../extract/dto/extract.dto';
  * 所有请求都需要 apiKeyId
  */
 const BaseConsolePlaygroundSchema = z.object({
-  apiKeyId: z.string().uuid('Invalid API Key ID'),
+  apiKeyId: z.string().cuid('Invalid API Key ID'),
 });
 
 /**
@@ -61,6 +61,6 @@ export type ConsoleExtractDto = z.infer<typeof ConsoleExtractSchema>;
  * Query 参数中的 apiKeyId（用于 GET/DELETE 请求）
  */
 export const ApiKeyIdQuerySchema = z.object({
-  apiKeyId: z.string().uuid('Invalid API Key ID'),
+  apiKeyId: z.string().cuid('Invalid API Key ID'),
 });
 export type ApiKeyIdQueryDto = z.infer<typeof ApiKeyIdQuerySchema>;
