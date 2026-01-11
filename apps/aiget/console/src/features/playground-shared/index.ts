@@ -12,6 +12,3 @@ export * from './types';
 
 // Schemas
 export * from './schemas';
-
-// API 客户端
-export { ApiKeyClient, ApiKeyClientError } from './api-key-client';

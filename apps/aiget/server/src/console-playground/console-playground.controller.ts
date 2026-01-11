@@ -33,11 +33,13 @@ import {
   ConsoleSearchSchema,
   ConsoleMapSchema,
   ConsoleExtractSchema,
+  ApiKeyIdQuerySchema,
   type ConsoleScrapeDto,
   type ConsoleCrawlDto,
   type ConsoleSearchDto,
   type ConsoleMapDto,
   type ConsoleExtractDto,
+  type ApiKeyIdQueryDto,
 } from './dto';
 
 @ApiTags('Console - Playground')
@@ -86,9 +88,9 @@ export class ConsolePlaygroundController {
   async getCrawlStatus(
     @CurrentUser() user: CurrentUserDto,
     @Param('jobId') jobId: string,
-    @Query('apiKeyId') apiKeyId: string,
+    @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
   ) {
-    return this.service.getCrawlStatus(user.id, apiKeyId, jobId);
+    return this.service.getCrawlStatus(user.id, query.apiKeyId, jobId);
   }
 
   /**
@@ -101,9 +103,9 @@ export class ConsolePlaygroundController {
   async cancelCrawl(
     @CurrentUser() user: CurrentUserDto,
     @Param('jobId') jobId: string,
-    @Query('apiKeyId') apiKeyId: string,
+    @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
   ) {
-    return this.service.cancelCrawl(user.id, apiKeyId, jobId);
+    return this.service.cancelCrawl(user.id, query.apiKeyId, jobId);
   }
 
   /**
