@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node -r ../../../scripts/os-cpus-polyfill.cjs ../../../node_modules/vite/bin/vite.js dev",
-    "build": "node -r ../../../scripts/os-cpus-polyfill.cjs ../../../node_modules/vite/bin/vite.js build",
-    "preview": "node -r ../../../scripts/os-cpus-polyfill.cjs ../../../node_modules/vite/bin/vite.js preview",
+    "dev": "NODE_OPTIONS=\"-r ../../../scripts/os-cpus-polyfill.cjs\" vite dev",
+    "build": "NODE_OPTIONS=\"-r ../../../scripts/os-cpus-polyfill.cjs\" vite build",
+    "preview": "NODE_OPTIONS=\"-r ../../../scripts/os-cpus-polyfill.cjs\" vite preview",
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit"
   },
