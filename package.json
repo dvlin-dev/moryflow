@@ -13,7 +13,7 @@
     "dev:moryflow:pc": "pnpm --filter @aiget/moryflow-pc dev",
     "build": "turbo run build",
     "build:agents:prebuild": "pnpm -r --filter '@aiget/agents*' prebuild",
-    "build:agents": "pnpm run build:agents:prebuild && tsc-multi",
+    "build:agents": "pnpm run build:agents:prebuild && tsc-multi -p tsc-multi.stage1.json && tsc-multi -p tsc-multi.stage1b.json && tsc-multi -p tsc-multi.stage2.json && tsc-multi -p tsc-multi.stage3.json",
     "build:packages": "pnpm run build:agents",
     "postinstall": "pnpm run build:packages",
     "build:aiget": "pnpm --filter @aiget/aiget-server build",

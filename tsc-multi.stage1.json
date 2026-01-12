@@ -1,0 +1,13 @@
+{
+  "targets": [
+    { "extname": ".js", "module": "commonjs", "moduleResolution": "node" },
+    { "extname": ".mjs", "module": "esnext" }
+  ],
+  "projects": [
+    "packages/sync/tsconfig.json",
+    "packages/i18n/tsconfig.json",
+    "packages/model-registry-data/tsconfig.json",
+    "packages/api/tsconfig.json",
+    "packages/agents-core/tsconfig.json"
+  ]
+}
