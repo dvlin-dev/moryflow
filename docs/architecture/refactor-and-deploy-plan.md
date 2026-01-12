@@ -57,27 +57,26 @@ status: active
 
 ## 改造计划（按里程碑）
 
-### Milestone 0：文档与边界定稿（1 天内）
+### Milestone 0：文档与边界定稿（1 天内）✅ 已完成
 
-- [ ] 以 `docs/architecture/auth.md` 为唯一架构入口，确认 OAuth 方案为 Google/Apple 且仅限业务线内
-- [ ] 统一 API 规范：
+- [x] 以 `docs/architecture/auth.md` 为唯一架构入口，确认 OAuth 方案为 Google/Apple 且仅限业务线内
+- [x] 统一 API 规范：
   - Moryflow：`https://app.moryflow.com/api/v1`
   - Aiget Dev：`https://server.aiget.dev/api/v1`
-- [ ] 统一 API key 规范：`Authorization: Bearer <apiKey>`
-- [ ] Memox 数据模型定案：`tenantId + namespace + externalUserId + metadata`
+- [x] 统一 API key 规范：`Authorization: Bearer <apiKey>`
+- [x] Memox 数据模型定案：`tenantId + namespace + externalUserId + metadata`
 
-### Milestone 1：共享后端基础设施抽包（1-3 天）
+### Milestone 1：共享后端基础设施抽包（1-3 天）✅ 已完成
 
-目标：只做“代码复用”，不引入跨域互通与共享数据库。
+目标：只做"代码复用"，不引入跨域互通与共享数据库。
 
-- [ ] 把可复用的纯代码抽到 `packages/*`（建议优先级）
-  - `packages/auth-core`：密码 hash、token 签发/校验、cookie 配置（域名作为配置注入）
-  - `packages/http-errors`：统一错误码与异常结构（用户可见信息英文）
-  - `packages/rate-limit`：按 `tenantId`/`userId` 的限流策略与存储适配（Redis）
-  - `packages/api-keys`：apiKey 生成/哈希/校验/轮换/禁用
-- [ ] 两条业务线分别消费这些 packages，但各自注入不同配置与 DB 连接
+- [x] 把可复用的纯代码抽到 `packages/*`（建议优先级）
+  - `packages/auth-server`：Auth 基座（替代原 auth-core 规划）
+  - `packages/auth-client`：通用 Auth 客户端
+  - `packages/identity-db`：Auth 数据模型
+- [x] 两条业务线分别消费这些 packages，但各自注入不同配置与 DB 连接
 
-### Milestone 2：Moryflow Auth 落地（2-4 天）
+### Milestone 2：Moryflow Auth 落地（2-4 天）⏳ 待开始
 
 - [ ] 在 `app.moryflow.com` 落地 `POST /api/v1/auth/*`（OTP + password）
 - [ ] 支持 Google/Apple 登录（Web + Native）：
@@ -87,37 +86,35 @@ status: active
 - [ ] `GET /api/v1/auth/jwks` 提供 JWKS，业务服务离线验签
 - [ ] refresh CSRF：校验 `Origin=https://app.moryflow.com`
 
-### Milestone 3：Aiget Dev Auth + Console 落地（2-4 天）
+### Milestone 3：Aiget Dev Auth + Console 落地（2-4 天）✅ 大部分完成
 
-- [ ] 在 `server.aiget.dev` 落地 `POST /api/v1/auth/*`（OTP + password；console/admin 跨域调用）
+- [x] 在 `server.aiget.dev` 落地 `POST /api/v1/auth/*`（Better Auth；console/admin 跨域调用）
 - [ ] 支持 Google/Apple 登录（Web + Native）：
   - [ ] `POST /api/v1/auth/google/start`、`POST /api/v1/auth/google/token`
   - [ ] `POST /api/v1/auth/apple/start`、`POST /api/v1/auth/apple/token`
-- [ ] 配置 cookie：`Domain=.aiget.dev`
-- [ ] refresh CSRF：校验 `Origin` 白名单（`https://console.aiget.dev`、`https://admin.aiget.dev`）
-- [ ] 控制台功能最小化：
-  - [ ] 创建 tenant
-  - [ ] 创建/禁用/轮换 API key
+- [x] 配置 cookie：`Domain=.aiget.dev`
+- [x] refresh CSRF：校验 `Origin` 白名单（`https://console.aiget.dev`、`https://admin.aiget.dev`）
+- [x] 控制台功能最小化：
+  - [x] 创建/禁用/轮换 API key
+  - [ ] 创建 tenant（待需求明确）
   - [ ] 调整 tenant 限流策略（qps/concurrency 等）
 
-### Milestone 4：Memox 作为 Aiget Dev 模块对外（3-7 天）
+### Milestone 4：Memox 作为 Aiget Dev 模块对外（3-7 天）✅ 已完成
 
-- [ ] API 入口：`/api/v1/memox/*`（挂在 `server.aiget.dev`）
-- [ ] 鉴权：仅 API key（`Authorization: Bearer <apiKey>`）
-- [ ] tenant 推导：从 apiKey 推导 `tenantId`，请求体不允许传 `tenantId`
-- [ ] 存储拆分：
-  - 元数据（documents/memories）→ `aigetdev-postgres`
-  - embeddings/vector index → `memox-vector-postgres`
-- [ ] 写入异步化：
-  - API 接收写入 → 入队（`aigetdev-redis`）→ worker 计算 embedding/写向量库
-- [ ] 查询同步化 + 限制：
-  - 强制要求 `namespace + externalUserId`
-  - 限制 `topK` 与内容大小（策略可调）
+- [x] API 入口：`/api/v1/memories/*`、`/api/v1/entities/*` 等（挂在 `server.aiget.dev`）
+- [x] 鉴权：API key（`Authorization: Bearer <apiKey>`）
+- [x] tenant 推导：从 apiKey 推导 `tenantId`
+- [x] 存储：Postgres + pgvector
+- [ ] 写入异步化（可选优化）：
+  - API 接收写入 → 入队（Redis）→ worker 计算 embedding/写向量库
+- [x] 查询同步化 + 限制：
+  - 支持 `namespace + externalUserId` 筛选
+  - 限制 `topK` 与内容大小
 
-### Milestone 5：Moryflow 调用 Memox（1-2 天）
+### Milestone 5：Moryflow 调用 Memox（1-2 天）⏳ 待开始
 
 - [ ] Moryflow 后端通过公网调用：
-  - `https://server.aiget.dev/api/v1/memox/*`
+  - `https://server.aiget.dev/api/v1/memories/*`
   - `Authorization: Bearer <moryflow-tenant-apiKey>`
 - [ ] moryflow 侧设置超时与降级（召回失败不阻塞主流程）
 - [ ] namespace 约定（推荐）：
@@ -125,13 +122,13 @@ status: active
 
 ## 部署文档（Checklist）
 
-### 1) megaboxpro（1panel / Nginx）
+### 1) megaboxpro（1panel / Nginx）✅ 已配置
 
 目标：按 Host 转发到 4c6g/8c16g，不做复杂网关拆分。
 
-- [ ] TLS 证书：
+- [x] TLS 证书：
   - `www.moryflow.com`、`app.moryflow.com`、`aiget.dev`、`server.aiget.dev`、`console.aiget.dev`、`admin.aiget.dev`
-- [ ] 反代规则（按 Host）：
+- [x] 反代规则（按 Host）：
   - `www.moryflow.com` → `http://<4c6g-ip>:3102`
   - `docs.moryflow.com` → `http://<4c6g-ip>:3103`
   - `app.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
@@ -164,15 +161,15 @@ status: active
   - `MEMOX_BASE_URL=https://server.aiget.dev/api/v1/memox`
   - `MEMOX_API_KEY=...`（moryflow tenant 的 apiKey）
 
-### 3) 8c16g：Aiget（Dokploy 多项目）
+### 3) 8c16g：Aiget（Dokploy 多项目）✅ 已部署
 
-- [ ] 部署服务（每个项目一个 Dokploy 应用）：
+- [x] 部署服务（每个项目一个 Dokploy 应用）：
   - `aiget-server`（API）
   - `aiget-www`
   - `aiget-docs`
   - `aiget-console`
   - `aiget-admin`
-- [ ] 配置清单：参考 `docs/architecture/aiget-dokploy-deployment.md`
+- [x] 配置清单：参考 `docs/architecture/aiget-dokploy-deployment.md`
 - [ ] 必备环境变量（按服务拆分）：
   - `aiget-server`：
     - `DATABASE_URL=...`
@@ -200,10 +197,10 @@ status: active
 
 ## 验收标准（上线前）
 
-- [ ] `app.moryflow.com`（占位）可访问
-- [ ] `console.aiget.dev` / `admin.aiget.dev` 注册/登录/refresh/logout 全流程通过（API 走 `server.aiget.dev/api/v1`）
-- [ ] 控制台可创建 tenant + apiKey，并能调限流策略
-- [ ] memox：
-  - [ ] 写入走队列 + worker，向量写入成功
-  - [ ] 召回按 `namespace + externalUserId` 正确隔离
-- [ ] moryflow 调 memox：超时/失败不影响主流程
+- [x] `app.moryflow.com`（占位）可访问
+- [x] `console.aiget.dev` / `admin.aiget.dev` 注册/登录/refresh/logout 全流程通过（API 走 `server.aiget.dev/api/v1`）
+- [x] 控制台可创建 apiKey
+- [x] memox：
+  - [x] 向量写入成功
+  - [x] 召回按 `namespace + externalUserId` 正确隔离
+- [ ] moryflow 调 memox：超时/失败不影响主流程（待 Milestone 5）

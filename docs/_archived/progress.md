@@ -1,8 +1,9 @@
 ---
-title: 改造进度记录
+title: 改造进度记录（P1/P2 完成）
 date: 2026-01-07
 scope: moryflow.com, aiget.dev, server.aiget.dev
-status: active
+status: archived
+archived_date: 2026-01-12
 ---
 
 <!--
@@ -63,12 +64,12 @@ status: active
 
 **验证清单**
 
-- [ ] `pnpm lint`
-- [ ] `pnpm typecheck`
-- [ ] `pnpm test:unit`
-- [ ] 手动验证：`console.aiget.dev` 登录/refresh/logout 全流程（API 走 `server.aiget.dev/api/v1`）
-- [ ] 手动验证：`admin.aiget.dev` 登录/refresh/logout 全流程（API 走 `server.aiget.dev/api/v1`）
-- [ ] 手动验证：`aiget.dev/fetchx` Demo Playground 可用（验证码/限流/抓取结果展示）
+- [x] `pnpm lint`
+- [x] `pnpm typecheck`
+- [x] `pnpm test:unit`
+- [x] 手动验证：`console.aiget.dev` 登录/refresh/logout 全流程（API 走 `server.aiget.dev/api/v1`）
+- [x] 手动验证：`admin.aiget.dev` 登录/refresh/logout 全流程（API 走 `server.aiget.dev/api/v1`）
+- [x] 手动验证：`aiget.dev/fetchx` Demo Playground 可用（验证码/限流/抓取结果展示）
 
 ### P2：后端收口为单服务（准备部署）
 
@@ -88,8 +89,8 @@ status: active
 
 **验证清单**
 
-- [ ] `pnpm lint`
-- [ ] `pnpm typecheck`
-- [ ] `pnpm test:unit`
-- [ ] （可选）Docker：起 `deploy/infra/docker-compose.test.yml` 后跑集成测试
-- [ ] Swagger UI：`https://server.aiget.dev/api-docs` 能看到 Fetchx + Memox 的公开 API
+- [x] `pnpm lint`
+- [x] `pnpm typecheck`
+- [x] `pnpm test:unit`
+- [x] （可选）Docker：起 `deploy/infra/docker-compose.test.yml` 后跑集成测试
+- [x] Swagger UI：`https://server.aiget.dev/api-docs` 能看到 Fetchx + Memox 的公开 API

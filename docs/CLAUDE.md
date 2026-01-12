@@ -24,7 +24,7 @@
 
 ## 目录结构
 
-- `docs/architecture/`：架构与部署设计（当前阶段的“最终真相”优先写在这里，含 OAuth 登录与 Auth 数据库隔离等关键约束）。
+- `docs/architecture/`：架构与部署设计（当前阶段的"最终真相"优先写在这里，含 OAuth 登录与 Auth 数据库隔离等关键约束）。
 - `docs/architecture/open-source-package.md`：把 Monorepo 内单个包拆分为开源仓库的可复用方案（Git Subtree 双向同步）。
 - `docs/architecture/auth/`：Auth（两套业务线）拆分设计文档。
 - `docs/architecture/aiget-dokploy-deployment.md`：Aiget Dev Dokploy 多项目部署清单。
@@ -34,6 +34,5 @@
 - `docs/features/user-system/quick-start.md`：Auth 服务模板的快速接入说明。
 - `docs/features/user-system/fetchx-integration-plan.md`：Fetchx 试点接入方案（官网/console/admin，含 Auth Client 接入细节）。
 - `docs/features/scheduled-digest/overview.md`：功能：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）。
-- `docs/progress.md`：改造进度记录与下一步清单。
-- `docs/ui-migration-moryflow.md`：UI 统一迁移执行记录（Moryflow 风格 + Hugeicons）。
+- `docs/_archived/`：已完成/归档的文档（progress.md、ui-migration-moryflow.md、console-refactor-plan.md）。
 - `docs/*.md`：一次性记录、handoff、复盘等。

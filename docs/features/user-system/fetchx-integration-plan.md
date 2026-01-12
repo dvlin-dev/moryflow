@@ -2,7 +2,7 @@
 title: Fetchx 接入方案（Aiget Dev 试点）
 date: 2026-01-06
 scope: aiget.dev, server.aiget.dev
-status: draft
+status: active
 ---
 
 <!--

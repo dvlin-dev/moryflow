@@ -2,7 +2,7 @@
 title: 用户系统改造计划（两套 Auth + Auth Client）
 date: 2026-01-06
 scope: moryflow.com, aiget.dev
-status: draft
+status: active
 ---
 
 <!--

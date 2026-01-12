@@ -25,7 +25,12 @@ status: active
 - 用户系统（Fetchx 接入方案）：`docs/features/user-system/fetchx-integration-plan.md`
 - 定时内容订阅（Email Digest）：`docs/features/scheduled-digest/overview.md`
 
+## 已归档
+
+- Console 改造方案（已完成）：`docs/_archived/console-refactor-plan.md`
+
 ## 最近更新
 
-- Fetchx 接入方案已更新：Admin 后端已并入 `apps/aiget/server`（不再保留 `apps/aiget/admin/server`）。
-- 新增需求方案：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）。
+- 2026-01-12：Console 改造方案已完成并归档
+- Fetchx 接入方案已更新：Admin 后端已并入 `apps/aiget/server`（不再保留 `apps/aiget/admin/server`）
+- 新增需求方案：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）

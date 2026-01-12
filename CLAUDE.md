@@ -203,23 +203,22 @@ Aiget/
 
 ## 文档索引
 
-| 文档                                                                                                             | 说明                                                       |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）  |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）   |
-| [`docs/architecture/aiget-dokploy-deployment.md`](./docs/architecture/aiget-dokploy-deployment.md)               | Aiget Dev Dokploy 多项目部署清单                           |
-| [`docs/architecture/open-source-package.md`](./docs/architecture/open-source-package.md)                         | 从 Monorepo 拆分并开源单个包的方案（Git Subtree 双向同步） |
-| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                   |
-| [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                               |
-| [`docs/progress.md`](./docs/progress.md)                                                                         | 改造进度记录与下一步清单                                   |
-| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                               | 功能：用户系统（总览 + 技术方案 + OAuth 登录）             |
-| [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                          |
-| [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                          |
-| [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点（含 Auth Client） |
-| [`docs/features/scheduled-digest/overview.md`](./docs/features/scheduled-digest/overview.md)                     | 功能：定时内容订阅（Email Digest）需求方案                 |
-| [`docs/ui-migration-moryflow.md`](./docs/ui-migration-moryflow.md)                                               | UI 统一迁移方案（Moryflow 风格 + Hugeicons）               |
-| `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                           |
-| `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                             |
+| 文档                                                                                                             | 说明                                                           |
+| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                       | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）      |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                   | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）       |
+| [`docs/architecture/aiget-dokploy-deployment.md`](./docs/architecture/aiget-dokploy-deployment.md)               | Aiget Dev Dokploy 多项目部署清单                               |
+| [`docs/architecture/open-source-package.md`](./docs/architecture/open-source-package.md)                         | 从 Monorepo 拆分并开源单个包的方案（Git Subtree 双向同步）     |
+| [`docs/architecture/refactor-and-deploy-plan.md`](./docs/architecture/refactor-and-deploy-plan.md)               | 改造步骤与部署 checklist                                       |
+| [`docs/features/index.md`](./docs/features/index.md)                                                             | 功能文档索引                                                   |
+| [`docs/features/user-system/overview.md`](./docs/features/user-system/overview.md)                               | 功能：用户系统（总览 + 技术方案 + OAuth 登录）                 |
+| [`docs/features/user-system/refactor-plan.md`](./docs/features/user-system/refactor-plan.md)                     | 改造计划：两套 Auth + Auth Client                              |
+| [`docs/features/user-system/quick-start.md`](./docs/features/user-system/quick-start.md)                         | 快速接入：Auth 服务模板与接入清单                              |
+| [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点（含 Auth Client）     |
+| [`docs/features/scheduled-digest/overview.md`](./docs/features/scheduled-digest/overview.md)                     | 功能：定时内容订阅（Email Digest）需求方案                     |
+| `docs/_archived/`                                                                                                | 已完成/归档文档（progress.md, ui-migration, console-refactor） |
+| `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                               |
+| `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                                 |
 
 ## 外部仓库快照（仅查阅）
 
