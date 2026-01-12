@@ -66,7 +66,13 @@
       "Bash(pnpm --filter @aiget/console why:*)",
       "WebFetch(domain:github.com)",
       "Bash(pnpm:*)",
-      "Bash(do echo '=== $\\(basename $dir\\) ===' ls -la $dir/)"
+      "Bash(do echo '=== $\\(basename $dir\\) ===' ls -la $dir/)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 15 pnpm:*)",
+      "mcp__firecrawl__firecrawl_search",
+      "mcp__firecrawl__firecrawl_scrape",
+      "Bash(node --input-type=module -e:*)",
+      "Bash(timeout 20 pnpm:*)"
     ]
   }
 }

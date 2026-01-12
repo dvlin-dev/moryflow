@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@aiget/ui';
 import { useApiKeys } from '@/features/api-keys';
 import { ScrapeForm, ScrapeResult, useScrape } from '@/features/scrape-playground';
-import { CodeExample } from '@/features/playground-shared';
+import { CodeExample, isScrapeError } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
 import type { ScrapeRequest, ScrapeResponse } from '@/features/playground-shared';
 
@@ -23,10 +23,10 @@ export default function ScrapePlaygroundPage() {
 
   const { scrape, isLoading, data, error, reset } = useScrape(effectiveKeyId, {
     onSuccess: (result: ScrapeResponse) => {
-      if (result.status === 'COMPLETED') {
+      if (isScrapeError(result)) {
+        toast.error(`Scrape failed: ${result.error.message}`);
+      } else {
         toast.success('Scrape completed successfully');
-      } else if (result.status === 'FAILED') {
-        toast.error(`Scrape failed: ${result.error?.message}`);
       }
     },
     onError: (err: Error) => {

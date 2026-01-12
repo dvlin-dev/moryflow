@@ -79,6 +79,7 @@ interface ForceLink {
   target: string;
   type: string;
   confidence?: number | null;
+  [key: string]: unknown;
 }
 
 interface ForceGraphData {
@@ -109,7 +110,7 @@ export default function GraphPage() {
   const [queryParams, setQueryParams] = useState<{ userId: string; limit: number } | null>(null);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
 
-  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
+  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
 
@@ -423,15 +424,21 @@ export default function GraphPage() {
                   graphData={forceGraphData}
                   width={dimensions.width}
                   height={dimensions.height - 20}
-                  nodeCanvasObject={nodeCanvasObject}
+                  nodeCanvasObject={
+                    nodeCanvasObject as (
+                      node: NodeObject,
+                      ctx: CanvasRenderingContext2D,
+                      globalScale: number
+                    ) => void
+                  }
                   nodePointerAreaPaint={(node, color, ctx) => {
                     ctx.fillStyle = color;
                     ctx.beginPath();
                     ctx.arc(node.x || 0, node.y || 0, 8, 0, 2 * Math.PI);
                     ctx.fill();
                   }}
-                  onNodeHover={handleNodeHover}
-                  onNodeClick={handleNodeClick}
+                  onNodeHover={handleNodeHover as (node: NodeObject | null) => void}
+                  onNodeClick={handleNodeClick as (node: NodeObject) => void}
                   linkColor={() => '#d1d5db'}
                   linkWidth={1}
                   linkDirectionalParticles={2}
