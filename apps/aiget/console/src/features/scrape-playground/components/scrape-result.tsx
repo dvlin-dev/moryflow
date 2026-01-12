@@ -27,7 +27,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@aiget/ui';
-import type { ScrapeResponse } from '@/features/playground-shared';
+import { isScrapeError, type ScrapeResponse } from '@/features/playground-shared';
 
 interface ScrapeResultProps {
   data: ScrapeResponse;
@@ -36,7 +36,8 @@ interface ScrapeResultProps {
 export function ScrapeResult({ data }: ScrapeResultProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  if (data.status === 'FAILED') {
+  // 错误处理
+  if (isScrapeError(data)) {
     return (
       <Card className="border-destructive">
         <CardHeader className="pb-2">
@@ -48,7 +49,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
         <CardContent>
           <div className="rounded-lg bg-destructive/10 p-4">
             <p className="font-mono text-sm">
-              {data.error?.code}: {data.error?.message}
+              {data.error.code}: {data.error.message}
             </p>
           </div>
         </CardContent>
@@ -56,18 +57,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
     );
   }
 
-  if (data.status !== 'COMPLETED') {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <div className="animate-pulse text-muted-foreground">
-            Processing... Status: {data.status}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // 同步完成 - 直接显示结果
   const hasScreenshot = data.screenshot?.url || data.screenshot?.base64;
   const hasPdf = data.pdf?.url || data.pdf?.base64;
   const hasMarkdown = Boolean(data.markdown);

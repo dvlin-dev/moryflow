@@ -1,5 +1,6 @@
 /**
  * Crawl 结果展示组件
+ * Console Playground 强制同步模式，无需进度显示
  */
 
 import {
@@ -16,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
   Icon,
-  Progress,
   Tabs,
   TabsContent,
   TabsList,
@@ -26,14 +26,11 @@ import type { CrawlResponse } from '@/features/playground-shared';
 
 interface CrawlResultProps {
   data: CrawlResponse;
-  progress?: CrawlResponse | null;
 }
 
-export function CrawlResult({ data, progress }: CrawlResultProps) {
-  const displayData =
-    data.status === 'COMPLETED' || data.status === 'FAILED' ? data : progress || data;
-
-  if (displayData.status === 'FAILED') {
+export function CrawlResult({ data }: CrawlResultProps) {
+  // 错误处理
+  if (data.status === 'FAILED') {
     return (
       <Card className="border-destructive">
         <CardHeader className="pb-2">
@@ -45,7 +42,7 @@ export function CrawlResult({ data, progress }: CrawlResultProps) {
         <CardContent>
           <div className="rounded-lg bg-destructive/10 p-4">
             <p className="font-mono text-sm">
-              {displayData.error?.code}: {displayData.error?.message}
+              {data.error?.code}: {data.error?.message}
             </p>
           </div>
         </CardContent>
@@ -53,35 +50,8 @@ export function CrawlResult({ data, progress }: CrawlResultProps) {
     );
   }
 
-  if (displayData.status === 'PENDING' || displayData.status === 'PROCESSING') {
-    const progressPercent =
-      displayData.totalPages && displayData.totalPages > 0
-        ? ((displayData.pagesScraped || 0) / displayData.totalPages) * 100
-        : 0;
-
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Icon icon={Globe02Icon} className="h-5 w-5 animate-pulse" />
-            Crawling...
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Progress value={progressPercent} className="h-2" />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>
-              Pages scraped: {displayData.pagesScraped || 0}
-              {displayData.totalPages ? ` / ${displayData.totalPages}` : ''}
-            </span>
-            <span>{Math.round(progressPercent)}%</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const pages = displayData.pages || [];
+  // 同步完成 - 直接显示结果
+  const pages = data.data || [];
 
   return (
     <div className="space-y-4">

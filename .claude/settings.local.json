@@ -65,7 +65,8 @@
       "Bash(pnpm why:*)",
       "Bash(pnpm --filter @aiget/console why:*)",
       "WebFetch(domain:github.com)",
-      "Bash(pnpm:*)"
+      "Bash(pnpm:*)",
+      "Bash(do echo '=== $\\(basename $dir\\) ===' ls -la $dir/)"
     ]
   }
 }

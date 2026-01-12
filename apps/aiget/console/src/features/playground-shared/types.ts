@@ -89,10 +89,31 @@ export interface ScreenshotResult {
   expiresAt?: string;
 }
 
-export interface ScrapeResponse {
+export interface PageMetadata {
+  title?: string;
+  description?: string;
+  author?: string;
+  keywords?: string[];
+  language?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogType?: string;
+  ogUrl?: string;
+  ogSiteName?: string;
+  twitterCard?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  favicon?: string;
+  canonicalUrl?: string;
+  robots?: string;
+}
+
+// 同步完成响应（直接返回结果）
+export interface ScrapeResultResponse {
   id: string;
   url: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   fromCache?: boolean;
   markdown?: string;
   html?: string;
@@ -100,11 +121,23 @@ export interface ScrapeResponse {
   links?: string[];
   screenshot?: ScreenshotResult;
   pdf?: { url?: string; base64?: string };
+  metadata?: PageMetadata;
   timings?: ScrapeTimings;
-  error?: {
-    code: string;
-    message: string;
-  };
+}
+
+// 失败响应
+export interface ScrapeErrorResponse {
+  id: string;
+  status: 'FAILED';
+  error: { code: string; message: string };
+}
+
+// 统一类型
+export type ScrapeResponse = ScrapeResultResponse | ScrapeErrorResponse;
+
+// 类型守卫
+export function isScrapeError(data: ScrapeResponse): data is ScrapeErrorResponse {
+  return 'status' in data && data.status === 'FAILED';
 }
 
 // ========== Crawl 请求/响应 ==========
@@ -120,21 +153,25 @@ export interface CrawlRequest {
 
 export interface CrawlPage {
   url: string;
+  depth?: number;
   markdown?: string;
   html?: string;
   links?: string[];
+  metadata?: Record<string, unknown>;
 }
 
+// 同步模式只返回 COMPLETED 或 FAILED
 export interface CrawlResponse {
   id: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  pagesScraped?: number;
-  totalPages?: number;
-  pages?: CrawlPage[];
-  error?: {
-    code: string;
-    message: string;
-  };
+  status: 'COMPLETED' | 'FAILED';
+  startUrl?: string;
+  totalUrls?: number;
+  completedUrls?: number;
+  failedUrls?: number;
+  createdAt?: string;
+  completedAt?: string;
+  data?: CrawlPage[];
+  error?: { code: string; message: string };
 }
 
 // ========== Map 请求/响应 ==========

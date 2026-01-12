@@ -21,10 +21,10 @@ export default function CrawlPlaygroundPage() {
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
 
-  const { crawl, isLoading, data, error, progress, reset } = useCrawl(effectiveKeyId, {
+  const { crawl, isLoading, data, error, reset } = useCrawl(effectiveKeyId, {
     onSuccess: (result: CrawlResponse) => {
       if (result.status === 'COMPLETED') {
-        toast.success(`Crawl completed: ${result.pages?.length || 0} pages`);
+        toast.success(`Crawl completed: ${result.data?.length || 0} pages`);
       } else if (result.status === 'FAILED') {
         toast.error(`Crawl failed: ${result.error?.message}`);
       }
@@ -107,9 +107,9 @@ export default function CrawlPlaygroundPage() {
             </Card>
           )}
 
-          {(data || progress) && <CrawlResult data={data!} progress={progress} />}
+          {data && <CrawlResult data={data} />}
 
-          {!data && !progress && !error && (
+          {!data && !error && (
             <Card>
               <CardContent className="py-16 text-center">
                 <p className="text-muted-foreground">
