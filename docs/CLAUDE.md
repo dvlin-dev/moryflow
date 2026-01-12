@@ -36,4 +36,5 @@
 - `docs/features/scheduled-digest/overview.md`：功能：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）。
 - `docs/progress.md`：改造进度记录与下一步清单。
 - `docs/ui-migration-moryflow.md`：UI 统一迁移执行记录（Moryflow 风格 + Hugeicons）。
+- `docs/opencode-architecture.md`：OpenCode 架构分析与可迁移模式清单（会话压缩/权限/配置/工具/事件等），用于反哺 Aiget 与 Moryflow 的 Agent 工作流。
 - `docs/*.md`：一次性记录、handoff、复盘等。

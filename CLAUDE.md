@@ -218,6 +218,7 @@ Aiget/
 | [`docs/features/user-system/fetchx-integration-plan.md`](./docs/features/user-system/fetchx-integration-plan.md) | 接入方案：Fetchx 官网/Console/Admin 试点（含 Auth Client） |
 | [`docs/features/scheduled-digest/overview.md`](./docs/features/scheduled-digest/overview.md)                     | 功能：定时内容订阅（Email Digest）需求方案                 |
 | [`docs/ui-migration-moryflow.md`](./docs/ui-migration-moryflow.md)                                               | UI 统一迁移方案（Moryflow 风格 + Hugeicons）               |
+| [`docs/opencode-architecture.md`](./docs/opencode-architecture.md)                                               | OpenCode 架构分析与可迁移模式清单（含本地 Snapshot 指南）  |
 | `apps/*/CLAUDE.md`                                                                                               | 各应用的详细文档                                           |
 | `packages/*/CLAUDE.md`                                                                                           | 各包的详细文档                                             |
 
