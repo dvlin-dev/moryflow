@@ -19,6 +19,10 @@ export const CrawlOptionsSchema = z.object({
   allowExternalLinks: z.boolean().default(false),
   scrapeOptions: ScrapeOptionsSchema.omit({ url: true }).optional(),
   webhookUrl: z.string().url().optional(),
+
+  // 同步/异步模式
+  sync: z.boolean().default(true),
+  timeout: z.number().default(300000), // 默认 5 分钟
 });
 
 export type CrawlOptions = z.infer<typeof CrawlOptionsSchema>;

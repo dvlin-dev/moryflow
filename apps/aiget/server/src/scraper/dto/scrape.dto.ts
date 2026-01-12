@@ -83,6 +83,9 @@ export const ScrapeOptionsSchema = z.object({
 
   // Actions (页面交互)
   actions: z.array(ActionSchema).optional(),
+
+  // 同步/异步模式
+  sync: z.boolean().default(true),
 });
 
 // ========== 推断类型 ==========

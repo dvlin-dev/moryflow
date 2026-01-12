@@ -19,7 +19,15 @@ Batch scraping API for processing multiple URLs in a single request. Creates asy
 - Public API uses ApiKeyGuard
 - SSRF protection via UrlValidator
 - Quota deducted per URL processed
-- Async job model (returns job ID immediately)
+
+## 同步/异步模式
+
+API 支持 `sync` 参数控制返回方式：
+
+| sync 值 | 行为                                     | 返回类型                    | 超时默认值 |
+| ------- | ---------------------------------------- | --------------------------- | ---------- |
+| `true`  | **默认**：等待批量抓取完成后返回完整结果 | `BatchScrapeStatus`         | 10 分钟    |
+| `false` | 立即返回任务 ID，客户端通过轮询获取结果  | `{ id, status, totalUrls }` | N/A        |
 
 ## File Structure
 

@@ -1,6 +1,6 @@
 /**
  * [INPUT]: BatchScrapeOptionsDto - URLs and scrape options
- * [OUTPUT]: { id, status, totalUrls } | BatchScrapeStatus - Job info or full status
+ * [OUTPUT]: BatchScrapeStatus (sync) | { id, status, totalUrls } (async)
  * [POS]: Public API controller for batch scraping operations
  *
  * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
@@ -46,22 +46,20 @@ export class BatchScrapeController {
 
   @Post()
   @ApiOperation({ summary: 'Start a batch scrape job' })
-  @ApiOkResponse({ description: 'Batch scrape job created' })
+  @ApiOkResponse({
+    description:
+      'Sync mode (default): returns complete result. Async mode (sync=false): returns job ID for polling.',
+  })
   @BillingKey('fetchx.batchScrape')
   async batchScrape(
     @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(BatchScrapeOptionsSchema)) options: unknown,
   ) {
-    const job = await this.batchScrapeService.batchScrape(
+    // Service 根据 sync 参数自动返回完整结果或任务 ID
+    return this.batchScrapeService.batchScrape(
       user.id,
       options as Parameters<typeof this.batchScrapeService.batchScrape>[1],
     );
-
-    return {
-      id: job.id,
-      status: job.status,
-      totalUrls: job.totalUrls,
-    };
   }
 
   @Get(':id')

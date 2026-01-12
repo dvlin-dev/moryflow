@@ -23,6 +23,17 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 - Browser pool concurrency limits apply
 - Cache hits don't consume quota
 
+## 同步/异步模式
+
+API 支持 `sync` 参数控制返回方式：
+
+| sync 值 | 行为                                    | 返回类型         |
+| ------- | --------------------------------------- | ---------------- |
+| `true`  | **默认**：等待抓取完成后返回完整结果    | `ScrapeResult`   |
+| `false` | 立即返回任务 ID，客户端通过轮询获取结果 | `{ id, status }` |
+
+内部服务（如 Extract、Search、Crawler）使用 `scrapeSync()` 方法，强制同步模式且不扣费。
+
 ## File Structure
 
 | File                    | Type       | Description                                |

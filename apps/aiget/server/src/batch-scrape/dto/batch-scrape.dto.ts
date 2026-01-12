@@ -16,6 +16,10 @@ export const BatchScrapeOptionsSchema = z.object({
   urls: z.array(z.string().url()).min(1).max(100),
   scrapeOptions: ScrapeOptionsSchema.omit({ url: true }).optional(),
   webhookUrl: z.string().url().optional(),
+
+  // 同步/异步模式
+  sync: z.boolean().default(true),
+  timeout: z.number().default(600000), // 默认 10 分钟
 });
 
 export type BatchScrapeOptions = z.infer<typeof BatchScrapeOptionsSchema>;

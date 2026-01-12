@@ -8,6 +8,7 @@ import type { PrismaService } from '../../prisma/prisma.service';
 import type { UrlValidator } from '../../common/validators/url.validator';
 import type { Queue } from 'bullmq';
 import type { BillingService } from '../../billing/billing.service';
+import type { ConfigService } from '@nestjs/config';
 
 describe('CrawlerService', () => {
   let service: CrawlerService;
@@ -32,6 +33,9 @@ describe('CrawlerService', () => {
   let mockBillingService: {
     deductOrThrow: ReturnType<typeof vi.fn>;
     refundOnFailure: ReturnType<typeof vi.fn>;
+  };
+  let mockConfigService: {
+    get: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -61,11 +65,16 @@ describe('CrawlerService', () => {
       refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
     };
 
+    mockConfigService = {
+      get: vi.fn().mockReturnValue('redis://localhost:6379'),
+    };
+
     service = new CrawlerService(
       mockPrisma as unknown as PrismaService,
       mockUrlValidator as unknown as UrlValidator,
       mockQueue as unknown as Queue,
       mockBillingService as unknown as BillingService,
+      mockConfigService as unknown as ConfigService,
     );
   });
 
@@ -77,6 +86,8 @@ describe('CrawlerService', () => {
       maxDepth: 3,
       limit: 100,
       allowExternalLinks: false,
+      sync: false, // 测试异步模式，避免等待 QueueEvents
+      timeout: 300000,
     };
 
     it('should create crawl job with correct data', async () => {
@@ -113,9 +124,11 @@ describe('CrawlerService', () => {
 
       await service.startCrawl('user_1', mockOptions);
 
-      expect(mockQueue.add).toHaveBeenCalledWith('crawl-start', {
-        crawlJobId: 'crawl_1',
-      });
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        'crawl-start',
+        { crawlJobId: 'crawl_1' },
+        { jobId: 'crawl_1' },
+      );
     });
 
     it('should return created job', async () => {
@@ -138,6 +151,8 @@ describe('CrawlerService', () => {
             maxDepth: 3,
             limit: 100,
             allowExternalLinks: false,
+            sync: false,
+            timeout: 300000,
           }),
         ).rejects.toThrow('URL not allowed');
       });
@@ -151,6 +166,8 @@ describe('CrawlerService', () => {
             maxDepth: 3,
             limit: 100,
             allowExternalLinks: false,
+            sync: false,
+            timeout: 300000,
           }),
         ).rejects.toThrow('SSRF');
       });
@@ -164,6 +181,8 @@ describe('CrawlerService', () => {
             maxDepth: 3,
             limit: 100,
             allowExternalLinks: false,
+            sync: false,
+            timeout: 300000,
           }),
         ).rejects.toThrow('SSRF');
       });
@@ -179,6 +198,8 @@ describe('CrawlerService', () => {
           maxDepth: 3,
           limit: 100,
           allowExternalLinks: false,
+          sync: false,
+          timeout: 300000,
         });
 
         expect(mockPrisma.crawlJob.create).toHaveBeenCalledWith({
@@ -204,6 +225,8 @@ describe('CrawlerService', () => {
           includePaths: ['/blog/*'],
           excludePaths: ['/admin/*'],
           allowExternalLinks: true,
+          sync: false,
+          timeout: 300000,
         });
 
         expect(mockPrisma.crawlJob.create).toHaveBeenCalledWith({
@@ -228,6 +251,8 @@ describe('CrawlerService', () => {
           limit: 100,
           allowExternalLinks: false,
           webhookUrl: 'https://webhook.example.com/callback',
+          sync: false,
+          timeout: 300000,
         });
 
         expect(mockPrisma.crawlJob.create).toHaveBeenCalledWith({

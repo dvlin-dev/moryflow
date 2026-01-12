@@ -1,5 +1,10 @@
 // apps/server/src/scraper/scraper.constants.ts
 
+// ============ 同步模式超时 ============
+
+/** 默认抓取超时时间（毫秒）- 30 秒 */
+export const DEFAULT_SCRAPE_TIMEOUT = 30_000;
+
 // ============ 文件格式类型 ============
 
 export type ImageFormat = 'png' | 'jpeg' | 'webp';

@@ -1,6 +1,6 @@
 /**
  * [INPUT]: ScrapeOptionsDto via POST /v1/scrape, API key auth
- * [OUTPUT]: ScrapeResponseDto - Job result or cached content
+ * [OUTPUT]: ScrapeResult (sync) | { id, status } (async)
  * [POS]: Public API controller for scraping, validates input and delegates to service
  *
  * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
@@ -49,7 +49,8 @@ export class ScraperController {
   @Post()
   @ApiOperation({ summary: 'Scrape a URL' })
   @ApiOkResponse({
-    description: 'Scrape job created or cached result returned',
+    description:
+      'Sync mode (default): returns complete result. Async mode (sync=false): returns job ID for polling.',
   })
   @BillingKey('fetchx.scrape')
   async scrape(
@@ -57,40 +58,13 @@ export class ScraperController {
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
     @Body(new ZodValidationPipe(ScrapeOptionsSchema)) options: unknown,
   ) {
-    const job = await this.scraperService.scrape(
+    // Service 根据 sync 参数自动返回完整结果或任务 ID
+    return this.scraperService.scrape(
       user.id,
       options as Parameters<typeof this.scraperService.scrape>[1],
       apiKey.id,
       { bill: true },
     );
-
-    // 如果是缓存命中，直接返回完整结果
-    if ('fromCache' in job && job.fromCache) {
-      return {
-        id: job.id,
-        url: job.url,
-        fromCache: true,
-        ...((job.result as Record<string, unknown>) || {}),
-        screenshot:
-          job.screenshotUrl || job.screenshotBase64
-            ? {
-                url: job.screenshotUrl,
-                base64: job.screenshotBase64,
-                width: job.screenshotWidth,
-                height: job.screenshotHeight,
-                format: job.screenshotFormat,
-                fileSize: job.screenshotFileSize,
-                expiresAt: job.screenshotExpiresAt?.toISOString(),
-              }
-            : undefined,
-      };
-    }
-
-    // 否则返回任务 ID，客户端轮询获取结果
-    return {
-      id: job.id,
-      status: job.status,
-    };
   }
 
   @Get(':id')

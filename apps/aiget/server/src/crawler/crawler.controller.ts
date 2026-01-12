@@ -1,6 +1,6 @@
 /**
  * [INPUT]: CrawlOptionsDto via POST /v1/crawl, API key auth
- * [OUTPUT]: CrawlJobDto - Job ID for status polling
+ * [OUTPUT]: CrawlStatus (sync) | { id, status } (async)
  * [POS]: Public API controller for multi-page crawling
  *
  * [PROTOCOL]: When this file changes, update this header and src/crawler/CLAUDE.md
@@ -47,21 +47,20 @@ export class CrawlerController {
 
   @Post()
   @ApiOperation({ summary: 'Start a crawl job' })
-  @ApiOkResponse({ description: 'Crawl job created' })
+  @ApiOkResponse({
+    description:
+      'Sync mode (default): returns complete result. Async mode (sync=false): returns job ID for polling.',
+  })
   @BillingKey('fetchx.crawl')
   async startCrawl(
     @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(CrawlOptionsSchema)) options: unknown,
   ) {
-    const job = await this.crawlerService.startCrawl(
+    // Service 根据 sync 参数自动返回完整结果或任务 ID
+    return this.crawlerService.startCrawl(
       user.id,
       options as Parameters<typeof this.crawlerService.startCrawl>[1],
     );
-
-    return {
-      id: job.id,
-      status: job.status,
-    };
   }
 
   @Get(':id')

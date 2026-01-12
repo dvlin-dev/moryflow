@@ -12,6 +12,7 @@ import type { ScrapeOptions } from '../dto/scrape.dto';
 import type { BillingService } from '../../billing/billing.service';
 
 // 共享的有效选项（用于所有测试）
+// 使用 sync: false 避免在测试中等待 QueueEvents
 const validOptions: ScrapeOptions = {
   url: 'https://example.com',
   formats: ['markdown'],
@@ -19,6 +20,7 @@ const validOptions: ScrapeOptions = {
   timeout: 30000,
   mobile: false,
   darkMode: false,
+  sync: false,
 };
 
 describe('ScraperService', () => {
@@ -112,7 +114,8 @@ describe('ScraperService', () => {
 
       const result = await service.scrape('user_1', validOptions);
 
-      expect(result.fromCache).toBe(true);
+      // 缓存命中时返回 ScrapeResult
+      expect('fromCache' in result && result.fromCache).toBe(true);
       expect(result.id).toBe('job_cached');
       expect(mockQueue.add).not.toHaveBeenCalled();
     });
@@ -131,7 +134,8 @@ describe('ScraperService', () => {
       const result = await service.scrape('user_1', validOptions);
 
       expect(result.id).toBe('job_new');
-      expect(result.status).toBe('PENDING');
+      // 异步模式（sync: false）返回 { id, status }
+      expect('status' in result && result.status).toBe('PENDING');
       expect(mockQueue.add).toHaveBeenCalledWith(
         'scrape',
         expect.objectContaining({
@@ -377,7 +381,8 @@ describe('ScraperService', () => {
         url: 'https://example.com',
       });
 
-      expect(result.fromCache).toBeUndefined();
+      // 异步模式（sync: false）缓存未命中时返回 { id, status }，无 fromCache 属性
+      expect('fromCache' in result).toBe(false);
       expect(mockQueue.add).toHaveBeenCalled();
     });
   });

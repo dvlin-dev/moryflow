@@ -16,11 +16,21 @@ Multi-page crawling engine for extracting content from entire websites. Uses asy
 
 ## Constraints
 
-- Async operation (returns job ID)
 - Maximum pages limit per crawl
 - Maximum depth limit
 - Same-domain links only (unless configured)
 - Uses Map module for URL discovery
+
+## 同步/异步模式
+
+API 支持 `sync` 参数控制返回方式：
+
+| sync 值 | 行为                                    | 返回类型         | 超时默认值 |
+| ------- | --------------------------------------- | ---------------- | ---------- |
+| `true`  | **默认**：等待爬取完成后返回完整结果    | `CrawlStatus`    | 5 分钟     |
+| `false` | 立即返回任务 ID，客户端通过轮询获取结果 | `{ id, status }` | N/A        |
+
+Console Playground 强制使用同步模式，确保用户体验一致。
 
 ## File Structure
 

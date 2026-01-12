@@ -64,7 +64,8 @@
       "Bash(npm view:*)",
       "Bash(pnpm why:*)",
       "Bash(pnpm --filter @aiget/console why:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm:*)"
     ]
   }
 }

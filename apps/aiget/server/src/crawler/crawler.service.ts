@@ -1,36 +1,49 @@
 /**
- * [INPUT]: CrawlOptions - URL, depth limit, page limit, filters
- * [OUTPUT]: CrawlJob - Async job reference for status polling
+ * [INPUT]: CrawlOptions - URL, depth limit, page limit, filters, sync mode
+ * [OUTPUT]: CrawlStatus (sync) | { id, status } (async)
  * [POS]: Crawl job orchestrator, manages URL frontier and page queue
  *
  * [PROTOCOL]: When this file changes, update this header and src/crawler/CLAUDE.md
  */
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Queue, type QueueEvents } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma-main/client';
 import { UrlValidator } from '../common/validators/url.validator';
-import { CRAWL_QUEUE } from '../queue/queue.constants';
+import { CRAWL_QUEUE, createQueueEvents } from '../queue';
 import { BillingService } from '../billing/billing.service';
 import type { CrawlOptions } from './dto/crawl.dto';
 import type { CrawlStatus, CrawlPageResult } from './crawler.types';
+import { CrawlJobNotFoundError, CrawlFailedError } from './crawler.errors';
+import { DEFAULT_CRAWL_TIMEOUT } from './crawler.constants';
 
 @Injectable()
 export class CrawlerService {
   private readonly logger = new Logger(CrawlerService.name);
+  private readonly queueEvents: QueueEvents;
 
   constructor(
     private prisma: PrismaService,
     private urlValidator: UrlValidator,
     @InjectQueue(CRAWL_QUEUE) private crawlQueue: Queue,
     private billingService: BillingService,
-  ) {}
+    config: ConfigService,
+  ) {
+    // 用于等待任务完成
+    this.queueEvents = createQueueEvents(CRAWL_QUEUE, config);
+  }
 
   /**
    * 启动爬取任务
+   * - sync=true（默认）：等待任务完成后返回完整结果
+   * - sync=false：立即返回任务 ID，客户端轮询获取结果
    */
-  async startCrawl(userId: string, options: CrawlOptions) {
+  async startCrawl(
+    userId: string,
+    options: CrawlOptions,
+  ): Promise<CrawlStatus | { id: string; status: string }> {
     // SSRF 防护
     if (!this.urlValidator.isAllowed(options.url)) {
       throw new Error('URL not allowed: possible SSRF attack');
@@ -93,9 +106,11 @@ export class CrawlerService {
       }
 
       // 加入队列
-      await this.crawlQueue.add('crawl-start', {
-        crawlJobId: job.id,
-      });
+      await this.crawlQueue.add(
+        'crawl-start',
+        { crawlJobId: job.id },
+        { jobId: job.id },
+      );
     } catch (error) {
       // 初始化失败：尽量回滚并退费
       if (billing) {
@@ -114,7 +129,43 @@ export class CrawlerService {
 
     this.logger.log(`Crawl job started: ${job.id} for ${options.url}`);
 
-    return job;
+    // 根据 sync 参数决定返回方式
+    if (options.sync !== false) {
+      // 同步模式（默认）：等待任务完成
+      return this.waitForCompletion(
+        job.id,
+        options.timeout || DEFAULT_CRAWL_TIMEOUT,
+      );
+    }
+
+    // 异步模式：返回任务 ID
+    return { id: job.id, status: job.status };
+  }
+
+  /**
+   * 等待爬取任务完成
+   */
+  private async waitForCompletion(
+    jobId: string,
+    timeout: number,
+  ): Promise<CrawlStatus> {
+    const queueJob = await this.crawlQueue.getJob(jobId);
+    if (!queueJob) {
+      throw new CrawlJobNotFoundError(jobId);
+    }
+
+    await queueJob.waitUntilFinished(this.queueEvents, timeout);
+
+    const status = await this.getStatus(jobId);
+    if (!status) {
+      throw new CrawlJobNotFoundError(jobId);
+    }
+
+    if (status.status === 'FAILED') {
+      throw new CrawlFailedError(status.startUrl, 'Crawl job failed');
+    }
+
+    return status;
   }
 
   /**

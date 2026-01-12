@@ -1,36 +1,51 @@
 /**
- * [INPUT]: BatchScrapeOptions - URLs list and scrape configuration
- * [OUTPUT]: BatchScrapeJob | BatchScrapeStatus - Created job or job status
+ * [INPUT]: BatchScrapeOptions - URLs list and scrape configuration, sync mode
+ * [OUTPUT]: BatchScrapeStatus (sync) | { id, status, totalUrls } (async)
  * [POS]: Core batch scrape logic - job creation, status tracking, history
  *
  * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
  */
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Queue, type QueueEvents } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma-main/client';
 import { UrlValidator } from '../common/validators/url.validator';
-import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
+import { BATCH_SCRAPE_QUEUE, createQueueEvents } from '../queue';
 import { BillingService } from '../billing/billing.service';
 import type { BatchScrapeOptions } from './dto/batch-scrape.dto';
 import type { BatchScrapeStatus } from './batch-scrape.types';
+import { BatchJobNotFoundError } from './batch-scrape.errors';
+import { DEFAULT_BATCH_TIMEOUT } from './batch-scrape.constants';
 
 @Injectable()
 export class BatchScrapeService {
   private readonly logger = new Logger(BatchScrapeService.name);
+  private readonly queueEvents: QueueEvents;
 
   constructor(
     private prisma: PrismaService,
     private urlValidator: UrlValidator,
     @InjectQueue(BATCH_SCRAPE_QUEUE) private batchQueue: Queue,
     private billingService: BillingService,
-  ) {}
+    config: ConfigService,
+  ) {
+    // 用于等待任务完成
+    this.queueEvents = createQueueEvents(BATCH_SCRAPE_QUEUE, config);
+  }
 
   /**
    * 创建批量抓取任务
+   * - sync=true（默认）：等待任务完成后返回完整结果
+   * - sync=false：立即返回任务 ID，客户端轮询获取结果
    */
-  async batchScrape(userId: string, options: BatchScrapeOptions) {
+  async batchScrape(
+    userId: string,
+    options: BatchScrapeOptions,
+  ): Promise<
+    BatchScrapeStatus | { id: string; status: string; totalUrls: number }
+  > {
     const { urls, scrapeOptions, webhookUrl } = options;
 
     // SSRF 防护
@@ -88,10 +103,14 @@ export class BatchScrapeService {
       }
 
       // 启动批次处理
-      await this.batchQueue.add('batch-start', {
-        batchJobId: batch.id,
-        options: scrapeOptions || {},
-      });
+      await this.batchQueue.add(
+        'batch-start',
+        {
+          batchJobId: batch.id,
+          options: scrapeOptions || {},
+        },
+        { jobId: batch.id },
+      );
     } catch (error) {
       // 队列/扣费/创建失败：尽量回滚并退费
       if (billing) {
@@ -112,7 +131,44 @@ export class BatchScrapeService {
       `Batch scrape job started: ${batch.id} with ${urls.length} URLs`,
     );
 
-    return batch;
+    // 根据 sync 参数决定返回方式
+    if (options.sync !== false) {
+      // 同步模式（默认）：等待任务完成
+      return this.waitForCompletion(
+        batch.id,
+        options.timeout || DEFAULT_BATCH_TIMEOUT,
+      );
+    }
+
+    // 异步模式：返回任务 ID
+    return { id: batch.id, status: batch.status, totalUrls: urls.length };
+  }
+
+  /**
+   * 等待批量抓取任务完成
+   */
+  private async waitForCompletion(
+    batchJobId: string,
+    timeout: number,
+  ): Promise<BatchScrapeStatus> {
+    const queueJob = await this.batchQueue.getJob(batchJobId);
+    if (!queueJob) {
+      throw new BatchJobNotFoundError(batchJobId);
+    }
+
+    await queueJob.waitUntilFinished(this.queueEvents, timeout);
+
+    const status = await this.getStatus(batchJobId);
+    if (!status) {
+      throw new BatchJobNotFoundError(batchJobId);
+    }
+
+    // 检查失败状态
+    if (status.status === 'FAILED') {
+      throw new Error(`Batch scrape job failed: ${batchJobId}`);
+    }
+
+    return status;
   }
 
   /**

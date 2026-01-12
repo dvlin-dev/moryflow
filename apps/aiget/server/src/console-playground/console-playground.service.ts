@@ -1,10 +1,13 @@
 /**
  * Console Playground Service
  * 验证 apiKeyId 所有权，代理请求到实际服务
+ * 所有抓取类操作强制使用同步模式，直接返回结果
  *
  * [INPUT]: apiKeyId + 各服务的请求参数
- * [OUTPUT]: 各服务的响应
+ * [OUTPUT]: 各服务的响应（同步模式返回完整结果）
  * [POS]: 供 console-playground.controller.ts 使用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -72,21 +75,21 @@ export class ConsolePlaygroundService {
   }
 
   /**
-   * Scrape 代理
+   * Scrape 代理（强制同步模式）
    */
   async scrape(userId: string, apiKeyId: string, options: ScrapeOptions) {
     await this.validateApiKeyOwnership(userId, apiKeyId);
     this.logger.log(`Console scrape: user=${userId}, apiKey=${apiKeyId}`);
-    return this.scraperService.scrape(userId, options);
+    return this.scraperService.scrape(userId, { ...options, sync: true });
   }
 
   /**
-   * Crawl 代理
+   * Crawl 代理（强制同步模式）
    */
   async crawl(userId: string, apiKeyId: string, options: CrawlOptions) {
     await this.validateApiKeyOwnership(userId, apiKeyId);
     this.logger.log(`Console crawl: user=${userId}, apiKey=${apiKeyId}`);
-    return this.crawlerService.startCrawl(userId, options);
+    return this.crawlerService.startCrawl(userId, { ...options, sync: true });
   }
 
   /**

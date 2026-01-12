@@ -1,6 +1,6 @@
 /**
- * [INPUT]: ScrapeOptions - URL, formats, wait options, actions
- * [OUTPUT]: ScrapeResult | JobId - Cached result or async job reference
+ * [INPUT]: ScrapeOptions - URL, formats, wait options, actions, sync mode
+ * [OUTPUT]: ScrapeResult (sync) | JobId (async) - Based on sync option
  * [POS]: Core scraping orchestrator, handles cache, queue, and quota coordination
  *
  * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
@@ -8,14 +8,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue, QueueEvents } from 'bullmq';
+import { Queue, type QueueEvents } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma-main/client';
 import { UrlValidator } from '../common/validators/url.validator';
-import { SCRAPE_QUEUE } from '../queue/queue.constants';
+import { SCRAPE_QUEUE, createQueueEvents } from '../queue';
 import { createHash } from 'crypto';
 import type { ScrapeOptions } from './dto/scrape.dto';
 import type { ScrapeResult } from './scraper.types';
+import { DEFAULT_SCRAPE_TIMEOUT } from './scraper.constants';
 import { BillingService } from '../billing/billing.service';
 
 @Injectable()
@@ -34,17 +35,8 @@ export class ScraperService {
     // 可配置的缓存 TTL，默认 1 小时
     this.cacheTtlMs = config.get('SCRAPE_CACHE_TTL_MS') || 3600000;
 
-    // 用于等待任务完成 - 解析 REDIS_URL
-    const redisUrl =
-      config.get<string>('REDIS_URL') || 'redis://localhost:6379';
-    const parsed = new URL(redisUrl);
-    this.queueEvents = new QueueEvents(SCRAPE_QUEUE, {
-      connection: {
-        host: parsed.hostname,
-        port: parseInt(parsed.port, 10) || 6379,
-        password: parsed.password || undefined,
-      },
-    });
+    // 用于等待任务完成
+    this.queueEvents = createQueueEvents(SCRAPE_QUEUE, config);
   }
 
   /**
@@ -56,14 +48,16 @@ export class ScraperService {
   }
 
   /**
-   * 异步抓取 - 返回任务 ID，客户端轮询获取结果
+   * 抓取网页
+   * - sync=true（默认）：等待任务完成后返回完整结果
+   * - sync=false：立即返回任务 ID，客户端轮询获取结果
    */
   async scrape(
     userId: string,
     options: ScrapeOptions,
     apiKeyId?: string,
     billingOptions?: { bill?: boolean },
-  ) {
+  ): Promise<ScrapeResult | { id: string; status: string }> {
     // 1. SSRF 防护 - 验证 URL
     if (!this.urlValidator.isAllowed(options.url)) {
       throw new Error('URL not allowed: possible SSRF attack');
@@ -81,7 +75,8 @@ export class ScraperService {
     });
 
     if (cached) {
-      return { ...cached, fromCache: true };
+      // 缓存命中：直接返回格式化后的结果
+      return this.formatResult({ ...cached, fromCache: true });
     }
 
     // 3. 获取用户套餐信息（用于水印和文件过期时间）
@@ -176,27 +171,37 @@ export class ScraperService {
       throw error;
     }
 
-    return job;
+    // 7. 根据 sync 参数决定返回方式
+    if (options.sync !== false) {
+      // 同步模式（默认）：等待任务完成
+      return this.waitForCompletion(
+        job.id,
+        options.timeout || DEFAULT_SCRAPE_TIMEOUT,
+      );
+    }
+
+    // 异步模式：返回任务 ID
+    return { id: job.id, status: job.status };
   }
 
   /**
-   * 同步抓取 - 等待任务完成后返回结果
-   * 用于 Extract API、Search API 等需要立即获取结果的场景
+   * 同步抓取（内部使用）
+   * 用于 Extract API、Search API、Crawler 等需要立即获取结果的场景
+   * 不扣费，由调用方自行处理计费
+   * 参数不需要传 sync，内部强制同步模式
    */
   async scrapeSync(
     userId: string,
-    options: ScrapeOptions,
+    options: Omit<ScrapeOptions, 'sync'>,
     apiKeyId?: string,
   ): Promise<ScrapeResult> {
-    const job = await this.scrape(userId, options, apiKeyId, { bill: false });
-
-    // 如果命中缓存，直接返回
-    if ('fromCache' in job && job.fromCache) {
-      return this.formatResult(job);
-    }
-
-    // 等待任务完成
-    return this.waitForCompletion(job.id, options.timeout || 30000);
+    const result = await this.scrape(
+      userId,
+      { ...options, sync: true } as ScrapeOptions,
+      apiKeyId,
+      { bill: false },
+    );
+    return result as ScrapeResult;
   }
 
   /**
