@@ -30,7 +30,7 @@ COPY --from=deps /app/apps/moryflow/server/node_modules ./apps/moryflow/server/n
 COPY --from=deps /app/packages/sync/node_modules ./packages/sync/node_modules
 COPY apps/moryflow/server ./apps/moryflow/server
 COPY packages/sync ./packages/sync
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 
 # 构建 sync 包
 WORKDIR /app/packages/sync
