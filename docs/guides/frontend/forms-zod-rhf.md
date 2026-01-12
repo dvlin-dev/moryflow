@@ -1,3 +1,18 @@
+---
+title: 表单：Zod + react-hook-form 兼容性（zod/v3）
+date: 2026-01-12
+scope: frontend, console/admin
+status: active
+---
+
+<!--
+[INPUT]: Zod v4 + @hookform/resolvers；monorepo 依赖解析差异（本地 vs Docker）
+[OUTPUT]: 可复用的解决方案与验证步骤（使用 `zod/v3` 兼容层）
+[POS]: 表单技术指南（避免“同仓库不同环境类型不一致”）
+
+[PROTOCOL]: 本文件变更需同步更新 `docs/index.md` 与 `docs/CLAUDE.md`。
+-->
+
 # Zod + @hookform/resolvers 兼容性问题
 
 > 记录日期：2026-01-12

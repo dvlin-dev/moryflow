@@ -58,22 +58,22 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 常见修改场景
 
-| 场景           | 涉及文件                          | 注意事项                       |
-| -------------- | --------------------------------- | ------------------------------ |
-| 新增 UI 组件   | `src/renderer/components/`        | 使用 TailwindCSS + shadcn      |
-| 修改工作区布局 | `src/renderer/workspace/`         | 参考现有 render 函数模式       |
-| 新增 IPC 通道  | `src/shared/ipc/`, `src/preload/` | 双向定义，类型安全             |
-| 修改聊天功能   | `src/main/chat/`, `src/renderer/` | 注意 IPC 通信                  |
-| 修改文件操作   | `src/main/vault/`                 | 在主进程执行                   |
-| 修改云同步     | `src/main/cloud-sync/`            | 参考 docs/features/cloud-sync/ |
+| 场景           | 涉及文件                          | 注意事项                                         |
+| -------------- | --------------------------------- | ------------------------------------------------ |
+| 新增 UI 组件   | `src/renderer/components/`        | 使用 TailwindCSS + shadcn                        |
+| 修改工作区布局 | `src/renderer/workspace/`         | 参考现有 render 函数模式                         |
+| 新增 IPC 通道  | `src/shared/ipc/`, `src/preload/` | 双向定义，类型安全                               |
+| 修改聊天功能   | `src/main/chat/`, `src/renderer/` | 注意 IPC 通信                                    |
+| 修改文件操作   | `src/main/vault/`                 | 在主进程执行                                     |
+| 修改云同步     | `src/main/cloud-sync/`            | 参考 docs/products/moryflow/features/cloud-sync/ |
 
 ## 依赖关系
 
 ```
-apps/pc/
+apps/moryflow/pc/
 ├── 依赖 → packages/shared-api（API 客户端）
 ├── 依赖 → packages/agents-*（Agent 框架）
-└── 功能文档 → docs/features/cloud-sync/
+└── 功能文档 → docs/products/moryflow/features/cloud-sync/
 ```
 
 ## 架构说明

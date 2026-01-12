@@ -20,7 +20,7 @@ archived_date: 2026-01-12
 
 ### 已完成
 
-- 用户系统与 Fetchx 接入方案已更新：`docs/features/user-system/fetchx-integration-plan.md`
+- 用户系统与 Fetchx 接入方案已更新：`docs/products/aiget-dev/migrations/fetchx-integration.md`
 - Auth 服务模板已落地：`templates/auth-service/README.md`、`.env.example`、`CLAUDE.md`
 - Aiget Dev Console/Admin 已接入 `@aiget/auth-client`（含 refresh 流程与用户态映射）
 - 迁移 Docs 项目：Aiget（`apps/aiget/docs` → `docs.aiget.dev`）、Moryflow（`apps/moryflow/docs` → `docs.moryflow.com`）

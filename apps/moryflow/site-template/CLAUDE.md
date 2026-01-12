@@ -5,7 +5,7 @@
 ## 目录结构
 
 ```
-apps/site-template/
+apps/moryflow/site-template/
 ├── src/
 │   ├── layouts/          # 布局组件（开发预览用）
 │   │   ├── SinglePage.tsx
@@ -45,7 +45,7 @@ apps/site-template/
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    apps/site-template/                          │
+│                apps/moryflow/site-template/                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  src/styles/              pnpm build         dist/              │
@@ -68,7 +68,7 @@ apps/site-template/
                                                  │            │
                                                  ▼            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│            apps/pc/src/main/site-publish/template/              │
+│        apps/moryflow/pc/src/main/site-publish/template/         │
 ├─────────────────────────────────────────────────────────────────┤
 │  index.ts              ← 统一导出（自动生成）                    │
 │  styles.ts             ← dist/styles.min.css                    │
@@ -84,10 +84,10 @@ apps/site-template/
 
 ### 命令说明
 
-| 命令         | 作用     | 输入                       | 输出                  |
-| ------------ | -------- | -------------------------- | --------------------- |
+| 命令         | 作用           | 输入                                | 输出                                  |
+| ------------ | -------------- | ----------------------------------- | ------------------------------------- |
 | `pnpm build` | 构建模板 + CSS | `src/build.ts` + `src/styles/*.css` | `dist/*.html` + `dist/styles.min.css` |
-| `pnpm sync`  | 同步模板 | `dist/` + `src/templates/` | `template/*.ts`       |
+| `pnpm sync`  | 同步模板       | `dist/` + `src/templates/`          | `template/*.ts`                       |
 
 ### 开发流程
 

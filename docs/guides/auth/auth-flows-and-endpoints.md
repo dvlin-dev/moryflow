@@ -8,14 +8,14 @@ status: active
 <!--
 [INPUT]: 两条业务线（Moryflow / Aiget Dev）；支持 Google/Apple 登录；独立用户体系与数据库；Token 策略（Web refresh cookie + access memory；原生 secure storage）
 [OUTPUT]: 两套用户系统的核心流程（注册/登录/刷新/登出）与接口约定（同路径、不同域名），以及落地技术方案
-[POS]: Feature 文档：用户系统，供后端实现与前端接入对齐
+[POS]: Guide：Auth 的流程与接口约定（实现/前端接入对齐），不承载系统级架构决策
 
-[PROTOCOL]: 本文件变更若影响全局约束，需同步更新 `docs/architecture/auth.md`。
+[PROTOCOL]: 本文件变更若影响全局约束，需同步更新 `docs/architecture/auth.md`、`docs/index.md` 与根 `CLAUDE.md`。
 -->
 
 # 用户系统（两套 Auth）
 
-本功能约定当前仓库的用户系统落地方式：**两条业务线各自独立 Auth**，不做跨域互通。
+本指南用于统一 Auth 的“接口与流程”口径。系统级不变量以 `docs/architecture/auth.md` 为准（本文件不与其冲突；如冲突，以 architecture 为准）。
 
 ## 关键概念
 

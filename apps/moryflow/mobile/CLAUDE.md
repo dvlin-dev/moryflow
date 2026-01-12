@@ -79,7 +79,7 @@ apps/mobile/
 
 ## 样式规范
 
-> 详细设计系统：→ `docs/features/mobile-design-system/proposal.md`
+> 详细设计系统：→ `docs/products/moryflow/features/mobile-design-system/proposal.md`
 
 ### 核心原则
 

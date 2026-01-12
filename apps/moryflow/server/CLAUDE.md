@@ -300,24 +300,24 @@ export type Theme = z.infer<typeof ThemeSchema>;  // 派生，不重复
 
 ## 常见修改场景
 
-| 场景         | 涉及文件                      | 注意事项                           |
-| ------------ | ----------------------------- | ---------------------------------- |
-| 新增 API     | 对应模块的 controller/service | 添加 Guard 权限校验                |
-| 修改数据模型 | `prisma/schema.prisma`        | 需运行 migrate                     |
-| 新增模块     | `src/xxx/`, `app.module.ts`   | 在根模块注册                       |
-| 修改 AI 代理 | `src/ai-proxy/`               | 注意积分消耗计算                   |
-| 修改支付逻辑 | `src/payment/`                | 参考 docs/features/credits-system/ |
-| 修改云同步   | `src/sync/`                   | 参考 docs/features/cloud-sync/     |
+| 场景         | 涉及文件                      | 注意事项                                             |
+| ------------ | ----------------------------- | ---------------------------------------------------- |
+| 新增 API     | 对应模块的 controller/service | 添加 Guard 权限校验                                  |
+| 修改数据模型 | `prisma/schema.prisma`        | 需运行 migrate                                       |
+| 新增模块     | `src/xxx/`, `app.module.ts`   | 在根模块注册                                         |
+| 修改 AI 代理 | `src/ai-proxy/`               | 注意积分消耗计算                                     |
+| 修改支付逻辑 | `src/payment/`                | 参考 docs/products/moryflow/features/credits-system/ |
+| 修改云同步   | `src/sync/`                   | 参考 docs/products/moryflow/features/cloud-sync/     |
 
 ## 依赖关系
 
 ```
-apps/server/
+apps/moryflow/server/
 ├── 依赖 → packages/shared-api（类型定义）
-├── 功能文档 → docs/features/credits-system/
-├── 功能文档 → docs/features/cloud-sync/
-├── 功能文档 → docs/features/speech-to-text/
-└── 被依赖 ← apps/pc, apps/mobile（API 调用）
+├── 功能文档 → docs/products/moryflow/features/credits-system/
+├── 功能文档 → docs/products/moryflow/features/cloud-sync/
+├── 功能文档 → docs/products/moryflow/features/speech-to-text/
+└── 被依赖 ← apps/moryflow/pc, apps/moryflow/mobile（API 调用）
 ```
 
 ## 模块架构

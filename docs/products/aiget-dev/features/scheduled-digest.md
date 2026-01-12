@@ -10,7 +10,7 @@ status: draft
 [OUTPUT]: 可落地的端到端需求规格（流程、数据模型、接口、调度/去重/重试策略、风险与待确认项）
 [POS]: Feature 文档：为 `apps/aiget/server` 实现“定时抓取 → 邮件投递 → 去重”提供统一方案
 
-[PROTOCOL]: 本文件新增/变更需同步更新 `docs/features/index.md`、`docs/CLAUDE.md` 与根 `CLAUDE.md`（文档索引）。
+[PROTOCOL]: 本文件新增/变更需同步更新 `docs/products/aiget-dev/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
 -->
 
 # 定时内容订阅（Email Digest）- 需求方案

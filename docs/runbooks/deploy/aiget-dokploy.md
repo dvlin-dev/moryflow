@@ -9,6 +9,8 @@ status: active
 [INPUT]: Aiget Dev 多项目部署需求（Dokploy）；8c16g 机器部署边界
 [OUTPUT]: 可直接照填的 Dokploy 配置清单 + 部署顺序
 [POS]: Aiget Dev 部署执行文档
+
+[PROTOCOL]: 本文件变更如影响域名/端口/部署口径，需同步更新 `docs/architecture/domains-and-deployment.md` 与根 `CLAUDE.md`。
 -->
 
 # Aiget Dokploy 多项目部署清单

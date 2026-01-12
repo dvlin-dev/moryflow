@@ -8,9 +8,9 @@ status: active
 <!--
 [INPUT]: 现有 Aiget monorepo + archive/external-repos/fetchx；两条业务线独立 Auth；零兼容改造
 [OUTPUT]: Fetchx 官网/Console/Admin 的接入方案（含 apps 目录重构、Auth 方案、部署与验收）
-[POS]: 用户系统接入文档（Fetchx 试点）
+[POS]: Aiget Dev 产品线内迁移方案（Fetchx 试点）
 
-[PROTOCOL]: 本文件变更需同步更新 docs/features/index.md、docs/CLAUDE.md 与根 CLAUDE.md。
+[PROTOCOL]: 本文件变更需同步更新 `docs/products/aiget-dev/index.md`、`docs/index.md` 与 `docs/CLAUDE.md`。
 -->
 
 # Fetchx 接入方案（Aiget Dev 试点）

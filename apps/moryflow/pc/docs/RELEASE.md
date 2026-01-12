@@ -79,15 +79,15 @@ https://github.com/dvlin-dev/moryflow/releases/$1
 ```bash
 # 在项目根目录执行
 # 发布正式版本
-./apps/pc/scripts/release.sh 0.2.0
+./apps/moryflow/pc/scripts/release.sh 0.2.0
 
 # 发布预发布版本
-./apps/pc/scripts/release.sh 0.2.0-beta.1
+./apps/moryflow/pc/scripts/release.sh 0.2.0-beta.1
 ```
 
 脚本会自动：
 
-1. 更新 `apps/pc/package.json` 版本号
+1. 更新 `apps/moryflow/pc/package.json` 版本号
 2. 提交版本更新
 3. 创建 Git tag
 4. 推送到远程仓库

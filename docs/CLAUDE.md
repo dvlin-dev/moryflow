@@ -1,7 +1,7 @@
 <!--
 [INPUT]: 本目录下的 Markdown 文档与架构说明
 [OUTPUT]: 统一的文档组织方式与写作约束（供人类与 AI 协作）
-[POS]: docs/ 目录的工作约定与索引入口
+[POS]: docs/ 的写作约束与组织规范（索引入口在 docs/index.md）
 
 [PROTOCOL]: 本文件变更时，需同步更新根 CLAUDE.md 的文档索引（若影响全局）。
 -->
@@ -24,15 +24,11 @@
 
 ## 目录结构
 
-- `docs/architecture/`：架构与部署设计（当前阶段的"最终真相"优先写在这里，含 OAuth 登录与 Auth 数据库隔离等关键约束）。
-- `docs/architecture/open-source-package.md`：把 Monorepo 内单个包拆分为开源仓库的可复用方案（Git Subtree 双向同步）。
-- `docs/architecture/auth/`：Auth（两套业务线）拆分设计文档。
-- `docs/architecture/aiget-dokploy-deployment.md`：Aiget Dev Dokploy 多项目部署清单。
-- 部署落点与端口分配：以 `docs/architecture/domains-and-deployment.md` 与 `docs/architecture/refactor-and-deploy-plan.md` 为准（Moryflow compose + Aiget Dokploy 多项目 + megaboxpro 反代到 `IP:端口`）。
-- `docs/features/`：功能层设计（用户系统两套 Auth + Google/Apple 登录、改造计划、订阅/钱包、API Key 等可复用能力）。
-- `docs/features/index.md`：功能层文档索引。
-- `docs/features/user-system/quick-start.md`：Auth 服务模板的快速接入说明。
-- `docs/features/user-system/fetchx-integration-plan.md`：Fetchx 试点接入方案（官网/console/admin，含 Auth Client 接入细节）。
-- `docs/features/scheduled-digest/overview.md`：功能：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）。
+- `docs/index.md`：统一入口索引（新增/移动文档时首先更新这里）。
+- `docs/architecture/`：系统级架构决策与不变量（“最终真相”）；含 `adr/` 决策记录与 `auth/` 拆分文档。
+- `docs/guides/`：开发指南（如何做、最佳实践、可复用做法）。
+- `docs/runbooks/`：运行手册（部署/排障/操作清单，照做即可）。
+- `docs/products/`：产品线内的内部方案（Aiget Dev / Moryflow）。
 - `docs/_archived/`：已完成/归档的文档（progress.md、ui-migration-moryflow.md、console-refactor-plan.md）。
-- `docs/*.md`：一次性记录、handoff、复盘等。
+- `docs/_archived/plans/`：已完成或阶段性结束的计划类文档（仅保留追溯价值）。
+- `docs/_archived/migrations/`：归档迁移记录。

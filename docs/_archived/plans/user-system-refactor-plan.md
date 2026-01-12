@@ -2,15 +2,16 @@
 title: 用户系统改造计划（两套 Auth + Auth Client）
 date: 2026-01-06
 scope: moryflow.com, aiget.dev
-status: active
+status: archived
+archived_date: 2026-01-12
 ---
 
 <!--
 [INPUT]: 两条业务线隔离（Moryflow / Aiget Dev）；支持 Google/Apple 登录；只共享 packages/*；零兼容改造
 [OUTPUT]: 用户系统改造计划（目标、目录、模块职责、步骤、删除清单、测试验收）
-[POS]: 用户系统改造执行手册
+[POS]: 归档：用户系统改造计划（阶段性执行记录）
 
-[PROTOCOL]: 本文件变更需同步更新 docs/CLAUDE.md 与根 CLAUDE.md 的文档索引。
+[PROTOCOL]: 本文件为归档记录；仅在需要追溯历史时更新，并同步更新 `docs/index.md`（若索引发生变化）。
 -->
 
 # 用户系统改造计划（两套 Auth + Auth Client）
@@ -32,10 +33,6 @@ status: active
 ## 改造后目录（目标结构）
 
 ```
-docs/features/user-system/
-├── overview.md
-└── refactor-plan.md
-
 packages/
 ├── auth-server/        # 服务端 Auth 基座（可复用、可配置）
 ├── auth-client/        # 通用 Auth 客户端（按业务线注入 baseURL）

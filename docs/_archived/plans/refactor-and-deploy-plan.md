@@ -2,15 +2,16 @@
 title: 改造计划与部署文档（目标架构落地）
 date: 2026-01-06
 scope: megaboxpro, 4c6g, 8c16g
-status: active
+status: archived
+archived_date: 2026-01-12
 ---
 
 <!--
 [INPUT]: 现状为单仓库多应用；三台机器（megaboxpro 入口反代、4c6g 主业务、8c16g 重服务）；支持 Google/Apple 登录；两条业务线永不互通
 [OUTPUT]: 按步骤推进的改造计划 + 三机部署 checklist（含反代路由与环境变量）
-[POS]: 从“文档定案”到“可上线运行”的执行手册
+[POS]: 归档：阶段性改造计划与部署 checklist（已拆分到 runbooks 与 architecture）
 
-[PROTOCOL]: 本文件变更时，需同步更新 `docs/architecture/CLAUDE.md` 与 `docs/architecture/domains-and-deployment.md`（若影响部署与路由约束）。
+[PROTOCOL]: 本文件为归档记录；若需要追溯更新，仅同步更新 `docs/index.md`（索引）与相关 runbook。
 -->
 
 # 改造计划与部署文档
@@ -169,7 +170,7 @@ status: active
   - `aiget-docs`
   - `aiget-console`
   - `aiget-admin`
-- [x] 配置清单：参考 `docs/architecture/aiget-dokploy-deployment.md`
+- [x] 配置清单：参考 `docs/runbooks/deploy/aiget-dokploy.md`
 - [ ] 必备环境变量（按服务拆分）：
   - `aiget-server`：
     - `DATABASE_URL=...`

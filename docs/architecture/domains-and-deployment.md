@@ -133,4 +133,8 @@ status: active
 - `console.aiget.dev` → `http://<8c16g-ip>:3102`
 - `admin.aiget.dev` → `http://<8c16g-ip>:3101`
 
-> 具体 Nginx 示例与部署 checklist 见：`docs/architecture/refactor-and-deploy-plan.md`。
+> 反代与部署 runbook：
+>
+> - megaboxpro（1panel）：`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`
+> - Aiget Dokploy：`docs/runbooks/deploy/aiget-dokploy.md`
+> - Moryflow compose：`docs/runbooks/deploy/moryflow-compose.md`

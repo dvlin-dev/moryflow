@@ -2,7 +2,7 @@
 title: 用户系统快速接入（Auth Service 模板）
 date: 2026-01-06
 scope: moryflow.com, aiget.dev
-status: draft
+status: active
 ---
 
 <!--
@@ -10,10 +10,10 @@ status: draft
 [OUTPUT]: Auth 服务快速接入步骤（仓库内/外部项目）
 [POS]: 用户系统快速接入文档
 
-[PROTOCOL]: 本文件变更需同步更新 docs/features/index.md、docs/CLAUDE.md 与根 CLAUDE.md。
+[PROTOCOL]: 本文件变更需同步更新 `docs/index.md`、`docs/CLAUDE.md` 与根 `CLAUDE.md`（若改变全局约束口径）。
 -->
 
-# 用户系统快速接入（Auth Service 模板）
+# Auth Service 模板快速接入
 
 ## 目标
 

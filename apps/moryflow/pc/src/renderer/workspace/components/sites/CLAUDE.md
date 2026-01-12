@@ -4,15 +4,15 @@
 
 ## 组件结构
 
-| 文件 | 职责 |
-|------|------|
-| `index.tsx` | Sites 主页面，整合列表和详情视图 |
-| `site-list.tsx` | 站点列表组件，包含 Header 和卡片网格 |
-| `site-card.tsx` | 站点卡片组件，显示状态、URL、操作菜单 |
-| `site-detail.tsx` | 站点详情页，设置编辑、操作按钮 |
-| `site-empty-state.tsx` | 空状态组件 |
+| 文件                     | 职责                                      |
+| ------------------------ | ----------------------------------------- |
+| `index.tsx`              | Sites 主页面，整合列表和详情视图          |
+| `site-list.tsx`          | 站点列表组件，包含 Header 和卡片网格      |
+| `site-card.tsx`          | 站点卡片组件，显示状态、URL、操作菜单     |
+| `site-detail.tsx`        | 站点详情页，设置编辑、操作按钮            |
+| `site-empty-state.tsx`   | 空状态组件                                |
 | `file-picker-dialog.tsx` | 文件选择对话框，两级结构（工作区 → 文件） |
-| `const.ts` | 类型定义、辅助函数 |
+| `const.ts`               | 类型定义、辅助函数                        |
 
 ## 视图模式
 
@@ -21,14 +21,14 @@
 
 ## 站点操作
 
-| 操作 | 说明 |
-|------|------|
-| `open` | 在浏览器打开站点 |
-| `copy` | 复制站点链接 |
-| `settings` | 进入详情页编辑设置 |
-| `republish` | 重新发布（TODO） |
-| `unpublish` | 下线站点 |
-| `delete` | 删除站点 |
+| 操作        | 说明               |
+| ----------- | ------------------ |
+| `open`      | 在浏览器打开站点   |
+| `copy`      | 复制站点链接       |
+| `settings`  | 进入详情页编辑设置 |
+| `republish` | 重新发布（TODO）   |
+| `unpublish` | 下线站点           |
+| `delete`    | 删除站点           |
 
 ## 数据流
 
@@ -61,5 +61,5 @@ SitesPage
 
 ## 相关文档
 
-- 设计文档：`docs/features/site-publish/publish-ux-redesign.md`
+- 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
 - Share 组件：`components/share/CLAUDE.md`
