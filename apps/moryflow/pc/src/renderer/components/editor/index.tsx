@@ -1,60 +1,60 @@
-'use client'
+'use client';
 
-import { useMemo, useRef, useEffect } from 'react'
-import { useEditor } from '@tiptap/react'
+import { useMemo, useRef, useEffect } from 'react';
+import { useEditor } from '@tiptap/react';
 
 // Tiptap Core Extensions
-import { StarterKit } from '@tiptap/starter-kit'
-import { Mention } from '@tiptap/extension-mention'
-import { TaskList, TaskItem } from '@tiptap/extension-list'
-import { Color, TextStyle } from '@tiptap/extension-text-style'
-import { Placeholder, Selection } from '@tiptap/extensions'
-import { Typography } from '@tiptap/extension-typography'
-import { Highlight } from '@tiptap/extension-highlight'
-import { Superscript } from '@tiptap/extension-superscript'
-import { Subscript } from '@tiptap/extension-subscript'
-import { TextAlign } from '@tiptap/extension-text-align'
-import { Mathematics } from '@tiptap/extension-mathematics'
-import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji'
+import { StarterKit } from '@tiptap/starter-kit';
+import { Mention } from '@tiptap/extension-mention';
+import { TaskList, TaskItem } from '@tiptap/extension-list';
+import { Color, TextStyle } from '@tiptap/extension-text-style';
+import { Placeholder, Selection } from '@tiptap/extensions';
+import { Typography } from '@tiptap/extension-typography';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Superscript } from '@tiptap/extension-superscript';
+import { Subscript } from '@tiptap/extension-subscript';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Mathematics } from '@tiptap/extension-mathematics';
+import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 
 // Custom Extensions
-import { HorizontalRule } from '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension'
-import { Image } from '@aiget/tiptap/nodes/image-node/image-node-extension'
-import { NodeBackground } from '@aiget/tiptap/extensions/node-background-extension'
-import { NodeAlignment } from '@aiget/tiptap/extensions/node-alignment-extension'
-import { UiState } from '@aiget/tiptap/extensions/ui-state-extension'
-import { ImageUploadNode } from '@aiget/tiptap/nodes/image-upload-node/image-upload-node-extension'
-import { TableKit } from '@aiget/tiptap/nodes/table-node/extensions/table-node-extension'
-import { TableHandleExtension } from '@aiget/tiptap/nodes/table-node/extensions/table-handle'
+import { HorizontalRule } from '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
+import { Image } from '@aiget/tiptap/nodes/image-node/image-node-extension';
+import { NodeBackground } from '@aiget/tiptap/extensions/node-background-extension';
+import { NodeAlignment } from '@aiget/tiptap/extensions/node-alignment-extension';
+import { UiState } from '@aiget/tiptap/extensions/ui-state-extension';
+import { ImageUploadNode } from '@aiget/tiptap/nodes/image-upload-node/image-upload-node-extension';
+import { TableKit } from '@aiget/tiptap/nodes/table-node/extensions/table-node-extension';
+import { TableHandleExtension } from '@aiget/tiptap/nodes/table-node/extensions/table-handle';
 
 // Utils
-import { handleImageUpload, MAX_FILE_SIZE } from '@aiget/tiptap/utils/tiptap-utils'
-import { markdownToHtml, htmlToMarkdown } from '@aiget/tiptap/utils/markdown'
+import { handleImageUpload, MAX_FILE_SIZE } from '@aiget/tiptap/utils/tiptap-utils';
+import { markdownToHtml, htmlToMarkdown } from '@aiget/tiptap';
 
 // Editor Components
-import { EditorRoot, EditorContentArea } from '@aiget/tiptap/editors/notion-editor'
-import { TableHandle } from '@aiget/tiptap/nodes/table-node/ui/table-handle/table-handle'
-import { TableSelectionOverlay } from '@aiget/tiptap/nodes/table-node/ui/table-selection-overlay'
-import { TableCellHandleMenu } from '@aiget/tiptap/nodes/table-node/ui/table-cell-handle-menu'
-import { TableExtendRowColumnButtons } from '@aiget/tiptap/nodes/table-node/ui/table-extend-row-column-button'
+import { EditorRoot, EditorContentArea } from '@aiget/tiptap/editors/notion-editor';
+import { TableHandle } from '@aiget/tiptap/nodes/table-node/ui/table-handle/table-handle';
+import { TableSelectionOverlay } from '@aiget/tiptap/nodes/table-node/ui/table-selection-overlay';
+import { TableCellHandleMenu } from '@aiget/tiptap/nodes/table-node/ui/table-cell-handle-menu';
+import { TableExtendRowColumnButtons } from '@aiget/tiptap/nodes/table-node/ui/table-extend-row-column-button';
 
 // Styles
-import '@aiget/tiptap/nodes/table-node/styles/prosemirror-table.scss'
-import '@aiget/tiptap/nodes/table-node/styles/table-node.scss'
-import '@aiget/tiptap/nodes/blockquote-node/blockquote-node.scss'
-import '@aiget/tiptap/nodes/code-block-node/code-block-node.scss'
-import '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss'
-import '@aiget/tiptap/nodes/list-node/list-node.scss'
-import '@aiget/tiptap/nodes/image-node/image-node.scss'
-import '@aiget/tiptap/nodes/heading-node/heading-node.scss'
-import '@aiget/tiptap/nodes/paragraph-node/paragraph-node.scss'
-import '@aiget/tiptap/styles/notion-editor.scss'
+import '@aiget/tiptap/nodes/table-node/styles/prosemirror-table.scss';
+import '@aiget/tiptap/nodes/table-node/styles/table-node.scss';
+import '@aiget/tiptap/nodes/blockquote-node/blockquote-node.scss';
+import '@aiget/tiptap/nodes/code-block-node/code-block-node.scss';
+import '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
+import '@aiget/tiptap/nodes/list-node/list-node.scss';
+import '@aiget/tiptap/nodes/image-node/image-node.scss';
+import '@aiget/tiptap/nodes/heading-node/heading-node.scss';
+import '@aiget/tiptap/nodes/paragraph-node/paragraph-node.scss';
+import '@aiget/tiptap/styles/notion-editor.scss';
 
 export interface NotionEditorProps {
-  value: string
-  onChange: (markdown: string) => void
-  placeholder?: string
-  readOnly?: boolean
+  value: string;
+  onChange: (markdown: string) => void;
+  placeholder?: string;
+  readOnly?: boolean;
 }
 
 /**
@@ -87,7 +87,7 @@ function LoadingSpinner({ text = 'Loading...' }: { text?: string }) {
         <span className="text-sm text-muted-foreground">{text}</span>
       </div>
     </div>
-  )
+  );
 }
 
 /**
@@ -137,7 +137,7 @@ function createEditorExtensions(placeholder: string) {
       onError: (error) => console.error('Upload failed:', error),
     }),
     Typography,
-  ]
+  ];
 }
 
 /**
@@ -154,14 +154,11 @@ export function NotionEditor({
   placeholder = 'Start writing...',
   readOnly = false,
 }: NotionEditorProps) {
-  const htmlContent = useMemo(() => markdownToHtml(value), [value])
-  const skipNextSyncRef = useRef(false)
+  const htmlContent = useMemo(() => markdownToHtml(value), [value]);
+  const skipNextSyncRef = useRef(false);
 
   // 缓存 extensions 配置，避免每次渲染重新创建
-  const extensions = useMemo(
-    () => createEditorExtensions(placeholder),
-    [placeholder]
-  )
+  const extensions = useMemo(() => createEditorExtensions(placeholder), [placeholder]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -174,34 +171,34 @@ export function NotionEditor({
     content: htmlContent,
     extensions,
     onUpdate: ({ editor }) => {
-      const nextMarkdown = htmlToMarkdown(editor.getHTML())
+      const nextMarkdown = htmlToMarkdown(editor.getHTML());
       // 标记本次更新来自内部，下一次 sync 应跳过
-      skipNextSyncRef.current = true
-      onChange(nextMarkdown)
+      skipNextSyncRef.current = true;
+      onChange(nextMarkdown);
     },
-  })
+  });
 
   // 外部 value 变化时同步内容
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     // 如果是内部触发的更新，跳过同步
     if (skipNextSyncRef.current) {
-      skipNextSyncRef.current = false
-      return
+      skipNextSyncRef.current = false;
+      return;
     }
 
     // 内容相同则不更新
-    const currentHtml = editor.getHTML()
+    const currentHtml = editor.getHTML();
     if (currentHtml === htmlContent) {
-      return
+      return;
     }
 
-    editor.commands.setContent(htmlContent, { emitUpdate: false })
-  }, [editor, htmlContent])
+    editor.commands.setContent(htmlContent, { emitUpdate: false });
+  }, [editor, htmlContent]);
 
   if (!editor) {
-    return <LoadingSpinner />
+    return <LoadingSpinner />;
   }
 
   return (
@@ -221,5 +218,5 @@ export function NotionEditor({
         />
       </EditorContentArea>
     </EditorRoot>
-  )
+  );
 }
