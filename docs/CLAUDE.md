@@ -34,6 +34,7 @@
 - `docs/features/user-system/quick-start.md`：Auth 服务模板的快速接入说明。
 - `docs/features/user-system/fetchx-integration-plan.md`：Fetchx 试点接入方案（官网/console/admin，含 Auth Client 接入细节）。
 - `docs/features/scheduled-digest/overview.md`：功能：定时内容订阅（Email Digest）（自定义 cron + 时区、抓全文、AI 摘要、用户全局去重）。
+- `docs/features/scheduled-digest/v2-intelligent-digest.md`：功能：智能内容订阅系统 v2.0（全局共享内容池、canonicalUrlHash、二次投递=7 天冷却、任意 cron、Web Inbox 为默认入口（含管理能力）、Public Topics（默认公开 + SEO + 一键订阅；付费可私密）、Email 推送后置可选、按 run 结算一次（按 Fetchx 实际成本汇总；缓存也收费）、Writer 叙事）。
 - `docs/progress.md`：改造进度记录与下一步清单。
 - `docs/ui-migration-moryflow.md`：UI 统一迁移执行记录（Moryflow 风格 + Hugeicons）。
 - `docs/*.md`：一次性记录、handoff、复盘等。
