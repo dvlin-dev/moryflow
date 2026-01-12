@@ -1,28 +1,18 @@
-import { Stack, router } from 'expo-router';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { ChevronLeftIcon } from 'lucide-react-native';
+import { Stack } from 'expo-router';
 
 /**
  * 编辑器路由布局
- * 使用原生导航栏
+ *
+ * 约束：
+ * - 只使用自定义悬浮返回按钮（液态玻璃 BackButton）
+ * - 禁止使用原生 header 返回按钮，避免返回栈异常/点击命中不一致
  */
 export default function EditorLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
-        title: '',
-        headerBackTitle: '',
-        headerTransparent: true,
-        headerBlurEffect: 'regular',
-        headerShadowVisible: false,
+        headerShown: false,
         animation: 'slide_from_right',
-        headerLeft: () => (
-          <Button variant="ghost" size="icon" onPress={() => router.back()}>
-            <Icon as={ChevronLeftIcon} className="size-6 text-foreground" />
-          </Button>
-        ),
       }}
     />
   );

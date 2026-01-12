@@ -1,8 +1,8 @@
-import '@/polyfills'
-import 'react-native-gesture-handler'
-import 'react-native-reanimated'
-import '@/global.css'
-import 'react-native-get-random-values'
+import '@/polyfills';
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
+import '@/global.css';
+import 'react-native-get-random-values';
 
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,10 +13,10 @@ import { MembershipProvider } from '@/lib/server';
 import { ModelProvider } from '@/lib/models';
 import { AuthProvider, useAuth } from '@/lib/contexts/auth.context';
 import { AuthGuardProvider } from '@/lib/contexts/auth-guard.context';
-import { TabBarProvider, useTabBar } from '@/lib/contexts/tab-bar.context';
+import { ChatSheetProvider, useChatSheet } from '@/lib/contexts/chat-sheet.context';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
-import { Stack, usePathname } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { Uniwind, useUniwind } from 'uniwind';
@@ -27,7 +27,6 @@ import { globalStreamManager } from '@/lib/utils/global-stream-manager';
 import { ToastProvider } from '@/lib/contexts/toast.context';
 import { ToastContainer } from '@/components/ui/toast-container';
 import { I18nProvider } from '@/lib/i18n';
-import { LiquidGlassTabBar } from '@/components/navigation/LiquidGlassTabBar';
 import { AIChatSheet } from '@/components/chat/AIChatSheet';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
@@ -63,9 +62,9 @@ function RootLayoutContent() {
   // 页面卸载/热重载时，清理所有流（安全兜底）
   useEffect(() => {
     return () => {
-      globalStreamManager.cleanupAll()
-    }
-  }, [])
+      globalStreamManager.cleanupAll();
+    };
+  }, []);
 
   return (
     <KeyboardProvider>
@@ -75,7 +74,7 @@ function RootLayoutContent() {
             <AuthProvider>
               <AuthGuardProvider>
                 <ToastProvider>
-                  <TabBarProvider>
+                  <ChatSheetProvider>
                     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
                       <BottomSheetModalProvider>
                         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
@@ -84,7 +83,7 @@ function RootLayoutContent() {
                         <ToastContainer />
                       </BottomSheetModalProvider>
                     </ThemeProvider>
-                  </TabBarProvider>
+                  </ChatSheetProvider>
                 </ToastProvider>
               </AuthGuardProvider>
             </AuthProvider>
@@ -99,8 +98,7 @@ SplashScreen.preventAutoHideAsync();
 
 function Routes() {
   const { isLoaded } = useAuth();
-  const pathname = usePathname();
-  const { visible, isChatOpen, openChat, closeChat } = useTabBar();
+  const { isChatOpen, closeChat } = useChatSheet();
 
   React.useEffect(() => {
     if (isLoaded) {
@@ -112,28 +110,23 @@ function Routes() {
     return null;
   }
 
-  // 判断是否在编辑器详情页（需要隐藏导航栏）
-  const isEditorDetail = pathname.startsWith('/(editor)');
-  // 判断是否在需要显示导航栏的页面
-  const shouldShowTabBar = !isEditorDetail && visible;
-
   // 延迟鉴权模式：所有页面默认可访问，关键操作时再触发登录
   return (
     <View style={{ flex: 1 }}>
       <Stack>
         {/* 根路由重定向到 tabs */}
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        
+
         {/* 主要页面 - 自定义底部导航 */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
         {/* 编辑器页面 */}
-        <Stack.Screen 
-          name="(editor)" 
-          options={{ 
+        <Stack.Screen
+          name="(editor)"
+          options={{
             headerShown: false,
             animation: 'slide_from_right',
-          }} 
+          }}
         />
 
         {/* 认证相关页面 */}
@@ -141,16 +134,10 @@ function Routes() {
         <Stack.Screen name="(auth)/sign-up" options={SIGN_UP_SCREEN_OPTIONS} />
         <Stack.Screen name="(auth)/forgot-password" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
         <Stack.Screen name="(auth)/verify-email" options={DEFAULT_AUTH_SCREEN_OPTIONS} />
-        
+
         {/* 设置页面 - Modal 呈现 */}
         <Stack.Screen name="(settings)" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
-
-      {/* 常驻液态玻璃导航栏 */}
-      <LiquidGlassTabBar
-        visible={shouldShowTabBar}
-        onAIPress={openChat}
-      />
 
       {/* AI 聊天底部抽屉 */}
       <AIChatSheet visible={isChatOpen} onClose={closeChat} />
@@ -175,4 +162,3 @@ const DEFAULT_AUTH_SCREEN_OPTIONS = {
   headerShadowVisible: false,
   headerTransparent: true,
 };
-

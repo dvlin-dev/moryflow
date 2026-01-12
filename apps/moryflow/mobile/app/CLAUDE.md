@@ -21,16 +21,16 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 
 ## 成员清单
 
-| 文件/目录        | 类型   | 说明                                 |
-| ---------------- | ------ | ------------------------------------ |
-| `_layout.tsx`    | 布局   | 根布局，配置全局 Provider            |
-| `index.tsx`      | 页面   | 首页/入口页                          |
-| `+html.tsx`      | 配置   | Web HTML 模板                        |
-| `+not-found.tsx` | 页面   | 404 页面                             |
-| `(auth)/`        | 路由组 | 认证相关页面（登录、注册、忘记密码） |
-| `(tabs)/`        | 路由组 | Tab 导航页面（主页、知识库、聊天）   |
-| `(editor)/`      | 路由组 | 编辑器页面                           |
-| `(settings)/`    | 路由组 | 设置页面                             |
+| 文件/目录        | 类型   | 说明                                         |
+| ---------------- | ------ | -------------------------------------------- |
+| `_layout.tsx`    | 布局   | 根布局，配置全局 Provider                    |
+| `index.tsx`      | 页面   | 首页/入口页                                  |
+| `+html.tsx`      | 配置   | Web HTML 模板                                |
+| `+not-found.tsx` | 页面   | 404 页面                                     |
+| `(auth)/`        | 路由组 | 认证相关页面（登录、注册、忘记密码）         |
+| `(tabs)/`        | 路由组 | Tab 页面组（主页、搜索；含快速创建草稿动作） |
+| `(editor)/`      | 路由组 | 编辑器页面                                   |
+| `(settings)/`    | 路由组 | 设置页面                                     |
 
 ## 路由结构
 
@@ -39,11 +39,10 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 /(auth)/sign-in       → 登录
 /(auth)/sign-up       → 注册
 /(auth)/forgot-password → 忘记密码
-/(tabs)/              → Tab 导航
-/(tabs)/home          → 主页
-/(tabs)/vault         → 知识库
-/(tabs)/chat          → 聊天
-/(editor)/[id]        → 编辑器（动态路由）
+/(tabs)/              → 主页（index）
+/(tabs)/search        → 搜索
+/(editor)/[fileId]    → 编辑器（动态路由，稳定引用）
+/(editor)/new-draft   → 新建草稿（动作入口）
 /(settings)/          → 设置
 ```
 
@@ -74,6 +73,8 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 ## 近期变更
 
 - 动态路由跳转优先使用 `{ pathname: '/(editor)/[fileId]', params: { fileId } }` 形式
+- Tab 导航使用真实 Tabs；「快速创建草稿」为动作按钮（不再使用路由页重定向）
+- 编辑器标题输入统一抽成 `TitleInput`，修复暗黑模式下标题颜色未适配的问题
 
 ## 依赖关系
 

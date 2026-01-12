@@ -1,57 +1,74 @@
 /**
- * 液态玻璃导航栏组件
+ * [PROVIDES]: LiquidGlassTabBar - 自定义底部导航栏（液态玻璃 + Tabs）
+ * [DEPENDS]: Expo Router Tabs, @react-navigation/bottom-tabs, expo-glass-effect, expo-blur
+ * [POS]: Moryflow Mobile 全局底部导航栏（仅在 Tabs 组内渲染），第三个按钮为「快速创建草稿」动作
  *
- * 使用 expo-glass-effect 实现 iOS 26 原生液态玻璃效果
- * - 左侧：3个导航按钮组（首页、搜索、草稿）- 液态玻璃背景
- * - 右侧：AI 按钮 - 液态玻璃 + 主色调
- *
- * 降级处理：iOS 26- 或其他平台使用 BlurView fallback
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, Pressable, Platform } from 'react-native';
-import { useRouter, usePathname, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { GlassView, GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { GlassButtonContainer } from '@/components/ui/glass-button-container';
-import { HomeIcon, SearchIcon, SquarePenIcon, SparklesIcon, LucideIcon } from 'lucide-react-native';
+import {
+  HomeIcon,
+  SearchIcon,
+  SquarePenIcon,
+  SparklesIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
 
-interface TabItem {
-  name: string;
-  route: Href;
-  icon: LucideIcon;
-}
+const TAB_ITEM_DEFS = {
+  index: { icon: HomeIcon, accessibilityLabel: 'Home' },
+  search: { icon: SearchIcon, accessibilityLabel: 'Search' },
+} satisfies Record<string, { icon: LucideIcon; accessibilityLabel: string }>;
 
-const TAB_ITEMS: TabItem[] = [
-  { name: 'index', route: '/(tabs)', icon: HomeIcon },
-  { name: 'search', route: '/(tabs)/search', icon: SearchIcon },
-  { name: 'drafts', route: '/(tabs)/drafts', icon: SquarePenIcon },
-];
+type TabKey = keyof typeof TAB_ITEM_DEFS;
 
-interface LiquidGlassTabBarProps {
-  /** 控制显示/隐藏 */
-  visible?: boolean;
+const isRouteGroupSegment = (segment: string): boolean =>
+  segment.startsWith('(') && segment.endsWith(')');
+
+const getTabRouteKey = (routeName: string): string => {
+  // 例：
+  // - "index" -> "index"
+  // - "search" -> "search"
+  // - "(tabs)/search/index" -> "search"
+  const parts = routeName
+    .split('/')
+    .filter(Boolean)
+    .filter((segment) => !isRouteGroupSegment(segment));
+
+  if (parts.length >= 2 && parts[parts.length - 1] === 'index') {
+    parts.pop();
+  }
+
+  return parts[0] ?? routeName;
+};
+
+interface LiquidGlassTabBarProps extends BottomTabBarProps {
   /** 点击 AI 按钮的回调 */
   onAIPress?: () => void;
+  /** 点击「快速创建草稿」的回调（不属于 tabs 路由） */
+  onQuickCreatePress?: () => void;
 }
 
-export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabBarProps) {
-  const router = useRouter();
-  const pathname = usePathname();
+export function LiquidGlassTabBar({
+  state,
+  navigation,
+  onAIPress,
+  onQuickCreatePress,
+}: LiquidGlassTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useTheme();
   const colors = useThemeColors();
 
   const isDark = colorScheme === 'dark';
+  const activeRouteKey = state.routes[state.index]?.key;
 
   // 检测液态玻璃是否可用
   const glassAvailable = useMemo(() => {
@@ -62,32 +79,27 @@ export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabB
     }
   }, []);
 
-  // 动画：显示/隐藏（柔和的 ease-out 过渡）
-  const translateY = useSharedValue(0);
-  React.useEffect(() => {
-    translateY.value = withTiming(visible ? 0 : 140, {
-      duration: 280,
-      easing: Easing.out(Easing.cubic),
+  const handleTabPress = (targetKey: string, routeName: string) => {
+    const event = navigation.emit({
+      type: 'tabPress',
+      target: targetKey,
+      canPreventDefault: true,
     });
-  }, [visible, translateY]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const getIsActive = (route: string) => {
-    if (route === '/(tabs)') {
-      return pathname === '/' || pathname === '/(tabs)' || pathname === '/index';
-    }
-    return pathname.includes(route.replace('/(tabs)', ''));
+    if (event.defaultPrevented) return;
+    navigation.navigate(routeName as never);
   };
 
-  const handleTabPress = (route: Href) => {
-    router.push(route);
+  const handleTabLongPress = (targetKey: string) => {
+    navigation.emit({ type: 'tabLongPress', target: targetKey });
   };
 
   const handleAIPress = () => {
     onAIPress?.();
+  };
+
+  const handleQuickCreatePress = () => {
+    onQuickCreatePress?.();
   };
 
   // 渲染导航组的玻璃背景
@@ -100,13 +112,21 @@ export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabB
         paddingHorizontal: 10,
         gap: 6,
       }}>
-      {TAB_ITEMS.map((tab) => {
-        const isActive = getIsActive(tab.route);
-        const IconComponent = tab.icon;
+      {state.routes.flatMap((route) => {
+        const tabKey = getTabRouteKey(route.name);
+        const def = TAB_ITEM_DEFS[tabKey as TabKey];
+        if (!def) return [];
+
+        const isActive = route.key === activeRouteKey;
+        const IconComponent = def.icon;
         return (
           <Pressable
-            key={tab.name}
-            onPress={() => handleTabPress(tab.route)}
+            key={route.key}
+            onPress={() => handleTabPress(route.key, route.name)}
+            onLongPress={() => handleTabLongPress(route.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            accessibilityLabel={def.accessibilityLabel}
             style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
             <IconComponent
               size={24}
@@ -116,6 +136,15 @@ export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabB
           </Pressable>
         );
       })}
+
+      {/* 第三个按钮：快速创建草稿（动作按钮，不参与 tabs 选中态） */}
+      <Pressable
+        onPress={handleQuickCreatePress}
+        accessibilityRole="button"
+        accessibilityLabel="Quick create draft"
+        style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+        <SquarePenIcon size={24} color={colors.iconMuted} strokeWidth={1.5} />
+      </Pressable>
     </View>
   );
 
@@ -130,10 +159,7 @@ export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabB
             borderWidth: 1,
             borderColor: colors.glassNavBorder,
           }}>
-          <GlassView
-            style={{ borderRadius: 9999 }}
-            glassEffectStyle="regular"
-            isInteractive={false}>
+          <GlassView style={{ borderRadius: 9999 }} glassEffectStyle="regular" isInteractive>
             {renderNavGlassContent()}
           </GlassView>
         </View>
@@ -163,7 +189,7 @@ export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabB
 
   // 渲染 AI 按钮
   const renderAIButton = () => (
-    <Pressable onPress={handleAIPress}>
+    <Pressable onPress={handleAIPress} accessibilityRole="button" accessibilityLabel="AI">
       <GlassButtonContainer
         size={48}
         tintColor={colors.glassAiButton}
@@ -193,20 +219,17 @@ export function LiquidGlassTabBar({ visible = true, onAIPress }: LiquidGlassTabB
   };
 
   return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          alignItems: 'center',
-          paddingHorizontal: 24,
-          paddingBottom: insets.bottom + 12,
-        },
-        animatedStyle,
-      ]}>
+    <View
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingBottom: insets.bottom + 12,
+      }}>
       {renderContent()}
-    </Animated.View>
+    </View>
   );
 }
