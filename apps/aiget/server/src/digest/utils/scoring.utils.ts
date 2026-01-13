@@ -8,6 +8,36 @@
 import { SCORE_WEIGHTS } from '../digest.constants';
 
 /**
+ * 订阅配置（扩展版）
+ */
+export interface SubscriptionConfig {
+  topic: string;
+  interests: string[];
+  negativeInterests?: string[];
+}
+
+/**
+ * 内容评分输入
+ */
+export interface ContentForScoring {
+  title: string;
+  description?: string;
+  fulltext?: string;
+  url?: string;
+}
+
+/**
+ * 反馈模式（用于评分调整）
+ */
+export interface FeedbackPatternForScoring {
+  patternType: 'KEYWORD' | 'DOMAIN' | 'AUTHOR';
+  value: string;
+  positiveCount: number;
+  negativeCount: number;
+  confidence: number;
+}
+
+/**
  * 评分维度
  */
 export interface ScoreDimensions {
@@ -47,18 +77,13 @@ export function calculateOverallScore(dimensions: ScoreDimensions): number {
 
 /**
  * 基于关键词匹配计算相关性分数
+ * 支持负面兴趣（屏蔽词）和反馈模式调整
  */
 export function calculateRelevanceScore(
-  content: {
-    title: string;
-    description?: string;
-    fulltext?: string;
-  },
-  subscription: {
-    topic: string;
-    interests: string[];
-  },
-): { score: number; reason: string } {
+  content: ContentForScoring,
+  subscription: SubscriptionConfig,
+  feedbackPatterns?: FeedbackPatternForScoring[],
+): { score: number; reason: string; blocked?: boolean } {
   const searchText = [
     content.title,
     content.description || '',
@@ -66,6 +91,22 @@ export function calculateRelevanceScore(
   ]
     .join(' ')
     .toLowerCase();
+
+  // 检查负面兴趣（屏蔽词）
+  if (
+    subscription.negativeInterests &&
+    subscription.negativeInterests.length > 0
+  ) {
+    for (const negative of subscription.negativeInterests) {
+      if (searchText.includes(negative.toLowerCase())) {
+        return {
+          score: 0,
+          reason: `Blocked by negative interest: ${negative}`,
+          blocked: true,
+        };
+      }
+    }
+  }
 
   const matchedTerms: string[] = [];
   let totalWeight = 0;
@@ -99,8 +140,17 @@ export function calculateRelevanceScore(
     matchedWeight = matchedWeight * 2;
   }
 
-  const score =
+  let score =
     totalWeight > 0 ? Math.min(100, (matchedWeight / totalWeight) * 100) : 0;
+
+  // 应用反馈模式调整
+  if (feedbackPatterns && feedbackPatterns.length > 0) {
+    const adjustment = applyFeedbackPatterns(content, feedbackPatterns);
+    score = Math.max(0, Math.min(100, score + adjustment.delta));
+    if (adjustment.matchedPatterns.length > 0) {
+      matchedTerms.push(...adjustment.matchedPatterns.map((p) => `[${p}]`));
+    }
+  }
 
   const reason =
     matchedTerms.length > 0
@@ -111,6 +161,74 @@ export function calculateRelevanceScore(
     score: Math.round(score),
     reason,
   };
+}
+
+/**
+ * 应用反馈模式调整分数
+ */
+function applyFeedbackPatterns(
+  content: ContentForScoring,
+  patterns: FeedbackPatternForScoring[],
+): { delta: number; matchedPatterns: string[] } {
+  let delta = 0;
+  const matchedPatterns: string[] = [];
+
+  const searchText = [
+    content.title,
+    content.description || '',
+    content.fulltext || '',
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  // 提取域名
+  let domain: string | undefined;
+  if (content.url) {
+    try {
+      domain = new URL(content.url).hostname.toLowerCase();
+    } catch {
+      // URL 解析失败，忽略域名模式
+    }
+  }
+
+  for (const pattern of patterns) {
+    let matched = false;
+
+    switch (pattern.patternType) {
+      case 'KEYWORD':
+        matched = searchText.includes(pattern.value.toLowerCase());
+        break;
+      case 'DOMAIN':
+        matched = domain === pattern.value.toLowerCase();
+        break;
+      case 'AUTHOR':
+        // 简单文本匹配
+        matched = searchText.includes(pattern.value.toLowerCase());
+        break;
+    }
+
+    if (matched) {
+      // 计算信号强度（对数缩放）
+      const totalSignals = pattern.positiveCount + pattern.negativeCount;
+      const signalStrength = Math.log10(totalSignals + 1) / Math.log10(11); // 归一化到 0-1
+
+      // 正向 vs 负向信号比例
+      const positiveRatio =
+        totalSignals > 0 ? pattern.positiveCount / totalSignals : 0.5;
+
+      // 调整幅度（最大 ±20 分）
+      const maxAdjustment = 20 * pattern.confidence * signalStrength;
+      const adjustment =
+        positiveRatio > 0.5
+          ? maxAdjustment * (positiveRatio - 0.5) * 2
+          : -maxAdjustment * (0.5 - positiveRatio) * 2;
+
+      delta += adjustment;
+      matchedPatterns.push(`${pattern.patternType}:${pattern.value}`);
+    }
+  }
+
+  return { delta, matchedPatterns };
 }
 
 /**

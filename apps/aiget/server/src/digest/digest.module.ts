@@ -23,6 +23,7 @@ import {
   DigestRssService,
   DigestSiteCrawlService,
   DigestSourceService,
+  DigestFeedbackService,
 } from './services';
 
 // Processors
@@ -113,6 +114,7 @@ import { MapModule } from '../map/map.module';
     DigestRssService,
     DigestSiteCrawlService,
     DigestSourceService,
+    DigestFeedbackService,
 
     // Processors
     SubscriptionSchedulerProcessor,
@@ -129,6 +131,7 @@ import { MapModule } from '../map/map.module';
     DigestTopicService,
     DigestAiService,
     DigestPreviewService,
+    DigestFeedbackService,
   ],
 })
 export class DigestModule {}

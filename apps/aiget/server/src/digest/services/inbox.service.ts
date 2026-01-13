@@ -8,6 +8,7 @@
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DigestFeedbackService } from './feedback.service';
 import type {
   InboxQuery,
   InboxStats,
@@ -36,7 +37,10 @@ export interface InboxItem extends DigestRunItem {
 export class DigestInboxService {
   private readonly logger = new Logger(DigestInboxService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly feedbackService: DigestFeedbackService,
+  ) {}
 
   /**
    * 获取 Inbox 条目列表
@@ -208,12 +212,19 @@ export class DigestInboxService {
     itemId: string,
     input: UpdateInboxItemInput,
   ): Promise<void> {
-    // 获取条目
+    // 获取条目（包含内容信息用于反馈学习）
     const item = await this.prisma.digestRunItem.findFirst({
       where: {
         id: itemId,
         userId,
         deliveredAt: { not: null },
+      },
+      include: {
+        content: {
+          select: {
+            canonicalUrl: true,
+          },
+        },
       },
     });
 
@@ -263,6 +274,30 @@ export class DigestInboxService {
       },
       update: updateData,
     });
+
+    // 记录反馈用于学习（save = 正向, notInterested = 负向）
+    if (input.action === 'save' || input.action === 'notInterested') {
+      try {
+        await this.feedbackService.recordFeedback(
+          item.subscriptionId,
+          {
+            title: item.titleSnapshot,
+            url: item.content.canonicalUrl,
+            aiSummary: item.aiSummarySnapshot ?? undefined,
+          },
+          input.action === 'save' ? 'positive' : 'negative',
+        );
+        this.logger.debug(
+          `Recorded ${input.action === 'save' ? 'positive' : 'negative'} feedback for item ${itemId}`,
+        );
+      } catch (error) {
+        // 反馈记录失败不影响主流程
+        this.logger.warn(
+          `Failed to record feedback for item ${itemId}:`,
+          error,
+        );
+      }
+    }
 
     this.logger.debug(`Updated inbox item ${itemId} state: ${input.action}`);
   }

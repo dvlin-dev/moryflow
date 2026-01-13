@@ -217,6 +217,25 @@ export const SOURCE_DEFAULTS = {
   siteCrawlMaxPages: 20,
 } as const;
 
+// ========== 反馈学习配置 ==========
+
+export const FEEDBACK_LEARNING = {
+  /** 生成建议的最小信号数 */
+  minSignalsForSuggestion: 2,
+  /** 正向信号阈值（比例） */
+  positiveThreshold: 0.7,
+  /** 负向信号阈值（比例） */
+  negativeThreshold: 0.7,
+  /** 添加到 interests 的最小正向次数 */
+  minPositiveForInterest: 3,
+  /** 添加到 negativeInterests 的最小负向次数 */
+  minNegativeForBlock: 2,
+  /** 最大建议数 */
+  maxSuggestions: 20,
+  /** 每条内容最多提取的关键词数 */
+  maxKeywordsPerContent: 5,
+} as const;
+
 // ========== BullMQ 队列名称 ==========
 
 export const QUEUE_NAMES = {

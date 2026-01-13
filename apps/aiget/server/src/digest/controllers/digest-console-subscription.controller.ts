@@ -36,15 +36,20 @@ import type { CurrentUserDto } from '../../types';
 import { DigestSubscriptionService } from '../services/subscription.service';
 import { DigestRunService } from '../services/run.service';
 import { DigestPreviewService } from '../services/preview.service';
+import { DigestFeedbackService } from '../services/feedback.service';
 import {
   CreateSubscriptionSchema,
   UpdateSubscriptionSchema,
   ListSubscriptionsQuerySchema,
   PreviewSubscriptionQuerySchema,
+  ApplySuggestionsSchema,
+  GetPatternsQuerySchema,
   type CreateSubscriptionInput,
   type UpdateSubscriptionInput,
   type ListSubscriptionsQuery,
   type PreviewSubscriptionQuery,
+  type ApplySuggestionsInput,
+  type GetPatternsQuery,
 } from '../dto';
 import {
   DIGEST_SUBSCRIPTION_RUN_QUEUE,
@@ -59,6 +64,7 @@ export class DigestConsoleSubscriptionController {
     private readonly subscriptionService: DigestSubscriptionService,
     private readonly runService: DigestRunService,
     private readonly previewService: DigestPreviewService,
+    private readonly feedbackService: DigestFeedbackService,
     @InjectQueue(DIGEST_SUBSCRIPTION_RUN_QUEUE)
     private readonly runQueue: Queue<DigestSubscriptionRunJobData>,
   ) {}
@@ -260,5 +266,138 @@ export class DigestConsoleSubscriptionController {
     query: PreviewSubscriptionQuery,
   ) {
     return this.previewService.previewSubscription(user.id, id, query);
+  }
+
+  // ==================== 反馈学习 API ====================
+
+  /**
+   * 获取学习建议
+   * GET /api/console/digest/subscriptions/:id/feedback/suggestions
+   *
+   * 基于用户反馈（save/notInterested）生成兴趣词建议
+   */
+  @Get(':id/feedback/suggestions')
+  @ApiOperation({
+    summary: 'Get learning suggestions based on feedback patterns',
+  })
+  @ApiParam({ name: 'id', description: 'Subscription ID' })
+  @ApiOkResponse({ description: 'Learning suggestions' })
+  async getFeedbackSuggestions(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+  ) {
+    // 验证订阅属于当前用户
+    const subscription = await this.subscriptionService.findOne(user.id, id);
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const suggestions = await this.feedbackService.getSuggestions(id);
+    return { suggestions };
+  }
+
+  /**
+   * 应用学习建议
+   * POST /api/console/digest/subscriptions/:id/feedback/apply
+   *
+   * 将选中的建议应用到订阅配置（添加到 interests 或 negativeInterests）
+   */
+  @Post(':id/feedback/apply')
+  @ApiOperation({ summary: 'Apply selected suggestions to subscription' })
+  @ApiParam({ name: 'id', description: 'Subscription ID' })
+  @ApiOkResponse({ description: 'Suggestions applied' })
+  async applyFeedbackSuggestions(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(ApplySuggestionsSchema))
+    input: ApplySuggestionsInput,
+  ) {
+    // 验证订阅属于当前用户
+    const subscription = await this.subscriptionService.findOne(user.id, id);
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const result = await this.feedbackService.applySuggestions(
+      id,
+      input.suggestionIds,
+    );
+    return {
+      applied: result.applied,
+      skipped: result.skipped,
+      message: `Applied ${result.applied} suggestions, skipped ${result.skipped}`,
+    };
+  }
+
+  /**
+   * 获取反馈统计
+   * GET /api/console/digest/subscriptions/:id/feedback/stats
+   */
+  @Get(':id/feedback/stats')
+  @ApiOperation({ summary: 'Get feedback statistics' })
+  @ApiParam({ name: 'id', description: 'Subscription ID' })
+  @ApiOkResponse({ description: 'Feedback statistics' })
+  async getFeedbackStats(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+  ) {
+    // 验证订阅属于当前用户
+    const subscription = await this.subscriptionService.findOne(user.id, id);
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    return this.feedbackService.getStats(id);
+  }
+
+  /**
+   * 获取反馈模式列表
+   * GET /api/console/digest/subscriptions/:id/feedback/patterns
+   */
+  @Get(':id/feedback/patterns')
+  @ApiOperation({ summary: 'Get feedback patterns' })
+  @ApiParam({ name: 'id', description: 'Subscription ID' })
+  @ApiOkResponse({ description: 'Feedback patterns list' })
+  async getFeedbackPatterns(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+    @Query(new ZodValidationPipe(GetPatternsQuerySchema))
+    query: GetPatternsQuery,
+  ) {
+    // 验证订阅属于当前用户
+    const subscription = await this.subscriptionService.findOne(user.id, id);
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const patterns = await this.feedbackService.getPatterns(id, {
+      patternType: query.patternType,
+      limit: query.limit,
+      offset: query.offset,
+    });
+
+    return { patterns, total: patterns.length };
+  }
+
+  /**
+   * 清除反馈模式
+   * DELETE /api/console/digest/subscriptions/:id/feedback/patterns
+   */
+  @Delete(':id/feedback/patterns')
+  @ApiOperation({ summary: 'Clear all feedback patterns' })
+  @ApiParam({ name: 'id', description: 'Subscription ID' })
+  @ApiNoContentResponse({ description: 'Patterns cleared' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async clearFeedbackPatterns(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+  ): Promise<void> {
+    // 验证订阅属于当前用户
+    const subscription = await this.subscriptionService.findOne(user.id, id);
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    await this.feedbackService.clearPatterns(id);
   }
 }

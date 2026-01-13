@@ -19,6 +19,7 @@ import {
 import { DigestContentService } from '../services/content.service';
 import { DigestAiService } from '../services/ai.service';
 import { DigestSourceService } from '../services/source.service';
+import { DigestFeedbackService } from '../services/feedback.service';
 import { DIGEST_SUBSCRIPTION_RUN_QUEUE } from '../../queue/queue.constants';
 import type { DigestSubscriptionRunJobData } from '../../queue/queue.constants';
 import { BILLING } from '../digest.constants';
@@ -27,6 +28,7 @@ import {
   calculateImpactScore,
   calculateQualityScore,
   calculateOverallScore,
+  type FeedbackPatternForScoring,
 } from '../utils/scoring.utils';
 import { extractDomain } from '../utils/url.utils';
 
@@ -42,6 +44,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
     private readonly contentService: DigestContentService,
     private readonly aiService: DigestAiService,
     private readonly sourceService: DigestSourceService,
+    private readonly feedbackService: DigestFeedbackService,
   ) {
     super();
   }
@@ -104,6 +107,23 @@ export class SubscriptionRunProcessor extends WorkerHost {
       );
       totalCredits += billingBreakdown['fetchx.scrape']?.subtotalCredits || 0;
 
+      // 4.5 加载反馈模式用于评分调整
+      const feedbackPatterns =
+        await this.feedbackService.getPatterns(subscriptionId);
+      const scoringPatterns: FeedbackPatternForScoring[] = feedbackPatterns.map(
+        (p) => ({
+          patternType: p.patternType as 'KEYWORD' | 'DOMAIN' | 'AUTHOR',
+          value: p.value,
+          positiveCount: p.positiveCount,
+          negativeCount: p.negativeCount,
+          confidence: p.confidence,
+        }),
+      );
+
+      this.logger.debug(
+        `Loaded ${scoringPatterns.length} feedback patterns for scoring`,
+      );
+
       // 5. 内容入池和评分（包含 AI 摘要生成）
       const scoredItems = await this.processAndScoreContents(
         mergedContents,
@@ -111,6 +131,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
         subscription,
         outputLocale,
         billingBreakdown,
+        scoringPatterns,
       );
       // 累加 AI 摘要成本
       totalCredits += billingBreakdown['ai.summary']?.subtotalCredits || 0;
@@ -329,9 +350,14 @@ export class SubscriptionRunProcessor extends WorkerHost {
       string,
       { fulltext: string; siteName?: string; favicon?: string }
     >,
-    subscription: { topic: string; interests: string[] },
+    subscription: {
+      topic: string;
+      interests: string[];
+      negativeInterests?: string[];
+    },
     locale: string,
     billingBreakdown: BillingBreakdown,
+    feedbackPatterns?: FeedbackPatternForScoring[],
   ): Promise<
     Array<{
       contentId: string;
@@ -362,6 +388,28 @@ export class SubscriptionRunProcessor extends WorkerHost {
     for (const result of searchResults) {
       const scraped = scrapedContents.get(result.url);
 
+      // 计算评分（先检查是否被屏蔽）
+      const {
+        score: relevance,
+        reason,
+        blocked,
+      } = calculateRelevanceScore(
+        {
+          title: result.title,
+          description: result.description,
+          fulltext: scraped?.fulltext,
+          url: result.url,
+        },
+        subscription,
+        feedbackPatterns,
+      );
+
+      // 跳过被负面兴趣屏蔽的内容
+      if (blocked) {
+        this.logger.debug(`Blocked content: ${result.url} - ${reason}`);
+        continue;
+      }
+
       // 入池
       const content = await this.contentService.ingestContent({
         url: result.url,
@@ -371,16 +419,6 @@ export class SubscriptionRunProcessor extends WorkerHost {
         siteName: scraped?.siteName,
         favicon: scraped?.favicon,
       });
-
-      // 计算评分
-      const { score: relevance, reason } = calculateRelevanceScore(
-        {
-          title: result.title,
-          description: result.description,
-          fulltext: scraped?.fulltext,
-        },
-        subscription,
-      );
 
       const impact = calculateImpactScore({
         domain: extractDomain(result.url),

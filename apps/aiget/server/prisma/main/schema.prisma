@@ -667,6 +667,13 @@ enum DigestTopicEditionStatus {
   FAILED
 }
 
+// 反馈学习模式类型
+enum DigestFeedbackTermType {
+  KEYWORD
+  DOMAIN
+  AUTHOR
+}
+
 // =============================================
 // Digest 全局数据源
 // =============================================
@@ -709,8 +716,9 @@ model DigestSubscription {
   name String
 
   // 用户输入
-  topic     String // 用户输入的主题
-  interests String[] // 关键词
+  topic             String   // 用户输入的主题
+  interests         String[] // 正向关键词
+  negativeInterests String[] // 负向关键词（屏蔽词，用于反馈学习）
 
   // 选题控制
   searchLimit        Int @default(60) // 搜索候选数量上限（1-100）
@@ -760,6 +768,7 @@ model DigestSubscription {
   subscriptionSources DigestSubscriptionSource[]
   runs                DigestRun[]
   runItems            DigestRunItem[]
+  feedbackPatterns    DigestFeedbackPattern[]
 
   // 作为 source 的 Topic（一对一）
   sourceForTopic DigestTopic? @relation("SourceSubscription")
@@ -790,6 +799,37 @@ model DigestSubscriptionSource {
 
   @@unique([subscriptionId, sourceId])
   @@index([sourceId])
+}
+
+// =============================================
+// Digest 反馈学习模式
+// =============================================
+
+model DigestFeedbackPattern {
+  id             String                  @id @default(cuid())
+  subscriptionId String
+  patternType    DigestFeedbackTermType
+  value          String                  // 关键词、域名或作者名
+
+  // 统计计数
+  positiveCount Int @default(0) // 正向信号次数（save）
+  negativeCount Int @default(0) // 负向信号次数（notInterested）
+
+  // 置信度（基于信号数量和一致性）
+  confidence Float @default(0.5)
+
+  // 追踪
+  lastContentUrl  String?   // 最近触发该模式的内容 URL
+  lastTriggeredAt DateTime? // 最后触发时间
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription DigestSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, patternType, value])
+  @@index([subscriptionId])
+  @@index([confidence])
 }
 
 // =============================================
