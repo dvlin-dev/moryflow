@@ -7,8 +7,15 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+import { createHash } from 'crypto';
 import type { Page } from 'playwright';
-import type { SnapshotInput, SnapshotResponse, RefData } from '../dto';
+import type {
+  SnapshotInput,
+  SnapshotResponse,
+  RefData,
+  DeltaSnapshotInput,
+  DeltaSnapshotResponse,
+} from '../dto';
 
 /** ARIA 角色分类 */
 const INTERACTIVE_ROLES = new Set([
@@ -108,9 +115,136 @@ class RoleNameTracker {
   }
 }
 
+/** 快照缓存数据 */
+interface SnapshotCache {
+  /** 快照哈希 */
+  hash: string;
+  /** refs 映射 */
+  refs: Record<string, RefData>;
+  /** 快照树文本 */
+  tree: string;
+  /** 创建时间 */
+  createdAt: number;
+}
+
 @Injectable()
 export class SnapshotService {
   private readonly logger = new Logger(SnapshotService.name);
+
+  /** 会话快照缓存（用于增量计算） */
+  private readonly snapshotCache = new Map<string, SnapshotCache>();
+
+  /** 缓存过期时间（5 分钟） */
+  private readonly CACHE_TTL = 5 * 60 * 1000;
+
+  /**
+   * 生成增量快照
+   */
+  async captureDelta(
+    sessionId: string,
+    page: Page,
+    options?: Partial<DeltaSnapshotInput>,
+  ): Promise<{ snapshot: DeltaSnapshotResponse; refs: Map<string, RefData> }> {
+    const isDelta = options?.delta ?? false;
+
+    // 获取完整快照
+    const { snapshot: fullSnapshot, refs } = await this.capture(page, options);
+
+    // 计算当前快照哈希
+    const currentHash = this.computeHash(fullSnapshot.tree);
+
+    // 如果不需要增量，直接返回带哈希的完整快照
+    if (!isDelta) {
+      // 更新缓存
+      this.updateCache(sessionId, {
+        hash: currentHash,
+        refs: fullSnapshot.refs,
+        tree: fullSnapshot.tree,
+        createdAt: Date.now(),
+      });
+
+      const response: DeltaSnapshotResponse = {
+        ...fullSnapshot,
+        isDelta: false,
+        currentHash,
+      };
+
+      return { snapshot: response, refs };
+    }
+
+    // 获取上次快照
+    const previousCache = this.snapshotCache.get(sessionId);
+
+    // 如果没有缓存或缓存过期，返回完整快照
+    if (!previousCache || this.isCacheExpired(previousCache)) {
+      this.updateCache(sessionId, {
+        hash: currentHash,
+        refs: fullSnapshot.refs,
+        tree: fullSnapshot.tree,
+        createdAt: Date.now(),
+      });
+
+      const response: DeltaSnapshotResponse = {
+        ...fullSnapshot,
+        isDelta: false,
+        currentHash,
+      };
+
+      return { snapshot: response, refs };
+    }
+
+    // 如果快照没有变化，返回最小化响应
+    if (previousCache.hash === currentHash) {
+      const response: DeltaSnapshotResponse = {
+        tree: '(no changes)',
+        refs: {},
+        stats: {
+          lines: 0,
+          chars: 0,
+          refs: 0,
+          interactive: 0,
+        },
+        isDelta: true,
+        baseHash: previousCache.hash,
+        currentHash,
+      };
+
+      return { snapshot: response, refs };
+    }
+
+    // 计算差异
+    const delta = this.computeDelta(previousCache.refs, fullSnapshot.refs);
+
+    // 更新缓存
+    this.updateCache(sessionId, {
+      hash: currentHash,
+      refs: fullSnapshot.refs,
+      tree: fullSnapshot.tree,
+      createdAt: Date.now(),
+    });
+
+    // 构建增量响应
+    const response: DeltaSnapshotResponse = {
+      tree: fullSnapshot.tree,
+      refs: fullSnapshot.refs,
+      stats: fullSnapshot.stats,
+      isDelta: true,
+      addedRefs: delta.added,
+      removedRefs: delta.removed,
+      changedRefs: delta.changed,
+      baseHash: previousCache.hash,
+      currentHash,
+    };
+
+    return { snapshot: response, refs };
+  }
+
+  /**
+   * 清除会话快照缓存
+   */
+  clearCache(sessionId: string): void {
+    this.snapshotCache.delete(sessionId);
+  }
 
   /**
    * 生成页面快照
@@ -407,5 +541,92 @@ export class SnapshotService {
       .replace(/\n/g, '\\n')
       .replace(/\r/g, '\\r')
       .replace(/\t/g, '\\t');
+  }
+
+  /**
+   * 计算内容哈希
+   */
+  private computeHash(content: string): string {
+    return createHash('sha256').update(content).digest('hex').slice(0, 16);
+  }
+
+  /**
+   * 更新快照缓存
+   */
+  private updateCache(sessionId: string, cache: SnapshotCache): void {
+    this.snapshotCache.set(sessionId, cache);
+
+    // 清理过期缓存
+    this.cleanupExpiredCache();
+  }
+
+  /**
+   * 检查缓存是否过期
+   */
+  private isCacheExpired(cache: SnapshotCache): boolean {
+    return Date.now() - cache.createdAt > this.CACHE_TTL;
+  }
+
+  /**
+   * 清理过期缓存
+   */
+  private cleanupExpiredCache(): void {
+    const now = Date.now();
+    for (const [sessionId, cache] of this.snapshotCache) {
+      if (now - cache.createdAt > this.CACHE_TTL) {
+        this.snapshotCache.delete(sessionId);
+      }
+    }
+  }
+
+  /**
+   * 计算 refs 差异
+   */
+  private computeDelta(
+    previous: Record<string, RefData>,
+    current: Record<string, RefData>,
+  ): {
+    added: Record<string, RefData>;
+    removed: string[];
+    changed: Record<string, RefData>;
+  } {
+    const added: Record<string, RefData> = {};
+    const removed: string[] = [];
+    const changed: Record<string, RefData> = {};
+
+    const previousKeys = new Set(Object.keys(previous));
+    const currentKeys = new Set(Object.keys(current));
+
+    // 找出新增的 refs
+    for (const key of currentKeys) {
+      if (!previousKeys.has(key)) {
+        added[key] = current[key];
+      }
+    }
+
+    // 找出移除的 refs
+    for (const key of previousKeys) {
+      if (!currentKeys.has(key)) {
+        removed.push(key);
+      }
+    }
+
+    // 找出变更的 refs
+    for (const key of currentKeys) {
+      if (previousKeys.has(key)) {
+        const prev = previous[key];
+        const curr = current[key];
+
+        if (
+          prev.role !== curr.role ||
+          prev.name !== curr.name ||
+          prev.nth !== curr.nth
+        ) {
+          changed[key] = curr;
+        }
+      }
+    }
+
+    return { added, removed, changed };
   }
 }

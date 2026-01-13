@@ -19,6 +19,28 @@ export {
 export { SnapshotService } from './snapshot';
 export { ActionHandler } from './handlers';
 
+// P2: CDP 连接
+export {
+  CdpConnectorService,
+  CdpConnectionError,
+  CdpEndpointError,
+  type CdpConnectOptions,
+  type CdpConnection,
+} from './cdp';
+
+// P2: 网络拦截
+export {
+  NetworkInterceptorService,
+  InvalidInterceptRuleError,
+} from './network';
+
+// P2: 会话持久化
+export {
+  StoragePersistenceService,
+  StorageImportError,
+  StorageExportError,
+} from './persistence';
+
 // DTOs
 export * from './dto';
 

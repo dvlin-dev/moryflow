@@ -29,7 +29,12 @@ export type CreateAgentTaskInput = z.infer<typeof CreateAgentTaskSchema>;
 // ========== 响应类型 ==========
 
 /** Agent 任务状态 */
-export type AgentTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type AgentTaskStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 /** Agent 任务信息 */
 export interface AgentTaskInfo {

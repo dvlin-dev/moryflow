@@ -84,6 +84,10 @@ export interface BrowserSession {
   expiresAt: Date;
   /** 最后访问时间 */
   lastAccessedAt: Date;
+  /** 是否为 CDP 连接（用于区分关闭行为） */
+  isCdpConnection?: boolean;
+  /** CDP WebSocket 端点（仅 CDP 会话有效） */
+  wsEndpoint?: string;
 }
 
 /** Session 不存在错误 */
@@ -279,7 +283,26 @@ export class SessionManager implements OnModuleDestroy {
 
     this.sessions.delete(sessionId);
 
-    // 释放所有窗口的上下文
+    // CDP 连接只断开连接，不关闭外部浏览器
+    if (session.isCdpConnection) {
+      for (const window of session.windows) {
+        try {
+          // 只关闭 Playwright 的连接，不关闭外部浏览器
+          const browser = window.context.browser();
+          if (browser) {
+            await browser.close();
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Error disconnecting CDP session ${sessionId}: ${error}`,
+          );
+        }
+      }
+      this.logger.debug(`CDP session disconnected: ${sessionId}`);
+      return;
+    }
+
+    // 普通会话：释放所有窗口的上下文
     const releasePromises = session.windows.map(async (window) => {
       try {
         await this.browserPool.releaseContext(window.context);
@@ -294,6 +317,65 @@ export class SessionManager implements OnModuleDestroy {
     this.logger.debug(
       `Session closed: ${sessionId}, released ${session.windows.length} window(s)`,
     );
+  }
+
+  /**
+   * 创建 CDP 会话
+   */
+  async createCdpSession(
+    context: BrowserContext,
+    wsEndpoint: string,
+    options?: Partial<CreateSessionInput>,
+  ): Promise<BrowserSession> {
+    const sessionId = this.generateSessionId();
+    const timeout = options?.timeout ?? this.DEFAULT_TIMEOUT;
+
+    // 获取现有页面或创建新页面
+    const pages = context.pages();
+    const page = pages.length > 0 ? pages[0] : await context.newPage();
+
+    // 应用会话配置
+    if (options?.viewport) {
+      await page.setViewportSize(options.viewport);
+    }
+
+    page.setDefaultTimeout(30000);
+
+    // 创建初始窗口数据
+    const initialWindow: WindowData = {
+      context,
+      page,
+      pages: pages.length > 0 ? pages : [page],
+      activePageIndex: 0,
+    };
+
+    const now = new Date();
+    const session: BrowserSession = {
+      id: sessionId,
+      windows: [initialWindow],
+      activeWindowIndex: 0,
+      context,
+      page,
+      pages: initialWindow.pages,
+      activePageIndex: 0,
+      refs: new Map(),
+      dialogHistory: [],
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + timeout),
+      lastAccessedAt: now,
+      isCdpConnection: true,
+      wsEndpoint,
+    };
+
+    // 设置对话框自动处理
+    this.setupDialogHandler(session, page);
+
+    this.sessions.set(sessionId, session);
+    this.logger.debug(
+      `CDP session created: ${sessionId}, wsEndpoint: ${wsEndpoint}`,
+    );
+
+    return session;
   }
 
   /**

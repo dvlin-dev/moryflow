@@ -3,7 +3,8 @@
  *
  * [INPUT]: 会话操作请求
  * [OUTPUT]: 会话信息、快照、操作结果
- * [POS]: L2 Browser API 业务逻辑层，整合 SessionManager、SnapshotService、ActionHandler
+ * [POS]: L2 Browser API 业务逻辑层，整合 SessionManager、SnapshotService、ActionHandler、
+ *        CdpConnector、NetworkInterceptor、StoragePersistence
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -11,18 +12,30 @@ import { UrlValidator } from '../common';
 import { SessionManager } from './session';
 import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
+import { CdpConnectorService } from './cdp';
+import { NetworkInterceptorService } from './network';
+import { StoragePersistenceService } from './persistence';
 import type {
   CreateSessionInput,
   CreateWindowInput,
   OpenUrlInput,
   SnapshotInput,
+  DeltaSnapshotInput,
   ActionInput,
   ScreenshotInput,
+  ConnectCdpInput,
+  InterceptRule,
+  ExportStorageInput,
+  ImportStorageInput,
   SessionInfo,
+  CdpSessionInfo,
   SnapshotResponse,
+  DeltaSnapshotResponse,
   ActionResponse,
   ScreenshotResponse,
   WindowInfo,
+  NetworkRequestRecord,
+  StorageExportResult,
 } from './dto';
 
 /** URL 验证失败错误 */
@@ -44,6 +57,9 @@ export class BrowserSessionService {
     private readonly snapshotService: SnapshotService,
     private readonly actionHandler: ActionHandler,
     private readonly urlValidator: UrlValidator,
+    private readonly cdpConnector: CdpConnectorService,
+    private readonly networkInterceptor: NetworkInterceptorService,
+    private readonly storagePersistence: StoragePersistenceService,
   ) {}
 
   /**
@@ -300,5 +316,178 @@ export class BrowserSessionService {
    */
   async closeWindow(sessionId: string, windowIndex: number): Promise<void> {
     return this.sessionManager.closeWindow(sessionId, windowIndex);
+  }
+
+  // ==================== P2.1 CDP 连接 ====================
+
+  /**
+   * 通过 CDP 连接到已运行的浏览器
+   */
+  async connectCdp(options: ConnectCdpInput): Promise<CdpSessionInfo> {
+    // 建立 CDP 连接
+    const connection = await this.cdpConnector.connect({
+      wsEndpoint: options.wsEndpoint,
+      port: options.port,
+      timeout: options.timeout,
+    });
+
+    // 创建 BrowserContext
+    const context = await this.cdpConnector.createContext(connection);
+
+    // 创建会话
+    const session = await this.sessionManager.createCdpSession(
+      connection.browser,
+      context,
+      connection.wsEndpoint,
+    );
+
+    return {
+      id: session.id,
+      createdAt: session.createdAt.toISOString(),
+      expiresAt: session.expiresAt.toISOString(),
+      url: session.page.url() || null,
+      title: null,
+      isCdpConnection: true,
+      wsEndpoint: connection.wsEndpoint,
+    };
+  }
+
+  // ==================== P2.2 网络拦截 ====================
+
+  /**
+   * 设置网络拦截规则
+   */
+  async setInterceptRules(
+    sessionId: string,
+    rules: InterceptRule[],
+  ): Promise<{ rulesCount: number }> {
+    const session = this.sessionManager.getSession(sessionId);
+    return this.networkInterceptor.setRules(sessionId, session.page, rules);
+  }
+
+  /**
+   * 添加单条拦截规则
+   */
+  async addInterceptRule(
+    sessionId: string,
+    rule: InterceptRule,
+  ): Promise<{ ruleId: string }> {
+    const session = this.sessionManager.getSession(sessionId);
+    return this.networkInterceptor.addRule(sessionId, session.page, rule);
+  }
+
+  /**
+   * 移除拦截规则
+   */
+  removeInterceptRule(sessionId: string, ruleId: string): boolean {
+    return this.networkInterceptor.removeRule(sessionId, ruleId);
+  }
+
+  /**
+   * 清除所有拦截规则
+   */
+  async clearInterceptRules(sessionId: string): Promise<void> {
+    const session = this.sessionManager.getSession(sessionId);
+    return this.networkInterceptor.clearRules(sessionId, session.page);
+  }
+
+  /**
+   * 获取当前拦截规则
+   */
+  getInterceptRules(sessionId: string): InterceptRule[] {
+    return this.networkInterceptor.getRules(sessionId);
+  }
+
+  /**
+   * 获取网络请求历史
+   */
+  getNetworkHistory(
+    sessionId: string,
+    options?: { limit?: number; urlFilter?: string },
+  ): NetworkRequestRecord[] {
+    return this.networkInterceptor.getRequestHistory(sessionId, options);
+  }
+
+  /**
+   * 清除网络历史记录
+   */
+  clearNetworkHistory(sessionId: string): void {
+    this.networkInterceptor.clearHistory(sessionId);
+  }
+
+  // ==================== P2.3 会话持久化 ====================
+
+  /**
+   * 导出会话存储
+   */
+  async exportStorage(
+    sessionId: string,
+    options?: ExportStorageInput,
+  ): Promise<StorageExportResult> {
+    const session = this.sessionManager.getSession(sessionId);
+    return this.storagePersistence.exportStorage(
+      session.context,
+      session.page,
+      options,
+    );
+  }
+
+  /**
+   * 导入会话存储
+   */
+  async importStorage(
+    sessionId: string,
+    data: ImportStorageInput,
+  ): Promise<{
+    imported: { cookies: number; localStorage: number; sessionStorage: number };
+  }> {
+    const session = this.sessionManager.getSession(sessionId);
+    return this.storagePersistence.importStorage(
+      session.context,
+      session.page,
+      data,
+    );
+  }
+
+  /**
+   * 清除会话存储
+   */
+  async clearStorage(
+    sessionId: string,
+    options?: {
+      cookies?: boolean;
+      localStorage?: boolean;
+      sessionStorage?: boolean;
+    },
+  ): Promise<void> {
+    const session = this.sessionManager.getSession(sessionId);
+    return this.storagePersistence.clearStorage(
+      session.context,
+      session.page,
+      options,
+    );
+  }
+
+  // ==================== P2.4 增量快照 ====================
+
+  /**
+   * 获取增量快照（delta 模式）
+   */
+  async getDeltaSnapshot(
+    sessionId: string,
+    options?: Partial<DeltaSnapshotInput>,
+  ): Promise<DeltaSnapshotResponse> {
+    const session = this.sessionManager.getSession(sessionId);
+
+    const { snapshot, refs } = await this.snapshotService.captureDelta(
+      sessionId,
+      session.page,
+      options,
+    );
+
+    // 更新会话的 ref 映射
+    this.sessionManager.updateRefs(sessionId, refs);
+
+    return snapshot;
   }
 }

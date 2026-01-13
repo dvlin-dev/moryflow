@@ -10,6 +10,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Param,
   Body,
   Res,
@@ -180,5 +181,44 @@ export class AgentController {
     }
 
     return this.agentService.estimateCost(parseResult.data);
+  }
+
+  /**
+   * 取消任务
+   * DELETE /api/v1/agent/:id
+   */
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Cancel an Agent task',
+    description:
+      'Cancel a running or pending task. Returns credits consumed before cancellation.',
+  })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiOkResponse({
+    description: 'Cancellation result',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        creditsUsed: { type: 'number' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  async cancelTask(
+    @Param('id') taskId: string,
+    @CurrentApiKey() _apiKey: ApiKeyPayload,
+  ) {
+    const result = await this.agentService.cancelTask(taskId);
+
+    if (!result.success && result.message === 'Task not found') {
+      throw new HttpException(
+        { message: 'Task not found' },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return result;
   }
 }

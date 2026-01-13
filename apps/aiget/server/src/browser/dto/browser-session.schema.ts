@@ -259,3 +259,169 @@ export interface WindowInfo {
   /** 标签页数量 */
   tabCount: number;
 }
+
+// ========== CDP 连接 Schemas ==========
+
+/** CDP 连接请求 */
+export const ConnectCdpSchema = z.object({
+  /** WebSocket 端点 URL（优先使用） */
+  wsEndpoint: z.string().url().optional(),
+  /** CDP 端口（使用 HTTP 获取 wsEndpoint） */
+  port: z.number().int().min(1).max(65535).optional(),
+  /** 连接超时时间（毫秒） */
+  timeout: z.number().int().min(1000).max(60000).default(30000),
+});
+
+export type ConnectCdpInput = z.infer<typeof ConnectCdpSchema>;
+
+/** CDP 会话信息 */
+export interface CdpSessionInfo extends SessionInfo {
+  /** 是否为 CDP 连接 */
+  isCdpConnection: true;
+  /** WebSocket 端点 */
+  wsEndpoint: string;
+}
+
+// ========== 网络拦截 Schemas ==========
+
+/** 请求拦截规则 */
+export const InterceptRuleSchema = z.object({
+  /** 规则 ID（用于更新/删除） */
+  id: z.string().optional(),
+  /** URL 匹配模式（支持 glob） */
+  urlPattern: z.string().max(500),
+  /** 请求方法过滤 */
+  method: z
+    .enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
+    .optional(),
+  /** 修改请求头 */
+  modifyHeaders: z.record(z.string()).optional(),
+  /** Mock 响应（如果设置，则不转发请求） */
+  mockResponse: z
+    .object({
+      status: z.number().int().min(100).max(599).default(200),
+      headers: z.record(z.string()).optional(),
+      body: z.string().optional(),
+      contentType: z.string().default('application/json'),
+    })
+    .optional(),
+  /** 是否阻止请求 */
+  block: z.boolean().default(false),
+});
+
+export type InterceptRule = z.infer<typeof InterceptRuleSchema>;
+
+/** 设置拦截规则请求 */
+export const SetInterceptRulesSchema = z.object({
+  rules: z.array(InterceptRuleSchema).max(50),
+});
+
+export type SetInterceptRulesInput = z.infer<typeof SetInterceptRulesSchema>;
+
+/** 网络请求记录 */
+export interface NetworkRequestRecord {
+  /** 请求 ID */
+  id: string;
+  /** 请求 URL */
+  url: string;
+  /** 请求方法 */
+  method: string;
+  /** 请求头 */
+  headers: Record<string, string>;
+  /** POST 数据（如果有） */
+  postData?: string;
+  /** 响应状态码 */
+  status?: number;
+  /** 响应头 */
+  responseHeaders?: Record<string, string>;
+  /** 是否被拦截 */
+  intercepted: boolean;
+  /** 时间戳 */
+  timestamp: number;
+}
+
+// ========== 会话持久化 Schemas ==========
+
+/** 导出存储请求 */
+export const ExportStorageSchema = z.object({
+  /** 要导出的内容 */
+  include: z
+    .object({
+      cookies: z.boolean().default(true),
+      localStorage: z.boolean().default(true),
+      sessionStorage: z.boolean().default(false),
+    })
+    .default({}),
+  /** 过滤域名（可选，不设置则导出所有） */
+  domains: z.array(z.string()).optional(),
+});
+
+export type ExportStorageInput = z.infer<typeof ExportStorageSchema>;
+
+/** 导入存储请求 */
+export const ImportStorageSchema = z.object({
+  /** Cookies */
+  cookies: z
+    .array(
+      z.object({
+        name: z.string(),
+        value: z.string(),
+        domain: z.string(),
+        path: z.string().default('/'),
+        expires: z.number().optional(),
+        httpOnly: z.boolean().default(false),
+        secure: z.boolean().default(false),
+        sameSite: z.enum(['Strict', 'Lax', 'None']).default('Lax'),
+      }),
+    )
+    .optional(),
+  /** LocalStorage 数据（按域名组织） */
+  localStorage: z.record(z.record(z.string())).optional(),
+  /** SessionStorage 数据（按域名组织） */
+  sessionStorage: z.record(z.record(z.string())).optional(),
+});
+
+export type ImportStorageInput = z.infer<typeof ImportStorageSchema>;
+
+/** 存储导出结果 */
+export interface StorageExportResult {
+  cookies: Array<{
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+    expires?: number;
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite: 'Strict' | 'Lax' | 'None';
+  }>;
+  localStorage: Record<string, Record<string, string>>;
+  sessionStorage?: Record<string, Record<string, string>>;
+  exportedAt: string;
+}
+
+// ========== 增量快照 Schemas ==========
+
+/** 增量快照请求（扩展 SnapshotSchema） */
+export const DeltaSnapshotSchema = SnapshotSchema.extend({
+  /** 是否返回增量（与上次快照的差异） */
+  delta: z.boolean().default(false),
+});
+
+export type DeltaSnapshotInput = z.infer<typeof DeltaSnapshotSchema>;
+
+/** 增量快照响应 */
+export interface DeltaSnapshotResponse extends SnapshotResponse {
+  /** 是否为增量快照 */
+  isDelta: boolean;
+  /** 新增的 refs */
+  addedRefs?: Record<string, RefData>;
+  /** 移除的 refs */
+  removedRefs?: string[];
+  /** 变更的 refs */
+  changedRefs?: Record<string, RefData>;
+  /** 上次快照的哈希（用于验证增量基准） */
+  baseHash?: string;
+  /** 当前快照的哈希 */
+  currentHash: string;
+}

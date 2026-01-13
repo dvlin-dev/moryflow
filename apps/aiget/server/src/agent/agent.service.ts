@@ -50,12 +50,16 @@ const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页
 /** 任务存储 */
 interface StoredTask {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   createdAt: Date;
   expiresAt: Date;
   result?: unknown;
   creditsUsed?: number;
   error?: string;
+  /** 用于取消任务的 AbortController */
+  abortController?: AbortController;
+  /** 关联的浏览器会话 ID */
+  sessionId?: string;
 }
 
 /** 计费参数（P1 计费模型优化） */
@@ -121,6 +125,7 @@ export class AgentService {
   async executeTask(input: CreateAgentTaskInput): Promise<AgentTaskResult> {
     const taskId = this.generateTaskId();
     const now = new Date();
+    const abortController = new AbortController();
 
     // 创建任务记录
     const task: StoredTask = {
@@ -128,6 +133,7 @@ export class AgentService {
       status: 'processing',
       createdAt: now,
       expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
+      abortController,
     };
     this.tasks.set(taskId, task);
 
@@ -141,6 +147,7 @@ export class AgentService {
 
     // 创建浏览器会话
     const session = await this.sessionManager.createSession();
+    task.sessionId = session.id;
 
     try {
       // 构建 Agent
@@ -242,6 +249,7 @@ export class AgentService {
   ): AsyncGenerator<AgentStreamEvent, void, unknown> {
     const taskId = this.generateTaskId();
     const now = new Date();
+    const abortController = new AbortController();
 
     // 创建任务记录
     const task: StoredTask = {
@@ -249,6 +257,7 @@ export class AgentService {
       status: 'processing',
       createdAt: now,
       expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
+      abortController,
     };
     this.tasks.set(taskId, task);
 
@@ -269,6 +278,7 @@ export class AgentService {
 
     // 创建浏览器会话
     const session = await this.sessionManager.createSession();
+    task.sessionId = session.id;
 
     try {
       // 构建 Agent
@@ -311,6 +321,16 @@ export class AgentService {
 
       // 处理流式事件并追踪计费
       for await (const event of streamResult) {
+        // 检查是否被取消
+        if (task.status === 'cancelled' || abortController.signal.aborted) {
+          yield {
+            type: 'failed',
+            error: 'Task cancelled by user',
+            creditsUsed: billing.currentCredits,
+          };
+          return;
+        }
+
         // 追踪工具调用次数
         if (event.type === 'run_item_stream_event') {
           const item = event.item;
@@ -490,6 +510,60 @@ export class AgentService {
       data: task.result,
       creditsUsed: task.creditsUsed,
       error: task.error,
+    };
+  }
+
+  /**
+   * 取消任务
+   * DELETE /api/v1/agent/:id
+   */
+  async cancelTask(
+    taskId: string,
+  ): Promise<{ success: boolean; message: string; creditsUsed?: number }> {
+    const task = this.tasks.get(taskId);
+
+    if (!task) {
+      return { success: false, message: 'Task not found' };
+    }
+
+    // 只能取消正在处理中的任务
+    if (task.status !== 'pending' && task.status !== 'processing') {
+      return {
+        success: false,
+        message: `Cannot cancel task in '${task.status}' status`,
+        creditsUsed: task.creditsUsed,
+      };
+    }
+
+    // 标记为已取消
+    task.status = 'cancelled';
+    task.error = 'Task cancelled by user';
+
+    // 触发 abort 信号
+    if (task.abortController) {
+      task.abortController.abort();
+    }
+
+    // 关闭关联的浏览器会话
+    if (task.sessionId) {
+      try {
+        await this.sessionManager.closeSession(task.sessionId);
+        this.logger.debug(
+          `Closed session ${task.sessionId} for cancelled task ${taskId}`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to close session for cancelled task: ${error}`,
+        );
+      }
+    }
+
+    this.logger.log(`Task ${taskId} cancelled by user`);
+
+    return {
+      success: true,
+      message: 'Task cancelled successfully',
+      creditsUsed: task.creditsUsed,
     };
   }
 
