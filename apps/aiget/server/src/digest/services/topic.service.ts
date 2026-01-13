@@ -393,7 +393,10 @@ export class DigestTopicService {
   async findEditions(
     topicId: string,
     query: EditionsQuery,
-  ): Promise<{ items: DigestTopicEdition[]; nextCursor: string | null }> {
+  ): Promise<{
+    items: (DigestTopicEdition & { _count: { items: number } })[];
+    nextCursor: string | null;
+  }> {
     const { cursor, limit } = query;
 
     const items = await this.prisma.digestTopicEdition.findMany({
@@ -407,6 +410,9 @@ export class DigestTopicService {
         skip: 1,
       }),
       orderBy: { scheduledAt: 'desc' },
+      include: {
+        _count: { select: { items: true } },
+      },
     });
 
     const hasMore = items.length > limit;
@@ -432,10 +438,17 @@ export class DigestTopicService {
   /**
    * 获取 Edition Items
    */
-  async findEditionItems(editionId: string): Promise<DigestTopicEditionItem[]> {
+  async findEditionItems(editionId: string): Promise<
+    (DigestTopicEditionItem & {
+      content: { siteName: string | null; favicon: string | null } | null;
+    })[]
+  > {
     return this.prisma.digestTopicEditionItem.findMany({
       where: { editionId },
       orderBy: { rank: 'asc' },
+      include: {
+        content: { select: { siteName: true, favicon: true } },
+      },
     });
   }
 
@@ -484,7 +497,7 @@ export class DigestTopicService {
    */
   toEditionItemResponse(
     item: DigestTopicEditionItem & {
-      content?: { siteName: string | null; favicon: string | null };
+      content: { siteName: string | null; favicon: string | null } | null;
     },
   ): EditionItemResponse {
     return {

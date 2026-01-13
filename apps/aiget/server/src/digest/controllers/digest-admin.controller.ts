@@ -26,7 +26,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { RequireAdmin } from '../../auth';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DigestAdminService } from '../services/admin.service';
 import type {
   DigestTopicVisibility,
   DigestTopicStatus,
@@ -38,7 +38,7 @@ import type {
 @Controller({ path: 'admin/digest', version: '1' })
 @RequireAdmin()
 export class DigestAdminController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly adminService: DigestAdminService) {}
 
   /**
    * 获取 Digest 系统统计
@@ -48,50 +48,7 @@ export class DigestAdminController {
   @ApiOperation({ summary: 'Get digest system statistics' })
   @ApiOkResponse({ description: 'System statistics' })
   async getStats() {
-    const [
-      totalSubscriptions,
-      activeSubscriptions,
-      totalTopics,
-      publicTopics,
-      totalRuns,
-      successfulRuns,
-      failedRuns,
-      totalContent,
-    ] = await Promise.all([
-      this.prisma.digestSubscription.count({ where: { deletedAt: null } }),
-      this.prisma.digestSubscription.count({
-        where: { deletedAt: null, enabled: true },
-      }),
-      this.prisma.digestTopic.count(),
-      this.prisma.digestTopic.count({ where: { visibility: 'PUBLIC' } }),
-      this.prisma.digestRun.count(),
-      this.prisma.digestRun.count({ where: { status: 'SUCCEEDED' } }),
-      this.prisma.digestRun.count({ where: { status: 'FAILED' } }),
-      this.prisma.contentItem.count(),
-    ]);
-
-    return {
-      subscriptions: {
-        total: totalSubscriptions,
-        active: activeSubscriptions,
-      },
-      topics: {
-        total: totalTopics,
-        public: publicTopics,
-      },
-      runs: {
-        total: totalRuns,
-        succeeded: successfulRuns,
-        failed: failedRuns,
-        successRate:
-          totalRuns > 0
-            ? Math.round((successfulRuns / totalRuns) * 100 * 100) / 100
-            : 0,
-      },
-      contentPool: {
-        totalItems: totalContent,
-      },
-    };
+    return this.adminService.getStats();
   }
 
   /**
@@ -107,47 +64,12 @@ export class DigestAdminController {
     @Query('userId') userId?: string,
     @Query('enabled') enabled?: string,
   ) {
-    const take = Math.min(parseInt(limit, 10) || 20, 100);
-
-    const subscriptions = await this.prisma.digestSubscription.findMany({
-      where: {
-        deletedAt: null,
-        ...(userId && { userId }),
-        ...(enabled !== undefined && { enabled: enabled === 'true' }),
-      },
-      take: take + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
-      }),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { id: true, email: true, name: true } },
-        _count: { select: { runs: true } },
-      },
+    return this.adminService.listSubscriptions({
+      cursor,
+      limit: parseInt(limit, 10) || 20,
+      userId,
+      enabled: enabled !== undefined ? enabled === 'true' : undefined,
     });
-
-    const hasMore = subscriptions.length > take;
-    if (hasMore) {
-      subscriptions.pop();
-    }
-
-    return {
-      items: subscriptions.map((s) => ({
-        id: s.id,
-        name: s.name,
-        topic: s.topic,
-        interests: s.interests,
-        enabled: s.enabled,
-        cron: s.cron,
-        lastRunAt: s.lastRunAt,
-        nextRunAt: s.nextRunAt,
-        createdAt: s.createdAt,
-        user: s.user,
-        runCount: s._count.runs,
-      })),
-      nextCursor: hasMore ? subscriptions[subscriptions.length - 1]?.id : null,
-    };
   }
 
   /**
@@ -163,45 +85,12 @@ export class DigestAdminController {
     @Query('visibility') visibility?: string,
     @Query('status') status?: string,
   ) {
-    const take = Math.min(parseInt(limit, 10) || 20, 100);
-
-    const topics = await this.prisma.digestTopic.findMany({
-      where: {
-        ...(visibility && { visibility: visibility as DigestTopicVisibility }),
-        ...(status && { status: status as DigestTopicStatus }),
-      },
-      take: take + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
-      }),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: { select: { id: true, email: true, name: true } },
-        _count: { select: { editions: true } },
-      },
+    return this.adminService.listTopics({
+      cursor,
+      limit: parseInt(limit, 10) || 20,
+      visibility: visibility as DigestTopicVisibility | undefined,
+      status: status as DigestTopicStatus | undefined,
     });
-
-    const hasMore = topics.length > take;
-    if (hasMore) {
-      topics.pop();
-    }
-
-    return {
-      items: topics.map((t) => ({
-        id: t.id,
-        slug: t.slug,
-        title: t.title,
-        visibility: t.visibility,
-        status: t.status,
-        subscriberCount: t.subscriberCount,
-        lastEditionAt: t.lastEditionAt,
-        createdAt: t.createdAt,
-        createdBy: t.createdBy,
-        editionCount: t._count.editions,
-      })),
-      nextCursor: hasMore ? topics[topics.length - 1]?.id : null,
-    };
   }
 
   /**
@@ -216,15 +105,7 @@ export class DigestAdminController {
     @Param('id') id: string,
     @Body() body: { status: DigestTopicStatus },
   ) {
-    const topic = await this.prisma.digestTopic.update({
-      where: { id },
-      data: { status: body.status },
-    });
-
-    return {
-      id: topic.id,
-      status: topic.status,
-    };
+    return this.adminService.updateTopicStatus(id, body.status);
   }
 
   /**
@@ -237,7 +118,7 @@ export class DigestAdminController {
   @ApiNoContentResponse({ description: 'Topic deleted' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteTopic(@Param('id') id: string): Promise<void> {
-    await this.prisma.digestTopic.delete({ where: { id } });
+    await this.adminService.deleteTopic(id);
   }
 
   /**
@@ -253,47 +134,11 @@ export class DigestAdminController {
     @Query('status') status?: string,
     @Query('subscriptionId') subscriptionId?: string,
   ) {
-    const take = Math.min(parseInt(limit, 10) || 20, 100);
-
-    const runs = await this.prisma.digestRun.findMany({
-      where: {
-        ...(status && { status: status as DigestRunStatus }),
-        ...(subscriptionId && { subscriptionId }),
-      },
-      take: take + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
-      }),
-      orderBy: { scheduledAt: 'desc' },
-      include: {
-        subscription: { select: { id: true, name: true } },
-        user: { select: { id: true, email: true } },
-      },
+    return this.adminService.listRuns({
+      cursor,
+      limit: parseInt(limit, 10) || 20,
+      status: status as DigestRunStatus | undefined,
+      subscriptionId,
     });
-
-    const hasMore = runs.length > take;
-    if (hasMore) {
-      runs.pop();
-    }
-
-    return {
-      items: runs.map((r) => ({
-        id: r.id,
-        subscriptionId: r.subscriptionId,
-        subscriptionName: r.subscription?.name,
-        userId: r.userId,
-        userEmail: r.user?.email,
-        scheduledAt: r.scheduledAt,
-        startedAt: r.startedAt,
-        finishedAt: r.finishedAt,
-        status: r.status,
-        source: r.source,
-        result: r.result,
-        billing: r.billing,
-        error: r.error,
-      })),
-      nextCursor: hasMore ? runs[runs.length - 1]?.id : null,
-    };
   }
 }

@@ -15,6 +15,9 @@ import {
   DigestRunService,
   DigestInboxService,
   DigestTopicService,
+  DigestAiService,
+  DigestPreviewService,
+  DigestAdminService,
 } from './services';
 
 // Processors
@@ -49,6 +52,7 @@ import { RedisModule } from '../redis/redis.module';
 import { SearchModule } from '../search/search.module';
 import { ScraperModule } from '../scraper/scraper.module';
 import { BillingModule } from '../billing/billing.module';
+import { ExtractModule } from '../extract/extract.module';
 
 @Module({
   imports: [
@@ -58,6 +62,7 @@ import { BillingModule } from '../billing/billing.module';
     SearchModule,
     ScraperModule,
     BillingModule,
+    ExtractModule, // 提供 LlmClient
 
     // BullMQ 队列
     BullModule.registerQueue(
@@ -89,6 +94,9 @@ import { BillingModule } from '../billing/billing.module';
     DigestRunService,
     DigestInboxService,
     DigestTopicService,
+    DigestAiService,
+    DigestPreviewService,
+    DigestAdminService,
 
     // Processors
     SubscriptionSchedulerProcessor,
@@ -101,6 +109,8 @@ import { BillingModule } from '../billing/billing.module';
     DigestRunService,
     DigestInboxService,
     DigestTopicService,
+    DigestAiService,
+    DigestPreviewService,
   ],
 })
 export class DigestModule {}

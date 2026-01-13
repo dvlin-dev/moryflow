@@ -36,13 +36,16 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
 import { DigestSubscriptionService } from '../services/subscription.service';
 import { DigestRunService } from '../services/run.service';
+import { DigestPreviewService } from '../services/preview.service';
 import {
   CreateSubscriptionSchema,
   UpdateSubscriptionSchema,
   ListSubscriptionsQuerySchema,
+  PreviewSubscriptionQuerySchema,
   type CreateSubscriptionInput,
   type UpdateSubscriptionInput,
   type ListSubscriptionsQuery,
+  type PreviewSubscriptionQuery,
 } from '../dto';
 import {
   DIGEST_SUBSCRIPTION_RUN_QUEUE,
@@ -56,6 +59,7 @@ export class DigestConsoleSubscriptionController {
   constructor(
     private readonly subscriptionService: DigestSubscriptionService,
     private readonly runService: DigestRunService,
+    private readonly previewService: DigestPreviewService,
     @InjectQueue(DIGEST_SUBSCRIPTION_RUN_QUEUE)
     private readonly runQueue: Queue<DigestSubscriptionRunJobData>,
   ) {}
@@ -237,5 +241,25 @@ export class DigestConsoleSubscriptionController {
       status: run.status,
       message: 'Run triggered successfully',
     };
+  }
+
+  /**
+   * 预览订阅
+   * POST /api/console/digest/subscriptions/:id/preview
+   *
+   * 执行搜索、评分、AI 摘要流程，但不写入数据库
+   * 用于用户在保存前预览订阅效果
+   */
+  @Post(':id/preview')
+  @ApiOperation({ summary: 'Preview subscription results without saving' })
+  @ApiParam({ name: 'id', description: 'Subscription ID' })
+  @ApiOkResponse({ description: 'Preview results' })
+  async preview(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+    @Query(new ZodValidationPipe(PreviewSubscriptionQuerySchema))
+    query: PreviewSubscriptionQuery,
+  ) {
+    return this.previewService.previewSubscription(user.id, id, query);
   }
 }

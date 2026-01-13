@@ -17,6 +17,7 @@ import {
   HttpCode,
   HttpStatus,
   VERSION_NEUTRAL,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -70,7 +71,7 @@ export class DigestConsoleTopicController {
     const topic = await this.topicService.findById(id);
 
     if (!topic || topic.createdByUserId !== user.id) {
-      return null;
+      throw new NotFoundException('Topic not found');
     }
 
     return this.topicService.toResponse(topic);

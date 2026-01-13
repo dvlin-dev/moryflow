@@ -16,7 +16,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  VERSION_NEUTRAL,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -79,7 +79,7 @@ export class DigestPublicTopicController {
     const topic = await this.topicService.findBySlug(slug);
 
     if (!topic) {
-      return null;
+      throw new NotFoundException('Topic not found');
     }
 
     return this.topicService.toResponse(topic);
@@ -101,7 +101,7 @@ export class DigestPublicTopicController {
     const topic = await this.topicService.findBySlug(slug);
 
     if (!topic) {
-      return { items: [], nextCursor: null };
+      throw new NotFoundException('Topic not found');
     }
 
     const { items, nextCursor } = await this.topicService.findEditions(
@@ -110,11 +110,7 @@ export class DigestPublicTopicController {
     );
 
     return {
-      items: items.map((e) =>
-        this.topicService.toEditionResponse(
-          e as Parameters<typeof this.topicService.toEditionResponse>[0],
-        ),
-      ),
+      items: items.map((e) => this.topicService.toEditionResponse(e)),
       nextCursor,
     };
   }
@@ -136,26 +132,20 @@ export class DigestPublicTopicController {
     const topic = await this.topicService.findBySlug(slug);
 
     if (!topic) {
-      return null;
+      throw new NotFoundException('Topic not found');
     }
 
     const edition = await this.topicService.findEditionById(editionId);
 
     if (!edition || edition.topicId !== topic.id) {
-      return null;
+      throw new NotFoundException('Edition not found');
     }
 
     const items = await this.topicService.findEditionItems(editionId);
 
     return {
-      edition: this.topicService.toEditionResponse(
-        edition as Parameters<typeof this.topicService.toEditionResponse>[0],
-      ),
-      items: items.map((item) =>
-        this.topicService.toEditionItemResponse(
-          item as Parameters<typeof this.topicService.toEditionItemResponse>[0],
-        ),
-      ),
+      edition: this.topicService.toEditionResponse(edition),
+      items: items.map((item) => this.topicService.toEditionItemResponse(item)),
     };
   }
 
@@ -176,7 +166,7 @@ export class DigestPublicTopicController {
     const topic = await this.topicService.findBySlug(slug);
 
     if (!topic) {
-      return null;
+      throw new NotFoundException('Topic not found');
     }
 
     const subscription = await this.topicService.followTopic(
@@ -208,7 +198,7 @@ export class DigestPublicTopicController {
     const topic = await this.topicService.findBySlug(slug);
 
     if (!topic) {
-      return;
+      throw new NotFoundException('Topic not found');
     }
 
     await this.topicService.unfollowTopic(user.id, topic.id);

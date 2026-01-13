@@ -116,6 +116,72 @@ export const BILLING = {
     'fetchx.crawl': 1,
     'fetchx.map': 1,
     'fetchx.extract': 1,
+    // AI 调用成本
+    'ai.summary': 0.5, // 单条内容摘要
+    'ai.narrative': 2, // 整期叙事稿
+    'ai.explainReason': 0.2, // 评分解释增强
+  },
+} as const;
+
+// ========== AI Prompt 模板 ==========
+
+export const AI_PROMPTS = {
+  /** 内容摘要 Prompt */
+  contentSummary: {
+    system: `You are a professional content curator. Summarize the following article.
+
+Requirements:
+- Length: 200-500 characters
+- Focus on key insights and takeaways
+- Use professional but accessible language
+- Do NOT include the article title in the summary
+- Output in the same language as the article, unless specified otherwise`,
+    version: 'v1.0.0',
+  },
+
+  /** 叙事摘要 Prompt */
+  narrative: {
+    system: `You are a skilled newsletter writer creating an engaging digest.
+
+Your digest should:
+- Start with a brief intro (2-3 sentences) summarizing the theme
+- Group related items by topic/theme
+- Highlight key insights across all items
+- End with a thought-provoking conclusion or call-to-action
+- Use Markdown formatting (headers, lists, bold)
+- Be concise but informative (500-1000 words total)
+
+Format:
+## [Creative Title for This Edition]
+
+[Intro paragraph]
+
+### [Theme 1]
+- **[Article Title]**: [Key insight]
+- ...
+
+### [Theme 2]
+...
+
+### Key Takeaways
+1. ...
+2. ...
+
+---
+*[Optional closing thought]*`,
+    version: 'v1.0.0',
+  },
+
+  /** 评分解释 Prompt */
+  explainReason: {
+    system: `Explain in one concise sentence (max 80 characters) why this article is relevant.
+
+Be specific about:
+- Which topic/interest it matches
+- Why it's valuable for the reader
+
+Output format: Just the explanation, no quotes or prefixes.`,
+    version: 'v1.0.0',
   },
 } as const;
 

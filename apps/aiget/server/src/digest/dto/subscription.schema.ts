@@ -80,6 +80,35 @@ export const ListSubscriptionsQuerySchema = z.object({
   followedTopicId: z.string().optional(),
 });
 
+// ========== 预览请求 Schema ==========
+
+export const PreviewSubscriptionQuerySchema = z.object({
+  /** 是否生成叙事稿（默认 false，节省成本） */
+  includeNarrative: z.coerce.boolean().default(false),
+  /** 输出语言（默认 en） */
+  locale: z.string().max(10).default('en'),
+});
+
+// ========== 预览响应 Schema ==========
+
+export const PreviewItemSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  aiSummary: z.string().optional(),
+  scoreOverall: z.number(),
+  scoringReason: z.string().optional(),
+  rank: z.number(),
+});
+
+export const PreviewResponseSchema = z.object({
+  items: z.array(PreviewItemSchema),
+  narrative: z.string().optional(),
+  stats: z.object({
+    itemsCandidate: z.number(),
+    itemsSelected: z.number(),
+  }),
+});
+
 // ========== 推断类型 ==========
 
 export type CreateSubscriptionInput = z.infer<typeof CreateSubscriptionSchema>;
@@ -87,6 +116,11 @@ export type UpdateSubscriptionInput = z.infer<typeof UpdateSubscriptionSchema>;
 export type ListSubscriptionsQuery = z.infer<
   typeof ListSubscriptionsQuerySchema
 >;
+export type PreviewSubscriptionQuery = z.infer<
+  typeof PreviewSubscriptionQuerySchema
+>;
+export type PreviewItem = z.infer<typeof PreviewItemSchema>;
+export type PreviewResponse = z.infer<typeof PreviewResponseSchema>;
 export type DigestTone = z.infer<typeof DigestToneSchema>;
 export type DigestLanguageMode = z.infer<typeof DigestLanguageModeSchema>;
 export type RedeliveryPolicy = z.infer<typeof RedeliveryPolicySchema>;

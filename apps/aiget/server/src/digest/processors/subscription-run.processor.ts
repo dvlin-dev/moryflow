@@ -17,6 +17,7 @@ import {
   type BillingBreakdown,
 } from '../services/run.service';
 import { DigestContentService } from '../services/content.service';
+import { DigestAiService } from '../services/ai.service';
 import { DIGEST_SUBSCRIPTION_RUN_QUEUE } from '../../queue/queue.constants';
 import type { DigestSubscriptionRunJobData } from '../../queue/queue.constants';
 import { BILLING } from '../digest.constants';
@@ -38,6 +39,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
     private readonly scraperService: ScraperService,
     private readonly runService: DigestRunService,
     private readonly contentService: DigestContentService,
+    private readonly aiService: DigestAiService,
   ) {
     super();
   }
@@ -82,13 +84,16 @@ export class SubscriptionRunProcessor extends WorkerHost {
       );
       totalCredits += billingBreakdown['fetchx.scrape']?.subtotalCredits || 0;
 
-      // 5. 内容入池和评分
+      // 5. 内容入池和评分（包含 AI 摘要生成）
       const scoredItems = await this.processAndScoreContents(
         searchResults,
         scrapedContents,
         subscription,
         outputLocale,
+        billingBreakdown,
       );
+      // 累加 AI 摘要成本
+      totalCredits += billingBreakdown['ai.summary']?.subtotalCredits || 0;
 
       // 6. 去重
       const { dedupedItems, dedupSkipped, redelivered } =
@@ -128,7 +133,26 @@ export class SubscriptionRunProcessor extends WorkerHost {
         await this.runService.deliverItems(runId, deliveredIds);
       }
 
-      // 10. 完成运行
+      // 10. 生成叙事稿（Writer narrative）
+      let narrativeMarkdown: string | undefined;
+      if (selectedItems.length > 0) {
+        const narrativeResult = await this.aiService.generateNarrative(
+          selectedItems.map((item) => ({
+            title: item.title,
+            url: item.url,
+            aiSummary: item.aiSummary,
+            scoreOverall: item.scoreOverall,
+            scoringReason: item.scoringReason,
+          })),
+          { topic: subscription.topic, interests: subscription.interests },
+          outputLocale,
+          billingBreakdown,
+        );
+        narrativeMarkdown = narrativeResult.result || undefined;
+        totalCredits += narrativeResult.cost;
+      }
+
+      // 11. 完成运行
       await this.runService.completeRun(
         runId,
         {
@@ -139,9 +163,10 @@ export class SubscriptionRunProcessor extends WorkerHost {
           itemsRedelivered: redelivered,
         },
         { totalCredits, breakdown: billingBreakdown },
+        narrativeMarkdown,
       );
 
-      // 11. 更新订阅最后运行时间
+      // 12. 更新订阅最后运行时间
       await this.prisma.digestSubscription.update({
         where: { id: subscriptionId },
         data: { lastRunAt: new Date() },
@@ -286,6 +311,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
     >,
     subscription: { topic: string; interests: string[] },
     locale: string,
+    billingBreakdown: BillingBreakdown,
   ): Promise<
     Array<{
       contentId: string;
@@ -354,15 +380,23 @@ export class SubscriptionRunProcessor extends WorkerHost {
         content.canonicalUrlHash,
         locale,
       );
-      if (!enrichment && scraped?.fulltext) {
-        // TODO: 调用 AI 生成摘要
-        // 暂时使用截取的描述
-        const summary = result.description || scraped.fulltext.slice(0, 300);
+      if (!enrichment && (scraped?.fulltext || result.description)) {
+        // 调用 AI 生成摘要
+        const { result: aiSummary } = await this.aiService.generateSummary(
+          {
+            title: result.title,
+            description: result.description,
+            fulltext: scraped?.fulltext,
+            url: result.url,
+          },
+          locale,
+          billingBreakdown,
+        );
         enrichment = await this.contentService.createEnrichment(
           content.id,
           content.canonicalUrlHash,
           locale,
-          summary,
+          aiSummary,
         );
       }
 

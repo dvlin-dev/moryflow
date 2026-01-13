@@ -1184,18 +1184,18 @@ v2+ 策略（可选）：
 
 **订阅管理**：
 
-| 方法   | 路径                                        | 说明                         |
-| ------ | ------------------------------------------- | ---------------------------- |
-| POST   | `/api/v1/console/digests`                   | 创建订阅                     |
-| GET    | `/api/v1/console/digests`                   | 列表                         |
-| GET    | `/api/v1/console/digests/:id`               | 详情                         |
-| PATCH  | `/api/v1/console/digests/:id`               | 更新/启停                    |
-| DELETE | `/api/v1/console/digests/:id`               | 软删除                       |
-| POST   | `/api/v1/console/digests/:id/run`           | 手动触发一次                 |
-| GET    | `/api/v1/console/digests/:id/preview`       | 预览下期选题（不写入 Inbox） |
-| GET    | `/api/v1/console/digests/:id/runs`          | 执行历史                     |
-| GET    | `/api/v1/console/digests/runs/:runId`       | 单次 run 详情（含 items）    |
-| POST   | `/api/v1/console/digests/runs/:runId/retry` | 重试失败的 run（不重复扣费） |
+| 方法   | 路径                                        | 说明                                   |
+| ------ | ------------------------------------------- | -------------------------------------- |
+| POST   | `/api/v1/console/digests`                   | 创建订阅                               |
+| GET    | `/api/v1/console/digests`                   | 列表                                   |
+| GET    | `/api/v1/console/digests/:id`               | 详情                                   |
+| PATCH  | `/api/v1/console/digests/:id`               | 更新/启停                              |
+| DELETE | `/api/v1/console/digests/:id`               | 软删除                                 |
+| POST   | `/api/v1/console/digests/:id/run`           | 手动触发一次                           |
+| POST   | `/api/v1/console/digests/:id/preview`       | 预览下期选题（不写入 Inbox）✅ Phase 2 |
+| GET    | `/api/v1/console/digests/:id/runs`          | 执行历史                               |
+| GET    | `/api/v1/console/digests/runs/:runId`       | 单次 run 详情（含 items）              |
+| POST   | `/api/v1/console/digests/runs/:runId/retry` | 重试失败的 run（不重复扣费）           |
 
 **Web Inbox**：
 
@@ -1233,7 +1233,7 @@ v2+ 策略（可选）：
 | PATCH  | `/api/v1/digests/:id`                 | 更新/启停                                                    |
 | DELETE | `/api/v1/digests/:id`                 | 软删除                                                       |
 | POST   | `/api/v1/digests/:id/run`             | 手动触发一次（计费：按本次 Fetchx 实际成本汇总；缓存也收费） |
-| GET    | `/api/v1/digests/:id/preview`         | 预览下期选题（建议不计费，但需限流）                         |
+| POST   | `/api/v1/digests/:id/preview`         | 预览下期选题（建议不计费，但需限流）✅ Phase 2               |
 | GET    | `/api/v1/digests/:id/runs`            | 执行历史                                                     |
 | GET    | `/api/v1/digests/runs/:runId`         | run 详情（含 items）                                         |
 | GET    | `/api/v1/digests/inbox/items`         | Web Inbox 条目列表（分页/筛选）                              |
@@ -1242,7 +1242,7 @@ v2+ 策略（可选）：
 计费建议：
 
 - `POST /digests/:id/run`：计费（一次 run 一次扣费；失败不收费）
-- `GET /digests/:id/preview`：不计费（否则用户无法调参），但**必须做严格频控**
+- `POST /digests/:id/preview`：不计费（否则用户无法调参），但**必须做严格频控**
 
 **Preview 接口滥用防护（必须做）**：
 
@@ -2195,12 +2195,12 @@ model DigestTopic {
 
 ## 8. 实施阶段（建议按产品闭环推进）
 
-**实施进度（2026-01-13 更新）**：
+**实施进度（2026-01-13 Phase 2 完成）**：
 
 | 阶段                     | 状态        | 说明                                                  |
 | ------------------------ | ----------- | ----------------------------------------------------- |
 | Phase 1: MVP             | ✅ 完成     | Prisma + 后端服务 + API + Console UI                  |
-| Phase 2: AI              | ⬜ 未开始   | AI 总结、Writer 叙事、Explainability                  |
+| Phase 2: AI              | ✅ 完成     | AI 总结、Writer 叙事、Explainability、Preview API     |
 | Phase 2.5: Public Topics | 🚧 部分完成 | 数据模型 + Public API + SEO 页面已完成；发布/治理待做 |
 | Phase 3: 多源            | ⬜ 未开始   | RSS/Site crawl/Scheduled refresh                      |
 | Phase 4: 多渠道          | ⬜ 未开始   | Webhook/Email/反馈学习                                |
@@ -2217,12 +2217,51 @@ model DigestTopic {
 - [x] Scheduler：扫描 due → 创建 run → 入队执行
 - [x] run 级计费：按 Fetchx 成本"按 run 汇总扣一次"（命中缓存也收费）
 
-### Phase 2：AI（让“知识策展”真的成立，1 周）
+### Phase 2：AI（让"知识策展"真的成立，1 周）✅ 已完成
 
-- [ ] 内容级 AI 总结缓存（LLM → ContentItem.aiSummary，全局复用）
-- [ ] Writer 叙事摘要（LLM → DigestRun.narrativeMarkdown）
-- [ ] Explainability：每条 item 带简短 reason（先启发式；可选 LLM 生成更自然的解释）
-- [ ] 预览接口（不写入 Inbox）
+- [x] 内容级 AI 总结缓存（LLM → ContentItemEnrichment.aiSummary，按 canonicalUrlHash + locale 全局复用）
+- [x] Writer 叙事摘要（LLM → DigestRun.narrativeMarkdown）
+- [x] Explainability：每条 item 带简短 reason（启发式 + 可选 LLM 增强）
+- [x] 预览接口（不写入 Inbox）：POST /api/console/digest/subscriptions/:id/preview
+
+**Phase 2 实现细节**：
+
+| 组件                 | 文件                          | 说明                  |
+| -------------------- | ----------------------------- | --------------------- |
+| DigestAiService      | `services/ai.service.ts`      | AI 核心服务           |
+| DigestPreviewService | `services/preview.service.ts` | 预览执行服务          |
+| AI Prompts           | `digest.constants.ts`         | Prompt 模板（v1.0.0） |
+
+**AI 服务方法**：
+
+- `generateSummary(input, locale, billing)` → 内容摘要（2-3 句话）
+- `generateNarrative(items, context, locale, billing)` → 叙事稿（Markdown）
+- `generateReason(input, context, billing)` → 评分解释增强
+- `generateSummaryBatch(inputs, locale, billing, concurrency)` → 批量摘要
+
+**计费成本（credits）**：
+
+| 操作               | 成本 |
+| ------------------ | ---- |
+| `ai.summary`       | 0.5  |
+| `ai.narrative`     | 2    |
+| `ai.explainReason` | 0.2  |
+
+**Preview API**：
+
+```
+POST /api/console/digest/subscriptions/:id/preview
+Query:
+  - includeNarrative: boolean (default: false) - 是否生成叙事稿
+  - locale: string (default: 'en') - 输出语言
+
+Response:
+{
+  items: [{ title, url, aiSummary?, scoreOverall, scoringReason?, rank }],
+  narrative?: string,
+  stats: { itemsCandidate, itemsSelected }
+}
+```
 
 ### Phase 2.5：Public Topics + SEO（增长闭环，1-2 周）🚧 部分完成
 
@@ -2263,27 +2302,42 @@ model DigestTopic {
 
 ---
 
-## 10. 文件结构（建议）
+## 10. 文件结构（实际实现）
 
 ```
 apps/aiget/server/src/digest/
-  digest.module.ts
-  digest.controller.ts
-  digest.service.ts
-  digest.scheduler.ts
-  digest.processor.ts
+  digest.module.ts                    # NestJS 模块定义
+  digest.constants.ts                 # 常量、计费规则、AI Prompts
   dto/
-    digest.schema.ts
-  scoring/
-    digest-scorer.service.ts
-  sources/
-    digest-source.interface.ts
-    search-source.service.ts
-    rss-source.service.ts
-    site-crawl-source.service.ts
-  delivery/
-    email-delivery.service.ts
-    webhook-delivery.service.ts
+    index.ts                          # DTO 导出
+    subscription.schema.ts            # Zod schemas（含 Preview）
+    inbox.schema.ts
+    run.schema.ts
+    topic.schema.ts
+  services/
+    index.ts                          # 服务导出
+    subscription.service.ts           # 订阅 CRUD
+    content.service.ts                # 内容池管理 + Enrichment 缓存
+    run.service.ts                    # 运行记录管理
+    inbox.service.ts                  # Web Inbox 管理
+    topic.service.ts                  # Public Topics
+    ai.service.ts                     # AI 摘要/叙事/解释生成 ✅ Phase 2
+    preview.service.ts                # 预览服务 ✅ Phase 2
+  processors/
+    index.ts
+    subscription-scheduler.processor.ts  # 调度器（扫描 due 订阅）
+    subscription-run.processor.ts        # 运行执行器（搜索→评分→AI→投递）
+  controllers/
+    index.ts
+    digest-console-subscription.controller.ts  # Console 订阅管理
+    digest-console-inbox.controller.ts         # Console Inbox
+    digest-console-run.controller.ts           # Console 运行历史
+    digest-console-topic.controller.ts         # Console 话题管理
+    digest-public-topic.controller.ts          # Public Topics API
+    digest-admin.controller.ts                 # Admin API
+  utils/
+    scoring.utils.ts                  # 评分工具函数
+    url.utils.ts                      # URL 工具函数
 ```
 
 ---
