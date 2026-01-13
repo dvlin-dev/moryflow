@@ -22,6 +22,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
+- Agent + `@aiget/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
@@ -75,6 +76,7 @@ pnpm --filter @aiget/aiget-server prisma:studio:vector
 | ---------------- | ----- | -------------------------------------------- | ------------------------- |
 | `scraper/`       | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
 | `common/`        | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
+| `agent/`         | 8     | L3 Agent API + Browser Tools                 | -                         |
 | `admin/`         | 16    | Admin dashboard APIs                         | -                         |
 | `oembed/`        | 18    | oEmbed provider support                      | -                         |
 | `billing/`       | 5     | Billing rules + deduct/refund                | -                         |

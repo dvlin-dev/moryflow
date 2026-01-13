@@ -17,7 +17,7 @@ export const CreateAgentTaskSchema = z.object({
   /** 可选的起始 URL 列表 */
   urls: z.array(z.string().url()).max(10).optional(),
   /** 输出格式 JSON Schema（可选，不传则返回纯文本） */
-  schema: z.record(z.unknown()).optional(),
+  schema: z.record(z.string(), z.unknown()).optional(),
   /** 最大消耗 credits（可选，默认无限制） */
   maxCredits: z.number().int().positive().optional(),
   /** 是否流式返回（默认 true） */

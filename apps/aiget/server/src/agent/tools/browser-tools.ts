@@ -3,10 +3,10 @@
  *
  * [PROVIDES]: Agent 可使用的浏览器操作工具
  * [DEPENDS]: @aiget/agents-core, browser 模块
- * [POS]: 将 L2 Browser API 封装为 Agent Tools
+ * [POS]: 将 L2 Browser API 封装为 Agent Tools（类型边界做降级，避免 typecheck OOM）
  */
 
-import { tool } from '@aiget/agents-core';
+import { tool, type Tool } from '@aiget/agents-core';
 import { z } from 'zod';
 import type { BrowserSession } from '../../browser/session';
 import type { SnapshotService } from '../../browser/snapshot';
@@ -83,8 +83,8 @@ export const snapshotTool = tool({
 返回的 ref 可用于后续 click、fill 等操作。
 - interactive=true: 仅返回可交互元素（button, link, input 等）
 - 每次操作后应调用此工具以了解页面变化`,
-  parameters: snapshotSchema,
-  execute: async (input, runContext) => {
+  parameters: snapshotSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -106,8 +106,8 @@ export const snapshotTool = tool({
 export const clickTool = tool({
   name: 'browser_click',
   description: '点击指定元素。使用 @ref 格式（如 @e1）或 CSS 选择器定位元素。',
-  parameters: selectorSchema,
-  execute: async (input, runContext) => {
+  parameters: selectorSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -116,6 +116,7 @@ export const clickTool = tool({
     return await actionHandler.execute(session, {
       type: 'click',
       selector: input.selector,
+      timeout: 5000,
     });
   },
 });
@@ -124,8 +125,8 @@ export const clickTool = tool({
 export const fillTool = tool({
   name: 'browser_fill',
   description: '在输入框中填写文本。会先清空原有内容，然后填入新内容。',
-  parameters: fillSchema,
-  execute: async (input, runContext) => {
+  parameters: fillSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -135,6 +136,7 @@ export const fillTool = tool({
       type: 'fill',
       selector: input.selector,
       value: input.value,
+      timeout: 5000,
     });
   },
 });
@@ -144,8 +146,8 @@ export const typeTool = tool({
   name: 'browser_type',
   description:
     '在输入框中逐字输入文本。不会清空原有内容，适合追加输入或触发输入事件。',
-  parameters: typeSchema,
-  execute: async (input, runContext) => {
+  parameters: typeSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -155,6 +157,7 @@ export const typeTool = tool({
       type: 'type',
       selector: input.selector,
       value: input.text,
+      timeout: 5000,
     });
   },
 });
@@ -163,8 +166,8 @@ export const typeTool = tool({
 export const openTool = tool({
   name: 'browser_open',
   description: '在浏览器中打开指定 URL。',
-  parameters: urlSchema,
-  execute: async (input, runContext) => {
+  parameters: urlSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -188,8 +191,8 @@ export const openTool = tool({
 export const searchTool = tool({
   name: 'web_search',
   description: '使用搜索引擎搜索信息。返回搜索结果页面的快照。',
-  parameters: querySchema,
-  execute: async (input, runContext) => {
+  parameters: querySchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -212,8 +215,8 @@ export const searchTool = tool({
 export const getTextTool = tool({
   name: 'browser_getText',
   description: '获取指定元素的文本内容。',
-  parameters: selectorSchema,
-  execute: async (input, runContext) => {
+  parameters: selectorSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -222,6 +225,7 @@ export const getTextTool = tool({
     return await actionHandler.execute(session, {
       type: 'getText',
       selector: input.selector,
+      timeout: 5000,
     });
   },
 });
@@ -230,8 +234,8 @@ export const getTextTool = tool({
 export const scrollTool = tool({
   name: 'browser_scroll',
   description: '滚动页面或指定元素。可用于查看更多内容或加载懒加载项。',
-  parameters: scrollSchema,
-  execute: async (input, runContext) => {
+  parameters: scrollSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -242,6 +246,7 @@ export const scrollTool = tool({
       selector: input.selector,
       direction: input.direction,
       distance: input.distance,
+      timeout: 5000,
     });
   },
 });
@@ -250,8 +255,8 @@ export const scrollTool = tool({
 export const waitTool = tool({
   name: 'browser_wait',
   description: '等待指定条件满足。可等待时间、元素出现/消失、或文本出现。',
-  parameters: waitSchema,
-  execute: async (input, runContext) => {
+  parameters: waitSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -265,6 +270,7 @@ export const waitTool = tool({
         selectorGone: input.selectorGone,
         text: input.text,
       },
+      timeout: 5000,
     });
   },
 });
@@ -274,8 +280,8 @@ export const pressTool = tool({
   name: 'browser_press',
   description:
     '模拟按下键盘按键。可用于提交表单（Enter）、取消操作（Escape）等。',
-  parameters: pressSchema,
-  execute: async (input, runContext) => {
+  parameters: pressSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -285,6 +291,7 @@ export const pressTool = tool({
       type: 'press',
       selector: input.selector,
       key: input.key,
+      timeout: 5000,
     });
   },
 });
@@ -293,8 +300,8 @@ export const pressTool = tool({
 export const hoverTool = tool({
   name: 'browser_hover',
   description: '将鼠标悬停在指定元素上。可用于触发下拉菜单或工具提示。',
-  parameters: selectorSchema,
-  execute: async (input, runContext) => {
+  parameters: selectorSchema as any,
+  execute: async (input: any, runContext) => {
     const ctx = runContext?.context as BrowserToolContext | undefined;
     if (!ctx) {
       throw new Error('Browser context not available');
@@ -303,12 +310,13 @@ export const hoverTool = tool({
     return await actionHandler.execute(session, {
       type: 'hover',
       selector: input.selector,
+      timeout: 5000,
     });
   },
 });
 
-/** 导出所有 Browser Tools */
-export const browserTools = [
+/** 导出所有 Browser Tools（使用显式类型避免复杂类型推断） */
+export const browserTools: Tool[] = [
   snapshotTool,
   clickTool,
   fillTool,

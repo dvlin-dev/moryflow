@@ -10,10 +10,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   Agent,
   run,
-  RunResult,
-  StreamedRunResult,
-  RunStreamEvent,
+  type RunStreamEvent,
 } from '@aiget/agents-core';
+
+// 使用 any 类型别名避免 agents-core 复杂泛型导致 TypeScript OOM
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRunResult = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyStreamedRunResult = any;
 import { z } from 'zod';
 import { SessionManager } from '../browser/session';
 import { SnapshotService } from '../browser/snapshot';
@@ -163,7 +167,7 @@ export class AgentService {
           temperature: 0.7,
           maxTokens: 4096,
         },
-      });
+      } as any);
 
       // 构建上下文
       const context: BrowserToolContext = {
@@ -180,15 +184,17 @@ export class AgentService {
       }
 
       // 执行 Agent
-      const result = await run(agent, userPrompt, {
-        context,
+      const result = (await run(agent as any, userPrompt, {
+        context: context as any,
         maxTurns: 20,
-      });
+      } as any)) as AnyRunResult;
 
       // 从结果中提取工具调用次数
       const toolCallCount =
-        result.state?.allItems?.filter((item) => item.type === 'tool_call_item')
-          .length ?? 0;
+        result.state?.allItems?.filter(
+          (item: unknown) =>
+            (item as { type?: unknown } | null)?.type === 'tool_call_item',
+        ).length ?? 0;
       billing.toolCallCount = toolCallCount;
 
       // 计算 credits（P1 计费模型优化）
@@ -294,7 +300,7 @@ export class AgentService {
           temperature: 0.7,
           maxTokens: 4096,
         },
-      });
+      } as any);
 
       // 构建上下文
       const context: BrowserToolContext = {
@@ -313,11 +319,11 @@ export class AgentService {
       yield { type: 'thinking', content: '正在分析任务需求...' };
 
       // 使用流式 API 执行 Agent
-      const streamResult = (await run(agent, userPrompt, {
-        context,
+      const streamResult = (await run(agent as any, userPrompt, {
+        context: context as any,
         maxTurns: 20,
         stream: true,
-      })) as StreamedRunResult<BrowserToolContext, typeof agent>;
+      } as any)) as AnyStreamedRunResult;
 
       // 处理流式事件并追踪计费
       for await (const event of streamResult) {
@@ -465,7 +471,7 @@ export class AgentService {
    * 从流式结果计算 credits（P1 计费模型优化）
    */
   private calculateCreditsFromStream(
-    result: StreamedRunResult<unknown, unknown>,
+    result: AnyStreamedRunResult,
     billing?: BillingParams,
   ): number {
     let credits = BILLING_CONSTANTS.BASE_CREDITS;
@@ -574,7 +580,7 @@ export class AgentService {
    * credits = 基础费 + token费 + 工具调用费 + 时长费
    */
   private calculateCredits(
-    result: RunResult<unknown, unknown>,
+    result: AnyRunResult,
     billing?: BillingParams,
   ): number {
     let credits = BILLING_CONSTANTS.BASE_CREDITS;

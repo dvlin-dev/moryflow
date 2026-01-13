@@ -65,7 +65,7 @@ export class AgentController {
       throw new HttpException(
         {
           message: 'Invalid request body',
-          errors: parseResult.error.errors,
+          errors: parseResult.error.issues,
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -174,7 +174,7 @@ export class AgentController {
       throw new HttpException(
         {
           message: 'Invalid request body',
-          errors: parseResult.error.errors,
+          errors: parseResult.error.issues,
         },
         HttpStatus.BAD_REQUEST,
       );

@@ -16,7 +16,7 @@
     "prelint": "pnpm prisma:generate",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "pretypecheck": "pnpm prisma:generate",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS='--max-old-space-size=16384' tsc --noEmit",
     "pretest": "pnpm prisma:generate",
     "test": "vitest run",
     "test:watch": "vitest",
