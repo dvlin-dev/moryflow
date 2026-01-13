@@ -1297,20 +1297,20 @@ export class AgentController {
 
 | Phase | 名称 | 状态 | 完成度 |
 |-------|------|------|--------|
-| Phase 1 | L2 Browser 基础架构 | 🔲 待开始 | 0/4 |
-| Phase 2 | Snapshot + Ref 系统 | 🔲 待开始 | 0/3 |
-| Phase 3 | L2 完整 Action | 🔲 待开始 | 0/3 |
-| Phase 4 | L3 Agent 基础（SDK） | 🔲 待开始 | 0/4 |
-| Phase 5 | L3 高级功能 | 🔲 待开始 | 0/3 |
+| Phase 1 | L2 Browser 基础架构 | ✅ 已完成 | 4/4 |
+| Phase 2 | Snapshot + Ref 系统 | ✅ 已完成 | 3/3 |
+| Phase 3 | L2 完整 Action | ✅ 已完成 | 3/3 |
+| Phase 4 | L3 Agent 基础（SDK） | ✅ 已完成 | 4/4 |
+| Phase 5 | L3 高级功能 | ✅ 已完成 | 3/3 |
 
 ### Phase 1: L2 Browser 基础架构
 
 | 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
 |------|------|------|----------|----------|
-| 1.1 | 创建 browser 模块骨架 | 🔲 待开始 | `browser.module.ts`, `browser.controller.ts`, `browser.service.ts` | - |
-| 1.2 | 定义 DTO 和 Zod Schema | 🔲 待开始 | `dto/browser.schema.ts` | - |
-| 1.3 | 实现 session 管理 | 🔲 待开始 | `session/session.manager.ts` | - |
-| 1.4 | 实现 open/close 基础功能 | 🔲 待开始 | 整合到 `browser.service.ts` | - |
+| 1.1 | 创建 browser 模块骨架 | ✅ 已完成 | `browser.module.ts`, `browser-session.controller.ts`, `browser-session.service.ts` | 2026-01-13 |
+| 1.2 | 定义 DTO 和 Zod Schema | ✅ 已完成 | `dto/browser-session.schema.ts` | 2026-01-13 |
+| 1.3 | 实现 session 管理 | ✅ 已完成 | `session/session.manager.ts` | 2026-01-13 |
+| 1.4 | 实现 open/close 基础功能 | ✅ 已完成 | 整合到 `browser-session.service.ts` | 2026-01-13 |
 
 **1.1 创建 browser 模块骨架**
 - 创建 `apps/aiget/server/src/browser/` 目录结构
@@ -1340,9 +1340,9 @@ export class AgentController {
 
 | 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
 |------|------|------|----------|----------|
-| 2.1 | 实现 snapshot 服务 | 🔲 待开始 | `snapshot/snapshot.service.ts` | - |
-| 2.2 | 实现 ref 系统 | 🔲 待开始 | 整合到 `session/session.manager.ts` | - |
-| 2.3 | action 支持 @ref 语法 | 🔲 待开始 | `handlers/action.handler.ts` | - |
+| 2.1 | 实现 snapshot 服务 | ✅ 已完成 | `snapshot/snapshot.service.ts` | 2026-01-13 |
+| 2.2 | 实现 ref 系统 | ✅ 已完成 | 整合到 `session/session.manager.ts` | 2026-01-13 |
+| 2.3 | action 支持 @ref 语法 | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
 
 **2.1 实现 snapshot 服务**
 - 基于 Playwright `locator.ariaSnapshot()` API
@@ -1365,9 +1365,9 @@ export class AgentController {
 
 | 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
 |------|------|------|----------|----------|
-| 3.1 | 实现交互类 action | 🔲 待开始 | `handlers/action.handler.ts` | - |
-| 3.2 | 实现信息获取 action | 🔲 待开始 | `handlers/action.handler.ts` | - |
-| 3.3 | 实现截图功能 | 🔲 待开始 | `browser.controller.ts` | - |
+| 3.1 | 实现交互类 action | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
+| 3.2 | 实现信息获取 action | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
+| 3.3 | 实现截图功能 | ✅ 已完成 | `browser-session.service.ts` | 2026-01-13 |
 
 **3.1 实现交互类 action**
 - `click`, `dblclick`, `fill`, `type`, `press`
@@ -1385,14 +1385,14 @@ export class AgentController {
 - 支持全页截图和元素截图
 - 返回 base64 编码图片
 
-### Phase 4: L3 Agent 基础（使用 @moryflow/agents SDK）
+### Phase 4: L3 Agent 基础（使用 @aiget/agents-core SDK）
 
 | 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
 |------|------|------|----------|----------|
-| 4.1 | 创建 agent 模块骨架 | 🔲 待开始 | `agent.module.ts`, `agent.controller.ts`, `agent.service.ts` | - |
-| 4.2 | 定义 Browser Tools | 🔲 待开始 | `agent/tools/browser-tools.ts` | - |
-| 4.3 | 实现异步任务系统 | 🔲 待开始 | 使用 BullMQ | - |
-| 4.4 | 实现 Agent 执行逻辑 | 🔲 待开始 | `agent.service.ts` | - |
+| 4.1 | 创建 agent 模块骨架 | ✅ 已完成 | `agent.module.ts`, `agent.controller.ts`, `agent.service.ts` | 2026-01-13 |
+| 4.2 | 定义 Browser Tools | ✅ 已完成 | `agent/tools/browser-tools.ts` | 2026-01-13 |
+| 4.3 | 实现异步任务系统 | ✅ 已完成 | 使用内存 Map + TTL 清理 | 2026-01-13 |
+| 4.4 | 实现 Agent 执行逻辑 | ✅ 已完成 | `agent.service.ts` | 2026-01-13 |
 
 **4.1 创建 agent 模块骨架**
 - 创建 `apps/aiget/server/src/agent/` 目录
@@ -1420,9 +1420,9 @@ export class AgentController {
 
 | 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
 |------|------|------|----------|----------|
-| 5.1 | 增强 Tools（更多动作） | 🔲 待开始 | `agent/tools/browser-tools.ts` | - |
-| 5.2 | 实现 credits 消耗追踪 | 🔲 待开始 | `agent.service.ts` | - |
-| 5.3 | 流式输出支持 | 🔲 待开始 | 使用 SDK `Runner.runStreaming()` | - |
+| 5.1 | 增强 Tools（更多动作） | ✅ 已完成 | `agent/tools/browser-tools.ts`（11 个工具） | 2026-01-13 |
+| 5.2 | 实现 credits 消耗追踪 | ✅ 已完成 | `agent.service.ts`（token 计费） | 2026-01-13 |
+| 5.3 | 流式输出支持 | ✅ 已完成 | SSE 实现 + SDK stream: true | 2026-01-13 |
 
 **5.1 增强 Tools**
 - 添加更多 Browser 操作：`select`, `hover`, `check`, `uncheck`
