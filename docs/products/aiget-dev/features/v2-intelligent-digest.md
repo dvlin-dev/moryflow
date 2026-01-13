@@ -2195,15 +2195,15 @@ model DigestTopic {
 
 ## 8. 实施阶段（建议按产品闭环推进）
 
-**实施进度（2026-01-13 Phase 2 完成）**：
+**实施进度（2026-01-13 Phase 2.5 完成）**：
 
-| 阶段                     | 状态        | 说明                                                  |
-| ------------------------ | ----------- | ----------------------------------------------------- |
-| Phase 1: MVP             | ✅ 完成     | Prisma + 后端服务 + API + Console UI                  |
-| Phase 2: AI              | ✅ 完成     | AI 总结、Writer 叙事、Explainability、Preview API     |
-| Phase 2.5: Public Topics | 🚧 部分完成 | 数据模型 + Public API + SEO 页面已完成；发布/治理待做 |
-| Phase 3: 多源            | ⬜ 未开始   | RSS/Site crawl/Scheduled refresh                      |
-| Phase 4: 多渠道          | ⬜ 未开始   | Webhook/Email/反馈学习                                |
+| 阶段                     | 状态      | 说明                                                 |
+| ------------------------ | --------- | ---------------------------------------------------- |
+| Phase 1: MVP             | ✅ 完成   | Prisma + 后端服务 + API + Console UI                 |
+| Phase 2: AI              | ✅ 完成   | AI 总结、Writer 叙事、Explainability、Preview API    |
+| Phase 2.5: Public Topics | ✅ 完成   | 数据模型 + Public API + SEO 页面 + Console 发布/治理 |
+| Phase 3: 多源            | ⬜ 未开始 | RSS/Site crawl/Scheduled refresh                     |
+| Phase 4: 多渠道          | ⬜ 未开始 | Webhook/Email/反馈学习                               |
 
 ### Phase 1：MVP（跑通 C 端闭环，1-2 周）✅ 已完成
 
@@ -2263,15 +2263,15 @@ Response:
 }
 ```
 
-### Phase 2.5：Public Topics + SEO（增长闭环，1-2 周）🚧 部分完成
+### Phase 2.5：Public Topics + SEO（增长闭环，1-2 周）✅ 已完成
 
 > 目标：让 `aiget.dev` 有可索引的"话题/每期内容页"，并且一键把用户导向 `console.aiget.dev` 创建订阅。
 
 - [x] 数据模型：`DigestTopic`（slug/可见性/默认配置/统计）+ `DigestTopicEdition` + `DigestTopicEditionItem`
 - [x] Public API：`GET /api/v1/public/digest-topics`、`GET /api/v1/public/digest-topics/:slug`、`GET /api/v1/public/digest-topics/:slug/editions/:id`
-- [ ] Console：话题发布/下架（PUBLIC/PRIVATE；仅付费可 PRIVATE），以及"从话题订阅"（follow topic 或 fork config）
+- [x] Console：话题发布/下架（PUBLIC/UNLISTED/PRIVATE）+ 从话题订阅（FollowTopicPage）
 - [x] `apps/aiget/www`：话题目录页 + 话题详情页 + 每期内容页（SSR/SSG + OG/meta + sitemap）
-- [ ] 基础治理：spam/侵权举报入口 + 管理员下架开关（避免 SEO 被污染）
+- [x] 基础治理：举报入口（www ReportTopicDialog）+ 管理员下架（admin DigestReportsPage + pauseTopic）
 
 ### Phase 3：多源（提升内容质量与可控性，1-2 周）
 
@@ -2886,7 +2886,7 @@ Digest 在用户视角仍是"按 run 结算一次"，但计价更像"本次 run 
 - `App.tsx` - 添加 Digest 路由
 - `components/layout/app-sidebar.tsx` - 添加 Digest 导航菜单
 
-### Phase 2.5 部分实现文件
+### Phase 2.5 实现文件
 
 **Public Topics SEO 页面（apps/aiget/www/src/）**：
 
@@ -2895,10 +2895,32 @@ Digest 在用户视角仍是"按 run 结算一次"，但计价更像"本次 run 
 - `components/digest/edition-list-item.tsx` - 期刊列表项组件
 - `components/digest/edition-content-item.tsx` - 期刊内容项组件
 - `components/digest/topics-hero.tsx` - 话题页 Hero 组件
+- `components/digest/report-topic-dialog.tsx` - 举报话题对话框
 - `components/digest/index.ts` - 组件导出
 - `routes/topics/index.tsx` - 话题列表页（/topics）
 - `routes/topics/$slug/index.tsx` - 话题详情页（/topics/:slug）
 - `routes/topics/$slug/editions/$editionId.tsx` - 期刊详情页
+
+**Console 话题管理（apps/aiget/console/src/）**：
+
+- `pages/DigestTopicsPage.tsx` - 话题管理页面
+- `pages/FollowTopicPage.tsx` - 从话题订阅页面
+- `features/digest/constants.ts` - 共享常量（CRON_PRESETS, TIMEZONES）
+- `features/digest/components/topic-list.tsx` - 话题列表组件
+- `features/digest/components/edit-topic-dialog.tsx` - 编辑话题对话框
+- `features/digest/components/publish-topic-dialog.tsx` - 发布话题对话框
+
+**Admin 举报管理（apps/aiget/admin/www/src/）**：
+
+- `pages/DigestReportsPage.tsx` - 举报管理页面（含 pauseTopic 下架功能）
+- `features/digest-reports/` - 举报管理功能模块
+
+**后端服务（apps/aiget/server/src/digest/）**：
+
+- `services/report.service.ts` - 举报服务
+- `services/admin.service.ts` - Admin 管理服务
+- `controllers/digest-admin.controller.ts` - Admin 控制器
+- `dto/report.schema.ts` - 举报 DTO
 
 **共享 UI 组件（packages/ui/src/digest/）**：
 
