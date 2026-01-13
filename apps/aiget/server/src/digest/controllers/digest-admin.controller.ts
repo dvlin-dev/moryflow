@@ -32,7 +32,6 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { DigestAdminService } from '../services/admin.service';
 import { DigestReportService } from '../services/report.service';
 import {
-  ListReportsQuerySchema,
   ResolveReportSchema,
   type ListReportsQuery,
   type ResolveReportInput,

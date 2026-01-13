@@ -6,14 +6,13 @@
  * [POS]: 订阅运行执行服务，处理搜索、评分、去重、投递
  */
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SCORE_WEIGHTS, BILLING, PROMPT_VERSIONS } from '../digest.constants';
+import { SCORE_WEIGHTS, BILLING } from '../digest.constants';
 import type { ListRunsQuery } from '../dto';
 import type {
   DigestRun,
   DigestRunItem,
-  DigestSubscription,
   Prisma,
 } from '../../../generated/prisma-main/client';
 

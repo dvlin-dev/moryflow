@@ -14,10 +14,7 @@ import type {
   UpdateSubscriptionInput,
   ListSubscriptionsQuery,
 } from '../dto';
-import type {
-  DigestSubscription,
-  SubscriptionTier,
-} from '../../../generated/prisma-main/client';
+import type { DigestSubscription } from '../../../generated/prisma-main/client';
 
 @Injectable()
 export class DigestSubscriptionService {

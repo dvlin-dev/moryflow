@@ -154,10 +154,13 @@ export class DigestContentService {
     }
 
     try {
-      const { compressed, data } = JSON.parse(payload);
-      const buffer = Buffer.from(data, 'base64');
+      const parsed = JSON.parse(payload) as {
+        compressed: boolean;
+        data: string;
+      };
+      const buffer = Buffer.from(parsed.data, 'base64');
 
-      if (compressed) {
+      if (parsed.compressed) {
         const decompressed = await gunzip(buffer);
         return decompressed.toString('utf-8');
       }

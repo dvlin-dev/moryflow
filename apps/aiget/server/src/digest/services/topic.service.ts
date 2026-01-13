@@ -32,7 +32,6 @@ import type {
   DigestTopicEdition,
   DigestTopicEditionItem,
   DigestSubscription,
-  SubscriptionTier,
   Prisma,
 } from '../../../generated/prisma-main/client';
 

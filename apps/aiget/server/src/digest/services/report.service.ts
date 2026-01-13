@@ -21,7 +21,6 @@ import type {
 } from '../dto';
 import type {
   DigestTopicReport,
-  DigestTopicReportStatus,
   Prisma,
 } from '../../../generated/prisma-main/client';
 
