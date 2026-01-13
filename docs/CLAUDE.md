@@ -25,7 +25,7 @@
 ## 目录结构
 
 - `docs/index.md`：统一入口索引（新增/移动文档时首先更新这里）。
-- `docs/architecture/`：系统级架构决策与不变量（“最终真相”）；含 `adr/` 决策记录与 `auth/` 拆分文档。
+- `docs/architecture/`：系统级架构决策与不变量（"最终真相"）；含 `adr/` 决策记录与 `auth/` 拆分文档。
 - `docs/guides/`：开发指南（如何做、最佳实践、可复用做法）。
 - `docs/runbooks/`：运行手册（部署/排障/操作清单，照做即可）。
 - `docs/products/`：产品线内的内部方案（Aiget Dev / Moryflow）。

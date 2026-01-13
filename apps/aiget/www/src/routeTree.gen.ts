@@ -8,80 +8,150 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as MemoxRouteImport } from './routes/memox'
-import { Route as FetchxRouteImport } from './routes/fetchx'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as MemoxRouteImport } from './routes/memox';
+import { Route as FetchxRouteImport } from './routes/fetchx';
+import { Route as IndexRouteImport } from './routes/index';
+import { Route as TopicsIndexRouteImport } from './routes/topics/index';
+import { Route as TopicsSlugIndexRouteImport } from './routes/topics/$slug/index';
+import { Route as TopicsSlugEditionsEditionIdRouteImport } from './routes/topics/$slug/editions/$editionId';
 
 const MemoxRoute = MemoxRouteImport.update({
   id: '/memox',
   path: '/memox',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FetchxRoute = FetchxRouteImport.update({
   id: '/fetchx',
   path: '/fetchx',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const TopicsIndexRoute = TopicsIndexRouteImport.update({
+  id: '/topics/',
+  path: '/topics/',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const TopicsSlugIndexRoute = TopicsSlugIndexRouteImport.update({
+  id: '/topics/$slug/',
+  path: '/topics/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const TopicsSlugEditionsEditionIdRoute = TopicsSlugEditionsEditionIdRouteImport.update({
+  id: '/topics/$slug/editions/$editionId',
+  path: '/topics/$slug/editions/$editionId',
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/fetchx': typeof FetchxRoute
-  '/memox': typeof MemoxRoute
+  '/': typeof IndexRoute;
+  '/fetchx': typeof FetchxRoute;
+  '/memox': typeof MemoxRoute;
+  '/topics': typeof TopicsIndexRoute;
+  '/topics/$slug': typeof TopicsSlugIndexRoute;
+  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/fetchx': typeof FetchxRoute
-  '/memox': typeof MemoxRoute
+  '/': typeof IndexRoute;
+  '/fetchx': typeof FetchxRoute;
+  '/memox': typeof MemoxRoute;
+  '/topics': typeof TopicsIndexRoute;
+  '/topics/$slug': typeof TopicsSlugIndexRoute;
+  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/fetchx': typeof FetchxRoute
-  '/memox': typeof MemoxRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexRoute;
+  '/fetchx': typeof FetchxRoute;
+  '/memox': typeof MemoxRoute;
+  '/topics/': typeof TopicsIndexRoute;
+  '/topics/$slug/': typeof TopicsSlugIndexRoute;
+  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fetchx' | '/memox'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fetchx' | '/memox'
-  id: '__root__' | '/' | '/fetchx' | '/memox'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths:
+    | '/'
+    | '/fetchx'
+    | '/memox'
+    | '/topics'
+    | '/topics/$slug'
+    | '/topics/$slug/editions/$editionId';
+  fileRoutesByTo: FileRoutesByTo;
+  to:
+    | '/'
+    | '/fetchx'
+    | '/memox'
+    | '/topics'
+    | '/topics/$slug'
+    | '/topics/$slug/editions/$editionId';
+  id:
+    | '__root__'
+    | '/'
+    | '/fetchx'
+    | '/memox'
+    | '/topics/'
+    | '/topics/$slug/'
+    | '/topics/$slug/editions/$editionId';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  FetchxRoute: typeof FetchxRoute
-  MemoxRoute: typeof MemoxRoute
+  IndexRoute: typeof IndexRoute;
+  FetchxRoute: typeof FetchxRoute;
+  MemoxRoute: typeof MemoxRoute;
+  TopicsIndexRoute: typeof TopicsIndexRoute;
+  TopicsSlugIndexRoute: typeof TopicsSlugIndexRoute;
+  TopicsSlugEditionsEditionIdRoute: typeof TopicsSlugEditionsEditionIdRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/memox': {
-      id: '/memox'
-      path: '/memox'
-      fullPath: '/memox'
-      preLoaderRoute: typeof MemoxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/memox';
+      path: '/memox';
+      fullPath: '/memox';
+      preLoaderRoute: typeof MemoxRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/fetchx': {
-      id: '/fetchx'
-      path: '/fetchx'
-      fullPath: '/fetchx'
-      preLoaderRoute: typeof FetchxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/fetchx';
+      path: '/fetchx';
+      fullPath: '/fetchx';
+      preLoaderRoute: typeof FetchxRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/topics/': {
+      id: '/topics/';
+      path: '/topics';
+      fullPath: '/topics';
+      preLoaderRoute: typeof TopicsIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/topics/$slug/': {
+      id: '/topics/$slug/';
+      path: '/topics/$slug';
+      fullPath: '/topics/$slug';
+      preLoaderRoute: typeof TopicsSlugIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/topics/$slug/editions/$editionId': {
+      id: '/topics/$slug/editions/$editionId';
+      path: '/topics/$slug/editions/$editionId';
+      fullPath: '/topics/$slug/editions/$editionId';
+      preLoaderRoute: typeof TopicsSlugEditionsEditionIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -89,16 +159,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FetchxRoute: FetchxRoute,
   MemoxRoute: MemoxRoute,
-}
+  TopicsIndexRoute: TopicsIndexRoute,
+  TopicsSlugIndexRoute: TopicsSlugIndexRoute,
+  TopicsSlugEditionsEditionIdRoute: TopicsSlugEditionsEditionIdRoute,
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { getRouter } from './router.tsx';
+import type { createStart } from '@tanstack/react-start';
 declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

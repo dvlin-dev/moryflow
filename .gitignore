@@ -66,3 +66,5 @@ prisma/migrations/.migration_lock.toml
 sandbox-runtime/
 
 *.gz
+# Reference repos (not tracked)
+aigc-weekly-ref/
