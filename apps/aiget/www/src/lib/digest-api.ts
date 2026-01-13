@@ -54,6 +54,13 @@ export interface DigestEditionDetail extends DigestEditionSummary {
   items: DigestEditionItem[];
 }
 
+export type ReportReason = 'SPAM' | 'COPYRIGHT' | 'INAPPROPRIATE' | 'MISLEADING' | 'OTHER';
+
+export interface CreateReportInput {
+  reason: ReportReason;
+  description?: string;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   nextCursor: string | null;
@@ -173,5 +180,23 @@ export async function getEditionById(
   );
 
   const json = (await response.json()) as ApiResponse<DigestEditionDetail>;
+  return handleApiResponse(response, json);
+}
+
+/**
+ * Report a topic
+ */
+export async function reportTopic(
+  apiUrl: string,
+  slug: string,
+  input: Omit<CreateReportInput, 'topicId'>
+): Promise<{ reportId: string; message: string }> {
+  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics/${slug}/report`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+
+  const json = (await response.json()) as ApiResponse<{ reportId: string; message: string }>;
   return handleApiResponse(response, json);
 }

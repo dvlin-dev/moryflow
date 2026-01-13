@@ -19,6 +19,7 @@ import {
   Menu01Icon,
   Receipt,
   UserGroupIcon,
+  Flag01Icon,
 } from '@hugeicons/core-free-icons';
 import { cn } from '@aiget/ui/lib';
 import { Icon, type HugeIcon } from '@aiget/ui';
@@ -34,6 +35,7 @@ const navItems: { path: string; label: string; icon: HugeIcon }[] = [
   { path: '/queues', label: 'Queues', icon: LayersIcon },
   { path: '/errors', label: 'Errors', icon: Alert01Icon },
   { path: '/browser', label: 'Browser Pool', icon: AiBrowserIcon },
+  { path: '/digest/reports', label: 'Digest Reports', icon: Flag01Icon },
 ];
 
 export function MainLayout() {

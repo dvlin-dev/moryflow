@@ -48,6 +48,9 @@ thumbs.db
 *.swp
 *.swo
 
+# Claude Code
+.claude/settings.local.json
+
 # 数据库
 pg-data/
 

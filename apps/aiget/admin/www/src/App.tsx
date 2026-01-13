@@ -23,6 +23,7 @@ import JobDetailPage from './pages/JobDetailPage';
 import QueuesPage from './pages/QueuesPage';
 import ErrorsPage from './pages/ErrorsPage';
 import BrowserPage from './pages/BrowserPage';
+import DigestReportsPage from './pages/DigestReportsPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -142,6 +143,9 @@ function App() {
 
             {/* Browser - 浏览器池监控 */}
             <Route path="browser" element={<BrowserPage />} />
+
+            {/* Digest Reports - 举报管理 */}
+            <Route path="digest/reports" element={<DigestReportsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

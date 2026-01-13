@@ -8,10 +8,15 @@
 
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft01Icon, UserMultipleIcon, Calendar01Icon } from '@hugeicons/core-free-icons';
+import {
+  ArrowLeft01Icon,
+  UserMultipleIcon,
+  Calendar01Icon,
+  Flag01Icon,
+} from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Header, Footer, Container } from '@/components/layout';
-import { EditionListItem } from '@/components/digest';
+import { EditionListItem, ReportTopicDialog } from '@/components/digest';
 import {
   getTopicBySlug,
   getTopicEditions,
@@ -32,6 +37,7 @@ function TopicDetailPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   useEffect(() => {
     loadTopic();
@@ -163,13 +169,21 @@ function TopicDetailPage() {
                 )}
               </div>
 
-              <div className="shrink-0">
+              <div className="flex shrink-0 items-center gap-3">
                 <a
                   href={`https://console.aiget.dev/digest/follow/${topic.slug}`}
                   className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
                 >
                   Subscribe to this topic
                 </a>
+                <button
+                  onClick={() => setReportDialogOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900"
+                  title="Report this topic"
+                >
+                  <HugeiconsIcon icon={Flag01Icon} className="h-4 w-4" />
+                  <span className="sr-only">Report</span>
+                </button>
               </div>
             </div>
           </Container>
@@ -210,6 +224,13 @@ function TopicDetailPage() {
         </section>
       </main>
       <Footer />
+
+      <ReportTopicDialog
+        topicSlug={slug}
+        apiUrl={env.apiUrl}
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+      />
     </div>
   );
 }
