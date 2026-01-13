@@ -4,14 +4,14 @@ export const SCRAPE_QUEUE = 'scrape';
 export const CRAWL_QUEUE = 'crawl';
 export const BATCH_SCRAPE_QUEUE = 'batch-scrape';
 
-// Digest 队列名称
+// Digest 队列名称（BullMQ 不允许队列名包含冒号）
 export const DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE =
-  'digest:subscription-scheduler';
-export const DIGEST_SUBSCRIPTION_RUN_QUEUE = 'digest:subscription-run';
-export const DIGEST_TOPIC_SCHEDULER_QUEUE = 'digest:topic-scheduler';
-export const DIGEST_TOPIC_EDITION_QUEUE = 'digest:topic-edition-run';
-export const DIGEST_CONTENT_INGEST_QUEUE = 'digest:content-ingest';
-export const DIGEST_SOURCE_REFRESH_QUEUE = 'digest:source-refresh';
+  'digest-subscription-scheduler';
+export const DIGEST_SUBSCRIPTION_RUN_QUEUE = 'digest-subscription-run';
+export const DIGEST_TOPIC_SCHEDULER_QUEUE = 'digest-topic-scheduler';
+export const DIGEST_TOPIC_EDITION_QUEUE = 'digest-topic-edition-run';
+export const DIGEST_CONTENT_INGEST_QUEUE = 'digest-content-ingest';
+export const DIGEST_SOURCE_REFRESH_QUEUE = 'digest-source-refresh';
 
 // 任务名称
 export const SCREENSHOT_JOBS = {
