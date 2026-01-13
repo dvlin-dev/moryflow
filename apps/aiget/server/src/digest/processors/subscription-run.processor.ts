@@ -18,6 +18,7 @@ import {
 } from '../services/run.service';
 import { DigestContentService } from '../services/content.service';
 import { DigestAiService } from '../services/ai.service';
+import { DigestSourceService } from '../services/source.service';
 import { DIGEST_SUBSCRIPTION_RUN_QUEUE } from '../../queue/queue.constants';
 import type { DigestSubscriptionRunJobData } from '../../queue/queue.constants';
 import { BILLING } from '../digest.constants';
@@ -40,6 +41,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
     private readonly runService: DigestRunService,
     private readonly contentService: DigestContentService,
     private readonly aiService: DigestAiService,
+    private readonly sourceService: DigestSourceService,
   ) {
     super();
   }
@@ -75,10 +77,28 @@ export class SubscriptionRunProcessor extends WorkerHost {
 
       this.logger.debug(`Search returned ${searchResults.length} results`);
 
-      // 4. 抓取内容（可选）
+      // 3.5 获取其他源（RSS、Site Crawl）的内容
+      const sourceContents = await this.sourceService.fetchSourceContents(
+        subscriptionId,
+        subscription.contentWindowHours ?? 168,
+      );
+
+      this.logger.debug(
+        `Source contents returned ${sourceContents.length} items`,
+      );
+
+      // 3.6 合并搜索结果和源内容
+      const mergedContents = this.sourceService.mergeContents(
+        searchResults,
+        sourceContents,
+      );
+
+      this.logger.debug(`Merged ${mergedContents.length} total contents`);
+
+      // 4. 抓取内容（可选）- 对合并后的内容进行抓取
       const scrapedContents = await this.scrapeContents(
         userId,
-        searchResults,
+        mergedContents,
         subscription.scrapeLimit,
         billingBreakdown,
       );
@@ -86,7 +106,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
 
       // 5. 内容入池和评分（包含 AI 摘要生成）
       const scoredItems = await this.processAndScoreContents(
-        searchResults,
+        mergedContents,
         scrapedContents,
         subscription,
         outputLocale,
@@ -156,7 +176,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
       await this.runService.completeRun(
         runId,
         {
-          itemsCandidate: searchResults.length,
+          itemsCandidate: mergedContents.length,
           itemsSelected: selectedItems.length,
           itemsDelivered: deliveredIds.length,
           itemsDedupSkipped: dedupSkipped,

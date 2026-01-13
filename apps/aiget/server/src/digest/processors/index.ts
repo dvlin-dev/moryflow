@@ -7,3 +7,5 @@
 
 export * from './subscription-scheduler.processor';
 export * from './subscription-run.processor';
+export * from './source-scheduler.processor';
+export * from './source-refresh.processor';

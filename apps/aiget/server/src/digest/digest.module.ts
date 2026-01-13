@@ -20,12 +20,17 @@ import {
   DigestAdminService,
   DigestReportService,
   DigestRateLimitService,
+  DigestRssService,
+  DigestSiteCrawlService,
+  DigestSourceService,
 } from './services';
 
 // Processors
 import {
   SubscriptionSchedulerProcessor,
   SubscriptionRunProcessor,
+  SourceSchedulerProcessor,
+  SourceRefreshProcessor,
 } from './processors';
 
 // Controllers
@@ -46,6 +51,7 @@ import {
   DIGEST_TOPIC_EDITION_QUEUE,
   DIGEST_CONTENT_INGEST_QUEUE,
   DIGEST_SOURCE_REFRESH_QUEUE,
+  DIGEST_SOURCE_SCHEDULER_QUEUE,
 } from '../queue/queue.constants';
 
 // Dependencies
@@ -55,6 +61,7 @@ import { SearchModule } from '../search/search.module';
 import { ScraperModule } from '../scraper/scraper.module';
 import { BillingModule } from '../billing/billing.module';
 import { ExtractModule } from '../extract/extract.module';
+import { MapModule } from '../map/map.module';
 
 @Module({
   imports: [
@@ -65,6 +72,7 @@ import { ExtractModule } from '../extract/extract.module';
     ScraperModule,
     BillingModule,
     ExtractModule, // 提供 LlmClient
+    MapModule, // 提供 MapService
 
     // BullMQ 队列
     BullModule.registerQueue(
@@ -74,6 +82,7 @@ import { ExtractModule } from '../extract/extract.module';
       { name: DIGEST_TOPIC_EDITION_QUEUE },
       { name: DIGEST_CONTENT_INGEST_QUEUE },
       { name: DIGEST_SOURCE_REFRESH_QUEUE },
+      { name: DIGEST_SOURCE_SCHEDULER_QUEUE },
     ),
   ],
   controllers: [
@@ -101,10 +110,15 @@ import { ExtractModule } from '../extract/extract.module';
     DigestAdminService,
     DigestReportService,
     DigestRateLimitService,
+    DigestRssService,
+    DigestSiteCrawlService,
+    DigestSourceService,
 
     // Processors
     SubscriptionSchedulerProcessor,
     SubscriptionRunProcessor,
+    SourceSchedulerProcessor,
+    SourceRefreshProcessor,
   ],
   exports: [
     // 导出服务供其他模块使用

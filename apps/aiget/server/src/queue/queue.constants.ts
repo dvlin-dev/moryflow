@@ -12,6 +12,7 @@ export const DIGEST_TOPIC_SCHEDULER_QUEUE = 'digest-topic-scheduler';
 export const DIGEST_TOPIC_EDITION_QUEUE = 'digest-topic-edition-run';
 export const DIGEST_CONTENT_INGEST_QUEUE = 'digest-content-ingest';
 export const DIGEST_SOURCE_REFRESH_QUEUE = 'digest-source-refresh';
+export const DIGEST_SOURCE_SCHEDULER_QUEUE = 'digest-source-scheduler';
 
 // 任务名称
 export const SCREENSHOT_JOBS = {

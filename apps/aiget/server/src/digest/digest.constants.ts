@@ -204,6 +204,19 @@ export const TRENDING_WEIGHTS = {
   engagement: 0.3, // 用户行为信号
 } as const;
 
+// ========== 源配置默认值 ==========
+
+export const SOURCE_DEFAULTS = {
+  /** 内容窗口期（小时）- 7 天 */
+  contentWindowHours: 168,
+  /** 默认源权重 */
+  weight: 100,
+  /** RSS 默认最大条目数 */
+  rssMaxItems: 50,
+  /** Site Crawl 默认最大页面数 */
+  siteCrawlMaxPages: 20,
+} as const;
+
 // ========== BullMQ 队列名称 ==========
 
 export const QUEUE_NAMES = {
