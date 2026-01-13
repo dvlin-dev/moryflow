@@ -9,8 +9,8 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { AlertTriangleIcon } from '@hugeicons/core-free-icons';
+import { z } from 'zod/v3';
+import { Alert01Icon } from '@hugeicons/core-free-icons';
 import {
   Dialog,
   DialogContent,
@@ -202,7 +202,7 @@ export function PublishTopicDialog({
 
             {isPublic && (
               <Alert variant="default" className="border-amber-200 bg-amber-50 text-amber-800">
-                <Icon icon={AlertTriangleIcon} className="h-4 w-4" />
+                <Icon icon={Alert01Icon} className="h-4 w-4" />
                 <AlertDescription>
                   <strong>Public topics are visible to everyone.</strong> Your topic will appear in
                   the public directory and can be reported for spam or copyright issues. Make sure

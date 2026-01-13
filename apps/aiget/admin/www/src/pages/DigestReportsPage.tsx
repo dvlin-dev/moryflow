@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { CheckmarkSquare01Icon, Cancel01Icon, ViewIcon } from '@hugeicons/core-free-icons';
 import { PageHeader } from '@aiget/ui';
 import {
@@ -75,7 +75,7 @@ const statusConfig: Record<
 const resolveFormSchema = z.object({
   status: z.enum(['RESOLVED_VALID', 'RESOLVED_INVALID', 'DISMISSED'] as const),
   resolveNote: z.string().max(500).optional(),
-  pauseTopic: z.boolean().default(false),
+  pauseTopic: z.boolean(),
 });
 
 type ResolveFormValues = z.infer<typeof resolveFormSchema>;
