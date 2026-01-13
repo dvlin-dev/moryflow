@@ -1,4 +1,11 @@
-import { View, ActivityIndicator, Alert, TextInput } from 'react-native';
+/**
+ * [PROPS]: none（Expo Router Screen）
+ * [POS]: 文件编辑/详情页（基于 fileId），负责标题输入、内容编辑、保存/删除与返回控制
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { View, ActivityIndicator, Alert, type TextInput } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -6,24 +13,12 @@ import { EditorWithToolbar } from '@/components/editor/EditorWithToolbar';
 import { useVault, readFile, deleteFile, moveFile, writeFile, fileIndexManager } from '@/lib/vault';
 import { addRecentlyOpened } from '@/lib/vault/recently-opened';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useHideTabBar } from '@/lib/hooks/use-hide-tab-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FLOATING_BUTTON_SIZE, FLOATING_BUTTON_MARGIN, type SaveStatus } from './const';
-import { BackButton, MoreButton, SaveStatusIndicator } from './components';
+import { BackButton, MoreButton, SaveStatusIndicator, TitleInput } from './components';
 import { useTranslation } from '@aiget/i18n';
 
-/**
- * 文件编辑器页面（基于 fileId 路由）
- *
- * 特点：
- * - 使用 fileId 作为路由参数，文件重命名不影响 URL
- * - 通过 fileIndexManager 解析 fileId → path
- * - 悬浮按钮布局 + 自动保存 + 底部保存状态
- */
 export default function EditorByFileId() {
-  // 进入编辑器时隐藏底部导航栏
-  useHideTabBar();
-
   const { t } = useTranslation('common');
   const insets = useSafeAreaInsets();
   const { fileId } = useLocalSearchParams<{ fileId: string }>();
@@ -314,14 +309,12 @@ export default function EditorByFileId() {
         <View className="flex-1">
           {/* 文件标题（可编辑） */}
           <View className="px-4 pt-2 pb-3">
-            <TextInput
+            <TitleInput
               ref={titleInputRef}
               value={editingTitle}
               onChangeText={setEditingTitle}
               onBlur={handleTitleBlur}
               editable={!isRenaming}
-              className="text-xl font-semibold"
-              style={{ padding: 0, margin: 0 }}
               returnKeyType="done"
               onSubmitEditing={() => titleInputRef.current?.blur()}
               selectTextOnFocus

@@ -42,18 +42,19 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 常见修改场景
 
-| 场景           | 涉及文件      | 注意事项                           |
-| -------------- | ------------- | ---------------------------------- |
-| 新增状态       | `stores/`     | 遵循 Zustand 模式                  |
-| 新增 Hook      | `hooks/`      | use-xxx 命名规范                   |
-| 修改聊天逻辑   | `chat/`       | 注意与 Agent 运行时的交互          |
-| 修改知识库逻辑 | `vault/`      | 注意文件系统权限                   |
-| 修改会员逻辑   | `membership/` | 参考 docs/features/credits-system/ |
+| 场景           | 涉及文件      | 注意事项                                             |
+| -------------- | ------------- | ---------------------------------------------------- |
+| 新增状态       | `stores/`     | 遵循 Zustand 模式                                    |
+| 新增 Hook      | `hooks/`      | use-xxx 命名规范                                     |
+| 修改聊天逻辑   | `chat/`       | 注意与 Agent 运行时的交互                            |
+| 修改知识库逻辑 | `vault/`      | 注意文件系统权限                                     |
+| 修改会员逻辑   | `membership/` | 参考 docs/products/moryflow/features/credits-system/ |
 
 ## 近期变更
 
 - Cloud Sync 与 Vault 日志统一通过 `createLogger()` 输出
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖
+- 拆分并收敛全局 UI 状态：新增 `ChatSheetProvider`，移除无用的 TabBar 显隐 Context/Hook
 
 ## 依赖关系
 

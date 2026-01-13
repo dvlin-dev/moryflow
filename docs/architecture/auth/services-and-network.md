@@ -40,8 +40,8 @@ status: active
 - 4c6g（Moryflow 线）：
   - moryflow app/api + moryflow-postgres + moryflow-redis
 - 8c16g（Aiget Dev + 重服务）：
-  - console app/api + aigetdev-postgres + aigetdev-redis
-  - memox-vector-postgres（pgvector，独立实例）
+  - console app/api + aiget-postgres + aiget-redis
+  - aiget-vector-postgres（pgvector，独立实例）
   - agentsbox/memox workers（重任务）
 
 ## Moryflow 调 Memox（公网同一套 API）

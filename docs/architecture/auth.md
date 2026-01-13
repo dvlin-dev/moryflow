@@ -59,4 +59,8 @@ status: active
   - 认证与 Token：`docs/architecture/auth/auth-and-tokens.md`
   - 数据库：`docs/architecture/auth/database.md`
   - 配额与 API Keys：`docs/architecture/auth/quota-and-api-keys.md`
-- 改造与部署步骤：`docs/architecture/refactor-and-deploy-plan.md`
+- ADR（顶层前提）：`docs/architecture/adr/adr-0001-two-business-lines.md`
+- 部署 runbooks：
+  - megaboxpro 反代：`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`
+  - Aiget Dokploy：`docs/runbooks/deploy/aiget-dokploy.md`
+  - Moryflow compose：`docs/runbooks/deploy/moryflow-compose.md`

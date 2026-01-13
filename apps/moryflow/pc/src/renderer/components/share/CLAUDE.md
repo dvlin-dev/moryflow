@@ -4,15 +4,15 @@
 
 ## 组件结构
 
-| 文件 | 职责 |
-|------|------|
-| `share-popover.tsx` | Share Popover 主组件，包含面板切换逻辑 |
-| `publish-panel.tsx` | 发布面板，子域名输入和发布按钮 |
-| `site-settings-panel.tsx` | 站点设置面板，标题、描述、水印配置 |
-| `subdomain-input.tsx` | 子域名输入组件，带实时可用性检查 |
-| `use-share-popover.ts` | 状态管理 Hook，发布/下线/设置等操作 |
-| `const.ts` | 类型定义和常量 |
-| `index.ts` | 统一导出 |
+| 文件                      | 职责                                   |
+| ------------------------- | -------------------------------------- |
+| `share-popover.tsx`       | Share Popover 主组件，包含面板切换逻辑 |
+| `publish-panel.tsx`       | 发布面板，子域名输入和发布按钮         |
+| `site-settings-panel.tsx` | 站点设置面板，标题、描述、水印配置     |
+| `subdomain-input.tsx`     | 子域名输入组件，带实时可用性检查       |
+| `use-share-popover.ts`    | 状态管理 Hook，发布/下线/设置等操作    |
+| `const.ts`                | 类型定义和常量                         |
+| `index.ts`                | 统一导出                               |
 
 ## 设计原则
 
@@ -43,5 +43,5 @@ SharePopover
 
 ## 相关文档
 
-- 设计文档：`docs/features/site-publish/publish-ux-redesign.md`
+- 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
 - Sites CMS：`workspace/components/sites/CLAUDE.md`

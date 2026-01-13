@@ -32,25 +32,25 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 成员清单
 
-| 文件/目录            | 类型 | 说明                                 |
-| -------------------- | ---- | ------------------------------------ |
-| `app/`               | 目录 | 页面路由（Expo Router）              |
-| `app/(auth)/`        | 目录 | 认证相关页面（登录、注册、忘记密码） |
-| `app/(editor)/`      | 目录 | 编辑器页面                           |
-| `app/(settings)/`    | 目录 | 设置页面                             |
-| `app/(tabs)/`        | 目录 | Tab 导航页面（主页、知识库、聊天）   |
-| `components/`        | 目录 | UI 组件                              |
-| `components/ui/`     | 目录 | 通用 UI 组件（Button、Input 等）     |
-| `components/chat/`   | 目录 | 聊天相关组件                         |
-| `components/editor/` | 目录 | 编辑器组件                           |
-| `components/vault/`  | 目录 | 知识库组件                           |
-| `lib/`               | 目录 | 业务逻辑与工具                       |
-| `lib/agent-runtime/` | 目录 | Agent 运行时                         |
-| `lib/chat/`          | 目录 | 聊天逻辑                             |
-| `lib/hooks/`         | 目录 | 自定义 Hooks                         |
-| `lib/stores/`        | 目录 | Zustand 状态管理                     |
-| `lib/vault/`         | 目录 | 知识库逻辑                           |
-| `lib/membership/`    | 目录 | 会员与订阅逻辑                       |
+| 文件/目录            | 类型 | 说明                                         |
+| -------------------- | ---- | -------------------------------------------- |
+| `app/`               | 目录 | 页面路由（Expo Router）                      |
+| `app/(auth)/`        | 目录 | 认证相关页面（登录、注册、忘记密码）         |
+| `app/(editor)/`      | 目录 | 编辑器页面                                   |
+| `app/(settings)/`    | 目录 | 设置页面                                     |
+| `app/(tabs)/`        | 目录 | Tab 页面组（主页、搜索；含快速创建草稿动作） |
+| `components/`        | 目录 | UI 组件                                      |
+| `components/ui/`     | 目录 | 通用 UI 组件（Button、Input 等）             |
+| `components/chat/`   | 目录 | 聊天相关组件                                 |
+| `components/editor/` | 目录 | 编辑器组件                                   |
+| `components/vault/`  | 目录 | 知识库组件                                   |
+| `lib/`               | 目录 | 业务逻辑与工具                               |
+| `lib/agent-runtime/` | 目录 | Agent 运行时                                 |
+| `lib/chat/`          | 目录 | 聊天逻辑                                     |
+| `lib/hooks/`         | 目录 | 自定义 Hooks                                 |
+| `lib/stores/`        | 目录 | Zustand 状态管理                             |
+| `lib/vault/`         | 目录 | 知识库逻辑                                   |
+| `lib/membership/`    | 目录 | 会员与订阅逻辑                               |
 
 ## 常见修改场景
 
@@ -65,6 +65,8 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 ## 近期变更
 
 - 动态路由跳转统一使用对象形式 `{ pathname, params }`，避免 `any` 断言
+- Tab 导航改为真实 Tabs；「快速创建草稿」为动作按钮，不再是路由页重定向
+- 编辑器标题在暗黑模式下的颜色适配统一由 `TitleInput` 处理
 - 日志输出统一走 `createLogger()`，减少直接 `console.*` 调用
 - ESLint 补充 React 版本检测配置，移除 lint 警告提示
 
@@ -79,7 +81,7 @@ apps/mobile/
 
 ## 样式规范
 
-> 详细设计系统：→ `docs/features/mobile-design-system/proposal.md`
+> 详细设计系统：→ `docs/products/moryflow/features/mobile-design-system/proposal.md`
 
 ### 核心原则
 

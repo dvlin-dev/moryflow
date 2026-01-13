@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================
 # MoryFlow PC 发布脚本
-# 用法: ./apps/pc/scripts/release.sh <version>
-# 示例: ./apps/pc/scripts/release.sh 0.2.0
+# 用法: ./apps/moryflow/pc/scripts/release.sh <version>
+# 示例: ./apps/moryflow/pc/scripts/release.sh 0.2.0
 # ============================================
 
 set -e
@@ -29,11 +29,11 @@ if [ -z "$VERSION" ]; then
   echo ""
   echo "MoryFlow PC 发布脚本"
   echo ""
-  echo "用法: ./apps/pc/scripts/release.sh <version>"
+  echo "用法: ./apps/moryflow/pc/scripts/release.sh <version>"
   echo ""
   echo "示例:"
-  echo "  ./apps/pc/scripts/release.sh 0.2.0      # 正式版本"
-  echo "  ./apps/pc/scripts/release.sh 0.2.0-beta # 预发布版本"
+  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0      # 正式版本"
+  echo "  ./apps/moryflow/pc/scripts/release.sh 0.2.0-beta # 预发布版本"
   echo ""
   exit 1
 fi
@@ -67,7 +67,7 @@ if git rev-parse "v$VERSION" >/dev/null 2>&1; then
 fi
 
 # 3. 更新 package.json 版本
-info "更新 apps/pc/package.json 版本..."
+info "更新 apps/moryflow/pc/package.json 版本..."
 cd "$PC_DIR"
 # 使用 node 更新版本，避免 pnpm version 的副作用
 node -e "
@@ -81,7 +81,7 @@ cd "$ROOT_DIR"
 
 # 4. 提交版本更新
 info "提交版本更新..."
-git add apps/pc/package.json
+git add apps/moryflow/pc/package.json
 git commit -m "chore(release): bump version to $VERSION"
 
 # 5. 创建 tag

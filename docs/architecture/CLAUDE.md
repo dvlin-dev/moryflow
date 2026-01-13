@@ -18,9 +18,8 @@
 - `domains-and-deployment.md`：域名职责 + 三机部署（megaboxpro/4c6g/8c16g）+ 反代路由的可执行方案（含 OAuth 登录）。
   - Moryflow：`www.moryflow.com`（营销）+ `docs.moryflow.com`（文档）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
   - Aiget Dev：`aiget.dev`（官网）+ `server.aiget.dev`（API `/api/v1`）+ `docs.aiget.dev`（文档）+ `console.aiget.dev` / `admin.aiget.dev`（Web 前端）
-- `aiget-dokploy-deployment.md`：Aiget Dev Dokploy 多项目部署清单（可直接照填）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
-- `open-source-package.md`：从 Monorepo 拆分并开源单个包的可复用方案（Git Subtree 双向同步）。
-- `refactor-and-deploy-plan.md`：从现有项目到目标架构的改造步骤与部署 checklist。
-  - 端口与部署方式（Moryflow compose + Aiget Dokploy 多项目）以此文档为准。
+- `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
+
+> 说明：部署/操作类文档已迁移到 `docs/runbooks/`；开发指南类文档已迁移到 `docs/guides/`；旧计划文档归档于 `docs/_archived/`。

@@ -2,7 +2,7 @@
  * [INPUT]: (SyncDiffRequest, SyncCommitRequest) - 本地文件清单与同步提交请求
  * [OUTPUT]: (SyncActions[], 预签名URL) - 同步指令与 R2 上传/下载链接
  * [POS]: 云同步核心服务，基于向量时钟实现双向差异计算、冲突解决
- * [DOC]: docs/research/sync-refactor-proposal.md
+ * [DOC]: docs/products/moryflow/research/sync-refactor-proposal.md
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
