@@ -7,7 +7,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,6 @@ import {
   DialogTitle,
   Button,
   Input,
-  Label,
   Textarea,
   Select,
   SelectContent,
@@ -38,11 +37,11 @@ const formSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   topic: z.string().min(1, 'Topic is required').max(200),
   interests: z.string().optional(),
-  cron: z.string().default('0 8 * * 1'),
-  timezone: z.string().default('America/Los_Angeles'),
-  outputLocale: z.string().default('en'),
-  minItems: z.coerce.number().min(1).max(50).default(5),
-  searchLimit: z.coerce.number().min(10).max(100).default(60),
+  cron: z.string().min(1),
+  timezone: z.string().min(1),
+  outputLocale: z.string().min(1),
+  minItems: z.coerce.number().min(1).max(50),
+  searchLimit: z.coerce.number().min(10).max(100),
 });
 
 type FormValues = z.infer<typeof formSchema>;

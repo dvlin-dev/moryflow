@@ -5,7 +5,6 @@
  * [POS]: Displays list of user's subscriptions with actions
  */
 
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Calendar01Icon,

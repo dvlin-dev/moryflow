@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { MailCheckIcon, FilterIcon } from '@hugeicons/core-free-icons';
+import { MailCheck, FilterIcon } from '@hugeicons/core-free-icons';
 import {
   Button,
   Icon,
@@ -57,7 +57,7 @@ export default function DigestInboxPage() {
           onClick={() => markAllAsRead.mutate(undefined)}
           disabled={markAllAsRead.isPending || stats?.unread === 0}
         >
-          <Icon icon={MailCheckIcon} className="mr-2 h-4 w-4" />
+          <Icon icon={MailCheck} className="mr-2 h-4 w-4" />
           Mark all read
         </Button>
       </div>
