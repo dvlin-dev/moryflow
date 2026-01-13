@@ -152,6 +152,84 @@ export class BrowserSessionController {
     }
   }
 
+  // ==================== 多标签页管理 ====================
+
+  @Post(':id/tabs')
+  @ApiOperation({ summary: 'Create a new tab in the session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiCreatedResponse({ description: 'New tab created' })
+  async createTab(@Param('id') sessionId: string) {
+    try {
+      return await this.browserSessionService.createTab(sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Get(':id/tabs')
+  @ApiOperation({ summary: 'List all tabs in the session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiOkResponse({ description: 'List of tabs' })
+  async listTabs(@Param('id') sessionId: string) {
+    try {
+      return await this.browserSessionService.listTabs(sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/tabs/:tabIndex/activate')
+  @ApiOperation({ summary: 'Switch to a specific tab' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiParam({ name: 'tabIndex', description: 'Tab index to activate' })
+  @ApiOkResponse({ description: 'Tab activated' })
+  async switchTab(
+    @Param('id') sessionId: string,
+    @Param('tabIndex') tabIndex: string,
+  ) {
+    try {
+      return await this.browserSessionService.switchTab(
+        sessionId,
+        parseInt(tabIndex, 10),
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Delete(':id/tabs/:tabIndex')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Close a specific tab' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiParam({ name: 'tabIndex', description: 'Tab index to close' })
+  async closeTab(
+    @Param('id') sessionId: string,
+    @Param('tabIndex') tabIndex: string,
+  ) {
+    try {
+      await this.browserSessionService.closeTab(
+        sessionId,
+        parseInt(tabIndex, 10),
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  // ==================== 对话框历史 ====================
+
+  @Get(':id/dialogs')
+  @ApiOperation({ summary: 'Get dialog history for the session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiOkResponse({ description: 'List of recent dialogs' })
+  async getDialogHistory(@Param('id') sessionId: string) {
+    try {
+      return await this.browserSessionService.getDialogHistory(sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
   /**
    * 统一处理会话相关错误
    */

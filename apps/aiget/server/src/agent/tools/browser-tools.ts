@@ -94,6 +94,10 @@ export const snapshotTool = tool({
       interactive: input.interactive,
       maxDepth: input.maxDepth,
     });
+
+    // 更新会话的 refs 映射，确保后续操作可以使用新的 refs
+    session.refs = result.refs;
+
     return result.snapshot;
   },
 });

@@ -9,13 +9,24 @@
 export const DEFAULT_BILLING_COST = 1;
 
 export const BILLING_KEYS = [
-  // Fetchx
+  // Fetchx - L1 基础抓取
   'fetchx.scrape',
   'fetchx.batchScrape',
   'fetchx.crawl',
   'fetchx.map',
   'fetchx.extract',
   'fetchx.search',
+
+  // Fetchx - L2 Browser（P1 计费模型优化）
+  'fetchx.browser.session',
+  'fetchx.browser.screenshot',
+  'fetchx.browser.action',
+  'fetchx.browser.snapshot',
+  'fetchx.browser.tab',
+
+  // Fetchx - L3 Agent（动态计费）
+  'fetchx.agent',
+  'fetchx.agent.estimate',
 
   // Memox
   'memox.memory.create',
@@ -37,12 +48,23 @@ export interface BillingRule {
 }
 
 const BASE_RULES: Record<BillingKey, BillingRule> = {
+  // L1 基础抓取
   'fetchx.scrape': { cost: 1, skipIfFromCache: true, refundOnFailure: true },
   'fetchx.batchScrape': { cost: 1, refundOnFailure: true },
   'fetchx.crawl': { cost: 1, refundOnFailure: true },
   'fetchx.map': { cost: 1, refundOnFailure: true },
   'fetchx.extract': { cost: 1, refundOnFailure: true },
   'fetchx.search': { cost: 1, refundOnFailure: true },
+  // L2 Browser（P1 计费模型优化：细粒度计费）
+  'fetchx.browser.session': { cost: 1, refundOnFailure: false }, // 会话创建费
+  'fetchx.browser.screenshot': { cost: 1, refundOnFailure: false }, // 截图费
+  'fetchx.browser.action': { cost: 0, refundOnFailure: false }, // 操作免费（计入会话时长）
+  'fetchx.browser.snapshot': { cost: 0, refundOnFailure: false }, // 快照免费
+  'fetchx.browser.tab': { cost: 0, refundOnFailure: false }, // 标签页操作免费
+  // L3 Agent（动态计费：基础费 + token费 + 工具调用费 + 时长费）
+  'fetchx.agent': { cost: 1, refundOnFailure: true }, // 基础起步价
+  'fetchx.agent.estimate': { cost: 0, refundOnFailure: false }, // 估算免费
+  // Memox
   'memox.memory.create': { cost: 1, refundOnFailure: true },
   'memox.memory.search': { cost: 1, refundOnFailure: true },
 };

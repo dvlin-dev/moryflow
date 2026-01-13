@@ -7,9 +7,35 @@
  */
 
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import type { BrowserContext, Page, Locator } from 'playwright';
+import type { BrowserContext, Page, Locator, Dialog } from 'playwright';
 import { BrowserPool } from '../browser-pool';
 import type { CreateSessionInput, RefData } from '../dto';
+
+/** 对话框记录 */
+export interface DialogRecord {
+  /** 对话框类型 */
+  type: 'alert' | 'confirm' | 'prompt' | 'beforeunload';
+  /** 对话框消息 */
+  message: string;
+  /** 默认输入值（仅 prompt 类型） */
+  defaultValue?: string;
+  /** 处理时间 */
+  handledAt: Date;
+  /** 是否被接受 */
+  accepted: boolean;
+}
+
+/** 标签页信息 */
+export interface TabInfo {
+  /** 标签页索引 */
+  index: number;
+  /** 页面 URL */
+  url: string;
+  /** 页面标题 */
+  title: string;
+  /** 是否为活跃标签页 */
+  active: boolean;
+}
 
 /** 浏览器会话 */
 export interface BrowserSession {
@@ -19,8 +45,14 @@ export interface BrowserSession {
   context: BrowserContext;
   /** 当前活跃 Page */
   page: Page;
+  /** 所有页面（多标签页支持） */
+  pages: Page[];
+  /** 当前活跃页面索引 */
+  activePageIndex: number;
   /** 元素引用映射（每次 snapshot 后更新） */
   refs: Map<string, RefData>;
+  /** 对话框历史记录（最近 10 条） */
+  dialogHistory: DialogRecord[];
   /** 创建时间 */
   createdAt: Date;
   /** 过期时间 */
@@ -105,11 +137,17 @@ export class SessionManager implements OnModuleDestroy {
       id: sessionId,
       context,
       page,
+      pages: [page],
+      activePageIndex: 0,
       refs: new Map(),
+      dialogHistory: [],
       createdAt: now,
       expiresAt: new Date(now.getTime() + timeout),
       lastAccessedAt: now,
     };
+
+    // 设置对话框自动处理
+    this.setupDialogHandler(session, page);
 
     this.sessions.set(sessionId, session);
     this.logger.debug(
@@ -117,6 +155,43 @@ export class SessionManager implements OnModuleDestroy {
     );
 
     return session;
+  }
+
+  /**
+   * 设置页面的对话框处理器
+   */
+  private setupDialogHandler(session: BrowserSession, page: Page): void {
+    page.on('dialog', async (dialog: Dialog) => {
+      const dialogType = dialog.type() as DialogRecord['type'];
+      const message = dialog.message();
+      const defaultValue = dialog.defaultValue();
+
+      this.logger.debug(
+        `Dialog appeared in session ${session.id}: [${dialogType}] ${message}`,
+      );
+
+      // 记录对话框信息
+      const record: DialogRecord = {
+        type: dialogType,
+        message,
+        defaultValue: defaultValue || undefined,
+        handledAt: new Date(),
+        accepted: true,
+      };
+
+      // 保留最近 10 条记录
+      session.dialogHistory.push(record);
+      if (session.dialogHistory.length > 10) {
+        session.dialogHistory.shift();
+      }
+
+      // 自动接受对话框
+      try {
+        await dialog.accept();
+      } catch (error) {
+        this.logger.warn(`Failed to accept dialog: ${error}`);
+      }
+    });
   }
 
   /**
@@ -241,6 +316,172 @@ export class SessionManager implements OnModuleDestroy {
 
     // 普通 CSS 选择器
     return session.page.locator(selector);
+  }
+
+  // ==================== 多标签页管理 ====================
+
+  /**
+   * 创建新标签页
+   */
+  async createTab(sessionId: string): Promise<TabInfo> {
+    const session = this.getSession(sessionId);
+
+    const newPage = await session.context.newPage();
+    newPage.setDefaultTimeout(30000);
+
+    // 设置对话框处理
+    this.setupDialogHandler(session, newPage);
+
+    const newIndex = session.pages.length;
+    session.pages.push(newPage);
+
+    // 切换到新标签页
+    session.activePageIndex = newIndex;
+    session.page = newPage;
+
+    // 清除 refs（新页面没有元素）
+    session.refs = new Map();
+
+    this.logger.debug(
+      `New tab created in session ${sessionId}, index: ${newIndex}`,
+    );
+
+    return {
+      index: newIndex,
+      url: newPage.url(),
+      title: '',
+      active: true,
+    };
+  }
+
+  /**
+   * 列出所有标签页
+   */
+  async listTabs(sessionId: string): Promise<TabInfo[]> {
+    const session = this.getSession(sessionId);
+
+    const tabs: TabInfo[] = [];
+    for (let i = 0; i < session.pages.length; i++) {
+      const page = session.pages[i];
+      // 检查页面是否已关闭
+      if (page.isClosed()) {
+        continue;
+      }
+
+      let title = '';
+      try {
+        title = await page.title();
+      } catch {
+        // 页面可能正在加载，忽略错误
+      }
+
+      tabs.push({
+        index: i,
+        url: page.url(),
+        title,
+        active: i === session.activePageIndex,
+      });
+    }
+
+    return tabs;
+  }
+
+  /**
+   * 切换到指定标签页
+   */
+  async switchTab(sessionId: string, tabIndex: number): Promise<TabInfo> {
+    const session = this.getSession(sessionId);
+
+    if (tabIndex < 0 || tabIndex >= session.pages.length) {
+      throw new Error(
+        `Invalid tab index: ${tabIndex}. Valid range: 0-${session.pages.length - 1}`,
+      );
+    }
+
+    const targetPage = session.pages[tabIndex];
+
+    if (targetPage.isClosed()) {
+      throw new Error(`Tab ${tabIndex} has been closed`);
+    }
+
+    // 更新活跃页面
+    session.activePageIndex = tabIndex;
+    session.page = targetPage;
+
+    // 清除 refs（需要重新获取快照）
+    session.refs = new Map();
+
+    // 将页面带到前台
+    await targetPage.bringToFront();
+
+    let title = '';
+    try {
+      title = await targetPage.title();
+    } catch {
+      // 忽略
+    }
+
+    this.logger.debug(`Switched to tab ${tabIndex} in session ${sessionId}`);
+
+    return {
+      index: tabIndex,
+      url: targetPage.url(),
+      title,
+      active: true,
+    };
+  }
+
+  /**
+   * 关闭指定标签页
+   */
+  async closeTab(sessionId: string, tabIndex: number): Promise<void> {
+    const session = this.getSession(sessionId);
+
+    if (tabIndex < 0 || tabIndex >= session.pages.length) {
+      throw new Error(
+        `Invalid tab index: ${tabIndex}. Valid range: 0-${session.pages.length - 1}`,
+      );
+    }
+
+    // 不能关闭最后一个标签页
+    const openTabs = session.pages.filter((p) => !p.isClosed());
+    if (openTabs.length <= 1) {
+      throw new Error('Cannot close the last tab. Close the session instead.');
+    }
+
+    const targetPage = session.pages[tabIndex];
+
+    if (!targetPage.isClosed()) {
+      await targetPage.close();
+    }
+
+    // 如果关闭的是当前活跃标签页，切换到另一个
+    if (tabIndex === session.activePageIndex) {
+      // 找到下一个未关闭的标签页
+      let newActiveIndex = -1;
+      for (let i = 0; i < session.pages.length; i++) {
+        if (!session.pages[i].isClosed()) {
+          newActiveIndex = i;
+          break;
+        }
+      }
+
+      if (newActiveIndex >= 0) {
+        session.activePageIndex = newActiveIndex;
+        session.page = session.pages[newActiveIndex];
+        session.refs = new Map();
+      }
+    }
+
+    this.logger.debug(`Closed tab ${tabIndex} in session ${sessionId}`);
+  }
+
+  /**
+   * 获取对话框历史记录
+   */
+  getDialogHistory(sessionId: string): DialogRecord[] {
+    const session = this.getSession(sessionId);
+    return [...session.dialogHistory];
   }
 
   /**

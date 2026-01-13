@@ -8,12 +8,14 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import type { Locator, Page } from 'playwright';
-import type { BrowserSession } from '../session';
+import { SessionManager, type BrowserSession } from '../session';
 import type { ActionInput, ActionResponse } from '../dto';
 
 @Injectable()
 export class ActionHandler {
   private readonly logger = new Logger(ActionHandler.name);
+
+  constructor(private readonly sessionManager: SessionManager) {}
 
   /**
    * 执行动作
@@ -28,7 +30,7 @@ export class ActionHandler {
       // 解析选择器（如果需要）
       let locator: Locator | undefined;
       if (selector) {
-        locator = this.resolveSelector(session, selector);
+        locator = this.sessionManager.resolveSelector(session, selector);
       }
 
       // 根据动作类型执行
@@ -169,42 +171,6 @@ export class ActionHandler {
     } catch (error) {
       return this.toAIFriendlyError(error, selector);
     }
-  }
-
-  /**
-   * 解析选择器（支持 @ref 格式）
-   */
-  private resolveSelector(session: BrowserSession, selector: string): Locator {
-    // @ref 格式：@e1, @e2, ...
-    if (selector.startsWith('@')) {
-      const refKey = selector.slice(1);
-      const refData = session.refs.get(refKey);
-
-      if (!refData) {
-        throw new Error(
-          `Unknown ref: ${selector}. Run 'snapshot' to get updated refs.`,
-        );
-      }
-
-      // 使用语义定位器
-      let locator = session.page.getByRole(
-        refData.role as Parameters<Page['getByRole']>[0],
-        {
-          name: refData.name,
-          exact: true,
-        },
-      );
-
-      // 如果有 nth 索引，应用它
-      if (refData.nth !== undefined) {
-        locator = locator.nth(refData.nth);
-      }
-
-      return locator;
-    }
-
-    // 普通 CSS 选择器
-    return session.page.locator(selector);
   }
 
   /**

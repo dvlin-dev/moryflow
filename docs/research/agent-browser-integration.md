@@ -2,6 +2,7 @@
 
 > 研究日期：2026-01-13
 > 参考仓库：
+>
 > - https://github.com/vercel-labs/agent-browser
 > - https://github.com/mendableai/firecrawl
 
@@ -35,6 +36,7 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 **定位**：面向 AI Agent 的**底层浏览器自动化 CLI 工具**
 
 **核心特点**：
+
 - **CLI 优先**：设计为命令行工具，便于 AI Agent 调用
 - **Rust + Node.js 混合架构**：CLI 用 Rust 实现（快速），后台 Daemon 用 Node.js + Playwright
 - **Ref 系统**：通过 snapshot 生成元素引用（@e1, @e2），实现确定性元素选择
@@ -63,16 +65,16 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 
 **核心功能**：
 
-| 功能类别 | 命令 | 说明 |
-|---------|------|------|
-| 导航 | `open`, `back`, `forward`, `reload`, `close` | 页面导航控制 |
-| Snapshot | `snapshot [-i] [-c] [-d N]` | 生成可访问性树，支持交互元素过滤、深度限制 |
-| 交互 | `click`, `dblclick`, `fill`, `type`, `press`, `hover`, `check`, `uncheck` | 元素交互 |
-| 等待 | `wait` | 等待元素/时间/URL/文本/网络空闲 |
-| 信息获取 | `get text/html/value/attr/title/url/count/box` | 获取页面/元素信息 |
-| 状态检查 | `is visible/enabled/checked` | 检查元素状态 |
-| 截图/PDF | `screenshot`, `pdf` | 页面截图和 PDF 导出 |
-| 语义定位 | `find role/text/label/placeholder/alt/title/testid` | 基于 ARIA 角色/文本的元素定位 |
+| 功能类别 | 命令                                                                      | 说明                                       |
+| -------- | ------------------------------------------------------------------------- | ------------------------------------------ |
+| 导航     | `open`, `back`, `forward`, `reload`, `close`                              | 页面导航控制                               |
+| Snapshot | `snapshot [-i] [-c] [-d N]`                                               | 生成可访问性树，支持交互元素过滤、深度限制 |
+| 交互     | `click`, `dblclick`, `fill`, `type`, `press`, `hover`, `check`, `uncheck` | 元素交互                                   |
+| 等待     | `wait`                                                                    | 等待元素/时间/URL/文本/网络空闲            |
+| 信息获取 | `get text/html/value/attr/title/url/count/box`                            | 获取页面/元素信息                          |
+| 状态检查 | `is visible/enabled/checked`                                              | 检查元素状态                               |
+| 截图/PDF | `screenshot`, `pdf`                                                       | 页面截图和 PDF 导出                        |
+| 语义定位 | `find role/text/label/placeholder/alt/title/testid`                       | 基于 ARIA 角色/文本的元素定位              |
 
 **Ref 系统示例**：
 
@@ -94,6 +96,7 @@ agent-browser fill @e3 "test@example.com"
 **定位**：**高层智能数据收集 API**
 
 **核心特点**：
+
 - **Prompt 驱动**：用户只需描述想要的数据，系统自动完成
 - **无需 URL**：自动搜索和导航找到数据
 - **LLM 决策**：使用 Gemini 2.5 Pro 智能决策导航路径
@@ -118,6 +121,7 @@ result = app.agent(
 ```
 
 **内部实现**（`smartScrape.ts`）：
+
 - 调用内部 `/smart-scrape` 端点
 - 使用 `gemini-2.5-pro` 作为决策模型
 - 使用 `gemini-2.0-flash` 作为工具执行模型
@@ -125,16 +129,16 @@ result = app.agent(
 
 ### 1.3 对比分析
 
-| 维度 | agent-browser | Firecrawl Agent |
-|------|---------------|-----------------|
-| **层级** | 底层自动化工具 | 高层智能 API |
-| **控制方式** | 命令式（click @e2, fill @e3） | 声明式（prompt: "找到创始人"） |
-| **是否需要 URL** | 需要 | 不需要（自动搜索） |
-| **LLM 依赖** | 无（纯浏览器操作） | 强依赖（gemini-2.5-pro 决策） |
-| **会话模型** | 有状态（多轮交互） | 无状态（一次任务） |
-| **使用者** | AI Agent（Claude/GPT） | 开发者/终端用户 |
-| **典型场景** | Agent 操作浏览器完成复杂任务 | "帮我研究 X 公司的信息" |
-| **成本** | 仅浏览器资源 | 高（LLM token 消耗） |
+| 维度             | agent-browser                 | Firecrawl Agent                |
+| ---------------- | ----------------------------- | ------------------------------ |
+| **层级**         | 底层自动化工具                | 高层智能 API                   |
+| **控制方式**     | 命令式（click @e2, fill @e3） | 声明式（prompt: "找到创始人"） |
+| **是否需要 URL** | 需要                          | 不需要（自动搜索）             |
+| **LLM 依赖**     | 无（纯浏览器操作）            | 强依赖（gemini-2.5-pro 决策）  |
+| **会话模型**     | 有状态（多轮交互）            | 无状态（一次任务）             |
+| **使用者**       | AI Agent（Claude/GPT）        | 开发者/终端用户                |
+| **典型场景**     | Agent 操作浏览器完成复杂任务  | "帮我研究 X 公司的信息"        |
+| **成本**         | 仅浏览器资源                  | 高（LLM token 消耗）           |
 
 ### 1.4 agent-browser 深入分析（值得借鉴的设计）
 
@@ -147,10 +151,10 @@ result = app.agent(
 ```typescript
 interface RefMap {
   [ref: string]: {
-    selector: string;  // "getByRole('button', { name: 'Submit', exact: true })"
-    role: string;      // ARIA 角色
-    name?: string;     // 元素文本/标签
-    nth?: number;      // 仅当有重复时存储（用于 .nth(1)）
+    selector: string; // "getByRole('button', { name: 'Submit', exact: true })"
+    role: string; // ARIA 角色
+    name?: string; // 元素文本/标签
+    nth?: number; // 仅当有重复时存储（用于 .nth(1)）
   };
 }
 ```
@@ -164,7 +168,7 @@ function removeNthFromNonDuplicates(refs: RefMap, tracker: RoleNameTracker): voi
   for (const [ref, data] of Object.entries(refs)) {
     const key = tracker.getKey(data.role, data.name);
     if (!duplicateKeys.has(key)) {
-      delete refs[ref].nth;  // 单独元素不需要 nth
+      delete refs[ref].nth; // 单独元素不需要 nth
     }
   }
 }
@@ -174,19 +178,48 @@ function removeNthFromNonDuplicates(refs: RefMap, tracker: RoleNameTracker): voi
 
 ```typescript
 const INTERACTIVE_ROLES = new Set([
-  'button', 'link', 'textbox', 'checkbox', 'radio', 'combobox',
-  'listbox', 'menuitem', 'option', 'searchbox', 'slider', 'spinbutton',
-  'switch', 'tab', 'treeitem',
+  'button',
+  'link',
+  'textbox',
+  'checkbox',
+  'radio',
+  'combobox',
+  'listbox',
+  'menuitem',
+  'option',
+  'searchbox',
+  'slider',
+  'spinbutton',
+  'switch',
+  'tab',
+  'treeitem',
 ]);
 
 const CONTENT_ROLES = new Set([
-  'heading', 'cell', 'gridcell', 'columnheader', 'rowheader',
-  'listitem', 'article', 'region', 'main', 'navigation',
+  'heading',
+  'cell',
+  'gridcell',
+  'columnheader',
+  'rowheader',
+  'listitem',
+  'article',
+  'region',
+  'main',
+  'navigation',
 ]);
 
 const STRUCTURAL_ROLES = new Set([
-  'generic', 'group', 'list', 'table', 'row', 'rowgroup',
-  'grid', 'menu', 'toolbar', 'tablist', 'tree',
+  'generic',
+  'group',
+  'list',
+  'table',
+  'row',
+  'rowgroup',
+  'grid',
+  'menu',
+  'toolbar',
+  'tablist',
+  'tree',
 ]);
 ```
 
@@ -194,9 +227,9 @@ const STRUCTURAL_ROLES = new Set([
 
 ```typescript
 class BrowserManager {
-  private contexts: BrowserContext[] = [];  // 多个隔离上下文
-  private pages: Page[] = [];                // 所有页面的平面列表
-  private activePageIndex: number = 0;       // 当前活跃页面索引
+  private contexts: BrowserContext[] = []; // 多个隔离上下文
+  private pages: Page[] = []; // 所有页面的平面列表
+  private activePageIndex: number = 0; // 当前活跃页面索引
 
   // 新标签页（同一上下文，共享 cookies）
   async newTab(): Promise<{ index: number }>;
@@ -239,14 +272,14 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
     const count = message.match(/resolved to (\d+) elements/)?.[1] ?? 'multiple';
     return new Error(
       `Selector "${selector}" matched ${count} elements. ` +
-      `Run 'snapshot' to get updated refs, or use a more specific CSS selector.`
+        `Run 'snapshot' to get updated refs, or use a more specific CSS selector.`
     );
   }
 
   if (message.includes('intercepts pointer events')) {
     return new Error(
       `Element "${selector}" is not interactable (may be hidden or covered). ` +
-      `Try scrolling it into view or check if a modal/overlay is blocking it.`
+        `Try scrolling it into view or check if a modal/overlay is blocking it.`
     );
   }
   // ...
@@ -255,17 +288,17 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
 
 #### 1.4.5 值得借鉴的功能清单
 
-| 功能 | 说明 | 优先级 |
-|------|------|--------|
-| **角色分类系统** | 支持 `--interactive` 仅返回可交互元素 | P0 |
-| **Nth 去重** | 自动处理重复元素 | P0 |
-| **语义定位器** | 使用 getByRole 而非 CSS | P0 |
-| **多标签页** | newTab, listTabs, switchTab | P1 |
-| **多窗口** | 独立上下文（隔离 cookies） | P1 |
-| **CDP 连接** | 连接已运行的浏览器 | P2 |
-| **AI 友好错误** | 错误消息 + 修复建议 | P1 |
-| **对话框处理** | 自动处理 alert/confirm/prompt | P1 |
-| **网络拦截** | 按需设置请求头、mock 响应 | P2 |
+| 功能             | 说明                                  | 优先级 |
+| ---------------- | ------------------------------------- | ------ |
+| **角色分类系统** | 支持 `--interactive` 仅返回可交互元素 | P0     |
+| **Nth 去重**     | 自动处理重复元素                      | P0     |
+| **语义定位器**   | 使用 getByRole 而非 CSS               | P0     |
+| **多标签页**     | newTab, listTabs, switchTab           | P1     |
+| **多窗口**       | 独立上下文（隔离 cookies）            | P1     |
+| **CDP 连接**     | 连接已运行的浏览器                    | P2     |
+| **AI 友好错误**  | 错误消息 + 修复建议                   | P1     |
+| **对话框处理**   | 自动处理 alert/confirm/prompt         | P1     |
+| **网络拦截**     | 按需设置请求头、mock 响应             | P2     |
 
 ---
 
@@ -331,6 +364,7 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
 ```
 
 **优势**：
+
 - 避免 HTTP 调用开销
 - 代码复用无重复
 - L2 对外提供 API，L3 内部使用相同能力
@@ -366,6 +400,7 @@ DELETE /api/v1/agent/:id         // 取消任务
 ```
 
 **L3 Agent 流式设计说明**：
+
 - `POST /agent` 默认返回 SSE 流，前端可实时显示进度
 - 流的第一条消息包含 `taskId`，用于断线重连
 - 使用 `stream=false` 参数可切换为非流式模式（仅返回 `{ id }`）
@@ -416,7 +451,7 @@ apps/aiget/server/src/
 interface CreateSessionRequest {
   viewport?: { width: number; height: number };
   userAgent?: string;
-  timeout?: number;  // 会话超时（默认 5 分钟）
+  timeout?: number; // 会话超时（默认 5 分钟）
 }
 
 interface CreateSessionResponse {
@@ -430,19 +465,23 @@ interface CreateSessionResponse {
 ```typescript
 // POST /api/v1/browser/session/:id/snapshot
 interface SnapshotRequest {
-  interactive?: boolean;  // 仅交互元素（默认 false）
-  compact?: boolean;      // 紧凑模式（默认 false）
-  maxDepth?: number;      // 深度限制
-  scope?: string;         // CSS 选择器范围
+  interactive?: boolean; // 仅交互元素（默认 false）
+  compact?: boolean; // 紧凑模式（默认 false）
+  maxDepth?: number; // 深度限制
+  scope?: string; // CSS 选择器范围
 }
 
 interface SnapshotResponse {
-  tree: string;           // 可访问性树文本
-  refs: Record<string, {  // 元素引用映射
-    role: string;
-    name?: string;
-    nth?: number;
-  }>;
+  tree: string; // 可访问性树文本
+  refs: Record<
+    string,
+    {
+      // 元素引用映射
+      role: string;
+      name?: string;
+      nth?: number;
+    }
+  >;
   stats: {
     lines: number;
     chars: number;
@@ -468,30 +507,47 @@ interface SnapshotResponse {
 // POST /api/v1/browser/session/:id/action
 interface ActionRequest {
   type: ActionType;
-  selector?: string;      // CSS 选择器或 @ref
-  value?: string;         // fill/type 的值
-  key?: string;           // press 的按键
+  selector?: string; // CSS 选择器或 @ref
+  value?: string; // fill/type 的值
+  key?: string; // press 的按键
   // ... 其他参数
 }
 
 type ActionType =
   // 导航
-  | 'open' | 'back' | 'forward' | 'reload'
+  | 'open'
+  | 'back'
+  | 'forward'
+  | 'reload'
   // 交互
-  | 'click' | 'dblclick' | 'fill' | 'type' | 'press'
-  | 'hover' | 'check' | 'uncheck' | 'select' | 'focus'
+  | 'click'
+  | 'dblclick'
+  | 'fill'
+  | 'type'
+  | 'press'
+  | 'hover'
+  | 'check'
+  | 'uncheck'
+  | 'select'
+  | 'focus'
   // 等待
   | 'wait'
   // 滚动
-  | 'scroll' | 'scrollIntoView'
+  | 'scroll'
+  | 'scrollIntoView'
   // 信息获取
-  | 'getText' | 'getAttribute' | 'getInnerHTML' | 'getInputValue'
+  | 'getText'
+  | 'getAttribute'
+  | 'getInnerHTML'
+  | 'getInputValue'
   // 状态检查
-  | 'isVisible' | 'isEnabled' | 'isChecked';
+  | 'isVisible'
+  | 'isEnabled'
+  | 'isChecked';
 
 interface ActionResponse {
   success: boolean;
-  result?: unknown;       // getText 等操作的返回值
+  result?: unknown; // getText 等操作的返回值
   error?: string;
 }
 ```
@@ -502,7 +558,7 @@ interface ActionResponse {
 // session/session.manager.ts
 interface RefMap {
   [ref: string]: {
-    selector: string;     // getByRole('button', { name: 'Submit', exact: true })
+    selector: string; // getByRole('button', { name: 'Submit', exact: true })
     role: string;
     name?: string;
     nth?: number;
@@ -510,12 +566,15 @@ interface RefMap {
 }
 
 class SessionManager {
-  private sessions: Map<string, {
-    context: BrowserContext;
-    page: Page;
-    refs: RefMap;
-    expiresAt: Date;
-  }>;
+  private sessions: Map<
+    string,
+    {
+      context: BrowserContext;
+      page: Page;
+      refs: RefMap;
+      expiresAt: Date;
+    }
+  >;
 
   // 解析 ref 语法
   parseSelector(selector: string, refs: RefMap): Locator {
@@ -526,7 +585,7 @@ class SessionManager {
 
       let locator = this.page.getByRole(refData.role, {
         name: refData.name,
-        exact: true
+        exact: true,
       });
 
       if (refData.nth !== undefined) {
@@ -730,14 +789,7 @@ export const getTextTool = tool<typeof selectorSchema, BrowserContext>({
 });
 
 // 导出所有 Tools
-export const browserTools = [
-  snapshotTool,
-  clickTool,
-  fillTool,
-  openTool,
-  searchTool,
-  getTextTool,
-];
+export const browserTools = [snapshotTool, clickTool, fillTool, openTool, searchTool, getTextTool];
 ```
 
 ### 5.3 Agent 实现
@@ -779,11 +831,11 @@ export class AgentService {
   constructor(
     private sessionManager: SessionManager,
     private snapshotService: SnapshotService,
-    private actionExecutor: ActionExecutor,
+    private actionExecutor: ActionExecutor
   ) {
     // 创建 Runner 实例（可复用）
     this.runner = new Runner({
-      tracingDisabled: false,  // 启用追踪
+      tracingDisabled: false, // 启用追踪
     });
   }
 
@@ -803,7 +855,7 @@ export class AgentService {
         model: 'gpt-4o',
         instructions: SYSTEM_INSTRUCTIONS,
         tools: browserTools,
-        outputType: request.schema ?? 'text',  // 默认文本输出
+        outputType: request.schema ?? 'text', // 默认文本输出
         modelSettings: {
           temperature: 0.7,
           maxTokens: 4096,
@@ -826,7 +878,7 @@ export class AgentService {
       // 执行 Agent
       const result = await this.runner.run(agent, userPrompt, {
         context,
-        maxTurns: 20,  // 最大轮数限制
+        maxTurns: 20, // 最大轮数限制
       });
 
       // 获取 token 用量
@@ -849,11 +901,7 @@ export class AgentService {
   }
 
   // 流式执行（用于实时反馈）
-  async executeTaskStream(request: {
-    prompt: string;
-    urls?: string[];
-    schema?: z.ZodType;
-  }) {
+  async executeTaskStream(request: { prompt: string; urls?: string[]; schema?: z.ZodType }) {
     const session = await this.sessionManager.createSession();
 
     const agent = new Agent<BrowserContext>({
@@ -897,11 +945,11 @@ export class AgentService {
 ```typescript
 // POST /api/v1/agent
 interface AgentRequest {
-  prompt: string;                    // 自然语言描述（必填）
-  urls?: string[];                   // 可选的起始 URL
-  schema?: Record<string, unknown>;  // JSON Schema 或 Zod schema
-  maxCredits?: number;               // 最大消耗 credits
-  stream?: boolean;                  // 是否流式返回（默认 true）
+  prompt: string; // 自然语言描述（必填）
+  urls?: string[]; // 可选的起始 URL
+  schema?: Record<string, unknown>; // JSON Schema 或 Zod schema
+  maxCredits?: number; // 最大消耗 credits
+  stream?: boolean; // 是否流式返回（默认 true）
 }
 
 // 非流式响应（stream=false）
@@ -917,7 +965,7 @@ interface AgentResponse {
 interface AgentStatusResponse {
   id: string;
   status: 'processing' | 'completed' | 'failed';
-  data?: unknown;            // 提取的结构化数据
+  data?: unknown; // 提取的结构化数据
   creditsUsed?: number;
   expiresAt?: string;
   error?: string;
@@ -1026,10 +1074,10 @@ async function executeAgentTask(prompt: string, schema: object) {
 }
 
 // 使用
-const result = await executeAgentTask(
-  'Find the founders and funding history of Firecrawl',
-  { type: 'object', properties: { founders: { type: 'array' } } }
-);
+const result = await executeAgentTask('Find the founders and funding history of Firecrawl', {
+  type: 'object',
+  properties: { founders: { type: 'array' } },
+});
 ```
 
 #### 断线重连
@@ -1046,7 +1094,7 @@ async function recoverTask(taskId: string) {
     throw new Error(result.error);
   } else {
     // 还在处理中，等待后重试
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     return recoverTask(taskId);
   }
 }
@@ -1061,7 +1109,7 @@ const job = await fetch('/api/v1/agent', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     prompt: 'Find the founders and funding history of Firecrawl',
-    stream: false,  // 禁用流式
+    stream: false, // 禁用流式
     schema: {
       type: 'object',
       properties: {
@@ -1071,9 +1119,9 @@ const job = await fetch('/api/v1/agent', {
             type: 'object',
             properties: {
               name: { type: 'string' },
-              role: { type: 'string' }
-            }
-          }
+              role: { type: 'string' },
+            },
+          },
         },
         funding: {
           type: 'array',
@@ -1082,21 +1130,21 @@ const job = await fetch('/api/v1/agent', {
             properties: {
               round: { type: 'string' },
               amount: { type: 'string' },
-              date: { type: 'string' }
-            }
-          }
-        }
-      }
-    }
-  })
-}).then(r => r.json());
+              date: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  }),
+}).then((r) => r.json());
 
 // 轮询结果
 const pollResult = async (id: string) => {
   while (true) {
-    const result = await fetch(`/api/v1/agent/${id}`).then(r => r.json());
+    const result = await fetch(`/api/v1/agent/${id}`).then((r) => r.json());
     if (result.status !== 'processing') return result;
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 2000));
   }
 };
 
@@ -1121,10 +1169,7 @@ export class AgentController {
   constructor(private readonly agentService: AgentService) {}
 
   @Post()
-  async createTask(
-    @Body() request: AgentRequestDto,
-    @Res() res: Response,
-  ) {
+  async createTask(@Body() request: AgentRequestDto, @Res() res: Response) {
     // 非流式模式
     if (request.stream === false) {
       const { id } = await this.agentService.createTask(request);
@@ -1216,14 +1261,14 @@ export class AgentController {
 
 ## 六、实现优先级
 
-| 优先级 | 内容 | 说明 |
-|-------|------|------|
-| **P0** | L2 Browser 基础 | session 管理 + open + close |
-| **P0** | Snapshot + Ref 系统 | snapshot 生成 ref，action 支持 @ref |
-| **P1** | L2 完整 Action | fill, check, select, hover, getText 等 |
-| **P1** | L3 Agent 基础 | prompt + schema + 异步任务 |
-| **P2** | L3 智能导航 | 集成 LLM 自动决策 |
-| **P2** | L2 高级功能 | 网络拦截、多标签页、调试工具 |
+| 优先级 | 内容                | 说明                                   |
+| ------ | ------------------- | -------------------------------------- |
+| **P0** | L2 Browser 基础     | session 管理 + open + close            |
+| **P0** | Snapshot + Ref 系统 | snapshot 生成 ref，action 支持 @ref    |
+| **P1** | L2 完整 Action      | fill, check, select, hover, getText 等 |
+| **P1** | L3 Agent 基础       | prompt + schema + 异步任务             |
+| **P2** | L3 智能导航         | 集成 LLM 自动决策                      |
+| **P2** | L2 高级功能         | 网络拦截、多标签页、调试工具           |
 
 ---
 
@@ -1236,11 +1281,11 @@ export class AgentController {
 
 ### L2 Browser
 
-| 计费项 | 说明 |
-|-------|------|
-| `fetchx.browser.session` | 创建会话：1 credit |
-| `fetchx.browser.action` | 每个动作：免费（已计入 session） |
-| `fetchx.browser.screenshot` | 截图：0.5 credit |
+| 计费项                      | 说明                             |
+| --------------------------- | -------------------------------- |
+| `fetchx.browser.session`    | 创建会话：1 credit               |
+| `fetchx.browser.action`     | 每个动作：免费（已计入 session） |
+| `fetchx.browser.screenshot` | 截图：0.5 credit                 |
 
 ### L3 Agent
 
@@ -1273,16 +1318,19 @@ export class AgentController {
 ### 关键源码文件
 
 **agent-browser**：
+
 - `src/snapshot.ts` - Snapshot + Ref 系统核心
 - `src/actions.ts` - 命令执行器
 - `src/browser.ts` - BrowserManager
 
 **firecrawl**（注意：Agent 核心逻辑未开源）：
+
 - `apps/api/src/scraper/scrapeURL/lib/smartScrape.ts` - 智能抓取接口（调用闭源服务）
 - `apps/api/src/controllers/v2/agent.ts` - Agent API 入口（透传到内部服务）
 - `apps/api/src/scraper/scrapeURL/lib/extractSmartScrape.ts` - LLM 决策是否使用 SmartScrape
 
 **@moryflow/agents（内部 SDK）**：
+
 - `packages/agents-core/src/agent.ts` - Agent 定义
 - `packages/agents-core/src/tool.ts` - Tool 抽象
 - `packages/agents-core/src/run.ts` - 执行入口
@@ -1295,42 +1343,47 @@ export class AgentController {
 
 ### 进度总览
 
-| Phase | 名称 | 状态 | 完成度 |
-|-------|------|------|--------|
-| Phase 1 | L2 Browser 基础架构 | ✅ 已完成 | 4/4 |
-| Phase 2 | Snapshot + Ref 系统 | ✅ 已完成 | 3/3 |
-| Phase 3 | L2 完整 Action | ✅ 已完成 | 3/3 |
-| Phase 4 | L3 Agent 基础（SDK） | ✅ 已完成 | 4/4 |
-| Phase 5 | L3 高级功能 | ✅ 已完成 | 3/3 |
+| Phase   | 名称                 | 状态      | 完成度 |
+| ------- | -------------------- | --------- | ------ |
+| Phase 1 | L2 Browser 基础架构  | ✅ 已完成 | 4/4    |
+| Phase 2 | Snapshot + Ref 系统  | ✅ 已完成 | 3/3    |
+| Phase 3 | L2 完整 Action       | ✅ 已完成 | 3/3    |
+| Phase 4 | L3 Agent 基础（SDK） | ✅ 已完成 | 4/4    |
+| Phase 5 | L3 高级功能          | ✅ 已完成 | 3/3    |
+| Phase 6 | P1 功能增强          | ✅ 已完成 | 3/3    |
 
 ### Phase 1: L2 Browser 基础架构
 
-| 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
-|------|------|------|----------|----------|
-| 1.1 | 创建 browser 模块骨架 | ✅ 已完成 | `browser.module.ts`, `browser-session.controller.ts`, `browser-session.service.ts` | 2026-01-13 |
-| 1.2 | 定义 DTO 和 Zod Schema | ✅ 已完成 | `dto/browser-session.schema.ts` | 2026-01-13 |
-| 1.3 | 实现 session 管理 | ✅ 已完成 | `session/session.manager.ts` | 2026-01-13 |
-| 1.4 | 实现 open/close 基础功能 | ✅ 已完成 | 整合到 `browser-session.service.ts` | 2026-01-13 |
+| 步骤 | 任务                     | 状态      | 产出文件                                                                           | 完成日期   |
+| ---- | ------------------------ | --------- | ---------------------------------------------------------------------------------- | ---------- |
+| 1.1  | 创建 browser 模块骨架    | ✅ 已完成 | `browser.module.ts`, `browser-session.controller.ts`, `browser-session.service.ts` | 2026-01-13 |
+| 1.2  | 定义 DTO 和 Zod Schema   | ✅ 已完成 | `dto/browser-session.schema.ts`                                                    | 2026-01-13 |
+| 1.3  | 实现 session 管理        | ✅ 已完成 | `session/session.manager.ts`                                                       | 2026-01-13 |
+| 1.4  | 实现 open/close 基础功能 | ✅ 已完成 | 整合到 `browser-session.service.ts`                                                | 2026-01-13 |
 
 **1.1 创建 browser 模块骨架**
+
 - 创建 `apps/aiget/server/src/browser/` 目录结构
 - 创建 NestJS 模块文件：module, controller, service
 - 注册到 AppModule
 - 路由前缀：`/api/v1/browser`
 
 **1.2 定义 DTO 和 Zod Schema**
+
 - `CreateSessionSchema` - 创建会话请求
 - `SessionResponse` - 会话信息响应
 - `OpenUrlSchema` - 打开 URL 请求
 - `ActionSchema` - 动作执行请求（预定义结构）
 
 **1.3 实现 session 管理**
+
 - 创建 `SessionManager` 类
 - 维护 `Map<sessionId, { context, page, refs, expiresAt }>`
 - 实现会话超时清理（默认 5 分钟）
 - 实现 `createSession`, `getSession`, `closeSession` 方法
 
 **1.4 实现 open/close 基础功能**
+
 - `POST /browser/session` - 创建会话
 - `GET /browser/session/:id` - 获取会话状态
 - `DELETE /browser/session/:id` - 关闭会话
@@ -1338,79 +1391,89 @@ export class AgentController {
 
 ### Phase 2: Snapshot + Ref 系统
 
-| 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
-|------|------|------|----------|----------|
-| 2.1 | 实现 snapshot 服务 | ✅ 已完成 | `snapshot/snapshot.service.ts` | 2026-01-13 |
-| 2.2 | 实现 ref 系统 | ✅ 已完成 | 整合到 `session/session.manager.ts` | 2026-01-13 |
-| 2.3 | action 支持 @ref 语法 | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
+| 步骤 | 任务                  | 状态      | 产出文件                            | 完成日期   |
+| ---- | --------------------- | --------- | ----------------------------------- | ---------- |
+| 2.1  | 实现 snapshot 服务    | ✅ 已完成 | `snapshot/snapshot.service.ts`      | 2026-01-13 |
+| 2.2  | 实现 ref 系统         | ✅ 已完成 | 整合到 `session/session.manager.ts` | 2026-01-13 |
+| 2.3  | action 支持 @ref 语法 | ✅ 已完成 | `handlers/action.handler.ts`        | 2026-01-13 |
 
 **2.1 实现 snapshot 服务**
+
 - 基于 Playwright `locator.ariaSnapshot()` API
 - 生成可访问性树文本
 - 支持选项：`interactive`, `compact`, `maxDepth`, `scope`
 - 解析生成元素引用（@e1, @e2...）
 
 **2.2 实现 ref 系统**
+
 - 解析 snapshot 输出，提取角色和名称
 - 构建 `RefMap: { e1: { role, name, nth }, ... }`
 - 存储到 session 中
 - 每次 snapshot 后更新 ref 映射
 
 **2.3 action 支持 @ref 语法**
+
 - 解析 `@e1` 格式的选择器
 - 转换为 Playwright `getByRole()` 调用
 - 支持 nth 索引（相同角色+名称的多个元素）
 
 ### Phase 3: L2 完整 Action
 
-| 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
-|------|------|------|----------|----------|
-| 3.1 | 实现交互类 action | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
-| 3.2 | 实现信息获取 action | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
-| 3.3 | 实现截图功能 | ✅ 已完成 | `browser-session.service.ts` | 2026-01-13 |
+| 步骤 | 任务                | 状态      | 产出文件                     | 完成日期   |
+| ---- | ------------------- | --------- | ---------------------------- | ---------- |
+| 3.1  | 实现交互类 action   | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
+| 3.2  | 实现信息获取 action | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
+| 3.3  | 实现截图功能        | ✅ 已完成 | `browser-session.service.ts` | 2026-01-13 |
 
 **3.1 实现交互类 action**
+
 - `click`, `dblclick`, `fill`, `type`, `press`
 - `hover`, `check`, `uncheck`, `select`, `focus`
 - `scroll`, `scrollIntoView`
 - 导航：`back`, `forward`, `reload`
 
 **3.2 实现信息获取 action**
+
 - `getText`, `getAttribute`, `getInnerHTML`, `getInputValue`
 - `isVisible`, `isEnabled`, `isChecked`
 - `getTitle`, `getUrl`
 
 **3.3 实现截图功能**
+
 - `GET /browser/session/:id/screenshot`
 - 支持全页截图和元素截图
 - 返回 base64 编码图片
 
 ### Phase 4: L3 Agent 基础（使用 @aiget/agents-core SDK）
 
-| 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
-|------|------|------|----------|----------|
-| 4.1 | 创建 agent 模块骨架 | ✅ 已完成 | `agent.module.ts`, `agent.controller.ts`, `agent.service.ts` | 2026-01-13 |
-| 4.2 | 定义 Browser Tools | ✅ 已完成 | `agent/tools/browser-tools.ts` | 2026-01-13 |
-| 4.3 | 实现异步任务系统 | ✅ 已完成 | 使用内存 Map + TTL 清理 | 2026-01-13 |
-| 4.4 | 实现 Agent 执行逻辑 | ✅ 已完成 | `agent.service.ts` | 2026-01-13 |
+| 步骤 | 任务                | 状态      | 产出文件                                                     | 完成日期   |
+| ---- | ------------------- | --------- | ------------------------------------------------------------ | ---------- |
+| 4.1  | 创建 agent 模块骨架 | ✅ 已完成 | `agent.module.ts`, `agent.controller.ts`, `agent.service.ts` | 2026-01-13 |
+| 4.2  | 定义 Browser Tools  | ✅ 已完成 | `agent/tools/browser-tools.ts`                               | 2026-01-13 |
+| 4.3  | 实现异步任务系统    | ✅ 已完成 | 使用内存 Map + TTL 清理                                      | 2026-01-13 |
+| 4.4  | 实现 Agent 执行逻辑 | ✅ 已完成 | `agent.service.ts`                                           | 2026-01-13 |
 
 **4.1 创建 agent 模块骨架**
+
 - 创建 `apps/aiget/server/src/agent/` 目录
 - 路由：`POST /api/v1/agent`, `GET /api/v1/agent/:id`, `DELETE /api/v1/agent/:id`
 - 定义 DTO：`AgentRequest`, `AgentResponse`, `AgentStatusResponse`
 
 **4.2 定义 Browser Tools**
+
 - 基于 `@moryflow/agents` 的 `tool()` 函数定义 Tools
 - 核心 Tools：`browser_snapshot`, `browser_click`, `browser_fill`, `browser_open`
 - 辅助 Tools：`web_search`, `browser_getText`, `browser_scroll`
 - Tools 使用 Shared Infrastructure（SessionManager, SnapshotService, ActionExecutor）
 
 **4.3 实现异步任务系统**
+
 - 使用 BullMQ 队列处理长时间任务
 - 任务状态：`processing`, `completed`, `failed`
 - 结果持久化（Redis 或 DB）
 
 **4.4 实现 Agent 执行逻辑**
+
 - 使用 `Agent` 类创建 Browser Agent
 - 配置 `instructions`（系统 prompt）
 - 传入 Browser Tools 和用户 schema
@@ -1418,26 +1481,60 @@ export class AgentController {
 
 ### Phase 5: L3 高级功能
 
-| 步骤 | 任务 | 状态 | 产出文件 | 完成日期 |
-|------|------|------|----------|----------|
-| 5.1 | 增强 Tools（更多动作） | ✅ 已完成 | `agent/tools/browser-tools.ts`（11 个工具） | 2026-01-13 |
-| 5.2 | 实现 credits 消耗追踪 | ✅ 已完成 | `agent.service.ts`（token 计费） | 2026-01-13 |
-| 5.3 | 流式输出支持 | ✅ 已完成 | SSE 实现 + SDK stream: true | 2026-01-13 |
+| 步骤 | 任务                   | 状态      | 产出文件                                    | 完成日期   |
+| ---- | ---------------------- | --------- | ------------------------------------------- | ---------- |
+| 5.1  | 增强 Tools（更多动作） | ✅ 已完成 | `agent/tools/browser-tools.ts`（11 个工具） | 2026-01-13 |
+| 5.2  | 实现 credits 消耗追踪  | ✅ 已完成 | `agent.service.ts`（token 计费）            | 2026-01-13 |
+| 5.3  | 流式输出支持           | ✅ 已完成 | SSE 实现 + SDK stream: true                 | 2026-01-13 |
 
 **5.1 增强 Tools**
+
 - 添加更多 Browser 操作：`select`, `hover`, `check`, `uncheck`
 - 添加 `screenshot` Tool（视觉分析）
 - 添加 `wait` Tool（等待条件）
 
 **5.2 实现 credits 消耗追踪**
+
 - 追踪 LLM token 使用量
 - 实现 `maxCredits` 限制
 - 超额时提前终止任务
 
 **5.3 流式输出支持**
+
 - 使用 SDK 的 `Runner.runStreaming()` API
 - 通过 SSE 推送执行进度
 - 返回中间步骤（思考过程、工具调用）
+
+### Phase 6: P1 功能增强
+
+| 步骤 | 任务                          | 状态      | 产出文件                                                      | 完成日期   |
+| ---- | ----------------------------- | --------- | ------------------------------------------------------------- | ---------- |
+| 6.1  | 对话框处理（Dialog Handling） | ✅ 已完成 | `session/session.manager.ts`                                  | 2026-01-13 |
+| 6.2  | 多标签页（Multi-Tab）         | ✅ 已完成 | `session/session.manager.ts`, `browser-session.controller.ts` | 2026-01-13 |
+| 6.3  | 计费模型优化                  | ✅ 已完成 | `agent.service.ts`, `billing.rules.ts`                        | 2026-01-13 |
+
+**6.1 对话框处理**
+
+- 自动处理 alert/confirm/prompt/beforeunload 对话框
+- `page.on('dialog')` 事件监听
+- 自动 accept 并记录到 `dialogHistory`（最近 10 条）
+- 新增 `GET /browser/session/:id/dialogs` 端点
+
+**6.2 多标签页**
+
+- `POST /browser/session/:id/tabs` - 创建新标签页
+- `GET /browser/session/:id/tabs` - 列出所有标签页
+- `POST /browser/session/:id/tabs/:tabIndex/activate` - 切换标签页
+- `DELETE /browser/session/:id/tabs/:tabIndex` - 关闭标签页
+- 切换标签页时自动清除 refs（需重新 snapshot）
+
+**6.3 计费模型优化**
+
+- L3 Agent 动态计费公式：`credits = 基础费 + token费 + 工具调用费 + 时长费`
+- 支持 `maxCredits` 参数限制任务成本
+- 新增 `POST /agent/estimate` 端点预估任务成本
+- 流式执行中实时追踪并检查 credits 限制
+- 超限时提前终止任务并返回错误
 
 ---
 
@@ -1446,6 +1543,7 @@ export class AgentController {
 ### 进度同步协议
 
 1. **每完成一个步骤**后，必须执行以下更新：
+
    ```markdown
    - 将该步骤状态从 🔲 改为 ✅
    - 填写完成日期
@@ -1454,11 +1552,13 @@ export class AgentController {
    ```
 
 2. **正在进行的步骤**使用 🔄 标记：
+
    ```markdown
    | 1.1 | 创建 browser 模块骨架 | 🔄 进行中 | ... | - |
    ```
 
 3. **遇到阻塞时**添加备注：
+
    ```markdown
    | 1.3 | 实现 session 管理 | ⚠️ 阻塞 | ... | - |
    备注：等待 browser-pool 重构完成
@@ -1474,6 +1574,7 @@ export class AgentController {
 ### 提交规范
 
 每个步骤完成后，commit message 格式：
+
 ```
 feat(browser): 完成步骤 X.X - [任务名称]
 
@@ -1493,42 +1594,42 @@ _文档版本: 5.1 | 更新日期: 2026-01-13_
 
 ### 11.1 已修正的问题
 
-| 问题 | 原方案 | 修正后 |
-|------|--------|--------|
-| **SDK 接口** | `ctx.context` 直接访问 | `runContext?.context` 判空访问 |
-| **Tool 泛型** | 缺少类型参数 | `tool<Schema, Context>()` |
-| **Runner 使用** | 直接 `run()` | 创建 `Runner` 实例复用 |
-| **Token 用量** | `result.usage` | `result.state._context.usage` |
+| 问题            | 原方案                 | 修正后                         |
+| --------------- | ---------------------- | ------------------------------ |
+| **SDK 接口**    | `ctx.context` 直接访问 | `runContext?.context` 判空访问 |
+| **Tool 泛型**   | 缺少类型参数           | `tool<Schema, Context>()`      |
+| **Runner 使用** | 直接 `run()`           | 创建 `Runner` 实例复用         |
+| **Token 用量**  | `result.usage`         | `result.state._context.usage`  |
 
 ### 11.2 需要补充的功能（按优先级）
 
 #### P0 - 必须实现
 
-| 功能 | 说明 | 实现建议 |
-|------|------|----------|
+| 功能             | 说明                               | 实现建议                      |
+| ---------------- | ---------------------------------- | ----------------------------- |
 | **角色分类系统** | INTERACTIVE / CONTENT / STRUCTURAL | 参考 agent-browser 的角色定义 |
-| **Nth 去重逻辑** | 处理相同 role+name 的重复元素 | 实现 RoleNameTracker |
-| **语义定位器** | 使用 `getByRole` 而非 CSS | RefMap 存储完整 selector |
-| **SSRF 防护** | 禁止内网/localhost | 复用现有 `url-validator.ts` |
+| **Nth 去重逻辑** | 处理相同 role+name 的重复元素      | 实现 RoleNameTracker          |
+| **语义定位器**   | 使用 `getByRole` 而非 CSS          | RefMap 存储完整 selector      |
+| **SSRF 防护**    | 禁止内网/localhost                 | 复用现有 `url-validator.ts`   |
 
 #### P1 - 建议实现
 
-| 功能 | 说明 | 实现建议 |
-|------|------|----------|
-| **AI 友好错误** | 错误消息 + 修复建议 | `toAIFriendlyError()` 转译 |
-| **多标签页** | newTab, listTabs, switchTab | BrowserManager 扩展 |
-| **对话框处理** | 自动处理 alert/confirm/prompt | `page.on('dialog')` |
-| **计费模型优化** | 按时长或动作数计费 | 避免资源滥用 |
+| 功能             | 说明                          | 实现建议                   |
+| ---------------- | ----------------------------- | -------------------------- |
+| **AI 友好错误**  | 错误消息 + 修复建议           | `toAIFriendlyError()` 转译 |
+| **多标签页**     | newTab, listTabs, switchTab   | BrowserManager 扩展        |
+| **对话框处理**   | 自动处理 alert/confirm/prompt | `page.on('dialog')`        |
+| **计费模型优化** | 按时长或动作数计费            | 避免资源滥用               |
 
 #### P2 - 可选实现
 
-| 功能 | 说明 | 实现建议 |
-|------|------|----------|
-| **多窗口** | 独立上下文（隔离 cookies） | `newWindow()` |
-| **CDP 连接** | 连接已运行的浏览器 | 调试用 |
-| **网络拦截** | 按需设置请求头、mock | 高级用例 |
-| **会话持久化** | 存储 cookies/localStorage | 断点续传 |
-| **增量快照** | `snapshot --delta` | 节省 token |
+| 功能           | 说明                       | 实现建议      |
+| -------------- | -------------------------- | ------------- |
+| **多窗口**     | 独立上下文（隔离 cookies） | `newWindow()` |
+| **CDP 连接**   | 连接已运行的浏览器         | 调试用        |
+| **网络拦截**   | 按需设置请求头、mock       | 高级用例      |
+| **会话持久化** | 存储 cookies/localStorage  | 断点续传      |
+| **增量快照**   | `snapshot --delta`         | 节省 token    |
 
 ### 11.3 计费模型建议
 
@@ -1576,7 +1677,7 @@ function validateFilePath(filePath: string): boolean {
   if (filePath.includes('..')) return false;
   // 限制在允许的目录内
   const allowedDirs = ['/tmp/fetchx/', '/var/fetchx/'];
-  return allowedDirs.some(dir => filePath.startsWith(dir));
+  return allowedDirs.some((dir) => filePath.startsWith(dir));
 }
 
 // 3. evaluate 命令沙盒化（可选）
@@ -1585,14 +1686,14 @@ function validateFilePath(filePath: string): boolean {
 
 ### 11.5 与 agent-browser 的差异对比
 
-| 维度 | agent-browser | Fetchx (本方案) |
-|------|--------------|-----------------|
-| **协议** | Unix Socket / TCP | REST API + WebSocket |
-| **会话模型** | Daemon（长连接） | 无状态（每请求创建） |
-| **Ref 有效期** | 单次快照内 | 单次快照内（相同） |
-| **并发** | 单连接串行 | 队列 + 异步 |
-| **持久化** | 无 | 可选（cookies/storage） |
-| **LLM 集成** | 无（纯浏览器） | @moryflow/agents SDK |
+| 维度           | agent-browser     | Fetchx (本方案)         |
+| -------------- | ----------------- | ----------------------- |
+| **协议**       | Unix Socket / TCP | REST API + WebSocket    |
+| **会话模型**   | Daemon（长连接）  | 无状态（每请求创建）    |
+| **Ref 有效期** | 单次快照内        | 单次快照内（相同）      |
+| **并发**       | 单连接串行        | 队列 + 异步             |
+| **持久化**     | 无                | 可选（cookies/storage） |
+| **LLM 集成**   | 无（纯浏览器）    | @moryflow/agents SDK    |
 
 ### 11.6 实现顺序调整建议
 
@@ -1618,11 +1719,12 @@ Phase 5（高级功能）← 加入：多标签页、计费优化
 
 ## 更新日志
 
-| 版本 | 日期 | 变更内容 |
-|------|------|----------|
-| 5.1 | 2026-01-13 | 添加流式 API 设计：SSE 事件类型、前后端示例 |
-| 5.0 | 2026-01-13 | 深入 Review：修正 SDK 接口、添加改进建议 |
-| 4.0 | 2026-01-13 | L3 Agent 架构调整为使用 @moryflow/agents SDK |
-| 3.0 | 2026-01-13 | 添加实现进度追踪和同步规则 |
-| 2.0 | 2026-01-13 | 完善 L2/L3 API 详细设计 |
-| 1.0 | 2026-01-13 | 初始版本：参考项目分析和架构设计 |
+| 版本 | 日期       | 变更内容                                        |
+| ---- | ---------- | ----------------------------------------------- |
+| 6.0  | 2026-01-13 | P1 功能完成：对话框处理、多标签页、计费模型优化 |
+| 5.1  | 2026-01-13 | 添加流式 API 设计：SSE 事件类型、前后端示例     |
+| 5.0  | 2026-01-13 | 深入 Review：修正 SDK 接口、添加改进建议        |
+| 4.0  | 2026-01-13 | L3 Agent 架构调整为使用 @moryflow/agents SDK    |
+| 3.0  | 2026-01-13 | 添加实现进度追踪和同步规则                      |
+| 2.0  | 2026-01-13 | 完善 L2/L3 API 详细设计                         |
+| 1.0  | 2026-01-13 | 初始版本：参考项目分析和架构设计                |

@@ -8,7 +8,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { UrlValidator } from '../common';
-import { SessionManager, type BrowserSession } from './session';
+import { SessionManager } from './session';
 import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
 import type {
@@ -185,7 +185,7 @@ export class BrowserSessionService {
 
     if (selector) {
       // 元素截图
-      const locator = this.resolveSelector(session, selector);
+      const locator = this.sessionManager.resolveSelector(session, selector);
       buffer = await locator.screenshot(screenshotOptions);
 
       // 获取元素尺寸
@@ -227,10 +227,40 @@ export class BrowserSessionService {
     return this.sessionManager.getActiveSessionCount();
   }
 
+  // ==================== 多标签页管理 ====================
+
   /**
-   * 解析选择器（支持 @ref）
+   * 创建新标签页
    */
-  private resolveSelector(session: BrowserSession, selector: string) {
-    return this.sessionManager.resolveSelector(session, selector);
+  async createTab(sessionId: string) {
+    return this.sessionManager.createTab(sessionId);
+  }
+
+  /**
+   * 列出所有标签页
+   */
+  async listTabs(sessionId: string) {
+    return this.sessionManager.listTabs(sessionId);
+  }
+
+  /**
+   * 切换到指定标签页
+   */
+  async switchTab(sessionId: string, tabIndex: number) {
+    return this.sessionManager.switchTab(sessionId, tabIndex);
+  }
+
+  /**
+   * 关闭指定标签页
+   */
+  async closeTab(sessionId: string, tabIndex: number) {
+    return this.sessionManager.closeTab(sessionId, tabIndex);
+  }
+
+  /**
+   * 获取对话框历史
+   */
+  getDialogHistory(sessionId: string) {
+    return this.sessionManager.getDialogHistory(sessionId);
   }
 }

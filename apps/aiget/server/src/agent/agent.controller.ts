@@ -17,13 +17,25 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiSecurity,
+  ApiOperation,
+  ApiOkResponse,
+  ApiNotFoundResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Public } from '../auth';
 import { ApiKeyGuard, CurrentApiKey } from '../api-key';
 import type { ApiKeyPayload } from '../api-key';
 import { AgentService } from './agent.service';
 import { CreateAgentTaskSchema, type AgentStreamEvent } from './dto';
 
-@Controller('agent')
+@ApiTags('Agent')
+@ApiSecurity('apiKey')
+@Public()
+@Controller({ path: 'agent', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class AgentController {
   constructor(private readonly agentService: AgentService) {}
@@ -35,6 +47,12 @@ export class AgentController {
    * 默认返回 SSE 流；设置 stream=false 返回 JSON
    */
   @Post()
+  @ApiOperation({
+    summary: 'Create a new Agent task',
+    description:
+      'Execute an AI agent task. Returns SSE stream by default, or JSON if stream=false.',
+  })
+  @ApiOkResponse({ description: 'Task result or SSE event stream' })
   async createTask(
     @Body() body: unknown,
     @Res() res: Response,
@@ -100,6 +118,10 @@ export class AgentController {
    * GET /api/v1/agent/:id
    */
   @Get(':id')
+  @ApiOperation({ summary: 'Get Agent task status' })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiOkResponse({ description: 'Task status and result' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
   async getTaskStatus(
     @Param('id') taskId: string,
     @CurrentApiKey() _apiKey: ApiKeyPayload,
@@ -114,5 +136,49 @@ export class AgentController {
     }
 
     return result;
+  }
+
+  /**
+   * 估算任务成本（P1 计费模型优化）
+   * POST /api/v1/agent/estimate
+   */
+  @Post('estimate')
+  @ApiOperation({
+    summary: 'Estimate task cost',
+    description:
+      'Estimate the credits cost for a task based on prompt length and URLs.',
+  })
+  @ApiOkResponse({
+    description: 'Cost estimate with breakdown',
+    schema: {
+      type: 'object',
+      properties: {
+        estimatedCredits: { type: 'number' },
+        breakdown: {
+          type: 'object',
+          properties: {
+            base: { type: 'number' },
+            tokenEstimate: { type: 'number' },
+            toolCallEstimate: { type: 'number' },
+            durationEstimate: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
+  estimateCost(@Body() body: unknown, @CurrentApiKey() _apiKey: ApiKeyPayload) {
+    // 验证输入
+    const parseResult = CreateAgentTaskSchema.safeParse(body);
+    if (!parseResult.success) {
+      throw new HttpException(
+        {
+          message: 'Invalid request body',
+          errors: parseResult.error.errors,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return this.agentService.estimateCost(parseResult.data);
   }
 }

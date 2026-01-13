@@ -58,6 +58,43 @@ interface StoredTask {
   error?: string;
 }
 
+/** 计费参数（P1 计费模型优化） */
+interface BillingParams {
+  /** 最大允许消耗的 credits */
+  maxCredits?: number;
+  /** 当前已消耗的 credits */
+  currentCredits: number;
+  /** 工具调用次数 */
+  toolCallCount: number;
+  /** 会话开始时间 */
+  startTime: Date;
+}
+
+/** Credits 超限错误 */
+export class CreditsExceededError extends Error {
+  constructor(
+    public readonly used: number,
+    public readonly max: number,
+  ) {
+    super(`Credits exceeded: used ${used}, max ${max}`);
+    this.name = 'CreditsExceededError';
+  }
+}
+
+/** 计费常量 */
+const BILLING_CONSTANTS = {
+  /** 每 1000 tokens 消耗的 credits */
+  CREDITS_PER_1K_TOKENS: 1,
+  /** 每个工具调用消耗的额外 credits */
+  CREDITS_PER_TOOL_CALL: 0.1,
+  /** 每分钟会话时长消耗的 credits */
+  CREDITS_PER_MINUTE: 0.5,
+  /** 基础 credits（任务启动费） */
+  BASE_CREDITS: 1,
+  /** 默认 maxCredits 上限（防止无限循环） */
+  DEFAULT_MAX_CREDITS: 100,
+} as const;
+
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
@@ -93,6 +130,14 @@ export class AgentService {
       expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
     };
     this.tasks.set(taskId, task);
+
+    // 初始化计费参数（P1 计费模型优化）
+    const billing: BillingParams = {
+      maxCredits: input.maxCredits ?? BILLING_CONSTANTS.DEFAULT_MAX_CREDITS,
+      currentCredits: BILLING_CONSTANTS.BASE_CREDITS,
+      toolCallCount: 0,
+      startTime: now,
+    };
 
     // 创建浏览器会话
     const session = await this.sessionManager.createSession();
@@ -133,8 +178,19 @@ export class AgentService {
         maxTurns: 20,
       });
 
-      // 计算 credits（简化版本：基于 token 数）
-      const creditsUsed = this.calculateCredits(result);
+      // 从结果中提取工具调用次数
+      const toolCallCount =
+        result.state?.allItems?.filter((item) => item.type === 'tool_call_item')
+          .length ?? 0;
+      billing.toolCallCount = toolCallCount;
+
+      // 计算 credits（P1 计费模型优化）
+      const creditsUsed = this.calculateCredits(result, billing);
+
+      // 检查是否超过限制
+      if (input.maxCredits && creditsUsed > input.maxCredits) {
+        throw new CreditsExceededError(creditsUsed, input.maxCredits);
+      }
 
       // 更新任务状态
       task.status = 'completed';
@@ -154,6 +210,17 @@ export class AgentService {
 
       task.status = 'failed';
       task.error = errorMessage;
+
+      // 如果是超限错误，返回已消耗的 credits
+      if (error instanceof CreditsExceededError) {
+        task.creditsUsed = error.used;
+        return {
+          id: taskId,
+          status: 'failed',
+          error: errorMessage,
+          creditsUsed: error.used,
+        };
+      }
 
       return {
         id: taskId,
@@ -184,6 +251,14 @@ export class AgentService {
       expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
     };
     this.tasks.set(taskId, task);
+
+    // 初始化计费参数（P1 计费模型优化）
+    const billing: BillingParams = {
+      maxCredits: input.maxCredits ?? BILLING_CONSTANTS.DEFAULT_MAX_CREDITS,
+      currentCredits: BILLING_CONSTANTS.BASE_CREDITS,
+      toolCallCount: 0,
+      startTime: now,
+    };
 
     // 发送开始事件
     yield {
@@ -234,8 +309,33 @@ export class AgentService {
         stream: true,
       })) as StreamedRunResult<BrowserToolContext, typeof agent>;
 
-      // 处理流式事件
+      // 处理流式事件并追踪计费
       for await (const event of streamResult) {
+        // 追踪工具调用次数
+        if (event.type === 'run_item_stream_event') {
+          const item = event.item;
+          if (item.type === 'tool_call_item') {
+            billing.toolCallCount++;
+            billing.currentCredits =
+              BILLING_CONSTANTS.BASE_CREDITS +
+              billing.toolCallCount * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL;
+
+            // 检查 credits 限制
+            try {
+              this.checkCreditsLimit(billing);
+            } catch (error) {
+              if (error instanceof CreditsExceededError) {
+                yield {
+                  type: 'failed',
+                  error: error.message,
+                  creditsUsed: billing.currentCredits,
+                };
+                return;
+              }
+            }
+          }
+        }
+
         const sseEvent = this.convertRunEventToSSE(event);
         if (sseEvent) {
           yield sseEvent;
@@ -244,7 +344,10 @@ export class AgentService {
 
       // 等待完成并获取最终结果
       const finalOutput = streamResult.finalOutput;
-      const creditsUsed = this.calculateCreditsFromStream(streamResult);
+      const creditsUsed = this.calculateCreditsFromStream(
+        streamResult,
+        billing,
+      );
 
       // 更新任务状态
       task.status = 'completed';
@@ -339,17 +442,37 @@ export class AgentService {
   }
 
   /**
-   * 从流式结果计算 credits
+   * 从流式结果计算 credits（P1 计费模型优化）
    */
   private calculateCreditsFromStream(
     result: StreamedRunResult<unknown, unknown>,
+    billing?: BillingParams,
   ): number {
+    let credits = BILLING_CONSTANTS.BASE_CREDITS;
+
+    // Token 费用
     const usage = result.state?._context?.usage;
     if (usage) {
       const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
-      return Math.ceil(totalTokens / 1000);
+      credits +=
+        Math.ceil(totalTokens / 1000) * BILLING_CONSTANTS.CREDITS_PER_1K_TOKENS;
     }
-    return 1;
+
+    // 工具调用费用
+    if (billing?.toolCallCount) {
+      credits +=
+        billing.toolCallCount * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL;
+    }
+
+    // 时长费用
+    if (billing?.startTime) {
+      const durationMinutes =
+        (Date.now() - billing.startTime.getTime()) / 60000;
+      credits +=
+        Math.ceil(durationMinutes) * BILLING_CONSTANTS.CREDITS_PER_MINUTE;
+    }
+
+    return Math.ceil(credits);
   }
 
   /**
@@ -371,17 +494,97 @@ export class AgentService {
   }
 
   /**
-   * 计算 credits 消耗
+   * 计算 credits 消耗（P1 计费模型优化）
+   *
+   * 计费公式：
+   * credits = 基础费 + token费 + 工具调用费 + 时长费
    */
-  private calculateCredits(result: RunResult<unknown, unknown>): number {
-    // 简化计算：每 1000 tokens = 1 credit
-    // 实际应根据模型定价计算
+  private calculateCredits(
+    result: RunResult<unknown, unknown>,
+    billing?: BillingParams,
+  ): number {
+    let credits = BILLING_CONSTANTS.BASE_CREDITS;
+
+    // Token 费用
     const usage = result.state?._context?.usage;
     if (usage) {
       const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
-      return Math.ceil(totalTokens / 1000);
+      credits +=
+        Math.ceil(totalTokens / 1000) * BILLING_CONSTANTS.CREDITS_PER_1K_TOKENS;
     }
-    return 1; // 默认消耗
+
+    // 工具调用费用
+    if (billing?.toolCallCount) {
+      credits +=
+        billing.toolCallCount * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL;
+    }
+
+    // 时长费用
+    if (billing?.startTime) {
+      const durationMinutes =
+        (Date.now() - billing.startTime.getTime()) / 60000;
+      credits +=
+        Math.ceil(durationMinutes) * BILLING_CONSTANTS.CREDITS_PER_MINUTE;
+    }
+
+    return Math.ceil(credits);
+  }
+
+  /**
+   * 估算任务成本（基于历史数据）
+   */
+  estimateCost(input: CreateAgentTaskInput): {
+    estimatedCredits: number;
+    breakdown: {
+      base: number;
+      tokenEstimate: number;
+      toolCallEstimate: number;
+      durationEstimate: number;
+    };
+  } {
+    // 基于 prompt 长度估算 token 消耗
+    const promptTokens = Math.ceil(input.prompt.length / 4);
+    const estimatedTotalTokens = promptTokens * 10; // 假设 10x 扩展
+
+    // 基于 URL 数量估算工具调用
+    const urlCount = input.urls?.length ?? 1;
+    const estimatedToolCalls = urlCount * 5 + 5; // 每个 URL 约 5 次操作
+
+    // 估算时长（分钟）
+    const estimatedDuration = Math.ceil(estimatedToolCalls * 0.5);
+
+    const breakdown = {
+      base: BILLING_CONSTANTS.BASE_CREDITS,
+      tokenEstimate:
+        Math.ceil(estimatedTotalTokens / 1000) *
+        BILLING_CONSTANTS.CREDITS_PER_1K_TOKENS,
+      toolCallEstimate:
+        estimatedToolCalls * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL,
+      durationEstimate:
+        estimatedDuration * BILLING_CONSTANTS.CREDITS_PER_MINUTE,
+    };
+
+    return {
+      estimatedCredits: Math.ceil(
+        breakdown.base +
+          breakdown.tokenEstimate +
+          breakdown.toolCallEstimate +
+          breakdown.durationEstimate,
+      ),
+      breakdown,
+    };
+  }
+
+  /**
+   * 检查是否超过 maxCredits 限制
+   */
+  private checkCreditsLimit(billing: BillingParams): void {
+    if (billing.maxCredits && billing.currentCredits >= billing.maxCredits) {
+      throw new CreditsExceededError(
+        billing.currentCredits,
+        billing.maxCredits,
+      );
+    }
   }
 
   /**
