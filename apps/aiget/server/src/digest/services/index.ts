@@ -13,3 +13,5 @@ export * from './topic.service';
 export * from './ai.service';
 export * from './preview.service';
 export * from './admin.service';
+export * from './report.service';
+export * from './rate-limit.service';

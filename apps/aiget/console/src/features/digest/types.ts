@@ -181,11 +181,15 @@ export interface Topic {
 }
 
 export interface CreateTopicRequest {
+  subscriptionId: string;
+  slug: string;
   title: string;
   description?: string;
+  visibility: TopicVisibility;
+}
+
+export interface UpdateTopicRequest {
+  title?: string;
+  description?: string;
   visibility?: TopicVisibility;
-  interests?: string[];
-  sources?: string[];
-  defaultCron?: string;
-  defaultTimezone?: string;
 }

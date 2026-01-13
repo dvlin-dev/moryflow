@@ -14,10 +14,12 @@ import {
   Param,
   Query,
   Body,
+  Req,
   HttpCode,
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -31,19 +33,25 @@ import { CurrentUser, Public } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
 import { DigestTopicService } from '../services/topic.service';
+import { DigestReportService } from '../services/report.service';
 import {
   PublicTopicsQuerySchema,
   EditionsQuerySchema,
   FollowTopicSchema,
+  CreateReportSchema,
   type PublicTopicsQuery,
   type EditionsQuery,
   type FollowTopicInput,
+  type CreateReportInput,
 } from '../dto';
 
 @ApiTags('Public - Digest Topics')
 @Controller({ path: 'digest/topics', version: '1' })
 export class DigestPublicTopicController {
-  constructor(private readonly topicService: DigestTopicService) {}
+  constructor(
+    private readonly topicService: DigestTopicService,
+    private readonly reportService: DigestReportService,
+  ) {}
 
   /**
    * 获取公开话题列表
@@ -202,5 +210,47 @@ export class DigestPublicTopicController {
     }
 
     await this.topicService.unfollowTopic(user.id, topic.id);
+  }
+
+  /**
+   * 举报话题
+   * POST /api/v1/digest/topics/:slug/report
+   * 支持匿名或登录用户举报
+   */
+  @Post(':slug/report')
+  @Public()
+  @ApiOperation({ summary: 'Report a topic for spam/copyright/etc' })
+  @ApiParam({ name: 'slug', description: 'Topic slug' })
+  @ApiCreatedResponse({ description: 'Report created' })
+  async reportTopic(
+    @Param('slug') slug: string,
+    @Body(new ZodValidationPipe(CreateReportSchema)) input: CreateReportInput,
+    @Req() req: Request,
+  ) {
+    const topic = await this.topicService.findBySlug(slug);
+
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    // 获取真实 IP（支持反向代理）
+    const reporterIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.ip ||
+      undefined;
+
+    // 尝试获取用户（如果已登录）
+    const user = req.user as CurrentUserDto | undefined;
+
+    const report = await this.reportService.create(
+      { ...input, topicId: topic.id },
+      user?.id,
+      reporterIp,
+    );
+
+    return {
+      reportId: report.id,
+      message: 'Report submitted successfully. We will review it shortly.',
+    };
   }
 }

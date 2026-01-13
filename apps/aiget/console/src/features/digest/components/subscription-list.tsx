@@ -5,6 +5,7 @@
  * [POS]: Displays list of user's subscriptions with actions
  */
 
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Calendar01Icon,
@@ -13,6 +14,7 @@ import {
   PauseIcon,
   Delete01Icon,
   Edit01Icon,
+  Share01Icon,
 } from '@hugeicons/core-free-icons';
 import {
   Card,
@@ -25,10 +27,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Skeleton,
 } from '@aiget/ui';
 import { useToggleSubscription, useDeleteSubscription, useTriggerManualRun } from '../hooks';
+import { PublishTopicDialog } from './publish-topic-dialog';
 import type { Subscription } from '../types';
 
 interface SubscriptionListProps {
@@ -38,9 +42,17 @@ interface SubscriptionListProps {
 }
 
 export function SubscriptionList({ subscriptions, isLoading, onEdit }: SubscriptionListProps) {
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+
   const toggleMutation = useToggleSubscription();
   const deleteMutation = useDeleteSubscription();
   const triggerMutation = useTriggerManualRun();
+
+  const handlePublishClick = (subscription: Subscription) => {
+    setSelectedSubscription(subscription);
+    setPublishDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -116,6 +128,12 @@ export function SubscriptionList({ subscriptions, isLoading, onEdit }: Subscript
                       <Icon icon={PlayIcon} className="mr-2 h-4 w-4" />
                       Run now
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handlePublishClick(subscription)}>
+                      <Icon icon={Share01Icon} className="mr-2 h-4 w-4" />
+                      Publish as topic
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => deleteMutation.mutate(subscription.id)}
                       disabled={deleteMutation.isPending}
@@ -175,6 +193,12 @@ export function SubscriptionList({ subscriptions, isLoading, onEdit }: Subscript
           </CardContent>
         </Card>
       ))}
+
+      <PublishTopicDialog
+        subscription={selectedSubscription}
+        open={publishDialogOpen}
+        onOpenChange={setPublishDialogOpen}
+      />
     </div>
   );
 }

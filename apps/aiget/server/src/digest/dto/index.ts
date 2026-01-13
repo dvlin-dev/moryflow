@@ -9,3 +9,4 @@ export * from './subscription.schema';
 export * from './inbox.schema';
 export * from './topic.schema';
 export * from './run.schema';
+export * from './report.schema';

@@ -11,9 +11,12 @@ import {
   Logger,
   NotFoundException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SUBSCRIPTION_LIMITS, ANTI_SPAM_LIMITS } from '../digest.constants';
+import { DigestRateLimitService } from './rate-limit.service';
 import type {
   CreateTopicInput,
   UpdateTopicInput,
@@ -37,7 +40,11 @@ import type {
 export class DigestTopicService {
   private readonly logger = new Logger(DigestTopicService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => DigestRateLimitService))
+    private readonly rateLimitService: DigestRateLimitService,
+  ) {}
 
   /**
    * 创建公开话题（从订阅发布）
@@ -61,32 +68,10 @@ export class DigestTopicService {
       throw new ConflictException('Slug already exists');
     }
 
-    // 3. 检查用户 Topic 数量限制
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        subscription: { select: { tier: true } },
-        _count: {
-          select: {
-            digestTopics: {
-              where: { visibility: 'PUBLIC' },
-            },
-          },
-        },
-      },
-    });
-
-    const tier = (user?.subscription?.tier || 'FREE') as SubscriptionTier;
-    const limits = SUBSCRIPTION_LIMITS[tier];
-    const currentPublicCount = user?._count?.digestTopics || 0;
-
-    if (
-      input.visibility === 'PUBLIC' &&
-      currentPublicCount >= limits.maxPublicTopics
-    ) {
-      throw new ConflictException(
-        `Public topic limit reached. Max ${limits.maxPublicTopics} for ${tier} tier.`,
-      );
+    // 3. 检查 PUBLIC topic 限制（数量 + 每日操作）
+    if (input.visibility === 'PUBLIC') {
+      await this.rateLimitService.checkPublicTopicCount(userId);
+      await this.rateLimitService.checkTopicOperation(userId, 'create');
     }
 
     // 4. 创建 Topic
@@ -114,6 +99,11 @@ export class DigestTopicService {
       },
     });
 
+    // 5. 记录操作（用于限流）
+    if (topic.visibility === 'PUBLIC') {
+      await this.rateLimitService.recordTopicOperation(userId, 'create');
+    }
+
     this.logger.log(
       `Created topic ${topic.id} (${topic.slug}) by user ${userId}`,
     );
@@ -137,7 +127,19 @@ export class DigestTopicService {
       throw new NotFoundException('Topic not found');
     }
 
-    return this.prisma.digestTopic.update({
+    // 检查是否涉及 PUBLIC visibility 变更（需要限流）
+    const isPublicUpdate =
+      existing.visibility === 'PUBLIC' || input.visibility === 'PUBLIC';
+
+    if (isPublicUpdate) {
+      // 如果从非 PUBLIC 变为 PUBLIC，检查数量限制
+      if (existing.visibility !== 'PUBLIC' && input.visibility === 'PUBLIC') {
+        await this.rateLimitService.checkPublicTopicCount(userId);
+      }
+      await this.rateLimitService.checkTopicOperation(userId, 'update');
+    }
+
+    const topic = await this.prisma.digestTopic.update({
       where: { id: topicId },
       data: {
         title: input.title,
@@ -156,6 +158,13 @@ export class DigestTopicService {
         locale: input.locale,
       },
     });
+
+    // 记录操作
+    if (isPublicUpdate) {
+      await this.rateLimitService.recordTopicOperation(userId, 'update');
+    }
+
+    return topic;
   }
 
   /**

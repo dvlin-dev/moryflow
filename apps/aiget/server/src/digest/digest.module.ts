@@ -18,6 +18,8 @@ import {
   DigestAiService,
   DigestPreviewService,
   DigestAdminService,
+  DigestReportService,
+  DigestRateLimitService,
 } from './services';
 
 // Processors
@@ -97,6 +99,8 @@ import { ExtractModule } from '../extract/extract.module';
     DigestAiService,
     DigestPreviewService,
     DigestAdminService,
+    DigestReportService,
+    DigestRateLimitService,
 
     // Processors
     SubscriptionSchedulerProcessor,

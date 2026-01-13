@@ -16,6 +16,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,12 +26,22 @@ import {
   ApiNoContentResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { RequireAdmin } from '../../auth';
+import { RequireAdmin, CurrentUser } from '../../auth';
+import type { CurrentUserDto } from '../../types';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { DigestAdminService } from '../services/admin.service';
+import { DigestReportService } from '../services/report.service';
+import {
+  ListReportsQuerySchema,
+  ResolveReportSchema,
+  type ListReportsQuery,
+  type ResolveReportInput,
+} from '../dto';
 import type {
   DigestTopicVisibility,
   DigestTopicStatus,
   DigestRunStatus,
+  DigestTopicReportStatus,
 } from '../../../generated/prisma-main/client';
 
 @ApiTags('Admin - Digest')
@@ -38,7 +49,10 @@ import type {
 @Controller({ path: 'admin/digest', version: '1' })
 @RequireAdmin()
 export class DigestAdminController {
-  constructor(private readonly adminService: DigestAdminService) {}
+  constructor(
+    private readonly adminService: DigestAdminService,
+    private readonly reportService: DigestReportService,
+  ) {}
 
   /**
    * 获取 Digest 系统统计
@@ -140,5 +154,72 @@ export class DigestAdminController {
       status: status as DigestRunStatus | undefined,
       subscriptionId,
     });
+  }
+
+  // ============= Report Management =============
+
+  /**
+   * 获取举报列表
+   * GET /api/v1/admin/digest/reports
+   */
+  @Get('reports')
+  @ApiOperation({ summary: 'List topic reports' })
+  @ApiOkResponse({ description: 'Report list with pagination' })
+  async listReports(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit = '20',
+    @Query('status') status?: string,
+    @Query('topicId') topicId?: string,
+  ) {
+    const query: ListReportsQuery = {
+      cursor,
+      limit: parseInt(limit, 10) || 20,
+      status: status as DigestTopicReportStatus | undefined,
+      topicId,
+    };
+
+    const { items, nextCursor } = await this.reportService.findMany(query);
+
+    return {
+      items: items.map((r) => this.reportService.toResponse(r)),
+      nextCursor,
+      pendingCount: await this.reportService.getPendingCount(),
+    };
+  }
+
+  /**
+   * 获取举报详情
+   * GET /api/v1/admin/digest/reports/:id
+   */
+  @Get('reports/:id')
+  @ApiOperation({ summary: 'Get report details' })
+  @ApiParam({ name: 'id', description: 'Report ID' })
+  @ApiOkResponse({ description: 'Report details' })
+  async getReport(@Param('id') id: string) {
+    const report = await this.reportService.findById(id);
+
+    if (!report) {
+      throw new NotFoundException('Report not found');
+    }
+
+    return this.reportService.toResponse(report);
+  }
+
+  /**
+   * 处理举报
+   * PATCH /api/v1/admin/digest/reports/:id
+   */
+  @Patch('reports/:id')
+  @ApiOperation({ summary: 'Resolve a report' })
+  @ApiParam({ name: 'id', description: 'Report ID' })
+  @ApiOkResponse({ description: 'Report resolved' })
+  async resolveReport(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(ResolveReportSchema)) input: ResolveReportInput,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    const report = await this.reportService.resolve(id, user.id, input);
+
+    return this.reportService.toResponse(report);
   }
 }

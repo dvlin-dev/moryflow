@@ -22,6 +22,7 @@ import type {
   RunQueryParams,
   Topic,
   CreateTopicRequest,
+  UpdateTopicRequest,
 } from './types';
 
 // ========== Subscription API ==========
@@ -149,6 +150,10 @@ export async function createTopic(data: CreateTopicRequest): Promise<Topic> {
   return apiClient.post<Topic>(DIGEST_CONSOLE_API.TOPICS, data);
 }
 
-export async function publishTopic(subscriptionId: string): Promise<Topic> {
-  return apiClient.post<Topic>(`${DIGEST_CONSOLE_API.SUBSCRIPTIONS}/${subscriptionId}/publish`, {});
+export async function updateTopic(id: string, data: UpdateTopicRequest): Promise<Topic> {
+  return apiClient.patch<Topic>(`${DIGEST_CONSOLE_API.TOPICS}/${id}`, data);
+}
+
+export async function deleteTopic(id: string): Promise<void> {
+  await apiClient.delete(`${DIGEST_CONSOLE_API.TOPICS}/${id}`);
 }

@@ -15,6 +15,8 @@ import type {
   InboxQueryParams,
   InboxItemState,
   RunQueryParams,
+  CreateTopicRequest,
+  UpdateTopicRequest,
 } from './types';
 
 // ========== Query Keys ==========
@@ -211,18 +213,49 @@ export function useUserTopics(params?: { cursor?: string; limit?: number }) {
   });
 }
 
-export function usePublishTopic() {
+export function useCreateTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (subscriptionId: string) => api.publishTopic(subscriptionId),
+    mutationFn: (data: CreateTopicRequest) => api.createTopic(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: digestKeys.topics() });
       queryClient.invalidateQueries({ queryKey: digestKeys.subscriptions() });
-      toast.success('Topic published');
+      toast.success('Topic published successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to publish topic');
+    },
+  });
+}
+
+export function useUpdateTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateTopicRequest }) =>
+      api.updateTopic(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: digestKeys.topics() });
+      toast.success('Topic updated');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update topic');
+    },
+  });
+}
+
+export function useDeleteTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.deleteTopic(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: digestKeys.topics() });
+      toast.success('Topic deleted');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete topic');
     },
   });
 }

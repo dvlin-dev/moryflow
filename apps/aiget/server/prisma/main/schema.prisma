@@ -45,6 +45,8 @@ model User {
   userContentStates   UserContentState[]
   digestTopics        DigestTopic[]
   userPreference      UserPreference?
+  resolvedReports     DigestTopicReport[] @relation("ReportResolver")
+  digestDailyOps      DigestUserDailyOps[]
 }
 
 model Session {
@@ -1033,6 +1035,7 @@ model DigestTopic {
 
   editions  DigestTopicEdition[]
   followers DigestSubscription[] @relation("FollowedTopic")
+  reports   DigestTopicReport[]
 
   @@index([visibility, status])
   @@index([subscriberCount])
@@ -1098,4 +1101,73 @@ model DigestTopicEditionItem {
   @@index([editionId, rank])
   @@index([topicId, createdAt])
   @@index([contentId])
+}
+
+// =============================================
+// Digest 话题举报
+// =============================================
+
+enum DigestTopicReportReason {
+  SPAM // 垃圾内容
+  COPYRIGHT // 版权侵权
+  INAPPROPRIATE // 不当内容
+  MISLEADING // 误导性内容
+  OTHER // 其他
+}
+
+enum DigestTopicReportStatus {
+  PENDING // 待处理
+  RESOLVED_VALID // 已处理 - 举报有效
+  RESOLVED_INVALID // 已处理 - 举报无效
+  DISMISSED // 已忽略
+}
+
+model DigestTopicReport {
+  id      String @id @default(cuid())
+  topicId String
+
+  // 举报者（可匿名）
+  reporterUserId String?
+  reporterIp     String?
+
+  // 举报内容
+  reason      DigestTopicReportReason
+  description String? // 详细说明
+
+  // 处理状态
+  status       DigestTopicReportStatus @default(PENDING)
+  resolvedAt   DateTime?
+  resolvedById String? // 处理人
+  resolveNote  String? // 处理备注
+
+  createdAt DateTime @default(now())
+
+  topic      DigestTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  resolvedBy User?       @relation("ReportResolver", fields: [resolvedById], references: [id])
+
+  @@index([topicId, status])
+  @@index([status, createdAt])
+  @@index([reporterUserId])
+}
+
+// =============================================
+// Digest 用户每日操作记录（反 spam）
+// =============================================
+
+model DigestUserDailyOps {
+  id     String @id @default(cuid())
+  userId String
+  date   String // YYYY-MM-DD 格式
+
+  // 操作计数
+  topicCreates Int @default(0) // PUBLIC topic 创建次数
+  topicUpdates Int @default(0) // PUBLIC topic 更新次数
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date])
 }
