@@ -53,3 +53,8 @@ status: active
 - 归档计划：`docs/_archived/plans/`
 - 归档迁移记录：`docs/_archived/migrations/`
 - 其他归档：`docs/_archived/`
+
+## Research（调研 / 排障记录）
+
+- Fetchx Browser & Agent 功能研究：`docs/research/agent-browser-integration.md`
+- Aiget Server：Agent 模块 typecheck OOM 排查：`docs/research/aiget-server-typecheck-oom-agent.md`
