@@ -9,6 +9,7 @@ import {
   Settings01Icon,
   Link02Icon,
   Brain02Icon,
+  Mail01Icon,
 } from '@hugeicons/core-free-icons';
 
 import { NavMain, type NavGroup } from '@/components/layout/nav-main';
@@ -50,6 +51,14 @@ const navGroups: NavGroup[] = [
           { title: 'Memories', url: '/memox/memories' },
           { title: 'Entities', url: '/memox/entities' },
           { title: 'Graph', url: '/memox/graph' },
+        ],
+      },
+      {
+        title: 'Digest',
+        icon: Mail01Icon,
+        items: [
+          { title: 'Inbox', url: '/digest/inbox' },
+          { title: 'Subscriptions', url: '/digest/subscriptions' },
         ],
       },
     ],

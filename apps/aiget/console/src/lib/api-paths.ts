@@ -58,6 +58,19 @@ export const MEMOX_CONSOLE_API = {
   ENTITIES: '/api/console/entities',
 } as const;
 
+// Digest Console API（Session 认证）
+export const DIGEST_CONSOLE_API = {
+  SUBSCRIPTIONS: '/api/v1/console/digest/subscriptions',
+  INBOX: '/api/v1/console/digest/inbox',
+  RUNS: '/api/v1/console/digest/subscriptions', // base path, actual: /subscriptions/:id/runs
+  TOPICS: '/api/v1/console/digest/topics',
+} as const;
+
+// Digest Public API（公开访问）
+export const DIGEST_PUBLIC_API = {
+  TOPICS: '/api/v1/public/digest/topics',
+} as const;
+
 // 健康检查
 export const HEALTH_API = {
   BASE: '/health',

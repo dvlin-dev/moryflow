@@ -1,0 +1,499 @@
+/**
+ * Subscription Run Processor
+ *
+ * [INPUT]: DigestSubscriptionRunJobData
+ * [OUTPUT]: 执行订阅运行，投递内容到 Inbox
+ * [POS]: BullMQ Worker - 订阅运行的核心执行逻辑
+ */
+
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
+import { Job } from 'bullmq';
+import { PrismaService } from '../../prisma/prisma.service';
+import { SearchService } from '../../search/search.service';
+import { ScraperService } from '../../scraper/scraper.service';
+import {
+  DigestRunService,
+  type BillingBreakdown,
+} from '../services/run.service';
+import { DigestContentService } from '../services/content.service';
+import { DIGEST_SUBSCRIPTION_RUN_QUEUE } from '../../queue/queue.constants';
+import type { DigestSubscriptionRunJobData } from '../../queue/queue.constants';
+import { BILLING } from '../digest.constants';
+import {
+  calculateRelevanceScore,
+  calculateImpactScore,
+  calculateQualityScore,
+  calculateOverallScore,
+} from '../utils/scoring.utils';
+import { extractDomain } from '../utils/url.utils';
+
+@Processor(DIGEST_SUBSCRIPTION_RUN_QUEUE)
+export class SubscriptionRunProcessor extends WorkerHost {
+  private readonly logger = new Logger(SubscriptionRunProcessor.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly searchService: SearchService,
+    private readonly scraperService: ScraperService,
+    private readonly runService: DigestRunService,
+    private readonly contentService: DigestContentService,
+  ) {
+    super();
+  }
+
+  async process(job: Job<DigestSubscriptionRunJobData>) {
+    const { subscriptionId, runId, userId, outputLocale } = job.data;
+
+    this.logger.log(`Processing subscription run: ${runId}`);
+
+    try {
+      // 1. 开始运行
+      await this.runService.startRun(runId);
+
+      // 2. 获取订阅配置
+      const subscription = await this.prisma.digestSubscription.findUnique({
+        where: { id: subscriptionId },
+      });
+
+      if (!subscription) {
+        throw new Error(`Subscription ${subscriptionId} not found`);
+      }
+
+      // 3. 执行搜索
+      const billingBreakdown: BillingBreakdown = {};
+      let totalCredits = 0;
+
+      const searchResults = await this.performSearch(
+        userId,
+        subscription,
+        billingBreakdown,
+      );
+      totalCredits += billingBreakdown['fetchx.search']?.subtotalCredits || 0;
+
+      this.logger.debug(`Search returned ${searchResults.length} results`);
+
+      // 4. 抓取内容（可选）
+      const scrapedContents = await this.scrapeContents(
+        userId,
+        searchResults,
+        subscription.scrapeLimit,
+        billingBreakdown,
+      );
+      totalCredits += billingBreakdown['fetchx.scrape']?.subtotalCredits || 0;
+
+      // 5. 内容入池和评分
+      const scoredItems = await this.processAndScoreContents(
+        searchResults,
+        scrapedContents,
+        subscription,
+        outputLocale,
+      );
+
+      // 6. 去重
+      const { dedupedItems, dedupSkipped, redelivered } =
+        await this.deduplicateItems(scoredItems, subscription);
+
+      // 7. 筛选和排序
+      const selectedItems = this.selectTopItems(
+        dedupedItems,
+        subscription.minItems,
+        subscription.minScore,
+      );
+
+      // 8. 创建运行条目并投递
+      const deliveredIds: string[] = [];
+      for (const item of selectedItems) {
+        const runItem = await this.runService.createRunItem(
+          runId,
+          subscriptionId,
+          userId,
+          item.contentId,
+          {
+            canonicalUrlHash: item.canonicalUrlHash,
+            scoreRelevance: item.scoreRelevance,
+            scoreOverall: item.scoreOverall,
+            scoringReason: item.scoringReason,
+            rank: item.rank,
+            titleSnapshot: item.title,
+            urlSnapshot: item.url,
+            aiSummarySnapshot: item.aiSummary,
+          },
+        );
+        deliveredIds.push(runItem.id);
+      }
+
+      // 9. 投递到 Inbox
+      if (deliveredIds.length > 0) {
+        await this.runService.deliverItems(runId, deliveredIds);
+      }
+
+      // 10. 完成运行
+      await this.runService.completeRun(
+        runId,
+        {
+          itemsCandidate: searchResults.length,
+          itemsSelected: selectedItems.length,
+          itemsDelivered: deliveredIds.length,
+          itemsDedupSkipped: dedupSkipped,
+          itemsRedelivered: redelivered,
+        },
+        { totalCredits, breakdown: billingBreakdown },
+      );
+
+      // 11. 更新订阅最后运行时间
+      await this.prisma.digestSubscription.update({
+        where: { id: subscriptionId },
+        data: { lastRunAt: new Date() },
+      });
+
+      this.logger.log(
+        `Completed subscription run ${runId}: ${deliveredIds.length} items delivered`,
+      );
+
+      return { success: true, itemsDelivered: deliveredIds.length };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed subscription run ${runId}:`, error);
+
+      await this.runService.failRun(runId, errorMessage);
+
+      throw error;
+    }
+  }
+
+  /**
+   * 执行搜索
+   */
+  private async performSearch(
+    userId: string,
+    subscription: {
+      topic: string;
+      interests: string[];
+      searchLimit: number;
+    },
+    billingBreakdown: BillingBreakdown,
+  ): Promise<
+    Array<{
+      url: string;
+      title: string;
+      description?: string;
+    }>
+  > {
+    // 构建搜索查询
+    const query = [subscription.topic, ...subscription.interests]
+      .filter(Boolean)
+      .join(' ');
+
+    // 调用搜索服务
+    const response = await this.searchService.search(userId, {
+      query,
+      limit: subscription.searchLimit,
+      scrapeResults: false, // 不自动抓取，我们会单独控制
+    });
+
+    // 记录计费
+    billingBreakdown['fetchx.search'] = {
+      count: 1,
+      costPerCall: BILLING.costs['fetchx.search'],
+      subtotalCredits: BILLING.costs['fetchx.search'],
+    };
+
+    return response.results.map((r) => ({
+      url: r.url,
+      title: r.title,
+      description: r.description,
+    }));
+  }
+
+  /**
+   * 抓取内容
+   */
+  private async scrapeContents(
+    userId: string,
+    searchResults: Array<{ url: string; title: string }>,
+    scrapeLimit: number,
+    billingBreakdown: BillingBreakdown,
+  ): Promise<
+    Map<string, { fulltext: string; siteName?: string; favicon?: string }>
+  > {
+    const scrapedMap = new Map<
+      string,
+      { fulltext: string; siteName?: string; favicon?: string }
+    >();
+
+    if (scrapeLimit <= 0) {
+      return scrapedMap;
+    }
+
+    const toScrape = searchResults.slice(0, scrapeLimit);
+    let scrapeCount = 0;
+
+    for (const result of toScrape) {
+      try {
+        const scrapeResult = await this.scraperService.scrape(
+          userId,
+          {
+            url: result.url,
+            formats: ['markdown'],
+            onlyMainContent: true,
+            timeout: 30000,
+            mobile: false,
+            darkMode: false,
+            sync: true,
+          },
+          undefined,
+          { bill: true },
+        );
+
+        if ('markdown' in scrapeResult && scrapeResult.markdown) {
+          scrapedMap.set(result.url, {
+            fulltext: scrapeResult.markdown,
+            siteName: scrapeResult.metadata?.ogSiteName || undefined,
+            favicon: scrapeResult.metadata?.favicon || undefined,
+          });
+          scrapeCount++;
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to scrape ${result.url}:`, error);
+      }
+    }
+
+    if (scrapeCount > 0) {
+      billingBreakdown['fetchx.scrape'] = {
+        count: scrapeCount,
+        costPerCall: BILLING.costs['fetchx.scrape'],
+        subtotalCredits: scrapeCount * BILLING.costs['fetchx.scrape'],
+      };
+    }
+
+    return scrapedMap;
+  }
+
+  /**
+   * 处理和评分内容
+   */
+  private async processAndScoreContents(
+    searchResults: Array<{
+      url: string;
+      title: string;
+      description?: string;
+    }>,
+    scrapedContents: Map<
+      string,
+      { fulltext: string; siteName?: string; favicon?: string }
+    >,
+    subscription: { topic: string; interests: string[] },
+    locale: string,
+  ): Promise<
+    Array<{
+      contentId: string;
+      canonicalUrlHash: string;
+      url: string;
+      title: string;
+      aiSummary?: string;
+      scoreRelevance: number;
+      scoreOverall: number;
+      scoringReason?: string;
+      rank: number;
+      isRedelivered: boolean;
+    }>
+  > {
+    const scoredItems: Array<{
+      contentId: string;
+      canonicalUrlHash: string;
+      url: string;
+      title: string;
+      aiSummary?: string;
+      scoreRelevance: number;
+      scoreOverall: number;
+      scoringReason?: string;
+      rank: number;
+      isRedelivered: boolean;
+    }> = [];
+
+    for (const result of searchResults) {
+      const scraped = scrapedContents.get(result.url);
+
+      // 入池
+      const content = await this.contentService.ingestContent({
+        url: result.url,
+        title: result.title,
+        description: result.description,
+        fulltext: scraped?.fulltext,
+        siteName: scraped?.siteName,
+        favicon: scraped?.favicon,
+      });
+
+      // 计算评分
+      const { score: relevance, reason } = calculateRelevanceScore(
+        {
+          title: result.title,
+          description: result.description,
+          fulltext: scraped?.fulltext,
+        },
+        subscription,
+      );
+
+      const impact = calculateImpactScore({
+        domain: extractDomain(result.url),
+        siteName: scraped?.siteName,
+      });
+
+      const quality = calculateQualityScore({
+        title: result.title,
+        description: result.description,
+        fulltext: scraped?.fulltext,
+      });
+
+      const overall = calculateOverallScore({ relevance, impact, quality });
+
+      // 获取或创建 AI 摘要
+      let enrichment = await this.contentService.getEnrichment(
+        content.canonicalUrlHash,
+        locale,
+      );
+      if (!enrichment && scraped?.fulltext) {
+        // TODO: 调用 AI 生成摘要
+        // 暂时使用截取的描述
+        const summary = result.description || scraped.fulltext.slice(0, 300);
+        enrichment = await this.contentService.createEnrichment(
+          content.id,
+          content.canonicalUrlHash,
+          locale,
+          summary,
+        );
+      }
+
+      scoredItems.push({
+        contentId: content.id,
+        canonicalUrlHash: content.canonicalUrlHash,
+        url: result.url,
+        title: result.title,
+        aiSummary: enrichment?.aiSummary,
+        scoreRelevance: relevance,
+        scoreOverall: overall,
+        scoringReason: reason,
+        rank: 0, // 稍后排序
+        isRedelivered: false,
+      });
+    }
+
+    // 排序并设置排名
+    scoredItems.sort((a, b) => b.scoreOverall - a.scoreOverall);
+    scoredItems.forEach((item, index) => {
+      item.rank = index + 1;
+    });
+
+    return scoredItems;
+  }
+
+  /**
+   * 去重
+   */
+  private async deduplicateItems(
+    items: Array<{
+      contentId: string;
+      canonicalUrlHash: string;
+      url: string;
+      title: string;
+      aiSummary?: string;
+      scoreRelevance: number;
+      scoreOverall: number;
+      scoringReason?: string;
+      rank: number;
+      isRedelivered: boolean;
+    }>,
+    subscription: {
+      id: string;
+      redeliveryPolicy: string;
+      redeliveryCooldownDays: number;
+    },
+  ): Promise<{
+    dedupedItems: typeof items;
+    dedupSkipped: number;
+    redelivered: number;
+  }> {
+    const dedupedItems: typeof items = [];
+    let dedupSkipped = 0;
+    let redelivered = 0;
+
+    for (const item of items) {
+      const { delivered, lastDeliveredAt } =
+        await this.runService.isContentDelivered(
+          subscription.id,
+          item.canonicalUrlHash,
+        );
+
+      if (!delivered) {
+        dedupedItems.push(item);
+        continue;
+      }
+
+      // 根据重投策略处理
+      switch (subscription.redeliveryPolicy) {
+        case 'NEVER':
+          dedupSkipped++;
+          break;
+
+        case 'COOLDOWN':
+          if (lastDeliveredAt) {
+            const cooldownMs =
+              subscription.redeliveryCooldownDays * 24 * 60 * 60 * 1000;
+            if (Date.now() - lastDeliveredAt.getTime() >= cooldownMs) {
+              item.isRedelivered = true;
+              dedupedItems.push(item);
+              redelivered++;
+            } else {
+              dedupSkipped++;
+            }
+          } else {
+            dedupSkipped++;
+          }
+          break;
+
+        case 'ON_CONTENT_UPDATE':
+          // TODO: 检查内容是否更新
+          dedupSkipped++;
+          break;
+
+        default:
+          dedupSkipped++;
+      }
+    }
+
+    return { dedupedItems, dedupSkipped, redelivered };
+  }
+
+  /**
+   * 筛选 Top N 条目
+   */
+  private selectTopItems(
+    items: Array<{
+      contentId: string;
+      canonicalUrlHash: string;
+      url: string;
+      title: string;
+      aiSummary?: string;
+      scoreRelevance: number;
+      scoreOverall: number;
+      scoringReason?: string;
+      rank: number;
+      isRedelivered: boolean;
+    }>,
+    minItems: number,
+    minScore: number,
+  ): typeof items {
+    // 先按最低分数筛选
+    let filtered = items.filter((item) => item.scoreOverall >= minScore);
+
+    // 如果筛选后数量不足，放宽条件
+    if (filtered.length < minItems) {
+      filtered = items.slice(0, minItems);
+    }
+
+    // 取 minItems 条
+    return filtered.slice(0, minItems);
+  }
+}
