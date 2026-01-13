@@ -66,3 +66,7 @@ prisma/migrations/.migration_lock.toml
 sandbox-runtime/
 
 *.gz
+
+# 外部参考仓库
+archive/external-repos/agent-browser/
+archive/external-repos/firecrawl/
