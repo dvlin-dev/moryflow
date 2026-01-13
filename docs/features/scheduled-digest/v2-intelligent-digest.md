@@ -64,19 +64,26 @@ reviewers: []
 示例 URL：
 
 - 话题详情：`https://aiget.dev/topics/:slug`
-- Edition 页（一期）：`https://aiget.dev/topics/:slug/editions/:id`（或 `:yyyy-mm-dd`）
+- Edition 页（一期）：`https://aiget.dev/topics/:slug/editions/:editionId`
 
 我建议把它设计为 **Public Topic Directory**（公开话题目录），并遵循两个产品底线：
 
-1. **隐私保护（在“默认公开”前提下）**：用户的“订阅”仍然是私有资产，但用户发布的 Topic 默认公开且可收录；因此产品必须在发布/创建时明确提示“公开可被搜索引擎收录”，并且把“切换为私密（付费）/删除话题”做成可见且可撤销的能力。
+1. **隐私保护 + 显式发布**：用户的"订阅"仍然是私有资产，**只有用户主动发布时才会创建 Topic**（不会自动公开）；用户发布的 Topic 默认公开且可收录；因此产品必须在发布时明确提示"公开可被搜索引擎收录"，并且把"切换为私密（付费）/删除订阅（自动下架 Topic）"做成可见且可撤销的能力。
 2. **版权与垃圾内容可控**：SEO 页只展示“摘要/要点 + 链接 + 来源列表”，避免全文转载；并提供最小审核/举报/下架机制，避免被 spam 反噬 SEO。
 
-你已确认的发布可见性（两档）：
+你已确认的发布可见性（三档）：
 
 - `PUBLIC`：默认公开（可收录，进首页/目录/站点地图）
 - `PRIVATE`：私密（仅创建者可见），**仅付费用户可切换为私密**
+- `UNLISTED`：已下架（关联订阅被删除时自动设置；SEO 页 404，从 sitemap 移除）
 
-风险提示（必须在产品里明确提示用户）：默认公开意味着用户的订阅意图可能被暴露，因此建议在创建/发布话题时提供醒目的“公开可被搜索引擎收录”的提示，并允许用户在发布前预览公开页面。
+**Topic 生命周期规则（已确认）**：
+
+- **显式发布才创建**：订阅创建后默认为私有，只有用户主动点击"发布"时才会创建 `DigestTopic`
+- **删除订阅后下架**：当用户删除关联的 `DigestSubscription` 时，对应的 `DigestTopic` 自动变为 `UNLISTED`
+- **下架后的处理**：SEO 页返回 404，从 sitemap 移除，但保留 slug（防止被抢注）
+
+风险提示（必须在产品里明确提示用户）：发布后话题公开意味着用户的订阅意图可能被暴露，因此建议在发布时提供醒目的"公开可被搜索引擎收录"的提示，并允许用户在发布前预览公开页面。
 
 #### 1.6.1 域名与路由（你已确认用 aiget.dev 做单品主站）
 
@@ -98,7 +105,7 @@ SEO 页建议落在 `aiget.dev`（而不是 `console.aiget.dev`），例如：
 
 - 话题目录：`https://aiget.dev/topics`
 - 话题详情：`https://aiget.dev/topics/:slug`
-- 每期内容页：`https://aiget.dev/topics/:slug/editions/:yyyy-mm-dd`（或 `:editionId`）
+- 每期内容页：`https://aiget.dev/topics/:slug/editions/:editionId`
 
 订阅转化路径（强推荐）：
 
@@ -131,7 +138,7 @@ SEO 页建议落在 `aiget.dev`（而不是 `console.aiget.dev`），例如：
 | `DigestRun`（Run） | 一次订阅执行的记录（一次“投递到 Inbox”） | 用户/Console | 按 run 结算一次（Fetchx 成本汇总） |
 | `DigestRunItem` | 某次 Run 中入选并投递的条目快照 | 用户/Console | 用于 Inbox 展示与追溯 |
 | `UserContentState` | 用户维度的去重与状态（read/saved/notInterested） | 用户/Console | 跨订阅共享，决定二次投递 |
-| `DigestTopic`（Topic） | 公开话题（默认 PUBLIC；付费可 PRIVATE） | 访客/SEO/Console | 对应 `aiget.dev/topics/:slug` |
+| `DigestTopic`（Topic） | 公开话题（用户显式发布后才创建；默认 PUBLIC，付费可 PRIVATE） | 访客/SEO/Console | 对应 `aiget.dev/topics/:slug` |
 | `DigestTopicEdition`（Edition） | 某个 Topic 的一期公开内容（“第 N 期/本期”） | 访客/SEO | 对应 `aiget.dev/topics/:slug/editions/:id` |
 | `DigestTopicEditionItem` | 某期 Edition 的条目快照 | 访客/SEO | 只展示摘要/链接，不展示全文 |
 | Follow（跟随订阅） | 基于 Topic 的 editions 作为候选集的订阅方式 | 用户 | 允许微调（关键词/阈值/时间），不建议改 sources（改 sources 用 Fork） |
@@ -215,6 +222,44 @@ DigestTopic (PUBLIC)
 
 关键点：**公开话题的 editions 应该是稳定且可复现的**（不受某个用户的 read/saved/notInterested 影响），否则 SEO 页与用户订阅体验会割裂。
 
+### 2.3.2 Topic Edition 生成流程（发布者付费）
+
+Topic Edition 生成是独立于普通订阅 run 的流程，由 TopicScheduler 触发，费用归属发布者。
+
+```text
+TopicScheduler (每分钟扫描)
+  │
+  ├─ 扫描 DigestTopic.status='ACTIVE' && visibility IN ('PUBLIC','PRIVATE') && nextEditionAt <= now()
+  │
+  ├─ 检查发布者余额（topic.sourceSubscription.userId）
+  │     └─ 余额不足 → topic.status = 'PAUSED_INSUFFICIENT_CREDITS'，跳过
+  │
+  ├─ 原子推进 nextEditionAt
+  │
+  ├─ 创建 DigestTopicEdition(PENDING)
+  │
+  └─ 入队执行（与普通 run 共享 BullMQ 队列，但标记 isTopicEdition=true）
+        │
+        ├─ 触发 sourceSubscription 的 run 逻辑
+        │     └─ 搜索/抓取/评分/筛选/生成 narrative
+        │
+        ├─ 写入 DigestTopicEditionItems（快照）
+        │
+        ├─ 计费：从发布者账户扣除（按 Fetchx 成本汇总）
+        │
+        └─ 更新 topic.lastEditionAt，标记 edition.status='SUCCEEDED'
+```
+
+**与普通订阅 run 的区别**：
+
+| 维度 | 普通订阅 Run | Topic Edition 生成 |
+|------|-------------|-------------------|
+| 触发方式 | SubscriptionScheduler | TopicScheduler |
+| 费用归属 | 订阅创建者 | Topic 发布者（sourceSubscription.userId） |
+| 输出目标 | DigestRunItem → 用户 Inbox | DigestTopicEditionItem → SEO 页 + Follow 订阅复用 |
+| 去重依据 | UserContentState | 无（Topic 级全量输出） |
+| 失败影响 | 仅影响单个用户 | 影响所有 Follower |
+
 ### 2.4 为什么全局内容池对 C 端很关键
 
 - **成本**：抓全文/摘要是最贵的部分，全局复用能显著降低边际成本。
@@ -290,6 +335,9 @@ interface DigestSubscription {
   // 去重 & 二次投递
   redeliveryPolicy: RedeliveryPolicy; // 默认 COOLDOWN
   redeliveryCooldownDays: number; // 默认 7（仅 COOLDOWN 生效）
+
+  // Follow 关联（可选，仅 Follow 订阅有值）
+  followedTopicId?: string; // 跟随的 Topic ID（有值时为 Follow 订阅，候选集来自 Topic Edition，免费）
 
   // 调度
   cron: string; // Cron 表达式（建议支持标准 5 段 + 可选 6 段(秒)；UI 提供高级模式）
@@ -394,17 +442,15 @@ interface ContentItem {
   title: string;
   description?: string; // 原始描述（来自 meta/RSS）
 
-  // AI 生成内容（分析全文后产出，但不存全文）
-  aiSummary?: string; // AI 总结（200-500 字，根据原文信息密度自适应）
-  aiTags?: string[]; // AI 提取的标签
-  contentType?: 'news' | 'release' | 'tutorial' | 'opinion' | 'paper'; // AI 分类
-
   // 元数据
   author?: string;
   publishedAt?: Date;
-  language?: string;
+  language?: string; // 原文语言（检测得到）
   siteName?: string;
   favicon?: string;
+
+  // 内容指纹（用于检测内容更新，支持 ON_CONTENT_UPDATE 策略）
+  contentHash?: string; // SHA256(normalizedContent)，用于检测"内容显著更新"
 
   // 全局评分（与订阅无关）
   scoreImpact: number; // 0-100
@@ -425,7 +471,63 @@ interface ContentItem {
 }
 ```
 
-#### 3.4.1 全文临时缓存策略
+### 3.4.1 ContentItemEnrichment（多语言 AI 摘要，按 locale 缓存）
+
+> **解决多语言问题**：AI 总结需要按用户 UI 语言生成，因此不能存在 ContentItem 的单一字段中。
+> 采用独立表按 `(canonicalUrlHash, locale)` 缓存，同一内容可有多语言版本。
+
+```typescript
+interface ContentItemEnrichment {
+  id: string;
+  contentId: string;
+  canonicalUrlHash: string;
+
+  // 缓存维度
+  locale: string; // 例如 'en' | 'zh-CN' | 'ja'
+  promptVersion: string; // prompt 版本号（避免旧缓存"污染"）
+
+  // AI 生成内容
+  aiSummary: string; // AI 总结（200-500 字，根据原文信息密度自适应）
+  aiTags?: string[]; // AI 提取的标签
+  contentType?: 'news' | 'release' | 'tutorial' | 'opinion' | 'paper'; // AI 分类
+  keyEntities?: string[]; // 提取的关键实体（产品名、版本号等）
+
+  createdAt: Date;
+  updatedAt: Date;
+
+  // @@unique([canonicalUrlHash, locale, promptVersion])
+  // @@index([contentId, locale])
+}
+```
+
+缓存策略：
+
+- 缓存 key：`canonicalUrlHash + locale + promptVersion`
+- 查询时先查 DB，缓存未命中则调用 LLM 生成并写入
+- prompt 版本变更时，旧缓存自动失效（通过 promptVersion 区分）
+
+**promptVersion 管理规范**：
+
+```typescript
+// 建议在 ConfigService 或环境变量中维护
+const PROMPT_VERSIONS = {
+  contentSummary: 'v1.0.0',   // ContentItemEnrichment 生成 prompt 版本
+  runNarrative: 'v1.0.0',     // DigestRun.narrativeMarkdown 生成 prompt 版本
+};
+
+// 版本号规则：
+// - 主版本（v2.x.x）：prompt 输出格式/结构变更，需要重新生成
+// - 次版本（v1.1.x）：prompt 优化，可选择是否重新生成
+// - 修订版（v1.0.1）：修正错误，不影响缓存
+```
+
+管理策略：
+
+- **Lazy 失效**：查询时按当前 `PROMPT_VERSIONS.contentSummary` 查，未命中则生成新版本
+- **不主动清理**：旧版本缓存保留（节省存储可做定期清理 job）
+- **版本发布**：prompt 变更后递增版本号，部署后新请求自动使用新版本
+
+#### 3.4.2 全文临时缓存策略
 
 抓取的全文使用 Redis 临时缓存（TTL = 1 小时），用途：
 
@@ -441,9 +543,18 @@ interface ContentFullTextCache {
   canonicalUrlHash: string;
   contentMarkdown: string;
   fetchedAt: Date;
+  byteSize: number; // 记录原始大小（用于监控）
   // TTL: 3600s (1 hour)
 }
 ```
+
+**全文缓存安全约束（必须做）**：
+
+- **体积上限**：单条内容最大 **500KB**（超过则截断或拒绝缓存）
+- **压缩**：对 > 10KB 的内容使用 gzip 压缩后再存入 Redis
+- **敏感内容过滤**：写入前检查是否包含明显的敏感词/个人信息，发现则跳过缓存
+- **总容量监控**：设置 Redis 内存告警（例如 > 1GB 时触发），避免缓存膨胀
+- **LRU 淘汰**：Redis 配置 `maxmemory-policy allkeys-lru`，自动淘汰最久未使用的缓存
 
 ### 3.5 DigestRun（一次订阅执行）
 
@@ -473,9 +584,11 @@ interface DigestRun {
   emailSubject?: string;
 
   // 计费：按 run 结算一次，但价格按本次 Fetchx 实际调用成本汇总（缓存也收费）
+  // 失败的 run 不收费（只有 status='SUCCEEDED' 时才结算）
   billing: {
     model: 'FETCHX_ACTUAL';
     totalCredits: number;
+    charged: boolean; // 是否已结算（只有 SUCCEEDED 才为 true）
     breakdown: Partial<
       Record<
         | 'fetchx.search'
@@ -488,7 +601,7 @@ interface DigestRun {
       >
     >;
   };
-  quotaTransactionId?: string;
+  quotaTransactionId?: string; // 只有 billing.charged=true 时才有值
 
   result?: {
     itemsCandidate: number;
@@ -565,14 +678,28 @@ interface UserContentState {
 
 ### 3.8 DigestTopic（Public Topic Directory，用于 SEO）
 
-> 用于 `aiget.dev/topics` 的“公开话题”。注意：这里的 Topic 是**发布用的公共对象**，不等同于用户私有的 `DigestSubscription`。
+> 用于 `aiget.dev/topics` 的"公开话题"。注意：这里的 Topic 是**发布用的公共对象**，不等同于用户私有的 `DigestSubscription`。
 >
+> **Topic 生命周期规则（已确认）**：
 > - 用户订阅默认是 private
-> - 当用户选择“发布话题”时，才会生成/更新 `DigestTopic`
+> - **显式发布才创建**：只有用户主动点击"发布"时，才会创建 `DigestTopic`（不会自动创建）
+> - **删除订阅后下架**：当用户删除关联的 `DigestSubscription` 时，对应的 `DigestTopic` 自动下架（`visibility='UNLISTED'`，SEO 页 404，从 sitemap 移除）
 > - SEO 页只展示摘要/链接，不展示全文
+>
+> **计费规则（发布者付费，订阅者免费）**：
+> - **发布者（Topic Owner）**：Topic Edition 生成 = 触发 sourceSubscription 的 run，费用从发布者账户扣除
+> - **订阅者（Follower）**：Follow 订阅免费（直接读取 Topic Edition，无 Fetchx 调用）
 
 ```typescript
-type DigestTopicVisibility = 'PUBLIC' | 'PRIVATE';
+type DigestTopicVisibility =
+  | 'PUBLIC'    // 公开（可收录，进首页/目录/站点地图）
+  | 'PRIVATE'   // 私密（仅创建者可见），仅付费用户可切换
+  | 'UNLISTED'; // 已下架（关联订阅被删除时自动设置；SEO 页 404，从 sitemap 移除）
+
+type DigestTopicStatus =
+  | 'ACTIVE'                       // 正常运行
+  | 'PAUSED_INSUFFICIENT_CREDITS'  // 发布者余额不足，暂停 Edition 生成
+  | 'PAUSED_BY_ADMIN';             // 管理员暂停（违规/spam）
 
 interface DigestTopic {
   id: string;
@@ -581,6 +708,10 @@ interface DigestTopic {
   title: string;
   description?: string;
   visibility: DigestTopicVisibility;
+  status: DigestTopicStatus; // 运行状态（与 visibility 独立）
+
+  // 关联的订阅（Topic 必须关联一个订阅，订阅删除时 Topic 自动下架）
+  sourceSubscriptionId: string; // 创建该 Topic 的订阅 ID（Edition 生成费用归属此订阅的 userId）
 
   // 默认配置（订阅时可 clone 并允许用户改 cron/timezone）
   topic: string;
@@ -592,7 +723,7 @@ interface DigestTopic {
   redeliveryPolicy: RedeliveryPolicy;
   redeliveryCooldownDays: number;
 
-  // 话题的“公开发布节奏”（用于生成 editions 与 SEO）
+  // 话题的"公开发布节奏"（用于生成 editions 与 SEO）
   cron: string;
   timezone: string;
 
@@ -602,12 +733,23 @@ interface DigestTopic {
   // 统计（用于首页排序）
   subscriberCount: number;
   lastEditionAt?: Date;
+  nextEditionAt?: Date; // 下次 Edition 生成时间（TopicScheduler 扫描用）
 
   createdByUserId: string;
   createdAt: Date;
   updatedAt: Date;
+  unlistedAt?: Date; // 下架时间（仅 visibility='UNLISTED' 时有值）
+  pausedAt?: Date;   // 暂停时间（仅 status 为 PAUSED_* 时有值）
+  pauseReason?: string; // 暂停原因（用于展示给发布者或管理员）
 }
 ```
+
+**subscriberCount 更新规则**：
+
+- **+1**：用户创建 Follow 订阅（`followedTopicId = topic.id`）
+- **-1**：用户删除 Follow 订阅，或订阅变为非 Follow
+- **不计入**：Topic 创建者 Follow 自己的 Topic（防止刷量）
+- **原子操作**：使用 DB 事务或 `UPDATE ... SET subscriberCount = subscriberCount + 1` 保证一致性
 
 ### 3.9 DigestTopicEdition（公开话题的一期内容）
 
@@ -627,16 +769,28 @@ interface DigestTopicEdition {
   narrativeMarkdown?: string;
   outputLocale: string;
 
+  // 失败处理
+  error?: string;       // 失败原因
+  retryCount: number;   // 已重试次数（默认 0）
+
   createdAt: Date;
 }
 ```
+
+**Topic Edition 生成失败处理**：
+
+- **自动重试**：最多 3 次，间隔指数退避（1min → 5min → 15min）
+- **超过重试次数**：标记 `status='FAILED'`，记录 `error` 原因
+- **连续失败阈值**：同一 Topic 连续 3 期失败 → `topic.status = 'PAUSED_BY_ADMIN'`，通知管理员
+- **用户可见**：Topic 详情页展示"最近更新状态"（成功/失败/暂停）
+- **恢复机制**：管理员解决问题后手动恢复 `topic.status = 'ACTIVE'`
 
 ### 3.10 DigestTopicEditionItem（公开话题的一期条目）
 
 ```typescript
 interface DigestTopicEditionItem {
   id: string;
-  runId: string;
+  editionId: string; // 关联 DigestTopicEdition（不是 runId，避免与用户私有 run 混淆）
   topicId: string;
 
   contentId: string;
@@ -648,7 +802,12 @@ interface DigestTopicEditionItem {
   // SEO/公开展示快照（避免后续内容更新影响历史一致性）
   titleSnapshot: string;
   urlSnapshot: string;
-  aiSummarySnapshot?: string; // AI 总结快照（200-500 字）
+  aiSummarySnapshot?: string; // AI 总结快照（来自 ContentItemEnrichment，按 topic locale）
+
+  createdAt: Date;
+
+  // @@index([editionId, rank])
+  // @@index([topicId, createdAt])
 }
 ```
 
@@ -719,25 +878,13 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 - **标签/分类**：生成 `ContentItem.aiTags`、`contentType`（是否是教程/发布/观点）等
 - **结构化信息提取（可选）**：例如从文章中提取产品名、GitHub repo、版本号、发布日期等（用于 Impact/Quality 的启发式增强）
 
-你选择了"Digest 输出语言跟随 UI 语言"，因此**内容级缓存也必须按语言维度切分**（否则中文用户会读到英文总结，或反之）。建议把 enrichment 从 `ContentItem.aiSummary` 演进为"按 locale 的全局缓存"，例如：
+你选择了"Digest 输出语言跟随 UI 语言"，因此**内容级缓存必须按语言维度切分**（否则中文用户会读到英文总结，或反之）。
 
-- 方案 A（推荐）：`ContentItemEnrichment { contentId, canonicalUrlHash, locale, aiSummary, aiTags, ... }`（一篇内容可以有多条 enrichment）
-- 方案 B（简单）：`ContentItem.aiSummaryI18n` 用 JSON 存 `{ "en": "...", "zh-CN": "..." }`（查询方便，但 schema 演进不如独立表清晰）
+**已采用方案 A（见 3.4.1）**：`ContentItemEnrichment { contentId, canonicalUrlHash, locale, promptVersion, aiSummary, aiTags, ... }`
 
-缓存 key 建议包含：`canonicalUrlHash + locale + promptVersion`（避免后续 prompt 调整导致旧缓存"污染"）。
-
-输出建议遵循稳定 schema（示例，非最终）：
-
-```typescript
-interface ContentEnrichment {
-  locale?: string; // e.g. 'en' | 'zh-CN'
-  aiSummary: string; // 200-500 字
-  aiTags: string[];
-  language?: string;
-  contentType?: 'news' | 'release' | 'tutorial' | 'opinion' | 'paper';
-  keyEntities?: string[];
-}
-```
+- 一篇内容可以有多条 enrichment（不同语言版本）
+- 缓存 key：`canonicalUrlHash + locale + promptVersion`
+- prompt 版本变更时旧缓存自动失效
 
 #### 4.4.2 订阅级（用户私有）LLM 处理：写入 `DigestRun` / `DigestRunItem`
 
@@ -913,7 +1060,28 @@ cron every 60s:
   - 小写 host；移除 fragment（`#...`）；移除默认端口；path 去重斜杠
   - query 参数排序；移除追踪参数（`utm_*`、`fbclid`、`gclid`、`spm`、`ref` 等）
   - 跟随 3xx 重定向（限制次数，例如 ≤5）
-  - 若抓正文：优先采信页面 `rel=canonical` / `og:url`（但要校验同域或可信规则，避免被“投毒”跳到无关站点）
+  - 若抓正文：优先采信页面 `rel=canonical` / `og:url`，但**必须遵守信任边界规则**
+
+**Canonical URL 信任边界（必须做）**：
+
+对 `rel=canonical` 和 `og:url` 的采信必须限制在可信范围内，否则会被恶意页面"投毒"至不相关域，破坏 `canonicalUrlHash` 的稳定性。
+
+规则（按优先级）：
+
+1. **同域优先**：canonical URL 必须与原始 URL 同域（包括子域名）
+2. **可信域白名单**：允许跨域的情况仅限于可信域名对（例如 `www.example.com` → `example.com`）
+3. **拒绝跨站**：若 canonical URL 指向完全不同的站点，忽略该 canonical 并使用原始 URL
+4. **协议一致**：canonical URL 必须是 http/https，拒绝其他协议
+5. **循环检测**：若 canonical URL 又指向另一个 canonical，最多跟随 2 次
+
+示例：
+
+```
+原始 URL: https://blog.example.com/post/123
+canonical: https://example.com/post/123       → ✅ 采信（同站）
+canonical: https://totally-different.com/x    → ❌ 拒绝（跨站投毒）
+canonical: https://example.com/post/123?ref=x → ✅ 采信后移除追踪参数
+```
 - `contentHash`（用于内容更新判定，v2+，可选）：
   - 若需要检测"内容显著更新"，可在分析时临时计算 hash 并与上次比较
   - 由于全文不永久存储，contentHash 可存入 ContentItem 供后续对比（仅存 hash，不存全文）
@@ -925,7 +1093,7 @@ cron every 60s:
 
 1. **计费**：本次 run 的费用 = 本次 Fetchx 实际调用成本汇总（缓存也收费），并且只结算一次（见 7.1/16.1）
 2. 组装候选集（Candidates，最多 `searchLimit` 条）：
-   - 若订阅为 **Topic Follow**（来自 `DigestTopic`）：直接取该 Topic 的最新一期（或指定范围内）的 `DigestTopicRunItems` 作为候选（保证与 SEO 页一致）
+   - 若订阅为 **Topic Follow**（`followedTopicId` 有值）：直接取该 Topic 的最新一期（或指定范围内）的 `DigestTopicEditionItems` 作为候选（保证与 SEO 页一致；Follow 订阅不触发 Fetchx 调用，免费）
    - 若订阅绑定了 `search`（ON_RUN）：执行一次 search（limit=`searchLimit`）并把新内容入池（注意：Digest 内部调用必须免二次扣费）
    - 若订阅绑定了 `rss/siteCrawl`（SCHEDULED）：直接从内容池取最近窗口内内容（最多 `searchLimit` 条）
    - 窗口：`publishedAt`（缺失则用 `firstSeenAt`）在 `contentWindowHours` 内
@@ -986,10 +1154,11 @@ v2+ 策略（可选）：
 - **同一用户并发 run 不重复投递**：写 `UserContentState` 时用 `@@unique([userId, canonicalUrlHash])` 兜底，并采用“先占位再写入 Inbox”的模式：
   - 在事务里尝试 `upsert UserContentState` 并判断是否满足 redelivery
   - 只有成功占位的内容才进入本次发送列表
-- **失败重试**：
-  - Search/RSS/Crawl 失败：run 可以降级（返回更少条目），但仍算一次 run（是否退费取决于产品策略）
-  - 写入 Web Inbox 失败（未能持久化 `DigestRunItem`）：run 标记 FAILED，可重试同一个 run（推荐：`retry` 走同一 `runId`，避免重复扣费）
-  - 可选推送（Email/Webhook）失败：不影响 Inbox 可见性；可以在后续提供“重试推送”的独立接口
+- **失败重试与计费**：
+  - Search/RSS/Crawl 失败：run 可以降级（返回更少条目），但若最终 run 失败则不收费
+  - 写入 Web Inbox 失败（未能持久化 `DigestRunItem`）：run 标记 FAILED，**不收费**；可重试同一个 run（推荐：`retry` 走同一 `runId`）
+  - 可选推送（Email/Webhook）失败：不影响 Inbox 可见性；可以在后续提供"重试推送"的独立接口
+  - **失败的 run 不收费**：只有 `status='SUCCEEDED'` 时才结算费用
 
 ### 5.5 Web Inbox 状态管理（已读/收藏/不感兴趣）
 
@@ -1010,6 +1179,8 @@ v2+ 策略（可选）：
 
 ### 6.1 Console（SessionGuard）
 
+**订阅管理**：
+
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/api/v1/console/digests` | 创建订阅 |
@@ -1022,9 +1193,25 @@ v2+ 策略（可选）：
 | GET | `/api/v1/console/digests/:id/runs` | 执行历史 |
 | GET | `/api/v1/console/digests/runs/:runId` | 单次 run 详情（含 items） |
 | POST | `/api/v1/console/digests/runs/:runId/retry` | 重试失败的 run（不重复扣费） |
-| GET | `/api/v1/console/digests/inbox/items` | Web Inbox：按用户汇总已投递条目（分页/搜索） |
-| PATCH | `/api/v1/console/digests/inbox/items/:itemId` | Web Inbox：更新条目状态（已读/收藏/不感兴趣等） |
-| GET | `/api/v1/console/digests/inbox/stats` | Web Inbox：未读/收藏计数（用于侧边栏 Badge） |
+
+**Web Inbox**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/console/digests/inbox/items` | 按用户汇总已投递条目（分页/搜索） |
+| PATCH | `/api/v1/console/digests/inbox/items/:itemId` | 更新条目状态（已读/收藏/不感兴趣等） |
+| GET | `/api/v1/console/digests/inbox/stats` | 未读/收藏计数（用于侧边栏 Badge） |
+
+**Topic 管理（发布/下架）**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/v1/console/digest-topics` | 从订阅发布为 Topic（需确认公开提示） |
+| GET | `/api/v1/console/digest-topics` | 我的 Topics 列表 |
+| GET | `/api/v1/console/digest-topics/:id` | Topic 详情 |
+| PATCH | `/api/v1/console/digest-topics/:id` | 更新 Topic（visibility/配置） |
+| DELETE | `/api/v1/console/digest-topics/:id` | 删除 Topic（变为 UNLISTED） |
+| POST | `/api/v1/console/digest-topics/:slug/follow` | 创建 Follow 订阅（免费） |
 
 ### 6.2 Public API（ApiKeyGuard，至少提供）
 
@@ -1051,8 +1238,20 @@ v2+ 策略（可选）：
 
 计费建议：
 
-- `POST /digests/:id/run`：计费（一次 run 一次扣费）
-- `GET /digests/:id/preview`：不计费（否则用户无法调参），但要做频控（例如每小时 ≤ N 次）
+- `POST /digests/:id/run`：计费（一次 run 一次扣费；失败不收费）
+- `GET /digests/:id/preview`：不计费（否则用户无法调参），但**必须做严格频控**
+
+**Preview 接口滥用防护（必须做）**：
+
+虽然 preview 不计费，但其流程仍会触发 search/scrape/LLM 等耗费资源的操作，存在被滥用的风险。
+
+必须实现的频控约束：
+
+- **用户级**：每个用户每小时最多 **10 次** preview（跨所有订阅）
+- **订阅级**：每个订阅每小时最多 **5 次** preview
+- **全局级**：全局 preview 并发上限 **20**（避免突发流量）
+- **降级策略**：频控触发时返回 429，提示"Please try again later"
+- **日志与告警**：记录 preview 调用日志，异常高频触发告警
 
 语言建议（Public API 场景）：
 
@@ -1116,8 +1315,9 @@ v2+ 策略（可选）：
   - 返回：`slug/title/description/locale/lastEditionAt/subscriberCount` 等
 - `GET /api/v1/public/digest-topics/:slug`
   - 返回：话题配置（去敏后的公开部分）+ 最近 N 期 editions 列表
-- `GET /api/v1/public/digest-topics/:slug/editions/:id`
+- `GET /api/v1/public/digest-topics/:slug/editions/:editionId`
   - 返回：该期 narrative + items（title/aiSummarySnapshot/urlSnapshot/source）
+  - `editionId` 格式：cuid/ulid（唯一标识，与 Topic.cron 频率无关）
 - 可选：`GET /api/v1/public/digest-topics/:slug/rss.xml`
   - 作为“public topic 的 RSS 输出”，同时也会增强增长（RSS 传播）
 
@@ -2085,18 +2285,19 @@ apps/aiget/server/src/digest/
 |------|------|------|
 | 内容池范围 | 全局共享（跨用户） | 复用抓取/摘要，降低成本 |
 | 去重主键 | canonicalUrlHash | 统一口径、可解释 |
-| 二次投递 | 允许（COOLDOWN=7 天） | 避免错过“持续演进的内容”，同时控制噪音 |
+| 二次投递 | 允许（COOLDOWN=7 天） | 避免错过"持续演进的内容"，同时控制噪音 |
 | 调度表达式 | 任意 cron + timezone（建议兼容 5 段 + 可选 6 段(秒)） | 既能做 API 能力，也方便独立产品形态 |
 | 输出语言 | 跟随 UI 语言 | 让用户在 Inbox/SEO 页的阅读体验一致（3.0） |
-| 计费 | 按 run 结算一次（按 Fetchx 实际成本汇总；缓存也收费） | 价格可解释（“抓了多少就扣多少”），但需要更强风控与预算检查 |
+| 计费 | 按 run 结算一次（按 Fetchx 实际成本汇总；缓存也收费） | 价格可解释（"抓了多少就扣多少"），但需要更强风控与预算检查 |
+| **Topic 计费** | **发布者付费，订阅者免费** | 谁发布谁付费；Follow 免费复用 Edition；避免平台被薅（见 17.1） |
 | Writer | 自由风格 | 差异化、可读性更强 |
 | 智能筛选 | `searchLimit=60`，`scrapeLimit=20`，`minItems=5`，`minScore=70` | AI 自由判断返回数量，保底机制避免空结果 |
-| 默认入口 | Web Inbox（网页） | 先做“可见可控”，再做推送渠道 |
+| 默认入口 | Web Inbox（网页） | 先做"可见可控"，再做推送渠道 |
 | 内容保留 | 不存全文，只存 AI 总结 + metadata | 大幅降低存储成本，规避版权风险；用户看原文通过链接跳转原站 |
 | RSS 源开放 | 允许任意 feedUrl | 覆盖更多来源；必须加强 SSRF/风控（3.2/5.1.3） |
 | 邮件模板 | Phase 4：统一模板（可选） | 开启 Email 时优先保证送达率与退订链路 |
 | Web Inbox | MVP：API + 前端展示 + 管理 | 已读/收藏/不感兴趣可用于后续学习与个性化 |
-| Public Topics（SEO） | `PUBLIC/PRIVATE`（默认 PUBLIC，付费可 PRIVATE） | 增长优先；需产品级风险提示与治理（见 1.6/6.6） |
+| Public Topics（SEO） | `PUBLIC/PRIVATE/UNLISTED`（默认 PUBLIC，付费可 PRIVATE） | 增长优先；需产品级风险提示与治理（见 1.6/6.6） |
 
 ---
 
@@ -2120,7 +2321,7 @@ apps/aiget/server/src/digest/
 4. ✅ 二次投递策略生效：超过冷却期后允许再次投递，并在 run 统计中可见；notInterested 内容不再出现
 5. ✅ run 历史可查：每次 run 的 items、分数、reason 可追溯
 6. ✅ 幂等与重试：并发/重试不产生重复写入 Inbox；未来开启推送时也不产生重复推送
-7. ✅ 计费正确：每次 run 仅结算一次（按 Fetchx 成本汇总；缓存也收费），失败按策略退费
+7. ✅ 计费正确：每次 run 仅结算一次（按 Fetchx 成本汇总；缓存也收费）；**失败的 run 不收费**
 
 ---
 
@@ -2350,8 +2551,10 @@ Digest 在用户视角仍是"按 run 结算一次"，但计价更像"本次 run 
 
 建议最小治理能力（MVP 就做）：
 
-1. **发布确认弹窗**：明确提示“公开可被搜索引擎收录”，并展示预览 URL
-2. **一键下架（改为 PRIVATE）**：付费用户可随时私密；免费用户至少要支持“删除 Topic”（即停止公开展示）
+1. **发布确认弹窗**：明确提示"公开可被搜索引擎收录"，并展示预览 URL
+2. **一键下架**：
+   - 付费用户：可随时切换为 PRIVATE（私密但保留）
+   - 所有用户：删除订阅时自动下架关联 Topic（变为 UNLISTED，SEO 页 404）
 3. **举报与管理员下架**：public 页面底部提供 Report；后台提供 `digest-topics` 下架与域名黑名单
 4. **反 spam 限制**：
    - 免费用户最多 **3 个 PUBLIC topics**；每天最多创建/更新 PUBLIC topic **3 次**（create+update 合计，见 17.3）
@@ -2360,38 +2563,75 @@ Digest 在用户视角仍是"按 run 结算一次"，但计价更像"本次 run 
 
 ### 16.4 计费口径补充（已拍板）
 
-你已确认 `fetchx.search` 计入“抓取实际费用”。因此 Digest run 的成本汇总口径为：
+你已确认 `fetchx.search` 计入"抓取实际费用"。因此 Digest run 的成本汇总口径为：
 
 - `fetchx.search`（计入）
 - `fetchx.scrape` / `fetchx.batchScrape` / `fetchx.crawl` / `fetchx.map` / `fetchx.extract`（计入）
 
 并且命中缓存也收费（即使 `fromCache=true` 也要计入汇总 cost）。
 
+**失败的 run 不收费（已确认）**：
+
+- 只有 `DigestRun.status='SUCCEEDED'` 时才结算费用
+- `status='FAILED'` 的 run 不扣费（即使已产生部分 Fetchx 调用）
+- 实现建议：先执行 run，成功后再扣费（而非先扣费再执行）
+- 重试失败的 run 时，不会重复扣费（同一 runId 只结算一次）
+
 ## 17. 已确认的关键实现约束（你已回复，2026-01-12）
 
 > 本节是“默认公开 + SEO + 按 Fetchx 实际成本计费”下，必须写死的实现约束，避免边做边改。
 
-### 17.1 Public Topic 的 Edition 生成成本由平台承担（建议方案，按最佳实践落地）
+### 17.1 Public Topic 计费规则：发布者付费，订阅者免费（已确认）
 
-你希望 `aiget.dev` 作为单品主站，有稳定的可索引内容产出。因此 Public Topic 的 **Edition（`DigestTopicEdition`）** 建议由平台定期生成（平台预算），而不是依赖某个订阅用户的 run 结果。
+**核心原则**：谁发布谁付费，订阅者免费享用。
 
-落地约束（建议写死）：
+**计费规则**：
 
-- Public Topic 的 Edition 生成不向普通浏览用户收费
-- 平台侧设置预算与频控（防 spam）：
-  - 免费用户最多 **3 个 PUBLIC topics**（你已确认）
-  - 每个 PUBLIC topic 的最小发布间隔：**24 小时**（建议），避免被用作高频聚合站
-  - Topic edition 生成队列需全局限流（例如全局并发 ≤ 20；单域名并发 ≤ 2）
-- Topic editions 产出后可被“Follow 订阅”复用，尽量减少订阅 run 的 Fetchx 调用（降低用户成本）
+1. **发布者（Topic Owner）付费**：
+   - Topic Edition 生成 = 触发 `sourceSubscription` 的 run
+   - 费用从发布者（`sourceSubscription.userId`）账户扣除
+   - 计费逻辑与普通订阅 run 一致（按 Fetchx 实际成本汇总）
 
-### 17.2 免费用户的撤销/自救能力：提供删除
+2. **订阅者（Follower）免费**：
+   - Follow 订阅直接读取 Topic Edition，不触发任何 Fetchx 调用
+   - 无候选集搜索/抓取成本
+   - Inbox 投递免费
 
-你已确认：提供“删除 Topic（停止公开展示）”。
+**发布者余额不足处理**：
 
-建议补充（最佳实践）：
+- Edition 调度前检查发布者余额
+- 余额不足 → `topic.status = 'PAUSED_INSUFFICIENT_CREDITS'`，跳过本次生成
+- 通知发布者充值（邮件/站内信）
+- 发布者充值后自动恢复（下次调度时检查）
+- **不自动下架**（给恢复机会，保护 SEO 权重）
+- 连续暂停超过 **30 天** → 管理员介入决定是否下架
 
-- 删除应当是“立即生效”（前端页面 404 或跳转到已删除提示页），并从 sitemap 移除
-- 管理端保留审计记录（避免 spam 反复发布/删除逃避治理）
+**防滥用约束**：
+
+- 免费用户最多 **3 个 PUBLIC topics**
+- 每个 PUBLIC topic 的最小发布间隔：**24 小时**（按 cron 限制）
+- Topic edition 生成队列全局限流（全局并发 ≤ 20；单域名并发 ≤ 2）
+- Topic 创建者 Follow 自己的 Topic 时，不计入 `subscriberCount`（防止刷量）
+
+### 17.2 Topic 生命周期管理：显式发布 + 删除订阅联动下架
+
+你已确认：**显式发布才创建 Topic，删除订阅后关联的 Topic 自动下架**。
+
+落地约束（已确认）：
+
+1. **显式发布**：
+   - 创建订阅时不会自动创建 Topic
+   - 用户需主动点击"发布"按钮，才会创建 `DigestTopic` 并关联到该订阅
+   - 发布时必须弹出确认框，提示"公开可被搜索引擎收录"
+
+2. **删除订阅联动下架**：
+   - 删除 `DigestSubscription` 时，关联的 `DigestTopic` 自动变为 `UNLISTED`
+   - 下架立即生效：SEO 页返回 404，从 sitemap 移除
+   - slug 保留（防止被抢注），但 30 天后可释放
+
+3. **审计与防滥用**：
+   - 管理端保留审计记录（避免 spam 反复发布/删除逃避治理）
+   - 同一用户短时间内反复发布/下架触发风控告警
 
 ### 17.3 反 spam 的硬阈值（我按最佳实践给出默认值）
 
@@ -2434,16 +2674,37 @@ Digest 在用户视角仍是"按 run 结算一次"，但计价更像"本次 run 
 
 你已确认：按建议启用 `saved/notInterested` 等聚合 engagement 信号，作为 Trending 的质量因子（仅聚合，不暴露个人数据）。
 
-### 17.7 Follow 默认允许微调
+### 17.7 Follow 订阅规则（允许微调，免费）
 
-你已确认：Follow 允许微调。
+**核心规则**：Follow 订阅直接复用 Topic Edition，不触发 Fetchx 调用，免费。
 
-落地建议（既满足"可微调"，又尽量不破坏 SEO 的一致性）：
+**参数约束**：
+
+| 参数 | Follow 订阅是否生效 | 说明 |
+|------|---------------------|------|
+| `searchLimit` | ❌ 不生效 | 候选集来自 Topic Edition，无需搜索 |
+| `scrapeLimit` | ❌ 不生效 | 无需额外抓取 |
+| `minItems` | ✅ 生效 | 从 Edition 中筛选最少返回数量 |
+| `minScore` | ✅ 生效 | 从 Edition 中筛选评分阈值 |
+| `interests`（正向/负向关键词） | ✅ 生效 | 用于重排序/过滤 |
+| `cron/timezone` | ✅ 生效 | 控制投递时间（与 Topic 生成时间独立） |
+| `languageMode/outputLocale` | ✅ 生效 | 用户可选择不同于 Topic 默认语言 |
+
+**微调方式**：
 
 - Follow 的候选集默认来自 Topic 的 editions（与公开页一致）
 - 用户微调作为"overlay"应用在候选集上：
   - 允许调整关键词（正向/负向）与阈值导致"过滤/重排序"
   - 若用户要改 sources，则提示 Fork（避免把 Follow 变成完全不同的订阅）
+
+**Fork vs Follow**：
+
+| 能力 | Follow（免费） | Fork（付费） |
+|------|----------------|--------------|
+| 候选集来源 | Topic Edition | 自定义（可改 sources） |
+| Fetchx 调用 | 无 | 有（每次 run） |
+| 计费 | 免费 | 按 run 计费 |
+| 与 Topic 关系 | 保持关联 | 脱钩（独立订阅） |
 
 ### 17.8 前端界面设计决策（2026-01-13 确认）
 
