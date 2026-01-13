@@ -42,11 +42,13 @@ import {
   SnapshotSchema,
   ActionSchema,
   ScreenshotSchema,
+  CreateWindowSchema,
   type CreateSessionInput,
   type OpenUrlInput,
   type SnapshotInput,
   type ActionInput,
   type ScreenshotInput,
+  type CreateWindowInput,
 } from './dto';
 
 @ApiTags('Browser')
@@ -225,6 +227,75 @@ export class BrowserSessionController {
   async getDialogHistory(@Param('id') sessionId: string) {
     try {
       return await this.browserSessionService.getDialogHistory(sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  // ==================== 多窗口管理 ====================
+
+  @Post(':id/windows')
+  @ApiOperation({
+    summary: 'Create a new window with isolated cookies/storage',
+  })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiCreatedResponse({ description: 'New window created' })
+  async createWindow(
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(CreateWindowSchema)) options: CreateWindowInput,
+  ) {
+    try {
+      return await this.browserSessionService.createWindow(sessionId, options);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Get(':id/windows')
+  @ApiOperation({ summary: 'List all windows in the session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiOkResponse({ description: 'List of windows' })
+  async listWindows(@Param('id') sessionId: string) {
+    try {
+      return await this.browserSessionService.listWindows(sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/windows/:windowIndex/activate')
+  @ApiOperation({ summary: 'Switch to a specific window' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiParam({ name: 'windowIndex', description: 'Window index to activate' })
+  @ApiOkResponse({ description: 'Window activated' })
+  async switchWindow(
+    @Param('id') sessionId: string,
+    @Param('windowIndex') windowIndex: string,
+  ) {
+    try {
+      return await this.browserSessionService.switchWindow(
+        sessionId,
+        parseInt(windowIndex, 10),
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Delete(':id/windows/:windowIndex')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Close a specific window' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiParam({ name: 'windowIndex', description: 'Window index to close' })
+  async closeWindow(
+    @Param('id') sessionId: string,
+    @Param('windowIndex') windowIndex: string,
+  ) {
+    try {
+      await this.browserSessionService.closeWindow(
+        sessionId,
+        parseInt(windowIndex, 10),
+      );
     } catch (error) {
       this.handleSessionError(error);
     }

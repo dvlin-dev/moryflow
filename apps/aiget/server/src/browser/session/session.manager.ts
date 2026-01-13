@@ -9,7 +9,16 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import type { BrowserContext, Page, Locator, Dialog } from 'playwright';
 import { BrowserPool } from '../browser-pool';
-import type { CreateSessionInput, RefData } from '../dto';
+import type {
+  CreateSessionInput,
+  CreateWindowInput,
+  RefData,
+  WindowInfo,
+} from '../dto';
+import {
+  DEFAULT_VIEWPORT_WIDTH,
+  DEFAULT_VIEWPORT_HEIGHT,
+} from '../browser.constants';
 
 /** 对话框记录 */
 export interface DialogRecord {
@@ -37,10 +46,8 @@ export interface TabInfo {
   active: boolean;
 }
 
-/** 浏览器会话 */
-export interface BrowserSession {
-  /** 会话 ID */
-  id: string;
+/** 窗口数据（独立 BrowserContext） */
+export interface WindowData {
   /** Playwright BrowserContext */
   context: BrowserContext;
   /** 当前活跃 Page */
@@ -48,6 +55,24 @@ export interface BrowserSession {
   /** 所有页面（多标签页支持） */
   pages: Page[];
   /** 当前活跃页面索引 */
+  activePageIndex: number;
+}
+
+/** 浏览器会话 */
+export interface BrowserSession {
+  /** 会话 ID */
+  id: string;
+  /** 所有窗口（多窗口支持，每个窗口是独立的 BrowserContext） */
+  windows: WindowData[];
+  /** 当前活跃窗口索引 */
+  activeWindowIndex: number;
+  /** Playwright BrowserContext（当前活跃窗口） */
+  context: BrowserContext;
+  /** 当前活跃 Page */
+  page: Page;
+  /** 所有页面（当前活跃窗口的多标签页支持） */
+  pages: Page[];
+  /** 当前活跃页面索引（当前活跃窗口） */
   activePageIndex: number;
   /** 元素引用映射（每次 snapshot 后更新） */
   refs: Map<string, RefData>;
@@ -132,9 +157,21 @@ export class SessionManager implements OnModuleDestroy {
     // 设置默认超时
     page.setDefaultTimeout(30000);
 
+    // 创建初始窗口数据
+    const initialWindow: WindowData = {
+      context,
+      page,
+      pages: [page],
+      activePageIndex: 0,
+    };
+
     const now = new Date();
     const session: BrowserSession = {
       id: sessionId,
+      // 多窗口支持
+      windows: [initialWindow],
+      activeWindowIndex: 0,
+      // 当前活跃窗口的快捷引用（向后兼容）
       context,
       page,
       pages: [page],
@@ -242,15 +279,21 @@ export class SessionManager implements OnModuleDestroy {
 
     this.sessions.delete(sessionId);
 
-    try {
-      // 释放浏览器上下文回池
-      await this.browserPool.releaseContext(session.context);
-      this.logger.debug(`Session closed: ${sessionId}`);
-    } catch (error) {
-      this.logger.warn(
-        `Error releasing context for session ${sessionId}: ${error}`,
-      );
-    }
+    // 释放所有窗口的上下文
+    const releasePromises = session.windows.map(async (window) => {
+      try {
+        await this.browserPool.releaseContext(window.context);
+      } catch (error) {
+        this.logger.warn(
+          `Error releasing context for session ${sessionId}: ${error}`,
+        );
+      }
+    });
+
+    await Promise.all(releasePromises);
+    this.logger.debug(
+      `Session closed: ${sessionId}, released ${session.windows.length} window(s)`,
+    );
   }
 
   /**
@@ -321,29 +364,33 @@ export class SessionManager implements OnModuleDestroy {
   // ==================== 多标签页管理 ====================
 
   /**
-   * 创建新标签页
+   * 创建新标签页（在当前活跃窗口内）
    */
   async createTab(sessionId: string): Promise<TabInfo> {
     const session = this.getSession(sessionId);
+    const activeWindow = session.windows[session.activeWindowIndex];
 
-    const newPage = await session.context.newPage();
+    const newPage = await activeWindow.context.newPage();
     newPage.setDefaultTimeout(30000);
 
     // 设置对话框处理
     this.setupDialogHandler(session, newPage);
 
-    const newIndex = session.pages.length;
-    session.pages.push(newPage);
+    const newIndex = activeWindow.pages.length;
+    activeWindow.pages.push(newPage);
 
     // 切换到新标签页
-    session.activePageIndex = newIndex;
-    session.page = newPage;
+    activeWindow.activePageIndex = newIndex;
+    activeWindow.page = newPage;
+
+    // 同步到会话
+    this.syncWindowToSession(session);
 
     // 清除 refs（新页面没有元素）
     session.refs = new Map();
 
     this.logger.debug(
-      `New tab created in session ${sessionId}, index: ${newIndex}`,
+      `New tab created in session ${sessionId}, window ${session.activeWindowIndex}, index: ${newIndex}`,
     );
 
     return {
@@ -355,14 +402,15 @@ export class SessionManager implements OnModuleDestroy {
   }
 
   /**
-   * 列出所有标签页
+   * 列出所有标签页（当前活跃窗口内）
    */
   async listTabs(sessionId: string): Promise<TabInfo[]> {
     const session = this.getSession(sessionId);
+    const activeWindow = session.windows[session.activeWindowIndex];
 
     const tabs: TabInfo[] = [];
-    for (let i = 0; i < session.pages.length; i++) {
-      const page = session.pages[i];
+    for (let i = 0; i < activeWindow.pages.length; i++) {
+      const page = activeWindow.pages[i];
       // 检查页面是否已关闭
       if (page.isClosed()) {
         continue;
@@ -379,7 +427,7 @@ export class SessionManager implements OnModuleDestroy {
         index: i,
         url: page.url(),
         title,
-        active: i === session.activePageIndex,
+        active: i === activeWindow.activePageIndex,
       });
     }
 
@@ -387,26 +435,30 @@ export class SessionManager implements OnModuleDestroy {
   }
 
   /**
-   * 切换到指定标签页
+   * 切换到指定标签页（在当前活跃窗口内）
    */
   async switchTab(sessionId: string, tabIndex: number): Promise<TabInfo> {
     const session = this.getSession(sessionId);
+    const activeWindow = session.windows[session.activeWindowIndex];
 
-    if (tabIndex < 0 || tabIndex >= session.pages.length) {
+    if (tabIndex < 0 || tabIndex >= activeWindow.pages.length) {
       throw new Error(
-        `Invalid tab index: ${tabIndex}. Valid range: 0-${session.pages.length - 1}`,
+        `Invalid tab index: ${tabIndex}. Valid range: 0-${activeWindow.pages.length - 1}`,
       );
     }
 
-    const targetPage = session.pages[tabIndex];
+    const targetPage = activeWindow.pages[tabIndex];
 
     if (targetPage.isClosed()) {
       throw new Error(`Tab ${tabIndex} has been closed`);
     }
 
     // 更新活跃页面
-    session.activePageIndex = tabIndex;
-    session.page = targetPage;
+    activeWindow.activePageIndex = tabIndex;
+    activeWindow.page = targetPage;
+
+    // 同步到会话
+    this.syncWindowToSession(session);
 
     // 清除 refs（需要重新获取快照）
     session.refs = new Map();
@@ -432,43 +484,46 @@ export class SessionManager implements OnModuleDestroy {
   }
 
   /**
-   * 关闭指定标签页
+   * 关闭指定标签页（在当前活跃窗口内）
    */
   async closeTab(sessionId: string, tabIndex: number): Promise<void> {
     const session = this.getSession(sessionId);
+    const activeWindow = session.windows[session.activeWindowIndex];
 
-    if (tabIndex < 0 || tabIndex >= session.pages.length) {
+    if (tabIndex < 0 || tabIndex >= activeWindow.pages.length) {
       throw new Error(
-        `Invalid tab index: ${tabIndex}. Valid range: 0-${session.pages.length - 1}`,
+        `Invalid tab index: ${tabIndex}. Valid range: 0-${activeWindow.pages.length - 1}`,
       );
     }
 
     // 不能关闭最后一个标签页
-    const openTabs = session.pages.filter((p) => !p.isClosed());
+    const openTabs = activeWindow.pages.filter((p) => !p.isClosed());
     if (openTabs.length <= 1) {
-      throw new Error('Cannot close the last tab. Close the session instead.');
+      throw new Error('Cannot close the last tab. Close the window instead.');
     }
 
-    const targetPage = session.pages[tabIndex];
+    const targetPage = activeWindow.pages[tabIndex];
 
     if (!targetPage.isClosed()) {
       await targetPage.close();
     }
 
     // 如果关闭的是当前活跃标签页，切换到另一个
-    if (tabIndex === session.activePageIndex) {
+    if (tabIndex === activeWindow.activePageIndex) {
       // 找到下一个未关闭的标签页
       let newActiveIndex = -1;
-      for (let i = 0; i < session.pages.length; i++) {
-        if (!session.pages[i].isClosed()) {
+      for (let i = 0; i < activeWindow.pages.length; i++) {
+        if (!activeWindow.pages[i].isClosed()) {
           newActiveIndex = i;
           break;
         }
       }
 
       if (newActiveIndex >= 0) {
-        session.activePageIndex = newActiveIndex;
-        session.page = session.pages[newActiveIndex];
+        activeWindow.activePageIndex = newActiveIndex;
+        activeWindow.page = activeWindow.pages[newActiveIndex];
+        // 同步到会话
+        this.syncWindowToSession(session);
         session.refs = new Map();
       }
     }
@@ -482,6 +537,253 @@ export class SessionManager implements OnModuleDestroy {
   getDialogHistory(sessionId: string): DialogRecord[] {
     const session = this.getSession(sessionId);
     return [...session.dialogHistory];
+  }
+
+  // ==================== 多窗口管理 ====================
+
+  /**
+   * 创建新窗口（独立 BrowserContext，隔离 cookies/storage）
+   */
+  async createWindow(
+    sessionId: string,
+    options?: CreateWindowInput,
+  ): Promise<WindowInfo> {
+    const session = this.getSession(sessionId);
+
+    // 从浏览器池获取新的上下文
+    const newContext = await this.browserPool.acquireContext();
+
+    // 创建页面
+    const newPage = await newContext.newPage();
+
+    // 应用视口配置
+    if (options?.viewport) {
+      await newPage.setViewportSize(options.viewport);
+    } else {
+      await newPage.setViewportSize({
+        width: DEFAULT_VIEWPORT_WIDTH,
+        height: DEFAULT_VIEWPORT_HEIGHT,
+      });
+    }
+
+    // 设置 User-Agent
+    if (options?.userAgent) {
+      await newContext.setExtraHTTPHeaders({
+        'User-Agent': options.userAgent,
+      });
+    }
+
+    newPage.setDefaultTimeout(30000);
+
+    // 创建窗口数据
+    const windowData: WindowData = {
+      context: newContext,
+      page: newPage,
+      pages: [newPage],
+      activePageIndex: 0,
+    };
+
+    const newIndex = session.windows.length;
+    session.windows.push(windowData);
+
+    // 切换到新窗口
+    session.activeWindowIndex = newIndex;
+    session.context = newContext;
+    session.page = newPage;
+    session.pages = [newPage];
+    session.activePageIndex = 0;
+
+    // 清除 refs（新窗口没有元素）
+    session.refs = new Map();
+
+    // 设置对话框处理
+    this.setupDialogHandler(session, newPage);
+
+    this.logger.debug(
+      `New window created in session ${sessionId}, index: ${newIndex}`,
+    );
+
+    return {
+      index: newIndex,
+      url: newPage.url(),
+      title: '',
+      active: true,
+      tabCount: 1,
+    };
+  }
+
+  /**
+   * 列出所有窗口
+   */
+  async listWindows(sessionId: string): Promise<WindowInfo[]> {
+    const session = this.getSession(sessionId);
+
+    const windows: WindowInfo[] = [];
+    for (let i = 0; i < session.windows.length; i++) {
+      const window = session.windows[i];
+      const activePage = window.page;
+
+      // 检查窗口是否有效（至少有一个未关闭的页面）
+      const openPages = window.pages.filter((p) => !p.isClosed());
+      if (openPages.length === 0) {
+        continue;
+      }
+
+      let title = '';
+      try {
+        title = await activePage.title();
+      } catch {
+        // 页面可能正在加载，忽略错误
+      }
+
+      windows.push({
+        index: i,
+        url: activePage.url(),
+        title,
+        active: i === session.activeWindowIndex,
+        tabCount: openPages.length,
+      });
+    }
+
+    return windows;
+  }
+
+  /**
+   * 切换到指定窗口
+   */
+  async switchWindow(
+    sessionId: string,
+    windowIndex: number,
+  ): Promise<WindowInfo> {
+    const session = this.getSession(sessionId);
+
+    if (windowIndex < 0 || windowIndex >= session.windows.length) {
+      throw new Error(
+        `Invalid window index: ${windowIndex}. Valid range: 0-${session.windows.length - 1}`,
+      );
+    }
+
+    const targetWindow = session.windows[windowIndex];
+
+    // 检查窗口是否有效
+    const openPages = targetWindow.pages.filter((p) => !p.isClosed());
+    if (openPages.length === 0) {
+      throw new Error(`Window ${windowIndex} has no open pages`);
+    }
+
+    // 更新活跃窗口
+    session.activeWindowIndex = windowIndex;
+    session.context = targetWindow.context;
+    session.page = targetWindow.page;
+    session.pages = targetWindow.pages;
+    session.activePageIndex = targetWindow.activePageIndex;
+
+    // 清除 refs（需要重新获取快照）
+    session.refs = new Map();
+
+    // 将页面带到前台
+    await targetWindow.page.bringToFront();
+
+    let title = '';
+    try {
+      title = await targetWindow.page.title();
+    } catch {
+      // 忽略
+    }
+
+    this.logger.debug(
+      `Switched to window ${windowIndex} in session ${sessionId}`,
+    );
+
+    return {
+      index: windowIndex,
+      url: targetWindow.page.url(),
+      title,
+      active: true,
+      tabCount: openPages.length,
+    };
+  }
+
+  /**
+   * 关闭指定窗口
+   */
+  async closeWindow(sessionId: string, windowIndex: number): Promise<void> {
+    const session = this.getSession(sessionId);
+
+    if (windowIndex < 0 || windowIndex >= session.windows.length) {
+      throw new Error(
+        `Invalid window index: ${windowIndex}. Valid range: 0-${session.windows.length - 1}`,
+      );
+    }
+
+    // 不能关闭最后一个窗口
+    const openWindows = session.windows.filter((w) =>
+      w.pages.some((p) => !p.isClosed()),
+    );
+    if (openWindows.length <= 1) {
+      throw new Error(
+        'Cannot close the last window. Close the session instead.',
+      );
+    }
+
+    const targetWindow = session.windows[windowIndex];
+
+    // 释放上下文
+    try {
+      await this.browserPool.releaseContext(targetWindow.context);
+    } catch (error) {
+      this.logger.warn(`Error releasing window context: ${error}`);
+    }
+
+    // 如果关闭的是当前活跃窗口，切换到另一个
+    if (windowIndex === session.activeWindowIndex) {
+      // 找到下一个有效窗口
+      let newActiveIndex = -1;
+      for (let i = 0; i < session.windows.length; i++) {
+        if (
+          i !== windowIndex &&
+          session.windows[i].pages.some((p) => !p.isClosed())
+        ) {
+          newActiveIndex = i;
+          break;
+        }
+      }
+
+      if (newActiveIndex >= 0) {
+        const newWindow = session.windows[newActiveIndex];
+        session.activeWindowIndex = newActiveIndex;
+        session.context = newWindow.context;
+        session.page = newWindow.page;
+        session.pages = newWindow.pages;
+        session.activePageIndex = newWindow.activePageIndex;
+        session.refs = new Map();
+      }
+    }
+
+    // 标记窗口为无效（关闭所有页面）
+    for (const page of targetWindow.pages) {
+      if (!page.isClosed()) {
+        try {
+          await page.close();
+        } catch {
+          // 忽略关闭错误
+        }
+      }
+    }
+
+    this.logger.debug(`Closed window ${windowIndex} in session ${sessionId}`);
+  }
+
+  /**
+   * 同步当前窗口状态到会话
+   * 在标签页操作后调用，确保会话的快捷引用与当前窗口同步
+   */
+  private syncWindowToSession(session: BrowserSession): void {
+    const activeWindow = session.windows[session.activeWindowIndex];
+    session.context = activeWindow.context;
+    session.page = activeWindow.page;
+    session.pages = activeWindow.pages;
+    session.activePageIndex = activeWindow.activePageIndex;
   }
 
   /**

@@ -13,6 +13,7 @@ import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
 import type {
   CreateSessionInput,
+  CreateWindowInput,
   OpenUrlInput,
   SnapshotInput,
   ActionInput,
@@ -21,6 +22,7 @@ import type {
   SnapshotResponse,
   ActionResponse,
   ScreenshotResponse,
+  WindowInfo,
 } from './dto';
 
 /** URL 验证失败错误 */
@@ -262,5 +264,41 @@ export class BrowserSessionService {
    */
   getDialogHistory(sessionId: string) {
     return this.sessionManager.getDialogHistory(sessionId);
+  }
+
+  // ==================== 多窗口管理 ====================
+
+  /**
+   * 创建新窗口（独立 BrowserContext，隔离 cookies/storage）
+   */
+  async createWindow(
+    sessionId: string,
+    options?: CreateWindowInput,
+  ): Promise<WindowInfo> {
+    return this.sessionManager.createWindow(sessionId, options);
+  }
+
+  /**
+   * 列出所有窗口
+   */
+  async listWindows(sessionId: string): Promise<WindowInfo[]> {
+    return this.sessionManager.listWindows(sessionId);
+  }
+
+  /**
+   * 切换到指定窗口
+   */
+  async switchWindow(
+    sessionId: string,
+    windowIndex: number,
+  ): Promise<WindowInfo> {
+    return this.sessionManager.switchWindow(sessionId, windowIndex);
+  }
+
+  /**
+   * 关闭指定窗口
+   */
+  async closeWindow(sessionId: string, windowIndex: number): Promise<void> {
+    return this.sessionManager.closeWindow(sessionId, windowIndex);
   }
 }

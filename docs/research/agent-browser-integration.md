@@ -1351,6 +1351,7 @@ export class AgentController {
 | Phase 4 | L3 Agent 基础（SDK） | ✅ 已完成 | 4/4    |
 | Phase 5 | L3 高级功能          | ✅ 已完成 | 3/3    |
 | Phase 6 | P1 功能增强          | ✅ 已完成 | 3/3    |
+| Phase 7 | P2 多窗口支持        | ✅ 已完成 | 4/4    |
 
 ### Phase 1: L2 Browser 基础架构
 
@@ -1535,6 +1536,53 @@ export class AgentController {
 - 新增 `POST /agent/estimate` 端点预估任务成本
 - 流式执行中实时追踪并检查 credits 限制
 - 超限时提前终止任务并返回错误
+
+### Phase 7: P2 多窗口支持
+
+| 步骤 | 任务                         | 状态      | 产出文件                                                         | 完成日期   |
+| ---- | ---------------------------- | --------- | ---------------------------------------------------------------- | ---------- |
+| 7.1  | 扩展 BrowserSession 数据结构 | ✅ 已完成 | `session/session.manager.ts`                                     | 2026-01-13 |
+| 7.2  | 实现多窗口 API               | ✅ 已完成 | `session/session.manager.ts`                                     | 2026-01-13 |
+| 7.3  | 更新 Service 层              | ✅ 已完成 | `browser-session.service.ts`                                     | 2026-01-13 |
+| 7.4  | 添加 Controller 端点         | ✅ 已完成 | `browser-session.controller.ts`, `dto/browser-session.schema.ts` | 2026-01-13 |
+
+**7.1 扩展 BrowserSession 数据结构**
+
+- 新增 `WindowData` 接口：独立 BrowserContext 的封装
+- 新增 `WindowInfo` 接口：窗口信息响应
+- 扩展 `BrowserSession`：添加 `windows[]` 数组和 `activeWindowIndex`
+- 保持向后兼容：`session.context/page/pages` 作为当前活跃窗口的快捷引用
+
+**7.2 实现多窗口 API**
+
+- `createWindow()` - 创建独立 BrowserContext（隔离 cookies/storage）
+- `listWindows()` - 列出所有窗口
+- `switchWindow()` - 切换活跃窗口
+- `closeWindow()` - 关闭窗口并释放资源
+- `syncWindowToSession()` - 同步窗口状态到会话快捷引用
+
+**7.3 更新 Service 层**
+
+- 添加 `createWindow`, `listWindows`, `switchWindow`, `closeWindow` 方法
+- 代理到 SessionManager
+
+**7.4 添加 Controller 端点**
+
+- `POST /browser/session/:id/windows` - 创建新窗口
+- `GET /browser/session/:id/windows` - 列出所有窗口
+- `POST /browser/session/:id/windows/:windowIndex/activate` - 切换窗口
+- `DELETE /browser/session/:id/windows/:windowIndex` - 关闭窗口
+- 新增 `CreateWindowSchema` Zod schema
+
+**多窗口 vs 多标签页**
+
+| 特性               | 多标签页（Tab）  | 多窗口（Window）     |
+| ------------------ | ---------------- | -------------------- |
+| **BrowserContext** | 共享同一个       | 每个窗口独立         |
+| **Cookies**        | 共享             | 隔离                 |
+| **localStorage**   | 共享             | 隔离                 |
+| **Session**        | 共享             | 隔离                 |
+| **使用场景**       | 同站点多页面操作 | 多账号登录、隔离测试 |
 
 ---
 
