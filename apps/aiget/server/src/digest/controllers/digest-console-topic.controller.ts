@@ -16,7 +16,6 @@ import {
   Param,
   HttpCode,
   HttpStatus,
-  VERSION_NEUTRAL,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -41,7 +40,7 @@ import {
 
 @ApiTags('Console - Digest Topics')
 @ApiCookieAuth()
-@Controller({ path: 'console/digest/topics', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/digest/topics', version: '1' })
 export class DigestConsoleTopicController {
   constructor(private readonly topicService: DigestTopicService) {}
 

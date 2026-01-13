@@ -14,7 +14,6 @@ import {
   Param,
   Query,
   Body,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,7 +35,7 @@ import {
 
 @ApiTags('Console - Digest Inbox')
 @ApiCookieAuth()
-@Controller({ path: 'console/digest/inbox', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/digest/inbox', version: '1' })
 export class DigestConsoleInboxController {
   constructor(private readonly inboxService: DigestInboxService) {}
 

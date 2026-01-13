@@ -6,7 +6,7 @@
  * [POS]: Console 运行历史 API（Session 认证）
  */
 
-import { Controller, Get, Param, Query, VERSION_NEUTRAL } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiCookieAuth,
@@ -24,7 +24,7 @@ import { ListRunsQuerySchema, type ListRunsQuery } from '../dto';
 @ApiCookieAuth()
 @Controller({
   path: 'console/digest/subscriptions/:subscriptionId/runs',
-  version: VERSION_NEUTRAL,
+  version: '1',
 })
 export class DigestConsoleRunController {
   constructor(private readonly runService: DigestRunService) {}

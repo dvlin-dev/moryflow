@@ -17,7 +17,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  VERSION_NEUTRAL,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -54,7 +53,7 @@ import {
 
 @ApiTags('Console - Digest Subscriptions')
 @ApiCookieAuth()
-@Controller({ path: 'console/digest/subscriptions', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/digest/subscriptions', version: '1' })
 export class DigestConsoleSubscriptionController {
   constructor(
     private readonly subscriptionService: DigestSubscriptionService,
