@@ -30,6 +30,8 @@ import WebhooksPage from './pages/WebhooksPage';
 import SettingsPage from './pages/SettingsPage';
 import DigestSubscriptionsPage from './pages/DigestSubscriptionsPage';
 import DigestInboxPage from './pages/DigestInboxPage';
+import DigestTopicsPage from './pages/DigestTopicsPage';
+import FollowTopicPage from './pages/FollowTopicPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -149,6 +151,8 @@ function App() {
               <Route index element={<Navigate to="/digest/inbox" replace />} />
               <Route path="inbox" element={<DigestInboxPage />} />
               <Route path="subscriptions" element={<DigestSubscriptionsPage />} />
+              <Route path="topics" element={<DigestTopicsPage />} />
+              <Route path="follow/:slug" element={<FollowTopicPage />} />
             </Route>
 
             {/* API Keys - 密钥管理 */}

@@ -46,7 +46,7 @@ export class DigestRateLimitService {
       select: { subscription: { select: { tier: true } } },
     });
 
-    return (user?.subscription?.tier || 'FREE') as SubscriptionTier;
+    return user?.subscription?.tier || 'FREE';
   }
 
   /**

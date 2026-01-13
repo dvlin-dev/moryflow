@@ -17,6 +17,7 @@ import type {
   RunQueryParams,
   CreateTopicRequest,
   UpdateTopicRequest,
+  FollowTopicRequest,
 } from './types';
 
 // ========== Query Keys ==========
@@ -34,6 +35,7 @@ export const digestKeys = {
   runItems: (subscriptionId: string, runId: string) =>
     [...digestKeys.run(subscriptionId, runId), 'items'] as const,
   topics: () => [...digestKeys.all, 'topics'] as const,
+  publicTopic: (slug: string) => [...digestKeys.all, 'public-topic', slug] as const,
 };
 
 // ========== Subscription Hooks ==========
@@ -256,6 +258,32 @@ export function useDeleteTopic() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete topic');
+    },
+  });
+}
+
+// ========== Public Topic Hooks (for Follow) ==========
+
+export function usePublicTopic(slug: string) {
+  return useQuery({
+    queryKey: digestKeys.publicTopic(slug),
+    queryFn: () => api.fetchPublicTopicBySlug(slug),
+    enabled: !!slug,
+  });
+}
+
+export function useFollowTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: FollowTopicRequest }) =>
+      api.followTopic(slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: digestKeys.subscriptions() });
+      toast.success('Successfully subscribed to topic');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to follow topic');
     },
   });
 }

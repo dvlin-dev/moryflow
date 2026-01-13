@@ -240,7 +240,7 @@ export class DigestPublicTopicController {
       undefined;
 
     // 尝试获取用户（如果已登录）
-    const user = req.user as CurrentUserDto | undefined;
+    const user = req.user;
 
     const report = await this.reportService.create(
       { ...input, topicId: topic.id },

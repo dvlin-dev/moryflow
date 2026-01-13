@@ -6,7 +6,7 @@
  */
 
 import { apiClient } from '@/lib/api-client';
-import { DIGEST_CONSOLE_API } from '@/lib/api-paths';
+import { DIGEST_CONSOLE_API, DIGEST_PUBLIC_API } from '@/lib/api-paths';
 import type {
   Subscription,
   CreateSubscriptionRequest,
@@ -23,6 +23,9 @@ import type {
   Topic,
   CreateTopicRequest,
   UpdateTopicRequest,
+  PublicTopic,
+  FollowTopicRequest,
+  FollowTopicResponse,
 } from './types';
 
 // ========== Subscription API ==========
@@ -156,4 +159,17 @@ export async function updateTopic(id: string, data: UpdateTopicRequest): Promise
 
 export async function deleteTopic(id: string): Promise<void> {
   await apiClient.delete(`${DIGEST_CONSOLE_API.TOPICS}/${id}`);
+}
+
+// ========== Public Topics API (for Follow) ==========
+
+export async function fetchPublicTopicBySlug(slug: string): Promise<PublicTopic> {
+  return apiClient.get<PublicTopic>(`${DIGEST_PUBLIC_API.TOPICS}/${slug}`);
+}
+
+export async function followTopic(
+  slug: string,
+  data: FollowTopicRequest
+): Promise<FollowTopicResponse> {
+  return apiClient.post<FollowTopicResponse>(`${DIGEST_PUBLIC_API.TOPICS}/${slug}/follow`, data);
 }

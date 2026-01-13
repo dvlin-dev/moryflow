@@ -68,7 +68,7 @@ export const DIGEST_CONSOLE_API = {
 
 // Digest Public API（公开访问）
 export const DIGEST_PUBLIC_API = {
-  TOPICS: '/api/v1/public/digest/topics',
+  TOPICS: '/api/v1/digest/topics',
 } as const;
 
 // 健康检查

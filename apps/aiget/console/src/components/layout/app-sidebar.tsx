@@ -59,6 +59,7 @@ const navGroups: NavGroup[] = [
         items: [
           { title: 'Inbox', url: '/digest/inbox' },
           { title: 'Subscriptions', url: '/digest/subscriptions' },
+          { title: 'My Topics', url: '/digest/topics' },
         ],
       },
     ],

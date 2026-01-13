@@ -41,7 +41,7 @@ export class DigestSubscriptionService {
       },
     });
 
-    const tier = (user?.subscription?.tier || 'FREE') as SubscriptionTier;
+    const tier = user?.subscription?.tier || 'FREE';
     const limits = SUBSCRIPTION_LIMITS[tier];
     const currentCount = user?._count?.digestSubscriptions || 0;
 

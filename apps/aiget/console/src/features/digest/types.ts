@@ -193,3 +193,38 @@ export interface UpdateTopicRequest {
   description?: string;
   visibility?: TopicVisibility;
 }
+
+// ========== Public Topic Types (for Follow) ==========
+
+export interface PublicTopic {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  visibility: TopicVisibility;
+  status: string;
+  topic: string;
+  interests: string[];
+  locale: string;
+  cron: string;
+  timezone: string;
+  subscriberCount: number;
+  lastEditionAt: string | null;
+  createdByUserId: string;
+  createdAt: string;
+}
+
+export interface FollowTopicRequest {
+  cron?: string;
+  timezone?: string;
+  minItems?: number;
+  minScore?: number;
+  interests?: string[];
+  languageMode?: 'FOLLOW_UI' | 'FIXED';
+  outputLocale?: string;
+}
+
+export interface FollowTopicResponse {
+  subscriptionId: string;
+  message: string;
+}

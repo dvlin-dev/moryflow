@@ -32,6 +32,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useCreateSubscription } from '../hooks';
+import { CRON_PRESETS, TIMEZONES, DEFAULT_SUBSCRIPTION } from '../constants';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -45,27 +46,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-// Common cron presets
-const cronPresets = [
-  { label: 'Weekly (Monday 8am)', value: '0 8 * * 1' },
-  { label: 'Daily (8am)', value: '0 8 * * *' },
-  { label: 'Twice daily (8am, 6pm)', value: '0 8,18 * * *' },
-  { label: 'Weekdays (8am)', value: '0 8 * * 1-5' },
-];
-
-// Common timezones
-const timezones = [
-  { label: 'Pacific (Los Angeles)', value: 'America/Los_Angeles' },
-  { label: 'Mountain (Denver)', value: 'America/Denver' },
-  { label: 'Central (Chicago)', value: 'America/Chicago' },
-  { label: 'Eastern (New York)', value: 'America/New_York' },
-  { label: 'UTC', value: 'UTC' },
-  { label: 'China (Shanghai)', value: 'Asia/Shanghai' },
-  { label: 'Japan (Tokyo)', value: 'Asia/Tokyo' },
-  { label: 'UK (London)', value: 'Europe/London' },
-  { label: 'Germany (Berlin)', value: 'Europe/Berlin' },
-];
 
 interface CreateSubscriptionDialogProps {
   open: boolean;
@@ -86,11 +66,11 @@ export function CreateSubscriptionDialog({
       name: '',
       topic: '',
       interests: '',
-      cron: '0 8 * * 1',
-      timezone: 'America/Los_Angeles',
-      outputLocale: 'en',
-      minItems: 5,
-      searchLimit: 60,
+      cron: DEFAULT_SUBSCRIPTION.cron,
+      timezone: DEFAULT_SUBSCRIPTION.timezone,
+      outputLocale: DEFAULT_SUBSCRIPTION.outputLocale,
+      minItems: DEFAULT_SUBSCRIPTION.minItems,
+      searchLimit: DEFAULT_SUBSCRIPTION.searchLimit,
     },
   });
 
@@ -196,7 +176,7 @@ export function CreateSubscriptionDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {cronPresets.map((preset) => (
+                        {CRON_PRESETS.map((preset) => (
                           <SelectItem key={preset.value} value={preset.value}>
                             {preset.label}
                           </SelectItem>
@@ -221,7 +201,7 @@ export function CreateSubscriptionDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {timezones.map((tz) => (
+                        {TIMEZONES.map((tz) => (
                           <SelectItem key={tz.value} value={tz.value}>
                             {tz.label}
                           </SelectItem>
