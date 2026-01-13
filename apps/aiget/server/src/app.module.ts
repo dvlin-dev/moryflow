@@ -32,6 +32,7 @@ import { RelationModule } from './relation';
 import { GraphModule } from './graph';
 import { ConsolePlaygroundModule } from './console-playground';
 import { CommonModule } from './common';
+import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
 
 @Module({
@@ -70,6 +71,7 @@ import { NotFoundModule } from './not-found';
     RelationModule,
     GraphModule,
     ConsolePlaygroundModule,
+    DigestModule,
     // NotFoundModule must be LAST to catch all unmatched routes
     NotFoundModule,
   ],
