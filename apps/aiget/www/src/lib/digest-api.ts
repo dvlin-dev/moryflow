@@ -114,7 +114,7 @@ export async function getPublicTopics(
   if (options?.limit) params.set('limit', options.limit.toString());
   if (options?.search) params.set('search', options.search);
 
-  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics?${params.toString()}`, {
+  const response = await fetch(`${apiUrl}/api/v1/digest/topics?${params.toString()}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -127,7 +127,7 @@ export async function getPublicTopics(
  * Get single topic by slug
  */
 export async function getTopicBySlug(apiUrl: string, slug: string): Promise<DigestTopicDetail> {
-  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics/${slug}`, {
+  const response = await fetch(`${apiUrl}/api/v1/digest/topics/${slug}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -152,7 +152,7 @@ export async function getTopicEditions(
   if (options?.limit) params.set('limit', options.limit.toString());
 
   const response = await fetch(
-    `${apiUrl}/api/v1/public/digest/topics/${slug}/editions?${params.toString()}`,
+    `${apiUrl}/api/v1/digest/topics/${slug}/editions?${params.toString()}`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -171,13 +171,10 @@ export async function getEditionById(
   slug: string,
   editionId: string
 ): Promise<DigestEditionDetail> {
-  const response = await fetch(
-    `${apiUrl}/api/v1/public/digest/topics/${slug}/editions/${editionId}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
+  const response = await fetch(`${apiUrl}/api/v1/digest/topics/${slug}/editions/${editionId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
   const json = (await response.json()) as ApiResponse<DigestEditionDetail>;
   return handleApiResponse(response, json);
@@ -191,7 +188,7 @@ export async function reportTopic(
   slug: string,
   input: Omit<CreateReportInput, 'topicId'>
 ): Promise<{ reportId: string; message: string }> {
-  const response = await fetch(`${apiUrl}/api/v1/public/digest/topics/${slug}/report`, {
+  const response = await fetch(`${apiUrl}/api/v1/digest/topics/${slug}/report`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
