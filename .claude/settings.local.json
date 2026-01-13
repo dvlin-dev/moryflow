@@ -72,7 +72,22 @@
       "mcp__firecrawl__firecrawl_search",
       "mcp__firecrawl__firecrawl_scrape",
       "Bash(node --input-type=module -e:*)",
-      "Bash(timeout 20 pnpm:*)"
+      "Bash(timeout 20 pnpm:*)",
+      "Bash(apps/aiget/server/prisma/main/schema.prisma )",
+      "Bash(apps/aiget/server/src/digest/dto/feedback.schema.ts )",
+      "Bash(apps/aiget/server/src/digest/dto/index.ts )",
+      "Bash(apps/aiget/server/src/digest/services/feedback.service.ts )",
+      "Bash(apps/aiget/server/src/digest/services/inbox.service.ts )",
+      "Bash(apps/aiget/server/src/digest/services/index.ts )",
+      "Bash(apps/aiget/server/src/digest/digest.module.ts )",
+      "Bash(apps/aiget/server/src/digest/digest.constants.ts )",
+      "Bash(apps/aiget/server/src/digest/utils/scoring.utils.ts )",
+      "Bash(apps/aiget/server/src/digest/processors/subscription-run.processor.ts )",
+      "Bash(apps/aiget/server/src/digest/controllers/digest-console-subscription.controller.ts)",
+      "WebFetch(domain:www.better-auth.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:tanstack.com)",
+      "Bash(timeout 30 pnpm:*)"
     ]
   }
 }

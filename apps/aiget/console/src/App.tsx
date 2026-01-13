@@ -13,7 +13,7 @@ import { useAuthStore } from './stores/auth';
 import { apiClient } from './lib/api-client';
 import { USER_API } from './lib/api-paths';
 import { MainLayout } from './components/layout';
-import LoginPage from './pages/LoginPage';
+import LoginRedirect from './pages/LoginRedirect';
 import DashboardPage from './pages/DashboardPage';
 import ScrapePlaygroundPage from './pages/ScrapePlaygroundPage';
 import CrawlPlaygroundPage from './pages/CrawlPlaygroundPage';
@@ -114,7 +114,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<LoginRedirect />} />
           <Route
             path="/"
             element={

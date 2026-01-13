@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { getPublicEnv, type PublicEnv } from '@/lib/env';
+import { AuthProvider } from '@/lib/auth-context';
 import '../styles/globals.css';
 
 // Context for public environment variables
@@ -90,15 +91,17 @@ function RootComponent() {
 
   return (
     <EnvContext.Provider value={env}>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <HeadContent />
-        </head>
-        <body className="flex min-h-screen flex-col">
-          <Outlet />
-          <Scripts />
-        </body>
-      </html>
+      <AuthProvider>
+        <html lang="en" suppressHydrationWarning>
+          <head>
+            <HeadContent />
+          </head>
+          <body className="flex min-h-screen flex-col">
+            <Outlet />
+            <Scripts />
+          </body>
+        </html>
+      </AuthProvider>
     </EnvContext.Provider>
   );
 }

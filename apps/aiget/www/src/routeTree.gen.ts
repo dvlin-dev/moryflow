@@ -9,16 +9,34 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root';
+import { Route as RegisterRouteImport } from './routes/register';
 import { Route as MemoxRouteImport } from './routes/memox';
+import { Route as LoginRouteImport } from './routes/login';
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password';
 import { Route as FetchxRouteImport } from './routes/fetchx';
 import { Route as IndexRouteImport } from './routes/index';
 import { Route as TopicsIndexRouteImport } from './routes/topics/index';
 import { Route as TopicsSlugIndexRouteImport } from './routes/topics/$slug/index';
 import { Route as TopicsSlugEditionsEditionIdRouteImport } from './routes/topics/$slug/editions/$editionId';
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const MemoxRoute = MemoxRouteImport.update({
   id: '/memox',
   path: '/memox',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any);
 const FetchxRoute = FetchxRouteImport.update({
@@ -50,7 +68,10 @@ const TopicsSlugEditionsEditionIdRoute = TopicsSlugEditionsEditionIdRouteImport.
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
   '/fetchx': typeof FetchxRoute;
+  '/forgot-password': typeof ForgotPasswordRoute;
+  '/login': typeof LoginRoute;
   '/memox': typeof MemoxRoute;
+  '/register': typeof RegisterRoute;
   '/topics': typeof TopicsIndexRoute;
   '/topics/$slug': typeof TopicsSlugIndexRoute;
   '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
@@ -58,7 +79,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute;
   '/fetchx': typeof FetchxRoute;
+  '/forgot-password': typeof ForgotPasswordRoute;
+  '/login': typeof LoginRoute;
   '/memox': typeof MemoxRoute;
+  '/register': typeof RegisterRoute;
   '/topics': typeof TopicsIndexRoute;
   '/topics/$slug': typeof TopicsSlugIndexRoute;
   '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
@@ -67,7 +91,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/': typeof IndexRoute;
   '/fetchx': typeof FetchxRoute;
+  '/forgot-password': typeof ForgotPasswordRoute;
+  '/login': typeof LoginRoute;
   '/memox': typeof MemoxRoute;
+  '/register': typeof RegisterRoute;
   '/topics/': typeof TopicsIndexRoute;
   '/topics/$slug/': typeof TopicsSlugIndexRoute;
   '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
@@ -77,7 +104,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/fetchx'
+    | '/forgot-password'
+    | '/login'
     | '/memox'
+    | '/register'
     | '/topics'
     | '/topics/$slug'
     | '/topics/$slug/editions/$editionId';
@@ -85,7 +115,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/fetchx'
+    | '/forgot-password'
+    | '/login'
     | '/memox'
+    | '/register'
     | '/topics'
     | '/topics/$slug'
     | '/topics/$slug/editions/$editionId';
@@ -93,7 +126,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/fetchx'
+    | '/forgot-password'
+    | '/login'
     | '/memox'
+    | '/register'
     | '/topics/'
     | '/topics/$slug/'
     | '/topics/$slug/editions/$editionId';
@@ -102,7 +138,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   FetchxRoute: typeof FetchxRoute;
+  ForgotPasswordRoute: typeof ForgotPasswordRoute;
+  LoginRoute: typeof LoginRoute;
   MemoxRoute: typeof MemoxRoute;
+  RegisterRoute: typeof RegisterRoute;
   TopicsIndexRoute: typeof TopicsIndexRoute;
   TopicsSlugIndexRoute: typeof TopicsSlugIndexRoute;
   TopicsSlugEditionsEditionIdRoute: typeof TopicsSlugEditionsEditionIdRoute;
@@ -110,11 +149,32 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register';
+      path: '/register';
+      fullPath: '/register';
+      preLoaderRoute: typeof RegisterRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/memox': {
       id: '/memox';
       path: '/memox';
       fullPath: '/memox';
       preLoaderRoute: typeof MemoxRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/login': {
+      id: '/login';
+      path: '/login';
+      fullPath: '/login';
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/forgot-password': {
+      id: '/forgot-password';
+      path: '/forgot-password';
+      fullPath: '/forgot-password';
+      preLoaderRoute: typeof ForgotPasswordRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/fetchx': {
@@ -158,7 +218,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FetchxRoute: FetchxRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
   MemoxRoute: MemoxRoute,
+  RegisterRoute: RegisterRoute,
   TopicsIndexRoute: TopicsIndexRoute,
   TopicsSlugIndexRoute: TopicsSlugIndexRoute,
   TopicsSlugEditionsEditionIdRoute: TopicsSlugEditionsEditionIdRoute,

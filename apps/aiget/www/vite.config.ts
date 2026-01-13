@@ -27,5 +27,13 @@ export default defineConfig({
   ],
   server: {
     port: 3001,
+    proxy: {
+      // 代理 API 请求到后端（本地开发）
+      '/api/': {
+        target: process.env.API_TARGET || 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });
