@@ -34,7 +34,8 @@ export class SubscriptionSchedulerProcessor extends WorkerHost {
     super();
   }
 
-  async process(_job: Job) {
+  async process(_job: Job): Promise<{ scheduled: number; total: number }> {
+    void _job; // WorkerHost requires job parameter
     this.logger.debug('Running subscription scheduler scan');
 
     try {

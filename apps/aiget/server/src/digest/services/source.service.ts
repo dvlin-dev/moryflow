@@ -103,7 +103,8 @@ export class DigestSourceService {
             break;
 
           default: {
-            this.logger.warn(`Unknown source type: ${source.type}`);
+            const unknownType: string = source.type;
+            this.logger.warn(`Unknown source type: ${unknownType}`);
           }
         }
       } catch (error) {
