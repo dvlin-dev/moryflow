@@ -1,12 +1,10 @@
 /**
- * Subscription List Component
- *
  * [PROPS]: subscriptions array, loading state
  * [POS]: Displays list of user's subscriptions with actions
  */
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 import {
   Calendar01Icon,
   MoreVerticalIcon,
@@ -91,7 +89,11 @@ export function SubscriptionList({ subscriptions, isLoading, onEdit }: Subscript
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <Link to={`/digest/subscriptions/${subscription.id}`} className="hover:underline">
+                <Link
+                  to="/subscriptions/$id"
+                  params={{ id: subscription.id }}
+                  className="hover:underline"
+                >
                   <CardTitle className="text-base">{subscription.name}</CardTitle>
                 </Link>
                 <p className="text-sm text-muted-foreground">{subscription.topic}</p>

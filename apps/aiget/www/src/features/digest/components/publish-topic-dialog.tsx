@@ -1,8 +1,5 @@
 /**
- * Publish Topic Dialog
- *
  * [PROPS]: subscription to publish, open state, onOpenChange callback
- * [EMITS]: onPublish when topic is successfully published
  * [POS]: Modal dialog for publishing subscription as public topic
  */
 
@@ -81,7 +78,6 @@ export function PublishTopicDialog({
     },
   });
 
-  // 当订阅变化时重置表单
   useEffect(() => {
     if (subscription && open) {
       form.reset({
@@ -137,7 +133,7 @@ export function PublishTopicDialog({
                     <Input placeholder="my-topic" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Public URL: aiget.dev/digest/{field.value || 'my-topic'}
+                    Public URL: aiget.dev/topics/{field.value || 'my-topic'}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -231,9 +227,6 @@ export function PublishTopicDialog({
   );
 }
 
-/**
- * 从名称生成 slug
- */
 function generateSlug(name: string): string {
   return name
     .toLowerCase()

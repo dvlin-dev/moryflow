@@ -1,11 +1,16 @@
 /**
- * Digest Types
- *
- * [DEFINES]: Digest module types for console
- * [POS]: Type definitions for subscriptions, inbox, runs
+ * [DEFINES]: Digest module types
+ * [POS]: Type definitions for subscriptions, inbox, runs, topics
  */
 
-// ========== Subscription Types ==========
+// ========== Common ==========
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
+// ========== Subscription ==========
 
 export type SubscriptionStatus = 'ACTIVE' | 'PAUSED' | 'DELETED';
 
@@ -27,7 +32,7 @@ export interface Subscription {
   updatedAt: string;
 }
 
-export interface CreateSubscriptionRequest {
+export interface CreateSubscriptionInput {
   name: string;
   topic: string;
   interests?: string[];
@@ -39,7 +44,7 @@ export interface CreateSubscriptionRequest {
   minScore?: number;
 }
 
-export interface UpdateSubscriptionRequest {
+export interface UpdateSubscriptionInput {
   name?: string;
   interests?: string[];
   cron?: string;
@@ -56,12 +61,7 @@ export interface SubscriptionQueryParams {
   enabled?: boolean;
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  nextCursor: string | null;
-}
-
-// ========== Inbox Types ==========
+// ========== Inbox ==========
 
 export type InboxItemState = 'UNREAD' | 'READ' | 'SAVED' | 'NOT_INTERESTED';
 
@@ -100,7 +100,7 @@ export interface InboxQueryParams {
   state?: InboxItemState;
 }
 
-// ========== Run Types ==========
+// ========== Run ==========
 
 export type RunStatus = 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
 export type RunSource = 'SCHEDULED' | 'MANUAL';
@@ -159,7 +159,7 @@ export interface RunQueryParams {
   status?: RunStatus;
 }
 
-// ========== Topic Types ==========
+// ========== Topic ==========
 
 export type TopicVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type TopicStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
@@ -180,7 +180,7 @@ export interface Topic {
   createdAt: string;
 }
 
-export interface CreateTopicRequest {
+export interface CreateTopicInput {
   subscriptionId: string;
   slug: string;
   title: string;
@@ -188,13 +188,13 @@ export interface CreateTopicRequest {
   visibility: TopicVisibility;
 }
 
-export interface UpdateTopicRequest {
+export interface UpdateTopicInput {
   title?: string;
   description?: string;
   visibility?: TopicVisibility;
 }
 
-// ========== Public Topic Types (for Follow) ==========
+// ========== Public Topic (for Follow) ==========
 
 export interface PublicTopic {
   id: string;
@@ -214,7 +214,7 @@ export interface PublicTopic {
   createdAt: string;
 }
 
-export interface FollowTopicRequest {
+export interface FollowTopicInput {
   cron?: string;
   timezone?: string;
   minItems?: number;

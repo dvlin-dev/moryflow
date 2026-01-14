@@ -1,6 +1,4 @@
 /**
- * Topic List Component
- *
  * [PROPS]: none (data fetched internally)
  * [POS]: Displays list of user's published topics with management actions
  */
@@ -81,7 +79,7 @@ export function TopicList() {
   };
 
   const copyTopicUrl = (slug: string) => {
-    const url = `${window.location.origin}/digest/${slug}`;
+    const url = `${window.location.origin}/topics/${slug}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copied to clipboard');
   };
@@ -141,7 +139,7 @@ export function TopicList() {
                     <DropdownMenuContent align="end">
                       {topic.visibility !== 'PRIVATE' && (
                         <DropdownMenuItem
-                          onClick={() => window.open(`/digest/${topic.slug}`, '_blank')}
+                          onClick={() => window.open(`/topics/${topic.slug}`, '_blank')}
                         >
                           <Icon icon={ViewIcon} className="mr-2 h-4 w-4" />
                           View Topic

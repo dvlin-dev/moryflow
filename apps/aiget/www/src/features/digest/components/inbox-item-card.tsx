@@ -1,7 +1,5 @@
 /**
- * Inbox Item Card Component
- *
- * [PROPS]: InboxItem, actions
+ * [PROPS]: InboxItem
  * [POS]: Single inbox item with read/save/dismiss actions
  */
 
@@ -30,7 +28,7 @@ interface InboxItemCardProps {
   item: InboxItem;
 }
 
-function getScoreColor(score: number): 'default' | 'secondary' | 'destructive' | 'outline' {
+function getScoreColor(score: number): 'default' | 'secondary' | 'outline' {
   if (score >= 80) return 'default';
   if (score >= 60) return 'secondary';
   return 'outline';

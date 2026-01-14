@@ -1,11 +1,18 @@
 /**
  * Digest Feature Module
- *
- * [PROVIDES]: Digest subscription, inbox, and run management for console
- * [POS]: Feature entry point
  */
 
+// Types
 export * from './types';
+
+// Constants
+export * from './constants';
+
+// API
 export * from './api';
+
+// Hooks
 export * from './hooks';
+
+// Components
 export * from './components';

@@ -1,9 +1,7 @@
 /**
- * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, HEALTH_API
+ * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, MEMOX_CONSOLE_API, HEALTH_API, QUOTA_API
  * [USED_BY]: features/*, lib/api-client
  * [POS]: Console API 路径常量定义
- *
- * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
 // 用户 API
@@ -56,19 +54,6 @@ export const MEMOX_API = {
 export const MEMOX_CONSOLE_API = {
   MEMORIES: '/api/console/memories',
   ENTITIES: '/api/console/entities',
-} as const;
-
-// Digest Console API（Session 认证）
-export const DIGEST_CONSOLE_API = {
-  SUBSCRIPTIONS: '/api/v1/console/digest/subscriptions',
-  INBOX: '/api/v1/console/digest/inbox',
-  RUNS: '/api/v1/console/digest/subscriptions', // base path, actual: /subscriptions/:id/runs
-  TOPICS: '/api/v1/console/digest/topics',
-} as const;
-
-// Digest Public API（公开访问）
-export const DIGEST_PUBLIC_API = {
-  TOPICS: '/api/v1/digest/topics',
 } as const;
 
 // 健康检查

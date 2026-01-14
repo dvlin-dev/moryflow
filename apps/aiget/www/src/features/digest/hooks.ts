@@ -1,6 +1,4 @@
 /**
- * Digest Hooks
- *
  * [PROVIDES]: React Query hooks for digest operations
  * [POS]: Data fetching and mutation hooks
  */
@@ -9,15 +7,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as api from './api';
 import type {
-  CreateSubscriptionRequest,
-  UpdateSubscriptionRequest,
+  CreateSubscriptionInput,
+  UpdateSubscriptionInput,
   SubscriptionQueryParams,
   InboxQueryParams,
   InboxItemState,
   RunQueryParams,
-  CreateTopicRequest,
-  UpdateTopicRequest,
-  FollowTopicRequest,
+  CreateTopicInput,
+  UpdateTopicInput,
+  FollowTopicInput,
 } from './types';
 
 // ========== Query Keys ==========
@@ -59,7 +57,7 @@ export function useCreateSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateSubscriptionRequest) => api.createSubscription(data),
+    mutationFn: (data: CreateSubscriptionInput) => api.createSubscription(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: digestKeys.subscriptions() });
       toast.success('Subscription created');
@@ -74,7 +72,7 @@ export function useUpdateSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateSubscriptionRequest }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateSubscriptionInput }) =>
       api.updateSubscription(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: digestKeys.subscription(id) });
@@ -219,7 +217,7 @@ export function useCreateTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateTopicRequest) => api.createTopic(data),
+    mutationFn: (data: CreateTopicInput) => api.createTopic(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: digestKeys.topics() });
       queryClient.invalidateQueries({ queryKey: digestKeys.subscriptions() });
@@ -235,8 +233,7 @@ export function useUpdateTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTopicRequest }) =>
-      api.updateTopic(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateTopicInput }) => api.updateTopic(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: digestKeys.topics() });
       toast.success('Topic updated');
@@ -276,7 +273,7 @@ export function useFollowTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: FollowTopicRequest }) =>
+    mutationFn: ({ slug, data }: { slug: string; data: FollowTopicInput }) =>
       api.followTopic(slug, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: digestKeys.subscriptions() });

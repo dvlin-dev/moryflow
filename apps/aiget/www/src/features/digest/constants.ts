@@ -1,11 +1,8 @@
 /**
- * Digest Constants
- *
- * [PROVIDES]: Shared constants for digest feature
- * [POS]: Constants for cron presets, timezones, locales
+ * [PROVIDES]: Cron presets, timezones, default values
+ * [POS]: Constants for digest feature
  */
 
-// Cron schedule presets
 export const CRON_PRESETS = [
   { label: 'Weekly (Monday 8am)', value: '0 8 * * 1' },
   { label: 'Daily (8am)', value: '0 8 * * *' },
@@ -13,7 +10,6 @@ export const CRON_PRESETS = [
   { label: 'Weekdays (8am)', value: '0 8 * * 1-5' },
 ] as const;
 
-// Common timezones
 export const TIMEZONES = [
   { label: 'Pacific (Los Angeles)', value: 'America/Los_Angeles' },
   { label: 'Mountain (Denver)', value: 'America/Denver' },
@@ -26,18 +22,19 @@ export const TIMEZONES = [
   { label: 'Germany (Berlin)', value: 'Europe/Berlin' },
 ] as const;
 
-// Default subscription values
 export const DEFAULT_SUBSCRIPTION = {
   cron: '0 8 * * 1',
   timezone: 'America/Los_Angeles',
   outputLocale: 'en',
   minItems: 5,
   searchLimit: 60,
+  minScore: 60,
 } as const;
 
-/**
- * Get cron preset label by value
- */
 export function getCronLabel(cron: string): string {
   return CRON_PRESETS.find((p) => p.value === cron)?.label ?? cron;
+}
+
+export function getTimezoneLabel(tz: string): string {
+  return TIMEZONES.find((t) => t.value === tz)?.label ?? tz;
 }

@@ -1,6 +1,4 @@
 /**
- * Create Subscription Dialog
- *
  * [PROPS]: open, onOpenChange, onSuccess
  * [POS]: Dialog for creating new digest subscriptions
  */
@@ -22,15 +20,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@aiget/ui';
-import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@aiget/ui';
 import { useCreateSubscription } from '../hooks';
 import { CRON_PRESETS, TIMEZONES, DEFAULT_SUBSCRIPTION } from '../constants';
 

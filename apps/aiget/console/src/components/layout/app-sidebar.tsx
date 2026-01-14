@@ -53,15 +53,6 @@ const navGroups: NavGroup[] = [
           { title: 'Graph', url: '/memox/graph' },
         ],
       },
-      {
-        title: 'Digest',
-        icon: Mail01Icon,
-        items: [
-          { title: 'Inbox', url: '/digest/inbox' },
-          { title: 'Subscriptions', url: '/digest/subscriptions' },
-          { title: 'My Topics', url: '/digest/topics' },
-        ],
-      },
     ],
   },
   {
@@ -69,6 +60,17 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'API Keys', url: '/api-keys', icon: Key01Icon },
       { title: 'Webhooks', url: '/webhooks', icon: WebhookIcon },
+    ],
+  },
+  {
+    label: 'Products',
+    items: [
+      {
+        title: 'Digest',
+        url: 'https://aiget.dev/dashboard',
+        icon: Mail01Icon,
+        external: true,
+      },
     ],
   },
   {

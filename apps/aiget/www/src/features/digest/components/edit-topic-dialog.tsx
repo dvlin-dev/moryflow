@@ -1,8 +1,5 @@
 /**
- * Edit Topic Dialog
- *
  * [PROPS]: topic to edit, open state, onOpenChange callback
- * [EMITS]: onUpdated when topic is successfully updated
  * [POS]: Modal dialog for editing topic visibility and metadata
  */
 
@@ -63,7 +60,6 @@ export function EditTopicDialog({ topic, open, onOpenChange, onUpdated }: EditTo
     },
   });
 
-  // 当话题变化时重置表单
   useEffect(() => {
     if (topic && open) {
       form.reset({
