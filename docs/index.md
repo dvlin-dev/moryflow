@@ -55,7 +55,6 @@ status: active
 - 归档迁移记录：`docs/_archived/migrations/`
 - 其他归档：`docs/_archived/`
 
-## Research（调研 / 排障记录）
+## Research（调研 / 功能需求）
 
-- Fetchx Browser & Agent 功能研究（更新至 2026-01-14，取消竞态修复、迁移与 Shadow DB 完成）：`docs/research/agent-browser-integration.md`
-- Aiget Server：Agent 模块 typecheck OOM 排查（更新至 2026-01-14，lint warnings 已清理）：`docs/research/aiget-server-typecheck-oom-agent.md`
+- Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`

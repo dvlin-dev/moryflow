@@ -1,503 +1,45 @@
-# Fetchx Browser & Agent 功能研究
+# Fetchx Browser & Agent 功能需求
 
-> 研究日期：2026-01-13
-> 参考仓库：
->
-> - https://github.com/vercel-labs/agent-browser
-> - https://github.com/mendableai/firecrawl
+> 创建日期：2026-01-13
+> 最后更新：2026-01-14
+> 状态：已完成
 
 ---
 
-## 研究流程说明
+## 一、前期准备
 
-**前置条件**：如果本地没有参考仓库，需要先拉取到本地。
+### 1.1 参考项目
+
+| 项目                | 仓库                                                                      | 定位                                      |
+| ------------------- | ------------------------------------------------------------------------- | ----------------------------------------- |
+| **agent-browser**   | [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) | 面向 AI Agent 的底层浏览器自动化 CLI 工具 |
+| **Firecrawl Agent** | [mendableai/firecrawl](https://github.com/mendableai/firecrawl)           | 高层智能数据收集 API                      |
+
+### 1.2 环境配置
+
+参考仓库需克隆到本地以供查阅：
 
 ```bash
-# 1. 克隆参考仓库到 archive/external-repos/ 目录
+# 克隆参考仓库
 git clone https://github.com/vercel-labs/agent-browser.git archive/external-repos/agent-browser
 git clone https://github.com/mendableai/firecrawl.git archive/external-repos/firecrawl
-
-# 2. 在 .gitignore 中添加忽略规则（避免提交外部仓库）
-# 已添加：
-# archive/external-repos/agent-browser/
-# archive/external-repos/firecrawl/
-
-# 3. 参考仓库本地路径
-# archive/external-repos/agent-browser/
-# archive/external-repos/firecrawl/
 ```
+
+> 注：已在 `.gitignore` 中添加忽略规则，避免提交外部仓库。
 
 ---
 
-## 代码审查计划（2026-01-14）
+## 二、需求概述
 
-### 审查目标与标准
+### 2.1 业务目标
 
-- 功能实现正常（L2 Browser / L3 Agent / 相关边界与计费流程）
-- 最佳实践（明确边界、低耦合、避免大类型泄漏）
-- 单一职责（服务/模块职责清晰，不做额外工作）
-- 模块化（ports/facade、DTO、service、controller 分层清楚）
-- 错误边界（异常可控、错误信息清晰，不泄露内部细节）
-- 不考虑历史兼容（必要时直接重构/删除）
-- 无用代码清理（未被使用的工具、分支或参数）
+为 AI Agent 提供完整的浏览器自动化能力，支持：
 
-### 本次 PR（#12）修改文件清单（全量）
+- **精确控制**：外部 AI Agent（如 Claude、GPT）可通过 API 操作浏览器
+- **智能决策**：内置 LLM 驱动的自动导航和数据提取
+- **结构化输出**：支持用户定义的 JSON Schema 输出格式
 
-**根目录**
-
-- `.gitignore`
-
-**apps/aiget/console**
-
-- `apps/aiget/console/src/features/CLAUDE.md`
-- `apps/aiget/console/src/features/scrape-playground/components/scrape-form.tsx`
-
-**apps/aiget/server**
-
-- `apps/aiget/server/CLAUDE.md`
-- `apps/aiget/server/package.json`
-- `apps/aiget/server/prisma/main/schema.prisma`
-- `apps/aiget/server/tsconfig.test.json`
-- `apps/aiget/server/src/app.module.ts`
-
-**apps/aiget/server - agent**
-
-- `apps/aiget/server/src/agent/__tests__/agent.service.spec.ts`
-- `apps/aiget/server/src/agent/agent.controller.ts`
-- `apps/aiget/server/src/agent/agent.module.ts`
-- `apps/aiget/server/src/agent/agent.service.ts`
-- `apps/aiget/server/src/agent/agent-task.progress.store.ts`
-- `apps/aiget/server/src/agent/agent-task.repository.ts`
-- `apps/aiget/server/src/agent/dto/agent.schema.ts`
-- `apps/aiget/server/src/agent/dto/index.ts`
-- `apps/aiget/server/src/agent/index.ts`
-- `apps/aiget/server/src/agent/tools/browser-tools.ts`
-- `apps/aiget/server/src/agent/tools/index.ts`
-
-**apps/aiget/server - billing**
-
-- `apps/aiget/server/src/billing/billing.rules.ts`
-
-**apps/aiget/server - browser**
-
-- `apps/aiget/server/src/browser/AGENTS.md`
-- `apps/aiget/server/src/browser/CLAUDE.md`
-- `apps/aiget/server/src/browser/browser-pool.ts`
-- `apps/aiget/server/src/browser/browser-session.controller.ts`
-- `apps/aiget/server/src/browser/browser-session.service.ts`
-- `apps/aiget/server/src/browser/browser.module.ts`
-- `apps/aiget/server/src/browser/browser.types.ts`
-- `apps/aiget/server/src/browser/index.ts`
-
-**apps/aiget/server - browser/cdp**
-
-- `apps/aiget/server/src/browser/cdp/cdp-connector.service.ts`
-- `apps/aiget/server/src/browser/cdp/index.ts`
-
-**apps/aiget/server - browser/dto**
-
-- `apps/aiget/server/src/browser/dto/action.schema.ts`
-- `apps/aiget/server/src/browser/dto/cdp.schema.ts`
-- `apps/aiget/server/src/browser/dto/index.ts`
-- `apps/aiget/server/src/browser/dto/network.schema.ts`
-- `apps/aiget/server/src/browser/dto/screenshot.schema.ts`
-- `apps/aiget/server/src/browser/dto/session.schema.ts`
-- `apps/aiget/server/src/browser/dto/snapshot.schema.ts`
-- `apps/aiget/server/src/browser/dto/storage.schema.ts`
-- `apps/aiget/server/src/browser/dto/types.ts`
-- `apps/aiget/server/src/browser/dto/window.schema.ts`
-
-**apps/aiget/server - browser/handlers**
-
-- `apps/aiget/server/src/browser/handlers/action.handler.ts`
-- `apps/aiget/server/src/browser/handlers/index.ts`
-
-**apps/aiget/server - browser/network**
-
-- `apps/aiget/server/src/browser/network/index.ts`
-- `apps/aiget/server/src/browser/network/interceptor.service.ts`
-
-**apps/aiget/server - browser/persistence**
-
-- `apps/aiget/server/src/browser/persistence/index.ts`
-- `apps/aiget/server/src/browser/persistence/storage.service.ts`
-
-**apps/aiget/server - browser/ports**
-
-- `apps/aiget/server/src/browser/ports/browser-agent.port.ts`
-- `apps/aiget/server/src/browser/ports/index.ts`
-
-**apps/aiget/server - browser/session**
-
-- `apps/aiget/server/src/browser/session/index.ts`
-- `apps/aiget/server/src/browser/session/session.manager.ts`
-
-**apps/aiget/server - browser/snapshot**
-
-- `apps/aiget/server/src/browser/snapshot/index.ts`
-- `apps/aiget/server/src/browser/snapshot/snapshot.service.ts`
-
-**apps/moryflow/mobile**
-
-- `apps/moryflow/mobile/components/CLAUDE.md`
-- `apps/moryflow/mobile/components/chat/MessageBubble.tsx`
-- `apps/moryflow/mobile/lib/CLAUDE.md`
-- `apps/moryflow/mobile/lib/agent-runtime/adapters/logger.ts`
-
-**docs**
-
-- `docs/CLAUDE.md`
-- `docs/index.md`
-- `docs/references/moryflow-agents-sdk.md`
-- `docs/research/agent-browser-integration.md`
-- `docs/research/aiget-server-typecheck-oom-agent.md`
-
-### 审查步骤（计划）
-
-1. **按模块分组**逐一审阅：browser → agent → billing → console/mobile → docs。
-2. **功能完整性核对**：对照 API/工具清单，确认端点/工具/计费/流式行为一致。
-3. **边界与依赖检查**：确保 Playwright 重类型不进入 agents-core 泛型；ports/facade 生效。
-4. **错误边界审阅**：异常处理是否明确，错误是否对外可读、对内可排查。
-5. **无用代码清理**：标出可删除的未使用分支/工具/参数，确认是否删除。
-6. **输出审查结论**：功能风险、最佳实践偏差、可删项、必须修复点。
-
-> 说明：以上为审查计划，已确认并开始执行。
-
----
-
-## 最佳实践落地方案（已确认）
-
-> 确认日期：2026-01-14
-
-### 已确认决策
-
-- **任务状态永久保留**：落地到 DB（Prisma），避免进程内存丢失/多实例不一致
-- **进度与取消协作**：实时进度写 Redis（TTL），取消标记由 Redis 驱动
-- **SSE 断开不取消任务**：后台继续执行，用户可通过 `GET /api/v1/agent/:id` 刷新查看
-- **失败不扣积分**：失败时全额退回已扣 checkpoint；但仍返回真实 `creditsUsed`（UI 需提示“失败不扣费”）
-- **用户主动取消要扣**：取消不退款，按已消耗扣费
-
-### 执行计划（最佳实践）
-
-1. **新增持久化模型**
-   - `AgentTask`：任务状态/结果/错误/消耗/时间戳（永久）
-   - `AgentTaskCharge`：checkpoint 扣费记录（用于失败退款/取消结算）
-2. **服务分层**
-   - `AgentTaskRepository`（DB）
-   - `AgentTaskProgressStore`（Redis）
-3. **AgentService 改造**
-   - 创建/更新任务写 DB；进度写 Redis；完成/失败/取消写 DB 终态
-   - 移除内存任务表（Map）
-4. **接口结果**
-   - `GET /api/v1/agent/:id` 合并 DB + Redis progress
-5. **计费语义**
-   - 成功：结算剩余 credits
-   - 失败：全额退款已扣 checkpoint
-   - 取消：不退款，按已消耗扣费
-
-### 当前进度
-
-- [x] 任务状态持久化（DB + Redis）
-- [x] 失败退款 / 取消结算语义落地
-- [x] `GET /agent/:id` 返回 progress
-- [x] 代码审查问题修复（ActionHandler、SSE、browser_wait、screenshot）
-- [x] 修复取消竞态：终态 compare-and-set，取消时 metrics 落库
-- [x] Prisma 迁移已生成并应用（AgentTask / AgentTaskCharge）
-- [x] Shadow DB 已建立并接入 Prisma config（migrate diff 可用）
-
-### 当前剩余问题
-
-- 仍需补齐 Browser API / Agent API 的单元与集成测试覆盖（除已补的取消回归用例外）
-
-### 接下来的计划
-
-1. 补齐 Browser/Agent 的单测与 E2E 覆盖
-
-### 验证命令与信号（2026-01-14）
-
-- `pnpm lint` ✅ 通过（`@aiget/model-registry-data` 同步超时但 fallback 成功）
-- `pnpm typecheck` ✅ 通过（同上）
-- `pnpm test:unit` ✅ 通过（Redis 连接拒绝日志存在，不影响用例结果；取消回归用例通过）
-- `pnpm exec prisma migrate deploy --config prisma.main.config.ts` ✅ 通过（Agent 任务表迁移已应用）
-- `pnpm exec prisma migrate diff --config prisma.main.config.ts --from-migrations prisma/main/migrations --to-schema prisma/main/schema.prisma --exit-code` ✅ 无差异
-- `pnpm exec prisma migrate diff --config prisma.vector.config.ts --from-migrations prisma/vector/migrations --to-schema prisma/vector/schema.prisma --exit-code` ✅ 无差异
-
-## 一、参考项目分析
-
-### 1.1 agent-browser（Vercel Labs）
-
-**定位**：面向 AI Agent 的**底层浏览器自动化 CLI 工具**
-
-**核心特点**：
-
-- **CLI 优先**：设计为命令行工具，便于 AI Agent 调用
-- **Rust + Node.js 混合架构**：CLI 用 Rust 实现（快速），后台 Daemon 用 Node.js + Playwright
-- **Ref 系统**：通过 snapshot 生成元素引用（@e1, @e2），实现确定性元素选择
-- **Session 管理**：支持多个隔离的浏览器实例
-
-**架构图**：
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     agent-browser                            │
-├─────────────────────────────────────────────────────────────┤
-│  CLI (Rust)                                                  │
-│  - 解析命令行参数                                            │
-│  - 通过 Unix Socket/TCP 与 Daemon 通信                       │
-├─────────────────────────────────────────────────────────────┤
-│  Daemon (Node.js)                                            │
-│  - BrowserManager: 管理 Playwright 浏览器实例                │
-│  - Actions: 执行各种浏览器操作                               │
-│  - Snapshot: 生成可访问性树 + 元素引用                       │
-│  - Protocol: JSON-based IPC 协议                             │
-├─────────────────────────────────────────────────────────────┤
-│  Playwright Core                                             │
-│  - Chromium / Firefox / WebKit                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**核心功能**：
-
-| 功能类别 | 命令                                                                      | 说明                                       |
-| -------- | ------------------------------------------------------------------------- | ------------------------------------------ |
-| 导航     | `open`, `back`, `forward`, `reload`, `close`                              | 页面导航控制                               |
-| Snapshot | `snapshot [-i] [-c] [-d N]`                                               | 生成可访问性树，支持交互元素过滤、深度限制 |
-| 交互     | `click`, `dblclick`, `fill`, `type`, `press`, `hover`, `check`, `uncheck` | 元素交互                                   |
-| 等待     | `wait`                                                                    | 等待元素/时间/URL/文本/网络空闲            |
-| 信息获取 | `get text/html/value/attr/title/url/count/box`                            | 获取页面/元素信息                          |
-| 状态检查 | `is visible/enabled/checked`                                              | 检查元素状态                               |
-| 截图/PDF | `screenshot`, `pdf`                                                       | 页面截图和 PDF 导出                        |
-| 语义定位 | `find role/text/label/placeholder/alt/title/testid`                       | 基于 ARIA 角色/文本的元素定位              |
-
-**Ref 系统示例**：
-
-```bash
-# 1. 获取页面快照，生成元素引用
-agent-browser snapshot -i
-# 输出：
-# - heading "Example Domain" [ref=e1] [level=1]
-# - button "Submit" [ref=e2]
-# - textbox "Email" [ref=e3]
-
-# 2. 使用 ref 进行操作（确定性）
-agent-browser click @e2
-agent-browser fill @e3 "test@example.com"
-```
-
-### 1.2 Firecrawl Agent
-
-**定位**：**高层智能数据收集 API**
-
-**核心特点**：
-
-- **Prompt 驱动**：用户只需描述想要的数据，系统自动完成
-- **无需 URL**：自动搜索和导航找到数据
-- **LLM 决策**：使用 Gemini 2.5 Pro 智能决策导航路径
-- **结构化输出**：支持 JSON Schema / Zod / Pydantic 定义输出格式
-
-**使用示例**：
-
-```typescript
-// Python SDK
-result = app.agent(
-    prompt="Find the founders of Firecrawl",
-    schema=FoundersSchema
-)
-
-// 返回结构化数据
-{
-  "founders": [
-    { "name": "Eric Ciarla", "role": "Co-founder" },
-    { "name": "Nicolas Camara", "role": "Co-founder" }
-  ]
-}
-```
-
-**内部实现**（`smartScrape.ts`）：
-
-- 调用内部 `/smart-scrape` 端点
-- 使用 `gemini-2.5-pro` 作为决策模型
-- 使用 `gemini-2.0-flash` 作为工具执行模型
-- 动态计费（基于 token 消耗）
-
-### 1.3 对比分析
-
-| 维度             | agent-browser                 | Firecrawl Agent                |
-| ---------------- | ----------------------------- | ------------------------------ |
-| **层级**         | 底层自动化工具                | 高层智能 API                   |
-| **控制方式**     | 命令式（click @e2, fill @e3） | 声明式（prompt: "找到创始人"） |
-| **是否需要 URL** | 需要                          | 不需要（自动搜索）             |
-| **LLM 依赖**     | 无（纯浏览器操作）            | 强依赖（gemini-2.5-pro 决策）  |
-| **会话模型**     | 有状态（多轮交互）            | 无状态（一次任务）             |
-| **使用者**       | AI Agent（Claude/GPT）        | 开发者/终端用户                |
-| **典型场景**     | Agent 操作浏览器完成复杂任务  | "帮我研究 X 公司的信息"        |
-| **成本**         | 仅浏览器资源                  | 高（LLM token 消耗）           |
-
-### 1.4 agent-browser 深入分析（值得借鉴的设计）
-
-> 基于源码深入分析，以下是 agent-browser 的核心设计细节。
-
-#### 1.4.1 Ref 系统精妙设计
-
-**Ref 存储格式** - 使用 Playwright 语义定位器而非 CSS 选择器：
-
-```typescript
-interface RefMap {
-  [ref: string]: {
-    selector: string; // "getByRole('button', { name: 'Submit', exact: true })"
-    role: string; // ARIA 角色
-    name?: string; // 元素文本/标签
-    nth?: number; // 仅当有重复时存储（用于 .nth(1)）
-  };
-}
-```
-
-**Nth 去重逻辑** - 通过 RoleNameTracker 检测重复元素：
-
-```typescript
-// 只有当多个元素具有相同 role+name 时才存储 nth
-function removeNthFromNonDuplicates(refs: RefMap, tracker: RoleNameTracker): void {
-  const duplicateKeys = tracker.getDuplicateKeys();
-  for (const [ref, data] of Object.entries(refs)) {
-    const key = tracker.getKey(data.role, data.name);
-    if (!duplicateKeys.has(key)) {
-      delete refs[ref].nth; // 单独元素不需要 nth
-    }
-  }
-}
-```
-
-**角色分类系统** - 支持不同的快照模式：
-
-```typescript
-const INTERACTIVE_ROLES = new Set([
-  'button',
-  'link',
-  'textbox',
-  'checkbox',
-  'radio',
-  'combobox',
-  'listbox',
-  'menuitem',
-  'option',
-  'searchbox',
-  'slider',
-  'spinbutton',
-  'switch',
-  'tab',
-  'treeitem',
-]);
-
-const CONTENT_ROLES = new Set([
-  'heading',
-  'cell',
-  'gridcell',
-  'columnheader',
-  'rowheader',
-  'listitem',
-  'article',
-  'region',
-  'main',
-  'navigation',
-]);
-
-const STRUCTURAL_ROLES = new Set([
-  'generic',
-  'group',
-  'list',
-  'table',
-  'row',
-  'rowgroup',
-  'grid',
-  'menu',
-  'toolbar',
-  'tablist',
-  'tree',
-]);
-```
-
-#### 1.4.2 多标签页/多窗口架构
-
-```typescript
-class BrowserManager {
-  private contexts: BrowserContext[] = []; // 多个隔离上下文
-  private pages: Page[] = []; // 所有页面的平面列表
-  private activePageIndex: number = 0; // 当前活跃页面索引
-
-  // 新标签页（同一上下文，共享 cookies）
-  async newTab(): Promise<{ index: number }>;
-
-  // 新窗口（新上下文，独立 cookies/storage）
-  async newWindow(viewport?: { width; height }): Promise<{ index: number }>;
-
-  // 列表所有标签页
-  async listTabs(): Promise<Array<{ index; url; title; active }>>;
-}
-```
-
-#### 1.4.3 CDP 连接支持（重连机制）
-
-```typescript
-// 连接到已运行的浏览器（如 Electron、调试实例）
-async connectViaCDP(cdpPort: number): Promise<void> {
-  const browser = await chromium.connectOverCDP(`http://localhost:${cdpPort}`);
-  // ... 验证连接、设置追踪
-}
-
-// 关闭时区分处理
-async close(): Promise<void> {
-  if (this.cdpPort !== null) {
-    // CDP 模式：只断开连接，不关闭外部应用
-    await this.browser.close();
-  } else {
-    // 普通模式：彻底关闭所有页面和浏览器
-    for (const page of this.pages) await page.close();
-    // ...
-  }
-}
-```
-
-#### 1.4.4 AI 友好的错误消息
-
-```typescript
-function toAIFriendlyError(error: unknown, selector: string): Error {
-  if (message.includes('strict mode violation')) {
-    const count = message.match(/resolved to (\d+) elements/)?.[1] ?? 'multiple';
-    return new Error(
-      `Selector "${selector}" matched ${count} elements. ` +
-        `Run 'snapshot' to get updated refs, or use a more specific CSS selector.`
-    );
-  }
-
-  if (message.includes('intercepts pointer events')) {
-    return new Error(
-      `Element "${selector}" is not interactable (may be hidden or covered). ` +
-        `Try scrolling it into view or check if a modal/overlay is blocking it.`
-    );
-  }
-  // ...
-}
-```
-
-#### 1.4.5 值得借鉴的功能清单
-
-| 功能             | 说明                                  | 优先级 |
-| ---------------- | ------------------------------------- | ------ |
-| **角色分类系统** | 支持 `--interactive` 仅返回可交互元素 | P0     |
-| **Nth 去重**     | 自动处理重复元素                      | P0     |
-| **语义定位器**   | 使用 getByRole 而非 CSS               | P0     |
-| **多标签页**     | newTab, listTabs, switchTab           | P1     |
-| **多窗口**       | 独立上下文（隔离 cookies）            | P1     |
-| **CDP 连接**     | 连接已运行的浏览器                    | P2     |
-| **AI 友好错误**  | 错误消息 + 修复建议                   | P1     |
-| **对话框处理**   | 自动处理 alert/confirm/prompt         | P1     |
-| **网络拦截**     | 按需设置请求头、mock 响应             | P2     |
-
----
-
-## 二、Fetchx API 层级架构
-
-基于以上分析，设计 Fetchx 三层 API 架构：
+### 2.2 三层 API 架构
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -505,7 +47,7 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
 ├─────────────────────────────────────────────────────────────────┤
 │  L3: Agent (智能数据收集)                                        │
 │      POST /api/v1/agent                                         │
-│      - 基于 @moryflow/agents SDK 实现                           │
+│      - 基于 @aiget/agents-core SDK 实现                         │
 │      - L2 Browser 能力封装为 Tools                              │
 │      - prompt 驱动，LLM 自动决策                                │
 │      - 返回结构化数据                                            │
@@ -524,14 +66,25 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
 │  Shared Infrastructure (共享基础设施)                            │
 │      - SessionManager: 浏览器会话管理                            │
 │      - SnapshotService: 快照生成与 Ref 映射                     │
-│      - ActionExecutor: 动作执行引擎                              │
+│      - ActionHandler: 动作执行引擎                               │
 │      - BrowserPool: 浏览器实例池                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### L2 与 L3 的关系
+### 2.3 核心功能矩阵
 
-**方案选择**：共享基础设施层（而非 L3 调用 L2 HTTP API）
+| 功能层级           | 描述           | 关键能力                                                       |
+| ------------------ | -------------- | -------------------------------------------------------------- |
+| **L2 Browser API** | 浏览器会话管理 | Session CRUD、页面导航、截图、快照、CDP 访问、多标签页、多窗口 |
+| **L3 Agent API**   | AI Agent 执行  | 任务执行、流式输出、取消、计费检查点                           |
+| **计费系统**       | Credits 扣费   | 分段检查（每 100 credits）、失败退款、取消结算                 |
+| **持久化**         | 任务状态管理   | DB 存储终态、Redis 存储实时进度                                |
+
+---
+
+## 三、架构设计
+
+### 3.1 系统架构图
 
 ```
                ┌─────────────┐     ┌─────────────┐
@@ -546,7 +99,7 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
         │  │ SessionManager│  │  SnapshotService  │   │
         │  └───────────────┘  └───────────────────┘   │
         │  ┌───────────────┐  ┌───────────────────┐   │
-        │  │ActionExecutor │  │   BrowserPool     │   │
+        │  │ ActionHandler │  │   BrowserPool     │   │
         │  └───────────────┘  └───────────────────┘   │
         └─────────────────────────────────────────────┘
                               │
@@ -556,135 +109,74 @@ function toAIFriendlyError(error: unknown, selector: string): Error {
         └─────────────────────────────────────────────┘
 ```
 
-**优势**：
+### 3.2 模块划分
 
-- 避免 HTTP 调用开销
-- 代码复用无重复
-- L2 对外提供 API，L3 内部使用相同能力
+```
+apps/aiget/server/src/
+├── browser/                    # L2 浏览器自动化
+│   ├── browser.module.ts
+│   ├── browser-session.controller.ts
+│   ├── browser-session.service.ts
+│   ├── session/                # 会话管理
+│   ├── snapshot/               # 快照服务
+│   ├── handlers/               # 动作处理
+│   ├── network/                # 网络拦截
+│   ├── persistence/            # 存储持久化
+│   ├── cdp/                    # CDP 连接
+│   ├── ports/                  # Agent 端口（类型隔离）
+│   └── dto/                    # Zod schemas
+│
+└── agent/                      # L3 智能 Agent
+    ├── agent.module.ts
+    ├── agent.controller.ts
+    ├── agent.service.ts
+    ├── agent-billing.service.ts    # 计费逻辑
+    ├── agent-task.repository.ts    # 任务持久化
+    ├── agent-task.progress.store.ts # 进度存储
+    ├── tools/                  # Browser Tools
+    └── dto/
+```
+
+### 3.3 类型隔离（Ports/Facade）
+
+为避免 Playwright 重类型进入 agents-core 泛型推断导致 TypeScript OOM，采用 Ports 模式隔离：
+
+```
+Agent Service  ──▶  BrowserAgentPortService  ──▶  SessionManager
+   (轻量类型)           (端口接口)                (Playwright 类型)
+```
 
 ---
 
-## 三、路由设计
+## 四、核心功能设计
 
-### 3.1 完整路由规划
+### 4.1 L2 Browser API
+
+#### 路由清单
 
 ```typescript
-// ==================== L1: 基础抓取（现有） ====================
-POST /api/v1/scrape              // 单页抓取
-POST /api/v1/crawl               // 多页爬取
-GET  /api/v1/crawl/:id           // 获取爬取状态
-POST /api/v1/map                 // URL 发现
-POST /api/v1/extract             // 结构化提取
-
-// ==================== L2: Browser 自动化（新增） ====================
+// 会话管理
 POST   /api/v1/browser/session              // 创建会话
 GET    /api/v1/browser/session/:id          // 获取会话状态
 DELETE /api/v1/browser/session/:id          // 关闭会话
 
+// 页面操作
 POST   /api/v1/browser/session/:id/open     // 打开 URL
 POST   /api/v1/browser/session/:id/snapshot // 获取 Snapshot + refs
-POST   /api/v1/browser/session/:id/action   // 执行动作（支持 @ref）
+POST   /api/v1/browser/session/:id/action   // 执行动作
 GET    /api/v1/browser/session/:id/screenshot // 截图
 
-// ==================== L3: Agent（新增） ====================
-POST   /api/v1/agent             // 创建 Agent 任务（默认 SSE 流式返回）
-GET    /api/v1/agent/:id         // 获取任务状态/结果（用于断线重连）
-DELETE /api/v1/agent/:id         // 取消任务
+// 高级功能
+POST   /api/v1/browser/session/:id/tabs     // 多标签页管理
+POST   /api/v1/browser/session/:id/window   // 多窗口管理
+POST   /api/v1/browser/session/:id/network  // 网络拦截
+POST   /api/v1/browser/session/:id/storage  // 存储管理
+POST   /api/v1/browser/session/:id/cdp      // CDP 命令
 ```
 
-**L3 Agent 流式设计说明**：
+#### Snapshot + Ref 系统
 
-- `POST /agent` 默认返回 SSE 流，前端可实时显示进度
-- 流的第一条消息包含 `taskId`，用于断线重连
-- 使用 `stream=false` 参数可切换为非流式模式（仅返回 `{ id }`）
-- `GET /agent/:id` 用于断线后获取任务结果（5 分钟内有效）
-
-### 3.2 模块结构
-
-```
-apps/aiget/server/src/
-├── scraper/                    # L1 基础抓取（现有）
-│   ├── scraper.module.ts
-│   ├── scraper.controller.ts
-│   ├── scraper.service.ts
-│   └── handlers/
-│       └── action-executor.handler.ts
-│
-├── browser/                    # L2 浏览器自动化（新增）
-│   ├── browser.module.ts
-│   ├── browser.controller.ts   # /api/v1/browser/*
-│   ├── browser.service.ts
-│   ├── session/
-│   │   └── session.manager.ts  # 会话管理（含 ref 映射）
-│   ├── snapshot/
-│   │   └── snapshot.service.ts # Snapshot 生成
-│   ├── handlers/
-│   │   └── action.handler.ts   # 动作执行（支持 @ref）
-│   └── dto/
-│       └── browser.schema.ts   # Zod schemas
-│
-└── agent/                      # L3 智能 Agent（新增）
-    ├── agent.module.ts
-    ├── agent.controller.ts     # /api/v1/agent
-    ├── agent.service.ts
-    ├── smart-scrape/
-    │   └── smart-scrape.service.ts # LLM 驱动的智能抓取
-    └── dto/
-        └── agent.schema.ts
-```
-
----
-
-## 四、L2 Browser API 详细设计
-
-### 4.1 会话管理
-
-```typescript
-// POST /api/v1/browser/session
-interface CreateSessionRequest {
-  viewport?: { width: number; height: number };
-  userAgent?: string;
-  timeout?: number; // 会话超时（默认 5 分钟）
-}
-
-interface CreateSessionResponse {
-  id: string;
-  expiresAt: string;
-}
-```
-
-### 4.2 Snapshot API
-
-```typescript
-// POST /api/v1/browser/session/:id/snapshot
-interface SnapshotRequest {
-  interactive?: boolean; // 仅交互元素（默认 false）
-  compact?: boolean; // 紧凑模式（默认 false）
-  maxDepth?: number; // 深度限制
-  scope?: string; // CSS 选择器范围
-}
-
-interface SnapshotResponse {
-  tree: string; // 可访问性树文本
-  refs: Record<
-    string,
-    {
-      // 元素引用映射
-      role: string;
-      name?: string;
-      nth?: number;
-    }
-  >;
-  stats: {
-    lines: number;
-    chars: number;
-    refs: number;
-    interactive: number;
-  };
-}
-```
-
-**示例输出**：
+Snapshot 返回页面可访问性树，并为每个元素生成唯一引用（@e1, @e2...）：
 
 ```
 - heading "Example Domain" [ref=e1] [level=1]
@@ -694,821 +186,185 @@ interface SnapshotResponse {
 - textbox "Email" [ref=e4]
 ```
 
-### 4.3 Action API
+后续操作可使用 `@ref` 格式定位元素，比 CSS 选择器更可靠：
+
+```bash
+# 使用 ref 进行操作
+click @e3      # 点击 Submit 按钮
+fill @e4 "test@example.com"  # 填写 Email
+```
+
+#### Action 类型
+
+| 类别         | 动作                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
+| **导航**     | open, back, forward, reload                                              |
+| **交互**     | click, dblclick, fill, type, press, hover, check, uncheck, select, focus |
+| **等待**     | wait (元素/时间/URL/文本/网络空闲)                                       |
+| **滚动**     | scroll, scrollIntoView                                                   |
+| **信息获取** | getText, getAttribute, getInnerHTML, getInputValue                       |
+| **状态检查** | isVisible, isEnabled, isChecked                                          |
+
+### 4.2 L3 Agent API
+
+#### 路由
 
 ```typescript
-// POST /api/v1/browser/session/:id/action
-interface ActionRequest {
-  type: ActionType;
-  selector?: string; // CSS 选择器或 @ref
-  value?: string; // fill/type 的值
-  key?: string; // press 的按键
-  // ... 其他参数
-}
-
-type ActionType =
-  // 导航
-  | 'open'
-  | 'back'
-  | 'forward'
-  | 'reload'
-  // 交互
-  | 'click'
-  | 'dblclick'
-  | 'fill'
-  | 'type'
-  | 'press'
-  | 'hover'
-  | 'check'
-  | 'uncheck'
-  | 'select'
-  | 'focus'
-  // 等待
-  | 'wait'
-  // 滚动
-  | 'scroll'
-  | 'scrollIntoView'
-  // 信息获取
-  | 'getText'
-  | 'getAttribute'
-  | 'getInnerHTML'
-  | 'getInputValue'
-  // 状态检查
-  | 'isVisible'
-  | 'isEnabled'
-  | 'isChecked';
-
-interface ActionResponse {
-  success: boolean;
-  result?: unknown; // getText 等操作的返回值
-  error?: string;
-}
+POST   /api/v1/agent             // 创建任务（默认 SSE 流式）
+GET    /api/v1/agent/:id         // 获取任务状态/结果
+DELETE /api/v1/agent/:id         // 取消任务
+POST   /api/v1/agent/estimate    // 预估 credits 消耗
 ```
 
-### 4.4 Ref 系统实现
-
-```typescript
-// session/session.manager.ts
-interface RefMap {
-  [ref: string]: {
-    selector: string; // getByRole('button', { name: 'Submit', exact: true })
-    role: string;
-    name?: string;
-    nth?: number;
-  };
-}
-
-class SessionManager {
-  private sessions: Map<
-    string,
-    {
-      context: BrowserContext;
-      page: Page;
-      refs: RefMap;
-      expiresAt: Date;
-    }
-  >;
-
-  // 解析 ref 语法
-  parseSelector(selector: string, refs: RefMap): Locator {
-    if (selector.startsWith('@')) {
-      const ref = selector.slice(1);
-      const refData = refs[ref];
-      if (!refData) throw new Error(`Unknown ref: ${ref}`);
-
-      let locator = this.page.getByRole(refData.role, {
-        name: refData.name,
-        exact: true,
-      });
-
-      if (refData.nth !== undefined) {
-        locator = locator.nth(refData.nth);
-      }
-
-      return locator;
-    }
-
-    return this.page.locator(selector);
-  }
-}
-```
-
----
-
-## 五、L3 Agent API 详细设计
-
-> **实现方式**：基于 `@moryflow/agents` SDK（二次封装自 openai-agents-js）
-> **参考文档**：[docs/references/moryflow-agents-sdk.md](../references/moryflow-agents-sdk.md)
-
-### 5.1 架构设计
-
-L3 Agent 使用现有 `@moryflow/agents` SDK，将 L2 Browser 的能力封装为 Tools：
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      L3 Agent Service                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌──────────────────────────────────────────────────────┐      │
-│   │              @moryflow/agents SDK                    │      │
-│   │                                                      │      │
-│   │   Agent({                                            │      │
-│   │     name: 'Fetchx Browser Agent',                    │      │
-│   │     model: 'gpt-4o',                                 │      │
-│   │     tools: [browserTools...],                        │      │
-│   │     outputType: userSchema,                          │      │
-│   │   })                                                 │      │
-│   │                                                      │      │
-│   └──────────────────────────────────────────────────────┘      │
-│                              │                                   │
-│                              ▼                                   │
-│   ┌──────────────────────────────────────────────────────┐      │
-│   │              Browser Tools                           │      │
-│   │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐  │      │
-│   │  │ snapshot │ │  click   │ │   fill   │ │  open  │  │      │
-│   │  └──────────┘ └──────────┘ └──────────┘ └────────┘  │      │
-│   │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐  │      │
-│   │  │  scroll  │ │  wait    │ │ getText  │ │ search │  │      │
-│   │  └──────────┘ └──────────┘ └──────────┘ └────────┘  │      │
-│   └──────────────────────────────────────────────────────┘      │
-│                              │                                   │
-│                              ▼                                   │
-│   ┌──────────────────────────────────────────────────────┐      │
-│   │           Shared Infrastructure                      │      │
-│   │   (SessionManager, SnapshotService, ActionExecutor)  │      │
-│   └──────────────────────────────────────────────────────┘      │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 5.2 Browser Tools 定义
-
-> ⚠️ **重要**：以下代码已根据 `@moryflow/agents` SDK 实际接口修正
-
-```typescript
-// agent/tools/browser-tools.ts
-import { tool } from '@moryflow/agents';
-import { z } from 'zod';
-import type { RunContext } from '@moryflow/agents';
-
-// 定义 Tool 上下文类型
-interface BrowserContext {
-  session: BrowserSession;
-  snapshotService: SnapshotService;
-  actionExecutor: ActionExecutor;
-}
-
-// Schema 定义
-const snapshotSchema = z.object({
-  interactive: z.boolean().optional().default(true),
-  maxDepth: z.number().optional(),
-});
-
-const selectorSchema = z.object({
-  selector: z.string().describe('元素选择器，支持 @ref 格式（如 @e1）'),
-});
-
-const fillSchema = z.object({
-  selector: z.string().describe('输入框选择器'),
-  value: z.string().describe('要填写的文本'),
-});
-
-const urlSchema = z.object({
-  url: z.string().url().describe('要打开的 URL'),
-});
-
-const querySchema = z.object({
-  query: z.string().describe('搜索关键词'),
-});
-
-// 获取页面快照（核心 Tool）
-export const snapshotTool = tool<typeof snapshotSchema, BrowserContext>({
-  name: 'browser_snapshot',
-  description: `获取当前页面的可访问性树快照，包含可交互元素的引用（@e1, @e2...）。
-  返回的 ref 可用于后续 click、fill 等操作。
-  - interactive=true: 仅返回可交互元素（button, link, input 等）
-  - 用于理解页面结构和定位目标元素`,
-  parameters: snapshotSchema,
-  execute: async (input, runContext) => {
-    // runContext 可能为 undefined，需要判空
-    if (!runContext?.context) {
-      throw new Error('Browser context not available');
-    }
-    const { snapshotService, session } = runContext.context;
-    return await snapshotService.capture(session.page, {
-      interactive: input.interactive,
-      maxDepth: input.maxDepth,
-    });
-  },
-});
-
-// 点击元素
-export const clickTool = tool<typeof selectorSchema, BrowserContext>({
-  name: 'browser_click',
-  description: '点击指定元素。使用 @ref 格式（如 @e1）或 CSS 选择器。',
-  parameters: selectorSchema,
-  execute: async (input, runContext) => {
-    if (!runContext?.context) {
-      throw new Error('Browser context not available');
-    }
-    const { actionExecutor, session } = runContext.context;
-    return await actionExecutor.execute(session, { type: 'click', selector: input.selector });
-  },
-});
-
-// 填写输入框
-export const fillTool = tool<typeof fillSchema, BrowserContext>({
-  name: 'browser_fill',
-  description: '在输入框中填写文本。会清空原有内容。',
-  parameters: fillSchema,
-  execute: async (input, runContext) => {
-    if (!runContext?.context) {
-      throw new Error('Browser context not available');
-    }
-    const { actionExecutor, session } = runContext.context;
-    return await actionExecutor.execute(session, {
-      type: 'fill',
-      selector: input.selector,
-      value: input.value,
-    });
-  },
-});
-
-// 打开 URL
-export const openTool = tool<typeof urlSchema, BrowserContext>({
-  name: 'browser_open',
-  description: '在浏览器中打开指定 URL。',
-  parameters: urlSchema,
-  execute: async (input, runContext) => {
-    if (!runContext?.context) {
-      throw new Error('Browser context not available');
-    }
-    const { session } = runContext.context;
-    await session.page.goto(input.url, { waitUntil: 'domcontentloaded' });
-    return { success: true, url: session.page.url() };
-  },
-});
-
-// Web 搜索（Agent 起点）
-export const searchTool = tool<typeof querySchema, BrowserContext>({
-  name: 'web_search',
-  description: '使用搜索引擎搜索信息。返回搜索结果页面。',
-  parameters: querySchema,
-  execute: async (input, runContext) => {
-    if (!runContext?.context) {
-      throw new Error('Browser context not available');
-    }
-    const { session, snapshotService } = runContext.context;
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(input.query)}`;
-    await session.page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-    // 返回搜索结果页的快照
-    const snapshot = await snapshotService.capture(session.page, { interactive: true });
-    return { success: true, url: session.page.url(), snapshot };
-  },
-});
-
-// 获取文本内容
-export const getTextTool = tool<typeof selectorSchema, BrowserContext>({
-  name: 'browser_getText',
-  description: '获取指定元素的文本内容。',
-  parameters: selectorSchema,
-  execute: async (input, runContext) => {
-    if (!runContext?.context) {
-      throw new Error('Browser context not available');
-    }
-    const { actionExecutor, session } = runContext.context;
-    return await actionExecutor.execute(session, { type: 'getText', selector: input.selector });
-  },
-});
-
-// 导出所有 Tools
-export const browserTools = [snapshotTool, clickTool, fillTool, openTool, searchTool, getTextTool];
-```
-
-### 5.3 Agent 实现
-
-> ⚠️ **重要**：以下代码已根据 `@moryflow/agents` SDK 实际接口修正
-
-```typescript
-// agent/agent.service.ts
-import { Agent, Runner } from '@moryflow/agents';
-import { z } from 'zod';
-import { browserTools, BrowserContext } from './tools/browser-tools';
-import { SessionManager } from '../browser/session/session.manager';
-import { SnapshotService } from '../browser/snapshot/snapshot.service';
-import { ActionExecutor } from '../browser/handlers/action.handler';
-
-const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页数据收集助手。
-
-你的任务是根据用户的 prompt，通过浏览器操作找到并提取所需数据。
-
-工作流程：
-1. 分析用户需求，确定需要收集的数据
-2. 如果没有提供 URL，使用 web_search 搜索相关网站
-3. 使用 browser_open 打开目标页面
-4. 使用 browser_snapshot 获取页面结构
-5. 根据快照中的 ref，使用 click/fill 等操作导航
-6. 多次迭代直到找到所有需要的数据
-7. 返回结构化的结果
-
-注意事项：
-- 每次操作后都应获取新的 snapshot 以了解页面变化
-- 使用 @ref 格式（如 @e1）进行元素定位，比 CSS 选择器更可靠
-- 如果页面需要登录，提示用户无法访问
-- 遇到验证码或反爬机制时，返回错误信息`;
-
-@Injectable()
-export class AgentService {
-  private runner: Runner;
-
-  constructor(
-    private sessionManager: SessionManager,
-    private snapshotService: SnapshotService,
-    private actionExecutor: ActionExecutor
-  ) {
-    // 创建 Runner 实例（可复用）
-    this.runner = new Runner({
-      tracingDisabled: false, // 启用追踪
-    });
-  }
-
-  async executeTask(request: {
-    prompt: string;
-    urls?: string[];
-    schema?: z.ZodType;
-    maxCredits?: number;
-  }) {
-    // 创建浏览器会话
-    const session = await this.sessionManager.createSession();
-
-    try {
-      // 构建 Agent（泛型指定上下文类型）
-      const agent = new Agent<BrowserContext>({
-        name: 'Fetchx Browser Agent',
-        model: 'gpt-4o',
-        instructions: SYSTEM_INSTRUCTIONS,
-        tools: browserTools,
-        outputType: request.schema ?? 'text', // 默认文本输出
-        modelSettings: {
-          temperature: 0.7,
-          maxTokens: 4096,
-        },
-      });
-
-      // 构建上下文（供 Tools 使用）
-      const context: BrowserContext = {
-        session,
-        snapshotService: this.snapshotService,
-        actionExecutor: this.actionExecutor,
-      };
-
-      // 构建初始 prompt
-      let userPrompt = request.prompt;
-      if (request.urls?.length) {
-        userPrompt += `\n\n起始 URL：${request.urls.join(', ')}`;
-      }
-
-      // 执行 Agent
-      const result = await this.runner.run(agent, userPrompt, {
-        context,
-        maxTurns: 20, // 最大轮数限制
-      });
-
-      // 获取 token 用量
-      const usage = result.state._context.usage;
-
-      return {
-        success: true,
-        data: result.finalOutput,
-        creditsUsed: usage.totalTokens,
-        details: {
-          requests: usage.requests,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-        },
-      };
-    } finally {
-      // 清理会话
-      await this.sessionManager.closeSession(session.id);
-    }
-  }
-
-  // 流式执行（用于实时反馈）
-  async executeTaskStream(request: { prompt: string; urls?: string[]; schema?: z.ZodType }) {
-    const session = await this.sessionManager.createSession();
-
-    const agent = new Agent<BrowserContext>({
-      name: 'Fetchx Browser Agent',
-      model: 'gpt-4o',
-      instructions: SYSTEM_INSTRUCTIONS,
-      tools: browserTools,
-      outputType: request.schema ?? 'text',
-    });
-
-    const context: BrowserContext = {
-      session,
-      snapshotService: this.snapshotService,
-      actionExecutor: this.actionExecutor,
-    };
-
-    let userPrompt = request.prompt;
-    if (request.urls?.length) {
-      userPrompt += `\n\n起始 URL：${request.urls.join(', ')}`;
-    }
-
-    // 流式执行
-    const streamResult = await this.runner.run(agent, userPrompt, {
-      context,
-      stream: true,
-      maxTurns: 20,
-    });
-
-    return {
-      stream: streamResult,
-      cleanup: async () => {
-        await this.sessionManager.closeSession(session.id);
-      },
-    };
-  }
-}
-```
-
-### 5.4 API 接口
+#### 请求/响应
 
 ```typescript
 // POST /api/v1/agent
 interface AgentRequest {
   prompt: string; // 自然语言描述（必填）
   urls?: string[]; // 可选的起始 URL
-  schema?: Record<string, unknown>; // JSON Schema 或 Zod schema
+  schema?: object; // JSON Schema 输出格式
   maxCredits?: number; // 最大消耗 credits
   stream?: boolean; // 是否流式返回（默认 true）
 }
 
-// 非流式响应（stream=false）
-interface AgentResponse {
-  id: string;
-  status: 'processing' | 'completed' | 'failed';
-}
-
-// 流式响应（stream=true，默认）：返回 SSE 事件流
-// Content-Type: text/event-stream
-
-// GET /api/v1/agent/:id
-interface AgentStatusResponse {
-  id: string;
-  status: 'processing' | 'completed' | 'failed';
-  data?: unknown; // 提取的结构化数据
-  creditsUsed?: number;
-  expiresAt?: string;
-  error?: string;
-}
-```
-
-### 5.5 SSE 事件类型定义
-
-> **核心设计**：POST /agent 默认返回 SSE 流，前端可实时显示执行进度
-
-```typescript
 // SSE 事件类型
 type AgentStreamEvent =
-  // 任务开始（第一条消息，包含 taskId 用于断线重连）
   | { type: 'started'; id: string; expiresAt: string }
-
-  // Agent 思考过程
   | { type: 'thinking'; content: string }
-
-  // 工具调用开始
-  | { type: 'tool_call'; callId: string; tool: string; args: Record<string, unknown> }
-
-  // 工具调用结果
-  | { type: 'tool_result'; callId: string; tool: string; result: unknown; error?: string }
-
-  // 进度更新
+  | { type: 'tool_call'; callId: string; tool: string; args: object }
+  | { type: 'tool_result'; callId: string; tool: string; result: unknown }
   | { type: 'progress'; message: string; step: number; totalSteps?: number }
-
-  // 任务完成
   | { type: 'complete'; data: unknown; creditsUsed: number }
-
-  // 任务失败
   | { type: 'failed'; error: string; creditsUsed?: number };
-
-// SSE 消息格式示例
-// event: thinking
-// data: {"type":"thinking","content":"正在分析目标网站结构..."}
-//
-// event: tool_call
-// data: {"type":"tool_call","callId":"call_123","tool":"browser_open","args":{"url":"https://example.com"}}
-//
-// event: tool_result
-// data: {"type":"tool_result","callId":"call_123","tool":"browser_open","result":{"success":true}}
-//
-// event: complete
-// data: {"type":"complete","data":{"founders":[...]},"creditsUsed":150}
 ```
 
-### 5.6 使用示例
+#### Browser Tools
 
-#### 流式模式（默认，推荐）
+Agent 可调用的浏览器工具：
 
-```typescript
-// 前端：使用 EventSource 接收 SSE 流
-async function executeAgentTask(prompt: string, schema: object) {
-  const response = await fetch('/api/v1/agent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, schema }),
-  });
+| 工具               | 说明                   |
+| ------------------ | ---------------------- |
+| `browser_snapshot` | 获取页面可访问性树快照 |
+| `browser_open`     | 打开 URL               |
+| `browser_click`    | 点击元素               |
+| `browser_fill`     | 填写输入框             |
+| `browser_type`     | 键入文本               |
+| `browser_press`    | 按键                   |
+| `browser_hover`    | 悬停                   |
+| `browser_scroll`   | 滚动页面               |
+| `browser_wait`     | 等待条件               |
+| `browser_getText`  | 获取文本               |
+| `web_search`       | 搜索引擎搜索           |
 
-  // 保存 taskId 用于断线重连
-  let taskId: string | null = null;
+### 4.3 计费规则
 
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
+#### L2 Browser 计费
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+| 计费项               | 说明                             |
+| -------------------- | -------------------------------- |
+| `browser.session`    | 创建会话：1 credit               |
+| `browser.action`     | 每个动作：免费（已计入 session） |
+| `browser.screenshot` | 截图：0.5 credit                 |
 
-    const chunk = decoder.decode(value);
-    const lines = chunk.split('\n');
+#### L3 Agent 计费
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const event = JSON.parse(line.slice(6)) as AgentStreamEvent;
+- **分段检查点**：每消耗 100 credits 触发一次检查，验证用户余额
+- **失败退款**：任务失败时全额退回已扣 checkpoint
+- **取消结算**：用户主动取消不退款，按已消耗扣费
+- **SSE 断开不取消**：后台继续执行，用户可通过 `GET /agent/:id` 查看结果
 
-        switch (event.type) {
-          case 'started':
-            taskId = event.id;
-            console.log('任务开始:', taskId);
-            break;
-          case 'thinking':
-            console.log('思考中:', event.content);
-            break;
-          case 'tool_call':
-            console.log(`调用工具: ${event.tool}`, event.args);
-            break;
-          case 'tool_result':
-            console.log(`工具结果: ${event.tool}`, event.result);
-            break;
-          case 'progress':
-            console.log(`进度: ${event.step}/${event.totalSteps ?? '?'} - ${event.message}`);
-            break;
-          case 'complete':
-            console.log('完成!', event.data);
-            console.log(`消耗 credits: ${event.creditsUsed}`);
-            return event.data;
-          case 'failed':
-            throw new Error(event.error);
-        }
-      }
-    }
-  }
+---
+
+## 五、数据结构与流程
+
+### 5.1 数据模型
+
+```prisma
+// 任务主表
+model AgentTask {
+  id            String   @id @default(cuid())
+  userId        String
+  status        String   // pending | running | completed | failed | cancelled
+  prompt        String
+  urls          String[] // 起始 URL 列表
+  outputSchema  Json?    // 用户期望的输出 schema
+  result        Json?    // 任务结果
+  error         String?  // 错误信息
+  creditsUsed   Int      @default(0)
+  creditsMax    Int?     // 用户设置的最大消耗
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  charges       AgentTaskCharge[]
 }
 
-// 使用
-const result = await executeAgentTask('Find the founders and funding history of Firecrawl', {
-  type: 'object',
-  properties: { founders: { type: 'array' } },
-});
-```
+// 计费流水表
+model AgentTaskCharge {
+  id            String   @id @default(cuid())
+  taskId        String
+  userId        String
+  referenceId   String   // quota 系统的扣费流水 ID
+  credits       Int      // 扣费金额
+  type          String   // checkpoint | settlement | refund
+  createdAt     DateTime @default(now())
 
-#### 断线重连
-
-```typescript
-// 如果 SSE 连接中断，使用 taskId 获取结果
-async function recoverTask(taskId: string) {
-  const response = await fetch(`/api/v1/agent/${taskId}`);
-  const result = await response.json();
-
-  if (result.status === 'completed') {
-    return result.data;
-  } else if (result.status === 'failed') {
-    throw new Error(result.error);
-  } else {
-    // 还在处理中，等待后重试
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    return recoverTask(taskId);
-  }
+  task          AgentTask @relation(...)
 }
 ```
 
-#### 非流式模式
+### 5.2 任务生命周期
 
-```typescript
-// 创建任务（非流式）
-const job = await fetch('/api/v1/agent', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    prompt: 'Find the founders and funding history of Firecrawl',
-    stream: false, // 禁用流式
-    schema: {
-      type: 'object',
-      properties: {
-        founders: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              role: { type: 'string' },
-            },
-          },
-        },
-        funding: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              round: { type: 'string' },
-              amount: { type: 'string' },
-              date: { type: 'string' },
-            },
-          },
-        },
-      },
-    },
-  }),
-}).then((r) => r.json());
-
-// 轮询结果
-const pollResult = async (id: string) => {
-  while (true) {
-    const result = await fetch(`/api/v1/agent/${id}`).then((r) => r.json());
-    if (result.status !== 'processing') return result;
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-};
-
-const result = await pollResult(job.id);
-// result.data = {
-//   founders: [{ name: "Eric Ciarla", role: "Co-founder" }, ...],
-//   funding: [{ round: "Seed", amount: "$1M", date: "2023-01" }, ...]
-// }
+```
+┌─────────┐    创建    ┌─────────┐    开始执行    ┌─────────┐
+│ pending │ ─────────▶ │ running │ ─────────────▶ │ running │
+└─────────┘            └─────────┘                └────┬────┘
+                                                       │
+           ┌───────────────────────────────────────────┼───────────────────────┐
+           │                                           │                       │
+           ▼                                           ▼                       ▼
+    ┌───────────┐                              ┌───────────┐            ┌───────────┐
+    │ completed │  ◀── 正常完成（结算剩余）     │  failed   │ ◀── 执行失败（全额退款）
+    └───────────┘                              └───────────┘            │
+                                                                        │
+                                                                 ┌──────┴──────┐
+                                                                 │  cancelled  │
+                                                                 └─────────────┘
+                                                                 ◀── 用户取消（不退款）
 ```
 
-### 5.7 后端流式实现（NestJS）
+### 5.3 计费流程
 
-```typescript
-// agent/agent.controller.ts
-import { Controller, Post, Body, Res, Get, Param, Delete } from '@nestjs/common';
-import { Response } from 'express';
-import { AgentService } from './agent.service';
-import { AgentRequestDto } from './dto/agent.schema';
-
-@Controller('api/v1/agent')
-export class AgentController {
-  constructor(private readonly agentService: AgentService) {}
-
-  @Post()
-  async createTask(@Body() request: AgentRequestDto, @Res() res: Response) {
-    // 非流式模式
-    if (request.stream === false) {
-      const { id } = await this.agentService.createTask(request);
-      return res.json({ id, status: 'processing' });
-    }
-
-    // 流式模式（默认）
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const sendEvent = (event: AgentStreamEvent) => {
-      res.write(`event: ${event.type}\n`);
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
-
-    try {
-      const { id, stream, cleanup } = await this.agentService.executeTaskStream(request);
-
-      // 发送开始事件（包含 taskId）
-      sendEvent({
-        type: 'started',
-        id,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      });
-
-      // 监听 SDK 事件
-      for await (const event of stream) {
-        switch (event.type) {
-          case 'raw_model_stream_event':
-            if (event.data.type === 'content_block_delta') {
-              sendEvent({ type: 'thinking', content: event.data.delta.text || '' });
-            }
-            break;
-          case 'run_item_stream_event':
-            if (event.item.type === 'tool_call_item') {
-              sendEvent({
-                type: 'tool_call',
-                callId: event.item.rawItem.call_id,
-                tool: event.item.rawItem.name,
-                args: event.item.rawItem.arguments,
-              });
-            } else if (event.item.type === 'tool_call_output_item') {
-              sendEvent({
-                type: 'tool_result',
-                callId: event.item.rawItem.call_id,
-                tool: event.item.rawItem.name,
-                result: event.item.rawItem.output,
-              });
-            }
-            break;
-        }
-      }
-
-      // 获取最终结果
-      const result = await stream.finalOutput;
-      const usage = stream.state._context.usage;
-
-      sendEvent({
-        type: 'complete',
-        data: result,
-        creditsUsed: usage.totalTokens,
-      });
-
-      await cleanup();
-    } catch (error) {
-      sendEvent({
-        type: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      res.end();
-    }
-  }
-
-  @Get(':id')
-  async getTaskStatus(@Param('id') id: string) {
-    return this.agentService.getTaskStatus(id);
-  }
-
-  @Delete(':id')
-  async cancelTask(@Param('id') id: string) {
-    return this.agentService.cancelTask(id);
-  }
-}
+```
+任务执行中
+    │
+    ├── 每 100 credits ──▶ checkpoint 扣费 ──▶ 写入 AgentTaskCharge
+    │
+    ├── 正常完成 ──▶ settlement（结算剩余 credits）
+    │
+    ├── 执行失败 ──▶ refund（退回所有 checkpoint）
+    │
+    └── 用户取消 ──▶ 不退款（保留已扣 checkpoint）
 ```
 
 ---
 
-## 六、实现优先级
+## 附录
 
-| 优先级 | 内容                | 说明                                   |
-| ------ | ------------------- | -------------------------------------- |
-| **P0** | L2 Browser 基础     | session 管理 + open + close            |
-| **P0** | Snapshot + Ref 系统 | snapshot 生成 ref，action 支持 @ref    |
-| **P1** | L2 完整 Action      | fill, check, select, hover, getText 等 |
-| **P1** | L3 Agent 基础       | prompt + schema + 异步任务             |
-| **P2** | L3 智能导航         | 集成 LLM 自动决策                      |
-| **P2** | L2 高级功能         | 网络拦截、多标签页、调试工具           |
+### A. 参考项目对比
 
----
+| 维度             | agent-browser                 | Firecrawl Agent                |
+| ---------------- | ----------------------------- | ------------------------------ |
+| **层级**         | 底层自动化工具                | 高层智能 API                   |
+| **控制方式**     | 命令式（click @e2, fill @e3） | 声明式（prompt: "找到创始人"） |
+| **是否需要 URL** | 需要                          | 不需要（自动搜索）             |
+| **LLM 依赖**     | 无（纯浏览器操作）            | 强依赖（LLM 决策）             |
+| **会话模型**     | 有状态（多轮交互）            | 无状态（一次任务）             |
+| **使用者**       | AI Agent（Claude/GPT）        | 开发者/终端用户                |
 
-## 七、计费方案
-
-### L1 Scrape（现有）
-
-- 按请求次数计费
-- `fetchx.scrape`: 1 credit/次
-
-### L2 Browser
-
-| 计费项                      | 说明                             |
-| --------------------------- | -------------------------------- |
-| `fetchx.browser.session`    | 创建会话：1 credit               |
-| `fetchx.browser.action`     | 每个动作：免费（已计入 session） |
-| `fetchx.browser.screenshot` | 截图：0.5 credit                 |
-
-### L3 Agent
-
-- 动态计费（基于 LLM token 消耗）
-- 设置 `maxCredits` 参数控制成本
-- 每日免费额度（推广期）
-
----
-
-## 八、参考资源
-
-### 本地参考仓库
-
-- `archive/external-repos/agent-browser/`
-- `archive/external-repos/firecrawl/`
-
-### 内部文档
-
-- **[@moryflow/agents SDK 参考](../references/moryflow-agents-sdk.md)** - L3 Agent 实现的核心依赖
-- `packages/agents-core/CLAUDE.md` - agents-core 包文档
-
-### 文档链接
-
-- [agent-browser GitHub](https://github.com/vercel-labs/agent-browser)
-- [Firecrawl Agent 文档](https://docs.firecrawl.dev/features/agent)
-- [Playwright ARIA Snapshot API](https://playwright.dev/docs/aria-snapshot)
-- [ARIA 角色参考](https://www.w3.org/TR/wai-aria-1.2/#role_definitions)
-- [OpenAI Agents SDK (原版)](https://github.com/openai/openai-agents-js)
-
-### 关键源码文件
+### B. 参考源码
 
 **agent-browser**：
 
@@ -1516,500 +372,18 @@ export class AgentController {
 - `src/actions.ts` - 命令执行器
 - `src/browser.ts` - BrowserManager
 
-**firecrawl**（注意：Agent 核心逻辑未开源）：
-
-- `apps/api/src/scraper/scrapeURL/lib/smartScrape.ts` - 智能抓取接口（调用闭源服务）
-- `apps/api/src/controllers/v2/agent.ts` - Agent API 入口（透传到内部服务）
-- `apps/api/src/scraper/scrapeURL/lib/extractSmartScrape.ts` - LLM 决策是否使用 SmartScrape
-
-**@moryflow/agents（内部 SDK）**：
+**@aiget/agents-core**：
 
 - `packages/agents-core/src/agent.ts` - Agent 定义
 - `packages/agents-core/src/tool.ts` - Tool 抽象
 - `packages/agents-core/src/run.ts` - 执行入口
 
----
-
-## 九、实现进度追踪
-
-> **同步规则**：每完成一个步骤后，必须更新此章节的状态和日期。
-
-### 进度总览
-
-| Phase   | 名称                                | 状态        | 完成度 |
-| ------- | ----------------------------------- | ----------- | ------ |
-| Phase 1 | L2 Browser 基础架构                 | ✅ 已完成   | 4/4    |
-| Phase 2 | Snapshot + Ref 系统                 | ✅ 已完成   | 3/3    |
-| Phase 3 | L2 完整 Action                      | ✅ 已完成   | 3/3    |
-| Phase 4 | L3 Agent 基础（SDK）                | ✅ 已完成   | 4/4    |
-| Phase 5 | L3 高级功能                         | ⚠️ 部分完成 | 2/3    |
-| Phase 6 | P1 功能增强                         | ✅ 已完成   | 3/3    |
-| Phase 7 | P2 多窗口支持                       | ✅ 已完成   | 4/4    |
-| Phase 8 | P2 高级功能（CDP/网络/持久化/增量） | ✅ 已完成   | 4/4    |
-
-### 实现核对（2026-01-14，对照当前代码）
-
-| 模块/能力                      | 对照结果 | 备注                                                                                                                          |
-| ------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| L2 Browser 核心 API            | ✅       | 会话/快照/action/截图/多标签页/对话框/多窗口/增量快照 均已实现                                                                |
-| Snapshot + Ref 系统            | ✅       | 角色分类、Nth 去重、`getByRole` 语义定位已落地                                                                                |
-| P2 高级功能（CDP/网络/持久化） | ✅       | CDP 连接、网络拦截、Storage 导入导出已集成                                                                                    |
-| L3 Agent API（含 SSE）         | ✅       | `POST/GET/DELETE /agent` + `POST /agent/estimate` 可用                                                                        |
-| L3 Browser Tools               | ⚠️       | 已实现 11 个（snapshot/click/fill/type/open/search/getText/scroll/wait/press/hover）；未实现：screenshot/select/check/uncheck |
-| 异步任务系统实现方式           | ⚠️       | 当前为内存 Map + TTL（未接入 BullMQ 队列）                                                                                    |
-
-### Phase 1: L2 Browser 基础架构
-
-| 步骤 | 任务                     | 状态      | 产出文件                                                                           | 完成日期   |
-| ---- | ------------------------ | --------- | ---------------------------------------------------------------------------------- | ---------- |
-| 1.1  | 创建 browser 模块骨架    | ✅ 已完成 | `browser.module.ts`, `browser-session.controller.ts`, `browser-session.service.ts` | 2026-01-13 |
-| 1.2  | 定义 DTO 和 Zod Schema   | ✅ 已完成 | `dto/browser-session.schema.ts`                                                    | 2026-01-13 |
-| 1.3  | 实现 session 管理        | ✅ 已完成 | `session/session.manager.ts`                                                       | 2026-01-13 |
-| 1.4  | 实现 open/close 基础功能 | ✅ 已完成 | 整合到 `browser-session.service.ts`                                                | 2026-01-13 |
-
-**1.1 创建 browser 模块骨架**
-
-- 创建 `apps/aiget/server/src/browser/` 目录结构
-- 创建 NestJS 模块文件：module, controller, service
-- 注册到 AppModule
-- 路由前缀：`/api/v1/browser`
-
-**1.2 定义 DTO 和 Zod Schema**
-
-- `CreateSessionSchema` - 创建会话请求
-- `SessionResponse` - 会话信息响应
-- `OpenUrlSchema` - 打开 URL 请求
-- `ActionSchema` - 动作执行请求（预定义结构）
-
-**1.3 实现 session 管理**
-
-- 创建 `SessionManager` 类
-- 维护 `Map<sessionId, { context, page, refs, expiresAt }>`
-- 实现会话超时清理（默认 5 分钟）
-- 实现 `createSession`, `getSession`, `closeSession` 方法
-
-**1.4 实现 open/close 基础功能**
-
-- `POST /browser/session` - 创建会话
-- `GET /browser/session/:id` - 获取会话状态
-- `DELETE /browser/session/:id` - 关闭会话
-- `POST /browser/session/:id/open` - 打开 URL
-
-### Phase 2: Snapshot + Ref 系统
-
-| 步骤 | 任务                  | 状态      | 产出文件                            | 完成日期   |
-| ---- | --------------------- | --------- | ----------------------------------- | ---------- |
-| 2.1  | 实现 snapshot 服务    | ✅ 已完成 | `snapshot/snapshot.service.ts`      | 2026-01-13 |
-| 2.2  | 实现 ref 系统         | ✅ 已完成 | 整合到 `session/session.manager.ts` | 2026-01-13 |
-| 2.3  | action 支持 @ref 语法 | ✅ 已完成 | `handlers/action.handler.ts`        | 2026-01-13 |
-
-**2.1 实现 snapshot 服务**
-
-- 基于 Playwright `locator.ariaSnapshot()` API
-- 生成可访问性树文本
-- 支持选项：`interactive`, `compact`, `maxDepth`, `scope`
-- 解析生成元素引用（@e1, @e2...）
-
-**2.2 实现 ref 系统**
-
-- 解析 snapshot 输出，提取角色和名称
-- 构建 `RefMap: { e1: { role, name, nth }, ... }`
-- 存储到 session 中
-- 每次 snapshot 后更新 ref 映射
-
-**2.3 action 支持 @ref 语法**
-
-- 解析 `@e1` 格式的选择器
-- 转换为 Playwright `getByRole()` 调用
-- 支持 nth 索引（相同角色+名称的多个元素）
-
-### Phase 3: L2 完整 Action
-
-| 步骤 | 任务                | 状态      | 产出文件                     | 完成日期   |
-| ---- | ------------------- | --------- | ---------------------------- | ---------- |
-| 3.1  | 实现交互类 action   | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
-| 3.2  | 实现信息获取 action | ✅ 已完成 | `handlers/action.handler.ts` | 2026-01-13 |
-| 3.3  | 实现截图功能        | ✅ 已完成 | `browser-session.service.ts` | 2026-01-13 |
-
-**3.1 实现交互类 action**
-
-- `click`, `dblclick`, `fill`, `type`, `press`
-- `hover`, `check`, `uncheck`, `select`, `focus`
-- `scroll`, `scrollIntoView`
-- 导航：`back`, `forward`, `reload`
-
-**3.2 实现信息获取 action**
-
-- `getText`, `getAttribute`, `getInnerHTML`, `getInputValue`
-- `isVisible`, `isEnabled`, `isChecked`
-- `getTitle`, `getUrl`
-
-**3.3 实现截图功能**
-
-- `GET /browser/session/:id/screenshot`
-- 支持全页截图和元素截图
-- 返回 base64 编码图片
-
-### Phase 4: L3 Agent 基础（使用 @aiget/agents-core SDK）
-
-| 步骤 | 任务                | 状态      | 产出文件                                                     | 完成日期   |
-| ---- | ------------------- | --------- | ------------------------------------------------------------ | ---------- |
-| 4.1  | 创建 agent 模块骨架 | ✅ 已完成 | `agent.module.ts`, `agent.controller.ts`, `agent.service.ts` | 2026-01-13 |
-| 4.2  | 定义 Browser Tools  | ✅ 已完成 | `agent/tools/browser-tools.ts`                               | 2026-01-13 |
-| 4.3  | 实现异步任务系统    | ✅ 已完成 | 使用内存 Map + TTL 清理                                      | 2026-01-13 |
-| 4.4  | 实现 Agent 执行逻辑 | ✅ 已完成 | `agent.service.ts`                                           | 2026-01-13 |
-
-**4.1 创建 agent 模块骨架**
-
-- 创建 `apps/aiget/server/src/agent/` 目录
-- 路由：`POST /api/v1/agent`, `GET /api/v1/agent/:id`, `DELETE /api/v1/agent/:id`
-- 定义 DTO：`AgentRequest`, `AgentResponse`, `AgentStatusResponse`
-
-**4.2 定义 Browser Tools**
-
-- 基于 `@moryflow/agents` 的 `tool()` 函数定义 Tools
-- 核心 Tools：`browser_snapshot`, `browser_click`, `browser_fill`, `browser_open`
-- 辅助 Tools：`web_search`, `browser_getText`, `browser_scroll`
-- Tools 使用 Shared Infrastructure（SessionManager, SnapshotService, ActionExecutor）
-
-**4.3 实现异步任务系统**
-
-- 使用内存 Map + TTL 清理（当前实现）
-- 任务状态：`processing`, `completed`, `failed`
-- 结果持久化暂未接入（仍为内存态）
-
-**4.4 实现 Agent 执行逻辑**
-
-- 使用 `Agent` 类创建 Browser Agent
-- 配置 `instructions`（系统 prompt）
-- 传入 Browser Tools 和用户 schema
-- 通过 `run()` 执行并获取结构化输出
-
-### Phase 5: L3 高级功能
-
-| 步骤 | 任务                   | 状态        | 产出文件                                    | 完成日期   |
-| ---- | ---------------------- | ----------- | ------------------------------------------- | ---------- |
-| 5.1  | 增强 Tools（更多动作） | ⚠️ 部分完成 | `agent/tools/browser-tools.ts`（11 个工具） | 2026-01-13 |
-| 5.2  | 实现 credits 消耗追踪  | ✅ 已完成   | `agent.service.ts`（token 计费）            | 2026-01-13 |
-| 5.3  | 流式输出支持           | ✅ 已完成   | SSE 实现 + SDK stream: true                 | 2026-01-13 |
-
-**5.1 增强 Tools**
-
-- 已实现工具（11 个）：`snapshot`, `click`, `fill`, `type`, `open`, `search`, `getText`, `scroll`, `wait`, `press`, `hover`
-- 未实现（原计划项）：`screenshot`, `select`, `check`, `uncheck`
-- 说明：工具总数符合预期，但覆盖范围与原计划存在差异（需补齐或调整计划）
-
-**5.2 实现 credits 消耗追踪**
-
-- 追踪 LLM token 使用量
-- 实现 `maxCredits` 限制
-- 超额时提前终止任务
-
-**5.3 流式输出支持**
-
-- 使用 SDK 的 `Runner.runStreaming()` API
-- 通过 SSE 推送执行进度
-- 返回中间步骤（思考过程、工具调用）
-
-### Phase 6: P1 功能增强
-
-| 步骤 | 任务                          | 状态      | 产出文件                                                      | 完成日期   |
-| ---- | ----------------------------- | --------- | ------------------------------------------------------------- | ---------- |
-| 6.1  | 对话框处理（Dialog Handling） | ✅ 已完成 | `session/session.manager.ts`                                  | 2026-01-13 |
-| 6.2  | 多标签页（Multi-Tab）         | ✅ 已完成 | `session/session.manager.ts`, `browser-session.controller.ts` | 2026-01-13 |
-| 6.3  | 计费模型优化                  | ✅ 已完成 | `agent.service.ts`, `billing.rules.ts`                        | 2026-01-13 |
-
-**6.1 对话框处理**
-
-- 自动处理 alert/confirm/prompt/beforeunload 对话框
-- `page.on('dialog')` 事件监听
-- 自动 accept 并记录到 `dialogHistory`（最近 10 条）
-- 新增 `GET /browser/session/:id/dialogs` 端点
-
-**6.2 多标签页**
-
-- `POST /browser/session/:id/tabs` - 创建新标签页
-- `GET /browser/session/:id/tabs` - 列出所有标签页
-- `POST /browser/session/:id/tabs/:tabIndex/activate` - 切换标签页
-- `DELETE /browser/session/:id/tabs/:tabIndex` - 关闭标签页
-- 切换标签页时自动清除 refs（需重新 snapshot）
-
-**6.3 计费模型优化**
-
-- L3 Agent 动态计费公式：`credits = 基础费 + token费 + 工具调用费 + 时长费`
-- 支持 `maxCredits` 参数限制任务成本
-- 新增 `POST /agent/estimate` 端点预估任务成本
-- 流式执行中实时追踪并检查 credits 限制
-- 超限时提前终止任务并返回错误
-
-### Phase 7: P2 多窗口支持
-
-| 步骤 | 任务                         | 状态      | 产出文件                                                         | 完成日期   |
-| ---- | ---------------------------- | --------- | ---------------------------------------------------------------- | ---------- |
-| 7.1  | 扩展 BrowserSession 数据结构 | ✅ 已完成 | `session/session.manager.ts`                                     | 2026-01-13 |
-| 7.2  | 实现多窗口 API               | ✅ 已完成 | `session/session.manager.ts`                                     | 2026-01-13 |
-| 7.3  | 更新 Service 层              | ✅ 已完成 | `browser-session.service.ts`                                     | 2026-01-13 |
-| 7.4  | 添加 Controller 端点         | ✅ 已完成 | `browser-session.controller.ts`, `dto/browser-session.schema.ts` | 2026-01-13 |
-
-**7.1 扩展 BrowserSession 数据结构**
-
-- 新增 `WindowData` 接口：独立 BrowserContext 的封装
-- 新增 `WindowInfo` 接口：窗口信息响应
-- 扩展 `BrowserSession`：添加 `windows[]` 数组和 `activeWindowIndex`
-- 保持向后兼容：`session.context/page/pages` 作为当前活跃窗口的快捷引用
-
-**7.2 实现多窗口 API**
-
-- `createWindow()` - 创建独立 BrowserContext（隔离 cookies/storage）
-- `listWindows()` - 列出所有窗口
-- `switchWindow()` - 切换活跃窗口
-- `closeWindow()` - 关闭窗口并释放资源
-- `syncWindowToSession()` - 同步窗口状态到会话快捷引用
-
-**7.3 更新 Service 层**
-
-- 添加 `createWindow`, `listWindows`, `switchWindow`, `closeWindow` 方法
-- 代理到 SessionManager
-
-**7.4 添加 Controller 端点**
-
-- `POST /browser/session/:id/windows` - 创建新窗口
-- `GET /browser/session/:id/windows` - 列出所有窗口
-- `POST /browser/session/:id/windows/:windowIndex/activate` - 切换窗口
-- `DELETE /browser/session/:id/windows/:windowIndex` - 关闭窗口
-- 新增 `CreateWindowSchema` Zod schema
-
-**多窗口 vs 多标签页**
-
-| 特性               | 多标签页（Tab）  | 多窗口（Window）     |
-| ------------------ | ---------------- | -------------------- |
-| **BrowserContext** | 共享同一个       | 每个窗口独立         |
-| **Cookies**        | 共享             | 隔离                 |
-| **localStorage**   | 共享             | 隔离                 |
-| **Session**        | 共享             | 隔离                 |
-| **使用场景**       | 同站点多页面操作 | 多账号登录、隔离测试 |
+### C. 相关文档
+
+- **[@moryflow/agents SDK 参考](../references/moryflow-agents-sdk.md)** - L3 Agent 实现的核心依赖
+- **[Playwright ARIA Snapshot API](https://playwright.dev/docs/aria-snapshot)** - 快照实现参考
+- **[ARIA 角色参考](https://www.w3.org/TR/wai-aria-1.2/#role_definitions)** - 可访问性角色定义
 
 ---
 
-## 十、同步规则
-
-### 进度同步协议
-
-1. **每完成一个步骤**后，必须执行以下更新：
-
-   ```markdown
-   - 将该步骤状态从 🔲 改为 ✅
-   - 填写完成日期
-   - 更新 Phase 总览的完成度
-   - 如果 Phase 完成，更新状态为 ✅ 已完成
-   ```
-
-2. **正在进行的步骤**使用 🔄 标记：
-
-   ```markdown
-   | 1.1 | 创建 browser 模块骨架 | 🔄 进行中 | ... | - |
-   ```
-
-3. **遇到阻塞时**添加备注：
-
-   ```markdown
-   | 1.3 | 实现 session 管理 | ⚠️ 阻塞 | ... | - |
-   备注：等待 browser-pool 重构完成
-   ```
-
-4. **状态图标说明**：
-   - 🔲 待开始
-   - 🔄 进行中
-   - ✅ 已完成
-   - ⚠️ 阻塞
-   - ❌ 已取消
-
-### 提交规范
-
-每个步骤完成后，commit message 格式：
-
-```
-feat(browser): 完成步骤 X.X - [任务名称]
-
-- 产出文件：xxx.ts
-- 关联文档：docs/research/agent-browser-integration.md
-```
-
----
-
-_文档版本: 8.0 | 更新日期: 2026-01-14_
-
----
-
-## 十一、方案 Review 与改进建议
-
-> 基于 agent-browser 源码深入分析和 @moryflow/agents SDK 接口验证后的改进建议
-
-### 11.1 已修正的问题
-
-| 问题            | 原方案                 | 修正后                         |
-| --------------- | ---------------------- | ------------------------------ |
-| **SDK 接口**    | `ctx.context` 直接访问 | `runContext?.context` 判空访问 |
-| **Tool 泛型**   | 缺少类型参数           | `tool<Schema, Context>()`      |
-| **Runner 使用** | 直接 `run()`           | 创建 `Runner` 实例复用         |
-| **Token 用量**  | `result.usage`         | `result.state._context.usage`  |
-
-### 11.2 需要补充的功能（按优先级）
-
-#### P0 - 必须实现
-
-| 功能             | 说明                               | 实现建议                      |
-| ---------------- | ---------------------------------- | ----------------------------- |
-| **角色分类系统** | INTERACTIVE / CONTENT / STRUCTURAL | 参考 agent-browser 的角色定义 |
-| **Nth 去重逻辑** | 处理相同 role+name 的重复元素      | 实现 RoleNameTracker          |
-| **语义定位器**   | 使用 `getByRole` 而非 CSS          | RefMap 存储完整 selector      |
-| **SSRF 防护**    | 禁止内网/localhost                 | 复用现有 `url-validator.ts`   |
-
-#### P1 - 建议实现
-
-| 功能             | 说明                          | 实现建议                   |
-| ---------------- | ----------------------------- | -------------------------- |
-| **AI 友好错误**  | 错误消息 + 修复建议           | `toAIFriendlyError()` 转译 |
-| **多标签页**     | newTab, listTabs, switchTab   | BrowserManager 扩展        |
-| **对话框处理**   | 自动处理 alert/confirm/prompt | `page.on('dialog')`        |
-| **计费模型优化** | 按时长或动作数计费            | 避免资源滥用               |
-
-#### P2 - 可选实现
-
-| 功能           | 说明                       | 实现建议      |
-| -------------- | -------------------------- | ------------- |
-| **多窗口**     | 独立上下文（隔离 cookies） | `newWindow()` |
-| **CDP 连接**   | 连接已运行的浏览器         | 调试用        |
-| **网络拦截**   | 按需设置请求头、mock       | 高级用例      |
-| **会话持久化** | 存储 cookies/localStorage  | 断点续传      |
-| **增量快照**   | `snapshot --delta`         | 节省 token    |
-
-### 11.3 计费模型建议
-
-**当前方案问题**：按 session 计费（1 credit/session）会导致资源滥用
-
-**改进方案**：
-
-```
-L2 Browser 计费方案（二选一）：
-
-方案 A：时长计费
-- session 创建：1 credit（基础，包含 5 分钟）
-- 超时计费：0.1 credit/分钟（超过 5 分钟后）
-- 截图：0.5 credit/次
-
-方案 B：动作计费
-- session 创建：0.5 credit
-- 每个 action：0.01 credit
-- snapshot：0.02 credit（token 消耗较高）
-- 截图：0.5 credit/次
-
-L3 Agent 计费方案：
-- 基于 LLM token 消耗动态计费
-- 支持 maxCredits 参数限制
-- 提供预估功能（基于历史数据）
-```
-
-### 11.4 安全考量
-
-```typescript
-// 1. URL 验证 - 复用现有 SSRF 防护
-import { validateUrl } from '../common/url-validator';
-
-async function openUrl(url: string): Promise<void> {
-  const validation = await validateUrl(url);
-  if (!validation.valid) {
-    throw new Error(`Invalid URL: ${validation.reason}`);
-  }
-  await page.goto(url);
-}
-
-// 2. 文件路径限制
-function validateFilePath(filePath: string): boolean {
-  // 禁止 ../ 路径穿越
-  if (filePath.includes('..')) return false;
-  // 限制在允许的目录内
-  const allowedDirs = ['/tmp/fetchx/', '/var/fetchx/'];
-  return allowedDirs.some((dir) => filePath.startsWith(dir));
-}
-
-// 3. evaluate 命令沙盒化（可选）
-// 使用 isolated context 或禁用危险 API
-```
-
-### 11.5 与 agent-browser 的差异对比
-
-| 维度           | agent-browser     | Fetchx (本方案)         |
-| -------------- | ----------------- | ----------------------- |
-| **协议**       | Unix Socket / TCP | REST API + WebSocket    |
-| **会话模型**   | Daemon（长连接）  | 无状态（每请求创建）    |
-| **Ref 有效期** | 单次快照内        | 单次快照内（相同）      |
-| **并发**       | 单连接串行        | 队列 + 异步             |
-| **持久化**     | 无                | 可选（cookies/storage） |
-| **LLM 集成**   | 无（纯浏览器）    | @moryflow/agents SDK    |
-
-### 11.6 实现顺序调整建议
-
-基于以上分析，建议调整实现顺序：
-
-```
-原顺序：
-Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
-
-建议顺序：
-Phase 1（基础架构）
-  ↓
-Phase 2（Snapshot + Ref）← 重点：加入角色分类、Nth 去重
-  ↓
-Phase 3（Action）← 加入：AI 友好错误、对话框处理
-  ↓
-Phase 4（Agent SDK 集成）
-  ↓
-Phase 5（高级功能）← 加入：多标签页、计费优化
-```
-
----
-
-## 十二、已知问题与待办事项
-
-### 12.1 已知问题
-
-| 问题                    | 描述                                                                                | 状态      | 优先级 |
-| ----------------------- | ----------------------------------------------------------------------------------- | --------- | ------ |
-| **TypeScript 内存溢出** | 执行 `pnpm --filter @aiget/aiget-server typecheck` 或 `lint` 时发生 OOM，主分支正常 | ✅ 已解决 | P1     |
-
-**TypeScript 内存溢出详情**：
-
-- **结论**：已解决（2026-01-14）
-- **最终方案**：Browser → Agent ports/facade 边界隔离 + tools 参数统一为 JSON schema，避免 Playwright 重类型进入 agents-core 泛型推断
-- **记录**：详见 `docs/research/aiget-server-typecheck-oom-agent.md`
-
-### 12.2 待办事项
-
-| 任务                       | 描述                                                                          | 状态      |
-| -------------------------- | ----------------------------------------------------------------------------- | --------- |
-| `DELETE /api/v1/agent/:id` | 取消正在执行的 Agent 任务（硬取消）                                           | ✅ 已完成 |
-| CreateSession 参数透传     | userAgent / JS / HTTPS 配置生效                                               | ✅ 已完成 |
-| Credits 分段检查           | 每 100 credits 检查并扣费                                                     | ✅ 已完成 |
-| Agent 任务持久化           | 任务状态落地 DB，进度/取消使用 Redis                                          | ✅ 已完成 |
-| 单元测试                   | Browser API 核心服务测试                                                      | 🔲 待实现 |
-| 集成测试                   | Agent API 端到端测试                                                          | 🔲 待实现 |
-| 解决 TypeScript 内存问题   | 分析并修复 OOM 问题（见 `docs/research/aiget-server-typecheck-oom-agent.md`） | ✅ 已完成 |
-
----
-
-## 更新日志
-
-| 版本 | 日期       | 变更内容                                                        |
-| ---- | ---------- | --------------------------------------------------------------- |
-| 10.0 | 2026-01-14 | 落地 Agent 任务持久化（DB + Redis），失败退款/取消结算语义      |
-| 9.0  | 2026-01-14 | 完成 CreateSession 参数透传、硬取消、credits 分段检查与进度返回 |
-| 8.0  | 2026-01-14 | 对照代码核对实现进度；修正 Phase 4/5 描述；标记 OOM 已解决      |
-| 7.0  | 2026-01-13 | 添加已知问题章节：TypeScript 内存溢出待分析                     |
-| 6.0  | 2026-01-13 | P1 功能完成：对话框处理、多标签页、计费模型优化                 |
-| 5.1  | 2026-01-13 | 添加流式 API 设计：SSE 事件类型、前后端示例                     |
-| 5.0  | 2026-01-13 | 深入 Review：修正 SDK 接口、添加改进建议                        |
-| 4.0  | 2026-01-13 | L3 Agent 架构调整为使用 @moryflow/agents SDK                    |
-| 3.0  | 2026-01-13 | 添加实现进度追踪和同步规则                                      |
-| 2.0  | 2026-01-13 | 完善 L2/L3 API 详细设计                                         |
-| 1.0  | 2026-01-13 | 初始版本：参考项目分析和架构设计                                |
+_版本: 1.0 | 更新日期: 2026-01-14_
