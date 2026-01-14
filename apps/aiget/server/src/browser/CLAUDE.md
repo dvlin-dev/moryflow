@@ -10,6 +10,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 
 - BrowserPool 管理（Chromium 实例池）
 - 会话生命周期管理（SessionManager）
+- CreateSession 上下文配置（viewport/userAgent/JS/HTTPS）
 - 快照/动作执行（SnapshotService、ActionHandler）
 - P2 扩展：CDP、网络拦截、会话持久化、增量快照
 - Agent 端口：`BrowserAgentPortService`（禁止暴露 Playwright 类型）
@@ -20,6 +21,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - **禁止透传 Playwright 类型** 到 agent/tools 或 agents-core 泛型
 - **SSRF 防护强制**：URL 必须通过 UrlValidator 校验
 - **用户可见错误信息使用英文**
+- **CreateSession 参数必须透传到 BrowserPool**，禁止硬编码上下文配置
 
 ## File Structure
 

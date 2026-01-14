@@ -4,7 +4,7 @@
  * [INPUT]: 会话操作请求
  * [OUTPUT]: 会话信息、快照、操作结果
  * [POS]: L2 Browser API 业务逻辑层，整合 SessionManager、SnapshotService、ActionHandler、
- *        CdpConnector、NetworkInterceptor、StoragePersistence
+ *        CdpConnector、NetworkInterceptor、StoragePersistence（含会话清理）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -107,6 +107,14 @@ export class BrowserSessionService {
    * 关闭会话
    */
   async closeSession(sessionId: string): Promise<void> {
+    try {
+      await this.networkInterceptor.cleanupSession(sessionId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to cleanup network interceptor for session ${sessionId}: ${error}`,
+      );
+    }
+
     await this.sessionManager.closeSession(sessionId);
   }
 
@@ -192,7 +200,6 @@ export class BrowserSessionService {
 
     const screenshotOptions: Parameters<typeof session.page.screenshot>[0] = {
       type: format,
-      fullPage,
     };
 
     if (format === 'jpeg' && quality !== undefined) {
@@ -214,7 +221,10 @@ export class BrowserSessionService {
       height = box?.height ?? 0;
     } else {
       // 页面截图
-      buffer = await session.page.screenshot(screenshotOptions);
+      buffer = await session.page.screenshot({
+        ...screenshotOptions,
+        fullPage,
+      });
 
       // 获取视口尺寸
       const viewportSize = session.page.viewportSize();

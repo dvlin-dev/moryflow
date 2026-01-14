@@ -4,6 +4,8 @@
  * [DEFINES]: L3 Agent API 请求/响应类型
  * [USED_BY]: agent.controller.ts, agent.service.ts
  * [POS]: Zod schemas + 推断类型（单一数据源）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { z } from 'zod';
@@ -18,7 +20,7 @@ export const CreateAgentTaskSchema = z.object({
   urls: z.array(z.string().url()).max(10).optional(),
   /** 输出格式 JSON Schema（可选，不传则返回纯文本） */
   schema: z.record(z.string(), z.unknown()).optional(),
-  /** 最大消耗 credits（可选，默认无限制） */
+  /** 最大消耗 credits（可选，不传则不限制） */
   maxCredits: z.number().int().positive().optional(),
   /** 是否流式返回（默认 true） */
   stream: z.boolean().default(true),
@@ -51,6 +53,14 @@ export interface AgentTaskResult {
   data?: unknown;
   creditsUsed?: number;
   error?: string;
+  progress?: AgentTaskProgress;
+}
+
+/** Agent 任务进度 */
+export interface AgentTaskProgress {
+  creditsUsed: number;
+  toolCallCount: number;
+  elapsedMs: number;
 }
 
 // ========== SSE 事件类型 ==========
@@ -105,6 +115,7 @@ export interface AgentEventFailed {
   type: 'failed';
   error: string;
   creditsUsed?: number;
+  progress?: AgentTaskProgress;
 }
 
 /** SSE 事件联合类型 */

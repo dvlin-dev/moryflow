@@ -2,8 +2,8 @@
  * Agent Service
  *
  * [INPUT]: Agent 任务请求
- * [OUTPUT]: 任务结果、SSE 事件流
- * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core 与 Browser ports
+ * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
+ * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与配额检查
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,13 +17,17 @@ import {
   type RunResult,
   type RunStreamEvent,
   type StreamedRunResult,
+  type Usage,
 } from '@aiget/agents-core';
 import { BrowserAgentPortService } from '../browser/ports';
+import { QuotaService } from '../quota/quota.service';
+import { QuotaExceededError } from '../quota/quota.errors';
 import { browserTools, type BrowserAgentContext } from './tools';
 import type {
   CreateAgentTaskInput,
   AgentTaskResult,
   AgentStreamEvent,
+  AgentTaskProgress,
 } from './dto';
 
 /** Agent 系统指令 */
@@ -72,6 +76,8 @@ interface BillingParams {
   toolCallCount: number;
   /** 会话开始时间 */
   startTime: Date;
+  /** 已扣减的 credits（按 100 递增） */
+  chargedCredits: number;
 }
 
 /** Credits 超限错误 */
@@ -85,6 +91,14 @@ export class CreditsExceededError extends Error {
   }
 }
 
+/** 任务取消错误 */
+export class TaskCancelledError extends Error {
+  constructor(message: string = 'Task cancelled by user') {
+    super(message);
+    this.name = 'TaskCancelledError';
+  }
+}
+
 /** 计费常量 */
 const BILLING_CONSTANTS = {
   /** 每 1000 tokens 消耗的 credits */
@@ -95,8 +109,8 @@ const BILLING_CONSTANTS = {
   CREDITS_PER_MINUTE: 0.5,
   /** 基础 credits（任务启动费） */
   BASE_CREDITS: 1,
-  /** 默认 maxCredits 上限（防止无限循环） */
-  DEFAULT_MAX_CREDITS: 100,
+  /** 每次检查/扣减的 credits 阈值 */
+  CREDIT_CHECK_INTERVAL: 100,
 } as const;
 
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
@@ -138,7 +152,10 @@ export class AgentService {
   /** 任务结果过期时间（10 分钟） */
   private readonly TASK_EXPIRY = 10 * 60 * 1000;
 
-  constructor(private readonly browserAgentPort: BrowserAgentPortService) {
+  constructor(
+    private readonly browserAgentPort: BrowserAgentPortService,
+    private readonly quotaService: QuotaService,
+  ) {
     // 定期清理过期任务
     setInterval(() => this.cleanupExpiredTasks(), 60 * 1000);
   }
@@ -146,7 +163,10 @@ export class AgentService {
   /**
    * 执行 Agent 任务（非流式）
    */
-  async executeTask(input: CreateAgentTaskInput): Promise<AgentTaskResult> {
+  async executeTask(
+    input: CreateAgentTaskInput,
+    userId: string,
+  ): Promise<AgentTaskResult> {
     const taskId = this.generateTaskId();
     const now = new Date();
     const abortController = new AbortController();
@@ -154,7 +174,7 @@ export class AgentService {
     // 创建任务记录
     const task: StoredTask = {
       id: taskId,
-      status: 'processing',
+      status: 'pending',
       createdAt: now,
       expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
       abortController,
@@ -162,84 +182,101 @@ export class AgentService {
     this.tasks.set(taskId, task);
 
     // 初始化计费参数（P1 计费模型优化）
-    const billing: BillingParams = {
-      maxCredits: input.maxCredits ?? BILLING_CONSTANTS.DEFAULT_MAX_CREDITS,
-      currentCredits: BILLING_CONSTANTS.BASE_CREDITS,
-      toolCallCount: 0,
-      startTime: now,
-    };
-
-    // 创建浏览器会话
-    const session = await this.browserAgentPort.createSession();
-    task.sessionId = session.id;
+    const billing = this.createBillingParams(now, input.maxCredits);
+    let session: { id: string } | null = null;
 
     try {
+      await this.ensureMinimumQuota(userId, taskId);
+
+      // 创建浏览器会话
+      session = await this.browserAgentPort.createSession();
+      task.sessionId = session.id;
+      task.status = 'processing';
+
       // 构建 Agent
-      const agent: BrowserAgent = new Agent<
-        BrowserAgentContext,
-        AgentOutputType
-      >({
-        name: 'Fetchx Browser Agent',
-        model: 'gpt-4o',
-        instructions: SYSTEM_INSTRUCTIONS,
-        tools: browserTools,
-        outputType: buildAgentOutputType(input.schema),
-        modelSettings: {
-          temperature: 0.7,
-          maxTokens: 4096,
-        },
-      });
+      const agent = this.buildAgent(input);
 
       // 构建上下文
       const context: BrowserAgentContext = {
         sessionId: session.id,
         browser: this.browserAgentPort,
+        abortSignal: abortController.signal,
       };
 
-      // 构建用户 prompt
-      let userPrompt = input.prompt;
-      if (input.urls?.length) {
-        userPrompt += `\n\n起始 URL：${input.urls.join(', ')}`;
+      if (abortController.signal.aborted) {
+        throw new TaskCancelledError();
       }
 
-      // 执行 Agent
-      const result: AgentRunResult = await run(agent, userPrompt, {
+      // 构建用户 prompt
+      const userPrompt = this.buildUserPrompt(input);
+
+      // 使用流式执行以便统一处理取消/计费检查
+      const streamResult: AgentStreamedResult = await run(agent, userPrompt, {
         context,
         maxTurns: 20,
+        stream: true,
+        signal: abortController.signal,
       });
 
-      // 从结果中提取工具调用次数
-      const toolCallCount =
-        result.newItems?.filter((item) => item.type === 'tool_call_item')
-          .length ?? 0;
-      billing.toolCallCount = toolCallCount;
-
-      // 计算 credits（P1 计费模型优化）
-      const creditsUsed = this.calculateCredits(result, billing);
-
-      // 检查是否超过限制
-      if (input.maxCredits && creditsUsed > input.maxCredits) {
-        throw new CreditsExceededError(creditsUsed, input.maxCredits);
+      for await (const event of this.consumeStreamEvents({
+        streamResult,
+        billing,
+        task,
+        taskId,
+        userId,
+        abortController,
+      })) {
+        // 非流式模式忽略中间事件
+        void event;
       }
+
+      // 计算最终 credits
+      const creditsUsed = this.calculateCreditsFromStream(
+        streamResult,
+        billing,
+      );
+      billing.currentCredits = creditsUsed;
+      this.checkCreditsLimit(billing);
+      await this.settleCharges(userId, taskId, billing, creditsUsed);
 
       // 更新任务状态
       task.status = 'completed';
-      task.result = result.finalOutput;
+      task.result = streamResult.finalOutput;
       task.creditsUsed = creditsUsed;
 
       return {
         id: taskId,
         status: 'completed',
-        data: result.finalOutput,
+        data: streamResult.finalOutput,
         creditsUsed,
+        progress: this.buildProgress(billing),
       };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      const progress = this.buildProgress(billing);
+
+      if (
+        error instanceof TaskCancelledError ||
+        abortController.signal.aborted
+      ) {
+        task.status = 'cancelled';
+        task.error = errorMessage;
+        task.creditsUsed = billing.currentCredits;
+        return {
+          id: taskId,
+          status: 'cancelled',
+          error: errorMessage,
+          creditsUsed: billing.currentCredits,
+          progress,
+        };
+      }
+
       this.logger.error(`Agent task ${taskId} failed: ${errorMessage}`);
 
       task.status = 'failed';
       task.error = errorMessage;
+      task.creditsUsed = billing.currentCredits;
 
       // 如果是超限错误，返回已消耗的 credits
       if (error instanceof CreditsExceededError) {
@@ -249,6 +286,17 @@ export class AgentService {
           status: 'failed',
           error: errorMessage,
           creditsUsed: error.used,
+          progress,
+        };
+      }
+
+      if (error instanceof QuotaExceededError) {
+        return {
+          id: taskId,
+          status: 'failed',
+          error: errorMessage,
+          creditsUsed: billing.currentCredits,
+          progress,
         };
       }
 
@@ -256,10 +304,14 @@ export class AgentService {
         id: taskId,
         status: 'failed',
         error: errorMessage,
+        creditsUsed: billing.currentCredits,
+        progress,
       };
     } finally {
       // 清理会话
-      await this.browserAgentPort.closeSession(session.id);
+      if (session) {
+        await this.browserAgentPort.closeSession(session.id);
+      }
     }
   }
 
@@ -269,6 +321,7 @@ export class AgentService {
    */
   async *executeTaskStream(
     input: CreateAgentTaskInput,
+    userId: string,
   ): AsyncGenerator<AgentStreamEvent, void, unknown> {
     const taskId = this.generateTaskId();
     const now = new Date();
@@ -277,7 +330,7 @@ export class AgentService {
     // 创建任务记录
     const task: StoredTask = {
       id: taskId,
-      status: 'processing',
+      status: 'pending',
       createdAt: now,
       expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
       abortController,
@@ -285,12 +338,8 @@ export class AgentService {
     this.tasks.set(taskId, task);
 
     // 初始化计费参数（P1 计费模型优化）
-    const billing: BillingParams = {
-      maxCredits: input.maxCredits ?? BILLING_CONSTANTS.DEFAULT_MAX_CREDITS,
-      currentCredits: BILLING_CONSTANTS.BASE_CREDITS,
-      toolCallCount: 0,
-      startTime: now,
-    };
+    const billing = this.createBillingParams(now, input.maxCredits);
+    let session: { id: string } | null = null;
 
     // 发送开始事件
     yield {
@@ -299,38 +348,30 @@ export class AgentService {
       expiresAt: task.expiresAt.toISOString(),
     };
 
-    // 创建浏览器会话
-    const session = await this.browserAgentPort.createSession();
-    task.sessionId = session.id;
-
     try {
+      await this.ensureMinimumQuota(userId, taskId);
+
+      // 创建浏览器会话
+      session = await this.browserAgentPort.createSession();
+      task.sessionId = session.id;
+      task.status = 'processing';
+
       // 构建 Agent
-      const agent: BrowserAgent = new Agent<
-        BrowserAgentContext,
-        AgentOutputType
-      >({
-        name: 'Fetchx Browser Agent',
-        model: 'gpt-4o',
-        instructions: SYSTEM_INSTRUCTIONS,
-        tools: browserTools,
-        outputType: buildAgentOutputType(input.schema),
-        modelSettings: {
-          temperature: 0.7,
-          maxTokens: 4096,
-        },
-      });
+      const agent = this.buildAgent(input);
 
       // 构建上下文
       const context: BrowserAgentContext = {
         sessionId: session.id,
         browser: this.browserAgentPort,
+        abortSignal: abortController.signal,
       };
 
-      // 构建用户 prompt
-      let userPrompt = input.prompt;
-      if (input.urls?.length) {
-        userPrompt += `\n\n起始 URL：${input.urls.join(', ')}`;
+      if (abortController.signal.aborted) {
+        throw new TaskCancelledError();
       }
+
+      // 构建用户 prompt
+      const userPrompt = this.buildUserPrompt(input);
 
       yield { type: 'thinking', content: '正在分析任务需求...' };
 
@@ -339,49 +380,19 @@ export class AgentService {
         context,
         maxTurns: 20,
         stream: true,
+        signal: abortController.signal,
       });
 
       // 处理流式事件并追踪计费
-      for await (const event of streamResult) {
-        // 检查是否被取消
-        if (task.status === 'cancelled' || abortController.signal.aborted) {
-          yield {
-            type: 'failed',
-            error: 'Task cancelled by user',
-            creditsUsed: billing.currentCredits,
-          };
-          return;
-        }
-
-        // 追踪工具调用次数
-        if (event.type === 'run_item_stream_event') {
-          const item = event.item;
-          if (item.type === 'tool_call_item') {
-            billing.toolCallCount++;
-            billing.currentCredits =
-              BILLING_CONSTANTS.BASE_CREDITS +
-              billing.toolCallCount * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL;
-
-            // 检查 credits 限制
-            try {
-              this.checkCreditsLimit(billing);
-            } catch (error) {
-              if (error instanceof CreditsExceededError) {
-                yield {
-                  type: 'failed',
-                  error: error.message,
-                  creditsUsed: billing.currentCredits,
-                };
-                return;
-              }
-            }
-          }
-        }
-
-        const sseEvent = this.convertRunEventToSSE(event);
-        if (sseEvent) {
-          yield sseEvent;
-        }
+      for await (const sseEvent of this.consumeStreamEvents({
+        streamResult,
+        billing,
+        task,
+        taskId,
+        userId,
+        abortController,
+      })) {
+        yield sseEvent;
       }
 
       // 等待完成并获取最终结果
@@ -390,6 +401,9 @@ export class AgentService {
         streamResult,
         billing,
       );
+      billing.currentCredits = creditsUsed;
+      this.checkCreditsLimit(billing);
+      await this.settleCharges(userId, taskId, billing, creditsUsed);
 
       // 更新任务状态
       task.status = 'completed';
@@ -405,18 +419,214 @@ export class AgentService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      const progress = this.buildProgress(billing);
+
+      if (
+        error instanceof TaskCancelledError ||
+        abortController.signal.aborted
+      ) {
+        task.status = 'cancelled';
+        task.error = errorMessage;
+        task.creditsUsed = billing.currentCredits;
+        yield {
+          type: 'failed',
+          error: 'Task cancelled by user',
+          creditsUsed: billing.currentCredits,
+          progress,
+        };
+        return;
+      }
+
       this.logger.error(`Agent task ${taskId} failed: ${errorMessage}`);
 
       task.status = 'failed';
       task.error = errorMessage;
+      task.creditsUsed = billing.currentCredits;
 
       yield {
         type: 'failed',
         error: errorMessage,
+        creditsUsed: billing.currentCredits,
+        progress,
       };
     } finally {
       // 清理会话
-      await this.browserAgentPort.closeSession(session.id);
+      if (session) {
+        await this.browserAgentPort.closeSession(session.id);
+      }
+    }
+  }
+
+  /**
+   * 初始化计费参数
+   */
+  private createBillingParams(now: Date, maxCredits?: number): BillingParams {
+    return {
+      maxCredits,
+      currentCredits: BILLING_CONSTANTS.BASE_CREDITS,
+      toolCallCount: 0,
+      startTime: now,
+      chargedCredits: 0,
+    };
+  }
+
+  /**
+   * 构建 Agent 实例
+   */
+  private buildAgent(input: CreateAgentTaskInput): BrowserAgent {
+    return new Agent<BrowserAgentContext, AgentOutputType>({
+      name: 'Fetchx Browser Agent',
+      model: 'gpt-4o',
+      instructions: SYSTEM_INSTRUCTIONS,
+      tools: browserTools,
+      outputType: buildAgentOutputType(input.schema),
+      modelSettings: {
+        temperature: 0.7,
+        maxTokens: 4096,
+      },
+    });
+  }
+
+  /**
+   * 构建用户 prompt
+   */
+  private buildUserPrompt(input: CreateAgentTaskInput): string {
+    let userPrompt = input.prompt;
+    if (input.urls?.length) {
+      userPrompt += `\n\n起始 URL：${input.urls.join(', ')}`;
+    }
+    return userPrompt;
+  }
+
+  /**
+   * 构建任务进度
+   */
+  private buildProgress(billing: BillingParams): AgentTaskProgress {
+    return {
+      creditsUsed: billing.currentCredits,
+      toolCallCount: billing.toolCallCount,
+      elapsedMs: Date.now() - billing.startTime.getTime(),
+    };
+  }
+
+  /**
+   * 更新计费进度（基于当前 usage + 工具调用 + 时长）
+   */
+  private updateBillingFromUsage(billing: BillingParams, usage?: Usage): void {
+    billing.currentCredits = this.calculateCreditsFromUsage(usage, billing);
+  }
+
+  /**
+   * 确保用户至少有基础 credits
+   */
+  private async ensureMinimumQuota(
+    userId: string,
+    taskId: string,
+  ): Promise<void> {
+    const status = await this.quotaService.getStatus(userId);
+    if (status.totalRemaining < BILLING_CONSTANTS.BASE_CREDITS) {
+      this.logger.warn(
+        `Agent task ${taskId} blocked: insufficient credits (remaining ${status.totalRemaining})`,
+      );
+      throw new QuotaExceededError(
+        status.totalRemaining,
+        BILLING_CONSTANTS.BASE_CREDITS,
+      );
+    }
+  }
+
+  /**
+   * 按 100 credits 阶段性扣减/检查
+   */
+  private async applyQuotaCheckpoint(
+    userId: string,
+    taskId: string,
+    billing: BillingParams,
+  ): Promise<void> {
+    while (
+      billing.currentCredits - billing.chargedCredits >=
+      BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL
+    ) {
+      const nextCheckpoint =
+        billing.chargedCredits + BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL;
+      await this.quotaService.deductOrThrow(
+        userId,
+        BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
+        `fetchx.agent:${taskId}:checkpoint:${nextCheckpoint}`,
+      );
+      billing.chargedCredits = nextCheckpoint;
+    }
+  }
+
+  /**
+   * 结算剩余 credits
+   */
+  private async settleCharges(
+    userId: string,
+    taskId: string,
+    billing: BillingParams,
+    creditsUsed: number,
+  ): Promise<void> {
+    const remaining = Math.max(0, creditsUsed - billing.chargedCredits);
+    if (remaining <= 0) {
+      return;
+    }
+
+    await this.quotaService.deductOrThrow(
+      userId,
+      remaining,
+      `fetchx.agent:${taskId}:final`,
+    );
+    billing.chargedCredits += remaining;
+  }
+
+  /**
+   * 处理流式事件并进行计费/取消检查
+   */
+  private async *consumeStreamEvents(params: {
+    streamResult: AgentStreamedResult;
+    billing: BillingParams;
+    task: StoredTask;
+    taskId: string;
+    userId: string;
+    abortController: AbortController;
+  }): AsyncGenerator<AgentStreamEvent, void, unknown> {
+    const { streamResult, billing, task, taskId, userId, abortController } =
+      params;
+
+    for await (const event of streamResult) {
+      if (task.status === 'cancelled' || abortController.signal.aborted) {
+        throw new TaskCancelledError();
+      }
+
+      if (event.type === 'run_item_stream_event') {
+        const item = event.item;
+        if (item.type === 'tool_call_item') {
+          billing.toolCallCount++;
+        }
+      }
+
+      this.updateBillingFromUsage(billing, streamResult.state?._context?.usage);
+      task.creditsUsed = billing.currentCredits;
+
+      try {
+        this.checkCreditsLimit(billing);
+      } catch (error) {
+        abortController.abort(error);
+        throw error;
+      }
+
+      try {
+        await this.applyQuotaCheckpoint(userId, taskId, billing);
+      } catch (error) {
+        abortController.abort(error);
+        throw error;
+      }
+
+      const sseEvent = this.convertRunEventToSSE(event);
+      if (sseEvent) {
+        yield sseEvent;
+      }
     }
   }
 
@@ -488,16 +698,15 @@ export class AgentService {
   }
 
   /**
-   * 从流式结果计算 credits（P1 计费模型优化）
+   * 基于 usage 计算 credits（P1 计费模型优化）
    */
-  private calculateCreditsFromStream(
-    result: AgentStreamedResult,
+  private calculateCreditsFromUsage(
+    usage: Usage | undefined,
     billing?: BillingParams,
   ): number {
     let credits = BILLING_CONSTANTS.BASE_CREDITS;
 
     // Token 费用
-    const usage = result.state?._context?.usage;
     if (usage) {
       const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
       credits +=
@@ -519,6 +728,17 @@ export class AgentService {
     }
 
     return Math.ceil(credits);
+  }
+
+  /**
+   * 从流式结果计算 credits（P1 计费模型优化）
+   */
+  private calculateCreditsFromStream(
+    result: AgentStreamedResult,
+    billing?: BillingParams,
+  ): number {
+    const usage = result.state?._context?.usage;
+    return this.calculateCreditsFromUsage(usage, billing);
   }
 
   /**
@@ -567,7 +787,7 @@ export class AgentService {
 
     // 触发 abort 信号
     if (task.abortController) {
-      task.abortController.abort();
+      task.abortController.abort(new TaskCancelledError());
     }
 
     // 关闭关联的浏览器会话
@@ -603,31 +823,8 @@ export class AgentService {
     result: AgentRunResult,
     billing?: BillingParams,
   ): number {
-    let credits = BILLING_CONSTANTS.BASE_CREDITS;
-
-    // Token 费用
     const usage = result.state?._context?.usage;
-    if (usage) {
-      const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
-      credits +=
-        Math.ceil(totalTokens / 1000) * BILLING_CONSTANTS.CREDITS_PER_1K_TOKENS;
-    }
-
-    // 工具调用费用
-    if (billing?.toolCallCount) {
-      credits +=
-        billing.toolCallCount * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL;
-    }
-
-    // 时长费用
-    if (billing?.startTime) {
-      const durationMinutes =
-        (Date.now() - billing.startTime.getTime()) / 60000;
-      credits +=
-        Math.ceil(durationMinutes) * BILLING_CONSTANTS.CREDITS_PER_MINUTE;
-    }
-
-    return Math.ceil(credits);
+    return this.calculateCreditsFromUsage(usage, billing);
   }
 
   /**
@@ -679,7 +876,7 @@ export class AgentService {
    * 检查是否超过 maxCredits 限制
    */
   private checkCreditsLimit(billing: BillingParams): void {
-    if (billing.maxCredits && billing.currentCredits >= billing.maxCredits) {
+    if (billing.maxCredits && billing.currentCredits > billing.maxCredits) {
       throw new CreditsExceededError(
         billing.currentCredits,
         billing.maxCredits,

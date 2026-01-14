@@ -1,5 +1,9 @@
 /**
- * Browser 模块类型定义
+ * [DEFINES]: Browser 模块公共类型与上下文配置
+ * [USED_BY]: browser-pool.ts, session.manager.ts
+ * [POS]: Browser 模块类型边界（避免跨模块耦合）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { Browser, BrowserContext } from 'playwright';
@@ -13,11 +17,24 @@ export interface BrowserInstance {
   isHealthy: boolean;
 }
 
+/** 浏览器上下文配置（只包含可控参数） */
+export interface BrowserContextOptions {
+  /** 视口尺寸 */
+  viewport?: { width: number; height: number };
+  /** 自定义 User-Agent */
+  userAgent?: string;
+  /** 是否启用 JavaScript */
+  javaScriptEnabled?: boolean;
+  /** 是否忽略 HTTPS 错误 */
+  ignoreHTTPSErrors?: boolean;
+}
+
 /** 等待队列项 */
 export interface WaitingRequest {
   resolve: (context: BrowserContext) => void;
   reject: (error: Error) => void;
   timeoutId: NodeJS.Timeout;
+  options?: BrowserContextOptions;
 }
 
 /** 单个浏览器实例状态 */

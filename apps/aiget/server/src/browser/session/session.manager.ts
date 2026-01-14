@@ -1,24 +1,23 @@
 /**
  * Browser Session Manager
  *
- * [INPUT]: 会话创建/管理请求
+ * [INPUT]: 会话创建/管理请求（含上下文配置）
  * [OUTPUT]: BrowserSession 实例
- * [POS]: 管理浏览器会话生命周期，包含 Ref 映射
+ * [POS]: 管理浏览器会话生命周期，包含 Ref 映射与窗口/标签页状态
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import type { BrowserContext, Page, Locator, Dialog } from 'playwright';
 import { BrowserPool } from '../browser-pool';
+import type { BrowserContextOptions } from '../browser.types';
 import type {
   CreateSessionInput,
   CreateWindowInput,
   RefData,
   WindowInfo,
 } from '../dto';
-import {
-  DEFAULT_VIEWPORT_WIDTH,
-  DEFAULT_VIEWPORT_HEIGHT,
-} from '../browser.constants';
 
 /** 对话框记录 */
 export interface DialogRecord {
@@ -148,7 +147,9 @@ export class SessionManager implements OnModuleDestroy {
     const timeout = options?.timeout ?? this.DEFAULT_TIMEOUT;
 
     // 从浏览器池获取上下文
-    const context = await this.browserPool.acquireContext();
+    const context = await this.browserPool.acquireContext(
+      this.toContextOptions(options),
+    );
 
     // 创建页面
     const page = await context.newPage();
@@ -633,26 +634,16 @@ export class SessionManager implements OnModuleDestroy {
     const session = this.getSession(sessionId);
 
     // 从浏览器池获取新的上下文
-    const newContext = await this.browserPool.acquireContext();
+    const newContext = await this.browserPool.acquireContext(
+      this.toWindowContextOptions(options),
+    );
 
     // 创建页面
     const newPage = await newContext.newPage();
 
-    // 应用视口配置
+    // 应用视口配置（若已在 context 设置则保持一致）
     if (options?.viewport) {
       await newPage.setViewportSize(options.viewport);
-    } else {
-      await newPage.setViewportSize({
-        width: DEFAULT_VIEWPORT_WIDTH,
-        height: DEFAULT_VIEWPORT_HEIGHT,
-      });
-    }
-
-    // 设置 User-Agent
-    if (options?.userAgent) {
-      await newContext.setExtraHTTPHeaders({
-        'User-Agent': options.userAgent,
-      });
     }
 
     newPage.setDefaultTimeout(30000);
@@ -691,6 +682,36 @@ export class SessionManager implements OnModuleDestroy {
       title: '',
       active: true,
       tabCount: 1,
+    };
+  }
+
+  /**
+   * CreateSessionInput -> BrowserContextOptions
+   */
+  private toContextOptions(
+    options?: Partial<CreateSessionInput>,
+  ): BrowserContextOptions | undefined {
+    if (!options) return undefined;
+
+    return {
+      viewport: options.viewport,
+      userAgent: options.userAgent,
+      javaScriptEnabled: options.javaScriptEnabled,
+      ignoreHTTPSErrors: options.ignoreHTTPSErrors,
+    };
+  }
+
+  /**
+   * CreateWindowInput -> BrowserContextOptions
+   */
+  private toWindowContextOptions(
+    options?: CreateWindowInput,
+  ): BrowserContextOptions | undefined {
+    if (!options) return undefined;
+
+    return {
+      viewport: options.viewport,
+      userAgent: options.userAgent,
     };
   }
 

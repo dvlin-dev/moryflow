@@ -3,7 +3,7 @@
  *
  * [PROVIDES]: Agent 可使用的浏览器操作工具
  * [DEPENDS]: @aiget/agents-core, browser/ports
- * [POS]: 将 L2 Browser API 封装为 Agent Tools（通过 ports/facade 隔离 Playwright 类型）
+ * [POS]: 将 L2 Browser API 封装为 Agent Tools（通过 ports/facade 隔离 Playwright 类型，支持取消）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,6 +16,7 @@ import type { BrowserAgentPort } from '../../browser/ports';
 export interface BrowserAgentContext {
   sessionId: string;
   browser: BrowserAgentPort;
+  abortSignal?: AbortSignal;
 }
 
 // ========== Schema 定义 ==========
@@ -194,6 +195,9 @@ const getBrowserContext = (
   const context = runContext?.context;
   if (!context) {
     throw new Error('Browser agent context not available');
+  }
+  if (context.abortSignal?.aborted) {
+    throw new Error('Task cancelled by user');
   }
   return context;
 };

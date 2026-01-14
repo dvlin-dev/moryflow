@@ -29,6 +29,134 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 
 ---
 
+## 代码审查计划（2026-01-14）
+
+### 审查目标与标准
+
+- 功能实现正常（L2 Browser / L3 Agent / 相关边界与计费流程）
+- 最佳实践（明确边界、低耦合、避免大类型泄漏）
+- 单一职责（服务/模块职责清晰，不做额外工作）
+- 模块化（ports/facade、DTO、service、controller 分层清楚）
+- 错误边界（异常可控、错误信息清晰，不泄露内部细节）
+- 不考虑历史兼容（必要时直接重构/删除）
+- 无用代码清理（未被使用的工具、分支或参数）
+
+### 本次 PR（#12）修改文件清单（全量）
+
+**根目录**
+
+- `.gitignore`
+
+**apps/aiget/console**
+
+- `apps/aiget/console/src/features/CLAUDE.md`
+- `apps/aiget/console/src/features/scrape-playground/components/scrape-form.tsx`
+
+**apps/aiget/server**
+
+- `apps/aiget/server/CLAUDE.md`
+- `apps/aiget/server/package.json`
+- `apps/aiget/server/tsconfig.test.json`
+- `apps/aiget/server/src/app.module.ts`
+
+**apps/aiget/server - agent**
+
+- `apps/aiget/server/src/agent/agent.controller.ts`
+- `apps/aiget/server/src/agent/agent.module.ts`
+- `apps/aiget/server/src/agent/agent.service.ts`
+- `apps/aiget/server/src/agent/dto/agent.schema.ts`
+- `apps/aiget/server/src/agent/dto/index.ts`
+- `apps/aiget/server/src/agent/index.ts`
+- `apps/aiget/server/src/agent/tools/browser-tools.ts`
+- `apps/aiget/server/src/agent/tools/index.ts`
+
+**apps/aiget/server - billing**
+
+- `apps/aiget/server/src/billing/billing.rules.ts`
+
+**apps/aiget/server - browser**
+
+- `apps/aiget/server/src/browser/AGENTS.md`
+- `apps/aiget/server/src/browser/CLAUDE.md`
+- `apps/aiget/server/src/browser/browser-session.controller.ts`
+- `apps/aiget/server/src/browser/browser-session.service.ts`
+- `apps/aiget/server/src/browser/browser.module.ts`
+- `apps/aiget/server/src/browser/index.ts`
+
+**apps/aiget/server - browser/cdp**
+
+- `apps/aiget/server/src/browser/cdp/cdp-connector.service.ts`
+- `apps/aiget/server/src/browser/cdp/index.ts`
+
+**apps/aiget/server - browser/dto**
+
+- `apps/aiget/server/src/browser/dto/action.schema.ts`
+- `apps/aiget/server/src/browser/dto/cdp.schema.ts`
+- `apps/aiget/server/src/browser/dto/index.ts`
+- `apps/aiget/server/src/browser/dto/network.schema.ts`
+- `apps/aiget/server/src/browser/dto/screenshot.schema.ts`
+- `apps/aiget/server/src/browser/dto/session.schema.ts`
+- `apps/aiget/server/src/browser/dto/snapshot.schema.ts`
+- `apps/aiget/server/src/browser/dto/storage.schema.ts`
+- `apps/aiget/server/src/browser/dto/types.ts`
+- `apps/aiget/server/src/browser/dto/window.schema.ts`
+
+**apps/aiget/server - browser/handlers**
+
+- `apps/aiget/server/src/browser/handlers/action.handler.ts`
+- `apps/aiget/server/src/browser/handlers/index.ts`
+
+**apps/aiget/server - browser/network**
+
+- `apps/aiget/server/src/browser/network/index.ts`
+- `apps/aiget/server/src/browser/network/interceptor.service.ts`
+
+**apps/aiget/server - browser/persistence**
+
+- `apps/aiget/server/src/browser/persistence/index.ts`
+- `apps/aiget/server/src/browser/persistence/storage.service.ts`
+
+**apps/aiget/server - browser/ports**
+
+- `apps/aiget/server/src/browser/ports/browser-agent.port.ts`
+- `apps/aiget/server/src/browser/ports/index.ts`
+
+**apps/aiget/server - browser/session**
+
+- `apps/aiget/server/src/browser/session/index.ts`
+- `apps/aiget/server/src/browser/session/session.manager.ts`
+
+**apps/aiget/server - browser/snapshot**
+
+- `apps/aiget/server/src/browser/snapshot/index.ts`
+- `apps/aiget/server/src/browser/snapshot/snapshot.service.ts`
+
+**apps/moryflow/mobile**
+
+- `apps/moryflow/mobile/components/CLAUDE.md`
+- `apps/moryflow/mobile/components/chat/MessageBubble.tsx`
+- `apps/moryflow/mobile/lib/CLAUDE.md`
+- `apps/moryflow/mobile/lib/agent-runtime/adapters/logger.ts`
+
+**docs**
+
+- `docs/CLAUDE.md`
+- `docs/index.md`
+- `docs/references/moryflow-agents-sdk.md`
+- `docs/research/agent-browser-integration.md`
+- `docs/research/aiget-server-typecheck-oom-agent.md`
+
+### 审查步骤（计划）
+
+1. **按模块分组**逐一审阅：browser → agent → billing → console/mobile → docs。
+2. **功能完整性核对**：对照 API/工具清单，确认端点/工具/计费/流式行为一致。
+3. **边界与依赖检查**：确保 Playwright 重类型不进入 agents-core 泛型；ports/facade 生效。
+4. **错误边界审阅**：异常处理是否明确，错误是否对外可读、对内可排查。
+5. **无用代码清理**：标出可删除的未使用分支/工具/参数，确认是否删除。
+6. **输出审查结论**：功能风险、最佳实践偏差、可删项、必须修复点。
+
+> 说明：以上为审查计划，待你确认后开始全量 code review。
+
 ## 一、参考项目分析
 
 ### 1.1 agent-browser（Vercel Labs）
@@ -1343,16 +1471,27 @@ export class AgentController {
 
 ### 进度总览
 
-| Phase   | 名称                                | 状态      | 完成度 |
-| ------- | ----------------------------------- | --------- | ------ |
-| Phase 1 | L2 Browser 基础架构                 | ✅ 已完成 | 4/4    |
-| Phase 2 | Snapshot + Ref 系统                 | ✅ 已完成 | 3/3    |
-| Phase 3 | L2 完整 Action                      | ✅ 已完成 | 3/3    |
-| Phase 4 | L3 Agent 基础（SDK）                | ✅ 已完成 | 4/4    |
-| Phase 5 | L3 高级功能                         | ✅ 已完成 | 3/3    |
-| Phase 6 | P1 功能增强                         | ✅ 已完成 | 3/3    |
-| Phase 7 | P2 多窗口支持                       | ✅ 已完成 | 4/4    |
-| Phase 8 | P2 高级功能（CDP/网络/持久化/增量） | ✅ 已完成 | 4/4    |
+| Phase   | 名称                                | 状态        | 完成度 |
+| ------- | ----------------------------------- | ----------- | ------ |
+| Phase 1 | L2 Browser 基础架构                 | ✅ 已完成   | 4/4    |
+| Phase 2 | Snapshot + Ref 系统                 | ✅ 已完成   | 3/3    |
+| Phase 3 | L2 完整 Action                      | ✅ 已完成   | 3/3    |
+| Phase 4 | L3 Agent 基础（SDK）                | ✅ 已完成   | 4/4    |
+| Phase 5 | L3 高级功能                         | ⚠️ 部分完成 | 2/3    |
+| Phase 6 | P1 功能增强                         | ✅ 已完成   | 3/3    |
+| Phase 7 | P2 多窗口支持                       | ✅ 已完成   | 4/4    |
+| Phase 8 | P2 高级功能（CDP/网络/持久化/增量） | ✅ 已完成   | 4/4    |
+
+### 实现核对（2026-01-14，对照当前代码）
+
+| 模块/能力                      | 对照结果 | 备注                                                                                                                          |
+| ------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| L2 Browser 核心 API            | ✅       | 会话/快照/action/截图/多标签页/对话框/多窗口/增量快照 均已实现                                                                |
+| Snapshot + Ref 系统            | ✅       | 角色分类、Nth 去重、`getByRole` 语义定位已落地                                                                                |
+| P2 高级功能（CDP/网络/持久化） | ✅       | CDP 连接、网络拦截、Storage 导入导出已集成                                                                                    |
+| L3 Agent API（含 SSE）         | ✅       | `POST/GET/DELETE /agent` + `POST /agent/estimate` 可用                                                                        |
+| L3 Browser Tools               | ⚠️       | 已实现 11 个（snapshot/click/fill/type/open/search/getText/scroll/wait/press/hover）；未实现：screenshot/select/check/uncheck |
+| 异步任务系统实现方式           | ⚠️       | 当前为内存 Map + TTL（未接入 BullMQ 队列）                                                                                    |
 
 ### Phase 1: L2 Browser 基础架构
 
@@ -1470,9 +1609,9 @@ export class AgentController {
 
 **4.3 实现异步任务系统**
 
-- 使用 BullMQ 队列处理长时间任务
+- 使用内存 Map + TTL 清理（当前实现）
 - 任务状态：`processing`, `completed`, `failed`
-- 结果持久化（Redis 或 DB）
+- 结果持久化暂未接入（仍为内存态）
 
 **4.4 实现 Agent 执行逻辑**
 
@@ -1483,17 +1622,17 @@ export class AgentController {
 
 ### Phase 5: L3 高级功能
 
-| 步骤 | 任务                   | 状态      | 产出文件                                    | 完成日期   |
-| ---- | ---------------------- | --------- | ------------------------------------------- | ---------- |
-| 5.1  | 增强 Tools（更多动作） | ✅ 已完成 | `agent/tools/browser-tools.ts`（11 个工具） | 2026-01-13 |
-| 5.2  | 实现 credits 消耗追踪  | ✅ 已完成 | `agent.service.ts`（token 计费）            | 2026-01-13 |
-| 5.3  | 流式输出支持           | ✅ 已完成 | SSE 实现 + SDK stream: true                 | 2026-01-13 |
+| 步骤 | 任务                   | 状态        | 产出文件                                    | 完成日期   |
+| ---- | ---------------------- | ----------- | ------------------------------------------- | ---------- |
+| 5.1  | 增强 Tools（更多动作） | ⚠️ 部分完成 | `agent/tools/browser-tools.ts`（11 个工具） | 2026-01-13 |
+| 5.2  | 实现 credits 消耗追踪  | ✅ 已完成   | `agent.service.ts`（token 计费）            | 2026-01-13 |
+| 5.3  | 流式输出支持           | ✅ 已完成   | SSE 实现 + SDK stream: true                 | 2026-01-13 |
 
 **5.1 增强 Tools**
 
-- 添加更多 Browser 操作：`select`, `hover`, `check`, `uncheck`
-- 添加 `screenshot` Tool（视觉分析）
-- 添加 `wait` Tool（等待条件）
+- 已实现工具（11 个）：`snapshot`, `click`, `fill`, `type`, `open`, `search`, `getText`, `scroll`, `wait`, `press`, `hover`
+- 未实现（原计划项）：`screenshot`, `select`, `check`, `uncheck`
+- 说明：工具总数符合预期，但覆盖范围与原计划存在差异（需补齐或调整计划）
 
 **5.2 实现 credits 消耗追踪**
 
@@ -1633,7 +1772,7 @@ feat(browser): 完成步骤 X.X - [任务名称]
 
 ---
 
-_文档版本: 5.1 | 更新日期: 2026-01-13_
+_文档版本: 8.0 | 更新日期: 2026-01-14_
 
 ---
 
@@ -1772,41 +1911,38 @@ Phase 5（高级功能）← 加入：多标签页、计费优化
 
 | 问题                    | 描述                                                                                | 状态      | 优先级 |
 | ----------------------- | ----------------------------------------------------------------------------------- | --------- | ------ |
-| **TypeScript 内存溢出** | 执行 `pnpm --filter @aiget/aiget-server typecheck` 或 `lint` 时发生 OOM，主分支正常 | 🔲 待分析 | P1     |
+| **TypeScript 内存溢出** | 执行 `pnpm --filter @aiget/aiget-server typecheck` 或 `lint` 时发生 OOM，主分支正常 | ✅ 已解决 | P1     |
 
 **TypeScript 内存溢出详情**：
 
-- **现象**：本分支执行 typecheck/lint 时内存溢出（8GB 不够），主分支正常
-- **可能原因**：
-  - 新增代码引入循环类型依赖
-  - DTO/Schema 类型推断过于复杂
-  - Zod schema 与 NestJS DTO 类型交叉导致类型膨胀
-- **排查方向**：
-  1. 使用 `madge --circular` 检查循环依赖
-  2. 检查 `dto/browser-session.schema.ts` 中的复杂类型定义
-  3. 对比主分支和本分支的类型定义差异
-  4. 尝试拆分大型 schema 文件
+- **结论**：已解决（2026-01-14）
+- **最终方案**：Browser → Agent ports/facade 边界隔离 + tools 参数统一为 JSON schema，避免 Playwright 重类型进入 agents-core 泛型推断
+- **记录**：详见 `docs/research/aiget-server-typecheck-oom-agent.md`
 
 ### 12.2 待办事项
 
-| 任务                       | 描述                      | 状态      |
-| -------------------------- | ------------------------- | --------- |
-| `DELETE /api/v1/agent/:id` | 取消正在执行的 Agent 任务 | ✅ 已完成 |
-| 单元测试                   | Browser API 核心服务测试  | 🔲 待实现 |
-| 集成测试                   | Agent API 端到端测试      | 🔲 待实现 |
-| 解决 TypeScript 内存问题   | 分析并修复 OOM 问题       | 🔲 待分析 |
+| 任务                       | 描述                                                                          | 状态      |
+| -------------------------- | ----------------------------------------------------------------------------- | --------- |
+| `DELETE /api/v1/agent/:id` | 取消正在执行的 Agent 任务（硬取消）                                           | ✅ 已完成 |
+| CreateSession 参数透传     | userAgent / JS / HTTPS 配置生效                                               | ✅ 已完成 |
+| Credits 分段检查           | 每 100 credits 检查并扣费                                                     | ✅ 已完成 |
+| 单元测试                   | Browser API 核心服务测试                                                      | 🔲 待实现 |
+| 集成测试                   | Agent API 端到端测试                                                          | 🔲 待实现 |
+| 解决 TypeScript 内存问题   | 分析并修复 OOM 问题（见 `docs/research/aiget-server-typecheck-oom-agent.md`） | ✅ 已完成 |
 
 ---
 
 ## 更新日志
 
-| 版本 | 日期       | 变更内容                                        |
-| ---- | ---------- | ----------------------------------------------- |
-| 7.0  | 2026-01-13 | 添加已知问题章节：TypeScript 内存溢出待分析     |
-| 6.0  | 2026-01-13 | P1 功能完成：对话框处理、多标签页、计费模型优化 |
-| 5.1  | 2026-01-13 | 添加流式 API 设计：SSE 事件类型、前后端示例     |
-| 5.0  | 2026-01-13 | 深入 Review：修正 SDK 接口、添加改进建议        |
-| 4.0  | 2026-01-13 | L3 Agent 架构调整为使用 @moryflow/agents SDK    |
-| 3.0  | 2026-01-13 | 添加实现进度追踪和同步规则                      |
-| 2.0  | 2026-01-13 | 完善 L2/L3 API 详细设计                         |
-| 1.0  | 2026-01-13 | 初始版本：参考项目分析和架构设计                |
+| 版本 | 日期       | 变更内容                                                        |
+| ---- | ---------- | --------------------------------------------------------------- |
+| 9.0  | 2026-01-14 | 完成 CreateSession 参数透传、硬取消、credits 分段检查与进度返回 |
+| 8.0  | 2026-01-14 | 对照代码核对实现进度；修正 Phase 4/5 描述；标记 OOM 已解决      |
+| 7.0  | 2026-01-13 | 添加已知问题章节：TypeScript 内存溢出待分析                     |
+| 6.0  | 2026-01-13 | P1 功能完成：对话框处理、多标签页、计费模型优化                 |
+| 5.1  | 2026-01-13 | 添加流式 API 设计：SSE 事件类型、前后端示例                     |
+| 5.0  | 2026-01-13 | 深入 Review：修正 SDK 接口、添加改进建议                        |
+| 4.0  | 2026-01-13 | L3 Agent 架构调整为使用 @moryflow/agents SDK                    |
+| 3.0  | 2026-01-13 | 添加实现进度追踪和同步规则                                      |
+| 2.0  | 2026-01-13 | 完善 L2/L3 API 详细设计                                         |
+| 1.0  | 2026-01-13 | 初始版本：参考项目分析和架构设计                                |

@@ -3,7 +3,7 @@
  *
  * [INPUT]: HTTP 请求
  * [OUTPUT]: JSON 响应或 SSE 事件流
- * [POS]: L3 Agent API 入口，处理任务创建和状态查询
+ * [POS]: L3 Agent API 入口，处理任务创建和状态查询（含用户上下文）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -29,10 +29,11 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { Public } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key';
 import { AgentService } from './agent.service';
 import { CreateAgentTaskSchema, type AgentStreamEvent } from './dto';
+import type { CurrentUserDto } from '../types';
 
 @ApiTags('Agent')
 @ApiSecurity('apiKey')
@@ -55,7 +56,11 @@ export class AgentController {
       'Execute an AI agent task. Returns SSE stream by default, or JSON if stream=false.',
   })
   @ApiOkResponse({ description: 'Task result or SSE event stream' })
-  async createTask(@Body() body: unknown, @Res() res: Response): Promise<void> {
+  async createTask(
+    @CurrentUser() user: CurrentUserDto,
+    @Body() body: unknown,
+    @Res() res: Response,
+  ): Promise<void> {
     // 验证输入
     const parseResult = CreateAgentTaskSchema.safeParse(body);
     if (!parseResult.success) {
@@ -72,7 +77,7 @@ export class AgentController {
 
     // 非流式模式
     if (!input.stream) {
-      const result = await this.agentService.executeTask(input);
+      const result = await this.agentService.executeTask(input, user.id);
       res.json(result);
       return;
     }
@@ -91,7 +96,10 @@ export class AgentController {
 
     try {
       // 使用流式执行
-      for await (const event of this.agentService.executeTaskStream(input)) {
+      for await (const event of this.agentService.executeTaskStream(
+        input,
+        user.id,
+      )) {
         sendEvent(event);
 
         // 如果连接已关闭，停止发送

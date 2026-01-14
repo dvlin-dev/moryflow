@@ -3,7 +3,9 @@
  *
  * [INPUT]: BrowserSession + ActionInput
  * [OUTPUT]: ActionResponse
- * [POS]: 执行浏览器操作，支持 @ref 语法
+ * [POS]: 执行浏览器操作，支持 @ref 语法与等待条件
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -244,18 +246,20 @@ export class ActionHandler {
     }
 
     if (waitFor.selector) {
-      await session.page.waitForSelector(waitFor.selector, {
-        state: 'visible',
-        timeout,
-      });
+      const locator = this.sessionManager.resolveSelector(
+        session,
+        waitFor.selector,
+      );
+      await locator.waitFor({ state: 'visible', timeout });
       return { success: true };
     }
 
     if (waitFor.selectorGone) {
-      await session.page.waitForSelector(waitFor.selectorGone, {
-        state: 'hidden',
-        timeout,
-      });
+      const locator = this.sessionManager.resolveSelector(
+        session,
+        waitFor.selectorGone,
+      );
+      await locator.waitFor({ state: 'hidden', timeout });
       return { success: true };
     }
 
