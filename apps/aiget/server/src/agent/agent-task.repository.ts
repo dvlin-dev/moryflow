@@ -73,19 +73,39 @@ export class AgentTaskRepository {
     taskId: string,
     params: UpdateAgentTaskParams,
   ): Promise<AgentTask> {
+    const data = this.toUpdateData(params);
     return this.prisma.agentTask.update({
       where: { id: taskId },
+      data,
+    });
+  }
+
+  async updateTaskIfStatus(
+    taskId: string,
+    statuses: AgentTaskStatus[],
+    params: UpdateAgentTaskParams,
+  ): Promise<boolean> {
+    const data = this.toUpdateData(params);
+    const result = await this.prisma.agentTask.updateMany({
+      where: { id: taskId, status: { in: statuses } },
+      data,
+    });
+    return result.count > 0;
+  }
+
+  async updateTaskMetrics(
+    taskId: string,
+    params: Pick<
+      UpdateAgentTaskParams,
+      'creditsUsed' | 'toolCallCount' | 'elapsedMs'
+    >,
+  ): Promise<void> {
+    await this.prisma.agentTask.updateMany({
+      where: { id: taskId },
       data: {
-        status: params.status,
-        result:
-          params.result === undefined ? undefined : this.toJson(params.result),
-        error: params.error,
         creditsUsed: params.creditsUsed,
         toolCallCount: params.toolCallCount,
         elapsedMs: params.elapsedMs,
-        startedAt: params.startedAt,
-        completedAt: params.completedAt,
-        cancelledAt: params.cancelledAt,
       },
     });
   }
@@ -117,6 +137,23 @@ export class AgentTaskRepository {
       where: { id: chargeId },
       data: { refundedAt: new Date() },
     });
+  }
+
+  private toUpdateData(
+    params: UpdateAgentTaskParams,
+  ): Prisma.AgentTaskUpdateInput {
+    return {
+      status: params.status,
+      result:
+        params.result === undefined ? undefined : this.toJson(params.result),
+      error: params.error,
+      creditsUsed: params.creditsUsed,
+      toolCallCount: params.toolCallCount,
+      elapsedMs: params.elapsedMs,
+      startedAt: params.startedAt,
+      completedAt: params.completedAt,
+      cancelledAt: params.cancelledAt,
+    };
   }
 
   private toJson(value: unknown): Prisma.InputJsonValue {

@@ -59,6 +59,8 @@ const createMockTaskRepository = (): AgentTaskRepository =>
   ({
     createTask: vi.fn().mockResolvedValue({}),
     updateTask: vi.fn().mockResolvedValue({}),
+    updateTaskIfStatus: vi.fn().mockResolvedValue(true),
+    updateTaskMetrics: vi.fn().mockResolvedValue(undefined),
     createCharge: vi.fn().mockResolvedValue({}),
     listCharges: vi.fn().mockResolvedValue([]),
     markChargeRefunded: vi.fn().mockResolvedValue({}),
@@ -224,6 +226,66 @@ describe('AgentService', () => {
     );
   });
 
+  it('marks task cancelled when cancel flag is set during execution', async () => {
+    const mockBrowserPort = {
+      createSession: vi.fn().mockResolvedValue({
+        id: 'session_1',
+        createdAt: '',
+        expiresAt: '',
+      }),
+      closeSession: vi.fn().mockResolvedValue(undefined),
+    } as unknown as BrowserAgentPortService;
+
+    const mockQuotaService = {
+      getStatus: vi.fn().mockResolvedValue({
+        monthly: { limit: 0, used: 0, remaining: 0 },
+        purchased: 1000,
+        totalRemaining: 1000,
+        periodEndsAt: new Date('2026-02-01'),
+        periodStartsAt: new Date('2026-01-01'),
+      }),
+      deductOrThrow: vi.fn().mockResolvedValue({
+        success: true,
+        source: 'MONTHLY',
+        balanceBefore: 1000,
+        balanceAfter: 999,
+        transactionId: 'tx_1',
+      }),
+      refund: vi.fn().mockResolvedValue({ success: true }),
+    } as unknown as QuotaService;
+
+    const mockTaskRepository = createMockTaskRepository();
+    const mockProgressStore = createMockProgressStore();
+    vi.mocked(mockProgressStore.isCancelRequested).mockResolvedValue(true);
+
+    mockRun.mockResolvedValue(
+      createStreamResult({ inputTokens: 0, outputTokens: 0 }) as never,
+    );
+
+    const service = new AgentService(
+      mockBrowserPort,
+      mockQuotaService,
+      mockTaskRepository,
+      mockProgressStore,
+    );
+
+    const result = await service.executeTask(
+      {
+        prompt: 'test',
+        stream: false,
+      },
+      'user_1',
+    );
+
+    expect(result.status).toBe('cancelled');
+    expect(mockTaskRepository.updateTaskIfStatus).toHaveBeenCalledWith(
+      expect.any(String),
+      ['PENDING', 'PROCESSING'],
+      expect.objectContaining({ status: 'CANCELLED' }),
+    );
+    expect(mockTaskRepository.updateTask).not.toHaveBeenCalled();
+  });
+
   it('requests cancel and returns latest progress credits', async () => {
     const mockBrowserPort = {
       createSession: vi.fn(),
@@ -273,8 +335,9 @@ describe('AgentService', () => {
     expect(result.success).toBe(true);
     expect(result.creditsUsed).toBe(12);
     expect(mockProgressStore.requestCancel).toHaveBeenCalledWith('task_1');
-    expect(mockTaskRepository.updateTask).toHaveBeenCalledWith(
+    expect(mockTaskRepository.updateTaskIfStatus).toHaveBeenCalledWith(
       'task_1',
+      ['PENDING', 'PROCESSING'],
       expect.objectContaining({ status: 'CANCELLED' }),
     );
   });

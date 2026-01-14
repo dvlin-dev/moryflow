@@ -198,10 +198,17 @@ export class AgentService {
       if (runtime) {
         runtime.sessionId = session.id;
       }
-      await this.taskRepository.updateTask(taskId, {
-        status: 'PROCESSING',
-        startedAt: new Date(),
-      });
+      const activated = await this.taskRepository.updateTaskIfStatus(
+        taskId,
+        ['PENDING'],
+        {
+          status: 'PROCESSING',
+          startedAt: new Date(),
+        },
+      );
+      if (!activated) {
+        throw new TaskCancelledError();
+      }
 
       // 构建 Agent
       const agent = this.buildAgent(input);
@@ -245,19 +252,32 @@ export class AgentService {
         billing,
       );
       billing.currentCredits = creditsUsed;
+      await this.throwIfTaskCancelled(taskId, userId);
       this.checkCreditsLimit(billing);
       await this.settleCharges(userId, taskId, billing, creditsUsed);
 
       // 更新任务状态
       const progress = this.buildProgress(billing);
-      await this.taskRepository.updateTask(taskId, {
-        status: 'COMPLETED',
-        result: streamResult.finalOutput,
-        creditsUsed,
-        toolCallCount: progress.toolCallCount,
-        elapsedMs: progress.elapsedMs,
-        completedAt: new Date(),
-      });
+      const completed = await this.taskRepository.updateTaskIfStatus(
+        taskId,
+        ['PENDING', 'PROCESSING'],
+        {
+          status: 'COMPLETED',
+          result: streamResult.finalOutput,
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+          completedAt: new Date(),
+        },
+      );
+      if (!completed) {
+        await this.taskRepository.updateTaskMetrics(taskId, {
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+        });
+        throw new TaskCancelledError();
+      }
       await this.safeProgressOperation(
         () => this.progressStore.clearProgress(taskId),
         'clear progress',
@@ -291,13 +311,12 @@ export class AgentService {
             `Failed to settle charges for cancelled task ${taskId}: ${settleError instanceof Error ? settleError.message : String(settleError)}`,
           );
         }
-        await this.taskRepository.updateTask(taskId, {
-          status: 'CANCELLED',
-          error: errorMessage,
+        await this.persistCancelledTask({
+          taskId,
+          userId,
+          errorMessage,
           creditsUsed,
-          toolCallCount: progress.toolCallCount,
-          elapsedMs: progress.elapsedMs,
-          cancelledAt: new Date(),
+          progress,
         });
         await this.safeProgressOperation(
           () => this.progressStore.clearProgress(taskId),
@@ -318,15 +337,32 @@ export class AgentService {
 
       this.logger.error(`Agent task ${taskId} failed: ${errorMessage}`);
 
-      await this.refundChargesOnFailure(userId, taskId);
-      await this.taskRepository.updateTask(taskId, {
-        status: 'FAILED',
-        error: errorMessage,
-        creditsUsed,
-        toolCallCount: progress.toolCallCount,
-        elapsedMs: progress.elapsedMs,
-        completedAt: new Date(),
-      });
+      const failed = await this.taskRepository.updateTaskIfStatus(
+        taskId,
+        ['PENDING', 'PROCESSING'],
+        {
+          status: 'FAILED',
+          error: errorMessage,
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+          completedAt: new Date(),
+        },
+      );
+      if (failed) {
+        await this.refundChargesOnFailure(userId, taskId);
+      } else {
+        const latest = await this.taskRepository.getTaskForUser(taskId, userId);
+        if (latest?.status === 'FAILED') {
+          await this.refundChargesOnFailure(userId, taskId);
+        } else if (latest?.status === 'CANCELLED') {
+          await this.taskRepository.updateTaskMetrics(taskId, {
+            creditsUsed,
+            toolCallCount: progress.toolCallCount,
+            elapsedMs: progress.elapsedMs,
+          });
+        }
+      }
       await this.safeProgressOperation(
         () => this.progressStore.clearProgress(taskId),
         'clear progress',
@@ -402,10 +438,17 @@ export class AgentService {
       if (runtime) {
         runtime.sessionId = session.id;
       }
-      await this.taskRepository.updateTask(taskId, {
-        status: 'PROCESSING',
-        startedAt: new Date(),
-      });
+      const activated = await this.taskRepository.updateTaskIfStatus(
+        taskId,
+        ['PENDING'],
+        {
+          status: 'PROCESSING',
+          startedAt: new Date(),
+        },
+      );
+      if (!activated) {
+        throw new TaskCancelledError();
+      }
 
       // 构建 Agent
       const agent = this.buildAgent(input);
@@ -452,19 +495,32 @@ export class AgentService {
         billing,
       );
       billing.currentCredits = creditsUsed;
+      await this.throwIfTaskCancelled(taskId, userId);
       this.checkCreditsLimit(billing);
       await this.settleCharges(userId, taskId, billing, creditsUsed);
 
       // 更新任务状态
       const progress = this.buildProgress(billing);
-      await this.taskRepository.updateTask(taskId, {
-        status: 'COMPLETED',
-        result: finalOutput,
-        creditsUsed,
-        toolCallCount: progress.toolCallCount,
-        elapsedMs: progress.elapsedMs,
-        completedAt: new Date(),
-      });
+      const completed = await this.taskRepository.updateTaskIfStatus(
+        taskId,
+        ['PENDING', 'PROCESSING'],
+        {
+          status: 'COMPLETED',
+          result: finalOutput,
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+          completedAt: new Date(),
+        },
+      );
+      if (!completed) {
+        await this.taskRepository.updateTaskMetrics(taskId, {
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+        });
+        throw new TaskCancelledError();
+      }
       await this.safeProgressOperation(
         () => this.progressStore.clearProgress(taskId),
         'clear progress',
@@ -496,13 +552,12 @@ export class AgentService {
             `Failed to settle charges for cancelled task ${taskId}: ${settleError instanceof Error ? settleError.message : String(settleError)}`,
           );
         }
-        await this.taskRepository.updateTask(taskId, {
-          status: 'CANCELLED',
-          error: errorMessage,
+        await this.persistCancelledTask({
+          taskId,
+          userId,
+          errorMessage,
           creditsUsed,
-          toolCallCount: progress.toolCallCount,
-          elapsedMs: progress.elapsedMs,
-          cancelledAt: new Date(),
+          progress,
         });
         await this.safeProgressOperation(
           () => this.progressStore.clearProgress(taskId),
@@ -523,15 +578,32 @@ export class AgentService {
 
       this.logger.error(`Agent task ${taskId} failed: ${errorMessage}`);
 
-      await this.refundChargesOnFailure(userId, taskId);
-      await this.taskRepository.updateTask(taskId, {
-        status: 'FAILED',
-        error: errorMessage,
-        creditsUsed,
-        toolCallCount: progress.toolCallCount,
-        elapsedMs: progress.elapsedMs,
-        completedAt: new Date(),
-      });
+      const failed = await this.taskRepository.updateTaskIfStatus(
+        taskId,
+        ['PENDING', 'PROCESSING'],
+        {
+          status: 'FAILED',
+          error: errorMessage,
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+          completedAt: new Date(),
+        },
+      );
+      if (failed) {
+        await this.refundChargesOnFailure(userId, taskId);
+      } else {
+        const latest = await this.taskRepository.getTaskForUser(taskId, userId);
+        if (latest?.status === 'FAILED') {
+          await this.refundChargesOnFailure(userId, taskId);
+        } else if (latest?.status === 'CANCELLED') {
+          await this.taskRepository.updateTaskMetrics(taskId, {
+            creditsUsed,
+            toolCallCount: progress.toolCallCount,
+            elapsedMs: progress.elapsedMs,
+          });
+        }
+      }
       await this.safeProgressOperation(
         () => this.progressStore.clearProgress(taskId),
         'clear progress',
@@ -795,16 +867,17 @@ export class AgentService {
       const now = Date.now();
       if (now - lastCancelCheckAt >= PROGRESS_UPDATE_INTERVAL_MS) {
         lastCancelCheckAt = now;
+        let cancelled = false;
         try {
-          const cancelled = await this.progressStore.isCancelRequested(taskId);
-          if (cancelled) {
-            abortController.abort(new TaskCancelledError());
-            throw new TaskCancelledError();
-          }
+          cancelled = await this.progressStore.isCancelRequested(taskId);
         } catch (error) {
           this.logger.warn(
             `Failed to check cancel status for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
           );
+        }
+        if (cancelled) {
+          abortController.abort(new TaskCancelledError());
+          throw new TaskCancelledError();
         }
       }
 
@@ -997,6 +1070,56 @@ export class AgentService {
     }
   }
 
+  private async persistCancelledTask(params: {
+    taskId: string;
+    userId: string;
+    errorMessage: string;
+    creditsUsed: number;
+    progress: AgentTaskProgress;
+  }): Promise<void> {
+    const cancelled = await this.taskRepository.updateTaskIfStatus(
+      params.taskId,
+      ['PENDING', 'PROCESSING'],
+      {
+        status: 'CANCELLED',
+        error: params.errorMessage,
+        creditsUsed: params.creditsUsed,
+        toolCallCount: params.progress.toolCallCount,
+        elapsedMs: params.progress.elapsedMs,
+        cancelledAt: new Date(),
+      },
+    );
+
+    if (cancelled) {
+      return;
+    }
+
+    const latest = await this.taskRepository.getTaskForUser(
+      params.taskId,
+      params.userId,
+    );
+
+    if (latest?.status !== 'CANCELLED') {
+      return;
+    }
+
+    await this.taskRepository.updateTaskMetrics(params.taskId, {
+      creditsUsed: params.creditsUsed,
+      toolCallCount: params.progress.toolCallCount,
+      elapsedMs: params.progress.elapsedMs,
+    });
+  }
+
+  private async throwIfTaskCancelled(
+    taskId: string,
+    userId: string,
+  ): Promise<void> {
+    const task = await this.taskRepository.getTaskForUser(taskId, userId);
+    if (task?.status === 'CANCELLED') {
+      throw new TaskCancelledError();
+    }
+  }
+
   /**
    * 获取任务状态
    */
@@ -1052,16 +1175,39 @@ export class AgentService {
       };
     }
 
-    // 标记为已取消
+    const progress = await this.safeProgressOperation(
+      () => this.progressStore.getProgress(taskId),
+      'get progress',
+    );
+
     await this.safeProgressOperation(
       () => this.progressStore.requestCancel(taskId),
       'request cancel',
     );
-    await this.taskRepository.updateTask(taskId, {
-      status: 'CANCELLED',
-      error: 'Task cancelled by user',
-      cancelledAt: new Date(),
-    });
+
+    const cancelled = await this.taskRepository.updateTaskIfStatus(
+      taskId,
+      ['PENDING', 'PROCESSING'],
+      {
+        status: 'CANCELLED',
+        error: 'Task cancelled by user',
+        cancelledAt: new Date(),
+        creditsUsed: progress?.creditsUsed ?? task.creditsUsed ?? undefined,
+        toolCallCount:
+          progress?.toolCallCount ?? task.toolCallCount ?? undefined,
+        elapsedMs: progress?.elapsedMs ?? task.elapsedMs ?? undefined,
+      },
+    );
+
+    if (!cancelled) {
+      const latest = await this.taskRepository.getTaskForUser(taskId, userId);
+      const latestStatus = latest?.status.toLowerCase() ?? status;
+      return {
+        success: false,
+        message: `Cannot cancel task in '${latestStatus}' status`,
+        creditsUsed: latest?.creditsUsed ?? task.creditsUsed ?? undefined,
+      };
+    }
 
     // 触发 abort 信号
     const runtime = this.runningTasks.get(taskId);
@@ -1084,11 +1230,6 @@ export class AgentService {
     }
 
     this.logger.log(`Task ${taskId} cancelled by user`);
-    const progress = await this.safeProgressOperation(
-      () => this.progressStore.getProgress(taskId),
-      'get progress',
-    );
-
     return {
       success: true,
       message: 'Task cancelled successfully',

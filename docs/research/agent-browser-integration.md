@@ -201,11 +201,12 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 - [x] 失败退款 / 取消结算语义落地
 - [x] `GET /agent/:id` 返回 progress
 - [x] 代码审查问题修复（ActionHandler、SSE、browser_wait、screenshot）
+- [x] 修复取消竞态：终态 compare-and-set，取消时 metrics 落库
 
 ### 当前剩余问题
 
-- 仍需补齐 Browser API / Agent API 的单元与集成测试覆盖（见待办事项）
-- Prisma 迁移尚未生成（需要有可用的 PostgreSQL 环境）
+- 仍需补齐 Browser API / Agent API 的单元与集成测试覆盖（除已补的取消回归用例外）
+- Prisma 迁移尚未生成（需要可用的 PostgreSQL 环境）
 
 ### 接下来的计划
 
@@ -216,7 +217,7 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 
 - `pnpm lint` ✅ 通过（`@aiget/model-registry-data` 同步超时但 fallback 成功）
 - `pnpm typecheck` ✅ 通过（同上）
-- `pnpm test:unit` ✅ 通过（Redis 连接拒绝日志存在，不影响用例结果）
+- `pnpm test:unit` ✅ 通过（Redis 连接拒绝日志存在，不影响用例结果；取消回归用例通过）
 
 ## 一、参考项目分析
 
