@@ -5,7 +5,6 @@
  * 注意：此测试仅测试公开的 API 方法，私有方法通过公开方法的行为间接测试
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 // Note: Mock type casting produces 'any' returns in some scenarios
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -243,66 +242,6 @@ describe('AiProxyService', () => {
           messages: [],
         }),
       ).rejects.toThrow();
-    });
-  });
-
-  // ==================== 等级权限验证 ====================
-
-  describe('等级权限逻辑', () => {
-    const tierOrder = [
-      UserTier.free,
-      UserTier.basic,
-      UserTier.pro,
-      UserTier.license,
-    ] as const;
-
-    it('Free 用户只能访问 Free 模型', () => {
-      expect(
-        tierOrder.indexOf(UserTier.free) >= tierOrder.indexOf(UserTier.free),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.free) >= tierOrder.indexOf(UserTier.basic),
-      ).toBe(false);
-      expect(
-        tierOrder.indexOf(UserTier.free) >= tierOrder.indexOf(UserTier.pro),
-      ).toBe(false);
-    });
-
-    it('Basic 用户可访问 Free 和 Basic 模型', () => {
-      expect(
-        tierOrder.indexOf(UserTier.basic) >= tierOrder.indexOf(UserTier.free),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.basic) >= tierOrder.indexOf(UserTier.basic),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.basic) >= tierOrder.indexOf(UserTier.pro),
-      ).toBe(false);
-    });
-
-    it('Pro 用户可访问所有等级模型', () => {
-      expect(
-        tierOrder.indexOf(UserTier.pro) >= tierOrder.indexOf(UserTier.free),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.pro) >= tierOrder.indexOf(UserTier.basic),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.pro) >= tierOrder.indexOf(UserTier.pro),
-      ).toBe(true);
-    });
-
-    it('License 用户可访问所有等级模型', () => {
-      expect(
-        tierOrder.indexOf(UserTier.license) >= tierOrder.indexOf(UserTier.free),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.license) >=
-          tierOrder.indexOf(UserTier.basic),
-      ).toBe(true);
-      expect(
-        tierOrder.indexOf(UserTier.license) >= tierOrder.indexOf(UserTier.pro),
-      ).toBe(true);
     });
   });
 
