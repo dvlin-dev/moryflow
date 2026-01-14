@@ -14,6 +14,7 @@
     "@aiget/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@hugeicons/core-free-icons": "^3.1.1",
+    "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-router": "^1.144.0",
     "@tanstack/react-start": "^1.144.0",
     "better-auth": "^1.4.5",
