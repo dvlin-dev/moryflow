@@ -2,51 +2,7 @@ import { Tick02Icon } from '@hugeicons/core-free-icons';
 import { Container } from '@/components/layout';
 import { Button, Icon } from '@aiget/ui';
 import { cn } from '@aiget/ui/lib';
-
-const tiers = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: '/month',
-    description: 'Perfect for side projects and testing',
-    features: [
-      '100 API requests/month',
-      'Markdown & HTML output',
-      'Basic metadata extraction',
-      'Screenshot support',
-    ],
-    cta: 'Get Started',
-    href: 'https://console.aiget.dev/signup',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: '$29',
-    period: '/month',
-    description: 'For growing teams and production apps',
-    features: [
-      '10,000 API requests/month',
-      'All output formats',
-      'AI data extraction',
-      'Site crawling & mapping',
-      'Priority support',
-      'Webhooks',
-    ],
-    cta: 'Start Free Trial',
-    href: 'https://console.aiget.dev/signup?plan=pro',
-    highlighted: true,
-  },
-  {
-    name: 'Enterprise',
-    price: 'Custom',
-    period: '',
-    description: 'For large-scale operations',
-    features: ['Unlimited requests', 'Dedicated support', 'Custom rate limits', 'Invoice billing'],
-    cta: 'Contact Sales',
-    href: '/contact',
-    highlighted: false,
-  },
-];
+import { PRICING_TIERS } from '@/lib/pricing';
 
 export function PricingSection() {
   return (
@@ -62,7 +18,7 @@ export function PricingSection() {
 
         {/* Pricing Grid */}
         <div className="grid gap-6 md:grid-cols-3">
-          {tiers.map((tier) => (
+          {PRICING_TIERS.map((tier) => (
             <div
               key={tier.name}
               className={cn(

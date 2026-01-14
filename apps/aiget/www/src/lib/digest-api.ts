@@ -98,6 +98,8 @@ function handleApiResponse<T>(response: Response, json: ApiResponse<T>): T {
 
 // ============== API Functions ==============
 
+export type TopicSort = 'trending' | 'latest' | 'most_followed' | 'quality';
+
 /**
  * Get public topics list
  */
@@ -107,12 +109,16 @@ export async function getPublicTopics(
     cursor?: string;
     limit?: number;
     search?: string;
+    sort?: TopicSort;
+    featured?: boolean;
   }
 ): Promise<PaginatedResponse<DigestTopicSummary>> {
   const params = new URLSearchParams();
   if (options?.cursor) params.set('cursor', options.cursor);
   if (options?.limit) params.set('limit', options.limit.toString());
-  if (options?.search) params.set('search', options.search);
+  if (options?.search) params.set('q', options.search);
+  if (options?.sort) params.set('sort', options.sort);
+  if (options?.featured !== undefined) params.set('featured', options.featured.toString());
 
   const response = await fetch(`${apiUrl}/api/v1/digest/topics?${params.toString()}`, {
     method: 'GET',
@@ -121,6 +127,30 @@ export async function getPublicTopics(
 
   const json = (await response.json()) as ApiResponse<PaginatedResponse<DigestTopicSummary>>;
   return handleApiResponse(response, json);
+}
+
+/**
+ * Get featured topics (convenience wrapper)
+ */
+export async function getFeaturedTopics(apiUrl: string, limit = 6): Promise<DigestTopicSummary[]> {
+  const result = await getPublicTopics(apiUrl, { featured: true, limit });
+  return result.items;
+}
+
+/**
+ * Get trending topics (convenience wrapper)
+ */
+export async function getTrendingTopics(apiUrl: string, limit = 8): Promise<DigestTopicSummary[]> {
+  const result = await getPublicTopics(apiUrl, { sort: 'trending', limit });
+  return result.items;
+}
+
+/**
+ * Get latest topics (convenience wrapper)
+ */
+export async function getLatestTopics(apiUrl: string, limit = 8): Promise<DigestTopicSummary[]> {
+  const result = await getPublicTopics(apiUrl, { sort: 'latest', limit });
+  return result.items;
 }
 
 /**

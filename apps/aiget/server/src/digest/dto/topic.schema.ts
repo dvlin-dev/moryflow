@@ -82,6 +82,12 @@ export const PublicTopicsQuerySchema = z.object({
     .default('trending'),
   q: z.string().max(200).optional(), // 搜索
   locale: z.string().max(10).optional(),
+  featured: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) =>
+      val === 'true' ? true : val === 'false' ? false : undefined,
+    ),
 });
 
 // ========== Edition 列表查询 Schema ==========

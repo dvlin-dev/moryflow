@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root';
 import { Route as SettingsRouteImport } from './routes/settings';
 import { Route as RegisterRouteImport } from './routes/register';
+import { Route as PricingRouteImport } from './routes/pricing';
 import { Route as MyTopicsRouteImport } from './routes/my-topics';
 import { Route as MemoxRouteImport } from './routes/memox';
 import { Route as LoginRouteImport } from './routes/login';
@@ -33,6 +34,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any);
 const MyTopicsRoute = MyTopicsRouteImport.update({
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute;
   '/memox': typeof MemoxRoute;
   '/my-topics': typeof MyTopicsRoute;
+  '/pricing': typeof PricingRoute;
   '/register': typeof RegisterRoute;
   '/settings': typeof SettingsRoute;
   '/subscriptions/$id': typeof SubscriptionsIdRoute;
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute;
   '/memox': typeof MemoxRoute;
   '/my-topics': typeof MyTopicsRoute;
+  '/pricing': typeof PricingRoute;
   '/register': typeof RegisterRoute;
   '/settings': typeof SettingsRoute;
   '/subscriptions/$id': typeof SubscriptionsIdRoute;
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute;
   '/memox': typeof MemoxRoute;
   '/my-topics': typeof MyTopicsRoute;
+  '/pricing': typeof PricingRoute;
   '/register': typeof RegisterRoute;
   '/settings': typeof SettingsRoute;
   '/subscriptions/$id': typeof SubscriptionsIdRoute;
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/memox'
     | '/my-topics'
+    | '/pricing'
     | '/register'
     | '/settings'
     | '/subscriptions/$id'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/memox'
     | '/my-topics'
+    | '/pricing'
     | '/register'
     | '/settings'
     | '/subscriptions/$id'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/memox'
     | '/my-topics'
+    | '/pricing'
     | '/register'
     | '/settings'
     | '/subscriptions/$id'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute;
   MemoxRoute: typeof MemoxRoute;
   MyTopicsRoute: typeof MyTopicsRoute;
+  PricingRoute: typeof PricingRoute;
   RegisterRoute: typeof RegisterRoute;
   SettingsRoute: typeof SettingsRoute;
   SubscriptionsIdRoute: typeof SubscriptionsIdRoute;
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/register';
       fullPath: '/register';
       preLoaderRoute: typeof RegisterRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/pricing': {
+      id: '/pricing';
+      path: '/pricing';
+      fullPath: '/pricing';
+      preLoaderRoute: typeof PricingRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/my-topics': {
@@ -344,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MemoxRoute: MemoxRoute,
   MyTopicsRoute: MyTopicsRoute,
+  PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   SubscriptionsIdRoute: SubscriptionsIdRoute,

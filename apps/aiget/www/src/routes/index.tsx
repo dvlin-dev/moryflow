@@ -1,87 +1,118 @@
+/**
+ * Homepage
+ *
+ * [INPUT]: None
+ * [OUTPUT]: Digest-focused homepage with public topics
+ * [POS]: aiget.dev homepage - C 端用户入口
+ */
+
+import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { ArrowRight01Icon, Database01Icon, Globe02Icon } from '@hugeicons/core-free-icons';
 import { Header, Footer } from '@/components/layout';
-import { Container } from '@/components/layout';
-import { Button, Icon } from '@aiget/ui';
+import { HomeHero, TopicsSection, HowItWorks, HomeCTA } from '@/components/home';
+import {
+  getFeaturedTopics,
+  getTrendingTopics,
+  getLatestTopics,
+  type DigestTopicSummary,
+} from '@/lib/digest-api';
+import { usePublicEnv } from './__root';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
+  head: () => ({
+    meta: [
+      { title: 'Aiget - AI-Powered Content Digest' },
+      {
+        name: 'description',
+        content:
+          'Subscribe to AI-curated topics and get intelligent summaries of what matters. Stay informed without information overload.',
+      },
+      { property: 'og:title', content: 'Aiget - AI-Powered Content Digest' },
+      {
+        property: 'og:description',
+        content: 'Subscribe to AI-curated topics and get intelligent summaries of what matters.',
+      },
+    ],
+    links: [{ rel: 'canonical', href: 'https://aiget.dev' }],
+  }),
 });
 
 function HomePage() {
+  const env = usePublicEnv();
+  const [featuredTopics, setFeaturedTopics] = useState<DigestTopicSummary[]>([]);
+  const [trendingTopics, setTrendingTopics] = useState<DigestTopicSummary[]>([]);
+  const [latestTopics, setLatestTopics] = useState<DigestTopicSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadTopics();
+  }, [env.apiUrl]);
+
+  async function loadTopics() {
+    setIsLoading(true);
+    try {
+      // 并行加载三类 Topics
+      const [featured, trending, latest] = await Promise.all([
+        getFeaturedTopics(env.apiUrl, 6).catch(() => []),
+        getTrendingTopics(env.apiUrl, 6).catch(() => []),
+        getLatestTopics(env.apiUrl, 6).catch(() => []),
+      ]);
+
+      setFeaturedTopics(featured);
+      setTrendingTopics(trending);
+      setLatestTopics(latest);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 是否显示 Featured 区域（需要有精选内容）
+  const showFeatured = isLoading || featuredTopics.length > 0;
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        <section className="relative overflow-hidden border-b border-border bg-background py-16 md:py-20 lg:py-24">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808010_1px,transparent_1px),linear-gradient(to_bottom,#80808010_1px,transparent_1px)] bg-[size:24px_24px]" />
-          <Container className="relative">
-            <div className="mx-auto max-w-3xl text-center">
-              <h1 className="font-mono text-4xl font-bold tracking-tight md:text-5xl">Aiget Dev</h1>
-              <p className="mt-5 text-lg text-muted-foreground md:text-xl">
-                One platform for AI agents: web data (Fetchx) and long-term memory (Memox).
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Button asChild className="font-mono">
-                  <a href="https://console.aiget.dev" target="_blank" rel="noopener noreferrer">
-                    Open Console <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-                <Button asChild variant="outline" className="font-mono">
-                  <a
-                    href="https://server.aiget.dev/api-docs"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    API Docs
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </Container>
-        </section>
+        <HomeHero />
 
-        <section className="border-b border-border py-16 md:py-20">
-          <Container>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="border border-border bg-card p-6">
-                <div className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
-                  <Icon icon={Globe02Icon} className="h-4 w-4" />
-                  <span>Fetchx</span>
-                </div>
-                <h2 className="mt-4 font-mono text-2xl font-bold">Web data for AI</h2>
-                <p className="mt-3 text-muted-foreground">
-                  Scrape, crawl, and extract structured data from websites.
-                </p>
-                <div className="mt-6">
-                  <Button asChild variant="outline" className="font-mono">
-                    <a href="/fetchx">
-                      Explore Fetchx <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
+        {/* Featured Topics - 仅当有精选内容时显示 */}
+        {showFeatured && (
+          <TopicsSection
+            title="Featured Topics"
+            subtitle="Hand-picked topics curated by our team"
+            topics={featuredTopics}
+            isLoading={isLoading}
+            showViewAll={false}
+            columns={3}
+          />
+        )}
 
-              <div className="border border-border bg-card p-6">
-                <div className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
-                  <Icon icon={Database01Icon} className="h-4 w-4" />
-                  <span>Memox</span>
-                </div>
-                <h2 className="mt-4 font-mono text-2xl font-bold">Long-term memory</h2>
-                <p className="mt-3 text-muted-foreground">
-                  Store and query semantic memories, entities, and knowledge graphs.
-                </p>
-                <div className="mt-6">
-                  <Button asChild variant="outline" className="font-mono">
-                    <a href="/memox">
-                      Explore Memox <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Container>
-        </section>
+        {/* Trending Topics */}
+        <TopicsSection
+          title="Trending Topics"
+          subtitle="Popular topics the community is following"
+          topics={trendingTopics}
+          isLoading={isLoading}
+          viewAllHref="/topics"
+          columns={3}
+        />
+
+        {/* How It Works */}
+        <HowItWorks />
+
+        {/* Latest Topics */}
+        <TopicsSection
+          title="Latest Topics"
+          subtitle="Recently created by the community"
+          topics={latestTopics}
+          isLoading={isLoading}
+          viewAllHref="/topics"
+          columns={3}
+        />
+
+        {/* CTA */}
+        <HomeCTA />
       </main>
       <Footer />
     </div>

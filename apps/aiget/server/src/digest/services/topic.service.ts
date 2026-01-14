@@ -213,13 +213,14 @@ export class DigestTopicService {
   async findPublicTopics(
     query: PublicTopicsQuery,
   ): Promise<{ items: DigestTopic[]; nextCursor: string | null }> {
-    const { cursor, limit, sort, q, locale } = query;
+    const { cursor, limit, sort, q, locale, featured } = query;
 
     // 构建查询条件
     const where: Prisma.DigestTopicWhereInput = {
       visibility: 'PUBLIC',
       status: 'ACTIVE',
       ...(locale && { locale }),
+      ...(featured !== undefined && { featured }),
       ...(q && {
         OR: [
           { title: { contains: q, mode: 'insensitive' } },
@@ -229,20 +230,26 @@ export class DigestTopicService {
       }),
     };
 
-    // 排序
-    let orderBy: Prisma.DigestTopicOrderByWithRelationInput;
-    switch (sort) {
-      case 'latest':
-        orderBy = { createdAt: 'desc' };
-        break;
-      case 'most_followed':
-        orderBy = { subscriberCount: 'desc' };
-        break;
-      case 'quality':
-      case 'trending':
-      default:
-        orderBy = { lastEditionAt: 'desc' };
-        break;
+    // 排序：精选优先按 featuredOrder，其他按原逻辑
+    let orderBy:
+      | Prisma.DigestTopicOrderByWithRelationInput
+      | Prisma.DigestTopicOrderByWithRelationInput[];
+    if (featured) {
+      orderBy = { featuredOrder: 'asc' };
+    } else {
+      switch (sort) {
+        case 'latest':
+          orderBy = { createdAt: 'desc' };
+          break;
+        case 'most_followed':
+          orderBy = { subscriberCount: 'desc' };
+          break;
+        case 'quality':
+        case 'trending':
+        default:
+          orderBy = { lastEditionAt: 'desc' };
+          break;
+      }
     }
 
     const items = await this.prisma.digestTopic.findMany({

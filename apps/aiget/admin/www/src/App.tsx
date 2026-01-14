@@ -24,6 +24,7 @@ import QueuesPage from './pages/QueuesPage';
 import ErrorsPage from './pages/ErrorsPage';
 import BrowserPage from './pages/BrowserPage';
 import DigestReportsPage from './pages/DigestReportsPage';
+import DigestTopicsPage from './pages/DigestTopicsPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -143,6 +144,9 @@ function App() {
 
             {/* Browser - 浏览器池监控 */}
             <Route path="browser" element={<BrowserPage />} />
+
+            {/* Digest Topics - 话题管理 */}
+            <Route path="digest/topics" element={<DigestTopicsPage />} />
 
             {/* Digest Reports - 举报管理 */}
             <Route path="digest/reports" element={<DigestReportsPage />} />

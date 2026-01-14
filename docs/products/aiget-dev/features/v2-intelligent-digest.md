@@ -473,14 +473,15 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 ## 9. 实施进度
 
-| 阶段                          | 状态      | 说明                                          |
-| ----------------------------- | --------- | --------------------------------------------- |
-| Phase 1: MVP                  | ✅ 完成   | Prisma + 后端服务 + API + Console UI          |
-| Phase 2: AI                   | ✅ 完成   | AI 摘要、Writer 叙事、Explainability、Preview |
-| Phase 2.5: Public Topics      | ✅ 完成   | 数据模型 + Public API + SEO 页面 + 举报治理   |
-| Phase 2.6: 统一登录与前端架构 | ⬜ 未开始 | 统一登录入口 + www 用户功能 + Console 精简    |
-| Phase 3: 多源                 | ⬜ 未开始 | RSS/Site crawl/Scheduled refresh              |
-| Phase 4: 多渠道               | ⬜ 未开始 | Webhook/Email/反馈学习                        |
+| 阶段                          | 状态      | 说明                                                   |
+| ----------------------------- | --------- | ------------------------------------------------------ |
+| Phase 1: MVP                  | ✅ 完成   | Prisma + 后端服务 + API + Console UI                   |
+| Phase 2: AI                   | ✅ 完成   | AI 摘要、Writer 叙事、Explainability、Preview          |
+| Phase 2.5: Public Topics      | ✅ 完成   | 数据模型 + Public API + SEO 页面 + 举报治理            |
+| Phase 2.6: 统一登录与前端架构 | ✅ 完成   | 统一登录入口 + www 用户功能 + Console 精简             |
+| Phase 2.7: 首页 C 端改造      | ✅ 完成   | Digest 主产品定位 + 首页 Public Topics 展示 + 精选配置 |
+| Phase 3: 多源                 | ✅ 完成   | RSS/Site crawl/Scheduled refresh（后端完整实现）       |
+| Phase 4: 多渠道               | ⬜ 未开始 | Webhook/Email/反馈学习                                 |
 
 ---
 
@@ -541,7 +542,112 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 ---
 
-### Phase 3: 多源（1-2 周）
+### Phase 2.7: 首页 C 端改造 ✅ 已完成
+
+> **实现状态**：已完成全部功能（Phase 2.7.1 ~ 2.7.4）
+>
+> - 后端：DigestTopic featured 字段 + Admin API（Phase 2.7.1）
+> - 后端：Public Topics API featured 筛选支持（Phase 2.7.2）
+> - 前端：www 首页重构（Hero + Featured/Trending/Latest Topics + How It Works + CTA）（Phase 2.7.3）
+> - Admin：Featured Topics 管理界面（查看/设置精选/排序）（Phase 2.7.4）
+
+**背景**：
+
+- 当前 `aiget.dev` 首页仍是开发者导向（展示 Fetchx/Memox API 产品）
+- Digest 作为主产品，需要在首页突出展示
+- Public Topics 已完成，但未在首页曝光，缺少流量入口
+
+**目标**：
+
+1. 将 `aiget.dev` 首页改造为面向 C 端用户的产品首页
+2. 以 Digest 作为核心产品，突出展示「AI 智能信息订阅」价值
+3. 首页展示 Public Topics：精选、热门、最新
+4. 后台可配置精选 Topics（Featured）
+
+**实施内容**：
+
+| 子阶段      | 内容                                                                                    |
+| ----------- | --------------------------------------------------------------------------------------- |
+| Phase 2.7.1 | 后端：DigestTopic 新增 `featured: Boolean` + `featuredOrder: Int?`；新增 Admin API 配置 |
+| Phase 2.7.2 | 后端：Public Topics API 新增 `featured=true` 筛选参数                                   |
+| Phase 2.7.3 | 前端：www 首页重构 - Hero（Digest 产品介绍）+ Featured Topics + Trending + Latest + CTA |
+| Phase 2.7.4 | Admin：新增 Featured Topics 管理界面（选择/排序/取消精选）                              |
+
+**首页结构设计**：
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Hero Section                                            │
+│ - 标题：AI-Powered Content Digest                       │
+│ - 副标题：让 AI 帮你筛选、整理、总结你关心的信息        │
+│ - CTA：Get Started / Explore Topics                     │
+└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ Featured Topics（精选话题 - 后台配置）                   │
+│ - 3-6 个精选 Topic 卡片，按 featuredOrder 排序          │
+│ - 卡片：标题 + 描述 + 订阅者数 + 最近更新               │
+└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ Trending Topics（热门话题）                              │
+│ - API 参数：sort=trending                               │
+│ - 展示 6-8 个热门 Topic                                 │
+└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ Latest Topics（最新话题）                                │
+│ - API 参数：sort=latest                                 │
+│ - 展示 6-8 个最新 Topic                                 │
+└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ How It Works（工作原理）                                 │
+│ - Step 1: 关注你感兴趣的话题                            │
+│ - Step 2: AI 自动筛选有价值内容                         │
+│ - Step 3: 定期收到结构化简报                            │
+└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│ CTA Section（最终行动召唤）                              │
+│ - 创建你自己的订阅 / 探索更多话题                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+**数据模型变更**：
+
+```prisma
+model DigestTopic {
+  // ... 现有字段
+  featured       Boolean  @default(false)  // 是否精选
+  featuredOrder  Int?                      // 精选排序（越小越靠前）
+  featuredAt     DateTime?                 // 设为精选的时间
+  featuredByUserId String?                 // 设置者（Admin）
+}
+```
+
+**新增 API**：
+
+| 方法  | 路径                                  | Guard        | 说明             |
+| ----- | ------------------------------------- | ------------ | ---------------- |
+| GET   | `/api/v1/digest/topics?featured=true` | 无（公开）   | 获取精选话题列表 |
+| PATCH | `/api/v1/admin/digest/topics/:id`     | RequireAdmin | 设置/取消精选    |
+| POST  | `/api/v1/admin/digest/topics/reorder` | RequireAdmin | 调整精选排序     |
+
+**验收标准**：
+
+1. ✅ 首页以 Digest 为核心产品展示
+2. ✅ 精选话题后台可配置（Admin API）
+3. ✅ 热门/最新话题正确排序展示
+4. ✅ Topic 卡片点击跳转到话题详情页
+5. ✅ 响应式设计（移动端适配）
+
+---
+
+### Phase 3: 多源 ✅ 已完成
+
+> **实现状态**：后端核心功能已完成
+>
+> - `DigestRssService` - RSS/Atom 解析器
+> - `DigestSiteCrawlService` - 网站爬取服务
+> - `DigestSourceService` - 统一源管理
+> - `SourceSchedulerProcessor` - 定时调度
+> - `SourceRefreshProcessor` - 刷新执行
 
 #### 11.1 RSS Source（SCHEDULED）
 
@@ -733,4 +839,4 @@ URL 标准化规则（跨业务线一致）：
 
 ---
 
-_版本: 2.0 | 更新日期: 2026-01-14_
+_版本: 2.1 | 更新日期: 2026-01-14_

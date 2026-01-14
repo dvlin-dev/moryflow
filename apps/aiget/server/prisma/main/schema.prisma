@@ -45,7 +45,8 @@ model User {
   userContentStates   UserContentState[]
   digestTopics        DigestTopic[]
   userPreference      UserPreference?
-  resolvedReports     DigestTopicReport[] @relation("ReportResolver")
+  resolvedReports     DigestTopicReport[]  @relation("ReportResolver")
+  featuredTopics      DigestTopic[]        @relation("FeaturedByUser")
   digestDailyOps      DigestUserDailyOps[]
 }
 
@@ -1073,6 +1074,13 @@ model DigestTopic {
   pausedAt    DateTime? // 暂停时间
   pauseReason String? // 暂停原因
 
+  // 精选配置（Admin 配置）
+  featured         Boolean   @default(false)
+  featuredOrder    Int? // 精选排序（越小越靠前）
+  featuredAt       DateTime? // 设为精选的时间
+  featuredByUserId String? // 设置者（Admin）
+  featuredBy       User?     @relation("FeaturedByUser", fields: [featuredByUserId], references: [id])
+
   editions  DigestTopicEdition[]
   followers DigestSubscription[] @relation("FollowedTopic")
   reports   DigestTopicReport[]
@@ -1081,6 +1089,7 @@ model DigestTopic {
   @@index([subscriberCount])
   @@index([nextEditionAt])
   @@index([createdByUserId])
+  @@index([featured, featuredOrder])
 }
 
 // =============================================
