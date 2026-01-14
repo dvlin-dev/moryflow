@@ -78,7 +78,7 @@ export function InboxItemCard({ item }: InboxItemCardProps) {
             {/* Meta and Actions */}
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                {item.favicon && <img src={item.favicon} alt="" className="h-4 w-4 rounded-sm" />}
+                {item.favicon && <img src={item.favicon} alt="" className="h-4 w-4 rounded" />}
                 {item.siteName && <span>{item.siteName}</span>}
                 <span>{item.subscriptionName}</span>
                 <span>

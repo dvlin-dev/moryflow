@@ -7,8 +7,8 @@
 
 /* Override Fumadocs theme to match AIGet project style */
 :root {
-  /* Boxy & Sharp style - no border radius */
-  --radius: 0;
+  /* Moryflow style - rounded corners */
+  --radius: 0.5rem;
 
   /* OKLch color system - consistent with project */
   --background: oklch(1 0 0);
@@ -46,7 +46,7 @@
   --fd-accent-foreground: oklch(0.205 0 0);
   --fd-border: oklch(0.922 0 0);
   --fd-ring: oklch(0.708 0 0);
-  --fd-radius: 0;
+  --fd-radius: 0.5rem;
 }
 
 .dark {
@@ -91,11 +91,6 @@
 @theme inline {
   --font-mono: 'JetBrains Mono Variable', 'Geist Mono', ui-monospace, monospace;
   --font-sans: 'Inter', 'Geist Sans', ui-sans-serif, sans-serif;
-}
-
-/* Disable all border radius (Boxy & Sharp) */
-* {
-  border-radius: 0 !important;
 }
 
 /* Smooth transitions */

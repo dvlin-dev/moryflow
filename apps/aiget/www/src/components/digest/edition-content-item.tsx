@@ -43,7 +43,7 @@ export function EditionContentItem({ item }: EditionContentItemProps) {
 
           <div className="flex items-center gap-3 pt-1">
             {item.favicon && (
-              <img src={item.favicon} alt="" className="h-4 w-4 rounded-sm" loading="lazy" />
+              <img src={item.favicon} alt="" className="h-4 w-4 rounded" loading="lazy" />
             )}
             {item.siteName && <span className="text-xs text-neutral-500">{item.siteName}</span>}
             <a
