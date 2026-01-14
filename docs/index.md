@@ -57,4 +57,4 @@ status: active
 ## Research（调研 / 排障记录）
 
 - Fetchx Browser & Agent 功能研究：`docs/research/agent-browser-integration.md`
-- Aiget Server：Agent 模块 typecheck OOM 排查：`docs/research/aiget-server-typecheck-oom-agent.md`
+- Aiget Server：Agent 模块 typecheck OOM 排查（更新至 2026-01-14，lint warnings 已清理）：`docs/research/aiget-server-typecheck-oom-agent.md`

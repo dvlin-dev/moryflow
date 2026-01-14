@@ -22,6 +22,8 @@
 - Markdown 文档建议包含 YAML Frontmatter（`title/date/scope/status`），便于后续文档站或索引生成。
 - Aiget Dev API 域名统一使用 `server.aiget.dev`（不再使用 `aiget.dev` 作为 API 域名）。
 - 排障/实验类记录优先放在 `docs/research/`，并在 `docs/index.md` 增加索引项，便于持续跟踪与后续归档。
+- Research 文档更新时，在 `docs/index.md` 标注更新日期，便于协作追踪。
+- Research 文档如更新测试验证结果或告警状态，同步刷新索引备注（例如 warnings 清理情况）。
 
 ## 目录结构
 

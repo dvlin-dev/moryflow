@@ -59,54 +59,61 @@ status: active
   - 在 `new Agent(...)` 与 `run(...)` 处对参数/返回做 `as any`（阻断 `run()` 对 `TContext` 等泛型的推断）
 - 结果：`tsc --noEmit` **不再 OOM**，能够在可接受时间内结束并输出普通的 TS 报错（说明 OOM 的主要触发点已被隔离）。
 
-## 本次止血改动清单（工作区变更）
+## 方案 B：Browser → Agent ports/facade（最佳实践落地）
 
-> 说明：以下是为了“验证 OOM 触发点 + 让 typecheck 可结束”而做的止血性改动，存在 `any`/类型降级；后续最佳实践落地会逐步收回到更干净的边界设计。
+目标：**恢复类型安全**，同时确保 Playwright 重类型不会进入 agents-core 泛型推断。
 
+已完成：
+
+- 新增 `BrowserAgentPortService`（browser/ports），agent 侧只依赖 ports，不再直接引用 `BrowserSession` / Playwright。
+- `browser-tools.ts` 与 `agent.service.ts` 移除 `any` 降级，改为轻量 `BrowserAgentContext` + ports。
+- `AgentService` 的 `run()`/`Agent` 恢复显式类型，保持低成本推断。
+- 方案 A 的 `any` 降级已收回，保留为历史排障记录。
+
+## 本次改动清单（止血 + ports/facade 落地）
+
+- `apps/aiget/server/src/browser/ports/*`
+  - 新增 `BrowserAgentPortService`，提供 Agent 侧浏览器能力端口（不暴露 Playwright 类型）
 - `apps/aiget/server/src/agent/tools/browser-tools.ts`
-  - `browserTools` 从 `Tool<BrowserToolContext>[]` 降级为 `Tool[]`（避免 `BrowserToolContext` 注入 `@aiget/agents-core` 泛型）
-  - 所有 `tool({ parameters })` 的 `parameters` 改为 `... as any`，`execute(input)` 的 `input` 标注为 `any`（避免工具参数类型参与复杂推断）
-  - 调用 `actionHandler.execute(...)` 时补齐必填字段 `timeout`（当前 `ActionInput` 推断为必填）
-  - 这部分改动的目标是：**让 agents-core 的类型世界看不到 Playwright 重类型 + 避免 Zod 类型身份冲突导致的深层比较**
-
+  - `BrowserAgentContext` 替换 `BrowserToolContext`，工具仅依赖 ports
+  - 移除 `parameters as any`/`input: any` 等止血降级
+  - tools 参数改为 JSON schema，运行时使用 Zod 校验输入（避免 zod 类型进入 agents-core 推断）
 - `apps/aiget/server/src/agent/agent.service.ts`
-  - `new Agent({...})` 处 `as any`，`run(agent, ..., { context })` 处对 `agent/context/options` 做 `as any`
-  - 目的：阻断 `run()` 反向推断出 `TContext = BrowserToolContext` 后触发极重的结构类型比较
-
+  - Agent/Run 重新使用显式泛型，移除 `as any`
+  - Session 管理改为 ports 边界（`BrowserAgentPortService`）
+  - `outputType` 改用 JSON schema（避免 zod v3/v4 类型身份冲突）
 - `apps/aiget/server/src/agent/agent.controller.ts`
-  - `ZodError` 输出字段改为 `.issues`（对齐当前后端实际使用的 zod 类型定义）
-
-- `apps/aiget/server/src/agent/dto/agent.schema.ts`
-  - `schema: z.record(...)` 改为 `z.record(z.string(), z.unknown())`（对齐当前后端代码中的一致写法，如 `src/extract/dto/extract.dto.ts`）
-
-- `apps/aiget/server/CLAUDE.md`
-  - 增加约束：Agent + `@aiget/agents-core` 集成时避免透传 Playwright 等重类型进入 `Tool<Context>`/`Agent<TContext>` 泛型
-  - `Module Structure` 表中补充 `agent/` 模块条目，便于定位
+  - `ApiKeyPayload` 对齐为 `ApiKeyValidationResult`
+- `apps/aiget/server/src/agent/agent.service.ts`
+  - `raw_model_stream_event` 分支对齐 SDK 事件类型（`output_text_delta`/`model`）
+- `apps/aiget/server/src/browser/browser-session.service.ts`
+  - `createCdpSession` 调用参数与签名对齐
+- `apps/aiget/server/src/browser/CLAUDE.md`
+  - 新增 browser 模块约束文档（ports 边界要求）
 
 ## 当前验证命令与信号
 
 - 验证命令（不经过 pnpm scripts，直接跑 tsc 以缩短反馈回路）：
   - `./apps/aiget/server/node_modules/.bin/tsc -p apps/aiget/server/tsconfig.json --noEmit`
-- 关键验证信号：
-  - 在应用上述止血改动后，`tsc` 可以在几秒内结束并输出 TS 报错（不再 OOM / 不再长时间卡死）
+- 当前状态（2026-01-14）：
+  - `pnpm --filter @aiget/aiget-server typecheck` ✅ 通过（未出现 OOM）
+  - `pnpm lint` ✅ 通过（lint warnings 已清理；@aiget/model-registry-data sync 超时但 fallback 成功）
+  - `pnpm typecheck` ✅ 通过（@aiget/model-registry-data sync 超时但 fallback 成功）
+  - `pnpm test:unit` ✅ 通过（单测中 Redis 连接被拒日志存在，但不影响用例结果）
 
 ## 关于 Zod 入口（避免误用范围）
 
 - **前端表单**：遵循 `docs/guides/frontend/forms-zod-rhf.md`，使用 `import { z } from 'zod/v3'`（目标是兼容 `@hookform/resolvers` 的类型要求）。
 - **后端 server**：现有代码广泛使用 `import { z } from 'zod'`；本次排障中，server 侧应优先保持与现有 server 代码一致，避免在后端混用 `zod/v3` 入口导致类型身份冲突、进一步放大推断成本。
 
-# 当前剩余问题（typecheck 仍失败，但已不 OOM）
+# 当前剩余问题
 
-> 以下条目是当前 `tsc` 报错的主要来源（已从“OOM”回落为普通类型错误），应在进入“最佳实践重构”前先清零。
-
-- `apps/aiget/server/src/agent/agent.controller.ts`：`ApiKeyPayload` 导出名不一致（需要对齐 `src/api-key` 的实际导出）。
-- `apps/aiget/server/src/agent/agent.service.ts`：`RunStreamEvent` 的 raw model stream 事件分支与 SDK 类型不一致（需要按 SDK 的实际事件类型做兼容分支/类型收敛）。
-- `apps/aiget/server/src/browser/browser-session.service.ts`：Playwright `Browser` vs `BrowserContext` 类型用法不一致（需要修正调用点或类型声明）。
+- 当前无新增 TS 报错；仍需关注后续重构是否引入 agents-core 泛型回溯或 Playwright 重类型泄漏。
 
 # 接下来的计划（短期）
 
-1. **修复剩余 TS 错误并保持不 OOM**：先让 `pnpm --filter @aiget/aiget-server typecheck` 回归通过（同时保持方案 A 的边界降级不引入 OOM）。
-2. **最小化 “any 止血层” 的覆盖面**：逐步把 `as any` 收敛到“边界文件/边界类型”上，避免 `any` 外溢到业务逻辑层。
+1. **运行 typecheck 并确认 0 报错**：`pnpm --filter @aiget/aiget-server typecheck`，确保不回到 OOM。
+2. **根据结果收敛边界**：如仍有错误，优先在 ports/DTO 层修复；避免把重类型带回 agents-core。
 
 # 未来方向（最佳实践落地候选）
 
@@ -126,5 +133,6 @@ status: active
 - `apps/aiget/server/src/agent/`
 - `apps/aiget/server/src/agent/tools/browser-tools.ts`
 - `apps/aiget/server/src/agent/agent.service.ts`
+- `apps/aiget/server/src/browser/ports/`（Agent 端口）
 - `apps/aiget/server/src/browser/session/session.manager.ts`（`BrowserSession` 含 Playwright 类型）
 - `packages/agents-core/src/tool.ts`（`Tool<Context>` / `FunctionTool<Context>` 泛型定义）
