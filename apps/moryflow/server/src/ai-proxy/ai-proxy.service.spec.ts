@@ -108,12 +108,7 @@ describe('AiProxyService', () => {
       ];
 
       prismaMock.aiModel.findMany.mockResolvedValue(
-        models.map(
-          (m) =>
-            ({ ...m, provider }) as Parameters<
-              typeof prismaMock.aiModel.findMany.mockResolvedValue
-            >[0][0],
-        ),
+        models.map((m) => ({ ...m, provider })),
       );
 
       const result = await service.getAllModelsWithAccess(UserTier.pro);
