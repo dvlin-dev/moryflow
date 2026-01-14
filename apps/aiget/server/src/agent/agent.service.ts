@@ -3,7 +3,7 @@
  *
  * [INPUT]: Agent 任务请求
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与配额检查
+ * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与配额检查（含硬取消与分段计费）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -14,7 +14,6 @@ import {
   run,
   type AgentOutputType,
   type JsonSchemaDefinition,
-  type RunResult,
   type RunStreamEvent,
   type StreamedRunResult,
   type Usage,
@@ -114,7 +113,6 @@ const BILLING_CONSTANTS = {
 } as const;
 
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
-type AgentRunResult = RunResult<BrowserAgentContext, BrowserAgent>;
 type AgentStreamedResult = StreamedRunResult<BrowserAgentContext, BrowserAgent>;
 
 const buildAgentOutputType = (
@@ -811,20 +809,6 @@ export class AgentService {
       message: 'Task cancelled successfully',
       creditsUsed: task.creditsUsed,
     };
-  }
-
-  /**
-   * 计算 credits 消耗（P1 计费模型优化）
-   *
-   * 计费公式：
-   * credits = 基础费 + token费 + 工具调用费 + 时长费
-   */
-  private calculateCredits(
-    result: AgentRunResult,
-    billing?: BillingParams,
-  ): number {
-    const usage = result.state?._context?.usage;
-    return this.calculateCreditsFromUsage(usage, billing);
   }
 
   /**

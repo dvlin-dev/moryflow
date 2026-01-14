@@ -61,6 +61,7 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 
 **apps/aiget/server - agent**
 
+- `apps/aiget/server/src/agent/__tests__/agent.service.spec.ts`
 - `apps/aiget/server/src/agent/agent.controller.ts`
 - `apps/aiget/server/src/agent/agent.module.ts`
 - `apps/aiget/server/src/agent/agent.service.ts`
@@ -78,9 +79,11 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 
 - `apps/aiget/server/src/browser/AGENTS.md`
 - `apps/aiget/server/src/browser/CLAUDE.md`
+- `apps/aiget/server/src/browser/browser-pool.ts`
 - `apps/aiget/server/src/browser/browser-session.controller.ts`
 - `apps/aiget/server/src/browser/browser-session.service.ts`
 - `apps/aiget/server/src/browser/browser.module.ts`
+- `apps/aiget/server/src/browser/browser.types.ts`
 - `apps/aiget/server/src/browser/index.ts`
 
 **apps/aiget/server - browser/cdp**
