@@ -25,6 +25,7 @@ import {
 export interface NavSubItem {
   title: string;
   url: string;
+  external?: boolean;
 }
 
 /** 导航项（支持子菜单） */
@@ -33,6 +34,7 @@ export interface NavItem {
   url?: string;
   icon: HugeIcon;
   items?: NavSubItem[];
+  external?: boolean;
 }
 
 /** 导航分组 */
@@ -108,17 +110,26 @@ export function NavMain({ groups }: NavMainProps) {
               }
 
               // 无子菜单的项目 - 直接链接
+              const LinkComponent = item.external ? (
+                <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
+                  <Icon icon={item.icon} className="size-4" />
+                  <span>{item.title}</span>
+                </a>
+              ) : (
+                <Link to={item.url || '#'}>
+                  <Icon icon={item.icon} className="size-4" />
+                  <span>{item.title}</span>
+                </Link>
+              );
+
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     tooltip={item.title}
-                    isActive={item.url ? isActive(item.url) : false}
+                    isActive={item.url && !item.external ? isActive(item.url) : false}
                   >
-                    <Link to={item.url || '#'}>
-                      <Icon icon={item.icon} className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                    {LinkComponent}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );

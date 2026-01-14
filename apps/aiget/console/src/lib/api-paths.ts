@@ -1,9 +1,7 @@
 /**
- * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, HEALTH_API
+ * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, MEMOX_CONSOLE_API, HEALTH_API, QUOTA_API
  * [USED_BY]: features/*, lib/api-client
  * [POS]: Console API 路径常量定义
- *
- * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
 // 用户 API

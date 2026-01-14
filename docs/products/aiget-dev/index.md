@@ -22,3 +22,9 @@ status: active
 ## Features
 
 - 定时内容订阅（Email Digest）：`docs/products/aiget-dev/features/scheduled-digest.md`
+- v2 智能信息订阅：`docs/products/aiget-dev/features/v2-intelligent-digest.md`
+- 统一登录与 Digest 前端架构：`docs/products/aiget-dev/features/unified-auth-and-digest-architecture.md`
+
+## Reviews
+
+- Digest 全量 Code Review 计划：`docs/products/aiget-dev/reviews/digest-code-review-plan.md`

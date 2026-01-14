@@ -27,6 +27,7 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 - API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://server.aiget.dev`（可用 `VITE_API_URL` 覆盖）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - 监控页面需要定时刷新
+- 列表分页统一使用 `page/limit`（不使用 `cursor/nextCursor`），UI 统一使用 `@aiget/ui` 的 `SimplePagination`
 - UI 风格：Moryflow 圆角 + 柔和层级
 - 组件统一从 `@aiget/ui` 导入
 - 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
@@ -52,15 +53,17 @@ Aiget Dev 管理后台，用于系统监控与运营管理，需管理员权限�
 
 ## 功能列表
 
-| 功能             | 路径             | 说明                       |
-| ---------------- | ---------------- | -------------------------- |
-| `dashboard/`     | `/`              | 系统概览与统计             |
-| `users/`         | `/users`         | 用户管理                   |
-| `subscriptions/` | `/subscriptions` | Subscription list          |
-| `orders/`        | `/orders`        | Order history              |
-| `jobs/`          | `/jobs`          | Crawl/batch job monitoring |
-| `queues/`        | `/queues`        | BullMQ queue status        |
-| `browser/`       | `/browser`       | Browser pool instances     |
+| 功能              | 路径              | 说明                       |
+| ----------------- | ----------------- | -------------------------- |
+| `dashboard/`      | `/`               | 系统概览与统计             |
+| `users/`          | `/users`          | 用户管理                   |
+| `subscriptions/`  | `/subscriptions`  | Subscription list          |
+| `orders/`         | `/orders`         | Order history              |
+| `jobs/`           | `/jobs`           | Crawl/batch job monitoring |
+| `queues/`         | `/queues`         | BullMQ queue status        |
+| `browser/`        | `/browser`        | Browser pool instances     |
+| `digest-topics/`  | `/digest/topics`  | Digest Topics 精选管理     |
+| `digest-reports/` | `/digest/reports` | Digest 举报管理            |
 
 ## Feature Module Structure
 
@@ -86,18 +89,20 @@ feature-name/
 
 ## Pages
 
-| Page                | Description                  |
-| ------------------- | ---------------------------- |
-| `DashboardPage`     | System metrics and overview  |
-| `UsersPage`         | User list with search/filter |
-| `SubscriptionsPage` | Active subscriptions         |
-| `OrdersPage`        | Order history and details    |
-| `JobsPage`          | Running/completed jobs       |
-| `JobDetailPage`     | Individual job details       |
-| `QueuesPage`        | Queue health and metrics     |
-| `BrowserPage`       | Browser instance status      |
-| `ErrorsPage`        | System error logs            |
-| `LoginPage`         | Admin login                  |
+| Page                | Description                       |
+| ------------------- | --------------------------------- |
+| `DashboardPage`     | System metrics and overview       |
+| `UsersPage`         | User list with search/filter      |
+| `SubscriptionsPage` | Active subscriptions              |
+| `OrdersPage`        | Order history and details         |
+| `JobsPage`          | Running/completed jobs            |
+| `JobDetailPage`     | Individual job details            |
+| `QueuesPage`        | Queue health and metrics          |
+| `BrowserPage`       | Browser instance status           |
+| `ErrorsPage`        | System error logs                 |
+| `DigestTopicsPage`  | Digest Topics featured management |
+| `DigestReportsPage` | Digest report moderation          |
+| `LoginPage`         | Admin login                       |
 
 ## Common Modification Scenarios
 

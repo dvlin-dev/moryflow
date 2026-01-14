@@ -85,7 +85,8 @@ pnpm --filter @aiget/aiget-server prisma:studio:vector
 | `scraper/`       | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
 | `common/`        | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
 | `agent/`         | 8     | L3 Agent API + Browser Tools                 | -                         |
-| `admin/`         | 16    | Admin dashboard APIs                         | -                         |
+| `digest/`        | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`    |
+| `admin/`         | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`     |
 | `oembed/`        | 18    | oEmbed provider support                      | -                         |
 | `billing/`       | 5     | Billing rules + deduct/refund                | -                         |
 | `quota/`         | 14    | Quota management                             | `src/quota/CLAUDE.md`     |

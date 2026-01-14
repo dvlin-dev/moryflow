@@ -141,3 +141,7 @@ export const cleanQueueSchema = z.object({
 });
 
 export type CleanQueueDto = z.infer<typeof cleanQueueSchema>;
+
+// =============================================
+// Digest Topics
+// =============================================

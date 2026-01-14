@@ -9,6 +9,7 @@ import {
   Settings01Icon,
   Link02Icon,
   Brain02Icon,
+  Mail01Icon,
 } from '@hugeicons/core-free-icons';
 
 import { NavMain, type NavGroup } from '@/components/layout/nav-main';
@@ -59,6 +60,17 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'API Keys', url: '/api-keys', icon: Key01Icon },
       { title: 'Webhooks', url: '/webhooks', icon: WebhookIcon },
+    ],
+  },
+  {
+    label: 'Products',
+    items: [
+      {
+        title: 'Digest',
+        url: 'https://aiget.dev/dashboard',
+        icon: Mail01Icon,
+        external: true,
+      },
     ],
   },
   {

@@ -1,7 +1,19 @@
 import { createContext, useContext } from 'react';
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getPublicEnv, type PublicEnv } from '@/lib/env';
+import { AuthProvider } from '@/lib/auth-context';
 import '../styles/globals.css';
+
+// React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60, // 1 minute
+      retry: 1,
+    },
+  },
+});
 
 // Context for public environment variables
 const EnvContext = createContext<PublicEnv | null>(null);
@@ -89,16 +101,20 @@ function RootComponent() {
   const { env } = Route.useLoaderData();
 
   return (
-    <EnvContext.Provider value={env}>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <HeadContent />
-        </head>
-        <body className="flex min-h-screen flex-col">
-          <Outlet />
-          <Scripts />
-        </body>
-      </html>
-    </EnvContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <EnvContext.Provider value={env}>
+        <AuthProvider>
+          <html lang="en" suppressHydrationWarning>
+            <head>
+              <HeadContent />
+            </head>
+            <body className="flex min-h-screen flex-col">
+              <Outlet />
+              <Scripts />
+            </body>
+          </html>
+        </AuthProvider>
+      </EnvContext.Provider>
+    </QueryClientProvider>
   );
 }

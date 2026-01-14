@@ -93,6 +93,14 @@ export function createBetterAuth(
       // 允许无 Origin 的请求（移动端需要）
       // React Native、Electron 等客户端不会发送 Origin header
       disableCSRFCheck: true,
+      // 跨子域 Cookie 共享：aiget.dev, console.aiget.dev, admin.aiget.dev
+      // 仅在生产环境启用（本地开发使用单域）
+      ...(process.env.NODE_ENV === 'production' && {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: '.aiget.dev',
+        },
+      }),
     },
     // 数据库钩子
     databaseHooks: {
@@ -182,14 +190,15 @@ export function createBetterAuth(
       // Email OTP 插件：邮箱验证码验证
       emailOTP({
         sendVerificationOTP: async ({ email, otp, type }) => {
-          if (type === 'email-verification') {
-            // 检查是否临时邮箱
-            if (isDisposableEmail(email)) {
-              throw new APIError('BAD_REQUEST', {
-                message: 'This email is not supported.',
-              });
-            }
-            // 注册时发送验证码
+          // 检查是否临时邮箱（注册和密码重置都检查）
+          if (isDisposableEmail(email)) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'This email is not supported.',
+            });
+          }
+
+          // 注册验证和密码重置都发送 OTP
+          if (type === 'email-verification' || type === 'forget-password') {
             await sendOTP(email, otp);
           }
         },

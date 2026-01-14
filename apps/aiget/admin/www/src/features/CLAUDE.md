@@ -19,15 +19,17 @@ feature-name/
 
 ## 功能清单
 
-| 功能             | 说明         | API 入口                      |
-| ---------------- | ------------ | ----------------------------- |
-| `dashboard/`     | 系统概览     | `/api/v1/admin/dashboard`     |
-| `users/`         | 用户管理     | `/api/v1/admin/users`         |
-| `subscriptions/` | 订阅管理     | `/api/v1/admin/subscriptions` |
-| `orders/`        | 订单管理     | `/api/v1/admin/orders`        |
-| `jobs/`          | 任务监控     | `/api/v1/admin/jobs`          |
-| `queues/`        | 队列监控     | `/api/v1/admin/queues`        |
-| `browser/`       | 浏览器池状态 | `/api/v1/admin/browser`       |
+| 功能              | 说明            | API 入口                       |
+| ----------------- | --------------- | ------------------------------ |
+| `dashboard/`      | 系统概览        | `/api/v1/admin/dashboard`      |
+| `users/`          | 用户管理        | `/api/v1/admin/users`          |
+| `subscriptions/`  | 订阅管理        | `/api/v1/admin/subscriptions`  |
+| `orders/`         | 订单管理        | `/api/v1/admin/orders`         |
+| `jobs/`           | 任务监控        | `/api/v1/admin/jobs`           |
+| `queues/`         | 队列监控        | `/api/v1/admin/queues`         |
+| `browser/`        | 浏览器池状态    | `/api/v1/admin/browser`        |
+| `digest-topics/`  | Digest 话题管理 | `/api/v1/admin/digest/topics`  |
+| `digest-reports/` | Digest 举报管理 | `/api/v1/admin/digest/reports` |
 
 ## 轮询刷新示例
 

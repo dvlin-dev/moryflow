@@ -14,6 +14,10 @@ export const ADMIN_API = {
   JOBS: '/api/v1/admin/jobs',
   QUEUES: '/api/v1/admin/queues',
   BROWSER: '/api/v1/admin/browser',
+  // Digest
+  DIGEST_REPORTS: '/api/v1/admin/digest/reports',
+  DIGEST_STATS: '/api/v1/admin/digest/stats',
+  DIGEST_TOPICS: '/api/v1/admin/digest/topics',
 } as const;
 
 export const USER_API = {

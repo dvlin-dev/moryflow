@@ -436,6 +436,7 @@ function BadForm() {
 2. 使用 `@aiget/ui` 的 Form 组件（Form, FormField, FormItem, FormLabel, FormControl, FormMessage）
 3. 数字字段使用 `z.coerce.number()` 自动转换
 4. 折叠状态等 UI 状态可以单独用 `useState`，但表单数据必须走 react-hook-form
+5. **Zod v3 兼容层（强制）**：前端表单必须使用 `import { z } from 'zod/v3'`，避免 Zod v4 与 `@hookform/resolvers` 的类型不兼容问题（详见 `docs/guides/frontend/forms-zod-rhf.md`）
 
 ---
 

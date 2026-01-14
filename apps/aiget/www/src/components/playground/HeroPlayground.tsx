@@ -793,7 +793,7 @@ export function HeroPlayground() {
     <div className="mx-auto w-full max-w-2xl">
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
-        <TabsList className="h-auto w-full justify-start rounded-none border-b border-border bg-transparent p-0">
+        <TabsList className="h-auto w-full justify-start rounded-t-lg border-b border-border bg-transparent p-0">
           {TABS.map((tab) => {
             const TabIcon = tab.icon;
             return (
