@@ -3,7 +3,7 @@
  *
  * [INPUT]: Agent 任务请求
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与配额检查（含硬取消、分段计费与任务持久化）
+ * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与任务管理
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,18 +16,17 @@ import {
   type JsonSchemaDefinition,
   type RunStreamEvent,
   type StreamedRunResult,
-  type Usage,
 } from '@aiget/agents-core';
 import type { AgentTask } from '../../generated/prisma-main/client';
 import { BrowserAgentPortService } from '../browser/ports';
-import { QuotaService } from '../quota/quota.service';
-import {
-  DuplicateRefundError,
-  QuotaExceededError,
-} from '../quota/quota.errors';
 import { browserTools, type BrowserAgentContext } from './tools';
 import { AgentTaskRepository } from './agent-task.repository';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
+import {
+  AgentBillingService,
+  CreditsExceededError,
+  type BillingParams,
+} from './agent-billing.service';
 import type {
   CreateAgentTaskInput,
   AgentTaskResult,
@@ -64,31 +63,6 @@ interface RunningTask {
   sessionId?: string;
 }
 
-/** 计费参数（P1 计费模型优化） */
-interface BillingParams {
-  /** 最大允许消耗的 credits */
-  maxCredits?: number;
-  /** 当前已消耗的 credits */
-  currentCredits: number;
-  /** 工具调用次数 */
-  toolCallCount: number;
-  /** 会话开始时间 */
-  startTime: Date;
-  /** 已扣减的 credits（按 100 递增） */
-  chargedCredits: number;
-}
-
-/** Credits 超限错误 */
-export class CreditsExceededError extends Error {
-  constructor(
-    public readonly used: number,
-    public readonly max: number,
-  ) {
-    super(`Credits exceeded: used ${used}, max ${max}`);
-    this.name = 'CreditsExceededError';
-  }
-}
-
 /** 任务取消错误 */
 export class TaskCancelledError extends Error {
   constructor(message: string = 'Task cancelled by user') {
@@ -96,20 +70,6 @@ export class TaskCancelledError extends Error {
     this.name = 'TaskCancelledError';
   }
 }
-
-/** 计费常量 */
-const BILLING_CONSTANTS = {
-  /** 每 1000 tokens 消耗的 credits */
-  CREDITS_PER_1K_TOKENS: 1,
-  /** 每个工具调用消耗的额外 credits */
-  CREDITS_PER_TOOL_CALL: 0.1,
-  /** 每分钟会话时长消耗的 credits */
-  CREDITS_PER_MINUTE: 0.5,
-  /** 基础 credits（任务启动费） */
-  BASE_CREDITS: 1,
-  /** 每次检查/扣减的 credits 阈值 */
-  CREDIT_CHECK_INTERVAL: 100,
-} as const;
 
 const PROGRESS_UPDATE_INTERVAL_MS = 1000;
 const PROGRESS_TTL_MS = 24 * 60 * 60 * 1000;
@@ -151,7 +111,7 @@ export class AgentService {
 
   constructor(
     private readonly browserAgentPort: BrowserAgentPortService,
-    private readonly quotaService: QuotaService,
+    private readonly billingService: AgentBillingService,
     private readonly taskRepository: AgentTaskRepository,
     private readonly progressStore: AgentTaskProgressStore,
   ) {}
@@ -181,16 +141,23 @@ export class AgentService {
       throw error;
     }
 
-    // 初始化计费参数（P1 计费模型优化）
-    const billing = this.createBillingParams(now, input.maxCredits);
+    // 初始化计费参数
+    const billing = this.billingService.createBillingParams(
+      now,
+      input.maxCredits,
+    );
     await this.safeProgressOperation(
-      () => this.progressStore.setProgress(taskId, this.buildProgress(billing)),
+      () =>
+        this.progressStore.setProgress(
+          taskId,
+          this.billingService.buildProgress(billing),
+        ),
       'set initial progress',
     );
     let session: { id: string } | null = null;
 
     try {
-      await this.ensureMinimumQuota(userId, taskId);
+      await this.billingService.ensureMinimumQuota(userId, taskId);
 
       // 创建浏览器会话
       session = await this.browserAgentPort.createSession();
@@ -247,17 +214,22 @@ export class AgentService {
       }
 
       // 计算最终 credits
-      const creditsUsed = this.calculateCreditsFromStream(
+      const creditsUsed = this.billingService.calculateCreditsFromStream(
         streamResult,
         billing,
       );
       billing.currentCredits = creditsUsed;
       await this.throwIfTaskCancelled(taskId, userId);
-      this.checkCreditsLimit(billing);
-      await this.settleCharges(userId, taskId, billing, creditsUsed);
+      this.billingService.checkCreditsLimit(billing);
+      await this.billingService.settleCharges(
+        userId,
+        taskId,
+        billing,
+        creditsUsed,
+      );
 
       // 更新任务状态
-      const progress = this.buildProgress(billing);
+      const progress = this.billingService.buildProgress(billing);
       const completed = await this.taskRepository.updateTaskIfStatus(
         taskId,
         ['PENDING', 'PROCESSING'],
@@ -293,7 +265,7 @@ export class AgentService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const progress = this.buildProgress(billing);
+      const progress = this.billingService.buildProgress(billing);
       const creditsUsed =
         error instanceof CreditsExceededError
           ? error.used
@@ -305,7 +277,12 @@ export class AgentService {
       ) {
         // 取消需要按已消耗结算（不退款）
         try {
-          await this.settleCharges(userId, taskId, billing, creditsUsed);
+          await this.billingService.settleCharges(
+            userId,
+            taskId,
+            billing,
+            creditsUsed,
+          );
         } catch (settleError) {
           this.logger.warn(
             `Failed to settle charges for cancelled task ${taskId}: ${settleError instanceof Error ? settleError.message : String(settleError)}`,
@@ -350,11 +327,11 @@ export class AgentService {
         },
       );
       if (failed) {
-        await this.refundChargesOnFailure(userId, taskId);
+        await this.billingService.refundChargesOnFailure(userId, taskId);
       } else {
         const latest = await this.taskRepository.getTaskForUser(taskId, userId);
         if (latest?.status === 'FAILED') {
-          await this.refundChargesOnFailure(userId, taskId);
+          await this.billingService.refundChargesOnFailure(userId, taskId);
         } else if (latest?.status === 'CANCELLED') {
           await this.taskRepository.updateTaskMetrics(taskId, {
             creditsUsed,
@@ -414,10 +391,17 @@ export class AgentService {
       throw error;
     }
 
-    // 初始化计费参数（P1 计费模型优化）
-    const billing = this.createBillingParams(now, input.maxCredits);
+    // 初始化计费参数
+    const billing = this.billingService.createBillingParams(
+      now,
+      input.maxCredits,
+    );
     await this.safeProgressOperation(
-      () => this.progressStore.setProgress(taskId, this.buildProgress(billing)),
+      () =>
+        this.progressStore.setProgress(
+          taskId,
+          this.billingService.buildProgress(billing),
+        ),
       'set initial progress',
     );
     let session: { id: string } | null = null;
@@ -430,7 +414,7 @@ export class AgentService {
     };
 
     try {
-      await this.ensureMinimumQuota(userId, taskId);
+      await this.billingService.ensureMinimumQuota(userId, taskId);
 
       // 创建浏览器会话
       session = await this.browserAgentPort.createSession();
@@ -490,17 +474,22 @@ export class AgentService {
 
       // 等待完成并获取最终结果
       const finalOutput = streamResult.finalOutput as unknown;
-      const creditsUsed = this.calculateCreditsFromStream(
+      const creditsUsed = this.billingService.calculateCreditsFromStream(
         streamResult,
         billing,
       );
       billing.currentCredits = creditsUsed;
       await this.throwIfTaskCancelled(taskId, userId);
-      this.checkCreditsLimit(billing);
-      await this.settleCharges(userId, taskId, billing, creditsUsed);
+      this.billingService.checkCreditsLimit(billing);
+      await this.billingService.settleCharges(
+        userId,
+        taskId,
+        billing,
+        creditsUsed,
+      );
 
       // 更新任务状态
-      const progress = this.buildProgress(billing);
+      const progress = this.billingService.buildProgress(billing);
       const completed = await this.taskRepository.updateTaskIfStatus(
         taskId,
         ['PENDING', 'PROCESSING'],
@@ -535,7 +524,7 @@ export class AgentService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const progress = this.buildProgress(billing);
+      const progress = this.billingService.buildProgress(billing);
       const creditsUsed =
         error instanceof CreditsExceededError
           ? error.used
@@ -546,7 +535,12 @@ export class AgentService {
         abortController.signal.aborted
       ) {
         try {
-          await this.settleCharges(userId, taskId, billing, creditsUsed);
+          await this.billingService.settleCharges(
+            userId,
+            taskId,
+            billing,
+            creditsUsed,
+          );
         } catch (settleError) {
           this.logger.warn(
             `Failed to settle charges for cancelled task ${taskId}: ${settleError instanceof Error ? settleError.message : String(settleError)}`,
@@ -591,11 +585,11 @@ export class AgentService {
         },
       );
       if (failed) {
-        await this.refundChargesOnFailure(userId, taskId);
+        await this.billingService.refundChargesOnFailure(userId, taskId);
       } else {
         const latest = await this.taskRepository.getTaskForUser(taskId, userId);
         if (latest?.status === 'FAILED') {
-          await this.refundChargesOnFailure(userId, taskId);
+          await this.billingService.refundChargesOnFailure(userId, taskId);
         } else if (latest?.status === 'CANCELLED') {
           await this.taskRepository.updateTaskMetrics(taskId, {
             creditsUsed,
@@ -629,19 +623,6 @@ export class AgentService {
   }
 
   /**
-   * 初始化计费参数
-   */
-  private createBillingParams(now: Date, maxCredits?: number): BillingParams {
-    return {
-      maxCredits,
-      currentCredits: BILLING_CONSTANTS.BASE_CREDITS,
-      toolCallCount: 0,
-      startTime: now,
-      chargedCredits: 0,
-    };
-  }
-
-  /**
    * 构建 Agent 实例
    */
   private buildAgent(input: CreateAgentTaskInput): BrowserAgent {
@@ -667,374 +648,6 @@ export class AgentService {
       userPrompt += `\n\n起始 URL：${input.urls.join(', ')}`;
     }
     return userPrompt;
-  }
-
-  /**
-   * 构建任务进度
-   */
-  private buildProgress(billing: BillingParams): AgentTaskProgress {
-    return {
-      creditsUsed: billing.currentCredits,
-      toolCallCount: billing.toolCallCount,
-      elapsedMs: Date.now() - billing.startTime.getTime(),
-    };
-  }
-
-  /**
-   * 更新计费进度（基于当前 usage + 工具调用 + 时长）
-   */
-  private updateBillingFromUsage(billing: BillingParams, usage?: Usage): void {
-    billing.currentCredits = this.calculateCreditsFromUsage(usage, billing);
-  }
-
-  /**
-   * 确保用户至少有基础 credits
-   */
-  private async ensureMinimumQuota(
-    userId: string,
-    taskId: string,
-  ): Promise<void> {
-    const status = await this.quotaService.getStatus(userId);
-    if (status.totalRemaining < BILLING_CONSTANTS.BASE_CREDITS) {
-      this.logger.warn(
-        `Agent task ${taskId} blocked: insufficient credits (remaining ${status.totalRemaining})`,
-      );
-      throw new QuotaExceededError(
-        status.totalRemaining,
-        BILLING_CONSTANTS.BASE_CREDITS,
-      );
-    }
-  }
-
-  /**
-   * 按 100 credits 阶段性扣减/检查
-   */
-  private async applyQuotaCheckpoint(
-    userId: string,
-    taskId: string,
-    billing: BillingParams,
-  ): Promise<void> {
-    while (
-      billing.currentCredits - billing.chargedCredits >=
-      BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL
-    ) {
-      const nextCheckpoint =
-        billing.chargedCredits + BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL;
-      const referenceId = `fetchx.agent:${taskId}:checkpoint:${nextCheckpoint}`;
-      const deduct = await this.quotaService.deductOrThrow(
-        userId,
-        BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
-        referenceId,
-      );
-      try {
-        await this.taskRepository.createCharge({
-          taskId,
-          userId,
-          amount: BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
-          source: deduct.source,
-          transactionId: deduct.transactionId,
-          referenceId,
-        });
-      } catch (error) {
-        this.logger.error(
-          `Failed to record agent checkpoint charge for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        try {
-          await this.quotaService.refund({
-            userId,
-            referenceId,
-            source: deduct.source,
-            amount: BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
-          });
-        } catch (refundError) {
-          if (!(refundError instanceof DuplicateRefundError)) {
-            this.logger.warn(
-              `Failed to refund agent checkpoint charge for task ${taskId}: ${refundError instanceof Error ? refundError.message : String(refundError)}`,
-            );
-          }
-        }
-        throw error;
-      }
-      billing.chargedCredits = nextCheckpoint;
-    }
-  }
-
-  /**
-   * 结算剩余 credits
-   */
-  private async settleCharges(
-    userId: string,
-    taskId: string,
-    billing: BillingParams,
-    creditsUsed: number,
-  ): Promise<void> {
-    const remaining = Math.max(0, creditsUsed - billing.chargedCredits);
-    if (remaining <= 0) {
-      return;
-    }
-
-    const referenceId = `fetchx.agent:${taskId}:final`;
-    const deduct = await this.quotaService.deductOrThrow(
-      userId,
-      remaining,
-      referenceId,
-    );
-    try {
-      await this.taskRepository.createCharge({
-        taskId,
-        userId,
-        amount: remaining,
-        source: deduct.source,
-        transactionId: deduct.transactionId,
-        referenceId,
-      });
-    } catch (error) {
-      this.logger.error(
-        `Failed to record agent final charge for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      try {
-        await this.quotaService.refund({
-          userId,
-          referenceId,
-          source: deduct.source,
-          amount: remaining,
-        });
-      } catch (refundError) {
-        if (!(refundError instanceof DuplicateRefundError)) {
-          this.logger.warn(
-            `Failed to refund agent final charge for task ${taskId}: ${refundError instanceof Error ? refundError.message : String(refundError)}`,
-          );
-        }
-      }
-      throw error;
-    }
-    billing.chargedCredits += remaining;
-  }
-
-  /**
-   * 失败退费（best-effort）
-   */
-  private async refundChargesOnFailure(
-    userId: string,
-    taskId: string,
-  ): Promise<void> {
-    const charges = await this.taskRepository.listCharges(taskId);
-    for (const charge of charges) {
-      if (charge.refundedAt) {
-        continue;
-      }
-
-      try {
-        await this.quotaService.refund({
-          userId,
-          referenceId: charge.referenceId,
-          source: charge.source,
-          amount: charge.amount,
-        });
-        await this.taskRepository.markChargeRefunded(charge.id);
-      } catch (error) {
-        if (error instanceof DuplicateRefundError) {
-          continue;
-        }
-        this.logger.warn(
-          `Failed to refund agent charge ${charge.id} for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
-    }
-  }
-
-  /**
-   * 处理流式事件并进行计费/取消检查
-   */
-  private async *consumeStreamEvents(params: {
-    streamResult: AgentStreamedResult;
-    billing: BillingParams;
-    taskId: string;
-    userId: string;
-    abortController: AbortController;
-  }): AsyncGenerator<AgentStreamEvent, void, unknown> {
-    const { streamResult, billing, taskId, userId, abortController } = params;
-    let lastProgressAt = 0;
-    let lastCreditsUsed = billing.currentCredits;
-    let lastToolCallCount = billing.toolCallCount;
-    let lastCancelCheckAt = 0;
-
-    for await (const event of streamResult) {
-      if (abortController.signal.aborted) {
-        throw new TaskCancelledError();
-      }
-
-      const now = Date.now();
-      if (now - lastCancelCheckAt >= PROGRESS_UPDATE_INTERVAL_MS) {
-        lastCancelCheckAt = now;
-        let cancelled = false;
-        try {
-          cancelled = await this.progressStore.isCancelRequested(taskId);
-        } catch (error) {
-          this.logger.warn(
-            `Failed to check cancel status for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
-          );
-        }
-        if (cancelled) {
-          abortController.abort(new TaskCancelledError());
-          throw new TaskCancelledError();
-        }
-      }
-
-      if (event.type === 'run_item_stream_event') {
-        const item = event.item;
-        if (item.type === 'tool_call_item') {
-          billing.toolCallCount++;
-        }
-      }
-
-      this.updateBillingFromUsage(billing, streamResult.state?._context?.usage);
-
-      const progress = this.buildProgress(billing);
-      const shouldUpdateProgress =
-        progress.creditsUsed !== lastCreditsUsed ||
-        progress.toolCallCount !== lastToolCallCount ||
-        now - lastProgressAt >= PROGRESS_UPDATE_INTERVAL_MS;
-      if (shouldUpdateProgress) {
-        await this.safeProgressOperation(
-          () => this.progressStore.setProgress(taskId, progress),
-          'set progress',
-        );
-        lastProgressAt = now;
-        lastCreditsUsed = progress.creditsUsed;
-        lastToolCallCount = progress.toolCallCount;
-      }
-
-      try {
-        this.checkCreditsLimit(billing);
-      } catch (error) {
-        abortController.abort(error);
-        throw error;
-      }
-
-      try {
-        await this.applyQuotaCheckpoint(userId, taskId, billing);
-      } catch (error) {
-        abortController.abort(error);
-        throw error;
-      }
-
-      const sseEvent = this.convertRunEventToSSE(event);
-      if (sseEvent) {
-        yield sseEvent;
-      }
-    }
-  }
-
-  /**
-   * 将 SDK 流事件转换为 SSE 事件
-   */
-  private convertRunEventToSSE(event: RunStreamEvent): AgentStreamEvent | null {
-    switch (event.type) {
-      case 'raw_model_stream_event': {
-        // 处理模型流事件（思考过程）
-        const modelEvent = event.data;
-        if (modelEvent.type === 'output_text_delta') {
-          return { type: 'thinking', content: modelEvent.delta };
-        }
-
-        if (modelEvent.type === 'model') {
-          const rawEvent = modelEvent.event as {
-            type?: string;
-            delta?: string;
-          };
-          if (rawEvent.type === 'reasoning-delta' && rawEvent.delta) {
-            return { type: 'thinking', content: rawEvent.delta };
-          }
-        }
-        break;
-      }
-
-      case 'run_item_stream_event': {
-        // 处理运行项事件（工具调用）
-        const item = event.item;
-        if (item.type === 'tool_call_item') {
-          const rawItem = item.rawItem as {
-            call_id?: string;
-            name?: string;
-            arguments?: Record<string, unknown>;
-          };
-          return {
-            type: 'tool_call',
-            callId: rawItem.call_id ?? '',
-            tool: rawItem.name ?? '',
-            args: rawItem.arguments ?? {},
-          };
-        } else if (item.type === 'tool_call_output_item') {
-          const rawItem = item.rawItem as {
-            call_id?: string;
-            name?: string;
-            output?: unknown;
-          };
-          return {
-            type: 'tool_result',
-            callId: rawItem.call_id ?? '',
-            tool: rawItem.name ?? '',
-            result: rawItem.output,
-          };
-        }
-        break;
-      }
-
-      case 'agent_updated_stream_event':
-        // Agent 切换事件（如果有 handoff）
-        return {
-          type: 'progress',
-          message: `切换到: ${event.agent.name}`,
-          step: 0,
-        };
-    }
-
-    return null;
-  }
-
-  /**
-   * 基于 usage 计算 credits（P1 计费模型优化）
-   */
-  private calculateCreditsFromUsage(
-    usage: Usage | undefined,
-    billing?: BillingParams,
-  ): number {
-    let credits = BILLING_CONSTANTS.BASE_CREDITS;
-
-    // Token 费用
-    if (usage) {
-      const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
-      credits +=
-        Math.ceil(totalTokens / 1000) * BILLING_CONSTANTS.CREDITS_PER_1K_TOKENS;
-    }
-
-    // 工具调用费用
-    if (billing?.toolCallCount) {
-      credits +=
-        billing.toolCallCount * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL;
-    }
-
-    // 时长费用
-    if (billing?.startTime) {
-      const durationMinutes =
-        (Date.now() - billing.startTime.getTime()) / 60000;
-      credits +=
-        Math.ceil(durationMinutes) * BILLING_CONSTANTS.CREDITS_PER_MINUTE;
-    }
-
-    return Math.ceil(credits);
-  }
-
-  /**
-   * 从流式结果计算 credits（P1 计费模型优化）
-   */
-  private calculateCreditsFromStream(
-    result: AgentStreamedResult,
-    billing?: BillingParams,
-  ): number {
-    const usage = result.state?._context?.usage;
-    return this.calculateCreditsFromUsage(usage, billing);
   }
 
   /**
@@ -1118,6 +731,159 @@ export class AgentService {
     if (task?.status === 'CANCELLED') {
       throw new TaskCancelledError();
     }
+  }
+
+  /**
+   * 处理流式事件并进行计费/取消检查
+   */
+  private async *consumeStreamEvents(params: {
+    streamResult: AgentStreamedResult;
+    billing: BillingParams;
+    taskId: string;
+    userId: string;
+    abortController: AbortController;
+  }): AsyncGenerator<AgentStreamEvent, void, unknown> {
+    const { streamResult, billing, taskId, userId, abortController } = params;
+    let lastProgressAt = 0;
+    let lastCreditsUsed = billing.currentCredits;
+    let lastToolCallCount = billing.toolCallCount;
+    let lastCancelCheckAt = 0;
+
+    for await (const event of streamResult) {
+      if (abortController.signal.aborted) {
+        throw new TaskCancelledError();
+      }
+
+      const now = Date.now();
+      if (now - lastCancelCheckAt >= PROGRESS_UPDATE_INTERVAL_MS) {
+        lastCancelCheckAt = now;
+        let cancelled = false;
+        try {
+          cancelled = await this.progressStore.isCancelRequested(taskId);
+        } catch (error) {
+          this.logger.warn(
+            `Failed to check cancel status for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        if (cancelled) {
+          abortController.abort(new TaskCancelledError());
+          throw new TaskCancelledError();
+        }
+      }
+
+      if (event.type === 'run_item_stream_event') {
+        const item = event.item;
+        if (item.type === 'tool_call_item') {
+          billing.toolCallCount++;
+        }
+      }
+
+      this.billingService.updateBillingFromUsage(
+        billing,
+        streamResult.state?._context?.usage,
+      );
+
+      const progress = this.billingService.buildProgress(billing);
+      const shouldUpdateProgress =
+        progress.creditsUsed !== lastCreditsUsed ||
+        progress.toolCallCount !== lastToolCallCount ||
+        now - lastProgressAt >= PROGRESS_UPDATE_INTERVAL_MS;
+      if (shouldUpdateProgress) {
+        await this.safeProgressOperation(
+          () => this.progressStore.setProgress(taskId, progress),
+          'set progress',
+        );
+        lastProgressAt = now;
+        lastCreditsUsed = progress.creditsUsed;
+        lastToolCallCount = progress.toolCallCount;
+      }
+
+      try {
+        this.billingService.checkCreditsLimit(billing);
+      } catch (error) {
+        abortController.abort(error);
+        throw error;
+      }
+
+      try {
+        await this.billingService.applyQuotaCheckpoint(userId, taskId, billing);
+      } catch (error) {
+        abortController.abort(error);
+        throw error;
+      }
+
+      const sseEvent = this.convertRunEventToSSE(event);
+      if (sseEvent) {
+        yield sseEvent;
+      }
+    }
+  }
+
+  /**
+   * 将 SDK 流事件转换为 SSE 事件
+   */
+  private convertRunEventToSSE(event: RunStreamEvent): AgentStreamEvent | null {
+    switch (event.type) {
+      case 'raw_model_stream_event': {
+        // 处理模型流事件（思考过程）
+        const modelEvent = event.data;
+        if (modelEvent.type === 'output_text_delta') {
+          return { type: 'thinking', content: modelEvent.delta };
+        }
+
+        if (modelEvent.type === 'model') {
+          const rawEvent = modelEvent.event as {
+            type?: string;
+            delta?: string;
+          };
+          if (rawEvent.type === 'reasoning-delta' && rawEvent.delta) {
+            return { type: 'thinking', content: rawEvent.delta };
+          }
+        }
+        break;
+      }
+
+      case 'run_item_stream_event': {
+        // 处理运行项事件（工具调用）
+        const item = event.item;
+        if (item.type === 'tool_call_item') {
+          const rawItem = item.rawItem as {
+            call_id?: string;
+            name?: string;
+            arguments?: Record<string, unknown>;
+          };
+          return {
+            type: 'tool_call',
+            callId: rawItem.call_id ?? '',
+            tool: rawItem.name ?? '',
+            args: rawItem.arguments ?? {},
+          };
+        } else if (item.type === 'tool_call_output_item') {
+          const rawItem = item.rawItem as {
+            call_id?: string;
+            name?: string;
+            output?: unknown;
+          };
+          return {
+            type: 'tool_result',
+            callId: rawItem.call_id ?? '',
+            tool: rawItem.name ?? '',
+            result: rawItem.output,
+          };
+        }
+        break;
+      }
+
+      case 'agent_updated_stream_event':
+        // Agent 切换事件（如果有 handoff）
+        return {
+          type: 'progress',
+          message: `切换到: ${event.agent.name}`,
+          step: 0,
+        };
+    }
+
+    return null;
   }
 
   /**
@@ -1249,49 +1015,7 @@ export class AgentService {
       durationEstimate: number;
     };
   } {
-    // 基于 prompt 长度估算 token 消耗
-    const promptTokens = Math.ceil(input.prompt.length / 4);
-    const estimatedTotalTokens = promptTokens * 10; // 假设 10x 扩展
-
-    // 基于 URL 数量估算工具调用
-    const urlCount = input.urls?.length ?? 1;
-    const estimatedToolCalls = urlCount * 5 + 5; // 每个 URL 约 5 次操作
-
-    // 估算时长（分钟）
-    const estimatedDuration = Math.ceil(estimatedToolCalls * 0.5);
-
-    const breakdown = {
-      base: BILLING_CONSTANTS.BASE_CREDITS,
-      tokenEstimate:
-        Math.ceil(estimatedTotalTokens / 1000) *
-        BILLING_CONSTANTS.CREDITS_PER_1K_TOKENS,
-      toolCallEstimate:
-        estimatedToolCalls * BILLING_CONSTANTS.CREDITS_PER_TOOL_CALL,
-      durationEstimate:
-        estimatedDuration * BILLING_CONSTANTS.CREDITS_PER_MINUTE,
-    };
-
-    return {
-      estimatedCredits: Math.ceil(
-        breakdown.base +
-          breakdown.tokenEstimate +
-          breakdown.toolCallEstimate +
-          breakdown.durationEstimate,
-      ),
-      breakdown,
-    };
-  }
-
-  /**
-   * 检查是否超过 maxCredits 限制
-   */
-  private checkCreditsLimit(billing: BillingParams): void {
-    if (billing.maxCredits && billing.currentCredits > billing.maxCredits) {
-      throw new CreditsExceededError(
-        billing.currentCredits,
-        billing.maxCredits,
-      );
-    }
+    return this.billingService.estimateCost(input);
   }
 
   /**

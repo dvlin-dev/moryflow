@@ -11,6 +11,7 @@
 import { tool, type RunContext, type Tool } from '@aiget/agents-core';
 import { z } from 'zod';
 import type { BrowserAgentPort } from '../../browser/ports';
+import { zodToJsonSchema } from './zod-to-json-schema';
 
 /** Browser Tool 上下文 */
 export interface BrowserAgentContext {
@@ -19,7 +20,7 @@ export interface BrowserAgentContext {
   abortSignal?: AbortSignal;
 }
 
-// ========== Schema 定义 ==========
+// ========== Schema 定义（单一数据源） ==========
 
 const snapshotSchema = z.object({
   interactive: z
@@ -75,123 +76,6 @@ const pressSchema = z.object({
 });
 
 type BrowserToolRunContext = RunContext<BrowserAgentContext>;
-type JsonObjectSchemaStrictLike = {
-  type: 'object';
-  properties: Record<string, Record<string, unknown>>;
-  required: string[];
-  additionalProperties: false;
-};
-
-const snapshotParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    interactive: {
-      type: 'boolean',
-      description: '仅返回可交互元素',
-    },
-    maxDepth: {
-      type: 'number',
-      description: '最大深度限制',
-    },
-  },
-  required: [],
-  additionalProperties: false,
-};
-
-const selectorParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    selector: {
-      type: 'string',
-      description: '元素选择器，支持 @ref 格式（如 @e1）或 CSS 选择器',
-    },
-  },
-  required: ['selector'],
-  additionalProperties: false,
-};
-
-const fillParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    selector: { type: 'string', description: '输入框选择器' },
-    value: { type: 'string', description: '要填写的文本' },
-  },
-  required: ['selector', 'value'],
-  additionalProperties: false,
-};
-
-const typeParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    selector: { type: 'string', description: '输入框选择器' },
-    text: { type: 'string', description: '要逐字输入的文本' },
-  },
-  required: ['selector', 'text'],
-  additionalProperties: false,
-};
-
-const urlParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    url: { type: 'string', description: '要打开的 URL' },
-  },
-  required: ['url'],
-  additionalProperties: false,
-};
-
-const queryParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    query: { type: 'string', description: '搜索关键词' },
-  },
-  required: ['query'],
-  additionalProperties: false,
-};
-
-const scrollParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    selector: {
-      type: 'string',
-      description: '要滚动的元素，不传则滚动整个页面',
-    },
-    direction: {
-      type: 'string',
-      enum: ['up', 'down', 'left', 'right'],
-      description: '滚动方向',
-    },
-    distance: {
-      type: 'number',
-      description: '滚动距离（像素）',
-    },
-  },
-  required: ['direction'],
-  additionalProperties: false,
-};
-
-const waitParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    time: { type: 'number', description: '等待时间（毫秒）' },
-    selector: { type: 'string', description: '等待选择器出现' },
-    selectorGone: { type: 'string', description: '等待选择器消失' },
-    text: { type: 'string', description: '等待文本出现' },
-    url: { type: 'string', description: '等待 URL 变化' },
-    networkIdle: { type: 'boolean', description: '等待网络空闲' },
-  },
-  required: [],
-  additionalProperties: false,
-};
-
-const pressParameters: JsonObjectSchemaStrictLike = {
-  type: 'object',
-  properties: {
-    selector: { type: 'string', description: '目标元素' },
-    key: { type: 'string', description: '按键名称（如 Enter、Tab、Escape）' },
-  },
-  required: ['key'],
-  additionalProperties: false,
-};
 
 const getBrowserContext = (
   runContext?: BrowserToolRunContext,
@@ -215,7 +99,7 @@ export const snapshotTool = tool({
 返回的 ref 可用于后续 click、fill 等操作。
 - interactive=true: 仅返回可交互元素（button, link, input 等）
 - 每次操作后应调用此工具以了解页面变化`,
-  parameters: snapshotParameters,
+  parameters: zodToJsonSchema(snapshotSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = snapshotSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -230,7 +114,7 @@ export const snapshotTool = tool({
 export const clickTool = tool({
   name: 'browser_click',
   description: '点击指定元素。使用 @ref 格式（如 @e1）或 CSS 选择器定位元素。',
-  parameters: selectorParameters,
+  parameters: zodToJsonSchema(selectorSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = selectorSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -246,7 +130,7 @@ export const clickTool = tool({
 export const fillTool = tool({
   name: 'browser_fill',
   description: '在输入框中填写文本。会先清空原有内容，然后填入新内容。',
-  parameters: fillParameters,
+  parameters: zodToJsonSchema(fillSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = fillSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -264,7 +148,7 @@ export const typeTool = tool({
   name: 'browser_type',
   description:
     '在输入框中逐字输入文本。不会清空原有内容，适合追加输入或触发输入事件。',
-  parameters: typeParameters,
+  parameters: zodToJsonSchema(typeSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = typeSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -281,7 +165,7 @@ export const typeTool = tool({
 export const openTool = tool({
   name: 'browser_open',
   description: '在浏览器中打开指定 URL。',
-  parameters: urlParameters,
+  parameters: zodToJsonSchema(urlSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = urlSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -305,7 +189,7 @@ export const openTool = tool({
 export const searchTool = tool({
   name: 'web_search',
   description: '使用搜索引擎搜索信息。返回搜索结果页面的快照。',
-  parameters: queryParameters,
+  parameters: zodToJsonSchema(querySchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = querySchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -330,7 +214,7 @@ export const searchTool = tool({
 export const getTextTool = tool({
   name: 'browser_getText',
   description: '获取指定元素的文本内容。',
-  parameters: selectorParameters,
+  parameters: zodToJsonSchema(selectorSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = selectorSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -346,7 +230,7 @@ export const getTextTool = tool({
 export const scrollTool = tool({
   name: 'browser_scroll',
   description: '滚动页面或指定元素。可用于查看更多内容或加载懒加载项。',
-  parameters: scrollParameters,
+  parameters: zodToJsonSchema(scrollSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = scrollSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -364,7 +248,7 @@ export const scrollTool = tool({
 export const waitTool = tool({
   name: 'browser_wait',
   description: '等待指定条件满足。可等待时间、元素出现/消失、或文本出现。',
-  parameters: waitParameters,
+  parameters: zodToJsonSchema(waitSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = waitSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -388,7 +272,7 @@ export const pressTool = tool({
   name: 'browser_press',
   description:
     '模拟按下键盘按键。可用于提交表单（Enter）、取消操作（Escape）等。',
-  parameters: pressParameters,
+  parameters: zodToJsonSchema(pressSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = pressSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);
@@ -405,7 +289,7 @@ export const pressTool = tool({
 export const hoverTool = tool({
   name: 'browser_hover',
   description: '将鼠标悬停在指定元素上。可用于触发下拉菜单或工具提示。',
-  parameters: selectorParameters,
+  parameters: zodToJsonSchema(selectorSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = selectorSchema.parse(input);
     const { browser, sessionId } = getBrowserContext(runContext);

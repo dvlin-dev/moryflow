@@ -4,9 +4,9 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentService } from '../agent.service';
+import { AgentBillingService } from '../agent-billing.service';
 import { run } from '@aiget/agents-core';
 import type { BrowserAgentPortService } from '../../browser/ports';
-import type { QuotaService } from '../../quota/quota.service';
 import type { AgentTaskRepository } from '../agent-task.repository';
 import type { AgentTaskProgressStore } from '../agent-task.progress.store';
 
@@ -77,6 +77,64 @@ const createMockProgressStore = (): AgentTaskProgressStore =>
     clearCancel: vi.fn().mockResolvedValue(undefined),
   }) as unknown as AgentTaskProgressStore;
 
+const createMockBillingService = (): AgentBillingService => {
+  const billingState = {
+    chargedCredits: 0,
+  };
+
+  return {
+    createBillingParams: vi
+      .fn()
+      .mockImplementation((startTime: Date, maxCredits?: number) => ({
+        maxCredits,
+        currentCredits: 1,
+        toolCallCount: 0,
+        startTime,
+        chargedCredits: 0,
+      })),
+    buildProgress: vi.fn().mockImplementation((billing) => ({
+      creditsUsed: billing.currentCredits,
+      toolCallCount: billing.toolCallCount,
+      elapsedMs: Date.now() - billing.startTime.getTime(),
+    })),
+    updateBillingFromUsage: vi.fn().mockImplementation((billing, usage) => {
+      if (usage) {
+        const tokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
+        billing.currentCredits = 1 + Math.ceil(tokens / 1000);
+      }
+    }),
+    calculateCreditsFromStream: vi
+      .fn()
+      .mockImplementation((result, billing) => {
+        const usage = result.state?._context?.usage;
+        if (usage) {
+          const tokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
+          return 1 + Math.ceil(tokens / 1000);
+        }
+        return billing?.currentCredits ?? 1;
+      }),
+    checkCreditsLimit: vi.fn(),
+    ensureMinimumQuota: vi.fn().mockResolvedValue(undefined),
+    applyQuotaCheckpoint: vi.fn().mockImplementation(async (_, __, billing) => {
+      while (billing.currentCredits - billing.chargedCredits >= 100) {
+        billing.chargedCredits += 100;
+        billingState.chargedCredits = billing.chargedCredits;
+      }
+    }),
+    settleCharges: vi.fn().mockResolvedValue(undefined),
+    refundChargesOnFailure: vi.fn().mockResolvedValue(undefined),
+    estimateCost: vi.fn().mockReturnValue({
+      estimatedCredits: 10,
+      breakdown: {
+        base: 1,
+        tokenEstimate: 5,
+        toolCallEstimate: 2,
+        durationEstimate: 2,
+      },
+    }),
+  } as unknown as AgentBillingService;
+};
+
 describe('AgentService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -98,23 +156,7 @@ describe('AgentService', () => {
       closeSession: vi.fn().mockResolvedValue(undefined),
     } as unknown as BrowserAgentPortService;
 
-    const mockQuotaService = {
-      getStatus: vi.fn().mockResolvedValue({
-        monthly: { limit: 0, used: 0, remaining: 0 },
-        purchased: 1000,
-        totalRemaining: 1000,
-        periodEndsAt: new Date('2026-02-01'),
-        periodStartsAt: new Date('2026-01-01'),
-      }),
-      deductOrThrow: vi.fn().mockResolvedValue({
-        success: true,
-        source: 'MONTHLY',
-        balanceBefore: 1000,
-        balanceAfter: 900,
-        transactionId: 'tx_1',
-      }),
-      refund: vi.fn().mockResolvedValue({ success: true }),
-    } as unknown as QuotaService;
+    const mockBillingService = createMockBillingService();
 
     mockRun.mockResolvedValue(
       createStreamResult({ inputTokens: 100000, outputTokens: 0 }) as never,
@@ -122,7 +164,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
-      mockQuotaService,
+      mockBillingService,
       createMockTaskRepository(),
       createMockProgressStore(),
     );
@@ -137,17 +179,12 @@ describe('AgentService', () => {
 
     expect(result.status).toBe('completed');
     expect(result.creditsUsed).toBe(101);
-    expect(mockQuotaService.deductOrThrow).toHaveBeenNthCalledWith(
-      1,
+    expect(mockBillingService.applyQuotaCheckpoint).toHaveBeenCalled();
+    expect(mockBillingService.settleCharges).toHaveBeenCalledWith(
       'user_1',
-      100,
-      expect.stringContaining('checkpoint:100'),
-    );
-    expect(mockQuotaService.deductOrThrow).toHaveBeenNthCalledWith(
-      2,
-      'user_1',
-      1,
-      expect.stringContaining('final'),
+      expect.any(String),
+      expect.any(Object),
+      101,
     );
   });
 
@@ -161,23 +198,7 @@ describe('AgentService', () => {
       closeSession: vi.fn().mockResolvedValue(undefined),
     } as unknown as BrowserAgentPortService;
 
-    const mockQuotaService = {
-      getStatus: vi.fn().mockResolvedValue({
-        monthly: { limit: 0, used: 0, remaining: 0 },
-        purchased: 1000,
-        totalRemaining: 1000,
-        periodEndsAt: new Date('2026-02-01'),
-        periodStartsAt: new Date('2026-01-01'),
-      }),
-      deductOrThrow: vi.fn().mockResolvedValue({
-        success: true,
-        source: 'MONTHLY',
-        balanceBefore: 1000,
-        balanceAfter: 900,
-        transactionId: 'tx_1',
-      }),
-      refund: vi.fn().mockResolvedValue({ success: true }),
-    } as unknown as QuotaService;
+    const mockBillingService = createMockBillingService();
 
     mockRun.mockResolvedValue(
       createStreamResult(
@@ -187,23 +208,10 @@ describe('AgentService', () => {
     );
 
     const mockTaskRepository = createMockTaskRepository();
-    vi.mocked(mockTaskRepository.listCharges).mockResolvedValue([
-      {
-        id: 'charge_1',
-        taskId: 'task_1',
-        userId: 'user_1',
-        amount: 100,
-        source: 'MONTHLY',
-        transactionId: 'tx_1',
-        referenceId: 'fetchx.agent:task_1:checkpoint:100',
-        refundedAt: null,
-        createdAt: new Date(),
-      },
-    ]);
 
     const service = new AgentService(
       mockBrowserPort,
-      mockQuotaService,
+      mockBillingService,
       mockTaskRepository,
       createMockProgressStore(),
     );
@@ -217,12 +225,9 @@ describe('AgentService', () => {
     );
 
     expect(result.status).toBe('failed');
-    expect(mockQuotaService.refund).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user_1',
-        amount: 100,
-        referenceId: expect.stringContaining('checkpoint:100'),
-      }),
+    expect(mockBillingService.refundChargesOnFailure).toHaveBeenCalledWith(
+      'user_1',
+      expect.any(String),
     );
   });
 
@@ -236,23 +241,7 @@ describe('AgentService', () => {
       closeSession: vi.fn().mockResolvedValue(undefined),
     } as unknown as BrowserAgentPortService;
 
-    const mockQuotaService = {
-      getStatus: vi.fn().mockResolvedValue({
-        monthly: { limit: 0, used: 0, remaining: 0 },
-        purchased: 1000,
-        totalRemaining: 1000,
-        periodEndsAt: new Date('2026-02-01'),
-        periodStartsAt: new Date('2026-01-01'),
-      }),
-      deductOrThrow: vi.fn().mockResolvedValue({
-        success: true,
-        source: 'MONTHLY',
-        balanceBefore: 1000,
-        balanceAfter: 999,
-        transactionId: 'tx_1',
-      }),
-      refund: vi.fn().mockResolvedValue({ success: true }),
-    } as unknown as QuotaService;
+    const mockBillingService = createMockBillingService();
 
     const mockTaskRepository = createMockTaskRepository();
     const mockProgressStore = createMockProgressStore();
@@ -264,7 +253,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
-      mockQuotaService,
+      mockBillingService,
       mockTaskRepository,
       mockProgressStore,
     );
@@ -292,11 +281,7 @@ describe('AgentService', () => {
       closeSession: vi.fn(),
     } as unknown as BrowserAgentPortService;
 
-    const mockQuotaService = {
-      getStatus: vi.fn(),
-      deductOrThrow: vi.fn(),
-      refund: vi.fn(),
-    } as unknown as QuotaService;
+    const mockBillingService = createMockBillingService();
 
     const mockTaskRepository = createMockTaskRepository();
     vi.mocked(mockTaskRepository.getTaskForUser).mockResolvedValue({
@@ -325,7 +310,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
-      mockQuotaService,
+      mockBillingService,
       mockTaskRepository,
       mockProgressStore,
     );
@@ -348,11 +333,7 @@ describe('AgentService', () => {
       closeSession: vi.fn(),
     } as unknown as BrowserAgentPortService;
 
-    const mockQuotaService = {
-      getStatus: vi.fn(),
-      deductOrThrow: vi.fn(),
-      refund: vi.fn(),
-    } as unknown as QuotaService;
+    const mockBillingService = createMockBillingService();
 
     const mockTaskRepository = createMockTaskRepository();
     vi.mocked(mockTaskRepository.getTaskForUser).mockResolvedValue({
@@ -374,7 +355,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
-      mockQuotaService,
+      mockBillingService,
       mockTaskRepository,
       createMockProgressStore(),
     );
