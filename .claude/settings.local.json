@@ -87,7 +87,8 @@
       "WebFetch(domain:www.better-auth.com)",
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:tanstack.com)",
-      "Bash(timeout 30 pnpm:*)"
+      "Bash(timeout 30 pnpm:*)",
+      "Bash(ping:*)"
     ]
   }
 }
