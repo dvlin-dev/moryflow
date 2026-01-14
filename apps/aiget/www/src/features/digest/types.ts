@@ -39,6 +39,14 @@ export interface Subscription {
   lastRunAt: string | null;
   nextRunAt: string | null;
   followedTopicId: string | null;
+  // Delivery options
+  inboxEnabled: boolean;
+  emailEnabled: boolean;
+  webhookEnabled: boolean;
+  // Content generation options
+  generateItemSummaries: boolean;
+  composeNarrative: boolean;
+  tone: DigestTone;
   createdAt: string;
   updatedAt: string;
 }
@@ -293,4 +301,53 @@ export interface FollowTopicInput {
 export interface FollowTopicResponse {
   subscriptionId: string;
   message: string;
+}
+
+// ========== Feedback ==========
+
+export type FeedbackPatternType = 'KEYWORD' | 'DOMAIN' | 'AUTHOR';
+export type FeedbackSuggestionType =
+  | 'add_interest'
+  | 'remove_interest'
+  | 'add_negative'
+  | 'adjust_score';
+
+export interface FeedbackSuggestion {
+  id: string;
+  type: FeedbackSuggestionType;
+  patternType: FeedbackPatternType;
+  value: string;
+  confidence: number;
+  reason: string;
+  positiveCount: number;
+  negativeCount: number;
+}
+
+export interface FeedbackSuggestionsResponse {
+  suggestions: FeedbackSuggestion[];
+}
+
+export interface ApplySuggestionsInput {
+  suggestionIds: string[];
+}
+
+export interface ApplySuggestionsResponse {
+  applied: number;
+  skipped: number;
+  message: string;
+}
+
+export interface FeedbackStats {
+  totalPositive: number;
+  totalNegative: number;
+  topPositiveTerms: Array<{
+    value: string;
+    patternType: FeedbackPatternType;
+    count: number;
+  }>;
+  topNegativeTerms: Array<{
+    value: string;
+    patternType: FeedbackPatternType;
+    count: number;
+  }>;
 }

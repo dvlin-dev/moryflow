@@ -26,6 +26,7 @@ import { CurrentUser } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
 import { DigestInboxService } from '../services/inbox.service';
+import { DigestContentService } from '../services/content.service';
 import {
   InboxQuerySchema,
   UpdateInboxItemSchema,
@@ -37,7 +38,10 @@ import {
 @ApiCookieAuth()
 @Controller({ path: 'console/digest/inbox', version: '1' })
 export class DigestConsoleInboxController {
-  constructor(private readonly inboxService: DigestInboxService) {}
+  constructor(
+    private readonly inboxService: DigestInboxService,
+    private readonly contentService: DigestContentService,
+  ) {}
 
   /**
    * 获取收件箱条目列表
@@ -104,5 +108,22 @@ export class DigestConsoleInboxController {
   ) {
     const count = await this.inboxService.markAllRead(user.id, subscriptionId);
     return { markedCount: count };
+  }
+
+  /**
+   * 获取条目全文内容
+   * GET /api/console/digest/inbox/:id/content
+   */
+  @Get(':id/content')
+  @ApiOperation({ summary: 'Get inbox item full content' })
+  @ApiParam({ name: 'id', description: 'Inbox item ID' })
+  @ApiOkResponse({ description: 'Full content markdown (if cached)' })
+  async getContent(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') id: string,
+  ) {
+    const contentId = await this.inboxService.getContentId(user.id, id);
+    const markdown = await this.contentService.getFulltext(contentId);
+    return { markdown };
   }
 }

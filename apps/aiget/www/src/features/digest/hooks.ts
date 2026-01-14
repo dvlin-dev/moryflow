@@ -16,6 +16,7 @@ import type {
   CreateTopicInput,
   UpdateTopicInput,
   FollowTopicInput,
+  ApplySuggestionsInput,
 } from './types';
 
 // ========== Query Keys ==========
@@ -27,9 +28,15 @@ export const digestKeys = {
   inbox: () => [...digestKeys.all, 'inbox'] as const,
   inboxItems: (params?: InboxQueryParams) => [...digestKeys.inbox(), 'items', params] as const,
   inboxStats: () => [...digestKeys.inbox(), 'stats'] as const,
+  inboxItemContent: (itemId: string) => [...digestKeys.inbox(), 'content', itemId] as const,
   runs: (subscriptionId: string) => [...digestKeys.all, 'runs', subscriptionId] as const,
   topics: () => [...digestKeys.all, 'topics'] as const,
   publicTopic: (slug: string) => [...digestKeys.all, 'public-topic', slug] as const,
+  feedback: (subscriptionId: string) => [...digestKeys.all, 'feedback', subscriptionId] as const,
+  feedbackSuggestions: (subscriptionId: string) =>
+    [...digestKeys.feedback(subscriptionId), 'suggestions'] as const,
+  feedbackStats: (subscriptionId: string) =>
+    [...digestKeys.feedback(subscriptionId), 'stats'] as const,
 };
 
 // ========== Subscription Hooks ==========
@@ -129,6 +136,17 @@ export function useTriggerManualRun() {
 }
 
 // ========== Inbox Hooks ==========
+
+export function useInboxItemContent(itemId: string | null) {
+  return useQuery({
+    queryKey: digestKeys.inboxItemContent(itemId ?? ''),
+    queryFn: () => {
+      if (!itemId) throw new Error('Item ID is required');
+      return api.fetchInboxItemContent(itemId);
+    },
+    enabled: !!itemId,
+  });
+}
 
 export function useInboxItems(params?: InboxQueryParams) {
   return useQuery({
@@ -262,5 +280,45 @@ export function useFollowTopic() {
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to follow topic');
     },
+  });
+}
+
+// ========== Feedback Hooks ==========
+
+export function useFeedbackSuggestions(subscriptionId: string) {
+  return useQuery({
+    queryKey: digestKeys.feedbackSuggestions(subscriptionId),
+    queryFn: () => api.fetchFeedbackSuggestions(subscriptionId),
+    enabled: !!subscriptionId,
+  });
+}
+
+export function useApplyFeedbackSuggestions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      subscriptionId,
+      data,
+    }: {
+      subscriptionId: string;
+      data: ApplySuggestionsInput;
+    }) => api.applyFeedbackSuggestions(subscriptionId, data),
+    onSuccess: (result, { subscriptionId }) => {
+      queryClient.invalidateQueries({ queryKey: digestKeys.feedbackSuggestions(subscriptionId) });
+      queryClient.invalidateQueries({ queryKey: digestKeys.subscription(subscriptionId) });
+      toast.success(`Applied ${result.applied} suggestions`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to apply suggestions');
+    },
+  });
+}
+
+export function useFeedbackStats(subscriptionId: string) {
+  return useQuery({
+    queryKey: digestKeys.feedbackStats(subscriptionId),
+    queryFn: () => api.fetchFeedbackStats(subscriptionId),
+    enabled: !!subscriptionId,
   });
 }

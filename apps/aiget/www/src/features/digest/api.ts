@@ -26,6 +26,10 @@ import type {
   FollowTopicResponse,
   TriggerRunResponse,
   UserTopicsResponse,
+  FeedbackSuggestionsResponse,
+  ApplySuggestionsInput,
+  ApplySuggestionsResponse,
+  FeedbackStats,
 } from './types';
 
 // ========== Subscription API ==========
@@ -149,6 +153,10 @@ export async function markAllAsRead(subscriptionId?: string): Promise<{ markedCo
   return apiClient.post<{ markedCount: number }>(url, {});
 }
 
+export async function fetchInboxItemContent(itemId: string): Promise<{ markdown: string | null }> {
+  return apiClient.get<{ markdown: string | null }>(`${DIGEST_API.INBOX}/${itemId}/content`);
+}
+
 // ========== Runs API ==========
 
 export async function fetchRuns(
@@ -192,4 +200,30 @@ export async function followTopic(
   data: FollowTopicInput
 ): Promise<FollowTopicResponse> {
   return apiClient.post<FollowTopicResponse>(`${DIGEST_PUBLIC_API.TOPICS}/${slug}/follow`, data);
+}
+
+// ========== Feedback API ==========
+
+export async function fetchFeedbackSuggestions(
+  subscriptionId: string
+): Promise<FeedbackSuggestionsResponse> {
+  return apiClient.get<FeedbackSuggestionsResponse>(
+    `${DIGEST_API.SUBSCRIPTIONS}/${subscriptionId}/feedback/suggestions`
+  );
+}
+
+export async function applyFeedbackSuggestions(
+  subscriptionId: string,
+  data: ApplySuggestionsInput
+): Promise<ApplySuggestionsResponse> {
+  return apiClient.post<ApplySuggestionsResponse>(
+    `${DIGEST_API.SUBSCRIPTIONS}/${subscriptionId}/feedback/apply`,
+    data
+  );
+}
+
+export async function fetchFeedbackStats(subscriptionId: string): Promise<FeedbackStats> {
+  return apiClient.get<FeedbackStats>(
+    `${DIGEST_API.SUBSCRIPTIONS}/${subscriptionId}/feedback/stats`
+  );
 }

@@ -370,6 +370,26 @@ export class DigestInboxService {
   }
 
   /**
+   * 获取条目的 contentId（用于获取全文）
+   */
+  async getContentId(userId: string, itemId: string): Promise<string> {
+    const item = await this.prisma.digestRunItem.findFirst({
+      where: {
+        id: itemId,
+        userId,
+        deliveredAt: { not: null },
+      },
+      select: { contentId: true },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Inbox item not found');
+    }
+
+    return item.contentId;
+  }
+
+  /**
    * 格式化为 API 响应
    */
   toResponse(item: InboxItem): InboxItemResponse {

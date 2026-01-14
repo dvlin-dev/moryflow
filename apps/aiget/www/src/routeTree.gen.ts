@@ -8,380 +8,318 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root';
-import { Route as SettingsRouteImport } from './routes/settings';
-import { Route as RegisterRouteImport } from './routes/register';
-import { Route as PricingRouteImport } from './routes/pricing';
-import { Route as MyTopicsRouteImport } from './routes/my-topics';
-import { Route as MemoxRouteImport } from './routes/memox';
-import { Route as LoginRouteImport } from './routes/login';
-import { Route as InboxRouteImport } from './routes/inbox';
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password';
-import { Route as FetchxRouteImport } from './routes/fetchx';
-import { Route as DashboardRouteImport } from './routes/dashboard';
-import { Route as IndexRouteImport } from './routes/index';
-import { Route as TopicsIndexRouteImport } from './routes/topics/index';
-import { Route as SubscriptionsIndexRouteImport } from './routes/subscriptions/index';
-import { Route as SubscriptionsIdRouteImport } from './routes/subscriptions/$id';
-import { Route as TopicsSlugIndexRouteImport } from './routes/topics/$slug/index';
-import { Route as TopicsSlugEditionsEditionIdRouteImport } from './routes/topics/$slug/editions/$editionId';
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as MemoxRouteImport } from './routes/memox'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FetchxRouteImport } from './routes/fetchx'
+import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as DeveloperRouteImport } from './routes/developer'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as TopicsIndexRouteImport } from './routes/topics/index'
+import { Route as TopicsSlugIndexRouteImport } from './routes/topics/$slug/index'
+import { Route as TopicsSlugEditionsEditionIdRouteImport } from './routes/topics/$slug/editions/$editionId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
-} as any);
-const MyTopicsRoute = MyTopicsRouteImport.update({
-  id: '/my-topics',
-  path: '/my-topics',
-  getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const MemoxRoute = MemoxRouteImport.update({
   id: '/memox',
   path: '/memox',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
-const InboxRoute = InboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const FetchxRoute = FetchxRouteImport.update({
   id: '/fetchx',
   path: '/fetchx',
   getParentRoute: () => rootRouteImport,
-} as any);
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+} as any)
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const DeveloperRoute = DeveloperRouteImport.update({
+  id: '/developer',
+  path: '/developer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TopicsIndexRoute = TopicsIndexRouteImport.update({
   id: '/topics/',
   path: '/topics/',
   getParentRoute: () => rootRouteImport,
-} as any);
-const SubscriptionsIndexRoute = SubscriptionsIndexRouteImport.update({
-  id: '/subscriptions/',
-  path: '/subscriptions/',
-  getParentRoute: () => rootRouteImport,
-} as any);
-const SubscriptionsIdRoute = SubscriptionsIdRouteImport.update({
-  id: '/subscriptions/$id',
-  path: '/subscriptions/$id',
-  getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TopicsSlugIndexRoute = TopicsSlugIndexRouteImport.update({
   id: '/topics/$slug/',
   path: '/topics/$slug/',
   getParentRoute: () => rootRouteImport,
-} as any);
-const TopicsSlugEditionsEditionIdRoute = TopicsSlugEditionsEditionIdRouteImport.update({
-  id: '/topics/$slug/editions/$editionId',
-  path: '/topics/$slug/editions/$editionId',
-  getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const TopicsSlugEditionsEditionIdRoute =
+  TopicsSlugEditionsEditionIdRouteImport.update({
+    id: '/topics/$slug/editions/$editionId',
+    path: '/topics/$slug/editions/$editionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute;
-  '/dashboard': typeof DashboardRoute;
-  '/fetchx': typeof FetchxRoute;
-  '/forgot-password': typeof ForgotPasswordRoute;
-  '/inbox': typeof InboxRoute;
-  '/login': typeof LoginRoute;
-  '/memox': typeof MemoxRoute;
-  '/my-topics': typeof MyTopicsRoute;
-  '/pricing': typeof PricingRoute;
-  '/register': typeof RegisterRoute;
-  '/settings': typeof SettingsRoute;
-  '/subscriptions/$id': typeof SubscriptionsIdRoute;
-  '/subscriptions': typeof SubscriptionsIndexRoute;
-  '/topics': typeof TopicsIndexRoute;
-  '/topics/$slug': typeof TopicsSlugIndexRoute;
-  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
+  '/': typeof IndexRoute
+  '/developer': typeof DeveloperRoute
+  '/discover': typeof DiscoverRoute
+  '/fetchx': typeof FetchxRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/memox': typeof MemoxRoute
+  '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
+  '/settings': typeof SettingsRoute
+  '/topics': typeof TopicsIndexRoute
+  '/topics/$slug': typeof TopicsSlugIndexRoute
+  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute;
-  '/dashboard': typeof DashboardRoute;
-  '/fetchx': typeof FetchxRoute;
-  '/forgot-password': typeof ForgotPasswordRoute;
-  '/inbox': typeof InboxRoute;
-  '/login': typeof LoginRoute;
-  '/memox': typeof MemoxRoute;
-  '/my-topics': typeof MyTopicsRoute;
-  '/pricing': typeof PricingRoute;
-  '/register': typeof RegisterRoute;
-  '/settings': typeof SettingsRoute;
-  '/subscriptions/$id': typeof SubscriptionsIdRoute;
-  '/subscriptions': typeof SubscriptionsIndexRoute;
-  '/topics': typeof TopicsIndexRoute;
-  '/topics/$slug': typeof TopicsSlugIndexRoute;
-  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
+  '/': typeof IndexRoute
+  '/developer': typeof DeveloperRoute
+  '/discover': typeof DiscoverRoute
+  '/fetchx': typeof FetchxRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/memox': typeof MemoxRoute
+  '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
+  '/settings': typeof SettingsRoute
+  '/topics': typeof TopicsIndexRoute
+  '/topics/$slug': typeof TopicsSlugIndexRoute
+  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  '/': typeof IndexRoute;
-  '/dashboard': typeof DashboardRoute;
-  '/fetchx': typeof FetchxRoute;
-  '/forgot-password': typeof ForgotPasswordRoute;
-  '/inbox': typeof InboxRoute;
-  '/login': typeof LoginRoute;
-  '/memox': typeof MemoxRoute;
-  '/my-topics': typeof MyTopicsRoute;
-  '/pricing': typeof PricingRoute;
-  '/register': typeof RegisterRoute;
-  '/settings': typeof SettingsRoute;
-  '/subscriptions/$id': typeof SubscriptionsIdRoute;
-  '/subscriptions/': typeof SubscriptionsIndexRoute;
-  '/topics/': typeof TopicsIndexRoute;
-  '/topics/$slug/': typeof TopicsSlugIndexRoute;
-  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/developer': typeof DeveloperRoute
+  '/discover': typeof DiscoverRoute
+  '/fetchx': typeof FetchxRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/memox': typeof MemoxRoute
+  '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
+  '/settings': typeof SettingsRoute
+  '/topics/': typeof TopicsIndexRoute
+  '/topics/$slug/': typeof TopicsSlugIndexRoute
+  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
+    | '/developer'
+    | '/discover'
     | '/fetchx'
     | '/forgot-password'
-    | '/inbox'
     | '/login'
     | '/memox'
-    | '/my-topics'
     | '/pricing'
     | '/register'
     | '/settings'
-    | '/subscriptions/$id'
-    | '/subscriptions'
     | '/topics'
     | '/topics/$slug'
-    | '/topics/$slug/editions/$editionId';
-  fileRoutesByTo: FileRoutesByTo;
+    | '/topics/$slug/editions/$editionId'
+  fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
+    | '/developer'
+    | '/discover'
     | '/fetchx'
     | '/forgot-password'
-    | '/inbox'
     | '/login'
     | '/memox'
-    | '/my-topics'
     | '/pricing'
     | '/register'
     | '/settings'
-    | '/subscriptions/$id'
-    | '/subscriptions'
     | '/topics'
     | '/topics/$slug'
-    | '/topics/$slug/editions/$editionId';
+    | '/topics/$slug/editions/$editionId'
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
+    | '/developer'
+    | '/discover'
     | '/fetchx'
     | '/forgot-password'
-    | '/inbox'
     | '/login'
     | '/memox'
-    | '/my-topics'
     | '/pricing'
     | '/register'
     | '/settings'
-    | '/subscriptions/$id'
-    | '/subscriptions/'
     | '/topics/'
     | '/topics/$slug/'
-    | '/topics/$slug/editions/$editionId';
-  fileRoutesById: FileRoutesById;
+    | '/topics/$slug/editions/$editionId'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  DashboardRoute: typeof DashboardRoute;
-  FetchxRoute: typeof FetchxRoute;
-  ForgotPasswordRoute: typeof ForgotPasswordRoute;
-  InboxRoute: typeof InboxRoute;
-  LoginRoute: typeof LoginRoute;
-  MemoxRoute: typeof MemoxRoute;
-  MyTopicsRoute: typeof MyTopicsRoute;
-  PricingRoute: typeof PricingRoute;
-  RegisterRoute: typeof RegisterRoute;
-  SettingsRoute: typeof SettingsRoute;
-  SubscriptionsIdRoute: typeof SubscriptionsIdRoute;
-  SubscriptionsIndexRoute: typeof SubscriptionsIndexRoute;
-  TopicsIndexRoute: typeof TopicsIndexRoute;
-  TopicsSlugIndexRoute: typeof TopicsSlugIndexRoute;
-  TopicsSlugEditionsEditionIdRoute: typeof TopicsSlugEditionsEditionIdRoute;
+  IndexRoute: typeof IndexRoute
+  DeveloperRoute: typeof DeveloperRoute
+  DiscoverRoute: typeof DiscoverRoute
+  FetchxRoute: typeof FetchxRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  MemoxRoute: typeof MemoxRoute
+  PricingRoute: typeof PricingRoute
+  RegisterRoute: typeof RegisterRoute
+  SettingsRoute: typeof SettingsRoute
+  TopicsIndexRoute: typeof TopicsIndexRoute
+  TopicsSlugIndexRoute: typeof TopicsSlugIndexRoute
+  TopicsSlugEditionsEditionIdRoute: typeof TopicsSlugEditionsEditionIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/settings': {
-      id: '/settings';
-      path: '/settings';
-      fullPath: '/settings';
-      preLoaderRoute: typeof SettingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
-      id: '/register';
-      path: '/register';
-      fullPath: '/register';
-      preLoaderRoute: typeof RegisterRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
-      id: '/pricing';
-      path: '/pricing';
-      fullPath: '/pricing';
-      preLoaderRoute: typeof PricingRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/my-topics': {
-      id: '/my-topics';
-      path: '/my-topics';
-      fullPath: '/my-topics';
-      preLoaderRoute: typeof MyTopicsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/memox': {
-      id: '/memox';
-      path: '/memox';
-      fullPath: '/memox';
-      preLoaderRoute: typeof MemoxRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/memox'
+      path: '/memox'
+      fullPath: '/memox'
+      preLoaderRoute: typeof MemoxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
-      id: '/login';
-      path: '/login';
-      fullPath: '/login';
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/inbox': {
-      id: '/inbox';
-      path: '/inbox';
-      fullPath: '/inbox';
-      preLoaderRoute: typeof InboxRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forgot-password': {
-      id: '/forgot-password';
-      path: '/forgot-password';
-      fullPath: '/forgot-password';
-      preLoaderRoute: typeof ForgotPasswordRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fetchx': {
-      id: '/fetchx';
-      path: '/fetchx';
-      fullPath: '/fetchx';
-      preLoaderRoute: typeof FetchxRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/dashboard': {
-      id: '/dashboard';
-      path: '/dashboard';
-      fullPath: '/dashboard';
-      preLoaderRoute: typeof DashboardRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/fetchx'
+      path: '/fetchx'
+      fullPath: '/fetchx'
+      preLoaderRoute: typeof FetchxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/developer': {
+      id: '/developer'
+      path: '/developer'
+      fullPath: '/developer'
+      preLoaderRoute: typeof DeveloperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topics/': {
-      id: '/topics/';
-      path: '/topics';
-      fullPath: '/topics';
-      preLoaderRoute: typeof TopicsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/subscriptions/': {
-      id: '/subscriptions/';
-      path: '/subscriptions';
-      fullPath: '/subscriptions';
-      preLoaderRoute: typeof SubscriptionsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/subscriptions/$id': {
-      id: '/subscriptions/$id';
-      path: '/subscriptions/$id';
-      fullPath: '/subscriptions/$id';
-      preLoaderRoute: typeof SubscriptionsIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/topics/'
+      path: '/topics'
+      fullPath: '/topics'
+      preLoaderRoute: typeof TopicsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topics/$slug/': {
-      id: '/topics/$slug/';
-      path: '/topics/$slug';
-      fullPath: '/topics/$slug';
-      preLoaderRoute: typeof TopicsSlugIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/topics/$slug/'
+      path: '/topics/$slug'
+      fullPath: '/topics/$slug'
+      preLoaderRoute: typeof TopicsSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topics/$slug/editions/$editionId': {
-      id: '/topics/$slug/editions/$editionId';
-      path: '/topics/$slug/editions/$editionId';
-      fullPath: '/topics/$slug/editions/$editionId';
-      preLoaderRoute: typeof TopicsSlugEditionsEditionIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/topics/$slug/editions/$editionId'
+      path: '/topics/$slug/editions/$editionId'
+      fullPath: '/topics/$slug/editions/$editionId'
+      preLoaderRoute: typeof TopicsSlugEditionsEditionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  DeveloperRoute: DeveloperRoute,
+  DiscoverRoute: DiscoverRoute,
   FetchxRoute: FetchxRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
-  InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   MemoxRoute: MemoxRoute,
-  MyTopicsRoute: MyTopicsRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
-  SubscriptionsIdRoute: SubscriptionsIdRoute,
-  SubscriptionsIndexRoute: SubscriptionsIndexRoute,
   TopicsIndexRoute: TopicsIndexRoute,
   TopicsSlugIndexRoute: TopicsSlugIndexRoute,
   TopicsSlugEditionsEditionIdRoute: TopicsSlugEditionsEditionIdRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from './router.tsx';
-import type { createStart } from '@tanstack/react-start';
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

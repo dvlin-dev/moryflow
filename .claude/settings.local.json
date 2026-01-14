@@ -88,7 +88,9 @@
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:tanstack.com)",
       "Bash(timeout 30 pnpm:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "WebSearch",
+      "Bash(tree:*)"
     ]
   }
 }
