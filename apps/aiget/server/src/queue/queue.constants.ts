@@ -14,6 +14,10 @@ export const DIGEST_CONTENT_INGEST_QUEUE = 'digest-content-ingest';
 export const DIGEST_SOURCE_REFRESH_QUEUE = 'digest-source-refresh';
 export const DIGEST_SOURCE_SCHEDULER_QUEUE = 'digest-source-scheduler';
 
+// Digest 通知投递队列
+export const DIGEST_WEBHOOK_DELIVERY_QUEUE = 'digest-webhook-delivery';
+export const DIGEST_EMAIL_DELIVERY_QUEUE = 'digest-email-delivery';
+
 // 任务名称
 export const SCREENSHOT_JOBS = {
   CAPTURE: 'capture', // 截图任务
@@ -95,4 +99,48 @@ export interface DigestSourceRefreshJobData {
   sourceId: string;
   url: string;
   sourceType: 'RSS' | 'WEBPAGE' | 'API';
+}
+
+// ========== Digest 通知投递任务数据类型 ==========
+
+/** Webhook 投递任务数据 */
+export interface DigestWebhookDeliveryJobData {
+  runId: string;
+  subscriptionId: string;
+  userId: string;
+  webhookUrl: string;
+  event: 'digest.run.completed' | 'digest.run.failed';
+  payload: {
+    runId: string;
+    subscriptionId: string;
+    subscriptionName: string;
+    status: 'completed' | 'failed';
+    itemsDelivered: number;
+    narrativeMarkdown?: string;
+    items: Array<{
+      title: string;
+      url: string;
+      aiSummary?: string;
+      scoreOverall: number;
+    }>;
+    timestamp: string;
+  };
+}
+
+/** Email 投递任务数据 */
+export interface DigestEmailDeliveryJobData {
+  runId: string;
+  subscriptionId: string;
+  userId: string;
+  emailTo: string;
+  emailSubject: string;
+  subscriptionName: string;
+  itemsCount: number;
+  narrativeMarkdown?: string;
+  items: Array<{
+    title: string;
+    url: string;
+    aiSummary?: string;
+  }>;
+  viewUrl: string;
 }

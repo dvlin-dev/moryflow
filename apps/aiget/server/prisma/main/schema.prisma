@@ -751,6 +751,7 @@ model DigestSubscription {
   emailSubjectTemplate String?
   webhookUrl           String?
   webhookEnabled       Boolean @default(false)
+  webhookSecret        String? // HMAC 签名密钥
 
   // AI & 写作偏好
   generateItemSummaries Boolean    @default(true)
@@ -930,7 +931,15 @@ model DigestRun {
   narrativeMarkdown String?
 
   // Email 相关
-  emailSubject String?
+  emailSubject     String?
+  emailDeliveredAt DateTime?
+  emailError       String?
+
+  // Webhook 相关
+  webhookDeliveredAt DateTime?
+  webhookError       String?
+  webhookStatusCode  Int?
+  webhookLatencyMs   Int?
 
   // 计费：按 run 结算一次，按 Fetchx 实际成本汇总
   billing            Json // { model, totalCredits, charged, breakdown }

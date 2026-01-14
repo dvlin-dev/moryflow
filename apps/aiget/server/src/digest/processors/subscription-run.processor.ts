@@ -20,6 +20,7 @@ import { DigestContentService } from '../services/content.service';
 import { DigestAiService } from '../services/ai.service';
 import { DigestSourceService } from '../services/source.service';
 import { DigestFeedbackService } from '../services/feedback.service';
+import { DigestNotificationService } from '../services/notification.service';
 import { DIGEST_SUBSCRIPTION_RUN_QUEUE } from '../../queue/queue.constants';
 import type { DigestSubscriptionRunJobData } from '../../queue/queue.constants';
 import { BILLING } from '../digest.constants';
@@ -45,6 +46,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
     private readonly aiService: DigestAiService,
     private readonly sourceService: DigestSourceService,
     private readonly feedbackService: DigestFeedbackService,
+    private readonly notificationService: DigestNotificationService,
   ) {
     super();
   }
@@ -213,6 +215,30 @@ export class SubscriptionRunProcessor extends WorkerHost {
         data: { lastRunAt: new Date() },
       });
 
+      // 13. 触发通知（Webhook + Email）
+      try {
+        await this.notificationService.onRunCompleted({
+          runId,
+          subscriptionId,
+          userId,
+          status: 'completed',
+          itemsDelivered: deliveredIds.length,
+          narrativeMarkdown,
+          items: selectedItems.map((item) => ({
+            title: item.title,
+            url: item.url,
+            aiSummary: item.aiSummary,
+            scoreOverall: item.scoreOverall,
+          })),
+        });
+      } catch (notifyError) {
+        // 通知失败不影响运行结果
+        this.logger.warn(
+          `Notification dispatch failed for run ${runId}:`,
+          notifyError,
+        );
+      }
+
       this.logger.log(
         `Completed subscription run ${runId}: ${deliveredIds.length} items delivered`,
       );
@@ -224,6 +250,24 @@ export class SubscriptionRunProcessor extends WorkerHost {
       this.logger.error(`Failed subscription run ${runId}:`, error);
 
       await this.runService.failRun(runId, errorMessage);
+
+      // 触发失败通知（仅 Webhook，不发 Email）
+      try {
+        await this.notificationService.onRunCompleted({
+          runId,
+          subscriptionId,
+          userId,
+          status: 'failed',
+          itemsDelivered: 0,
+          items: [],
+          error: errorMessage,
+        });
+      } catch (notifyError) {
+        this.logger.warn(
+          `Failed notification dispatch for run ${runId}:`,
+          notifyError,
+        );
+      }
 
       throw error;
     }

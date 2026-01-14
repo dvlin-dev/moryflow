@@ -24,6 +24,7 @@ import {
   DigestSiteCrawlService,
   DigestSourceService,
   DigestFeedbackService,
+  DigestNotificationService,
 } from './services';
 
 // Processors
@@ -32,6 +33,8 @@ import {
   SubscriptionRunProcessor,
   SourceSchedulerProcessor,
   SourceRefreshProcessor,
+  WebhookDeliveryProcessor,
+  EmailDeliveryProcessor,
 } from './processors';
 
 // Controllers
@@ -53,6 +56,8 @@ import {
   DIGEST_CONTENT_INGEST_QUEUE,
   DIGEST_SOURCE_REFRESH_QUEUE,
   DIGEST_SOURCE_SCHEDULER_QUEUE,
+  DIGEST_WEBHOOK_DELIVERY_QUEUE,
+  DIGEST_EMAIL_DELIVERY_QUEUE,
 } from '../queue/queue.constants';
 
 // Dependencies
@@ -84,6 +89,8 @@ import { MapModule } from '../map/map.module';
       { name: DIGEST_CONTENT_INGEST_QUEUE },
       { name: DIGEST_SOURCE_REFRESH_QUEUE },
       { name: DIGEST_SOURCE_SCHEDULER_QUEUE },
+      { name: DIGEST_WEBHOOK_DELIVERY_QUEUE },
+      { name: DIGEST_EMAIL_DELIVERY_QUEUE },
     ),
   ],
   controllers: [
@@ -115,12 +122,15 @@ import { MapModule } from '../map/map.module';
     DigestSiteCrawlService,
     DigestSourceService,
     DigestFeedbackService,
+    DigestNotificationService,
 
     // Processors
     SubscriptionSchedulerProcessor,
     SubscriptionRunProcessor,
     SourceSchedulerProcessor,
     SourceRefreshProcessor,
+    WebhookDeliveryProcessor,
+    EmailDeliveryProcessor,
   ],
   exports: [
     // 导出服务供其他模块使用

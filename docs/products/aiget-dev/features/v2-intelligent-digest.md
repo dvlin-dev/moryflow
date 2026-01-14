@@ -473,15 +473,15 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 ## 9. 实施进度
 
-| 阶段                          | 状态      | 说明                                                   |
-| ----------------------------- | --------- | ------------------------------------------------------ |
-| Phase 1: MVP                  | ✅ 完成   | Prisma + 后端服务 + API + Console UI                   |
-| Phase 2: AI                   | ✅ 完成   | AI 摘要、Writer 叙事、Explainability、Preview          |
-| Phase 2.5: Public Topics      | ✅ 完成   | 数据模型 + Public API + SEO 页面 + 举报治理            |
-| Phase 2.6: 统一登录与前端架构 | ✅ 完成   | 统一登录入口 + www 用户功能 + Console 精简             |
-| Phase 2.7: 首页 C 端改造      | ✅ 完成   | Digest 主产品定位 + 首页 Public Topics 展示 + 精选配置 |
-| Phase 3: 多源                 | ✅ 完成   | RSS/Site crawl/Scheduled refresh（后端完整实现）       |
-| Phase 4: 多渠道               | ⬜ 未开始 | Webhook/Email/反馈学习                                 |
+| 阶段                          | 状态    | 说明                                                   |
+| ----------------------------- | ------- | ------------------------------------------------------ |
+| Phase 1: MVP                  | ✅ 完成 | Prisma + 后端服务 + API + Console UI                   |
+| Phase 2: AI                   | ✅ 完成 | AI 摘要、Writer 叙事、Explainability、Preview          |
+| Phase 2.5: Public Topics      | ✅ 完成 | 数据模型 + Public API + SEO 页面 + 举报治理            |
+| Phase 2.6: 统一登录与前端架构 | ✅ 完成 | 统一登录入口 + www 用户功能 + Console 精简             |
+| Phase 2.7: 首页 C 端改造      | ✅ 完成 | Digest 主产品定位 + 首页 Public Topics 展示 + 精选配置 |
+| Phase 3: 多源                 | ✅ 完成 | RSS/Site crawl/Scheduled refresh（后端完整实现）       |
+| Phase 4: 多渠道               | ✅ 完成 | Webhook 投递 + Email 推送 + 反馈学习                   |
 
 ---
 

@@ -236,6 +236,27 @@ export const FEEDBACK_LEARNING = {
   maxKeywordsPerContent: 5,
 } as const;
 
+// ========== 通知配置 ==========
+
+export const NOTIFICATION = {
+  /** Webhook 请求超时（毫秒） */
+  webhookTimeoutMs: 10000,
+  /** Webhook 最大重试次数 */
+  webhookMaxRetries: 3,
+  /** Webhook 重试延迟（毫秒）- 指数退避：2s, 10s, 50s */
+  webhookRetryDelayMs: 2000,
+  /** Email 最大重试次数 */
+  emailMaxRetries: 3,
+  /** Email 重试延迟（毫秒） */
+  emailRetryDelayMs: 5000,
+  /** 签名 header 名称 */
+  signatureHeader: 'X-Digest-Signature',
+  /** 事件 header 名称 */
+  eventHeader: 'X-Digest-Event',
+  /** 时间戳 header 名称 */
+  timestampHeader: 'X-Digest-Timestamp',
+} as const;
+
 // ========== BullMQ 队列名称 ==========
 
 export const QUEUE_NAMES = {
