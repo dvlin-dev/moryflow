@@ -14,6 +14,7 @@ import { QuotaModule } from '../quota/quota.module';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
 import { AgentBillingService } from './agent-billing.service';
+import { AgentStreamProcessor } from './agent-stream.processor';
 import { AgentTaskRepository } from './agent-task.repository';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
 
@@ -23,6 +24,7 @@ import { AgentTaskProgressStore } from './agent-task.progress.store';
   providers: [
     AgentService,
     AgentBillingService,
+    AgentStreamProcessor,
     AgentTaskRepository,
     AgentTaskProgressStore,
   ],

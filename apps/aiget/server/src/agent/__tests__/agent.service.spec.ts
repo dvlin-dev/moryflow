@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentService } from '../agent.service';
 import { AgentBillingService } from '../agent-billing.service';
+import { AgentStreamProcessor } from '../agent-stream.processor';
 import { run } from '@aiget/agents-core';
 import type { BrowserAgentPortService } from '../../browser/ports';
 import type { AgentTaskRepository } from '../agent-task.repository';
@@ -76,6 +77,12 @@ const createMockProgressStore = (): AgentTaskProgressStore =>
     isCancelRequested: vi.fn().mockResolvedValue(false),
     clearCancel: vi.fn().mockResolvedValue(undefined),
   }) as unknown as AgentTaskProgressStore;
+
+const createMockStreamProcessor = (
+  progressStore: AgentTaskProgressStore,
+  billingService: AgentBillingService,
+): AgentStreamProcessor =>
+  new AgentStreamProcessor(progressStore, billingService);
 
 const createMockBillingService = (): AgentBillingService => {
   const billingState = {
@@ -162,11 +169,13 @@ describe('AgentService', () => {
       createStreamResult({ inputTokens: 100000, outputTokens: 0 }) as never,
     );
 
+    const mockProgressStore = createMockProgressStore();
     const service = new AgentService(
       mockBrowserPort,
       mockBillingService,
       createMockTaskRepository(),
-      createMockProgressStore(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
     const result = await service.executeTask(
@@ -208,12 +217,14 @@ describe('AgentService', () => {
     );
 
     const mockTaskRepository = createMockTaskRepository();
+    const mockProgressStore = createMockProgressStore();
 
     const service = new AgentService(
       mockBrowserPort,
       mockBillingService,
       mockTaskRepository,
-      createMockProgressStore(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
     const result = await service.executeTask(
@@ -256,6 +267,7 @@ describe('AgentService', () => {
       mockBillingService,
       mockTaskRepository,
       mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
     const result = await service.executeTask(
@@ -313,6 +325,7 @@ describe('AgentService', () => {
       mockBillingService,
       mockTaskRepository,
       mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
     const result = await service.cancelTask('task_1', 'user_1');
@@ -353,11 +366,13 @@ describe('AgentService', () => {
       cancelledAt: null,
     });
 
+    const mockProgressStore = createMockProgressStore();
     const service = new AgentService(
       mockBrowserPort,
       mockBillingService,
       mockTaskRepository,
-      createMockProgressStore(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
     const result = await service.cancelTask('task_2', 'user_1');

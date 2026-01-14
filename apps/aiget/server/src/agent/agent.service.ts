@@ -14,7 +14,6 @@ import {
   run,
   type AgentOutputType,
   type JsonSchemaDefinition,
-  type RunStreamEvent,
   type StreamedRunResult,
 } from '@aiget/agents-core';
 import type { AgentTask } from '../../generated/prisma-main/client';
@@ -27,12 +26,18 @@ import {
   CreditsExceededError,
   type BillingParams,
 } from './agent-billing.service';
+import {
+  AgentStreamProcessor,
+  TaskCancelledError,
+} from './agent-stream.processor';
 import type {
   CreateAgentTaskInput,
   AgentTaskResult,
   AgentStreamEvent,
   AgentTaskProgress,
 } from './dto';
+
+export { TaskCancelledError } from './agent-stream.processor';
 
 /** Agent 系统指令 */
 const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页数据收集助手。
@@ -63,15 +68,6 @@ interface RunningTask {
   sessionId?: string;
 }
 
-/** 任务取消错误 */
-export class TaskCancelledError extends Error {
-  constructor(message: string = 'Task cancelled by user') {
-    super(message);
-    this.name = 'TaskCancelledError';
-  }
-}
-
-const PROGRESS_UPDATE_INTERVAL_MS = 1000;
 const PROGRESS_TTL_MS = 24 * 60 * 60 * 1000;
 
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
@@ -114,6 +110,7 @@ export class AgentService {
     private readonly billingService: AgentBillingService,
     private readonly taskRepository: AgentTaskRepository,
     private readonly progressStore: AgentTaskProgressStore,
+    private readonly streamProcessor: AgentStreamProcessor,
   ) {}
 
   /**
@@ -202,7 +199,7 @@ export class AgentService {
         signal: abortController.signal,
       });
 
-      for await (const event of this.consumeStreamEvents({
+      for await (const event of this.streamProcessor.consumeStreamEvents({
         streamResult,
         billing,
         taskId,
@@ -462,7 +459,7 @@ export class AgentService {
       });
 
       // 处理流式事件并追踪计费
-      for await (const sseEvent of this.consumeStreamEvents({
+      for await (const sseEvent of this.streamProcessor.consumeStreamEvents({
         streamResult,
         billing,
         taskId,
@@ -731,159 +728,6 @@ export class AgentService {
     if (task?.status === 'CANCELLED') {
       throw new TaskCancelledError();
     }
-  }
-
-  /**
-   * 处理流式事件并进行计费/取消检查
-   */
-  private async *consumeStreamEvents(params: {
-    streamResult: AgentStreamedResult;
-    billing: BillingParams;
-    taskId: string;
-    userId: string;
-    abortController: AbortController;
-  }): AsyncGenerator<AgentStreamEvent, void, unknown> {
-    const { streamResult, billing, taskId, userId, abortController } = params;
-    let lastProgressAt = 0;
-    let lastCreditsUsed = billing.currentCredits;
-    let lastToolCallCount = billing.toolCallCount;
-    let lastCancelCheckAt = 0;
-
-    for await (const event of streamResult) {
-      if (abortController.signal.aborted) {
-        throw new TaskCancelledError();
-      }
-
-      const now = Date.now();
-      if (now - lastCancelCheckAt >= PROGRESS_UPDATE_INTERVAL_MS) {
-        lastCancelCheckAt = now;
-        let cancelled = false;
-        try {
-          cancelled = await this.progressStore.isCancelRequested(taskId);
-        } catch (error) {
-          this.logger.warn(
-            `Failed to check cancel status for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
-          );
-        }
-        if (cancelled) {
-          abortController.abort(new TaskCancelledError());
-          throw new TaskCancelledError();
-        }
-      }
-
-      if (event.type === 'run_item_stream_event') {
-        const item = event.item;
-        if (item.type === 'tool_call_item') {
-          billing.toolCallCount++;
-        }
-      }
-
-      this.billingService.updateBillingFromUsage(
-        billing,
-        streamResult.state?._context?.usage,
-      );
-
-      const progress = this.billingService.buildProgress(billing);
-      const shouldUpdateProgress =
-        progress.creditsUsed !== lastCreditsUsed ||
-        progress.toolCallCount !== lastToolCallCount ||
-        now - lastProgressAt >= PROGRESS_UPDATE_INTERVAL_MS;
-      if (shouldUpdateProgress) {
-        await this.safeProgressOperation(
-          () => this.progressStore.setProgress(taskId, progress),
-          'set progress',
-        );
-        lastProgressAt = now;
-        lastCreditsUsed = progress.creditsUsed;
-        lastToolCallCount = progress.toolCallCount;
-      }
-
-      try {
-        this.billingService.checkCreditsLimit(billing);
-      } catch (error) {
-        abortController.abort(error);
-        throw error;
-      }
-
-      try {
-        await this.billingService.applyQuotaCheckpoint(userId, taskId, billing);
-      } catch (error) {
-        abortController.abort(error);
-        throw error;
-      }
-
-      const sseEvent = this.convertRunEventToSSE(event);
-      if (sseEvent) {
-        yield sseEvent;
-      }
-    }
-  }
-
-  /**
-   * 将 SDK 流事件转换为 SSE 事件
-   */
-  private convertRunEventToSSE(event: RunStreamEvent): AgentStreamEvent | null {
-    switch (event.type) {
-      case 'raw_model_stream_event': {
-        // 处理模型流事件（思考过程）
-        const modelEvent = event.data;
-        if (modelEvent.type === 'output_text_delta') {
-          return { type: 'thinking', content: modelEvent.delta };
-        }
-
-        if (modelEvent.type === 'model') {
-          const rawEvent = modelEvent.event as {
-            type?: string;
-            delta?: string;
-          };
-          if (rawEvent.type === 'reasoning-delta' && rawEvent.delta) {
-            return { type: 'thinking', content: rawEvent.delta };
-          }
-        }
-        break;
-      }
-
-      case 'run_item_stream_event': {
-        // 处理运行项事件（工具调用）
-        const item = event.item;
-        if (item.type === 'tool_call_item') {
-          const rawItem = item.rawItem as {
-            call_id?: string;
-            name?: string;
-            arguments?: Record<string, unknown>;
-          };
-          return {
-            type: 'tool_call',
-            callId: rawItem.call_id ?? '',
-            tool: rawItem.name ?? '',
-            args: rawItem.arguments ?? {},
-          };
-        } else if (item.type === 'tool_call_output_item') {
-          const rawItem = item.rawItem as {
-            call_id?: string;
-            name?: string;
-            output?: unknown;
-          };
-          return {
-            type: 'tool_result',
-            callId: rawItem.call_id ?? '',
-            tool: rawItem.name ?? '',
-            result: rawItem.output,
-          };
-        }
-        break;
-      }
-
-      case 'agent_updated_stream_event':
-        // Agent 切换事件（如果有 handoff）
-        return {
-          type: 'progress',
-          message: `切换到: ${event.agent.name}`,
-          step: 0,
-        };
-    }
-
-    return null;
   }
 
   /**
