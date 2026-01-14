@@ -83,6 +83,7 @@ export function createBetterAuth(
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: true,
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -206,6 +207,7 @@ export function createBetterAuth(
         otpLength: 6,
         expiresIn: 300, // 5 分钟
         allowedAttempts: 3,
+        overrideDefaultEmailVerification: true, // 使用 OTP 替代验证链接
       }),
     ],
   });
