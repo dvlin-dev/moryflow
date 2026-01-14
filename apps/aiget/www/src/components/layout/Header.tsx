@@ -76,10 +76,10 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link
-              to="/dashboard"
+              to="/"
               className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground rounded-lg hover:bg-muted"
             >
-              Digest
+              Home
             </Link>
             <Link
               to="/pricing"
@@ -230,11 +230,11 @@ export function Header() {
         >
           <nav className="flex flex-col gap-1 pt-2">
             <Link
-              to="/dashboard"
+              to="/"
               className="px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Digest
+              Home
             </Link>
             <Link
               to="/pricing"
