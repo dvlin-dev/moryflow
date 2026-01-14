@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: pnpm test:unit || echo "No tests found, skipping..."
+        run: pnpm test:unit
 
   build:
     name: Build
