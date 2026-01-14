@@ -9,6 +9,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MapService } from '../../map/map.service';
 import { ScraperService } from '../../scraper/scraper.service';
+import { UrlValidator } from '../../common/validators/url.validator';
 import { SOURCE_DEFAULTS } from '../digest.constants';
 
 /**
@@ -53,6 +54,7 @@ export class DigestSiteCrawlService {
   constructor(
     private readonly mapService: MapService,
     private readonly scraperService: ScraperService,
+    private readonly urlValidator: UrlValidator,
   ) {}
 
   /**
@@ -76,6 +78,10 @@ export class DigestSiteCrawlService {
     let errorCount = 0;
 
     try {
+      if (!this.urlValidator.isAllowed(siteUrl)) {
+        throw new Error(`Site URL not allowed: ${siteUrl}`);
+      }
+
       // 1. 使用 MapService 发现网站 URL
       const mapResult = await this.mapService.map(userId, {
         url: siteUrl,

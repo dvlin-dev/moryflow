@@ -8,10 +8,15 @@
 
 import { z } from 'zod';
 
+const QueryBooleanSchema = z
+  .enum(['true', 'false'])
+  .transform((val) => val === 'true')
+  .optional();
+
 // ========== Inbox 查询 Schema ==========
 
 export const InboxQuerySchema = z.object({
-  cursor: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 
   // 筛选
@@ -19,9 +24,9 @@ export const InboxQuerySchema = z.object({
   q: z.string().max(200).optional(), // 搜索：title/source
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
-  saved: z.coerce.boolean().optional(),
-  unread: z.coerce.boolean().optional(),
-  notInterested: z.coerce.boolean().optional(),
+  saved: QueryBooleanSchema,
+  unread: QueryBooleanSchema,
+  notInterested: QueryBooleanSchema,
 });
 
 // ========== Inbox 状态统计 Schema ==========

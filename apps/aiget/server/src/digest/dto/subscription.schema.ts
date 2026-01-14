@@ -8,6 +8,11 @@
 
 import { z } from 'zod';
 
+const QueryBooleanSchema = z
+  .enum(['true', 'false'])
+  .transform((val) => val === 'true')
+  .optional();
+
 // ========== 枚举 Schema ==========
 
 export const DigestToneSchema = z.enum(['neutral', 'opinionated', 'concise']);
@@ -74,17 +79,29 @@ export const UpdateSubscriptionSchema = CreateSubscriptionSchema.partial();
 // ========== 列表查询 Schema ==========
 
 export const ListSubscriptionsQuerySchema = z.object({
-  cursor: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  enabled: z.coerce.boolean().optional(),
+  enabled: QueryBooleanSchema,
   followedTopicId: z.string().optional(),
+});
+
+// ========== Admin 列表查询 Schema（page/limit） ==========
+
+export const AdminListSubscriptionsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  userId: z.string().optional(),
+  enabled: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
 });
 
 // ========== 预览请求 Schema ==========
 
 export const PreviewSubscriptionQuerySchema = z.object({
   /** 是否生成叙事稿（默认 false，节省成本） */
-  includeNarrative: z.coerce.boolean().default(false),
+  includeNarrative: QueryBooleanSchema.default(false),
   /** 输出语言（默认 en） */
   locale: z.string().max(10).default('en'),
 });
@@ -115,6 +132,9 @@ export type CreateSubscriptionInput = z.infer<typeof CreateSubscriptionSchema>;
 export type UpdateSubscriptionInput = z.infer<typeof UpdateSubscriptionSchema>;
 export type ListSubscriptionsQuery = z.infer<
   typeof ListSubscriptionsQuerySchema
+>;
+export type AdminListSubscriptionsQuery = z.infer<
+  typeof AdminListSubscriptionsQuerySchema
 >;
 export type PreviewSubscriptionQuery = z.infer<
   typeof PreviewSubscriptionQuerySchema

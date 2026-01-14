@@ -2,31 +2,34 @@
  * Digest Admin Service
  *
  * [INPUT]: 管理员查询条件
- * [OUTPUT]: 系统统计、订阅/话题/运行列表
+ * [OUTPUT]: 系统统计、订阅/话题/运行列表、话题精选配置
  * [POS]: 管理后台数据访问层
  */
 
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
-  DigestTopicVisibility,
   DigestTopicStatus,
   DigestRunStatus,
 } from '../../../generated/prisma-main/client';
+import type {
+  AdminTopicsQuery,
+  SetFeaturedInput,
+  ReorderFeaturedInput,
+} from '../dto';
 
 export interface AdminListQuery {
-  cursor?: string;
+  page?: number;
   limit?: number;
 }
 
 export interface AdminSubscriptionQuery extends AdminListQuery {
   userId?: string;
   enabled?: boolean;
-}
-
-export interface AdminTopicQuery extends AdminListQuery {
-  visibility?: DigestTopicVisibility;
-  status?: DigestTopicStatus;
 }
 
 export interface AdminRunQuery extends AdminListQuery {
@@ -37,6 +40,162 @@ export interface AdminRunQuery extends AdminListQuery {
 @Injectable()
 export class DigestAdminService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * 获取话题列表（分页 + 搜索 + 过滤）
+   */
+  async listTopics(query: AdminTopicsQuery) {
+    const { page, limit, search, featured, visibility, status } = query;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      ...(featured !== undefined && { featured }),
+      ...(visibility && { visibility }),
+      ...(status && { status }),
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' as const } },
+          { slug: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }),
+    };
+
+    const [topics, total] = await Promise.all([
+      this.prisma.digestTopic.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [
+          { featured: 'desc' },
+          { featuredOrder: 'asc' },
+          { subscriberCount: 'desc' },
+        ],
+        include: {
+          createdBy: { select: { id: true, email: true, name: true } },
+          featuredBy: { select: { id: true, email: true, name: true } },
+          _count: { select: { editions: true, followers: true } },
+        },
+      }),
+      this.prisma.digestTopic.count({ where }),
+    ]);
+
+    return {
+      items: topics,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * 获取精选话题列表（Admin 视角，不过滤 visibility/status）
+   */
+  async getFeaturedTopics() {
+    return this.prisma.digestTopic.findMany({
+      where: { featured: true },
+      orderBy: { featuredOrder: 'asc' },
+      include: {
+        createdBy: { select: { id: true, email: true, name: true } },
+        featuredBy: { select: { id: true, email: true, name: true } },
+        _count: { select: { editions: true, followers: true } },
+      },
+    });
+  }
+
+  /**
+   * 获取单个话题详情（包含 Admin 需要的关联字段）
+   */
+  async getTopic(id: string) {
+    const topic = await this.prisma.digestTopic.findUnique({
+      where: { id },
+      include: {
+        createdBy: { select: { id: true, email: true, name: true } },
+        featuredBy: { select: { id: true, email: true, name: true } },
+        _count: { select: { editions: true, followers: true } },
+      },
+    });
+
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    return topic;
+  }
+
+  /**
+   * 设置/取消精选
+   */
+  async setFeatured(
+    topicId: string,
+    adminUserId: string,
+    input: SetFeaturedInput,
+  ) {
+    const topic = await this.prisma.digestTopic.findUnique({
+      where: { id: topicId },
+    });
+
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    let featuredOrder = input.featuredOrder;
+    if (input.featured && featuredOrder === undefined) {
+      const maxOrder = await this.prisma.digestTopic.aggregate({
+        where: { featured: true },
+        _max: { featuredOrder: true },
+      });
+      featuredOrder = (maxOrder._max.featuredOrder ?? -1) + 1;
+    }
+
+    return this.prisma.digestTopic.update({
+      where: { id: topicId },
+      data: {
+        featured: input.featured,
+        featuredOrder: input.featured ? featuredOrder : null,
+        featuredAt: input.featured ? new Date() : null,
+        featuredByUserId: input.featured ? adminUserId : null,
+      },
+      include: {
+        createdBy: { select: { id: true, email: true, name: true } },
+        featuredBy: { select: { id: true, email: true, name: true } },
+        _count: { select: { editions: true, followers: true } },
+      },
+    });
+  }
+
+  /**
+   * 批量重排精选顺序
+   */
+  async reorderFeatured(input: ReorderFeaturedInput) {
+    const { topicIds } = input;
+
+    const topics = await this.prisma.digestTopic.findMany({
+      where: { id: { in: topicIds } },
+      select: { id: true, featured: true },
+    });
+
+    if (topics.length !== topicIds.length) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    const notFeaturedIds = topics.filter((t) => !t.featured).map((t) => t.id);
+    if (notFeaturedIds.length > 0) {
+      throw new BadRequestException('All topics must be featured to reorder');
+    }
+
+    await this.prisma.$transaction(
+      topicIds.map((id, index) =>
+        this.prisma.digestTopic.update({
+          where: { id },
+          data: { featuredOrder: index },
+        }),
+      ),
+    );
+
+    return this.getFeaturedTopics();
+  }
 
   /**
    * 获取系统统计
@@ -92,30 +251,29 @@ export class DigestAdminService {
    * 获取订阅列表（管理员视图）
    */
   async listSubscriptions(query: AdminSubscriptionQuery) {
-    const take = Math.min(query.limit || 20, 100);
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(query.limit || 20, 100);
+    const skip = (page - 1) * limit;
 
-    const subscriptions = await this.prisma.digestSubscription.findMany({
-      where: {
-        deletedAt: null,
-        ...(query.userId && { userId: query.userId }),
-        ...(query.enabled !== undefined && { enabled: query.enabled }),
-      },
-      take: take + 1,
-      ...(query.cursor && {
-        cursor: { id: query.cursor },
-        skip: 1,
+    const where = {
+      deletedAt: null,
+      ...(query.userId && { userId: query.userId }),
+      ...(query.enabled !== undefined && { enabled: query.enabled }),
+    };
+
+    const [subscriptions, total] = await Promise.all([
+      this.prisma.digestSubscription.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { id: true, email: true, name: true } },
+          _count: { select: { runs: true } },
+        },
       }),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { id: true, email: true, name: true } },
-        _count: { select: { runs: true } },
-      },
-    });
-
-    const hasMore = subscriptions.length > take;
-    if (hasMore) {
-      subscriptions.pop();
-    }
+      this.prisma.digestSubscription.count({ where }),
+    ]);
 
     return {
       items: subscriptions.map((s) => ({
@@ -131,104 +289,39 @@ export class DigestAdminService {
         user: s.user,
         runCount: s._count.runs,
       })),
-      nextCursor: hasMore ? subscriptions[subscriptions.length - 1]?.id : null,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
-  }
-
-  /**
-   * 获取话题列表（管理员视图）
-   */
-  async listTopics(query: AdminTopicQuery) {
-    const take = Math.min(query.limit || 20, 100);
-
-    const topics = await this.prisma.digestTopic.findMany({
-      where: {
-        ...(query.visibility && { visibility: query.visibility }),
-        ...(query.status && { status: query.status }),
-      },
-      take: take + 1,
-      ...(query.cursor && {
-        cursor: { id: query.cursor },
-        skip: 1,
-      }),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: { select: { id: true, email: true, name: true } },
-        _count: { select: { editions: true } },
-      },
-    });
-
-    const hasMore = topics.length > take;
-    if (hasMore) {
-      topics.pop();
-    }
-
-    return {
-      items: topics.map((t) => ({
-        id: t.id,
-        slug: t.slug,
-        title: t.title,
-        visibility: t.visibility,
-        status: t.status,
-        subscriberCount: t.subscriberCount,
-        lastEditionAt: t.lastEditionAt,
-        createdAt: t.createdAt,
-        createdBy: t.createdBy,
-        editionCount: t._count.editions,
-      })),
-      nextCursor: hasMore ? topics[topics.length - 1]?.id : null,
-    };
-  }
-
-  /**
-   * 更新话题状态
-   */
-  async updateTopicStatus(topicId: string, status: DigestTopicStatus) {
-    const topic = await this.prisma.digestTopic.update({
-      where: { id: topicId },
-      data: { status },
-    });
-
-    return {
-      id: topic.id,
-      status: topic.status,
-    };
-  }
-
-  /**
-   * 删除话题（硬删除）
-   */
-  async deleteTopic(topicId: string): Promise<void> {
-    await this.prisma.digestTopic.delete({ where: { id: topicId } });
   }
 
   /**
    * 获取运行历史（管理员视图）
    */
   async listRuns(query: AdminRunQuery) {
-    const take = Math.min(query.limit || 20, 100);
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(query.limit || 20, 100);
+    const skip = (page - 1) * limit;
 
-    const runs = await this.prisma.digestRun.findMany({
-      where: {
-        ...(query.status && { status: query.status }),
-        ...(query.subscriptionId && { subscriptionId: query.subscriptionId }),
-      },
-      take: take + 1,
-      ...(query.cursor && {
-        cursor: { id: query.cursor },
-        skip: 1,
+    const where = {
+      ...(query.status && { status: query.status }),
+      ...(query.subscriptionId && { subscriptionId: query.subscriptionId }),
+    };
+
+    const [runs, total] = await Promise.all([
+      this.prisma.digestRun.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { scheduledAt: 'desc' },
+        include: {
+          subscription: { select: { id: true, name: true } },
+          user: { select: { id: true, email: true } },
+        },
       }),
-      orderBy: { scheduledAt: 'desc' },
-      include: {
-        subscription: { select: { id: true, name: true } },
-        user: { select: { id: true, email: true } },
-      },
-    });
-
-    const hasMore = runs.length > take;
-    if (hasMore) {
-      runs.pop();
-    }
+      this.prisma.digestRun.count({ where }),
+    ]);
 
     return {
       items: runs.map((r) => ({
@@ -246,7 +339,30 @@ export class DigestAdminService {
         billing: r.billing,
         error: r.error,
       })),
-      nextCursor: hasMore ? runs[runs.length - 1]?.id : null,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * 更新话题状态
+   */
+  async updateTopicStatus(topicId: string, status: DigestTopicStatus) {
+    const topic = await this.prisma.digestTopic.update({
+      where: { id: topicId },
+      data: { status },
+      select: { id: true, status: true },
+    });
+
+    return topic;
+  }
+
+  /**
+   * 删除话题（硬删除）
+   */
+  async deleteTopic(topicId: string): Promise<void> {
+    await this.prisma.digestTopic.delete({ where: { id: topicId } });
   }
 }

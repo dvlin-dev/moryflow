@@ -37,6 +37,7 @@ export class EmailDeliveryProcessor extends WorkerHost {
   async process(job: Job<DigestEmailDeliveryJobData>): Promise<DeliveryResult> {
     const {
       runId,
+      subscriptionId,
       emailTo,
       emailSubject,
       subscriptionName,
@@ -44,6 +45,7 @@ export class EmailDeliveryProcessor extends WorkerHost {
       narrativeMarkdown,
       items,
       viewUrl,
+      unsubscribeUrl,
     } = job.data;
 
     this.logger.log(
@@ -58,8 +60,7 @@ export class EmailDeliveryProcessor extends WorkerHost {
         items,
         narrativeMarkdown,
         viewUrl,
-        // TODO: 生成退订链接
-        unsubscribeUrl: undefined,
+        unsubscribeUrl,
       });
 
       // 2. 发送邮件
@@ -69,7 +70,7 @@ export class EmailDeliveryProcessor extends WorkerHost {
       await this.recordDelivery(runId, { success: true });
 
       this.logger.log(
-        `Email delivered successfully to ${emailTo} for run ${runId}`,
+        `Email delivered successfully to ${emailTo} for subscription ${subscriptionId}, run ${runId}`,
       );
 
       return { success: true };

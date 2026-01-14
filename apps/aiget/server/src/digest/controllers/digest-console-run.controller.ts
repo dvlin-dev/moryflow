@@ -42,11 +42,8 @@ export class DigestConsoleRunController {
     @Param('subscriptionId') subscriptionId: string,
     @Query(new ZodValidationPipe(ListRunsQuerySchema)) query: ListRunsQuery,
   ) {
-    const { items, nextCursor } = await this.runService.findMany(
-      user.id,
-      subscriptionId,
-      query,
-    );
+    const { items, total, page, limit, totalPages } =
+      await this.runService.findMany(user.id, subscriptionId, query);
 
     return {
       items: items.map((run) => ({
@@ -62,7 +59,10 @@ export class DigestConsoleRunController {
         billing: run.billing,
         error: run.error,
       })),
-      nextCursor,
+      total,
+      page,
+      limit,
+      totalPages,
     };
   }
 

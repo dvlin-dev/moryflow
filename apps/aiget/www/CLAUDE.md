@@ -12,6 +12,8 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - 模块页路由：Fetchx / Memox
 - Docs 外链入口：`https://docs.aiget.dev`
 - Fetchx Demo Playground（验证码保护）
+- Digest Public Pages（SEO）：Topics / Editions（`/topics`）
+- Digest Console Pages（Session）：Inbox / Dashboard（调用 `server.aiget.dev` 的 Digest Console API）
 - Pricing / Code Examples / CTA
 
 ## Constraints

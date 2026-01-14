@@ -6,6 +6,8 @@
 
 Admin dashboard backend APIs for system monitoring and management. Requires admin role authentication.
 
+> 注意：Digest 的 Admin API 不在本模块实现。所有 `/api/v1/admin/digest/*` 路由由 `src/digest/controllers/digest-admin.controller.ts` 负责，避免重复注册导致路由冲突。
+
 ## Responsibilities
 
 - Dashboard statistics and metrics

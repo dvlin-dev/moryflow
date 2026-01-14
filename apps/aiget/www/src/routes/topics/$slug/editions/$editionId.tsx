@@ -82,6 +82,8 @@ function EditionDetailPage() {
     );
   }
 
+  const displayDate = edition.finishedAt ?? edition.scheduledAt;
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -98,14 +100,12 @@ function EditionDetailPage() {
               Back to topic
             </Link>
 
-            <h1 className="text-3xl font-bold text-neutral-900">
-              Edition #{edition.editionNumber}
-            </h1>
+            <h1 className="text-3xl font-bold text-neutral-900">Edition</h1>
 
             <div className="mt-3 flex items-center gap-4 text-sm text-neutral-500">
               <span className="flex items-center gap-1">
                 <HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4" />
-                {new Date(edition.publishedAt).toLocaleDateString('en-US', {
+                {new Date(displayDate).toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',

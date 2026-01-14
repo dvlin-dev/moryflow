@@ -32,3 +32,7 @@
 - `docs/_archived/`：已完成/归档的文档（progress.md、ui-migration-moryflow.md、console-refactor-plan.md）。
 - `docs/_archived/plans/`：已完成或阶段性结束的计划类文档（仅保留追溯价值）。
 - `docs/_archived/migrations/`：归档迁移记录。
+
+## 最近更新
+
+- Digest 全量 Code Review：`docs/products/aiget-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）

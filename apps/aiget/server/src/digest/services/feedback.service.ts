@@ -550,11 +550,12 @@ export class DigestFeedbackService {
     subscriptionId: string,
     options?: {
       patternType?: DigestFeedbackTermType;
+      page?: number;
       limit?: number;
-      offset?: number;
     },
   ): Promise<DigestFeedbackPattern[]> {
-    const { patternType, limit = 50, offset = 0 } = options || {};
+    const { patternType, page = 1, limit = 50 } = options || {};
+    const skip = (page - 1) * limit;
 
     return this.prisma.digestFeedbackPattern.findMany({
       where: {
@@ -563,7 +564,20 @@ export class DigestFeedbackService {
       },
       orderBy: [{ positiveCount: 'desc' }, { negativeCount: 'desc' }],
       take: limit,
-      skip: offset,
+      skip,
+    });
+  }
+
+  async countPatterns(
+    subscriptionId: string,
+    options?: { patternType?: DigestFeedbackTermType },
+  ): Promise<number> {
+    const { patternType } = options || {};
+    return this.prisma.digestFeedbackPattern.count({
+      where: {
+        subscriptionId,
+        ...(patternType ? { patternType } : {}),
+      },
     });
   }
 

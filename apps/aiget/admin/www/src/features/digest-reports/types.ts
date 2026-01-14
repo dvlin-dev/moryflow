@@ -25,7 +25,7 @@ export interface Report {
 }
 
 export interface ReportQuery {
-  cursor?: string;
+  page?: number;
   limit?: number;
   status?: ReportStatus;
   topicId?: string;
@@ -39,6 +39,9 @@ export interface ResolveReportInput {
 
 export interface ReportListResponse {
   items: Report[];
-  nextCursor: string | null;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   pendingCount: number;
 }

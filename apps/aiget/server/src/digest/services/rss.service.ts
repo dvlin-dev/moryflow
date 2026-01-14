@@ -7,6 +7,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+import { UrlValidator } from '../../common/validators/url.validator';
 import { SOURCE_DEFAULTS } from '../digest.constants';
 
 /**
@@ -53,6 +54,8 @@ export interface RssSourceConfig {
 export class DigestRssService {
   private readonly logger = new Logger(DigestRssService.name);
 
+  constructor(private readonly urlValidator: UrlValidator) {}
+
   /**
    * 获取并解析 RSS feed
    */
@@ -62,6 +65,10 @@ export class DigestRssService {
     this.logger.debug(`Fetching RSS feed: ${feedUrl}`);
 
     try {
+      if (!this.urlValidator.isAllowed(feedUrl)) {
+        throw new Error(`Feed URL not allowed: ${feedUrl}`);
+      }
+
       const response = await fetch(feedUrl, {
         headers: {
           'User-Agent': 'Aiget-Digest/1.0 (+https://aiget.dev)',

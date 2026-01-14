@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
 import { CheckmarkSquare01Icon, Cancel01Icon, ViewIcon } from '@hugeicons/core-free-icons';
-import { PageHeader } from '@aiget/ui';
+import { PageHeader, SimplePagination } from '@aiget/ui';
 import {
   Card,
   CardContent,
@@ -54,6 +54,9 @@ const STATUS_OPTIONS: ReportStatus[] = [
   'DISMISSED',
 ];
 
+// www 站点 URL（用于查看 Topic）
+const WWW_URL = 'https://aiget.dev';
+
 const reasonLabels: Record<ReportReason, string> = {
   SPAM: 'Spam',
   COPYRIGHT: 'Copyright',
@@ -81,7 +84,7 @@ const resolveFormSchema = z.object({
 type ResolveFormValues = z.infer<typeof resolveFormSchema>;
 
 export default function DigestReportsPage() {
-  const [query, setQuery] = useState<ReportQuery>({ limit: 20 });
+  const [query, setQuery] = useState<ReportQuery>({ page: 1, limit: 20 });
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
@@ -100,8 +103,13 @@ export default function DigestReportsPage() {
   const handleFilterStatus = (status: string) => {
     setQuery((prev) => ({
       ...prev,
+      page: 1,
       status: status === 'all' ? undefined : (status as ReportStatus),
     }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setQuery((prev) => ({ ...prev, page }));
   };
 
   const handleResolve = (report: Report) => {
@@ -177,70 +185,91 @@ export default function DigestReportsPage() {
               <p className="text-muted-foreground">No reports found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Topic</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reported</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.items.map((report) => {
-                  const config = statusConfig[report.status];
-                  return (
-                    <TableRow key={report.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{report.topic?.title || 'Unknown'}</p>
-                          <p className="text-sm text-muted-foreground">/{report.topic?.slug}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{reasonLabels[report.reason]}</Badge>
-                        {report.description && (
-                          <p className="mt-1 max-w-xs truncate text-xs text-muted-foreground">
-                            {report.description}
-                          </p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={config.variant}>{config.label}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatRelativeTime(report.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {report.topic?.slug && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => window.open(`/digest/${report.topic?.slug}`, '_blank')}
-                              title="View Topic"
-                            >
-                              <Icon icon={ViewIcon} className="h-4 w-4" />
-                            </Button>
+            <>
+              <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  Page {data.page} of {data.totalPages}
+                </span>
+                <span>{data.total} total</span>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Topic</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Reported</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.items.map((report) => {
+                    const config = statusConfig[report.status];
+                    return (
+                      <TableRow key={report.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{report.topic?.title || 'Unknown'}</p>
+                            <p className="text-sm text-muted-foreground">/{report.topic?.slug}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{reasonLabels[report.reason]}</Badge>
+                          {report.description && (
+                            <p className="mt-1 max-w-xs truncate text-xs text-muted-foreground">
+                              {report.description}
+                            </p>
                           )}
-                          {report.status === 'PENDING' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleResolve(report)}
-                              title="Resolve"
-                            >
-                              <Icon icon={CheckmarkSquare01Icon} className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={config.variant}>{config.label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatRelativeTime(report.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {report.topic?.slug && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  window.open(`${WWW_URL}/topics/${report.topic?.slug}`, '_blank')
+                                }
+                                title="View Topic"
+                              >
+                                <Icon icon={ViewIcon} className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {report.status === 'PENDING' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleResolve(report)}
+                                title="Resolve"
+                              >
+                                <Icon icon={CheckmarkSquare01Icon} className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              {data.totalPages > 1 && (
+                <div className="mt-4 flex justify-center">
+                  <SimplePagination
+                    page={data.page}
+                    totalPages={data.totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

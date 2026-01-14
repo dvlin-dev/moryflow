@@ -81,14 +81,14 @@ function InboxPage() {
           <div>
             <h1 className="text-2xl font-bold">Inbox</h1>
             <p className="text-muted-foreground">
-              {stats?.unread ?? 0} unread of {stats?.total ?? 0} items
+              {stats?.unreadCount ?? 0} unread of {stats?.totalCount ?? 0} items
             </p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleMarkAllAsRead}
-            disabled={markAllAsRead.isPending || (stats?.unread ?? 0) === 0}
+            disabled={markAllAsRead.isPending || (stats?.unreadCount ?? 0) === 0}
           >
             <Icon icon={Tick02Icon} className="mr-2 h-4 w-4" />
             Mark all as read
@@ -126,8 +126,8 @@ function InboxPage() {
 
           {/* Stats badges */}
           <div className="flex items-center gap-2 ml-auto">
-            <Badge variant="outline">{stats?.unread ?? 0} unread</Badge>
-            <Badge variant="outline">{stats?.saved ?? 0} saved</Badge>
+            <Badge variant="outline">{stats?.unreadCount ?? 0} unread</Badge>
+            <Badge variant="outline">{stats?.savedCount ?? 0} saved</Badge>
           </div>
         </div>
 

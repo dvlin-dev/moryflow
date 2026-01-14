@@ -11,6 +11,7 @@ import {
   Logger,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -210,10 +211,15 @@ export class DigestTopicService {
   /**
    * 获取公开话题列表
    */
-  async findPublicTopics(
-    query: PublicTopicsQuery,
-  ): Promise<{ items: DigestTopic[]; nextCursor: string | null }> {
-    const { cursor, limit, sort, q, locale, featured } = query;
+  async findPublicTopics(query: PublicTopicsQuery): Promise<{
+    items: DigestTopic[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const { page, limit, sort, q, locale, featured } = query;
+    const skip = (page - 1) * limit;
 
     // 构建查询条件
     const where: Prisma.DigestTopicWhereInput = {
@@ -252,24 +258,22 @@ export class DigestTopicService {
       }
     }
 
-    const items = await this.prisma.digestTopic.findMany({
-      where,
-      take: limit + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
+    const [items, total] = await Promise.all([
+      this.prisma.digestTopic.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
       }),
-      orderBy,
-    });
-
-    const hasMore = items.length > limit;
-    if (hasMore) {
-      items.pop();
-    }
+      this.prisma.digestTopic.count({ where }),
+    ]);
 
     return {
       items,
-      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -333,7 +337,7 @@ export class DigestTopicService {
     const currentCount = user?._count?.digestSubscriptions || 0;
 
     if (currentCount >= limits.maxSubscriptions) {
-      throw new ConflictException(
+      throw new ForbiddenException(
         `Subscription limit reached. Max ${limits.maxSubscriptions} for ${tier} tier.`,
       );
     }
@@ -410,34 +414,41 @@ export class DigestTopicService {
     query: EditionsQuery,
   ): Promise<{
     items: (DigestTopicEdition & { _count: { items: number } })[];
-    nextCursor: string | null;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
   }> {
-    const { cursor, limit } = query;
+    const { page, limit } = query;
+    const safeLimit = Math.min(limit, ANTI_SPAM_LIMITS.maxEditionsDisplay);
+    const skip = (page - 1) * safeLimit;
 
-    const items = await this.prisma.digestTopicEdition.findMany({
-      where: {
-        topicId,
-        status: 'SUCCEEDED',
-      },
-      take: Math.min(limit + 1, ANTI_SPAM_LIMITS.maxEditionsDisplay),
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
+    const where = {
+      topicId,
+      status: 'SUCCEEDED' as const,
+    };
+
+    const [items, totalRaw] = await Promise.all([
+      this.prisma.digestTopicEdition.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        orderBy: { scheduledAt: 'desc' },
+        include: {
+          _count: { select: { items: true } },
+        },
       }),
-      orderBy: { scheduledAt: 'desc' },
-      include: {
-        _count: { select: { items: true } },
-      },
-    });
+      this.prisma.digestTopicEdition.count({ where }),
+    ]);
 
-    const hasMore = items.length > limit;
-    if (hasMore) {
-      items.pop();
-    }
+    const total = Math.min(totalRaw, ANTI_SPAM_LIMITS.maxEditionsDisplay);
 
     return {
       items,
-      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+      page,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
     };
   }
 

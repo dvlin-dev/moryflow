@@ -145,31 +145,3 @@ export type CleanQueueDto = z.infer<typeof cleanQueueSchema>;
 // =============================================
 // Digest Topics
 // =============================================
-
-export const digestTopicQuerySchema = paginationQuerySchema.extend({
-  featured: z
-    .enum(['true', 'false'])
-    .optional()
-    .transform((val) =>
-      val === 'true' ? true : val === 'false' ? false : undefined,
-    ),
-  visibility: z.enum(['PUBLIC', 'PRIVATE', 'UNLISTED']).optional(),
-  status: z
-    .enum(['ACTIVE', 'PAUSED_INSUFFICIENT_CREDITS', 'PAUSED_BY_ADMIN'])
-    .optional(),
-});
-
-export type DigestTopicQuery = z.infer<typeof digestTopicQuerySchema>;
-
-export const setFeaturedSchema = z.object({
-  featured: z.boolean(),
-  featuredOrder: z.number().int().min(0).max(999).optional(),
-});
-
-export type SetFeaturedDto = z.infer<typeof setFeaturedSchema>;
-
-export const reorderFeaturedSchema = z.object({
-  topicIds: z.array(z.string()).min(1).max(50),
-});
-
-export type ReorderFeaturedDto = z.infer<typeof reorderFeaturedSchema>;

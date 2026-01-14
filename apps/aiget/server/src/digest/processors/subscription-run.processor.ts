@@ -543,6 +543,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
     }>,
     subscription: {
       id: string;
+      userId: string;
       redeliveryPolicy: string;
       redeliveryCooldownDays: number;
     },
@@ -551,16 +552,65 @@ export class SubscriptionRunProcessor extends WorkerHost {
     dedupSkipped: number;
     redelivered: number;
   }> {
+    const canonicalUrlHashes = [
+      ...new Set(items.map((item) => item.canonicalUrlHash)),
+    ];
+    const contentIds = [...new Set(items.map((item) => item.contentId))];
+
+    const [deliveredRows, userStates, contents] = await Promise.all([
+      this.prisma.digestRunItem.groupBy({
+        by: ['canonicalUrlHash'],
+        where: {
+          subscriptionId: subscription.id,
+          canonicalUrlHash: { in: canonicalUrlHashes },
+          deliveredAt: { not: null },
+        },
+        _max: { deliveredAt: true },
+      }),
+      this.prisma.userContentState.findMany({
+        where: {
+          userId: subscription.userId,
+          canonicalUrlHash: { in: canonicalUrlHashes },
+        },
+        select: {
+          canonicalUrlHash: true,
+          lastDeliveredContentHash: true,
+        },
+      }),
+      this.prisma.contentItem.findMany({
+        where: { id: { in: contentIds } },
+        select: {
+          id: true,
+          contentHash: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    const lastDeliveredAtByHash = new Map(
+      deliveredRows.map((row) => [
+        row.canonicalUrlHash,
+        row._max.deliveredAt ?? null,
+      ]),
+    );
+
+    const lastDeliveredContentHashByHash = new Map(
+      userStates.map((s) => [
+        s.canonicalUrlHash,
+        s.lastDeliveredContentHash ?? null,
+      ]),
+    );
+
+    const contentById = new Map(contents.map((c) => [c.id, c]));
+
     const dedupedItems: typeof items = [];
     let dedupSkipped = 0;
     let redelivered = 0;
 
     for (const item of items) {
-      const { delivered, lastDeliveredAt } =
-        await this.runService.isContentDelivered(
-          subscription.id,
-          item.canonicalUrlHash,
-        );
+      const lastDeliveredAt =
+        lastDeliveredAtByHash.get(item.canonicalUrlHash) ?? null;
+      const delivered = !!lastDeliveredAt;
 
       if (!delivered) {
         dedupedItems.push(item);
@@ -590,8 +640,40 @@ export class SubscriptionRunProcessor extends WorkerHost {
           break;
 
         case 'ON_CONTENT_UPDATE':
-          // TODO: 检查内容是否更新
-          dedupSkipped++;
+          {
+            const content = contentById.get(item.contentId);
+            const currentContentHash = content?.contentHash ?? null;
+
+            if (!content || !currentContentHash) {
+              dedupSkipped++;
+              break;
+            }
+
+            const lastContentHash =
+              lastDeliveredContentHashByHash.get(item.canonicalUrlHash) ?? null;
+
+            // 有明确 hash 且发生变化：认为内容更新，允许重投
+            if (lastContentHash && lastContentHash !== currentContentHash) {
+              item.isRedelivered = true;
+              dedupedItems.push(item);
+              redelivered++;
+              break;
+            }
+
+            // 兼容：历史数据未写入 lastDeliveredContentHash 时，使用 updatedAt 粗略判断
+            if (
+              !lastContentHash &&
+              lastDeliveredAt &&
+              content.updatedAt > lastDeliveredAt
+            ) {
+              item.isRedelivered = true;
+              dedupedItems.push(item);
+              redelivered++;
+              break;
+            }
+
+            dedupSkipped++;
+          }
           break;
 
         default:

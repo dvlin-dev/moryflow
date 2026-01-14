@@ -42,10 +42,10 @@ function DashboardPage() {
                 {inboxLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  <div className="text-2xl font-bold">{inboxStats?.unread ?? 0}</div>
+                  <div className="text-2xl font-bold">{inboxStats?.unreadCount ?? 0}</div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {inboxStats?.total ?? 0} total items
+                  {inboxStats?.totalCount ?? 0} total items
                 </p>
               </CardContent>
             </Card>

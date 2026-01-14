@@ -34,7 +34,8 @@ function TopicDetailPage() {
   const env = usePublicEnv();
   const [topic, setTopic] = useState<DigestTopicDetail | null>(null);
   const [editions, setEditions] = useState<DigestEditionSummary[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [editionsPage, setEditionsPage] = useState(1);
+  const [editionsTotalPages, setEditionsTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -48,11 +49,12 @@ function TopicDetailPage() {
       setIsLoading(true);
       const [topicData, editionsData] = await Promise.all([
         getTopicBySlug(env.apiUrl, slug),
-        getTopicEditions(env.apiUrl, slug, { limit: 10 }),
+        getTopicEditions(env.apiUrl, slug, { page: 1, limit: 10 }),
       ]);
       setTopic(topicData);
       setEditions(editionsData.items);
-      setNextCursor(editionsData.nextCursor);
+      setEditionsPage(editionsData.page);
+      setEditionsTotalPages(editionsData.totalPages);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load topic');
@@ -62,15 +64,17 @@ function TopicDetailPage() {
   }
 
   async function loadMoreEditions() {
-    if (!nextCursor) return;
+    if (editionsPage >= editionsTotalPages) return;
     try {
       setIsLoading(true);
+      const nextPage = editionsPage + 1;
       const result = await getTopicEditions(env.apiUrl, slug, {
-        cursor: nextCursor,
+        page: nextPage,
         limit: 10,
       });
       setEditions((prev) => [...prev, ...result.items]);
-      setNextCursor(result.nextCursor);
+      setEditionsPage(result.page);
+      setEditionsTotalPages(result.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load more editions');
     } finally {
@@ -207,7 +211,7 @@ function TopicDetailPage() {
                   ))}
                 </div>
 
-                {nextCursor && (
+                {editionsPage < editionsTotalPages && (
                   <div className="mt-8 flex justify-center">
                     <button
                       onClick={loadMoreEditions}

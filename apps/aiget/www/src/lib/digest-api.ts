@@ -9,6 +9,9 @@ import { ApiError } from './api';
 
 // ============== Types ==============
 
+export type DigestTopicVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+export type DigestTopicStatus = 'ACTIVE' | 'PAUSED_INSUFFICIENT_CREDITS' | 'PAUSED_BY_ADMIN';
+
 export interface DigestTopicSummary {
   id: string;
   slug: string;
@@ -17,24 +20,25 @@ export interface DigestTopicSummary {
   subscriberCount: number;
   lastEditionAt: string | null;
   createdAt: string;
-  createdBy: {
-    id: string;
-    name: string | null;
-  };
 }
 
 export interface DigestTopicDetail extends DigestTopicSummary {
+  visibility: DigestTopicVisibility;
+  status: DigestTopicStatus;
+  topic: string;
   interests: string[];
-  sources: string[];
-  defaultCron: string;
-  defaultTimezone: string;
+  locale: string;
+  cron: string;
+  timezone: string;
+  createdByUserId: string | null;
 }
 
 export interface DigestEditionSummary {
   id: string;
   topicId: string;
-  editionNumber: number;
-  publishedAt: string;
+  scheduledAt: string;
+  finishedAt: string | null;
+  outputLocale: string;
   narrativeMarkdown: string | null;
   itemCount: number;
 }
@@ -63,7 +67,10 @@ export interface CreateReportInput {
 
 export interface PaginatedResponse<T> {
   items: T[];
-  nextCursor: string | null;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // ============== API Response Types ==============
@@ -106,7 +113,7 @@ export type TopicSort = 'trending' | 'latest' | 'most_followed' | 'quality';
 export async function getPublicTopics(
   apiUrl: string,
   options?: {
-    cursor?: string;
+    page?: number;
     limit?: number;
     search?: string;
     sort?: TopicSort;
@@ -114,7 +121,7 @@ export async function getPublicTopics(
   }
 ): Promise<PaginatedResponse<DigestTopicSummary>> {
   const params = new URLSearchParams();
-  if (options?.cursor) params.set('cursor', options.cursor);
+  if (options?.page) params.set('page', options.page.toString());
   if (options?.limit) params.set('limit', options.limit.toString());
   if (options?.search) params.set('q', options.search);
   if (options?.sort) params.set('sort', options.sort);
@@ -173,12 +180,12 @@ export async function getTopicEditions(
   apiUrl: string,
   slug: string,
   options?: {
-    cursor?: string;
+    page?: number;
     limit?: number;
   }
 ): Promise<PaginatedResponse<DigestEditionSummary>> {
   const params = new URLSearchParams();
-  if (options?.cursor) params.set('cursor', options.cursor);
+  if (options?.page) params.set('page', options.page.toString());
   if (options?.limit) params.set('limit', options.limit.toString());
 
   const response = await fetch(
@@ -206,8 +213,12 @@ export async function getEditionById(
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<DigestEditionDetail>;
-  return handleApiResponse(response, json);
+  const json = (await response.json()) as ApiResponse<{
+    edition: DigestEditionSummary;
+    items: DigestEditionItem[];
+  }>;
+  const result = handleApiResponse(response, json);
+  return { ...result.edition, items: result.items };
 }
 
 /**

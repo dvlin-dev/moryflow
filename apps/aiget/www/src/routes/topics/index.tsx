@@ -36,24 +36,26 @@ export const Route = createFileRoute('/topics/')({
 function TopicsPage() {
   const env = usePublicEnv();
   const [topics, setTopics] = useState<DigestTopicSummary[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTopics();
+    loadTopics(1);
   }, []);
 
-  async function loadTopics(cursor?: string) {
+  async function loadTopics(pageToLoad: number) {
     try {
       setIsLoading(true);
-      const result = await getPublicTopics(env.apiUrl, { cursor, limit: 20 });
-      if (cursor) {
-        setTopics((prev) => [...prev, ...result.items]);
-      } else {
-        setTopics(result.items);
-      }
-      setNextCursor(result.nextCursor);
+      const result = await getPublicTopics(env.apiUrl, {
+        page: pageToLoad,
+        limit: 20,
+      });
+
+      setTopics((prev) => (pageToLoad === 1 ? result.items : [...prev, ...result.items]));
+      setPage(result.page);
+      setTotalPages(result.totalPages);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load topics');
@@ -87,10 +89,10 @@ function TopicsPage() {
                   ))}
                 </div>
 
-                {nextCursor && (
+                {page < totalPages && (
                   <div className="mt-8 flex justify-center">
                     <button
-                      onClick={() => loadTopics(nextCursor)}
+                      onClick={() => loadTopics(page + 1)}
                       disabled={isLoading}
                       className="rounded-lg bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:opacity-50"
                     >

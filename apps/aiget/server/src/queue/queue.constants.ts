@@ -143,4 +143,5 @@ export interface DigestEmailDeliveryJobData {
     aiSummary?: string;
   }>;
   viewUrl: string;
+  unsubscribeUrl?: string;
 }

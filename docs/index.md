@@ -44,7 +44,8 @@ status: active
 
 ## Products（产品线内的内部方案）
 
-- Aiget Dev：`docs/products/aiget-dev/`
+- Aiget Dev
+  - 入口：`docs/products/aiget-dev/index.md`
 - Moryflow：`docs/products/moryflow/`
   - 入口：`docs/products/moryflow/index.md`
 

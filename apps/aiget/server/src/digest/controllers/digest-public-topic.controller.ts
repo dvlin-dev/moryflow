@@ -65,12 +65,15 @@ export class DigestPublicTopicController {
     @Query(new ZodValidationPipe(PublicTopicsQuerySchema))
     query: PublicTopicsQuery,
   ) {
-    const { items, nextCursor } =
+    const { items, total, page, limit, totalPages } =
       await this.topicService.findPublicTopics(query);
 
     return {
       items: items.map((t) => this.topicService.toResponse(t)),
-      nextCursor,
+      total,
+      page,
+      limit,
+      totalPages,
     };
   }
 
@@ -112,14 +115,15 @@ export class DigestPublicTopicController {
       throw new NotFoundException('Topic not found');
     }
 
-    const { items, nextCursor } = await this.topicService.findEditions(
-      topic.id,
-      query,
-    );
+    const { items, total, page, limit, totalPages } =
+      await this.topicService.findEditions(topic.id, query);
 
     return {
       items: items.map((e) => this.topicService.toEditionResponse(e)),
-      nextCursor,
+      total,
+      page,
+      limit,
+      totalPages,
     };
   }
 

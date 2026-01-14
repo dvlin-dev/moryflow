@@ -14,9 +14,9 @@ import type {
   InboxItem,
   InboxStats,
   InboxQueryParams,
+  InboxItemAction,
   InboxItemState,
   Run,
-  RunItem,
   RunQueryParams,
   Topic,
   CreateTopicInput,
@@ -24,6 +24,8 @@ import type {
   PublicTopic,
   FollowTopicInput,
   FollowTopicResponse,
+  TriggerRunResponse,
+  UserTopicsResponse,
 } from './types';
 
 // ========== Subscription API ==========
@@ -71,34 +73,80 @@ export async function toggleSubscription(id: string): Promise<Subscription> {
   return apiClient.post<Subscription>(`${DIGEST_API.SUBSCRIPTIONS}/${id}/toggle`, {});
 }
 
-export async function triggerManualRun(id: string): Promise<Run> {
-  return apiClient.post<Run>(`${DIGEST_API.SUBSCRIPTIONS}/${id}/run`, {});
+export async function triggerManualRun(id: string): Promise<TriggerRunResponse> {
+  return apiClient.post<TriggerRunResponse>(`${DIGEST_API.SUBSCRIPTIONS}/${id}/run`, {});
 }
 
 // ========== Inbox API ==========
-
-export async function fetchInboxItems(
-  params?: InboxQueryParams
-): Promise<PaginatedResponse<InboxItem>> {
-  const query = params
-    ? buildQueryString(params as Record<string, string | number | boolean | undefined>)
-    : '';
-  const url = query ? `${DIGEST_API.INBOX}?${query}` : DIGEST_API.INBOX;
-  return apiClient.get<PaginatedResponse<InboxItem>>(url);
-}
 
 export async function fetchInboxStats(): Promise<InboxStats> {
   return apiClient.get<InboxStats>(`${DIGEST_API.INBOX}/stats`);
 }
 
-export async function updateInboxItemState(id: string, state: InboxItemState): Promise<InboxItem> {
-  return apiClient.patch<InboxItem>(`${DIGEST_API.INBOX}/${id}`, { state });
+function getInboxItemState(item: {
+  readAt: string | null;
+  savedAt: string | null;
+  notInterestedAt: string | null;
+}): InboxItemState {
+  if (item.savedAt) return 'SAVED';
+  if (item.notInterestedAt) return 'NOT_INTERESTED';
+  if (item.readAt) return 'READ';
+  return 'UNREAD';
 }
 
-export async function markAllAsRead(subscriptionId?: string): Promise<{ count: number }> {
-  const data: Record<string, string> = {};
-  if (subscriptionId) data.subscriptionId = subscriptionId;
-  return apiClient.post<{ count: number }>(`${DIGEST_API.INBOX}/mark-all-read`, data);
+export async function fetchInboxItems(
+  params?: InboxQueryParams
+): Promise<PaginatedResponse<InboxItem>> {
+  const backendParams: Record<string, string | number | boolean | undefined> = {
+    page: params?.page,
+    limit: params?.limit,
+    subscriptionId: params?.subscriptionId,
+  };
+
+  if (params?.state) {
+    switch (params.state) {
+      case 'UNREAD':
+        backendParams.unread = true;
+        backendParams.saved = false;
+        backendParams.notInterested = false;
+        break;
+      case 'READ':
+        backendParams.unread = false;
+        backendParams.saved = false;
+        backendParams.notInterested = false;
+        break;
+      case 'SAVED':
+        backendParams.saved = true;
+        break;
+      case 'NOT_INTERESTED':
+        backendParams.notInterested = true;
+        break;
+    }
+  }
+
+  const query = buildQueryString(backendParams);
+  const url = query ? `${DIGEST_API.INBOX}?${query}` : DIGEST_API.INBOX;
+  const result = await apiClient.get<PaginatedResponse<Omit<InboxItem, 'state'>>>(url);
+
+  return {
+    ...result,
+    items: result.items.map((item) => ({
+      ...item,
+      state: getInboxItemState(item),
+    })),
+  };
+}
+
+export async function updateInboxItemState(id: string, action: InboxItemAction): Promise<void> {
+  await apiClient.patch(`${DIGEST_API.INBOX}/${id}`, { action });
+}
+
+export async function markAllAsRead(subscriptionId?: string): Promise<{ markedCount: number }> {
+  const url = subscriptionId
+    ? `${DIGEST_API.INBOX}/mark-all-read?${buildQueryString({ subscriptionId })}`
+    : `${DIGEST_API.INBOX}/mark-all-read`;
+
+  return apiClient.post<{ markedCount: number }>(url, {});
 }
 
 // ========== Runs API ==========
@@ -115,25 +163,10 @@ export async function fetchRuns(
   return apiClient.get<PaginatedResponse<Run>>(url);
 }
 
-export async function fetchRun(subscriptionId: string, runId: string): Promise<Run> {
-  return apiClient.get<Run>(`${DIGEST_API.SUBSCRIPTIONS}/${subscriptionId}/runs/${runId}`);
-}
-
-export async function fetchRunItems(subscriptionId: string, runId: string): Promise<RunItem[]> {
-  return apiClient.get<RunItem[]>(
-    `${DIGEST_API.SUBSCRIPTIONS}/${subscriptionId}/runs/${runId}/items`
-  );
-}
-
 // ========== Topics API ==========
 
-export async function fetchUserTopics(params?: {
-  cursor?: string;
-  limit?: number;
-}): Promise<PaginatedResponse<Topic>> {
-  const query = params ? buildQueryString(params) : '';
-  const url = query ? `${DIGEST_API.TOPICS}?${query}` : DIGEST_API.TOPICS;
-  return apiClient.get<PaginatedResponse<Topic>>(url);
+export async function fetchUserTopics(): Promise<UserTopicsResponse> {
+  return apiClient.get<UserTopicsResponse>(DIGEST_API.TOPICS);
 }
 
 export async function createTopic(data: CreateTopicInput): Promise<Topic> {

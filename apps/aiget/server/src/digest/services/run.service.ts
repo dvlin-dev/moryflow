@@ -213,14 +213,97 @@ export class DigestRunService {
    * 投递条目到 Inbox
    */
   async deliverItems(runId: string, itemIds: string[]): Promise<void> {
-    await this.prisma.digestRunItem.updateMany({
+    const now = new Date();
+
+    const items = await this.prisma.digestRunItem.findMany({
       where: {
         id: { in: itemIds },
         runId,
       },
-      data: {
-        deliveredAt: new Date(),
+      select: {
+        id: true,
+        userId: true,
+        canonicalUrlHash: true,
+        content: {
+          select: { contentHash: true },
+        },
       },
+    });
+
+    if (items.length === 0) {
+      return;
+    }
+
+    const userIds = [...new Set(items.map((i) => i.userId))];
+    const canonicalUrlHashes = [
+      ...new Set(items.map((i) => i.canonicalUrlHash)),
+    ];
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.digestRunItem.updateMany({
+        where: {
+          id: { in: itemIds },
+          runId,
+        },
+        data: {
+          deliveredAt: now,
+        },
+      });
+
+      const existingStates = await tx.userContentState.findMany({
+        where: {
+          userId: { in: userIds },
+          canonicalUrlHash: { in: canonicalUrlHashes },
+        },
+        select: {
+          userId: true,
+          canonicalUrlHash: true,
+          firstDeliveredAt: true,
+        },
+      });
+
+      const firstDeliveredAtByKey = new Map(
+        existingStates.map((s) => [
+          `${s.userId}:${s.canonicalUrlHash}`,
+          s.firstDeliveredAt,
+        ]),
+      );
+
+      for (const item of items) {
+        const updateData: Prisma.UserContentStateUpdateInput = {
+          lastDeliveredAt: now,
+          deliveredCount: { increment: 1 },
+          lastDeliveredRunId: runId,
+        };
+
+        const key = `${item.userId}:${item.canonicalUrlHash}`;
+        if (!firstDeliveredAtByKey.get(key)) {
+          updateData.firstDeliveredAt = now;
+        }
+
+        if (item.content.contentHash) {
+          updateData.lastDeliveredContentHash = item.content.contentHash;
+        }
+
+        await tx.userContentState.upsert({
+          where: {
+            userId_canonicalUrlHash: {
+              userId: item.userId,
+              canonicalUrlHash: item.canonicalUrlHash,
+            },
+          },
+          create: {
+            userId: item.userId,
+            canonicalUrlHash: item.canonicalUrlHash,
+            firstDeliveredAt: now,
+            lastDeliveredAt: now,
+            deliveredCount: 1,
+            lastDeliveredRunId: runId,
+            lastDeliveredContentHash: item.content.contentHash ?? null,
+          },
+          update: updateData,
+        });
+      }
     });
   }
 
@@ -240,31 +323,38 @@ export class DigestRunService {
     userId: string,
     subscriptionId: string,
     query: ListRunsQuery,
-  ): Promise<{ items: DigestRun[]; nextCursor: string | null }> {
-    const { cursor, limit, status } = query;
+  ): Promise<{
+    items: DigestRun[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const { page, limit, status } = query;
+    const skip = (page - 1) * limit;
 
-    const items = await this.prisma.digestRun.findMany({
-      where: {
-        userId,
-        subscriptionId,
-        ...(status && { status }),
-      },
-      take: limit + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
+    const where = {
+      userId,
+      subscriptionId,
+      ...(status && { status }),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.digestRun.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { scheduledAt: 'desc' },
       }),
-      orderBy: { scheduledAt: 'desc' },
-    });
-
-    const hasMore = items.length > limit;
-    if (hasMore) {
-      items.pop();
-    }
+      this.prisma.digestRun.count({ where }),
+    ]);
 
     return {
       items,
-      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -291,28 +381,5 @@ export class DigestRunService {
       impact * SCORE_WEIGHTS.impact +
       quality * SCORE_WEIGHTS.quality
     );
-  }
-
-  /**
-   * 检查内容是否已投递（去重）
-   */
-  async isContentDelivered(
-    subscriptionId: string,
-    canonicalUrlHash: string,
-  ): Promise<{ delivered: boolean; lastDeliveredAt: Date | null }> {
-    const existingItem = await this.prisma.digestRunItem.findFirst({
-      where: {
-        canonicalUrlHash,
-        deliveredAt: { not: null },
-        subscriptionId,
-      },
-      orderBy: { deliveredAt: 'desc' },
-      select: { deliveredAt: true },
-    });
-
-    return {
-      delivered: !!existingItem,
-      lastDeliveredAt: existingItem?.deliveredAt ?? null,
-    };
   }
 }

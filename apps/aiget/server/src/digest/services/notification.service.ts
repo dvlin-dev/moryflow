@@ -47,7 +47,7 @@ export interface NotificationResult {
 @Injectable()
 export class DigestNotificationService {
   private readonly logger = new Logger(DigestNotificationService.name);
-  private readonly consoleUrl: string;
+  private readonly wwwUrl: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -57,9 +57,9 @@ export class DigestNotificationService {
     @InjectQueue(DIGEST_EMAIL_DELIVERY_QUEUE)
     private readonly emailQueue: Queue<DigestEmailDeliveryJobData>,
   ) {
-    // 控制台 URL 用于邮件中的查看链接
-    this.consoleUrl =
-      this.config.get<string>('CONSOLE_URL') || 'https://console.aiget.dev';
+    // WWW URL 用于邮件中的查看/管理链接
+    this.wwwUrl =
+      this.config.get<string>('AIGET_WWW_URL') || 'https://aiget.dev';
   }
 
   /**
@@ -203,7 +203,8 @@ export class DigestNotificationService {
     );
 
     // 构建查看链接
-    const viewUrl = `${this.consoleUrl}/inbox?run=${event.runId}`;
+    const viewUrl = `${this.wwwUrl}/inbox?subscriptionId=${event.subscriptionId}&state=UNREAD`;
+    const unsubscribeUrl = `${this.wwwUrl}/subscriptions/${event.subscriptionId}`;
 
     const jobData: DigestEmailDeliveryJobData = {
       runId: event.runId,
@@ -220,6 +221,7 @@ export class DigestNotificationService {
         aiSummary: item.aiSummary,
       })),
       viewUrl,
+      unsubscribeUrl,
     };
 
     const job = await this.emailQueue.add('deliver', jobData, {

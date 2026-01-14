@@ -22,7 +22,7 @@ import {
   TooltipProvider,
 } from '@aiget/ui';
 import { useUpdateInboxItemState } from '../hooks';
-import type { InboxItem, InboxItemState } from '../types';
+import type { InboxItem, InboxItemAction } from '../types';
 
 interface InboxItemCardProps {
   item: InboxItem;
@@ -37,12 +37,14 @@ function getScoreColor(score: number): 'default' | 'secondary' | 'outline' {
 export function InboxItemCard({ item }: InboxItemCardProps) {
   const updateState = useUpdateInboxItemState();
 
-  const handleStateChange = (state: InboxItemState) => {
-    updateState.mutate({ id: item.id, state });
+  const handleAction = (action: InboxItemAction) => {
+    updateState.mutate({ id: item.id, action });
   };
 
-  const isUnread = item.state === 'UNREAD';
-  const isSaved = item.state === 'SAVED';
+  const isRead = !!item.readAt;
+  const isSaved = !!item.savedAt;
+  const isNotInterested = !!item.notInterestedAt;
+  const isUnread = !isRead && !isNotInterested;
 
   return (
     <Card className={isUnread ? 'border-l-4 border-l-primary' : ''}>
@@ -95,13 +97,13 @@ export function InboxItemCard({ item }: InboxItemCardProps) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handleStateChange(isUnread ? 'READ' : 'UNREAD')}
+                        onClick={() => handleAction(isRead ? 'markUnread' : 'markRead')}
                         disabled={updateState.isPending}
                       >
-                        <Icon icon={isUnread ? MailOpen01Icon : Mail01Icon} className="h-4 w-4" />
+                        <Icon icon={isRead ? MailOpen01Icon : Mail01Icon} className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{isUnread ? 'Mark as read' : 'Mark as unread'}</TooltipContent>
+                    <TooltipContent>{isRead ? 'Mark as unread' : 'Mark as read'}</TooltipContent>
                   </Tooltip>
 
                   <Tooltip>
@@ -110,7 +112,7 @@ export function InboxItemCard({ item }: InboxItemCardProps) {
                         variant={isSaved ? 'default' : 'ghost'}
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handleStateChange(isSaved ? 'READ' : 'SAVED')}
+                        onClick={() => handleAction(isSaved ? 'unsave' : 'save')}
                         disabled={updateState.isPending}
                       >
                         <Icon icon={BookmarkIcon} className="h-4 w-4" />
@@ -125,13 +127,17 @@ export function InboxItemCard({ item }: InboxItemCardProps) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handleStateChange('NOT_INTERESTED')}
+                        onClick={() =>
+                          handleAction(isNotInterested ? 'undoNotInterested' : 'notInterested')
+                        }
                         disabled={updateState.isPending}
                       >
                         <Icon icon={Cancel01Icon} className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Not interested</TooltipContent>
+                    <TooltipContent>
+                      {isNotInterested ? 'Undo not interested' : 'Not interested'}
+                    </TooltipContent>
                   </Tooltip>
 
                   <Tooltip>

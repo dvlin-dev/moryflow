@@ -11,7 +11,7 @@ import type { Report, ReportQuery, ReportListResponse, ResolveReportInput } from
 
 export async function fetchReports(params?: ReportQuery): Promise<ReportListResponse> {
   const searchParams = new URLSearchParams();
-  if (params?.cursor) searchParams.set('cursor', params.cursor);
+  if (params?.page) searchParams.set('page', String(params.page));
   if (params?.limit) searchParams.set('limit', String(params.limit));
   if (params?.status) searchParams.set('status', params.status);
   if (params?.topicId) searchParams.set('topicId', params.topicId);

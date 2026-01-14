@@ -48,9 +48,15 @@ export class DigestInboxService {
   async findMany(
     userId: string,
     query: InboxQuery,
-  ): Promise<{ items: InboxItem[]; nextCursor: string | null }> {
+  ): Promise<{
+    items: InboxItem[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const {
-      cursor,
+      page,
       limit,
       subscriptionId,
       q,
@@ -60,6 +66,7 @@ export class DigestInboxService {
       unread,
       notInterested,
     } = query;
+    const skip = (page - 1) * limit;
 
     // 构建查询条件
     const where: Prisma.DigestRunItemWhereInput = {
@@ -80,76 +87,89 @@ export class DigestInboxService {
       ];
     }
 
-    // 获取基础条目
-    const items = await this.prisma.digestRunItem.findMany({
-      where,
-      take: limit + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
-      }),
-      orderBy: { deliveredAt: 'desc' },
-      include: {
-        run: {
-          select: {
-            subscriptionId: true,
-            subscription: { select: { name: true } },
+    // 用户状态过滤：必须放到 DB 层，避免内存过滤导致分页不正确
+    const andFilters: Prisma.DigestRunItemWhereInput[] = [];
+
+    if (saved !== undefined) {
+      andFilters.push({
+        content: {
+          userContentStates: {
+            [saved ? 'some' : 'none']: { userId, savedAt: { not: null } },
           },
         },
-        content: {
-          select: { siteName: true, favicon: true },
-        },
-      },
-    });
-
-    // 获取用户状态
-    const urlHashes = items.map((item) => item.canonicalUrlHash);
-    const userStates = await this.prisma.userContentState.findMany({
-      where: {
-        userId,
-        canonicalUrlHash: { in: urlHashes },
-      },
-    });
-
-    const stateMap = new Map(userStates.map((s) => [s.canonicalUrlHash, s]));
-
-    // 合并用户状态并过滤
-    let filteredItems = items.map((item) => ({
-      ...item,
-      userState: stateMap.get(item.canonicalUrlHash) || null,
-    }));
-
-    // 应用用户状态过滤
-    if (saved !== undefined) {
-      filteredItems = filteredItems.filter((item) =>
-        saved ? item.userState?.savedAt !== null : !item.userState?.savedAt,
-      );
+      });
     }
 
     if (unread !== undefined) {
-      filteredItems = filteredItems.filter((item) =>
-        unread ? !item.userState?.readAt : item.userState?.readAt !== null,
-      );
+      andFilters.push({
+        content: {
+          userContentStates: {
+            [unread ? 'none' : 'some']: { userId, readAt: { not: null } },
+          },
+        },
+      });
     }
 
     if (notInterested !== undefined) {
-      filteredItems = filteredItems.filter((item) =>
-        notInterested
-          ? item.userState?.notInterestedAt !== null
-          : !item.userState?.notInterestedAt,
-      );
+      andFilters.push({
+        content: {
+          userContentStates: {
+            [notInterested ? 'some' : 'none']: {
+              userId,
+              notInterestedAt: { not: null },
+            },
+          },
+        },
+      });
     }
 
-    const hasMore = filteredItems.length > limit;
-    if (hasMore) {
-      filteredItems.pop();
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
     }
+
+    const [items, total] = await Promise.all([
+      this.prisma.digestRunItem.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { deliveredAt: 'desc' },
+        include: {
+          run: {
+            select: {
+              subscriptionId: true,
+              subscription: { select: { name: true } },
+            },
+          },
+          content: {
+            select: {
+              siteName: true,
+              favicon: true,
+              userContentStates: {
+                where: { userId },
+                take: 1,
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.digestRunItem.count({ where }),
+    ]);
+
+    const normalizedItems = items.map((item) => ({
+      ...item,
+      userState: item.content.userContentStates?.[0] ?? null,
+      content: {
+        siteName: item.content.siteName,
+        favicon: item.content.favicon,
+      },
+    }));
 
     return {
-      items: filteredItems as InboxItem[],
-      nextCursor: hasMore
-        ? (filteredItems[filteredItems.length - 1]?.id ?? null)
-        : null,
+      items: normalizedItems as InboxItem[],
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

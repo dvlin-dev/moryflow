@@ -8,7 +8,6 @@ import { AdminService } from './admin.service';
 import { AdminJobsService } from './admin-jobs.service';
 import { AdminQueueService } from './admin-queue.service';
 import { AdminScheduledTasksService } from './admin-scheduled-tasks.service';
-import { AdminDigestService } from './admin-digest.service';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { AdminUsersController } from './admin-users.controller';
@@ -17,7 +16,6 @@ import { AdminOrdersController } from './admin-orders.controller';
 import { AdminJobsController } from './admin-jobs.controller';
 import { AdminQueueController } from './admin-queue.controller';
 import { AdminBrowserController } from './admin-browser.controller';
-import { AdminDigestController } from './admin-digest.controller';
 import { QueueModule } from '../queue';
 
 @Module({
@@ -31,14 +29,12 @@ import { QueueModule } from '../queue';
     AdminJobsController,
     AdminQueueController,
     AdminBrowserController,
-    AdminDigestController,
   ],
   providers: [
     AdminService,
     AdminJobsService,
     AdminQueueService,
     AdminScheduledTasksService,
-    AdminDigestService,
   ],
   exports: [AdminService],
 })

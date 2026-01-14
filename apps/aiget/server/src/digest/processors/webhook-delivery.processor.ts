@@ -8,7 +8,7 @@
 
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Job, UnrecoverableError } from 'bullmq';
 import { createHmac } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UrlValidator } from '../../common/validators/url.validator';
@@ -57,7 +57,7 @@ export class WebhookDeliveryProcessor extends WorkerHost {
         error,
       });
       // 不重试，直接失败（job.discard() 已被弃用，用 UnrecoverableError）
-      throw new Error(error);
+      throw new UnrecoverableError(error);
     }
 
     try {

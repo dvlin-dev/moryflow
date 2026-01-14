@@ -22,9 +22,18 @@ export const DigestRunSourceSchema = z.enum(['SCHEDULED', 'MANUAL']);
 // ========== Run 列表查询 Schema ==========
 
 export const ListRunsQuerySchema = z.object({
-  cursor: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: DigestRunStatusSchema.optional(),
+});
+
+// ========== Admin 列表查询 Schema（page/limit） ==========
+
+export const AdminListRunsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: DigestRunStatusSchema.optional(),
+  subscriptionId: z.string().optional(),
 });
 
 // ========== 手动触发 Run Schema ==========
@@ -103,6 +112,7 @@ export const RunItemResponseSchema = z.object({
 // ========== 推断类型 ==========
 
 export type ListRunsQuery = z.infer<typeof ListRunsQuerySchema>;
+export type AdminListRunsQuery = z.infer<typeof AdminListRunsQuerySchema>;
 export type TriggerRunInput = z.infer<typeof TriggerRunSchema>;
 export type RunResponse = z.infer<typeof RunResponseSchema>;
 export type RunItemResponse = z.infer<typeof RunItemResponseSchema>;

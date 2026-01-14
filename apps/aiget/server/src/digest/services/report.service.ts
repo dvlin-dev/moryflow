@@ -152,36 +152,38 @@ export class DigestReportService {
     items: (DigestTopicReport & {
       topic: { id: string; slug: string; title: string };
     })[];
-    nextCursor: string | null;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
   }> {
-    const { cursor, limit, status, topicId } = query;
+    const { page, limit, status, topicId } = query;
+    const skip = (page - 1) * limit;
 
     const where: Prisma.DigestTopicReportWhereInput = {
       ...(status && { status }),
       ...(topicId && { topicId }),
     };
 
-    const items = await this.prisma.digestTopicReport.findMany({
-      where,
-      take: limit + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
+    const [items, total] = await Promise.all([
+      this.prisma.digestTopicReport.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          topic: { select: { id: true, slug: true, title: true } },
+        },
       }),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        topic: { select: { id: true, slug: true, title: true } },
-      },
-    });
-
-    const hasMore = items.length > limit;
-    if (hasMore) {
-      items.pop();
-    }
+      this.prisma.digestTopicReport.count({ where }),
+    ]);
 
     return {
       items,
-      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

@@ -6,7 +6,12 @@
  * [POS]: 订阅管理核心服务，被 Console/Public Controller 调用
  */
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SUBSCRIPTION_LIMITS } from '../digest.constants';
 import type {
@@ -43,7 +48,7 @@ export class DigestSubscriptionService {
     const currentCount = user?._count?.digestSubscriptions || 0;
 
     if (currentCount >= limits.maxSubscriptions) {
-      throw new Error(
+      throw new ForbiddenException(
         `Subscription limit reached. Max ${limits.maxSubscriptions} for ${tier} tier.`,
       );
     }
@@ -160,31 +165,39 @@ export class DigestSubscriptionService {
   async findMany(
     userId: string,
     query: ListSubscriptionsQuery,
-  ): Promise<{ items: DigestSubscription[]; nextCursor: string | null }> {
-    const { cursor, limit, enabled } = query;
+  ): Promise<{
+    items: DigestSubscription[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const { page, limit, enabled, followedTopicId } = query;
+    const skip = (page - 1) * limit;
 
-    const items = await this.prisma.digestSubscription.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-        ...(enabled !== undefined && { enabled }),
-      },
-      take: limit + 1,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
+    const where = {
+      userId,
+      deletedAt: null,
+      ...(enabled !== undefined && { enabled }),
+      ...(followedTopicId && { followedTopicId }),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.digestSubscription.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
       }),
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const hasMore = items.length > limit;
-    if (hasMore) {
-      items.pop();
-    }
+      this.prisma.digestSubscription.count({ where }),
+    ]);
 
     return {
       items,
-      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

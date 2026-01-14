@@ -23,6 +23,37 @@ export const DigestTopicStatusSchema = z.enum([
   'PAUSED_BY_ADMIN',
 ]);
 
+// ========== Admin Topic 列表查询 Schema（page/limit） ==========
+
+export const AdminTopicsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().max(200).optional(),
+  featured: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) =>
+      val === 'true' ? true : val === 'false' ? false : undefined,
+    ),
+  visibility: DigestTopicVisibilitySchema.optional(),
+  status: DigestTopicStatusSchema.optional(),
+});
+
+// ========== Admin Featured 管理 Schema ==========
+
+export const SetFeaturedSchema = z.object({
+  featured: z.boolean(),
+  featuredOrder: z.number().int().min(0).max(999).optional(),
+});
+
+export const ReorderFeaturedSchema = z.object({
+  topicIds: z.array(z.string()).min(1).max(50),
+});
+
+export const UpdateTopicStatusSchema = z.object({
+  status: DigestTopicStatusSchema,
+});
+
 // ========== Slug 格式校验 ==========
 
 const SlugSchema = z
@@ -75,7 +106,7 @@ export const UpdateTopicSchema = z.object({
 // ========== 公开 Topic 列表查询 Schema ==========
 
 export const PublicTopicsQuerySchema = z.object({
-  cursor: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   sort: z
     .enum(['trending', 'latest', 'most_followed', 'quality'])
@@ -93,7 +124,7 @@ export const PublicTopicsQuerySchema = z.object({
 // ========== Edition 列表查询 Schema ==========
 
 export const EditionsQuerySchema = z.object({
-  cursor: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(30).default(10),
 });
 
@@ -167,3 +198,7 @@ export type EditionResponse = z.infer<typeof EditionResponseSchema>;
 export type EditionItemResponse = z.infer<typeof EditionItemResponseSchema>;
 export type DigestTopicVisibility = z.infer<typeof DigestTopicVisibilitySchema>;
 export type DigestTopicStatus = z.infer<typeof DigestTopicStatusSchema>;
+export type AdminTopicsQuery = z.infer<typeof AdminTopicsQuerySchema>;
+export type SetFeaturedInput = z.infer<typeof SetFeaturedSchema>;
+export type ReorderFeaturedInput = z.infer<typeof ReorderFeaturedSchema>;
+export type UpdateTopicStatusInput = z.infer<typeof UpdateTopicStatusSchema>;

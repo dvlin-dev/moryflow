@@ -81,14 +81,15 @@ export class DigestConsoleSubscriptionController {
     @Query(new ZodValidationPipe(ListSubscriptionsQuerySchema))
     query: ListSubscriptionsQuery,
   ) {
-    const { items, nextCursor } = await this.subscriptionService.findMany(
-      user.id,
-      query,
-    );
+    const { items, total, page, limit, totalPages } =
+      await this.subscriptionService.findMany(user.id, query);
 
     return {
       items: items.map((s) => this.subscriptionService.toResponse(s)),
-      nextCursor,
+      total,
+      page,
+      limit,
+      totalPages,
     };
   }
 
@@ -370,13 +371,24 @@ export class DigestConsoleSubscriptionController {
       throw new NotFoundException('Subscription not found');
     }
 
-    const patterns = await this.feedbackService.getPatterns(id, {
-      patternType: query.patternType,
-      limit: query.limit,
-      offset: query.offset,
-    });
+    const [patterns, total] = await Promise.all([
+      this.feedbackService.getPatterns(id, {
+        patternType: query.patternType,
+        page: query.page,
+        limit: query.limit,
+      }),
+      this.feedbackService.countPatterns(id, {
+        patternType: query.patternType,
+      }),
+    ]);
 
-    return { patterns, total: patterns.length };
+    return {
+      items: patterns,
+      total,
+      page: query.page,
+      limit: query.limit,
+      totalPages: Math.ceil(total / query.limit),
+    };
   }
 
   /**

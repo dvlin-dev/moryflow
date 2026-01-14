@@ -11,7 +11,7 @@ import type {
   UpdateSubscriptionInput,
   SubscriptionQueryParams,
   InboxQueryParams,
-  InboxItemState,
+  InboxItemAction,
   RunQueryParams,
   CreateTopicInput,
   UpdateTopicInput,
@@ -28,10 +28,6 @@ export const digestKeys = {
   inboxItems: (params?: InboxQueryParams) => [...digestKeys.inbox(), 'items', params] as const,
   inboxStats: () => [...digestKeys.inbox(), 'stats'] as const,
   runs: (subscriptionId: string) => [...digestKeys.all, 'runs', subscriptionId] as const,
-  run: (subscriptionId: string, runId: string) =>
-    [...digestKeys.runs(subscriptionId), runId] as const,
-  runItems: (subscriptionId: string, runId: string) =>
-    [...digestKeys.run(subscriptionId, runId), 'items'] as const,
   topics: () => [...digestKeys.all, 'topics'] as const,
   publicTopic: (slug: string) => [...digestKeys.all, 'public-topic', slug] as const,
 };
@@ -152,8 +148,8 @@ export function useUpdateInboxItemState() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, state }: { id: string; state: InboxItemState }) =>
-      api.updateInboxItemState(id, state),
+    mutationFn: ({ id, action }: { id: string; action: InboxItemAction }) =>
+      api.updateInboxItemState(id, action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: digestKeys.inbox() });
     },
@@ -170,7 +166,7 @@ export function useMarkAllAsRead() {
     mutationFn: (subscriptionId?: string) => api.markAllAsRead(subscriptionId),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: digestKeys.inbox() });
-      toast.success(`Marked ${result.count} items as read`);
+      toast.success(`Marked ${result.markedCount} items as read`);
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to mark as read');
@@ -188,28 +184,12 @@ export function useRuns(subscriptionId: string, params?: RunQueryParams) {
   });
 }
 
-export function useRun(subscriptionId: string, runId: string) {
-  return useQuery({
-    queryKey: digestKeys.run(subscriptionId, runId),
-    queryFn: () => api.fetchRun(subscriptionId, runId),
-    enabled: !!subscriptionId && !!runId,
-  });
-}
-
-export function useRunItems(subscriptionId: string, runId: string) {
-  return useQuery({
-    queryKey: digestKeys.runItems(subscriptionId, runId),
-    queryFn: () => api.fetchRunItems(subscriptionId, runId),
-    enabled: !!subscriptionId && !!runId,
-  });
-}
-
 // ========== Topic Hooks ==========
 
-export function useUserTopics(params?: { cursor?: string; limit?: number }) {
+export function useUserTopics() {
   return useQuery({
-    queryKey: [...digestKeys.topics(), params],
-    queryFn: () => api.fetchUserTopics(params),
+    queryKey: digestKeys.topics(),
+    queryFn: () => api.fetchUserTopics(),
   });
 }
 

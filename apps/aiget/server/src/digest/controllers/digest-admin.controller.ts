@@ -10,6 +10,7 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Delete,
   Param,
   Query,
@@ -32,16 +33,23 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { DigestAdminService } from '../services/admin.service';
 import { DigestReportService } from '../services/report.service';
 import {
+  AdminTopicsQuerySchema,
+  AdminListSubscriptionsQuerySchema,
+  AdminListRunsQuerySchema,
+  SetFeaturedSchema,
+  ReorderFeaturedSchema,
+  UpdateTopicStatusSchema,
   ResolveReportSchema,
+  ListReportsQuerySchema,
+  type AdminTopicsQuery,
+  type AdminListSubscriptionsQuery,
+  type AdminListRunsQuery,
+  type SetFeaturedInput,
+  type ReorderFeaturedInput,
+  type UpdateTopicStatusInput,
   type ListReportsQuery,
   type ResolveReportInput,
 } from '../dto';
-import type {
-  DigestTopicVisibility,
-  DigestTopicStatus,
-  DigestRunStatus,
-  DigestTopicReportStatus,
-} from '../../../generated/prisma-main/client';
 
 @ApiTags('Admin - Digest')
 @ApiSecurity('session')
@@ -72,38 +80,77 @@ export class DigestAdminController {
   @ApiOperation({ summary: 'List all subscriptions (admin)' })
   @ApiOkResponse({ description: 'Subscription list with pagination' })
   async listSubscriptions(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit = '20',
-    @Query('userId') userId?: string,
-    @Query('enabled') enabled?: string,
+    @Query(new ZodValidationPipe(AdminListSubscriptionsQuerySchema))
+    query: AdminListSubscriptionsQuery,
   ) {
-    return this.adminService.listSubscriptions({
-      cursor,
-      limit: parseInt(limit, 10) || 20,
-      userId,
-      enabled: enabled !== undefined ? enabled === 'true' : undefined,
-    });
+    return this.adminService.listSubscriptions(query);
   }
 
   /**
-   * 获取话题列表（管理员视图）
+   * 获取话题列表（管理员视图，page/limit）
    * GET /api/v1/admin/digest/topics
    */
   @Get('topics')
-  @ApiOperation({ summary: 'List all topics (admin)' })
+  @ApiOperation({ summary: 'List topics (admin)' })
   @ApiOkResponse({ description: 'Topic list with pagination' })
   async listTopics(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit = '20',
-    @Query('visibility') visibility?: string,
-    @Query('status') status?: string,
+    @Query(new ZodValidationPipe(AdminTopicsQuerySchema))
+    query: AdminTopicsQuery,
   ) {
-    return this.adminService.listTopics({
-      cursor,
-      limit: parseInt(limit, 10) || 20,
-      visibility: visibility as DigestTopicVisibility | undefined,
-      status: status as DigestTopicStatus | undefined,
-    });
+    return this.adminService.listTopics(query);
+  }
+
+  /**
+   * 获取精选话题列表（Admin 视角，不过滤 visibility/status）
+   * GET /api/v1/admin/digest/topics/featured
+   */
+  @Get('topics/featured')
+  @ApiOperation({ summary: 'Get featured topics' })
+  @ApiOkResponse({ description: 'Featured topics' })
+  async getFeaturedTopics() {
+    return this.adminService.getFeaturedTopics();
+  }
+
+  /**
+   * 获取单个话题详情
+   * GET /api/v1/admin/digest/topics/:id
+   */
+  @Get('topics/:id')
+  @ApiOperation({ summary: 'Get topic by ID' })
+  @ApiParam({ name: 'id', description: 'Topic ID' })
+  @ApiOkResponse({ description: 'Topic details' })
+  async getTopic(@Param('id') id: string) {
+    return this.adminService.getTopic(id);
+  }
+
+  /**
+   * 设置/取消精选
+   * PATCH /api/v1/admin/digest/topics/:id/featured
+   */
+  @Patch('topics/:id/featured')
+  @ApiOperation({ summary: 'Set or unset topic as featured' })
+  @ApiParam({ name: 'id', description: 'Topic ID' })
+  @ApiOkResponse({ description: 'Updated topic' })
+  async setFeatured(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserDto,
+    @Body(new ZodValidationPipe(SetFeaturedSchema)) input: SetFeaturedInput,
+  ) {
+    return this.adminService.setFeatured(id, user.id, input);
+  }
+
+  /**
+   * 批量重排精选顺序
+   * POST /api/v1/admin/digest/topics/featured/reorder
+   */
+  @Post('topics/featured/reorder')
+  @ApiOperation({ summary: 'Reorder featured topics' })
+  @ApiOkResponse({ description: 'Reordered featured topics' })
+  async reorderFeatured(
+    @Body(new ZodValidationPipe(ReorderFeaturedSchema))
+    input: ReorderFeaturedInput,
+  ) {
+    return this.adminService.reorderFeatured(input);
   }
 
   /**
@@ -116,7 +163,8 @@ export class DigestAdminController {
   @ApiOkResponse({ description: 'Topic status updated' })
   async updateTopicStatus(
     @Param('id') id: string,
-    @Body() body: { status: DigestTopicStatus },
+    @Body(new ZodValidationPipe(UpdateTopicStatusSchema))
+    body: UpdateTopicStatusInput,
   ) {
     return this.adminService.updateTopicStatus(id, body.status);
   }
@@ -142,17 +190,10 @@ export class DigestAdminController {
   @ApiOperation({ summary: 'List all runs (admin)' })
   @ApiOkResponse({ description: 'Run list with pagination' })
   async listRuns(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit = '20',
-    @Query('status') status?: string,
-    @Query('subscriptionId') subscriptionId?: string,
+    @Query(new ZodValidationPipe(AdminListRunsQuerySchema))
+    query: AdminListRunsQuery,
   ) {
-    return this.adminService.listRuns({
-      cursor,
-      limit: parseInt(limit, 10) || 20,
-      status: status as DigestRunStatus | undefined,
-      subscriptionId,
-    });
+    return this.adminService.listRuns(query);
   }
 
   // ============= Report Management =============
@@ -165,23 +206,19 @@ export class DigestAdminController {
   @ApiOperation({ summary: 'List topic reports' })
   @ApiOkResponse({ description: 'Report list with pagination' })
   async listReports(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit = '20',
-    @Query('status') status?: string,
-    @Query('topicId') topicId?: string,
+    // 兼容 query string 输入，统一走 ZodValidationPipe 做校验/默认值
+    @Query(new ZodValidationPipe(ListReportsQuerySchema))
+    query: ListReportsQuery,
   ) {
-    const query: ListReportsQuery = {
-      cursor,
-      limit: parseInt(limit, 10) || 20,
-      status: status as DigestTopicReportStatus | undefined,
-      topicId,
-    };
-
-    const { items, nextCursor } = await this.reportService.findMany(query);
+    const { items, total, page, limit, totalPages } =
+      await this.reportService.findMany(query);
 
     return {
       items: items.map((r) => this.reportService.toResponse(r)),
-      nextCursor,
+      total,
+      page,
+      limit,
+      totalPages,
       pendingCount: await this.reportService.getPendingCount(),
     };
   }

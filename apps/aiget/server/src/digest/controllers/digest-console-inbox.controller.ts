@@ -50,14 +50,15 @@ export class DigestConsoleInboxController {
     @CurrentUser() user: CurrentUserDto,
     @Query(new ZodValidationPipe(InboxQuerySchema)) query: InboxQuery,
   ) {
-    const { items, nextCursor } = await this.inboxService.findMany(
-      user.id,
-      query,
-    );
+    const { items, total, page, limit, totalPages } =
+      await this.inboxService.findMany(user.id, query);
 
     return {
       items: items.map((item) => this.inboxService.toResponse(item)),
-      nextCursor,
+      total,
+      page,
+      limit,
+      totalPages,
     };
   }
 

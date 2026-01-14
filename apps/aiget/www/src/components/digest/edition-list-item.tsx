@@ -16,6 +16,8 @@ interface EditionListItemProps {
 }
 
 export function EditionListItem({ edition, topicSlug }: EditionListItemProps) {
+  const displayDate = edition.finishedAt ?? edition.scheduledAt;
+
   return (
     <Link
       to="/topics/$slug/editions/$editionId"
@@ -24,13 +26,11 @@ export function EditionListItem({ edition, topicSlug }: EditionListItemProps) {
     >
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h4 className="font-medium text-neutral-900 group-hover:text-neutral-700">
-            Edition #{edition.editionNumber}
-          </h4>
+          <h4 className="font-medium text-neutral-900 group-hover:text-neutral-700">Edition</h4>
           <div className="flex items-center gap-4 text-xs text-neutral-500">
             <span className="flex items-center gap-1">
               <HugeiconsIcon icon={Calendar01Icon} className="h-3.5 w-3.5" />
-              {new Date(edition.publishedAt).toLocaleDateString('en-US', {
+              {new Date(displayDate).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
