@@ -65,6 +65,8 @@ const waitSchema = z.object({
   selector: z.string().optional().describe('等待选择器出现'),
   selectorGone: z.string().optional().describe('等待选择器消失'),
   text: z.string().optional().describe('等待文本出现'),
+  url: z.string().optional().describe('等待 URL 变化'),
+  networkIdle: z.boolean().optional().describe('等待网络空闲'),
 });
 
 const pressSchema = z.object({
@@ -174,6 +176,8 @@ const waitParameters: JsonObjectSchemaStrictLike = {
     selector: { type: 'string', description: '等待选择器出现' },
     selectorGone: { type: 'string', description: '等待选择器消失' },
     text: { type: 'string', description: '等待文本出现' },
+    url: { type: 'string', description: '等待 URL 变化' },
+    networkIdle: { type: 'boolean', description: '等待网络空闲' },
   },
   required: [],
   additionalProperties: false,
@@ -371,6 +375,8 @@ export const waitTool = tool({
         selector: parsed.selector,
         selectorGone: parsed.selectorGone,
         text: parsed.text,
+        url: parsed.url,
+        networkIdle: parsed.networkIdle,
       },
       timeout: 5000,
     });

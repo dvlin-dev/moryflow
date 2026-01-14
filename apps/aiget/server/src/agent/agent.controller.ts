@@ -87,6 +87,10 @@ export class AgentController {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // 禁用 Nginx 缓冲
+    let connectionClosed = false;
+    res.on('close', () => {
+      connectionClosed = true;
+    });
 
     // 发送事件的辅助函数
     const sendEvent = (event: AgentStreamEvent) => {
@@ -100,20 +104,19 @@ export class AgentController {
         input,
         user.id,
       )) {
-        sendEvent(event);
-
-        // 如果连接已关闭，停止发送
-        if (res.writableEnded) {
-          break;
+        if (!connectionClosed) {
+          sendEvent(event);
         }
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      sendEvent({
-        type: 'failed',
-        error: errorMessage,
-      });
+      if (!connectionClosed) {
+        sendEvent({
+          type: 'failed',
+          error: errorMessage,
+        });
+      }
     } finally {
       res.end();
     }
@@ -128,8 +131,11 @@ export class AgentController {
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiOkResponse({ description: 'Task status and result' })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  getTaskStatus(@Param('id') taskId: string) {
-    const result = this.agentService.getTaskStatus(taskId);
+  async getTaskStatus(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') taskId: string,
+  ) {
+    const result = await this.agentService.getTaskStatus(taskId, user.id);
 
     if (!result) {
       throw new HttpException(
@@ -208,8 +214,11 @@ export class AgentController {
     },
   })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  async cancelTask(@Param('id') taskId: string) {
-    const result = await this.agentService.cancelTask(taskId);
+  async cancelTask(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') taskId: string,
+  ) {
+    const result = await this.agentService.cancelTask(taskId, user.id);
 
     if (!result.success && result.message === 'Task not found') {
       throw new HttpException(

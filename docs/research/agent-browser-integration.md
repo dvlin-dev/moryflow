@@ -56,6 +56,7 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 
 - `apps/aiget/server/CLAUDE.md`
 - `apps/aiget/server/package.json`
+- `apps/aiget/server/prisma/main/schema.prisma`
 - `apps/aiget/server/tsconfig.test.json`
 - `apps/aiget/server/src/app.module.ts`
 
@@ -65,6 +66,8 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 - `apps/aiget/server/src/agent/agent.controller.ts`
 - `apps/aiget/server/src/agent/agent.module.ts`
 - `apps/aiget/server/src/agent/agent.service.ts`
+- `apps/aiget/server/src/agent/agent-task.progress.store.ts`
+- `apps/aiget/server/src/agent/agent-task.repository.ts`
 - `apps/aiget/server/src/agent/dto/agent.schema.ts`
 - `apps/aiget/server/src/agent/dto/index.ts`
 - `apps/aiget/server/src/agent/index.ts`
@@ -158,7 +161,62 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 5. **无用代码清理**：标出可删除的未使用分支/工具/参数，确认是否删除。
 6. **输出审查结论**：功能风险、最佳实践偏差、可删项、必须修复点。
 
-> 说明：以上为审查计划，待你确认后开始全量 code review。
+> 说明：以上为审查计划，已确认并开始执行。
+
+---
+
+## 最佳实践落地方案（已确认）
+
+> 确认日期：2026-01-14
+
+### 已确认决策
+
+- **任务状态永久保留**：落地到 DB（Prisma），避免进程内存丢失/多实例不一致
+- **进度与取消协作**：实时进度写 Redis（TTL），取消标记由 Redis 驱动
+- **SSE 断开不取消任务**：后台继续执行，用户可通过 `GET /api/v1/agent/:id` 刷新查看
+- **失败不扣积分**：失败时全额退回已扣 checkpoint；但仍返回真实 `creditsUsed`（UI 需提示“失败不扣费”）
+- **用户主动取消要扣**：取消不退款，按已消耗扣费
+
+### 执行计划（最佳实践）
+
+1. **新增持久化模型**
+   - `AgentTask`：任务状态/结果/错误/消耗/时间戳（永久）
+   - `AgentTaskCharge`：checkpoint 扣费记录（用于失败退款/取消结算）
+2. **服务分层**
+   - `AgentTaskRepository`（DB）
+   - `AgentTaskProgressStore`（Redis）
+3. **AgentService 改造**
+   - 创建/更新任务写 DB；进度写 Redis；完成/失败/取消写 DB 终态
+   - 移除内存任务表（Map）
+4. **接口结果**
+   - `GET /api/v1/agent/:id` 合并 DB + Redis progress
+5. **计费语义**
+   - 成功：结算剩余 credits
+   - 失败：全额退款已扣 checkpoint
+   - 取消：不退款，按已消耗扣费
+
+### 当前进度
+
+- [x] 任务状态持久化（DB + Redis）
+- [x] 失败退款 / 取消结算语义落地
+- [x] `GET /agent/:id` 返回 progress
+- [x] 代码审查问题修复（ActionHandler、SSE、browser_wait、screenshot）
+
+### 当前剩余问题
+
+- 仍需补齐 Browser API / Agent API 的单元与集成测试覆盖（见待办事项）
+- Prisma 迁移尚未生成（需要有可用的 PostgreSQL 环境）
+
+### 接下来的计划
+
+1. 生成 Prisma 迁移（`AgentTask` / `AgentTaskCharge`）
+2. 补齐 Browser/Agent 的单测与 E2E 覆盖
+
+### 验证命令与信号（2026-01-14）
+
+- `pnpm lint` ✅ 通过（`@aiget/model-registry-data` 同步超时但 fallback 成功）
+- `pnpm typecheck` ✅ 通过（同上）
+- `pnpm test:unit` ✅ 通过（Redis 连接拒绝日志存在，不影响用例结果）
 
 ## 一、参考项目分析
 
@@ -1929,6 +1987,7 @@ Phase 5（高级功能）← 加入：多标签页、计费优化
 | `DELETE /api/v1/agent/:id` | 取消正在执行的 Agent 任务（硬取消）                                           | ✅ 已完成 |
 | CreateSession 参数透传     | userAgent / JS / HTTPS 配置生效                                               | ✅ 已完成 |
 | Credits 分段检查           | 每 100 credits 检查并扣费                                                     | ✅ 已完成 |
+| Agent 任务持久化           | 任务状态落地 DB，进度/取消使用 Redis                                          | ✅ 已完成 |
 | 单元测试                   | Browser API 核心服务测试                                                      | 🔲 待实现 |
 | 集成测试                   | Agent API 端到端测试                                                          | 🔲 待实现 |
 | 解决 TypeScript 内存问题   | 分析并修复 OOM 问题（见 `docs/research/aiget-server-typecheck-oom-agent.md`） | ✅ 已完成 |
@@ -1939,6 +1998,7 @@ Phase 5（高级功能）← 加入：多标签页、计费优化
 
 | 版本 | 日期       | 变更内容                                                        |
 | ---- | ---------- | --------------------------------------------------------------- |
+| 10.0 | 2026-01-14 | 落地 Agent 任务持久化（DB + Redis），失败退款/取消结算语义      |
 | 9.0  | 2026-01-14 | 完成 CreateSession 参数透传、硬取消、credits 分段检查与进度返回 |
 | 8.0  | 2026-01-14 | 对照代码核对实现进度；修正 Phase 4/5 描述；标记 OOM 已解决      |
 | 7.0  | 2026-01-13 | 添加已知问题章节：TypeScript 内存溢出待分析                     |

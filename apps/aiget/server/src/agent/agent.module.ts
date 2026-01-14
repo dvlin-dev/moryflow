@@ -13,11 +13,13 @@ import { Module } from '@nestjs/common';
 import { QuotaModule } from '../quota/quota.module';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
+import { AgentTaskRepository } from './agent-task.repository';
+import { AgentTaskProgressStore } from './agent-task.progress.store';
 
 @Module({
   imports: [QuotaModule],
   controllers: [AgentController],
-  providers: [AgentService],
+  providers: [AgentService, AgentTaskRepository, AgentTaskProgressStore],
   exports: [AgentService],
 })
 export class AgentModule {}

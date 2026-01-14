@@ -37,6 +37,7 @@ model User {
   scrapeJobs            ScrapeJob[]
   batchScrapeJobs       BatchScrapeJob[]
   crawlJobs             CrawlJob[]
+  agentTasks            AgentTask[]
 }
 
 model Session {
@@ -346,6 +347,14 @@ enum ScrapeStatus {
   FAILED
 }
 
+enum AgentTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 enum ScrapeErrorCode {
   PAGE_TIMEOUT      // 页面加载超时
   URL_NOT_ALLOWED   // SSRF 防护拦截
@@ -561,4 +570,54 @@ model CrawlPage {
   @@index([crawlJobId])
   @@index([status])
   @@unique([crawlJobId, url])
+}
+
+// =============================================
+// Agent Task - L3 Agent 任务
+// =============================================
+
+model AgentTask {
+  id            String          @id
+  userId        String
+  status        AgentTaskStatus @default(PENDING)
+
+  input         Json
+  result        Json?
+  error         String?
+
+  creditsUsed   Int?
+  toolCallCount Int?
+  elapsedMs     Int?
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  startedAt     DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  charges       AgentTaskCharge[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AgentTaskCharge {
+  id            String     @id @default(cuid())
+  taskId        String
+  userId        String
+  amount        Int
+  source        QuotaSource
+  transactionId String
+  referenceId   String
+  refundedAt    DateTime?
+  createdAt     DateTime   @default(now())
+
+  task          AgentTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, referenceId])
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
 }

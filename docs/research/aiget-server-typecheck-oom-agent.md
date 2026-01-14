@@ -97,9 +97,9 @@ status: active
   - `./apps/aiget/server/node_modules/.bin/tsc -p apps/aiget/server/tsconfig.json --noEmit`
 - 当前状态（2026-01-14）：
   - `pnpm --filter @aiget/aiget-server typecheck` ✅ 通过（未出现 OOM）
-  - `pnpm lint` ✅ 通过（lint warnings 已清理；@aiget/model-registry-data sync 超时但 fallback 成功）
-  - `pnpm typecheck` ✅ 通过（@aiget/model-registry-data sync 超时但 fallback 成功）
-  - `pnpm test:unit` ✅ 通过（单测中 Redis 连接被拒日志存在，但不影响用例结果）
+  - `pnpm lint` ✅ 通过（@aiget/model-registry-data sync 超时，但 fallback 空数据继续构建）
+  - `pnpm typecheck` ✅ 通过（@aiget/model-registry-data sync 超时，但 fallback 空数据继续构建）
+  - `pnpm test:unit` ✅ 通过（单测中 Redis 连接拒绝日志存在，但不影响用例结果）
 
 ## 关于 Zod 入口（避免误用范围）
 

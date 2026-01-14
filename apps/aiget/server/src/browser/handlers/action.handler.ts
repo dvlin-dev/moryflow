@@ -59,14 +59,14 @@ export class ActionHandler {
           return { success: true };
 
         case 'fill':
-          if (!action.value) {
+          if (action.value === undefined) {
             throw new Error('fill requires a value');
           }
           await locator!.fill(action.value, { timeout });
           return { success: true };
 
         case 'type':
-          if (!action.value) {
+          if (action.value === undefined) {
             throw new Error('type requires a value');
           }
           await locator!.pressSequentially(action.value, {

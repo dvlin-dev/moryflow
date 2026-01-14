@@ -152,7 +152,7 @@ export class BrowserSessionController {
     }
   }
 
-  @Get(':id/screenshot')
+  @Post(':id/screenshot')
   @ApiOperation({ summary: 'Take a screenshot of the page' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Screenshot data' })

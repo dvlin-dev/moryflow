@@ -3,7 +3,7 @@
  *
  * [INPUT]: Agent 任务请求
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与配额检查（含硬取消与分段计费）
+ * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core、Browser ports 与配额检查（含硬取消、分段计费与任务持久化）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -18,10 +18,16 @@ import {
   type StreamedRunResult,
   type Usage,
 } from '@aiget/agents-core';
+import type { AgentTask } from '../../generated/prisma-main/client';
 import { BrowserAgentPortService } from '../browser/ports';
 import { QuotaService } from '../quota/quota.service';
-import { QuotaExceededError } from '../quota/quota.errors';
+import {
+  DuplicateRefundError,
+  QuotaExceededError,
+} from '../quota/quota.errors';
 import { browserTools, type BrowserAgentContext } from './tools';
+import { AgentTaskRepository } from './agent-task.repository';
+import { AgentTaskProgressStore } from './agent-task.progress.store';
 import type {
   CreateAgentTaskInput,
   AgentTaskResult,
@@ -50,17 +56,10 @@ const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页
 - 遇到验证码或反爬机制时，返回错误信息
 - 控制操作次数，避免无限循环`;
 
-/** 任务存储 */
-interface StoredTask {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-  createdAt: Date;
-  expiresAt: Date;
-  result?: unknown;
-  creditsUsed?: number;
-  error?: string;
+/** 运行时任务句柄（仅本实例可见） */
+interface RunningTask {
   /** 用于取消任务的 AbortController */
-  abortController?: AbortController;
+  abortController: AbortController;
   /** 关联的浏览器会话 ID */
   sessionId?: string;
 }
@@ -112,6 +111,9 @@ const BILLING_CONSTANTS = {
   CREDIT_CHECK_INTERVAL: 100,
 } as const;
 
+const PROGRESS_UPDATE_INTERVAL_MS = 1000;
+const PROGRESS_TTL_MS = 24 * 60 * 60 * 1000;
+
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
 type AgentStreamedResult = StreamedRunResult<BrowserAgentContext, BrowserAgent>;
 
@@ -144,19 +146,15 @@ const buildAgentOutputType = (
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
 
-  /** 任务存储 */
-  private readonly tasks = new Map<string, StoredTask>();
-
-  /** 任务结果过期时间（10 分钟） */
-  private readonly TASK_EXPIRY = 10 * 60 * 1000;
+  /** 运行中任务句柄（仅本实例） */
+  private readonly runningTasks = new Map<string, RunningTask>();
 
   constructor(
     private readonly browserAgentPort: BrowserAgentPortService,
     private readonly quotaService: QuotaService,
-  ) {
-    // 定期清理过期任务
-    setInterval(() => this.cleanupExpiredTasks(), 60 * 1000);
-  }
+    private readonly taskRepository: AgentTaskRepository,
+    private readonly progressStore: AgentTaskProgressStore,
+  ) {}
 
   /**
    * 执行 Agent 任务（非流式）
@@ -168,19 +166,27 @@ export class AgentService {
     const taskId = this.generateTaskId();
     const now = new Date();
     const abortController = new AbortController();
+    this.runningTasks.set(taskId, { abortController });
 
-    // 创建任务记录
-    const task: StoredTask = {
-      id: taskId,
-      status: 'pending',
-      createdAt: now,
-      expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
-      abortController,
-    };
-    this.tasks.set(taskId, task);
+    // 创建持久化任务记录
+    try {
+      await this.taskRepository.createTask({
+        id: taskId,
+        userId,
+        input,
+        status: 'PENDING',
+      });
+    } catch (error) {
+      this.runningTasks.delete(taskId);
+      throw error;
+    }
 
     // 初始化计费参数（P1 计费模型优化）
     const billing = this.createBillingParams(now, input.maxCredits);
+    await this.safeProgressOperation(
+      () => this.progressStore.setProgress(taskId, this.buildProgress(billing)),
+      'set initial progress',
+    );
     let session: { id: string } | null = null;
 
     try {
@@ -188,8 +194,14 @@ export class AgentService {
 
       // 创建浏览器会话
       session = await this.browserAgentPort.createSession();
-      task.sessionId = session.id;
-      task.status = 'processing';
+      const runtime = this.runningTasks.get(taskId);
+      if (runtime) {
+        runtime.sessionId = session.id;
+      }
+      await this.taskRepository.updateTask(taskId, {
+        status: 'PROCESSING',
+        startedAt: new Date(),
+      });
 
       // 构建 Agent
       const agent = this.buildAgent(input);
@@ -219,7 +231,6 @@ export class AgentService {
       for await (const event of this.consumeStreamEvents({
         streamResult,
         billing,
-        task,
         taskId,
         userId,
         abortController,
@@ -238,71 +249,94 @@ export class AgentService {
       await this.settleCharges(userId, taskId, billing, creditsUsed);
 
       // 更新任务状态
-      task.status = 'completed';
-      task.result = streamResult.finalOutput;
-      task.creditsUsed = creditsUsed;
+      const progress = this.buildProgress(billing);
+      await this.taskRepository.updateTask(taskId, {
+        status: 'COMPLETED',
+        result: streamResult.finalOutput,
+        creditsUsed,
+        toolCallCount: progress.toolCallCount,
+        elapsedMs: progress.elapsedMs,
+        completedAt: new Date(),
+      });
+      await this.safeProgressOperation(
+        () => this.progressStore.clearProgress(taskId),
+        'clear progress',
+      );
 
       return {
         id: taskId,
         status: 'completed',
         data: streamResult.finalOutput,
         creditsUsed,
-        progress: this.buildProgress(billing),
+        progress,
       };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       const progress = this.buildProgress(billing);
+      const creditsUsed =
+        error instanceof CreditsExceededError
+          ? error.used
+          : billing.currentCredits;
 
       if (
         error instanceof TaskCancelledError ||
         abortController.signal.aborted
       ) {
-        task.status = 'cancelled';
-        task.error = errorMessage;
-        task.creditsUsed = billing.currentCredits;
+        // 取消需要按已消耗结算（不退款）
+        try {
+          await this.settleCharges(userId, taskId, billing, creditsUsed);
+        } catch (settleError) {
+          this.logger.warn(
+            `Failed to settle charges for cancelled task ${taskId}: ${settleError instanceof Error ? settleError.message : String(settleError)}`,
+          );
+        }
+        await this.taskRepository.updateTask(taskId, {
+          status: 'CANCELLED',
+          error: errorMessage,
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+          cancelledAt: new Date(),
+        });
+        await this.safeProgressOperation(
+          () => this.progressStore.clearProgress(taskId),
+          'clear progress',
+        );
+        await this.safeProgressOperation(
+          () => this.progressStore.clearCancel(taskId),
+          'clear cancel',
+        );
         return {
           id: taskId,
           status: 'cancelled',
           error: errorMessage,
-          creditsUsed: billing.currentCredits,
+          creditsUsed,
           progress,
         };
       }
 
       this.logger.error(`Agent task ${taskId} failed: ${errorMessage}`);
 
-      task.status = 'failed';
-      task.error = errorMessage;
-      task.creditsUsed = billing.currentCredits;
-
-      // 如果是超限错误，返回已消耗的 credits
-      if (error instanceof CreditsExceededError) {
-        task.creditsUsed = error.used;
-        return {
-          id: taskId,
-          status: 'failed',
-          error: errorMessage,
-          creditsUsed: error.used,
-          progress,
-        };
-      }
-
-      if (error instanceof QuotaExceededError) {
-        return {
-          id: taskId,
-          status: 'failed',
-          error: errorMessage,
-          creditsUsed: billing.currentCredits,
-          progress,
-        };
-      }
+      await this.refundChargesOnFailure(userId, taskId);
+      await this.taskRepository.updateTask(taskId, {
+        status: 'FAILED',
+        error: errorMessage,
+        creditsUsed,
+        toolCallCount: progress.toolCallCount,
+        elapsedMs: progress.elapsedMs,
+        completedAt: new Date(),
+      });
+      await this.safeProgressOperation(
+        () => this.progressStore.clearProgress(taskId),
+        'clear progress',
+      );
 
       return {
         id: taskId,
         status: 'failed',
         error: errorMessage,
-        creditsUsed: billing.currentCredits,
+        creditsUsed,
         progress,
       };
     } finally {
@@ -310,6 +344,11 @@ export class AgentService {
       if (session) {
         await this.browserAgentPort.closeSession(session.id);
       }
+      await this.safeProgressOperation(
+        () => this.progressStore.clearCancel(taskId),
+        'clear cancel',
+      );
+      this.runningTasks.delete(taskId);
     }
   }
 
@@ -324,26 +363,34 @@ export class AgentService {
     const taskId = this.generateTaskId();
     const now = new Date();
     const abortController = new AbortController();
+    this.runningTasks.set(taskId, { abortController });
 
-    // 创建任务记录
-    const task: StoredTask = {
-      id: taskId,
-      status: 'pending',
-      createdAt: now,
-      expiresAt: new Date(now.getTime() + this.TASK_EXPIRY),
-      abortController,
-    };
-    this.tasks.set(taskId, task);
+    // 创建持久化任务记录
+    try {
+      await this.taskRepository.createTask({
+        id: taskId,
+        userId,
+        input,
+        status: 'PENDING',
+      });
+    } catch (error) {
+      this.runningTasks.delete(taskId);
+      throw error;
+    }
 
     // 初始化计费参数（P1 计费模型优化）
     const billing = this.createBillingParams(now, input.maxCredits);
+    await this.safeProgressOperation(
+      () => this.progressStore.setProgress(taskId, this.buildProgress(billing)),
+      'set initial progress',
+    );
     let session: { id: string } | null = null;
 
     // 发送开始事件
     yield {
       type: 'started',
       id: taskId,
-      expiresAt: task.expiresAt.toISOString(),
+      expiresAt: new Date(now.getTime() + PROGRESS_TTL_MS).toISOString(),
     };
 
     try {
@@ -351,8 +398,14 @@ export class AgentService {
 
       // 创建浏览器会话
       session = await this.browserAgentPort.createSession();
-      task.sessionId = session.id;
-      task.status = 'processing';
+      const runtime = this.runningTasks.get(taskId);
+      if (runtime) {
+        runtime.sessionId = session.id;
+      }
+      await this.taskRepository.updateTask(taskId, {
+        status: 'PROCESSING',
+        startedAt: new Date(),
+      });
 
       // 构建 Agent
       const agent = this.buildAgent(input);
@@ -385,7 +438,6 @@ export class AgentService {
       for await (const sseEvent of this.consumeStreamEvents({
         streamResult,
         billing,
-        task,
         taskId,
         userId,
         abortController,
@@ -404,9 +456,19 @@ export class AgentService {
       await this.settleCharges(userId, taskId, billing, creditsUsed);
 
       // 更新任务状态
-      task.status = 'completed';
-      task.result = finalOutput;
-      task.creditsUsed = creditsUsed;
+      const progress = this.buildProgress(billing);
+      await this.taskRepository.updateTask(taskId, {
+        status: 'COMPLETED',
+        result: finalOutput,
+        creditsUsed,
+        toolCallCount: progress.toolCallCount,
+        elapsedMs: progress.elapsedMs,
+        completedAt: new Date(),
+      });
+      await this.safeProgressOperation(
+        () => this.progressStore.clearProgress(taskId),
+        'clear progress',
+      );
 
       // 发送完成事件
       yield {
@@ -418,18 +480,42 @@ export class AgentService {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       const progress = this.buildProgress(billing);
+      const creditsUsed =
+        error instanceof CreditsExceededError
+          ? error.used
+          : billing.currentCredits;
 
       if (
         error instanceof TaskCancelledError ||
         abortController.signal.aborted
       ) {
-        task.status = 'cancelled';
-        task.error = errorMessage;
-        task.creditsUsed = billing.currentCredits;
+        try {
+          await this.settleCharges(userId, taskId, billing, creditsUsed);
+        } catch (settleError) {
+          this.logger.warn(
+            `Failed to settle charges for cancelled task ${taskId}: ${settleError instanceof Error ? settleError.message : String(settleError)}`,
+          );
+        }
+        await this.taskRepository.updateTask(taskId, {
+          status: 'CANCELLED',
+          error: errorMessage,
+          creditsUsed,
+          toolCallCount: progress.toolCallCount,
+          elapsedMs: progress.elapsedMs,
+          cancelledAt: new Date(),
+        });
+        await this.safeProgressOperation(
+          () => this.progressStore.clearProgress(taskId),
+          'clear progress',
+        );
+        await this.safeProgressOperation(
+          () => this.progressStore.clearCancel(taskId),
+          'clear cancel',
+        );
         yield {
           type: 'failed',
           error: 'Task cancelled by user',
-          creditsUsed: billing.currentCredits,
+          creditsUsed,
           progress,
         };
         return;
@@ -437,14 +523,24 @@ export class AgentService {
 
       this.logger.error(`Agent task ${taskId} failed: ${errorMessage}`);
 
-      task.status = 'failed';
-      task.error = errorMessage;
-      task.creditsUsed = billing.currentCredits;
+      await this.refundChargesOnFailure(userId, taskId);
+      await this.taskRepository.updateTask(taskId, {
+        status: 'FAILED',
+        error: errorMessage,
+        creditsUsed,
+        toolCallCount: progress.toolCallCount,
+        elapsedMs: progress.elapsedMs,
+        completedAt: new Date(),
+      });
+      await this.safeProgressOperation(
+        () => this.progressStore.clearProgress(taskId),
+        'clear progress',
+      );
 
       yield {
         type: 'failed',
         error: errorMessage,
-        creditsUsed: billing.currentCredits,
+        creditsUsed,
         progress,
       };
     } finally {
@@ -452,6 +548,11 @@ export class AgentService {
       if (session) {
         await this.browserAgentPort.closeSession(session.id);
       }
+      await this.safeProgressOperation(
+        () => this.progressStore.clearCancel(taskId),
+        'clear cancel',
+      );
+      this.runningTasks.delete(taskId);
     }
   }
 
@@ -547,11 +648,41 @@ export class AgentService {
     ) {
       const nextCheckpoint =
         billing.chargedCredits + BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL;
-      await this.quotaService.deductOrThrow(
+      const referenceId = `fetchx.agent:${taskId}:checkpoint:${nextCheckpoint}`;
+      const deduct = await this.quotaService.deductOrThrow(
         userId,
         BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
-        `fetchx.agent:${taskId}:checkpoint:${nextCheckpoint}`,
+        referenceId,
       );
+      try {
+        await this.taskRepository.createCharge({
+          taskId,
+          userId,
+          amount: BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
+          source: deduct.source,
+          transactionId: deduct.transactionId,
+          referenceId,
+        });
+      } catch (error) {
+        this.logger.error(
+          `Failed to record agent checkpoint charge for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        try {
+          await this.quotaService.refund({
+            userId,
+            referenceId,
+            source: deduct.source,
+            amount: BILLING_CONSTANTS.CREDIT_CHECK_INTERVAL,
+          });
+        } catch (refundError) {
+          if (!(refundError instanceof DuplicateRefundError)) {
+            this.logger.warn(
+              `Failed to refund agent checkpoint charge for task ${taskId}: ${refundError instanceof Error ? refundError.message : String(refundError)}`,
+            );
+          }
+        }
+        throw error;
+      }
       billing.chargedCredits = nextCheckpoint;
     }
   }
@@ -570,12 +701,74 @@ export class AgentService {
       return;
     }
 
-    await this.quotaService.deductOrThrow(
+    const referenceId = `fetchx.agent:${taskId}:final`;
+    const deduct = await this.quotaService.deductOrThrow(
       userId,
       remaining,
-      `fetchx.agent:${taskId}:final`,
+      referenceId,
     );
+    try {
+      await this.taskRepository.createCharge({
+        taskId,
+        userId,
+        amount: remaining,
+        source: deduct.source,
+        transactionId: deduct.transactionId,
+        referenceId,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to record agent final charge for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      try {
+        await this.quotaService.refund({
+          userId,
+          referenceId,
+          source: deduct.source,
+          amount: remaining,
+        });
+      } catch (refundError) {
+        if (!(refundError instanceof DuplicateRefundError)) {
+          this.logger.warn(
+            `Failed to refund agent final charge for task ${taskId}: ${refundError instanceof Error ? refundError.message : String(refundError)}`,
+          );
+        }
+      }
+      throw error;
+    }
     billing.chargedCredits += remaining;
+  }
+
+  /**
+   * 失败退费（best-effort）
+   */
+  private async refundChargesOnFailure(
+    userId: string,
+    taskId: string,
+  ): Promise<void> {
+    const charges = await this.taskRepository.listCharges(taskId);
+    for (const charge of charges) {
+      if (charge.refundedAt) {
+        continue;
+      }
+
+      try {
+        await this.quotaService.refund({
+          userId,
+          referenceId: charge.referenceId,
+          source: charge.source,
+          amount: charge.amount,
+        });
+        await this.taskRepository.markChargeRefunded(charge.id);
+      } catch (error) {
+        if (error instanceof DuplicateRefundError) {
+          continue;
+        }
+        this.logger.warn(
+          `Failed to refund agent charge ${charge.id} for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
   }
 
   /**
@@ -584,17 +777,35 @@ export class AgentService {
   private async *consumeStreamEvents(params: {
     streamResult: AgentStreamedResult;
     billing: BillingParams;
-    task: StoredTask;
     taskId: string;
     userId: string;
     abortController: AbortController;
   }): AsyncGenerator<AgentStreamEvent, void, unknown> {
-    const { streamResult, billing, task, taskId, userId, abortController } =
-      params;
+    const { streamResult, billing, taskId, userId, abortController } = params;
+    let lastProgressAt = 0;
+    let lastCreditsUsed = billing.currentCredits;
+    let lastToolCallCount = billing.toolCallCount;
+    let lastCancelCheckAt = 0;
 
     for await (const event of streamResult) {
-      if (task.status === 'cancelled' || abortController.signal.aborted) {
+      if (abortController.signal.aborted) {
         throw new TaskCancelledError();
+      }
+
+      const now = Date.now();
+      if (now - lastCancelCheckAt >= PROGRESS_UPDATE_INTERVAL_MS) {
+        lastCancelCheckAt = now;
+        try {
+          const cancelled = await this.progressStore.isCancelRequested(taskId);
+          if (cancelled) {
+            abortController.abort(new TaskCancelledError());
+            throw new TaskCancelledError();
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to check cancel status for task ${taskId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       }
 
       if (event.type === 'run_item_stream_event') {
@@ -605,7 +816,21 @@ export class AgentService {
       }
 
       this.updateBillingFromUsage(billing, streamResult.state?._context?.usage);
-      task.creditsUsed = billing.currentCredits;
+
+      const progress = this.buildProgress(billing);
+      const shouldUpdateProgress =
+        progress.creditsUsed !== lastCreditsUsed ||
+        progress.toolCallCount !== lastToolCallCount ||
+        now - lastProgressAt >= PROGRESS_UPDATE_INTERVAL_MS;
+      if (shouldUpdateProgress) {
+        await this.safeProgressOperation(
+          () => this.progressStore.setProgress(taskId, progress),
+          'set progress',
+        );
+        lastProgressAt = now;
+        lastCreditsUsed = progress.creditsUsed;
+        lastToolCallCount = progress.toolCallCount;
+      }
 
       try {
         this.checkCreditsLimit(billing);
@@ -740,20 +965,66 @@ export class AgentService {
   }
 
   /**
-   * 获取任务状态
+   * 从持久化任务记录构建进度快照
    */
-  getTaskStatus(taskId: string): AgentTaskResult | null {
-    const task = this.tasks.get(taskId);
-    if (!task) {
+  private buildProgressFromTask(task: AgentTask): AgentTaskProgress | null {
+    if (
+      task.creditsUsed === null &&
+      task.toolCallCount === null &&
+      task.elapsedMs === null
+    ) {
       return null;
     }
 
     return {
+      creditsUsed: task.creditsUsed ?? 0,
+      toolCallCount: task.toolCallCount ?? 0,
+      elapsedMs: task.elapsedMs ?? 0,
+    };
+  }
+
+  private async safeProgressOperation<T>(
+    operation: () => Promise<T>,
+    context: string,
+  ): Promise<T | null> {
+    try {
+      return await operation();
+    } catch (error) {
+      this.logger.warn(
+        `Agent progress store ${context} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * 获取任务状态
+   */
+  async getTaskStatus(
+    taskId: string,
+    userId: string,
+  ): Promise<AgentTaskResult | null> {
+    const task = await this.taskRepository.getTaskForUser(taskId, userId);
+    if (!task) {
+      return null;
+    }
+
+    const progress =
+      (await this.safeProgressOperation(
+        () => this.progressStore.getProgress(taskId),
+        'get progress',
+      )) ?? this.buildProgressFromTask(task);
+
+    const status = task.status.toLowerCase() as AgentTaskResult['status'];
+    const creditsUsed = progress?.creditsUsed ?? task.creditsUsed ?? undefined;
+
+    return {
       id: task.id,
-      status: task.status,
-      data: task.result,
-      creditsUsed: task.creditsUsed,
-      error: task.error,
+      status,
+      data: task.result ?? undefined,
+      creditsUsed,
+      error: task.error ?? undefined,
+      progress: progress ?? undefined,
     };
   }
 
@@ -763,37 +1034,47 @@ export class AgentService {
    */
   async cancelTask(
     taskId: string,
+    userId: string,
   ): Promise<{ success: boolean; message: string; creditsUsed?: number }> {
-    const task = this.tasks.get(taskId);
+    const task = await this.taskRepository.getTaskForUser(taskId, userId);
 
     if (!task) {
       return { success: false, message: 'Task not found' };
     }
 
     // 只能取消正在处理中的任务
-    if (task.status !== 'pending' && task.status !== 'processing') {
+    const status = task.status.toLowerCase();
+    if (status !== 'pending' && status !== 'processing') {
       return {
         success: false,
-        message: `Cannot cancel task in '${task.status}' status`,
-        creditsUsed: task.creditsUsed,
+        message: `Cannot cancel task in '${status}' status`,
+        creditsUsed: task.creditsUsed ?? undefined,
       };
     }
 
     // 标记为已取消
-    task.status = 'cancelled';
-    task.error = 'Task cancelled by user';
+    await this.safeProgressOperation(
+      () => this.progressStore.requestCancel(taskId),
+      'request cancel',
+    );
+    await this.taskRepository.updateTask(taskId, {
+      status: 'CANCELLED',
+      error: 'Task cancelled by user',
+      cancelledAt: new Date(),
+    });
 
     // 触发 abort 信号
-    if (task.abortController) {
-      task.abortController.abort(new TaskCancelledError());
+    const runtime = this.runningTasks.get(taskId);
+    if (runtime?.abortController) {
+      runtime.abortController.abort(new TaskCancelledError());
     }
 
     // 关闭关联的浏览器会话
-    if (task.sessionId) {
+    if (runtime?.sessionId) {
       try {
-        await this.browserAgentPort.closeSession(task.sessionId);
+        await this.browserAgentPort.closeSession(runtime.sessionId);
         this.logger.debug(
-          `Closed session ${task.sessionId} for cancelled task ${taskId}`,
+          `Closed session ${runtime.sessionId} for cancelled task ${taskId}`,
         );
       } catch (error) {
         this.logger.warn(
@@ -803,11 +1084,15 @@ export class AgentService {
     }
 
     this.logger.log(`Task ${taskId} cancelled by user`);
+    const progress = await this.safeProgressOperation(
+      () => this.progressStore.getProgress(taskId),
+      'get progress',
+    );
 
     return {
       success: true,
       message: 'Task cancelled successfully',
-      creditsUsed: task.creditsUsed,
+      creditsUsed: progress?.creditsUsed ?? task.creditsUsed ?? undefined,
     };
   }
 
@@ -875,29 +1160,5 @@ export class AgentService {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).slice(2, 10);
     return `at_${timestamp}_${random}`;
-  }
-
-  /**
-   * 清理过期任务
-   */
-  private cleanupExpiredTasks(): void {
-    const now = new Date();
-    const expiredIds: string[] = [];
-
-    for (const [id, task] of this.tasks) {
-      if (now > task.expiresAt) {
-        expiredIds.push(id);
-      }
-    }
-
-    for (const id of expiredIds) {
-      this.tasks.delete(id);
-    }
-
-    if (expiredIds.length > 0) {
-      this.logger.debug(
-        `Cleaned up ${expiredIds.length} expired agent task(s)`,
-      );
-    }
   }
 }
