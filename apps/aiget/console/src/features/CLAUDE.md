@@ -57,6 +57,10 @@ export function useApiKeys() {
 }
 ```
 
+## 近期变更
+
+- Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
+
 ## 依赖
 
 - `@tanstack/react-query` - 数据请求
