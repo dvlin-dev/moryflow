@@ -5,6 +5,8 @@
  * [OUTPUT]: 会话信息、快照、操作结果
  * [POS]: L2 Browser API 业务逻辑层，整合 SessionManager、SnapshotService、ActionHandler、
  *        CdpConnector、NetworkInterceptor、StoragePersistence
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -336,7 +338,6 @@ export class BrowserSessionService {
 
     // 创建会话
     const session = await this.sessionManager.createCdpSession(
-      connection.browser,
       context,
       connection.wsEndpoint,
     );
@@ -387,8 +388,7 @@ export class BrowserSessionService {
    * 清除所有拦截规则
    */
   async clearInterceptRules(sessionId: string): Promise<void> {
-    const session = this.sessionManager.getSession(sessionId);
-    return this.networkInterceptor.clearRules(sessionId, session.page);
+    return this.networkInterceptor.clearRules(sessionId);
   }
 
   /**

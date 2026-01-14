@@ -23,6 +23,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - Agent + `@aiget/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
+- Agent 访问浏览器能力必须通过 `BrowserAgentPort`（禁止直接依赖 `BrowserSession` / Playwright 类型）
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
@@ -97,7 +98,7 @@ pnpm --filter @aiget/aiget-server prisma:studio:vector
 | `map/`           | 8     | URL discovery                                | -                         |
 | `storage/`       | 7     | Cloudflare R2 storage                        | -                         |
 | `search/`        | 6     | Web search API                               | -                         |
-| `browser/`       | 5     | Browser pool management                      | -                         |
+| `browser/`       | 6     | Browser pool management                      | `src/browser/CLAUDE.md`   |
 | `demo/`          | 5     | Playground demo API                          | -                         |
 | `redis/`         | 4     | Redis caching                                | -                         |
 | `health/`        | 3     | Health check endpoints                       | -                         |

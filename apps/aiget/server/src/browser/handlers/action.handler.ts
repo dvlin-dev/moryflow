@@ -165,8 +165,10 @@ export class ActionHandler {
           return { success: true, result: checked };
         }
 
-        default:
-          throw new Error(`Unknown action type: ${type}`);
+        default: {
+          const actionType = String(type);
+          throw new Error(`Unknown action type: ${actionType}`);
+        }
       }
     } catch (error) {
       return this.toAIFriendlyError(error, selector);

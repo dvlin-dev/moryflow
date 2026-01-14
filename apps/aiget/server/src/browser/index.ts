@@ -1,5 +1,10 @@
 /**
  * Browser 模块导出
+ *
+ * [PROVIDES]: Browser 模块对外导出
+ * [POS]: 统一出口，避免跨模块直接引用内部实现
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 export { BrowserModule } from './browser.module';
@@ -18,6 +23,12 @@ export {
 } from './session';
 export { SnapshotService } from './snapshot';
 export { ActionHandler } from './handlers';
+export { BrowserAgentPortService } from './ports';
+export type {
+  BrowserAgentPort,
+  BrowserAgentSession,
+  BrowserAgentSearchResult,
+} from './ports';
 
 // P2: CDP 连接
 export {

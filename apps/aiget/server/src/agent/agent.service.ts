@@ -3,27 +3,23 @@
  *
  * [INPUT]: Agent 任务请求
  * [OUTPUT]: 任务结果、SSE 事件流
- * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core 与 Browser 模块
+ * [POS]: L3 Agent 核心业务逻辑，整合 @aiget/agents-core 与 Browser ports
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import {
   Agent,
   run,
+  type AgentOutputType,
+  type JsonSchemaDefinition,
+  type RunResult,
   type RunStreamEvent,
+  type StreamedRunResult,
 } from '@aiget/agents-core';
-
-// 使用 any 类型别名避免 agents-core 复杂泛型导致 TypeScript OOM
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRunResult = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyStreamedRunResult = any;
-import { z } from 'zod';
-import { SessionManager } from '../browser/session';
-import { SnapshotService } from '../browser/snapshot';
-import { ActionHandler } from '../browser/handlers';
-import { UrlValidator } from '../common';
-import { browserTools, BrowserToolContext } from './tools';
+import { BrowserAgentPortService } from '../browser/ports';
+import { browserTools, type BrowserAgentContext } from './tools';
 import type {
   CreateAgentTaskInput,
   AgentTaskResult,
@@ -103,6 +99,35 @@ const BILLING_CONSTANTS = {
   DEFAULT_MAX_CREDITS: 100,
 } as const;
 
+type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
+type AgentRunResult = RunResult<BrowserAgentContext, BrowserAgent>;
+type AgentStreamedResult = StreamedRunResult<BrowserAgentContext, BrowserAgent>;
+
+const buildAgentOutputType = (
+  schema?: Record<string, unknown>,
+): AgentOutputType | undefined => {
+  if (!schema) {
+    return undefined;
+  }
+
+  const properties = schema as Record<string, Record<string, unknown>>;
+  const required = Object.keys(properties);
+
+  const jsonSchema: JsonSchemaDefinition = {
+    type: 'json_schema',
+    name: 'agent_output',
+    strict: false,
+    schema: {
+      type: 'object',
+      properties,
+      required,
+      additionalProperties: true,
+    },
+  };
+
+  return jsonSchema;
+};
+
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
@@ -113,12 +138,7 @@ export class AgentService {
   /** 任务结果过期时间（10 分钟） */
   private readonly TASK_EXPIRY = 10 * 60 * 1000;
 
-  constructor(
-    private readonly sessionManager: SessionManager,
-    private readonly snapshotService: SnapshotService,
-    private readonly actionHandler: ActionHandler,
-    private readonly urlValidator: UrlValidator,
-  ) {
+  constructor(private readonly browserAgentPort: BrowserAgentPortService) {
     // 定期清理过期任务
     setInterval(() => this.cleanupExpiredTasks(), 60 * 1000);
   }
@@ -150,31 +170,30 @@ export class AgentService {
     };
 
     // 创建浏览器会话
-    const session = await this.sessionManager.createSession();
+    const session = await this.browserAgentPort.createSession();
     task.sessionId = session.id;
 
     try {
       // 构建 Agent
-      const agent = new Agent({
+      const agent: BrowserAgent = new Agent<
+        BrowserAgentContext,
+        AgentOutputType
+      >({
         name: 'Fetchx Browser Agent',
         model: 'gpt-4o',
         instructions: SYSTEM_INSTRUCTIONS,
         tools: browserTools,
-        outputType: input.schema
-          ? z.object(input.schema as z.ZodRawShape)
-          : undefined,
+        outputType: buildAgentOutputType(input.schema),
         modelSettings: {
           temperature: 0.7,
           maxTokens: 4096,
         },
-      } as any);
+      });
 
       // 构建上下文
-      const context: BrowserToolContext = {
-        session,
-        snapshotService: this.snapshotService,
-        actionHandler: this.actionHandler,
-        urlValidator: this.urlValidator,
+      const context: BrowserAgentContext = {
+        sessionId: session.id,
+        browser: this.browserAgentPort,
       };
 
       // 构建用户 prompt
@@ -184,17 +203,15 @@ export class AgentService {
       }
 
       // 执行 Agent
-      const result = (await run(agent as any, userPrompt, {
-        context: context as any,
+      const result: AgentRunResult = await run(agent, userPrompt, {
+        context,
         maxTurns: 20,
-      } as any)) as AnyRunResult;
+      });
 
       // 从结果中提取工具调用次数
       const toolCallCount =
-        result.state?.allItems?.filter(
-          (item: unknown) =>
-            (item as { type?: unknown } | null)?.type === 'tool_call_item',
-        ).length ?? 0;
+        result.newItems?.filter((item) => item.type === 'tool_call_item')
+          .length ?? 0;
       billing.toolCallCount = toolCallCount;
 
       // 计算 credits（P1 计费模型优化）
@@ -242,7 +259,7 @@ export class AgentService {
       };
     } finally {
       // 清理会话
-      await this.sessionManager.closeSession(session.id);
+      await this.browserAgentPort.closeSession(session.id);
     }
   }
 
@@ -283,31 +300,30 @@ export class AgentService {
     };
 
     // 创建浏览器会话
-    const session = await this.sessionManager.createSession();
+    const session = await this.browserAgentPort.createSession();
     task.sessionId = session.id;
 
     try {
       // 构建 Agent
-      const agent = new Agent({
+      const agent: BrowserAgent = new Agent<
+        BrowserAgentContext,
+        AgentOutputType
+      >({
         name: 'Fetchx Browser Agent',
         model: 'gpt-4o',
         instructions: SYSTEM_INSTRUCTIONS,
         tools: browserTools,
-        outputType: input.schema
-          ? z.object(input.schema as z.ZodRawShape)
-          : undefined,
+        outputType: buildAgentOutputType(input.schema),
         modelSettings: {
           temperature: 0.7,
           maxTokens: 4096,
         },
-      } as any);
+      });
 
       // 构建上下文
-      const context: BrowserToolContext = {
-        session,
-        snapshotService: this.snapshotService,
-        actionHandler: this.actionHandler,
-        urlValidator: this.urlValidator,
+      const context: BrowserAgentContext = {
+        sessionId: session.id,
+        browser: this.browserAgentPort,
       };
 
       // 构建用户 prompt
@@ -319,11 +335,11 @@ export class AgentService {
       yield { type: 'thinking', content: '正在分析任务需求...' };
 
       // 使用流式 API 执行 Agent
-      const streamResult = (await run(agent as any, userPrompt, {
-        context: context as any,
+      const streamResult: AgentStreamedResult = await run(agent, userPrompt, {
+        context,
         maxTurns: 20,
         stream: true,
-      } as any)) as AnyStreamedRunResult;
+      });
 
       // 处理流式事件并追踪计费
       for await (const event of streamResult) {
@@ -369,7 +385,7 @@ export class AgentService {
       }
 
       // 等待完成并获取最终结果
-      const finalOutput = streamResult.finalOutput;
+      const finalOutput = streamResult.finalOutput as unknown;
       const creditsUsed = this.calculateCreditsFromStream(
         streamResult,
         billing,
@@ -400,7 +416,7 @@ export class AgentService {
       };
     } finally {
       // 清理会话
-      await this.sessionManager.closeSession(session.id);
+      await this.browserAgentPort.closeSession(session.id);
     }
   }
 
@@ -412,13 +428,17 @@ export class AgentService {
       case 'raw_model_stream_event': {
         // 处理模型流事件（思考过程）
         const modelEvent = event.data;
-        if (
-          modelEvent.type === 'content_block_delta' &&
-          'delta' in modelEvent
-        ) {
-          const delta = modelEvent.delta as { text?: string };
-          if (delta.text) {
-            return { type: 'thinking', content: delta.text };
+        if (modelEvent.type === 'output_text_delta') {
+          return { type: 'thinking', content: modelEvent.delta };
+        }
+
+        if (modelEvent.type === 'model') {
+          const rawEvent = modelEvent.event as {
+            type?: string;
+            delta?: string;
+          };
+          if (rawEvent.type === 'reasoning-delta' && rawEvent.delta) {
+            return { type: 'thinking', content: rawEvent.delta };
           }
         }
         break;
@@ -471,7 +491,7 @@ export class AgentService {
    * 从流式结果计算 credits（P1 计费模型优化）
    */
   private calculateCreditsFromStream(
-    result: AnyStreamedRunResult,
+    result: AgentStreamedResult,
     billing?: BillingParams,
   ): number {
     let credits = BILLING_CONSTANTS.BASE_CREDITS;
@@ -553,7 +573,7 @@ export class AgentService {
     // 关闭关联的浏览器会话
     if (task.sessionId) {
       try {
-        await this.sessionManager.closeSession(task.sessionId);
+        await this.browserAgentPort.closeSession(task.sessionId);
         this.logger.debug(
           `Closed session ${task.sessionId} for cancelled task ${taskId}`,
         );
@@ -580,7 +600,7 @@ export class AgentService {
    * credits = 基础费 + token费 + 工具调用费 + 时长费
    */
   private calculateCredits(
-    result: AnyRunResult,
+    result: AgentRunResult,
     billing?: BillingParams,
   ): number {
     let credits = BILLING_CONSTANTS.BASE_CREDITS;

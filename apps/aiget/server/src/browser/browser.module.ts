@@ -1,9 +1,9 @@
 /**
  * Browser 模块
  *
- * 提供两层功能：
- * 1. BrowserPool - 基础设施层，Playwright 浏览器实例池管理
- * 2. L2 Browser API - 会话管理、快照、动作执行
+ * [INPUT]: 浏览器会话与自动化请求
+ * [OUTPUT]: 浏览器能力服务（Session/Snapshot/Action/Ports）
+ * [POS]: L2 Browser API + Agent 端口提供方
  *
  * P2 扩展功能：
  * - CDP 连接：连接已运行的浏览器（调试、Electron 等）
@@ -12,6 +12,8 @@
  * - 增量快照：delta 模式节省 token
  *
  * 使用场景：screenshot（截图）、automation（智能化操作）、agent（AI Agent）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Module, Global } from '@nestjs/common';
@@ -24,6 +26,7 @@ import { NetworkInterceptorService } from './network';
 import { StoragePersistenceService } from './persistence';
 import { BrowserSessionService } from './browser-session.service';
 import { BrowserSessionController } from './browser-session.controller';
+import { BrowserAgentPortService } from './ports';
 
 @Global()
 @Module({
@@ -41,6 +44,8 @@ import { BrowserSessionController } from './browser-session.controller';
     StoragePersistenceService,
     // 聚合服务
     BrowserSessionService,
+    // Agent 端口（隔离 Playwright 类型）
+    BrowserAgentPortService,
   ],
   exports: [
     BrowserPool,
@@ -51,6 +56,7 @@ import { BrowserSessionController } from './browser-session.controller';
     NetworkInterceptorService,
     StoragePersistenceService,
     BrowserSessionService,
+    BrowserAgentPortService,
   ],
 })
 export class BrowserModule {}

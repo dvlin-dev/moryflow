@@ -2,23 +2,20 @@
  * Browser Tools for Agent
  *
  * [PROVIDES]: Agent 可使用的浏览器操作工具
- * [DEPENDS]: @aiget/agents-core, browser 模块
- * [POS]: 将 L2 Browser API 封装为 Agent Tools（类型边界做降级，避免 typecheck OOM）
+ * [DEPENDS]: @aiget/agents-core, browser/ports
+ * [POS]: 将 L2 Browser API 封装为 Agent Tools（通过 ports/facade 隔离 Playwright 类型）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { tool, type Tool } from '@aiget/agents-core';
+import { tool, type RunContext, type Tool } from '@aiget/agents-core';
 import { z } from 'zod';
-import type { BrowserSession } from '../../browser/session';
-import type { SnapshotService } from '../../browser/snapshot';
-import type { ActionHandler } from '../../browser/handlers';
-import type { UrlValidator } from '../../common';
+import type { BrowserAgentPort } from '../../browser/ports';
 
 /** Browser Tool 上下文 */
-export interface BrowserToolContext {
-  session: BrowserSession;
-  snapshotService: SnapshotService;
-  actionHandler: ActionHandler;
-  urlValidator: UrlValidator;
+export interface BrowserAgentContext {
+  sessionId: string;
+  browser: BrowserAgentPort;
 }
 
 // ========== Schema 定义 ==========
@@ -74,6 +71,133 @@ const pressSchema = z.object({
   key: z.string().describe('按键名称（如 Enter、Tab、Escape）'),
 });
 
+type BrowserToolRunContext = RunContext<BrowserAgentContext>;
+type JsonObjectSchemaStrictLike = {
+  type: 'object';
+  properties: Record<string, Record<string, unknown>>;
+  required: string[];
+  additionalProperties: false;
+};
+
+const snapshotParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    interactive: {
+      type: 'boolean',
+      description: '仅返回可交互元素',
+    },
+    maxDepth: {
+      type: 'number',
+      description: '最大深度限制',
+    },
+  },
+  required: [],
+  additionalProperties: false,
+};
+
+const selectorParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    selector: {
+      type: 'string',
+      description: '元素选择器，支持 @ref 格式（如 @e1）或 CSS 选择器',
+    },
+  },
+  required: ['selector'],
+  additionalProperties: false,
+};
+
+const fillParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    selector: { type: 'string', description: '输入框选择器' },
+    value: { type: 'string', description: '要填写的文本' },
+  },
+  required: ['selector', 'value'],
+  additionalProperties: false,
+};
+
+const typeParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    selector: { type: 'string', description: '输入框选择器' },
+    text: { type: 'string', description: '要逐字输入的文本' },
+  },
+  required: ['selector', 'text'],
+  additionalProperties: false,
+};
+
+const urlParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    url: { type: 'string', description: '要打开的 URL' },
+  },
+  required: ['url'],
+  additionalProperties: false,
+};
+
+const queryParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    query: { type: 'string', description: '搜索关键词' },
+  },
+  required: ['query'],
+  additionalProperties: false,
+};
+
+const scrollParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    selector: {
+      type: 'string',
+      description: '要滚动的元素，不传则滚动整个页面',
+    },
+    direction: {
+      type: 'string',
+      enum: ['up', 'down', 'left', 'right'],
+      description: '滚动方向',
+    },
+    distance: {
+      type: 'number',
+      description: '滚动距离（像素）',
+    },
+  },
+  required: ['direction'],
+  additionalProperties: false,
+};
+
+const waitParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    time: { type: 'number', description: '等待时间（毫秒）' },
+    selector: { type: 'string', description: '等待选择器出现' },
+    selectorGone: { type: 'string', description: '等待选择器消失' },
+    text: { type: 'string', description: '等待文本出现' },
+  },
+  required: [],
+  additionalProperties: false,
+};
+
+const pressParameters: JsonObjectSchemaStrictLike = {
+  type: 'object',
+  properties: {
+    selector: { type: 'string', description: '目标元素' },
+    key: { type: 'string', description: '按键名称（如 Enter、Tab、Escape）' },
+  },
+  required: ['key'],
+  additionalProperties: false,
+};
+
+const getBrowserContext = (
+  runContext?: BrowserToolRunContext,
+): BrowserAgentContext => {
+  const context = runContext?.context;
+  if (!context) {
+    throw new Error('Browser agent context not available');
+  }
+  return context;
+};
+
 // ========== Tool 定义 ==========
 
 /** 获取页面快照 */
@@ -83,22 +207,14 @@ export const snapshotTool = tool({
 返回的 ref 可用于后续 click、fill 等操作。
 - interactive=true: 仅返回可交互元素（button, link, input 等）
 - 每次操作后应调用此工具以了解页面变化`,
-  parameters: snapshotSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { snapshotService, session } = ctx;
-    const result = await snapshotService.capture(session.page, {
-      interactive: input.interactive,
-      maxDepth: input.maxDepth,
+  parameters: snapshotParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = snapshotSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return browser.snapshot(sessionId, {
+      interactive: parsed.interactive,
+      maxDepth: parsed.maxDepth,
     });
-
-    // 更新会话的 refs 映射，确保后续操作可以使用新的 refs
-    session.refs = result.refs;
-
-    return result.snapshot;
   },
 });
 
@@ -106,16 +222,13 @@ export const snapshotTool = tool({
 export const clickTool = tool({
   name: 'browser_click',
   description: '点击指定元素。使用 @ref 格式（如 @e1）或 CSS 选择器定位元素。',
-  parameters: selectorSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: selectorParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = selectorSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'click',
-      selector: input.selector,
+      selector: parsed.selector,
       timeout: 5000,
     });
   },
@@ -125,17 +238,14 @@ export const clickTool = tool({
 export const fillTool = tool({
   name: 'browser_fill',
   description: '在输入框中填写文本。会先清空原有内容，然后填入新内容。',
-  parameters: fillSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: fillParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = fillSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'fill',
-      selector: input.selector,
-      value: input.value,
+      selector: parsed.selector,
+      value: parsed.value,
       timeout: 5000,
     });
   },
@@ -146,17 +256,14 @@ export const typeTool = tool({
   name: 'browser_type',
   description:
     '在输入框中逐字输入文本。不会清空原有内容，适合追加输入或触发输入事件。',
-  parameters: typeSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: typeParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = typeSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'type',
-      selector: input.selector,
-      value: input.text,
+      selector: parsed.selector,
+      value: parsed.text,
       timeout: 5000,
     });
   },
@@ -166,24 +273,23 @@ export const typeTool = tool({
 export const openTool = tool({
   name: 'browser_open',
   description: '在浏览器中打开指定 URL。',
-  parameters: urlSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { session, urlValidator } = ctx;
-
-    // SSRF 防护
-    if (!urlValidator.isAllowed(input.url)) {
+  parameters: urlParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = urlSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    try {
+      return await browser.openUrl(sessionId, {
+        url: parsed.url,
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: `URL not allowed: ${input.url}. Access to internal/private addresses is blocked.`,
+        error: message,
       };
     }
-
-    await session.page.goto(input.url, { waitUntil: 'domcontentloaded' });
-    return { success: true, url: session.page.url() };
   },
 });
 
@@ -191,23 +297,24 @@ export const openTool = tool({
 export const searchTool = tool({
   name: 'web_search',
   description: '使用搜索引擎搜索信息。返回搜索结果页面的快照。',
-  parameters: querySchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
+  parameters: queryParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = querySchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    try {
+      const result = await browser.search(sessionId, parsed.query);
+      return {
+        success: true,
+        url: result.url,
+        snapshot: result.snapshot,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: message,
+      };
     }
-    const { session, snapshotService } = ctx;
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(input.query)}`;
-    await session.page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-    const result = await snapshotService.capture(session.page, {
-      interactive: true,
-    });
-    return {
-      success: true,
-      url: session.page.url(),
-      snapshot: result.snapshot,
-    };
   },
 });
 
@@ -215,16 +322,13 @@ export const searchTool = tool({
 export const getTextTool = tool({
   name: 'browser_getText',
   description: '获取指定元素的文本内容。',
-  parameters: selectorSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: selectorParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = selectorSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'getText',
-      selector: input.selector,
+      selector: parsed.selector,
       timeout: 5000,
     });
   },
@@ -234,18 +338,15 @@ export const getTextTool = tool({
 export const scrollTool = tool({
   name: 'browser_scroll',
   description: '滚动页面或指定元素。可用于查看更多内容或加载懒加载项。',
-  parameters: scrollSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: scrollParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = scrollSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'scroll',
-      selector: input.selector,
-      direction: input.direction,
-      distance: input.distance,
+      selector: parsed.selector,
+      direction: parsed.direction,
+      distance: parsed.distance,
       timeout: 5000,
     });
   },
@@ -255,20 +356,17 @@ export const scrollTool = tool({
 export const waitTool = tool({
   name: 'browser_wait',
   description: '等待指定条件满足。可等待时间、元素出现/消失、或文本出现。',
-  parameters: waitSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: waitParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = waitSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'wait',
       waitFor: {
-        time: input.time,
-        selector: input.selector,
-        selectorGone: input.selectorGone,
-        text: input.text,
+        time: parsed.time,
+        selector: parsed.selector,
+        selectorGone: parsed.selectorGone,
+        text: parsed.text,
       },
       timeout: 5000,
     });
@@ -280,17 +378,14 @@ export const pressTool = tool({
   name: 'browser_press',
   description:
     '模拟按下键盘按键。可用于提交表单（Enter）、取消操作（Escape）等。',
-  parameters: pressSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: pressParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = pressSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'press',
-      selector: input.selector,
-      key: input.key,
+      selector: parsed.selector,
+      key: parsed.key,
       timeout: 5000,
     });
   },
@@ -300,23 +395,20 @@ export const pressTool = tool({
 export const hoverTool = tool({
   name: 'browser_hover',
   description: '将鼠标悬停在指定元素上。可用于触发下拉菜单或工具提示。',
-  parameters: selectorSchema as any,
-  execute: async (input: any, runContext) => {
-    const ctx = runContext?.context as BrowserToolContext | undefined;
-    if (!ctx) {
-      throw new Error('Browser context not available');
-    }
-    const { actionHandler, session } = ctx;
-    return await actionHandler.execute(session, {
+  parameters: selectorParameters,
+  execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+    const parsed = selectorSchema.parse(input);
+    const { browser, sessionId } = getBrowserContext(runContext);
+    return await browser.executeAction(sessionId, {
       type: 'hover',
-      selector: input.selector,
+      selector: parsed.selector,
       timeout: 5000,
     });
   },
 });
 
 /** 导出所有 Browser Tools（使用显式类型避免复杂类型推断） */
-export const browserTools: Tool[] = [
+export const browserTools: Tool<BrowserAgentContext>[] = [
   snapshotTool,
   clickTool,
   fillTool,

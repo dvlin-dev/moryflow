@@ -4,6 +4,8 @@
  * [INPUT]: HTTP 请求
  * [OUTPUT]: JSON 响应或 SSE 事件流
  * [POS]: L3 Agent API 入口，处理任务创建和状态查询
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -28,8 +30,7 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Public } from '../auth';
-import { ApiKeyGuard, CurrentApiKey } from '../api-key';
-import type { ApiKeyPayload } from '../api-key';
+import { ApiKeyGuard } from '../api-key';
 import { AgentService } from './agent.service';
 import { CreateAgentTaskSchema, type AgentStreamEvent } from './dto';
 
@@ -54,11 +55,7 @@ export class AgentController {
       'Execute an AI agent task. Returns SSE stream by default, or JSON if stream=false.',
   })
   @ApiOkResponse({ description: 'Task result or SSE event stream' })
-  async createTask(
-    @Body() body: unknown,
-    @Res() res: Response,
-    @CurrentApiKey() _apiKey: ApiKeyPayload,
-  ): Promise<void> {
+  async createTask(@Body() body: unknown, @Res() res: Response): Promise<void> {
     // 验证输入
     const parseResult = CreateAgentTaskSchema.safeParse(body);
     if (!parseResult.success) {
@@ -123,10 +120,7 @@ export class AgentController {
   @ApiParam({ name: 'id', description: 'Task ID' })
   @ApiOkResponse({ description: 'Task status and result' })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  async getTaskStatus(
-    @Param('id') taskId: string,
-    @CurrentApiKey() _apiKey: ApiKeyPayload,
-  ) {
+  getTaskStatus(@Param('id') taskId: string) {
     const result = this.agentService.getTaskStatus(taskId);
 
     if (!result) {
@@ -167,7 +161,7 @@ export class AgentController {
       },
     },
   })
-  estimateCost(@Body() body: unknown, @CurrentApiKey() _apiKey: ApiKeyPayload) {
+  estimateCost(@Body() body: unknown) {
     // 验证输入
     const parseResult = CreateAgentTaskSchema.safeParse(body);
     if (!parseResult.success) {
@@ -206,10 +200,7 @@ export class AgentController {
     },
   })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  async cancelTask(
-    @Param('id') taskId: string,
-    @CurrentApiKey() _apiKey: ApiKeyPayload,
-  ) {
+  async cancelTask(@Param('id') taskId: string) {
     const result = await this.agentService.cancelTask(taskId);
 
     if (!result.success && result.message === 'Task not found') {

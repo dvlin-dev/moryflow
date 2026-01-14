@@ -238,9 +238,9 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'Get dialog history for the session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'List of recent dialogs' })
-  async getDialogHistory(@Param('id') sessionId: string) {
+  getDialogHistory(@Param('id') sessionId: string) {
     try {
-      return await this.browserSessionService.getDialogHistory(sessionId);
+      return this.browserSessionService.getDialogHistory(sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }

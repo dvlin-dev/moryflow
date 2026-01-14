@@ -41,27 +41,6 @@ export class NetworkInterceptorService {
   private readonly MAX_HISTORY_SIZE = 100;
 
   /**
-   * 初始化会话的网络拦截
-   */
-
-  initSession(sessionId: string, _page: Page): void {
-    if (this.sessionStates.has(sessionId)) {
-      return;
-    }
-
-    const state: SessionInterceptState = {
-      rules: new Map(),
-      requestHistory: [],
-      routingEnabled: false,
-    };
-
-    this.sessionStates.set(sessionId, state);
-    this.logger.debug(
-      `Initialized network interceptor for session ${sessionId}`,
-    );
-  }
-
-  /**
    * 设置拦截规则
    */
   async setRules(
@@ -148,7 +127,7 @@ export class NetworkInterceptorService {
    * 清除所有规则
    */
 
-  async clearRules(sessionId: string, _page: Page): Promise<void> {
+  async clearRules(sessionId: string): Promise<void> {
     const state = this.sessionStates.get(sessionId);
     if (!state) {
       return;
