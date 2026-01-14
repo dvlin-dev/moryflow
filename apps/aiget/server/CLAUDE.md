@@ -30,6 +30,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Agent 失败不扣积分（checkpoint 全退），用户主动取消按已消耗扣费
 - Agent 任务终态更新必须使用 `updateTaskIfStatus`（compare-and-set）以避免取消状态被覆盖；取消后需确保 metrics（creditsUsed/toolCallCount/elapsedMs）落库
 - Agent 失败退款需在确认任务状态为 `FAILED` 后执行，避免与取消竞态造成错误退款
+- Prisma 迁移 diff 依赖 Shadow DB；本地需设置 `SHADOW_DATABASE_URL` / `VECTOR_SHADOW_DATABASE_URL`（仅本地，不提交）
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）

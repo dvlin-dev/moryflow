@@ -8,5 +8,6 @@ export default defineConfig({
   },
   datasource: {
     url: env('VECTOR_DATABASE_URL'),
+    shadowDatabaseUrl: process.env.VECTOR_SHADOW_DATABASE_URL,
   },
 });

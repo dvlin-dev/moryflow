@@ -203,6 +203,7 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 - [x] 代码审查问题修复（ActionHandler、SSE、browser_wait、screenshot）
 - [x] 修复取消竞态：终态 compare-and-set，取消时 metrics 落库
 - [x] Prisma 迁移已生成并应用（AgentTask / AgentTaskCharge）
+- [x] Shadow DB 已建立并接入 Prisma config（migrate diff 可用）
 
 ### 当前剩余问题
 
@@ -218,6 +219,8 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 - `pnpm typecheck` ✅ 通过（同上）
 - `pnpm test:unit` ✅ 通过（Redis 连接拒绝日志存在，不影响用例结果；取消回归用例通过）
 - `pnpm exec prisma migrate deploy --config prisma.main.config.ts` ✅ 通过（Agent 任务表迁移已应用）
+- `pnpm exec prisma migrate diff --config prisma.main.config.ts --from-migrations prisma/main/migrations --to-schema prisma/main/schema.prisma --exit-code` ✅ 无差异
+- `pnpm exec prisma migrate diff --config prisma.vector.config.ts --from-migrations prisma/vector/migrations --to-schema prisma/vector/schema.prisma --exit-code` ✅ 无差异
 
 ## 一、参考项目分析
 
