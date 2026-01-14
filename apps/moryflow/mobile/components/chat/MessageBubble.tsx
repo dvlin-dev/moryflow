@@ -1,12 +1,15 @@
 /**
  * 消息气泡组件
  *
- * 支持渲染多种消息类型：文本、工具调用、推理过程
- * 新消息带入场动画：用户消息（滑动+淡入）、助手消息（淡入）
+ * [PROPS]: MessageBubbleProps
+ * [EMITS]: —
+ * [POS]: 聊天消息渲染入口（用户/助手消息与动画）
  *
  * 重构说明：
  * - 移除了 placeholderMinHeight 逻辑（导致复杂滚动的根源）
  * - AI 占位消息使用简单的 loading 指示器
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import * as React from 'react';
@@ -103,7 +106,7 @@ function UserMessage({ message }: UserMessageProps) {
         }
       );
     }
-  }, []);
+  }, [markAnimated, opacity, setLastUserMessageAnimated, translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -179,7 +182,7 @@ function AssistantMessage({
         return () => clearTimeout(timeout);
       }
     }
-  }, []);
+  }, [lastUserMessageAnimated, markAnimated, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
