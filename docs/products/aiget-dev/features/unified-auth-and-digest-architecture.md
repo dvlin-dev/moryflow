@@ -114,29 +114,23 @@ function isAllowedRedirect(url: string): boolean {
 
 #### 公开页面（无需登录）
 
-| 路由                         | 说明                    |
-| ---------------------------- | ----------------------- |
-| `/`                          | 首页（产品介绍 + 入口） |
-| `/fetchx`                    | Fetchx 模块介绍         |
-| `/memox`                     | Memox 模块介绍          |
-| `/topics`                    | 浏览公开 Topics         |
-| `/topics/:slug`              | Topic 详情页            |
-| `/topics/:slug/editions/:id` | Edition 详情页          |
-| `/login`                     | 统一登录                |
-| `/register`                  | 注册                    |
+| 路由                         | 说明                              |
+| ---------------------------- | --------------------------------- |
+| `/`                          | Reader（Digest 主入口，三栏布局） |
+| `/developer`                 | Developer hub（导航页）           |
+| `/fetchx`                    | Fetchx 模块介绍                   |
+| `/memox`                     | Memox 模块介绍                    |
+| `/pricing`                   | 价格页                            |
+| `/topics`                    | 浏览公开 Topics                   |
+| `/topics/:slug`              | Topic 详情页                      |
+| `/topics/:slug/editions/:id` | Edition 详情页                    |
+| `/login`                     | 统一登录（打开 Auth 弹窗）        |
+| `/register`                  | 注册（打开 Auth 弹窗）            |
+| `/forgot-password`           | 忘记密码（打开 Auth 弹窗）        |
 
 #### 用户页面（需登录）
 
-| 路由                 | 说明                             |
-| -------------------- | -------------------------------- |
-| `/dashboard`         | 用户首页（收件箱概览、快捷入口） |
-| `/inbox`             | 我的收件箱（所有订阅的内容聚合） |
-| `/subscriptions`     | 我的订阅列表                     |
-| `/subscriptions/new` | 创建新订阅                       |
-| `/subscriptions/:id` | 订阅详情/编辑                    |
-| `/my-topics`         | 我发布的 Topics                  |
-| `/my-topics/:id`     | Topic 详情/编辑                  |
-| `/settings`          | 账户设置                         |
+www 不再维护独立的“用户页面路由”。登录后的所有 C 端操作（Inbox、Subscriptions、Account Settings、Publish 等）统一在 `/` 的 Reader 壳层内通过弹窗/三栏视图完成，避免跳转与上下文丢失。
 
 ### console.aiget.dev - 开发者工具
 

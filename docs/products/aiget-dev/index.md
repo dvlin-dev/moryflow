@@ -24,6 +24,9 @@ status: active
 - 定时内容订阅（Email Digest）：`docs/products/aiget-dev/features/scheduled-digest.md`
 - v2 智能信息订阅：`docs/products/aiget-dev/features/v2-intelligent-digest.md`
 - 统一登录与 Digest 前端架构：`docs/products/aiget-dev/features/unified-auth-and-digest-architecture.md`
+- 首页 Reader 三栏布局设计（已实现）：`docs/products/aiget-dev/features/homepage-reader-redesign.md`
+- 首页 Discover 增强（已实现）：`docs/products/aiget-dev/features/homepage-redesign.md`
+- www：Reader 与 Developer 双模块布局方案（提案）：`docs/products/aiget-dev/features/www-reader-and-developer-split.md`
 
 ## Reviews
 

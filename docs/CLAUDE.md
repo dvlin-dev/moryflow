@@ -36,3 +36,4 @@
 ## 最近更新
 
 - Digest 全量 Code Review：`docs/products/aiget-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）
+- www Reader/Developer 双模块布局方案：`docs/products/aiget-dev/features/www-reader-and-developer-split.md`（Reader 内操作不跳页：登录/设置弹窗；Developer 端保持 Header/Footer）
