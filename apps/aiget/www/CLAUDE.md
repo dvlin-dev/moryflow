@@ -63,31 +63,33 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 
 ### Reader Components (首页)
 
-| Component                    | Description                                     |
-| ---------------------------- | ----------------------------------------------- |
-| `ReaderLayout`               | Three-column layout container                   |
-| `MobileReaderLayout`         | Mobile-optimized layout                         |
-| `SidePanel`                  | Left sidebar (Discover/Inbox/Subscriptions)     |
-| `ArticleList`                | Middle column article list (Inbox)              |
-| `ArticleCard`                | Article card in list                            |
-| `ArticleDetail`              | Right column article detail                     |
-| `MarkdownView`               | Lazy markdown renderer (react-markdown chunk)   |
-| `DiscoverFeedList`           | Middle column discover feed (Featured/Trending) |
-| `DiscoverFeedCard`           | Discover feed item card                         |
-| `DiscoverDetail`             | Right column discover item detail               |
-| `TopicBrowseList`            | Middle column topics browse (Reader 内)         |
-| `TopicPreviewDetail`         | Right column topic preview (Reader 内)          |
-| `WelcomeGuide`               | Welcome guide for new users                     |
-| `CreateSubscriptionDialog`   | Create subscription dialog                      |
-| `SubscriptionSettingsDialog` | Subscription settings dialog                    |
-| `ReaderScaffold`             | Desktop/Mobile 壳层切换（feature composition）  |
-| `ReaderListPane`             | 中栏视图切换（Discover/Topics/Inbox）           |
-| `ReaderDetailPane`           | 右栏视图切换（Welcome/Discover/Topic/Article）  |
-| `ReaderDialogs`              | Reader 内操作弹窗统一出口                       |
-| `ReaderPaneFallback`         | 懒加载视图占位（Notion 风格骨架）               |
-| `ReaderErrorBoundary`        | Reader 局部错误边界（单栏兜底）                 |
-| `reader.preload.ts`          | Reader 懒加载模块预取（hover/click）            |
-| `reader.types.ts`            | Reader Inbox 过滤状态与映射                     |
+| Component                    | Description                                                    |
+| ---------------------------- | -------------------------------------------------------------- |
+| `ReaderLayout`               | Three-column layout container                                  |
+| `MobileReaderLayout`         | Mobile-optimized layout                                        |
+| `SidePanel`                  | Left sidebar (Discover/Inbox/Subscriptions)                    |
+| `ArticleList`                | Middle column article list (Inbox)                             |
+| `ArticleCard`                | Article card in list                                           |
+| `ArticleDetail`              | Right column article detail                                    |
+| `MarkdownView`               | Lazy markdown renderer (react-markdown chunk)                  |
+| `DiscoverFeedList`           | Middle column discover feed (Featured/Trending)                |
+| `DiscoverFeedCard`           | Discover feed item card                                        |
+| `DiscoverDetail`             | Right column discover item detail                              |
+| `TopicBrowseList`            | Middle column topics browse (Reader 内)                        |
+| `TopicPreviewDetail`         | Right column topic preview (Reader 内)                         |
+| `WelcomeGuide`               | Welcome guide for new users                                    |
+| `CreateSubscriptionDialog`   | Create subscription dialog                                     |
+| `SubscriptionSettingsDialog` | Subscription settings dialog                                   |
+| `ReaderScaffold`             | Desktop/Mobile 壳层切换（feature composition）                 |
+| `ReaderListPane`             | 中栏分发器（按 ViewModel 渲染 Discover/Topics/Inbox）          |
+| `ReaderDetailPane`           | 右栏分发器（按 ViewModel 渲染 Welcome/Discover/Topic/Article） |
+| `ReaderDialogs`              | Reader 内操作弹窗统一出口                                      |
+| `ReaderPaneFallback`         | 懒加载视图占位（Notion 风格骨架）                              |
+| `ReaderErrorBoundary`        | Reader 局部错误边界（单栏兜底）                                |
+| `reader.preload.ts`          | Reader 懒加载模块预取（hover/click）                           |
+| `reader.models.ts`           | Reader List/Detail ViewModel（判别联合）                       |
+| `reader.types.ts`            | Reader Inbox 过滤状态与映射                                    |
+| `useReaderController.ts`     | Reader 控制器 Hook（状态/数据/交互/模型组装）                  |
 
 ### Landing Sections
 
@@ -167,6 +169,31 @@ routes/
 已登录用户（无订阅）:
   默认显示 Inbox 空状态（WelcomeGuide）→ 引导创建订阅 / 浏览 Topics
 ```
+
+## 交互与架构规范（Notion 风格 / 强约束）
+
+> 目的：保证 Reader“不中断上下文”的产品体验，同时让代码结构可持续演进。
+
+### Reader 交互（必须遵守）
+
+- Reader 是 C 端主流程的唯一壳层：用户完成订阅/浏览/预览/阅读/账号相关操作时 **不跳出 Reader 布局**。
+- 认证相关（登录/注册/忘记密码）统一使用 **Auth Modal**，不做独立页面交互。
+- 设置/历史/建议/发布等“操作型流程”统一使用 **Reader 内弹窗/抽屉**（`ReaderDialogs` 为统一渲染出口）。
+- 保持上下文：打开弹窗/切换视图不应清空左/中/右栏的选择状态；关闭后用户能“回到刚才的位置”。
+- Loading 使用 Skeleton（`ReaderPaneFallback`/`Skeleton`），避免强干扰 spinner；尽量避免 layout shift。
+- 出错时优先局部兜底（`ReaderErrorBoundary`）：单栏失败不影响整个 Reader；兜底提供 Retry/Back/Discover 等清晰动作。
+- 乐观更新必须可回滚：按钮展示 pending 状态并禁用重复操作；失败时恢复 UI 并给出清晰反馈（toast/inline）。
+
+### 组件设计（SRP / Props 收敛）
+
+- 避免“长 Props 注入”模式：当一个组件需要同时支持多个视图分支（Discover/Topics/Inbox…）时，应改为 **判别联合 ViewModel** 或拆分为多个 SRP 组件。
+- 推荐结构：容器层（hooks/组装 ViewModel） + 纯渲染层（只消费 model），边界清晰，便于测试与性能优化。
+- 性能约束：ViewModel 必须引用稳定（`useMemo`），回调必须稳定（`useCallback`）；避免每次 render 构造大量新对象导致无意义 rerender。
+- 继续保持现有 code-splitting：重型视图与弹窗 lazy-load，并配合 `reader.preload.ts` 做 hover/click 预取；`manualChunks` 与 SSR `noExternal` 必须一致。
+
+### 计划文档
+
+- 重构路线与进度跟踪：`docs/products/aiget-dev/features/www-reader-srp-and-props-refactor.md`
 
 ## Common Modification Scenarios
 

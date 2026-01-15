@@ -1,118 +1,64 @@
 /**
- * [PROPS]: currentView + detail pane data/handlers
- * [POS]: Reader 右栏渲染器（Welcome / Discover / Topic Preview / Article）- SRP：只负责详情区切换
+ * [PROPS]: model (判别联合 ViewModel)
+ * [POS]: Reader 右栏视图切换（Welcome / Discover / Topic Preview / Article）- SRP：只负责按 model.type 分发渲染
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/aiget/www/CLAUDE.md`
  */
 
-import { lazy, Suspense } from 'react';
-import type { DiscoverFeedItem } from '@/features/discover/types';
-import type { InboxItem } from '@/features/digest/types';
-import { ArticleDetail } from '@/components/reader/ArticleDetail';
-import { DiscoverDetail } from '@/components/reader/DiscoverDetail';
-import { WelcomeGuide } from '@/components/reader/WelcomeGuide';
-import type { SidePanelView } from '@/components/reader/SidePanel';
-import { ReaderPaneFallback } from './ReaderPaneFallback';
-
-const LazyTopicPreviewDetail = lazy(() =>
-  import('@/components/reader/TopicPreviewDetail').then((m) => ({ default: m.TopicPreviewDetail }))
-);
+import type { ReaderDetailPaneModel } from '../reader.models';
+import { ArticleDetailPane } from './detail/ArticleDetailPane';
+import { DiscoverDetailPane } from './detail/DiscoverDetailPane';
+import { TopicPreviewPane } from './detail/TopicPreviewPane';
+import { WelcomePane } from './detail/WelcomePane';
 
 interface ReaderDetailPaneProps {
-  currentView: SidePanelView;
-  showWelcome: boolean;
-  isAuthenticated: boolean;
-
-  selectedDiscoverItem: DiscoverFeedItem | null;
-  onPreviewTopic: (slug: string) => void;
-  onPreviewTopicHover?: (slug: string) => void;
-
-  selectedTopicSlug: string | null;
-  followedTopicIds: ReadonlySet<string>;
-  pendingFollowTopicIds?: ReadonlySet<string>;
-  onFollowTopic: (topic: { id: string; slug: string }) => void;
-
-  selectedArticle: InboxItem | null;
-  onSave: (item: InboxItem) => void;
-  onNotInterested: (item: InboxItem) => void;
-  fullContent: string | null;
-  isLoadingContent: boolean;
-  isSaving: boolean;
-
-  onCreateSubscription: (initialQuery?: string) => void;
-  onCreateSubscriptionHover?: () => void;
-  onBrowseTopics: () => void;
-  onBrowseTopicsHover?: () => void;
-  onSignIn: () => void;
+  model: ReaderDetailPaneModel;
 }
 
-export function ReaderDetailPane({
-  currentView,
-  showWelcome,
-  isAuthenticated,
-  selectedDiscoverItem,
-  onPreviewTopic,
-  onPreviewTopicHover,
-  selectedTopicSlug,
-  followedTopicIds,
-  pendingFollowTopicIds,
-  onFollowTopic,
-  selectedArticle,
-  onSave,
-  onNotInterested,
-  fullContent,
-  isLoadingContent,
-  isSaving,
-  onCreateSubscription,
-  onCreateSubscriptionHover,
-  onBrowseTopics,
-  onBrowseTopicsHover,
-  onSignIn,
-}: ReaderDetailPaneProps) {
-  if (showWelcome) {
-    return (
-      <WelcomeGuide
-        onCreateSubscription={() => onCreateSubscription()}
-        onCreateSubscriptionHover={onCreateSubscriptionHover}
-        onBrowseTopics={onBrowseTopics}
-        onBrowseTopicsHover={onBrowseTopicsHover}
-        onSignIn={onSignIn}
-        isAuthenticated={isAuthenticated}
-      />
-    );
-  }
-
-  if (currentView.type === 'discover') {
-    return (
-      <DiscoverDetail
-        item={selectedDiscoverItem}
-        onPreviewTopic={onPreviewTopic}
-        onPreviewTopicHover={onPreviewTopicHover}
-      />
-    );
-  }
-
-  if (currentView.type === 'topics') {
-    return (
-      <Suspense fallback={<ReaderPaneFallback variant="detail" />}>
-        <LazyTopicPreviewDetail
-          slug={selectedTopicSlug}
-          followedTopicIds={followedTopicIds}
-          pendingFollowTopicIds={pendingFollowTopicIds}
-          onFollowTopic={onFollowTopic}
+export function ReaderDetailPane({ model }: ReaderDetailPaneProps) {
+  switch (model.type) {
+    case 'welcome':
+      return (
+        <WelcomePane
+          isAuthenticated={model.isAuthenticated}
+          onCreateSubscription={model.onCreateSubscription}
+          onCreateSubscriptionHover={model.onCreateSubscriptionHover}
+          onBrowseTopics={model.onBrowseTopics}
+          onBrowseTopicsHover={model.onBrowseTopicsHover}
+          onSignIn={model.onSignIn}
         />
-      </Suspense>
-    );
+      );
+    case 'discover':
+      return (
+        <DiscoverDetailPane
+          item={model.item}
+          onPreviewTopic={model.onPreviewTopic}
+          onPreviewTopicHover={model.onPreviewTopicHover}
+        />
+      );
+    case 'topics':
+      return (
+        <TopicPreviewPane
+          slug={model.slug}
+          followedTopicIds={model.followedTopicIds}
+          pendingFollowTopicIds={model.pendingFollowTopicIds}
+          onFollowTopic={model.onFollowTopic}
+        />
+      );
+    case 'article':
+      return (
+        <ArticleDetailPane
+          item={model.item}
+          fullContent={model.fullContent}
+          isLoadingContent={model.isLoadingContent}
+          isSaving={model.isSaving}
+          onSave={model.onSave}
+          onNotInterested={model.onNotInterested}
+        />
+      );
+    default: {
+      const _exhaustive: never = model;
+      return _exhaustive;
+    }
   }
-
-  return (
-    <ArticleDetail
-      item={selectedArticle}
-      onSave={onSave}
-      onNotInterested={onNotInterested}
-      fullContent={fullContent}
-      isLoadingContent={isLoadingContent}
-      isSaving={isSaving}
-    />
-  );
 }

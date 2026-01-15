@@ -1,67 +1,29 @@
 /**
- * [PROPS]: subscriptions, stats, selectedView, onSelect, onCreateClick, onDiscoverSelect
- * [POS]: Left sidebar with user info, navigation, discover section, and subscription list
+ * [PROPS]: subscriptions, stats, currentView, actions
+ * [POS]: Reader 左侧边栏（用户区 + Discover/Inbox/Subscriptions 导航）
+ *
+ * [PROTOCOL]: 本文件变更时，请同步更新 `apps/aiget/www/CLAUDE.md`
  */
 
-import { Link } from '@tanstack/react-router';
-import { ScrollArea, Separator, Button, Badge, Skeleton, Icon } from '@aiget/ui';
-import {
-  Add01Icon,
-  InboxIcon,
-  Search01Icon,
-  StarIcon,
-  Notification01Icon,
-  Fire02Icon,
-  SparklesIcon,
-  CodeIcon,
-} from '@hugeicons/core-free-icons';
+import { Separator } from '@aiget/ui';
 import { useAuth } from '@/lib/auth-context';
-import { UserMenu } from './UserMenu';
-import { SubscriptionItem } from './SubscriptionItem';
-import { useFeaturedTopics } from '@/features/discover';
-import type { Subscription, InboxStats, Topic } from '@/features/digest/types';
-import type { DiscoverFeedType } from '@/features/discover/types';
+import type { InboxStats, Subscription, Topic } from '@/features/digest/types';
+import { SidePanelDeveloperEntry } from './side-panel/SidePanelDeveloperEntry';
+import { SidePanelDiscoverNav } from './side-panel/SidePanelDiscoverNav';
+import { SidePanelFeaturedTopics } from './side-panel/SidePanelFeaturedTopics';
+import { SidePanelInboxNav } from './side-panel/SidePanelInboxNav';
+import { SidePanelSubscriptions } from './side-panel/SidePanelSubscriptions';
+import { SidePanelUserArea } from './side-panel/SidePanelUserArea';
+import type { SidePanelActions, SidePanelView } from './side-panel/side-panel.types';
 
-// View type for the sidebar
-export type SidePanelView =
-  | { type: 'inbox'; filter: 'all' | 'saved' | string }
-  | { type: 'discover'; feed: DiscoverFeedType }
-  | { type: 'topics' };
+export type { SidePanelView, SidePanelActions } from './side-panel/side-panel.types';
 
 interface SidePanelProps {
-  /** User subscriptions */
   subscriptions: Subscription[];
-  /** User's published topics */
   userTopics?: Topic[];
-  /** Inbox statistics */
   stats: InboxStats | null;
-  /** Current view state */
   currentView: SidePanelView;
-  /** Callback when selecting a view */
-  onViewChange: (view: SidePanelView) => void;
-  /** Callback to open create subscription dialog */
-  onCreateClick: () => void;
-  /** Preload create subscription dialog chunk */
-  onCreateHover?: () => void;
-  /** Callback to open auth modal (unauthenticated user area) */
-  onSignInClick?: () => void;
-  /** Callback to open topic browsing view */
-  onBrowseTopics?: () => void;
-  /** Preload topic browse/preview chunks */
-  onBrowseTopicsHover?: () => void;
-  /** Callback to preview a topic inside Reader */
-  onPreviewTopic?: (slug: string) => void;
-  /** Preload topic preview chunk (hover on specific topic) */
-  onPreviewTopicHover?: (slug: string) => void;
-  /** Callback to open settings dialog for a subscription */
-  onSettingsClick?: (subscription: Subscription) => void;
-  /** Callback to open run history dialog for a subscription */
-  onHistoryClick?: (subscription: Subscription) => void;
-  /** Callback to open learning suggestions dialog for a subscription */
-  onSuggestionsClick?: (subscription: Subscription) => void;
-  /** Callback to open publish topic dialog for a subscription */
-  onPublishClick?: (subscription: Subscription) => void;
-  /** Loading state */
+  actions: SidePanelActions;
   isLoading?: boolean;
 }
 
@@ -70,303 +32,66 @@ export function SidePanel({
   userTopics = [],
   stats,
   currentView,
-  onViewChange,
-  onCreateClick,
-  onCreateHover,
-  onSettingsClick,
-  onHistoryClick,
-  onSuggestionsClick,
-  onPublishClick,
-  onSignInClick,
-  onBrowseTopics,
-  onBrowseTopicsHover,
-  onPreviewTopic,
-  onPreviewTopicHover,
-  isLoading,
+  actions,
+  isLoading = false,
 }: SidePanelProps) {
   const { user, isAuthenticated } = useAuth();
-  const { data: featuredTopicsData } = useFeaturedTopics(5);
-
-  // Helper to check if a view is selected
-  const isViewSelected = (view: SidePanelView): boolean => {
-    if (currentView.type !== view.type) return false;
-    if (view.type === 'inbox' && currentView.type === 'inbox') {
-      return currentView.filter === view.filter;
-    }
-    if (view.type === 'discover' && currentView.type === 'discover') {
-      return currentView.feed === view.feed;
-    }
-    if (view.type === 'topics' && currentView.type === 'topics') {
-      return true;
-    }
-    return false;
-  };
-
-  const hasSubscriptions = subscriptions.length > 0;
-  const showInboxSection = isAuthenticated && hasSubscriptions;
+  const showInboxSection = isAuthenticated && subscriptions.length > 0;
 
   return (
     <div className="flex h-full flex-col">
-      {/* User area */}
       <div className="p-3">
-        {isAuthenticated && user ? (
-          <UserMenu user={user} stats={stats} />
-        ) : (
-          <button
-            type="button"
-            onClick={onSignInClick}
-            disabled={!onSignInClick}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
-          >
-            <Icon icon={Notification01Icon} className="size-4" />
-            <span>Sign in / Register</span>
-          </button>
-        )}
+        <SidePanelUserArea
+          user={user}
+          isAuthenticated={isAuthenticated}
+          stats={stats}
+          onSignIn={actions.auth.onSignIn}
+        />
       </div>
 
       <Separator />
 
-      {/* Discover section */}
-      <div className="space-y-0.5 p-2">
-        <div className="px-2 py-1">
-          <span className="text-xs font-medium uppercase text-muted-foreground">Discover</span>
-        </div>
-        <button
-          onClick={() => onViewChange({ type: 'discover', feed: 'featured' })}
-          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
-            isViewSelected({ type: 'discover', feed: 'featured' })
-              ? 'bg-accent text-foreground'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-          }`}
-        >
-          <Icon icon={SparklesIcon} className="size-4" />
-          <span>Featured</span>
-        </button>
-        <button
-          onClick={() => onViewChange({ type: 'discover', feed: 'trending' })}
-          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
-            isViewSelected({ type: 'discover', feed: 'trending' })
-              ? 'bg-accent text-foreground'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-          }`}
-        >
-          <Icon icon={Fire02Icon} className="size-4" />
-          <span>Trending</span>
-        </button>
-        <button
-          onClick={() => (onBrowseTopics ? onBrowseTopics() : onViewChange({ type: 'topics' }))}
-          onMouseEnter={onBrowseTopicsHover}
-          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
-            isViewSelected({ type: 'topics' })
-              ? 'bg-accent text-foreground'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-          }`}
-        >
-          <Icon icon={Search01Icon} className="size-4" />
-          <span>Browse topics</span>
-        </button>
-      </div>
+      <SidePanelDiscoverNav
+        currentView={currentView}
+        onViewChange={actions.navigation.onViewChange}
+        onBrowseTopics={actions.navigation.onBrowseTopics}
+        onBrowseTopicsHover={actions.navigation.onBrowseTopicsHover}
+      />
 
-      <div className="p-2">
-        <Link
-          to="/developer"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <Icon icon={CodeIcon} className="size-4" />
-          <span>Developer</span>
-        </Link>
-      </div>
+      <SidePanelDeveloperEntry />
 
       <Separator />
 
-      {/* Featured Topics list */}
-      {featuredTopicsData?.items && featuredTopicsData.items.length > 0 && (
-        <>
-          <div className="space-y-0.5 p-2">
-            <div className="px-2 py-1">
-              <span className="text-xs font-medium uppercase text-muted-foreground">
-                Featured Topics
-              </span>
-            </div>
-            {featuredTopicsData.items.map((topic) => (
-              <div key={topic.id}>
-                {onPreviewTopic ? (
-                  <button
-                    type="button"
-                    onClick={() => onPreviewTopic(topic.slug)}
-                    onMouseEnter={() => onPreviewTopicHover?.(topic.slug)}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  >
-                    <span className="truncate">{topic.title}</span>
-                  </button>
-                ) : (
-                  <Link
-                    to="/topics/$slug"
-                    params={{ slug: topic.slug }}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  >
-                    <span className="truncate">{topic.title}</span>
-                  </Link>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => (onBrowseTopics ? onBrowseTopics() : onViewChange({ type: 'topics' }))}
-              onMouseEnter={onBrowseTopicsHover}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <Icon icon={Search01Icon} className="size-4" />
-              <span>Browse all</span>
-            </button>
-          </div>
-        </>
-      )}
+      <SidePanelFeaturedTopics
+        onPreviewTopic={actions.navigation.onPreviewTopic}
+        onPreviewTopicHover={actions.navigation.onPreviewTopicHover}
+        onBrowseTopics={actions.navigation.onBrowseTopics}
+        onBrowseTopicsHover={actions.navigation.onBrowseTopicsHover}
+      />
 
-      {/* Inbox section - only show if user has subscriptions */}
       {showInboxSection && (
         <>
           <Separator />
-          <div className="space-y-0.5 p-2">
-            <div className="px-2 py-1">
-              <span className="text-xs font-medium uppercase text-muted-foreground">Inbox</span>
-            </div>
-            <button
-              onClick={() => onViewChange({ type: 'inbox', filter: 'all' })}
-              className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
-                isViewSelected({ type: 'inbox', filter: 'all' })
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Icon icon={InboxIcon} className="size-4" />
-                <span>All</span>
-              </div>
-              {stats && stats.unreadCount > 0 && (
-                <Badge variant="secondary" className="ml-auto h-5 min-w-5 px-1.5 text-xs">
-                  {stats.unreadCount}
-                </Badge>
-              )}
-            </button>
-            <button
-              onClick={() => onViewChange({ type: 'inbox', filter: 'saved' })}
-              className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
-                isViewSelected({ type: 'inbox', filter: 'saved' })
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Icon icon={StarIcon} className="size-4" />
-                <span>Saved</span>
-              </div>
-              {stats && stats.savedCount > 0 && (
-                <Badge variant="secondary" className="ml-auto h-5 min-w-5 px-1.5 text-xs">
-                  {stats.savedCount}
-                </Badge>
-              )}
-            </button>
-          </div>
+          <SidePanelInboxNav
+            stats={stats}
+            currentView={currentView}
+            onViewChange={actions.navigation.onViewChange}
+          />
         </>
       )}
 
-      <Separator />
-
-      {/* Subscriptions section */}
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          {/* Create button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-2 w-full justify-start gap-2 text-muted-foreground"
-            onClick={onCreateClick}
-            onMouseEnter={onCreateHover}
-          >
-            <Icon icon={Add01Icon} className="size-4" />
-            <span>New Subscription</span>
-          </Button>
-
-          {isLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-2 px-2 py-1.5">
-                  <Skeleton className="h-4 w-4 rounded" />
-                  <Skeleton className="h-4 flex-1" />
-                </div>
-              ))}
-            </div>
-          ) : subscriptions.length === 0 ? (
-            <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-              {isAuthenticated ? 'No subscriptions yet' : 'Sign in to create subscriptions'}
-            </p>
-          ) : (
-            <div className="space-y-0.5">
-              <div className="px-2 py-1">
-                <span className="text-xs font-medium uppercase text-muted-foreground">
-                  Subscriptions
-                </span>
-              </div>
-              {subscriptions.map((subscription) => (
-                <SubscriptionItem
-                  key={subscription.id}
-                  subscription={subscription}
-                  isSelected={
-                    currentView.type === 'inbox' && currentView.filter === subscription.id
-                  }
-                  onSelect={() => onViewChange({ type: 'inbox', filter: subscription.id })}
-                  onSettingsClick={
-                    onSettingsClick ? () => onSettingsClick(subscription) : undefined
-                  }
-                  onHistoryClick={onHistoryClick ? () => onHistoryClick(subscription) : undefined}
-                  onSuggestionsClick={
-                    onSuggestionsClick ? () => onSuggestionsClick(subscription) : undefined
-                  }
-                  onPublishClick={onPublishClick ? () => onPublishClick(subscription) : undefined}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Published topics */}
-          {userTopics.length > 0 && (
-            <>
-              <Separator className="my-2" />
-              <div className="px-2 py-1">
-                <span className="text-xs font-medium uppercase text-muted-foreground">
-                  Published Topics
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                {userTopics.map((topic) => (
-                  <div key={topic.id}>
-                    {onPreviewTopic ? (
-                      <button
-                        type="button"
-                        onClick={() => onPreviewTopic(topic.slug)}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-                      >
-                        <Icon icon={Notification01Icon} className="size-4" />
-                        <span className="truncate">{topic.title}</span>
-                      </button>
-                    ) : (
-                      <Link
-                        to="/topics/$slug"
-                        params={{ slug: topic.slug }}
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-                      >
-                        <Icon icon={Notification01Icon} className="size-4" />
-                        <span className="truncate">{topic.title}</span>
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </ScrollArea>
+      <SidePanelSubscriptions
+        subscriptions={subscriptions}
+        userTopics={userTopics}
+        currentView={currentView}
+        isAuthenticated={isAuthenticated}
+        isLoading={isLoading}
+        onCreate={actions.subscriptions.onCreate}
+        onCreateHover={actions.subscriptions.onCreateHover}
+        onViewChange={actions.navigation.onViewChange}
+        onPreviewTopic={actions.navigation.onPreviewTopic}
+        onSubscriptionAction={actions.subscriptions.onSubscriptionAction}
+      />
     </div>
   );
 }

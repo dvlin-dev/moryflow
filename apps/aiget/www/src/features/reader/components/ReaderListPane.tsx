@@ -1,125 +1,63 @@
 /**
- * [PROPS]: currentView + list pane data/handlers
- * [POS]: Reader 中栏渲染器（Discover / Topics / Inbox）- SRP：只负责列表区切换
+ * [PROPS]: model (判别联合 ViewModel)
+ * [POS]: Reader 中栏视图切换（Discover / Topics / Inbox）- SRP：只负责按 model.type 分发渲染
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/aiget/www/CLAUDE.md`
  */
 
-import { lazy, Suspense } from 'react';
-import type { DiscoverFeedItem, DiscoverFeedType } from '@/features/discover/types';
-import type { DigestTopicSummary } from '@/lib/digest-api';
-import type { InboxItem } from '@/features/digest/types';
-import { DiscoverFeedList } from '@/components/reader/DiscoverFeedList';
-import { ArticleList } from '@/components/reader/ArticleList';
-import type { SidePanelView } from '@/components/reader/SidePanel';
-import { ReaderPaneFallback } from './ReaderPaneFallback';
-import type { FilterState } from '../reader.types';
-
-const LazyTopicBrowseList = lazy(() =>
-  import('@/components/reader/TopicBrowseList').then((m) => ({ default: m.TopicBrowseList }))
-);
+import type { ReaderListPaneModel } from '../reader.models';
+import { DiscoverListPane } from './list/DiscoverListPane';
+import { InboxListPane } from './list/InboxListPane';
+import { TopicsListPane } from './list/TopicsListPane';
 
 interface ReaderListPaneProps {
-  currentView: SidePanelView;
-
-  discoverItems: DiscoverFeedItem[];
-  selectedDiscoverItemId: string | null;
-  onSelectDiscoverItem: (item: DiscoverFeedItem) => void;
-  discoverFeedType: DiscoverFeedType;
-  onDiscoverFeedTypeChange: (feedType: DiscoverFeedType) => void;
-  onDiscoverRefresh: () => void;
-  isDiscoverLoading: boolean;
-  isDiscoverRefreshing: boolean;
-
-  selectedTopicSlug: string | null;
-  followedTopicIds: ReadonlySet<string>;
-  pendingFollowTopicIds?: ReadonlySet<string>;
-  onSelectTopic: (topic: DigestTopicSummary) => void;
-  onFollowTopic: (topic: DigestTopicSummary) => void;
-  onCreateSubscription: (initialQuery?: string) => void;
-
-  inboxItems: InboxItem[];
-  selectedArticleId: string | null;
-  onSelectArticle: (item: InboxItem) => void;
-  inboxTitle: string;
-  filter: FilterState;
-  onFilterChange: (filter: FilterState) => void;
-  onInboxRefresh: () => void;
-  onMarkAllRead: () => void;
-  isInboxLoading: boolean;
-  isInboxRefreshing: boolean;
+  model: ReaderListPaneModel;
 }
 
-export function ReaderListPane({
-  currentView,
-  discoverItems,
-  selectedDiscoverItemId,
-  onSelectDiscoverItem,
-  discoverFeedType,
-  onDiscoverFeedTypeChange,
-  onDiscoverRefresh,
-  isDiscoverLoading,
-  isDiscoverRefreshing,
-  selectedTopicSlug,
-  followedTopicIds,
-  pendingFollowTopicIds,
-  onSelectTopic,
-  onFollowTopic,
-  onCreateSubscription,
-  inboxItems,
-  selectedArticleId,
-  onSelectArticle,
-  inboxTitle,
-  filter,
-  onFilterChange,
-  onInboxRefresh,
-  onMarkAllRead,
-  isInboxLoading,
-  isInboxRefreshing,
-}: ReaderListPaneProps) {
-  if (currentView.type === 'discover') {
-    return (
-      <DiscoverFeedList
-        items={discoverItems}
-        selectedId={selectedDiscoverItemId}
-        onSelect={onSelectDiscoverItem}
-        feedType={discoverFeedType}
-        onFeedTypeChange={onDiscoverFeedTypeChange}
-        onRefresh={onDiscoverRefresh}
-        isLoading={isDiscoverLoading}
-        isRefreshing={isDiscoverRefreshing}
-      />
-    );
-  }
-
-  if (currentView.type === 'topics') {
-    return (
-      <Suspense fallback={<ReaderPaneFallback variant="list" />}>
-        <LazyTopicBrowseList
-          enabled={true}
-          selectedSlug={selectedTopicSlug}
-          followedTopicIds={followedTopicIds}
-          pendingFollowTopicIds={pendingFollowTopicIds}
-          onSelectTopic={onSelectTopic}
-          onFollowTopic={onFollowTopic}
-          onCreateSubscription={onCreateSubscription}
+export function ReaderListPane({ model }: ReaderListPaneProps) {
+  switch (model.type) {
+    case 'discover':
+      return (
+        <DiscoverListPane
+          items={model.items}
+          selectedId={model.selectedId}
+          feedType={model.feedType}
+          isLoading={model.isLoading}
+          isRefreshing={model.isRefreshing}
+          onSelect={model.onSelect}
+          onFeedTypeChange={model.onFeedTypeChange}
+          onRefresh={model.onRefresh}
         />
-      </Suspense>
-    );
+      );
+    case 'topics':
+      return (
+        <TopicsListPane
+          selectedSlug={model.selectedSlug}
+          followedTopicIds={model.followedTopicIds}
+          pendingFollowTopicIds={model.pendingFollowTopicIds}
+          onSelectTopic={model.onSelectTopic}
+          onFollowTopic={model.onFollowTopic}
+          onCreateSubscription={model.onCreateSubscription}
+        />
+      );
+    case 'inbox':
+      return (
+        <InboxListPane
+          items={model.items}
+          selectedId={model.selectedId}
+          title={model.title}
+          filter={model.filter}
+          isLoading={model.isLoading}
+          isRefreshing={model.isRefreshing}
+          onSelect={model.onSelect}
+          onFilterChange={model.onFilterChange}
+          onRefresh={model.onRefresh}
+          onMarkAllRead={model.onMarkAllRead}
+        />
+      );
+    default: {
+      const _exhaustive: never = model;
+      return _exhaustive;
+    }
   }
-
-  return (
-    <ArticleList
-      items={inboxItems}
-      selectedId={selectedArticleId}
-      onSelect={onSelectArticle}
-      title={inboxTitle}
-      filter={filter}
-      onFilterChange={onFilterChange}
-      onRefresh={onInboxRefresh}
-      onMarkAllRead={onMarkAllRead}
-      isLoading={isInboxLoading}
-      isRefreshing={isInboxRefreshing}
-    />
-  );
 }

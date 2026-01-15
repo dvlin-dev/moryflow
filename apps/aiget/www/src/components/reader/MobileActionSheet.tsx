@@ -36,6 +36,7 @@ import {
   useDeleteSubscription,
 } from '@/features/digest/hooks';
 import type { Subscription } from '@/features/digest/types';
+import type { SubscriptionAction } from './subscriptions/subscriptionActions';
 
 interface ActionItemProps {
   icon: HugeIcon;
@@ -72,14 +73,8 @@ interface MobileActionSheetProps {
   subscription: Subscription;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Callback to open settings dialog */
-  onSettingsClick?: () => void;
-  /** Callback to open run history dialog */
-  onHistoryClick?: () => void;
-  /** Callback to open learning suggestions dialog */
-  onSuggestionsClick?: () => void;
-  /** Callback to open publish topic dialog */
-  onPublishClick?: () => void;
+  /** Open modal/drawer inside Reader for a specific action */
+  onAction?: (action: SubscriptionAction, subscription: Subscription) => void;
 }
 
 /**
@@ -91,10 +86,7 @@ export function MobileActionSheet({
   subscription,
   open,
   onOpenChange,
-  onSettingsClick,
-  onHistoryClick,
-  onSuggestionsClick,
-  onPublishClick,
+  onAction,
 }: MobileActionSheetProps) {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
@@ -111,22 +103,22 @@ export function MobileActionSheet({
 
   const handleSettings = () => {
     closeSheet();
-    onSettingsClick?.();
+    onAction?.('settings', subscription);
   };
 
   const handleHistory = () => {
     closeSheet();
-    onHistoryClick?.();
+    onAction?.('history', subscription);
   };
 
   const handleSuggestions = () => {
     closeSheet();
-    onSuggestionsClick?.();
+    onAction?.('suggestions', subscription);
   };
 
   const handlePublish = () => {
     closeSheet();
-    onPublishClick?.();
+    onAction?.('publish', subscription);
   };
 
   const handleToggle = () => {

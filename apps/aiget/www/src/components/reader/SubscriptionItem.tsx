@@ -11,29 +11,21 @@ import { MobileActionSheet } from './MobileActionSheet';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Subscription } from '@/features/digest/types';
+import type { SubscriptionAction } from './subscriptions/subscriptionActions';
 
 interface SubscriptionItemProps {
   subscription: Subscription;
   isSelected: boolean;
   onSelect: () => void;
-  /** Callback to open settings dialog */
-  onSettingsClick?: () => void;
-  /** Callback to open run history dialog */
-  onHistoryClick?: () => void;
-  /** Callback to open learning suggestions dialog */
-  onSuggestionsClick?: () => void;
-  /** Callback to open publish topic dialog */
-  onPublishClick?: () => void;
+  /** Open modal/drawer inside Reader for a specific action */
+  onAction?: (action: SubscriptionAction, subscription: Subscription) => void;
 }
 
 export function SubscriptionItem({
   subscription,
   isSelected,
   onSelect,
-  onSettingsClick,
-  onHistoryClick,
-  onSuggestionsClick,
-  onPublishClick,
+  onAction,
 }: SubscriptionItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,13 +116,7 @@ export function SubscriptionItem({
     <>
       {/* Desktop: Context menu */}
       {!isMobile ? (
-        <SubscriptionContextMenu
-          subscription={subscription}
-          onSettingsClick={onSettingsClick}
-          onHistoryClick={onHistoryClick}
-          onSuggestionsClick={onSuggestionsClick}
-          onPublishClick={onPublishClick}
-        >
+        <SubscriptionContextMenu subscription={subscription} onAction={onAction}>
           {content}
         </SubscriptionContextMenu>
       ) : (
@@ -143,10 +129,7 @@ export function SubscriptionItem({
           subscription={subscription}
           open={mobileSheetOpen}
           onOpenChange={setMobileSheetOpen}
-          onSettingsClick={onSettingsClick}
-          onHistoryClick={onHistoryClick}
-          onSuggestionsClick={onSuggestionsClick}
-          onPublishClick={onPublishClick}
+          onAction={onAction}
         />
       )}
     </>

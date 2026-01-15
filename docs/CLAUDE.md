@@ -37,3 +37,4 @@
 
 - Digest 全量 Code Review：`docs/products/aiget-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）
 - www Reader/Developer 双模块布局方案：`docs/products/aiget-dev/features/www-reader-and-developer-split.md`（Reader 内操作不跳页：登录/设置弹窗；Developer 端保持 Header/Footer）
+- www Reader SRP 与 Props 收敛重构计划：`docs/products/aiget-dev/features/www-reader-srp-and-props-refactor.md`（分支视图用 ViewModel 收敛 Props，按域拆分 SRP 组件，保持现有懒加载与错误边界策略）

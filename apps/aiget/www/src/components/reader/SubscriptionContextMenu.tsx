@@ -35,27 +35,19 @@ import {
   useDeleteSubscription,
 } from '@/features/digest/hooks';
 import type { Subscription } from '@/features/digest/types';
+import type { SubscriptionAction } from './subscriptions/subscriptionActions';
 
 interface SubscriptionContextMenuProps {
   subscription: Subscription;
   children: ReactNode;
-  /** Callback to open settings dialog */
-  onSettingsClick?: () => void;
-  /** Callback to open run history dialog */
-  onHistoryClick?: () => void;
-  /** Callback to open learning suggestions dialog */
-  onSuggestionsClick?: () => void;
-  /** Callback to open publish topic dialog */
-  onPublishClick?: () => void;
+  /** Open modal/drawer inside Reader for a specific action */
+  onAction?: (action: SubscriptionAction, subscription: Subscription) => void;
 }
 
 export function SubscriptionContextMenu({
   subscription,
   children,
-  onSettingsClick,
-  onHistoryClick,
-  onSuggestionsClick,
-  onPublishClick,
+  onAction,
 }: SubscriptionContextMenuProps) {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
@@ -88,24 +80,30 @@ export function SubscriptionContextMenu({
 
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={onSettingsClick}>
+          <ContextMenuItem
+            onClick={() => onAction?.('settings', subscription)}
+            disabled={!onAction}
+          >
             <Icon icon={Settings01Icon} className="mr-2 size-4" />
             <span>Settings</span>
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={onHistoryClick}>
+          <ContextMenuItem onClick={() => onAction?.('history', subscription)} disabled={!onAction}>
             <Icon icon={Clock01Icon} className="mr-2 size-4" />
             <span>Run History</span>
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={onSuggestionsClick}>
+          <ContextMenuItem
+            onClick={() => onAction?.('suggestions', subscription)}
+            disabled={!onAction}
+          >
             <Icon icon={BulbIcon} className="mr-2 size-4" />
             <span>Learning Suggestions</span>
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={onPublishClick}>
+          <ContextMenuItem onClick={() => onAction?.('publish', subscription)} disabled={!onAction}>
             <Icon icon={Share01Icon} className="mr-2 size-4" />
             <span>Publish as Topic</span>
           </ContextMenuItem>

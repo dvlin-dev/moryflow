@@ -47,6 +47,7 @@ status: active
 - Aiget Dev
   - 入口：`docs/products/aiget-dev/index.md`
   - www Reader/Developer 双模块布局方案：`docs/products/aiget-dev/features/www-reader-and-developer-split.md`
+  - www Reader SRP 与 Props 收敛重构计划：`docs/products/aiget-dev/features/www-reader-srp-and-props-refactor.md`
 - Moryflow：`docs/products/moryflow/`
   - 入口：`docs/products/moryflow/index.md`
 
