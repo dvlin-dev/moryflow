@@ -32,7 +32,15 @@ const VENDOR_CHUNKS: Record<string, string[]> = {
   'vendor-icons': ['@hugeicons/core-free-icons'],
 };
 
-const SSR_NO_EXTERNAL = Array.from(new Set(Object.values(VENDOR_CHUNKS).flat()));
+// react/react-dom 必须保持 external，否则 SSR 时 CJS 格式在 ESM 环境中不兼容
+const SSR_EXTERNAL_ALWAYS = ['react', 'react-dom'];
+const SSR_NO_EXTERNAL = Array.from(
+  new Set(
+    Object.values(VENDOR_CHUNKS)
+      .flat()
+      .filter((pkg) => !SSR_EXTERNAL_ALWAYS.includes(pkg))
+  )
+);
 
 export default defineConfig({
   plugins: [

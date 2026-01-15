@@ -106,21 +106,11 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
           />
         ) : (
           <Tabs value={mode} onValueChange={(v) => setMode(v as AuthModalMode)} className="w-full">
-            <TabsList className="h-10 w-full justify-start rounded-none bg-transparent p-0">
-              <TabsTrigger
-                value="login"
-                className="px-4 data-[state=active]:border-b-2 data-[state=active]:border-foreground"
-              >
-                Sign in
-              </TabsTrigger>
-              <TabsTrigger
-                value="register"
-                className="px-4 data-[state=active]:border-b-2 data-[state=active]:border-foreground"
-              >
-                Create account
-              </TabsTrigger>
+            <TabsList className="w-full">
+              <TabsTrigger value="login">Sign in</TabsTrigger>
+              <TabsTrigger value="register">Create account</TabsTrigger>
             </TabsList>
-            <TabsContent value="login" className="m-0 pt-4">
+            <TabsContent value="login">
               <LoginForm
                 variant="dialog"
                 onSuccess={handleAuthedSuccess}
@@ -128,7 +118,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
                 onRequestForgotPassword={() => setMode('forgotPassword')}
               />
             </TabsContent>
-            <TabsContent value="register" className="m-0 pt-4">
+            <TabsContent value="register">
               <RegisterForm
                 variant="dialog"
                 onSuccess={handleAuthedSuccess}

@@ -71,3 +71,5 @@ sandbox-runtime/
 *.gz
 # Reference repos (not tracked)
 aigc-weekly-ref/
+
+**/.tanstack/

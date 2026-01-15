@@ -25,6 +25,7 @@ export const Route = createRootRoute({
   },
   component: RootComponent,
   errorComponent: RootErrorComponent,
+  notFoundComponent: NotFoundComponent,
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -153,5 +154,24 @@ function RootErrorComponent({ error }: { error: unknown }) {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function NotFoundComponent() {
+  return (
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-16">
+      <h1 className="text-xl font-semibold">Page not found</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        The page you are looking for does not exist or has been moved.
+      </p>
+      <div className="mt-6">
+        <a
+          href="/"
+          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm text-primary-foreground"
+        >
+          Back to Home
+        </a>
+      </div>
+    </main>
   );
 }

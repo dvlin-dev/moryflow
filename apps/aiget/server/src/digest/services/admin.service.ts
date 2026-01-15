@@ -12,6 +12,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DiscoverService } from './discover.service';
 import type {
   DigestTopicStatus,
   DigestRunStatus,
@@ -39,7 +40,10 @@ export interface AdminRunQuery extends AdminListQuery {
 
 @Injectable()
 export class DigestAdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly discoverService: DiscoverService,
+  ) {}
 
   /**
    * 获取话题列表（分页 + 搜索 + 过滤）
@@ -149,7 +153,7 @@ export class DigestAdminService {
       featuredOrder = (maxOrder._max.featuredOrder ?? -1) + 1;
     }
 
-    return this.prisma.digestTopic.update({
+    const updated = await this.prisma.digestTopic.update({
       where: { id: topicId },
       data: {
         featured: input.featured,
@@ -163,6 +167,11 @@ export class DigestAdminService {
         _count: { select: { editions: true, followers: true } },
       },
     });
+
+    // 清除 Discover 缓存，使 featured 变更立即生效
+    await this.discoverService.invalidateCache();
+
+    return updated;
   }
 
   /**
@@ -193,6 +202,9 @@ export class DigestAdminService {
         }),
       ),
     );
+
+    // 清除 Discover 缓存，使排序变更立即生效
+    await this.discoverService.invalidateCache();
 
     return this.getFeaturedTopics();
   }
