@@ -52,6 +52,11 @@ embedding/
 └── depended by ← extract/ (query embedding)
 ```
 
+## Testing Notes
+
+- `openai` 是 ESM 依赖；单测需要在 `vi.mock('openai', ...)` 生效后再加载 `EmbeddingService`，避免误触发真实网络请求。
+- 当前做法：在 `src/embedding/__tests__/embedding.service.spec.ts` 中使用 `vi.resetModules()` + 动态 `import('../embedding.service')`。
+
 ---
 
 _See [apps/aiget/server/CLAUDE.md](../../CLAUDE.md) for server conventions_

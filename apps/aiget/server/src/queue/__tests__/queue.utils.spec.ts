@@ -24,11 +24,14 @@ vi.mock('bullmq', () => ({
   },
 }));
 
-// 导入需要在 mock 之后
-import { createQueueEvents } from '../queue.utils';
-
 describe('createQueueEvents', () => {
-  beforeEach(() => {
+  let createQueueEvents: typeof import('../queue.utils').createQueueEvents;
+
+  beforeEach(async () => {
+    // 确保本测试文件的 mock 在被测模块加载前生效
+    vi.resetModules();
+    ({ createQueueEvents } = await import('../queue.utils'));
+
     vi.clearAllMocks();
     captured.name = null;
     captured.options = null;

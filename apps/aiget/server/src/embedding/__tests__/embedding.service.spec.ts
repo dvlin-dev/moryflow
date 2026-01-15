@@ -7,9 +7,8 @@
  * - 余弦相似度计算
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import { EmbeddingService } from '../embedding.service';
 
 // Mock OpenAI - 需要在测试中动态设置
 const mockEmbeddingsCreate = vi.fn();
@@ -23,11 +22,17 @@ vi.mock('openai', () => ({
 }));
 
 describe('EmbeddingService', () => {
-  let service: EmbeddingService;
+  let EmbeddingServiceClass: typeof import('../embedding.service').EmbeddingService;
+  let service: import('../embedding.service').EmbeddingService;
 
   const mockEmbedding = [0.1, 0.2, 0.3, 0.4, 0.5];
 
   beforeEach(async () => {
+    // 确保每个测试都使用已 mock 的 OpenAI 依赖
+    vi.resetModules();
+    ({ EmbeddingService: EmbeddingServiceClass } =
+      await import('../embedding.service'));
+
     // 重置 mock
     mockEmbeddingsCreate.mockReset();
 
@@ -42,7 +47,7 @@ describe('EmbeddingService', () => {
       }),
     };
 
-    service = new EmbeddingService(
+    service = new EmbeddingServiceClass(
       mockConfigService as unknown as ConfigService,
     );
   });
@@ -200,7 +205,7 @@ describe('EmbeddingService', () => {
         }),
       };
 
-      const svc = new EmbeddingService(
+      const svc = new EmbeddingServiceClass(
         mockConfigService as unknown as ConfigService,
       );
 
@@ -227,7 +232,7 @@ describe('EmbeddingService', () => {
         }),
       };
 
-      const svc = new EmbeddingService(
+      const svc = new EmbeddingServiceClass(
         mockConfigService as unknown as ConfigService,
       );
 
