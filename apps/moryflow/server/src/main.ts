@@ -1,7 +1,21 @@
+/**
+ * [INPUT]: 环境变量（PORT/ALLOWED_ORIGINS/...）与反代请求头（X-Forwarded-Proto/Host）
+ * [OUTPUT]: 启动 NestJS HTTP 服务并挂载中间件/OpenAPI/各业务模块
+ * [POS]: Moryflow Server 入口（反代部署必须启用 trust proxy）
+ *
+ * [PROTOCOL]: 本文件变更时，请同步更新 `apps/moryflow/server/CLAUDE.md`
+ */
+
 import { NestFactory } from '@nestjs/core';
 import { Logger, type INestApplication } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
-import { json, urlencoded, type Request, type Response } from 'express';
+import {
+  json,
+  urlencoded,
+  type Application,
+  type Request,
+  type Response,
+} from 'express';
 import { AppModule } from './app.module';
 import {
   OpenApiService,
@@ -91,6 +105,10 @@ async function bootstrap() {
     // 保留原始请求体用于 Webhook 签名验证
     rawBody: true,
   });
+
+  // 反代部署必须启用 trust proxy，否则 req.protocol/secure cookie 等会被错误识别为 http。
+  // 单层反代（megaboxpro/1panel）默认设置为 1；如未来有多层代理再按 hop 数调整。
+  (app.getHttpAdapter().getInstance() as Application).set('trust proxy', 1);
 
   // 增加请求体大小限制（默认 100kb，增加到 50mb）
   app.use(json({ limit: '50mb' }));
