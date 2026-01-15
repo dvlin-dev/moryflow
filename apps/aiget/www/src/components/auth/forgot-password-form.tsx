@@ -213,8 +213,14 @@ export function ForgotPasswordForm({ className, onSuccess, ...props }: ForgotPas
                             autoComplete="one-time-code"
                             disabled={isLoading}
                             className="text-center font-mono text-lg tracking-widest"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                            name={field.name}
+                            ref={field.ref}
+                            value={field.value}
+                            onBlur={field.onBlur}
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(/\D/g, '');
+                              field.onChange(numericValue);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
