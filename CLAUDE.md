@@ -242,6 +242,27 @@ Aiget/
 
 ---
 
+## 部署与重定向（强制）
+
+### TanStack Start（SSR）路由初始化规范
+
+- **禁止在服务端复用 Router 单例**：SSR 必须「每个请求创建一个新的 router」。只能在浏览器端缓存 singleton router。
+  - 原因：TanStack Start 在 SSR 时会根据请求推断 `origin/publicHref` 并做 canonical redirect；如果 router 是进程级单例，早期请求（如 IP:端口 健康检查、内网请求）会“污染”后续请求的 Host/Proto，导致 **307 自重定向循环**（监控常见报错：`Maximum number of redirects exceeded`）。
+- **推荐模式**：导出 `getRouter()`（或 `createRouter()`），在 `typeof window === 'undefined'` 时永远返回新实例；在浏览器端才做惰性缓存。
+
+### 反向代理 / CDN（Host + Proto）规范
+
+- **NestJS/Express（含 Better Auth 回调、cookie secure 判定）在反代后必须开启 `trust proxy`**：`app.set('trust proxy', 1)`。
+  - 作用：让 `req.protocol`/`req.secure`/绝对 URL 推断基于 `X-Forwarded-*`，避免 http/https、域名/IP 不一致导致的重定向与 cookie 异常。
+  - 安全边界：如果应用“直接暴露在公网且不经过可信反代”，不应无条件信任 `X-Forwarded-*`；应关闭 `trust proxy` 或限制为反代 IP 段（避免客户端伪造头部）。
+- **上游反代必须转发关键头**（至少）：`Host`、`X-Forwarded-Proto`、`X-Forwarded-For`（可选：`X-Forwarded-Host`）。
+
+### Generated 文件规范
+
+- TanStack 生成物（如 `**/.tanstack/**`、`**/routeTree.gen.*`）视为 **generated**：禁止手改，避免格式化/校验导致无意义的 diff 和 Vite 反复 reload。
+
+---
+
 ## 工作流程
 
 1. **计划**：改动前给出最小范围 plan，说明动机与风险

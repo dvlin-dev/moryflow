@@ -21,6 +21,7 @@ API documentation and usage guides. Built with TanStack Start + Fumadocs.
 - Fumadocs conventions
 - Source content in `/content/docs/`
 - `strictNullChecks` must be enabled (TanStack Router requirement)
+- SSR Router 必须每个请求创建新实例：禁止在服务端复用 Router 单例（避免反代/多域名场景出现自重定向循环）。
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 

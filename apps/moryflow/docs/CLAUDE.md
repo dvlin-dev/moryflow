@@ -37,3 +37,4 @@ pnpm --filter @moryflow/docs typecheck
 
 - TanStack Router 需要开启 `strictNullChecks`（见 `tsconfig.json`）。
 - `content-collections` 是构建期生成的虚拟模块；TypeScript 类型通过 `src/content-collections.d.ts` 提供（不依赖生成目录）。
+- SSR Router 必须每个请求创建新实例：禁止在服务端复用 Router 单例（避免反代/多域名场景出现自重定向循环）。

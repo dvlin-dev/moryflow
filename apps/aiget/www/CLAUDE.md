@@ -153,6 +153,7 @@ routes/
 | `hooks/useCaptchaVerification.ts` | Turnstile captcha hook                    |
 | `hooks/useKeyboardShortcuts.ts`   | Reader keyboard shortcuts                 |
 | `hooks/useIsMobile.ts`            | Mobile detection hook                     |
+| `router.tsx`                      | Router factory (SSR per-request)          |
 | `entry-client.tsx`                | Client hydration                          |
 | `entry-server.tsx`                | SSR entry point                           |
 | `vite.config.ts`                  | Vite/Nitro/TanStack Start config + chunks |
@@ -190,6 +191,12 @@ routes/
 - 推荐结构：容器层（hooks/组装 ViewModel） + 纯渲染层（只消费 model），边界清晰，便于测试与性能优化。
 - 性能约束：ViewModel 必须引用稳定（`useMemo`），回调必须稳定（`useCallback`）；避免每次 render 构造大量新对象导致无意义 rerender。
 - 继续保持现有 code-splitting：重型视图与弹窗 lazy-load，并配合 `reader.preload.ts` 做 hover/click 预取；`manualChunks` 与 SSR `noExternal` 必须一致。
+
+### SSR Router（反代/部署关键约束）
+
+- **SSR 必须每个请求创建新的 Router**：禁止在服务端复用 Router 单例（会被“第一次请求”的 Host/Proto 污染）。
+- 典型症状：部署在 `IP:端口` 上、由另一台机器反代到域名时，出现 `Maximum number of redirects exceeded`（Location 指向同一路径，形成自循环）。
+- 反代必须传递：`Host`、`X-Forwarded-Host`、`X-Forwarded-Proto`（否则 SSR 推导 origin 可能不稳定）。
 
 ### 计划文档
 
