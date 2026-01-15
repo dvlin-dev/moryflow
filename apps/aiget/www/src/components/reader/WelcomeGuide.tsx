@@ -1,5 +1,5 @@
 /**
- * [PROPS]: onCreateSubscription, onBrowseTopics, onSignIn, isAuthenticated
+ * [PROPS]: onCreateSubscription, onBrowseTopics, onSignIn, isAuthenticated, onBrowseTopicsHover?, onCreateSubscriptionHover?
  * [POS]: 新用户引导组件，显示在空状态时
  */
 
@@ -17,8 +17,12 @@ import {
 interface WelcomeGuideProps {
   /** 点击创建订阅 */
   onCreateSubscription: () => void;
+  /** 预加载创建订阅弹窗 chunk */
+  onCreateSubscriptionHover?: () => void;
   /** 点击浏览 Topics（Reader 内视图） */
   onBrowseTopics: () => void;
+  /** 预加载 Topics 浏览 chunk */
+  onBrowseTopicsHover?: () => void;
   /** 打开登录弹窗（未登录时） */
   onSignIn: () => void;
   /** 是否已登录 */
@@ -55,7 +59,9 @@ const features = [
  */
 export function WelcomeGuide({
   onCreateSubscription,
+  onCreateSubscriptionHover,
   onBrowseTopics,
+  onBrowseTopicsHover,
   onSignIn,
   isAuthenticated,
 }: WelcomeGuideProps) {
@@ -123,11 +129,20 @@ export function WelcomeGuide({
         >
           {isAuthenticated ? (
             <>
-              <Button onClick={onCreateSubscription} size="lg">
+              <Button
+                onClick={onCreateSubscription}
+                onMouseEnter={onCreateSubscriptionHover}
+                size="lg"
+              >
                 <Icon icon={Add01Icon} className="mr-2 size-4" />
                 Create Subscription
               </Button>
-              <Button variant="outline" size="lg" onClick={onBrowseTopics}>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={onBrowseTopics}
+                onMouseEnter={onBrowseTopicsHover}
+              >
                 <Icon icon={Search01Icon} className="mr-2 size-4" />
                 Discover Topics
               </Button>
@@ -137,7 +152,12 @@ export function WelcomeGuide({
               <Button size="lg" onClick={onSignIn}>
                 Sign In to Get Started
               </Button>
-              <Button variant="outline" size="lg" onClick={onBrowseTopics}>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={onBrowseTopics}
+                onMouseEnter={onBrowseTopicsHover}
+              >
                 <Icon icon={Search01Icon} className="mr-2 size-4" />
                 Browse Topics
               </Button>

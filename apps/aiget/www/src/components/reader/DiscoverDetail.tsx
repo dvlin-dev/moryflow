@@ -25,9 +25,11 @@ interface DiscoverDetailProps {
   item: DiscoverFeedItem | null;
   /** Optional callback to preview a topic inside Reader */
   onPreviewTopic?: (slug: string) => void;
+  /** Optional callback to preload topic preview chunk */
+  onPreviewTopicHover?: (slug: string) => void;
 }
 
-export function DiscoverDetail({ item, onPreviewTopic }: DiscoverDetailProps) {
+export function DiscoverDetail({ item, onPreviewTopic, onPreviewTopicHover }: DiscoverDetailProps) {
   if (!item) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -91,7 +93,11 @@ export function DiscoverDetail({ item, onPreviewTopic }: DiscoverDetailProps) {
               </div>
               <Button variant="outline" size="sm" asChild>
                 {onPreviewTopic ? (
-                  <button type="button" onClick={() => onPreviewTopic(item.topic.slug)}>
+                  <button
+                    type="button"
+                    onClick={() => onPreviewTopic(item.topic.slug)}
+                    onMouseEnter={() => onPreviewTopicHover?.(item.topic.slug)}
+                  >
                     <Icon icon={EyeIcon} className="mr-1 size-4" />
                     View Topic
                   </button>

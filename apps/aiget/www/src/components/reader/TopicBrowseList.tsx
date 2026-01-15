@@ -43,6 +43,7 @@ interface TopicBrowseListProps {
   enabled: boolean;
   selectedSlug: string | null;
   followedTopicIds: ReadonlySet<string>;
+  pendingFollowTopicIds?: ReadonlySet<string>;
   onSelectTopic: (topic: DigestTopicSummary) => void;
   onFollowTopic: (topic: DigestTopicSummary) => void;
   onCreateSubscription: (initialQuery?: string) => void;
@@ -52,6 +53,7 @@ export function TopicBrowseList({
   enabled,
   selectedSlug,
   followedTopicIds,
+  pendingFollowTopicIds,
   onSelectTopic,
   onFollowTopic,
   onCreateSubscription,
@@ -78,14 +80,18 @@ export function TopicBrowseList({
         search: currentSearch,
         limit: 30,
       }),
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    placeholderData: (previous) => previous,
   });
 
   const topics = data?.items ?? [];
 
   useEffect(() => {
     if (!enabled) return;
-    if (selectedSlug) return;
     if (topics.length === 0) return;
+    if (selectedSlug && topics.some((t) => t.slug === selectedSlug)) return;
     onSelectTopic(topics[0]);
   }, [enabled, selectedSlug, topics, onSelectTopic]);
 
@@ -190,7 +196,9 @@ export function TopicBrowseList({
             <div className="space-y-1">
               {topics.map((topic) => {
                 const isSelected = selectedSlug === topic.slug;
-                const isFollowing = followedTopicIds.has(topic.id);
+                const isFollowing =
+                  followedTopicIds.has(topic.id) || pendingFollowTopicIds?.has(topic.id) === true;
+                const isFollowPending = pendingFollowTopicIds?.has(topic.id) === true;
 
                 return (
                   <div
@@ -231,12 +239,13 @@ export function TopicBrowseList({
                         'h-8 shrink-0 px-2 text-xs',
                         'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                       )}
+                      disabled={isFollowPending}
                       onClick={(e) => {
                         e.stopPropagation();
                         onFollowTopic(topic);
                       }}
                     >
-                      {isFollowing ? 'Following' : 'Follow'}
+                      {isFollowPending ? 'Following…' : isFollowing ? 'Following' : 'Follow'}
                     </Button>
                   </div>
                 );

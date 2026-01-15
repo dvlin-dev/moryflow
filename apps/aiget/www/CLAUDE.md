@@ -85,6 +85,9 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 | `ReaderDetailPane`           | 右栏视图切换（Welcome/Discover/Topic/Article）  |
 | `ReaderDialogs`              | Reader 内操作弹窗统一出口                       |
 | `ReaderPaneFallback`         | 懒加载视图占位（Notion 风格骨架）               |
+| `ReaderErrorBoundary`        | Reader 局部错误边界（单栏兜底）                 |
+| `reader.preload.ts`          | Reader 懒加载模块预取（hover/click）            |
+| `reader.types.ts`            | Reader Inbox 过滤状态与映射                     |
 
 ### Landing Sections
 

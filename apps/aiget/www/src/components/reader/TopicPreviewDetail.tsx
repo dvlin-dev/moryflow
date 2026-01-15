@@ -25,7 +25,8 @@ import { formatDate } from '@/lib/date';
 interface TopicPreviewDetailProps {
   slug: string | null;
   followedTopicIds: ReadonlySet<string>;
-  onFollowTopic: (slug: string) => void;
+  pendingFollowTopicIds?: ReadonlySet<string>;
+  onFollowTopic: (topic: { id: string; slug: string }) => void;
 }
 
 type TopicPreviewData = {
@@ -36,6 +37,7 @@ type TopicPreviewData = {
 export function TopicPreviewDetail({
   slug,
   followedTopicIds,
+  pendingFollowTopicIds,
   onFollowTopic,
 }: TopicPreviewDetailProps) {
   const env = usePublicEnv();
@@ -56,6 +58,10 @@ export function TopicPreviewDetail({
       ]);
       return { topic, editions: editions.items };
     },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    placeholderData: (previous) => previous,
   });
 
   if (!slug) {
@@ -96,7 +102,9 @@ export function TopicPreviewDetail({
     );
   }
 
-  const isFollowing = followedTopicIds.has(data.topic.id);
+  const isFollowing =
+    followedTopicIds.has(data.topic.id) || pendingFollowTopicIds?.has(data.topic.id) === true;
+  const isFollowPending = pendingFollowTopicIds?.has(data.topic.id) === true;
 
   return (
     <div className="flex h-full flex-col">
@@ -108,9 +116,10 @@ export function TopicPreviewDetail({
             variant={isFollowing ? 'secondary' : 'default'}
             size="sm"
             className="h-8"
-            onClick={() => onFollowTopic(data.topic.slug)}
+            onClick={() => onFollowTopic({ id: data.topic.id, slug: data.topic.slug })}
+            disabled={isFollowPending}
           >
-            {isFollowing ? 'Following' : 'Follow'}
+            {isFollowPending ? 'Following…' : isFollowing ? 'Following' : 'Follow'}
           </Button>
           <Button variant="ghost" size="icon" className="size-8" asChild>
             <a href={`/topics/${data.topic.slug}`} target="_blank" rel="noopener noreferrer">

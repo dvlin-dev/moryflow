@@ -25,10 +25,12 @@ interface ReaderDetailPaneProps {
 
   selectedDiscoverItem: DiscoverFeedItem | null;
   onPreviewTopic: (slug: string) => void;
+  onPreviewTopicHover?: (slug: string) => void;
 
   selectedTopicSlug: string | null;
   followedTopicIds: ReadonlySet<string>;
-  onFollowTopicBySlug: (slug: string) => void;
+  pendingFollowTopicIds?: ReadonlySet<string>;
+  onFollowTopic: (topic: { id: string; slug: string }) => void;
 
   selectedArticle: InboxItem | null;
   onSave: (item: InboxItem) => void;
@@ -38,7 +40,9 @@ interface ReaderDetailPaneProps {
   isSaving: boolean;
 
   onCreateSubscription: (initialQuery?: string) => void;
+  onCreateSubscriptionHover?: () => void;
   onBrowseTopics: () => void;
+  onBrowseTopicsHover?: () => void;
   onSignIn: () => void;
 }
 
@@ -48,9 +52,11 @@ export function ReaderDetailPane({
   isAuthenticated,
   selectedDiscoverItem,
   onPreviewTopic,
+  onPreviewTopicHover,
   selectedTopicSlug,
   followedTopicIds,
-  onFollowTopicBySlug,
+  pendingFollowTopicIds,
+  onFollowTopic,
   selectedArticle,
   onSave,
   onNotInterested,
@@ -58,14 +64,18 @@ export function ReaderDetailPane({
   isLoadingContent,
   isSaving,
   onCreateSubscription,
+  onCreateSubscriptionHover,
   onBrowseTopics,
+  onBrowseTopicsHover,
   onSignIn,
 }: ReaderDetailPaneProps) {
   if (showWelcome) {
     return (
       <WelcomeGuide
         onCreateSubscription={() => onCreateSubscription()}
+        onCreateSubscriptionHover={onCreateSubscriptionHover}
         onBrowseTopics={onBrowseTopics}
+        onBrowseTopicsHover={onBrowseTopicsHover}
         onSignIn={onSignIn}
         isAuthenticated={isAuthenticated}
       />
@@ -73,7 +83,13 @@ export function ReaderDetailPane({
   }
 
   if (currentView.type === 'discover') {
-    return <DiscoverDetail item={selectedDiscoverItem} onPreviewTopic={onPreviewTopic} />;
+    return (
+      <DiscoverDetail
+        item={selectedDiscoverItem}
+        onPreviewTopic={onPreviewTopic}
+        onPreviewTopicHover={onPreviewTopicHover}
+      />
+    );
   }
 
   if (currentView.type === 'topics') {
@@ -82,7 +98,8 @@ export function ReaderDetailPane({
         <LazyTopicPreviewDetail
           slug={selectedTopicSlug}
           followedTopicIds={followedTopicIds}
-          onFollowTopic={onFollowTopicBySlug}
+          pendingFollowTopicIds={pendingFollowTopicIds}
+          onFollowTopic={onFollowTopic}
         />
       </Suspense>
     );

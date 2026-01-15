@@ -33,6 +33,7 @@ interface ReaderListPaneProps {
 
   selectedTopicSlug: string | null;
   followedTopicIds: ReadonlySet<string>;
+  pendingFollowTopicIds?: ReadonlySet<string>;
   onSelectTopic: (topic: DigestTopicSummary) => void;
   onFollowTopic: (topic: DigestTopicSummary) => void;
   onCreateSubscription: (initialQuery?: string) => void;
@@ -61,6 +62,7 @@ export function ReaderListPane({
   isDiscoverRefreshing,
   selectedTopicSlug,
   followedTopicIds,
+  pendingFollowTopicIds,
   onSelectTopic,
   onFollowTopic,
   onCreateSubscription,
@@ -97,6 +99,7 @@ export function ReaderListPane({
           enabled={true}
           selectedSlug={selectedTopicSlug}
           followedTopicIds={followedTopicIds}
+          pendingFollowTopicIds={pendingFollowTopicIds}
           onSelectTopic={onSelectTopic}
           onFollowTopic={onFollowTopic}
           onCreateSubscription={onCreateSubscription}

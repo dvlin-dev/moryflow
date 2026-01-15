@@ -7,6 +7,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as api from './api';
 import type {
+  InboxItem,
+  InboxItemState,
+  InboxStats,
+  PaginatedResponse,
   CreateSubscriptionInput,
   UpdateSubscriptionInput,
   SubscriptionQueryParams,
@@ -18,6 +22,74 @@ import type {
   FollowTopicInput,
   ApplySuggestionsInput,
 } from './types';
+
+function getInboxItemState(
+  item: Pick<InboxItem, 'readAt' | 'savedAt' | 'notInterestedAt'>
+): InboxItemState {
+  if (item.savedAt) return 'SAVED';
+  if (item.notInterestedAt) return 'NOT_INTERESTED';
+  if (item.readAt) return 'READ';
+  return 'UNREAD';
+}
+
+function applyInboxItemAction(item: InboxItem, action: InboxItemAction, nowIso: string): InboxItem {
+  switch (action) {
+    case 'markRead': {
+      const next = { ...item, readAt: item.readAt ?? nowIso };
+      return { ...next, state: getInboxItemState(next) };
+    }
+    case 'markUnread': {
+      const next = { ...item, readAt: null };
+      return { ...next, state: getInboxItemState(next) };
+    }
+    case 'save': {
+      const next = { ...item, savedAt: item.savedAt ?? nowIso };
+      return { ...next, state: getInboxItemState(next) };
+    }
+    case 'unsave': {
+      const next = { ...item, savedAt: null };
+      return { ...next, state: getInboxItemState(next) };
+    }
+    case 'notInterested': {
+      const next = { ...item, notInterestedAt: item.notInterestedAt ?? nowIso };
+      return { ...next, state: getInboxItemState(next) };
+    }
+    case 'undoNotInterested': {
+      const next = { ...item, notInterestedAt: null };
+      return { ...next, state: getInboxItemState(next) };
+    }
+    default: {
+      return item;
+    }
+  }
+}
+
+function shouldKeepInboxItemForQuery(item: InboxItem, params?: InboxQueryParams): boolean {
+  if (params?.subscriptionId && item.subscriptionId !== params.subscriptionId) return false;
+  if (!params?.state) return true;
+  return item.state === params.state;
+}
+
+function updateInboxStatsForItemChange(
+  stats: InboxStats,
+  prev: InboxItem,
+  next: InboxItem
+): InboxStats {
+  let unreadCount = stats.unreadCount;
+  let savedCount = stats.savedCount;
+
+  if (prev.state === 'UNREAD' && next.state !== 'UNREAD') unreadCount -= 1;
+  if (prev.state !== 'UNREAD' && next.state === 'UNREAD') unreadCount += 1;
+
+  if (prev.state === 'SAVED' && next.state !== 'SAVED') savedCount -= 1;
+  if (prev.state !== 'SAVED' && next.state === 'SAVED') savedCount += 1;
+
+  return {
+    ...stats,
+    unreadCount: Math.max(0, unreadCount),
+    savedCount: Math.max(0, savedCount),
+  };
+}
 
 // ========== Query Keys ==========
 
@@ -174,11 +246,68 @@ export function useUpdateInboxItemState() {
   return useMutation({
     mutationFn: ({ id, action }: { id: string; action: InboxItemAction }) =>
       api.updateInboxItemState(id, action),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: digestKeys.inbox() });
+    onMutate: async ({ id, action }) => {
+      const nowIso = new Date().toISOString();
+
+      await queryClient.cancelQueries({ queryKey: digestKeys.inbox() });
+
+      const previousQueries = queryClient.getQueriesData<PaginatedResponse<InboxItem>>({
+        queryKey: digestKeys.inbox(),
+      });
+      const previousStats = queryClient.getQueryData<InboxStats>(digestKeys.inboxStats());
+
+      let previousItem: InboxItem | null = null;
+      let nextItem: InboxItem | null = null;
+
+      for (const [queryKey] of previousQueries) {
+        if (!Array.isArray(queryKey)) continue;
+        if (queryKey[2] !== 'items') continue;
+
+        const params = queryKey[3] as InboxQueryParams | undefined;
+
+        queryClient.setQueryData<PaginatedResponse<InboxItem> | undefined>(queryKey, (old) => {
+          if (!old) return old;
+
+          const updatedItems = old.items
+            .map((item) => {
+              if (item.id !== id) return item;
+              previousItem = previousItem ?? item;
+              const updated = applyInboxItemAction(item, action, nowIso);
+              nextItem = nextItem ?? updated;
+              return updated;
+            })
+            .filter((item) => shouldKeepInboxItemForQuery(item, params));
+
+          return old.items === updatedItems ? old : { ...old, items: updatedItems };
+        });
+      }
+
+      const prevItem = previousItem;
+      const nextUpdatedItem = nextItem;
+
+      if (prevItem && nextUpdatedItem) {
+        queryClient.setQueryData<InboxStats | undefined>(digestKeys.inboxStats(), (old) => {
+          if (!old) return old;
+          return updateInboxStatsForItemChange(old, prevItem, nextUpdatedItem);
+        });
+      }
+
+      return { previousQueries, previousStats };
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _vars, context) => {
+      if (context?.previousQueries) {
+        for (const [queryKey, data] of context.previousQueries) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
+      if (context?.previousStats) {
+        queryClient.setQueryData(digestKeys.inboxStats(), context.previousStats);
+      }
       toast.error(error.message || 'Failed to update item');
+    },
+    onSettled: () => {
+      // 轻量同步：只刷新 stats，避免每次点开文章都触发全量列表重拉
+      queryClient.invalidateQueries({ queryKey: digestKeys.inboxStats() });
     },
   });
 }

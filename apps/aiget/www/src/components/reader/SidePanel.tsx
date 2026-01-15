@@ -41,12 +41,18 @@ interface SidePanelProps {
   onViewChange: (view: SidePanelView) => void;
   /** Callback to open create subscription dialog */
   onCreateClick: () => void;
+  /** Preload create subscription dialog chunk */
+  onCreateHover?: () => void;
   /** Callback to open auth modal (unauthenticated user area) */
   onSignInClick?: () => void;
   /** Callback to open topic browsing view */
   onBrowseTopics?: () => void;
+  /** Preload topic browse/preview chunks */
+  onBrowseTopicsHover?: () => void;
   /** Callback to preview a topic inside Reader */
   onPreviewTopic?: (slug: string) => void;
+  /** Preload topic preview chunk (hover on specific topic) */
+  onPreviewTopicHover?: (slug: string) => void;
   /** Callback to open settings dialog for a subscription */
   onSettingsClick?: (subscription: Subscription) => void;
   /** Callback to open run history dialog for a subscription */
@@ -66,13 +72,16 @@ export function SidePanel({
   currentView,
   onViewChange,
   onCreateClick,
+  onCreateHover,
   onSettingsClick,
   onHistoryClick,
   onSuggestionsClick,
   onPublishClick,
   onSignInClick,
   onBrowseTopics,
+  onBrowseTopicsHover,
   onPreviewTopic,
+  onPreviewTopicHover,
   isLoading,
 }: SidePanelProps) {
   const { user, isAuthenticated } = useAuth();
@@ -146,6 +155,7 @@ export function SidePanel({
         </button>
         <button
           onClick={() => (onBrowseTopics ? onBrowseTopics() : onViewChange({ type: 'topics' }))}
+          onMouseEnter={onBrowseTopicsHover}
           className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
             isViewSelected({ type: 'topics' })
               ? 'bg-accent text-foreground'
@@ -184,6 +194,7 @@ export function SidePanel({
                   <button
                     type="button"
                     onClick={() => onPreviewTopic(topic.slug)}
+                    onMouseEnter={() => onPreviewTopicHover?.(topic.slug)}
                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   >
                     <span className="truncate">{topic.title}</span>
@@ -202,6 +213,7 @@ export function SidePanel({
             <button
               type="button"
               onClick={() => (onBrowseTopics ? onBrowseTopics() : onViewChange({ type: 'topics' }))}
+              onMouseEnter={onBrowseTopicsHover}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <Icon icon={Search01Icon} className="size-4" />
@@ -270,6 +282,7 @@ export function SidePanel({
             size="sm"
             className="mb-2 w-full justify-start gap-2 text-muted-foreground"
             onClick={onCreateClick}
+            onMouseEnter={onCreateHover}
           >
             <Icon icon={Add01Icon} className="size-4" />
             <span>New Subscription</span>

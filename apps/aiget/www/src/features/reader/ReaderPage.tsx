@@ -31,9 +31,17 @@ import { SidePanel, type SidePanelView } from '@/components/reader/SidePanel';
 import { ReaderDialogs } from './components/ReaderDialogs';
 import { ReaderDetailPane } from './components/ReaderDetailPane';
 import { ReaderListPane } from './components/ReaderListPane';
+import { ReaderErrorBoundary, ReaderPaneErrorState } from './components/ReaderErrorBoundary';
 import { ReaderScaffold } from './components/ReaderScaffold';
 import type { FilterState } from './reader.types';
 import { filterStateToInboxState } from './reader.types';
+import {
+  preloadCreateSubscriptionDialog,
+  preloadPublishTopicDialog,
+  preloadSubscriptionSettingsDialog,
+  preloadTopicBrowseList,
+  preloadTopicPreviewDetail,
+} from './reader.preload';
 
 export function ReaderPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -86,6 +94,16 @@ export function ReaderPage() {
     );
   }, [subscriptionsData?.items]);
 
+  const [optimisticFollowedTopicIds, setOptimisticFollowedTopicIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [pendingFollowTopicIds, setPendingFollowTopicIds] = useState<Set<string>>(() => new Set());
+
+  const effectiveFollowedTopicIds = useMemo(() => {
+    if (optimisticFollowedTopicIds.size === 0) return followedTopicIds;
+    return new Set([...followedTopicIds, ...optimisticFollowedTopicIds]);
+  }, [followedTopicIds, optimisticFollowedTopicIds]);
+
   // Discover feed query (public)
   const discoverFeedType: DiscoverFeedType =
     currentView.type === 'discover' ? currentView.feed : 'featured';
@@ -134,6 +152,7 @@ export function ReaderPage() {
   const openCreateSubscription = useCallback(
     (initialQuery?: string) => {
       requireAuth(() => {
+        preloadCreateSubscriptionDialog();
         setCreateDialogInitialTopic(initialQuery?.trim() || undefined);
         setCreateDialogOpen(true);
       });
@@ -142,11 +161,13 @@ export function ReaderPage() {
   );
 
   const handleOpenSettingsDialog = useCallback((subscription: Subscription) => {
+    preloadSubscriptionSettingsDialog();
     setSelectedSubscription(subscription);
     setSettingsDialogOpen(true);
   }, []);
 
   const handleOpenPublishForSubscription = useCallback((subscription: Subscription) => {
+    preloadPublishTopicDialog();
     setSelectedSubscription(subscription);
     setPublishDialogOpen(true);
   }, []);
@@ -208,28 +229,90 @@ export function ReaderPage() {
   const handleFollowTopic = useCallback(
     (topic: DigestTopicSummary) => {
       requireAuth(() => {
-        followTopic.mutate({
-          slug: topic.slug,
-          data: {},
-        });
+        setOptimisticFollowedTopicIds((prev) => new Set(prev).add(topic.id));
+        setPendingFollowTopicIds((prev) => new Set(prev).add(topic.id));
+        followTopic.mutate(
+          {
+            slug: topic.slug,
+            data: {},
+          },
+          {
+            onError: () => {
+              setOptimisticFollowedTopicIds((prev) => {
+                const next = new Set(prev);
+                next.delete(topic.id);
+                return next;
+              });
+            },
+            onSettled: () => {
+              setPendingFollowTopicIds((prev) => {
+                const next = new Set(prev);
+                next.delete(topic.id);
+                return next;
+              });
+            },
+          }
+        );
       });
     },
     [followTopic, requireAuth]
   );
 
-  const handleFollowTopicBySlug = useCallback(
-    (slug: string) => {
+  const handleFollowTopicFromPreview = useCallback(
+    (topic: { id: string; slug: string }) => {
       requireAuth(() => {
-        followTopic.mutate({
-          slug,
-          data: {},
-        });
+        setOptimisticFollowedTopicIds((prev) => new Set(prev).add(topic.id));
+        setPendingFollowTopicIds((prev) => new Set(prev).add(topic.id));
+        followTopic.mutate(
+          {
+            slug: topic.slug,
+            data: {},
+          },
+          {
+            onError: () => {
+              setOptimisticFollowedTopicIds((prev) => {
+                const next = new Set(prev);
+                next.delete(topic.id);
+                return next;
+              });
+            },
+            onSettled: () => {
+              setPendingFollowTopicIds((prev) => {
+                const next = new Set(prev);
+                next.delete(topic.id);
+                return next;
+              });
+            },
+          }
+        );
       });
     },
     [followTopic, requireAuth]
   );
+
+  useEffect(() => {
+    if (followedTopicIds.size === 0) return;
+    setOptimisticFollowedTopicIds((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set(prev);
+      for (const id of followedTopicIds) {
+        next.delete(id);
+      }
+      return next;
+    });
+    setPendingFollowTopicIds((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Set(prev);
+      for (const id of followedTopicIds) {
+        next.delete(id);
+      }
+      return next;
+    });
+  }, [followedTopicIds]);
 
   const openTopicPreview = useCallback((slug: string) => {
+    preloadTopicBrowseList();
+    preloadTopicPreviewDetail();
     setCurrentView({ type: 'topics' });
     setSelectedTopicSlug(slug);
     setSelectedArticle(null);
@@ -241,6 +324,9 @@ export function ReaderPage() {
   }, []);
 
   const handleViewChange = useCallback((view: SidePanelView) => {
+    if (view.type === 'topics') {
+      preloadTopicBrowseList();
+    }
     setCurrentView(view);
     setSelectedArticle(null);
     setSelectedDiscoverItem(null);
@@ -260,6 +346,10 @@ export function ReaderPage() {
     setSelectedDiscoverItem(null);
     setSelectedTopicSlug(null);
   }, []);
+
+  const handleBackToDiscover = useCallback(() => {
+    handleViewChange({ type: 'discover', feed: 'featured' });
+  }, [handleViewChange]);
 
   const handleSignIn = useCallback(() => {
     openAuthModal({ mode: 'login' });
@@ -340,12 +430,16 @@ export function ReaderPage() {
       currentView={currentView}
       onViewChange={handleViewChange}
       onCreateClick={() => openCreateSubscription()}
+      onCreateHover={preloadCreateSubscriptionDialog}
       onSettingsClick={handleOpenSettingsDialog}
       onHistoryClick={handleOpenSettingsDialog}
       onSuggestionsClick={handleOpenSettingsDialog}
       onPublishClick={handleOpenPublishForSubscription}
       onSignInClick={handleSignIn}
+      onBrowseTopics={() => handleViewChange({ type: 'topics' })}
+      onBrowseTopicsHover={preloadTopicBrowseList}
       onPreviewTopic={openTopicPreview}
+      onPreviewTopicHover={(_slug) => preloadTopicPreviewDetail()}
       isLoading={subscriptionsLoading || authLoading}
     />
   );
@@ -358,55 +452,105 @@ export function ReaderPage() {
     return subscription?.name || 'Inbox';
   }, [currentView, subscriptionsData?.items]);
 
+  const listResetKeys = [
+    currentView.type,
+    currentView.type === 'discover'
+      ? currentView.feed
+      : currentView.type === 'inbox'
+        ? currentView.filter
+        : 'topics',
+  ];
+
   const listComponent = (
-    <ReaderListPane
-      currentView={currentView}
-      discoverItems={discoverItems}
-      selectedDiscoverItemId={selectedDiscoverItem?.id || null}
-      onSelectDiscoverItem={handleSelectDiscoverItem}
-      discoverFeedType={discoverFeedType}
-      onDiscoverFeedTypeChange={(feedType) => setCurrentView({ type: 'discover', feed: feedType })}
-      onDiscoverRefresh={() => refetchDiscover()}
-      isDiscoverLoading={discoverLoading}
-      isDiscoverRefreshing={isDiscoverRefetching}
-      selectedTopicSlug={selectedTopicSlug}
-      followedTopicIds={followedTopicIds}
-      onSelectTopic={handleSelectTopic}
-      onFollowTopic={handleFollowTopic}
-      onCreateSubscription={openCreateSubscription}
-      inboxItems={inboxItems}
-      selectedArticleId={selectedArticle?.id || null}
-      onSelectArticle={handleSelectArticle}
-      inboxTitle={inboxTitle}
-      filter={filter}
-      onFilterChange={setFilter}
-      onInboxRefresh={() => refetchInbox()}
-      onMarkAllRead={handleMarkAllRead}
-      isInboxLoading={inboxLoading}
-      isInboxRefreshing={isRefetching}
-    />
+    <ReaderErrorBoundary
+      resetKeys={listResetKeys}
+      fallback={({ reset }) => (
+        <ReaderPaneErrorState onRetry={reset} onBackToDiscover={handleBackToDiscover} />
+      )}
+    >
+      <ReaderListPane
+        currentView={currentView}
+        discoverItems={discoverItems}
+        selectedDiscoverItemId={selectedDiscoverItem?.id || null}
+        onSelectDiscoverItem={handleSelectDiscoverItem}
+        discoverFeedType={discoverFeedType}
+        onDiscoverFeedTypeChange={(feedType) =>
+          setCurrentView({ type: 'discover', feed: feedType })
+        }
+        onDiscoverRefresh={() => refetchDiscover()}
+        isDiscoverLoading={discoverLoading}
+        isDiscoverRefreshing={isDiscoverRefetching}
+        selectedTopicSlug={selectedTopicSlug}
+        followedTopicIds={effectiveFollowedTopicIds}
+        pendingFollowTopicIds={pendingFollowTopicIds}
+        onSelectTopic={handleSelectTopic}
+        onFollowTopic={handleFollowTopic}
+        onCreateSubscription={openCreateSubscription}
+        inboxItems={inboxItems}
+        selectedArticleId={selectedArticle?.id || null}
+        onSelectArticle={handleSelectArticle}
+        inboxTitle={inboxTitle}
+        filter={filter}
+        onFilterChange={setFilter}
+        onInboxRefresh={() => refetchInbox()}
+        onMarkAllRead={handleMarkAllRead}
+        isInboxLoading={inboxLoading}
+        isInboxRefreshing={isRefetching}
+      />
+    </ReaderErrorBoundary>
   );
 
+  const detailResetKeys = [
+    currentView.type,
+    selectedArticle?.id ?? null,
+    selectedDiscoverItem?.id ?? null,
+    selectedTopicSlug ?? null,
+  ];
+
   const detailComponent = (
-    <ReaderDetailPane
-      currentView={currentView}
-      showWelcome={showWelcome}
-      isAuthenticated={isAuthenticated}
-      selectedDiscoverItem={selectedDiscoverItem}
-      onPreviewTopic={openTopicPreview}
-      selectedTopicSlug={selectedTopicSlug}
-      followedTopicIds={followedTopicIds}
-      onFollowTopicBySlug={handleFollowTopicBySlug}
-      selectedArticle={selectedArticle}
-      onSave={handleSave}
-      onNotInterested={handleNotInterested}
-      fullContent={contentData?.markdown ?? null}
-      isLoadingContent={isLoadingContent}
-      isSaving={updateItemState.isPending}
-      onCreateSubscription={openCreateSubscription}
-      onBrowseTopics={() => handleViewChange({ type: 'topics' })}
-      onSignIn={handleSignIn}
-    />
+    <ReaderErrorBoundary
+      resetKeys={detailResetKeys}
+      onReset={handleBack}
+      fallback={({ reset }) => (
+        <ReaderPaneErrorState
+          title="Unable to render this pane"
+          description="Try again, or go back and pick another item."
+          onRetry={reset}
+          secondaryAction={{
+            label: 'Back',
+            onClick: () => {
+              handleBack();
+              reset();
+            },
+          }}
+          onBackToDiscover={handleBackToDiscover}
+        />
+      )}
+    >
+      <ReaderDetailPane
+        currentView={currentView}
+        showWelcome={showWelcome}
+        isAuthenticated={isAuthenticated}
+        selectedDiscoverItem={selectedDiscoverItem}
+        onPreviewTopic={openTopicPreview}
+        onPreviewTopicHover={(_slug) => preloadTopicPreviewDetail()}
+        selectedTopicSlug={selectedTopicSlug}
+        followedTopicIds={effectiveFollowedTopicIds}
+        pendingFollowTopicIds={pendingFollowTopicIds}
+        onFollowTopic={handleFollowTopicFromPreview}
+        selectedArticle={selectedArticle}
+        onSave={handleSave}
+        onNotInterested={handleNotInterested}
+        fullContent={contentData?.markdown ?? null}
+        isLoadingContent={isLoadingContent}
+        isSaving={updateItemState.isPending}
+        onCreateSubscription={openCreateSubscription}
+        onCreateSubscriptionHover={preloadCreateSubscriptionDialog}
+        onBrowseTopics={() => handleViewChange({ type: 'topics' })}
+        onBrowseTopicsHover={preloadTopicBrowseList}
+        onSignIn={handleSignIn}
+      />
+    </ReaderErrorBoundary>
   );
 
   const hasSelectedItem =
