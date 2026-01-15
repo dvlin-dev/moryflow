@@ -35,7 +35,7 @@ import {
   SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import { Turnstile } from './Turnstile';
-import { usePublicEnv } from '@/routes/__root';
+import { usePublicEnv } from '@/lib/public-env-context';
 import { useCaptchaVerification } from '@/hooks/useCaptchaVerification';
 import {
   scrapeUrl,

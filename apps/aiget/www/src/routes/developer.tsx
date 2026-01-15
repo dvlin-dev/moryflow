@@ -74,7 +74,7 @@ function DeveloperPage() {
             className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <Icon icon={ArrowLeft02Icon} className="size-4" />
-            Back to Home
+            Back to Digest
           </Link>
 
           <h1 className="mb-2 text-3xl font-bold">Developer Resources</h1>

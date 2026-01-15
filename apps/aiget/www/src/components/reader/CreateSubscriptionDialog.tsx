@@ -4,7 +4,7 @@
  * Renders as Dialog on desktop, Drawer on mobile
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
@@ -73,12 +73,15 @@ interface CreateSubscriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  /** Optional initial topic/keywords to prefill when opening */
+  initialTopic?: string;
 }
 
 export function CreateSubscriptionDialog({
   open,
   onOpenChange,
   onSuccess,
+  initialTopic,
 }: CreateSubscriptionDialogProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const createMutation = useCreateSubscription();
@@ -106,6 +109,21 @@ export function CreateSubscriptionDialog({
       webhookUrl: '',
     },
   });
+
+  useEffect(() => {
+    if (!open) return;
+    if (!initialTopic) return;
+
+    const currentTopic = form.getValues('topic');
+    if (!currentTopic) {
+      form.setValue('topic', initialTopic, { shouldDirty: true });
+    }
+
+    const currentName = form.getValues('name');
+    if (!currentName) {
+      form.setValue('name', initialTopic.slice(0, 100), { shouldDirty: true });
+    }
+  }, [open, initialTopic, form]);
 
   const onSubmit = (values: FormValues) => {
     const interests = values.interests

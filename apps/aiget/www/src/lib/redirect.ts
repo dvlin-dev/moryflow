@@ -13,7 +13,7 @@ export const ALLOWED_REDIRECT_HOSTS = [
 ] as const;
 
 /** 默认重定向地址 */
-export const DEFAULT_REDIRECT = '/dashboard';
+export const DEFAULT_REDIRECT = '/';
 
 /**
  * 验证重定向 URL 是否安全
@@ -46,7 +46,9 @@ export function getRedirectUrl(searchRedirect?: string): string {
     return searchRedirect;
   }
 
-  // 不安全的重定向，使用默认值
-  console.warn(`Blocked unsafe redirect: ${searchRedirect}`);
+  // 不安全的重定向，使用默认值（仅在开发环境提示）
+  if (import.meta.env.DEV) {
+    console.warn(`Blocked unsafe redirect: ${searchRedirect}`);
+  }
   return DEFAULT_REDIRECT;
 }

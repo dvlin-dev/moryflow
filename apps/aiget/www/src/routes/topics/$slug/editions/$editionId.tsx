@@ -13,7 +13,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Header, Footer, Container } from '@/components/layout';
 import { EditionContentItem } from '@/components/digest';
 import { getEditionById, type DigestEditionDetail } from '@/lib/digest-api';
-import { usePublicEnv } from '../../../__root';
+import { usePublicEnv } from '@/lib/public-env-context';
 
 export const Route = createFileRoute('/topics/$slug/editions/$editionId')({
   component: EditionDetailPage,

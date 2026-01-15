@@ -1,5 +1,5 @@
 /**
- * [PROPS]: onCreateSubscription, onDiscover
+ * [PROPS]: onCreateSubscription, onBrowseTopics, onSignIn, isAuthenticated
  * [POS]: 新用户引导组件，显示在空状态时
  */
 
@@ -17,8 +17,10 @@ import {
 interface WelcomeGuideProps {
   /** 点击创建订阅 */
   onCreateSubscription: () => void;
-  /** 点击发现主题 */
-  onDiscover: () => void;
+  /** 点击浏览 Topics（Reader 内视图） */
+  onBrowseTopics: () => void;
+  /** 打开登录弹窗（未登录时） */
+  onSignIn: () => void;
   /** 是否已登录 */
   isAuthenticated: boolean;
 }
@@ -53,7 +55,8 @@ const features = [
  */
 export function WelcomeGuide({
   onCreateSubscription,
-  onDiscover,
+  onBrowseTopics,
+  onSignIn,
   isAuthenticated,
 }: WelcomeGuideProps) {
   return (
@@ -124,17 +127,17 @@ export function WelcomeGuide({
                 <Icon icon={Add01Icon} className="mr-2 size-4" />
                 Create Subscription
               </Button>
-              <Button variant="outline" size="lg" onClick={onDiscover}>
+              <Button variant="outline" size="lg" onClick={onBrowseTopics}>
                 <Icon icon={Search01Icon} className="mr-2 size-4" />
                 Discover Topics
               </Button>
             </>
           ) : (
             <>
-              <Button asChild size="lg">
-                <a href="/login">Sign In to Get Started</a>
+              <Button size="lg" onClick={onSignIn}>
+                Sign In to Get Started
               </Button>
-              <Button variant="outline" size="lg" onClick={onDiscover}>
+              <Button variant="outline" size="lg" onClick={onBrowseTopics}>
                 <Icon icon={Search01Icon} className="mr-2 size-4" />
                 Browse Topics
               </Button>

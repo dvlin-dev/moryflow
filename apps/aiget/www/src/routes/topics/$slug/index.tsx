@@ -23,7 +23,7 @@ import {
   type DigestTopicDetail,
   type DigestEditionSummary,
 } from '@/lib/digest-api';
-import { usePublicEnv } from '../../__root';
+import { usePublicEnv } from '@/lib/public-env-context';
 
 export const Route = createFileRoute('/topics/$slug/')({
   component: TopicDetailPage,

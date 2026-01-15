@@ -21,7 +21,6 @@ export { SubscriptionSettingsDialog } from './SubscriptionSettingsDialog';
 export { RunHistoryTab } from './RunHistoryTab';
 export { LearningSuggestionsTab } from './LearningSuggestionsTab';
 export { PublishTopicDialog } from './PublishTopicDialog';
-export { TopicCard } from './TopicCard';
 export { AnimatedList, AnimatedListItem, FadeIn, SlideIn, AnimatePresence } from './AnimatedList';
 export { VirtualArticleList } from './VirtualArticleList';
 export { WelcomeGuide } from './WelcomeGuide';

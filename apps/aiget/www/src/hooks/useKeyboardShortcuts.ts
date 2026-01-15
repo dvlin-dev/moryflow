@@ -12,6 +12,8 @@ interface KeyboardShortcutsOptions {
   selectedId: string | null;
   /** 选择文章的回调 */
   onSelect: (id: string) => void;
+  /** 取消选择（Escape） */
+  onClearSelection?: () => void;
   /** 保存文章的回调 */
   onSave?: () => void;
   /** 标记不感兴趣的回调 */
@@ -43,6 +45,7 @@ export function useKeyboardShortcuts({
   items,
   selectedId,
   onSelect,
+  onClearSelection,
   onSave,
   onNotInterested,
   onOpenOriginal,
@@ -68,9 +71,18 @@ export function useKeyboardShortcuts({
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+
+      // 任意 Dialog/Drawer 打开时，避免影响后台选择（Notion 风格：modal 优先）
+      const hasOpenDialog = Boolean(
+        document.querySelector('[role="dialog"][data-state="open"], [aria-modal="true"]')
+      );
+      if (hasOpenDialog) return;
+
       // 如果在输入框中，不处理快捷键
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+      const tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
         return;
       }
 
@@ -120,6 +132,13 @@ export function useKeyboardShortcuts({
             onMarkAllRead?.();
           }
           break;
+
+        case 'escape':
+          if (onClearSelection) {
+            e.preventDefault();
+            onClearSelection();
+          }
+          break;
       }
     };
 
@@ -135,6 +154,7 @@ export function useKeyboardShortcuts({
     onOpenOriginal,
     onRefresh,
     onMarkAllRead,
+    onClearSelection,
   ]);
 
   return {

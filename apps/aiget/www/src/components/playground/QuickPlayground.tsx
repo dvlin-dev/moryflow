@@ -6,7 +6,7 @@ import { StatsBar } from './StatsBar';
 import { Turnstile } from './Turnstile';
 import { CaptchaStatus } from './CaptchaStatus';
 import { captureScreenshot, type CaptureResult } from '@/lib/api';
-import { usePublicEnv } from '@/routes/__root';
+import { usePublicEnv } from '@/lib/public-env-context';
 import { useCaptchaVerification } from '@/hooks/useCaptchaVerification';
 
 export function QuickPlayground() {

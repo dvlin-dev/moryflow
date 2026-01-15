@@ -1,9 +1,10 @@
 /**
  * [POS]: 忘记密码页面路由
  */
-import { createFileRoute } from '@tanstack/react-router';
-import { Header, Footer, Container } from '@/components/layout';
-import { ForgotPasswordForm } from '@/components/auth';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
+import { useAuthModal } from '@/components/auth/auth-modal';
+import { ReaderPage } from '@/features/reader/ReaderPage';
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,
@@ -16,15 +17,19 @@ export const Route = createFileRoute('/forgot-password')({
 });
 
 function ForgotPasswordPage() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex flex-1 items-center justify-center py-12">
-        <Container className="max-w-md">
-          <ForgotPasswordForm />
-        </Container>
-      </main>
-      <Footer />
-    </div>
-  );
+  const navigate = useNavigate();
+  const { openAuthModal } = useAuthModal();
+  const openedRef = useRef(false);
+
+  useEffect(() => {
+    if (openedRef.current) return;
+    openedRef.current = true;
+
+    openAuthModal({
+      mode: 'forgotPassword',
+      onClose: () => navigate({ to: '/' }),
+    });
+  }, [openAuthModal, navigate]);
+
+  return <ReaderPage />;
 }

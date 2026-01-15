@@ -15,16 +15,19 @@ import {
 import { Container } from './Container';
 import { Button, Icon, Skeleton, cn } from '@aiget/ui';
 import { useAuth } from '@/lib/auth-context';
+import { useAuthModal } from '@/components/auth/auth-modal';
 import { DEVELOPER_PRODUCTS, DEVELOPER_RESOURCES, type NavMenuItem } from '@/lib/navigation';
 
 export function Header() {
   const { isLoading, isAuthenticated } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const [developerMenuOpen, setDeveloperMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDevOpen, setMobileDevOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const developerMenuId = 'developer-mega-menu';
 
   // 处理 hover 开启
   const handleMouseEnter = () => {
@@ -64,12 +67,27 @@ export function Header() {
     };
   }, []);
 
+  // Esc 关闭（Notion 风格：随时退出 overlay）
+  useEffect(() => {
+    if (!developerMenuOpen && !mobileMenuOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setDeveloperMenuOpen(false);
+      setMobileMenuOpen(false);
+      setMobileDevOpen(false);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [developerMenuOpen, mobileMenuOpen]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/developer" className="flex items-center gap-2">
             <span className="text-xl font-bold tracking-tight">AIGET</span>
           </Link>
 
@@ -79,7 +97,13 @@ export function Header() {
               to="/"
               className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground rounded-lg hover:bg-muted"
             >
-              Home
+              Digest
+            </Link>
+            <Link
+              to="/developer"
+              className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground rounded-lg hover:bg-muted"
+            >
+              Developer
             </Link>
             <Link
               to="/pricing"
@@ -97,6 +121,15 @@ export function Header() {
               <button
                 ref={triggerRef}
                 onClick={() => setDeveloperMenuOpen(!developerMenuOpen)}
+                aria-haspopup="menu"
+                aria-expanded={developerMenuOpen}
+                aria-controls={developerMenuId}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setDeveloperMenuOpen(true);
+                  }
+                }}
                 className={cn(
                   'flex items-center gap-1 px-4 py-2 text-sm transition-colors rounded-lg',
                   developerMenuOpen
@@ -116,6 +149,7 @@ export function Header() {
 
               {/* Mega Menu Panel */}
               <div
+                id={developerMenuId}
                 ref={menuRef}
                 className={cn(
                   'absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[540px] origin-top transition-all duration-150',
@@ -126,7 +160,11 @@ export function Header() {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                <div className="rounded-xl border border-border bg-background shadow-lg p-6">
+                <div
+                  role="menu"
+                  aria-label="Developers"
+                  className="rounded-xl border border-border bg-background shadow-lg p-6"
+                >
                   <div className="grid grid-cols-2 gap-6">
                     {/* Products Column */}
                     <div>
@@ -194,19 +232,17 @@ export function Header() {
             {isLoading ? (
               <Skeleton className="h-9 w-20" />
             ) : isAuthenticated ? (
-              <Link to="/dashboard">
-                <Button size="sm">Dashboard</Button>
+              <Link to="/">
+                <Button size="sm">Open Digest</Button>
               </Link>
             ) : (
               <>
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button size="sm">Get Started</Button>
-                </Link>
+                <Button variant="ghost" size="sm" onClick={() => openAuthModal({ mode: 'login' })}>
+                  Sign In
+                </Button>
+                <Button size="sm" onClick={() => openAuthModal({ mode: 'register' })}>
+                  Get Started
+                </Button>
               </>
             )}
           </div>
@@ -234,7 +270,14 @@ export function Header() {
               className="px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Home
+              Digest
+            </Link>
+            <Link
+              to="/developer"
+              className="px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Developer
             </Link>
             <Link
               to="/pricing"
@@ -292,23 +335,34 @@ export function Header() {
               {isLoading ? (
                 <Skeleton className="h-9 w-full" />
               ) : isAuthenticated ? (
-                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full" size="sm">
-                    Dashboard
+                    Open Digest
                   </Button>
                 </Link>
               ) : (
                 <>
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full" size="sm">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full" size="sm">
-                      Get Started
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    size="sm"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openAuthModal({ mode: 'login' });
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    className="w-full"
+                    size="sm"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openAuthModal({ mode: 'register' });
+                    }}
+                  >
+                    Get Started
+                  </Button>
                 </>
               )}
             </div>

@@ -11,7 +11,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Header, Footer, Container } from '@/components/layout';
 import { TopicsHero, TopicListItem } from '@/components/digest';
 import { getPublicTopics, type DigestTopicSummary } from '@/lib/digest-api';
-import { usePublicEnv } from '../__root';
+import { usePublicEnv } from '@/lib/public-env-context';
 
 export const Route = createFileRoute('/topics/')({
   component: TopicsPage,

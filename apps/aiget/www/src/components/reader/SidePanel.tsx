@@ -13,6 +13,7 @@ import {
   Notification01Icon,
   Fire02Icon,
   SparklesIcon,
+  CodeIcon,
 } from '@hugeicons/core-free-icons';
 import { useAuth } from '@/lib/auth-context';
 import { UserMenu } from './UserMenu';
@@ -24,7 +25,8 @@ import type { DiscoverFeedType } from '@/features/discover/types';
 // View type for the sidebar
 export type SidePanelView =
   | { type: 'inbox'; filter: 'all' | 'saved' | string }
-  | { type: 'discover'; feed: DiscoverFeedType };
+  | { type: 'discover'; feed: DiscoverFeedType }
+  | { type: 'topics' };
 
 interface SidePanelProps {
   /** User subscriptions */
@@ -39,6 +41,12 @@ interface SidePanelProps {
   onViewChange: (view: SidePanelView) => void;
   /** Callback to open create subscription dialog */
   onCreateClick: () => void;
+  /** Callback to open auth modal (unauthenticated user area) */
+  onSignInClick?: () => void;
+  /** Callback to open topic browsing view */
+  onBrowseTopics?: () => void;
+  /** Callback to preview a topic inside Reader */
+  onPreviewTopic?: (slug: string) => void;
   /** Callback to open settings dialog for a subscription */
   onSettingsClick?: (subscription: Subscription) => void;
   /** Callback to open run history dialog for a subscription */
@@ -62,6 +70,9 @@ export function SidePanel({
   onHistoryClick,
   onSuggestionsClick,
   onPublishClick,
+  onSignInClick,
+  onBrowseTopics,
+  onPreviewTopic,
   isLoading,
 }: SidePanelProps) {
   const { user, isAuthenticated } = useAuth();
@@ -76,6 +87,9 @@ export function SidePanel({
     if (view.type === 'discover' && currentView.type === 'discover') {
       return currentView.feed === view.feed;
     }
+    if (view.type === 'topics' && currentView.type === 'topics') {
+      return true;
+    }
     return false;
   };
 
@@ -89,13 +103,15 @@ export function SidePanel({
         {isAuthenticated && user ? (
           <UserMenu user={user} stats={stats} />
         ) : (
-          <Link
-            to="/login"
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          <button
+            type="button"
+            onClick={onSignInClick}
+            disabled={!onSignInClick}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
           >
             <Icon icon={Notification01Icon} className="size-4" />
             <span>Sign in / Register</span>
-          </Link>
+          </button>
         )}
       </div>
 
@@ -128,12 +144,34 @@ export function SidePanel({
           <Icon icon={Fire02Icon} className="size-4" />
           <span>Trending</span>
         </button>
+        <button
+          onClick={() => (onBrowseTopics ? onBrowseTopics() : onViewChange({ type: 'topics' }))}
+          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors ${
+            isViewSelected({ type: 'topics' })
+              ? 'bg-accent text-foreground'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+          }`}
+        >
+          <Icon icon={Search01Icon} className="size-4" />
+          <span>Browse topics</span>
+        </button>
       </div>
+
+      <div className="p-2">
+        <Link
+          to="/developer"
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
+          <Icon icon={CodeIcon} className="size-4" />
+          <span>Developer</span>
+        </Link>
+      </div>
+
+      <Separator />
 
       {/* Featured Topics list */}
       {featuredTopicsData?.items && featuredTopicsData.items.length > 0 && (
         <>
-          <Separator />
           <div className="space-y-0.5 p-2">
             <div className="px-2 py-1">
               <span className="text-xs font-medium uppercase text-muted-foreground">
@@ -141,22 +179,34 @@ export function SidePanel({
               </span>
             </div>
             {featuredTopicsData.items.map((topic) => (
-              <Link
-                key={topic.id}
-                to="/topics/$slug"
-                params={{ slug: topic.slug }}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                <span className="truncate">{topic.title}</span>
-              </Link>
+              <div key={topic.id}>
+                {onPreviewTopic ? (
+                  <button
+                    type="button"
+                    onClick={() => onPreviewTopic(topic.slug)}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <span className="truncate">{topic.title}</span>
+                  </button>
+                ) : (
+                  <Link
+                    to="/topics/$slug"
+                    params={{ slug: topic.slug }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <span className="truncate">{topic.title}</span>
+                  </Link>
+                )}
+              </div>
             ))}
-            <Link
-              to="/discover"
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            <button
+              type="button"
+              onClick={() => (onBrowseTopics ? onBrowseTopics() : onViewChange({ type: 'topics' }))}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <Icon icon={Search01Icon} className="size-4" />
               <span>Browse all</span>
-            </Link>
+            </button>
           </div>
         </>
       )}
@@ -220,7 +270,6 @@ export function SidePanel({
             size="sm"
             className="mb-2 w-full justify-start gap-2 text-muted-foreground"
             onClick={onCreateClick}
-            disabled={!isAuthenticated}
           >
             <Icon icon={Add01Icon} className="size-4" />
             <span>New Subscription</span>
@@ -278,15 +327,27 @@ export function SidePanel({
               </div>
               <div className="space-y-0.5">
                 {userTopics.map((topic) => (
-                  <Link
-                    key={topic.id}
-                    to="/topics/$slug"
-                    params={{ slug: topic.slug }}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <Icon icon={Notification01Icon} className="size-4" />
-                    <span className="truncate">{topic.title}</span>
-                  </Link>
+                  <div key={topic.id}>
+                    {onPreviewTopic ? (
+                      <button
+                        type="button"
+                        onClick={() => onPreviewTopic(topic.slug)}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <Icon icon={Notification01Icon} className="size-4" />
+                        <span className="truncate">{topic.title}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        to="/topics/$slug"
+                        params={{ slug: topic.slug }}
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <Icon icon={Notification01Icon} className="size-4" />
+                        <span className="truncate">{topic.title}</span>
+                      </Link>
+                    )}
+                  </div>
                 ))}
               </div>
             </>

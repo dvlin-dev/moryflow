@@ -13,9 +13,11 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Docs 外链入口：`https://docs.aiget.dev`
 - Fetchx Demo Playground（验证码保护）
 - Digest Public Pages（SEO）：Topics / Editions（`/topics`）
-- Digest Console Pages（Session）：Inbox / Dashboard（调用 `server.aiget.dev` 的 Digest Console API）
-- **首页 Reader 三栏布局**：Discover / Inbox / Article Detail
+- **首页 Reader 三栏布局**：Discover Feed / Topics 浏览与预览 / Inbox / Article Detail
+- Reader 内操作不跳页：登录/注册/忘记密码通过全局 Auth 弹窗完成
+- Reader-only：不保留 `/settings` 等独立用户页面路由
 - Pricing / Code Examples / CTA
+- Root error boundary：异常时展示友好兜底页（`routes/__root.tsx`）
 
 ## Constraints
 
@@ -48,6 +50,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 | `components/layout/`     | Header, Footer                  |
 | `features/digest/`       | Digest API, hooks, types        |
 | `features/discover/`     | Discover feed API, hooks, types |
+| `features/reader/`       | Reader page composition         |
 | `hooks/`                 | Custom hooks                    |
 | `lib/`                   | API calls, utilities            |
 | `types/`                 | Type definitions                |
@@ -117,8 +120,11 @@ routes/
 ├── index.tsx       # Homepage (Reader three-column layout)
 ├── fetchx.tsx      # Fetchx module page (/fetchx)
 ├── memox.tsx       # Memox module page (/memox)
+├── login.tsx       # Auth route (opens Auth modal over Reader)
+├── register.tsx    # Auth route (opens Auth modal over Reader)
+├── forgot-password.tsx # Auth route (opens Auth modal over Reader)
 ├── topics/         # Public topic pages
-└── discover/       # Discover page
+└── developer.tsx   # Developer hub page (/developer)
 ```
 
 ## Key Files
@@ -138,13 +144,13 @@ routes/
 
 ```
 未登录用户:
-  默认显示 Discover (Featured) → 可切换 Trending → 显示 DiscoverDetail
+  默认显示 Discover Feed (Featured) → 可切换 Trending / Browse topics → 右栏预览
 
 已登录用户（有订阅）:
   默认显示 Inbox (All) → 可切换 Saved/Subscription → 显示 ArticleDetail
 
 已登录用户（无订阅）:
-  默认显示 WelcomeGuide
+  默认显示 Inbox 空状态（WelcomeGuide）→ 引导创建订阅 / 浏览 Topics
 ```
 
 ## Common Modification Scenarios
