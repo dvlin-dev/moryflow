@@ -20,3 +20,4 @@ export * from './site-crawl.service';
 export * from './source.service';
 export * from './feedback.service';
 export * from './notification.service';
+export * from './discover.service';

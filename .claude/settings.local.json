@@ -90,7 +90,8 @@
       "Bash(timeout 30 pnpm:*)",
       "Bash(ping:*)",
       "WebSearch",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基于 TanStack Start（SSR），包含 Fetchx Demo Playground。
+Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基于 TanStack Start（SSR），包含 Fetchx Demo Playground 和 Digest Reader 首页。
 
 ## Responsibilities
 
@@ -14,6 +14,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Fetchx Demo Playground（验证码保护）
 - Digest Public Pages（SEO）：Topics / Editions（`/topics`）
 - Digest Console Pages（Session）：Inbox / Dashboard（调用 `server.aiget.dev` 的 Digest Console API）
+- **首页 Reader 三栏布局**：Discover / Inbox / Article Detail
 - Pricing / Code Examples / CTA
 
 ## Constraints
@@ -37,19 +38,39 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 
 ## Directory Structure
 
-| Directory                | Description                   |
-| ------------------------ | ----------------------------- |
-| `routes/`                | File-based routing (TanStack) |
-| `components/landing/`    | Landing page sections         |
-| `components/memox/`      | Memox module page sections    |
-| `components/playground/` | Demo playground UI            |
-| `components/layout/`     | Header, Footer                |
-| `hooks/`                 | Custom hooks                  |
-| `lib/`                   | API calls, utilities          |
-| `types/`                 | Type definitions              |
-| `styles/`                | Global styles                 |
+| Directory                | Description                     |
+| ------------------------ | ------------------------------- |
+| `routes/`                | File-based routing (TanStack)   |
+| `components/reader/`     | Reader layout components        |
+| `components/landing/`    | Landing page sections           |
+| `components/memox/`      | Memox module page sections      |
+| `components/playground/` | Demo playground UI              |
+| `components/layout/`     | Header, Footer                  |
+| `features/digest/`       | Digest API, hooks, types        |
+| `features/discover/`     | Discover feed API, hooks, types |
+| `hooks/`                 | Custom hooks                    |
+| `lib/`                   | API calls, utilities            |
+| `types/`                 | Type definitions                |
+| `styles/`                | Global styles                   |
 
 ## Components
+
+### Reader Components (首页)
+
+| Component                    | Description                                     |
+| ---------------------------- | ----------------------------------------------- |
+| `ReaderLayout`               | Three-column layout container                   |
+| `MobileReaderLayout`         | Mobile-optimized layout                         |
+| `SidePanel`                  | Left sidebar (Discover/Inbox/Subscriptions)     |
+| `ArticleList`                | Middle column article list (Inbox)              |
+| `ArticleCard`                | Article card in list                            |
+| `ArticleDetail`              | Right column article detail                     |
+| `DiscoverFeedList`           | Middle column discover feed (Featured/Trending) |
+| `DiscoverFeedCard`           | Discover feed item card                         |
+| `DiscoverDetail`             | Right column discover item detail               |
+| `WelcomeGuide`               | Welcome guide for new users                     |
+| `CreateSubscriptionDialog`   | Create subscription dialog                      |
+| `SubscriptionSettingsDialog` | Subscription settings dialog                    |
 
 ### Landing Sections
 
@@ -74,46 +95,76 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 | `PresetButtons`   | Quick preset URLs         |
 | `Turnstile`       | Cloudflare captcha        |
 
+## Features
+
+### Digest Feature (`features/digest/`)
+
+- `api.ts` - Digest API functions (subscriptions, inbox, runs, topics)
+- `hooks.ts` - React Query hooks for digest operations
+- `types.ts` - TypeScript type definitions
+
+### Discover Feature (`features/discover/`)
+
+- `api.ts` - Discover API functions (feed, featured/trending topics)
+- `hooks.ts` - React Query hooks for discover operations
+- `types.ts` - TypeScript type definitions
+
 ## Routes
 
 ```
 routes/
 ├── __root.tsx      # Root layout
-├── index.tsx       # Aiget Dev homepage (/)
+├── index.tsx       # Homepage (Reader three-column layout)
 ├── fetchx.tsx      # Fetchx module page (/fetchx)
-└── memox.tsx       # Memox module page (/memox)
+├── memox.tsx       # Memox module page (/memox)
+├── topics/         # Public topic pages
+└── discover/       # Discover page
 ```
 
 ## Key Files
 
-| File                              | Description               |
-| --------------------------------- | ------------------------- |
-| `lib/api.ts`                      | Demo scrape API calls     |
-| `lib/env.ts`                      | Public environment config |
-| `hooks/useCaptchaVerification.ts` | Turnstile captcha hook    |
-| `entry-client.tsx`                | Client hydration          |
-| `entry-server.tsx`                | SSR entry point           |
+| File                              | Description                    |
+| --------------------------------- | ------------------------------ |
+| `lib/api-client.ts`               | API client with cookie auth    |
+| `lib/api-paths.ts`                | Centralized API path constants |
+| `lib/env.ts`                      | Public environment config      |
+| `hooks/useCaptchaVerification.ts` | Turnstile captcha hook         |
+| `hooks/useKeyboardShortcuts.ts`   | Reader keyboard shortcuts      |
+| `hooks/useIsMobile.ts`            | Mobile detection hook          |
+| `entry-client.tsx`                | Client hydration               |
+| `entry-server.tsx`                | SSR entry point                |
 
-## Demo Flow
+## Homepage View Flow
 
 ```
-User enters URL → Captcha verification → Demo API call → Display result
+未登录用户:
+  默认显示 Discover (Featured) → 可切换 Trending → 显示 DiscoverDetail
+
+已登录用户（有订阅）:
+  默认显示 Inbox (All) → 可切换 Saved/Subscription → 显示 ArticleDetail
+
+已登录用户（无订阅）:
+  默认显示 WelcomeGuide
 ```
 
 ## Common Modification Scenarios
 
-| Scenario            | Files to Modify                         | Notes                    |
-| ------------------- | --------------------------------------- | ------------------------ |
-| Add landing section | `components/landing/`                   | Create section component |
-| Update pricing      | `components/landing/PricingSection.tsx` |                          |
-| Change playground   | `components/playground/`                |                          |
-| Add captcha rule    | `hooks/useCaptchaVerification.ts`       |                          |
+| Scenario             | Files to Modify                         | Notes                    |
+| -------------------- | --------------------------------------- | ------------------------ |
+| Add landing section  | `components/landing/`                   | Create section component |
+| Update pricing       | `components/landing/PricingSection.tsx` |                          |
+| Change playground    | `components/playground/`                |                          |
+| Add captcha rule     | `hooks/useCaptchaVerification.ts`       |                          |
+| Update reader layout | `components/reader/`                    |                          |
+| Add digest API       | `features/digest/api.ts`                |                          |
+| Add discover API     | `features/discover/api.ts`              |                          |
 
 ## Dependencies
 
 ```
 www/
 ├── @tanstack/start - SSR framework
+├── @tanstack/react-query - Data fetching
 ├── @aiget/ui - UI components
 ├── @hugeicons/core-free-icons - Icon library
 ├── turnstile - Cloudflare captcha

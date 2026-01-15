@@ -8,3 +8,4 @@ export * from './digest-console-run.controller';
 export * from './digest-console-topic.controller';
 export * from './digest-public-topic.controller';
 export * from './digest-admin.controller';
+export * from './digest-discover.controller';

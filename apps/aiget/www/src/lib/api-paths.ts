@@ -15,6 +15,13 @@ export const DIGEST_PUBLIC_API = {
   TOPICS: '/api/v1/digest/topics',
 } as const;
 
+// Discover Public API (no auth)
+export const DISCOVER_API = {
+  FEED: '/api/v1/discover/feed',
+  FEATURED_TOPICS: '/api/v1/discover/featured-topics',
+  TRENDING_TOPICS: '/api/v1/discover/trending-topics',
+} as const;
+
 // User API
 export const USER_API = {
   ME: '/api/v1/user/me',

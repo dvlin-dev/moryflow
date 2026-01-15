@@ -2,7 +2,7 @@
  * Homepage - Reader Layout
  *
  * [INPUT]: None
- * [OUTPUT]: Three-column reader layout with sidebar, article list, and detail
+ * [OUTPUT]: Three-column reader layout with sidebar, article/discover list, and detail
  * [POS]: aiget.dev homepage - Main entry point
  */
 
@@ -18,16 +18,21 @@ import {
   useMarkAllAsRead,
   useInboxItemContent,
 } from '@/features/digest/hooks';
+import { useDiscoverFeed } from '@/features/discover';
+import type { DiscoverFeedType, DiscoverFeedItem } from '@/features/discover/types';
 import {
   ReaderLayout,
   SidePanel,
   ArticleList,
   ArticleDetail,
+  DiscoverFeedList,
+  DiscoverDetail,
   CreateSubscriptionDialog,
   SubscriptionSettingsDialog,
   PublishTopicDialog,
   WelcomeGuide,
   type FilterState,
+  type SidePanelView,
 } from '@/components/reader';
 import { MobileReaderLayout } from '@/components/reader/MobileReaderLayout';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -71,9 +76,13 @@ function HomePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // View state
-  const [selectedView, setSelectedView] = useState<'all' | 'saved' | string>('all');
+  // View state - default to discover for unauthenticated users
+  const [currentView, setCurrentView] = useState<SidePanelView>({
+    type: 'discover',
+    feed: 'featured',
+  });
   const [selectedArticle, setSelectedArticle] = useState<InboxItem | null>(null);
+  const [selectedDiscoverItem, setSelectedDiscoverItem] = useState<DiscoverFeedItem | null>(null);
   const [filter, setFilter] = useState<FilterState>('all');
 
   // Dialog state
@@ -87,9 +96,20 @@ function HomePage() {
   const { data: userTopicsData } = useUserTopics();
   const { data: statsData } = useInboxStats();
 
+  // Discover feed query
+  const discoverFeedType = currentView.type === 'discover' ? currentView.feed : 'featured';
+  const {
+    data: discoverData,
+    isLoading: discoverLoading,
+    refetch: refetchDiscover,
+    isRefetching: isDiscoverRefetching,
+  } = useDiscoverFeed(discoverFeedType);
+
   // Determine subscription ID for inbox query
   const subscriptionId =
-    selectedView !== 'all' && selectedView !== 'saved' ? selectedView : undefined;
+    currentView.type === 'inbox' && currentView.filter !== 'all' && currentView.filter !== 'saved'
+      ? currentView.filter
+      : undefined;
 
   // Inbox query with filters
   const {
@@ -99,7 +119,10 @@ function HomePage() {
     isRefetching,
   } = useInboxItems({
     subscriptionId,
-    state: selectedView === 'saved' ? 'SAVED' : filterStateToInboxState(filter),
+    state:
+      currentView.type === 'inbox' && currentView.filter === 'saved'
+        ? 'SAVED'
+        : filterStateToInboxState(filter),
     limit: 50,
   });
 
@@ -114,16 +137,23 @@ function HomePage() {
 
   // Get current list title
   const getListTitle = useCallback(() => {
-    if (selectedView === 'all') return 'All';
-    if (selectedView === 'saved') return 'Saved';
-    const subscription = subscriptionsData?.items.find((s) => s.id === selectedView);
-    return subscription?.name || 'Inbox';
-  }, [selectedView, subscriptionsData]);
+    if (currentView.type === 'discover') {
+      return currentView.feed === 'featured' ? 'Featured' : 'Trending';
+    }
+    if (currentView.type === 'inbox') {
+      if (currentView.filter === 'all') return 'All';
+      if (currentView.filter === 'saved') return 'Saved';
+      const subscription = subscriptionsData?.items.find((s) => s.id === currentView.filter);
+      return subscription?.name || 'Inbox';
+    }
+    return 'Inbox';
+  }, [currentView, subscriptionsData]);
 
-  // Handle article selection
+  // Handle article selection (for inbox)
   const handleSelectArticle = useCallback(
     (item: InboxItem) => {
       setSelectedArticle(item);
+      setSelectedDiscoverItem(null);
 
       // Mark as read if unread
       if (!item.readAt) {
@@ -132,6 +162,12 @@ function HomePage() {
     },
     [updateItemState]
   );
+
+  // Handle discover item selection
+  const handleSelectDiscoverItem = useCallback((item: DiscoverFeedItem) => {
+    setSelectedDiscoverItem(item);
+    setSelectedArticle(null);
+  }, []);
 
   // Handle save/unsave
   const handleSave = useCallback(
@@ -161,15 +197,21 @@ function HomePage() {
     markAllAsRead.mutate(subscriptionId);
   }, [markAllAsRead, subscriptionId]);
 
-  // Handle subscription selection
-  function handleSelectSubscription(_id: string | null, view: 'all' | 'saved' | string) {
-    setSelectedView(view);
+  // Handle view change from sidebar
+  const handleViewChange = useCallback((view: SidePanelView) => {
+    setCurrentView(view);
     setSelectedArticle(null);
+    setSelectedDiscoverItem(null);
     setFilter('all');
-  }
+  }, []);
+
+  // Handle feed type change
+  const handleFeedTypeChange = useCallback((feedType: DiscoverFeedType) => {
+    setCurrentView({ type: 'discover', feed: feedType });
+    setSelectedDiscoverItem(null);
+  }, []);
 
   // Handle opening settings dialog for a subscription
-  // Used by settings, history, and suggestions - dialog handles tab selection internally
   function handleOpenSettingsDialog(subscription: Subscription) {
     setSelectedSubscription(subscription);
     setSettingsDialogOpen(true);
@@ -203,9 +245,10 @@ function HomePage() {
   const subscriptions = subscriptionsData?.items || [];
   const userTopics = userTopicsData?.items || [];
   const inboxItems = inboxData?.items || [];
+  const discoverItems = discoverData?.items || [];
   const stats = statsData || null;
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (only for inbox view)
   useKeyboardShortcuts({
     items: inboxItems,
     selectedId: selectedArticle?.id || null,
@@ -222,22 +265,47 @@ function HomePage() {
     onOpenOriginal: handleOpenOriginal,
     onRefresh: () => refetchInbox(),
     onMarkAllRead: handleMarkAllRead,
-    enabled: !createDialogOpen && !settingsDialogOpen && !publishDialogOpen,
+    enabled:
+      currentView.type === 'inbox' &&
+      !createDialogOpen &&
+      !settingsDialogOpen &&
+      !publishDialogOpen,
   });
 
   // Select first article when inbox loads
   useEffect(() => {
-    if (inboxItems.length > 0 && !selectedArticle) {
+    if (currentView.type === 'inbox' && inboxItems.length > 0 && !selectedArticle) {
       setSelectedArticle(inboxItems[0]);
     }
-  }, [inboxItems, selectedArticle]);
+  }, [currentView.type, inboxItems, selectedArticle]);
+
+  // Select first discover item when discover loads
+  useEffect(() => {
+    if (currentView.type === 'discover' && discoverItems.length > 0 && !selectedDiscoverItem) {
+      setSelectedDiscoverItem(discoverItems[0]);
+    }
+  }, [currentView.type, discoverItems, selectedDiscoverItem]);
+
+  // Switch to inbox view when authenticated user has subscriptions
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && !subscriptionsLoading && subscriptions.length > 0) {
+      // Only switch if currently on discover view
+      if (currentView.type === 'discover') {
+        setCurrentView({ type: 'inbox', filter: 'all' });
+      }
+    }
+  }, [isAuthenticated, authLoading, subscriptionsLoading, subscriptions.length, currentView.type]);
 
   // Mobile detection
   const isMobile = useIsMobile();
 
-  // Check if should show welcome guide
+  // Check if should show welcome guide (only for empty inbox view)
   const showWelcome =
-    !authLoading && !subscriptionsLoading && subscriptions.length === 0 && inboxItems.length === 0;
+    currentView.type === 'inbox' &&
+    !authLoading &&
+    !subscriptionsLoading &&
+    subscriptions.length === 0 &&
+    inboxItems.length === 0;
 
   // Sidebar component
   const sidebar = (
@@ -245,8 +313,8 @@ function HomePage() {
       subscriptions={subscriptions}
       userTopics={userTopics}
       stats={stats}
-      selectedView={selectedView}
-      onSelect={handleSelectSubscription}
+      currentView={currentView}
+      onViewChange={handleViewChange}
       onCreateClick={() => setCreateDialogOpen(true)}
       onSettingsClick={handleOpenSettingsDialog}
       onHistoryClick={handleOpenSettingsDialog}
@@ -256,50 +324,77 @@ function HomePage() {
     />
   );
 
-  // Article list component
-  const articleList = (
-    <ArticleList
-      items={inboxItems}
-      selectedId={selectedArticle?.id || null}
-      onSelect={handleSelectArticle}
-      title={getListTitle()}
-      filter={filter}
-      onFilterChange={setFilter}
-      onRefresh={() => refetchInbox()}
-      onMarkAllRead={handleMarkAllRead}
-      isLoading={inboxLoading}
-      isRefreshing={isRefetching}
-    />
-  );
+  // List component - conditionally render based on view type
+  const listComponent =
+    currentView.type === 'discover' ? (
+      <DiscoverFeedList
+        items={discoverItems}
+        selectedId={selectedDiscoverItem?.id || null}
+        onSelect={handleSelectDiscoverItem}
+        feedType={discoverFeedType}
+        onFeedTypeChange={handleFeedTypeChange}
+        onRefresh={() => refetchDiscover()}
+        isLoading={discoverLoading}
+        isRefreshing={isDiscoverRefetching}
+      />
+    ) : (
+      <ArticleList
+        items={inboxItems}
+        selectedId={selectedArticle?.id || null}
+        onSelect={handleSelectArticle}
+        title={getListTitle()}
+        filter={filter}
+        onFilterChange={setFilter}
+        onRefresh={() => refetchInbox()}
+        onMarkAllRead={handleMarkAllRead}
+        isLoading={inboxLoading}
+        isRefreshing={isRefetching}
+      />
+    );
 
-  // Article detail component - show welcome guide if no content
-  const articleDetail = showWelcome ? (
-    <WelcomeGuide
-      onCreateSubscription={() => setCreateDialogOpen(true)}
-      onDiscover={handleDiscover}
-      isAuthenticated={isAuthenticated}
-    />
-  ) : (
-    <ArticleDetail
-      item={selectedArticle}
-      onSave={handleSave}
-      onNotInterested={handleNotInterested}
-      fullContent={contentData?.markdown ?? null}
-      isLoadingContent={isLoadingContent}
-      isSaving={updateItemState.isPending}
-    />
-  );
+  // Detail component - conditionally render based on view type and state
+  const detailComponent = (() => {
+    if (showWelcome) {
+      return (
+        <WelcomeGuide
+          onCreateSubscription={() => setCreateDialogOpen(true)}
+          onDiscover={handleDiscover}
+          isAuthenticated={isAuthenticated}
+        />
+      );
+    }
+
+    if (currentView.type === 'discover') {
+      return <DiscoverDetail item={selectedDiscoverItem} />;
+    }
+
+    return (
+      <ArticleDetail
+        item={selectedArticle}
+        onSave={handleSave}
+        onNotInterested={handleNotInterested}
+        fullContent={contentData?.markdown ?? null}
+        isLoadingContent={isLoadingContent}
+        isSaving={updateItemState.isPending}
+      />
+    );
+  })();
 
   // Render mobile layout on small screens
   if (isMobile) {
+    const hasSelectedItem =
+      currentView.type === 'discover' ? !!selectedDiscoverItem : !!selectedArticle;
     return (
       <>
         <MobileReaderLayout
           sidebar={sidebar}
-          list={articleList}
-          detail={articleDetail}
-          hasSelectedArticle={!!selectedArticle}
-          onBack={() => setSelectedArticle(null)}
+          list={listComponent}
+          detail={detailComponent}
+          hasSelectedArticle={hasSelectedItem}
+          onBack={() => {
+            setSelectedArticle(null);
+            setSelectedDiscoverItem(null);
+          }}
         />
         <CreateSubscriptionDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
         <SubscriptionSettingsDialog
@@ -319,7 +414,7 @@ function HomePage() {
 
   return (
     <>
-      <ReaderLayout sidebar={sidebar} list={articleList} detail={articleDetail} />
+      <ReaderLayout sidebar={sidebar} list={listComponent} detail={detailComponent} />
 
       {/* Dialogs */}
       <CreateSubscriptionDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
