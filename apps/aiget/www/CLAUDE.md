@@ -18,7 +18,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Reader-only：不保留 `/settings` 等独立用户页面路由
 - Pricing / Code Examples / CTA
 - Root error boundary：异常时展示友好兜底页（`routes/__root.tsx`）
-- Build chunk 拆分：通过 `vite.config.ts` 的 `manualChunks` + SSR `noExternal` 控制首包体积
+- Build chunk 拆分：通过 `vite.config.ts` 的 `manualChunks` 控制首包体积（SSR 需避免与 external 冲突）
 
 ## Constraints
 
@@ -31,7 +31,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - Vite `vite-tsconfig-paths` 需跳过 `archive/external-repos`，避免外部仓库 tsconfig 解析失败
-- `vite.config.ts` 中的 `build.rollupOptions.output.manualChunks` 与 `ssr.noExternal` 需保持一致（否则 SSR build 会失败）
+- `vite.config.ts` 中 `manualChunks` 必须使用「函数形式」（基于 `id` 判断），避免 SSR build external 依赖导致 Rollup 报错（`react` 典型）。
 
 ## 环境变量
 

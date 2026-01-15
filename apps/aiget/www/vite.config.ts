@@ -32,15 +32,20 @@ const VENDOR_CHUNKS: Record<string, string[]> = {
   'vendor-icons': ['@hugeicons/core-free-icons'],
 };
 
-// react/react-dom 必须保持 external，否则 SSR 时 CJS 格式在 ESM 环境中不兼容
-const SSR_EXTERNAL_ALWAYS = ['react', 'react-dom'];
-const SSR_NO_EXTERNAL = Array.from(
-  new Set(
-    Object.values(VENDOR_CHUNKS)
-      .flat()
-      .filter((pkg) => !SSR_EXTERNAL_ALWAYS.includes(pkg))
-  )
-);
+const SSR_NO_EXTERNAL = Array.from(new Set(Object.values(VENDOR_CHUNKS).flat()));
+
+function manualChunks(id: string) {
+  if (!id.includes('node_modules')) return undefined;
+
+  const normalized = id.replaceAll('\\', '/');
+  for (const [chunkName, packages] of Object.entries(VENDOR_CHUNKS)) {
+    for (const pkg of packages) {
+      if (normalized.includes(`/node_modules/${pkg}/`)) return chunkName;
+    }
+  }
+
+  return undefined;
+}
 
 export default defineConfig({
   plugins: [
@@ -69,16 +74,16 @@ export default defineConfig({
          * 降低 `main` chunk 体积告警：把大依赖拆到更稳定的 vendor chunks，提高缓存命中。
          *
          * 注意：TanStack Start 会在一次 `vite build` 内执行 client + SSR 两次构建；
-         * SSR build 中部分依赖会被 external；对应依赖见下方 `ssr.noExternal`。
+         * SSR build 中部分依赖可能被 external，所以不能使用「对象形式」强行把包塞进 chunk。
+         * 这里使用基于 `id` 的函数形式，让 SSR external 的模块自然跳过。
          */
-        manualChunks: VENDOR_CHUNKS,
+        manualChunks,
       },
     },
   },
   ssr: {
     /**
-     * 保证 SSR build 中这些依赖不被 external，否则 Rollup 会拒绝把 external 依赖放入 manualChunks。
-     * 这里只列出手动拆分的 vendor 入口依赖，避免扩大 SSR bundle 范围。
+     * SSR build 若需要 bundling 特定依赖（CJS/转译等），再把依赖加入这里。
      */
     noExternal: SSR_NO_EXTERNAL,
   },
