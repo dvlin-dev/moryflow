@@ -21,6 +21,8 @@ export default [
       '**/dist/**',
       '**/node_modules/**',
       '**/.turbo/**',
+      '**/.tanstack/**',
+      '**/routeTree.gen.*',
       'pnpm-lock.yaml',
       '**/generated/**',
       'apps/aiget/server/test/**',
