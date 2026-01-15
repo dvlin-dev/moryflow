@@ -149,7 +149,7 @@ export function RegisterForm({
       <div className={cn('flex flex-col gap-6', className)} {...props}>
         <Card className="overflow-hidden border-border">
           <CardContent className="p-6 md:p-8">
-            <Form {...otpForm}>
+            <Form key="otp-form" {...otpForm}>
               <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-6">
                 <div className="flex flex-col items-center gap-2 text-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -184,14 +184,8 @@ export function RegisterForm({
                             autoComplete="one-time-code"
                             disabled={isLoading}
                             className="text-center font-mono text-lg tracking-widest"
-                            name={field.name}
-                            ref={field.ref}
-                            value={field.value}
-                            onBlur={field.onBlur}
-                            onChange={(e) => {
-                              const numericValue = e.target.value.replace(/\D/g, '');
-                              field.onChange(numericValue);
-                            }}
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
                           />
                         </FormControl>
                         <FormMessage />
