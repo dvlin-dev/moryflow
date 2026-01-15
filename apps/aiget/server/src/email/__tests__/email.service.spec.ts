@@ -6,12 +6,11 @@
  * - 发送邮件（通过 mock 验证）
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import { EmailService } from '../email.service';
 
-// Mock Resend - 使用 class mock
-const mockSend = vi.fn();
+// Mock Resend - 使用 hoisted mock，确保在 ESM/transform 环境中稳定生效
+const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
 vi.mock('resend', () => ({
   Resend: class MockResend {
     emails = {
@@ -21,7 +20,12 @@ vi.mock('resend', () => ({
 }));
 
 describe('EmailService', () => {
+  let EmailServiceCtor: typeof import('../email.service').EmailService;
   let mockConfig: Record<string, string>;
+
+  beforeAll(async () => {
+    ({ EmailService: EmailServiceCtor } = await import('../email.service'));
+  });
 
   beforeEach(() => {
     mockSend.mockReset();
@@ -39,7 +43,7 @@ describe('EmailService', () => {
     const mockConfigService = {
       get: vi.fn((key: string) => config[key]),
     };
-    return new EmailService(mockConfigService as unknown as ConfigService);
+    return new EmailServiceCtor(mockConfigService as unknown as ConfigService);
   }
 
   describe('sendEmail', () => {
