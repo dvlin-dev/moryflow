@@ -91,10 +91,12 @@ function HomePage() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
 
-  // Data queries
-  const { data: subscriptionsData, isLoading: subscriptionsLoading } = useSubscriptions();
-  const { data: userTopicsData } = useUserTopics();
-  const { data: statsData } = useInboxStats();
+  // Data queries - only fetch when authenticated
+  const { data: subscriptionsData, isLoading: subscriptionsLoading } = useSubscriptions(undefined, {
+    enabled: isAuthenticated,
+  });
+  const { data: userTopicsData } = useUserTopics({ enabled: isAuthenticated });
+  const { data: statsData } = useInboxStats({ enabled: isAuthenticated });
 
   // Discover feed query
   const discoverFeedType = currentView.type === 'discover' ? currentView.feed : 'featured';
@@ -111,20 +113,23 @@ function HomePage() {
       ? currentView.filter
       : undefined;
 
-  // Inbox query with filters
+  // Inbox query with filters - only fetch when authenticated
   const {
     data: inboxData,
     isLoading: inboxLoading,
     refetch: refetchInbox,
     isRefetching,
-  } = useInboxItems({
-    subscriptionId,
-    state:
-      currentView.type === 'inbox' && currentView.filter === 'saved'
-        ? 'SAVED'
-        : filterStateToInboxState(filter),
-    limit: 50,
-  });
+  } = useInboxItems(
+    {
+      subscriptionId,
+      state:
+        currentView.type === 'inbox' && currentView.filter === 'saved'
+          ? 'SAVED'
+          : filterStateToInboxState(filter),
+      limit: 50,
+    },
+    { enabled: isAuthenticated }
+  );
 
   // Mutations
   const updateItemState = useUpdateInboxItemState();

@@ -41,10 +41,14 @@ export const digestKeys = {
 
 // ========== Subscription Hooks ==========
 
-export function useSubscriptions(params?: SubscriptionQueryParams) {
+export function useSubscriptions(
+  params?: SubscriptionQueryParams,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [...digestKeys.subscriptions(), params],
     queryFn: () => api.fetchSubscriptions(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -148,17 +152,19 @@ export function useInboxItemContent(itemId: string | null) {
   });
 }
 
-export function useInboxItems(params?: InboxQueryParams) {
+export function useInboxItems(params?: InboxQueryParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: digestKeys.inboxItems(params),
     queryFn: () => api.fetchInboxItems(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function useInboxStats() {
+export function useInboxStats(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: digestKeys.inboxStats(),
     queryFn: () => api.fetchInboxStats(),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -204,10 +210,11 @@ export function useRuns(subscriptionId: string, params?: RunQueryParams) {
 
 // ========== Topic Hooks ==========
 
-export function useUserTopics() {
+export function useUserTopics(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: digestKeys.topics(),
     queryFn: () => api.fetchUserTopics(),
+    enabled: options?.enabled ?? true,
   });
 }
 
