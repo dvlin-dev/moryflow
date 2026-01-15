@@ -32,7 +32,15 @@ const VENDOR_CHUNKS: Record<string, string[]> = {
   'vendor-icons': ['@hugeicons/core-free-icons'],
 };
 
-const SSR_NO_EXTERNAL = Array.from(new Set(Object.values(VENDOR_CHUNKS).flat()));
+// SSR 必须保证 React 相关依赖为 external：否则会在不同 chunks 中重复打包 React，导致 hooks dispatcher 不一致（`useRef` 读到 null）。
+const SSR_EXTERNAL_ALWAYS = ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'];
+const SSR_NO_EXTERNAL = Array.from(
+  new Set(
+    Object.values(VENDOR_CHUNKS)
+      .flat()
+      .filter((pkg) => !SSR_EXTERNAL_ALWAYS.includes(pkg))
+  )
+);
 
 function manualChunks(id: string) {
   if (!id.includes('node_modules')) return undefined;
@@ -48,6 +56,12 @@ function manualChunks(id: string) {
 }
 
 export default defineConfig({
+  nitro: {
+    /**
+     * 生产构建必须允许 external（否则 Nitro 会把依赖拆进 `_libs/*`，React 可能在不同 chunks 中重复实例化，导致 SSR hooks 崩溃）。
+     */
+    noExternals: false,
+  },
   plugins: [
     tsconfigPaths({
       ignoreConfigErrors: true,
@@ -85,6 +99,7 @@ export default defineConfig({
     /**
      * SSR build 若需要 bundling 特定依赖（CJS/转译等），再把依赖加入这里。
      */
+    external: SSR_EXTERNAL_ALWAYS,
     noExternal: SSR_NO_EXTERNAL,
   },
   server: {

@@ -261,6 +261,13 @@ Aiget/
 
 - TanStack 生成物（如 `**/.tanstack/**`、`**/routeTree.gen.*`）视为 **generated**：禁止手改，避免格式化/校验导致无意义的 diff 和 Vite 反复 reload。
 
+### Nitro（TanStack Start SSR）打包规范
+
+- **避免 SSR runtime hooks 崩溃（`useRef` 读取 null）**：Nitro 构建必须避免把 React 在多个 SSR chunks 中重复实例化。
+  - 现象：线上 SSR 500，日志形如 `Cannot read properties of null (reading 'useRef')`，栈顶常见 `@tanstack/react-store` / `useSyncExternalStoreWithSelector` / `useRouterState`。
+  - 原因：React 被拆成多个实例（不同 chunk 各自打包了一份 React），renderer 设置 dispatcher 的 React 实例与组件调用 hooks 的 React 实例不一致。
+  - **要求**：TanStack Start 项目在 `vite.config.ts` 中显式配置 `nitro.noExternals=false`（或等价 Nitro 配置），确保 server bundle 不会产生多份 React 实例。
+
 ---
 
 ## 工作流程

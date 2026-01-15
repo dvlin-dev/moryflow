@@ -32,6 +32,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - Vite `vite-tsconfig-paths` 需跳过 `archive/external-repos`，避免外部仓库 tsconfig 解析失败
 - `vite.config.ts` 中 `manualChunks` 必须使用「函数形式」（基于 `id` 判断），避免 SSR build external 依赖导致 Rollup 报错（`react` 典型）。
+- SSR 必须保持 `react`/`react-dom`（含 `react/jsx-runtime`）为 external，避免 React 在多个 SSR chunks 中被重复打包导致 hooks dispatcher 不一致（线上会报 `useRef` 读取 null）。
 
 ## 环境变量
 
