@@ -18,6 +18,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Reader-only：不保留 `/settings` 等独立用户页面路由
 - Pricing / Code Examples / CTA
 - Root error boundary：异常时展示友好兜底页（`routes/__root.tsx`）
+- Build chunk 拆分：通过 `vite.config.ts` 的 `manualChunks` + SSR `noExternal` 控制首包体积
 
 ## Constraints
 
@@ -30,6 +31,7 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - Vite `vite-tsconfig-paths` 需跳过 `archive/external-repos`，避免外部仓库 tsconfig 解析失败
+- `vite.config.ts` 中的 `build.rollupOptions.output.manualChunks` 与 `ssr.noExternal` 需保持一致（否则 SSR build 会失败）
 
 ## 环境变量
 
@@ -40,21 +42,22 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 
 ## Directory Structure
 
-| Directory                | Description                     |
-| ------------------------ | ------------------------------- |
-| `routes/`                | File-based routing (TanStack)   |
-| `components/reader/`     | Reader layout components        |
-| `components/landing/`    | Landing page sections           |
-| `components/memox/`      | Memox module page sections      |
-| `components/playground/` | Demo playground UI              |
-| `components/layout/`     | Header, Footer                  |
-| `features/digest/`       | Digest API, hooks, types        |
-| `features/discover/`     | Discover feed API, hooks, types |
-| `features/reader/`       | Reader page composition         |
-| `hooks/`                 | Custom hooks                    |
-| `lib/`                   | API calls, utilities            |
-| `types/`                 | Type definitions                |
-| `styles/`                | Global styles                   |
+| Directory                     | Description                         |
+| ----------------------------- | ----------------------------------- |
+| `routes/`                     | File-based routing (TanStack)       |
+| `components/reader/`          | Reader layout components            |
+| `components/landing/`         | Landing page sections               |
+| `components/memox/`           | Memox module page sections          |
+| `components/playground/`      | Demo playground UI                  |
+| `components/layout/`          | Header, Footer                      |
+| `features/digest/`            | Digest API, hooks, types            |
+| `features/discover/`          | Discover feed API, hooks, types     |
+| `features/reader/`            | Reader page composition             |
+| `features/reader/components/` | Reader composition components (SRP) |
+| `hooks/`                      | Custom hooks                        |
+| `lib/`                        | API calls, utilities                |
+| `types/`                      | Type definitions                    |
+| `styles/`                     | Global styles                       |
 
 ## Components
 
@@ -68,12 +71,20 @@ Aiget Dev 官网（`aiget.dev`），包含模块页 `/fetchx`、`/memox`。基�
 | `ArticleList`                | Middle column article list (Inbox)              |
 | `ArticleCard`                | Article card in list                            |
 | `ArticleDetail`              | Right column article detail                     |
+| `MarkdownView`               | Lazy markdown renderer (react-markdown chunk)   |
 | `DiscoverFeedList`           | Middle column discover feed (Featured/Trending) |
 | `DiscoverFeedCard`           | Discover feed item card                         |
 | `DiscoverDetail`             | Right column discover item detail               |
+| `TopicBrowseList`            | Middle column topics browse (Reader 内)         |
+| `TopicPreviewDetail`         | Right column topic preview (Reader 内)          |
 | `WelcomeGuide`               | Welcome guide for new users                     |
 | `CreateSubscriptionDialog`   | Create subscription dialog                      |
 | `SubscriptionSettingsDialog` | Subscription settings dialog                    |
+| `ReaderScaffold`             | Desktop/Mobile 壳层切换（feature composition）  |
+| `ReaderListPane`             | 中栏视图切换（Discover/Topics/Inbox）           |
+| `ReaderDetailPane`           | 右栏视图切换（Welcome/Discover/Topic/Article）  |
+| `ReaderDialogs`              | Reader 内操作弹窗统一出口                       |
+| `ReaderPaneFallback`         | 懒加载视图占位（Notion 风格骨架）               |
 
 ### Landing Sections
 
@@ -129,16 +140,17 @@ routes/
 
 ## Key Files
 
-| File                              | Description                    |
-| --------------------------------- | ------------------------------ |
-| `lib/api-client.ts`               | API client with cookie auth    |
-| `lib/api-paths.ts`                | Centralized API path constants |
-| `lib/env.ts`                      | Public environment config      |
-| `hooks/useCaptchaVerification.ts` | Turnstile captcha hook         |
-| `hooks/useKeyboardShortcuts.ts`   | Reader keyboard shortcuts      |
-| `hooks/useIsMobile.ts`            | Mobile detection hook          |
-| `entry-client.tsx`                | Client hydration               |
-| `entry-server.tsx`                | SSR entry point                |
+| File                              | Description                               |
+| --------------------------------- | ----------------------------------------- |
+| `lib/api-client.ts`               | API client with cookie auth               |
+| `lib/api-paths.ts`                | Centralized API path constants            |
+| `lib/env.ts`                      | Public environment config                 |
+| `hooks/useCaptchaVerification.ts` | Turnstile captcha hook                    |
+| `hooks/useKeyboardShortcuts.ts`   | Reader keyboard shortcuts                 |
+| `hooks/useIsMobile.ts`            | Mobile detection hook                     |
+| `entry-client.tsx`                | Client hydration                          |
+| `entry-server.tsx`                | SSR entry point                           |
+| `vite.config.ts`                  | Vite/Nitro/TanStack Start config + chunks |
 
 ## Homepage View Flow
 

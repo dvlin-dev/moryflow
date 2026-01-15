@@ -3,8 +3,7 @@
  * [POS]: Right column article detail with actions and content
  */
 
-import Markdown from 'react-markdown';
-import rehypeSanitize from 'rehype-sanitize';
+import { lazy, Suspense } from 'react';
 import {
   ScrollArea,
   Button,
@@ -19,6 +18,10 @@ import { StarIcon, ThumbsDownIcon, SquareArrowUpRightIcon } from '@hugeicons/cor
 import { AISummaryCard } from './AISummaryCard';
 import { formatDate } from '@/lib/date';
 import type { InboxItem } from '@/features/digest/types';
+
+const LazyMarkdownView = lazy(() =>
+  import('./MarkdownView').then((m) => ({ default: m.MarkdownView }))
+);
 
 interface ArticleDetailProps {
   /** The article to display */
@@ -69,7 +72,19 @@ export function ArticleDetail({
     if (fullContent) {
       return (
         <div className="article-content">
-          <Markdown rehypePlugins={[rehypeSanitize]}>{fullContent}</Markdown>
+          <Suspense
+            fallback={
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            }
+          >
+            <LazyMarkdownView markdown={fullContent} />
+          </Suspense>
         </div>
       );
     }

@@ -21,40 +21,19 @@ import {
   useUserTopics,
   useFollowTopic,
 } from '@/features/digest/hooks';
-import type { InboxItem, InboxItemState, Subscription } from '@/features/digest/types';
+import type { InboxItem, Subscription } from '@/features/digest/types';
 import type { DigestTopicSummary } from '@/lib/digest-api';
 import { useAuth } from '@/lib/auth-context';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobileReaderLayout } from '@/components/reader/MobileReaderLayout';
-import { ReaderLayout } from '@/components/reader/ReaderLayout';
 import { SidePanel, type SidePanelView } from '@/components/reader/SidePanel';
-import { ArticleList } from '@/components/reader/ArticleList';
-import { ArticleDetail } from '@/components/reader/ArticleDetail';
-import { DiscoverFeedList } from '@/components/reader/DiscoverFeedList';
-import { DiscoverDetail } from '@/components/reader/DiscoverDetail';
-import { WelcomeGuide } from '@/components/reader/WelcomeGuide';
-import { CreateSubscriptionDialog } from '@/components/reader/CreateSubscriptionDialog';
-import { SubscriptionSettingsDialog } from '@/components/reader/SubscriptionSettingsDialog';
-import { PublishTopicDialog } from '@/components/reader/PublishTopicDialog';
-import { TopicBrowseList } from '@/components/reader/TopicBrowseList';
-import { TopicPreviewDetail } from '@/components/reader/TopicPreviewDetail';
-
-type FilterState = 'all' | 'unread' | 'saved' | 'not_interested';
-
-function filterStateToInboxState(filter: FilterState): InboxItemState | undefined {
-  switch (filter) {
-    case 'unread':
-      return 'UNREAD';
-    case 'saved':
-      return 'SAVED';
-    case 'not_interested':
-      return 'NOT_INTERESTED';
-    default:
-      return undefined;
-  }
-}
+import { ReaderDialogs } from './components/ReaderDialogs';
+import { ReaderDetailPane } from './components/ReaderDetailPane';
+import { ReaderListPane } from './components/ReaderListPane';
+import { ReaderScaffold } from './components/ReaderScaffold';
+import type { FilterState } from './reader.types';
+import { filterStateToInboxState } from './reader.types';
 
 export function ReaderPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -269,6 +248,19 @@ export function ReaderPage() {
     setFilter('all');
   }, []);
 
+  const handleCreateDialogOpenChange = useCallback((next: boolean) => {
+    setCreateDialogOpen(next);
+    if (!next) {
+      setCreateDialogInitialTopic(undefined);
+    }
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setSelectedArticle(null);
+    setSelectedDiscoverItem(null);
+    setSelectedTopicSlug(null);
+  }, []);
+
   const handleSignIn = useCallback(() => {
     openAuthModal({ mode: 'login' });
   }, [openAuthModal]);
@@ -366,158 +358,84 @@ export function ReaderPage() {
     return subscription?.name || 'Inbox';
   }, [currentView, subscriptionsData?.items]);
 
-  const listComponent = (() => {
-    if (currentView.type === 'discover') {
-      return (
-        <DiscoverFeedList
-          items={discoverItems}
-          selectedId={selectedDiscoverItem?.id || null}
-          onSelect={handleSelectDiscoverItem}
-          feedType={discoverFeedType}
-          onFeedTypeChange={(feedType) => setCurrentView({ type: 'discover', feed: feedType })}
-          onRefresh={() => refetchDiscover()}
-          isLoading={discoverLoading}
-          isRefreshing={isDiscoverRefetching}
-        />
-      );
-    }
+  const listComponent = (
+    <ReaderListPane
+      currentView={currentView}
+      discoverItems={discoverItems}
+      selectedDiscoverItemId={selectedDiscoverItem?.id || null}
+      onSelectDiscoverItem={handleSelectDiscoverItem}
+      discoverFeedType={discoverFeedType}
+      onDiscoverFeedTypeChange={(feedType) => setCurrentView({ type: 'discover', feed: feedType })}
+      onDiscoverRefresh={() => refetchDiscover()}
+      isDiscoverLoading={discoverLoading}
+      isDiscoverRefreshing={isDiscoverRefetching}
+      selectedTopicSlug={selectedTopicSlug}
+      followedTopicIds={followedTopicIds}
+      onSelectTopic={handleSelectTopic}
+      onFollowTopic={handleFollowTopic}
+      onCreateSubscription={openCreateSubscription}
+      inboxItems={inboxItems}
+      selectedArticleId={selectedArticle?.id || null}
+      onSelectArticle={handleSelectArticle}
+      inboxTitle={inboxTitle}
+      filter={filter}
+      onFilterChange={setFilter}
+      onInboxRefresh={() => refetchInbox()}
+      onMarkAllRead={handleMarkAllRead}
+      isInboxLoading={inboxLoading}
+      isInboxRefreshing={isRefetching}
+    />
+  );
 
-    if (currentView.type === 'topics') {
-      return (
-        <TopicBrowseList
-          enabled={true}
-          selectedSlug={selectedTopicSlug}
-          followedTopicIds={followedTopicIds}
-          onSelectTopic={handleSelectTopic}
-          onFollowTopic={handleFollowTopic}
-          onCreateSubscription={openCreateSubscription}
-        />
-      );
-    }
+  const detailComponent = (
+    <ReaderDetailPane
+      currentView={currentView}
+      showWelcome={showWelcome}
+      isAuthenticated={isAuthenticated}
+      selectedDiscoverItem={selectedDiscoverItem}
+      onPreviewTopic={openTopicPreview}
+      selectedTopicSlug={selectedTopicSlug}
+      followedTopicIds={followedTopicIds}
+      onFollowTopicBySlug={handleFollowTopicBySlug}
+      selectedArticle={selectedArticle}
+      onSave={handleSave}
+      onNotInterested={handleNotInterested}
+      fullContent={contentData?.markdown ?? null}
+      isLoadingContent={isLoadingContent}
+      isSaving={updateItemState.isPending}
+      onCreateSubscription={openCreateSubscription}
+      onBrowseTopics={() => handleViewChange({ type: 'topics' })}
+      onSignIn={handleSignIn}
+    />
+  );
 
-    return (
-      <ArticleList
-        items={inboxItems}
-        selectedId={selectedArticle?.id || null}
-        onSelect={handleSelectArticle}
-        title={inboxTitle}
-        filter={filter}
-        onFilterChange={setFilter}
-        onRefresh={() => refetchInbox()}
-        onMarkAllRead={handleMarkAllRead}
-        isLoading={inboxLoading}
-        isRefreshing={isRefetching}
-      />
-    );
-  })();
-
-  const detailComponent = (() => {
-    if (showWelcome) {
-      return (
-        <WelcomeGuide
-          onCreateSubscription={() => openCreateSubscription()}
-          onBrowseTopics={() => handleViewChange({ type: 'topics' })}
-          onSignIn={handleSignIn}
-          isAuthenticated={isAuthenticated}
-        />
-      );
-    }
-
-    if (currentView.type === 'discover') {
-      return <DiscoverDetail item={selectedDiscoverItem} onPreviewTopic={openTopicPreview} />;
-    }
-
-    if (currentView.type === 'topics') {
-      return (
-        <TopicPreviewDetail
-          slug={selectedTopicSlug}
-          followedTopicIds={followedTopicIds}
-          onFollowTopic={handleFollowTopicBySlug}
-        />
-      );
-    }
-
-    return (
-      <ArticleDetail
-        item={selectedArticle}
-        onSave={handleSave}
-        onNotInterested={handleNotInterested}
-        fullContent={contentData?.markdown ?? null}
-        isLoadingContent={isLoadingContent}
-        isSaving={updateItemState.isPending}
-      />
-    );
-  })();
-
-  if (isMobile) {
-    const hasSelectedItem =
-      currentView.type === 'discover'
-        ? Boolean(selectedDiscoverItem)
-        : currentView.type === 'topics'
-          ? Boolean(selectedTopicSlug)
-          : Boolean(selectedArticle);
-
-    return (
-      <>
-        <MobileReaderLayout
-          sidebar={sidebar}
-          list={listComponent}
-          detail={detailComponent}
-          hasSelectedArticle={hasSelectedItem}
-          onBack={() => {
-            setSelectedArticle(null);
-            setSelectedDiscoverItem(null);
-            setSelectedTopicSlug(null);
-          }}
-        />
-        <CreateSubscriptionDialog
-          open={createDialogOpen}
-          initialTopic={createDialogInitialTopic}
-          onOpenChange={(next) => {
-            setCreateDialogOpen(next);
-            if (!next) {
-              setCreateDialogInitialTopic(undefined);
-            }
-          }}
-        />
-        <SubscriptionSettingsDialog
-          subscription={selectedSubscription}
-          open={settingsDialogOpen}
-          onOpenChange={setSettingsDialogOpen}
-          onPublishClick={handleOpenPublish}
-        />
-        <PublishTopicDialog
-          subscription={selectedSubscription}
-          open={publishDialogOpen}
-          onOpenChange={setPublishDialogOpen}
-        />
-      </>
-    );
-  }
+  const hasSelectedItem =
+    currentView.type === 'discover'
+      ? Boolean(selectedDiscoverItem)
+      : currentView.type === 'topics'
+        ? Boolean(selectedTopicSlug)
+        : Boolean(selectedArticle);
 
   return (
     <>
-      <ReaderLayout sidebar={sidebar} list={listComponent} detail={detailComponent} />
-      <CreateSubscriptionDialog
-        open={createDialogOpen}
-        initialTopic={createDialogInitialTopic}
-        onOpenChange={(next) => {
-          setCreateDialogOpen(next);
-          if (!next) {
-            setCreateDialogInitialTopic(undefined);
-          }
-        }}
+      <ReaderScaffold
+        isMobile={isMobile}
+        sidebar={sidebar}
+        list={listComponent}
+        detail={detailComponent}
+        hasSelectedItem={hasSelectedItem}
+        onBack={handleBack}
       />
-      <SubscriptionSettingsDialog
-        subscription={selectedSubscription}
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
+      <ReaderDialogs
+        createDialogOpen={createDialogOpen}
+        createDialogInitialTopic={createDialogInitialTopic}
+        onCreateDialogOpenChange={handleCreateDialogOpenChange}
+        settingsDialogOpen={settingsDialogOpen}
+        onSettingsDialogOpenChange={setSettingsDialogOpen}
+        publishDialogOpen={publishDialogOpen}
+        onPublishDialogOpenChange={setPublishDialogOpen}
+        selectedSubscription={selectedSubscription}
         onPublishClick={handleOpenPublish}
-      />
-      <PublishTopicDialog
-        subscription={selectedSubscription}
-        open={publishDialogOpen}
-        onOpenChange={setPublishDialogOpen}
       />
     </>
   );
