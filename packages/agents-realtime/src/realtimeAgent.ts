@@ -4,7 +4,7 @@ import {
   Handoff,
   TextOutput,
   UnknownContext,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import { RealtimeContextData } from './realtimeSession';
 
 export type RealtimeAgentConfiguration<TContext = UnknownContext> = Partial<

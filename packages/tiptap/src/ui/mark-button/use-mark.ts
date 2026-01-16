@@ -8,13 +8,13 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { isMarkInSchema, isNodeTypeSelected } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { BoldIcon } from "@aiget/ui/icons/bold-icon"
-import { Code2Icon } from "@aiget/ui/icons/code2-icon"
-import { ItalicIcon } from "@aiget/ui/icons/italic-icon"
-import { StrikeIcon } from "@aiget/ui/icons/strike-icon"
-import { SubscriptIcon } from "@aiget/ui/icons/subscript-icon"
-import { SuperscriptIcon } from "@aiget/ui/icons/superscript-icon"
-import { UnderlineIcon } from "@aiget/ui/icons/underline-icon"
+import { BoldIcon } from "@anyhunt/ui/icons/bold-icon"
+import { Code2Icon } from "@anyhunt/ui/icons/code2-icon"
+import { ItalicIcon } from "@anyhunt/ui/icons/italic-icon"
+import { StrikeIcon } from "@anyhunt/ui/icons/strike-icon"
+import { SubscriptIcon } from "@anyhunt/ui/icons/subscript-icon"
+import { SuperscriptIcon } from "@anyhunt/ui/icons/superscript-icon"
+import { UnderlineIcon } from "@anyhunt/ui/icons/underline-icon"
 
 export type Mark =
   | "bold"

@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/api",
+  "name": "@anyhunt/api",
   "version": "1.0.0",
   "description": "共享 API 类型和常量，供 PC 和 Mobile 共用",
   "main": "dist/index.js",
@@ -21,14 +21,16 @@
       "import": "./dist/cloud-sync/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "scripts": {
     "build": "tsc-multi",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aiget/sync": "workspace:*"
+    "@anyhunt/sync": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

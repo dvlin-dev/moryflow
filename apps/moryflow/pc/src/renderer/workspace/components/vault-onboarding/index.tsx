@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
 import { ArrowLeft, FolderPlus, FolderOpen, Cloud } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import type { VaultOnboardingProps, OnboardingView } from './const'

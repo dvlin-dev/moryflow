@@ -6,7 +6,7 @@ import { NodeSelection } from "@tiptap/pm/state"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { ChevronDownIcon } from "@aiget/ui/icons/chevron-down-icon"
+import { ChevronDownIcon } from "@anyhunt/ui/icons/chevron-down-icon"
 
 // --- Tiptap UI ---
 import type { Level } from "../heading-button"

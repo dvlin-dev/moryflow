@@ -17,7 +17,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { AtSignIcon } from "@aiget/ui/icons/at-sign-icon"
+import { AtSignIcon } from "@anyhunt/ui/icons/at-sign-icon"
 
 export const MENTION_TRIGGER_SHORTCUT_KEY = "mod+shift+2"
 

@@ -3,14 +3,14 @@ import { Loader2 } from 'lucide-react'
 
 import { useTranslation } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { Button } from '@aiget/ui/components/button'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@aiget/ui/components/field'
+import { Button } from '@anyhunt/ui/components/button'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@anyhunt/ui/components/field'
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from '@aiget/ui/components/input-otp'
+} from '@anyhunt/ui/components/input-otp'
 import { emailOtp } from '@/lib/server/client'
 import { preRegisterApi } from '@/lib/server'
 

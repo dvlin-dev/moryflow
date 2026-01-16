@@ -9,9 +9,9 @@ import {
   MessageAction,
   MessageActions,
   MessageContent,
-} from '@aiget/ui/ai/message'
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@aiget/ui/ai/reasoning'
-import { Shimmer } from '@aiget/ui/ai/shimmer'
+} from '@anyhunt/ui/ai/message'
+import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning'
+import { Shimmer } from '@anyhunt/ui/ai/shimmer'
 import {
   MessageAttachment,
   MessageAttachments,

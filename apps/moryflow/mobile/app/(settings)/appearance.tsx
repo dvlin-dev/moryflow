@@ -11,7 +11,7 @@ import * as React from 'react'
 import { Icon } from '@/components/ui/icon'
 import { useTheme, type Theme } from '@/lib/hooks/use-theme'
 import { useThemeColors } from '@/lib/theme'
-import { useTranslation } from '@aiget/i18n'
+import { useTranslation } from '@anyhunt/i18n'
 import {
   SettingsGroup,
   SettingsRow,

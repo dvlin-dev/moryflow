@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import { parseAuthError } from '@aiget/api'
+import { parseAuthError } from '@anyhunt/api'
 import { signIn, signUp, signOut, setStoredToken, clearStoredToken, getStoredToken } from './client'
 import { fetchCurrentUser, fetchMembershipModels } from './api'
 import type { UserInfo, MembershipModel, MembershipAuthState } from './types'

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAITracingExporter } from '../src/openaiTracingExporter';
 import { HEADERS } from '../src/defaults';
-import { createCustomSpan } from '@aiget/agents-core';
+import { createCustomSpan } from '@anyhunt/agents-core';
 
 describe('OpenAITracingExporter', () => {
   const fakeSpan = createCustomSpan({
@@ -104,8 +104,8 @@ describe('OpenAITracingExporter', () => {
     const setTraceProcessors = vi.fn();
     const BatchTraceProcessor = vi.fn().mockImplementation((exp) => ({ exp }));
     vi.resetModules();
-    vi.doMock('@aiget/agents-core', async () => {
-      const actual = await vi.importActual<any>('@aiget/agents-core');
+    vi.doMock('@anyhunt/agents-core', async () => {
+      const actual = await vi.importActual<any>('@anyhunt/agents-core');
       return { ...actual, BatchTraceProcessor, setTraceProcessors };
     });
     const mod = await import('../src/openaiTracingExporter');

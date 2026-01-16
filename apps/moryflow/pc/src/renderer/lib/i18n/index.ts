@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: PC 端 i18n 模块统一导出
- * [DEPENDS]: @aiget/i18n, local modules
+ * [DEPENDS]: /i18n, local modules
  * [POS]: 入口文件，供组件导入使用
  */
 
@@ -27,4 +27,4 @@ export {
   getDateLocale,
   formatDate,
   formatSmartRelativeTime,
-} from '@aiget/i18n'
+} from '@anyhunt/i18n'

@@ -1,5 +1,5 @@
 import { Loader2Icon, PlusIcon } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
+import { Button } from '@anyhunt/ui/components/button'
 
 export const LoadingHint = ({ text }: { text: string }) => (
   <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">

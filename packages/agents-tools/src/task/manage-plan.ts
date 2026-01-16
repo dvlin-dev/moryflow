@@ -1,6 +1,6 @@
-import { tool, type RunContext } from '@aiget/agents'
+import { tool, type RunContext } from '@anyhunt/agents'
 import { z } from 'zod'
-import type { AgentContext } from '@aiget/agents-runtime'
+import type { AgentContext } from '@anyhunt/agents-runtime'
 import { toolSummarySchema } from '../shared'
 
 /** 任务状态 */

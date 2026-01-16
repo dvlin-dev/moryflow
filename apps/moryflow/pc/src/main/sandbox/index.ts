@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: 沙盒服务 - 管理命令执行的沙盒环境
- * [DEPENDS]: @aiget/agents-sandbox
+ * [DEPENDS]: /agents-sandbox
  * [POS]: Main 进程核心模块，提供安全的命令执行能力
  */
 
@@ -11,7 +11,7 @@ import {
   type SandboxConfig,
   type SandboxMode,
   type AuthChoice,
-} from '@aiget/agents-sandbox'
+} from '@anyhunt/agents-sandbox'
 
 /** 沙盒设置存储 */
 const settingsStore = new Store<{

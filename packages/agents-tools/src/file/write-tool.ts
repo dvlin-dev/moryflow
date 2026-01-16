@@ -1,8 +1,8 @@
-import { tool, type RunContext } from '@aiget/agents'
+import { tool, type RunContext } from '@anyhunt/agents'
 import { applyPatch } from 'diff'
 import { z } from 'zod'
-import type { PlatformCapabilities, CryptoUtils } from '@aiget/agents-adapter'
-import type { AgentContext, VaultUtils } from '@aiget/agents-runtime'
+import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter'
+import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime'
 import { toolSummarySchema, trimPreview } from '../shared'
 
 /**

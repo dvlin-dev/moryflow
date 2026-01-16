@@ -13,7 +13,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { AiSparklesIcon } from "@aiget/ui/icons/ai-sparkles-icon"
+import { AiSparklesIcon } from "@anyhunt/ui/icons/ai-sparkles-icon"
 
 export interface UseAiAskConfig {
   /**

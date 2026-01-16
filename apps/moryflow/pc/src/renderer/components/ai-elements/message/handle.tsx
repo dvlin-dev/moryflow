@@ -5,7 +5,7 @@ import {
   useContext,
 } from "react";
 
-import type { MessageBranchContextType } from "@aiget/ui/ai/message";
+import type { MessageBranchContextType } from "@anyhunt/ui/ai/message";
 
 export const MessageBranchContext = createContext<MessageBranchContextType | null>(
   null

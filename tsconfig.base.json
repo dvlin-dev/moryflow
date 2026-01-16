@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Aiget Base Config",
+  "display": "Anyhunt Base Config",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

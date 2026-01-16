@@ -309,7 +309,7 @@ export class AuthFacadeController {
       'http://localhost:3001',
     ];
 
-    if (!trustedOrigins.includes(origin) && !origin.endsWith('.aiget.dev')) {
+    if (!trustedOrigins.includes(origin) && !origin.endsWith('.anyhunt.app')) {
       throw new ForbiddenException('Untrusted origin');
     }
   }

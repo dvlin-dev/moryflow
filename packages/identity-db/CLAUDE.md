@@ -51,7 +51,7 @@
 ## 使用方式
 
 ```typescript
-import { PrismaClient, type User } from '@aiget/identity-db';
+import { PrismaClient, type User } from '@anyhunt/identity-db';
 
 // 创建实例（消费方负责单例管理）
 const prisma = new PrismaClient();
@@ -76,21 +76,21 @@ const subscription = await prisma.subscription.create({
 
 ```bash
 # identity schema 数据库连接（各业务线分别配置）
-IDENTITY_DATABASE_URL=postgresql://user:pass@localhost:5432/aiget?schema=identity
+IDENTITY_DATABASE_URL=postgresql://user:pass@localhost:5432/anyhunt?schema=identity
 ```
 
 ## 命令
 
 ```bash
 # 生成 Prisma Client
-pnpm --filter @aiget/identity-db prisma:generate
+pnpm --filter @anyhunt/identity-db prisma:generate
 
 # 推送 schema 到数据库（开发用）
-pnpm --filter @aiget/identity-db prisma:push
+pnpm --filter @anyhunt/identity-db prisma:push
 
 # 创建迁移
-pnpm --filter @aiget/identity-db prisma:migrate
+pnpm --filter @anyhunt/identity-db prisma:migrate
 
 # 打开 Prisma Studio
-pnpm --filter @aiget/identity-db prisma:studio
+pnpm --filter @anyhunt/identity-db prisma:studio
 ```

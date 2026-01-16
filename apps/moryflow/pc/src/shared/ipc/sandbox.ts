@@ -3,7 +3,7 @@
  * [USED_BY]: preload, renderer, main/sandbox
  */
 
-import type { AuthChoice, SandboxMode } from '@aiget/agents-sandbox'
+import type { AuthChoice, SandboxMode } from '@anyhunt/agents-sandbox'
 
 /** 沙盒授权请求 */
 export interface SandboxAuthRequest {

@@ -5,9 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@aiget/ui/components/dialog'
-import { Button } from '@aiget/ui/components/button'
-import { Badge } from '@aiget/ui/components/badge'
+} from '@anyhunt/ui/components/dialog'
+import { Button } from '@anyhunt/ui/components/button'
+import { Badge } from '@anyhunt/ui/components/badge'
 import { Loader2, Coins, Sparkles, Gem, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchProducts } from '@/lib/server/api'

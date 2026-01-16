@@ -7,7 +7,7 @@
  */
 
 import { Injectable, Inject, UnauthorizedException, ForbiddenException } from '@nestjs/common';
-import type { PrismaClient } from '@aiget/identity-db';
+import type { PrismaClient } from '@anyhunt/identity-db';
 import type { Auth } from '../better-auth';
 import { AUTH_INSTANCE } from '../guards/session.guard';
 import { AUTH_COOKIE_NAME, COOKIE_DOMAIN, SESSION_TTL_SECONDS } from '../constants';

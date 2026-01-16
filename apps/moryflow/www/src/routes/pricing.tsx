@@ -6,7 +6,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import { Tick02Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 
 export const Route = createFileRoute('/pricing')({

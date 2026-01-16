@@ -17,12 +17,12 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { HeadingOneIcon } from "@aiget/ui/icons/heading-one-icon"
-import { HeadingTwoIcon } from "@aiget/ui/icons/heading-two-icon"
-import { HeadingThreeIcon } from "@aiget/ui/icons/heading-three-icon"
-import { HeadingFourIcon } from "@aiget/ui/icons/heading-four-icon"
-import { HeadingFiveIcon } from "@aiget/ui/icons/heading-five-icon"
-import { HeadingSixIcon } from "@aiget/ui/icons/heading-six-icon"
+import { HeadingOneIcon } from "@anyhunt/ui/icons/heading-one-icon"
+import { HeadingTwoIcon } from "@anyhunt/ui/icons/heading-two-icon"
+import { HeadingThreeIcon } from "@anyhunt/ui/icons/heading-three-icon"
+import { HeadingFourIcon } from "@anyhunt/ui/icons/heading-four-icon"
+import { HeadingFiveIcon } from "@anyhunt/ui/icons/heading-five-icon"
+import { HeadingSixIcon } from "@anyhunt/ui/icons/heading-six-icon"
 
 export type Level = 1 | 2 | 3 | 4 | 5 | 6
 

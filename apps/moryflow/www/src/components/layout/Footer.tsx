@@ -5,7 +5,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import { Mail01Icon, FavouriteIcon } from '@hugeicons/core-free-icons';
 
 const productLinks = [

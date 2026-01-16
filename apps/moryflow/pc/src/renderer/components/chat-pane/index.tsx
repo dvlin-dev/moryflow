@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
-import { CardContent } from '@aiget/ui/components/card'
+import { CardContent } from '@anyhunt/ui/components/card'
 import { IpcChatTransport } from '@/transport/ipc-chat-transport'
 import { getModelContextWindow } from '@shared/model-registry'
 import { useAuth } from '@/lib/server'

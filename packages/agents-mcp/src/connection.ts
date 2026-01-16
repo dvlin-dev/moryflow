@@ -3,7 +3,7 @@
  * 平台无关的连接、重试逻辑
  */
 
-import type { MCPServer } from '@aiget/agents'
+import type { MCPServer } from '@anyhunt/agents'
 import type { ServerConnectionResult } from './types'
 
 const LOG_PREFIX = '[mcp]'

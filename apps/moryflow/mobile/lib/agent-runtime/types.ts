@@ -2,9 +2,9 @@
  * Mobile Agent Runtime 类型定义
  */
 
-import type { Agent, RunStreamEvent } from '@aiget/agents'
-import type { AgentContext, AgentChatContext, AgentAttachmentContext } from '@aiget/agents-runtime'
-import type { Session } from '@aiget/agents'
+import type { Agent, RunStreamEvent } from '@anyhunt/agents'
+import type { AgentContext, AgentChatContext, AgentAttachmentContext } from '@anyhunt/agents-runtime'
+import type { Session } from '@anyhunt/agents'
 
 // ============ Runtime 选项 ============
 

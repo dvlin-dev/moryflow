@@ -12,7 +12,7 @@
 
 > 说明：对外文档站点是**独立项目**（不与官网耦合）：
 >
-> - Aiget Dev Docs：`apps/aiget/docs` → `docs.aiget.dev`
+> - Anyhunt Dev Docs：`apps/anyhunt/docs` → `docs.anyhunt.app`
 > - Moryflow Docs：`apps/moryflow/docs` → `docs.moryflow.com`
 
 ## 写作约束
@@ -20,7 +20,7 @@
 - 开发者相关内容使用中文；用户可见文案（若出现）使用英文。
 - 以“可执行”为目标：域名、路由、职责边界、流程与配置要能落地。
 - Markdown 文档建议包含 YAML Frontmatter（`title/date/scope/status`），便于后续文档站或索引生成。
-- Aiget Dev API 域名统一使用 `server.aiget.dev`（不再使用 `aiget.dev` 作为 API 域名）。
+- Anyhunt Dev API 域名统一使用 `server.anyhunt.app`（不再使用 `anyhunt.app` 作为 API 域名）。
 
 ## 目录结构
 
@@ -28,14 +28,14 @@
 - `docs/architecture/`：系统级架构决策与不变量（"最终真相"）；含 `adr/` 决策记录与 `auth/` 拆分文档。
 - `docs/guides/`：开发指南（如何做、最佳实践、可复用做法）。
 - `docs/runbooks/`：运行手册（部署/排障/操作清单，照做即可）。
-- `docs/products/`：产品线内的内部方案（Aiget Dev / Moryflow）。
+- `docs/products/`：产品线内的内部方案（Anyhunt Dev / Moryflow）。
 - `docs/_archived/`：已完成/归档的文档（progress.md、ui-migration-moryflow.md、console-refactor-plan.md）。
 - `docs/_archived/plans/`：已完成或阶段性结束的计划类文档（仅保留追溯价值）。
 - `docs/_archived/migrations/`：归档迁移记录。
 
 ## 最近更新
 
-- Digest 全量 Code Review：`docs/products/aiget-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）
-- www Reader/Developer 双模块布局方案：`docs/products/aiget-dev/features/www-reader-and-developer-split.md`（Reader 内操作不跳页：登录/设置弹窗；Developer 端保持 Header/Footer）
-- www Reader SRP 与 Props 收敛重构计划：`docs/products/aiget-dev/features/www-reader-srp-and-props-refactor.md`（分支视图用 ViewModel 收敛 Props，按域拆分 SRP 组件，保持现有懒加载与错误边界策略）
-- Aiget → Anyfeed 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyfeed.md`（域名/包名/环境变量/API Key 前缀/Prisma 迁移重置）
+- Digest 全量 Code Review：`docs/products/anyhunt-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）
+- www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`（Reader 内操作不跳页：登录/设置弹窗；Developer 端保持 Header/Footer）
+- www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`（分支视图用 ViewModel 收敛 Props，按域拆分 SRP 组件，保持现有懒加载与错误边界策略）
+- Aiget → Anyhunt 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyhunt.md`（域名/包名/环境变量/API Key 前缀/Prisma 迁移重置）

@@ -5,8 +5,8 @@
  */
 
 import { getStoredToken } from '@/lib/server/storage'
-import { MEMBERSHIP_API_URL } from '@aiget/api'
-import type { MembershipConfig } from '@aiget/agents-runtime'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
+import type { MembershipConfig } from '@anyhunt/agents-runtime'
 
 // 内存中的配置（运行时使用）
 let membershipConfig: MembershipConfig = {

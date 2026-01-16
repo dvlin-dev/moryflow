@@ -2,7 +2,7 @@ import { DesktopWorkspace } from '@/workspace'
 import { useDesktopWorkspace } from '@/workspace/handle'
 import { AuthProvider } from '@/lib/server'
 import { I18nProvider } from '@/lib/i18n'
-import { Toaster } from '@aiget/ui/components/sonner'
+import { Toaster } from '@anyhunt/ui/components/sonner'
 import { SandboxAuthProvider } from '@/components/sandbox'
 import { BindingConflictProvider } from '@/components/cloud-sync'
 

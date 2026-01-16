@@ -1,5 +1,5 @@
 /**
- * @aiget/agents-mcp
+ * /agents-mcp
  *
  * MCP 服务器管理包
  * 提供平台无关的 MCP 服务器连接、工具获取等功能

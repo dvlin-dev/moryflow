@@ -29,10 +29,10 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { AddColLeftIcon } from "@aiget/ui/icons/add-col-left-icon"
-import { AddColRightIcon } from "@aiget/ui/icons/add-col-right-icon"
-import { AddRowBottomIcon } from "@aiget/ui/icons/add-row-bottom-icon"
-import { AddRowTopIcon } from "@aiget/ui/icons/add-row-top-icon"
+import { AddColLeftIcon } from "@anyhunt/ui/icons/add-col-left-icon"
+import { AddColRightIcon } from "@anyhunt/ui/icons/add-col-right-icon"
+import { AddRowBottomIcon } from "@anyhunt/ui/icons/add-row-bottom-icon"
+import { AddRowTopIcon } from "@anyhunt/ui/icons/add-row-top-icon"
 
 export type RowSide = "above" | "below"
 export type ColSide = "left" | "right"

@@ -17,7 +17,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { SmilePlusIcon } from "@aiget/ui/icons/smile-plus-icon"
+import { SmilePlusIcon } from "@anyhunt/ui/icons/smile-plus-icon"
 
 export const EMOJI_TRIGGER_SHORTCUT_KEY = "mod+shift+e"
 

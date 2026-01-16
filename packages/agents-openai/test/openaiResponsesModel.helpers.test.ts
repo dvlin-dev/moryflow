@@ -6,7 +6,7 @@ import {
   getInputItems,
   convertToOutputItem,
 } from '../src/openaiResponsesModel';
-import { UserError } from '@aiget/agents-core';
+import { UserError } from '@anyhunt/agents-core';
 
 describe('getToolChoice', () => {
   it('returns default choices', () => {

@@ -9,8 +9,8 @@
  */
 
 // 从 sync 导入并重导出 VectorClock
-export type { VectorClock } from '@aiget/sync'
-import type { VectorClock } from '@aiget/sync'
+export type { VectorClock } from '@anyhunt/sync'
+import type { VectorClock } from '@anyhunt/sync'
 
 /** 单个文件条目 */
 export interface FileEntry {

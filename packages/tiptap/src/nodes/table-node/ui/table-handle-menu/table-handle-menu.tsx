@@ -16,7 +16,7 @@ import type { Orientation } from "../../lib/tiptap-table-utils"
 import { selectCellsByCoords } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { MoreVerticalIcon } from "@aiget/ui/icons/more-vertical-icon"
+import { MoreVerticalIcon } from "@anyhunt/ui/icons/more-vertical-icon"
 
 // --- UI Primitives ---
 import { Button } from "../../../../ui-primitive/button"

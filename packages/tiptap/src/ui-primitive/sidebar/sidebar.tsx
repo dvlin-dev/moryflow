@@ -8,7 +8,7 @@ import {
   useState,
 } from "react"
 import { Button } from "../button"
-import { MessageSquareIcon } from "@aiget/ui/icons/message-square-icon"
+import { MessageSquareIcon } from "@anyhunt/ui/icons/message-square-icon"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 import "./sidebar.scss"
 

@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
-import type { InterpolationParams } from '@aiget/i18n';
+import type { InterpolationParams } from '@anyhunt/i18n';
 
 import type { ActiveDocument, SelectedFile } from '../const';
 

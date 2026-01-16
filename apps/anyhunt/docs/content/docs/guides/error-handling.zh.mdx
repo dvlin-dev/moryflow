@@ -1,0 +1,348 @@
+---
+title: 错误处理
+description: 理解错误码和实现重试策略
+---
+
+# 错误处理
+
+了解如何处理 Anyhunt API 错误并实现健壮的重试策略。
+
+## 错误响应格式
+
+所有 API 错误遵循统一格式：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "人类可读的错误信息",
+    "details": {}
+  }
+}
+```
+
+## 常见错误码
+
+### 客户端错误 (4xx)
+
+| 错误码 | HTTP 状态 | 描述 |
+|--------|-----------|------|
+| `INVALID_URL` | 400 | URL 格式错误或使用不支持的协议 |
+| `URL_NOT_ALLOWED` | 400 | URL 被 SSRF 防护阻止（本地地址、私有 IP） |
+| `INVALID_PARAMETER` | 400 | 请求参数验证失败 |
+| `SELECTOR_NOT_FOUND` | 400 | 页面上未找到 CSS 选择器 |
+| `UNAUTHORIZED` | 401 | 缺少或无效的 API 密钥 |
+| `FORBIDDEN` | 403 | API 密钥缺少必要权限 |
+| `NOT_FOUND` | 404 | 资源（任务、抓取）未找到 |
+| `RATE_LIMITED` | 429 | 请求过于频繁 - 请降速 |
+| `QUOTA_EXCEEDED` | 429 | 月度配额已用完 |
+
+### 服务器错误 (5xx)
+
+| 错误码 | HTTP 状态 | 描述 |
+|--------|-----------|------|
+| `PAGE_TIMEOUT` | 504 | 页面加载超时 |
+| `BROWSER_ERROR` | 500 | 浏览器崩溃或失败 |
+| `NETWORK_ERROR` | 500 | 网络请求失败 |
+| `INTERNAL_ERROR` | 500 | 服务器内部错误 |
+
+## 处理特定错误
+
+### 频率限制
+
+被限流时，响应包含重试信息：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "请求过于频繁",
+    "details": {
+      "retryAfter": 60,
+      "limit": 100,
+      "remaining": 0,
+      "resetAt": "2024-01-15T11:00:00.000Z"
+    }
+  }
+}
+```
+
+**响应头：**
+
+| 响应头 | 描述 |
+|--------|------|
+| `X-RateLimit-Limit` | 窗口期内允许的请求数 |
+| `X-RateLimit-Remaining` | 剩余请求数 |
+| `X-RateLimit-Reset` | 窗口重置时间戳 |
+| `Retry-After` | 需等待的秒数（被限流时） |
+
+### 配额超限
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "QUOTA_EXCEEDED",
+    "message": "月度配额已超限",
+    "details": {
+      "quota": 10000,
+      "used": 10000,
+      "resetAt": "2024-02-01T00:00:00.000Z"
+    }
+  }
+}
+```
+
+### 页面超时
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PAGE_TIMEOUT",
+    "message": "页面加载超时，已等待 30000ms",
+    "details": {
+      "url": "https://slow-website.com",
+      "timeout": 30000
+    }
+  }
+}
+```
+
+## 重试策略
+
+### 指数退避
+
+对瞬时错误实现指数退避重试：
+
+```javascript
+async function scrapeWithRetry(url, options, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://server.anyhunt.app/api/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ah_your_api_key',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, ...options }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        return data;
+      }
+
+      // 客户端错误不重试（限流除外）
+      if (response.status >= 400 && response.status < 500
+          && data.error?.code !== 'RATE_LIMITED') {
+        throw new Error(`客户端错误: ${data.error?.message}`);
+      }
+
+      // 处理限流
+      if (data.error?.code === 'RATE_LIMITED') {
+        const retryAfter = data.error.details?.retryAfter || 60;
+        console.log(`被限流。等待 ${retryAfter} 秒...`);
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+
+      // 服务器错误使用指数退避重试
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // 1秒, 2秒, 4秒
+        console.log(`第 ${attempt + 1} 次尝试失败。${delay}ms 后重试...`);
+        await sleep(delay);
+      }
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error('超过最大重试次数');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+### Python 实现
+
+```python
+import time
+import requests
+from typing import Optional
+
+def scrape_with_retry(
+    url: str,
+    options: dict = None,
+    max_retries: int = 3
+) -> dict:
+    options = options or {}
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.post(
+                'https://server.anyhunt.app/api/v1/scrape',
+                headers={
+                    'Authorization': 'Bearer ah_your_api_key',
+                    'Content-Type': 'application/json',
+                },
+                json={'url': url, **options},
+            )
+
+            data = response.json()
+
+            if data.get('success'):
+                return data
+
+            error = data.get('error', {})
+            error_code = error.get('code')
+
+            # 客户端错误不重试（限流除外）
+            if 400 <= response.status_code < 500 and error_code != 'RATE_LIMITED':
+                raise Exception(f"客户端错误: {error.get('message')}")
+
+            # 处理限流
+            if error_code == 'RATE_LIMITED':
+                retry_after = error.get('details', {}).get('retryAfter', 60)
+                print(f"被限流。等待 {retry_after} 秒...")
+                time.sleep(retry_after)
+                continue
+
+            # 服务器错误使用指数退避重试
+            if attempt < max_retries:
+                delay = (2 ** attempt)
+                print(f"第 {attempt + 1} 次尝试失败。{delay} 秒后重试...")
+                time.sleep(delay)
+
+        except requests.RequestException as e:
+            if attempt == max_retries:
+                raise
+            delay = (2 ** attempt)
+            time.sleep(delay)
+
+    raise Exception('超过最大重试次数')
+```
+
+## 错误恢复模式
+
+### 熔断器
+
+使用熔断器防止级联故障：
+
+```javascript
+class CircuitBreaker {
+  constructor(threshold = 5, resetTimeout = 60000) {
+    this.failures = 0;
+    this.threshold = threshold;
+    this.resetTimeout = resetTimeout;
+    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    this.nextAttempt = 0;
+  }
+
+  async execute(fn) {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new Error('熔断器已打开');
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failures = 0;
+    this.state = 'CLOSED';
+  }
+
+  onFailure() {
+    this.failures++;
+    if (this.failures >= this.threshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.resetTimeout;
+    }
+  }
+}
+
+// 使用示例
+const breaker = new CircuitBreaker(5, 60000);
+
+async function safeScrape(url) {
+  return breaker.execute(() => scrapeWithRetry(url));
+}
+```
+
+### 优雅降级
+
+处理批量操作中的部分失败：
+
+```javascript
+async function scrapeBatchWithFallback(urls) {
+  const results = [];
+  const errors = [];
+
+  for (const url of urls) {
+    try {
+      const result = await scrapeWithRetry(url);
+      results.push({ url, success: true, data: result.data });
+    } catch (error) {
+      errors.push({ url, success: false, error: error.message });
+      // 继续处理其他 URL
+    }
+  }
+
+  return {
+    results,
+    errors,
+    successRate: results.length / urls.length,
+  };
+}
+```
+
+## 最佳实践
+
+1. **始终检查 `success` 字段** - 不要假设请求成功
+2. **实现重试机制** - 对瞬时错误使用指数退避
+3. **尊重频率限制** - 使用 `Retry-After` 响应头的值
+4. **记录错误日志** - 保留记录用于调试
+5. **设置超时** - 不要无限期等待响应
+6. **处理部分失败** - 批量操作中处理可以处理的部分
+7. **监控错误率** - 跟踪错误以及早发现问题
+
+## 调试技巧
+
+### 启用详细日志
+
+```javascript
+const response = await fetch('https://server.anyhunt.app/api/v1/scrape', {
+  // ...
+});
+
+console.log('状态码:', response.status);
+console.log('响应头:', Object.fromEntries(response.headers));
+console.log('响应体:', await response.text());
+```
+
+### 检查请求 ID
+
+每个响应都包含请求 ID，用于技术支持：
+
+```
+X-Request-Id: req_abc123xyz
+```
+
+报告问题时请提供此 ID。

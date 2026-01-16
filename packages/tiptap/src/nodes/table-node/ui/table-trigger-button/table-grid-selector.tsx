@@ -7,8 +7,8 @@ import { Button } from "../../../../ui-primitive/button"
 import { cn } from "../../../../utils/tiptap-utils"
 
 // --- Icons ---
-import { TableColumnIcon } from "@aiget/ui/icons/table-column-icon"
-import { TableRowIcon } from "@aiget/ui/icons/table-row-icon"
+import { TableColumnIcon } from "@anyhunt/ui/icons/table-column-icon"
+import { TableRowIcon } from "@anyhunt/ui/icons/table-row-icon"
 
 import "./table-grid-selector.scss"
 

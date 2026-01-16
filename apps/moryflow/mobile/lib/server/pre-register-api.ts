@@ -1,14 +1,14 @@
 /**
  * [PROVIDES]: preRegisterApi - 预注册 API
- * [DEPENDS]: @aiget/api
+ * [DEPENDS]: /api
  * [POS]: Mobile 端预注册 API，用于注册前的邮箱验证流程
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import { setStoredToken } from './storage'
-import type { BetterAuthError } from '@aiget/api'
+import type { BetterAuthError } from '@anyhunt/api'
 
 // ── 类型定义 ────────────────────────────────────────────────
 

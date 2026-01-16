@@ -4,7 +4,7 @@
  * [POS]: Card grid showcasing Mory usage scenarios
  */
 
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import { CheckmarkCircle01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 
 const scenarios = [

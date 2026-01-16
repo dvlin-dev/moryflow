@@ -22,7 +22,7 @@ import {
 import { cn } from "../../../../utils/tiptap-utils"
 
 // --- Icons ---
-import { PlusSmallIcon } from "@aiget/ui/icons/plus-small-icon"
+import { PlusSmallIcon } from "@anyhunt/ui/icons/plus-small-icon"
 
 // --- Internal ---
 import { useTableExtendRowColumnButtonsPositioning } from "../table-extend-row-column-button/use-table-extend-row-column"

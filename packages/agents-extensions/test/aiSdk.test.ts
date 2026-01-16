@@ -7,10 +7,10 @@ import {
   toolChoiceToLanguageModelFormat,
   toolToLanguageModelTool,
 } from '../src/aiSdk';
-import { protocol, withTrace, UserError } from '@aiget/agents';
+import { protocol, withTrace, UserError } from '@anyhunt/agents';
 import { ReadableStream } from 'node:stream/web';
 import type { LanguageModelV3 } from '@ai-sdk/provider';
-import type { SerializedOutputType } from '@aiget/agents';
+import type { SerializedOutputType } from '@anyhunt/agents';
 
 function stubModel(
   partial: Partial<Pick<LanguageModelV3, 'doGenerate' | 'doStream'>>,

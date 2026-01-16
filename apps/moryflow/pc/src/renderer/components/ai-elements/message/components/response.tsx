@@ -6,7 +6,7 @@ import { Streamdown } from "streamdown";
 
 import { cn } from "@/lib/utils";
 
-import type { MessageResponseProps } from "@aiget/ui/ai/message";
+import type { MessageResponseProps } from "@anyhunt/ui/ai/message";
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (

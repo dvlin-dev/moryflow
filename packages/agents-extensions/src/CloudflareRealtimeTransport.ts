@@ -2,7 +2,7 @@ import {
   RealtimeTransportLayer,
   OpenAIRealtimeWebSocket,
   OpenAIRealtimeWebSocketOptions,
-} from '@aiget/agents/realtime';
+} from '@anyhunt/agents/realtime';
 
 /**
  * An adapter transport for Cloudflare Workers (workerd) environments.

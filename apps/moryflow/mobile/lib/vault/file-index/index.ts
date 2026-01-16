@@ -10,8 +10,8 @@
  */
 
 import * as Crypto from 'expo-crypto'
-import type { FileEntry, IFileIndexManager } from '@aiget/api'
-import { createEmptyClock } from '@aiget/sync'
+import type { FileEntry, IFileIndexManager } from '@anyhunt/api'
+import { createEmptyClock } from '@anyhunt/sync'
 import { loadStore, saveStore } from './store'
 import { scanMdFiles } from './scanner'
 

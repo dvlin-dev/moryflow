@@ -2,7 +2,7 @@ import {
   JsonObjectSchema,
   ModelSettingsToolChoice,
   Prompt,
-} from '@aiget/agents-core/types';
+} from '@anyhunt/agents-core/types';
 
 export type RealtimeClientMessage = {
   type: string;

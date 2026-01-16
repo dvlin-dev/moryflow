@@ -10,7 +10,7 @@ import type {
 } from './types.ts';
 import { ApiError, NetworkError } from './errors.ts';
 
-const DEFAULT_BASE_URL = 'https://server.aiget.dev';
+const DEFAULT_BASE_URL = 'https://server.anyhunt.app';
 const DEFAULT_TIMEOUT = 30000;
 
 /** Embed 客户端接口 */

@@ -17,7 +17,7 @@ import type {
   AttachmentsContext,
   PromptInputControllerProps,
   PromptInputProviderProps,
-} from '@aiget/ui/ai/prompt-input';
+} from '@anyhunt/ui/ai/prompt-input';
 
 const PromptInputController = createContext<PromptInputControllerProps | null>(
   null,

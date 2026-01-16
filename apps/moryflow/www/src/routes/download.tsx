@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import {
   Download01Icon,
   AppleIcon,

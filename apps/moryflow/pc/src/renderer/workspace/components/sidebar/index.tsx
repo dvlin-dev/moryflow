@@ -6,8 +6,8 @@
 
 import { useCallback, useState } from 'react'
 import type { VaultTreeNode } from '@shared/ipc'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
-import { TooltipProvider } from '@aiget/ui/components/tooltip'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
+import { TooltipProvider } from '@anyhunt/ui/components/tooltip'
 import { PublishDialog } from '@/components/site-publish'
 import { SidebarNav } from './components/sidebar-nav'
 import { SidebarFiles } from './components/sidebar-files'

@@ -8,7 +8,7 @@ import {
   Usage,
   ModelBehaviorError,
   RunToolApprovalItem,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import * as utils from '../src/utils';
 import type { TransportToolCallEvent } from '../src/transportLayerEvents';
 import {

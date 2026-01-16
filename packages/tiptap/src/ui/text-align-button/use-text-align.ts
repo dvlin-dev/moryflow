@@ -14,10 +14,10 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { AlignCenterIcon } from "@aiget/ui/icons/align-center-icon"
-import { AlignJustifyIcon } from "@aiget/ui/icons/align-justify-icon"
-import { AlignLeftIcon } from "@aiget/ui/icons/align-left-icon"
-import { AlignRightIcon } from "@aiget/ui/icons/align-right-icon"
+import { AlignCenterIcon } from "@anyhunt/ui/icons/align-center-icon"
+import { AlignJustifyIcon } from "@anyhunt/ui/icons/align-justify-icon"
+import { AlignLeftIcon } from "@anyhunt/ui/icons/align-left-icon"
+import { AlignRightIcon } from "@anyhunt/ui/icons/align-right-icon"
 
 export type TextAlign = "left" | "center" | "right" | "justify"
 

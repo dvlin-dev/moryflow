@@ -12,7 +12,7 @@ import { useThemeColors } from '@/lib/theme'
 import { useCloudSync, cloudSyncApi, formatStorageSize, formatLastSyncTime } from '@/lib/cloud-sync'
 import { useUser } from '@/lib/contexts/auth.context'
 import { useAuthGuard } from '@/lib/contexts/auth-guard.context'
-import { useTranslation } from '@aiget/i18n'
+import { useTranslation } from '@anyhunt/i18n'
 import {
   CloudIcon,
   RefreshCwIcon,
@@ -23,7 +23,7 @@ import {
   SparklesIcon,
 } from 'lucide-react-native'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { UsageResponse } from '@aiget/api/cloud-sync'
+import type { UsageResponse } from '@anyhunt/api/cloud-sync'
 import Animated, {
   useAnimatedStyle,
   withRepeat,

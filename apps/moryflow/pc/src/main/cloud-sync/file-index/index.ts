@@ -10,12 +10,12 @@
  * - 向量时钟支持（v2）
  */
 
-import type { FileEntry, IFileIndexManager } from '@aiget/api'
+import type { FileEntry, IFileIndexManager } from '@anyhunt/api'
 import {
   type VectorClock,
   incrementClock as sharedIncrementClock,
   mergeVectorClocks,
-} from '@aiget/sync'
+} from '@anyhunt/sync'
 import { loadStore, saveStore } from './store.js'
 import { scanMdFiles } from './scanner.js'
 import { createLogger } from '../logger.js'

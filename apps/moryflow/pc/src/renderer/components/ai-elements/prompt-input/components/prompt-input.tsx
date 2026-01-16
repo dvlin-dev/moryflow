@@ -12,10 +12,10 @@ import {
   useState,
 } from 'react';
 
-import { InputGroup } from '@aiget/ui/components/input-group';
+import { InputGroup } from '@anyhunt/ui/components/input-group';
 import { cn } from '@/lib/utils';
 
-import type { AttachmentsContext, PromptInputProps } from '@aiget/ui/ai/prompt-input';
+import type { AttachmentsContext, PromptInputProps } from '@anyhunt/ui/ai/prompt-input';
 import {
   LocalAttachmentsContext,
   useOptionalPromptInputController,

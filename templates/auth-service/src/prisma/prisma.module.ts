@@ -1,13 +1,13 @@
 /**
  * [PROVIDES]: PrismaModule - Identity DB Prisma 客户端
- * [DEPENDS]: @aiget/identity-db, @prisma/adapter-pg
+ * [DEPENDS]: /identity-db, @prisma/adapter-pg
  * [POS]: Auth Service 数据库连接模块
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 templates/auth-service/README.md
  */
 
 import { Global, Module } from '@nestjs/common';
-import { PrismaClient } from '@aiget/identity-db';
+import { PrismaClient } from '@anyhunt/identity-db';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 export const IDENTITY_PRISMA = Symbol('IDENTITY_PRISMA');

@@ -5,7 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
-import type { Storage, SecureStorage } from '@aiget/agents-adapter'
+import type { Storage, SecureStorage } from '@anyhunt/agents-adapter'
 
 const STORAGE_PREFIX = 'agent-runtime:'
 const SECURE_STORAGE_PREFIX = 'agent-secure:'

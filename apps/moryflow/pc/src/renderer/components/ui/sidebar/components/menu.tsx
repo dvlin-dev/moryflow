@@ -2,12 +2,12 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
-import { Skeleton } from "@aiget/ui/components/skeleton"
+import { Skeleton } from "@anyhunt/ui/components/skeleton"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@aiget/ui/components/tooltip"
+} from "@anyhunt/ui/components/tooltip"
 import { cn } from "@/lib/utils"
 
 import { useSidebar } from "../handle"

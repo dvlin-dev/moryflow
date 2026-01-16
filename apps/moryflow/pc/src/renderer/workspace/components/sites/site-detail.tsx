@@ -14,12 +14,12 @@ import {
   Check,
   Loader2,
 } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { Textarea } from '@aiget/ui/components/textarea'
-import { Checkbox } from '@aiget/ui/components/checkbox'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { Textarea } from '@anyhunt/ui/components/textarea'
+import { Checkbox } from '@anyhunt/ui/components/checkbox'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +29,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
+} from '@anyhunt/ui/components/alert-dialog'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { SiteDetailProps } from './const'

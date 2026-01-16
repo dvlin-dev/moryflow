@@ -7,17 +7,17 @@ import { NodeSelection } from "@tiptap/pm/state"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { MicAiIcon } from "@aiget/ui/icons/mic-ai-icon"
-import { AiSparklesIcon } from "@aiget/ui/icons/ai-sparkles-icon"
-import { CheckAiIcon } from "@aiget/ui/icons/check-ai-icon"
-import { TextExtendIcon } from "@aiget/ui/icons/text-extend-icon"
-import { TextReduceIcon } from "@aiget/ui/icons/text-reduce-icon"
-import { Simplify2Icon } from "@aiget/ui/icons/simplify-2-icon"
-import { SmileAiIcon } from "@aiget/ui/icons/smile-ai-icon"
-import { CompleteSentenceIcon } from "@aiget/ui/icons/complete-sentence-icon"
-import { SummarizeTextIcon } from "@aiget/ui/icons/summarize-text-icon"
-import { LanguagesIcon } from "@aiget/ui/icons/languages-icon"
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon"
+import { MicAiIcon } from "@anyhunt/ui/icons/mic-ai-icon"
+import { AiSparklesIcon } from "@anyhunt/ui/icons/ai-sparkles-icon"
+import { CheckAiIcon } from "@anyhunt/ui/icons/check-ai-icon"
+import { TextExtendIcon } from "@anyhunt/ui/icons/text-extend-icon"
+import { TextReduceIcon } from "@anyhunt/ui/icons/text-reduce-icon"
+import { Simplify2Icon } from "@anyhunt/ui/icons/simplify-2-icon"
+import { SmileAiIcon } from "@anyhunt/ui/icons/smile-ai-icon"
+import { CompleteSentenceIcon } from "@anyhunt/ui/icons/complete-sentence-icon"
+import { SummarizeTextIcon } from "@anyhunt/ui/icons/summarize-text-icon"
+import { LanguagesIcon } from "@anyhunt/ui/icons/languages-icon"
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
 
 // --- Tiptap UI ---
 import {

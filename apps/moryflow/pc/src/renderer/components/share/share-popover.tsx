@@ -15,8 +15,8 @@ import {
   Check,
   FolderOpen,
 } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '@aiget/ui/components/popover'
-import { Button } from '@aiget/ui/components/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover'
+import { Button } from '@anyhunt/ui/components/button'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { PublishPanel } from './publish-panel'

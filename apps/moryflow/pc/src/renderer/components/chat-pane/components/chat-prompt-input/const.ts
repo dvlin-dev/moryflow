@@ -1,6 +1,6 @@
 import type { ChatStatus, FileUIPart } from 'ai'
 
-import type { PromptInputProps } from '@aiget/ui/ai/prompt-input'
+import type { PromptInputProps } from '@anyhunt/ui/ai/prompt-input'
 import type { SettingsSection } from '@/components/settings-dialog/const'
 import type { PlanSnapshot, TokenUsage } from '@shared/ipc'
 

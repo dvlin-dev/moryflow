@@ -9,7 +9,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-} from '@aiget/ui/components/context-menu'
+} from '@anyhunt/ui/components/context-menu'
 import { useTranslation } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { ContextMenuAction, ContextMenuItem as MenuItemType } from '../const'

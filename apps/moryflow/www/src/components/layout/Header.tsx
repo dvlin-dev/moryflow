@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import { Download01Icon, Book01Icon } from '@hugeicons/core-free-icons';
 import { cn } from '../../lib/cn';
 

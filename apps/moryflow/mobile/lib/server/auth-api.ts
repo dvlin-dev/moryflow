@@ -4,7 +4,7 @@
  * 处理登录、注册、登出等认证相关的 API 调用
  */
 
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import type { BetterAuthError } from './types'
 
 // ============ 类型定义 ============

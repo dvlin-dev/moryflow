@@ -4,14 +4,14 @@
  * [POS]: 基础 bash 工具实现，目前未被使用
  *
  * [NOTE]: 当前未被任何平台调用：
- *   - PC 端使用 @aiget/agents-sandbox 的沙盒化版本
+ *   - PC 端使用 /agents-sandbox 的沙盒化版本
  *   - Mobile 端不支持 bash
  *   保留此文件作为非沙盒版本的备选实现
  */
-import { tool, type RunContext } from '@aiget/agents'
+import { tool, type RunContext } from '@anyhunt/agents'
 import { z } from 'zod'
-import type { PlatformCapabilities } from '@aiget/agents-adapter'
-import type { AgentContext, VaultUtils } from '@aiget/agents-runtime'
+import type { PlatformCapabilities } from '@anyhunt/agents-adapter'
+import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime'
 import { toolSummarySchema, trimPreview } from '../shared'
 
 const DEFAULT_TIMEOUT = 120_000 // 2 分钟

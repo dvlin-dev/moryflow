@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from '@aiget/agents-core/_shims';
+import { AsyncLocalStorage } from '@anyhunt/agents-core/_shims';
 import { Trace, TraceOptions } from './traces';
 import { getGlobalTraceProvider } from './provider';
 import { Span, SpanError } from './spans';

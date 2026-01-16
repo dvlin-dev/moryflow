@@ -34,7 +34,7 @@ status: active
 Cookie domain 规则：
 
 - Moryflow：`Domain=.moryflow.com`
-- Aiget Dev：`Domain=.aiget.dev`
+- Anyhunt Dev：`Domain=.anyhunt.app`
 
 ## 刷新主流程（必须实现）
 
@@ -53,7 +53,7 @@ Cookie domain 规则：
 - 要求 `Content-Type: application/json`
 - 校验 `Origin` 必须是：
   - Moryflow：`https://app.moryflow.com`
-  - Aiget Dev：`https://console.aiget.dev` / `https://admin.aiget.dev`
+  - Anyhunt Dev：`https://console.anyhunt.app` / `https://admin.anyhunt.app`
 
 ## 产品服务端校验 accessToken（固定规则）
 

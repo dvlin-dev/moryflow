@@ -1,21 +1,21 @@
 ---
-title: Aiget Dev - 配额与 API Keys（tenantId + policy）
+title: Anyhunt Dev - 配额与 API Keys（tenantId + policy）
 date: 2026-01-06
-scope: aiget.dev, server.aiget.dev
+scope: anyhunt.app, server.anyhunt.app
 status: active
 ---
 
 <!--
-[INPUT]: Aiget Dev 统一 API（server.aiget.dev/api/v1）；控制台（console.aiget.dev）管理策略；Memox/Agentsbox 等能力对外提供 API；支持 Google/Apple 登录；动态可调限流策略
+[INPUT]: Anyhunt Dev 统一 API（server.anyhunt.app/api/v1）；控制台（console.anyhunt.app）管理策略；Memox/Agentsbox 等能力对外提供 API；支持 Google/Apple 登录；动态可调限流策略
 [OUTPUT]: API Key、tenant、多租户隔离、namespace/metadata 约定与最小限流模型
-[POS]: Aiget Dev 对外能力的安全与计量基座（不引入复杂计费）
+[POS]: Anyhunt Dev 对外能力的安全与计量基座（不引入复杂计费）
 
 [PROTOCOL]: 本文件变更时，需同步更新 `docs/architecture/auth.md`（索引与约束）。
 -->
 
 # 配额与 API Keys
 
-本文件约定 Aiget Dev 对外能力（Memox/Agentsbox）的统一鉴权与隔离模型：**API Key + 动态策略**。
+本文件约定 Anyhunt Dev 对外能力（Memox/Agentsbox）的统一鉴权与隔离模型：**API Key + 动态策略**。
 
 ## 关键目标
 
@@ -73,4 +73,4 @@ Memox 的每条数据至少绑定：
 - `maxTopK`
 - `maxContentBytes`
 
-控制台（`console.aiget.dev`）允许你随时调整策略；所谓“企业版支持”只体现在策略值不同。
+控制台（`console.anyhunt.app`）允许你随时调整策略；所谓“企业版支持”只体现在策略值不同。

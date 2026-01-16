@@ -6,9 +6,9 @@
  */
 
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import type { RunItemStreamEvent } from '@aiget/agents';
-import { createSessionAdapter } from '@aiget/agents-runtime';
-import type { AgentChatContext, AgentAttachmentContext } from '@aiget/agents-runtime';
+import type { RunItemStreamEvent } from '@anyhunt/agents';
+import { createSessionAdapter } from '@anyhunt/agents-runtime';
+import type { AgentChatContext, AgentAttachmentContext } from '@anyhunt/agents-runtime';
 import { getAgentRuntime, mobileSessionStore, createLogger } from '@/lib/agent-runtime';
 import { generateUUID } from '@/lib/utils/uuid';
 import { extractTextFromParts } from './utils';

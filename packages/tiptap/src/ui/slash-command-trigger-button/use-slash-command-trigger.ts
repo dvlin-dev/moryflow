@@ -10,7 +10,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { PlusIcon } from "@aiget/ui/icons/plus-icon"
+import { PlusIcon } from "@anyhunt/ui/icons/plus-icon"
 
 // --- Lib ---
 import {

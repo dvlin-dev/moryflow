@@ -11,7 +11,7 @@ import {
   deleteSession as deleteSessionApi,
   updateSession as updateSessionApi,
 } from '@/lib/agent-runtime'
-import type { ChatSessionSummary } from '@aiget/agents-runtime'
+import type { ChatSessionSummary } from '@anyhunt/agents-runtime'
 
 // 重新导出类型
 export type { ChatSessionSummary }

@@ -8,9 +8,9 @@
 
 import { useState } from 'react'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
-import { Label } from '@aiget/ui/components/label'
-import { Progress } from '@aiget/ui/components/progress'
+import { Button } from '@anyhunt/ui/components/button'
+import { Label } from '@anyhunt/ui/components/label'
+import { Progress } from '@anyhunt/ui/components/progress'
 import { SubdomainInput } from './subdomain-input'
 import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish'
 import type { SubdomainStatus } from './const'

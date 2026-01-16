@@ -1,4 +1,4 @@
-import { Model, ModelProvider, getDefaultModel } from '@aiget/agents-core';
+import { Model, ModelProvider, getDefaultModel } from '@anyhunt/agents-core';
 import OpenAI from 'openai';
 import {
   getDefaultOpenAIClient,

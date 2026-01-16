@@ -1,6 +1,6 @@
 import type { ChatStatus } from 'ai'
 
-import { CardFooter } from '@aiget/ui/components/card'
+import { CardFooter } from '@anyhunt/ui/components/card'
 import type { SettingsSection } from '@/components/settings-dialog/const'
 import type { PlanSnapshot, TokenUsage } from '@shared/ipc'
 

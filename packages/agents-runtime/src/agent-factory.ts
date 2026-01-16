@@ -1,4 +1,4 @@
-import { Agent, type Tool } from '@aiget/agents'
+import { Agent, type Tool } from '@anyhunt/agents'
 
 import type { ModelFactory } from './model-factory'
 import { getMorySystemPrompt } from './prompt'

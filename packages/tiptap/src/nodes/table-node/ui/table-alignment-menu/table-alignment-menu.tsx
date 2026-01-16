@@ -4,8 +4,8 @@ import type { Orientation } from "../../lib/tiptap-table-utils"
 import { useTableAlignCell } from "../table-align-cell-button"
 
 // --- Icons ---
-import { AlignmentIcon } from "@aiget/ui/icons/alignment-icon"
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon"
+import { AlignmentIcon } from "@anyhunt/ui/icons/alignment-icon"
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
 
 // --- UI Primitives ---
 import {

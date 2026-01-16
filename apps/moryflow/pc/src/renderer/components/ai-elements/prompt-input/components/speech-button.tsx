@@ -6,7 +6,7 @@ import { MicIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-import { PromptInputButton } from '@aiget/ui/ai/prompt-input';
+import { PromptInputButton } from '@anyhunt/ui/ai/prompt-input';
 
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;

@@ -14,7 +14,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { ImageCaptionIcon } from "@aiget/ui/icons/image-caption-icon"
+import { ImageCaptionIcon } from "@anyhunt/ui/icons/image-caption-icon"
 
 /**
  * Configuration for the image caption functionality

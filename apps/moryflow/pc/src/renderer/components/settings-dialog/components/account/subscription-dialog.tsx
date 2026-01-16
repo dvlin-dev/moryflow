@@ -5,17 +5,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@aiget/ui/components/dialog'
-import { Button } from '@aiget/ui/components/button'
-import { Badge } from '@aiget/ui/components/badge'
-import { Tabs, TabsList, TabsTrigger } from '@aiget/ui/components/tabs'
+} from '@anyhunt/ui/components/dialog'
+import { Button } from '@anyhunt/ui/components/button'
+import { Badge } from '@anyhunt/ui/components/badge'
+import { Tabs, TabsList, TabsTrigger } from '@anyhunt/ui/components/tabs'
 import { Check, Loader2, Crown, Sparkles, Zap, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchProducts } from '@/lib/server/api'
 import { usePurchase } from '@/lib/server/hooks'
 import { useAuth } from '@/lib/server'
 import { PaymentDialog } from '@/components/payment-dialog'
-import { getTierInfo } from '@aiget/api'
+import { getTierInfo } from '@anyhunt/api'
 import { useTranslation } from '@/lib/i18n'
 import type { ProductInfo, UserTier } from '@/lib/server/types'
 

@@ -4,8 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
-      "@aiget/agents-core": ["./src/index.ts"],
-      "@aiget/agents-core/_shims": ["./src/shims/shims-node.ts"]
+      "@anyhunt/agents-core": ["./src/index.ts"],
+      "@anyhunt/agents-core/_shims": ["./src/shims/shims-node.ts"]
     }
   },
   "exclude": ["dist/**", "test/**"]

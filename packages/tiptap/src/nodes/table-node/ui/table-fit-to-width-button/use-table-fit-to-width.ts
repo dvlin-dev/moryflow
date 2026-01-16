@@ -12,7 +12,7 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --Icons ---
-import { MoveHorizontalIcon } from "@aiget/ui/icons/move-horizontal-icon"
+import { MoveHorizontalIcon } from "@anyhunt/ui/icons/move-horizontal-icon"
 
 export interface UseTableFitToWidthConfig {
   /**

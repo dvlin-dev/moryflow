@@ -6,7 +6,7 @@
 
 import { View, Pressable } from 'react-native'
 import * as ContextMenu from 'zeego/context-menu'
-import { useTranslation } from '@aiget/i18n'
+import { useTranslation } from '@anyhunt/i18n'
 import { Text } from '@/components/ui/text'
 import { Icon } from '@/components/ui/icon'
 import { CheckIcon } from 'lucide-react-native'

@@ -17,7 +17,7 @@ status: active
 
 本目录用于沉淀“可执行的工程真相”（架构决策、运行手册、开发指南、迁移方案）。对外文档站点是独立项目：
 
-- Aiget Dev Docs：`apps/aiget/docs`
+- Anyhunt Dev Docs：`apps/anyhunt/docs`
 - Moryflow Docs：`apps/moryflow/docs`
 
 ## Architecture（系统级决策 / 不变量）
@@ -38,20 +38,20 @@ status: active
 
 ## Runbooks（运维手册 / 照做即可）
 
-- Aiget Dev（8c16g / Dokploy）：`docs/runbooks/deploy/aiget-dokploy.md`
+- Anyhunt Dev（8c16g / Dokploy）：`docs/runbooks/deploy/anyhunt-dokploy.md`
 - megaboxpro（1panel）反代路由：`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`
 - Moryflow（4c6g / docker compose）：`docs/runbooks/deploy/moryflow-compose.md`
 
 ## Migrations（迁移方案 / 一次性执行）
 
-- Aiget → Anyfeed 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyfeed.md`
+- Aiget → Anyhunt 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyhunt.md`
 
 ## Products（产品线内的内部方案）
 
-- Aiget Dev
-  - 入口：`docs/products/aiget-dev/index.md`
-  - www Reader/Developer 双模块布局方案：`docs/products/aiget-dev/features/www-reader-and-developer-split.md`
-  - www Reader SRP 与 Props 收敛重构计划：`docs/products/aiget-dev/features/www-reader-srp-and-props-refactor.md`
+- Anyhunt Dev
+  - 入口：`docs/products/anyhunt-dev/index.md`
+  - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
+  - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
 - Moryflow：`docs/products/moryflow/`
   - 入口：`docs/products/moryflow/index.md`
 

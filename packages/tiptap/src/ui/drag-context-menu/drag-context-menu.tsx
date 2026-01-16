@@ -71,9 +71,9 @@ import type {
 } from "./drag-context-menu-types"
 
 // Icons
-import { GripVerticalIcon } from "@aiget/ui/icons/grip-vertical-icon"
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon"
-import { Repeat2Icon } from "@aiget/ui/icons/repeat-2-icon"
+import { GripVerticalIcon } from "@anyhunt/ui/icons/grip-vertical-icon"
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
+import { Repeat2Icon } from "@anyhunt/ui/icons/repeat-2-icon"
 import "./drag-context-menu.scss"
 
 const useNodeTransformActions = () => {

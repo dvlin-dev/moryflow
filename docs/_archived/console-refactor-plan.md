@@ -6,7 +6,7 @@
 
 ### 1.1 当前问题
 
-Console 前端（`apps/aiget/console`）存在以下问题：
+Console 前端（`apps/anyhunt/console`）存在以下问题：
 
 1. **404 接口**：使用了多个后端不存在的 API 端点
 2. **功能缺失**：Playground 只有 Screenshot 和 Embed，缺少核心 API 测试功能
@@ -244,7 +244,7 @@ Memox
 ### 4.1 删除文件
 
 ```
-apps/aiget/console/src/
+apps/anyhunt/console/src/
 ├── pages/ScreenshotsPage.tsx              # ✅ 已删除
 ├── pages/ScreenshotPlaygroundPage.tsx     # ✅ 已删除
 ├── features/screenshots/                   # ✅ 整个目录已删除
@@ -254,7 +254,7 @@ apps/aiget/console/src/
 ### 4.2 修改文件
 
 ```
-apps/aiget/console/src/
+apps/anyhunt/console/src/
 ├── lib/api-paths.ts                       # ✅ 更新 API 路径
 ├── App.tsx                                # ✅ 更新路由
 └── components/layout/app-sidebar.tsx      # ✅ 更新侧边栏导航
@@ -263,7 +263,7 @@ apps/aiget/console/src/
 ### 4.3 新增文件
 
 ```
-apps/aiget/console/src/
+apps/anyhunt/console/src/
 ├── features/
 │   ├── playground-shared/                 # ✅ 共享模块
 │   │   ├── api-key-client.ts              # API Key 认证客户端
@@ -422,7 +422,7 @@ Settings
 ### 7.1 API 认证
 
 - **Console API**：使用 Session（Better Auth Cookie）
-- **Public API**：需要 API Key（`Authorization: Bearer ag_xxx`）
+- **Public API**：需要 API Key（`Authorization: Bearer ah_xxx`）
 - **Playground 调用**：通过 Console 代理或使用用户的 API Key
 
 ### 7.2 异步任务处理
@@ -453,10 +453,10 @@ const codeExample = generateCodeExample({
 
 ### 8.1 完整 API 端点参考
 
-详见：https://server.aiget.dev/api-docs
+详见：https://server.anyhunt.app/api-docs
 
 ### 8.2 相关文档
 
-- [Console CLAUDE.md](../../apps/aiget/console/CLAUDE.md)
-- [Server CLAUDE.md](../../apps/aiget/server/CLAUDE.md)
-- [Scraper CLAUDE.md](../../apps/aiget/server/src/scraper/CLAUDE.md)
+- [Console CLAUDE.md](../../apps/anyhunt/console/CLAUDE.md)
+- [Server CLAUDE.md](../../apps/anyhunt/server/CLAUDE.md)
+- [Scraper CLAUDE.md](../../apps/anyhunt/server/src/scraper/CLAUDE.md)

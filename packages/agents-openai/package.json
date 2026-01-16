@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-openai",
+  "name": "@anyhunt/agents-openai",
   "repository": "https://github.com/openai/openai-agents-js",
   "homepage": "https://openai.github.io/openai-agents-js/",
   "version": "0.3.3",
@@ -15,7 +15,7 @@
     }
   },
   "dependencies": {
-    "@aiget/agents-core": "workspace:*",
+    "@anyhunt/agents-core": "workspace:*",
     "debug": "^4.4.0",
     "openai": "^6"
   },

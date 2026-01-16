@@ -4,7 +4,7 @@
  */
 
 import type { Editor } from '@tiptap/react';
-import { markdownToHtml, htmlToMarkdown } from '@aiget/tiptap';
+import { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
 
 // ============ 类型定义 ============
 

@@ -19,8 +19,8 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { ArrowDownAZIcon } from "@aiget/ui/icons/arrow-down-a-z-icon"
-import { ArrowDownZAIcon } from "@aiget/ui/icons/arrow-down-z-a-icon"
+import { ArrowDownAZIcon } from "@anyhunt/ui/icons/arrow-down-a-z-icon"
+import { ArrowDownZAIcon } from "@anyhunt/ui/icons/arrow-down-z-a-icon"
 
 export type SortDirection = "asc" | "desc"
 

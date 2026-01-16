@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import type {
   VaultDto,
   VaultListDto,
@@ -21,7 +21,7 @@ import type {
   SearchRequest,
   SearchResponse,
   UsageResponse,
-} from '@aiget/api/cloud-sync'
+} from '@anyhunt/api/cloud-sync'
 import { getStoredToken } from '@/lib/server/storage'
 import { FETCH_TIMEOUT } from './const'
 

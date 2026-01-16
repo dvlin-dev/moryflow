@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/moryflow-vectorize",
+  "name": "@anyhunt/moryflow-vectorize",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -17,4 +17,3 @@
     "wrangler": "^4.0.0"
   }
 }
-

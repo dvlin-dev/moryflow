@@ -1,10 +1,10 @@
 /**
  * [PROVIDES]: 沙盒模块日志
- * [DEPENDS]: @aiget/agents-core
+ * [DEPENDS]: /agents-core
  * [POS]: 统一的日志接口，命名空间 openai-agents:sandbox
  */
 
-import { getLogger } from '@aiget/agents-core'
+import { getLogger } from '@anyhunt/agents-core'
 
 /** 日志类型（从 getLogger 返回类型推断） */
 export type Logger = ReturnType<typeof getLogger>

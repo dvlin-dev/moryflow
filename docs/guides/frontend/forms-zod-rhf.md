@@ -78,22 +78,22 @@ Zod v4 提供了 `zod/v3` 兼容入口，类型与 @hookform/resolvers 完美兼
 
 ## 受影响文件
 
-- `apps/aiget/console/src/features/playground-shared/schemas.ts`
-- `apps/aiget/console/src/pages/ExtractPlaygroundPage.tsx`
-- `apps/aiget/console/src/pages/GraphPage.tsx`
-- `apps/aiget/console/src/pages/MapPlaygroundPage.tsx`
-- `apps/aiget/console/src/pages/MemoxPlaygroundPage.tsx`
-- `apps/aiget/console/src/pages/SearchPlaygroundPage.tsx`
+- `apps/anyhunt/console/src/features/playground-shared/schemas.ts`
+- `apps/anyhunt/console/src/pages/ExtractPlaygroundPage.tsx`
+- `apps/anyhunt/console/src/pages/GraphPage.tsx`
+- `apps/anyhunt/console/src/pages/MapPlaygroundPage.tsx`
+- `apps/anyhunt/console/src/pages/MemoxPlaygroundPage.tsx`
+- `apps/anyhunt/console/src/pages/SearchPlaygroundPage.tsx`
 
 ## 验证步骤
 
 ```bash
 # 本地验证
-pnpm --filter @aiget/console typecheck
-pnpm --filter @aiget/console build
+pnpm --filter @anyhunt/console typecheck
+pnpm --filter @anyhunt/console build
 
 # Docker 验证
-docker build -f apps/aiget/console/Dockerfile .
+docker build -f apps/anyhunt/console/Dockerfile .
 ```
 
 ## 长期跟踪

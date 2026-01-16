@@ -7,7 +7,7 @@
  */
 
 import { Check, X, Loader2 } from 'lucide-react'
-import { Input } from '@aiget/ui/components/input'
+import { Input } from '@anyhunt/ui/components/input'
 import { cn } from '@/lib/utils'
 import type { SubdomainInputProps, SubdomainStatus } from './const'
 import { SUBDOMAIN_SUFFIX } from './const'

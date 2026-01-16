@@ -7,14 +7,14 @@
  */
 
 import { Globe, MoreHorizontal, ExternalLink, Copy, Settings, RefreshCw, Power, Trash2 } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@aiget/ui/components/dropdown-menu'
+} from '@anyhunt/ui/components/dropdown-menu'
 import { cn } from '@/lib/utils'
 import type { SiteCardProps, SiteAction } from './const'
 import { formatRelativeTime, isSiteOnline } from './const'

@@ -1,5 +1,5 @@
 /**
- * @aiget/agents-model-registry
+ * /agents-model-registry
  *
  * 共享的模型服务商和模型注册表
  * 供 PC 端和 Mobile 端复用

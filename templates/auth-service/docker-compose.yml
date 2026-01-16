@@ -1,15 +1,15 @@
 services:
   postgres:
     image: postgres:16
-    container_name: aiget-auth-postgres
+    container_name: anyhunt-auth-postgres
     environment:
-      POSTGRES_USER: aiget
-      POSTGRES_PASSWORD: aiget
-      POSTGRES_DB: aiget_auth
+      POSTGRES_USER: anyhunt
+      POSTGRES_PASSWORD: anyhunt
+      POSTGRES_DB: anyhunt_auth
     ports:
       - "5432:5432"
     volumes:
-      - aiget_auth_postgres:/var/lib/postgresql/data
+      - anyhunt_auth_postgres:/var/lib/postgresql/data
 
 volumes:
-  aiget_auth_postgres:
+  anyhunt_auth_postgres:

@@ -5,7 +5,7 @@
  * 参考 PC 端 apps/moryflow/pc/src/main/chat/tool-calls.ts
  */
 
-import type { RunItemStreamEvent } from '@aiget/agents';
+import type { RunItemStreamEvent } from '@anyhunt/agents';
 import type { UIMessageChunk } from 'ai';
 import { generateUUID } from '@/lib/utils/uuid';
 

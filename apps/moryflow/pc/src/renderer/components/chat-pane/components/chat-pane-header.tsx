@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react'
 import type { ChatSessionSummary } from '@shared/ipc'
-import { Button } from '@aiget/ui/components/button'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@aiget/ui/components/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@aiget/ui/components/tooltip'
+} from '@anyhunt/ui/components/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
 import { useTranslation } from '@/lib/i18n'
 import { CheckIcon, MoreHorizontalIcon, PanelRightIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 

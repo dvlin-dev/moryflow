@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: Better Auth 配置, Facade Controller, Guards, Decorators
- * [DEPENDS]: @aiget/identity-db, better-auth, @nestjs/common
+ * [DEPENDS]: /identity-db, better-auth, @nestjs/common
  * [POS]: auth-server 包的入口文件
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 CLAUDE.md

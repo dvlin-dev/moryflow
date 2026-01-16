@@ -7,12 +7,12 @@ import {
   toolToOpenAI,
   convertHandoffTool,
 } from '../src/openaiChatCompletionsConverter';
-import { protocol, UserError } from '@aiget/agents-core';
+import { protocol, UserError } from '@anyhunt/agents-core';
 import type {
   SerializedFunctionTool,
   SerializedHandoff,
   SerializedTool,
-} from '@aiget/agents-core/model';
+} from '@anyhunt/agents-core/model';
 
 /**
  * Tests around the helpers converting internal protocol structures to the

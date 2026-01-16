@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: useAudioRecorder - 音频录制 Hook
- * [DEPENDS]: expo-av, @aiget/i18n
+ * [DEPENDS]: expo-av, /i18n
  * [POS]: 提供录音功能，输出实时 metering 数据用于波形显示
  */
 
@@ -8,7 +8,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { Alert } from 'react-native'
 import { Audio } from 'expo-av'
 import { logError } from '@/lib/utils/error'
-import { useTranslation } from '@aiget/i18n'
+import { useTranslation } from '@anyhunt/i18n'
 
 // ==================== 类型定义 ====================
 

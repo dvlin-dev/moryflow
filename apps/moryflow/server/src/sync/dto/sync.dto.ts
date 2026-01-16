@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 
 // 重导出 VectorClock 类型供其他模块使用
-export type { VectorClock } from '@aiget/sync';
+export type { VectorClock } from '@anyhunt/sync';
 
 // ==================== 向量时钟 Schema ====================
 

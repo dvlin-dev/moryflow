@@ -6,7 +6,7 @@
 
 import * as React from 'react'
 import { I18nextProvider } from 'react-i18next'
-import { initI18nSync, getI18nInstance, type SupportedLanguage } from '@aiget/i18n'
+import { initI18nSync, getI18nInstance, type SupportedLanguage } from '@anyhunt/i18n'
 import { createPCLanguageDetector } from './language-detector'
 
 /** PC 端回退到英文 */

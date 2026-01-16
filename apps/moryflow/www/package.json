@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aiget/ui": "workspace:*",
+    "@anyhunt/ui": "workspace:*",
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
     "@tanstack/react-router": "^1.144.0",

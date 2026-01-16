@@ -23,7 +23,7 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { SquareXIcon } from "@aiget/ui/icons/square-x-icon"
+import { SquareXIcon } from "@anyhunt/ui/icons/square-x-icon"
 
 export interface UseTableClearRowColumnContentConfig {
   /**

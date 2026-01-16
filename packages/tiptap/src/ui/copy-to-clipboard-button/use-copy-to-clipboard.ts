@@ -10,7 +10,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { ClipboardIcon } from "@aiget/ui/icons/clipboard-icon"
+import { ClipboardIcon } from "@anyhunt/ui/icons/clipboard-icon"
 
 export const COPY_TO_CLIPBOARD_SHORTCUT_KEY = "mod+c"
 

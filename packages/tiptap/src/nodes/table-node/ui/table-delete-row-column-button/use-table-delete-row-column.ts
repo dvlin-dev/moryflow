@@ -18,7 +18,7 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { TrashIcon } from "@aiget/ui/icons/trash-icon"
+import { TrashIcon } from "@anyhunt/ui/icons/trash-icon"
 
 export interface UseTableDeleteRowColumnConfig {
   /**

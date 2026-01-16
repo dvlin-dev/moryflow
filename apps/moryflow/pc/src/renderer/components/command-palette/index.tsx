@@ -8,7 +8,7 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from '@aiget/ui/components/command'
+} from '@anyhunt/ui/components/command'
 import { useTranslation } from '@/lib/i18n'
 import type { CommandPaletteProps } from './const'
 import { groupActions } from './handle'

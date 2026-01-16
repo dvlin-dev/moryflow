@@ -5,7 +5,7 @@ import {
 } from './items';
 import type { InputAudioTranscriptionCompletedEvent } from './transportLayerEvents';
 import METADATA from './metadata';
-import { RunToolApprovalItem } from '@aiget/agents-core';
+import { RunToolApprovalItem } from '@anyhunt/agents-core';
 import { RealtimeAgent } from './realtimeAgent';
 
 /**

@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
-import { Alert, AlertDescription } from '@aiget/ui/components/alert'
+import { Alert, AlertDescription } from '@anyhunt/ui/components/alert'
 import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
   ConversationScrollButton,
-} from '@aiget/ui/ai/conversation'
+} from '@anyhunt/ui/ai/conversation'
 import { useTranslation } from '@/lib/i18n'
 import { ChatMessage } from './message'
 import type { ChatStatus, UIMessage } from 'ai'

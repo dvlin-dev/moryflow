@@ -12,7 +12,7 @@ import {
   compareVectorClocks,
   type VectorClock,
   type ClockRelation,
-} from '@aiget/sync';
+} from '@anyhunt/sync';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
 import { QuotaService } from '../quota';

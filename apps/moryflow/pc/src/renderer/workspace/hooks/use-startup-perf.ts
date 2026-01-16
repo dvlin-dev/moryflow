@@ -135,7 +135,7 @@ export const useWorkspaceChunkPreload = ({
           key: 'shiki',
           hash: SHIKI_CHUNK_HASH,
           loader: async () => {
-            const mod = await import('@aiget/ui/ai/code-block')
+            const mod = await import('@anyhunt/ui/ai/code-block')
             preloadRegistry.set('shiki', mod, mod.SHIKI_CHUNK_HASH)
             return mod
           }

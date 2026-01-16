@@ -4,7 +4,7 @@
 
 ## 定位
 
-为 Moryflow 与 Aiget Dev 提供可复用的服务端认证基础设施，各自独立部署与配置。
+为 Moryflow 与 Anyhunt Dev 提供可复用的服务端认证基础设施，各自独立部署与配置。
 
 ## 职责
 
@@ -56,8 +56,8 @@
 ### 1. 创建 Better Auth 实例
 
 ```typescript
-import { createBetterAuth } from '@aiget/auth-server';
-import { identityPrisma } from '@aiget/identity-db';
+import { createBetterAuth } from '@anyhunt/auth-server';
+import { identityPrisma } from '@anyhunt/identity-db';
 
 const auth = createBetterAuth(
   identityPrisma,
@@ -88,8 +88,8 @@ import {
   AuthFacadeService,
   AUTH_INSTANCE,
   IDENTITY_PRISMA,
-} from '@aiget/auth-server';
-import { identityPrisma } from '@aiget/identity-db';
+} from '@anyhunt/auth-server';
+import { identityPrisma } from '@anyhunt/identity-db';
 
 @Module({
   controllers: [AuthFacadeController],
@@ -112,7 +112,7 @@ export class AuthModule {}
 
 ```typescript
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { SessionGuard, CurrentUser, type RequestUser } from '@aiget/auth-server';
+import { SessionGuard, CurrentUser, type RequestUser } from '@anyhunt/auth-server';
 
 @Controller('users')
 export class UsersController {
@@ -132,14 +132,14 @@ BETTER_AUTH_SECRET=your-secret-key-at-least-32-characters
 
 # Better Auth URL（按业务线配置）
 # - Moryflow: https://app.moryflow.com/api/v1/auth
-# - Aiget Dev: https://server.aiget.dev/api/v1/auth
+# - Anyhunt Dev: https://server.anyhunt.app/api/v1/auth
 BETTER_AUTH_URL=https://app.moryflow.com/api/v1/auth
 
 # Cookie Domain（生产环境按业务线域名）
 COOKIE_DOMAIN=.moryflow.com
 
 # 信任的来源（逗号分隔）
-TRUSTED_ORIGINS=https://app.moryflow.com,https://console.aiget.dev,https://admin.aiget.dev
+TRUSTED_ORIGINS=https://app.moryflow.com,https://console.anyhunt.app,https://admin.anyhunt.app
 
 # Google OAuth
 GOOGLE_CLIENT_ID=xxx
@@ -152,7 +152,7 @@ APPLE_CLIENT_SECRET=xxx
 
 ## Token 策略
 
-- JWT issuer/audience 默认 `https://server.aiget.dev`（需要时在 `src/constants.ts` 调整）。
+- JWT issuer/audience 默认 `https://server.anyhunt.app`（需要时在 `src/constants.ts` 调整）。
 
 | Token 类型    | 存储位置（Web） | 存储位置（Native） | TTL    |
 | ------------- | --------------- | ------------------ | ------ |

@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@aiget/ui/components/dialog'
+} from '@anyhunt/ui/components/dialog'
 import { cn } from '@/lib/utils'
 import { useTranslation } from '@/lib/i18n'
 import type { SearchDialogProps } from './const'

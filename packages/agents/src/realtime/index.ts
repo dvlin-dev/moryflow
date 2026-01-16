@@ -1,1 +1,1 @@
-export * from '@aiget/agents-realtime';
+export * from '@anyhunt/agents-realtime';

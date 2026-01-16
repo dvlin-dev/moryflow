@@ -2,8 +2,8 @@
  * Embed - 通用嵌入组件
  */
 import { useEffect, type ReactNode } from 'react';
-import type { EmbedData, EmbedOptions } from '@aiget/embed';
-import { type EmbedError } from '@aiget/embed';
+import type { EmbedData, EmbedOptions } from '@anyhunt/embed';
+import { type EmbedError } from '@anyhunt/embed';
 import { useEmbed } from '../hooks/useEmbed.ts';
 import { EmbedSkeleton } from './EmbedSkeleton.tsx';
 

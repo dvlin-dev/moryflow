@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: Aiget 统一平台共享类型
+ * [DEFINES]: Anyhunt 统一平台共享类型
  * [USED_BY]: 所有产品的服务端和客户端
  * [POS]: 类型包入口
  *

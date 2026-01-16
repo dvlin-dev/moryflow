@@ -5,14 +5,14 @@
  */
 
 import { FolderOpen, MoreHorizontal, Pencil, Trash2, Check } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@aiget/ui/components/dropdown-menu'
-import { Input } from '@aiget/ui/components/input'
+} from '@anyhunt/ui/components/dropdown-menu'
+import { Input } from '@anyhunt/ui/components/input'
 import { useTranslation } from '@/lib/i18n'
 import type { VaultListItemProps } from '../const'
 

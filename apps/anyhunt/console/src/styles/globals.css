@@ -1,0 +1,4 @@
+@import '@anyhunt/ui/styles';
+
+/* 扫描源文件中的 class（Tailwind v4 需要此配置） */
+@source "../**/*.{ts,tsx}";

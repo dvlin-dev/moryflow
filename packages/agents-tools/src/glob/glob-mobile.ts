@@ -5,7 +5,7 @@
  * 支持常见的 glob 模式：**、*、?
  */
 
-import type { PlatformCapabilities } from '@aiget/agents-adapter'
+import type { PlatformCapabilities } from '@anyhunt/agents-adapter'
 import type { GlobImpl, GlobEntry } from './glob-interface'
 import { setGlobImpl } from './glob-interface'
 

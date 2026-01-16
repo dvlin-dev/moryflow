@@ -18,11 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@aiget/ui/components/dialog'
-import { Button } from '@aiget/ui/components/button'
-import { Checkbox } from '@aiget/ui/components/checkbox'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
-import { Skeleton } from '@aiget/ui/components/skeleton'
+} from '@anyhunt/ui/components/dialog'
+import { Button } from '@anyhunt/ui/components/button'
+import { Checkbox } from '@anyhunt/ui/components/checkbox'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
+import { Skeleton } from '@anyhunt/ui/components/skeleton'
 import type { VaultTreeNode, VaultItem } from '../../../../shared/ipc/vault'
 import { SKELETON_PLACEHOLDER_COUNT } from './const'
 

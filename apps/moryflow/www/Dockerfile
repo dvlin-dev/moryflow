@@ -15,7 +15,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/moryflow/www/package.json ./apps/moryflow/www/
 COPY packages/ui/package.json ./packages/ui/
 
-# 安装依赖（包含 @aiget/ui 组件库）
+# 安装依赖（包含 /ui 组件库）
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/www...
 
 # 构建阶段
@@ -31,7 +31,7 @@ COPY apps/moryflow/www ./apps/moryflow/www
 COPY packages/ui ./packages/ui
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 
-# 构建 www 应用（@aiget/ui 直接导出 TS 源码，Vite 会处理）
+# 构建 www 应用（/ui 直接导出 TS 源码，Vite 会处理）
 WORKDIR /app/apps/moryflow/www
 
 # 构建时环境变量（Vite 会将 VITE_* 变量嵌入到静态文件中）

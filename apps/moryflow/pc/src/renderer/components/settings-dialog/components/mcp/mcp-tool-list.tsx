@@ -1,4 +1,4 @@
-import { Badge } from '@aiget/ui/components/badge'
+import { Badge } from '@anyhunt/ui/components/badge'
 
 type McpToolListProps = {
   toolNames?: string[]

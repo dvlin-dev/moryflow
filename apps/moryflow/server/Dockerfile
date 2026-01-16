@@ -1,4 +1,4 @@
-# Dockerfile for @aiget/moryflow-server
+# Dockerfile for /moryflow-server
 # 构建上下文：根目录 (.)
 # Dockerfile 路径：apps/moryflow/server/Dockerfile
 
@@ -14,14 +14,14 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/moryflow/server/package.json ./apps/moryflow/server/
 COPY packages/sync/package.json ./packages/sync/
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/moryflow-server...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server...
 
 # 生产依赖阶段 - 仅安装生产依赖
 FROM base AS prod-deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/moryflow/server/package.json ./apps/moryflow/server/
 COPY packages/sync/package.json ./packages/sync/
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @aiget/moryflow-server... --prod
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server... --prod
 
 # 构建阶段
 FROM base AS builder

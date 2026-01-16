@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-tools",
+  "name": "@anyhunt/agents-tools",
   "version": "0.1.0",
   "description": "Tools for Moryflow Agent Runtime",
   "main": "dist/index.js",
@@ -17,12 +17,14 @@
       "import": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "dependencies": {
-    "@aiget/agents-adapter": "workspace:*",
-    "@aiget/agents-runtime": "workspace:*",
-    "@aiget/agents": "workspace:*",
+    "@anyhunt/agents-adapter": "workspace:*",
+    "@anyhunt/agents-runtime": "workspace:*",
+    "@anyhunt/agents": "workspace:*",
     "diff": "^7.0.0",
     "fast-glob": "^3.3.3",
     "zod": "^3.25.40"

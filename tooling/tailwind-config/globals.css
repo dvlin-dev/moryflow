@@ -1,5 +1,5 @@
 /**
- * Aiget 统一全局样式
+ * Anyhunt 统一全局样式
  * Tailwind CSS v4 + shadcn/ui 主题变量
  */
 
@@ -85,6 +85,8 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-mcp",
+  "name": "@anyhunt/agents-mcp",
   "version": "0.1.0",
   "description": "MCP server management for agent runtime",
   "main": "dist/index.js",
@@ -12,9 +12,9 @@
     }
   },
   "dependencies": {
-    "@aiget/agents": "workspace:*",
-    "@aiget/agents-core": "workspace:*",
-    "@aiget/agents-runtime": "workspace:*"
+    "@anyhunt/agents": "workspace:*",
+    "@anyhunt/agents-core": "workspace:*",
+    "@anyhunt/agents-runtime": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

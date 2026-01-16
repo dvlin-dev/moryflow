@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-realtime",
+  "name": "@anyhunt/agents-realtime",
   "repository": "https://github.com/openai/openai-agents-js",
   "homepage": "https://openai.github.io/openai-agents-js/",
   "version": "0.3.3",
@@ -53,7 +53,7 @@
     "bundle": "vite build"
   },
   "dependencies": {
-    "@aiget/agents-core": "workspace:*",
+    "@anyhunt/agents-core": "workspace:*",
     "@types/ws": "^8.18.1",
     "debug": "^4.4.0",
     "ws": "^8.18.1"

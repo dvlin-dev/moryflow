@@ -5,9 +5,9 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { RadioGroup, RadioGroupItem } from '@aiget/ui/components/radio-group'
-import { Label } from '@aiget/ui/components/label'
-import { Button } from '@aiget/ui/components/button'
+import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group'
+import { Label } from '@anyhunt/ui/components/label'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +17,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
+} from '@anyhunt/ui/components/alert-dialog'
 import { ShieldIcon, ShieldOffIcon, FolderIcon, XIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
-import type { SandboxMode } from '@aiget/agents-sandbox'
+import type { SandboxMode } from '@anyhunt/agents-sandbox'
 import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc'
 
 type ModeOption = {

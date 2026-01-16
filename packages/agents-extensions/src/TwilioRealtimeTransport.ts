@@ -5,8 +5,8 @@ import {
   RealtimeTransportLayerConnectOptions,
   TransportLayerAudio,
   RealtimeSessionConfig,
-} from '@aiget/agents/realtime';
-import { getLogger } from '@aiget/agents';
+} from '@anyhunt/agents/realtime';
+import { getLogger } from '@anyhunt/agents';
 import type { WebSocket as NodeWebSocket, MessageEvent as NodeMessageEvent } from 'ws';
 
 /**

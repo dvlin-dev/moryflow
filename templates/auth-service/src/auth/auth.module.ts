@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: AuthModule - Auth Facade 接入模块
- * [DEPENDS]: @aiget/auth-server, @aiget/identity-db
+ * [DEPENDS]: /auth-server, /identity-db
  * [POS]: Auth Service 认证模块
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 templates/auth-service/README.md
@@ -15,8 +15,8 @@ import {
   IDENTITY_PRISMA as AUTH_IDENTITY_PRISMA,
   JwtGuard,
   type CreateBetterAuthOptions,
-} from '@aiget/auth-server';
-import { PrismaClient } from '@aiget/identity-db';
+} from '@anyhunt/auth-server';
+import { PrismaClient } from '@anyhunt/identity-db';
 import { IDENTITY_PRISMA } from '../prisma/prisma.module';
 
 let authInstance: ReturnType<typeof createBetterAuth> | undefined;

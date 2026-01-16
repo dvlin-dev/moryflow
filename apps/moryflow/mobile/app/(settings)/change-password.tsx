@@ -12,7 +12,7 @@ import { PasswordStrengthIndicator } from '@/components/auth';
 import { useMembershipAuth, PASSWORD_CONFIG } from '@/lib/server';
 import { useThemeColors } from '@/lib/theme';
 import { useChangePassword } from '@/lib/contexts/change-password.context';
-import { useTranslation } from '@aiget/i18n';
+import { useTranslation } from '@anyhunt/i18n';
 import { SettingsGroup } from '@/components/settings';
 
 export default function ChangePasswordScreen() {

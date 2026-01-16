@@ -5,7 +5,7 @@
  */
 
 export const ProductId = {
-  AIGET_DEV: 'aiget-dev',
+  ANYHUNT_DEV: 'anyhunt-dev',
   MORYFLOW: 'moryflow',
   FETCHX: 'fetchx',
   MEMOX: 'memox',
@@ -25,14 +25,14 @@ export interface ProductInfo {
 }
 
 export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
-  [ProductId.AIGET_DEV]: {
-    id: ProductId.AIGET_DEV,
-    name: 'Aiget Dev',
+  [ProductId.ANYHUNT_DEV]: {
+    id: ProductId.ANYHUNT_DEV,
+    name: 'Anyhunt Dev',
     description: 'Developer platform for AI agents (Fetchx, Memox, ...)',
-    websiteBaseUrl: 'https://aiget.dev',
+    websiteBaseUrl: 'https://anyhunt.app',
     websitePath: '/',
-    apiBaseUrl: 'https://server.aiget.dev/api/v1',
-    apiKeyPrefix: 'ag_',
+    apiBaseUrl: 'https://server.anyhunt.app/api/v1',
+    apiKeyPrefix: 'ah_',
   },
   [ProductId.MORYFLOW]: {
     id: ProductId.MORYFLOW,
@@ -47,27 +47,27 @@ export const PRODUCT_INFOS: Record<ProductId, ProductInfo> = {
     id: ProductId.FETCHX,
     name: 'Fetchx',
     description: 'Web data API (scrape, crawl, extract)',
-    websiteBaseUrl: 'https://aiget.dev',
+    websiteBaseUrl: 'https://anyhunt.app',
     websitePath: '/fetchx',
-    apiBaseUrl: 'https://server.aiget.dev/api/v1',
-    apiKeyPrefix: 'ag_',
+    apiBaseUrl: 'https://server.anyhunt.app/api/v1',
+    apiKeyPrefix: 'ah_',
   },
   [ProductId.MEMOX]: {
     id: ProductId.MEMOX,
     name: 'Memox',
     description: 'AI memory API for long-term memory',
-    websiteBaseUrl: 'https://aiget.dev',
+    websiteBaseUrl: 'https://anyhunt.app',
     websitePath: '/memox',
-    apiBaseUrl: 'https://server.aiget.dev/api/v1',
-    apiKeyPrefix: 'ag_',
+    apiBaseUrl: 'https://server.anyhunt.app/api/v1',
+    apiKeyPrefix: 'ah_',
   },
   [ProductId.SANDX]: {
     id: ProductId.SANDX,
     name: 'Sandx',
     description: 'Agent sandbox for secure code execution',
-    websiteBaseUrl: 'https://aiget.dev',
+    websiteBaseUrl: 'https://anyhunt.app',
     websitePath: '/sandx',
-    apiBaseUrl: 'https://server.aiget.dev/api/v1',
-    apiKeyPrefix: 'ag_',
+    apiBaseUrl: 'https://server.anyhunt.app/api/v1',
+    apiKeyPrefix: 'ah_',
   },
 };

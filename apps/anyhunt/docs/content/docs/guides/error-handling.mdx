@@ -1,0 +1,348 @@
+---
+title: Error Handling
+description: Understanding error codes and implementing retry strategies
+---
+
+# Error Handling
+
+Learn how to handle errors from Anyhunt APIs and implement robust retry strategies.
+
+## Error Response Format
+
+All API errors follow a consistent format:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {}
+  }
+}
+```
+
+## Common Error Codes
+
+### Client Errors (4xx)
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `INVALID_URL` | 400 | URL is malformed or uses unsupported protocol |
+| `URL_NOT_ALLOWED` | 400 | URL blocked by SSRF protection (localhost, private IPs) |
+| `INVALID_PARAMETER` | 400 | Request parameter validation failed |
+| `SELECTOR_NOT_FOUND` | 400 | CSS selector not found on page |
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `FORBIDDEN` | 403 | API key lacks required permissions |
+| `NOT_FOUND` | 404 | Resource (job, scrape) not found |
+| `RATE_LIMITED` | 429 | Too many requests - slow down |
+| `QUOTA_EXCEEDED` | 429 | Monthly quota exhausted |
+
+### Server Errors (5xx)
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `PAGE_TIMEOUT` | 504 | Page load exceeded timeout |
+| `BROWSER_ERROR` | 500 | Browser crashed or failed |
+| `NETWORK_ERROR` | 500 | Network request failed |
+| `INTERNAL_ERROR` | 500 | Unexpected server error |
+
+## Handling Specific Errors
+
+### Rate Limiting
+
+When rate limited, the response includes retry information:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests",
+    "details": {
+      "retryAfter": 60,
+      "limit": 100,
+      "remaining": 0,
+      "resetAt": "2024-01-15T11:00:00.000Z"
+    }
+  }
+}
+```
+
+**Headers:**
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Requests allowed per window |
+| `X-RateLimit-Remaining` | Requests remaining |
+| `X-RateLimit-Reset` | Window reset timestamp |
+| `Retry-After` | Seconds to wait (when limited) |
+
+### Quota Exceeded
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "QUOTA_EXCEEDED",
+    "message": "Monthly quota exceeded",
+    "details": {
+      "quota": 10000,
+      "used": 10000,
+      "resetAt": "2024-02-01T00:00:00.000Z"
+    }
+  }
+}
+```
+
+### Page Timeout
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PAGE_TIMEOUT",
+    "message": "Page load timed out after 30000ms",
+    "details": {
+      "url": "https://slow-website.com",
+      "timeout": 30000
+    }
+  }
+}
+```
+
+## Retry Strategies
+
+### Exponential Backoff
+
+Implement exponential backoff for transient errors:
+
+```javascript
+async function scrapeWithRetry(url, options, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://server.anyhunt.app/api/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ah_your_api_key',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, ...options }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        return data;
+      }
+
+      // Don't retry client errors (except rate limits)
+      if (response.status >= 400 && response.status < 500
+          && data.error?.code !== 'RATE_LIMITED') {
+        throw new Error(`Client error: ${data.error?.message}`);
+      }
+
+      // Handle rate limiting
+      if (data.error?.code === 'RATE_LIMITED') {
+        const retryAfter = data.error.details?.retryAfter || 60;
+        console.log(`Rate limited. Waiting ${retryAfter}s...`);
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+
+      // Retry server errors with exponential backoff
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        console.log(`Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`);
+        await sleep(delay);
+      }
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error('Max retries exceeded');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+### Python Implementation
+
+```python
+import time
+import requests
+from typing import Optional
+
+def scrape_with_retry(
+    url: str,
+    options: dict = None,
+    max_retries: int = 3
+) -> dict:
+    options = options or {}
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.post(
+                'https://server.anyhunt.app/api/v1/scrape',
+                headers={
+                    'Authorization': 'Bearer ah_your_api_key',
+                    'Content-Type': 'application/json',
+                },
+                json={'url': url, **options},
+            )
+
+            data = response.json()
+
+            if data.get('success'):
+                return data
+
+            error = data.get('error', {})
+            error_code = error.get('code')
+
+            # Don't retry client errors (except rate limits)
+            if 400 <= response.status_code < 500 and error_code != 'RATE_LIMITED':
+                raise Exception(f"Client error: {error.get('message')}")
+
+            # Handle rate limiting
+            if error_code == 'RATE_LIMITED':
+                retry_after = error.get('details', {}).get('retryAfter', 60)
+                print(f"Rate limited. Waiting {retry_after}s...")
+                time.sleep(retry_after)
+                continue
+
+            # Retry server errors with exponential backoff
+            if attempt < max_retries:
+                delay = (2 ** attempt)
+                print(f"Attempt {attempt + 1} failed. Retrying in {delay}s...")
+                time.sleep(delay)
+
+        except requests.RequestException as e:
+            if attempt == max_retries:
+                raise
+            delay = (2 ** attempt)
+            time.sleep(delay)
+
+    raise Exception('Max retries exceeded')
+```
+
+## Error Recovery Patterns
+
+### Circuit Breaker
+
+Prevent cascading failures with a circuit breaker:
+
+```javascript
+class CircuitBreaker {
+  constructor(threshold = 5, resetTimeout = 60000) {
+    this.failures = 0;
+    this.threshold = threshold;
+    this.resetTimeout = resetTimeout;
+    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    this.nextAttempt = 0;
+  }
+
+  async execute(fn) {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new Error('Circuit breaker is OPEN');
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failures = 0;
+    this.state = 'CLOSED';
+  }
+
+  onFailure() {
+    this.failures++;
+    if (this.failures >= this.threshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.resetTimeout;
+    }
+  }
+}
+
+// Usage
+const breaker = new CircuitBreaker(5, 60000);
+
+async function safeScrape(url) {
+  return breaker.execute(() => scrapeWithRetry(url));
+}
+```
+
+### Graceful Degradation
+
+Handle partial failures in batch operations:
+
+```javascript
+async function scrapeBatchWithFallback(urls) {
+  const results = [];
+  const errors = [];
+
+  for (const url of urls) {
+    try {
+      const result = await scrapeWithRetry(url);
+      results.push({ url, success: true, data: result.data });
+    } catch (error) {
+      errors.push({ url, success: false, error: error.message });
+      // Continue processing other URLs
+    }
+  }
+
+  return {
+    results,
+    errors,
+    successRate: results.length / urls.length,
+  };
+}
+```
+
+## Best Practices
+
+1. **Always check `success` field** - Don't assume requests succeed
+2. **Implement retries** - Use exponential backoff for transient errors
+3. **Respect rate limits** - Use `Retry-After` header values
+4. **Log errors** - Keep records for debugging
+5. **Set timeouts** - Don't wait indefinitely for responses
+6. **Handle partial failures** - In batch operations, process what you can
+7. **Monitor error rates** - Track errors to detect issues early
+
+## Debugging Tips
+
+### Enable Verbose Logging
+
+```javascript
+const response = await fetch('https://server.anyhunt.app/api/v1/scrape', {
+  // ...
+});
+
+console.log('Status:', response.status);
+console.log('Headers:', Object.fromEntries(response.headers));
+console.log('Body:', await response.text());
+```
+
+### Check Request ID
+
+Every response includes a request ID for support:
+
+```
+X-Request-Id: req_abc123xyz
+```
+
+Include this ID when reporting issues.

@@ -5,7 +5,7 @@ import type { Editor } from "@tiptap/react"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { TextColorSmallIcon } from "@aiget/ui/icons/text-color-small-icon"
+import { TextColorSmallIcon } from "@anyhunt/ui/icons/text-color-small-icon"
 
 // --- Lib ---
 import { isMarkInSchema } from "../../utils/tiptap-utils"

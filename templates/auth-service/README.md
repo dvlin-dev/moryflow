@@ -1,6 +1,6 @@
 # Auth Service 模板
 
-本模板用于快速落地一套可复用的 Auth 服务（独立部署），并与 `@aiget/auth-client` 配合完成注册/登录/刷新/登出与 Google/Apple 登录流程。
+本模板用于快速落地一套可复用的 Auth 服务（独立部署），并与 `/auth-client` 配合完成注册/登录/刷新/登出与 Google/Apple 登录流程。
 
 ## 适用场景
 
@@ -13,7 +13,7 @@
 - `/api/v1/auth/*` 标准化路由（Auth Facade）。
 - Web/Native 统一的 refresh 行为（Cookie/响应体）。
 - 可选 Google/Apple 登录（按业务线独立配置）。
-- `@aiget/identity-db` 的 Prisma 数据模型与连接方式示例。
+- `/identity-db` 的 Prisma 数据模型与连接方式示例。
 
 ## 目录结构
 
@@ -45,7 +45,7 @@ pnpm dev
 ## 快速开始（外部项目）
 
 1. 复制 `templates/auth-service` 到你的项目根目录。
-2. 将 `package.json` 内的 `@aiget/*` 依赖替换为可安装版本（已发布或本地路径）。
+2. 将 `package.json` 内的 `/*` 依赖替换为可安装版本（已发布或本地路径）。
 3. 准备数据库并同步 schema（详见下方“数据库”）。
 4. 配置 `.env` 后启动服务。
 
@@ -64,11 +64,11 @@ pnpm dev
 
 ## 数据库
 
-- 使用 `@aiget/identity-db` 的 schema。
+- 使用 `/identity-db` 的 schema。
 - 在本仓库内可直接执行：
 
 ```bash
-pnpm --filter @aiget/identity-db prisma:push
+pnpm --filter @anyhunt/identity-db prisma:push
 ```
 
 > 外部项目请确保拿到 `identity-db` 的 schema（或复制 `packages/identity-db/prisma/schema.prisma`）。
@@ -80,10 +80,10 @@ pnpm --filter @aiget/identity-db prisma:push
 
 ## 客户端接入
 
-建议使用 `@aiget/auth-client`：
+建议使用 `/auth-client`：
 
 ```ts
-import { createAuthClient } from '@aiget/auth-client';
+import { createAuthClient } from '@anyhunt/auth-client';
 
 const auth = createAuthClient({
   baseUrl: 'https://app.moryflow.com/api/v1/auth',

@@ -1,13 +1,13 @@
 /**
  * [PROVIDES]: serverApi, fetchCurrentUser, fetchCredits, fetchProfile, updateProfile, fetchMembershipModels, deleteAccount
- * [DEPENDS]: @aiget/api/client, storage.ts
+ * [DEPENDS]: /api/client, storage.ts
  * [POS]: Mobile 端 Server API 封装，使用统一客户端
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { createServerApiClient, ServerApiError } from '@aiget/api/client'
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import { createServerApiClient, ServerApiError } from '@anyhunt/api/client'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import { getStoredToken } from './storage'
 
 // ── 创建 API 客户端 ──────────────────────────────────────

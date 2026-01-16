@@ -8,8 +8,8 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { isNodeTypeSelected } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { Redo2Icon } from "@aiget/ui/icons/redo2-icon"
-import { Undo2Icon } from "@aiget/ui/icons/undo2-icon"
+import { Redo2Icon } from "@anyhunt/ui/icons/redo2-icon"
+import { Undo2Icon } from "@anyhunt/ui/icons/undo2-icon"
 
 export type UndoRedoAction = "undo" | "redo"
 

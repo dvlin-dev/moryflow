@@ -10,7 +10,7 @@ import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import type { Auth } from '../better-auth';
 import { AUTH_INSTANCE } from './session.guard';
-import type { PrismaClient } from '@aiget/identity-db';
+import type { PrismaClient } from '@anyhunt/identity-db';
 import { IDENTITY_PRISMA } from '../facade/auth-facade.service';
 
 /**

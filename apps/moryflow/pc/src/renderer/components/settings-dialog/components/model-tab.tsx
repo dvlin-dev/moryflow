@@ -1,7 +1,7 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form'
-import { Alert, AlertDescription } from '@aiget/ui/components/alert'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
+import { Alert, AlertDescription } from '@anyhunt/ui/components/alert'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
 import { useTranslation } from '@/lib/i18n'
 import type { FormValues } from '../const'
 

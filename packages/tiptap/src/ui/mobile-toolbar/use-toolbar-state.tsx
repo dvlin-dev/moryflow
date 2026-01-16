@@ -15,8 +15,8 @@ import {
   LinkPopover,
 } from "../link-popover"
 import { canColorHighlight } from "../color-highlight-button"
-import { HighlighterIcon } from "@aiget/ui/icons/highlighter-icon"
-import { LinkIcon } from "@aiget/ui/icons/link-icon"
+import { HighlighterIcon } from "@anyhunt/ui/icons/highlighter-icon"
+import { LinkIcon } from "@anyhunt/ui/icons/link-icon"
 
 import type { ToolbarState, ToolbarViewId, ToolbarViewRegistry } from "./types"
 import { TOOLBAR_VIEWS } from "./types"

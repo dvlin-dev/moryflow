@@ -45,14 +45,14 @@ export type ClientType = (typeof ClientType)[keyof typeof ClientType];
  * 跨子域 Cookie 域名
  */
 export const COOKIE_DOMAIN =
-  process.env.COOKIE_DOMAIN ?? (process.env.NODE_ENV === 'production' ? '.aiget.dev' : undefined);
+  process.env.COOKIE_DOMAIN ?? (process.env.NODE_ENV === 'production' ? '.anyhunt.app' : undefined);
 
 /**
  * JWT 配置
  */
 export const JWT_CONFIG = {
-  issuer: 'https://server.aiget.dev',
-  audience: 'https://server.aiget.dev',
+  issuer: 'https://server.anyhunt.app',
+  audience: 'https://server.anyhunt.app',
   expirationTime: ACCESS_TOKEN_TTL,
 } as const;
 
@@ -69,10 +69,10 @@ export const EMAIL_OTP_CONFIG = {
  * 信任的子域名（生产环境应从环境变量读取）
  */
 export const DEFAULT_TRUSTED_ORIGINS = [
-  'https://aiget.dev',
-  'https://server.aiget.dev',
-  'https://console.aiget.dev',
-  'https://admin.aiget.dev',
+  'https://anyhunt.app',
+  'https://server.anyhunt.app',
+  'https://console.anyhunt.app',
+  'https://admin.anyhunt.app',
   // 开发环境
   'http://localhost:3000',
   'http://localhost:5173',

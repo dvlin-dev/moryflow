@@ -11,7 +11,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
-import type { AgentSettings, UserProviderConfig, CustomProviderConfig } from '@aiget/agents-runtime'
+import type { AgentSettings, UserProviderConfig, CustomProviderConfig } from '@anyhunt/agents-runtime'
 
 // 重新导出类型
 export type { AgentSettings, UserProviderConfig, CustomProviderConfig }

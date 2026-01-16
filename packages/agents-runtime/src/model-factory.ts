@@ -5,7 +5,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createXai } from '@ai-sdk/xai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { aisdk } from '@aiget/agents-extensions'
+import { aisdk } from '@anyhunt/agents-extensions'
 
 import {
   type AgentSettings,

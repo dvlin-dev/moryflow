@@ -18,8 +18,8 @@ import {
 } from "../../../../ui-primitive/menu";
 import { Button } from "../../../../ui-primitive/button";
 import { ComboboxList } from "../../../../ui-primitive/combobox";
-import { MicAiIcon } from "@aiget/ui/icons/mic-ai-icon";
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon";
+import { MicAiIcon } from "@anyhunt/ui/icons/mic-ai-icon";
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon";
 
 import { SUPPORTED_TONES } from "../ai-menu-items-constants";
 

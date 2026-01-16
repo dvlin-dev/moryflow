@@ -1,13 +1,13 @@
 ---
 title: 用户系统改造计划（两套 Auth + Auth Client）
 date: 2026-01-06
-scope: moryflow.com, aiget.dev
+scope: moryflow.com, anyhunt.app
 status: archived
 archived_date: 2026-01-12
 ---
 
 <!--
-[INPUT]: 两条业务线隔离（Moryflow / Aiget Dev）；支持 Google/Apple 登录；只共享 packages/*；零兼容改造
+[INPUT]: 两条业务线隔离（Moryflow / Anyhunt Dev）；支持 Google/Apple 登录；只共享 packages/*；零兼容改造
 [OUTPUT]: 用户系统改造计划（目标、目录、模块职责、步骤、删除清单、测试验收）
 [POS]: 归档：用户系统改造计划（阶段性执行记录）
 
@@ -86,15 +86,15 @@ templates/
 - OAuth 仅支持 Google/Apple（每条业务线独立 clientId/回调域名）。
 - Token 规则：`access=6h`、`refresh=90d`、rotation=on。
 - Web：refresh 存 `HttpOnly Cookie`；access 仅内存。
-- CSRF：refresh 必须校验 `Origin`（`app.moryflow.com` / `console.aiget.dev` / `admin.aiget.dev`）。
+- CSRF：refresh 必须校验 `Origin`（`app.moryflow.com` / `console.anyhunt.app` / `admin.anyhunt.app`）。
 - JWKS：业务服务通过 `/api/v1/auth/jwks` 离线验签。
-- Aiget Dev 对外能力使用 API key（`Authorization: Bearer <apiKey>`）。
+- Anyhunt Dev 对外能力使用 API key（`Authorization: Bearer <apiKey>`）。
 
 ## 交付与复用形态（必须落地）
 
 1. **内嵌模式（业务线内）**：在现有应用内注册 Auth 模块，复用 `auth-server`。
 2. **独立服务模式**：使用 `templates/auth-service` 独立部署，通过反代挂载到同域名 `/api/v1/auth`。
-3. **客户端 SDK**：`@aiget/auth-client` 作为统一接入层，业务侧只配置 `baseUrl/clientType`。
+3. **客户端 SDK**：`/auth-client` 作为统一接入层，业务侧只配置 `baseUrl/clientType`。
 
 ## 快速接入清单（必须具备）
 
@@ -122,10 +122,10 @@ templates/
 ## 改造范围（必须覆盖）
 
 - Auth Server：完善 Google/Apple OAuth 入口、DTO/Service 与示例配置。
-- Auth Client：重命名 `@aiget/auth` → `@aiget/auth-client`，注入化配置。
+- Auth Client：重命名 `/auth` → `/auth-client`，注入化配置。
 - Auth Client：连接注册/登录/刷新/登出/Me + Google/Apple 登录流程。
 - Identity DB：文档与注释对齐“业务线独立”。
-- 业务线接入：Moryflow 与 Aiget Dev 各自配置 Auth（域名、Cookie、密钥、DB）。
+- 业务线接入：Moryflow 与 Anyhunt Dev 各自配置 Auth（域名、Cookie、密钥、DB）。
 - 文档同步：所有“统一身份/共享账号”表述清理。
 - Auth 服务模板：提供可独立部署的模板与最小配置文档。
 
@@ -143,7 +143,7 @@ templates/
 
 ### Milestone 1：Auth Client 重构
 
-- `packages/auth` → `packages/auth-client`（包名为 `@aiget/auth-client`）。
+- `packages/auth` → `packages/auth-client`（包名为 `/auth-client`）。
 - 提供 `createAuthClient({ baseUrl, clientType })`。
 - 移除硬编码域名与旧配置。
 
@@ -162,7 +162,7 @@ templates/
 ### Milestone 3：业务线落地
 
 - Moryflow：配置 `baseURL`、`COOKIE_DOMAIN=.moryflow.com`、独立 DB。
-- Aiget Dev：配置 `baseURL`、`COOKIE_DOMAIN=.aiget.dev`、独立 DB。
+- Anyhunt Dev：配置 `baseURL`、`COOKIE_DOMAIN=.anyhunt.app`、独立 DB。
 - 确保 JWT issuer/audience 与 JWKS 按业务线隔离。
 
 ### Milestone 4：Auth 服务模板与快速接入
@@ -173,7 +173,7 @@ templates/
 
 ### Milestone 5：API Key 与 Memox 基座
 
-- Aiget Dev API key 生成/轮换/禁用。
+- Anyhunt Dev API key 生成/轮换/禁用。
 - tenantId 从 apiKey 推导；禁止客户端传入。
 
 ### Milestone 6：测试与验收

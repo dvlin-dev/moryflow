@@ -1,10 +1,10 @@
 /**
  * [PROVIDES]: 沙盒化的 bash 工具
- * [DEPENDS]: sandbox-manager, @aiget/agents
+ * [DEPENDS]: sandbox-manager, /agents
  * [POS]: 替代原有的 bash 工具，添加沙盒保护
  */
 
-import { tool, type RunContext } from '@aiget/agents'
+import { tool, type RunContext } from '@anyhunt/agents'
 import { z } from 'zod'
 import type { SandboxManager } from './sandbox-manager'
 import type { AuthChoice } from './types'

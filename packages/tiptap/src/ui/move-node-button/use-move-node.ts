@@ -11,8 +11,8 @@ import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 import { getAnchorNodeAndPos } from "../../utils/tiptap-advanced-utils"
 
 // --- Icons ---
-import { AlignTopIcon } from "@aiget/ui/icons/align-top-icon"
-import { AlignBottomIcon } from "@aiget/ui/icons/align-bottom-icon"
+import { AlignTopIcon } from "@anyhunt/ui/icons/align-top-icon"
+import { AlignBottomIcon } from "@anyhunt/ui/icons/align-bottom-icon"
 
 export const MOVE_UP_SHORTCUT_KEY = "mod+shift+ArrowUp"
 export const MOVE_DOWN_SHORTCUT_KEY = "mod+shift+ArrowDown"

@@ -1,13 +1,13 @@
 ---
 title: 'UI 迁移：统一为 Moryflow 风格 + Hugeicons'
 date: '2026-01-09'
-scope: 'packages/ui, apps/aiget/*'
+scope: 'packages/ui, apps/anyhunt/*'
 status: 'done'
 ---
 
 # 结论
 
-- 组件入口统一为 `@aiget/ui`（默认导出 components/composed/hooks/lib）
+- 组件入口统一为 `/ui`（默认导出 components/composed/hooks/lib）
 - `primitives` 目录已移除，旧入口不再保留
 - 图标统一 Hugeicons（组件库与业务页同规则）
 
@@ -22,13 +22,13 @@ status: 'done'
 ## packages/ui
 
 - 移除 `primitives` 目录与导出入口
-- 默认入口 `@aiget/ui` 直接导出 components/composed/hooks/lib
+- 默认入口 `/ui` 直接导出 components/composed/hooks/lib
 - 新增 `Icon` 封装，组件图标统一 Hugeicons
 - Sidebar 已迁移到 components 并调整为圆角风格
 
-## apps/aiget/console / admin / www
+## apps/anyhunt/console / admin / www
 
-- 组件导入统一为 `@aiget/ui`
+- 组件导入统一为 `/ui`
 - 页面与组件图标替换为 Hugeicons
 - 清理方角覆盖样式（不再使用 `rounded-none` 主题）
 
@@ -37,8 +37,8 @@ status: 'done'
 ## 组件导入
 
 ```tsx
-import { Button, Card, Icon } from '@aiget/ui';
-import { DataTable } from '@aiget/ui/composed';
+import { Button, Card, Icon } from '@anyhunt/ui';
+import { DataTable } from '@anyhunt/ui/composed';
 ```
 
 ## 图标
@@ -50,5 +50,5 @@ import { DataTable } from '@aiget/ui/composed';
 # 验收清单
 
 - 旧 primitives 入口全局无引用
-- Aiget 业务线不再依赖 lucide/tabler 图标
+- Anyhunt 业务线不再依赖 lucide/tabler 图标
 - 主要页面 UI 风格为圆角与柔和层级

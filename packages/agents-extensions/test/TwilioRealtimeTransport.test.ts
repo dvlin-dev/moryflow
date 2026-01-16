@@ -5,7 +5,7 @@ import { TwilioRealtimeTransportLayer } from '../src/TwilioRealtimeTransport';
 import type { MessageEvent as NodeMessageEvent } from 'ws';
 import type { MessageEvent } from 'undici-types';
 
-vi.mock('@aiget/agents/realtime', () => {
+vi.mock('@anyhunt/agents/realtime', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { EventEmitter } = require('events');
   const utils = {
@@ -69,7 +69,7 @@ describe('TwilioRealtimeTransportLayer', () => {
       twilioWebSocket: twilio as any,
     });
     await transport.connect({ apiKey: 'ek_test' } as any);
-    const { OpenAIRealtimeWebSocket } = await import('@aiget/agents/realtime');
+    const { OpenAIRealtimeWebSocket } = await import('@anyhunt/agents/realtime');
     const sendAudioSpy = vi.mocked(OpenAIRealtimeWebSocket.prototype.sendAudio);
     const closeSpy = vi.mocked(OpenAIRealtimeWebSocket.prototype.close);
     const interruptSpy = vi.mocked(
@@ -154,7 +154,7 @@ describe('TwilioRealtimeTransportLayer', () => {
       twilioWebSocket: twilio as any,
     });
     await transport.connect({ apiKey: 'ek_test' } as any);
-    const { OpenAIRealtimeWebSocket } = await import('@aiget/agents/realtime');
+    const { OpenAIRealtimeWebSocket } = await import('@anyhunt/agents/realtime');
     const spy = vi.mocked(
       OpenAIRealtimeWebSocket.prototype.updateSessionConfig,
     );

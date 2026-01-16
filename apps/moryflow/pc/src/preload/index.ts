@@ -14,7 +14,7 @@ import type {
   SandboxAuthRequest,
   BindingConflictRequest,
 } from '../shared/ipc.js'
-import type { SandboxMode } from '@aiget/agents-sandbox'
+import type { SandboxMode } from '@anyhunt/agents-sandbox'
 
 const api: DesktopApi = {
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),

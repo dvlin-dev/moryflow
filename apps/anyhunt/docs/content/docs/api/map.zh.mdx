@@ -1,0 +1,127 @@
+---
+title: Map API
+description: 通过 Sitemap 或浏览器爬取发现网站所有 URL
+---
+
+# Map API
+
+Map API 用于发现网站上的所有 URL。它首先尝试解析 Sitemap，如果失败则回退到浏览器爬取。返回 URL 列表，不包含页面内容。
+
+## 接口端点
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| POST | `/api/v1/map` | 获取网站 URL（同步） |
+
+## 发现 URL
+
+```http
+POST /api/v1/map
+```
+
+### 请求参数
+
+| 参数 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `url` | string | 必填 | 网站基础 URL |
+| `search` | string | - | 按关键词过滤 URL |
+| `limit` | number | 5000 | 最大返回 URL 数（1-10000） |
+| `ignoreSitemap` | boolean | `false` | 跳过 Sitemap，仅使用浏览器爬取 |
+| `includeSubdomains` | boolean | `false` | 包含子域名 URL |
+
+### 请求示例
+
+```bash
+curl -X POST https://server.anyhunt.app/api/v1/map \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "search": "blog",
+    "limit": 100
+  }'
+```
+
+### 响应
+
+```json
+{
+  "success": true,
+  "data": {
+    "links": [
+      "https://example.com/blog",
+      "https://example.com/blog/post-1",
+      "https://example.com/blog/post-2",
+      "https://example.com/blog/archive"
+    ],
+    "count": 4
+  }
+}
+```
+
+## 工作原理
+
+1. **Sitemap 解析**（默认）
+   - 获取 `/sitemap.xml` 和 `/sitemap_index.xml`
+   - 解析 XML 提取所有 `<loc>` URL
+   - 递归解析 Sitemap 索引文件
+
+2. **浏览器爬取**（降级或当 `ignoreSitemap: true` 时）
+   - 从首页开始
+   - 提取每个页面的所有链接
+   - 限制为配置的 `MAP_MAX_CRAWL_PAGES`（默认 100）
+
+3. **过滤**
+   - 如指定 `search` 关键词则进行过滤
+   - URL 去重
+   - 过滤外部域名（除非 `includeSubdomains: true`）
+
+## 使用场景
+
+### 爬取前发现网站结构
+
+```bash
+# 首先，发现所有 URL
+curl -X POST https://server.anyhunt.app/api/v1/map \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -d '{"url": "https://docs.example.com"}'
+
+# 然后，爬取特定部分
+curl -X POST https://server.anyhunt.app/api/v1/crawl \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -d '{
+    "url": "https://docs.example.com",
+    "includePaths": ["/guides/*"]
+  }'
+```
+
+### 查找特定内容
+
+```bash
+# 查找所有价格相关页面
+curl -X POST https://server.anyhunt.app/api/v1/map \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -d '{
+    "url": "https://example.com",
+    "search": "pricing"
+  }'
+```
+
+### 包含子域名
+
+```bash
+# 获取所有子域名的 URL
+curl -X POST https://server.anyhunt.app/api/v1/map \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -d '{
+    "url": "https://example.com",
+    "includeSubdomains": true
+  }'
+```
+
+## 注意事项
+
+- 此接口是**同步**的 - 响应包含所有发现的 URL
+- 大型网站可能需要较长时间（最多 30 秒）
+- 使用 `limit` 控制超大型网站的响应大小
+- 结果自动去重

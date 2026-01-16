@@ -1,4 +1,4 @@
-import type { AgentInputItem, Session } from '@aiget/agents'
+import type { AgentInputItem, Session } from '@anyhunt/agents'
 import type { TokenUsage } from './types'
 
 /**

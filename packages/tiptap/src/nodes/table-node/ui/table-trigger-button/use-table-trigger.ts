@@ -8,7 +8,7 @@ import { useTiptapEditor } from "../../../../hooks/use-tiptap-editor"
 import { isExtensionAvailable } from "../../../../utils/tiptap-utils"
 
 // --- Icons ---
-import { TableIcon } from "@aiget/ui/icons/table-icon"
+import { TableIcon } from "@anyhunt/ui/icons/table-icon"
 
 const REQUIRED_EXTENSIONS = ["table"]
 

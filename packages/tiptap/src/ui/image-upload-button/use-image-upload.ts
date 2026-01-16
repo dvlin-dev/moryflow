@@ -10,7 +10,7 @@ import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 import { isExtensionAvailable } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { ImagePlusIcon } from "@aiget/ui/icons/image-plus-icon"
+import { ImagePlusIcon } from "@anyhunt/ui/icons/image-plus-icon"
 
 export const IMAGE_UPLOAD_SHORTCUT_KEY = "mod+shift+i"
 

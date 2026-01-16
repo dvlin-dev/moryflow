@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Tooltip, TooltipTrigger, TooltipContent } from '@aiget/ui/components/tooltip'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@anyhunt/ui/components/tooltip'
 import { useTranslation } from '@/lib/i18n'
 import type { TokenUsage } from '@shared/ipc'
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Aiget NestJS TypeScript Config",
+  "display": "Anyhunt NestJS TypeScript Config",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

@@ -13,7 +13,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
+} from '@anyhunt/ui/components/alert-dialog'
 import { useTranslation } from '@/lib/i18n'
 import type { VaultRemoveDialogProps } from '../const'
 

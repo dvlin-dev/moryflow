@@ -1,7 +1,7 @@
 {
-  "name": "@aiget/tiptap",
+  "name": "@anyhunt/tiptap",
   "version": "0.1.0",
-  "description": "Aiget Tiptap editor components and utilities",
+  "description": "Anyhunt Tiptap editor components and utilities",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

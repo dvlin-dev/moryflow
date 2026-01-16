@@ -24,7 +24,7 @@ import type {
   FileInfo,
   CryptoUtils,
   AuthCapabilities,
-} from '@aiget/agents-adapter'
+} from '@anyhunt/agents-adapter'
 import { membershipBridge } from '../membership-bridge.js'
 
 const execAsync = promisify(exec)

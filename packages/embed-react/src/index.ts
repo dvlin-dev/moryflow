@@ -1,10 +1,10 @@
 /**
- * @aiget/embed-react - React bindings for oEmbed API
+ * /embed-react - React bindings for oEmbed API
  */
 
 // Re-export from core
-export type { EmbedType, ProviderName, EmbedTheme, EmbedData, EmbedOptions } from '@aiget/embed';
-export { EmbedError, detectProvider, isSupported } from '@aiget/embed';
+export type { EmbedType, ProviderName, EmbedTheme, EmbedData, EmbedOptions } from '@anyhunt/embed';
+export { EmbedError, detectProvider, isSupported } from '@anyhunt/embed';
 
 // Components
 export {

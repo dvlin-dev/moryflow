@@ -4,7 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import type { FileIndexStore } from '@aiget/api'
+import type { FileIndexStore } from '@anyhunt/api'
 
 const getStorageKey = (vaultPath: string) => `moryflow:file-index:${vaultPath}`
 

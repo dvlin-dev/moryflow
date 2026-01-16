@@ -15,13 +15,13 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { AlignLeftIcon } from "@aiget/ui/icons/align-left-icon"
-import { AlignCenterIcon } from "@aiget/ui/icons/align-center-icon"
-import { AlignRightIcon } from "@aiget/ui/icons/align-right-icon"
-import { AlignJustifyIcon } from "@aiget/ui/icons/align-justify-icon"
-import { AlignBottomIcon } from "@aiget/ui/icons/align-bottom-icon"
-import { AlignTopIcon } from "@aiget/ui/icons/align-top-icon"
-import { AlignMiddleIcon } from "@aiget/ui/icons/align-middle-icon"
+import { AlignLeftIcon } from "@anyhunt/ui/icons/align-left-icon"
+import { AlignCenterIcon } from "@anyhunt/ui/icons/align-center-icon"
+import { AlignRightIcon } from "@anyhunt/ui/icons/align-right-icon"
+import { AlignJustifyIcon } from "@anyhunt/ui/icons/align-justify-icon"
+import { AlignBottomIcon } from "@anyhunt/ui/icons/align-bottom-icon"
+import { AlignTopIcon } from "@anyhunt/ui/icons/align-top-icon"
+import { AlignMiddleIcon } from "@anyhunt/ui/icons/align-middle-icon"
 
 export type TextAlignment = "left" | "center" | "right" | "justify"
 export type VerticalAlignment = "top" | "middle" | "bottom"

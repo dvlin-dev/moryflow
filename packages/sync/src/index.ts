@@ -1,5 +1,5 @@
 /**
- * @aiget/sync
+ * /sync
  *
  * [PROVIDES]: 云同步系统共享工具包
  * [DEPENDS]: zod

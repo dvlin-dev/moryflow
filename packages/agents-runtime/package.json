@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-runtime",
+  "name": "@anyhunt/agents-runtime",
   "version": "0.1.0",
   "description": "Core runtime for Moryflow Agent",
   "main": "dist/index.js",
@@ -11,14 +11,16 @@
       "import": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "dependencies": {
-    "@aiget/agents-adapter": "workspace:*",
-    "@aiget/agents": "workspace:*",
-    "@aiget/agents-core": "workspace:*",
-    "@aiget/agents-extensions": "workspace:*",
-    "@aiget/api": "workspace:*",
+    "@anyhunt/agents-adapter": "workspace:*",
+    "@anyhunt/agents": "workspace:*",
+    "@anyhunt/agents-core": "workspace:*",
+    "@anyhunt/agents-extensions": "workspace:*",
+    "@anyhunt/api": "workspace:*",
     "@ai-sdk/openai": "^3.0.1",
     "@ai-sdk/anthropic": "^3.0.1",
     "@ai-sdk/google": "^3.0.1",

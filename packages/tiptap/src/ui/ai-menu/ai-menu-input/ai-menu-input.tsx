@@ -4,9 +4,9 @@ import { useCallback, useState } from "react"
 import type { Tone } from "../../ai-types"
 
 // Icons
-import { MicAiIcon } from "@aiget/ui/icons/mic-ai-icon"
-import { ArrowUpIcon } from "@aiget/ui/icons/arrow-up-icon"
-import { AiSparklesIcon } from "@aiget/ui/icons/ai-sparkles-icon"
+import { MicAiIcon } from "@anyhunt/ui/icons/mic-ai-icon"
+import { ArrowUpIcon } from "@anyhunt/ui/icons/arrow-up-icon"
+import { AiSparklesIcon } from "@anyhunt/ui/icons/ai-sparkles-icon"
 
 // UI Components
 import { SUPPORTED_TONES } from "../ai-menu-items/ai-menu-items-constants"

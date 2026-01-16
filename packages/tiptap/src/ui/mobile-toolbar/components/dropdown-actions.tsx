@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "../../../ui-primitive/dropdown-menu"
 import { Button } from "../../../ui-primitive/button"
-import { MoreVerticalIcon } from "@aiget/ui/icons/more-vertical-icon"
+import { MoreVerticalIcon } from "@anyhunt/ui/icons/more-vertical-icon"
 import { useIsBreakpoint } from "../../../hooks/use-is-breakpoint"
 import { getNodeDisplayName } from "../../../utils/tiptap-collab-utils"
 import { ResetAllFormattingButton } from "../../reset-all-formatting-button"

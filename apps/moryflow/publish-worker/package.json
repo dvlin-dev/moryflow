@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/moryflow-publish-worker",
+  "name": "@anyhunt/moryflow-publish-worker",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,4 +13,3 @@
     "wrangler": "^3.99.0"
   }
 }
-

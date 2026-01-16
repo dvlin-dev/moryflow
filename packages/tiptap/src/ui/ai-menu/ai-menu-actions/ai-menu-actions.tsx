@@ -3,9 +3,9 @@
 import { useCallback } from "react"
 import type { Editor } from "@tiptap/react"
 import { Button, ButtonGroup } from "../../../ui-primitive/button"
-import { RefreshAiIcon } from "@aiget/ui/icons/refresh-ai-icon"
-import { XIcon } from "@aiget/ui/icons/x-icon"
-import { CheckIcon } from "@aiget/ui/icons/check-icon"
+import { RefreshAiIcon } from "@anyhunt/ui/icons/refresh-ai-icon"
+import { XIcon } from "@anyhunt/ui/icons/x-icon"
+import { CheckIcon } from "@anyhunt/ui/icons/check-icon"
 import type { TextOptions } from "../../ai-types"
 import { useUiEditorState } from "../../../hooks/use-ui-editor-state"
 

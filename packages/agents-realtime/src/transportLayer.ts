@@ -1,4 +1,4 @@
-import { EventEmitter } from '@aiget/agents-core/_shims';
+import { EventEmitter } from '@anyhunt/agents-core/_shims';
 import {
   RealtimeClientMessage,
   RealtimeSessionConfig,

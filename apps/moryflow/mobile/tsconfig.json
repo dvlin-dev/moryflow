@@ -5,12 +5,12 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["*"],
-      "@aiget/shared-storage/*": ["../../packages/shared-storage/src/*"],
-      "@aiget/shared-types/*": ["../../packages/shared-types/src/*"],
-      "@aiget/shared-core/*": ["../../packages/shared-core/src/*"],
-      "@aiget/shared-types": ["../../packages/shared-types/src/index.ts"],
-      "@aiget/shared-core": ["../../packages/shared-core/src/index.ts"],
-      "@aiget/tiptap/*": ["../../packages/tiptap/src/*"]
+      "/shared-storage/*": ["../../packages/shared-storage/src/*"],
+      "/shared-types/*": ["../../packages/shared-types/src/*"],
+      "/shared-core/*": ["../../packages/shared-core/src/*"],
+      "/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "/shared-core": ["../../packages/shared-core/src/index.ts"],
+      "@anyhunt/tiptap/*": ["../../packages/tiptap/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "uniwind-types.d.ts"]

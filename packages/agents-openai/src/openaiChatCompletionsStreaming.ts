@@ -1,6 +1,6 @@
 import type { Stream } from 'openai/streaming';
 import type { CompletionUsage } from 'openai/resources/completions';
-import { protocol } from '@aiget/agents-core';
+import { protocol } from '@anyhunt/agents-core';
 import { ChatCompletion, ChatCompletionChunk } from 'openai/resources/chat';
 import { FAKE_ID } from './openaiChatCompletionsModel';
 

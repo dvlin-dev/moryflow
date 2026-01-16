@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: Server API 客户端、类型与工具函数
- * [DEPENDS]: @aiget/api - 共享 API 类型和客户端
+ * [DEPENDS]: /api - 共享 API 类型和客户端
  * [POS]: Mobile 端 Server 模块入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -31,7 +31,7 @@ export {
   parseAuthError,
   // API URL
   MEMBERSHIP_API_URL,
-} from '@aiget/api'
+} from '@anyhunt/api'
 
 export type {
   UserTier,
@@ -47,7 +47,7 @@ export type {
   MembershipModelsResponse,
   MembershipAuthState,
   BetterAuthError,
-} from '@aiget/api'
+} from '@anyhunt/api'
 
 // ── Mobile 特有导出 ──────────────────────────────────────
 

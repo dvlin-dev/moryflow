@@ -26,13 +26,13 @@ status: active
 - `moryflow-postgres`
 - `moryflow-redis`
 
-### 8c16g：Aiget Dev
+### 8c16g：Anyhunt Dev
 
-- `aiget-postgres`：console/auth/agentsbox/memox 元数据（非向量）
-- `aiget-redis`：队列/限流/缓存
-- `aiget-vector-postgres`：向量与索引（pgvector，独立实例）
+- `anyhunt-postgres`：console/auth/agentsbox/memox 元数据（非向量）
+- `anyhunt-redis`：队列/限流/缓存
+- `anyhunt-vector-postgres`：向量与索引（pgvector，独立实例）
 
-## Aiget Dev 数据模型（最小可用）
+## Anyhunt Dev 数据模型（最小可用）
 
 Auth/控制台（示例）：
 
@@ -46,7 +46,7 @@ API Key 与租户：
 - `api_keys`（只存 hash；明文仅创建时显示一次）
 - `api_key_policies`（动态限流/配额策略，按 `tenantId`）
 
-Memox（元数据，落在 `aiget-postgres`）：
+Memox（元数据，落在 `anyhunt-postgres`）：
 
 - `memox.documents`（或 `memox.memories`）
   - `tenantId`（从 apiKey 推导）
@@ -54,7 +54,7 @@ Memox（元数据，落在 `aiget-postgres`）：
   - `externalUserId`
   - `metadata`（jsonb）
 
-Memox（向量，落在 `aiget-vector-postgres`）：
+Memox（向量，落在 `anyhunt-vector-postgres`）：
 
 - `memox.embeddings`
   - `tenantId + namespace + externalUserId` 必须可筛选

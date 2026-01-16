@@ -5,9 +5,9 @@
  * 需要先调用 initMobileGlob() 初始化 glob 实现。
  */
 
-import type { Tool } from '@aiget/agents'
-import type { PlatformCapabilities, CryptoUtils } from '@aiget/agents-adapter'
-import type { AgentContext, VaultUtils } from '@aiget/agents-runtime'
+import type { Tool } from '@anyhunt/agents'
+import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter'
+import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime'
 
 import { createReadTool } from './file/read-tool'
 import { createWriteTool } from './file/write-tool'

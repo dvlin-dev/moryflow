@@ -1,4 +1,4 @@
-import { randomUUID } from '@aiget/agents-core/_shims';
+import { randomUUID } from '@anyhunt/agents-core/_shims';
 
 /**
  * Generate an ISO 8601 timestamp of the current time.

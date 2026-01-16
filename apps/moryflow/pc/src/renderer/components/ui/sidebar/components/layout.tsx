@@ -1,16 +1,16 @@
 import * as React from "react"
 import { PanelLeft } from "lucide-react"
 
-import { Button } from "@aiget/ui/components/button"
-import { Input } from "@aiget/ui/components/input"
-import { Separator } from "@aiget/ui/components/separator"
+import { Button } from "@anyhunt/ui/components/button"
+import { Input } from "@anyhunt/ui/components/input"
+import { Separator } from "@anyhunt/ui/components/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@aiget/ui/components/sheet"
+} from "@anyhunt/ui/components/sheet"
 import { cn } from "@/lib/utils"
 
 import type { SidebarProps } from "../const"

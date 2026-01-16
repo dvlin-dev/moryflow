@@ -168,8 +168,8 @@ git subtree pull --prefix=packages/auth-server auth-server-oss main
 建议固定为一个“同步机器人”身份，便于审计：
 
 ```bash
-git config user.name  "aiget-sync-bot"
-git config user.email "aiget-sync-bot@users.noreply.github.com"
+git config user.name  "anyhunt-sync-bot"
+git config user.email "anyhunt-sync-bot@users.noreply.github.com"
 ```
 
 ## CI 模板：Monorepo 合并后直推 OSS（可直接复制）
@@ -203,8 +203,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name  "aiget-sync-bot"
-          git config user.email "aiget-sync-bot@users.noreply.github.com"
+          git config user.name  "anyhunt-sync-bot"
+          git config user.email "anyhunt-sync-bot@users.noreply.github.com"
 
       - name: Add OSS remote
         run: |
@@ -257,8 +257,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name  "aiget-sync-bot"
-          git config user.email "aiget-sync-bot@users.noreply.github.com"
+          git config user.name  "anyhunt-sync-bot"
+          git config user.email "anyhunt-sync-bot@users.noreply.github.com"
 
       - name: Add OSS remote + fetch
         run: |

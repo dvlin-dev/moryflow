@@ -9,7 +9,7 @@ import {
   type SupportedLanguage,
   SUPPORTED_LANGUAGES,
   DEFAULT_LANGUAGE,
-} from '@aiget/i18n';
+} from '@anyhunt/i18n';
 
 const LANGUAGE_STORAGE_KEY = 'moryflow_language' as const;
 

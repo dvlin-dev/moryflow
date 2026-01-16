@@ -7,8 +7,8 @@
  */
 
 import { File, Directory, Paths } from 'expo-file-system'
-import type { SyncActionDto, CompletedFileDto } from '@aiget/api/cloud-sync'
-import { createEmptyClock, mergeVectorClocks } from '@aiget/sync'
+import type { SyncActionDto, CompletedFileDto } from '@anyhunt/api/cloud-sync'
+import { createEmptyClock, mergeVectorClocks } from '@anyhunt/sync'
 import { fileIndexManager } from '@/lib/vault/file-index'
 import { cloudSyncApi } from './api-client'
 import { computeHash } from './file-collector'

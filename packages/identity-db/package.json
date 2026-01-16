@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/identity-db",
+  "name": "@anyhunt/identity-db",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -28,7 +28,7 @@
     "@prisma/client": "^7.1.0"
   },
   "devDependencies": {
-    "@aiget/eslint-config": "workspace:*",
+    "@anyhunt/eslint-config": "workspace:*",
     "dotenv": "^17.2.3",
     "prisma": "^7.1.0"
   }

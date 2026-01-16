@@ -20,8 +20,8 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { TableHeaderRowIcon } from "@aiget/ui/icons/table-header-row-icon"
-import { TableHeaderColumnIcon } from "@aiget/ui/icons/table-header-column-icon"
+import { TableHeaderRowIcon } from "@anyhunt/ui/icons/table-header-row-icon"
+import { TableHeaderColumnIcon } from "@anyhunt/ui/icons/table-header-column-icon"
 
 export interface UseTableHeaderRowColumnConfig {
   /**

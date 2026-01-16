@@ -1,5 +1,5 @@
-import { setTracingDisabled, type MCPServer, type Tool } from '@aiget/agents'
-import type { AgentContext } from '@aiget/agents-runtime'
+import { setTracingDisabled, type MCPServer, type Tool } from '@anyhunt/agents'
+import type { AgentContext } from '@anyhunt/agents-runtime'
 import {
   type McpServerState,
   type McpStatusSnapshot,
@@ -12,8 +12,8 @@ import {
   closeServers,
   getToolsFromServers,
   createServersFromSettings,
-} from '@aiget/agents-mcp'
-import { MCPServerStdio, MCPServerStreamableHttp } from '@aiget/agents'
+} from '@anyhunt/agents-mcp'
+import { MCPServerStdio, MCPServerStreamableHttp } from '@anyhunt/agents'
 
 // 从 PC 端 ipc 导入 AgentSettings（包含完整的配置结构）
 import type { AgentSettings } from '../../../shared/ipc.js'

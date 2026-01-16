@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/model-registry-data",
+  "name": "@anyhunt/model-registry-data",
   "version": "0.1.0",
   "description": "LiteLLM 模型数据注册表，提供模型搜索和自动填充功能",
   "main": "dist/index.js",

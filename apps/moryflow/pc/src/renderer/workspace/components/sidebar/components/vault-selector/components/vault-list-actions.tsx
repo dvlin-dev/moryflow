@@ -5,8 +5,8 @@
  */
 
 import { FolderPlus, Plus } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
 import { useTranslation } from '@/lib/i18n'
 import type { VaultListActionsProps } from '../const'
 

@@ -4,7 +4,7 @@
 import {
   initI18nSync,
   DEFAULT_LANGUAGE,
-} from '@aiget/i18n'
+} from '@anyhunt/i18n'
 import { createNativeLanguageDetector } from './language-detector'
 
 /**

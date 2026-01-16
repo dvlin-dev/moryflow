@@ -14,8 +14,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
-import { Button } from '@aiget/ui/components/button'
+} from '@anyhunt/ui/components/alert-dialog'
+import { Button } from '@anyhunt/ui/components/button'
 import type { BindingConflictChoice } from '@shared/ipc'
 
 interface BindingConflictDialogProps {

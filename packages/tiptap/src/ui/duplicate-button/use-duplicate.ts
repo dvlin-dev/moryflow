@@ -8,7 +8,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { CopyIcon } from "@aiget/ui/icons/copy-icon"
+import { CopyIcon } from "@anyhunt/ui/icons/copy-icon"
 
 export const DUPLICATE_SHORTCUT_KEY = "mod+d"
 

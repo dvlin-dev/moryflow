@@ -3,7 +3,7 @@
  * 不依赖 expo-file-system，避免 URL 编码问题
  */
 
-import type { PathUtils } from '@aiget/agents-adapter'
+import type { PathUtils } from '@anyhunt/agents-adapter'
 
 /**
  * 移除 file:// 前缀，返回纯路径

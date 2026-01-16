@@ -1,4 +1,4 @@
-# @aiget/ui
+# /ui
 
 > 统一 UI 组件库，采用 Moryflow 风格与 Hugeicons
 
@@ -20,12 +20,12 @@ styles/                 # 全局样式
 ## 导入方式
 
 ```tsx
-import { Button, Card, Icon } from '@aiget/ui';
-import { DataTable, PageHeader } from '@aiget/ui/composed';
-import { CodeBlock } from '@aiget/ui/ai/code-block';
-import { Highlight } from '@aiget/ui/animate/primitives/effects/highlight';
-import { cn } from '@aiget/ui/lib';
-import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
+import { Button, Card, Icon } from '@anyhunt/ui';
+import { DataTable, PageHeader } from '@anyhunt/ui/composed';
+import { CodeBlock } from '@anyhunt/ui/ai/code-block';
+import { Highlight } from '@anyhunt/ui/animate/primitives/effects/highlight';
+import { cn } from '@anyhunt/ui/lib';
+import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
 ```
 
 ## 图标规范
@@ -37,7 +37,7 @@ import { useIsMobile } from '@aiget/ui/hooks/use-mobile';
 ## 主题与样式
 
 - 统一 Token 与基础样式来自 `styles/index.css`（含 `tailwindcss` + `tw-animate-css`）
-- 业务侧只需 `@import '@aiget/ui/styles'`，再为自身代码声明 `@source`
+- 业务侧只需 `@import '@anyhunt/ui/styles'`，再为自身代码声明 `@source`
 - 应用专属样式（Electron/编辑器等）仅放在应用内，不放入 UI 包
 
 ## 约束

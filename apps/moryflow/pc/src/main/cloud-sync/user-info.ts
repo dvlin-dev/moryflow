@@ -1,13 +1,13 @@
 /**
  * [PROVIDES]: fetchCurrentUserId, clearUserIdCache - 获取当前登录用户 ID
- * [DEPENDS]: membershipBridge, @aiget/api
+ * [DEPENDS]: membershipBridge, /api
  * [POS]: 为 main 进程提供用户 ID 获取功能，用于绑定冲突检测
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { createServerApiClient } from '@aiget/api/client'
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import { createServerApiClient } from '@anyhunt/api/client'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import { membershipBridge } from '../membership-bridge.js'
 import { createLogger } from './logger.js'
 

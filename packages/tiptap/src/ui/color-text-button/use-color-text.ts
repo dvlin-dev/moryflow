@@ -14,7 +14,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { TextColorSmallIcon } from "@aiget/ui/icons/text-color-small-icon"
+import { TextColorSmallIcon } from "@anyhunt/ui/icons/text-color-small-icon"
 
 export const COLOR_TEXT_SHORTCUT_KEY = "mod+shift+t"
 export const TEXT_COLORS = [

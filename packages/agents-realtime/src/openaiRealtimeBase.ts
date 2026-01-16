@@ -1,4 +1,4 @@
-import { RuntimeEventEmitter, Usage } from '@aiget/agents-core';
+import { RuntimeEventEmitter, Usage } from '@anyhunt/agents-core';
 import type { MessageEvent as WebSocketMessageEvent } from 'ws';
 
 import {
@@ -34,7 +34,7 @@ import {
   TransportToolCallEvent,
 } from './transportLayerEvents';
 import { arrayBufferToBase64, diffRealtimeHistory } from './utils';
-import { EventEmitterDelegate } from '@aiget/agents-core/utils';
+import { EventEmitterDelegate } from '@anyhunt/agents-core/utils';
 
 /**
  * The models that are supported by the OpenAI Realtime API.

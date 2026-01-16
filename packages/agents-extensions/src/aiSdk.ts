@@ -32,9 +32,9 @@ import {
   withGenerationSpan,
   getLogger,
   ModelSettingsToolChoice,
-} from '@aiget/agents';
-import { isZodObject } from '@aiget/agents/utils';
-import { encodeUint8ArrayToBase64 } from '@aiget/agents/utils';
+} from '@anyhunt/agents';
+import { isZodObject } from '@anyhunt/agents/utils';
+import { encodeUint8ArrayToBase64 } from '@anyhunt/agents/utils';
 
 /**
  * 从 AI SDK v6 的 LanguageModelV3Usage 中提取 token 数量
@@ -557,7 +557,7 @@ export function getResponseFormat(
  * If tracing is enabled, the model will send generation spans to your traces processor.
  *
  * ```ts
- * import { aisdk } from '@aiget/agents-extensions';
+ * import { aisdk } from '@anyhunt/agents-extensions';
  * import { openai } from '@ai-sdk/openai';
  *
  * const model = aisdk(openai('gpt-4o'));
@@ -993,7 +993,7 @@ export class AiSdkModel implements Model {
  * If tracing is enabled, the model will send generation spans to your traces processor.
  *
  * ```ts
- * import { aisdk } from '@aiget/agents-extensions';
+ * import { aisdk } from '@anyhunt/agents-extensions';
  * import { openai } from '@ai-sdk/openai';
  *
  * const model = aisdk(openai('gpt-4o'));

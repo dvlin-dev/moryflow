@@ -9,7 +9,7 @@ import {
   CryptoDigestAlgorithm,
   CryptoEncoding,
 } from 'expo-crypto'
-import type { CryptoUtils } from '@aiget/agents-adapter'
+import type { CryptoUtils } from '@anyhunt/agents-adapter'
 
 /**
  * 计算字符串的 SHA256 哈希

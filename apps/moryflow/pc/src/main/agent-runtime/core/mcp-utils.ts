@@ -14,4 +14,4 @@ export {
   createServersFromSettings,
   type ServerConnectionResult,
   type ServerWithConfig,
-} from '@aiget/agents-mcp'
+} from '@anyhunt/agents-mcp'

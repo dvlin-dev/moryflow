@@ -1,6 +1,6 @@
-import { tool } from '@aiget/agents'
+import { tool } from '@anyhunt/agents'
 import { z } from 'zod'
-import type { PlatformCapabilities } from '@aiget/agents-adapter'
+import type { PlatformCapabilities } from '@anyhunt/agents-adapter'
 import { toolSummarySchema } from '../shared'
 
 const MAX_CONTENT_LENGTH = 100 * 1024 // 100KB

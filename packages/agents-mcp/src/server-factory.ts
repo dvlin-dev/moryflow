@@ -2,7 +2,7 @@
  * MCP 服务器工厂
  * 根据配置创建服务器实例
  *
- * 注意：此模块依赖 @aiget/agents 中的 MCPServerStdio 和 MCPServerStreamableHttp
+ * 注意：此模块依赖 /agents 中的 MCPServerStdio 和 MCPServerStreamableHttp
  * 在 React Native 环境中，需要等待 @modelcontextprotocol/sdk 支持后才能正常使用
  */
 
@@ -10,7 +10,7 @@ import {
   MCPServerStdio,
   MCPServerStreamableHttp,
   type MCPServer,
-} from '@aiget/agents'
+} from '@anyhunt/agents'
 import type { McpSettings } from './types'
 
 const LOG_PREFIX = '[mcp]'

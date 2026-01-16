@@ -1,5 +1,5 @@
-import type { RunContext } from '@aiget/agents'
-import type { Model } from '@aiget/agents-core'
+import type { RunContext } from '@anyhunt/agents'
+import type { Model } from '@anyhunt/agents-core'
 
 /**
  * 附件上下文
@@ -181,4 +181,4 @@ export {
   isMembershipModelId,
   extractMembershipModelId,
   buildMembershipModelId,
-} from '@aiget/api'
+} from '@anyhunt/api'

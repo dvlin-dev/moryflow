@@ -12,9 +12,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
-import { Button } from '@aiget/ui/components/button'
-import type { AuthChoice } from '@aiget/agents-sandbox'
+} from '@anyhunt/ui/components/alert-dialog'
+import { Button } from '@anyhunt/ui/components/button'
+import type { AuthChoice } from '@anyhunt/agents-sandbox'
 
 interface SandboxAuthDialogProps {
   open: boolean

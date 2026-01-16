@@ -10,7 +10,7 @@
 import { File, Directory, Paths } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createLogger } from '@/lib/agent-runtime';
-import type { VaultService, VaultInfo, ResolvedVaultPath } from '@aiget/agents-adapter';
+import type { VaultService, VaultInfo, ResolvedVaultPath } from '@anyhunt/agents-adapter';
 import type { VaultTreeNode, VaultFileInfo, VaultChangeListener, VaultChangeEvent } from './types';
 import { fileIndexManager } from './file-index';
 

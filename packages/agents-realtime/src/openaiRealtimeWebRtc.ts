@@ -1,12 +1,12 @@
 /// <reference lib="dom" />
 
-import { isBrowserEnvironment } from '@aiget/agents-core/_shims';
+import { isBrowserEnvironment } from '@anyhunt/agents-core/_shims';
 import {
   RealtimeTransportLayer,
   RealtimeTransportLayerConnectOptions,
 } from './transportLayer';
 
-import { UserError } from '@aiget/agents-core';
+import { UserError } from '@anyhunt/agents-core';
 import logger from './logger';
 import { RealtimeClientMessage, RealtimeSessionConfig } from './clientMessages';
 import {

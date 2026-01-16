@@ -16,7 +16,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react'
-import { parseAuthError } from '@aiget/api'
+import { parseAuthError } from '@anyhunt/api'
 import {
   getStoredToken,
   setStoredToken,

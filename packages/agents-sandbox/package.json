@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-sandbox",
+  "name": "@anyhunt/agents-sandbox",
   "version": "0.1.0",
   "description": "Local sandbox execution for Moryflow Agent",
   "main": "dist/index.js",
@@ -11,7 +11,9 @@
       "import": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "scripts": {
     "build-check": "tsc --noEmit",
@@ -20,8 +22,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@aiget/agents": "workspace:*",
-    "@aiget/agents-core": "workspace:*",
+    "@anyhunt/agents": "workspace:*",
+    "@anyhunt/agents-core": "workspace:*",
     "zod": "^3.25.40"
   },
   "devDependencies": {

@@ -9,8 +9,8 @@ import {
 } from 'react';
 import { ImageIcon, PaperclipIcon, XIcon } from 'lucide-react';
 
-import { Button } from '@aiget/ui/components/button';
-import { DropdownMenuItem } from '@aiget/ui/components/dropdown-menu';
+import { Button } from '@anyhunt/ui/components/button';
+import { DropdownMenuItem } from '@anyhunt/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 import { usePromptInputAttachments } from '../handle';
@@ -18,7 +18,7 @@ import {
   PromptInputHoverCard,
   PromptInputHoverCardContent,
   PromptInputHoverCardTrigger,
-} from '@aiget/ui/ai/prompt-input';
+} from '@anyhunt/ui/ai/prompt-input';
 
 export type PromptInputAttachmentProps = HTMLAttributes<HTMLDivElement> & {
   data: FileUIPart & { id: string };

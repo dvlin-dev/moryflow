@@ -3,7 +3,7 @@
  * 平台无关，供 PC 和 Mobile 复用
  */
 
-import type { Tool } from '@aiget/agents'
+import type { Tool } from '@anyhunt/agents'
 
 /**
  * MCP 服务器连接状态

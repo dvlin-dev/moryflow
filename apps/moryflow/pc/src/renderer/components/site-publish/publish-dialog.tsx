@@ -11,11 +11,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@aiget/ui/components/dialog'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { Progress } from '@aiget/ui/components/progress'
+} from '@anyhunt/ui/components/dialog'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { Progress } from '@anyhunt/ui/components/progress'
 import { Loader2, Check, AlertCircle, Globe, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BuildSiteInput, BuildProgressEvent } from '../../../shared/ipc/site-publish'

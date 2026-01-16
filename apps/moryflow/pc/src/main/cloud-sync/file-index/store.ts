@@ -5,7 +5,7 @@
 
 import path from 'node:path'
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
-import type { FileIndexStore, FileEntry, LegacyFileEntry } from '@aiget/api'
+import type { FileIndexStore, FileEntry, LegacyFileEntry } from '@anyhunt/api'
 import { FILE_INDEX_STORE_PATH } from '../const.js'
 
 const getStorePath = (vaultPath: string) =>

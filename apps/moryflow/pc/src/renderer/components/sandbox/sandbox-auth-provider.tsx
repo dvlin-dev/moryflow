@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import type { SandboxAuthRequest } from '@shared/ipc'
-import type { AuthChoice } from '@aiget/agents-sandbox'
+import type { AuthChoice } from '@anyhunt/agents-sandbox'
 import { SandboxAuthDialog } from './sandbox-auth-dialog'
 
 interface SandboxAuthProviderProps {

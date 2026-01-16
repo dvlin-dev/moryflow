@@ -3,8 +3,8 @@
  * 从已连接的服务器获取工具列表
  */
 
-import type { MCPServer, Tool } from '@aiget/agents'
-import { mcpToFunctionTool } from '@aiget/agents-core'
+import type { MCPServer, Tool } from '@anyhunt/agents'
+import { mcpToFunctionTool } from '@anyhunt/agents-core'
 
 const LOG_PREFIX = '[mcp]'
 

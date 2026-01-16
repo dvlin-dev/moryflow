@@ -30,9 +30,9 @@ import {
 } from "../color-text-popover"
 
 // Icons
-import { PaintBucketIcon } from "@aiget/ui/icons/paint-bucket-icon"
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon"
-import { TextColorSmallIcon } from "@aiget/ui/icons/text-color-small-icon"
+import { PaintBucketIcon } from "@anyhunt/ui/icons/paint-bucket-icon"
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
+import { TextColorSmallIcon } from "@anyhunt/ui/icons/text-color-small-icon"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 interface ColorMenuItemProps {

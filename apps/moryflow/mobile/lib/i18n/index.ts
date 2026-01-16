@@ -2,7 +2,7 @@
  * Mobile i18n 初始化和配置
  * 使用新的 shared-i18n 包
  */
-import { getI18nInstance } from '@aiget/i18n'
+import { getI18nInstance } from '@anyhunt/i18n'
 
 // 导出初始化函数
 export { initI18n } from './init'
@@ -16,7 +16,7 @@ export { I18nProvider } from './provider';
 export {
   useTranslation,
   useLanguage,
-} from '@aiget/i18n';
+} from '@anyhunt/i18n';
 
 // 导出类型
 export type {
@@ -24,4 +24,4 @@ export type {
   TranslationKeys,
   InterpolationParams,
   SupportedLanguage,
-} from '@aiget/i18n';
+} from '@anyhunt/i18n';

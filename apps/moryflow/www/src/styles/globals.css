@@ -3,7 +3,7 @@
 /* 扫描本地组件 */
 @source "../**/*.{ts,tsx}";
 
-/* 扫描 @aiget/ui 组件库 */
+/* 扫描 /ui 组件库 */
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 /* Mory 品牌主题 */

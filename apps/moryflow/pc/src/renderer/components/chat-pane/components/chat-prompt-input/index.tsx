@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { PromptInputMessage } from '@aiget/ui/ai/prompt-input'
+import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input'
 import {
   PromptInputActionMenu,
   PromptInputActionMenuContent,
   PromptInputActionMenuTrigger,
   PromptInputButton,
   PromptInputSubmit,
-} from '@aiget/ui/ai/prompt-input'
+} from '@anyhunt/ui/ai/prompt-input'
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -17,8 +17,8 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
-import { InputGroupButton } from '@aiget/ui/components/input-group'
-import { Button } from '@aiget/ui/components/button'
+import { InputGroupButton } from '@anyhunt/ui/components/input-group'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -29,7 +29,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
   ModelSelectorFooter,
-} from '@aiget/ui/ai/model-selector'
+} from '@anyhunt/ui/ai/model-selector'
 import {
   CheckIcon,
   SparklesIcon,
@@ -41,10 +41,10 @@ import {
   ArrowUpRightIcon,
   MicIcon,
 } from 'lucide-react'
-import { Badge } from '@aiget/ui/components/badge'
+import { Badge } from '@anyhunt/ui/components/badge'
 import { TIER_DISPLAY_NAMES } from '@/lib/server'
 import { McpSelector } from '@/components/ai-elements/mcp-selector'
-import { LiveWaveform } from '@aiget/ui/components/live-waveform'
+import { LiveWaveform } from '@anyhunt/ui/components/live-waveform'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useSpeechRecording } from '@/hooks/use-speech-recording'

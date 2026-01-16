@@ -1,6 +1,0 @@
-@import '@aiget/ui/styles';
-
-/* 扫描源文件中的 class（Tailwind v4 需要此配置） */
-@source "./**/*.{ts,tsx}";
-
-/* Admin 特定样式可以在这里添加 */

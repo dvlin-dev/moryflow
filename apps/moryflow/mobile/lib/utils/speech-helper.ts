@@ -1,10 +1,10 @@
 /**
  * [PROVIDES]: transcribeAudio, SpeechError
- * [DEPENDS]: @aiget/api, lib/server/storage
+ * [DEPENDS]: /api, lib/server/storage
  * [POS]: 语音转录辅助函数，将本地音频文件上传到服务端进行转录
  */
 
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import { getStoredToken } from '@/lib/server/storage'
 
 // ==================== 类型定义 ====================

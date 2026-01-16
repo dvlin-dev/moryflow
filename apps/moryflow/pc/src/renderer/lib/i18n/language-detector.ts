@@ -4,7 +4,7 @@
  * [POS]: 为 Electron 环境提供语言检测和持久化能力
  */
 
-import type { LanguageDetectorModule, SupportedLanguage } from '@aiget/i18n'
+import type { LanguageDetectorModule, SupportedLanguage } from '@anyhunt/i18n'
 
 const STORAGE_KEY = 'moryflow_language'
 

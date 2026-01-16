@@ -1,5 +1,5 @@
 /**
- * @aiget/agents-tools - React Native 入口
+ * /agents-tools - React Native 入口
  *
  * 这个文件是为 React Native 环境准备的入口点。
  * 它不会自动初始化 glob 实现（需要手动调用 initMobileGlob），

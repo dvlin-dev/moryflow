@@ -6,8 +6,8 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import type { HugeIcon } from '@aiget/ui';
-import { Icon } from '@aiget/ui';
+import type { HugeIcon } from '@anyhunt/ui';
+import { Icon } from '@anyhunt/ui';
 import { FavouriteIcon, Target01Icon, UserGroupIcon } from '@hugeicons/core-free-icons';
 
 export const Route = createFileRoute('/about')({

@@ -39,5 +39,5 @@ pnpm test:unit
 
 ## 产品/应用维度
 
-- Aiget Server：`pnpm --filter @aiget/aiget-server test`、`pnpm --filter @aiget/aiget-server test:e2e`
-- Admin：`pnpm --filter @aiget/admin test`、`pnpm --filter @aiget/admin test:e2e`
+- Anyhunt Server：`pnpm --filter @anyhunt/anyhunt-server test`、`pnpm --filter @anyhunt/anyhunt-server test:e2e`
+- Admin：`pnpm --filter @anyhunt/admin test`、`pnpm --filter @anyhunt/admin test:e2e`

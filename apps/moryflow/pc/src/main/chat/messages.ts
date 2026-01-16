@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { UIMessage, UIMessageChunk, UIMessageStreamWriter, FileUIPart } from 'ai'
 import { isFileUIPart, isTextUIPart, readUIMessageStream } from 'ai'
-import { RunItemStreamEvent, RunRawModelStreamEvent } from '@aiget/agents-core'
+import { RunItemStreamEvent, RunRawModelStreamEvent } from '@anyhunt/agents-core'
 
 import type { TokenUsage } from '../../shared/ipc.js'
 import type { AgentStreamResult } from '../agent-runtime/index.js'
@@ -78,7 +78,7 @@ export type StreamAgentRunResult = {
 
 /**
  * 流式处理 Agent 运行结果
- * 将 @aiget/agents SDK 的流事件转换为 UI 消息流
+ * 将 /agents SDK 的流事件转换为 UI 消息流
  */
 export const streamAgentRun = async ({
   writer,
@@ -257,7 +257,7 @@ type StreamEventResult = {
 const EMPTY_RESULT: StreamEventResult = { deltaText: '', reasoningDelta: '', isDone: false }
 
 /**
- * 从 @aiget/agents-extensions aisdk 流事件中提取文本和 reasoning
+ * 从 /agents-extensions aisdk 流事件中提取文本和 reasoning
  *
  * aisdk 会 yield 以下事件类型：
  * - { type: 'output_text_delta', delta: '...' } - 文本增量

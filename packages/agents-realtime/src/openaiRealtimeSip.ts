@@ -1,4 +1,4 @@
-import { UserError } from '@aiget/agents-core';
+import { UserError } from '@anyhunt/agents-core';
 import type { RealtimeTransportLayerConnectOptions } from './transportLayer';
 import {
   OpenAIRealtimeWebSocket,

@@ -6,7 +6,7 @@
 
 import { useMemo, type DragEvent } from 'react'
 import { FolderIcon, FolderOpenIcon } from 'lucide-react'
-import { ContextMenu, ContextMenuTrigger } from '@aiget/ui/components/context-menu'
+import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu'
 import {
   FolderItem as FolderItemPrimitive,
   FolderHeader as FolderHeaderPrimitive,
@@ -16,7 +16,7 @@ import {
   FolderIcon as FolderIconPrimitive,
   FileLabel as FileLabelPrimitive,
   FolderPanel as FolderPanelPrimitive,
-} from '@aiget/ui/animate/primitives/base/files'
+} from '@anyhunt/ui/animate/primitives/base/files'
 import { useTranslation } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { VaultTreeNode } from '@shared/ipc'

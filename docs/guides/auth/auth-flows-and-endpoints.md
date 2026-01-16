@@ -1,12 +1,12 @@
 ---
 title: 用户系统（两套 Auth）- 总览与技术方案
 date: 2026-01-06
-scope: moryflow.com, aiget.dev, server.aiget.dev
+scope: moryflow.com, anyhunt.app, server.anyhunt.app
 status: active
 ---
 
 <!--
-[INPUT]: 两条业务线（Moryflow / Aiget Dev）；支持 Google/Apple 登录；独立用户体系与数据库；Token 策略（Web refresh cookie + access memory；原生 secure storage）
+[INPUT]: 两条业务线（Moryflow / Anyhunt Dev）；支持 Google/Apple 登录；独立用户体系与数据库；Token 策略（Web refresh cookie + access memory；原生 secure storage）
 [OUTPUT]: 两套用户系统的核心流程（注册/登录/刷新/登出）与接口约定（同路径、不同域名），以及落地技术方案
 [POS]: Guide：Auth 的流程与接口约定（实现/前端接入对齐），不承载系统级架构决策
 
@@ -19,7 +19,7 @@ status: active
 
 ## 关键概念
 
-- **User**：业务线内唯一用户（email 唯一）；Moryflow 与 Aiget Dev 各自独立
+- **User**：业务线内唯一用户（email 唯一）；Moryflow 与 Anyhunt Dev 各自独立
 - **Profile**：用户资料（昵称、头像等）；仅在所属业务线内
 - **Account（OAuth Account）**：支持 Google/Apple 账号绑定；仅在所属业务线内
 - **Session**：登录会话；仅在所属业务线内；由 refresh token 驱动续期
@@ -29,7 +29,7 @@ status: active
 ## 服务形态（如何“复用但不复杂”）
 
 - **Moryflow Auth**：只服务 `app.moryflow.com`（cookie `Domain=.moryflow.com`）。
-- **Aiget Dev Auth**：只服务 `server.aiget.dev`（cookie `Domain=.aiget.dev`，平台内模块共享；console/admin 为独立 Web 前端）。
+- **Anyhunt Dev Auth**：只服务 `server.anyhunt.app`（cookie `Domain=.anyhunt.app`，平台内模块共享；console/admin 为独立 Web 前端）。
 - 两条 Auth **共享代码**（抽到 `packages/*`），但 **不共享数据库/密钥**。
 - User/Profile/Session 等核心数据各自独立，禁止跨业务线关联。
 
@@ -38,7 +38,7 @@ status: active
 > 这些路由在各自业务线的应用域名下保持一致：
 >
 > - Moryflow：`https://app.moryflow.com/api/v1/auth/*`
-> - Aiget Dev：`https://server.aiget.dev/api/v1/auth/*`（console/admin 跨域调用）
+> - Anyhunt Dev：`https://server.anyhunt.app/api/v1/auth/*`（console/admin 跨域调用）
 
 - `POST /api/v1/auth/register`
   - 输入：name、email、password
@@ -78,7 +78,7 @@ status: active
 2. 用户输入 OTP → `POST /api/v1/auth/verify-email-otp`
 3. 创建 `identity.session`
 4. 下发 token（refresh rotation 开启）
-   - Web：写入 refresh `HttpOnly Cookie`（Moryflow：`Domain=.moryflow.com`；Aiget Dev：`Domain=.aiget.dev`）；返回 access token
+   - Web：写入 refresh `HttpOnly Cookie`（Moryflow：`Domain=.moryflow.com`；Anyhunt Dev：`Domain=.anyhunt.app`）；返回 access token
    - 原生：返回 refresh token + access token（由客户端写入 Secure Storage/内存）
 
 ### 2) 邮箱登录
@@ -92,10 +92,10 @@ status: active
 2. 若 `identity.user.email` 已存在：绑定第三方 account 到该 user
 3. 若不存在：创建 user 并绑定 account
 
-### 4) Aiget Dev 平台内免重复登录
+### 4) Anyhunt Dev 平台内免重复登录
 
-- Aiget Dev 的登录态通过 `Domain=.aiget.dev` Cookie 在 `aiget.dev` / `server.aiget.dev` / `console.aiget.dev` / `admin.aiget.dev` 共享；不做旧子域名兼容。
-- Moryflow 与 Aiget Dev **永不互通**，因此不设计跨域免登录。
+- Anyhunt Dev 的登录态通过 `Domain=.anyhunt.app` Cookie 在 `anyhunt.app` / `server.anyhunt.app` / `console.anyhunt.app` / `admin.anyhunt.app` 共享；不做旧子域名兼容。
+- Moryflow 与 Anyhunt Dev **永不互通**，因此不设计跨域免登录。
 
 ### 5) 原生端免登录
 
@@ -114,15 +114,15 @@ status: active
 
 1. **两套 Auth**：
    - Moryflow Auth：仅服务 `app.moryflow.com`
-   - Aiget Dev Auth：仅服务 `server.aiget.dev`
+   - Anyhunt Dev Auth：仅服务 `server.anyhunt.app`
 2. **永不互通**：不共享账号/Token/数据库；OAuth 仅限业务线内。
-3. **Aiget Dev API 固定入口**：`https://server.aiget.dev/api/v1`；console/admin 为独立 Web，需要 CORS 与 CSRF 白名单。
+3. **Anyhunt Dev API 固定入口**：`https://server.anyhunt.app/api/v1`；console/admin 为独立 Web，需要 CORS 与 CSRF 白名单。
 
 ### 域名与路由
 
 - Moryflow（应用 + API）：`https://app.moryflow.com/api/v1/...`
-- Aiget Dev（API）：`https://server.aiget.dev/api/v1/...`
-- Aiget Dev（Web）：`https://console.aiget.dev`、`https://admin.aiget.dev`
+- Anyhunt Dev（API）：`https://server.anyhunt.app/api/v1/...`
+- Anyhunt Dev（Web）：`https://console.anyhunt.app`、`https://admin.anyhunt.app`
 
 ### 第三方登录（OAuth/OIDC）
 
@@ -139,7 +139,7 @@ status: active
 
 - refreshToken：`HttpOnly; Secure; SameSite=Lax` Cookie
   - Moryflow：`Domain=.moryflow.com`
-  - Aiget Dev：`Domain=.aiget.dev`
+  - Anyhunt Dev：`Domain=.anyhunt.app`
 - accessToken：仅内存；页面刷新后调用 refresh 恢复
 
 ### 刷新流程（必须）
@@ -154,7 +154,7 @@ status: active
 - 要求 `Content-Type: application/json`
 - 校验 `Origin`：
   - Moryflow：必须是 `https://app.moryflow.com`
-  - Aiget Dev：必须是 `https://console.aiget.dev` / `https://admin.aiget.dev`
+  - Anyhunt Dev：必须是 `https://console.anyhunt.app` / `https://admin.anyhunt.app`
 
 ### 服务端鉴权（JWT）
 
@@ -162,9 +162,9 @@ status: active
   - 通过 `GET /api/v1/auth/jwks` 拉取并缓存 JWKS
   - 按 `kid` 自动更新
 
-### Aiget Dev 对外能力（API key）
+### Anyhunt Dev 对外能力（API key）
 
-Aiget Dev 下的 Memox/Agentsbox 对外 API 使用 API key 鉴权：
+Anyhunt Dev 下的 Memox/Agentsbox 对外 API 使用 API key 鉴权：
 
 - Header：`Authorization: Bearer <apiKey>`
 - 多租户隔离（最小可用）：`tenantId` 从 apiKey 推导；按 `namespace + externalUserId` 划分数据域

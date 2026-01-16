@@ -3,7 +3,7 @@
  * 将 PC 端的 chatSessionStore 适配为 agents-runtime 的 SessionStore 接口
  */
 
-import type { SessionStore, ChatSessionSummary, TokenUsage } from '@aiget/agents-runtime'
+import type { SessionStore, ChatSessionSummary, TokenUsage } from '@anyhunt/agents-runtime'
 import { chatSessionStore } from './handle.js'
 
 /**

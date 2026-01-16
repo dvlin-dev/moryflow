@@ -83,6 +83,6 @@ export {
   OutputGuardrailTripwireTriggered,
   tool,
   UserError,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 
 export { backgroundResult, isBackgroundResult } from './tool';

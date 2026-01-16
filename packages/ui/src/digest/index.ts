@@ -2,7 +2,7 @@
  * Digest Components - 智能内容订阅系统组件
  *
  * 使用方式:
- * import { SubscriptionCard, InboxItem, TopicCard } from '@aiget/ui/digest'
+ * import { SubscriptionCard, InboxItem, TopicCard } from '@anyhunt/ui/digest'
  */
 
 export * from './score-badge';

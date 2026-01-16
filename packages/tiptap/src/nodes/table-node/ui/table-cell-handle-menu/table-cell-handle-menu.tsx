@@ -28,7 +28,7 @@ import {
 import { Separator } from "../../../../ui-primitive/separator"
 
 // --- Icons ---
-import { Grip4Icon } from "@aiget/ui/icons/grip-4-icon"
+import { Grip4Icon } from "@anyhunt/ui/icons/grip-4-icon"
 
 import "./table-cell-handle-menu.scss"
 

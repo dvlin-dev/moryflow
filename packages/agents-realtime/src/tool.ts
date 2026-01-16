@@ -3,7 +3,7 @@ import {
   HostedMCPTool,
   Tool,
   UserError,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import { RealtimeToolDefinition } from './clientMessages';
 
 export const BACKGROUND_RESULT_SYMBOL = Symbol('backgroundResult');

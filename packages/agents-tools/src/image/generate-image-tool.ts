@@ -1,14 +1,14 @@
 /**
  * [PROVIDES]: createGenerateImageTool - AI 图片生成工具
- * [DEPENDS]: @aiget/agents, @aiget/agents-adapter
+ * [DEPENDS]: /agents, /agents-adapter
  * [POS]: Agent 工具，调用后端 /v1/images/generations 生成图片
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { tool } from '@aiget/agents'
+import { tool } from '@anyhunt/agents'
 import { z } from 'zod'
-import type { PlatformCapabilities } from '@aiget/agents-adapter'
+import type { PlatformCapabilities } from '@anyhunt/agents-adapter'
 import { toolSummarySchema } from '../shared'
 
 const MAX_IMAGES = 10

@@ -5,8 +5,8 @@
  */
 
 import { PanelLeft } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@aiget/ui/components/tooltip'
+import { Button } from '@anyhunt/ui/components/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
 import { useTranslation } from '@/lib/i18n'
 
 type SidebarToggleProps = {

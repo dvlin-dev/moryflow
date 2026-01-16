@@ -17,11 +17,11 @@ import {
   TrashIcon,
   XCircleIcon,
 } from 'lucide-react'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@aiget/ui/components/hover-card'
-import { Button } from '@aiget/ui/components/button'
-import { Separator } from '@aiget/ui/components/separator'
-import { Progress } from '@aiget/ui/components/progress'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@anyhunt/ui/components/hover-card'
+import { Button } from '@anyhunt/ui/components/button'
+import { Separator } from '@anyhunt/ui/components/separator'
+import { Progress } from '@anyhunt/ui/components/progress'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
 import { useCloudSync } from '@/hooks/use-cloud-sync'
 import { useTranslation } from '@/lib/i18n'
 import type { SyncEngineStatus, SyncStatusDetail, SyncActivity, PendingFile } from '@shared/ipc'

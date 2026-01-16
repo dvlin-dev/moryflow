@@ -5,8 +5,8 @@
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
-import { run, type Agent, type Session } from '@aiget/agents'
-import type { RunStreamEvent } from '@aiget/agents-core'
+import { run, type Agent, type Session } from '@anyhunt/agents'
+import type { RunStreamEvent } from '@anyhunt/agents-core'
 import {
   createAgentFactory,
   createModelFactory,
@@ -16,9 +16,9 @@ import {
   type AgentContext,
   type AgentAttachmentContext,
   type ModelFactory,
-} from '@aiget/agents-runtime'
-import { createBaseTools } from '@aiget/agents-tools'
-import { createSandboxBashTool } from '@aiget/agents-sandbox'
+} from '@anyhunt/agents-runtime'
+import { createBaseTools } from '@anyhunt/agents-tools'
+import { createSandboxBashTool } from '@anyhunt/agents-sandbox'
 
 import type { AgentChatContext, McpStatusSnapshot, McpStatusEvent, McpTestInput, McpTestResult } from '../../shared/ipc.js'
 import { requestPathAuthorization, getSandboxManager } from '../sandbox/index.js'

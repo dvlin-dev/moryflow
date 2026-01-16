@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Aiget React Native TypeScript Config",
+  "display": "Anyhunt React Native TypeScript Config",
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,

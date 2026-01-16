@@ -9,8 +9,8 @@ import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { BanIcon } from "@aiget/ui/icons/ban-icon"
-import { HighlighterIcon } from "@aiget/ui/icons/highlighter-icon"
+import { BanIcon } from "@anyhunt/ui/icons/ban-icon"
+import { HighlighterIcon } from "@anyhunt/ui/icons/highlighter-icon"
 
 // --- UI Primitives ---
 import type { ButtonProps } from "../../ui-primitive/button"

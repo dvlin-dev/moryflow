@@ -1,18 +1,18 @@
 import { useState, useCallback } from 'react'
 import { Controller, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { Switch } from '@aiget/ui/components/switch'
-import { Checkbox } from '@aiget/ui/components/checkbox'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { Switch } from '@anyhunt/ui/components/switch'
+import { Checkbox } from '@anyhunt/ui/components/checkbox'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@aiget/ui/components/select'
+} from '@anyhunt/ui/components/select'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
+} from '@anyhunt/ui/components/alert-dialog'
 import { FlaskConical, TrashIcon, CheckCircle2, XCircle, Loader2Icon } from 'lucide-react'
 import type { FormValues } from '../../const'
 import type { McpServerEntry, McpServerType } from './constants'

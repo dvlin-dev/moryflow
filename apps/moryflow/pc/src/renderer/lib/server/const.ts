@@ -4,7 +4,7 @@
  * 从共享包重新导出，并添加 PC 端特有配置
  */
 
-import { MEMBERSHIP_API_URL as MEMBERSHIP_API_URL_DEFAULT } from '@aiget/api'
+import { MEMBERSHIP_API_URL as MEMBERSHIP_API_URL_DEFAULT } from '@anyhunt/api'
 
 // 从共享包导入并重新导出所有常量和工具函数
 export {
@@ -26,7 +26,7 @@ export {
   // 错误处理
   AUTH_ERROR_MESSAGES,
   parseAuthError,
-} from '@aiget/api'
+} from '@anyhunt/api'
 
 // ── PC 端特有配置 ────────────────────────────────────────
 

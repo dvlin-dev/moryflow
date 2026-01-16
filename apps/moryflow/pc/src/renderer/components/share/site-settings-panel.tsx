@@ -8,11 +8,11 @@
 
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { Textarea } from '@aiget/ui/components/textarea'
-import { Checkbox } from '@aiget/ui/components/checkbox'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { Textarea } from '@anyhunt/ui/components/textarea'
+import { Checkbox } from '@anyhunt/ui/components/checkbox'
 import type { Site } from '../../../shared/ipc/site-publish'
 import type { SiteSettings } from './const'
 

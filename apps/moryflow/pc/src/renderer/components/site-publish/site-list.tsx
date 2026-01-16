@@ -17,14 +17,14 @@ import {
   FileText,
   Calendar,
 } from 'lucide-react'
-import { Button } from '@aiget/ui/components/button'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@aiget/ui/components/dropdown-menu'
+} from '@anyhunt/ui/components/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@aiget/ui/components/alert-dialog'
+} from '@anyhunt/ui/components/alert-dialog'
 import { cn } from '@/lib/utils'
 import type { Site } from '../../../shared/ipc/site-publish'
 import { useSitePublish } from './use-site-publish'

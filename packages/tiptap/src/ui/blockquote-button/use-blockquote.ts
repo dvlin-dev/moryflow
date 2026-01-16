@@ -8,7 +8,7 @@ import { NodeSelection, TextSelection } from "@tiptap/pm/state"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { BlockquoteIcon } from "@aiget/ui/icons/blockquote-icon"
+import { BlockquoteIcon } from "@anyhunt/ui/icons/blockquote-icon"
 
 // --- UI Utils ---
 import {

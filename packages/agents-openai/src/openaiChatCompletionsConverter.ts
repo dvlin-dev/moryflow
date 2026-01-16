@@ -11,7 +11,7 @@ import {
   ModelRequest,
   protocol,
   UserError,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 
 export function convertToolChoice(
   toolChoice: 'auto' | 'required' | 'none' | string | undefined | null

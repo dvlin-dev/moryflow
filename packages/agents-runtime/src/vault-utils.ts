@@ -2,7 +2,7 @@ import type {
   PlatformCapabilities,
   ResolvedVaultPath,
   CryptoUtils,
-} from '@aiget/agents-adapter'
+} from '@anyhunt/agents-adapter'
 
 /**
  * Vault 文件数据

@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: Server API 模块导出
- * [DEPENDS]: @aiget/api, api.ts, client.ts, context.tsx
+ * [DEPENDS]: /api, api.ts, client.ts, context.tsx
  * [POS]: PC 端 Server 模块入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -19,7 +19,7 @@ export type {
   MembershipAuthState,
   BetterAuthError,
   MembershipApiError,
-} from '@aiget/api'
+} from '@anyhunt/api'
 
 // ── 从共享包重新导出常量和工具函数 ────────────────────────
 export {
@@ -37,7 +37,7 @@ export {
   isTierSufficient,
   AUTH_ERROR_MESSAGES,
   parseAuthError,
-} from '@aiget/api'
+} from '@anyhunt/api'
 
 // ── 本地类型别名（向后兼容） ──────────────────────────────
 export type {

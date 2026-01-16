@@ -12,7 +12,7 @@ import { WorkspaceSheet } from './workspace-sheet'
 import { Text } from '@/components/ui/text'
 import { useThemeColors } from '@/lib/theme'
 import { useTheme } from '@/lib/hooks/use-theme'
-import { useTranslation } from '@aiget/i18n'
+import { useTranslation } from '@anyhunt/i18n'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import { BlurView } from 'expo-blur'
 

@@ -9,8 +9,8 @@ import { useTiptapEditor } from "../../../../hooks/use-tiptap-editor"
 import { isExtensionAvailable } from "../../../../utils/tiptap-utils"
 
 // --- Icons ---
-import { TableCellMergeIcon } from "@aiget/ui/icons/table-cell-merge-icon"
-import { TableCellSplitIcon } from "@aiget/ui/icons/table-cell-split-icon"
+import { TableCellMergeIcon } from "@anyhunt/ui/icons/table-cell-merge-icon"
+import { TableCellSplitIcon } from "@anyhunt/ui/icons/table-cell-split-icon"
 
 export type MergeSplitAction = "merge" | "split"
 

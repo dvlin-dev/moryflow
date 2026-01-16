@@ -3,8 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "paths": {
-      "@aiget/agents-core": ["./src/index.ts"],
-      "@aiget/agents-core/_shims": ["./src/shims/shims-node.ts"]
+      "@anyhunt/agents-core": ["./src/index.ts"],
+      "@anyhunt/agents-core/_shims": ["./src/shims/shims-node.ts"]
     }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],

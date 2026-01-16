@@ -1,5 +1,5 @@
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
-import { Button } from '@aiget/ui/components/button'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
+import { Button } from '@anyhunt/ui/components/button'
 import { PlusIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { McpServerState } from '@shared/ipc'

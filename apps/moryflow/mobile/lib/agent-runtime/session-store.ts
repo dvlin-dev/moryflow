@@ -9,9 +9,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { randomUUID } from 'expo-crypto'
-import type { AgentInputItem } from '@aiget/agents'
+import type { AgentInputItem } from '@anyhunt/agents'
 import type { UIMessage } from 'ai'
-import type { SessionStore, ChatSessionSummary } from '@aiget/agents-runtime'
+import type { SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime'
 
 // ============ 常量 ============
 

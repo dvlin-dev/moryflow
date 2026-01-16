@@ -13,16 +13,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@aiget/ui/components/alert-dialog'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { RadioGroup, RadioGroupItem } from '@aiget/ui/components/radio-group'
-import { Textarea } from '@aiget/ui/components/textarea'
+} from '@anyhunt/ui/components/alert-dialog'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group'
+import { Textarea } from '@anyhunt/ui/components/textarea'
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteAccount } from '@/lib/server/api'
-import { DELETION_REASONS, type DeletionReasonCode } from '@aiget/api'
+import { DELETION_REASONS, type DeletionReasonCode } from '@anyhunt/api'
 import { useTranslation } from '@/lib/i18n'
 import type { UserInfo } from '@/lib/server/types'
 

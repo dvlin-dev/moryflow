@@ -11,8 +11,8 @@
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { readFile, writeFile, stat, mkdir, unlink } from 'node:fs/promises'
-import type { FileEntry } from '@aiget/api'
-import type { VectorClock } from '@aiget/sync'
+import type { FileEntry } from '@anyhunt/api'
+import type { VectorClock } from '@anyhunt/sync'
 import type { SyncActionDto, CompletedFileDto, LocalFileDto } from '../api/types.js'
 import type { SyncDirection } from '../const.js'
 import {

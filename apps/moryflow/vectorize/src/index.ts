@@ -18,7 +18,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use(
   '/*',
   cors({
-    origin: ['https://moryflow.aiget.dev', 'http://localhost:3000'],
+    origin: ['https://www.moryflow.com', 'http://localhost:3000'],
     allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
   }),

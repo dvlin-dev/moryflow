@@ -2,7 +2,7 @@
  * Vault 服务类型定义
  */
 
-import type { VaultInfo, ResolvedVaultPath } from '@aiget/agents-adapter'
+import type { VaultInfo, ResolvedVaultPath } from '@anyhunt/agents-adapter'
 
 // 重新导出类型
 export type { VaultInfo, ResolvedVaultPath }

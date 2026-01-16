@@ -4,7 +4,7 @@ import {
   MCPServerStdio as UnderlyingMCPServerStdio,
   MCPServerStreamableHttp as UnderlyingMCPServerStreamableHttp,
   MCPServerSSE as UnderlyingMCPServerSSE,
-} from '@aiget/agents-core/_shims';
+} from '@anyhunt/agents-core/_shims';
 import {
   getCurrentSpan,
   getCurrentTrace,

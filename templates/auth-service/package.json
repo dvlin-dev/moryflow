@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/auth-service-template",
+  "name": "@anyhunt/auth-service-template",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aiget/auth-server": "workspace:*",
-    "@aiget/identity-db": "workspace:*",
+    "@anyhunt/auth-server": "workspace:*",
+    "@anyhunt/identity-db": "workspace:*",
     "@nestjs/common": "^11.1.11",
     "@nestjs/core": "^11.1.11",
     "@nestjs/platform-express": "^11.1.11",

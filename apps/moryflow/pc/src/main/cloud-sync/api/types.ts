@@ -33,4 +33,4 @@ export type {
 
   // Usage API
   UsageResponse,
-} from '@aiget/api/cloud-sync'
+} from '@anyhunt/api/cloud-sync'

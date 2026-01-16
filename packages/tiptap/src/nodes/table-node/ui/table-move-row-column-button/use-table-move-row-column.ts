@@ -27,10 +27,10 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { ArrowLeftIcon } from "@aiget/ui/icons/arrow-left-icon"
-import { ArrowRightIcon } from "@aiget/ui/icons/arrow-right-icon"
-import { ArrowUpIcon } from "@aiget/ui/icons/arrow-up-icon"
-import { ArrowDownIcon } from "@aiget/ui/icons/arrow-down-icon"
+import { ArrowLeftIcon } from "@anyhunt/ui/icons/arrow-left-icon"
+import { ArrowRightIcon } from "@anyhunt/ui/icons/arrow-right-icon"
+import { ArrowUpIcon } from "@anyhunt/ui/icons/arrow-up-icon"
+import { ArrowDownIcon } from "@anyhunt/ui/icons/arrow-down-icon"
 
 export type MoveDirection = "up" | "down" | "left" | "right"
 

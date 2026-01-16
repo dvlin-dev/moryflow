@@ -16,7 +16,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FLOATING_BUTTON_SIZE, FLOATING_BUTTON_MARGIN, type SaveStatus } from './const';
 import { BackButton, MoreButton, SaveStatusIndicator, TitleInput } from './components';
-import { useTranslation } from '@aiget/i18n';
+import { useTranslation } from '@anyhunt/i18n';
 
 export default function EditorByFileId() {
   const { t } = useTranslation('common');

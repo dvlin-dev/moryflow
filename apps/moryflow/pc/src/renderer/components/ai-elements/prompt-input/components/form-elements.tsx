@@ -12,7 +12,7 @@ import {
 import {
   InputGroupAddon,
   InputGroupTextarea,
-} from '@aiget/ui/components/input-group';
+} from '@anyhunt/ui/components/input-group';
 import { cn } from '@/lib/utils';
 
 import {

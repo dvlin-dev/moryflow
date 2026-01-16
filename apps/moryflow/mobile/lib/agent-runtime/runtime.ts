@@ -5,7 +5,7 @@
  * 与 PC 端 apps/moryflow/pc/src/main/agent-runtime/index.ts 对应。
  */
 
-import { run, setTracingDisabled } from '@aiget/agents';
+import { run, setTracingDisabled } from '@anyhunt/agents';
 import {
   createAgentFactory,
   createModelFactory,
@@ -18,9 +18,9 @@ import {
   type ModelFactory,
   type VaultUtils,
   type AgentSettings,
-} from '@aiget/agents-runtime';
-import { createMobileTools } from '@aiget/agents-tools';
-import { providerRegistry, toApiModelId } from '@aiget/agents-model-registry';
+} from '@anyhunt/agents-runtime';
+import { createMobileTools } from '@anyhunt/agents-tools';
+import { providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
@@ -196,8 +196,8 @@ export async function runChatTurn(params: {
   chatId: string;
   input: string;
   preferredModelId?: string;
-  context?: import('@aiget/agents-runtime').AgentChatContext;
-  attachments?: import('@aiget/agents-runtime').AgentAttachmentContext[];
+  context?: import('@anyhunt/agents-runtime').AgentChatContext;
+  attachments?: import('@anyhunt/agents-runtime').AgentAttachmentContext[];
   signal?: AbortSignal;
 }): Promise<MobileChatTurnResult> {
   const rt = await getAgentRuntime();

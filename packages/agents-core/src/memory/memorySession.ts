@@ -1,4 +1,4 @@
-import { randomUUID } from '@aiget/agents-core/_shims';
+import { randomUUID } from '@anyhunt/agents-core/_shims';
 
 import type { AgentInputItem } from '../types';
 import type { Session } from './session';

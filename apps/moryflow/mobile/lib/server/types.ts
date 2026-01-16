@@ -19,10 +19,10 @@ export type {
   MembershipModelsResponse,
   MembershipAuthState,
   BetterAuthError,
-} from '@aiget/api'
+} from '@anyhunt/api'
 
 // 本地类型别名（简化使用）
 export type {
   MembershipUserInfo as UserInfo,
   MembershipModelsResponse as ModelsResponse,
-} from '@aiget/api'
+} from '@anyhunt/api'

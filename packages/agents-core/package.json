@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-core",
+  "name": "@anyhunt/agents-core",
   "repository": "https://github.com/openai/openai-agents-js",
   "homepage": "https://openai.github.io/openai-agents-js/",
   "version": "0.3.3",

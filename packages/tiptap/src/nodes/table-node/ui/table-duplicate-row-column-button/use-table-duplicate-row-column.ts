@@ -20,7 +20,7 @@ import {
 } from "../../lib/tiptap-table-utils"
 
 // --- Icons ---
-import { CopyIcon } from "@aiget/ui/icons/copy-icon"
+import { CopyIcon } from "@anyhunt/ui/icons/copy-icon"
 
 export interface UseTableDuplicateRowColumnConfig {
   /**

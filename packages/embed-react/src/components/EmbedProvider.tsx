@@ -2,7 +2,7 @@
  * EmbedProvider - 提供 Embed 客户端上下文
  */
 import { useMemo, type ReactNode } from 'react';
-import { createEmbedClient, type EmbedTheme } from '@aiget/embed';
+import { createEmbedClient, type EmbedTheme } from '@anyhunt/embed';
 import { EmbedContext, type EmbedContextValue } from '../context.tsx';
 
 export interface EmbedProviderProps {

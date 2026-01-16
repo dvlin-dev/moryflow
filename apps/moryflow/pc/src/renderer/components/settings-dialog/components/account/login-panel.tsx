@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { Button } from '@aiget/ui/components/button'
-import { Input } from '@aiget/ui/components/input'
+import { Button } from '@anyhunt/ui/components/button'
+import { Input } from '@anyhunt/ui/components/input'
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from '@aiget/ui/components/field'
+} from '@anyhunt/ui/components/field'
 import { Loader2 } from 'lucide-react'
 import { useAuth, preRegisterApi } from '@/lib/server'
 import { OTPForm } from '@/components/auth'

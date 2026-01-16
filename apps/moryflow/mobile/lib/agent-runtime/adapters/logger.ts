@@ -3,7 +3,7 @@
  * 提供统一的日志接口
  */
 
-import type { Logger } from '@aiget/agents-adapter';
+import type { Logger } from '@anyhunt/agents-adapter';
 
 const LOG_PREFIX = '[MobileAdapter]';
 

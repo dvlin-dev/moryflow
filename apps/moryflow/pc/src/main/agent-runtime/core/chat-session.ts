@@ -8,8 +8,8 @@
  * uiMessages 由 chat-request.ts 单独管理。
  */
 
-import type { Session } from '@aiget/agents'
-import { createSessionAdapter } from '@aiget/agents-runtime'
+import type { Session } from '@anyhunt/agents'
+import { createSessionAdapter } from '@anyhunt/agents-runtime'
 import { desktopSessionStore } from '../../chat-session-store/index.js'
 
 /**

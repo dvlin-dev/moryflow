@@ -2,7 +2,7 @@ import { useRef, useState } from "react"
 import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "../../ui-primitive/button"
-import { CloseIcon } from "@aiget/ui/icons/close-icon"
+import { CloseIcon } from "@anyhunt/ui/icons/close-icon"
 import "./image-upload-node.scss"
 import { focusNextNode, isValidPosition } from "../../utils/tiptap-utils"
 

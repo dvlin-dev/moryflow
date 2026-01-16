@@ -16,7 +16,7 @@
     "noUnusedParameters": false,
     "baseUrl": ".",
     "paths": {
-      "@aiget/ui/*": ["../ui/src/*"]
+      "@anyhunt/ui/*": ["../ui/src/*"]
     }
   },
   "include": ["src/**/*"],

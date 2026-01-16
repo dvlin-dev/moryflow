@@ -3,21 +3,21 @@
 import { useState } from "react";
 import { PaperclipIcon, XIcon } from "lucide-react";
 
-import { Badge } from "@aiget/ui/components/badge";
-import { Button } from "@aiget/ui/components/button";
-import { ScrollArea } from "@aiget/ui/components/scroll-area";
+import { Badge } from "@anyhunt/ui/components/badge";
+import { Button } from "@anyhunt/ui/components/button";
+import { ScrollArea } from "@anyhunt/ui/components/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@aiget/ui/components/tooltip";
+} from "@anyhunt/ui/components/tooltip";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 import type {
   MessageAttachmentProps,
   MessageAttachmentsProps,
-} from "@aiget/ui/ai/message";
+} from "@anyhunt/ui/ai/message";
 
 export function MessageAttachment({
   data,

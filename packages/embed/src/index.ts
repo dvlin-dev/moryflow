@@ -1,5 +1,5 @@
 /**
- * @aiget/embed - oEmbed API 客户端
+ * /embed - oEmbed API 客户端
  */
 
 // Client

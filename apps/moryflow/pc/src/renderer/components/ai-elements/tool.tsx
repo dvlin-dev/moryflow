@@ -1,9 +1,9 @@
 'use client'
 
-import { Button } from '@aiget/ui/components/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@aiget/ui/components/collapsible'
-import { ScrollArea, ScrollBar } from '@aiget/ui/components/scroll-area'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@aiget/ui/components/tooltip'
+import { Button } from '@anyhunt/ui/components/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anyhunt/ui/components/collapsible'
+import { ScrollArea, ScrollBar } from '@anyhunt/ui/components/scroll-area'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
 import { useTranslation } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { ToolUIPart } from 'ai'
@@ -20,7 +20,7 @@ import {
 import type { ComponentProps, ReactNode } from 'react'
 import { isValidElement, useState } from 'react'
 import { toast } from 'sonner'
-import { CodeBlock } from '@aiget/ui/ai/code-block'
+import { CodeBlock } from '@anyhunt/ui/ai/code-block'
 
 export type ToolProps = ComponentProps<typeof Collapsible>
 

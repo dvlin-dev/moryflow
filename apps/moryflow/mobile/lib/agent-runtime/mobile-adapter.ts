@@ -11,8 +11,8 @@
  * - expo-crypto: 加密工具
  */
 
-import type { PlatformCapabilities, CryptoUtils, AuthCapabilities } from '@aiget/agents-adapter'
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import type { PlatformCapabilities, CryptoUtils, AuthCapabilities } from '@anyhunt/agents-adapter'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import {
   pathUtils,
   createFileSystem,

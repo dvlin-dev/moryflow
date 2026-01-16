@@ -1,8 +1,8 @@
-# @aiget/types
+# /types
 
-> Aiget 跨业务线共享类型定义（不代表账号/数据互通）
+> Anyhunt 跨业务线共享类型定义（不代表账号/数据互通）
 
-- Aiget Dev API base 默认指向 `https://server.aiget.dev/api/v1`（见 `src/common/product.ts`）。
+- Anyhunt Dev API base 默认指向 `https://server.anyhunt.app/api/v1`（见 `src/common/product.ts`）。
 
 ## 目录结构
 
@@ -19,20 +19,20 @@ src/
         └── screenshot.ts # 截图 API 类型
 ```
 
-> 类型可在 Moryflow 与 Aiget Dev 复用，但业务数据严格隔离。
+> 类型可在 Moryflow 与 Anyhunt Dev 复用，但业务数据严格隔离。
 
 ## 导入方式
 
 ```typescript
 // 全部导入
-import { User, Subscription, CreditStatus } from '@aiget/types';
+import { User, Subscription, CreditStatus } from '@anyhunt/types';
 
 // 按模块导入
-import { User, ApiKey } from '@aiget/types/common/user';
-import { SubscriptionTier } from '@aiget/types/common/subscription';
+import { User, ApiKey } from '@anyhunt/types/common/user';
+import { SubscriptionTier } from '@anyhunt/types/common/subscription';
 
 // 产品类型
-import { fetchx } from '@aiget/types';
+import { fetchx } from '@anyhunt/types';
 const req: fetchx.ScreenshotRequest = { url: '...' };
 ```
 
@@ -53,10 +53,10 @@ const req: fetchx.ScreenshotRequest = { url: '...' };
 
 ## API Key 前缀
 
-| 类型          | 前缀  |
-| ------------- | ----- |
-| Aiget Dev Key | `ag_` |
-| Moryflow Key  | `mf_` |
+| 类型            | 前缀  |
+| --------------- | ----- |
+| Anyhunt Dev Key | `ah_` |
+| Moryflow Key    | `mf_` |
 
 ---
 

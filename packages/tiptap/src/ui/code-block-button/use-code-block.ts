@@ -17,7 +17,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { CodeBlockIcon } from "@aiget/ui/icons/code-block-icon"
+import { CodeBlockIcon } from "@anyhunt/ui/icons/code-block-icon"
 
 export const CODE_BLOCK_SHORTCUT_KEY = "mod+alt+c"
 

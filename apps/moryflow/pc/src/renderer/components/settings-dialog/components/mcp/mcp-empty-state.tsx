@@ -1,5 +1,5 @@
-import { Button } from '@aiget/ui/components/button'
-import { Badge } from '@aiget/ui/components/badge'
+import { Button } from '@anyhunt/ui/components/button'
+import { Badge } from '@anyhunt/ui/components/badge'
 import { PlusIcon } from 'lucide-react'
 import { MCP_PRESETS, type McpPreset } from './mcp-presets'
 

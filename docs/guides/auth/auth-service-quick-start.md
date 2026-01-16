@@ -1,12 +1,12 @@
 ---
 title: 用户系统快速接入（Auth Service 模板）
 date: 2026-01-06
-scope: moryflow.com, aiget.dev
+scope: moryflow.com, anyhunt.app
 status: active
 ---
 
 <!--
-[INPUT]: templates/auth-service, @aiget/auth-client, @aiget/identity-db
+[INPUT]: templates/auth-service, /auth-client, /identity-db
 [OUTPUT]: Auth 服务快速接入步骤（仓库内/外部项目）
 [POS]: 用户系统快速接入文档
 
@@ -32,7 +32,7 @@ status: active
    - 或者：在 `pnpm-workspace.yaml` 中加入 `templates/*`。
 2. 准备数据库：
    - 启动本地 Postgres：`docker compose up -d`（模板内自带）。
-   - 推送 schema：`pnpm --filter @aiget/identity-db prisma:push`。
+   - 推送 schema：`pnpm --filter @anyhunt/identity-db prisma:push`。
 3. 配置环境变量：
    - 复制 `.env.example` → `.env`。
    - 至少设置 `BETTER_AUTH_SECRET`、`IDENTITY_DATABASE_URL`、`TRUSTED_ORIGINS`。
@@ -42,16 +42,16 @@ status: active
 ## 快速接入（外部项目）
 
 1. 复制模板到新项目根目录。
-2. 替换 `package.json` 中的 `@aiget/*` 依赖为可安装版本（已发布或本地路径）。
+2. 替换 `package.json` 中的 `/*` 依赖为可安装版本（已发布或本地路径）。
 3. 准备数据库并同步 schema（可直接复制 `packages/identity-db/prisma/schema.prisma`）。
 4. 配置 `.env` 后启动服务。
 
 ## 客户端接入（推荐）
 
-使用 `@aiget/auth-client`：
+使用 `/auth-client`：
 
 ```ts
-import { createAuthClient } from '@aiget/auth-client';
+import { createAuthClient } from '@anyhunt/auth-client';
 
 const auth = createAuthClient({
   baseUrl: 'https://app.moryflow.com/api/v1/auth',

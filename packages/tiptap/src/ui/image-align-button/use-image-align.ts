@@ -13,9 +13,9 @@ import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 import { isExtensionAvailable } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { AlignCenterVerticalIcon } from "@aiget/ui/icons/align-center-vertical-icon"
-import { AlignEndVerticalIcon } from "@aiget/ui/icons/align-end-vertical-icon"
-import { AlignStartVerticalIcon } from "@aiget/ui/icons/align-start-vertical-icon"
+import { AlignCenterVerticalIcon } from "@anyhunt/ui/icons/align-center-vertical-icon"
+import { AlignEndVerticalIcon } from "@anyhunt/ui/icons/align-end-vertical-icon"
+import { AlignStartVerticalIcon } from "@anyhunt/ui/icons/align-start-vertical-icon"
 
 export type ImageAlign = "left" | "center" | "right"
 

@@ -18,7 +18,7 @@ import {
   ToolbarGroup,
   ToolbarSeparator,
 } from "../../ui-primitive/toolbar"
-import { MoreVerticalIcon } from "@aiget/ui/icons/more-vertical-icon"
+import { MoreVerticalIcon } from "@anyhunt/ui/icons/more-vertical-icon"
 
 import type { MoreOptionsProps } from "./types"
 

@@ -1,4 +1,4 @@
-import { getLogger } from '@aiget/agents-core';
+import { getLogger } from '@anyhunt/agents-core';
 
 const logger = getLogger('openai-agents:openai');
 

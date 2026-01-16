@@ -4,11 +4,11 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
-import { Button } from "@aiget/ui/components/button";
+import { Button } from "@anyhunt/ui/components/button";
 import {
   ButtonGroup,
   ButtonGroupText,
-} from "@aiget/ui/components/button-group";
+} from "@anyhunt/ui/components/button-group";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -18,7 +18,7 @@ import type {
   MessageBranchPreviousProps,
   MessageBranchProps,
   MessageBranchSelectorProps,
-} from "@aiget/ui/ai/message";
+} from "@anyhunt/ui/ai/message";
 import { MessageBranchContext, useMessageBranch } from "../handle";
 
 export const MessageBranch = ({

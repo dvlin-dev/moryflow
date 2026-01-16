@@ -1,5 +1,5 @@
 import { useAuth } from '@/lib/server'
-import { Skeleton } from '@aiget/ui/components/skeleton'
+import { Skeleton } from '@anyhunt/ui/components/skeleton'
 import { LoginPanel } from './account/login-panel'
 import { UserProfile } from './account/user-profile'
 

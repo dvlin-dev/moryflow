@@ -8,10 +8,10 @@ import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { CornerDownLeftIcon } from "@aiget/ui/icons/corner-down-left-icon"
-import { ExternalLinkIcon } from "@aiget/ui/icons/external-link-icon"
-import { LinkIcon } from "@aiget/ui/icons/link-icon"
-import { TrashIcon } from "@aiget/ui/icons/trash-icon"
+import { CornerDownLeftIcon } from "@anyhunt/ui/icons/corner-down-left-icon"
+import { ExternalLinkIcon } from "@anyhunt/ui/icons/external-link-icon"
+import { LinkIcon } from "@anyhunt/ui/icons/link-icon"
+import { TrashIcon } from "@anyhunt/ui/icons/trash-icon"
 
 // --- Tiptap UI ---
 import type { UseLinkPopoverConfig } from "./use-link-popover"

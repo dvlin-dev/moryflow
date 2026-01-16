@@ -20,8 +20,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - 渲染进程使用 TailwindCSS
 - 主进程处理文件系统、网络、Agent 运行时等重操作
 - 敏感操作（文件访问、网络请求）必须在主进程执行
-- 全局样式引入 `@aiget/ui/styles`，Electron 专属样式保留在 `src/renderer/global.css`
-- `electron.vite.config.ts` 需为 `@aiget/ui/styles` 设置别名，避免解析到 `packages/ui/src`
+- 全局样式引入 `/ui/styles`，Electron 专属样式保留在 `src/renderer/global.css`
+- `electron.vite.config.ts` 需为 `/ui/styles` 设置别名，避免解析到 `packages/ui/src`
 
 ## 技术栈
 

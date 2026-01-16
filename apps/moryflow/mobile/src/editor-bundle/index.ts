@@ -18,27 +18,27 @@ import { Mathematics } from '@tiptap/extension-mathematics';
 import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 
 // 自定义扩展
-import { HorizontalRule } from '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
-import { Image } from '@aiget/tiptap/nodes/image-node/image-node-extension';
-import { NodeBackground } from '@aiget/tiptap/extensions/node-background-extension';
-import { NodeAlignment } from '@aiget/tiptap/extensions/node-alignment-extension';
-import { UiState } from '@aiget/tiptap/extensions/ui-state-extension';
-import { TableKit } from '@aiget/tiptap/nodes/table-node/extensions/table-node-extension';
+import { HorizontalRule } from '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
+import { Image } from '@anyhunt/tiptap/nodes/image-node/image-node-extension';
+import { NodeBackground } from '@anyhunt/tiptap/extensions/node-background-extension';
+import { NodeAlignment } from '@anyhunt/tiptap/extensions/node-alignment-extension';
+import { UiState } from '@anyhunt/tiptap/extensions/ui-state-extension';
+import { TableKit } from '@anyhunt/tiptap/nodes/table-node/extensions/table-node-extension';
 
 // Bridge Client
 import { BridgeClient, type EditorCommand } from './bridge-client';
 
 // 样式
-import '@aiget/tiptap/nodes/blockquote-node/blockquote-node.scss';
-import '@aiget/tiptap/nodes/code-block-node/code-block-node.scss';
-import '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
-import '@aiget/tiptap/nodes/list-node/list-node.scss';
-import '@aiget/tiptap/nodes/image-node/image-node.scss';
-import '@aiget/tiptap/nodes/heading-node/heading-node.scss';
-import '@aiget/tiptap/nodes/paragraph-node/paragraph-node.scss';
-import '@aiget/tiptap/nodes/table-node/styles/prosemirror-table.scss';
-import '@aiget/tiptap/nodes/table-node/styles/table-node.scss';
-import '@aiget/tiptap/styles/notion-editor.scss';
+import '@anyhunt/tiptap/nodes/blockquote-node/blockquote-node.scss';
+import '@anyhunt/tiptap/nodes/code-block-node/code-block-node.scss';
+import '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
+import '@anyhunt/tiptap/nodes/list-node/list-node.scss';
+import '@anyhunt/tiptap/nodes/image-node/image-node.scss';
+import '@anyhunt/tiptap/nodes/heading-node/heading-node.scss';
+import '@anyhunt/tiptap/nodes/paragraph-node/paragraph-node.scss';
+import '@anyhunt/tiptap/nodes/table-node/styles/prosemirror-table.scss';
+import '@anyhunt/tiptap/nodes/table-node/styles/table-node.scss';
+import '@anyhunt/tiptap/styles/notion-editor.scss';
 
 // ============ 初始化编辑器 ============
 

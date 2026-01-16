@@ -6,7 +6,7 @@
 
 import { Settings } from 'lucide-react'
 import { SyncStatusIndicator, SyncStatusHoverCard } from '@/components/cloud-sync'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@aiget/ui/components/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
 import { useTranslation } from '@/lib/i18n'
 import type { SidebarToolsProps } from '../const'
 

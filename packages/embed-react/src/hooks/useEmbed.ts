@@ -2,7 +2,7 @@
  * useEmbed hook - 获取 oEmbed 数据
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { EmbedData, EmbedOptions, EmbedError } from '@aiget/embed';
+import type { EmbedData, EmbedOptions, EmbedError } from '@anyhunt/embed';
 import { useEmbedContext } from './useEmbedContext.ts';
 
 export interface UseEmbedOptions extends EmbedOptions {

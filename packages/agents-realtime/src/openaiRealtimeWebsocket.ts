@@ -2,7 +2,7 @@ import {
   isBrowserEnvironment,
   useWebSocketProtocols,
   WebSocket,
-} from '@aiget/agents-realtime/_shims';
+} from '@anyhunt/agents-realtime/_shims';
 import {
   RealtimeTransportLayerConnectOptions,
   RealtimeTransportLayer,
@@ -14,7 +14,7 @@ import {
   OpenAIRealtimeBaseOptions,
 } from './openaiRealtimeBase';
 import { base64ToArrayBuffer, HEADERS, WEBSOCKET_META } from './utils';
-import { UserError } from '@aiget/agents-core';
+import { UserError } from '@anyhunt/agents-core';
 import { TransportLayerAudio } from './transportLayerEvents';
 import { parseRealtimeEvent } from './openaiRealtimeEvents';
 

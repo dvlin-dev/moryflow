@@ -26,8 +26,8 @@ import { useComboboxValueState } from "../../../../ui-primitive/menu";
 import {
   filterMenuItems,
 } from "../../../../ui-primitive/menu";
-import { LanguagesIcon } from "@aiget/ui/icons/languages-icon";
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon";
+import { LanguagesIcon } from "@anyhunt/ui/icons/languages-icon";
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon";
 
 import { SUPPORTED_LANGUAGES } from "../ai-menu-items-constants";
 

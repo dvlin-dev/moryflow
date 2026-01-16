@@ -31,7 +31,7 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ['@aiget/ui'],
+    noExternal: ['@anyhunt/ui'],
   },
   build: {
     // Enable CSS code splitting

@@ -1,7 +1,7 @@
 ---
 title: ADR-0001：两条业务线永不互通
 date: 2026-01-12
-scope: moryflow.com, aiget.dev
+scope: moryflow.com, anyhunt.app
 status: active
 ---
 
@@ -20,7 +20,7 @@ status: active
 当前仓库的默认架构是 **两条互不互通的业务线**：
 
 1. Moryflow：`www.moryflow.com` / `app.moryflow.com`
-2. Aiget Dev：`aiget.dev` / `server.aiget.dev` / `console.aiget.dev` / `admin.aiget.dev`
+2. Anyhunt Dev：`anyhunt.app` / `server.anyhunt.app` / `console.anyhunt.app` / `admin.anyhunt.app`
 
 两条业务线：
 

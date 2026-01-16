@@ -29,7 +29,7 @@ export interface User {
 // ============ API Key ============
 
 export const ApiKeyPrefix = {
-  AIGET_DEV: 'ag_', // Aiget Dev（aiget.dev）
+  ANYHUNT_DEV: 'ah_', // Anyhunt Dev（anyhunt.app）
   MORYFLOW: 'mf_', // Moryflow（app.moryflow.com）
 } as const;
 
@@ -39,7 +39,7 @@ export interface ApiKey {
   id: string;
   userId: string;
   name: string;
-  keyPrefix: string; // 显示用（如 "ag_xxxx..."）
+  keyPrefix: string; // 显示用（如 "ah_xxxx..."）
   keyHash: string; // SHA256 哈希，用于验证
   productScope: string[]; // 可访问的产品列表
   isActive: boolean;

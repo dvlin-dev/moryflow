@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@aiget/ui/components/dropdown-menu'
+} from '@anyhunt/ui/components/dropdown-menu'
 import { useTranslation } from '@/lib/i18n'
 import type { CreateMenuProps } from '../const'
 

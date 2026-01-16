@@ -1,0 +1,255 @@
+---
+title: Search API
+description: Web search with optional result content scraping
+---
+
+# Search API
+
+The Search API provides web search capabilities. Optionally scrape the content of search results for deeper analysis.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/search` | Execute search |
+| GET | `/api/v1/search/autocomplete` | Get search suggestions |
+
+## Execute Search
+
+```http
+POST /api/v1/search
+```
+
+### Request Body
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | required | Search query (max 500 chars) |
+| `limit` | number | 10 | Number of results (1-100) |
+| `categories` | string[] | - | Search categories |
+| `engines` | string[] | - | Specific search engines |
+| `language` | string | - | Language code (e.g., "en", "zh") |
+| `timeRange` | string | - | Time filter: `day`, `week`, `month`, `year` |
+| `safeSearch` | number | - | Safe search: `0` (off), `1` (moderate), `2` (strict) |
+| `scrapeResults` | boolean | `false` | Scrape content from result pages |
+| `scrapeOptions` | object | - | Options for result scraping |
+
+### Search Categories
+
+| Category | Description |
+|----------|-------------|
+| `general` | Web pages (default) |
+| `images` | Image search |
+| `news` | News articles |
+| `videos` | Video content |
+| `music` | Music and audio |
+| `files` | Downloadable files |
+| `it` | IT and programming |
+| `science` | Scientific content |
+| `social media` | Social media posts |
+
+### Example Request
+
+```bash
+curl -X POST https://server.anyhunt.app/api/v1/search \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "web scraping best practices",
+    "limit": 10,
+    "categories": ["general"],
+    "timeRange": "month",
+    "safeSearch": 1
+  }'
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "query": "web scraping best practices",
+    "numberOfResults": 10,
+    "results": [
+      {
+        "title": "Web Scraping Best Practices Guide",
+        "url": "https://example.com/guide",
+        "description": "Learn the best practices for ethical web scraping...",
+        "engine": "google",
+        "score": 0.95,
+        "publishedDate": "2024-01-10"
+      },
+      {
+        "title": "How to Scrape Websites Responsibly",
+        "url": "https://example.org/scraping",
+        "description": "A comprehensive guide to responsible web scraping...",
+        "engine": "bing",
+        "score": 0.92
+      }
+    ],
+    "suggestions": [
+      "web scraping python",
+      "web scraping tools",
+      "web scraping legal"
+    ]
+  }
+}
+```
+
+## Search with Content Scraping
+
+Enable `scrapeResults` to fetch and include the content of each result page:
+
+```bash
+curl -X POST https://server.anyhunt.app/api/v1/search \
+  -H "Authorization: Bearer ah_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "web scraping tutorial",
+    "limit": 5,
+    "scrapeResults": true,
+    "scrapeOptions": {
+      "formats": ["markdown"],
+      "onlyMainContent": true
+    }
+  }'
+```
+
+### Response with Content
+
+```json
+{
+  "success": true,
+  "data": {
+    "query": "web scraping tutorial",
+    "numberOfResults": 5,
+    "results": [
+      {
+        "title": "Web Scraping Tutorial",
+        "url": "https://example.com/tutorial",
+        "description": "Step-by-step web scraping guide...",
+        "engine": "google",
+        "content": "# Web Scraping Tutorial\n\nIn this tutorial, you'll learn..."
+      }
+    ]
+  }
+}
+```
+
+## Autocomplete
+
+```http
+GET /api/v1/search/autocomplete?q=web+scrap
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "suggestions": [
+      "web scraping",
+      "web scraping python",
+      "web scraping tools",
+      "web scraper"
+    ]
+  }
+}
+```
+
+## Code Examples
+
+### Node.js
+
+```javascript
+// Basic search
+const response = await fetch('https://server.anyhunt.app/api/v1/search', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ah_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    query: 'machine learning tutorials',
+    limit: 10,
+    timeRange: 'month',
+  }),
+});
+
+const { data } = await response.json();
+console.log(`Found ${data.numberOfResults} results`);
+data.results.forEach(r => console.log(r.title, r.url));
+```
+
+### Python
+
+```python
+import requests
+
+# Search with content scraping
+response = requests.post(
+    'https://server.anyhunt.app/api/v1/search',
+    headers={
+        'Authorization': 'Bearer ah_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'query': 'machine learning tutorials',
+        'limit': 5,
+        'scrapeResults': True,
+        'scrapeOptions': {
+            'formats': ['markdown'],
+        },
+    },
+)
+
+results = response.json()['data']['results']
+for r in results:
+    print(f"Title: {r['title']}")
+    print(f"Content preview: {r.get('content', '')[:200]}...")
+    print()
+```
+
+## Use Cases
+
+### News Aggregation
+
+```json
+{
+  "query": "AI technology news",
+  "categories": ["news"],
+  "timeRange": "day",
+  "limit": 20
+}
+```
+
+### Research
+
+```json
+{
+  "query": "climate change research papers",
+  "categories": ["science"],
+  "scrapeResults": true,
+  "scrapeOptions": {
+    "formats": ["markdown"],
+    "onlyMainContent": true
+  }
+}
+```
+
+### Competitive Analysis
+
+```json
+{
+  "query": "site:competitor.com product features",
+  "scrapeResults": true
+}
+```
+
+## Notes
+
+- `scrapeResults: true` increases response time and quota usage
+- Use specific categories to improve result relevance
+- Time range filters help find recent content

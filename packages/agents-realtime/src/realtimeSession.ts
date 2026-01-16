@@ -9,9 +9,9 @@ import {
   Usage,
   RunToolApprovalItem,
   type FunctionTool,
-} from '@aiget/agents-core';
-import { RuntimeEventEmitter } from '@aiget/agents-core/_shims';
-import { isZodObject, toSmartString } from '@aiget/agents-core/utils';
+} from '@anyhunt/agents-core';
+import { RuntimeEventEmitter } from '@anyhunt/agents-core/_shims';
+import { isZodObject, toSmartString } from '@anyhunt/agents-core/utils';
 import type {
   RealtimeSessionConfig,
   RealtimeSessionConfigDefinition,

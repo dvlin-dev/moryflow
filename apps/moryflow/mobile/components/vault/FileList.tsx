@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
-import { useTranslation } from '@aiget/i18n';
+import { useTranslation } from '@anyhunt/i18n';
 import {
   FileIcon,
   FolderIcon,

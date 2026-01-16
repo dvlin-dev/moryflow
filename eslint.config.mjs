@@ -1,4 +1,4 @@
-import baseConfig from '@aiget/eslint-config/base';
+import baseConfig from '@anyhunt/eslint-config/base';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import reactHooks from 'eslint-plugin-react-hooks';
 
@@ -25,8 +25,8 @@ export default [
       '**/routeTree.gen.*',
       'pnpm-lock.yaml',
       '**/generated/**',
-      'apps/aiget/server/test/**',
-      'apps/aiget/server/src/**/__tests__/**',
+      'apps/anyhunt/server/test/**',
+      'apps/anyhunt/server/src/**/__tests__/**',
     ],
   },
 ];

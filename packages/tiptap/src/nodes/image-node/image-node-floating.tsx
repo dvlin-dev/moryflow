@@ -15,7 +15,7 @@ import { ImageAlignButton } from "../../ui/image-align-button"
 import { Separator } from "../../ui-primitive/separator"
 import { ImageCaptionButton } from "../../ui/image-caption-button"
 import { ImageUploadButton } from "../../ui/image-upload-button"
-import { RefreshCcwIcon } from "@aiget/ui/icons/refresh-ccw-icon"
+import { RefreshCcwIcon } from "@anyhunt/ui/icons/refresh-ccw-icon"
 
 export function ImageNodeFloating({
   editor: providedEditor,

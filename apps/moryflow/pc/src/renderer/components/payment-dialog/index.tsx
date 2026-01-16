@@ -5,8 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@aiget/ui/components/dialog'
-import { Button } from '@aiget/ui/components/button'
+} from '@anyhunt/ui/components/dialog'
+import { Button } from '@anyhunt/ui/components/button'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 

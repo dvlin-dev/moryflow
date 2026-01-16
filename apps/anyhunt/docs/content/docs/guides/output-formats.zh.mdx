@@ -1,0 +1,230 @@
+---
+title: 输出格式
+description: 了解可用的不同内容格式
+---
+
+# 输出格式
+
+Scrape API 支持多种输出格式。你可以在单个请求中请求一种或多种格式。
+
+## 可用格式
+
+| 格式 | 描述 | 使用场景 |
+|------|------|----------|
+| `markdown` | 清洁的 Markdown 文本 | 内容处理，LLM 输入 |
+| `html` | 清理后的 HTML | 网页渲染，存档 |
+| `rawHtml` | 原始 HTML | 调试，完整页面分析 |
+| `links` | 页面所有链接 | 链接提取，网站地图 |
+| `screenshot` | 页面图片 | 视觉存档，缩略图 |
+
+## Markdown
+
+默认格式。将 HTML 转换为清晰可读的 Markdown。
+
+```json
+{
+  "url": "https://example.com/article",
+  "formats": ["markdown"]
+}
+```
+
+**特性：**
+- GitHub 风格 Markdown（表格、任务列表、删除线）
+- 保留代码块及语法提示
+- 图片转换为 `![alt](url)` 格式
+- 链接保留为 `[text](url)`
+- 移除 script、style 和 SVG 标签
+
+**响应：**
+```json
+{
+  "markdown": "# 文章标题\n\n这是文章内容，包含 **粗体** 和 *斜体* 文本。\n\n## 章节\n\n更多内容..."
+}
+```
+
+## HTML
+
+清理后的 HTML，移除了脚本和样式。
+
+```json
+{
+  "url": "https://example.com/article",
+  "formats": ["html"]
+}
+```
+
+**特性：**
+- 移除 script 和 style 标签
+- 移除内联事件处理器
+- 干净、安全的 HTML 输出
+
+**响应：**
+```json
+{
+  "html": "<article><h1>文章标题</h1><p>这是文章内容...</p></article>"
+}
+```
+
+## 原始 HTML
+
+页面的原始、未修改的 HTML。
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["rawHtml"]
+}
+```
+
+**使用场景：**
+- 调试渲染问题
+- 完整页面分析
+- 保留原始结构
+
+**响应：**
+```json
+{
+  "rawHtml": "<!DOCTYPE html><html><head>...</head><body>...</body></html>"
+}
+```
+
+## 链接
+
+提取页面上的所有超链接。
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["links"]
+}
+```
+
+**特性：**
+- 仅唯一链接（已去重）
+- 仅 HTTP/HTTPS 链接
+- 排除 JavaScript 链接
+- 绝对 URL
+
+**响应：**
+```json
+{
+  "links": [
+    "https://example.com/about",
+    "https://example.com/contact",
+    "https://external-site.com/page"
+  ]
+}
+```
+
+## 截图
+
+捕获页面的视觉图像。
+
+```json
+{
+  "url": "https://example.com",
+  "formats": ["screenshot"],
+  "screenshotOptions": {
+    "fullPage": true,
+    "format": "webp",
+    "quality": 85
+  }
+}
+```
+
+**选项：**
+
+| 选项 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `fullPage` | boolean | `false` | 捕获完整页面高度 |
+| `format` | string | `"png"` | `png`、`jpeg`、`webp` |
+| `quality` | number | 80 | 图片质量（1-100） |
+| `clip` | string | - | 元素截图的 CSS 选择器 |
+| `response` | string | `"url"` | `url` 或 `base64` |
+
+**响应：**
+```json
+{
+  "screenshot": {
+    "url": "https://cdn.anyhunt.app/scraper/abc123.webp",
+    "width": 1920,
+    "height": 3500,
+    "format": "webp",
+    "fileSize": 245000,
+    "expiresAt": "2024-02-15T10:30:00.000Z"
+  }
+}
+```
+
+## 多种格式
+
+在单个 API 调用中请求多种格式：
+
+```json
+{
+  "url": "https://example.com/article",
+  "formats": ["markdown", "links", "screenshot"]
+}
+```
+
+**响应：**
+```json
+{
+  "markdown": "# 文章\n\n内容...",
+  "links": ["https://example.com/other"],
+  "screenshot": {
+    "url": "https://cdn.anyhunt.app/...",
+    "width": 1920,
+    "height": 1080
+  }
+}
+```
+
+## 主内容提取
+
+默认情况下，`onlyMainContent: true` 使用 Readability 算法仅提取主要文章内容。
+
+```json
+{
+  "url": "https://example.com/article",
+  "formats": ["markdown"],
+  "onlyMainContent": true
+}
+```
+
+设置为 `false` 以包含导航、侧边栏、页脚：
+
+```json
+{
+  "onlyMainContent": false
+}
+```
+
+## 格式选择指南
+
+| 目标 | 推荐格式 |
+|------|----------|
+| 输入到 LLM | `markdown` |
+| 存储用于搜索 | `markdown` + 元数据 |
+| 视觉存档 | `screenshot`（fullPage） |
+| 构建网站地图 | `links` |
+| 保留原始内容 | `rawHtml` |
+| 网页显示 | `html` |
+
+## 元数据
+
+每个响应都会包含元数据：
+
+```json
+{
+  "metadata": {
+    "title": "页面标题",
+    "description": "页面描述",
+    "author": "作者名称",
+    "ogImage": "https://example.com/og.jpg",
+    "favicon": "https://example.com/favicon.ico",
+    "language": "zh",
+    "publishedTime": "2024-01-15T10:00:00Z"
+  }
+}
+```

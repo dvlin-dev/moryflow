@@ -1,5 +1,5 @@
 import { FileTextIcon, XIcon } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@aiget/ui/components/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
 import { useTranslation } from '@/lib/i18n'
 
 type ContextFileTag = {

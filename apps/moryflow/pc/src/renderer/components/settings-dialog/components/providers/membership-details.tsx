@@ -1,8 +1,8 @@
-import { Badge } from '@aiget/ui/components/badge'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
+import { Badge } from '@anyhunt/ui/components/badge'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
 import { Crown, Sparkles, Zap, Info, Lock } from 'lucide-react'
 import { useAuth, TIER_DISPLAY_NAMES, type MembershipModel } from '@/lib/server'
-import { Skeleton } from '@aiget/ui/components/skeleton'
+import { Skeleton } from '@anyhunt/ui/components/skeleton'
 import { cn } from '@/lib/utils'
 
 /**

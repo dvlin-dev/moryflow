@@ -5,13 +5,13 @@ import {
   resetCurrentSpan,
   createGenerationSpan,
   setCurrentSpan,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import type {
   ModelRequest,
   ModelResponse,
   ResponseStreamEvent,
   SerializedOutputType,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import OpenAI from 'openai';
 import type { Stream } from 'openai/streaming';
 import logger from './logger';
@@ -22,8 +22,8 @@ import type {
   ResponseFormatJSONSchema,
   ResponseFormatJSONObject,
 } from 'openai/resources/shared';
-import { Span } from '@aiget/agents-core/dist/tracing/spans';
-import { GenerationSpanData } from '@aiget/agents-core/dist/tracing/spans';
+import { Span } from '@anyhunt/agents-core/dist/tracing/spans';
+import { GenerationSpanData } from '@anyhunt/agents-core/dist/tracing/spans';
 import { convertChatCompletionsStreamToResponses } from './openaiChatCompletionsStreaming';
 import {
   convertToolChoice,
@@ -31,7 +31,7 @@ import {
   convertHandoffTool,
   itemsToMessages,
 } from './openaiChatCompletionsConverter';
-import { protocol } from '@aiget/agents-core';
+import { protocol } from '@anyhunt/agents-core';
 
 export const FAKE_ID = 'FAKE_ID';
 

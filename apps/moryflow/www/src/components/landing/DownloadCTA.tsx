@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import {
   Download01Icon,
   AppleIcon,

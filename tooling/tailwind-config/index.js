@@ -1,5 +1,5 @@
 /**
- * Aiget 统一 Tailwind CSS v4 配置
+ * Anyhunt 统一 Tailwind CSS v4 配置
  * 各应用可继承此配置并按需扩展
  */
 

@@ -2,7 +2,7 @@
  * Embed Context
  */
 import { createContext } from 'react';
-import type { EmbedClient, EmbedTheme } from '@aiget/embed';
+import type { EmbedClient, EmbedTheme } from '@anyhunt/embed';
 
 export interface EmbedContextValue {
   client: EmbedClient | null;

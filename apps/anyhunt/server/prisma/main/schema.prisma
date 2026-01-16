@@ -1,0 +1,1231 @@
+// Prisma Schema for Anyhunt - Main Database
+// 业务数据库（不含向量数据）
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../../generated/prisma-main"
+  outputType = "commonjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================
+// 用户系统（Better Auth 核心表）
+// =============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // 软删除时间戳，null 表示未删除
+
+  sessions              Session[]
+  accounts              Account[]
+  subscription          Subscription?
+  quota                 Quota?
+  apiKeys               ApiKey[]
+  screenshots           Screenshot[]
+  webhooks              Webhook[]
+  accountDeletionRecord AccountDeletionRecord?
+  scrapeJobs            ScrapeJob[]
+  batchScrapeJobs       BatchScrapeJob[]
+  crawlJobs             CrawlJob[]
+
+  // Digest 相关
+  digestSubscriptions DigestSubscription[]
+  digestRuns          DigestRun[]
+  digestRunItems      DigestRunItem[]
+  userContentStates   UserContentState[]
+  digestTopics        DigestTopic[]
+  userPreference      UserPreference?
+  resolvedReports     DigestTopicReport[]  @relation("ReportResolver")
+  featuredTopics      DigestTopic[]        @relation("FeaturedByUser")
+  digestDailyOps      DigestUserDailyOps[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// =============================================
+// 订阅系统
+// =============================================
+
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PRO
+  TEAM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  tier                SubscriptionTier   @default(FREE)
+  status              SubscriptionStatus @default(ACTIVE)
+  creemCustomerId     String?
+  creemSubscriptionId String?            @unique
+  currentPeriodStart  DateTime           @default(now())
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// =============================================
+// 配额系统
+// =============================================
+
+enum QuotaTransactionType {
+  DEDUCT // 扣减
+  REFUND // 返还
+  PURCHASE // 购买
+  RESET // 周期重置
+}
+
+enum QuotaSource {
+  MONTHLY // 月度配额
+  PURCHASED // 购买配额
+}
+
+model Quota {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // 月度订阅配额
+  monthlyLimit  Int      @default(100)
+  monthlyUsed   Int      @default(0)
+  periodStartAt DateTime @default(now())
+  periodEndAt   DateTime
+
+  // 按量购买额度（永不过期）
+  purchasedQuota Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QuotaTransaction {
+  id            String               @id @default(cuid())
+  userId        String
+  type          QuotaTransactionType
+  amount        Int // 正数
+  source        QuotaSource
+  balanceBefore Int
+  balanceAfter  Int
+  reason        String? // screenshot_id 或其他说明
+  createdAt     DateTime             @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// =============================================
+// 支付订单
+// =============================================
+
+model PaymentOrder {
+  id           String   @id @default(cuid())
+  userId       String
+  creemOrderId String   @unique
+  type         String // subscription | quota_purchase
+  amount       Int // 金额（分）
+  currency     String   @default("USD")
+  status       String // pending | completed | failed | refunded
+  quotaAmount  Int? // 购买的配额数量（按量购买时）
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// =============================================
+// API Key（移除 Memox 关联）
+// =============================================
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  keyPrefix  String // 展示用，如 "ah_abc1"
+  keyHash    String    @unique // SHA256(完整key)
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenshots Screenshot[]
+  scrapeJobs  ScrapeJob[]
+
+  @@index([userId])
+  @@index([keyHash])
+}
+
+// =============================================
+// 截图记录
+// =============================================
+
+enum ScreenshotStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Screenshot {
+  id       String  @id @default(cuid())
+  userId   String
+  apiKeyId String?
+
+  // 请求信息
+  url         String
+  requestHash String
+  request     Json
+
+  // 配额追踪
+  quotaDeducted Boolean      @default(false)
+  quotaSource   QuotaSource?
+
+  // 处理结果
+  status        ScreenshotStatus @default(PENDING)
+  fileUrl       String?
+  fileSize      Int?
+  fileExpiresAt DateTime?
+  error         String?
+
+  // 页面元信息
+  pageTitle   String?
+  pageDesc    String?
+  pageFavicon String?
+
+  // 性能
+  processingMs Int?
+  fromCache    Boolean @default(false)
+
+  // 时间统计（各阶段耗时）
+  queueWaitMs    Int? // 队列等待时间
+  pageLoadMs     Int? // 页面加载时间
+  captureMs      Int? // 截图捕获时间
+  imageProcessMs Int? // 图片处理时间
+  uploadMs       Int? // 文件上传时间
+
+  // 时间
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKey ApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([url])
+  @@index([requestHash])
+  @@index([status])
+  @@index([createdAt])
+  @@index([fileExpiresAt])
+}
+
+// =============================================
+// Webhook 配置
+// =============================================
+
+model Webhook {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  url       String
+  secret    String
+  events    String[] @default(["screenshot.completed", "screenshot.failed"])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     Json
+  statusCode  Int?
+  response    String?
+  error       String?
+  attempts    Int       @default(1)
+  success     Boolean   @default(false)
+  latencyMs   Int?
+  createdAt   DateTime  @default(now())
+  deliveredAt DateTime?
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([createdAt])
+}
+
+// =============================================
+// 账户删除记录
+// =============================================
+
+model AccountDeletionRecord {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  email     String // 删除时的邮箱（保留用于记录）
+  reason    String // 删除原因代码
+  feedback  String? // 用户可选的详细反馈
+  deletedAt DateTime @default(now()) // 删除时间
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reason])
+  @@index([deletedAt])
+}
+
+// =============================================
+// Scrape API - 网页抓取
+// =============================================
+
+enum ScrapeStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ScrapeErrorCode {
+  PAGE_TIMEOUT // 页面加载超时
+  URL_NOT_ALLOWED // SSRF 防护拦截
+  SELECTOR_NOT_FOUND // CSS 选择器未找到
+  BROWSER_ERROR // 浏览器错误
+  NETWORK_ERROR // 网络错误
+  RATE_LIMITED // 限流
+  QUOTA_EXCEEDED // 配额不足
+  INVALID_URL // URL 格式错误
+  PAGE_NOT_FOUND // 404
+  ACCESS_DENIED // 403
+  STORAGE_ERROR // 文件存储错误
+}
+
+model ScrapeJob {
+  id       String  @id @default(cuid())
+  userId   String
+  apiKeyId String?
+
+  url         String
+  requestHash String // SHA256(url + options)
+  status      ScrapeStatus @default(PENDING)
+
+  // 请求选项
+  options Json // { formats, waitFor, timeout, viewport, screenshotOptions, ... }
+
+  // 结果（根据 formats 动态填充）
+  result Json? // { markdown?, html?, rawHtml?, links?, metadata }
+
+  // 截图输出（独立存储，因为需要 R2 URL）
+  screenshotUrl       String?
+  screenshotBase64    String?
+  screenshotWidth     Int?
+  screenshotHeight    Int?
+  screenshotFileSize  Int?
+  screenshotFormat    String? // 'png' | 'jpeg' | 'webp'
+  screenshotExpiresAt DateTime?
+
+  // PDF 输出（仅 URL，不支持 base64）
+  pdfUrl       String?
+  pdfFileSize  Int?
+  pdfPageCount Int?
+  pdfExpiresAt DateTime?
+
+  // 错误信息
+  error     String?
+  errorCode ScrapeErrorCode?
+
+  // 性能指标
+  queueWaitMs    Int?
+  fetchMs        Int?
+  renderMs       Int?
+  transformMs    Int?
+  screenshotMs   Int?
+  pdfMs          Int?
+  imageProcessMs Int?
+  uploadMs       Int?
+  totalMs        Int?
+
+  // 缓存
+  fromCache Boolean @default(false)
+
+  // 配额
+  quotaDeducted      Boolean      @default(false)
+  quotaSource        QuotaSource?
+  quotaAmount        Int?
+  quotaTransactionId String?
+  billingKey         String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKey ApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([requestHash])
+  @@index([status])
+  @@index([url])
+  @@index([createdAt])
+}
+
+// =============================================
+// Batch Scrape - 批量抓取
+// =============================================
+
+enum BatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model BatchScrapeJob {
+  id     String @id @default(cuid())
+  userId String
+
+  status        BatchStatus @default(PENDING)
+  totalUrls     Int
+  completedUrls Int         @default(0)
+  failedUrls    Int         @default(0)
+
+  options    Json // 通用抓取选项
+  webhookUrl String? // 完成后回调 URL
+
+  // 配额（每次创建任务扣 1，失败全退）
+  quotaDeducted      Boolean      @default(false)
+  quotaSource        QuotaSource?
+  quotaAmount        Int?
+  quotaTransactionId String?
+  billingKey         String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  items BatchScrapeItem[]
+  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model BatchScrapeItem {
+  id         String         @id @default(cuid())
+  batchJobId String
+  batchJob   BatchScrapeJob @relation(fields: [batchJobId], references: [id], onDelete: Cascade)
+
+  url    String
+  order  Int // 保持顺序
+  status ScrapeStatus @default(PENDING)
+
+  result    Json?
+  error     String?
+  errorCode ScrapeErrorCode?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([batchJobId])
+  @@index([status])
+}
+
+// =============================================
+// Crawl API - 网站爬取
+// =============================================
+
+enum CrawlStatus {
+  PENDING
+  CRAWLING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model CrawlJob {
+  id     String @id @default(cuid())
+  userId String
+
+  startUrl String
+  status   CrawlStatus @default(PENDING)
+
+  // 配置
+  options Json // { maxDepth, limit, includePaths, excludePaths, ... }
+
+  // 进度
+  totalUrls     Int @default(0)
+  completedUrls Int @default(0)
+  failedUrls    Int @default(0)
+
+  // Webhook
+  webhookUrl String?
+
+  // 配额（每次创建任务扣 1，失败全退）
+  quotaDeducted      Boolean      @default(false)
+  quotaSource        QuotaSource?
+  quotaAmount        Int?
+  quotaTransactionId String?
+  billingKey         String?
+
+  // 时间
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  pages CrawlPage[]
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model CrawlPage {
+  id         String   @id @default(cuid())
+  crawlJobId String
+  crawlJob   CrawlJob @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+
+  url    String
+  depth  Int // 距离起始 URL 的深度
+  status ScrapeStatus @default(PENDING)
+
+  // 结果
+  result Json? // { markdown, html, metadata, links, ... }
+  error  String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@unique([crawlJobId, url])
+  @@index([crawlJobId])
+  @@index([status])
+}
+
+// =============================================
+// 用户偏好设置
+// =============================================
+
+enum LocaleMode {
+  AUTO // 跟随浏览器 Accept-Language
+  MANUAL // 用户手动选择
+}
+
+model UserPreference {
+  id         String     @id @default(cuid())
+  userId     String     @unique
+  uiLocale   String     @default("en") // 用户选择的 UI 语言
+  timezone   String     @default("UTC") // 用户默认时区（IANA）
+  localeMode LocaleMode @default(AUTO)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// =============================================
+// Digest 智能内容订阅系统
+// =============================================
+
+// 订阅写作风格
+enum DigestTone {
+  neutral // 中性客观
+  opinionated // 带观点
+  concise // 简洁
+}
+
+// 输出语言模式
+enum DigestLanguageMode {
+  FOLLOW_UI // 跟随 UI 语言
+  FIXED // 固定语言
+}
+
+// 二次投递策略
+enum RedeliveryPolicy {
+  NEVER // 永不二次投递
+  COOLDOWN // 冷却期后允许再次投递（默认）
+  ON_CONTENT_UPDATE // 内容显著更新时允许再次投递（v2+）
+}
+
+// 数据源类型
+enum DigestSourceType {
+  search // 搜索
+  rss // RSS 订阅
+  siteCrawl // 站点爬取
+}
+
+// 数据源刷新模式
+enum DigestSourceRefreshMode {
+  ON_RUN // 运行时拉取
+  SCHEDULED // 定时刷新
+}
+
+// 订阅运行状态
+enum DigestRunStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+// 订阅运行来源
+enum DigestRunSource {
+  SCHEDULED // 定时调度
+  MANUAL // 手动触发
+}
+
+// 公开话题可见性
+enum DigestTopicVisibility {
+  PUBLIC // 公开（可收录，进首页/目录/站点地图）
+  PRIVATE // 私密（仅创建者可见），仅付费用户可切换
+  UNLISTED // 已下架（关联订阅被删除时自动设置；SEO 页 404）
+}
+
+// 公开话题运行状态
+enum DigestTopicStatus {
+  ACTIVE // 正常运行
+  PAUSED_INSUFFICIENT_CREDITS // 发布者余额不足，暂停 Edition 生成
+  PAUSED_BY_ADMIN // 管理员暂停（违规/spam）
+}
+
+// Topic Edition 状态
+enum DigestTopicEditionStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+// 反馈学习模式类型
+enum DigestFeedbackTermType {
+  KEYWORD
+  DOMAIN
+  AUTHOR
+}
+
+// =============================================
+// Digest 全局数据源
+// =============================================
+
+model DigestSource {
+  id          String                  @id @default(cuid())
+  type        DigestSourceType
+  refreshMode DigestSourceRefreshMode
+
+  // 配置：search: { query, engines, timeRange } / rss: { feedUrl } / crawl: { siteUrl, includePaths }
+  config     Json
+  configHash String // SHA256(normalized config)
+
+  enabled Boolean @default(true)
+
+  // 仅对 SCHEDULED 生效
+  refreshCron   String?
+  timezone      String?
+  nextRefreshAt DateTime?
+  lastRefreshAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptionSources DigestSubscriptionSource[]
+
+  @@unique([type, configHash])
+  @@index([refreshMode, enabled])
+  @@index([nextRefreshAt])
+}
+
+// =============================================
+// Digest 用户订阅
+// =============================================
+
+model DigestSubscription {
+  id     String @id @default(cuid())
+  userId String
+
+  name String
+
+  // 用户输入
+  topic             String   // 用户输入的主题
+  interests         String[] // 正向关键词
+  negativeInterests String[] // 负向关键词（屏蔽词，用于反馈学习）
+
+  // 选题控制
+  searchLimit        Int @default(60) // 搜索候选数量上限（1-100）
+  scrapeLimit        Int @default(20) // 抓取全文数量上限（0-100）
+  minItems           Int @default(5) // 最少返回数量（1-30）
+  minScore           Int @default(70) // 评分阈值（0-100）
+  contentWindowHours Int @default(168) // 默认 7 天
+
+  // 去重 & 二次投递
+  redeliveryPolicy       RedeliveryPolicy @default(COOLDOWN)
+  redeliveryCooldownDays Int              @default(7)
+
+  // Follow 关联（可选，仅 Follow 订阅有值）
+  followedTopicId String?
+  followedTopic   DigestTopic? @relation("FollowedTopic", fields: [followedTopicId], references: [id], onDelete: SetNull)
+
+  // 调度
+  cron     String // Cron 表达式
+  timezone String // IANA timezone
+
+  // 输出语言
+  languageMode DigestLanguageMode @default(FOLLOW_UI)
+  outputLocale String? // languageMode=FIXED 时使用
+
+  // 投递
+  inboxEnabled         Boolean @default(true)
+  emailEnabled         Boolean @default(false)
+  emailTo              String?
+  emailSubjectTemplate String?
+  webhookUrl           String?
+  webhookEnabled       Boolean @default(false)
+  webhookSecret        String? // HMAC 签名密钥
+
+  // AI & 写作偏好
+  generateItemSummaries Boolean    @default(true)
+  composeNarrative      Boolean    @default(true)
+  tone                  DigestTone @default(neutral)
+
+  enabled   Boolean   @default(true)
+  nextRunAt DateTime?
+  lastRunAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user                User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionSources DigestSubscriptionSource[]
+  runs                DigestRun[]
+  runItems            DigestRunItem[]
+  feedbackPatterns    DigestFeedbackPattern[]
+
+  // 作为 source 的 Topic（一对一）
+  sourceForTopic DigestTopic? @relation("SourceSubscription")
+
+  @@index([userId])
+  @@index([enabled, nextRunAt])
+  @@index([followedTopicId])
+}
+
+// =============================================
+// Digest 订阅与数据源关系
+// =============================================
+
+model DigestSubscriptionSource {
+  id             String @id @default(cuid())
+  subscriptionId String
+  sourceId       String
+
+  enabled          Boolean @default(true)
+  weight           Int? // 多源融合时的偏好
+  overrideMinScore Int? // 单源阈值覆盖
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription DigestSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  source       DigestSource       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, sourceId])
+  @@index([sourceId])
+}
+
+// =============================================
+// Digest 反馈学习模式
+// =============================================
+
+model DigestFeedbackPattern {
+  id             String                  @id @default(cuid())
+  subscriptionId String
+  patternType    DigestFeedbackTermType
+  value          String                  // 关键词、域名或作者名
+
+  // 统计计数
+  positiveCount Int @default(0) // 正向信号次数（save）
+  negativeCount Int @default(0) // 负向信号次数（notInterested）
+
+  // 置信度（基于信号数量和一致性）
+  confidence Float @default(0.5)
+
+  // 追踪
+  lastContentUrl  String?   // 最近触发该模式的内容 URL
+  lastTriggeredAt DateTime? // 最后触发时间
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription DigestSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, patternType, value])
+  @@index([subscriptionId])
+  @@index([confidence])
+}
+
+// =============================================
+// Digest 全局内容条目
+// =============================================
+
+model ContentItem {
+  id String @id @default(cuid())
+
+  canonicalUrl     String
+  canonicalUrlHash String @unique // SHA256(canonicalUrl) - 全局唯一键
+
+  title       String
+  description String? // 原始描述（来自 meta/RSS）
+
+  // 元数据
+  author      String?
+  publishedAt DateTime?
+  language    String? // 原文语言（检测得到）
+  siteName    String?
+  favicon     String?
+
+  // 内容指纹（用于检测内容更新，支持 ON_CONTENT_UPDATE 策略）
+  contentHash String? // SHA256(normalizedContent)
+
+  // 全局评分（与订阅无关）
+  scoreImpact    Int      @default(50) // 0-100
+  scoreQuality   Int      @default(50) // 0-100
+  scoreUpdatedAt DateTime @default(now())
+
+  // 采集追踪
+  firstSeenAt    DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  lastAnalyzedAt DateTime? // 最后一次 AI 分析时间
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrichments       ContentItemEnrichment[]
+  runItems          DigestRunItem[]
+  userContentStates UserContentState[]
+  topicEditionItems DigestTopicEditionItem[]
+
+  @@index([publishedAt])
+  @@index([scoreImpact, scoreQuality])
+  @@index([firstSeenAt])
+}
+
+// =============================================
+// Digest 多语言 AI 摘要缓存
+// =============================================
+
+model ContentItemEnrichment {
+  id               String @id @default(cuid())
+  contentId        String
+  canonicalUrlHash String
+
+  // 缓存维度
+  locale        String // 例如 'en' | 'zh-CN' | 'ja'
+  promptVersion String // prompt 版本号
+
+  // AI 生成内容
+  aiSummary   String // AI 总结（200-500 字）
+  aiTags      String[] // AI 提取的标签
+  contentType String? // 'news' | 'release' | 'tutorial' | 'opinion' | 'paper'
+  keyEntities String[] // 提取的关键实体
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([canonicalUrlHash, locale, promptVersion])
+  @@index([contentId, locale])
+}
+
+// =============================================
+// Digest 订阅执行记录
+// =============================================
+
+model DigestRun {
+  id             String @id @default(cuid())
+  subscriptionId String
+  userId         String
+
+  status DigestRunStatus @default(PENDING)
+  source DigestRunSource
+
+  scheduledAt DateTime
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  // 本次输出语言
+  outputLocale String @default("en")
+
+  // 本期"编辑稿"
+  narrativeMarkdown String?
+
+  // Email 相关
+  emailSubject     String?
+  emailDeliveredAt DateTime?
+  emailError       String?
+
+  // Webhook 相关
+  webhookDeliveredAt DateTime?
+  webhookError       String?
+  webhookStatusCode  Int?
+  webhookLatencyMs   Int?
+
+  // 计费：按 run 结算一次，按 Fetchx 实际成本汇总
+  billing            Json // { model, totalCredits, charged, breakdown }
+  quotaTransactionId String?
+
+  // 执行结果统计
+  result Json? // { itemsCandidate, itemsSelected, itemsDelivered, itemsDedupSkipped, itemsRedelivered, narrativeTokensUsed }
+
+  error String?
+
+  createdAt DateTime @default(now())
+
+  subscription DigestSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items        DigestRunItem[]
+
+  @@index([subscriptionId])
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// =============================================
+// Digest 简报条目
+// =============================================
+
+model DigestRunItem {
+  id             String @id @default(cuid())
+  runId          String
+  subscriptionId String
+  userId         String
+
+  contentId        String
+  canonicalUrlHash String
+
+  // 分数快照（订阅私有）
+  scoreRelevance Int     @default(50) // 0-100
+  scoreOverall   Int     @default(50) // 0-100
+  scoringReason  String? // 解释性
+
+  rank Int
+
+  // 展示快照
+  titleSnapshot     String
+  urlSnapshot       String
+  aiSummarySnapshot String?
+
+  deliveredAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  run          DigestRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  subscription DigestSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content      ContentItem        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([runId, rank])
+  @@index([userId, deliveredAt])
+  @@index([contentId])
+}
+
+// =============================================
+// Digest 用户维度去重与状态
+// =============================================
+
+model UserContentState {
+  id               String @id @default(cuid())
+  userId           String
+  canonicalUrlHash String
+
+  firstDeliveredAt DateTime?
+  lastDeliveredAt  DateTime?
+  deliveredCount   Int       @default(0)
+
+  // Web Inbox 行为
+  lastOpenedAt    DateTime?
+  readAt          DateTime?
+  savedAt         DateTime?
+  notInterestedAt DateTime?
+
+  // 用于 ON_CONTENT_UPDATE（v2+）
+  lastDeliveredContentHash String?
+  lastDeliveredRunId       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content ContentItem @relation(fields: [canonicalUrlHash], references: [canonicalUrlHash], onDelete: Cascade)
+
+  @@unique([userId, canonicalUrlHash])
+  @@index([userId, lastDeliveredAt])
+}
+
+// =============================================
+// Digest 公开话题（SEO）
+// =============================================
+
+model DigestTopic {
+  id   String @id @default(cuid())
+  slug String @unique // URL path，全局唯一
+
+  title       String
+  description String?
+  visibility  DigestTopicVisibility @default(PUBLIC)
+  status      DigestTopicStatus     @default(ACTIVE)
+
+  // 关联的订阅（Topic 必须关联一个订阅）
+  sourceSubscriptionId String             @unique
+  sourceSubscription   DigestSubscription @relation("SourceSubscription", fields: [sourceSubscriptionId], references: [id], onDelete: Cascade)
+
+  // 默认配置
+  topic                  String
+  interests              String[]
+  searchLimit            Int              @default(60)
+  scrapeLimit            Int              @default(20)
+  minItems               Int              @default(5)
+  minScore               Int              @default(70)
+  redeliveryPolicy       RedeliveryPolicy @default(COOLDOWN)
+  redeliveryCooldownDays Int              @default(7)
+
+  // 话题的"公开发布节奏"
+  cron     String
+  timezone String
+
+  // 语言
+  locale String @default("en")
+
+  // 统计
+  subscriberCount Int       @default(0)
+  lastEditionAt   DateTime?
+  nextEditionAt   DateTime?
+
+  // 创建者
+  createdByUserId String
+  createdBy       User   @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  unlistedAt  DateTime? // 下架时间
+  pausedAt    DateTime? // 暂停时间
+  pauseReason String? // 暂停原因
+
+  // 精选配置（Admin 配置）
+  featured         Boolean   @default(false)
+  featuredOrder    Int? // 精选排序（越小越靠前）
+  featuredAt       DateTime? // 设为精选的时间
+  featuredByUserId String? // 设置者（Admin）
+  featuredBy       User?     @relation("FeaturedByUser", fields: [featuredByUserId], references: [id])
+
+  editions  DigestTopicEdition[]
+  followers DigestSubscription[] @relation("FollowedTopic")
+  reports   DigestTopicReport[]
+
+  @@index([visibility, status])
+  @@index([subscriberCount])
+  @@index([nextEditionAt])
+  @@index([createdByUserId])
+  @@index([featured, featuredOrder])
+}
+
+// =============================================
+// Digest 公开话题期刊
+// =============================================
+
+model DigestTopicEdition {
+  id      String @id @default(cuid())
+  topicId String
+
+  status      DigestTopicEditionStatus @default(PENDING)
+  scheduledAt DateTime
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  // SEO 页展示用
+  narrativeMarkdown String?
+  outputLocale      String  @default("en")
+
+  // 失败处理
+  error      String?
+  retryCount Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  topic DigestTopic              @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  items DigestTopicEditionItem[]
+
+  @@index([topicId, scheduledAt])
+  @@index([status])
+}
+
+// =============================================
+// Digest 公开话题期刊条目
+// =============================================
+
+model DigestTopicEditionItem {
+  id        String @id @default(cuid())
+  editionId String
+  topicId   String
+
+  contentId        String
+  canonicalUrlHash String
+
+  rank         Int
+  scoreOverall Int @default(50)
+
+  // SEO/公开展示快照
+  titleSnapshot     String
+  urlSnapshot       String
+  aiSummarySnapshot String?
+
+  createdAt DateTime @default(now())
+
+  edition DigestTopicEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  content ContentItem        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([editionId, rank])
+  @@index([topicId, createdAt])
+  @@index([contentId])
+}
+
+// =============================================
+// Digest 话题举报
+// =============================================
+
+enum DigestTopicReportReason {
+  SPAM // 垃圾内容
+  COPYRIGHT // 版权侵权
+  INAPPROPRIATE // 不当内容
+  MISLEADING // 误导性内容
+  OTHER // 其他
+}
+
+enum DigestTopicReportStatus {
+  PENDING // 待处理
+  RESOLVED_VALID // 已处理 - 举报有效
+  RESOLVED_INVALID // 已处理 - 举报无效
+  DISMISSED // 已忽略
+}
+
+model DigestTopicReport {
+  id      String @id @default(cuid())
+  topicId String
+
+  // 举报者（可匿名）
+  reporterUserId String?
+  reporterIp     String?
+
+  // 举报内容
+  reason      DigestTopicReportReason
+  description String? // 详细说明
+
+  // 处理状态
+  status       DigestTopicReportStatus @default(PENDING)
+  resolvedAt   DateTime?
+  resolvedById String? // 处理人
+  resolveNote  String? // 处理备注
+
+  createdAt DateTime @default(now())
+
+  topic      DigestTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  resolvedBy User?       @relation("ReportResolver", fields: [resolvedById], references: [id])
+
+  @@index([topicId, status])
+  @@index([status, createdAt])
+  @@index([reporterUserId])
+}
+
+// =============================================
+// Digest 用户每日操作记录（反 spam）
+// =============================================
+
+model DigestUserDailyOps {
+  id     String @id @default(cuid())
+  userId String
+  date   String // YYYY-MM-DD 格式
+
+  // 操作计数
+  topicCreates Int @default(0) // PUBLIC topic 创建次数
+  topicUpdates Int @default(0) // PUBLIC topic 更新次数
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date])
+}

@@ -1,17 +1,17 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { Button } from '@aiget/ui/components/button'
-import { Switch } from '@aiget/ui/components/switch'
-import { Badge } from '@aiget/ui/components/badge'
-import { ScrollArea } from '@aiget/ui/components/scroll-area'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { Button } from '@anyhunt/ui/components/button'
+import { Switch } from '@anyhunt/ui/components/switch'
+import { Badge } from '@anyhunt/ui/components/badge'
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@aiget/ui/components/select'
+} from '@anyhunt/ui/components/select'
 import { ExternalLink, Trash2, Check, Loader2, Search, Plus, Settings2 } from 'lucide-react'
 import { getProviderById, modelRegistry } from '@shared/model-registry'
 import type { SettingsDialogState } from '../../use-settings-dialog'

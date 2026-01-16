@@ -11,12 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@aiget/ui/components/dialog'
-import { Input } from '@aiget/ui/components/input'
-import { Label } from '@aiget/ui/components/label'
-import { Button } from '@aiget/ui/components/button'
-import { Checkbox } from '@aiget/ui/components/checkbox'
-import { searchModels, getModelCount, type ModelInfo } from '@aiget/model-registry-data'
+} from '@anyhunt/ui/components/dialog'
+import { Input } from '@anyhunt/ui/components/input'
+import { Label } from '@anyhunt/ui/components/label'
+import { Button } from '@anyhunt/ui/components/button'
+import { Checkbox } from '@anyhunt/ui/components/checkbox'
+import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data'
 import type { ModelModality } from '@shared/model-registry'
 
 /** 自定义模型能力 */

@@ -20,7 +20,7 @@ import {
   DEFAULT_AUTO_CONTINUE_CONFIG,
   shouldContinueForTruncation,
   buildTruncateContinuePrompt,
-} from '@aiget/agents-runtime'
+} from '@anyhunt/agents-runtime'
 
 type ChatSessionStream = { stream: ReadableStream<UIMessageChunk>; cancel: () => Promise<void> | void }
 

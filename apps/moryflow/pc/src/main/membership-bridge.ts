@@ -1,5 +1,5 @@
-import type { MembershipConfig } from '@aiget/agents-runtime'
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+import type { MembershipConfig } from '@anyhunt/agents-runtime'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 
 /** 会员模型状态 */
 interface MembershipState {

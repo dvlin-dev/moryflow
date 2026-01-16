@@ -1,20 +1,20 @@
-# @aiget/embed-react
+# /embed-react
 
 > Fetchx React 嵌入组件
 
 ## 概述
 
-@aiget/embed 的 React 封装，提供 Hooks 和组件方式集成 Fetchx API。
+/embed 的 React 封装，提供 Hooks 和组件方式集成 Fetchx API。
 
 ## 依赖
 
-- `@aiget/embed` - 核心嵌入逻辑
+- `/embed` - 核心嵌入逻辑
 - `react` ^18 || ^19
 
 ## 导出
 
 ```typescript
-import { useEmbed, EmbedProvider } from '@aiget/embed-react';
+import { useEmbed, EmbedProvider } from '@anyhunt/embed-react';
 ```
 
 ## 目录结构
@@ -32,11 +32,11 @@ src/
 ## 使用方式
 
 ```tsx
-import { EmbedProvider, useEmbed } from '@aiget/embed-react';
+import { EmbedProvider, useEmbed } from '@anyhunt/embed-react';
 
 function App() {
   return (
-    <EmbedProvider apiKey="ag_xxx">
+    <EmbedProvider apiKey="ah_xxx">
       <MyComponent />
     </EmbedProvider>
   );

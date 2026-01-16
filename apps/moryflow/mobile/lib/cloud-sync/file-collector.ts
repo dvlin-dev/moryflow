@@ -8,7 +8,7 @@
 
 import { File, Paths } from 'expo-file-system'
 import { digestStringAsync, CryptoDigestAlgorithm, CryptoEncoding } from 'expo-crypto'
-import type { LocalFileDto } from '@aiget/api/cloud-sync'
+import type { LocalFileDto } from '@anyhunt/api/cloud-sync'
 import { fileIndexManager } from '@/lib/vault/file-index'
 import { extractTitle, MAX_SYNC_FILE_SIZE } from './const'
 

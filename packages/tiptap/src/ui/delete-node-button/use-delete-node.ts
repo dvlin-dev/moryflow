@@ -10,7 +10,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { TrashIcon } from "@aiget/ui/icons/trash-icon"
+import { TrashIcon } from "@anyhunt/ui/icons/trash-icon"
 
 export const DELETE_NODE_SHORTCUT_KEY = "backspace"
 

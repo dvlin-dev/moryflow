@@ -6,13 +6,13 @@
 
 import type { DragEvent } from 'react'
 import { FileText } from 'lucide-react'
-import { ContextMenu, ContextMenuTrigger } from '@aiget/ui/components/context-menu'
+import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu'
 import {
   FileHighlight as FileHighlightPrimitive,
   File as FilePrimitive,
   FileIcon as FileIconPrimitive,
   FileLabel as FileLabelPrimitive,
-} from '@aiget/ui/animate/primitives/base/files'
+} from '@anyhunt/ui/animate/primitives/base/files'
 import { cn } from '@/lib/utils'
 import type { VaultTreeNode } from '@shared/ipc'
 import type { ContextMenuAction } from '../const'

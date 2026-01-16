@@ -1,11 +1,11 @@
 /**
  * [PROVIDES]: 内容转换工具（Mobile 特化）
- * [DEPENDS]: @aiget/tiptap
+ * [DEPENDS]: /tiptap
  * [POS]: Mobile 端内容处理，扩展 tiptap 的 markdown 转换功能
  */
 
 // 复用 tiptap 包的核心转换函数
-export { markdownToHtml, htmlToMarkdown } from '@aiget/tiptap';
+export { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
 
 /**
  * 规范化 Markdown

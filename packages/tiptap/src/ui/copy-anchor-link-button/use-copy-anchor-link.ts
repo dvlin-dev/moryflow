@@ -14,7 +14,7 @@ import {
 } from "../../utils/tiptap-advanced-utils"
 
 // --- Icons ---
-import { LinkIcon } from "@aiget/ui/icons/link-icon"
+import { LinkIcon } from "@anyhunt/ui/icons/link-icon"
 
 export const COPY_ANCHOR_LINK_SHORTCUT_KEY = "mod+ctrl+l"
 

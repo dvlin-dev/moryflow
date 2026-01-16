@@ -9,7 +9,7 @@
  */
 
 import { File, Directory, Paths } from 'expo-file-system'
-import type { FileSystem as IFileSystem, FileInfo } from '@aiget/agents-adapter'
+import type { FileSystem as IFileSystem, FileInfo } from '@anyhunt/agents-adapter'
 import { pathUtils } from './path-utils'
 
 // ============ 文件变更事件类型 ============

@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Icon } from '@aiget/ui';
+import { Icon } from '@anyhunt/ui';
 import { CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 
 const scenarios = [

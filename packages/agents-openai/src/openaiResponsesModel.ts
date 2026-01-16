@@ -8,7 +8,7 @@ import {
   resetCurrentSpan,
   protocol,
   UserError,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import type {
   SerializedHandoff,
   SerializedTool,
@@ -17,7 +17,7 @@ import type {
   ModelSettingsToolChoice,
   ResponseStreamEvent,
   SerializedOutputType,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 import OpenAI from 'openai';
 import type { Stream } from 'openai/streaming';
 import logger from './logger';
@@ -35,8 +35,8 @@ import {
   WebSearchStatus,
 } from './tools';
 import { camelOrSnakeToSnakeCase } from './utils/providerData';
-import { ProviderData } from '@aiget/agents-core/types';
-import { encodeUint8ArrayToBase64 } from '@aiget/agents-core/utils';
+import { ProviderData } from '@anyhunt/agents-core/types';
+import { encodeUint8ArrayToBase64 } from '@anyhunt/agents-core/utils';
 
 type ToolChoice =
   | ToolChoiceOptions

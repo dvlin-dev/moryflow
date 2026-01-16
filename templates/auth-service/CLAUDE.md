@@ -4,7 +4,7 @@
 
 ## 定位
 
-为任意项目提供一套可直接运行的 Auth Service，封装 `@aiget/auth-server` 与 `@aiget/identity-db`，产出统一的 `/api/v1/auth/*` 入口。
+为任意项目提供一套可直接运行的 Auth Service，封装 `/auth-server` 与 `/identity-db`，产出统一的 `/api/v1/auth/*` 入口。
 
 ## 职责
 

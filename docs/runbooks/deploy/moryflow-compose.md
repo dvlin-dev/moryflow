@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: Moryflow 使用单份 docker compose；域名反代在 megaboxpro；DB/Redis 与 Aiget Dev 物理隔离
+[INPUT]: Moryflow 使用单份 docker compose；域名反代在 megaboxpro；DB/Redis 与 Anyhunt Dev 物理隔离
 [OUTPUT]: 可照做的部署顺序与最小环境变量清单
 [POS]: Moryflow 部署 runbook（不讨论架构决策）
 

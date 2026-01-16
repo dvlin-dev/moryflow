@@ -17,7 +17,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { ArrowDownToLineIcon } from "@aiget/ui/icons/arrow-down-to-line-icon"
+import { ArrowDownToLineIcon } from "@anyhunt/ui/icons/arrow-down-to-line-icon"
 
 export const IMAGE_DOWNLOAD_SHORTCUT_KEY = "mod+shift+d"
 

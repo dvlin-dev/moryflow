@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/auth-server",
+  "name": "@anyhunt/auth-server",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aiget/identity-db": "workspace:*",
+    "@anyhunt/identity-db": "workspace:*",
     "better-auth": "^1.4.5",
     "zod": "^4.1.13"
   },
@@ -37,8 +37,8 @@
     "@nestjs/core": "^11.0.0"
   },
   "devDependencies": {
-    "@aiget/eslint-config": "workspace:*",
-    "@aiget/typescript-config": "workspace:*",
+    "@anyhunt/eslint-config": "workspace:*",
+    "@anyhunt/typescript-config": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@types/node": "^22.10.7",

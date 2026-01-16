@@ -1,10 +1,10 @@
-# Aiget 统一平台
+# Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
 
 ## 项目概述
 
-**Aiget** 是一个统一平台，采用「核心产品 + 原子能力」架构：
+**Anyhunt** 是一个统一平台，采用「核心产品 + 原子能力」架构：
 
 **核心产品**：
 
@@ -33,8 +33,8 @@
 docker compose -f deploy/infra/docker-compose.test.yml up -d
 
 # 运行测试
-pnpm --filter @aiget/aiget-server test
-pnpm --filter @aiget/aiget-server test:e2e
+pnpm --filter @anyhunt/anyhunt-server test
+pnpm --filter @anyhunt/anyhunt-server test:e2e
 ```
 
 ### 前端测试
@@ -45,10 +45,10 @@ pnpm --filter @aiget/aiget-server test:e2e
 
 ```bash
 # 运行单元测试
-pnpm --filter @aiget/admin test
+pnpm --filter @anyhunt/admin test
 
 # 运行 Playwright E2E 测试
-pnpm --filter @aiget/admin test:e2e
+pnpm --filter @anyhunt/admin test:e2e
 ```
 
 ### 测试环境 Docker Compose
@@ -89,46 +89,46 @@ pnpm --filter @aiget/admin test:e2e
 
 ### 域名规划
 
-| 服务                   | 域名              | 说明                       |
-| ---------------------- | ----------------- | -------------------------- |
-| **Moryflow 主站**      | www.moryflow.com  | 核心产品主入口             |
-| **Moryflow Docs**      | docs.moryflow.com | 产品文档（独立 Docs 项目） |
-| **Moryflow 应用**      | app.moryflow.com  | 主应用（Web + API）        |
-| **Moryflow 发布站**    | moryflow.app      | 用户发布的网站             |
-| **Aiget 官网**         | aiget.dev         | Aiget Dev 官网（模块导航） |
-| **Aiget Dev API**      | server.aiget.dev  | 统一 API 入口（`/api/v1`） |
-| **Aiget Docs**         | docs.aiget.dev    | 产品文档（独立 Docs 项目） |
-| **Aiget Dev 控制台**   | console.aiget.dev | Aiget Dev 控制台（Web）    |
-| **Aiget Dev 管理后台** | admin.aiget.dev   | 运营管理（Web）            |
+| 服务                     | 域名                | 说明                         |
+| ------------------------ | ------------------- | ---------------------------- |
+| **Moryflow 主站**        | www.moryflow.com    | 核心产品主入口               |
+| **Moryflow Docs**        | docs.moryflow.com   | 产品文档（独立 Docs 项目）   |
+| **Moryflow 应用**        | app.moryflow.com    | 主应用（Web + API）          |
+| **Moryflow 发布站**      | moryflow.app        | 用户发布的网站               |
+| **Anyhunt 官网**         | anyhunt.app         | Anyhunt Dev 官网（模块导航） |
+| **Anyhunt Dev API**      | server.anyhunt.app  | 统一 API 入口（`/api/v1`）   |
+| **Anyhunt Docs**         | docs.anyhunt.app    | 产品文档（独立 Docs 项目）   |
+| **Anyhunt Dev 控制台**   | console.anyhunt.app | Anyhunt Dev 控制台（Web）    |
+| **Anyhunt Dev 管理后台** | admin.anyhunt.app   | 运营管理（Web）              |
 
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
-> - Aiget Dev 是开发者平台：官网在 `aiget.dev`，API 在 `server.aiget.dev`，控制台/后台分别在 `console.aiget.dev`、`admin.aiget.dev`
-> - API 路径规范：`https://server.aiget.dev/api/v1/...`（带 `/api` 前缀；不做旧域名兼容/跳转）
+> - Anyhunt Dev 是开发者平台：官网在 `anyhunt.app`，API 在 `server.anyhunt.app`，控制台/后台分别在 `console.anyhunt.app`、`admin.anyhunt.app`
+> - API 路径规范：`https://server.anyhunt.app/api/v1/...`（带 `/api` 前缀；不做旧域名兼容/跳转）
 
 ### API Key 前缀
 
-| 类型          | 前缀  | 说明                                                   |
-| ------------- | ----- | ------------------------------------------------------ |
-| Moryflow Key  | `mf_` | Moryflow（app.moryflow.com）                           |
-| Aiget Dev Key | `ag_` | Aiget Dev（console.aiget.dev；Agentsbox/Memox 等能力） |
+| 类型            | 前缀  | 说明                                                       |
+| --------------- | ----- | ---------------------------------------------------------- |
+| Moryflow Key    | `mf_` | Moryflow（app.moryflow.com）                               |
+| Anyhunt Dev Key | `ah_` | Anyhunt Dev（console.anyhunt.app；Agentsbox/Memox 等能力） |
 
 ### 目标 Monorepo 结构
 
 ```
-Aiget/
+Anyhunt/
 ├── apps/
-│   ├── aiget/                       # Aiget Dev 业务线
-│   │   ├── www/                     # Aiget Dev 官网（aiget.dev；模块导航：/fetchx、/memox）
-│   │   ├── docs/                    # Aiget Dev 文档站（docs.aiget.dev）
-│   │   ├── server/                  # Aiget Dev 统一后端（server.aiget.dev/api/v1）
-│   │   ├── console/                 # Aiget Dev 控制台（Web）
-│   │   ├── admin/                   # Aiget Dev 管理后台
+│   ├── anyhunt/                     # Anyhunt Dev 业务线
+│   │   ├── www/                     # Anyhunt Dev 官网（anyhunt.app；模块导航：/fetchx、/memox）
+│   │   ├── docs/                    # Anyhunt Dev 文档站（docs.anyhunt.app）
+│   │   ├── server/                  # Anyhunt Dev 统一后端（server.anyhunt.app/api/v1）
+│   │   ├── console/                 # Anyhunt Dev 控制台（Web）
+│   │   ├── admin/                   # Anyhunt Dev 管理后台
 │   │   │   ├── www/                 # 管理后台前端
-│   │   │   └── server/              # （迁移中）将并入 aiget/server
+│   │   │   └── server/              # （迁移中）将并入 anyhunt/server
 │   │   ├── fetchx/                  # 原子能力：网页抓取
 │   │   │   └── (docs only)          # 模块文档与边界说明
 │   │   ├── memox/                   # 原子能力：AI 记忆
-│   │   │   └── server/              # （迁移中）将并入 aiget/server
+│   │   │   └── server/              # （迁移中）将并入 anyhunt/server
 │   │   └── sandx/                   # 原子能力：Agent 沙盒（规划中）
 │   │       ├── server/              # 沙盒执行服务
 │   │       └── www/                 # 落地页
@@ -195,9 +195,9 @@ Aiget/
 当前架构为 **两条业务线**，永不互通（不共享账号/Token/数据库）：
 
 - **Moryflow**：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）
-- **Aiget Dev**：`console.aiget.dev`（控制台+API；Agentsbox/Memox 等能力）
+- **Anyhunt Dev**：`console.anyhunt.app`（控制台+API；Agentsbox/Memox 等能力）
 
-计费/订阅暂不作为默认架构约束；Aiget Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/architecture/auth/quota-and-api-keys.md`）。
+计费/订阅暂不作为默认架构约束；Anyhunt Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/architecture/auth/quota-and-api-keys.md`）。
 
 ---
 
@@ -209,15 +209,15 @@ Aiget/
 | [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）      |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）       |
 | [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                        |
-| [`docs/runbooks/deploy/aiget-dokploy.md`](./docs/runbooks/deploy/aiget-dokploy.md)                                     | Runbook：Aiget Dev Dokploy 多项目部署清单                      |
+| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                 | Runbook：Anyhunt Dev Dokploy 多项目部署清单                    |
 | [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md) | Runbook：megaboxpro（1panel）反代路由配置                      |
 | [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                               | Runbook：Moryflow docker compose 部署                          |
 | [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                       | Guide：Auth 流程与接口约定                                     |
 | [`docs/guides/auth/auth-service-quick-start.md`](./docs/guides/auth/auth-service-quick-start.md)                       | Guide：Auth Service 模板快速接入                               |
 | [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                     | Guide：Zod + RHF 兼容性（zod/v3）                              |
 | [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                           | Guide：从 Monorepo 开源拆分单个包（Git Subtree）               |
-| [`docs/migrations/aiget-to-anyfeed.md`](./docs/migrations/aiget-to-anyfeed.md)                                         | Migration：Aiget → Anyfeed 全量品牌迁移（无历史兼容）          |
-| [`docs/products/aiget-dev/index.md`](./docs/products/aiget-dev/index.md)                                               | Aiget Dev：内部方案入口                                        |
+| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                         | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）          |
+| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                           | Anyhunt Dev：内部方案入口                                      |
 | [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                 | Moryflow：内部方案入口                                         |
 | `docs/_archived/`                                                                                                      | 已完成/归档文档（progress.md, ui-migration, console-refactor） |
 | `apps/*/CLAUDE.md`                                                                                                     | 各应用的详细文档                                               |
@@ -462,7 +462,7 @@ function BadForm() {
 **核心原则**：
 
 1. Schema 定义在独立文件（如 `schemas.ts`），类型通过 `z.infer<>` 派生
-2. 使用 `@aiget/ui` 的 Form 组件（Form, FormField, FormItem, FormLabel, FormControl, FormMessage）
+2. 使用 `/ui` 的 Form 组件（Form, FormField, FormItem, FormLabel, FormControl, FormMessage）
 3. 数字字段使用 `z.coerce.number()` 自动转换
 4. 折叠状态等 UI 状态可以单独用 `useState`，但表单数据必须走 react-hook-form
 5. **Zod v3 兼容层（强制）**：前端表单必须使用 `import { z } from 'zod/v3'`，避免 Zod v4 与 `@hookform/resolvers` 的类型不兼容问题（详见 `docs/guides/frontend/forms-zod-rhf.md`）
@@ -582,7 +582,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 1. **Data 属性变体**：Radix UI 使用 `data-[state=active]:` 而非 `data-active:`
 2. **颜色透明度**：oklch 修饰符可能不生效，使用内联样式
 3. **CSS 变量配置**：在 `globals.css` 的 `@theme inline` 块中定义
-4. **样式入口**：应用统一 `@import '@aiget/ui/styles'`，并在应用内补充 `@source` 扫描路径
+4. **样式入口**：应用统一 `@import '@anyhunt/ui/styles'`，并在应用内补充 `@source` 扫描路径
 
 ---
 
@@ -601,9 +601,9 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 pnpm test
 
 # 运行特定产品测试
-pnpm --filter @aiget/moryflow-server test
-pnpm --filter @aiget/aiget-server test
-pnpm --filter @aiget/sandx-server test
+pnpm --filter @anyhunt/moryflow-server test
+pnpm --filter @anyhunt/anyhunt-server test
+pnpm --filter @anyhunt/sandx-server test
 
 # 类型检查
 pnpm typecheck
@@ -616,13 +616,13 @@ pnpm lint
 
 ## 包命名规范
 
-| 类型     | 模式                     | 示例                                            |
-| -------- | ------------------------ | ----------------------------------------------- |
-| 应用包   | `@aiget/{product}-{app}` | `@aiget/moryflow-server`、`@aiget/aiget-server` |
-| 共享包   | `@aiget/{name}`          | `@aiget/types`、`@aiget/api`、`@aiget/sync`     |
-| UI 包    | `@aiget/ui`              | 唯一                                            |
-| 配置包   | `@aiget/{name}-config`   | `@aiget/eslint-config`                          |
-| Agent 包 | `@aiget/agents-{name}`   | `@aiget/agents-core`                            |
+| 类型     | 模式                       | 示例                                                  |
+| -------- | -------------------------- | ----------------------------------------------------- |
+| 应用包   | `@anyhunt/{product}-{app}` | `@anyhunt/moryflow-server`、`@anyhunt/anyhunt-server` |
+| 共享包   | `@anyhunt/{name}`          | `@anyhunt/types`、`@anyhunt/api`、`@anyhunt/sync`     |
+| UI 包    | `@anyhunt/ui`              | 唯一                                                  |
+| 配置包   | `@anyhunt/{name}-config`   | `@anyhunt/eslint-config`                              |
+| Agent 包 | `@anyhunt/agents-{name}`   | `@anyhunt/agents-core`                                |
 
 ---
 
@@ -640,7 +640,7 @@ pnpm lint
 
 ### CI 依赖说明
 
-`@aiget/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
+`@anyhunt/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
 
 Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接依赖 `@electron/node-gyp`；为避免 CI 走 `git@github.com` 的 SSH clone（无 key 会失败），根 `pnpm.overrides` 固定 `@electron/node-gyp=10.2.0-electron.1`（从 npm registry 安装）。
 
@@ -693,7 +693,7 @@ Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接�
 
 ```json
 {
-  "extends": "@aiget/typescript-config/base.json",
+  "extends": "@anyhunt/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -733,7 +733,7 @@ import { ApiError } from './client.js';
 
 ```bash
 # 构建单个包
-pnpm --filter @aiget/types build
+pnpm --filter @anyhunt/types build
 
 # 构建所有包
 pnpm -r build

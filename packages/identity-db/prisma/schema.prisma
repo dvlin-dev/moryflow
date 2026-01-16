@@ -1,4 +1,4 @@
-// Aiget Auth Database Schema
+// Anyhunt Auth Database Schema
 // 认证数据库（Better Auth 核心表 + 业务线内通用表）
 
 generator client {

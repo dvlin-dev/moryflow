@@ -37,28 +37,28 @@ export default defineConfig({
         { find: '@', replacement: resolve(__dirname, 'src/renderer') },
         { find: '@shared', replacement: resolve(__dirname, 'src/shared') },
         {
-          find: '@aiget/ui/styles',
+          find: '@anyhunt/ui/styles',
           replacement: resolve(__dirname, '../../../packages/ui/styles/index.css'),
         },
         {
-          find: /^@aiget\/ui\/styles\/(.*)$/,
+          find: /^@anyhunt\/ui\/styles\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/ui/styles/$1'),
         },
         {
-          find: /^@aiget\/ui\/(.*)$/,
+          find: /^@anyhunt\/ui\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/ui/src/$1'),
         },
         // styles 目录在包根目录，需单独处理
         {
-          find: /^@aiget\/tiptap\/styles\/(.*)$/,
+          find: /^@anyhunt\/tiptap\/styles\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/styles/$1'),
         },
         {
-          find: /^@aiget\/tiptap\/(.*)$/,
+          find: /^@anyhunt\/tiptap\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/src/$1'),
         },
-        { find: '@aiget/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
-        { find: '@aiget/tiptap', replacement: resolve(__dirname, '../../../packages/tiptap/src') },
+        { find: '@anyhunt/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
+        { find: '@anyhunt/tiptap', replacement: resolve(__dirname, '../../../packages/tiptap/src') },
       ],
       dedupe: ['react', 'react-dom'],
     },

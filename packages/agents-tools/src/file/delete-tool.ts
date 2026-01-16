@@ -1,7 +1,7 @@
-import { tool, type RunContext } from '@aiget/agents'
+import { tool, type RunContext } from '@anyhunt/agents'
 import { z } from 'zod'
-import type { PlatformCapabilities } from '@aiget/agents-adapter'
-import type { AgentContext, VaultUtils } from '@aiget/agents-runtime'
+import type { PlatformCapabilities } from '@anyhunt/agents-adapter'
+import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime'
 import { toolSummarySchema } from '../shared'
 
 const deleteParams = z.object({

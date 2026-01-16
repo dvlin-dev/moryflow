@@ -14,7 +14,7 @@ import {
 } from "../../utils/tiptap-utils"
 
 // --- Icons ---
-import { HighlighterIcon } from "@aiget/ui/icons/highlighter-icon"
+import { HighlighterIcon } from "@anyhunt/ui/icons/highlighter-icon"
 
 export const COLOR_HIGHLIGHT_SHORTCUT_KEY = "mod+shift+h"
 export const HIGHLIGHT_COLORS = [

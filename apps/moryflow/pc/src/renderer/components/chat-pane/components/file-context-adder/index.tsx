@@ -4,7 +4,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@aiget/ui/components/popover'
+} from '@anyhunt/ui/components/popover'
 import {
   Command,
   CommandEmpty,
@@ -12,7 +12,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@aiget/ui/components/command'
+} from '@anyhunt/ui/components/command'
 import { cn } from '@/lib/utils'
 import { useTranslation } from '@/lib/i18n'
 import type { FlatFile } from '@/workspace/utils'

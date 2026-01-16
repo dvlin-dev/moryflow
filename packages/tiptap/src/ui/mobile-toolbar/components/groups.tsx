@@ -1,8 +1,8 @@
 "use client"
 
-import { ChevronRightIcon } from "@aiget/ui/icons/chevron-right-icon"
-import { PaintBucketIcon } from "@aiget/ui/icons/paint-bucket-icon"
-import { Repeat2Icon } from "@aiget/ui/icons/repeat-2-icon"
+import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
+import { PaintBucketIcon } from "@anyhunt/ui/icons/paint-bucket-icon"
+import { Repeat2Icon } from "@anyhunt/ui/icons/repeat-2-icon"
 import { Button, ButtonGroup } from "../../../ui-primitive/button"
 import {
   Card,

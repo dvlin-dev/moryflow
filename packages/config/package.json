@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/config",
+  "name": "@anyhunt/config",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -41,8 +41,8 @@
     "zod": "^3.25.40"
   },
   "devDependencies": {
-    "@aiget/eslint-config": "workspace:*",
-    "@aiget/typescript-config": "workspace:*",
+    "@anyhunt/eslint-config": "workspace:*",
+    "@anyhunt/typescript-config": "workspace:*",
     "tsc-multi": "^1.1.0",
     "typescript": "~5.9.3"
   }

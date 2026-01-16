@@ -5,7 +5,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@aiget/ui/components/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
 
 import type {
   MessageAttachment,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@aiget/ui/components/button'
+import { Button } from '@anyhunt/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@aiget/ui/components/dialog'
-import { Input } from '@aiget/ui/components/input'
+} from '@anyhunt/ui/components/dialog'
+import { Input } from '@anyhunt/ui/components/input'
 import { useTranslation } from '@/lib/i18n'
 import type { InputDialogProps } from './const'
 

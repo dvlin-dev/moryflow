@@ -5,7 +5,7 @@ import {
   OutputGuardrailDefinition,
   OutputGuardrailMetadata,
   OutputGuardrailFunctionArgs,
-} from '@aiget/agents-core';
+} from '@anyhunt/agents-core';
 
 export interface RealtimeOutputGuardrailSettings {
   /**

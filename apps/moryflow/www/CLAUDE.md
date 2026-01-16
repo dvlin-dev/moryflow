@@ -14,7 +14,7 @@ Moryflow 官网（营销站），部署于 `www.moryflow.com`。
 | 运行时 | React 19 + Nitro           |
 | 构建   | Vite 7                     |
 | 样式   | Tailwind CSS v4            |
-| UI 库  | @aiget/ui                  |
+| UI 库  | /ui                        |
 | 图标   | @hugeicons/core-free-icons |
 
 ## 项目结构

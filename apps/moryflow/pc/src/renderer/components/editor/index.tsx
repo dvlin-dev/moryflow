@@ -18,37 +18,37 @@ import { Mathematics } from '@tiptap/extension-mathematics';
 import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 
 // Custom Extensions
-import { HorizontalRule } from '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
-import { Image } from '@aiget/tiptap/nodes/image-node/image-node-extension';
-import { NodeBackground } from '@aiget/tiptap/extensions/node-background-extension';
-import { NodeAlignment } from '@aiget/tiptap/extensions/node-alignment-extension';
-import { UiState } from '@aiget/tiptap/extensions/ui-state-extension';
-import { ImageUploadNode } from '@aiget/tiptap/nodes/image-upload-node/image-upload-node-extension';
-import { TableKit } from '@aiget/tiptap/nodes/table-node/extensions/table-node-extension';
-import { TableHandleExtension } from '@aiget/tiptap/nodes/table-node/extensions/table-handle';
+import { HorizontalRule } from '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
+import { Image } from '@anyhunt/tiptap/nodes/image-node/image-node-extension';
+import { NodeBackground } from '@anyhunt/tiptap/extensions/node-background-extension';
+import { NodeAlignment } from '@anyhunt/tiptap/extensions/node-alignment-extension';
+import { UiState } from '@anyhunt/tiptap/extensions/ui-state-extension';
+import { ImageUploadNode } from '@anyhunt/tiptap/nodes/image-upload-node/image-upload-node-extension';
+import { TableKit } from '@anyhunt/tiptap/nodes/table-node/extensions/table-node-extension';
+import { TableHandleExtension } from '@anyhunt/tiptap/nodes/table-node/extensions/table-handle';
 
 // Utils
-import { handleImageUpload, MAX_FILE_SIZE } from '@aiget/tiptap/utils/tiptap-utils';
-import { markdownToHtml, htmlToMarkdown } from '@aiget/tiptap';
+import { handleImageUpload, MAX_FILE_SIZE } from '@anyhunt/tiptap/utils/tiptap-utils';
+import { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
 
 // Editor Components
-import { EditorRoot, EditorContentArea } from '@aiget/tiptap/editors/notion-editor';
-import { TableHandle } from '@aiget/tiptap/nodes/table-node/ui/table-handle/table-handle';
-import { TableSelectionOverlay } from '@aiget/tiptap/nodes/table-node/ui/table-selection-overlay';
-import { TableCellHandleMenu } from '@aiget/tiptap/nodes/table-node/ui/table-cell-handle-menu';
-import { TableExtendRowColumnButtons } from '@aiget/tiptap/nodes/table-node/ui/table-extend-row-column-button';
+import { EditorRoot, EditorContentArea } from '@anyhunt/tiptap/editors/notion-editor';
+import { TableHandle } from '@anyhunt/tiptap/nodes/table-node/ui/table-handle/table-handle';
+import { TableSelectionOverlay } from '@anyhunt/tiptap/nodes/table-node/ui/table-selection-overlay';
+import { TableCellHandleMenu } from '@anyhunt/tiptap/nodes/table-node/ui/table-cell-handle-menu';
+import { TableExtendRowColumnButtons } from '@anyhunt/tiptap/nodes/table-node/ui/table-extend-row-column-button';
 
 // Styles
-import '@aiget/tiptap/nodes/table-node/styles/prosemirror-table.scss';
-import '@aiget/tiptap/nodes/table-node/styles/table-node.scss';
-import '@aiget/tiptap/nodes/blockquote-node/blockquote-node.scss';
-import '@aiget/tiptap/nodes/code-block-node/code-block-node.scss';
-import '@aiget/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
-import '@aiget/tiptap/nodes/list-node/list-node.scss';
-import '@aiget/tiptap/nodes/image-node/image-node.scss';
-import '@aiget/tiptap/nodes/heading-node/heading-node.scss';
-import '@aiget/tiptap/nodes/paragraph-node/paragraph-node.scss';
-import '@aiget/tiptap/styles/notion-editor.scss';
+import '@anyhunt/tiptap/nodes/table-node/styles/prosemirror-table.scss';
+import '@anyhunt/tiptap/nodes/table-node/styles/table-node.scss';
+import '@anyhunt/tiptap/nodes/blockquote-node/blockquote-node.scss';
+import '@anyhunt/tiptap/nodes/code-block-node/code-block-node.scss';
+import '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
+import '@anyhunt/tiptap/nodes/list-node/list-node.scss';
+import '@anyhunt/tiptap/nodes/image-node/image-node.scss';
+import '@anyhunt/tiptap/nodes/heading-node/heading-node.scss';
+import '@anyhunt/tiptap/nodes/paragraph-node/paragraph-node.scss';
+import '@anyhunt/tiptap/styles/notion-editor.scss';
 
 export interface NotionEditorProps {
   value: string;

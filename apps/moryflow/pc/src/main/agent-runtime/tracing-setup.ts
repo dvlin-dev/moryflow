@@ -9,8 +9,8 @@ import {
   setTracingDisabled,
   ServerTracingProcessor,
   type TraceBatchPayload,
-} from '@aiget/agents-core'
-import { MEMBERSHIP_API_URL } from '@aiget/api'
+} from '@anyhunt/agents-core'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api'
 import { membershipBridge } from '../membership-bridge.js'
 
 const MAX_CACHED_TRACES = 100

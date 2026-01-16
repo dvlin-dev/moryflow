@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import { AgentHooks, EventEmitterDelegate, RunHooks } from '../src/lifecycle';
-import type { EventEmitter } from '@aiget/agents-core/_shims';
+import type { EventEmitter } from '@anyhunt/agents-core/_shims';
 import type { RunContext } from '../src/runContext';
 import type { Agent } from '../src/agent';
 import type { Tool } from '../src/tool';

@@ -1,0 +1,137 @@
+---
+title: FAQ
+description: Frequently asked questions about Anyhunt
+---
+
+# Frequently Asked Questions
+
+## General
+
+### What is Anyhunt?
+
+Anyhunt is a web scraping API that extracts content from any webpage. You send a URL via our API, and we return clean, structured content in your preferred format (Markdown, HTML, links, or screenshots).
+
+### What output formats are supported?
+
+We support multiple output formats:
+- **Markdown** - Clean, readable text (default)
+- **HTML** - Cleaned HTML without scripts
+- **Raw HTML** - Original unmodified HTML
+- **Links** - All hyperlinks on the page
+- **Screenshot** - Page capture in PNG, JPEG, or WebP
+
+### How fast is the scraping?
+
+Most scrapes complete in 2-5 seconds, depending on page complexity and network conditions. We wait for JavaScript to fully render before extracting content.
+
+### Can I scrape pages that require login?
+
+Currently, we support public pages only. Authenticated page scraping is on our roadmap.
+
+## APIs
+
+### What's the difference between Scrape and Crawl?
+
+- **Scrape** - Extracts content from a single URL
+- **Crawl** - Starts from a URL and follows links to scrape multiple pages, with depth control and path filtering
+
+Use Scrape for individual pages. Use Crawl when you need content from an entire website or section.
+
+### How does AI-powered extraction work?
+
+The Extract API uses LLM (Large Language Model) to extract structured data from web pages. You provide a JSON Schema defining the data structure you want, and we return data matching that schema. Perfect for extracting product info, article metadata, or any custom data.
+
+### How do Page Actions work?
+
+Page Actions let you interact with a page before scraping. You can:
+- **click** - Click elements (e.g., "Load More" buttons)
+- **type** - Enter text into inputs
+- **scroll** - Scroll the page
+- **wait** - Wait for elements or time
+- **press** - Press keyboard keys
+
+This is useful for SPAs and pages with lazy-loaded content.
+
+### What is the Map API for?
+
+The Map API discovers all URLs on a website. It first tries to parse the sitemap (`/sitemap.xml`), and falls back to browser-based crawling if unavailable. Great for understanding site structure before crawling.
+
+## Technical
+
+### What browser do you use?
+
+We use Chromium via Playwright for consistent, high-fidelity rendering that matches what users see in Chrome.
+
+### Do you execute JavaScript?
+
+Yes, JavaScript is fully executed. We wait for the page to be fully loaded and rendered before extracting content.
+
+### What's the maximum page height for screenshots?
+
+Full-page screenshots can capture up to 16,384 pixels in height.
+
+### How does caching work?
+
+Responses are cached for 1 hour by default. Cache keys are computed from `SHA256(url + options)`, so identical requests return cached results. Cache hits are indicated by `fromCache: true` and don't count against your quota.
+
+### How is main content extracted?
+
+We use Mozilla's Readability algorithm (same as Firefox Reader View) to identify and extract main content, filtering out navigation, ads, and other clutter. You can disable this with `onlyMainContent: false` to get the full page content.
+
+## Security
+
+### Is my API key secure?
+
+API keys are stored as SHA256 hashes. The plaintext key is only shown once during creation. Always store keys securely and never expose them in client-side code.
+
+### What SSRF protections do you have?
+
+We block all requests to:
+- Private IP ranges (10.x.x.x, 192.168.x.x, etc.)
+- Localhost and loopback addresses
+- Cloud metadata endpoints (169.254.x.x)
+- Internal DNS names
+
+### Where is my data stored?
+
+Scraped content is cached on Cloudflare R2 and served via Cloudflare's global CDN. Data is encrypted at rest and in transit. Screenshots expire after the configured TTL.
+
+## Billing
+
+### How does billing work?
+
+You're billed monthly based on your plan. Each API call consumes credits from your quota. Cache hits don't count against your quota.
+
+### What payment methods do you accept?
+
+We accept all major credit cards via our payment processor, Creem.
+
+### Can I get a refund?
+
+Monthly subscriptions are non-refundable but you can cancel anytime. Unused pay-as-you-go credits can be refunded within 30 days.
+
+### Do you offer invoices?
+
+Yes, invoices are automatically generated and available in your console under Billing.
+
+## Support
+
+### How do I get help?
+
+- **Documentation**: You're here!
+- **Email**: support@anyhunt.app
+- **Console**: Use the feedback button in your dashboard
+
+### What's your uptime SLA?
+
+We target 99.9% uptime. Check our status page at status.anyhunt.app for real-time availability.
+
+### Do you have rate limits?
+
+Yes, rate limits depend on your plan:
+- **Free**: 10 requests/minute
+- **Basic**: 30 requests/minute
+- **Pro**: 60 requests/minute
+- **Team**: 120 requests/minute
+
+Still have questions? Contact us at support@anyhunt.app.

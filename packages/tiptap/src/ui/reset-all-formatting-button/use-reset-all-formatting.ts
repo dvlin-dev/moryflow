@@ -10,7 +10,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { RotateCcwIcon } from "@aiget/ui/icons/rotate-ccw-icon"
+import { RotateCcwIcon } from "@anyhunt/ui/icons/rotate-ccw-icon"
 
 export const RESET_ALL_FORMATTING_SHORTCUT_KEY = "mod+r"
 

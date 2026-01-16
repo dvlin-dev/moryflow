@@ -1,6 +1,6 @@
-import { Agent, run, tool, type RunContext, type Tool } from '@aiget/agents'
+import { Agent, run, tool, type RunContext, type Tool } from '@anyhunt/agents'
 import { z } from 'zod'
-import type { AgentContext } from '@aiget/agents-runtime'
+import type { AgentContext } from '@anyhunt/agents-runtime'
 import { toolSummarySchema } from '../shared'
 
 const taskParams = z.object({

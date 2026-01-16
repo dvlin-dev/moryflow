@@ -8,9 +8,9 @@ import { NodeSelection, TextSelection } from "@tiptap/pm/state"
 import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 
 // --- Icons ---
-import { ListIcon } from "@aiget/ui/icons/list-icon"
-import { ListOrderedIcon } from "@aiget/ui/icons/list-ordered-icon"
-import { ListTodoIcon } from "@aiget/ui/icons/list-todo-icon"
+import { ListIcon } from "@anyhunt/ui/icons/list-icon"
+import { ListOrderedIcon } from "@anyhunt/ui/icons/list-ordered-icon"
+import { ListTodoIcon } from "@anyhunt/ui/icons/list-todo-icon"
 
 // --- Lib ---
 import {

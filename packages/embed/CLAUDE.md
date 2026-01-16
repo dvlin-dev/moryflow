@@ -1,4 +1,4 @@
-# @aiget/embed
+# /embed
 
 > Fetchx 嵌入脚本（Vanilla JavaScript）
 
@@ -9,8 +9,8 @@
 ## 导出
 
 ```typescript
-import { EmbedClient } from '@aiget/embed';
-import { detectProvider } from '@aiget/embed/utils/provider-detect';
+import { EmbedClient } from '@anyhunt/embed';
+import { detectProvider } from '@anyhunt/embed/utils/provider-detect';
 ```
 
 ## 目录结构
@@ -30,8 +30,8 @@ src/
 
 ```typescript
 const client = createEmbedClient({
-  apiKey: 'ag_xxx',
-  baseUrl: 'https://server.aiget.dev',
+  apiKey: 'ah_xxx',
+  baseUrl: 'https://server.anyhunt.app',
 });
 
 const result = await client.fetch({

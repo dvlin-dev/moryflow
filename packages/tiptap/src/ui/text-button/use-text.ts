@@ -10,7 +10,7 @@ import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "../../hooks/use-is-breakpoint"
 
 // --- Icons ---
-import { TypeIcon } from "@aiget/ui/icons/type-icon"
+import { TypeIcon } from "@anyhunt/ui/icons/type-icon"
 
 // --- Lib ---
 import {

@@ -39,7 +39,7 @@ import {
 } from "./ai-menu-hooks"
 
 // -- Icons --
-import { StopCircle2Icon } from "@aiget/ui/icons/stop-circle-2-icon"
+import { StopCircle2Icon } from "@anyhunt/ui/icons/stop-circle-2-icon"
 
 import "./ai-menu.scss"
 

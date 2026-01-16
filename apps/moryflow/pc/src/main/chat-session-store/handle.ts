@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { AgentInputItem } from '@aiget/agents'
+import type { AgentInputItem } from '@anyhunt/agents'
 import type { UIMessage } from 'ai'
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js'
 import { agentHistoryToUiMessages } from './ui-message.js'

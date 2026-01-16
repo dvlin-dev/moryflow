@@ -1,4 +1,4 @@
-import type { AgentInputItem } from '@aiget/agents'
+import type { AgentInputItem } from '@anyhunt/agents'
 import type { UIMessage } from 'ai'
 import type { AgentMessage } from './const.js'
 

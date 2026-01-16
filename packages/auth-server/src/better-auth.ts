@@ -9,7 +9,7 @@
 import { betterAuth, APIError } from 'better-auth';
 import { jwt, emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import type { PrismaClient } from '@aiget/identity-db';
+import type { PrismaClient } from '@anyhunt/identity-db';
 import {
   COOKIE_DOMAIN,
   SESSION_TTL_SECONDS,

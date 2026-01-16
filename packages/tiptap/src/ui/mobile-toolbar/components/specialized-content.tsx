@@ -5,7 +5,7 @@ import {
   ToolbarGroup,
   ToolbarSeparator,
 } from "../../../ui-primitive/toolbar"
-import { ArrowLeftIcon } from "@aiget/ui/icons/arrow-left-icon"
+import { ArrowLeftIcon } from "@anyhunt/ui/icons/arrow-left-icon"
 
 import type { SpecializedToolbarContentProps } from "../types"
 

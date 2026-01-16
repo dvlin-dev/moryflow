@@ -1,5 +1,5 @@
 {
-  "name": "@aiget/agents-adapter",
+  "name": "@anyhunt/agents-adapter",
   "version": "0.1.0",
   "description": "Platform adapter interfaces for Moryflow Agent Runtime",
   "main": "dist/index.js",
@@ -11,7 +11,9 @@
       "import": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.9.3"

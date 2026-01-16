@@ -11,4 +11,4 @@ export type {
   McpStatusEvent,
   McpTestInput,
   McpTestResult,
-} from '@aiget/agents-mcp'
+} from '@anyhunt/agents-mcp'
