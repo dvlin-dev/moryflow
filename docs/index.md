@@ -42,6 +42,10 @@ status: active
 - megaboxpro（1panel）反代路由：`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`
 - Moryflow（4c6g / docker compose）：`docs/runbooks/deploy/moryflow-compose.md`
 
+## Migrations（迁移方案 / 一次性执行）
+
+- Aiget → Anyfeed 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyfeed.md`
+
 ## Products（产品线内的内部方案）
 
 - Aiget Dev

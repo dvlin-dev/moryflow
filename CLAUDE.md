@@ -216,6 +216,7 @@ Aiget/
 | [`docs/guides/auth/auth-service-quick-start.md`](./docs/guides/auth/auth-service-quick-start.md)                       | Guide：Auth Service 模板快速接入                               |
 | [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                     | Guide：Zod + RHF 兼容性（zod/v3）                              |
 | [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                           | Guide：从 Monorepo 开源拆分单个包（Git Subtree）               |
+| [`docs/migrations/aiget-to-anyfeed.md`](./docs/migrations/aiget-to-anyfeed.md)                                         | Migration：Aiget → Anyfeed 全量品牌迁移（无历史兼容）          |
 | [`docs/products/aiget-dev/index.md`](./docs/products/aiget-dev/index.md)                                               | Aiget Dev：内部方案入口                                        |
 | [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                 | Moryflow：内部方案入口                                         |
 | `docs/_archived/`                                                                                                      | 已完成/归档文档（progress.md, ui-migration, console-refactor） |
