@@ -98,6 +98,7 @@ pnpm --filter @anyhunt/admin test:e2e
 | **Anyhunt 官网**         | anyhunt.app         | Anyhunt Dev 官网（模块导航） |
 | **Anyhunt Dev API**      | server.anyhunt.app  | 统一 API 入口（`/api/v1`）   |
 | **Anyhunt Docs**         | docs.anyhunt.app    | 产品文档（独立 Docs 项目）   |
+| **Anyhunt Status**       | status.anyhunt.app  | 服务状态页（可选）           |
 | **Anyhunt Dev 控制台**   | console.anyhunt.app | Anyhunt Dev 控制台（Web）    |
 | **Anyhunt Dev 管理后台** | admin.anyhunt.app   | 运营管理（Web）              |
 

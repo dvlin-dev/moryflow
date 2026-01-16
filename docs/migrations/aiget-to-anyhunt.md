@@ -33,6 +33,7 @@ status: active
 - `https://console.anyhunt.app`
 - `https://admin.anyhunt.app`
 - `https://cdn.anyhunt.app`（CDN 固定域名；`R2_PUBLIC_URL` 需与之保持一致）
+- `https://status.anyhunt.app`（状态页，可选）
 
 > 备注：`Moryflow` 业务线对外域名保持 `moryflow.com / moryflow.app` 不变；但由于本次要求“全仓改名”，内部 npm scope、共享包引用等也会随之统一改名。
 
@@ -225,7 +226,7 @@ pnpm test:unit
 
 # 迁移完成后需要你人工修改/配置的事项（清单）
 
-- DNS：为 `anyhunt.app` 及子域名（`server/console/admin/docs/cdn`）配置解析记录（A/AAAA/CNAME），并确认反代上游 `Host`/`X-Forwarded-Proto` 转发正确
+- DNS：为 `anyhunt.app` 及子域名（`server/console/admin/docs/cdn/status`）配置解析记录（A/AAAA/CNAME），并确认反代上游 `Host`/`X-Forwarded-Proto` 转发正确
 - 域名口径：canonical 固定 `anyhunt.app`（在反代层把 `www.anyhunt.app` 301 到 `anyhunt.app`）
 - 证书：为所有子域名签发/续期 TLS（可用泛域名 `*.anyhunt.app`，或逐个域名）
 - 反代路由：在 Dokploy/1panel/Nginx 上把各子域名路由到对应服务（并确保应用侧开启 `trust proxy` 口径不变）
