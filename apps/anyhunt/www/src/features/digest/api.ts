@@ -153,8 +153,16 @@ export async function markAllAsRead(subscriptionId?: string): Promise<{ markedCo
   return apiClient.post<{ markedCount: number }>(url, {});
 }
 
-export async function fetchInboxItemContent(itemId: string): Promise<{ markdown: string | null }> {
-  return apiClient.get<{ markdown: string | null }>(`${DIGEST_API.INBOX}/${itemId}/content`);
+export async function fetchInboxItemContent(itemId: string): Promise<{
+  markdown: string | null;
+  titleSnapshot?: string;
+  urlSnapshot?: string;
+}> {
+  return apiClient.get<{
+    markdown: string | null;
+    titleSnapshot?: string;
+    urlSnapshot?: string;
+  }>(`${DIGEST_API.INBOX}/${itemId}/content`);
 }
 
 // ========== Runs API ==========

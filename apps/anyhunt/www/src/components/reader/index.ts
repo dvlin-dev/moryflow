@@ -5,17 +5,14 @@
 
 export { ReaderLayout } from './ReaderLayout';
 export { MobileReaderLayout } from './MobileReaderLayout';
-export { SidePanel, type SidePanelView } from './SidePanel';
-export { UserMenu } from './UserMenu';
+export { ReaderTwoColumnLayout } from './ReaderTwoColumnLayout';
+export { SidePanel } from './SidePanel';
 export { SubscriptionItem } from './SubscriptionItem';
 export { SubscriptionContextMenu } from './SubscriptionContextMenu';
 export { ArticleList, type FilterState } from './ArticleList';
 export { ArticleCard } from './ArticleCard';
 export { ArticleDetail } from './ArticleDetail';
 export { AISummaryCard } from './AISummaryCard';
-export { DiscoverFeedList } from './DiscoverFeedList';
-export { DiscoverFeedCard } from './DiscoverFeedCard';
-export { DiscoverDetail } from './DiscoverDetail';
 export { CreateSubscriptionDialog } from './CreateSubscriptionDialog';
 export { SubscriptionSettingsDialog } from './SubscriptionSettingsDialog';
 export { RunHistoryTab } from './RunHistoryTab';

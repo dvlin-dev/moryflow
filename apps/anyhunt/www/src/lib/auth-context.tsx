@@ -39,7 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = useCallback(async () => {
     await authClient.signOut();
     // 登出后跳转到首页
-    window.location.href = '/';
+    window.location.href = '/welcome';
   }, []);
 
   const value: AuthContextValue = {

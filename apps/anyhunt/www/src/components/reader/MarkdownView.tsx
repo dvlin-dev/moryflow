@@ -7,11 +7,17 @@
 
 import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
+import type { Components } from 'react-markdown';
 
 interface MarkdownViewProps {
   markdown: string;
+  components?: Components;
 }
 
-export function MarkdownView({ markdown }: MarkdownViewProps) {
-  return <Markdown rehypePlugins={[rehypeSanitize]}>{markdown}</Markdown>;
+export function MarkdownView({ markdown, components }: MarkdownViewProps) {
+  return (
+    <Markdown rehypePlugins={[rehypeSanitize]} components={components}>
+      {markdown}
+    </Markdown>
+  );
 }

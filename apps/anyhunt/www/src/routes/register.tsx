@@ -10,7 +10,8 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { getRedirectUrl } from '@/lib/redirect';
-import { ReaderPage } from '@/features/reader/ReaderPage';
+import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
+import { WelcomePane } from '@/features/welcome/WelcomePane';
 
 const registerSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -49,10 +50,15 @@ function RegisterPage() {
     openAuthModal({
       mode: 'register',
       redirectTo: redirectTo === '/' ? null : redirectTo,
-      afterAuth: redirectTo === '/' ? () => navigate({ to: '/' }) : null,
-      onClose: () => navigate({ to: '/' }),
+      afterAuth: redirectTo === '/' ? () => navigate({ to: '/welcome' }) : null,
+      onClose: () => navigate({ to: '/welcome' }),
     });
   }, [isLoading, isAuthenticated, openAuthModal, redirectTo, navigate]);
 
-  return <ReaderPage />;
+  return (
+    <ReaderThreePane
+      list={<WelcomePane kind="outline" />}
+      detail={<WelcomePane kind="content" />}
+    />
+  );
 }

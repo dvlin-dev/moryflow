@@ -9,18 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MemoxRouteImport } from './routes/memox'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FetchxRouteImport } from './routes/fetchx'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopicsIndexRouteImport } from './routes/topics/index'
+import { Route as InboxIndexRouteImport } from './routes/inbox/index'
 import { Route as TopicsSlugIndexRouteImport } from './routes/topics/$slug/index'
+import { Route as TopicSlugIndexRouteImport } from './routes/topic/$slug/index'
+import { Route as InboxItemsItemIdRouteImport } from './routes/inbox/items/$itemId'
 import { Route as TopicsSlugEditionsEditionIdRouteImport } from './routes/topics/$slug/editions/$editionId'
+import { Route as TopicSlugEditionsEditionIdRouteImport } from './routes/topic/$slug/editions/$editionId'
 
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -51,6 +62,11 @@ const FetchxRoute = FetchxRouteImport.update({
   path: '/fetchx',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeveloperRoute = DeveloperRouteImport.update({
   id: '/developer',
   path: '/developer',
@@ -66,9 +82,24 @@ const TopicsIndexRoute = TopicsIndexRouteImport.update({
   path: '/topics/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InboxIndexRoute = InboxIndexRouteImport.update({
+  id: '/inbox/',
+  path: '/inbox/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TopicsSlugIndexRoute = TopicsSlugIndexRouteImport.update({
   id: '/topics/$slug/',
   path: '/topics/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopicSlugIndexRoute = TopicSlugIndexRouteImport.update({
+  id: '/topic/$slug/',
+  path: '/topic/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxItemsItemIdRoute = InboxItemsItemIdRouteImport.update({
+  id: '/inbox/items/$itemId',
+  path: '/inbox/items/$itemId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TopicsSlugEditionsEditionIdRoute =
@@ -77,45 +108,69 @@ const TopicsSlugEditionsEditionIdRoute =
     path: '/topics/$slug/editions/$editionId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const TopicSlugEditionsEditionIdRoute =
+  TopicSlugEditionsEditionIdRouteImport.update({
+    id: '/topic/$slug/editions/$editionId',
+    path: '/topic/$slug/editions/$editionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/developer': typeof DeveloperRoute
+  '/explore': typeof ExploreRoute
   '/fetchx': typeof FetchxRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/memox': typeof MemoxRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/welcome': typeof WelcomeRoute
+  '/inbox': typeof InboxIndexRoute
   '/topics': typeof TopicsIndexRoute
+  '/inbox/items/$itemId': typeof InboxItemsItemIdRoute
+  '/topic/$slug': typeof TopicSlugIndexRoute
   '/topics/$slug': typeof TopicsSlugIndexRoute
+  '/topic/$slug/editions/$editionId': typeof TopicSlugEditionsEditionIdRoute
   '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/developer': typeof DeveloperRoute
+  '/explore': typeof ExploreRoute
   '/fetchx': typeof FetchxRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/memox': typeof MemoxRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/welcome': typeof WelcomeRoute
+  '/inbox': typeof InboxIndexRoute
   '/topics': typeof TopicsIndexRoute
+  '/inbox/items/$itemId': typeof InboxItemsItemIdRoute
+  '/topic/$slug': typeof TopicSlugIndexRoute
   '/topics/$slug': typeof TopicsSlugIndexRoute
+  '/topic/$slug/editions/$editionId': typeof TopicSlugEditionsEditionIdRoute
   '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/developer': typeof DeveloperRoute
+  '/explore': typeof ExploreRoute
   '/fetchx': typeof FetchxRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/memox': typeof MemoxRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/welcome': typeof WelcomeRoute
+  '/inbox/': typeof InboxIndexRoute
   '/topics/': typeof TopicsIndexRoute
+  '/inbox/items/$itemId': typeof InboxItemsItemIdRoute
+  '/topic/$slug/': typeof TopicSlugIndexRoute
   '/topics/$slug/': typeof TopicsSlugIndexRoute
+  '/topic/$slug/editions/$editionId': typeof TopicSlugEditionsEditionIdRoute
   '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
 }
 export interface FileRouteTypes {
@@ -123,59 +178,90 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/developer'
+    | '/explore'
     | '/fetchx'
     | '/forgot-password'
     | '/login'
     | '/memox'
     | '/pricing'
     | '/register'
+    | '/welcome'
+    | '/inbox'
     | '/topics'
+    | '/inbox/items/$itemId'
+    | '/topic/$slug'
     | '/topics/$slug'
+    | '/topic/$slug/editions/$editionId'
     | '/topics/$slug/editions/$editionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/developer'
+    | '/explore'
     | '/fetchx'
     | '/forgot-password'
     | '/login'
     | '/memox'
     | '/pricing'
     | '/register'
+    | '/welcome'
+    | '/inbox'
     | '/topics'
+    | '/inbox/items/$itemId'
+    | '/topic/$slug'
     | '/topics/$slug'
+    | '/topic/$slug/editions/$editionId'
     | '/topics/$slug/editions/$editionId'
   id:
     | '__root__'
     | '/'
     | '/developer'
+    | '/explore'
     | '/fetchx'
     | '/forgot-password'
     | '/login'
     | '/memox'
     | '/pricing'
     | '/register'
+    | '/welcome'
+    | '/inbox/'
     | '/topics/'
+    | '/inbox/items/$itemId'
+    | '/topic/$slug/'
     | '/topics/$slug/'
+    | '/topic/$slug/editions/$editionId'
     | '/topics/$slug/editions/$editionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DeveloperRoute: typeof DeveloperRoute
+  ExploreRoute: typeof ExploreRoute
   FetchxRoute: typeof FetchxRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   MemoxRoute: typeof MemoxRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
+  WelcomeRoute: typeof WelcomeRoute
+  InboxIndexRoute: typeof InboxIndexRoute
   TopicsIndexRoute: typeof TopicsIndexRoute
+  InboxItemsItemIdRoute: typeof InboxItemsItemIdRoute
+  TopicSlugIndexRoute: typeof TopicSlugIndexRoute
   TopicsSlugIndexRoute: typeof TopicsSlugIndexRoute
+  TopicSlugEditionsEditionIdRoute: typeof TopicSlugEditionsEditionIdRoute
   TopicsSlugEditionsEditionIdRoute: typeof TopicsSlugEditionsEditionIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -218,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FetchxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/developer': {
       id: '/developer'
       path: '/developer'
@@ -239,11 +332,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TopicsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inbox/': {
+      id: '/inbox/'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/topics/$slug/': {
       id: '/topics/$slug/'
       path: '/topics/$slug'
       fullPath: '/topics/$slug'
       preLoaderRoute: typeof TopicsSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/topic/$slug/': {
+      id: '/topic/$slug/'
+      path: '/topic/$slug'
+      fullPath: '/topic/$slug'
+      preLoaderRoute: typeof TopicSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox/items/$itemId': {
+      id: '/inbox/items/$itemId'
+      path: '/inbox/items/$itemId'
+      fullPath: '/inbox/items/$itemId'
+      preLoaderRoute: typeof InboxItemsItemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/topics/$slug/editions/$editionId': {
@@ -253,20 +367,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TopicsSlugEditionsEditionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/topic/$slug/editions/$editionId': {
+      id: '/topic/$slug/editions/$editionId'
+      path: '/topic/$slug/editions/$editionId'
+      fullPath: '/topic/$slug/editions/$editionId'
+      preLoaderRoute: typeof TopicSlugEditionsEditionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DeveloperRoute: DeveloperRoute,
+  ExploreRoute: ExploreRoute,
   FetchxRoute: FetchxRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   MemoxRoute: MemoxRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
+  WelcomeRoute: WelcomeRoute,
+  InboxIndexRoute: InboxIndexRoute,
   TopicsIndexRoute: TopicsIndexRoute,
+  InboxItemsItemIdRoute: InboxItemsItemIdRoute,
+  TopicSlugIndexRoute: TopicSlugIndexRoute,
   TopicsSlugIndexRoute: TopicsSlugIndexRoute,
+  TopicSlugEditionsEditionIdRoute: TopicSlugEditionsEditionIdRoute,
   TopicsSlugEditionsEditionIdRoute: TopicsSlugEditionsEditionIdRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,0 +1,103 @@
+/**
+ * Topic Preview Dialog
+ *
+ * [PROPS]: open, onOpenChange, slug
+ * [POS]: Explore 中预览 topic（不拆成第三列）
+ */
+
+import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { Button } from '@anyhunt/ui';
+import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
+import { getTopicBySlug, getTopicEditions } from '@/lib/digest-api';
+import { usePublicEnv } from '@/lib/public-env-context';
+
+interface TopicPreviewDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  slug: string | null;
+}
+
+export function TopicPreviewDialog({ open, onOpenChange, slug }: TopicPreviewDialogProps) {
+  const env = usePublicEnv();
+
+  const topicQuery = useQuery({
+    queryKey: ['digest', 'topic-preview', slug],
+    queryFn: async () => {
+      if (!slug) throw new Error('Missing slug');
+      const [topic, editions] = await Promise.all([
+        getTopicBySlug(env.apiUrl, slug),
+        getTopicEditions(env.apiUrl, slug, { limit: 5 }),
+      ]);
+      return { topic, editions: editions.items };
+    },
+    enabled: open && Boolean(slug),
+  });
+
+  return (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Preview"
+      description={slug ? `Topic: ${slug}` : undefined}
+      footer={
+        slug ? (
+          <div className="flex w-full justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+            <Button asChild>
+              <Link to="/topic/$slug" params={{ slug }}>
+                Open topic
+              </Link>
+            </Button>
+          </div>
+        ) : null
+      }
+    >
+      {topicQuery.isLoading ? (
+        <div className="py-6 text-sm text-muted-foreground">Loading…</div>
+      ) : topicQuery.isError || !topicQuery.data ? (
+        <div className="py-6 text-sm text-destructive">Failed to load preview.</div>
+      ) : (
+        <div className="space-y-4 py-2">
+          <div>
+            <div className="text-sm font-semibold">{topicQuery.data.topic.title}</div>
+            {topicQuery.data.topic.description ? (
+              <div className="mt-1 text-sm text-muted-foreground">
+                {topicQuery.data.topic.description}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-muted-foreground">Recent editions</div>
+            {topicQuery.data.editions.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No editions yet.</div>
+            ) : (
+              <div className="space-y-1">
+                {topicQuery.data.editions.map((edition) => (
+                  <Link
+                    key={edition.id}
+                    to="/topic/$slug/editions/$editionId"
+                    params={{ slug: topicQuery.data.topic.slug, editionId: edition.id }}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/40"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    <span>
+                      {new Date(edition.finishedAt ?? edition.scheduledAt).toLocaleDateString(
+                        'en-US',
+                        { month: 'short', day: 'numeric' }
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{edition.itemCount} items</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </ResponsiveDialog>
+  );
+}
