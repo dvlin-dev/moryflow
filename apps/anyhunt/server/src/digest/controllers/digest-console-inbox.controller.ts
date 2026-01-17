@@ -122,8 +122,12 @@ export class DigestConsoleInboxController {
     @CurrentUser() user: CurrentUserDto,
     @Param('id') id: string,
   ) {
-    const contentId = await this.inboxService.getContentId(user.id, id);
-    const markdown = await this.contentService.getFulltext(contentId);
-    return { markdown };
+    const info = await this.inboxService.getItemContentInfo(user.id, id);
+    const markdown = await this.contentService.getFulltext(info.contentId);
+    return {
+      markdown,
+      titleSnapshot: info.titleSnapshot,
+      urlSnapshot: info.urlSnapshot,
+    };
   }
 }

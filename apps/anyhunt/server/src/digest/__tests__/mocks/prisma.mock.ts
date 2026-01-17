@@ -104,6 +104,12 @@ export type MockDigestSource = {
   delete: Mock;
 };
 
+export type MockDigestWelcomeConfig = {
+  findUnique: Mock;
+  create: Mock;
+  upsert: Mock;
+};
+
 export type MockDigestReport = {
   create: Mock;
   findFirst: Mock;
@@ -141,6 +147,7 @@ export type MockPrismaDigest = {
   digestTopicEdition: MockDigestTopicEdition;
   digestTopicEditionItem: MockDigestTopicEditionItem;
   digestSource: MockDigestSource;
+  digestWelcomeConfig: MockDigestWelcomeConfig;
   digestReport: MockDigestReport;
   digestFeedbackPattern: MockDigestFeedbackPattern;
   user: MockUser;
@@ -263,6 +270,14 @@ export function createMockDigestSource(): MockDigestSource {
   };
 }
 
+export function createMockDigestWelcomeConfig(): MockDigestWelcomeConfig {
+  return {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    upsert: vi.fn(),
+  };
+}
+
 export function createMockDigestReport(): MockDigestReport {
   return {
     create: vi.fn(),
@@ -308,6 +323,7 @@ export function createMockPrisma(): MockPrismaDigest {
     digestTopicEdition: createMockDigestTopicEdition(),
     digestTopicEditionItem: createMockDigestTopicEditionItem(),
     digestSource: createMockDigestSource(),
+    digestWelcomeConfig: createMockDigestWelcomeConfig(),
     digestReport: createMockDigestReport(),
     digestFeedbackPattern: createMockDigestFeedbackPattern(),
     user: createMockUser(),

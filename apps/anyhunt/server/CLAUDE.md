@@ -14,6 +14,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Process async jobs via BullMQ
 - Quota and API key management
 - User authentication and authorization
+- Digest: topics/subscriptions/inbox + Welcome config (public/admin)
 
 ## Constraints
 

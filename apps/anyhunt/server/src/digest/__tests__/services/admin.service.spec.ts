@@ -5,28 +5,18 @@
  * [POS]: 测试管理后台数据访问逻辑
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { DigestAdminService } from '../../services/admin.service';
 import { createMockPrisma } from '../mocks';
 
-const createMockDiscoverService = () => ({
-  invalidateCache: vi.fn().mockResolvedValue(undefined),
-});
-
 describe('DigestAdminService', () => {
   let service: DigestAdminService;
   let mockPrisma: any;
-  let mockDiscoverService: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrisma();
-    mockDiscoverService = createMockDiscoverService();
-
-    service = new DigestAdminService(
-      mockPrisma as any,
-      mockDiscoverService as any,
-    );
+    service = new DigestAdminService(mockPrisma as any);
   });
 
   // ========== listTopics ==========

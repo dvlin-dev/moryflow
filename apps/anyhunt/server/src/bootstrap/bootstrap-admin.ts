@@ -15,7 +15,8 @@ type LoggerLike = Pick<Logger, 'log' | 'warn'>;
 function isInvalidPasswordHashError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   if (!('message' in error)) return false;
-  const message = String((error as { message?: unknown }).message ?? '');
+  const rawMessage = (error as { message?: unknown }).message;
+  const message = typeof rawMessage === 'string' ? rawMessage : '';
   return message.toLowerCase().includes('invalid password hash');
 }
 

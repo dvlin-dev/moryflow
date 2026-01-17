@@ -679,6 +679,23 @@ enum DigestFeedbackTermType {
 // Digest 全局数据源
 // =============================================
 
+model DigestWelcomeConfig {
+  id String @id @default("welcome")
+
+  enabled Boolean @default(true)
+
+  // i18n-ready：key 使用 BCP-47（en, zh-CN, zh-Hans 等）
+  titleByLocale           Json
+  contentMarkdownByLocale Json
+
+  // { labelByLocale: Record<string,string>, action: 'openExplore' | 'openSignIn' }
+  primaryAction   Json?
+  secondaryAction Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model DigestSource {
   id          String                  @id @default(cuid())
   type        DigestSourceType

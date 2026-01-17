@@ -370,23 +370,34 @@ export class DigestInboxService {
   }
 
   /**
-   * 获取条目的 contentId（用于获取全文）
+   * 获取条目的 contentId + 快照信息（用于详情页展示）
    */
-  async getContentId(userId: string, itemId: string): Promise<string> {
+  async getItemContentInfo(
+    userId: string,
+    itemId: string,
+  ): Promise<{
+    contentId: string;
+    titleSnapshot: string;
+    urlSnapshot: string;
+  }> {
     const item = await this.prisma.digestRunItem.findFirst({
       where: {
         id: itemId,
         userId,
         deliveredAt: { not: null },
       },
-      select: { contentId: true },
+      select: { contentId: true, titleSnapshot: true, urlSnapshot: true },
     });
 
     if (!item) {
       throw new NotFoundException('Inbox item not found');
     }
 
-    return item.contentId;
+    return {
+      contentId: item.contentId,
+      titleSnapshot: item.titleSnapshot,
+      urlSnapshot: item.urlSnapshot,
+    };
   }
 
   /**

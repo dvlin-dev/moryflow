@@ -33,10 +33,12 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 - `GET /api/v1/console/digest/subscriptions/:subscriptionId/runs`：运行历史（`page/limit`）
 - `GET /api/v1/console/digest/inbox`：Inbox 列表（`page/limit`）
 - `GET /api/v1/console/digest/inbox/stats`：Inbox 统计
+- `GET /api/v1/console/digest/inbox/:id/content`：Inbox 条目全文（`markdown` + `titleSnapshot/urlSnapshot`）
 
 ### Public（部分匿名）
 
 - `GET /api/v1/digest/topics`：公开 Topics 列表（`page/limit`）
+- `GET /api/v1/digest/welcome`：Welcome 配置（按 locale 解析）
 - `GET /api/v1/digest/topics/:slug`：Topic 详情
 - `GET /api/v1/digest/topics/:slug/editions`：Edition 列表（`page/limit`）
 - `GET /api/v1/digest/topics/:slug/editions/:editionId`：Edition + Items
@@ -44,12 +46,14 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 ### Admin（RequireAdmin）
 
-> Admin Digest API **仅在本模块**：`src/digest/controllers/digest-admin.controller.ts`，避免与 `src/admin/*` 路由冲突。
+> Admin Digest API **仅在本模块**：`src/digest/controllers/digest-admin.controller.ts`、`src/digest/controllers/digest-admin-welcome.controller.ts`，避免与 `src/admin/*` 路由冲突。
 
 - `GET /api/v1/admin/digest/topics`：Topics 管理（`page/limit`）
 - `GET /api/v1/admin/digest/reports`：Reports 列表（`page/limit`）
 - `GET /api/v1/admin/digest/subscriptions`：Subscriptions 列表（`page/limit`）
 - `GET /api/v1/admin/digest/runs`：Runs 列表（`page/limit`）
+- `GET /api/v1/admin/digest/welcome`：Welcome 配置（raw locale maps）
+- `PUT /api/v1/admin/digest/welcome`：更新 Welcome 配置
 
 ## 分页协议（强制）
 
