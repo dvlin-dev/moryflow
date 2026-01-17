@@ -63,7 +63,7 @@ describe('ensureBootstrapAdmin', () => {
     const logger = createLogger();
 
     process.env.ADMIN_EMAIL = 'a@anyhunt.app';
-    process.env.ADMIN_PASSWORD = '15936916554any';
+    process.env.ADMIN_PASSWORD = 'TestPassword_123456';
 
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', isAdmin: true });
     prisma.account.findUnique.mockResolvedValue({
@@ -78,7 +78,7 @@ describe('ensureBootstrapAdmin', () => {
 
     await ensureBootstrapAdmin(prisma as any, logger as any);
 
-    expect(hashPassword).toHaveBeenCalledWith('15936916554any');
+    expect(hashPassword).toHaveBeenCalledWith('TestPassword_123456');
     expect(prisma.account.update).toHaveBeenCalledWith({
       where: { id: 'acc1' },
       data: { password: 'better-auth-hash' },
@@ -90,7 +90,7 @@ describe('ensureBootstrapAdmin', () => {
     const logger = createLogger();
 
     process.env.ADMIN_EMAIL = 'a@anyhunt.app';
-    process.env.ADMIN_PASSWORD = '15936916554any';
+    process.env.ADMIN_PASSWORD = 'TestPassword_123456';
 
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', isAdmin: true });
     prisma.account.findUnique.mockResolvedValue({
