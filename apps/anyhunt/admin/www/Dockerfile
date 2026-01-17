@@ -12,6 +12,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/admin/www/package.json ./apps/anyhunt/admin/www/
 COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/tiptap/package.json ./packages/tiptap/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 COPY tooling/eslint-config/package.json ./tooling/eslint-config/
 
@@ -20,6 +21,7 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hois
 COPY apps/anyhunt/admin/www ./apps/anyhunt/admin/www
 COPY packages/types ./packages/types
 COPY packages/ui ./packages/ui
+COPY packages/tiptap ./packages/tiptap
 COPY tooling/typescript-config ./tooling/typescript-config
 COPY tooling/eslint-config ./tooling/eslint-config
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./

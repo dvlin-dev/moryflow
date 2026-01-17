@@ -21,7 +21,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
 - 认证通过 HttpOnly Cookie 承载，无需前端存储 token
 - 登录与启动时通过 `/api/v1/user/me` 同步用户档案（含 isAdmin）
-- Docker 构建依赖 `packages/types`、`packages/ui`
+- Docker 构建依赖 `packages/types`、`packages/ui`、`packages/tiptap`（Welcome Markdown Editor）
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://server.anyhunt.app`（可用 `VITE_API_URL` 覆盖）
