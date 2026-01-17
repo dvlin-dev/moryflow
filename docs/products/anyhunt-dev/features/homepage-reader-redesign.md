@@ -2,6 +2,8 @@
 
 > 文档版本: 2.2 | 更新日期: 2026-01-15
 
+> 注意：本方案描述的“首页默认路径 / Discover 入口”已被新的 IA 替代（Welcome + Recommended + `/explore` + URL 状态同步），保留仅供回溯参考：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
+
 ## 目录
 
 1. [需求背景](#1-需求背景)

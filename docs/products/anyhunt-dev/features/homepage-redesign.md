@@ -1,6 +1,8 @@
 # Anyhunt 首页重构方案
 
-> 状态：**已实现** | 创建日期：2026-01-15 | 更新日期：2026-01-15
+> 状态：**已实现（已被新信息架构替代）** | 创建日期：2026-01-15 | 更新日期：2026-01-15
+
+> 注意：本方案已被「Reader 顶部导航 + Explore Topics 专用页」替代，保留仅供回溯参考：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
 
 ## 背景
 

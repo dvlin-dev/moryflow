@@ -50,6 +50,7 @@ status: active
 
 - Anyhunt Dev
   - 入口：`docs/products/anyhunt-dev/index.md`
+  - Reader 顶部导航 + Explore Topics 专用页（提案）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
   - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
   - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
 - Moryflow：`docs/products/moryflow/`
