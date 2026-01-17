@@ -10,7 +10,9 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { Logger, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded, type Application } from 'express';
+import * as bcrypt from 'bcryptjs';
 import { AppModule } from './app.module';
+import { PrismaService } from './prisma';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -31,6 +33,77 @@ function matchOrigin(origin: string, pattern: string): boolean {
   }
 
   return false;
+}
+
+async function ensureBootstrapAdmin(prisma: PrismaService, logger: Logger) {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    logger.warn('ADMIN_EMAIL/ADMIN_PASSWORD not set, skipping admin bootstrap');
+    return;
+  }
+
+  if (adminPassword.length < 8) {
+    throw new Error('ADMIN_PASSWORD must be at least 8 characters');
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email: adminEmail },
+    select: { id: true, isAdmin: true },
+  });
+
+  const user =
+    existingUser ??
+    (await prisma.user.create({
+      data: {
+        email: adminEmail,
+        name: 'Admin',
+        emailVerified: true,
+        isAdmin: true,
+      },
+      select: { id: true, isAdmin: true },
+    }));
+
+  if (!user.isAdmin) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isAdmin: true, emailVerified: true },
+    });
+  }
+
+  const existingAccount = await prisma.account.findUnique({
+    where: {
+      providerId_accountId: { providerId: 'credential', accountId: adminEmail },
+    },
+    select: { id: true, userId: true, password: true },
+  });
+
+  if (existingAccount && existingAccount.userId !== user.id) {
+    throw new Error(
+      `ADMIN_EMAIL ${adminEmail} is already linked to another user`,
+    );
+  }
+
+  if (!existingAccount) {
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    await prisma.account.create({
+      data: {
+        userId: user.id,
+        accountId: adminEmail,
+        providerId: 'credential',
+        password: passwordHash,
+      },
+    });
+  } else if (!existingAccount.password) {
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    await prisma.account.update({
+      where: { id: existingAccount.id },
+      data: { password: passwordHash },
+    });
+  }
+
+  logger.log(`✅ Admin bootstrap ready: ${adminEmail}`);
 }
 
 async function bootstrap() {
@@ -141,6 +214,8 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api-docs', app, document);
+
+  await ensureBootstrapAdmin(app.get(PrismaService), logger);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

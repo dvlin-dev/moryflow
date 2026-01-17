@@ -247,6 +247,7 @@ open http://localhost:3000/api-docs
 | `REDIS_URL`                   | ✅   | Redis 连接字符串                                                                 |
 | `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                                                 |
 | `BETTER_AUTH_URL`             | ✅   | 服务公网 URL（生产建议 `https://server.anyhunt.app`）                            |
+| `ADMIN_EMAIL`                 | ✅   | 初始管理员邮箱（用于创建 bootstrap admin 账号）                                  |
 | `ADMIN_PASSWORD`              | ✅   | 管理后台登录密码                                                                 |
 | `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                                        |
 | `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
