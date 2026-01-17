@@ -21,6 +21,7 @@ import {
   UserGroupIcon,
   Flag01Icon,
   News01Icon,
+  Edit01Icon,
 } from '@hugeicons/core-free-icons';
 import { cn } from '@anyhunt/ui/lib';
 import { Icon, type HugeIcon } from '@anyhunt/ui';
@@ -38,6 +39,7 @@ const navItems: { path: string; label: string; icon: HugeIcon }[] = [
   { path: '/browser', label: 'Browser Pool', icon: AiBrowserIcon },
   { path: '/digest/topics', label: 'Digest Topics', icon: News01Icon },
   { path: '/digest/reports', label: 'Digest Reports', icon: Flag01Icon },
+  { path: '/digest/welcome', label: 'Digest Welcome', icon: Edit01Icon },
 ];
 
 export function MainLayout() {

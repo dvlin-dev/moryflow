@@ -30,6 +30,7 @@ feature-name/
 | `browser/`        | 浏览器池状态    | `/api/v1/admin/browser`        |
 | `digest-topics/`  | Digest 话题管理 | `/api/v1/admin/digest/topics`  |
 | `digest-reports/` | Digest 举报管理 | `/api/v1/admin/digest/reports` |
+| `digest-welcome/` | Welcome 配置    | `/api/v1/admin/digest/welcome` |
 
 ## 轮询刷新示例
 

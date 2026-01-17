@@ -25,6 +25,7 @@ import ErrorsPage from './pages/ErrorsPage';
 import BrowserPage from './pages/BrowserPage';
 import DigestReportsPage from './pages/DigestReportsPage';
 import DigestTopicsPage from './pages/DigestTopicsPage';
+import DigestWelcomePage from './pages/DigestWelcomePage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -150,6 +151,9 @@ function App() {
 
             {/* Digest Reports - 举报管理 */}
             <Route path="digest/reports" element={<DigestReportsPage />} />
+
+            {/* Digest Welcome - Welcome 配置 */}
+            <Route path="digest/welcome" element={<DigestWelcomePage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -18,6 +18,7 @@ export const ADMIN_API = {
   DIGEST_REPORTS: '/api/v1/admin/digest/reports',
   DIGEST_STATS: '/api/v1/admin/digest/stats',
   DIGEST_TOPICS: '/api/v1/admin/digest/topics',
+  DIGEST_WELCOME: '/api/v1/admin/digest/welcome',
 } as const;
 
 export const USER_API = {
