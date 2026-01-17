@@ -5,6 +5,13 @@
  * 全局样式（body、html、字体加载等）应由业务层控制。
  */
 
+@use "../src/nodes/blockquote-node/blockquote-node.scss";
+@use "../src/nodes/code-block-node/code-block-node.scss";
+@use "../src/nodes/horizontal-rule-node/horizontal-rule-node.scss";
+@use "../src/nodes/list-node/list-node.scss";
+@use "../src/nodes/heading-node/heading-node.scss";
+@use "../src/nodes/paragraph-node/paragraph-node.scss";
+
 // 编辑器根容器
 .notion-editor-root {
   --tt-toolbar-height: 44px;

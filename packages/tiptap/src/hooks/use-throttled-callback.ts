@@ -1,17 +1,25 @@
-import throttle from "lodash.throttle"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+/**
+ * [PROVIDES]: useThrottledCallback - 返回节流回调（始终调用最新 fn）
+ * [DEPENDS]: lodash.throttle, useUnmount
+ * [POS]: tiptap hooks 工具，被编辑器/业务层复用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 
-import { useUnmount } from "./use-unmount"
+import throttle from 'lodash.throttle';
+import { useEffect, useMemo, useRef } from 'react';
+
+import { useUnmount } from './use-unmount';
 
 interface ThrottleSettings {
-  leading?: boolean | undefined
-  trailing?: boolean | undefined
+  leading?: boolean | undefined;
+  trailing?: boolean | undefined;
 }
 
 const defaultOptions: ThrottleSettings = {
   leading: false,
   trailing: true,
-}
+};
 
 /**
  * A hook that returns a throttled callback function.
@@ -26,38 +34,34 @@ export function useThrottledCallback<T extends (...args: never[]) => unknown>(
   wait = 250,
   options: ThrottleSettings = defaultOptions
 ): {
-  (this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T>
-  cancel: () => void
-  flush: () => void
+  (this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T>;
+  cancel: () => void;
+  flush: () => void;
 } {
   // 使用 ref 存储最新的 fn，避免闭包过期
-  const fnRef = useRef(fn)
+  const fnRef = useRef(fn);
 
   // 每次渲染时更新 ref
   useEffect(() => {
-    fnRef.current = fn
-  }, [fn])
+    fnRef.current = fn;
+  }, [fn]);
 
   // 创建稳定的 throttle 包装函数
   const throttledFn = useMemo(
     () =>
-      throttle(
-        (...args: Parameters<T>) => fnRef.current(...args) as ReturnType<T>,
-        wait,
-        options
-      ),
+      throttle((...args: Parameters<T>) => fnRef.current(...args) as ReturnType<T>, wait, options),
     [wait, options]
-  )
+  );
 
   useUnmount(() => {
-    throttledFn.cancel()
-  })
+    throttledFn.cancel();
+  });
 
   return throttledFn as {
-    (this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T>
-    cancel: () => void
-    flush: () => void
-  }
+    (this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T>;
+    cancel: () => void;
+    flush: () => void;
+  };
 }
 
-export default useThrottledCallback
+export default useThrottledCallback;

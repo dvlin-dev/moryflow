@@ -3,10 +3,12 @@
  *
  * [PROPS]: value, onChange, placeholder, readOnly
  * [POS]: 管理后台 Markdown 富文本编辑（Markdown ↔ HTML）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useEffect, useMemo, useRef } from 'react';
-import { useEditor } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
 
 import { StarterKit } from '@tiptap/starter-kit';
 import { Mention } from '@tiptap/extension-mention';
@@ -14,19 +16,15 @@ import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 import { Placeholder } from '@tiptap/extensions';
 import { TextAlign } from '@tiptap/extension-text-align';
 
-import { HorizontalRule } from '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
-import { NodeBackground } from '@anyhunt/tiptap/extensions/node-background-extension';
-import { NodeAlignment } from '@anyhunt/tiptap/extensions/node-alignment-extension';
-import { UiState } from '@anyhunt/tiptap/extensions/ui-state-extension';
-import { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
-import { EditorRoot, EditorContentArea } from '@anyhunt/tiptap/editors/notion-editor';
+import {
+  HorizontalRule,
+  NodeAlignment,
+  NodeBackground,
+  UiState,
+  htmlToMarkdown,
+  markdownToHtml,
+} from '@anyhunt/tiptap';
 
-import '@anyhunt/tiptap/nodes/blockquote-node/blockquote-node.scss';
-import '@anyhunt/tiptap/nodes/code-block-node/code-block-node.scss';
-import '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
-import '@anyhunt/tiptap/nodes/list-node/list-node.scss';
-import '@anyhunt/tiptap/nodes/heading-node/heading-node.scss';
-import '@anyhunt/tiptap/nodes/paragraph-node/paragraph-node.scss';
 import '@anyhunt/tiptap/styles/notion-editor.scss';
 
 export interface NotionMarkdownEditorProps {
@@ -116,9 +114,11 @@ export function NotionMarkdownEditor({
 
   return (
     <div className="overflow-hidden rounded-md border border-border">
-      <EditorRoot editor={editor}>
-        <EditorContentArea />
-      </EditorRoot>
+      <div className="notion-editor-root">
+        <div className="notion-editor-content">
+          <EditorContent editor={editor} />
+        </div>
+      </div>
     </div>
   );
 }
