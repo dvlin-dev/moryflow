@@ -143,7 +143,7 @@ status: active
 需要同步更新的类别：
 
 - 服务端常量与校验：`API_KEY_PREFIX`
-- 单元测试与 fixtures（断言正则、seed key hash）
+- 单元测试与 fixtures（断言正则等）
 - 文档示例与 Console/UI 示例代码
 - `packages/types` 内的产品信息与 `ApiKeyPrefix` 定义
 
@@ -194,13 +194,7 @@ pnpm exec prisma migrate deploy --config prisma.vector.config.ts
 pnpm prisma:generate
 ```
 
-7. 如有 seed（演示账号/默认数据），统一改为 Anyhunt 语义并重新执行（默认建议不跑，保持 DB 干净）：
-
-```bash
-pnpm exec prisma db seed
-```
-
-> 说明：本仓库 server 已维护 `prisma:generate`/`prisma db seed` 入口；以它们为准，避免漏掉双库 client。
+7. 初始管理员账号：通过 `ADMIN_EMAIL`/`ADMIN_PASSWORD` 在服务启动时自动 bootstrap（无需 seed）。
 
 ## 6. 运行与验证
 

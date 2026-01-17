@@ -106,6 +106,77 @@ async function ensureBootstrapAdmin(prisma: PrismaService, logger: Logger) {
   logger.log(`✅ Admin bootstrap ready: ${adminEmail}`);
 }
 
+async function ensureDemoPlaygroundUser(prisma: PrismaService, logger: Logger) {
+  const demoUserId = 'demo-playground-user';
+  const demoEmail = 'demo@anyhunt.app';
+
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email: demoEmail },
+    select: { id: true },
+  });
+
+  if (existingByEmail && existingByEmail.id !== demoUserId) {
+    throw new Error(
+      `Demo user email ${demoEmail} is already used by another user (${existingByEmail.id})`,
+    );
+  }
+
+  await prisma.user.upsert({
+    where: { id: demoUserId },
+    update: { email: demoEmail, name: 'Demo Playground', emailVerified: true },
+    create: {
+      id: demoUserId,
+      email: demoEmail,
+      name: 'Demo Playground',
+      emailVerified: true,
+      isAdmin: false,
+    },
+  });
+
+  const now = new Date();
+  const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  await prisma.subscription.upsert({
+    where: { userId: demoUserId },
+    update: {
+      tier: 'FREE',
+      status: 'ACTIVE',
+      currentPeriodStart: now,
+      currentPeriodEnd: thirtyDaysLater,
+      cancelAtPeriodEnd: false,
+    },
+    create: {
+      userId: demoUserId,
+      tier: 'FREE',
+      status: 'ACTIVE',
+      currentPeriodStart: now,
+      currentPeriodEnd: thirtyDaysLater,
+      cancelAtPeriodEnd: false,
+    },
+  });
+
+  await prisma.quota.upsert({
+    where: { userId: demoUserId },
+    update: {
+      monthlyLimit: 999999,
+      monthlyUsed: 0,
+      periodStartAt: now,
+      periodEndAt: thirtyDaysLater,
+      purchasedQuota: 0,
+    },
+    create: {
+      userId: demoUserId,
+      monthlyLimit: 999999,
+      monthlyUsed: 0,
+      periodStartAt: now,
+      periodEndAt: thirtyDaysLater,
+      purchasedQuota: 0,
+    },
+  });
+
+  logger.log(`✅ Demo playground user ready: ${demoUserId}`);
+}
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
@@ -216,6 +287,7 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   await ensureBootstrapAdmin(app.get(PrismaService), logger);
+  await ensureDemoPlaygroundUser(app.get(PrismaService), logger);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

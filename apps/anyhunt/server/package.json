@@ -117,8 +117,5 @@
     "typescript-eslint": "^8.20.0",
     "unplugin-swc": "^1.5.9",
     "vitest": "^4.0.15"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

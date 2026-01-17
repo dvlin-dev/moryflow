@@ -26,7 +26,7 @@ const VERIFIED_IP_PREFIX = 'demo:verified:';
 /** 已验证状态有效期（秒） */
 const VERIFIED_TTL = 3600; // 1 小时
 
-/** Demo 用户 ID（与 seed.ts 中的 demo 用户保持一致） */
+/** Demo 用户 ID（启动时 bootstrap 自动创建） */
 const DEMO_USER_ID = 'demo-playground-user';
 
 /**
