@@ -197,7 +197,18 @@ describe('BatchScrapeService', () => {
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue({
-          deduct: { source: 'credits', transactionId: 'tx-1' },
+          deduct: {
+            success: true,
+            breakdown: [
+              {
+                source: 'MONTHLY',
+                amount: 2,
+                transactionId: 'tx-1',
+                balanceBefore: 100,
+                balanceAfter: 98,
+              },
+            ],
+          },
           amount: 2,
         });
         mockQueue.add.mockResolvedValue({});
@@ -218,9 +229,18 @@ describe('BatchScrapeService', () => {
           where: { id: 'batch-1' },
           data: {
             quotaDeducted: true,
-            quotaSource: 'credits',
+            quotaSource: 'MONTHLY',
             quotaAmount: 2,
             quotaTransactionId: 'tx-1',
+            quotaBreakdown: [
+              {
+                source: 'MONTHLY',
+                amount: 2,
+                transactionId: 'tx-1',
+                balanceBefore: 100,
+                balanceAfter: 98,
+              },
+            ],
             billingKey: 'fetchx.batchScrape',
           },
         });
@@ -231,7 +251,18 @@ describe('BatchScrapeService', () => {
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue({
-          deduct: { source: 'credits', transactionId: 'tx-1' },
+          deduct: {
+            success: true,
+            breakdown: [
+              {
+                source: 'MONTHLY',
+                amount: 2,
+                transactionId: 'tx-1',
+                balanceBefore: 100,
+                balanceAfter: 98,
+              },
+            ],
+          },
           amount: 2,
         });
         mockQueue.add.mockRejectedValue(new Error('Queue error'));
@@ -249,8 +280,15 @@ describe('BatchScrapeService', () => {
           userId: 'user-1',
           billingKey: 'fetchx.batchScrape',
           referenceId: 'batch-1',
-          source: 'credits',
-          amount: 2,
+          breakdown: [
+            {
+              source: 'MONTHLY',
+              amount: 2,
+              transactionId: 'tx-1',
+              balanceBefore: 100,
+              balanceAfter: 98,
+            },
+          ],
         });
         expect(mockPrisma.batchScrapeJob.delete).toHaveBeenCalledWith({
           where: { id: 'batch-1' },

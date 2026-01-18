@@ -9,6 +9,8 @@ import type { SubscriptionTier } from '../types/tier.types';
 // ============ 套餐配额配置 ============
 
 export interface TierQuotaConfig {
+  /** 每日免费 Credits（UTC 天；当日有效，不累积） */
+  dailyCredits: number;
   /** 月度配额 */
   monthlyQuota: number;
   /** 最大分辨率宽度 */
@@ -36,7 +38,8 @@ export interface TierQuotaConfig {
 /** 各套餐配额配置 */
 export const TIER_QUOTA_CONFIGS: Record<SubscriptionTier, TierQuotaConfig> = {
   FREE: {
-    monthlyQuota: 100,
+    dailyCredits: 100,
+    monthlyQuota: 0,
     maxWidth: 1280,
     maxHeight: 800,
     maxDelay: 3000,
@@ -52,6 +55,7 @@ export const TIER_QUOTA_CONFIGS: Record<SubscriptionTier, TierQuotaConfig> = {
     },
   },
   BASIC: {
+    dailyCredits: 0,
     monthlyQuota: 5000,
     maxWidth: 2560,
     maxHeight: 1440,
@@ -68,6 +72,7 @@ export const TIER_QUOTA_CONFIGS: Record<SubscriptionTier, TierQuotaConfig> = {
     },
   },
   PRO: {
+    dailyCredits: 0,
     monthlyQuota: 20000,
     maxWidth: 3840,
     maxHeight: 2160,
@@ -84,6 +89,7 @@ export const TIER_QUOTA_CONFIGS: Record<SubscriptionTier, TierQuotaConfig> = {
     },
   },
   TEAM: {
+    dailyCredits: 0,
     monthlyQuota: 60000,
     maxWidth: 3840,
     maxHeight: 2160,
@@ -151,6 +157,10 @@ export function getMonthlyQuotaByTier(tier: SubscriptionTier): number {
  */
 export function getTierConfig(tier: SubscriptionTier): TierQuotaConfig {
   return TIER_QUOTA_CONFIGS[tier] ?? TIER_QUOTA_CONFIGS[DEFAULT_TIER];
+}
+
+export function getDailyCreditsByTier(tier: SubscriptionTier): number {
+  return getTierConfig(tier).dailyCredits;
 }
 
 /**

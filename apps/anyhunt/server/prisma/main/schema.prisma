@@ -143,6 +143,7 @@ enum QuotaTransactionType {
 }
 
 enum QuotaSource {
+  DAILY // 每日免费积分（FREE 用户）
   MONTHLY // 月度配额
   PURCHASED // 购买配额
 }
@@ -444,6 +445,7 @@ model ScrapeJob {
   quotaSource        QuotaSource?
   quotaAmount        Int?
   quotaTransactionId String?
+  quotaBreakdown     Json? // [{ source, amount, transactionId, balanceBefore, balanceAfter }]
   billingKey         String?
 
   createdAt   DateTime  @default(now())
@@ -489,6 +491,7 @@ model BatchScrapeJob {
   quotaSource        QuotaSource?
   quotaAmount        Int?
   quotaTransactionId String?
+  quotaBreakdown     Json? // [{ source, amount, transactionId, balanceBefore, balanceAfter }]
   billingKey         String?
 
   createdAt   DateTime  @default(now())
@@ -558,6 +561,7 @@ model CrawlJob {
   quotaSource        QuotaSource?
   quotaAmount        Int?
   quotaTransactionId String?
+  quotaBreakdown     Json? // [{ source, amount, transactionId, balanceBefore, balanceAfter }]
   billingKey         String?
 
   // 时间

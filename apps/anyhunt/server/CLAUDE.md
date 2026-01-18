@@ -23,6 +23,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
+- 失败退费必须基于 `deduct.breakdown`（按交易分解），异步任务需写入 `quotaBreakdown` 供 worker 退费
+- FREE 用户额度为“每日 100 Credits（UTC 天）”，`monthlyQuota=0`
 - 反代部署必须启用 `trust proxy`（Express）：否则 `req.protocol`/secure cookie/回调 URL 在反代下会被错误识别为 http
 - 管理员账号在启动期通过 `ADMIN_EMAIL`/`ADMIN_PASSWORD` bootstrap；密码哈希必须使用 `better-auth/crypto`（禁止用 bcrypt 写入，否则会触发 `Invalid password hash`）
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含

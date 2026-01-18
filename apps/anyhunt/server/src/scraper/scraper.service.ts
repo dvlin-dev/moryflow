@@ -117,13 +117,15 @@ export class ScraperService {
 
       // 5. 记录扣费信息（用于失败退款）
       if (billing) {
+        const primary = billing.deduct.breakdown[0] ?? null;
         await this.prisma.scrapeJob.update({
           where: { id: job.id },
           data: {
             quotaDeducted: true,
-            quotaSource: billing.deduct.source,
+            quotaSource: primary?.source ?? null,
             quotaAmount: billing.amount,
-            quotaTransactionId: billing.deduct.transactionId,
+            quotaTransactionId: primary?.transactionId ?? null,
+            quotaBreakdown: billing.deduct.breakdown as Prisma.InputJsonValue,
             billingKey,
           },
         });
@@ -163,8 +165,7 @@ export class ScraperService {
           userId,
           billingKey,
           referenceId: job.id,
-          source: billing.deduct.source,
-          amount: billing.amount,
+          breakdown: billing.deduct.breakdown,
         });
       }
 

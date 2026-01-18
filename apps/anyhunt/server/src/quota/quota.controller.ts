@@ -28,6 +28,12 @@ export class QuotaController {
     const status = await this.quotaService.getStatus(apiKey.userId);
 
     return {
+      daily: {
+        limit: status.daily.limit,
+        used: status.daily.used,
+        remaining: status.daily.remaining,
+        resetsAt: status.daily.resetsAt.toISOString(),
+      },
       monthly: {
         limit: status.monthly.limit,
         used: status.monthly.used,

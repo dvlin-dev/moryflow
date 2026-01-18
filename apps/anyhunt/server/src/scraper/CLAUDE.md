@@ -22,6 +22,7 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 - 触发实际抓取前必须先扣费（通过 `BillingService` + `@BillingKey(...)`）
 - Browser pool concurrency limits apply
 - Cache hits don't consume quota
+- 异步任务失败退费依赖 `ScrapeJob.quotaBreakdown`（按扣费交易分解，幂等）
 
 ## 同步/异步模式
 

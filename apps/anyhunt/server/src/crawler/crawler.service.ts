@@ -93,13 +93,15 @@ export class CrawlerService {
       });
 
       if (billing) {
+        const primary = billing.deduct.breakdown[0] ?? null;
         await this.prisma.crawlJob.update({
           where: { id: job.id },
           data: {
             quotaDeducted: true,
-            quotaSource: billing.deduct.source,
+            quotaSource: primary?.source ?? null,
             quotaAmount: billing.amount,
-            quotaTransactionId: billing.deduct.transactionId,
+            quotaTransactionId: primary?.transactionId ?? null,
+            quotaBreakdown: billing.deduct.breakdown as Prisma.InputJsonValue,
             billingKey,
           },
         });
@@ -118,8 +120,7 @@ export class CrawlerService {
           userId,
           billingKey,
           referenceId: job.id,
-          source: billing.deduct.source,
-          amount: billing.amount,
+          breakdown: billing.deduct.breakdown,
         });
       }
 

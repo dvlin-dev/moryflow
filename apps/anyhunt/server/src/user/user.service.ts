@@ -17,6 +17,7 @@ import type {
   Quota,
 } from '../../generated/prisma-main/client';
 import type { SubscriptionTier } from '../types';
+import { QuotaService } from '../quota/quota.service';
 import type {
   DeleteAccountDto,
   UpdateProfileDto,
@@ -31,7 +32,10 @@ type UserWithRelations = User & {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly quotaService: QuotaService,
+  ) {}
 
   /**
    * 格式化用户资料响应
@@ -43,16 +47,33 @@ export class UserService {
       name: user.name,
       tier: (user.subscription?.tier ?? 'FREE') as SubscriptionTier,
       isAdmin: user.isAdmin,
-      quota: user.quota
-        ? {
-            monthlyLimit: user.quota.monthlyLimit,
-            monthlyUsed: user.quota.monthlyUsed,
-            monthlyRemaining: user.quota.monthlyLimit - user.quota.monthlyUsed,
-            purchasedQuota: user.quota.purchasedQuota,
-            periodEndAt: user.quota.periodEndAt,
-          }
-        : null,
       createdAt: user.createdAt,
+    };
+  }
+
+  /**
+   * 构建带 quota 的用户资料（SRP：统一 quota 组装）
+   */
+  private async buildProfileWithQuota(user: UserWithRelations) {
+    const tier = (user.subscription?.tier ?? 'FREE') as SubscriptionTier;
+    await this.quotaService.ensureExists(user.id, tier);
+    const quota = await this.quotaService.getStatus(user.id);
+
+    return {
+      ...this.formatUserProfile(user),
+      quota: {
+        dailyLimit: quota.daily.limit,
+        dailyUsed: quota.daily.used,
+        dailyRemaining: quota.daily.remaining,
+        dailyResetsAt: quota.daily.resetsAt,
+        monthlyLimit: quota.monthly.limit,
+        monthlyUsed: quota.monthly.used,
+        monthlyRemaining: quota.monthly.remaining,
+        purchasedQuota: quota.purchased,
+        periodStartsAt: quota.periodStartsAt,
+        periodEndAt: quota.periodEndsAt,
+        totalRemaining: quota.totalRemaining,
+      },
     };
   }
 
@@ -72,7 +93,7 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return this.formatUserProfile(user);
+    return this.buildProfileWithQuota(user);
   }
 
   /**
@@ -88,7 +109,7 @@ export class UserService {
       },
     });
 
-    return this.formatUserProfile(user);
+    return this.buildProfileWithQuota(user);
   }
 
   /**

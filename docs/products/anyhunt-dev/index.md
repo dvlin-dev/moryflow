@@ -27,6 +27,7 @@ status: active
 - 首页 Reader 三栏布局设计（已实现）：`docs/products/anyhunt-dev/features/homepage-reader-redesign.md`
 - 首页 Discover 增强（已实现）：`docs/products/anyhunt-dev/features/homepage-redesign.md`
 - Reader 顶部导航 + Explore Topics 专用页（已实现）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
+- 免费用户每日赠送 100 Credits（方案）：`docs/products/anyhunt-dev/features/daily-free-credits.md`
 - www：Reader 与 Developer 双模块布局方案（提案）：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
 - www Reader SRP 与 Props 收敛重构计划（提案）：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
 

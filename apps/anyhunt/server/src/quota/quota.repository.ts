@@ -13,12 +13,21 @@ import type {
   Prisma,
 } from '../../generated/prisma-main/client';
 import { calculatePeriodEnd, DEFAULT_MONTHLY_QUOTA } from './quota.constants';
+import type { SubscriptionTier } from '../types/tier.types';
 
 @Injectable()
 export class QuotaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   // ============ 查询操作 ============
+
+  async getUserTier(userId: string): Promise<SubscriptionTier> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+      select: { tier: true },
+    });
+    return (subscription?.tier ?? 'FREE') as SubscriptionTier;
+  }
 
   /**
    * 根据用户 ID 查询配额记录
@@ -211,10 +220,12 @@ export class QuotaRepository {
         balanceBefore = current.monthlyLimit - current.monthlyUsed;
         balanceAfter = balanceBefore + amount;
         updateData = { monthlyUsed: { decrement: amount } };
-      } else {
+      } else if (source === 'PURCHASED') {
         balanceBefore = current.purchasedQuota;
         balanceAfter = balanceBefore + amount;
         updateData = { purchasedQuota: { increment: amount } };
+      } else {
+        throw new Error(`Unsupported refund source: ${source}`);
       }
 
       const quota = await tx.quota.update({
@@ -325,5 +336,42 @@ export class QuotaRepository {
 
       return { quota, transaction };
     });
+  }
+
+  async createTransaction(params: {
+    userId: string;
+    type: 'DEDUCT' | 'REFUND' | 'PURCHASE' | 'RESET' | 'ADMIN_GRANT';
+    source: QuotaSource;
+    amount: number;
+    balanceBefore: number;
+    balanceAfter: number;
+    reason?: string;
+    actorUserId?: string | null;
+  }): Promise<QuotaTransaction> {
+    const {
+      userId,
+      type,
+      source,
+      amount,
+      balanceBefore,
+      balanceAfter,
+      reason,
+    } = params;
+    return this.prisma.quotaTransaction.create({
+      data: {
+        userId,
+        actorUserId: params.actorUserId ?? undefined,
+        type,
+        source,
+        amount,
+        balanceBefore,
+        balanceAfter,
+        reason,
+      },
+    });
+  }
+
+  async findTransactionById(id: string): Promise<QuotaTransaction | null> {
+    return this.prisma.quotaTransaction.findUnique({ where: { id } });
   }
 }

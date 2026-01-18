@@ -4,7 +4,7 @@
 
 ## Overview
 
-Quota management system for tracking and limiting API usage. Handles monthly subscription quotas and pay-as-you-go credits.
+Quota management system for tracking and limiting API usage. Handles daily free credits (FREE), monthly subscription quotas, and pay-as-you-go credits.
 
 ## Responsibilities
 
@@ -12,27 +12,30 @@ Quota management system for tracking and limiting API usage. Handles monthly sub
 - Deduct quota before API operations
 - Refund quota on operation failure
 - Handle monthly quota reset
+- Track daily free credits (UTC day)
 - Manage pay-as-you-go credits
 
 ## Constraints
 
-- Deduction order: Monthly quota first, then pay-as-you-go
+- Deduction order: Daily (FREE) → Monthly → Pay-as-you-go
 - Pre-deduct on request, refund on failure
 - Cache hits don't consume quota
 - Thread-safe operations via Redis
 
 ## File Structure
 
-| File                      | Type       | Description                                   |
-| ------------------------- | ---------- | --------------------------------------------- |
-| `quota.service.ts`        | Service    | Core quota operations (deduct, refund, check) |
-| `quota.controller.ts`     | Controller | Console API for quota status                  |
-| `quota.repository.ts`     | Repository | Database operations                           |
-| `quota.module.ts`         | Module     | NestJS module definition                      |
-| `quota.constants.ts`      | Constants  | Tier limits, reset schedules                  |
-| `quota.errors.ts`         | Errors     | QuotaExceededError, etc.                      |
-| `quota.types.ts`          | Types      | QuotaStatus, DeductResult types               |
-| `dto/quota-status.dto.ts` | DTO        | Response schemas                              |
+| File                       | Type       | Description                                   |
+| -------------------------- | ---------- | --------------------------------------------- |
+| `quota.service.ts`         | Service    | Core quota operations (deduct, refund, check) |
+| `quota.controller.ts`      | Controller | Console API for quota status                  |
+| `quota.repository.ts`      | Repository | Database operations                           |
+| `quota.module.ts`          | Module     | NestJS module definition                      |
+| `quota.constants.ts`       | Constants  | Tier limits, reset schedules                  |
+| `quota.errors.ts`          | Errors     | QuotaExceededError, etc.                      |
+| `quota.types.ts`           | Types      | QuotaStatus, DeductResult types               |
+| `dto/quota-status.dto.ts`  | DTO        | Response schemas                              |
+| `daily-credits.service.ts` | Service    | Daily credits ledger (Redis + Lua)            |
+| `daily-credits.utils.ts`   | Utils      | UTC day helpers                               |
 
 ## Quota Flow
 
@@ -41,7 +44,7 @@ API Request
     ↓
 Check Quota → Insufficient? → Return QUOTA_EXCEEDED
     ↓
-Deduct Quota (monthly first, then payg)
+Deduct Quota (daily → monthly → payg)
     ↓
 Execute Operation
     ↓
@@ -52,12 +55,12 @@ Failure? → Refund Quota
 
 ## Tier Limits
 
-| Tier  | Monthly Quota | Concurrency |
-| ----- | ------------- | ----------- |
-| FREE  | 100           | 2           |
-| BASIC | 5,000         | 5           |
-| PRO   | 20,000        | 10          |
-| TEAM  | 60,000        | 20          |
+| Tier  | Daily Credits | Monthly Quota | Concurrency |
+| ----- | ------------- | ------------- | ----------- |
+| FREE  | 100           | 0             | 2           |
+| BASIC | 0             | 5,000         | 5           |
+| PRO   | 0             | 20,000        | 10          |
+| TEAM  | 0             | 60,000        | 20          |
 
 ## Common Modification Scenarios
 
@@ -78,12 +81,15 @@ await quotaService.hasQuota(userId, amount);
 const result = await quotaService.deductOrThrow(userId, amount, reason);
 
 // Refund on failure
-await quotaService.refund({
-  userId,
-  referenceId: reason, // 幂等性 key（不再使用 screenshotId）
-  source: result.source,
-  amount,
-});
+for (const item of result.breakdown) {
+  await quotaService.refund({
+    userId,
+    referenceId: `refund:${item.transactionId}`, // 幂等性 key
+    deductTransactionId: item.transactionId, // DAILY 用于定位 UTC 天
+    source: item.source,
+    amount: item.amount,
+  });
+}
 
 // Get current status
 const status = await quotaService.getStatus(userId);

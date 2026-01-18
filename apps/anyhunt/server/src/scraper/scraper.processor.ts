@@ -30,6 +30,7 @@ import type { ScrapeOptions, ScrapeFormat } from './dto/scrape.dto';
 import type { ScrapeJobData } from './scraper.types';
 import { BillingService } from '../billing/billing.service';
 import { BILLING_KEYS, type BillingKey } from '../billing/billing.rules';
+import { parseQuotaBreakdown } from '../billing/quota-breakdown.utils';
 
 const BILLING_KEY_SET = new Set<string>(BILLING_KEYS);
 
@@ -261,8 +262,7 @@ export class ScraperProcessor extends WorkerHost {
       select: {
         userId: true,
         quotaDeducted: true,
-        quotaSource: true,
-        quotaAmount: true,
+        quotaBreakdown: true,
         billingKey: true,
       },
     });
@@ -277,20 +277,19 @@ export class ScraperProcessor extends WorkerHost {
       },
     });
 
+    const breakdown = parseQuotaBreakdown(billing?.quotaBreakdown);
+
     if (
       billing?.quotaDeducted &&
-      billing.quotaSource &&
-      billing.quotaAmount &&
+      breakdown &&
       billing.billingKey &&
       BILLING_KEY_SET.has(billing.billingKey)
     ) {
-      const billingKey = billing.billingKey as BillingKey;
       await this.billingService.refundOnFailure({
         userId: billing.userId,
-        billingKey,
+        billingKey: billing.billingKey as BillingKey,
         referenceId: jobId,
-        source: billing.quotaSource,
-        amount: billing.quotaAmount,
+        breakdown,
       });
     }
   }

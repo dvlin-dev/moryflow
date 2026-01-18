@@ -56,6 +56,15 @@ describe('QuotaService (Integration)', () => {
     // 清理测试数据
     await prisma.quotaTransaction.deleteMany({ where: { userId: testUserId } });
     await prisma.quota.deleteMany({ where: { userId: testUserId } });
+    await prisma.subscription.deleteMany({ where: { userId: testUserId } });
+    await prisma.user.deleteMany({ where: { id: testUserId } });
+
+    await prisma.user.create({
+      data: {
+        id: testUserId,
+        email: `${testUserId}@anyhunt.app`,
+      },
+    });
 
     // 清理 Redis
     await redis.del(`cc:${testUserId}`);
@@ -70,13 +79,15 @@ describe('QuotaService (Integration)', () => {
 
       const status = await service.getStatus(testUserId);
 
-      expect(status.monthly.limit).toBe(100); // FREE tier
+      expect(status.daily.limit).toBe(100); // FREE tier daily credits
+      expect(status.daily.remaining).toBe(100);
+      expect(status.monthly.limit).toBe(0); // FREE monthly quota
       expect(status.monthly.used).toBe(0);
       expect(status.purchased).toBe(0);
       expect(status.totalRemaining).toBe(100);
     });
 
-    it('should deduct from monthly quota', async () => {
+    it('should deduct from daily credits for FREE user', async () => {
       await service.ensureExists(testUserId, 'FREE');
 
       const result = await service.deductOrThrow(
@@ -85,29 +96,34 @@ describe('QuotaService (Integration)', () => {
         'test_screenshot_1',
       );
 
-      expect(result.source).toBe('MONTHLY');
-      expect(result.transactionId).toBeDefined();
+      expect(result.breakdown[0]?.source).toBe('DAILY');
+      expect(result.breakdown[0]?.transactionId).toBeDefined();
 
       const status = await service.getStatus(testUserId);
-      expect(status.monthly.used).toBe(1);
+      expect(status.daily.used).toBe(1);
       expect(status.totalRemaining).toBe(99);
     });
 
     it('should refund quota correctly', async () => {
       await service.ensureExists(testUserId, 'FREE');
-      await service.deductOrThrow(testUserId, 1, 'test_screenshot_2');
+      const deduct = await service.deductOrThrow(
+        testUserId,
+        1,
+        'test_screenshot_2',
+      );
 
       const refundResult = await service.refund({
         userId: testUserId,
-        referenceId: 'test_screenshot_2',
-        source: 'MONTHLY',
+        referenceId: 'test_screenshot_2_refund',
+        deductTransactionId: deduct.breakdown[0]?.transactionId,
+        source: 'DAILY',
         amount: 1,
       });
 
       expect(refundResult.success).toBe(true);
 
       const status = await service.getStatus(testUserId);
-      expect(status.monthly.used).toBe(0);
+      expect(status.daily.used).toBe(0);
       expect(status.totalRemaining).toBe(100);
     });
   });
@@ -116,6 +132,9 @@ describe('QuotaService (Integration)', () => {
 
   describe('deduction logic', () => {
     it('should exhaust monthly quota then use purchased', async () => {
+      await prisma.subscription.create({
+        data: { userId: testUserId, tier: 'BASIC' },
+      });
       // 创建只有 2 个月度配额的用户
       await prisma.quota.create({
         data: {
@@ -130,15 +149,15 @@ describe('QuotaService (Integration)', () => {
 
       // 扣减第一个（月度）
       const result1 = await service.deductOrThrow(testUserId, 1, 'ss_1');
-      expect(result1.source).toBe('MONTHLY');
+      expect(result1.breakdown[0]?.source).toBe('MONTHLY');
 
       // 扣减第二个（月度）
       const result2 = await service.deductOrThrow(testUserId, 1, 'ss_2');
-      expect(result2.source).toBe('MONTHLY');
+      expect(result2.breakdown[0]?.source).toBe('MONTHLY');
 
       // 扣减第三个（购买配额）
       const result3 = await service.deductOrThrow(testUserId, 1, 'ss_3');
-      expect(result3.source).toBe('PURCHASED');
+      expect(result3.breakdown[0]?.source).toBe('PURCHASED');
 
       const status = await service.getStatus(testUserId);
       expect(status.monthly.used).toBe(2);
@@ -146,6 +165,9 @@ describe('QuotaService (Integration)', () => {
     });
 
     it('should throw QuotaExceededError when exhausted', async () => {
+      await prisma.subscription.create({
+        data: { userId: testUserId, tier: 'BASIC' },
+      });
       await prisma.quota.create({
         data: {
           userId: testUserId,
@@ -167,7 +189,10 @@ describe('QuotaService (Integration)', () => {
 
   describe('idempotency', () => {
     it('should prevent duplicate refund', async () => {
-      await service.ensureExists(testUserId, 'FREE');
+      await prisma.subscription.create({
+        data: { userId: testUserId, tier: 'BASIC' },
+      });
+      await service.ensureExists(testUserId, 'BASIC');
       await service.deductOrThrow(testUserId, 1, 'ss_dup');
 
       // 第一次返还成功
@@ -228,6 +253,9 @@ describe('QuotaService (Integration)', () => {
 
   describe('period reset', () => {
     it('should reset quota when period expires', async () => {
+      await prisma.subscription.create({
+        data: { userId: testUserId, tier: 'BASIC' },
+      });
       // 创建一个已过期的配额
       await prisma.quota.create({
         data: {
@@ -252,6 +280,9 @@ describe('QuotaService (Integration)', () => {
 
   describe('transaction consistency', () => {
     it('should maintain consistency during concurrent deductions', async () => {
+      await prisma.subscription.create({
+        data: { userId: testUserId, tier: 'BASIC' },
+      });
       await prisma.quota.create({
         data: {
           userId: testUserId,

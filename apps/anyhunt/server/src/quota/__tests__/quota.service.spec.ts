@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { QuotaService } from '../quota.service';
 import type { QuotaRepository } from '../quota.repository';
 import type { RedisService } from '../../redis/redis.service';
+import type { DailyCreditsService } from '../daily-credits.service';
 import {
   QuotaExceededError,
   QuotaNotFoundError,
@@ -20,6 +21,7 @@ describe('QuotaService', () => {
   let service: QuotaService;
   let mockRepository: {
     findByUserId: Mock;
+    getUserTier: Mock;
     exists: Mock;
     create: Mock;
     deductMonthlyInTransaction: Mock;
@@ -29,11 +31,18 @@ describe('QuotaService', () => {
     resetPeriodInTransaction: Mock;
     addPurchasedInTransaction: Mock;
     updateMonthlyLimit: Mock;
+    createTransaction: Mock;
+    findTransactionById: Mock;
   };
   let mockRedis: {
     incrementConcurrent: Mock;
     decrementConcurrent: Mock;
     checkRateLimit: Mock;
+  };
+  let mockDailyCredits: {
+    getStatus: Mock;
+    consume: Mock;
+    refund: Mock;
   };
 
   // 创建一个未过期的配额记录
@@ -58,6 +67,7 @@ describe('QuotaService', () => {
   beforeEach(() => {
     mockRepository = {
       findByUserId: vi.fn(),
+      getUserTier: vi.fn(),
       exists: vi.fn(),
       create: vi.fn(),
       deductMonthlyInTransaction: vi.fn(),
@@ -67,15 +77,32 @@ describe('QuotaService', () => {
       resetPeriodInTransaction: vi.fn(),
       addPurchasedInTransaction: vi.fn(),
       updateMonthlyLimit: vi.fn(),
+      createTransaction: vi.fn(),
+      findTransactionById: vi.fn(),
     };
     mockRedis = {
       incrementConcurrent: vi.fn(),
       decrementConcurrent: vi.fn(),
       checkRateLimit: vi.fn(),
     };
+    mockDailyCredits = {
+      getStatus: vi.fn(),
+      consume: vi.fn(),
+      refund: vi.fn(),
+    };
+
+    mockRepository.getUserTier.mockResolvedValue('BASIC');
+    mockDailyCredits.getStatus.mockResolvedValue({
+      limit: 0,
+      used: 0,
+      remaining: 0,
+      resetsAt: new Date(),
+    });
+
     service = new QuotaService(
       mockRepository as unknown as QuotaRepository,
       mockRedis as unknown as RedisService,
+      mockDailyCredits as unknown as DailyCreditsService,
     );
   });
 
@@ -84,10 +111,18 @@ describe('QuotaService', () => {
   describe('getStatus', () => {
     it('should return quota status when quota exists', async () => {
       const quota = createValidQuota();
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(quota);
 
       const result = await service.getStatus('user_1');
 
+      expect(result.daily.limit).toBe(0);
       expect(result.monthly.limit).toBe(1000);
       expect(result.monthly.used).toBe(100);
       expect(result.monthly.remaining).toBe(900);
@@ -96,6 +131,13 @@ describe('QuotaService', () => {
     });
 
     it('should throw QuotaNotFoundError when quota not exists', async () => {
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(null);
 
       await expect(service.getStatus('nonexistent')).rejects.toThrow(
@@ -120,6 +162,13 @@ describe('QuotaService', () => {
         transaction: { id: 'tx_1' },
         previousUsed: 500,
       });
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
 
       const result = await service.getStatus('user_1');
 
@@ -134,6 +183,13 @@ describe('QuotaService', () => {
 
   describe('checkAvailable', () => {
     it('should return true when quota is sufficient', async () => {
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(createValidQuota());
 
       const result = await service.checkAvailable('user_1', 100);
@@ -142,6 +198,13 @@ describe('QuotaService', () => {
     });
 
     it('should return false when quota is insufficient', async () => {
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(
         createValidQuota({
           monthlyLimit: 100,
@@ -160,6 +223,13 @@ describe('QuotaService', () => {
 
   describe('deduct', () => {
     it('should deduct from monthly quota when sufficient', async () => {
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(createValidQuota());
       mockRepository.deductMonthlyInTransaction.mockResolvedValue({
         quota: createValidQuota({ monthlyUsed: 101 }),
@@ -170,7 +240,7 @@ describe('QuotaService', () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.source).toBe('MONTHLY');
+        expect(result.breakdown[0]?.source).toBe('MONTHLY');
       }
       expect(mockRepository.deductMonthlyInTransaction).toHaveBeenCalledWith(
         'user_1',
@@ -180,6 +250,13 @@ describe('QuotaService', () => {
     });
 
     it('should deduct from purchased quota when monthly exhausted', async () => {
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(
         createValidQuota({
           monthlyLimit: 100,
@@ -196,12 +273,19 @@ describe('QuotaService', () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.source).toBe('PURCHASED');
+        expect(result.breakdown[0]?.source).toBe('PURCHASED');
       }
       expect(mockRepository.deductPurchasedInTransaction).toHaveBeenCalled();
     });
 
     it('should return failure when all quota exhausted', async () => {
+      mockRepository.getUserTier.mockResolvedValue('BASIC');
+      mockDailyCredits.getStatus.mockResolvedValue({
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date(),
+      });
       mockRepository.findByUserId.mockResolvedValue(
         createValidQuota({
           monthlyLimit: 100,
@@ -256,8 +340,8 @@ describe('QuotaService', () => {
 
       const result = await service.deductOrThrow('user_1', 1);
 
-      expect(result.source).toBe('MONTHLY');
-      expect(result.transactionId).toBe('tx_1');
+      expect(result.breakdown[0]?.source).toBe('MONTHLY');
+      expect(result.breakdown[0]?.transactionId).toBe('tx_1');
     });
 
     it('should throw QuotaExceededError when insufficient', async () => {
@@ -399,8 +483,8 @@ describe('QuotaService', () => {
 
       await service.ensureExists('new_user');
 
-      // FREE tier has 100 monthly quota
-      expect(mockRepository.create).toHaveBeenCalledWith('new_user', 100);
+      // FREE tier monthly quota is 0 (daily credits handled separately)
+      expect(mockRepository.create).toHaveBeenCalledWith('new_user', 0);
     });
   });
 

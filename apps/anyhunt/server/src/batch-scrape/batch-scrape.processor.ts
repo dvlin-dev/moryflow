@@ -15,6 +15,7 @@ import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
 import { BillingService } from '../billing/billing.service';
 import { BILLING_KEYS, type BillingKey } from '../billing/billing.rules';
+import { parseQuotaBreakdown } from '../billing/quota-breakdown.utils';
 import { BATCH_SCRAPE_QUEUE } from '../queue/queue.constants';
 import type { BatchScrapeJobData } from './batch-scrape.types';
 
@@ -96,11 +97,12 @@ export class BatchScrapeProcessor extends WorkerHost {
     });
 
     // 全失败：失败退款（幂等）
+    const breakdown = parseQuotaBreakdown(updatedBatch.quotaBreakdown);
+
     if (
       updatedBatch.status === 'FAILED' &&
       updatedBatch.quotaDeducted &&
-      updatedBatch.quotaSource &&
-      updatedBatch.quotaAmount &&
+      breakdown &&
       updatedBatch.billingKey &&
       BILLING_KEY_SET.has(updatedBatch.billingKey)
     ) {
@@ -108,8 +110,7 @@ export class BatchScrapeProcessor extends WorkerHost {
         userId: updatedBatch.userId,
         billingKey: updatedBatch.billingKey as BillingKey,
         referenceId: updatedBatch.id,
-        source: updatedBatch.quotaSource,
-        amount: updatedBatch.quotaAmount,
+        breakdown,
       });
     }
 

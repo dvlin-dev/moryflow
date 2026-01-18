@@ -10,7 +10,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { getBillingRule, type BillingKey } from './billing.rules';
 import { QuotaService } from '../quota/quota.service';
 import type { DeductResult, RefundResult } from '../quota/quota.types';
-import type { QuotaSource } from '../../generated/prisma-main/client';
 import { DuplicateRefundError } from '../quota/quota.errors';
 
 export interface BillingDeductParams {
@@ -25,8 +24,7 @@ export interface BillingRefundParams {
   userId: string;
   billingKey: BillingKey;
   referenceId: string;
-  source: QuotaSource;
-  amount: number;
+  breakdown: DeductResult['breakdown'];
 }
 
 @Injectable()
@@ -72,28 +70,39 @@ export class BillingService {
    * - 幂等性：`${billingKey}:${referenceId}`
    */
   async refundOnFailure(params: BillingRefundParams): Promise<RefundResult> {
-    const { userId, billingKey, referenceId, source, amount } = params;
+    const { userId, billingKey, referenceId, breakdown } = params;
     const rule = getBillingRule(billingKey);
 
-    if (!rule.refundOnFailure || amount <= 0) {
+    if (!rule.refundOnFailure || breakdown.length === 0) {
       return { success: true };
     }
 
-    try {
-      return await this.quotaService.refund({
-        userId,
-        referenceId: `${billingKey}:${referenceId}`,
-        source,
-        amount,
-      });
-    } catch (error) {
-      if (error instanceof DuplicateRefundError) {
-        return { success: true };
+    let allSuccess = true;
+    for (const item of breakdown) {
+      if (!item.amount || item.amount <= 0) continue;
+
+      try {
+        const result = await this.quotaService.refund({
+          userId,
+          referenceId: `refund:${item.transactionId}`,
+          deductTransactionId: item.transactionId,
+          source: item.source,
+          amount: item.amount,
+        });
+        if (!result.success) {
+          allSuccess = false;
+        }
+      } catch (error) {
+        if (error instanceof DuplicateRefundError) {
+          continue;
+        }
+        allSuccess = false;
+        this.logger.warn(
+          `退费失败: billingKey=${billingKey}, referenceId=${referenceId}, error=${error instanceof Error ? error.message : String(error)}`,
+        );
       }
-      this.logger.warn(
-        `退费失败: billingKey=${billingKey}, referenceId=${referenceId}, error=${error instanceof Error ? error.message : String(error)}`,
-      );
-      return { success: false };
     }
+
+    return { success: allSuccess };
   }
 }

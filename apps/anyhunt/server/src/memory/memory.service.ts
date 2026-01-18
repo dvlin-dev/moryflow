@@ -130,8 +130,7 @@ export class MemoryService {
           userId: platformUserId,
           billingKey,
           referenceId,
-          source: billing.deduct.source,
-          amount: billing.amount,
+          breakdown: billing.deduct.breakdown,
         });
       }
       throw error;
@@ -178,8 +177,7 @@ export class MemoryService {
           userId: platformUserId,
           billingKey,
           referenceId,
-          source: billing.deduct.source,
-          amount: billing.amount,
+          breakdown: billing.deduct.breakdown,
         });
       }
       throw error;

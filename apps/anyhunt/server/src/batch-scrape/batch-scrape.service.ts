@@ -90,13 +90,15 @@ export class BatchScrapeService {
       });
 
       if (billing) {
+        const primary = billing.deduct.breakdown[0] ?? null;
         await this.prisma.batchScrapeJob.update({
           where: { id: batch.id },
           data: {
             quotaDeducted: true,
-            quotaSource: billing.deduct.source,
+            quotaSource: primary?.source ?? null,
             quotaAmount: billing.amount,
-            quotaTransactionId: billing.deduct.transactionId,
+            quotaTransactionId: primary?.transactionId ?? null,
+            quotaBreakdown: billing.deduct.breakdown as Prisma.InputJsonValue,
             billingKey,
           },
         });
@@ -118,8 +120,7 @@ export class BatchScrapeService {
           userId,
           billingKey,
           referenceId: batch.id,
-          source: billing.deduct.source,
-          amount: billing.amount,
+          breakdown: billing.deduct.breakdown,
         });
       }
 

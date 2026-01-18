@@ -9,6 +9,7 @@ import { QuotaController } from './quota.controller';
 import { QuotaService } from './quota.service';
 import { QuotaRepository } from './quota.repository';
 import { ApiKeyModule } from '../api-key/api-key.module';
+import { DailyCreditsService } from './daily-credits.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { ApiKeyModule } from '../api-key/api-key.module';
     forwardRef(() => ApiKeyModule),
   ],
   controllers: [QuotaController],
-  providers: [QuotaService, QuotaRepository],
-  exports: [QuotaService, QuotaRepository],
+  providers: [QuotaService, QuotaRepository, DailyCreditsService],
+  exports: [QuotaService, QuotaRepository, DailyCreditsService],
 })
 export class QuotaModule {}

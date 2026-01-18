@@ -451,7 +451,7 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 - 默认参数（`searchLimit=60`, `scrapeLimit=20`）
 - 典型费用：1 search + 20 scrape = **21 credits/run**
-- FREE（100 credits/月）：约 **4-5 次/月**
+- FREE（100 credits/天，UTC 重置）：约 **4-5 次/天**
 - BASIC（5000 credits/月）：约 **238 次/月**
 
 ### 8.5 Topic 计费规则

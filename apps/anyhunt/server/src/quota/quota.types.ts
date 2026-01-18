@@ -10,6 +10,13 @@ import type { QuotaSource } from '../../generated/prisma-main/client';
 
 /** 配额状态查询结果 */
 export interface QuotaStatus {
+  /** 每日免费 Credits（UTC 天） */
+  daily: {
+    limit: number;
+    used: number;
+    remaining: number;
+    resetsAt: Date;
+  };
   /** 月度配额 */
   monthly: {
     limit: number;
@@ -31,14 +38,14 @@ export interface QuotaStatus {
 /** 预扣配额结果 */
 export interface DeductResult {
   success: true;
-  /** 扣减来源 */
-  source: QuotaSource;
-  /** 扣减前余额 */
-  balanceBefore: number;
-  /** 扣减后余额 */
-  balanceAfter: number;
-  /** 创建的交易记录 ID */
-  transactionId: string;
+  /** 本次扣减的明细（可跨多个 bucket；用于失败退费） */
+  breakdown: Array<{
+    source: QuotaSource;
+    amount: number;
+    transactionId: string;
+    balanceBefore: number;
+    balanceAfter: number;
+  }>;
 }
 
 /** 配额不足结果 */
@@ -58,6 +65,8 @@ export interface RefundParams {
   userId: string;
   /** 关联的业务引用 ID（用于幂等性退款） */
   referenceId: string;
+  /** 原始扣费交易 ID（daily credits 用于定位 UTC 天） */
+  deductTransactionId?: string;
   /** 原扣减来源 */
   source: QuotaSource;
   /** 返还数量 */

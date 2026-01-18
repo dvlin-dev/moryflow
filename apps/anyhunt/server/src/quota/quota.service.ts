@@ -21,6 +21,7 @@ import type {
   PeriodResetResult,
 } from './quota.types';
 import {
+  getDailyCreditsByTier,
   getMonthlyQuotaByTier,
   getTierConfig,
   DEFAULT_TIER,
@@ -35,6 +36,7 @@ import {
   ConcurrentLimitExceededError,
   RateLimitExceededError,
 } from './quota.errors';
+import { DailyCreditsService } from './daily-credits.service';
 
 @Injectable()
 export class QuotaService {
@@ -43,6 +45,7 @@ export class QuotaService {
   constructor(
     private readonly repository: QuotaRepository,
     private readonly redis: RedisService,
+    private readonly dailyCredits: DailyCreditsService,
   ) {}
 
   // ============ 查询操作 ============
@@ -55,6 +58,14 @@ export class QuotaService {
     // 先检查周期是否需要重置
     await this.checkAndResetPeriodIfNeeded(userId);
 
+    const tier = await this.repository.getUserTier(userId);
+    const dailyLimit = getDailyCreditsByTier(tier);
+    const dailyStatus = await this.dailyCredits.getStatus(
+      userId,
+      dailyLimit,
+      new Date(),
+    );
+
     const quota = await this.repository.findByUserId(userId);
     if (!quota) {
       throw new QuotaNotFoundError(userId);
@@ -66,13 +77,20 @@ export class QuotaService {
     );
 
     return {
+      daily: {
+        limit: dailyStatus.limit,
+        used: dailyStatus.used,
+        remaining: dailyStatus.remaining,
+        resetsAt: dailyStatus.resetsAt,
+      },
       monthly: {
         limit: quota.monthlyLimit,
         used: quota.monthlyUsed,
         remaining: monthlyRemaining,
       },
       purchased: quota.purchasedQuota,
-      totalRemaining: monthlyRemaining + quota.purchasedQuota,
+      totalRemaining:
+        dailyStatus.remaining + monthlyRemaining + quota.purchasedQuota,
       periodEndsAt: quota.periodEndAt,
       periodStartsAt: quota.periodStartAt,
     };
@@ -107,13 +125,23 @@ export class QuotaService {
     // 先检查周期是否需要重置
     await this.checkAndResetPeriodIfNeeded(userId);
 
+    const tier = await this.repository.getUserTier(userId);
+    const dailyLimit = getDailyCreditsByTier(tier);
+    const now = new Date();
+    const dailyStatus = await this.dailyCredits.getStatus(
+      userId,
+      dailyLimit,
+      now,
+    );
+
     const quota = await this.repository.findByUserId(userId);
     if (!quota) {
       throw new QuotaNotFoundError(userId);
     }
 
     const monthlyRemaining = quota.monthlyLimit - quota.monthlyUsed;
-    const totalAvailable = monthlyRemaining + quota.purchasedQuota;
+    const totalAvailable =
+      dailyStatus.remaining + monthlyRemaining + quota.purchasedQuota;
 
     // 配额不足
     if (totalAvailable < amount) {
@@ -124,46 +152,94 @@ export class QuotaService {
       };
     }
 
-    // 决定扣减来源
-    if (monthlyRemaining >= amount) {
-      // 从月度配额扣减
-      const result = await this.repository.deductMonthlyInTransaction(
+    let remaining = amount;
+    const breakdown: DeductResult['breakdown'] = [];
+
+    // 1) Daily credits（FREE）优先
+    if (dailyStatus.remaining > 0 && remaining > 0) {
+      const dailyToConsume = Math.min(dailyStatus.remaining, remaining);
+      const consumed = await this.dailyCredits.consume(
         userId,
-        amount,
-        reason,
+        dailyLimit,
+        dailyToConsume,
+        now,
       );
 
-      this.logger.debug(
-        `Deducted ${amount} from monthly quota for user ${userId}. Remaining: ${result.quota.monthlyLimit - result.quota.monthlyUsed}`,
-      );
+      if (consumed.consumed > 0) {
+        const tx = await this.repository.createTransaction({
+          userId,
+          type: 'DEDUCT',
+          source: 'DAILY',
+          amount: consumed.consumed,
+          balanceBefore: consumed.balanceBefore,
+          balanceAfter: consumed.balanceAfter,
+          reason,
+        });
 
+        breakdown.push({
+          source: 'DAILY',
+          amount: consumed.consumed,
+          transactionId: tx.id,
+          balanceBefore: consumed.balanceBefore,
+          balanceAfter: consumed.balanceAfter,
+        });
+
+        remaining -= consumed.consumed;
+      }
+    }
+
+    // 2) Monthly credits
+    if (remaining > 0 && monthlyRemaining > 0) {
+      const monthlyToConsume = Math.min(monthlyRemaining, remaining);
+      if (monthlyToConsume > 0) {
+        const result = await this.repository.deductMonthlyInTransaction(
+          userId,
+          monthlyToConsume,
+          reason,
+        );
+        breakdown.push({
+          source: 'MONTHLY',
+          amount: monthlyToConsume,
+          transactionId: result.transaction.id,
+          balanceBefore: result.transaction.balanceBefore,
+          balanceAfter: result.transaction.balanceAfter,
+        });
+        remaining -= monthlyToConsume;
+      }
+    }
+
+    // 3) Purchased credits
+    if (remaining > 0) {
+      const purchasedToConsume = Math.min(quota.purchasedQuota, remaining);
+      if (purchasedToConsume > 0) {
+        const result = await this.repository.deductPurchasedInTransaction(
+          userId,
+          purchasedToConsume,
+          reason,
+        );
+        breakdown.push({
+          source: 'PURCHASED',
+          amount: purchasedToConsume,
+          transactionId: result.transaction.id,
+          balanceBefore: result.transaction.balanceBefore,
+          balanceAfter: result.transaction.balanceAfter,
+        });
+        remaining -= purchasedToConsume;
+      }
+    }
+
+    if (remaining > 0) {
+      this.logger.warn(
+        `Deduct race detected: requested=${amount}, remaining=${remaining}, user=${userId}`,
+      );
       return {
-        success: true,
-        source: 'MONTHLY',
-        balanceBefore: result.transaction.balanceBefore,
-        balanceAfter: result.transaction.balanceAfter,
-        transactionId: result.transaction.id,
-      };
-    } else {
-      // 从购买配额扣减
-      const result = await this.repository.deductPurchasedInTransaction(
-        userId,
-        amount,
-        reason,
-      );
-
-      this.logger.debug(
-        `Deducted ${amount} from purchased quota for user ${userId}. Remaining: ${result.quota.purchasedQuota}`,
-      );
-
-      return {
-        success: true,
-        source: 'PURCHASED',
-        balanceBefore: result.transaction.balanceBefore,
-        balanceAfter: result.transaction.balanceAfter,
-        transactionId: result.transaction.id,
+        success: false,
+        available: totalAvailable - (amount - remaining),
+        required: amount,
       };
     }
+
+    return { success: true, breakdown };
   }
 
   /**
@@ -213,6 +289,50 @@ export class QuotaService {
     }
 
     try {
+      if (source === 'DAILY') {
+        const dailyLimit = getDailyCreditsByTier('FREE');
+        const deductTxId = params.deductTransactionId;
+        if (!deductTxId) {
+          throw new InvalidRefundError(
+            'deductTransactionId is required for DAILY',
+          );
+        }
+
+        const deductTx = await this.repository.findTransactionById(deductTxId);
+        if (!deductTx) {
+          throw new InvalidRefundError('Deduct transaction not found');
+        }
+
+        const refunded = await this.dailyCredits.refund(
+          userId,
+          dailyLimit,
+          amount,
+          deductTx.createdAt,
+          new Date(),
+        );
+
+        const refundTx = await this.repository.createTransaction({
+          userId,
+          type: 'REFUND',
+          source: 'DAILY',
+          amount: refunded.refunded,
+          balanceBefore: refunded.balanceBefore,
+          balanceAfter: refunded.balanceAfter,
+          reason: referenceId,
+        });
+
+        this.logger.log(
+          `Refunded ${refunded.refunded}/${amount} to DAILY credits for user ${userId}, reference ${referenceId}`,
+        );
+
+        return {
+          success: true,
+          transactionId: refundTx.id,
+          balanceBefore: refunded.balanceBefore,
+          balanceAfter: refunded.balanceAfter,
+        };
+      }
+
       const result = await this.repository.refundInTransaction(
         userId,
         amount,

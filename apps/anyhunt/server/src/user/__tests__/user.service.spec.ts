@@ -46,6 +46,10 @@ type MockPrismaService = {
 describe('UserService', () => {
   let service: UserService;
   let mockPrisma: MockPrismaService;
+  let mockQuotaService: {
+    ensureExists: Mock;
+    getStatus: Mock;
+  };
 
   const mockUser = {
     id: 'user-1',
@@ -91,7 +95,26 @@ describe('UserService', () => {
       $transaction: vi.fn(),
     };
 
-    service = new UserService(mockPrisma as any);
+    mockQuotaService = {
+      ensureExists: vi.fn(),
+      getStatus: vi.fn(),
+    };
+
+    mockQuotaService.getStatus.mockResolvedValue({
+      daily: {
+        limit: 0,
+        used: 0,
+        remaining: 0,
+        resetsAt: new Date('2024-01-01T00:00:00Z'),
+      },
+      monthly: { limit: 1000, used: 500, remaining: 500 },
+      purchased: 0,
+      totalRemaining: 500,
+      periodStartsAt: new Date('2024-01-01T00:00:00Z'),
+      periodEndsAt: new Date('2024-02-01T00:00:00Z'),
+    });
+
+    service = new UserService(mockPrisma as any, mockQuotaService as any);
 
     // Reset mocks
     vi.mocked(hashPassword).mockReset();
@@ -115,6 +138,9 @@ describe('UserService', () => {
         tier: 'PRO',
         isAdmin: false,
         quota: {
+          dailyLimit: 0,
+          dailyUsed: 0,
+          dailyRemaining: 0,
           monthlyLimit: 1000,
           monthlyUsed: 500,
           monthlyRemaining: 500,
@@ -142,7 +168,7 @@ describe('UserService', () => {
       expect(result.tier).toBe('FREE');
     });
 
-    it('should return null quota when no quota record', async () => {
+    it('should ensure quota exists even when quota record is missing', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         ...mockUser,
         quota: null,
@@ -150,7 +176,8 @@ describe('UserService', () => {
 
       const result = await service.getUserProfile('user-1');
 
-      expect(result.quota).toBeNull();
+      expect(mockQuotaService.ensureExists).toHaveBeenCalled();
+      expect(result.quota).not.toBeNull();
     });
   });
 

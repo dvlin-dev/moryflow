@@ -19,10 +19,15 @@ describe('BillingService', () => {
 
   const mockDeductResult: DeductResult = {
     success: true,
-    source: 'MONTHLY',
-    balanceBefore: 100,
-    balanceAfter: 99,
-    transactionId: 'tx-1',
+    breakdown: [
+      {
+        source: 'MONTHLY',
+        amount: 1,
+        transactionId: 'tx-1',
+        balanceBefore: 100,
+        balanceAfter: 99,
+      },
+    ],
   };
 
   const mockRefundResult: RefundResult = {
@@ -185,39 +190,45 @@ describe('BillingService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.scrape', // Has refundOnFailure: true
         referenceId: 'ref-1',
-        source: 'MONTHLY',
-        amount: 1,
+        breakdown: mockDeductResult.breakdown,
       });
 
       expect(result.success).toBe(true);
       expect(mockQuotaService.refund).toHaveBeenCalledWith({
         userId: 'user-1',
-        referenceId: 'fetchx.scrape:ref-1',
+        referenceId: 'refund:tx-1',
+        deductTransactionId: 'tx-1',
         source: 'MONTHLY',
         amount: 1,
       });
     });
 
-    it('should return success without refund when amount is 0', async () => {
+    it('should return success without refund when breakdown is empty', async () => {
       const result = await service.refundOnFailure({
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'ref-1',
-        source: 'MONTHLY',
-        amount: 0,
+        breakdown: [],
       });
 
       expect(result.success).toBe(true);
       expect(mockQuotaService.refund).not.toHaveBeenCalled();
     });
 
-    it('should return success without refund when amount is negative', async () => {
+    it('should skip items with non-positive amount', async () => {
       const result = await service.refundOnFailure({
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'ref-1',
-        source: 'MONTHLY',
-        amount: -1,
+        breakdown: [
+          {
+            source: 'MONTHLY',
+            amount: 0,
+            transactionId: 'tx-1',
+            balanceBefore: 0,
+            balanceAfter: 0,
+          },
+        ],
       });
 
       expect(result.success).toBe(true);
@@ -233,8 +244,7 @@ describe('BillingService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'ref-1',
-        source: 'MONTHLY',
-        amount: 1,
+        breakdown: mockDeductResult.breakdown,
       });
 
       expect(result.success).toBe(true);
@@ -247,8 +257,7 @@ describe('BillingService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'ref-1',
-        source: 'MONTHLY',
-        amount: 1,
+        breakdown: mockDeductResult.breakdown,
       });
 
       expect(result.success).toBe(false);
@@ -261,8 +270,7 @@ describe('BillingService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'ref-1',
-        source: 'MONTHLY',
-        amount: 1,
+        breakdown: mockDeductResult.breakdown,
       });
 
       expect(result.success).toBe(false);
@@ -275,14 +283,22 @@ describe('BillingService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'ref-1',
-        source: 'PURCHASED',
-        amount: 5,
+        breakdown: [
+          {
+            source: 'PURCHASED',
+            amount: 5,
+            transactionId: 'tx-purchased',
+            balanceBefore: 50,
+            balanceAfter: 45,
+          },
+        ],
       });
 
       expect(result.success).toBe(true);
       expect(mockQuotaService.refund).toHaveBeenCalledWith({
         userId: 'user-1',
-        referenceId: 'fetchx.scrape:ref-1',
+        referenceId: 'refund:tx-purchased',
+        deductTransactionId: 'tx-purchased',
         source: 'PURCHASED',
         amount: 5,
       });
@@ -306,8 +322,7 @@ describe('BillingService', () => {
           userId: 'user-1',
           billingKey,
           referenceId: 'ref-1',
-          source: 'MONTHLY',
-          amount: 1,
+          breakdown: mockDeductResult.breakdown,
         });
 
         // All these keys have refundOnFailure: true
@@ -336,8 +351,7 @@ describe('BillingService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.scrape',
         referenceId: 'operation-123',
-        source: mockDeductResult.source,
-        amount: deductResult!.amount,
+        breakdown: mockDeductResult.breakdown,
       });
 
       // Both should use the same referenceId format
@@ -348,7 +362,8 @@ describe('BillingService', () => {
       );
       expect(mockQuotaService.refund).toHaveBeenCalledWith({
         userId: 'user-1',
-        referenceId: 'fetchx.scrape:operation-123',
+        referenceId: 'refund:tx-1',
+        deductTransactionId: 'tx-1',
         source: 'MONTHLY',
         amount: 1,
       });

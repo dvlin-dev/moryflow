@@ -1,4 +1,10 @@
-// apps/server/src/crawler/crawler.processor.ts
+/**
+ * [INPUT]: CrawlJobData from BullMQ queue - crawlJobId, batch processing state
+ * [OUTPUT]: void - updates CrawlJob/CrawlPage and triggers webhook on completion
+ * [POS]: BullMQ worker for Crawl API（按批次抓取页面并聚合结果）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -11,6 +17,7 @@ import { ScraperService } from '../scraper/scraper.service';
 import { WebhookService } from '../common/services/webhook.service';
 import { BillingService } from '../billing/billing.service';
 import { BILLING_KEYS, type BillingKey } from '../billing/billing.rules';
+import { parseQuotaBreakdown } from '../billing/quota-breakdown.utils';
 import { CRAWL_QUEUE } from '../queue/queue.constants';
 import type { CrawlJobData, FrontierOptions } from './crawler.types';
 
@@ -280,11 +287,12 @@ export class CrawlerProcessor extends WorkerHost {
       await this.urlFrontier.cleanup(crawlJobId);
 
       // 全失败：失败退款（幂等）
+      const breakdown = parseQuotaBreakdown(crawlJob.quotaBreakdown);
+
       if (
         crawlJob.status === 'FAILED' &&
         crawlJob.quotaDeducted &&
-        crawlJob.quotaSource &&
-        crawlJob.quotaAmount &&
+        breakdown &&
         crawlJob.billingKey &&
         BILLING_KEY_SET.has(crawlJob.billingKey)
       ) {
@@ -292,8 +300,7 @@ export class CrawlerProcessor extends WorkerHost {
           userId: crawlJob.userId,
           billingKey: crawlJob.billingKey as BillingKey,
           referenceId: crawlJob.id,
-          source: crawlJob.quotaSource,
-          amount: crawlJob.quotaAmount,
+          breakdown,
         });
       }
 

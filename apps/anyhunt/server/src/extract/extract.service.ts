@@ -132,8 +132,7 @@ export class ExtractService {
           userId,
           billingKey,
           referenceId,
-          source: billing.deduct.source,
-          amount: billing.amount,
+          breakdown: billing.deduct.breakdown,
         });
       }
       throw error;

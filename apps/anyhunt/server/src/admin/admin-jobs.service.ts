@@ -139,6 +139,9 @@ export class AdminJobsService {
       fromCache: job.fromCache,
       quotaDeducted: job.quotaDeducted,
       quotaSource: job.quotaSource,
+      quotaAmount: job.quotaAmount,
+      quotaTransactionId: job.quotaTransactionId,
+      quotaBreakdown: job.quotaBreakdown,
       user: {
         id: job.user.id,
         email: job.user.email,

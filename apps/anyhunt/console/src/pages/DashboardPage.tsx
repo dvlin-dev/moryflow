@@ -29,6 +29,10 @@ export default function DashboardPage() {
   const { data: profile, isLoading } = useProfile();
 
   const quota = profile?.quota ?? {
+    dailyLimit: 0,
+    dailyUsed: 0,
+    dailyRemaining: 0,
+    dailyResetsAt: new Date().toISOString(),
     monthlyLimit: 0,
     monthlyUsed: 0,
     monthlyRemaining: 0,
@@ -37,6 +41,8 @@ export default function DashboardPage() {
   };
 
   const usagePercent = quota.monthlyLimit > 0 ? (quota.monthlyUsed / quota.monthlyLimit) * 100 : 0;
+  const dailyUsagePercent =
+    quota.dailyLimit > 0 ? ((quota.dailyUsed ?? 0) / quota.dailyLimit) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -44,32 +50,63 @@ export default function DashboardPage() {
 
       {/* 配额卡片 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Monthly Quota</CardDescription>
-            <CardTitle className="text-2xl">
+        {quota.dailyLimit > 0 ? (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Daily Credits</CardDescription>
+              <CardTitle className="text-2xl">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : (
+                  `${quota.dailyRemaining} / ${quota.dailyLimit}`
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               {isLoading ? (
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-2 w-full" />
               ) : (
-                `${quota.monthlyRemaining} / ${quota.monthlyLimit}`
+                <Progress value={dailyUsagePercent} className="h-2" />
               )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-2 w-full" />
-            ) : (
-              <Progress value={usagePercent} className="h-2" />
-            )}
-            <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : quota.dailyResetsAt ? (
+                  `Resets at ${new Date(quota.dailyResetsAt).toLocaleTimeString('zh-CN')}`
+                ) : (
+                  'Resets at UTC midnight'
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Monthly Quota</CardDescription>
+              <CardTitle className="text-2xl">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : (
+                  `${quota.monthlyRemaining} / ${quota.monthlyLimit}`
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               {isLoading ? (
-                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-2 w-full" />
               ) : (
-                `Used ${quota.monthlyUsed}, ${quota.monthlyRemaining} remaining`
+                <Progress value={usagePercent} className="h-2" />
               )}
-            </p>
-          </CardContent>
-        </Card>
+              <p className="text-sm text-muted-foreground mt-2">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : (
+                  `Used ${quota.monthlyUsed}, ${quota.monthlyRemaining} remaining`
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="pb-2">

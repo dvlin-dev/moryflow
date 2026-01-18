@@ -52,6 +52,7 @@ status: active
   - 入口：`docs/products/anyhunt-dev/index.md`
   - Reader 顶部导航 + Explore Topics 专用页（提案）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
   - Admin：手动充值 Credits（已落地）：`docs/products/anyhunt-dev/features/admin-credits-and-entitlements.md`
+  - 免费用户每日赠送 100 Credits（方案）：`docs/products/anyhunt-dev/features/daily-free-credits.md`
   - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
   - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
 - Moryflow：`docs/products/moryflow/`
