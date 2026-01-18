@@ -684,9 +684,8 @@ model DigestWelcomeConfig {
 
   enabled Boolean @default(true)
 
-  // i18n-ready：key 使用 BCP-47（en, zh-CN, zh-Hans 等）
-  titleByLocale           Json
-  contentMarkdownByLocale Json
+  // 默认展示的 Welcome Page slug（用于 /welcome?page=... 的 fallback）
+  defaultSlug String @default("welcome")
 
   // { labelByLocale: Record<string,string>, action: 'openExplore' | 'openSignIn' }
   primaryAction   Json?
@@ -694,6 +693,25 @@ model DigestWelcomeConfig {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DigestWelcomePage {
+  id String @id @default(cuid())
+
+  // URL slug（用于 /welcome?page=...）
+  slug String @unique
+
+  enabled   Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  // i18n-ready：key 使用 BCP-47（en, zh-CN, zh-Hans 等）
+  titleByLocale           Json
+  contentMarkdownByLocale Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
 }
 
 model DigestSource {

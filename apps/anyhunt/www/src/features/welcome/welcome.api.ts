@@ -1,19 +1,12 @@
 /**
- * [PROVIDES]: Welcome config API client (public)
- * [POS]: /welcome 页面内容来源（可后台动态配置）
+ * Welcome API (public)
+ *
+ * [PROVIDES]: getWelcomeOverview, getWelcomePage
+ * [POS]: /welcome 的数据源（服务端可配置，i18n-ready）
  */
 
 import { ApiError } from '@/lib/api';
-
-export type WelcomeAction = { label: string; action: 'openExplore' | 'openSignIn' };
-
-export interface WelcomeConfigPublic {
-  enabled: boolean;
-  title: string;
-  contentMarkdown: string;
-  primaryAction: WelcomeAction | null;
-  secondaryAction: WelcomeAction | null;
-}
+import type { WelcomeOverviewPublic, WelcomePagePublic } from './welcome.types';
 
 interface ApiSuccessResponse<T> {
   success: true;
@@ -41,18 +34,36 @@ function handleApiResponse<T>(response: Response, json: ApiResponse<T>): T {
   return json.data;
 }
 
-export async function getWelcomeConfig(apiUrl: string): Promise<WelcomeConfigPublic> {
-  const locale =
-    typeof window === 'undefined' ? 'en' : navigator.language || navigator.languages?.[0] || 'en';
+function getClientLocale(): string {
+  if (typeof window === 'undefined') return 'en';
+  return navigator.language || navigator.languages?.[0] || 'en';
+}
 
+export async function getWelcomeOverview(apiUrl: string): Promise<WelcomeOverviewPublic> {
   const params = new URLSearchParams();
-  params.set('locale', locale);
+  params.set('locale', getClientLocale());
 
   const response = await fetch(`${apiUrl}/api/v1/digest/welcome?${params.toString()}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<WelcomeConfigPublic>;
+  const json = (await response.json()) as ApiResponse<WelcomeOverviewPublic>;
+  return handleApiResponse(response, json);
+}
+
+export async function getWelcomePage(apiUrl: string, slug: string): Promise<WelcomePagePublic> {
+  const params = new URLSearchParams();
+  params.set('locale', getClientLocale());
+
+  const response = await fetch(
+    `${apiUrl}/api/v1/digest/welcome/pages/${encodeURIComponent(slug)}?${params.toString()}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const json = (await response.json()) as ApiResponse<WelcomePagePublic>;
   return handleApiResponse(response, json);
 }

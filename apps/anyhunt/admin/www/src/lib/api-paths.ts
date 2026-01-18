@@ -19,6 +19,7 @@ export const ADMIN_API = {
   DIGEST_STATS: '/api/v1/admin/digest/stats',
   DIGEST_TOPICS: '/api/v1/admin/digest/topics',
   DIGEST_WELCOME: '/api/v1/admin/digest/welcome',
+  DIGEST_WELCOME_PAGES: '/api/v1/admin/digest/welcome/pages',
 } as const;
 
 export const USER_API = {

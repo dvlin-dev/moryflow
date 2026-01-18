@@ -1,5 +1,5 @@
 /**
- * Digest Welcome Hooks (Admin)
+ * Digest Welcome Config Hooks (Admin)
  *
  * [PROVIDES]: useAdminWelcomeConfig, useUpdateAdminWelcomeConfig
  * [POS]: React Query hooks for Welcome config
@@ -7,13 +7,13 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchAdminWelcomeConfig, updateAdminWelcomeConfig } from './api';
-import type { UpdateWelcomeInput } from './types';
+import type { UpdateWelcomeConfigInput } from './types';
 
-const digestWelcomeKey = ['admin', 'digest', 'welcome'] as const;
+const digestWelcomeConfigKey = ['admin', 'digest', 'welcome', 'config'] as const;
 
 export function useAdminWelcomeConfig() {
   return useQuery({
-    queryKey: digestWelcomeKey,
+    queryKey: digestWelcomeConfigKey,
     queryFn: fetchAdminWelcomeConfig,
   });
 }
@@ -22,9 +22,9 @@ export function useUpdateAdminWelcomeConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateWelcomeInput) => updateAdminWelcomeConfig(input),
+    mutationFn: (input: UpdateWelcomeConfigInput) => updateAdminWelcomeConfig(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: digestWelcomeKey });
+      queryClient.invalidateQueries({ queryKey: digestWelcomeConfigKey });
     },
   });
 }

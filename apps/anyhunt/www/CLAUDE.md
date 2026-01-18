@@ -14,7 +14,7 @@ Anyhunt Dev 官网（`anyhunt.app`），包含模块页 `/fetchx`、`/memox`。�
 - SEO：canonical 固定 `https://anyhunt.app`（`www.anyhunt.app` 在反代层 301 到 `anyhunt.app`）
 - Fetchx Demo Playground（验证码保护）
 - Digest Public Pages（SEO）：Topics / Editions（`/topics`）
-- **Reader 壳层（C 端）**：`/welcome`（默认）/ `/explore` / `/topic/*` / `/inbox/*`（状态驱动 URL，可刷新恢复）
+- **Reader 壳层（C 端）**：`/welcome`（默认，Welcome Pages 列表 + `?page=` 选中项）/ `/explore` / `/topic/*` / `/inbox/*`（状态驱动 URL，可刷新恢复）
 - Reader 内操作不跳页：登录/注册/忘记密码通过全局 Auth 弹窗完成
 - Reader-only：不保留 `/settings` 等独立用户页面路由
 - Pricing / Code Examples / CTA

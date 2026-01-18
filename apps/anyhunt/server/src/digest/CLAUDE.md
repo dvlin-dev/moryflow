@@ -38,7 +38,8 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 ### Public（部分匿名）
 
 - `GET /api/v1/digest/topics`：公开 Topics 列表（`page/limit`）
-- `GET /api/v1/digest/welcome`：Welcome 配置（按 locale 解析）
+- `GET /api/v1/digest/welcome`：Welcome overview（config + pages list，按 locale 解析）
+- `GET /api/v1/digest/welcome/pages/:slug`：Welcome Page 详情（按 locale 解析）
 - `GET /api/v1/digest/topics/:slug`：Topic 详情
 - `GET /api/v1/digest/topics/:slug/editions`：Edition 列表（`page/limit`）
 - `GET /api/v1/digest/topics/:slug/editions/:editionId`：Edition + Items
@@ -52,8 +53,13 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 - `GET /api/v1/admin/digest/reports`：Reports 列表（`page/limit`）
 - `GET /api/v1/admin/digest/subscriptions`：Subscriptions 列表（`page/limit`）
 - `GET /api/v1/admin/digest/runs`：Runs 列表（`page/limit`）
-- `GET /api/v1/admin/digest/welcome`：Welcome 配置（raw locale maps）
-- `PUT /api/v1/admin/digest/welcome`：更新 Welcome 配置
+- `GET /api/v1/admin/digest/welcome`：Welcome Config（enabled/defaultSlug/actions）
+- `PUT /api/v1/admin/digest/welcome`：更新 Welcome Config
+- `GET /api/v1/admin/digest/welcome/pages`：Welcome Pages 列表（raw locale maps）
+- `POST /api/v1/admin/digest/welcome/pages`：创建 Welcome Page
+- `PUT /api/v1/admin/digest/welcome/pages/:id`：更新 Welcome Page
+- `PUT /api/v1/admin/digest/welcome/pages/reorder`：排序 Welcome Pages
+- `DELETE /api/v1/admin/digest/welcome/pages/:id`：删除 Welcome Page
 
 ## 分页协议（强制）
 

@@ -25,7 +25,8 @@ import {
   DigestSourceService,
   DigestFeedbackService,
   DigestNotificationService,
-  DigestWelcomeService,
+  DigestWelcomeConfigService,
+  DigestWelcomePagesService,
 } from './services';
 
 // Processors
@@ -46,8 +47,10 @@ import {
   DigestConsoleTopicController,
   DigestPublicTopicController,
   DigestPublicWelcomeController,
+  DigestPublicWelcomePagesController,
   DigestAdminController,
   DigestAdminWelcomeController,
+  DigestAdminWelcomePagesController,
 } from './controllers';
 
 // Queue constants
@@ -106,10 +109,12 @@ import { MapModule } from '../map/map.module';
     // Public 控制器（部分需要认证）
     DigestPublicTopicController,
     DigestPublicWelcomeController,
+    DigestPublicWelcomePagesController,
 
     // Admin 控制器
     DigestAdminController,
     DigestAdminWelcomeController,
+    DigestAdminWelcomePagesController,
   ],
   providers: [
     // Services
@@ -128,7 +133,8 @@ import { MapModule } from '../map/map.module';
     DigestSourceService,
     DigestFeedbackService,
     DigestNotificationService,
-    DigestWelcomeService,
+    DigestWelcomeConfigService,
+    DigestWelcomePagesService,
 
     // Processors
     SubscriptionSchedulerProcessor,

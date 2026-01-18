@@ -5,7 +5,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
-import { WelcomePane } from '@/features/welcome/WelcomePane';
+import { WelcomeListPane } from '@/features/welcome/WelcomeListPane';
+import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,
@@ -34,8 +35,8 @@ function ForgotPasswordPage() {
 
   return (
     <ReaderThreePane
-      list={<WelcomePane kind="outline" />}
-      detail={<WelcomePane kind="content" />}
+      list={<WelcomeListPane selectedSlug={null} />}
+      detail={<WelcomeContentPane selectedSlug={null} />}
     />
   );
 }

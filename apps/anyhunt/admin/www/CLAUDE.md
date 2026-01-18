@@ -65,7 +65,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 | `browser/`        | `/browser`        | Browser pool instances     |
 | `digest-topics/`  | `/digest/topics`  | Digest Topics 精选管理     |
 | `digest-reports/` | `/digest/reports` | Digest 举报管理            |
-| `digest-welcome/` | `/digest/welcome` | Digest Welcome 配置        |
+| `digest-welcome/` | `/digest/welcome` | Digest Welcome 配置与页面  |
 
 ## Feature Module Structure
 

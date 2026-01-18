@@ -11,7 +11,8 @@ import { useAuth } from '@/lib/auth-context';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { getRedirectUrl } from '@/lib/redirect';
 import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
-import { WelcomePane } from '@/features/welcome/WelcomePane';
+import { WelcomeListPane } from '@/features/welcome/WelcomeListPane';
+import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -57,8 +58,8 @@ function LoginPage() {
 
   return (
     <ReaderThreePane
-      list={<WelcomePane kind="outline" />}
-      detail={<WelcomePane kind="content" />}
+      list={<WelcomeListPane selectedSlug={null} />}
+      detail={<WelcomeContentPane selectedSlug={null} />}
     />
   );
 }

@@ -2,7 +2,7 @@
  * Digest Admin Welcome Controller
  *
  * [INPUT]: WelcomeConfig update payload
- * [OUTPUT]: Updated config (raw by-locale maps)
+ * [OUTPUT]: Updated config
  * [POS]: Admin Welcome 配置管理（RequireAdmin）
  */
 
@@ -15,30 +15,40 @@ import {
 } from '@nestjs/swagger';
 import { RequireAdmin } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { DigestWelcomeService } from '../services/welcome.service';
-import { UpdateWelcomeSchema, type UpdateWelcomeInput } from '../dto';
+import {
+  DigestWelcomeConfigService,
+  DigestWelcomePagesService,
+} from '../services';
+import {
+  UpdateWelcomeConfigSchema,
+  type UpdateWelcomeConfigInput,
+} from '../dto';
 
 @ApiTags('Admin - Digest Welcome')
 @ApiSecurity('session')
 @Controller({ path: 'admin/digest/welcome', version: '1' })
 @RequireAdmin()
 export class DigestAdminWelcomeController {
-  constructor(private readonly welcomeService: DigestWelcomeService) {}
+  constructor(
+    private readonly welcomeConfigService: DigestWelcomeConfigService,
+    private readonly welcomePagesService: DigestWelcomePagesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get welcome config (admin)' })
-  @ApiOkResponse({ description: 'Welcome config (raw locale maps)' })
+  @ApiOkResponse({ description: 'Welcome config' })
   async getWelcome() {
-    return this.welcomeService.getAdminWelcome();
+    return this.welcomeConfigService.getAdminConfig();
   }
 
   @Put()
   @ApiOperation({ summary: 'Update welcome config (admin)' })
   @ApiOkResponse({ description: 'Updated welcome config' })
   async updateWelcome(
-    @Body(new ZodValidationPipe(UpdateWelcomeSchema)) input: UpdateWelcomeInput,
+    @Body(new ZodValidationPipe(UpdateWelcomeConfigSchema))
+    input: UpdateWelcomeConfigInput,
   ) {
-    await this.welcomeService.updateWelcome(input);
-    return this.welcomeService.getAdminWelcome();
+    await this.welcomePagesService.assertSlugExists(input.defaultSlug);
+    return this.welcomeConfigService.updateConfig(input);
   }
 }

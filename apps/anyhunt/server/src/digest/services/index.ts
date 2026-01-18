@@ -20,4 +20,5 @@ export * from './site-crawl.service';
 export * from './source.service';
 export * from './feedback.service';
 export * from './notification.service';
-export * from './welcome.service';
+export * from './welcome-config.service';
+export * from './welcome-pages.service';

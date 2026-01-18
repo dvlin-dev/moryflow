@@ -20,6 +20,5 @@ export { LearningSuggestionsTab } from './LearningSuggestionsTab';
 export { PublishTopicDialog } from './PublishTopicDialog';
 export { AnimatedList, AnimatedListItem, FadeIn, SlideIn, AnimatePresence } from './AnimatedList';
 export { VirtualArticleList } from './VirtualArticleList';
-export { WelcomeGuide } from './WelcomeGuide';
 export { ResponsiveDialog } from './ResponsiveDialog';
 export { MobileActionSheet } from './MobileActionSheet';
