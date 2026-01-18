@@ -3,8 +3,8 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getUsers, getUser, updateUser, deleteUser } from './api';
-import type { UserQuery, UpdateUserRequest } from './types';
+import { deleteUser, getCreditGrants, getUser, getUsers, grantCredits, updateUser } from './api';
+import type { UserQuery, UpdateUserRequest, CreditGrantsQuery, GrantCreditsRequest } from './types';
 
 /** Query Key 工厂 */
 export const userKeys = {
@@ -13,6 +13,9 @@ export const userKeys = {
   list: (query?: UserQuery) => [...userKeys.lists(), query] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (id: string) => [...userKeys.details(), id] as const,
+  creditGrants: () => [...userKeys.all, 'credits', 'grants'] as const,
+  creditGrantsByUser: (id: string, query?: CreditGrantsQuery) =>
+    [...userKeys.creditGrants(), id, query] as const,
 };
 
 /** 获取用户列表 */
@@ -29,6 +32,14 @@ export function useUser(id: string) {
     queryKey: userKeys.detail(id),
     queryFn: () => getUser(id),
     enabled: !!id,
+  });
+}
+
+export function useCreditGrants(userId: string, query: CreditGrantsQuery = {}) {
+  return useQuery({
+    queryKey: userKeys.creditGrantsByUser(userId, query),
+    queryFn: () => getCreditGrants(userId, query),
+    enabled: !!userId,
   });
 }
 
@@ -58,6 +69,26 @@ export function useDeleteUser() {
     },
     onError: (error: Error) => {
       toast.error(error.message || '删除失败');
+    },
+  });
+}
+
+export function useGrantCredits() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: GrantCreditsRequest }) =>
+      grantCredits(userId, data),
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: userKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: userKeys.detail(result.userId) }),
+        queryClient.invalidateQueries({ queryKey: userKeys.creditGrants() }),
+      ]);
+      toast.success('Credits granted');
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Grant failed';
+      toast.error(message);
     },
   });
 }

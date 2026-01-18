@@ -33,21 +33,23 @@ Admin dashboard backend APIs for system monitoring and management. Requires admi
 | `admin-jobs.service.ts`            | Service | Job monitoring and status |
 | `admin-queue.service.ts`           | Service | Queue operations          |
 | `admin-scheduled-tasks.service.ts` | Service | Scheduled task management |
+| `admin-user-credits.service.ts`    | Service | Internal credits grants   |
 | `admin.module.ts`                  | Module  | NestJS module definition  |
 | `dto.ts`                           | DTO     | Unified admin DTOs        |
 
 ### Controllers
 
-| File                                | Endpoint               | Description          |
-| ----------------------------------- | ---------------------- | -------------------- |
-| `admin-auth.controller.ts`          | `/admin/auth`          | Admin authentication |
-| `admin-dashboard.controller.ts`     | `/admin/dashboard`     | Dashboard stats      |
-| `admin-users.controller.ts`         | `/admin/users`         | User management      |
-| `admin-subscriptions.controller.ts` | `/admin/subscriptions` | Subscription list    |
-| `admin-orders.controller.ts`        | `/admin/orders`        | Order history        |
-| `admin-jobs.controller.ts`          | `/admin/jobs`          | Job monitoring       |
-| `admin-queue.controller.ts`         | `/admin/queues`        | Queue status         |
-| `admin-browser.controller.ts`       | `/admin/browser`       | Browser pool         |
+| File                                | Endpoint                 | Description          |
+| ----------------------------------- | ------------------------ | -------------------- |
+| `admin-auth.controller.ts`          | `/admin/auth`            | Admin authentication |
+| `admin-dashboard.controller.ts`     | `/admin/dashboard`       | Dashboard stats      |
+| `admin-users.controller.ts`         | `/admin/users`           | User management      |
+| `admin-user-credits.controller.ts`  | `/admin/users/*/credits` | Credits grants       |
+| `admin-subscriptions.controller.ts` | `/admin/subscriptions`   | Subscription list    |
+| `admin-orders.controller.ts`        | `/admin/orders`          | Order history        |
+| `admin-jobs.controller.ts`          | `/admin/jobs`            | Job monitoring       |
+| `admin-queue.controller.ts`         | `/admin/queues`          | Queue status         |
+| `admin-browser.controller.ts`       | `/admin/browser`         | Browser pool         |
 
 ## Common Modification Scenarios
 

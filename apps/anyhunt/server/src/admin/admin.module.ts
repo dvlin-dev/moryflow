@@ -11,12 +11,14 @@ import { AdminScheduledTasksService } from './admin-scheduled-tasks.service';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { AdminUsersController } from './admin-users.controller';
+import { AdminUserCreditsController } from './admin-user-credits.controller';
 import { AdminSubscriptionsController } from './admin-subscriptions.controller';
 import { AdminOrdersController } from './admin-orders.controller';
 import { AdminJobsController } from './admin-jobs.controller';
 import { AdminQueueController } from './admin-queue.controller';
 import { AdminBrowserController } from './admin-browser.controller';
 import { QueueModule } from '../queue';
+import { AdminUserCreditsService } from './admin-user-credits.service';
 
 @Module({
   imports: [QueueModule],
@@ -24,6 +26,7 @@ import { QueueModule } from '../queue';
     AdminAuthController,
     AdminDashboardController,
     AdminUsersController,
+    AdminUserCreditsController,
     AdminSubscriptionsController,
     AdminOrdersController,
     AdminJobsController,
@@ -35,6 +38,7 @@ import { QueueModule } from '../queue';
     AdminJobsService,
     AdminQueueService,
     AdminScheduledTasksService,
+    AdminUserCreditsService,
   ],
   exports: [AdminService],
 })

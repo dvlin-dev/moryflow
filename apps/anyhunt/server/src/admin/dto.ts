@@ -143,5 +143,22 @@ export const cleanQueueSchema = z.object({
 export type CleanQueueDto = z.infer<typeof cleanQueueSchema>;
 
 // =============================================
+// Credits (Internal Testing)
+// =============================================
+
+export const grantCreditsSchema = z.object({
+  amount: z.coerce.number().int().min(1).max(1_000_000),
+  reason: z.string().min(1).max(500),
+});
+
+export type GrantCreditsDto = z.infer<typeof grantCreditsSchema>;
+
+export const creditsGrantsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type CreditsGrantsQuery = z.infer<typeof creditsGrantsQuerySchema>;
+
+// =============================================
 // Digest Topics
 // =============================================

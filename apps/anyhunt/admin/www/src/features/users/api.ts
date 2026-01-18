@@ -10,6 +10,10 @@ import type {
   UserDetail,
   UserQuery,
   UpdateUserRequest,
+  GrantCreditsRequest,
+  GrantCreditsResult,
+  CreditGrantRecord,
+  CreditGrantsQuery,
 } from './types';
 
 /** 获取用户列表 */
@@ -36,4 +40,23 @@ export async function updateUser(id: string, data: UpdateUserRequest): Promise<U
 /** 删除用户 */
 export async function deleteUser(id: string): Promise<void> {
   await apiClient.delete(`${ADMIN_API.USERS}/${id}`);
+}
+
+/** 手动充值 Credits（仅增不减） */
+export async function grantCredits(
+  userId: string,
+  data: GrantCreditsRequest
+): Promise<GrantCreditsResult> {
+  return apiClient.post<GrantCreditsResult>(`${ADMIN_API.USERS}/${userId}/credits/grant`, data);
+}
+
+/** 获取充值记录（仅 ADMIN_GRANT） */
+export async function getCreditGrants(
+  userId: string,
+  query: CreditGrantsQuery = {}
+): Promise<CreditGrantRecord[]> {
+  const url = buildUrl(`${ADMIN_API.USERS}/${userId}/credits/grants`, {
+    limit: query.limit,
+  });
+  return apiClient.get<CreditGrantRecord[]>(url);
 }

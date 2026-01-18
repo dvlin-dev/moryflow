@@ -54,3 +54,34 @@ export interface UpdateUserRequest {
   name?: string;
   isAdmin?: boolean;
 }
+
+/** 手动充值 Credits 请求 */
+export interface GrantCreditsRequest {
+  amount: number;
+  reason: string;
+}
+
+/** 手动充值 Credits 结果 */
+export interface GrantCreditsResult {
+  userId: string;
+  amount: number;
+  purchasedQuotaBefore: number;
+  purchasedQuotaAfter: number;
+  quotaTransactionId: string;
+  auditLogId: string;
+}
+
+/** Credits 充值记录（仅 ADMIN_GRANT） */
+export interface CreditGrantRecord {
+  id: string;
+  createdAt: string;
+  actorUserId: string | null;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  reason: string | null;
+}
+
+export interface CreditGrantsQuery {
+  limit?: number;
+}

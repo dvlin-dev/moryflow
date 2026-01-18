@@ -8,6 +8,7 @@ import {
   MoreHorizontalIcon,
   Search01Icon,
   Shield01Icon,
+  Coins01Icon,
 } from '@hugeicons/core-free-icons';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
@@ -42,7 +43,7 @@ import {
   AlertDialogTitle,
 } from '@anyhunt/ui';
 import { formatRelativeTime } from '@anyhunt/ui/lib';
-import { useUsers, useUpdateUser, useDeleteUser } from '@/features/users';
+import { useUsers, useUpdateUser, useDeleteUser, UserCreditsSheet } from '@/features/users';
 import type { UserListItem, UserQuery } from '@/features/users';
 
 export default function UsersPage() {
@@ -50,6 +51,8 @@ export default function UsersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
+  const [creditsSheetOpen, setCreditsSheetOpen] = useState(false);
+  const [creditsUserId, setCreditsUserId] = useState<string | null>(null);
 
   const { data, isLoading } = useUsers(query);
   const { mutate: updateUser } = useUpdateUser();
@@ -79,6 +82,11 @@ export default function UsersPage() {
   const handleDelete = (user: UserListItem) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
+  };
+
+  const handleGrantCredits = (user: UserListItem) => {
+    setCreditsUserId(user.id);
+    setCreditsSheetOpen(true);
   };
 
   const handleConfirmDelete = () => {
@@ -209,6 +217,10 @@ export default function UsersPage() {
                               <Icon icon={Shield01Icon} className="h-4 w-4 mr-2" />
                               {user.isAdmin ? '移除管理员' : '设为管理员'}
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGrantCredits(user)}>
+                              <Icon icon={Coins01Icon} className="h-4 w-4 mr-2" />
+                              Grant credits
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => handleDelete(user)}
@@ -260,6 +272,17 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UserCreditsSheet
+        open={creditsSheetOpen}
+        onOpenChange={(open) => {
+          setCreditsSheetOpen(open);
+          if (!open) {
+            setCreditsUserId(null);
+          }
+        }}
+        userId={creditsUserId}
+      />
     </div>
   );
 }

@@ -138,6 +138,7 @@ enum QuotaTransactionType {
   DEDUCT // 扣减
   REFUND // 返还
   PURCHASE // 购买
+  ADMIN_GRANT // 管理员赠送积分（测试用）
   RESET // 周期重置
 }
 
@@ -168,6 +169,7 @@ model Quota {
 model QuotaTransaction {
   id            String               @id @default(cuid())
   userId        String
+  actorUserId   String? // 管理员操作人（仅 ADMIN_* 类型使用）
   type          QuotaTransactionType
   amount        Int // 正数
   source        QuotaSource
@@ -177,6 +179,24 @@ model QuotaTransaction {
   createdAt     DateTime             @default(now())
 
   @@index([userId])
+  @@index([createdAt])
+}
+
+// =============================================
+// Admin 审计日志
+// =============================================
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String
+  targetUserId String?
+  action       String
+  reason       String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([targetUserId])
   @@index([createdAt])
 }
 

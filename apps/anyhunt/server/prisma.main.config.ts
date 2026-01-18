@@ -1,3 +1,4 @@
+// Prisma config for Anyhunt main database (production migrations)
 import 'dotenv/config';
 import { defineConfig, env } from 'prisma/config';
 
