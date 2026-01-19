@@ -6,6 +6,8 @@
 
 Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排为一组工具调用（Browser Tools），并以 SSE 方式流式返回思考过程、工具调用与最终结构化输出。
 
+本模块是 Agent 能力在 Anyhunt Dev 业务线的唯一实现入口；旧品牌遗留的 `apps/aiget/*` 已移除，避免出现重复实现与漂移。
+
 ## Responsibilities
 
 - 任务管理：创建/查询/取消（DB：`AgentTask`；Redis：进度/取消标记）
