@@ -37,6 +37,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建若依赖 workspace 包（例如 `@anyhunt/agents-core`），需在 `deps/prod-deps` 阶段 `COPY` 对应 workspace 包的 `package.json`，并在 `builder/runner` 阶段包含该包目录，避免 `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` 与运行时 symlink 断链
 - Docker 构建默认使用 `pnpm install --ignore-scripts`：workspace 包的 `dist/` 不会自动生成；若业务编译依赖（例如 `@anyhunt/agents-core` 的 `types=dist/*`），必须在 `builder` 阶段显式构建（例如直接 `tsc -p packages/agents-core/tsconfig.json --module commonjs`）
+- 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 

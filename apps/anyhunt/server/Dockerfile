@@ -50,6 +50,9 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/agents-core ./packages/agents-core
 COPY apps/anyhunt/server ./apps/anyhunt/server
 
+# agents-core 的 tsconfig 依赖根配置（../../tsconfig.agents.json），因此必须把根 tsconfig 一并带进镜像。
+COPY tsconfig.agents.json ./tsconfig.agents.json
+
 # Docker 构建中默认 `--ignore-scripts`，workspace 包不会自动生成 dist；
 # 这里显式构建 `@anyhunt/agents-core`，确保 anyhunt-server 的 tsc 能解析到 types，并且运行时可 require。
 RUN /app/node_modules/.bin/tsc -p /app/packages/agents-core/tsconfig.json --module commonjs --outDir /app/packages/agents-core/dist
