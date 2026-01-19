@@ -49,8 +49,8 @@ Public API (v1) - ApiKeyGuard:
   DELETE /v1/memories/:id       # Delete memory
 
 Console API - SessionGuard:
-  GET    /api/console/memories  # List for console
-  GET    /api/console/memories/export # Export as JSON/CSV
+  GET    /api/v1/console/memories  # List for console
+  GET    /api/v1/console/memories/export # Export as JSON/CSV
 ```
 
 ## Key Schemas

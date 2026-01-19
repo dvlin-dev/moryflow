@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-20（Console Fetchx 路由调整为 `/fetchx/*`；Agent Browser 拆分多页面模块）
+> 最近更新：2026-01-20（Console Fetchx 路由调整为 `/fetchx/*`；Console API 统一 `/api/v1/console/*`）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -53,4 +53,5 @@
 - 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`（2026-01-19：补充 Docker workspace 依赖修复）
 - Console Agent Browser Playground 设计方案（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（2026-01-20：独立模块路径 `/agent-browser/*`）
 - Console Fetchx 路由调整：`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`（2026-01-20：更新为 `/fetchx/*`）
+- Console API 版本化：`docs/research/console-agent-browser-playground-design.md`（2026-01-20：统一 `/api/v1/console/*`）
 - Skill：`code-simplifier` 文档中文化：`docs/skill/code-simplifier.md`（2026-01-19）

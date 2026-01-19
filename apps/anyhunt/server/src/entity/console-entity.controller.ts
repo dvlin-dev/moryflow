@@ -11,7 +11,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,13 +28,13 @@ import { parsePaginationParams } from '../common/utils';
 
 @ApiTags('Console - Entity')
 @ApiCookieAuth()
-@Controller({ path: 'console/entities', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/entities', version: '1' })
 export class ConsoleEntityController {
   constructor(private readonly entityService: EntityService) {}
 
   /**
    * 获取所有 Entities
-   * GET /api/console/entities
+   * GET /api/v1/console/entities
    */
   @Get()
   @ApiOperation({ summary: 'List all entities' })
@@ -88,7 +87,7 @@ export class ConsoleEntityController {
 
   /**
    * 获取所有 Entity 类型
-   * GET /api/console/entities/types
+   * GET /api/v1/console/entities/types
    */
   @Get('types')
   @ApiOperation({ summary: 'Get all entity types' })
@@ -99,7 +98,7 @@ export class ConsoleEntityController {
 
   /**
    * 删除 Entity
-   * DELETE /api/console/entities/:id
+   * DELETE /api/v1/console/entities/:id
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

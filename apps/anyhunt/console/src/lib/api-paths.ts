@@ -24,15 +24,15 @@ export const CONSOLE_API = {
 
 // Console Playground API（Session 认证，代理到实际服务）
 export const CONSOLE_PLAYGROUND_API = {
-  SCRAPE: '/api/console/playground/scrape',
-  CRAWL: '/api/console/playground/crawl',
-  MAP: '/api/console/playground/map',
-  EXTRACT: '/api/console/playground/extract',
-  SEARCH: '/api/console/playground/search',
-  BROWSER_SESSION: '/api/console/playground/browser/session',
-  BROWSER_CDP_CONNECT: '/api/console/playground/browser/cdp/connect',
-  AGENT: '/api/console/playground/agent',
-  AGENT_ESTIMATE: '/api/console/playground/agent/estimate',
+  SCRAPE: '/api/v1/console/playground/scrape',
+  CRAWL: '/api/v1/console/playground/crawl',
+  MAP: '/api/v1/console/playground/map',
+  EXTRACT: '/api/v1/console/playground/extract',
+  SEARCH: '/api/v1/console/playground/search',
+  BROWSER_SESSION: '/api/v1/console/playground/browser/session',
+  BROWSER_CDP_CONNECT: '/api/v1/console/playground/browser/cdp/connect',
+  AGENT: '/api/v1/console/playground/agent',
+  AGENT_ESTIMATE: '/api/v1/console/playground/agent/estimate',
 } as const;
 
 // Fetchx 核心 API（API Key 认证）
@@ -56,8 +56,8 @@ export const MEMOX_API = {
 
 // Memox Console API（Session 认证）
 export const MEMOX_CONSOLE_API = {
-  MEMORIES: '/api/console/memories',
-  ENTITIES: '/api/console/entities',
+  MEMORIES: '/api/v1/console/memories',
+  ENTITIES: '/api/v1/console/entities',
 } as const;
 
 // 健康检查

@@ -16,7 +16,6 @@ import {
   Body,
   Param,
   Query,
-  VERSION_NEUTRAL,
   HttpCode,
   HttpStatus,
   HttpException,
@@ -76,7 +75,7 @@ import {
 
 @ApiTags('Console - Playground')
 @ApiCookieAuth()
-@Controller({ path: 'console/playground/browser', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/playground/browser', version: '1' })
 export class ConsolePlaygroundBrowserController {
   constructor(private readonly service: ConsolePlaygroundService) {}
 

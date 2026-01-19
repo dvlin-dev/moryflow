@@ -9,7 +9,6 @@ import {
   Query,
   Res,
   BadRequestException,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,13 +26,13 @@ import { parsePaginationParams } from '../common/utils';
 
 @ApiTags('Console - Memory')
 @ApiCookieAuth()
-@Controller({ path: 'console/memories', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/memories', version: '1' })
 export class ConsoleMemoryController {
   constructor(private readonly memoryService: MemoryService) {}
 
   /**
    * 获取所有 Memories
-   * GET /api/console/memories
+   * GET /api/v1/console/memories
    */
   @Get()
   @ApiOperation({ summary: 'List all memories' })
@@ -79,7 +78,7 @@ export class ConsoleMemoryController {
 
   /**
    * 导出 Memories
-   * GET /api/console/memories/export
+   * GET /api/v1/console/memories/export
    */
   @Get('export')
   @ApiOperation({ summary: 'Export memories' })

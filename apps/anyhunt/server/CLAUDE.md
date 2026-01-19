@@ -20,6 +20,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ## Constraints
 
 - All controllers must use `version: '1'` for API versioning
+- Console Session 认证接口统一走 `/api/v1/console/*`（禁止无版本路径）
 - Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection

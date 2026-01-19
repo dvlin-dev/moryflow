@@ -15,7 +15,6 @@ import {
   Body,
   Param,
   Query,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -44,13 +43,13 @@ import {
 
 @ApiTags('Console - Playground')
 @ApiCookieAuth()
-@Controller({ path: 'console/playground', version: VERSION_NEUTRAL })
+@Controller({ path: 'console/playground', version: '1' })
 export class ConsolePlaygroundController {
   constructor(private readonly service: ConsolePlaygroundService) {}
 
   /**
    * Scrape 代理
-   * POST /api/console/playground/scrape
+   * POST /api/v1/console/playground/scrape
    */
   @Post('scrape')
   @ApiOperation({ summary: 'Scrape a URL (console proxy)' })
@@ -65,7 +64,7 @@ export class ConsolePlaygroundController {
 
   /**
    * Crawl 代理
-   * POST /api/console/playground/crawl
+   * POST /api/v1/console/playground/crawl
    */
   @Post('crawl')
   @ApiOperation({ summary: 'Start a crawl job (console proxy)' })
@@ -80,7 +79,7 @@ export class ConsolePlaygroundController {
 
   /**
    * 获取 Crawl 状态
-   * GET /api/console/playground/crawl/:jobId?apiKeyId=xxx
+   * GET /api/v1/console/playground/crawl/:jobId?apiKeyId=xxx
    */
   @Get('crawl/:jobId')
   @ApiOperation({ summary: 'Get crawl job status (console proxy)' })
@@ -95,7 +94,7 @@ export class ConsolePlaygroundController {
 
   /**
    * 取消 Crawl 任务
-   * DELETE /api/console/playground/crawl/:jobId?apiKeyId=xxx
+   * DELETE /api/v1/console/playground/crawl/:jobId?apiKeyId=xxx
    */
   @Delete('crawl/:jobId')
   @ApiOperation({ summary: 'Cancel a crawl job (console proxy)' })
@@ -110,7 +109,7 @@ export class ConsolePlaygroundController {
 
   /**
    * Search 代理
-   * POST /api/console/playground/search
+   * POST /api/v1/console/playground/search
    */
   @Post('search')
   @ApiOperation({ summary: 'Search the web (console proxy)' })
@@ -125,7 +124,7 @@ export class ConsolePlaygroundController {
 
   /**
    * Map 代理
-   * POST /api/console/playground/map
+   * POST /api/v1/console/playground/map
    */
   @Post('map')
   @ApiOperation({ summary: 'Discover URLs on a website (console proxy)' })
@@ -140,7 +139,7 @@ export class ConsolePlaygroundController {
 
   /**
    * Extract 代理
-   * POST /api/console/playground/extract
+   * POST /api/v1/console/playground/extract
    */
   @Post('extract')
   @ApiOperation({ summary: 'Extract structured data (console proxy)' })

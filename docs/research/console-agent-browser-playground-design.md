@@ -114,7 +114,7 @@ status: draft
 现有模式（已存在）：
 
 - `apps/anyhunt/server/src/console-playground/*`
-- 路径：`/api/console/playground/*`（`VERSION_NEUTRAL`）
+- 路径：`/api/v1/console/playground/*`（版本化 v1）
 - 认证：Session Cookie（Better Auth）
 - 输入：`apiKeyId`（cuid）+ 参数
 - 服务端校验 `apiKeyId` ownership + isActive + expiresAt
@@ -125,13 +125,13 @@ status: draft
 
 Controller path（建议）：
 
-- `POST /api/console/playground/browser/session`（create）
-- `GET /api/console/playground/browser/session/:id?apiKeyId=...`（status）
-- `DELETE /api/console/playground/browser/session/:id?apiKeyId=...`（close）
-- `POST /api/console/playground/browser/session/:id/open`
-- `POST /api/console/playground/browser/session/:id/snapshot`
-- `POST /api/console/playground/browser/session/:id/action`
-- `POST /api/console/playground/browser/session/:id/screenshot`
+- `POST /api/v1/console/playground/browser/session`（create）
+- `GET /api/v1/console/playground/browser/session/:id?apiKeyId=...`（status）
+- `DELETE /api/v1/console/playground/browser/session/:id?apiKeyId=...`（close）
+- `POST /api/v1/console/playground/browser/session/:id/open`
+- `POST /api/v1/console/playground/browser/session/:id/snapshot`
+- `POST /api/v1/console/playground/browser/session/:id/action`
+- `POST /api/v1/console/playground/browser/session/:id/screenshot`
 - 可选：`tabs/windows/intercept/storage/cdp`（按需扩展）
 
 DTO 规则：
@@ -150,10 +150,10 @@ DTO 规则：
 
 为了让 Console 能安全使用 Agent（不需要明文 key），提供 proxy endpoints：
 
-- `POST /api/console/playground/agent/estimate`
-- `POST /api/console/playground/agent`（`stream=false` 返回 JSON；`stream=true` 返回 SSE）
-- `GET /api/console/playground/agent/:id?apiKeyId=...`
-- `DELETE /api/console/playground/agent/:id?apiKeyId=...`
+- `POST /api/v1/console/playground/agent/estimate`
+- `POST /api/v1/console/playground/agent`（`stream=false` 返回 JSON；`stream=true` 返回 SSE）
+- `GET /api/v1/console/playground/agent/:id?apiKeyId=...`
+- `DELETE /api/v1/console/playground/agent/:id?apiKeyId=...`
 
 实现原则：
 
@@ -267,12 +267,12 @@ Console 侧使用：
 
 核心行为：
 
-1. `sendMessages()` 内 `fetch('/api/console/playground/agent', { credentials:'include', signal: abortSignal, body:{ apiKeyId, prompt, ... , stream:true } })`
+1. `sendMessages()` 内 `fetch('/api/v1/console/playground/agent', { credentials:'include', signal: abortSignal, body:{ apiKeyId, prompt, ... , stream:true } })`
 2. 用 `eventsource-parser` 逐条解析 `event/data`
 3. 把 event 映射成 `UIMessageChunk` 并 `controller.enqueue(chunk)`
 4. `abortSignal` 触发：
    - cancel reader
-   - 如果已拿到 `taskId`：调用 `DELETE /api/console/playground/agent/:id?apiKeyId=...`
+   - 如果已拿到 `taskId`：调用 `DELETE /api/v1/console/playground/agent/:id?apiKeyId=...`
 5. `complete/failed` 后：enqueue `finish` 并 close stream
 
 ---

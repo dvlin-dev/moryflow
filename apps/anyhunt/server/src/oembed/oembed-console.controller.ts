@@ -30,7 +30,7 @@ export class OembedConsoleController {
 
   /**
    * Playground oEmbed
-   * POST /api/console/oembed
+   * POST /api/v1/console/oembed
    * 使用会话认证，apiKeyId 用于选择使用哪个 API Key
    */
   @Post('oembed')

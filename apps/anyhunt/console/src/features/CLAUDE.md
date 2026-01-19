@@ -19,21 +19,21 @@ feature-name/
 
 ## 功能清单
 
-| 功能                        | 说明                 | API 入口                     |
-| --------------------------- | -------------------- | ---------------------------- |
-| `api-keys/`                 | API Key 管理         | `/api/v1/console/api-keys`   |
-| `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth） |
-| `playground-shared/`        | Playground 共享组件  | —                            |
-| `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`             |
-| `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`              |
-| `map-playground/`           | URL 发现测试         | `/api/v1/map`                |
-| `extract-playground/`       | AI 数据提取测试      | `/api/v1/extract`            |
-| `search-playground/`        | 网页搜索测试         | `/api/v1/search`             |
-| `embed-playground/`         | Embed 测试           | Demo-only                    |
-| `agent-browser-playground/` | Agent + Browser 测试 | `/api/console/playground/*`  |
-| `memox/`                    | Memox 记忆管理       | `/api/console/memories`      |
-| `settings/`                 | 账户设置             | `/api/v1/console/*`          |
-| `webhooks/`                 | Webhook 管理         | `/api/v1/console/webhooks`   |
+| 功能                        | 说明                 | API 入口                       |
+| --------------------------- | -------------------- | ------------------------------ |
+| `api-keys/`                 | API Key 管理         | `/api/v1/console/api-keys`     |
+| `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth）   |
+| `playground-shared/`        | Playground 共享组件  | —                              |
+| `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`               |
+| `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`                |
+| `map-playground/`           | URL 发现测试         | `/api/v1/map`                  |
+| `extract-playground/`       | AI 数据提取测试      | `/api/v1/extract`              |
+| `search-playground/`        | 网页搜索测试         | `/api/v1/search`               |
+| `embed-playground/`         | Embed 测试           | Demo-only                      |
+| `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/console/playground/*` |
+| `memox/`                    | Memox 记忆管理       | `/api/v1/console/memories`     |
+| `settings/`                 | 账户设置             | `/api/v1/console/*`            |
+| `webhooks/`                 | Webhook 管理         | `/api/v1/console/webhooks`     |
 
 ## 常用模式
 
