@@ -2,7 +2,7 @@
 title: 合并 dvlin-dev/agent-browser-research 冲突解决方案
 date: 2026-01-19
 scope: anyhunt-monorepo
-status: draft
+status: review
 ---
 
 # 合并 dvlin-dev/agent-browser-research 冲突解决方案
@@ -95,6 +95,22 @@ Anyhunt 当前的配额体系是 “Daily + Monthly + Purchased” 多 bucket，
 - `apps/anyhunt/server/prisma/main/schema.prisma` 引入 `AgentTask` / `AgentTaskCharge` / `AgentTaskStatus`
 - 同步添加迁移：`apps/anyhunt/server/prisma/main/migrations/20260119203000_add_agent_task/migration.sql`
 
+### E. Dokploy/Docker 构建：修复 workspace 依赖缺失导致的安装失败
+
+现象（Dokploy 日志）：
+
+- `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND: "@anyhunt/agents-core@workspace:*" ... no package named "@anyhunt/agents-core" is present in the workspace`
+
+根因：
+
+- `apps/anyhunt/server/Dockerfile` 的 `deps/prod-deps` 阶段只 `COPY` 了根 `package.json` 与 `apps/anyhunt/server/package.json`
+- 但 `@anyhunt/anyhunt-server` 依赖 `@anyhunt/agents-core`（workspace 包），pnpm 在 Docker 构建中无法发现该 workspace 包（因为它的 `package.json` 没有进镜像）
+
+结论（合并结果必须可部署）：
+
+- 在 `apps/anyhunt/server/Dockerfile` 的 `deps/prod-deps` 阶段补充 `COPY packages/agents-core/package.json`
+- 在 `builder/runner` 阶段补充 `COPY packages/agents-core`，避免 workspace symlink 在运行时变成断链
+
 ---
 
 ## 推荐操作流程（如果你要自己手工合并一次）
@@ -114,4 +130,9 @@ Anyhunt 当前的配额体系是 “Daily + Monthly + Purchased” 多 bucket，
 - `apps/anyhunt/server/src/app.module.ts` 能成功编译（不再因 `./agent` 缺失失败）
 - `fetchx.agent` / `fetchx.agent.estimate` 已加入 `apps/anyhunt/server/src/billing/billing.rules.ts`
 - Agent 退款逻辑基于 `deduct.breakdown`，且 Daily 退款携带 `deductTransactionId`
+- Dokploy/Docker 构建能完成 `pnpm install --filter @anyhunt/anyhunt-server... --prod`（不再因 workspace 包缺失失败）
 - `pnpm lint && pnpm typecheck && pnpm test:unit` 全部通过
+
+## 核对记录
+
+- 2026-01-19：复核冲突解法与部署报错；本地通过 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit`、`pnpm build`。

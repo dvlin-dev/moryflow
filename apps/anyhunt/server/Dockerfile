@@ -16,6 +16,7 @@ FROM base AS deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
+COPY packages/agents-core/package.json ./packages/agents-core/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server...
 
@@ -26,6 +27,7 @@ FROM base AS prod-deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
+COPY packages/agents-core/package.json ./packages/agents-core/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server... --prod \
     # 重建 Sharp 以获取正确的原生模块（WebP/SVG 支持）
@@ -40,6 +42,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/anyhunt/server/node_modules ./apps/anyhunt/server/node_modules
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY packages/agents-core ./packages/agents-core
 COPY apps/anyhunt/server ./apps/anyhunt/server
 
 WORKDIR /app/apps/anyhunt/server
@@ -115,6 +118,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma ./apps
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/package.json ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.main.config.ts ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.vector.config.ts ./apps/anyhunt/server/
+COPY --from=builder --chown=nestjs:nodejs /app/packages/agents-core ./packages/agents-core
 COPY --chown=nestjs:nodejs apps/anyhunt/server/docker-entrypoint.sh ./apps/anyhunt/server/
 RUN chmod +x ./apps/anyhunt/server/docker-entrypoint.sh
 

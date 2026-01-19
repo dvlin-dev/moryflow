@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-12
+date: 2026-01-19
 scope: monorepo
 status: active
 ---
@@ -67,4 +67,4 @@ status: active
 ## Research（调研 / 功能需求）
 
 - Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`
-- 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`
+- 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`（更新：2026-01-19，补充 Docker workspace 依赖修复）
