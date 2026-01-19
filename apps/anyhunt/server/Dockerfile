@@ -7,6 +7,11 @@ FROM node:22-slim AS base
 
 RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
+# Prisma 在容器内需要 OpenSSL 以正确选择 engine（否则会警告并可能导致不兼容）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # =============================================================================
@@ -45,6 +50,10 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/agents-core ./packages/agents-core
 COPY apps/anyhunt/server ./apps/anyhunt/server
 
+# Docker 构建中默认 `--ignore-scripts`，workspace 包不会自动生成 dist；
+# 这里显式构建 `@anyhunt/agents-core`，确保 anyhunt-server 的 tsc 能解析到 types，并且运行时可 require。
+RUN /app/node_modules/.bin/tsc -p /app/packages/agents-core/tsconfig.json --module commonjs --outDir /app/packages/agents-core/dist
+
 WORKDIR /app/apps/anyhunt/server
 
 # 为 Prisma 生成提供占位符环境变量（运行时会被真实值覆盖）
@@ -82,6 +91,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # 字体（截图渲染需要）
     fonts-liberation \
     fonts-noto-cjk \
+    # Prisma engine 检测/兼容性
+    openssl \
     # wget 用于健康检查
     wget \
     # 清理

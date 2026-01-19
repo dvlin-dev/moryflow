@@ -110,6 +110,8 @@ Anyhunt 当前的配额体系是 “Daily + Monthly + Purchased” 多 bucket，
 
 - 在 `apps/anyhunt/server/Dockerfile` 的 `deps/prod-deps` 阶段补充 `COPY packages/agents-core/package.json`
 - 在 `builder/runner` 阶段补充 `COPY packages/agents-core`，避免 workspace symlink 在运行时变成断链
+- Docker 构建默认 `pnpm install --ignore-scripts`：workspace 包不会自动生成 `dist/`。由于 `@anyhunt/agents-core` 的 `types` 指向 `dist/*`，需要在 `builder` 阶段显式 `tsc` 生成 `packages/agents-core/dist`，否则会触发 `TS2307: Cannot find module '@anyhunt/agents-core'`
+- Prisma 在容器内可能提示 OpenSSL 检测警告；为避免 engine 选择不稳定，在镜像中安装 `openssl`
 
 ---
 
