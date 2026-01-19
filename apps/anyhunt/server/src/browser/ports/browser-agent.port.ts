@@ -58,63 +58,73 @@ export interface BrowserAgentPort {
 }
 
 @Injectable()
-export class BrowserAgentPortService implements BrowserAgentPort {
+export class BrowserAgentPortService {
   constructor(private readonly sessionService: BrowserSessionService) {}
 
-  async createSession(
-    options?: Partial<CreateSessionInput>,
-  ): Promise<BrowserAgentSession> {
-    const session = await this.sessionService.createSession(options);
+  forUser(userId: string): BrowserAgentPort {
     return {
-      id: session.id,
-      createdAt: session.createdAt,
-      expiresAt: session.expiresAt,
-    };
-  }
+      createSession: async (
+        options?: Partial<CreateSessionInput>,
+      ): Promise<BrowserAgentSession> => {
+        const session = await this.sessionService.createSession(
+          userId,
+          options,
+        );
+        return {
+          id: session.id,
+          createdAt: session.createdAt,
+          expiresAt: session.expiresAt,
+        };
+      },
+      closeSession: async (sessionId: string): Promise<void> => {
+        await this.sessionService.closeSession(userId, sessionId);
+      },
+      openUrl: async (
+        sessionId: string,
+        input: OpenUrlInput,
+      ): Promise<{ success: boolean; url: string; title: string | null }> => {
+        return this.sessionService.openUrl(userId, sessionId, input);
+      },
+      snapshot: async (
+        sessionId: string,
+        options?: Partial<SnapshotInput>,
+      ): Promise<SnapshotResponse> => {
+        return this.sessionService.getSnapshot(userId, sessionId, options);
+      },
+      executeAction: async (
+        sessionId: string,
+        action: ActionInput,
+      ): Promise<ActionResponse> => {
+        return this.sessionService.executeAction(userId, sessionId, action);
+      },
+      search: async (
+        sessionId: string,
+        query: string,
+      ): Promise<BrowserAgentSearchResult> => {
+        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+        const openResult = await this.sessionService.openUrl(
+          userId,
+          sessionId,
+          {
+            url: searchUrl,
+            waitUntil: 'domcontentloaded',
+            timeout: 30000,
+          },
+        );
 
-  async closeSession(sessionId: string): Promise<void> {
-    await this.sessionService.closeSession(sessionId);
-  }
+        const snapshot = await this.sessionService.getSnapshot(
+          userId,
+          sessionId,
+          {
+            interactive: true,
+          },
+        );
 
-  async openUrl(
-    sessionId: string,
-    input: OpenUrlInput,
-  ): Promise<{ success: boolean; url: string; title: string | null }> {
-    return this.sessionService.openUrl(sessionId, input);
-  }
-
-  async snapshot(
-    sessionId: string,
-    options?: Partial<SnapshotInput>,
-  ): Promise<SnapshotResponse> {
-    return this.sessionService.getSnapshot(sessionId, options);
-  }
-
-  async executeAction(
-    sessionId: string,
-    action: ActionInput,
-  ): Promise<ActionResponse> {
-    return this.sessionService.executeAction(sessionId, action);
-  }
-
-  async search(
-    sessionId: string,
-    query: string,
-  ): Promise<BrowserAgentSearchResult> {
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    const openResult = await this.sessionService.openUrl(sessionId, {
-      url: searchUrl,
-      waitUntil: 'domcontentloaded',
-      timeout: 30000,
-    });
-
-    const snapshot = await this.sessionService.getSnapshot(sessionId, {
-      interactive: true,
-    });
-
-    return {
-      url: openResult.url,
-      snapshot,
+        return {
+          url: openResult.url,
+          snapshot,
+        };
+      },
     };
   }
 }

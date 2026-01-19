@@ -22,11 +22,28 @@ import { CrawlerService } from '../crawler/crawler.service';
 import { SearchService } from '../search/search.service';
 import { MapService } from '../map/map.service';
 import { ExtractService } from '../extract/extract.service';
+import { BrowserSessionService } from '../browser/browser-session.service';
+import { AgentService } from '../agent/agent.service';
 import type { ScrapeOptions } from '../scraper/dto/scrape.dto';
 import type { CrawlOptions } from '../crawler/dto/crawl.dto';
 import type { SearchOptions } from '../search/dto/search.dto';
 import type { MapOptions } from '../map/dto/map.dto';
 import type { ExtractOptions } from '../extract/dto/extract.dto';
+import type {
+  CreateSessionInput,
+  OpenUrlInput,
+  SnapshotInput,
+  DeltaSnapshotInput,
+  ActionInput,
+  ScreenshotInput,
+  CreateWindowInput,
+  ConnectCdpInput,
+  InterceptRule,
+  ExportStorageInput,
+  ImportStorageInput,
+  NetworkRequestRecord,
+} from '../browser/dto';
+import type { CreateAgentTaskInput, AgentStreamEvent } from '../agent/dto';
 
 @Injectable()
 export class ConsolePlaygroundService {
@@ -39,6 +56,8 @@ export class ConsolePlaygroundService {
     private readonly searchService: SearchService,
     private readonly mapService: MapService,
     private readonly extractService: ExtractService,
+    private readonly browserSessionService: BrowserSessionService,
+    private readonly agentService: AgentService,
   ) {}
 
   /**
@@ -133,5 +152,333 @@ export class ConsolePlaygroundService {
     await this.validateApiKeyOwnership(userId, apiKeyId);
     this.logger.log(`Console extract: user=${userId}, apiKey=${apiKeyId}`);
     return this.extractService.extract(userId, options);
+  }
+
+  // ==================== Browser Playground ====================
+
+  async createBrowserSession(
+    userId: string,
+    apiKeyId: string,
+    options?: Partial<CreateSessionInput>,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    this.logger.log(
+      `Console browser session create: user=${userId}, apiKey=${apiKeyId}`,
+    );
+    return this.browserSessionService.createSession(userId, options);
+  }
+
+  async getBrowserSessionStatus(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getSessionStatus(userId, sessionId);
+  }
+
+  async closeBrowserSession(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.closeSession(userId, sessionId);
+  }
+
+  async openBrowserUrl(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options: OpenUrlInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.openUrl(userId, sessionId, options);
+  }
+
+  async getBrowserSnapshot(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options?: Partial<SnapshotInput>,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getSnapshot(userId, sessionId, options);
+  }
+
+  async getBrowserDeltaSnapshot(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options?: Partial<DeltaSnapshotInput>,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getDeltaSnapshot(
+      userId,
+      sessionId,
+      options,
+    );
+  }
+
+  async executeBrowserAction(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    action: ActionInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.executeAction(userId, sessionId, action);
+  }
+
+  async getBrowserScreenshot(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options?: Partial<ScreenshotInput>,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getScreenshot(userId, sessionId, options);
+  }
+
+  async createBrowserTab(userId: string, apiKeyId: string, sessionId: string) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.createTab(userId, sessionId);
+  }
+
+  async listBrowserTabs(userId: string, apiKeyId: string, sessionId: string) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.listTabs(userId, sessionId);
+  }
+
+  async switchBrowserTab(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    tabIndex: number,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.switchTab(userId, sessionId, tabIndex);
+  }
+
+  async closeBrowserTab(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    tabIndex: number,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.closeTab(userId, sessionId, tabIndex);
+  }
+
+  async getBrowserDialogHistory(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getDialogHistory(userId, sessionId);
+  }
+
+  async createBrowserWindow(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options?: CreateWindowInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.createWindow(userId, sessionId, options);
+  }
+
+  async listBrowserWindows(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.listWindows(userId, sessionId);
+  }
+
+  async switchBrowserWindow(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    windowIndex: number,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.switchWindow(
+      userId,
+      sessionId,
+      windowIndex,
+    );
+  }
+
+  async closeBrowserWindow(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    windowIndex: number,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.closeWindow(
+      userId,
+      sessionId,
+      windowIndex,
+    );
+  }
+
+  async connectBrowserCdp(
+    userId: string,
+    apiKeyId: string,
+    options: ConnectCdpInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.connectCdp(userId, options);
+  }
+
+  async setBrowserInterceptRules(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    rules: InterceptRule[],
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.setInterceptRules(
+      userId,
+      sessionId,
+      rules,
+    );
+  }
+
+  async addBrowserInterceptRule(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    rule: InterceptRule,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.addInterceptRule(userId, sessionId, rule);
+  }
+
+  async removeBrowserInterceptRule(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    ruleId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.removeInterceptRule(
+      userId,
+      sessionId,
+      ruleId,
+    );
+  }
+
+  async clearBrowserInterceptRules(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.clearInterceptRules(userId, sessionId);
+  }
+
+  async getBrowserInterceptRules(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getInterceptRules(userId, sessionId);
+  }
+
+  async getBrowserNetworkHistory(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options?: { limit?: number; urlFilter?: string },
+  ): Promise<NetworkRequestRecord[]> {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getNetworkHistory(
+      userId,
+      sessionId,
+      options,
+    );
+  }
+
+  async clearBrowserNetworkHistory(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.clearNetworkHistory(userId, sessionId);
+  }
+
+  async exportBrowserStorage(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    options?: ExportStorageInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.exportStorage(userId, sessionId, options);
+  }
+
+  async importBrowserStorage(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    data: ImportStorageInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.importStorage(userId, sessionId, data);
+  }
+
+  async clearBrowserStorage(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.clearStorage(userId, sessionId);
+  }
+
+  // ==================== Agent Playground ====================
+
+  async estimateAgentCost(
+    userId: string,
+    apiKeyId: string,
+    input: CreateAgentTaskInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.agentService.estimateCost(input);
+  }
+
+  async executeAgentTask(
+    userId: string,
+    apiKeyId: string,
+    input: CreateAgentTaskInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.agentService.executeTask(input, userId);
+  }
+
+  async *executeAgentTaskStream(
+    userId: string,
+    apiKeyId: string,
+    input: CreateAgentTaskInput,
+  ): AsyncGenerator<AgentStreamEvent, void, unknown> {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    yield* this.agentService.executeTaskStream(input, userId);
+  }
+
+  async getAgentTaskStatus(userId: string, apiKeyId: string, taskId: string) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.agentService.getTaskStatus(taskId, userId);
+  }
+
+  async cancelAgentTask(userId: string, apiKeyId: string, taskId: string) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.agentService.cancelTask(taskId, userId);
   }
 }

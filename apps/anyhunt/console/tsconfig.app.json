@@ -19,7 +19,8 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@anyhunt/ui/ai/*": ["../../../packages/ui/src/ai/*"]
     },
 
     /* Linting */

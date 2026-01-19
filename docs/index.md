@@ -68,3 +68,8 @@ status: active
 
 - Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`
 - 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`（更新：2026-01-19，补充 Docker workspace 依赖修复）
+- 设计方案：Console Agent Browser Playground（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`
+
+## Skills（内部协作 / Prompt 规范）
+
+- Code Simplifier：`docs/skill/code-simplifier.md`

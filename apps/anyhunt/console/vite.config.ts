@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@anyhunt/ui/ai': path.resolve(__dirname, '../../../packages/ui/src/ai'),
     },
     dedupe: ['react', 'react-dom'],
   },

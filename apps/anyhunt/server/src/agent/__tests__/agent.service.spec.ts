@@ -136,6 +136,25 @@ const createMockBillingService = (): AgentBillingService => {
   } as unknown as AgentBillingService;
 };
 
+const createMockBrowserPortService = (): BrowserAgentPortService => {
+  const port = {
+    createSession: vi.fn().mockResolvedValue({
+      id: 'session_1',
+      createdAt: '',
+      expiresAt: '',
+    }),
+    closeSession: vi.fn().mockResolvedValue(undefined),
+    openUrl: vi.fn(),
+    snapshot: vi.fn(),
+    executeAction: vi.fn(),
+    search: vi.fn(),
+  };
+
+  return {
+    forUser: vi.fn().mockReturnValue(port),
+  } as unknown as BrowserAgentPortService;
+};
+
 describe('AgentService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -148,14 +167,7 @@ describe('AgentService', () => {
   });
 
   it('deducts credits in 100-credit checkpoints and settles remainder', async () => {
-    const mockBrowserPort = {
-      createSession: vi.fn().mockResolvedValue({
-        id: 'session_1',
-        createdAt: '',
-        expiresAt: '',
-      }),
-      closeSession: vi.fn().mockResolvedValue(undefined),
-    } as unknown as BrowserAgentPortService;
+    const mockBrowserPort = createMockBrowserPortService();
 
     const mockBillingService = createMockBillingService();
 
@@ -192,14 +204,7 @@ describe('AgentService', () => {
   });
 
   it('refunds checkpoint charges on failure', async () => {
-    const mockBrowserPort = {
-      createSession: vi.fn().mockResolvedValue({
-        id: 'session_1',
-        createdAt: '',
-        expiresAt: '',
-      }),
-      closeSession: vi.fn().mockResolvedValue(undefined),
-    } as unknown as BrowserAgentPortService;
+    const mockBrowserPort = createMockBrowserPortService();
 
     const mockBillingService = createMockBillingService();
 
@@ -237,14 +242,7 @@ describe('AgentService', () => {
   });
 
   it('marks task cancelled when cancel flag is set during execution', async () => {
-    const mockBrowserPort = {
-      createSession: vi.fn().mockResolvedValue({
-        id: 'session_1',
-        createdAt: '',
-        expiresAt: '',
-      }),
-      closeSession: vi.fn().mockResolvedValue(undefined),
-    } as unknown as BrowserAgentPortService;
+    const mockBrowserPort = createMockBrowserPortService();
 
     const mockBillingService = createMockBillingService();
 
@@ -282,10 +280,7 @@ describe('AgentService', () => {
   });
 
   it('requests cancel and returns latest progress credits', async () => {
-    const mockBrowserPort = {
-      createSession: vi.fn(),
-      closeSession: vi.fn(),
-    } as unknown as BrowserAgentPortService;
+    const mockBrowserPort = createMockBrowserPortService();
 
     const mockBillingService = createMockBillingService();
 
@@ -335,10 +330,7 @@ describe('AgentService', () => {
   });
 
   it('rejects cancel when task is already completed', async () => {
-    const mockBrowserPort = {
-      createSession: vi.fn(),
-      closeSession: vi.fn(),
-    } as unknown as BrowserAgentPortService;
+    const mockBrowserPort = createMockBrowserPortService();
 
     const mockBillingService = createMockBillingService();
 

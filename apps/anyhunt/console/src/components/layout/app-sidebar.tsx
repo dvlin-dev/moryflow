@@ -41,6 +41,7 @@ const navGroups: NavGroup[] = [
           { title: 'Extract', url: '/playground/extract' },
           { title: 'Search', url: '/playground/search' },
           { title: 'Embed', url: '/playground/embed' },
+          { title: 'Agent Browser', url: '/playground/agent-browser' },
         ],
       },
       {

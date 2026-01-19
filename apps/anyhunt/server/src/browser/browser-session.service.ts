@@ -64,13 +64,22 @@ export class BrowserSessionService {
     private readonly storagePersistence: StoragePersistenceService,
   ) {}
 
+  private assertSessionAccess(userId: string, sessionId: string): void {
+    this.sessionManager.assertSessionOwnership(sessionId, userId);
+  }
+
+  private getSessionForUser(userId: string, sessionId: string) {
+    return this.sessionManager.assertSessionOwnership(sessionId, userId);
+  }
+
   /**
    * 创建会话
    */
   async createSession(
+    userId: string,
     options?: Partial<CreateSessionInput>,
   ): Promise<SessionInfo> {
-    const session = await this.sessionManager.createSession(options);
+    const session = await this.sessionManager.createSession(options, userId);
 
     return {
       id: session.id,
@@ -84,8 +93,11 @@ export class BrowserSessionService {
   /**
    * 获取会话状态
    */
-  async getSessionStatus(sessionId: string): Promise<SessionInfo> {
-    const session = this.sessionManager.getSession(sessionId);
+  async getSessionStatus(
+    userId: string,
+    sessionId: string,
+  ): Promise<SessionInfo> {
+    const session = this.getSessionForUser(userId, sessionId);
 
     let title: string | null = null;
     try {
@@ -106,7 +118,8 @@ export class BrowserSessionService {
   /**
    * 关闭会话
    */
-  async closeSession(sessionId: string): Promise<void> {
+  async closeSession(userId: string, sessionId: string): Promise<void> {
+    this.assertSessionAccess(userId, sessionId);
     try {
       await this.networkInterceptor.cleanupSession(sessionId);
     } catch (error) {
@@ -122,6 +135,7 @@ export class BrowserSessionService {
    * 打开 URL
    */
   async openUrl(
+    userId: string,
     sessionId: string,
     options: OpenUrlInput,
   ): Promise<{ success: boolean; url: string; title: string | null }> {
@@ -132,7 +146,7 @@ export class BrowserSessionService {
       throw new UrlNotAllowedError(url);
     }
 
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
 
     await session.page.goto(url, { waitUntil, timeout });
 
@@ -154,10 +168,11 @@ export class BrowserSessionService {
    * 获取页面快照
    */
   async getSnapshot(
+    userId: string,
     sessionId: string,
     options?: Partial<SnapshotInput>,
   ): Promise<SnapshotResponse> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
 
     const { snapshot, refs } = await this.snapshotService.capture(
       session.page,
@@ -174,10 +189,11 @@ export class BrowserSessionService {
    * 执行动作
    */
   async executeAction(
+    userId: string,
     sessionId: string,
     action: ActionInput,
   ): Promise<ActionResponse> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
 
     return this.actionHandler.execute(session, action);
   }
@@ -186,10 +202,11 @@ export class BrowserSessionService {
    * 获取截图
    */
   async getScreenshot(
+    userId: string,
     sessionId: string,
     options?: Partial<ScreenshotInput>,
   ): Promise<ScreenshotResponse> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
 
     const {
       selector,
@@ -262,35 +279,40 @@ export class BrowserSessionService {
   /**
    * 创建新标签页
    */
-  async createTab(sessionId: string) {
+  async createTab(userId: string, sessionId: string) {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.createTab(sessionId);
   }
 
   /**
    * 列出所有标签页
    */
-  async listTabs(sessionId: string) {
+  async listTabs(userId: string, sessionId: string) {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.listTabs(sessionId);
   }
 
   /**
    * 切换到指定标签页
    */
-  async switchTab(sessionId: string, tabIndex: number) {
+  async switchTab(userId: string, sessionId: string, tabIndex: number) {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.switchTab(sessionId, tabIndex);
   }
 
   /**
    * 关闭指定标签页
    */
-  async closeTab(sessionId: string, tabIndex: number) {
+  async closeTab(userId: string, sessionId: string, tabIndex: number) {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.closeTab(sessionId, tabIndex);
   }
 
   /**
    * 获取对话框历史
    */
-  getDialogHistory(sessionId: string) {
+  getDialogHistory(userId: string, sessionId: string) {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.getDialogHistory(sessionId);
   }
 
@@ -300,16 +322,19 @@ export class BrowserSessionService {
    * 创建新窗口（独立 BrowserContext，隔离 cookies/storage）
    */
   async createWindow(
+    userId: string,
     sessionId: string,
     options?: CreateWindowInput,
   ): Promise<WindowInfo> {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.createWindow(sessionId, options);
   }
 
   /**
    * 列出所有窗口
    */
-  async listWindows(sessionId: string): Promise<WindowInfo[]> {
+  async listWindows(userId: string, sessionId: string): Promise<WindowInfo[]> {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.listWindows(sessionId);
   }
 
@@ -317,16 +342,23 @@ export class BrowserSessionService {
    * 切换到指定窗口
    */
   async switchWindow(
+    userId: string,
     sessionId: string,
     windowIndex: number,
   ): Promise<WindowInfo> {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.switchWindow(sessionId, windowIndex);
   }
 
   /**
    * 关闭指定窗口
    */
-  async closeWindow(sessionId: string, windowIndex: number): Promise<void> {
+  async closeWindow(
+    userId: string,
+    sessionId: string,
+    windowIndex: number,
+  ): Promise<void> {
+    this.assertSessionAccess(userId, sessionId);
     return this.sessionManager.closeWindow(sessionId, windowIndex);
   }
 
@@ -335,7 +367,10 @@ export class BrowserSessionService {
   /**
    * 通过 CDP 连接到已运行的浏览器
    */
-  async connectCdp(options: ConnectCdpInput): Promise<CdpSessionInfo> {
+  async connectCdp(
+    userId: string,
+    options: ConnectCdpInput,
+  ): Promise<CdpSessionInfo> {
     // 建立 CDP 连接
     const connection = await this.cdpConnector.connect({
       wsEndpoint: options.wsEndpoint,
@@ -350,6 +385,8 @@ export class BrowserSessionService {
     const session = await this.sessionManager.createCdpSession(
       context,
       connection.wsEndpoint,
+      undefined,
+      userId,
     );
 
     return {
@@ -369,10 +406,11 @@ export class BrowserSessionService {
    * 设置网络拦截规则
    */
   async setInterceptRules(
+    userId: string,
     sessionId: string,
     rules: InterceptRule[],
   ): Promise<{ rulesCount: number }> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
     return this.networkInterceptor.setRules(sessionId, session.page, rules);
   }
 
@@ -380,31 +418,39 @@ export class BrowserSessionService {
    * 添加单条拦截规则
    */
   async addInterceptRule(
+    userId: string,
     sessionId: string,
     rule: InterceptRule,
   ): Promise<{ ruleId: string }> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
     return this.networkInterceptor.addRule(sessionId, session.page, rule);
   }
 
   /**
    * 移除拦截规则
    */
-  removeInterceptRule(sessionId: string, ruleId: string): boolean {
+  removeInterceptRule(
+    userId: string,
+    sessionId: string,
+    ruleId: string,
+  ): boolean {
+    this.assertSessionAccess(userId, sessionId);
     return this.networkInterceptor.removeRule(sessionId, ruleId);
   }
 
   /**
    * 清除所有拦截规则
    */
-  async clearInterceptRules(sessionId: string): Promise<void> {
+  async clearInterceptRules(userId: string, sessionId: string): Promise<void> {
+    this.assertSessionAccess(userId, sessionId);
     return this.networkInterceptor.clearRules(sessionId);
   }
 
   /**
    * 获取当前拦截规则
    */
-  getInterceptRules(sessionId: string): InterceptRule[] {
+  getInterceptRules(userId: string, sessionId: string): InterceptRule[] {
+    this.assertSessionAccess(userId, sessionId);
     return this.networkInterceptor.getRules(sessionId);
   }
 
@@ -412,16 +458,19 @@ export class BrowserSessionService {
    * 获取网络请求历史
    */
   getNetworkHistory(
+    userId: string,
     sessionId: string,
     options?: { limit?: number; urlFilter?: string },
   ): NetworkRequestRecord[] {
+    this.assertSessionAccess(userId, sessionId);
     return this.networkInterceptor.getRequestHistory(sessionId, options);
   }
 
   /**
    * 清除网络历史记录
    */
-  clearNetworkHistory(sessionId: string): void {
+  clearNetworkHistory(userId: string, sessionId: string): void {
+    this.assertSessionAccess(userId, sessionId);
     this.networkInterceptor.clearHistory(sessionId);
   }
 
@@ -431,10 +480,11 @@ export class BrowserSessionService {
    * 导出会话存储
    */
   async exportStorage(
+    userId: string,
     sessionId: string,
     options?: ExportStorageInput,
   ): Promise<StorageExportResult> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
     return this.storagePersistence.exportStorage(
       session.context,
       session.page,
@@ -446,12 +496,13 @@ export class BrowserSessionService {
    * 导入会话存储
    */
   async importStorage(
+    userId: string,
     sessionId: string,
     data: ImportStorageInput,
   ): Promise<{
     imported: { cookies: number; localStorage: number; sessionStorage: number };
   }> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
     return this.storagePersistence.importStorage(
       session.context,
       session.page,
@@ -463,6 +514,7 @@ export class BrowserSessionService {
    * 清除会话存储
    */
   async clearStorage(
+    userId: string,
     sessionId: string,
     options?: {
       cookies?: boolean;
@@ -470,7 +522,7 @@ export class BrowserSessionService {
       sessionStorage?: boolean;
     },
   ): Promise<void> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
     return this.storagePersistence.clearStorage(
       session.context,
       session.page,
@@ -484,10 +536,11 @@ export class BrowserSessionService {
    * 获取增量快照（delta 模式）
    */
   async getDeltaSnapshot(
+    userId: string,
     sessionId: string,
     options?: Partial<DeltaSnapshotInput>,
   ): Promise<DeltaSnapshotResponse> {
-    const session = this.sessionManager.getSession(sessionId);
+    const session = this.getSessionForUser(userId, sessionId);
 
     const { snapshot, refs } = await this.snapshotService.captureDelta(
       sessionId,

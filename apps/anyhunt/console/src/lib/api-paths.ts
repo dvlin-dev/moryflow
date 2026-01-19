@@ -29,6 +29,10 @@ export const CONSOLE_PLAYGROUND_API = {
   MAP: '/api/console/playground/map',
   EXTRACT: '/api/console/playground/extract',
   SEARCH: '/api/console/playground/search',
+  BROWSER_SESSION: '/api/console/playground/browser/session',
+  BROWSER_CDP_CONNECT: '/api/console/playground/browser/cdp/connect',
+  AGENT: '/api/console/playground/agent',
+  AGENT_ESTIMATE: '/api/console/playground/agent/estimate',
 } as const;
 
 // Fetchx 核心 API（API Key 认证）

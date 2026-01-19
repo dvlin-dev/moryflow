@@ -21,6 +21,7 @@ import MapPlaygroundPage from './pages/MapPlaygroundPage';
 import ExtractPlaygroundPage from './pages/ExtractPlaygroundPage';
 import SearchPlaygroundPage from './pages/SearchPlaygroundPage';
 import EmbedPlaygroundPage from './pages/EmbedPlaygroundPage';
+import AgentBrowserPlaygroundPage from './pages/AgentBrowserPlaygroundPage';
 import MemoriesPage from './pages/MemoriesPage';
 import EntitiesPage from './pages/EntitiesPage';
 import GraphPage from './pages/GraphPage';
@@ -131,6 +132,7 @@ function App() {
               <Route path="extract" element={<ExtractPlaygroundPage />} />
               <Route path="search" element={<SearchPlaygroundPage />} />
               <Route path="embed" element={<EmbedPlaygroundPage />} />
+              <Route path="agent-browser" element={<AgentBrowserPlaygroundPage />} />
             </Route>
 
             {/* Memox - AI 记忆管理 */}

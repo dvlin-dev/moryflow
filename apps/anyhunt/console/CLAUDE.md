@@ -11,6 +11,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 用量与额度概览
 - API Key 管理（创建/删除/查看）
 - 抓取/截图测试（Playground）
+- Agent + Browser 闭环测试（Playground）
 - Memox 记忆管理（Memories/Entities/Graph）
 - 文档入口（外链：`https://docs.anyhunt.app`）
 - Webhook 配置
@@ -33,6 +34,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 全局样式仅引入 `/ui/styles`，`@source` 只扫描本应用源码
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - Vite 需 `resolve.dedupe` React 依赖，避免生产环境 hooks 异常
+- `@anyhunt/ui/ai/*` 通过 Vite/tsconfig alias 指向 `packages/ui/src/ai`，确保构建可解析
 - 使用 TailwindCSS 4 + shadcn/ui 组件库
 - 状态管理使用 Zustand
 - 数据获取使用 TanStack Query
@@ -59,19 +61,24 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 功能列表
 
-| 功能                  | 路径                  | 说明            |
-| --------------------- | --------------------- | --------------- |
-| `api-keys/`           | `/api-keys`           | API Key 管理    |
-| `scrape-playground/`  | `/playground/scrape`  | 单页抓取测试    |
-| `crawl-playground/`   | `/playground/crawl`   | 多页爬取测试    |
-| `map-playground/`     | `/playground/map`     | URL 发现测试    |
-| `extract-playground/` | `/playground/extract` | AI 数据提取测试 |
-| `search-playground/`  | `/playground/search`  | 网页搜索测试    |
-| `embed-playground/`   | `/playground/embed`   | Embed 脚本测试  |
-| `memox/`              | `/memox/*`            | Memox 记忆管理  |
-| `webhooks/`           | `/webhooks`           | Webhook 配置    |
-| `settings/`           | `/settings`           | 账户设置        |
-| `auth/`               | `/login`              | 登录表单        |
+| 功能                        | 路径                        | 说明                 |
+| --------------------------- | --------------------------- | -------------------- |
+| `api-keys/`                 | `/api-keys`                 | API Key 管理         |
+| `scrape-playground/`        | `/playground/scrape`        | 单页抓取测试         |
+| `crawl-playground/`         | `/playground/crawl`         | 多页爬取测试         |
+| `map-playground/`           | `/playground/map`           | URL 发现测试         |
+| `extract-playground/`       | `/playground/extract`       | AI 数据提取测试      |
+| `search-playground/`        | `/playground/search`        | 网页搜索测试         |
+| `embed-playground/`         | `/playground/embed`         | Embed 脚本测试       |
+| `agent-browser-playground/` | `/playground/agent-browser` | Agent + Browser 测试 |
+| `memox/`                    | `/memox/*`                  | Memox 记忆管理       |
+| `webhooks/`                 | `/webhooks`                 | Webhook 配置         |
+| `settings/`                 | `/settings`                 | 账户设置             |
+| `auth/`                     | `/login`                    | 登录表单             |
+
+## 近期变更
+
+- Agent Browser Playground 页面新增错误边界与分区组件，提升稳定性
 
 ## Feature Module Structure
 

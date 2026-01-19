@@ -52,8 +52,10 @@ module-name/
 
 ## 近期变更
 
+- E2E 测试 setup 补充默认环境变量（BETTER*AUTH_SECRET、VECTORIZE*\*），避免缺失配置阻断启动
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
+- AuthModule 设为全局并导出 AuthGuard，修复 e2e 中 Guard 依赖注入失败
 
 ## 错误信息规范
 

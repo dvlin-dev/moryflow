@@ -61,6 +61,8 @@ export interface WindowData {
 export interface BrowserSession {
   /** 会话 ID */
   id: string;
+  /** 会话归属用户（用于权限校验） */
+  ownerUserId?: string;
   /** 所有窗口（多窗口支持，每个窗口是独立的 BrowserContext） */
   windows: WindowData[];
   /** 当前活跃窗口索引 */
@@ -105,6 +107,14 @@ export class SessionExpiredError extends Error {
   }
 }
 
+/** Session 归属校验失败 */
+export class SessionOwnershipError extends Error {
+  constructor(sessionId: string) {
+    super(`Session ownership mismatch: ${sessionId}`);
+    this.name = 'SessionOwnershipError';
+  }
+}
+
 @Injectable()
 export class SessionManager implements OnModuleDestroy {
   private readonly logger = new Logger(SessionManager.name);
@@ -142,6 +152,7 @@ export class SessionManager implements OnModuleDestroy {
    */
   async createSession(
     options?: Partial<CreateSessionInput>,
+    ownerUserId?: string,
   ): Promise<BrowserSession> {
     const sessionId = this.generateSessionId();
     const timeout = options?.timeout ?? this.DEFAULT_TIMEOUT;
@@ -173,6 +184,7 @@ export class SessionManager implements OnModuleDestroy {
     const now = new Date();
     const session: BrowserSession = {
       id: sessionId,
+      ownerUserId,
       // 多窗口支持
       windows: [initialWindow],
       activeWindowIndex: 0,
@@ -262,6 +274,22 @@ export class SessionManager implements OnModuleDestroy {
   }
 
   /**
+   * 校验会话归属
+   */
+  assertSessionOwnership(
+    sessionId: string,
+    ownerUserId: string,
+  ): BrowserSession {
+    const session = this.getSession(sessionId);
+
+    if (session.ownerUserId && session.ownerUserId !== ownerUserId) {
+      throw new SessionOwnershipError(sessionId);
+    }
+
+    return session;
+  }
+
+  /**
    * 延长会话有效期
    */
   extendSession(sessionId: string, additionalMs: number): void {
@@ -327,6 +355,7 @@ export class SessionManager implements OnModuleDestroy {
     context: BrowserContext,
     wsEndpoint: string,
     options?: Partial<CreateSessionInput>,
+    ownerUserId?: string,
   ): Promise<BrowserSession> {
     const sessionId = this.generateSessionId();
     const timeout = options?.timeout ?? this.DEFAULT_TIMEOUT;
@@ -353,6 +382,7 @@ export class SessionManager implements OnModuleDestroy {
     const now = new Date();
     const session: BrowserSession = {
       id: sessionId,
+      ownerUserId,
       windows: [initialWindow],
       activeWindowIndex: 0,
       context,

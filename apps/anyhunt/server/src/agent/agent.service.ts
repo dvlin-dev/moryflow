@@ -17,7 +17,10 @@ import {
   type StreamedRunResult,
 } from '@anyhunt/agents-core';
 import type { AgentTask } from '../../generated/prisma-main/client';
-import { BrowserAgentPortService } from '../browser/ports';
+import {
+  BrowserAgentPortService,
+  type BrowserAgentSession,
+} from '../browser/ports';
 import { browserTools, type BrowserAgentContext } from './tools';
 import { AgentTaskRepository } from './agent-task.repository';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
@@ -139,12 +142,13 @@ export class AgentService {
         ),
       'set initial progress',
     );
-    let session: { id: string } | null = null;
+    const browserPort = this.browserAgentPort.forUser(userId);
+    let session: BrowserAgentSession | null = null;
 
     try {
       await this.billingService.ensureMinimumQuota(userId, taskId);
 
-      session = await this.browserAgentPort.createSession();
+      session = await browserPort.createSession();
       const runtime = this.runningTasks.get(taskId);
       if (runtime) {
         runtime.sessionId = session.id;
@@ -165,7 +169,7 @@ export class AgentService {
 
       const context: BrowserAgentContext = {
         sessionId: session.id,
-        browser: this.browserAgentPort,
+        browser: browserPort,
         abortSignal: abortController.signal,
       };
 
@@ -330,7 +334,7 @@ export class AgentService {
       };
     } finally {
       if (session) {
-        await this.browserAgentPort.closeSession(session.id);
+        await browserPort.closeSession(session.id);
       }
       await this.safeProgressOperation(
         () => this.progressStore.clearCancel(taskId),
@@ -373,7 +377,8 @@ export class AgentService {
         ),
       'set initial progress',
     );
-    let session: { id: string } | null = null;
+    const browserPort = this.browserAgentPort.forUser(userId);
+    let session: BrowserAgentSession | null = null;
 
     yield {
       type: 'started',
@@ -384,7 +389,7 @@ export class AgentService {
     try {
       await this.billingService.ensureMinimumQuota(userId, taskId);
 
-      session = await this.browserAgentPort.createSession();
+      session = await browserPort.createSession();
       const runtime = this.runningTasks.get(taskId);
       if (runtime) {
         runtime.sessionId = session.id;
@@ -405,7 +410,7 @@ export class AgentService {
 
       const context: BrowserAgentContext = {
         sessionId: session.id,
-        browser: this.browserAgentPort,
+        browser: browserPort,
         abortSignal: abortController.signal,
       };
 
@@ -570,7 +575,7 @@ export class AgentService {
       };
     } finally {
       if (session) {
-        await this.browserAgentPort.closeSession(session.id);
+        await browserPort.closeSession(session.id);
       }
       await this.safeProgressOperation(
         () => this.progressStore.clearCancel(taskId),
@@ -770,7 +775,8 @@ export class AgentService {
 
     if (runtime?.sessionId) {
       try {
-        await this.browserAgentPort.closeSession(runtime.sessionId);
+        const browserPort = this.browserAgentPort.forUser(userId);
+        await browserPort.closeSession(runtime.sessionId);
         this.logger.debug(
           `Closed session ${runtime.sessionId} for cancelled task ${taskId}`,
         );

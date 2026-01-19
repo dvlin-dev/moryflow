@@ -28,14 +28,19 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { ZodValidationPipe } from '../common';
-import { Public } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { BillingKey } from '../billing/billing.decorators';
 import {
   BrowserSessionService,
   UrlNotAllowedError,
 } from './browser-session.service';
-import { SessionNotFoundError, SessionExpiredError } from './session';
+import {
+  SessionNotFoundError,
+  SessionExpiredError,
+  SessionOwnershipError,
+} from './session';
+import type { CurrentUserDto } from '../types';
 import {
   CreateSessionSchema,
   OpenUrlSchema,
@@ -78,10 +83,11 @@ export class BrowserSessionController {
   @ApiCreatedResponse({ description: 'Session created successfully' })
   @BillingKey('fetchx.browser.session')
   async createSession(
+    @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(CreateSessionSchema))
     options: CreateSessionInput,
   ) {
-    return this.browserSessionService.createSession(options);
+    return this.browserSessionService.createSession(user.id, options);
   }
 
   @Get(':id')
@@ -89,9 +95,15 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Session status' })
   @ApiNotFoundResponse({ description: 'Session not found or expired' })
-  async getSessionStatus(@Param('id') sessionId: string) {
+  async getSessionStatus(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return await this.browserSessionService.getSessionStatus(sessionId);
+      return await this.browserSessionService.getSessionStatus(
+        user.id,
+        sessionId,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -101,8 +113,11 @@ export class BrowserSessionController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Close a browser session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  async closeSession(@Param('id') sessionId: string) {
-    await this.browserSessionService.closeSession(sessionId);
+  async closeSession(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
+    await this.browserSessionService.closeSession(user.id, sessionId);
   }
 
   @Post(':id/open')
@@ -110,11 +125,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'URL opened successfully' })
   async openUrl(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(OpenUrlSchema)) options: OpenUrlInput,
   ) {
     try {
-      return await this.browserSessionService.openUrl(sessionId, options);
+      return await this.browserSessionService.openUrl(
+        user.id,
+        sessionId,
+        options,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -127,11 +147,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Page snapshot with refs' })
   async getSnapshot(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(SnapshotSchema)) options: SnapshotInput,
   ) {
     try {
-      return await this.browserSessionService.getSnapshot(sessionId, options);
+      return await this.browserSessionService.getSnapshot(
+        user.id,
+        sessionId,
+        options,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -142,11 +167,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Action result' })
   async executeAction(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(ActionSchema)) action: ActionInput,
   ) {
     try {
-      return await this.browserSessionService.executeAction(sessionId, action);
+      return await this.browserSessionService.executeAction(
+        user.id,
+        sessionId,
+        action,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -158,11 +188,16 @@ export class BrowserSessionController {
   @ApiOkResponse({ description: 'Screenshot data' })
   @BillingKey('fetchx.browser.screenshot')
   async getScreenshot(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(ScreenshotSchema)) options: ScreenshotInput,
   ) {
     try {
-      return await this.browserSessionService.getScreenshot(sessionId, options);
+      return await this.browserSessionService.getScreenshot(
+        user.id,
+        sessionId,
+        options,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -174,9 +209,12 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'Create a new tab in the session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiCreatedResponse({ description: 'New tab created' })
-  async createTab(@Param('id') sessionId: string) {
+  async createTab(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return await this.browserSessionService.createTab(sessionId);
+      return await this.browserSessionService.createTab(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -186,9 +224,12 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'List all tabs in the session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'List of tabs' })
-  async listTabs(@Param('id') sessionId: string) {
+  async listTabs(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return await this.browserSessionService.listTabs(sessionId);
+      return await this.browserSessionService.listTabs(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -200,11 +241,13 @@ export class BrowserSessionController {
   @ApiParam({ name: 'tabIndex', description: 'Tab index to activate' })
   @ApiOkResponse({ description: 'Tab activated' })
   async switchTab(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Param('tabIndex') tabIndex: string,
   ) {
     try {
       return await this.browserSessionService.switchTab(
+        user.id,
         sessionId,
         parseInt(tabIndex, 10),
       );
@@ -219,11 +262,13 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiParam({ name: 'tabIndex', description: 'Tab index to close' })
   async closeTab(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Param('tabIndex') tabIndex: string,
   ) {
     try {
       await this.browserSessionService.closeTab(
+        user.id,
         sessionId,
         parseInt(tabIndex, 10),
       );
@@ -238,9 +283,12 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'Get dialog history for the session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'List of recent dialogs' })
-  getDialogHistory(@Param('id') sessionId: string) {
+  getDialogHistory(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return this.browserSessionService.getDialogHistory(sessionId);
+      return this.browserSessionService.getDialogHistory(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -255,11 +303,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiCreatedResponse({ description: 'New window created' })
   async createWindow(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(CreateWindowSchema)) options: CreateWindowInput,
   ) {
     try {
-      return await this.browserSessionService.createWindow(sessionId, options);
+      return await this.browserSessionService.createWindow(
+        user.id,
+        sessionId,
+        options,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -269,9 +322,12 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'List all windows in the session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'List of windows' })
-  async listWindows(@Param('id') sessionId: string) {
+  async listWindows(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return await this.browserSessionService.listWindows(sessionId);
+      return await this.browserSessionService.listWindows(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -283,11 +339,13 @@ export class BrowserSessionController {
   @ApiParam({ name: 'windowIndex', description: 'Window index to activate' })
   @ApiOkResponse({ description: 'Window activated' })
   async switchWindow(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Param('windowIndex') windowIndex: string,
   ) {
     try {
       return await this.browserSessionService.switchWindow(
+        user.id,
         sessionId,
         parseInt(windowIndex, 10),
       );
@@ -302,11 +360,13 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiParam({ name: 'windowIndex', description: 'Window index to close' })
   async closeWindow(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Param('windowIndex') windowIndex: string,
   ) {
     try {
       await this.browserSessionService.closeWindow(
+        user.id,
         sessionId,
         parseInt(windowIndex, 10),
       );
@@ -321,10 +381,11 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'Connect to an existing browser via CDP' })
   @ApiCreatedResponse({ description: 'CDP session created successfully' })
   async connectCdp(
+    @CurrentUser() user: CurrentUserDto,
     @Body(new ZodValidationPipe(ConnectCdpSchema)) options: ConnectCdpInput,
   ) {
     try {
-      return await this.browserSessionService.connectCdp(options);
+      return await this.browserSessionService.connectCdp(user.id, options);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -337,12 +398,14 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Rules set successfully' })
   async setInterceptRules(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(SetInterceptRulesSchema))
     body: { rules: InterceptRule[] },
   ) {
     try {
       return await this.browserSessionService.setInterceptRules(
+        user.id,
         sessionId,
         body.rules,
       );
@@ -356,11 +419,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiCreatedResponse({ description: 'Rule added successfully' })
   async addInterceptRule(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(InterceptRuleSchema)) rule: InterceptRule,
   ) {
     try {
-      return await this.browserSessionService.addInterceptRule(sessionId, rule);
+      return await this.browserSessionService.addInterceptRule(
+        user.id,
+        sessionId,
+        rule,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -372,11 +440,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiParam({ name: 'ruleId', description: 'Rule ID to remove' })
   removeInterceptRule(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Param('ruleId') ruleId: string,
   ) {
     try {
-      this.browserSessionService.removeInterceptRule(sessionId, ruleId);
+      this.browserSessionService.removeInterceptRule(
+        user.id,
+        sessionId,
+        ruleId,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -386,9 +459,12 @@ export class BrowserSessionController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Clear all interception rules' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  async clearInterceptRules(@Param('id') sessionId: string) {
+  async clearInterceptRules(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      await this.browserSessionService.clearInterceptRules(sessionId);
+      await this.browserSessionService.clearInterceptRules(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -398,9 +474,12 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'Get current interception rules' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'List of rules' })
-  getInterceptRules(@Param('id') sessionId: string) {
+  getInterceptRules(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return this.browserSessionService.getInterceptRules(sessionId);
+      return this.browserSessionService.getInterceptRules(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -410,9 +489,12 @@ export class BrowserSessionController {
   @ApiOperation({ summary: 'Get network request history' })
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'List of network requests' })
-  getNetworkHistory(@Param('id') sessionId: string) {
+  getNetworkHistory(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      return this.browserSessionService.getNetworkHistory(sessionId);
+      return this.browserSessionService.getNetworkHistory(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -422,9 +504,12 @@ export class BrowserSessionController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Clear network request history' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  clearNetworkHistory(@Param('id') sessionId: string) {
+  clearNetworkHistory(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      this.browserSessionService.clearNetworkHistory(sessionId);
+      this.browserSessionService.clearNetworkHistory(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -437,12 +522,17 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Exported storage data' })
   async exportStorage(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(ExportStorageSchema))
     options: ExportStorageInput,
   ) {
     try {
-      return await this.browserSessionService.exportStorage(sessionId, options);
+      return await this.browserSessionService.exportStorage(
+        user.id,
+        sessionId,
+        options,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -453,11 +543,16 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Import result' })
   async importStorage(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(ImportStorageSchema)) data: ImportStorageInput,
   ) {
     try {
-      return await this.browserSessionService.importStorage(sessionId, data);
+      return await this.browserSessionService.importStorage(
+        user.id,
+        sessionId,
+        data,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -467,9 +562,12 @@ export class BrowserSessionController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Clear session storage' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  async clearStorage(@Param('id') sessionId: string) {
+  async clearStorage(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
     try {
-      await this.browserSessionService.clearStorage(sessionId);
+      await this.browserSessionService.clearStorage(user.id, sessionId);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -484,12 +582,14 @@ export class BrowserSessionController {
   @ApiParam({ name: 'id', description: 'Session ID' })
   @ApiOkResponse({ description: 'Delta snapshot with changes' })
   async getDeltaSnapshot(
+    @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
     @Body(new ZodValidationPipe(DeltaSnapshotSchema))
     options: DeltaSnapshotInput,
   ) {
     try {
       return await this.browserSessionService.getDeltaSnapshot(
+        user.id,
         sessionId,
         options,
       );
@@ -513,6 +613,13 @@ export class BrowserSessionController {
       throw new HttpException(
         { error: 'Session expired', message: error.message },
         HttpStatus.GONE,
+      );
+    }
+
+    if (error instanceof SessionOwnershipError) {
+      throw new HttpException(
+        { error: 'Session forbidden', message: error.message },
+        HttpStatus.FORBIDDEN,
       );
     }
 
