@@ -79,6 +79,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 近期变更
 
 - Agent Browser Playground 页面新增错误边界与分区组件，提升稳定性
+- Console 构建统一使用 eventsource-parser v3 API，避免 SSE 解析类型不一致
 
 ## Feature Module Structure
 
