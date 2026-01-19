@@ -466,7 +466,23 @@ function BadForm() {
 2. 使用 `/ui` 的 Form 组件（Form, FormField, FormItem, FormLabel, FormControl, FormMessage）
 3. 数字字段使用 `z.coerce.number()` 自动转换
 4. 折叠状态等 UI 状态可以单独用 `useState`，但表单数据必须走 react-hook-form
-5. **Zod v3 兼容层（强制）**：前端表单必须使用 `import { z } from 'zod/v3'`，避免 Zod v4 与 `@hookform/resolvers` 的类型不兼容问题（详见 `docs/guides/frontend/forms-zod-rhf.md`）
+
+---
+
+## Zod 导入规范（强制）
+
+项目使用 **Zod v4**，但前端和后端使用不同的导入方式：
+
+| 场景                                | 导入方式                     | 原因                                                                                                  |
+| ----------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **前端表单**（console, www, admin） | `import { z } from 'zod/v3'` | 兼容 `@hookform/resolvers` 类型（详见 [`forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)） |
+| **后端 server**                     | `import { z } from 'zod'`    | 原生 Zod v4，支持 `z.toJSONSchema()` 等新特性                                                         |
+
+**注意**：
+
+- `zod/v3` 是 Zod v4 提供的兼容层，运行时仍使用 v4 引擎，仅类型签名与 v3 兼容
+- 后端不要使用 `zod/v3`，会导致类型身份冲突、增加 TypeScript 推断成本
+- 前端不使用 `zod/v3` 会在 Docker 构建时出现 `_zod.version.minor` 类型不兼容错误
 
 ---
 

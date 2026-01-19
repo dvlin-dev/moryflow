@@ -8,6 +8,8 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-01-14（Agent 取消竞态修复、迁移与 Shadow DB 完成）
+
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
 > 说明：对外文档站点是**独立项目**（不与官网耦合）：
@@ -21,6 +23,10 @@
 - 以“可执行”为目标：域名、路由、职责边界、流程与配置要能落地。
 - Markdown 文档建议包含 YAML Frontmatter（`title/date/scope/status`），便于后续文档站或索引生成。
 - Anyhunt Dev API 域名统一使用 `server.anyhunt.app`（不再使用 `anyhunt.app` 作为 API 域名）。
+- 排障/实验类记录优先放在 `docs/research/`，并在 `docs/index.md` 增加索引项，便于持续跟踪与后续归档。
+- Research 文档更新时，在 `docs/index.md` 标注更新日期，便于协作追踪。
+- Research 文档如更新测试验证结果或告警状态，同步刷新索引备注（例如 warnings 清理情况）。
+- 进度类 Research 文档完成代码核对后，需要在正文标注核对日期，并更新文档版本与更新日志。
 
 ## 目录结构
 
@@ -43,3 +49,4 @@
 - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`（分支视图用 ViewModel 收敛 Props，按域拆分 SRP 组件，保持现有懒加载与错误边界策略）
 - Aiget → Anyhunt 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyhunt.md`（域名/包名/环境变量/API Key 前缀/Prisma 迁移重置）
 - Anyhunt Dokploy 多项目部署清单：`docs/runbooks/deploy/anyhunt-dokploy.md`（补充 `ADMIN_EMAIL`/管理员 bootstrap 与旧路径报错排查）
+- 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`

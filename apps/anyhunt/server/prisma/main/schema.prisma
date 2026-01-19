@@ -37,6 +37,7 @@ model User {
   scrapeJobs            ScrapeJob[]
   batchScrapeJobs       BatchScrapeJob[]
   crawlJobs             CrawlJob[]
+  agentTasks            AgentTask[]
 
   // Digest 相关
   digestSubscriptions DigestSubscription[]
@@ -376,6 +377,14 @@ enum ScrapeStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum AgentTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 enum ScrapeErrorCode {
@@ -1287,4 +1296,54 @@ model DigestUserDailyOps {
 
   @@unique([userId, date])
   @@index([date])
+}
+
+// =============================================
+// Agent Task - L3 Agent 任务
+// =============================================
+
+model AgentTask {
+  id            String          @id
+  userId        String
+  status        AgentTaskStatus @default(PENDING)
+
+  input         Json
+  result        Json?
+  error         String?
+
+  creditsUsed   Int?
+  toolCallCount Int?
+  elapsedMs     Int?
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  startedAt     DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  charges       AgentTaskCharge[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AgentTaskCharge {
+  id            String     @id @default(cuid())
+  taskId        String
+  userId        String
+  amount        Int
+  source        QuotaSource
+  transactionId String
+  referenceId   String
+  refundedAt    DateTime?
+  createdAt     DateTime   @default(now())
+
+  task          AgentTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, referenceId])
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
 }

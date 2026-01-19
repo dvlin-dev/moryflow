@@ -41,6 +41,13 @@ describe('billing.rules', () => {
       expect(BILLING_KEYS).toContain('fetchx.map');
       expect(BILLING_KEYS).toContain('fetchx.extract');
       expect(BILLING_KEYS).toContain('fetchx.search');
+      expect(BILLING_KEYS).toContain('fetchx.browser.session');
+      expect(BILLING_KEYS).toContain('fetchx.browser.screenshot');
+      expect(BILLING_KEYS).toContain('fetchx.browser.action');
+      expect(BILLING_KEYS).toContain('fetchx.browser.snapshot');
+      expect(BILLING_KEYS).toContain('fetchx.browser.tab');
+      expect(BILLING_KEYS).toContain('fetchx.agent');
+      expect(BILLING_KEYS).toContain('fetchx.agent.estimate');
     });
 
     it('should contain all Memox billing keys', () => {
@@ -49,7 +56,7 @@ describe('billing.rules', () => {
     });
 
     it('should have correct count', () => {
-      expect(BILLING_KEYS.length).toBe(8);
+      expect(BILLING_KEYS.length).toBe(15);
     });
   });
 

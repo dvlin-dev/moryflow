@@ -87,7 +87,18 @@ describe('SearchService', () => {
   describe('search', () => {
     it('should execute search with billing deduction', async () => {
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
 
@@ -188,7 +199,18 @@ describe('SearchService', () => {
 
     it('should refund on search failure', async () => {
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
 
@@ -206,8 +228,7 @@ describe('SearchService', () => {
         userId: 'user-1',
         billingKey: 'fetchx.search',
         referenceId: expect.any(String),
-        source: 'credits',
-        amount: 1,
+        breakdown: expect.any(Array),
       });
     });
   });

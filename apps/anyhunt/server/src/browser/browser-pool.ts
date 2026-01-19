@@ -1,9 +1,11 @@
 /**
  * [INPUT]: 浏览器实例请求
- * [OUTPUT]: Playwright BrowserContext 实例
+ * [OUTPUT]: Playwright BrowserContext 实例（支持上下文选项）
  * [POS]: 浏览器实例池管理，复用实例，自动回收，健康检查
  *
  * 作为独立基础设施模块，供 screenshot、automation 等模块复用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -15,6 +17,7 @@ import {
 import { chromium, type BrowserContext } from 'playwright';
 import type {
   BrowserInstance,
+  BrowserContextOptions,
   WaitingRequest,
   BrowserPoolStatus,
   BrowserPoolDetailedStatus,
@@ -157,7 +160,9 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
    * 获取浏览器上下文
    * 如果池已满且没有可用实例，会排队等待
    */
-  async acquireContext(): Promise<BrowserContext> {
+  async acquireContext(
+    options?: BrowserContextOptions,
+  ): Promise<BrowserContext> {
     if (this.isShuttingDown) {
       throw new BrowserUnavailableError('Browser pool is shutting down');
     }
@@ -166,7 +171,7 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
     const instance = this.findAvailableInstance();
 
     if (instance) {
-      return this.createContextFromInstance(instance);
+      return this.createContextFromInstance(instance, options);
     }
 
     // 使用互斥锁防止并发创建过多实例
@@ -175,20 +180,20 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
       // 获取锁后再次检查（可能其他请求已创建）
       const instanceAfterLock = this.findAvailableInstance();
       if (instanceAfterLock) {
-        return this.createContextFromInstance(instanceAfterLock);
+        return this.createContextFromInstance(instanceAfterLock, options);
       }
 
       // 如果池未满，创建新实例
       if (this.instances.length < BROWSER_POOL_SIZE) {
         const newInstance = await this.createInstance();
-        return this.createContextFromInstance(newInstance);
+        return this.createContextFromInstance(newInstance, options);
       }
     } finally {
       this.createMutex.release();
     }
 
     // 池已满，排队等待
-    return this.waitForAvailableContext();
+    return this.waitForAvailableContext(options);
   }
 
   /**
@@ -327,23 +332,30 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
    */
   private async createContextFromInstance(
     instance: BrowserInstance,
+    options?: BrowserContextOptions,
   ): Promise<BrowserContext> {
     // 先增加计数，失败时回滚
     instance.pageCount++;
     instance.lastUsedAt = Date.now();
 
     try {
+      const viewport = options?.viewport ?? {
+        width: DEFAULT_VIEWPORT_WIDTH,
+        height: DEFAULT_VIEWPORT_HEIGHT,
+      };
+      const javaScriptEnabled = options?.javaScriptEnabled ?? true;
+      const ignoreHTTPSErrors = options?.ignoreHTTPSErrors ?? true;
+
       // 创建独立的浏览器上下文
       const context = await instance.browser.newContext({
         // 禁用 JavaScript 错误弹窗
-        javaScriptEnabled: true,
+        javaScriptEnabled,
         // 忽略 HTTPS 错误
-        ignoreHTTPSErrors: true,
-        // 默认视口
-        viewport: {
-          width: DEFAULT_VIEWPORT_WIDTH,
-          height: DEFAULT_VIEWPORT_HEIGHT,
-        },
+        ignoreHTTPSErrors,
+        // 视口
+        viewport,
+        // User-Agent
+        userAgent: options?.userAgent,
       });
 
       return context;
@@ -369,7 +381,9 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
   /**
    * 等待可用的上下文
    */
-  private waitForAvailableContext(): Promise<BrowserContext> {
+  private waitForAvailableContext(
+    options?: BrowserContextOptions,
+  ): Promise<BrowserContext> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         // 从队列中移除
@@ -386,7 +400,7 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
         );
       }, BROWSER_ACQUIRE_TIMEOUT);
 
-      this.waitingQueue.push({ resolve, reject, timeoutId });
+      this.waitingQueue.push({ resolve, reject, timeoutId, options });
     });
   }
 
@@ -404,7 +418,10 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
       if (request) {
         clearTimeout(request.timeoutId);
         try {
-          const context = await this.createContextFromInstance(instance);
+          const context = await this.createContextFromInstance(
+            instance,
+            request.options,
+          );
           request.resolve(context);
         } catch (error) {
           request.reject(error as Error);

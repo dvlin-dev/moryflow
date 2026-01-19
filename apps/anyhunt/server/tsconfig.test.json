@@ -1,7 +1,32 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "baseUrl": "./"
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": [
+    "src/prisma/**/*.ts",
+    "src/redis/**/*.ts",
+    "src/common/**/*.ts",
+    "src/auth/**/*.ts",
+    "src/user/**/*.ts",
+    "src/email/**/*.ts",
+    "src/queue/**/*.ts",
+    "src/payment/**/*.ts",
+    "src/storage/**/*.ts",
+    "src/health/**/*.ts",
+    "src/api-key/**/*.ts",
+    "src/quota/**/*.ts",
+    "src/browser/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

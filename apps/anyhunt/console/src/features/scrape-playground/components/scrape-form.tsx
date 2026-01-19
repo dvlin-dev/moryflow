@@ -1,10 +1,15 @@
 /**
  * Scrape 表单组件
- * 使用 react-hook-form + zod 验证
+ *
+ * [PROPS]: ScrapeFormProps
+ * [EMITS]: onSubmit, onKeyChange
+ * [POS]: Scrape Playground 主表单入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Search01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -76,8 +81,9 @@ export function ScrapeForm({
     defaultValues: scrapeFormDefaults,
   });
 
-  const formats = form.watch('formats');
-  const device = form.watch('device');
+  const formats =
+    useWatch({ control: form.control, name: 'formats' }) ?? scrapeFormDefaults.formats;
+  const device = useWatch({ control: form.control, name: 'device' }) ?? scrapeFormDefaults.device;
 
   const handleDeviceChange = (value: string) => {
     form.setValue('device', value as DevicePreset | 'custom');

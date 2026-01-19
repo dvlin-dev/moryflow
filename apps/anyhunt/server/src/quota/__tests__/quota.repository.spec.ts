@@ -124,7 +124,7 @@ describe('QuotaRepository', () => {
     it('should create quota with default limit', async () => {
       const createdQuota = {
         userId: 'new_user',
-        monthlyLimit: 100,
+        monthlyLimit: 0,
         monthlyUsed: 0,
         purchasedQuota: 0,
       };
@@ -136,8 +136,10 @@ describe('QuotaRepository', () => {
       expect(mockPrisma.quota.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: 'new_user',
-          monthlyLimit: 100, // DEFAULT_MONTHLY_QUOTA
+          monthlyLimit: 0, // DEFAULT_MONTHLY_QUOTA (FREE tier)
           monthlyUsed: 0,
+          periodStartAt: expect.any(Date),
+          periodEndAt: expect.any(Date),
           purchasedQuota: 0,
         }),
       });

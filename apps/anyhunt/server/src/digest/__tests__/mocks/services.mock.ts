@@ -343,14 +343,12 @@ export type MockDigestSiteCrawlService = {
 
 export function createMockDigestSiteCrawlService(): MockDigestSiteCrawlService {
   return {
-    crawlSite: vi
-      .fn()
-      .mockResolvedValue({
-        pages: [],
-        discoveredUrls: [],
-        crawledCount: 0,
-        errorCount: 0,
-      }),
+    crawlSite: vi.fn().mockResolvedValue({
+      pages: [],
+      discoveredUrls: [],
+      crawledCount: 0,
+      errorCount: 0,
+    }),
   };
 }
 

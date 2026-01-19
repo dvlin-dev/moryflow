@@ -27,6 +27,12 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - FREE 用户额度为“每日 100 Credits（UTC 天）”，`monthlyQuota=0`
 - 反代部署必须启用 `trust proxy`（Express）：否则 `req.protocol`/secure cookie/回调 URL 在反代下会被错误识别为 http
 - 管理员账号在启动期通过 `ADMIN_EMAIL`/`ADMIN_PASSWORD` bootstrap；密码哈希必须使用 `better-auth/crypto`（禁止用 bcrypt 写入，否则会触发 `Invalid password hash`）
+- Agent + `@anyhunt/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
+- Agent 访问浏览器能力必须通过 `BrowserAgentPort`（禁止直接依赖 `BrowserSession` / Playwright 类型）
+- Agent 任务必须支持硬取消（AbortSignal）与分段配额检查（每 100 credits）
+- Agent 任务状态持久化到 DB（`AgentTask`），实时进度与取消标记使用 Redis；`GET /api/v1/agent/:id` 合并 DB + Redis
+- Agent 任务终态更新必须使用 compare-and-set（`updateTaskIfStatus`）以避免取消状态被覆盖；取消后需确保 metrics（creditsUsed/toolCallCount/elapsedMs）落库
+- Prisma 迁移 diff 依赖 Shadow DB；本地需设置 `SHADOW_DATABASE_URL` / `VECTOR_SHADOW_DATABASE_URL`（仅本地，不提交）
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
@@ -80,6 +86,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | ---------------- | ----- | -------------------------------------------- | ------------------------- |
 | `scraper/`       | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
 | `common/`        | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
+| `agent/`         | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`     |
 | `digest/`        | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`    |
 | `admin/`         | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`     |
 | `oembed/`        | 18    | oEmbed provider support                      | -                         |
@@ -102,7 +109,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | `map/`           | 8     | URL discovery                                | -                         |
 | `storage/`       | 7     | Cloudflare R2 storage                        | -                         |
 | `search/`        | 6     | Web search API                               | -                         |
-| `browser/`       | 5     | Browser pool management                      | -                         |
+| `browser/`       | 6     | Browser pool management                      | `src/browser/CLAUDE.md`   |
 | `demo/`          | 5     | Playground demo API                          | -                         |
 | `redis/`         | 4     | Redis caching                                | -                         |
 | `health/`        | 3     | Health check endpoints                       | -                         |

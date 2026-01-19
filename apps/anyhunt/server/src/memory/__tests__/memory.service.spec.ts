@@ -117,7 +117,18 @@ describe('MemoryService', () => {
   describe('create', () => {
     it('should create memory with billing deduction and embedding', async () => {
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
       mockEmbeddingService.generateEmbedding.mockResolvedValue(mockEmbedding);
@@ -151,7 +162,18 @@ describe('MemoryService', () => {
 
     it('should refund on embedding failure', async () => {
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
       mockEmbeddingService.generateEmbedding.mockRejectedValue(
@@ -169,14 +191,24 @@ describe('MemoryService', () => {
         userId: 'platform-user-1',
         billingKey: 'memox.memory.create',
         referenceId: expect.any(String),
-        source: 'credits',
-        amount: 1,
+        breakdown: expect.any(Array),
       });
     });
 
     it('should refund on repository failure', async () => {
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
       mockEmbeddingService.generateEmbedding.mockResolvedValue(mockEmbedding);
@@ -203,7 +235,18 @@ describe('MemoryService', () => {
       ];
 
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
       mockEmbeddingService.generateEmbedding.mockResolvedValue(mockEmbedding);
@@ -238,7 +281,18 @@ describe('MemoryService', () => {
 
     it('should refund on search failure', async () => {
       mockBillingService.deductOrThrow.mockResolvedValue({
-        deduct: { source: 'credits' },
+        deduct: {
+          success: true,
+          breakdown: [
+            {
+              source: 'DAILY',
+              amount: 1,
+              transactionId: 'tx_1',
+              balanceBefore: 100,
+              balanceAfter: 99,
+            },
+          ],
+        },
         amount: 1,
       });
       mockEmbeddingService.generateEmbedding.mockResolvedValue(mockEmbedding);

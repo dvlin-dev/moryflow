@@ -63,3 +63,8 @@ status: active
 - 归档计划：`docs/_archived/plans/`
 - 归档迁移记录：`docs/_archived/migrations/`
 - 其他归档：`docs/_archived/`
+
+## Research（调研 / 功能需求）
+
+- Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`
+- 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`
