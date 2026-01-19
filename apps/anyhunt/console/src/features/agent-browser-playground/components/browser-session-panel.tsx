@@ -1,5 +1,5 @@
 /**
- * [PROPS]: BrowserSessionPanelProps
+ * [PROPS]: BrowserSessionPanelProps（sections 可按页面裁剪）
  * [EMITS]: onSessionChange
  * [POS]: Browser Playground 操作面板（分区组件）
  */
@@ -112,16 +112,51 @@ const parseJson = <T,>(value?: string): T | null => {
 
 const formatJson = (value: unknown) => JSON.stringify(value ?? {}, null, 2);
 
+export type BrowserSessionSection =
+  | 'session'
+  | 'open'
+  | 'snapshot'
+  | 'delta'
+  | 'action'
+  | 'screenshot'
+  | 'tabs'
+  | 'windows'
+  | 'intercept'
+  | 'network'
+  | 'storage'
+  | 'cdp';
+
+const defaultSections: BrowserSessionSection[] = [
+  'session',
+  'open',
+  'snapshot',
+  'delta',
+  'action',
+  'screenshot',
+  'tabs',
+  'windows',
+  'intercept',
+  'network',
+  'storage',
+  'cdp',
+];
+
 export interface BrowserSessionPanelProps {
   apiKeyId: string;
   sessionId?: string;
   onSessionChange?: (sessionId: string) => void;
+  sections?: BrowserSessionSection[];
+  title?: string;
+  description?: string;
 }
 
 export function BrowserSessionPanel({
   apiKeyId,
   sessionId,
   onSessionChange,
+  sections = defaultSections,
+  title = 'Browser Session',
+  description = 'Manage sessions and execute browser operations.',
 }: BrowserSessionPanelProps) {
   const [sessionInfo, setSessionInfo] = useState<BrowserSessionInfo | null>(null);
   const [openResult, setOpenResult] = useState<BrowserOpenResponse | null>(null);
@@ -650,126 +685,152 @@ export function BrowserSessionPanel({
     }
   };
 
+  const hasSection = (section: BrowserSessionSection) => sections.includes(section);
+
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Browser Session</CardTitle>
-        <CardDescription>Manage sessions and execute browser operations.</CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <SessionSection
-          apiKeyId={apiKeyId}
-          form={sessionForm}
-          sessionInfo={sessionInfo}
-          open={sessionOpen}
-          onOpenChange={setSessionOpen}
-          onCreate={handleCreateSession}
-          onStatus={handleStatus}
-          onClose={handleClose}
-        />
-        <OpenUrlSection
-          apiKeyId={apiKeyId}
-          form={openForm}
-          open={openUrlOpen}
-          onOpenChange={setOpenUrlOpen}
-          onSubmit={handleOpenUrl}
-          result={openResult}
-        />
-        <SnapshotSection
-          apiKeyId={apiKeyId}
-          form={snapshotForm}
-          open={snapshotOpen}
-          onOpenChange={setSnapshotOpen}
-          onSubmit={handleSnapshot}
-          result={snapshot}
-        />
-        <DeltaSnapshotSection
-          apiKeyId={apiKeyId}
-          form={deltaSnapshotForm}
-          open={deltaSnapshotOpen}
-          onOpenChange={setDeltaSnapshotOpen}
-          onSubmit={handleDeltaSnapshot}
-          result={deltaSnapshot}
-        />
-        <ActionSection
-          apiKeyId={apiKeyId}
-          form={actionForm}
-          open={actionOpen}
-          onOpenChange={setActionOpen}
-          onSubmit={handleAction}
-          result={actionResult}
-        />
-        <ScreenshotSection
-          apiKeyId={apiKeyId}
-          form={screenshotForm}
-          open={screenshotOpen}
-          onOpenChange={setScreenshotOpen}
-          onSubmit={handleScreenshot}
-          result={screenshot}
-        />
-        <TabsSection
-          apiKeyId={apiKeyId}
-          form={tabsForm}
-          open={tabsOpen}
-          onOpenChange={setTabsOpen}
-          tabs={tabs}
-          dialogHistory={dialogHistory}
-          onCreateTab={handleCreateTab}
-          onListTabs={handleListTabs}
-          onSwitchTab={handleSwitchTab}
-          onCloseTab={handleCloseTab}
-          onDialogHistory={handleDialogHistory}
-        />
-        <WindowsSection
-          apiKeyId={apiKeyId}
-          form={windowsForm}
-          open={windowsOpen}
-          onOpenChange={setWindowsOpen}
-          windows={windows}
-          onCreateWindow={handleCreateWindow}
-          onListWindows={handleListWindows}
-          onSwitchWindow={handleSwitchWindow}
-          onCloseWindow={handleCloseWindow}
-        />
-        <InterceptSection
-          apiKeyId={apiKeyId}
-          form={interceptForm}
-          open={interceptOpen}
-          onOpenChange={setInterceptOpen}
-          rules={interceptRules}
-          onSetRules={handleSetRules}
-          onAddRule={handleAddRule}
-          onRemoveRule={handleRemoveRule}
-          onClearRules={handleClearRules}
-          onListRules={handleListRules}
-        />
-        <NetworkHistorySection
-          apiKeyId={apiKeyId}
-          form={networkForm}
-          open={networkOpen}
-          onOpenChange={setNetworkOpen}
-          history={networkHistory}
-          onFetch={handleNetworkHistory}
-          onClear={handleClearNetworkHistory}
-        />
-        <StorageSection
-          apiKeyId={apiKeyId}
-          form={storageForm}
-          open={storageOpen}
-          onOpenChange={setStorageOpen}
-          exportResult={storageExport}
-          onExport={handleExportStorage}
-          onImport={handleImportStorage}
-          onClear={handleClearStorage}
-        />
-        <CdpSection
-          apiKeyId={apiKeyId}
-          form={cdpForm}
-          open={cdpOpen}
-          onOpenChange={setCdpOpen}
-          session={cdpSession}
-          onConnect={handleConnectCdp}
-        />
+        {hasSection('session') && (
+          <SessionSection
+            apiKeyId={apiKeyId}
+            form={sessionForm}
+            sessionInfo={sessionInfo}
+            open={sessionOpen}
+            onOpenChange={setSessionOpen}
+            onCreate={handleCreateSession}
+            onStatus={handleStatus}
+            onClose={handleClose}
+          />
+        )}
+        {hasSection('open') && (
+          <OpenUrlSection
+            apiKeyId={apiKeyId}
+            form={openForm}
+            open={openUrlOpen}
+            onOpenChange={setOpenUrlOpen}
+            onSubmit={handleOpenUrl}
+            result={openResult}
+          />
+        )}
+        {hasSection('snapshot') && (
+          <SnapshotSection
+            apiKeyId={apiKeyId}
+            form={snapshotForm}
+            open={snapshotOpen}
+            onOpenChange={setSnapshotOpen}
+            onSubmit={handleSnapshot}
+            result={snapshot}
+          />
+        )}
+        {hasSection('delta') && (
+          <DeltaSnapshotSection
+            apiKeyId={apiKeyId}
+            form={deltaSnapshotForm}
+            open={deltaSnapshotOpen}
+            onOpenChange={setDeltaSnapshotOpen}
+            onSubmit={handleDeltaSnapshot}
+            result={deltaSnapshot}
+          />
+        )}
+        {hasSection('action') && (
+          <ActionSection
+            apiKeyId={apiKeyId}
+            form={actionForm}
+            open={actionOpen}
+            onOpenChange={setActionOpen}
+            onSubmit={handleAction}
+            result={actionResult}
+          />
+        )}
+        {hasSection('screenshot') && (
+          <ScreenshotSection
+            apiKeyId={apiKeyId}
+            form={screenshotForm}
+            open={screenshotOpen}
+            onOpenChange={setScreenshotOpen}
+            onSubmit={handleScreenshot}
+            result={screenshot}
+          />
+        )}
+        {hasSection('tabs') && (
+          <TabsSection
+            apiKeyId={apiKeyId}
+            form={tabsForm}
+            open={tabsOpen}
+            onOpenChange={setTabsOpen}
+            tabs={tabs}
+            dialogHistory={dialogHistory}
+            onCreateTab={handleCreateTab}
+            onListTabs={handleListTabs}
+            onSwitchTab={handleSwitchTab}
+            onCloseTab={handleCloseTab}
+            onDialogHistory={handleDialogHistory}
+          />
+        )}
+        {hasSection('windows') && (
+          <WindowsSection
+            apiKeyId={apiKeyId}
+            form={windowsForm}
+            open={windowsOpen}
+            onOpenChange={setWindowsOpen}
+            windows={windows}
+            onCreateWindow={handleCreateWindow}
+            onListWindows={handleListWindows}
+            onSwitchWindow={handleSwitchWindow}
+            onCloseWindow={handleCloseWindow}
+          />
+        )}
+        {hasSection('intercept') && (
+          <InterceptSection
+            apiKeyId={apiKeyId}
+            form={interceptForm}
+            open={interceptOpen}
+            onOpenChange={setInterceptOpen}
+            rules={interceptRules}
+            onSetRules={handleSetRules}
+            onAddRule={handleAddRule}
+            onRemoveRule={handleRemoveRule}
+            onClearRules={handleClearRules}
+            onListRules={handleListRules}
+          />
+        )}
+        {hasSection('network') && (
+          <NetworkHistorySection
+            apiKeyId={apiKeyId}
+            form={networkForm}
+            open={networkOpen}
+            onOpenChange={setNetworkOpen}
+            history={networkHistory}
+            onFetch={handleNetworkHistory}
+            onClear={handleClearNetworkHistory}
+          />
+        )}
+        {hasSection('storage') && (
+          <StorageSection
+            apiKeyId={apiKeyId}
+            form={storageForm}
+            open={storageOpen}
+            onOpenChange={setStorageOpen}
+            exportResult={storageExport}
+            onExport={handleExportStorage}
+            onImport={handleImportStorage}
+            onClear={handleClearStorage}
+          />
+        )}
+        {hasSection('cdp') && (
+          <CdpSection
+            apiKeyId={apiKeyId}
+            form={cdpForm}
+            open={cdpOpen}
+            onOpenChange={setCdpOpen}
+            session={cdpSession}
+            onConnect={handleConnectCdp}
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -1,5 +1,7 @@
 /**
- * AppSidebar - Anyhunt 控制台侧边栏
+ * [PROPS]: AppSidebarProps
+ * [EMITS]: None
+ * [POS]: Anyhunt 控制台侧边栏
  */
 import {
   DashboardSquare01Icon,
@@ -10,6 +12,7 @@ import {
   Link02Icon,
   Brain02Icon,
   Mail01Icon,
+  AiBrowserIcon,
 } from '@hugeicons/core-free-icons';
 
 import { NavMain, type NavGroup } from '@/components/layout/nav-main';
@@ -32,16 +35,28 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'Dashboard', url: '/', icon: DashboardSquare01Icon },
       {
-        title: 'Playground',
+        title: 'Fetchx',
         icon: PlayIcon,
         items: [
-          { title: 'Scrape', url: '/playground/scrape' },
-          { title: 'Crawl', url: '/playground/crawl' },
-          { title: 'Map', url: '/playground/map' },
-          { title: 'Extract', url: '/playground/extract' },
-          { title: 'Search', url: '/playground/search' },
-          { title: 'Embed', url: '/playground/embed' },
-          { title: 'Agent Browser', url: '/playground/agent-browser' },
+          { title: 'Playground', url: '/fetchx/playground' },
+          { title: 'Scrape', url: '/fetchx/scrape' },
+          { title: 'Crawl', url: '/fetchx/crawl' },
+          { title: 'Map', url: '/fetchx/map' },
+          { title: 'Extract', url: '/fetchx/extract' },
+          { title: 'Search', url: '/fetchx/search' },
+          { title: 'Embed', url: '/fetchx/embed' },
+        ],
+      },
+      {
+        title: 'Agent Browser',
+        icon: AiBrowserIcon,
+        items: [
+          { title: 'Overview', url: '/agent-browser/overview' },
+          { title: 'Browser', url: '/agent-browser/browser' },
+          { title: 'Agent', url: '/agent-browser/agent' },
+          { title: 'Network', url: '/agent-browser/network' },
+          { title: 'Storage', url: '/agent-browser/storage' },
+          { title: 'CDP', url: '/agent-browser/cdp' },
         ],
       },
       {

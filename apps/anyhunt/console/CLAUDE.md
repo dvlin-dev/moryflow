@@ -10,8 +10,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 - 用量与额度概览
 - API Key 管理（创建/删除/查看）
-- 抓取/截图测试（Playground）
-- Agent + Browser 闭环测试（Playground）
+- Fetchx 抓取/截图测试（Playground）
+- Agent Browser 闭环测试（独立模块）
 - Memox 记忆管理（Memories/Entities/Graph）
 - 文档入口（外链：`https://docs.anyhunt.app`）
 - Webhook 配置
@@ -61,24 +61,27 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 功能列表
 
-| 功能                        | 路径                        | 说明                 |
-| --------------------------- | --------------------------- | -------------------- |
-| `api-keys/`                 | `/api-keys`                 | API Key 管理         |
-| `scrape-playground/`        | `/playground/scrape`        | 单页抓取测试         |
-| `crawl-playground/`         | `/playground/crawl`         | 多页爬取测试         |
-| `map-playground/`           | `/playground/map`           | URL 发现测试         |
-| `extract-playground/`       | `/playground/extract`       | AI 数据提取测试      |
-| `search-playground/`        | `/playground/search`        | 网页搜索测试         |
-| `embed-playground/`         | `/playground/embed`         | Embed 脚本测试       |
-| `agent-browser-playground/` | `/playground/agent-browser` | Agent + Browser 测试 |
-| `memox/`                    | `/memox/*`                  | Memox 记忆管理       |
-| `webhooks/`                 | `/webhooks`                 | Webhook 配置         |
-| `settings/`                 | `/settings`                 | 账户设置             |
-| `auth/`                     | `/login`                    | 登录表单             |
+| 功能                        | 路径               | 说明                 |
+| --------------------------- | ------------------ | -------------------- |
+| `api-keys/`                 | `/api-keys`        | API Key 管理         |
+| `scrape-playground/`        | `/fetchx/scrape`   | 单页抓取测试         |
+| `crawl-playground/`         | `/fetchx/crawl`    | 多页爬取测试         |
+| `map-playground/`           | `/fetchx/map`      | URL 发现测试         |
+| `extract-playground/`       | `/fetchx/extract`  | AI 数据提取测试      |
+| `search-playground/`        | `/fetchx/search`   | 网页搜索测试         |
+| `embed-playground/`         | `/fetchx/embed`    | Embed 脚本测试       |
+| `agent-browser-playground/` | `/agent-browser/*` | Agent + Browser 测试 |
+| `memox/`                    | `/memox/*`         | Memox 记忆管理       |
+| `webhooks/`                 | `/webhooks`        | Webhook 配置         |
+| `settings/`                 | `/settings`        | 账户设置             |
+| `auth/`                     | `/login`           | 登录表单             |
 
 ## 近期变更
 
 - Agent Browser Playground 页面新增错误边界与分区组件，提升稳定性
+- Agent Browser 从 Fetchx Playground 独立为模块导航
+- Agent Browser 拆分为 Overview/Browser/Agent/Network/Storage/CDP 多页面
+- Fetchx Playground 路由调整为 `/fetchx/*` 结构
 - Console 构建统一使用 eventsource-parser v3 API，避免 SSE 解析类型不一致
 
 ## Feature Module Structure

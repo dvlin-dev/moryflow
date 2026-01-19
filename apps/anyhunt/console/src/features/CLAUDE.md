@@ -61,6 +61,7 @@ export function useApiKeys() {
 ## 近期变更
 
 - Agent Browser Playground：补充 Reasoning/Progress 映射、stream abort 处理、错误边界与分区组件
+- Agent Browser Playground：BrowserSessionPanel 支持 sections 裁剪，配合多页面拆分
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
 
 ## 依赖

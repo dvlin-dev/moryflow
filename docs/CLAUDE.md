@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-19（补充 Browser/Agent 验收清单 + 合并方案 Docker workspace 依赖修复；补充 skills 文档约束）
+> 最近更新：2026-01-20（Console Fetchx 路由调整为 `/fetchx/*`；Agent Browser 拆分多页面模块）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -51,5 +51,6 @@
 - Aiget → Anyhunt 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyhunt.md`（域名/包名/环境变量/API Key 前缀/Prisma 迁移重置）
 - Anyhunt Dokploy 多项目部署清单：`docs/runbooks/deploy/anyhunt-dokploy.md`（补充 `ADMIN_EMAIL`/管理员 bootstrap 与旧路径报错排查）
 - 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`（2026-01-19：补充 Docker workspace 依赖修复）
-- Console Agent Browser Playground 设计方案（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（2026-01-19：采用 `@ai-sdk/react` + 自定义 `ChatTransport`）
+- Console Agent Browser Playground 设计方案（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（2026-01-20：独立模块路径 `/agent-browser/*`）
+- Console Fetchx 路由调整：`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`（2026-01-20：更新为 `/fetchx/*`）
 - Skill：`code-simplifier` 文档中文化：`docs/skill/code-simplifier.md`（2026-01-19）

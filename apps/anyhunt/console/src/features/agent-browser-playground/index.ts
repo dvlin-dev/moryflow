@@ -6,6 +6,7 @@
 
 export { AgentRunPanel } from './components/agent-run-panel';
 export { BrowserSessionPanel } from './components/browser-session-panel';
+export type { BrowserSessionSection } from './components/browser-session-panel';
 export { FlowRunner } from './components/flow-runner';
 export { PlaygroundErrorBoundary } from './components/playground-error-boundary';
 export * from './api';

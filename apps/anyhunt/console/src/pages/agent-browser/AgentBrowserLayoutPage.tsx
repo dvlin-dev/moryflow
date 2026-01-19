@@ -1,26 +1,29 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Console Agent Browser Playground 路由页
+ * [POS]: Agent Browser 模块布局（API Key 选择 + Outlet）
  */
 
 import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
 import { useApiKeys } from '@/features/api-keys';
 import { ApiKeySelector } from '@/features/playground-shared';
-import {
-  AgentRunPanel,
-  BrowserSessionPanel,
-  FlowRunner,
-  PlaygroundErrorBoundary,
-} from '@/features/agent-browser-playground';
+import { PlaygroundErrorBoundary } from '@/features/agent-browser-playground';
 
-export default function AgentBrowserPlaygroundPage() {
+export type AgentBrowserOutletContext = {
+  apiKeyId: string;
+  sessionId: string;
+  setSessionId: (sessionId: string) => void;
+};
+
+export default function AgentBrowserLayoutPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
 
   const activeKeyId = selectedKeyId || apiKeys.find((key) => key.isActive)?.id || '';
+
   const handleKeyChange = (keyId: string) => {
     setSelectedKeyId(keyId);
     setSessionId('');
@@ -40,18 +43,16 @@ export default function AgentBrowserPlaygroundPage() {
     <PlaygroundErrorBoundary>
       <div className="container py-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Agent Browser Playground</h1>
+          <h1 className="text-2xl font-semibold">Agent Browser</h1>
           <p className="mt-1 text-muted-foreground">
-            Test Browser sessions and Agent runs end-to-end with console proxy APIs.
+            Run browser sessions and agent tasks with console proxy APIs.
           </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>API Key</CardTitle>
-            <CardDescription>
-              Select an active API key to authorize playground calls.
-            </CardDescription>
+            <CardDescription>Select an active API key to authorize requests.</CardDescription>
           </CardHeader>
           <CardContent>
             <ApiKeySelector
@@ -63,16 +64,13 @@ export default function AgentBrowserPlaygroundPage() {
           </CardContent>
         </Card>
 
-        <FlowRunner apiKeyId={activeKeyId} onSessionChange={setSessionId} />
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <BrowserSessionPanel
-            apiKeyId={activeKeyId}
-            sessionId={sessionId}
-            onSessionChange={setSessionId}
-          />
-          <AgentRunPanel apiKeyId={activeKeyId} />
-        </div>
+        <Outlet
+          context={{
+            apiKeyId: activeKeyId,
+            sessionId,
+            setSessionId,
+          }}
+        />
       </div>
     </PlaygroundErrorBoundary>
   );

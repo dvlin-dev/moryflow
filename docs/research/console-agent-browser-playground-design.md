@@ -57,23 +57,34 @@ status: draft
 
 ### 2.1 路由与入口
 
-- Path：`/playground/agent-browser`
+- Base path：`/agent-browser`
 - Menu label（英文）：`Agent Browser`
-- Description（英文）：`Test Browser sessions and Agent runs end-to-end.`
+- Module description（英文）：`Run browser sessions and agent tasks with console proxy APIs.`
+
+子页面拆分（按功能单一职责）：
+
+- `/agent-browser/overview`：E2E Flow Runner（闭环一键跑通）
+- `/agent-browser/browser`：Browser Session + 页面操作
+- `/agent-browser/agent`：Agent 任务与流式对话
+- `/agent-browser/network`：Network Intercept + History
+- `/agent-browser/storage`：Storage Export/Import/Clear
+- `/agent-browser/cdp`：CDP Connect
 
 ### 2.2 页面布局（建议）
 
-建议“两栏 + 顶部 Stepper”：
-
-- 顶部：`E2E Flow Runner`（确定性脚本，串联闭环，一键执行/一键清理）
-- 左侧：`Browser Session`（手动调试：open/snapshot/action/screenshot + tabs/windows 等）
-- 右侧：`Agent Run`（聊天式运行：estimate、run/stream、cancel、status、结果展示）
-
-页面级共享区：
+模块级共享区（布局层统一提供）：
 
 - API Key Selector（输出 `apiKeyId`）
-- Target URL、Agent Prompt、Schema、maxCredits
-- Request/Response History（最近 N 次）
+- Session ID 状态（跨页面复用）
+
+各页面职责：
+
+- Overview：一键闭环脚本 + 结果摘要
+- Browser：Session/Open/Snapshot/Action/Screenshot/Tabs/Windows
+- Agent：Prompt/Schema/Estimate + Stream 对话
+- Network：拦截规则 + 网络历史
+- Storage：导入/导出/清理
+- CDP：CDP 连接与复用
 
 ---
 
@@ -290,7 +301,7 @@ Console 侧使用：
 
 1. Server：实现 Browser proxy endpoints（含 owner 校验方案与计费点对齐）
 2. Server：实现 Agent proxy endpoints（含 SSE passthrough）
-3. Console：新增页面 `/playground/agent-browser`
+3. Console：新增页面 `/agent-browser/overview`（模块入口）
 4. Console：Agent 面板采用 `useChat + ChatTransport` 跑通 streaming（先能看到 tool_call/tool_result + final JSON）
 5. Console：Browser 面板跑通 create/open/snapshot/action/screenshot
 6. Console：E2E Flow Runner（确定性脚本）+ 一键清理
