@@ -1,0 +1,27 @@
+# Node / pnpm
+**/node_modules
+.pnpm-store
+
+# Build outputs
+**/dist
+**/generated
+**/.turbo
+
+# Vite / TanStack / Next generated
+**/.tanstack
+**/routeTree.gen.*
+**/.next
+**/.vite
+
+# Logs / cache
+**/*.log
+**/.cache
+
+# VCS / editor
+.git
+.gitignore
+.DS_Store
+
+# Local env
+.env
+.env.*
