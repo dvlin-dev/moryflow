@@ -1,6 +1,6 @@
 /**
  * [INPUT]: ConfigService env (OPENAI_API_KEY / OPENAI_BASE_URL)
- * [OUTPUT]: 设置 @anyhunt/agents-core 的默认 ModelProvider
+ * [OUTPUT]: 设置 @anyhunt/agents-core 的默认 ModelProvider（只使用 Chat Completions）
  * [POS]: Anyhunt Server 启动期初始化 Agent 的 LLM Provider（避免 runtime 报 “No default model provider set”）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -27,7 +27,10 @@ export class AgentModelProviderInitializer implements OnModuleInit {
 
     // 注意：即使 apiKey 未配置，也要先设置 provider，避免 agents-core 直接抛 “No default model provider set”
     // 真正调用时若缺少 apiKey，会由 OpenAI SDK 抛出更具体的错误（可在上层再做用户友好提示）。
-    setDefaultModelProvider(new OpenAIProvider({ apiKey, baseURL }));
+    setDefaultModelProvider(
+      // 约束：Anyhunt Server 禁止使用 Responses API，只使用 /chat/completions
+      new OpenAIProvider({ apiKey, baseURL, useResponses: false }),
+    );
 
     if (!apiKey) {
       this.logger.warn(
@@ -36,7 +39,7 @@ export class AgentModelProviderInitializer implements OnModuleInit {
     }
 
     this.logger.log(
-      `Default model provider set: OpenAIProvider(baseURL=${baseURL ? 'configured' : 'default'})`,
+      `Default model provider set: OpenAIProvider(api=chat_completions, baseURL=${baseURL ? 'configured' : 'default'})`,
     );
   }
 }

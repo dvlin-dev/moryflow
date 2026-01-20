@@ -7,10 +7,26 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import * as agentsCore from '@anyhunt/agents-core';
-import { AgentModelProviderInitializer } from '../../src/agent/agent-model-provider.initializer';
+
+const openAiMockState = vi.hoisted(() => ({
+  lastOptions: undefined as unknown,
+}));
+
+vi.mock('@anyhunt/agents-openai', () => {
+  class OpenAIProvider {
+    constructor(options: unknown) {
+      openAiMockState.lastOptions = options;
+    }
+    async getModel() {
+      return {} as never;
+    }
+  }
+
+  return { OpenAIProvider };
+});
 
 describe('AgentModelProviderInitializer', () => {
-  it('sets a default model provider (and trims env)', () => {
+  it('sets OpenAIProvider(useResponses=false) and trims env', async () => {
     const mockConfig = {
       get: vi.fn((key: string) => {
         if (key === 'OPENAI_API_KEY') return '  test-key  ';
@@ -21,6 +37,8 @@ describe('AgentModelProviderInitializer', () => {
 
     const spy = vi.spyOn(agentsCore, 'setDefaultModelProvider');
 
+    const { AgentModelProviderInitializer } =
+      await import('../../src/agent/agent-model-provider.initializer');
     const initializer = new AgentModelProviderInitializer(mockConfig);
     initializer.onModuleInit();
 
@@ -28,6 +46,14 @@ describe('AgentModelProviderInitializer', () => {
     expect(spy.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         getModel: expect.any(Function),
+      }),
+    );
+
+    expect(openAiMockState.lastOptions).toEqual(
+      expect.objectContaining({
+        apiKey: 'test-key',
+        baseURL: 'https://llm.example.com/v1',
+        useResponses: false,
       }),
     );
   });

@@ -14,8 +14,8 @@ import type { BrowserAgentPort } from '../../browser/ports';
 import { zodToJsonSchema } from './zod-to-json-schema';
 
 export interface BrowserAgentContext {
-  sessionId: string;
   browser: BrowserAgentPort;
+  getSessionId: () => Promise<string>;
   abortSignal?: AbortSignal;
 }
 
@@ -96,7 +96,8 @@ export const snapshotTool = tool({
   parameters: zodToJsonSchema(snapshotSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = snapshotSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return browser.snapshot(sessionId, {
       interactive: parsed.interactive,
       maxDepth: parsed.maxDepth,
@@ -110,7 +111,8 @@ export const clickTool = tool({
   parameters: zodToJsonSchema(selectorSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = selectorSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return await browser.executeAction(sessionId, {
       type: 'click',
       selector: parsed.selector,
@@ -125,7 +127,8 @@ export const fillTool = tool({
   parameters: zodToJsonSchema(fillSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = fillSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return await browser.executeAction(sessionId, {
       type: 'fill',
       selector: parsed.selector,
@@ -142,7 +145,8 @@ export const typeTool = tool({
   parameters: zodToJsonSchema(typeSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = typeSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return await browser.executeAction(sessionId, {
       type: 'type',
       selector: parsed.selector,
@@ -158,7 +162,8 @@ export const openTool = tool({
   parameters: zodToJsonSchema(urlSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = urlSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     try {
       return await browser.openUrl(sessionId, {
         url: parsed.url,
@@ -181,7 +186,8 @@ export const searchTool = tool({
   parameters: zodToJsonSchema(querySchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = querySchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     try {
       const result = await browser.search(sessionId, parsed.query);
       return {
@@ -205,7 +211,8 @@ export const scrollTool = tool({
   parameters: zodToJsonSchema(scrollSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = scrollSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return await browser.executeAction(sessionId, {
       type: 'scroll',
       selector: parsed.selector,
@@ -223,7 +230,8 @@ export const waitTool = tool({
   parameters: zodToJsonSchema(waitSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = waitSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return await browser.executeAction(sessionId, {
       type: 'wait',
       ...parsed,
@@ -238,7 +246,8 @@ export const pressTool = tool({
   parameters: zodToJsonSchema(pressSchema),
   execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
     const parsed = pressSchema.parse(input);
-    const { browser, sessionId } = getBrowserContext(runContext);
+    const { browser, getSessionId } = getBrowserContext(runContext);
+    const sessionId = await getSessionId();
     return await browser.executeAction(sessionId, {
       type: 'press',
       selector: parsed.selector,

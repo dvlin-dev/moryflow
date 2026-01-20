@@ -6,10 +6,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentService } from '../agent.service';
 import { AgentBillingService } from '../agent-billing.service';
 import { AgentStreamProcessor } from '../agent-stream.processor';
-import { run } from '@anyhunt/agents-core';
+import { run, type StreamRunOptions } from '@anyhunt/agents-core';
 import type { BrowserAgentPortService } from '../../browser/ports';
 import type { AgentTaskRepository } from '../agent-task.repository';
 import type { AgentTaskProgressStore } from '../agent-task.progress.store';
+import type { BrowserAgentContext } from '../tools';
 
 vi.mock('@anyhunt/agents-core', async () => {
   const actual = await vi.importActual<typeof import('@anyhunt/agents-core')>(
@@ -50,6 +51,23 @@ const createStreamResult = (
       if (options?.throwAfterFirst) {
         throw new Error('stream failed');
       }
+    },
+    finalOutput: { ok: true },
+  };
+};
+
+const createStreamResultNoToolCalls = (usage: {
+  inputTokens: number;
+  outputTokens: number;
+}) => {
+  return {
+    state: {
+      _context: {
+        usage,
+      },
+    },
+    async *[Symbol.asyncIterator]() {
+      // no-op
     },
     finalOutput: { ok: true },
   };
@@ -239,6 +257,77 @@ describe('AgentService', () => {
       'user_1',
       expect.any(String),
     );
+  });
+
+  it('creates browser session only when tools are used', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+
+    mockRun.mockImplementation(
+      async (
+        _agent,
+        _prompt,
+        options?: StreamRunOptions<BrowserAgentContext>,
+      ) => {
+        const context = options?.context as BrowserAgentContext | undefined;
+        if (!context) {
+          throw new Error('Missing agent context');
+        }
+        await context.getSessionId();
+        return createStreamResult({ inputTokens: 0, outputTokens: 0 }) as never;
+      },
+    );
+
+    const mockProgressStore = createMockProgressStore();
+    const service = new AgentService(
+      mockBrowserPort,
+      mockBillingService,
+      createMockTaskRepository(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+
+    await service.executeTask({ prompt: 'test', stream: false }, 'user_1');
+
+    const port = vi.mocked(mockBrowserPort.forUser).mock.results[0]
+      ?.value as unknown as {
+      createSession: ReturnType<typeof vi.fn>;
+      closeSession: ReturnType<typeof vi.fn>;
+    };
+    expect(port.createSession).toHaveBeenCalledTimes(1);
+    expect(port.closeSession).toHaveBeenCalledTimes(1);
+    expect(port.closeSession).toHaveBeenCalledWith('session_1');
+  });
+
+  it('does not create browser session when no tools are used', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+
+    mockRun.mockResolvedValue(
+      createStreamResultNoToolCalls({
+        inputTokens: 0,
+        outputTokens: 0,
+      }) as never,
+    );
+
+    const mockProgressStore = createMockProgressStore();
+    const service = new AgentService(
+      mockBrowserPort,
+      mockBillingService,
+      createMockTaskRepository(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+
+    await service.executeTask({ prompt: 'test', stream: false }, 'user_1');
+
+    const port = vi.mocked(mockBrowserPort.forUser).mock.results[0]
+      ?.value as unknown as {
+      createSession: ReturnType<typeof vi.fn>;
+      closeSession: ReturnType<typeof vi.fn>;
+    };
+    expect(port.createSession).not.toHaveBeenCalled();
+    expect(port.closeSession).not.toHaveBeenCalled();
   });
 
   it('marks task cancelled when cancel flag is set during execution', async () => {

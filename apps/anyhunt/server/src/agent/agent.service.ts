@@ -194,16 +194,11 @@ export class AgentService {
       'set initial progress',
     );
     const browserPort = this.browserAgentPort.forUser(userId);
-    let session: BrowserAgentSession | null = null;
+    let sessionPromise: Promise<BrowserAgentSession> | null = null;
 
     try {
       await this.billingService.ensureMinimumQuota(userId, taskId);
 
-      session = await browserPort.createSession();
-      const runtime = this.runningTasks.get(taskId);
-      if (runtime) {
-        runtime.sessionId = session.id;
-      }
       const activated = await this.taskRepository.updateTaskIfStatus(
         taskId,
         ['PENDING'],
@@ -219,8 +214,21 @@ export class AgentService {
       const agent = this.buildAgent(input);
 
       const context: BrowserAgentContext = {
-        sessionId: session.id,
         browser: browserPort,
+        getSessionId: async () => {
+          if (abortController.signal.aborted) {
+            throw new TaskCancelledError();
+          }
+          if (!sessionPromise) {
+            sessionPromise = browserPort.createSession();
+          }
+          const session = await sessionPromise;
+          const runtime = this.runningTasks.get(taskId);
+          if (runtime && !runtime.sessionId) {
+            runtime.sessionId = session.id;
+          }
+          return session.id;
+        },
         abortSignal: abortController.signal,
       };
 
@@ -384,8 +392,15 @@ export class AgentService {
         progress,
       };
     } finally {
-      if (session) {
-        await browserPort.closeSession(session.id);
+      const runtime = this.runningTasks.get(taskId);
+      if (runtime?.sessionId) {
+        try {
+          await browserPort.closeSession(runtime.sessionId);
+        } catch (error) {
+          this.logger.warn(
+            `Failed to close browser session ${runtime.sessionId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       }
       await this.safeProgressOperation(
         () => this.progressStore.clearCancel(taskId),
@@ -429,7 +444,7 @@ export class AgentService {
       'set initial progress',
     );
     const browserPort = this.browserAgentPort.forUser(userId);
-    let session: BrowserAgentSession | null = null;
+    let sessionPromise: Promise<BrowserAgentSession> | null = null;
 
     yield {
       type: 'started',
@@ -469,11 +484,6 @@ export class AgentService {
     try {
       await this.billingService.ensureMinimumQuota(userId, taskId);
 
-      session = await browserPort.createSession();
-      const runtime = this.runningTasks.get(taskId);
-      if (runtime) {
-        runtime.sessionId = session.id;
-      }
       const activated = await this.taskRepository.updateTaskIfStatus(
         taskId,
         ['PENDING'],
@@ -489,8 +499,21 @@ export class AgentService {
       const agent = this.buildAgent(input);
 
       const context: BrowserAgentContext = {
-        sessionId: session.id,
         browser: browserPort,
+        getSessionId: async () => {
+          if (abortController.signal.aborted) {
+            throw new TaskCancelledError();
+          }
+          if (!sessionPromise) {
+            sessionPromise = browserPort.createSession();
+          }
+          const session = await sessionPromise;
+          const runtime = this.runningTasks.get(taskId);
+          if (runtime && !runtime.sessionId) {
+            runtime.sessionId = session.id;
+          }
+          return session.id;
+        },
         abortSignal: abortController.signal,
       };
 
@@ -654,8 +677,15 @@ export class AgentService {
         progress,
       };
     } finally {
-      if (session) {
-        await browserPort.closeSession(session.id);
+      const runtime = this.runningTasks.get(taskId);
+      if (runtime?.sessionId) {
+        try {
+          await browserPort.closeSession(runtime.sessionId);
+        } catch (error) {
+          this.logger.warn(
+            `Failed to close browser session ${runtime.sessionId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       }
       await this.safeProgressOperation(
         () => this.progressStore.clearCancel(taskId),
