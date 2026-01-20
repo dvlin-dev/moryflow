@@ -111,6 +111,30 @@ export type AgentEstimateResponse = {
   };
 };
 
+export type JsonSchemaProperty = {
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
+  description?: string;
+  enum?: Array<string | number | boolean>;
+  items?: JsonSchemaProperty;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+  additionalProperties?: boolean;
+};
+
+export type AgentOutput =
+  | { type: 'text' }
+  | {
+      type: 'json_schema';
+      name?: string;
+      strict?: boolean;
+      schema: {
+        type: 'object';
+        properties: Record<string, JsonSchemaProperty>;
+        required?: string[];
+        additionalProperties?: boolean;
+      };
+    };
+
 export type AgentCancelResponse = {
   success: boolean;
   message: string;

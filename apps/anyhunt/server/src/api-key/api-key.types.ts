@@ -9,6 +9,9 @@ export interface ApiKeyValidationResult {
   id: string;
   userId: string;
   name: string;
+  llmEnabled: boolean;
+  llmProviderId: string;
+  llmModelId: string;
   user: {
     id: string;
     email: string;
@@ -32,6 +35,9 @@ export interface ApiKeyListItem {
   name: string;
   keyPrefix: string;
   isActive: boolean;
+  llmEnabled: boolean;
+  llmProviderId: string;
+  llmModelId: string;
   lastUsedAt: Date | null;
   expiresAt: Date | null;
   createdAt: Date;

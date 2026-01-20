@@ -24,6 +24,13 @@ vi.mock('@anyhunt/agents-core', async () => {
 
 const mockRun = vi.mocked(run);
 
+const defaultApiKey = {
+  id: 'api-key-1',
+  llmEnabled: true,
+  llmProviderId: 'openai',
+  llmModelId: 'gpt-4o',
+} as const;
+
 const createStreamResult = (
   usage: { inputTokens: number; outputTokens: number },
   options?: { throwAfterFirst?: boolean },
@@ -206,8 +213,10 @@ describe('AgentService', () => {
       {
         prompt: 'test',
         stream: false,
+        output: { type: 'text' },
       },
       'user_1',
+      defaultApiKey,
     );
 
     expect(result.status).toBe('completed');
@@ -248,8 +257,10 @@ describe('AgentService', () => {
       {
         prompt: 'test',
         stream: false,
+        output: { type: 'text' },
       },
       'user_1',
+      defaultApiKey,
     );
 
     expect(result.status).toBe('failed');
@@ -287,7 +298,11 @@ describe('AgentService', () => {
       createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
-    await service.executeTask({ prompt: 'test', stream: false }, 'user_1');
+    await service.executeTask(
+      { prompt: 'test', stream: false, output: { type: 'text' } },
+      'user_1',
+      defaultApiKey,
+    );
 
     const port = vi.mocked(mockBrowserPort.forUser).mock.results[0]
       ?.value as unknown as {
@@ -319,7 +334,11 @@ describe('AgentService', () => {
       createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
-    await service.executeTask({ prompt: 'test', stream: false }, 'user_1');
+    await service.executeTask(
+      { prompt: 'test', stream: false, output: { type: 'text' } },
+      'user_1',
+      defaultApiKey,
+    );
 
     const port = vi.mocked(mockBrowserPort.forUser).mock.results[0]
       ?.value as unknown as {
@@ -355,8 +374,10 @@ describe('AgentService', () => {
       {
         prompt: 'test',
         stream: false,
+        output: { type: 'text' },
       },
       'user_1',
+      defaultApiKey,
     );
 
     expect(result.status).toBe('cancelled');
@@ -390,8 +411,9 @@ describe('AgentService', () => {
       );
 
       const result = await service.executeTask(
-        { prompt: 'test', stream: false },
+        { prompt: 'test', stream: false, output: { type: 'text' } },
         'user_1',
+        defaultApiKey,
       );
 
       expect(result.status).toBe('failed');
@@ -527,7 +549,11 @@ describe('AgentService', () => {
       createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
-    await service.executeTask({ prompt: 'test', stream: false }, 'user_1');
+    await service.executeTask(
+      { prompt: 'test', stream: false, output: { type: 'text' } },
+      'user_1',
+      defaultApiKey,
+    );
 
     const agent = mockRun.mock.calls[0]?.[0] as any;
     expect(agent?.modelSettings?.providerData).toHaveProperty(
@@ -560,9 +586,18 @@ describe('AgentService', () => {
       {
         prompt: 'test',
         stream: false,
-        schema: { title: { type: 'string' } },
+        output: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: { title: { type: 'string' } },
+            required: ['title'],
+            additionalProperties: false,
+          },
+        },
       },
       'user_1',
+      defaultApiKey,
     );
 
     const agent = mockRun.mock.calls[0]?.[0] as any;

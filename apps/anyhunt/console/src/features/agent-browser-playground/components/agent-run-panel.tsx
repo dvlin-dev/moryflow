@@ -30,6 +30,7 @@ import {
 } from '@anyhunt/ui';
 import { PromptInputSubmit } from '@anyhunt/ui/ai/prompt-input';
 import { ConsoleAgentChatTransport } from '../transport/agent-chat-transport';
+import { parseSchemaJsonToAgentOutput } from '../agent-output';
 import {
   agentOptionsSchema,
   agentPromptSchema,
@@ -37,7 +38,7 @@ import {
   type AgentPromptValues,
 } from '../schemas';
 import { estimateAgentCost } from '../api';
-import type { AgentEstimateResponse } from '../types';
+import type { AgentEstimateResponse, AgentOutput } from '../types';
 import { AgentMessageList } from './agent-message-list';
 
 interface AgentRunPanelProps {
@@ -49,15 +50,6 @@ const parseUrls = (value?: string) =>
     ?.split(/[\s,]+/)
     .map((item) => item.trim())
     .filter(Boolean) ?? [];
-
-const parseSchema = (value?: string) => {
-  if (!value) return undefined;
-  try {
-    return JSON.parse(value) as Record<string, unknown>;
-  } catch {
-    return undefined;
-  }
-};
 
 export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
   const optionsForm = useForm<AgentOptionsValues>({
@@ -79,15 +71,25 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
   const optionsRef = useRef({
     apiKeyId,
     urls: [] as string[],
-    schema: undefined as Record<string, unknown> | undefined,
+    output: { type: 'text' } as AgentOutput,
+    schemaJson: '' as string,
     maxCredits: undefined as number | undefined,
   });
 
   useEffect(() => {
+    const schemaJson = optionsWatch?.schemaJson ?? '';
+    let output: AgentOutput = { type: 'text' };
+    try {
+      output = parseSchemaJsonToAgentOutput(schemaJson);
+    } catch {
+      output = { type: 'text' };
+    }
+
     optionsRef.current = {
       apiKeyId,
       urls: parseUrls(optionsWatch?.urls),
-      schema: parseSchema(optionsWatch?.schemaJson),
+      output,
+      schemaJson,
       maxCredits: optionsWatch?.maxCredits || undefined,
     };
   }, [apiKeyId, optionsWatch?.urls, optionsWatch?.schemaJson, optionsWatch?.maxCredits]);
@@ -142,7 +144,7 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
     const input = {
       prompt,
       urls: optionsRef.current.urls.length ? optionsRef.current.urls : undefined,
-      schema: optionsRef.current.schema,
+      output: optionsRef.current.output,
       maxCredits: optionsRef.current.maxCredits,
     };
     await estimateMutation.mutateAsync(input);
@@ -184,7 +186,10 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
                 <FormItem>
                   <FormLabel>Output Schema (JSON)</FormLabel>
                   <FormControl>
-                    <Input placeholder='{"title":"string","price":"number"}' {...field} />
+                    <Input
+                      placeholder='{"title":{"type":"string"},"price":{"type":"number"}}'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -28,6 +28,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.anyhunt.app`（可用 `VITE_API_URL` 覆盖）
 - Agent Playground：JSON 任务使用 `POST /api/v1/console/playground/agent`；SSE 流式使用 `POST /api/v1/console/playground/agent/stream`（不再通过 body 里的 `stream` 开关复用同一路由）
+- Agent Playground 入参使用 `output`（`text`/`json_schema`），不再发送旧的 `schema` 字段；模型/Provider 由 API Key 策略决定（不允许请求侧选择）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - Zustand 管理登录状态，React Query 管理数据
 - UI 风格：Moryflow 圆角 + 柔和层级

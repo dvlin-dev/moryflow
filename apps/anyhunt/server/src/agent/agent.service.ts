@@ -1,14 +1,14 @@
 /**
  * Agent Service
  *
- * [INPUT]: Agent 任务请求（可选 model；默认使用 OPENAI_DEFAULT_MODEL）
+ * [INPUT]: Agent 任务请求 + ApiKey LLM 策略（model/provider 由 ApiKey 决定）
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
  * [POS]: L3 Agent 核心业务逻辑，整合 @anyhunt/agents-core、Browser ports 与任务管理；生产环境缺少 OPENAI_API_KEY 时 fail-fast
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import {
   Agent,
   run,
@@ -16,6 +16,7 @@ import {
   type JsonSchemaDefinition,
   type StreamedRunResult,
 } from '@anyhunt/agents-core';
+import { providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
 import type { AgentTask } from '../../generated/prisma-main/client';
 import {
   BrowserAgentPortService,
@@ -34,6 +35,7 @@ import {
 } from './agent-stream.processor';
 import type {
   CreateAgentTaskInput,
+  AgentOutput,
   AgentTaskResult,
   AgentStreamEvent,
   AgentTaskProgress,
@@ -71,25 +73,80 @@ const PROGRESS_TTL_MS = 24 * 60 * 60 * 1000;
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
 type AgentStreamedResult = StreamedRunResult<BrowserAgentContext, BrowserAgent>;
 
+type ApiKeyLlmPolicyInput = {
+  id: string;
+  llmEnabled?: boolean;
+  llmProviderId?: string;
+  llmModelId?: string;
+};
+
+type ResolvedLlmPolicy = {
+  apiModelId: string;
+};
+
+const DEFAULT_LLM_PROVIDER_ID = 'openai';
+const DEFAULT_LLM_MODEL_ID = 'gpt-4o';
+
+function resolveLlmPolicyOrThrow(
+  apiKey: ApiKeyLlmPolicyInput,
+): ResolvedLlmPolicy {
+  if (apiKey.llmEnabled === false) {
+    throw new ForbiddenException('LLM is disabled for this API key');
+  }
+
+  const providerId = apiKey.llmProviderId ?? DEFAULT_LLM_PROVIDER_ID;
+  const provider = providerRegistry[providerId];
+  if (!provider) {
+    throw new ForbiddenException(
+      'LLM provider is not allowed for this API key',
+    );
+  }
+
+  const configuredProviderId =
+    process.env.ANYHUNT_LLM_PROVIDER_ID?.trim() || DEFAULT_LLM_PROVIDER_ID;
+  if (providerId !== configuredProviderId) {
+    throw new ForbiddenException(
+      'LLM provider is not available in this environment',
+    );
+  }
+
+  const modelId = apiKey.llmModelId ?? DEFAULT_LLM_MODEL_ID;
+  const modelAllowed =
+    provider.modelIds.includes(modelId) || provider.allowCustomModels === true;
+  if (!modelAllowed) {
+    throw new ForbiddenException('LLM model is not allowed for this API key');
+  }
+
+  return {
+    apiModelId: toApiModelId(providerId, modelId),
+  };
+}
+
 const buildAgentOutputType = (
-  schema?: Record<string, unknown>,
+  output: AgentOutput,
 ): AgentOutputType | undefined => {
-  if (!schema) {
+  if (output.type !== 'json_schema') {
     return undefined;
   }
 
-  const properties = schema as Record<string, Record<string, unknown>>;
-  const required = Object.keys(properties);
+  const properties = output.schema.properties as unknown as Record<
+    string,
+    Record<string, unknown>
+  >;
+  const required = output.schema.required ?? [];
 
   const jsonSchema: JsonSchemaDefinition = {
     type: 'json_schema',
-    name: 'agent_output',
-    strict: false,
+    name: output.name ?? 'agent_output',
+    strict: output.strict ?? false,
     schema: {
       type: 'object',
       properties,
       required,
-      additionalProperties: true,
+      additionalProperties:
+        output.schema.additionalProperties === true
+          ? (true as const)
+          : (false as const),
     },
   };
 
@@ -108,6 +165,10 @@ export class AgentService {
     private readonly progressStore: AgentTaskProgressStore,
     private readonly streamProcessor: AgentStreamProcessor,
   ) {}
+
+  resolveLlmPolicyForApiKey(apiKey: ApiKeyLlmPolicyInput): ResolvedLlmPolicy {
+    return resolveLlmPolicyOrThrow(apiKey);
+  }
 
   private getLlmConfigurationError(): string | null {
     // 仅在生产环境强制要求配置，避免本地/单测因为缺少密钥而无法运行。
@@ -134,7 +195,9 @@ export class AgentService {
   async executeTask(
     input: CreateAgentTaskInput,
     userId: string,
+    apiKey: ApiKeyLlmPolicyInput,
   ): Promise<AgentTaskResult> {
+    const llmPolicy = this.resolveLlmPolicyForApiKey(apiKey);
     const taskId = this.generateTaskId();
     const now = new Date();
     const abortController = new AbortController();
@@ -211,7 +274,7 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input);
+      const agent = this.buildAgent(input, llmPolicy);
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -413,7 +476,9 @@ export class AgentService {
   async *executeTaskStream(
     input: CreateAgentTaskInput,
     userId: string,
+    apiKey: ApiKeyLlmPolicyInput,
   ): AsyncGenerator<AgentStreamEvent, void, unknown> {
+    const llmPolicy = this.resolveLlmPolicyForApiKey(apiKey);
     const taskId = this.generateTaskId();
     const now = new Date();
     const abortController = new AbortController();
@@ -496,7 +561,7 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input);
+      const agent = this.buildAgent(input, llmPolicy);
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -695,22 +760,24 @@ export class AgentService {
     }
   }
 
-  private buildAgent(input: CreateAgentTaskInput): BrowserAgent {
+  private buildAgent(
+    input: CreateAgentTaskInput,
+    llmPolicy: ResolvedLlmPolicy,
+  ): BrowserAgent {
     // agents-openai 的 Chat Completions 实现会默认带上 `response_format: { type: 'text' }`。
     // 部分 OpenAI-compatible 网关（尤其是 Gemini/Claude 代理）会对该字段报 400 invalid argument。
     // 这里在“纯文本输出”场景下显式移除它（通过 providerData 覆盖为 undefined，使 JSON.stringify 丢弃字段）。
-    const providerData: Record<string, unknown> | undefined = input.schema
-      ? undefined
-      : { response_format: undefined };
+    const providerData: Record<string, unknown> | undefined =
+      input.output.type === 'json_schema'
+        ? undefined
+        : { response_format: undefined };
 
     return new Agent<BrowserAgentContext, AgentOutputType>({
       name: 'Fetchx Browser Agent',
-      // 默认使用 agents-core 的 OPENAI_DEFAULT_MODEL（Agent.DEFAULT_MODEL_PLACEHOLDER === ''）。
-      // 允许请求侧覆盖，以便 Console Playground 选择不同 model。
-      model: input.model ?? Agent.DEFAULT_MODEL_PLACEHOLDER,
+      model: llmPolicy.apiModelId,
       instructions: SYSTEM_INSTRUCTIONS,
       tools: browserTools,
-      outputType: buildAgentOutputType(input.schema),
+      outputType: buildAgentOutputType(input.output),
       modelSettings: {
         temperature: 0.7,
         maxTokens: 4096,

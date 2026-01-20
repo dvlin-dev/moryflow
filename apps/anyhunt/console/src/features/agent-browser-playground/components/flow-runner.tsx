@@ -25,6 +25,7 @@ import {
   Input,
 } from '@anyhunt/ui';
 import { CodeBlock } from '@anyhunt/ui/ai/code-block';
+import { parseSchemaJsonToAgentOutput } from '../agent-output';
 import { flowRunnerSchema, type FlowRunnerValues } from '../schemas';
 import {
   createBrowserSession,
@@ -69,15 +70,6 @@ const parseUrls = (value?: string) =>
     ?.split(/[\s,]+/)
     .map((item) => item.trim())
     .filter(Boolean) ?? [];
-
-const parseSchema = (value?: string) => {
-  if (!value) return undefined;
-  try {
-    return JSON.parse(value) as Record<string, unknown>;
-  } catch {
-    return undefined;
-  }
-};
 
 const stepDefinitions: FlowStep[] = [
   { id: 'create', label: 'Create session', status: 'pending' },
@@ -177,7 +169,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
       const estimate = await estimateAgentCost(apiKeyId, {
         prompt: values.prompt,
         urls: parseUrls(values.targetUrl),
-        schema: parseSchema(values.schemaJson),
+        output: parseSchemaJsonToAgentOutput(values.schemaJson),
         maxCredits: values.maxCredits,
       });
       updateStep('estimate', 'success');
@@ -187,7 +179,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
       const agent = await executeAgentTask(apiKeyId, {
         prompt: values.prompt,
         urls: parseUrls(values.targetUrl),
-        schema: parseSchema(values.schemaJson),
+        output: parseSchemaJsonToAgentOutput(values.schemaJson),
         maxCredits: values.maxCredits,
       });
       updateStep('agent', 'success', agent.id);
@@ -285,7 +277,10 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
                 <FormItem className="md:col-span-2">
                   <FormLabel>Output Schema (JSON)</FormLabel>
                   <FormControl>
-                    <Input placeholder='{"title":"string"}' {...field} />
+                    <Input
+                      placeholder='{"title":{"type":"string"},"price":{"type":"number"}}'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -23,7 +23,9 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 - **LLM API 约束**：只允许使用 `/chat/completions`（`useResponses=false`），禁止 Responses API（避免网关不兼容导致 400）
 - **网关兼容性**：对“纯文本输出”任务需移除 `response_format: { type: 'text' }`（部分 OpenAI-compatible 网关会对该字段报 400）；实现见 `AgentService.buildAgent`
 - **浏览器 Session 惰性创建**：Agent 不应在 LLM 首次调用前创建 Browser Session；仅在首次 Browser Tool 调用时创建（避免无效 session、降低资源占用）
-- **Model 选择**：默认使用 agents-core 的 `OPENAI_DEFAULT_MODEL`；请求可通过 `model` 字段覆盖
+- **输出格式收紧**：请求使用 `output`（`text` / `json_schema`），并对 `json_schema` 的 schema 做规模/深度/required 校验；不再支持旧的 `schema` 透传
+- **Model/Provider 策略**：model/provider 由 `ApiKey.llmProviderId/llmModelId/llmEnabled` 决定，请求不允许覆盖
+- **Provider 对齐**：运行时通过 `ANYHUNT_LLM_PROVIDER_ID` 与 `ApiKey.llmProviderId` 对齐，避免 baseURL/provider 不一致导致不可预测错误
 - **生产环境配置校验**：`NODE_ENV=production` 且缺少 `OPENAI_API_KEY` 时，任务必须 fail-fast（不创建 Browser Session）
 - **用户归属绑定**：Browser 端口必须通过 `BrowserAgentPortService.forUser(userId)` 获取
 - **取消语义**：必须支持硬取消（AbortSignal）+ Redis 取消标记（跨实例）
@@ -55,4 +57,4 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 
 - `OPENAI_API_KEY`: required (or the key for an OpenAI-compatible gateway)
 - `OPENAI_BASE_URL`: optional (set when using a gateway, e.g. OpenRouter/AI Gateway)
-- `OPENAI_DEFAULT_MODEL`: optional (default model name used by agents-core)
+- `ANYHUNT_LLM_PROVIDER_ID`: optional (default `openai`, must match ApiKey.llmProviderId)

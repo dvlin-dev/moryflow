@@ -233,6 +233,9 @@ model ApiKey {
   keyPrefix  String // 展示用，如 "ah_abc1"
   keyHash    String    @unique // SHA256(完整key)
   isActive   Boolean   @default(true)
+  llmEnabled Boolean   @default(true)
+  llmProviderId String @default("openai")
+  llmModelId String    @default("gpt-4o")
   lastUsedAt DateTime?
   expiresAt  DateTime?
   createdAt  DateTime  @default(now())

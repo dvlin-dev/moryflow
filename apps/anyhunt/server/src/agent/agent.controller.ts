@@ -30,7 +30,11 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CurrentUser, Public } from '../auth';
-import { ApiKeyGuard } from '../api-key';
+import {
+  ApiKeyGuard,
+  CurrentApiKey,
+  type ApiKeyValidationResult,
+} from '../api-key';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { AgentService } from './agent.service';
 import {
@@ -64,6 +68,7 @@ export class AgentController {
   @ApiOkResponse({ description: 'Task result or SSE event stream' })
   async createTask(
     @CurrentUser() user: CurrentUserDto,
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
     @Body() body: unknown,
     @Res() res: Response,
   ): Promise<void> {
@@ -80,8 +85,14 @@ export class AgentController {
 
     const input = parseResult.data;
 
+    this.agentService.resolveLlmPolicyForApiKey(apiKey);
+
     if (!input.stream) {
-      const result = await this.agentService.executeTask(input, user.id);
+      const result = await this.agentService.executeTask(
+        input,
+        user.id,
+        apiKey,
+      );
       res.json(result);
       return;
     }
@@ -104,6 +115,7 @@ export class AgentController {
       for await (const event of this.agentService.executeTaskStream(
         input,
         user.id,
+        apiKey,
       )) {
         if (!connectionClosed) {
           sendEvent(event);

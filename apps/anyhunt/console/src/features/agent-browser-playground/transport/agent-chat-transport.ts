@@ -13,14 +13,16 @@ import {
   extractPromptFromMessages,
   mapAgentEventToChunks,
 } from '../agent-stream';
-import type { AgentStreamEvent } from '../types';
+import { parseSchemaJsonToAgentOutput } from '../agent-output';
+import type { AgentStreamEvent, AgentOutput } from '../types';
 
 type SendOptions = Parameters<ChatTransport<UIMessage>['sendMessages']>[0];
 
 export type AgentChatOptions = {
   apiKeyId: string;
   urls?: string[];
-  schema?: Record<string, unknown>;
+  output?: AgentOutput;
+  schemaJson?: string;
   maxCredits?: number;
 };
 
@@ -71,7 +73,7 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
         apiKeyId: requestApiKeyId,
         prompt,
         urls: options.urls,
-        schema: options.schema,
+        output: options.output ?? parseSchemaJsonToAgentOutput(options.schemaJson),
         maxCredits: options.maxCredits,
       }),
       signal: abortSignal,

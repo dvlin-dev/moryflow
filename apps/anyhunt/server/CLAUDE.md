@@ -33,6 +33,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Agent + `@anyhunt/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
 - Agent 访问浏览器能力必须通过 `BrowserAgentPort`（禁止直接依赖 `BrowserSession` / Playwright 类型）
 - Agent 任务必须支持硬取消（AbortSignal）与分段配额检查（每 100 credits）
+- Agent 的 LLM 能力必须受 API Key 级别策略约束（`ApiKey.llmEnabled/llmProviderId/llmModelId`），请求不允许自由指定 model/provider
 - Agent 任务状态持久化到 DB（`AgentTask`），实时进度与取消标记使用 Redis；`GET /api/v1/agent/:id` 合并 DB + Redis
 - Agent 任务终态更新必须使用 compare-and-set（`updateTaskIfStatus`）以避免取消状态被覆盖；取消后需确保 metrics（creditsUsed/toolCallCount/elapsedMs）落库
 - Prisma 迁移 diff 依赖 Shadow DB；本地需设置 `SHADOW_DATABASE_URL` / `VECTOR_SHADOW_DATABASE_URL`（仅本地，不提交）

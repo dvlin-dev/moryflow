@@ -3,7 +3,7 @@
  *
  * [INPUT]: apiKeyId + Agent 任务请求
  * [OUTPUT]: JSON（标准响应包装）或 SSE 流
- * [POS]: Console Playground Agent 代理入口（Session 认证）
+ * [POS]: Console Playground Agent 代理入口（Session 认证；SSE 前会 fail-fast 校验 ApiKey LLM 策略）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -91,6 +91,8 @@ export class ConsolePlaygroundAgentController {
     @Res() res: Response,
   ): Promise<void> {
     const { apiKeyId, ...input } = dto;
+
+    await this.service.assertAgentLlmPolicy(user.id, apiKeyId);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');

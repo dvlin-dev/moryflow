@@ -183,6 +183,9 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
         keyHash: 'hash_1',
+        llmEnabled: true,
+        llmProviderId: 'openai',
+        llmModelId: 'gpt-4o',
       });
       mockPrisma.apiKey.update.mockResolvedValue({
         id: 'key_1',
@@ -208,6 +211,9 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
         keyHash: 'hash_1',
+        llmEnabled: true,
+        llmProviderId: 'openai',
+        llmModelId: 'gpt-4o',
       });
       mockPrisma.apiKey.update.mockResolvedValue({
         id: 'key_1',
@@ -223,6 +229,9 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
         keyHash: 'hash_1',
+        llmEnabled: true,
+        llmProviderId: 'openai',
+        llmModelId: 'gpt-4o',
       });
       mockPrisma.apiKey.update.mockResolvedValue({
         id: 'key_1',
@@ -323,6 +332,9 @@ describe('ApiKeyService', () => {
         userId: 'user_1',
         name: 'Test Key',
         isActive: true,
+        llmEnabled: true,
+        llmProviderId: 'openai',
+        llmModelId: 'gpt-4o',
         expiresAt: null,
         user: {
           id: 'user_1',
@@ -347,6 +359,9 @@ describe('ApiKeyService', () => {
         userId: 'user_1',
         name: 'Test Key',
         isActive: true,
+        llmEnabled: true,
+        llmProviderId: 'openai',
+        llmModelId: 'gpt-4o',
         expiresAt: null,
         user: {
           id: 'user_1',
@@ -368,9 +383,13 @@ describe('ApiKeyService', () => {
         id: 'key_1',
         userId: 'user_1',
         name: 'Cached Key',
+        llmEnabled: true,
+        llmProviderId: 'openai',
+        llmModelId: 'gpt-4o',
         user: {
           id: 'user_1',
           email: 'cached@example.com',
+          name: null,
           tier: 'FREE',
           isAdmin: false,
         },
