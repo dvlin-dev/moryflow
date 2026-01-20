@@ -277,9 +277,9 @@ open http://localhost:3000/api-docs
 | `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
 | `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
 | `ANYHUNT_LLM_SECRET_KEY`      | ❌   | 用于加密存储在 DB 的 provider apiKey（Admin LLM 配置必需；base64(32 bytes)）     |
-| `OPENAI_API_KEY`              | ❌   | Extract/Embedding 的 OpenAI Key（未配置则相关接口会失败）                        |
-| `OPENAI_BASE_URL`             | ❌   | Extract 的 OpenAI-compatible baseURL（空字符串视为未配置）                       |
-| `OPENAI_DEFAULT_MODEL`        | ❌   | Extract 默认模型名（默认 `gpt-4o-mini`）                                         |
+| `EMBEDDING_OPENAI_API_KEY`    | ✅   | Embedding 模块 OpenAI-compatible API Key（未配置则 embedding 会失败）            |
+| `EMBEDDING_OPENAI_BASE_URL`   | ❌   | Embedding 模块 OpenAI-compatible baseURL（空字符串视为未配置）                   |
+| `EMBEDDING_OPENAI_MODEL`      | ❌   | Embedding 模块默认模型（默认 `text-embedding-3-small`）                          |
 | `R2_*`                        | ❌   | 云存储配置（可选）                                                               |
 | `R2_PUBLIC_URL`               | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
 | `RESEND_API_KEY`              | ❌   | Resend API Key（不启用邮件可留空）                                               |

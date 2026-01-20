@@ -31,9 +31,9 @@ Vector embedding generation for semantic search. Converts text content into vect
 
 ```typescript
 // Environment variables
-OPENAI_API_KEY=...
-EMBEDDING_API_URL=...      // optional (OpenAI-compatible endpoint)
-EMBEDDING_MODEL=...        // optional (default: text-embedding-3-small)
+EMBEDDING_OPENAI_API_KEY=...     // required
+EMBEDDING_OPENAI_BASE_URL=...    // optional (OpenAI-compatible endpoint)
+EMBEDDING_OPENAI_MODEL=...       // optional (default: text-embedding-3-small)
 ```
 
 ## Usage

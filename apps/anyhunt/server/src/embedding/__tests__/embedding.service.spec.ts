@@ -39,9 +39,9 @@ describe('EmbeddingService', () => {
     const mockConfigService = {
       get: vi.fn((key: string, defaultValue?: string) => {
         const config: Record<string, string> = {
-          OPENAI_API_KEY: 'test-api-key',
-          EMBEDDING_API_URL: '',
-          EMBEDDING_MODEL: 'text-embedding-3-small',
+          EMBEDDING_OPENAI_API_KEY: 'test-api-key',
+          EMBEDDING_OPENAI_BASE_URL: '',
+          EMBEDDING_OPENAI_MODEL: 'text-embedding-3-small',
         };
         return config[key] ?? defaultValue;
       }),
@@ -199,8 +199,8 @@ describe('EmbeddingService', () => {
     it('should use default model when not configured', async () => {
       const mockConfigService = {
         get: vi.fn((key: string, defaultValue?: string) => {
-          if (key === 'EMBEDDING_MODEL') return defaultValue;
-          if (key === 'OPENAI_API_KEY') return 'test-key';
+          if (key === 'EMBEDDING_OPENAI_MODEL') return defaultValue;
+          if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
           return '';
         }),
       };
@@ -226,8 +226,8 @@ describe('EmbeddingService', () => {
     it('should use custom model when configured', async () => {
       const mockConfigService = {
         get: vi.fn((key: string) => {
-          if (key === 'EMBEDDING_MODEL') return 'text-embedding-ada-002';
-          if (key === 'OPENAI_API_KEY') return 'test-key';
+          if (key === 'EMBEDDING_OPENAI_MODEL') return 'text-embedding-ada-002';
+          if (key === 'EMBEDDING_OPENAI_API_KEY') return 'test-key';
           return '';
         }),
       };

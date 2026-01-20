@@ -10,6 +10,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 
+const EMBEDDING_OPENAI_API_KEY_ENV = 'EMBEDDING_OPENAI_API_KEY';
+const EMBEDDING_OPENAI_BASE_URL_ENV = 'EMBEDDING_OPENAI_BASE_URL';
+const EMBEDDING_OPENAI_MODEL_ENV = 'EMBEDDING_OPENAI_MODEL';
+
 export interface EmbeddingResult {
   embedding: number[];
   model: string;
@@ -23,16 +27,22 @@ export class EmbeddingService {
   private readonly model: string;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY', '');
-    const baseUrl = this.configService.get<string>('EMBEDDING_API_URL', '');
+    const apiKey = this.configService.get<string>(EMBEDDING_OPENAI_API_KEY_ENV);
+    if (!apiKey || !apiKey.trim()) {
+      throw new Error('Embedding provider API key is not configured');
+    }
+
+    const baseUrl = this.configService.get<string>(
+      EMBEDDING_OPENAI_BASE_URL_ENV,
+    );
 
     this.openai = new OpenAI({
-      apiKey,
+      apiKey: apiKey.trim(),
       baseURL: baseUrl && baseUrl.trim() ? baseUrl.trim() : undefined,
     });
 
     this.model = this.configService.get<string>(
-      'EMBEDDING_MODEL',
+      EMBEDDING_OPENAI_MODEL_ENV,
       'text-embedding-3-small',
     );
   }
