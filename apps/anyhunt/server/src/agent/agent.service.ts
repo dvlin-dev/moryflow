@@ -696,6 +696,13 @@ export class AgentService {
   }
 
   private buildAgent(input: CreateAgentTaskInput): BrowserAgent {
+    // agents-openai 的 Chat Completions 实现会默认带上 `response_format: { type: 'text' }`。
+    // 部分 OpenAI-compatible 网关（尤其是 Gemini/Claude 代理）会对该字段报 400 invalid argument。
+    // 这里在“纯文本输出”场景下显式移除它（通过 providerData 覆盖为 undefined，使 JSON.stringify 丢弃字段）。
+    const providerData: Record<string, unknown> | undefined = input.schema
+      ? undefined
+      : { response_format: undefined };
+
     return new Agent<BrowserAgentContext, AgentOutputType>({
       name: 'Fetchx Browser Agent',
       // 默认使用 agents-core 的 OPENAI_DEFAULT_MODEL（Agent.DEFAULT_MODEL_PLACEHOLDER === ''）。
@@ -707,6 +714,7 @@ export class AgentService {
       modelSettings: {
         temperature: 0.7,
         maxTokens: 4096,
+        ...(providerData ? { providerData } : {}),
       },
     });
   }

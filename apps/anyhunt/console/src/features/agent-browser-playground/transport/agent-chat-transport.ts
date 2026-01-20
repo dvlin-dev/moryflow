@@ -60,7 +60,7 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       throw new Error('Prompt is empty');
     }
 
-    const response = await fetch(`${API_BASE_URL}${CONSOLE_PLAYGROUND_API.AGENT}`, {
+    const response = await fetch(`${API_BASE_URL}${CONSOLE_PLAYGROUND_API.AGENT_STREAM}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,7 +73,6 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
         urls: options.urls,
         schema: options.schema,
         maxCredits: options.maxCredits,
-        stream: true,
       }),
       signal: abortSignal,
     });

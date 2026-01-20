@@ -36,20 +36,32 @@ COPY apps/anyhunt/server ./apps/anyhunt/server
 
 # Docker 构建中默认 `--ignore-scripts`，workspace 包不会自动生成 dist；
 # 这里用 tsc-multi 正确生成 `.js`(CJS) + `.mjs`(ESM) 的 dist，匹配 packages/* 的 exports 约定。
-RUN cat > /app/tsc-multi.anyhunt-server.json <<'EOF'
+#
+# 注意：`@anyhunt/agents-openai` 依赖 `@anyhunt/agents-core` 的 dist（含 subpath exports），
+# 必须先构建 agents-core，再构建 agents-openai；否则会在编译期出现 TS2307 等错误。
+RUN cat > /app/tsc-multi.agents-core.json <<'EOF'
 {
   "targets": [
     { "extname": ".js", "module": "commonjs", "moduleResolution": "node" },
     { "extname": ".mjs", "module": "esnext" }
   ],
-  "projects": [
-    "packages/agents-core/tsconfig.json",
-    "packages/agents-openai/tsconfig.json"
-  ]
+  "projects": ["packages/agents-core/tsconfig.json"]
 }
 EOF
 
-RUN pnpm dlx tsc-multi@1.1.0 --config /app/tsc-multi.anyhunt-server.json
+RUN pnpm dlx tsc-multi@1.1.0 --config /app/tsc-multi.agents-core.json
+
+RUN cat > /app/tsc-multi.agents-openai.json <<'EOF'
+{
+  "targets": [
+    { "extname": ".js", "module": "commonjs", "moduleResolution": "node" },
+    { "extname": ".mjs", "module": "esnext" }
+  ],
+  "projects": ["packages/agents-openai/tsconfig.json"]
+}
+EOF
+
+RUN pnpm dlx tsc-multi@1.1.0 --config /app/tsc-multi.agents-openai.json
 
 WORKDIR /app/apps/anyhunt/server
 

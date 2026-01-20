@@ -3,7 +3,7 @@
  *
  * [INPUT]: HTTP 请求
  * [OUTPUT]: JSON 响应或 SSE 事件流
- * [POS]: L3 Agent API 入口，处理任务创建和状态查询（含用户上下文）
+ * [POS]: L3 Agent API 入口，处理任务创建和状态查询（含用户上下文与 taskId 参数校验）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -31,8 +31,14 @@ import {
 import type { Response } from 'express';
 import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { AgentService } from './agent.service';
-import { CreateAgentTaskSchema, type AgentStreamEvent } from './dto';
+import {
+  AgentTaskIdParamSchema,
+  type AgentTaskIdParamDto,
+  CreateAgentTaskSchema,
+  type AgentStreamEvent,
+} from './dto';
 import type { CurrentUserDto } from '../types';
 
 @ApiTags('Agent')
@@ -128,9 +134,10 @@ export class AgentController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   async getTaskStatus(
     @CurrentUser() user: CurrentUserDto,
-    @Param('id') taskId: string,
+    @Param(new ZodValidationPipe(AgentTaskIdParamSchema))
+    params: AgentTaskIdParamDto,
   ) {
-    const result = await this.agentService.getTaskStatus(taskId, user.id);
+    const result = await this.agentService.getTaskStatus(params.id, user.id);
 
     if (!result) {
       throw new HttpException(
@@ -210,9 +217,10 @@ export class AgentController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   async cancelTask(
     @CurrentUser() user: CurrentUserDto,
-    @Param('id') taskId: string,
+    @Param(new ZodValidationPipe(AgentTaskIdParamSchema))
+    params: AgentTaskIdParamDto,
   ) {
-    const result = await this.agentService.cancelTask(taskId, user.id);
+    const result = await this.agentService.cancelTask(params.id, user.id);
 
     if (!result.success && result.message === 'Task not found') {
       throw new HttpException(

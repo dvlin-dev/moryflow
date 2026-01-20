@@ -32,6 +32,7 @@ export const CONSOLE_PLAYGROUND_API = {
   BROWSER_SESSION: '/api/v1/console/playground/browser/session',
   BROWSER_CDP_CONNECT: '/api/v1/console/playground/browser/cdp/connect',
   AGENT: '/api/v1/console/playground/agent',
+  AGENT_STREAM: '/api/v1/console/playground/agent/stream',
   AGENT_ESTIMATE: '/api/v1/console/playground/agent/estimate',
 } as const;
 

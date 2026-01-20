@@ -5,6 +5,8 @@
  * [INPUT]: Console 前端请求
  * [OUTPUT]: 验证后的请求参数
  * [POS]: 供 console-playground.controller.ts 使用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { z } from 'zod';
@@ -27,7 +29,9 @@ import {
   ExportStorageSchema,
   ImportStorageSchema,
 } from '../../browser/dto';
-import { CreateAgentTaskSchema } from '../../agent/dto';
+import { AgentTaskIdParamSchema, CreateAgentTaskSchema } from '../../agent/dto';
+
+export { AgentTaskIdParamSchema };
 
 /**
  * 基础 Console Playground 请求 Schema
@@ -181,10 +185,14 @@ export type ConsoleBrowserImportStorageDto = z.infer<
 /**
  * Console Agent 任务
  */
-export const ConsoleAgentTaskSchema = BaseConsolePlaygroundSchema.merge(
-  CreateAgentTaskSchema,
+export const ConsoleAgentTaskInputSchema = BaseConsolePlaygroundSchema.merge(
+  CreateAgentTaskSchema.omit({ stream: true }),
 );
-export type ConsoleAgentTaskDto = z.infer<typeof ConsoleAgentTaskSchema>;
+export type ConsoleAgentTaskInputDto = z.infer<
+  typeof ConsoleAgentTaskInputSchema
+>;
+
+export type AgentTaskIdParamDto = z.infer<typeof AgentTaskIdParamSchema>;
 
 /**
  * Query 参数中的 apiKeyId（用于 GET/DELETE 请求）

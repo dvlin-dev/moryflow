@@ -179,7 +179,6 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
         urls: parseUrls(values.targetUrl),
         schema: parseSchema(values.schemaJson),
         maxCredits: values.maxCredits,
-        stream: false,
       });
       updateStep('estimate', 'success');
 
@@ -190,12 +189,14 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
         urls: parseUrls(values.targetUrl),
         schema: parseSchema(values.schemaJson),
         maxCredits: values.maxCredits,
-        stream: false,
       });
       updateStep('agent', 'success', agent.id);
 
       activeStepId = 'status';
       updateStep('status', 'running');
+      if (!agent?.id) {
+        throw new Error('Agent task id is missing');
+      }
       const status = await getAgentTaskStatus(apiKeyId, agent.id);
       const isCompleted = status?.status === 'completed';
       updateStep('status', isCompleted ? 'success' : 'failed', status?.status ?? 'unknown');

@@ -2,6 +2,8 @@
  * [PROVIDES]: Agent/Browser Playground API calls
  * [DEPENDS]: apiClient, CONSOLE_PLAYGROUND_API
  * [POS]: Console Playground 代理请求封装
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { apiClient } from '@/lib/api-client';
@@ -31,6 +33,14 @@ const withQuery = (endpoint: string, query: Record<string, string | undefined>) 
   });
   const queryString = params.toString();
   return queryString ? `${endpoint}?${queryString}` : endpoint;
+};
+
+const AGENT_TASK_ID_PATTERN = /^at_[a-z0-9]+_[a-z0-9]+$/;
+
+const assertAgentTaskId = (taskId: string) => {
+  if (!taskId || !AGENT_TASK_ID_PATTERN.test(taskId)) {
+    throw new Error('Task id is required');
+  }
 };
 
 export async function createBrowserSession(
@@ -328,6 +338,7 @@ export async function getAgentTaskStatus(
   apiKeyId: string,
   taskId: string
 ): Promise<AgentTaskResult | null> {
+  assertAgentTaskId(taskId);
   return apiClient.get(withQuery(`${CONSOLE_PLAYGROUND_API.AGENT}/${taskId}`, { apiKeyId }));
 }
 
@@ -335,5 +346,6 @@ export async function cancelAgentTask(
   apiKeyId: string,
   taskId: string
 ): Promise<AgentCancelResponse> {
+  assertAgentTaskId(taskId);
   return apiClient.delete(withQuery(`${CONSOLE_PLAYGROUND_API.AGENT}/${taskId}`, { apiKeyId }));
 }

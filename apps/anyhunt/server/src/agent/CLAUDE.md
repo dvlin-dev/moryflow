@@ -21,6 +21,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 - **ApiKeyGuard 依赖**：Agent L3 API 使用 `ApiKeyGuard`，对应模块必须导入 `ApiKeyModule`，否则会导致 Nest 启动失败
 - **LLM Provider 初始化**：anyhunt-server 必须在启动期调用 `setDefaultModelProvider(...)`（见 `AgentModelProviderInitializer`），否则会报 `No default model provider set`
 - **LLM API 约束**：只允许使用 `/chat/completions`（`useResponses=false`），禁止 Responses API（避免网关不兼容导致 400）
+- **网关兼容性**：对“纯文本输出”任务需移除 `response_format: { type: 'text' }`（部分 OpenAI-compatible 网关会对该字段报 400）；实现见 `AgentService.buildAgent`
 - **浏览器 Session 惰性创建**：Agent 不应在 LLM 首次调用前创建 Browser Session；仅在首次 Browser Tool 调用时创建（避免无效 session、降低资源占用）
 - **Model 选择**：默认使用 agents-core 的 `OPENAI_DEFAULT_MODEL`；请求可通过 `model` 字段覆盖
 - **生产环境配置校验**：`NODE_ENV=production` 且缺少 `OPENAI_API_KEY` 时，任务必须 fail-fast（不创建 Browser Session）

@@ -1,7 +1,7 @@
 /**
  * Agent DTO - Zod Schemas
  *
- * [DEFINES]: L3 Agent API 请求/响应类型（支持可选 model 覆盖）
+ * [DEFINES]: L3 Agent API 请求/响应/Param Schema（支持可选 model 覆盖）
  * [USED_BY]: agent.controller.ts, agent.service.ts
  * [POS]: Zod schemas + 推断类型（单一数据源）
  *
@@ -9,6 +9,15 @@
  */
 
 import { z } from 'zod';
+
+export const AgentTaskIdSchema = z
+  .string()
+  .regex(/^at_[a-z0-9]+_[a-z0-9]+$/, 'Invalid task ID');
+
+export const AgentTaskIdParamSchema = z.object({
+  id: AgentTaskIdSchema,
+});
+export type AgentTaskIdParamDto = z.infer<typeof AgentTaskIdParamSchema>;
 
 export const CreateAgentTaskSchema = z.object({
   prompt: z.string().min(1).max(10000),

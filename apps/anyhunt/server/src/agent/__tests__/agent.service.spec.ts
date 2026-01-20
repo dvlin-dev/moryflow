@@ -506,4 +506,66 @@ describe('AgentService', () => {
     expect(result.message).toContain('Cannot cancel');
     expect(result.creditsUsed).toBe(5);
   });
+
+  it('overrides chat-completions response_format for text output (gateway compat)', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+    const mockProgressStore = createMockProgressStore();
+
+    mockRun.mockResolvedValue(
+      createStreamResultNoToolCalls({
+        inputTokens: 10,
+        outputTokens: 0,
+      }) as never,
+    );
+
+    const service = new AgentService(
+      mockBrowserPort,
+      mockBillingService,
+      createMockTaskRepository(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+
+    await service.executeTask({ prompt: 'test', stream: false }, 'user_1');
+
+    const agent = mockRun.mock.calls[0]?.[0] as any;
+    expect(agent?.modelSettings?.providerData).toHaveProperty(
+      'response_format',
+      undefined,
+    );
+  });
+
+  it('does not override response_format when structured schema is requested', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+    const mockProgressStore = createMockProgressStore();
+
+    mockRun.mockResolvedValue(
+      createStreamResultNoToolCalls({
+        inputTokens: 10,
+        outputTokens: 0,
+      }) as never,
+    );
+
+    const service = new AgentService(
+      mockBrowserPort,
+      mockBillingService,
+      createMockTaskRepository(),
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+
+    await service.executeTask(
+      {
+        prompt: 'test',
+        stream: false,
+        schema: { title: { type: 'string' } },
+      },
+      'user_1',
+    );
+
+    const agent = mockRun.mock.calls[0]?.[0] as any;
+    expect(agent?.modelSettings?.providerData).toBeUndefined();
+  });
 });

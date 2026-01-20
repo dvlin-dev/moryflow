@@ -144,7 +144,6 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
       urls: optionsRef.current.urls.length ? optionsRef.current.urls : undefined,
       schema: optionsRef.current.schema,
       maxCredits: optionsRef.current.maxCredits,
-      stream: false,
     };
     await estimateMutation.mutateAsync(input);
   };
