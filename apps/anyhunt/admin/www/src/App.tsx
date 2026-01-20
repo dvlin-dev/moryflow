@@ -26,6 +26,7 @@ import BrowserPage from './pages/BrowserPage';
 import DigestReportsPage from './pages/DigestReportsPage';
 import DigestTopicsPage from './pages/DigestTopicsPage';
 import DigestWelcomePage from './pages/DigestWelcomePage';
+import LlmPage from './pages/LlmPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -145,6 +146,9 @@ function App() {
 
             {/* Browser - 浏览器池监控 */}
             <Route path="browser" element={<BrowserPage />} />
+
+            {/* LLM - Provider/Model 配置 */}
+            <Route path="llm" element={<LlmPage />} />
 
             {/* Digest Topics - 话题管理 */}
             <Route path="digest/topics" element={<DigestTopicsPage />} />

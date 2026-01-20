@@ -28,6 +28,7 @@ feature-name/
 | `jobs/`           | 任务监控                    | `/api/v1/admin/jobs`           |
 | `queues/`         | 队列监控                    | `/api/v1/admin/queues`         |
 | `browser/`        | 浏览器池状态                | `/api/v1/admin/browser`        |
+| `llm/`            | LLM Providers/Models 配置   | `/api/v1/admin/llm/*`          |
 | `digest-topics/`  | Digest 话题管理             | `/api/v1/admin/digest/topics`  |
 | `digest-reports/` | Digest 举报管理             | `/api/v1/admin/digest/reports` |
 | `digest-welcome/` | Welcome 配置                | `/api/v1/admin/digest/welcome` |

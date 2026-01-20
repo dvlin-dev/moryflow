@@ -2,7 +2,7 @@
 title: Anyhunt Server：Admin 动态配置 LLM Providers/Models（参考 Moryflow）
 date: 2026-01-20
 scope: apps/anyhunt/server
-status: draft
+status: implemented
 ---
 
 ## 背景
@@ -31,9 +31,9 @@ Anyhunt Server 的 Agent/LLM 能力需要支持：
 
 ### 非目标
 
-- 不实现前端页面（只提供后端 API）；前端可后续按接口接入。
 - 不实现复杂定价/配额策略（仅完成“可用性与路由”）。
 - 不实现多业务线共享（Anyhunt Dev 与 Moryflow 永不互通）。
+- Embeddings 的 provider/baseUrl/key 统一入库与路由暂不纳入本方案（目前采用 `EMBEDDING_*` 环境变量分离配置）。
 
 ## 数据模型（Anyhunt 主库）
 
@@ -124,5 +124,5 @@ Phase 1（本次）：
 
 Phase 2（后续）：
 
-- [ ] Admin Web：增加 LLM 配置页面
+- [x] Admin Web：增加 LLM 配置页面（`apps/anyhunt/admin/www/src/pages/LlmPage.tsx`）
 - [ ] Console：模型选择器（可选；不选则用 default）

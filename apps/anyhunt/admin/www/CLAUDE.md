@@ -67,6 +67,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 | `digest-topics/`  | `/digest/topics`  | Digest Topics 精选管理     |
 | `digest-reports/` | `/digest/reports` | Digest 举报管理            |
 | `digest-welcome/` | `/digest/welcome` | Digest Welcome 配置与页面  |
+| `llm/`            | `/llm`            | LLM Providers/Models 配置  |
 
 ## Feature Module Structure
 
@@ -92,30 +93,32 @@ feature-name/
 
 ## Pages
 
-| Page                | Description                       |
-| ------------------- | --------------------------------- |
-| `DashboardPage`     | System metrics and overview       |
-| `UsersPage`         | User list with search/filter      |
-| `SubscriptionsPage` | Active subscriptions              |
-| `OrdersPage`        | Order history and details         |
-| `JobsPage`          | Running/completed jobs            |
-| `JobDetailPage`     | Individual job details            |
-| `QueuesPage`        | Queue health and metrics          |
-| `BrowserPage`       | Browser instance status           |
-| `ErrorsPage`        | System error logs                 |
-| `DigestTopicsPage`  | Digest Topics featured management |
-| `DigestReportsPage` | Digest report moderation          |
-| `DigestWelcomePage` | Digest welcome configuration      |
-| `LoginPage`         | Admin login                       |
+| Page                | Description                        |
+| ------------------- | ---------------------------------- |
+| `DashboardPage`     | System metrics and overview        |
+| `UsersPage`         | User list with search/filter       |
+| `SubscriptionsPage` | Active subscriptions               |
+| `OrdersPage`        | Order history and details          |
+| `JobsPage`          | Running/completed jobs             |
+| `JobDetailPage`     | Individual job details             |
+| `QueuesPage`        | Queue health and metrics           |
+| `BrowserPage`       | Browser instance status            |
+| `ErrorsPage`        | System error logs                  |
+| `DigestTopicsPage`  | Digest Topics featured management  |
+| `DigestReportsPage` | Digest report moderation           |
+| `DigestWelcomePage` | Digest welcome configuration       |
+| `LlmPage`           | LLM providers/models configuration |
+| `LoginPage`         | Admin login                        |
 
 ## Common Modification Scenarios
 
-| Scenario               | Files to Modify       | Notes                  |
-| ---------------------- | --------------------- | ---------------------- |
-| Add admin page         | `pages/`, routing     | Create page + route    |
-| Add monitoring feature | `features/*/`         | api, hooks, components |
-| Add bulk action        | `features/*/api.ts`   | Add mutation           |
-| Add real-time refresh  | `features/*/hooks.ts` | refetchInterval option |
+| Scenario               | Files to Modify       | Notes                    |
+| ---------------------- | --------------------- | ------------------------ |
+| Add admin page         | `pages/`, routing     | Create page + route      |
+| Add monitoring feature | `features/*/`         | api, hooks, components   |
+| Add bulk action        | `features/*/api.ts`   | Add mutation             |
+| Adjust LLM config UX   | `pages/llm/`          | Dialog copy + validation |
+| Add real-time refresh  | `features/*/hooks.ts` | refetchInterval option   |
 
 ## API Patterns
 
