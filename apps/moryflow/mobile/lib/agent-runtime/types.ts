@@ -2,27 +2,31 @@
  * Mobile Agent Runtime 类型定义
  */
 
-import type { Agent, RunStreamEvent } from '@anyhunt/agents'
-import type { AgentContext, AgentChatContext, AgentAttachmentContext } from '@anyhunt/agents-runtime'
-import type { Session } from '@anyhunt/agents'
+import type { Agent, RunStreamEvent } from '@anyhunt/agents';
+import type {
+  AgentContext,
+  AgentChatContext,
+  AgentAttachmentContext,
+} from '@anyhunt/agents-runtime';
+import type { Session } from '@anyhunt/agents';
 
 // ============ Runtime 选项 ============
 
 export interface MobileAgentRuntimeOptions {
   /** 当前对话 ID */
-  chatId: string
+  chatId: string;
   /** 用户输入文本 */
-  input: string
+  input: string;
   /** 指定首选模型 */
-  preferredModelId?: string
+  preferredModelId?: string;
   /** 结构化上下文信息 */
-  context?: AgentChatContext
+  context?: AgentChatContext;
   /** SDK Session 实例 */
-  session: Session
+  session: Session;
   /** 附件上下文 */
-  attachments?: AgentAttachmentContext[]
+  attachments?: AgentAttachmentContext[];
   /** 中断信号 */
-  signal?: AbortSignal
+  signal?: AbortSignal;
 }
 
 // ============ 结果类型 ============
@@ -31,17 +35,17 @@ export interface MobileAgentRuntimeOptions {
  * 流式运行结果
  */
 export interface MobileAgentStreamResult extends AsyncIterable<RunStreamEvent> {
-  completed: Promise<void>
-  finalOutput?: string
+  completed: Promise<void>;
+  finalOutput?: string;
 }
 
 /**
  * 聊天回合返回结果
  */
 export interface MobileChatTurnResult {
-  result: MobileAgentStreamResult
-  agent: Agent<AgentContext>
-  toolNames: string[]
+  result: MobileAgentStreamResult;
+  agent: Agent<AgentContext>;
+  toolNames: string[];
 }
 
 // ============ Runtime 接口 ============
@@ -51,15 +55,15 @@ export interface MobileChatTurnResult {
  */
 export interface MobileAgentRuntime {
   /** 执行单轮对话 */
-  runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult>
+  runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult>;
   /** 获取 Vault 根目录 */
-  getVaultRoot(): Promise<string>
+  getVaultRoot(): Promise<string>;
   /** 当前是否已初始化 */
-  isInitialized(): boolean
+  isInitialized(): boolean;
   /** 获取可用工具列表 */
-  getToolNames(): string[]
+  getToolNames(): string[];
 }
 
 // ============ 常量 ============
 
-export const MAX_AGENT_TURNS = 40
+export const MAX_AGENT_TURNS = 100;

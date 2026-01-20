@@ -71,6 +71,7 @@ interface RunningTask {
 }
 
 const PROGRESS_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_AGENT_TURNS = 100;
 
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
 type AgentStreamedResult = StreamedRunResult<BrowserAgentContext, BrowserAgent>;
@@ -247,7 +248,7 @@ export class AgentService {
         userPrompt,
         {
           context,
-          maxTurns: 20,
+          maxTurns: MAX_AGENT_TURNS,
           stream: true,
           signal: abortController.signal,
         },
@@ -548,7 +549,7 @@ export class AgentService {
         userPrompt,
         {
           context,
-          maxTurns: 20,
+          maxTurns: MAX_AGENT_TURNS,
           stream: true,
           signal: abortController.signal,
         },
