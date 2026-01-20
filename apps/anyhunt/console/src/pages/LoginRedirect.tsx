@@ -1,30 +1,39 @@
 /**
  * [POS]: 登录重定向组件，将用户导向统一登录页面 (anyhunt.app/login)
+ *        避免把 redirect 回跳到 console 的 `/login`，否则登录后会产生死循环。
  */
 import { useEffect, useMemo } from 'react';
-
-/**
- * 获取统一登录页面 URL
- */
-function getLoginUrl(): string {
-  const currentUrl = window.location.href;
-
-  // 开发环境：重定向到本地 www（端口 3001）
-  if (import.meta.env.DEV) {
-    const wwwPort = import.meta.env.VITE_WWW_PORT || '3001';
-    return `http://localhost:${wwwPort}/login?redirect=${encodeURIComponent(currentUrl)}`;
-  }
-
-  // 生产环境：重定向到 anyhunt.app
-  return `https://anyhunt.app/login?redirect=${encodeURIComponent(currentUrl)}`;
-}
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/auth';
+import { buildUnifiedLoginUrl, resolveLoginRedirectTarget } from './loginRedirect.utils';
 
 export default function LoginRedirect() {
-  const loginUrl = useMemo(() => getLoginUrl(), []);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+
+  const { nextPath, returnToUrl } = useMemo(
+    () => resolveLoginRedirectTarget(window.location.href),
+    []
+  );
+  const loginUrl = useMemo(
+    () =>
+      buildUnifiedLoginUrl({
+        returnToUrl,
+        isDev: import.meta.env.DEV,
+        wwwPort: import.meta.env.VITE_WWW_PORT,
+      }),
+    [returnToUrl]
+  );
 
   useEffect(() => {
+    if (!isBootstrapped) return;
+    if (isAuthenticated) return;
     window.location.href = loginUrl;
-  }, [loginUrl]);
+  }, [isBootstrapped, isAuthenticated, loginUrl]);
+
+  if (isBootstrapped && isAuthenticated) {
+    return <Navigate to={nextPath} replace />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">

@@ -22,6 +22,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
 - 认证通过 HttpOnly Cookie 承载，无需前端存储 token
 - 登录与启动时通过 `/api/v1/user/me` 同步用户档案
+- `/login` 仅作为统一登录跳转入口：未登录时跳转 `anyhunt.app/login`；已登录时直接跳回 `next`（默认 `/`），避免登录死循环
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/embed`、`packages/embed-react`
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃

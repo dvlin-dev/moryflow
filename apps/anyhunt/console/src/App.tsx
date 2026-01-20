@@ -7,7 +7,7 @@
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
@@ -51,6 +51,7 @@ const queryClient = new QueryClient({
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const location = useLocation();
 
   if (!isBootstrapped) {
     return (
@@ -61,7 +62,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const nextPath = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/login?next=${encodeURIComponent(nextPath)}`} replace />;
   }
 
   return <>{children}</>;
