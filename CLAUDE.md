@@ -278,11 +278,15 @@ Anyhunt/
 2. **实施**：聚焦单一问题，不盲改
 3. **测试**：新功能必须编写单元测试，修复 bug 需补充回归测试
 4. **校验**：完成后必须运行以下命令全部通过：
+
    ```bash
    pnpm lint        # 代码规范检查
    pnpm typecheck   # 类型检查
    pnpm test:unit   # 单元测试
    ```
+
+   - 注意：根 `eslint.config.mjs` 会 `import '@anyhunt/eslint-config/*'`，因此根 `package.json` 必须包含 `@anyhunt/eslint-config`（workspace 依赖），否则 monorepo lint 会直接报 `ERR_MODULE_NOT_FOUND`。
+
 5. **同步**：更新相关 CLAUDE.md（本条强制）
 
 ### 测试要求（强制）

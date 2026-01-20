@@ -6,7 +6,7 @@
  * - 发送邮件（通过 mock 验证）
  */
 
-import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 
 // Mock Resend - 使用 hoisted mock，确保在 ESM/transform 环境中稳定生效
@@ -23,12 +23,10 @@ describe('EmailService', () => {
   let EmailServiceCtor: typeof import('../email.service').EmailService;
   let mockConfig: Record<string, string>;
 
-  beforeAll(async () => {
-    ({ EmailService: EmailServiceCtor } = await import('../email.service'));
-  });
-
-  beforeEach(() => {
+  beforeEach(async () => {
     mockSend.mockReset();
+    vi.resetModules();
+    ({ EmailService: EmailServiceCtor } = await import('../email.service'));
 
     mockConfig = {
       RESEND_API_KEY: 'test-api-key',

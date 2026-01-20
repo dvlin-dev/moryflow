@@ -22,6 +22,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - All controllers must use `version: '1'` for API versioning
 - Console Session 认证接口统一走 `/api/v1/console/*`（禁止无版本路径）
 - Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
+- Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
 - Use `SessionGuard` for console endpoints
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
@@ -252,7 +253,10 @@ pnpm dev:anyhunt
 curl http://localhost:3000/health
 # 期望响应: {"status":"ok","services":{"database":true,"redis":true}}
 
-# 3. 检查 Swagger 文档
+# 3. 检查部署版本（用于排查“线上仍是旧版本导致 404”）
+curl http://localhost:3000/health/version
+
+# 4. 检查 Swagger 文档
 open http://localhost:3000/api-docs
 ```
 

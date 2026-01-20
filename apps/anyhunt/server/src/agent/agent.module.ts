@@ -6,11 +6,14 @@
  * - Browser Tools 集成
  * - SSE 流式输出
  *
+ * 依赖：Public L3 API 使用 ApiKeyGuard，因此必须导入 ApiKeyModule（提供 ApiKeyService）
+ *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Module } from '@nestjs/common';
 import { QuotaModule } from '../quota/quota.module';
+import { ApiKeyModule } from '../api-key';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
 import { AgentBillingService } from './agent-billing.service';
@@ -19,7 +22,7 @@ import { AgentTaskRepository } from './agent-task.repository';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
 
 @Module({
-  imports: [QuotaModule],
+  imports: [QuotaModule, ApiKeyModule],
   controllers: [AgentController],
   providers: [
     AgentService,

@@ -1,6 +1,9 @@
 /**
- * Health Controller
- * 健康检查端点 - 验证数据库和 Redis 连接
+ * [INPUT]: HTTP requests for health probes (live/ready/version)
+ * [OUTPUT]: HealthCheckResponse / HealthVersionResponse
+ * [POS]: 健康检查端点（运维探针 + 部署版本确认）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
@@ -18,6 +21,19 @@ interface HealthCheckResponse {
     database: boolean;
     redis: boolean;
   };
+}
+
+interface HealthVersionResponse {
+  /**
+   * 应用版本（优先 APP_VERSION，其次 npm package version）
+   * 用于快速确认线上是否已部署到预期版本。
+   */
+  version: string;
+  /** 可选：CI/CD 注入的 git commit sha */
+  gitSha: string | null;
+  /** 可选：CI/CD 注入的构建时间（ISO 字符串） */
+  buildTime: string | null;
+  timestamp: string;
 }
 
 @ApiTags('Health')
@@ -78,6 +94,26 @@ export class HealthController {
   @Get('ready')
   async ready(): Promise<HealthCheckResponse> {
     return this.check();
+  }
+
+  /**
+   * Version probe - 用于确认部署版本（不依赖 DB/Redis）
+   */
+  @ApiOperation({
+    summary: 'Version Probe',
+    description: '用于确认当前服务版本/构建信息（不依赖 DB/Redis）',
+  })
+  @ApiResponse({ status: 200, description: '版本信息' })
+  @Public()
+  @Get('version')
+  version(): HealthVersionResponse {
+    return {
+      version:
+        process.env.APP_VERSION ?? process.env.npm_package_version ?? 'unknown',
+      gitSha: process.env.GIT_SHA ?? null,
+      buildTime: process.env.BUILD_TIME ?? null,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   private async checkDatabase(): Promise<boolean> {

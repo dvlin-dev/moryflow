@@ -18,6 +18,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 ## Constraints
 
 - **Ports 边界**：Agent 只能依赖 `src/browser/ports/*`（禁止直接依赖 Playwright 类型）
+- **ApiKeyGuard 依赖**：Agent L3 API 使用 `ApiKeyGuard`，对应模块必须导入 `ApiKeyModule`，否则会导致 Nest 启动失败
 - **用户归属绑定**：Browser 端口必须通过 `BrowserAgentPortService.forUser(userId)` 获取
 - **取消语义**：必须支持硬取消（AbortSignal）+ Redis 取消标记（跨实例）
 - **竞态保护**：任务终态更新必须使用 `updateTaskIfStatus`（compare-and-set）

@@ -31,6 +31,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@anyhunt/eslint-config": "workspace:*",
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
     "@rollup/rollup-linux-x64-gnu": "4.54.0",

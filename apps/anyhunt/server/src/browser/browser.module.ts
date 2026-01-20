@@ -12,6 +12,7 @@
  * - 增量快照：delta 模式节省 token
  *
  * 使用场景：screenshot（截图）、automation（智能化操作）、agent（AI Agent）
+ * 依赖：Public L2 API 使用 ApiKeyGuard，因此必须导入 ApiKeyModule（提供 ApiKeyService）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -27,9 +28,11 @@ import { StoragePersistenceService } from './persistence';
 import { BrowserSessionService } from './browser-session.service';
 import { BrowserSessionController } from './browser-session.controller';
 import { BrowserAgentPortService } from './ports';
+import { ApiKeyModule } from '../api-key';
 
 @Global()
 @Module({
+  imports: [ApiKeyModule],
   controllers: [BrowserSessionController],
   providers: [
     // 基础设施
