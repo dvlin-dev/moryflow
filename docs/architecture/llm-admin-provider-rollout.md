@@ -40,5 +40,5 @@ status: draft
 
 ## 后续（可选）
 
-- [ ] Admin Web：增加 LLM 配置页面（providers/models/settings）
+- [x] Admin Web：增加 LLM 配置页面（providers/models/settings）
 - [ ] Console：模型选择器（可选；不选则用 default）

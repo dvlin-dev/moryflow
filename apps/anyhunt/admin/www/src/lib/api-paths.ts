@@ -14,6 +14,10 @@ export const ADMIN_API = {
   JOBS: '/api/v1/admin/jobs',
   QUEUES: '/api/v1/admin/queues',
   BROWSER: '/api/v1/admin/browser',
+  // LLM
+  LLM_SETTINGS: '/api/v1/admin/llm/settings',
+  LLM_PROVIDERS: '/api/v1/admin/llm/providers',
+  LLM_MODELS: '/api/v1/admin/llm/models',
   // Digest
   DIGEST_REPORTS: '/api/v1/admin/digest/reports',
   DIGEST_STATS: '/api/v1/admin/digest/stats',

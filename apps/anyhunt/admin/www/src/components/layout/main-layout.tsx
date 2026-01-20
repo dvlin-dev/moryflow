@@ -5,11 +5,13 @@
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Alert01Icon,
   AiBrowserIcon,
+  AiBrain02Icon,
+  ArrowDown01Icon,
   Cancel01Icon,
   CreditCardIcon,
   DashboardSquare01Icon,
@@ -24,28 +26,96 @@ import {
   Edit01Icon,
 } from '@hugeicons/core-free-icons';
 import { cn } from '@anyhunt/ui/lib';
-import { Icon, type HugeIcon } from '@anyhunt/ui';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Icon,
+  type HugeIcon,
+} from '@anyhunt/ui';
 import { useAuthStore } from '@/stores/auth';
 import { authClient } from '@/lib/auth-client';
 
-const navItems: { path: string; label: string; icon: HugeIcon }[] = [
-  { path: '/', label: 'Dashboard', icon: DashboardSquare01Icon },
-  { path: '/users', label: 'Users', icon: UserGroupIcon },
-  { path: '/orders', label: 'Orders', icon: Receipt },
-  { path: '/subscriptions', label: 'Subscriptions', icon: CreditCardIcon },
-  { path: '/jobs', label: 'Jobs', icon: ListTodo },
-  { path: '/queues', label: 'Queues', icon: LayersIcon },
-  { path: '/errors', label: 'Errors', icon: Alert01Icon },
-  { path: '/browser', label: 'Browser Pool', icon: AiBrowserIcon },
-  { path: '/digest/topics', label: 'Digest Topics', icon: News01Icon },
-  { path: '/digest/reports', label: 'Digest Reports', icon: Flag01Icon },
-  { path: '/digest/welcome', label: 'Digest Welcome', icon: Edit01Icon },
+type NavItem = { path: string; label: string; icon: HugeIcon };
+type NavGroup = { id: string; label: string; icon: HugeIcon; items: NavItem[] };
+
+const navGroups: NavGroup[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    icon: DashboardSquare01Icon,
+    items: [{ path: '/', label: 'Dashboard', icon: DashboardSquare01Icon }],
+  },
+  {
+    id: 'users-billing',
+    label: 'Users & Billing',
+    icon: UserGroupIcon,
+    items: [
+      { path: '/users', label: 'Users', icon: UserGroupIcon },
+      { path: '/orders', label: 'Orders', icon: Receipt },
+      { path: '/subscriptions', label: 'Subscriptions', icon: CreditCardIcon },
+    ],
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    icon: LayersIcon,
+    items: [
+      { path: '/jobs', label: 'Jobs', icon: ListTodo },
+      { path: '/queues', label: 'Queues', icon: LayersIcon },
+      { path: '/browser', label: 'Browser Pool', icon: AiBrowserIcon },
+      { path: '/errors', label: 'Errors', icon: Alert01Icon },
+    ],
+  },
+  {
+    id: 'ai',
+    label: 'AI',
+    icon: AiBrain02Icon,
+    items: [{ path: '/llm', label: 'LLM', icon: AiBrain02Icon }],
+  },
+  {
+    id: 'digest',
+    label: 'Digest',
+    icon: News01Icon,
+    items: [
+      { path: '/digest/topics', label: 'Topics', icon: News01Icon },
+      { path: '/digest/reports', label: 'Reports', icon: Flag01Icon },
+      { path: '/digest/welcome', label: 'Welcome', icon: Edit01Icon },
+    ],
+  },
 ];
+
+function isPathActive(pathname: string, itemPath: string): boolean {
+  if (itemPath === '/') return pathname === '/';
+  if (pathname === itemPath) return true;
+  return pathname.startsWith(`${itemPath}/`);
+}
 
 export function MainLayout() {
   const location = useLocation();
   const { user, clearSession } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const pathname = location.pathname;
+    const initial: Record<string, boolean> = {};
+    for (const group of navGroups) {
+      initial[group.id] = group.items.some((item) => isPathActive(pathname, item.path));
+    }
+    return initial;
+  });
+
+  useEffect(() => {
+    const pathname = location.pathname;
+    setOpenGroups((prev) => {
+      const next = { ...prev };
+      for (const group of navGroups) {
+        if (group.items.some((item) => isPathActive(pathname, item.path))) {
+          next[group.id] = true;
+        }
+      }
+      return next;
+    });
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -81,23 +151,72 @@ export function MainLayout() {
         </div>
         <nav className="p-4">
           <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                    location.pathname === item.path
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                  )}
-                >
-                  <Icon icon={item.icon} className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {navGroups.map((group) => {
+              const groupActive = group.items.some((item) =>
+                isPathActive(location.pathname, item.path)
+              );
+              const open = openGroups[group.id] ?? false;
+
+              return (
+                <li key={group.id} className="pt-1">
+                  <Collapsible
+                    open={open}
+                    onOpenChange={(next) =>
+                      setOpenGroups((prev) => ({ ...prev, [group.id]: next }))
+                    }
+                  >
+                    <CollapsibleTrigger asChild>
+                      <button
+                        className={cn(
+                          'flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors',
+                          groupActive
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                        )}
+                        type="button"
+                      >
+                        <span className="flex items-center gap-3">
+                          <Icon icon={group.icon} className="h-4 w-4" />
+                          {group.label}
+                        </span>
+                        <Icon
+                          icon={ArrowDown01Icon}
+                          className={cn(
+                            'h-4 w-4 transition-transform',
+                            open ? 'rotate-0' : '-rotate-90'
+                          )}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <ul className="mt-1 space-y-1 pl-3">
+                        {group.items.map((item) => {
+                          const active = isPathActive(location.pathname, item.path);
+                          return (
+                            <li key={item.path}>
+                              <Link
+                                to={item.path}
+                                onClick={() => setSidebarOpen(false)}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                                  active
+                                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                                )}
+                              >
+                                <Icon icon={item.icon} className="h-4 w-4 opacity-80" />
+                                {item.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </aside>
