@@ -1,7 +1,7 @@
 /**
  * Agent DTO - Zod Schemas
  *
- * [DEFINES]: L3 Agent API 请求/响应类型
+ * [DEFINES]: L3 Agent API 请求/响应类型（支持可选 model 覆盖）
  * [USED_BY]: agent.controller.ts, agent.service.ts
  * [POS]: Zod schemas + 推断类型（单一数据源）
  *
@@ -14,6 +14,7 @@ export const CreateAgentTaskSchema = z.object({
   prompt: z.string().min(1).max(10000),
   urls: z.array(z.string().url()).max(10).optional(),
   schema: z.record(z.string(), z.unknown()).optional(),
+  model: z.string().min(1).max(200).optional(),
   maxCredits: z.number().int().positive().optional(),
   stream: z.boolean().default(true),
 });

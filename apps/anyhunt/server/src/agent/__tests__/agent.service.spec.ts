@@ -279,6 +279,56 @@ describe('AgentService', () => {
     expect(mockTaskRepository.updateTask).not.toHaveBeenCalled();
   });
 
+  it('fails fast in production when OPENAI_API_KEY is missing (no browser session)', async () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    const previousOpenAiKey = process.env.OPENAI_API_KEY;
+
+    process.env.NODE_ENV = 'production';
+    delete process.env.OPENAI_API_KEY;
+
+    try {
+      const mockBrowserPort = createMockBrowserPortService();
+      const mockBillingService = createMockBillingService();
+      const mockTaskRepository = createMockTaskRepository();
+      const mockProgressStore = createMockProgressStore();
+
+      const service = new AgentService(
+        mockBrowserPort,
+        mockBillingService,
+        mockTaskRepository,
+        mockProgressStore,
+        createMockStreamProcessor(mockProgressStore, mockBillingService),
+      );
+
+      const result = await service.executeTask(
+        { prompt: 'test', stream: false },
+        'user_1',
+      );
+
+      expect(result.status).toBe('failed');
+      expect(result.creditsUsed).toBe(0);
+      expect(result.error).toMatch(/OPENAI_API_KEY/);
+
+      expect(vi.mocked(mockBrowserPort.forUser)).not.toHaveBeenCalled();
+      expect(mockBillingService.ensureMinimumQuota).not.toHaveBeenCalled();
+      expect(mockTaskRepository.updateTaskIfStatus).toHaveBeenCalledWith(
+        expect.any(String),
+        ['PENDING'],
+        expect.objectContaining({
+          status: 'FAILED',
+          creditsUsed: 0,
+        }),
+      );
+    } finally {
+      process.env.NODE_ENV = previousNodeEnv;
+      if (previousOpenAiKey === undefined) {
+        delete process.env.OPENAI_API_KEY;
+      } else {
+        process.env.OPENAI_API_KEY = previousOpenAiKey;
+      }
+    }
+  });
+
   it('requests cancel and returns latest progress credits', async () => {
     const mockBrowserPort = createMockBrowserPortService();
 

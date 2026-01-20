@@ -1,9 +1,9 @@
 /**
  * Agent Service
  *
- * [INPUT]: Agent 任务请求
+ * [INPUT]: Agent 任务请求（可选 model；默认使用 OPENAI_DEFAULT_MODEL）
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @anyhunt/agents-core、Browser ports 与任务管理
+ * [POS]: L3 Agent 核心业务逻辑，整合 @anyhunt/agents-core、Browser ports 与任务管理；生产环境缺少 OPENAI_API_KEY 时 fail-fast
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -109,6 +109,28 @@ export class AgentService {
     private readonly streamProcessor: AgentStreamProcessor,
   ) {}
 
+  private getLlmConfigurationError(): string | null {
+    // 仅在生产环境强制要求配置，避免本地/单测因为缺少密钥而无法运行。
+    if (process.env.NODE_ENV !== 'production') {
+      return null;
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!apiKey) {
+      return 'LLM provider is not configured. Please set OPENAI_API_KEY (and optionally OPENAI_BASE_URL) in the server environment.';
+    }
+
+    return null;
+  }
+
+  private buildZeroProgress(startTime: Date): AgentTaskProgress {
+    return {
+      creditsUsed: 0,
+      toolCallCount: 0,
+      elapsedMs: Date.now() - startTime.getTime(),
+    };
+  }
+
   async executeTask(
     input: CreateAgentTaskInput,
     userId: string,
@@ -128,6 +150,35 @@ export class AgentService {
     } catch (error) {
       this.runningTasks.delete(taskId);
       throw error;
+    }
+
+    const llmConfigError = this.getLlmConfigurationError();
+    if (llmConfigError) {
+      const progress = this.buildZeroProgress(now);
+      try {
+        await this.taskRepository.updateTaskIfStatus(taskId, ['PENDING'], {
+          status: 'FAILED',
+          error: llmConfigError,
+          creditsUsed: 0,
+          toolCallCount: 0,
+          elapsedMs: progress.elapsedMs,
+          completedAt: new Date(),
+        });
+      } finally {
+        await this.safeProgressOperation(
+          () => this.progressStore.clearCancel(taskId),
+          'clear cancel',
+        );
+        this.runningTasks.delete(taskId);
+      }
+
+      return {
+        id: taskId,
+        status: 'failed',
+        error: llmConfigError,
+        creditsUsed: 0,
+        progress,
+      };
     }
 
     const billing = this.billingService.createBillingParams(
@@ -386,6 +437,35 @@ export class AgentService {
       expiresAt: new Date(now.getTime() + PROGRESS_TTL_MS).toISOString(),
     };
 
+    const llmConfigError = this.getLlmConfigurationError();
+    if (llmConfigError) {
+      const progress = this.buildZeroProgress(now);
+      try {
+        await this.taskRepository.updateTaskIfStatus(taskId, ['PENDING'], {
+          status: 'FAILED',
+          error: llmConfigError,
+          creditsUsed: 0,
+          toolCallCount: 0,
+          elapsedMs: progress.elapsedMs,
+          completedAt: new Date(),
+        });
+      } finally {
+        await this.safeProgressOperation(
+          () => this.progressStore.clearCancel(taskId),
+          'clear cancel',
+        );
+        this.runningTasks.delete(taskId);
+      }
+
+      yield {
+        type: 'failed',
+        error: llmConfigError,
+        creditsUsed: 0,
+        progress,
+      };
+      return;
+    }
+
     try {
       await this.billingService.ensureMinimumQuota(userId, taskId);
 
@@ -588,7 +668,9 @@ export class AgentService {
   private buildAgent(input: CreateAgentTaskInput): BrowserAgent {
     return new Agent<BrowserAgentContext, AgentOutputType>({
       name: 'Fetchx Browser Agent',
-      model: 'gpt-4o',
+      // 默认使用 agents-core 的 OPENAI_DEFAULT_MODEL（Agent.DEFAULT_MODEL_PLACEHOLDER === ''）。
+      // 允许请求侧覆盖，以便 Console Playground 选择不同 model。
+      model: input.model ?? Agent.DEFAULT_MODEL_PLACEHOLDER,
       instructions: SYSTEM_INSTRUCTIONS,
       tools: browserTools,
       outputType: buildAgentOutputType(input.schema),
