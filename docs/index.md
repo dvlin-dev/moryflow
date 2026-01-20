@@ -25,6 +25,7 @@ status: active
 - 域名与部署架构（两条业务线）：`docs/architecture/domains-and-deployment.md`
 - Auth 系统入口（两条业务线不互通）：`docs/architecture/auth.md`
 - Auth 拆分文档：`docs/architecture/auth/`
+- Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`
 
 ## Guides（开发指南 / 可复用做法）

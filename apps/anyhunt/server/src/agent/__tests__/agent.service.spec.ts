@@ -11,6 +11,7 @@ import type { BrowserAgentPortService } from '../../browser/ports';
 import type { AgentTaskRepository } from '../agent-task.repository';
 import type { AgentTaskProgressStore } from '../agent-task.progress.store';
 import type { BrowserAgentContext } from '../tools';
+import type { LlmRoutingService } from '../../llm';
 
 vi.mock('@anyhunt/agents-core', async () => {
   const actual = await vi.importActual<typeof import('@anyhunt/agents-core')>(
@@ -23,13 +24,6 @@ vi.mock('@anyhunt/agents-core', async () => {
 });
 
 const mockRun = vi.mocked(run);
-
-const defaultApiKey = {
-  id: 'api-key-1',
-  llmEnabled: true,
-  llmProviderId: 'openai',
-  llmModelId: 'gpt-4o',
-} as const;
 
 const createStreamResult = (
   usage: { inputTokens: number; outputTokens: number },
@@ -180,6 +174,21 @@ const createMockBrowserPortService = (): BrowserAgentPortService => {
   } as unknown as BrowserAgentPortService;
 };
 
+const createMockLlmRoutingService = (): LlmRoutingService =>
+  ({
+    resolveModel: vi.fn().mockResolvedValue({
+      requestedModelId: 'gpt-4o',
+      upstreamModelId: 'gpt-4o',
+      provider: {
+        id: 'p1',
+        providerType: 'openai',
+        name: 'OpenAI',
+        baseUrl: null,
+      },
+      model: {} as never,
+    }),
+  }) as unknown as LlmRoutingService;
+
 describe('AgentService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -203,6 +212,7 @@ describe('AgentService', () => {
     const mockProgressStore = createMockProgressStore();
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       createMockTaskRepository(),
       mockProgressStore,
@@ -216,7 +226,6 @@ describe('AgentService', () => {
         output: { type: 'text' },
       },
       'user_1',
-      defaultApiKey,
     );
 
     expect(result.status).toBe('completed');
@@ -247,6 +256,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       mockTaskRepository,
       mockProgressStore,
@@ -260,7 +270,6 @@ describe('AgentService', () => {
         output: { type: 'text' },
       },
       'user_1',
-      defaultApiKey,
     );
 
     expect(result.status).toBe('failed');
@@ -292,6 +301,7 @@ describe('AgentService', () => {
     const mockProgressStore = createMockProgressStore();
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       createMockTaskRepository(),
       mockProgressStore,
@@ -301,7 +311,6 @@ describe('AgentService', () => {
     await service.executeTask(
       { prompt: 'test', stream: false, output: { type: 'text' } },
       'user_1',
-      defaultApiKey,
     );
 
     const port = vi.mocked(mockBrowserPort.forUser).mock.results[0]
@@ -328,6 +337,7 @@ describe('AgentService', () => {
     const mockProgressStore = createMockProgressStore();
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       createMockTaskRepository(),
       mockProgressStore,
@@ -337,7 +347,6 @@ describe('AgentService', () => {
     await service.executeTask(
       { prompt: 'test', stream: false, output: { type: 'text' } },
       'user_1',
-      defaultApiKey,
     );
 
     const port = vi.mocked(mockBrowserPort.forUser).mock.results[0]
@@ -364,6 +373,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       mockTaskRepository,
       mockProgressStore,
@@ -377,7 +387,6 @@ describe('AgentService', () => {
         output: { type: 'text' },
       },
       'user_1',
-      defaultApiKey,
     );
 
     expect(result.status).toBe('cancelled');
@@ -389,55 +398,45 @@ describe('AgentService', () => {
     expect(mockTaskRepository.updateTask).not.toHaveBeenCalled();
   });
 
-  it('fails fast in production when OPENAI_API_KEY is missing (no browser session)', async () => {
-    const previousNodeEnv = process.env.NODE_ENV;
-    const previousOpenAiKey = process.env.OPENAI_API_KEY;
+  it('fails fast when model routing fails (no browser session)', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+    const mockTaskRepository = createMockTaskRepository();
+    const mockProgressStore = createMockProgressStore();
 
-    process.env.NODE_ENV = 'production';
-    delete process.env.OPENAI_API_KEY;
+    const mockRouting = createMockLlmRoutingService();
+    vi.mocked(mockRouting.resolveModel).mockRejectedValue(
+      new Error('Model is not available'),
+    );
 
-    try {
-      const mockBrowserPort = createMockBrowserPortService();
-      const mockBillingService = createMockBillingService();
-      const mockTaskRepository = createMockTaskRepository();
-      const mockProgressStore = createMockProgressStore();
+    const service = new AgentService(
+      mockBrowserPort,
+      mockRouting,
+      mockBillingService,
+      mockTaskRepository,
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
 
-      const service = new AgentService(
-        mockBrowserPort,
-        mockBillingService,
-        mockTaskRepository,
-        mockProgressStore,
-        createMockStreamProcessor(mockProgressStore, mockBillingService),
-      );
+    const result = await service.executeTask(
+      { prompt: 'test', stream: false, output: { type: 'text' } },
+      'user_1',
+    );
 
-      const result = await service.executeTask(
-        { prompt: 'test', stream: false, output: { type: 'text' } },
-        'user_1',
-        defaultApiKey,
-      );
+    expect(result.status).toBe('failed');
+    expect(result.creditsUsed).toBe(0);
+    expect(result.error).toMatch(/Model is not available/);
 
-      expect(result.status).toBe('failed');
-      expect(result.creditsUsed).toBe(0);
-      expect(result.error).toMatch(/OPENAI_API_KEY/);
-
-      expect(vi.mocked(mockBrowserPort.forUser)).not.toHaveBeenCalled();
-      expect(mockBillingService.ensureMinimumQuota).not.toHaveBeenCalled();
-      expect(mockTaskRepository.updateTaskIfStatus).toHaveBeenCalledWith(
-        expect.any(String),
-        ['PENDING'],
-        expect.objectContaining({
-          status: 'FAILED',
-          creditsUsed: 0,
-        }),
-      );
-    } finally {
-      process.env.NODE_ENV = previousNodeEnv;
-      if (previousOpenAiKey === undefined) {
-        delete process.env.OPENAI_API_KEY;
-      } else {
-        process.env.OPENAI_API_KEY = previousOpenAiKey;
-      }
-    }
+    expect(vi.mocked(mockBrowserPort.forUser)).not.toHaveBeenCalled();
+    expect(mockBillingService.ensureMinimumQuota).not.toHaveBeenCalled();
+    expect(mockTaskRepository.updateTaskIfStatus).toHaveBeenCalledWith(
+      expect.any(String),
+      ['PENDING'],
+      expect.objectContaining({
+        status: 'FAILED',
+        creditsUsed: 0,
+      }),
+    );
   });
 
   it('requests cancel and returns latest progress credits', async () => {
@@ -472,6 +471,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       mockTaskRepository,
       mockProgressStore,
@@ -516,6 +516,7 @@ describe('AgentService', () => {
     const mockProgressStore = createMockProgressStore();
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       mockTaskRepository,
       mockProgressStore,
@@ -543,6 +544,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       createMockTaskRepository(),
       mockProgressStore,
@@ -552,7 +554,6 @@ describe('AgentService', () => {
     await service.executeTask(
       { prompt: 'test', stream: false, output: { type: 'text' } },
       'user_1',
-      defaultApiKey,
     );
 
     const agent = mockRun.mock.calls[0]?.[0] as any;
@@ -576,6 +577,7 @@ describe('AgentService', () => {
 
     const service = new AgentService(
       mockBrowserPort,
+      createMockLlmRoutingService(),
       mockBillingService,
       createMockTaskRepository(),
       mockProgressStore,
@@ -597,7 +599,6 @@ describe('AgentService', () => {
         },
       },
       'user_1',
-      defaultApiKey,
     );
 
     const agent = mockRun.mock.calls[0]?.[0] as any;

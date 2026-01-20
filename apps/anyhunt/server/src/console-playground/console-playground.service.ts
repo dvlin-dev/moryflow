@@ -2,7 +2,7 @@
  * Console Playground Service
  * 验证 apiKeyId 所有权，代理请求到实际服务
  * 所有抓取类操作强制使用同步模式，直接返回结果
- * Agent 相关请求会先校验 ApiKey 的 LLM 策略（llmEnabled/provider/model），避免无效调用产生成本
+ * Agent 相关请求会先校验 ApiKey 所有权（不做 LLM 策略；LLM provider/model 由 Admin 配置决定）
  *
  * [INPUT]: apiKeyId + 各服务的请求参数
  * [OUTPUT]: 各服务的响应（同步模式返回完整结果）
@@ -63,17 +63,11 @@ export class ConsolePlaygroundService {
 
   /**
    * 验证 apiKeyId 属于当前用户
-   * @returns ApiKey LLM policy fields (用于 Agent 模型选择)
    */
   private async validateApiKeyOwnership(
     userId: string,
     apiKeyId: string,
-  ): Promise<{
-    id: string;
-    llmEnabled: boolean;
-    llmProviderId: string;
-    llmModelId: string;
-  }> {
+  ): Promise<void> {
     const apiKey = await this.prisma.apiKey.findFirst({
       where: {
         id: apiKeyId,
@@ -83,9 +77,6 @@ export class ConsolePlaygroundService {
         id: true,
         isActive: true,
         expiresAt: true,
-        llmEnabled: true,
-        llmProviderId: true,
-        llmModelId: true,
       },
     });
 
@@ -100,13 +91,6 @@ export class ConsolePlaygroundService {
     if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
       throw new ForbiddenException('API key has expired');
     }
-
-    return {
-      id: apiKey.id,
-      llmEnabled: apiKey.llmEnabled ?? true,
-      llmProviderId: apiKey.llmProviderId ?? 'openai',
-      llmModelId: apiKey.llmModelId ?? 'gpt-4o',
-    };
   }
 
   /**
@@ -461,11 +445,6 @@ export class ConsolePlaygroundService {
 
   // ==================== Agent Playground ====================
 
-  async assertAgentLlmPolicy(userId: string, apiKeyId: string): Promise<void> {
-    const apiKey = await this.validateApiKeyOwnership(userId, apiKeyId);
-    this.agentService.resolveLlmPolicyForApiKey(apiKey);
-  }
-
   async estimateAgentCost(
     userId: string,
     apiKeyId: string,
@@ -480,8 +459,8 @@ export class ConsolePlaygroundService {
     apiKeyId: string,
     input: CreateAgentTaskInput,
   ) {
-    const apiKey = await this.validateApiKeyOwnership(userId, apiKeyId);
-    return this.agentService.executeTask(input, userId, apiKey);
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.agentService.executeTask(input, userId);
   }
 
   async *executeAgentTaskStream(
@@ -489,8 +468,8 @@ export class ConsolePlaygroundService {
     apiKeyId: string,
     input: CreateAgentTaskInput,
   ): AsyncGenerator<AgentStreamEvent, void, unknown> {
-    const apiKey = await this.validateApiKeyOwnership(userId, apiKeyId);
-    yield* this.agentService.executeTaskStream(input, userId, apiKey);
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    yield* this.agentService.executeTaskStream(input, userId);
   }
 
   async getAgentTaskStatus(userId: string, apiKeyId: string, taskId: string) {

@@ -92,8 +92,6 @@ export class ConsolePlaygroundAgentController {
   ): Promise<void> {
     const { apiKeyId, ...input } = dto;
 
-    await this.service.assertAgentLlmPolicy(user.id, apiKeyId);
-
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');

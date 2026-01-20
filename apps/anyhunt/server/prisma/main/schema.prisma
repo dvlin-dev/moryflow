@@ -233,9 +233,6 @@ model ApiKey {
   keyPrefix  String // 展示用，如 "ah_abc1"
   keyHash    String    @unique // SHA256(完整key)
   isActive   Boolean   @default(true)
-  llmEnabled Boolean   @default(true)
-  llmProviderId String @default("openai")
-  llmModelId String    @default("gpt-4o")
   lastUsedAt DateTime?
   expiresAt  DateTime?
   createdAt  DateTime  @default(now())
@@ -247,6 +244,51 @@ model ApiKey {
 
   @@index([userId])
   @@index([keyHash])
+}
+
+// =============================================
+// LLM Providers/Models（Admin 动态配置，参考 Moryflow）
+// =============================================
+
+model LlmProvider {
+  id              String   @id @default(cuid())
+  providerType    String // openai | openai_compatible | openrouter
+  name            String
+  apiKeyEncrypted String // 加密存储（AES-256-GCM），禁止明文入库
+  baseUrl         String?
+  enabled         Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  models LlmModel[]
+
+  @@index([enabled])
+  @@index([providerType])
+}
+
+model LlmModel {
+  id         String   @id @default(cuid())
+  providerId String
+  modelId    String // 对外模型 ID（如 'gpt-4o'）
+  upstreamId String // 上游模型 ID（如 'gpt-4o' 或 'openai/gpt-4o'）
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  provider LlmProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, modelId])
+  @@index([providerId])
+  @@index([enabled])
+  @@index([modelId])
+}
+
+model LlmSettings {
+  id               String   @id @default("default")
+  defaultModelId   String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // =============================================

@@ -13,7 +13,6 @@ API key management for authenticating public API requests. Handles creation, val
 - Validate API keys on requests
 - Track key usage and last used timestamp
 - Support key revocation and rotation
-- API Key 级别 LLM 策略（Agent/Playground）：`llmEnabled/llmProviderId/llmModelId`
 - 删除 ApiKey 时异步清理向量库关联数据（Memory、Entity、Relation）
 
 ## Constraints
@@ -22,7 +21,6 @@ API key management for authenticating public API requests. Handles creation, val
 - Store only SHA256 hash in database
 - Keys must have `ah_` prefix
 - One key per scope per user (optional)
-- Agent/Playground 的 provider 运行时只能启用 1 个：用 `ANYHUNT_LLM_PROVIDER_ID` 与 ApiKey 上的 `llmProviderId` 对齐
 
 ## File Structure
 

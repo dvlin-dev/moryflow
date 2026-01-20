@@ -23,7 +23,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Console Session 认证接口统一走 `/api/v1/console/*`（禁止无版本路径）
 - Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
-- Use `SessionGuard` for console endpoints
+- Console endpoints use Better Auth session (via global `AuthGuard`)
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - 失败退费必须基于 `deduct.breakdown`（按交易分解），异步任务需写入 `quotaBreakdown` 供 worker 退费
@@ -33,14 +33,14 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Agent + `@anyhunt/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
 - Agent 访问浏览器能力必须通过 `BrowserAgentPort`（禁止直接依赖 `BrowserSession` / Playwright 类型）
 - Agent 任务必须支持硬取消（AbortSignal）与分段配额检查（每 100 credits）
-- Agent 的 LLM 能力必须受 API Key 级别策略约束（`ApiKey.llmEnabled/llmProviderId/llmModelId`），请求不允许自由指定 model/provider
+- Agent 的 LLM 能力由 Admin 配置的 `LlmProvider/LlmModel/LlmSettings` 决定；请求可选传 `model`，不传则使用 Admin 默认模型
 - Agent 任务状态持久化到 DB（`AgentTask`），实时进度与取消标记使用 Redis；`GET /api/v1/agent/:id` 合并 DB + Redis
 - Agent 任务终态更新必须使用 compare-and-set（`updateTaskIfStatus`）以避免取消状态被覆盖；取消后需确保 metrics（creditsUsed/toolCallCount/elapsedMs）落库
 - Prisma 迁移 diff 依赖 Shadow DB；本地需设置 `SHADOW_DATABASE_URL` / `VECTOR_SHADOW_DATABASE_URL`（仅本地，不提交）
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建若依赖 workspace 包（例如 `@anyhunt/agents-core`），禁止跨 stage `COPY node_modules`（Docker 会解引用 workspace symlink，导致依赖解析到“只剩 package.json”的空壳包）；应在同一个 stage 内 `pnpm install`，并在安装前 `COPY` 相关 workspace 包的 `package.json`
-- Docker 构建默认使用 `pnpm install --ignore-scripts`：workspace 包的 `dist/` 不会自动生成；必须在 `builder` 阶段显式构建（本项目通过 `pnpm dlx tsc-multi` **按依赖顺序**构建 `agents-core` → `agents-model-registry` → `agents-openai`）
+- Docker 构建默认使用 `pnpm install --ignore-scripts`：workspace 包的 `dist/` 不会自动生成；必须在 `builder` 阶段显式构建（本项目通过 `pnpm dlx tsc-multi` **按依赖顺序**构建 `agents-core` → `agents-openai`）
 - 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
@@ -93,6 +93,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | --------------------- | ----- | -------------------------------------------- | ------------------------- |
 | `scraper/`            | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
 | `common/`             | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
+| `llm/`                | -     | Admin LLM Providers/Models + runtime routing | `src/llm/CLAUDE.md`       |
 | `agent/`              | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`     |
 | `digest/`             | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`    |
 | `admin/`              | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`     |
@@ -275,9 +276,10 @@ open http://localhost:3000/api-docs
 | `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                                        |
 | `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
 | `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
-| `OPENAI_API_KEY`              | ❌   | LLM 能力（Agent Playground/Extract/Embedding）。未配置则相关接口会失败           |
-| `OPENAI_BASE_URL`             | ❌   | OpenAI-compatible gateway baseURL（空字符串视为未配置）                          |
-| `OPENAI_DEFAULT_MODEL`        | ❌   | 默认模型名（Agent/Extract 使用，默认为 `gpt-4.1`/`gpt-4o-mini`）                 |
+| `ANYHUNT_LLM_SECRET_KEY`      | ❌   | 用于加密存储在 DB 的 provider apiKey（Admin LLM 配置必需；base64(32 bytes)）     |
+| `OPENAI_API_KEY`              | ❌   | Extract/Embedding 的 OpenAI Key（未配置则相关接口会失败）                        |
+| `OPENAI_BASE_URL`             | ❌   | Extract 的 OpenAI-compatible baseURL（空字符串视为未配置）                       |
+| `OPENAI_DEFAULT_MODEL`        | ❌   | Extract 默认模型名（默认 `gpt-4o-mini`）                                         |
 | `R2_*`                        | ❌   | 云存储配置（可选）                                                               |
 | `R2_PUBLIC_URL`               | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
 | `RESEND_API_KEY`              | ❌   | Resend API Key（不启用邮件可留空）                                               |

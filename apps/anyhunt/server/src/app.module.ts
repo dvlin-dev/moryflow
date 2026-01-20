@@ -35,6 +35,7 @@ import { CommonModule } from './common';
 import { AgentModule } from './agent';
 import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
+import { LlmModule } from './llm';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { NotFoundModule } from './not-found';
     RelationModule,
     GraphModule,
     ConsolePlaygroundModule,
+    LlmModule,
     AgentModule,
     DigestModule,
     // NotFoundModule must be LAST to catch all unmatched routes

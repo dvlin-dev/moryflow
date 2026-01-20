@@ -14,19 +14,18 @@
 import { Module } from '@nestjs/common';
 import { QuotaModule } from '../quota/quota.module';
 import { ApiKeyModule } from '../api-key';
+import { LlmModule } from '../llm';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
 import { AgentBillingService } from './agent-billing.service';
 import { AgentStreamProcessor } from './agent-stream.processor';
 import { AgentTaskRepository } from './agent-task.repository';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
-import { AgentModelProviderInitializer } from './agent-model-provider.initializer';
 
 @Module({
-  imports: [QuotaModule, ApiKeyModule],
+  imports: [QuotaModule, ApiKeyModule, LlmModule],
   controllers: [AgentController],
   providers: [
-    AgentModelProviderInitializer,
     AgentService,
     AgentBillingService,
     AgentStreamProcessor,

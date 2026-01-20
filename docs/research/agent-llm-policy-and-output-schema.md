@@ -2,8 +2,10 @@
 title: Anyhunt Agent：API Key 级别 LLM 策略 + 输出 Schema 入参收紧方案
 date: 2026-01-20
 scope: apps/anyhunt/server (Agent + Console Playground)
-status: draft
+status: superseded
 ---
+
+> 本文已被新方案替代：`docs/architecture/admin-llm-provider-config.md`（LLM Provider/BaseURL/API Key 入库并在 Admin 动态配置）。
 
 ## 背景与问题
 

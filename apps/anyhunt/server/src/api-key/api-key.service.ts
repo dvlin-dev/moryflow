@@ -1,6 +1,6 @@
 /**
  * [INPUT]: CreateApiKeyDto, UpdateApiKeyDto, plaintext key for validation
- * [OUTPUT]: ApiKeyValidationResult（含 llmEnabled/llmProviderId/llmModelId）, ApiKeyCreateResult, ApiKeyListItem[]
+ * [OUTPUT]: ApiKeyValidationResult, ApiKeyCreateResult, ApiKeyListItem[]
  * [POS]: API key lifecycle management - create, validate, revoke
  *        删除时清理向量库关联数据（Memory, Entity, Relation）
  *
@@ -11,13 +11,11 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { RedisService } from '../redis/redis.service';
-import { providerRegistry } from '@anyhunt/agents-model-registry';
 import type { CreateApiKeyDto } from './dto/create-api-key.dto';
 import type { UpdateApiKeyDto } from './dto/update-api-key.dto';
 import type { SubscriptionTier } from '../types/tier.types';
@@ -140,9 +138,6 @@ export class ApiKeyService {
       select: {
         id: true,
         keyHash: true,
-        llmEnabled: true,
-        llmProviderId: true,
-        llmModelId: true,
       },
     });
 
@@ -150,48 +145,17 @@ export class ApiKeyService {
       throw new NotFoundException('API key not found');
     }
 
-    const nextProviderId = dto.llmProviderId ?? existing.llmProviderId;
-    const nextModelId = dto.llmModelId ?? existing.llmModelId;
-
-    if (dto.llmProviderId !== undefined || dto.llmModelId !== undefined) {
-      const provider = providerRegistry[nextProviderId];
-      if (!provider) {
-        throw new BadRequestException('Invalid LLM provider');
-      }
-
-      const configuredProviderId =
-        process.env.ANYHUNT_LLM_PROVIDER_ID?.trim() || 'openai';
-      if (nextProviderId !== configuredProviderId) {
-        throw new BadRequestException('LLM provider is not available');
-      }
-
-      const modelAllowed =
-        provider.modelIds.includes(nextModelId) ||
-        provider.allowCustomModels === true;
-      if (!modelAllowed) {
-        throw new BadRequestException('Invalid LLM model');
-      }
-    }
-
     const updated = await this.prisma.apiKey.update({
       where: { id: keyId },
       data: {
         name: dto.name,
         isActive: dto.isActive,
-        llmEnabled: dto.llmEnabled,
-        llmProviderId: dto.llmProviderId,
-        llmModelId: dto.llmModelId,
       },
       select: API_KEY_SELECT_FIELDS,
     });
 
     // 如果 Key 被停用，清除缓存
-    if (
-      dto.isActive === false ||
-      dto.llmEnabled === false ||
-      dto.llmProviderId !== undefined ||
-      dto.llmModelId !== undefined
-    ) {
+    if (dto.isActive !== undefined) {
       await this.invalidateCache(existing.keyHash);
     }
 
@@ -307,9 +271,6 @@ export class ApiKeyService {
       id: key.id,
       userId: key.userId,
       name: key.name,
-      llmEnabled: key.llmEnabled ?? true,
-      llmProviderId: key.llmProviderId ?? 'openai',
-      llmModelId: key.llmModelId ?? 'gpt-4o',
       user: {
         id: key.user.id,
         email: key.user.email,
@@ -387,15 +348,6 @@ export class ApiKeyService {
       id: raw.id,
       userId: raw.userId,
       name: raw.name,
-      llmEnabled: raw.llmEnabled !== false,
-      llmProviderId:
-        typeof raw.llmProviderId === 'string' && raw.llmProviderId.trim()
-          ? raw.llmProviderId
-          : 'openai',
-      llmModelId:
-        typeof raw.llmModelId === 'string' && raw.llmModelId.trim()
-          ? raw.llmModelId
-          : 'gpt-4o',
       user: {
         id: user.id,
         email: user.email,
