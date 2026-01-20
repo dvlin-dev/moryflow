@@ -684,6 +684,8 @@ Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接�
 }
 ```
 
+运行非默认配置文件时使用 `tsc-multi --config ./path/to/tsc-multi.json`（不要用 `-p`）。
+
 ### package.json 配置
 
 ```json

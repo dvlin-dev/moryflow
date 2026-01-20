@@ -49,7 +49,7 @@ RUN cat > /app/tsc-multi.anyhunt-server.json <<'EOF'
 }
 EOF
 
-RUN pnpm dlx tsc-multi@1.1.0 -p /app/tsc-multi.anyhunt-server.json
+RUN pnpm dlx tsc-multi@1.1.0 --config /app/tsc-multi.anyhunt-server.json
 
 WORKDIR /app/apps/anyhunt/server
 

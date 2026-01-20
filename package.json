@@ -13,7 +13,7 @@
     "dev:moryflow:pc": "pnpm --filter @anyhunt/moryflow-pc dev",
     "build": "turbo run build",
     "build:agents:prebuild": "pnpm -r --filter '@anyhunt/agents*' prebuild",
-    "build:agents": "pnpm run build:agents:prebuild && tsc-multi -p tsc-multi.stage1.json && tsc-multi -p tsc-multi.stage1b.json && tsc-multi -p tsc-multi.stage2.json && tsc-multi -p tsc-multi.stage3.json",
+    "build:agents": "pnpm run build:agents:prebuild && tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage1b.json && tsc-multi --config tsc-multi.stage2.json && tsc-multi --config tsc-multi.stage3.json",
     "build:packages": "pnpm run build:agents",
     "postinstall": "pnpm run build:packages",
     "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server build",
