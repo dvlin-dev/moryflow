@@ -15,6 +15,7 @@ Agent 框架的核心包，基于 OpenAI Agents SDK 定制，提供 Agent 抽象
 - Handoff（Agent 间切换）机制
 - Guardrail（安全护栏）
 - Tracing（追踪与日志）
+  - `GenerationSpanData` 属于公开导出（供 agents-openai 使用）
 
 ## 约束
 

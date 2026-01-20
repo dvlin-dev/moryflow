@@ -1,6 +1,5 @@
 import { TracingExporter, BatchTraceProcessor, setTraceProcessors } from '@anyhunt/agents-core';
-import type { Span } from '@anyhunt/agents-core/dist/tracing/spans';
-import type { Trace } from '@anyhunt/agents-core/dist/tracing/traces';
+import type { Span, Trace } from '@anyhunt/agents-core';
 import { getTracingExportApiKey, HEADERS } from './defaults';
 import logger from './logger';
 

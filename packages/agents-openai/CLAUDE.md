@@ -19,6 +19,8 @@ OpenAI 模型适配器，为 Agent 框架提供 OpenAI API 的统一接口。
 - 依赖 agents-core 和 agents-adapter
 - 保持与 OpenAI API 的兼容性
 - 支持流式和非流式两种模式
+- **禁止 deep import**：禁止从 `@anyhunt/agents-core/dist/*` 导入（会被 package `exports` 拦截且 Docker 构建期易失效）；统一从 `@anyhunt/agents-core`（公开导出）导入
+- **构建顺序**：在 Docker/CI 中必须先构建 `agents-core`（生成 `dist/*.d.ts`）再构建 `agents-openai`
 
 ## 成员清单
 

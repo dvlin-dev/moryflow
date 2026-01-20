@@ -1,10 +1,12 @@
 import {
   Model,
+  Span,
   Usage,
   withGenerationSpan,
   resetCurrentSpan,
   createGenerationSpan,
   setCurrentSpan,
+  type GenerationSpanData,
 } from '@anyhunt/agents-core';
 import type {
   ModelRequest,
@@ -22,8 +24,6 @@ import type {
   ResponseFormatJSONSchema,
   ResponseFormatJSONObject,
 } from 'openai/resources/shared';
-import { Span } from '@anyhunt/agents-core/dist/tracing/spans';
-import { GenerationSpanData } from '@anyhunt/agents-core/dist/tracing/spans';
 import { convertChatCompletionsStreamToResponses } from './openaiChatCompletionsStreaming';
 import {
   convertToolChoice,
