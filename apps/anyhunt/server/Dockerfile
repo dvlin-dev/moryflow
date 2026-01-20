@@ -22,6 +22,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
 COPY packages/agents-core/package.json ./packages/agents-core/
+COPY packages/agents-openai/package.json ./packages/agents-openai/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server...
 
@@ -33,6 +34,7 @@ FROM base AS prod-deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
 COPY packages/agents-core/package.json ./packages/agents-core/
+COPY packages/agents-openai/package.json ./packages/agents-openai/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server... --prod \
     # 重建 Sharp 以获取正确的原生模块（WebP/SVG 支持）
@@ -48,6 +50,7 @@ COPY --from=deps /app/apps/anyhunt/server/node_modules ./apps/anyhunt/server/nod
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/agents-core ./packages/agents-core
+COPY packages/agents-openai ./packages/agents-openai
 COPY apps/anyhunt/server ./apps/anyhunt/server
 
 # agents-core 的 tsconfig 依赖根配置（../../tsconfig.agents.json），因此必须把根 tsconfig 一并带进镜像。
@@ -56,6 +59,7 @@ COPY tsconfig.agents.json ./tsconfig.agents.json
 # Docker 构建中默认 `--ignore-scripts`，workspace 包不会自动生成 dist；
 # 这里显式构建 `@anyhunt/agents-core`，确保 anyhunt-server 的 tsc 能解析到 types，并且运行时可 require。
 RUN /app/node_modules/.bin/tsc -p /app/packages/agents-core/tsconfig.json --module commonjs --outDir /app/packages/agents-core/dist
+RUN /app/node_modules/.bin/tsc -p /app/packages/agents-openai/tsconfig.json --module commonjs --outDir /app/packages/agents-openai/dist
 
 WORKDIR /app/apps/anyhunt/server
 
@@ -133,6 +137,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/package.json 
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.main.config.ts ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.vector.config.ts ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/packages/agents-core ./packages/agents-core
+COPY --from=builder --chown=nestjs:nodejs /app/packages/agents-openai ./packages/agents-openai
 COPY --chown=nestjs:nodejs apps/anyhunt/server/docker-entrypoint.sh ./apps/anyhunt/server/
 RUN chmod +x ./apps/anyhunt/server/docker-entrypoint.sh
 
