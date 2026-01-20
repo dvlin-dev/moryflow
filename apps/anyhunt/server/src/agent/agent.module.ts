@@ -20,11 +20,13 @@ import { AgentBillingService } from './agent-billing.service';
 import { AgentStreamProcessor } from './agent-stream.processor';
 import { AgentTaskRepository } from './agent-task.repository';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
+import { AgentModelProviderInitializer } from './agent-model-provider.initializer';
 
 @Module({
   imports: [QuotaModule, ApiKeyModule],
   controllers: [AgentController],
   providers: [
+    AgentModelProviderInitializer,
     AgentService,
     AgentBillingService,
     AgentStreamProcessor,

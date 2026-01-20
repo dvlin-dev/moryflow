@@ -469,6 +469,9 @@ importers:
       '@anyhunt/agents-core':
         specifier: workspace:*
         version: link:../../../packages/agents-core
+      '@anyhunt/agents-openai':
+        specifier: workspace:*
+        version: link:../../../packages/agents-openai
       '@aws-sdk/client-s3':
         specifier: ^3.700.0
         version: 3.962.0

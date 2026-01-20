@@ -274,7 +274,9 @@ open http://localhost:3000/api-docs
 | `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                                        |
 | `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
 | `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
-| `OPENAI_API_KEY`              | ❌   | AI 提取功能（可选）                                                              |
+| `OPENAI_API_KEY`              | ❌   | LLM 能力（Agent Playground/Extract/Embedding）。未配置则相关接口会失败           |
+| `OPENAI_BASE_URL`             | ❌   | OpenAI-compatible gateway baseURL（空字符串视为未配置）                          |
+| `OPENAI_DEFAULT_MODEL`        | ❌   | 默认模型名（Agent/Extract 使用，默认为 `gpt-4.1`/`gpt-4o-mini`）                 |
 | `R2_*`                        | ❌   | 云存储配置（可选）                                                               |
 | `R2_PUBLIC_URL`               | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
 | `RESEND_API_KEY`              | ❌   | Resend API Key（不启用邮件可留空）                                               |
