@@ -72,7 +72,7 @@ import { RedisModule } from '../redis/redis.module';
 import { SearchModule } from '../search/search.module';
 import { ScraperModule } from '../scraper/scraper.module';
 import { BillingModule } from '../billing/billing.module';
-import { ExtractModule } from '../extract/extract.module';
+import { LlmModule } from '../llm/llm.module';
 import { MapModule } from '../map/map.module';
 
 @Module({
@@ -83,7 +83,7 @@ import { MapModule } from '../map/map.module';
     SearchModule,
     ScraperModule,
     BillingModule,
-    ExtractModule, // 提供 LlmClient
+    LlmModule, // 提供 LlmOpenAiClientService
     MapModule, // 提供 MapService
 
     // BullMQ 队列

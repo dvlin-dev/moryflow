@@ -7,7 +7,8 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { LlmClient } from '../../extract/llm.client';
+import type OpenAI from 'openai';
+import { LlmOpenAiClientService } from '../../llm';
 import { AI_PROMPTS, AI_SUMMARY, BILLING } from '../digest.constants';
 import type { BillingBreakdown } from './run.service';
 
@@ -58,11 +59,42 @@ export interface AiGenerationResult<T> {
   cost: number;
 }
 
+type DigestResolvedLlm = {
+  client: OpenAI;
+  upstreamModelId: string;
+};
+
 @Injectable()
 export class DigestAiService {
   private readonly logger = new Logger(DigestAiService.name);
 
-  constructor(private readonly llmClient: LlmClient) {}
+  constructor(private readonly llmOpenAiClient: LlmOpenAiClientService) {}
+
+  private async resolveLlm(): Promise<DigestResolvedLlm> {
+    const resolved = await this.llmOpenAiClient.resolveClient({
+      purpose: 'agent',
+    });
+
+    return {
+      client: resolved.client,
+      upstreamModelId: resolved.upstreamModelId,
+    };
+  }
+
+  private async completeText(
+    resolved: DigestResolvedLlm,
+    params: { systemPrompt: string; userPrompt: string },
+  ): Promise<string> {
+    const response = await resolved.client.chat.completions.create({
+      model: resolved.upstreamModelId,
+      messages: [
+        { role: 'system', content: params.systemPrompt },
+        { role: 'user', content: params.userPrompt },
+      ],
+    });
+
+    return response.choices[0]?.message?.content || '';
+  }
 
   /**
    * 生成内容摘要
@@ -96,8 +128,10 @@ export class DigestAiService {
     const localeInstruction =
       locale !== 'en' ? `\n\nOutput language: ${locale}` : '';
 
+    const resolved = await this.resolveLlm();
+
     try {
-      const summary = await this.llmClient.complete({
+      const summary = await this.completeText(resolved, {
         systemPrompt: AI_PROMPTS.contentSummary.system + localeInstruction,
         userPrompt: `Title: ${title}\n\nContent:\n${contentForSummary}`,
       });
@@ -168,8 +202,10 @@ Articles to include (${items.length} items):
 
 ${itemsDescription}`;
 
+    const resolved = await this.resolveLlm();
+
     try {
-      const narrative = await this.llmClient.complete({
+      const narrative = await this.completeText(resolved, {
         systemPrompt: AI_PROMPTS.narrative.system + localeInstruction,
         userPrompt,
       });
@@ -233,8 +269,10 @@ User's interests: ${subscription.interests.join(', ') || 'None specified'}
 
 Current explanation: ${heuristicReason}`;
 
+    const resolved = await this.resolveLlm();
+
     try {
-      const reason = await this.llmClient.complete({
+      const reason = await this.completeText(resolved, {
         systemPrompt: AI_PROMPTS.explainReason.system,
         userPrompt,
       });

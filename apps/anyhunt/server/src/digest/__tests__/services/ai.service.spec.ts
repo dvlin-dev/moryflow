@@ -7,26 +7,48 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DigestAiService } from '../../services/ai.service';
-import { createMockLlmClient, type MockLlmClient } from '../mocks';
 import { BILLING, AI_SUMMARY } from '../../digest.constants';
 
 describe('DigestAiService', () => {
   let service: DigestAiService;
-  let mockLlmClient: MockLlmClient;
+  let mockCreateCompletion: ReturnType<typeof vi.fn>;
+  let mockLlmOpenAiClientService: { resolveClient: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    mockLlmClient = createMockLlmClient();
-    service = new DigestAiService(mockLlmClient as any);
+    mockCreateCompletion = vi.fn();
+
+    const mockOpenAiClient = {
+      chat: {
+        completions: {
+          create: mockCreateCompletion,
+        },
+      },
+    };
+
+    mockLlmOpenAiClientService = {
+      resolveClient: vi.fn().mockResolvedValue({
+        client: mockOpenAiClient,
+        requestedModelId: 'gpt-4o',
+        upstreamModelId: 'gpt-4o',
+        provider: {
+          id: 'lp_test',
+          providerType: 'openai',
+          name: 'OpenAI',
+          baseUrl: null,
+        },
+      }),
+    };
+
+    service = new DigestAiService(mockLlmOpenAiClientService as any);
   });
 
   // ========== generateSummary ==========
 
   describe('generateSummary', () => {
     it('should generate summary using LLM', async () => {
-      mockLlmClient.chat.mockResolvedValue('AI generated summary');
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockResolvedValue('AI generated summary');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'AI generated summary' } }],
+      });
 
       const result = await service.generateSummary(
         {
@@ -72,7 +94,9 @@ describe('DigestAiService', () => {
 
     it('should truncate result to maxLength', async () => {
       const longSummary = 'A'.repeat(1000);
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue(longSummary);
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: longSummary } }],
+      });
 
       const result = await service.generateSummary(
         {
@@ -88,7 +112,9 @@ describe('DigestAiService', () => {
     });
 
     it('should record billing when breakdown provided', async () => {
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue('Summary');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Summary' } }],
+      });
       const billing: Record<string, any> = {};
 
       await service.generateSummary(
@@ -109,9 +135,7 @@ describe('DigestAiService', () => {
     });
 
     it('should return fallback on LLM error', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockRejectedValue(new Error('LLM error'));
+      mockCreateCompletion.mockRejectedValue(new Error('LLM error'));
 
       const result = await service.generateSummary(
         {
@@ -128,7 +152,9 @@ describe('DigestAiService', () => {
     });
 
     it('should add locale instruction for non-English', async () => {
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue('中文摘要');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: '中文摘要' } }],
+      });
 
       await service.generateSummary(
         {
@@ -139,11 +165,11 @@ describe('DigestAiService', () => {
         'zh',
       );
 
-      expect((mockLlmClient as any).complete).toHaveBeenCalledWith(
-        expect.objectContaining({
-          systemPrompt: expect.stringContaining('Output language: zh'),
-        }),
+      const call = mockCreateCompletion.mock.calls[0]?.[0] as any;
+      const systemMessage = call?.messages?.find(
+        (m: any) => m.role === 'system',
       );
+      expect(systemMessage?.content).toContain('Output language: zh');
     });
   });
 
@@ -172,9 +198,9 @@ describe('DigestAiService', () => {
     };
 
     it('should generate narrative for multiple items', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockResolvedValue('## AI News Digest');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: '## AI News Digest' } }],
+      });
 
       const result = await service.generateNarrative(items, subscription, 'en');
 
@@ -190,24 +216,22 @@ describe('DigestAiService', () => {
     });
 
     it('should include all items in prompt', async () => {
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue('Narrative');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Narrative' } }],
+      });
 
       await service.generateNarrative(items, subscription, 'en');
 
-      expect((mockLlmClient as any).complete).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userPrompt: expect.stringContaining('Article 1'),
-        }),
-      );
-      expect((mockLlmClient as any).complete).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userPrompt: expect.stringContaining('Article 2'),
-        }),
-      );
+      const call = mockCreateCompletion.mock.calls[0]?.[0] as any;
+      const userMessage = call?.messages?.find((m: any) => m.role === 'user');
+      expect(userMessage?.content).toContain('Article 1');
+      expect(userMessage?.content).toContain('Article 2');
     });
 
     it('should record billing', async () => {
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue('Narrative');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Narrative' } }],
+      });
       const billing: Record<string, any> = {};
 
       await service.generateNarrative(items, subscription, 'en', billing);
@@ -217,9 +241,7 @@ describe('DigestAiService', () => {
     });
 
     it('should return fallback narrative on error', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockRejectedValue(new Error('LLM error'));
+      mockCreateCompletion.mockRejectedValue(new Error('LLM error'));
 
       const result = await service.generateNarrative(items, subscription, 'en');
 
@@ -253,9 +275,9 @@ describe('DigestAiService', () => {
     });
 
     it('should generate enhanced reason for poor heuristic', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockResolvedValue('Relevant to AI research');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Relevant to AI research' } }],
+      });
 
       const result = await service.generateReason(
         {
@@ -270,9 +292,9 @@ describe('DigestAiService', () => {
     });
 
     it('should truncate reason to 100 chars', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockResolvedValue('A'.repeat(200));
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'A'.repeat(200) } }],
+      });
 
       const result = await service.generateReason(
         {
@@ -286,9 +308,7 @@ describe('DigestAiService', () => {
     });
 
     it('should fallback to heuristic on error', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockRejectedValue(new Error('LLM error'));
+      mockCreateCompletion.mockRejectedValue(new Error('LLM error'));
 
       const result = await service.generateReason(
         {
@@ -307,9 +327,9 @@ describe('DigestAiService', () => {
 
   describe('generateSummaryBatch', () => {
     it('should process items in batches', async () => {
-      (mockLlmClient as any).complete = vi
-        .fn()
-        .mockImplementation(async () => 'Summary');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Summary' } }],
+      });
 
       const inputs = [
         { title: 'A1', fulltext: 'X'.repeat(500), url: 'https://a.com/1' },
@@ -331,7 +351,9 @@ describe('DigestAiService', () => {
     });
 
     it('should use default concurrency of 3', async () => {
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue('Summary');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Summary' } }],
+      });
 
       const inputs = [
         { title: 'A1', fulltext: 'Y'.repeat(500), url: 'https://b.com/1' },
@@ -344,7 +366,9 @@ describe('DigestAiService', () => {
     });
 
     it('should track billing across batch', async () => {
-      (mockLlmClient as any).complete = vi.fn().mockResolvedValue('Summary');
+      mockCreateCompletion.mockResolvedValue({
+        choices: [{ message: { content: 'Summary' } }],
+      });
       const billing: Record<string, any> = {};
 
       const inputs = [

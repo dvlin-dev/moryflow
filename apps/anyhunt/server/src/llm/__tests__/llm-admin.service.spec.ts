@@ -5,17 +5,20 @@ import type { LlmSecretService } from '../llm-secret.service';
 import { LlmAdminService } from '../llm-admin.service';
 
 function createMockPrisma(params: {
-  defaultModelId?: string;
+  defaultAgentModelId?: string;
+  defaultExtractModelId?: string;
   countImpl: (args: any) => number;
 }): PrismaService {
-  const defaultModelId = params.defaultModelId ?? 'gpt-4o';
+  const defaultAgentModelId = params.defaultAgentModelId ?? 'gpt-4o';
+  const defaultExtractModelId = params.defaultExtractModelId ?? 'gpt-4o-mini';
   const now = new Date();
 
   const mock = {
     llmSettings: {
       findUnique: vi.fn().mockResolvedValue({
         id: 'default',
-        defaultModelId,
+        defaultAgentModelId,
+        defaultExtractModelId,
         createdAt: now,
         updatedAt: now,
       }),
@@ -111,5 +114,21 @@ describe('LlmAdminService', () => {
       service.updateModel('m1', { enabled: false }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect((prisma as any).llmModel.update).not.toHaveBeenCalled();
+  });
+
+  it('blocks disabling provider when it would break default extract model', async () => {
+    const prisma = createMockPrisma({
+      defaultExtractModelId: 'gpt-4o-mini',
+      countImpl: ({ where }) => {
+        if (where.modelId !== 'gpt-4o-mini') return 0;
+        if (where.providerId?.not === 'p1') return 0;
+        return 1;
+      },
+    });
+
+    const service = new LlmAdminService(prisma, secrets);
+    await expect(
+      service.updateProvider('p1', { enabled: false }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

@@ -3,15 +3,16 @@ import { Module } from '@nestjs/common';
 import { ScraperModule } from '../scraper';
 import { ApiKeyModule } from '../api-key';
 import { BillingModule } from '../billing/billing.module';
+import { LlmModule } from '../llm/llm.module';
 
 import { ExtractService } from './extract.service';
 import { ExtractController } from './extract.controller';
-import { LlmClient } from './llm.client';
+import { ExtractLlmClient } from './extract-llm.client';
 
 @Module({
-  imports: [ScraperModule, ApiKeyModule, BillingModule],
+  imports: [ScraperModule, ApiKeyModule, BillingModule, LlmModule],
   controllers: [ExtractController],
-  providers: [ExtractService, LlmClient],
-  exports: [ExtractService, LlmClient],
+  providers: [ExtractService, ExtractLlmClient],
+  exports: [ExtractService],
 })
 export class ExtractModule {}

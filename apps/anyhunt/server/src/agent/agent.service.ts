@@ -147,7 +147,9 @@ export class AgentService {
 
     let llmModel: Model;
     try {
-      const llmRoute = await this.llmRoutingService.resolveModel(input.model);
+      const llmRoute = await this.llmRoutingService.resolveAgentModel(
+        input.model,
+      );
       llmModel = llmRoute.model;
     } catch (error) {
       const llmConfigError =
@@ -452,7 +454,9 @@ export class AgentService {
 
     let llmModel: Model;
     try {
-      const llmRoute = await this.llmRoutingService.resolveModel(input.model);
+      const llmRoute = await this.llmRoutingService.resolveAgentModel(
+        input.model,
+      );
       llmModel = llmRoute.model;
     } catch (error) {
       const llmConfigError =

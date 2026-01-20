@@ -17,8 +17,8 @@ export const ExtractOptionsSchema = z.object({
   prompt: z.string().max(5000).optional(),
   schema: z.record(z.string(), z.unknown()).optional(), // JSON Schema
   systemPrompt: z.string().max(2000).optional(),
-  /** Optional: Specify LLM model (defaults to OPENAI_DEFAULT_MODEL from env) */
-  model: z.string().max(100).optional(),
+  /** Optional: Specify modelId (defaults to Admin defaultExtractModelId) */
+  model: z.string().max(200).optional(),
 });
 
 export type ExtractOptions = z.infer<typeof ExtractOptionsSchema>;

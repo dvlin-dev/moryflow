@@ -8,7 +8,11 @@
 
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DEFAULT_LLM_MODEL_ID, DEFAULT_LLM_SETTINGS_ID } from './llm.constants';
+import {
+  DEFAULT_LLM_AGENT_MODEL_ID,
+  DEFAULT_LLM_EXTRACT_MODEL_ID,
+  DEFAULT_LLM_SETTINGS_ID,
+} from './llm.constants';
 import { LlmSecretService } from './llm-secret.service';
 import type {
   CreateLlmProviderDto,
@@ -55,25 +59,30 @@ export class LlmAdminService {
     excludeModelRecordId?: string;
   }): Promise<void> {
     const settings = await this.getSettings();
-    const defaultModelId = settings.defaultModelId;
+    const defaultModelIds = [
+      settings.defaultAgentModelId,
+      settings.defaultExtractModelId,
+    ];
 
-    const before = await this.countEnabledMappingsForModelId({
-      modelId: defaultModelId,
-    });
-    if (before === 0) {
-      return;
-    }
+    for (const modelId of defaultModelIds) {
+      const before = await this.countEnabledMappingsForModelId({
+        modelId,
+      });
+      if (before === 0) {
+        continue;
+      }
 
-    const after = await this.countEnabledMappingsForModelId({
-      modelId: defaultModelId,
-      excludeProviderId: params.excludeProviderId,
-      excludeModelRecordId: params.excludeModelRecordId,
-    });
+      const after = await this.countEnabledMappingsForModelId({
+        modelId,
+        excludeProviderId: params.excludeProviderId,
+        excludeModelRecordId: params.excludeModelRecordId,
+      });
 
-    if (after === 0) {
-      throw new BadRequestException(
-        'Operation would make default model unavailable. Update defaultModelId or add another enabled mapping first.',
-      );
+      if (after === 0) {
+        throw new BadRequestException(
+          'Operation would make default model unavailable. Update default models or add another enabled mapping first.',
+        );
+      }
     }
   }
 
@@ -89,17 +98,16 @@ export class LlmAdminService {
     return this.prisma.llmSettings.create({
       data: {
         id: DEFAULT_LLM_SETTINGS_ID,
-        defaultModelId: DEFAULT_LLM_MODEL_ID,
+        defaultAgentModelId: DEFAULT_LLM_AGENT_MODEL_ID,
+        defaultExtractModelId: DEFAULT_LLM_EXTRACT_MODEL_ID,
       },
     });
   }
 
-  private async assertDefaultModelAvailable(
-    defaultModelId: string,
-  ): Promise<void> {
+  private async assertModelAvailable(modelId: string): Promise<void> {
     const exists = await this.prisma.llmModel.findFirst({
       where: {
-        modelId: defaultModelId,
+        modelId,
         enabled: true,
         provider: { enabled: true },
       },
@@ -108,22 +116,25 @@ export class LlmAdminService {
 
     if (!exists) {
       throw new BadRequestException(
-        'Default model is not available (no enabled provider/model mapping found)',
+        'Model is not available (no enabled provider/model mapping found)',
       );
     }
   }
 
   async updateSettings(dto: UpdateLlmSettingsDto): Promise<LlmSettingsDto> {
-    await this.assertDefaultModelAvailable(dto.defaultModelId);
+    await this.assertModelAvailable(dto.defaultAgentModelId);
+    await this.assertModelAvailable(dto.defaultExtractModelId);
 
     return this.prisma.llmSettings.upsert({
       where: { id: DEFAULT_LLM_SETTINGS_ID },
       create: {
         id: DEFAULT_LLM_SETTINGS_ID,
-        defaultModelId: dto.defaultModelId,
+        defaultAgentModelId: dto.defaultAgentModelId,
+        defaultExtractModelId: dto.defaultExtractModelId,
       },
       update: {
-        defaultModelId: dto.defaultModelId,
+        defaultAgentModelId: dto.defaultAgentModelId,
+        defaultExtractModelId: dto.defaultExtractModelId,
       },
     });
   }
@@ -283,12 +294,15 @@ export class LlmAdminService {
       throw new BadRequestException('LLM model not found');
     }
 
+    const isDefaultModel =
+      current.modelId === settings.defaultAgentModelId ||
+      current.modelId === settings.defaultExtractModelId;
     const wouldRemoveDefaultMapping =
-      current.modelId === settings.defaultModelId &&
+      isDefaultModel &&
       current.enabled === true &&
       current.provider.enabled === true &&
       (dto.enabled === false ||
-        (dto.modelId !== undefined && dto.modelId !== settings.defaultModelId));
+        (dto.modelId !== undefined && dto.modelId !== current.modelId));
 
     if (wouldRemoveDefaultMapping) {
       await this.assertDefaultModelNotBrokenByRemoval({

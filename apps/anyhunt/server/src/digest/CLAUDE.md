@@ -85,6 +85,11 @@ type PaginatedResponse<T> = {
   - Inbox 查看链接
   - Unsubscribe 链接
 
+## LLM（摘要/叙事/解释）
+
+- Digest 的所有 LLM 调用统一走 `src/llm/` 的 Admin 配置（Provider/BaseUrl/API Key 入库 + 加密存储）。
+- 默认模型使用 `LlmSettings.defaultAgentModelId`（Digest 视为 Agent 类用途；不在 Digest 内硬编码 model）。
+
 ## 安全约束（强制）
 
 - **SSRF 防护**：RSS URL / Site Crawl URL 必须经过 `UrlValidator` 校验（禁止 localhost/内网/云元数据等）。

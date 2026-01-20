@@ -1,47 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LlmRoutingService } from '../llm-routing.service';
-import { LlmSecretService } from '../llm-secret.service';
-import type { PrismaService } from '../../prisma/prisma.service';
 import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { OpenAIProvider } from '@anyhunt/agents-openai';
 import type { Model } from '@anyhunt/agents-core';
+import type { LlmUpstreamResolverService } from '../llm-upstream-resolver.service';
 
-function createMockPrisma(params: {
-  defaultModelId?: string;
-  candidates: Array<{
-    upstreamId: string;
-    provider: {
-      id: string;
-      providerType: 'openai' | 'openai_compatible' | 'openrouter';
-      name: string;
-      baseUrl: string | null;
-      apiKeyEncrypted: string;
-      sortOrder: number;
-    };
-  }>;
-}): PrismaService {
-  const mock = {
-    llmSettings: {
-      findUnique: vi.fn().mockResolvedValue({
-        defaultModelId: params.defaultModelId ?? 'gpt-4o',
-      }),
-    },
-    llmModel: {
-      findMany: vi.fn().mockResolvedValue(params.candidates),
-    },
-  };
-
-  return mock as unknown as PrismaService;
+function createMockUpstream(params: {
+  resolveUpstream: (args: any) => any;
+}): LlmUpstreamResolverService {
+  return {
+    resolveUpstream: vi.fn().mockImplementation(params.resolveUpstream),
+  } as unknown as LlmUpstreamResolverService;
 }
 
 describe('LlmRoutingService', () => {
-  const secrets = {
-    decryptApiKey: vi.fn().mockReturnValue('sk-test'),
-  } as unknown as LlmSecretService;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(OpenAIProvider.prototype, 'getModel').mockResolvedValue(
@@ -49,100 +24,95 @@ describe('LlmRoutingService', () => {
     );
   });
 
-  it('falls back to admin defaultModelId', async () => {
-    const prisma = createMockPrisma({
-      defaultModelId: 'gpt-4o',
-      candidates: [
-        {
-          upstreamId: 'gpt-4o',
-          provider: {
-            id: 'p1',
-            providerType: 'openai',
-            name: 'OpenAI',
-            baseUrl: null,
-            apiKeyEncrypted: 'enc',
-            sortOrder: 0,
-          },
+  it('falls back to admin defaultAgentModelId', async () => {
+    const upstream = createMockUpstream({
+      resolveUpstream: () => ({
+        requestedModelId: 'gpt-4o',
+        upstreamModelId: 'gpt-4o',
+        apiKey: 'sk-test',
+        provider: {
+          id: 'p1',
+          providerType: 'openai',
+          name: 'OpenAI',
+          baseUrl: null,
         },
-      ],
+      }),
     });
 
-    const service = new LlmRoutingService(prisma, secrets);
-    const result = await service.resolveModel(undefined);
+    const service = new LlmRoutingService(upstream);
+    const result = await service.resolveAgentModel(undefined);
     expect(result.requestedModelId).toBe('gpt-4o');
-    expect(prisma.llmModel.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ modelId: 'gpt-4o' }),
-      }),
+    expect(upstream.resolveUpstream).toHaveBeenCalledWith(
+      expect.objectContaining({ purpose: 'agent' }),
     );
   });
 
-  it('selects provider by sortOrder when ambiguous', async () => {
-    const prisma = createMockPrisma({
-      candidates: [
-        {
-          upstreamId: 'gpt-4o',
-          provider: {
-            id: 'p1',
-            providerType: 'openai',
-            name: 'OpenAI-1',
-            baseUrl: null,
-            apiKeyEncrypted: 'enc1',
-            sortOrder: 0,
-          },
+  it('uses resolved upstream model + provider meta', async () => {
+    const upstream = createMockUpstream({
+      resolveUpstream: () => ({
+        requestedModelId: 'gpt-4o',
+        upstreamModelId: 'gpt-4o',
+        apiKey: 'sk-test',
+        provider: {
+          id: 'p2',
+          providerType: 'openai',
+          name: 'OpenAI-2',
+          baseUrl: 'https://api.openai.com/v1',
         },
-        {
-          upstreamId: 'gpt-4o',
-          provider: {
-            id: 'p2',
-            providerType: 'openai',
-            name: 'OpenAI-2',
-            baseUrl: null,
-            apiKeyEncrypted: 'enc2',
-            sortOrder: 10,
-          },
-        },
-      ],
+      }),
     });
 
-    const service = new LlmRoutingService(prisma, secrets);
-    const result = await service.resolveModel('gpt-4o');
+    const service = new LlmRoutingService(upstream);
+    const result = await service.resolveAgentModel('gpt-4o');
     expect(result.provider.id).toBe('p2');
+    expect(result.provider.baseUrl).toBe('https://api.openai.com/v1');
+    expect(result.upstreamModelId).toBe('gpt-4o');
   });
 
   it('throws when model is not available', async () => {
-    const prisma = createMockPrisma({ candidates: [] });
-    const service = new LlmRoutingService(prisma, secrets);
-    await expect(service.resolveModel('gpt-4o')).rejects.toBeInstanceOf(
+    const upstream = createMockUpstream({
+      resolveUpstream: () => {
+        throw new BadRequestException('Model is not available');
+      },
+    });
+    const service = new LlmRoutingService(upstream);
+    await expect(service.resolveAgentModel('gpt-4o')).rejects.toBeInstanceOf(
       BadRequestException,
     );
   });
 
-  it('throws 500 when apiKey cannot be decrypted', async () => {
-    const prisma = createMockPrisma({
-      candidates: [
-        {
-          upstreamId: 'gpt-4o',
-          provider: {
-            id: 'p1',
-            providerType: 'openai',
-            name: 'OpenAI',
-            baseUrl: null,
-            apiKeyEncrypted: 'enc',
-            sortOrder: 0,
-          },
-        },
-      ],
+  it('throws 500 when upstream resolver throws 500', async () => {
+    const upstream = createMockUpstream({
+      resolveUpstream: () => {
+        throw new InternalServerErrorException('boom');
+      },
     });
-    const badSecrets = {
-      decryptApiKey: vi.fn(() => {
-        throw new Error('boom');
-      }),
-    } as unknown as LlmSecretService;
-
-    const service = new LlmRoutingService(prisma, badSecrets);
-    await expect(service.resolveModel('gpt-4o')).rejects.toBeInstanceOf(
+    const service = new LlmRoutingService(upstream);
+    await expect(service.resolveAgentModel('gpt-4o')).rejects.toBeInstanceOf(
       InternalServerErrorException,
+    );
+  });
+
+  it('falls back to admin defaultExtractModelId', async () => {
+    const upstream = createMockUpstream({
+      resolveUpstream: () => ({
+        requestedModelId: 'gpt-4o-mini',
+        upstreamModelId: 'gpt-4o-mini',
+        apiKey: 'sk-test',
+        provider: {
+          id: 'p1',
+          providerType: 'openai',
+          name: 'OpenAI',
+          baseUrl: null,
+        },
+      }),
+    });
+
+    const service = new LlmRoutingService(upstream);
+    const result = await service.resolveExtractModel(undefined);
+    expect(result.requestedModelId).toBe('gpt-4o-mini');
+    expect(upstream.resolveUpstream).toHaveBeenCalledWith(
+      expect.objectContaining({ purpose: 'extract' }),
     );
   });
 });

@@ -35,7 +35,8 @@ export type LlmModelListItem = {
 
 export type LlmSettingsDto = {
   id: string;
-  defaultModelId: string;
+  defaultAgentModelId: string;
+  defaultExtractModelId: string;
   createdAt: Date;
   updatedAt: Date;
 };

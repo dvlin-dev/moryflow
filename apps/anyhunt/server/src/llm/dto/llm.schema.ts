@@ -52,6 +52,7 @@ export const UpdateLlmModelSchema = z.object({
 export type UpdateLlmModelDto = z.infer<typeof UpdateLlmModelSchema>;
 
 export const UpdateLlmSettingsSchema = z.object({
-  defaultModelId: LlmModelIdSchema,
+  defaultAgentModelId: LlmModelIdSchema,
+  defaultExtractModelId: LlmModelIdSchema,
 });
 export type UpdateLlmSettingsDto = z.infer<typeof UpdateLlmSettingsSchema>;

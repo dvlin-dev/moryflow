@@ -16,8 +16,8 @@ AI-powered structured data extraction API. Scrapes web pages and uses LLM to ext
 ## Constraints
 
 - Public API uses ApiKeyGuard
-- Requires LLM API key (OpenAI-compatible)
-- Quota deducted per URL processed
+- LLM 配置由 Admin 的 `LlmProvider/LlmModel/LlmSettings.defaultExtractModelId` 决定（请求可选传 `model`）
+- Quota 扣费由 `BillingService` 规则决定（本模块只负责在失败时按 breakdown 退费）
 - Synchronous processing (no job queue)
 
 ## File Structure
@@ -29,7 +29,7 @@ AI-powered structured data extraction API. Scrapes web pages and uses LLM to ext
 | `extract.module.ts`     | Module     | NestJS module definition             |
 | `extract.types.ts`      | Types      | Result types                         |
 | `extract.errors.ts`     | Errors     | Custom exceptions                    |
-| `llm.client.ts`         | Client     | LLM API wrapper (OpenAI-compatible)  |
+| `extract-llm.client.ts` | Client     | Extract LLM 调用边界（基于 `llm/`）  |
 | `dto/extract.dto.ts`    | DTO        | Request/response schemas             |
 
 ## Extract Flow
@@ -62,7 +62,7 @@ JSON Schema → Zod schema conversion in `extract.service.ts`:
 
 | Scenario              | Files to Modify                            | Notes                           |
 | --------------------- | ------------------------------------------ | ------------------------------- |
-| Add LLM provider      | `llm.client.ts`                            | Extend client                   |
+| Add LLM provider      | `src/llm/*`                                | 通过 Admin 配置 provider/model  |
 | Change default prompt | `extract.service.ts`                       | Update `getDefaultSystemPrompt` |
 | Add extraction option | `dto/extract.dto.ts`, `extract.service.ts` |                                 |
 | Adjust concurrency    | `extract.service.ts`                       | `EXTRACT_CONCURRENCY` env       |
@@ -80,8 +80,6 @@ extract/
 
 | Variable              | Default | Description                |
 | --------------------- | ------- | -------------------------- |
-| `LLM_API_URL`         | -       | OpenAI-compatible API URL  |
-| `LLM_API_KEY`         | -       | API key for LLM            |
 | `EXTRACT_CONCURRENCY` | 5       | Max concurrent extractions |
 
 ## Key Exports

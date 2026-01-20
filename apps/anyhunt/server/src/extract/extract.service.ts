@@ -1,5 +1,5 @@
 /**
- * [INPUT]: ExtractOptions - URLs, prompt, JSON schema, model config
+ * [INPUT]: ExtractOptions - URLs, prompt, JSON schema, modelId (optional; fallback to Admin default)
  * [OUTPUT]: ExtractResponse - Array of extraction results with data or errors
  * [POS]: Core extraction logic - scrape pages, call LLM, validate structured output
  *
@@ -8,7 +8,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScraperService } from '../scraper/scraper.service';
-import { LlmClient } from './llm.client';
+import {
+  ExtractLlmClient,
+  type ExtractResolvedLlm,
+} from './extract-llm.client';
 import { z } from 'zod';
 import type { ExtractOptions } from './dto/extract.dto';
 import type { ExtractResult, ExtractResponse } from './extract.types';
@@ -78,7 +81,7 @@ export class ExtractService {
 
   constructor(
     private scraperService: ScraperService,
-    private llmClient: LlmClient,
+    private llmClient: ExtractLlmClient,
     private config: ConfigService,
     private billingService: BillingService,
   ) {
@@ -93,6 +96,8 @@ export class ExtractService {
     options: ExtractOptions,
   ): Promise<ExtractResponse> {
     const { urls, prompt, schema, systemPrompt, model } = options;
+
+    const resolvedLlm = await this.llmClient.resolve(model);
 
     const billingKey = 'fetchx.extract' as const;
     const referenceId = randomUUID();
@@ -120,7 +125,7 @@ export class ExtractService {
             prompt,
             systemPrompt,
             zodSchema,
-            model,
+            resolvedLlm,
           ),
         this.concurrency,
       );
@@ -148,7 +153,7 @@ export class ExtractService {
     prompt: string | undefined,
     systemPrompt: string | undefined,
     zodSchema: z.ZodType<unknown> | null,
-    model: string | undefined,
+    resolvedLlm: ExtractResolvedLlm,
   ): Promise<ExtractResult> {
     try {
       // 1. 抓取页面内容
@@ -168,19 +173,17 @@ export class ExtractService {
 
       if (zodSchema) {
         // 3a. 使用 Structured Outputs
-        data = (await this.llmClient.completeParsed({
+        data = (await this.llmClient.completeParsed(resolvedLlm, {
           systemPrompt: systemPrompt || this.getDefaultSystemPrompt(true),
           userPrompt,
           schema: zodSchema,
           schemaName: 'extracted_data',
-          model,
         })) as Record<string, unknown>;
       } else {
         // 3b. 无 Schema，返回普通文本
-        const response = await this.llmClient.complete({
+        const response = await this.llmClient.complete(resolvedLlm, {
           systemPrompt: systemPrompt || this.getDefaultSystemPrompt(false),
           userPrompt,
-          model,
         });
         data = { content: response };
       }

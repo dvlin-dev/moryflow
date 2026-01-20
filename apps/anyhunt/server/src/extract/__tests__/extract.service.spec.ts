@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { ExtractService } from '../extract.service';
 import type { ScraperService } from '../../scraper/scraper.service';
-import type { LlmClient } from '../llm.client';
+import type { ExtractLlmClient } from '../extract-llm.client';
 import type { ConfigService } from '@nestjs/config';
 import type { BillingService } from '../../billing/billing.service';
 
@@ -15,6 +15,7 @@ describe('ExtractService', () => {
     scrapeSync: Mock;
   };
   let mockLlmClient: {
+    resolve: Mock;
     complete: Mock;
     completeParsed: Mock;
   };
@@ -30,6 +31,10 @@ describe('ExtractService', () => {
     };
 
     mockLlmClient = {
+      resolve: vi.fn().mockResolvedValue({
+        client: {} as any,
+        upstreamModelId: 'gpt-4o-mini',
+      }),
       complete: vi.fn().mockResolvedValue('Extracted text content'),
       completeParsed: vi.fn().mockResolvedValue({
         name: 'Test Product',
@@ -48,7 +53,7 @@ describe('ExtractService', () => {
 
     service = new ExtractService(
       mockScraperService as unknown as ScraperService,
-      mockLlmClient as unknown as LlmClient,
+      mockLlmClient as unknown as ExtractLlmClient,
       mockConfig as unknown as ConfigService,
       mockBillingService as unknown as BillingService,
     );
@@ -92,6 +97,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.complete).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           userPrompt: expect.stringContaining('Extract product information'),
         }),
@@ -201,6 +207,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.complete).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           systemPrompt: 'You are a helpful data extraction assistant.',
         }),
@@ -214,6 +221,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.completeParsed).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           systemPrompt: expect.stringContaining('data extraction'),
         }),
@@ -227,6 +235,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.complete).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           systemPrompt: expect.stringContaining('helpful assistant'),
         }),
@@ -244,11 +253,7 @@ describe('ExtractService', () => {
         model: 'gpt-4o',
       });
 
-      expect(mockLlmClient.complete).toHaveBeenCalledWith(
-        expect.objectContaining({
-          model: 'gpt-4o',
-        }),
-      );
+      expect(mockLlmClient.resolve).toHaveBeenCalledWith('gpt-4o');
     });
   });
 
@@ -275,7 +280,7 @@ describe('ExtractService', () => {
       // Recreate service with new config
       const newService = new ExtractService(
         mockScraperService as unknown as ScraperService,
-        mockLlmClient as unknown as LlmClient,
+        mockLlmClient as unknown as ExtractLlmClient,
         mockConfig as unknown as ConfigService,
         mockBillingService as unknown as BillingService,
       );
@@ -359,6 +364,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.complete).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           userPrompt: expect.stringContaining('# Page Title'),
         }),
@@ -372,6 +378,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.complete).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           userPrompt: expect.stringContaining('What are the main products?'),
         }),
@@ -384,6 +391,7 @@ describe('ExtractService', () => {
       });
 
       expect(mockLlmClient.complete).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           userPrompt: expect.stringContaining(
             'Extract the relevant structured data',

@@ -286,7 +286,8 @@ model LlmModel {
 
 model LlmSettings {
   id               String   @id @default("default")
-  defaultModelId   String
+  defaultAgentModelId   String
+  defaultExtractModelId String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

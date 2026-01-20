@@ -176,7 +176,18 @@ const createMockBrowserPortService = (): BrowserAgentPortService => {
 
 const createMockLlmRoutingService = (): LlmRoutingService =>
   ({
-    resolveModel: vi.fn().mockResolvedValue({
+    resolveAgentModel: vi.fn().mockResolvedValue({
+      requestedModelId: 'gpt-4o',
+      upstreamModelId: 'gpt-4o',
+      provider: {
+        id: 'p1',
+        providerType: 'openai',
+        name: 'OpenAI',
+        baseUrl: null,
+      },
+      model: {} as never,
+    }),
+    resolveExtractModel: vi.fn().mockResolvedValue({
       requestedModelId: 'gpt-4o',
       upstreamModelId: 'gpt-4o',
       provider: {
@@ -405,7 +416,7 @@ describe('AgentService', () => {
     const mockProgressStore = createMockProgressStore();
 
     const mockRouting = createMockLlmRoutingService();
-    vi.mocked(mockRouting.resolveModel).mockRejectedValue(
+    vi.mocked(mockRouting.resolveAgentModel).mockRejectedValue(
       new Error('Model is not available'),
     );
 
