@@ -23,6 +23,7 @@ FROM base AS builder
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
 COPY packages/agents-core/package.json ./packages/agents-core/
+COPY packages/agents-model-registry/package.json ./packages/agents-model-registry/
 COPY packages/agents-openai/package.json ./packages/agents-openai/
 
 # 注意：不要在 stage 之间 COPY node_modules（workspace symlink 会被 Docker 解引用，导致 @anyhunt/* 变成“只剩 package.json”的空壳包）。
@@ -31,6 +32,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted
 
 # 再复制源码（依赖已缓存）
 COPY packages/agents-core ./packages/agents-core
+COPY packages/agents-model-registry ./packages/agents-model-registry
 COPY packages/agents-openai ./packages/agents-openai
 COPY apps/anyhunt/server ./apps/anyhunt/server
 
@@ -50,6 +52,18 @@ RUN cat > /app/tsc-multi.agents-core.json <<'EOF'
 EOF
 
 RUN pnpm dlx tsc-multi@1.1.0 --config /app/tsc-multi.agents-core.json
+
+RUN cat > /app/tsc-multi.agents-model-registry.json <<'EOF'
+{
+  "targets": [
+    { "extname": ".js", "module": "commonjs", "moduleResolution": "node" },
+    { "extname": ".mjs", "module": "esnext" }
+  ],
+  "projects": ["packages/agents-model-registry/tsconfig.json"]
+}
+EOF
+
+RUN pnpm dlx tsc-multi@1.1.0 --config /app/tsc-multi.agents-model-registry.json
 
 RUN cat > /app/tsc-multi.agents-openai.json <<'EOF'
 {
@@ -133,6 +147,7 @@ WORKDIR /app
 COPY --chown=nestjs:nodejs pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY --chown=nestjs:nodejs apps/anyhunt/server/package.json ./apps/anyhunt/server/
 COPY --chown=nestjs:nodejs packages/agents-core/package.json ./packages/agents-core/
+COPY --chown=nestjs:nodejs packages/agents-model-registry/package.json ./packages/agents-model-registry/
 COPY --chown=nestjs:nodejs packages/agents-openai/package.json ./packages/agents-openai/
 
 RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server... --prod \
@@ -147,6 +162,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/package.json 
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.main.config.ts ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.vector.config.ts ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/packages/agents-core ./packages/agents-core
+COPY --from=builder --chown=nestjs:nodejs /app/packages/agents-model-registry ./packages/agents-model-registry
 COPY --from=builder --chown=nestjs:nodejs /app/packages/agents-openai ./packages/agents-openai
 COPY --chown=nestjs:nodejs apps/anyhunt/server/docker-entrypoint.sh ./apps/anyhunt/server/
 RUN chmod +x ./apps/anyhunt/server/docker-entrypoint.sh
