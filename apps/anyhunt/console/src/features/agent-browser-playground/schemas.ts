@@ -1,7 +1,7 @@
 /**
  * [DEFINES]: 表单校验 Schema
  * [USED_BY]: components/*
- * [POS]: Agent/Browser Playground 前端表单校验
+ * [POS]: Agent/Browser Playground 前端表单校验（保留最小 Agent Prompt）
  */
 
 import { z } from 'zod/v3';
@@ -19,26 +19,6 @@ const jsonStringSchema = z
       return false;
     }
   }, 'Invalid JSON');
-
-const urlListSchema = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => {
-    if (!value) return true;
-    const urls = value
-      .split(/[\s,]+/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    return urls.every((item) => {
-      try {
-        new URL(item);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-  }, 'Invalid URL list');
 
 export const flowRunnerSchema = z.object({
   targetUrl: z.string().url('Please enter a valid URL'),
@@ -143,14 +123,6 @@ export const browserCdpSchema = z.object({
 });
 
 export type BrowserCdpValues = z.infer<typeof browserCdpSchema>;
-
-export const agentOptionsSchema = z.object({
-  urls: urlListSchema,
-  schemaJson: jsonStringSchema,
-  maxCredits: z.coerce.number().int().positive().optional(),
-});
-
-export type AgentOptionsValues = z.infer<typeof agentOptionsSchema>;
 
 export const agentPromptSchema = z.object({
   prompt: z.string().trim().min(1, 'Please enter a prompt'),

@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: ConsoleAgentChatTransport (SSE + graceful abort)
  * [DEPENDS]: fetch, eventsource-parser, ai UIMessage
- * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（useChat）
+ * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（含 start 边界）
  */
 
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
@@ -13,16 +13,13 @@ import {
   extractPromptFromMessages,
   mapAgentEventToChunks,
 } from '../agent-stream';
-import { parseSchemaJsonToAgentOutput } from '../agent-output';
 import type { AgentStreamEvent, AgentOutput } from '../types';
 
 type SendOptions = Parameters<ChatTransport<UIMessage>['sendMessages']>[0];
 
 export type AgentChatOptions = {
   apiKeyId: string;
-  urls?: string[];
   output?: AgentOutput;
-  schemaJson?: string;
   maxCredits?: number;
 };
 
@@ -72,8 +69,7 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       body: JSON.stringify({
         apiKeyId: requestApiKeyId,
         prompt,
-        urls: options.urls,
-        output: options.output ?? parseSchemaJsonToAgentOutput(options.schemaJson),
+        output: options.output ?? { type: 'text' },
         maxCredits: options.maxCredits,
       }),
       signal: abortSignal,
@@ -91,6 +87,7 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
     const state = createAgentEventState(crypto.randomUUID());
     let taskId: string | null = null;
     let closed = false;
+    let messageStarted = false;
 
     const cancelRemote = async () => {
       if (!taskId) return;
@@ -123,6 +120,11 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
 
             if (parsed.type === 'started') {
               taskId = parsed.id;
+            }
+
+            if (!messageStarted) {
+              messageStarted = true;
+              controller.enqueue({ type: 'start', messageId: state.messageId });
             }
 
             const chunks = mapAgentEventToChunks(parsed, state);
