@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: LLM module public types (Admin DTOs + runtime resolved route)
+ * [DEFINES]: LLM module public types (Admin DTOs + runtime resolved route with ModelProvider)
  * [USED_BY]: agent.service.ts, llm-admin.service.ts
  * [POS]: LLM Provider/Model/Settings 的输出类型边界
  *
@@ -7,7 +7,7 @@
  */
 
 import type { LlmProviderType } from './dto';
-import type { Model } from '@anyhunt/agents-core';
+import type { Model, ModelProvider } from '@anyhunt/agents-core';
 
 export type LlmProviderListItem = {
   id: string;
@@ -50,5 +50,6 @@ export type ResolvedLlmRoute = {
     baseUrl: string | null;
   };
   upstreamModelId: string;
+  modelProvider: ModelProvider;
   model: Model;
 };

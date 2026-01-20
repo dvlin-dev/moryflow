@@ -6,24 +6,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentService } from '../agent.service';
 import { AgentBillingService } from '../agent-billing.service';
 import { AgentStreamProcessor } from '../agent-stream.processor';
-import { run, type StreamRunOptions } from '@anyhunt/agents-core';
+import { Runner, type StreamRunOptions } from '@anyhunt/agents-core';
 import type { BrowserAgentPortService } from '../../browser/ports';
 import type { AgentTaskRepository } from '../agent-task.repository';
 import type { AgentTaskProgressStore } from '../agent-task.progress.store';
 import type { BrowserAgentContext } from '../tools';
 import type { LlmRoutingService } from '../../llm';
 
-vi.mock('@anyhunt/agents-core', async () => {
-  const actual = await vi.importActual<typeof import('@anyhunt/agents-core')>(
-    '@anyhunt/agents-core',
-  );
-  return {
-    ...actual,
-    run: vi.fn(),
-  };
-});
-
-const mockRun = vi.mocked(run);
+let mockRun: ReturnType<typeof vi.spyOn>;
 
 const createStreamResult = (
   usage: { inputTokens: number; outputTokens: number },
@@ -185,6 +175,9 @@ const createMockLlmRoutingService = (): LlmRoutingService =>
         name: 'OpenAI',
         baseUrl: null,
       },
+      modelProvider: {
+        getModel: vi.fn(),
+      },
       model: {} as never,
     }),
     resolveExtractModel: vi.fn().mockResolvedValue({
@@ -196,6 +189,9 @@ const createMockLlmRoutingService = (): LlmRoutingService =>
         name: 'OpenAI',
         baseUrl: null,
       },
+      modelProvider: {
+        getModel: vi.fn(),
+      },
       model: {} as never,
     }),
   }) as unknown as LlmRoutingService;
@@ -204,6 +200,7 @@ describe('AgentService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-14T00:00:00.000Z'));
+    mockRun = vi.spyOn(Runner.prototype, 'run');
   });
 
   afterEach(() => {
@@ -296,8 +293,8 @@ describe('AgentService', () => {
 
     mockRun.mockImplementation(
       async (
-        _agent,
-        _prompt,
+        _agent: unknown,
+        _prompt: unknown,
         options?: StreamRunOptions<BrowserAgentContext>,
       ) => {
         const context = options?.context as BrowserAgentContext | undefined;

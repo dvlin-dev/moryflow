@@ -1,6 +1,6 @@
 /**
  * [INPUT]: requested modelId (optional; fallback to Admin default by purpose)
- * [OUTPUT]: ResolvedLlmRoute（确定 provider + upstreamModelId + Model 实例）
+ * [OUTPUT]: ResolvedLlmRoute（确定 provider + upstreamModelId + Model/ModelProvider 实例）
  * [POS]: 运行时 LLM 路由器：将“对外 modelId”映射为“上游 upstreamId”，并加载对应 provider 的密钥/baseUrl
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -8,7 +8,7 @@
 
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { OpenAIProvider } from '@anyhunt/agents-openai';
-import type { Model } from '@anyhunt/agents-core';
+import type { ModelProvider } from '@anyhunt/agents-core';
 import type { ResolvedLlmRoute } from './llm.types';
 import type { LlmProviderType } from './dto';
 import {
@@ -24,7 +24,7 @@ export class LlmRoutingService {
     providerType: LlmProviderType;
     apiKey: string;
     baseUrl: string | null;
-  }): { getModel: (modelName?: string) => Promise<Model> } {
+  }): ModelProvider {
     const { providerType, apiKey, baseUrl } = params;
 
     if (
@@ -48,13 +48,13 @@ export class LlmRoutingService {
   }): Promise<ResolvedLlmRoute> {
     const resolved = await this.upstream.resolveUpstream(params);
 
-    const provider = this.buildModelProviderOrThrow({
+    const modelProvider = this.buildModelProviderOrThrow({
       providerType: resolved.provider.providerType,
       apiKey: resolved.apiKey,
       baseUrl: resolved.provider.baseUrl,
     });
 
-    const model = await provider.getModel(resolved.upstreamModelId);
+    const model = await modelProvider.getModel(resolved.upstreamModelId);
 
     return {
       requestedModelId: resolved.requestedModelId,
@@ -65,6 +65,7 @@ export class LlmRoutingService {
         baseUrl: resolved.provider.baseUrl,
       },
       upstreamModelId: resolved.upstreamModelId,
+      modelProvider,
       model,
     };
   }

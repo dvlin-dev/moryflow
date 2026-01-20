@@ -4,7 +4,7 @@
 
 ## Overview
 
-Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维护 Provider / Model / Default Models；运行时由 `LlmRoutingService` 为不同用途（Agent/Extract）解析请求的 `model`（可选）并构建可用的 LLM provider 实例。
+Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维护 Provider / Model / Default Models；运行时由 `LlmRoutingService` 为不同用途（Agent/Extract）解析请求的 `model`（可选）并构建可用的 LLM provider 实例（含 ModelProvider）。
 
 ## Responsibilities
 

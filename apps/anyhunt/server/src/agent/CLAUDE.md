@@ -23,7 +23,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 - **网关兼容性**：对“纯文本输出”任务需移除 `response_format: { type: 'text' }`（部分 OpenAI-compatible 网关会对该字段报 400）；实现见 `AgentService.buildAgent`
 - **浏览器 Session 惰性创建**：Agent 不应在 LLM 首次调用前创建 Browser Session；仅在首次 Browser Tool 调用时创建（避免无效 session、降低资源占用）
 - **输出格式收紧**：请求使用 `output`（`text` / `json_schema`），并对 `json_schema` 的 schema 做规模/深度/required 校验；不再支持旧的 `schema` 透传
-- **Model 选择**：请求可选传 `model`（标准模型名），不传则使用 Admin 配置的默认模型；最终 provider + upstreamId 由 `LlmRoutingService` 决定
+- **Model 选择**：请求可选传 `model`（标准模型名），不传则使用 Admin 配置的默认模型；最终 provider + upstreamId 由 `LlmRoutingService` 决定，并由 Runner 使用对应 ModelProvider
 - **用户归属绑定**：Browser 端口必须通过 `BrowserAgentPortService.forUser(userId)` 获取
 - **取消语义**：必须支持硬取消（AbortSignal）+ Redis 取消标记（跨实例）
 - **竞态保护**：任务终态更新必须使用 `updateTaskIfStatus`（compare-and-set）
