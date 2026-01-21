@@ -1,27 +1,35 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Input } from '@anyhunt/ui/components/input'
-import { Label } from '@anyhunt/ui/components/label'
-import { Button } from '@anyhunt/ui/components/button'
-import { Switch } from '@anyhunt/ui/components/switch'
-import { Badge } from '@anyhunt/ui/components/badge'
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
-import { ExternalLink, RefreshCw, Search, Download, Trash2, Loader2 } from 'lucide-react'
-import { getProviderById } from '@shared/model-registry'
-import type { SettingsDialogState } from '../../use-settings-dialog'
-import type { OllamaLocalModel, OllamaConnectionResult } from '@shared/ipc'
-import { ModelLibraryDialog } from './model-library-dialog'
+/**
+ * [PROPS]: { providers, form }
+ * [EMITS]: 通过 setValue 修改 settings 表单；通过 desktopAPI 调用 ollama IPC
+ * [POS]: 设置弹窗 - Ollama 面板（本地模型管理与启用状态配置）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { Input } from '@anyhunt/ui/components/input';
+import { Label } from '@anyhunt/ui/components/label';
+import { Button } from '@anyhunt/ui/components/button';
+import { Switch } from '@anyhunt/ui/components/switch';
+import { Badge } from '@anyhunt/ui/components/badge';
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { ExternalLink, RefreshCw, Search, Download, Trash2, Loader2 } from 'lucide-react';
+import { getProviderById } from '@shared/model-registry';
+import type { SettingsDialogState } from '../../use-settings-dialog';
+import type { OllamaLocalModel, OllamaConnectionResult } from '@shared/ipc';
+import { ModelLibraryDialog } from './model-library-dialog';
 
 type OllamaPanelProps = {
-  providers: SettingsDialogState['providers']
-  form: SettingsDialogState['form']
-}
+  providers: SettingsDialogState['providers'];
+  form: SettingsDialogState['form'];
+};
 
 /** 格式化文件大小 */
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
 /**
@@ -29,32 +37,32 @@ function formatSize(bytes: number): string {
  * 提供连接检测、本地模型管理、模型下载等功能
  */
 export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
-  const { providerValues } = providers
-  const { setValue, getValues, register } = form
+  const { providerValues } = providers;
+  const { setValue, getValues, register } = form;
 
-  const preset = getProviderById('ollama')!
+  const preset = getProviderById('ollama')!;
 
   // 状态
-  const [connectionStatus, setConnectionStatus] = useState<OllamaConnectionResult | null>(null)
-  const [localModels, setLocalModels] = useState<OllamaLocalModel[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [libraryOpen, setLibraryOpen] = useState(false)
-  const [deletingModel, setDeletingModel] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<OllamaConnectionResult | null>(null);
+  const [localModels, setLocalModels] = useState<OllamaLocalModel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [deletingModel, setDeletingModel] = useState<string | null>(null);
 
   // 获取配置索引
-  const presetIndex = providerValues.findIndex((p) => p.providerId === 'ollama')
-  const currentConfig = presetIndex >= 0 ? providerValues[presetIndex] : null
-  const userModels = currentConfig?.models || []
+  const presetIndex = providerValues.findIndex((p) => p.providerId === 'ollama');
+  const currentConfig = presetIndex >= 0 ? providerValues[presetIndex] : null;
+  const userModels = currentConfig?.models || [];
 
   // 获取用户配置的 baseUrl
-  const customBaseUrl = currentConfig?.baseUrl || undefined
+  const customBaseUrl = currentConfig?.baseUrl || undefined;
 
   // 确保配置记录存在（在 useEffect 中调用，避免渲染期间 setState）
   useEffect(() => {
     // 使用 getValues 获取最新值，避免闭包问题和重复添加
-    const currentProviders = getValues('providers')
-    const existingIndex = currentProviders.findIndex((p) => p.providerId === 'ollama')
+    const currentProviders = getValues('providers');
+    const existingIndex = currentProviders.findIndex((p) => p.providerId === 'ollama');
     if (existingIndex < 0) {
       setValue('providers', [
         ...currentProviders,
@@ -66,110 +74,117 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
           models: [],
           defaultModelId: null,
         },
-      ])
+      ]);
     }
-  }, [getValues, setValue, preset.nativeApiBaseUrl])
-
+  }, [getValues, setValue, preset.nativeApiBaseUrl]);
 
   /** 检测连接 */
   const checkConnection = useCallback(async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const result = await window.desktopAPI?.ollama.checkConnection(customBaseUrl)
-      setConnectionStatus(result ?? { connected: false, error: '未知错误' })
+      const result = await window.desktopAPI?.ollama.checkConnection(customBaseUrl);
+      setConnectionStatus(result ?? { connected: false, error: '未知错误' });
     } catch (error) {
       setConnectionStatus({
         connected: false,
         error: error instanceof Error ? error.message : String(error),
-      })
+      });
     }
-    setIsLoading(false)
-  }, [customBaseUrl])
+    setIsLoading(false);
+  }, [customBaseUrl]);
 
   /** 获取本地模型列表 */
   const fetchLocalModels = useCallback(async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const models = await window.desktopAPI?.ollama.getLocalModels(customBaseUrl)
-      setLocalModels(models ?? [])
+      const models = await window.desktopAPI?.ollama.getLocalModels(customBaseUrl);
+      setLocalModels(models ?? []);
     } catch (error) {
-      console.error('Failed to fetch local models:', error)
-      setLocalModels([])
+      console.error('Failed to fetch local models:', error);
+      setLocalModels([]);
     }
-    setIsLoading(false)
-  }, [customBaseUrl])
+    setIsLoading(false);
+  }, [customBaseUrl]);
 
   /** 删除模型 */
-  const handleDeleteModel = useCallback(async (modelId: string) => {
-    setDeletingModel(modelId)
-    try {
-      const result = await window.desktopAPI?.ollama.deleteModel(modelId, customBaseUrl)
-      if (result?.success) {
-        // 刷新模型列表
-        await fetchLocalModels()
+  const handleDeleteModel = useCallback(
+    async (modelId: string) => {
+      setDeletingModel(modelId);
+      try {
+        const result = await window.desktopAPI?.ollama.deleteModel(modelId, customBaseUrl);
+        if (result?.success) {
+          // 刷新模型列表
+          await fetchLocalModels();
+        }
+      } catch (error) {
+        console.error('Failed to delete model:', error);
       }
-    } catch (error) {
-      console.error('Failed to delete model:', error)
-    }
-    setDeletingModel(null)
-  }, [customBaseUrl, fetchLocalModels])
+      setDeletingModel(null);
+    },
+    [customBaseUrl, fetchLocalModels]
+  );
 
   /** 刷新所有数据 */
   const handleRefresh = useCallback(async () => {
-    await Promise.all([checkConnection(), fetchLocalModels()])
-  }, [checkConnection, fetchLocalModels])
+    await Promise.all([checkConnection(), fetchLocalModels()]);
+  }, [checkConnection, fetchLocalModels]);
 
   // 初始化
   useEffect(() => {
-    handleRefresh()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    handleRefresh();
+  }, []);
 
   // 搜索过滤
   const filteredModels = localModels.filter((model) => {
-    if (!searchQuery.trim()) return true
-    const query = searchQuery.toLowerCase()
-    return model.id.toLowerCase().includes(query) || model.name.toLowerCase().includes(query)
-  })
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return model.id.toLowerCase().includes(query) || model.name.toLowerCase().includes(query);
+  });
 
   /** 获取模型是否启用 */
   const isModelEnabled = useCallback(
     (modelId: string, modelIndex: number) => {
-      const modelConfig = userModels.find((m) => m.id === modelId)
-      if (modelConfig) return modelConfig.enabled
-      return modelIndex === 0
+      const modelConfig = userModels.find((m) => m.id === modelId);
+      if (modelConfig) return modelConfig.enabled;
+      // 一旦用户显式配置过任意模型：仅以显式配置为准
+      if (userModels.length > 0) return false;
+      return modelIndex === 0;
     },
     [userModels]
-  )
+  );
 
   /** 切换模型启用状态 */
   const handleToggleModel = useCallback(
     (modelId: string, enabled: boolean) => {
-      if (presetIndex < 0) return
+      if (presetIndex < 0) return;
 
-      const currentModels = providerValues[presetIndex]?.models || []
-      const existingIndex = currentModels.findIndex((m) => m.id === modelId)
+      if (enabled) {
+        // 用户开启模型意味着想使用该服务商（避免“开了模型但服务商没开”）
+        setValue(`providers.${presetIndex}.enabled`, true);
+      }
+
+      const currentModels = providerValues[presetIndex]?.models || [];
+      const existingIndex = currentModels.findIndex((m) => m.id === modelId);
 
       if (existingIndex >= 0) {
-        setValue(`providers.${presetIndex}.models.${existingIndex}.enabled`, enabled)
+        setValue(`providers.${presetIndex}.models.${existingIndex}.enabled`, enabled);
       } else {
-        setValue(`providers.${presetIndex}.models`, [...currentModels, { id: modelId, enabled }])
+        setValue(`providers.${presetIndex}.models`, [...currentModels, { id: modelId, enabled }]);
       }
     },
     [presetIndex, providerValues, setValue]
-  )
+  );
 
   /** 模型下载完成回调 */
   const handleModelPulled = useCallback(() => {
-    fetchLocalModels()
-  }, [fetchLocalModels])
+    fetchLocalModels();
+  }, [fetchLocalModels]);
 
   // 等待配置创建完成后再渲染表单，避免 register 创建不完整的对象
   if (presetIndex < 0) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        加载中...
-      </div>
-    )
+      <div className="flex h-full items-center justify-center text-muted-foreground">加载中...</div>
+    );
   }
 
   return (
@@ -261,8 +276,8 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
           {connectionStatus?.connected ? (
             <div className="space-y-2 max-h-[300px] overflow-y-auto">
               {filteredModels.map((model, modelIndex) => {
-                const isEnabled = isModelEnabled(model.id, modelIndex)
-                const isDeleting = deletingModel === model.id
+                const isEnabled = isModelEnabled(model.id, modelIndex);
+                const isDeleting = deletingModel === model.id;
 
                 return (
                   <div
@@ -311,7 +326,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
                       onCheckedChange={(checked) => handleToggleModel(model.id, checked)}
                     />
                   </div>
-                )
+                );
               })}
               {filteredModels.length === 0 && localModels.length > 0 && (
                 <div className="text-center text-sm text-muted-foreground py-4">
@@ -350,5 +365,5 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
         />
       </div>
     </ScrollArea>
-  )
-}
+  );
+};
