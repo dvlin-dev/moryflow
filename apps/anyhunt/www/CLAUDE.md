@@ -35,6 +35,10 @@ Anyhunt Dev 官网（`anyhunt.app`），包含模块页 `/fetchx`、`/memox`。�
 - `vite.config.ts` 中 `manualChunks` 必须使用「函数形式」（基于 `id` 判断），避免 SSR build external 依赖导致 Rollup 报错（`react` 典型）。
 - SSR 必须保持 `react`/`react-dom`（含 `react/jsx-runtime`）为 external，避免 React 在多个 SSR chunks 中被重复打包导致 hooks dispatcher 不一致（线上会报 `useRef` 读取 null）。
 
+## 近期变更
+
+- Dockerfile 补齐 `packages/types` 的 workspace package 依赖拷贝，避免 pnpm install 报 `WORKSPACE_PKG_NOT_FOUND`
+
 ## 环境变量
 
 - `VITE_API_URL`：后端 API 地址（生产必填）

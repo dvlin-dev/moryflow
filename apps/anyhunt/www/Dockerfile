@@ -16,6 +16,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/types/package.json ./packages/types/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-www...
 
@@ -31,6 +32,7 @@ COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/www ./apps/anyhunt/www
 COPY packages/ui ./packages/ui
+COPY packages/types ./packages/types
 
 WORKDIR /app/apps/anyhunt/www
 
@@ -44,6 +46,7 @@ FROM base AS prod-deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/types/package.json ./packages/types/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --prod --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-www...
 
