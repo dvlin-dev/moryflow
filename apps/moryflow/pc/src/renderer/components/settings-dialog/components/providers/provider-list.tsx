@@ -15,13 +15,14 @@ export { MEMBERSHIP_PROVIDER_ID };
 type ProviderListProps = {
   providers: SettingsDialogState['providers'];
   form: SettingsDialogState['form'];
+  isLoading: boolean;
 };
 
 /**
  * Providers 列表
  * 显示会员模型 +（预设服务商与自定义服务商合并）列表，启用的排在上方。
  */
-export const ProviderList = ({ providers, form }: ProviderListProps) => {
+export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) => {
   const { t } = useTranslation('settings');
   const {
     providerValues,
@@ -121,6 +122,17 @@ export const ProviderList = ({ providers, form }: ProviderListProps) => {
   const presetConfigById = useMemo(() => {
     return new Map(providerValues.map((p) => [p.providerId, p]));
   }, [providerValues]);
+
+  // 设置加载完成后刷新一次顺序，确保首次进入就满足“启用在上”的规则。
+  // 用户编辑过程中（包括自动启用）不跟随 enabled 变化重排，避免列表跳动。
+  const prevIsLoadingRef = useRef<boolean>(isLoading);
+  useEffect(() => {
+    const prev = prevIsLoadingRef.current;
+    prevIsLoadingRef.current = isLoading;
+    if (prev && !isLoading) {
+      setProviderOrder(desiredOrderRef.current);
+    }
+  }, [isLoading]);
 
   return (
     <div className="flex h-full flex-col">
