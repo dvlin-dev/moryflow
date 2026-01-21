@@ -4,6 +4,7 @@
  */
 
 export * from './api';
+export * from './chat';
 export * from './product';
 export * from './subscription';
 export * from './user';

@@ -1,3 +1,11 @@
+/**
+ * [PROVIDES]: PromptInput 上下文与状态管理（文本 + 附件）
+ * [DEPENDS]: React, nanoid, ai FileUIPart
+ * [POS]: PromptInput 组件的基础状态层（含附件资源清理）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 'use client';
 
 import type { FileUIPart } from 'ai';
@@ -8,6 +16,7 @@ import {
   type RefObject,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -17,44 +26,36 @@ import type {
   AttachmentsContext,
   PromptInputControllerProps,
   PromptInputProviderProps,
-} from '@anyhunt/ui/ai/prompt-input';
+} from './const';
 
-const PromptInputController = createContext<PromptInputControllerProps | null>(
-  null,
-);
-const ProviderAttachmentsContext = createContext<AttachmentsContext | null>(
-  null,
-);
+const PromptInputController = createContext<PromptInputControllerProps | null>(null);
+const ProviderAttachmentsContext = createContext<AttachmentsContext | null>(null);
 
-export const LocalAttachmentsContext = createContext<AttachmentsContext | null>(
-  null,
-);
+export const LocalAttachmentsContext = createContext<AttachmentsContext | null>(null);
 
 export const usePromptInputController = () => {
   const ctx = useContext(PromptInputController);
   if (!ctx) {
     throw new Error(
-      'Wrap your component inside <PromptInputProvider> to use usePromptInputController().',
+      'Wrap your component inside <PromptInputProvider> to use usePromptInputController().'
     );
   }
   return ctx;
 };
 
-export const useOptionalPromptInputController = () =>
-  useContext(PromptInputController);
+export const useOptionalPromptInputController = () => useContext(PromptInputController);
 
 export const useProviderAttachments = () => {
   const ctx = useContext(ProviderAttachmentsContext);
   if (!ctx) {
     throw new Error(
-      'Wrap your component inside <PromptInputProvider> to use useProviderAttachments().',
+      'Wrap your component inside <PromptInputProvider> to use useProviderAttachments().'
     );
   }
   return ctx;
 };
 
-const useOptionalProviderAttachments = () =>
-  useContext(ProviderAttachmentsContext);
+const useOptionalProviderAttachments = () => useContext(ProviderAttachmentsContext);
 
 export const usePromptInputAttachments = () => {
   const provider = useOptionalProviderAttachments();
@@ -62,7 +63,7 @@ export const usePromptInputAttachments = () => {
   const context = provider ?? local;
   if (!context) {
     throw new Error(
-      'usePromptInputAttachments must be used within a PromptInput or PromptInputProvider',
+      'usePromptInputAttachments must be used within a PromptInput or PromptInputProvider'
     );
   }
   return context;
@@ -75,9 +76,8 @@ export function PromptInputProvider({
   const [textInput, setTextInput] = useState(initialTextInput);
   const clearInput = useCallback(() => setTextInput(''), []);
 
-  const [attachments, setAttachments] = useState<(FileUIPart & { id: string })[]>(
-    [],
-  );
+  const [attachments, setAttachments] = useState<(FileUIPart & { id: string })[]>([]);
+  const attachmentsRef = useRef<(FileUIPart & { id: string })[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const openRef = useRef<() => void>(() => {});
 
@@ -95,8 +95,8 @@ export function PromptInputProvider({
           url: URL.createObjectURL(file),
           mediaType: file.type,
           filename: file.name,
-        })),
-      ),
+        }))
+      )
     );
   }, []);
 
@@ -121,6 +121,21 @@ export function PromptInputProvider({
     });
   }, []);
 
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  useEffect(
+    () => () => {
+      for (const file of attachmentsRef.current) {
+        if (file.url) {
+          URL.revokeObjectURL(file.url);
+        }
+      }
+    },
+    []
+  );
+
   const openFileDialog = useCallback(() => {
     openRef.current?.();
   }, []);
@@ -130,7 +145,7 @@ export function PromptInputProvider({
       fileInputRef.current = ref.current;
       openRef.current = open;
     },
-    [],
+    []
   );
 
   const attachmentsContext = useMemo<AttachmentsContext>(
@@ -142,7 +157,7 @@ export function PromptInputProvider({
       openFileDialog,
       fileInputRef,
     }),
-    [attachments, add, remove, clear, openFileDialog],
+    [attachments, add, remove, clear, openFileDialog]
   );
 
   const controller = useMemo<PromptInputControllerProps>(
@@ -155,16 +170,12 @@ export function PromptInputProvider({
       attachments: attachmentsContext,
       __registerFileInput,
     }),
-    [textInput, clearInput, attachmentsContext, __registerFileInput],
+    [textInput, clearInput, attachmentsContext, __registerFileInput]
   );
 
   return createElement(
     PromptInputController.Provider,
     { value: controller },
-    createElement(
-      ProviderAttachmentsContext.Provider,
-      { value: attachmentsContext },
-      children,
-    ),
+    createElement(ProviderAttachmentsContext.Provider, { value: attachmentsContext }, children)
   );
 }

@@ -1,24 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input'
-import {
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
-  PromptInputButton,
-  PromptInputSubmit,
-} from '@anyhunt/ui/ai/prompt-input'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
 import {
   PromptInput,
   PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
   PromptInputAttachment,
   PromptInputAttachments,
   PromptInputBody,
+  PromptInputButton,
   PromptInputFooter,
+  PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from '@/components/ai-elements/prompt-input'
-import { InputGroupButton } from '@anyhunt/ui/components/input-group'
-import { Button } from '@anyhunt/ui/components/button'
+} from '@anyhunt/ui/ai/prompt-input';
+import { InputGroupButton } from '@anyhunt/ui/components/input-group';
+import { Button } from '@anyhunt/ui/components/button';
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -29,7 +27,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
   ModelSelectorFooter,
-} from '@anyhunt/ui/ai/model-selector'
+} from '@anyhunt/ui/ai/model-selector';
 import {
   CheckIcon,
   SparklesIcon,
@@ -40,29 +38,29 @@ import {
   PaperclipIcon,
   ArrowUpRightIcon,
   MicIcon,
-} from 'lucide-react'
-import { Badge } from '@anyhunt/ui/components/badge'
-import { TIER_DISPLAY_NAMES } from '@/lib/server'
-import { McpSelector } from '@/components/ai-elements/mcp-selector'
-import { LiveWaveform } from '@anyhunt/ui/components/live-waveform'
-import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
-import { useSpeechRecording } from '@/hooks/use-speech-recording'
-import { useTranslation } from '@/lib/i18n'
+} from 'lucide-react';
+import { Badge } from '@anyhunt/ui/components/badge';
+import { TIER_DISPLAY_NAMES } from '@/lib/server';
+import { McpSelector } from '@/components/ai-elements/mcp-selector';
+import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useSpeechRecording } from '@/hooks/use-speech-recording';
+import { useTranslation } from '@/lib/i18n';
 
-import { TodoPanel } from '../todo-panel'
-import { ContextFileTags, type ContextFileTag } from '../context-file-tags'
-import { FileContextAdder } from '../file-context-adder'
-import { TokenUsageIndicator } from '../token-usage-indicator'
-import { useWorkspaceFiles } from '../../hooks'
-import { createFileRefAttachment } from '../../types/attachment'
-import { buildAIRequest } from '../../utils'
+import { TodoPanel } from '../todo-panel';
+import { ContextFileTags, type ContextFileTag } from '../context-file-tags';
+import { FileContextAdder } from '../file-context-adder';
+import { TokenUsageIndicator } from '../token-usage-indicator';
+import { useWorkspaceFiles } from '../../hooks';
+import { createFileRefAttachment } from '../../types/attachment';
+import { buildAIRequest } from '../../utils';
 
-import type { ChatPromptInputProps } from './const'
-import { enrichFileMetadata, findModel } from './handle'
+import type { ChatPromptInputProps } from './const';
+import { enrichFileMetadata, findModel } from './handle';
 
 /** 默认 context window 大小 */
-const DEFAULT_CONTEXT_WINDOW = 128000
+const DEFAULT_CONTEXT_WINDOW = 128000;
 
 export const ChatPromptInput = ({
   status,
@@ -81,47 +79,50 @@ export const ChatPromptInput = ({
   tokenUsage,
   contextWindow = DEFAULT_CONTEXT_WINDOW,
 }: ChatPromptInputProps) => {
-  const { t } = useTranslation('chat')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [modelSelectorOpen, setModelSelectorOpen] = useState(false)
-  const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([])
+  const { t } = useTranslation('chat');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([]);
 
   // 获取工作区所有文件
-  const { files: workspaceFiles } = useWorkspaceFiles(vaultPath ?? null)
+  const { files: workspaceFiles } = useWorkspaceFiles(vaultPath ?? null);
 
   const selectedModel = useMemo(
     () => findModel(modelGroups, selectedModelId),
     [modelGroups, selectedModelId]
-  )
+  );
   const hasModelOptions = useMemo(
     () => modelGroups.some((group) => group.options.length > 0),
     [modelGroups]
-  )
-  const canStop = status === 'submitted' || status === 'streaming'
-  const isDisabled = Boolean(disabled)
+  );
+  const canStop = status === 'submitted' || status === 'streaming';
+  const isDisabled = Boolean(disabled);
 
   // 语音录制 hook
   const handleTranscribed = useCallback((text: string) => {
     if (textareaRef.current) {
-      const textarea = textareaRef.current
-      const currentValue = textarea.value
-      const newValue = currentValue ? `${currentValue} ${text}` : text
+      const textarea = textareaRef.current;
+      const currentValue = textarea.value;
+      const newValue = currentValue ? `${currentValue} ${text}` : text;
 
-      textarea.value = newValue
-      textarea.dispatchEvent(new Event('input', { bubbles: true }))
-      textarea.focus()
+      textarea.value = newValue;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      textarea.focus();
     }
-  }, [])
+  }, []);
 
-  const handleSpeechError = useCallback((error: Error) => {
-    // 根据错误类型显示不同提示
-    const message = error.message || t('voiceTranscriptionFailed')
-    toast.error(message)
-  }, [t])
+  const handleSpeechError = useCallback(
+    (error: Error) => {
+      // 根据错误类型显示不同提示
+      const message = error.message || t('voiceTranscriptionFailed');
+      toast.error(message);
+    },
+    [t]
+  );
 
   const handleMaxDuration = useCallback(() => {
-    toast.info(t('maxRecordingReached'))
-  }, [t])
+    toast.info(t('maxRecordingReached'));
+  }, [t]);
 
   const {
     isRecording,
@@ -136,71 +137,74 @@ export const ChatPromptInput = ({
     onError: handleSpeechError,
     onMaxDuration: handleMaxDuration,
     disabled: isDisabled,
-  })
+  });
 
   // 同步当前活跃文件到引用列表
   useEffect(() => {
     if (activeFilePath && activeFileContent) {
-      const fileName = activeFilePath.split(/[\\/]/).pop() ?? 'current-note.md'
-      const fileId = `active-${activeFilePath}`
+      const fileName = activeFilePath.split(/[\\/]/).pop() ?? 'current-note.md';
+      const fileId = `active-${activeFilePath}`;
       setContextFiles((prev) => {
         // 检查是否已存在
-        const exists = prev.some((f) => f.id === fileId)
-        if (exists) return prev
+        const exists = prev.some((f) => f.id === fileId);
+        if (exists) return prev;
         // 添加当前活跃文件
-        return [{ id: fileId, name: fileName, path: activeFilePath }, ...prev.filter((f) => !f.id.startsWith('active-'))]
-      })
+        return [
+          { id: fileId, name: fileName, path: activeFilePath },
+          ...prev.filter((f) => !f.id.startsWith('active-')),
+        ];
+      });
     } else {
       // 移除活跃文件引用
-      setContextFiles((prev) => prev.filter((f) => !f.id.startsWith('active-')))
+      setContextFiles((prev) => prev.filter((f) => !f.id.startsWith('active-')));
     }
-  }, [activeFilePath, activeFileContent])
+  }, [activeFilePath, activeFileContent]);
 
   const handleRemoveContextFile = useCallback((id: string) => {
-    setContextFiles((prev) => prev.filter((f) => f.id !== id))
-  }, [])
+    setContextFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
 
   const handleAddContextFile = useCallback((file: ContextFileTag) => {
     setContextFiles((prev) => {
-      const exists = prev.some((f) => f.path === file.path)
-      if (exists) return prev
-      return [...prev, file]
-    })
-  }, [])
+      const exists = prev.some((f) => f.path === file.path);
+      if (exists) return prev;
+      return [...prev, file];
+    });
+  }, []);
 
   useEffect(() => {
     if (isDisabled) {
-      setModelSelectorOpen(false)
+      setModelSelectorOpen(false);
     }
-  }, [isDisabled])
+  }, [isDisabled]);
 
   const handleSubmit = useCallback(
     (payload: PromptInputMessage) => {
       if (isDisabled) {
-        return
+        return;
       }
 
       // 构建结构化附件列表
-      const attachments = contextFiles.map(createFileRefAttachment)
+      const attachments = contextFiles.map(createFileRefAttachment);
 
       // 转换为 AI 请求格式（file-ref 拼接到文本，file-embed/image-embed 放入 files）
-      const aiRequest = buildAIRequest(payload.text, attachments)
+      const aiRequest = buildAIRequest(payload.text, attachments);
 
       // 合并原有上传文件和嵌入附件
-      const allFiles = [...payload.files.map(enrichFileMetadata), ...aiRequest.files]
+      const allFiles = [...payload.files.map(enrichFileMetadata), ...aiRequest.files];
 
       // 提交：text 已包含 [Referenced files: ...]，attachments 用于存储和展示
       onSubmit({
         text: aiRequest.text,
         files: allFiles,
         attachments,
-      })
+      });
 
       // 清空已选文件
-      setContextFiles([])
+      setContextFiles([]);
     },
     [isDisabled, onSubmit, contextFiles]
-  )
+  );
 
   // 渲染文件引用区域：@ 按钮 + 已引用文件标签
   const renderFileReferenceArea = () => (
@@ -215,13 +219,13 @@ export const ChatPromptInput = ({
         <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />
       )}
     </div>
-  )
+  );
 
   const renderAttachments = () => (
     <PromptInputAttachments className="flex-wrap gap-2 px-3 pt-2">
       {(file) => <PromptInputAttachment key={file.id} data={file} />}
     </PromptInputAttachments>
-  )
+  );
 
   const renderTextarea = () => (
     <PromptInputBody>
@@ -233,7 +237,7 @@ export const ChatPromptInput = ({
         disabled={isDisabled}
       />
     </PromptInputBody>
-  )
+  );
 
   // 渲染语音按钮
   const renderSpeechButton = () => (
@@ -255,7 +259,7 @@ export const ChatPromptInput = ({
         <MicIcon className="size-4" />
       )}
     </InputGroupButton>
-  )
+  );
 
   const renderActionMenu = () => (
     <PromptInputActionMenu>
@@ -266,7 +270,7 @@ export const ChatPromptInput = ({
         <PromptInputActionAddAttachments />
       </PromptInputActionMenuContent>
     </PromptInputActionMenu>
-  )
+  );
 
   const renderModelSelectorList = () => (
     <ModelSelectorContent>
@@ -280,20 +284,22 @@ export const ChatPromptInput = ({
                 value={option.id}
                 disabled={option.disabled}
                 onSelect={() => {
-                  if (option.disabled && option.isMembership) {
-                    // 不可用的会员模型：点击触发升级（暂时占位）
-                    console.log('[upgrade] user clicked locked model:', option.id, option.requiredTier)
-                    return
+                  if (option.disabled) {
+                    return;
                   }
-                  onSelectModel(option.id)
-                  setModelSelectorOpen(false)
+                  onSelectModel(option.id);
+                  setModelSelectorOpen(false);
                 }}
               >
                 <ModelSelectorName>{option.name}</ModelSelectorName>
                 {option.disabled && option.isMembership && option.requiredTier ? (
-                  <Badge variant="outline" className="ml-auto shrink-0 text-xs px-1.5 py-0 h-5 gap-0.5">
+                  <Badge
+                    variant="outline"
+                    className="ml-auto shrink-0 text-xs px-1.5 py-0 h-5 gap-0.5"
+                  >
                     <ArrowUpRightIcon className="size-3" />
-                    {TIER_DISPLAY_NAMES[option.requiredTier as keyof typeof TIER_DISPLAY_NAMES] || t('upgrade')}
+                    {TIER_DISPLAY_NAMES[option.requiredTier as keyof typeof TIER_DISPLAY_NAMES] ||
+                      t('upgrade')}
                   </Badge>
                 ) : selectedModelId === option.id ? (
                   <CheckIcon className="ml-auto size-4 shrink-0" />
@@ -310,8 +316,8 @@ export const ChatPromptInput = ({
           size="sm"
           className="w-full justify-start text-xs"
           onClick={() => {
-            setModelSelectorOpen(false)
-            onOpenSettings?.('providers')
+            setModelSelectorOpen(false);
+            onOpenSettings?.('providers');
           }}
         >
           <Settings2Icon className="mr-2 size-3.5" />
@@ -319,7 +325,7 @@ export const ChatPromptInput = ({
         </Button>
       </ModelSelectorFooter>
     </ModelSelectorContent>
-  )
+  );
 
   const renderModelSelector = () =>
     hasModelOptions ? (
@@ -342,7 +348,7 @@ export const ChatPromptInput = ({
         <SparklesIcon className="size-4" />
         <span>{t('setupModel')}</span>
       </PromptInputButton>
-    )
+    );
 
   const renderSubmitAction = () =>
     canStop ? (
@@ -361,7 +367,7 @@ export const ChatPromptInput = ({
       <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full">
         <ArrowUpIcon className="size-4" />
       </PromptInputSubmit>
-    )
+    );
 
   const renderFooterActions = () => (
     <PromptInputFooter>
@@ -393,12 +399,14 @@ export const ChatPromptInput = ({
         </PromptInputTools>
       )}
       <div className="flex items-center gap-2">
-        {!isSpeechActive && <TokenUsageIndicator usage={tokenUsage} contextWindow={contextWindow} />}
+        {!isSpeechActive && (
+          <TokenUsageIndicator usage={tokenUsage} contextWindow={contextWindow} />
+        )}
         {renderSpeechButton()}
         {!isSpeechActive && renderSubmitAction()}
       </div>
     </PromptInputFooter>
-  )
+  );
 
   return (
     <PromptInput
@@ -415,5 +423,5 @@ export const ChatPromptInput = ({
       {renderTextarea()}
       {renderFooterActions()}
     </PromptInput>
-  )
-}
+  );
+};

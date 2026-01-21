@@ -41,6 +41,7 @@
     "@base-ui-components/react": "1.0.0-beta.7",
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
+    "@anyhunt/types": "workspace:*",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
     "@radix-ui/react-accordion": "^1.2.12",

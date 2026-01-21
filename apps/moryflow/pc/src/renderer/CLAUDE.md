@@ -19,6 +19,8 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - 禁止直接访问文件系统（需通过 IPC 调用主进程）
 - 使用 TailwindCSS + shadcn/ui 进行样式开发
 - 重操作（网络请求、文件操作）需委托给主进程
+- 聊天消息扩展字段统一使用 `metadata.chat`；文件附件预览统一使用 `providerMetadata.chat`
+- 聊天消息列表与输入框 UI 统一使用 `@anyhunt/ui/ai/*` 组件
 
 ## 成员清单
 
@@ -38,20 +40,20 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ### 组件目录（components/）
 
-| 目录                  | 说明               |
-| --------------------- | ------------------ |
-| `ui/`                 | shadcn/ui 基础组件 |
-| `chat-pane/`          | 聊天面板组件       |
-| `vault-files/`        | 知识库文件管理     |
-| `cloud-sync/`         | 云同步状态展示     |
-| `command-palette/`    | 命令面板           |
-| `settings-dialog/`    | 设置对话框         |
-| `payment-dialog/`     | 支付对话框         |
-| `login-form.tsx`      | 登录表单           |
-| `notion-like-editor/` | 类 Notion 编辑器   |
-| `tiptap-*`            | Tiptap 编辑器相关  |
-| `ai-elements/`        | AI 相关 UI 元素    |
-| `animate-ui/`         | 动画组件           |
+| 目录                  | 说明                                  |
+| --------------------- | ------------------------------------- |
+| `ui/`                 | shadcn/ui 基础组件                    |
+| `chat-pane/`          | 聊天面板组件                          |
+| `vault-files/`        | 知识库文件管理                        |
+| `cloud-sync/`         | 云同步状态展示                        |
+| `command-palette/`    | 命令面板                              |
+| `settings-dialog/`    | 设置对话框                            |
+| `payment-dialog/`     | 支付对话框                            |
+| `login-form.tsx`      | 登录表单                              |
+| `notion-like-editor/` | 类 Notion 编辑器                      |
+| `tiptap-*`            | Tiptap 编辑器相关                     |
+| `ai-elements/`        | AI 相关 UI 元素（仅保留业务特定组件） |
+| `animate-ui/`         | 动画组件                              |
 
 ### 工作区目录（workspace/）
 
@@ -116,3 +118,7 @@ renderer/
 │         (ipcMain.handle/on)            │
 └────────────────────────────────────────┘
 ```
+
+## 近期变更
+
+- 模型选择禁用项移除占位日志，保持交互收敛

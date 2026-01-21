@@ -1,34 +1,23 @@
 /**
- * [DEFINES]: MoryflowMessageMeta, getMessageMeta, createMessageMetadata
+ * [DEFINES]: ChatMessageMeta, getMessageMeta, createMessageMetadata
  * [USED_BY]: ChatInputBar, MessageBubble
  * [POS]: 消息元数据类型和工具函数，与 PC 端保持一致
  */
 
-import type { UIMessage } from 'ai'
-import type { MessageAttachment } from './attachment'
+import type { UIMessage } from 'ai';
+import type { ChatMessageMeta, ChatMessageMetadata } from '@anyhunt/types';
 
 /**
- * Moryflow 消息元数据
- * 存储在 UIMessage.metadata.moryflow 中
+ * 从 UIMessage 中提取 chat 元数据
  */
-export interface MoryflowMessageMeta {
-  /** 用户添加的附件列表 */
-  attachments?: MessageAttachment[]
+export function getMessageMeta(message: UIMessage): ChatMessageMeta {
+  const metadata = message.metadata as ChatMessageMetadata | undefined;
+  return metadata?.chat ?? {};
 }
 
 /**
- * 从 UIMessage 中提取 moryflow 元数据
+ * 创建包含 chat 元数据的 metadata 对象
  */
-export function getMessageMeta(message: UIMessage): MoryflowMessageMeta {
-  const metadata = message.metadata as Record<string, unknown> | undefined
-  return (metadata?.moryflow as MoryflowMessageMeta) ?? {}
-}
-
-/**
- * 创建包含 moryflow 元数据的 metadata 对象
- */
-export function createMessageMetadata(
-  meta: MoryflowMessageMeta
-): Record<string, unknown> {
-  return { moryflow: meta }
+export function createMessageMetadata(meta: ChatMessageMeta): ChatMessageMetadata {
+  return { chat: meta };
 }

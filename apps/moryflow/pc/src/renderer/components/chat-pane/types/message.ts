@@ -1,47 +1,29 @@
 /**
- * [DEFINES]: MoryflowMessageMeta - 消息元数据类型
+ * [DEFINES]: ChatMessageMeta helpers - 消息元数据访问
  * [USED_BY]: ChatMessage, ChatPromptInput
- * [POS]: 扩展 AI SDK 的 UIMessage，存储附件等自定义数据
+ * [POS]: 统一 UIMessage.metadata.chat 的访问入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { UIMessage } from 'ai'
-
-import type { MessageAttachment } from './attachment'
+import type { UIMessage } from 'ai';
+import type { ChatMessageMeta, ChatMessageMetadata } from '@anyhunt/types';
 
 /**
- * Moryflow 扩展的消息元数据
- * 存储在 UIMessage.metadata.moryflow 中
+ * 从 UIMessage 中提取 chat 元数据
  */
-export interface MoryflowMessageMeta {
-  /** 用户添加的附件列表 */
-  attachments?: MessageAttachment[]
-}
+export const getMessageMeta = (message: UIMessage): ChatMessageMeta => {
+  const meta = message.metadata as ChatMessageMetadata | undefined;
+  return meta?.chat ?? {};
+};
 
 /**
- * 带 moryflow 扩展的消息元数据类型
- */
-export interface MoryflowMetadata {
-  moryflow?: MoryflowMessageMeta
-  [key: string]: unknown
-}
-
-/**
- * 从 UIMessage 中提取 moryflow 元数据
- */
-export const getMessageMeta = (message: UIMessage): MoryflowMessageMeta => {
-  const meta = message.metadata as MoryflowMetadata | undefined
-  return meta?.moryflow ?? {}
-}
-
-/**
- * 创建包含 moryflow 元数据的 metadata 对象
+ * 创建包含 chat 元数据的 metadata 对象
  */
 export const createMessageMetadata = (
-  moryflowMeta: MoryflowMessageMeta,
+  chatMeta: ChatMessageMeta,
   existing?: Record<string, unknown>
-): MoryflowMetadata => ({
+): ChatMessageMetadata => ({
   ...existing,
-  moryflow: moryflowMeta,
-})
+  chat: chatMeta,
+});

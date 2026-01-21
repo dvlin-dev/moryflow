@@ -19,6 +19,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - 所有颜色必须支持 light/dark 模式，使用 `useThemeColors()` 获取主题色
 - 第三方组件（如 `GlassView`、`BlurView`）必须使用 `style` 属性，不支持 `className`
 - 状态管理使用 Zustand
+- 聊天消息扩展字段统一使用 `metadata.chat`
 
 ## 技术栈
 
@@ -69,6 +70,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - 编辑器标题在暗黑模式下的颜色适配统一由 `TitleInput` 处理
 - 日志输出统一走 `createLogger()`，减少直接 `console.*` 调用
 - ESLint 补充 React 版本检测配置，移除 lint 警告提示
+- ChatInputBar 移除附件占位回调，避免空实现代码
 
 ## 依赖关系
 
@@ -76,6 +78,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 apps/mobile/
 ├── 依赖 → packages/shared-api（API 客户端）
 ├── 依赖 → packages/shared-i18n（国际化）
+├── 依赖 → packages/types（共享类型）
 └── 依赖 → packages/agents-*（Agent 框架）
 ```
 

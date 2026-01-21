@@ -1,3 +1,10 @@
+/**
+ * [PROPS]: PromptInputBody / PromptInputTextarea / PromptInputHeader 等
+ * [POS]: PromptInput 结构分区与输入行为
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 'use client';
 
 import {
@@ -9,29 +16,18 @@ import {
   useState,
 } from 'react';
 
-import {
-  InputGroupAddon,
-  InputGroupTextarea,
-} from '@anyhunt/ui/components/input-group';
-import { cn } from '@/lib/utils';
+import { InputGroupAddon, InputGroupTextarea } from '../../components/input-group';
+import { cn } from '../../lib/utils';
 
-import {
-  useOptionalPromptInputController,
-  usePromptInputAttachments,
-} from '../handle';
+import { useOptionalPromptInputController, usePromptInputAttachments } from './handle';
 
 export type PromptInputBodyProps = HTMLAttributes<HTMLDivElement>;
 
-export const PromptInputBody = ({
-  className,
-  ...props
-}: PromptInputBodyProps) => (
+export const PromptInputBody = ({ className, ...props }: PromptInputBodyProps) => (
   <div className={cn('contents', className)} {...props} />
 );
 
-export type PromptInputTextareaProps = ComponentProps<
-  typeof InputGroupTextarea
->;
+export type PromptInputTextareaProps = ComponentProps<typeof InputGroupTextarea>;
 
 export const PromptInputTextarea = ({
   onChange,
@@ -54,9 +50,7 @@ export const PromptInputTextarea = ({
       event.preventDefault();
 
       const form = event.currentTarget.form;
-      const submitButton = form?.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement | null;
+      const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
       if (submitButton?.disabled) {
         return;
       }
@@ -128,15 +122,9 @@ export const PromptInputTextarea = ({
   );
 };
 
-export type PromptInputHeaderProps = Omit<
-  ComponentProps<typeof InputGroupAddon>,
-  'align'
->;
+export type PromptInputHeaderProps = Omit<ComponentProps<typeof InputGroupAddon>, 'align'>;
 
-export const PromptInputHeader = ({
-  className,
-  ...props
-}: PromptInputHeaderProps) => (
+export const PromptInputHeader = ({ className, ...props }: PromptInputHeaderProps) => (
   <InputGroupAddon
     align="block-end"
     className={cn('order-first flex-wrap gap-1', className)}
@@ -144,15 +132,9 @@ export const PromptInputHeader = ({
   />
 );
 
-export type PromptInputFooterProps = Omit<
-  ComponentProps<typeof InputGroupAddon>,
-  'align'
->;
+export type PromptInputFooterProps = Omit<ComponentProps<typeof InputGroupAddon>, 'align'>;
 
-export const PromptInputFooter = ({
-  className,
-  ...props
-}: PromptInputFooterProps) => (
+export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProps) => (
   <InputGroupAddon
     align="block-end"
     className={cn('justify-between gap-1', className)}
@@ -162,9 +144,6 @@ export const PromptInputFooter = ({
 
 export type PromptInputToolsProps = HTMLAttributes<HTMLDivElement>;
 
-export const PromptInputTools = ({
-  className,
-  ...props
-}: PromptInputToolsProps) => (
+export const PromptInputTools = ({ className, ...props }: PromptInputToolsProps) => (
   <div className={cn('flex items-center gap-1', className)} {...props} />
 );

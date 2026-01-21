@@ -10,11 +10,11 @@ export type {
   ImageAttachment,
   MessageAttachment,
   ImplementedAttachment,
-} from './attachment'
+} from './attachment';
 
-export { isFileRef, isFileEmbed, isImage, createFileRefAttachment } from './attachment'
+export { isFileRef, isFileEmbed, isImage, createFileRefAttachment } from './attachment';
 
 // 消息元数据
-export type { MoryflowMessageMeta } from './message'
+export type { ChatMessageMeta } from './message';
 
-export { getMessageMeta, createMessageMetadata } from './message'
+export { getMessageMeta, createMessageMetadata } from './message';

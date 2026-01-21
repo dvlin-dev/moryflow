@@ -1,15 +1,20 @@
-"use client";
+/**
+ * [PROPS]: MessageBranch* - 消息分支切换组件
+ * [POS]: 多分支消息的展示与导航
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 
-import type { ReactElement } from "react";
-import { useEffect, useState } from "react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+'use client';
 
-import { Button } from "@anyhunt/ui/components/button";
-import {
-  ButtonGroup,
-  ButtonGroupText,
-} from "@anyhunt/ui/components/button-group";
-import { cn } from "@/lib/utils";
+import type { ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+
+import { Button } from '../../components/button';
+import { ButtonGroup, ButtonGroupText } from '../../components/button-group';
+import { Icon } from '../../components/icon';
+import { cn } from '../../lib/utils';
 
 import type {
   MessageBranchContentProps,
@@ -18,8 +23,8 @@ import type {
   MessageBranchPreviousProps,
   MessageBranchProps,
   MessageBranchSelectorProps,
-} from "@anyhunt/ui/ai/message";
-import { MessageBranchContext, useMessageBranch } from "../handle";
+} from './const';
+import { MessageBranchContext, useMessageBranch } from './handle';
 
 export const MessageBranch = ({
   defaultBranch = 0,
@@ -36,14 +41,12 @@ export const MessageBranch = ({
   };
 
   const goToPrevious = () => {
-    const newBranch =
-      currentBranch > 0 ? currentBranch - 1 : branches.length - 1;
+    const newBranch = currentBranch > 0 ? currentBranch - 1 : branches.length - 1;
     handleBranchChange(newBranch);
   };
 
   const goToNext = () => {
-    const newBranch =
-      currentBranch < branches.length - 1 ? currentBranch + 1 : 0;
+    const newBranch = currentBranch < branches.length - 1 ? currentBranch + 1 : 0;
     handleBranchChange(newBranch);
   };
 
@@ -58,18 +61,12 @@ export const MessageBranch = ({
 
   return (
     <MessageBranchContext.Provider value={contextValue}>
-      <div
-        className={cn("grid w-full gap-2 [&>div]:pb-0", className)}
-        {...props}
-      />
+      <div className={cn('grid w-full gap-2 [&>div]:pb-0', className)} {...props} />
     </MessageBranchContext.Provider>
   );
 };
 
-export const MessageBranchContent = ({
-  children,
-  ...props
-}: MessageBranchContentProps) => {
+export const MessageBranchContent = ({ children, ...props }: MessageBranchContentProps) => {
   const { currentBranch, setBranches, branches } = useMessageBranch();
   const childrenArray = Array.isArray(children) ? children : [children];
 
@@ -82,8 +79,8 @@ export const MessageBranchContent = ({
   return childrenArray.map((branch, index) => (
     <div
       className={cn(
-        "grid gap-2 overflow-hidden [&>div]:pb-0",
-        index === currentBranch ? "block" : "hidden"
+        'grid gap-2 overflow-hidden [&>div]:pb-0',
+        index === currentBranch ? 'block' : 'hidden'
       )}
       key={branch?.key ?? index}
       {...props}
@@ -93,10 +90,7 @@ export const MessageBranchContent = ({
   ));
 };
 
-export const MessageBranchSelector = ({
-  className,
-  ...props
-}: MessageBranchSelectorProps) => {
+export const MessageBranchSelector = ({ className, ...props }: MessageBranchSelectorProps) => {
   const { totalBranches } = useMessageBranch();
 
   if (totalBranches <= 1) {
@@ -106,7 +100,7 @@ export const MessageBranchSelector = ({
   return (
     <ButtonGroup
       className={cn(
-        "[&>*:not(:first-child)]:rounded-l-lg [&>*:not(:last-child)]:rounded-r-lg",
+        '[&>*:not(:first-child)]:rounded-l-lg [&>*:not(:last-child)]:rounded-r-lg',
         className
       )}
       orientation="horizontal"
@@ -115,10 +109,7 @@ export const MessageBranchSelector = ({
   );
 };
 
-export const MessageBranchPrevious = ({
-  children,
-  ...props
-}: MessageBranchPreviousProps) => {
+export const MessageBranchPrevious = ({ children, ...props }: MessageBranchPreviousProps) => {
   const { goToPrevious, totalBranches } = useMessageBranch();
 
   return (
@@ -131,15 +122,12 @@ export const MessageBranchPrevious = ({
       variant="ghost"
       {...props}
     >
-      {children ?? <ChevronLeftIcon size={14} />}
+      {children ?? <Icon icon={ArrowLeft01Icon} className="size-3.5" />}
     </Button>
   );
 };
 
-export const MessageBranchNext = ({
-  children,
-  ...props
-}: MessageBranchNextProps) => {
+export const MessageBranchNext = ({ children, ...props }: MessageBranchNextProps) => {
   const { goToNext, totalBranches } = useMessageBranch();
 
   return (
@@ -152,23 +140,17 @@ export const MessageBranchNext = ({
       variant="ghost"
       {...props}
     >
-      {children ?? <ChevronRightIcon size={14} />}
+      {children ?? <Icon icon={ArrowRight01Icon} className="size-3.5" />}
     </Button>
   );
 };
 
-export const MessageBranchPage = ({
-  className,
-  ...props
-}: MessageBranchPageProps) => {
+export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProps) => {
   const { currentBranch, totalBranches } = useMessageBranch();
 
   return (
     <ButtonGroupText
-      className={cn(
-        "border-none bg-transparent text-muted-foreground shadow-none",
-        className
-      )}
+      className={cn('border-none bg-transparent text-muted-foreground shadow-none', className)}
       {...props}
     >
       {currentBranch + 1} of {totalBranches}

@@ -1,12 +1,20 @@
+/**
+ * [PROPS]: PromptInputSpeechButtonProps - 语音输入触发按钮
+ * [POS]: PromptInput 的可选语音输入能力
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 'use client';
 
 import type { ComponentProps, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MicIcon } from 'lucide-react';
+import { Mic01Icon } from '@hugeicons/core-free-icons';
 
-import { cn } from '@/lib/utils';
+import { Icon } from '../../components/icon';
+import { cn } from '../../lib/utils';
 
-import { PromptInputButton } from '@anyhunt/ui/ai/prompt-input';
+import { PromptInputButton } from './buttons';
 
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
@@ -16,12 +24,8 @@ interface SpeechRecognition extends EventTarget {
   stop(): void;
   onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
   onend: ((this: SpeechRecognition, ev: Event) => void) | null;
-  onresult:
-    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void)
-    | null;
-  onerror:
-    | ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void)
-    | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void) | null;
 }
 
 interface SpeechRecognitionEvent extends Event {
@@ -62,9 +66,7 @@ declare global {
   }
 }
 
-export type PromptInputSpeechButtonProps = ComponentProps<
-  typeof PromptInputButton
-> & {
+export type PromptInputSpeechButtonProps = ComponentProps<typeof PromptInputButton> & {
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
   onTranscriptionChange?: (text: string) => void;
 };
@@ -76,9 +78,7 @@ export const PromptInputSpeechButton = ({
   ...props
 }: PromptInputSpeechButtonProps) => {
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(
-    null,
-  );
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -86,8 +86,7 @@ export const PromptInputSpeechButton = ({
       typeof window !== 'undefined' &&
       ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
     ) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const speechRecognition = new SpeechRecognition();
 
       speechRecognition.continuous = true;
@@ -115,8 +114,7 @@ export const PromptInputSpeechButton = ({
         if (finalTranscript && textareaRef?.current) {
           const textarea = textareaRef.current;
           const currentValue = textarea.value;
-          const newValue =
-            currentValue + (currentValue ? ' ' : '') + finalTranscript;
+          const newValue = currentValue + (currentValue ? ' ' : '') + finalTranscript;
 
           textarea.value = newValue;
           textarea.dispatchEvent(new Event('input', { bubbles: true }));
@@ -157,13 +155,13 @@ export const PromptInputSpeechButton = ({
       className={cn(
         'relative transition-all duration-normal',
         isListening && 'animate-pulse bg-accent text-accent-foreground',
-        className,
+        className
       )}
       disabled={!recognition}
       onClick={toggleListening}
       {...props}
     >
-      <MicIcon className="size-4" />
+      <Icon icon={Mic01Icon} className="size-4" />
     </PromptInputButton>
   );
 };

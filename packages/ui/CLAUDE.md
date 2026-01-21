@@ -6,7 +6,7 @@
 
 ```
 src/
-├── ai/                 # AI 相关组件（代码块、消息等）- 来自 Moryflow
+├── ai/                 # AI 相关组件（代码块、消息、输入、工具等）- 来自 Moryflow
 ├── animate/            # 动画组件和效果 - 来自 Moryflow
 ├── components/         # Moryflow 风格基础 UI 组件
 ├── composed/           # 组合组件（基于 components）
@@ -44,6 +44,11 @@ import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
 
 - `verbatimModuleSyntax` 开启时，类型必须使用 `import type`
 
+## 近期变更
+
+- PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
+- ToolOutput：允许渲染 `0`/`false` 等非空输出
+
 ## 技术栈
 
 - React 19
@@ -67,4 +72,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.3 | 更新日期: 2026-01-09_
+_版本: 4.5 | 更新日期: 2026-01-21_

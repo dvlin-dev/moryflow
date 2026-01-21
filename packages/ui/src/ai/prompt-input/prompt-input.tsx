@@ -1,3 +1,10 @@
+/**
+ * [PROPS]: PromptInputProps - 输入框容器与附件处理（含错误回调）
+ * [POS]: PromptInput 交互主体（拖拽、上传、提交）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 'use client';
 
 import type { FileUIPart } from 'ai';
@@ -12,14 +19,11 @@ import {
   useState,
 } from 'react';
 
-import { InputGroup } from '@anyhunt/ui/components/input-group';
-import { cn } from '@/lib/utils';
+import { InputGroup } from '../../components/input-group';
+import { cn } from '../../lib/utils';
 
-import type { AttachmentsContext, PromptInputProps } from '@anyhunt/ui/ai/prompt-input';
-import {
-  LocalAttachmentsContext,
-  useOptionalPromptInputController,
-} from '../handle';
+import type { AttachmentsContext, PromptInputProps } from './const';
+import { LocalAttachmentsContext, useOptionalPromptInputController } from './handle';
 
 export const PromptInput = ({
   className,
@@ -60,12 +64,29 @@ export const PromptInput = ({
       if (!accept || accept.trim() === '') {
         return true;
       }
-      if (accept.includes('image/*')) {
-        return file.type.startsWith('image/');
-      }
-      return true;
+
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      const rules = accept
+        .split(',')
+        .map((rule) => rule.trim().toLowerCase())
+        .filter(Boolean);
+
+      return rules.some((rule) => {
+        if (rule === '*/*') {
+          return true;
+        }
+        if (rule.startsWith('.')) {
+          return fileName.endsWith(rule);
+        }
+        if (rule.endsWith('/*')) {
+          const prefix = rule.slice(0, -1);
+          return fileType.startsWith(prefix);
+        }
+        return fileType === rule;
+      });
     },
-    [accept],
+    [accept]
   );
 
   const addLocal = useCallback(
@@ -79,8 +100,7 @@ export const PromptInput = ({
         });
         return;
       }
-      const withinSize = (file: File) =>
-        maxFileSize ? file.size <= maxFileSize : true;
+      const withinSize = (file: File) => (maxFileSize ? file.size <= maxFileSize : true);
       const sized = accepted.filter(withinSize);
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
@@ -92,11 +112,8 @@ export const PromptInput = ({
 
       setItems((prev) => {
         const capacity =
-          typeof maxFiles === 'number'
-            ? Math.max(0, maxFiles - prev.length)
-            : undefined;
-        const capped =
-          typeof capacity === 'number' ? sized.slice(0, capacity) : sized;
+          typeof maxFiles === 'number' ? Math.max(0, maxFiles - prev.length) : undefined;
+        const capped = typeof capacity === 'number' ? sized.slice(0, capacity) : sized;
         if (typeof capacity === 'number' && sized.length > capacity) {
           onError?.({
             code: 'max_files',
@@ -116,7 +133,7 @@ export const PromptInput = ({
         return prev.concat(next);
       });
     },
-    [matchesAccept, maxFiles, maxFileSize, onError],
+    [matchesAccept, maxFiles, maxFileSize, onError]
   );
 
   const add = usingProvider
@@ -222,7 +239,7 @@ export const PromptInput = ({
         }
       }
     },
-    [usingProvider, files],
+    [usingProvider, files]
   );
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -240,7 +257,7 @@ export const PromptInput = ({
       openFileDialog,
       fileInputRef: inputRef,
     }),
-    [files, add, remove, clear, openFileDialog],
+    [files, add, remove, clear, openFileDialog]
   );
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
@@ -254,42 +271,48 @@ export const PromptInput = ({
           return (formData.get('message') as string) || '';
         })();
 
-    if (!usingProvider) {
-      form.reset();
-    }
-
-    Promise.all(
-      files.map(async ({ id, ...item }) => {
-        if (item.url && item.url.startsWith('blob:')) {
-          return {
-            ...item,
-            url: await convertBlobUrlToDataUrl(item.url),
-          };
-        }
-        return item;
-      }),
-    ).then((convertedFiles: FileUIPart[]) => {
-      try {
-        const result = onSubmit({ text, files: convertedFiles }, event);
-        if (result instanceof Promise) {
-          result
-            .then(() => {
-              clear();
-              if (usingProvider) {
-                controller!.textInput.clear();
+    const submit = async () => {
+      let reportedConvertError = false;
+      const convertedFiles = await Promise.all(
+        files.map(async ({ id, ...item }) => {
+          if (item.url && item.url.startsWith('blob:')) {
+            try {
+              return {
+                ...item,
+                url: await convertBlobUrlToDataUrl(item.url),
+              };
+            } catch (error) {
+              if (!reportedConvertError) {
+                reportedConvertError = true;
+                onError?.({
+                  code: 'convert',
+                  message: 'Failed to process attachments.',
+                });
               }
-            })
-            .catch(() => {});
-        } else {
-          clear();
-          if (usingProvider) {
-            controller!.textInput.clear();
+              return item;
+            }
           }
+          return item;
+        })
+      );
+
+      try {
+        await Promise.resolve(onSubmit({ text, files: convertedFiles }, event));
+        clear();
+        if (usingProvider) {
+          controller!.textInput.clear();
+        } else {
+          form.reset();
         }
       } catch (error) {
-        // swallow to allow retry
+        onError?.({
+          code: 'submit',
+          message: 'Failed to submit message.',
+        });
       }
-    });
+    };
+
+    void submit();
   };
 
   const inner = (
@@ -305,11 +328,7 @@ export const PromptInput = ({
         title="Upload files"
         type="file"
       />
-      <form
-        className={cn('w-full', className)}
-        onSubmit={handleSubmit}
-        {...props}
-      >
+      <form className={cn('w-full', className)} onSubmit={handleSubmit} {...props}>
         <InputGroup className="overflow-hidden">{children}</InputGroup>
       </form>
     </>
@@ -318,9 +337,7 @@ export const PromptInput = ({
   return usingProvider ? (
     inner
   ) : (
-    <LocalAttachmentsContext.Provider value={ctx}>
-      {inner}
-    </LocalAttachmentsContext.Provider>
+    <LocalAttachmentsContext.Provider value={ctx}>{inner}</LocalAttachmentsContext.Provider>
   );
 };
 

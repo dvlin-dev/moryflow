@@ -10,6 +10,7 @@
 src/
 ├── common/              # 通用基础类型
 │   ├── api.ts           # API 响应格式
+│   ├── chat.ts          # 聊天消息与附件类型
 │   ├── product.ts       # 产品标识
 │   ├── subscription.ts  # 订阅等级
 │   ├── user.ts          # 用户和 API Key
