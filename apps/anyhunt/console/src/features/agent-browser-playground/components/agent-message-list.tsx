@@ -10,6 +10,8 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  ScrollArea,
+  ScrollBar,
 } from '@anyhunt/ui';
 import {
   Conversation,
@@ -36,24 +38,35 @@ const renderJson = (value: unknown) => {
   return <CodeBlock code={content || '{}'} language="json" />;
 };
 
+const ToolPayload = ({ label, value }: { label: string; value: unknown }) => (
+  <div className="space-y-2">
+    <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <ScrollArea className="max-w-full rounded-lg bg-muted/50">
+      <div className="min-w-0">{renderJson(value)}</div>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
+  </div>
+);
+
 const ToolPartCard = ({ part }: { part: UIMessage['parts'][number] }) => {
   if (!isToolUIPart(part)) return null;
 
   const toolName = getToolName(part);
   const hasDetails = part.input !== undefined || part.output !== undefined || !!part.errorText;
-  const defaultOpen = part.state !== 'output-available' && part.state !== 'output-error';
 
   return (
     <Collapsible
-      defaultOpen={hasDetails && defaultOpen}
-      className="rounded-lg border border-border-muted bg-muted/30"
+      defaultOpen={false}
+      className="w-full min-w-0 max-w-full rounded-lg border border-border-muted bg-muted/30"
     >
       <CollapsibleTrigger
-        className="group flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+        className="group flex w-full min-w-0 items-center justify-between gap-2 px-3 py-2 text-left"
         disabled={!hasDetails}
       >
-        <div className="text-xs font-medium text-muted-foreground">
-          Tool: {toolName} · {part.state}
+        <div className="min-w-0 text-xs font-medium text-muted-foreground">
+          <span className="truncate">
+            Tool: {toolName} · {part.state}
+          </span>
         </div>
         {hasDetails && (
           <div className="text-xs text-muted-foreground/70">
@@ -63,17 +76,11 @@ const ToolPartCard = ({ part }: { part: UIMessage['parts'][number] }) => {
         )}
       </CollapsibleTrigger>
       {hasDetails && (
-        <CollapsibleContent className="px-3 pb-3">
-          {part.input !== undefined && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Input</p>
-              {renderJson(part.input)}
-            </div>
-          )}
+        <CollapsibleContent className="min-w-0 max-w-full px-3 pb-3">
+          {part.input !== undefined && <ToolPayload label="Input" value={part.input} />}
           {part.output !== undefined && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Output</p>
-              {renderJson(part.output)}
+            <div className={part.input !== undefined ? 'mt-3' : undefined}>
+              <ToolPayload label="Output" value={part.output} />
             </div>
           )}
           {part.errorText && (
@@ -93,15 +100,15 @@ export interface AgentMessageListProps {
 
 export function AgentMessageList({ messages, status, error }: AgentMessageListProps) {
   return (
-    <div className="flex h-full flex-col">
-      <Conversation className="flex-1" role="log">
+    <div className="flex h-full min-w-0 flex-col overflow-x-hidden">
+      <Conversation className="flex-1 overflow-x-hidden" role="log">
         {messages.length === 0 ? (
           <ConversationEmptyState
             title="No messages yet"
             description="Send a prompt to start a run."
           />
         ) : (
-          <ConversationContent>
+          <ConversationContent className="min-w-0 overflow-x-hidden">
             {messages.map((message) => {
               const parts = message.parts ?? [];
               const hasRenderableParts = parts.some(
@@ -110,8 +117,8 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
               const from = message.role === 'user' ? 'user' : 'assistant';
 
               return (
-                <Message key={message.id} from={from}>
-                  <MessageContent>
+                <Message key={message.id} from={from} className="min-w-0 max-w-[80%]">
+                  <MessageContent className="min-w-0 max-w-full overflow-x-hidden">
                     {parts.map((part, index) => {
                       if (isTextUIPart(part)) {
                         return (
