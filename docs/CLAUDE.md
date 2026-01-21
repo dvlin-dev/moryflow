@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-22（消息列表相关代码审查报告：覆盖 Moryflow PC / Anyhunt Console / @anyhunt/ui）
+> 最近更新：2026-01-23（全量 Code Review 计划按阶段重排并纳入详细设计审查）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -43,6 +43,10 @@
 
 ## 最近更新
 
+- 全量 Code Review 计划：按阶段重排模块清单并纳入详细设计审查：`docs/code-review/index.md`（2026-01-23：active）
+- 全量 Code Review 计划：补充阶段顺序与执行步骤：`docs/code-review/index.md`（2026-01-23：active）
+- 全量 Code Review 计划：调整执行顺序、补充核心前端清单与进度同步区：`docs/code-review/index.md`（2026-01-23：active）
+- 全量 Code Review 计划：补充统一审查标准与前端性能规范：`docs/code-review/index.md`（2026-01-23：active）
 - 消息列表相关代码审查报告（Moryflow PC / Anyhunt Console / @anyhunt/ui）：`docs/research/message-list-ui-code-review.md`（2026-01-22：review）
 - 全量 Code Review（模块拆分 + 优先级 + 进度索引）：`docs/code-review/index.md`（2026-01-21：active）
 - 工程基线：同步 `pnpm-lock.yaml` 并验证 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（2026-01-21：completed）

@@ -1,13 +1,13 @@
 ---
 title: 全量 Code Review 计划（索引）
-date: 2026-01-21
+date: 2026-01-23
 scope: monorepo
 status: active
 ---
 
 <!--
 [INPUT]: 本仓库的全量代码（apps/*, packages/*, tooling/*, deploy/*, scripts/* + 根配置）
-[OUTPUT]: 可执行的 Code Review 模块拆分 + 优先级 + 执行顺序 + 进度追踪入口
+[OUTPUT]: 可执行的 Code Review 模块拆分 + 优先级 + 执行顺序 + 进度追踪入口 + 统一审查规范
 [POS]: docs/code-review/ 的入口；后续每个模块的 review 记录与修复跟踪都从这里索引
 
 [PROTOCOL]: 本文件新增/变更时，需要同步更新 `docs/index.md` 与 `docs/CLAUDE.md`（文档索引与目录结构）。
@@ -57,11 +57,32 @@ status: active
 
 建议每个模块按以下固定步骤执行，保证可复盘、可并行：
 
+0. **对齐规范**：先确认该模块适用的强制规范（见下方“统一审查标准”），避免在 review/修复过程中引入风格或结构偏差。
 1. **边界**：列出该模块的入口点（HTTP routes/queues/cron/CLI）、依赖（DB/Redis/外部 API）、以及数据模型（Prisma tables/types）。
 2. **风险优先**：先扫安全与数据正确性（Auth、权限、SSRF、注入、幂等、并发/重试、队列重复消费、资源泄露）。
 3. **可观测性**：日志/trace/metrics 是否能定位问题（request id、关键维度、错误分层）。
-4. **测试**：单测覆盖核心逻辑；集成测试覆盖 DB/Redis；E2E 覆盖关键流程（如有前端）。
-5. **修复闭环**：每个问题必须对应修复 PR/commit 或明确“弃修原因 + 风险接受人 + 截止日期”。
+4. **测试**：单测覆盖核心逻辑；集成测试覆盖 DB/Redis；E2E 覆盖关键流程（如有前端），并遵守仓库测试门禁要求。
+5. **修复闭环**：每个问题必须对应修复 PR/commit 或明确“弃修原因 + 风险接受人 + 截止日期”。修复中涉及“非行为变更”的重构时，必须遵循 `docs/skill/code-simplifier.md`。
+
+## 统一审查标准（强制）
+
+> 任何 review/修复必须遵守以下强制规范；若发现不符合项，记录为问题并在修复时对齐。
+
+- **代码原则**：遵循 `CLAUDE.md` 的《## 代码原则》（SRP/OCP/LoD/DIP、early return、DRY、禁止兼容层/废弃注释）。
+- **目录规范**：遵循 `CLAUDE.md` 的《### 后端模块结构（NestJS）》与《### 前端组件结构》，不符合的目录结构必须在修复中收敛。
+- **表单与 Zod 规范**：前端表单必须使用 RHF + `zod/v3`；后端只能用 `zod`；类型必须由 schema 推断。
+- **生成物规则**：`**/.tanstack/**`、`**/routeTree.gen.*` 等 generated 文件不可手改。
+- **安全基线**：URL 校验、私有 IP 屏蔽、API Key 仅存哈希、反代 `trust proxy` 等硬约束必须覆盖。
+
+## 前端性能审查标准（Vercel React Best Practices）
+
+前端模块 review 需遵循 Vercel React Best Practices（重点关注性能与可维护性）：
+
+- **异步与瀑布**：避免串行 `await` 导致瀑布；能并行就并行（`Promise.all`）。
+- **包体与加载**：避免 barrel import；重组件使用动态加载；延后第三方脚本。
+- **渲染与重渲染**：拆分昂贵渲染、稳定依赖、避免不必要订阅；长列表使用 `content-visibility` 等策略。
+- **客户端请求**：去重请求（如 SWR）、避免重复监听器。
+- **SSR/流式**：对支持 SSR 的应用，确认数据获取与 streaming 策略无阻塞、无重复实例。
 
 ## 优先级与执行顺序（全局）
 
@@ -74,9 +95,9 @@ status: active
 
 建议执行阶段（可并行但要保持依赖顺序）：
 
-1. **Phase 0**：根配置/CI/生成物规范（避免 review 过程中被工具链噪声干扰）
-2. **Phase 1**：Anyhunt Dev 后端（server）P0 模块
-3. **Phase 2**：Moryflow 后端（server）P0 模块
+1. **Phase 0**：工程基线 + 详细设计对齐 + 测试基础设施 + 共享身份基建
+2. **Phase 1**：Moryflow 后端（server）P0 模块
+3. **Phase 2**：Anyhunt Dev 后端（server）P0 模块
 4. **Phase 3**：核心前端（console/admin/www/pc/mobile）关键流程
 5. **Phase 4**：packages/_ 与 tooling/_（作为平台基建统一收口）
 6. **Phase 5**：deploy/_、scripts/_、templates/_、archive/_（收尾与风险确认）
@@ -85,51 +106,74 @@ status: active
 
 - CI（GitHub Actions）当前是**有意关闭自动触发**的（仅 `workflow_dispatch` 手动触发）。因此本计划的“工程基线”模块不以“打开 CI”为目标，而是以**本地可复现验证**为门禁：每次修复都应至少跑通 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（必要时再跑 `pnpm build` / `pnpm test:e2e`）。
 
-## 模块清单（按优先级）
+## 模块清单（按执行步骤）
 
 说明：
 
+- `Priority` 用于标注风险等级（P0→P3），每个阶段内按 P0→P3 排序。
 - `Status` 建议使用：`todo` / `in_progress` / `blocked` / `done` / `wontfix`
 - `Doc` 是后续要创建的模块 review 文档路径（本索引先把“坑位”列出来）
 
-### P0 - 安全 / Auth / 配额计费 / 数据一致性（先做）
+### Phase 0 - 工程基线 / 详细设计 / 测试基础设施
 
-| Priority | Module                                    | Scope                                                                                                   | Directories / Key Files                                                                                                                                                             | Doc                                                      | Status |
-| -------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------ |
-| P0       | 工程基线（可安装性/验证门禁/生成物）      | 确保“任何人都能装得起来并跑通 lint/typecheck/test”，同时明确 generated 规则（避免无意义 diff 与线上坑） | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `eslint.config.mjs`, `tsconfig.base.json`, `tsc-multi*.json`, `scripts/`                                     | `docs/code-review/root-tooling.md`                       | done   |
-| P0       | Anyhunt Server：Auth & Session            | 登录/回调/cookie/跨域/信任反代/权限边界                                                                 | `apps/anyhunt/server/src/auth/`, `apps/anyhunt/server/src/user/`, `apps/anyhunt/server/src/common/guards/`                                                                          | `docs/code-review/anyhunt-server-auth.md`                | todo   |
-| P0       | Anyhunt Server：API Key & Quota           | API Key 存储/校验；限流/配额扣减一致性                                                                  | `apps/anyhunt/server/src/api-key/`, `apps/anyhunt/server/src/quota/`, `apps/anyhunt/server/src/billing/`                                                                            | `docs/code-review/anyhunt-server-api-key-quota.md`       | todo   |
-| P0       | Anyhunt Server：Billing & Payment         | 订阅/充值/对账/幂等；支付回调安全                                                                       | `apps/anyhunt/server/src/payment/`, `apps/anyhunt/server/src/billing/`                                                                                                              | `docs/code-review/anyhunt-server-billing-payment.md`     | todo   |
-| P0       | Anyhunt Server：抓取安全（SSRF/网络隔离） | URL 校验、内网阻断、代理/重定向策略                                                                     | `apps/anyhunt/server/src/common/validators/`, `apps/anyhunt/server/src/scraper/`, `apps/anyhunt/server/src/crawler/`, `apps/anyhunt/server/src/browser/`                            | `docs/code-review/anyhunt-server-ssrf-sandbox.md`        | todo   |
-| P0       | Anyhunt Server：Queue/异步一致性          | BullMQ/Redis 可靠性、重复投递、幂等、DLQ                                                                | `apps/anyhunt/server/src/queue/`, `apps/anyhunt/server/src/digest/`, `apps/anyhunt/server/src/batch-scrape/`                                                                        | `docs/code-review/anyhunt-server-queue.md`               | todo   |
-| P0       | Anyhunt Server：Prisma/迁移/多数据库边界  | Schema 设计、迁移策略、读写分离/事务边界                                                                | `apps/anyhunt/server/prisma/`, `apps/anyhunt/server/src/prisma/`, `apps/anyhunt/server/src/vector-prisma/`                                                                          | `docs/code-review/anyhunt-server-prisma.md`              | todo   |
-| P0       | Moryflow Server：Auth & Quota & Payment   | 核心产品的账户/配额/支付闭环                                                                            | `apps/moryflow/server/src/auth/`, `apps/moryflow/server/src/quota/`, `apps/moryflow/server/src/payment/`, `apps/moryflow/server/src/admin-payment/`, `apps/moryflow/server/prisma/` | `docs/code-review/moryflow-server-auth-quota-payment.md` | todo   |
-| P0       | packages：identity/auth 基建              | 统一身份/鉴权相关的共享代码正确性                                                                       | `packages/auth-server/`, `packages/identity-db/`                                                                                                                                    | `docs/code-review/packages-auth-identity.md`             | todo   |
-| P0       | deploy：测试环境与基础设施                | 测试 DB/Redis 与本地可复现性                                                                            | `deploy/infra/docker-compose.test.yml`, `deploy/infra/`                                                                                                                             | `docs/code-review/deploy-infra.md`                       | todo   |
+| Priority | Module                               | Scope                                                                                                   | Directories / Key Files                                                                                                      | Doc                                          | Status |
+| -------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------ |
+| P0       | 工程基线（可安装性/验证门禁/生成物） | 确保“任何人都能装得起来并跑通 lint/typecheck/test”，同时明确 generated 规则（避免无意义 diff 与线上坑） | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `eslint.config.mjs`, `tsconfig.base.json`, `scripts/` | `docs/code-review/root-tooling.md`           | done   |
+| P0       | packages：identity/auth 基建         | 统一身份/鉴权相关的共享代码正确性                                                                       | `packages/auth-server/`, `packages/identity-db/`                                                                             | `docs/code-review/packages-auth-identity.md` | todo   |
+| P0       | deploy：测试环境与基础设施           | 测试 DB/Redis 与本地可复现性                                                                            | `deploy/infra/docker-compose.test.yml`, `deploy/infra/`                                                                      | `docs/code-review/deploy-infra.md`           | todo   |
+| P2       | 详细设计/方案文档（仅审查）          | 对齐架构与方案假设，确保 review 过程与设计约束一致                                                      | `docs/architecture/`, `docs/research/`, `docs/products/`                                                                     | `docs/code-review/design-docs.md`            | todo   |
 
-### P1 - 核心业务能力（主流程）
+### Phase 1 - Moryflow 后端（P0 优先 → P1）
 
-| Priority | Module                                       | Scope                                        | Directories / Key Files                                                                                                                                                             | Doc                                                       | Status |
-| -------- | -------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------ |
-| P1       | Anyhunt Server：Scraper/Crawler/Extract/Map  | Fetchx 核心能力在 Anyhunt 统一后端的实现质量 | `apps/anyhunt/server/src/scraper/`, `apps/anyhunt/server/src/crawler/`, `apps/anyhunt/server/src/extract/`, `apps/anyhunt/server/src/map/`, `apps/anyhunt/server/src/batch-scrape/` | `docs/code-review/anyhunt-server-fetchx-core.md`          | todo   |
-| P1       | Anyhunt Server：Browser（Agent Browser）     | 浏览器会话、CDP、安全、资源回收、持久化      | `apps/anyhunt/server/src/browser/`                                                                                                                                                  | `docs/code-review/anyhunt-server-browser.md`              | todo   |
-| P1       | Anyhunt Server：Agent/LLM/Embedding          | 提示词/工具调用/流式协议/策略注入/成本控制   | `apps/anyhunt/server/src/agent/`, `apps/anyhunt/server/src/llm/`, `apps/anyhunt/server/src/embedding/`, `apps/anyhunt/server/src/console-playground/`                               | `docs/code-review/anyhunt-server-agent-llm.md`            | todo   |
-| P1       | Anyhunt Server：Memory/Graph/Search/Relation | Memox 能力在 Anyhunt 统一后端的落地质量      | `apps/anyhunt/server/src/memory/`, `apps/anyhunt/server/src/graph/`, `apps/anyhunt/server/src/search/`, `apps/anyhunt/server/src/relation/`, `apps/anyhunt/server/src/entity/`      | `docs/code-review/anyhunt-server-memox-core.md`           | todo   |
-| P1       | Anyhunt Server：Digest（投递/模板/队列）     | Digest 生成、投递链路、模板安全、退订/合规   | `apps/anyhunt/server/src/digest/`, `apps/anyhunt/server/src/email/`, `apps/anyhunt/server/src/webhook/`                                                                             | `docs/code-review/anyhunt-server-digest.md`               | todo   |
-| P1       | Moryflow：Publish/Vectorize/AI Proxy         | 发布 worker、向量化任务、模型代理与成本边界  | `apps/moryflow/publish-worker/`, `apps/moryflow/vectorize/`, `apps/moryflow/server/src/ai-proxy/`, `apps/moryflow/server/src/vectorize/`                                            | `docs/code-review/moryflow-publish-vectorize-ai-proxy.md` | todo   |
+| Priority | Module                                  | Scope                                       | Directories / Key Files                                                                                                                                                             | Doc                                                       | Status |
+| -------- | --------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------ |
+| P0       | Moryflow Server：Auth & Quota & Payment | 核心产品的账户/配额/支付闭环                | `apps/moryflow/server/src/auth/`, `apps/moryflow/server/src/quota/`, `apps/moryflow/server/src/payment/`, `apps/moryflow/server/src/admin-payment/`, `apps/moryflow/server/prisma/` | `docs/code-review/moryflow-server-auth-quota-payment.md`  | todo   |
+| P1       | Moryflow：Publish/Vectorize/AI Proxy    | 发布 worker、向量化任务、模型代理与成本边界 | `apps/moryflow/publish-worker/`, `apps/moryflow/vectorize/`, `apps/moryflow/server/src/ai-proxy/`, `apps/moryflow/server/src/vectorize/`                                            | `docs/code-review/moryflow-publish-vectorize-ai-proxy.md` | todo   |
 
-### P2 - 前端应用（用户体验与端到端稳定性）
+### Phase 2 - Anyhunt 后端（P0 优先 → P1）
 
-| Priority | Module                               | Scope                                     | Directories / Key Files                                                      | Doc                                        | Status |
-| -------- | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | todo   |
-| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理     | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo   |
-| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性      | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo   |
-| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物    | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | todo   |
-| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私   | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo   |
-| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略    | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | todo   |
+| Priority | Module                                       | Scope                                        | Directories / Key Files                                                                                                                                                             | Doc                                                  | Status |
+| -------- | -------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------ |
+| P0       | Anyhunt Server：Auth & Session               | 登录/回调/cookie/跨域/信任反代/权限边界      | `apps/anyhunt/server/src/auth/`, `apps/anyhunt/server/src/user/`, `apps/anyhunt/server/src/common/guards/`                                                                          | `docs/code-review/anyhunt-server-auth.md`            | todo   |
+| P0       | Anyhunt Server：API Key & Quota              | API Key 存储/校验；限流/配额扣减一致性       | `apps/anyhunt/server/src/api-key/`, `apps/anyhunt/server/src/quota/`, `apps/anyhunt/server/src/billing/`                                                                            | `docs/code-review/anyhunt-server-api-key-quota.md`   | todo   |
+| P0       | Anyhunt Server：Billing & Payment            | 订阅/充值/对账/幂等；支付回调安全            | `apps/anyhunt/server/src/payment/`, `apps/anyhunt/server/src/billing/`                                                                                                              | `docs/code-review/anyhunt-server-billing-payment.md` | todo   |
+| P0       | Anyhunt Server：抓取安全（SSRF/网络隔离）    | URL 校验、内网阻断、代理/重定向策略          | `apps/anyhunt/server/src/common/validators/`, `apps/anyhunt/server/src/scraper/`, `apps/anyhunt/server/src/crawler/`, `apps/anyhunt/server/src/browser/`                            | `docs/code-review/anyhunt-server-ssrf-sandbox.md`    | todo   |
+| P0       | Anyhunt Server：Queue/异步一致性             | BullMQ/Redis 可靠性、重复投递、幂等、DLQ     | `apps/anyhunt/server/src/queue/`, `apps/anyhunt/server/src/digest/`, `apps/anyhunt/server/src/batch-scrape/`                                                                        | `docs/code-review/anyhunt-server-queue.md`           | todo   |
+| P0       | Anyhunt Server：Prisma/迁移/多数据库边界     | Schema 设计、迁移策略、读写分离/事务边界     | `apps/anyhunt/server/prisma/`, `apps/anyhunt/server/src/prisma/`, `apps/anyhunt/server/src/vector-prisma/`                                                                          | `docs/code-review/anyhunt-server-prisma.md`          | todo   |
+| P1       | Anyhunt Server：Scraper/Crawler/Extract/Map  | Fetchx 核心能力在 Anyhunt 统一后端的实现质量 | `apps/anyhunt/server/src/scraper/`, `apps/anyhunt/server/src/crawler/`, `apps/anyhunt/server/src/extract/`, `apps/anyhunt/server/src/map/`, `apps/anyhunt/server/src/batch-scrape/` | `docs/code-review/anyhunt-server-fetchx-core.md`     | todo   |
+| P1       | Anyhunt Server：Browser（Agent Browser）     | 浏览器会话、CDP、安全、资源回收、持久化      | `apps/anyhunt/server/src/browser/`                                                                                                                                                  | `docs/code-review/anyhunt-server-browser.md`         | todo   |
+| P1       | Anyhunt Server：Agent/LLM/Embedding          | 提示词/工具调用/流式协议/策略注入/成本控制   | `apps/anyhunt/server/src/agent/`, `apps/anyhunt/server/src/llm/`, `apps/anyhunt/server/src/embedding/`, `apps/anyhunt/server/src/console-playground/`                               | `docs/code-review/anyhunt-server-agent-llm.md`       | todo   |
+| P1       | Anyhunt Server：Memory/Graph/Search/Relation | Memox 能力在 Anyhunt 统一后端的落地质量      | `apps/anyhunt/server/src/memory/`, `apps/anyhunt/server/src/graph/`, `apps/anyhunt/server/src/search/`, `apps/anyhunt/server/src/relation/`, `apps/anyhunt/server/src/entity/`      | `docs/code-review/anyhunt-server-memox-core.md`      | todo   |
+| P1       | Anyhunt Server：Digest（投递/模板/队列）     | Digest 生成、投递链路、模板安全、退订/合规   | `apps/anyhunt/server/src/digest/`, `apps/anyhunt/server/src/email/`, `apps/anyhunt/server/src/webhook/`                                                                             | `docs/code-review/anyhunt-server-digest.md`          | todo   |
 
-### P3 - packages/_ 与 tooling/_（平台基建与复用质量）
+### Phase 3 - 核心前端（Anyhunt Dev + Moryflow）
+
+核心前端范围：
+
+**Anyhunt Dev**
+
+- 开发者控制台：`apps/anyhunt/console/`
+- 运营管理后台：`apps/anyhunt/admin/www/`
+- 官网/Reader：`apps/anyhunt/www/`
+
+**Moryflow**
+
+- 桌面端：`apps/moryflow/pc/`
+- 移动端：`apps/moryflow/mobile/`
+- 管理后台：`apps/moryflow/admin/`
+- 官网：`apps/moryflow/www/`
+- 发布站点模板：`apps/moryflow/site-template/`
+
+| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status |
+| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------ |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | todo   |
+| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo   |
+| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo   |
+| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | todo   |
+| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo   |
+| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | todo   |
+
+### Phase 4 - packages/_ 与 tooling/_（平台基建与复用质量）
 
 | Priority | Module                                          | Scope                                  | Directories / Key Files                                                                                                                                                                                                                                                           | Doc                                             | Status |
 | -------- | ----------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------ |
@@ -140,7 +184,7 @@ status: active
 | P3       | packages/sync + packages/tiptap                 | 同步与编辑器能力（跨端一致性）         | `packages/sync/`, `packages/tiptap/`                                                                                                                                                                                                                                              | `docs/code-review/packages-sync-tiptap.md`      | todo   |
 | P3       | tooling/\*（eslint/ts/tailwind）                | 规则正确性、迁移成本、开发体验         | `tooling/eslint-config/`, `tooling/typescript-config/`, `tooling/tailwind-config/`                                                                                                                                                                                                | `docs/code-review/tooling-config.md`            | todo   |
 
-### P3 - 收尾（低频但必须确认）
+### Phase 5 - deploy/_、scripts/_、templates/_、archive/_（收尾）
 
 | Priority | Module                     | Scope                                        | Directories / Key Files  | Doc                                     | Status |
 | -------- | -------------------------- | -------------------------------------------- | ------------------------ | --------------------------------------- | ------ |
@@ -184,3 +228,32 @@ status: draft
 - 验证方式（测试命令/回归步骤）：
 - 状态：todo / in_progress / done
 ```
+
+## Review 执行计划（逐步）
+
+先按阶段顺序执行（严格按下列顺序；可并行但不跨阶段跳跃）：
+
+1. **Phase 0**：工程基线 + 详细设计对齐 + 测试基础设施 + 共享身份基建
+2. **Phase 1**：Moryflow 后端（server）P0 模块
+3. **Phase 2**：Anyhunt Dev 后端（server）P0 模块
+4. **Phase 3**：核心前端（console/admin/www/pc/mobile）关键流程
+5. **Phase 4**：packages/_ 与 tooling/_（作为平台基建统一收口）
+6. **Phase 5**：deploy/_、scripts/_、templates/_、archive/_（收尾与风险确认）
+
+每个模块按以下步骤执行，并在“进度同步区”更新记录：
+
+1. **范围确认**：入口点/依赖/数据模型清单，避免漏评或超范围。
+2. **规范对齐**：对照“统一审查标准 + 前端性能规范”，列出不符合项。
+3. **风险扫描**：安全/权限/一致性/幂等/队列/资源回收优先。
+4. **测试审计**：单测/集成/E2E 缺口与覆盖清单。
+5. **修复计划**：按严重程度拆分修复项，保持单一逻辑变更。
+6. **验证与回归**：至少跑通 `pnpm lint`、`pnpm typecheck`、`pnpm test:unit`；必要时补充模块级验证。
+7. **文档同步**：更新对应模块 review 文档 + 本页“进度同步区”。
+
+## 进度同步区（每次 review/修复后追加）
+
+> 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
+
+| 日期       | 模块 | 结论摘要 | 修复记录（PR/commit） | 状态 |
+| ---------- | ---- | -------- | --------------------- | ---- |
+| 2026-01-23 | -    | -        | -                     | todo |
