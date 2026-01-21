@@ -1,6 +1,6 @@
 /**
  * [DEFINES]: Agent/Browser Playground 类型
- * [USED_BY]: agent-stream.ts, api.ts, components/*
+ * [USED_BY]: api.ts, transport/*, components/*
  * [POS]: Console Agent Browser Playground 类型定义
  */
 
@@ -140,64 +140,3 @@ export type AgentCancelResponse = {
   message: string;
   creditsUsed?: number;
 };
-
-export type AgentEventStarted = {
-  type: 'started';
-  id: string;
-  expiresAt: string;
-};
-
-export type AgentEventTextDelta = {
-  type: 'textDelta';
-  delta: string;
-};
-
-export type AgentEventReasoningDelta = {
-  type: 'reasoningDelta';
-  delta: string;
-};
-
-export type AgentEventToolCall = {
-  type: 'toolCall';
-  toolCallId: string;
-  toolName: string;
-  input: unknown;
-};
-
-export type AgentEventToolResult = {
-  type: 'toolResult';
-  toolCallId: string;
-  toolName?: string;
-  output?: unknown;
-  errorText?: string;
-};
-
-export type AgentEventProgress = {
-  type: 'progress';
-  message: string;
-  step: number;
-  totalSteps?: number;
-};
-
-export type AgentEventComplete = {
-  type: 'complete';
-  data: unknown;
-  creditsUsed: number;
-};
-
-export type AgentEventFailed = {
-  type: 'failed';
-  error: string;
-  creditsUsed?: number;
-  progress?: AgentTaskProgress;
-};
-
-export type AgentStreamEvent =
-  | AgentEventStarted
-  | AgentEventTextDelta
-  | AgentEventReasoningDelta
-  | AgentEventToolCall
-  | AgentEventToolResult
-  | AgentEventProgress
-  | AgentEventComplete
-  | AgentEventFailed;

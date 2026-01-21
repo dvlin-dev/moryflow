@@ -1,21 +1,16 @@
 /**
- * [PROVIDES]: Agent SSE event mapping helpers (text/tool)
- * [DEPENDS]: ai UI message types
- * [POS]: 将 AgentStreamEvent 转换为 UIMessageChunk（text/reasoning/tool/progress）
+ * [INPUT]: AgentStreamEvent（Console Playground 代理层事件）
+ * [OUTPUT]: UIMessageChunk[]（ai 标准 UI 流协议）
+ * [POS]: 将 AgentStreamEvent 映射为 UIMessageChunk，并在 tool 边界进行文本分段
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md（若存在）与 apps/anyhunt/server/CLAUDE.md（若影响协议/对外行为）
  */
 
-import { isTextUIPart, type UIMessage, type UIMessageChunk } from 'ai';
-import type { AgentStreamEvent, AgentEventProgress } from './types';
+import { randomUUID } from 'node:crypto';
+import type { UIMessageChunk } from 'ai';
+import type { AgentEventProgress, AgentStreamEvent } from '../../agent/dto';
 
-const createPartId = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
-
-export type AgentEventMapperState = {
-  messageId: string;
+export type ConsoleAgentUiChunkMapperState = {
   textPartId: string;
   reasoningPartId: string;
   textSegmentStarted: boolean;
@@ -23,49 +18,80 @@ export type AgentEventMapperState = {
   hasOutputTextDelta: boolean;
 };
 
-export const createAgentEventState = (messageId: string): AgentEventMapperState => ({
-  messageId,
-  textPartId: createPartId(),
-  reasoningPartId: createPartId(),
-  textSegmentStarted: false,
-  reasoningStarted: false,
-  hasOutputTextDelta: false,
-});
+export const createConsoleAgentUiChunkMapperState =
+  (): ConsoleAgentUiChunkMapperState => ({
+    textPartId: randomUUID(),
+    reasoningPartId: randomUUID(),
+    textSegmentStarted: false,
+    reasoningStarted: false,
+    hasOutputTextDelta: false,
+  });
 
-const ensureTextStart = (state: AgentEventMapperState): UIMessageChunk[] => {
+const rotateTextPartId = (state: ConsoleAgentUiChunkMapperState) => {
+  state.textPartId = randomUUID();
+};
+
+const rotateReasoningPartId = (state: ConsoleAgentUiChunkMapperState) => {
+  state.reasoningPartId = randomUUID();
+};
+
+const ensureTextStart = (
+  state: ConsoleAgentUiChunkMapperState,
+): UIMessageChunk[] => {
   if (state.textSegmentStarted) return [];
   const chunks: UIMessageChunk[] = [];
   if (state.reasoningStarted) {
     state.reasoningStarted = false;
     chunks.push({ type: 'reasoning-end', id: state.reasoningPartId });
+    rotateReasoningPartId(state);
   }
   state.textSegmentStarted = true;
   chunks.push({ type: 'text-start', id: state.textPartId });
   return chunks;
 };
 
-const ensureTextEnd = (state: AgentEventMapperState): UIMessageChunk[] => {
+const ensureTextEnd = (
+  state: ConsoleAgentUiChunkMapperState,
+): UIMessageChunk[] => {
   if (!state.textSegmentStarted) return [];
   state.textSegmentStarted = false;
-  return [{ type: 'text-end', id: state.textPartId }];
+  const chunk: UIMessageChunk = { type: 'text-end', id: state.textPartId };
+  rotateTextPartId(state);
+  return [chunk];
 };
 
-const ensureReasoningStart = (state: AgentEventMapperState): UIMessageChunk[] => {
+const ensureReasoningStart = (
+  state: ConsoleAgentUiChunkMapperState,
+): UIMessageChunk[] => {
   if (state.reasoningStarted) return [];
   const chunks: UIMessageChunk[] = [];
   if (state.textSegmentStarted) {
     state.textSegmentStarted = false;
     chunks.push({ type: 'text-end', id: state.textPartId });
+    rotateTextPartId(state);
   }
   state.reasoningStarted = true;
   chunks.push({ type: 'reasoning-start', id: state.reasoningPartId });
   return chunks;
 };
 
-const ensureReasoningEnd = (state: AgentEventMapperState): UIMessageChunk[] => {
+const ensureReasoningEnd = (
+  state: ConsoleAgentUiChunkMapperState,
+): UIMessageChunk[] => {
   if (!state.reasoningStarted) return [];
   state.reasoningStarted = false;
-  return [{ type: 'reasoning-end', id: state.reasoningPartId }];
+  const chunk: UIMessageChunk = {
+    type: 'reasoning-end',
+    id: state.reasoningPartId,
+  };
+  rotateReasoningPartId(state);
+  return [chunk];
+};
+
+const ensureToolBoundary = (
+  state: ConsoleAgentUiChunkMapperState,
+): UIMessageChunk[] => {
+  return [...ensureReasoningEnd(state), ...ensureTextEnd(state)];
 };
 
 const serializePayload = (data: unknown): string => {
@@ -74,7 +100,10 @@ const serializePayload = (data: unknown): string => {
   try {
     return JSON.stringify(data, null, 2);
   } catch {
-    return String(data);
+    if (data instanceof Error) {
+      return data.message;
+    }
+    return '[Unserializable payload]';
   }
 };
 
@@ -92,16 +121,28 @@ const formatProgressMessage = (event: AgentEventProgress): string => {
 const ensureTrailingLineBreak = (value: string): string =>
   value.endsWith('\n') ? value : `${value}\n`;
 
-export const mapAgentEventToChunks = (
+/**
+ * 将 AgentStreamEvent 映射为 UIMessageChunk（不包含 started → start 的映射）
+ *
+ * 关键策略：
+ * - 在 toolCall/toolResult 前先结束 text/reasoning 段落，确保“文本 → tool → 文本”按顺序渲染
+ * - complete/failed 时确保段落结束，避免前端出现 streaming part 悬挂
+ */
+export const mapConsoleAgentEventToUiChunks = (
   event: AgentStreamEvent,
-  state: AgentEventMapperState
+  state: ConsoleAgentUiChunkMapperState,
 ): UIMessageChunk[] => {
   switch (event.type) {
+    case 'started':
+      return [];
     case 'textDelta': {
       const delta = event.delta ?? '';
       if (!delta) return [];
       state.hasOutputTextDelta = true;
-      return [...ensureTextStart(state), { type: 'text-delta', id: state.textPartId, delta }];
+      return [
+        ...ensureTextStart(state),
+        { type: 'text-delta', id: state.textPartId, delta },
+      ];
     }
     case 'reasoningDelta': {
       const delta = event.delta ?? '';
@@ -125,6 +166,7 @@ export const mapAgentEventToChunks = (
     }
     case 'toolCall': {
       return [
+        ...ensureToolBoundary(state),
         {
           type: 'tool-input-available',
           toolCallId: event.toolCallId,
@@ -134,8 +176,10 @@ export const mapAgentEventToChunks = (
       ];
     }
     case 'toolResult': {
+      const boundary = ensureToolBoundary(state);
       if (event.errorText) {
         return [
+          ...boundary,
           {
             type: 'tool-output-error',
             toolCallId: event.toolCallId,
@@ -145,6 +189,7 @@ export const mapAgentEventToChunks = (
       }
       if (event.output !== undefined) {
         return [
+          ...boundary,
           {
             type: 'tool-output-available',
             toolCallId: event.toolCallId,
@@ -152,7 +197,7 @@ export const mapAgentEventToChunks = (
           },
         ];
       }
-      return [];
+      return boundary;
     }
     case 'complete': {
       const chunks: UIMessageChunk[] = [];
@@ -173,7 +218,10 @@ export const mapAgentEventToChunks = (
       return chunks;
     }
     case 'failed': {
-      const chunks: UIMessageChunk[] = [...ensureReasoningEnd(state), ...ensureTextStart(state)];
+      const chunks: UIMessageChunk[] = [
+        ...ensureReasoningEnd(state),
+        ...ensureTextStart(state),
+      ];
       chunks.push({
         type: 'text-delta',
         id: state.textPartId,
@@ -186,14 +234,4 @@ export const mapAgentEventToChunks = (
     default:
       return [];
   }
-};
-
-export const extractPromptFromMessages = (messages: UIMessage[]): string => {
-  const lastUser = [...messages].reverse().find((message) => message.role === 'user');
-  if (!lastUser) return '';
-  const textParts = lastUser.parts.filter(isTextUIPart);
-  return textParts
-    .map((part) => part.text)
-    .join('\n')
-    .trim();
 };

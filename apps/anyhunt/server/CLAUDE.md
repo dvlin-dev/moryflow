@@ -21,6 +21,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 - All controllers must use `version: '1'` for API versioning
 - Console Session 认证接口统一走 `/api/v1/console/*`（禁止无版本路径）
+- Console Playground Agent SSE（`POST /api/v1/console/playground/agent/stream`）输出 `ai` 的 `UIMessageChunk` 协议（`start/finish` + parts），供 Console Chat 直接消费
 - Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
 - Console endpoints use Better Auth session (via global `AuthGuard`)

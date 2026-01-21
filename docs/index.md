@@ -70,6 +70,7 @@ status: active
 - Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`
 - 合并冲突解决方案：dvlin-dev/agent-browser-research → main：`docs/research/merge-agent-browser-research.md`（更新：2026-01-19，补充 Docker workspace 依赖修复）
 - 设计方案：Console Agent Browser Playground（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（更新：2026-01-20，独立模块 + 多页面拆分）
+- 方案：Agent Browser Chat 流式消息分段（对齐 Moryflow/pc：UIMessageChunk 单协议）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（更新：2026-01-21）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-20）
 

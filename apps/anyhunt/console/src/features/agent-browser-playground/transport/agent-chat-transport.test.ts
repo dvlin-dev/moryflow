@@ -24,10 +24,13 @@ const buildSseStream = (events: unknown[]) => {
 };
 
 describe('ConsoleAgentChatTransport', () => {
-  it('emits a start chunk before any content chunks', async () => {
+  it('passes through UIMessageChunk SSE payloads', async () => {
     const stream = buildSseStream([
-      { type: 'started', id: 'task-1', expiresAt: new Date().toISOString() },
-      { type: 'complete', data: { ok: true }, creditsUsed: 1 },
+      { type: 'start', messageId: 'task-1' },
+      { type: 'text-start', id: 'part-1' },
+      { type: 'text-delta', id: 'part-1', delta: 'Hello' },
+      { type: 'text-end', id: 'part-1' },
+      { type: 'finish' },
     ]);
 
     const fetchMock = vi.fn().mockResolvedValue(
@@ -65,10 +68,11 @@ describe('ConsoleAgentChatTransport', () => {
         chunks.push(value);
       }
 
-      const startIndex = chunks.findIndex((chunk) => chunk.type === 'start');
-      const textStartIndex = chunks.findIndex((chunk) => chunk.type === 'text-start');
-      expect(startIndex).toBeGreaterThanOrEqual(0);
-      expect(textStartIndex).toBeGreaterThan(startIndex);
+      expect(chunks[0]).toEqual({ type: 'start', messageId: 'task-1' });
+      expect(chunks[1]).toEqual({ type: 'text-start', id: 'part-1' });
+      expect(chunks[2]).toEqual({ type: 'text-delta', id: 'part-1', delta: 'Hello' });
+      expect(chunks[3]).toEqual({ type: 'text-end', id: 'part-1' });
+      expect(chunks[4]).toEqual({ type: 'finish' });
     } finally {
       vi.unstubAllGlobals();
     }

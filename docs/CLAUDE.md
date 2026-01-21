@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-20（Console Fetchx 路由调整为 `/fetchx/*`；Console API 统一 `/api/v1/console/*`）
+> 最近更新：2026-01-21（Console Agent Browser Chat：UIMessageChunk 流式分段方案）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -42,6 +42,7 @@
 
 ## 最近更新
 
+- Console Agent Browser Chat：UIMessageChunk 流式分段（对齐 Moryflow/pc）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（2026-01-21：draft）
 - Digest 全量 Code Review：`docs/products/anyhunt-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）
 - Anyhunt Server：Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`（2026-01-20：draft）
 - Anyhunt Server：LLM Admin 配置改造进度（Agent + Extract）：`docs/architecture/llm-admin-provider-rollout.md`（2026-01-20：draft）

@@ -2,7 +2,7 @@
  * Console Playground Agent Controller
  *
  * [INPUT]: apiKeyId + Agent 任务请求
- * [OUTPUT]: JSON（标准响应包装）或 SSE 流
+ * [OUTPUT]: JSON（标准响应包装）或 SSE（`ai` 的 UIMessageChunk 协议）
  * [POS]: Console Playground Agent 代理入口（Session 认证；SSE 前会 fail-fast 校验 ApiKey LLM 策略）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -29,10 +29,10 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import type { UIMessageChunk } from 'ai';
 import { CurrentUser } from '../auth';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../types';
-import type { AgentStreamEvent } from '../agent/dto';
 import { ConsolePlaygroundService } from './console-playground.service';
 import {
   ApiKeyIdQuerySchema,
@@ -42,6 +42,10 @@ import {
   type AgentTaskIdParamDto,
   type ApiKeyIdQueryDto,
 } from './dto';
+import {
+  createConsoleAgentUiChunkMapperState,
+  mapConsoleAgentEventToUiChunks,
+} from './streaming/console-agent-ui-chunk.mapper';
 
 @ApiTags('Console - Playground')
 @ApiCookieAuth()
@@ -99,6 +103,8 @@ export class ConsolePlaygroundAgentController {
 
     let connectionClosed = false;
     let taskId: string | null = null;
+    let finished = false;
+    const mapperState = createConsoleAgentUiChunkMapperState();
 
     res.on('close', () => {
       connectionClosed = true;
@@ -109,9 +115,8 @@ export class ConsolePlaygroundAgentController {
       }
     });
 
-    const sendEvent = (event: AgentStreamEvent) => {
-      res.write(`event: ${event.type}\n`);
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    const sendChunk = (chunk: UIMessageChunk) => {
+      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
     };
 
     try {
@@ -122,16 +127,49 @@ export class ConsolePlaygroundAgentController {
       )) {
         if (event.type === 'started') {
           taskId = event.id;
+          if (!connectionClosed) {
+            sendChunk({
+              type: 'start',
+              messageId: taskId,
+              messageMetadata: { expiresAt: event.expiresAt },
+            });
+          }
+          continue;
         }
-        if (!connectionClosed) {
-          sendEvent(event);
+
+        if (connectionClosed) {
+          continue;
+        }
+
+        for (const chunk of mapConsoleAgentEventToUiChunks(
+          event,
+          mapperState,
+        )) {
+          sendChunk(chunk);
+        }
+
+        if (
+          (event.type === 'complete' || event.type === 'failed') &&
+          !finished
+        ) {
+          finished = true;
+          sendChunk({ type: 'finish' });
         }
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       if (!connectionClosed) {
-        sendEvent({ type: 'failed', error: errorMessage });
+        for (const chunk of mapConsoleAgentEventToUiChunks(
+          { type: 'failed', error: errorMessage },
+          mapperState,
+        )) {
+          sendChunk(chunk);
+        }
+        if (!finished) {
+          finished = true;
+          sendChunk({ type: 'finish' });
+        }
       }
     } finally {
       res.end();

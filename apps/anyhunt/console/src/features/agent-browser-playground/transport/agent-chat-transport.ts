@@ -8,12 +8,8 @@ import { createParser, type EventSourceMessage } from 'eventsource-parser';
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
 import { API_BASE_URL } from '@/lib/api-client';
 import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
-import {
-  createAgentEventState,
-  extractPromptFromMessages,
-  mapAgentEventToChunks,
-} from '../agent-stream';
-import type { AgentStreamEvent, AgentOutput } from '../types';
+import { extractPromptFromMessages } from '../agent-streaming';
+import type { AgentOutput } from '../types';
 
 type SendOptions = Parameters<ChatTransport<UIMessage>['sendMessages']>[0];
 
@@ -84,10 +80,8 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       throw new Error('Empty response body');
     }
 
-    const state = createAgentEventState(crypto.randomUUID());
     let taskId: string | null = null;
     let closed = false;
-    let messageStarted = false;
 
     const cancelRemote = async () => {
       if (!taskId) return;
@@ -111,26 +105,26 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
         const parser = createParser({
           onEvent: (event: EventSourceMessage) => {
             if (!event.data) return;
-            let parsed: AgentStreamEvent;
+            let parsed: UIMessageChunk;
             try {
-              parsed = JSON.parse(event.data) as AgentStreamEvent;
+              parsed = JSON.parse(event.data) as UIMessageChunk;
             } catch {
+              controller.enqueue({ type: 'error', errorText: 'Invalid stream payload' });
+              if (!closed) {
+                closed = true;
+                controller.close();
+                void reader.cancel();
+              }
               return;
             }
 
-            if (parsed.type === 'started') {
-              taskId = parsed.id;
+            if (parsed.type === 'start' && parsed.messageId) {
+              taskId = parsed.messageId;
             }
 
-            if (!messageStarted) {
-              messageStarted = true;
-              controller.enqueue({ type: 'start', messageId: state.messageId });
-            }
+            controller.enqueue(parsed);
 
-            const chunks = mapAgentEventToChunks(parsed, state);
-            chunks.forEach((chunk) => controller.enqueue(chunk));
-
-            if ((parsed.type === 'complete' || parsed.type === 'failed') && !closed) {
+            if (parsed.type === 'finish' && !closed) {
               closed = true;
               controller.close();
               void reader.cancel();
