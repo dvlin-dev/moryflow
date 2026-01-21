@@ -8,7 +8,7 @@
 
 import type { MutableRefObject } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { UIMessage } from 'ai';
+import type { ChatStatus, UIMessage } from 'ai';
 import type { StickToBottomContext } from 'use-stick-to-bottom';
 
 const createPlaceholderMessage = (afterId: string): UIMessage => ({
@@ -17,8 +17,15 @@ const createPlaceholderMessage = (afterId: string): UIMessage => ({
   parts: [],
 });
 
-const findLatestMessageByRole = (messages: UIMessage[], role: UIMessage['role']) =>
-  [...messages].reverse().find((message) => message.role === role);
+const findLatestMessageByRole = (messages: UIMessage[], role: UIMessage['role']) => {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role === role) {
+      return message;
+    }
+  }
+  return undefined;
+};
 
 const insertPlaceholderMessage = (
   messages: UIMessage[],
@@ -52,7 +59,7 @@ export type UseConversationLayoutResult = {
 
 export const useConversationLayout = (
   messages: UIMessage[],
-  status: string
+  status: ChatStatus
 ): UseConversationLayoutResult => {
   const conversationContextRef = useRef<StickToBottomContext | null>(null);
   const messageRefs = useRef<Map<string, HTMLElement>>(new Map());

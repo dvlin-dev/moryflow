@@ -31,7 +31,7 @@ import { toast } from 'sonner';
 import { ConsoleAgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
 import type { AgentOutput } from '../types';
-import { AgentMessageList } from './agent-message-list';
+import { AgentMessageList } from './AgentMessageList';
 
 interface AgentRunPanelProps {
   apiKeyId: string;

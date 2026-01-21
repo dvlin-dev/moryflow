@@ -66,6 +66,7 @@ export function useApiKeys() {
 - Agent Browser Playground：`thinking/progress` 事件按文本输出，避免误入 Reasoning
 - Agent Browser Playground：消息列表与输入框切换为 `@anyhunt/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
 - Agent Browser Playground：输入提交失败保留内容，交由上层提示错误
+- Agent Browser Playground：消息列表组件拆分与渲染性能优化（单次遍历 + 子组件化）
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
 
 ## 依赖

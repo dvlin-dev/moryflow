@@ -74,6 +74,7 @@ status: active
 - 方案：Agent Browser Chat 流式消息分段（对齐 Moryflow/pc：UIMessageChunk 单协议）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（更新：2026-01-21）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-20）
+- 审查：消息列表相关代码审查报告（Moryflow PC / Anyhunt Console / @anyhunt/ui）：`docs/research/message-list-ui-code-review.md`（更新：2026-01-22）
 
 ## Skills（内部协作 / Prompt 规范）
 

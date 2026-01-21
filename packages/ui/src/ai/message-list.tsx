@@ -86,7 +86,7 @@ export const MessageList = ({
             })}
           </ConversationContent>
         )}
-        {showScrollButton && <ConversationScrollButton />}
+        {showScrollButton ? <ConversationScrollButton /> : null}
       </Conversation>
     </div>
   );

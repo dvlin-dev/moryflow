@@ -86,6 +86,10 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 | 新增 Hook      | `hooks/`                                                | 遵循 use-xxx 命名                                |
 | 修改云同步 UI  | `components/cloud-sync/`, `hooks/use-cloud-sync.ts`     | 参考 docs/products/moryflow/features/cloud-sync/ |
 
+## 近期变更
+
+- Chat Pane 消息列表：ToolInput 空输入保护、Hugeicons 替换、渲染性能优化与条件渲染收敛
+
 ## 依赖关系
 
 ```

@@ -1,8 +1,22 @@
+/**
+ * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
+ * [EMITS]: onEditAndResend/onResend/onRetry/onFork
+ * [POS]: Chat Pane 消息内容渲染
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { isFileUIPart, isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
 import type { FileUIPart, ToolUIPart, UIMessage } from 'ai';
-import { Pencil, RefreshCw, GitBranch, Check, X } from 'lucide-react';
+import {
+  Cancel01Icon,
+  Edit01Icon,
+  GitBranchIcon,
+  RefreshIcon,
+  Tick02Icon,
+} from '@hugeicons/core-free-icons';
 
 import {
   Message,
@@ -14,6 +28,7 @@ import {
   MessageMetaAttachments,
   MessageResponse,
 } from '@anyhunt/ui/ai/message';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
 import { Shimmer } from '@anyhunt/ui/ai/shimmer';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
@@ -101,7 +116,6 @@ export const ChatMessage = ({
 
   const isStreaming = status === 'streaming' || status === 'submitted';
   const isUser = message.role === 'user';
-  const hasUserActions = isUser && actions;
 
   const handleResend = useCallback(() => {
     actions?.onResend?.(messageIndex);
@@ -174,27 +188,30 @@ export const ChatMessage = ({
     [t]
   );
 
-  const renderTool = (part: ToolUIPart, index: number) => (
-    <Tool key={`${message.id}-tool-${index}`} defaultOpen={false}>
-      <ToolHeader
-        type={part.type}
-        state={part.state as ToolState}
-        input={part.input as Record<string, unknown>}
-        statusLabels={toolStatusLabels}
-      />
-      <ToolContent>
-        <ToolInput input={part.input} label={t('parameters')} />
-        <ToolOutput
-          output={part.output}
-          errorText={part.errorText}
-          labels={toolOutputLabels}
-          onApplyDiff={canApplyDiff ? handleApplyDiff : undefined}
-          onApplyDiffSuccess={canApplyDiff ? handleApplyDiffSuccess : undefined}
-          onApplyDiffError={canApplyDiff ? handleApplyDiffError : undefined}
+  const renderTool = (part: ToolUIPart, index: number) => {
+    const hasToolInput = part.input !== undefined;
+    return (
+      <Tool key={`${message.id}-tool-${index}`} defaultOpen={false}>
+        <ToolHeader
+          type={part.type}
+          state={part.state as ToolState}
+          input={part.input as Record<string, unknown>}
+          statusLabels={toolStatusLabels}
         />
-      </ToolContent>
-    </Tool>
-  );
+        <ToolContent>
+          {hasToolInput ? <ToolInput input={part.input} label={t('parameters')} /> : null}
+          <ToolOutput
+            output={part.output}
+            errorText={part.errorText}
+            labels={toolOutputLabels}
+            onApplyDiff={canApplyDiff ? handleApplyDiff : undefined}
+            onApplyDiffSuccess={canApplyDiff ? handleApplyDiffSuccess : undefined}
+            onApplyDiffError={canApplyDiff ? handleApplyDiffError : undefined}
+          />
+        </ToolContent>
+      </Tool>
+    );
+  };
 
   // 用户消息内容渲染
   const renderUserContent = () => (
@@ -249,43 +266,53 @@ export const ChatMessage = ({
   const renderChatAttachments = () =>
     chatAttachments.length > 0 ? <MessageMetaAttachments attachments={chatAttachments} /> : null;
 
-  const renderUserActions = () => (
-    <MessageActions
-      className={`ml-auto transition-opacity ${
-        isStreaming ? 'pointer-events-none opacity-0' : 'opacity-0 group-hover:opacity-100'
-      }`}
-    >
-      {actions?.onEditAndResend && (
-        <MessageAction onClick={startEdit} size="icon-xs">
-          <Pencil className="size-3" />
-        </MessageAction>
-      )}
-      {actions?.onResend && (
-        <MessageAction onClick={handleResend} size="icon-xs">
-          <RefreshCw className="size-3" />
-        </MessageAction>
-      )}
-      {actions?.onFork && (
-        <MessageAction onClick={handleFork} size="icon-xs">
-          <GitBranch className="size-3" />
-        </MessageAction>
-      )}
-    </MessageActions>
-  );
+  const renderUserActions = () => {
+    if (!actions) {
+      return null;
+    }
 
-  const renderAssistantActions = () => (
-    <MessageActions
-      className={`min-h-6 transition-opacity ${
-        isStreaming ? 'pointer-events-none opacity-0' : 'opacity-0 group-hover:opacity-100'
-      }`}
-    >
-      {isLastAssistant && actions?.onRetry && (
+    return (
+      <MessageActions
+        className={`ml-auto transition-opacity ${
+          isStreaming ? 'pointer-events-none opacity-0' : 'opacity-0 group-hover:opacity-100'
+        }`}
+      >
+        {actions.onEditAndResend ? (
+          <MessageAction onClick={startEdit} size="icon-xs">
+            <Icon icon={Edit01Icon} className="size-3" />
+          </MessageAction>
+        ) : null}
+        {actions.onResend ? (
+          <MessageAction onClick={handleResend} size="icon-xs">
+            <Icon icon={RefreshIcon} className="size-3" />
+          </MessageAction>
+        ) : null}
+        {actions.onFork ? (
+          <MessageAction onClick={handleFork} size="icon-xs">
+            <Icon icon={GitBranchIcon} className="size-3" />
+          </MessageAction>
+        ) : null}
+      </MessageActions>
+    );
+  };
+
+  const renderAssistantActions = () => {
+    if (!isLastAssistant || !actions?.onRetry) {
+      return null;
+    }
+
+    return (
+      <MessageActions
+        className={`min-h-6 transition-opacity ${
+          isStreaming ? 'pointer-events-none opacity-0' : 'opacity-0 group-hover:opacity-100'
+        }`}
+      >
         <MessageAction onClick={handleRetry} size="icon-xs">
-          <RefreshCw className="size-3" />
+          <Icon icon={RefreshIcon} className="size-3" />
         </MessageAction>
-      )}
-    </MessageActions>
-  );
+      </MessageActions>
+    );
+  };
 
   const renderEditContent = () => (
     <textarea
@@ -303,13 +330,26 @@ export const ChatMessage = ({
   const renderEditActions = () => (
     <MessageActions className="ml-auto">
       <MessageAction onClick={cancelEdit} size="icon-xs">
-        <X className="size-3" />
+        <Icon icon={Cancel01Icon} className="size-3" />
       </MessageAction>
       <MessageAction onClick={confirmEdit} size="icon-xs">
-        <Check className="size-3" />
+        <Icon icon={Tick02Icon} className="size-3" />
       </MessageAction>
     </MessageActions>
   );
+
+  const renderMessageBody = () => {
+    if (isEditing) {
+      return renderEditContent();
+    }
+    if (isUser) {
+      return renderUserContent();
+    }
+    if (orderedParts.length === 0) {
+      return <ThinkingContent />;
+    }
+    return orderedParts.map(renderPart);
+  };
 
   return (
     <Message
@@ -321,19 +361,13 @@ export const ChatMessage = ({
       data-placeholder={isPlaceholder ? 'true' : undefined}
     >
       <MessageContent ref={isUser ? contentRef : undefined} style={editContentStyle}>
-        {isEditing ? (
-          renderEditContent()
-        ) : isUser ? (
-          renderUserContent()
-        ) : (
-          <>{orderedParts.length === 0 ? <ThinkingContent /> : orderedParts.map(renderPart)}</>
-        )}
+        {renderMessageBody()}
       </MessageContent>
       {renderFileParts()}
-      {isUser && renderChatAttachments()}
-      {isEditing && renderEditActions()}
-      {!isEditing && hasUserActions && renderUserActions()}
-      {!isEditing && !isUser && renderAssistantActions()}
+      {isUser ? renderChatAttachments() : null}
+      {isEditing ? renderEditActions() : null}
+      {!isEditing && isUser ? renderUserActions() : null}
+      {!isEditing && !isUser ? renderAssistantActions() : null}
     </Message>
   );
 };
