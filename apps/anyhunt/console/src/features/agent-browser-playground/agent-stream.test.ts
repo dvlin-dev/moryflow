@@ -70,7 +70,7 @@ describe('agent-stream', () => {
     expect(chunks[2]).toEqual({ type: 'text-end', id: messageId });
   });
 
-  it('maps thinking events to reasoning chunks', () => {
+  it('maps thinking events to text chunks', () => {
     const state = createAgentEventState(messageId);
     const event: AgentStreamEvent = {
       type: 'thinking',
@@ -79,15 +79,15 @@ describe('agent-stream', () => {
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'reasoning-start', id: `${messageId}-reasoning` });
+    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
     expect(chunks[1]).toEqual({
-      type: 'reasoning-delta',
-      id: `${messageId}-reasoning`,
+      type: 'text-delta',
+      id: messageId,
       delta: 'Analyzing the page structure.',
     });
   });
 
-  it('maps progress events to reasoning chunks', () => {
+  it('maps progress events to text chunks', () => {
     const state = createAgentEventState(messageId);
     const event: AgentStreamEvent = {
       type: 'progress',
@@ -98,10 +98,10 @@ describe('agent-stream', () => {
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'reasoning-start', id: `${messageId}-reasoning` });
+    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
     expect(chunks[1]).toEqual({
-      type: 'reasoning-delta',
-      id: `${messageId}-reasoning`,
+      type: 'text-delta',
+      id: messageId,
       delta: 'Progress: Opening target URL · Step 1/3\n',
     });
   });

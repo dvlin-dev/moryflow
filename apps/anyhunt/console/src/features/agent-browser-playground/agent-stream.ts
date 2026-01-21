@@ -1,7 +1,7 @@
 /**
- * [PROVIDES]: Agent SSE event mapping helpers (text/tool/reasoning)
+ * [PROVIDES]: Agent SSE event mapping helpers (text/tool)
  * [DEPENDS]: ai UI message types
- * [POS]: 将 AgentStreamEvent 转换为 UIMessageChunk
+ * [POS]: 将 AgentStreamEvent 转换为 UIMessageChunk（thinking/progress 作为文本）
  */
 
 import { isTextUIPart, type UIMessage, type UIMessageChunk } from 'ai';
@@ -9,20 +9,14 @@ import type { AgentStreamEvent, AgentEventProgress } from './types';
 
 export type AgentEventMapperState = {
   messageId: string;
-  reasoningId: string;
   textStarted: boolean;
   textEnded: boolean;
-  reasoningStarted: boolean;
-  reasoningEnded: boolean;
 };
 
 export const createAgentEventState = (messageId: string): AgentEventMapperState => ({
   messageId,
-  reasoningId: `${messageId}-reasoning`,
   textStarted: false,
   textEnded: false,
-  reasoningStarted: false,
-  reasoningEnded: false,
 });
 
 const ensureTextStart = (state: AgentEventMapperState): UIMessageChunk[] => {
@@ -35,18 +29,6 @@ const ensureTextEnd = (state: AgentEventMapperState): UIMessageChunk[] => {
   if (state.textEnded || !state.textStarted) return [];
   state.textEnded = true;
   return [{ type: 'text-end', id: state.messageId }];
-};
-
-const ensureReasoningStart = (state: AgentEventMapperState): UIMessageChunk[] => {
-  if (state.reasoningStarted) return [];
-  state.reasoningStarted = true;
-  return [{ type: 'reasoning-start', id: state.reasoningId }];
-};
-
-const ensureReasoningEnd = (state: AgentEventMapperState): UIMessageChunk[] => {
-  if (!state.reasoningStarted || state.reasoningEnded) return [];
-  state.reasoningEnded = true;
-  return [{ type: 'reasoning-end', id: state.reasoningId }];
 };
 
 const serializePayload = (data: unknown): string => {
@@ -79,13 +61,13 @@ export const mapAgentEventToChunks = (
 ): UIMessageChunk[] => {
   switch (event.type) {
     case 'thinking': {
-      const content = event.content?.trim();
+      const content = event.content ?? '';
       if (!content) return [];
       return [
-        ...ensureReasoningStart(state),
+        ...ensureTextStart(state),
         {
-          type: 'reasoning-delta',
-          id: state.reasoningId,
+          type: 'text-delta',
+          id: state.messageId,
           delta: content,
         },
       ];
@@ -94,10 +76,10 @@ export const mapAgentEventToChunks = (
       const progressText = formatProgressMessage(event);
       if (!progressText) return [];
       return [
-        ...ensureReasoningStart(state),
+        ...ensureTextStart(state),
         {
-          type: 'reasoning-delta',
-          id: state.reasoningId,
+          type: 'text-delta',
+          id: state.messageId,
           delta: ensureTrailingLineBreak(progressText),
         },
       ];
@@ -132,7 +114,7 @@ export const mapAgentEventToChunks = (
     }
     case 'complete': {
       const payload = serializePayload(event.data);
-      const chunks: UIMessageChunk[] = [...ensureReasoningEnd(state), ...ensureTextStart(state)];
+      const chunks: UIMessageChunk[] = [...ensureTextStart(state)];
       if (payload) {
         chunks.push({
           type: 'text-delta',
@@ -143,7 +125,7 @@ export const mapAgentEventToChunks = (
       return chunks.concat(ensureTextEnd(state));
     }
     case 'failed': {
-      const chunks: UIMessageChunk[] = [...ensureReasoningEnd(state), ...ensureTextStart(state)];
+      const chunks: UIMessageChunk[] = [...ensureTextStart(state)];
       chunks.push({
         type: 'text-delta',
         id: state.messageId,

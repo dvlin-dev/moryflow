@@ -63,8 +63,10 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
       return;
     }
 
-    await sendMessage({ text: prompt });
     promptForm.reset({ prompt: '' });
+    void sendMessage({ text: prompt }).catch(() => {
+      promptForm.setValue('prompt', prompt, { shouldDirty: true });
+    });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {

@@ -1,7 +1,7 @@
 /**
  * [PROPS]: AgentMessageListProps
  * [EMITS]: None
- * [POS]: Agent Playground 对话消息与 Reasoning 渲染
+ * [POS]: Agent Playground 对话消息渲染
  */
 
 import { Alert, AlertDescription } from '@anyhunt/ui';
