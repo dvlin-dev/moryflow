@@ -1,7 +1,7 @@
 /**
  * [DEFINES]: 表单校验 Schema
  * [USED_BY]: components/*
- * [POS]: Agent/Browser Playground 前端表单校验（保留最小 Agent Prompt）
+ * [POS]: Agent/Browser Playground 前端表单校验
  */
 
 import { z } from 'zod/v3';
@@ -125,7 +125,7 @@ export const browserCdpSchema = z.object({
 export type BrowserCdpValues = z.infer<typeof browserCdpSchema>;
 
 export const agentPromptSchema = z.object({
-  prompt: z.string().trim().min(1, 'Please enter a prompt'),
+  message: z.string().trim().min(1, 'Please enter a prompt'),
 });
 
 export type AgentPromptValues = z.infer<typeof agentPromptSchema>;

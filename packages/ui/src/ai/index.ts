@@ -21,6 +21,7 @@ export * from './node';
 // Interactive/stateful components
 export * from './confirmation';
 export * from './conversation';
+export * from './message-list';
 export * from './open-in-chat';
 export * from './chain-of-thought';
 export * from './web-preview';

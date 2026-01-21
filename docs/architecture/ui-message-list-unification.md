@@ -2,7 +2,7 @@
 title: 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）
 date: 2026-01-21
 scope: ui
-status: in-progress
+status: completed
 ---
 
 <!--
@@ -37,7 +37,7 @@ status: in-progress
 - ✅ 已完成：消息列表 UI 组件与输入框 UI 抽离到 `@anyhunt/ui`
 - ✅ 已完成：Moryflow PC 已切换使用 `@anyhunt/ui/ai/*` 组件
 - ✅ 已完成：清理占位逻辑并补齐 PromptInput 错误边界
-- ⏳ 待开始：Anyhunt Console 切换与样式对齐
+- ✅ 已完成：Anyhunt Console 切换与样式对齐（消息列表 + 输入框）
 
 ## 现状梳理（高层）
 
@@ -133,9 +133,8 @@ export type ChatMessageMetadata = {
 
 ### 迁移策略（用户数据安全）
 
-- **Moryflow 已有消息使用 `metadata.moryflow`，需要迁移到 `metadata.chat`。**
-- 不保留向后兼容：提供一次性迁移脚本/升级逻辑，把旧字段转换为新结构并写回存储；迁移完成后移除 `metadata.moryflow` 的读取逻辑。
-- Console 当前无历史 metadata，可不迁移。
+- 不保留向后兼容：删除 `metadata.moryflow` 的读取/迁移逻辑，旧数据不再支持。
+- Console 当前无历史 metadata，无需迁移。
 
 ## 统一后的使用方式（高层）
 
@@ -171,9 +170,9 @@ export type ChatMessageMetadata = {
   - 迁移 `useConversationLayout` 逻辑（占位、滚动跟随）
   - 只依赖 `UIMessage` 和 `status`
 
-- ⏳ `packages/ui/src/ai/message-list.tsx`（建议新增）
+- ✅ `packages/ui/src/ai/message-list.tsx`
   - 封装消息列表渲染循环
-  - 通过 props 注入：`renderMessage`, `renderPart`, `emptyState`, `labels`
+  - 通过 props 注入：`renderMessage`, `emptyState`
 
 - ✅ `packages/ui/src/ai/prompt-input/*`
   - 迁移 Moryflow 的 PromptInput Provider/Attachments/布局组件
@@ -234,8 +233,8 @@ export type ChatMessageMetadata = {
 
 ### Phase 3：迁移 Anyhunt Console
 
-1. 用同一套 `@anyhunt/ui` 组件替换 `AgentMessageList` 与输入区。
-2. 默认渲染对齐 Moryflow 样式，保留可选插槽用于差异化需求。
+1. ✅ 用同一套 `@anyhunt/ui` 组件替换 `AgentMessageList` 与输入区。
+2. ✅ 默认渲染对齐 Moryflow 样式，保留可选插槽用于差异化需求。
 
 ## 风险与对策
 

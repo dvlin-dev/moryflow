@@ -29,4 +29,4 @@
 
 ## 近期更新
 
-- `ui-message-list-unification.md` 已完成 UI 抽离与 PromptInput 错误边界补齐（等待 Console 切换）。
+- `ui-message-list-unification.md` 已补齐 MessageList 组件并移除 metadata.moryflow 兼容逻辑。

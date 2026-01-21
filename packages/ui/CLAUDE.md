@@ -48,6 +48,7 @@ import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
 
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
+- MessageList：新增通用消息列表封装，统一占位与滚动布局并补齐稳定 key
 
 ## 技术栈
 

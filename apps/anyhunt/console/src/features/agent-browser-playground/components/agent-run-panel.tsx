@@ -1,10 +1,10 @@
 /**
  * [PROPS]: AgentRunPanelProps
  * [EMITS]: None
- * [POS]: Agent Playground 聊天面板（消息列表 + 输入）
+ * [POS]: Agent Playground 聊天面板（共享输入框 + 消息列表）
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -13,13 +13,21 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupTextarea,
+  InputGroupButton,
+  Icon,
 } from '@anyhunt/ui';
-import { PromptInputSubmit } from '@anyhunt/ui/ai/prompt-input';
+import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from '@anyhunt/ui/ai/prompt-input';
+import { StopIcon } from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
 import { ConsoleAgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
 import type { AgentOutput } from '../types';
@@ -32,7 +40,7 @@ interface AgentRunPanelProps {
 export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
   const promptForm = useForm<AgentPromptValues>({
     resolver: zodResolver(agentPromptSchema),
-    defaultValues: { prompt: '' },
+    defaultValues: { message: '' },
   });
 
   const optionsRef = useRef({
@@ -54,26 +62,27 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
     transport,
   });
 
-  const handlePromptSubmit = async (values: AgentPromptValues) => {
-    const prompt = values.prompt.trim();
-    if (!prompt) return;
+  const canStop = status === 'submitted' || status === 'streaming';
+  const isDisabled = !apiKeyId;
 
-    if (status === 'streaming' || status === 'submitted') {
-      stop();
+  const handlePromptSubmit = ({ files }: PromptInputMessage, event: FormEvent<HTMLFormElement>) =>
+    promptForm.handleSubmit(async (values) => {
+      const prompt = values.message.trim();
+      try {
+        await sendMessage({ text: prompt, files });
+        promptForm.reset({ message: '' });
+      } catch (error) {
+        promptForm.setValue('message', values.message, { shouldDirty: true });
+        throw error;
+      }
+    })(event);
+
+  const handlePromptError = (issue: { code: string; message: string }) => {
+    if (issue.code === 'max_files') {
+      toast.error('Attachments are not supported yet.');
       return;
     }
-
-    promptForm.reset({ prompt: '' });
-    void sendMessage({ text: prompt }).catch(() => {
-      promptForm.setValue('prompt', prompt, { shouldDirty: true });
-    });
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      void promptForm.handleSubmit(handlePromptSubmit)();
-    }
+    toast.error(issue.message);
   };
 
   return (
@@ -83,35 +92,52 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
       </div>
 
       <Form {...promptForm}>
-        <form onSubmit={promptForm.handleSubmit(handlePromptSubmit)} className="space-y-2">
-          <FormField
-            control={promptForm.control}
-            name="prompt"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="sr-only">Prompt</FormLabel>
-                <FormControl>
-                  <InputGroup>
-                    <InputGroupTextarea
+        <PromptInput
+          onSubmit={handlePromptSubmit}
+          onError={handlePromptError}
+          maxFiles={0}
+          className="**:data-[slot=input-group]:rounded-xl **:data-[slot=input-group]:shadow-lg **:data-[slot=input-group]:border-border-muted **:data-[slot=input-group]:overflow-hidden"
+        >
+          <PromptInputBody>
+            <FormField
+              control={promptForm.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormControl>
+                    <PromptInputTextarea
                       placeholder="Describe the task for the agent"
-                      rows={3}
+                      autoComplete="off"
+                      disabled={isDisabled}
                       {...field}
-                      onKeyDown={handleKeyDown}
                     />
-                    <InputGroupAddon align="inline-end">
-                      <PromptInputSubmit
-                        status={status}
-                        disabled={!apiKeyId || status === 'submitted'}
-                        className="rounded-full"
-                      />
-                    </InputGroupAddon>
-                  </InputGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </form>
+                  </FormControl>
+                  <FormMessage className="px-3 pt-1" />
+                </FormItem>
+              )}
+            />
+          </PromptInputBody>
+          <PromptInputFooter>
+            <PromptInputTools />
+            <div className="flex items-center gap-2">
+              {canStop ? (
+                <InputGroupButton
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Stop generating"
+                  disabled={isDisabled}
+                  onClick={stop}
+                  className="rounded-full bg-white text-black hover:bg-gray-100"
+                >
+                  <Icon icon={StopIcon} className="size-4" />
+                </InputGroupButton>
+              ) : (
+                <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full" />
+              )}
+            </div>
+          </PromptInputFooter>
+        </PromptInput>
       </Form>
     </div>
   );
