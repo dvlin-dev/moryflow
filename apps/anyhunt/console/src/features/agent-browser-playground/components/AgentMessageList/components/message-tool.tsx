@@ -1,5 +1,5 @@
 /**
- * [PROPS]: MessageToolProps - ToolUIPart 渲染参数
+ * [PROPS]: MessageToolProps - ToolUIPart/DynamicToolUIPart 渲染参数
  * [EMITS]: None
  * [POS]: AgentMessageList 的 Tool 消息渲染
  *
@@ -16,7 +16,7 @@ import {
   type ToolState,
   type ToolStatusLabels,
 } from '@anyhunt/ui/ai/tool';
-import type { ToolUIPart } from 'ai';
+import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 
 const TOOL_STATUS_LABELS: ToolStatusLabels = {
   'input-streaming': 'Preparing',
@@ -47,10 +47,11 @@ const TOOL_OUTPUT_LABELS: ToolOutputLabels = {
 };
 
 type MessageToolProps = {
-  part: ToolUIPart;
+  part: ToolUIPart | DynamicToolUIPart;
 };
 
 export function MessageTool({ part }: MessageToolProps) {
+  const toolType = part.type === 'dynamic-tool' ? `tool-${part.toolName}` : part.type;
   const hasInput = part.input !== undefined;
   const hasOutput = part.output !== undefined || !!part.errorText;
   const hasDetails = hasInput || hasOutput;
@@ -58,7 +59,7 @@ export function MessageTool({ part }: MessageToolProps) {
   return (
     <Tool defaultOpen={false} disabled={!hasDetails}>
       <ToolHeader
-        type={part.type}
+        type={toolType}
         state={part.state as ToolState}
         input={part.input as Record<string, unknown> | undefined}
         statusLabels={TOOL_STATUS_LABELS}
