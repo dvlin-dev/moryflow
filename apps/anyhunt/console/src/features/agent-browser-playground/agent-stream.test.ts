@@ -16,46 +16,68 @@ import type { UIMessage } from 'ai';
 const messageId = 'msg-1';
 
 describe('agent-stream', () => {
-  it('maps tool_call events to tool input chunks', () => {
+  it('maps toolCall events to tool input chunks', () => {
     const state = createAgentEventState(messageId);
     const event: AgentStreamEvent = {
-      type: 'tool_call',
-      callId: 'call-1',
-      tool: 'browser.open',
-      args: { url: 'https://example.com' },
-    };
-
-    const chunks = mapAgentEventToChunks(event, state);
-
-    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
-    expect(chunks[1]).toEqual({
-      type: 'tool-input-available',
+      type: 'toolCall',
       toolCallId: 'call-1',
       toolName: 'browser.open',
       input: { url: 'https://example.com' },
-    });
-  });
-
-  it('maps tool_result events to tool output chunks', () => {
-    const state = createAgentEventState(messageId);
-    const event: AgentStreamEvent = {
-      type: 'tool_result',
-      callId: 'call-2',
-      tool: 'browser.snapshot',
-      result: { ok: true },
     };
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
-    expect(chunks[1]).toEqual({
-      type: 'tool-output-available',
-      toolCallId: 'call-2',
-      output: { ok: true },
-    });
+    expect(chunks).toEqual([
+      {
+        type: 'tool-input-available',
+        toolCallId: 'call-1',
+        toolName: 'browser.open',
+        input: { url: 'https://example.com' },
+      },
+    ]);
   });
 
-  it('maps complete events to text chunks', () => {
+  it('maps toolResult events to tool output chunks', () => {
+    const state = createAgentEventState(messageId);
+    const event: AgentStreamEvent = {
+      type: 'toolResult',
+      toolCallId: 'call-2',
+      toolName: 'browser.snapshot',
+      output: { ok: true },
+    };
+
+    const chunks = mapAgentEventToChunks(event, state);
+
+    expect(chunks).toEqual([
+      {
+        type: 'tool-output-available',
+        toolCallId: 'call-2',
+        output: { ok: true },
+      },
+    ]);
+  });
+
+  it('maps toolResult errors to tool output error chunks', () => {
+    const state = createAgentEventState(messageId);
+    const event: AgentStreamEvent = {
+      type: 'toolResult',
+      toolCallId: 'call-2',
+      toolName: 'browser.snapshot',
+      errorText: 'No permission',
+    };
+
+    const chunks = mapAgentEventToChunks(event, state);
+
+    expect(chunks).toEqual([
+      {
+        type: 'tool-output-error',
+        toolCallId: 'call-2',
+        errorText: 'No permission',
+      },
+    ]);
+  });
+
+  it('maps complete events to text chunks when no output_text_delta streamed', () => {
     const state = createAgentEventState(messageId);
     const event: AgentStreamEvent = {
       type: 'complete',
@@ -65,25 +87,60 @@ describe('agent-stream', () => {
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
-    expect(chunks[1]).toMatchObject({ type: 'text-delta', id: messageId });
-    expect(chunks[2]).toEqual({ type: 'text-end', id: messageId });
+    expect(chunks[0]).toEqual({ type: 'text-start', id: state.textPartId });
+    expect(chunks[1]).toMatchObject({ type: 'text-delta', id: state.textPartId });
+    expect(chunks[2]).toEqual({ type: 'text-end', id: state.textPartId });
   });
 
-  it('maps thinking events to text chunks', () => {
+  it('does not append complete payload when output_text_delta already streamed', () => {
+    const state = createAgentEventState(messageId);
+    const deltaEvent: AgentStreamEvent = {
+      type: 'textDelta',
+      delta: 'Hello',
+    };
+    mapAgentEventToChunks(deltaEvent, state);
+
+    const completeEvent: AgentStreamEvent = {
+      type: 'complete',
+      data: 'Hello',
+      creditsUsed: 12,
+    };
+
+    const chunks = mapAgentEventToChunks(completeEvent, state);
+    expect(chunks).toEqual([{ type: 'text-end', id: state.textPartId }]);
+  });
+
+  it('maps textDelta events to text chunks', () => {
     const state = createAgentEventState(messageId);
     const event: AgentStreamEvent = {
-      type: 'thinking',
-      content: 'Analyzing the page structure.',
+      type: 'textDelta',
+      delta: 'Analyzing the page structure.',
     };
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
+    expect(chunks[0]).toEqual({ type: 'text-start', id: state.textPartId });
     expect(chunks[1]).toEqual({
       type: 'text-delta',
-      id: messageId,
+      id: state.textPartId,
       delta: 'Analyzing the page structure.',
+    });
+  });
+
+  it('maps reasoningDelta events to reasoning chunks', () => {
+    const state = createAgentEventState(messageId);
+    const event: AgentStreamEvent = {
+      type: 'reasoningDelta',
+      delta: 'Thinking...',
+    };
+
+    const chunks = mapAgentEventToChunks(event, state);
+
+    expect(chunks[0]).toEqual({ type: 'reasoning-start', id: state.reasoningPartId });
+    expect(chunks[1]).toEqual({
+      type: 'reasoning-delta',
+      id: state.reasoningPartId,
+      delta: 'Thinking...',
     });
   });
 
@@ -98,10 +155,10 @@ describe('agent-stream', () => {
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
+    expect(chunks[0]).toEqual({ type: 'text-start', id: state.textPartId });
     expect(chunks[1]).toEqual({
       type: 'text-delta',
-      id: messageId,
+      id: state.textPartId,
       delta: 'Progress: Opening target URL · Step 1/3\n',
     });
   });
@@ -115,9 +172,9 @@ describe('agent-stream', () => {
 
     const chunks = mapAgentEventToChunks(event, state);
 
-    expect(chunks[0]).toEqual({ type: 'text-start', id: messageId });
-    expect(chunks[1]).toMatchObject({ type: 'text-delta', id: messageId });
-    expect(chunks[2]).toEqual({ type: 'text-end', id: messageId });
+    expect(chunks[0]).toEqual({ type: 'text-start', id: state.textPartId });
+    expect(chunks[1]).toMatchObject({ type: 'text-delta', id: state.textPartId });
+    expect(chunks[2]).toEqual({ type: 'text-end', id: state.textPartId });
     expect(chunks[3]).toEqual({ type: 'error', errorText: 'Something went wrong' });
   });
 

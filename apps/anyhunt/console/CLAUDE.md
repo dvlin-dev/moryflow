@@ -86,8 +86,9 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Agent Browser 拆分为 Overview/Browser/Agent/Network/Storage/CDP 多页面
 - Agent Browser Agent 页面调整为纯聊天视图（消息列表 + 输入），API Key 自动选择并补充无 Key 引导
 - Agent Browser SSE 流新增 `start` chunk，确保消息按轮次追加
-- Agent Browser `thinking/progress` 事件改为文本输出，避免混入 Reasoning
-- Agent Browser 消息列表展示文本 + Tool 调用卡片
+- Agent Browser SSE 事件统一为 camelCase（`toolCallId/toolName`），避免 tool 调用被覆盖
+- Agent Browser SSE 区分 `textDelta` 与 `reasoningDelta`，Reasoning 在 UI 中可折叠展示
+- Agent Browser 消息列表展示文本 + 可折叠 Tool 调用卡片（默认收起输出，避免刷屏）
 - Fetchx Playground 路由调整为 `/fetchx/*` 结构
 - Console 构建统一使用 eventsource-parser v3 API，避免 SSE 解析类型不一致
 

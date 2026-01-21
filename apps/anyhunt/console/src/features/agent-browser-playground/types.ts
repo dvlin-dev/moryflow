@@ -147,24 +147,29 @@ export type AgentEventStarted = {
   expiresAt: string;
 };
 
-export type AgentEventThinking = {
-  type: 'thinking';
-  content: string;
+export type AgentEventTextDelta = {
+  type: 'textDelta';
+  delta: string;
+};
+
+export type AgentEventReasoningDelta = {
+  type: 'reasoningDelta';
+  delta: string;
 };
 
 export type AgentEventToolCall = {
-  type: 'tool_call';
-  callId: string;
-  tool: string;
-  args: Record<string, unknown>;
+  type: 'toolCall';
+  toolCallId: string;
+  toolName: string;
+  input: unknown;
 };
 
 export type AgentEventToolResult = {
-  type: 'tool_result';
-  callId: string;
-  tool: string;
-  result: unknown;
-  error?: string;
+  type: 'toolResult';
+  toolCallId: string;
+  toolName?: string;
+  output?: unknown;
+  errorText?: string;
 };
 
 export type AgentEventProgress = {
@@ -189,7 +194,8 @@ export type AgentEventFailed = {
 
 export type AgentStreamEvent =
   | AgentEventStarted
-  | AgentEventThinking
+  | AgentEventTextDelta
+  | AgentEventReasoningDelta
   | AgentEventToolCall
   | AgentEventToolResult
   | AgentEventProgress

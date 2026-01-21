@@ -1,34 +1,71 @@
 /**
  * [PROVIDES]: Agent SSE event mapping helpers (text/tool)
  * [DEPENDS]: ai UI message types
- * [POS]: 将 AgentStreamEvent 转换为 UIMessageChunk（thinking/progress 作为文本）
+ * [POS]: 将 AgentStreamEvent 转换为 UIMessageChunk（text/reasoning/tool/progress）
  */
 
 import { isTextUIPart, type UIMessage, type UIMessageChunk } from 'ai';
 import type { AgentStreamEvent, AgentEventProgress } from './types';
 
+const createPartId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
 export type AgentEventMapperState = {
   messageId: string;
-  textStarted: boolean;
-  textEnded: boolean;
+  textPartId: string;
+  reasoningPartId: string;
+  textSegmentStarted: boolean;
+  reasoningStarted: boolean;
+  hasOutputTextDelta: boolean;
 };
 
 export const createAgentEventState = (messageId: string): AgentEventMapperState => ({
   messageId,
-  textStarted: false,
-  textEnded: false,
+  textPartId: createPartId(),
+  reasoningPartId: createPartId(),
+  textSegmentStarted: false,
+  reasoningStarted: false,
+  hasOutputTextDelta: false,
 });
 
 const ensureTextStart = (state: AgentEventMapperState): UIMessageChunk[] => {
-  if (state.textStarted) return [];
-  state.textStarted = true;
-  return [{ type: 'text-start', id: state.messageId }];
+  if (state.textSegmentStarted) return [];
+  const chunks: UIMessageChunk[] = [];
+  if (state.reasoningStarted) {
+    state.reasoningStarted = false;
+    chunks.push({ type: 'reasoning-end', id: state.reasoningPartId });
+  }
+  state.textSegmentStarted = true;
+  chunks.push({ type: 'text-start', id: state.textPartId });
+  return chunks;
 };
 
 const ensureTextEnd = (state: AgentEventMapperState): UIMessageChunk[] => {
-  if (state.textEnded || !state.textStarted) return [];
-  state.textEnded = true;
-  return [{ type: 'text-end', id: state.messageId }];
+  if (!state.textSegmentStarted) return [];
+  state.textSegmentStarted = false;
+  return [{ type: 'text-end', id: state.textPartId }];
+};
+
+const ensureReasoningStart = (state: AgentEventMapperState): UIMessageChunk[] => {
+  if (state.reasoningStarted) return [];
+  const chunks: UIMessageChunk[] = [];
+  if (state.textSegmentStarted) {
+    state.textSegmentStarted = false;
+    chunks.push({ type: 'text-end', id: state.textPartId });
+  }
+  state.reasoningStarted = true;
+  chunks.push({ type: 'reasoning-start', id: state.reasoningPartId });
+  return chunks;
+};
+
+const ensureReasoningEnd = (state: AgentEventMapperState): UIMessageChunk[] => {
+  if (!state.reasoningStarted) return [];
+  state.reasoningStarted = false;
+  return [{ type: 'reasoning-end', id: state.reasoningPartId }];
 };
 
 const serializePayload = (data: unknown): string => {
@@ -60,16 +97,18 @@ export const mapAgentEventToChunks = (
   state: AgentEventMapperState
 ): UIMessageChunk[] => {
   switch (event.type) {
-    case 'thinking': {
-      const content = event.content ?? '';
-      if (!content) return [];
+    case 'textDelta': {
+      const delta = event.delta ?? '';
+      if (!delta) return [];
+      state.hasOutputTextDelta = true;
+      return [...ensureTextStart(state), { type: 'text-delta', id: state.textPartId, delta }];
+    }
+    case 'reasoningDelta': {
+      const delta = event.delta ?? '';
+      if (!delta) return [];
       return [
-        ...ensureTextStart(state),
-        {
-          type: 'text-delta',
-          id: state.messageId,
-          delta: content,
-        },
+        ...ensureReasoningStart(state),
+        { type: 'reasoning-delta', id: state.reasoningPartId, delta },
       ];
     }
     case 'progress': {
@@ -79,56 +118,65 @@ export const mapAgentEventToChunks = (
         ...ensureTextStart(state),
         {
           type: 'text-delta',
-          id: state.messageId,
+          id: state.textPartId,
           delta: ensureTrailingLineBreak(progressText),
         },
       ];
     }
-    case 'tool_call': {
+    case 'toolCall': {
       return [
-        ...ensureTextStart(state),
         {
           type: 'tool-input-available',
-          toolCallId: event.callId,
-          toolName: event.tool,
-          input: event.args,
+          toolCallId: event.toolCallId,
+          toolName: event.toolName,
+          input: event.input,
         },
       ];
     }
-    case 'tool_result': {
-      const chunks: UIMessageChunk[] = [...ensureTextStart(state)];
-      if (event.error) {
-        chunks.push({
-          type: 'tool-output-error',
-          toolCallId: event.callId,
-          errorText: event.error,
-        });
-        return chunks;
+    case 'toolResult': {
+      if (event.errorText) {
+        return [
+          {
+            type: 'tool-output-error',
+            toolCallId: event.toolCallId,
+            errorText: event.errorText,
+          },
+        ];
       }
-      chunks.push({
-        type: 'tool-output-available',
-        toolCallId: event.callId,
-        output: event.result,
-      });
-      return chunks;
+      if (event.output !== undefined) {
+        return [
+          {
+            type: 'tool-output-available',
+            toolCallId: event.toolCallId,
+            output: event.output,
+          },
+        ];
+      }
+      return [];
     }
     case 'complete': {
-      const payload = serializePayload(event.data);
-      const chunks: UIMessageChunk[] = [...ensureTextStart(state)];
-      if (payload) {
-        chunks.push({
-          type: 'text-delta',
-          id: state.messageId,
-          delta: payload,
-        });
+      const chunks: UIMessageChunk[] = [];
+      chunks.push(...ensureReasoningEnd(state));
+
+      if (!state.hasOutputTextDelta) {
+        const payload = serializePayload(event.data);
+        if (payload) {
+          chunks.push(...ensureTextStart(state), {
+            type: 'text-delta',
+            id: state.textPartId,
+            delta: payload,
+          });
+        }
       }
-      return chunks.concat(ensureTextEnd(state));
+
+      chunks.push(...ensureTextEnd(state));
+      return chunks;
     }
     case 'failed': {
-      const chunks: UIMessageChunk[] = [...ensureTextStart(state)];
+      const chunks: UIMessageChunk[] = [...ensureReasoningEnd(state), ...ensureTextStart(state)];
       chunks.push({
         type: 'text-delta',
-        id: state.messageId,
+        id: state.textPartId,
         delta: `Error: ${event.error}`,
       });
       chunks.push(...ensureTextEnd(state));

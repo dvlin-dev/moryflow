@@ -4,7 +4,13 @@
  * [POS]: Agent Playground 对话消息渲染
  */
 
-import { Alert, AlertDescription } from '@anyhunt/ui';
+import {
+  Alert,
+  AlertDescription,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@anyhunt/ui';
 import {
   Conversation,
   ConversationContent,
@@ -28,6 +34,55 @@ const renderJson = (value: unknown) => {
   const content = typeof value === 'string' ? value : JSON.stringify(value ?? {}, null, 2) || '';
 
   return <CodeBlock code={content || '{}'} language="json" />;
+};
+
+const ToolPartCard = ({ part }: { part: UIMessage['parts'][number] }) => {
+  if (!isToolUIPart(part)) return null;
+
+  const toolName = getToolName(part);
+  const hasDetails = part.input !== undefined || part.output !== undefined || !!part.errorText;
+  const defaultOpen = part.state !== 'output-available' && part.state !== 'output-error';
+
+  return (
+    <Collapsible
+      defaultOpen={hasDetails && defaultOpen}
+      className="rounded-lg border border-border-muted bg-muted/30"
+    >
+      <CollapsibleTrigger
+        className="group flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+        disabled={!hasDetails}
+      >
+        <div className="text-xs font-medium text-muted-foreground">
+          Tool: {toolName} · {part.state}
+        </div>
+        {hasDetails && (
+          <div className="text-xs text-muted-foreground/70">
+            <span className="group-data-[state=open]:hidden">Show</span>
+            <span className="hidden group-data-[state=open]:inline">Hide</span>
+          </div>
+        )}
+      </CollapsibleTrigger>
+      {hasDetails && (
+        <CollapsibleContent className="px-3 pb-3">
+          {part.input !== undefined && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Input</p>
+              {renderJson(part.input)}
+            </div>
+          )}
+          {part.output !== undefined && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Output</p>
+              {renderJson(part.output)}
+            </div>
+          )}
+          {part.errorText && (
+            <p className="mt-2 text-xs text-destructive">Error: {part.errorText}</p>
+          )}
+        </CollapsibleContent>
+      )}
+    </Collapsible>
+  );
 };
 
 export interface AgentMessageListProps {
@@ -79,32 +134,9 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
                         );
                       }
                       if (isToolUIPart(part)) {
-                        const toolName = getToolName(part);
                         return (
-                          <div
-                            key={`${message.id}-tool-${index}`}
-                            className="rounded-lg border border-border-muted bg-muted/30 p-3"
-                          >
-                            <div className="mb-2 text-xs font-medium text-muted-foreground">
-                              Tool: {toolName} · {part.state}
-                            </div>
-                            {part.input !== undefined && (
-                              <div className="space-y-2">
-                                <p className="text-xs font-medium text-muted-foreground">Input</p>
-                                {renderJson(part.input)}
-                              </div>
-                            )}
-                            {part.output !== undefined && (
-                              <div className="mt-3 space-y-2">
-                                <p className="text-xs font-medium text-muted-foreground">Output</p>
-                                {renderJson(part.output)}
-                              </div>
-                            )}
-                            {part.errorText && (
-                              <p className="mt-2 text-xs text-destructive">
-                                Error: {part.errorText}
-                              </p>
-                            )}
+                          <div key={`${message.id}-tool-${index}`} className="mt-3">
+                            <ToolPartCard part={part} />
                           </div>
                         );
                       }

@@ -11,7 +11,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 ## Responsibilities
 
 - 任务管理：创建/查询/取消（DB：`AgentTask`；Redis：进度/取消标记）
-- 流式输出：SSE（`thinking/tool_call/tool_result/progress/complete/failed`）
+- 流式输出：SSE（`textDelta/reasoningDelta/toolCall/toolResult/progress/complete/failed`）
 - Browser Tools：基于 `BrowserAgentPort`，禁止透传 Playwright 类型
 - 动态计费：分段 checkpoint（每 100 credits）+ 最终结算 + 失败退款
 

@@ -342,24 +342,29 @@ export interface AgentEventStarted {
   expiresAt: string;
 }
 
-export interface AgentEventThinking {
-  type: 'thinking';
-  content: string;
+export interface AgentEventTextDelta {
+  type: 'textDelta';
+  delta: string;
+}
+
+export interface AgentEventReasoningDelta {
+  type: 'reasoningDelta';
+  delta: string;
 }
 
 export interface AgentEventToolCall {
-  type: 'tool_call';
-  callId: string;
-  tool: string;
-  args: Record<string, unknown>;
+  type: 'toolCall';
+  toolCallId: string;
+  toolName: string;
+  input: unknown;
 }
 
 export interface AgentEventToolResult {
-  type: 'tool_result';
-  callId: string;
-  tool: string;
-  result: unknown;
-  error?: string;
+  type: 'toolResult';
+  toolCallId: string;
+  toolName?: string;
+  output?: unknown;
+  errorText?: string;
 }
 
 export interface AgentEventProgress {
@@ -384,7 +389,8 @@ export interface AgentEventFailed {
 
 export type AgentStreamEvent =
   | AgentEventStarted
-  | AgentEventThinking
+  | AgentEventTextDelta
+  | AgentEventReasoningDelta
   | AgentEventToolCall
   | AgentEventToolResult
   | AgentEventProgress

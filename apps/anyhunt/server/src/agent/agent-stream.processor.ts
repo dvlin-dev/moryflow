@@ -10,6 +10,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import type { RunStreamEvent, StreamedRunResult } from '@anyhunt/agents-core';
+import { randomUUID } from 'node:crypto';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
 import {
   AgentBillingService,
@@ -18,6 +19,57 @@ import {
 import type { AgentStreamEvent } from './dto';
 
 const PROGRESS_UPDATE_INTERVAL_MS = 1000;
+
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+const parseJsonIfPossible = (value: unknown): unknown => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return value;
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    return value;
+  }
+};
+
+const getNonEmptyString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+
+const extractToolCallId = (rawItem: unknown): string =>
+  getNonEmptyString((rawItem as UnknownRecord | undefined)?.callId) ??
+  getNonEmptyString((rawItem as UnknownRecord | undefined)?.id) ??
+  randomUUID();
+
+const extractToolName = (rawItem: unknown): string =>
+  getNonEmptyString((rawItem as UnknownRecord | undefined)?.name) ??
+  getNonEmptyString((rawItem as UnknownRecord | undefined)?.toolName) ??
+  'tool';
+
+const extractToolInput = (rawItem: unknown): unknown => {
+  if (!isRecord(rawItem)) return null;
+  const inputSource = rawItem.arguments ?? rawItem.input ?? null;
+  return parseJsonIfPossible(inputSource);
+};
+
+const extractToolOutput = (
+  rawItem: unknown,
+): {
+  output?: unknown;
+  errorText?: string;
+} => {
+  if (!isRecord(rawItem)) return {};
+  const errorText = getNonEmptyString(rawItem.errorText);
+  const outputSource = 'output' in rawItem ? rawItem.output : undefined;
+  return {
+    output: parseJsonIfPossible(outputSource),
+    errorText,
+  };
+};
 
 export class TaskCancelledError extends Error {
   constructor(message: string = 'Task cancelled by user') {
@@ -131,7 +183,7 @@ export class AgentStreamProcessor {
       case 'raw_model_stream_event': {
         const modelEvent = event.data;
         if (modelEvent.type === 'output_text_delta') {
-          return { type: 'thinking', content: modelEvent.delta };
+          return { type: 'textDelta', delta: modelEvent.delta };
         }
 
         if (modelEvent.type === 'model') {
@@ -140,7 +192,7 @@ export class AgentStreamProcessor {
             delta?: string;
           };
           if (rawEvent.type === 'reasoning-delta' && rawEvent.delta) {
-            return { type: 'thinking', content: rawEvent.delta };
+            return { type: 'reasoningDelta', delta: rawEvent.delta };
           }
         }
         break;
@@ -149,28 +201,21 @@ export class AgentStreamProcessor {
       case 'run_item_stream_event': {
         const item = event.item;
         if (item.type === 'tool_call_item') {
-          const rawItem = item.rawItem as {
-            call_id?: string;
-            name?: string;
-            arguments?: Record<string, unknown>;
-          };
           return {
-            type: 'tool_call',
-            callId: rawItem.call_id ?? '',
-            tool: rawItem.name ?? '',
-            args: rawItem.arguments ?? {},
+            type: 'toolCall',
+            toolCallId: extractToolCallId(item.rawItem),
+            toolName: extractToolName(item.rawItem),
+            input: extractToolInput(item.rawItem),
           };
         } else if (item.type === 'tool_call_output_item') {
-          const rawItem = item.rawItem as {
-            call_id?: string;
-            name?: string;
-            output?: unknown;
-          };
+          const toolName = extractToolName(item.rawItem);
+          const { output, errorText } = extractToolOutput(item.rawItem);
           return {
-            type: 'tool_result',
-            callId: rawItem.call_id ?? '',
-            tool: rawItem.name ?? '',
-            result: rawItem.output,
+            type: 'toolResult',
+            toolCallId: extractToolCallId(item.rawItem),
+            toolName,
+            output,
+            errorText,
           };
         }
         break;

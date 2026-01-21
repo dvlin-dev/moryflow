@@ -541,7 +541,7 @@ export class AgentService {
 
       const userPrompt = this.buildUserPrompt(input);
 
-      yield { type: 'thinking', content: '正在分析任务需求...' };
+      yield { type: 'textDelta', delta: '正在分析任务需求...\n' };
 
       const runner = this.buildRunner(llmModelProvider);
       const streamResult: AgentStreamedResult = await runner.run(
