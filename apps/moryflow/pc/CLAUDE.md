@@ -20,6 +20,10 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - 渲染进程使用 TailwindCSS
 - 主进程处理文件系统、网络、Agent 运行时等重操作
 - 敏感操作（文件访问、网络请求）必须在主进程执行
+- Providers 设置页的“测试连接”必须基于用户已启用模型的第一个（不允许写死默认模型做 fallback）
+- 当用户填写 API Key 或开启任意模型时，UI 应自动开启对应服务商，避免“已配置但忘记启用”
+- Custom Provider 必须支持模型列表管理（添加/启用/禁用/删除），否则无法测试与选择模型
+- Providers 左侧列表仅保留“会员模型 + Providers”两类；Providers 内部排序为启用在上、未启用在下，并在切换 active provider 时才刷新顺序（避免编辑时跳动）
 - 全局样式引入 `/ui/styles`，Electron 专属样式保留在 `src/renderer/global.css`
 - `electron.vite.config.ts` 需为 `/ui/styles` 设置别名，避免解析到 `packages/ui/src`
 
