@@ -33,52 +33,38 @@ archived_date: 2026-01-12
 ## 改造后目录（目标结构）
 
 ```
-packages/
-├── auth-server/        # 服务端 Auth 基座（可复用、可配置）
-├── auth-client/        # 通用 Auth 客户端（按业务线注入 baseURL）
-├── identity-db/        # Auth 数据模型（同 schema，不同实例）
-└── types/              # 通用类型（不代表账号/数据互通）
-
 apps/
-├── moryflow/
-│   └── server/src/modules/auth/
-└── console/
-    └── server/src/modules/auth/
+├── anyhunt/
+│   ├── server/src/auth/
+│   ├── console/src/lib/auth-client.ts
+│   ├── admin/www/src/lib/auth-client.ts
+│   └── www/src/lib/auth-client.ts
+└── moryflow/
+    └── server/src/auth/
 
-templates/
-└── auth-service/       # 独立 Auth 服务模板（用于新项目快速复用）
+packages/
+└── types/              # 通用类型（不代表账号/数据互通）
 ```
 
 > 实际落点以现有应用结构为准，但**必须保持两条业务线各自独立部署**。
 
 ## 模块职责（单一职责）
 
-### packages/auth-server
+### 后端 Auth 模块（`apps/*/server/src/auth`）
 
-- 提供 Auth 基础能力：JWT、email OTP、refresh rotation、Facade controller。
+- 提供 Auth 基础能力：JWT、email OTP、refresh rotation、核心控制器与服务。
 - 支持 OAuth/OIDC（Google/Apple），不提供跨业务线共享逻辑。
 - 业务线通过配置注入：`baseURL`、`COOKIE_DOMAIN`、`AUTH_JWT_ISSUER` 等。
 
-### packages/auth-client（由 packages/auth 重命名）
+### 前端 Auth Client 封装（`apps/*/src/lib/auth-client.ts`）
 
-- 面向 Web/PC/移动端的通用客户端 SDK。
-- 暴露 `createAuthClient({ baseUrl, clientType })`，不内置域名/统一配置。
+- 面向 Web/PC/移动端的通用客户端封装。
+- 暴露 `createAuthClient({ baseUrl, clientType })` 或等价调用入口，避免硬编码域名。
 - 只封装通用流程：register/login/verify/refresh/logout/me + Google/Apple 登录。
-
-### packages/identity-db
-
-- 提供同一份 schema 与 Prisma Client。
-- **每条业务线独立数据库与密钥**（不同实例，不共享数据）。
 
 ### packages/types
 
 - 提供通用类型，不引入“统一身份/统一钱包”的语义。
-
-### templates/auth-service（新增）
-
-- 提供可直接部署的 Auth 服务模板（独立项目也可用）。
-- 仅依赖 `auth-server` 与 `identity-db`，无业务耦合。
-- 通过环境变量注入域名、Cookie、OAuth、邮件发送等配置。
 
 ## 关键设计约束（固定）
 
@@ -92,14 +78,13 @@ templates/
 
 ## 交付与复用形态（必须落地）
 
-1. **内嵌模式（业务线内）**：在现有应用内注册 Auth 模块，复用 `auth-server`。
-2. **独立服务模式**：使用 `templates/auth-service` 独立部署，通过反代挂载到同域名 `/api/v1/auth`。
-3. **客户端 SDK**：`/auth-client` 作为统一接入层，业务侧只配置 `baseUrl/clientType`。
+1. **内嵌模式（业务线内）**：在各自后端内注册 Auth 模块（`apps/*/server/src/auth`）。
+2. **客户端封装**：各前端使用内置 `auth-client` 封装，业务侧只配置 `baseUrl/clientType`。
 
 ## 快速接入清单（必须具备）
 
-- 最小化环境变量文档（Auth 服务 + OAuth + 邮件）；
-- Docker Compose 示例（Postgres + Redis + Auth Service）；
+- 最小化环境变量文档（认证模块 + OAuth + 邮件）；
+- Docker Compose 示例（Postgres + Redis）；
 - 统一回调域名与 cookie domain 配置说明；
 - 前端接入示例（Web + Native）；
 - OpenAPI/接口说明（可通过 Swagger 或文档列出）。
@@ -121,17 +106,15 @@ templates/
 
 ## 改造范围（必须覆盖）
 
-- Auth Server：完善 Google/Apple OAuth 入口、DTO/Service 与示例配置。
-- Auth Client：重命名 `/auth` → `/auth-client`，注入化配置。
+- 后端 Auth 模块：完善 Google/Apple OAuth 入口、DTO/Service 与示例配置。
+- Auth Client：统一前端 `auth-client` 封装命名与配置注入方式。
 - Auth Client：连接注册/登录/刷新/登出/Me + Google/Apple 登录流程。
-- Identity DB：文档与注释对齐“业务线独立”。
 - 业务线接入：Moryflow 与 Anyhunt Dev 各自配置 Auth（域名、Cookie、密钥、DB）。
 - 文档同步：所有“统一身份/共享账号”表述清理。
-- Auth 服务模板：提供可独立部署的模板与最小配置文档。
 
 ## 删除清单（零兼容）
 
-- 删除旧目录 `packages/auth`（仅保留 `packages/auth-client`）。
+- 删除旧的独立认证服务/模板/包与相关文档。
 - 删除文档里关于“统一身份/共享账号/跨域互通”的旧内容。
 
 ## 改造步骤（里程碑）
@@ -141,13 +124,13 @@ templates/
 - 更新用户系统文档与索引（本文件 + overview）。
 - 清理“统一身份/共享账号”相关表述。
 
-### Milestone 1：Auth Client 重构
+### Milestone 1：Auth Client 封装收敛
 
-- `packages/auth` → `packages/auth-client`（包名为 `/auth-client`）。
-- 提供 `createAuthClient({ baseUrl, clientType })`。
+- 统一前端 `auth-client` 封装（`apps/*/src/lib/auth-client.ts`）。
+- 提供 `createAuthClient({ baseUrl, clientType })` 或等价入口。
 - 移除硬编码域名与旧配置。
 
-### Milestone 2：Auth Server 收敛
+### Milestone 2：后端 Auth 模块收敛
 
 - 落地 Google/Apple OAuth 路由、DTO 与服务逻辑。
 - 明确回调域名与 clientId/密钥注入方式（按业务线独立配置）。
@@ -165,9 +148,8 @@ templates/
 - Anyhunt Dev：配置 `baseURL`、`COOKIE_DOMAIN=.anyhunt.app`、独立 DB。
 - 确保 JWT issuer/audience 与 JWKS 按业务线隔离。
 
-### Milestone 4：Auth 服务模板与快速接入
+### Milestone 4：认证接入与快速落地
 
-- 新增 `templates/auth-service`（独立服务）。
 - 输出最小环境变量清单与 Docker Compose 示例。
 - 输出前端接入示例（Web + Native）。
 
@@ -193,7 +175,7 @@ templates/
 - 业务线之间 Token/Session/Cookie 互不可用。
 - Google/Apple 登录在两条业务线内各自可用。
 - Auth Client 可复用于任一业务线（仅变更 baseURL/config）。
-- 任意新项目可按模板在 1 天内完成部署与接入。
+- 任意新项目可按文档在 1 天内完成部署与接入。
 - 开源版本具备最小可用文档与示例配置。
 
 ## 风险与注意

@@ -72,9 +72,9 @@ archived_date: 2026-01-12
 目标：只做"代码复用"，不引入跨域互通与共享数据库。
 
 - [x] 把可复用的纯代码抽到 `packages/*`（建议优先级）
-  - `packages/auth-server`：Auth 基座（替代原 auth-core 规划）
-  - `packages/auth-client`：通用 Auth 客户端
-  - `packages/identity-db`：Auth 数据模型
+  - `packages/types`：通用类型
+  - `packages/api`：API 客户端工具
+  - `packages/config`：共享配置
 - [x] 两条业务线分别消费这些 packages，但各自注入不同配置与 DB 连接
 
 ### Milestone 2：Moryflow Auth 落地（2-4 天）⏳ 待开始

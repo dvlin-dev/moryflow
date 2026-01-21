@@ -1,6 +1,6 @@
 ---
 title: Anyhunt Dev（内部方案）
-date: 2026-01-12
+date: 2026-01-23
 scope: anyhunt.app, server.anyhunt.app
 status: active
 ---

@@ -21,8 +21,7 @@ archived_date: 2026-01-12
 ### 已完成
 
 - 用户系统与 Fetchx 接入方案已更新：`docs/products/anyhunt-dev/migrations/fetchx-integration.md`
-- Auth 服务模板已落地：`templates/auth-service/README.md`、`.env.example`、`CLAUDE.md`
-- Anyhunt Dev Console/Admin 已接入 `/auth-client`（含 refresh 流程与用户态映射）
+- Anyhunt Dev Console/Admin 已接入内置 auth client（`apps/anyhunt/console/src/lib/auth-client.ts`、`apps/anyhunt/admin/www/src/lib/auth-client.ts`）
 - 迁移 Docs 项目：Anyhunt（`apps/anyhunt/docs` → `docs.anyhunt.app`）、Moryflow（`apps/moryflow/docs` → `docs.moryflow.com`）
 - 清理旧版后台：删除 `apps/anyhunt/admin/www-old`
 - Anyhunt Dev 部署切换为 Dokploy 多项目，Moryflow 保持 compose（端口分配与反代口径已固化）

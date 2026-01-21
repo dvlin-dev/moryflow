@@ -145,7 +145,6 @@ Anyhunt/
 │   ├── ui/                          # 统一 UI 组件库（shadcn/ui）
 │   ├── types/                       # 跨产品共享类型
 │   ├── api/                         # API 客户端工具
-│   ├── auth-client/                 # 认证客户端
 │   ├── config/                      # 共享配置
 │   ├── sync/                        # 云同步工具（来自 Moryflow）
 │   ├── tiptap/                      # Tiptap 编辑器（来自 Moryflow）
@@ -216,7 +215,6 @@ Anyhunt/
 | [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md) | Runbook：megaboxpro（1panel）反代路由配置                      |
 | [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                               | Runbook：Moryflow docker compose 部署                          |
 | [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                       | Guide：Auth 流程与接口约定                                     |
-| [`docs/guides/auth/auth-service-quick-start.md`](./docs/guides/auth/auth-service-quick-start.md)                       | Guide：Auth Service 模板快速接入                               |
 | [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                     | Guide：Zod + RHF 兼容性（zod/v3）                              |
 | [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                           | Guide：从 Monorepo 开源拆分单个包（Git Subtree）               |
 | [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                         | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）          |
@@ -744,15 +742,14 @@ import { ApiError } from './client.js';
 
 ### 包类型分类
 
-| 类型                   | 构建方式  | 说明                            |
-| ---------------------- | --------- | ------------------------------- |
-| `packages/types`       | tsc-multi | 纯类型包，需要构建供外部使用    |
-| `packages/api`         | tsc-multi | API 客户端，需要 ESM/CJS 双格式 |
-| `packages/auth-client` | tsc-multi | 认证客户端，需要 ESM/CJS 双格式 |
-| `packages/config`      | tsc-multi | 配置工具，需要 ESM/CJS 双格式   |
-| `packages/ui`          | 无需构建  | React 组件，由消费方打包        |
-| `packages/agents-*`    | tsc-multi | Agent 相关包                    |
-| `tooling/*`            | 无需构建  | 配置包，直接使用源码            |
+| 类型                | 构建方式  | 说明                            |
+| ------------------- | --------- | ------------------------------- |
+| `packages/types`    | tsc-multi | 纯类型包，需要构建供外部使用    |
+| `packages/api`      | tsc-multi | API 客户端，需要 ESM/CJS 双格式 |
+| `packages/config`   | tsc-multi | 配置工具，需要 ESM/CJS 双格式   |
+| `packages/ui`       | 无需构建  | React 组件，由消费方打包        |
+| `packages/agents-*` | tsc-multi | Agent 相关包                    |
+| `tooling/*`         | 无需构建  | 配置包，直接使用源码            |
 
 ### 开发命令
 

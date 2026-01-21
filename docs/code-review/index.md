@@ -42,7 +42,6 @@ status: active
   - `packages/types/`：跨产品共享类型
   - `packages/api/`：API 客户端工具
   - `packages/config/`：共享配置
-  - `packages/auth-server/`、`packages/identity-db/`：认证/身份相关基建
   - `packages/agents*/`：Agent 平台能力（runtime/tools/mcp/openai/sandbox 等）
   - `packages/embed*/`：嵌入 SDK
   - `packages/sync/`、`packages/tiptap/`：同步与编辑器能力（来自 Moryflow）
@@ -95,7 +94,7 @@ status: active
 
 建议执行阶段（可并行但要保持依赖顺序）：
 
-1. **Phase 0**：工程基线 + 详细设计对齐 + 测试基础设施 + 共享身份基建
+1. **Phase 0**：工程基线 + 详细设计对齐 + 测试基础设施
 2. **Phase 1**：Moryflow 后端（server）P0 模块
 3. **Phase 2**：Anyhunt Dev 后端（server）P0 模块
 4. **Phase 3**：核心前端（console/admin/www/pc/mobile）关键流程
@@ -116,12 +115,11 @@ status: active
 
 ### Phase 0 - 工程基线 / 详细设计 / 测试基础设施
 
-| Priority | Module                               | Scope                                                                                                   | Directories / Key Files                                                                                                      | Doc                                          | Status |
-| -------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------ |
-| P0       | 工程基线（可安装性/验证门禁/生成物） | 确保“任何人都能装得起来并跑通 lint/typecheck/test”，同时明确 generated 规则（避免无意义 diff 与线上坑） | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `eslint.config.mjs`, `tsconfig.base.json`, `scripts/` | `docs/code-review/root-tooling.md`           | done   |
-| P0       | packages：identity/auth 基建         | 统一身份/鉴权相关的共享代码正确性                                                                       | `packages/auth-server/`, `packages/identity-db/`                                                                             | `docs/code-review/packages-auth-identity.md` | todo   |
-| P0       | deploy：测试环境与基础设施           | 测试 DB/Redis 与本地可复现性                                                                            | `deploy/infra/docker-compose.test.yml`, `deploy/infra/`                                                                      | `docs/code-review/deploy-infra.md`           | todo   |
-| P2       | 详细设计/方案文档（仅审查）          | 对齐架构与方案假设，确保 review 过程与设计约束一致                                                      | `docs/architecture/`, `docs/research/`, `docs/products/`                                                                     | `docs/code-review/design-docs.md`            | todo   |
+| Priority | Module                               | Scope                                                                                                   | Directories / Key Files                                                                                                      | Doc                                | Status |
+| -------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------ |
+| P0       | 工程基线（可安装性/验证门禁/生成物） | 确保“任何人都能装得起来并跑通 lint/typecheck/test”，同时明确 generated 规则（避免无意义 diff 与线上坑） | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `eslint.config.mjs`, `tsconfig.base.json`, `scripts/` | `docs/code-review/root-tooling.md` | done   |
+| P0       | deploy：测试环境与基础设施           | 测试 DB/Redis 与本地可复现性                                                                            | `deploy/infra/docker-compose.test.yml`, `deploy/infra/`                                                                      | `docs/code-review/deploy-infra.md` | todo   |
+| P2       | 详细设计/方案文档（仅审查）          | 对齐架构与方案假设，确保 review 过程与设计约束一致                                                      | `docs/architecture/`, `docs/research/`, `docs/products/`                                                                     | `docs/code-review/design-docs.md`  | todo   |
 
 ### Phase 1 - Moryflow 后端（P0 优先 → P1）
 
@@ -233,7 +231,7 @@ status: draft
 
 先按阶段顺序执行（严格按下列顺序；可并行但不跨阶段跳跃）：
 
-1. **Phase 0**：工程基线 + 详细设计对齐 + 测试基础设施 + 共享身份基建
+1. **Phase 0**：工程基线 + 详细设计对齐 + 测试基础设施
 2. **Phase 1**：Moryflow 后端（server）P0 模块
 3. **Phase 2**：Anyhunt Dev 后端（server）P0 模块
 4. **Phase 3**：核心前端（console/admin/www/pc/mobile）关键流程

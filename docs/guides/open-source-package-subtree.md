@@ -1,12 +1,12 @@
 ---
 title: 从 Monorepo 开源拆分单个包（Git Subtree 双向同步）
-date: 2026-01-07
+date: 2026-01-23
 scope: monorepo, oss-repo
 status: proposal
 ---
 
 <!--
-[INPUT]: Monorepo 内的单个包（例如 `packages/auth-server`）；希望对外开源且保留该包的历史；内部仍以 Monorepo 为主要开发场景；允许外部 PR
+[INPUT]: Monorepo 内的单个包（例如 `packages/types`）；希望对外开源且保留该包的历史；内部仍以 Monorepo 为主要开发场景；允许外部 PR
 [OUTPUT]: 一个可复用的“拆分 + 双向同步 + 冲突治理”的落地方案（含自动化策略与约束）
 [POS]: 用于未来将任意 `packages/*` 独立开源时复用的流程模板
 
@@ -15,7 +15,7 @@ status: proposal
 
 # 从 Monorepo 开源拆分单个包（Git Subtree 双向同步）
 
-目标：把 Monorepo 中的某个包（下文称 **Package**，例如 `packages/auth-server`）单独开源成一个独立仓库（下文称 **OSS Repo**），同时 Package 仍保留在 Monorepo 里，内部继续在 Monorepo 开发；OSS Repo 允许外部 PR，并能回流到 Monorepo。
+目标：把 Monorepo 中的某个包（下文称 **Package**，例如 `packages/types`）单独开源成一个独立仓库（下文称 **OSS Repo**），同时 Package 仍保留在 Monorepo 里，内部继续在 Monorepo 开发；OSS Repo 允许外部 PR，并能回流到 Monorepo。
 
 本方案采用 **Git Subtree**，并选择以下默认策略（可按包调整）：
 
@@ -35,7 +35,7 @@ status: proposal
 
 ## 仓库角色与目录映射
 
-- **Monorepo**：开发主战场；Package 位于 `packages/<name>`，例如 `packages/auth-server`
+- **Monorepo**：开发主战场；Package 位于 `packages/<name>`，例如 `packages/types`
 - **OSS Repo**：对外开源仓库；其仓库根目录 = Package 根目录（拆分后目录结构会“上移一层”）
 
 映射关系：
@@ -52,15 +52,15 @@ status: proposal
 
 初始化只做一次（在你真正要开源时执行）。思路是：从 Monorepo 中把 `packages/<name>` 的提交历史提取成一条只包含该目录的分支，再推到全新 OSS Repo 的 `main`。
 
-推荐命令（示例包：`packages/auth-server`）：
+推荐命令（示例包：`packages/types`）：
 
 ```bash
 # 在 Monorepo 根目录
-git subtree split --prefix=packages/auth-server -b oss/auth-server-main
+git subtree split --prefix=packages/types -b oss/types-main
 
 # 推到新建的 OSS Repo（空仓库）
-git remote add auth-server-oss git@github.com:<org>/auth-server.git
-git push auth-server-oss oss/auth-server-main:main
+git remote add types-oss git@github.com:<org>/types.git
+git push types-oss oss/types-main:main
 ```
 
 注意事项：
@@ -77,7 +77,7 @@ git push auth-server-oss oss/auth-server-main:main
 同步命令：
 
 ```bash
-git subtree push --prefix=packages/auth-server auth-server-oss main
+git subtree push --prefix=packages/types types-oss main
 ```
 
 建议放在 Monorepo 的 CI（例如 GitHub Actions）里，做到“合并即同步”。
@@ -102,13 +102,13 @@ git subtree push --prefix=packages/auth-server auth-server-oss main
 核心命令：
 
 ```bash
-git subtree pull --prefix=packages/auth-server auth-server-oss main
+git subtree pull --prefix=packages/types types-oss main
 ```
 
 建议 PR 命名规范：
 
-- 分支：`sync/auth-server-from-oss/<timestamp>`
-- PR 标题：`chore(auth-server): sync from OSS`
+- 分支：`sync/types-from-oss/<timestamp>`
+- PR 标题：`chore(types): sync from OSS`
 - PR 内容：自动附上 OSS Repo 的最新 commit 链接与变更摘要（由 CI 生成）
 
 ## 分叉与冲突治理（最重要）
@@ -148,7 +148,7 @@ git subtree pull --prefix=packages/auth-server auth-server-oss main
 
 ### Token 1：Monorepo -> OSS 推送 token
 
-- 存放位置：Monorepo 的 Actions Secrets（例如 `OSS_AUTH_SERVER_PUSH_TOKEN`）
+- 存放位置：Monorepo 的 Actions Secrets（例如 `OSS_TYPES_PUSH_TOKEN`）
 - 类型：fine-grained PAT（推荐）或 GitHub App token
 - 访问范围：仅 OSS Repo
 - 权限（最小）：
@@ -174,21 +174,21 @@ git config user.email "anyhunt-sync-bot@users.noreply.github.com"
 
 ## CI 模板：Monorepo 合并后直推 OSS（可直接复制）
 
-把下述 workflow 放到 Monorepo：`.github/workflows/sync-auth-server-to-oss.yml`
+把下述 workflow 放到 Monorepo：`.github/workflows/sync-types-to-oss.yml`
 
-> 说明：以 `auth-server` 为例；未来其他包只需改 `prefix` 和 `oss_repo`。
+> 说明：以 `types` 为例；未来其他包只需改 `prefix` 和 `oss_repo`。
 
 ```yaml
-name: sync(auth-server): monorepo -> oss
+name: sync(types): monorepo -> oss
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/auth-server/**"
+      - "packages/types/**"
 
 concurrency:
-  group: sync-auth-server-to-oss
+  group: sync-types-to-oss
   cancel-in-progress: false
 
 jobs:
@@ -208,12 +208,12 @@ jobs:
 
       - name: Add OSS remote
         run: |
-          git remote add auth-server-oss https://x-access-token:${{ secrets.OSS_AUTH_SERVER_PUSH_TOKEN }}@github.com/<org>/auth-server.git
+          git remote add types-oss https://x-access-token:${{ secrets.OSS_TYPES_PUSH_TOKEN }}@github.com/<org>/types.git
           git remote -v
 
       - name: Push subtree to OSS main
         run: |
-          git subtree push --prefix=packages/auth-server auth-server-oss main
+          git subtree push --prefix=packages/types types-oss main
 ```
 
 失败处理（建议写进 CI 日志或团队约定）：
@@ -230,18 +230,18 @@ jobs:
 - workflow 会：
   1. checkout Monorepo（完整历史）
   2. 添加 OSS remote（指向当前 repo）
-  3. `git subtree pull` 把变更拉回 `packages/auth-server`
+  3. `git subtree pull` 把变更拉回 `packages/types`
   4. 使用 `peter-evans/create-pull-request` 自动创建 PR（需要人工 merge）
 
 ```yaml
-name: sync(auth-server): oss -> monorepo PR
+name: sync(types): oss -> monorepo PR
 
 on:
   push:
     branches: [main]
 
 concurrency:
-  group: sync-auth-server-to-monorepo
+  group: sync-types-to-monorepo
   cancel-in-progress: true
 
 jobs:
@@ -262,27 +262,27 @@ jobs:
 
       - name: Add OSS remote + fetch
         run: |
-          git remote add auth-server-oss https://github.com/<org>/auth-server.git
-          git fetch --no-tags auth-server-oss main
+          git remote add types-oss https://github.com/<org>/types.git
+          git fetch --no-tags types-oss main
 
-      - name: Subtree pull into packages/auth-server
+      - name: Subtree pull into packages/types
         run: |
-          git subtree pull --prefix=packages/auth-server auth-server-oss main
+          git subtree pull --prefix=packages/types types-oss main
 
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.MONOREPO_SYNC_PR_TOKEN }}
-          branch: sync/auth-server-from-oss
+          branch: sync/types-from-oss
           delete-branch: true
-          title: "chore(auth-server): sync from OSS"
+          title: "chore(types): sync from OSS"
           body: |
-            Sync `auth-server` from OSS repo.
+            Sync `types` from OSS repo.
 
-            Source: https://github.com/<org>/auth-server/commits/main
-          commit-message: "chore(auth-server): sync from OSS"
+            Source: https://github.com/<org>/types/commits/main
+          commit-message: "chore(types): sync from OSS"
           labels: |
-            sync:auth-server
+            sync:types
 ```
 
 可选增强：
@@ -322,18 +322,18 @@ jobs:
 
 ## 落地步骤（一次性 setup，按清单执行）
 
-> 下述步骤以 `packages/auth-server` 为例；其他包替换路径与仓库名即可。
+> 下述步骤以 `packages/types` 为例；其他包替换路径与仓库名即可。
 
 ### 1) 让 Package 具备“可独立开源”的形态
 
 - 把对外仓库需要的文件放在 Package 根目录（拆分后会成为 OSS Repo 根）：
-  - `packages/auth-server/README.md`
-  - `packages/auth-server/LICENSE`（或 `LICENSE.md`）
-  - `packages/auth-server/CONTRIBUTING.md`（可选）
-  - `packages/auth-server/SECURITY.md`（可选）
-- 确保 `packages/auth-server/package.json` 的 scripts 在 OSS 环境可直接跑：
+  - `packages/types/README.md`
+  - `packages/types/LICENSE`（或 `LICENSE.md`）
+  - `packages/types/CONTRIBUTING.md`（可选）
+  - `packages/types/SECURITY.md`（可选）
+- 确保 `packages/types/package.json` 的 scripts 在 OSS 环境可直接跑：
   - `lint` / `typecheck` / `test`
-- 如果你决定采用“策略 1（独立 lockfile）”，在 `packages/auth-server` 放置 `pnpm-lock.yaml`。
+- 如果你决定采用“策略 1（独立 lockfile）”，在 `packages/types` 放置 `pnpm-lock.yaml`。
 
 ### 2) 新建 OSS Repo（空仓库）
 
@@ -347,25 +347,25 @@ jobs:
 在 Monorepo 根目录执行：
 
 ```bash
-git subtree split --prefix=packages/auth-server -b oss/auth-server-main
-git remote add auth-server-oss git@github.com:<org>/auth-server.git
-git push auth-server-oss oss/auth-server-main:main
+git subtree split --prefix=packages/types -b oss/types-main
+git remote add types-oss git@github.com:<org>/types.git
+git push types-oss oss/types-main:main
 ```
 
 ### 4) 配置 Monorepo 的同步（Monorepo->OSS）
 
-- 在 Monorepo 添加 Secret：`OSS_AUTH_SERVER_PUSH_TOKEN`
-- 添加 workflow：`.github/workflows/sync-auth-server-to-oss.yml`（模板见上文）
+- 在 Monorepo 添加 Secret：`OSS_TYPES_PUSH_TOKEN`
+- 添加 workflow：`.github/workflows/sync-types-to-oss.yml`（模板见上文）
 
 ### 5) 配置 OSS Repo 的回流（OSS->Monorepo PR）
 
 - 在 OSS Repo 添加 workflow：`.github/workflows/sync-to-monorepo-pr.yml`（模板见上文）
-- 给 Monorepo 设置 label（可选）：`sync:auth-server`
+- 给 Monorepo 设置 label（可选）：`sync:types`
 
 ### 6) 进行一次“空风险”验收
 
-- 在 Monorepo 改一行 `packages/auth-server/README.md` → merge → 检查 OSS Repo `main` 是否出现对应变更
-- 在 OSS Repo 开一个 PR 改 `README.md` → merge → 检查 Monorepo 是否自动出现 `chore(auth-server): sync from OSS` PR
+- 在 Monorepo 改一行 `packages/types/README.md` → merge → 检查 OSS Repo `main` 是否出现对应变更
+- 在 OSS Repo 开一个 PR 改 `README.md` → merge → 检查 Monorepo 是否自动出现 `chore(types): sync from OSS` PR
 
 ## 运行手册（出问题时怎么处理）
 
@@ -375,8 +375,8 @@ git push auth-server-oss oss/auth-server-main:main
 
 处理：
 
-1. 去 Monorepo 看是否存在 `chore(auth-server): sync from OSS` 的同步 PR；如果有，先合它
-2. 重新运行 Monorepo 的 `sync(auth-server): monorepo -> oss` workflow
+1. 去 Monorepo 看是否存在 `chore(types): sync from OSS` 的同步 PR；如果有，先合它
+2. 重新运行 Monorepo 的 `sync(types): monorepo -> oss` workflow
 
 ### 场景 B：OSS->Monorepo PR workflow 失败（subtree pull 冲突）
 
@@ -386,17 +386,17 @@ git push auth-server-oss oss/auth-server-main:main
 
 ```bash
 # 在 Monorepo 本地
-git remote add auth-server-oss https://github.com/<org>/auth-server.git
-git fetch auth-server-oss main
+git remote add types-oss https://github.com/<org>/types.git
+git fetch types-oss main
 
-git checkout -b sync/auth-server-from-oss-manual
-git subtree pull --prefix=packages/auth-server auth-server-oss main
+git checkout -b sync/types-from-oss-manual
+git subtree pull --prefix=packages/types types-oss main
 
 # 解决冲突后
-git push origin sync/auth-server-from-oss-manual
+git push origin sync/types-from-oss-manual
 ```
 
-然后在 Monorepo 创建 PR，标题建议仍为 `chore(auth-server): sync from OSS`。
+然后在 Monorepo 创建 PR，标题建议仍为 `chore(types): sync from OSS`。
 
 ## OSS Repo 的自测 CI（推荐最小集合）
 
@@ -413,10 +413,10 @@ git push origin sync/auth-server-from-oss-manual
 建议在 Monorepo 内抽象出“可复用”的同步配置（不要求现在实现）：
 
 - 约定一个配置对象（YAML/JSON 均可），描述：
-  - `packagePrefix`: `packages/auth-server`
-  - `ossRepo`: `org/auth-server`
+  - `packagePrefix`: `packages/types`
+  - `ossRepo`: `org/types`
   - `ossBranch`: `main`
-  - `syncLabels`: `sync:auth-server`
+  - `syncLabels`: `sync:types`
 - 将同步脚本做成参数化（一个脚本支持多个包），避免未来每个包复制一套 Action。
 
 ## 开源前检查清单（建议）

@@ -1,6 +1,6 @@
 ---
 title: Fetchx 接入方案（Anyhunt Dev 试点）
-date: 2026-01-06
+date: 2026-01-23
 scope: anyhunt.app, server.anyhunt.app
 status: active
 ---
@@ -46,7 +46,7 @@ status: active
 
 ### 3) 风险提示（当前差距）
 
-- Fetchx 现有 Auth 与新方案冲突：`apps/anyhunt/server/src/auth` 需删除并切到 `/auth-server` + Auth Service。
+- Fetchx 现有 Auth 与新方案冲突：需清理旧 Auth 逻辑，统一到 `apps/anyhunt/server/src/auth`。
 - console/admin 已迁入，但需改造接入 Auth Client 与新域名。
 - apps 目录重构会影响 workspace 匹配规则与构建脚本。
 
@@ -91,7 +91,7 @@ apps/
 
 ### Phase 2：Console 接入（用户控制台）
 
-- `apps/anyhunt/console` 已完成迁入并接入 `/auth-client`。
+- `apps/anyhunt/console` 已完成迁入并接入内置 auth client（`apps/anyhunt/console/src/lib/auth-client.ts`）。
 - 认证细节（已落地）：
   - `baseUrl=https://server.anyhunt.app/api/v1/auth`
   - `clientType=web`
@@ -106,7 +106,7 @@ apps/
 
 ### Phase 3：Admin 接入（管理后台）
 
-- `apps/anyhunt/admin/www` 已完成迁入并接入 `/auth-client`（管理端 API 统一由 `apps/anyhunt/server` 提供）。
+- `apps/anyhunt/admin/www` 已完成迁入并接入内置 auth client（`apps/anyhunt/admin/www/src/lib/auth-client.ts`，管理端 API 统一由 `apps/anyhunt/server` 提供）。
 - 认证细节（已落地）：
   - `baseUrl=https://server.anyhunt.app/api/v1/auth`
   - `clientType=web`
@@ -118,20 +118,16 @@ apps/
   - API Key 管理
   - 额度/订单/操作日志（若已有）
 
-### Phase 4：Auth Service 落地
+### Phase 4：Auth 模块统一（内置）
 
-- 使用 `templates/auth-service` 部署 Anyhunt Dev 的 Auth：
-  - `BETTER_AUTH_URL=https://server.anyhunt.app/api/v1/auth`
-  - `COOKIE_DOMAIN=.anyhunt.app`
-  - `TRUSTED_ORIGINS=https://console.anyhunt.app,https://admin.anyhunt.app`
-- Google/Apple 登录按 Anyhunt Dev 独立配置。
-- Fetchx Server 不再自带 auth 模块，仅做业务 API。
+- 认证模块统一在 `apps/anyhunt/server/src/auth` 内维护（不再引入独立认证服务）。
+- 保持 console/admin 走 session（`/api/v1/auth`）与 API Key 双轨鉴权。
+- 统一配置 OAuth/域名/cookie 域相关环境变量（以 Anyhunt Dev 为准）。
 
-### Phase 5：Fetchx Server 与权限切换
+### Phase 5：Fetchx Server 权限切换与清理
 
-- 移除 `apps/anyhunt/server/src/auth`，切到新 Auth/JWKS。
-- 内部接口：`JwtGuard`（Auth Service 签发 access token）
-- 对外能力：API Key (`Authorization: Bearer <apiKey>`) + 限流
+- 清理旧 Fetchx Auth 路由与中间件，确保 SessionGuard 与 ApiKeyGuard 生效。
+- 对外能力保持 API Key (`Authorization: Bearer <apiKey>`) + 限流。
 
 ## 五、删除清单（零兼容）
 
@@ -145,7 +141,7 @@ apps/
 - `anyhunt.app/fetchx` → Fetchx 模块页（`apps/anyhunt/www`）
 - `console.anyhunt.app` → Console 前端（Web）
 - `admin.anyhunt.app` → Admin 前端（Web）
-- `server.anyhunt.app/api/v1/auth/*` → Auth Service（同域挂载）
+- `server.anyhunt.app/api/v1/auth/*` → Anyhunt Server Auth（内置）
 - `server.anyhunt.app/api/v1/*` → Anyhunt Server（Fetchx 模块）
 
 ## 七、验收标准

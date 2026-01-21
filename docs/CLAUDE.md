@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-23（全量 Code Review 计划按阶段重排并纳入详细设计审查）
+> 最近更新：2026-01-23（清理未使用的认证相关内容与归档文档引用，并同步修正文档中的 auth-client/旧拆包引用）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -43,6 +43,9 @@
 
 ## 最近更新
 
+- 清理 auth-client/旧拆包引用：`docs/_archived/plans/user-system-refactor-plan.md`、`docs/_archived/plans/refactor-and-deploy-plan.md`、`docs/runbooks/deploy/anyhunt-dokploy.md`、`docs/products/anyhunt-dev/migrations/fetchx-integration.md`、`docs/_archived/progress.md`（2026-01-23：archived/runbook）
+- 归档用户系统计划清理 Identity DB 引用：`docs/_archived/plans/user-system-refactor-plan.md`（2026-01-23：archived）
+- 清理未使用的认证相关内容（备份哈希：`835853de3e01ba610fdf4d5c39644a4974395cb7`）
 - 全量 Code Review 计划：按阶段重排模块清单并纳入详细设计审查：`docs/code-review/index.md`（2026-01-23：active）
 - 全量 Code Review 计划：补充阶段顺序与执行步骤：`docs/code-review/index.md`（2026-01-23：active）
 - 全量 Code Review 计划：调整执行顺序、补充核心前端清单与进度同步区：`docs/code-review/index.md`（2026-01-23：active）

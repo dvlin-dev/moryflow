@@ -7,7 +7,6 @@
   "scripts": {
     "dev:anyhunt": "pnpm --filter @anyhunt/anyhunt-server start:dev",
     "dev:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www dev",
-    "dev:auth": "pnpm --filter @anyhunt/auth-server start:dev",
     "dev:console": "pnpm --filter @anyhunt/console dev",
     "dev:admin": "pnpm --filter @anyhunt/admin dev",
     "dev:moryflow:pc": "pnpm --filter @anyhunt/moryflow-pc dev",
@@ -18,7 +17,6 @@
     "postinstall": "pnpm run build:packages",
     "build:anyhunt": "pnpm --filter @anyhunt/anyhunt-server build",
     "build:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www build",
-    "build:auth": "pnpm --filter @anyhunt/auth-server build",
     "build:console": "pnpm --filter @anyhunt/console build",
     "build:admin": "pnpm --filter @anyhunt/admin build",
     "lint": "turbo run lint",

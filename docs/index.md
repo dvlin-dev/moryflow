@@ -34,7 +34,6 @@ status: active
 - 本地开发环境：`docs/guides/dev-setup.md`
 - 测试指南：`docs/guides/testing.md`
 - Auth：流程与接口约定：`docs/guides/auth/auth-flows-and-endpoints.md`
-- Auth Service 模板快速接入：`docs/guides/auth/auth-service-quick-start.md`
 - 前端表单：Zod + RHF 兼容：`docs/guides/frontend/forms-zod-rhf.md`
 - 开源拆分：Git Subtree 双向同步：`docs/guides/open-source-package-subtree.md`
 
