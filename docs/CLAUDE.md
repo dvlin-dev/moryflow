@@ -31,6 +31,7 @@
 ## 目录结构
 
 - `docs/index.md`：统一入口索引（新增/移动文档时首先更新这里）。
+- `docs/code-review/`：全量 Code Review 的模块拆分、进度与结论索引（每个模块单独一份 review 文档）。
 - `docs/architecture/`：系统级架构决策与不变量（"最终真相"）；含 `adr/` 决策记录与 `auth/` 拆分文档。
 - `docs/guides/`：开发指南（如何做、最佳实践、可复用做法）。
 - `docs/runbooks/`：运行手册（部署/排障/操作清单，照做即可）。
@@ -43,6 +44,8 @@
 ## 最近更新
 
 - 消息列表相关代码审查报告（Moryflow PC / Anyhunt Console / @anyhunt/ui）：`docs/research/message-list-ui-code-review.md`（2026-01-22：review）
+- 全量 Code Review（模块拆分 + 优先级 + 进度索引）：`docs/code-review/index.md`（2026-01-21：active）
+- 工程基线：同步 `pnpm-lock.yaml` 并验证 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（2026-01-21：completed）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`（2026-01-21：completed，MessageList 已补齐）
 - Console Agent Browser Chat：UIMessageChunk 流式分段（对齐 Moryflow/pc）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（2026-01-21：draft）
 - Digest 全量 Code Review：`docs/products/anyhunt-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）

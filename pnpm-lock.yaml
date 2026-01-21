@@ -1139,6 +1139,9 @@ importers:
       '@anyhunt/tiptap':
         specifier: workspace:*
         version: link:../../../packages/tiptap
+      '@anyhunt/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.30)(react-dom@19.2.3(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -1575,6 +1578,9 @@ importers:
       '@anyhunt/tiptap':
         specifier: workspace:*
         version: link:../../../packages/tiptap
+      '@anyhunt/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
       '@anyhunt/ui':
         specifier: workspace:*
         version: link:../../../packages/ui
@@ -2859,6 +2865,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@anyhunt/types':
+        specifier: workspace:*
+        version: link:../types
       '@base-ui-components/react':
         specifier: 1.0.0-beta.7
         version: 1.0.0-beta.7(@types/react@19.1.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
