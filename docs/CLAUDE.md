@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-23（清理未使用的认证相关内容与归档文档引用，并同步修正文档中的 auth-client/旧拆包引用）
+> 最近更新：2026-01-23（完成 root-tooling 修复并同步索引）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,8 @@
 
 ## 最近更新
 
+- 工程基线 / Root Tooling 修复完成：`docs/code-review/root-tooling.md`（2026-01-23：fix）
+- 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（2026-01-23：review）
 - 清理历史归档文档并移除目录：`docs/index.md`（2026-01-23）
 - 修正 Agents SDK 参考文档包名与文件命名：`docs/references/anyhunt-agents-sdk.md`（2026-01-23）
 - 修正 Moryflow 同步方案的共享包引用：`docs/products/moryflow/research/sync-refactor-proposal.md`（2026-01-23）

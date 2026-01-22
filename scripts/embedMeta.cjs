@@ -1,3 +1,11 @@
+/**
+ * [PROVIDES]: 生成构建期 metadata（用于 agents 包的版本信息注入）
+ * [DEPENDS]: package.json 依赖、node:fs/node:path/node:process
+ * [POS]: packages/agents* 的 prebuild 脚本入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 const { readFileSync, writeFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 const { cwd } = require('node:process');
@@ -7,14 +15,14 @@ const packageJson = JSON.parse(
 );
 
 const dependencies = Object.entries(packageJson.dependencies ?? {});
-const moryflowDependencies = dependencies.filter(
-  ([name]) => name.startsWith('@moryflow/') || name === 'openai',
+const anyhuntDependencies = dependencies.filter(
+  ([name]) => name.startsWith('@anyhunt/') || name === 'openai',
 );
 
 const versions = {
   [packageJson.name]: packageJson.version,
   ...Object.fromEntries(
-    moryflowDependencies.map(([name, version]) => [name, version]),
+    anyhuntDependencies.map(([name, version]) => [name, version]),
   ),
 };
 

@@ -24,7 +24,7 @@
     "test": "turbo run test",
     "test:unit": "turbo run test:unit",
     "test:e2e": "turbo run test:e2e",
-    "clean": "turbo run clean && rm -rf node_modules",
+    "clean": "turbo run clean && node scripts/clean.cjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky"
   },

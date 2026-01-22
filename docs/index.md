@@ -62,6 +62,7 @@ status: active
 ## Code Review（全量评审计划与进度）
 
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`
+- 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）
 

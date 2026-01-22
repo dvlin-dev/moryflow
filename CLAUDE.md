@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-01-23（对齐 .npmrc 安装策略、更新 embedMeta 前缀、clean 脚本跨平台）
 
 ## 项目概述
 
@@ -206,25 +207,24 @@ Anyhunt/
 
 ## 文档索引
 
-| 文档                                                                                                                   | 说明                                                           |
-| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| [`docs/index.md`](./docs/index.md)                                                                                     | docs/ 统一入口索引（内部协作）                                 |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）      |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）       |
-| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）      |
-| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                        |
-| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                 | Runbook：Anyhunt Dev Dokploy 多项目部署清单                    |
-| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md) | Runbook：megaboxpro（1panel）反代路由配置                      |
-| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                               | Runbook：Moryflow docker compose 部署                          |
-| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                       | Guide：Auth 流程与接口约定                                     |
-| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                     | Guide：Zod + RHF 兼容性（zod/v3）                              |
-| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                           | Guide：从 Monorepo 开源拆分单个包（Git Subtree）               |
-| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                         | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）          |
-| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                           | Anyhunt Dev：内部方案入口                                      |
-| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                 | Moryflow：内部方案入口                                         |
-| `docs/_archived/`                                                                                                      | 已完成/归档文档（progress.md, ui-migration, console-refactor） |
-| `apps/*/CLAUDE.md`                                                                                                     | 各应用的详细文档                                               |
-| `packages/*/CLAUDE.md`                                                                                                 | 各包的详细文档                                                 |
+| 文档                                                                                                                   | 说明                                                      |
+| ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [`docs/index.md`](./docs/index.md)                                                                                     | docs/ 统一入口索引（内部协作）                            |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
+| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
+| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                   |
+| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                 | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |
+| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md) | Runbook：megaboxpro（1panel）反代路由配置                 |
+| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                               | Runbook：Moryflow docker compose 部署                     |
+| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                       | Guide：Auth 流程与接口约定                                |
+| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                     | Guide：Zod + RHF 兼容性（zod/v3）                         |
+| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                           | Guide：从 Monorepo 开源拆分单个包（Git Subtree）          |
+| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                         | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）     |
+| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                           | Anyhunt Dev：内部方案入口                                 |
+| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                 | Moryflow：内部方案入口                                    |
+| `apps/*/CLAUDE.md`                                                                                                     | 各应用的详细文档                                          |
+| `packages/*/CLAUDE.md`                                                                                                 | 各包的详细文档                                            |
 
 ## 外部仓库快照（仅查阅）
 
