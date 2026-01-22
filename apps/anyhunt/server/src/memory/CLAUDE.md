@@ -29,7 +29,7 @@ Core memory service for the Memox platform. Handles memory CRUD operations, sema
 | File                           | Type       | Description                        |
 | ------------------------------ | ---------- | ---------------------------------- |
 | `memory.controller.ts`         | Controller | Public API endpoints (ApiKeyGuard) |
-| `console-memory.controller.ts` | Controller | Console endpoints (SessionGuard)   |
+| `console-memory.controller.ts` | Controller | Console endpoints (AuthGuard)      |
 | `memory.service.ts`            | Service    | Core business logic                |
 | `memory.repository.ts`         | Repository | Database queries with pgvector     |
 | `memory.module.ts`             | Module     | NestJS module definition           |
@@ -48,7 +48,7 @@ Public API (v1) - ApiKeyGuard:
   GET    /v1/memories/:id       # Get by ID
   DELETE /v1/memories/:id       # Delete memory
 
-Console API - SessionGuard:
+Console API - AuthGuard:
   GET    /api/v1/console/memories  # List for console
   GET    /api/v1/console/memories/export # Export as JSON/CSV
 ```

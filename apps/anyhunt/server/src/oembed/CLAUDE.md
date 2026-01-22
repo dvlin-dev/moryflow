@@ -16,7 +16,7 @@ oEmbed provider support for fetching embed data from various media platforms. Us
 ## Constraints
 
 - Public API uses ApiKeyGuard
-- Console endpoints use SessionGuard
+- Console endpoints use AuthGuard
 - Provider implementations must extend BaseProvider
 - URL patterns defined in constants
 

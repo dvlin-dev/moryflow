@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthService } from '../auth.service';
 import type { PrismaService } from '../../prisma/prisma.service';
 import type { EmailService } from '../../email/email.service';
+import type { RedisService } from '../../redis/redis.service';
 import type { Request as ExpressRequest } from 'express';
 
 describe('AuthService', () => {
@@ -14,12 +15,14 @@ describe('AuthService', () => {
     user: {
       findUnique: ReturnType<typeof vi.fn>;
     };
-    session: {
-      findUnique: ReturnType<typeof vi.fn>;
-    };
   };
   let mockEmailService: {
     sendOTP: ReturnType<typeof vi.fn>;
+  };
+  let mockRedisService: {
+    get: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+    del: ReturnType<typeof vi.fn>;
   };
   let mockAuth: {
     api: {
@@ -32,18 +35,22 @@ describe('AuthService', () => {
       user: {
         findUnique: vi.fn(),
       },
-      session: {
-        findUnique: vi.fn(),
-      },
     };
 
     mockEmailService = {
       sendOTP: vi.fn(),
     };
 
+    mockRedisService = {
+      get: vi.fn(),
+      set: vi.fn(),
+      del: vi.fn(),
+    };
+
     service = new AuthService(
       mockPrisma as unknown as PrismaService,
       mockEmailService as unknown as EmailService,
+      mockRedisService as unknown as RedisService,
     );
 
     // Mock the internal auth instance
@@ -67,9 +74,9 @@ describe('AuthService', () => {
     });
   });
 
-  // ============ getSession ============
+  // ============ getSessionFromRequest ============
 
-  describe('getSession', () => {
+  describe('getSessionFromRequest', () => {
     const mockRequest = {
       headers: {
         cookie: 'session=abc123',
@@ -80,7 +87,7 @@ describe('AuthService', () => {
     it('should return null when no session exists', async () => {
       mockAuth.api.getSession.mockResolvedValue(null);
 
-      const result = await service.getSession(mockRequest);
+      const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result).toBeNull();
     });
@@ -92,7 +99,7 @@ describe('AuthService', () => {
       });
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      const result = await service.getSession(mockRequest);
+      const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result).toBeNull();
     });
@@ -111,7 +118,7 @@ describe('AuthService', () => {
         subscription: { tier: 'FREE' },
       });
 
-      const result = await service.getSession(mockRequest);
+      const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result).toBeNull();
     });
@@ -131,7 +138,7 @@ describe('AuthService', () => {
         subscription: { tier: 'PRO' },
       });
 
-      const result = await service.getSession(mockRequest);
+      const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result).toEqual({
         session: {
@@ -162,7 +169,7 @@ describe('AuthService', () => {
         subscription: null, // No subscription
       });
 
-      const result = await service.getSession(mockRequest);
+      const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result?.user.tier).toBe('FREE');
     });
@@ -181,7 +188,7 @@ describe('AuthService', () => {
         subscription: { tier: 'TEAM' },
       });
 
-      const result = await service.getSession(mockRequest);
+      const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result?.user.isAdmin).toBe(true);
     });
@@ -196,170 +203,10 @@ describe('AuthService', () => {
 
       mockAuth.api.getSession.mockResolvedValue(null);
 
-      await service.getSession(requestWithArrayHeader);
+      await service.getSessionFromRequest(requestWithArrayHeader);
 
       expect(mockAuth.api.getSession).toHaveBeenCalledWith({
         headers: expect.any(Headers),
-      });
-    });
-  });
-
-  // ============ isAdmin ============
-
-  describe('isAdmin', () => {
-    it('should return true for admin user', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({ isAdmin: true });
-
-      const result = await service.isAdmin('admin_1');
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false for non-admin user', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({ isAdmin: false });
-
-      const result = await service.isAdmin('user_1');
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false for non-existent user', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
-
-      const result = await service.isAdmin('non_existent');
-
-      expect(result).toBe(false);
-    });
-
-    it('should query correct user', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({ isAdmin: false });
-
-      await service.isAdmin('user_123');
-
-      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 'user_123' },
-        select: { isAdmin: true },
-      });
-    });
-  });
-
-  // ============ getSessionByToken ============
-
-  describe('getSessionByToken', () => {
-    it('should return null for non-existent session', async () => {
-      mockPrisma.session.findUnique.mockResolvedValue(null);
-
-      const result = await service.getSessionByToken('invalid_token');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null for expired session', async () => {
-      mockPrisma.session.findUnique.mockResolvedValue({
-        id: 'session_1',
-        token: 'token_1',
-        expiresAt: new Date(Date.now() - 1000), // Expired
-        user: {
-          id: 'user_1',
-          email: 'test@example.com',
-          name: 'Test',
-          isAdmin: false,
-          deletedAt: null,
-          subscription: { tier: 'FREE' },
-        },
-      });
-
-      const result = await service.getSessionByToken('token_1');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null for soft-deleted user', async () => {
-      mockPrisma.session.findUnique.mockResolvedValue({
-        id: 'session_1',
-        token: 'token_1',
-        expiresAt: new Date(Date.now() + 86400000), // Tomorrow
-        user: {
-          id: 'user_1',
-          email: 'test@example.com',
-          name: 'Test',
-          isAdmin: false,
-          deletedAt: new Date(), // Deleted
-          subscription: { tier: 'FREE' },
-        },
-      });
-
-      const result = await service.getSessionByToken('token_1');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return session with user data', async () => {
-      const expiresAt = new Date(Date.now() + 86400000);
-      mockPrisma.session.findUnique.mockResolvedValue({
-        id: 'session_1',
-        token: 'token_abc',
-        expiresAt,
-        user: {
-          id: 'user_1',
-          email: 'test@example.com',
-          name: 'Test User',
-          isAdmin: false,
-          deletedAt: null,
-          subscription: { tier: 'PRO' },
-        },
-      });
-
-      const result = await service.getSessionByToken('token_abc');
-
-      expect(result).toEqual({
-        session: {
-          id: 'session_1',
-          token: 'token_abc',
-          expiresAt,
-        },
-        user: {
-          id: 'user_1',
-          email: 'test@example.com',
-          name: 'Test User',
-          tier: 'PRO',
-          isAdmin: false,
-        },
-      });
-    });
-
-    it('should default tier to FREE when no subscription', async () => {
-      mockPrisma.session.findUnique.mockResolvedValue({
-        id: 'session_1',
-        token: 'token_abc',
-        expiresAt: new Date(Date.now() + 86400000),
-        user: {
-          id: 'user_1',
-          email: 'test@example.com',
-          name: 'Test',
-          isAdmin: false,
-          deletedAt: null,
-          subscription: null,
-        },
-      });
-
-      const result = await service.getSessionByToken('token_abc');
-
-      expect(result?.user.tier).toBe('FREE');
-    });
-
-    it('should query with correct token', async () => {
-      mockPrisma.session.findUnique.mockResolvedValue(null);
-
-      await service.getSessionByToken('my_token_123');
-
-      expect(mockPrisma.session.findUnique).toHaveBeenCalledWith({
-        where: { token: 'my_token_123' },
-        include: {
-          user: {
-            include: { subscription: true },
-          },
-        },
       });
     });
   });

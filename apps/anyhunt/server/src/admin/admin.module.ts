@@ -8,7 +8,6 @@ import { AdminService } from './admin.service';
 import { AdminJobsService } from './admin-jobs.service';
 import { AdminQueueService } from './admin-queue.service';
 import { AdminScheduledTasksService } from './admin-scheduled-tasks.service';
-import { AdminAuthController } from './admin-auth.controller';
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminUserCreditsController } from './admin-user-credits.controller';
@@ -23,7 +22,6 @@ import { AdminUserCreditsService } from './admin-user-credits.service';
 @Module({
   imports: [QueueModule],
   controllers: [
-    AdminAuthController,
     AdminDashboardController,
     AdminUsersController,
     AdminUserCreditsController,

@@ -22,7 +22,7 @@ status: active
 1. **两条业务线互不互通**：不共享账号/Token/数据库。
 2. **只共享代码**：后端基础设施抽到 `packages/*` 复用；部署互不影响。
 3. **Anyhunt Dev API 统一入口**：Anyhunt Dev 对外 API 固定 `https://server.anyhunt.app/api/v1`；控制台/后台为独立 Web 应用，需按 Origin 配置 CORS 与 CSRF。
-   - 服务端生产环境强制要求配置 `ALLOWED_ORIGINS`（逗号分隔），至少包含 `https://anyhunt.app`、`https://console.anyhunt.app`、`https://admin.anyhunt.app`。
+   - 服务端生产环境强制要求配置 `TRUSTED_ORIGINS`（逗号分隔），至少包含 `https://anyhunt.app`、`https://console.anyhunt.app`、`https://admin.anyhunt.app`。
 4. **OAuth 登录**：支持 Google/Apple；每条业务线独立配置与回调域名。
 5. **不引入 Tailscale**：服务间走公网 HTTPS；安全依靠鉴权 + 限流 + 最小暴露面。
 6. **服务机只暴露 `IP:端口`**：4c6g/8c16g 不处理域名与证书；域名反代统一在 megaboxpro（1panel）。
@@ -71,9 +71,9 @@ status: active
 约定：
 
 - `app.setGlobalPrefix('api')`；对外统一 `/api/v1/...`
-- Auth：`/api/v1/auth/*`（支持 Google/Apple 登录）
+- Auth：`/api/auth/*`（支持 Google/Apple 登录）
 - Anyhunt Dev API Key：`Authorization: Bearer <apiKey>`
-- 生产环境 CORS：两条业务线服务端都要求配置 `ALLOWED_ORIGINS`（逗号分隔），按业务线分别填：
+- 生产环境 CORS：两条业务线服务端都要求配置 `TRUSTED_ORIGINS`（逗号分隔），按业务线分别填：
   - Moryflow：至少包含 `https://www.moryflow.com`、`https://admin.moryflow.com`、`https://app.moryflow.com`
   - Anyhunt：至少包含 `https://anyhunt.app`、`https://console.anyhunt.app`、`https://admin.anyhunt.app`
 

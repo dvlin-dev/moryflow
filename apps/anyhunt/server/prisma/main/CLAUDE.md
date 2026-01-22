@@ -28,3 +28,5 @@
 ## 近期变更记录
 
 - 2026-01-20：LLM Settings 拆分默认模型：`defaultModelId` → `defaultAgentModelId/defaultExtractModelId`（新增补丁迁移，避免修改既有迁移）。
+- 2026-01-24：新增 `RefreshToken` 与 `Jwks` 模型（access/refresh token 与 JWKS 支持）。
+- 2026-01-25：补充 `User.refreshTokens` 关系字段，完善 RefreshToken 双向关联。

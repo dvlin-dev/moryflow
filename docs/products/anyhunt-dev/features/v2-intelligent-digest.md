@@ -352,7 +352,7 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 > 完整路由表。详细参数见 Zod schema。
 
-### 7.1 Console API（SessionGuard）
+### 7.1 Console API（AuthGuard）
 
 **订阅管理**：
 

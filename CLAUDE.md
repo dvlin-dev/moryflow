@@ -402,7 +402,7 @@ module-name/
 │   └── module-name.schema.ts       # Zod schemas + 推断类型 + DTO 类
 ├── module-name.module.ts           # NestJS 模块定义
 ├── module-name.controller.ts       # API 控制器（ApiKeyGuard）
-├── module-name-console.controller.ts # 控制台控制器（SessionGuard）[可选]
+├── module-name-console.controller.ts # 控制台控制器（AuthGuard）[可选]
 ├── module-name.service.ts          # 业务逻辑
 ├── module-name.constants.ts        # 常量、枚举、配置
 ├── module-name.errors.ts           # 自定义 HttpException 错误

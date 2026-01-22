@@ -13,13 +13,13 @@ status: draft
 
 ### 1.1 服务端（真正发起模型请求）
 
-| 能力 | 入口 API | 关键文件（调用点） | 实际调用方式 |
-| --- | --- | --- | --- |
-| LLM Admin 配置（Provider/Model/Settings） | `GET/PUT /api/v1/admin/llm/*` | `apps/anyhunt/server/src/llm/*` | 不调用模型；只做密钥加解密与路由配置 |
-| Extract（结构化提取） | `POST /api/v1/extract` | `apps/anyhunt/server/src/extract/extract.service.ts` | OpenAI SDK：`chat.completions.create/parse` |
-| Agent（浏览器工具调用编排，SSE） | `POST /api/v1/agent` | `apps/anyhunt/server/src/agent/agent.service.ts` | `@anyhunt/agents-core` + `Model`（由 `llm/` 路由构建） |
-| Digest（摘要/叙事/解释） | 多个 Digest run/投递流程内部触发 | `apps/anyhunt/server/src/digest/services/ai.service.ts` | OpenAI SDK：`chat.completions.create` |
-| Embedding（向量） | 被 Memory/Search/Extract 等间接依赖 | `apps/anyhunt/server/src/embedding/embedding.service.ts` | OpenAI SDK：`embeddings.create` |
+| 能力                                      | 入口 API                            | 关键文件（调用点）                                       | 实际调用方式                                           |
+| ----------------------------------------- | ----------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
+| LLM Admin 配置（Provider/Model/Settings） | `GET/PUT /api/v1/admin/llm/*`       | `apps/anyhunt/server/src/llm/*`                          | 不调用模型；只做密钥加解密与路由配置                   |
+| Extract（结构化提取）                     | `POST /api/v1/extract`              | `apps/anyhunt/server/src/extract/extract.service.ts`     | OpenAI SDK：`chat.completions.create/parse`            |
+| Agent（浏览器工具调用编排，SSE）          | `POST /api/v1/agent`                | `apps/anyhunt/server/src/agent/agent.service.ts`         | `@anyhunt/agents-core` + `Model`（由 `llm/` 路由构建） |
+| Digest（摘要/叙事/解释）                  | 多个 Digest run/投递流程内部触发    | `apps/anyhunt/server/src/digest/services/ai.service.ts`  | OpenAI SDK：`chat.completions.create`                  |
+| Embedding（向量）                         | 被 Memory/Search/Extract 等间接依赖 | `apps/anyhunt/server/src/embedding/embedding.service.ts` | OpenAI SDK：`embeddings.create`                        |
 
 ### 1.2 前端（只负责传参/展示，不直接调用模型）
 
@@ -33,7 +33,7 @@ status: draft
 
 这一层是 Anyhunt Dev 的“模型配置真相来源”，其核心目标是：
 
-1) **密钥只存密文**（DB），2) **按用途（agent/extract）选择默认模型**，3) **把外部 modelId 映射到上游 upstreamId**，4) **把 provider/baseUrl/apiKey 组装成可调用的 client/model**。
+1. **密钥只存密文**（DB），2) **按用途（agent/extract）选择默认模型**，3) **把外部 modelId 映射到上游 upstreamId**，4) **把 provider/baseUrl/apiKey 组装成可调用的 client/model**。
 
 ### 2.1 数据结构（概念层）
 
@@ -107,8 +107,8 @@ resolveUpstream({ purpose, requestedModelId? }):
 
 这里分两条“调用形态”：
 
-1) **Agent 路径（`LlmRoutingService`）**：返回 `@anyhunt/agents-core` 的 `Model`
-2) **OpenAI SDK 路径（`LlmOpenAiClientService`）**：返回 OpenAI SDK client（用于 `chat.completions.*` / `embeddings.*`）
+1. **Agent 路径（`LlmRoutingService`）**：返回 `@anyhunt/agents-core` 的 `Model`
+2. **OpenAI SDK 路径（`LlmOpenAiClientService`）**：返回 OpenAI SDK client（用于 `chat.completions.*` / `embeddings.*`）
 
 Agent 路由（伪代码，文件：`apps/anyhunt/server/src/llm/llm-routing.service.ts`）：
 
@@ -216,7 +216,7 @@ completeText({ systemPrompt, userPrompt }):
 ### 5.1 核心链路（从 API 到 LLM）
 
 - API（Public）：`POST /api/v1/agent`（ApiKeyGuard）
-- API（Console 代理）：`POST /api/v1/console/playground/agent`（SessionGuard，仅代理）
+- API（Console 代理）：`POST /api/v1/console/playground/agent`（AuthGuard，仅代理）
 - 执行编排：`apps/anyhunt/server/src/agent/agent.service.ts`
 - 模型路由：`apps/anyhunt/server/src/llm/llm-routing.service.ts`（返回 `Model`）
 
@@ -258,24 +258,24 @@ executeTask(input, userId):
 
 ### 5.3 关键实现细节（Code Review 重点）
 
-1) **“纯文本输出”时移除 `response_format: { type: 'text' }`**
+1. **“纯文本输出”时移除 `response_format: { type: 'text' }`**
    - 位置：`apps/anyhunt/server/src/agent/agent.service.ts` `buildAgent()`
    - 原因：部分 OpenAI-compatible 网关会对该字段报 400（尤其是 Gemini/Claude 的代理网关）
    - 实现：通过 `modelSettings.providerData = { response_format: undefined }` 覆盖并让 JSON stringify 丢弃该字段
 
-2) **Browser Session 惰性创建**
+2. **Browser Session 惰性创建**
    - 位置：`getSessionId()` closure，只有首次工具调用才 `browserPort.createSession()`
    - 收益：避免“LLM fail-fast / 早期取消 / 额度不足”导致的无效 session
 
-3) **流式事件转换**
+3. **流式事件转换**
    - 位置：`apps/anyhunt/server/src/agent/agent-stream.processor.ts`
    - 将 `@anyhunt/agents-core` 的 stream event 转为 SSE：`thinking/tool_call/tool_result/progress/...`
 
-4) **取消语义**
+4. **取消语义**
    - AbortSignal（本进程内硬取消）
    - Redis cancel flag（跨实例，轮询检测）
 
-5) **工具集合（Tool Calling 的边界）**
+5. **工具集合（Tool Calling 的边界）**
    - 位置：`apps/anyhunt/server/src/agent/tools/browser-tools.ts`
    - 核心工具：
      - `web_search`
@@ -319,28 +319,28 @@ generateEmbedding(text):
 
 ### 7.2 主要风险/潜在问题（建议列为 TODO 或重构任务）
 
-1) Extract 的 `jsonSchemaToZod()` 过于“宽松/不完整”
+1. Extract 的 `jsonSchemaToZod()` 过于“宽松/不完整”
    - 只支持最基础的 `type`，忽略 `enum/format/minLength/maxLength/oneOf/...`
    - 没有 schema bytes/depth 的限制（Agent 有，Extract 没有）
    - 风险：structured output 约束弱，LLM 输出更容易飘；也更容易被输入放大成本
 
-2) Extract 的 prompt 没有内容截断/分块策略
+2. Extract 的 prompt 没有内容截断/分块策略
    - 当前会把整个 `markdown` 塞进 prompt（可能非常大）
    - 风险：超过上下文长度导致 400/截断/质量差；成本/延迟不可控
 
-3) Structured Outputs 的兼容性问题
+3. Structured Outputs 的兼容性问题
    - Extract 用 `chat.completions.parse + response_format(zodResponseFormat)`
    - 风险：部分 “OpenAI-compatible” 网关并不支持 structured output；需要 fallback 策略（例如降级到 text + zod safeParse）
 
-4) Digest 的 LLM 调用缺少可控的生成参数
+4. Digest 的 LLM 调用缺少可控的生成参数
    - 当前 `chat.completions.create` 没有显式传 `temperature/max_tokens`（输出主要靠 prompt + slice）
    - 风险：输出长度/风格波动；在不同 provider 上更不可控
 
-5) Embedding 的配置体系与 `llm/` 不统一
+5. Embedding 的配置体系与 `llm/` 不统一
    - Embedding 走 env；文本生成走 Admin 配置
    - 这可能是“有意的”（embedding 常独立预算/限流），但需要在架构文档中明确：为什么要分开、谁负责配置与轮换密钥
 
-6) 多 provider 同名 model 的“静默择优”
+6. 多 provider 同名 model 的“静默择优”
    - 当前通过 `sortOrder` 自动选最大者
    - 风险：运维/回滚时可能出现“以为切了模型但实际走了另一个 provider”的隐性问题
    - 建议：至少在日志/管理后台明确显示最终命中 provider；或引入显式“主 provider”指针
@@ -371,4 +371,3 @@ generateEmbedding(text):
 - 想改 Agent 的 SSE 协议 / 进度与取消策略：
   - `apps/anyhunt/server/src/agent/agent-stream.processor.ts`
   - `apps/anyhunt/server/src/agent/agent-task.progress.store.ts`
-

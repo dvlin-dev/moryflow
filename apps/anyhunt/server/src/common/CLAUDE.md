@@ -13,7 +13,7 @@ Shared infrastructure components used across all modules. Contains guards, decor
 - URL security validation (SSRF protection)
 - Response transformation
 - Rate limiting
-- Shared utilities (crypto, HTTP, JSON, pagination)
+- Shared utilities (crypto, HTTP, JSON, pagination, origin match)
 - BaseRepository for apiKey-isolated tables
 
 ## Constraints
@@ -53,6 +53,7 @@ Shared infrastructure components used across all modules. Contains guards, decor
 | `utils/json.utils.ts`              | Utility   | Prisma JSON → Record conversion         |
 | `utils/json.zod.ts`                | Schema    | JsonValueSchema                         |
 | `utils/pagination.utils.ts`        | Utility   | Pagination helpers                      |
+| `utils/origin.utils.ts`            | Utility   | Origin 匹配（支持通配符）               |
 | `schemas/pagination.schema.ts`     | Schema    | Shared pagination schema                |
 | `constants/error-codes.ts`         | Constants | Unified error code definitions          |
 | `services/webhook.service.ts`      | Service   | Webhook dispatch utility                |

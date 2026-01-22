@@ -27,6 +27,7 @@ model User {
   deletedAt     DateTime? // 软删除时间戳，null 表示未删除
 
   sessions              Session[]
+  refreshTokens         RefreshToken[]
   accounts              Account[]
   subscription          Subscription?
   quota                 Quota?
@@ -64,6 +65,33 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model RefreshToken {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken? @relation("RefreshTokenRotation", fields: [replacedById], references: [id])
+  replacements RefreshToken[] @relation("RefreshTokenRotation")
+
+  @@index([userId])
+}
+
+model Jwks {
+  id         String   @id @default(cuid())
+  publicKey  String
+  privateKey String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime?
 }
 
 model Account {

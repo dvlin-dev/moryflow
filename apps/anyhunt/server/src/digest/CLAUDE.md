@@ -26,7 +26,7 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 > 统一版本：所有 Controller 必须使用 `version: '1'`。
 
-### Console（SessionGuard）
+### Console（AuthGuard）
 
 - `GET /api/v1/console/digest/subscriptions`：订阅列表（`page/limit`）
 - `GET /api/v1/console/digest/subscriptions/:id`：订阅详情

@@ -1,3 +1,8 @@
+/**
+ * [INPUT]: /api/auth/* 的原始请求（包含 rawBody）
+ * [OUTPUT]: Better Auth 统一响应透传
+ * [POS]: Better Auth 的 NestJS 入口适配层
+ */
 import { All, Controller, Req, Res, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
 import type {
@@ -7,6 +12,7 @@ import type {
 import { AuthService } from './auth.service';
 import { Public } from './decorators';
 import { SkipResponseWrap } from '../common/decorators';
+import { applyAuthResponse, buildAuthRequest } from './auth.handler.utils';
 
 /**
  * Better Auth 路由控制器
@@ -27,39 +33,7 @@ export class AuthController {
   ): Promise<void> {
     const auth = this.authService.getAuth();
 
-    // 构建 Web Request 对象
-    const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (typeof value === 'string') {
-        headers.set(key, value);
-      } else if (Array.isArray(value)) {
-        headers.set(key, value.join(', '));
-      }
-    }
-
-    const webRequest = new Request(url, {
-      method: req.method,
-      headers,
-      body: ['GET', 'HEAD'].includes(req.method)
-        ? undefined
-        : JSON.stringify(req.body),
-    });
-
-    const response = await auth.handler(webRequest);
-
-    // 复制 Better Auth 响应到 Express Response
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
-
-    res.status(response.status);
-
-    if (response.body) {
-      const body = await response.text();
-      res.send(body);
-    } else {
-      res.end();
-    }
+    const response = await auth.handler(buildAuthRequest(req));
+    await applyAuthResponse(res, response);
   }
 }

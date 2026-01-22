@@ -24,7 +24,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Console Playground Agent SSE（`POST /api/v1/console/playground/agent/stream`）输出 `ai` 的 `UIMessageChunk` 协议（`start/finish` + parts），供 Console Chat 直接消费
 - Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
-- Console endpoints use Better Auth session (via global `AuthGuard`)
+- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/auth/refresh` 使用
+- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/auth/jwks`
 - URL validation required for SSRF protection
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - 失败退费必须基于 `deduct.breakdown`（按交易分解），异步任务需写入 `quotaBreakdown` 供 worker 退费
