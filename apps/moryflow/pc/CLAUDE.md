@@ -75,7 +75,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ```
 apps/moryflow/pc/
-├── 依赖 → packages/shared-api（API 客户端）
+├── 依赖 → packages/api（API 客户端）
 ├── 依赖 → packages/agents-*（Agent 框架）
 ├── 依赖 → packages/types（共享类型）
 └── 功能文档 → docs/products/moryflow/features/cloud-sync/

@@ -90,7 +90,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 ```
 main/
 ├── 依赖 → packages/agents-*（Agent 框架）
-├── 依赖 → packages/shared-api（API 客户端）
+├── 依赖 → packages/api（API 客户端）
 ├── 通信 → preload（IPC 桥接）
 ├── 通信 → renderer（渲染进程）
 └── 功能文档 → docs/products/moryflow/features/cloud-sync/

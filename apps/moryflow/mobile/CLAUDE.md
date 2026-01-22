@@ -76,8 +76,8 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ```
 apps/mobile/
-├── 依赖 → packages/shared-api（API 客户端）
-├── 依赖 → packages/shared-i18n（国际化）
+├── 依赖 → packages/api（API 客户端）
+├── 依赖 → packages/i18n（国际化）
 ├── 依赖 → packages/types（共享类型）
 └── 依赖 → packages/agents-*（Agent 框架）
 ```

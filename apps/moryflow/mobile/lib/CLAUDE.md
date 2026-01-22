@@ -61,9 +61,9 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ```
 lib/
-├── 依赖 → packages/shared-api（API 客户端）
+├── 依赖 → packages/api（API 客户端）
 ├── 依赖 → packages/agents-*（Agent 框架）
-├── 依赖 → packages/shared-i18n（国际化）
+├── 依赖 → packages/i18n（国际化）
 └── 被依赖 ← components/（UI 组件）
 └── 被依赖 ← app/（页面组件）
 ```

@@ -316,7 +316,7 @@ export type Theme = z.infer<typeof ThemeSchema>;  // 派生，不重复
 
 ```
 apps/moryflow/server/
-├── 依赖 → packages/shared-api（类型定义）
+├── 依赖 → packages/api（类型定义）
 ├── 功能文档 → docs/products/moryflow/features/credits-system/
 ├── 功能文档 → docs/products/moryflow/features/cloud-sync/
 ├── 功能文档 → docs/products/moryflow/features/speech-to-text/
