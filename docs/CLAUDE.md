@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-23（完成 Moryflow Auth/Quota/Payment 修复并同步索引）
+> 最近更新：2026-01-23（启动 Publish/AI Proxy review 并同步索引）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -42,6 +42,8 @@
 ## 最近更新
 
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（2026-01-23：fix）
+- Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（2026-01-23：review）
+- Moryflow Vectorize 暂不处理（将由 Anyhunt Memox 替换）：`docs/code-review/index.md`（2026-01-23：status）
 - 工程基线 / Root Tooling 修复完成：`docs/code-review/root-tooling.md`（2026-01-23：fix）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（2026-01-23：review）
 - 清理历史归档文档并移除目录：`docs/index.md`（2026-01-23）

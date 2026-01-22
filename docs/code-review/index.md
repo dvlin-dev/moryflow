@@ -123,10 +123,11 @@ status: active
 
 ### Phase 1 - Moryflow 后端（P0 优先 → P1）
 
-| Priority | Module                                  | Scope                                       | Directories / Key Files                                                                                                                                                             | Doc                                                       | Status |
-| -------- | --------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------ |
-| P0       | Moryflow Server：Auth & Quota & Payment | 核心产品的账户/配额/支付闭环                | `apps/moryflow/server/src/auth/`, `apps/moryflow/server/src/quota/`, `apps/moryflow/server/src/payment/`, `apps/moryflow/server/src/admin-payment/`, `apps/moryflow/server/prisma/` | `docs/code-review/moryflow-server-auth-quota-payment.md`  | done   |
-| P1       | Moryflow：Publish/Vectorize/AI Proxy    | 发布 worker、向量化任务、模型代理与成本边界 | `apps/moryflow/publish-worker/`, `apps/moryflow/vectorize/`, `apps/moryflow/server/src/ai-proxy/`, `apps/moryflow/server/src/vectorize/`                                            | `docs/code-review/moryflow-publish-vectorize-ai-proxy.md` | todo   |
+| Priority | Module                                  | Scope                           | Directories / Key Files                                                                                                                                                             | Doc                                                       | Status      |
+| -------- | --------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----------- |
+| P0       | Moryflow Server：Auth & Quota & Payment | 核心产品的账户/配额/支付闭环    | `apps/moryflow/server/src/auth/`, `apps/moryflow/server/src/quota/`, `apps/moryflow/server/src/payment/`, `apps/moryflow/server/src/admin-payment/`, `apps/moryflow/server/prisma/` | `docs/code-review/moryflow-server-auth-quota-payment.md`  | done        |
+| P1       | Moryflow：Publish/AI Proxy              | 发布 worker、模型代理与成本边界 | `apps/moryflow/publish-worker/`, `apps/moryflow/server/src/ai-proxy/`                                                                                                               | `docs/code-review/moryflow-publish-vectorize-ai-proxy.md` | in_progress |
+| P1       | Moryflow：Vectorize（暂不处理）         | 将由 Anyhunt 的 Memox 替换      | `apps/moryflow/vectorize/`, `apps/moryflow/server/src/vectorize/`                                                                                                                   | `docs/code-review/moryflow-publish-vectorize-ai-proxy.md` | wontfix     |
 
 ### Phase 2 - Anyhunt 后端（P0 优先 → P1）
 
