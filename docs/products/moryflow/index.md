@@ -31,8 +31,8 @@ status: draft
 
 ## Runbooks（发布/签名）
 
-- macOS 代码签名：`docs/products/moryflow/runbooks/release/macos-code-signing.md`
-- iOS 证书与签名（EAS）：`docs/products/moryflow/runbooks/release/ios-code-signing.md`
+- macOS 签名与公证（Electron）：`docs/products/moryflow/runbooks/release/macos-code-signing.md`
+- iOS 签名与发布（Expo + EAS）：`docs/products/moryflow/runbooks/release/ios-code-signing.md`
 
 ## Research（调研/方案草案）
 
