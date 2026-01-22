@@ -52,6 +52,9 @@ module-name/
 
 ## 近期变更
 
+- AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
+- AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
+- CreditService：新增欠费记录与付费积分优先抵扣
 - Auth：Web/设备端区分 CSRF（Web 开启、设备端允许无 Origin），补充 origin 白名单工具与单测
 - Payment：successUrl 白名单校验、Webhook productId 校验与类型映射、成功页 postMessage 限定 origin
 - Payment：Webhook 幂等性补齐唯一约束兜底；新增支付工具与单测

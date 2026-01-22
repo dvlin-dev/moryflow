@@ -46,6 +46,9 @@ status: active
   - 元数据：`sites/{siteSlug}/_meta.json`
   - 首页：`sites/{siteSlug}/index.html`
   - 可选自定义 404：`sites/{siteSlug}/404.html`
+- 只允许 `GET/HEAD`；其他方法返回 `405` 并带 `Allow: GET, HEAD`
+- OFFLINE/EXPIRED/404 等状态页禁止缓存：`Cache-Control: no-store, must-revalidate`
+- `_meta.json` 解析或结构校验失败时按 OFFLINE 处理（返回 503）
 
 ### Anyhunt Dev（开发者平台）
 

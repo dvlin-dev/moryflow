@@ -97,6 +97,18 @@ export class InsufficientCreditsException extends AiImageException {
   }
 }
 
+/** 欠费异常 */
+export class OutstandingDebtException extends AiImageException {
+  constructor(debt: number) {
+    super(
+      `Outstanding balance: ${debt}. Please top up to continue.`,
+      'insufficient_quota',
+      'insufficient_credits',
+      HttpStatus.PAYMENT_REQUIRED,
+    );
+  }
+}
+
 /** 请求验证异常 */
 export class InvalidRequestException extends AiImageException {
   constructor(message: string) {

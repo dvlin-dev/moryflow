@@ -59,6 +59,7 @@ export const ModelName = {
   SubscriptionCredits: 'SubscriptionCredits',
   PurchasedCredits: 'PurchasedCredits',
   CreditUsageDaily: 'CreditUsageDaily',
+  CreditDebt: 'CreditDebt',
   Subscription: 'Subscription',
   PaymentOrder: 'PaymentOrder',
   License: 'License',
@@ -204,6 +205,16 @@ export const CreditUsageDailyScalarFieldEnum = {
 } as const
 
 export type CreditUsageDailyScalarFieldEnum = (typeof CreditUsageDailyScalarFieldEnum)[keyof typeof CreditUsageDailyScalarFieldEnum]
+
+
+export const CreditDebtScalarFieldEnum = {
+  userId: 'userId',
+  amount: 'amount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CreditDebtScalarFieldEnum = (typeof CreditDebtScalarFieldEnum)[keyof typeof CreditDebtScalarFieldEnum]
 
 
 export const SubscriptionScalarFieldEnum = {

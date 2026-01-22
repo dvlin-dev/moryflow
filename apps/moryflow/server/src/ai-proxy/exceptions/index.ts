@@ -4,6 +4,7 @@ export {
   UnsupportedProviderException,
   InsufficientModelPermissionException,
   InsufficientCreditsException,
+  OutstandingDebtException,
   InvalidRequestException,
   StreamProcessingException,
   AiServiceException,

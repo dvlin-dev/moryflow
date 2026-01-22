@@ -29,5 +29,7 @@
 
 ## 近期更新
 
+- `domains-and-deployment.md`：补充发布站点仅允许 GET/HEAD 与状态页禁缓存约束。
+- `domains-and-deployment.md`：补充 `_meta.json` 解析/结构异常按 OFFLINE 处理。
 - `domains-and-deployment.md` 补充 `rss.anyhunt.app`（Digest RSS 入口）说明。
 - `ui-message-list-unification.md` 已补齐 MessageList 组件并移除 metadata.moryflow 兼容逻辑。

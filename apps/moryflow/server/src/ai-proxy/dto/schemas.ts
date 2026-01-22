@@ -156,7 +156,7 @@ export const ChatCompletionRequestSchema = z
 
     // 其他参数
     stop: z.union([z.string(), z.array(z.string())]).optional(),
-    n: z.number().positive().optional(),
+    n: z.number().int().positive().optional(),
     user: z.string().optional(),
   })
   .passthrough(); // 允许额外字段透传

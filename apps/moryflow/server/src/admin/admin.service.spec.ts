@@ -4,7 +4,6 @@
  * 测试管理员功能：用户管理、权限控制、日志记录
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // Note: expect.objectContaining and expect.any return 'any' type
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -50,6 +49,8 @@ describe('AdminService', () => {
         subscription: 0,
         purchased: 0,
         total: 15,
+        debt: 0,
+        available: 15,
       }),
       grantSubscriptionCredits: vi.fn(),
       grantPurchasedCredits: vi.fn(),
@@ -149,6 +150,8 @@ describe('AdminService', () => {
         subscription: 1000,
         purchased: 500,
         total: 1515,
+        debt: 0,
+        available: 1515,
       });
 
       const result = await service.getUserDetails(user.id);

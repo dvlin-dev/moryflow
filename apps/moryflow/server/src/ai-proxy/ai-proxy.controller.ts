@@ -115,25 +115,51 @@ export class AiProxyController {
     setSSEHeaders(res);
 
     try {
+      const abortController = new AbortController();
       const stream = await this.aiProxyService.proxyChatCompletionStream(
         user.id,
         user.tier,
         request,
+        abortController.signal,
       );
 
       const reader = stream.getReader();
+      let closed = false;
 
-      const pump = async (): Promise<void> => {
-        const { done, value } = await reader.read();
-        if (done) {
-          res.end();
-          return;
-        }
-        res.write(value);
-        await pump();
+      const handleClose = () => {
+        closed = true;
+        abortController.abort();
+        void reader.cancel();
       };
 
-      await pump();
+      res.on('close', handleClose);
+
+      const writeChunk = async (value: Uint8Array): Promise<void> => {
+        if (closed || res.writableEnded) {
+          return;
+        }
+
+        if (!res.write(value)) {
+          await new Promise<void>((resolve) => {
+            res.once('drain', resolve);
+            res.once('close', resolve);
+          });
+        }
+      };
+
+      while (!closed) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        await writeChunk(value);
+      }
+
+      res.off('close', handleClose);
+
+      if (!res.writableEnded) {
+        res.end();
+      }
     } catch (error) {
       this.logger.error('Stream error', error);
 

@@ -86,6 +86,7 @@ model User {
   licenses            License[]
   activityLogs        ActivityLog[]        @relation("UserActivityLogs")
   targetActivityLogs  ActivityLog[]        @relation("TargetActivityLogs")
+  creditDebt          CreditDebt?
 
   // 云同步相关
   vaults              Vault[]
@@ -202,6 +203,15 @@ model CreditUsageDaily {
 
   @@id([userId, date])
   @@index([date])
+}
+
+model CreditDebt {
+  userId    String   @id
+  amount    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ==========================================

@@ -2,7 +2,7 @@
 title: Moryflow Publish/Vectorize/AI Proxy Code Review
 date: 2026-01-23
 scope: apps/moryflow/publish-worker + apps/moryflow/server/src/ai-proxy
-status: in_progress
+status: done
 ---
 
 <!--
@@ -27,9 +27,9 @@ status: in_progress
 
 ## 结论摘要
 
-- 高风险问题（P1）：1 个（AI Proxy 计费预检缺失）
-- 中风险问题（P2）：2 个（流式断连不取消、Publish meta 解析失败导致 500）
-- 低风险/规范问题（P3）：3 个（非 GET/HEAD 请求未限制、SSE 未处理 backpressure、OpenAI 参数忽略）
+- 高风险问题（P1）：1 个（AI Proxy 计费预检缺失）已修复
+- 中风险问题（P2）：2 个（流式断连不取消、Publish meta 解析失败导致 500）已修复
+- 低风险/规范问题（P3）：3 个（非 GET/HEAD 请求未限制、SSE 未处理 backpressure、OpenAI 参数忽略）已修复
 
 ## 发现（按严重程度排序）
 
@@ -41,16 +41,16 @@ status: in_progress
 - [P3] SSE 未处理 backpressure：`apps/moryflow/server/src/ai-proxy/ai-proxy.controller.ts` `res.write()` 未等待 `drain`，高频流式输出可能产生内存压力。
 - [P3] OpenAI 参数声明但未生效：`apps/moryflow/server/src/ai-proxy/dto/schemas.ts` 接收 `stop`/`n`/`user`，但 `ai-proxy.service.ts` 未传递给 AI SDK，存在协议兼容性落差。
 
-## 修复建议
+## 修复结果
 
-- 计费预检：引入“预估/预扣/上限”策略（例如基于 `max_tokens` + 模型单价预估；不足即拒绝），完成后再按实际 usage 结算并差额退回。
-- 断连取消：在控制器监听 `res.on('close')`，触发 AbortController，向 AI SDK 传递 `signal` 终止推理，并在回调中跳过扣费。
-- Publish 容错：`_meta.json` 解析失败时返回 404/离线页；`decodeURIComponent` 包裹 try/catch；为 OFFLINE/EXPIRED/404 增加明确的 `Cache-Control`。
-- SSE backpressure：当 `res.write()` 返回 false 时等待 `drain`，避免积压。
-- 协议兼容：若要支持 `stop`/`n`/`user`，补齐参数透传；否则从 schema 移除并在文档说明。
+- 计费策略：改为“后扣费 + 欠费记录 + 欠费门禁”，不中断当次请求；欠费需用付费积分抵扣后才允许新请求。
+- 断连取消：流式连接 `close` 时触发 AbortController，传递 `abortSignal` 给 AI SDK；断连后不再扣费。
+- Publish 容错：`_meta.json` 解析/`decodeURIComponent` 失败走离线页；`expiresAt` 解析异常直接离线；OFFLINE/EXPIRED/404 禁止缓存。
+- 方法限制：Publish Worker 仅允许 GET/HEAD，其他方法返回 405 + Allow。
+- SSE backpressure：`res.write()` 失败等待 `drain`，避免内存积压。
+- OpenAI 参数：`stop/n/user` 透传；`stream=true && n>1` 直接 400。
+- 回归测试：新增 Publish Worker 单测（方法限制/非法 meta/解码失败/HEAD）。
 
 ## 修复计划与进度
 
-- 当前阶段：review
-- 待处理：上述问题的修复与单测
-- 状态：in_progress
+- 状态：done

@@ -96,6 +96,18 @@ export class InsufficientCreditsException extends AiProxyException {
   }
 }
 
+/** 欠费异常 */
+export class OutstandingDebtException extends AiProxyException {
+  constructor(debt: number) {
+    super(
+      `Outstanding balance: ${debt}. Please top up to continue.`,
+      'insufficient_quota',
+      'insufficient_credits',
+      HttpStatus.PAYMENT_REQUIRED,
+    );
+  }
+}
+
 /** 请求验证异常 */
 export class InvalidRequestException extends AiProxyException {
   constructor(message: string) {

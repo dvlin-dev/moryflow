@@ -4,8 +4,8 @@
  * 纯函数，用于数据转换和处理
  */
 
-import type { UserInfo, MembershipModel, MembershipModelApiItem } from './types'
-import type { AuthUser } from './auth-api'
+import type { UserInfo, MembershipModel, MembershipModelApiItem } from './types';
+import type { AuthUser } from './auth-api';
 
 /**
  * 从认证用户创建临时用户信息
@@ -20,8 +20,15 @@ export function createTempUserInfo(authUser: AuthUser, name?: string): UserInfo 
     createdAt: new Date().toISOString(),
     tier: 'free',
     tierInfo: { displayName: '免费用户', features: [], creditsPerMonth: 0 },
-    credits: { daily: 0, subscription: 0, purchased: 0, total: 0 },
-  }
+    credits: {
+      daily: 0,
+      subscription: 0,
+      purchased: 0,
+      total: 0,
+      debt: 0,
+      available: 0,
+    },
+  };
 }
 
 /**
@@ -34,5 +41,5 @@ export function convertApiModels(apiModels: MembershipModelApiItem[]): Membershi
     ownedBy: model.owned_by,
     minTier: model.min_tier,
     available: model.available,
-  }))
+  }));
 }

@@ -37,6 +37,7 @@ export interface MockPrismaService {
   subscription: ModelMock;
   subscriptionCredits: ModelMock;
   purchasedCredits: ModelMock;
+  creditDebt: ModelMock;
   creditUsageDaily: ModelMock;
   userStorageUsage: ModelMock;
   syncFile: ModelMock;
@@ -90,6 +91,7 @@ export function createPrismaMock(): MockPrismaService {
     subscription: createModelMock(),
     subscriptionCredits: createModelMock(),
     purchasedCredits: createModelMock(),
+    creditDebt: createModelMock(),
     creditUsageDaily: createModelMock(),
     userStorageUsage: createModelMock(),
     syncFile: createModelMock(),

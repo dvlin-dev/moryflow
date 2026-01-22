@@ -392,6 +392,7 @@ export const ModelName = {
   SubscriptionCredits: 'SubscriptionCredits',
   PurchasedCredits: 'PurchasedCredits',
   CreditUsageDaily: 'CreditUsageDaily',
+  CreditDebt: 'CreditDebt',
   Subscription: 'Subscription',
   PaymentOrder: 'PaymentOrder',
   License: 'License',
@@ -427,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "subscription" | "paymentOrder" | "license" | "licenseActivation" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
+    modelProps: "user" | "session" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "license" | "licenseActivation" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1020,6 +1021,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.CreditUsageDailyCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.CreditUsageDailyCountAggregateOutputType> | number
+        }
+      }
+    }
+    CreditDebt: {
+      payload: Prisma.$CreditDebtPayload<ExtArgs>
+      fields: Prisma.CreditDebtFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CreditDebtFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CreditDebtFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>
+        }
+        findFirst: {
+          args: Prisma.CreditDebtFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CreditDebtFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>
+        }
+        findMany: {
+          args: Prisma.CreditDebtFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>[]
+        }
+        create: {
+          args: Prisma.CreditDebtCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>
+        }
+        createMany: {
+          args: Prisma.CreditDebtCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CreditDebtCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>[]
+        }
+        delete: {
+          args: Prisma.CreditDebtDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>
+        }
+        update: {
+          args: Prisma.CreditDebtUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>
+        }
+        deleteMany: {
+          args: Prisma.CreditDebtDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CreditDebtUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CreditDebtUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>[]
+        }
+        upsert: {
+          args: Prisma.CreditDebtUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditDebtPayload>
+        }
+        aggregate: {
+          args: Prisma.CreditDebtAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCreditDebt>
+        }
+        groupBy: {
+          args: Prisma.CreditDebtGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditDebtGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CreditDebtCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditDebtCountAggregateOutputType> | number
         }
       }
     }
@@ -2651,6 +2726,16 @@ export const CreditUsageDailyScalarFieldEnum = {
 export type CreditUsageDailyScalarFieldEnum = (typeof CreditUsageDailyScalarFieldEnum)[keyof typeof CreditUsageDailyScalarFieldEnum]
 
 
+export const CreditDebtScalarFieldEnum = {
+  userId: 'userId',
+  amount: 'amount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CreditDebtScalarFieldEnum = (typeof CreditDebtScalarFieldEnum)[keyof typeof CreditDebtScalarFieldEnum]
+
+
 export const SubscriptionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -3407,6 +3492,7 @@ export type GlobalOmitConfig = {
   subscriptionCredits?: Prisma.SubscriptionCreditsOmit
   purchasedCredits?: Prisma.PurchasedCreditsOmit
   creditUsageDaily?: Prisma.CreditUsageDailyOmit
+  creditDebt?: Prisma.CreditDebtOmit
   subscription?: Prisma.SubscriptionOmit
   paymentOrder?: Prisma.PaymentOrderOmit
   license?: Prisma.LicenseOmit

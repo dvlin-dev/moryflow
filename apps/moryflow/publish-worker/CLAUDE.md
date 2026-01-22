@@ -13,6 +13,9 @@
 - 处理 `moryflow.app` 与 `*.moryflow.app` 的访问请求。
 - 根据子域名 `{siteSlug}.moryflow.app` 从 R2 读取站点文件并返回。
 - 支持站点状态（OFFLINE/DELETED）、过期提示、404 回退、免费水印注入。
+- 仅允许 GET/HEAD，其他方法返回 405 并带 Allow 头。
+- OFFLINE/EXPIRED/404 状态页禁缓存（`Cache-Control: no-store, must-revalidate`）。
+- `_meta.json` 结构校验失败视为离线，避免异常导致 500。
 
 ## 存储约定（R2）
 

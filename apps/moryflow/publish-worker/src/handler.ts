@@ -1,18 +1,31 @@
 /**
  * [INPUT]: Request + Env（SITE_DOMAIN, SITE_BUCKET）
- * [OUTPUT]: Response（站点内容/状态页面）
- * [POS]: moryflow.app 发布站点核心请求处理器
+ * [OUTPUT]: Response（站点内容/状态页面/方法限制）
+ * [POS]: moryflow.app 发布站点核心请求处理器（含方法过滤、元数据校验与状态页容错）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 docs/architecture/domains-and-deployment.md 中的发布站点约定。
  */
 
-import type { Env, SiteMeta } from './types';
+import type { Env, SiteMeta, SiteStatus } from './types';
 import { injectWatermark } from './watermark';
 import { getContentType } from './mime';
 
 const SITES_PREFIX = 'sites';
+const ALLOWED_METHODS = ['GET', 'HEAD'] as const;
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, must-revalidate',
+};
+const SITE_STATUSES: SiteStatus[] = ['ACTIVE', 'OFFLINE', 'DELETED'];
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
+  const method = request.method.toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD') {
+    return new Response('Method Not Allowed', {
+      status: 405,
+      headers: { Allow: ALLOWED_METHODS.join(', ') },
+    });
+  }
+
   const url = new URL(request.url);
   const hostname = url.hostname;
 
@@ -26,21 +39,48 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     return new Response('Invalid domain', { status: 400 });
   }
 
-  return handleSiteRequest(env, subdomain, url.pathname);
+  const response = await handleSiteRequest(env, subdomain, url.pathname);
+  if (method === 'HEAD') {
+    return new Response(null, {
+      status: response.status,
+      headers: response.headers,
+    });
+  }
+  return response;
 }
 
+type SiteMetaResult =
+  | { status: 'missing'; meta: null }
+  | { status: 'invalid'; meta: null }
+  | { status: 'ok'; meta: SiteMeta };
+
 async function handleSiteRequest(env: Env, subdomain: string, pathname: string): Promise<Response> {
-  const meta = await getSiteMeta(env, subdomain);
-  if (!meta) return renderNotFound(subdomain, env.SITE_DOMAIN);
+  const metaResult = await getSiteMeta(env, subdomain);
+  if (metaResult.status === 'missing') {
+    return renderNotFound(subdomain, env.SITE_DOMAIN);
+  }
+  if (metaResult.status === 'invalid') {
+    return renderOfflinePage(subdomain, env.SITE_DOMAIN);
+  }
+  const meta = metaResult.meta;
 
   if (meta.status === 'DELETED') return renderNotFound(subdomain, env.SITE_DOMAIN);
   if (meta.status === 'OFFLINE') return renderOfflinePage(subdomain, env.SITE_DOMAIN);
 
-  if (meta.expiresAt && new Date(meta.expiresAt) < new Date()) {
-    return renderExpiredPage(subdomain, env.SITE_DOMAIN);
+  if (meta.expiresAt) {
+    const expiresAt = new Date(meta.expiresAt);
+    if (Number.isNaN(expiresAt.getTime())) {
+      return renderOfflinePage(subdomain, env.SITE_DOMAIN);
+    }
+    if (expiresAt < new Date()) {
+      return renderExpiredPage(subdomain, env.SITE_DOMAIN);
+    }
   }
 
   const filePath = resolveFilePath(pathname, meta);
+  if (!filePath) {
+    return renderOfflinePage(subdomain, env.SITE_DOMAIN);
+  }
   const objectKey = `${SITES_PREFIX}/${subdomain}/${filePath}`;
   const object = await env.SITE_BUCKET.get(objectKey);
 
@@ -51,11 +91,17 @@ async function handleSiteRequest(env: Env, subdomain: string, pathname: string):
       if (meta.showWatermark) content = injectWatermark(content);
       return new Response(content, {
         status: 404,
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          ...NO_STORE_HEADERS,
+        },
       });
     }
 
-    return new Response('Page not found', { status: 404 });
+    return new Response('Page not found', {
+      status: 404,
+      headers: NO_STORE_HEADERS,
+    });
   }
 
   const contentType = getContentType(filePath);
@@ -83,17 +129,30 @@ function extractSubdomain(hostname: string, siteDomain: string): string | null {
   return subdomain;
 }
 
-async function getSiteMeta(env: Env, subdomain: string): Promise<SiteMeta | null> {
+async function getSiteMeta(env: Env, subdomain: string): Promise<SiteMetaResult> {
   const metaKey = `${SITES_PREFIX}/${subdomain}/_meta.json`;
   const object = await env.SITE_BUCKET.get(metaKey);
-  if (!object) return null;
-  return object.json();
+  if (!object) return { status: 'missing', meta: null };
+  try {
+    const meta = await object.json();
+    if (!isSiteMeta(meta)) {
+      return { status: 'invalid', meta: null };
+    }
+    return { status: 'ok', meta };
+  } catch {
+    return { status: 'invalid', meta: null };
+  }
 }
 
-function resolveFilePath(pathname: string, meta: SiteMeta): string {
+function resolveFilePath(pathname: string, meta: SiteMeta): string | null {
   if (pathname === '/') return 'index.html';
 
-  const decodedPathname = decodeURIComponent(pathname);
+  let decodedPathname = '';
+  try {
+    decodedPathname = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
   let path = decodedPathname.slice(1);
 
   if (path.endsWith('/')) path += 'index.html';
@@ -104,6 +163,35 @@ function resolveFilePath(pathname: string, meta: SiteMeta): string {
   }
 
   return path;
+}
+
+function isSiteMeta(value: unknown): value is SiteMeta {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  if (!SITE_STATUSES.includes(record.status as SiteStatus)) return false;
+  if (
+    'expiresAt' in record &&
+    record.expiresAt !== undefined &&
+    typeof record.expiresAt !== 'string'
+  ) {
+    return false;
+  }
+  if (
+    'showWatermark' in record &&
+    record.showWatermark !== undefined &&
+    typeof record.showWatermark !== 'boolean'
+  ) {
+    return false;
+  }
+  if ('routes' in record && record.routes !== undefined) {
+    if (!Array.isArray(record.routes)) return false;
+    for (const route of record.routes) {
+      if (!route || typeof route !== 'object') return false;
+      const routeRecord = route as Record<string, unknown>;
+      if (typeof routeRecord.path !== 'string') return false;
+    }
+  }
+  return true;
 }
 
 function renderNotFound(subdomain: string, siteDomain: string): Response {
@@ -131,7 +219,10 @@ function renderNotFound(subdomain: string, siteDomain: string): Response {
 
   return new Response(html, {
     status: 404,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      ...NO_STORE_HEADERS,
+    },
   });
 }
 
@@ -165,7 +256,10 @@ function renderOfflinePage(subdomain: string, siteDomain: string): Response {
 
   return new Response(html, {
     status: 503,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      ...NO_STORE_HEADERS,
+    },
   });
 }
 
@@ -197,6 +291,9 @@ function renderExpiredPage(subdomain: string, siteDomain: string): Response {
 
   return new Response(html, {
     status: 410,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      ...NO_STORE_HEADERS,
+    },
   });
 }

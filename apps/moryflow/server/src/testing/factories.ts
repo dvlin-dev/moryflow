@@ -14,6 +14,7 @@ import type {
   Subscription,
   SubscriptionCredits,
   PurchasedCredits,
+  CreditDebt,
   AiModel,
   AiProvider,
   ActivityLog,
@@ -158,6 +159,22 @@ export function createMockPurchasedCredits(
     orderId: `order_${randomUUID().slice(0, 8)}`,
     purchasedAt: new Date(),
     expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    ...overrides,
+  };
+}
+
+/**
+ * Credit Debt 测试数据工厂
+ */
+export function createMockCreditDebt(
+  overrides: Partial<CreditDebt> = {},
+): CreditDebt {
+  const now = new Date();
+  return {
+    userId: randomUUID(),
+    amount: 0,
+    createdAt: now,
+    updatedAt: now,
     ...overrides,
   };
 }

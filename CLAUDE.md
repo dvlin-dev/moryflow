@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-23（完成 Moryflow Auth/Quota/Payment 修复，同步对话中文约束）
+> 最近更新：2026-01-23（完成 Moryflow Auth/Quota/Payment 修复；补充发布站点 `_meta.json` OFFLINE 约定；同步对话中文约束）
 
 ## 项目概述
 
@@ -108,6 +108,7 @@ pnpm --filter @anyhunt/admin test:e2e
 > - Moryflow 是核心产品，拥有独立域名 moryflow.com / moryflow.app
 > - Anyhunt Dev 是开发者平台：官网在 `anyhunt.app`，API 在 `server.anyhunt.app`，控制台/后台分别在 `console.anyhunt.app`、`admin.anyhunt.app`
 > - API 路径规范：`https://server.anyhunt.app/api/v1/...`（带 `/api` 前缀；不做旧域名兼容/跳转）
+> - `moryflow.app` 发布站点仅允许 GET/HEAD；OFFLINE/EXPIRED/404 状态页禁止缓存（`no-store`）
 
 ### API Key 前缀
 

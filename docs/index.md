@@ -65,7 +65,7 @@ status: active
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
-- Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，review 进行中）
+- Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）
 - Moryflow Vectorize 将由 Anyhunt Memox 替换：已标记暂不处理（详见 `docs/code-review/index.md`）

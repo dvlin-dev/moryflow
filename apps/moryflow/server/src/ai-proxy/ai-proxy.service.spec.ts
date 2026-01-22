@@ -9,7 +9,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AiProxyService } from './ai-proxy.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
@@ -22,12 +21,19 @@ import {
   createMockAiProvider,
   UserTier,
 } from '../testing/factories';
+import {
+  InsufficientCreditsException,
+  OutstandingDebtException,
+  ModelNotFoundException,
+  InsufficientModelPermissionException,
+  InvalidRequestException,
+} from './exceptions';
 
 describe('AiProxyService', () => {
   let service: AiProxyService;
   let prismaMock: MockPrismaService;
   let creditServiceMock: {
-    consumeCredits: ReturnType<typeof vi.fn>;
+    consumeCreditsWithDebt: ReturnType<typeof vi.fn>;
     getCreditsBalance: ReturnType<typeof vi.fn>;
   };
 
@@ -35,12 +41,18 @@ describe('AiProxyService', () => {
     prismaMock = createPrismaMock();
 
     creditServiceMock = {
-      consumeCredits: vi.fn(),
+      consumeCreditsWithDebt: vi.fn().mockResolvedValue({
+        consumed: 10,
+        debtIncurred: 0,
+        debtBalance: 0,
+      }),
       getCreditsBalance: vi.fn().mockResolvedValue({
         daily: 15,
         subscription: 0,
         purchased: 0,
         total: 15,
+        debt: 0,
+        available: 15,
       }),
     };
 
@@ -153,7 +165,7 @@ describe('AiProxyService', () => {
   // ==================== proxyChatCompletion ====================
 
   describe('proxyChatCompletion', () => {
-    it('模型不存在时应抛出 NotFoundException', async () => {
+    it('模型不存在时应抛出 ModelNotFoundException', async () => {
       prismaMock.aiModel.findFirst.mockResolvedValue(null);
 
       await expect(
@@ -161,10 +173,10 @@ describe('AiProxyService', () => {
           model: 'non-existent',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(ModelNotFoundException);
     });
 
-    it('用户等级不足时应抛出 ForbiddenException', async () => {
+    it('用户等级不足时应抛出 InsufficientModelPermissionException', async () => {
       const provider = createMockAiProvider();
       const model = createMockAiModel({
         providerId: provider.id,
@@ -185,10 +197,10 @@ describe('AiProxyService', () => {
           model: 'gpt-4o',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(InsufficientModelPermissionException);
     });
 
-    it('积分不足时应抛出 ForbiddenException', async () => {
+    it('积分不足时应抛出 InsufficientCreditsException', async () => {
       const provider = createMockAiProvider();
       const model = createMockAiModel({
         providerId: provider.id,
@@ -209,6 +221,8 @@ describe('AiProxyService', () => {
         subscription: 0,
         purchased: 0,
         total: 0,
+        debt: 0,
+        available: 0,
       });
 
       await expect(
@@ -216,10 +230,68 @@ describe('AiProxyService', () => {
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(InsufficientCreditsException);
     });
 
-    it('模型被禁用时应抛出 NotFoundException', async () => {
+    it('超出套餐 n 上限应抛出 InvalidRequestException', async () => {
+      const provider = createMockAiProvider();
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-4o-mini',
+        minTier: UserTier.free,
+        enabled: true,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as Parameters<
+        typeof prismaMock.aiModel.findFirst.mockResolvedValue
+      >[0]);
+
+      await expect(
+        service.proxyChatCompletion('user-123', UserTier.free, {
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Hello' }],
+          n: 2,
+        }),
+      ).rejects.toThrow(InvalidRequestException);
+    });
+
+    it('存在欠费时应抛出 OutstandingDebtException', async () => {
+      const provider = createMockAiProvider();
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-4o-mini',
+        minTier: UserTier.free,
+        enabled: true,
+      });
+
+      prismaMock.aiModel.findFirst.mockResolvedValue({
+        ...model,
+        provider,
+      } as Parameters<
+        typeof prismaMock.aiModel.findFirst.mockResolvedValue
+      >[0]);
+
+      creditServiceMock.getCreditsBalance.mockResolvedValue({
+        daily: 10,
+        subscription: 0,
+        purchased: 0,
+        total: 10,
+        debt: 5,
+        available: 0,
+      });
+
+      await expect(
+        service.proxyChatCompletion('user-123', UserTier.free, {
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Hello' }],
+        }),
+      ).rejects.toThrow(OutstandingDebtException);
+    });
+
+    it('模型被禁用时应抛出 ModelNotFoundException', async () => {
       prismaMock.aiModel.findFirst.mockResolvedValue(null); // enabled=true 条件过滤
 
       await expect(
@@ -227,7 +299,7 @@ describe('AiProxyService', () => {
           model: 'disabled-model',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(ModelNotFoundException);
     });
 
     it('缺少 messages 参数时应抛出 BadRequestException', async () => {
@@ -263,6 +335,8 @@ describe('AiProxyService', () => {
         subscription: 0,
         purchased: 0,
         total: 0,
+        debt: 0,
+        available: 0,
       });
 
       await expect(
@@ -270,7 +344,7 @@ describe('AiProxyService', () => {
           model: model.modelId,
           messages: [{ role: 'user', content: 'Test' }],
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(InsufficientCreditsException);
 
       expect(creditServiceMock.getCreditsBalance).toHaveBeenCalledWith(
         'user-123',

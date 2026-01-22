@@ -1,7 +1,7 @@
 /**
  * [INPUT]: (ImageGenerationRequest, userId, userTier) - 图片生成请求与用户信息
  * [OUTPUT]: (ImageGenerationResponse) - 统一格式的图片生成响应
- * [POS]: 图片生成核心服务，模型验证、权限检查、积分扣除、Provider 路由
+ * [POS]: 图片生成核心服务，模型验证、权限检查、积分扣除/欠费记录、计费日志、Provider 路由
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -32,6 +32,7 @@ import {
   ModelNotFoundException,
   InsufficientModelPermissionException,
   InsufficientCreditsException,
+  OutstandingDebtException,
   ImageGenerationException,
 } from './exceptions';
 
@@ -147,13 +148,16 @@ export class AiImageService {
    */
   private async checkCreditsBalance(userId: string): Promise<void> {
     const balance = await this.creditService.getCreditsBalance(userId);
+    if (balance.debt > 0) {
+      throw new OutstandingDebtException(balance.debt);
+    }
     if (balance.total <= 0) {
       throw new InsufficientCreditsException(balance.total);
     }
   }
 
   /**
-   * 扣除积分
+   * 扣除积分（含欠费时返回完整消耗）
    */
   private async consumeCredits(
     userId: string,
@@ -161,8 +165,18 @@ export class AiImageService {
     model: ImageModelConfig,
   ): Promise<number> {
     const credits = this.calculateCredits(usage, model);
-    await this.creditService.consumeCredits(userId, credits);
-    return credits;
+    const settlement = await this.creditService.consumeCreditsWithDebt(
+      userId,
+      credits,
+    );
+
+    if (settlement.debtIncurred > 0) {
+      this.logger.warn(
+        `Credits debt incurred: userId=${userId}, debt=${settlement.debtIncurred}`,
+      );
+    }
+
+    return settlement.consumed + settlement.debtIncurred;
   }
 
   /**

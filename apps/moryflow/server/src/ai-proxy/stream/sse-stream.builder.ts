@@ -22,6 +22,7 @@ interface StreamContext {
 /** 流处理回调 */
 interface StreamCallbacks {
   onUsage: (usage: InternalTokenUsage) => Promise<void>;
+  onAbort?: () => Promise<void> | void;
 }
 
 /**
@@ -82,6 +83,7 @@ export class SSEStreamBuilder {
     let reasoningIndex = 0;
 
     // 处理流事件
+    let aborted = false;
     for await (const part of streamResult.fullStream) {
       switch (part.type) {
         case 'reasoning-delta': {
@@ -135,7 +137,26 @@ export class SSEStreamBuilder {
           toolCallIndex++;
           break;
         }
+
+        case 'abort': {
+          aborted = true;
+          break;
+        }
+
+        case 'error': {
+          throw part.error;
+        }
       }
+
+      if (aborted) {
+        break;
+      }
+    }
+
+    if (aborted) {
+      await callbacks.onAbort?.();
+      controller.close();
+      return;
     }
 
     // 获取 usage 并回调

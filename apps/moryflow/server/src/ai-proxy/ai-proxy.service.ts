@@ -1,13 +1,14 @@
 /**
  * [INPUT]: (ChatCompletionRequest, userId, userTier) - OpenAI 格式请求与用户信息
  * [OUTPUT]: (SSE Stream | ChatCompletionResponse) - 流式或非流式 AI 响应
- * [POS]: AI 代理核心服务，模型验证、权限检查、积分扣除、多 Provider 路由
+ * [POS]: AI 代理核心服务，模型验证、权限检查、积分扣除/欠费记录、choice 限制、provider 参数透传、多 Provider 路由
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { streamText, generateText, type ModelMessage } from 'ai';
+import type { ProviderOptions } from '@ai-sdk/provider-utils';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreditService } from '../credit/credit.service';
 import { ActivityLogService } from '../activity-log';
@@ -18,6 +19,7 @@ import type { AiModel, AiProvider } from '../../generated/prisma/client';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
+  ChatCompletionChoice,
   ModelInfo,
   InternalTokenUsage,
   MessageResponse,
@@ -33,7 +35,18 @@ import {
   ModelNotFoundException,
   InsufficientModelPermissionException,
   InsufficientCreditsException,
+  OutstandingDebtException,
+  InvalidRequestException,
 } from './exceptions';
+
+const MAX_CHOICE_COUNT_BY_TIER: Record<UserTier, number> = {
+  free: 1,
+  starter: 1,
+  basic: 2,
+  pro: 4,
+  license: 4,
+};
+const MAX_PARALLEL_CHOICES = 2;
 
 @Injectable()
 export class AiProxyService {
@@ -84,23 +97,36 @@ export class AiProxyService {
       reasoning,
     );
 
-    // 6. 转换格式并调用 AI SDK
-    // 类型断言：我们的 AISDKMessage 格式在运行时与 ModelMessage 兼容
-    const result = await generateText({
+    const messages = MessageConverter.convert(
+      request.messages,
+    ) as ModelMessage[];
+    const tools = ToolConverter.convertTools(request.tools);
+    const toolChoice = ToolConverter.convertToolChoice(request.tool_choice);
+    const stopSequences = this.resolveStopSequences(request.stop);
+    const providerOptions = this.buildProviderOptions(request.user);
+
+    const baseOptions = {
       model: languageModel,
-      messages: MessageConverter.convert(request.messages) as ModelMessage[],
-      tools: ToolConverter.convertTools(request.tools),
-      toolChoice: ToolConverter.convertToolChoice(request.tool_choice),
+      messages,
+      tools,
+      toolChoice,
       temperature: request.temperature,
       maxOutputTokens,
       topP: request.top_p,
       frequencyPenalty: request.frequency_penalty,
       presencePenalty: request.presence_penalty,
-    });
+      stopSequences,
+      ...(providerOptions && { providerOptions }),
+    };
+
+    const choiceCount = this.resolveChoiceCount(userTier, request, false);
+    const results = await this.generateChoices(baseOptions, choiceCount);
 
     // 7. 提取 usage 并扣除积分
-    const usage = this.extractUsage(result.usage);
-    const credits = await this.consumeCredits(userId, usage, modelConfig);
+    const usages = results.map((result) => this.extractUsage(result.usage));
+    const usage = this.mergeUsage(usages);
+    const settlement = await this.consumeCredits(userId, usage, modelConfig);
+    const credits = settlement.consumed + settlement.debtIncurred;
 
     // 8. 记录活动日志
     const duration = Date.now() - startTime;
@@ -120,7 +146,11 @@ export class AiProxyService {
     );
 
     // 9. 构建响应
-    return this.buildCompletionResponse(result, request.model, usage);
+    const choices = results.map((result, index) =>
+      this.buildCompletionChoice(result, index),
+    );
+
+    return this.buildCompletionResponse(request.model, choices, usage);
   }
 
   /**
@@ -130,6 +160,7 @@ export class AiProxyService {
     userId: string,
     userTier: UserTier,
     request: ChatCompletionRequest,
+    abortSignal?: AbortSignal,
   ): Promise<ReadableStream<Uint8Array>> {
     const startTime = Date.now();
     this.logger.debug(
@@ -143,40 +174,59 @@ export class AiProxyService {
     // 2. 预检积分余额
     await this.checkCreditsBalance(userId);
 
-    // 3. 计算最大输出 tokens
+    // 3. 验证生成选项
+    this.resolveChoiceCount(userTier, request, true);
+
+    // 4. 计算最大输出 tokens
     const maxOutputTokens = this.resolveMaxOutputTokens(request, modelConfig);
 
-    // 4. 解析 reasoning 配置（模型默认配置 + 请求覆盖）
+    // 5. 解析 reasoning 配置（模型默认配置 + 请求覆盖）
     const reasoning = this.resolveReasoningConfig(
       modelConfig,
       request.reasoning,
     );
 
-    // 5. 创建模型实例（传递 reasoning 配置）
+    // 6. 创建模型实例（传递 reasoning 配置）
     const languageModel = ModelProviderFactory.create(
       providerConfig,
       modelConfig,
       reasoning,
     );
 
-    // 6. 转换格式并调用 AI SDK
+    const messages = MessageConverter.convert(
+      request.messages,
+    ) as ModelMessage[];
+    const tools = ToolConverter.convertTools(request.tools);
+    const toolChoice = ToolConverter.convertToolChoice(request.tool_choice);
+    const stopSequences = this.resolveStopSequences(request.stop);
+    const providerOptions = this.buildProviderOptions(request.user);
+
+    // 7. 转换格式并调用 AI SDK
     // 类型断言：我们的 AISDKMessage 格式在运行时与 ModelMessage 兼容
     const streamResult = streamText({
       model: languageModel,
-      messages: MessageConverter.convert(request.messages) as ModelMessage[],
-      tools: ToolConverter.convertTools(request.tools),
-      toolChoice: ToolConverter.convertToolChoice(request.tool_choice),
+      messages,
+      tools,
+      toolChoice,
       temperature: request.temperature,
       maxOutputTokens,
       topP: request.top_p,
       frequencyPenalty: request.frequency_penalty,
       presencePenalty: request.presence_penalty,
+      stopSequences,
+      ...(providerOptions && { providerOptions }),
+      abortSignal,
     });
 
-    // 7. 创建 SSE 流
+    // 8. 创建 SSE 流
     return this.sseStreamBuilder.createStream(streamResult, request.model, {
       onUsage: async (usage) => {
-        const credits = await this.consumeCredits(userId, usage, modelConfig);
+        const settlement = await this.consumeCredits(
+          userId,
+          usage,
+          modelConfig,
+        );
+        const credits = settlement.consumed + settlement.debtIncurred;
         // 记录活动日志
         await this.activityLogService.logAiChat(
           userId,
@@ -187,6 +237,11 @@ export class AiProxyService {
             creditsConsumed: credits,
           },
           Date.now() - startTime,
+        );
+      },
+      onAbort: () => {
+        this.logger.debug(
+          `Stream aborted: model=${request.model}, userId=${userId}`,
         );
       },
     });
@@ -253,10 +308,13 @@ export class AiProxyService {
   }
 
   /**
-   * 预检积分余额（仅检查是否 > 0）
+   * 预检积分余额（欠费与余额不足都会阻断）
    */
   private async checkCreditsBalance(userId: string): Promise<void> {
     const balance = await this.creditService.getCreditsBalance(userId);
+    if (balance.debt > 0) {
+      throw new OutstandingDebtException(balance.debt);
+    }
     if (balance.total <= 0) {
       throw new InsufficientCreditsException(1, balance.total);
     }
@@ -270,14 +328,27 @@ export class AiProxyService {
     userId: string,
     usage: InternalTokenUsage,
     model: AiModel,
-  ): Promise<number> {
+  ): Promise<{ consumed: number; debtIncurred: number }> {
     const credits = this.calculateCredits(
       usage,
       model.inputTokenPrice,
       model.outputTokenPrice,
     );
-    await this.creditService.consumeCredits(userId, credits);
-    return credits;
+    const settlement = await this.creditService.consumeCreditsWithDebt(
+      userId,
+      credits,
+    );
+
+    if (settlement.debtIncurred > 0) {
+      this.logger.warn(
+        `Credits debt incurred: userId=${userId}, debt=${settlement.debtIncurred}`,
+      );
+    }
+
+    return {
+      consumed: settlement.consumed,
+      debtIncurred: settlement.debtIncurred,
+    };
   }
 
   /**
@@ -376,13 +447,26 @@ export class AiProxyService {
   }
 
   /**
-   * 构建非流式响应
+   * 合并 usage
    */
-  private buildCompletionResponse(
+  private mergeUsage(usages: InternalTokenUsage[]): InternalTokenUsage {
+    return usages.reduce(
+      (acc, usage) => ({
+        promptTokens: acc.promptTokens + usage.promptTokens,
+        completionTokens: acc.completionTokens + usage.completionTokens,
+        totalTokens: acc.totalTokens + usage.totalTokens,
+      }),
+      { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+    );
+  }
+
+  /**
+   * 构建单条 choice
+   */
+  private buildCompletionChoice(
     result: Awaited<ReturnType<typeof generateText>>,
-    model: string,
-    usage: InternalTokenUsage,
-  ): ChatCompletionResponse {
+    index: number,
+  ): ChatCompletionChoice {
     const hasToolCalls = result.toolCalls && result.toolCalls.length > 0;
 
     // 构建 message
@@ -405,22 +489,108 @@ export class AiProxyService {
     }
 
     return {
+      index,
+      message,
+      finish_reason: hasToolCalls ? 'tool_calls' : 'stop',
+    };
+  }
+
+  /**
+   * 构建非流式响应
+   */
+  private buildCompletionResponse(
+    model: string,
+    choices: ChatCompletionChoice[],
+    usage: InternalTokenUsage,
+  ): ChatCompletionResponse {
+    return {
       id: `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
       model,
-      choices: [
-        {
-          index: 0,
-          message,
-          finish_reason: hasToolCalls ? 'tool_calls' : 'stop',
-        },
-      ],
+      choices,
       usage: {
         prompt_tokens: usage.promptTokens,
         completion_tokens: usage.completionTokens,
         total_tokens: usage.totalTokens,
       },
     };
+  }
+
+  /**
+   * 解析 stop 参数
+   */
+  private resolveStopSequences(stop?: string | string[]): string[] | undefined {
+    if (!stop) {
+      return undefined;
+    }
+
+    const sequences = Array.isArray(stop) ? stop : [stop];
+    const normalized = sequences.filter((sequence) => sequence.length > 0);
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  /**
+   * 透传 provider-specific options
+   */
+  private buildProviderOptions(user?: string): ProviderOptions | undefined {
+    if (!user) {
+      return undefined;
+    }
+
+    const providerOptions: ProviderOptions = {
+      openai: { user },
+      openrouter: { user },
+    };
+
+    return providerOptions;
+  }
+
+  private resolveChoiceCount(
+    userTier: UserTier,
+    request: ChatCompletionRequest,
+    isStream: boolean,
+  ): number {
+    const requested = request.n ?? 1;
+    if (!Number.isInteger(requested) || requested <= 0) {
+      throw new InvalidRequestException('n must be a positive integer');
+    }
+
+    if (isStream && requested > 1) {
+      throw new InvalidRequestException('n must be 1 when stream is true');
+    }
+
+    const maxAllowed = MAX_CHOICE_COUNT_BY_TIER[userTier] ?? 1;
+    if (requested > maxAllowed) {
+      throw new InvalidRequestException(
+        `n exceeds plan limit. Max allowed: ${maxAllowed}.`,
+      );
+    }
+
+    return requested;
+  }
+
+  private async generateChoices(
+    baseOptions: Parameters<typeof generateText>[0],
+    choiceCount: number,
+  ): Promise<Awaited<ReturnType<typeof generateText>>[]> {
+    if (choiceCount <= 1) {
+      return [await generateText(baseOptions)];
+    }
+
+    const results: Awaited<ReturnType<typeof generateText>>[] = [];
+    const batchSize = Math.min(MAX_PARALLEL_CHOICES, choiceCount);
+
+    for (let i = 0; i < choiceCount; i += batchSize) {
+      const currentCount = Math.min(batchSize, choiceCount - i);
+      const batch = await Promise.all(
+        Array.from({ length: currentCount }, () =>
+          generateText({ ...baseOptions }),
+        ),
+      );
+      results.push(...batch);
+    }
+
+    return results;
   }
 }

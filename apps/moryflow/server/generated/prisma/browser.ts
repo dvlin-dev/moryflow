@@ -58,6 +58,11 @@ export type PurchasedCredits = Prisma.PurchasedCreditsModel
  */
 export type CreditUsageDaily = Prisma.CreditUsageDailyModel
 /**
+ * Model CreditDebt
+ * 
+ */
+export type CreditDebt = Prisma.CreditDebtModel
+/**
  * Model Subscription
  * 
  */
