@@ -1,3 +1,10 @@
+---
+title: Fetchx Browser & Agent 功能需求
+date: 2026-01-13
+scope: server.anyhunt.app
+status: done
+---
+
 # Fetchx Browser & Agent 功能需求
 
 > 创建日期：2026-01-13

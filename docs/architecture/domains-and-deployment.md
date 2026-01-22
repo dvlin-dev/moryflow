@@ -55,6 +55,7 @@ status: active
 - `admin.anyhunt.app`：管理后台（Web UI，仅前端）。
 - `docs.anyhunt.app`：产品文档（独立 Docs 项目）。
 - `cdn.anyhunt.app`：静态资源/对象存储对外域名（R2 public URL）。
+- `rss.anyhunt.app`：Digest RSS 入口（可选）。
 - `status.anyhunt.app`：服务状态页（可选）。
 
 > 不做旧域名兼容：不再使用 `fetchx.anyhunt.app`、`memox.anyhunt.app` 等子域名（文档域名固定为 `docs.anyhunt.app`）。

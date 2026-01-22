@@ -257,3 +257,4 @@ status: draft
 | 2026-01-22 | deploy/infra | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突） | -                     | in_progress |
 | 2026-01-22 | deploy/infra | 修复完成（healthcheck/健康轮询/容器名冲突）                        | -                     | done        |
 | 2026-01-22 | design-docs  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                     | -                     | done        |
+| 2026-01-22 | design-docs  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划）                 | -                     | done        |

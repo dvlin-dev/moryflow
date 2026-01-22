@@ -23,28 +23,28 @@ status: done
 
 - 高风险问题（P0）：无
 - 中风险问题（P1）：无
-- 低风险/清理项（P2）：索引缺失、frontmatter 缺失、状态标记不一致、域名规划文档不一致
+- 低风险/清理项（P2）：已修复（索引缺失、frontmatter 缺失、状态标记不一致、域名规划文档不一致）
 
 ## 发现（按严重程度排序）
 
-- [P2] `docs/products/anyhunt-dev/index.md` 引用不存在的文档：
+- [P2] `docs/products/anyhunt-dev/index.md` 引用不存在的文档：（已修复）
   - `docs/products/anyhunt-dev/features/scheduled-digest.md`
   - `docs/products/anyhunt-dev/reviews/digest-code-review-plan.md`
-- [P2] 方案状态与内容说明不一致且缺少 frontmatter：`docs/products/anyhunt-dev/features/homepage-reader-redesign.md`、`docs/products/anyhunt-dev/features/homepage-redesign.md` 标注“已被新信息架构替代”，但仍在 Features 索引中标为“已实现”。
-- [P2] 关键方案/研究文档缺少 YAML frontmatter（缺少 status/date/scope 等元信息）：
+- [P2] 方案状态与内容说明不一致且缺少 frontmatter：`docs/products/anyhunt-dev/features/homepage-reader-redesign.md`、`docs/products/anyhunt-dev/features/homepage-redesign.md` 标注“已被新信息架构替代”，但仍在 Features 索引中标为“已实现”。（已修复）
+- [P2] 关键方案/研究文档缺少 YAML frontmatter（缺少 status/date/scope 等元信息）：（已修复）
   - `docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`
   - `docs/products/anyhunt-dev/features/homepage-reader-redesign.md`
   - `docs/products/anyhunt-dev/features/homepage-redesign.md`
   - `docs/research/agent-browser-integration.md`
-- [P2] 域名规划不一致：`docs/architecture/domains-and-deployment.md` 提及 `cdn.anyhunt.app`，`docs/products/anyhunt-dev/features/v2-intelligent-digest.md` 提及 `rss.anyhunt.app`，但根 `CLAUDE.md` 的域名规划未覆盖，需确认是否纳入正式域名表。
-- [P2] 统一登录与 Digest 前端架构方案（`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`）涉及跨子域 session/cookie 变更，但未标注状态与是否已进入 `docs/architecture/auth/` 或 ADR，易造成“提案”与“最终决策”边界模糊。
+- [P2] 域名规划不一致：`docs/architecture/domains-and-deployment.md` 提及 `cdn.anyhunt.app`，`docs/products/anyhunt-dev/features/v2-intelligent-digest.md` 提及 `rss.anyhunt.app`，但根 `CLAUDE.md` 的域名规划未覆盖，需确认是否纳入正式域名表。（已修复）
+- [P2] 统一登录与 Digest 前端架构方案（`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`）涉及跨子域 session/cookie 变更，但未标注状态与是否已进入 `docs/architecture/auth/` 或 ADR，易造成“提案”与“最终决策”边界模糊。（已修复）
 
 ## 修复计划与进度
 
-- 计划：
-  - 补齐缺失文档或移除索引引用（scheduled-digest / digest-code-review-plan）
-  - 为缺少 frontmatter 的方案补齐元信息（status/date/scope）
-  - 对已被替代的方案改为 archived 或在索引中标注为历史参考
-  - 与域名规划表对齐 `cdn.anyhunt.app`、`rss.anyhunt.app` 的现状与归属
-  - 明确“统一登录方案”是提案还是已拍板，并同步到架构文档或 ADR
-- 状态：done（已完成审查，等待修复）
+- 已完成：
+  - 清理缺失索引引用（scheduled-digest / digest-code-review-plan）
+  - 补齐 frontmatter（status/date/scope）
+  - 在索引中标注被替代方案为历史参考
+  - 同步域名规划（补充 `cdn.anyhunt.app`、`rss.anyhunt.app`）
+  - 明确“统一登录方案”为提案（status: draft）
+- 状态：done

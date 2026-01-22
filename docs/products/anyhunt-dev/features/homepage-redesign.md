@@ -1,3 +1,10 @@
+---
+title: Anyhunt 首页重构方案
+date: 2026-01-15
+scope: anyhunt.app
+status: archived
+---
+
 # Anyhunt 首页重构方案
 
 > 状态：**已实现（已被新信息架构替代）** | 创建日期：2026-01-15 | 更新日期：2026-01-15

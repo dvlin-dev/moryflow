@@ -29,4 +29,5 @@
 
 ## 近期更新
 
+- `domains-and-deployment.md` 补充 `rss.anyhunt.app`（Digest RSS 入口）说明。
 - `ui-message-list-unification.md` 已补齐 MessageList 组件并移除 metadata.moryflow 兼容逻辑。

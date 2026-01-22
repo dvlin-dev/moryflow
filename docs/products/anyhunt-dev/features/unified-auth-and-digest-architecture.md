@@ -1,3 +1,10 @@
+---
+title: 统一登录与 Digest 前端架构
+date: 2026-01-14
+scope: anyhunt.app, server.anyhunt.app
+status: draft
+---
+
 # 统一登录与 Digest 前端架构
 
 > 本文档定义 Anyhunt Dev 的统一登录架构，以及 Digest（智能信息订阅）功能在各前端应用中的边界划分。

@@ -1,3 +1,10 @@
+---
+title: Anyhunt 首页改版设计：AI 智能订阅平台
+date: 2026-01-15
+scope: anyhunt.app
+status: archived
+---
+
 # Anyhunt 首页改版设计：AI 智能订阅平台
 
 > 文档版本: 2.2 | 更新日期: 2026-01-15

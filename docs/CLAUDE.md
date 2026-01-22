@@ -43,6 +43,7 @@
 
 ## 最近更新
 
+- 详细设计/方案文档修复：补齐 frontmatter、清理缺失索引、同步域名规划（2026-01-22）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（2026-01-22：review）
 - deploy/infra 测试环境修复（healthcheck/健康轮询/容器名冲突）：`docs/code-review/deploy-infra.md`（2026-01-22：done）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（2026-01-22：review）
@@ -58,7 +59,6 @@
 - 工程基线：同步 `pnpm-lock.yaml` 并验证 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（2026-01-21：completed）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`（2026-01-21：completed，MessageList 已补齐）
 - Console Agent Browser Chat：UIMessageChunk 流式分段（对齐 Moryflow/pc）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（2026-01-21：draft）
-- Digest 全量 Code Review：`docs/products/anyhunt-dev/reviews/digest-code-review-plan.md`（Admin 路由冲突消除、全模块分页协议统一 `page/limit`、关键投递/安全问题修复；修复完成先暂存区确认再推送）
 - Anyhunt Server：Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`（2026-01-20：draft）
 - Anyhunt Server：LLM Admin 配置改造进度（Agent + Extract）：`docs/architecture/llm-admin-provider-rollout.md`（2026-01-20：draft）
 - apps/anyhunt：大模型调用逻辑梳理（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（2026-01-20：draft）
