@@ -1,6 +1,6 @@
 ---
 title: 全量 Code Review 计划（索引）
-date: 2026-01-23
+date: 2026-01-22
 scope: monorepo
 status: active
 ---
@@ -260,5 +260,5 @@ status: draft
 | 2026-01-22 | design-docs                 | 完成审查；存在 P2 文档索引/状态/域名规划不一致                     | -                     | done        |
 | 2026-01-22 | design-docs                 | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）    | -                     | done        |
 | 2026-01-23 | root-tooling                | 完成 review；存在 P1 npmrc 冲突与脚本清理项                        | -                     | in_progress |
-| 2026-01-23 | root-tooling                | 修复完成（npmrc 对齐/metadata 前缀/clean 跨平台）                  | -                     | done        |
+| 2026-01-23 | root-tooling                | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version） | -                     | done        |
 | 2026-01-23 | moryflow-auth-quota-payment | 完成 review；存在 P1 安全问题与 P2 一致性问题                      | -                     | in_progress |

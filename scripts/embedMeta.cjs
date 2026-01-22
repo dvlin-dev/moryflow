@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: 生成构建期 metadata（用于 agents 包的版本信息注入）
+ * [PROVIDES]: 生成构建期 metadata（用于 agents 包的版本信息注入；只注入稳定字段）
  * [DEPENDS]: package.json 依赖、node:fs/node:path/node:process
  * [POS]: packages/agents* 的 prebuild 脚本入口
  *
@@ -14,22 +14,9 @@ const packageJson = JSON.parse(
   readFileSync(resolve(cwd(), 'package.json'), 'utf-8'),
 );
 
-const dependencies = Object.entries(packageJson.dependencies ?? {});
-const anyhuntDependencies = dependencies.filter(
-  ([name]) => name.startsWith('@anyhunt/') || name === 'openai',
-);
-
-const versions = {
-  [packageJson.name]: packageJson.version,
-  ...Object.fromEntries(
-    anyhuntDependencies.map(([name, version]) => [name, version]),
-  ),
-};
-
 const METADATA = {
   name: packageJson.name,
   version: packageJson.version,
-  versions,
 };
 
 const output = `
