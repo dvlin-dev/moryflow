@@ -43,6 +43,8 @@
 
 ## 最近更新
 
+- deploy/infra 测试环境修复（healthcheck/健康轮询/容器名冲突）：`docs/code-review/deploy-infra.md`（2026-01-22：done）
+- deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（2026-01-22：review）
 - 清理 auth-client/旧拆包引用：`docs/_archived/plans/user-system-refactor-plan.md`、`docs/_archived/plans/refactor-and-deploy-plan.md`、`docs/runbooks/deploy/anyhunt-dokploy.md`、`docs/products/anyhunt-dev/migrations/fetchx-integration.md`、`docs/_archived/progress.md`（2026-01-23：archived/runbook）
 - 归档用户系统计划清理 Identity DB 引用：`docs/_archived/plans/user-system-refactor-plan.md`（2026-01-23：archived）
 - 清理未使用的认证相关内容（备份哈希：`835853de3e01ba610fdf4d5c39644a4974395cb7`）

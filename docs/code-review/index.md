@@ -118,7 +118,7 @@ status: active
 | Priority | Module                               | Scope                                                                                                   | Directories / Key Files                                                                                                      | Doc                                | Status |
 | -------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------ |
 | P0       | 工程基线（可安装性/验证门禁/生成物） | 确保“任何人都能装得起来并跑通 lint/typecheck/test”，同时明确 generated 规则（避免无意义 diff 与线上坑） | `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `eslint.config.mjs`, `tsconfig.base.json`, `scripts/` | `docs/code-review/root-tooling.md` | done   |
-| P0       | deploy：测试环境与基础设施           | 测试 DB/Redis 与本地可复现性                                                                            | `deploy/infra/docker-compose.test.yml`, `deploy/infra/`                                                                      | `docs/code-review/deploy-infra.md` | todo   |
+| P0       | deploy：测试环境与基础设施           | 测试 DB/Redis 与本地可复现性                                                                            | `deploy/infra/docker-compose.test.yml`, `deploy/infra/`                                                                      | `docs/code-review/deploy-infra.md` | done   |
 | P2       | 详细设计/方案文档（仅审查）          | 对齐架构与方案假设，确保 review 过程与设计约束一致                                                      | `docs/architecture/`, `docs/research/`, `docs/products/`                                                                     | `docs/code-review/design-docs.md`  | todo   |
 
 ### Phase 1 - Moryflow 后端（P0 优先 → P1）
@@ -252,6 +252,7 @@ status: draft
 
 > 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
 
-| 日期       | 模块 | 结论摘要 | 修复记录（PR/commit） | 状态 |
-| ---------- | ---- | -------- | --------------------- | ---- |
-| 2026-01-23 | -    | -        | -                     | todo |
+| 日期       | 模块         | 结论摘要                                                           | 修复记录（PR/commit） | 状态        |
+| ---------- | ------------ | ------------------------------------------------------------------ | --------------------- | ----------- |
+| 2026-01-22 | deploy/infra | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突） | -                     | in_progress |
+| 2026-01-22 | deploy/infra | 修复完成（healthcheck/健康轮询/容器名冲突）                        | -                     | done        |
