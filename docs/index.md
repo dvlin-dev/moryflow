@@ -67,10 +67,7 @@ status: active
 
 ## Archived（归档）
 
-- 归档计划：`docs/_archived/plans/`
-- 归档迁移记录：`docs/_archived/migrations/`
-- 合并冲突解决方案：dvlin-dev/agent-browser-research → main（已归档）：`docs/_archived/merge-agent-browser-research.md`
-- 其他归档：`docs/_archived/`
+- 归档目录（当前已清空）：`docs/_archived/`
 
 ## Research（调研 / 功能需求）
 

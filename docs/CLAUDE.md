@@ -36,24 +36,20 @@
 - `docs/guides/`：开发指南（如何做、最佳实践、可复用做法）。
 - `docs/runbooks/`：运行手册（部署/排障/操作清单，照做即可）。
 - `docs/products/`：产品线内的内部方案（Anyhunt Dev / Moryflow）。
-- `docs/_archived/`：已完成/归档的文档（progress.md、ui-migration-moryflow.md、console-refactor-plan.md）。
-- `docs/_archived/plans/`：已完成或阶段性结束的计划类文档（仅保留追溯价值）。
-- `docs/_archived/migrations/`：归档迁移记录。
+- `docs/_archived/`：已完成/归档的文档（当前清空，按需保留）。
 - `docs/skill/`：Codex Skills 相关说明（Prompt/技能元信息），用于本仓库内的协作与对齐。
 
 ## 最近更新
 
-- 归档文档补齐 frontmatter/status：`docs/_archived/console-refactor-plan.md`、`docs/_archived/ui-migration-moryflow.md`（2026-01-23）
+- 清理 docs/\_archived 历史文档（console-refactor-plan、ui-migration-moryflow、progress、merge-agent-browser-research、plans/\*）：`docs/index.md`（2026-01-23）
 - 修正 Agents SDK 参考文档包名与文件命名：`docs/references/anyhunt-agents-sdk.md`（2026-01-23）
 - 修正 Moryflow 同步方案的共享包引用：`docs/products/moryflow/research/sync-refactor-proposal.md`（2026-01-23）
-- 归档合并冲突方案并更新索引：`docs/_archived/merge-agent-browser-research.md`、`docs/index.md`（2026-01-23）
 - 清理缺失文档引用（message-list-ui-code-review）：`docs/index.md`（2026-01-22）
 - 详细设计/方案文档修复：补齐 frontmatter、清理缺失索引、同步域名规划（2026-01-22）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（2026-01-22：review）
 - deploy/infra 测试环境修复（healthcheck/健康轮询/容器名冲突）：`docs/code-review/deploy-infra.md`（2026-01-22：done）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（2026-01-22：review）
-- 清理 auth-client/旧拆包引用：`docs/_archived/plans/user-system-refactor-plan.md`、`docs/_archived/plans/refactor-and-deploy-plan.md`、`docs/runbooks/deploy/anyhunt-dokploy.md`、`docs/products/anyhunt-dev/migrations/fetchx-integration.md`、`docs/_archived/progress.md`（2026-01-23：archived/runbook）
-- 归档用户系统计划清理 Identity DB 引用：`docs/_archived/plans/user-system-refactor-plan.md`（2026-01-23：archived）
+- 清理 auth-client/旧拆包引用：`docs/runbooks/deploy/anyhunt-dokploy.md`、`docs/products/anyhunt-dev/migrations/fetchx-integration.md`（2026-01-23：runbook）
 - 清理未使用的认证相关内容（备份哈希：`835853de3e01ba610fdf4d5c39644a4974395cb7`）
 - 全量 Code Review 计划：按阶段重排模块清单并纳入详细设计审查：`docs/code-review/index.md`（2026-01-23：active）
 - 全量 Code Review 计划：补充阶段顺序与执行步骤：`docs/code-review/index.md`（2026-01-23：active）
