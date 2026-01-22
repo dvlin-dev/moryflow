@@ -1445,13 +1445,13 @@ function migrateFileIndex(oldIndex: OldFileIndex): FileIndex {
 
 1. ✅ 数据库迁移 - 使用 `prisma db push`，SyncFile 已添加 vectorClock 字段并移除 mtime
 2. ✅ 客户端 FileIndex 升级逻辑 - store.ts 自动检测版本并迁移 v1 → v2
-3. ✅ 类型检查通过 - shared-api、server、pc client cloud-sync 模块均无类型错误
+3. ✅ 类型检查通过 - @anyhunt/api、server、pc client cloud-sync 模块均无类型错误
 
 ### Phase 5: 共享包集成 ✅ 完成
 
-1. ✅ 统一使用 `@moryflow/shared-sync` 作为向量时钟的单一来源
-2. ✅ server 和 pc 添加 `@moryflow/shared-sync` 依赖
-3. ✅ `shared-api` 从 `shared-sync` 重导出 `VectorClock` 类型
+1. ✅ 统一使用 `@anyhunt/sync` 作为向量时钟的单一来源
+2. ✅ server 和 pc 添加 `@anyhunt/sync` 依赖
+3. ✅ `@anyhunt/api` 从 `@anyhunt/sync` 重导出 `VectorClock` 类型
 4. ✅ 移除服务端和客户端的重复向量时钟实现
 5. ✅ 所有包构建通过
 

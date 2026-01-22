@@ -409,7 +409,7 @@ model AgentTaskCharge {
 
 ### C. 相关文档
 
-- **[@moryflow/agents SDK 参考](../references/moryflow-agents-sdk.md)** - L3 Agent 实现的核心依赖
+- **[@anyhunt/agents SDK 参考](../references/anyhunt-agents-sdk.md)** - L3 Agent 实现的核心依赖
 - **[Playwright ARIA Snapshot API](https://playwright.dev/docs/aria-snapshot)** - 快照实现参考
 - **[ARIA 角色参考](https://www.w3.org/TR/wai-aria-1.2/#role_definitions)** - 可访问性角色定义
 

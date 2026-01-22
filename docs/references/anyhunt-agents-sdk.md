@@ -1,4 +1,11 @@
-# Moryflow Agents SDK 参考文档
+---
+title: Anyhunt Agents SDK 参考文档
+date: 2026-01-23
+scope: anyhunt, agents
+status: active
+---
+
+# Anyhunt Agents SDK 参考文档
 
 > 基于 OpenAI Agents JS SDK 二次开发，提供 Agent 抽象、运行时、工具调用等核心能力。
 >
@@ -21,7 +28,7 @@
 2. 安装 Agents SDK。
 
    ```bash
-   npm install @moryflow/agents zod@3
+   npm install @anyhunt/agents zod@3
    ```
 
 3. 设置 OpenAI API key。
@@ -37,7 +44,7 @@
 智能体由 instructions 和名称定义。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'History Tutor',
@@ -53,7 +60,7 @@ const agent = new Agent({
 这将返回一个执行结果，其中包含最终输出以及在该次运行期间执行的所有操作。
 
 ```typescript
-import { Agent, run } from '@moryflow/agents';
+import { Agent, run } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'History Tutor',
@@ -71,7 +78,7 @@ console.log(result.finalOutput);
 您可以为智能体提供工具，用于查找信息或执行操作。
 
 ```typescript
-import { Agent, tool } from '@moryflow/agents';
+import { Agent, tool } from '@anyhunt/agents';
 import { z } from 'zod'; // 确保导入 zod
 
 const historyFunFact = tool({
@@ -134,7 +141,7 @@ const triageAgent = Agent.create({
 Runner 负责处理各个智能体的执行、可能的交接以及工具执行。
 
 ```typescript
-import { run } from '@moryflow/agents';
+import { run } from '@anyhunt/agents';
 
 async function main() {
   const result = await run(triageAgent, 'What is the capital of France?');
@@ -149,7 +156,7 @@ main().catch((err) => console.error(err));
 让我们把以上内容整合成一个完整示例。将其放入您的 `index.js` 文件并运行。
 
 ```typescript
-import { Agent, run } from '@moryflow/agents';
+import { Agent, run } from '@anyhunt/agents';
 
 const historyTutorAgent = new Agent({
   name: 'History Tutor',
@@ -193,7 +200,7 @@ Agents SDK 会自动为您生成追踪。这使您可以审查智能体的运行
 - **Tools** —— LLM 可调用以完成任务的一组函数或 API。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Haiku Agent',
@@ -215,7 +222,7 @@ const agent = new Agent({
 | `tools`         | no   | 模型可调用的 `Tool` 实例数组。                        |
 
 ```typescript
-import { Agent, tool } from '@moryflow/agents';
+import { Agent, tool } from '@anyhunt/agents';
 import { z } from 'zod';
 
 const getWeather = tool({
@@ -240,7 +247,7 @@ const agent = new Agent({
 智能体对其上下文类型是**泛型**的——即 `Agent<TContext, TOutput>`。该上下文是一个依赖注入对象，由你创建并传入 `Runner.run()`。它会被转发到每个工具、护栏、交接等，对于存储状态或提供共享服务（数据库连接、用户元数据、功能开关等）很有用。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 interface Purchase {
   id: string;
@@ -261,7 +268,7 @@ const agent = new Agent<UserContext>({
 });
 
 // Later
-import { run } from '@moryflow/agents';
+import { run } from '@anyhunt/agents';
 
 const result = await run(agent, 'Find me a new pair of running shoes', {
   context: { uid: 'abc', isProUser: true, fetchPurchases: async () => [] },
@@ -276,7 +283,7 @@ const result = await run(agent, 'Find me a new pair of running shoes', {
 2. 任何兼容 JSON Schema 的对象。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 import { z } from 'zod';
 
 const CalendarEvent = z.object({
@@ -309,7 +316,7 @@ const extractor = new Agent({
 在该模式下，管理者从不移交控制权——LLM 使用工具，管理者汇总最终答案。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const bookingAgent = new Agent({
   name: 'Booking expert',
@@ -343,7 +350,7 @@ const customerFacingAgent = new Agent({
 采用交接时，分诊智能体负责路由请求，但一旦发生交接，专家智能体就拥有对话控制权直到产生最终输出。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const bookingAgent = new Agent({
   name: 'Booking Agent',
@@ -370,7 +377,7 @@ const triageAgent = Agent.create({
 `instructions` 可以是**函数**而不是字符串。该函数接收当前的 `RunContext` 和 Agent 实例，并可返回字符串或 `Promise<string>`。
 
 ```typescript
-import { Agent, RunContext } from '@moryflow/agents';
+import { Agent, RunContext } from '@anyhunt/agents';
 
 interface UserContext {
   name: string;
@@ -393,7 +400,7 @@ const agent = new Agent<UserContext>({
 对于高级用例，你可以通过监听事件来观察 Agent 的生命周期。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Verbose agent',
@@ -417,7 +424,7 @@ agent.on('agent_end', (ctx, output) => {
 需要现有智能体的稍作修改版本？使用 `clone()` 方法，它会返回一个全新的 `Agent` 实例。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const pirateAgent = new Agent({
   name: 'Pirate',
@@ -441,7 +448,7 @@ const robotAgent = pirateAgent.clone({
 4. 指定工具名，如 `'calculator'` —— LLM 必须调用该特定工具。
 
 ```typescript
-import { Agent, tool } from '@moryflow/agents';
+import { Agent, tool } from '@anyhunt/agents';
 import { z } from 'zod';
 
 const calculatorTool = tool({
@@ -482,7 +489,7 @@ const agent = new Agent({
 智能体不会自行执行——您需要使用 `Runner` 类或 `run()` 工具来**运行**它们。
 
 ```typescript
-import { Agent, run } from '@moryflow/agents';
+import { Agent, run } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Assistant',
@@ -502,7 +509,7 @@ console.log(result.finalOutput);
 或者，您也可以创建自己的 runner 实例：
 
 ```typescript
-import { Agent, Runner } from '@moryflow/agents';
+import { Agent, Runner } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Assistant',
@@ -547,8 +554,8 @@ runner 会执行如下循环：
 每次调用 `runner.run()`（或 `run()` 工具）代表您应用层对话中的一个**轮次**。
 
 ```typescript
-import { Agent, run } from '@moryflow/agents';
-import type { AgentInputItem } from '@moryflow/agents';
+import { Agent, run } from '@anyhunt/agents';
+import type { AgentInputItem } from '@anyhunt/agents';
 
 let thread: AgentInputItem[] = [];
 
@@ -640,7 +647,7 @@ SDK 会抛出一小组可捕获的错误：
 | Image generation        | `'image_generation'` | 基于文本生成图像。               |
 
 ```typescript
-import { Agent, webSearchTool, fileSearchTool } from '@moryflow/agents';
+import { Agent, webSearchTool, fileSearchTool } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Travel assistant',
@@ -653,7 +660,7 @@ const agent = new Agent({
 你可以使用 `tool()` 帮助器将**任意**函数转换为工具。
 
 ```typescript
-import { tool } from '@moryflow/agents';
+import { tool } from '@anyhunt/agents';
 import { z } from 'zod';
 
 const getWeatherTool = tool({
@@ -682,7 +689,7 @@ const getWeatherTool = tool({
 有时你希望一个智能体在不完全交接对话的情况下*协助*另一个智能体。使用 `agent.asTool()`：
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const summarizer = new Agent({
   name: 'Summarizer',
@@ -705,7 +712,7 @@ const mainAgent = new Agent({
 你可以通过 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 服务器暴露工具，并将其附加到智能体上。
 
 ```typescript
-import { Agent, MCPServerStdio } from '@moryflow/agents';
+import { Agent, MCPServerStdio } from '@anyhunt/agents';
 
 const server = new MCPServerStdio({
   fullCommand: 'npx -y @modelcontextprotocol/server-filesystem ./sample_files',
@@ -761,7 +768,7 @@ const agent = new Agent({
 每个智能体都接受一个 `handoffs` 选项。它可以包含其他 `Agent` 实例，或由 `handoff()` 帮助函数返回的 `Handoff` 对象。
 
 ```typescript
-import { Agent, handoff } from '@moryflow/agents';
+import { Agent, handoff } from '@anyhunt/agents';
 
 const billingAgent = new Agent({ name: 'Billing agent' });
 const refundAgent = new Agent({ name: 'Refund agent' });
@@ -796,7 +803,7 @@ const triageAgent = Agent.create({
 本地上下文由 `RunContext<T>` 类型表示。你可以创建任意对象来保存状态或依赖，并将其传给 `Runner.run()`。
 
 ```typescript
-import { Agent, run, RunContext, tool } from '@moryflow/agents';
+import { Agent, run, RunContext, tool } from '@anyhunt/agents';
 import { z } from 'zod';
 
 interface UserInfo {
@@ -850,7 +857,7 @@ SDK 自带两个实现：`OpenAIConversationsSession` (Conversations API) 和 `M
 ### 快速上手
 
 ```typescript
-import { Agent, OpenAIConversationsSession, run } from '@moryflow/agents';
+import { Agent, OpenAIConversationsSession, run } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'TourGuide',
@@ -874,7 +881,7 @@ console.log(secondTurn.finalOutput); // "California"
 每个 Agent 最终都会调用一个 LLM。SDK 通过 `Model` 和 `ModelProvider` 接口抽象了模型。
 
 ```typescript
-import { Agent } from '@moryflow/agents';
+import { Agent } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Creative writer',
@@ -889,7 +896,7 @@ const agent = new Agent({
 您可以通过设置 `OPENAI_DEFAULT_MODEL` 环境变量来更改全局默认值，或者在 `Runner` 实例上设置默认值：
 
 ```typescript
-import { Runner } from '@moryflow/agents';
+import { Runner } from '@anyhunt/agents';
 
 const runner = new Runner({ model: 'gpt‑4.1-mini' });
 ```
@@ -928,7 +935,7 @@ Agents SDK 可以增量地传递来自模型和其他执行步骤的输出。
 向 `Runner.run()` 传入 `{ stream: true }` 选项以获取一个流式对象 (`StreamedRunResult`)。
 
 ```typescript
-import { Agent, run } from '@moryflow/agents';
+import { Agent, run } from '@anyhunt/agents';
 
 const agent = new Agent({
   name: 'Storyteller',
@@ -973,7 +980,7 @@ await result.completed;
 可以通过将 `needsApproval` 选项设置为 `true`，或设置为一个返回布尔值的异步函数，来定义需要审批的工具。
 
 ```typescript
-import { tool } from '@moryflow/agents';
+import { tool } from '@anyhunt/agents';
 import z from 'zod';
 
 const sensitiveTool = tool({
@@ -1038,7 +1045,7 @@ Agents SDK 内置了追踪功能，会在智能体运行期间收集完整的事
 默认情况下，SDK 会读取 `OPENAI_API_KEY` 环境变量。您也可以手动设置：
 
 ```typescript
-import { setDefaultOpenAIKey } from '@moryflow/agents';
+import { setDefaultOpenAIKey } from '@anyhunt/agents';
 setDefaultOpenAIKey(process.env.OPENAI_API_KEY!);
 ```
 
@@ -1046,7 +1053,7 @@ setDefaultOpenAIKey(process.env.OPENAI_API_KEY!);
 
 ```typescript
 import { OpenAI } from 'openai';
-import { setDefaultOpenAIClient } from '@moryflow/agents';
+import { setDefaultOpenAIClient } from '@anyhunt/agents';
 
 const customClient = new OpenAI({ baseURL: '...', apiKey: '...' });
 setDefaultOpenAIClient(customClient);
@@ -1055,7 +1062,7 @@ setDefaultOpenAIClient(customClient);
 切换 API (Responses vs Chat Completions):
 
 ```typescript
-import { setOpenAIAPI } from '@moryflow/agents';
+import { setOpenAIAPI } from '@anyhunt/agents';
 setOpenAIAPI('chat_completions'); // 默认为 'responses'
 ```
 
@@ -1094,7 +1101,7 @@ OpenAI Agents SDK 支持以下服务器环境：
 1. 安装扩展包：
 
    ```bash
-   npm install @moryflow/agents-extensions
+   npm install @anyhunt/agents-extensions
    ```
 
 2. 从 Vercel 的 AI SDK 选择所需的模型包并进行安装（例如 OpenAI）：
@@ -1107,7 +1114,7 @@ OpenAI Agents SDK 支持以下服务器环境：
 
    ```typescript
    import { openai } from '@ai-sdk/openai'; // 来自 Vercel AI SDK
-   import { aisdk } from '@moryflow/agents-extensions'; // 适配器
+   import { aisdk } from '@anyhunt/agents-extensions'; // 适配器
    ```
 
 4. 初始化一个模型实例供智能体使用：
@@ -1119,13 +1126,13 @@ OpenAI Agents SDK 支持以下服务器环境：
 ### 示例
 
 ```typescript
-import { Agent, run } from '@moryflow/agents';
+import { Agent, run } from '@anyhunt/agents';
 
 // 1. Import the model package you installed
 import { openai } from '@ai-sdk/openai';
 
 // 2. Import the adapter
-import { aisdk } from '@moryflow/agents-extensions';
+import { aisdk } from '@anyhunt/agents-extensions';
 
 // 3. Create a model instance to be used by the agent
 const model = aisdk(openai('gpt-5-mini'));

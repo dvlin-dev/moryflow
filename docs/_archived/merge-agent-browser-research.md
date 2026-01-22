@@ -2,10 +2,12 @@
 title: 合并 dvlin-dev/agent-browser-research 冲突解决方案
 date: 2026-01-19
 scope: anyhunt-monorepo
-status: review
+status: archived
 ---
 
 # 合并 dvlin-dev/agent-browser-research 冲突解决方案
+
+> 已归档：合并已完成，保留为历史记录。
 
 ## 背景
 
