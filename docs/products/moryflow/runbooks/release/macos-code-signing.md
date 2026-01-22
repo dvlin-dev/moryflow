@@ -1,100 +1,283 @@
 ---
-title: macOS 桌面端代码签名指南
-date: 2026-01-12
+title: macOS 桌面端签名与公证（Electron + electron-builder）
+date: 2026-01-22
 scope: moryflow, pc, release
 status: draft
 ---
 
 <!--
 [INPUT]: Apple Developer 证书；electron-builder；公证流程；CI 配置
-[OUTPUT]: 可照做的代码签名与公证步骤（Moryflow PC）
-[POS]: Runbook：Moryflow 桌面端发布（macOS）
+[OUTPUT]: 可照做的签名 + 公证 + 发版流水线（Moryflow PC）
+[POS]: Runbook：Moryflow 桌面端发布（macOS / Electron）
 
 [PROTOCOL]: 本文件变更时同步更新 `docs/products/moryflow/index.md`（索引）。
 -->
 
-# macOS 桌面端代码签名指南
+# macOS 桌面端签名与公证（Electron + electron-builder）
 
-本文档提供 MoryFlow 桌面端（apps/moryflow/pc）在 macOS 上的代码签名和公证流程，使打包后的应用不会显示"无法验证开发者"警告。
+本文档面向 `apps/moryflow/pc`，目标是让 Desktop App 在 macOS 上：
+
+- **签名（Code Signing）**：用户打开不会出现“无法验证开发者”类的阻断
+- **公证（Notarization）**：通过 Gatekeeper 验证，适合在官网 / GitHub Release 分发
+- **可自动化**：通过 tag 触发 CI 构建发布（对齐当前仓库已有的 `release.sh` + GitHub Actions）
+
+> 重要：macOS 公证要求应用启用 Hardened Runtime；Electron 还需要合适的 entitlements。
 
 ## 目录
 
-- [前置要求](#前置要求)
-- [方式选择](#方式选择)
-- [方式一：Fastlane Match 自动化（推荐）](#方式一fastlane-match-自动化推荐)
-  - [安装 Fastlane](#安装-fastlane)
-  - [初始化 Match](#初始化-match)
-  - [创建证书](#创建证书)
-  - [清除旧证书重新申请](#清除旧证书重新申请)
-  - [集成到构建流程](#集成到构建流程)
-  - [CI 环境配置](#ci-环境配置)
-- [方式二：手动申请证书](#方式二手动申请证书)
-  - [步骤 1：创建证书签名请求](#步骤-1创建证书签名请求)
-  - [步骤 2：创建 Developer ID 证书](#步骤-2创建-developer-id-证书)
-  - [步骤 3：导出 .p12 文件](#步骤-3导出-p12-文件)
-  - [步骤 4：创建 App 专用密码](#步骤-4创建-app-专用密码)
-  - [步骤 5：获取 Team ID](#步骤-5获取-team-id)
-- [项目配置](#项目配置)
-  - [创建 entitlements 文件](#创建-entitlements-文件)
-  - [修改 electron-builder 配置](#修改-electron-builder-配置)
-  - [创建公证脚本](#创建公证脚本)
-  - [安装依赖](#安装依赖)
-- [本地打包](#本地打包)
-- [GitHub Actions 配置](#github-actions-配置)
-- [常见问题](#常见问题)
+- [TL;DR（推荐路径）](#tldr推荐路径)
+- [项目事实（以仓库为准）](#项目事实以仓库为准)
+- [推荐的凭证策略](#推荐的凭证策略)
+- [一次性初始化（One-time Setup）](#一次性初始化one-time-setup)
+- [仓库配置（electron-builder）](#仓库配置electron-builder)
+- [本地打包与验证](#本地打包与验证)
+- [CI 发版（tag → GitHub Release）](#ci-发版tag--github-release)
+- [排障（Troubleshooting）](#排障troubleshooting)
 
 ---
 
-## 前置要求
+## TL;DR（推荐路径）
 
-### 必需条件
+1. 日常发版入口使用：`./apps/moryflow/pc/scripts/release.sh <version>`（会 bump 版本、commit、打 tag、push）。
+2. CI（macOS job）负责签名 + 公证 + 上传产物到 GitHub Release。
+3. 认证/密钥推荐：
+   - 签名证书：Developer ID Application（`.p12`）→ `CSC_LINK` + `CSC_KEY_PASSWORD`
+   - 公证：优先 **App Store Connect API Key** → `APPLE_API_KEY` + `APPLE_API_KEY_ID` + `APPLE_API_ISSUER`
 
-| 项目                 | 说明                                 |
-| -------------------- | ------------------------------------ |
-| Apple Developer 账号 | $99/年，用于获取代码签名证书         |
-| macOS 系统           | 用于创建证书签名请求和导出 .p12 文件 |
-| Xcode                | 安装命令行工具，公证需要             |
+---
 
-### 安装 Xcode 命令行工具
+## 项目事实（以仓库为准）
+
+| 项目                  | 值                                                               |
+| --------------------- | ---------------------------------------------------------------- |
+| App 路径              | `apps/moryflow/pc`                                               |
+| electron-builder 配置 | `apps/moryflow/pc/electron-builder.yml`                          |
+| tag 发版脚本          | `apps/moryflow/pc/scripts/release.sh`                            |
+| GitHub Actions        | `apps/moryflow/pc/.github/workflows/release.yml`                 |
+| App ID（macOS）       | `com.moryflow.app`（见 `apps/moryflow/pc/electron-builder.yml`） |
+
+> 注意：当前仓库的 `apps/moryflow/pc/electron-builder.yml` 里 `hardenedRuntime: false`，且未配置公证步骤；要实现“可分发且不被 Gatekeeper 拦截”，需要按本文补齐配置。
+
+---
+
+## 推荐的凭证策略
+
+把 Desktop macOS 发布拆成两件事：
+
+1. **Signing credentials（签名）**：Developer ID Application 证书（导出为 `.p12`）
+2. **Notarization credentials（公证）**：推荐 App Store Connect API Key（`.p8`），备选 Apple ID + App 专用密码
+
+### 为什么推荐 App Store Connect API Key
+
+- 对 CI 更友好：不依赖 Apple ID 2FA、密码轮换等“人肉环节”
+- electron-builder / @electron/notarize 都原生支持使用 API Key 进行 notarization
+
+---
+
+## 一次性初始化（One-time Setup）
+
+### 0. 前置条件
+
+- Apple Developer Program（可创建 Developer ID Application 证书）
+- macOS（用于生成 CSR、导出 `.p12`）
+- Xcode Command Line Tools（用于 codesign / stapler / notarytool 等工具）
 
 ```bash
 xcode-select --install
 ```
 
-如遇到 `xcrun: error: unable to find utility "altool"` 错误：
+### 1. 创建 Developer ID Application 证书（导出为 .p12）
+
+你可以走两种路径：
+
+#### 路径 A：Fastlane Match（团队更推荐）
+
+- 优点：证书与 profile 由 Match 统一管理，团队协作更清晰
+- 代价：需要一个私有证书仓库 + 维护 `MATCH_PASSWORD`
+
+参考 Fastlane 官方 Match 文档（见本文末参考资料）。
+
+#### 路径 B：手动申请并导出 `.p12`（最直接）
+
+1. 钥匙串访问生成 CSR
+2. Apple Developer 创建 **Developer ID Application** 证书
+3. 导入证书到钥匙串后，连同私钥一起导出 `.p12` 并设置密码
+
+最终你会得到：
+
+- `Moryflow-Developer-ID.p12`
+- `CSC_KEY_PASSWORD`（导出时设置的密码）
+
+---
+
+## 仓库配置（electron-builder）
+
+### 1. electron-builder 基础签名参数（CI 必需）
+
+electron-builder 支持用环境变量注入 macOS 签名证书：
+
+- `CSC_LINK`：`.p12` 的 base64 内容（或文件路径，视配置而定）
+- `CSC_KEY_PASSWORD`：`.p12` 密码
+
+> 建议：把 `.p12` 放到密码管理器/离线安全存储，不要提交到仓库。
+
+### 2. 启用 Hardened Runtime（公证必需）
+
+要通过 Apple notarization，必须启用 Hardened Runtime。
+
+请在 `apps/moryflow/pc/electron-builder.yml` 把 `hardenedRuntime` 改为 `true`：
+
+```yaml
+mac:
+  hardenedRuntime: true
+```
+
+### 3. 添加 entitlements（Electron 常见需求）
+
+建议新增 `apps/moryflow/pc/build/entitlements.mac.plist`（如果 `apps/moryflow/pc/build/` 目录不存在就创建）。
+
+参考 @electron/notarize 对 Electron Hardened Runtime 的说明：
+
+一个相对保守的起点如下：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+  </dict>
+</plist>
+```
+
+> 注意：`com.apple.security.cs.allow-unsigned-executable-memory` 通常只在旧版 Electron（<=11）才需要；新版本 Electron 不建议默认加。
+
+然后在 `apps/moryflow/pc/electron-builder.yml` 里引用：
+
+```yaml
+mac:
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+```
+
+### 4. 启用公证（Notarization）
+
+electron-builder 内置了对 `@electron/notarize` 的集成；只要提供 Apple 凭证就会在构建中执行 notarization。
+
+推荐（App Store Connect API Key）环境变量：
+
+- `APPLE_API_KEY`：API key（可为 base64 内容或文件路径）
+- `APPLE_API_KEY_ID`：Key ID
+- `APPLE_API_ISSUER`：Issuer ID
+
+备选（Apple ID + App 专用密码）：
+
+- `APPLE_ID`
+- `APPLE_APP_SPECIFIC_PASSWORD`
+- `APPLE_TEAM_ID`
+
+---
+
+## 本地打包与验证
+
+### 1. 本地构建（macOS）
 
 ```bash
-sudo xcode-select --reset
+cd apps/moryflow/pc
+pnpm dist:mac
+```
+
+如果你想在本地验证“签名 + 公证”是否生效，你需要在执行前设置 `CSC_*` 和 `APPLE_*` 相关环境变量（见上文）。
+
+### 2. 验证签名 / 公证 / Staple
+
+（示例命令，具体路径以产物为准）
+
+```bash
+# 1) 验证签名（deep 校验会更严格）
+codesign --verify --deep --strict --verbose=2 /path/to/MoryFlow.app
+
+# 2) Gatekeeper 验证
+spctl -a -vv /path/to/MoryFlow.app
+
+# 3) Staple 验证（确保离线也能通过验证）
+xcrun stapler validate /path/to/MoryFlow.app
 ```
 
 ---
 
-## 方式选择
+## CI 发版（tag → GitHub Release）
 
-macOS 代码签名有两种方式：
+### 1. 发版入口：release.sh
 
-| 方式               | 优点                           | 缺点                   | 推荐场景           |
-| ------------------ | ------------------------------ | ---------------------- | ------------------ |
-| **Fastlane Match** | 全自动、团队共享、证书统一管理 | 需要额外配置 Git 仓库  | 团队协作、CI/CD    |
-| **手动申请**       | 简单直接、无额外依赖           | 手动操作、证书不易共享 | 个人开发、快速上手 |
+当前仓库已经提供 `apps/moryflow/pc/scripts/release.sh`，会：
+
+- 更新 `apps/moryflow/pc/package.json` 的 version
+- 提交 `chore(release): bump version to x.y.z`
+- 创建 annotated tag：`vX.Y.Z`
+- push 分支和 tag 到远程（触发 GitHub Actions）
+
+用法：
+
+```bash
+./apps/moryflow/pc/scripts/release.sh 0.2.16
+```
+
+### 2. GitHub Actions Secrets（macOS job）
+
+建议在 GitHub 仓库 `Settings → Secrets and variables → Actions` 添加：
+
+- `CSC_LINK`：`.p12` base64（建议去掉换行后再粘贴）
+- `CSC_KEY_PASSWORD`
+- `APPLE_API_KEY`（`.p8` base64 或者文件路径；推荐 base64）
+- `APPLE_API_KEY_ID`
+- `APPLE_API_ISSUER`
+
+### 3. Workflow 注意事项（当前仓库的改进建议）
+
+当前 `apps/moryflow/pc/.github/workflows/release.yml` 是三平台矩阵，但未配置签名/公证的 secrets 注入。
+
+建议：
+
+- 仅在 `macos-latest` job 注入 `CSC_*`/`APPLE_*`
+- pnpm 版本与 monorepo 根保持一致（根 `packageManager` 是 `pnpm@9.12.2`）
 
 ---
 
-## 方式一：Fastlane Match 自动化（推荐）
+## 排障（Troubleshooting）
 
-Fastlane Match 可以自动在 Apple Developer 申请证书，并安全存储到 Git 仓库，类似 Expo 的 EAS Credentials。
+### Q: 打包后仍提示“无法验证开发者”或被 Gatekeeper 拦截
 
-### 安装 Fastlane
+检查：
 
-```bash
-# 使用 Homebrew 安装
-brew install fastlane
+1. `apps/moryflow/pc/electron-builder.yml` 是否设置 `hardenedRuntime: true`
+2. 是否提供了 notarization 需要的 `APPLE_*` 环境变量
+3. 产物是否 stapled（`xcrun stapler validate ...`）
 
-# 或使用 gem
-sudo gem install fastlane
-```
+### Q: notarization 失败（鉴权相关）
 
-### 初始化 Match
+- 使用 Apple ID 流程：确认用的是 **App 专用密码**，不是 Apple ID 登录密码
+- 使用 API Key 流程：确认 `.p8` 没过期、Key ID / Issuer ID 正确，且 key 有权限
+
+### Q: codesign 报错 `errSecInternalComponent`
+
+常见原因：
+
+- 证书导出 `.p12` 时没有包含私钥
+- `CSC_KEY_PASSWORD` 错误
+- CI Runner 无法导入证书（`CSC_LINK` 有换行/截断）
+
+---
+
+## 参考资料（官方）
+
+- [electron-builder: Code Signing](https://www.electron.build/code-signing)
+- [electron-builder: macOS notarize options / env vars](https://www.electron.build/configuration/mac)
+- [@electron/notarize: Hardened Runtime + notarization](https://github.com/electron/notarize)
+- [Apple: notarytool](https://keith.github.io/xcode-man-pages/notarytool.1.html)
 
 ```bash
 cd apps/moryflow/pc

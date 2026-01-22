@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-23
+date: 2026-01-22
 scope: monorepo
 status: active
 ---
@@ -58,6 +58,7 @@ status: active
   - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
 - Moryflow：`docs/products/moryflow/`
   - 入口：`docs/products/moryflow/index.md`
+  - 发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`
 
 ## Code Review（全量评审计划与进度）
 
