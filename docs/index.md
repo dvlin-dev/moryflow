@@ -59,6 +59,7 @@ status: active
 - Moryflow：`docs/products/moryflow/`
   - 入口：`docs/products/moryflow/index.md`
   - 发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`
+  - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
 
 ## Code Review（全量评审计划与进度）
 
