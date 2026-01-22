@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma';
 import {
@@ -13,6 +14,7 @@ import {
   MockPrismaService,
 } from '../testing/mocks/prisma.mock';
 import { createMockUser, createMockSession } from '../testing/factories';
+import { createBetterAuth } from './better-auth';
 
 // Mock better-auth 模块
 vi.mock('better-auth', () => ({
@@ -44,6 +46,12 @@ vi.mock('./better-auth', () => ({
 describe('AuthService', () => {
   let service: AuthService;
   let prismaMock: MockPrismaService;
+  const createBetterAuthMock = vi.mocked(createBetterAuth);
+  const createAuthMock = (): ReturnType<typeof createBetterAuth> =>
+    ({
+      api: { getSession: vi.fn() },
+      handler: vi.fn(),
+    }) as unknown as ReturnType<typeof createBetterAuth>;
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
@@ -144,11 +152,83 @@ describe('AuthService', () => {
 
   describe('getAuth', () => {
     it('初始化后应返回 Better Auth 实例', () => {
+      const authWeb = createAuthMock();
+      const authDevice = createAuthMock();
+      createBetterAuthMock
+        .mockReturnValueOnce(authWeb)
+        .mockReturnValueOnce(authDevice);
       void service.onModuleInit();
       const auth = service.getAuth();
 
       expect(auth).toBeDefined();
       expect(auth.api).toBeDefined();
+      expect(auth).toBe(authWeb);
+    });
+  });
+
+  describe('getAuthForRequest', () => {
+    it('有 Origin 时应使用 web auth', () => {
+      const authWeb = createAuthMock();
+      const authDevice = createAuthMock();
+      createBetterAuthMock
+        .mockReturnValueOnce(authWeb)
+        .mockReturnValueOnce(authDevice);
+      void service.onModuleInit();
+
+      const req = { headers: { origin: 'https://app.moryflow.com' } };
+
+      expect(service.getAuthForRequest(req as unknown as ExpressRequest)).toBe(
+        authWeb,
+      );
+    });
+
+    it('无 Origin 且有 Bearer 时应使用 device auth', () => {
+      const authWeb = createAuthMock();
+      const authDevice = createAuthMock();
+      createBetterAuthMock
+        .mockReturnValueOnce(authWeb)
+        .mockReturnValueOnce(authDevice);
+      void service.onModuleInit();
+
+      const req = {
+        headers: { authorization: 'Bearer test-token' },
+      };
+
+      expect(service.getAuthForRequest(req as unknown as ExpressRequest)).toBe(
+        authDevice,
+      );
+    });
+
+    it('无 Origin 且有 X-App-Platform 时应使用 device auth', () => {
+      const authWeb = createAuthMock();
+      const authDevice = createAuthMock();
+      createBetterAuthMock
+        .mockReturnValueOnce(authWeb)
+        .mockReturnValueOnce(authDevice);
+      void service.onModuleInit();
+
+      const req = {
+        headers: { 'x-app-platform': 'mobile' },
+      };
+
+      expect(service.getAuthForRequest(req as unknown as ExpressRequest)).toBe(
+        authDevice,
+      );
+    });
+
+    it('无 Origin 且无设备标识时应抛错', () => {
+      const authWeb = createAuthMock();
+      const authDevice = createAuthMock();
+      createBetterAuthMock
+        .mockReturnValueOnce(authWeb)
+        .mockReturnValueOnce(authDevice);
+      void service.onModuleInit();
+
+      const req = { headers: {} };
+
+      expect(() =>
+        service.getAuthForRequest(req as unknown as ExpressRequest),
+      ).toThrow('Invalid auth request');
     });
   });
 });

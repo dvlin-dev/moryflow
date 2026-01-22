@@ -3,9 +3,13 @@
  * [OUTPUT]: (Session & User) | null - 用户会话与完整用户信息
  * [POS]: 认证核心服务，基于 Better Auth，被所有需要鉴权的接口依赖
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
 import { PrismaService } from '../prisma';
 import { EmailService } from '../email';
@@ -14,7 +18,8 @@ import type { CurrentUserDto } from '../types';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
-  private auth!: Auth;
+  private authWeb!: Auth;
+  private authDevice!: Auth;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -22,9 +27,16 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.auth = createBetterAuth(
+    this.authWeb = createBetterAuth(
       this.prisma,
       this.emailService.sendOTP.bind(this.emailService),
+      { disableCSRFCheck: false },
+    );
+
+    this.authDevice = createBetterAuth(
+      this.prisma,
+      this.emailService.sendOTP.bind(this.emailService),
+      { disableCSRFCheck: true },
     );
   }
 
@@ -32,7 +44,28 @@ export class AuthService implements OnModuleInit {
    * 获取 Better Auth 实例
    */
   getAuth(): Auth {
-    return this.auth;
+    return this.authWeb;
+  }
+
+  /**
+   * 根据请求来源选择 Auth 实例
+   */
+  getAuthForRequest(req: ExpressRequest): Auth {
+    const origin = req.headers.origin as string | string[] | undefined;
+    const hasOrigin =
+      typeof origin === 'string'
+        ? origin.trim().length > 0
+        : Array.isArray(origin) && origin.length > 0;
+
+    if (hasOrigin) {
+      return this.authWeb;
+    }
+
+    if (this.isDeviceRequest(req)) {
+      return this.authDevice;
+    }
+
+    throw new UnauthorizedException('Invalid auth request');
   }
 
   /**
@@ -54,7 +87,9 @@ export class AuthService implements OnModuleInit {
       }
     }
 
-    const session = await this.auth.api.getSession({ headers });
+    const session = await this.getAuthForRequest(req).api.getSession({
+      headers,
+    });
 
     if (!session) {
       return null;
@@ -137,5 +172,20 @@ export class AuthService implements OnModuleInit {
         isAdmin: session.user.isAdmin,
       },
     };
+  }
+
+  private isDeviceRequest(req: ExpressRequest): boolean {
+    const authorization = req.headers.authorization;
+    const hasBearer =
+      typeof authorization === 'string' &&
+      authorization.toLowerCase().startsWith('bearer ');
+
+    const appPlatform = req.headers['x-app-platform'];
+    const hasPlatform =
+      typeof appPlatform === 'string'
+        ? appPlatform.trim().length > 0
+        : Array.isArray(appPlatform) && appPlatform.some(Boolean);
+
+    return hasBearer || hasPlatform;
   }
 }

@@ -52,6 +52,11 @@ module-name/
 
 ## 近期变更
 
+- Auth：Web/设备端区分 CSRF（Web 开启、设备端允许无 Origin），补充 origin 白名单工具与单测
+- Payment：successUrl 白名单校验、Webhook productId 校验与类型映射、成功页 postMessage 限定 origin
+- Payment：Webhook 幂等性补齐唯一约束兜底；新增支付工具与单测
+- Quota：存储/向量化扣减改为原子更新并补齐单测
+- Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
 - E2E 测试 setup 补充默认环境变量（BETTER*AUTH_SECRET、VECTORIZE*\*），避免缺失配置阻断启动
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`

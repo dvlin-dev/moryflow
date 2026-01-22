@@ -3,7 +3,7 @@
  * [OUTPUT]: (用户等级升降级、积分发放、许可证创建) - 支付后权益交付
  * [POS]: 支付核心服务，处理 Creem Webhook 回调，协调 CreditService/LicenseService 完成发货
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -319,19 +319,29 @@ export class PaymentService {
         return;
       }
 
-      await tx.paymentOrder.create({
-        data: {
-          userId,
-          creemCheckoutId: checkoutId,
-          creemOrderId: orderId,
-          productId,
-          productType,
-          amount,
-          currency,
-          status: 'completed',
-          completedAt: new Date(),
-        },
-      });
+      try {
+        await tx.paymentOrder.create({
+          data: {
+            userId,
+            creemCheckoutId: checkoutId,
+            creemOrderId: orderId,
+            productId,
+            productType,
+            amount,
+            currency,
+            status: 'completed',
+            completedAt: new Date(),
+          },
+        });
+      } catch (error) {
+        if (this.isUniqueConstraintError(error)) {
+          this.logger.log(
+            `Checkout ${checkoutId} already processed (unique constraint)`,
+          );
+          return;
+        }
+        throw error;
+      }
 
       // 根据产品类型处理
       if (productType === 'credits') {
@@ -403,5 +413,14 @@ export class PaymentService {
       this.logger.error('Signature verification error', error);
       return false;
     }
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    return (
+      !!error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2002'
+    );
   }
 }

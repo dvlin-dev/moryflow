@@ -1,7 +1,16 @@
+/**
+ * [INPUT]: PrismaClient + OTP 发送函数 + 安全选项（CSRF/Origin）
+ * [OUTPUT]: Better Auth 实例（web/device 分流）
+ * [POS]: Auth 核心配置入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { betterAuth, APIError } from 'better-auth';
 import { bearer, emailOTP } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { PrismaClient } from '../../generated/prisma/client';
+import { getAllowedOrigins } from '../common/utils';
 import { isDisposableEmail } from './email-validator';
 
 /**
@@ -22,9 +31,14 @@ import { isDisposableEmail } from './email-validator';
  * - 后续请求通过 `Authorization: Bearer <token>` 携带
  * - token 就是 session token，与 Cookie 共用同一套 session 系统
  */
+export interface BetterAuthOptions {
+  disableCSRFCheck?: boolean;
+}
+
 export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
+  options: BetterAuthOptions = {},
 ) {
   // M4 Fix: 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
@@ -34,13 +48,7 @@ export function createBetterAuth(
     );
   }
 
-  const trustedOrigins = process.env.TRUSTED_ORIGINS?.split(',').filter(
-    Boolean,
-  ) ?? [
-    // 默认信任的来源（生产环境应在环境变量中配置）
-    'http://localhost:3000',
-    'http://localhost:5173',
-  ];
+  const trustedOrigins = getAllowedOrigins();
 
   return betterAuth({
     database: prismaAdapter(prisma, {
@@ -59,7 +67,7 @@ export function createBetterAuth(
     advanced: {
       // 允许无 Origin 的请求（移动端需要）
       // React Native、Electron 等客户端不会发送 Origin header
-      disableCSRFCheck: true,
+      disableCSRFCheck: options.disableCSRFCheck ?? false,
     },
     // 数据库钩子：防止已删除用户创建新 session
     databaseHooks: {

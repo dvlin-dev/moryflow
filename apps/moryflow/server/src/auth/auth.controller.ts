@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: Express Request/Response
+ * [OUTPUT]: Better Auth handler 响应透传
+ * [POS]: /api/auth/* 路由入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { All, Controller, Req, Res } from '@nestjs/common';
 import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
 import type {
@@ -23,7 +31,7 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res() res: ExpressResponse,
   ): Promise<void> {
-    const auth = this.authService.getAuth();
+    const auth = this.authService.getAuthForRequest(req);
 
     // 构建 Web Request 对象
     const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;

@@ -4,3 +4,4 @@
  */
 
 export * from './http.utils';
+export * from './origin.utils';

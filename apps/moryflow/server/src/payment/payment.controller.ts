@@ -3,6 +3,14 @@
  * 提供产品列表、Checkout 配置、订阅状态查询
  */
 
+/**
+ * [INPUT]: 当前用户 + 产品信息 + 支付配置
+ * [OUTPUT]: Checkout 配置与支付链接
+ * [POS]: 用户端支付入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import {
   Controller,
   Get,
@@ -25,8 +33,10 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard, CurrentUser, Public } from '../auth';
 import type { CurrentUserDto } from '../types';
+import { getAllowedOrigins } from '../common/utils';
 import { PrismaService } from '../prisma';
 import { getProductConfigs, type ProductConfig } from '../config';
+import { resolveSuccessUrl } from './payment.utils';
 
 /** 产品信息（API 返回格式） */
 interface ProductInfo {
@@ -197,7 +207,20 @@ export class PaymentController {
     // 4. 构建成功 URL：指向服务器中转页面，由页面跳转到 Deep Link
     const baseUrl = this.configService.get<string>('BETTER_AUTH_URL');
     const paymentBaseUrl = baseUrl || 'https://server.moryflow.com';
-    const successUrl = dto.successUrl || `${paymentBaseUrl}/payment/success`;
+    const allowedOrigins = getAllowedOrigins();
+    let successUrl: string;
+
+    try {
+      successUrl = resolveSuccessUrl(
+        dto.successUrl,
+        paymentBaseUrl,
+        allowedOrigins,
+      );
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Invalid successUrl',
+      );
+    }
 
     // 5. 调用 Creem SDK 创建 checkout
     try {

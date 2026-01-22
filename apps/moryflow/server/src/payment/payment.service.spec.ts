@@ -11,6 +11,7 @@ import { PaymentService } from './payment.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
 import { LicenseService } from '../license';
+import { ActivityLogService } from '../activity-log';
 import {
   createPrismaMock,
   MockPrismaService,
@@ -29,6 +30,7 @@ describe('PaymentService', () => {
     grantPurchasedCredits: ReturnType<typeof vi.fn>;
   };
   let licenseServiceMock: { createLicense: ReturnType<typeof vi.fn> };
+  let activityLogServiceMock: { log: ReturnType<typeof vi.fn> };
   let configServiceMock: { get: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
@@ -43,6 +45,10 @@ describe('PaymentService', () => {
       createLicense: vi.fn(),
     };
 
+    activityLogServiceMock = {
+      log: vi.fn(),
+    };
+
     configServiceMock = {
       get: vi.fn().mockReturnValue('test-webhook-secret'),
     };
@@ -53,6 +59,7 @@ describe('PaymentService', () => {
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
         { provide: LicenseService, useValue: licenseServiceMock },
+        { provide: ActivityLogService, useValue: activityLogServiceMock },
         { provide: ConfigService, useValue: configServiceMock },
       ],
     }).compile();
@@ -264,6 +271,36 @@ describe('PaymentService', () => {
       await service.handleCheckoutCompleted({
         checkoutId: 'checkout-123',
         orderId: 'order-123',
+        productId: 'credits_500',
+        userId: 'user-123',
+        amount: 1000,
+        currency: 'USD',
+        productType: 'credits',
+      });
+
+      expect(creditServiceMock.grantPurchasedCredits).not.toHaveBeenCalled();
+      expect(licenseServiceMock.createLicense).not.toHaveBeenCalled();
+    });
+
+    it('唯一约束冲突应视为已处理', async () => {
+      prismaMock.$transaction.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          if (typeof callback === 'function') {
+            const txMock = {
+              paymentOrder: {
+                findFirst: vi.fn().mockResolvedValue(null),
+                create: vi.fn().mockRejectedValue({ code: 'P2002' }),
+              },
+            };
+            return callback(txMock);
+          }
+          return callback;
+        },
+      );
+
+      await service.handleCheckoutCompleted({
+        checkoutId: 'checkout-456',
+        orderId: 'order-456',
         productId: 'credits_500',
         userId: 'user-123',
         amount: 1000,

@@ -1,11 +1,20 @@
 /**
- * Payment Success Controller
- * 处理支付成功后的回调页面
+ * [INPUT]: Query + Referer
+ * [OUTPUT]: 支付成功 HTML（可选 postMessage）
+ * [POS]: 支付回跳中转页
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Controller, Get, Header, Query } from '@nestjs/common';
+import { Controller, Get, Header, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { Public } from '../auth';
+import { getAllowedOrigins } from '../common/utils';
+import {
+  resolvePostMessageOrigin,
+  serializeQueryForScript,
+} from './payment.utils';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -20,15 +29,26 @@ export class PaymentSuccessController {
   @Public()
   @Get('success')
   @Header('Content-Type', 'text/html; charset=utf-8')
-  getSuccessPage(@Query() query: Record<string, string>) {
-    const queryData = JSON.stringify(query);
+  getSuccessPage(@Req() req: Request, @Query() query: Record<string, string>) {
+    const queryData = serializeQueryForScript(query);
+    const allowedOrigins = getAllowedOrigins();
+    const host = req.get('host');
+    const fallbackOrigin = host ? `${req.protocol}://${host}` : undefined;
+    const targetOrigin = resolvePostMessageOrigin(
+      allowedOrigins,
+      req.get('referer') ?? undefined,
+      fallbackOrigin,
+    );
+    const targetOriginJson = targetOrigin
+      ? JSON.stringify(targetOrigin)
+      : 'null';
 
     return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>支付成功 - Moryflow</title>
+  <title>Payment successful - Moryflow</title>
   <style>
     * {
       margin: 0;
@@ -106,16 +126,17 @@ export class PaymentSuccessController {
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
       </svg>
     </div>
-    <h1>支付成功</h1>
-    <p><span class="spinner"></span>正在返回应用...</p>
+    <h1>Payment successful</h1>
+    <p><span class="spinner"></span>Returning to the app...</p>
   </div>
   <script>
+    const targetOrigin = ${targetOriginJson};
     // 通知父窗口支付成功（iframe 场景）
-    if (window.parent !== window) {
+    if (window.parent !== window && targetOrigin) {
       window.parent.postMessage({
         type: 'PAYMENT_SUCCESS',
         data: ${queryData}
-      }, '*');
+      }, targetOrigin);
     }
 
     // 非 iframe 场景：跳转到 Deep Link 返回应用

@@ -125,7 +125,7 @@ status: active
 
 | Priority | Module                                  | Scope                                       | Directories / Key Files                                                                                                                                                             | Doc                                                       | Status |
 | -------- | --------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------ |
-| P0       | Moryflow Server：Auth & Quota & Payment | 核心产品的账户/配额/支付闭环                | `apps/moryflow/server/src/auth/`, `apps/moryflow/server/src/quota/`, `apps/moryflow/server/src/payment/`, `apps/moryflow/server/src/admin-payment/`, `apps/moryflow/server/prisma/` | `docs/code-review/moryflow-server-auth-quota-payment.md`  | todo   |
+| P0       | Moryflow Server：Auth & Quota & Payment | 核心产品的账户/配额/支付闭环                | `apps/moryflow/server/src/auth/`, `apps/moryflow/server/src/quota/`, `apps/moryflow/server/src/payment/`, `apps/moryflow/server/src/admin-payment/`, `apps/moryflow/server/prisma/` | `docs/code-review/moryflow-server-auth-quota-payment.md`  | done   |
 | P1       | Moryflow：Publish/Vectorize/AI Proxy    | 发布 worker、向量化任务、模型代理与成本边界 | `apps/moryflow/publish-worker/`, `apps/moryflow/vectorize/`, `apps/moryflow/server/src/ai-proxy/`, `apps/moryflow/server/src/vectorize/`                                            | `docs/code-review/moryflow-publish-vectorize-ai-proxy.md` | todo   |
 
 ### Phase 2 - Anyhunt 后端（P0 优先 → P1）
@@ -252,11 +252,12 @@ status: draft
 
 > 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
 
-| 日期       | 模块         | 结论摘要                                                           | 修复记录（PR/commit） | 状态        |
-| ---------- | ------------ | ------------------------------------------------------------------ | --------------------- | ----------- |
-| 2026-01-22 | deploy/infra | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突） | -                     | in_progress |
-| 2026-01-22 | deploy/infra | 修复完成（healthcheck/健康轮询/容器名冲突）                        | -                     | done        |
-| 2026-01-22 | design-docs  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                     | -                     | done        |
-| 2026-01-22 | design-docs  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）    | -                     | done        |
-| 2026-01-23 | root-tooling | 完成 review；存在 P1 npmrc 冲突与脚本清理项                        | -                     | in_progress |
-| 2026-01-23 | root-tooling | 修复完成（npmrc 对齐/metadata 前缀/clean 跨平台）                  | -                     | done        |
+| 日期       | 模块                        | 结论摘要                                                           | 修复记录（PR/commit） | 状态        |
+| ---------- | --------------------------- | ------------------------------------------------------------------ | --------------------- | ----------- |
+| 2026-01-22 | deploy/infra                | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突） | -                     | in_progress |
+| 2026-01-22 | deploy/infra                | 修复完成（healthcheck/健康轮询/容器名冲突）                        | -                     | done        |
+| 2026-01-22 | design-docs                 | 完成审查；存在 P2 文档索引/状态/域名规划不一致                     | -                     | done        |
+| 2026-01-22 | design-docs                 | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）    | -                     | done        |
+| 2026-01-23 | root-tooling                | 完成 review；存在 P1 npmrc 冲突与脚本清理项                        | -                     | in_progress |
+| 2026-01-23 | root-tooling                | 修复完成（npmrc 对齐/metadata 前缀/clean 跨平台）                  | -                     | done        |
+| 2026-01-23 | moryflow-auth-quota-payment | 完成 review；存在 P1 安全问题与 P2 一致性问题                      | -                     | in_progress |

@@ -1,6 +1,9 @@
 /**
- * Quota Service
- * 额度控制服务
+ * [INPUT]: 用户等级/用量数据/文件大小
+ * [OUTPUT]: 用量统计与额度判断结果
+ * [POS]: 配额核心逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
@@ -185,16 +188,12 @@ export class QuotaService {
    * 减少存储用量
    */
   async decrementStorageUsage(userId: string, bytes: number): Promise<void> {
-    const usage = await this.getOrCreateUsage(userId);
-    const currentStorage = Number(usage.storageUsed);
-    const newStorage = Math.max(0, currentStorage - bytes);
-
-    await this.prisma.userStorageUsage.update({
-      where: { userId },
-      data: {
-        storageUsed: BigInt(newStorage),
-      },
-    });
+    await this.getOrCreateUsage(userId);
+    await this.prisma.$executeRaw`
+      UPDATE "UserStorageUsage"
+      SET "storageUsed" = GREATEST("storageUsed" - ${BigInt(bytes)}, 0::bigint)
+      WHERE "userId" = ${userId}
+    `;
   }
 
   /**
@@ -219,15 +218,12 @@ export class QuotaService {
    * 减少向量化计数
    */
   async decrementVectorizedCount(userId: string): Promise<void> {
-    const usage = await this.getOrCreateUsage(userId);
-    const newCount = Math.max(0, usage.vectorizedCount - 1);
-
-    await this.prisma.userStorageUsage.update({
-      where: { userId },
-      data: {
-        vectorizedCount: newCount,
-      },
-    });
+    await this.getOrCreateUsage(userId);
+    await this.prisma.$executeRaw`
+      UPDATE "UserStorageUsage"
+      SET "vectorizedCount" = GREATEST("vectorizedCount" - 1, 0)
+      WHERE "userId" = ${userId}
+    `;
   }
 
   /**

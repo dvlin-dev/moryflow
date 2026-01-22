@@ -1,6 +1,9 @@
 /**
- * Payment Webhook Controller
- * 处理 Creem 支付回调
+ * [INPUT]: Creem Webhook 回调（rawBody + signature + payload）
+ * [OUTPUT]: 订阅/订单/积分/License 的发放或状态更新
+ * [POS]: Webhook 安全入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -23,6 +26,8 @@ import {
   type CreemWebhookPayload,
 } from './dto/payment.dto';
 import { DEFAULT_SUBSCRIPTION_PERIOD_MS } from '../config';
+import { getCreditPacks, getLicenseConfig } from '../config';
+import { resolveCheckoutProductType } from './payment.utils';
 
 @ApiTags('Payment')
 @Controller('webhooks/creem')
@@ -74,6 +79,7 @@ export class PaymentWebhookController {
     const { eventType, object } = parsed.data;
     // metadata.referenceId 用于关联用户
     const userId = object.metadata?.referenceId as string | undefined;
+    const productId = object.product?.id;
 
     if (!userId) {
       this.logger.warn('No referenceId in webhook payload');
@@ -85,10 +91,13 @@ export class PaymentWebhookController {
         case 'subscription.active':
         case 'subscription.trialing':
         case 'subscription.paid':
+          if (!productId) {
+            throw new BadRequestException('Missing productId for subscription');
+          }
           await this.paymentService.handleSubscriptionActive({
             subscriptionId: object.id,
             customerId: object.customer?.id || '',
-            productId: object.product?.id || '',
+            productId,
             userId,
             periodEnd: object.current_period_end_date
               ? new Date(object.current_period_end_date)
@@ -118,11 +127,18 @@ export class PaymentWebhookController {
 
         case 'checkout.completed':
           if (object.order) {
-            const productType = this.inferProductType(object.product?.id || '');
+            if (!productId) {
+              throw new BadRequestException('Missing productId for checkout');
+            }
+            const productType = resolveCheckoutProductType(
+              productId,
+              getCreditPacks(),
+              getLicenseConfig(),
+            );
             await this.paymentService.handleCheckoutCompleted({
               checkoutId: object.id,
               orderId: object.order.id,
-              productId: object.product?.id || '',
+              productId,
               userId,
               amount: object.order.amount,
               currency: object.order.currency || 'USD',
@@ -133,9 +149,12 @@ export class PaymentWebhookController {
           break;
 
         case 'subscription.update':
+          if (!productId) {
+            throw new BadRequestException('Missing productId for subscription');
+          }
           await this.paymentService.handleSubscriptionUpdate({
             subscriptionId: object.id,
-            productId: object.product?.id || '',
+            productId,
             userId,
             periodEnd: object.current_period_end_date
               ? new Date(object.current_period_end_date)
@@ -183,11 +202,5 @@ export class PaymentWebhookController {
     return { received: true };
   }
 
-  /**
-   * 根据 productId 推断产品类型
-   */
-  private inferProductType(productId: string): 'credits' | 'license' {
-    if (productId.includes('license')) return 'license';
-    return 'credits';
-  }
+  // 产品类型推断改为配置映射，避免字符串推断误判
 }

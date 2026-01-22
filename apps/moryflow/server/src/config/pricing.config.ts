@@ -1,6 +1,9 @@
 /**
- * Pricing Configuration
- * 统一的积分和订阅定价配置
+ * [PROVIDES]: 积分/订阅/产品配置与映射
+ * [DEPENDS]: process.env
+ * [POS]: 支付与配额策略的单一数据源
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { UserTier } from '../types';
@@ -183,14 +186,16 @@ export function getProductConfigs(): Map<string, ProductConfig> {
 /** 获取产品 ID 到 Tier 的映射 */
 export function getProductTierMap(): Record<string, UserTier> {
   const products = getCreemProducts();
-  return {
-    [products.STARTER_MONTHLY]: 'starter',
-    [products.STARTER_YEARLY]: 'starter',
-    [products.BASIC_MONTHLY]: 'basic',
-    [products.BASIC_YEARLY]: 'basic',
-    [products.PRO_MONTHLY]: 'pro',
-    [products.PRO_YEARLY]: 'pro',
-  };
+  const map: Record<string, UserTier> = {};
+
+  if (products.STARTER_MONTHLY) map[products.STARTER_MONTHLY] = 'starter';
+  if (products.STARTER_YEARLY) map[products.STARTER_YEARLY] = 'starter';
+  if (products.BASIC_MONTHLY) map[products.BASIC_MONTHLY] = 'basic';
+  if (products.BASIC_YEARLY) map[products.BASIC_YEARLY] = 'basic';
+  if (products.PRO_MONTHLY) map[products.PRO_MONTHLY] = 'pro';
+  if (products.PRO_YEARLY) map[products.PRO_YEARLY] = 'pro';
+
+  return map;
 }
 
 // ==================== 积分配置 ====================
@@ -207,11 +212,13 @@ export const DEFAULT_SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 /** 获取积分包配置 - 产品 ID 到积分数量的映射 */
 export function getCreditPacks(): Record<string, number> {
   const products = getCreemProducts();
-  return {
-    [products.CREDITS_5000]: 5000,
-    [products.CREDITS_10000]: 10000,
-    [products.CREDITS_50000]: 50000,
-  };
+  const packs: Record<string, number> = {};
+
+  if (products.CREDITS_5000) packs[products.CREDITS_5000] = 5000;
+  if (products.CREDITS_10000) packs[products.CREDITS_10000] = 10000;
+  if (products.CREDITS_50000) packs[products.CREDITS_50000] = 50000;
+
+  return packs;
 }
 
 // ==================== License 配置 ====================
@@ -222,10 +229,22 @@ export function getLicenseConfig(): Record<
   { tier: 'standard' | 'pro'; activationLimit: number }
 > {
   const products = getCreemProducts();
-  return {
-    [products.LICENSE_STANDARD]: { tier: 'standard', activationLimit: 2 },
-    [products.LICENSE_PRO]: { tier: 'pro', activationLimit: 5 },
-  };
+  const config: Record<
+    string,
+    { tier: 'standard' | 'pro'; activationLimit: number }
+  > = {};
+
+  if (products.LICENSE_STANDARD) {
+    config[products.LICENSE_STANDARD] = {
+      tier: 'standard',
+      activationLimit: 2,
+    };
+  }
+  if (products.LICENSE_PRO) {
+    config[products.LICENSE_PRO] = { tier: 'pro', activationLimit: 5 };
+  }
+
+  return config;
 }
 
 // ==================== 积分计算 ====================
