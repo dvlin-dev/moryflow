@@ -43,6 +43,7 @@
 
 ## 最近更新
 
+- 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（2026-01-22：review）
 - deploy/infra 测试环境修复（healthcheck/健康轮询/容器名冲突）：`docs/code-review/deploy-infra.md`（2026-01-22：done）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（2026-01-22：review）
 - 清理 auth-client/旧拆包引用：`docs/_archived/plans/user-system-refactor-plan.md`、`docs/_archived/plans/refactor-and-deploy-plan.md`、`docs/runbooks/deploy/anyhunt-dokploy.md`、`docs/products/anyhunt-dev/migrations/fetchx-integration.md`、`docs/_archived/progress.md`（2026-01-23：archived/runbook）
