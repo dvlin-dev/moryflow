@@ -2,7 +2,7 @@
 title: 'UI 迁移：统一为 Moryflow 风格 + Hugeicons'
 date: '2026-01-09'
 scope: 'packages/ui, apps/anyhunt/*'
-status: 'done'
+status: 'archived'
 ---
 
 # 结论

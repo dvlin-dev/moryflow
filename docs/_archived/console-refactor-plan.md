@@ -1,6 +1,14 @@
+---
+title: Console 改造方案（归档）
+date: 2026-01-11
+scope: anyhunt console
+status: archived
+archived_date: 2026-01-12
+---
+
 # Console 改造方案
 
-> 版本: 1.0 | 创建日期: 2026-01-11 | 状态: ✅ 已完成（归档于 2026-01-12）
+> 版本: 1.0 | 创建日期: 2026-01-11 | 状态: archived（归档于 2026-01-12）
 
 ## 1. 背景与目标
 

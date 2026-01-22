@@ -43,6 +43,7 @@
 
 ## 最近更新
 
+- 归档文档补齐 frontmatter/status：`docs/_archived/console-refactor-plan.md`、`docs/_archived/ui-migration-moryflow.md`（2026-01-23）
 - 修正 Agents SDK 参考文档包名与文件命名：`docs/references/anyhunt-agents-sdk.md`（2026-01-23）
 - 修正 Moryflow 同步方案的共享包引用：`docs/products/moryflow/research/sync-refactor-proposal.md`（2026-01-23）
 - 归档合并冲突方案并更新索引：`docs/_archived/merge-agent-browser-research.md`、`docs/index.md`（2026-01-23）
