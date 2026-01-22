@@ -43,6 +43,7 @@
 
 ## 最近更新
 
+- 清理缺失文档引用（message-list-ui-code-review）：`docs/index.md`（2026-01-22）
 - 详细设计/方案文档修复：补齐 frontmatter、清理缺失索引、同步域名规划（2026-01-22）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（2026-01-22：review）
 - deploy/infra 测试环境修复（healthcheck/健康轮询/容器名冲突）：`docs/code-review/deploy-infra.md`（2026-01-22：done）
@@ -54,7 +55,6 @@
 - 全量 Code Review 计划：补充阶段顺序与执行步骤：`docs/code-review/index.md`（2026-01-23：active）
 - 全量 Code Review 计划：调整执行顺序、补充核心前端清单与进度同步区：`docs/code-review/index.md`（2026-01-23：active）
 - 全量 Code Review 计划：补充统一审查标准与前端性能规范：`docs/code-review/index.md`（2026-01-23：active）
-- 消息列表相关代码审查报告（Moryflow PC / Anyhunt Console / @anyhunt/ui）：`docs/research/message-list-ui-code-review.md`（2026-01-22：review）
 - 全量 Code Review（模块拆分 + 优先级 + 进度索引）：`docs/code-review/index.md`（2026-01-21：active）
 - 工程基线：同步 `pnpm-lock.yaml` 并验证 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（2026-01-21：completed）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`（2026-01-21：completed，MessageList 已补齐）

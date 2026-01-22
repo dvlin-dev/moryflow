@@ -27,9 +27,7 @@ status: done
 
 ## 发现（按严重程度排序）
 
-- [P2] `docs/products/anyhunt-dev/index.md` 引用不存在的文档：（已修复）
-  - `docs/products/anyhunt-dev/features/scheduled-digest.md`
-  - `docs/products/anyhunt-dev/reviews/digest-code-review-plan.md`
+- [P2] `docs/products/anyhunt-dev/index.md` 引用不存在的文档（已修复）：scheduled-digest、digest-code-review-plan
 - [P2] 方案状态与内容说明不一致且缺少 frontmatter：`docs/products/anyhunt-dev/features/homepage-reader-redesign.md`、`docs/products/anyhunt-dev/features/homepage-redesign.md` 标注“已被新信息架构替代”，但仍在 Features 索引中标为“已实现”。（已修复）
 - [P2] 关键方案/研究文档缺少 YAML frontmatter（缺少 status/date/scope 等元信息）：（已修复）
   - `docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`
