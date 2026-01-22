@@ -67,7 +67,7 @@ status: active
 
 ## Archived（归档）
 
-- 归档目录（当前已清空）：`docs/_archived/`
+- 归档目录已移除（如需重新归档再创建）。
 
 ## Research（调研 / 功能需求）
 

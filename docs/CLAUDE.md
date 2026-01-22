@@ -36,12 +36,12 @@
 - `docs/guides/`：开发指南（如何做、最佳实践、可复用做法）。
 - `docs/runbooks/`：运行手册（部署/排障/操作清单，照做即可）。
 - `docs/products/`：产品线内的内部方案（Anyhunt Dev / Moryflow）。
-- `docs/_archived/`：已完成/归档的文档（当前清空，按需保留）。
+- 归档文档已移除目录（如需归档再新建并补充索引）。
 - `docs/skill/`：Codex Skills 相关说明（Prompt/技能元信息），用于本仓库内的协作与对齐。
 
 ## 最近更新
 
-- 清理 docs/\_archived 历史文档（console-refactor-plan、ui-migration-moryflow、progress、merge-agent-browser-research、plans/\*）：`docs/index.md`（2026-01-23）
+- 清理历史归档文档并移除目录：`docs/index.md`（2026-01-23）
 - 修正 Agents SDK 参考文档包名与文件命名：`docs/references/anyhunt-agents-sdk.md`（2026-01-23）
 - 修正 Moryflow 同步方案的共享包引用：`docs/products/moryflow/research/sync-refactor-proposal.md`（2026-01-23）
 - 清理缺失文档引用（message-list-ui-code-review）：`docs/index.md`（2026-01-22）
