@@ -1,13 +1,14 @@
 /**
  * [PROVIDES]: ConsoleAgentChatTransport (SSE + graceful abort)
- * [DEPENDS]: fetch, eventsource-parser, ai UIMessage
- * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（含 start 边界）
+ * [DEPENDS]: fetch, eventsource-parser, ai UIMessage, auth store
+ * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（含 start 边界 + access token）
  */
 
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
 import { API_BASE_URL } from '@/lib/api-base';
 import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
+import { useAuthStore } from '@/stores/auth';
 import { extractPromptFromMessages } from '../agent-streaming';
 import type { AgentOutput } from '../types';
 
@@ -55,11 +56,17 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       throw new Error('Prompt is empty');
     }
 
+    const accessToken = await useAuthStore.getState().ensureAccessToken();
+    if (!accessToken) {
+      throw new Error('Missing access token');
+    }
+
     const response = await fetch(`${API_BASE_URL}${CONSOLE_PLAYGROUND_API.AGENT_STREAM}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        Authorization: `Bearer ${accessToken}`,
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -90,6 +97,7 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
           `${API_BASE_URL}${CONSOLE_PLAYGROUND_API.AGENT}/${taskId}?apiKeyId=${requestApiKeyId}`,
           {
             method: 'DELETE',
+            headers: { Authorization: `Bearer ${accessToken}` },
             credentials: 'include',
           }
         );
