@@ -29,7 +29,7 @@ describe('DigestSubscriptionService', () => {
     it('should create subscription when under limit', async () => {
       // Mock user with FREE tier and 0 subscriptions
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         _count: { digestSubscriptions: 0 },
       });
 
@@ -65,7 +65,7 @@ describe('DigestSubscriptionService', () => {
 
     it('should throw ForbiddenException when FREE tier limit reached', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         _count: { digestSubscriptions: 3 }, // FREE limit is 3
       });
 
@@ -132,7 +132,7 @@ describe('DigestSubscriptionService', () => {
 
     it('should allow PRO tier to have more subscriptions', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
         _count: { digestSubscriptions: 50 }, // PRO limit is 100
       });
       mockPrisma.digestSubscription.create.mockResolvedValue(

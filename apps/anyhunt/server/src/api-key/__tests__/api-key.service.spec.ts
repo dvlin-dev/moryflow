@@ -330,7 +330,7 @@ describe('ApiKeyService', () => {
           name: 'Test User',
           deletedAt: null,
           isAdmin: false,
-          subscription: { tier: 'PRO' },
+          subscription: { tier: 'PRO', status: 'ACTIVE' },
         },
       });
 
@@ -339,6 +339,28 @@ describe('ApiKeyService', () => {
       expect(result.userId).toBe('user_1');
       expect(result.user.subscriptionTier).toBe('PRO');
       expect(result.user.email).toBe('test@example.com');
+    });
+
+    it('should downgrade tier when subscription is not active', async () => {
+      mockPrisma.apiKey.findUnique.mockResolvedValue({
+        id: 'key_1',
+        userId: 'user_1',
+        name: 'Test Key',
+        isActive: true,
+        expiresAt: null,
+        user: {
+          id: 'user_1',
+          email: 'test@example.com',
+          name: 'Test User',
+          deletedAt: null,
+          isAdmin: false,
+          subscription: { tier: 'PRO', status: 'CANCELED' },
+        },
+      });
+
+      const result = await service.validateKey(validApiKey);
+
+      expect(result.user.subscriptionTier).toBe('FREE');
     });
 
     it('should default to FREE tier when no subscription', async () => {
@@ -397,7 +419,7 @@ describe('ApiKeyService', () => {
           name: 'Test User',
           deletedAt: null,
           isAdmin: false,
-          subscription: { tier: 'PRO' },
+          subscription: { tier: 'PRO', status: 'ACTIVE' },
         },
       });
 
@@ -424,7 +446,7 @@ describe('ApiKeyService', () => {
           name: 'Test User',
           deletedAt: null,
           isAdmin: false,
-          subscription: { tier: 'FREE' },
+          subscription: { tier: 'FREE', status: 'ACTIVE' },
         },
       });
 
@@ -448,7 +470,7 @@ describe('ApiKeyService', () => {
           name: 'Test User',
           deletedAt: null,
           isAdmin: false,
-          subscription: { tier: 'FREE' },
+          subscription: { tier: 'FREE', status: 'ACTIVE' },
         },
       });
 

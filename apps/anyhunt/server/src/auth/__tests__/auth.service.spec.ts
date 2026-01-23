@@ -117,7 +117,7 @@ describe('AuthService', () => {
         name: 'Test User',
         isAdmin: false,
         deletedAt: new Date(), // Soft deleted
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);
@@ -137,7 +137,7 @@ describe('AuthService', () => {
         name: 'Test User',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);
@@ -187,7 +187,7 @@ describe('AuthService', () => {
         name: 'Admin User',
         isAdmin: true,
         deletedAt: null,
-        subscription: { tier: 'TEAM' },
+        subscription: { tier: 'TEAM', status: 'ACTIVE' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);
@@ -209,7 +209,7 @@ describe('AuthService', () => {
         name: 'Admin User',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.user.update.mockResolvedValue({
         id: 'user_1',

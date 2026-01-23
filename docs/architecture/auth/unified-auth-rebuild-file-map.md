@@ -2,7 +2,7 @@
 title: Auth 统一改造涉及文件与模块清单
 date: 2026-01-25
 scope: apps/anyhunt/*, apps/moryflow/*, packages/*
-status: active
+status: done
 ---
 
 <!--
@@ -14,6 +14,8 @@ status: active
 # 目的
 
 对齐本分支“Auth 交互统一 + 数据库重置”的实际落点，标记已涉及的模块与文件范围，并补充可能被遗漏但仍相关的模块。
+
+> 最后核对：2026-01-25（本文件列出的问题已全部修复/确认）
 
 # 已涉及模块（按产品）
 
@@ -158,7 +160,9 @@ status: active
 - **涉及文件**：`apps/anyhunt/server/src/auth/auth.tokens.controller.ts`、`apps/moryflow/server/src/auth/auth.tokens.controller.ts`
 - **状态**：已修复
 
-# 仍需确认（可能遗漏）
+# 已确认（无剩余）
+
+本轮调研已完成，未发现未覆盖的入口或兼容路径。
 
 ## 调研结论
 

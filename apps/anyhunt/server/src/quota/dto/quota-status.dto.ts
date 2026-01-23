@@ -6,6 +6,18 @@
 
 /** 配额状态响应 */
 export class QuotaStatusDto {
+  /** 每日免费 Credits */
+  daily: {
+    /** 每日上限 */
+    limit: number;
+    /** 已使用量 */
+    used: number;
+    /** 剩余量 */
+    remaining: number;
+    /** 重置时间 (ISO 8601) */
+    resetsAt: string;
+  };
+
   /** 月度配额信息 */
   monthly: {
     /** 月度上限 */
@@ -33,4 +45,5 @@ export class QuotaStatusDto {
 export class QuotaStatusResponseDto {
   success: true;
   data: QuotaStatusDto;
+  timestamp: string;
 }

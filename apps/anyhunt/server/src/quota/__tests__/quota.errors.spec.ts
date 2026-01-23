@@ -10,7 +10,10 @@ import {
   QuotaNotFoundError,
   QuotaAlreadyExistsError,
   InvalidRefundError,
+  InvalidQuotaAmountError,
+  InvalidPurchaseError,
   DuplicateRefundError,
+  DuplicatePurchaseError,
   ConcurrentLimitExceededError,
   RateLimitExceededError,
   QuotaErrorCode,
@@ -118,6 +121,45 @@ describe('Quota Errors', () => {
     });
   });
 
+  describe('InvalidQuotaAmountError', () => {
+    it('should have correct status and code', () => {
+      const error = new InvalidQuotaAmountError(0, 'invalid');
+
+      expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      expect(error.code).toBe(QuotaErrorCode.INVALID_QUOTA_AMOUNT);
+    });
+
+    it('should include amount in details', () => {
+      const error = new InvalidQuotaAmountError(-1);
+
+      expect(error.details).toEqual({ amount: -1, reason: undefined });
+    });
+  });
+
+  describe('InvalidPurchaseError', () => {
+    it('should have correct status and code', () => {
+      const error = new InvalidPurchaseError('orderId is required');
+
+      expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      expect(error.code).toBe(QuotaErrorCode.INVALID_PURCHASE);
+    });
+  });
+
+  describe('DuplicatePurchaseError', () => {
+    it('should have correct status and code', () => {
+      const error = new DuplicatePurchaseError('order_123');
+
+      expect(error.getStatus()).toBe(HttpStatus.CONFLICT);
+      expect(error.code).toBe(QuotaErrorCode.DUPLICATE_PURCHASE);
+    });
+
+    it('should include orderId in details', () => {
+      const error = new DuplicatePurchaseError('order_456');
+
+      expect(error.details).toEqual({ orderId: 'order_456' });
+    });
+  });
+
   describe('ConcurrentLimitExceededError', () => {
     it('should have correct status and code', () => {
       const error = new ConcurrentLimitExceededError(2, 2);
@@ -168,7 +210,12 @@ describe('Quota Errors', () => {
       expect(new QuotaNotFoundError('user')).toBeInstanceOf(QuotaError);
       expect(new QuotaAlreadyExistsError('user')).toBeInstanceOf(QuotaError);
       expect(new InvalidRefundError('reason')).toBeInstanceOf(QuotaError);
+      expect(new InvalidQuotaAmountError(1)).toBeInstanceOf(QuotaError);
+      expect(new InvalidPurchaseError('orderId is required')).toBeInstanceOf(
+        QuotaError,
+      );
       expect(new DuplicateRefundError('ss')).toBeInstanceOf(QuotaError);
+      expect(new DuplicatePurchaseError('order')).toBeInstanceOf(QuotaError);
       expect(new ConcurrentLimitExceededError(1, 1)).toBeInstanceOf(QuotaError);
       expect(new RateLimitExceededError(1, 's')).toBeInstanceOf(QuotaError);
     });

@@ -23,6 +23,7 @@ import type {
   UpdateProfileDto,
   ChangePasswordDto,
 } from './dto';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 /** 用户查询结果类型 */
 type UserWithRelations = User & {
@@ -41,11 +42,17 @@ export class UserService {
    * 格式化用户资料响应
    */
   private formatUserProfile(user: UserWithRelations) {
+    const effectiveTier = getEffectiveSubscriptionTier(
+      user.subscription
+        ? { tier: user.subscription.tier, status: user.subscription.status }
+        : null,
+      'FREE',
+    ) as SubscriptionTier;
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      subscriptionTier: (user.subscription?.tier ?? 'FREE') as SubscriptionTier,
+      subscriptionTier: effectiveTier,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     };
@@ -55,8 +62,12 @@ export class UserService {
    * 构建带 quota 的用户资料（SRP：统一 quota 组装）
    */
   private async buildProfileWithQuota(user: UserWithRelations) {
-    const subscriptionTier = (user.subscription?.tier ??
-      'FREE') as SubscriptionTier;
+    const subscriptionTier = getEffectiveSubscriptionTier(
+      user.subscription
+        ? { tier: user.subscription.tier, status: user.subscription.status }
+        : null,
+      'FREE',
+    ) as SubscriptionTier;
     await this.quotaService.ensureExists(user.id, subscriptionTier);
     const quota = await this.quotaService.getStatus(user.id);
 

@@ -60,6 +60,7 @@ describe('UserService', () => {
     deletedAt: null,
     subscription: {
       tier: 'PRO',
+      status: 'ACTIVE',
     },
     quota: {
       monthlyLimit: 1000,

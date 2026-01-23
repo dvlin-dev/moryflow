@@ -5,6 +5,7 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 import type {
   UserQuery,
   UpdateUserDto,
@@ -186,7 +187,10 @@ export class AdminService {
         name: user.name,
         isAdmin: user.isAdmin,
         emailVerified: user.emailVerified,
-        subscriptionTier: user.subscription?.tier ?? 'FREE',
+        subscriptionTier: getEffectiveSubscriptionTier(
+          user.subscription,
+          'FREE',
+        ),
         subscriptionStatus: user.subscription?.status ?? null,
         quota: user.quota
           ? {
@@ -232,7 +236,7 @@ export class AdminService {
       isAdmin: user.isAdmin,
       emailVerified: user.emailVerified,
       image: user.image,
-      subscriptionTier: user.subscription?.tier ?? 'FREE',
+      subscriptionTier: getEffectiveSubscriptionTier(user.subscription, 'FREE'),
       subscriptionStatus: user.subscription?.status ?? null,
       quota: user.quota
         ? {
@@ -274,7 +278,10 @@ export class AdminService {
       email: updated.email,
       name: updated.name,
       isAdmin: updated.isAdmin,
-      subscriptionTier: updated.subscription?.tier ?? 'FREE',
+      subscriptionTier: getEffectiveSubscriptionTier(
+        updated.subscription,
+        'FREE',
+      ),
     };
   }
 

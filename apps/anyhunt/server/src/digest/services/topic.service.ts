@@ -18,6 +18,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { SUBSCRIPTION_LIMITS, ANTI_SPAM_LIMITS } from '../digest.constants';
 import { DigestRateLimitService } from './rate-limit.service';
+import { getEffectiveSubscriptionTier } from '../../common/utils/subscription-tier';
 import type {
   CreateTopicInput,
   UpdateTopicInput,
@@ -327,12 +328,12 @@ export class DigestTopicService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
-        subscription: { select: { tier: true } },
+        subscription: { select: { tier: true, status: true } },
         _count: { select: { digestSubscriptions: true } },
       },
     });
 
-    const tier = user?.subscription?.tier || 'FREE';
+    const tier = getEffectiveSubscriptionTier(user?.subscription, 'FREE');
     const limits = SUBSCRIPTION_LIMITS[tier];
     const currentCount = user?._count?.digestSubscriptions || 0;
 

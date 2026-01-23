@@ -23,6 +23,7 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 - Browser pool concurrency limits apply
 - Cache hits don't consume quota
 - 异步任务失败退费依赖 `ScrapeJob.quotaBreakdown`（按扣费交易分解，幂等）
+- 套餐判断基于有效订阅（仅 ACTIVE 计入付费 tier）
 
 ## 同步/异步模式
 

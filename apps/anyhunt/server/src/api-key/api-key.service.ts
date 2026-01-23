@@ -3,6 +3,7 @@
  * [OUTPUT]: ApiKeyValidationResult, ApiKeyCreateResult, ApiKeyListItem[]
  * [POS]: API key lifecycle management - create, validate, revoke
  *        删除时清理向量库关联数据（Memory, Entity, Relation）
+ *        订阅状态仅 ACTIVE 计入有效 tier
  *
  * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
  */
@@ -24,6 +25,7 @@ import type {
   ApiKeyCreateResult,
   ApiKeyListItem,
 } from './api-key.types';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 import {
   API_KEY_PREFIX,
   API_KEY_LENGTH,
@@ -244,7 +246,7 @@ export class ApiKeyService {
         user: {
           include: {
             subscription: {
-              select: { tier: true },
+              select: { tier: true, status: true },
             },
           },
         },
@@ -275,8 +277,10 @@ export class ApiKeyService {
         id: key.user.id,
         email: key.user.email,
         name: key.user.name,
-        subscriptionTier: (key.user.subscription?.tier ||
-          'FREE') as SubscriptionTier,
+        subscriptionTier: getEffectiveSubscriptionTier(
+          key.user.subscription,
+          'FREE',
+        ) as SubscriptionTier,
         isAdmin: key.user.isAdmin,
       },
     };

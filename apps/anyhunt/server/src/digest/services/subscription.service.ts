@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SUBSCRIPTION_LIMITS } from '../digest.constants';
+import { getEffectiveSubscriptionTier } from '../../common/utils/subscription-tier';
 import type {
   CreateSubscriptionInput,
   UpdateSubscriptionInput,
@@ -38,12 +39,12 @@ export class DigestSubscriptionService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
-        subscription: { select: { tier: true } },
+        subscription: { select: { tier: true, status: true } },
         _count: { select: { digestSubscriptions: true } },
       },
     });
 
-    const tier = user?.subscription?.tier || 'FREE';
+    const tier = getEffectiveSubscriptionTier(user?.subscription, 'FREE');
     const limits = SUBSCRIPTION_LIMITS[tier];
     const currentCount = user?._count?.digestSubscriptions || 0;
 

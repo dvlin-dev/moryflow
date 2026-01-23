@@ -94,3 +94,4 @@ type PaginatedResponse<T> = {
 
 - **SSRF 防护**：RSS URL / Site Crawl URL 必须经过 `UrlValidator` 校验（禁止 localhost/内网/云元数据等）。
 - Webhook URL 若被判定为不可投递，Worker 需抛出 `UnrecoverableError`（避免无限重试）。
+- 订阅/话题数量限制与反垃圾逻辑基于有效订阅（仅 ACTIVE 计入付费 tier）。

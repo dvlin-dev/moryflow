@@ -2,6 +2,7 @@
  * [INPUT]: ExpressRequest（Cookie/Headers）与 Auth 配置依赖
  * [OUTPUT]: Better Auth 实例与可验证的用户会话信息
  * [POS]: 认证核心服务，封装 Better Auth 实例与会话查询
+ *        subscriptionTier 基于有效订阅（ACTIVE 才计入付费）
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
  */
@@ -12,6 +13,7 @@ import { EmailService } from '../email';
 import { createBetterAuth, Auth, isAdminEmail } from './better-auth';
 import type { CurrentUserDto } from '../types';
 import { RedisService } from '../redis/redis.service';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -78,7 +80,7 @@ export class AuthService implements OnModuleInit {
         isAdmin: true,
         deletedAt: true,
         subscription: {
-          select: { tier: true },
+          select: { tier: true, status: true },
         },
       },
     });
@@ -113,7 +115,10 @@ export class AuthService implements OnModuleInit {
         id: fullUser.id,
         email: fullUser.email,
         name: fullUser.name,
-        subscriptionTier: fullUser.subscription?.tier ?? 'FREE',
+        subscriptionTier: getEffectiveSubscriptionTier(
+          fullUser.subscription,
+          'FREE',
+        ),
         isAdmin,
       },
     };

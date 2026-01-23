@@ -123,7 +123,7 @@ describe('ScraperService', () => {
     it('should create job and add to queue when not cached', async () => {
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',
@@ -154,7 +154,7 @@ describe('ScraperService', () => {
     it('should use user tier for job', async () => {
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',
@@ -196,7 +196,7 @@ describe('ScraperService', () => {
     it('should store apiKeyId when provided', async () => {
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',
@@ -215,7 +215,7 @@ describe('ScraperService', () => {
     it('should compute consistent hash for same options', async () => {
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',
@@ -300,7 +300,7 @@ describe('ScraperService', () => {
     it('should validate URL before processing', async () => {
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',
@@ -342,7 +342,7 @@ describe('ScraperService', () => {
     it('should only use cache within TTL', async () => {
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',
@@ -369,7 +369,7 @@ describe('ScraperService', () => {
       // Return a PENDING job - should not be treated as cached
       mockPrisma.scrapeJob.findFirst.mockResolvedValue(null); // Query only looks for COMPLETED
       mockPrisma.user.findUnique.mockResolvedValue({
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.scrapeJob.create.mockResolvedValue({
         id: 'job_new',

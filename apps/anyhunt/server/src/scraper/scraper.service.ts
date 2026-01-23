@@ -2,6 +2,7 @@
  * [INPUT]: ScrapeOptions - URL, formats, wait options, actions, sync mode
  * [OUTPUT]: ScrapeResult (sync) | JobId (async) - Based on sync option
  * [POS]: Core scraping orchestrator, handles cache, queue, and quota coordination
+ *        使用有效订阅（ACTIVE）决定水印/保留等策略
  *
  * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
  */
@@ -18,6 +19,7 @@ import type { ScrapeOptions } from './dto/scrape.dto';
 import type { ScrapeResult } from './scraper.types';
 import { DEFAULT_SCRAPE_TIMEOUT } from './scraper.constants';
 import { BillingService } from '../billing/billing.service';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 @Injectable()
 export class ScraperService {
@@ -82,9 +84,9 @@ export class ScraperService {
     // 3. 获取用户套餐信息（用于水印和文件过期时间）
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { subscription: { select: { tier: true } } },
+      select: { subscription: { select: { tier: true, status: true } } },
     });
-    const tier = user?.subscription?.tier || 'FREE';
+    const tier = getEffectiveSubscriptionTier(user?.subscription, 'FREE');
 
     // 4. 创建任务记录
     const job = await this.prisma.scrapeJob.create({

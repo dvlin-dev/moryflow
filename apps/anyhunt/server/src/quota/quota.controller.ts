@@ -5,11 +5,13 @@
  */
 
 import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiOkResponse } from '@nestjs/swagger';
 import { QuotaService } from './quota.service';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public } from '../auth';
+import { QuotaStatusResponseDto } from './dto';
 
 @Public()
 @Controller({ path: 'quota', version: '1' })
@@ -24,6 +26,7 @@ export class QuotaController {
    * 需要 apiKey 认证（Authorization: Bearer <apiKey>）
    */
   @Get()
+  @ApiOkResponse({ description: 'Quota status', type: QuotaStatusResponseDto })
   async getQuotaStatus(@CurrentApiKey() apiKey: ApiKeyValidationResult) {
     const status = await this.quotaService.getStatus(apiKey.userId);
 

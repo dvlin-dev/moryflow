@@ -21,6 +21,9 @@ Quota management system for tracking and limiting API usage. Handles daily free 
 - Pre-deduct on request, refund on failure
 - Cache hits don't consume quota
 - Thread-safe operations via Redis
+- Refund requires unique referenceId (DB unique) to ensure idempotency
+- Non-daily refund: update failure will re-check existing refund by referenceId to return DuplicateRefundError
+- Repository deduct methods can return null; tests should guard before access
 - 集成测试依赖 ApiKeyModule，测试模块需引入 VectorPrismaModule 并提供 VECTOR_DATABASE_URL
 - 集成测试需清理 daily credits Redis key（`credits:daily_used:*`），避免用例间污染
 
@@ -29,7 +32,7 @@ Quota management system for tracking and limiting API usage. Handles daily free 
 | File                       | Type       | Description                                   |
 | -------------------------- | ---------- | --------------------------------------------- |
 | `quota.service.ts`         | Service    | Core quota operations (deduct, refund, check) |
-| `quota.controller.ts`      | Controller | Console API for quota status                  |
+| `quota.controller.ts`      | Controller | Public API for quota status                   |
 | `quota.repository.ts`      | Repository | Database operations                           |
 | `quota.module.ts`          | Module     | NestJS module definition                      |
 | `quota.constants.ts`       | Constants  | Tier limits, reset schedules                  |
@@ -82,7 +85,7 @@ await quotaService.hasQuota(userId, amount);
 // Deduct quota (throws on insufficient)
 const result = await quotaService.deductOrThrow(userId, amount, reason);
 
-// Refund on failure
+// Refund on failure (referenceId must be unique)
 for (const item of result.breakdown) {
   await quotaService.refund({
     userId,
@@ -95,6 +98,9 @@ for (const item of result.breakdown) {
 
 // Get current status
 const status = await quotaService.getStatus(userId);
+
+// Purchase credits (orderId required)
+await quotaService.addPurchased({ userId, amount: 100, orderId: 'order_123' });
 ```
 
 ## Dependencies

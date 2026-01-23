@@ -206,10 +206,14 @@ model QuotaTransaction {
   balanceBefore Int
   balanceAfter  Int
   reason        String? // screenshot_id 或其他说明
+  referenceId   String? // 幂等性 key（refund）
+  orderId       String? // 支付订单 ID（purchase）
   createdAt     DateTime             @default(now())
 
   @@index([userId])
   @@index([createdAt])
+  @@unique([userId, type, referenceId])
+  @@unique([orderId])
 }
 
 // =============================================

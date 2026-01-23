@@ -17,6 +17,7 @@ import {
 } from './auth.constants';
 import { getAuthBaseUrl, getJwtPluginOptions } from './auth.config';
 import type { CurrentUserDto } from '../types';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 type RefreshTokenMeta = {
   ipAddress?: string | null;
@@ -139,7 +140,7 @@ export class AuthTokensService {
               name: true,
               isAdmin: true,
               deletedAt: true,
-              subscription: { select: { tier: true } },
+              subscription: { select: { tier: true, status: true } },
             },
           },
         },
@@ -205,7 +206,10 @@ export class AuthTokensService {
           id: record.user.id,
           email: record.user.email,
           name: record.user.name,
-          subscriptionTier: record.user.subscription?.tier ?? 'FREE',
+          subscriptionTier: getEffectiveSubscriptionTier(
+            record.user.subscription,
+            'FREE',
+          ),
           isAdmin: record.user.isAdmin,
         },
         refreshToken: { token: refreshToken, expiresAt },
@@ -247,7 +251,7 @@ export class AuthTokensService {
         isAdmin: true,
         deletedAt: true,
         subscription: {
-          select: { tier: true },
+          select: { tier: true, status: true },
         },
       },
     });
@@ -260,7 +264,7 @@ export class AuthTokensService {
       id: user.id,
       email: user.email,
       name: user.name,
-      subscriptionTier: user.subscription?.tier ?? 'FREE',
+      subscriptionTier: getEffectiveSubscriptionTier(user.subscription, 'FREE'),
       isAdmin: user.isAdmin,
     };
   }

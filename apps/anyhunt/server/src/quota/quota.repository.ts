@@ -2,6 +2,9 @@
  * [INPUT]: userId, 配额操作参数
  * [OUTPUT]: Quota 实体, QuotaTransaction 记录
  * [POS]: 配额数据访问层，封装 Prisma 操作，不含业务逻辑
+ *        扣减/返还使用条件更新，避免超扣与负数
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
@@ -10,10 +13,10 @@ import type {
   Quota,
   QuotaTransaction,
   QuotaSource,
-  Prisma,
 } from '../../generated/prisma-main/client';
 import { calculatePeriodEnd, DEFAULT_MONTHLY_QUOTA } from './quota.constants';
 import type { SubscriptionTier } from '../types/tier.types';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 @Injectable()
 export class QuotaRepository {
@@ -24,9 +27,12 @@ export class QuotaRepository {
   async getUserTier(userId: string): Promise<SubscriptionTier> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
-      select: { tier: true },
+      select: { tier: true, status: true },
     });
-    return (subscription?.tier ?? 'FREE') as SubscriptionTier;
+    return getEffectiveSubscriptionTier(
+      subscription,
+      'FREE',
+    ) as SubscriptionTier;
   }
 
   /**
@@ -44,23 +50,6 @@ export class QuotaRepository {
   async exists(userId: string): Promise<boolean> {
     const count = await this.prisma.quota.count({
       where: { userId },
-    });
-    return count > 0;
-  }
-
-  /**
-   * 查询用户是否有返还记录（用于幂等性检查）
-   */
-  async hasRefundForReference(
-    userId: string,
-    referenceId: string,
-  ): Promise<boolean> {
-    const count = await this.prisma.quotaTransaction.count({
-      where: {
-        userId,
-        type: 'REFUND',
-        reason: referenceId,
-      },
     });
     return count > 0;
   }
@@ -112,27 +101,22 @@ export class QuotaRepository {
     userId: string,
     amount: number,
     reason?: string,
-  ): Promise<{ quota: Quota; transaction: QuotaTransaction }> {
+  ): Promise<{ quota: Quota; transaction: QuotaTransaction } | null> {
     return this.prisma.$transaction(async (tx) => {
-      // 获取当前配额（锁定行）
-      const current = await tx.quota.findUnique({
-        where: { userId },
-      });
-
-      if (!current) {
-        throw new Error('Quota not found');
+      const rows = await tx.$queryRaw<Quota[]>`
+        UPDATE "Quota"
+        SET "monthlyUsed" = "monthlyUsed" + ${amount}
+        WHERE "userId" = ${userId}
+          AND "monthlyUsed" + ${amount} <= "monthlyLimit"
+        RETURNING *
+      `;
+      const quota = rows[0];
+      if (!quota) {
+        return null;
       }
 
-      const balanceBefore = current.monthlyLimit - current.monthlyUsed;
-      const balanceAfter = balanceBefore - amount;
-
-      // 更新配额
-      const quota = await tx.quota.update({
-        where: { userId },
-        data: {
-          monthlyUsed: { increment: amount },
-        },
-      });
+      const balanceAfter = quota.monthlyLimit - quota.monthlyUsed;
+      const balanceBefore = balanceAfter + amount;
 
       // 创建交易记录
       const transaction = await tx.quotaTransaction.create({
@@ -158,25 +142,22 @@ export class QuotaRepository {
     userId: string,
     amount: number,
     reason?: string,
-  ): Promise<{ quota: Quota; transaction: QuotaTransaction }> {
+  ): Promise<{ quota: Quota; transaction: QuotaTransaction } | null> {
     return this.prisma.$transaction(async (tx) => {
-      const current = await tx.quota.findUnique({
-        where: { userId },
-      });
-
-      if (!current) {
-        throw new Error('Quota not found');
+      const rows = await tx.$queryRaw<Quota[]>`
+        UPDATE "Quota"
+        SET "purchasedQuota" = "purchasedQuota" - ${amount}
+        WHERE "userId" = ${userId}
+          AND "purchasedQuota" >= ${amount}
+        RETURNING *
+      `;
+      const quota = rows[0];
+      if (!quota) {
+        return null;
       }
 
-      const balanceBefore = current.purchasedQuota;
-      const balanceAfter = balanceBefore - amount;
-
-      const quota = await tx.quota.update({
-        where: { userId },
-        data: {
-          purchasedQuota: { decrement: amount },
-        },
-      });
+      const balanceAfter = quota.purchasedQuota;
+      const balanceBefore = balanceAfter + amount;
 
       const transaction = await tx.quotaTransaction.create({
         data: {
@@ -202,36 +183,39 @@ export class QuotaRepository {
     amount: number,
     source: QuotaSource,
     reason: string,
-  ): Promise<{ quota: Quota; transaction: QuotaTransaction }> {
+    referenceId: string,
+  ): Promise<{ quota: Quota; transaction: QuotaTransaction } | null> {
     return this.prisma.$transaction(async (tx) => {
-      const current = await tx.quota.findUnique({
-        where: { userId },
-      });
-
-      if (!current) {
-        throw new Error('Quota not found');
-      }
-
+      let quota: Quota | undefined;
       let balanceBefore: number;
       let balanceAfter: number;
-      let updateData: Prisma.QuotaUpdateInput;
 
       if (source === 'MONTHLY') {
-        balanceBefore = current.monthlyLimit - current.monthlyUsed;
-        balanceAfter = balanceBefore + amount;
-        updateData = { monthlyUsed: { decrement: amount } };
+        const rows = await tx.$queryRaw<Quota[]>`
+          UPDATE "Quota"
+          SET "monthlyUsed" = "monthlyUsed" - ${amount}
+          WHERE "userId" = ${userId}
+            AND "monthlyUsed" >= ${amount}
+          RETURNING *
+        `;
+        quota = rows[0];
+        if (!quota) return null;
+        balanceAfter = quota.monthlyLimit - quota.monthlyUsed;
+        balanceBefore = balanceAfter - amount;
       } else if (source === 'PURCHASED') {
-        balanceBefore = current.purchasedQuota;
-        balanceAfter = balanceBefore + amount;
-        updateData = { purchasedQuota: { increment: amount } };
+        const rows = await tx.$queryRaw<Quota[]>`
+          UPDATE "Quota"
+          SET "purchasedQuota" = "purchasedQuota" + ${amount}
+          WHERE "userId" = ${userId}
+          RETURNING *
+        `;
+        quota = rows[0];
+        if (!quota) return null;
+        balanceAfter = quota.purchasedQuota;
+        balanceBefore = balanceAfter - amount;
       } else {
         throw new Error(`Unsupported refund source: ${source}`);
       }
-
-      const quota = await tx.quota.update({
-        where: { userId },
-        data: updateData,
-      });
 
       const transaction = await tx.quotaTransaction.create({
         data: {
@@ -242,6 +226,7 @@ export class QuotaRepository {
           balanceBefore,
           balanceAfter,
           reason,
+          referenceId,
         },
       });
 
@@ -254,7 +239,7 @@ export class QuotaRepository {
    */
   async resetPeriodInTransaction(userId: string): Promise<{
     quota: Quota;
-    transaction: QuotaTransaction;
+    transaction: QuotaTransaction | null;
     previousUsed: number;
   }> {
     return this.prisma.$transaction(async (tx) => {
@@ -278,18 +263,20 @@ export class QuotaRepository {
         },
       });
 
-      // 只有当之前有使用量时才创建重置记录
-      const transaction = await tx.quotaTransaction.create({
-        data: {
-          userId,
-          type: 'RESET',
-          amount: previousUsed,
-          source: 'MONTHLY',
-          balanceBefore: current.monthlyLimit - previousUsed,
-          balanceAfter: current.monthlyLimit,
-          reason: `Period reset. Previous used: ${previousUsed}`,
-        },
-      });
+      const transaction =
+        previousUsed > 0
+          ? await tx.quotaTransaction.create({
+              data: {
+                userId,
+                type: 'RESET',
+                amount: previousUsed,
+                source: 'MONTHLY',
+                balanceBefore: current.monthlyLimit - previousUsed,
+                balanceAfter: current.monthlyLimit,
+                reason: `Period reset. Previous used: ${previousUsed}`,
+              },
+            })
+          : null;
 
       return { quota, transaction, previousUsed };
     });
@@ -331,6 +318,7 @@ export class QuotaRepository {
           balanceBefore,
           balanceAfter,
           reason: orderId ? `Order: ${orderId}` : undefined,
+          orderId: orderId ?? undefined,
         },
       });
 
@@ -346,6 +334,8 @@ export class QuotaRepository {
     balanceBefore: number;
     balanceAfter: number;
     reason?: string;
+    referenceId?: string | null;
+    orderId?: string | null;
     actorUserId?: string | null;
   }): Promise<QuotaTransaction> {
     const {
@@ -356,6 +346,8 @@ export class QuotaRepository {
       balanceBefore,
       balanceAfter,
       reason,
+      referenceId,
+      orderId,
     } = params;
     return this.prisma.quotaTransaction.create({
       data: {
@@ -367,11 +359,26 @@ export class QuotaRepository {
         balanceBefore,
         balanceAfter,
         reason,
+        referenceId: referenceId ?? undefined,
+        orderId: orderId ?? undefined,
       },
     });
   }
 
   async findTransactionById(id: string): Promise<QuotaTransaction | null> {
     return this.prisma.quotaTransaction.findUnique({ where: { id } });
+  }
+
+  async findRefundByReferenceId(
+    userId: string,
+    referenceId: string,
+  ): Promise<QuotaTransaction | null> {
+    return this.prisma.quotaTransaction.findFirst({
+      where: {
+        userId,
+        type: 'REFUND',
+        referenceId,
+      },
+    });
   }
 }

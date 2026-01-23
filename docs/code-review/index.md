@@ -134,7 +134,7 @@ status: active
 | Priority | Module                                       | Scope                                        | Directories / Key Files                                                                                                                                                             | Doc                                                  | Status                |
 | -------- | -------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------- |
 | P0       | Anyhunt Server：Auth & Session               | 登录/回调/cookie/跨域/信任反代/权限边界      | `apps/anyhunt/server/src/auth/`, `apps/anyhunt/server/src/user/`, `apps/anyhunt/server/src/common/guards/`                                                                          | `docs/code-review/anyhunt-server-auth.md`            | done (2026-01-25 fix) |
-| P0       | Anyhunt Server：API Key & Quota              | API Key 存储/校验；限流/配额扣减一致性       | `apps/anyhunt/server/src/api-key/`, `apps/anyhunt/server/src/quota/`, `apps/anyhunt/server/src/billing/`                                                                            | `docs/code-review/anyhunt-server-api-key-quota.md`   | todo                  |
+| P0       | Anyhunt Server：API Key & Quota              | API Key 存储/校验；限流/配额扣减一致性       | `apps/anyhunt/server/src/api-key/`, `apps/anyhunt/server/src/quota/`, `apps/anyhunt/server/src/billing/`                                                                            | `docs/code-review/anyhunt-server-api-key-quota.md`   | done (fix)            |
 | P0       | Anyhunt Server：Billing & Payment            | 订阅/充值/对账/幂等；支付回调安全            | `apps/anyhunt/server/src/payment/`, `apps/anyhunt/server/src/billing/`                                                                                                              | `docs/code-review/anyhunt-server-billing-payment.md` | todo                  |
 | P0       | Anyhunt Server：抓取安全（SSRF/网络隔离）    | URL 校验、内网阻断、代理/重定向策略          | `apps/anyhunt/server/src/common/validators/`, `apps/anyhunt/server/src/scraper/`, `apps/anyhunt/server/src/crawler/`, `apps/anyhunt/server/src/browser/`                            | `docs/code-review/anyhunt-server-ssrf-sandbox.md`    | todo                  |
 | P0       | Anyhunt Server：Queue/异步一致性             | BullMQ/Redis 可靠性、重复投递、幂等、DLQ     | `apps/anyhunt/server/src/queue/`, `apps/anyhunt/server/src/digest/`, `apps/anyhunt/server/src/batch-scrape/`                                                                        | `docs/code-review/anyhunt-server-queue.md`           | todo                  |
@@ -253,14 +253,15 @@ status: draft
 
 > 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
 
-| 日期       | 模块                        | 结论摘要                                                                   | 修复记录（PR/commit） | 状态        |
-| ---------- | --------------------------- | -------------------------------------------------------------------------- | --------------------- | ----------- |
-| 2026-01-22 | deploy/infra                | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）         | -                     | in_progress |
-| 2026-01-22 | deploy/infra                | 修复完成（healthcheck/健康轮询/容器名冲突）                                | -                     | done        |
-| 2026-01-22 | design-docs                 | 完成审查；存在 P2 文档索引/状态/域名规划不一致                             | -                     | done        |
-| 2026-01-24 | anyhunt-server-auth         | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流 | -                     | in_progress |
-| 2026-01-22 | design-docs                 | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）            | -                     | done        |
-| 2026-01-23 | root-tooling                | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                | -                     | in_progress |
-| 2026-01-23 | root-tooling                | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）         | -                     | done        |
-| 2026-01-23 | moryflow-auth-quota-payment | 完成 review；存在 P1 安全问题与 P2 一致性问题                              | -                     | in_progress |
-| 2026-01-23 | moryflow-publish-ai-proxy   | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）       | -                     | done        |
+| 日期       | 模块                         | 结论摘要                                                                   | 修复记录（PR/commit） | 状态        |
+| ---------- | ---------------------------- | -------------------------------------------------------------------------- | --------------------- | ----------- |
+| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）         | -                     | in_progress |
+| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                | -                     | done        |
+| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                             | -                     | done        |
+| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流 | -                     | in_progress |
+| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）            | -                     | done        |
+| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                | -                     | in_progress |
+| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）         | -                     | done        |
+| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                              | -                     | in_progress |
+| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）       | -                     | done        |
+| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                 | -                     | done        |

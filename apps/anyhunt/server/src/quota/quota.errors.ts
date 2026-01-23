@@ -2,6 +2,7 @@
  * [DEFINES]: 配额模块自定义错误类
  * [USED_BY]: quota.service.ts, quota.repository.ts
  * [POS]: 错误边界，提供清晰的错误类型和错误码
+ *        覆盖扣减/返还/购买幂等的关键错误
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,6 +17,9 @@ export enum QuotaErrorCode {
   QUOTA_ALREADY_EXISTS = 'QUOTA_ALREADY_EXISTS',
   INVALID_REFUND = 'INVALID_REFUND',
   DUPLICATE_REFUND = 'DUPLICATE_REFUND',
+  INVALID_QUOTA_AMOUNT = 'INVALID_QUOTA_AMOUNT',
+  INVALID_PURCHASE = 'INVALID_PURCHASE',
+  DUPLICATE_PURCHASE = 'DUPLICATE_PURCHASE',
 
   // 并发错误
   CONCURRENT_LIMIT_EXCEEDED = 'CONCURRENT_LIMIT_EXCEEDED',
@@ -95,6 +99,30 @@ export class InvalidRefundError extends QuotaError {
   }
 }
 
+/** 无效扣减/充值数量错误 */
+export class InvalidQuotaAmountError extends QuotaError {
+  constructor(amount: number, reason?: string) {
+    super(
+      QuotaErrorCode.INVALID_QUOTA_AMOUNT,
+      `Invalid quota amount: ${amount}`,
+      HttpStatus.BAD_REQUEST,
+      { amount, reason },
+    );
+  }
+}
+
+/** 无效购买请求错误 */
+export class InvalidPurchaseError extends QuotaError {
+  constructor(reason: string) {
+    super(
+      QuotaErrorCode.INVALID_PURCHASE,
+      `Invalid purchase request: ${reason}`,
+      HttpStatus.BAD_REQUEST,
+      { reason },
+    );
+  }
+}
+
 /** 重复返还错误 */
 export class DuplicateRefundError extends QuotaError {
   constructor(referenceId: string) {
@@ -103,6 +131,18 @@ export class DuplicateRefundError extends QuotaError {
       `Refund already processed for this reference`,
       HttpStatus.CONFLICT,
       { referenceId },
+    );
+  }
+}
+
+/** 重复购买错误 */
+export class DuplicatePurchaseError extends QuotaError {
+  constructor(orderId: string) {
+    super(
+      QuotaErrorCode.DUPLICATE_PURCHASE,
+      `Purchase already processed for this order`,
+      HttpStatus.CONFLICT,
+      { orderId },
     );
   }
 }

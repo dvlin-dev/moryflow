@@ -55,7 +55,7 @@ describe('AdminUserCreditsService', () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'u1',
         deletedAt: null,
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         quota: null,
       });
 
@@ -120,7 +120,7 @@ describe('AdminUserCreditsService', () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'u1',
         deletedAt: null,
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         quota: { id: 'q1', purchasedQuota: 7 },
       });
 
@@ -179,7 +179,7 @@ describe('AdminUserCreditsService', () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'u1',
         deletedAt: new Date(),
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         quota: null,
       });
 

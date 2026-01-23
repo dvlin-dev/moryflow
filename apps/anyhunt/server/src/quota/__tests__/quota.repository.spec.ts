@@ -1,6 +1,7 @@
 /**
- * QuotaRepository 单元测试
- * 测试配额数据访问层
+ * [INPUT]: QuotaRepository（包含条件更新返回 null 的路径）
+ * [OUTPUT]: QuotaRepository 数据访问层行为断言
+ * [POS]: QuotaRepository 单元测试
  */
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { QuotaRepository } from '../quota.repository';
@@ -38,6 +39,13 @@ describe('QuotaRepository', () => {
     };
     repository = new QuotaRepository(mockPrisma as unknown as PrismaService);
   });
+
+  const requireResult = <T>(value: T | null): T => {
+    if (!value) {
+      throw new Error('Expected non-null result');
+    }
+    return value;
+  };
 
   // ============ findByUserId ============
 
@@ -86,33 +94,6 @@ describe('QuotaRepository', () => {
       mockPrisma.quota.count.mockResolvedValue(0);
 
       const result = await repository.exists('nonexistent');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  // ============ hasRefundForReference ============
-
-  describe('hasRefundForReference', () => {
-    it('should return true when refund exists', async () => {
-      mockPrisma.quotaTransaction.count.mockResolvedValue(1);
-
-      const result = await repository.hasRefundForReference('user_1', 'ref_1');
-
-      expect(result).toBe(true);
-      expect(mockPrisma.quotaTransaction.count).toHaveBeenCalledWith({
-        where: {
-          userId: 'user_1',
-          type: 'REFUND',
-          reason: 'ref_1',
-        },
-      });
-    });
-
-    it('should return false when refund not exists', async () => {
-      mockPrisma.quotaTransaction.count.mockResolvedValue(0);
-
-      const result = await repository.hasRefundForReference('user_1', 'ref_1');
 
       expect(result).toBe(false);
     });
@@ -186,35 +167,33 @@ describe('QuotaRepository', () => {
 
   describe('deductMonthlyInTransaction', () => {
     it('should execute transaction with correct operations', async () => {
-      const transactionResult = {
-        quota: { userId: 'user_1', monthlyUsed: 101 },
-        transaction: { id: 'tx_1', balanceBefore: 900, balanceAfter: 899 },
+      const quota = {
+        id: 'quota_1',
+        userId: 'user_1',
+        monthlyLimit: 1000,
+        monthlyUsed: 101,
+        purchasedQuota: 0,
+        periodStartAt: new Date(),
+        periodEndAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+      const transaction = { id: 'tx_1', balanceBefore: 900, balanceAfter: 899 };
 
-      // Mock $transaction to execute the callback
       mockPrisma.$transaction.mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
           const txMock = {
-            quota: {
-              findUnique: vi.fn().mockResolvedValue({
-                userId: 'user_1',
-                monthlyLimit: 1000,
-                monthlyUsed: 100,
-              }),
-              update: vi.fn().mockResolvedValue(transactionResult.quota),
-            },
+            $queryRaw: vi.fn().mockResolvedValue([quota]),
             quotaTransaction: {
-              create: vi.fn().mockResolvedValue(transactionResult.transaction),
+              create: vi.fn().mockResolvedValue(transaction),
             },
           };
           return callback(txMock);
         },
       );
 
-      const result = await repository.deductMonthlyInTransaction(
-        'user_1',
-        1,
-        'ss_1',
+      const result = requireResult(
+        await repository.deductMonthlyInTransaction('user_1', 1, 'ss_1'),
       );
 
       expect(result.quota.monthlyUsed).toBe(101);
@@ -222,53 +201,54 @@ describe('QuotaRepository', () => {
       expect(result.transaction.balanceAfter).toBe(899);
     });
 
-    it('should throw error when quota not found in transaction', async () => {
+    it('should return null when quota is insufficient', async () => {
       mockPrisma.$transaction.mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
           const txMock = {
-            quota: {
-              findUnique: vi.fn().mockResolvedValue(null),
-            },
+            $queryRaw: vi.fn().mockResolvedValue([]),
           };
           return callback(txMock);
         },
       );
 
-      await expect(
-        repository.deductMonthlyInTransaction('nonexistent', 1),
-      ).rejects.toThrow('Quota not found');
+      const result = await repository.deductMonthlyInTransaction(
+        'nonexistent',
+        1,
+      );
+
+      expect(result).toBeNull();
     });
   });
 
   describe('deductPurchasedInTransaction', () => {
     it('should execute transaction correctly', async () => {
-      const transactionResult = {
-        quota: { userId: 'user_1', purchasedQuota: 49 },
-        transaction: { id: 'tx_2', balanceBefore: 50, balanceAfter: 49 },
+      const quota = {
+        id: 'quota_1',
+        userId: 'user_1',
+        monthlyLimit: 1000,
+        monthlyUsed: 0,
+        purchasedQuota: 49,
+        periodStartAt: new Date(),
+        periodEndAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+      const transaction = { id: 'tx_2', balanceBefore: 50, balanceAfter: 49 };
 
       mockPrisma.$transaction.mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
           const txMock = {
-            quota: {
-              findUnique: vi.fn().mockResolvedValue({
-                userId: 'user_1',
-                purchasedQuota: 50,
-              }),
-              update: vi.fn().mockResolvedValue(transactionResult.quota),
-            },
+            $queryRaw: vi.fn().mockResolvedValue([quota]),
             quotaTransaction: {
-              create: vi.fn().mockResolvedValue(transactionResult.transaction),
+              create: vi.fn().mockResolvedValue(transaction),
             },
           };
           return callback(txMock);
         },
       );
 
-      const result = await repository.deductPurchasedInTransaction(
-        'user_1',
-        1,
-        'ss_1',
+      const result = requireResult(
+        await repository.deductPurchasedInTransaction('user_1', 1, 'ss_1'),
       );
 
       expect(result.quota.purchasedQuota).toBe(49);
@@ -278,72 +258,86 @@ describe('QuotaRepository', () => {
 
   describe('refundInTransaction', () => {
     it('should refund to monthly quota', async () => {
-      const transactionResult = {
-        quota: { userId: 'user_1', monthlyUsed: 99 },
-        transaction: { id: 'tx_refund', balanceBefore: 899, balanceAfter: 900 },
+      const quota = {
+        id: 'quota_1',
+        userId: 'user_1',
+        monthlyLimit: 1000,
+        monthlyUsed: 99,
+        purchasedQuota: 50,
+        periodStartAt: new Date(),
+        periodEndAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const transaction = {
+        id: 'tx_refund',
+        balanceBefore: 899,
+        balanceAfter: 900,
       };
 
       mockPrisma.$transaction.mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
           const txMock = {
-            quota: {
-              findUnique: vi.fn().mockResolvedValue({
-                userId: 'user_1',
-                monthlyLimit: 1000,
-                monthlyUsed: 100,
-                purchasedQuota: 50,
-              }),
-              update: vi.fn().mockResolvedValue(transactionResult.quota),
-            },
+            $queryRaw: vi.fn().mockResolvedValue([quota]),
             quotaTransaction: {
-              create: vi.fn().mockResolvedValue(transactionResult.transaction),
+              create: vi.fn().mockResolvedValue(transaction),
             },
           };
           return callback(txMock);
         },
       );
 
-      const result = await repository.refundInTransaction(
-        'user_1',
-        1,
-        'MONTHLY',
-        'ss_1',
+      const result = requireResult(
+        await repository.refundInTransaction(
+          'user_1',
+          1,
+          'MONTHLY',
+          'ss_1',
+          'ss_1',
+        ),
       );
 
       expect(result.transaction.balanceAfter).toBe(900);
     });
 
     it('should refund to purchased quota', async () => {
-      const transactionResult = {
-        quota: { userId: 'user_1', purchasedQuota: 51 },
-        transaction: { id: 'tx_refund', balanceBefore: 50, balanceAfter: 51 },
+      const quota = {
+        id: 'quota_1',
+        userId: 'user_1',
+        monthlyLimit: 1000,
+        monthlyUsed: 100,
+        purchasedQuota: 51,
+        periodStartAt: new Date(),
+        periodEndAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const transaction = {
+        id: 'tx_refund',
+        balanceBefore: 50,
+        balanceAfter: 51,
       };
 
       mockPrisma.$transaction.mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
           const txMock = {
-            quota: {
-              findUnique: vi.fn().mockResolvedValue({
-                userId: 'user_1',
-                monthlyLimit: 1000,
-                monthlyUsed: 100,
-                purchasedQuota: 50,
-              }),
-              update: vi.fn().mockResolvedValue(transactionResult.quota),
-            },
+            $queryRaw: vi.fn().mockResolvedValue([quota]),
             quotaTransaction: {
-              create: vi.fn().mockResolvedValue(transactionResult.transaction),
+              create: vi.fn().mockResolvedValue(transaction),
             },
           };
           return callback(txMock);
         },
       );
 
-      const result = await repository.refundInTransaction(
-        'user_1',
-        1,
-        'PURCHASED',
-        'ss_1',
+      const result = requireResult(
+        await repository.refundInTransaction(
+          'user_1',
+          1,
+          'PURCHASED',
+          'ss_1',
+          'ss_1',
+        ),
       );
 
       expect(result.transaction.balanceAfter).toBe(51);
@@ -382,6 +376,35 @@ describe('QuotaRepository', () => {
       expect(result.previousUsed).toBe(500);
       expect(result.quota.monthlyUsed).toBe(0);
     });
+
+    it('should skip reset transaction when no usage', async () => {
+      mockPrisma.$transaction.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          const txMock = {
+            quota: {
+              findUnique: vi.fn().mockResolvedValue({
+                userId: 'user_1',
+                monthlyLimit: 1000,
+                monthlyUsed: 0,
+              }),
+              update: vi.fn().mockResolvedValue({
+                userId: 'user_1',
+                monthlyUsed: 0,
+              }),
+            },
+            quotaTransaction: {
+              create: vi.fn(),
+            },
+          };
+          return callback(txMock);
+        },
+      );
+
+      const result = await repository.resetPeriodInTransaction('user_1');
+
+      expect(result.previousUsed).toBe(0);
+      expect(result.transaction).toBeNull();
+    });
   });
 
   describe('addPurchasedInTransaction', () => {
@@ -413,10 +436,8 @@ describe('QuotaRepository', () => {
         },
       );
 
-      const result = await repository.addPurchasedInTransaction(
-        'user_1',
-        100,
-        'order_123',
+      const result = requireResult(
+        await repository.addPurchasedInTransaction('user_1', 100, 'order_123'),
       );
 
       expect(result.quota.purchasedQuota).toBe(150);

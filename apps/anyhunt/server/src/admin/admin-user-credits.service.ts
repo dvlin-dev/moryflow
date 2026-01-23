@@ -2,6 +2,7 @@
  * [INPUT]: actorUserId, targetUserId, amount, reason
  * [OUTPUT]: granted credits result + transaction/audit ids
  * [POS]: Admin 手动充值 Credits（仅增不减），用于内部员工测试
+ *        月度配额按有效订阅（ACTIVE）计算
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,6 +18,7 @@ import {
   getMonthlyQuotaByTier,
 } from '../quota/quota.constants';
 import type { SubscriptionTier } from '../types/tier.types';
+import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 export interface GrantCreditsParams {
   actorUserId: string;
@@ -58,7 +60,7 @@ export class AdminUserCreditsService {
         select: {
           id: true,
           deletedAt: true,
-          subscription: { select: { tier: true } },
+          subscription: { select: { tier: true, status: true } },
           quota: { select: { id: true, purchasedQuota: true } },
         },
       });
@@ -67,7 +69,10 @@ export class AdminUserCreditsService {
         throw new NotFoundException('User not found');
       }
 
-      const tier = (user.subscription?.tier ?? 'FREE') as SubscriptionTier;
+      const tier = getEffectiveSubscriptionTier(
+        user.subscription,
+        'FREE',
+      ) as SubscriptionTier;
       const monthlyLimit = getMonthlyQuotaByTier(tier);
 
       const quota = user.quota

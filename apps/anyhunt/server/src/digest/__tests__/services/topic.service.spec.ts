@@ -437,7 +437,7 @@ describe('DigestTopicService', () => {
       mockPrisma.digestSubscription.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         _count: { digestSubscriptions: 0 },
       });
       mockPrisma.digestSubscription.create.mockResolvedValue({
@@ -484,7 +484,7 @@ describe('DigestTopicService', () => {
       mockPrisma.digestSubscription.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
         _count: { digestSubscriptions: 100 }, // Exceeds limit
       });
 

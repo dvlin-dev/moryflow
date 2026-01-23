@@ -99,8 +99,8 @@ export interface InitQuotaParams {
 export interface AddPurchasedQuotaParams {
   userId: string;
   amount: number;
-  /** 关联的订单 ID */
-  orderId?: string;
+  /** 关联的订单 ID（幂等） */
+  orderId: string;
 }
 
 // ============ 周期重置 ============

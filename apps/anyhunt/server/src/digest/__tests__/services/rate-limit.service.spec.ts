@@ -33,7 +33,7 @@ describe('DigestRateLimitService', () => {
     it('should allow operation within daily limit for FREE user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestUserDailyOps.findUnique.mockResolvedValue({
         topicCreates: 1,
@@ -48,7 +48,7 @@ describe('DigestRateLimitService', () => {
     it('should throw ForbiddenException when daily limit exceeded for FREE user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestUserDailyOps.findUnique.mockResolvedValue({
         topicCreates: ANTI_SPAM_LIMITS.freeUserDailyTopicOps,
@@ -63,7 +63,7 @@ describe('DigestRateLimitService', () => {
     it('should allow unlimited operations for PRO user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
       });
 
       await expect(
@@ -77,7 +77,7 @@ describe('DigestRateLimitService', () => {
     it('should treat null ops as 0', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestUserDailyOps.findUnique.mockResolvedValue(null);
 
@@ -108,7 +108,7 @@ describe('DigestRateLimitService', () => {
     it('should allow creation within public topic limit for FREE user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestTopic.count.mockResolvedValue(0);
 
@@ -120,7 +120,7 @@ describe('DigestRateLimitService', () => {
     it('should throw ForbiddenException when public topic limit exceeded', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestTopic.count.mockResolvedValue(
         SUBSCRIPTION_LIMITS.FREE.maxPublicTopics,
@@ -134,7 +134,7 @@ describe('DigestRateLimitService', () => {
     it('should allow more public topics for PRO tier', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
       });
       mockPrisma.digestTopic.count.mockResolvedValue(
         SUBSCRIPTION_LIMITS.FREE.maxPublicTopics + 5,
@@ -148,7 +148,7 @@ describe('DigestRateLimitService', () => {
     it('should count only user public topics', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestTopic.count.mockResolvedValue(0);
 
@@ -217,7 +217,7 @@ describe('DigestRateLimitService', () => {
     it('should return remaining operations for FREE user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestUserDailyOps.findUnique.mockResolvedValue({
         topicCreates: 2,
@@ -236,7 +236,7 @@ describe('DigestRateLimitService', () => {
     it('should return full limit when no operations used', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestUserDailyOps.findUnique.mockResolvedValue(null);
 
@@ -248,7 +248,7 @@ describe('DigestRateLimitService', () => {
     it('should return 0 when limit exceeded', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'FREE' },
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.digestUserDailyOps.findUnique.mockResolvedValue({
         topicCreates: ANTI_SPAM_LIMITS.freeUserDailyTopicOps + 5,
@@ -263,7 +263,7 @@ describe('DigestRateLimitService', () => {
     it('should return unlimited for PRO tier', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
       });
 
       const result = await service.getRemainingOperations('user-1');

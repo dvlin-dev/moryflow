@@ -10,6 +10,7 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ANTI_SPAM_LIMITS, SUBSCRIPTION_LIMITS } from '../digest.constants';
 import type { SubscriptionTier } from '../../../generated/prisma-main/client';
+import { getEffectiveSubscriptionTier } from '../../common/utils/subscription-tier';
 
 export type TopicOperation = 'create' | 'update';
 
@@ -43,10 +44,10 @@ export class DigestRateLimitService {
   private async getUserTier(userId: string): Promise<SubscriptionTier> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { subscription: { select: { tier: true } } },
+      select: { subscription: { select: { tier: true, status: true } } },
     });
 
-    return user?.subscription?.tier || 'FREE';
+    return getEffectiveSubscriptionTier(user?.subscription, 'FREE');
   }
 
   /**

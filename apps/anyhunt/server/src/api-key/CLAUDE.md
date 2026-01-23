@@ -20,7 +20,8 @@ API key management for authenticating public API requests. Handles creation, val
 - Plaintext key shown only once on creation
 - Store only SHA256 hash in database
 - Keys must have `ah_` prefix
-- One key per scope per user (optional)
+- 明文 Key 仅创建时返回，后续不可读取
+- subscriptionTier 仅在订阅 ACTIVE 时视为付费 tier
 
 ## File Structure
 
@@ -31,7 +32,6 @@ API key management for authenticating public API requests. Handles creation, val
 | `api-key.guard.ts`          | Guard      | Request authentication guard     |
 | `api-key.module.ts`         | Module     | NestJS module definition         |
 | `api-key.constants.ts`      | Constants  | Key prefix, hash algorithm       |
-| `api-key.errors.ts`         | Errors     | InvalidApiKeyError, etc.         |
 | `api-key.types.ts`          | Types      | ApiKey type definitions          |
 | `api-key.decorators.ts`     | Decorators | @CurrentApiKey decorator         |
 | `dto/create-api-key.dto.ts` | DTO        | Create key request schema        |
@@ -71,16 +71,16 @@ Not found? → 403 Forbidden
 
 ```typescript
 // Generate new key (returns plaintext once)
-const { key, hashedKey } = await apiKeyService.create(userId, name);
+const { key } = await apiKeyService.create(userId, name);
 
 // Validate key from request
-const apiKey = await apiKeyService.validate(plaintextKey);
+const apiKey = await apiKeyService.validateKey(plaintextKey);
 
 // List user's keys
-const keys = await apiKeyService.findByUser(userId);
+const keys = await apiKeyService.findAllByUser(userId);
 
-// Revoke key
-await apiKeyService.revoke(keyId, userId);
+// Disable key
+await apiKeyService.update(userId, keyId, { isActive: false });
 ```
 
 ## Usage in Controllers

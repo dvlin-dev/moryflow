@@ -280,7 +280,7 @@ describe('AdminService', () => {
         email: 'test@example.com',
         name: 'Updated Name',
         isAdmin: true,
-        subscription: { tier: 'PRO' },
+        subscription: { tier: 'PRO', status: 'ACTIVE' },
         quota: null,
       });
 

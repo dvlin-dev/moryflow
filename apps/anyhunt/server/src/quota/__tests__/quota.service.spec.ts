@@ -7,12 +7,16 @@ import { QuotaService } from '../quota.service';
 import type { QuotaRepository } from '../quota.repository';
 import type { RedisService } from '../../redis/redis.service';
 import type { DailyCreditsService } from '../daily-credits.service';
+import { Prisma } from '../../../generated/prisma-main/client';
 import {
   QuotaExceededError,
   QuotaNotFoundError,
   QuotaAlreadyExistsError,
   DuplicateRefundError,
   InvalidRefundError,
+  InvalidQuotaAmountError,
+  InvalidPurchaseError,
+  DuplicatePurchaseError,
   ConcurrentLimitExceededError,
   RateLimitExceededError,
 } from '../quota.errors';
@@ -26,13 +30,13 @@ describe('QuotaService', () => {
     create: Mock;
     deductMonthlyInTransaction: Mock;
     deductPurchasedInTransaction: Mock;
-    hasRefundForReference: Mock;
     refundInTransaction: Mock;
     resetPeriodInTransaction: Mock;
     addPurchasedInTransaction: Mock;
     updateMonthlyLimit: Mock;
     createTransaction: Mock;
     findTransactionById: Mock;
+    findRefundByReferenceId: Mock;
   };
   let mockRedis: {
     incrementConcurrent: Mock;
@@ -43,6 +47,7 @@ describe('QuotaService', () => {
     getStatus: Mock;
     consume: Mock;
     refund: Mock;
+    refundOnce: Mock;
   };
 
   // 创建一个未过期的配额记录
@@ -72,13 +77,13 @@ describe('QuotaService', () => {
       create: vi.fn(),
       deductMonthlyInTransaction: vi.fn(),
       deductPurchasedInTransaction: vi.fn(),
-      hasRefundForReference: vi.fn(),
       refundInTransaction: vi.fn(),
       resetPeriodInTransaction: vi.fn(),
       addPurchasedInTransaction: vi.fn(),
       updateMonthlyLimit: vi.fn(),
       createTransaction: vi.fn(),
       findTransactionById: vi.fn(),
+      findRefundByReferenceId: vi.fn(),
     };
     mockRedis = {
       incrementConcurrent: vi.fn(),
@@ -89,9 +94,11 @@ describe('QuotaService', () => {
       getStatus: vi.fn(),
       consume: vi.fn(),
       refund: vi.fn(),
+      refundOnce: vi.fn(),
     };
 
     mockRepository.getUserTier.mockResolvedValue('BASIC');
+    mockRepository.findRefundByReferenceId.mockResolvedValue(null);
     mockDailyCredits.getStatus.mockResolvedValue({
       limit: 0,
       used: 0,
@@ -303,6 +310,18 @@ describe('QuotaService', () => {
       }
     });
 
+    it('should throw InvalidQuotaAmountError for invalid amount', async () => {
+      await expect(service.deduct('user_1', 0)).rejects.toThrow(
+        InvalidQuotaAmountError,
+      );
+      await expect(service.deduct('user_1', -1)).rejects.toThrow(
+        InvalidQuotaAmountError,
+      );
+      await expect(service.deduct('user_1', 1.5)).rejects.toThrow(
+        InvalidQuotaAmountError,
+      );
+    });
+
     it('should throw QuotaNotFoundError when user has no quota', async () => {
       mockRepository.findByUserId.mockResolvedValue(null);
 
@@ -362,9 +381,7 @@ describe('QuotaService', () => {
   // ============ refund ============
 
   describe('refund', () => {
-    it('should refund successfully', async () => {
-      mockRepository.findByUserId.mockResolvedValue(createValidQuota());
-      mockRepository.hasRefundForReference.mockResolvedValue(false);
+    it('should refund monthly successfully', async () => {
       mockRepository.refundInTransaction.mockResolvedValue({
         quota: createValidQuota({ monthlyUsed: 99 }),
         transaction: { id: 'tx_refund', balanceBefore: 899, balanceAfter: 900 },
@@ -381,22 +398,34 @@ describe('QuotaService', () => {
       expect(result.transactionId).toBe('tx_refund');
     });
 
-    it('should throw DuplicateRefundError for duplicate refund', async () => {
-      mockRepository.hasRefundForReference.mockResolvedValue(true);
+    it('should throw DuplicateRefundError for duplicated daily refund', async () => {
+      const createdAt = new Date();
+      mockRepository.findTransactionById.mockResolvedValue({
+        id: 'tx_daily',
+        createdAt,
+        type: 'DEDUCT',
+        source: 'DAILY',
+      });
+      mockDailyCredits.refundOnce.mockResolvedValue({
+        refunded: 0,
+        balanceBefore: 1,
+        balanceAfter: 1,
+        resetsAt: new Date(),
+        duplicated: true,
+      });
 
       await expect(
         service.refund({
           userId: 'user_1',
-          referenceId: 'ss_1',
-          source: 'MONTHLY',
+          referenceId: 'daily_refund',
+          deductTransactionId: 'tx_daily',
+          source: 'DAILY',
           amount: 1,
         }),
       ).rejects.toThrow(DuplicateRefundError);
     });
 
     it('should throw InvalidRefundError for non-positive amount', async () => {
-      mockRepository.hasRefundForReference.mockResolvedValue(false);
-
       await expect(
         service.refund({
           userId: 'user_1',
@@ -417,7 +446,6 @@ describe('QuotaService', () => {
     });
 
     it('should return failure when refund transaction fails', async () => {
-      mockRepository.hasRefundForReference.mockResolvedValue(false);
       mockRepository.refundInTransaction.mockRejectedValue(
         new Error('DB error'),
       );
@@ -430,6 +458,35 @@ describe('QuotaService', () => {
       });
 
       expect(result.success).toBe(false);
+    });
+
+    it('should throw DuplicateRefundError when refund already exists', async () => {
+      mockRepository.refundInTransaction.mockResolvedValue(null);
+      mockRepository.findRefundByReferenceId.mockResolvedValue({
+        id: 'tx_dup',
+      });
+
+      await expect(
+        service.refund({
+          userId: 'user_1',
+          referenceId: 'ss_1',
+          source: 'MONTHLY',
+          amount: 1,
+        }),
+      ).rejects.toThrow(DuplicateRefundError);
+    });
+
+    it('should throw InvalidRefundError when quota is missing', async () => {
+      mockRepository.refundInTransaction.mockResolvedValue(null);
+
+      await expect(
+        service.refund({
+          userId: 'user_1',
+          referenceId: 'ss_1',
+          source: 'MONTHLY',
+          amount: 1,
+        }),
+      ).rejects.toThrow(InvalidRefundError);
     });
   });
 
@@ -508,6 +565,42 @@ describe('QuotaService', () => {
         100,
         'order_123',
       );
+    });
+
+    it('should throw InvalidPurchaseError when orderId is missing', async () => {
+      await expect(
+        service.addPurchased({
+          userId: 'user_1',
+          amount: 100,
+          orderId: '  ',
+        }),
+      ).rejects.toThrow(InvalidPurchaseError);
+    });
+
+    it('should throw InvalidQuotaAmountError for invalid amount', async () => {
+      await expect(
+        service.addPurchased({
+          userId: 'user_1',
+          amount: 0,
+          orderId: 'order_123',
+        }),
+      ).rejects.toThrow(InvalidQuotaAmountError);
+    });
+
+    it('should throw DuplicatePurchaseError on duplicate order', async () => {
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        { code: 'P2002', clientVersion: 'test' },
+      );
+      mockRepository.addPurchasedInTransaction.mockRejectedValue(prismaError);
+
+      await expect(
+        service.addPurchased({
+          userId: 'user_1',
+          amount: 100,
+          orderId: 'order_123',
+        }),
+      ).rejects.toThrow(DuplicatePurchaseError);
     });
   });
 
