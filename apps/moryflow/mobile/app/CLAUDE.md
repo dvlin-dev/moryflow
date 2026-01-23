@@ -27,7 +27,7 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 | `index.tsx`      | 页面   | 首页/入口页                                  |
 | `+html.tsx`      | 配置   | Web HTML 模板                                |
 | `+not-found.tsx` | 页面   | 404 页面                                     |
-| `(auth)/`        | 路由组 | 认证相关页面（登录、注册、忘记密码）         |
+| `(auth)/`        | 路由组 | 认证相关页面（登录、注册）                   |
 | `(tabs)/`        | 路由组 | Tab 页面组（主页、搜索；含快速创建草稿动作） |
 | `(editor)/`      | 路由组 | 编辑器页面                                   |
 | `(settings)/`    | 路由组 | 设置页面                                     |
@@ -38,7 +38,6 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 /                     → index.tsx（入口）
 /(auth)/sign-in       → 登录
 /(auth)/sign-up       → 注册
-/(auth)/forgot-password → 忘记密码
 /(tabs)/              → 主页（index）
 /(tabs)/search        → 搜索
 /(editor)/[fileId]    → 编辑器（动态路由，稳定引用）
@@ -75,6 +74,7 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 - 动态路由跳转优先使用 `{ pathname: '/(editor)/[fileId]', params: { fileId } }` 形式
 - Tab 导航使用真实 Tabs；「快速创建草稿」为动作按钮（不再使用路由页重定向）
 - 编辑器标题输入统一抽成 `TitleInput`，修复暗黑模式下标题颜色未适配的问题
+- Auth 路由移除忘记密码入口，统一为登录/注册/邮箱验证
 
 ## 依赖关系
 

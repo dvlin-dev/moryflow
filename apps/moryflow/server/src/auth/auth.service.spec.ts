@@ -1,234 +1,212 @@
 /**
  * AuthService 单元测试
- *
- * 测试认证服务的所有公开方法
+ * 测试认证核心服务
  */
-
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../prisma';
-import {
-  createPrismaMock,
-  MockPrismaService,
-} from '../testing/mocks/prisma.mock';
-import { createMockUser, createMockSession } from '../testing/factories';
-import { createBetterAuth } from './better-auth';
-
-// Mock better-auth 模块
-vi.mock('better-auth', () => ({
-  betterAuth: vi.fn(() => ({
-    api: {
-      getSession: vi.fn(),
-    },
-    handler: vi.fn(),
-  })),
-}));
-
-vi.mock('better-auth/plugins', () => ({
-  bearer: vi.fn(() => ({})),
-}));
-
-vi.mock('better-auth/adapters/prisma', () => ({
-  prismaAdapter: vi.fn(() => ({})),
-}));
-
-vi.mock('./better-auth', () => ({
-  createBetterAuth: vi.fn(() => ({
-    api: {
-      getSession: vi.fn(),
-    },
-    handler: vi.fn(),
-  })),
-}));
+import type { PrismaService } from '../prisma';
+import type { EmailService } from '../email';
+import type { RedisService } from '../redis/redis.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prismaMock: MockPrismaService;
-  const createBetterAuthMock = vi.mocked(createBetterAuth);
-  const createAuthMock = (): ReturnType<typeof createBetterAuth> =>
-    ({
-      api: { getSession: vi.fn() },
-      handler: vi.fn(),
-    }) as unknown as ReturnType<typeof createBetterAuth>;
+  let mockPrisma: {
+    user: {
+      findUnique: ReturnType<typeof vi.fn>;
+    };
+  };
+  let mockEmailService: {
+    sendOTP: ReturnType<typeof vi.fn>;
+  };
+  let mockRedisService: {
+    get: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+    del: ReturnType<typeof vi.fn>;
+  };
+  type GetSessionInput = { headers: Headers };
+  type GetSessionFn = (input: GetSessionInput) => Promise<unknown>;
+  let mockAuth: {
+    api: {
+      getSession: ReturnType<typeof vi.fn<GetSessionFn>>;
+    };
+  };
 
-  beforeEach(async () => {
-    prismaMock = createPrismaMock();
+  beforeEach(() => {
+    mockPrisma = {
+      user: {
+        findUnique: vi.fn(),
+      },
+    };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: PrismaService, useValue: prismaMock },
-      ],
-    }).compile();
+    mockEmailService = {
+      sendOTP: vi.fn(),
+    };
 
-    service = module.get<AuthService>(AuthService);
-  });
+    mockRedisService = {
+      get: vi.fn(),
+      set: vi.fn(),
+      del: vi.fn(),
+    };
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+    service = new AuthService(
+      mockPrisma as unknown as PrismaService,
+      mockEmailService as unknown as EmailService,
+      mockRedisService as unknown as RedisService,
+    );
 
-  describe('isAdmin', () => {
-    it('管理员用户应返回 true', async () => {
-      const adminUser = createMockUser({ isAdmin: true });
-      prismaMock.user.findUnique.mockResolvedValue(adminUser);
+    const getSession = vi.fn<GetSessionFn>();
+    mockAuth = {
+      api: {
+        getSession,
+      },
+    };
 
-      const result = await service.isAdmin(adminUser.id);
-
-      expect(result).toBe(true);
-      expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
-        where: { id: adminUser.id },
-        select: { isAdmin: true },
-      });
-    });
-
-    it('普通用户应返回 false', async () => {
-      const normalUser = createMockUser({ isAdmin: false });
-      prismaMock.user.findUnique.mockResolvedValue(normalUser);
-
-      const result = await service.isAdmin(normalUser.id);
-
-      expect(result).toBe(false);
-    });
-
-    it('用户不存在时应返回 false', async () => {
-      prismaMock.user.findUnique.mockResolvedValue(null);
-
-      const result = await service.isAdmin('non-existent-id');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('getSessionByToken', () => {
-    it('有效 token 应返回完整的用户信息', async () => {
-      const user = createMockUser({ tier: 'pro', isAdmin: true });
-      const session = createMockSession({
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 3600 * 1000), // 1小时后过期
-      });
-
-      prismaMock.session.findUnique.mockResolvedValue({
-        ...session,
-        user,
-      });
-
-      const result = await service.getSessionByToken(session.token);
-
-      expect(result).not.toBeNull();
-      expect(result?.session.token).toBe(session.token);
-      expect(result?.user.id).toBe(user.id);
-      expect(result?.user.tier).toBe('pro');
-      expect(result?.user.isAdmin).toBe(true);
-    });
-
-    it('无效 token 应返回 null', async () => {
-      prismaMock.session.findUnique.mockResolvedValue(null);
-
-      const result = await service.getSessionByToken('invalid-token');
-
-      expect(result).toBeNull();
-    });
-
-    it('过期的 session 应返回 null', async () => {
-      const user = createMockUser();
-      const expiredSession = createMockSession({
-        userId: user.id,
-        expiresAt: new Date(Date.now() - 3600 * 1000), // 1小时前过期
-      });
-
-      prismaMock.session.findUnique.mockResolvedValue({
-        ...expiredSession,
-        user,
-      });
-
-      const result = await service.getSessionByToken(expiredSession.token);
-
-      expect(result).toBeNull();
-    });
+    (service as unknown as { auth: typeof mockAuth }).auth = mockAuth;
   });
 
   describe('getAuth', () => {
-    it('初始化后应返回 Better Auth 实例', () => {
-      const authWeb = createAuthMock();
-      const authDevice = createAuthMock();
-      createBetterAuthMock
-        .mockReturnValueOnce(authWeb)
-        .mockReturnValueOnce(authDevice);
-      void service.onModuleInit();
+    it('should return the auth instance', () => {
       const auth = service.getAuth();
-
-      expect(auth).toBeDefined();
-      expect(auth.api).toBeDefined();
-      expect(auth).toBe(authWeb);
+      expect(auth).toBe(mockAuth);
     });
   });
 
-  describe('getAuthForRequest', () => {
-    it('有 Origin 时应使用 web auth', () => {
-      const authWeb = createAuthMock();
-      const authDevice = createAuthMock();
-      createBetterAuthMock
-        .mockReturnValueOnce(authWeb)
-        .mockReturnValueOnce(authDevice);
-      void service.onModuleInit();
+  describe('getSessionFromRequest', () => {
+    const mockRequest = {
+      headers: {
+        cookie: 'session=abc123',
+        authorization: 'Bearer token123',
+      },
+    } as unknown as ExpressRequest;
 
-      const req = { headers: { origin: 'https://app.moryflow.com' } };
+    it('should return null when no session exists', async () => {
+      mockAuth.api.getSession.mockResolvedValue(null);
 
-      expect(service.getAuthForRequest(req as unknown as ExpressRequest)).toBe(
-        authWeb,
-      );
+      const result = await service.getSessionFromRequest(mockRequest);
+
+      expect(result).toBeNull();
     });
 
-    it('无 Origin 且有 Bearer 时应使用 device auth', () => {
-      const authWeb = createAuthMock();
-      const authDevice = createAuthMock();
-      createBetterAuthMock
-        .mockReturnValueOnce(authWeb)
-        .mockReturnValueOnce(authDevice);
-      void service.onModuleInit();
+    it('should return null when user not found', async () => {
+      mockAuth.api.getSession.mockResolvedValue({
+        user: { id: 'user_1' },
+        session: { id: 'session_1', expiresAt: new Date() },
+      });
+      mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      const req = {
-        headers: { authorization: 'Bearer test-token' },
-      };
+      const result = await service.getSessionFromRequest(mockRequest);
 
-      expect(service.getAuthForRequest(req as unknown as ExpressRequest)).toBe(
-        authDevice,
-      );
+      expect(result).toBeNull();
     });
 
-    it('无 Origin 且有 X-App-Platform 时应使用 device auth', () => {
-      const authWeb = createAuthMock();
-      const authDevice = createAuthMock();
-      createBetterAuthMock
-        .mockReturnValueOnce(authWeb)
-        .mockReturnValueOnce(authDevice);
-      void service.onModuleInit();
+    it('should return null for soft-deleted user', async () => {
+      mockAuth.api.getSession.mockResolvedValue({
+        user: { id: 'user_1' },
+        session: { id: 'session_1', expiresAt: new Date() },
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_1',
+        email: 'test@example.com',
+        name: 'Test User',
+        isAdmin: false,
+        deletedAt: new Date(),
+        subscription: { tier: 'pro' },
+      });
 
-      const req = {
-        headers: { 'x-app-platform': 'mobile' },
-      };
+      const result = await service.getSessionFromRequest(mockRequest);
 
-      expect(service.getAuthForRequest(req as unknown as ExpressRequest)).toBe(
-        authDevice,
-      );
+      expect(result).toBeNull();
     });
 
-    it('无 Origin 且无设备标识时应抛错', () => {
-      const authWeb = createAuthMock();
-      const authDevice = createAuthMock();
-      createBetterAuthMock
-        .mockReturnValueOnce(authWeb)
-        .mockReturnValueOnce(authDevice);
-      void service.onModuleInit();
+    it('should return session with full user data', async () => {
+      const expiresAt = new Date('2024-02-01');
+      mockAuth.api.getSession.mockResolvedValue({
+        user: { id: 'user_1' },
+        session: { id: 'session_1', expiresAt },
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_1',
+        email: 'test@example.com',
+        name: 'Test User',
+        isAdmin: false,
+        deletedAt: null,
+        subscription: { tier: 'pro' },
+      });
 
-      const req = { headers: {} };
+      const result = await service.getSessionFromRequest(mockRequest);
 
-      expect(() =>
-        service.getAuthForRequest(req as unknown as ExpressRequest),
-      ).toThrow('Invalid auth request');
+      expect(result).toEqual({
+        session: {
+          id: 'session_1',
+          expiresAt,
+        },
+        user: {
+          id: 'user_1',
+          email: 'test@example.com',
+          name: 'Test User',
+          subscriptionTier: 'pro',
+          isAdmin: false,
+        },
+      });
+    });
+
+    it('should default tier to free when no subscription', async () => {
+      mockAuth.api.getSession.mockResolvedValue({
+        user: { id: 'user_1' },
+        session: { id: 'session_1', expiresAt: new Date() },
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_1',
+        email: 'test@example.com',
+        name: 'Test User',
+        isAdmin: false,
+        deletedAt: null,
+        subscription: null,
+      });
+
+      const result = await service.getSessionFromRequest(mockRequest);
+
+      expect(result?.user.subscriptionTier).toBe('free');
+    });
+
+    it('should handle admin users', async () => {
+      mockAuth.api.getSession.mockResolvedValue({
+        user: { id: 'admin_1' },
+        session: { id: 'session_1', expiresAt: new Date() },
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'admin_1',
+        email: 'admin@example.com',
+        name: 'Admin User',
+        isAdmin: true,
+        deletedAt: null,
+        subscription: { tier: 'license' },
+      });
+
+      const result = await service.getSessionFromRequest(mockRequest);
+
+      expect(result?.user.isAdmin).toBe(true);
+    });
+
+    it('should copy headers correctly', async () => {
+      const requestWithArrayHeader = {
+        headers: {
+          cookie: 'session=abc',
+          'accept-language': ['en-US', 'en'],
+        },
+      } as unknown as ExpressRequest;
+
+      mockAuth.api.getSession.mockResolvedValue(null);
+
+      await service.getSessionFromRequest(requestWithArrayHeader);
+
+      expect(mockAuth.api.getSession).toHaveBeenCalled();
+      const calls = mockAuth.api.getSession.mock.calls as Array<
+        [GetSessionInput]
+      >;
+      const call = calls[0]?.[0];
+      expect(call?.headers).toBeInstanceOf(Headers);
     });
   });
 });

@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer, shell } from 'electron'
-import type { UIMessageChunk } from 'ai'
+import { contextBridge, ipcRenderer, shell } from 'electron';
+import type { UIMessageChunk } from 'ai';
 
 import type {
   AgentSettings,
@@ -13,21 +13,24 @@ import type {
   BuildProgressEvent,
   SandboxAuthRequest,
   BindingConflictRequest,
-} from '../shared/ipc.js'
-import type { SandboxMode } from '@anyhunt/agents-sandbox'
+} from '../shared/ipc.js';
+import type { SandboxMode } from '@anyhunt/agents-sandbox';
 
 const api: DesktopApi = {
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   membership: {
     syncToken: (token) => ipcRenderer.invoke('membership:syncToken', token),
     syncEnabled: (enabled) => ipcRenderer.invoke('membership:syncEnabled', enabled),
+    getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
+    setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
+    clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
   },
   payment: {
     openCheckout: (url) => shell.openExternal(url),
     onSuccess: (handler) => {
-      const listener = () => handler()
-      ipcRenderer.on('payment:success', listener)
-      return () => ipcRenderer.removeListener('payment:success', listener)
+      const listener = () => handler();
+      ipcRenderer.on('payment:success', listener);
+      return () => ipcRenderer.removeListener('payment:success', listener);
     },
   },
   vault: {
@@ -43,7 +46,7 @@ const api: DesktopApi = {
     setTreeCache: (params) =>
       ipcRenderer.invoke('vault:setTreeCache', {
         vaultPath: params?.vaultPath,
-        nodes: params?.nodes
+        nodes: params?.nodes,
       }),
     // ── 多 Vault 支持 ──────────────────────────────────────────
     getVaults: () => ipcRenderer.invoke('vault:getVaults'),
@@ -53,32 +56,36 @@ const api: DesktopApi = {
     renameVault: (vaultId, name) => ipcRenderer.invoke('vault:renameVault', { vaultId, name }),
     validateVaults: () => ipcRenderer.invoke('vault:validateVaults'),
     onVaultsChange: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: VaultItem[]) => handler(payload)
-      ipcRenderer.on('vault:vaultsChanged', listener)
-      return () => ipcRenderer.removeListener('vault:vaultsChanged', listener)
+      const listener = (_event: Electron.IpcRendererEvent, payload: VaultItem[]) =>
+        handler(payload);
+      ipcRenderer.on('vault:vaultsChanged', listener);
+      return () => ipcRenderer.removeListener('vault:vaultsChanged', listener);
     },
     onActiveVaultChange: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: VaultItem | null) => handler(payload)
-      ipcRenderer.on('vault:activeVaultChanged', listener)
-      return () => ipcRenderer.removeListener('vault:activeVaultChanged', listener)
+      const listener = (_event: Electron.IpcRendererEvent, payload: VaultItem | null) =>
+        handler(payload);
+      ipcRenderer.on('vault:activeVaultChanged', listener);
+      return () => ipcRenderer.removeListener('vault:activeVaultChanged', listener);
     },
   },
   workspace: {
-    getExpandedPaths: (vaultPath) => ipcRenderer.invoke('workspace:getExpandedPaths', { vaultPath }),
+    getExpandedPaths: (vaultPath) =>
+      ipcRenderer.invoke('workspace:getExpandedPaths', { vaultPath }),
     setExpandedPaths: (vaultPath, paths) =>
       ipcRenderer.invoke('workspace:setExpandedPaths', { vaultPath, paths }),
-    getLastOpenedFile: (vaultPath) => ipcRenderer.invoke('workspace:getLastOpenedFile', { vaultPath }),
+    getLastOpenedFile: (vaultPath) =>
+      ipcRenderer.invoke('workspace:getLastOpenedFile', { vaultPath }),
     setLastOpenedFile: (vaultPath, filePath) =>
       ipcRenderer.invoke('workspace:setLastOpenedFile', { vaultPath, filePath }),
     getOpenTabs: (vaultPath) => ipcRenderer.invoke('workspace:getOpenTabs', { vaultPath }),
     setOpenTabs: (vaultPath, tabs) =>
-      ipcRenderer.invoke('workspace:setOpenTabs', { vaultPath, tabs })
+      ipcRenderer.invoke('workspace:setOpenTabs', { vaultPath, tabs }),
   },
   preload: {
     getCache: () => ipcRenderer.invoke('preload:getCache'),
     setCache: (input) => ipcRenderer.invoke('preload:setCache', input ?? {}),
     getConfig: () => ipcRenderer.invoke('preload:getConfig'),
-    setConfig: (input) => ipcRenderer.invoke('preload:setConfig', input ?? {})
+    setConfig: (input) => ipcRenderer.invoke('preload:setConfig', input ?? {}),
   },
   files: {
     read: (path) => ipcRenderer.invoke('files:read', { path }),
@@ -88,27 +95,28 @@ const api: DesktopApi = {
     rename: (input) => ipcRenderer.invoke('files:rename', input),
     move: (input) => ipcRenderer.invoke('files:move', input),
     delete: (input) => ipcRenderer.invoke('files:delete', input),
-    showInFinder: (input) => ipcRenderer.invoke('files:showInFinder', input)
+    showInFinder: (input) => ipcRenderer.invoke('files:showInFinder', input),
   },
   events: {
     onVaultFsEvent: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
         if (!payload || typeof payload !== 'object') {
-          return
+          return;
         }
-        handler(payload as VaultFsEvent)
-      }
-      ipcRenderer.on('vault:fs-event', listener)
-      return () => ipcRenderer.removeListener('vault:fs-event', listener)
-    }
+        handler(payload as VaultFsEvent);
+      };
+      ipcRenderer.on('vault:fs-event', listener);
+      return () => ipcRenderer.removeListener('vault:fs-event', listener);
+    },
   },
   chat: {
     send: (payload) => ipcRenderer.invoke('chat:agent-request', payload ?? {}),
     stop: (payload) => ipcRenderer.invoke('chat:agent-stop', payload ?? {}),
     onChunk: (channel, handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, chunk: UIMessageChunk | null) => handler(chunk)
-      ipcRenderer.on(channel, listener)
-      return () => ipcRenderer.removeListener(channel, listener)
+      const listener = (_event: Electron.IpcRendererEvent, chunk: UIMessageChunk | null) =>
+        handler(chunk);
+      ipcRenderer.on(channel, listener);
+      return () => ipcRenderer.removeListener(channel, listener);
     },
     listSessions: () => ipcRenderer.invoke('chat:sessions:list'),
     createSession: () => ipcRenderer.invoke('chat:sessions:create'),
@@ -120,9 +128,10 @@ const api: DesktopApi = {
     replaceMessage: (input) => ipcRenderer.invoke('chat:sessions:replaceMessage', input ?? {}),
     forkSession: (input) => ipcRenderer.invoke('chat:sessions:fork', input ?? {}),
     onSessionEvent: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: ChatSessionEvent) => handler(payload)
-      ipcRenderer.on('chat:session-event', listener)
-      return () => ipcRenderer.removeListener('chat:session-event', listener)
+      const listener = (_event: Electron.IpcRendererEvent, payload: ChatSessionEvent) =>
+        handler(payload);
+      ipcRenderer.on('chat:session-event', listener);
+      return () => ipcRenderer.removeListener('chat:session-event', listener);
     },
     applyEdit: (input) => ipcRenderer.invoke('chat:apply-edit', input ?? {}),
   },
@@ -130,22 +139,24 @@ const api: DesktopApi = {
     getSettings: () => ipcRenderer.invoke('agent:settings:get'),
     updateSettings: (input) => ipcRenderer.invoke('agent:settings:update', input ?? {}),
     onSettingsChange: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: AgentSettings) => handler(payload)
-      ipcRenderer.on('agent:settings-changed', listener)
-      return () => ipcRenderer.removeListener('agent:settings-changed', listener)
+      const listener = (_event: Electron.IpcRendererEvent, payload: AgentSettings) =>
+        handler(payload);
+      ipcRenderer.on('agent:settings-changed', listener);
+      return () => ipcRenderer.removeListener('agent:settings-changed', listener);
     },
     getMcpStatus: () => ipcRenderer.invoke('agent:mcp:getStatus'),
     onMcpStatusChange: (handler) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: McpStatusEvent) => handler(payload)
-      ipcRenderer.on('agent:mcp-status-changed', listener)
-      return () => ipcRenderer.removeListener('agent:mcp-status-changed', listener)
+      const listener = (_event: Electron.IpcRendererEvent, payload: McpStatusEvent) =>
+        handler(payload);
+      ipcRenderer.on('agent:mcp-status-changed', listener);
+      return () => ipcRenderer.removeListener('agent:mcp-status-changed', listener);
     },
     testMcpServer: (input) => ipcRenderer.invoke('agent:mcp:testServer', input ?? {}),
     reloadMcp: () => ipcRenderer.invoke('agent:mcp:reload'),
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {
-    resetApp: () => ipcRenderer.invoke('app:resetApp')
+    resetApp: () => ipcRenderer.invoke('app:resetApp'),
   },
   ollama: {
     checkConnection: (baseUrl) => ipcRenderer.invoke('ollama:checkConnection', { baseUrl }),
@@ -155,9 +166,9 @@ const api: DesktopApi = {
     deleteModel: (name, baseUrl) => ipcRenderer.invoke('ollama:deleteModel', { name, baseUrl }),
     onPullProgress: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: OllamaPullProgressEvent) =>
-        handler(payload)
-      ipcRenderer.on('ollama:pullProgress', listener)
-      return () => ipcRenderer.removeListener('ollama:pullProgress', listener)
+        handler(payload);
+      ipcRenderer.on('ollama:pullProgress', listener);
+      return () => ipcRenderer.removeListener('ollama:pullProgress', listener);
     },
   },
   cloudSync: {
@@ -174,9 +185,9 @@ const api: DesktopApi = {
     triggerSync: () => ipcRenderer.invoke('cloud-sync:triggerSync'),
     onStatusChange: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: CloudSyncStatusEvent) =>
-        handler(payload)
-      ipcRenderer.on('cloud-sync:status-changed', listener)
-      return () => ipcRenderer.removeListener('cloud-sync:status-changed', listener)
+        handler(payload);
+      ipcRenderer.on('cloud-sync:status-changed', listener);
+      return () => ipcRenderer.removeListener('cloud-sync:status-changed', listener);
     },
 
     getUsage: () => ipcRenderer.invoke('cloud-sync:getUsage'),
@@ -188,9 +199,9 @@ const api: DesktopApi = {
       ipcRenderer.invoke('cloud-sync:binding-conflict-response', response),
     onBindingConflictRequest: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: BindingConflictRequest) =>
-        handler(payload)
-      ipcRenderer.on('cloud-sync:binding-conflict-request', listener)
-      return () => ipcRenderer.removeListener('cloud-sync:binding-conflict-request', listener)
+        handler(payload);
+      ipcRenderer.on('cloud-sync:binding-conflict-request', listener);
+      return () => ipcRenderer.removeListener('cloud-sync:binding-conflict-request', listener);
     },
   },
   sitePublish: {
@@ -207,9 +218,9 @@ const api: DesktopApi = {
     buildAndPublish: (input) => ipcRenderer.invoke('site-publish:buildAndPublish', input),
     onProgress: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: BuildProgressEvent) =>
-        handler(payload)
-      ipcRenderer.on('site-publish:progress', listener)
-      return () => ipcRenderer.removeListener('site-publish:progress', listener)
+        handler(payload);
+      ipcRenderer.on('site-publish:progress', listener);
+      return () => ipcRenderer.removeListener('site-publish:progress', listener);
     },
     detectChanges: (sourcePaths, lastHashes) =>
       ipcRenderer.invoke('site-publish:detectChanges', { sourcePaths, lastHashes }),
@@ -218,16 +229,17 @@ const api: DesktopApi = {
   sandbox: {
     getSettings: () => ipcRenderer.invoke('sandbox:get-settings'),
     setMode: (mode: SandboxMode) => ipcRenderer.invoke('sandbox:set-mode', mode),
-    removeAuthorizedPath: (path: string) => ipcRenderer.invoke('sandbox:remove-authorized-path', path),
+    removeAuthorizedPath: (path: string) =>
+      ipcRenderer.invoke('sandbox:remove-authorized-path', path),
     clearAuthorizedPaths: () => ipcRenderer.invoke('sandbox:clear-authorized-paths'),
     respondAuth: (response) => ipcRenderer.invoke('sandbox:auth-response', response),
     onAuthRequest: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: SandboxAuthRequest) =>
-        handler(payload)
-      ipcRenderer.on('sandbox:auth-request', listener)
-      return () => ipcRenderer.removeListener('sandbox:auth-request', listener)
+        handler(payload);
+      ipcRenderer.on('sandbox:auth-request', listener);
+      return () => ipcRenderer.removeListener('sandbox:auth-request', listener);
     },
   },
-}
+};
 
-contextBridge.exposeInMainWorld('desktopAPI', api)
+contextBridge.exposeInMainWorld('desktopAPI', api);

@@ -1,32 +1,32 @@
 /**
- * Membership 配置桥接
- *
- * 用于将会员配置同步到 Agent Runtime
+ * [PROVIDES]: 会员配置桥接
+ * [DEPENDS]: auth-session, agents-runtime
+ * [POS]: Mobile 端 Agent Runtime 会员配置同步
  */
 
-import { getStoredToken } from '@/lib/server/storage'
-import { MEMBERSHIP_API_URL } from '@anyhunt/api'
-import type { MembershipConfig } from '@anyhunt/agents-runtime'
+import { getAccessToken } from '@/lib/server/auth-session';
+import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import type { MembershipConfig } from '@anyhunt/agents-runtime';
 
 // 内存中的配置（运行时使用）
 let membershipConfig: MembershipConfig = {
   enabled: false,
   apiUrl: MEMBERSHIP_API_URL,
   token: null,
-}
+};
 
 /**
  * 获取当前会员配置
  */
 export function getMembershipConfig(): MembershipConfig {
-  return membershipConfig
+  return membershipConfig;
 }
 
 /**
  * 更新会员配置
  */
 export function setMembershipConfig(config: Partial<MembershipConfig>): void {
-  membershipConfig = { ...membershipConfig, ...config }
+  membershipConfig = { ...membershipConfig, ...config };
 }
 
 /**
@@ -34,11 +34,11 @@ export function setMembershipConfig(config: Partial<MembershipConfig>): void {
  *
  * 在 MembershipProvider 中调用，保持配置与登录状态同步
  */
-export async function syncMembershipConfig(enabled: boolean): Promise<void> {
-  const token = await getStoredToken()
+export function syncMembershipConfig(enabled: boolean): void {
+  const token = getAccessToken();
   setMembershipConfig({
     token,
     enabled,
     apiUrl: MEMBERSHIP_API_URL,
-  })
+  });
 }

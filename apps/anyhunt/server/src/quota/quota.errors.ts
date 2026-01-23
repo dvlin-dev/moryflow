@@ -2,6 +2,8 @@
  * [DEFINES]: 配额模块自定义错误类
  * [USED_BY]: quota.service.ts, quota.repository.ts
  * [POS]: 错误边界，提供清晰的错误类型和错误码
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -41,6 +43,7 @@ export abstract class QuotaError extends HttpException {
       },
       status,
     );
+    this.message = message;
   }
 }
 

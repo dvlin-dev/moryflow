@@ -1,201 +1,194 @@
-import * as React from 'react'
-import { Loader2 } from 'lucide-react'
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod/v3';
+import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useTranslation } from '@/lib/i18n'
-import { cn } from '@/lib/utils'
-import { Button } from '@anyhunt/ui/components/button'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@anyhunt/ui/components/field'
+import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
+import { Button } from '@anyhunt/ui/components/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@anyhunt/ui/components/field';
+import { Form, FormField, FormItem, FormControl, FormMessage } from '@anyhunt/ui/components/form';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from '@anyhunt/ui/components/input-otp'
-import { emailOtp } from '@/lib/server/client'
-import { preRegisterApi } from '@/lib/server'
+} from '@anyhunt/ui/components/input-otp';
+import { emailOtp } from '@/lib/server/client';
 
 interface OTPFormProps extends React.ComponentProps<'div'> {
-  email: string
-  /**
-   * 验证模式
-   * - 'pre-register': 预注册验证，验证成功后创建账号并登录
-   * - 'email-verification': 邮箱验证，仅验证邮箱（默认）
-   */
-  mode?: 'pre-register' | 'email-verification'
-  onSuccess?: () => void
-  onBack?: () => void
+  email: string;
+  onSuccess?: () => void;
+  onBack?: () => void;
 }
 
-const RESEND_COOLDOWN = 60
+type OTPFormValues = {
+  otp: string;
+};
 
-export function OTPForm({ className, email, mode = 'email-verification', onSuccess, onBack, ...props }: OTPFormProps) {
-  const { t } = useTranslation('auth')
-  const [otp, setOtp] = React.useState('')
-  const [error, setError] = React.useState<string | null>(null)
-  const [isVerifying, setIsVerifying] = React.useState(false)
-  const [isResending, setIsResending] = React.useState(false)
-  const [countdown, setCountdown] = React.useState(RESEND_COOLDOWN)
+const RESEND_COOLDOWN = 60;
+
+export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFormProps) {
+  const { t } = useTranslation('auth');
+  const [isVerifying, setIsVerifying] = React.useState(false);
+  const [isResending, setIsResending] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(RESEND_COOLDOWN);
+
+  const schema = React.useMemo(
+    () =>
+      z.object({
+        otp: z.string().length(6, t('enterFullOtp')),
+      }),
+    [t]
+  );
+
+  const form = useForm<OTPFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { otp: '' },
+  });
+  // 规避 workspace 内 react-hook-form 类型来源不一致导致的类型冲突
+  const formProviderProps = form as unknown as React.ComponentProps<typeof Form>;
+  const formControl = form.control as unknown as React.ComponentProps<typeof FormField>['control'];
 
   // 倒计时
   React.useEffect(() => {
-    if (countdown <= 0) return
+    if (countdown <= 0) return;
     const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1)
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [countdown])
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
 
-  // 验证 OTP
-  async function handleVerify() {
-    if (otp.length !== 6) {
-      setError(t('enterFullOtp'))
-      return
-    }
-
-    setError(null)
-    setIsVerifying(true)
+  const handleVerify = form.handleSubmit(async (values) => {
+    setIsVerifying(true);
+    form.clearErrors('otp');
 
     try {
-      if (mode === 'pre-register') {
-        // 预注册模式：验证 OTP 并创建账号
-        await preRegisterApi.verify({ email, otp })
-        onSuccess?.()
-      } else {
-        // 邮箱验证模式：仅验证邮箱
-        const { error: verifyError } = await emailOtp.verifyEmail({
-          email,
-          otp,
-        })
+      const { error: verifyError } = await emailOtp.verifyEmail({
+        email,
+        otp: values.otp,
+      });
 
-        if (verifyError) {
-          setError(verifyError.message || t('otpError'))
-          return
-        }
-
-        onSuccess?.()
+      if (verifyError) {
+        form.setError('otp', { message: verifyError.message || t('otpError') });
+        return;
       }
+
+      onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('verifyFailed'))
+      form.setError('otp', { message: err instanceof Error ? err.message : t('verifyFailed') });
     } finally {
-      setIsVerifying(false)
+      setIsVerifying(false);
     }
-  }
+  });
 
-  // 重发验证码（仅邮箱验证模式支持）
+  // 重发验证码
   async function handleResend() {
-    // 预注册模式不支持重发，需要返回上一步重新填写信息
-    if (mode === 'pre-register') {
-      onBack?.()
-      return
-    }
-
-    setIsResending(true)
-    setError(null)
+    setIsResending(true);
+    form.clearErrors('otp');
 
     try {
       const { error: sendError } = await emailOtp.sendVerificationOtp({
         email,
         type: 'email-verification',
-      })
+      });
 
       if (sendError) {
-        setError(sendError.message || t('sendFailed'))
-        return
+        form.setError('otp', { message: sendError.message || t('sendFailed') });
+        return;
       }
 
-      setCountdown(RESEND_COOLDOWN)
+      setCountdown(RESEND_COOLDOWN);
     } catch {
-      setError(t('sendFailedRetry'))
+      form.setError('otp', { message: t('sendFailedRetry') });
     } finally {
-      setIsResending(false)
+      setIsResending(false);
     }
   }
 
-  // 预注册模式不支持倒计时后重发
-  const canResend = mode !== 'pre-register' && countdown <= 0 && !isResending
+  const canResend = countdown <= 0 && !isResending;
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <div>
-        <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-xl font-bold">{t('verifyEmail')}</h1>
-            <FieldDescription>
-              {t('otpSentToEmail')} <span className="font-medium text-foreground">{email}</span>
-            </FieldDescription>
-          </div>
-          <Field>
-            <FieldLabel htmlFor="otp" className="sr-only">
-              {t('verificationCodeLabel')}
-            </FieldLabel>
-            <InputOTP
-              maxLength={6}
-              id="otp"
-              value={otp}
-              onChange={setOtp}
-              disabled={isVerifying}
-              containerClassName="gap-4"
-            >
-              <InputOTPGroup className="gap-2.5 data-[slot=input-otp-slot]:*:h-16 data-[slot=input-otp-slot]:*:w-12 data-[slot=input-otp-slot]:*:rounded-md data-[slot=input-otp-slot]:*:border data-[slot=input-otp-slot]:*:text-xl">
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup className="gap-2.5 data-[slot=input-otp-slot]:*:h-16 data-[slot=input-otp-slot]:*:w-12 data-[slot=input-otp-slot]:*:rounded-md data-[slot=input-otp-slot]:*:border data-[slot=input-otp-slot]:*:text-xl">
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
-            {error && <p className="text-center text-sm text-destructive">{error}</p>}
-            <FieldDescription className="text-center">
-              {mode === 'pre-register' ? (
-                // 预注册模式：提示返回重新发送
-                <>
-                  {t('noCodeQuestion')}{' '}
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    {t('backAndResend')}
-                  </button>
-                </>
-              ) : (
-                // 邮箱验证模式：倒计时后可重发
-                <>
-                  {t('noCodeQuestion')}{' '}
-                  {canResend ? (
-                    <button
-                      type="button"
-                      onClick={handleResend}
-                      className="text-primary underline-offset-4 hover:underline"
-                    >
-                      {isResending ? t('sendingOtp') : t('resendOtp')}
-                    </button>
-                  ) : (
-                    <span className="text-muted-foreground">{t('resendInSeconds', { seconds: countdown })}</span>
+        <Form {...formProviderProps}>
+          <form onSubmit={handleVerify}>
+            <FieldGroup>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h1 className="text-xl font-bold">{t('verifyEmail')}</h1>
+                <FieldDescription>
+                  {t('otpSentToEmail')} <span className="font-medium text-foreground">{email}</span>
+                </FieldDescription>
+              </div>
+              <FormField
+                control={formControl}
+                name="otp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FieldLabel htmlFor="otp" className="sr-only">
+                      {t('verificationCodeLabel')}
+                    </FieldLabel>
+                    <FormControl>
+                      <InputOTP
+                        maxLength={6}
+                        id="otp"
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isVerifying}
+                        containerClassName="gap-4"
+                      >
+                        <InputOTPGroup className="gap-2.5 data-[slot=input-otp-slot]:*:h-16 data-[slot=input-otp-slot]:*:w-12 data-[slot=input-otp-slot]:*:rounded-md data-[slot=input-otp-slot]:*:border data-[slot=input-otp-slot]:*:text-xl">
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup className="gap-2.5 data-[slot=input-otp-slot]:*:h-16 data-[slot=input-otp-slot]:*:w-12 data-[slot=input-otp-slot]:*:rounded-md data-[slot=input-otp-slot]:*:border data-[slot=input-otp-slot]:*:text-xl">
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </FormControl>
+                    <FormMessage className="text-center" />
+                    <FieldDescription className="text-center">
+                      {t('noCodeQuestion')}{' '}
+                      {canResend ? (
+                        <button
+                          type="button"
+                          onClick={handleResend}
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          {isResending ? t('sendingOtp') : t('resendOtp')}
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {t('resendInSeconds', { seconds: countdown })}
+                        </span>
+                      )}
+                    </FieldDescription>
+                  </FormItem>
+                )}
+              />
+              <Field>
+                <Button type="submit" disabled={isVerifying || form.getValues('otp').length !== 6}>
+                  {isVerifying && (
+                    <span className="mr-2 size-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
                   )}
-                </>
+                  {t('verifyButton')}
+                </Button>
+              </Field>
+              {onBack && (
+                <Field>
+                  <Button type="button" variant="ghost" onClick={onBack}>
+                    {t('backButton')}
+                  </Button>
+                </Field>
               )}
-            </FieldDescription>
-          </Field>
-          <Field>
-            <Button type="button" onClick={handleVerify} disabled={isVerifying || otp.length !== 6}>
-              {isVerifying && <Loader2 className="mr-2 size-4 animate-spin" />}
-              {t('verifyButton')}
-            </Button>
-          </Field>
-          {onBack && (
-            <Field>
-              <Button type="button" variant="ghost" onClick={onBack}>
-                {t('backButton')}
-              </Button>
-            </Field>
-          )}
-        </FieldGroup>
+            </FieldGroup>
+          </form>
+        </Form>
       </div>
     </div>
-  )
+  );
 }

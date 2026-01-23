@@ -69,7 +69,11 @@ export class PaymentService {
         return;
       }
 
-      // 2. 创建或更新订阅记录
+      // 2. 根据产品确定用户等级和积分
+      const tier = getTierFromProductId(productId);
+      const credits = TIER_CREDITS[tier] || 0;
+
+      // 3. 创建或更新订阅记录
       await tx.subscription.upsert({
         where: { creemSubscriptionId: subscriptionId },
         create: {
@@ -77,28 +81,20 @@ export class PaymentService {
           creemSubscriptionId: subscriptionId,
           creemCustomerId: customerId,
           productId,
+          tier,
           status: 'active',
           currentPeriodStart: new Date(),
           currentPeriodEnd: periodEnd,
         },
         update: {
+          tier,
           status: 'active',
           currentPeriodStart: new Date(),
           currentPeriodEnd: periodEnd,
         },
       });
 
-      // 3. 根据产品确定用户等级和积分
-      const tier = getTierFromProductId(productId);
-      const credits = TIER_CREDITS[tier] || 0;
-
-      // 4. 更新用户等级
-      await tx.user.update({
-        where: { id: userId },
-        data: { tier },
-      });
-
-      // 5. 发放订阅积分（仅在新周期时发放）
+      // 4. 发放订阅积分（仅在新周期时发放）
       if (credits > 0) {
         await this.creditService.grantSubscriptionCredits(
           userId,
@@ -173,19 +169,13 @@ export class PaymentService {
   async handleSubscriptionExpired(
     params: SubscriptionCanceledParams,
   ): Promise<void> {
-    const { subscriptionId, userId } = params;
+    const { subscriptionId } = params;
 
     this.logger.log(`Subscription expired: ${subscriptionId}`);
 
     await this.prisma.subscription.update({
       where: { creemSubscriptionId: subscriptionId },
-      data: { status: 'expired' },
-    });
-
-    // 降级用户到 free
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { tier: 'free' },
+      data: { status: 'expired', tier: 'free' },
     });
   }
 
@@ -203,20 +193,16 @@ export class PaymentService {
 
     this.logger.log(`Subscription updated: ${subscriptionId}`);
 
+    const tier = getTierFromProductId(productId);
+
     // 更新订阅产品信息
     await this.prisma.subscription.update({
       where: { creemSubscriptionId: subscriptionId },
       data: {
         productId,
+        tier,
         ...(periodEnd && { currentPeriodEnd: periodEnd }),
       },
-    });
-
-    // 根据新产品更新用户等级
-    const tier = getTierFromProductId(productId);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { tier },
     });
 
     this.logger.log(`User ${userId} tier updated to ${tier}`);

@@ -51,7 +51,7 @@ export interface MembershipUser {
   name?: string;
   image?: string;
   createdAt: string;
-  tier: UserTier;
+  subscriptionTier: UserTier;
 }
 
 /** 用户完整信息（含会员详情） */

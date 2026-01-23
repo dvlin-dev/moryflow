@@ -2,19 +2,19 @@
  * 站点管理页面
  */
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { PageHeader, TierBadge, SimplePagination } from '@/components/shared'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { PageHeader, TierBadge, SimplePagination } from '@/components/shared';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -22,14 +22,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,9 +39,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { usePagination } from '@/hooks'
-import { formatDate } from '@/lib/format'
+} from '@/components/ui/alert-dialog';
+import { usePagination } from '@/hooks';
+import { formatDate } from '@/lib/format';
 import {
   useSites,
   useOfflineSite,
@@ -50,31 +50,23 @@ import {
   SiteStatusBadge,
   SiteTypeBadge,
   type SiteListItem,
-} from '@/features/sites'
-import {
-  Eye,
-  MoreHorizontal,
-  Power,
-  PowerOff,
-  Trash2,
-  ExternalLink,
-  Search,
-} from 'lucide-react'
+} from '@/features/sites';
+import { Eye, MoreHorizontal, Power, PowerOff, Trash2, ExternalLink, Search } from 'lucide-react';
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 // 筛选选项
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
   { value: 'ACTIVE', label: '活跃' },
   { value: 'OFFLINE', label: '下线' },
-]
+];
 
 const TYPE_OPTIONS = [
   { value: 'all', label: '全部类型' },
   { value: 'MARKDOWN', label: 'Markdown' },
   { value: 'GENERATED', label: 'AI 生成' },
-]
+];
 
 const TIER_OPTIONS = [
   { value: 'all', label: '全部等级' },
@@ -83,28 +75,28 @@ const TIER_OPTIONS = [
   { value: 'basic', label: 'Basic' },
   { value: 'pro', label: 'Pro' },
   { value: 'license', label: 'License' },
-]
+];
 
 const EXPIRY_OPTIONS = [
   { value: 'all', label: '全部' },
   { value: 'expiring', label: '即将过期' },
   { value: 'expired', label: '已过期' },
-]
+];
 
 export default function SitesPage() {
   // 筛选状态
-  const [search, setSearch] = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [tierFilter, setTierFilter] = useState('all')
-  const [expiryFilter, setExpiryFilter] = useState('all')
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [tierFilter, setTierFilter] = useState('all');
+  const [expiryFilter, setExpiryFilter] = useState('all');
 
   // 操作状态
-  const [actionSite, setActionSite] = useState<SiteListItem | null>(null)
-  const [actionType, setActionType] = useState<'offline' | 'online' | 'delete' | null>(null)
+  const [actionSite, setActionSite] = useState<SiteListItem | null>(null);
+  const [actionType, setActionType] = useState<'offline' | 'online' | 'delete' | null>(null);
 
-  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE })
+  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
   // 数据查询
   const { data, isLoading } = useSites({
@@ -115,56 +107,56 @@ export default function SitesPage() {
     type: typeFilter !== 'all' ? typeFilter : undefined,
     userTier: tierFilter !== 'all' ? tierFilter : undefined,
     expiryFilter: expiryFilter !== 'all' ? expiryFilter : undefined,
-  })
+  });
 
   // Mutations
-  const offlineMutation = useOfflineSite()
-  const onlineMutation = useOnlineSite()
-  const deleteMutation = useDeleteSite()
+  const offlineMutation = useOfflineSite();
+  const onlineMutation = useOnlineSite();
+  const deleteMutation = useDeleteSite();
 
-  const sites = data?.sites || []
-  const totalPages = getTotalPages(data?.pagination.total || 0)
+  const sites = data?.sites || [];
+  const totalPages = getTotalPages(data?.pagination.total || 0);
 
   // 处理搜索
   const handleSearch = () => {
-    setSearch(searchInput)
-    resetPage()
-  }
+    setSearch(searchInput);
+    resetPage();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSearch()
+      handleSearch();
     }
-  }
+  };
 
   // 处理操作
   const handleAction = (site: SiteListItem, action: typeof actionType) => {
-    setActionSite(site)
-    setActionType(action)
-  }
+    setActionSite(site);
+    setActionType(action);
+  };
 
   const handleConfirmAction = () => {
-    if (!actionSite || !actionType) return
+    if (!actionSite || !actionType) return;
 
-    const id = actionSite.id
+    const id = actionSite.id;
     switch (actionType) {
       case 'offline':
-        offlineMutation.mutate(id)
-        break
+        offlineMutation.mutate(id);
+        break;
       case 'online':
-        onlineMutation.mutate(id)
-        break
+        onlineMutation.mutate(id);
+        break;
       case 'delete':
-        deleteMutation.mutate(id)
-        break
+        deleteMutation.mutate(id);
+        break;
     }
 
-    setActionSite(null)
-    setActionType(null)
-  }
+    setActionSite(null);
+    setActionType(null);
+  };
 
   const isActionLoading =
-    offlineMutation.isPending || onlineMutation.isPending || deleteMutation.isPending
+    offlineMutation.isPending || onlineMutation.isPending || deleteMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -190,8 +182,8 @@ export default function SitesPage() {
         <Select
           value={statusFilter}
           onValueChange={(value) => {
-            setStatusFilter(value)
-            resetPage()
+            setStatusFilter(value);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-32">
@@ -210,8 +202,8 @@ export default function SitesPage() {
         <Select
           value={typeFilter}
           onValueChange={(value) => {
-            setTypeFilter(value)
-            resetPage()
+            setTypeFilter(value);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-32">
@@ -230,8 +222,8 @@ export default function SitesPage() {
         <Select
           value={tierFilter}
           onValueChange={(value) => {
-            setTierFilter(value)
-            resetPage()
+            setTierFilter(value);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-32">
@@ -250,8 +242,8 @@ export default function SitesPage() {
         <Select
           value={expiryFilter}
           onValueChange={(value) => {
-            setExpiryFilter(value)
-            resetPage()
+            setExpiryFilter(value);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-32">
@@ -320,13 +312,10 @@ export default function SitesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Link
-                        to={`/users/${site.owner.id}`}
-                        className="text-sm hover:underline"
-                      >
+                      <Link to={`/users/${site.owner.id}`} className="text-sm hover:underline">
                         {site.owner.email}
                       </Link>
-                      <TierBadge tier={site.owner.tier} short />
+                      <TierBadge tier={site.owner.subscriptionTier} short />
                     </div>
                   </TableCell>
                   <TableCell>{site.pageCount}</TableCell>
@@ -401,7 +390,8 @@ export default function SitesPage() {
               {actionType === 'delete' && '确认删除站点？'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {actionType === 'offline' && `站点 ${actionSite?.subdomain} 将被下线，用户将无法访问。`}
+              {actionType === 'offline' &&
+                `站点 ${actionSite?.subdomain} 将被下线，用户将无法访问。`}
               {actionType === 'online' && `站点 ${actionSite?.subdomain} 将恢复上线。`}
               {actionType === 'delete' && (
                 <span className="text-red-600">
@@ -423,5 +413,5 @@ export default function SitesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

@@ -21,7 +21,7 @@ import type {
   PaymentOrder,
 } from '../../generated/prisma/client';
 import {
-  UserTier,
+  SubscriptionTier,
   LicenseStatus,
   LicenseTier,
   LicenseActivationStatus,
@@ -41,7 +41,6 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     name: 'Test User',
     emailVerified: true,
     image: null,
-    tier: UserTier.free,
     isAdmin: false,
     createdAt: now,
     updatedAt: now,
@@ -114,6 +113,7 @@ export function createMockSubscription(
   return {
     id: randomUUID(),
     userId: randomUUID(),
+    tier: SubscriptionTier.free,
     creemSubscriptionId: `sub_${randomUUID().slice(0, 8)}`,
     creemCustomerId: `cust_${randomUUID().slice(0, 8)}`,
     productId: 'prod_basic_monthly',
@@ -193,7 +193,7 @@ export function createMockAiModel(overrides: Partial<AiModel> = {}): AiModel {
     enabled: true,
     inputTokenPrice: 0.15,
     outputTokenPrice: 0.6,
-    minTier: UserTier.free,
+    minTier: SubscriptionTier.free,
     maxContextTokens: 128000,
     maxOutputTokens: 4096,
     capabilitiesJson: {},
@@ -280,7 +280,7 @@ export function createMockCurrentUser(
     id: string;
     email: string;
     name: string;
-    tier: UserTier;
+    tier: SubscriptionTier;
     isAdmin: boolean;
   }> = {},
 ) {
@@ -288,7 +288,7 @@ export function createMockCurrentUser(
     id: randomUUID(),
     email: 'test@example.com',
     name: 'Test User',
-    tier: UserTier.free,
+    tier: SubscriptionTier.free,
     isAdmin: false,
     ...overrides,
   };
@@ -296,7 +296,7 @@ export function createMockCurrentUser(
 
 // Re-export enums for convenience
 export {
-  UserTier,
+  SubscriptionTier,
   LicenseStatus,
   LicenseTier,
   LicenseActivationStatus,

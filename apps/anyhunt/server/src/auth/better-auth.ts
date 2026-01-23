@@ -1,5 +1,13 @@
-import { betterAuth, APIError } from 'better-auth';
-import { bearer, emailOTP } from 'better-auth/plugins';
+/**
+ * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/ADMIN_EMAILS
+ * [OUTPUT]: Better Auth 实例（Anyhunt Dev 专用配置）
+ * [POS]: Auth 配置入口
+ *
+ * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
+ */
+import { betterAuth, APIError, type SecondaryStorage } from 'better-auth';
+import { emailOTP } from 'better-auth/plugins/email-otp';
+import { jwt } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { createHash, randomBytes } from 'crypto';
 import type { PrismaClient } from '../../generated/prisma-main/client';
@@ -13,6 +21,12 @@ import {
   API_KEY_LENGTH,
   KEY_PREFIX_DISPLAY_LENGTH,
 } from '../api-key/api-key.constants';
+import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
+import {
+  getAuthBaseUrl,
+  getJwtPluginOptions,
+  getTrustedOrigins,
+} from './auth.config';
 
 // 套餐对应的月度配额
 const TIER_MONTHLY_QUOTA = {
@@ -21,6 +35,20 @@ const TIER_MONTHLY_QUOTA = {
   PRO: 20000,
   TEAM: 60000,
 } as const;
+
+export function isAdminEmail(
+  email: string | null | undefined,
+  rawAdminEmails: string | undefined,
+): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return false;
+  const adminEmails = (rawAdminEmails ?? '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(normalized);
+}
 
 /**
  * 安全地计算一个月后的日期
@@ -47,17 +75,13 @@ function addOneMonth(date: Date): Date {
  * - 支持第三方登录（Google/Apple）
  *
  * 认证方式：
- * - Web 端：Cookie（HttpOnly, Secure, SameSite 保护）
- * - API/Mobile：Bearer Token（通过 bearer 插件支持）
- *
- * Bearer Token 使用说明：
- * - 登录成功后从响应头 `set-auth-token` 获取 token
- * - 后续请求通过 `Authorization: Bearer <token>` 携带
- * - token 就是 session token，与 Cookie 共用同一套 session 系统
+ * - Web 端：refreshToken Cookie + accessToken（JWT）
+ * - API/Mobile：refreshToken（Secure Storage）+ accessToken（JWT）
  */
 export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
+  secondaryStorage?: SecondaryStorage,
 ) {
   // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
@@ -67,41 +91,48 @@ export function createBetterAuth(
     );
   }
 
-  const trustedOrigins = process.env.TRUSTED_ORIGINS?.split(',').filter(
-    Boolean,
-  ) ?? [
-    // 默认信任的来源（生产环境应在环境变量中配置）
-    'http://localhost:3000',
-    'http://localhost:5173',
-  ];
+  const baseURL = getAuthBaseUrl();
+  const trustedOrigins = getTrustedOrigins();
+  const jwtOptions = getJwtPluginOptions(baseURL);
 
   return betterAuth({
     database: prismaAdapter(prisma, {
       provider: 'postgresql',
     }),
+    secondaryStorage,
     secret,
-    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    baseURL,
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 7, // 7 days
-      updateAge: 60 * 60 * 24, // 1 day
+      expiresIn: REFRESH_TOKEN_TTL_SECONDS,
+      updateAge: 60 * 60 * 24,
+      storeSessionInDatabase: false,
+      cookieCache: {
+        enabled: true,
+        strategy: 'jwe',
+        maxAge: REFRESH_TOKEN_TTL_SECONDS,
+      },
     },
     trustedOrigins,
     advanced: {
-      // 允许无 Origin 的请求（移动端需要）
-      // React Native、Electron 等客户端不会发送 Origin header
-      disableCSRFCheck: true,
+      useSecureCookies: isProduction,
       // 跨子域 Cookie 共享：anyhunt.app, console.anyhunt.app, admin.anyhunt.app
       // 仅在生产环境启用（本地开发使用单域）
-      ...(process.env.NODE_ENV === 'production' && {
+      ...(isProduction && {
         crossSubDomainCookies: {
           enabled: true,
           domain: '.anyhunt.app',
         },
       }),
+    },
+    rateLimit: {
+      enabled: true,
+      window: 10,
+      max: 20,
+      storage: secondaryStorage ? 'secondary-storage' : 'memory',
     },
     // 数据库钩子
     databaseHooks: {
@@ -130,64 +161,75 @@ export function createBetterAuth(
             const periodEnd = addOneMonth(now);
 
             try {
-              // 创建免费订阅
-              await prisma.subscription.create({
-                data: {
-                  userId: user.id,
-                  tier: SubscriptionTier.FREE,
-                  status: SubscriptionStatus.ACTIVE,
-                  currentPeriodStart: now,
-                  currentPeriodEnd: periodEnd,
-                },
+              await prisma.$transaction(async (tx) => {
+                // 创建免费订阅
+                await tx.subscription.create({
+                  data: {
+                    userId: user.id,
+                    tier: SubscriptionTier.FREE,
+                    status: SubscriptionStatus.ACTIVE,
+                    currentPeriodStart: now,
+                    currentPeriodEnd: periodEnd,
+                  },
+                });
+
+                // 创建配额
+                await tx.quota.create({
+                  data: {
+                    userId: user.id,
+                    monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
+                    monthlyUsed: 0,
+                    periodStartAt: now,
+                    periodEndAt: periodEnd,
+                  },
+                });
+
+                // 创建默认 API Key
+                const apiKeyBytes = randomBytes(API_KEY_LENGTH);
+                const fullKey = `${API_KEY_PREFIX}${apiKeyBytes.toString('hex')}`;
+                const keyHash = createHash('sha256')
+                  .update(fullKey)
+                  .digest('hex');
+                const keyPrefix = fullKey.substring(
+                  0,
+                  KEY_PREFIX_DISPLAY_LENGTH,
+                );
+
+                await tx.apiKey.create({
+                  data: {
+                    userId: user.id,
+                    name: 'Default',
+                    keyPrefix,
+                    keyHash,
+                    isActive: true,
+                  },
+                });
+
+                if (isAdminEmail(user.email, process.env.ADMIN_EMAILS)) {
+                  await tx.user.update({
+                    where: { id: user.id },
+                    data: { isAdmin: true },
+                  });
+                }
               });
-
-              // 创建配额
-              await prisma.quota.create({
-                data: {
-                  userId: user.id,
-                  monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
-                  monthlyUsed: 0,
-                  periodStartAt: now,
-                  periodEndAt: periodEnd,
-                },
-              });
-
-              // 创建默认 API Key
-              const apiKeyBytes = randomBytes(API_KEY_LENGTH);
-              const fullKey = `${API_KEY_PREFIX}${apiKeyBytes.toString('hex')}`;
-              const keyHash = createHash('sha256')
-                .update(fullKey)
-                .digest('hex');
-              const keyPrefix = fullKey.substring(0, KEY_PREFIX_DISPLAY_LENGTH);
-
-              await prisma.apiKey.create({
-                data: {
-                  userId: user.id,
-                  name: 'Default',
-                  keyPrefix,
-                  keyHash,
-                  isActive: true,
-                },
-              });
-
-              console.log(
-                `[BetterAuth] Initialized subscription, quota and API key for user ${user.id}`,
-              );
             } catch (error) {
-              // 如果已存在（幂等处理），忽略错误
               console.error(
-                `[BetterAuth] Failed to initialize subscription/quota for user ${user.id}:`,
+                `[BetterAuth] Failed to initialize user resources for ${user.id}:`,
                 error,
               );
+              await prisma.user
+                .delete({ where: { id: user.id } })
+                .catch(() => undefined);
+              throw new APIError('INTERNAL_SERVER_ERROR', {
+                message: 'Failed to initialize user resources',
+              });
             }
           },
         },
       },
     },
     plugins: [
-      // Bearer Token 插件：允许通过 Authorization: Bearer <token> 进行认证
-      // 适用于 OpenAI 兼容 API、移动应用、CLI 工具等非浏览器场景
-      bearer(),
+      jwt(jwtOptions),
       // Email OTP 插件：邮箱验证码验证
       emailOTP({
         sendVerificationOTP: async ({ email, otp, type }) => {

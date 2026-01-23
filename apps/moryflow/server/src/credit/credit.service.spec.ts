@@ -4,13 +4,12 @@
  * 测试积分系统的完整业务逻辑
  */
 
-// Note: expect.objectContaining returns 'any' type in assertions
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreditService } from './credit.service';
 import { PrismaService } from '../prisma';
 import { RedisService } from '../redis';
+import { DAILY_FREE_CREDITS } from '../config';
 import {
   createPrismaMock,
   MockPrismaService,
@@ -125,7 +124,7 @@ describe('CreditService', () => {
 
       const daily = await service.getDailyCredits(userId);
 
-      expect(daily).toBe(1000); // DAILY_FREE_CREDITS
+      expect(daily).toBe(DAILY_FREE_CREDITS);
     });
 
     it('已使用部分应返回剩余数量', async () => {
@@ -133,15 +132,15 @@ describe('CreditService', () => {
 
       const daily = await service.getDailyCredits(userId);
 
-      expect(daily).toBe(995); // 1000 - 5
+      expect(daily).toBe(DAILY_FREE_CREDITS - 5);
     });
 
     it('用完后应返回 0', async () => {
-      redisMock.get.mockResolvedValue('15'); // 全部用完
+      redisMock.get.mockResolvedValue(`${DAILY_FREE_CREDITS}`); // 全部用完
 
       const daily = await service.getDailyCredits(userId);
 
-      expect(daily).toBe(985); // 1000 - 15
+      expect(daily).toBe(0);
     });
 
     it('超额使用时应返回 0', async () => {
@@ -223,7 +222,7 @@ describe('CreditService', () => {
     });
 
     it('超出余额应产生欠费', async () => {
-      redisMock.get.mockResolvedValue('995'); // 剩余日积分 5
+      redisMock.get.mockResolvedValue(`${DAILY_FREE_CREDITS - 5}`); // 剩余日积分 5
       prismaMock.subscriptionCredits.findUnique.mockResolvedValue(null);
       prismaMock.purchasedCredits.findMany.mockResolvedValue([]);
       prismaMock.creditDebt.findUnique.mockResolvedValue(null);
@@ -298,16 +297,16 @@ describe('CreditService', () => {
         periodEnd,
       );
 
-      expect(prismaMock.subscriptionCredits.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { userId },
-          create: expect.objectContaining({
-            userId,
-            creditsTotal: 1000,
-            creditsRemaining: 1000,
-          }),
-        }),
-      );
+      expect(
+        prismaMock.subscriptionCredits.upsert.mock.calls[0]?.[0],
+      ).toMatchObject({
+        where: { userId },
+        create: {
+          userId,
+          creditsTotal: 1000,
+          creditsRemaining: 1000,
+        },
+      });
     });
 
     it('应先抵扣欠费再写入订阅积分', async () => {
@@ -335,16 +334,16 @@ describe('CreditService', () => {
         periodEnd,
       );
 
-      expect(prismaMock.subscriptionCredits.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          create: expect.objectContaining({
-            creditsRemaining: 700,
-          }),
-          update: expect.objectContaining({
-            creditsRemaining: 700,
-          }),
-        }),
-      );
+      expect(
+        prismaMock.subscriptionCredits.upsert.mock.calls[0]?.[0],
+      ).toMatchObject({
+        create: {
+          creditsRemaining: 700,
+        },
+        update: {
+          creditsRemaining: 700,
+        },
+      });
     });
 
     it('发放 0 或负数应抛出 BadRequestException', async () => {
@@ -372,16 +371,16 @@ describe('CreditService', () => {
 
       await service.grantPurchasedCredits(userId, 500, 'order-123');
 
-      expect(prismaMock.purchasedCredits.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            userId,
-            amount: 500,
-            remaining: 500,
-            orderId: 'order-123',
-          }),
-        }),
-      );
+      expect(
+        prismaMock.purchasedCredits.create.mock.calls[0]?.[0],
+      ).toMatchObject({
+        data: {
+          userId,
+          amount: 500,
+          remaining: 500,
+          orderId: 'order-123',
+        },
+      });
     });
 
     it('应先抵扣欠费再创建购买积分', async () => {
@@ -397,13 +396,13 @@ describe('CreditService', () => {
 
       await service.grantPurchasedCredits(userId, 500, 'order-123');
 
-      expect(prismaMock.purchasedCredits.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            remaining: 300,
-          }),
-        }),
-      );
+      expect(
+        prismaMock.purchasedCredits.create.mock.calls[0]?.[0],
+      ).toMatchObject({
+        data: {
+          remaining: 300,
+        },
+      });
     });
 
     it('发放 0 或负数应抛出 BadRequestException', async () => {

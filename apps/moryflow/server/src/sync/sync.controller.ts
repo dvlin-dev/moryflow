@@ -53,7 +53,7 @@ export class SyncController {
     @CurrentUser() user: CurrentUserDto,
     @Body() body: SyncDiffRequestDto,
   ): Promise<SyncDiffResponseDto> {
-    return this.syncService.calculateDiff(user.id, user.tier, body);
+    return this.syncService.calculateDiff(user.id, user.subscriptionTier, body);
   }
 
   /**

@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { SiteType, SiteStatus } from '../../generated/prisma/enums';
-import type { CurrentUserDto, UserTier } from '../types';
+import type { CurrentUserDto, SubscriptionTier } from '../types';
 import type { CreateSiteDto, UpdateSiteDto, SiteResponseDto } from './dto';
 import {
   RESERVED_SUBDOMAINS,
@@ -40,7 +40,7 @@ export class SiteService {
   /**
    * 检查用户是否为付费用户
    */
-  private isPaidUser(tier: UserTier): boolean {
+  private isPaidUser(tier: SubscriptionTier): boolean {
     return tier !== 'free';
   }
 
@@ -148,7 +148,7 @@ export class SiteService {
    */
   async checkUserSiteLimit(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
   ): Promise<{ allowed: boolean; message?: string }> {
     const quota = getQuotaConfig(tier);
 
@@ -180,7 +180,10 @@ export class SiteService {
     dto: CreateSiteDto,
   ): Promise<SiteResponseDto> {
     // 检查站点数量限制
-    const limitCheck = await this.checkUserSiteLimit(user.id, user.tier);
+    const limitCheck = await this.checkUserSiteLimit(
+      user.id,
+      user.subscriptionTier,
+    );
     if (!limitCheck.allowed) {
       throw new ForbiddenException(limitCheck.message);
     }
@@ -192,7 +195,7 @@ export class SiteService {
     }
 
     // 计算过期时间（免费用户 1 年）
-    const expiresAt = this.isPaidUser(user.tier)
+    const expiresAt = this.isPaidUser(user.subscriptionTier)
       ? null
       : new Date(Date.now() + FREE_USER_SITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
@@ -204,7 +207,7 @@ export class SiteService {
         type: dto.type,
         title: dto.title,
         description: dto.description,
-        showWatermark: !this.isPaidUser(user.tier),
+        showWatermark: !this.isPaidUser(user.subscriptionTier),
         expiresAt,
       },
       include: {
@@ -318,7 +321,7 @@ export class SiteService {
   async updateSite(
     siteId: string,
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
     dto: UpdateSiteDto,
   ): Promise<SiteResponseDto> {
     // 验证站点所有权

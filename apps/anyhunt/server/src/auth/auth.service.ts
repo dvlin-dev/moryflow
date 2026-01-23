@@ -1,14 +1,17 @@
 /**
- * [INPUT]: (ExpressRequest | token: string) - HTTP 请求或 Bearer Token
- * [OUTPUT]: (Session & User) | null - 用户会话与完整用户信息
- * [POS]: 认证核心服务，基于 Better Auth，被所有需要鉴权的接口依赖
+ * [INPUT]: ExpressRequest（Cookie/Headers）与 Auth 配置依赖
+ * [OUTPUT]: Better Auth 实例与可验证的用户会话信息
+ * [POS]: 认证核心服务，封装 Better Auth 实例与会话查询
+ *
+ * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
  */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
 import { PrismaService } from '../prisma';
 import { EmailService } from '../email';
-import { createBetterAuth, Auth } from './better-auth';
+import { createBetterAuth, Auth, isAdminEmail } from './better-auth';
 import type { CurrentUserDto } from '../types';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -17,12 +20,18 @@ export class AuthService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly redis: RedisService,
   ) {}
 
   onModuleInit() {
     this.auth = createBetterAuth(
       this.prisma,
       this.emailService.sendOTP.bind(this.emailService),
+      {
+        get: (key) => this.redis.get(key),
+        set: (key, value, ttl) => this.redis.set(key, value, ttl),
+        delete: (key) => this.redis.del(key),
+      },
     );
   }
 
@@ -35,9 +44,9 @@ export class AuthService implements OnModuleInit {
 
   /**
    * 从 Express Request 中获取 Session
-   * 返回完整的用户信息（包括 tier 和 isAdmin）
+   * 返回完整的用户信息（包括 subscriptionTier 和 isAdmin）
    */
-  async getSession(req: ExpressRequest): Promise<{
+  async getSessionFromRequest(req: ExpressRequest): Promise<{
     session: { id: string; expiresAt: Date };
     user: CurrentUserDto;
   } | null> {
@@ -79,6 +88,22 @@ export class AuthService implements OnModuleInit {
       return null;
     }
 
+    let isAdmin = fullUser.isAdmin;
+    if (!isAdmin && isAdminEmail(fullUser.email, process.env.ADMIN_EMAILS)) {
+      try {
+        await this.prisma.user.update({
+          where: { id: fullUser.id },
+          data: { isAdmin: true },
+        });
+        isAdmin = true;
+      } catch (error) {
+        console.error(
+          `[AuthService] Failed to promote admin for ${fullUser.id}:`,
+          error,
+        );
+      }
+    }
+
     return {
       session: {
         id: session.session.id,
@@ -88,57 +113,8 @@ export class AuthService implements OnModuleInit {
         id: fullUser.id,
         email: fullUser.email,
         name: fullUser.name,
-        tier: fullUser.subscription?.tier ?? 'FREE',
-        isAdmin: fullUser.isAdmin,
-      },
-    };
-  }
-
-  /**
-   * 验证用户是否是管理员
-   */
-  async isAdmin(userId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { isAdmin: true },
-    });
-    return user?.isAdmin ?? false;
-  }
-
-  /**
-   * 根据 Token 获取 Session（用于 API 认证）
-   */
-  async getSessionByToken(token: string): Promise<{
-    session: { id: string; token: string; expiresAt: Date };
-    user: CurrentUserDto;
-  } | null> {
-    // 查找有效的 session
-    const session = await this.prisma.session.findUnique({
-      where: { token },
-      include: {
-        user: {
-          include: { subscription: true },
-        },
-      },
-    });
-
-    // session 不存在、已过期、或用户已被软删除
-    if (!session || session.expiresAt < new Date() || session.user.deletedAt) {
-      return null;
-    }
-
-    return {
-      session: {
-        id: session.id,
-        token: session.token,
-        expiresAt: session.expiresAt,
-      },
-      user: {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        tier: session.user.subscription?.tier ?? 'FREE',
-        isAdmin: session.user.isAdmin,
+        subscriptionTier: fullUser.subscription?.tier ?? 'FREE',
+        isAdmin,
       },
     };
   }

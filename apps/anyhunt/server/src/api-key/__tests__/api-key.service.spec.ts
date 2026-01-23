@@ -337,7 +337,7 @@ describe('ApiKeyService', () => {
       const result = await service.validateKey(validApiKey);
 
       expect(result.userId).toBe('user_1');
-      expect(result.user.tier).toBe('PRO');
+      expect(result.user.subscriptionTier).toBe('PRO');
       expect(result.user.email).toBe('test@example.com');
     });
 
@@ -360,7 +360,7 @@ describe('ApiKeyService', () => {
 
       const result = await service.validateKey(validApiKey);
 
-      expect(result.user.tier).toBe('FREE');
+      expect(result.user.subscriptionTier).toBe('FREE');
     });
 
     it('should use cache when available', async () => {
@@ -372,7 +372,7 @@ describe('ApiKeyService', () => {
           id: 'user_1',
           email: 'cached@example.com',
           name: null,
-          tier: 'FREE',
+          subscriptionTier: 'FREE',
           isAdmin: false,
         },
       };

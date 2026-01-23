@@ -9,5 +9,5 @@ export type {
   ImageGenerationOptions,
   ImageGenerationResult,
   ImageUsage,
-  UserTier,
+  SubscriptionTier,
 } from './types';

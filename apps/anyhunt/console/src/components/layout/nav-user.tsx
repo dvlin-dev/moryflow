@@ -1,14 +1,13 @@
 /**
  * [PROPS]: NavUserProps
  * [EMITS]: logout (click)
- * [POS]: Console 用户菜单与登出入口（Better Auth）
+ * [POS]: Console 用户菜单与登出入口（Access Token）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { Logout01Icon, MoreVerticalIcon } from '@hugeicons/core-free-icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
-import { authClient } from '@/lib/auth-client';
 
 import {
   Avatar,
@@ -38,16 +37,10 @@ export interface NavUserProps {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
-  const clearSession = useAuthStore((state) => state.clearSession);
+  const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = async () => {
-    try {
-      // 调用后端清除 Session Cookie
-      await authClient.signOut();
-    } catch {
-      // 即使后端调用失败，也要清除前端状态
-    }
-    clearSession();
+    await logout();
     navigate('/login');
   };
 

@@ -20,11 +20,13 @@ export const PAGINATION_DEFAULT_LIMIT = 50;
 /**
  * 设置用户等级请求
  */
-export const SetUserTierSchema = z.object({
-  tier: z.enum(['free', 'basic', 'pro', 'license']),
+export const SetSubscriptionTierSchema = z.object({
+  tier: z.enum(['free', 'starter', 'basic', 'pro', 'license']),
 });
 
-export class SetUserTierDto extends createZodDto(SetUserTierSchema) {}
+export class SetSubscriptionTierDto extends createZodDto(
+  SetSubscriptionTierSchema,
+) {}
 
 /**
  * 发放积分请求
@@ -68,16 +70,6 @@ export const PaginationSchema = z.object({
 });
 
 export class PaginationDto extends createZodDto(PaginationSchema) {}
-
-/**
- * 管理员登录请求
- */
-export const AdminLoginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-export class AdminLoginDto extends createZodDto(AdminLoginSchema) {}
 
 /**
  * 发送邮件请求

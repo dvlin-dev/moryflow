@@ -1,31 +1,31 @@
-import { useState } from 'react'
-import { Button } from '@anyhunt/ui/components/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@anyhunt/ui/components/avatar'
-import { Badge } from '@anyhunt/ui/components/badge'
-import { Separator } from '@anyhunt/ui/components/separator'
-import { LogOut, CreditCard, Crown, Plus, ArrowUpCircle } from 'lucide-react'
-import { useAuth, type UserInfo, TIER_DISPLAY_NAMES, TIER_COLORS } from '@/lib/server'
-import { useTranslation } from '@/lib/i18n'
-import { SubscriptionDialog } from './subscription-dialog'
-import { CreditPacksDialog } from './credit-packs-dialog'
-import { DeleteAccountDialog } from './delete-account-dialog'
+import { useState } from 'react';
+import { Button } from '@anyhunt/ui/components/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@anyhunt/ui/components/avatar';
+import { Badge } from '@anyhunt/ui/components/badge';
+import { Separator } from '@anyhunt/ui/components/separator';
+import { LogOut, CreditCard, Crown, Plus, ArrowUpCircle } from 'lucide-react';
+import { useAuth, type UserInfo, TIER_DISPLAY_NAMES, TIER_COLORS } from '@/lib/server';
+import { useTranslation } from '@/lib/i18n';
+import { SubscriptionDialog } from './subscription-dialog';
+import { CreditPacksDialog } from './credit-packs-dialog';
+import { DeleteAccountDialog } from './delete-account-dialog';
 
 type UserProfileProps = {
-  user: UserInfo
-}
+  user: UserInfo;
+};
 
 /**
  * 用户信息展示组件
  * 显示用户头像、昵称、邮箱、会员等级、积分余额等
  */
 export const UserProfile = ({ user }: UserProfileProps) => {
-  const { t } = useTranslation('auth')
-  const { logout, isLoading } = useAuth()
-  const [subscriptionOpen, setSubscriptionOpen] = useState(false)
-  const [creditPacksOpen, setCreditPacksOpen] = useState(false)
+  const { t } = useTranslation('auth');
+  const { logout, isLoading } = useAuth();
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [creditPacksOpen, setCreditPacksOpen] = useState(false);
 
-  const tierDisplayName = TIER_DISPLAY_NAMES[user.tier] || user.tier
-  const tierColor = TIER_COLORS[user.tier] || 'text-muted-foreground'
+  const tierDisplayName = TIER_DISPLAY_NAMES[user.subscriptionTier] || user.subscriptionTier;
+  const tierColor = TIER_COLORS[user.subscriptionTier] || 'text-muted-foreground';
 
   // 获取用户名首字母作为头像备用
   const initials = (user.name || user.email)
@@ -33,10 +33,10 @@ export const UserProfile = ({ user }: UserProfileProps) => {
     .filter(Boolean)
     .slice(0, 2)
     .map((s) => s[0].toUpperCase())
-    .join('')
+    .join('');
 
   // 是否可以升级（非 license 用户）
-  const canUpgrade = user.tier !== 'license' && user.tier !== 'pro'
+  const canUpgrade = user.subscriptionTier !== 'license' && user.subscriptionTier !== 'pro';
 
   return (
     <div className="space-y-6">
@@ -61,12 +61,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
             <p className="text-xs text-amber-600">{t('emailNotVerified')}</p>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => logout()}
-          disabled={isLoading}
-        >
+        <Button variant="outline" size="sm" onClick={() => logout()} disabled={isLoading}>
           <LogOut className="mr-2 h-4 w-4" />
           {t('logout')}
         </Button>
@@ -155,9 +150,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">{t('deleteAccount')}</p>
-              <p className="text-sm text-muted-foreground">
-                {t('deleteAccountWarning')}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('deleteAccountWarning')}</p>
             </div>
             <DeleteAccountDialog user={user} onDeleted={() => logout()} />
           </div>
@@ -168,11 +161,11 @@ export const UserProfile = ({ user }: UserProfileProps) => {
       <SubscriptionDialog
         open={subscriptionOpen}
         onOpenChange={setSubscriptionOpen}
-        currentTier={user.tier}
+        currentTier={user.subscriptionTier}
       />
 
       {/* 积分包购买 Dialog */}
       <CreditPacksDialog open={creditPacksOpen} onOpenChange={setCreditPacksOpen} />
     </div>
-  )
-}
+  );
+};

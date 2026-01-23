@@ -1,6 +1,9 @@
 /**
- * Testcontainers 封装
- * 提供 PostgreSQL 和 Redis 容器的启动和停止
+ * [PROVIDES]: TestContainers - PostgreSQL/Redis/Vector 测试容器生命周期管理
+ * [DEPENDS]: @testcontainers/postgresql, @testcontainers/redis, prisma CLI
+ * [POS]: 集成测试启动与迁移入口，供 test/helpers 调用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import {
   PostgreSqlContainer,
@@ -14,6 +17,7 @@ import { execSync } from 'child_process';
 
 export class TestContainers {
   private static pgContainer: StartedPostgreSqlContainer | null = null;
+  private static vectorContainer: StartedPostgreSqlContainer | null = null;
   private static redisContainer: StartedRedisContainer | null = null;
   private static initialized = false;
 
@@ -28,24 +32,34 @@ export class TestContainers {
     console.log('[TestContainers] Starting containers...');
 
     // 并行启动容器
-    const [pg, redis] = await Promise.all([
+    const [pg, redis, vector] = await Promise.all([
       new PostgreSqlContainer('postgres:16-alpine')
         .withDatabase('aiget_test')
         .withUsername('test')
         .withPassword('test')
         .start(),
       new RedisContainer('redis:7-alpine').start(),
+      new PostgreSqlContainer('pgvector/pgvector:pg16')
+        .withDatabase('aiget_vector_test')
+        .withUsername('test')
+        .withPassword('test')
+        .start(),
     ]);
 
     this.pgContainer = pg;
+    this.vectorContainer = vector;
     this.redisContainer = redis;
 
     // 设置环境变量
     process.env.DATABASE_URL = pg.getConnectionUri();
     process.env.REDIS_URL = redis.getConnectionUrl();
+    process.env.VECTOR_DATABASE_URL = vector.getConnectionUri();
 
     console.log(`[TestContainers] PostgreSQL: ${process.env.DATABASE_URL}`);
     console.log(`[TestContainers] Redis: ${process.env.REDIS_URL}`);
+    console.log(
+      `[TestContainers] Vector PostgreSQL: ${process.env.VECTOR_DATABASE_URL}`,
+    );
 
     // 运行 Prisma migrate
     await this.runMigrations();
@@ -60,9 +74,14 @@ export class TestContainers {
   static async stop(): Promise<void> {
     console.log('[TestContainers] Stopping containers...');
 
-    await Promise.all([this.pgContainer?.stop(), this.redisContainer?.stop()]);
+    await Promise.all([
+      this.pgContainer?.stop(),
+      this.vectorContainer?.stop(),
+      this.redisContainer?.stop(),
+    ]);
 
     this.pgContainer = null;
+    this.vectorContainer = null;
     this.redisContainer = null;
     this.initialized = false;
 
@@ -75,11 +94,19 @@ export class TestContainers {
   private static async runMigrations(): Promise<void> {
     console.log('[TestContainers] Running migrations...');
     try {
-      execSync('npx prisma db push --skip-generate', {
+      execSync('npx prisma db push --config prisma.main.config.ts', {
         cwd: process.cwd(),
         env: {
           ...process.env,
           DATABASE_URL: process.env.DATABASE_URL,
+        },
+        stdio: 'pipe',
+      });
+      execSync('npx prisma db push --config prisma.vector.config.ts', {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          VECTOR_DATABASE_URL: process.env.VECTOR_DATABASE_URL,
         },
         stdio: 'pipe',
       });
@@ -100,14 +127,28 @@ export class TestContainers {
 
     console.log('[TestContainers] Resetting database...');
     try {
-      execSync('npx prisma db push --force-reset --skip-generate', {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          DATABASE_URL: process.env.DATABASE_URL,
+      execSync(
+        'npx prisma db push --force-reset --config prisma.main.config.ts',
+        {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            DATABASE_URL: process.env.DATABASE_URL,
+          },
+          stdio: 'pipe',
         },
-        stdio: 'pipe',
-      });
+      );
+      execSync(
+        'npx prisma db push --force-reset --config prisma.vector.config.ts',
+        {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            VECTOR_DATABASE_URL: process.env.VECTOR_DATABASE_URL,
+          },
+          stdio: 'pipe',
+        },
+      );
       console.log('[TestContainers] Database reset completed');
     } catch (error) {
       console.error('[TestContainers] Database reset failed:', error);
@@ -122,6 +163,7 @@ export class TestContainers {
     return (
       this.initialized &&
       this.pgContainer !== null &&
+      this.vectorContainer !== null &&
       this.redisContainer !== null
     );
   }
@@ -134,6 +176,16 @@ export class TestContainers {
       throw new Error('PostgreSQL container not started');
     }
     return this.pgContainer.getConnectionUri();
+  }
+
+  /**
+   * 获取 Vector PostgreSQL 连接 URI
+   */
+  static getVectorPostgresUri(): string {
+    if (!this.vectorContainer) {
+      throw new Error('Vector PostgreSQL container not started');
+    }
+    return this.vectorContainer.getConnectionUri();
   }
 
   /**

@@ -1,3 +1,9 @@
+/**
+ * [INPUT]: Authorization: Bearer <accessToken>
+ * [OUTPUT]: 注入 request.user/session 或抛出 401
+ * [POS]: 全局鉴权守卫（Moryflow API 入口）
+ */
+
 import {
   Injectable,
   CanActivate,
@@ -6,13 +12,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { AuthService } from './auth.service';
+import { AuthTokensService } from './auth.tokens.service';
 import { IS_PUBLIC_KEY } from './decorators';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private readonly authService: AuthService,
+    private readonly tokensService: AuthTokensService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -28,16 +34,20 @@ export class AuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const session = await this.authService.getSession(request);
 
-    if (!session) {
-      throw new UnauthorizedException('Invalid or expired session');
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Missing access token');
     }
 
-    // 附加用户信息到请求对象（使用扩展后的 Request 类型）
+    const token = authHeader.substring(7);
+    const session = await this.tokensService.verifyAccessToken(token);
+    if (!session) {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
+
     request.user = session.user;
     request.session = session.session;
-
     return true;
   }
 }

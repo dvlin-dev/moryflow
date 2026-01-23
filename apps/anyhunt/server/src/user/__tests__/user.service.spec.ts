@@ -135,7 +135,7 @@ describe('UserService', () => {
         id: 'user-1',
         email: 'test@example.com',
         name: 'Test User',
-        tier: 'PRO',
+        subscriptionTier: 'PRO',
         isAdmin: false,
         quota: {
           dailyLimit: 0,
@@ -165,7 +165,7 @@ describe('UserService', () => {
 
       const result = await service.getUserProfile('user-1');
 
-      expect(result.tier).toBe('FREE');
+      expect(result.subscriptionTier).toBe('FREE');
     });
 
     it('should ensure quota exists even when quota record is missing', async () => {

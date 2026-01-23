@@ -1,6 +1,9 @@
 /**
- * QuotaService 集成测试
- * 使用 Testcontainers 进行真实数据库测试
+ * [INPUT]: QuotaService, QuotaRepository, PrismaService, RedisService
+ * [OUTPUT]: 配额生命周期/扣减/并发控制的集成覆盖
+ * [POS]: 集成测试，验证 QuotaService + Redis + Prisma + TestContainers
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -9,6 +12,8 @@ import { TestContainers } from '../../../test/helpers';
 import { QuotaService } from '../quota.service';
 import { QuotaRepository } from '../quota.repository';
 import { QuotaModule } from '../quota.module';
+import { getUtcDateKey } from '../daily-credits.utils';
+import { VectorPrismaModule } from '../../vector-prisma';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisModule } from '../../redis/redis.module';
@@ -35,6 +40,7 @@ describe('QuotaService (Integration)', () => {
           isGlobal: true,
           envFilePath: '.env.test',
         }),
+        VectorPrismaModule,
         PrismaModule,
         RedisModule,
         QuotaModule,
@@ -69,6 +75,9 @@ describe('QuotaService (Integration)', () => {
     // 清理 Redis
     await redis.del(`cc:${testUserId}`);
     await redis.del(`rl:${testUserId}:*`);
+    await redis.del(
+      `credits:daily_used:${testUserId}:${getUtcDateKey(new Date())}`,
+    );
   });
 
   // ============ 基本流程测试 ============

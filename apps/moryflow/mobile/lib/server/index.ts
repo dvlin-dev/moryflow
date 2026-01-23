@@ -31,7 +31,7 @@ export {
   parseAuthError,
   // API URL
   MEMBERSHIP_API_URL,
-} from '@anyhunt/api'
+} from '@anyhunt/api';
 
 export type {
   UserTier,
@@ -47,29 +47,24 @@ export type {
   MembershipModelsResponse,
   MembershipAuthState,
   BetterAuthError,
-} from '@anyhunt/api'
+} from '@anyhunt/api';
 
 // ── Mobile 特有导出 ──────────────────────────────────────
 
-export type { UserInfo, ModelsResponse } from './types'
+export type { UserInfo, ModelsResponse } from './types';
 
 // 验证工具
-export {
-  PASSWORD_CONFIG,
-  validateEmail,
-  validatePassword,
-  generateUsername,
-} from './validation'
+export { PASSWORD_CONFIG, validateEmail, validatePassword, generateUsername } from './validation';
 
 // 存储
 export {
-  getStoredToken,
-  setStoredToken,
-  clearStoredToken,
+  getStoredRefreshToken,
+  setStoredRefreshToken,
+  clearStoredRefreshToken,
   getStoredUserCache,
   setStoredUserCache,
   clearStoredUserCache,
-} from './storage'
+} from './storage';
 
 // API 客户端和便捷函数
 export {
@@ -81,29 +76,35 @@ export {
   updateProfile,
   fetchMembershipModels,
   deleteAccount,
-} from './api'
+} from './api';
 
 // 认证 API（Mobile 特有）
 export {
   signInWithEmail,
   signUpWithEmail,
-  signOutFromServer,
   sendVerificationOTP,
   verifyEmailOTP,
-  extractToken,
   extractUser,
   type BetterAuthResponse,
   type AuthUser,
-} from './auth-api'
+} from './auth-api';
 
-// 预注册 API
-export { preRegisterApi, type SendOtpParams, type VerifyParams, type VerifyResult } from './pre-register-api'
+// Auth Session
+export {
+  getAccessToken,
+  setAccessToken,
+  refreshAccessToken,
+  clearAuthSession,
+  logoutFromServer,
+} from './auth-session';
 
 // Context & Hooks
 export {
   MembershipProvider,
+  AuthError,
+  isAuthError,
   useMembership,
   useMembershipUser,
   useMembershipModels,
   useMembershipAuth,
-} from './context'
+} from './context';

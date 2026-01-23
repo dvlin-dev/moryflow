@@ -1,22 +1,17 @@
 /**
  * 用户管理页面
  */
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import {
-  PageHeader,
-  TierBadge,
-  TableSkeleton,
-  SimplePagination,
-} from '@/components/shared'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { PageHeader, TierBadge, TableSkeleton, SimplePagination } from '@/components/shared';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -24,27 +19,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { usePagination } from '@/hooks'
-import { formatDate, formatNumber } from '@/lib/format'
-import { TIER_OPTIONS } from '@/constants/tier'
-import { useUsers, useSetUserTier, SetTierDialog } from '@/features/users'
-import type { User, UserTier } from '@/types/api'
-import { Eye, Settings } from 'lucide-react'
+} from '@/components/ui/table';
+import { usePagination } from '@/hooks';
+import { formatDate, formatNumber } from '@/lib/format';
+import { TIER_OPTIONS } from '@/constants/tier';
+import { useUsers, useSetUserTier, SetTierDialog } from '@/features/users';
+import type { User, UserTier } from '@/types/api';
+import { Eye, Settings } from 'lucide-react';
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
-const TIER_FILTER_OPTIONS = [
-  { value: 'all', label: '全部等级' },
-  ...TIER_OPTIONS,
-]
+const TIER_FILTER_OPTIONS = [{ value: 'all', label: '全部等级' }, ...TIER_OPTIONS];
 
 /** 删除状态筛选选项 */
 const DELETED_FILTER_OPTIONS = [
   { value: 'all', label: '全部用户' },
   { value: 'active', label: '活跃用户' },
   { value: 'deleted', label: '已删除用户' },
-]
+];
 
 const USER_TABLE_COLUMNS = [
   { width: 'w-24' },
@@ -55,52 +47,52 @@ const USER_TABLE_COLUMNS = [
   { width: 'w-24' },
   { width: 'w-24' },
   { width: 'w-20' },
-]
+];
 
 /** 解析删除状态筛选值 */
 function parseDeletedFilter(value: string): boolean | undefined {
-  if (value === 'active') return false
-  if (value === 'deleted') return true
-  return undefined
+  if (value === 'active') return false;
+  if (value === 'deleted') return true;
+  return undefined;
 }
 
 export default function UsersPage() {
-  const [selectedTier, setSelectedTier] = useState('all')
-  const [deletedFilter, setDeletedFilter] = useState('all')
-  const [tierDialogOpen, setTierDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedTier, setSelectedTier] = useState('all');
+  const [deletedFilter, setDeletedFilter] = useState('all');
+  const [tierDialogOpen, setTierDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE })
+  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
   const { data, isLoading } = useUsers({
     page,
     pageSize: PAGE_SIZE,
     tier: selectedTier,
     deleted: parseDeletedFilter(deletedFilter),
-  })
+  });
 
-  const setTierMutation = useSetUserTier()
+  const setTierMutation = useSetUserTier();
 
-  const users = data?.users || []
-  const totalPages = getTotalPages(data?.pagination.count || 0)
+  const users = data?.users || [];
+  const totalPages = getTotalPages(data?.pagination.count || 0);
 
   const handleOpenTierDialog = (user: User) => {
-    setSelectedUser(user)
-    setTierDialogOpen(true)
-  }
+    setSelectedUser(user);
+    setTierDialogOpen(true);
+  };
 
   const handleSetTier = (tier: UserTier) => {
-    if (!selectedUser) return
+    if (!selectedUser) return;
     setTierMutation.mutate(
       { userId: selectedUser.id, tier },
       {
         onSuccess: () => {
-          setTierDialogOpen(false)
-          setSelectedUser(null)
+          setTierDialogOpen(false);
+          setSelectedUser(null);
         },
       }
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -111,8 +103,8 @@ export default function UsersPage() {
         <Select
           value={selectedTier}
           onValueChange={(value) => {
-            setSelectedTier(value)
-            resetPage()
+            setSelectedTier(value);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-40">
@@ -130,8 +122,8 @@ export default function UsersPage() {
         <Select
           value={deletedFilter}
           onValueChange={(value) => {
-            setDeletedFilter(value)
-            resetPage()
+            setDeletedFilter(value);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-40">
@@ -173,7 +165,7 @@ export default function UsersPage() {
                     {user.email}
                   </TableCell>
                   <TableCell>
-                    <TierBadge tier={user.tier} />
+                    <TierBadge tier={user.subscriptionTier} />
                   </TableCell>
                   <TableCell>
                     <span className="font-medium">{formatNumber(user.credits)}</span>
@@ -239,11 +231,11 @@ export default function UsersPage() {
         <SetTierDialog
           open={tierDialogOpen}
           onOpenChange={setTierDialogOpen}
-          currentTier={selectedUser.tier}
+          currentTier={selectedUser.subscriptionTier}
           onSubmit={handleSetTier}
           isLoading={setTierMutation.isPending}
         />
       )}
     </div>
-  )
+  );
 }

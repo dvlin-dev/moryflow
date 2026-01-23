@@ -25,7 +25,7 @@ export interface UserListItem {
   name: string | null;
   isAdmin: boolean;
   emailVerified: boolean;
-  tier: SubscriptionTier;
+  subscriptionTier: SubscriptionTier;
   subscriptionStatus: SubscriptionStatus | null;
   quota: UserQuota | null;
   screenshotCount: number;

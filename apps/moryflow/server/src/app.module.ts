@@ -30,7 +30,6 @@ import { ActivityLogModule } from './activity-log';
 import { SiteModule } from './site';
 import { AgentTraceModule } from './agent-trace';
 import { AlertModule } from './alert';
-import { PreRegisterModule } from './pre-register';
 import { OpenApiModule } from './openapi';
 
 @Module({
@@ -65,7 +64,6 @@ import { OpenApiModule } from './openapi';
     SiteModule,
     AgentTraceModule,
     AlertModule,
-    PreRegisterModule,
     OpenApiModule,
   ],
   providers: [{ provide: APP_PIPE, useClass: ZodValidationPipe }],

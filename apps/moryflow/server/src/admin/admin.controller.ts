@@ -1,11 +1,11 @@
 /**
- * Admin Controller
- * 管理员功能 API
+ * [INPUT]: Admin API 请求（Bearer access token + 请求体/查询参数）
+ * [OUTPUT]: 管理员视角的用户/统计/操作结果
+ * [POS]: 管理后台 API 入口（AdminGuard 统一鉴权）
  *
  * 认证机制：
- * - 登录/登出接口使用 @Public() 跳过认证
- * - 其他接口由全局 AuthGuard 验证 Session，AdminGuard 检查管理员权限
- * - 使用 HTTP-Only Cookie 管理 Session
+ * - 统一走 /api/auth/* 登录与刷新（access JWT + refresh）
+ * - AdminGuard 负责管理员权限校验
  */
 
 import {
@@ -16,8 +16,6 @@ import {
   Body,
   Param,
   Query,
-  Req,
-  Res,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
@@ -25,108 +23,32 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiCookieAuth,
+  ApiBearerAuth,
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
-import { CurrentUser, Public } from '../auth';
+import { CurrentUser } from '../auth';
 import { AdminGuard } from '../common/guards';
 import { AdminService } from './admin.service';
-import type { UserTier, CurrentUserDto } from '../types';
+import type { SubscriptionTier, CurrentUserDto } from '../types';
 import {
-  SetUserTierSchema,
+  SetSubscriptionTierSchema,
   GrantCreditsSchema,
   SetAdminPermissionSchema,
   PaginationSchema,
-  AdminLoginSchema,
   SendEmailSchema,
 } from './dto/admin.dto';
 
-/** Session Cookie 名称（与 Better Auth 保持一致） */
-const SESSION_COOKIE_NAME = 'better-auth.session_token';
-
-/** Session Cookie 配置 */
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  // 跨站请求需要 'none'，同站可用 'lax'
-  sameSite:
-    (process.env.COOKIE_SAME_SITE as 'lax' | 'none' | 'strict') || 'lax',
-  path: '/',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 天
-};
-
 @ApiTags('Admin')
-@ApiCookieAuth()
+@ApiBearerAuth()
 @Controller('api/admin')
 @UseGuards(AdminGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // ==================== 公开接口 ====================
-
-  @ApiOperation({
-    summary: '管理员登录',
-    description: '验证 ADMIN_PASSWORD，成功后设置 Session Cookie',
-  })
-  @ApiResponse({ status: 200, description: '登录成功' })
-  @ApiResponse({ status: 401, description: '密码错误' })
-  @Public()
-  @Post('login')
-  async login(
-    @Body() body: { email: string; password: string },
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const parsed = AdminLoginSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new BadRequestException(parsed.error.issues[0]?.message);
-    }
-
-    const result = await this.adminService.adminLogin(
-      parsed.data.email,
-      parsed.data.password,
-      req.ip,
-      req.headers['user-agent'],
-    );
-
-    // 设置 Session Cookie（Web 端备用）
-    res.cookie(SESSION_COOKIE_NAME, result.sessionToken, COOKIE_OPTIONS);
-
-    // 返回 token 供前端使用 Bearer 认证
-    return {
-      success: result.success,
-      user: result.user,
-      token: result.sessionToken,
-    };
-  }
-
-  @ApiOperation({
-    summary: '管理员登出',
-    description: '清除 Session Cookie 并删除服务端 Session',
-  })
-  @ApiResponse({ status: 200, description: '登出成功' })
-  @Public()
-  @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const sessionToken = (req.cookies as Record<string, string> | undefined)?.[
-      SESSION_COOKIE_NAME
-    ];
-
-    if (sessionToken) {
-      await this.adminService.adminLogout(sessionToken);
-    }
-
-    // 清除 Cookie
-    res.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
-
-    return { success: true };
-  }
-
   @ApiOperation({
     summary: '获取当前用户信息',
-    description: '验证 Session 有效性并返回当前管理员信息',
+    description: '验证 Access Token 并返回当前管理员信息',
   })
   @ApiResponse({ status: 200, description: '当前用户信息' })
   @ApiResponse({ status: 401, description: '未认证' })
@@ -157,7 +79,7 @@ export class AdminController {
   @ApiQuery({
     name: 'tier',
     required: false,
-    enum: ['free', 'basic', 'pro', 'license'],
+    enum: ['free', 'starter', 'basic', 'pro', 'license'],
     description: '用户等级筛选',
   })
   @ApiQuery({
@@ -183,7 +105,7 @@ export class AdminController {
   @ApiResponse({ status: 403, description: '无管理员权限' })
   @Get('users')
   async listUsers(
-    @Query('tier') tier?: UserTier,
+    @Query('tier') tier?: SubscriptionTier,
     @Query('deleted') deleted?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
@@ -289,16 +211,20 @@ export class AdminController {
   @ApiResponse({ status: 403, description: '无管理员权限' })
   @ApiResponse({ status: 404, description: '用户不存在' })
   @Put('users/:userId/tier')
-  async setUserTier(
+  async setSubscriptionTier(
     @CurrentUser() user: CurrentUserDto,
     @Param('userId') userId: string,
-    @Body() body: { tier: UserTier },
+    @Body() body: { tier: SubscriptionTier },
   ) {
-    const parsed = SetUserTierSchema.safeParse(body);
+    const parsed = SetSubscriptionTierSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues[0]?.message);
     }
-    return this.adminService.setUserTier(userId, parsed.data.tier, user.id);
+    return this.adminService.setSubscriptionTier(
+      userId,
+      parsed.data.tier,
+      user.id,
+    );
   }
 
   @ApiOperation({ summary: '发放积分', description: '手动为用户发放积分' })

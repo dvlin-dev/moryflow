@@ -19,9 +19,10 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 ## 约束
 
 - 仅管理员可访问
-- Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
-- 认证通过 HttpOnly Cookie 承载，无需前端存储 token
-- 登录与启动时通过 `/api/v1/user/me` 同步用户档案（含 isAdmin）
+- Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
+- refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
+- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/user/me` 同步用户档案（含 isAdmin）
+- `401 token_expired` 只允许刷新一次并重试原请求
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/tiptap`（Welcome Markdown Editor）
 - TipTap 统一从 `@anyhunt/tiptap` 根入口导入；样式仅引入 `@anyhunt/tiptap/styles/notion-editor.scss`（禁止深路径导入）
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
@@ -40,8 +41,11 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 ## 环境变量
 
 - `VITE_API_URL`：后端 API 地址（生产必填）
-- `VITE_AUTH_URL`：Auth 服务地址（生产必填）
 - 示例文件：`.env.example`
+
+## 测试
+
+- E2E：`pnpm test:e2e`（Playwright，启动本地 Vite dev server）
 
 ## 目录结构
 
@@ -82,14 +86,14 @@ feature-name/
 
 ## Key Files
 
-| File                               | Description                          |
-| ---------------------------------- | ------------------------------------ |
-| `lib/api-client.ts`                | HTTP client with cookie credentials  |
-| `lib/api-paths.ts`                 | Admin/user API endpoint constants    |
-| `lib/auth-client.ts`               | Better Auth official client instance |
-| `lib/job-utils.tsx`                | Job status rendering utilities       |
-| `stores/auth.ts`                   | Admin auth state (Zustand)           |
-| `components/layout/MainLayout.tsx` | Admin shell layout                   |
+| File                               | Description                       |
+| ---------------------------------- | --------------------------------- |
+| `lib/api-base.ts`                  | API base URL resolver             |
+| `lib/api-client.ts`                | HTTP client with access/refresh   |
+| `lib/api-paths.ts`                 | Admin/user API endpoint constants |
+| `lib/job-utils.tsx`                | Job status rendering utilities    |
+| `stores/auth.ts`                   | Admin auth state (Zustand)        |
+| `components/layout/MainLayout.tsx` | Admin shell layout                |
 
 ## Pages
 
@@ -147,7 +151,6 @@ export function useJobs() {
 admin/
 ├── /ui - UI components
 ├── @hugeicons/core-free-icons - Icon library
-├── better-auth - Official Better Auth client
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

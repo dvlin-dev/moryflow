@@ -1,121 +1,89 @@
 /**
- * 认证状态一致性属性测试
- * **Feature: admin-shadcn-refactor, Property 1: 认证状态一致性**
- * **Validates: Requirements 2.2, 4.3**
+ * AuthStore 单元测试
+ * 关注 access token 内存策略与刷新行为
  */
-import { describe, it, beforeEach } from 'vitest'
-import fc from 'fast-check'
-import { useAuthStore } from './auth'
+import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
+import { useAuthStore } from './auth';
 
-describe('属性 1: 认证状态一致性', () => {
+const createResponse = (data: unknown, init?: { ok?: boolean; status?: number }) => {
+  const ok = init?.ok ?? true;
+  const status = init?.status ?? (ok ? 200 : 400);
+  return {
+    ok,
+    status,
+    json: async () => data,
+  } as Response;
+};
+
+describe('AuthStore', () => {
+  const originalFetch = globalThis.fetch;
+
   beforeEach(() => {
-    // 重置 store 状态
     useAuthStore.setState({
       user: null,
+      accessToken: null,
       isAuthenticated: false,
-    })
-  })
+      isBootstrapping: false,
+    });
+  });
 
-  it('对于任意有效用户信息，setAuth 后 isAuthenticated 应为 true', () => {
-    fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        fc.emailAddress(),
-        fc.boolean(),
-        (userId, email, isAdmin) => {
-          const { setAuth } = useAuthStore.getState()
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
 
-          // 执行登录
-          setAuth({ id: userId, email, isAdmin })
+  it('logout 会清空本地认证状态', async () => {
+    globalThis.fetch = vi.fn(async () => createResponse({}));
 
-          // 获取更新后的状态
-          const state = useAuthStore.getState()
+    useAuthStore.setState({
+      user: { id: 'u1', email: 'admin@example.com', isAdmin: true },
+      accessToken: 'token-1',
+      isAuthenticated: true,
+    });
 
-          return (
-            state.isAuthenticated === true &&
-            state.user?.id === userId &&
-            state.user?.email === email &&
-            state.user?.isAdmin === isAdmin
-          )
-        }
-      ),
-      { numRuns: 100 }
-    )
-  })
+    await useAuthStore.getState().logout();
 
-  it('对于任意已登录状态，logout 后 isAuthenticated 应为 false', () => {
-    fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        fc.emailAddress(),
-        fc.boolean(),
-        (userId, email, isAdmin) => {
-          const { setAuth, logout } = useAuthStore.getState()
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+  });
 
-          // 先登录
-          setAuth({ id: userId, email, isAdmin })
+  it('refreshAccessToken 成功时写入 access token', async () => {
+    globalThis.fetch = vi.fn(async () => createResponse({ accessToken: 'access-123' }));
 
-          // 确认已登录
-          const loggedInState = useAuthStore.getState()
-          if (!loggedInState.isAuthenticated) return false
+    const ok = await useAuthStore.getState().refreshAccessToken();
 
-          // 执行登出
-          logout()
+    expect(ok).toBe(true);
+    expect(useAuthStore.getState().accessToken).toBe('access-123');
+  });
 
-          // 获取更新后的状态
-          const state = useAuthStore.getState()
+  it('ensureAccessToken 优先返回内存 token', async () => {
+    useAuthStore.setState({ accessToken: 'cached-token' });
 
-          return state.isAuthenticated === false && state.user === null
-        }
-      ),
-      { numRuns: 100 }
-    )
-  })
+    const token = await useAuthStore.getState().ensureAccessToken();
 
-  it('对于任意连续的登录/登出操作，状态应保持一致', () => {
-    fc.assert(
-      fc.property(
-        fc.array(
-          fc.oneof(
-            fc.tuple(
-              fc.constant('login'),
-              fc.string({ minLength: 1, maxLength: 20 }),
-              fc.emailAddress(),
-              fc.boolean()
-            ),
-            fc.tuple(fc.constant('logout'))
-          ),
-          { minLength: 1, maxLength: 10 }
-        ),
-        (operations) => {
-          let expectedAuthenticated = false
-          let expectedUser: { id: string; email: string; isAdmin: boolean } | null = null
+    expect(token).toBe('cached-token');
+  });
 
-          for (const op of operations) {
-            if (op[0] === 'login') {
-              const [, userId, email, isAdmin] = op as [string, string, string, boolean]
-              useAuthStore.getState().setAuth({ id: userId, email, isAdmin })
-              expectedAuthenticated = true
-              expectedUser = { id: userId, email, isAdmin }
-            } else {
-              useAuthStore.getState().logout()
-              expectedAuthenticated = false
-              expectedUser = null
-            }
-          }
+  it('bootstrap 会在 refresh 成功后拉取管理员信息', async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.endsWith('/api/auth/refresh')) {
+        return createResponse({ accessToken: 'access-boot' });
+      }
+      if (url.endsWith('/api/admin/me')) {
+        return createResponse({
+          user: { id: 'admin-1', email: 'admin@example.com', isAdmin: true },
+        });
+      }
+      return createResponse({});
+    });
 
-          const state = useAuthStore.getState()
-          return (
-            state.isAuthenticated === expectedAuthenticated &&
-            (expectedUser === null
-              ? state.user === null
-              : state.user?.id === expectedUser.id &&
-                state.user?.email === expectedUser.email &&
-                state.user?.isAdmin === expectedUser.isAdmin)
-          )
-        }
-      ),
-      { numRuns: 100 }
-    )
-  })
-})
+    await useAuthStore.getState().bootstrap();
+
+    const state = useAuthStore.getState();
+    expect(state.user?.id).toBe('admin-1');
+    expect(state.isAuthenticated).toBe(true);
+  });
+});

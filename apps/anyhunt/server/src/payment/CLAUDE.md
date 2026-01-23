@@ -18,7 +18,7 @@ Payment processing integration with Creem. Handles subscriptions, tier upgrades,
 
 - Uses Creem as payment provider
 - Webhook endpoint must be VERSION_NEUTRAL for Creem callbacks
-- Console endpoints use SessionGuard
+- Console endpoints use AuthGuard
 - Quota updates must be atomic
 
 ## File Structure

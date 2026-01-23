@@ -172,7 +172,12 @@ export class SiteController {
     @Param('id') id: string,
     @Body() body: UpdateSiteDto,
   ): Promise<SiteResponseDto> {
-    return this.siteService.updateSite(id, user.id, user.tier, body);
+    return this.siteService.updateSite(
+      id,
+      user.id,
+      user.subscriptionTier,
+      body,
+    );
   }
 
   /**

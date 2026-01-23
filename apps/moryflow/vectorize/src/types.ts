@@ -9,7 +9,7 @@
 export interface Env {
   AI: Ai;
   VECTOR_INDEX: VectorizeIndex;
-  API_SECRET: string;
+  AUTH_BASE_URL: string;
   EMBEDDING_MODEL: string;
   VECTOR_DIMENSIONS: string;
 }
@@ -77,4 +77,3 @@ export interface ErrorResponse {
   error: string;
   details?: string;
 }
-

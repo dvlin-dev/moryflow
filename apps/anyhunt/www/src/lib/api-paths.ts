@@ -3,7 +3,7 @@
  * [POS]: Centralized API endpoint definitions
  */
 
-// Digest Console API (Session auth)
+// Digest Console API (access token auth)
 export const DIGEST_API = {
   SUBSCRIPTIONS: '/api/v1/console/digest/subscriptions',
   INBOX: '/api/v1/console/digest/inbox',

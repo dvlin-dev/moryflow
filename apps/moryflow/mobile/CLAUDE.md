@@ -36,7 +36,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 | 文件/目录            | 类型 | 说明                                         |
 | -------------------- | ---- | -------------------------------------------- |
 | `app/`               | 目录 | 页面路由（Expo Router）                      |
-| `app/(auth)/`        | 目录 | 认证相关页面（登录、注册、忘记密码）         |
+| `app/(auth)/`        | 目录 | 认证相关页面（登录、注册、邮箱验证）         |
 | `app/(editor)/`      | 目录 | 编辑器页面                                   |
 | `app/(settings)/`    | 目录 | 设置页面                                     |
 | `app/(tabs)/`        | 目录 | Tab 页面组（主页、搜索；含快速创建草稿动作） |
@@ -71,6 +71,10 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - 日志输出统一走 `createLogger()`，减少直接 `console.*` 调用
 - ESLint 补充 React 版本检测配置，移除 lint 警告提示
 - ChatInputBar 移除附件占位回调，避免空实现代码
+- Auth 交互改为 access 内存 + refresh 安全存储，移除 pre-register 与忘记密码入口
+- Auth：接入 `@better-auth/expo`，移动端 Cookie/Session 由 SecureStore 管理
+- Auth Session refresh 增加网络失败清理，避免初始化阶段因网络异常中断
+- Auth Session 单元测试补齐（vitest）
 
 ## 依赖关系
 

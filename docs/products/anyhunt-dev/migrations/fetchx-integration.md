@@ -93,7 +93,7 @@ apps/
 
 - `apps/anyhunt/console` 已完成迁入并接入内置 auth client（`apps/anyhunt/console/src/lib/auth-client.ts`）。
 - 认证细节（已落地）：
-  - `baseUrl=https://server.anyhunt.app/api/v1/auth`
+  - `baseUrl=https://server.anyhunt.app/api/auth`
   - `clientType=web`
   - access token 仅内存，refresh token 走 HttpOnly Cookie
   - 401 时触发 refresh 重试一次
@@ -108,7 +108,7 @@ apps/
 
 - `apps/anyhunt/admin/www` 已完成迁入并接入内置 auth client（`apps/anyhunt/admin/www/src/lib/auth-client.ts`，管理端 API 统一由 `apps/anyhunt/server` 提供）。
 - 认证细节（已落地）：
-  - `baseUrl=https://server.anyhunt.app/api/v1/auth`
+  - `baseUrl=https://server.anyhunt.app/api/auth`
   - `clientType=web`
   - access token 仅内存，refresh token 走 HttpOnly Cookie
   - 401 时触发 refresh 重试一次
@@ -121,12 +121,12 @@ apps/
 ### Phase 4：Auth 模块统一（内置）
 
 - 认证模块统一在 `apps/anyhunt/server/src/auth` 内维护（不再引入独立认证服务）。
-- 保持 console/admin 走 session（`/api/v1/auth`）与 API Key 双轨鉴权。
+- console/admin 统一走 accessToken（`/api/auth`）+ API Key 双轨鉴权。
 - 统一配置 OAuth/域名/cookie 域相关环境变量（以 Anyhunt Dev 为准）。
 
 ### Phase 5：Fetchx Server 权限切换与清理
 
-- 清理旧 Fetchx Auth 路由与中间件，确保 SessionGuard 与 ApiKeyGuard 生效。
+- 清理旧 Fetchx Auth 路由与中间件，确保 AuthGuard 与 ApiKeyGuard 生效。
 - 对外能力保持 API Key (`Authorization: Bearer <apiKey>`) + 限流。
 
 ## 五、删除清单（零兼容）
@@ -141,7 +141,7 @@ apps/
 - `anyhunt.app/fetchx` → Fetchx 模块页（`apps/anyhunt/www`）
 - `console.anyhunt.app` → Console 前端（Web）
 - `admin.anyhunt.app` → Admin 前端（Web）
-- `server.anyhunt.app/api/v1/auth/*` → Anyhunt Server Auth（内置）
+- `server.anyhunt.app/api/auth/*` → Anyhunt Server Auth（内置）
 - `server.anyhunt.app/api/v1/*` → Anyhunt Server（Fetchx 模块）
 
 ## 七、验收标准

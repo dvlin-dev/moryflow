@@ -7,6 +7,29 @@ import {
 
 describe('pricing.config', () => {
   const envSnapshot = { ...process.env };
+  const tierProductEnvKeys = [
+    'CREEM_PRODUCT_STARTER_MONTHLY',
+    'CREEM_PRODUCT_STARTER_YEARLY',
+    'CREEM_PRODUCT_BASIC_MONTHLY',
+    'CREEM_PRODUCT_BASIC_YEARLY',
+    'CREEM_PRODUCT_PRO_MONTHLY',
+    'CREEM_PRODUCT_PRO_YEARLY',
+  ];
+  const creditPackEnvKeys = [
+    'CREEM_PRODUCT_CREDITS_5000',
+    'CREEM_PRODUCT_CREDITS_10000',
+    'CREEM_PRODUCT_CREDITS_50000',
+  ];
+  const licenseEnvKeys = [
+    'CREEM_PRODUCT_LICENSE_STANDARD',
+    'CREEM_PRODUCT_LICENSE_PRO',
+  ];
+
+  const resetEnvKeys = (keys: string[]) => {
+    for (const key of keys) {
+      process.env[key] = '';
+    }
+  };
 
   beforeEach(() => {
     process.env = { ...envSnapshot };
@@ -17,8 +40,7 @@ describe('pricing.config', () => {
   });
 
   it('空产品 ID 不应写入 Tier 映射', () => {
-    process.env.CREEM_PRODUCT_STARTER_MONTHLY = '';
-    process.env.CREEM_PRODUCT_BASIC_MONTHLY = '';
+    resetEnvKeys(tierProductEnvKeys);
 
     const map = getProductTierMap();
 
@@ -27,6 +49,7 @@ describe('pricing.config', () => {
   });
 
   it('积分包配置仅收录有效产品 ID', () => {
+    resetEnvKeys(creditPackEnvKeys);
     process.env.CREEM_PRODUCT_CREDITS_5000 = 'credits_5000';
     process.env.CREEM_PRODUCT_CREDITS_10000 = '';
 
@@ -36,6 +59,7 @@ describe('pricing.config', () => {
   });
 
   it('License 配置仅收录有效产品 ID', () => {
+    resetEnvKeys(licenseEnvKeys);
     process.env.CREEM_PRODUCT_LICENSE_STANDARD = 'license_standard';
     process.env.CREEM_PRODUCT_LICENSE_PRO = '';
 

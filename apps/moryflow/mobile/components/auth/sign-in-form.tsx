@@ -1,144 +1,144 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Text } from '@/components/ui/text'
-import { useMembershipAuth, validateEmail, validatePassword } from '@/lib/server'
-import { Link, router } from 'expo-router'
-import * as React from 'react'
-import { type TextInput, View, ActivityIndicator } from 'react-native'
-import { useTranslation } from '@/lib/i18n'
+/**
+ * [PROPS]: 无
+ * [EMITS]: 登录成功后跳转首页或返回
+ * [POS]: 移动端登录表单
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ */
+
+import { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod/v3';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, router } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
+import { useTranslation } from '@/lib/i18n';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { PASSWORD_CONFIG, isAuthError, useMembershipAuth } from '@/lib/server';
+
+type SignInFormValues = {
+  email: string;
+  password: string;
+};
 
 export function SignInForm() {
-  const { t } = useTranslation('auth')
-  const { login, isLoading } = useMembershipAuth()
+  const { t } = useTranslation('auth');
+  const { login, isLoading } = useMembershipAuth();
 
-  const [email, setEmail] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [localError, setLocalError] = React.useState<{ email?: string; password?: string }>({})
-  const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const passwordInputRef = React.useRef<TextInput>(null)
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z.string().trim().email(t('emailInvalid')),
+        password: z.string().min(PASSWORD_CONFIG.MIN_LENGTH, t('passwordTooShort')),
+      }),
+    [t]
+  );
 
-  const clearError = () => setLocalError({})
+  const form = useForm<SignInFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '' },
+  });
 
-  async function onSubmit() {
-    clearError()
+  const isSubmitting = isLoading || form.formState.isSubmitting;
+  const rootError = form.formState.errors.root?.message;
 
-    // 验证邮箱
-    if (!email) {
-      setLocalError({ email: t('emailRequired') })
-      return
-    }
-
-    if (!validateEmail(email)) {
-      setLocalError({ email: t('emailInvalid') })
-      return
-    }
-
-    // 验证密码
-    const passwordValidation = validatePassword(password)
-    if (!passwordValidation.valid) {
-      setLocalError({ password: t('passwordTooShort') })
-      return
-    }
-
-    setIsSubmitting(true)
+  const handleSubmit = form.handleSubmit(async (values) => {
+    form.clearErrors('root');
     try {
-      await login(email, password)
-
-      // 登录成功后导航
+      await login(values.email, values.password);
       if (router.canGoBack()) {
-        router.back()
+        router.back();
       } else {
-        router.replace('/')
+        router.replace('/');
       }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t('signInFailed')
-      setLocalError({ password: errorMessage })
-    } finally {
-      setIsSubmitting(false)
+    } catch (err) {
+      if (isAuthError(err) && err.code === 'EMAIL_NOT_VERIFIED') {
+        router.replace({
+          pathname: '/(auth)/verify-email',
+          params: { email: values.email, mode: 'signin' },
+        });
+        return;
+      }
+      const message = err instanceof Error ? err.message : t('signInFailed');
+      form.setError('root', { message });
     }
-  }
-
-  function onEmailSubmitEditing() {
-    passwordInputRef.current?.focus()
-  }
-
-  const isButtonDisabled = isSubmitting || isLoading || !email || !password
+  });
 
   return (
     <View className="gap-6">
-      <Card className="border-border/0 shadow-none sm:border-border sm:shadow-sm sm:shadow-black/5">
+      <Card className="border-border/0 sm:border-border shadow-none sm:shadow-sm sm:shadow-black/5">
         <CardHeader>
           <CardTitle className="text-center text-xl sm:text-left">
             {t('signInToMoryFlow')}
           </CardTitle>
-          <CardDescription className="text-center sm:text-left">
-            {t('welcomeBack')}
-          </CardDescription>
+          <CardDescription className="text-center sm:text-left">{t('welcomeBack')}</CardDescription>
         </CardHeader>
         <CardContent className="gap-6">
-          <View className="gap-6">
-            <View className="gap-1.5">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input
-                id="email"
-                placeholder="m@example.com"
-                keyboardType="email-address"
-                autoComplete="email"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text)
-                  clearError()
-                }}
-                onSubmitEditing={onEmailSubmitEditing}
-                returnKeyType="next"
-                submitBehavior="submit"
-                editable={!isSubmitting}
+          <Form {...form}>
+            <View className="gap-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('email')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="m@example.com"
+                        keyboardType="email-address"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        editable={!isSubmitting}
+                        returnKeyType="next"
+                        onSubmitEditing={() => form.setFocus('password')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {localError.email ? (
-                <Text className="text-sm font-medium text-destructive">{localError.email}</Text>
-              ) : null}
-            </View>
 
-            <View className="gap-1.5">
-              <View className="flex-row items-center">
-                <Label htmlFor="password">{t('password')}</Label>
-                <Link asChild href={`/(auth)/forgot-password?email=${email}`}>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="ml-auto h-4 px-1 py-0 web:h-fit sm:h-4"
-                    disabled={isSubmitting}
-                  >
-                    <Text className="font-normal leading-4">{t('forgotPassword')}</Text>
-                  </Button>
-                </Link>
-              </View>
-              <Input
-                ref={passwordInputRef}
-                id="password"
-                secureTextEntry
-                placeholder={t('enterPassword')}
-                autoComplete="password"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text)
-                  clearError()
-                }}
-                onSubmitEditing={onSubmit}
-                returnKeyType="done"
-                submitBehavior="submit"
-                editable={!isSubmitting}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('password')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        secureTextEntry
+                        placeholder={t('enterPassword')}
+                        autoComplete="password"
+                        editable={!isSubmitting}
+                        returnKeyType="done"
+                        onSubmitEditing={handleSubmit}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {localError.password ? (
-                <Text className="text-sm font-medium text-destructive">{localError.password}</Text>
-              ) : null}
             </View>
-          </View>
+          </Form>
 
-          <Button onPress={onSubmit} disabled={isButtonDisabled} className="web:w-full">
+          {rootError ? (
+            <Text className="text-destructive text-sm font-medium">{rootError}</Text>
+          ) : null}
+
+          <Button onPress={handleSubmit} disabled={isSubmitting} className="web:w-full">
             {isSubmitting ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
@@ -147,9 +147,9 @@ export function SignInForm() {
           </Button>
 
           <View className="flex-row items-center justify-center gap-1">
-            <Text className="text-sm text-muted-foreground">{t('noAccount')}</Text>
+            <Text className="text-muted-foreground text-sm">{t('noAccount')}</Text>
             <Link asChild href="/(auth)/sign-up">
-              <Button variant="link" size="sm" className="h-4 px-1 py-0 web:h-fit sm:h-4">
+              <Button variant="link" size="sm" className="web:h-fit h-4 px-1 py-0 sm:h-4">
                 <Text>{t('signUp')}</Text>
               </Button>
             </Link>
@@ -157,5 +157,5 @@ export function SignInForm() {
         </CardContent>
       </Card>
     </View>
-  )
+  );
 }

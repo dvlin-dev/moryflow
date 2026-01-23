@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：Stream 请求改为强制携带 access token，移除 cookie-only 依赖
 - Agent Browser Playground：补充 Reasoning/Progress 映射、stream abort 处理、错误边界与分区组件
 - Agent Browser Playground：BrowserSessionPanel 支持 sections 裁剪，配合多页面拆分
 - Agent Browser Playground：Agent Chat 改为纯消息 UI，SSE 流显式发送 `start` 以保证消息追加

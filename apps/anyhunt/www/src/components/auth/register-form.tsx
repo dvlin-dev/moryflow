@@ -23,6 +23,7 @@ import {
 } from '@anyhunt/ui';
 import { cn } from '@anyhunt/ui/lib';
 import { authClient } from '@/lib/auth-client';
+import { refreshAccessToken } from '@/lib/auth-session';
 
 // 注册表单 Schema
 const registerFormSchema = z.object({
@@ -115,6 +116,11 @@ export function RegisterForm({
 
       if (verifyError) {
         throw new Error(verifyError.message ?? 'Verification failed');
+      }
+
+      const refreshed = await refreshAccessToken();
+      if (!refreshed) {
+        throw new Error('Failed to refresh session');
       }
 
       onSuccess?.();

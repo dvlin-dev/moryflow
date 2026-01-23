@@ -9,7 +9,7 @@
 * 🟢 You can import this file directly.
 */
 
-export const UserTier = {
+export const SubscriptionTier = {
   free: 'free',
   starter: 'starter',
   basic: 'basic',
@@ -17,7 +17,7 @@ export const UserTier = {
   license: 'license'
 } as const
 
-export type UserTier = (typeof UserTier)[keyof typeof UserTier]
+export type SubscriptionTier = (typeof SubscriptionTier)[keyof typeof SubscriptionTier]
 
 
 export const SubscriptionStatus = {

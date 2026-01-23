@@ -18,7 +18,6 @@ import {
 } from '../testing/mocks/prisma.mock';
 import {
   createMockSubscription,
-  createMockUser,
   createMockPaymentOrder,
 } from '../testing/factories';
 
@@ -74,15 +73,21 @@ describe('PaymentService', () => {
   // ==================== handleSubscriptionActive ====================
 
   describe('handleSubscriptionActive', () => {
-    it('应创建订阅并升级用户等级', async () => {
+    it('应创建订阅并更新等级', async () => {
       const userId = 'user-123';
       const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+      prismaMock.$transaction.mockImplementation(
+        async (callback: (tx: MockPrismaService) => Promise<unknown>) => {
+          if (typeof callback === 'function') {
+            return callback(prismaMock);
+          }
+          return callback;
+        },
+      );
+      prismaMock.subscription.findUnique.mockResolvedValue(null);
       prismaMock.subscription.upsert.mockResolvedValue(
         createMockSubscription({ userId, status: 'active' }),
-      );
-      prismaMock.user.update.mockResolvedValue(
-        createMockUser({ id: userId, tier: 'basic' }),
       );
 
       await service.handleSubscriptionActive({
@@ -94,11 +99,6 @@ describe('PaymentService', () => {
       });
 
       expect(prismaMock.subscription.upsert).toHaveBeenCalled();
-      expect(prismaMock.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: userId },
-        }),
-      );
       expect(creditServiceMock.grantSubscriptionCredits).toHaveBeenCalled();
     });
 
@@ -106,11 +106,17 @@ describe('PaymentService', () => {
       const userId = 'user-123';
       const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+      prismaMock.$transaction.mockImplementation(
+        async (callback: (tx: MockPrismaService) => Promise<unknown>) => {
+          if (typeof callback === 'function') {
+            return callback(prismaMock);
+          }
+          return callback;
+        },
+      );
+      prismaMock.subscription.findUnique.mockResolvedValue(null);
       prismaMock.subscription.upsert.mockResolvedValue(
         createMockSubscription({ userId, status: 'active' }),
-      );
-      prismaMock.user.update.mockResolvedValue(
-        createMockUser({ id: userId, tier: 'pro' }),
       );
 
       await service.handleSubscriptionActive({
@@ -126,6 +132,7 @@ describe('PaymentService', () => {
         expect.any(Number),
         expect.any(Date),
         periodEnd,
+        expect.anything(),
       );
     });
   });
@@ -135,6 +142,7 @@ describe('PaymentService', () => {
   describe('handleSubscriptionCanceled', () => {
     it('应将订阅状态更新为 canceled', async () => {
       const subscription = createMockSubscription({ status: 'active' });
+      const subscriptionId = subscription.creemSubscriptionId ?? 'sub-123';
       prismaMock.subscription.update.mockResolvedValue({
         ...subscription,
         status: 'canceled',
@@ -142,12 +150,12 @@ describe('PaymentService', () => {
       });
 
       await service.handleSubscriptionCanceled({
-        subscriptionId: subscription.creemSubscriptionId,
+        subscriptionId,
         userId: subscription.userId,
       });
 
       expect(prismaMock.subscription.update).toHaveBeenCalledWith({
-        where: { creemSubscriptionId: subscription.creemSubscriptionId },
+        where: { creemSubscriptionId: subscriptionId },
         data: { status: 'canceled', cancelAtPeriodEnd: true },
       });
     });
@@ -158,17 +166,18 @@ describe('PaymentService', () => {
   describe('handleSubscriptionPaused', () => {
     it('应将订阅状态更新为 paused', async () => {
       const subscription = createMockSubscription({ status: 'active' });
+      const subscriptionId = subscription.creemSubscriptionId ?? 'sub-123';
       prismaMock.subscription.update.mockResolvedValue({
         ...subscription,
         status: 'paused',
       });
 
       await service.handleSubscriptionPaused({
-        subscriptionId: subscription.creemSubscriptionId,
+        subscriptionId,
       });
 
       expect(prismaMock.subscription.update).toHaveBeenCalledWith({
-        where: { creemSubscriptionId: subscription.creemSubscriptionId },
+        where: { creemSubscriptionId: subscriptionId },
         data: { status: 'paused' },
       });
     });
@@ -177,26 +186,24 @@ describe('PaymentService', () => {
   // ==================== handleSubscriptionExpired ====================
 
   describe('handleSubscriptionExpired', () => {
-    it('应降级用户到 free 等级', async () => {
+    it('应将订阅降级到 free', async () => {
       const userId = 'user-123';
       const subscription = createMockSubscription({ userId, status: 'active' });
+      const subscriptionId = subscription.creemSubscriptionId ?? 'sub-123';
 
       prismaMock.subscription.update.mockResolvedValue({
         ...subscription,
         status: 'expired',
       });
-      prismaMock.user.update.mockResolvedValue(
-        createMockUser({ id: userId, tier: 'free' }),
-      );
 
       await service.handleSubscriptionExpired({
-        subscriptionId: subscription.creemSubscriptionId,
+        subscriptionId,
         userId,
       });
 
-      expect(prismaMock.user.update).toHaveBeenCalledWith({
-        where: { id: userId },
-        data: { tier: 'free' },
+      expect(prismaMock.subscription.update).toHaveBeenCalledWith({
+        where: { creemSubscriptionId: subscriptionId },
+        data: { status: 'expired', tier: 'free' },
       });
     });
   });

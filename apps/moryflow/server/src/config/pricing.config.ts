@@ -6,12 +6,12 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { UserTier } from '../types';
+import type { SubscriptionTier } from '../types';
 
 // ==================== Tier 相关配置 ====================
 
 /** Tier 优先级顺序 */
-export const TIER_ORDER: UserTier[] = [
+export const TIER_ORDER: SubscriptionTier[] = [
   'free',
   'starter',
   'basic',
@@ -184,9 +184,9 @@ export function getProductConfigs(): Map<string, ProductConfig> {
 }
 
 /** 获取产品 ID 到 Tier 的映射 */
-export function getProductTierMap(): Record<string, UserTier> {
+export function getProductTierMap(): Record<string, SubscriptionTier> {
   const products = getCreemProducts();
-  const map: Record<string, UserTier> = {};
+  const map: Record<string, SubscriptionTier> = {};
 
   if (products.STARTER_MONTHLY) map[products.STARTER_MONTHLY] = 'starter';
   if (products.STARTER_YEARLY) map[products.STARTER_YEARLY] = 'starter';
@@ -258,7 +258,7 @@ export const PROFIT_MULTIPLIER = 2.0;
 /**
  * 获取 Tier 优先级
  */
-export function getTierLevel(tier: UserTier): number {
+export function getTierLevel(tier: SubscriptionTier): number {
   return TIER_ORDER.indexOf(tier);
 }
 
@@ -267,8 +267,8 @@ export function getTierLevel(tier: UserTier): number {
  * @returns true 如果 userTier >= requiredTier
  */
 export function hasTierAccess(
-  userTier: UserTier,
-  requiredTier: UserTier,
+  userTier: SubscriptionTier,
+  requiredTier: SubscriptionTier,
 ): boolean {
   return getTierLevel(userTier) >= getTierLevel(requiredTier);
 }
@@ -277,7 +277,7 @@ export function hasTierAccess(
  * 根据产品 ID 获取 Tier
  * 优先使用显式映射，fallback 到名称推断
  */
-export function getTierFromProductId(productId: string): UserTier {
+export function getTierFromProductId(productId: string): SubscriptionTier {
   const tierMap = getProductTierMap();
   if (tierMap[productId]) {
     return tierMap[productId];

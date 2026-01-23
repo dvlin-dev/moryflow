@@ -18,7 +18,7 @@ export function createTempUserInfo(authUser: AuthUser, name?: string): UserInfo 
     emailVerified: false,
     name: authUser.name || name,
     createdAt: new Date().toISOString(),
-    tier: 'free',
+    subscriptionTier: 'free',
     tierInfo: { displayName: '免费用户', features: [], creditsPerMonth: 0 },
     credits: {
       daily: 0,

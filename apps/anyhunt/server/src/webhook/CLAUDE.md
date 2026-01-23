@@ -15,7 +15,7 @@ Webhook notification system for sending event notifications to user-configured e
 
 ## Constraints
 
-- Console endpoints use SessionGuard
+- Console endpoints use AuthGuard
 - Webhook secrets regenerated on request
 - Retry with exponential backoff on failure
 - Events: crawl.completed, batch-scrape.completed

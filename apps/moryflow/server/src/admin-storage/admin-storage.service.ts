@@ -1,6 +1,9 @@
 /**
- * Admin Storage Service
- * 云同步管理业务逻辑
+ * [INPUT]: 管理端存储查询/操作请求
+ * [OUTPUT]: Storage/Admin 相关统计与操作结果
+ * [POS]: 云同步管理业务逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
@@ -9,7 +12,6 @@ import { PrismaService } from '../prisma';
 import { StorageClient } from '../storage/storage.client';
 import { VectorizeClient } from '../vectorize/vectorize.client';
 import { getQuotaConfig } from '../quota/quota.config';
-import type { UserTier } from '../types';
 import type {
   StorageStatsResponse,
   VaultListQuery,
@@ -144,7 +146,14 @@ export class AdminStorageService {
     const vault = await this.prisma.vault.findUnique({
       where: { id: vaultId },
       include: {
-        user: { select: { id: true, email: true, name: true, tier: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            subscription: { select: { tier: true } },
+          },
+        },
         devices: {
           select: {
             id: true,
@@ -192,7 +201,7 @@ export class AdminStorageService {
           id: vault.user.id,
           email: vault.user.email,
           name: vault.user.name,
-          tier: vault.user.tier,
+          subscriptionTier: vault.user.subscription?.tier ?? 'free',
         },
       },
       stats: {
@@ -273,7 +282,12 @@ export class AdminStorageService {
         where,
         include: {
           user: {
-            select: { id: true, email: true, name: true, tier: true },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              subscription: { select: { tier: true } },
+            },
           },
         },
         orderBy: { storageUsed: 'desc' },
@@ -296,12 +310,13 @@ export class AdminStorageService {
 
     return {
       users: usages.map((usage) => {
-        const quota = getQuotaConfig(usage.user.tier as UserTier);
+        const tier = usage.user.subscription?.tier ?? 'free';
+        const quota = getQuotaConfig(tier);
         return {
           userId: usage.userId,
           email: usage.user.email,
           name: usage.user.name,
-          tier: usage.user.tier,
+          subscriptionTier: tier,
           storageUsed: Number(usage.storageUsed),
           storageLimit: quota.maxStorage,
           vectorizedCount: usage.vectorizedCount,
@@ -321,7 +336,12 @@ export class AdminStorageService {
   ): Promise<UserStorageDetailResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, tier: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        subscription: { select: { tier: true } },
+      },
     });
 
     if (!user) {
@@ -351,14 +371,15 @@ export class AdminStorageService {
     });
     const sizeMap = new Map(sizeAgg.map((s) => [s.vaultId, s._sum.size ?? 0]));
 
-    const quota = getQuotaConfig(user.tier as UserTier);
+    const tier = user.subscription?.tier ?? 'free';
+    const quota = getQuotaConfig(tier);
 
     return {
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-        tier: user.tier,
+        subscriptionTier: tier,
       },
       usage: {
         storageUsed: Number(usage?.storageUsed ?? 0),
@@ -439,7 +460,7 @@ export class AdminStorageService {
 
     // 删除 Vectorize 中的向量
     try {
-      await this.vectorizeClient.delete([file.fileId]);
+      await this.vectorizeClient.delete(file.userId, [file.fileId]);
     } catch (error) {
       this.logger.warn(`Failed to delete vector for ${file.fileId}`, error);
     }

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Anyhunt Dev 官网（`anyhunt.app`），包含模块页 `/fetchx`、`/memox`。基于 TanStack Start（SSR），包含 Fetchx Demo Playground 和 Digest Reader 首页。
+Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetchx`、`/memox`。基于 TanStack Start（SSR），包含 Fetchx Demo Playground 和 Digest Reader 主流程。
 
 ## Responsibilities
 
@@ -24,7 +24,7 @@ Anyhunt Dev 官网（`anyhunt.app`），包含模块页 `/fetchx`、`/memox`。�
 ## Constraints
 
 - Server-side rendering (SSR)
-- Public access (no auth)
+- Public + Auth（Reader/Digest/Inbox 需要登录）
 - Cloudflare Turnstile for captcha
 - Demo API has rate limits
 - 组件统一从 `/ui` 导入，图标统一 Hugeicons
@@ -139,7 +139,9 @@ routes/
 
 | File                              | Description                               |
 | --------------------------------- | ----------------------------------------- |
-| `lib/api-client.ts`               | API client with cookie auth               |
+| `lib/api-base.ts`                 | API base URL 解析                         |
+| `lib/auth-session.ts`             | Access Token 内存态 + refresh/logout      |
+| `lib/api-client.ts`               | API client（Bearer + refresh）            |
 | `lib/api-paths.ts`                | Centralized API path constants            |
 | `lib/env.ts`                      | Public environment config                 |
 | `hooks/useCaptchaVerification.ts` | Turnstile captcha hook                    |
@@ -148,6 +150,7 @@ routes/
 | `router.tsx`                      | Router factory (SSR per-request)          |
 | `entry-client.tsx`                | Client hydration                          |
 | `entry-server.tsx`                | SSR entry point                           |
+| `vitest.config.ts`                | 单元测试配置（node 环境）                 |
 | `vite.config.ts`                  | Vite/Nitro/TanStack Start config + chunks |
 
 ## Homepage View Flow

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/react": "3.0.3",
@@ -57,6 +58,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@hookform/resolvers": "^5.2.2",
+    "@playwright/test": "^1.49.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",

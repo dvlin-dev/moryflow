@@ -40,6 +40,9 @@ function resolveAuthBaseUrl(): string {
  */
 export const authClient = createAuthClient({
   baseURL: resolveAuthBaseUrl(),
+  fetchOptions: {
+    credentials: 'include',
+  },
   plugins: [emailOTPClient()],
 });
 

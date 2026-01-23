@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: userId + SearchDto
+ * [OUTPUT]: SearchResponseDto（向量搜索结果）
+ * [POS]: 语义搜索服务（Vectorize Worker）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { VectorizeClient } from '../vectorize';
@@ -38,7 +46,7 @@ export class SearchService {
     }
 
     // 调用 Vectorize Worker 搜索，使用 filter 进行 vaultId 过滤
-    const matches = await this.vectorizeClient.query(query, {
+    const matches = await this.vectorizeClient.query(userId, query, {
       topK,
       namespace: `user:${userId}`,
       filter: vaultId ? { vaultId } : undefined,

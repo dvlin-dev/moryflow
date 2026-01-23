@@ -1,5 +1,10 @@
-import { PrismaClient, UserTier, LicenseStatus, LicenseTier } from '../generated/prisma/client';
+import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import {
+  SubscriptionTier,
+  LicenseStatus,
+  LicenseTier,
+} from '../generated/prisma/enums';
 import * as bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({
@@ -16,6 +21,67 @@ const prisma = new PrismaClient({ adapter });
  * ⚠️ 警告：此脚本会插入测试数据，请勿在生产环境使用！
  */
 
+type SeedUserInput = {
+  email: string;
+  name: string;
+  tier: SubscriptionTier;
+  isAdmin?: boolean;
+};
+
+const getNextBillingDate = (date: Date): Date => {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()),
+  );
+};
+
+async function upsertUserWithSubscription(
+  input: SeedUserInput,
+  passwordHash: string,
+  now: Date,
+) {
+  const user = await prisma.user.upsert({
+    where: { email: input.email },
+    update: {
+      name: input.name,
+      isAdmin: input.isAdmin ?? false,
+      emailVerified: true,
+    },
+    create: {
+      email: input.email,
+      name: input.name,
+      emailVerified: true,
+      isAdmin: input.isAdmin ?? false,
+      accounts: {
+        create: {
+          accountId: input.email,
+          providerId: 'credential',
+          password: passwordHash,
+        },
+      },
+    },
+  });
+
+  const periodEnd = getNextBillingDate(now);
+  await prisma.subscription.upsert({
+    where: { userId: user.id },
+    create: {
+      userId: user.id,
+      tier: input.tier,
+      status: 'active',
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+    },
+    update: {
+      tier: input.tier,
+      status: 'active',
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+    },
+  });
+
+  return user;
+}
+
 async function main() {
   console.log('🌱 开始插入种子数据...\n');
 
@@ -23,118 +89,73 @@ async function main() {
   const passwordHash = await bcrypt.hash('test123456', 10);
 
   // ==========================================
-  // 1. 测试用户
+  // 1. 测试用户与订阅
   // ==========================================
 
-  // 管理员用户
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
+  const now = new Date();
+
+  const adminUser = await upsertUserWithSubscription(
+    {
       email: 'admin@example.com',
       name: '管理员',
-      emailVerified: true,
-      tier: UserTier.license,
+      tier: SubscriptionTier.license,
       isAdmin: true,
-      accounts: {
-        create: {
-          accountId: 'admin@example.com',
-          providerId: 'credential',
-          password: passwordHash,
-        },
-      },
     },
-  });
+    passwordHash,
+    now,
+  );
   console.log('✅ 创建管理员用户:', adminUser.email);
 
-  // 免费用户
-  const freeUser = await prisma.user.upsert({
-    where: { email: 'free.user@example.com' },
-    update: {},
-    create: {
+  const freeUser = await upsertUserWithSubscription(
+    {
       email: 'free.user@example.com',
       name: '免费用户',
-      emailVerified: true,
-      tier: UserTier.free,
-      accounts: {
-        create: {
-          accountId: 'free.user@example.com',
-          providerId: 'credential',
-          password: passwordHash,
-        },
-      },
+      tier: SubscriptionTier.free,
     },
-  });
+    passwordHash,
+    now,
+  );
   console.log('✅ 创建免费用户:', freeUser.email);
 
-  // 基础会员
-  const basicUser = await prisma.user.upsert({
-    where: { email: 'basic.user@example.com' },
-    update: {},
-    create: {
+  const basicUser = await upsertUserWithSubscription(
+    {
       email: 'basic.user@example.com',
       name: '基础会员',
-      emailVerified: true,
-      tier: UserTier.basic,
-      accounts: {
-        create: {
-          accountId: 'basic.user@example.com',
-          providerId: 'credential',
-          password: passwordHash,
-        },
-      },
+      tier: SubscriptionTier.basic,
     },
-  });
+    passwordHash,
+    now,
+  );
   console.log('✅ 创建基础会员:', basicUser.email);
 
-  // 专业会员
-  const proUser = await prisma.user.upsert({
-    where: { email: 'pro.user@example.com' },
-    update: {},
-    create: {
+  const proUser = await upsertUserWithSubscription(
+    {
       email: 'pro.user@example.com',
       name: '专业会员',
-      emailVerified: true,
-      tier: UserTier.pro,
-      accounts: {
-        create: {
-          accountId: 'pro.user@example.com',
-          providerId: 'credential',
-          password: passwordHash,
-        },
-      },
+      tier: SubscriptionTier.pro,
     },
-  });
+    passwordHash,
+    now,
+  );
   console.log('✅ 创建专业会员:', proUser.email);
 
-  // 永久授权用户
-  const licenseUser = await prisma.user.upsert({
-    where: { email: 'license.user@example.com' },
-    update: {},
-    create: {
+  const licenseUser = await upsertUserWithSubscription(
+    {
       email: 'license.user@example.com',
       name: '永久授权用户',
-      emailVerified: true,
-      tier: UserTier.license,
-      accounts: {
-        create: {
-          accountId: 'license.user@example.com',
-          providerId: 'credential',
-          password: passwordHash,
-        },
-      },
+      tier: SubscriptionTier.license,
     },
-  });
+    passwordHash,
+    now,
+  );
   console.log('✅ 创建永久授权用户:', licenseUser.email);
 
   // ==========================================
   // 2. 订阅积分
   // ==========================================
 
-  const now = new Date();
   const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  // 基础会员订阅积分
   await prisma.subscriptionCredits.upsert({
     where: { userId: basicUser.id },
     update: {},
@@ -148,7 +169,6 @@ async function main() {
   });
   console.log('✅ 创建基础会员订阅积分');
 
-  // 专业会员订阅积分
   await prisma.subscriptionCredits.upsert({
     where: { userId: proUser.id },
     update: {},
@@ -208,20 +228,6 @@ async function main() {
   console.log('✅ 创建测试 License');
 
   // ==========================================
-  // 5. 管理员操作日志
-  // ==========================================
-
-  await prisma.adminLog.create({
-    data: {
-      operatorId: adminUser.id,
-      action: 'SET_USER_TIER',
-      targetUserId: basicUser.id,
-      details: { tier: 'basic', previousTier: 'free', reason: '测试升级' },
-    },
-  });
-  console.log('✅ 创建管理员操作日志');
-
-  // ==========================================
   // 完成
   // ==========================================
 
@@ -231,15 +237,23 @@ async function main() {
   console.log('  订阅积分记录:', await prisma.subscriptionCredits.count());
   console.log('  购买积分记录:', await prisma.purchasedCredits.count());
   console.log('  License 数:', await prisma.license.count());
-  console.log('  管理日志数:', await prisma.adminLog.count());
 
   console.log('\n👤 测试账号（密码均为 test123456）：');
   const users = await prisma.user.findMany({
-    select: { email: true, name: true, tier: true, isAdmin: true },
-    orderBy: { tier: 'asc' },
+    select: {
+      email: true,
+      name: true,
+      isAdmin: true,
+      subscription: { select: { tier: true } },
+    },
+    orderBy: { createdAt: 'asc' },
   });
-  users.forEach((u: { email: string; name: string | null; tier: UserTier; isAdmin: boolean }) => {
-    console.log(`  ${u.email} - ${u.name} [${u.tier}]${u.isAdmin ? ' (管理员)' : ''}`);
+  users.forEach((u) => {
+    console.log(
+      `  ${u.email} - ${u.name} [${u.subscription?.tier ?? 'free'}]${
+        u.isAdmin ? ' (管理员)' : ''
+      }`,
+    );
   });
 
   console.log('\n⚠️  注意：这些是测试数据，请勿在生产环境使用！');

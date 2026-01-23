@@ -89,6 +89,9 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 ## 近期变更
 
 - Chat Pane 消息列表：ToolInput 空输入保护、Hugeicons 替换、渲染性能优化与条件渲染收敛
+- Auth 改为 access 内存 + refresh 轮换，移除 pre-register
+- Auth 表单：FormProvider props 做类型桥接，规避 react-hook-form 重复安装的类型冲突
+- 模型选择禁用项移除占位日志，保持交互收敛
 
 ## 依赖关系
 
@@ -122,7 +125,3 @@ renderer/
 │         (ipcMain.handle/on)            │
 └────────────────────────────────────────┘
 ```
-
-## 近期变更
-
-- 模型选择禁用项移除占位日志，保持交互收敛

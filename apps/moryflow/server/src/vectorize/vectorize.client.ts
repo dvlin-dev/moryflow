@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: userId + Vectorize 请求参数
+ * [OUTPUT]: Vectorize Worker 响应
+ * [POS]: 向量化 Worker 客户端（JWT 鉴权）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type {
@@ -10,24 +18,19 @@ import type {
   DeleteResponse,
   ApiErrorResponse,
 } from './types';
-
-/**
- * Vectorize API 客户端
- * 用于与 Cloudflare Vectorize Worker 通信
- */
+import { AuthTokensService } from '../auth';
 @Injectable()
 export class VectorizeClient implements OnModuleInit {
   private readonly logger = new Logger(VectorizeClient.name);
   private baseUrl: string;
-  private apiSecret: string;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly authTokensService: AuthTokensService,
+  ) {}
 
   onModuleInit() {
     this.baseUrl = this.configService.getOrThrow<string>('VECTORIZE_API_URL');
-    this.apiSecret = this.configService.getOrThrow<string>(
-      'VECTORIZE_API_SECRET',
-    );
 
     this.logger.log(`Vectorize client initialized: ${this.baseUrl}`);
   }
@@ -36,16 +39,18 @@ export class VectorizeClient implements OnModuleInit {
    * 发送 HTTP 请求
    */
   private async request<T>(
+    userId: string,
     path: string,
     options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
+    const accessToken = await this.authTokensService.createAccessToken(userId);
 
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiSecret}`,
+        Authorization: `Bearer ${accessToken.token}`,
         ...options.headers,
       },
     });
@@ -72,10 +77,11 @@ export class VectorizeClient implements OnModuleInit {
    * @returns 向量数组
    */
   async embed(
+    userId: string,
     texts: string[],
     type: 'query' | 'document' = 'document',
   ): Promise<number[][]> {
-    const result = await this.request<EmbedResponse>('/api/embed', {
+    const result = await this.request<EmbedResponse>(userId, '/api/embed', {
       method: 'POST',
       body: JSON.stringify({ texts, type }),
     });
@@ -89,8 +95,11 @@ export class VectorizeClient implements OnModuleInit {
    * @param vectors - 向量数据数组
    * @returns 操作结果
    */
-  async upsert(vectors: UpsertVectorInput[]): Promise<UpsertResponse> {
-    return this.request<UpsertResponse>('/api/vectors/upsert', {
+  async upsert(
+    userId: string,
+    vectors: UpsertVectorInput[],
+  ): Promise<UpsertResponse> {
+    return this.request<UpsertResponse>(userId, '/api/vectors/upsert', {
       method: 'POST',
       body: JSON.stringify({ vectors }),
     });
@@ -104,11 +113,19 @@ export class VectorizeClient implements OnModuleInit {
    * @param options - 搜索选项
    * @returns 匹配结果
    */
-  async query(text: string, options: QueryOptions = {}): Promise<QueryMatch[]> {
-    const result = await this.request<QueryResponse>('/api/vectors/query', {
-      method: 'POST',
-      body: JSON.stringify({ text, ...options }),
-    });
+  async query(
+    userId: string,
+    text: string,
+    options: QueryOptions = {},
+  ): Promise<QueryMatch[]> {
+    const result = await this.request<QueryResponse>(
+      userId,
+      '/api/vectors/query',
+      {
+        method: 'POST',
+        body: JSON.stringify({ text, ...options }),
+      },
+    );
     return result.matches;
   }
 
@@ -117,8 +134,8 @@ export class VectorizeClient implements OnModuleInit {
    *
    * @param ids - 要删除的向量 ID 列表
    */
-  async delete(ids: string[]): Promise<DeleteResponse> {
-    return this.request<DeleteResponse>('/api/vectors', {
+  async delete(userId: string, ids: string[]): Promise<DeleteResponse> {
+    return this.request<DeleteResponse>(userId, '/api/vectors', {
       method: 'DELETE',
       body: JSON.stringify({ ids }),
     });

@@ -275,7 +275,8 @@ export class ApiKeyService {
         id: key.user.id,
         email: key.user.email,
         name: key.user.name,
-        tier: (key.user.subscription?.tier || 'FREE') as SubscriptionTier,
+        subscriptionTier: (key.user.subscription?.tier ||
+          'FREE') as SubscriptionTier,
         isAdmin: key.user.isAdmin,
       },
     };
@@ -352,9 +353,9 @@ export class ApiKeyService {
         id: user.id,
         email: user.email,
         name: typeof user.name === 'string' ? user.name : null,
-        tier:
-          typeof user.tier === 'string'
-            ? (user.tier as SubscriptionTier)
+        subscriptionTier:
+          typeof user.subscriptionTier === 'string'
+            ? (user.subscriptionTier as SubscriptionTier)
             : 'FREE',
         isAdmin: user.isAdmin === true,
       },

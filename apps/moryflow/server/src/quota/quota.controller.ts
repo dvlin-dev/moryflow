@@ -34,6 +34,6 @@ export class QuotaController {
   async getUsage(
     @CurrentUser() user: CurrentUserDto,
   ): Promise<UsageResponseDto> {
-    return this.quotaService.getUsage(user.id, user.tier);
+    return this.quotaService.getUsage(user.id, user.subscriptionTier);
   }
 }

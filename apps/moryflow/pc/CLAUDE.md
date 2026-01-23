@@ -71,6 +71,11 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 | 修改文件操作   | `src/main/vault/`                 | 在主进程执行                                     |
 | 修改云同步     | `src/main/cloud-sync/`            | 参考 docs/products/moryflow/features/cloud-sync/ |
 
+## 近期变更
+
+- Auth 改为 access 内存 + refresh 安全存储（`src/main/membership-token-store.ts`）
+- 统一登录/注册为 email + OTP 验证流程，移除 pre-register
+
 ## 依赖关系
 
 ```

@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: userId + 向量化请求 DTO
+ * [OUTPUT]: 队列入队结果 / 删除结果 / 状态查询
+ * [POS]: 向量化服务（队列与配额调度）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -9,7 +17,6 @@ import type {
   VectorizeJobData,
 } from './dto/vectorize.dto';
 import { VectorizeClient } from './vectorize.client';
-import type { UserTier } from '../types';
 
 export const VECTORIZE_QUEUE = 'vectorize-queue';
 
@@ -61,9 +68,9 @@ export class VectorizeService {
     // 获取用户 tier
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { tier: true },
+      select: { subscription: { select: { tier: true } } },
     });
-    const tier = (user?.tier as UserTier) || 'free';
+    const tier = user?.subscription?.tier ?? 'free';
 
     // 检查是否已存在该文件的向量化记录
     const existing = await this.prisma.vectorizedFile.findUnique({
@@ -127,7 +134,7 @@ export class VectorizeService {
 
     // 调用 Vectorize Worker 删除向量
     try {
-      await this.vectorizeClient.delete([fileId]);
+      await this.vectorizeClient.delete(userId, [fileId]);
     } catch (error) {
       this.logger.error(`Failed to delete vector from worker: ${error}`);
       // 继续删除数据库记录
@@ -216,9 +223,9 @@ export class VectorizeService {
     // 获取用户 tier
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { tier: true },
+      select: { subscription: { select: { tier: true } } },
     });
-    const tier = (user?.tier as UserTier) || 'free';
+    const tier = user?.subscription?.tier ?? 'free';
 
     // 获取已存在的向量化记录（用于判断是否需要检查配额）
     const existingRecords = await this.prisma.vectorizedFile.findMany({

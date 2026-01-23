@@ -4,11 +4,8 @@
  * 测试管理员功能：用户管理、权限控制、日志记录
  */
 
-// Note: expect.objectContaining and expect.any return 'any' type
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma';
@@ -17,7 +14,11 @@ import {
   createPrismaMock,
   MockPrismaService,
 } from '../testing/mocks/prisma.mock';
-import { createMockUser, createMockActivityLog } from '../testing/factories';
+import {
+  createMockUser,
+  createMockActivityLog,
+  createMockSubscription,
+} from '../testing/factories';
 import { ActivityLogService } from '../activity-log';
 import { EmailService } from '../email';
 
@@ -28,9 +29,6 @@ describe('AdminService', () => {
     getCreditsBalance: ReturnType<typeof vi.fn>;
     grantSubscriptionCredits: ReturnType<typeof vi.fn>;
     grantPurchasedCredits: ReturnType<typeof vi.fn>;
-  };
-  let configServiceMock: {
-    get: ReturnType<typeof vi.fn>;
   };
   let activityLogServiceMock: {
     logAdminAction: ReturnType<typeof vi.fn>;
@@ -56,10 +54,6 @@ describe('AdminService', () => {
       grantPurchasedCredits: vi.fn(),
     };
 
-    configServiceMock = {
-      get: vi.fn().mockReturnValue('test-admin-password'),
-    };
-
     activityLogServiceMock = {
       logAdminAction: vi.fn().mockResolvedValue(undefined),
       query: vi.fn().mockResolvedValue({
@@ -77,7 +71,6 @@ describe('AdminService', () => {
         AdminService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
-        { provide: ConfigService, useValue: configServiceMock },
         { provide: ActivityLogService, useValue: activityLogServiceMock },
         { provide: EmailService, useValue: emailServiceMock },
       ],
@@ -95,9 +88,9 @@ describe('AdminService', () => {
   describe('listUsers', () => {
     it('应返回分页用户列表', async () => {
       const users = [
-        createMockUser({ tier: 'free' }),
-        createMockUser({ tier: 'basic' }),
-        createMockUser({ tier: 'pro' }),
+        { ...createMockUser(), subscription: { tier: 'free' } },
+        { ...createMockUser(), subscription: { tier: 'basic' } },
+        { ...createMockUser(), subscription: { tier: 'pro' } },
       ];
       prismaMock.user.findMany.mockResolvedValue(users);
       prismaMock.user.count.mockResolvedValue(3);
@@ -105,21 +98,20 @@ describe('AdminService', () => {
       const result = await service.listUsers({ limit: 10, offset: 0 });
 
       expect(result.users).toHaveLength(3);
+      expect(result.users[0]?.subscriptionTier).toBe('free');
       expect(result.pagination).toEqual({ count: 3, limit: 10, offset: 0 });
     });
 
     it('应支持按等级筛选', async () => {
-      const proUsers = [createMockUser({ tier: 'pro' })];
+      const proUsers = [{ ...createMockUser(), subscription: { tier: 'pro' } }];
       prismaMock.user.findMany.mockResolvedValue(proUsers);
       prismaMock.user.count.mockResolvedValue(1);
 
       await service.listUsers({ tier: 'pro', limit: 10, offset: 0 });
 
-      expect(prismaMock.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ tier: 'pro' }),
-        }),
-      );
+      expect(prismaMock.user.findMany.mock.calls[0]?.[0]).toMatchObject({
+        where: { subscription: { tier: 'pro' } },
+      });
     });
 
     it('应支持分页参数', async () => {
@@ -142,7 +134,7 @@ describe('AdminService', () => {
 
   describe('getUserDetails', () => {
     it('应返回用户详情和积分余额', async () => {
-      const user = createMockUser({ tier: 'basic' });
+      const user = { ...createMockUser(), subscription: { tier: 'basic' } };
       prismaMock.user.findUnique.mockResolvedValue(user);
 
       creditServiceMock.getCreditsBalance.mockResolvedValue({
@@ -170,22 +162,29 @@ describe('AdminService', () => {
     });
   });
 
-  // ==================== setUserTier ====================
+  // ==================== setSubscriptionTier ====================
 
-  describe('setUserTier', () => {
+  describe('setSubscriptionTier', () => {
     it('应更新用户等级并记录日志', async () => {
-      const user = createMockUser({ tier: 'free' });
+      const user = createMockUser();
       const operatorId = 'admin-123';
 
       prismaMock.user.findUnique.mockResolvedValue(user);
-      prismaMock.user.update.mockResolvedValue({
-        ...user,
-        tier: 'pro',
+      prismaMock.subscription.upsert.mockResolvedValue({
+        ...createMockSubscription({ userId: user.id, tier: 'pro' }),
       });
 
-      const result = await service.setUserTier(user.id, 'pro', operatorId);
+      const result = await service.setSubscriptionTier(
+        user.id,
+        'pro',
+        operatorId,
+      );
 
-      expect(result.tier).toBe('pro');
+      expect(result.id).toBe(user.id);
+      expect(prismaMock.subscription.upsert.mock.calls[0]?.[0]).toMatchObject({
+        where: { userId: user.id },
+        update: { tier: 'pro' },
+      });
       expect(activityLogServiceMock.logAdminAction).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'set_tier',

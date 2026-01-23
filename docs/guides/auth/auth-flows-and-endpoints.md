@@ -1,6 +1,6 @@
 ---
 title: 用户系统（两套 Auth）- 总览与技术方案
-date: 2026-01-06
+date: 2026-01-25
 scope: moryflow.com, anyhunt.app, server.anyhunt.app
 status: active
 ---
@@ -33,58 +33,54 @@ status: active
 - 两条 Auth **共享代码**（抽到 `packages/*`），但 **不共享数据库/密钥**。
 - User/Profile/Session 等核心数据各自独立，禁止跨业务线关联。
 
-## 统一接口规范（v1）
+## 统一接口规范（/api/auth）
 
 > 这些路由在各自业务线的应用域名下保持一致：
 >
-> - Moryflow：`https://app.moryflow.com/api/v1/auth/*`
-> - Anyhunt Dev：`https://server.anyhunt.app/api/v1/auth/*`（console/admin 跨域调用）
+> - Moryflow：`https://app.moryflow.com/api/auth/*`
+> - Anyhunt Dev：`https://server.anyhunt.app/api/auth/*`（console/admin 跨域调用）
 
-- `POST /api/v1/auth/register`
+- `POST /api/auth/sign-up/email`
   - 输入：name、email、password
-  - 输出：返回 `next=VERIFY_EMAIL_OTP`（注册后需要验证码完成登录态建立）
-- `POST /api/v1/auth/verify-email-otp`
+  - 输出：创建用户并设置 session cookie（后续需调用 refresh 获取 access/refresh）
+- `POST /api/auth/email-otp/verify-email`
   - 输入：email、otp
-  - 输出：设置 refresh cookie（Web）或返回 refresh token（原生），并返回 access token
-- `POST /api/v1/auth/login`
+  - 输出：完成邮箱验证（后续需调用 refresh 获取 access/refresh）
+- `POST /api/auth/sign-in/email`
   - 输入：email、password
-  - 输出：同上
-- `POST /api/v1/auth/google/start`
-  - 输入：callbackURL（可选）
-  - 输出：返回授权跳转 URL（Web）
-- `POST /api/v1/auth/google/token`
-  - 输入：idToken
-  - 输出：返回 access/refresh 与用户信息（Native）
-- `POST /api/v1/auth/apple/start`
-  - 输入：callbackURL（可选）
-  - 输出：返回授权跳转 URL（Web）
-- `POST /api/v1/auth/apple/token`
-  - 输入：idToken
-  - 输出：返回 access/refresh 与用户信息（Native）
-- `POST /api/v1/auth/refresh`
+  - 输出：设置 session cookie（后续需调用 refresh 获取 access/refresh）
+- `POST /api/auth/sign-in/social`
+  - 输入：provider + callbackURL（可选）
+  - 输出：返回授权跳转 URL（Web）或返回用户信息（Native）
+- `POST /api/auth/refresh`
   - 行为：校验 refresh token → 轮换（rotation）→ 发新 access token（+ 新 refresh）
-- `POST /api/v1/auth/logout`
-  - 行为：失效当前 session/refresh；清理 Web refresh cookie
-- `GET /api/v1/auth/me`
-  - 行为：返回当前用户（需已登录；Web 用 refresh cookie，原生用 Bearer token）
-- `GET /api/v1/auth/jwks`
+  - 原生端必须携带 `X-App-Platform` 并在 body 传 refresh token
+- `POST /api/auth/logout`
+  - 行为：失效当前 refresh；清理 session/refresh cookie
+  - 原生端必须携带 `X-App-Platform` 并在 body 传 refresh token
+- `POST /api/auth/sign-out`
+  - 行为：同 `/api/auth/logout`，同时失效 refresh + session（Better Auth 默认出口）
+  - 原生端必须携带 `X-App-Platform` 并在 body 传 refresh token
+- `GET /api/v1/user/me`
+  - 行为：返回当前用户（需 Bearer access token）
+- `GET /api/auth/jwks`
   - 行为：提供 JWKS，用于服务端离线验签
 
 ## 核心流程
 
 ### 1) 邮箱注册（必须验证码）
 
-1. `POST /api/v1/auth/register`（创建用户，进入验证码验证阶段）
-2. 用户输入 OTP → `POST /api/v1/auth/verify-email-otp`
-3. 创建 `identity.session`
-4. 下发 token（refresh rotation 开启）
+1. `POST /api/auth/sign-up/email`（创建用户，进入验证码验证阶段）
+2. 用户输入 OTP → `POST /api/auth/email-otp/verify-email`
+3. 调 `POST /api/auth/refresh` 获取 access/refresh（refresh rotation 开启）
    - Web：写入 refresh `HttpOnly Cookie`（Moryflow：`Domain=.moryflow.com`；Anyhunt Dev：`Domain=.anyhunt.app`）；返回 access token
    - 原生：返回 refresh token + access token（由客户端写入 Secure Storage/内存）
 
 ### 2) 邮箱登录
 
-1. `POST /api/v1/auth/login`
-2. 校验密码 → 创建/更新 session → 下发 token（同上）
+1. `POST /api/auth/sign-in/email`
+2. 校验密码 → 创建 session
+3. 调 `POST /api/auth/refresh` 下发 token（同上）
 
 ### 3) 第三方登录（Google / Apple）
 
@@ -99,7 +95,7 @@ status: active
 
 ### 5) 原生端免登录
 
-- App 启动从 Secure Storage 取 refresh token，走 `POST /api/v1/auth/refresh` 换取新 access（并轮换 refresh）。
+- App 启动从 Secure Storage 取 refresh token，走 `POST /api/auth/refresh` 换取新 access（并轮换 refresh）。
 
 ## 安全约束（必须）
 
@@ -145,21 +141,27 @@ status: active
 ### 刷新流程（必须）
 
 1. 正常请求只带 `Authorization: Bearer <accessToken>`
-2. `401 token_expired` 时调用 `POST /api/v1/auth/refresh`
+2. `401 token_expired` 时调用 `POST /api/auth/refresh`
 3. 成功后更新 accessToken（内存），原请求仅重试一次
 
 ### refresh 的 CSRF 约束（必须）
 
 - 只允许 `POST`
-- 要求 `Content-Type: application/json`
+- 仅校验 `Origin`（无 Origin 且携带 Cookie 会被拒绝）
 - 校验 `Origin`：
   - Moryflow：必须是 `https://app.moryflow.com`
   - Anyhunt Dev：必须是 `https://console.anyhunt.app` / `https://admin.anyhunt.app`
+- `POST /api/auth/logout` 与 `POST /api/auth/sign-out` 同样要求 Origin 校验
+
+### refresh 的原生端约束（必须）
+
+- refreshToken 必须放在请求体
+- 必须携带 `X-App-Platform`（ios/android/desktop/electron/cli）
 
 ### 服务端鉴权（JWT）
 
 - 业务服务离线验签 JWT：
-  - 通过 `GET /api/v1/auth/jwks` 拉取并缓存 JWKS
+  - 通过 `GET /api/auth/jwks` 拉取并缓存 JWKS
   - 按 `kid` 自动更新
 
 ### Anyhunt Dev 对外能力（API key）

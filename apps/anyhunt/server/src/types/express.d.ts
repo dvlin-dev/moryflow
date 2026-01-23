@@ -13,7 +13,7 @@ declare global {
       /** 当前会话信息 */
       session?: {
         id: string;
-        token?: string; // Optional: present for API token auth, not for cookie auth
+        tokenType?: 'access';
         expiresAt: Date;
       };
       /** 原始请求体（用于 webhook 签名验证） */

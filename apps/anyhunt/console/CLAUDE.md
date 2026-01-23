@@ -19,9 +19,10 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 约束
 
-- Auth 使用 Better Auth 官方客户端（`/api/auth/*`，不带版本号）
-- 认证通过 HttpOnly Cookie 承载，无需前端存储 token
-- 登录与启动时通过 `/api/v1/user/me` 同步用户档案
+- Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
+- refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
+- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/user/me` 同步用户档案
+- `401 token_expired` 只允许刷新一次并重试原请求
 - `/login` 仅作为统一登录跳转入口：未登录时跳转 `anyhunt.app/login`；已登录时直接跳回 `next`（默认 `/`），避免登录死循环
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/embed`、`packages/embed-react`
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
@@ -47,8 +48,12 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 环境变量
 
 - `VITE_API_URL`：后端 API 地址（生产必填）
-- `VITE_AUTH_URL`：Auth 服务地址（生产必填）
+- `VITE_E2E_DISABLE_LOGIN_REDIRECT`：E2E 环境禁用 `/login` 自动跳转（Playwright 使用）
 - 示例文件：`.env.example`
+
+## 测试
+
+- E2E：`pnpm test:e2e`（Playwright，启动本地 Vite dev server）
 
 ## 目录结构
 
@@ -105,14 +110,14 @@ feature-name/
 
 ## Key Files
 
-| File                               | Description                        |
-| ---------------------------------- | ---------------------------------- |
-| `lib/api-client.ts`                | HTTP client with cookie auth       |
-| `lib/api-paths.ts`                 | Centralized API endpoint constants |
-| `lib/auth-client.ts`               | Better Auth client instance        |
-| `stores/auth.ts`                   | Zustand auth state                 |
-| `components/layout/MainLayout.tsx` | App shell with sidebar             |
-| `components/layout/AppSidebar.tsx` | Navigation sidebar                 |
+| File                               | Description                         |
+| ---------------------------------- | ----------------------------------- |
+| `lib/api-base.ts`                  | API base URL resolver               |
+| `lib/api-client.ts`                | HTTP client with access/refresh     |
+| `lib/api-paths.ts`                 | Centralized API endpoint constants  |
+| `stores/auth.ts`                   | Zustand auth state (access/refresh) |
+| `components/layout/MainLayout.tsx` | App shell with sidebar              |
+| `components/layout/AppSidebar.tsx` | Navigation sidebar                  |
 
 ## Common Modification Scenarios
 
@@ -178,7 +183,6 @@ export function useScrape(apiKey: string) {
 console/
 ├── /ui - UI components
 ├── @hugeicons/core-free-icons - Icon library
-├── better-auth - Official Better Auth client
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

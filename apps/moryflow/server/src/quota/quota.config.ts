@@ -3,7 +3,7 @@
  * 用户存储和向量化额度配置
  */
 
-import type { UserTier } from '../types';
+import type { SubscriptionTier } from '../types';
 
 /**
  * 额度配置
@@ -22,7 +22,7 @@ export interface QuotaConfig {
 /**
  * 各等级额度配置
  */
-export const QUOTA_CONFIG: Record<UserTier, QuotaConfig> = {
+export const QUOTA_CONFIG: Record<SubscriptionTier, QuotaConfig> = {
   free: {
     maxFileSize: 1 * 1024 * 1024, // 1 MB
     maxStorage: 50 * 1024 * 1024, // 50 MB
@@ -59,6 +59,6 @@ export const QUOTA_CONFIG: Record<UserTier, QuotaConfig> = {
 /**
  * 获取用户等级的额度配置
  */
-export function getQuotaConfig(tier: UserTier): QuotaConfig {
+export function getQuotaConfig(tier: SubscriptionTier): QuotaConfig {
   return QUOTA_CONFIG[tier];
 }

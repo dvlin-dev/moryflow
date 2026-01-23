@@ -56,6 +56,7 @@ pg-data/
 
 # 测试覆盖率
 coverage/
+**/test-results/
 
 # Prisma
 prisma/migrations/.migration_lock.toml

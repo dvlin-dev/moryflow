@@ -1,17 +1,31 @@
 /**
- * [INPUT]: PrismaClient + OTP 发送函数 + 安全选项（CSRF/Origin）
- * [OUTPUT]: Better Auth 实例（web/device 分流）
- * [POS]: Auth 核心配置入口
+ * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/Expo 插件
+ * [OUTPUT]: Better Auth 实例（Moryflow 专用配置）
+ * [POS]: Auth 配置入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { betterAuth, APIError } from 'better-auth';
-import { bearer, emailOTP } from 'better-auth/plugins';
+import {
+  betterAuth,
+  APIError,
+  type SecondaryStorage,
+  type Auth as BetterAuthInstance,
+} from 'better-auth';
+import { expo } from '@better-auth/expo';
+import { emailOTP } from 'better-auth/plugins/email-otp';
+import { jwt } from 'better-auth/plugins/jwt';
+import type { JwtOptions } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import type { JWTPayload } from 'jose';
 import type { PrismaClient } from '../../generated/prisma/client';
-import { getAllowedOrigins } from '../common/utils';
 import { isDisposableEmail } from './email-validator';
+import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
+import {
+  getAuthBaseUrl,
+  getJwtPluginOptions,
+  getTrustedOrigins,
+} from './auth.config';
 
 /**
  * Create Better Auth instance with Prisma adapter
@@ -23,24 +37,15 @@ import { isDisposableEmail } from './email-validator';
  * - 支持第三方登录（Google/Apple）
  *
  * 认证方式：
- * - Web 端：Cookie（HttpOnly, Secure, SameSite 保护）
- * - API/Mobile：Bearer Token（通过 bearer 插件支持）
- *
- * Bearer Token 使用说明：
- * - 登录成功后从响应头 `set-auth-token` 获取 token
- * - 后续请求通过 `Authorization: Bearer <token>` 携带
- * - token 就是 session token，与 Cookie 共用同一套 session 系统
+ * - Web 端：refreshToken Cookie + accessToken（JWT）
+ * - API/Mobile：refreshToken（Secure Storage）+ accessToken（JWT）
  */
-export interface BetterAuthOptions {
-  disableCSRFCheck?: boolean;
-}
-
 export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
-  options: BetterAuthOptions = {},
-) {
-  // M4 Fix: 验证 BETTER_AUTH_SECRET
+  secondaryStorage?: SecondaryStorage,
+): Auth {
+  // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error(
@@ -48,29 +53,51 @@ export function createBetterAuth(
     );
   }
 
-  const trustedOrigins = getAllowedOrigins();
+  const baseURL = getAuthBaseUrl();
+  const trustedOrigins = getTrustedOrigins();
+  const jwtOptions = getJwtPluginOptions(baseURL);
 
   return betterAuth({
     database: prismaAdapter(prisma, {
       provider: 'postgresql',
     }),
+    secondaryStorage,
     secret,
-    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    baseURL,
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: true,
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 7, // 7 days
-      updateAge: 60 * 60 * 24, // 1 day
+      expiresIn: REFRESH_TOKEN_TTL_SECONDS,
+      updateAge: 60 * 60 * 24,
+      storeSessionInDatabase: false,
+      cookieCache: {
+        enabled: true,
+        strategy: 'jwe',
+        maxAge: REFRESH_TOKEN_TTL_SECONDS,
+      },
     },
     trustedOrigins,
     advanced: {
-      // 允许无 Origin 的请求（移动端需要）
-      // React Native、Electron 等客户端不会发送 Origin header
-      disableCSRFCheck: options.disableCSRFCheck ?? false,
+      useSecureCookies: isProduction,
+      // 跨子域 Cookie 共享：moryflow.com / app.moryflow.com
+      ...(isProduction && {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: '.moryflow.com',
+        },
+      }),
     },
-    // 数据库钩子：防止已删除用户创建新 session
+    rateLimit: {
+      enabled: true,
+      window: 10,
+      max: 20,
+      storage: secondaryStorage ? 'secondary-storage' : 'memory',
+    },
+    // 数据库钩子
     databaseHooks: {
+      // 防止已删除用户创建新 session
       session: {
         create: {
           before: async (session) => {
@@ -87,31 +114,94 @@ export function createBetterAuth(
           },
         },
       },
-    },
-    plugins: [
-      // Bearer Token 插件：允许通过 Authorization: Bearer <token> 进行认证
-      // 适用于 OpenAI 兼容 API、移动应用、CLI 工具等非浏览器场景
-      bearer(),
-      // Email OTP 插件：用于忘记密码等场景
-      // 注意：注册流程使用 PreRegisterModule 的预注册验证，不再自动发送验证码
-      emailOTP({
-        sendVerificationOTP: async ({ email, otp, type }) => {
-          if (type === 'email-verification') {
-            // 检查是否临时邮箱
-            if (isDisposableEmail(email)) {
-              throw new APIError('BAD_REQUEST', {
-                message: 'This email is not supported.',
+      // 用户创建后初始化订阅
+      user: {
+        create: {
+          after: async (user) => {
+            const now = new Date();
+            const periodEnd = new Date(
+              Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth() + 1,
+                now.getUTCDate(),
+              ),
+            );
+
+            try {
+              await prisma.subscription.create({
+                data: {
+                  userId: user.id,
+                  tier: 'free',
+                  status: 'active',
+                  currentPeriodStart: now,
+                  currentPeriodEnd: periodEnd,
+                },
+              });
+
+              const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+                .split(',')
+                .map((email) => email.trim().toLowerCase())
+                .filter(Boolean);
+
+              if (adminEmails.includes(user.email.toLowerCase())) {
+                await prisma.user.update({
+                  where: { id: user.id },
+                  data: { isAdmin: true },
+                });
+              }
+            } catch (error) {
+              console.error(
+                `[BetterAuth] Failed to initialize subscription for ${user.id}:`,
+                error,
+              );
+              await prisma.user
+                .delete({ where: { id: user.id } })
+                .catch(() => undefined);
+              throw new APIError('INTERNAL_SERVER_ERROR', {
+                message: 'Failed to initialize subscription',
               });
             }
+          },
+        },
+      },
+    },
+    plugins: [
+      expo(),
+      jwt(jwtOptions),
+      // Email OTP 插件：邮箱验证码验证
+      emailOTP({
+        sendVerificationOTP: async ({ email, otp, type }) => {
+          // 检查是否临时邮箱（注册和密码重置都检查）
+          if (isDisposableEmail(email)) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'This email is not supported.',
+            });
+          }
+
+          // 注册验证和密码重置都发送 OTP
+          if (type === 'email-verification' || type === 'forget-password') {
             await sendOTP(email, otp);
           }
         },
+        sendVerificationOnSignUp: true,
         otpLength: 6,
         expiresIn: 300, // 5 分钟
         allowedAttempts: 3,
+        overrideDefaultEmailVerification: true, // 使用 OTP 替代验证链接
       }),
     ],
   });
 }
 
-export type Auth = ReturnType<typeof createBetterAuth>;
+type JwtApi = {
+  signJWT: (input: {
+    body: { payload: JWTPayload; overrideOptions?: JwtOptions };
+  }) => Promise<{ token: string }>;
+  verifyJWT: (input: { body: { token: string } }) => Promise<{
+    payload?: JWTPayload | null;
+  }>;
+};
+
+export type Auth = BetterAuthInstance & {
+  api: BetterAuthInstance['api'] & JwtApi;
+};

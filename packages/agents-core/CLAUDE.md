@@ -137,3 +137,7 @@ agents-core/
 ├── /types     # 类型定义
 └── /_shims    # 平台兼容层
 ```
+
+## 近期变更
+
+- 刷新自动生成的 `metadata.ts`

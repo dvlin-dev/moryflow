@@ -1,9 +1,9 @@
-import { Badge } from '@anyhunt/ui/components/badge'
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
-import { Crown, Sparkles, Zap, Info, Lock } from 'lucide-react'
-import { useAuth, TIER_DISPLAY_NAMES, type MembershipModel } from '@/lib/server'
-import { Skeleton } from '@anyhunt/ui/components/skeleton'
-import { cn } from '@/lib/utils'
+import { Badge } from '@anyhunt/ui/components/badge';
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Crown, Sparkles, Zap, Info, Lock } from 'lucide-react';
+import { useAuth, TIER_DISPLAY_NAMES, type MembershipModel } from '@/lib/server';
+import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import { cn } from '@/lib/utils';
 
 /**
  * 会员模型详情面板
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
  * 模型数据从 AuthContext 缓存中获取，避免重复请求
  */
 export const MembershipDetails = () => {
-  const { user, isAuthenticated, models, modelsLoading: isLoading } = useAuth()
+  const { user, isAuthenticated, models, modelsLoading: isLoading } = useAuth();
 
   if (!isAuthenticated || !user) {
     return (
@@ -21,7 +21,7 @@ export const MembershipDetails = () => {
           <p className="text-sm text-muted-foreground">登录后可使用会员模型</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -59,7 +59,7 @@ export const MembershipDetails = () => {
               ))}
             </div>
           ) : (
-            <ModelList models={models} userTier={user.tier} />
+            <ModelList models={models} userTier={user.subscriptionTier} />
           )}
         </div>
       </ScrollArea>
@@ -82,14 +82,14 @@ export const MembershipDetails = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 /** 模型列表组件 */
 const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: string }) => {
   // 分组：可用 vs 需要升级
-  const availableModels = models.filter((m) => m.available)
-  const lockedModels = models.filter((m) => !m.available)
+  const availableModels = models.filter((m) => m.available);
+  const lockedModels = models.filter((m) => !m.available);
 
   if (models.length === 0) {
     return (
@@ -97,7 +97,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
         <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
         <p className="mt-3 text-sm text-muted-foreground">暂无会员模型</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -109,7 +109,9 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
             <Zap className="h-4 w-4 text-primary" />
             <span>可用模型</span>
             {availableModels.length > 1 && (
-              <Badge variant="secondary" className="text-xs">{availableModels.length}</Badge>
+              <Badge variant="secondary" className="text-xs">
+                {availableModels.length}
+              </Badge>
             )}
           </div>
           <div className="space-y-2">
@@ -127,7 +129,9 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
             <Lock className="h-4 w-4" />
             <span>升级后可用</span>
             {lockedModels.length > 1 && (
-              <Badge variant="outline" className="text-xs">{lockedModels.length}</Badge>
+              <Badge variant="outline" className="text-xs">
+                {lockedModels.length}
+              </Badge>
             )}
           </div>
           <div className="space-y-2 opacity-60">
@@ -138,12 +142,13 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 /** 单个模型卡片 */
 const ModelItem = ({ model, locked }: { model: MembershipModel; locked?: boolean }) => {
-  const tierName = TIER_DISPLAY_NAMES[model.minTier as keyof typeof TIER_DISPLAY_NAMES] || model.minTier
+  const tierName =
+    TIER_DISPLAY_NAMES[model.minTier as keyof typeof TIER_DISPLAY_NAMES] || model.minTier;
 
   return (
     <div
@@ -180,5 +185,5 @@ const ModelItem = ({ model, locked }: { model: MembershipModel; locked?: boolean
         )}
       </div>
     </div>
-  )
-}
+  );
+};

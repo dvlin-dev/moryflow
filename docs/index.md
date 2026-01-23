@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-22
+date: 2026-01-25
 scope: monorepo
 status: active
 ---
@@ -25,6 +25,8 @@ status: active
 - 域名与部署架构（两条业务线）：`docs/architecture/domains-and-deployment.md`
 - Auth 系统入口（两条业务线不互通）：`docs/architecture/auth.md`
 - Auth 拆分文档：`docs/architecture/auth/`
+- Auth 交互统一与数据库重置方案：`docs/architecture/auth/unified-auth-rebuild-plan.md`
+- Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`
@@ -65,6 +67,7 @@ status: active
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
+- Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-01-25，修复完成）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）

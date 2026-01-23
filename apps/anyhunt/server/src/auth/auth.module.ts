@@ -4,11 +4,16 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AdminGuard } from './admin.guard';
+import { AuthTokensController } from './auth.tokens.controller';
+import { AuthTokensService } from './auth.tokens.service';
+import { RedisModule } from '../redis';
 
 @Module({
-  controllers: [AuthController],
+  imports: [RedisModule],
+  controllers: [AuthTokensController, AuthController],
   providers: [
     AuthService,
+    AuthTokensService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
@@ -18,6 +23,6 @@ import { AdminGuard } from './admin.guard';
       useClass: AdminGuard,
     },
   ],
-  exports: [AuthService],
+  exports: [AuthService, AuthTokensService],
 })
 export class AuthModule {}

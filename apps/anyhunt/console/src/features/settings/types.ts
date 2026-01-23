@@ -20,7 +20,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string | null;
-  tier: string;
+  subscriptionTier: string;
   isAdmin: boolean;
   quota: UserQuota | null;
   createdAt: string;

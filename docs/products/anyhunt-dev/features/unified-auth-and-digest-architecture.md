@@ -183,7 +183,7 @@ Digest API 同时支持两种认证方式：
 export class DigestSubscriptionController {
   // Session 认证（www 用户）
   @Get()
-  @UseGuards(SessionGuard)
+  @UseGuards(AuthGuard)
   async listMySubscriptions(@CurrentUser() user: CurrentUserDto) {
     return this.service.findByUserId(user.id);
   }

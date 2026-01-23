@@ -3,7 +3,6 @@
  * 测试管理功能端点
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 // Note: supertest response.body is typed as 'any', these rules are disabled for e2e tests
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -12,16 +11,18 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+import { AuthTokensService } from '../src/auth/auth.tokens.service';
 import { PrismaService } from '../src/prisma';
 
 describe('Admin Controller (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
+  let tokensService: AuthTokensService;
 
   // 测试用户数据
   const testAdminId = 'test-admin-e2e';
   const testUserId = 'test-user-admin-e2e';
-  let adminSession: { token: string };
+  let adminAccessToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,14 +33,20 @@ describe('Admin Controller (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
+    tokensService = app.get(AuthTokensService);
 
     // 清理测试数据
-    await prisma.adminLog.deleteMany({
+    await prisma.activityLog.deleteMany({
       where: {
-        OR: [{ operatorId: testAdminId }, { targetUserId: testUserId }],
+        OR: [
+          { userId: testAdminId },
+          { userId: testUserId },
+          { targetUserId: testAdminId },
+          { targetUserId: testUserId },
+        ],
       },
     });
-    await prisma.session.deleteMany({
+    await prisma.subscription.deleteMany({
       where: { userId: { in: [testAdminId, testUserId] } },
     });
     await prisma.user.deleteMany({
@@ -52,7 +59,6 @@ describe('Admin Controller (e2e)', () => {
         id: testAdminId,
         email: 'admin-test@example.com',
         name: 'Admin Test User',
-        tier: 'pro',
         isAdmin: true,
       },
     });
@@ -63,30 +69,27 @@ describe('Admin Controller (e2e)', () => {
         id: testUserId,
         email: 'user-admin-test@example.com',
         name: 'Regular Test User',
-        tier: 'free',
         isAdmin: false,
       },
     });
 
-    // 创建管理员 session
-    const session = await prisma.session.create({
-      data: {
-        userId: testAdminId,
-        token: `admin-test-token-${Date.now()}`,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-    });
-    adminSession = { token: session.token };
+    const access = await tokensService.createAccessToken(testAdminId);
+    adminAccessToken = access.token;
   });
 
   afterAll(async () => {
     // 清理
-    await prisma.adminLog.deleteMany({
+    await prisma.activityLog.deleteMany({
       where: {
-        OR: [{ operatorId: testAdminId }, { targetUserId: testUserId }],
+        OR: [
+          { userId: testAdminId },
+          { userId: testUserId },
+          { targetUserId: testAdminId },
+          { targetUserId: testUserId },
+        ],
       },
     });
-    await prisma.session.deleteMany({
+    await prisma.subscription.deleteMany({
       where: { userId: { in: [testAdminId, testUserId] } },
     });
     await prisma.user.deleteMany({
@@ -99,20 +102,20 @@ describe('Admin Controller (e2e)', () => {
     it('应该返回用户列表', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/admin/users')
-        .set('Authorization', `Bearer ${adminSession.token}`)
+        .set('Authorization', `Bearer ${adminAccessToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(Array.isArray(response.body.users)).toBe(true);
     });
 
     it('应该支持分页', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/admin/users')
         .query({ limit: 5, offset: 0 })
-        .set('Authorization', `Bearer ${adminSession.token}`)
+        .set('Authorization', `Bearer ${adminAccessToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(Array.isArray(response.body.users)).toBe(true);
     });
   });
 
@@ -120,7 +123,7 @@ describe('Admin Controller (e2e)', () => {
     it('应该返回用户详情', async () => {
       const response = await request(app.getHttpServer())
         .get(`/api/admin/users/${testUserId}`)
-        .set('Authorization', `Bearer ${adminSession.token}`)
+        .set('Authorization', `Bearer ${adminAccessToken}`)
         .expect(200);
 
       expect(response.body.user).toBeDefined();
@@ -132,11 +135,11 @@ describe('Admin Controller (e2e)', () => {
     it('应该更新用户等级', async () => {
       const response = await request(app.getHttpServer())
         .put(`/api/admin/users/${testUserId}/tier`)
-        .set('Authorization', `Bearer ${adminSession.token}`)
+        .set('Authorization', `Bearer ${adminAccessToken}`)
         .send({ tier: 'basic' })
         .expect(200);
 
-      expect(response.body.tier).toBe('basic');
+      expect(response.body.subscriptionTier).toBe('basic');
     });
   });
 
@@ -144,7 +147,7 @@ describe('Admin Controller (e2e)', () => {
     it('应该发放积分', async () => {
       const response = await request(app.getHttpServer())
         .post(`/api/admin/users/${testUserId}/credits`)
-        .set('Authorization', `Bearer ${adminSession.token}`)
+        .set('Authorization', `Bearer ${adminAccessToken}`)
         .send({ type: 'purchased', amount: 100 })
         .expect(201);
 
@@ -156,10 +159,10 @@ describe('Admin Controller (e2e)', () => {
     it('应该返回操作日志', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/admin/logs')
-        .set('Authorization', `Bearer ${adminSession.token}`)
+        .set('Authorization', `Bearer ${adminAccessToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(Array.isArray(response.body.logs)).toBe(true);
     });
   });
 });

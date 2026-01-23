@@ -20,21 +20,10 @@ import {
   Label,
 } from '@anyhunt/ui';
 import { useAuthStore } from '@/stores/auth';
-import { authClient } from '@/lib/auth-client';
-import { apiClient } from '@/lib/api-client';
-import { USER_API } from '@/lib/api-paths';
-
-type UserProfile = {
-  id: string;
-  email: string;
-  name: string | null;
-  tier: string;
-  isAdmin: boolean;
-};
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const setUser = useAuthStore((state) => state.setUser);
+  const signIn = useAuthStore((state) => state.signIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -46,28 +35,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data, error: signInError } = await authClient.signIn.email({ email, password });
-
-      if (signInError) {
-        throw new Error(signInError.message ?? 'Login failed');
-      }
-
-      if (!data?.user) {
-        throw new Error('Login failed');
-      }
-
-      const profile = await apiClient.get<UserProfile>(USER_API.ME);
-
-      if (!profile.isAdmin) {
-        try {
-          await authClient.signOut();
-        } catch {
-          // 忽略登出失败
-        }
-        throw new Error('Admin access required');
-      }
-
-      setUser(profile);
+      await signIn(email, password);
       navigate('/');
     } catch (err) {
       setError((err as Error).message);

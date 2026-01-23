@@ -8,7 +8,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import type { UserTier } from '../types';
+import type { SubscriptionTier } from '../types';
 import { getQuotaConfig } from './quota.config';
 import type {
   UsageResponseDto,
@@ -24,7 +24,10 @@ export class QuotaService {
   /**
    * 获取用户完整用量信息
    */
-  async getUsage(userId: string, tier: UserTier): Promise<UsageResponseDto> {
+  async getUsage(
+    userId: string,
+    tier: SubscriptionTier,
+  ): Promise<UsageResponseDto> {
     const config = getQuotaConfig(tier);
     const usage = await this.getOrCreateUsage(userId);
 
@@ -62,7 +65,7 @@ export class QuotaService {
    */
   async getStorageUsage(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
   ): Promise<StorageUsageDto> {
     const config = getQuotaConfig(tier);
     const usage = await this.getOrCreateUsage(userId);
@@ -85,7 +88,7 @@ export class QuotaService {
    */
   async getVectorizedUsage(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
   ): Promise<VectorizedUsageDto> {
     const config = getQuotaConfig(tier);
     const usage = await this.getOrCreateUsage(userId);
@@ -107,7 +110,7 @@ export class QuotaService {
    */
   async checkUploadAllowed(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
     fileSize: number,
   ): Promise<QuotaCheckResult> {
     const config = getQuotaConfig(tier);
@@ -147,7 +150,7 @@ export class QuotaService {
    */
   async checkVectorizeAllowed(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
     count: number = 1,
   ): Promise<QuotaCheckResult> {
     const config = getQuotaConfig(tier);

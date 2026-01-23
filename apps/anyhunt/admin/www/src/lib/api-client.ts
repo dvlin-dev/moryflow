@@ -1,26 +1,13 @@
 /**
  * [PROVIDES]: apiClient, ApiError
  * [DEPENDS]: fetch, import.meta.env, zustand store
- * [POS]: Admin API 请求封装（Better Auth Cookie 模式）
+ * [POS]: Admin API 请求封装（Access Token + Refresh）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, getAccessToken } from '@/stores/auth';
 import type { PaginationMeta, ApiErrorResponse } from '@anyhunt/types';
-
-const normalizeApiOrigin = (value: string) => value.replace(/\/+$/, '');
-
-/**
- * 生产环境默认走 `https://server.anyhunt.app`，避免误走 admin 同源 `/api/v1/*`。
- * 本地开发默认走空字符串，让 Vite proxy 代理 `/api/*` 到后端。
- */
-export const API_BASE_URL = (() => {
-  const explicit = (import.meta.env.VITE_API_URL ?? '').trim();
-  if (explicit) {
-    return normalizeApiOrigin(explicit);
-  }
-  return import.meta.env.DEV ? '' : 'https://server.anyhunt.app';
-})();
+import { API_BASE_URL } from './api-base';
 
 /**
  * API 错误类
@@ -69,22 +56,19 @@ class ApiClient {
   }
 
   /**
-   * 构建请求头（Better Auth 使用 Cookie，不需要 Bearer Token）
+   * 构建请求头（Access Token 优先）
    */
-  private buildHeaders(additionalHeaders?: HeadersInit): HeadersInit {
-    return {
+  private buildHeaders(additionalHeaders?: HeadersInit, token?: string | null): HeadersInit {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(additionalHeaders as Record<string, string>),
     };
-  }
 
-  /**
-   * 处理认证错误
-   */
-  private handleAuthError(status: number): void {
-    if (status === 401 || status === 403) {
-      useAuthStore.getState().clearSession();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
+
+    return headers;
   }
 
   /**
@@ -133,7 +117,6 @@ class ApiClient {
 
     // 处理错误响应
     if (!response.ok || (json as { success?: boolean }).success === false) {
-      this.handleAuthError(response.status);
       this.throwApiError(response.status, json);
     }
 
@@ -142,20 +125,33 @@ class ApiClient {
   }
 
   /**
-   * 发送请求（Better Auth 使用 Cookie，credentials: include 自动携带）
+   * 发送请求（Access Token + Refresh）
    */
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async fetchWithAuth(
+    endpoint: string,
+    options?: RequestInit,
+    attempt = 0
+  ): Promise<Response> {
+    const token = getAccessToken();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       ...options,
-      headers: this.buildHeaders(options?.headers),
+      headers: this.buildHeaders(options?.headers, token),
       credentials: 'include',
     });
 
-    // 401 时清除 session（Cookie 失效）
     if (response.status === 401) {
-      this.handleAuthError(response.status);
+      const refreshed = await useAuthStore.getState().refreshAccessToken();
+      if (refreshed && attempt === 0) {
+        return this.fetchWithAuth(endpoint, options, attempt + 1);
+      }
+      await useAuthStore.getState().logout();
     }
 
+    return response;
+  }
+
+  private async request<T>(endpoint: string, options?: RequestInit, attempt = 0): Promise<T> {
+    const response = await this.fetchWithAuth(endpoint, options, attempt);
     return this.handleResponse<T>(response);
   }
 
@@ -194,12 +190,7 @@ class ApiClient {
    * GET 分页请求 - 返回 data + meta
    */
   async getPaginated<T>(endpoint: string): Promise<PaginatedResult<T>> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      headers: this.buildHeaders(),
-      credentials: 'include',
-    });
-
-    this.handleAuthError(response.status);
+    const response = await this.fetchWithAuth(endpoint);
 
     const json = await this.safeParseJson(response);
 
@@ -218,12 +209,9 @@ class ApiClient {
    * GET Blob 请求（用于文件下载）
    */
   async getBlob(endpoint: string): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      credentials: 'include',
-    });
+    const response = await this.fetchWithAuth(endpoint);
 
     if (!response.ok) {
-      this.handleAuthError(response.status);
       throw new ApiError(response.status, 'DOWNLOAD_ERROR', 'Download failed');
     }
 
@@ -234,15 +222,13 @@ class ApiClient {
    * POST Blob 请求（用于导出等需要 POST 请求的文件下载）
    */
   async postBlob(endpoint: string, data?: unknown): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await this.fetchWithAuth(endpoint, {
       method: 'POST',
       headers: this.buildHeaders(),
-      credentials: 'include',
       body: data ? JSON.stringify(data) : undefined,
     });
 
     if (!response.ok) {
-      this.handleAuthError(response.status);
       throw new ApiError(response.status, 'DOWNLOAD_ERROR', 'Download failed');
     }
 

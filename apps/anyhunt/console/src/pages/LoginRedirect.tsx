@@ -10,6 +10,7 @@ import { buildUnifiedLoginUrl, resolveLoginRedirectTarget } from './loginRedirec
 export default function LoginRedirect() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const disableAutoRedirect = import.meta.env.VITE_E2E_DISABLE_LOGIN_REDIRECT === 'true';
 
   const { nextPath, returnToUrl } = useMemo(
     () => resolveLoginRedirectTarget(window.location.href),
@@ -26,10 +27,11 @@ export default function LoginRedirect() {
   );
 
   useEffect(() => {
+    if (disableAutoRedirect) return;
     if (!isBootstrapped) return;
     if (isAuthenticated) return;
     window.location.href = loginUrl;
-  }, [isBootstrapped, isAuthenticated, loginUrl]);
+  }, [disableAutoRedirect, isBootstrapped, isAuthenticated, loginUrl]);
 
   if (isBootstrapped && isAuthenticated) {
     return <Navigate to={nextPath} replace />;

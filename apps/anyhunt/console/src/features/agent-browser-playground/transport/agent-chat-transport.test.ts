@@ -9,6 +9,14 @@ import { describe, expect, it, vi } from 'vitest';
 import type { UIMessage, UIMessageChunk } from 'ai';
 import { ConsoleAgentChatTransport } from './agent-chat-transport';
 
+const ensureAccessToken = vi.fn().mockResolvedValue('token-1');
+
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: {
+    getState: () => ({ ensureAccessToken }),
+  },
+}));
+
 const buildSseStream = (events: unknown[]) => {
   const encoder = new TextEncoder();
   const payload = events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('');
@@ -59,6 +67,11 @@ describe('ConsoleAgentChatTransport', () => {
         trigger: 'submit-message',
         abortSignal: undefined,
       });
+
+      expect(ensureAccessToken).toHaveBeenCalledTimes(1);
+      const [, requestInit] = fetchMock.mock.calls[0] ?? [];
+      const headers = (requestInit?.headers ?? {}) as Record<string, string>;
+      expect(headers.Authorization).toBe('Bearer token-1');
 
       const reader = resultStream.getReader();
       const chunks: UIMessageChunk[] = [];

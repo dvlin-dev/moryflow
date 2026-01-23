@@ -19,7 +19,7 @@ import { QuotaService } from '../quota';
 import { StorageClient } from '../storage';
 import { VectorizeService } from '../vectorize';
 import { getMimeType, getFileName } from '../storage/mime-utils';
-import type { UserTier, PaginationParams } from '../types';
+import type { SubscriptionTier, PaginationParams } from '../types';
 import type {
   SyncDiffRequestDto,
   SyncDiffResponseDto,
@@ -68,7 +68,7 @@ export class SyncService {
    */
   async calculateDiff(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
     dto: SyncDiffRequestDto,
   ): Promise<SyncDiffResponseDto> {
     const { vaultId, deviceId, localFiles } = dto;
@@ -308,7 +308,7 @@ export class SyncService {
    */
   private async validateUploadQuota(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
     localFiles: LocalFileDto[],
   ): Promise<void> {
     // 过滤掉删除操作（contentHash 为空）

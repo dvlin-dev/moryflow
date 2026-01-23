@@ -92,7 +92,7 @@ export interface VaultDetailResponse {
       id: string;
       email: string;
       name: string | null;
-      tier: string;
+      subscriptionTier: string;
     };
   };
   stats: {
@@ -120,7 +120,7 @@ export interface UserStorageListItem {
   userId: string;
   email: string;
   name: string | null;
-  tier: string;
+  subscriptionTier: string;
   storageUsed: number;
   storageLimit: number;
   vectorizedCount: number;
@@ -140,7 +140,7 @@ export interface UserStorageDetailResponse {
     id: string;
     email: string;
     name: string | null;
-    tier: string;
+    subscriptionTier: string;
   };
   usage: {
     storageUsed: number;

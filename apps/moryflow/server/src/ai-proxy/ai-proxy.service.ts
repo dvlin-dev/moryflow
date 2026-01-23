@@ -23,7 +23,7 @@ import type {
   ModelInfo,
   InternalTokenUsage,
   MessageResponse,
-  UserTier,
+  SubscriptionTier,
   ReasoningRequest,
 } from './dto';
 
@@ -39,7 +39,7 @@ import {
   InvalidRequestException,
 } from './exceptions';
 
-const MAX_CHOICE_COUNT_BY_TIER: Record<UserTier, number> = {
+const MAX_CHOICE_COUNT_BY_TIER: Record<SubscriptionTier, number> = {
   free: 1,
   starter: 1,
   basic: 2,
@@ -66,7 +66,7 @@ export class AiProxyService {
    */
   async proxyChatCompletion(
     userId: string,
-    userTier: UserTier,
+    userTier: SubscriptionTier,
     request: ChatCompletionRequest,
   ): Promise<ChatCompletionResponse> {
     const startTime = Date.now();
@@ -158,7 +158,7 @@ export class AiProxyService {
    */
   async proxyChatCompletionStream(
     userId: string,
-    userTier: UserTier,
+    userTier: SubscriptionTier,
     request: ChatCompletionRequest,
     abortSignal?: AbortSignal,
   ): Promise<ReadableStream<Uint8Array>> {
@@ -250,7 +250,9 @@ export class AiProxyService {
   /**
    * 获取所有模型列表（包含权限信息）
    */
-  async getAllModelsWithAccess(userTier: UserTier): Promise<ModelInfo[]> {
+  async getAllModelsWithAccess(
+    userTier: SubscriptionTier,
+  ): Promise<ModelInfo[]> {
     const userLevel = TIER_ORDER.indexOf(userTier);
 
     const models = await this.prisma.aiModel.findMany({
@@ -262,7 +264,7 @@ export class AiProxyService {
     return models
       .filter((m) => m.provider.enabled)
       .map((m) => {
-        const modelLevel = TIER_ORDER.indexOf(m.minTier as UserTier);
+        const modelLevel = TIER_ORDER.indexOf(m.minTier as SubscriptionTier);
         return {
           id: m.modelId,
           object: 'model' as const,
@@ -284,7 +286,7 @@ export class AiProxyService {
    * 获取并验证模型配置
    */
   private async getAndValidateModel(
-    userTier: UserTier,
+    userTier: SubscriptionTier,
     modelId: string,
   ): Promise<{ model: AiModel; provider: AiProvider }> {
     const model = await this.prisma.aiModel.findFirst({
@@ -298,7 +300,7 @@ export class AiProxyService {
 
     // 检查用户权限
     const userLevel = TIER_ORDER.indexOf(userTier);
-    const modelLevel = TIER_ORDER.indexOf(model.minTier as UserTier);
+    const modelLevel = TIER_ORDER.indexOf(model.minTier as SubscriptionTier);
 
     if (userLevel < modelLevel) {
       throw new InsufficientModelPermissionException(userTier, modelId);
@@ -547,7 +549,7 @@ export class AiProxyService {
   }
 
   private resolveChoiceCount(
-    userTier: UserTier,
+    userTier: SubscriptionTier,
     request: ChatCompletionRequest,
     isStream: boolean,
   ): number {
