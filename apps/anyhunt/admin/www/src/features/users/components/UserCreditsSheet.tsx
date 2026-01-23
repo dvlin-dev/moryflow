@@ -165,7 +165,7 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
                       </Badge>
                     )}
                     <Badge variant="outline" className="text-xs">
-                      {userQuery.data.tier}
+                      {userQuery.data.subscriptionTier}
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">ID: {userQuery.data.id}</div>

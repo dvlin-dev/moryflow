@@ -26,7 +26,7 @@ export class AdminService {
       id: user.id,
       email: user.email,
       name: user.name,
-      tier: user.subscription?.tier ?? 'free',
+      subscriptionTier: user.subscription?.tier ?? 'free',
       isAdmin: user.isAdmin,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,

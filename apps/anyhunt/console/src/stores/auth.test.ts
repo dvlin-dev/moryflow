@@ -1,167 +1,96 @@
 /**
- * [INPUT]: 认证状态变更
- * [OUTPUT]: 状态一致性断言
- * [POS]: Console Auth Store 属性测试（setUser/clearSession）
+ * [INPUT]: refresh/logout/bootstrap 调用
+ * [OUTPUT]: AuthStore 状态更新断言
+ * [POS]: Console Auth Store 单元测试（access/refresh 交互）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { describe, it, beforeEach } from 'vitest';
-import fc from 'fast-check';
+import { describe, it, beforeEach, vi, expect } from 'vitest';
 import { useAuthStore } from './auth';
 
-describe('属性 1: 认证状态一致性', () => {
+const fetchMock = vi.fn();
+
+(global as any).fetch = fetchMock;
+
+const jsonResponse = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+describe('AuthStore', () => {
   beforeEach(() => {
-    // 重置 store 状态
+    fetchMock.mockReset();
     useAuthStore.setState({
       user: null,
+      accessToken: null,
       isAuthenticated: false,
       isBootstrapped: false,
     });
   });
 
-  it('对于任意有效用户信息，setUser 后 isAuthenticated 应为 true', () => {
-    fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        fc.emailAddress(),
-        fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
-        fc.boolean(),
-        fc.constantFrom('FREE', 'BASIC', 'PRO', 'TEAM'),
-        (userId, email, name, isAdmin, tier) => {
-          const { setUser } = useAuthStore.getState();
+  it('refreshAccessToken 应在成功时写入 accessToken', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ accessToken: 'token_123' }));
 
-          // 执行登录
-          setUser({
-            id: userId,
-            email,
-            name,
-            tier,
-            isAdmin,
-          });
+    const result = await useAuthStore.getState().refreshAccessToken();
 
-          // 获取更新后的状态
-          const state = useAuthStore.getState();
-
-          return (
-            state.isAuthenticated === true &&
-            state.user?.id === userId &&
-            state.user?.email === email &&
-            state.user?.name === name &&
-            state.user?.isAdmin === isAdmin &&
-            state.isBootstrapped === true
-          );
-        }
-      ),
-      { numRuns: 100 }
-    );
+    expect(result).toBe(true);
+    expect(useAuthStore.getState().accessToken).toBe('token_123');
   });
 
-  it('对于任意已登录状态，clearSession 后 isAuthenticated 应为 false', () => {
-    fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        fc.emailAddress(),
-        fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
-        fc.boolean(),
-        fc.constantFrom('FREE', 'BASIC', 'PRO', 'TEAM'),
-        (userId, email, name, isAdmin, tier) => {
-          const { setUser, clearSession } = useAuthStore.getState();
+  it('refreshAccessToken 应在失败时清空 accessToken', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'Unauthorized' }, 401));
 
-          // 先登录
-          setUser({
-            id: userId,
-            email,
-            name,
-            tier,
-            isAdmin,
-          });
+    const result = await useAuthStore.getState().refreshAccessToken();
 
-          // 确认已登录
-          const loggedInState = useAuthStore.getState();
-          if (!loggedInState.isAuthenticated) return false;
-
-          // 执行登出
-          clearSession();
-
-          // 获取更新后的状态
-          const state = useAuthStore.getState();
-
-          return (
-            state.isAuthenticated === false && state.user === null && state.isBootstrapped === true
-          );
-        }
-      ),
-      { numRuns: 100 }
-    );
+    expect(result).toBe(false);
+    expect(useAuthStore.getState().accessToken).toBeNull();
   });
 
-  it('对于任意连续的登录/登出操作，状态应保持一致', () => {
-    fc.assert(
-      fc.property(
-        fc.array(
-          fc.oneof(
-            fc.tuple(
-              fc.constant('login'),
-              fc.string({ minLength: 1, maxLength: 20 }),
-              fc.emailAddress(),
-              fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
-              fc.boolean(),
-              fc.constantFrom('FREE', 'BASIC', 'PRO', 'TEAM')
-            ),
-            fc.tuple(fc.constant('logout'))
-          ),
-          { minLength: 1, maxLength: 10 }
-        ),
-        (operations) => {
-          let expectedAuthenticated = false;
-          let expectedUser: {
-            id: string;
-            email: string;
-            name: string | null;
-            isAdmin: boolean;
-            tier: string;
-          } | null = null;
+  it('bootstrap 应在 refresh 成功后设置 user 与认证状态', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ accessToken: 'token_abc' }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: 'user_1',
+          email: 'user@example.com',
+          name: null,
+          subscriptionTier: 'FREE',
+          isAdmin: false,
+        })
+      );
 
-          for (const op of operations) {
-            if (op[0] === 'login') {
-              const [, userId, email, name, isAdmin, tier] = op as [
-                string,
-                string,
-                string,
-                string | null,
-                boolean,
-                string,
-              ];
-              useAuthStore.getState().setUser({
-                id: userId,
-                email,
-                name,
-                tier,
-                isAdmin,
-              });
-              expectedAuthenticated = true;
-              expectedUser = { id: userId, email, name, isAdmin, tier };
-            } else {
-              useAuthStore.getState().clearSession();
-              expectedAuthenticated = false;
-              expectedUser = null;
-            }
-          }
+    await useAuthStore.getState().bootstrap();
 
-          const state = useAuthStore.getState();
-          return (
-            state.isAuthenticated === expectedAuthenticated &&
-            (expectedUser === null
-              ? state.user === null
-              : state.user?.id === expectedUser.id &&
-                state.user?.email === expectedUser.email &&
-                state.user?.name === expectedUser.name &&
-                state.user?.isAdmin === expectedUser.isAdmin &&
-                state.user?.tier === expectedUser.tier)
-          );
-        }
-      ),
-      { numRuns: 100 }
-    );
+    const state = useAuthStore.getState();
+    expect(state.isBootstrapped).toBe(true);
+    expect(state.isAuthenticated).toBe(true);
+    expect(state.user?.email).toBe('user@example.com');
+    expect(state.user?.subscriptionTier).toBe('FREE');
+  });
+
+  it('logout 应清空用户状态，即使请求失败', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('network'));
+
+    useAuthStore.setState({
+      user: {
+        id: 'user_1',
+        email: 'user@example.com',
+        name: null,
+        subscriptionTier: 'PRO',
+        isAdmin: false,
+      },
+      accessToken: 'token_abc',
+      isAuthenticated: true,
+      isBootstrapped: false,
+    });
+
+    await useAuthStore.getState().logout();
+
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isBootstrapped).toBe(true);
   });
 });

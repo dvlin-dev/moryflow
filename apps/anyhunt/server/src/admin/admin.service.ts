@@ -186,7 +186,7 @@ export class AdminService {
         name: user.name,
         isAdmin: user.isAdmin,
         emailVerified: user.emailVerified,
-        tier: user.subscription?.tier ?? 'FREE',
+        subscriptionTier: user.subscription?.tier ?? 'FREE',
         subscriptionStatus: user.subscription?.status ?? null,
         quota: user.quota
           ? {
@@ -232,7 +232,7 @@ export class AdminService {
       isAdmin: user.isAdmin,
       emailVerified: user.emailVerified,
       image: user.image,
-      tier: user.subscription?.tier ?? 'FREE',
+      subscriptionTier: user.subscription?.tier ?? 'FREE',
       subscriptionStatus: user.subscription?.status ?? null,
       quota: user.quota
         ? {
@@ -274,7 +274,7 @@ export class AdminService {
       email: updated.email,
       name: updated.name,
       isAdmin: updated.isAdmin,
-      tier: updated.subscription?.tier ?? 'FREE',
+      subscriptionTier: updated.subscription?.tier ?? 'FREE',
     };
   }
 

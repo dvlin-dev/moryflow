@@ -21,4 +21,3 @@ config({ path: resolve(__dirname, '../.env') });
 // 仅用于测试默认值，避免缺失配置导致启动失败
 ensureEnv('BETTER_AUTH_SECRET', 'test-secret-key-min-32-chars-123456');
 ensureEnv('VECTORIZE_API_URL', 'http://localhost:8787');
-ensureEnv('VECTORIZE_API_SECRET', 'test-vectorize-secret');

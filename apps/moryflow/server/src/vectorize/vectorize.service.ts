@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: userId + 向量化请求 DTO
+ * [OUTPUT]: 队列入队结果 / 删除结果 / 状态查询
+ * [POS]: 向量化服务（队列与配额调度）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -126,7 +134,7 @@ export class VectorizeService {
 
     // 调用 Vectorize Worker 删除向量
     try {
-      await this.vectorizeClient.delete([fileId]);
+      await this.vectorizeClient.delete(userId, [fileId]);
     } catch (error) {
       this.logger.error(`Failed to delete vector from worker: ${error}`);
       // 继续删除数据库记录

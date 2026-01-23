@@ -77,6 +77,15 @@ describe('PaymentService', () => {
       const userId = 'user-123';
       const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+      prismaMock.$transaction.mockImplementation(
+        async (callback: (tx: MockPrismaService) => Promise<unknown>) => {
+          if (typeof callback === 'function') {
+            return callback(prismaMock);
+          }
+          return callback;
+        },
+      );
+      prismaMock.subscription.findUnique.mockResolvedValue(null);
       prismaMock.subscription.upsert.mockResolvedValue(
         createMockSubscription({ userId, status: 'active' }),
       );
@@ -97,6 +106,15 @@ describe('PaymentService', () => {
       const userId = 'user-123';
       const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+      prismaMock.$transaction.mockImplementation(
+        async (callback: (tx: MockPrismaService) => Promise<unknown>) => {
+          if (typeof callback === 'function') {
+            return callback(prismaMock);
+          }
+          return callback;
+        },
+      );
+      prismaMock.subscription.findUnique.mockResolvedValue(null);
       prismaMock.subscription.upsert.mockResolvedValue(
         createMockSubscription({ userId, status: 'active' }),
       );
@@ -114,6 +132,7 @@ describe('PaymentService', () => {
         expect.any(Number),
         expect.any(Date),
         periodEnd,
+        expect.anything(),
       );
     });
   });

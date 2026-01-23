@@ -3,7 +3,6 @@
  * 测试 AI 代理功能
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 // Note: supertest response.body is typed as 'any', these rules are disabled for e2e tests
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -12,14 +11,16 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+import { AuthTokensService } from '../src/auth/auth.tokens.service';
 import { PrismaService } from '../src/prisma';
 
 describe('AI Proxy Controller (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
+  let tokensService: AuthTokensService;
 
   const testUserId = 'test-user-ai-proxy-e2e';
-  let userSession: { token: string };
+  let accessToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -30,9 +31,10 @@ describe('AI Proxy Controller (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
+    tokensService = app.get(AuthTokensService);
 
     // 清理并创建测试用户
-    await prisma.session.deleteMany({ where: { userId: testUserId } });
+    await prisma.subscription.deleteMany({ where: { userId: testUserId } });
     await prisma.subscriptionCredits.deleteMany({
       where: { userId: testUserId },
     });
@@ -44,20 +46,20 @@ describe('AI Proxy Controller (e2e)', () => {
         id: testUserId,
         email: 'ai-proxy-test@example.com',
         name: 'AI Proxy Test User',
-        tier: 'pro',
         isAdmin: false,
       },
     });
 
-    // 创建 session
-    const session = await prisma.session.create({
+    await prisma.subscription.create({
       data: {
         userId: testUserId,
-        token: `ai-proxy-test-token-${Date.now()}`,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        tier: 'pro',
+        status: 'active',
       },
     });
-    userSession = { token: session.token };
+
+    const access = await tokensService.createAccessToken(testUserId);
+    accessToken = access.token;
 
     // 授予积分
     await prisma.purchasedCredits.create({
@@ -71,7 +73,7 @@ describe('AI Proxy Controller (e2e)', () => {
   });
 
   afterAll(async () => {
-    await prisma.session.deleteMany({ where: { userId: testUserId } });
+    await prisma.subscription.deleteMany({ where: { userId: testUserId } });
     await prisma.subscriptionCredits.deleteMany({
       where: { userId: testUserId },
     });
@@ -88,7 +90,7 @@ describe('AI Proxy Controller (e2e)', () => {
     it('应该返回可用模型列表', async () => {
       const response = await request(app.getHttpServer())
         .get('/v1/models')
-        .set('Authorization', `Bearer ${userSession.token}`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('object', 'list');
@@ -111,7 +113,7 @@ describe('AI Proxy Controller (e2e)', () => {
     it('缺少必需参数时应该返回 400', async () => {
       const response = await request(app.getHttpServer())
         .post('/v1/chat/completions')
-        .set('Authorization', `Bearer ${userSession.token}`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .send({})
         .expect(400);
 

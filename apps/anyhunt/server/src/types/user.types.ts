@@ -12,6 +12,6 @@ export interface CurrentUserDto {
   id: string;
   email: string;
   name: string | null;
-  tier: SubscriptionTier; // 从 Subscription 关联获取
+  subscriptionTier: SubscriptionTier; // 从 Subscription 关联获取
   isAdmin: boolean;
 }

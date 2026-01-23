@@ -8,22 +8,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { formatBytes, getTierDisplayName } from '../const'
-import { formatDate } from '@/lib/format'
-import type { VaultDetailResponse, VaultDevice, VaultFile } from '@/types/storage'
-import { FolderOpen, User, HardDrive, Smartphone, FileText } from 'lucide-react'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { formatBytes, getTierDisplayName } from '../const';
+import { formatDate } from '@/lib/format';
+import type { VaultDetailResponse, VaultDevice, VaultFile } from '@/types/storage';
+import { FolderOpen, User, HardDrive, Smartphone, FileText } from 'lucide-react';
 
 interface VaultDetailDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  data: VaultDetailResponse | null
-  isLoading: boolean
-  onDelete?: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  data: VaultDetailResponse | null;
+  isLoading: boolean;
+  onDelete?: () => void;
 }
 
 export function VaultDetailDialog({
@@ -40,11 +40,11 @@ export function VaultDetailDialog({
       <Skeleton className="h-32 w-full" />
       <Skeleton className="h-48 w-full" />
     </div>
-  )
+  );
 
   // 基本信息
   const renderBasicInfo = () => {
-    if (!data) return null
+    if (!data) return null;
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
@@ -62,12 +62,12 @@ export function VaultDetailDialog({
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // 用户信息
   const renderUserInfo = () => {
-    if (!data) return null
+    if (!data) return null;
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
@@ -81,7 +81,7 @@ export function VaultDetailDialog({
           </div>
           <div>
             <span className="text-muted-foreground">等级：</span>
-            <Badge variant="outline">{getTierDisplayName(data.vault.user.tier)}</Badge>
+            <Badge variant="outline">{getTierDisplayName(data.vault.user.subscriptionTier)}</Badge>
           </div>
           {data.vault.user.name && (
             <div>
@@ -91,12 +91,12 @@ export function VaultDetailDialog({
           )}
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // 统计信息
   const renderStats = () => {
-    if (!data) return null
+    if (!data) return null;
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
@@ -118,12 +118,12 @@ export function VaultDetailDialog({
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // 设备列表
   const renderDevices = () => {
-    if (!data) return null
+    if (!data) return null;
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
@@ -139,9 +139,7 @@ export function VaultDetailDialog({
               >
                 <span className="font-medium">{device.deviceName}</span>
                 <span className="text-muted-foreground">
-                  {device.lastSyncAt
-                    ? `最后同步: ${formatDate(device.lastSyncAt)}`
-                    : '从未同步'}
+                  {device.lastSyncAt ? `最后同步: ${formatDate(device.lastSyncAt)}` : '从未同步'}
                 </span>
               </div>
             ))}
@@ -150,12 +148,12 @@ export function VaultDetailDialog({
           <div className="text-sm text-muted-foreground">暂无注册设备</div>
         )}
       </div>
-    )
-  }
+    );
+  };
 
   // 最近文件
   const renderRecentFiles = () => {
-    if (!data) return null
+    if (!data) return null;
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
@@ -182,12 +180,12 @@ export function VaultDetailDialog({
           <div className="text-sm text-muted-foreground">暂无文件</div>
         )}
       </div>
-    )
-  }
+    );
+  };
 
   // 内容区域
   const renderContent = () => {
-    if (!data) return null
+    if (!data) return null;
     return (
       <div className="space-y-6">
         {renderBasicInfo()}
@@ -200,8 +198,8 @@ export function VaultDetailDialog({
         <Separator />
         {renderRecentFiles()}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -227,5 +225,5 @@ export function VaultDetailDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

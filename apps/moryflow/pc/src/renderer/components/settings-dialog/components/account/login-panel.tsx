@@ -51,6 +51,9 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '', name: '' },
   });
+  // 规避 workspace 内 react-hook-form 类型来源不一致导致的类型冲突
+  const formProviderProps = form as unknown as React.ComponentProps<typeof Form>;
+  const formControl = form.control as unknown as React.ComponentProps<typeof FormField>['control'];
 
   const isSubmitting = isLoading || form.formState.isSubmitting;
   const rootError = form.formState.errors.root?.message;
@@ -128,7 +131,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
         </p>
       </div>
 
-      <Form {...form}>
+      <Form {...formProviderProps}>
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             {/* OAuth 登录按钮 - 暂时禁用 */}
@@ -165,7 +168,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
 
             {mode === 'register' && (
               <FormField
-                control={form.control}
+                control={formControl}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
@@ -186,7 +189,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
             )}
 
             <FormField
-              control={form.control}
+              control={formControl}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -206,7 +209,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
             />
 
             <FormField
-              control={form.control}
+              control={formControl}
               name="password"
               render={({ field }) => (
                 <FormItem>

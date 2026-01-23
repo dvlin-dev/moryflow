@@ -28,11 +28,12 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/auth/jwks`
 - 本次重置后仅保留 init 迁移（不保留历史迁移文件）
 - URL validation required for SSRF protection
+- `ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 必须覆盖 Console/Admin 域名（`console.anyhunt.app`/`admin.anyhunt.app`）
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - 失败退费必须基于 `deduct.breakdown`（按交易分解），异步任务需写入 `quotaBreakdown` 供 worker 退费
 - FREE 用户额度为“每日 100 Credits（UTC 天）”，`monthlyQuota=0`
 - 反代部署必须启用 `trust proxy`（Express）：否则 `req.protocol`/secure cookie/回调 URL 在反代下会被错误识别为 http
-- 管理员账号在启动期通过 `ADMIN_EMAIL`/`ADMIN_PASSWORD` bootstrap；密码哈希必须使用 `better-auth/crypto`（禁止用 bcrypt 写入，否则会触发 `Invalid password hash`）
+- 管理员权限通过 `ADMIN_EMAILS` 邮箱白名单授予（注册后自动标记为 `isAdmin`，已有账号在会话获取阶段补写；不在启动期注入密码）
 - Agent + `@anyhunt/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
 - Agent 访问浏览器能力必须通过 `BrowserAgentPort`（禁止直接依赖 `BrowserSession` / Playwright 类型）
 - Agent 任务必须支持硬取消（AbortSignal）与分段配额检查（每 100 credits）
@@ -47,6 +48,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
+- TestContainers 启动主库 + 向量库容器，并执行 `prisma db push --config prisma.main.config.ts / prisma.vector.config.ts`（Prisma 7 已移除 `--skip-generate`）
 
 ## 数据库架构（双库分离）
 
@@ -116,7 +118,6 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | `extract/`            | 9     | AI-powered data extraction                   | -                         |
 | `batch-scrape/`       | 9     | Bulk URL processing                          | -                         |
 | `user/`               | 9     | User management                              | -                         |
-| `bootstrap/`          | 2     | Startup bootstrap helpers                    | -                         |
 | `map/`                | 8     | URL discovery                                | -                         |
 | `storage/`            | 7     | Cloudflare R2 storage                        | -                         |
 | `search/`             | 6     | Web search API                               | -                         |
@@ -274,8 +275,7 @@ open http://localhost:3000/api-docs
 | `REDIS_URL`                   | ✅   | Redis 连接字符串                                                                 |
 | `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                                                 |
 | `BETTER_AUTH_URL`             | ✅   | 服务公网 URL（生产建议 `https://server.anyhunt.app`）                            |
-| `ADMIN_EMAIL`                 | ✅   | 初始管理员邮箱（用于创建 bootstrap admin 账号）                                  |
-| `ADMIN_PASSWORD`              | ✅   | 管理后台登录密码                                                                 |
+| `ADMIN_EMAILS`                | ✅   | 管理员邮箱白名单（逗号分隔，注册后自动授予管理员权限）                           |
 | `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                                        |
 | `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
 | `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |

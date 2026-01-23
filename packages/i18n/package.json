@@ -14,8 +14,7 @@
     "build": "tsc-multi",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "lint": "eslint src --ext .ts,.tsx",
-    "test": "jest"
+    "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
@@ -26,16 +25,9 @@
     "@types/node": "^20.0.0",
     "@types/react": "~19.1.17",
     "react": "^19.1.0",
-    "react-native": "^0.81.5",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-native": "*"
-  },
-  "peerDependenciesMeta": {
-    "react-native": {
-      "optional": true
-    }
+    "react": ">=18.0.0"
   }
 }

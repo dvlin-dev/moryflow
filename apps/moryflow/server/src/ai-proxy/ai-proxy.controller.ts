@@ -58,7 +58,9 @@ export class AiProxyController {
   async listModels(
     @CurrentUser() user: CurrentUserDto,
   ): Promise<ModelsListResponse> {
-    const models = await this.aiProxyService.getAllModelsWithAccess(user.tier);
+    const models = await this.aiProxyService.getAllModelsWithAccess(
+      user.subscriptionTier,
+    );
     return {
       object: 'list',
       data: models,
@@ -97,7 +99,7 @@ export class AiProxyController {
     } else {
       const response = await this.aiProxyService.proxyChatCompletion(
         user.id,
-        user.tier,
+        user.subscriptionTier,
         parsed.data,
       );
       res.json(response);
@@ -118,7 +120,7 @@ export class AiProxyController {
       const abortController = new AbortController();
       const stream = await this.aiProxyService.proxyChatCompletionStream(
         user.id,
-        user.tier,
+        user.subscriptionTier,
         request,
         abortController.signal,
       );

@@ -90,7 +90,7 @@ export function createServerApiClient(config: ServerApiClientConfig): ServerApiC
       async fetchCurrent(): Promise<UserInfo> {
         const user = await request<Omit<UserInfo, 'tierInfo'>>(USER_API.ME);
         // 前端补充 tierInfo
-        return { ...user, tierInfo: getTierInfo(user.tier) };
+        return { ...user, tierInfo: getTierInfo(user.subscriptionTier) };
       },
 
       fetchCredits(): Promise<CreditsInfo> {

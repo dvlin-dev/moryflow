@@ -3,7 +3,6 @@
  * 测试 License 模块的完整业务流程
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 // Note: supertest response.body is typed as 'any', these rules are disabled for e2e tests
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -47,7 +46,6 @@ describe('License Controller (e2e)', () => {
         id: testUserId,
         email: 'license-test@example.com',
         name: 'License Test User',
-        tier: 'free',
       },
       update: {},
     });

@@ -162,7 +162,7 @@ describe('AdminService', () => {
       });
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].tier).toBe('PRO');
+      expect(result.items[0].subscriptionTier).toBe('PRO');
       expect(result.pagination).toEqual({
         page: 1,
         limit: 10,
@@ -230,7 +230,7 @@ describe('AdminService', () => {
         isAdmin: undefined,
       });
 
-      expect(result.items[0].tier).toBe('FREE');
+      expect(result.items[0].subscriptionTier).toBe('FREE');
     });
   });
 
@@ -259,7 +259,7 @@ describe('AdminService', () => {
       const result = await service.getUser('user_1');
 
       expect(result.id).toBe('user_1');
-      expect(result.tier).toBe('PRO');
+      expect(result.subscriptionTier).toBe('PRO');
       expect(result.quota?.monthlyLimit).toBe(1000);
     });
 

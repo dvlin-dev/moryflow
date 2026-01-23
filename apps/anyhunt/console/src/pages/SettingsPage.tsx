@@ -119,7 +119,7 @@ function ProfileSettings() {
 
           <div className="space-y-2">
             <Label>Current Plan</Label>
-            <Input value={profile?.tier ?? ''} disabled className="bg-muted" />
+            <Input value={profile?.subscriptionTier ?? ''} disabled className="bg-muted" />
           </div>
 
           <Separator />

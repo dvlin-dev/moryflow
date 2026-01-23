@@ -9,7 +9,8 @@
     "tail": "wrangler tail"
   },
   "dependencies": {
-    "hono": "^4.7.0"
+    "hono": "^4.7.0",
+    "jose": "^5.2.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",

@@ -7,6 +7,7 @@
   "ai": { "binding": "AI" },
   "vectorize": [{ "binding": "VECTOR_INDEX", "index_name": "moryflow-embeddings" }],
   "vars": {
+    "AUTH_BASE_URL": "https://app.moryflow.com",
     "EMBEDDING_MODEL": "@cf/qwen/qwen3-embedding-0.6b",
     "VECTOR_DIMENSIONS": "1024"
   },
@@ -14,4 +15,3 @@
     "logs": { "enabled": false, "head_sampling_rate": 1, "invocation_logs": true, "persist": true }
   }
 }
-

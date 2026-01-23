@@ -14,6 +14,7 @@ describe('AuthService', () => {
   let mockPrisma: {
     user: {
       findUnique: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
     };
   };
   let mockEmailService: {
@@ -34,6 +35,7 @@ describe('AuthService', () => {
     mockPrisma = {
       user: {
         findUnique: vi.fn(),
+        update: vi.fn(),
       },
     };
 
@@ -149,7 +151,7 @@ describe('AuthService', () => {
           id: 'user_1',
           email: 'test@example.com',
           name: 'Test User',
-          tier: 'PRO',
+          subscriptionTier: 'PRO',
           isAdmin: false,
         },
       });
@@ -171,7 +173,7 @@ describe('AuthService', () => {
 
       const result = await service.getSessionFromRequest(mockRequest);
 
-      expect(result?.user.tier).toBe('FREE');
+      expect(result?.user.subscriptionTier).toBe('FREE');
     });
 
     it('should handle admin users', async () => {
@@ -191,6 +193,42 @@ describe('AuthService', () => {
       const result = await service.getSessionFromRequest(mockRequest);
 
       expect(result?.user.isAdmin).toBe(true);
+    });
+
+    it('should promote admin when email matches ADMIN_EMAILS', async () => {
+      const originalAdminEmails = process.env.ADMIN_EMAILS;
+      process.env.ADMIN_EMAILS = 'admin@dvlin.com';
+
+      mockAuth.api.getSession.mockResolvedValue({
+        user: { id: 'user_1' },
+        session: { id: 'session_1', expiresAt: new Date() },
+      });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user_1',
+        email: 'admin@dvlin.com',
+        name: 'Admin User',
+        isAdmin: false,
+        deletedAt: null,
+        subscription: { tier: 'FREE' },
+      });
+      mockPrisma.user.update.mockResolvedValue({
+        id: 'user_1',
+        isAdmin: true,
+      });
+
+      const result = await service.getSessionFromRequest(mockRequest);
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user_1' },
+        data: { isAdmin: true },
+      });
+      expect(result?.user.isAdmin).toBe(true);
+
+      if (originalAdminEmails === undefined) {
+        delete process.env.ADMIN_EMAILS;
+      } else {
+        process.env.ADMIN_EMAILS = originalAdminEmails;
+      }
     });
 
     it('should copy headers correctly', async () => {

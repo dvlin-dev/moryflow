@@ -86,7 +86,7 @@ export const SiteOwnerSchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string().nullable(),
-  tier: z.string(),
+  subscriptionTier: z.string(),
   createdAt: z.date(),
 });
 

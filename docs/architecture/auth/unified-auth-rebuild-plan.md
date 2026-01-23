@@ -2,7 +2,7 @@
 title: Anyhunt/Moryflow Auth 交互统一与数据库重置改造方案
 date: 2026-01-25
 scope: apps/anyhunt/server, apps/moryflow/server, packages/*
-status: draft
+status: done
 ---
 
 <!--
@@ -60,10 +60,9 @@ status: draft
 
 ## Moryflow
 
-- 使用 Better Auth session + bearer 插件，`set-auth-token` 交互
-- Web/Device 通过双 Auth 实例 + `disableCSRFCheck` 区分
-- 未引入 refresh/JWKS
-- `user.tier` 与订阅信息并存
+- 已切换 `access JWT + refresh rotation + JWKS`
+- Web/Device 统一使用 Origin / `X-App-Platform` 分流
+- `user.tier` 已移除，订阅统一来源于 `Subscription.tier`（接口输出 `subscriptionTier`）
 
 # 目标架构（统一交互）
 
@@ -175,11 +174,13 @@ status: draft
 - Moryflow：`/api/auth/*` 路由统一，刷新/登出与 Better Auth handler 入口对齐
 - Moryflow：PreRegister 与忘记密码入口移除（Web/PC/Mobile 同步）
 - 端侧接入：Web/PC/Mobile 改为 access 内存 + refresh 安全存储/HttpOnly Cookie
+- 订阅字段：`user.tier` 已移除，统一输出 `subscriptionTier`
+- Anyhunt/Moryflow：init 迁移已生成并应用（DB 已重置）
+- Moryflow Vectorize Worker：接入 JWKS 验签 access JWT（业务服务按 JWKS 校验）
 - 测试门禁：`pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 已运行并通过
-
-## 待确认（如需进一步精简）
-
-- `user.tier` 字段仍作为接口层派生字段（源自 `subscription.tier`），是否需要更名为 `subscriptionTier`
+- 环境变量核对：两端 `.env` 已包含 Auth 必需项（`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`TRUSTED_ORIGINS`、`ALLOWED_ORIGINS`、`ADMIN_EMAILS`、`SERVER_URL`）；`BETTER_AUTH_URL`/`SERVER_URL` 已对齐 `https://server.anyhunt.app` 与 `https://app.moryflow.com`，`ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 已覆盖 `moryflow.com` 系列域名（无需新增 Auth env）
+- 数据库重置：已按 init 迁移重置 Anyhunt main/vector 与 Moryflow 主库（基于各自 prisma config）
+- 测试补齐：JWKS 端点验签用例已落地（Anyhunt 集成 / Moryflow E2E）
 
 # 验证与门禁（必须）
 
@@ -261,11 +262,11 @@ status: draft
 
 # 数据库 Review（仅就用户系统/授权）
 
-## 发现问题（跨业务线）
+## 改造前问题（跨业务线）
 
 1. **Moryflow Account 缺少唯一约束**：`providerId + accountId` 未唯一，存在重复绑定风险
 2. **Moryflow 无 RefreshToken/Jwks**：无法实现 refresh/JWKS 统一
-3. **Moryflow `user.tier` 与订阅重复**：双数据源，易漂移
+3. **Moryflow `user.tier` 与订阅重复**：双数据源，易漂移（已移除）
 4. **Anyhunt Session 表存在但不使用**：可保留但需明确用途（Better Auth schema 需求）
 
 ## 统一后的模型约束（明确约束）
@@ -303,7 +304,7 @@ status: draft
 1. **删除所有历史迁移文件**
    - `apps/anyhunt/server/prisma/main/migrations/*`
    - `apps/anyhunt/server/prisma/vector/migrations/*`
-   - Moryflow 当前无 migrations 目录（无需删除）
+   - `apps/moryflow/server/prisma/migrations/*`
 2. **删除数据库中的迁移历史表**（例如 `_prisma_migrations`）
 3. **完成 schema 统一后生成新的 init 迁移**
    - 推荐：`prisma migrate dev --name init`

@@ -1,17 +1,17 @@
 /**
  * 用户详情页面
  */
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { PageHeader, TierBadge } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { formatDateTime, formatNumber } from '@/lib/format'
-import { useUserDetail, useGrantCredits, GrantCreditsDialog } from '@/features/users'
-import type { CreditType } from '@/types/api'
-import { UserStorageCard } from '@/features/storage'
-import { ArrowLeft, CreditCard, Trash2, User } from 'lucide-react'
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { PageHeader, TierBadge } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatDateTime, formatNumber } from '@/lib/format';
+import { useUserDetail, useGrantCredits, GrantCreditsDialog } from '@/features/users';
+import type { CreditType } from '@/types/api';
+import { UserStorageCard } from '@/features/storage';
+import { ArrowLeft, CreditCard, Trash2, User } from 'lucide-react';
 
 /** 删除原因映射 */
 const DELETION_REASON_LABELS: Record<string, string> = {
@@ -20,27 +20,23 @@ const DELETION_REASON_LABELS: Record<string, string> = {
   switching: '切换到其他服务',
   too_expensive: '价格太贵',
   other: '其他原因',
-}
+};
 
 export default function UserDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const [showGrantDialog, setShowGrantDialog] = useState(false)
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [showGrantDialog, setShowGrantDialog] = useState(false);
 
-  const { data, isLoading } = useUserDetail(id)
-  const grantCreditsMutation = useGrantCredits()
+  const { data, isLoading } = useUserDetail(id);
+  const grantCreditsMutation = useGrantCredits();
 
-  const handleGrantCredits = (formData: {
-    type: CreditType
-    amount: number
-    reason?: string
-  }) => {
-    if (!id) return
+  const handleGrantCredits = (formData: { type: CreditType; amount: number; reason?: string }) => {
+    if (!id) return;
     grantCreditsMutation.mutate(
       { userId: id, ...formData },
       { onSuccess: () => setShowGrantDialog(false) }
-    )
-  }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -51,7 +47,7 @@ export default function UserDetailPage() {
           <Skeleton className="h-48" />
         </div>
       </div>
-    )
+    );
   }
 
   if (!data) {
@@ -62,7 +58,7 @@ export default function UserDetailPage() {
           返回用户列表
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -106,7 +102,7 @@ export default function UserDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">等级</p>
                 <div className="mt-1">
-                  <TierBadge tier={data.user.tier} />
+                  <TierBadge tier={data.user.subscriptionTier} />
                 </div>
               </div>
               <div>
@@ -139,15 +135,11 @@ export default function UserDetailPage() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">订阅积分</p>
-                <p className="text-2xl font-bold mt-1">
-                  {formatNumber(data.credits.subscription)}
-                </p>
+                <p className="text-2xl font-bold mt-1">{formatNumber(data.credits.subscription)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">购买积分</p>
-                <p className="text-2xl font-bold mt-1">
-                  {formatNumber(data.credits.purchased)}
-                </p>
+                <p className="text-2xl font-bold mt-1">{formatNumber(data.credits.purchased)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">总计</p>
@@ -205,5 +197,5 @@ export default function UserDetailPage() {
         isLoading={grantCreditsMutation.isPending}
       />
     </div>
-  )
+  );
 }

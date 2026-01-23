@@ -46,6 +46,9 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
     resolver: zodResolver(schema),
     defaultValues: { otp: '' },
   });
+  // 规避 workspace 内 react-hook-form 类型来源不一致导致的类型冲突
+  const formProviderProps = form as unknown as React.ComponentProps<typeof Form>;
+  const formControl = form.control as unknown as React.ComponentProps<typeof FormField>['control'];
 
   // 倒计时
   React.useEffect(() => {
@@ -108,7 +111,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <div>
-        <Form {...form}>
+        <Form {...formProviderProps}>
           <form onSubmit={handleVerify}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
@@ -118,7 +121,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
                 </FieldDescription>
               </div>
               <FormField
-                control={form.control}
+                control={formControl}
                 name="otp"
                 render={({ field }) => (
                   <FormItem>

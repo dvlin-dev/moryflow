@@ -1,6 +1,6 @@
 ---
 title: 测试指南（要求 + 命令）
-date: 2026-01-12
+date: 2026-01-25
 scope: testing
 status: active
 ---
@@ -41,3 +41,4 @@ pnpm test:unit
 
 - Anyhunt Server：`pnpm --filter @anyhunt/anyhunt-server test`、`pnpm --filter @anyhunt/anyhunt-server test:e2e`
 - Admin：`pnpm --filter @anyhunt/admin test`、`pnpm --filter @anyhunt/admin test:e2e`
+- Console：`pnpm --filter @anyhunt/console test`、`pnpm --filter @anyhunt/console test:e2e`

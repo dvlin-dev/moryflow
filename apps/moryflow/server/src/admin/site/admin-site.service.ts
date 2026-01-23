@@ -135,7 +135,7 @@ export class AdminSiteService {
         id: site.user.id,
         email: site.user.email,
         name: site.user.name,
-        tier: site.user.subscription?.tier ?? 'free',
+        subscriptionTier: site.user.subscription?.tier ?? 'free',
         createdAt: site.user.createdAt,
       },
     }));
@@ -194,7 +194,7 @@ export class AdminSiteService {
         id: site.user.id,
         email: site.user.email,
         name: site.user.name,
-        tier: site.user.subscription?.tier ?? 'free',
+        subscriptionTier: site.user.subscription?.tier ?? 'free',
         createdAt: site.user.createdAt,
       },
       pages: site.pages.map((page) => ({

@@ -97,7 +97,7 @@ export class AuthService implements OnModuleInit {
         id: fullUser.id,
         email: fullUser.email,
         name: fullUser.name,
-        tier: fullUser.subscription?.tier ?? 'free',
+        subscriptionTier: fullUser.subscription?.tier ?? 'free',
         isAdmin: fullUser.isAdmin,
       },
     };

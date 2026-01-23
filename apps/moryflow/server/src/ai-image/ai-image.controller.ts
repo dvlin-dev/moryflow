@@ -54,6 +54,10 @@ export class AiImageController {
       );
     }
 
-    return this.aiImageService.generateImage(user.id, user.tier, parsed.data);
+    return this.aiImageService.generateImage(
+      user.id,
+      user.subscriptionTier,
+      parsed.data,
+    );
   }
 }

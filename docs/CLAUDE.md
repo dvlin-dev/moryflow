@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-25（补充 Auth 交互统一与数据库重置改造方案进度同步）
+> 最近更新：2026-01-25（补充 Auth 环境变量核对细节与域名对齐结论、数据库重置记录、JWKS 测试与测试命令更新）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,7 +41,12 @@
 
 ## 最近更新
 
-- Auth 交互统一与数据库重置改造方案：补充执行要求与进度同步（2026-01-25）
+- Auth JWKS 测试：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
+- Auth 数据库重置记录：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
+- Auth 环境变量核对：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
+- Auth 环境变量域名对齐结论：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
+- 测试指南：补充 Console E2E 命令（2026-01-25）
+- Auth 交互统一与数据库重置改造方案：标记完成并补充 JWKS 验签落地（2026-01-25）
 - Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（2026-01-25：修复完成）
 - Moryflow Publish/AI Proxy 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（2026-01-23）
 - Moryflow 发布站点约定：补充 `_meta.json` 解析/结构异常按 OFFLINE 处理：`docs/architecture/domains-and-deployment.md`（2026-01-23）
@@ -78,7 +83,7 @@
 - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`（Reader 内操作不跳页：登录/设置弹窗；Developer 端保持 Header/Footer）
 - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`（分支视图用 ViewModel 收敛 Props，按域拆分 SRP 组件，保持现有懒加载与错误边界策略）
 - Aiget → Anyhunt 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyhunt.md`（域名/包名/环境变量/API Key 前缀/Prisma 迁移重置）
-- Anyhunt Dokploy 多项目部署清单：`docs/runbooks/deploy/anyhunt-dokploy.md`（补充 `ADMIN_EMAIL`/管理员 bootstrap 与旧路径报错排查）
+- Anyhunt Dokploy 多项目部署清单：`docs/runbooks/deploy/anyhunt-dokploy.md`（补充 `ADMIN_EMAILS` 管理员白名单与旧路径报错排查）
 - Console Agent Browser Playground 设计方案（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（2026-01-20：独立模块路径 `/agent-browser/*`）
 - Agent：API Key 级别 LLM 策略 + 输出 Schema 入参收紧方案：`docs/research/agent-llm-policy-and-output-schema.md`（2026-01-20：draft）
 - Console Fetchx 路由调整：`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`（2026-01-20：更新为 `/fetchx/*`）

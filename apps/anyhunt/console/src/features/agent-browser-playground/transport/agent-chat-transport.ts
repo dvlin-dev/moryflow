@@ -6,7 +6,7 @@
 
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import { API_BASE_URL } from '@/lib/api-client';
+import { API_BASE_URL } from '@/lib/api-base';
 import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
 import { extractPromptFromMessages } from '../agent-streaming';
 import type { AgentOutput } from '../types';

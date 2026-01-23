@@ -25,6 +25,7 @@
 - Web：HttpOnly Cookie；Device：body refresh + `X-App-Platform`
 - Web 必须校验 `Origin`（`TRUSTED_ORIGINS`）
 - `AuthTokensController` 必须先于 `AuthController` 注册，避免 `/api/auth/*` 被兜底 handler 拦截
+- 内部服务可通过 `AuthTokensService` 签发 access JWT（Vectorize Worker 使用 JWKS 验签）
 
 ## 依赖
 
@@ -37,3 +38,4 @@
 - `__tests__/auth.guard.spec.ts`
 - `__tests__/auth.tokens.service.spec.ts`
 - `__tests__/auth.tokens.controller.spec.ts`
+- `test/auth-jwks.e2e-spec.ts`（JWKS 可验签 access token）

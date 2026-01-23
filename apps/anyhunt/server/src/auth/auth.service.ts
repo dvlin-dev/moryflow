@@ -2,12 +2,14 @@
  * [INPUT]: ExpressRequest（Cookie/Headers）与 Auth 配置依赖
  * [OUTPUT]: Better Auth 实例与可验证的用户会话信息
  * [POS]: 认证核心服务，封装 Better Auth 实例与会话查询
+ *
+ * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
  */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
 import { PrismaService } from '../prisma';
 import { EmailService } from '../email';
-import { createBetterAuth, Auth } from './better-auth';
+import { createBetterAuth, Auth, isAdminEmail } from './better-auth';
 import type { CurrentUserDto } from '../types';
 import { RedisService } from '../redis/redis.service';
 
@@ -42,7 +44,7 @@ export class AuthService implements OnModuleInit {
 
   /**
    * 从 Express Request 中获取 Session
-   * 返回完整的用户信息（包括 tier 和 isAdmin）
+   * 返回完整的用户信息（包括 subscriptionTier 和 isAdmin）
    */
   async getSessionFromRequest(req: ExpressRequest): Promise<{
     session: { id: string; expiresAt: Date };
@@ -86,6 +88,22 @@ export class AuthService implements OnModuleInit {
       return null;
     }
 
+    let isAdmin = fullUser.isAdmin;
+    if (!isAdmin && isAdminEmail(fullUser.email, process.env.ADMIN_EMAILS)) {
+      try {
+        await this.prisma.user.update({
+          where: { id: fullUser.id },
+          data: { isAdmin: true },
+        });
+        isAdmin = true;
+      } catch (error) {
+        console.error(
+          `[AuthService] Failed to promote admin for ${fullUser.id}:`,
+          error,
+        );
+      }
+    }
+
     return {
       session: {
         id: session.session.id,
@@ -95,8 +113,8 @@ export class AuthService implements OnModuleInit {
         id: fullUser.id,
         email: fullUser.email,
         name: fullUser.name,
-        tier: fullUser.subscription?.tier ?? 'FREE',
-        isAdmin: fullUser.isAdmin,
+        subscriptionTier: fullUser.subscription?.tier ?? 'FREE',
+        isAdmin,
       },
     };
   }

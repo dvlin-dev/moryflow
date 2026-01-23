@@ -2,12 +2,12 @@
  * 站点详情页面
  */
 
-import { useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { PageHeader, TierBadge } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { PageHeader, TierBadge } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +25,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { formatDateTime } from '@/lib/format'
+} from '@/components/ui/alert-dialog';
+import { formatDateTime } from '@/lib/format';
 import {
   useSiteDetail,
   useOfflineSite,
@@ -34,7 +34,7 @@ import {
   useDeleteSite,
   SiteStatusBadge,
   SiteTypeBadge,
-} from '@/features/sites'
+} from '@/features/sites';
 import {
   ArrowLeft,
   Globe,
@@ -46,40 +46,40 @@ import {
   ExternalLink,
   Calendar,
   Eye,
-} from 'lucide-react'
+} from 'lucide-react';
 
 export default function SiteDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const [actionType, setActionType] = useState<'offline' | 'online' | 'delete' | null>(null)
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [actionType, setActionType] = useState<'offline' | 'online' | 'delete' | null>(null);
 
-  const { data: site, isLoading } = useSiteDetail(id)
-  const offlineMutation = useOfflineSite()
-  const onlineMutation = useOnlineSite()
-  const deleteMutation = useDeleteSite()
+  const { data: site, isLoading } = useSiteDetail(id);
+  const offlineMutation = useOfflineSite();
+  const onlineMutation = useOnlineSite();
+  const deleteMutation = useDeleteSite();
 
   const handleConfirmAction = () => {
-    if (!id || !actionType) return
+    if (!id || !actionType) return;
 
     switch (actionType) {
       case 'offline':
-        offlineMutation.mutate(id)
-        break
+        offlineMutation.mutate(id);
+        break;
       case 'online':
-        onlineMutation.mutate(id)
-        break
+        onlineMutation.mutate(id);
+        break;
       case 'delete':
         deleteMutation.mutate(id, {
           onSuccess: () => navigate('/sites'),
-        })
-        break
+        });
+        break;
     }
 
-    setActionType(null)
-  }
+    setActionType(null);
+  };
 
   const isActionLoading =
-    offlineMutation.isPending || onlineMutation.isPending || deleteMutation.isPending
+    offlineMutation.isPending || onlineMutation.isPending || deleteMutation.isPending;
 
   if (isLoading) {
     return (
@@ -91,7 +91,7 @@ export default function SiteDetailPage() {
         </div>
         <Skeleton className="h-48" />
       </div>
-    )
+    );
   }
 
   if (!site) {
@@ -102,7 +102,7 @@ export default function SiteDetailPage() {
           返回站点列表
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -234,7 +234,7 @@ export default function SiteDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">用户等级</p>
                 <div className="mt-1">
-                  <TierBadge tier={site.owner.tier} />
+                  <TierBadge tier={site.owner.subscriptionTier} />
                 </div>
               </div>
               <div>
@@ -271,12 +271,13 @@ export default function SiteDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">过期时间</p>
-                <p className="mt-1 text-sm">{site.expiresAt ? formatDateTime(site.expiresAt) : '永久'}</p>
+                <p className="mt-1 text-sm">
+                  {site.expiresAt ? formatDateTime(site.expiresAt) : '永久'}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
-
       </div>
 
       {/* 页面列表 */}
@@ -351,5 +352,5 @@ export default function SiteDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

@@ -1,6 +1,9 @@
 /**
- * Admin Storage Service
- * 云同步管理业务逻辑
+ * [INPUT]: 管理端存储查询/操作请求
+ * [OUTPUT]: Storage/Admin 相关统计与操作结果
+ * [POS]: 云同步管理业务逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
@@ -198,7 +201,7 @@ export class AdminStorageService {
           id: vault.user.id,
           email: vault.user.email,
           name: vault.user.name,
-          tier: vault.user.subscription?.tier ?? 'free',
+          subscriptionTier: vault.user.subscription?.tier ?? 'free',
         },
       },
       stats: {
@@ -313,7 +316,7 @@ export class AdminStorageService {
           userId: usage.userId,
           email: usage.user.email,
           name: usage.user.name,
-          tier,
+          subscriptionTier: tier,
           storageUsed: Number(usage.storageUsed),
           storageLimit: quota.maxStorage,
           vectorizedCount: usage.vectorizedCount,
@@ -376,7 +379,7 @@ export class AdminStorageService {
         id: user.id,
         email: user.email,
         name: user.name,
-        tier,
+        subscriptionTier: tier,
       },
       usage: {
         storageUsed: Number(usage?.storageUsed ?? 0),
@@ -457,7 +460,7 @@ export class AdminStorageService {
 
     // 删除 Vectorize 中的向量
     try {
-      await this.vectorizeClient.delete([file.fileId]);
+      await this.vectorizeClient.delete(file.userId, [file.fileId]);
     } catch (error) {
       this.logger.warn(`Failed to delete vector for ${file.fileId}`, error);
     }

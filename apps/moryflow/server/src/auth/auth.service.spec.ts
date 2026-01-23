@@ -142,7 +142,7 @@ describe('AuthService', () => {
           id: 'user_1',
           email: 'test@example.com',
           name: 'Test User',
-          tier: 'pro',
+          subscriptionTier: 'pro',
           isAdmin: false,
         },
       });
@@ -164,7 +164,7 @@ describe('AuthService', () => {
 
       const result = await service.getSessionFromRequest(mockRequest);
 
-      expect(result?.user.tier).toBe('free');
+      expect(result?.user.subscriptionTier).toBe('free');
     });
 
     it('should handle admin users', async () => {

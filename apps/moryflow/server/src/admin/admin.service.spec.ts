@@ -100,7 +100,7 @@ describe('AdminService', () => {
       const result = await service.listUsers({ limit: 10, offset: 0 });
 
       expect(result.users).toHaveLength(3);
-      expect(result.users[0]?.tier).toBe('free');
+      expect(result.users[0]?.subscriptionTier).toBe('free');
       expect(result.pagination).toEqual({ count: 3, limit: 10, offset: 0 });
     });
 

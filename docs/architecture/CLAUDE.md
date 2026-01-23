@@ -33,4 +33,8 @@
 - `domains-and-deployment.md`：补充 `_meta.json` 解析/结构异常按 OFFLINE 处理。
 - `domains-and-deployment.md` 补充 `rss.anyhunt.app`（Digest RSS 入口）说明。
 - `ui-message-list-unification.md` 已补齐 MessageList 组件并移除 metadata.moryflow 兼容逻辑。
-- `auth/unified-auth-rebuild-plan.md`：同步当前改造进度与已完成清单。
+- `auth/unified-auth-rebuild-plan.md`：标记完成并补充业务服务 JWKS 验签落地。
+- `auth/unified-auth-rebuild-plan.md`：补充 Auth 环境变量核对结论。
+- `auth/unified-auth-rebuild-plan.md`：补充 Anyhunt/Moryflow 数据库重置执行记录。
+- `auth/unified-auth-rebuild-plan.md`：补充 JWKS 验签测试落地记录。
+- `auth/unified-auth-rebuild-plan.md`：补充 Auth env 域名对齐与无需新增变量结论。

@@ -1,7 +1,9 @@
 /**
- * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage
+ * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/ADMIN_EMAILS
  * [OUTPUT]: Better Auth 实例（Anyhunt Dev 专用配置）
  * [POS]: Auth 配置入口
+ *
+ * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
  */
 import { betterAuth, APIError, type SecondaryStorage } from 'better-auth';
 import { emailOTP } from 'better-auth/plugins/email-otp';
@@ -33,6 +35,20 @@ const TIER_MONTHLY_QUOTA = {
   PRO: 20000,
   TEAM: 60000,
 } as const;
+
+export function isAdminEmail(
+  email: string | null | undefined,
+  rawAdminEmails: string | undefined,
+): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return false;
+  const adminEmails = (rawAdminEmails ?? '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(normalized);
+}
 
 /**
  * 安全地计算一个月后的日期
@@ -188,6 +204,13 @@ export function createBetterAuth(
                     isActive: true,
                   },
                 });
+
+                if (isAdminEmail(user.email, process.env.ADMIN_EMAILS)) {
+                  await tx.user.update({
+                    where: { id: user.id },
+                    data: { isAdmin: true },
+                  });
+                }
               });
             } catch (error) {
               console.error(

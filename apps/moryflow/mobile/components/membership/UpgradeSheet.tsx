@@ -5,33 +5,27 @@
  * 使用 nativewind + theme tokens 支持暗黑模式
  */
 
-import React from 'react'
-import { View, Linking, Pressable } from 'react-native'
-import { router } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Text } from '@/components/ui/text'
-import { Button } from '@/components/ui/button'
-import { Icon } from '@/components/ui/icon'
-import { useThemeColors } from '@/lib/theme'
-import { useMembershipUser, TIER_DISPLAY_NAMES, MEMBERSHIP_API_URL } from '@/lib/server'
-import { useTranslation } from '@/lib/i18n'
-import type { UnifiedModel } from '@/lib/models'
-import {
-  XIcon,
-  CrownIcon,
-  SparklesIcon,
-  CheckIcon,
-  LogInIcon,
-} from 'lucide-react-native'
+import React from 'react';
+import { View, Linking, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { useThemeColors } from '@/lib/theme';
+import { useMembershipUser, TIER_DISPLAY_NAMES, MEMBERSHIP_API_URL } from '@/lib/server';
+import { useTranslation } from '@/lib/i18n';
+import type { UnifiedModel } from '@/lib/models';
+import { XIcon, CrownIcon, SparklesIcon, CheckIcon, LogInIcon } from 'lucide-react-native';
 
 // 升级网站地址（基于 API URL 推导）
-const UPGRADE_URL = MEMBERSHIP_API_URL.replace('/api', '').replace('api.', '') + '/pricing'
+const UPGRADE_URL = MEMBERSHIP_API_URL.replace('/api', '').replace('api.', '') + '/pricing';
 
 interface UpgradeSheetProps {
   /** 触发升级的模型（可选） */
-  model?: UnifiedModel | null
+  model?: UnifiedModel | null;
   /** 关闭回调 */
-  onClose: () => void
+  onClose: () => void;
 }
 
 /**
@@ -41,44 +35,40 @@ interface UpgradeSheetProps {
  * - 提供升级入口
  */
 export function UpgradeSheet({ model, onClose }: UpgradeSheetProps) {
-  const insets = useSafeAreaInsets()
-  const colors = useThemeColors()
-  const { user, isAuthenticated } = useMembershipUser()
-  const { t } = useTranslation('membership')
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+  const { user, isAuthenticated } = useMembershipUser();
+  const { t } = useTranslation('membership');
 
-  const currentTier = user?.tier || 'free'
-  const currentTierName = user?.tierInfo?.displayName || TIER_DISPLAY_NAMES[currentTier] || t('freeTier')
-  const requiredTier = model?.meta?.minTier
-  const requiredTierName = requiredTier ? TIER_DISPLAY_NAMES[requiredTier] : null
+  const currentTier = user?.subscriptionTier || 'free';
+  const currentTierName =
+    user?.tierInfo?.displayName || TIER_DISPLAY_NAMES[currentTier] || t('freeTier');
+  const requiredTier = model?.meta?.minTier;
+  const requiredTierName = requiredTier ? TIER_DISPLAY_NAMES[requiredTier] : null;
 
   const handleUpgrade = () => {
-    Linking.openURL(UPGRADE_URL)
-  }
+    Linking.openURL(UPGRADE_URL);
+  };
 
   const handleLogin = () => {
-    onClose()
-    router.push('/(auth)/sign-in')
-  }
+    onClose();
+    router.push('/(auth)/sign-in');
+  };
 
   // 升级权益列表
-  const benefits = [
-    t('benefit1'),
-    t('benefit2'),
-    t('benefit3'),
-  ]
+  const benefits = [t('benefit1'), t('benefit2'), t('benefit3')];
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="bg-background flex-1">
       {/* Header - 使用 style 处理动态 insets */}
       <View style={{ paddingTop: insets.top }}>
         <View className="flex-row items-center justify-between px-4 py-3">
-          <Text className="text-lg font-semibold text-foreground">
+          <Text className="text-foreground text-lg font-semibold">
             {isAuthenticated ? t('upgradeTitle') : t('loginRequired')}
           </Text>
           <Pressable
-            className="w-10 h-10 items-center justify-center rounded-full active:bg-muted"
-            onPress={onClose}
-          >
+            className="active:bg-muted h-10 w-10 items-center justify-center rounded-full"
+            onPress={onClose}>
             <Icon as={XIcon} size={22} className="text-foreground" />
           </Pressable>
         </View>
@@ -88,14 +78,14 @@ export function UpgradeSheet({ model, onClose }: UpgradeSheetProps) {
       <View className="flex-1 px-5">
         {/* 提示信息 */}
         {model && (
-          <View className="p-4 rounded-xl bg-muted mb-6">
-            <Text className="text-base text-foreground text-center leading-6">
+          <View className="bg-muted mb-6 rounded-xl p-4">
+            <Text className="text-foreground text-center text-base leading-6">
               <Text className="font-semibold">{model.name}</Text>
               {requiredTierName ? (
                 <Text>
-                  {' '}{t('requiresTier')}{' '}
-                  <Text className="text-primary">{requiredTierName}</Text>
-                  {' '}{t('orAbove')}
+                  {' '}
+                  {t('requiresTier')} <Text className="text-primary">{requiredTierName}</Text>{' '}
+                  {t('orAbove')}
                 </Text>
               ) : (
                 <Text> {t('requiresHigherTier')}</Text>
@@ -106,14 +96,12 @@ export function UpgradeSheet({ model, onClose }: UpgradeSheetProps) {
 
         {/* 当前状态 */}
         <View className="mb-6">
-          <Text className="text-sm text-muted-foreground mb-2">
-            {t('currentTier')}
-          </Text>
+          <Text className="text-muted-foreground mb-2 text-sm">{t('currentTier')}</Text>
           <View className="flex-row items-center gap-3">
-            <View className="w-9 h-9 rounded-lg bg-muted items-center justify-center">
+            <View className="bg-muted h-9 w-9 items-center justify-center rounded-lg">
               <Icon as={SparklesIcon} size={18} className="text-muted-foreground" />
             </View>
-            <Text className="text-base font-medium text-foreground">
+            <Text className="text-foreground text-base font-medium">
               {isAuthenticated ? currentTierName : t('notLoggedIn')}
             </Text>
           </View>
@@ -122,15 +110,15 @@ export function UpgradeSheet({ model, onClose }: UpgradeSheetProps) {
         {/* 升级权益（仅已登录用户显示） */}
         {isAuthenticated && (
           <View className="mb-8">
-            <Text className="text-base font-semibold text-foreground mb-4">
+            <Text className="text-foreground mb-4 text-base font-semibold">
               {t('benefitsTitle')}
             </Text>
             {benefits.map((text, index) => (
-              <View key={index} className="flex-row items-center gap-3 mb-3.5">
-                <View className="w-6 h-6 rounded-md bg-primary/15 items-center justify-center">
+              <View key={index} className="mb-3.5 flex-row items-center gap-3">
+                <View className="bg-primary/15 h-6 w-6 items-center justify-center rounded-md">
                   <Icon as={CheckIcon} size={14} className="text-primary" />
                 </View>
-                <Text className="text-base text-foreground">{text}</Text>
+                <Text className="text-foreground text-base">{text}</Text>
               </View>
             ))}
           </View>
@@ -139,39 +127,37 @@ export function UpgradeSheet({ model, onClose }: UpgradeSheetProps) {
         {/* 操作按钮 - 使用 style 处理动态 insets */}
         <View style={{ paddingBottom: insets.bottom + 16 }}>
           <View className="mt-auto pt-4">
-          {isAuthenticated ? (
-            // 已登录：显示升级按钮
-            <Button
-              variant="default"
-              size="lg"
-              onPress={handleUpgrade}
-              className="flex-row items-center justify-center gap-2 h-12 rounded-xl"
-            >
-              <Icon as={CrownIcon} size={18} color={colors.textInverse} />
-              <Text className="text-primary-foreground text-base font-semibold">
-                {t('viewPlans')}
-              </Text>
-            </Button>
-          ) : (
-            // 未登录：显示登录按钮
-            <Button
-              variant="default"
-              size="lg"
-              onPress={handleLogin}
-              className="flex-row items-center justify-center gap-2 h-12 rounded-xl"
-            >
-              <Icon as={LogInIcon} size={18} color={colors.textInverse} />
-              <Text className="text-primary-foreground text-base font-semibold">
-                {t('loginNow')}
-              </Text>
-            </Button>
-          )}
-          <Pressable className="items-center py-4 active:opacity-70" onPress={onClose}>
-            <Text className="text-sm text-muted-foreground">{t('later')}</Text>
-          </Pressable>
+            {isAuthenticated ? (
+              // 已登录：显示升级按钮
+              <Button
+                variant="default"
+                size="lg"
+                onPress={handleUpgrade}
+                className="h-12 flex-row items-center justify-center gap-2 rounded-xl">
+                <Icon as={CrownIcon} size={18} color={colors.textInverse} />
+                <Text className="text-primary-foreground text-base font-semibold">
+                  {t('viewPlans')}
+                </Text>
+              </Button>
+            ) : (
+              // 未登录：显示登录按钮
+              <Button
+                variant="default"
+                size="lg"
+                onPress={handleLogin}
+                className="h-12 flex-row items-center justify-center gap-2 rounded-xl">
+                <Icon as={LogInIcon} size={18} color={colors.textInverse} />
+                <Text className="text-primary-foreground text-base font-semibold">
+                  {t('loginNow')}
+                </Text>
+              </Button>
+            )}
+            <Pressable className="items-center py-4 active:opacity-70" onPress={onClose}>
+              <Text className="text-muted-foreground text-sm">{t('later')}</Text>
+            </Pressable>
           </View>
         </View>
       </View>
     </View>
-  )
+  );
 }

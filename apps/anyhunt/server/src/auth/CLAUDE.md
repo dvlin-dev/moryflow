@@ -25,6 +25,12 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 - `POST /api/auth/logout` 与 `POST /api/auth/sign-out` 必须同时失效 refresh 与 session
 - 生产环境必须设置 `BETTER_AUTH_URL` 与 `TRUSTED_ORIGINS`
 - 生产环境启用 `useSecureCookies` 与跨子域 Cookie（`.anyhunt.app`）
+- 管理员权限通过 `ADMIN_EMAILS` 邮箱白名单授予（注册后自动标记 `isAdmin`）
+- 已有账号命中 `ADMIN_EMAILS` 时，在会话获取阶段补写 `isAdmin=true`
+
+## 测试覆盖
+
+- JWKS 集成测试：`auth.jwks.integration.spec.ts`（校验 JWKS 可验签 access token）
 
 ## 文件结构
 

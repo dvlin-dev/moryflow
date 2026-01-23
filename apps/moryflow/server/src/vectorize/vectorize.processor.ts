@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: VectorizeJobData（userId/fileId/content）
+ * [OUTPUT]: Vectorize Worker 调用与向量化记录写入
+ * [POS]: 向量化队列处理器（后台任务）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -51,7 +59,7 @@ export class VectorizeProcessor extends WorkerHost {
       const vectorText = buildVectorText(fileName, content);
 
       // 调用 Vectorize Worker
-      await this.vectorizeClient.upsert([
+      await this.vectorizeClient.upsert(userId, [
         {
           id: fileId,
           text: vectorText,

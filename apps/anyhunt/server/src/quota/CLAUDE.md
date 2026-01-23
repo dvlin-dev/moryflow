@@ -21,6 +21,8 @@ Quota management system for tracking and limiting API usage. Handles daily free 
 - Pre-deduct on request, refund on failure
 - Cache hits don't consume quota
 - Thread-safe operations via Redis
+- 集成测试依赖 ApiKeyModule，测试模块需引入 VectorPrismaModule 并提供 VECTOR_DATABASE_URL
+- 集成测试需清理 daily credits Redis key（`credits:daily_used:*`），避免用例间污染
 
 ## File Structure
 

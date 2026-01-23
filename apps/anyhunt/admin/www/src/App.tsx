@@ -10,8 +10,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
-import { apiClient } from './lib/api-client';
-import { USER_API } from './lib/api-paths';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -61,52 +59,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-type UserProfile = {
-  id: string;
-  email: string;
-  name: string | null;
-  tier: string;
-  isAdmin: boolean;
-};
-
 function App() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
-  const setUser = useAuthStore((state) => state.setUser);
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const setBootstrapped = useAuthStore((state) => state.setBootstrapped);
+  const bootstrap = useAuthStore((state) => state.bootstrap);
 
   useEffect(() => {
-    let isActive = true;
-
-    if (isBootstrapped || isAuthenticated) {
-      if (!isBootstrapped && isAuthenticated) {
-        setBootstrapped(true);
-      }
-      return;
+    if (!isBootstrapped) {
+      void bootstrap();
     }
-
-    const bootstrap = async () => {
-      try {
-        const profile = await apiClient.get<UserProfile>(USER_API.ME);
-        if (!isActive) return;
-        setUser(profile);
-      } catch {
-        if (!isActive) return;
-        clearSession();
-      } finally {
-        if (isActive) {
-          setBootstrapped(true);
-        }
-      }
-    };
-
-    bootstrap();
-
-    return () => {
-      isActive = false;
-    };
-  }, [isAuthenticated, isBootstrapped, setBootstrapped, setUser, clearSession]);
+  }, [bootstrap, isBootstrapped]);
 
   return (
     <QueryClientProvider client={queryClient}>

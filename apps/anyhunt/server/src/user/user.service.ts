@@ -45,7 +45,7 @@ export class UserService {
       id: user.id,
       email: user.email,
       name: user.name,
-      tier: (user.subscription?.tier ?? 'FREE') as SubscriptionTier,
+      subscriptionTier: (user.subscription?.tier ?? 'FREE') as SubscriptionTier,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     };
@@ -55,8 +55,9 @@ export class UserService {
    * 构建带 quota 的用户资料（SRP：统一 quota 组装）
    */
   private async buildProfileWithQuota(user: UserWithRelations) {
-    const tier = (user.subscription?.tier ?? 'FREE') as SubscriptionTier;
-    await this.quotaService.ensureExists(user.id, tier);
+    const subscriptionTier = (user.subscription?.tier ??
+      'FREE') as SubscriptionTier;
+    await this.quotaService.ensureExists(user.id, subscriptionTier);
     const quota = await this.quotaService.getStatus(user.id);
 
     return {

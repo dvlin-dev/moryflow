@@ -18,7 +18,8 @@ import { ZodError, type ZodSchema } from 'zod';
 export class ZodValidationPipe implements PipeTransform {
   constructor(private readonly schema: ZodSchema) {}
 
-  transform(value: unknown, _metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
+    void metadata;
     try {
       return this.schema.parse(value);
     } catch (error) {

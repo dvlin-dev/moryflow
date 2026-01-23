@@ -205,7 +205,7 @@ export class AuthTokensService {
           id: record.user.id,
           email: record.user.email,
           name: record.user.name,
-          tier: record.user.subscription?.tier ?? 'FREE',
+          subscriptionTier: record.user.subscription?.tier ?? 'FREE',
           isAdmin: record.user.isAdmin,
         },
         refreshToken: { token: refreshToken, expiresAt },
@@ -260,7 +260,7 @@ export class AuthTokensService {
       id: user.id,
       email: user.email,
       name: user.name,
-      tier: user.subscription?.tier ?? 'FREE',
+      subscriptionTier: user.subscription?.tier ?? 'FREE',
       isAdmin: user.isAdmin,
     };
   }

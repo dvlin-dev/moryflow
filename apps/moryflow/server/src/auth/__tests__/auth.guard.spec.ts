@@ -61,7 +61,7 @@ describe('AuthGuard', () => {
         id: 'user_1',
         email: 'user@example.com',
         name: 'User',
-        tier: 'free',
+        subscriptionTier: 'free',
         isAdmin: false,
       },
     });

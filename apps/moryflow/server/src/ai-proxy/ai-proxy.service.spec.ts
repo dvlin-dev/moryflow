@@ -12,6 +12,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AiProxyService } from './ai-proxy.service';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
+import { ActivityLogService } from '../activity-log';
 import {
   createPrismaMock,
   MockPrismaService,
@@ -36,6 +37,7 @@ describe('AiProxyService', () => {
     consumeCreditsWithDebt: ReturnType<typeof vi.fn>;
     getCreditsBalance: ReturnType<typeof vi.fn>;
   };
+  let activityLogServiceMock: { logAiChat: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
@@ -55,12 +57,16 @@ describe('AiProxyService', () => {
         available: 15,
       }),
     };
+    activityLogServiceMock = {
+      logAiChat: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiProxyService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: CreditService, useValue: creditServiceMock },
+        { provide: ActivityLogService, useValue: activityLogServiceMock },
       ],
     }).compile();
 

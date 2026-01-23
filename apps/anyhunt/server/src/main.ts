@@ -2,6 +2,7 @@
  * [INPUT]: 环境变量（PORT/ALLOWED_ORIGINS/...）与反代请求头（X-Forwarded-Proto/Host）
  * [OUTPUT]: 启动 NestJS HTTP 服务并挂载全局中间件/拦截器/Swagger
  * [POS]: Anyhunt Dev Server 入口（反代部署必须启用 trust proxy）
+ * [NOTE]: 启动期仅初始化 Demo 用户，管理员权限由注册后 ADMIN_EMAILS 白名单授予
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/CLAUDE.md`
  */
@@ -21,7 +22,6 @@ import { AppModule } from './app.module';
 import { PrismaService } from './prisma';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { ensureBootstrapAdmin } from './bootstrap/bootstrap-admin';
 import { matchOrigin } from './common/utils';
 import { DEVICE_PLATFORM_ALLOWLIST } from './auth/auth.constants';
 import { getTrustedOrigins } from './auth/auth.config';
@@ -215,7 +215,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api-docs', app, document);
 
-  await ensureBootstrapAdmin(app.get(PrismaService), logger);
   await ensureDemoPlaygroundUser(app.get(PrismaService), logger);
 
   const port = process.env.PORT ?? 3000;

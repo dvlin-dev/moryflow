@@ -11,6 +11,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreditService } from './credit.service';
 import { PrismaService } from '../prisma';
 import { RedisService } from '../redis';
+import { DAILY_FREE_CREDITS } from '../config';
 import {
   createPrismaMock,
   MockPrismaService,
@@ -125,7 +126,7 @@ describe('CreditService', () => {
 
       const daily = await service.getDailyCredits(userId);
 
-      expect(daily).toBe(1000); // DAILY_FREE_CREDITS
+      expect(daily).toBe(DAILY_FREE_CREDITS);
     });
 
     it('已使用部分应返回剩余数量', async () => {
@@ -133,15 +134,15 @@ describe('CreditService', () => {
 
       const daily = await service.getDailyCredits(userId);
 
-      expect(daily).toBe(995); // 1000 - 5
+      expect(daily).toBe(DAILY_FREE_CREDITS - 5);
     });
 
     it('用完后应返回 0', async () => {
-      redisMock.get.mockResolvedValue('15'); // 全部用完
+      redisMock.get.mockResolvedValue(`${DAILY_FREE_CREDITS}`); // 全部用完
 
       const daily = await service.getDailyCredits(userId);
 
-      expect(daily).toBe(985); // 1000 - 15
+      expect(daily).toBe(0);
     });
 
     it('超额使用时应返回 0', async () => {
@@ -223,7 +224,7 @@ describe('CreditService', () => {
     });
 
     it('超出余额应产生欠费', async () => {
-      redisMock.get.mockResolvedValue('995'); // 剩余日积分 5
+      redisMock.get.mockResolvedValue(`${DAILY_FREE_CREDITS - 5}`); // 剩余日积分 5
       prismaMock.subscriptionCredits.findUnique.mockResolvedValue(null);
       prismaMock.purchasedCredits.findMany.mockResolvedValue([]);
       prismaMock.creditDebt.findUnique.mockResolvedValue(null);

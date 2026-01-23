@@ -194,7 +194,7 @@ pnpm exec prisma migrate deploy --config prisma.vector.config.ts
 pnpm prisma:generate
 ```
 
-7. 初始管理员账号：通过 `ADMIN_EMAIL`/`ADMIN_PASSWORD` 在服务启动时自动 bootstrap（无需 seed）。
+7. 初始管理员账号：通过 `ADMIN_EMAILS` 邮箱白名单，注册后自动授予 `isAdmin=true`（不在启动期注入密码）。
 
 ## 6. 运行与验证
 

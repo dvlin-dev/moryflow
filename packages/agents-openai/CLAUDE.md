@@ -60,3 +60,7 @@ agents-openai/
 └── 被依赖 ← agents-realtime
 └── 被依赖 ← agents（顶层导出）
 ```
+
+## 近期变更
+
+- 刷新自动生成的 `metadata.ts`

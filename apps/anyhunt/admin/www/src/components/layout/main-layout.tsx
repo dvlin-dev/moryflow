@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: logout (click)
- * [POS]: Admin 主布局与导航壳（Better Auth 登出）
+ * [POS]: Admin 主布局与导航壳（Access Token 登出）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -34,7 +34,6 @@ import {
   type HugeIcon,
 } from '@anyhunt/ui';
 import { useAuthStore } from '@/stores/auth';
-import { authClient } from '@/lib/auth-client';
 
 type NavItem = { path: string; label: string; icon: HugeIcon };
 type NavGroup = { id: string; label: string; icon: HugeIcon; items: NavItem[] };
@@ -93,7 +92,7 @@ function isPathActive(pathname: string, itemPath: string): boolean {
 
 export function MainLayout() {
   const location = useLocation();
-  const { user, clearSession } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const pathname = location.pathname;
@@ -118,12 +117,7 @@ export function MainLayout() {
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    try {
-      await authClient.signOut();
-    } catch {
-      // 即使后端调用失败，也要清除前端状态
-    }
-    clearSession();
+    await logout();
   };
 
   return (

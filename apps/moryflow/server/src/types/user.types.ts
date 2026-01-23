@@ -12,6 +12,6 @@ export interface CurrentUserDto {
   id: string;
   email: string;
   name: string | null;
-  tier: SubscriptionTier;
+  subscriptionTier: SubscriptionTier;
   isAdmin: boolean;
 }

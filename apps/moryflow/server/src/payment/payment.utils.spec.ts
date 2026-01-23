@@ -120,14 +120,14 @@ describe('payment.utils', () => {
       expect(result).toBe('https://app.moryflow.com');
     });
 
-    it('不可信 referrer 返回 null', () => {
+    it('不可信 referrer 回退到唯一允许域名', () => {
       const result = resolvePostMessageOrigin(
         ['https://app.moryflow.com'],
         'https://evil.com/path',
         'https://server.moryflow.com',
       );
 
-      expect(result).toBeNull();
+      expect(result).toBe('https://app.moryflow.com');
     });
 
     it('无 referrer 时使用 fallback', () => {

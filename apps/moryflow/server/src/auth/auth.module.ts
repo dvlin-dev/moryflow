@@ -26,6 +26,6 @@ import { AuthTokensService } from './auth.tokens.service';
       useExisting: AuthGuard,
     },
   ],
-  exports: [AuthService, AuthGuard],
+  exports: [AuthService, AuthTokensService, AuthGuard],
 })
 export class AuthModule {}

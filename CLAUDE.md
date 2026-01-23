@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-23（完成 Moryflow Auth/Quota/Payment 修复；补充发布站点 `_meta.json` OFFLINE 约定；同步对话中文约束）
+> 最近更新：2026-01-25（补充 Console E2E 测试命令；核对 Auth 环境变量细节与域名对齐、数据库重置记录与 JWKS 测试落地）
 
 ## 项目概述
 
@@ -50,6 +50,8 @@ pnpm --filter @anyhunt/admin test
 
 # 运行 Playwright E2E 测试
 pnpm --filter @anyhunt/admin test:e2e
+pnpm --filter @anyhunt/console test
+pnpm --filter @anyhunt/console test:e2e
 ```
 
 ### 测试环境 Docker Compose
@@ -212,6 +214,7 @@ Anyhunt/
 | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | [`docs/index.md`](./docs/index.md)                                                                                     | docs/ 统一入口索引（内部协作）                            |
 | [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
+| [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)         | Auth 交互统一与数据库重置改造方案                         |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
 | [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                   |
