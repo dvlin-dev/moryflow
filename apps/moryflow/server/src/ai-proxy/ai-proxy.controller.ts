@@ -1,11 +1,11 @@
 /**
- * AI Proxy Controller
- * OpenAI 兼容 API 端点
+ * [INPUT]: OpenAI 兼容请求（Bearer access token）
+ * [OUTPUT]: 模型列表与对话补全响应
+ * [POS]: AI Proxy 控制器（/v1）
  *
  * 认证说明：
- * - 使用 Bearer Token 认证（通过 Better Auth bearer 插件）
- * - 客户端通过 `Authorization: Bearer <session-token>` 携带凭证
- * - 全局 AuthGuard 自动验证并注入 user 到 request
+ * - 使用 access JWT（Authorization: Bearer <accessToken>）
+ * - AuthGuard 验证 access token 并注入 user 到 request
  */
 
 import {

@@ -25,6 +25,7 @@ status: active
 - 域名与部署架构（两条业务线）：`docs/architecture/domains-and-deployment.md`
 - Auth 系统入口（两条业务线不互通）：`docs/architecture/auth.md`
 - Auth 拆分文档：`docs/architecture/auth/`
+- Auth 交互统一与数据库重置方案：`docs/architecture/auth/unified-auth-rebuild-plan.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`

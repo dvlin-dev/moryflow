@@ -87,4 +87,4 @@ export interface ImageUsage {
 
 // ==================== Re-export ====================
 
-export type { UserTier } from '../../types';
+export type { SubscriptionTier } from '../../types';

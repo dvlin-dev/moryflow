@@ -50,6 +50,7 @@ import type { VaultWatcherController } from '../vault-watcher/index.js';
 import { getRuntime } from '../chat/runtime.js';
 import * as ollamaService from '../ollama-service/index.js';
 import { membershipBridge } from '../membership-bridge.js';
+import { getRefreshToken, setRefreshToken, clearRefreshToken } from '../membership-token-store.js';
 import path from 'node:path';
 import {
   cloudSyncEngine,
@@ -470,6 +471,20 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
   ipcMain.handle('membership:syncEnabled', (_event, payload) => {
     const enabled = typeof payload === 'boolean' ? payload : true;
     membershipBridge.setEnabled(enabled);
+  });
+
+  ipcMain.handle('membership:getRefreshToken', () => getRefreshToken());
+
+  ipcMain.handle('membership:setRefreshToken', (_event, payload) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      setRefreshToken(payload.trim());
+      return;
+    }
+    clearRefreshToken();
+  });
+
+  ipcMain.handle('membership:clearRefreshToken', () => {
+    clearRefreshToken();
   });
 
   // ── Cloud Sync ────────────────────────────────────────────────

@@ -10,6 +10,8 @@
  */
 export type * from './models/User'
 export type * from './models/Session'
+export type * from './models/RefreshToken'
+export type * from './models/Jwks'
 export type * from './models/Account'
 export type * from './models/Verification'
 export type * from './models/UserProfile'

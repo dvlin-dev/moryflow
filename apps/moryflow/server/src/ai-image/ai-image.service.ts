@@ -16,7 +16,7 @@ import type {
   ImageGenerationRequest,
   ImageGenerationResponse,
   ImageUsage,
-  UserTier,
+  SubscriptionTier,
 } from './dto';
 
 // 配置
@@ -52,7 +52,7 @@ export class AiImageService {
    */
   async generateImage(
     userId: string,
-    userTier: UserTier,
+    userTier: SubscriptionTier,
     request: ImageGenerationRequest,
   ): Promise<ImageGenerationResponse> {
     const startTime = Date.now();
@@ -122,7 +122,7 @@ export class AiImageService {
    * 获取并验证模型配置（使用硬编码配置）
    */
   private getAndValidateModel(
-    userTier: UserTier,
+    userTier: SubscriptionTier,
     modelId?: string,
   ): ImageModelConfig {
     const actualModelId = modelId || DEFAULT_IMAGE_MODEL;

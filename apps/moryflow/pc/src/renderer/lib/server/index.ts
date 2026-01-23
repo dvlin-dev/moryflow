@@ -19,7 +19,7 @@ export type {
   MembershipAuthState,
   BetterAuthError,
   MembershipApiError,
-} from '@anyhunt/api'
+} from '@anyhunt/api';
 
 // ── 从共享包重新导出常量和工具函数 ────────────────────────
 export {
@@ -37,29 +37,24 @@ export {
   isTierSufficient,
   AUTH_ERROR_MESSAGES,
   parseAuthError,
-} from '@anyhunt/api'
+} from '@anyhunt/api';
 
 // ── 本地类型别名（向后兼容） ──────────────────────────────
-export type {
-  User,
-  UserInfo,
-  UserProfile,
-  ModelsResponse,
-  AuthState,
-} from './types'
+export type { User, UserInfo, UserProfile, ModelsResponse, AuthState } from './types';
 
 // ── PC 端特有常量 ────────────────────────────────────────
-export { MEMBERSHIP_API_URL } from './const'
+export { MEMBERSHIP_API_URL } from './const';
 
 // ── Auth Client 导出 ─────────────────────────────────────
+export { signIn, signUp, emailOtp } from './client';
+
+// ── Auth Session ────────────────────────────────────────
 export {
-  signIn,
-  signUp,
-  signOut,
-  getStoredToken,
-  setStoredToken,
-  clearStoredToken,
-} from './client'
+  getAccessToken,
+  refreshAccessToken,
+  logoutFromServer,
+  clearAuthSession,
+} from './auth-session';
 
 // ── API 客户端和便捷函数 ─────────────────────────────────
 export {
@@ -73,10 +68,7 @@ export {
   fetchProducts,
   createCheckout,
   deleteAccount,
-} from './api'
-
-// ── 预注册 API ───────────────────────────────────────────
-export { preRegisterApi } from './pre-register'
+} from './api';
 
 // ── Context & Hooks 导出 ─────────────────────────────────
-export { AuthProvider, useAuth } from './context'
+export { AuthProvider, useAuth } from './context';

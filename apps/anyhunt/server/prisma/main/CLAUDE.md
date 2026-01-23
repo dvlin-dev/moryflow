@@ -11,12 +11,12 @@
 ## 目录职责
 
 - `schema.prisma`：Anyhunt Dev 主库（业务数据）唯一数据源
-- `migrations/*`：主库迁移历史（只增不改）
+- `migrations/*`：主库迁移（重置后仅保留 init 基线）
 
 ## 迁移原则（强制）
 
-- 已进入 `migrations/` 的迁移 **禁止修改**（避免生产/测试环境漂移）。
-- 新变更一律新增 migration（哪怕“不考虑历史兼容”，也必须保证迁移链可顺序执行）。
+- 已生成的迁移 **禁止修改**（避免生产/测试环境漂移）。
+- 本次重置后仅保留 init；后续变更继续新增 migration。
 - 允许 `DROP COLUMN/TABLE`（本项目默认零兼容），但必须确保：
   - 线上部署有明确的执行顺序（先 deploy migration，再 deploy server 代码）。
 
@@ -27,6 +27,4 @@
 
 ## 近期变更记录
 
-- 2026-01-20：LLM Settings 拆分默认模型：`defaultModelId` → `defaultAgentModelId/defaultExtractModelId`（新增补丁迁移，避免修改既有迁移）。
-- 2026-01-24：新增 `RefreshToken` 与 `Jwks` 模型（access/refresh token 与 JWKS 支持）。
-- 2026-01-25：补充 `User.refreshTokens` 关系字段，完善 RefreshToken 双向关联。
+- 2026-01-25：删除历史迁移，准备以 init 迁移作为新基线。

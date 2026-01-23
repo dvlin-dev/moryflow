@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { SiteType, SiteStatus } from '../../generated/prisma/enums';
-import type { CurrentUserDto, UserTier } from '../types';
+import type { CurrentUserDto, SubscriptionTier } from '../types';
 import type { CreateSiteDto, UpdateSiteDto, SiteResponseDto } from './dto';
 import {
   RESERVED_SUBDOMAINS,
@@ -40,7 +40,7 @@ export class SiteService {
   /**
    * 检查用户是否为付费用户
    */
-  private isPaidUser(tier: UserTier): boolean {
+  private isPaidUser(tier: SubscriptionTier): boolean {
     return tier !== 'free';
   }
 
@@ -148,7 +148,7 @@ export class SiteService {
    */
   async checkUserSiteLimit(
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
   ): Promise<{ allowed: boolean; message?: string }> {
     const quota = getQuotaConfig(tier);
 
@@ -318,7 +318,7 @@ export class SiteService {
   async updateSite(
     siteId: string,
     userId: string,
-    tier: UserTier,
+    tier: SubscriptionTier,
     dto: UpdateSiteDto,
   ): Promise<SiteResponseDto> {
     // 验证站点所有权

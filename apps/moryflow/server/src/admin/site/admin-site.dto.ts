@@ -16,7 +16,7 @@ import {
 
 export const SiteStatusEnum = ['ACTIVE', 'OFFLINE'] as const;
 export const SiteTypeEnum = ['MARKDOWN', 'GENERATED'] as const;
-export const UserTierEnum = [
+export const SubscriptionTierEnum = [
   'free',
   'starter',
   'basic',
@@ -37,7 +37,7 @@ export const AdminSiteListQuerySchema = z.object({
   // 筛选条件
   status: z.enum(SiteStatusEnum).optional(),
   type: z.enum(SiteTypeEnum).optional(),
-  userTier: z.enum(UserTierEnum).optional(),
+  userTier: z.enum(SubscriptionTierEnum).optional(),
   expiryFilter: z.enum(ExpiryFilterEnum).optional(),
 
   // 分页

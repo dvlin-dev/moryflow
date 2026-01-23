@@ -55,7 +55,9 @@ module-name/
 - AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
 - AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
 - CreditService：新增欠费记录与付费积分优先抵扣
+- Auth：access JWT + refresh rotation + JWKS，移除 pre-register 与旧 bearer 交互
 - Auth：Web/设备端区分 CSRF（Web 开启、设备端允许无 Origin），补充 origin 白名单工具与单测
+- Prisma：User 增补 refreshTokens 关联，避免 RefreshToken 关系缺失
 - Payment：successUrl 白名单校验、Webhook productId 校验与类型映射、成功页 postMessage 限定 origin
 - Payment：Webhook 幂等性补齐唯一约束兜底；新增支付工具与单测
 - Quota：存储/向量化扣减改为原子更新并补齐单测
@@ -64,6 +66,7 @@ module-name/
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
 - AuthModule 设为全局并导出 AuthGuard，修复 e2e 中 Guard 依赖注入失败
+- Common：补齐 ZodValidationPipe，用于 controller 级别 schema 校验
 
 ## 错误信息规范
 

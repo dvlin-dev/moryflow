@@ -1,130 +1,126 @@
 /**
  * LoginForm - 管理员登录表单组件
- * 使用 Bearer Token 认证，登录成功后保存 token 到 localStorage
+ * 通过 /api/auth/* 完成登录与刷新
  */
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth'
-import { apiClient } from '@/lib/api-client'
-import { ADMIN_API } from '@/lib/api-paths'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Command, Loader2 } from 'lucide-react'
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useAuthStore } from '@/stores/auth';
+import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 
-interface LoginResponse {
-  success: boolean
-  user: {
-    id: string
-    email: string
-    name?: string | null
-    isAdmin: boolean
-  }
-  token: string
-}
-
-export type LoginFormProps = React.ComponentProps<'div'>
+export type LoginFormProps = React.ComponentProps<'div'>;
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const setAuth = useAuthStore((state) => state.setAuth)
-  const navigate = useNavigate()
+  const signIn = useAuthStore((state) => state.signIn);
+  const navigate = useNavigate();
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const isLoading = form.formState.isSubmitting;
+  const rootError = useMemo(
+    () => form.formState.errors.root?.message,
+    [form.formState.errors.root?.message]
+  );
 
-    if (!email.trim() || !password.trim()) {
-      toast.error('请输入邮箱和密码')
-      return
-    }
-
-    setIsLoading(true)
-
+  const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      const data = await apiClient.post<LoginResponse>(ADMIN_API.LOGIN, {
-        email,
-        password,
-      })
-
-      if (data.success && data.user && data.token) {
-        setAuth(data.user, data.token)
-        toast.success('登录成功')
-        navigate('/')
-      } else {
-        throw new Error('登录失败')
-      }
+      await signIn(values.email.trim(), values.password.trim());
+      toast.success('Signed in successfully');
+      navigate('/');
     } catch (error) {
-      console.error('Login error:', error)
-      toast.error(error instanceof Error ? error.message : '登录失败，请检查账号密码')
-    } finally {
-      setIsLoading(false)
+      const message = error instanceof Error ? error.message : 'Sign in failed';
+      form.setError('root', { message });
+      toast.error(message);
     }
-  }
+  });
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex items-center gap-2">
-                <Command className="size-8" />
+          <Form {...form}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-2xl font-bold">Moryflow</h1>
+                <p className="text-muted-foreground text-balance text-sm">管理后台登录</p>
               </div>
-              <p className="text-muted-foreground text-balance text-sm">
-                管理后台登录
-              </p>
-            </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">管理员邮箱</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  required
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>管理员邮箱</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="admin@example.com"
+                          autoComplete="email"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">密码</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  required
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>密码</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-muted-foreground">
-                  初始设置使用环境变量 ADMIN_PASSWORD
-                </p>
-              </div>
+                {rootError ? <p className="text-sm text-destructive">{rootError}</p> : null}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    登录中...
-                  </>
-                ) : (
-                  '登录'
-                )}
-              </Button>
-            </div>
-          </form>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
+                      Signing in...
+                    </>
+                  ) : (
+                    '登录'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

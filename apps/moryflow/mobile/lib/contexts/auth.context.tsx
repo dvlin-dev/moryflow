@@ -1,13 +1,12 @@
 /**
- * 认证上下文
- *
- * 基于 MembershipProvider 的认证状态管理
- * 提供与旧 API 兼容的接口
+ * [PROVIDES]: useAuth/useSignIn/useUser 兼容接口
+ * [DEPENDS]: MembershipProvider/useMembershipAuth
+ * [POS]: 认证上下文兼容层
  */
 
 import React, { useCallback, useMemo } from 'react';
 import { router } from 'expo-router';
-import { useMembership, useMembershipAuth, type UserInfo } from '@/lib/server';
+import { useMembership, useMembershipAuth, isAuthError, type UserInfo } from '@/lib/server';
 
 // ── Provider（兼容层）────────────────────────────────────
 
@@ -58,7 +57,18 @@ export function useAuth() {
         throw new Error('请输入邮箱和密码');
       }
 
-      await login(credentials.email, credentials.password);
+      try {
+        await login(credentials.email, credentials.password);
+      } catch (error) {
+        if (isAuthError(error) && error.code === 'EMAIL_NOT_VERIFIED') {
+          router.replace({
+            pathname: '/(auth)/verify-email',
+            params: { email: credentials.email, mode: 'signin' },
+          });
+          return;
+        }
+        throw error;
+      }
 
       // 登录成功后导航
       if (returnTo) {
@@ -73,17 +83,13 @@ export function useAuth() {
   );
 
   const signUp = useCallback(
-    async (data: SignUpData, returnTo?: string) => {
+    async (data: SignUpData) => {
       await register(data.email, data.password, data.name);
 
-      // 注册成功后导航
-      if (returnTo) {
-        router.replace(returnTo as never);
-      } else if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/');
-      }
+      router.replace({
+        pathname: '/(auth)/verify-email',
+        params: { email: data.email, mode: 'signup' },
+      });
     },
     [register]
   );
@@ -123,7 +129,18 @@ export function useSignIn() {
         throw new Error('请输入邮箱和密码');
       }
 
-      await login(credentials.email, credentials.password);
+      try {
+        await login(credentials.email, credentials.password);
+      } catch (error) {
+        if (isAuthError(error) && error.code === 'EMAIL_NOT_VERIFIED') {
+          router.replace({
+            pathname: '/(auth)/verify-email',
+            params: { email: credentials.email, mode: 'signin' },
+          });
+          return;
+        }
+        throw error;
+      }
 
       // 登录成功后导航
       if (router.canGoBack()) {

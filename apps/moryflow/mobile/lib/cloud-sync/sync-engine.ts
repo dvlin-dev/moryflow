@@ -7,7 +7,7 @@
  */
 
 import { create } from 'zustand';
-import { getStoredToken } from '@/lib/server/storage';
+import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 import { fileIndexManager } from '@/lib/vault/file-index';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
@@ -235,8 +235,9 @@ export const cloudSyncEngine = {
       return;
     }
 
-    const token = await getStoredToken();
-    if (!token) {
+    const refreshed = await refreshAccessToken();
+    const token = getAccessToken();
+    if (!refreshed || !token) {
       store.setStatus('disabled');
       store.setVault(vaultPath, null, null);
       return;

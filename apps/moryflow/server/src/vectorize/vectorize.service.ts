@@ -9,7 +9,6 @@ import type {
   VectorizeJobData,
 } from './dto/vectorize.dto';
 import { VectorizeClient } from './vectorize.client';
-import type { UserTier } from '../types';
 
 export const VECTORIZE_QUEUE = 'vectorize-queue';
 
@@ -61,9 +60,9 @@ export class VectorizeService {
     // 获取用户 tier
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { tier: true },
+      select: { subscription: { select: { tier: true } } },
     });
-    const tier = (user?.tier as UserTier) || 'free';
+    const tier = user?.subscription?.tier ?? 'free';
 
     // 检查是否已存在该文件的向量化记录
     const existing = await this.prisma.vectorizedFile.findUnique({
@@ -216,9 +215,9 @@ export class VectorizeService {
     // 获取用户 tier
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { tier: true },
+      select: { subscription: { select: { tier: true } } },
     });
-    const tier = (user?.tier as UserTier) || 'free';
+    const tier = user?.subscription?.tier ?? 'free';
 
     // 获取已存在的向量化记录（用于判断是否需要检查配额）
     const existingRecords = await this.prisma.vectorizedFile.findMany({

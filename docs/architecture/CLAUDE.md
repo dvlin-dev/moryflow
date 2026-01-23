@@ -33,3 +33,4 @@
 - `domains-and-deployment.md`：补充 `_meta.json` 解析/结构异常按 OFFLINE 处理。
 - `domains-and-deployment.md` 补充 `rss.anyhunt.app`（Digest RSS 入口）说明。
 - `ui-message-list-unification.md` 已补齐 MessageList 组件并移除 metadata.moryflow 兼容逻辑。
+- `auth/unified-auth-rebuild-plan.md`：同步当前改造进度与已完成清单。

@@ -61,7 +61,12 @@ export class AuthTokensController {
   ) {
     const cookieToken = this.getRefreshTokenFromCookie(req);
     const bodyToken = dto.refreshToken?.trim();
-    const isDeviceRequest = this.assertTokenRequest(req, bodyToken);
+    const devicePlatform = getDevicePlatform(req);
+    const isDeviceRequest = this.assertTokenRequest(
+      req,
+      devicePlatform,
+      bodyToken,
+    );
 
     const tokenMeta = {
       ipAddress: req.ip,
@@ -117,7 +122,8 @@ export class AuthTokensController {
   ) {
     const cookieToken = this.getRefreshTokenFromCookie(req);
     const bodyToken = dto.refreshToken?.trim();
-    this.assertTokenRequest(req, bodyToken);
+    const devicePlatform = getDevicePlatform(req);
+    this.assertTokenRequest(req, devicePlatform, bodyToken);
 
     const token = bodyToken || cookieToken;
     if (token) {
@@ -142,7 +148,8 @@ export class AuthTokensController {
   ): Promise<void> {
     const cookieToken = this.getRefreshTokenFromCookie(req);
     const bodyToken = dto.refreshToken?.trim();
-    this.assertTokenRequest(req, bodyToken);
+    const devicePlatform = getDevicePlatform(req);
+    this.assertTokenRequest(req, devicePlatform, bodyToken);
     const token = bodyToken || cookieToken;
 
     if (token) {
@@ -165,20 +172,30 @@ export class AuthTokensController {
     return token ? token.trim() : null;
   }
 
-  private assertTokenRequest(req: Request, bodyToken?: string | null): boolean {
-    const isDeviceRequest = Boolean(bodyToken);
-    if (isDeviceRequest && !getDevicePlatform(req)) {
+  private assertTokenRequest(
+    req: Request,
+    devicePlatform: string | null,
+    bodyToken?: string | null,
+  ): boolean {
+    const isDeviceRequest = Boolean(devicePlatform) || Boolean(bodyToken);
+    if (bodyToken && !devicePlatform) {
       throw new ForbiddenException('Missing or invalid X-App-Platform');
     }
     if (!isDeviceRequest) {
       this.assertTrustedOrigin(req);
     }
+    if (devicePlatform) {
+      this.assertTrustedOrigin(req, devicePlatform);
+    }
     return isDeviceRequest;
   }
 
-  private assertTrustedOrigin(req: Request) {
+  private assertTrustedOrigin(req: Request, devicePlatform?: string | null) {
     const origin = getRequestOrigin(req);
     if (!origin) {
+      if (devicePlatform) {
+        return;
+      }
       throw new ForbiddenException('Missing origin');
     }
     const trustedOrigins = getTrustedOrigins();

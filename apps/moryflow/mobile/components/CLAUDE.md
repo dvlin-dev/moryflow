@@ -80,6 +80,7 @@ const colors = useThemeColors()
 - `LiquidGlassTabBar` 以 Tabs 状态为唯一数据源渲染/导航，「快速创建草稿」为独立动作按钮
 - `EditorWebView` 注入主题相关样式，确保内容 placeholder 在暗黑模式下可见
 - `MessageBubble` 补齐动画 useEffect 依赖，消除 hooks lint 警告
+- Auth 表单统一改为 RHF + zod/v3，并新增 `ui/form.tsx`
 
 ## 依赖关系
 

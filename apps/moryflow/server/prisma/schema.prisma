@@ -15,7 +15,7 @@ datasource db {
 // Enums
 // ==========================================
 
-enum UserTier {
+enum SubscriptionTier {
   free
   starter
   basic
@@ -70,18 +70,18 @@ model User {
   name          String?
   emailVerified Boolean   @default(false)
   image         String?
-  tier          UserTier  @default(free)
   isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // 软删除时间戳，null 表示未删除
 
   sessions            Session[]
+  refreshTokens       RefreshToken[]
   accounts            Account[]
   profile             UserProfile?
   subscriptionCredits SubscriptionCredits?
   purchasedCredits    PurchasedCredits[]
-  subscriptions       Subscription[]
+  subscription        Subscription?
   paymentOrders       PaymentOrder[]
   licenses            License[]
   activityLogs        ActivityLog[]        @relation("UserActivityLogs")
@@ -118,6 +118,33 @@ model Session {
   @@index([userId])
 }
 
+model RefreshToken {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken? @relation("RefreshTokenRotation", fields: [replacedById], references: [id])
+  replacements RefreshToken[] @relation("RefreshTokenRotation")
+
+  @@index([userId])
+}
+
+model Jwks {
+  id         String   @id @default(cuid())
+  publicKey  String
+  privateKey String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime?
+}
+
 model Account {
   id                    String    @id @default(cuid())
   userId                String
@@ -134,6 +161,7 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([providerId, accountId])
   @@index([userId])
 }
 
@@ -220,11 +248,12 @@ model CreditDebt {
 
 model Subscription {
   id                  String             @id @default(cuid())
-  userId              String
-  creemSubscriptionId String             @unique
-  creemCustomerId     String
-  productId           String
-  status              SubscriptionStatus
+  userId              String             @unique
+  tier                SubscriptionTier   @default(free)
+  status              SubscriptionStatus @default(active)
+  creemSubscriptionId String?            @unique
+  creemCustomerId     String?
+  productId           String?
   currentPeriodStart  DateTime?
   currentPeriodEnd    DateTime?
   cancelAtPeriodEnd   Boolean            @default(false)
@@ -233,7 +262,6 @@ model Subscription {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@index([status])
 }
 
@@ -390,7 +418,7 @@ model AiModel {
   enabled          Boolean  @default(true)
   inputTokenPrice  Float // 输入 token 价格（美元/1M）
   outputTokenPrice Float // 输出 token 价格（美元/1M）
-  minTier          UserTier
+  minTier          SubscriptionTier
   maxContextTokens Int
   maxOutputTokens  Int
   capabilitiesJson Json // 模型能力配置

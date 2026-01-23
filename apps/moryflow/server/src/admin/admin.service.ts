@@ -1,120 +1,44 @@
 /**
- * Admin Service
- * 管理员功能业务逻辑
+ * [INPUT]: 用户/订阅/积分/管理员操作参数
+ * [OUTPUT]: 管理员视角的用户与统计结果
+ * [POS]: Admin 模块核心业务逻辑
  */
 
-import {
-  Injectable,
-  Logger,
-  UnauthorizedException,
-  NotFoundException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { randomBytes } from 'crypto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
 import { EmailService } from '../email';
 import { ActivityLogService } from '../activity-log';
-import type { UserTier, CurrentUserDto } from '../types';
-
-/** Session 有效期（毫秒） - 7 天 */
-const SESSION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** Admin 登录响应 */
-export interface AdminLoginResult {
-  success: boolean;
-  sessionToken: string;
-  user: CurrentUserDto;
-}
+import type { SubscriptionTier } from '../types';
 
 @Injectable()
 export class AdminService {
-  private readonly logger = new Logger(AdminService.name);
+  private mapAdminUser(user: {
+    id: string;
+    email: string;
+    name: string | null;
+    isAdmin: boolean;
+    createdAt: Date;
+    deletedAt: Date | null;
+    subscription: { tier: SubscriptionTier } | null;
+  }) {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      tier: user.subscription?.tier ?? 'free',
+      isAdmin: user.isAdmin,
+      createdAt: user.createdAt,
+      deletedAt: user.deletedAt,
+    };
+  }
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly creditService: CreditService,
-    private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     private readonly activityLogService: ActivityLogService,
   ) {}
-
-  /**
-   * 管理员登录
-   * 验证 ADMIN_PASSWORD 环境变量，创建 Better Auth Session
-   */
-  async adminLogin(
-    email: string,
-    password: string,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<AdminLoginResult> {
-    const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
-
-    if (!adminPassword || password !== adminPassword) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // 查找或创建管理员用户
-    let user = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      // 自动创建管理员账户
-      user = await this.prisma.user.create({
-        data: {
-          email,
-          emailVerified: true,
-          tier: 'license',
-          isAdmin: true,
-        },
-      });
-      this.logger.log(`Created admin user: ${email}`);
-    } else if (!user.isAdmin) {
-      // 确保是管理员
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { isAdmin: true },
-      });
-    }
-
-    // 创建 Better Auth 兼容的 Session
-    const sessionToken = randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + SESSION_EXPIRES_MS);
-
-    await this.prisma.session.create({
-      data: {
-        userId: user.id,
-        token: sessionToken,
-        expiresAt,
-        ipAddress,
-        userAgent,
-      },
-    });
-
-    return {
-      success: true,
-      sessionToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        tier: user.tier as CurrentUserDto['tier'],
-        isAdmin: user.isAdmin,
-      },
-    };
-  }
-
-  /**
-   * 管理员登出
-   * 删除指定的 Session
-   */
-  async adminLogout(sessionToken: string): Promise<void> {
-    await this.prisma.session.deleteMany({
-      where: { token: sessionToken },
-    });
-  }
 
   /**
    * 获取系统统计信息
@@ -131,10 +55,9 @@ export class AdminService {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { deletedAt: null } }),
       this.prisma.user.count({ where: { deletedAt: { not: null } } }),
-      this.prisma.user.groupBy({
-        by: ['tier'],
-        where: { deletedAt: null }, // 只统计活跃用户的等级分布
-        _count: true,
+      this.prisma.subscription.findMany({
+        where: { user: { deletedAt: null } },
+        select: { tier: true },
       }),
       this.prisma.creditUsageDaily.aggregate({
         _sum: {
@@ -151,7 +74,7 @@ export class AdminService {
     // 转换 tier counts 为 Record 格式
     const usersByTier: Record<string, number> = {};
     for (const tc of tierCounts) {
-      usersByTier[tc.tier] = tc._count;
+      usersByTier[tc.tier] = (usersByTier[tc.tier] ?? 0) + 1;
     }
 
     return {
@@ -171,7 +94,7 @@ export class AdminService {
    * @param deleted - undefined: 所有用户, true: 仅已删除, false: 仅活跃用户
    */
   async listUsers(options?: {
-    tier?: UserTier;
+    tier?: SubscriptionTier;
     deleted?: boolean;
     limit?: number;
     offset?: number;
@@ -180,12 +103,12 @@ export class AdminService {
 
     // 构建查询条件
     const where: {
-      tier?: UserTier;
+      subscription?: { tier: SubscriptionTier };
       deletedAt?: null | { not: null };
     } = {};
 
     if (tier) {
-      where.tier = tier;
+      where.subscription = { tier };
     }
 
     if (deleted === true) {
@@ -204,17 +127,19 @@ export class AdminService {
           id: true,
           email: true,
           name: true,
-          tier: true,
           isAdmin: true,
           createdAt: true,
           deletedAt: true,
+          subscription: {
+            select: { tier: true },
+          },
         },
       }),
       this.prisma.user.count({ where }),
     ]);
 
     return {
-      users,
+      users: users.map((user) => this.mapAdminUser(user)),
       pagination: { count, limit, offset },
     };
   }
@@ -226,14 +151,14 @@ export class AdminService {
     const [user, credits] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
-        include: {
-          subscriptionCredits: true,
-          purchasedCredits: {
-            where: { expiresAt: { gt: new Date() } },
-          },
-          subscriptions: {
-            where: { status: 'active' },
-          },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isAdmin: true,
+          createdAt: true,
+          deletedAt: true,
+          subscription: { select: { tier: true } },
         },
       }),
       this.creditService.getCreditsBalance(userId),
@@ -256,7 +181,14 @@ export class AdminService {
       });
     }
 
-    return { user, credits, deletionRecord };
+    return {
+      user: this.mapAdminUser({
+        ...user,
+        subscription: user.subscription ?? null,
+      }),
+      credits,
+      deletionRecord,
+    };
   }
 
   /**
@@ -322,18 +254,39 @@ export class AdminService {
   /**
    * 设置用户等级
    */
-  async setUserTier(userId: string, tier: UserTier, operatorId: string) {
-    // 先检查用户是否存在
-    const existing = await this.prisma.user.findUnique({
+  async setSubscriptionTier(
+    userId: string,
+    tier: SubscriptionTier,
+    operatorId: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-    if (!existing) {
+
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { tier },
+    const now = new Date();
+    const periodEnd = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate()),
+    );
+
+    await this.prisma.subscription.upsert({
+      where: { userId },
+      create: {
+        userId,
+        tier,
+        status: 'active',
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+      },
+      update: {
+        tier,
+        status: 'active',
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+      },
     });
 
     await this.activityLogService.logAdminAction({
@@ -343,7 +296,10 @@ export class AdminService {
       details: { tier },
     });
 
-    return user;
+    return this.mapAdminUser({
+      ...user,
+      subscription: { tier },
+    });
   }
 
   /**

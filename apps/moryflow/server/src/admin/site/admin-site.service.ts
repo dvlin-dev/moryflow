@@ -61,7 +61,7 @@ export class AdminSiteService {
 
     // 用户等级筛选
     if (userTier) {
-      userWhere.tier = userTier;
+      userWhere.subscription = { tier: userTier };
     }
 
     // 过期筛选
@@ -102,7 +102,7 @@ export class AdminSiteService {
               id: true,
               email: true,
               name: true,
-              tier: true,
+              subscription: { select: { tier: true } },
               createdAt: true,
             },
           },
@@ -135,7 +135,7 @@ export class AdminSiteService {
         id: site.user.id,
         email: site.user.email,
         name: site.user.name,
-        tier: site.user.tier,
+        tier: site.user.subscription?.tier ?? 'free',
         createdAt: site.user.createdAt,
       },
     }));
@@ -162,7 +162,7 @@ export class AdminSiteService {
             id: true,
             email: true,
             name: true,
-            tier: true,
+            subscription: { select: { tier: true } },
             createdAt: true,
           },
         },
@@ -194,7 +194,7 @@ export class AdminSiteService {
         id: site.user.id,
         email: site.user.email,
         name: site.user.name,
-        tier: site.user.tier,
+        tier: site.user.subscription?.tier ?? 'free',
         createdAt: site.user.createdAt,
       },
       pages: site.pages.map((page) => ({

@@ -3,7 +3,7 @@
  * 定义支持的图片生成模型及其价格
  */
 
-import type { UserTier } from '../types';
+import type { SubscriptionTier } from '../types';
 
 /** 图片生成 SDK 类型 */
 export type ImageSdkType = 'fal' | 'openrouter';
@@ -21,7 +21,7 @@ export interface ImageModelConfig {
   /** 图片价格（美元/张） */
   imagePrice: number;
   /** 最低用户等级 */
-  minTier: UserTier;
+  minTier: SubscriptionTier;
   /** 是否启用 */
   enabled: boolean;
 }

@@ -1,12 +1,12 @@
 /**
- * [INPUT]: token (via getStoredToken), API payload
+ * [INPUT]: token (via getAccessToken), API payload
  * [OUTPUT]: API response DTOs
  * [POS]: Cloud Sync HTTP 客户端，单一职责：HTTP 请求
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { MEMBERSHIP_API_URL } from '@anyhunt/api'
+import { MEMBERSHIP_API_URL } from '@anyhunt/api';
 import type {
   VaultDto,
   VaultListDto,
@@ -21,9 +21,9 @@ import type {
   SearchRequest,
   SearchResponse,
   UsageResponse,
-} from '@anyhunt/api/cloud-sync'
-import { getStoredToken } from '@/lib/server/storage'
-import { FETCH_TIMEOUT } from './const'
+} from '@anyhunt/api/cloud-sync';
+import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
+import { FETCH_TIMEOUT } from './const';
 
 // ── HTTP 错误类型 ───────────────────────────────────────────
 
@@ -33,20 +33,20 @@ export class CloudSyncApiError extends Error {
     public readonly status: number,
     public readonly code?: string
   ) {
-    super(message)
-    this.name = 'CloudSyncApiError'
+    super(message);
+    this.name = 'CloudSyncApiError';
   }
 
   get isUnauthorized(): boolean {
-    return this.status === 401
+    return this.status === 401;
   }
 
   get isQuotaExceeded(): boolean {
-    return this.status === 403
+    return this.status === 403;
   }
 
   get isServerError(): boolean {
-    return this.status >= 500
+    return this.status >= 500;
   }
 }
 
@@ -54,93 +54,100 @@ export class CloudSyncApiError extends Error {
 
 interface RequestConfig extends RequestInit {
   /** 使用完整 URL（用于预签名 URL），跳过 baseUrl 和鉴权 */
-  fullUrl?: string
+  fullUrl?: string;
   /** 返回原始 Response 而非 JSON */
-  raw?: boolean
+  raw?: boolean;
 }
 
-const request = async <T>(
-  path: string,
-  options: RequestConfig = {}
-): Promise<T> => {
-  const { fullUrl, raw, ...fetchOptions } = options
+const request = async <T>(path: string, options: RequestConfig = {}, attempt = 0): Promise<T> => {
+  const { fullUrl, raw, ...fetchOptions } = options;
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
   try {
-    let url: string
-    let headers: HeadersInit
+    let url: string;
+    let headers: HeadersInit;
 
     if (fullUrl) {
       // 预签名 URL：不需要鉴权
-      url = fullUrl
-      headers = { ...fetchOptions.headers }
+      url = fullUrl;
+      headers = { ...fetchOptions.headers };
     } else {
       // API 请求：需要鉴权
-      const token = await getStoredToken()
+      let token = getAccessToken();
       if (!token) {
-        throw new CloudSyncApiError('Please log in first', 401, 'UNAUTHORIZED')
+        const refreshed = await refreshAccessToken();
+        token = refreshed ? getAccessToken() : null;
       }
-      url = `${MEMBERSHIP_API_URL}${path}`
+      if (!token) {
+        throw new CloudSyncApiError('Please log in first', 401, 'UNAUTHORIZED');
+      }
+      url = `${MEMBERSHIP_API_URL}${path}`;
       headers = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
         ...fetchOptions.headers,
-      }
+      };
     }
 
     const res = await fetch(url, {
       ...fetchOptions,
       signal: controller.signal,
       headers,
-    })
+    });
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => '')
-      let error: { message?: string; code?: string } = { message: `Request failed: ${res.status}` }
+      if (res.status === 401 && attempt === 0) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          return request<T>(path, options, attempt + 1);
+        }
+      }
+      const errorText = await res.text().catch(() => '');
+      let error: { message?: string; code?: string } = { message: `Request failed: ${res.status}` };
       try {
         if (errorText) {
-          error = JSON.parse(errorText)
+          error = JSON.parse(errorText);
         }
       } catch {
-        error.message = errorText || `Request failed: ${res.status}`
+        error.message = errorText || `Request failed: ${res.status}`;
       }
-      console.error(`[CloudSync] ${fullUrl || path} failed:`, res.status, errorText)
+      console.error(`[CloudSync] ${fullUrl || path} failed:`, res.status, errorText);
       throw new CloudSyncApiError(
         error.message || `Request failed: ${res.status}`,
         res.status,
         error.code
-      )
+      );
     }
 
     // 返回原始 Response
     if (raw) {
-      return res as unknown as T
+      return res as unknown as T;
     }
 
     // 204 No Content
     if (res.status === 204) {
-      return undefined as T
+      return undefined as T;
     }
 
-    return res.json()
+    return res.json();
   } catch (err) {
     if (err instanceof CloudSyncApiError) {
-      throw err
+      throw err;
     }
     if (err instanceof Error && err.name === 'AbortError') {
-      throw new CloudSyncApiError('Request timeout', 408, 'TIMEOUT')
+      throw new CloudSyncApiError('Request timeout', 408, 'TIMEOUT');
     }
     throw new CloudSyncApiError(
       err instanceof Error ? err.message : 'Network error',
       0,
       'NETWORK_ERROR'
-    )
+    );
   } finally {
-    clearTimeout(timeoutId)
+    clearTimeout(timeoutId);
   }
-}
+};
 
 // ── API 方法（纯函数）────────────────────────────────────────
 
@@ -160,7 +167,11 @@ export const cloudSyncApi = {
   deleteVault: (vaultId: string): Promise<void> =>
     request(`/api/vaults/${vaultId}`, { method: 'DELETE' }),
 
-  registerDevice: (vaultId: string, deviceId: string, deviceName: string): Promise<VaultDeviceDto> =>
+  registerDevice: (
+    vaultId: string,
+    deviceId: string,
+    deviceName: string
+  ): Promise<VaultDeviceDto> =>
     request(`/api/vaults/${vaultId}/devices`, {
       method: 'POST',
       body: JSON.stringify({ deviceId, deviceName }),
@@ -216,12 +227,12 @@ export const cloudSyncApi = {
       body: content.buffer as ArrayBuffer,
       headers: { 'Content-Type': 'application/octet-stream' },
       raw: true,
-    })
+    });
   },
 
   /** 从预签名 URL 下载文件 */
   downloadFile: async (url: string): Promise<string> => {
-    const res = await request<Response>('', { fullUrl: url, raw: true })
-    return res.text()
+    const res = await request<Response>('', { fullUrl: url, raw: true });
+    return res.text();
   },
-} as const
+} as const;

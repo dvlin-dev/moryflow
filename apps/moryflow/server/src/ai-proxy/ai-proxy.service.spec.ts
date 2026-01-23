@@ -19,7 +19,7 @@ import {
 import {
   createMockAiModel,
   createMockAiProvider,
-  UserTier,
+  SubscriptionTier,
 } from '../testing/factories';
 import {
   InsufficientCreditsException,
@@ -80,14 +80,14 @@ describe('AiProxyService', () => {
         providerId: provider.id,
         modelId: 'gpt-4o-mini',
         displayName: 'GPT-4o Mini',
-        minTier: UserTier.free,
+        minTier: SubscriptionTier.free,
         enabled: true,
       });
       const proModel = createMockAiModel({
         providerId: provider.id,
         modelId: 'gpt-4o',
         displayName: 'GPT-4o',
-        minTier: UserTier.pro,
+        minTier: SubscriptionTier.pro,
         enabled: true,
       });
 
@@ -100,7 +100,9 @@ describe('AiProxyService', () => {
         >[0][0],
       ]);
 
-      const result = await service.getAllModelsWithAccess(UserTier.free);
+      const result = await service.getAllModelsWithAccess(
+        SubscriptionTier.free,
+      );
 
       expect(result).toHaveLength(2);
 
@@ -114,16 +116,25 @@ describe('AiProxyService', () => {
     it('Pro 用户应能访问所有模型', async () => {
       const provider = createMockAiProvider({ providerType: 'openai' });
       const models = [
-        createMockAiModel({ providerId: provider.id, minTier: UserTier.free }),
-        createMockAiModel({ providerId: provider.id, minTier: UserTier.basic }),
-        createMockAiModel({ providerId: provider.id, minTier: UserTier.pro }),
+        createMockAiModel({
+          providerId: provider.id,
+          minTier: SubscriptionTier.free,
+        }),
+        createMockAiModel({
+          providerId: provider.id,
+          minTier: SubscriptionTier.basic,
+        }),
+        createMockAiModel({
+          providerId: provider.id,
+          minTier: SubscriptionTier.pro,
+        }),
       ];
 
       prismaMock.aiModel.findMany.mockResolvedValue(
         models.map((m) => ({ ...m, provider })),
       );
 
-      const result = await service.getAllModelsWithAccess(UserTier.pro);
+      const result = await service.getAllModelsWithAccess(SubscriptionTier.pro);
 
       expect(result.every((m) => m.available)).toBe(true);
     });
@@ -147,7 +158,9 @@ describe('AiProxyService', () => {
         >[0][0],
       ]);
 
-      const result = await service.getAllModelsWithAccess(UserTier.free);
+      const result = await service.getAllModelsWithAccess(
+        SubscriptionTier.free,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(enabledModel.modelId);
@@ -156,7 +169,9 @@ describe('AiProxyService', () => {
     it('无模型时应返回空数组', async () => {
       prismaMock.aiModel.findMany.mockResolvedValue([]);
 
-      const result = await service.getAllModelsWithAccess(UserTier.free);
+      const result = await service.getAllModelsWithAccess(
+        SubscriptionTier.free,
+      );
 
       expect(result).toEqual([]);
     });
@@ -169,7 +184,7 @@ describe('AiProxyService', () => {
       prismaMock.aiModel.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: 'non-existent',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
@@ -181,7 +196,7 @@ describe('AiProxyService', () => {
       const model = createMockAiModel({
         providerId: provider.id,
         modelId: 'gpt-4o',
-        minTier: UserTier.pro,
+        minTier: SubscriptionTier.pro,
         enabled: true,
       });
 
@@ -193,7 +208,7 @@ describe('AiProxyService', () => {
       >[0]);
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: 'gpt-4o',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
@@ -205,7 +220,7 @@ describe('AiProxyService', () => {
       const model = createMockAiModel({
         providerId: provider.id,
         modelId: 'gpt-4o-mini',
-        minTier: UserTier.free,
+        minTier: SubscriptionTier.free,
         enabled: true,
       });
 
@@ -226,7 +241,7 @@ describe('AiProxyService', () => {
       });
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
@@ -238,7 +253,7 @@ describe('AiProxyService', () => {
       const model = createMockAiModel({
         providerId: provider.id,
         modelId: 'gpt-4o-mini',
-        minTier: UserTier.free,
+        minTier: SubscriptionTier.free,
         enabled: true,
       });
 
@@ -250,7 +265,7 @@ describe('AiProxyService', () => {
       >[0]);
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: 'Hello' }],
           n: 2,
@@ -263,7 +278,7 @@ describe('AiProxyService', () => {
       const model = createMockAiModel({
         providerId: provider.id,
         modelId: 'gpt-4o-mini',
-        minTier: UserTier.free,
+        minTier: SubscriptionTier.free,
         enabled: true,
       });
 
@@ -284,7 +299,7 @@ describe('AiProxyService', () => {
       });
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
@@ -295,7 +310,7 @@ describe('AiProxyService', () => {
       prismaMock.aiModel.findFirst.mockResolvedValue(null); // enabled=true 条件过滤
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.pro, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.pro, {
           model: 'disabled-model',
           messages: [{ role: 'user', content: 'Hello' }],
         }),
@@ -304,7 +319,7 @@ describe('AiProxyService', () => {
 
     it('缺少 messages 参数时应抛出 BadRequestException', async () => {
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: 'gpt-4o-mini',
           messages: [],
         }),
@@ -319,7 +334,7 @@ describe('AiProxyService', () => {
       const provider = createMockAiProvider();
       const model = createMockAiModel({
         providerId: provider.id,
-        minTier: UserTier.free,
+        minTier: SubscriptionTier.free,
         enabled: true,
       });
 
@@ -340,7 +355,7 @@ describe('AiProxyService', () => {
       });
 
       await expect(
-        service.proxyChatCompletion('user-123', UserTier.free, {
+        service.proxyChatCompletion('user-123', SubscriptionTier.free, {
           model: model.modelId,
           messages: [{ role: 'user', content: 'Test' }],
         }),

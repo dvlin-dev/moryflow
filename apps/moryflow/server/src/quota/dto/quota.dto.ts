@@ -44,7 +44,7 @@ export type FileSizeLimitDto = z.infer<typeof FileSizeLimitSchema>;
  * 用户等级 Schema（运行时验证）
  * 与 types/tier.types.ts 保持同步
  */
-export const UserTierSchema = z.enum([
+export const SubscriptionTierSchema = z.enum([
   'free',
   'starter',
   'basic',
@@ -59,7 +59,7 @@ export const UsageResponseSchema = z.object({
   storage: StorageUsageSchema,
   vectorized: VectorizedUsageSchema,
   fileLimit: FileSizeLimitSchema,
-  plan: UserTierSchema,
+  plan: SubscriptionTierSchema,
 });
 
 export type UsageResponseDto = z.infer<typeof UsageResponseSchema>;

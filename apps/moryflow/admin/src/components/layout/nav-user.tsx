@@ -1,18 +1,11 @@
 /**
  * NavUser - 用户菜单组件
- * 登出时调用后端 API 清除 Session Cookie
  */
-import { LogOut, MoreVertical } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/auth'
-import { apiClient } from '@/lib/api-client'
-import { ADMIN_API } from '@/lib/api-paths'
+import { LogOut, MoreVertical } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/auth';
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,37 +13,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar'
+} from '@/components/ui/sidebar';
 
 export interface NavUserProps {
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
+    name: string;
+    email: string;
+    avatar: string;
+  };
 }
 
 export function NavUser({ user }: NavUserProps) {
-  const { isMobile } = useSidebar()
-  const navigate = useNavigate()
-  const logout = useAuthStore((state) => state.logout)
+  const { isMobile } = useSidebar();
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = async () => {
-    try {
-      // 调用后端清除 Session Cookie
-      await apiClient.post(ADMIN_API.LOGOUT)
-    } catch {
-      // 即使后端调用失败，也要清除前端状态
-    }
-    logout()
-    navigate('/login')
-  }
+    await logout();
+    navigate('/login');
+  };
 
   // 获取用户名首字母作为头像 fallback
   const initials = user.name
@@ -58,7 +45,7 @@ export function NavUser({ user }: NavUserProps) {
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2);
 
   return (
     <SidebarMenu>
@@ -75,9 +62,7 @@ export function NavUser({ user }: NavUserProps) {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
-                </span>
+                <span className="text-muted-foreground truncate text-xs">{user.email}</span>
               </div>
               <MoreVertical className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -96,9 +81,7 @@ export function NavUser({ user }: NavUserProps) {
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
-                  </span>
+                  <span className="text-muted-foreground truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -111,5 +94,5 @@ export function NavUser({ user }: NavUserProps) {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

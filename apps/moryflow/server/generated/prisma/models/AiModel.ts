@@ -51,7 +51,7 @@ export type AiModelMinAggregateOutputType = {
   enabled: boolean | null
   inputTokenPrice: number | null
   outputTokenPrice: number | null
-  minTier: $Enums.UserTier | null
+  minTier: $Enums.SubscriptionTier | null
   maxContextTokens: number | null
   maxOutputTokens: number | null
   sortOrder: number | null
@@ -68,7 +68,7 @@ export type AiModelMaxAggregateOutputType = {
   enabled: boolean | null
   inputTokenPrice: number | null
   outputTokenPrice: number | null
-  minTier: $Enums.UserTier | null
+  minTier: $Enums.SubscriptionTier | null
   maxContextTokens: number | null
   maxOutputTokens: number | null
   sortOrder: number | null
@@ -260,7 +260,7 @@ export type AiModelGroupByOutputType = {
   enabled: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: runtime.JsonValue
@@ -301,7 +301,7 @@ export type AiModelWhereInput = {
   enabled?: Prisma.BoolFilter<"AiModel"> | boolean
   inputTokenPrice?: Prisma.FloatFilter<"AiModel"> | number
   outputTokenPrice?: Prisma.FloatFilter<"AiModel"> | number
-  minTier?: Prisma.EnumUserTierFilter<"AiModel"> | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFilter<"AiModel"> | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFilter<"AiModel"> | number
   maxOutputTokens?: Prisma.IntFilter<"AiModel"> | number
   capabilitiesJson?: Prisma.JsonFilter<"AiModel">
@@ -343,7 +343,7 @@ export type AiModelWhereUniqueInput = Prisma.AtLeast<{
   enabled?: Prisma.BoolFilter<"AiModel"> | boolean
   inputTokenPrice?: Prisma.FloatFilter<"AiModel"> | number
   outputTokenPrice?: Prisma.FloatFilter<"AiModel"> | number
-  minTier?: Prisma.EnumUserTierFilter<"AiModel"> | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFilter<"AiModel"> | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFilter<"AiModel"> | number
   maxOutputTokens?: Prisma.IntFilter<"AiModel"> | number
   capabilitiesJson?: Prisma.JsonFilter<"AiModel">
@@ -388,7 +388,7 @@ export type AiModelScalarWhereWithAggregatesInput = {
   enabled?: Prisma.BoolWithAggregatesFilter<"AiModel"> | boolean
   inputTokenPrice?: Prisma.FloatWithAggregatesFilter<"AiModel"> | number
   outputTokenPrice?: Prisma.FloatWithAggregatesFilter<"AiModel"> | number
-  minTier?: Prisma.EnumUserTierWithAggregatesFilter<"AiModel"> | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierWithAggregatesFilter<"AiModel"> | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntWithAggregatesFilter<"AiModel"> | number
   maxOutputTokens?: Prisma.IntWithAggregatesFilter<"AiModel"> | number
   capabilitiesJson?: Prisma.JsonWithAggregatesFilter<"AiModel">
@@ -405,7 +405,7 @@ export type AiModelCreateInput = {
   enabled?: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -424,7 +424,7 @@ export type AiModelUncheckedCreateInput = {
   enabled?: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -441,7 +441,7 @@ export type AiModelUpdateInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -460,7 +460,7 @@ export type AiModelUncheckedUpdateInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -478,7 +478,7 @@ export type AiModelCreateManyInput = {
   enabled?: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -495,7 +495,7 @@ export type AiModelUpdateManyMutationInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -513,7 +513,7 @@ export type AiModelUncheckedUpdateManyInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -663,7 +663,7 @@ export type AiModelCreateWithoutProviderInput = {
   enabled?: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -680,7 +680,7 @@ export type AiModelUncheckedCreateWithoutProviderInput = {
   enabled?: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -727,7 +727,7 @@ export type AiModelScalarWhereInput = {
   enabled?: Prisma.BoolFilter<"AiModel"> | boolean
   inputTokenPrice?: Prisma.FloatFilter<"AiModel"> | number
   outputTokenPrice?: Prisma.FloatFilter<"AiModel"> | number
-  minTier?: Prisma.EnumUserTierFilter<"AiModel"> | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFilter<"AiModel"> | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFilter<"AiModel"> | number
   maxOutputTokens?: Prisma.IntFilter<"AiModel"> | number
   capabilitiesJson?: Prisma.JsonFilter<"AiModel">
@@ -744,7 +744,7 @@ export type AiModelCreateManyProviderInput = {
   enabled?: boolean
   inputTokenPrice: number
   outputTokenPrice: number
-  minTier: $Enums.UserTier
+  minTier: $Enums.SubscriptionTier
   maxContextTokens: number
   maxOutputTokens: number
   capabilitiesJson: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -761,7 +761,7 @@ export type AiModelUpdateWithoutProviderInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -778,7 +778,7 @@ export type AiModelUncheckedUpdateWithoutProviderInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -795,7 +795,7 @@ export type AiModelUncheckedUpdateManyWithoutProviderInput = {
   enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
   outputTokenPrice?: Prisma.FloatFieldUpdateOperationsInput | number
-  minTier?: Prisma.EnumUserTierFieldUpdateOperationsInput | $Enums.UserTier
+  minTier?: Prisma.EnumSubscriptionTierFieldUpdateOperationsInput | $Enums.SubscriptionTier
   maxContextTokens?: Prisma.IntFieldUpdateOperationsInput | number
   maxOutputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   capabilitiesJson?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -906,7 +906,7 @@ export type $AiModelPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     enabled: boolean
     inputTokenPrice: number
     outputTokenPrice: number
-    minTier: $Enums.UserTier
+    minTier: $Enums.SubscriptionTier
     maxContextTokens: number
     maxOutputTokens: number
     capabilitiesJson: runtime.JsonValue
@@ -1345,7 +1345,7 @@ export interface AiModelFieldRefs {
   readonly enabled: Prisma.FieldRef<"AiModel", 'Boolean'>
   readonly inputTokenPrice: Prisma.FieldRef<"AiModel", 'Float'>
   readonly outputTokenPrice: Prisma.FieldRef<"AiModel", 'Float'>
-  readonly minTier: Prisma.FieldRef<"AiModel", 'UserTier'>
+  readonly minTier: Prisma.FieldRef<"AiModel", 'SubscriptionTier'>
   readonly maxContextTokens: Prisma.FieldRef<"AiModel", 'Int'>
   readonly maxOutputTokens: Prisma.FieldRef<"AiModel", 'Int'>
   readonly capabilitiesJson: Prisma.FieldRef<"AiModel", 'Json'>

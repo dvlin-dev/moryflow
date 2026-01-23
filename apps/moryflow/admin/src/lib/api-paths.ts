@@ -7,8 +7,6 @@
 
 export const ADMIN_API = {
   BASE: '/api/admin',
-  LOGIN: '/api/admin/login',
-  LOGOUT: '/api/admin/logout',
   ME: '/api/admin/me',
   STATS: '/api/admin/stats',
   LOGS: '/api/admin/logs',
@@ -18,15 +16,15 @@ export const ADMIN_API = {
   AI_MODELS: '/api/admin/ai/models',
   AI_PROVIDERS: '/api/admin/ai/providers',
   AI_PRESET_PROVIDERS: '/api/admin/ai/preset-providers',
-} as const
+} as const;
 
 /** AI Proxy API 路径 (OpenAI 兼容) */
 export const AI_PROXY_API = {
   CHAT_COMPLETIONS: '/v1/chat/completions',
   IMAGES_GENERATIONS: '/v1/images/generations',
   MODELS: '/v1/models',
-} as const
+} as const;
 
 export const HEALTH_API = {
   BASE: '/health',
-} as const
+} as const;

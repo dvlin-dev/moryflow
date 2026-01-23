@@ -55,5 +55,5 @@ export type {
   // 错误类型
   OpenAIError,
   // 用户类型
-  UserTier,
+  SubscriptionTier,
 } from './types';
