@@ -166,6 +166,12 @@ export class AuthTokensService {
         return null;
       }
 
+      const isAdmin = await this.authService.ensureAdminStatus({
+        id: record.user.id,
+        email: record.user.email,
+        isAdmin: record.user.isAdmin,
+      });
+
       const refreshToken = this.generateRefreshToken();
       const refreshTokenHash = this.hashToken(refreshToken);
       const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000);
@@ -210,7 +216,7 @@ export class AuthTokensService {
             record.user.subscription,
             'FREE',
           ),
-          isAdmin: record.user.isAdmin,
+          isAdmin,
         },
         refreshToken: { token: refreshToken, expiresAt },
       };
@@ -260,12 +266,18 @@ export class AuthTokensService {
       return null;
     }
 
+    const isAdmin = await this.authService.ensureAdminStatus({
+      id: user.id,
+      email: user.email,
+      isAdmin: user.isAdmin,
+    });
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       subscriptionTier: getEffectiveSubscriptionTier(user.subscription, 'FREE'),
-      isAdmin: user.isAdmin,
+      isAdmin,
     };
   }
 

@@ -28,7 +28,6 @@ describe('AdminService', () => {
     };
     paymentOrder: {
       aggregate: Mock;
-      groupBy: Mock;
       findMany: Mock;
       findUnique: Mock;
       count: Mock;
@@ -36,6 +35,7 @@ describe('AdminService', () => {
     session: {
       deleteMany: Mock;
     };
+    $queryRaw: Mock;
     $transaction: Mock;
   };
 
@@ -59,7 +59,6 @@ describe('AdminService', () => {
       },
       paymentOrder: {
         aggregate: vi.fn(),
-        groupBy: vi.fn(),
         findMany: vi.fn(),
         findUnique: vi.fn(),
         count: vi.fn(),
@@ -67,6 +66,7 @@ describe('AdminService', () => {
       session: {
         deleteMany: vi.fn(),
       },
+      $queryRaw: vi.fn(),
       $transaction: vi.fn((callback) => callback(mockPrisma)),
     };
 
@@ -106,17 +106,52 @@ describe('AdminService', () => {
 
       expect(result.revenueMTD).toBe(0);
     });
+
+    it('should use UTC boundaries for daily and monthly stats', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2024-02-15T12:34:56.000Z'));
+
+      mockPrisma.user.count.mockResolvedValue(0);
+      mockPrisma.subscription.count.mockResolvedValue(0);
+      mockPrisma.screenshot.count.mockResolvedValue(0);
+      mockPrisma.paymentOrder.aggregate.mockResolvedValue({
+        _sum: { amount: 0 },
+      });
+
+      await service.getDashboardStats();
+
+      expect(mockPrisma.screenshot.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            createdAt: {
+              gte: new Date(Date.UTC(2024, 1, 15)),
+            },
+          }),
+        }),
+      );
+
+      expect(mockPrisma.paymentOrder.aggregate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            createdAt: {
+              gte: new Date(Date.UTC(2024, 1, 1)),
+            },
+          }),
+        }),
+      );
+
+      vi.useRealTimers();
+    });
   });
 
   describe('getChartData', () => {
     it('should return chart data for last 7 days', async () => {
-      mockPrisma.screenshot.groupBy.mockResolvedValue([
-        { createdAt: new Date('2024-01-07'), _count: { id: 100 } },
-        { createdAt: new Date('2024-01-06'), _count: { id: 80 } },
-      ]);
-      mockPrisma.paymentOrder.groupBy.mockResolvedValue([
-        { createdAt: new Date('2024-01-07'), _sum: { amount: 9900 } },
-      ]);
+      mockPrisma.$queryRaw
+        .mockResolvedValueOnce([
+          { day: '2024-01-07', count: 100 },
+          { day: '2024-01-06', count: 80 },
+        ])
+        .mockResolvedValueOnce([{ day: '2024-01-07', amount: 9900 }]);
 
       const result = await service.getChartData();
 
@@ -125,8 +160,7 @@ describe('AdminService', () => {
     });
 
     it('should fill missing dates with zero', async () => {
-      mockPrisma.screenshot.groupBy.mockResolvedValue([]);
-      mockPrisma.paymentOrder.groupBy.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       const result = await service.getChartData();
 

@@ -23,6 +23,7 @@ describe('AuthTokensService', () => {
   };
   let mockAuthService: {
     getAuth: ReturnType<typeof vi.fn>;
+    ensureAdminStatus: ReturnType<typeof vi.fn>;
   };
   let mockSignJWT: ReturnType<typeof vi.fn>;
   let mockVerifyJWT: ReturnType<typeof vi.fn>;
@@ -48,6 +49,7 @@ describe('AuthTokensService', () => {
           verifyJWT: mockVerifyJWT,
         },
       }),
+      ensureAdminStatus: vi.fn().mockResolvedValue(false),
     };
 
     service = new AuthTokensService(
@@ -153,6 +155,13 @@ describe('AuthTokensService', () => {
 
     expect(result?.user.id).toBe('user_1');
     expect(result?.refreshToken.token).toBeTruthy();
+    expect(mockAuthService.ensureAdminStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'user_1',
+        email: 'user@example.com',
+        isAdmin: false,
+      }),
+    );
     expect(tx.refreshToken.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: 'rt_1' }),
@@ -197,5 +206,42 @@ describe('AuthTokensService', () => {
     expect(tx.refreshToken.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'rt_2' } }),
     );
+  });
+
+  it('should promote admin during refresh when ADMIN_EMAILS matches', async () => {
+    mockAuthService.ensureAdminStatus.mockResolvedValue(true);
+    const now = new Date();
+    const record = {
+      id: 'rt_1',
+      userId: 'user_1',
+      expiresAt: new Date(now.getTime() + 1000),
+      revokedAt: null,
+      user: {
+        id: 'user_1',
+        email: 'admin@dvlin.com',
+        name: 'Admin',
+        isAdmin: false,
+        deletedAt: null,
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
+      },
+    };
+
+    const tx = {
+      refreshToken: {
+        findUnique: vi.fn().mockResolvedValue(record),
+        create: vi.fn().mockResolvedValue({ id: 'rt_2' }),
+        update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+
+    mockPrisma.$transaction.mockImplementation(async (fn) => fn(tx));
+
+    const result = await service.rotateRefreshToken('raw-token', {
+      ipAddress: '127.0.0.1',
+      userAgent: 'test',
+    });
+
+    expect(result?.user.isAdmin).toBe(true);
   });
 });

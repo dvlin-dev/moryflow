@@ -45,6 +45,37 @@ export class AuthService implements OnModuleInit {
   }
 
   /**
+   * 确保管理员状态（基于 ADMIN_EMAILS）
+   */
+  async ensureAdminStatus(user: {
+    id: string;
+    email: string;
+    isAdmin: boolean;
+  }): Promise<boolean> {
+    if (user.isAdmin) {
+      return true;
+    }
+
+    if (!isAdminEmail(user.email, process.env.ADMIN_EMAILS)) {
+      return false;
+    }
+
+    try {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { isAdmin: true },
+      });
+      return true;
+    } catch (error) {
+      console.error(
+        `[AuthService] Failed to promote admin for ${user.id}:`,
+        error,
+      );
+      return false;
+    }
+  }
+
+  /**
    * 从 Express Request 中获取 Session
    * 返回完整的用户信息（包括 subscriptionTier 和 isAdmin）
    */
@@ -90,21 +121,11 @@ export class AuthService implements OnModuleInit {
       return null;
     }
 
-    let isAdmin = fullUser.isAdmin;
-    if (!isAdmin && isAdminEmail(fullUser.email, process.env.ADMIN_EMAILS)) {
-      try {
-        await this.prisma.user.update({
-          where: { id: fullUser.id },
-          data: { isAdmin: true },
-        });
-        isAdmin = true;
-      } catch (error) {
-        console.error(
-          `[AuthService] Failed to promote admin for ${fullUser.id}:`,
-          error,
-        );
-      }
-    }
+    const isAdmin = await this.ensureAdminStatus({
+      id: fullUser.id,
+      email: fullUser.email,
+      isAdmin: fullUser.isAdmin,
+    });
 
     return {
       session: {

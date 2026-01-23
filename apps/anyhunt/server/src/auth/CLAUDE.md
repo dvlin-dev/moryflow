@@ -28,7 +28,7 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 - 生产环境必须设置 `BETTER_AUTH_URL` 与 `TRUSTED_ORIGINS`
 - 生产环境启用 `useSecureCookies` 与跨子域 Cookie（`.anyhunt.app`）
 - 管理员权限通过 `ADMIN_EMAILS` 邮箱白名单授予（注册后自动标记 `isAdmin`）
-- 已有账号命中 `ADMIN_EMAILS` 时，在会话获取阶段补写 `isAdmin=true`
+- 已有账号命中 `ADMIN_EMAILS` 时，在会话获取与 refresh 阶段补写 `isAdmin=true`
 - access token 中的 `subscriptionTier` 基于有效订阅（仅 ACTIVE 计入付费 tier）
 
 ## 测试覆盖

@@ -26,11 +26,14 @@ export class AdminService {
     const now = new Date();
 
     // Start of today (UTC)
-    const startOfToday = new Date(now);
-    startOfToday.setUTCHours(0, 0, 0, 0);
+    const startOfToday = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 
     // Start of current month (UTC)
-    const startOfMonth = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1);
+    const startOfMonth = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
 
     const [totalUsers, activeSubscriptions, screenshotsToday, revenueResult] =
       await Promise.all([
@@ -85,43 +88,38 @@ export class AdminService {
 
     const sevenDaysAgo = dates[0];
 
-    // 查询截图数据
-    const screenshotData = await this.prisma.screenshot.groupBy({
-      by: ['createdAt'],
-      _count: { id: true },
-      where: {
-        createdAt: { gte: sevenDaysAgo },
-      },
-    });
+    type DailyCountRow = { day: string; count: number };
+    type DailyRevenueRow = { day: string; amount: number };
 
-    // 查询收入数据
-    const revenueData = await this.prisma.paymentOrder.groupBy({
-      by: ['createdAt'],
-      _sum: { amount: true },
-      where: {
-        status: 'completed',
-        createdAt: { gte: sevenDaysAgo },
-      },
-    });
+    const screenshotData = await this.prisma.$queryRaw<DailyCountRow[]>`
+      SELECT
+        to_char(("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+        COUNT(*)::int AS count
+      FROM "Screenshot"
+      WHERE "createdAt" >= ${sevenDaysAgo}
+      GROUP BY day
+      ORDER BY day
+    `;
 
-    // 按日期聚合截图数据
+    const revenueData = await this.prisma.$queryRaw<DailyRevenueRow[]>`
+      SELECT
+        to_char(("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+        COALESCE(SUM("amount"), 0)::int AS amount
+      FROM "PaymentOrder"
+      WHERE "status" = 'completed'
+        AND "createdAt" >= ${sevenDaysAgo}
+      GROUP BY day
+      ORDER BY day
+    `;
+
     const screenshotsByDate = new Map<string, number>();
     for (const item of screenshotData) {
-      const dateStr = item.createdAt.toISOString().split('T')[0];
-      screenshotsByDate.set(
-        dateStr,
-        (screenshotsByDate.get(dateStr) ?? 0) + item._count.id,
-      );
+      screenshotsByDate.set(item.day, item.count);
     }
 
-    // 按日期聚合收入数据
     const revenueByDate = new Map<string, number>();
     for (const item of revenueData) {
-      const dateStr = item.createdAt.toISOString().split('T')[0];
-      revenueByDate.set(
-        dateStr,
-        (revenueByDate.get(dateStr) ?? 0) + (item._sum.amount ?? 0),
-      );
+      revenueByDate.set(item.day, item.amount);
     }
 
     // 填充所有日期（确保 7 天都有数据）
