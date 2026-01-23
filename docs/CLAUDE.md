@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-25（标记 Auth 统一改造文件清单完成态）
+> 最近更新：2026-01-25（补充 Auth test:e2e 与全量测试记录、Mobile refresh 异常修复与 X-App-Platform 调研结论；新增 Moryflow PC 自动更新 R2 Runbook）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -67,6 +67,7 @@
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（2026-01-23：fix）
 - Moryflow Vectorize 暂不处理（将由 Anyhunt Memox 替换）：`docs/code-review/index.md`（2026-01-23：status）
 - Moryflow：更新 iOS（Expo+EAS）与 macOS（Electron/electron-builder）发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`（2026-01-22）
+- Moryflow PC 自动更新（R2-only）Runbook：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`（2026-01-22）
 - 工程基线：删除 agents metadata 的无用字段（仅保留 name/version），避免 install 后 git tree 变脏：`docs/code-review/root-tooling.md`（2026-01-22）
 - 工程基线 / Root Tooling 修复完成：`docs/code-review/root-tooling.md`（2026-01-23：fix）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（2026-01-23：review）
