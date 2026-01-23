@@ -1,7 +1,7 @@
 /**
  * [INPUT]: refresh/logout/sign-out 请求（Header/Cookie/Body）
  * [OUTPUT]: accessToken 刷新结果或登出响应
- * [POS]: Auth Token 入口（/api/auth/*）
+ * [POS]: Auth Token 入口（/api/auth/*，含 Origin/Device 分流）
  */
 
 import {
@@ -181,21 +181,16 @@ export class AuthTokensController {
     if (bodyToken && !devicePlatform) {
       throw new ForbiddenException('Missing or invalid X-App-Platform');
     }
-    if (!isDeviceRequest) {
-      this.assertTrustedOrigin(req);
-    }
     if (devicePlatform) {
-      this.assertTrustedOrigin(req, devicePlatform);
+      return true;
     }
+    this.assertTrustedOrigin(req);
     return isDeviceRequest;
   }
 
-  private assertTrustedOrigin(req: Request, devicePlatform?: string | null) {
+  private assertTrustedOrigin(req: Request) {
     const origin = getRequestOrigin(req);
     if (!origin) {
-      if (devicePlatform) {
-        return;
-      }
       throw new ForbiddenException('Missing origin');
     }
     const trustedOrigins = getTrustedOrigins();

@@ -24,9 +24,11 @@ describe('AuthService', () => {
     set: ReturnType<typeof vi.fn>;
     del: ReturnType<typeof vi.fn>;
   };
+  type GetSessionInput = { headers: Headers };
+  type GetSessionFn = (input: GetSessionInput) => Promise<unknown>;
   let mockAuth: {
     api: {
-      getSession: ReturnType<typeof vi.fn>;
+      getSession: ReturnType<typeof vi.fn<GetSessionFn>>;
     };
   };
 
@@ -53,9 +55,10 @@ describe('AuthService', () => {
       mockRedisService as unknown as RedisService,
     );
 
+    const getSession = vi.fn<GetSessionFn>();
     mockAuth = {
       api: {
-        getSession: vi.fn(),
+        getSession,
       },
     };
 
@@ -198,9 +201,12 @@ describe('AuthService', () => {
 
       await service.getSessionFromRequest(requestWithArrayHeader);
 
-      expect(mockAuth.api.getSession).toHaveBeenCalledWith({
-        headers: expect.any(Headers),
-      });
+      expect(mockAuth.api.getSession).toHaveBeenCalled();
+      const calls = mockAuth.api.getSession.mock.calls as Array<
+        [GetSessionInput]
+      >;
+      const call = calls[0]?.[0];
+      expect(call?.headers).toBeInstanceOf(Headers);
     });
   });
 });

@@ -11,6 +11,7 @@
     "check:type": "tsc --noEmit",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "test:unit": "vitest run",
     "with-env": "dotenv -e ../../.env -c --",
     "build:editor-bundle": "vite build --config vite.editor-bundle.config.ts",
     "dev:editor-bundle": "vite --config vite.editor-bundle.config.ts",
@@ -50,6 +51,7 @@
     "@anyhunt/sync": "workspace:*",
     "@anyhunt/tiptap": "workspace:*",
     "@anyhunt/types": "workspace:*",
+    "@better-auth/expo": "^1.4.17",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-navigation/drawer": "^7.5.8",
     "@react-navigation/native": "^7.0.0",
@@ -80,6 +82,7 @@
     "@stardazed/streams-text-encoding": "^1.0.2",
     "@ungap/structured-clone": "^1.3.0",
     "ai": "6.0.3",
+    "better-auth": "^1.4.5",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
@@ -171,7 +174,8 @@
     "terser": "^5.40.0",
     "typescript": "~5.9.3",
     "vite": "^6.3.5",
-    "vite-plugin-singlefile": "^2.0.3"
+    "vite-plugin-singlefile": "^2.0.3",
+    "vitest": "^4.0.16"
   },
   "private": true
 }

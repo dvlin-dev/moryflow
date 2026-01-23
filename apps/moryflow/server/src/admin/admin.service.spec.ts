@@ -4,8 +4,6 @@
  * 测试管理员功能：用户管理、权限控制、日志记录
  */
 
-// Note: expect.objectContaining and expect.any return 'any' type
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
@@ -111,11 +109,9 @@ describe('AdminService', () => {
 
       await service.listUsers({ tier: 'pro', limit: 10, offset: 0 });
 
-      expect(prismaMock.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ subscription: { tier: 'pro' } }),
-        }),
-      );
+      expect(prismaMock.user.findMany.mock.calls[0]?.[0]).toMatchObject({
+        where: { subscription: { tier: 'pro' } },
+      });
     });
 
     it('应支持分页参数', async () => {
@@ -185,12 +181,10 @@ describe('AdminService', () => {
       );
 
       expect(result.id).toBe(user.id);
-      expect(prismaMock.subscription.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { userId: user.id },
-          update: expect.objectContaining({ tier: 'pro' }),
-        }),
-      );
+      expect(prismaMock.subscription.upsert.mock.calls[0]?.[0]).toMatchObject({
+        where: { userId: user.id },
+        update: { tier: 'pro' },
+      });
       expect(activityLogServiceMock.logAdminAction).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'set_tier',

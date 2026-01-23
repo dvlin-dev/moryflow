@@ -57,6 +57,9 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - 拆分并收敛全局 UI 状态：新增 `ChatSheetProvider`，移除无用的 TabBar 显隐 Context/Hook
 - Agent Runtime 日志适配器将 debug/info 限制为开发环境输出，避免 console lint 警告
 - Auth 相关请求改为 access 内存 + refresh 安全存储，新增 `lib/server/auth-session.ts`
+- Auth：接入 `@better-auth/expo`（新增 `auth-client.ts`/`auth-platform.ts`），refresh 使用 SecureStore cookie + `X-App-Platform`
+- Auth Session refresh 增加网络失败清理，避免请求异常导致初始化抛错
+- Auth Session 单元测试新增（`lib/server/__tests__/auth-session.spec.ts`）
 - Membership Context 依赖清理与 signUp 参数收敛，避免无用依赖/参数
 
 ## 依赖关系

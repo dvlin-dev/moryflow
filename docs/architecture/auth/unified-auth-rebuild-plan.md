@@ -15,6 +15,7 @@ status: done
 
 - **交互统一**：两条业务线统一为 `access JWT + refresh rotation + JWKS`
 - **多端一致**：Web/桌面/移动/CLI 使用同一套规则
+- **主战场定位**：`anyhunt.app` 为 C 端主应用；`console.anyhunt.app` 仅开发者平台
 - **不做兼容**：全量重置数据，删除历史迁移，仅保留初始化流程
 - **复杂度控制**：只统一交互与必要模型；业务逻辑保持分离
 
@@ -177,10 +178,17 @@ status: done
 - 订阅字段：`user.tier` 已移除，统一输出 `subscriptionTier`
 - Anyhunt/Moryflow：init 迁移已生成并应用（DB 已重置）
 - Moryflow Vectorize Worker：接入 JWKS 验签 access JWT（业务服务按 JWKS 校验）
-- 测试门禁：`pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 已运行并通过
+- 测试门禁：`pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 已复跑通过（lint 仍有 Moryflow Server `no-unsafe-assignment` 警告；test:unit 有 Redis/Turnstile 等预期日志警告）
 - 环境变量核对：两端 `.env` 已包含 Auth 必需项（`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`TRUSTED_ORIGINS`、`ALLOWED_ORIGINS`、`ADMIN_EMAILS`、`SERVER_URL`）；`BETTER_AUTH_URL`/`SERVER_URL` 已对齐 `https://server.anyhunt.app` 与 `https://app.moryflow.com`，`ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 已覆盖 `moryflow.com` 系列域名（无需新增 Auth env）
 - 数据库重置：已按 init 迁移重置 Anyhunt main/vector 与 Moryflow 主库（基于各自 prisma config）
 - 测试补齐：JWKS 端点验签用例已落地（Anyhunt 集成 / Moryflow E2E）
+- 测试补齐：Anyhunt www `auth-session` 单测已落地（refresh/logout）
+- 测试补齐：Anyhunt Server `test:e2e` 已通过（依赖测试 Docker）
+- 全量测试：`pnpm test` 已通过（Turbo 提示未配置 `outputs`，不影响测试结果）
+- Device 刷新：Anyhunt/Moryflow 均在 `X-App-Platform` 存在时跳过 Origin 校验（含单测）
+- Mobile Auth：Moryflow Expo Client 接入（SecureStore cookie 管理 + server expo plugin）
+- Anyhunt www：恢复 Digest/Inbox/Reader 主流程，并对齐 access token + refresh 交互
+- 清理：`CurrentSession` 装饰器与 `adminLoginSchema` 已删除；`.gitignore` 忽略 `test-results`
 
 # 验证与门禁（必须）
 

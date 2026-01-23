@@ -155,11 +155,9 @@ describe('AuthTokensService', () => {
 
     expect(result?.user.id).toBe('user_1');
     expect(result?.refreshToken.token).toBeTruthy();
-    expect(tx.refreshToken.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ id: 'rt_1' }),
-      }),
-    );
+    expect(tx.refreshToken.updateMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { id: 'rt_1' },
+    });
   });
 
   it('should revoke newly created token when rotation fails', async () => {

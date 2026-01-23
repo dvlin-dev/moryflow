@@ -1,23 +1,11 @@
 /**
  * [PROVIDES]: apiClient, ApiClientError
- * [DEPENDS]: fetch
- * [POS]: www API client for authenticated requests (Cookie-based)
+ * [DEPENDS]: fetch, auth-session
+ * [POS]: www API client for authenticated requests (Bearer + refresh)
  */
 
-const normalizeApiOrigin = (value: string) => value.replace(/\/+$/, '');
-
-/**
- * API base URL
- * - Dev: empty string (use Vite proxy)
- * - Prod: https://server.anyhunt.app
- */
-export const API_BASE_URL = (() => {
-  const explicit = (import.meta.env.VITE_API_URL ?? '').trim();
-  if (explicit) {
-    return normalizeApiOrigin(explicit);
-  }
-  return import.meta.env.DEV ? '' : 'https://server.anyhunt.app';
-})();
+import { API_BASE_URL } from './api-base';
+import { getAccessToken, refreshAccessToken, logout } from './auth-session';
 
 /**
  * API Error
@@ -64,11 +52,17 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  private buildHeaders(additionalHeaders?: HeadersInit): HeadersInit {
-    return {
+  private buildHeaders(additionalHeaders?: HeadersInit, token?: string | null): HeadersInit {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(additionalHeaders as Record<string, string>),
     };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
   }
 
   private async safeParseJson(response: Response): Promise<unknown> {
@@ -111,13 +105,31 @@ class ApiClient {
     return (json as { data: T }).data;
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async fetchWithAuth(
+    endpoint: string,
+    options?: RequestInit,
+    attempt = 0
+  ): Promise<Response> {
+    const token = getAccessToken();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       ...options,
-      headers: this.buildHeaders(options?.headers),
+      headers: this.buildHeaders(options?.headers, token),
       credentials: 'include',
     });
 
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed && attempt === 0) {
+        return this.fetchWithAuth(endpoint, options, attempt + 1);
+      }
+      await logout();
+    }
+
+    return response;
+  }
+
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const response = await this.fetchWithAuth(endpoint, options);
     return this.handleResponse<T>(response);
   }
 

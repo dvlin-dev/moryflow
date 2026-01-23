@@ -21,6 +21,8 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 - refreshToken 只在 `/api/auth/refresh` 使用：
   - Web：HttpOnly Cookie
   - Mobile/Electron/CLI：请求体（需 `X-App-Platform`）
+- `X-App-Platform` 存在时跳过 Origin 校验（避免 Electron/RN `Origin: null` 误判）
+- Origin 校验仅用于 Web 请求，Device 以 `X-App-Platform` 分流
 - refreshToken 必须每次 refresh 轮换（rotation on）
 - `POST /api/auth/logout` 与 `POST /api/auth/sign-out` 必须同时失效 refresh 与 session
 - 生产环境必须设置 `BETTER_AUTH_URL` 与 `TRUSTED_ORIGINS`
@@ -79,7 +81,7 @@ POST /api/auth/logout 或 /api/auth/sign-out
 
 ```
 POST /api/auth/refresh
-  -> Body refreshToken + X-App-Platform
+  -> Body refreshToken + X-App-Platform（跳过 Origin 校验）
   -> rotate refreshToken
   -> return accessToken + refreshToken
 ```
@@ -88,7 +90,7 @@ POST /api/auth/refresh
 
 ```
 POST /api/auth/logout 或 /api/auth/sign-out
-  -> Body refreshToken + X-App-Platform
+  -> Body refreshToken + X-App-Platform（跳过 Origin 校验）
   -> revoke refresh token
 ```
 

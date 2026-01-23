@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-25（补充 Auth 环境变量核对细节与域名对齐结论、数据库重置记录、JWKS 测试与测试命令更新）
+> 最近更新：2026-01-25（补充 Auth test:e2e 与全量测试记录、Mobile refresh 异常修复与 X-App-Platform 调研结论）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,16 @@
 
 ## 最近更新
 
+- Auth 统一改造落地状态：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造执行记录：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
+- Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造 Review 问题与方案清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造调研结论：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造决策补充：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造：补充 Mobile refresh 网络异常修复与 `X-App-Platform` 传递范围结论：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造：补充 Expo 插件类型推断修复记录：`docs/architecture/auth/unified-auth-rebuild-file-map.md`（2026-01-25）
+- Auth 统一改造：调整 anyhunt.app 为 C 端主战场并完成 www 对齐：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
+- Auth 统一改造：补充 `test:e2e` 与 `pnpm test` 验证记录：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
 - Auth JWKS 测试：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
 - Auth 数据库重置记录：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）
 - Auth 环境变量核对：`docs/architecture/auth/unified-auth-rebuild-plan.md`（2026-01-25）

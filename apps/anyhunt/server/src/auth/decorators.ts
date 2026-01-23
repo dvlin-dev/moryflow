@@ -1,3 +1,9 @@
+/**
+ * [PROVIDES]: Public/RequireAdmin/CurrentUser 装饰器
+ * [DEPENDS]: NestJS metadata + request context
+ * [POS]: Auth 装饰器统一出口
+ */
+
 import {
   SetMetadata,
   createParamDecorator,
@@ -18,16 +24,6 @@ export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<Request>();
     return request.user;
-  },
-);
-
-/**
- * 获取当前 Session
- */
-export const CurrentSession = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest<Request>();
-    return request.session;
   },
 );
 

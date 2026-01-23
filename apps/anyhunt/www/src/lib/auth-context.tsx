@@ -1,10 +1,11 @@
 /**
  * [PROVIDES]: AuthProvider, useAuth
- * [DEPENDS]: auth-client, react
+ * [DEPENDS]: auth-client, auth-session, react
  * [POS]: 全局认证状态 Context，提供用户信息和认证操作
  */
-import { createContext, useContext, useCallback, type ReactNode } from 'react';
-import { useSession, authClient, type User } from './auth-client';
+import { createContext, useContext, useCallback, useEffect, type ReactNode } from 'react';
+import { useSession, type User } from './auth-client';
+import { bootstrapAuth, logout } from './auth-session';
 
 interface AuthContextValue {
   /** 当前用户（未登录时为 null） */
@@ -36,8 +37,12 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const { data: session, isPending } = useSession();
 
+  useEffect(() => {
+    void bootstrapAuth();
+  }, []);
+
   const signOut = useCallback(async () => {
-    await authClient.signOut();
+    await logout();
     // 登出后跳转到首页
     window.location.href = '/welcome';
   }, []);

@@ -1,15 +1,23 @@
 /**
- * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage
+ * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/Expo 插件
  * [OUTPUT]: Better Auth 实例（Moryflow 专用配置）
  * [POS]: Auth 配置入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { betterAuth, APIError, type SecondaryStorage } from 'better-auth';
+import {
+  betterAuth,
+  APIError,
+  type SecondaryStorage,
+  type Auth as BetterAuthInstance,
+} from 'better-auth';
+import { expo } from '@better-auth/expo';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
+import type { JwtOptions } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import type { JWTPayload } from 'jose';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { isDisposableEmail } from './email-validator';
 import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
@@ -36,7 +44,7 @@ export function createBetterAuth(
   prisma: PrismaClient,
   sendOTP: (email: string, otp: string) => Promise<void>,
   secondaryStorage?: SecondaryStorage,
-) {
+): Auth {
   // 验证 BETTER_AUTH_SECRET
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32) {
@@ -158,6 +166,7 @@ export function createBetterAuth(
       },
     },
     plugins: [
+      expo(),
       jwt(jwtOptions),
       // Email OTP 插件：邮箱验证码验证
       emailOTP({
@@ -184,4 +193,15 @@ export function createBetterAuth(
   });
 }
 
-export type Auth = ReturnType<typeof createBetterAuth>;
+type JwtApi = {
+  signJWT: (input: {
+    body: { payload: JWTPayload; overrideOptions?: JwtOptions };
+  }) => Promise<{ token: string }>;
+  verifyJWT: (input: { body: { token: string } }) => Promise<{
+    payload?: JWTPayload | null;
+  }>;
+};
+
+export type Auth = BetterAuthInstance & {
+  api: BetterAuthInstance['api'] & JwtApi;
+};

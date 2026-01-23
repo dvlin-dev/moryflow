@@ -1,20 +1,10 @@
 /**
- * Admin DTOs
- * Zod schemas for admin API validation
+ * [DEFINES]: Admin DTO schemas/types
+ * [USED_BY]: admin controllers
+ * [POS]: Admin API DTO 入口
  */
 
 import { z } from 'zod';
-
-// =============================================
-// Auth
-// =============================================
-
-export const adminLoginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-export type AdminLoginDto = z.infer<typeof adminLoginSchema>;
 
 // =============================================
 // Pagination

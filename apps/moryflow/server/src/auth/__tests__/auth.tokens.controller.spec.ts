@@ -10,11 +10,15 @@ import { AuthTokensController } from '../auth.tokens.controller';
 import type { AuthTokensService } from '../auth.tokens.service';
 import type { AuthService } from '../auth.service';
 
-const createController = () => {
+const createController = (overrides?: {
+  tokensService?: Partial<AuthTokensService>;
+  authService?: Partial<AuthService>;
+}) => {
   const tokensService = {
     rotateRefreshToken: vi.fn(),
     createAccessToken: vi.fn(),
     revokeRefreshToken: vi.fn(),
+    ...(overrides?.tokensService ?? {}),
   } as unknown as AuthTokensService;
 
   const authService = {
@@ -30,6 +34,7 @@ const createController = () => {
       },
     }),
     getSessionFromRequest: vi.fn(),
+    ...(overrides?.authService ?? {}),
   } as unknown as AuthService;
 
   return new AuthTokensController(tokensService, authService);
@@ -74,6 +79,30 @@ describe('AuthTokensController', () => {
     await expect(controller.refresh(req, res, {})).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('refresh should allow device request with invalid origin', async () => {
+    const expiresAt = new Date('2030-01-01T00:00:00.000Z');
+    const controller = createController({
+      tokensService: {
+        rotateRefreshToken: vi.fn().mockResolvedValue({
+          user: { id: 'user-1' },
+          refreshToken: { token: 'new-refresh', expiresAt },
+        }),
+        createAccessToken: vi.fn().mockResolvedValue({
+          token: 'access-token',
+          expiresAt,
+        }),
+      },
+    });
+    const req = createReq({ origin: 'null', 'x-app-platform': 'ios' });
+    const res = createRes();
+
+    const result = await controller.refresh(req, res, {
+      refreshToken: mockToken,
+    });
+
+    expect(result.accessToken).toBe('access-token');
   });
 
   it('logout should reject device token without X-App-Platform', async () => {

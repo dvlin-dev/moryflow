@@ -5,12 +5,10 @@
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { describe, it, beforeEach, vi, expect } from 'vitest';
+import { describe, it, beforeEach, afterEach, vi, expect } from 'vitest';
 import { useAuthStore } from './auth';
 
-const fetchMock = vi.fn();
-
-(global as any).fetch = fetchMock;
+const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
 
 const jsonResponse = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -21,12 +19,17 @@ const jsonResponse = (data: unknown, status = 200) =>
 describe('AuthStore', () => {
   beforeEach(() => {
     fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
     useAuthStore.setState({
       user: null,
       accessToken: null,
       isAuthenticated: false,
       isBootstrapped: false,
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('refreshAccessToken 应在成功时写入 accessToken', async () => {

@@ -57,6 +57,7 @@ module-name/
 - CreditService：新增欠费记录与付费积分优先抵扣
 - Auth：access JWT + refresh rotation + JWKS，移除 pre-register 与旧 bearer 交互
 - Auth：Web/设备端区分 CSRF（Web 开启、设备端允许无 Origin），补充 origin 白名单工具与单测
+- Auth：接入 Expo plugin（`@better-auth/expo`），`TRUSTED_ORIGINS` 示例包含 `moryflow://`
 - Prisma：重置数据库并生成 init 迁移作为新基线
 - Prisma：User 增补 refreshTokens 关联，避免 RefreshToken 关系缺失
 - Common：ZodValidationPipe 清理未使用参数，避免 lint 报错
