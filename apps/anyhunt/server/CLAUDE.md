@@ -32,6 +32,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - 触发实际工作的接口必须先扣费（通过 `BillingService` + `@BillingKey(...)`），再执行任务
 - 失败退费必须基于 `deduct.breakdown`（按交易分解），异步任务需写入 `quotaBreakdown` 供 worker 退费
 - FREE 用户额度为“每日 100 Credits（UTC 天）”，`monthlyQuota=0`
+- Payment Webhook 必须事件级去重（`PaymentWebhookEvent`）且校验产品 ID/金额/币种一致性
+- Creem 产品映射以 `payment.constants.ts` 为准，`.env.example` 的 JSON 变量仅作占位
 - 反代部署必须启用 `trust proxy`（Express）：否则 `req.protocol`/secure cookie/回调 URL 在反代下会被错误识别为 http
 - 管理员权限通过 `ADMIN_EMAILS` 邮箱白名单授予（注册后自动标记为 `isAdmin`，已有账号在会话获取阶段补写；不在启动期注入密码）
 - Agent + `@anyhunt/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级

@@ -162,12 +162,15 @@ describe('billing.rules', () => {
       });
 
       it('should ignore invalid JSON', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         process.env.BILLING_RULE_OVERRIDES_JSON = 'invalid json';
         const { getBillingRule: getRule } = await import('../billing.rules');
 
         const rule = getRule('fetchx.scrape');
 
         expect(rule.cost).toBe(1); // Default cost
+        expect(warnSpy).toHaveBeenCalled();
+        warnSpy.mockRestore();
       });
 
       it('should ignore negative cost values', async () => {

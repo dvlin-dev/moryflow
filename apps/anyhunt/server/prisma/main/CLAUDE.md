@@ -28,3 +28,4 @@
 ## 近期变更记录
 
 - 2026-01-25：重置数据库并生成 init 迁移作为新基线。
+- 2026-01-25：新增 PaymentWebhookEvent 表，用于 Creem webhook 幂等去重。

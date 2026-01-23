@@ -95,7 +95,11 @@ function loadCostOverridesFromEnv(): Partial<
     }
 
     return overrides;
-  } catch {
+  } catch (error) {
+    console.warn(
+      '[BillingRules] Invalid BILLING_RULE_OVERRIDES_JSON, ignored',
+      error,
+    );
     return null;
   }
 }

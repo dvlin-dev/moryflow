@@ -1,6 +1,9 @@
 /**
- * Payment Service
- * 支付相关业务逻辑（Creem 集成）
+ * [INPUT]: Creem webhook payload、用户订阅/配额/订单数据
+ * [OUTPUT]: Subscription/Quota/PaymentOrder 更新 + Webhook 幂等记录
+ * [POS]: 支付业务逻辑核心（订阅/配额/回调）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -8,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma';
 import {
+  Prisma,
   SubscriptionTier,
   SubscriptionStatus,
   QuotaTransactionType,
@@ -17,6 +21,7 @@ import { TIER_MONTHLY_QUOTA, addOneMonth } from './payment.constants';
 import type {
   SubscriptionActivatedParams,
   QuotaPurchaseParams,
+  WebhookEventRecordParams,
 } from './payment.types';
 
 @Injectable()
@@ -27,6 +32,41 @@ export class PaymentService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * 记录 Webhook 事件（用于幂等与重放防护）
+   */
+  async recordWebhookEvent(data: WebhookEventRecordParams): Promise<boolean> {
+    try {
+      await this.prisma.paymentWebhookEvent.create({
+        data: {
+          eventId: data.eventId,
+          eventType: data.eventType,
+          userId: data.userId ?? null,
+          creemObjectId: data.creemObjectId ?? null,
+          creemOrderId: data.creemOrderId ?? null,
+          eventCreatedAt: data.eventCreatedAt ?? null,
+        },
+      });
+      return true;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return false;
+      }
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === 'P2002'
+      ) {
+        return false;
+      }
+      throw error;
+    }
+  }
 
   /**
    * 处理订阅激活（Creem webhook 回调）
@@ -42,6 +82,21 @@ export class PaymentService {
     } = data;
 
     await this.prisma.$transaction(async (tx) => {
+      const existingSubscription = await tx.subscription.findUnique({
+        where: { userId },
+        select: {
+          currentPeriodStart: true,
+          currentPeriodEnd: true,
+        },
+      });
+      const periodChanged =
+        !existingSubscription?.currentPeriodStart ||
+        !existingSubscription?.currentPeriodEnd ||
+        existingSubscription.currentPeriodStart.getTime() !==
+          currentPeriodStart.getTime() ||
+        existingSubscription.currentPeriodEnd.getTime() !==
+          currentPeriodEnd.getTime();
+
       // 更新或创建订阅
       await tx.subscription.upsert({
         where: { userId },
@@ -78,7 +133,7 @@ export class PaymentService {
         },
         update: {
           monthlyLimit,
-          monthlyUsed: 0, // 重置使用量
+          ...(periodChanged ? { monthlyUsed: 0 } : {}),
           periodStartAt: currentPeriodStart,
           periodEndAt: currentPeriodEnd,
         },
@@ -92,13 +147,18 @@ export class PaymentService {
    * 处理订阅取消
    */
   async handleSubscriptionCanceled(userId: string) {
-    await this.prisma.subscription.update({
+    const result = await this.prisma.subscription.updateMany({
       where: { userId },
       data: {
         status: SubscriptionStatus.CANCELED,
         cancelAtPeriodEnd: true,
       },
     });
+
+    if (result.count === 0) {
+      this.logger.warn(`Subscription not found for user ${userId}`);
+      return;
+    }
 
     this.logger.log(`Subscription canceled for user ${userId}`);
   }
@@ -109,21 +169,39 @@ export class PaymentService {
   async handleSubscriptionExpired(userId: string) {
     await this.prisma.$transaction(async (tx) => {
       // 更新订阅状态
-      await tx.subscription.update({
+      const now = new Date();
+      const periodEnd = addOneMonth(now);
+
+      await tx.subscription.upsert({
         where: { userId },
-        data: {
+        create: {
+          userId,
           tier: SubscriptionTier.FREE,
           status: SubscriptionStatus.EXPIRED,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          cancelAtPeriodEnd: false,
+        },
+        update: {
+          tier: SubscriptionTier.FREE,
+          status: SubscriptionStatus.EXPIRED,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          cancelAtPeriodEnd: false,
         },
       });
 
       // 重置配额为免费版
-      const now = new Date();
-      const periodEnd = addOneMonth(now);
-
-      await tx.quota.update({
+      await tx.quota.upsert({
         where: { userId },
-        data: {
+        create: {
+          userId,
+          monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
+          monthlyUsed: 0,
+          periodStartAt: now,
+          periodEndAt: periodEnd,
+        },
+        update: {
           monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
           monthlyUsed: 0,
           periodStartAt: now,
@@ -139,9 +217,23 @@ export class PaymentService {
    * 处理配额购买
    */
   async handleQuotaPurchase(data: QuotaPurchaseParams) {
-    const { userId, amount, creemOrderId, price } = data;
+    const { userId, amount, creemOrderId, price, currency } = data;
 
     await this.prisma.$transaction(async (tx) => {
+      const existingOrder = await tx.paymentOrder.findUnique({
+        where: { creemOrderId },
+        select: { userId: true },
+      });
+
+      if (existingOrder) {
+        if (existingOrder.userId !== userId) {
+          this.logger.warn(
+            `Order ${creemOrderId} belongs to another user (${existingOrder.userId})`,
+          );
+        }
+        return;
+      }
+
       // 先获取当前配额以计算真实的 balance
       const currentQuota = await tx.quota.findUnique({
         where: { userId },
@@ -176,6 +268,7 @@ export class PaymentService {
           creemOrderId,
           type: 'quota_purchase',
           amount: price,
+          currency,
           status: 'completed',
           quotaAmount: amount,
         },

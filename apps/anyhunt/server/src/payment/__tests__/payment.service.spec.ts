@@ -18,6 +18,7 @@ describe('PaymentService', () => {
     subscription: {
       upsert: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
     };
@@ -28,6 +29,10 @@ describe('PaymentService', () => {
       create: ReturnType<typeof vi.fn>;
     };
     paymentOrder: {
+      findUnique: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
+    };
+    paymentWebhookEvent: {
       create: ReturnType<typeof vi.fn>;
     };
     quotaTransaction: {
@@ -42,6 +47,7 @@ describe('PaymentService', () => {
       subscription: {
         upsert: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn(),
         create: vi.fn(),
       },
@@ -52,6 +58,10 @@ describe('PaymentService', () => {
         create: vi.fn(),
       },
       paymentOrder: {
+        findUnique: vi.fn(),
+        create: vi.fn(),
+      },
+      paymentWebhookEvent: {
         create: vi.fn(),
       },
       quotaTransaction: {
@@ -103,6 +113,8 @@ describe('PaymentService', () => {
     });
 
     it('should upsert quota with tier limit', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue(null);
+
       await service.handleSubscriptionActivated(mockParams);
 
       expect(mockPrisma.quota.upsert).toHaveBeenCalledWith({
@@ -117,6 +129,18 @@ describe('PaymentService', () => {
           monthlyUsed: 0,
         }),
       });
+    });
+
+    it('should keep monthlyUsed when period does not change', async () => {
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        currentPeriodStart: mockParams.currentPeriodStart,
+        currentPeriodEnd: mockParams.currentPeriodEnd,
+      });
+
+      await service.handleSubscriptionActivated(mockParams);
+
+      const updateData = mockPrisma.quota.upsert.mock.calls[0][0].update;
+      expect(updateData).not.toHaveProperty('monthlyUsed');
     });
 
     it('should run in a transaction', async () => {
@@ -153,7 +177,7 @@ describe('PaymentService', () => {
     it('should update subscription status to CANCELED', async () => {
       await service.handleSubscriptionCanceled('user_1');
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
+      expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith({
         where: { userId: 'user_1' },
         data: {
           status: SubscriptionStatus.CANCELED,
@@ -169,22 +193,26 @@ describe('PaymentService', () => {
     it('should reset subscription to FREE tier', async () => {
       await service.handleSubscriptionExpired('user_1');
 
-      expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
+      expect(mockPrisma.subscription.upsert).toHaveBeenCalledWith({
         where: { userId: 'user_1' },
-        data: {
+        create: expect.objectContaining({
           tier: SubscriptionTier.FREE,
           status: SubscriptionStatus.EXPIRED,
-        },
+        }),
+        update: expect.objectContaining({
+          tier: SubscriptionTier.FREE,
+          status: SubscriptionStatus.EXPIRED,
+        }),
       });
     });
 
     it('should reset quota to FREE tier limit', async () => {
       await service.handleSubscriptionExpired('user_1');
 
-      expect(mockPrisma.quota.update).toHaveBeenCalledWith(
+      expect(mockPrisma.quota.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId: 'user_1' },
-          data: expect.objectContaining({
+          update: expect.objectContaining({
             monthlyLimit: TIER_MONTHLY_QUOTA.FREE, // 100
             monthlyUsed: 0,
           }),
@@ -207,6 +235,7 @@ describe('PaymentService', () => {
       amount: 1000,
       creemOrderId: 'order_123',
       price: 9900, // $99.00 in cents
+      currency: 'USD',
     };
 
     it('should increment purchased quota', async () => {
@@ -226,6 +255,7 @@ describe('PaymentService', () => {
 
     it('should create payment order record', async () => {
       mockPrisma.quota.findUnique.mockResolvedValue({ purchasedQuota: 0 });
+      mockPrisma.paymentOrder.findUnique.mockResolvedValue(null);
 
       await service.handleQuotaPurchase(mockPurchase);
 
@@ -235,6 +265,7 @@ describe('PaymentService', () => {
           creemOrderId: 'order_123',
           type: 'quota_purchase',
           amount: 9900,
+          currency: 'USD',
           status: 'completed',
           quotaAmount: 1000,
         },
@@ -243,6 +274,7 @@ describe('PaymentService', () => {
 
     it('should create quota transaction with correct balance', async () => {
       mockPrisma.quota.findUnique.mockResolvedValue({ purchasedQuota: 500 });
+      mockPrisma.paymentOrder.findUnique.mockResolvedValue(null);
 
       await service.handleQuotaPurchase(mockPurchase);
 
@@ -261,6 +293,7 @@ describe('PaymentService', () => {
 
     it('should handle first purchase (no existing quota)', async () => {
       mockPrisma.quota.findUnique.mockResolvedValue(null);
+      mockPrisma.paymentOrder.findUnique.mockResolvedValue(null);
 
       await service.handleQuotaPurchase(mockPurchase);
 
@@ -270,6 +303,51 @@ describe('PaymentService', () => {
           balanceAfter: 1000,
         }),
       });
+    });
+
+    it('should skip when order already processed', async () => {
+      mockPrisma.paymentOrder.findUnique.mockResolvedValue({
+        userId: 'user_1',
+      });
+
+      await service.handleQuotaPurchase(mockPurchase);
+
+      expect(mockPrisma.quota.upsert).not.toHaveBeenCalled();
+      expect(mockPrisma.paymentOrder.create).not.toHaveBeenCalled();
+      expect(mockPrisma.quotaTransaction.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============ Webhook 幂等记录 ============
+
+  describe('recordWebhookEvent', () => {
+    it('should return true on first record', async () => {
+      mockPrisma.paymentWebhookEvent.create.mockResolvedValue({
+        id: 'evt_1',
+      });
+
+      const result = await service.recordWebhookEvent({
+        eventId: 'evt_1',
+        eventType: 'subscription.active',
+        userId: 'user_1',
+      });
+
+      expect(result).toBe(true);
+      expect(mockPrisma.paymentWebhookEvent.create).toHaveBeenCalled();
+    });
+
+    it('should return false on duplicate event', async () => {
+      const error = Object.assign(new Error('duplicate'), {
+        code: 'P2002',
+      });
+      mockPrisma.paymentWebhookEvent.create.mockRejectedValue(error);
+
+      const result = await service.recordWebhookEvent({
+        eventId: 'evt_1',
+        eventType: 'subscription.active',
+      });
+
+      expect(result).toBe(false);
     });
   });
 

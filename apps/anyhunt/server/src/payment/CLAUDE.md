@@ -13,6 +13,7 @@ Payment processing integration with Creem. Handles subscriptions, tier upgrades,
 - Creem webhook handling
 - Order tracking
 - Tier-based quota allocation
+- Webhook 事件幂等去重（PaymentWebhookEvent）
 
 ## Constraints
 
@@ -20,6 +21,9 @@ Payment processing integration with Creem. Handles subscriptions, tier upgrades,
 - Webhook endpoint must be VERSION_NEUTRAL for Creem callbacks
 - Console endpoints use AuthGuard
 - Quota updates must be atomic
+- Webhook 事件必须落库去重（eventId 唯一）
+- 未知产品 ID 必须拒绝处理（不允许默认授予）
+- 配额购买必须校验订单金额/币种与产品配置一致
 
 ## File Structure
 
@@ -62,12 +66,13 @@ Creem webhook (payment.success) → Add quota to user balance
 
 ## Common Modification Scenarios
 
-| Scenario           | Files to Modify                              | Notes                     |
-| ------------------ | -------------------------------------------- | ------------------------- |
-| Add tier           | `payment.constants.ts`, `payment.service.ts` | Update Creem products     |
-| Change price       | `payment.constants.ts`                       | Sync with Creem dashboard |
-| Add payment method | `payment.service.ts`                         | Extend Creem integration  |
-| Handle new webhook | `payment-webhook.controller.ts`              | Add event handler         |
+| Scenario             | Files to Modify                              | Notes                     |
+| -------------------- | -------------------------------------------- | ------------------------- |
+| Add tier             | `payment.constants.ts`, `payment.service.ts` | Update Creem products     |
+| Change price         | `payment.constants.ts`                       | Sync with Creem dashboard |
+| Update Creem产品映射 | `payment.constants.ts`                       | 同步 productId/价格/币种  |
+| Add payment method   | `payment.service.ts`                         | Extend Creem integration  |
+| Handle new webhook   | `payment-webhook.controller.ts`              | Add event handler         |
 
 ## Webhook Handling
 

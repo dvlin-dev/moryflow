@@ -1,6 +1,9 @@
 /**
- * Payment Controller
- * 支付相关 API
+ * [INPUT]: 当前登录用户
+ * [OUTPUT]: 订阅与配额状态
+ * [POS]: Payment API 入口（Console 查询）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Controller, Get } from '@nestjs/common';
@@ -25,8 +28,8 @@ export class PaymentController {
 
     return {
       tier: subscription?.tier ?? 'FREE',
-      status: subscription?.status ?? 'ACTIVE',
-      currentPeriodEnd: subscription?.currentPeriodEnd,
+      status: subscription?.status ?? 'EXPIRED',
+      currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
     };
   }

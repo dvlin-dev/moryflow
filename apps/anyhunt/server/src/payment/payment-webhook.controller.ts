@@ -1,6 +1,9 @@
 /**
- * Payment Webhook Controller
- * 处理 Creem 支付回调
+ * [INPUT]: Creem webhook payload + signature
+ * [OUTPUT]: 订阅/配额更新与幂等处理结果
+ * [POS]: Creem Webhook 入口控制器
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -20,21 +23,7 @@ import { Public } from '../auth';
 import { SkipResponseWrap } from '../common/decorators';
 import { PaymentService } from './payment.service';
 import { CreemWebhookSchema, type CreemWebhookPayload } from './dto';
-import { SubscriptionTier } from '../../generated/prisma-main/client';
-
-// Creem 产品 ID 到套餐的映射（需要根据实际配置调整）
-const PRODUCT_TO_TIER: Record<string, SubscriptionTier> = {
-  // 示例，实际值需要从 Creem 控制台获取
-  prod_basic_monthly: SubscriptionTier.BASIC,
-  prod_basic_yearly: SubscriptionTier.BASIC,
-  prod_pro_monthly: SubscriptionTier.PRO,
-  prod_pro_yearly: SubscriptionTier.PRO,
-  prod_team_monthly: SubscriptionTier.TEAM,
-  prod_team_yearly: SubscriptionTier.TEAM,
-};
-
-// 默认订阅周期（30天）
-const DEFAULT_SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+import { getQuotaProduct, getSubscriptionProduct } from './payment.constants';
 
 @Controller({ path: 'webhooks/creem', version: VERSION_NEUTRAL })
 @SkipResponseWrap()
@@ -76,8 +65,23 @@ export class PaymentWebhookController {
     }
 
     const { eventType, object } = parsed.data;
+    const eventCreatedAt = this.parseCreemTimestamp(parsed.data.created_at);
     // metadata.referenceId 用于关联用户
     const userId = object.metadata?.referenceId as string | undefined;
+
+    const isFirstTime = await this.paymentService.recordWebhookEvent({
+      eventId: parsed.data.id,
+      eventType,
+      userId,
+      creemObjectId: object.id,
+      creemOrderId: object.order?.id,
+      eventCreatedAt,
+    });
+
+    if (!isFirstTime) {
+      this.logger.warn(`Duplicate webhook event: ${parsed.data.id}`);
+      return { received: true };
+    }
 
     if (!userId) {
       this.logger.warn('No referenceId in webhook payload');
@@ -89,18 +93,40 @@ export class PaymentWebhookController {
         case 'subscription.active':
         case 'subscription.trialing':
         case 'subscription.paid': {
-          const productId = object.product?.id || '';
-          const tier = PRODUCT_TO_TIER[productId] || SubscriptionTier.BASIC;
-          const periodEnd = object.current_period_end_date
-            ? new Date(object.current_period_end_date)
-            : new Date(Date.now() + DEFAULT_SUBSCRIPTION_PERIOD_MS);
+          const productId = object.product?.id;
+          const subscriptionProduct = productId
+            ? getSubscriptionProduct(productId)
+            : null;
+
+          if (!subscriptionProduct) {
+            this.logger.warn(
+              `Unknown subscription product: ${object.product?.id ?? 'missing'}`,
+            );
+            return { received: true };
+          }
+
+          const periodStart = this.parseCreemDate(
+            object.current_period_start_date,
+          );
+          const periodEnd = this.parseCreemDate(object.current_period_end_date);
+
+          if (!periodStart || !periodEnd) {
+            this.logger.warn('Missing subscription period in webhook payload');
+            return { received: true };
+          }
+
+          const creemCustomerId = object.customer?.id;
+          if (!creemCustomerId) {
+            this.logger.warn('Missing customer id in webhook payload');
+            return { received: true };
+          }
 
           await this.paymentService.handleSubscriptionActivated({
             userId,
-            creemCustomerId: object.customer?.id || '',
+            creemCustomerId,
             creemSubscriptionId: object.id,
-            tier,
-            currentPeriodStart: new Date(),
+            tier: subscriptionProduct.tier,
+            currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
           });
           break;
@@ -117,15 +143,39 @@ export class PaymentWebhookController {
         case 'checkout.completed':
           // 检查是否是配额购买（非订阅的一次性购买）
           if (object.order && !object.subscription) {
-            const quotaAmount = this.parseQuotaAmount(object.product?.id || '');
-            if (quotaAmount > 0) {
-              await this.paymentService.handleQuotaPurchase({
-                userId,
-                amount: quotaAmount,
-                creemOrderId: object.order.id,
-                price: object.order.amount,
-              });
+            const productId = object.product?.id;
+            const quotaProduct = productId ? getQuotaProduct(productId) : null;
+
+            if (!quotaProduct) {
+              this.logger.warn(
+                `Unknown quota product: ${object.product?.id ?? 'missing'}`,
+              );
+              return { received: true };
             }
+
+            const orderCurrency = this.normalizeCurrency(object.order.currency);
+            if (!orderCurrency) {
+              this.logger.warn('Missing order currency in webhook payload');
+              return { received: true };
+            }
+
+            if (
+              object.order.amount !== quotaProduct.price ||
+              orderCurrency !== quotaProduct.currency
+            ) {
+              this.logger.warn(
+                `Order mismatch for product ${productId}: amount=${object.order.amount}, currency=${orderCurrency}`,
+              );
+              return { received: true };
+            }
+
+            await this.paymentService.handleQuotaPurchase({
+              userId,
+              amount: quotaProduct.amount,
+              creemOrderId: object.order.id,
+              price: object.order.amount,
+              currency: orderCurrency,
+            });
           }
           break;
 
@@ -140,17 +190,21 @@ export class PaymentWebhookController {
     return { received: true };
   }
 
-  /**
-   * 根据 productId 解析配额数量
-   */
-  private parseQuotaAmount(productId: string): number {
-    // 示例配额包配置（需要根据实际产品配置调整）
-    const quotaPacks: Record<string, number> = {
-      prod_quota_1000: 1000,
-      prod_quota_5000: 5000,
-      prod_quota_10000: 10000,
-      prod_quota_50000: 50000,
-    };
-    return quotaPacks[productId] || 0;
+  private parseCreemDate(value?: string): Date | null {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private parseCreemTimestamp(value?: number): Date | null {
+    if (!value) return null;
+    const ms = value > 10_000_000_000 ? value : value * 1000;
+    const parsed = new Date(ms);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private normalizeCurrency(value?: string): string | null {
+    if (!value) return null;
+    return value.toUpperCase();
   }
 }

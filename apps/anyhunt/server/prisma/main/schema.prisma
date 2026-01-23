@@ -255,6 +255,24 @@ model PaymentOrder {
 }
 
 // =============================================
+// 支付回调事件（Webhook 幂等）
+// =============================================
+
+model PaymentWebhookEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  eventType      String
+  userId         String?
+  creemObjectId  String?
+  creemOrderId   String?
+  eventCreatedAt DateTime?
+  receivedAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventCreatedAt])
+}
+
+// =============================================
 // API Key（移除 Memox 关联）
 // =============================================
 
