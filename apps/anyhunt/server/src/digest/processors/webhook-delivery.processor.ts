@@ -4,6 +4,8 @@
  * [INPUT]: DigestWebhookDeliveryJobData
  * [OUTPUT]: HTTP POST 到用户 Webhook 端点
  * [POS]: BullMQ Worker - Digest Webhook 投递执行逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Processor, WorkerHost } from '@nestjs/bullmq';
@@ -48,7 +50,7 @@ export class WebhookDeliveryProcessor extends WorkerHost {
     );
 
     // 1. URL 安全校验（SSRF 防护）
-    if (!this.urlValidator.isAllowed(webhookUrl)) {
+    if (!(await this.urlValidator.isAllowed(webhookUrl))) {
       const error = `Webhook URL not allowed: ${webhookUrl}`;
       this.logger.warn(error);
       await this.recordDelivery(job.data, {
@@ -86,6 +88,7 @@ export class WebhookDeliveryProcessor extends WorkerHost {
           [NOTIFICATION.timestampHeader]: timestamp,
         },
         body: bodyString,
+        redirect: 'manual',
         signal: AbortSignal.timeout(NOTIFICATION.webhookTimeoutMs),
       });
 

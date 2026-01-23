@@ -53,7 +53,7 @@ describe('CrawlerService', () => {
     };
 
     mockUrlValidator = {
-      isAllowed: vi.fn().mockReturnValue(true),
+      isAllowed: vi.fn().mockResolvedValue(true),
     };
 
     mockQueue = {
@@ -143,7 +143,7 @@ describe('CrawlerService', () => {
     // SSRF 防护测试
     describe('SSRF protection', () => {
       it('should throw for blocked URLs', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(false);
+        mockUrlValidator.isAllowed.mockResolvedValue(false);
 
         await expect(
           service.startCrawl('user_1', {
@@ -158,7 +158,7 @@ describe('CrawlerService', () => {
       });
 
       it('should throw for localhost', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(false);
+        mockUrlValidator.isAllowed.mockResolvedValue(false);
 
         await expect(
           service.startCrawl('user_1', {
@@ -173,7 +173,7 @@ describe('CrawlerService', () => {
       });
 
       it('should throw for private IP', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(false);
+        mockUrlValidator.isAllowed.mockResolvedValue(false);
 
         await expect(
           service.startCrawl('user_1', {
@@ -185,6 +185,24 @@ describe('CrawlerService', () => {
             timeout: 300000,
           }),
         ).rejects.toThrow('SSRF');
+      });
+
+      it('should throw for disallowed webhook URL', async () => {
+        mockUrlValidator.isAllowed
+          .mockResolvedValueOnce(true)
+          .mockResolvedValueOnce(false);
+
+        await expect(
+          service.startCrawl('user_1', {
+            url: 'https://example.com',
+            maxDepth: 3,
+            limit: 100,
+            allowExternalLinks: false,
+            webhookUrl: 'http://localhost:3000/webhook',
+            sync: false,
+            timeout: 300000,
+          }),
+        ).rejects.toThrow('Webhook URL not allowed');
       });
     });
 

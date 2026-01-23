@@ -9,6 +9,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
 import type { SitemapEntry } from './dto/map.dto';
+import { UrlValidator } from '../common/validators/url.validator';
+import { fetchWithSsrGuard } from '../common/utils/ssrf-fetch';
 
 /**
  * fast-xml-parser 解析结果的类型定义
@@ -38,7 +40,7 @@ export class SitemapParser {
   private readonly logger = new Logger(SitemapParser.name);
   private parser: XMLParser;
 
-  constructor() {
+  constructor(private readonly urlValidator: UrlValidator) {
     this.parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '@_',
@@ -60,6 +62,10 @@ export class SitemapParser {
 
     for (const sitemapUrl of sitemapUrls) {
       try {
+        if (!(await this.urlValidator.isAllowed(sitemapUrl))) {
+          continue;
+        }
+
         const entries = await this.parseSitemapUrl(sitemapUrl);
         urls.push(...entries);
         if (entries.length > 0) {
@@ -74,20 +80,25 @@ export class SitemapParser {
     // 尝试从 robots.txt 获取 sitemap
     try {
       const robotsUrl = `${baseUrl}/robots.txt`;
-      const response = await fetch(robotsUrl, {
-        signal: AbortSignal.timeout(10000),
-      });
-      const text = await response.text();
-      const sitemapMatches = text.match(/Sitemap:\s*(.+)/gi);
+      if (await this.urlValidator.isAllowed(robotsUrl)) {
+        const response = await fetchWithSsrGuard(this.urlValidator, robotsUrl, {
+          signal: AbortSignal.timeout(10000),
+          maxRedirects: 3,
+        });
+        const text = await response.text();
+        const sitemapMatches = text.match(/Sitemap:\s*(.+)/gi);
 
-      if (sitemapMatches) {
-        for (const match of sitemapMatches) {
-          const url = match.replace(/Sitemap:\s*/i, '').trim();
-          try {
-            const entries = await this.parseSitemapUrl(url);
-            urls.push(...entries);
-          } catch {
-            // ignore
+        if (sitemapMatches) {
+          for (const match of sitemapMatches) {
+            const url = match.replace(/Sitemap:\s*/i, '').trim();
+            try {
+              if (await this.urlValidator.isAllowed(url)) {
+                const entries = await this.parseSitemapUrl(url);
+                urls.push(...entries);
+              }
+            } catch {
+              // ignore
+            }
           }
         }
       }
@@ -110,8 +121,14 @@ export class SitemapParser {
    * 解析单个 sitemap URL
    */
   private async parseSitemapUrl(url: string): Promise<SitemapEntry[]> {
-    const response = await fetch(url, {
+    if (!(await this.urlValidator.isAllowed(url))) {
+      this.logger.warn(`Blocked sitemap URL: ${url}`);
+      return [];
+    }
+
+    const response = await fetchWithSsrGuard(this.urlValidator, url, {
       signal: AbortSignal.timeout(10000),
+      maxRedirects: 3,
     });
 
     if (!response.ok) {

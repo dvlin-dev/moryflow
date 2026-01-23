@@ -20,6 +20,7 @@ describe('WebhookService', () => {
       delete: Mock;
     };
   };
+  let mockUrlValidator: { isAllowed: Mock };
 
   beforeEach(() => {
     mockPrisma = {
@@ -33,7 +34,14 @@ describe('WebhookService', () => {
       },
     };
 
-    service = new WebhookService(mockPrisma as unknown as PrismaService);
+    mockUrlValidator = {
+      isAllowed: vi.fn().mockResolvedValue(true),
+    };
+
+    service = new WebhookService(
+      mockPrisma as unknown as PrismaService,
+      mockUrlValidator as any,
+    );
   });
 
   // ============ 创建 Webhook ============
@@ -99,6 +107,18 @@ describe('WebhookService', () => {
       const result = await service.create('user_1', createDto);
 
       expect(result.id).toBe('webhook_10');
+    });
+
+    it('should reject disallowed webhook URL', async () => {
+      mockPrisma.webhook.count.mockResolvedValue(0);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
+
+      await expect(service.create('user_1', createDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.create('user_1', createDto)).rejects.toThrow(
+        'Webhook URL is not allowed',
+      );
     });
   });
 
@@ -240,6 +260,18 @@ describe('WebhookService', () => {
         where: { id: 'webhook_1' },
         data: updateDto,
       });
+    });
+
+    it('should reject disallowed webhook URL on update', async () => {
+      mockPrisma.webhook.findFirst.mockResolvedValue({ id: 'webhook_1' });
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
+
+      await expect(
+        service.update('webhook_1', 'user_1', updateDto),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.update('webhook_1', 'user_1', updateDto),
+      ).rejects.toThrow('Webhook URL is not allowed');
     });
 
     it('should throw NotFoundException when webhook not found', async () => {

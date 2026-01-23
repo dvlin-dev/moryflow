@@ -17,8 +17,9 @@ Batch scraping API for processing multiple URLs in a single request. Creates asy
 ## Constraints
 
 - Public API uses ApiKeyGuard
-- SSRF protection via UrlValidator
+- SSRF protection via UrlValidator (async DNS resolution)
 - Quota deducted per URL processed
+- webhookUrl (if provided) must pass SSRF validation
 
 ## 同步/异步模式
 

@@ -1,7 +1,14 @@
-// apps/server/src/common/services/webhook.service.ts
+/**
+ * [INPUT]: Webhook URL + payload
+ * [OUTPUT]: boolean - send success/failure
+ * [POS]: Shared webhook sender with SSRF guard and signature
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { UrlValidator } from '../validators/url.validator';
 
 export interface WebhookPayload {
   event: string;
@@ -14,7 +21,10 @@ export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
   private readonly webhookSecret: string;
 
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    private urlValidator: UrlValidator,
+  ) {
     this.webhookSecret = config.get('WEBHOOK_SECRET') || '';
   }
 
@@ -22,6 +32,11 @@ export class WebhookService {
    * 发送 Webhook 请求
    */
   async send(url: string, payload: WebhookPayload): Promise<boolean> {
+    if (!(await this.urlValidator.isAllowed(url))) {
+      this.logger.warn(`Webhook URL blocked by SSRF guard: ${url}`);
+      return false;
+    }
+
     const body = {
       ...payload,
       timestamp: new Date().toISOString(),
@@ -38,6 +53,7 @@ export class WebhookService {
           'X-Webhook-Event': payload.event,
         },
         body: JSON.stringify(body),
+        redirect: 'manual',
         signal: AbortSignal.timeout(10000), // 10 秒超时
       });
 

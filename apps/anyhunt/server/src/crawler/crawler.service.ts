@@ -45,8 +45,15 @@ export class CrawlerService {
     options: CrawlOptions,
   ): Promise<CrawlStatus | { id: string; status: string }> {
     // SSRF 防护
-    if (!this.urlValidator.isAllowed(options.url)) {
+    if (!(await this.urlValidator.isAllowed(options.url))) {
       throw new Error('URL not allowed: possible SSRF attack');
+    }
+
+    if (
+      options.webhookUrl &&
+      !(await this.urlValidator.isAllowed(options.webhookUrl))
+    ) {
+      throw new Error(`Webhook URL not allowed: ${options.webhookUrl}`);
     }
 
     // 创建 CrawlJob

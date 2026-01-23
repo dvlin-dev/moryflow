@@ -16,9 +16,10 @@ URL discovery API for mapping website structure. Combines sitemap parsing with b
 ## Constraints
 
 - Public API uses ApiKeyGuard
-- SSRF protection via UrlValidator
+- SSRF protection via UrlValidator (async DNS resolution for sitemap/robots/page links)
 - Excludes resource files (images, CSS, JS, etc.)
 - Limits crawl depth to prevent infinite loops
+- BrowserPool enforces network-level SSRF guard during crawling
 
 ## File Structure
 

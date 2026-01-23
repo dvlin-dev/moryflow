@@ -18,12 +18,13 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 
 ## Constraints
 
-- URL must pass SSRF validation before scraping
+- URL must pass SSRF validation before scraping (async DNS resolution)
 - 触发实际抓取前必须先扣费（通过 `BillingService` + `@BillingKey(...)`）
 - Browser pool concurrency limits apply
 - Cache hits don't consume quota
 - 异步任务失败退费依赖 `ScrapeJob.quotaBreakdown`（按扣费交易分解，幂等）
 - 套餐判断基于有效订阅（仅 ACTIVE 计入付费 tier）
+- BrowserPool enforces network-level SSRF guard for sub-requests
 
 ## 同步/异步模式
 

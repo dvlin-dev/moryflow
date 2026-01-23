@@ -19,6 +19,7 @@ Webhook notification system for sending event notifications to user-configured e
 - Webhook secrets regenerated on request
 - Retry with exponential backoff on failure
 - Events: crawl.completed, batch-scrape.completed
+- Webhook URL must pass SSRF validation (async DNS via UrlValidator)
 
 ## File Structure
 

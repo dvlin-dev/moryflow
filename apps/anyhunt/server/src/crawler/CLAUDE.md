@@ -21,6 +21,7 @@ Multi-page crawling engine for extracting content from entire websites. Uses asy
 - Same-domain links only (unless configured)
 - Uses Map module for URL discovery
 - Billing/Refund: use `CrawlJob.quotaBreakdown` (JSON) for idempotent refunds on failure
+- SSRF protection is async with DNS resolution (startUrl + webhookUrl must pass `UrlValidator`)
 
 ## 同步/异步模式
 

@@ -4,11 +4,14 @@
  * [INPUT]: 拦截规则、请求事件
  * [OUTPUT]: 修改后的请求/响应或 mock 数据
  * [POS]: 管理网络拦截规则，支持请求头修改、响应 mock、请求阻止
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import type { Page, Route, Request, Response } from 'playwright';
 import type { InterceptRule, NetworkRequestRecord } from '../dto';
+import { UrlValidator } from '../../common/validators/url.validator';
 
 /** 会话拦截状态 */
 interface SessionInterceptState {
@@ -33,12 +36,15 @@ export class InvalidInterceptRuleError extends Error {
 @Injectable()
 export class NetworkInterceptorService {
   private readonly logger = new Logger(NetworkInterceptorService.name);
+  private readonly NON_HTTP_ALLOWLIST = new Set(['about:', 'data:', 'blob:']);
 
   /** 会话拦截状态 */
   private readonly sessionStates = new Map<string, SessionInterceptState>();
 
   /** 请求历史最大条数 */
   private readonly MAX_HISTORY_SIZE = 100;
+
+  constructor(private readonly urlValidator: UrlValidator) {}
 
   /**
    * 设置拦截规则
@@ -262,6 +268,39 @@ export class NetworkInterceptorService {
       timestamp: Date.now(),
     };
 
+    const protocol = this.getProtocol(url);
+    if (!protocol) {
+      record.intercepted = true;
+      this.addToHistory(state, record);
+      await route.abort('blockedbyclient');
+      return;
+    }
+
+    if (protocol === 'http:' || protocol === 'https:') {
+      if (!(await this.urlValidator.isAllowed(url))) {
+        record.intercepted = true;
+        this.addToHistory(state, record);
+        await route.abort('blockedbyclient');
+        return;
+      }
+    } else if (protocol === 'ws:' || protocol === 'wss:') {
+      const normalizedUrl =
+        protocol === 'ws:'
+          ? url.replace(/^ws:/i, 'http:')
+          : url.replace(/^wss:/i, 'https:');
+      if (!(await this.urlValidator.isAllowed(normalizedUrl))) {
+        record.intercepted = true;
+        this.addToHistory(state, record);
+        await route.abort('blockedbyclient');
+        return;
+      }
+    } else if (!this.NON_HTTP_ALLOWLIST.has(protocol)) {
+      record.intercepted = true;
+      this.addToHistory(state, record);
+      await route.abort('blockedbyclient');
+      return;
+    }
+
     // 查找匹配的规则
     const matchingRule = this.findMatchingRule(state.rules, url, method);
 
@@ -434,5 +473,13 @@ export class NetworkInterceptorService {
    */
   private generateRequestId(): string {
     return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  private getProtocol(url: string): string | null {
+    try {
+      return new URL(url).protocol;
+    } catch {
+      return null;
+    }
   }
 }

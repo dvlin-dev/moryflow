@@ -46,7 +46,7 @@ export class MapService {
     } = options;
 
     // SSRF 防护
-    if (!this.urlValidator.isAllowed(url)) {
+    if (!(await this.urlValidator.isAllowed(url))) {
       throw new Error('URL not allowed: possible SSRF attack');
     }
 
@@ -76,7 +76,8 @@ export class MapService {
             if (results.length >= limit) break;
             if (
               this.isValidUrl(entry.url, baseHost, includeSubdomains) &&
-              !seen.has(entry.url)
+              !seen.has(entry.url) &&
+              (await this.urlValidator.isAllowed(entry.url))
             ) {
               if (
                 !search ||
@@ -154,6 +155,10 @@ export class MapService {
         seen.add(url);
 
         try {
+          if (!(await this.urlValidator.isAllowed(url))) {
+            continue;
+          }
+
           await page.goto(url, {
             waitUntil: 'domcontentloaded',
             timeout: 10000,
@@ -171,7 +176,8 @@ export class MapService {
             if (results.length >= limit) break;
             if (
               this.isValidUrl(link, baseHost, includeSubdomains) &&
-              !seen.has(link)
+              !seen.has(link) &&
+              (await this.urlValidator.isAllowed(link))
             ) {
               if (
                 !search ||

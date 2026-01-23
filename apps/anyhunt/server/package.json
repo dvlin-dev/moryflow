@@ -66,6 +66,7 @@
     "express": "^5.1.0",
     "fast-xml-parser": "^5.3.3",
     "ioredis": "^5.8.2",
+    "ipaddr.js": "^1.9.1",
     "jsdom": "^27.2.0",
     "mailchecker": "^6.0.19",
     "mime-types": "^3.0.2",

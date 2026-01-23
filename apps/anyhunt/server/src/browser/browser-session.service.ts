@@ -142,7 +142,7 @@ export class BrowserSessionService {
     const { url, waitUntil = 'domcontentloaded', timeout = 30000 } = options;
 
     // SSRF 防护
-    if (!this.urlValidator.isAllowed(url)) {
+    if (!(await this.urlValidator.isAllowed(url))) {
       throw new UrlNotAllowedError(url);
     }
 

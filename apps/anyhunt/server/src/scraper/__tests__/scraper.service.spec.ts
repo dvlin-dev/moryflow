@@ -61,7 +61,7 @@ describe('ScraperService', () => {
       },
     };
     mockUrlValidator = {
-      isAllowed: vi.fn().mockReturnValue(true),
+      isAllowed: vi.fn().mockResolvedValue(true),
     };
     mockQueue = {
       add: vi.fn().mockResolvedValue({ id: 'queue_job_1' }),
@@ -93,7 +93,7 @@ describe('ScraperService', () => {
 
   describe('scrape', () => {
     it('should throw error for SSRF attempt', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       await expect(
         service.scrape('user_1', {
@@ -318,7 +318,7 @@ describe('ScraperService', () => {
     });
 
     it('should reject various SSRF attack vectors', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       const ssrfUrls = [
         'http://localhost',

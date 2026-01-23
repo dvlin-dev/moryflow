@@ -136,8 +136,8 @@ describe('BatchScrapeService', () => {
     describe('SSRF protection', () => {
       it('should reject disallowed URLs', async () => {
         mockUrlValidator.isAllowed
-          .mockReturnValueOnce(true)
-          .mockReturnValueOnce(false);
+          .mockResolvedValueOnce(true)
+          .mockResolvedValueOnce(false);
 
         await expect(
           service.batchScrape('user-1', {
@@ -150,8 +150,25 @@ describe('BatchScrapeService', () => {
         expect(mockPrisma.batchScrapeJob.create).not.toHaveBeenCalled();
       });
 
+      it('should reject disallowed webhook URL', async () => {
+        mockUrlValidator.isAllowed
+          .mockResolvedValueOnce(true)
+          .mockResolvedValueOnce(false);
+
+        await expect(
+          service.batchScrape('user-1', {
+            urls: ['https://example.com'],
+            webhookUrl: 'http://localhost:3000/webhook',
+            sync: false,
+            timeout: 30000,
+          }),
+        ).rejects.toThrow('Webhook URL not allowed');
+
+        expect(mockPrisma.batchScrapeJob.create).not.toHaveBeenCalled();
+      });
+
       it('should allow valid URLs', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(true);
+        mockUrlValidator.isAllowed.mockResolvedValue(true);
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue(null);
@@ -171,7 +188,7 @@ describe('BatchScrapeService', () => {
 
     describe('async mode (sync=false)', () => {
       it('should return job ID immediately', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(true);
+        mockUrlValidator.isAllowed.mockResolvedValue(true);
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue(null);
@@ -193,7 +210,7 @@ describe('BatchScrapeService', () => {
 
     describe('billing integration', () => {
       it('should deduct billing after job creation', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(true);
+        mockUrlValidator.isAllowed.mockResolvedValue(true);
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue({
@@ -247,7 +264,7 @@ describe('BatchScrapeService', () => {
       });
 
       it('should refund and cleanup on queue failure', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(true);
+        mockUrlValidator.isAllowed.mockResolvedValue(true);
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue({
@@ -298,7 +315,7 @@ describe('BatchScrapeService', () => {
 
     describe('job creation', () => {
       it('should create batch job and items', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(true);
+        mockUrlValidator.isAllowed.mockResolvedValue(true);
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue(null);
@@ -341,7 +358,7 @@ describe('BatchScrapeService', () => {
       });
 
       it('should queue batch-start job', async () => {
-        mockUrlValidator.isAllowed.mockReturnValue(true);
+        mockUrlValidator.isAllowed.mockResolvedValue(true);
         mockPrisma.batchScrapeJob.create.mockResolvedValue(mockBatchJob);
         mockPrisma.batchScrapeItem.createMany.mockResolvedValue({ count: 2 });
         mockBillingService.deductOrThrow.mockResolvedValue(null);

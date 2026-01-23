@@ -4,6 +4,8 @@
  * [INPUT]: Site URL, crawl 配置
  * [OUTPUT]: 解析后的页面内容列表
  * [POS]: 处理网站爬取，发现新内容并提取信息
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -78,7 +80,7 @@ export class DigestSiteCrawlService {
     let errorCount = 0;
 
     try {
-      if (!this.urlValidator.isAllowed(siteUrl)) {
+      if (!(await this.urlValidator.isAllowed(siteUrl))) {
         throw new Error(`Site URL not allowed: ${siteUrl}`);
       }
 

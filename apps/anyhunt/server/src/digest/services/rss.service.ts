@@ -4,11 +4,14 @@
  * [INPUT]: RSS feed URL
  * [OUTPUT]: 解析后的 RSS 条目列表
  * [POS]: 处理 RSS/Atom feed 解析，支持 RSSHub 和自定义 feed
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { UrlValidator } from '../../common/validators/url.validator';
 import { SOURCE_DEFAULTS } from '../digest.constants';
+import { fetchWithSsrGuard } from '../../common/utils/ssrf-fetch';
 
 /**
  * RSS 条目
@@ -65,17 +68,18 @@ export class DigestRssService {
     this.logger.debug(`Fetching RSS feed: ${feedUrl}`);
 
     try {
-      if (!this.urlValidator.isAllowed(feedUrl)) {
+      if (!(await this.urlValidator.isAllowed(feedUrl))) {
         throw new Error(`Feed URL not allowed: ${feedUrl}`);
       }
 
-      const response = await fetch(feedUrl, {
+      const response = await fetchWithSsrGuard(this.urlValidator, feedUrl, {
         headers: {
           'User-Agent': 'Anyhunt-Digest/1.0 (+https://anyhunt.app)',
           Accept:
             'application/rss+xml, application/atom+xml, application/xml, text/xml',
         },
         signal: AbortSignal.timeout(30000),
+        maxRedirects: 3,
       });
 
       if (!response.ok) {

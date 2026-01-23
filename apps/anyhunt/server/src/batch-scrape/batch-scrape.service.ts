@@ -50,9 +50,13 @@ export class BatchScrapeService {
 
     // SSRF 防护
     for (const url of urls) {
-      if (!this.urlValidator.isAllowed(url)) {
+      if (!(await this.urlValidator.isAllowed(url))) {
         throw new Error(`URL not allowed: ${url}`);
       }
+    }
+
+    if (webhookUrl && !(await this.urlValidator.isAllowed(webhookUrl))) {
+      throw new Error(`Webhook URL not allowed: ${webhookUrl}`);
     }
 
     // 创建批次任务

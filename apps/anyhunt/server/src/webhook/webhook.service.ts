@@ -1,6 +1,9 @@
 /**
- * Webhook Service
- * Webhook 管理业务逻辑
+ * [INPUT]: Webhook CRUD requests (Create/Update/Delete)
+ * [OUTPUT]: Webhook model view (secret masked)
+ * [POS]: Webhook management service with SSRF guard
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -10,13 +13,17 @@ import {
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma';
+import { UrlValidator } from '../common/validators/url.validator';
 import type { Webhook } from '../../generated/prisma-main/client';
 import type { CreateWebhookDto, UpdateWebhookDto } from './dto';
 import { MAX_WEBHOOKS_PER_USER } from './webhook.constants';
 
 @Injectable()
 export class WebhookService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly urlValidator: UrlValidator,
+  ) {}
 
   /**
    * 生成 Webhook secret
@@ -38,6 +45,10 @@ export class WebhookService {
       throw new BadRequestException(
         `Maximum ${MAX_WEBHOOKS_PER_USER} webhooks allowed per user`,
       );
+    }
+
+    if (!(await this.urlValidator.isAllowed(dto.url))) {
+      throw new BadRequestException('Webhook URL is not allowed');
     }
 
     const webhook = await this.prisma.webhook.create({
@@ -91,6 +102,10 @@ export class WebhookService {
 
     if (!existing) {
       throw new NotFoundException('Webhook not found');
+    }
+
+    if (dto.url && !(await this.urlValidator.isAllowed(dto.url))) {
+      throw new BadRequestException('Webhook URL is not allowed');
     }
 
     const webhook = await this.prisma.webhook.update({

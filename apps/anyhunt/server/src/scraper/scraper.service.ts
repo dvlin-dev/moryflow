@@ -61,7 +61,7 @@ export class ScraperService {
     billingOptions?: { bill?: boolean },
   ): Promise<ScrapeResult | { id: string; status: string }> {
     // 1. SSRF 防护 - 验证 URL
-    if (!this.urlValidator.isAllowed(options.url)) {
+    if (!(await this.urlValidator.isAllowed(options.url))) {
       throw new Error('URL not allowed: possible SSRF attack');
     }
 

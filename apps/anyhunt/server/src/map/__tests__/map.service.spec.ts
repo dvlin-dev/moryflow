@@ -58,7 +58,7 @@ describe('MapService', () => {
     };
 
     mockUrlValidator = {
-      isAllowed: vi.fn().mockReturnValue(true),
+      isAllowed: vi.fn().mockResolvedValue(true),
     };
 
     mockConfig = {
@@ -83,7 +83,7 @@ describe('MapService', () => {
 
   describe('SSRF protection', () => {
     it('should throw for blocked URLs', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       await expect(
         service.map(TEST_USER_ID, {
@@ -94,18 +94,24 @@ describe('MapService', () => {
     });
 
     it('should throw for localhost', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       await expect(
-        service.map(TEST_USER_ID, { ...baseOptions, url: 'http://localhost:3000' }),
+        service.map(TEST_USER_ID, {
+          ...baseOptions,
+          url: 'http://localhost:3000',
+        }),
       ).rejects.toThrow('SSRF');
     });
 
     it('should throw for private IP', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       await expect(
-        service.map(TEST_USER_ID, { ...baseOptions, url: 'http://192.168.1.1' }),
+        service.map(TEST_USER_ID, {
+          ...baseOptions,
+          url: 'http://192.168.1.1',
+        }),
       ).rejects.toThrow('SSRF');
     });
   });
@@ -219,7 +225,10 @@ describe('MapService', () => {
       mockPage.goto.mockResolvedValue(undefined);
       mockPage.$$eval.mockResolvedValue([]);
 
-      await service.map(TEST_USER_ID, { ...baseOptions, url: 'https://example.com' });
+      await service.map(TEST_USER_ID, {
+        ...baseOptions,
+        url: 'https://example.com',
+      });
 
       expect(mockBrowserPool.releaseContext).toHaveBeenCalledWith(mockContext);
     });
@@ -227,7 +236,10 @@ describe('MapService', () => {
     it('should close page after crawling', async () => {
       mockSitemapParser.fetchAndParse.mockResolvedValue([]);
 
-      await service.map(TEST_USER_ID, { ...baseOptions, url: 'https://example.com' });
+      await service.map(TEST_USER_ID, {
+        ...baseOptions,
+        url: 'https://example.com',
+      });
 
       expect(mockPage.close).toHaveBeenCalled();
     });
@@ -360,7 +372,10 @@ describe('MapService', () => {
     });
 
     it('should use ignoreSitemap=false by default', async () => {
-      await service.map(TEST_USER_ID, { ...baseOptions, url: 'https://example.com' });
+      await service.map(TEST_USER_ID, {
+        ...baseOptions,
+        url: 'https://example.com',
+      });
 
       expect(mockSitemapParser.fetchAndParse).toHaveBeenCalled();
     });

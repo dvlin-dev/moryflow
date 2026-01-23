@@ -50,7 +50,7 @@ describe('WebhookDeliveryProcessor', () => {
     };
 
     it('should deliver webhook successfully', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({
         webhookSecret: 'secret-123',
       });
@@ -76,7 +76,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should reject disallowed URLs (SSRF protection)', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
       const localJob = {
         ...mockJob,
         data: {
@@ -99,7 +99,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should include HMAC signature when webhookSecret is set', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({
         webhookSecret: 'my-secret',
       });
@@ -116,7 +116,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should return "none" signature when no webhookSecret', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({
         webhookSecret: null,
       });
@@ -133,7 +133,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should include event header', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: true,
@@ -148,7 +148,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should record failure and throw on HTTP error', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: false,
@@ -170,7 +170,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should handle 4xx client errors', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: false,
@@ -183,7 +183,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should handle network errors', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockRejectedValue(new Error('Network error'));
 
@@ -200,7 +200,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should not double-record HTTP errors', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: false,
@@ -216,7 +216,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should post JSON body with correct content-type', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: true,
@@ -232,7 +232,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should handle timeout errors', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockRejectedValue(new Error('Request timeout'));
 
@@ -242,7 +242,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should include timestamp header', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: true,
@@ -259,7 +259,7 @@ describe('WebhookDeliveryProcessor', () => {
     });
 
     it('should not fail recording when DB update fails', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(true);
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
       mockPrisma.digestSubscription.findUnique.mockResolvedValue({});
       (global.fetch as any).mockResolvedValue({
         ok: true,

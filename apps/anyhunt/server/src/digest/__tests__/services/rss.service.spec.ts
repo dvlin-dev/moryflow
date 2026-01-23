@@ -12,6 +12,13 @@ import { createMockUrlValidator, type MockUrlValidator } from '../mocks';
 // Mock global fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
+const buildResponse = (overrides: Record<string, unknown>) => ({
+  ok: true,
+  status: 200,
+  statusText: 'OK',
+  headers: new Headers(),
+  ...overrides,
+});
 
 describe('DigestRssService', () => {
   let service: DigestRssService;
@@ -27,7 +34,7 @@ describe('DigestRssService', () => {
 
   describe('fetchAndParse', () => {
     it('should throw error for disallowed URL', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       await expect(
         service.fetchAndParse({ feedUrl: 'http://localhost/feed.xml' }),
@@ -35,11 +42,13 @@ describe('DigestRssService', () => {
     });
 
     it('should throw error on HTTP failure', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        }),
+      );
 
       await expect(
         service.fetchAndParse({ feedUrl: 'https://example.com/feed.xml' }),
@@ -72,10 +81,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -107,10 +117,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -140,10 +151,11 @@ describe('DigestRssService', () => {
         </feed>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(atomXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(atomXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/atom.xml',
@@ -172,10 +184,11 @@ describe('DigestRssService', () => {
         </feed>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(atomXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(atomXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/atom.xml',
@@ -199,10 +212,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -225,10 +239,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -253,10 +268,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -282,10 +298,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -308,10 +325,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -336,10 +354,11 @@ describe('DigestRssService', () => {
         </rss>
       `;
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(rssXml),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () => Promise.resolve(rssXml),
+        }),
+      );
 
       const result = await service.fetchAndParse({
         feedUrl: 'https://example.com/feed.xml',
@@ -349,13 +368,14 @@ describe('DigestRssService', () => {
     });
 
     it('should set correct headers for fetch', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        text: () =>
-          Promise.resolve(
-            '<rss version="2.0"><channel><title>T</title></channel></rss>',
-          ),
-      });
+      mockFetch.mockResolvedValue(
+        buildResponse({
+          text: () =>
+            Promise.resolve(
+              '<rss version="2.0"><channel><title>T</title></channel></rss>',
+            ),
+        }),
+      );
 
       await service.fetchAndParse({ feedUrl: 'https://example.com/feed.xml' });
 

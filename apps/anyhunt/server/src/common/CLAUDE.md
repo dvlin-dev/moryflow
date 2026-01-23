@@ -55,21 +55,25 @@ Shared infrastructure components used across all modules. Contains guards, decor
 | `utils/pagination.utils.ts`        | Utility   | Pagination helpers                      |
 | `utils/origin.utils.ts`            | Utility   | Origin 匹配（支持通配符）               |
 | `utils/subscription-tier.ts`       | Utility   | 订阅状态 → 有效 tier 计算               |
+| `utils/ssrf-fetch.ts`              | Utility   | SSRF-safe fetch + redirect validation   |
 | `schemas/pagination.schema.ts`     | Schema    | Shared pagination schema                |
 | `constants/error-codes.ts`         | Constants | Unified error code definitions          |
 | `services/webhook.service.ts`      | Service   | Webhook dispatch utility                |
 
 ## URL Validator (Critical)
 
-The `url.validator.ts` provides SSRF protection:
+The `url.validator.ts` provides SSRF protection with DNS resolution and IPv6 normalization:
 
 ```typescript
-import { isUrlAllowed } from '@/common/validators/url.validator';
+import { UrlValidator } from '@/common/validators/url.validator';
+
+const allowed = await urlValidator.isAllowed(url);
+if (!allowed) throw new UrlNotAllowedError(url);
 
 // Blocks:
-// - Private IPs (10.x, 192.168.x, 127.x, etc.)
-// - Localhost
-// - Cloud metadata endpoints (169.254.169.254)
+// - Private/reserved IP ranges (IPv4/IPv6, incl. metadata endpoints)
+// - localhost and local domains (.local/.internal/.localhost)
+// - URLs with credentials
 // - Non-HTTP(S) protocols
 ```
 
@@ -95,9 +99,8 @@ import { isUrlAllowed } from '@/common/validators/url.validator';
 ### URL Validation
 
 ```typescript
-import { isUrlAllowed } from '@/common/validators/url.validator';
-
-if (!isUrlAllowed(url)) {
+const allowed = await urlValidator.isAllowed(url);
+if (!allowed) {
   throw new UrlNotAllowedError(url);
 }
 ```
@@ -123,7 +126,8 @@ common/
 ```typescript
 export { ZodValidationPipe } from './pipes';
 export { HttpExceptionFilter } from './filters';
-export { isUrlAllowed, validateUrl } from './validators';
+export { UrlValidator } from './validators';
+export { WebhookService } from './services';
 export { hashApiKey, generateApiKey } from './utils';
 export { ERROR_CODES } from './constants';
 ```

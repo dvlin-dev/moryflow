@@ -14,7 +14,8 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { chromium, type BrowserContext } from 'playwright';
+import { chromium, type BrowserContext, type Route } from 'playwright';
+import { UrlValidator } from '../common/validators/url.validator';
 import type {
   BrowserInstance,
   BrowserContextOptions,
@@ -85,6 +86,9 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
 
   /** 实例创建互斥锁，防止并发创建超出上限 */
   private readonly createMutex = new Mutex();
+  private readonly NON_HTTP_ALLOWLIST = new Set(['about:', 'data:', 'blob:']);
+
+  constructor(private readonly urlValidator: UrlValidator) {}
 
   async onModuleInit() {
     // 输出系统资源检测信息
@@ -358,11 +362,68 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
         userAgent: options?.userAgent,
       });
 
+      await this.attachNetworkGuard(context);
+
       return context;
     } catch (error) {
       // 创建失败，回滚计数
       instance.pageCount = Math.max(0, instance.pageCount - 1);
       throw error;
+    }
+  }
+
+  private async attachNetworkGuard(context: BrowserContext): Promise<void> {
+    await context.route('**/*', async (route: Route) => {
+      const requestUrl = route.request().url();
+      const protocol = this.getProtocol(requestUrl);
+
+      if (!protocol) {
+        await route.abort('blockedbyclient');
+        return;
+      }
+
+      if (protocol === 'http:' || protocol === 'https:') {
+        const allowed = await this.urlValidator.isAllowed(requestUrl);
+        if (!allowed) {
+          this.logger.warn(`Blocked browser request: ${requestUrl}`);
+          await route.abort('blockedbyclient');
+          return;
+        }
+
+        await route.fallback();
+        return;
+      }
+
+      if (protocol === 'ws:' || protocol === 'wss:') {
+        const normalizedUrl =
+          protocol === 'ws:'
+            ? requestUrl.replace(/^ws:/i, 'http:')
+            : requestUrl.replace(/^wss:/i, 'https:');
+        const allowed = await this.urlValidator.isAllowed(normalizedUrl);
+        if (!allowed) {
+          this.logger.warn(`Blocked browser request: ${requestUrl}`);
+          await route.abort('blockedbyclient');
+          return;
+        }
+
+        await route.fallback();
+        return;
+      }
+
+      if (this.NON_HTTP_ALLOWLIST.has(protocol)) {
+        await route.fallback();
+        return;
+      }
+
+      await route.abort('blockedbyclient');
+    });
+  }
+
+  private getProtocol(url: string): string | null {
+    try {
+      return new URL(url).protocol;
+    } catch {
+      return null;
     }
   }
 

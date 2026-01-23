@@ -99,14 +99,12 @@ export function createMockLlmClient(): MockLlmClient {
 // ========== URL Validator Mock ==========
 
 export type MockUrlValidator = {
-  validate: Mock;
   isAllowed: Mock;
 };
 
 export function createMockUrlValidator(): MockUrlValidator {
   return {
-    validate: vi.fn().mockReturnValue({ valid: true }),
-    isAllowed: vi.fn().mockReturnValue(true),
+    isAllowed: vi.fn().mockResolvedValue(true),
   };
 }
 

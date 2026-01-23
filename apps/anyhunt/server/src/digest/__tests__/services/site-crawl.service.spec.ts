@@ -39,7 +39,7 @@ describe('DigestSiteCrawlService', () => {
 
   describe('crawlSite', () => {
     it('should throw error for disallowed URL', async () => {
-      mockUrlValidator.isAllowed.mockReturnValue(false);
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
 
       await expect(
         service.crawlSite('user-1', { siteUrl: 'http://localhost' }),
