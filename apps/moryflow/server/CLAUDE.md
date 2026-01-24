@@ -64,6 +64,7 @@ module-name/
 - Payment：successUrl 白名单校验、Webhook productId 校验与类型映射、成功页 postMessage 限定 origin
 - Payment：Webhook 幂等性补齐唯一约束兜底；新增支付工具与单测
 - Quota：存储/向量化扣减改为原子更新并补齐单测
+- Quota：QuotaModule 补齐 AuthModule 依赖，修复 AuthGuard 依赖注入失败
 - Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
 - Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
 - Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
