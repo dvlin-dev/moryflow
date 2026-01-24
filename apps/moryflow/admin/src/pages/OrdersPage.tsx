@@ -1,21 +1,21 @@
 /**
  * 订单管理页面
  */
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   PageHeader,
   TableSkeleton,
   SimplePagination,
   StatusBadge,
   ORDER_STATUS_CONFIG,
-} from '@/components/shared'
+} from '@/components/shared';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -23,11 +23,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { usePagination } from '@/hooks'
-import { formatDate, formatCurrency } from '@/lib/format'
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { usePagination } from '@/hooks';
+import { formatDate, formatCurrency } from '@/lib/format';
 import {
   useOrders,
   ORDER_STATUS_OPTIONS,
@@ -35,40 +35,41 @@ import {
   PRODUCT_TYPE_LABEL,
   ORDER_TABLE_COLUMNS,
   OrderDetailDialog,
-} from '@/features/payment'
-import type { PaymentOrder } from '@/types/payment'
-import { Eye } from 'lucide-react'
+} from '@/features/payment';
+import type { PaymentOrder } from '@/types/payment';
+import { ViewIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 export default function OrdersPage() {
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [selectedType, setSelectedType] = useState('all')
-  const [selectedOrder, setSelectedOrder] = useState<PaymentOrder | null>(null)
-  const [detailOpen, setDetailOpen] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<PaymentOrder | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
-  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE })
+  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
   const { data, isLoading } = useOrders({
     page,
     pageSize: PAGE_SIZE,
     status: selectedStatus,
     productType: selectedType,
-  })
+  });
 
-  const orders = data?.orders || []
-  const totalPages = getTotalPages(data?.pagination.count || 0)
+  const orders = data?.orders || [];
+  const totalPages = getTotalPages(data?.pagination.count || 0);
 
   const handleFilterChange = (type: 'status' | 'productType', value: string) => {
-    if (type === 'status') setSelectedStatus(value)
-    else setSelectedType(value)
-    resetPage()
-  }
+    if (type === 'status') setSelectedStatus(value);
+    else setSelectedType(value);
+    resetPage();
+  };
 
   const handleViewDetail = (order: PaymentOrder) => {
-    setSelectedOrder(order)
-    setDetailOpen(true)
-  }
+    setSelectedOrder(order);
+    setDetailOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -76,10 +77,7 @@ export default function OrdersPage() {
 
       {/* 筛选器 */}
       <div className="flex gap-2">
-        <Select
-          value={selectedStatus}
-          onValueChange={(v) => handleFilterChange('status', v)}
-        >
+        <Select value={selectedStatus} onValueChange={(v) => handleFilterChange('status', v)}>
           <SelectTrigger className="w-32">
             <SelectValue placeholder="选择状态" />
           </SelectTrigger>
@@ -92,10 +90,7 @@ export default function OrdersPage() {
           </SelectContent>
         </Select>
 
-        <Select
-          value={selectedType}
-          onValueChange={(v) => handleFilterChange('productType', v)}
-        >
+        <Select value={selectedType} onValueChange={(v) => handleFilterChange('productType', v)}>
           <SelectTrigger className="w-32">
             <SelectValue placeholder="选择类型" />
           </SelectTrigger>
@@ -137,9 +132,7 @@ export default function OrdersPage() {
                       {PRODUCT_TYPE_LABEL[order.productType] || order.productType}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(order.amount)}
-                  </TableCell>
+                  <TableCell className="font-medium">{formatCurrency(order.amount)}</TableCell>
                   <TableCell>
                     <StatusBadge status={order.status} configMap={ORDER_STATUS_CONFIG} />
                   </TableCell>
@@ -150,12 +143,8 @@ export default function OrdersPage() {
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetail(order)}
-                    >
-                      <Eye className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" onClick={() => handleViewDetail(order)}>
+                      <Icon icon={ViewIcon} className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -177,11 +166,7 @@ export default function OrdersPage() {
       )}
 
       {/* 详情弹窗 */}
-      <OrderDetailDialog
-        order={selectedOrder}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-      />
+      <OrderDetailDialog order={selectedOrder} open={detailOpen} onOpenChange={setDetailOpen} />
     </div>
-  )
+  );
 }

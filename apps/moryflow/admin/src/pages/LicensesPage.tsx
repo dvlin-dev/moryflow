@@ -1,21 +1,21 @@
 /**
  * License 管理页面
  */
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   PageHeader,
   TableSkeleton,
   SimplePagination,
   StatusBadge,
   LICENSE_STATUS_CONFIG,
-} from '@/components/shared'
+} from '@/components/shared';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -23,11 +23,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { usePagination } from '@/hooks'
-import { formatDate } from '@/lib/format'
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { usePagination } from '@/hooks';
+import { formatDate } from '@/lib/format';
 import {
   useLicenses,
   useRevokeLicense,
@@ -35,45 +35,46 @@ import {
   LICENSE_TIER_LABEL,
   LICENSE_TABLE_COLUMNS,
   RevokeLicenseDialog,
-} from '@/features/payment'
-import type { License } from '@/types/payment'
-import { Ban } from 'lucide-react'
+} from '@/features/payment';
+import type { License } from '@/types/payment';
+import { BlockedIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 export default function LicensesPage() {
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [selectedLicense, setSelectedLicense] = useState<License | null>(null)
-  const [revokeOpen, setRevokeOpen] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
+  const [revokeOpen, setRevokeOpen] = useState(false);
 
-  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE })
+  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
   const { data, isLoading } = useLicenses({
     page,
     pageSize: PAGE_SIZE,
     status: selectedStatus,
-  })
+  });
 
-  const revokeMutation = useRevokeLicense()
+  const revokeMutation = useRevokeLicense();
 
-  const licenses = data?.licenses || []
-  const totalPages = getTotalPages(data?.pagination.count || 0)
+  const licenses = data?.licenses || [];
+  const totalPages = getTotalPages(data?.pagination.count || 0);
 
   const handleRevoke = (license: License) => {
-    setSelectedLicense(license)
-    setRevokeOpen(true)
-  }
+    setSelectedLicense(license);
+    setRevokeOpen(true);
+  };
 
   const confirmRevoke = () => {
     if (selectedLicense) {
       revokeMutation.mutate(selectedLicense.id, {
         onSuccess: () => {
-          setRevokeOpen(false)
-          setSelectedLicense(null)
+          setRevokeOpen(false);
+          setSelectedLicense(null);
         },
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -84,8 +85,8 @@ export default function LicensesPage() {
         <Select
           value={selectedStatus}
           onValueChange={(v) => {
-            setSelectedStatus(v)
-            resetPage()
+            setSelectedStatus(v);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-32">
@@ -145,7 +146,7 @@ export default function LicensesPage() {
                         onClick={() => handleRevoke(license)}
                         className="text-destructive hover:text-destructive"
                       >
-                        <Ban className="h-4 w-4 mr-1" />
+                        <Icon icon={BlockedIcon} className="h-4 w-4 mr-1" />
                         撤销
                       </Button>
                     )}
@@ -177,5 +178,5 @@ export default function LicensesPage() {
         isLoading={revokeMutation.isPending}
       />
     </div>
-  )
+  );
 }

@@ -2,15 +2,11 @@
  * NavMain - 主导航组件（支持二级菜单）
  * 基于 shadcn sidebar collapsible 模式
  */
-import { useLocation, Link } from 'react-router-dom'
-import type { LucideIcon } from 'lucide-react'
-import { ChevronRight } from 'lucide-react'
+import { useLocation, Link } from 'react-router-dom';
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Icon, type HugeIcon } from '@/components/ui/icon';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -20,48 +16,48 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@/components/ui/sidebar'
+} from '@/components/ui/sidebar';
 
 /** 子菜单项 */
 export interface NavSubItem {
-  title: string
-  url: string
+  title: string;
+  url: string;
 }
 
 /** 导航项（支持子菜单） */
 export interface NavItem {
-  title: string
-  url?: string
-  icon: LucideIcon
-  items?: NavSubItem[]
+  title: string;
+  url?: string;
+  icon: HugeIcon;
+  items?: NavSubItem[];
 }
 
 /** 导航分组 */
 export interface NavGroup {
-  label?: string
-  items: NavItem[]
+  label?: string;
+  items: NavItem[];
 }
 
 export interface NavMainProps {
-  groups: NavGroup[]
+  groups: NavGroup[];
 }
 
 export function NavMain({ groups }: NavMainProps) {
-  const location = useLocation()
+  const location = useLocation();
 
   // 检查路由是否激活
   const isActive = (url: string) => {
     if (url === '/') {
-      return location.pathname === '/'
+      return location.pathname === '/';
     }
-    return location.pathname.startsWith(url)
-  }
+    return location.pathname.startsWith(url);
+  };
 
   // 检查分组是否有激活的子项
   const hasActiveChild = (items?: NavSubItem[]) => {
-    if (!items) return false
-    return items.some((item) => isActive(item.url))
-  }
+    if (!items) return false;
+    return items.some((item) => isActive(item.url));
+  };
 
   return (
     <>
@@ -82,19 +78,19 @@ export function NavMain({ groups }: NavMainProps) {
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton tooltip={item.title}>
-                          <item.icon />
+                          <Icon icon={item.icon} />
                           <span>{item.title}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          <Icon
+                            icon={ArrowRight01Icon}
+                            className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                          />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <SidebarMenuSub>
                           {item.items.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={isActive(subItem.url)}
-                              >
+                              <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
                                 <Link to={subItem.url}>
                                   <span>{subItem.title}</span>
                                 </Link>
@@ -105,7 +101,7 @@ export function NavMain({ groups }: NavMainProps) {
                       </CollapsibleContent>
                     </SidebarMenuItem>
                   </Collapsible>
-                )
+                );
               }
 
               // 无子菜单的项目 - 直接链接
@@ -117,16 +113,16 @@ export function NavMain({ groups }: NavMainProps) {
                     isActive={item.url ? isActive(item.url) : false}
                   >
                     <Link to={item.url || '#'}>
-                      <item.icon />
+                      <Icon icon={item.icon} />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )
+              );
             })}
           </SidebarMenu>
         </SidebarGroup>
       ))}
     </>
-  )
+  );
 }

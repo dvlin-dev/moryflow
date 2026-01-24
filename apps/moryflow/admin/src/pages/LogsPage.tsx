@@ -1,8 +1,8 @@
 /**
  * 活动日志页面
  */
-import { useState } from 'react'
-import { PageHeader, TableSkeleton, SimplePagination } from '@/components/shared'
+import { useState } from 'react';
+import { PageHeader, TableSkeleton, SimplePagination } from '@/components/shared';
 import {
   Table,
   TableBody,
@@ -10,50 +10,73 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { usePagination } from '@/hooks';
+import { formatDateTime } from '@/lib/format';
+import { useActivityLogs, useExportActivityLogs } from '@/features/admin-logs';
+import type { ActivityLog } from '@/types/api';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { usePagination } from '@/hooks'
-import { formatDateTime } from '@/lib/format'
-import { useActivityLogs, useExportActivityLogs } from '@/features/admin-logs'
-import type { ActivityLog } from '@/types/api'
-import { FileText, Eye, Download, Search, X } from 'lucide-react'
+  Cancel01Icon,
+  Download01Icon,
+  File01Icon,
+  Search01Icon,
+  ViewIcon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 50;
 
 /** 分类配置 */
 const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
   auth: { label: '认证', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-  ai: { label: 'AI', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
-  payment: { label: '支付', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-  admin: { label: '管理', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
-  vault: { label: '知识库', color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200' },
-  storage: { label: '存储', color: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200' },
-  sync: { label: '同步', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200' },
-}
+  ai: {
+    label: 'AI',
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  },
+  payment: {
+    label: '支付',
+    color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  },
+  admin: {
+    label: '管理',
+    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  },
+  vault: {
+    label: '知识库',
+    color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+  },
+  storage: {
+    label: '存储',
+    color: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+  },
+  sync: {
+    label: '同步',
+    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+  },
+};
 
 /** 日志级别配置 */
 const LEVEL_CONFIG: Record<string, { label: string; color: string }> = {
   info: { label: 'INFO', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' },
-  warn: { label: 'WARN', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+  warn: {
+    label: 'WARN',
+    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  },
   error: { label: 'ERROR', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-}
+};
 
-const DEFAULT_COLOR = 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+const DEFAULT_COLOR = 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
 
 const LOG_TABLE_COLUMNS = [
   { width: 'w-32' },
@@ -62,24 +85,16 @@ const LOG_TABLE_COLUMNS = [
   { width: 'w-24' },
   { width: 'w-20' },
   { width: 'w-16' },
-]
+];
 
 function CategoryBadge({ category }: { category: string }) {
-  const config = CATEGORY_CONFIG[category]
-  return (
-    <Badge className={config?.color || DEFAULT_COLOR}>
-      {config?.label || category}
-    </Badge>
-  )
+  const config = CATEGORY_CONFIG[category];
+  return <Badge className={config?.color || DEFAULT_COLOR}>{config?.label || category}</Badge>;
 }
 
 function LevelBadge({ level }: { level: string }) {
-  const config = LEVEL_CONFIG[level]
-  return (
-    <Badge className={config?.color || DEFAULT_COLOR}>
-      {config?.label || level}
-    </Badge>
-  )
+  const config = LEVEL_CONFIG[level];
+  return <Badge className={config?.color || DEFAULT_COLOR}>{config?.label || level}</Badge>;
 }
 
 function LogDetailDialog({
@@ -87,11 +102,11 @@ function LogDetailDialog({
   open,
   onOpenChange,
 }: {
-  log: ActivityLog | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  log: ActivityLog | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  if (!log) return null
+  if (!log) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,25 +171,23 @@ function LogDetailDialog({
           {log.userAgent && (
             <div>
               <p className="text-sm text-muted-foreground mb-2">User-Agent</p>
-              <p className="text-xs text-muted-foreground font-mono break-all">
-                {log.userAgent}
-              </p>
+              <p className="text-xs text-muted-foreground font-mono break-all">{log.userAgent}</p>
             </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export default function LogsPage() {
-  const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null)
-  const [email, setEmail] = useState('')
-  const [category, setCategory] = useState<string>('')
-  const [level, setLevel] = useState<string>('')
+  const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
+  const [email, setEmail] = useState('');
+  const [category, setCategory] = useState<string>('');
+  const [level, setLevel] = useState<string>('');
 
-  const { page, setPage, getTotalPages } = usePagination({ pageSize: PAGE_SIZE })
-  const exportMutation = useExportActivityLogs()
+  const { page, setPage, getTotalPages } = usePagination({ pageSize: PAGE_SIZE });
+  const exportMutation = useExportActivityLogs();
 
   const { data, isLoading } = useActivityLogs({
     page,
@@ -182,10 +195,10 @@ export default function LogsPage() {
     email: email || undefined,
     category: category || undefined,
     level: level as 'info' | 'warn' | 'error' | undefined,
-  })
+  });
 
-  const logs = data?.logs || []
-  const totalPages = getTotalPages(data?.pagination.total || 0)
+  const logs = data?.logs || [];
+  const totalPages = getTotalPages(data?.pagination.total || 0);
 
   const handleExport = (format: 'csv' | 'json') => {
     exportMutation.mutate({
@@ -193,17 +206,17 @@ export default function LogsPage() {
       email: email || undefined,
       category: category || undefined,
       level: level as 'info' | 'warn' | 'error' | undefined,
-    })
-  }
+    });
+  };
 
   const clearFilters = () => {
-    setEmail('')
-    setCategory('')
-    setLevel('')
-    setPage(1)
-  }
+    setEmail('');
+    setCategory('');
+    setLevel('');
+    setPage(1);
+  };
 
-  const hasFilters = email || category || level
+  const hasFilters = email || category || level;
 
   return (
     <div className="space-y-6">
@@ -218,7 +231,7 @@ export default function LogsPage() {
               onClick={() => handleExport('csv')}
               disabled={exportMutation.isPending}
             >
-              <Download className="h-4 w-4 mr-1" />
+              <Icon icon={Download01Icon} className="h-4 w-4 mr-1" />
               导出 CSV
             </Button>
             <Button
@@ -227,7 +240,7 @@ export default function LogsPage() {
               onClick={() => handleExport('json')}
               disabled={exportMutation.isPending}
             >
-              <Download className="h-4 w-4 mr-1" />
+              <Icon icon={Download01Icon} className="h-4 w-4 mr-1" />
               导出 JSON
             </Button>
           </div>
@@ -237,13 +250,13 @@ export default function LogsPage() {
       {/* 筛选条件 */}
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
+          <Icon icon={Search01Icon} className="h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索邮箱..."
             value={email}
             onChange={(e) => {
-              setEmail(e.target.value)
-              setPage(1)
+              setEmail(e.target.value);
+              setPage(1);
             }}
             className="w-48"
           />
@@ -251,8 +264,8 @@ export default function LogsPage() {
         <Select
           value={category}
           onValueChange={(v) => {
-            setCategory(v === 'all' ? '' : v)
-            setPage(1)
+            setCategory(v === 'all' ? '' : v);
+            setPage(1);
           }}
         >
           <SelectTrigger className="w-32">
@@ -270,8 +283,8 @@ export default function LogsPage() {
         <Select
           value={level}
           onValueChange={(v) => {
-            setLevel(v === 'all' ? '' : v)
-            setPage(1)
+            setLevel(v === 'all' ? '' : v);
+            setPage(1);
           }}
         >
           <SelectTrigger className="w-32">
@@ -286,7 +299,7 @@ export default function LogsPage() {
         </Select>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <X className="h-4 w-4 mr-1" />
+            <Icon icon={Cancel01Icon} className="h-4 w-4 mr-1" />
             清除筛选
           </Button>
         )}
@@ -329,12 +342,8 @@ export default function LogsPage() {
                     <LevelBadge level={log.level} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedLog(log)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
+                      <Icon icon={ViewIcon} className="h-4 w-4 mr-1" />
                       详情
                     </Button>
                   </TableCell>
@@ -343,7 +352,10 @@ export default function LogsPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <Icon
+                    icon={File01Icon}
+                    className="h-12 w-12 mx-auto text-muted-foreground mb-4"
+                  />
                   <p className="text-muted-foreground">
                     {hasFilters ? '没有符合条件的日志' : '暂无活动日志'}
                   </p>
@@ -366,5 +378,5 @@ export default function LogsPage() {
         onOpenChange={(open) => !open && setSelectedLog(null)}
       />
     </div>
-  )
+  );
 }

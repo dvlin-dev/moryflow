@@ -2,7 +2,7 @@
  * Trace 列表表格
  */
 
-import { TableSkeleton } from '@/components/shared'
+import { TableSkeleton } from '@/components/shared';
 import {
   Table,
   TableBody,
@@ -10,17 +10,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Eye, FileText } from 'lucide-react'
-import { formatDateTime, formatDuration, formatTokens } from '@/lib/format'
-import { TraceStatusBadge } from './trace-status-badge'
-import type { AgentTrace } from '../types'
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { File01Icon, ViewIcon } from '@hugeicons/core-free-icons';
+import { formatDateTime, formatDuration, formatTokens } from '@/lib/format';
+import { TraceStatusBadge } from './trace-status-badge';
+import type { AgentTrace } from '../types';
 
 interface TraceTableProps {
-  traces: AgentTrace[]
-  isLoading?: boolean
-  onViewDetail: (trace: AgentTrace) => void
+  traces: AgentTrace[];
+  isLoading?: boolean;
+  onViewDetail: (trace: AgentTrace) => void;
 }
 
 const TABLE_COLUMNS = [
@@ -32,7 +33,7 @@ const TABLE_COLUMNS = [
   { width: 'w-16' },
   { width: 'w-16' },
   { width: 'w-16' },
-]
+];
 
 export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps) {
   return (
@@ -70,9 +71,7 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
                 <TableCell>
                   <TraceStatusBadge status={trace.status} />
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
-                  {trace.turnCount}
-                </TableCell>
+                <TableCell className="text-right font-mono text-sm">{trace.turnCount}</TableCell>
                 <TableCell className="text-right font-mono text-sm">
                   {formatTokens(trace.totalTokens)}
                 </TableCell>
@@ -80,12 +79,8 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
                   {formatDuration(trace.duration)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewDetail(trace)}
-                  >
-                    <Eye className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" onClick={() => onViewDetail(trace)}>
+                    <Icon icon={ViewIcon} className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -93,7 +88,7 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
           ) : (
             <TableRow>
               <TableCell colSpan={8} className="text-center py-12">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <Icon icon={File01Icon} className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">暂无执行记录</p>
               </TableCell>
             </TableRow>
@@ -101,5 +96,5 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

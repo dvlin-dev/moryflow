@@ -47,14 +47,15 @@ www/
 │   │   ├── download.tsx      # 下载页
 │   │   ├── about.tsx         # 关于页
 │   │   ├── privacy.tsx       # 隐私政策
-│   │   ├── terms.tsx         # 服务条款
-│   │   ├── sitemap.xml.ts    # Sitemap
-│   │   ├── robots.txt.ts     # Robots
-│   │   └── api/
-│   │       └── health.ts     # 健康检查
+│   │   └── terms.tsx         # 服务条款
 │   ├── styles/
 │   │   └── globals.css       # 全局样式
 │   └── router.tsx            # 路由配置
+├── server/
+│   └── routes/               # Nitro 服务器路由
+│       ├── api/health.ts     # 健康检查
+│       ├── robots.txt.ts     # Robots
+│       └── sitemap.xml.ts    # Sitemap
 ├── public/                   # 静态资源
 ├── Dockerfile                # Docker 构建
 ├── vite.config.ts            # Vite 配置
@@ -101,18 +102,18 @@ docker run -p 3000:3000 moryflow-www
 
 ## 页面列表
 
-| 路径           | 组件           | 说明                                                                 |
-| -------------- | -------------- | -------------------------------------------------------------------- |
-| `/`            | index.tsx      | 首页（Hero + AgentShowcase + WhyLocal + Capabilities + DownloadCTA） |
-| `/features`    | features.tsx   | 功能特性                                                             |
-| `/pricing`     | pricing.tsx    | 定价（Beta 免费）                                                    |
-| `/download`    | download.tsx   | 下载页（macOS/Windows）                                              |
-| `/about`       | about.tsx      | 关于我们                                                             |
-| `/privacy`     | privacy.tsx    | 隐私政策                                                             |
-| `/terms`       | terms.tsx      | 服务条款                                                             |
-| `/sitemap.xml` | sitemap.xml.ts | Sitemap                                                              |
-| `/robots.txt`  | robots.txt.ts  | Robots                                                               |
-| `/api/health`  | api/health.ts  | 健康检查                                                             |
+| 路径           | 组件                         | 说明                                                                 |
+| -------------- | ---------------------------- | -------------------------------------------------------------------- |
+| `/`            | index.tsx                    | 首页（Hero + AgentShowcase + WhyLocal + Capabilities + DownloadCTA） |
+| `/features`    | features.tsx                 | 功能特性                                                             |
+| `/pricing`     | pricing.tsx                  | 定价（Beta 免费）                                                    |
+| `/download`    | download.tsx                 | 下载页（macOS/Windows）                                              |
+| `/about`       | about.tsx                    | 关于我们                                                             |
+| `/privacy`     | privacy.tsx                  | 隐私政策                                                             |
+| `/terms`       | terms.tsx                    | 服务条款                                                             |
+| `/sitemap.xml` | server/routes/sitemap.xml.ts | Sitemap                                                              |
+| `/robots.txt`  | server/routes/robots.txt.ts  | Robots                                                               |
+| `/api/health`  | server/routes/api/health.ts  | 健康检查                                                             |
 
 ## 图标映射
 
@@ -139,3 +140,8 @@ docker run -p 3000:3000 moryflow-www
 | 爱心    | FavouriteIcon         |
 | 目标    | Target01Icon          |
 | 用户组  | UserGroupIcon         |
+
+## 近期变更
+
+- 健康检查迁移到 Nitro `server/routes`，并补齐 robots/sitemap/health 单测
+- SEO 主域名统一为 `https://www.moryflow.com`，OG/JSON-LD 资源对齐

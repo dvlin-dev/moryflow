@@ -1,27 +1,28 @@
 /**
  * 聊天底部输入区组件
  */
-import { useState, useRef, type FormEvent, type KeyboardEvent } from 'react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { ModelSelector } from './model-selector'
-import { TokenUsageIndicator } from './token-usage-indicator'
-import { ArrowUpIcon, SquareIcon, PaperclipIcon } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
-import type { ModelGroup } from '../types'
+import { useState, useRef, type FormEvent, type KeyboardEvent } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { ModelSelector } from './model-selector';
+import { TokenUsageIndicator } from './token-usage-indicator';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Icon } from '@/components/ui/icon';
+import { ArrowUp01Icon, ClipIcon, StopIcon } from '@hugeicons/core-free-icons';
+import type { ModelGroup } from '../types';
 
-type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error'
+type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
 interface ChatFooterProps {
-  status: ChatStatus
-  onSubmit: (text: string) => void
-  onStop: () => void
-  modelGroups: ModelGroup[]
-  selectedModelId: string | null
-  onSelectModel: (id: string) => void
-  disabled?: boolean
-  usedTokens?: number
-  maxTokens?: number
+  status: ChatStatus;
+  onSubmit: (text: string) => void;
+  onStop: () => void;
+  modelGroups: ModelGroup[];
+  selectedModelId: string | null;
+  onSelectModel: (id: string) => void;
+  disabled?: boolean;
+  usedTokens?: number;
+  maxTokens?: number;
 }
 
 export function ChatFooter({
@@ -35,25 +36,25 @@ export function ChatFooter({
   usedTokens,
   maxTokens,
 }: ChatFooterProps) {
-  const [input, setInput] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [input, setInput] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const isStreaming = status === 'streaming' || status === 'submitted'
-  const canSubmit = input.trim().length > 0 && !isStreaming && !disabled
+  const isStreaming = status === 'streaming' || status === 'submitted';
+  const canSubmit = input.trim().length > 0 && !isStreaming && !disabled;
 
   const handleSubmit = (e?: FormEvent) => {
-    e?.preventDefault()
-    if (!canSubmit) return
-    onSubmit(input.trim())
-    setInput('')
-  }
+    e?.preventDefault();
+    if (!canSubmit) return;
+    onSubmit(input.trim());
+    setInput('');
+  };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
+      e.preventDefault();
+      handleSubmit();
     }
-  }
+  };
 
   return (
     <TooltipProvider>
@@ -87,7 +88,7 @@ export function ChatFooter({
                       className="size-8 text-muted-foreground"
                       disabled
                     >
-                      <PaperclipIcon className="size-4" />
+                      <Icon icon={ClipIcon} className="size-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>附件（暂未实现）</TooltipContent>
@@ -104,10 +105,7 @@ export function ChatFooter({
 
               <div className="flex items-center gap-2">
                 {/* Token 使用量 */}
-                <TokenUsageIndicator
-                  usedTokens={usedTokens}
-                  maxTokens={maxTokens}
-                />
+                <TokenUsageIndicator usedTokens={usedTokens} maxTokens={maxTokens} />
 
                 {/* 发送/停止按钮 */}
                 {isStreaming ? (
@@ -118,7 +116,7 @@ export function ChatFooter({
                     onClick={onStop}
                     className="size-8 rounded-full bg-foreground text-background hover:bg-foreground/90"
                   >
-                    <SquareIcon className="size-3 fill-current" />
+                    <Icon icon={StopIcon} className="size-3 fill-current" />
                   </Button>
                 ) : (
                   <Button
@@ -127,7 +125,7 @@ export function ChatFooter({
                     disabled={!canSubmit}
                     className="size-8 rounded-full"
                   >
-                    <ArrowUpIcon className="size-4" />
+                    <Icon icon={ArrowUp01Icon} className="size-4" />
                   </Button>
                 )}
               </div>
@@ -136,5 +134,5 @@ export function ChatFooter({
         </form>
       </div>
     </TooltipProvider>
-  )
+  );
 }

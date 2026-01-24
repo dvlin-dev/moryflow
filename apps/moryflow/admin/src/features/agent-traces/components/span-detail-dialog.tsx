@@ -3,23 +3,19 @@
  * 用于显示失败 Tool 的详细信息
  */
 
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Copy, Check } from 'lucide-react'
-import { formatDateTime, formatDuration } from '@/lib/format'
-import { SpanStatusBadge, ErrorTypeBadge } from './trace-status-badge'
-import type { AgentSpan } from '../types'
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { CheckmarkCircle01Icon, Copy01Icon } from '@hugeicons/core-free-icons';
+import { formatDateTime, formatDuration } from '@/lib/format';
+import { SpanStatusBadge, ErrorTypeBadge } from './trace-status-badge';
+import type { AgentSpan } from '../types';
 
 interface SpanDetailDialogProps {
-  span: AgentSpan | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  span: AgentSpan | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 /** 生成可复制的错误报告 */
@@ -32,43 +28,43 @@ function buildErrorReport(span: AgentSpan): string {
     `**User**: ${span.trace?.user?.email ?? '-'}`,
     `**Time**: ${formatDateTime(span.startedAt)}`,
     `**Duration**: ${formatDuration(span.duration)}`,
-  ]
+  ];
 
   if (span.status === 'failed') {
-    lines.push('', '### Error')
+    lines.push('', '### Error');
     if (span.errorType) {
-      lines.push(`**Type**: ${span.errorType}`)
+      lines.push(`**Type**: ${span.errorType}`);
     }
     if (span.errorMessage) {
-      lines.push('', '**Message**:', '```', span.errorMessage, '```')
+      lines.push('', '**Message**:', '```', span.errorMessage, '```');
     }
     if (span.errorStack) {
-      lines.push('', '**Stack**:', '```', span.errorStack, '```')
+      lines.push('', '**Stack**:', '```', span.errorStack, '```');
     }
   }
 
   if (span.input !== undefined && span.input !== null) {
-    lines.push('', '### Input', '```json', JSON.stringify(span.input, null, 2), '```')
+    lines.push('', '### Input', '```json', JSON.stringify(span.input, null, 2), '```');
   }
 
   if (span.output !== undefined && span.output !== null) {
-    lines.push('', '### Output', '```json', JSON.stringify(span.output, null, 2), '```')
+    lines.push('', '### Output', '```json', JSON.stringify(span.output, null, 2), '```');
   }
 
-  return lines.join('\n')
+  return lines.join('\n');
 }
 
 export function SpanDetailDialog({ span, open, onOpenChange }: SpanDetailDialogProps) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
 
-  if (!span) return null
+  if (!span) return null;
 
   const handleCopy = async () => {
-    const report = buildErrorReport(span)
-    await navigator.clipboard.writeText(report)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    const report = buildErrorReport(span);
+    await navigator.clipboard.writeText(report);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,20 +75,15 @@ export function SpanDetailDialog({ span, open, onOpenChange }: SpanDetailDialogP
               <span className="font-mono">{span.name}</span>
               <SpanStatusBadge status={span.status} />
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="ml-4"
-            >
+            <Button variant="outline" size="sm" onClick={handleCopy} className="ml-4">
               {copied ? (
                 <>
-                  <Check className="h-4 w-4 mr-1.5 text-green-500" />
+                  <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4 mr-1.5 text-green-500" />
                   Copied
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4 mr-1.5" />
+                  <Icon icon={Copy01Icon} className="h-4 w-4 mr-1.5" />
                   Copy
                 </>
               )}
@@ -181,5 +172,5 @@ export function SpanDetailDialog({ span, open, onOpenChange }: SpanDetailDialogP
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,7 +1,7 @@
 /**
- * [PROPS]: { data } - JSON-LD structured data object
- * [EMITS]: None
- * [POS]: SEO JSON-LD component, injects structured data into page head
+ * [PROPS]: { data } - JSON-LD 结构化数据
+ * [EMITS]: 无
+ * [POS]: SEO JSON-LD 注入组件
  */
 
 interface OrganizationSchema {
@@ -34,17 +34,15 @@ export function JsonLd({ data }: { data: JsonLdData }) {
   );
 }
 
-// Organization structured data
 export const organizationSchema: OrganizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Moryflow',
-  url: 'https://moryflow.com',
-  logo: 'https://moryflow.com/logo.png',
+  url: 'https://www.moryflow.com',
+  logo: 'https://www.moryflow.com/logo.svg',
   sameAs: ['https://twitter.com/moryflow', 'https://github.com/moryflow'],
 };
 
-// Product structured data
 export const productSchema: ProductSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',

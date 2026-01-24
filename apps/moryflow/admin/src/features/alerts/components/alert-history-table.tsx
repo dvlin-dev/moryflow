@@ -9,16 +9,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle } from 'lucide-react'
-import { formatDateTime } from '@/lib/format'
-import { AlertLevelBadge, AlertTypeBadge } from './alert-badges'
-import type { AlertHistory } from '../types'
+} from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Icon } from '@/components/ui/icon';
+import { AlertCircleIcon } from '@hugeicons/core-free-icons';
+import { formatDateTime } from '@/lib/format';
+import { AlertLevelBadge, AlertTypeBadge } from './alert-badges';
+import type { AlertHistory } from '../types';
 
 interface AlertHistoryTableProps {
-  history: AlertHistory[]
-  isLoading?: boolean
+  history: AlertHistory[];
+  isLoading?: boolean;
 }
 
 export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps) {
@@ -37,28 +38,34 @@ export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps
           <TableBody>
             {Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-64" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-40" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-64" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-    )
+    );
   }
 
   if (history.length === 0) {
     return (
       <div className="rounded-lg border p-12 text-center">
-        <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <Icon icon={AlertCircleIcon} className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <p className="text-muted-foreground">暂无告警记录</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          当告警触发时会显示在这里
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">当告警触发时会显示在这里</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -81,9 +88,7 @@ export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps
               <TableCell>
                 <div className="space-y-1">
                   <p className="font-medium text-sm">{item.rule?.name ?? '-'}</p>
-                  {item.rule?.type && (
-                    <AlertTypeBadge type={item.rule.type} />
-                  )}
+                  {item.rule?.type && <AlertTypeBadge type={item.rule.type} />}
                 </div>
               </TableCell>
               <TableCell>
@@ -93,10 +98,14 @@ export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps
                 <p className="text-sm">{item.context.message}</p>
                 <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
                   {item.context.toolName && (
-                    <span>Tool: <code>{item.context.toolName}</code></span>
+                    <span>
+                      Tool: <code>{item.context.toolName}</code>
+                    </span>
                   )}
                   {item.context.agentName && (
-                    <span>Agent: <code>{item.context.agentName}</code></span>
+                    <span>
+                      Agent: <code>{item.context.agentName}</code>
+                    </span>
                   )}
                   <span>
                     当前值: {item.context.value} / 阈值: {item.context.threshold}
@@ -108,5 +117,5 @@ export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

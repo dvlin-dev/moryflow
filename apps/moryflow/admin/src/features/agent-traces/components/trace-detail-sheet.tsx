@@ -2,48 +2,48 @@
  * Trace 详情抽屉
  */
 
-import { useState } from 'react'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Copy, Check } from 'lucide-react'
-import { formatDateTime, formatDuration, formatTokens } from '@/lib/format'
-import { TraceStatusBadge, SpanStatusBadge, ErrorTypeBadge } from './trace-status-badge'
-import { SpanTree } from './span-tree'
-import { useTraceDetail } from '../hooks'
-import type { AgentSpan } from '../types'
+import { useState } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Icon } from '@/components/ui/icon';
+import { CheckmarkCircle01Icon, Copy01Icon } from '@hugeicons/core-free-icons';
+import { formatDateTime, formatDuration, formatTokens } from '@/lib/format';
+import { TraceStatusBadge, SpanStatusBadge, ErrorTypeBadge } from './trace-status-badge';
+import { SpanTree } from './span-tree';
+import { useTraceDetail } from '../hooks';
+import type { AgentSpan } from '../types';
 
 interface TraceDetailSheetProps {
-  traceId: string | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  traceId: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <Button variant="ghost" size="sm" onClick={handleCopy}>
-      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      {copied ? (
+        <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4" />
+      ) : (
+        <Icon icon={Copy01Icon} className="h-4 w-4" />
+      )}
     </Button>
-  )
+  );
 }
 
 interface SpanDetailPanelProps {
-  span: AgentSpan
+  span: AgentSpan;
 }
 
 function SpanDetailPanel({ span }: SpanDetailPanelProps) {
@@ -110,17 +110,17 @@ function SpanDetailPanel({ span }: SpanDetailPanelProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export function TraceDetailSheet({ traceId, open, onOpenChange }: TraceDetailSheetProps) {
-  const { data: trace, isLoading } = useTraceDetail(traceId)
-  const [selectedSpan, setSelectedSpan] = useState<AgentSpan | null>(null)
+  const { data: trace, isLoading } = useTraceDetail(traceId);
+  const [selectedSpan, setSelectedSpan] = useState<AgentSpan | null>(null);
 
   const handleClose = () => {
-    setSelectedSpan(null)
-    onOpenChange(false)
-  }
+    setSelectedSpan(null);
+    onOpenChange(false);
+  };
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
@@ -237,11 +237,9 @@ export function TraceDetailSheet({ traceId, open, onOpenChange }: TraceDetailShe
             </ScrollArea>
           </Tabs>
         ) : (
-          <div className="p-6 text-center text-muted-foreground">
-            Trace 不存在
-          </div>
+          <div className="p-6 text-center text-muted-foreground">Trace 不存在</div>
         )}
       </SheetContent>
     </Sheet>
-  )
+  );
 }

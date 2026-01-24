@@ -2,65 +2,63 @@
  * 邮件测试页面
  * 用于测试邮件服务和向特定用户发送邮件
  */
-import { useState } from 'react'
-import { PageHeader } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { TiptapEditor, isEditorEmpty } from '@/components/ui/tiptap-editor'
-import { toast } from 'sonner'
-import { Loader2, Mail, Send } from 'lucide-react'
-import { apiClient } from '@/lib/api-client'
-import { ADMIN_API } from '@/lib/api-paths'
+import { useState } from 'react';
+import { PageHeader } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { TiptapEditor, isEditorEmpty } from '@/components/ui/tiptap-editor';
+import { toast } from 'sonner';
+import { Loading01Icon, Mail01Icon, MailSend01Icon } from '@hugeicons/core-free-icons';
+import { apiClient } from '@/lib/api-client';
+import { ADMIN_API } from '@/lib/api-paths';
+import { Icon } from '@/components/ui/icon';
 
 export default function EmailTestPage() {
-  const [to, setTo] = useState('')
-  const [subject, setSubject] = useState('')
-  const [html, setHtml] = useState('')
-  const [isSending, setIsSending] = useState(false)
+  const [to, setTo] = useState('');
+  const [subject, setSubject] = useState('');
+  const [html, setHtml] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const handleSend = async () => {
     if (!to || !subject || isEditorEmpty(html)) {
-      toast.error('请填写完整的邮件信息')
-      return
+      toast.error('请填写完整的邮件信息');
+      return;
     }
 
-    setIsSending(true)
+    setIsSending(true);
 
     try {
       await apiClient.post<{ success: boolean }>(`${ADMIN_API.EMAIL}/send`, {
         to,
         subject,
         html,
-      })
+      });
 
-      toast.success('邮件发送成功')
+      toast.success('邮件发送成功');
       // 清空表单
-      setTo('')
-      setSubject('')
-      setHtml('')
+      setTo('');
+      setSubject('');
+      setHtml('');
     } catch (error) {
-      console.error('Send email error:', error)
-      toast.error(error instanceof Error ? error.message : '发送失败')
+      console.error('Send email error:', error);
+      toast.error(error instanceof Error ? error.message : '发送失败');
     } finally {
-      setIsSending(false)
+      setIsSending(false);
     }
-  }
+  };
 
-  const isFormValid = to.trim() && subject.trim() && !isEditorEmpty(html)
+  const isFormValid = to.trim() && subject.trim() && !isEditorEmpty(html);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="邮件测试"
-        description="测试邮件服务或向特定用户发送邮件"
-      />
+      <PageHeader title="邮件测试" description="测试邮件服务或向特定用户发送邮件" />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Mail className="h-5 w-5" />
+            <Icon icon={Mail01Icon} className="h-5 w-5" />
             发送邮件
           </CardTitle>
           <CardDescription>
@@ -113,9 +111,9 @@ export default function EmailTestPage() {
           <div className="flex justify-end">
             <Button onClick={handleSend} disabled={isSending || !isFormValid}>
               {isSending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Send className="mr-2 h-4 w-4" />
+                <Icon icon={MailSend01Icon} className="mr-2 h-4 w-4" />
               )}
               发送邮件
             </Button>
@@ -132,13 +130,27 @@ export default function EmailTestPage() {
           <p>2. 输入邮件主题</p>
           <p>3. 在编辑器中编写邮件内容，支持 Markdown 快捷键：</p>
           <ul className="ml-4 list-disc space-y-1">
-            <li><code>#</code> + 空格 = 一级标题</li>
-            <li><code>##</code> + 空格 = 二级标题</li>
-            <li><code>*</code> 或 <code>-</code> + 空格 = 无序列表</li>
-            <li><code>1.</code> + 空格 = 有序列表</li>
-            <li><code>&gt;</code> + 空格 = 引用</li>
-            <li><code>`code`</code> = 行内代码</li>
-            <li><code>```</code> = 代码块</li>
+            <li>
+              <code>#</code> + 空格 = 一级标题
+            </li>
+            <li>
+              <code>##</code> + 空格 = 二级标题
+            </li>
+            <li>
+              <code>*</code> 或 <code>-</code> + 空格 = 无序列表
+            </li>
+            <li>
+              <code>1.</code> + 空格 = 有序列表
+            </li>
+            <li>
+              <code>&gt;</code> + 空格 = 引用
+            </li>
+            <li>
+              <code>`code`</code> = 行内代码
+            </li>
+            <li>
+              <code>```</code> = 代码块
+            </li>
           </ul>
           <p>4. 点击"发送邮件"按钮</p>
           <p className="mt-4 text-yellow-600 dark:text-yellow-400">
@@ -147,5 +159,5 @@ export default function EmailTestPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

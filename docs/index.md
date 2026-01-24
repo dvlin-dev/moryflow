@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-26
+date: 2026-01-24
 scope: monorepo
 status: active
 ---
@@ -73,6 +73,7 @@ status: active
 - Anyhunt Server Billing & Payment Code Review：`docs/code-review/anyhunt-server-billing-payment.md`（更新：2026-01-25，修复完成）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
 - Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（更新：2026-01-26，修复完成 + preload CJS）
+- Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（更新：2026-01-24，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）
 - Moryflow Vectorize 将由 Anyhunt Memox 替换：已标记暂不处理（详见 `docs/code-review/index.md`）

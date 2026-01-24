@@ -1,10 +1,10 @@
 /**
- * 应用入口
- * 路由配置和全局 Provider
+ * [PROPS]: None
+ * [EMITS]: None
+ * [POS]: 管理后台根路由与全局布局
  */
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
 import { MainLayout } from './components/layout';
@@ -31,16 +31,6 @@ import AgentTracesFailedPage from './pages/AgentTracesFailedPage';
 import AgentTraceStoragePage from './pages/AgentTraceStoragePage';
 import AlertsPage from './pages/AlertsPage';
 import ToolAnalyticsPage from './pages/ToolAnalyticsPage';
-
-// React Query 客户端
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60, // 1 分钟
-      retry: 1,
-    },
-  },
-});
 
 /** 受保护路由 */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -70,7 +60,7 @@ function App() {
   }, [bootstrap]);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -108,7 +98,7 @@ function App() {
         </Routes>
       </BrowserRouter>
       <Toaster richColors position="top-center" />
-    </QueryClientProvider>
+    </>
   );
 }
 

@@ -93,6 +93,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - preload 产物改为 CJS 输出，Playwright E2E 可正常挂载 desktopAPI
 - Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
 - external-links 安全校验补齐路径边界与单测
+- 站点发布模板新增 `lang`/`description` 占位符，构建链路默认 `en`
 
 ## 依赖关系
 

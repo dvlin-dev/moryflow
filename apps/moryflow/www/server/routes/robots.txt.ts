@@ -1,14 +1,16 @@
 /**
- * [PROVIDES]: Dynamic robots.txt generation
- * [DEPENDS]: None
- * [POS]: Core SEO route for guiding search engine crawlers
+ * [PROVIDES]: 动态 robots.txt 输出
+ * [DEPENDS]: 无
+ * [POS]: 官网 SEO 路由（爬虫规则）
  */
+
+import { defineEventHandler } from 'h3';
 
 export default defineEventHandler(() => {
   const robotsTxt = `User-agent: *
 Allow: /
 
-Sitemap: https://moryflow.com/sitemap.xml
+Sitemap: https://www.moryflow.com/sitemap.xml
 
 # Disallowed paths
 Disallow: /api/

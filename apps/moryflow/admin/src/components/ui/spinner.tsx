@@ -1,16 +1,26 @@
-import { Loader2Icon } from "lucide-react"
+/**
+ * [PROPS]: SpinnerProps - 统一加载指示器配置
+ * [EMITS]: none
+ * [POS]: 管理后台通用 loading 图标
+ */
 
-import { cn } from "@/lib/utils"
+import { Loading01Icon } from '@hugeicons/core-free-icons';
 
-function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+import { cn } from '@/lib/utils';
+import { Icon } from '@/components/ui/icon';
+
+type SpinnerProps = Omit<React.ComponentProps<typeof Icon>, 'icon'>;
+
+function Spinner({ className, ...props }: SpinnerProps) {
   return (
-    <Loader2Icon
+    <Icon
+      icon={Loading01Icon}
       role="status"
       aria-label="Loading"
-      className={cn("size-4 animate-spin", className)}
+      className={cn('size-4 animate-spin', className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Spinner }
+export { Spinner };
