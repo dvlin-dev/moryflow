@@ -75,6 +75,7 @@ const createMemorySchema = z.object({
   enable_graph: z.boolean().default(false),
 });
 
+type CreateMemoryFormInput = z.input<typeof createMemorySchema>;
 type CreateMemoryFormValues = z.infer<typeof createMemorySchema>;
 
 // 搜索记忆表单 Schema
@@ -96,10 +97,11 @@ const searchMemorySchema = z.object({
   categories: z.string().optional(),
 });
 
+type SearchMemoryFormInput = z.input<typeof searchMemorySchema>;
 type SearchMemoryFormValues = z.infer<typeof searchMemorySchema>;
 
 // 搜索记忆表单默认值
-const searchMemoryDefaults: SearchMemoryFormValues = {
+const searchMemoryDefaults: SearchMemoryFormInput = {
   user_id: '',
   query: '',
   top_k: 10,
@@ -138,7 +140,7 @@ export default function MemoxPlaygroundPage() {
   const searchMemoriesMutation = useSearchMemories();
 
   // 创建记忆表单
-  const createForm = useForm<CreateMemoryFormValues>({
+  const createForm = useForm<CreateMemoryFormInput, unknown, CreateMemoryFormValues>({
     resolver: zodResolver(createMemorySchema),
     defaultValues: {
       user_id: '',
@@ -159,7 +161,7 @@ export default function MemoxPlaygroundPage() {
   });
 
   // 搜索记忆表单
-  const searchForm = useForm<SearchMemoryFormValues>({
+  const searchForm = useForm<SearchMemoryFormInput, unknown, SearchMemoryFormValues>({
     resolver: zodResolver(searchMemorySchema),
     defaultValues: searchMemoryDefaults,
   });

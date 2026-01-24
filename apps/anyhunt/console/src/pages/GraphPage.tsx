@@ -49,10 +49,11 @@ const graphFormSchema = z.object({
   limit: z.coerce.number().min(1).max(1000).default(200),
 });
 
+type GraphFormInput = z.input<typeof graphFormSchema>;
 type GraphFormValues = z.infer<typeof graphFormSchema>;
 
 // 表单默认值
-const graphFormDefaults: GraphFormValues = {
+const graphFormDefaults: GraphFormInput = {
   entity_type: 'user',
   entity_id: '',
   limit: 200,
@@ -106,7 +107,7 @@ export default function GraphPage() {
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [queryParams, setQueryParams] = useState<GraphQueryParams | null>(null);
-  const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<NodeObject | null>(null);
 
   const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -150,7 +151,7 @@ export default function GraphPage() {
   }, [graphData]);
 
   // 表单
-  const form = useForm<GraphFormValues>({
+  const form = useForm<GraphFormInput, unknown, GraphFormValues>({
     resolver: zodResolver(graphFormSchema),
     defaultValues: graphFormDefaults,
   });
@@ -166,18 +167,20 @@ export default function GraphPage() {
 
   // 节点渲染
   const nodeCanvasObject = useCallback(
-    (node: ForceNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const label = node.name || node.id;
+    (node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      const data = node as ForceNode;
+      const label = data.name || data.id || 'unknown';
       const fontSize = 12 / globalScale;
       const nodeRadius = 6;
 
       // 节点颜色
-      const color = node.type ? NODE_COLORS[node.type] || NODE_COLORS.default : NODE_COLORS.default;
+      const color = data.type ? NODE_COLORS[data.type] || NODE_COLORS.default : NODE_COLORS.default;
+      const isHovered = hoveredNode?.id !== undefined && String(hoveredNode.id) === String(data.id);
 
       // 绘制节点
       ctx.beginPath();
-      ctx.arc(node.x || 0, node.y || 0, nodeRadius, 0, 2 * Math.PI);
-      ctx.fillStyle = hoveredNode?.id === node.id ? '#f59e0b' : color;
+      ctx.arc(data.x || 0, data.y || 0, nodeRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = isHovered ? '#f59e0b' : color;
       ctx.fill();
 
       // 绘制标签
@@ -185,18 +188,18 @@ export default function GraphPage() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = '#374151';
-      ctx.fillText(label, node.x || 0, (node.y || 0) + nodeRadius + 2);
+      ctx.fillText(label, data.x || 0, (data.y || 0) + nodeRadius + 2);
     },
     [hoveredNode]
   );
 
   // 节点悬停
-  const handleNodeHover = useCallback((node: ForceNode | null) => {
+  const handleNodeHover = useCallback((node: NodeObject | null) => {
     setHoveredNode(node);
   }, []);
 
   // 节点点击
-  const handleNodeClick = useCallback((node: ForceNode) => {
+  const handleNodeClick = useCallback((node: NodeObject) => {
     if (graphRef.current) {
       graphRef.current.centerAt(node.x, node.y, 500);
       graphRef.current.zoom(2, 500);
