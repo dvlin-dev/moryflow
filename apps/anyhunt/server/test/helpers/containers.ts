@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: TestContainers - PostgreSQL/Redis/Vector 测试容器生命周期管理
  * [DEPENDS]: @testcontainers/postgresql, @testcontainers/redis, prisma CLI
- * [POS]: 集成测试启动与迁移入口，供 test/helpers 调用
+ * [POS]: 集成测试启动与迁移入口（migrate deploy/reset），供 test/helpers 调用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -61,7 +61,7 @@ export class TestContainers {
       `[TestContainers] Vector PostgreSQL: ${process.env.VECTOR_DATABASE_URL}`,
     );
 
-    // 运行 Prisma migrate
+    // 运行 Prisma migrate（使用 migrate deploy 验证迁移一致性）
     await this.runMigrations();
 
     this.initialized = true;
@@ -94,7 +94,7 @@ export class TestContainers {
   private static async runMigrations(): Promise<void> {
     console.log('[TestContainers] Running migrations...');
     try {
-      execSync('npx prisma db push --config prisma.main.config.ts', {
+      execSync('npx prisma migrate deploy --config prisma.main.config.ts', {
         cwd: process.cwd(),
         env: {
           ...process.env,
@@ -102,7 +102,7 @@ export class TestContainers {
         },
         stdio: 'pipe',
       });
-      execSync('npx prisma db push --config prisma.vector.config.ts', {
+      execSync('npx prisma migrate deploy --config prisma.vector.config.ts', {
         cwd: process.cwd(),
         env: {
           ...process.env,
@@ -128,7 +128,7 @@ export class TestContainers {
     console.log('[TestContainers] Resetting database...');
     try {
       execSync(
-        'npx prisma db push --force-reset --config prisma.main.config.ts',
+        'npx prisma migrate reset --force --skip-seed --config prisma.main.config.ts',
         {
           cwd: process.cwd(),
           env: {
@@ -139,7 +139,7 @@ export class TestContainers {
         },
       );
       execSync(
-        'npx prisma db push --force-reset --config prisma.vector.config.ts',
+        'npx prisma migrate reset --force --skip-seed --config prisma.vector.config.ts',
         {
           cwd: process.cwd(),
           env: {

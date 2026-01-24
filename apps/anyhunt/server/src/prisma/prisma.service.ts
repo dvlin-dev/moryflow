@@ -1,5 +1,5 @@
 /**
- * [INPUT]: DATABASE_URL 环境变量
+ * [INPUT]: DATABASE_URL 环境变量（必填）
  * [OUTPUT]: 主数据库 PrismaClient 实例
  * [POS]: 业务数据库连接服务（不含向量数据）
  *
@@ -16,9 +16,14 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const adapter = new PrismaPg({
-      connectionString: process.env.DATABASE_URL,
-    });
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error(
+        'DATABASE_URL environment variable is required for main database connection',
+      );
+    }
+
+    const adapter = new PrismaPg({ connectionString });
     super({ adapter });
   }
 

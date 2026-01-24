@@ -23,9 +23,16 @@
 ## 常用命令
 
 - 开发生成迁移：`pnpm --filter @anyhunt/anyhunt-server prisma:migrate:main`
-- 仅应用迁移（生产）：`pnpm --filter @anyhunt/anyhunt-server prisma migrate deploy --schema=prisma/main/schema.prisma`
+- 仅应用迁移（生产）：`pnpm --filter @anyhunt/anyhunt-server prisma migrate deploy --config prisma.main.config.ts`
+- 快速同步（仅开发/测试）：`pnpm --filter @anyhunt/anyhunt-server prisma:push:main`
+
+## 测试与验证
+
+- TestContainers 使用 `prisma migrate deploy --config prisma.main.config.ts`
+- CI/集成测试应优先使用 `migrate deploy` 校验迁移有效性
 
 ## 近期变更记录
 
 - 2026-01-25：重置数据库并生成 init 迁移作为新基线。
 - 2026-01-25：新增 PaymentWebhookEvent 表，用于 Creem webhook 幂等去重。
+- 2026-01-26：迁移脚本统一使用 `prisma.*.config.ts`，测试使用 migrate deploy 校验迁移。

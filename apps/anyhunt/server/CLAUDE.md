@@ -47,6 +47,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Agent 任务状态持久化到 DB（`AgentTask`），实时进度与取消标记使用 Redis；`GET /api/v1/agent/:id` 合并 DB + Redis
 - Agent 任务终态更新必须使用 compare-and-set（`updateTaskIfStatus`）以避免取消状态被覆盖；取消后需确保 metrics（creditsUsed/toolCallCount/elapsedMs）落库
 - Prisma 迁移 diff 依赖 Shadow DB；本地需设置 `SHADOW_DATABASE_URL` / `VECTOR_SHADOW_DATABASE_URL`（仅本地，不提交）
+- `prisma db push` 仅限本地/测试环境使用，生产只允许 `migrate deploy`
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
 - Docker 构建若依赖 workspace 包（例如 `@anyhunt/agents-core`），禁止跨 stage `COPY node_modules`（Docker 会解引用 workspace symlink，导致依赖解析到“只剩 package.json”的空壳包）；应在同一个 stage 内 `pnpm install`，并在安装前 `COPY` 相关 workspace 包的 `package.json`
@@ -54,7 +55,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
-- TestContainers 启动主库 + 向量库容器，并执行 `prisma db push --config prisma.main.config.ts / prisma.vector.config.ts`（Prisma 7 已移除 `--skip-generate`）
+- TestContainers 启动主库 + 向量库容器，并执行 `prisma migrate deploy --config prisma.main.config.ts / prisma.vector.config.ts`（Prisma 7 已移除 `--skip-generate`）
 
 ## 数据库架构（双库分离）
 
