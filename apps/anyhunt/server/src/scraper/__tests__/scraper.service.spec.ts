@@ -21,6 +21,7 @@ const validOptions: ScrapeOptions = {
   mobile: false,
   darkMode: false,
   sync: false,
+  syncTimeout: 120000,
 };
 
 describe('ScraperService', () => {
@@ -100,7 +101,7 @@ describe('ScraperService', () => {
           ...validOptions,
           url: 'http://169.254.169.254',
         }),
-      ).rejects.toThrow('SSRF');
+      ).rejects.toThrow('SSRF protection');
     });
 
     it('should return cached result when available', async () => {
@@ -149,6 +150,27 @@ describe('ScraperService', () => {
           attempts: 3,
         }),
       );
+    });
+
+    it('should not persist request headers in job options', async () => {
+      mockPrisma.scrapeJob.findFirst.mockResolvedValue(null);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        subscription: { tier: 'FREE', status: 'ACTIVE' },
+      });
+      mockPrisma.scrapeJob.create.mockResolvedValue({
+        id: 'job_new',
+        url: 'https://example.com',
+        status: 'PENDING',
+      });
+
+      await service.scrape('user_1', {
+        ...validOptions,
+        headers: { Authorization: 'Bearer secret-token' },
+      });
+
+      const createCall = mockPrisma.scrapeJob.create.mock.calls[0][0];
+      const storedOptions = createCall.data.options as Record<string, unknown>;
+      expect(storedOptions.headers).toBeUndefined();
     });
 
     it('should use user tier for job', async () => {
@@ -331,7 +353,7 @@ describe('ScraperService', () => {
       for (const url of ssrfUrls) {
         await expect(
           service.scrape('user_1', { ...validOptions, url }),
-        ).rejects.toThrow('SSRF');
+        ).rejects.toThrow('SSRF protection');
       }
     });
   });

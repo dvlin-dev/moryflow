@@ -5,7 +5,7 @@
  *
  * [PROTOCOL]: When this file changes, update this header and src/extract/CLAUDE.md
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScraperService } from '../scraper/scraper.service';
 import {
@@ -17,6 +17,7 @@ import type { ExtractOptions } from './dto/extract.dto';
 import type { ExtractResult, ExtractResponse } from './extract.types';
 import { BillingService } from '../billing/billing.service';
 import { randomUUID } from 'crypto';
+import { UrlValidator } from '../common/validators/url.validator';
 
 /** 默认并发数 */
 const DEFAULT_CONCURRENCY = 5;
@@ -84,6 +85,7 @@ export class ExtractService {
     private llmClient: ExtractLlmClient,
     private config: ConfigService,
     private billingService: BillingService,
+    private urlValidator: UrlValidator,
   ) {
     this.concurrency = config.get('EXTRACT_CONCURRENCY') || DEFAULT_CONCURRENCY;
   }
@@ -96,6 +98,12 @@ export class ExtractService {
     options: ExtractOptions,
   ): Promise<ExtractResponse> {
     const { urls, prompt, schema, systemPrompt, model } = options;
+
+    for (const url of urls) {
+      if (!(await this.urlValidator.isAllowed(url))) {
+        throw new ForbiddenException('URL is not allowed (SSRF protection)');
+      }
+    }
 
     const resolvedLlm = await this.llmClient.resolve(model);
 

@@ -90,7 +90,7 @@ describe('MapService', () => {
           ...baseOptions,
           url: 'http://169.254.169.254',
         }),
-      ).rejects.toThrow('URL not allowed');
+      ).rejects.toThrow('SSRF protection');
     });
 
     it('should throw for localhost', async () => {
@@ -101,7 +101,7 @@ describe('MapService', () => {
           ...baseOptions,
           url: 'http://localhost:3000',
         }),
-      ).rejects.toThrow('SSRF');
+      ).rejects.toThrow('SSRF protection');
     });
 
     it('should throw for private IP', async () => {
@@ -112,7 +112,7 @@ describe('MapService', () => {
           ...baseOptions,
           url: 'http://192.168.1.1',
         }),
-      ).rejects.toThrow('SSRF');
+      ).rejects.toThrow('SSRF protection');
     });
   });
 

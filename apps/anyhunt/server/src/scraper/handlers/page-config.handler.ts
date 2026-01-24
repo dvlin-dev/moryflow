@@ -45,26 +45,29 @@ export class PageConfigHandler {
    * 配置页面（视口、UA、深色模式）
    */
   async configure(page: Page, options: ScrapeOptions): Promise<void> {
-    // 1. 设置自定义请求头
-    if (options.headers) {
-      await page.setExtraHTTPHeaders(options.headers);
-    }
-
-    // 2. 设置视口
+    // 1. 设置视口
     const viewportConfig = this.resolveViewport(options);
     await page.setViewportSize({
       width: viewportConfig.width,
       height: viewportConfig.height,
     });
 
-    // 3. 设置 User-Agent（如果有设备预设）
-    if (viewportConfig.userAgent) {
-      await page.setExtraHTTPHeaders({
-        'User-Agent': viewportConfig.userAgent,
-      });
+    // 2. 设置请求头（合并用户头与设备预设 UA）
+    const baseHeaders = options.headers || {};
+    const hasCustomUserAgent = Object.keys(baseHeaders).some(
+      (key) => key.toLowerCase() === 'user-agent',
+    );
+    const mergedHeaders = {
+      ...baseHeaders,
+      ...(!hasCustomUserAgent && viewportConfig.userAgent
+        ? { 'User-Agent': viewportConfig.userAgent }
+        : {}),
+    };
+    if (Object.keys(mergedHeaders).length > 0) {
+      await page.setExtraHTTPHeaders(mergedHeaders);
     }
 
-    // 4. 深色模式
+    // 3. 深色模式
     if (options.darkMode) {
       await page.emulateMedia({ colorScheme: 'dark' });
     }

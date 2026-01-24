@@ -1,9 +1,18 @@
-// apps/server/src/scraper/scraper.constants.ts
+/**
+ * [PROVIDES]: Scraper 常量与工具函数（超时、存储、水印）
+ * [DEPENDS]: none
+ * [POS]: Scraper 模块配置与通用工具
+ *
+ * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
+ */
 
 // ============ 同步模式超时 ============
 
-/** 默认抓取超时时间（毫秒）- 30 秒 */
+/** 默认页面超时时间（毫秒）- 30 秒 */
 export const DEFAULT_SCRAPE_TIMEOUT = 30_000;
+
+/** 默认同步等待超时时间（毫秒）- 120 秒 */
+export const DEFAULT_SCRAPE_SYNC_TIMEOUT = 120_000;
 
 // ============ 文件格式类型 ============
 
@@ -81,26 +90,4 @@ export function getContentType(format: ImageFormat): string {
     webp: 'image/webp',
   };
   return contentTypes[format];
-}
-
-/**
- * 规范化 URL
- */
-export function normalizeUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    parsed.hostname = parsed.hostname.toLowerCase();
-    if (
-      (parsed.protocol === 'http:' && parsed.port === '80') ||
-      (parsed.protocol === 'https:' && parsed.port === '443')
-    ) {
-      parsed.port = '';
-    }
-    if (parsed.pathname !== '/' && parsed.pathname.endsWith('/')) {
-      parsed.pathname = parsed.pathname.slice(0, -1);
-    }
-    return parsed.toString();
-  } catch {
-    return url;
-  }
 }

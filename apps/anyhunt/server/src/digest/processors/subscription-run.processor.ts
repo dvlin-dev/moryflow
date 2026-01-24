@@ -12,6 +12,7 @@ import { Job } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SearchService } from '../../search/search.service';
 import { ScraperService } from '../../scraper/scraper.service';
+import { DEFAULT_SCRAPE_SYNC_TIMEOUT } from '../../scraper/scraper.constants';
 import {
   DigestRunService,
   type BillingBreakdown,
@@ -352,6 +353,7 @@ export class SubscriptionRunProcessor extends WorkerHost {
             mobile: false,
             darkMode: false,
             sync: true,
+            syncTimeout: DEFAULT_SCRAPE_SYNC_TIMEOUT,
           },
           undefined,
           { bill: true },

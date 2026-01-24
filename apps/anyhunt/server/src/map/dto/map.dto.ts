@@ -1,4 +1,12 @@
-// apps/server/src/map/dto/map.dto.ts
+/**
+ * Map DTO - Zod Schemas
+ *
+ * [INPUT]: Map 请求参数验证
+ * [OUTPUT]: MapOptions/MapResult 类型定义
+ * [POS]: Map 模块请求/响应 schema 与类型
+ *
+ * [PROTOCOL]: When this file changes, you MUST update this header and the directory CLAUDE.md
+ */
 import { z } from 'zod';
 
 // Map 请求 Schema

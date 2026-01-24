@@ -1,4 +1,10 @@
-// apps/server/src/crawler/url-frontier.ts
+/**
+ * [PROVIDES]: URL Frontier - Redis-backed URL queue and dedupe
+ * [DEPENDS]: RedisService, minimatch
+ * [POS]: Crawler 的 URL 去重、队列与过滤规则
+ *
+ * [PROTOCOL]: When this file changes, update this header and src/crawler/CLAUDE.md
+ */
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { minimatch } from 'minimatch';
@@ -8,30 +14,34 @@ import type { FrontierOptions } from './crawler.types';
 export class UrlFrontier {
   constructor(private redis: RedisService) {}
 
+  private readonly enqueueScript = `
+    local seenKey = KEYS[1]
+    local queueKey = KEYS[2]
+    local url = ARGV[1]
+    local payload = ARGV[2]
+    local score = tonumber(ARGV[3])
+    local limit = tonumber(ARGV[4])
+
+    if redis.call('SISMEMBER', seenKey, url) == 1 then
+      return 0
+    end
+
+    local count = redis.call('SCARD', seenKey)
+    if count >= limit then
+      return 0
+    end
+
+    redis.call('SADD', seenKey, url)
+    redis.call('ZADD', queueKey, score, payload)
+    return 1
+  `;
+
   private getSeenKey(crawlJobId: string): string {
     return `crawl:${crawlJobId}:seen`;
   }
 
   private getQueueKey(crawlJobId: string): string {
     return `crawl:${crawlJobId}:queue`;
-  }
-
-  /**
-   * 检查 URL 是否已访问
-   */
-  async isSeen(crawlJobId: string, url: string): Promise<boolean> {
-    const result = await this.redis.client.sismember(
-      this.getSeenKey(crawlJobId),
-      url,
-    );
-    return result === 1;
-  }
-
-  /**
-   * 标记 URL 为已访问
-   */
-  async markSeen(crawlJobId: string, url: string): Promise<void> {
-    await this.redis.client.sadd(this.getSeenKey(crawlJobId), url);
   }
 
   /**
@@ -47,15 +57,6 @@ export class UrlFrontier {
       // 检查深度限制
       if (depth > options.maxDepth) continue;
 
-      // 检查是否已访问
-      if (await this.isSeen(options.crawlJobId, url)) continue;
-
-      // 检查数量限制
-      const currentCount = await this.redis.client.scard(
-        this.getSeenKey(options.crawlJobId),
-      );
-      if (currentCount >= options.limit) break;
-
       // 检查域名限制
       if (!this.isAllowedUrl(url, options)) continue;
 
@@ -63,13 +64,17 @@ export class UrlFrontier {
       if (!this.matchesPathFilters(url, options)) continue;
 
       // 添加到队列（使用 depth 作为 score，优先爬取浅层页面）
-      await this.redis.client.zadd(
-        this.getQueueKey(options.crawlJobId),
+      const payload = JSON.stringify({ url, depth });
+      const added = await this.tryEnqueueUrl(
+        options.crawlJobId,
+        url,
+        payload,
         depth,
-        JSON.stringify({ url, depth }),
+        options.limit,
       );
-      await this.markSeen(options.crawlJobId, url);
-      addedCount++;
+      if (added) {
+        addedCount++;
+      }
     }
 
     return addedCount;
@@ -125,6 +130,30 @@ export class UrlFrontier {
   async cleanup(crawlJobId: string): Promise<void> {
     await this.redis.del(this.getSeenKey(crawlJobId));
     await this.redis.del(this.getQueueKey(crawlJobId));
+  }
+
+  /**
+   * 原子：去重 + 限额 + 入队
+   */
+  private async tryEnqueueUrl(
+    crawlJobId: string,
+    url: string,
+    payload: string,
+    depth: number,
+    limit: number,
+  ): Promise<boolean> {
+    const added = (await this.redis.client.eval(
+      this.enqueueScript,
+      2,
+      this.getSeenKey(crawlJobId),
+      this.getQueueKey(crawlJobId),
+      url,
+      payload,
+      String(depth),
+      String(limit),
+    )) as number;
+
+    return added === 1;
   }
 
   /**

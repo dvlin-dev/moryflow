@@ -26,10 +26,11 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 - 套餐判断基于有效订阅（仅 ACTIVE 计入付费 tier）
 - BrowserPool enforces network-level SSRF guard for sub-requests
 - QueueEvents 仅用于同步等待，服务关闭时释放连接
+- `headers` 仅用于运行时请求，不写入 `ScrapeJob.options`
 
 ## 同步/异步模式
 
-API 支持 `sync` 参数控制返回方式：
+API 支持 `sync` 参数控制返回方式（`syncTimeout` 控制同步等待上限）：
 
 | sync 值 | 行为                                    | 返回类型         |
 | ------- | --------------------------------------- | ---------------- |
@@ -37,6 +38,8 @@ API 支持 `sync` 参数控制返回方式：
 | `false` | 立即返回任务 ID，客户端通过轮询获取结果 | `{ id, status }` |
 
 内部服务（如 Extract、Search、Crawler）使用 `scrapeSync()` 方法，强制同步模式且不扣费。
+
+`syncTimeout` 用于控制同步等待上限（默认 120 秒），不影响页面加载超时（`timeout`）。
 
 ## File Structure
 

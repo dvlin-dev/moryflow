@@ -5,7 +5,7 @@
  *
  * [PROTOCOL]: When this file changes, update this header and src/crawler/CLAUDE.md
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -47,14 +47,16 @@ export class CrawlerService {
   ): Promise<CrawlStatus | { id: string; status: string }> {
     // SSRF 防护
     if (!(await this.urlValidator.isAllowed(options.url))) {
-      throw new Error('URL not allowed: possible SSRF attack');
+      throw new ForbiddenException('URL is not allowed (SSRF protection)');
     }
 
     if (
       options.webhookUrl &&
       !(await this.urlValidator.isAllowed(options.webhookUrl))
     ) {
-      throw new Error(`Webhook URL not allowed: ${options.webhookUrl}`);
+      throw new ForbiddenException(
+        'Webhook URL is not allowed (SSRF protection)',
+      );
     }
 
     // 创建 CrawlJob

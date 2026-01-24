@@ -264,7 +264,7 @@ describe('CrawlerService', () => {
             sync: false,
             timeout: 300000,
           }),
-        ).rejects.toThrow('URL not allowed');
+        ).rejects.toThrow('SSRF protection');
       });
 
       it('should throw for localhost', async () => {
@@ -279,7 +279,7 @@ describe('CrawlerService', () => {
             sync: false,
             timeout: 300000,
           }),
-        ).rejects.toThrow('SSRF');
+        ).rejects.toThrow('SSRF protection');
       });
 
       it('should throw for private IP', async () => {
@@ -294,7 +294,7 @@ describe('CrawlerService', () => {
             sync: false,
             timeout: 300000,
           }),
-        ).rejects.toThrow('SSRF');
+        ).rejects.toThrow('SSRF protection');
       });
 
       it('should throw for disallowed webhook URL', async () => {
@@ -312,7 +312,7 @@ describe('CrawlerService', () => {
             sync: false,
             timeout: 300000,
           }),
-        ).rejects.toThrow('Webhook URL not allowed');
+        ).rejects.toThrow('Webhook URL is not allowed (SSRF protection)');
       });
     });
 

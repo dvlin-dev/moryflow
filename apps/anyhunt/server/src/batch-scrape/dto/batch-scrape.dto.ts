@@ -10,10 +10,11 @@
 // apps/server/src/batch-scrape/dto/batch-scrape.dto.ts
 import { z } from 'zod';
 import { ScrapeOptionsSchema } from '../../scraper/dto/scrape.dto';
+import { DEFAULT_BATCH_MAX_URLS } from '../batch-scrape.constants';
 
 // Batch Scrape request schema
 export const BatchScrapeOptionsSchema = z.object({
-  urls: z.array(z.string().url()).min(1).max(100),
+  urls: z.array(z.string().url()).min(1).max(DEFAULT_BATCH_MAX_URLS),
   scrapeOptions: ScrapeOptionsSchema.omit({ url: true }).optional(),
   webhookUrl: z.string().url().optional(),
 

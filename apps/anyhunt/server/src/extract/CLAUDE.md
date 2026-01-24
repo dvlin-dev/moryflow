@@ -18,6 +18,7 @@ AI-powered structured data extraction API. Scrapes web pages and uses LLM to ext
 - Public API uses ApiKeyGuard
 - LLM 配置由 Admin 的 `LlmProvider/LlmModel/LlmSettings.defaultExtractModelId` 决定（请求可选传 `model`）
 - Quota 扣费由 `BillingService` 规则决定（本模块只负责在失败时按 breakdown 退费）
+- URL 必须通过 SSRF 校验后才会扣费
 - Synchronous processing (no job queue)
 
 ## File Structure

@@ -18,6 +18,7 @@ Multi-page crawling engine for extracting content from entire websites. Uses asy
 - Aggregate results from multiple pages
 - Respect crawl limits and depth
 - 终态任务保护（COMPLETED/FAILED 不再继续批处理）
+- URL Frontier 使用 Redis 原子入队保证限额与去重
 
 ## Constraints
 
@@ -27,6 +28,7 @@ Multi-page crawling engine for extracting content from entire websites. Uses asy
 - Uses Map module for URL discovery
 - Billing/Refund: use `CrawlJob.quotaBreakdown` (JSON) for idempotent refunds on failure
 - SSRF protection is async with DNS resolution (startUrl + webhookUrl must pass `UrlValidator`)
+- SSRF blocked URLs return 403
 
 ## 同步/异步模式
 

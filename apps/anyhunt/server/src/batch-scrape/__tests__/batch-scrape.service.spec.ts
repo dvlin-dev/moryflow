@@ -145,7 +145,7 @@ describe('BatchScrapeService', () => {
             sync: false,
             timeout: 30000,
           }),
-        ).rejects.toThrow('URL not allowed');
+        ).rejects.toThrow('SSRF protection');
 
         expect(mockPrisma.batchScrapeJob.create).not.toHaveBeenCalled();
       });
@@ -162,7 +162,7 @@ describe('BatchScrapeService', () => {
             sync: false,
             timeout: 30000,
           }),
-        ).rejects.toThrow('Webhook URL not allowed');
+        ).rejects.toThrow('Webhook URL is not allowed (SSRF protection)');
 
         expect(mockPrisma.batchScrapeJob.create).not.toHaveBeenCalled();
       });

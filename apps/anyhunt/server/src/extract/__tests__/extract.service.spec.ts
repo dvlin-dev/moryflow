@@ -8,6 +8,7 @@ import type { ScraperService } from '../../scraper/scraper.service';
 import type { ExtractLlmClient } from '../extract-llm.client';
 import type { ConfigService } from '@nestjs/config';
 import type { BillingService } from '../../billing/billing.service';
+import type { UrlValidator } from '../../common/validators/url.validator';
 
 describe('ExtractService', () => {
   let service: ExtractService;
@@ -21,6 +22,7 @@ describe('ExtractService', () => {
   };
   let mockConfig: { get: Mock };
   let mockBillingService: { deductOrThrow: Mock; refundOnFailure: Mock };
+  let mockUrlValidator: { isAllowed: Mock };
 
   beforeEach(() => {
     mockScraperService = {
@@ -51,17 +53,36 @@ describe('ExtractService', () => {
       refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
     };
 
+    mockUrlValidator = {
+      isAllowed: vi.fn().mockResolvedValue(true),
+    };
+
     service = new ExtractService(
       mockScraperService as unknown as ScraperService,
       mockLlmClient as unknown as ExtractLlmClient,
       mockConfig as unknown as ConfigService,
       mockBillingService as unknown as BillingService,
+      mockUrlValidator as unknown as UrlValidator,
     );
   });
 
   // ============ 基本提取 ============
 
   describe('extract', () => {
+    it('should reject blocked URLs before billing', async () => {
+      mockUrlValidator.isAllowed.mockResolvedValue(false);
+
+      await expect(
+        service.extract('user_1', {
+          urls: ['http://169.254.169.254'],
+          prompt: 'Extract content',
+        }),
+      ).rejects.toThrow('SSRF protection');
+
+      expect(mockBillingService.deductOrThrow).not.toHaveBeenCalled();
+      expect(mockScraperService.scrapeSync).not.toHaveBeenCalled();
+    });
+
     it('should scrape and extract from single URL', async () => {
       const result = await service.extract('user_1', {
         urls: ['https://example.com'],
@@ -283,6 +304,7 @@ describe('ExtractService', () => {
         mockLlmClient as unknown as ExtractLlmClient,
         mockConfig as unknown as ConfigService,
         mockBillingService as unknown as BillingService,
+        mockUrlValidator as unknown as UrlValidator,
       );
 
       const urls = Array.from(

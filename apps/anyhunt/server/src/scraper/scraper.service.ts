@@ -1,12 +1,17 @@
 /**
- * [INPUT]: ScrapeOptions - URL, formats, wait options, actions, sync mode
+ * [INPUT]: ScrapeOptions - URL, formats, wait options, actions, sync/syncTimeout
  * [OUTPUT]: ScrapeResult (sync) | JobId (async) - Based on sync option
  * [POS]: Core scraping orchestrator, handles cache, queue, and quota coordination
  *        使用有效订阅（ACTIVE）决定水印/保留等策略，QueueEvents 同步等待并在关闭时释放
  *
  * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
  */
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, type QueueEvents } from 'bullmq';
@@ -17,7 +22,7 @@ import { SCRAPE_QUEUE, createQueueEvents } from '../queue';
 import { createHash } from 'crypto';
 import type { ScrapeOptions } from './dto/scrape.dto';
 import type { ScrapeResult } from './scraper.types';
-import { DEFAULT_SCRAPE_TIMEOUT } from './scraper.constants';
+import { DEFAULT_SCRAPE_SYNC_TIMEOUT } from './scraper.constants';
 import { BillingService } from '../billing/billing.service';
 import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
@@ -51,8 +56,22 @@ export class ScraperService implements OnModuleDestroy {
    * 计算请求哈希，用于缓存
    */
   private computeHash(options: ScrapeOptions): string {
-    const payload = JSON.stringify(options);
+    const { sync, syncTimeout, ...hashOptions } = options;
+    void sync;
+    void syncTimeout;
+    const payload = JSON.stringify(hashOptions);
     return createHash('sha256').update(payload).digest('hex');
+  }
+
+  /**
+   * 规范化存储选项（移除敏感 headers）
+   */
+  private sanitizeOptions(
+    options: ScrapeOptions,
+  ): Omit<ScrapeOptions, 'headers'> {
+    const { headers, ...safeOptions } = options;
+    void headers;
+    return safeOptions;
   }
 
   /**
@@ -68,7 +87,7 @@ export class ScraperService implements OnModuleDestroy {
   ): Promise<ScrapeResult | { id: string; status: string }> {
     // 1. SSRF 防护 - 验证 URL
     if (!(await this.urlValidator.isAllowed(options.url))) {
-      throw new Error('URL not allowed: possible SSRF attack');
+      throw new ForbiddenException('URL is not allowed (SSRF protection)');
     }
 
     const requestHash = this.computeHash(options);
@@ -101,7 +120,9 @@ export class ScraperService implements OnModuleDestroy {
         apiKeyId,
         url: options.url,
         requestHash,
-        options: JSON.parse(JSON.stringify(options)) as Prisma.InputJsonValue,
+        options: JSON.parse(
+          JSON.stringify(this.sanitizeOptions(options)),
+        ) as Prisma.InputJsonValue,
         status: 'PENDING',
       },
     });
@@ -185,7 +206,7 @@ export class ScraperService implements OnModuleDestroy {
       // 同步模式（默认）：等待任务完成
       return this.waitForCompletion(
         job.id,
-        options.timeout || DEFAULT_SCRAPE_TIMEOUT,
+        options.syncTimeout ?? DEFAULT_SCRAPE_SYNC_TIMEOUT,
       );
     }
 
@@ -201,12 +222,18 @@ export class ScraperService implements OnModuleDestroy {
    */
   async scrapeSync(
     userId: string,
-    options: Omit<ScrapeOptions, 'sync'>,
+    options: Omit<ScrapeOptions, 'sync' | 'syncTimeout'> & {
+      syncTimeout?: number;
+    },
     apiKeyId?: string,
   ): Promise<ScrapeResult> {
     const result = await this.scrape(
       userId,
-      { ...options, sync: true } as ScrapeOptions,
+      {
+        ...options,
+        sync: true,
+        syncTimeout: options.syncTimeout,
+      } as ScrapeOptions,
       apiKeyId,
       { bill: false },
     );

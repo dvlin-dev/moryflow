@@ -5,7 +5,7 @@
  *
  * [PROTOCOL]: When this file changes, update this header and src/map/CLAUDE.md
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SitemapParser } from './sitemap-parser';
 import { BrowserPool } from '../browser/browser-pool';
@@ -47,7 +47,7 @@ export class MapService {
 
     // SSRF 防护
     if (!(await this.urlValidator.isAllowed(url))) {
-      throw new Error('URL not allowed: possible SSRF attack');
+      throw new ForbiddenException('URL is not allowed (SSRF protection)');
     }
 
     const billingKey = 'fetchx.map' as const;

@@ -20,6 +20,7 @@ URL discovery API for mapping website structure. Combines sitemap parsing with b
 - Excludes resource files (images, CSS, JS, etc.)
 - Limits crawl depth to prevent infinite loops
 - BrowserPool enforces network-level SSRF guard during crawling
+- SSRF blocked URLs return 403
 
 ## File Structure
 

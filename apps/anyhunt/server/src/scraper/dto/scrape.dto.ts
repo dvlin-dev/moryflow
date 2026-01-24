@@ -1,12 +1,13 @@
 /**
  * Scraper DTO - Zod Schemas
  *
- * [INPUT]: 抓取请求参数
+ * [INPUT]: 抓取请求参数（含 syncTimeout）
  * [OUTPUT]: 验证后的抓取选项
  * [POS]: Zod schemas + 推断类型（用于验证）
  */
 
 import { z } from 'zod';
+import { DEFAULT_SCRAPE_SYNC_TIMEOUT } from '../scraper.constants';
 
 // ========== 子 Schema ==========
 
@@ -86,6 +87,7 @@ export const ScrapeOptionsSchema = z.object({
 
   // 同步/异步模式
   sync: z.boolean().default(true),
+  syncTimeout: z.number().default(DEFAULT_SCRAPE_SYNC_TIMEOUT),
 });
 
 // ========== 推断类型 ==========

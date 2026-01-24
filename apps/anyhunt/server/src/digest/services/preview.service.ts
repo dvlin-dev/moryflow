@@ -10,6 +10,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SearchService } from '../../search/search.service';
 import { ScraperService } from '../../scraper/scraper.service';
+import { DEFAULT_SCRAPE_SYNC_TIMEOUT } from '../../scraper/scraper.constants';
 import { DigestContentService } from './content.service';
 import { DigestAiService } from './ai.service';
 import {
@@ -248,6 +249,7 @@ export class DigestPreviewService {
             mobile: false,
             darkMode: false,
             sync: true,
+            syncTimeout: DEFAULT_SCRAPE_SYNC_TIMEOUT,
           },
           undefined,
           { bill: true },

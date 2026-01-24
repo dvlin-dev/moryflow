@@ -5,7 +5,12 @@
  *
  * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
  */
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, type QueueEvents } from 'bullmq';
@@ -57,12 +62,14 @@ export class BatchScrapeService implements OnModuleDestroy {
     // SSRF 防护
     for (const url of urls) {
       if (!(await this.urlValidator.isAllowed(url))) {
-        throw new Error(`URL not allowed: ${url}`);
+        throw new ForbiddenException('URL is not allowed (SSRF protection)');
       }
     }
 
     if (webhookUrl && !(await this.urlValidator.isAllowed(webhookUrl))) {
-      throw new Error(`Webhook URL not allowed: ${webhookUrl}`);
+      throw new ForbiddenException(
+        'Webhook URL is not allowed (SSRF protection)',
+      );
     }
 
     // 创建批次任务
