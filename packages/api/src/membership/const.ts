@@ -132,7 +132,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   UNAUTHORIZED: 'Unauthorized.',
 };
 
-/** 解析 Better Auth 错误为中文消息 */
+/** 解析 Better Auth 错误为英文消息 */
 export function parseAuthError(error: { code?: string; message?: string }): string {
   if (error.code && AUTH_ERROR_MESSAGES[error.code]) {
     return AUTH_ERROR_MESSAGES[error.code];
