@@ -1,6 +1,6 @@
 /**
  * [INPUT]: text content
- * [OUTPUT]: vector embeddings
+ * [OUTPUT]: vector embeddings (1536 dims)
  * [POS]: 向量嵌入服务
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -15,6 +15,7 @@ import OpenAI from 'openai';
 const EMBEDDING_OPENAI_API_KEY_ENV = 'EMBEDDING_OPENAI_API_KEY';
 const EMBEDDING_OPENAI_BASE_URL_ENV = 'EMBEDDING_OPENAI_BASE_URL';
 const EMBEDDING_OPENAI_MODEL_ENV = 'EMBEDDING_OPENAI_MODEL';
+const EMBEDDING_DIMENSIONS = 1536;
 
 export interface EmbeddingResult {
   embedding: number[];
@@ -60,6 +61,11 @@ export class EmbeddingService {
       });
 
       const embedding = response.data[0].embedding;
+      if (embedding.length !== EMBEDDING_DIMENSIONS) {
+        throw new Error(
+          `Embedding dimension mismatch: expected ${EMBEDDING_DIMENSIONS}, got ${embedding.length}`,
+        );
+      }
 
       return {
         embedding,
@@ -94,11 +100,19 @@ export class EmbeddingService {
       });
 
       // OpenAI 返回的 data 数组按输入顺序排列
-      return response.data.map((item) => ({
-        embedding: item.embedding,
-        model: response.model,
-        dimensions: item.embedding.length,
-      }));
+      return response.data.map((item) => {
+        if (item.embedding.length !== EMBEDDING_DIMENSIONS) {
+          throw new Error(
+            `Embedding dimension mismatch: expected ${EMBEDDING_DIMENSIONS}, got ${item.embedding.length}`,
+          );
+        }
+
+        return {
+          embedding: item.embedding,
+          model: response.model,
+          dimensions: item.embedding.length,
+        };
+      });
     } catch (error) {
       this.logger.error(
         `Failed to generate batch embeddings: ${(error as Error).message}`,

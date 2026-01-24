@@ -1,8 +1,8 @@
 /**
- * [POS]: Memory API Controller
+ * [POS]: Memory API Controller (Mem0 V1 aligned)
  *
- * [INPUT]: CreateMemoryInput, SearchMemoryInput, ListMemoryQuery
- * [OUTPUT]: Memory responses
+ * [INPUT]: Mem0 V1 memory DTOs (snake_case)
+ * [OUTPUT]: Memory responses (project wrapper, core structure aligned)
  */
 
 import {
@@ -10,6 +10,7 @@ import {
   Get,
   Post,
   Delete,
+  Put,
   Body,
   Param,
   Query,
@@ -28,9 +29,13 @@ import {
   CreateMemorySchema,
   SearchMemorySchema,
   ListMemoryQuerySchema,
+  DeleteMemoriesQuerySchema,
+  UpdateMemorySchema,
   type CreateMemoryInput,
   type SearchMemoryInput,
   type ListMemoryQuery,
+  type DeleteMemoriesQuery,
+  type UpdateMemoryInput,
 } from './dto';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
@@ -48,12 +53,9 @@ import { BillingKey } from '../billing/billing.decorators';
 export class MemoryController {
   constructor(private readonly memoryService: MemoryService) {}
 
-  /**
-   * Create a new memory
-   */
   @Post()
-  @ApiOperation({ summary: 'Create a memory' })
-  @ApiOkResponse({ description: 'Memory created successfully' })
+  @ApiOperation({ summary: 'Add memories' })
+  @ApiOkResponse({ description: 'Memories created' })
   @BillingKey('memox.memory.create')
   async create(
     @CurrentUser() user: CurrentUserDto,
@@ -63,11 +65,30 @@ export class MemoryController {
     return this.memoryService.create(user.id, apiKey.id, dto);
   }
 
-  /**
-   * Semantic search memories
-   */
+  @Get()
+  @ApiOperation({ summary: 'Get memories' })
+  @ApiOkResponse({ description: 'Memories list returned' })
+  async list(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Query(new ZodValidationPipe(ListMemoryQuerySchema)) query: ListMemoryQuery,
+  ) {
+    return this.memoryService.list(apiKey.id, query);
+  }
+
+  @Delete()
+  @ApiOperation({ summary: 'Delete memories by filter' })
+  @ApiNoContentResponse({ description: 'Memories deleted' })
+  async deleteByFilter(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Query(new ZodValidationPipe(DeleteMemoriesQuerySchema))
+    query: DeleteMemoriesQuery,
+  ) {
+    await this.memoryService.deleteByFilter(apiKey.id, query);
+    return null;
+  }
+
   @Post('search')
-  @ApiOperation({ summary: 'Search memories by semantic similarity' })
+  @ApiOperation({ summary: 'Search memories' })
   @ApiOkResponse({ description: 'Search results returned' })
   @BillingKey('memox.memory.search')
   async search(
@@ -78,65 +99,68 @@ export class MemoryController {
     return this.memoryService.search(user.id, apiKey.id, dto);
   }
 
-  /**
-   * List memories for a user
-   */
-  @Get()
-  @ApiOperation({ summary: 'List memories for a user' })
-  @ApiOkResponse({ description: 'List of memories' })
-  async list(
-    @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Query(new ZodValidationPipe(ListMemoryQuerySchema)) query: ListMemoryQuery,
-  ) {
-    return this.memoryService.list(apiKey.id, query.userId, {
-      limit: query.limit,
-      offset: query.offset,
-      agentId: query.agentId,
-      sessionId: query.sessionId,
-    });
-  }
-
-  /**
-   * Get a single memory by ID
-   */
-  @Get(':id')
+  @Get(':memoryId')
   @ApiOperation({ summary: 'Get a memory by ID' })
   @ApiOkResponse({ description: 'Memory details' })
-  @ApiParam({ name: 'id', description: 'Memory ID' })
+  @ApiParam({ name: 'memoryId', description: 'Memory ID' })
   async getById(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Param('id') id: string,
+    @Param('memoryId') memoryId: string,
   ) {
-    return this.memoryService.getById(apiKey.id, id);
+    return this.memoryService.getById(apiKey.id, memoryId);
   }
 
-  /**
-   * Delete a memory by ID
-   */
-  @Delete(':id')
+  @Put(':memoryId')
+  @ApiOperation({ summary: 'Update a memory' })
+  @ApiOkResponse({ description: 'Memory updated' })
+  @ApiParam({ name: 'memoryId', description: 'Memory ID' })
+  async update(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Param('memoryId') memoryId: string,
+    @Body(new ZodValidationPipe(UpdateMemorySchema)) dto: UpdateMemoryInput,
+  ) {
+    return this.memoryService.update(apiKey.id, memoryId, dto);
+  }
+
+  @Delete(':memoryId')
   @ApiOperation({ summary: 'Delete a memory' })
   @ApiNoContentResponse({ description: 'Memory deleted' })
-  @ApiParam({ name: 'id', description: 'Memory ID' })
+  @ApiParam({ name: 'memoryId', description: 'Memory ID' })
   async delete(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Param('id') id: string,
+    @Param('memoryId') memoryId: string,
   ) {
-    await this.memoryService.delete(apiKey.id, id);
+    await this.memoryService.delete(apiKey.id, memoryId);
     return null;
   }
 
-  /**
-   * Delete all memories for a user
-   */
-  @Delete('user/:userId')
-  @ApiOperation({ summary: 'Delete all memories for a user' })
-  @ApiNoContentResponse({ description: 'All user memories deleted' })
-  @ApiParam({ name: 'userId', description: 'User ID' })
-  async deleteByUser(
+  @Get(':memoryId/history')
+  @ApiOperation({ summary: 'Memory history' })
+  @ApiOkResponse({ description: 'Memory history returned' })
+  @ApiParam({ name: 'memoryId', description: 'Memory ID' })
+  async history(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Param('userId') userId: string,
+    @Param('memoryId') memoryId: string,
   ) {
-    await this.memoryService.deleteByUser(apiKey.id, userId);
-    return null;
+    return this.memoryService.history(apiKey.id, memoryId);
+  }
+
+  @Get(':entityType/:entityId')
+  @ApiOperation({ summary: 'Get memories by entity' })
+  @ApiOkResponse({ description: 'Entity memories returned' })
+  @ApiParam({ name: 'entityType', description: 'Entity type' })
+  @ApiParam({ name: 'entityId', description: 'Entity ID' })
+  async listByEntity(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Param('entityType') entityType: string,
+    @Param('entityId') entityId: string,
+    @Query(new ZodValidationPipe(ListMemoryQuerySchema)) query: ListMemoryQuery,
+  ) {
+    return this.memoryService.listByEntity(
+      apiKey.id,
+      entityType,
+      entityId,
+      query,
+    );
   }
 }

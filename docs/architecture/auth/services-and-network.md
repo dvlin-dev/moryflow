@@ -48,7 +48,9 @@ status: active
 
 Moryflow 后端调用 Memox 时不走“内部专线”，直接调用 Anyhunt Dev 的公网 API：
 
-- Base URL：`https://server.anyhunt.app/api/v1/memox`
+- Base URL：`https://server.anyhunt.app/api/v1`
+- Memox endpoints：`/memories`、`/entities`、`/relations`、`/graph`
+- Search（Fetchx）：`/search`
 - 鉴权：`Authorization: Bearer <apiKey>`
 - 隔离：`tenantId` 从 apiKey 推导；按 `namespace + externalUserId` 划分数据域
 

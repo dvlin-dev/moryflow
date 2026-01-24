@@ -8,10 +8,8 @@ export { MemoryListCard, Pagination } from './components';
 // Types
 export type {
   Memory,
-  MemoriesResponse,
   MemoriesQueryParams,
   Entity,
-  EntitiesResponse,
   EntitiesQueryParams,
   EntityType,
   GraphNode,
@@ -21,16 +19,15 @@ export type {
   CreateMemoryRequest,
   SearchMemoryRequest,
   MemorySearchResult,
+  CreateMemoryResponse,
 } from './types';
 
 // API
 export {
-  // Console API (Session 认证)
   fetchMemories,
   exportMemories,
   fetchEntities,
   fetchEntityTypes,
-  deleteEntity,
   // Graph API (API Key 认证)
   fetchGraph,
   // Memory Playground API (API Key 认证)
@@ -43,12 +40,10 @@ export {
 // Hooks
 export {
   memoxKeys,
-  // Console Hooks
   useMemories,
   useExportMemories,
   useEntities,
   useEntityTypes,
-  useDeleteEntity,
   // Graph Hooks
   useGraph,
   // Memory Playground Hooks

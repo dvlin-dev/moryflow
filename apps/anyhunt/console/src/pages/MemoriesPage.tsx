@@ -2,7 +2,7 @@
  * Memories 页面 - 记忆列表与管理
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Brain02Icon, Download01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -18,48 +18,77 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Input,
+  Label,
 } from '@anyhunt/ui';
 import { useApiKeys } from '@/features/api-keys';
-import { useMemories, useExportMemories, MemoryListCard, Pagination } from '@/features/memox';
+import { useMemories, useExportMemories, MemoryListCard } from '@/features/memox';
 
-const PAGE_SIZE = 20;
+const DEFAULT_EXPORT_SCHEMA = {
+  type: 'object',
+  properties: {
+    memory: { type: 'string' },
+    metadata: { type: 'object' },
+  },
+  required: ['memory'],
+};
 
 export default function MemoriesPage() {
-  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('all');
-  const [offset, setOffset] = useState(0);
+  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [userId, setUserId] = useState('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const { data, isLoading, error } = useMemories({
-    apiKeyId: selectedApiKeyId === 'all' ? undefined : selectedApiKeyId,
-    limit: PAGE_SIZE,
-    offset,
-  });
+  const apiKeyValue = apiKeyInput.trim();
+  const activeKeys = apiKeys.filter((key) => key.isActive);
+  const selectedKey = apiKeys.find((key) => key.id === selectedApiKeyId);
+
+  const queryParams = useMemo(
+    () => ({
+      user_id: userId || undefined,
+      page: 1,
+      page_size: 100,
+    }),
+    [userId]
+  );
+
+  const { data: memories = [], isLoading, error } = useMemories(apiKeyValue, queryParams);
   const exportMutation = useExportMemories();
 
-  const handleExport = async (format: 'json' | 'csv') => {
+  const handleExport = async () => {
+    if (!apiKeyValue) {
+      toast.error('Please enter a full API key');
+      return;
+    }
+
+    if (!userId) {
+      toast.error('User ID is required for export');
+      return;
+    }
+
     try {
       const blob = await exportMutation.mutateAsync({
-        apiKeyId: selectedApiKeyId === 'all' ? undefined : selectedApiKeyId,
-        format,
+        apiKey: apiKeyValue,
+        payload: {
+          schema: DEFAULT_EXPORT_SCHEMA,
+          filters: { user_id: userId },
+        },
       });
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `memories-${new Date().toISOString().slice(0, 10)}.${format}`;
+      a.download = `memories-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`Exported as ${format.toUpperCase()}`);
+      toast.success('Exported JSON successfully');
     } catch {
       toast.error('Export failed');
     }
   };
-
-  const totalPages = data ? Math.ceil(data.pagination.total / PAGE_SIZE) : 0;
-  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
   return (
     <div className="container py-6 space-y-6">
@@ -70,27 +99,18 @@ export default function MemoriesPage() {
             <Icon icon={Brain02Icon} className="h-6 w-6" />
             Memories
           </h1>
-          <p className="text-muted-foreground mt-1">View and export your semantic memories.</p>
+          <p className="text-muted-foreground mt-1">View Mem0-style memories for a user.</p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleExport('json')}
-            disabled={exportMutation.isPending || !data?.items.length}
+            onClick={handleExport}
+            disabled={exportMutation.isPending || memories.length === 0}
           >
             <Icon icon={Download01Icon} className="h-4 w-4 mr-2" />
-            JSON
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('csv')}
-            disabled={exportMutation.isPending || !data?.items.length}
-          >
-            <Icon icon={Download01Icon} className="h-4 w-4 mr-2" />
-            CSV
+            Export JSON
           </Button>
         </div>
       </div>
@@ -101,40 +121,73 @@ export default function MemoriesPage() {
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>API Key</Label>
               <Select
                 value={selectedApiKeyId}
-                onValueChange={(value) => {
-                  setSelectedApiKeyId(value);
-                  setOffset(0);
-                }}
+                onValueChange={setSelectedApiKeyId}
                 disabled={isLoadingKeys}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select API Key" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All API Keys</SelectItem>
-                  {apiKeys.map((key) => (
-                    <SelectItem key={key.id} value={key.id}>
-                      {key.name} ({key.keyPrefix}...)
+                  {activeKeys.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No active API keys
                     </SelectItem>
-                  ))}
+                  ) : (
+                    activeKeys.map((key) => (
+                      <SelectItem key={key.id} value={key.id}>
+                        {key.name} ({key.keyPrefix}...)
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
-            {data && (
-              <span className="text-sm text-muted-foreground">
-                {data.pagination.total} memories found
-              </span>
-            )}
+
+            <div className="space-y-2">
+              <Label>API Key (Full)</Label>
+              <Input
+                placeholder="ah_..."
+                value={apiKeyInput}
+                onChange={(event) => setApiKeyInput(event.target.value)}
+              />
+              {selectedKey && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {selectedKey.name} ({selectedKey.keyPrefix}...)
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>User ID</Label>
+              <Input
+                placeholder="user-123"
+                value={userId}
+                onChange={(event) => setUserId(event.target.value)}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Content */}
-      {isLoading ? (
+      {!apiKeyValue ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            Enter a full API key to load memories.
+          </CardContent>
+        </Card>
+      ) : !userId ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            User ID is required for listing memories.
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
         </Card>
@@ -144,10 +197,10 @@ export default function MemoriesPage() {
             <CardTitle className="text-destructive">Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{error.message}</p>
+            <p className="text-sm">Failed to load memories.</p>
           </CardContent>
         </Card>
-      ) : data?.items.length === 0 ? (
+      ) : memories.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
             <Icon icon={Brain02Icon} className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
@@ -158,20 +211,11 @@ export default function MemoriesPage() {
           </CardContent>
         </Card>
       ) : (
-        <>
-          <div className="grid gap-4">
-            {data?.items.map((memory) => (
-              <MemoryListCard key={memory.id} memory={memory} />
-            ))}
-          </div>
-
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPrevious={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-            onNext={() => setOffset(offset + PAGE_SIZE)}
-          />
-        </>
+        <div className="grid gap-4">
+          {memories.map((memory) => (
+            <MemoryListCard key={memory.id} memory={memory} />
+          ))}
+        </div>
       )}
     </div>
   );

@@ -4,7 +4,7 @@
 
 ## Position
 
-Vector embedding generation for semantic search. Converts text content into vector representations using OpenAI embeddings.
+Vector embedding generation for semantic search. Converts text content into vector representations using OpenAI embeddings (fixed 1536 dims).
 
 ## Responsibilities
 
@@ -41,7 +41,7 @@ EMBEDDING_OPENAI_MODEL=...       // optional (default: text-embedding-3-small)
 ```typescript
 // In memory.service.ts
 const embedding = await this.embeddingService.generate(content);
-// Returns: number[] (1536-dimensional vector for OpenAI)
+// Returns: number[] (fixed 1536-dimensional vector)
 ```
 
 ## Dependencies
@@ -59,6 +59,7 @@ embedding/
 
 ## 最近更新
 
+- 2026-01-24：单测 mock 向量统一为 1536 维，避免维度校验失败
 - 2026-01-26：补齐 Embedding 模块文件头 [PROTOCOL] 规范（不影响功能）
 
 ---

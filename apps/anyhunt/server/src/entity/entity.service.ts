@@ -1,267 +1,166 @@
 /**
- * [INPUT]: apiKeyId, CreateEntityInput, ListEntitiesByUserOptions
- * [OUTPUT]: Entity, EntityWithApiKeyName[], pagination data
- * [POS]: Entity business logic layer - CRUD operations for knowledge graph entities
- *        跨库查询：主库 ApiKey + 向量库 Entity
+ * [INPUT]: apiKeyId, Mem0 entity DTOs
+ * [OUTPUT]: Mem0 entity list / created entity
+ * [POS]: Entity 业务逻辑层（Mem0 entities）
  *
- * [PROTOCOL]: When modifying this file, you MUST update this header and src/entity/CLAUDE.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '../../generated/prisma-vector/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { EntityRepository, type MemoxEntity } from './entity.repository';
 import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
-import { asRecordOrNull } from '../common/utils';
-import { EntityRepository, Entity } from './entity.repository';
-import type { CreateEntityInput } from './dto';
+import type {
+  CreateUserInput,
+  CreateAgentInput,
+  CreateAppInput,
+  CreateRunInput,
+  ListEntitiesQuery,
+} from './dto';
 
-export type EntityWithApiKeyName = Omit<Entity, 'properties'> & {
-  properties: Record<string, unknown> | null;
-  apiKeyName: string;
-};
-
-export interface ListEntitiesByUserOptions {
-  type?: string;
-  apiKeyId?: string;
-  limit?: number;
-  offset?: number;
-}
+const ENTITY_TYPES = ['user', 'agent', 'app', 'run'] as const;
 
 @Injectable()
 export class EntityService {
-  private readonly logger = new Logger(EntityService.name);
-
   constructor(
     private readonly repository: EntityRepository,
-    private readonly prisma: PrismaService,
     private readonly vectorPrisma: VectorPrismaService,
   ) {}
 
-  /**
-   * 从 Map 中获取 ApiKey 名称，找不到时记录告警
-   */
-  private resolveApiKeyName(
-    apiKeyId: string,
-    resourceId: string,
-    map: Map<string, string>,
-  ): string {
-    const name = map.get(apiKeyId);
-    if (!name) {
-      this.logger.warn(
-        `Entity ${resourceId} references unknown apiKeyId: ${apiKeyId}`,
-      );
-    }
-    return name ?? 'Unknown';
-  }
-
-  /**
-   * 创建实体
-   */
-  async create(apiKeyId: string, dto: CreateEntityInput): Promise<Entity> {
-    const entity = await this.repository.create(apiKeyId, {
-      userId: dto.userId,
-      type: dto.type,
-      name: dto.name,
-      properties: dto.properties ?? null,
-      confidence: dto.confidence ?? 1.0,
-    });
-
-    this.logger.log(`Created entity ${entity.id}: ${dto.type}/${dto.name}`);
-    return entity;
-  }
-
-  /**
-   * 创建或更新实体
-   */
-  async upsert(apiKeyId: string, dto: CreateEntityInput): Promise<Entity> {
-    return this.repository.upsert(apiKeyId, {
-      userId: dto.userId,
-      type: dto.type,
-      name: dto.name,
-      properties: dto.properties,
-      confidence: dto.confidence ?? 1.0,
-    });
-  }
-
-  /**
-   * 批量创建实体
-   */
-  async createMany(
-    apiKeyId: string,
-    dtos: CreateEntityInput[],
-  ): Promise<Entity[]> {
-    const entities: Entity[] = [];
-    for (const dto of dtos) {
-      const entity = await this.upsert(apiKeyId, dto);
-      entities.push(entity);
-    }
-    return entities;
-  }
-
-  /**
-   * 列出用户的实体
-   */
-  async list(
-    apiKeyId: string,
-    userId: string,
-    options: { type?: string; limit?: number; offset?: number } = {},
-  ): Promise<Entity[]> {
-    const where: Prisma.EntityWhereInput = {
-      userId,
-      ...(options.type ? { type: options.type } : {}),
-    };
-
-    return this.repository.findMany(apiKeyId, {
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: options.limit ?? 100,
-      skip: options.offset ?? 0,
-    });
-  }
-
-  /**
-   * 获取单个实体
-   */
-  async getById(apiKeyId: string, id: string): Promise<Entity | null> {
-    return this.repository.findById(apiKeyId, id);
-  }
-
-  /**
-   * 按类型查找实体
-   */
-  async getByType(
-    apiKeyId: string,
-    userId: string,
-    type: string,
-  ): Promise<Entity[]> {
-    return this.repository.findByType(apiKeyId, userId, type);
-  }
-
-  /**
-   * 删除实体
-   */
-  async delete(apiKeyId: string, id: string): Promise<void> {
-    await this.repository.deleteById(apiKeyId, id);
-    this.logger.log(`Deleted entity ${id}`);
-  }
-
-  /**
-   * 获取用户所有 API Keys 下的 Entities（Console 用）
-   * 跨库查询：主库查 ApiKey，向量库查 Entity
-   */
-  async listByUser(
-    userId: string,
-    options: ListEntitiesByUserOptions = {},
-  ): Promise<{ entities: EntityWithApiKeyName[]; total: number }> {
-    const { type, apiKeyId, limit = 20, offset = 0 } = options;
-
-    // 1. 从主库获取用户的 ApiKey 列表
-    const apiKeys = await this.prisma.apiKey.findMany({
-      where: apiKeyId ? { id: apiKeyId, userId } : { userId },
-      select: { id: true, name: true },
-    });
-
-    if (apiKeys.length === 0) {
-      return { entities: [], total: 0 };
-    }
-
-    const apiKeyIds = apiKeys.map((k) => k.id);
-    const apiKeyNameMap = new Map(apiKeys.map((k) => [k.id, k.name]));
-
-    // 2. 从向量库查询 Entity
-    const where: Prisma.EntityWhereInput = {
-      apiKeyId: { in: apiKeyIds },
-    };
-
-    if (type) {
-      where.type = type;
-    }
-
-    const [entities, total] = await Promise.all([
-      this.vectorPrisma.entity.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset,
-      }),
-      this.vectorPrisma.entity.count({ where }),
-    ]);
-
-    // 3. 应用层组装 apiKeyName
+  private toEntityResponse(
+    entity: MemoxEntity,
+    totalMemories: number,
+  ): Record<string, unknown> {
     return {
-      entities: entities.map((e) => ({
-        id: e.id,
-        apiKeyId: e.apiKeyId,
-        userId: e.userId,
-        type: e.type,
-        name: e.name,
-        properties: asRecordOrNull(e.properties),
-        confidence: e.confidence,
-        createdAt: e.createdAt,
-        updatedAt: e.updatedAt,
-        apiKeyName: this.resolveApiKeyName(e.apiKeyId, e.id, apiKeyNameMap),
-      })),
-      total,
+      id: entity.entityId,
+      name: entity.name ?? entity.entityId,
+      type: entity.type,
+      created_at: entity.createdAt.toISOString(),
+      updated_at: entity.updatedAt.toISOString(),
+      total_memories: totalMemories,
+      owner: entity.apiKeyId,
+      organization: entity.orgId ?? null,
+      metadata: entity.metadata ?? null,
     };
   }
 
-  /**
-   * 按 ID 删除实体（Console 用，验证归属）
-   * 跨库查询：主库验证 ApiKey 归属，向量库删除 Entity
-   */
-  async deleteByUser(userId: string, entityId: string): Promise<void> {
-    // 1. 从向量库查找 Entity
-    const entity = await this.vectorPrisma.entity.findUnique({
-      where: { id: entityId },
-      select: { id: true, apiKeyId: true },
-    });
+  private async countMemoriesByEntity(
+    apiKeyId: string,
+    entity: MemoxEntity,
+  ): Promise<number> {
+    const where: Record<string, unknown> = { apiKeyId };
 
-    if (!entity) {
-      throw new NotFoundException('Entity not found');
+    if (entity.type === 'user') {
+      where.userId = entity.entityId;
+    } else if (entity.type === 'agent') {
+      where.agentId = entity.entityId;
+    } else if (entity.type === 'app') {
+      where.appId = entity.entityId;
+    } else if (entity.type === 'run') {
+      where.runId = entity.entityId;
     }
 
-    // 2. 从主库验证 ApiKey 归属（用 count 减少数据传输）
-    const apiKeyBelongsToUser = await this.prisma.apiKey.count({
-      where: { id: entity.apiKeyId, userId },
-    });
-
-    if (apiKeyBelongsToUser === 0) {
-      throw new NotFoundException('Entity not found');
-    }
-
-    // 3. 从向量库删除 Entity
-    await this.vectorPrisma.entity.delete({
-      where: { id: entityId },
-    });
-
-    this.logger.log(`Deleted entity ${entityId} by user ${userId}`);
+    return this.vectorPrisma.memory.count({ where });
   }
 
-  /**
-   * 获取用户的所有 Entity 类型（Console 用）
-   * 跨库查询：主库查 ApiKey，向量库查 Entity
-   */
-  async getTypesByUser(userId: string): Promise<string[]> {
-    // 1. 从主库获取用户的 ApiKey 列表
-    const apiKeys = await this.prisma.apiKey.findMany({
-      where: { userId },
-      select: { id: true },
+  async createUser(apiKeyId: string, dto: CreateUserInput) {
+    const entity = await this.repository.upsert(apiKeyId, {
+      type: 'user',
+      entityId: dto.user_id,
+      metadata: dto.metadata ?? null,
+      orgId: dto.org_id ?? null,
+      projectId: dto.project_id ?? null,
     });
 
-    if (apiKeys.length === 0) {
-      return [];
-    }
+    return {
+      user_id: entity.entityId,
+      metadata: entity.metadata ?? null,
+    };
+  }
 
-    const apiKeyIds = apiKeys.map((k) => k.id);
-
-    // 2. 从向量库查询 Entity 类型
-    const types = await this.vectorPrisma.entity.findMany({
-      where: { apiKeyId: { in: apiKeyIds } },
-      select: { type: true },
-      distinct: ['type'],
-      orderBy: { type: 'asc' },
+  async createAgent(apiKeyId: string, dto: CreateAgentInput) {
+    const entity = await this.repository.upsert(apiKeyId, {
+      type: 'agent',
+      entityId: dto.agent_id,
+      name: dto.name ?? null,
+      metadata: dto.metadata ?? null,
+      orgId: dto.org_id ?? null,
+      projectId: dto.project_id ?? null,
     });
 
-    return types.map((t) => t.type);
+    return {
+      agent_id: entity.entityId,
+      name: entity.name ?? null,
+      metadata: entity.metadata ?? null,
+    };
+  }
+
+  async createApp(apiKeyId: string, dto: CreateAppInput) {
+    const entity = await this.repository.upsert(apiKeyId, {
+      type: 'app',
+      entityId: dto.app_id,
+      name: dto.name ?? null,
+      metadata: dto.metadata ?? null,
+      orgId: dto.org_id ?? null,
+      projectId: dto.project_id ?? null,
+    });
+
+    return {
+      app_id: entity.entityId,
+      name: entity.name ?? null,
+      metadata: entity.metadata ?? null,
+    };
+  }
+
+  async createRun(apiKeyId: string, dto: CreateRunInput) {
+    const entity = await this.repository.upsert(apiKeyId, {
+      type: 'run',
+      entityId: dto.run_id,
+      name: dto.name ?? null,
+      metadata: dto.metadata ?? null,
+      orgId: dto.org_id ?? null,
+      projectId: dto.project_id ?? null,
+    });
+
+    return {
+      run_id: entity.entityId,
+      name: entity.name ?? null,
+      metadata: entity.metadata ?? null,
+    };
+  }
+
+  async listEntities(apiKeyId: string, query: ListEntitiesQuery) {
+    const entities = await this.vectorPrisma.memoxEntity.findMany({
+      where: {
+        apiKeyId,
+        ...(query.org_id ? { orgId: query.org_id } : {}),
+        ...(query.project_id ? { projectId: query.project_id } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const counts = await Promise.all(
+      entities.map((entity) => this.countMemoriesByEntity(apiKeyId, entity)),
+    );
+
+    return entities.map((entity, index) =>
+      this.toEntityResponse(entity, counts[index] ?? 0),
+    );
+  }
+
+  async listEntityFilters(apiKeyId: string) {
+    const grouped = await this.vectorPrisma.memoxEntity.groupBy({
+      by: ['type'],
+      where: { apiKeyId },
+      _count: { type: true },
+    });
+
+    const counts = new Map(
+      grouped.map((item) => [item.type, item._count.type]),
+    );
+
+    return ENTITY_TYPES.map((type) => ({
+      type,
+      count: counts.get(type) ?? 0,
+    }));
   }
 }

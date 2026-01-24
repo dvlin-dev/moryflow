@@ -2,23 +2,11 @@
  * Entities 页面 - 实体列表与管理
  */
 
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Group01Icon, Delete01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
+import { useMemo, useState } from 'react';
+import { Group01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-  Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Icon,
@@ -28,80 +16,43 @@ import {
   SelectTrigger,
   SelectValue,
   Badge,
+  Input,
+  Label,
 } from '@anyhunt/ui';
 import { useApiKeys } from '@/features/api-keys';
-import {
-  useEntities,
-  useEntityTypes,
-  useDeleteEntity,
-  Pagination,
-  type Entity,
-} from '@/features/memox';
+import { useEntities, useEntityTypes, type Entity } from '@/features/memox';
 
-const PAGE_SIZE = 20;
-
-function EntityCard({ entity, onDelete }: { entity: Entity; onDelete: (id: string) => void }) {
-  const createdAt = new Date(entity.createdAt).toLocaleString();
+function EntityCard({ entity }: { entity: Entity }) {
+  const createdAt = new Date(entity.created_at).toLocaleString();
 
   return (
     <Card>
       <CardContent className="pt-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1 min-w-0">
-            {/* Name & Type */}
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium truncate">{entity.name}</h3>
-              <Badge variant="outline" className="shrink-0">
-                {entity.type}
-              </Badge>
-            </div>
-
-            {/* Properties */}
-            {entity.properties && Object.keys(entity.properties).length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                <pre className="bg-muted rounded p-2 overflow-auto max-h-24">
-                  {JSON.stringify(entity.properties, null, 2)}
-                </pre>
-              </div>
-            )}
-
-            {/* Metadata */}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Icon icon={Calendar03Icon} className="h-3.5 w-3.5" />
-                <span>{createdAt}</span>
-              </div>
-              {entity.confidence !== null && (
-                <span>Confidence: {(entity.confidence * 100).toFixed(0)}%</span>
-              )}
-            </div>
+        <div className="space-y-2">
+          {/* Name & Type */}
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium truncate">{entity.name}</h3>
+            <Badge variant="outline" className="shrink-0">
+              {entity.type}
+            </Badge>
           </div>
 
-          {/* Actions */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 text-destructive">
-                <Icon icon={Delete01Icon} className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Entity</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{entity.name}"? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => onDelete(entity.id)}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Metadata */}
+          {entity.metadata && Object.keys(entity.metadata).length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              <pre className="bg-muted rounded p-2 overflow-auto max-h-24">
+                {JSON.stringify(entity.metadata, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Icon icon={Calendar03Icon} className="h-3.5 w-3.5" />
+              <span>{createdAt}</span>
+            </div>
+            <span>Total memories: {entity.total_memories}</span>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -109,31 +60,23 @@ function EntityCard({ entity, onDelete }: { entity: Entity; onDelete: (id: strin
 }
 
 export default function EntitiesPage() {
-  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('all');
+  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [offset, setOffset] = useState(0);
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const { data: entityTypes = [], isLoading: isLoadingTypes } = useEntityTypes();
-  const { data, isLoading, error } = useEntities({
-    apiKeyId: selectedApiKeyId === 'all' ? undefined : selectedApiKeyId,
-    type: selectedType === 'all' ? undefined : selectedType,
-    limit: PAGE_SIZE,
-    offset,
-  });
-  const deleteMutation = useDeleteEntity();
+  const apiKeyValue = apiKeyInput.trim();
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteMutation.mutateAsync(id);
-      toast.success('Entity deleted');
-    } catch {
-      toast.error('Failed to delete entity');
-    }
-  };
+  const { data: entities = [], isLoading, error } = useEntities(apiKeyValue);
+  const { data: entityTypes = [] } = useEntityTypes(apiKeyValue);
 
-  const totalPages = data ? Math.ceil(data.pagination.total / PAGE_SIZE) : 0;
-  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
+  const filteredEntities = useMemo(() => {
+    if (selectedType === 'all') return entities;
+    return entities.filter((entity) => entity.type === selectedType);
+  }, [entities, selectedType]);
+
+  const activeKeys = apiKeys.filter((key) => key.isActive);
+  const selectedKey = apiKeys.find((key) => key.id === selectedApiKeyId);
 
   return (
     <div className="container py-6 space-y-6">
@@ -143,7 +86,7 @@ export default function EntitiesPage() {
           <Icon icon={Group01Icon} className="h-6 w-6" />
           Entities
         </h1>
-        <p className="text-muted-foreground mt-1">View and manage your knowledge graph entities.</p>
+        <p className="text-muted-foreground mt-1">View Mem0-style entities for your API key.</p>
       </div>
 
       {/* Filters */}
@@ -152,39 +95,50 @@ export default function EntitiesPage() {
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="w-64">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>API Key</Label>
               <Select
                 value={selectedApiKeyId}
-                onValueChange={(value) => {
-                  setSelectedApiKeyId(value);
-                  setOffset(0);
-                }}
+                onValueChange={setSelectedApiKeyId}
                 disabled={isLoadingKeys}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select API Key" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All API Keys</SelectItem>
-                  {apiKeys.map((key) => (
-                    <SelectItem key={key.id} value={key.id}>
-                      {key.name} ({key.keyPrefix}...)
+                  {activeKeys.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No active API keys
                     </SelectItem>
-                  ))}
+                  ) : (
+                    activeKeys.map((key) => (
+                      <SelectItem key={key.id} value={key.id}>
+                        {key.name} ({key.keyPrefix}...)
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="w-48">
-              <Select
-                value={selectedType}
-                onValueChange={(value) => {
-                  setSelectedType(value);
-                  setOffset(0);
-                }}
-                disabled={isLoadingTypes}
-              >
+            <div className="space-y-2">
+              <Label>API Key (Full)</Label>
+              <Input
+                placeholder="ah_..."
+                value={apiKeyInput}
+                onChange={(event) => setApiKeyInput(event.target.value)}
+              />
+              {selectedKey && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {selectedKey.name} ({selectedKey.keyPrefix}...)
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Entity Type</Label>
+              <Select value={selectedType} onValueChange={setSelectedType} disabled={!apiKeyValue}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Type" />
                 </SelectTrigger>
@@ -198,18 +152,18 @@ export default function EntitiesPage() {
                 </SelectContent>
               </Select>
             </div>
-
-            {data && (
-              <span className="text-sm text-muted-foreground">
-                {data.pagination.total} entities found
-              </span>
-            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Content */}
-      {isLoading ? (
+      {!apiKeyValue ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            Enter a full API key to load entities.
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
         </Card>
@@ -218,35 +172,26 @@ export default function EntitiesPage() {
           <CardHeader>
             <CardTitle className="text-destructive">Error</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm">{error.message}</p>
-          </CardContent>
+          <CardContent>Failed to load entities.</CardContent>
         </Card>
-      ) : data?.items.length === 0 ? (
+      ) : filteredEntities.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center">
-            <Icon icon={Group01Icon} className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <CardDescription>No entities found.</CardDescription>
-            <p className="text-sm text-muted-foreground mt-2">
-              Entities are extracted from memories via the Memox API.
-            </p>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            No entities found for the selected filters.
           </CardContent>
         </Card>
       ) : (
-        <>
-          <div className="grid gap-4">
-            {data?.items.map((entity) => (
-              <EntityCard key={entity.id} entity={entity} onDelete={handleDelete} />
-            ))}
-          </div>
+        <div className="grid gap-4">
+          {filteredEntities.map((entity) => (
+            <EntityCard key={`${entity.type}-${entity.id}`} entity={entity} />
+          ))}
+        </div>
+      )}
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPrevious={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-            onNext={() => setOffset(offset + PAGE_SIZE)}
-          />
-        </>
+      {apiKeyValue && filteredEntities.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          {filteredEntities.length} entities loaded
+        </div>
       )}
     </div>
   );

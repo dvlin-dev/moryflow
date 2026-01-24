@@ -77,6 +77,7 @@ status: active
 - Anyhunt Server Scraper/Crawler/Extract/Map Code Review：`docs/code-review/anyhunt-server-fetchx-core.md`（更新：2026-01-26，修复完成）
 - Anyhunt Server Browser Code Review：`docs/code-review/anyhunt-server-browser.md`（更新：2026-01-26，修复完成）
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（更新：2026-01-26，修复完成；EmbeddingService 保留确认）
+- Anyhunt Server Memox Core 对标 Mem0 改造计划：`docs/code-review/anyhunt-server-memox-core.md`（更新：2026-01-24；实施进度同步；Filters DSL；R2 导出；Token 认证一致；Graph/Relation 公共 API 删除；entities 语义替换）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）

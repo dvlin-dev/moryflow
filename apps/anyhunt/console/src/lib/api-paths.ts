@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, MEMOX_CONSOLE_API, HEALTH_API, QUOTA_API
+ * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, HEALTH_API, QUOTA_API
  * [USED_BY]: features/*, lib/api-client
  * [POS]: Console API 路径常量定义
  */
@@ -50,15 +50,17 @@ export const FETCHX_API = {
 export const MEMOX_API = {
   MEMORIES: '/api/v1/memories',
   MEMORIES_SEARCH: '/api/v1/memories/search',
+  MEMORIES_BATCH: '/api/v1/batch',
+  MEMORIES_BY_ENTITY: '/api/v1/memories',
   ENTITIES: '/api/v1/entities',
-  RELATIONS: '/api/v1/relations',
-  GRAPH: '/api/v1/graph',
-} as const;
-
-// Memox Console API（Session 认证）
-export const MEMOX_CONSOLE_API = {
-  MEMORIES: '/api/v1/console/memories',
-  ENTITIES: '/api/v1/console/entities',
+  ENTITY_FILTERS: '/api/v1/entities/filters',
+  USERS: '/api/v1/users',
+  AGENTS: '/api/v1/agents',
+  APPS: '/api/v1/apps',
+  RUNS: '/api/v1/runs',
+  FEEDBACK: '/api/v1/feedback',
+  EXPORTS: '/api/v1/exports',
+  EXPORTS_GET: '/api/v1/exports/get',
 } as const;
 
 // 健康检查

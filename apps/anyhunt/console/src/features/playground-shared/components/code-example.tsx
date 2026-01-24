@@ -104,7 +104,7 @@ function CodeBlock({
 
 function generateCurl(url: string, method: string, apiKey: string, body?: unknown): string {
   const lines = [`curl -X ${method} "${url}"`];
-  lines.push(`  -H "Authorization: Bearer ${apiKey}"`);
+  lines.push(`  -H "Authorization: Token ${apiKey}"`);
   lines.push(`  -H "Content-Type: application/json"`);
   if (body) {
     lines.push(`  -d '${JSON.stringify(body, null, 2)}'`);
@@ -116,7 +116,7 @@ function generateJavaScript(url: string, method: string, apiKey: string, body?: 
   return `const response = await fetch("${url}", {
   method: "${method}",
   headers: {
-    "Authorization": "Bearer ${apiKey}",
+    "Authorization": "Token ${apiKey}",
     "Content-Type": "application/json"
   }${
     body
@@ -143,7 +143,7 @@ function generatePython(url: string, method: string, apiKey: string, body?: unkn
 response = requests.${method.toLowerCase()}(
     "${url}",
     headers={
-        "Authorization": f"Bearer ${apiKey}",
+        "Authorization": f"Token ${apiKey}",
         "Content-Type": "application/json"
     }${
       body

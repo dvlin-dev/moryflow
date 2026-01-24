@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-25（Billing & Payment 修复完成；新增 Moryflow PC 自动更新 R2 Runbook）
+> 最近更新：2026-01-24（Memox 对标 Mem0 改造计划更新：实施进度同步 + Filters DSL + R2 导出 + Token 认证一致）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,9 @@
 
 ## 最近更新
 
+- Anyhunt Server Memox Core：对标 Mem0 改造计划更新（实施进度同步 + Filters DSL + R2 导出 + Token 认证一致）（2026-01-24）
+- Auth 域名与路由：Memox API 路径对齐（2026-01-24）
+- Anyhunt Server Memox Core Code Review：`docs/code-review/anyhunt-server-memox-core.md`（2026-01-24：review 完成）
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（2026-01-26：修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Browser Code Review：`docs/code-review/anyhunt-server-browser.md`（2026-01-26：修复完成）
 - Anyhunt Server Prisma/迁移/多数据库边界 Code Review：`docs/code-review/anyhunt-server-prisma.md`（2026-01-26：review 完成）

@@ -40,8 +40,9 @@ status: active
 - Moryflow Web 端只请求同源 API（不做跨域 CORS 方案）。
 - Anyhunt Dev 的 Web（console/admin）跨域调用 `server.anyhunt.app/api/v1`：必须配置 CORS 与 refresh CSRF 白名单。
 - Auth 路由固定：`/api/auth/*`（包含 Google/Apple 登录）。
-- Anyhunt Dev 能力路由建议按模块分前缀：
-  - Memox：`/api/v1/memox/*`
+- Anyhunt Dev 能力路由按功能资源组织（不再使用 memox 前缀）：
+  - Memox：`/api/v1/memories`、`/api/v1/entities`、`/api/v1/relations`、`/api/v1/graph`
+  - Fetchx Search：`/api/v1/search`
   - Agentsbox：`/api/v1/agentsbox/*`
 
 ## 入口反代（megaboxpro / 1panel）

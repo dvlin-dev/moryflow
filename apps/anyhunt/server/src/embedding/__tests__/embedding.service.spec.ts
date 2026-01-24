@@ -25,7 +25,9 @@ describe('EmbeddingService', () => {
   let EmbeddingServiceClass: typeof import('../embedding.service').EmbeddingService;
   let service: import('../embedding.service').EmbeddingService;
 
-  const mockEmbedding = [0.1, 0.2, 0.3, 0.4, 0.5];
+  const buildEmbedding = (value: number) =>
+    Array.from({ length: 1536 }, () => value);
+  const mockEmbedding = buildEmbedding(0.1);
 
   beforeEach(async () => {
     // 确保每个测试都使用已 mock 的 OpenAI 依赖
@@ -64,7 +66,7 @@ describe('EmbeddingService', () => {
       expect(result).toEqual({
         embedding: mockEmbedding,
         model: 'text-embedding-3-small',
-        dimensions: 5,
+        dimensions: 1536,
       });
       expect(mockEmbeddingsCreate).toHaveBeenCalledWith({
         input: 'test text',
@@ -108,9 +110,9 @@ describe('EmbeddingService', () => {
 
     it('should batch generate embeddings for multiple texts', async () => {
       const mockEmbeddings = [
-        [0.1, 0.2, 0.3],
-        [0.4, 0.5, 0.6],
-        [0.7, 0.8, 0.9],
+        buildEmbedding(0.1),
+        buildEmbedding(0.2),
+        buildEmbedding(0.3),
       ];
 
       mockEmbeddingsCreate.mockResolvedValue({
@@ -210,7 +212,7 @@ describe('EmbeddingService', () => {
       );
 
       mockEmbeddingsCreate.mockResolvedValue({
-        data: [{ embedding: [0.1] }],
+        data: [{ embedding: buildEmbedding(0.1) }],
         model: 'text-embedding-3-small',
       });
 
@@ -237,7 +239,7 @@ describe('EmbeddingService', () => {
       );
 
       mockEmbeddingsCreate.mockResolvedValue({
-        data: [{ embedding: [0.1] }],
+        data: [{ embedding: buildEmbedding(0.1) }],
         model: 'text-embedding-ada-002',
       });
 

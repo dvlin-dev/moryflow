@@ -1,52 +1,67 @@
 # Entity Module
 
-> ⚠️ 本文件夹结构变更时，必须同步更新此文档
+> Warning: When this folder structure changes, you MUST update this document
 
-## 定位
+## Position
 
-实体管理模块。为 Memox 知识图谱提供 Entity 的 CRUD 与查询能力。
+Memox 实体模块（Mem0 V1 对齐）。提供 user/agent/app/run 的注册与列表能力。
 
-**数据存储**：向量库（`VectorPrismaService`）
+**数据存储**：向量库（`VectorPrismaService` → `MemoxEntity`）
 
-## 职责
+## Responsibilities
 
-**包含：**
+**Does:**
 
-- 实体抽取
-- 实体 CRUD
-- 跨记忆实体关联
-- 实体类型分类
-- `properties` 字段输入使用 `JsonValueSchema`，输出使用 `asRecordOrNull` 收敛为对象或 null
-- 跨库查询：Console 接口从主库查 ApiKey，从向量库查 Entity，应用层组装
+- 创建用户/Agent/App/Run 实体（upsert）
+- 列出全部实体（含 total_memories）
+- 返回实体筛选器（types + count）
+- metadata JSON 字段需要显式 DbNull 处理（见 entity.repository.ts）
 
-**不包含：**
+**Does NOT:**
 
-- 关系管理（由 relation/ 负责）
-- 记忆存储（由 memory/ 负责）
+- 知识图谱 CRUD（已移除）
+- Console 私有接口
 
-## 成员清单
+## Member List
 
-| 文件                           | 类型       | 说明              |
-| ------------------------------ | ---------- | ----------------- |
-| `entity.controller.ts`         | Controller | 公网 API          |
-| `console-entity.controller.ts` | Controller | Console API       |
-| `entity.service.ts`            | Service    | 业务逻辑          |
-| `entity.repository.ts`         | Repository | 数据库操作        |
-| `entity.module.ts`             | Module     | NestJS 模块定义   |
-| `entity.errors.ts`             | Errors     | 自定义错误        |
-| `dto/entity.schema.ts`         | Schema     | Zod schemas + DTO |
-| `dto/index.ts`                 | Export     | DTO 导出          |
-| `index.ts`                     | Export     | 模块导出          |
+| File                   | Type       | Description                  |
+| ---------------------- | ---------- | ---------------------------- |
+| `entity.controller.ts` | Controller | Mem0 entity endpoints        |
+| `entity.service.ts`    | Service    | Core business logic          |
+| `entity.repository.ts` | Repository | MemoxEntity data access      |
+| `entity.module.ts`     | Module     | NestJS module definition     |
+| `dto/entity.schema.ts` | Schema     | Zod schemas + inferred types |
+| `dto/index.ts`         | Export     | DTO exports                  |
+| `index.ts`             | Export     | Public module exports        |
 
-## 依赖关系
+## API Endpoints
+
+```
+Public API (v1) - ApiKeyGuard:
+  GET  /v1/entities          # List entities
+  GET  /v1/entities/filters  # List entity filters
+  POST /v1/users             # Create user
+  POST /v1/agents            # Create agent
+  POST /v1/apps              # Create app
+  POST /v1/runs              # Create run
+```
+
+## Key Schemas
+
+```typescript
+CreateUserSchema = { user_id: string, metadata?: object }
+CreateAgentSchema = { agent_id: string, name?: string, metadata?: object }
+CreateAppSchema = { app_id: string, name?: string, metadata?: object }
+CreateRunSchema = { run_id: string, name?: string, metadata?: object }
+```
+
+## Dependencies
 
 ```
 entity/
-├── 依赖 → vector-prisma/（向量库 - Entity 存储）
-├── 依赖 → prisma/（主库 - Console 跨库查询 ApiKey）
-└── 被依赖 ← graph/（知识图谱）
+└── depends on → vector-prisma/ (MemoxEntity 存储)
 ```
 
 ---
 
-_见 [apps/anyhunt/server/CLAUDE.md](../../CLAUDE.md) 获取服务端约定_
+_See [apps/anyhunt/server/CLAUDE.md](../../CLAUDE.md) for server conventions_

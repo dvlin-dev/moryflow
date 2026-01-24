@@ -31,7 +31,7 @@ feature-name/
 | `search-playground/`        | 网页搜索测试         | `/api/v1/search`               |
 | `embed-playground/`         | Embed 测试           | Demo-only                      |
 | `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/console/playground/*` |
-| `memox/`                    | Memox 记忆管理       | `/api/v1/console/memories`     |
+| `memox/`                    | Memox 记忆管理       | `/api/v1/memories` (Token)     |
 | `settings/`                 | 账户设置             | `/api/v1/console/*`            |
 | `webhooks/`                 | Webhook 管理         | `/api/v1/console/webhooks`     |
 
@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Memox Playground：补齐 includes/excludes/custom_instructions/custom_categories、filters/threshold/rerank 等高级字段
 - Agent Browser Playground：Stream 请求改为强制携带 access token，移除 cookie-only 依赖
 - Agent Browser Playground：补充 Reasoning/Progress 映射、stream abort 处理、错误边界与分区组件
 - Agent Browser Playground：BrowserSessionPanel 支持 sections 裁剪，配合多页面拆分

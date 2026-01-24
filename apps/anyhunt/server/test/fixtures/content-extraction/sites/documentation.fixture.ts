@@ -62,7 +62,7 @@ export const documentationFixture: ContentFixture = {
         <h2 id="examples">Examples</h2>
         <p>Here's a basic example using curl:</p>
         <pre><code class="language-bash">curl -X POST https://api.example.com/v1/scrape \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Authorization: Token YOUR_API_KEY" \\
   -d '{"url": "https://example.com"}'</code></pre>
 
         <p>Response:</p>

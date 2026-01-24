@@ -11,11 +11,12 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Agent/LLM/Embedding：修复流式任务进度清理、补齐 LLM Settings 兜底，完善相关测试与文件头规范
 - Console Playground Browser 路由测试使用 `app.listen(0)`，减少并发测试下的连接重置
 - Browser CDP 连接新增白名单/私网策略环境变量（`.env.example`）
+- Memox Memory 对齐 Mem0：新增 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains）、导出/历史/反馈与 Token 认证一致
 
 ## Responsibilities
 
 - Handle API requests for scraping, crawling, map, extract, search, batch-scrape
-- Provide Memox APIs for semantic memory and knowledge graph
+- Provide Memox APIs for semantic memory and Mem0 entities
 - Console Playground proxies (Browser/Agent) via session auth
 - Manage browser pool for rendering pages
 - Process async jobs via BullMQ
@@ -63,15 +64,15 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 采用**主库 + 向量库**分离架构，实现性能隔离和独立扩展：
 
-| 数据库 | 连接变量              | Schema 路径      | 用途                                   |
-| ------ | --------------------- | ---------------- | -------------------------------------- |
-| 主库   | `DATABASE_URL`        | `prisma/main/`   | 业务数据（User、ApiKey、Job 等）       |
-| 向量库 | `VECTOR_DATABASE_URL` | `prisma/vector/` | Memox 数据（Memory、Entity、Relation） |
+| 数据库 | 连接变量              | Schema 路径      | 用途                                                       |
+| ------ | --------------------- | ---------------- | ---------------------------------------------------------- |
+| 主库   | `DATABASE_URL`        | `prisma/main/`   | 业务数据（User、ApiKey、Job 等）                           |
+| 向量库 | `VECTOR_DATABASE_URL` | `prisma/vector/` | Memox 数据（Memory、MemoxEntity、History/Feedback/Export） |
 
 ### 关键设计
 
 - **软引用**：向量库中的 `apiKeyId` 无外键约束，通过应用层保证一致性
-- **跨库查询**：Console 接口需要跨库查询（主库 ApiKey + 向量库 Memox），在应用层组装
+- **跨库查询**：仅在需要主库 ApiKey 补充信息时由应用层组装
 - **删除清理**：删除 ApiKey 时异步清理向量库关联数据（fail-safe）
 
 ### Prisma 命令
@@ -116,9 +117,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | `quota/`              | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
 | `api-key/`            | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
 | `memory/`             | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
-| `entity/`             | 10    | Knowledge graph entities (Memox)             | `src/entity/CLAUDE.md`    |
-| `relation/`           | 9     | Knowledge graph relations (Memox)            | `src/relation/CLAUDE.md`  |
-| `graph/`              | 7     | Knowledge graph traversal (Memox)            | `src/graph/CLAUDE.md`     |
+| `entity/`             | 10    | Mem0 entities (user/agent/app/run)           | `src/entity/CLAUDE.md`    |
 | `embedding/`          | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md` |
 | `crawler/`            | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`   |
 | `auth/`               | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`      |

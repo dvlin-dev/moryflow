@@ -1,76 +1,64 @@
 /**
- * [POS]: Entity Repository（向量数据库）
+ * [POS]: Entity Repository（Mem0 entities）
+ *
+ * 职责：MemoxEntity 数据访问层（用户/Agent/App/Run），JSON 字段需要显式处理 null
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable } from '@nestjs/common';
-import type { Entity as PrismaEntity } from '../../generated/prisma-vector/client';
+import {
+  Prisma,
+  type MemoxEntity as PrismaMemoxEntity,
+} from '../../generated/prisma-vector/client';
 import { VectorPrismaService } from '../vector-prisma/vector-prisma.service';
 import { BaseRepository } from '../common/base.repository';
-import type { CreateEntityInput } from './dto';
 
-export type Entity = PrismaEntity;
+export type MemoxEntity = PrismaMemoxEntity;
 
 @Injectable()
-export class EntityRepository extends BaseRepository<Entity> {
+export class EntityRepository extends BaseRepository<MemoxEntity> {
   constructor(private readonly vectorPrisma: VectorPrismaService) {
-    super(vectorPrisma, vectorPrisma.entity);
+    super(vectorPrisma, vectorPrisma.memoxEntity);
   }
 
-  /**
-   * 按类型查找实体
-   */
-  async findByType(
-    apiKeyId: string,
-    userId: string,
-    type: string,
-  ): Promise<Entity[]> {
-    return this.findMany(apiKeyId, {
-      where: { userId, type },
-      orderBy: { name: 'asc' },
-    });
-  }
-
-  /**
-   * 按名称查找实体（精确匹配）
-   */
-  async findByName(
-    apiKeyId: string,
-    userId: string,
-    type: string,
-    name: string,
-  ): Promise<Entity | null> {
-    return this.findOne(apiKeyId, { userId, type, name });
-  }
-
-  /**
-   * 创建或更新实体（upsert）
-   */
   async upsert(
     apiKeyId: string,
-    data: CreateEntityInput & { confidence?: number },
-  ): Promise<Entity> {
-    return this.vectorPrisma.entity.upsert({
+    data: {
+      type: string;
+      entityId: string;
+      name?: string | null;
+      metadata?: Record<string, unknown> | null;
+      orgId?: string | null;
+      projectId?: string | null;
+    },
+  ): Promise<MemoxEntity> {
+    const metadata = data.metadata
+      ? (data.metadata as Prisma.InputJsonValue)
+      : Prisma.DbNull;
+
+    return this.vectorPrisma.memoxEntity.upsert({
       where: {
-        apiKeyId_userId_type_name: {
+        apiKeyId_type_entityId: {
           apiKeyId,
-          userId: data.userId,
           type: data.type,
-          name: data.name,
+          entityId: data.entityId,
         },
+      },
+      update: {
+        name: data.name ?? null,
+        metadata,
+        orgId: data.orgId ?? null,
+        projectId: data.projectId ?? null,
       },
       create: {
         apiKeyId,
-        userId: data.userId,
         type: data.type,
-        name: data.name,
-        properties: data.properties ?? undefined,
-        confidence: data.confidence,
-      },
-      update: {
-        properties: data.properties ?? undefined,
-        confidence: data.confidence,
+        entityId: data.entityId,
+        name: data.name ?? null,
+        metadata,
+        orgId: data.orgId ?? null,
+        projectId: data.projectId ?? null,
       },
     });
   }

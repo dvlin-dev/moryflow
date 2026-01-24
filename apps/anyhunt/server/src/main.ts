@@ -195,8 +195,8 @@ async function bootstrap() {
     .setTitle('Anyhunt API')
     .setDescription('Anyhunt 截图服务 API 文档')
     .setVersion('1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'APIKey' },
+    .addApiKey(
+      { type: 'apiKey', in: 'header', name: 'Authorization' },
       'apiKey',
     )
     .addBearerAuth(

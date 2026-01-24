@@ -45,6 +45,7 @@ import {
   TabsTrigger,
   Badge,
   ScrollArea,
+  Switch,
 } from '@anyhunt/ui';
 import { useApiKeys } from '@/features/api-keys';
 import {
@@ -58,39 +59,66 @@ import { MEMOX_API } from '@/lib/api-paths';
 
 // 创建记忆表单 Schema
 const createMemorySchema = z.object({
-  userId: z.string().min(1, 'User ID is required'),
-  content: z.string().min(1, 'Content is required').max(10000, 'Content too long'),
-  agentId: z.string().optional(),
-  sessionId: z.string().optional(),
-  source: z.string().optional(),
-  importance: z.number().min(0).max(1).optional(),
-  tags: z.string().optional(),
+  user_id: z.string().min(1, 'User ID is required'),
+  message: z.string().min(1, 'Message is required').max(10000, 'Message too long'),
+  agent_id: z.string().optional(),
+  app_id: z.string().optional(),
+  run_id: z.string().optional(),
+  metadata: z.string().optional(),
+  includes: z.string().optional(),
+  excludes: z.string().optional(),
+  custom_instructions: z.string().optional(),
+  custom_categories: z.string().optional(),
+  infer: z.boolean().default(true),
+  async_mode: z.boolean().default(true),
+  output_format: z.enum(['v1.0', 'v1.1']).default('v1.1'),
+  enable_graph: z.boolean().default(false),
 });
 
 type CreateMemoryFormValues = z.infer<typeof createMemorySchema>;
 
 // 搜索记忆表单 Schema
 const searchMemorySchema = z.object({
-  userId: z.string().min(1, 'User ID is required'),
+  user_id: z.string().min(1, 'User ID is required'),
   query: z.string().min(1, 'Query is required'),
-  limit: z.number().min(1).max(100),
-  threshold: z.number().min(0).max(1),
+  top_k: z.coerce.number().min(1).max(100).default(10),
+  threshold: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().min(0).max(1).optional()
+  ),
+  output_format: z.enum(['v1.0', 'v1.1']).default('v1.1'),
+  keyword_search: z.boolean().default(false),
+  rerank: z.boolean().default(false),
+  filter_memories: z.boolean().default(false),
+  only_metadata_based_search: z.boolean().default(false),
+  metadata: z.string().optional(),
+  filters: z.string().optional(),
+  categories: z.string().optional(),
 });
 
 type SearchMemoryFormValues = z.infer<typeof searchMemorySchema>;
 
 // 搜索记忆表单默认值
 const searchMemoryDefaults: SearchMemoryFormValues = {
-  userId: '',
+  user_id: '',
   query: '',
-  limit: 10,
-  threshold: 0.5,
+  top_k: 10,
+  threshold: undefined,
+  output_format: 'v1.1',
+  keyword_search: false,
+  rerank: false,
+  filter_memories: false,
+  only_metadata_based_search: false,
+  metadata: '',
+  filters: '',
+  categories: '',
 };
 
 export default function MemoxPlaygroundPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'create' | 'search'>('create');
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
   // 结果状态
   const [createdMemory, setCreatedMemory] = useState<Memory | null>(null);
@@ -102,9 +130,8 @@ export default function MemoxPlaygroundPage() {
 
   // 计算 effective API key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
-  const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const activeKeys = apiKeys.filter((k) => k.isActive);
-  const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
+  const apiKeyValue = apiKeyInput.trim();
 
   // Mutations
   const createMemoryMutation = useCreateMemory();
@@ -114,13 +141,20 @@ export default function MemoxPlaygroundPage() {
   const createForm = useForm<CreateMemoryFormValues>({
     resolver: zodResolver(createMemorySchema),
     defaultValues: {
-      userId: '',
-      content: '',
-      agentId: '',
-      sessionId: '',
-      source: '',
-      importance: undefined,
-      tags: '',
+      user_id: '',
+      message: '',
+      agent_id: '',
+      app_id: '',
+      run_id: '',
+      metadata: '',
+      includes: '',
+      excludes: '',
+      custom_instructions: '',
+      custom_categories: '',
+      infer: true,
+      async_mode: true,
+      output_format: 'v1.1',
+      enable_graph: false,
     },
   });
 
@@ -132,35 +166,67 @@ export default function MemoxPlaygroundPage() {
 
   // 创建记忆提交
   const handleCreate = async (values: CreateMemoryFormValues) => {
-    if (!selectedKey?.keyPrefix) {
-      toast.error('Please select an API key');
+    if (!apiKeyValue) {
+      toast.error('Please enter a full API key');
       return;
     }
 
     setLastCreateRequest(values);
     setCreatedMemory(null);
 
+    let metadata: Record<string, unknown> | undefined;
+    if (values.metadata) {
+      try {
+        metadata = JSON.parse(values.metadata) as Record<string, unknown>;
+      } catch (_error) {
+        toast.error('Metadata must be valid JSON');
+        return;
+      }
+    }
+
+    let customCategories: Record<string, unknown> | undefined;
+    if (values.custom_categories) {
+      try {
+        customCategories = JSON.parse(values.custom_categories) as Record<string, unknown>;
+      } catch (_error) {
+        toast.error('Custom categories must be valid JSON');
+        return;
+      }
+    }
+
     const requestData = {
-      userId: values.userId,
-      content: values.content,
-      ...(values.agentId && { agentId: values.agentId }),
-      ...(values.sessionId && { sessionId: values.sessionId }),
-      ...(values.source && { source: values.source }),
-      ...(values.importance !== undefined && { importance: values.importance }),
-      ...(values.tags && {
-        tags: values.tags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
-      }),
+      messages: [{ role: 'user', content: values.message }],
+      user_id: values.user_id,
+      ...(values.agent_id && { agent_id: values.agent_id }),
+      ...(values.app_id && { app_id: values.app_id }),
+      ...(values.run_id && { run_id: values.run_id }),
+      ...(metadata && { metadata }),
+      ...(values.includes && { includes: values.includes }),
+      ...(values.excludes && { excludes: values.excludes }),
+      ...(values.custom_instructions && { custom_instructions: values.custom_instructions }),
+      ...(customCategories && { custom_categories: customCategories }),
+      infer: values.infer,
+      async_mode: values.async_mode,
+      output_format: values.output_format,
+      enable_graph: values.enable_graph,
     };
 
     try {
       const result = await createMemoryMutation.mutateAsync({
-        apiKey: selectedKey.keyPrefix,
+        apiKey: apiKeyValue,
         data: requestData,
       });
-      setCreatedMemory(result);
+      const created = Array.isArray(result.results) ? result.results[0]?.data?.memory : null;
+      setCreatedMemory(
+        created
+          ? {
+              id: result.results?.[0]?.id ?? '',
+              memory: created,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          : null
+      );
       toast.success('Memory created successfully');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create memory');
@@ -169,22 +235,57 @@ export default function MemoxPlaygroundPage() {
 
   // 搜索记忆提交
   const handleSearch = async (values: SearchMemoryFormValues) => {
-    if (!selectedKey?.keyPrefix) {
-      toast.error('Please select an API key');
+    if (!apiKeyValue) {
+      toast.error('Please enter a full API key');
       return;
     }
 
     setLastSearchRequest(values);
     setSearchResults(null);
 
+    let metadata: Record<string, unknown> | undefined;
+    if (values.metadata) {
+      try {
+        metadata = JSON.parse(values.metadata) as Record<string, unknown>;
+      } catch (_error) {
+        toast.error('Metadata must be valid JSON');
+        return;
+      }
+    }
+
+    let filters: unknown | undefined;
+    if (values.filters) {
+      try {
+        filters = JSON.parse(values.filters) as unknown;
+      } catch (_error) {
+        toast.error('Filters must be valid JSON');
+        return;
+      }
+    }
+
+    const categories = values.categories
+      ? values.categories
+          .split(',')
+          .map((category) => category.trim())
+          .filter(Boolean)
+      : [];
+
     try {
       const results = await searchMemoriesMutation.mutateAsync({
-        apiKey: selectedKey.keyPrefix,
+        apiKey: apiKeyValue,
         data: {
-          userId: values.userId,
+          user_id: values.user_id,
           query: values.query,
-          limit: values.limit,
-          threshold: values.threshold,
+          top_k: values.top_k,
+          ...(values.threshold !== undefined && { threshold: values.threshold }),
+          output_format: values.output_format,
+          keyword_search: values.keyword_search,
+          rerank: values.rerank,
+          filter_memories: values.filter_memories,
+          only_metadata_based_search: values.only_metadata_based_search,
+          ...(metadata && { metadata }),
+          ...(filters !== undefined && { filters }),
+          ...(categories.length > 0 && { categories }),
         },
       });
       setSearchResults(results);
@@ -268,6 +369,18 @@ export default function MemoxPlaygroundPage() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label>API Key (Full)</Label>
+                <Input
+                  placeholder="ah_..."
+                  value={apiKeyInput}
+                  onChange={(event) => setApiKeyInput(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste the full API key (only shown once when created).
+                </p>
+              </div>
+
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'create' | 'search')}>
                 <TabsList className="w-full">
@@ -287,7 +400,7 @@ export default function MemoxPlaygroundPage() {
                     <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4">
                       <FormField
                         control={createForm.control}
-                        name="userId"
+                        name="user_id"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>User ID *</FormLabel>
@@ -301,13 +414,13 @@ export default function MemoxPlaygroundPage() {
 
                       <FormField
                         control={createForm.control}
-                        name="content"
+                        name="message"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Content *</FormLabel>
+                            <FormLabel>Message *</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Enter the memory content..."
+                                placeholder="Enter the user message..."
                                 rows={4}
                                 {...field}
                               />
@@ -320,7 +433,7 @@ export default function MemoxPlaygroundPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={createForm.control}
-                          name="agentId"
+                          name="agent_id"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Agent ID</FormLabel>
@@ -333,10 +446,10 @@ export default function MemoxPlaygroundPage() {
 
                         <FormField
                           control={createForm.control}
-                          name="sessionId"
+                          name="app_id"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Session ID</FormLabel>
+                              <FormLabel>App ID</FormLabel>
                               <FormControl>
                                 <Input placeholder="Optional" {...field} />
                               </FormControl>
@@ -348,12 +461,12 @@ export default function MemoxPlaygroundPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={createForm.control}
-                          name="source"
+                          name="run_id"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Source</FormLabel>
+                              <FormLabel>Run ID</FormLabel>
                               <FormControl>
-                                <Input placeholder="e.g., chat, api" {...field} />
+                                <Input placeholder="Optional" {...field} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -361,19 +474,20 @@ export default function MemoxPlaygroundPage() {
 
                         <FormField
                           control={createForm.control}
-                          name="importance"
+                          name="output_format"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Importance (0-1)</FormLabel>
+                              <FormLabel>Output Format</FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  min="0"
-                                  max="1"
-                                  placeholder="0.5"
-                                  {...field}
-                                />
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select format" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="v1.0">v1.0</SelectItem>
+                                    <SelectItem value="v1.1">v1.1</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </FormControl>
                             </FormItem>
                           )}
@@ -382,22 +496,135 @@ export default function MemoxPlaygroundPage() {
 
                       <FormField
                         control={createForm.control}
-                        name="tags"
+                        name="metadata"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tags</FormLabel>
+                            <FormLabel>Metadata (JSON)</FormLabel>
                             <FormControl>
-                              <Input placeholder="tag1, tag2, tag3" {...field} />
+                              <Textarea placeholder='{"source":"playground"}' rows={3} {...field} />
                             </FormControl>
-                            <FormDescription>Comma-separated list of tags</FormDescription>
+                            <FormDescription>JSON object for memory metadata</FormDescription>
                           </FormItem>
                         )}
                       />
 
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={createForm.control}
+                          name="includes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Includes</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Optional" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={createForm.control}
+                          name="excludes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Excludes</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Optional" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={createForm.control}
+                        name="custom_instructions"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Custom Instructions</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Optional" rows={3} {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={createForm.control}
+                        name="custom_categories"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Custom Categories (JSON)</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder='{"topic": "Description"}'
+                                rows={3}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              JSON object mapping category to description
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Infer Memory</FormLabel>
+                          <p className="text-xs text-muted-foreground">Use LLM to infer memory</p>
+                        </div>
+                        <FormField
+                          control={createForm.control}
+                          name="infer"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Async Mode</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Process multiple memories in parallel
+                          </p>
+                        </div>
+                        <FormField
+                          control={createForm.control}
+                          name="async_mode"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Enable Graph</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Extract entities and relations
+                          </p>
+                        </div>
+                        <FormField
+                          control={createForm.control}
+                          name="enable_graph"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={createMemoryMutation.isPending || !effectiveKeyId}
+                        disabled={createMemoryMutation.isPending || !apiKeyValue}
                       >
                         {createMemoryMutation.isPending ? (
                           <>
@@ -421,7 +648,7 @@ export default function MemoxPlaygroundPage() {
                     <form onSubmit={searchForm.handleSubmit(handleSearch)} className="space-y-4">
                       <FormField
                         control={searchForm.control}
-                        name="userId"
+                        name="user_id"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>User ID *</FormLabel>
@@ -457,10 +684,10 @@ export default function MemoxPlaygroundPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={searchForm.control}
-                          name="limit"
+                          name="top_k"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Limit</FormLabel>
+                              <FormLabel>Top K</FormLabel>
                               <FormControl>
                                 <Input type="number" min="1" max="100" {...field} />
                               </FormControl>
@@ -473,11 +700,154 @@ export default function MemoxPlaygroundPage() {
                           name="threshold"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Threshold (0-1)</FormLabel>
+                              <FormLabel>Threshold</FormLabel>
                               <FormControl>
-                                <Input type="number" step="0.1" min="0" max="1" {...field} />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  placeholder="0.3"
+                                  {...field}
+                                />
                               </FormControl>
                             </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={searchForm.control}
+                          name="output_format"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Output Format</FormLabel>
+                              <FormControl>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select format" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="v1.0">v1.0</SelectItem>
+                                    <SelectItem value="v1.1">v1.1</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={searchForm.control}
+                        name="metadata"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Metadata (JSON)</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder='{"source":"playground"}' rows={3} {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={searchForm.control}
+                        name="filters"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Filters (JSON)</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder='{"AND":[{"user_id":"user-1"}]}'
+                                rows={3}
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={searchForm.control}
+                        name="categories"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Categories</FormLabel>
+                            <FormControl>
+                              <Input placeholder="comma separated" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Keyword Search</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Use keyword search instead of embeddings
+                          </p>
+                        </div>
+                        <FormField
+                          control={searchForm.control}
+                          name="keyword_search"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Rerank</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Rerank results using query relevance
+                          </p>
+                        </div>
+                        <FormField
+                          control={searchForm.control}
+                          name="rerank"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Filter Memories</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Apply filters and metadata constraints
+                          </p>
+                        </div>
+                        <FormField
+                          control={searchForm.control}
+                          name="filter_memories"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <FormLabel>Metadata Only</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            Search only using metadata and filters
+                          </p>
+                        </div>
+                        <FormField
+                          control={searchForm.control}
+                          name="only_metadata_based_search"
+                          render={({ field }) => (
+                            <FormControl>
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
                           )}
                         />
                       </div>
@@ -485,7 +855,7 @@ export default function MemoxPlaygroundPage() {
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={searchMemoriesMutation.isPending || !effectiveKeyId}
+                        disabled={searchMemoriesMutation.isPending || !apiKeyValue}
                       >
                         {searchMemoriesMutation.isPending ? (
                           <>
@@ -519,20 +889,38 @@ export default function MemoxPlaygroundPage() {
                   method="POST"
                   apiKey={apiKeyValue}
                   body={{
-                    userId: lastCreateRequest.userId,
-                    content: lastCreateRequest.content,
-                    ...(lastCreateRequest.agentId && { agentId: lastCreateRequest.agentId }),
-                    ...(lastCreateRequest.sessionId && { sessionId: lastCreateRequest.sessionId }),
-                    ...(lastCreateRequest.source && { source: lastCreateRequest.source }),
-                    ...(lastCreateRequest.importance !== undefined && {
-                      importance: lastCreateRequest.importance,
+                    messages: [{ role: 'user', content: lastCreateRequest.message }],
+                    user_id: lastCreateRequest.user_id,
+                    ...(lastCreateRequest.agent_id && { agent_id: lastCreateRequest.agent_id }),
+                    ...(lastCreateRequest.app_id && { app_id: lastCreateRequest.app_id }),
+                    ...(lastCreateRequest.run_id && { run_id: lastCreateRequest.run_id }),
+                    ...(lastCreateRequest.metadata && {
+                      metadata: (() => {
+                        try {
+                          return JSON.parse(lastCreateRequest.metadata);
+                        } catch {
+                          return lastCreateRequest.metadata;
+                        }
+                      })(),
                     }),
-                    ...(lastCreateRequest.tags && {
-                      tags: lastCreateRequest.tags
-                        .split(',')
-                        .map((t) => t.trim())
-                        .filter(Boolean),
+                    ...(lastCreateRequest.includes && { includes: lastCreateRequest.includes }),
+                    ...(lastCreateRequest.excludes && { excludes: lastCreateRequest.excludes }),
+                    ...(lastCreateRequest.custom_instructions && {
+                      custom_instructions: lastCreateRequest.custom_instructions,
                     }),
+                    ...(lastCreateRequest.custom_categories && {
+                      custom_categories: (() => {
+                        try {
+                          return JSON.parse(lastCreateRequest.custom_categories);
+                        } catch {
+                          return lastCreateRequest.custom_categories;
+                        }
+                      })(),
+                    }),
+                    infer: lastCreateRequest.infer,
+                    async_mode: lastCreateRequest.async_mode,
+                    output_format: lastCreateRequest.output_format,
+                    enable_graph: lastCreateRequest.enable_graph,
                   }}
                 />
               </CardContent>
@@ -550,7 +938,43 @@ export default function MemoxPlaygroundPage() {
                   endpoint={MEMOX_API.MEMORIES_SEARCH}
                   method="POST"
                   apiKey={apiKeyValue}
-                  body={lastSearchRequest}
+                  body={{
+                    user_id: lastSearchRequest.user_id,
+                    query: lastSearchRequest.query,
+                    top_k: lastSearchRequest.top_k,
+                    ...(lastSearchRequest.threshold !== undefined && {
+                      threshold: lastSearchRequest.threshold,
+                    }),
+                    output_format: lastSearchRequest.output_format,
+                    keyword_search: lastSearchRequest.keyword_search,
+                    rerank: lastSearchRequest.rerank,
+                    filter_memories: lastSearchRequest.filter_memories,
+                    only_metadata_based_search: lastSearchRequest.only_metadata_based_search,
+                    ...(lastSearchRequest.metadata && {
+                      metadata: (() => {
+                        try {
+                          return JSON.parse(lastSearchRequest.metadata);
+                        } catch {
+                          return lastSearchRequest.metadata;
+                        }
+                      })(),
+                    }),
+                    ...(lastSearchRequest.filters && {
+                      filters: (() => {
+                        try {
+                          return JSON.parse(lastSearchRequest.filters);
+                        } catch {
+                          return lastSearchRequest.filters;
+                        }
+                      })(),
+                    }),
+                    ...(lastSearchRequest.categories && {
+                      categories: lastSearchRequest.categories
+                        .split(',')
+                        .map((category) => category.trim())
+                        .filter(Boolean),
+                    }),
+                  }}
                 />
               </CardContent>
             </Card>
@@ -638,17 +1062,20 @@ export default function MemoxPlaygroundPage() {
 
 // 记忆卡片组件
 function MemoryCard({ memory }: { memory: Memory }) {
+  const categories = memory.categories ?? [];
+  const keywords = memory.keywords ?? [];
+
   return (
     <div className="space-y-3 text-sm">
       <div>
-        <p className="text-muted-foreground text-xs">Content</p>
-        <p className="whitespace-pre-wrap">{memory.content}</p>
+        <p className="text-muted-foreground text-xs">Memory</p>
+        <p className="whitespace-pre-wrap">{memory.memory}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-muted-foreground text-xs">User ID</p>
-          <p className="font-mono text-xs">{memory.userId}</p>
+          <p className="font-mono text-xs">{memory.user_id ?? '-'}</p>
         </div>
         <div>
           <p className="text-muted-foreground text-xs">ID</p>
@@ -656,35 +1083,32 @@ function MemoryCard({ memory }: { memory: Memory }) {
         </div>
       </div>
 
-      {memory.tags.length > 0 && (
+      {(categories.length > 0 || keywords.length > 0) && (
         <div>
-          <p className="text-muted-foreground text-xs mb-1">Tags</p>
+          <p className="text-muted-foreground text-xs mb-1">Categories & Keywords</p>
           <div className="flex flex-wrap gap-1">
-            {memory.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
+            {categories.map((category) => (
+              <Badge key={category} variant="secondary" className="text-xs">
+                {category}
+              </Badge>
+            ))}
+            {keywords.map((keyword) => (
+              <Badge key={keyword} variant="outline" className="text-xs">
+                {keyword}
               </Badge>
             ))}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 text-xs">
-        {memory.source && (
-          <div>
-            <p className="text-muted-foreground">Source</p>
-            <p>{memory.source}</p>
-          </div>
-        )}
-        {memory.importance !== null && (
-          <div>
-            <p className="text-muted-foreground">Importance</p>
-            <p>{memory.importance}</p>
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-4 text-xs">
         <div>
           <p className="text-muted-foreground">Created</p>
-          <p>{new Date(memory.createdAt).toLocaleString()}</p>
+          <p>{new Date(memory.created_at).toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Updated</p>
+          <p>{new Date(memory.updated_at).toLocaleString()}</p>
         </div>
       </div>
     </div>
@@ -693,38 +1117,32 @@ function MemoryCard({ memory }: { memory: Memory }) {
 
 // 搜索结果卡片组件
 function MemorySearchResultCard({ result }: { result: MemorySearchResult }) {
-  const similarityPercent = Math.round(result.similarity * 100);
+  const categories = result.categories ?? [];
+  const keywords = result.keywords ?? [];
 
   return (
     <Card>
       <CardContent className="pt-4 space-y-3">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-sm whitespace-pre-wrap flex-1">{result.content}</p>
-          <Badge
-            variant={
-              similarityPercent >= 80
-                ? 'default'
-                : similarityPercent >= 50
-                  ? 'secondary'
-                  : 'outline'
-            }
-            className="shrink-0"
-          >
-            {similarityPercent}%
-          </Badge>
+          <p className="text-sm whitespace-pre-wrap flex-1">{result.memory}</p>
         </div>
 
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
           <span>ID: {result.id.slice(0, 8)}...</span>
-          {result.source && <span>Source: {result.source}</span>}
-          <span>{new Date(result.createdAt).toLocaleDateString()}</span>
+          {result.user_id && <span>User: {result.user_id}</span>}
+          <span>{new Date(result.created_at).toLocaleDateString()}</span>
         </div>
 
-        {result.tags.length > 0 && (
+        {(categories.length > 0 || keywords.length > 0) && (
           <div className="flex flex-wrap gap-1">
-            {result.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                {tag}
+            {categories.map((category) => (
+              <Badge key={category} variant="secondary" className="text-xs">
+                {category}
+              </Badge>
+            ))}
+            {keywords.map((keyword) => (
+              <Badge key={keyword} variant="outline" className="text-xs">
+                {keyword}
               </Badge>
             ))}
           </div>

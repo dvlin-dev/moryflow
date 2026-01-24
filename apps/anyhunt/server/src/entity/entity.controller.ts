@@ -1,36 +1,30 @@
 /**
- * [POS]: Entity API Controller
+ * [POS]: Entity API Controller (Mem0 aligned)
  *
- * [INPUT]: CreateEntityInput, ListEntityQuery
- * [OUTPUT]: Entity responses
+ * [INPUT]: Mem0 entity DTOs
+ * [OUTPUT]: Mem0 entity responses
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiSecurity,
-  ApiParam,
   ApiOkResponse,
-  ApiNoContentResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { EntityService } from './entity.service';
 import {
-  CreateEntitySchema,
-  CreateEntityBatchSchema,
-  ListEntityQuerySchema,
-  type CreateEntityInput,
-  type CreateEntityBatchInput,
-  type ListEntityQuery,
+  CreateUserSchema,
+  CreateAgentSchema,
+  CreateAppSchema,
+  CreateRunSchema,
+  ListEntitiesQuerySchema,
+  type CreateUserInput,
+  type CreateAgentInput,
+  type CreateAppInput,
+  type CreateRunInput,
+  type ListEntitiesQuery,
 } from './dto';
 import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
@@ -38,84 +32,69 @@ import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public } from '../auth';
 import { ZodValidationPipe } from '../common';
 
-@ApiTags('Entity')
+@ApiTags('Entities')
 @ApiSecurity('apiKey')
 @Public()
-@Controller({ path: 'entities', version: '1' })
+@Controller({ path: '', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class EntityController {
   constructor(private readonly entityService: EntityService) {}
 
-  /**
-   * Create an entity
-   */
-  @Post()
-  @ApiOperation({ summary: 'Create an entity' })
-  @ApiOkResponse({ description: 'Entity created' })
-  async create(
+  @Get('entities')
+  @ApiOperation({ summary: 'List entities' })
+  @ApiOkResponse({ description: 'Entities list returned' })
+  async listEntities(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Body(new ZodValidationPipe(CreateEntitySchema)) dto: CreateEntityInput,
+    @Query(new ZodValidationPipe(ListEntitiesQuerySchema))
+    query: ListEntitiesQuery,
   ) {
-    return this.entityService.create(apiKey.id, dto);
+    return this.entityService.listEntities(apiKey.id, query);
   }
 
-  /**
-   * Batch create entities
-   */
-  @Post('batch')
-  @ApiOperation({ summary: 'Batch create entities' })
-  @ApiOkResponse({ description: 'Entities created' })
-  async createMany(
-    @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Body(new ZodValidationPipe(CreateEntityBatchSchema))
-    dto: CreateEntityBatchInput,
-  ) {
-    return this.entityService.createMany(apiKey.id, dto);
+  @Get('entities/filters')
+  @ApiOperation({ summary: 'List entity filters' })
+  @ApiOkResponse({ description: 'Entity filters returned' })
+  async listEntityFilters(@CurrentApiKey() apiKey: ApiKeyValidationResult) {
+    return this.entityService.listEntityFilters(apiKey.id);
   }
 
-  /**
-   * List entities for a user
-   */
-  @Get()
-  @ApiOperation({ summary: 'List entities for a user' })
-  @ApiOkResponse({ description: 'List of entities' })
-  async list(
+  @Post('users')
+  @ApiOperation({ summary: 'Create user entity' })
+  @ApiCreatedResponse({ description: 'User created' })
+  async createUser(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Query(new ZodValidationPipe(ListEntityQuerySchema)) query: ListEntityQuery,
+    @Body(new ZodValidationPipe(CreateUserSchema)) dto: CreateUserInput,
   ) {
-    return this.entityService.list(apiKey.id, query.userId, {
-      type: query.type,
-      limit: query.limit,
-      offset: query.offset,
-    });
+    return this.entityService.createUser(apiKey.id, dto);
   }
 
-  /**
-   * Get an entity by ID
-   */
-  @Get(':id')
-  @ApiOperation({ summary: 'Get an entity by ID' })
-  @ApiOkResponse({ description: 'Entity details' })
-  @ApiParam({ name: 'id', description: 'Entity ID' })
-  async getById(
+  @Post('agents')
+  @ApiOperation({ summary: 'Create agent entity' })
+  @ApiCreatedResponse({ description: 'Agent created' })
+  async createAgent(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Param('id') id: string,
+    @Body(new ZodValidationPipe(CreateAgentSchema)) dto: CreateAgentInput,
   ) {
-    return this.entityService.getById(apiKey.id, id);
+    return this.entityService.createAgent(apiKey.id, dto);
   }
 
-  /**
-   * Delete an entity
-   */
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete an entity' })
-  @ApiNoContentResponse({ description: 'Entity deleted' })
-  @ApiParam({ name: 'id', description: 'Entity ID' })
-  async delete(
+  @Post('apps')
+  @ApiOperation({ summary: 'Create app entity' })
+  @ApiCreatedResponse({ description: 'App created' })
+  async createApp(
     @CurrentApiKey() apiKey: ApiKeyValidationResult,
-    @Param('id') id: string,
+    @Body(new ZodValidationPipe(CreateAppSchema)) dto: CreateAppInput,
   ) {
-    await this.entityService.delete(apiKey.id, id);
-    return null;
+    return this.entityService.createApp(apiKey.id, dto);
+  }
+
+  @Post('runs')
+  @ApiOperation({ summary: 'Create run entity' })
+  @ApiCreatedResponse({ description: 'Run created' })
+  async createRun(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+    @Body(new ZodValidationPipe(CreateRunSchema)) dto: CreateRunInput,
+  ) {
+    return this.entityService.createRun(apiKey.id, dto);
   }
 }

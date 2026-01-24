@@ -2,7 +2,7 @@
  * Graph 页面 - 知识图谱可视化
  *
  * 使用 react-force-graph-2d 进行力导向图谱渲染。
- * 需要选择 API Key 和输入 User ID 来查询图谱数据。
+ * 需要输入 API Key 与实体过滤条件（user_id/agent_id/app_id/run_id）。
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
@@ -40,45 +40,44 @@ import {
   SelectValue,
 } from '@anyhunt/ui';
 import { useApiKeys } from '@/features/api-keys';
-import { useGraph, type GraphNode, type GraphEdge } from '@/features/memox';
+import { useGraph, type GraphNode, type GraphEdge, type GraphQueryParams } from '@/features/memox';
 
 // 表单 Schema
 const graphFormSchema = z.object({
-  userId: z.string().min(1, 'User ID is required'),
-  limit: z.number().min(1).max(1000),
+  entity_type: z.enum(['user', 'agent', 'app', 'run']),
+  entity_id: z.string().min(1, 'Entity ID is required'),
+  limit: z.coerce.number().min(1).max(1000).default(200),
 });
 
 type GraphFormValues = z.infer<typeof graphFormSchema>;
 
 // 表单默认值
 const graphFormDefaults: GraphFormValues = {
-  userId: '',
-  limit: 100,
+  entity_type: 'user',
+  entity_id: '',
+  limit: 200,
 };
 
 // 节点类型颜色映射
 const NODE_COLORS: Record<string, string> = {
-  person: '#4f46e5',
-  organization: '#059669',
-  location: '#d97706',
-  event: '#dc2626',
-  concept: '#7c3aed',
+  user: '#4f46e5',
+  agent: '#059669',
+  app: '#d97706',
+  run: '#dc2626',
   default: '#6b7280',
 };
 
 // 转换 API 数据为 force-graph 格式
 interface ForceNode extends NodeObject {
   id: string;
-  name: string;
-  type: string;
-  properties?: Record<string, unknown> | null;
+  name?: string;
+  type?: string;
 }
 
 interface ForceLink {
   source: string;
   target: string;
-  type: string;
-  confidence?: number | null;
+  type?: string;
   [key: string]: unknown;
 }
 
@@ -91,15 +90,13 @@ function transformGraphData(nodes: GraphNode[], edges: GraphEdge[]): ForceGraphD
   return {
     nodes: nodes.map((node) => ({
       id: node.id,
-      name: node.name,
+      name: node.name ?? node.id,
       type: node.type,
-      properties: node.properties,
     })),
     links: edges.map((edge) => ({
       source: edge.sourceId,
       target: edge.targetId,
       type: edge.type,
-      confidence: edge.confidence,
     })),
   };
 }
@@ -107,7 +104,8 @@ function transformGraphData(nodes: GraphNode[], edges: GraphEdge[]): ForceGraphD
 export default function GraphPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
-  const [queryParams, setQueryParams] = useState<{ userId: string; limit: number } | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [queryParams, setQueryParams] = useState<GraphQueryParams | null>(null);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
 
   const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>(null);
@@ -136,17 +134,14 @@ export default function GraphPage() {
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
   const activeKeys = apiKeys.filter((k) => k.isActive);
+  const apiKeyValue = apiKeyInput.trim();
 
   // 图谱查询
   const {
     data: graphData,
     isLoading: isLoadingGraph,
     error: graphError,
-  } = useGraph(
-    selectedKey?.keyPrefix || '',
-    queryParams ? { userId: queryParams.userId, limit: queryParams.limit } : { userId: '' },
-    !!selectedKey?.keyPrefix && !!queryParams
-  );
+  } = useGraph(apiKeyValue, queryParams ?? {}, !!apiKeyValue && !!queryParams);
 
   // 转换图谱数据
   const forceGraphData = useMemo(() => {
@@ -161,7 +156,12 @@ export default function GraphPage() {
   });
 
   const onSubmit = (values: GraphFormValues) => {
-    setQueryParams(values);
+    const params: GraphQueryParams = { limit: values.limit };
+    if (values.entity_type === 'user') params.user_id = values.entity_id;
+    if (values.entity_type === 'agent') params.agent_id = values.entity_id;
+    if (values.entity_type === 'app') params.app_id = values.entity_id;
+    if (values.entity_type === 'run') params.run_id = values.entity_id;
+    setQueryParams(params);
   };
 
   // 节点渲染
@@ -172,7 +172,7 @@ export default function GraphPage() {
       const nodeRadius = 6;
 
       // 节点颜色
-      const color = NODE_COLORS[node.type.toLowerCase()] || NODE_COLORS.default;
+      const color = node.type ? NODE_COLORS[node.type] || NODE_COLORS.default : NODE_COLORS.default;
 
       // 绘制节点
       ctx.beginPath();
@@ -222,93 +222,111 @@ export default function GraphPage() {
           <Icon icon={FlowConnectionIcon} className="h-6 w-6" />
           Knowledge Graph
         </h1>
-        <p className="text-muted-foreground mt-1">Visualize entities and their relationships.</p>
+        <p className="text-muted-foreground mt-1">
+          Visualize entities and relations from memories.
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* 左侧：配置表单 */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* 左侧：表单 */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Query Settings</CardTitle>
-              <CardDescription>Select API Key and enter User ID to load graph</CardDescription>
+              <CardTitle>Query</CardTitle>
+              <CardDescription>Select API Key and enter an entity to load graph</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>API Key</Label>
+                <Select
+                  value={effectiveKeyId}
+                  onValueChange={setSelectedKeyId}
+                  disabled={isLoadingGraph}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select API Key" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeKeys.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No active API keys
+                      </SelectItem>
+                    ) : (
+                      activeKeys.map((key) => (
+                        <SelectItem key={key.id} value={key.id}>
+                          {key.name} ({key.keyPrefix}...)
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>API Key (Full)</Label>
+                <Input
+                  placeholder="ah_..."
+                  value={apiKeyInput}
+                  onChange={(event) => setApiKeyInput(event.target.value)}
+                />
+                {selectedKey && (
+                  <p className="text-xs text-muted-foreground">
+                    Selected: {selectedKey.name} ({selectedKey.keyPrefix}...)
+                  </p>
+                )}
+              </div>
+
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  {/* API Key 选择 */}
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Select
-                      value={effectiveKeyId}
-                      onValueChange={setSelectedKeyId}
-                      disabled={isLoadingGraph}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select API Key" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {activeKeys.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            No active API keys
-                          </SelectItem>
-                        ) : (
-                          activeKeys.map((key) => (
-                            <SelectItem key={key.id} value={key.id}>
-                              <span className="flex items-center gap-2">
-                                <span>{key.name}</span>
-                                <span className="text-muted-foreground font-mono text-xs">
-                                  {key.keyPrefix}...
-                                </span>
-                              </span>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {activeKeys.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Create an API key in{' '}
-                        <a href="/api-keys" className="text-primary hover:underline">
-                          API Keys
-                        </a>{' '}
-                        to query the graph.
-                      </p>
-                    )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="entity_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Entity Type</FormLabel>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="agent">Agent</SelectItem>
+                                <SelectItem value="app">App</SelectItem>
+                                <SelectItem value="run">Run</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="entity_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Entity ID *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="entity-123" {...field} disabled={isLoadingGraph} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
-                  {/* User ID */}
-                  <FormField
-                    control={form.control}
-                    name="userId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>User ID</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter user ID" {...field} disabled={isLoadingGraph} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Limit */}
                   <FormField
                     control={form.control}
                     name="limit"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Node Limit</FormLabel>
+                        <FormLabel>Limit</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={1000}
-                            {...field}
-                            disabled={isLoadingGraph}
-                          />
+                          <Input type="number" min="1" max="1000" {...field} />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -316,7 +334,7 @@ export default function GraphPage() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isLoadingGraph || !effectiveKeyId}
+                    disabled={!apiKeyValue || isLoadingGraph}
                   >
                     {isLoadingGraph ? (
                       <>
@@ -324,146 +342,69 @@ export default function GraphPage() {
                         Loading...
                       </>
                     ) : (
-                      'Load Graph'
+                      <>Load Graph</>
                     )}
                   </Button>
                 </form>
               </Form>
+
+              <Alert>
+                <Icon icon={InformationCircleIcon} className="h-4 w-4" />
+                <AlertDescription>
+                  Graph data is derived from entities and relations stored on memories.
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
-
-          {/* 图例 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Legend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                {Object.entries(NODE_COLORS)
-                  .filter(([key]) => key !== 'default')
-                  .map(([type, color]) => (
-                    <div key={type} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                      <span className="capitalize">{type}</span>
-                    </div>
-                  ))}
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: NODE_COLORS.default }}
-                  />
-                  <span>Other</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 悬停节点信息 */}
-          {hoveredNode && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Node Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-2 text-sm">
-                  <div>
-                    <dt className="text-muted-foreground">Name</dt>
-                    <dd className="font-medium">{hoveredNode.name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Type</dt>
-                    <dd className="capitalize">{hoveredNode.type}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">ID</dt>
-                    <dd className="font-mono text-xs truncate">{hoveredNode.id}</dd>
-                  </div>
-                  {hoveredNode.properties && Object.keys(hoveredNode.properties).length > 0 && (
-                    <div>
-                      <dt className="text-muted-foreground">Properties</dt>
-                      <dd className="font-mono text-xs bg-muted p-2 rounded mt-1 overflow-auto max-h-32">
-                        {JSON.stringify(hoveredNode.properties, null, 2)}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* 右侧：图谱可视化 */}
-        <div className="lg:col-span-2">
-          {graphError && (
-            <Alert variant="destructive" className="mb-4">
-              <Icon icon={InformationCircleIcon} className="h-4 w-4" />
-              <AlertDescription>Failed to load graph: {graphError.message}</AlertDescription>
-            </Alert>
-          )}
-
-          <Card className="h-[600px]">
-            <CardHeader className="pb-2">
+        {/* 右侧：图谱 */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
               <CardTitle>Graph Visualization</CardTitle>
               <CardDescription>
                 {forceGraphData
                   ? `${forceGraphData.nodes.length} nodes, ${forceGraphData.links.length} edges`
-                  : 'Enter User ID and click "Load Graph" to visualize'}
+                  : 'Enter an entity and click "Load Graph" to visualize'}
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[calc(100%-80px)]" ref={containerRef}>
+            <CardContent ref={containerRef} className="h-[500px]">
+              {graphError && (
+                <Alert className="mb-4" variant="destructive">
+                  <AlertDescription>
+                    Failed to load graph:{' '}
+                    {graphError instanceof Error ? graphError.message : 'error'}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {isLoadingGraph ? (
-                <div className="flex items-center justify-center h-full">
-                  <Icon
-                    icon={Loading03Icon}
-                    className="h-8 w-8 animate-spin text-muted-foreground"
-                  />
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  <Icon icon={Loading03Icon} className="h-5 w-5 animate-spin mr-2" />
+                  Loading graph...
                 </div>
               ) : forceGraphData && forceGraphData.nodes.length > 0 ? (
                 <ForceGraph2D
                   ref={graphRef}
                   graphData={forceGraphData}
                   width={dimensions.width}
-                  height={dimensions.height - 20}
-                  nodeCanvasObject={
-                    nodeCanvasObject as (
-                      node: NodeObject,
-                      ctx: CanvasRenderingContext2D,
-                      globalScale: number
-                    ) => void
-                  }
-                  nodePointerAreaPaint={(node, color, ctx) => {
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.arc(node.x || 0, node.y || 0, 8, 0, 2 * Math.PI);
-                    ctx.fill();
-                  }}
-                  onNodeHover={handleNodeHover as (node: NodeObject | null) => void}
-                  onNodeClick={handleNodeClick as (node: NodeObject) => void}
-                  linkColor={() => '#d1d5db'}
-                  linkWidth={1}
-                  linkDirectionalParticles={2}
-                  linkDirectionalParticleWidth={2}
-                  cooldownTicks={100}
+                  height={dimensions.height}
+                  nodeCanvasObject={nodeCanvasObject}
+                  onNodeHover={handleNodeHover}
+                  onNodeClick={handleNodeClick}
+                  linkDirectionalArrowLength={5}
+                  linkDirectionalArrowRelPos={1}
+                  linkCurvature={0.1}
                   onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}
                 />
               ) : forceGraphData && forceGraphData.nodes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Icon
-                    icon={FlowConnectionIcon}
-                    className="h-16 w-16 text-muted-foreground/30 mb-4"
-                  />
-                  <p className="text-muted-foreground">No graph data found for this user.</p>
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  <p>No graph data found for this entity.</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Icon
-                    icon={FlowConnectionIcon}
-                    className="h-16 w-16 text-muted-foreground/30 mb-4"
-                  />
-                  <p className="text-muted-foreground max-w-md">
-                    Select an API Key, enter a User ID, and click "Load Graph" to visualize the
-                    knowledge graph.
-                  </p>
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  <p>Enter an entity and click "Load Graph" to visualize.</p>
                 </div>
               )}
             </CardContent>

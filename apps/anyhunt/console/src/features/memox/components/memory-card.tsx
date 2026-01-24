@@ -11,22 +11,29 @@ interface MemoryListCardProps {
 }
 
 export function MemoryListCard({ memory }: MemoryListCardProps) {
-  const createdAt = new Date(memory.createdAt).toLocaleString();
+  const createdAt = new Date(memory.created_at).toLocaleString();
+  const categories = memory.categories ?? [];
+  const keywords = memory.keywords ?? [];
 
   return (
     <Card>
       <CardContent className="pt-4">
         <div className="space-y-3">
           {/* Content */}
-          <p className="text-sm whitespace-pre-wrap line-clamp-4">{memory.content}</p>
+          <p className="text-sm whitespace-pre-wrap line-clamp-4">{memory.memory}</p>
 
           {/* Tags */}
-          {memory.tags.length > 0 && (
+          {(categories.length > 0 || keywords.length > 0) && (
             <div className="flex items-center gap-2 flex-wrap">
               <Icon icon={Tag01Icon} className="h-3.5 w-3.5 text-muted-foreground" />
-              {memory.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
-                  {tag}
+              {categories.map((category) => (
+                <Badge key={category} variant="secondary" className="text-xs">
+                  {category}
+                </Badge>
+              ))}
+              {keywords.map((keyword) => (
+                <Badge key={keyword} variant="outline" className="text-xs">
+                  {keyword}
                 </Badge>
               ))}
             </div>
@@ -38,10 +45,7 @@ export function MemoryListCard({ memory }: MemoryListCardProps) {
               <Icon icon={Calendar03Icon} className="h-3.5 w-3.5" />
               <span>{createdAt}</span>
             </div>
-            {memory.importance !== null && (
-              <span>Importance: {(memory.importance * 100).toFixed(0)}%</span>
-            )}
-            {memory.source && <span>Source: {memory.source}</span>}
+            {memory.user_id && <span>User: {memory.user_id}</span>}
           </div>
         </div>
       </CardContent>

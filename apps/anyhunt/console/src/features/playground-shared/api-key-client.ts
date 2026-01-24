@@ -37,7 +37,7 @@ export class ApiKeyClient {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Token ${this.apiKey}`,
           ...headers,
         },
         body: body ? JSON.stringify(body) : undefined,

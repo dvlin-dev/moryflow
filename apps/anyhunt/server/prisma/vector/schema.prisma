@@ -1,5 +1,5 @@
 // Prisma Schema for Anyhunt - Vector Database
-// Memox 向量数据库（Memory、Entity、Relation）
+// Memox 向量数据库（Memory、MemoxEntity）
 
 generator client {
   provider        = "prisma-client"
@@ -14,82 +14,123 @@ datasource db {
 }
 
 // =============================================
-// Memox - 语义记忆
+// Memox - 语义记忆（Mem0 对标）
 // =============================================
 
 model Memory {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   apiKeyId  String   // 软引用（无外键约束）
 
-  // 调用方的用户 ID（非平台用户）
-  userId    String
+  // 调用方的用户/实体维度
+  userId    String?
   agentId   String?
-  sessionId String?
+  appId     String?
+  runId     String?
+  orgId     String?
+  projectId String?
 
-  content   String
-  embedding Unsupported("vector(1536)")?
+  memory    String
+  input     Json?    // messages 原始输入
   metadata  Json?
-  source    String?
-  importance Float?  @default(0.5)
-  tags      String[] @default([])
+  categories String[] @default([])
+  keywords  String[] @default([])
+  hash      String?
+  immutable Boolean  @default(false)
+  expirationDate DateTime?
+  timestamp DateTime?
+  entities  Json?
+  relations Json?
+
+  embedding Unsupported("vector(1536)")?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([apiKeyId, userId])
-  @@index([apiKeyId, userId, agentId])
+  @@index([apiKeyId, agentId])
+  @@index([apiKeyId, appId])
+  @@index([apiKeyId, runId])
+  @@index([apiKeyId, orgId])
+  @@index([apiKeyId, projectId])
   @@index([apiKeyId, createdAt])
 }
 
 // =============================================
-// Memox - 知识图谱实体
+// Memox - Memory History
 // =============================================
 
-model Entity {
-  id         String   @id @default(cuid())
-  apiKeyId   String   // 软引用（无外键约束）
-  userId     String
-  type       String   @db.VarChar(100)
-  name       String   @db.VarChar(500)
-  properties Json?
-  embedding  Unsupported("vector(1536)")?
-  confidence Float?   @default(1.0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model MemoryHistory {
+  id        String   @id @default(uuid())
+  apiKeyId  String
+  memoryId  String
+  userId    String
+  input     Json?
+  oldMemory String?
+  newMemory String
+  event     String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // 库内关系（保留）
-  sourceRelations Relation[] @relation("SourceEntity")
-  targetRelations Relation[] @relation("TargetEntity")
-
-  @@unique([apiKeyId, userId, type, name])
+  @@index([apiKeyId, memoryId])
   @@index([apiKeyId, userId])
-  @@index([apiKeyId, userId, type])
+  @@index([apiKeyId, createdAt])
 }
 
 // =============================================
-// Memox - 知识图谱关系
+// Memox - Memory Feedback
 // =============================================
 
-model Relation {
-  id         String    @id @default(cuid())
-  apiKeyId   String    // 软引用（无外键约束）
-  userId     String
-  sourceId   String
-  targetId   String
-  type       String    @db.VarChar(100)
-  properties Json?
-  confidence Float?    @default(1.0)
-  validFrom  DateTime?
-  validTo    DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+model MemoryFeedback {
+  id             String   @id @default(uuid())
+  apiKeyId       String
+  memoryId       String
+  feedback       String?
+  feedbackReason String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  // 库内关系（保留）
-  source Entity @relation("SourceEntity", fields: [sourceId], references: [id], onDelete: Cascade)
-  target Entity @relation("TargetEntity", fields: [targetId], references: [id], onDelete: Cascade)
+  @@index([apiKeyId, memoryId])
+  @@index([apiKeyId, createdAt])
+}
 
-  @@index([apiKeyId, userId])
-  @@index([sourceId])
-  @@index([targetId])
-  @@index([apiKeyId, userId, type])
+// =============================================
+// Memox - Memory Export
+// =============================================
+
+model MemoryExport {
+  id        String   @id @default(uuid())
+  apiKeyId  String
+  schema    Json
+  filters   Json?
+  orgId     String?
+  projectId String?
+  status    String
+  r2Key     String?
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([apiKeyId, createdAt])
+}
+
+// =============================================
+// Memox - Entities（Mem0 /v1/entities, /v1/users, /v1/agents, /v1/apps, /v1/runs）
+// =============================================
+
+model MemoxEntity {
+  id        String   @id @default(uuid())
+  apiKeyId  String
+  type      String   // user | agent | app | run
+  entityId  String
+  name      String?
+  metadata  Json?
+  orgId     String?
+  projectId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([apiKeyId, type, entityId])
+  @@index([apiKeyId, type])
+  @@index([apiKeyId, createdAt])
 }

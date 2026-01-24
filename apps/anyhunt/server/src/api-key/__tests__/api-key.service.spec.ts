@@ -26,8 +26,10 @@ type MockPrisma = {
 
 type MockVectorPrisma = {
   memory: { deleteMany: Mock };
-  entity: { deleteMany: Mock };
-  relation: { deleteMany: Mock };
+  memoryHistory: { deleteMany: Mock };
+  memoryFeedback: { deleteMany: Mock };
+  memoryExport: { deleteMany: Mock };
+  memoxEntity: { deleteMany: Mock };
 };
 
 type MockRedis = {
@@ -58,8 +60,10 @@ describe('ApiKeyService', () => {
     };
     mockVectorPrisma = {
       memory: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-      entity: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
-      relation: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      memoryHistory: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      memoryFeedback: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      memoryExport: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+      memoxEntity: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     };
     mockRedis = {
       get: vi.fn().mockResolvedValue(null),

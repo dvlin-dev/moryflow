@@ -7,7 +7,7 @@
  * 所有核心数据表的 Repository 应继承此类
  *
  * 设计策略（方案 A）：使用显式模型类型泛型，而非 Prisma TypeMap 抽象
- * - TModel：具体模型类型（如 Entity, Memory, Relation）
+ * - TModel：具体模型类型（如 MemoxEntity, Memory）
  * - 避免 TypeMap 推断导致字段变成 optional 的问题
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及 src/common/CLAUDE.md

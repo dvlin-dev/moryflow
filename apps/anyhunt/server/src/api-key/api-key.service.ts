@@ -2,7 +2,7 @@
  * [INPUT]: CreateApiKeyDto, UpdateApiKeyDto, plaintext key for validation
  * [OUTPUT]: ApiKeyValidationResult, ApiKeyCreateResult, ApiKeyListItem[]
  * [POS]: API key lifecycle management - create, validate, revoke
- *        删除时清理向量库关联数据（Memory, Entity, Relation）
+ *        删除时清理向量库关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
  *        订阅状态仅 ACTIVE 计入有效 tier
  *
  * [PROTOCOL]: When this file changes, update this header and src/api-key/CLAUDE.md
@@ -168,7 +168,7 @@ export class ApiKeyService {
 
   /**
    * 删除 API Key（硬删除）
-   * 同时异步清理向量库中的关联数据（Memory, Entity, Relation）
+   * 同时异步清理向量库中的关联数据（Memory, MemoxEntity, MemoryHistory, MemoryFeedback, MemoryExport）
    */
   async delete(userId: string, keyId: string): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
@@ -195,15 +195,21 @@ export class ApiKeyService {
 
   /**
    * 异步清理向量库中的关联数据（fail-safe）
-   * 按依赖顺序：先 Relation，再 Entity，最后 Memory
+   * 按依赖顺序：先 MemoryHistory/Feedback/Export，再 MemoxEntity，最后 Memory
    */
   private cleanupVectorDataAsync(apiKeyId: string): void {
     void (async () => {
       try {
-        await this.vectorPrisma.relation.deleteMany({
+        await this.vectorPrisma.memoryHistory.deleteMany({
           where: { apiKeyId },
         });
-        await this.vectorPrisma.entity.deleteMany({
+        await this.vectorPrisma.memoryFeedback.deleteMany({
+          where: { apiKeyId },
+        });
+        await this.vectorPrisma.memoryExport.deleteMany({
+          where: { apiKeyId },
+        });
+        await this.vectorPrisma.memoxEntity.deleteMany({
           where: { apiKeyId },
         });
         await this.vectorPrisma.memory.deleteMany({

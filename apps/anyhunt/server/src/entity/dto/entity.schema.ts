@@ -1,60 +1,67 @@
 /**
- * Entity module Zod schemas
+ * Entity module Zod schemas (Mem0 aligned)
  *
- * [DEFINES]: CreateEntitySchema, EntitySchema, etc.
+ * [DEFINES]: CreateUserSchema, CreateAgentSchema, CreateAppSchema, CreateRunSchema, ListEntitiesQuerySchema
  * [USED_BY]: entity.controller.ts, entity.service.ts
  */
 import { z } from 'zod';
 import { JsonValueSchema } from '../../common/utils/json.zod';
 
-// ========== Field Schemas ==========
+const EntityIdSchema = z.string().min(1, 'id is required');
+const OptionalEntityIdSchema = z.string().min(1).optional();
+const MetadataSchema = z.record(z.string(), JsonValueSchema).optional();
 
-const UserIdSchema = z.string().min(1, 'userId is required');
-
-const EntityTypeSchema = z.string().min(1, 'type is required');
-
-const EntityNameSchema = z.string().min(1, 'name is required');
-
-const PropertiesSchema = z.record(z.string(), JsonValueSchema).optional();
-
-const ConfidenceSchema = z.number().min(0).max(1).optional();
-
-// ========== Request Schemas ==========
-
-export const CreateEntitySchema = z.object({
-  userId: UserIdSchema,
-  type: EntityTypeSchema,
-  name: EntityNameSchema,
-  properties: PropertiesSchema,
-  confidence: ConfidenceSchema,
+export const CreateUserSchema = z.object({
+  user_id: EntityIdSchema,
+  metadata: MetadataSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
 });
 
-export const CreateEntityBatchSchema = z.array(CreateEntitySchema);
-
-export const ListEntityQuerySchema = z.object({
-  userId: UserIdSchema,
-  type: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-  offset: z.coerce.number().int().min(0).optional(),
+export const CreateAgentSchema = z.object({
+  agent_id: EntityIdSchema,
+  name: z.string().min(1).optional(),
+  metadata: MetadataSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
 });
 
-// ========== Response Schemas ==========
+export const CreateAppSchema = z.object({
+  app_id: EntityIdSchema,
+  name: z.string().min(1).optional(),
+  metadata: MetadataSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
+});
+
+export const CreateRunSchema = z.object({
+  run_id: EntityIdSchema,
+  name: z.string().min(1).optional(),
+  metadata: MetadataSchema,
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
+});
+
+export const ListEntitiesQuerySchema = z.object({
+  org_id: OptionalEntityIdSchema,
+  project_id: OptionalEntityIdSchema,
+});
 
 export const EntitySchema = z.object({
   id: z.string(),
-  apiKeyId: z.string(),
-  userId: z.string(),
-  type: z.string(),
   name: z.string(),
-  properties: z.record(z.string(), JsonValueSchema).nullable(),
-  confidence: z.number().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  type: z.enum(['user', 'agent', 'app', 'run']),
+  created_at: z.string(),
+  updated_at: z.string(),
+  total_memories: z.number(),
+  owner: z.string(),
+  organization: z.string().nullable(),
+  metadata: z.record(z.string(), JsonValueSchema).nullable(),
 });
 
-// ========== Inferred Types ==========
-
-export type CreateEntityInput = z.infer<typeof CreateEntitySchema>;
-export type CreateEntityBatchInput = z.infer<typeof CreateEntityBatchSchema>;
-export type ListEntityQuery = z.infer<typeof ListEntityQuerySchema>;
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+export type CreateAgentInput = z.infer<typeof CreateAgentSchema>;
+export type CreateAppInput = z.infer<typeof CreateAppSchema>;
+export type CreateRunInput = z.infer<typeof CreateRunSchema>;
+export type ListEntitiesQuery = z.infer<typeof ListEntitiesQuerySchema>;
 export type EntityResponse = z.infer<typeof EntitySchema>;

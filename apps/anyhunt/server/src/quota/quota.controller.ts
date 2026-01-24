@@ -1,5 +1,5 @@
 /**
- * [INPUT]: API 请求 (Authorization: Bearer apiKey 认证)
+ * [INPUT]: API 请求 (Authorization: Token apiKey 认证)
  * [OUTPUT]: QuotaStatusResponseDto
  * [POS]: 配额模块 API 路由，提供公开 API 端点
  */
@@ -23,7 +23,7 @@ export class QuotaController {
    * 查询当前配额状态
    * GET /api/v1/quota
    *
-   * 需要 apiKey 认证（Authorization: Bearer <apiKey>）
+   * 需要 apiKey 认证（Authorization: Token <apiKey>）
    */
   @Get()
   @ApiOkResponse({ description: 'Quota status', type: QuotaStatusResponseDto })
