@@ -1,7 +1,11 @@
 /**
- * URL Provider 识别
+ * [PROVIDES]: detectProvider, isSupported
+ * [DEPENDS]: ../types
+ * [POS]: Embed URL Provider 识别
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
  */
-import type { ProviderName } from '../types.ts';
+import type { ProviderName } from '../types';
 
 const PROVIDER_PATTERNS: Record<Exclude<ProviderName, 'unknown'>, RegExp[]> = {
   twitter: [

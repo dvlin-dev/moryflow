@@ -1,6 +1,6 @@
 # /embed
 
-> Fetchx 嵌入脚本（Vanilla JavaScript）
+> Fetchx 嵌入 SDK（TypeScript）
 
 ## 概述
 
@@ -17,13 +17,13 @@ import { detectProvider } from '@anyhunt/embed/utils/provider-detect';
 
 ```
 src/
-├── client.ts           # 主客户端
-├── types.ts            # 类型定义
-├── errors.ts           # 错误类
-├── index.ts            # 入口
+├── client.ts             # 主客户端
+├── types.ts              # 类型定义
+├── errors.ts             # 错误类
+├── index.ts              # 入口
 └── utils/
-    ├── provider-detect.ts  # 提供商检测
-    └── helpers.ts          # 工具函数
+    ├── index.ts           # 工具入口
+    └── provider-detect.ts # 提供商检测
 ```
 
 ## 使用方式
@@ -34,8 +34,7 @@ const client = createEmbedClient({
   baseUrl: 'https://server.anyhunt.app',
 });
 
-const result = await client.fetch({
-  url: 'https://example.com',
+const result = await client.fetch('https://example.com', {
   maxWidth: 640,
 });
 ```
@@ -46,4 +45,12 @@ const result = await client.fetch({
 
 ---
 
-_版本: 1.0 | 迁移日期: 2026-01-05_
+## 近期变更
+
+- 统一本地导入路径（去除 `.ts` 后缀），避免编译后路径不一致
+- 基础 URL 归一化，避免双斜杠请求路径
+- 补齐文件头注释与协议说明
+
+---
+
+_版本: 1.1 | 更新日期: 2026-01-24_

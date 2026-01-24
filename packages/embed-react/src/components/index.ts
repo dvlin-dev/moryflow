@@ -1,3 +1,3 @@
-export { EmbedProvider, type EmbedProviderProps } from './EmbedProvider.tsx';
-export { Embed, type EmbedProps } from './Embed.tsx';
-export { EmbedSkeleton, type EmbedSkeletonProps } from './EmbedSkeleton.tsx';
+export { EmbedProvider, type EmbedProviderProps } from './EmbedProvider';
+export { Embed, type EmbedProps } from './Embed';
+export { EmbedSkeleton, type EmbedSkeletonProps } from './EmbedSkeleton';

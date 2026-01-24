@@ -1,6 +1,12 @@
 /**
- * EmbedSkeleton - 加载骨架屏
+ * [PROPS]: EmbedSkeletonProps
+ * [EMITS]: none
+ * [POS]: Embed loading skeleton
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed-react/CLAUDE.md
  */
+
+'use client';
 export interface EmbedSkeletonProps {
   /** 宽度 */
   width?: number | string;

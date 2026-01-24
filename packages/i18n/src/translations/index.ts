@@ -1,5 +1,9 @@
 /**
- * 翻译资源聚合
+ * [PROVIDES]: translations 资源表
+ * [DEPENDS]: ./translations/*
+ * [POS]: i18n 翻译资源聚合
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */
 
 import commonEn from './common/en';

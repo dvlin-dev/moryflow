@@ -1,5 +1,9 @@
 /**
- * 国际化常量定义
+ * [PROVIDES]: 支持语言、默认命名空间与运行时常量
+ * [DEPENDS]: ./types
+ * [POS]: i18n 常量与默认配置
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */
 
 import type { SupportedLanguage, LanguageConfig, TranslationNamespace } from './types';
@@ -62,103 +66,6 @@ export const FALLBACK_LANGUAGE: SupportedLanguage = 'zh-CN';
 
 // 存储键名
 export const LANGUAGE_STORAGE_KEY = 'moryflow_language';
-
-// 语言 Cookie 名称（Web 端使用）
-export const LANGUAGE_COOKIE_NAME = 'moryflow_lang';
-
-// HTTP 请求头
-export const ACCEPT_LANGUAGE_HEADER = 'accept-language';
-export const CONTENT_LANGUAGE_HEADER = 'content-language';
-
-// 语言检测顺序（Web 端使用）
-export const LANGUAGE_DETECTION_ORDER = [
-  'querystring',
-  'cookie',
-  'localStorage',
-  'sessionStorage',
-  'navigator',
-  'htmlTag',
-] as const;
-
-// 日期格式化模式 - 英文
-export const DATE_FORMAT_PATTERNS_EN = {
-  short: 'MM/dd/yyyy',
-  medium: 'MMM dd, yyyy',
-  long: 'MMMM dd, yyyy',
-  full: 'EEEE, MMMM dd, yyyy',
-  shortTime: 'HH:mm',
-  mediumTime: 'HH:mm:ss',
-  shortDateTime: 'MM/dd/yyyy HH:mm',
-  mediumDateTime: 'MMM dd, yyyy HH:mm',
-  longDateTime: 'MMMM dd, yyyy HH:mm:ss',
-} as const;
-
-// 日期格式化模式 - 中文
-export const DATE_FORMAT_PATTERNS_ZH = {
-  short: 'yyyy/MM/dd',
-  medium: 'yyyy年MM月dd日',
-  long: 'yyyy年MM月dd日',
-  full: 'yyyy年MM月dd日 EEEE',
-  shortTime: 'HH:mm',
-  mediumTime: 'HH:mm:ss',
-  shortDateTime: 'yyyy/MM/dd HH:mm',
-  mediumDateTime: 'yyyy年MM月dd日 HH:mm',
-  longDateTime: 'yyyy年MM月dd日 HH:mm:ss',
-} as const;
-
-// 日期格式化模式 - 日文
-export const DATE_FORMAT_PATTERNS_JA = {
-  short: 'yyyy/MM/dd',
-  medium: 'yyyy年MM月dd日',
-  long: 'yyyy年MM月dd日',
-  full: 'yyyy年MM月dd日 EEEE',
-  shortTime: 'HH:mm',
-  mediumTime: 'HH:mm:ss',
-  shortDateTime: 'yyyy/MM/dd HH:mm',
-  mediumDateTime: 'yyyy年MM月dd日 HH:mm',
-  longDateTime: 'yyyy年MM月dd日 HH:mm:ss',
-} as const;
-
-// 日期格式化模式 - 德文
-export const DATE_FORMAT_PATTERNS_DE = {
-  short: 'dd.MM.yyyy',
-  medium: 'dd. MMM yyyy',
-  long: 'dd. MMMM yyyy',
-  full: 'EEEE, dd. MMMM yyyy',
-  shortTime: 'HH:mm',
-  mediumTime: 'HH:mm:ss',
-  shortDateTime: 'dd.MM.yyyy HH:mm',
-  mediumDateTime: 'dd. MMM yyyy HH:mm',
-  longDateTime: 'dd. MMMM yyyy HH:mm:ss',
-} as const;
-
-// 日期格式化模式 - 阿拉伯文
-export const DATE_FORMAT_PATTERNS_AR = {
-  short: 'dd/MM/yyyy',
-  medium: 'dd MMM yyyy',
-  long: 'dd MMMM yyyy',
-  full: 'EEEE dd MMMM yyyy',
-  shortTime: 'HH:mm',
-  mediumTime: 'HH:mm:ss',
-  shortDateTime: 'dd/MM/yyyy HH:mm',
-  mediumDateTime: 'dd MMM yyyy HH:mm',
-  longDateTime: 'dd MMMM yyyy HH:mm:ss',
-} as const;
-
-// 货币代码映射
-export const CURRENCY_CODES: Record<SupportedLanguage, string> = {
-  en: 'USD',
-  'zh-CN': 'CNY',
-  ja: 'JPY',
-  de: 'EUR',
-  ar: 'SAR',
-};
-
-// 插值占位符模式
-export const INTERPOLATION_PATTERN = /\{\{(\w+)\}\}/g;
-
-// 命名空间分隔符
-export const NAMESPACE_SEPARATOR = '.';
 
 // 开发环境标志（兼容 React Native）
 declare const __DEV__: boolean | undefined;

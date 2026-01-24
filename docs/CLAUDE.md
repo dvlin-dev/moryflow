@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-24（packages/ui Code Review 修复完成）
+> 最近更新：2026-01-24（packages/embed & packages/i18n Code Review 修复完成）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（2026-01-24：修复完成）
 - packages/ui Code Review：`docs/code-review/packages-ui.md`（2026-01-24：修复完成）
 - Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（2026-01-24：修复完成）
 - Moryflow PC Code Review：修复 preload 在 sandbox 下的 ESM 兼容问题（2026-01-26）

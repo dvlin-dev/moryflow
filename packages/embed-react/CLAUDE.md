@@ -22,11 +22,15 @@ import { useEmbed, EmbedProvider } from '@anyhunt/embed-react';
 ```
 src/
 ├── hooks/
-│   └── useEmbed.ts     # 主 Hook
-├── context/
-│   └── EmbedContext.tsx # Context Provider
-├── index.ts            # 入口
-└── types.ts            # 类型定义
+│   ├── useEmbed.ts         # 主 Hook
+│   ├── useEmbedContext.ts  # Context 读取
+│   └── index.ts            # Hooks 入口
+├── components/
+│   ├── Embed.tsx           # 通用嵌入组件
+│   ├── EmbedProvider.tsx   # Provider
+│   └── EmbedSkeleton.tsx   # Skeleton
+├── context.tsx             # Context 定义
+└── index.ts                # 入口
 ```
 
 ## 使用方式
@@ -43,14 +47,19 @@ function App() {
 }
 
 function MyComponent() {
-  const { scrape, loading, error } = useEmbed();
+  const { data, isLoading, error, refetch } = useEmbed('https://example.com', {
+    maxWidth: 640,
+  });
 
-  const handleScrape = async () => {
-    const result = await scrape({ url: 'https://example.com' });
-    console.log(result);
-  };
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>{error.message}</div>;
 
-  return <button onClick={handleScrape}>Scrape</button>;
+  return (
+    <div>
+      <button onClick={refetch}>Refresh</button>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
 }
 ```
 
@@ -60,4 +69,12 @@ function MyComponent() {
 
 ---
 
-_版本: 1.0 | 迁移日期: 2026-01-05_
+## 近期变更
+
+- Embed 支持 photo/link 类型 fallback 渲染（html 缺失时不再空白）
+- 补齐 client 边界与文件头注释，统一本地导入路径
+- 新增 Embed 单元测试基线（photo/link 渲染）
+
+---
+
+_版本: 1.1 | 更新日期: 2026-01-24_

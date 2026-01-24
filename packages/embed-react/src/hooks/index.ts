@@ -1,2 +1,2 @@
-export { useEmbedContext } from './useEmbedContext.ts';
-export { useEmbed, type UseEmbedOptions, type UseEmbedResult } from './useEmbed.ts';
+export { useEmbedContext } from './useEmbedContext';
+export { useEmbed, type UseEmbedOptions, type UseEmbedResult } from './useEmbed';

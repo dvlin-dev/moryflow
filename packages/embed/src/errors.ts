@@ -1,5 +1,9 @@
 /**
- * Embed SDK 错误类定义
+ * [PROVIDES]: EmbedError, NetworkError, ApiError
+ * [DEPENDS]: none
+ * [POS]: Embed SDK 错误基类与分类
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
  */
 
 /** 基础错误类 */
