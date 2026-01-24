@@ -4,12 +4,43 @@ import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
 import { toolSummarySchema } from '../shared';
 
 const MAX_CONTENT_LENGTH = 100 * 1024; // 100KB
+const ALLOWED_PROTOCOLS = ['http:', 'https:'];
+const BLOCKED_DOMAINS = ['localhost', 'metadata.google.internal', '169.254.169.254'];
+const BLOCKED_IP_RANGES = [
+  /^127\./, // localhost
+  /^10\./, // 10.0.0.0/8
+  /^172\.(1[6-9]|2[0-9]|3[01])\./, // 172.16.0.0/12
+  /^192\.168\./, // 192.168.0.0/16
+  /^0\./, // 0.0.0.0/8
+  /^169\.254\./, // link-local
+  /^::1$/, // IPv6 localhost
+  /^fc00:/i, // IPv6 private
+  /^fe80:/i, // IPv6 link-local
+];
 
 const webFetchParams = z.object({
   summary: toolSummarySchema.default('web_fetch'),
   url: z.string().url().describe('要获取的网页 URL（必须是完整的 URL）'),
   prompt: z.string().min(1).describe('告诉我你想从网页中提取什么信息'),
 });
+
+const isAllowedUrl = (value: string): boolean => {
+  try {
+    const urlObj = new URL(value);
+    if (!ALLOWED_PROTOCOLS.includes(urlObj.protocol)) {
+      return false;
+    }
+
+    const hostname = urlObj.hostname.toLowerCase();
+    if (BLOCKED_DOMAINS.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`))) {
+      return false;
+    }
+
+    return !BLOCKED_IP_RANGES.some((pattern) => pattern.test(hostname));
+  } catch {
+    return false;
+  }
+};
 
 /**
  * 简单的 HTML 转文本处理
@@ -57,6 +88,13 @@ export const createWebFetchTool = (capabilities: PlatformCapabilities) => {
 
       // HTTP 自动升级为 HTTPS
       const secureUrl = url.replace(/^http:\/\//i, 'https://');
+      if (!isAllowedUrl(secureUrl)) {
+        return {
+          success: false,
+          url: secureUrl,
+          error: 'URL 不被允许访问',
+        };
+      }
 
       try {
         const response = await fetchFn(secureUrl, {

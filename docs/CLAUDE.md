@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-26（OpenAI Agents 迁移 + AI SDK 版本统一）
+> 最近更新：2026-01-26（OpenAI Agents 迁移 + AI SDK 版本统一 + Code Review 索引调整）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,8 @@
 
 ## 最近更新
 
+- packages/agents\* Code Review：`docs/code-review/packages-agents.md`（2026-01-24：修复完成）
+- 全量 Code Review 计划：packages/agents\* 范围调整（迁移至 `@openai/agents-core`）`docs/code-review/index.md`（2026-01-26）
 - OpenAI Agents SDK RN 兼容性调研（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（2026-01-24：补充 moryflow/mobile 配置）
 - AI SDK 版本统一调研（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（2026-01-24：draft）
 - 全量 Code Review 计划：进度同步区记录 packages-types-api-config（2026-01-26）

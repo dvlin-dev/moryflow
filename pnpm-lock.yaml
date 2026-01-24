@@ -2403,9 +2403,6 @@ importers:
       '@anyhunt/api':
         specifier: workspace:*
         version: link:../api
-      '@openai/agents':
-        specifier: 0.4.3
-        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       '@openai/agents-core':
         specifier: 0.4.3
         version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
@@ -2419,9 +2416,15 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
+      '@types/node':
+        specifier: ^22.10.10
+        version: 22.19.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/agents-sandbox:
     dependencies:
@@ -2466,9 +2469,15 @@ importers:
       '@types/diff':
         specifier: ^7.0.2
         version: 7.0.2
+      '@types/node':
+        specifier: ^22.10.10
+        version: 22.19.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/api:
     dependencies:

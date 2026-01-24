@@ -21,6 +21,9 @@
     "dist"
   ],
   "license": "MIT",
+  "scripts": {
+    "test:unit": "vitest run"
+  },
   "dependencies": {
     "@anyhunt/agents-adapter": "workspace:*",
     "@anyhunt/agents-runtime": "workspace:*",
@@ -31,6 +34,8 @@
   },
   "devDependencies": {
     "@types/diff": "^7.0.2",
-    "typescript": "^5.9.3"
+    "@types/node": "^22.10.10",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

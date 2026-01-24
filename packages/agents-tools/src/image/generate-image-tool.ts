@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createGenerateImageTool - AI 图片生成工具
- * [DEPENDS]: /agents, /agents-adapter
+ * [DEPENDS]: @openai/agents-core, @anyhunt/agents-adapter
  * [POS]: Agent 工具，调用后端 /v1/images/generations 生成图片
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md

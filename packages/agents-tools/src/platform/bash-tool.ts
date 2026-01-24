@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createBashTool - 非沙盒化的 bash 工具
- * [DEPENDS]: agents, agents-adapter, agents-runtime
+ * [DEPENDS]: @openai/agents-core, @anyhunt/agents-adapter, @anyhunt/agents-runtime
  * [POS]: 基础 bash 工具实现，目前未被使用
  *
  * [NOTE]: 当前未被任何平台调用：
@@ -73,7 +73,10 @@ export const createBashTool = (capabilities: PlatformCapabilities, vaultUtils?: 
       }
 
       // 安全检查：确保在 Vault 内
-      if (!workDir.startsWith(vaultRoot)) {
+      const relative = pathUtils.relative(vaultRoot, workDir);
+      const isInsideVault =
+        relative === '' || (!relative.startsWith('..') && !pathUtils.isAbsolute(relative));
+      if (!isInsideVault) {
         throw new Error('工作目录必须在 Vault 内');
       }
 

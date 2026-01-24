@@ -32,11 +32,7 @@ export const createMoveTool = (capabilities: PlatformCapabilities, vaultUtils: V
       // 执行移动/重命名
       await fs.move(source.absolute, targetResolved.absolute);
 
-      const newRelative = normalizeRelativePath(
-        source.root,
-        targetResolved.absolute,
-        pathUtils.sep
-      );
+      const newRelative = normalizeRelativePath(source.root, targetResolved.absolute, pathUtils);
 
       return {
         from: source.relative,

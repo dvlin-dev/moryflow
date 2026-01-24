@@ -15,10 +15,12 @@
     "dist"
   ],
   "license": "MIT",
+  "scripts": {
+    "test:unit": "vitest run"
+  },
   "dependencies": {
     "@anyhunt/agents-adapter": "workspace:*",
     "@anyhunt/api": "workspace:*",
-    "@openai/agents": "0.4.3",
     "@openai/agents-core": "0.4.3",
     "@openai/agents-extensions": "0.4.3",
     "@ai-sdk/openai": "3.0.18",
@@ -31,6 +33,8 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "@types/node": "^22.10.10",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

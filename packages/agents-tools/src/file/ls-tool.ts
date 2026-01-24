@@ -44,7 +44,7 @@ export const createLsTool = (capabilities: PlatformCapabilities, vaultUtils: Vau
         }
 
         const entryPath = pathUtils.join(resolved.absolute, name);
-        const relative = normalizeRelativePath(root, entryPath, pathUtils.sep);
+        const relative = normalizeRelativePath(root, entryPath, pathUtils);
 
         try {
           const entryStats = await fs.stat(entryPath);
