@@ -27,7 +27,6 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflo
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/moryflow/server/node_modules ./apps/moryflow/server/node_modules
-COPY --from=deps /app/packages/sync/node_modules ./packages/sync/node_modules
 COPY apps/moryflow/server ./apps/moryflow/server
 COPY packages/sync ./packages/sync
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc tsconfig.base.json tsconfig.agents.json ./
@@ -75,7 +74,6 @@ COPY --from=deps --chown=nestjs:nodejs /app/apps/moryflow/server/node_modules ./
 # 复制 sync 包（运行时依赖）
 COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/dist ./packages/sync/dist
 COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/package.json ./packages/sync/
-COPY --from=deps --chown=nestjs:nodejs /app/packages/sync/node_modules ./packages/sync/node_modules
 
 # 复制构建产物
 COPY --from=builder --chown=nestjs:nodejs /app/apps/moryflow/server/dist ./apps/moryflow/server/dist
