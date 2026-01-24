@@ -173,6 +173,10 @@ export class AgentService {
           () => this.progressStore.clearCancel(taskId),
           'clear cancel',
         );
+        await this.safeProgressOperation(
+          () => this.progressStore.clearProgress(taskId),
+          'clear progress',
+        );
         this.runningTasks.delete(taskId);
       }
 
@@ -486,6 +490,10 @@ export class AgentService {
         await this.safeProgressOperation(
           () => this.progressStore.clearCancel(taskId),
           'clear cancel',
+        );
+        await this.safeProgressOperation(
+          () => this.progressStore.clearProgress(taskId),
+          'clear progress',
         );
         this.runningTasks.delete(taskId);
       }

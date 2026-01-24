@@ -54,3 +54,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 ## LLM Env（Admin 动态配置）
 
 - `ANYHUNT_LLM_SECRET_KEY`: required（用于加密存储在 DB 的 provider apiKey）
+
+## 最近更新
+
+- 2026-01-26：修复流式任务在 LLM 路由失败时清理 Redis 进度；补充对应单测

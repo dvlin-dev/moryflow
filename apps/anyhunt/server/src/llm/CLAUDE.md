@@ -46,3 +46,7 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
    - 已传 → 查找 `LlmModel.modelId`
    - 校验 model/provider 启用状态
 3. `LlmUpstreamResolverService` 负责查库/选路由/解密；上层再构建具体 provider/client
+
+## 最近更新
+
+- 2026-01-26：运行时解析器补齐默认 `LlmSettings` 兜底（避免首次请求 500）；新增单测覆盖

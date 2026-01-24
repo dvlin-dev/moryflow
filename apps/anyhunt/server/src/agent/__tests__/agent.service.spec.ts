@@ -447,6 +447,39 @@ describe('AgentService', () => {
     );
   });
 
+  it('clears progress when stream routing fails', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+    const mockTaskRepository = createMockTaskRepository();
+    const mockProgressStore = createMockProgressStore();
+
+    const mockRouting = createMockLlmRoutingService();
+    vi.mocked(mockRouting.resolveAgentModel).mockRejectedValue(
+      new Error('Model is not available'),
+    );
+
+    const service = new AgentService(
+      mockBrowserPort,
+      mockRouting,
+      mockBillingService,
+      mockTaskRepository,
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+
+    const events = [];
+    for await (const event of service.executeTaskStream(
+      { prompt: 'test', stream: true, output: { type: 'text' } },
+      'user_1',
+    )) {
+      events.push(event);
+    }
+
+    expect(events.some((event) => event.type === 'failed')).toBe(true);
+    expect(mockProgressStore.setProgress).toHaveBeenCalled();
+    expect(mockProgressStore.clearProgress).toHaveBeenCalled();
+  });
+
   it('requests cancel and returns latest progress credits', async () => {
     const mockBrowserPort = createMockBrowserPortService();
 

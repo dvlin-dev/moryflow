@@ -5,6 +5,8 @@
  * [INPUT]: apiKeyId + 各服务的请求参数
  * [OUTPUT]: 各服务的响应
  * [POS]: 供 Console 前端 Playground 使用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {

@@ -57,6 +57,10 @@ embedding/
 - `openai` 是 ESM 依赖；单测需要在 `vi.mock('openai', ...)` 生效后再加载 `EmbeddingService`，避免误触发真实网络请求。
 - 当前做法：在 `src/embedding/__tests__/embedding.service.spec.ts` 中使用 `vi.resetModules()` + 动态 `import('../embedding.service')`。
 
+## 最近更新
+
+- 2026-01-26：补齐 Embedding 模块文件头 [PROTOCOL] 规范（不影响功能）
+
 ---
 
 _See [apps/anyhunt/server/CLAUDE.md](../../CLAUDE.md) for server conventions_

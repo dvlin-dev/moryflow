@@ -76,6 +76,7 @@ status: active
 - Anyhunt Server Prisma/迁移/多数据库边界 Code Review：`docs/code-review/anyhunt-server-prisma.md`（更新：2026-01-26，review 完成）
 - Anyhunt Server Scraper/Crawler/Extract/Map Code Review：`docs/code-review/anyhunt-server-fetchx-core.md`（更新：2026-01-26，修复完成）
 - Anyhunt Server Browser Code Review：`docs/code-review/anyhunt-server-browser.md`（更新：2026-01-26，修复完成）
+- Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（更新：2026-01-26，修复完成；EmbeddingService 保留确认）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）

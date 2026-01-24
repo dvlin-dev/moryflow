@@ -12,7 +12,11 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DEFAULT_LLM_SETTINGS_ID } from './llm.constants';
+import {
+  DEFAULT_LLM_AGENT_MODEL_ID,
+  DEFAULT_LLM_EXTRACT_MODEL_ID,
+  DEFAULT_LLM_SETTINGS_ID,
+} from './llm.constants';
 import { LlmSecretService } from './llm-secret.service';
 import type { LlmProviderType } from './dto';
 
@@ -46,18 +50,16 @@ export class LlmUpstreamResolverService {
     defaultAgentModelId: string;
     defaultExtractModelId: string;
   }> {
-    const settings = await this.prisma.llmSettings.findUnique({
+    return this.prisma.llmSettings.upsert({
       where: { id: DEFAULT_LLM_SETTINGS_ID },
+      create: {
+        id: DEFAULT_LLM_SETTINGS_ID,
+        defaultAgentModelId: DEFAULT_LLM_AGENT_MODEL_ID,
+        defaultExtractModelId: DEFAULT_LLM_EXTRACT_MODEL_ID,
+      },
+      update: {},
       select: { defaultAgentModelId: true, defaultExtractModelId: true },
     });
-
-    if (!settings) {
-      throw new InternalServerErrorException(
-        'LLM settings are not initialized',
-      );
-    }
-
-    return settings;
   }
 
   private getDefaultModelIdOrThrow(

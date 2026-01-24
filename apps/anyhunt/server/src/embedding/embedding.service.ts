@@ -3,6 +3,8 @@
  * [OUTPUT]: vector embeddings
  * [POS]: 向量嵌入服务
  *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ *
  * 职责：生成文本的向量表示
  */
 
