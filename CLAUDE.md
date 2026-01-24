@@ -159,8 +159,7 @@ Anyhunt/
 │   └── scraper-core/                # 抓取核心（来自 Fetchx）
 ├── tooling/
 │   ├── eslint-config/               # ESLint 配置
-│   ├── typescript-config/           # TypeScript 配置
-│   └── tailwind-config/             # Tailwind 配置
+│   └── typescript-config/           # TypeScript 配置
 ├── deploy/                          # 部署配置目录
 │   ├── infra/                       # 基础设施（DB、Redis；含测试环境）
 │   └── moryflow/                    # Moryflow 一套 docker compose（4c6g）

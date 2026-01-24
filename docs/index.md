@@ -78,6 +78,7 @@ status: active
 - packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（更新：2026-01-24，修复完成）
 - packages/types + packages/api + packages/config Code Review：`docs/code-review/packages-types-api-config.md`（更新：2026-01-26，修复完成）
 - packages/agents\* Code Review：`docs/code-review/packages-agents.md`（更新：2026-01-24，修复完成）
+- tooling/\* Code Review：`docs/code-review/tooling-config.md`（更新：2026-01-24，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）
 - Moryflow Vectorize 将由 Anyhunt Memox 替换：已标记暂不处理（详见 `docs/code-review/index.md`）

@@ -181,7 +181,7 @@ status: active
 | P3       | packages/agents\*（Agent 平台能力）             | 工具协议/运行时/模型注册/沙盒/测试质量（已迁移至 `@openai/agents-core`，聚焦 adapter/runtime/tools/mcp/sandbox/model-registry） | `packages/agents-adapter/`, `packages/agents-runtime/`, `packages/agents-tools/`, `packages/agents-mcp/`, `packages/agents-sandbox/`, `packages/agents-model-registry/`, `packages/model-registry-data/` | `docs/code-review/packages-agents.md`           | done (2026-01-24) |
 | P3       | packages/embed\* + packages/i18n                | 嵌入 SDK、国际化边界、构建与发布                                                                                                | `packages/embed/`, `packages/embed-react/`, `packages/i18n/`                                                                                                                                             | `docs/code-review/packages-embed-i18n.md`       | done              |
 | P3       | packages/sync + packages/tiptap                 | 同步与编辑器能力（跨端一致性）                                                                                                  | `packages/sync/`, `packages/tiptap/`                                                                                                                                                                     | `docs/code-review/packages-sync-tiptap.md`      | todo              |
-| P3       | tooling/\*（eslint/ts/tailwind）                | 规则正确性、迁移成本、开发体验                                                                                                  | `tooling/eslint-config/`, `tooling/typescript-config/`, `tooling/tailwind-config/`                                                                                                                       | `docs/code-review/tooling-config.md`            | todo              |
+| P3       | tooling/\*（eslint/ts）                         | 规则正确性、迁移成本、开发体验（tailwind-config 已移除）                                                                        | `tooling/eslint-config/`, `tooling/typescript-config/`                                                                                                                                                   | `docs/code-review/tooling-config.md`            | done (2026-01-24) |
 
 ### Phase 5 - deploy/_、scripts/_、templates/_、archive/_（收尾）
 
@@ -253,20 +253,21 @@ status: draft
 
 > 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
 
-| 日期       | 模块                         | 结论摘要                                                                     | 修复记录（PR/commit） | 状态        |
-| ---------- | ---------------------------- | ---------------------------------------------------------------------------- | --------------------- | ----------- |
-| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）           | -                     | in_progress |
-| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                  | -                     | done        |
-| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                               | -                     | done        |
-| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流   | -                     | in_progress |
-| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）              | -                     | done        |
-| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                  | -                     | in_progress |
-| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）           | -                     | done        |
-| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                                | -                     | in_progress |
-| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）         | -                     | done        |
-| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                   | -                     | done        |
-| 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                  | -                     | in_progress |
-| 2026-01-24 | moryflow-pc                  | 完成 review 并补充修复方案；存在外链导航安全、Zod 规范、性能与测试缺口等问题 | -                     | in_progress |
-| 2026-01-25 | moryflow-pc                  | 修复完成：外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测；E2E 待补  | -                     | in_progress |
-| 2026-01-24 | packages-embed-i18n          | 完成 review + 修复（Embed fallback、client 边界、i18n 常量清理、单测补齐）   | ecdb3b5               | done        |
-| 2026-01-26 | packages-types-api-config    | 完成 review + 修复（类型包收敛、会员文案英文化、配置升级、协议标注）         | -                     | done        |
+| 日期       | 模块                         | 结论摘要                                                                               | 修复记录（PR/commit） | 状态        |
+| ---------- | ---------------------------- | -------------------------------------------------------------------------------------- | --------------------- | ----------- |
+| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）                     | -                     | in_progress |
+| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                            | -                     | done        |
+| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                                         | -                     | done        |
+| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流             | -                     | in_progress |
+| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）                        | -                     | done        |
+| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                            | -                     | in_progress |
+| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）                     | -                     | done        |
+| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                                          | -                     | in_progress |
+| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）                   | -                     | done        |
+| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                             | -                     | done        |
+| 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                            | -                     | in_progress |
+| 2026-01-24 | moryflow-pc                  | 完成 review 并补充修复方案；存在外链导航安全、Zod 规范、性能与测试缺口等问题           | -                     | in_progress |
+| 2026-01-25 | moryflow-pc                  | 修复完成：外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测；E2E 待补            | -                     | in_progress |
+| 2026-01-24 | packages-embed-i18n          | 完成 review + 修复（Embed fallback、client 边界、i18n 常量清理、单测补齐）             | ecdb3b5               | done        |
+| 2026-01-26 | packages-types-api-config    | 完成 review + 修复（类型包收敛、会员文案英文化、配置升级、协议标注）                   | -                     | done        |
+| 2026-01-26 | tooling-config               | 完成 review + 修复（React 规则补齐、Prettier 依赖、Vitest 全局、移除 tailwind-config） | -                     | done        |

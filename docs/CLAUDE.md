@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- tooling/\* Code Review：`docs/code-review/tooling-config.md`（2026-01-24：修复完成）
 - packages/agents\* Code Review：`docs/code-review/packages-agents.md`（2026-01-24：修复完成）
 - 全量 Code Review 计划：packages/agents\* 范围调整（迁移至 `@openai/agents-core`）`docs/code-review/index.md`（2026-01-26）
 - OpenAI Agents SDK RN 兼容性调研（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（2026-01-24：补充 moryflow/mobile 配置）
