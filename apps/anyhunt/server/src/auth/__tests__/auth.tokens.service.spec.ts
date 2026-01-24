@@ -218,7 +218,7 @@ describe('AuthTokensService', () => {
       revokedAt: null,
       user: {
         id: 'user_1',
-        email: 'admin@dvlin.com',
+        email: 'dvlindev@qq.com',
         name: 'Admin',
         isAdmin: false,
         deletedAt: null,

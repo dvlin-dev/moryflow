@@ -68,7 +68,7 @@ module-name/
 - Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
 - Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
 - Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
-- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `app.moryflow.com`，`ADMIN_EMAILS=admin@dvlin.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
+- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `app.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
 - E2E 测试 setup 补充默认环境变量（BETTER_AUTH_SECRET、VECTORIZE_API_URL），避免缺失配置阻断启动
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
