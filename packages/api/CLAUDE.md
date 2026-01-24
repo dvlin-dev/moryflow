@@ -34,3 +34,5 @@ const client = createServerApiClient({
 ## 最近变更
 
 - 增加 `onUnauthorized` 重试回调（用于刷新 access）
+- 会员展示文案统一为英文，移除未使用的会员比较/错误映射导出
+- `MEMBERSHIP_API_URL` 默认值对齐 `app.moryflow.com`

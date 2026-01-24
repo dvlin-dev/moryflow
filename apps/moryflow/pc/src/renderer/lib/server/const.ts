@@ -1,10 +1,12 @@
 /**
- * Membership 常量定义
+ * [PROVIDES]: Moryflow 会员常量与 API URL
+ * [DEPENDS]: @anyhunt/api
+ * [POS]: PC 端会员常量入口
  *
- * 从共享包重新导出，并添加 PC 端特有配置
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { MEMBERSHIP_API_URL as MEMBERSHIP_API_URL_DEFAULT } from '@anyhunt/api'
+import { MEMBERSHIP_API_URL as MEMBERSHIP_API_URL_DEFAULT } from '@anyhunt/api';
 
 // 从共享包导入并重新导出所有常量和工具函数
 export {
@@ -20,16 +22,12 @@ export {
   // 等级配置
   TIER_DISPLAY_NAMES,
   TIER_COLORS,
-  TIER_PRIORITY,
-  compareTiers,
-  isTierSufficient,
   // 错误处理
-  AUTH_ERROR_MESSAGES,
   parseAuthError,
-} from '@anyhunt/api'
+} from '@anyhunt/api';
 
 // ── PC 端特有配置 ────────────────────────────────────────
 
 /** 会员 API 基础 URL（支持环境变量覆盖） */
 export const MEMBERSHIP_API_URL =
-  (import.meta.env.VITE_MEMBERSHIP_API_URL as string) || MEMBERSHIP_API_URL_DEFAULT
+  (import.meta.env.VITE_MEMBERSHIP_API_URL as string) || MEMBERSHIP_API_URL_DEFAULT;

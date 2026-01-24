@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Server 会员导出收敛，移除未使用的等级比较/优先级常量
 - Cloud Sync 与 Vault 日志统一通过 `createLogger()` 输出
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖
 - 拆分并收敛全局 UI 状态：新增 `ChatSheetProvider`，移除无用的 TabBar 显隐 Context/Hook

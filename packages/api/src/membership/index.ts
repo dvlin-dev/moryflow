@@ -1,5 +1,9 @@
 /**
- * Membership 模块导出
+ * [PROVIDES]: membership 类型、常量与工具函数导出
+ * [DEPENDS]: membership/types.ts, membership/const.ts
+ * [POS]: 共享 API 包的 membership 入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 // 类型
@@ -27,7 +31,7 @@ export type {
   SubscriptionStatusResponse,
   CreateCheckoutRequest,
   CreateCheckoutResponse,
-} from './types'
+} from './types';
 
 // 常量和工具函数
 export {
@@ -43,12 +47,7 @@ export {
   // 等级配置
   TIER_DISPLAY_NAMES,
   TIER_COLORS,
-  TIER_PRIORITY,
-  TIER_INFO_CONFIG,
-  compareTiers,
-  isTierSufficient,
   getTierInfo,
   // 错误处理
-  AUTH_ERROR_MESSAGES,
   parseAuthError,
-} from './const'
+} from './const';

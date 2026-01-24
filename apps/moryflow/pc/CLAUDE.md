@@ -82,6 +82,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Auth 改为 access 内存 + refresh 安全存储（`src/main/membership-token-store.ts`）
 - 统一登录/注册为 email + OTP 验证流程，移除 pre-register
 - 主窗口安全收敛：启用 sandbox + 外链 allowlist + 导航拦截

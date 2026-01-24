@@ -41,6 +41,8 @@
 
 ## 最近更新
 
+- 全量 Code Review 计划：进度同步区记录 packages-types-api-config（2026-01-26）
+- packages/types + packages/api + packages/config Code Review：`docs/code-review/packages-types-api-config.md`（2026-01-26：修复完成）
 - 全量 Code Review 计划：进度同步区记录 packages-embed-i18n（2026-01-24）
 - packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（2026-01-24：修复完成）
 - packages/ui Code Review：`docs/code-review/packages-ui.md`（2026-01-24：修复完成）

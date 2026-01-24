@@ -2,22 +2,13 @@
 
 > Anyhunt 跨业务线共享类型定义（不代表账号/数据互通）
 
-- Anyhunt Dev API base 默认指向 `https://server.anyhunt.app/api/v1`（见 `src/common/product.ts`）。
-
 ## 目录结构
 
 ```
 src/
-├── common/              # 通用基础类型
-│   ├── api.ts           # API 响应格式
-│   ├── chat.ts          # 聊天消息与附件类型
-│   ├── product.ts       # 产品标识
-│   ├── subscription.ts  # 订阅等级
-│   ├── user.ts          # 用户和 API Key
-│   └── wallet.ts        # 钱包和积分
-└── products/            # 产品特定类型
-    └── fetchx/
-        └── screenshot.ts # 截图 API 类型
+└── common/              # 通用基础类型
+    ├── api.ts           # API 响应元数据与错误结构
+    └── chat.ts          # 聊天消息与附件类型
 ```
 
 > 类型可在 Moryflow 与 Anyhunt Dev 复用，但业务数据严格隔离。
@@ -25,16 +16,7 @@ src/
 ## 导入方式
 
 ```typescript
-// 全部导入
-import { User, Subscription, CreditStatus } from '@anyhunt/types';
-
-// 按模块导入
-import { User, ApiKey } from '@anyhunt/types/common/user';
-import { SubscriptionTier } from '@anyhunt/types/common/subscription';
-
-// 产品类型
-import { fetchx } from '@anyhunt/types';
-const req: fetchx.ScreenshotRequest = { url: '...' };
+import type { ChatAttachment, PaginationMeta, ApiErrorResponse } from '@anyhunt/types';
 ```
 
 ## 类型规范
@@ -42,22 +24,6 @@ const req: fetchx.ScreenshotRequest = { url: '...' };
 1. **常量对象 + 类型推断**：使用 `as const` + `typeof` 模式
 2. **接口命名**：驼峰命名，描述性名称
 3. **文件头注释**：`[DEFINES]`, `[USED_BY]`, `[POS]`
-
-## 订阅等级
-
-| 等级    | 月付 | 年付 | 每月积分 |
-| ------- | ---- | ---- | -------- |
-| FREE    | $0   | -    | 100      |
-| STARTER | $9   | $99  | 1,000    |
-| PRO     | $29  | $299 | 5,000    |
-| MAX     | $99  | -    | 20,000   |
-
-## API Key 前缀
-
-| 类型            | 前缀  |
-| --------------- | ----- |
-| Anyhunt Dev Key | `ah_` |
-| Moryflow Key    | `mf_` |
 
 ---
 

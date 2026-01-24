@@ -26,16 +26,6 @@
         "types": "./dist/common/index.d.cts",
         "default": "./dist/common/index.cjs"
       }
-    },
-    "./products/*": {
-      "import": {
-        "types": "./dist/products/*/index.d.ts",
-        "default": "./dist/products/*/index.mjs"
-      },
-      "require": {
-        "types": "./dist/products/*/index.d.cts",
-        "default": "./dist/products/*/index.cjs"
-      }
     }
   },
   "files": [
