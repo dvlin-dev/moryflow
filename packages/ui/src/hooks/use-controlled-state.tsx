@@ -1,3 +1,13 @@
+/**
+ * [PROVIDES]: useControlledState - controlled/uncontrolled state helper
+ * [DEPENDS]: React
+ * [POS]: Shared hook for UI primitives
+ *
+ * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ */
+
+'use client';
+
 import * as React from 'react';
 
 interface CommonControlledStateProps<T> {
@@ -5,16 +15,15 @@ interface CommonControlledStateProps<T> {
   defaultValue?: T;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useControlledState<T, Rest extends any[] = []>(
   props: CommonControlledStateProps<T> & {
     onChange?: (value: T, ...args: Rest) => void;
-  },
+  }
 ): readonly [T, (next: T, ...args: Rest) => void] {
   const { value, defaultValue, onChange } = props;
 
   const [state, setInternalState] = React.useState<T>(
-    value !== undefined ? value : (defaultValue as T),
+    value !== undefined ? value : (defaultValue as T)
   );
 
   React.useEffect(() => {
@@ -26,7 +35,7 @@ export function useControlledState<T, Rest extends any[] = []>(
       setInternalState(next);
       onChange?.(next, ...args);
     },
-    [onChange],
+    [onChange]
   );
 
   return [state, setState] as const;

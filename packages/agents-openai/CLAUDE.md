@@ -63,4 +63,4 @@ agents-openai/
 
 ## 近期变更
 
-- 刷新自动生成的 `metadata.ts`
+- 2026-01-24：刷新自动生成的 `metadata.ts`

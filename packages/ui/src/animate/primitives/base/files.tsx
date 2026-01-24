@@ -1,3 +1,12 @@
+/**
+ * [PROPS]: Files* - file tree primitives with highlight + accordion
+ * [POS]: Animated file/folder list building blocks
+ *
+ * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ */
+
+'use client';
+
 import * as React from 'react';
 import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react';
 

@@ -29,7 +29,8 @@
     "styles"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -43,7 +44,6 @@
     "@hugeicons/react": "^1.1.4",
     "@anyhunt/types": "workspace:*",
     "next-themes": "^0.4.6",
-    "radix-ui": "^1.4.3",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -94,6 +94,9 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "jsdom": "^27.2.0",
+    "vitest": "^4.0.15",
     "typescript": "~5.9.2"
   },
   "peerDependenciesMeta": {

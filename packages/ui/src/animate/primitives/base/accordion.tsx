@@ -1,3 +1,13 @@
+/**
+ * [PROPS]: Accordion* - animated accordion primitives
+ * [EMITS]: onValueChange - selection changes
+ * [POS]: Base UI accordion with motion-driven panels
+ *
+ * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ */
+
+'use client';
+
 import * as React from 'react';
 import { Accordion as AccordionPrimitive } from '@base-ui-components/react/accordion';
 import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react';
@@ -6,13 +16,12 @@ import { getStrictContext } from '../../../lib/get-strict-context';
 import { useControlledState } from '../../../hooks/use-controlled-state';
 
 type AccordionContextType = {
-  value: string | string[] | undefined;
-  setValue: (value: string | string[] | undefined) => void;
+  value: string[] | undefined;
+  setValue: (value: string[] | undefined) => void;
 };
 
 type AccordionItemContextType = {
   isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
 };
 
 const [AccordionProvider, useAccordion] =
@@ -24,10 +33,10 @@ const [AccordionItemProvider, useAccordionItem] =
 type AccordionProps = React.ComponentProps<typeof AccordionPrimitive.Root>;
 
 function Accordion(props: AccordionProps) {
-  const [value, setValue] = useControlledState<string | string[] | undefined>({
-    value: props?.value,
-    defaultValue: props?.defaultValue,
-    onChange: props?.onValueChange as (value: string | string[] | undefined) => void,
+  const [value, setValue] = useControlledState<string[] | undefined>({
+    value: props?.value as string[] | undefined,
+    defaultValue: props?.defaultValue as string[] | undefined,
+    onChange: props?.onValueChange as (value: string[] | undefined) => void,
   });
 
   return (
@@ -41,14 +50,10 @@ type AccordionItemProps = React.ComponentProps<typeof AccordionPrimitive.Item>;
 
 function AccordionItem(props: AccordionItemProps) {
   const { value } = useAccordion();
-  const [isOpen, setIsOpen] = React.useState(value?.includes(props?.value) ?? false);
-
-  React.useEffect(() => {
-    setIsOpen(value?.includes(props?.value) ?? false);
-  }, [value, props?.value]);
+  const isOpen = Array.isArray(value) && value.includes(props?.value ?? '');
 
   return (
-    <AccordionItemProvider value={{ isOpen, setIsOpen }}>
+    <AccordionItemProvider value={{ isOpen }}>
       <AccordionPrimitive.Item data-slot="accordion-item" {...props} />
     </AccordionItemProvider>
   );

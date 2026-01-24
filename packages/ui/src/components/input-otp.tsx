@@ -1,3 +1,12 @@
+/**
+ * [PROPS]: InputOTP* - one-time password input primitives
+ * [POS]: OTP input slots + separators
+ *
+ * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ */
+
+'use client';
+
 import * as React from 'react';
 import { OTPInput, OTPInputContext } from 'input-otp';
 import { RecordIcon } from '@hugeicons/core-free-icons';

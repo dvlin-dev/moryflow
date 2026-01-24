@@ -1,3 +1,13 @@
+/**
+ * [PROPS]: LiveWaveformProps - live audio waveform renderer
+ * [EMITS]: onError/onStreamReady/onStreamEnd - stream lifecycle
+ * [POS]: Audio visualization for capture/processing states
+ *
+ * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
+ */
+
+'use client';
+
 import { useEffect, useRef, type HTMLAttributes } from 'react';
 
 import { cn } from '../lib/utils';

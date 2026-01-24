@@ -50,12 +50,16 @@ import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
 - MessageList：新增通用消息列表封装，统一占位与滚动布局并补齐稳定 key
 - useConversationLayout：优化最新消息查找与渲染路径，避免多余数组反转
+- Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
+- Accordion/Highlight：状态派生与 ref 清理，补齐 client 边界
+- Chart：Tooltip 支持 `0` 值展示并补充单测
+- Testing：新增 packages/ui 单元测试配置与基础用例
 
 ## 技术栈
 
 - React 19
 - Tailwind CSS v4
-- Radix UI / radix-ui（统一包）
+- Radix UI（@radix-ui/\*）
 - Shiki（代码高亮）
 - Motion（动画）
 - next-themes（主题切换）
@@ -74,4 +78,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.5 | 更新日期: 2026-01-21_
+_版本: 4.6 | 更新日期: 2026-01-24_

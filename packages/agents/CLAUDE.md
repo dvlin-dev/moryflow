@@ -19,4 +19,4 @@ OpenAI Agents SDK 的顶层聚合包（Anyhunt 内部封装），统一导出 co
 
 ## 近期变更
 
-- 刷新自动生成的 `metadata.ts`
+- 2026-01-24：刷新自动生成的 `metadata.ts`
