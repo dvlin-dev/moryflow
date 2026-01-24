@@ -1,6 +1,9 @@
 /**
- * 仪表盘页面
- * 显示系统统计和健康状态
+ * [PROPS]: 无
+ * [EMITS]: 无
+ * [POS]: 管理后台仪表盘页面，展示系统统计、健康状态与云同步概览
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import { PageHeader } from '@/components/shared';
 import { useStats, useHealth, StatsCard, HealthCard, TierDistribution } from '@/features/dashboard';
@@ -10,7 +13,7 @@ import {
   CloudIcon,
   CreditCardIcon,
   DatabaseIcon,
-  FileTextIcon,
+  FileSyncIcon,
   HardDriveIcon,
   UserCheck01Icon,
   UserMultipleIcon,
@@ -89,7 +92,7 @@ export default function DashboardPage() {
           <StatsCard
             title="同步文件数"
             value={storageStats?.storage.fileCount ?? 0}
-            icon={<Icon icon={FileTextIcon} className="h-4 w-4" />}
+            icon={<Icon icon={FileSyncIcon} className="h-4 w-4" />}
             isLoading={storageLoading}
           />
           <StatsCard
