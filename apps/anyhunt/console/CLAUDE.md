@@ -98,6 +98,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Console 构建统一使用 eventsource-parser v3 API，避免 SSE 解析类型不一致
 - Memox/Graph 表单使用 zod input/output 区分，修复 RHF resolver 类型冲突
 - Graph 可视化回调统一为 NodeObject 入参，避免强类型不匹配
+- Memox threshold 数字输入显式归一，避免 unknown value 类型报错
 
 ## Feature Module Structure
 

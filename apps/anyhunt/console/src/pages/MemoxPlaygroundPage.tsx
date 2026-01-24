@@ -4,7 +4,7 @@
  * 测试 Memox Memory API：创建记忆和语义搜索。
  */
 
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3'; // 使用 v3 兼容层，解决 @hookform/resolvers 类型兼容问题
@@ -710,7 +710,23 @@ export default function MemoxPlaygroundPage() {
                                   max="1"
                                   step="0.01"
                                   placeholder="0.3"
-                                  {...field}
+                                  name={field.name}
+                                  ref={field.ref}
+                                  onBlur={field.onBlur}
+                                  value={
+                                    typeof field.value === 'number' && !Number.isNaN(field.value)
+                                      ? field.value
+                                      : ''
+                                  }
+                                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                    const nextValue = event.target.value;
+                                    if (nextValue === '') {
+                                      field.onChange(undefined);
+                                      return;
+                                    }
+                                    const parsed = Number(nextValue);
+                                    field.onChange(Number.isNaN(parsed) ? undefined : parsed);
+                                  }}
                                 />
                               </FormControl>
                             </FormItem>
