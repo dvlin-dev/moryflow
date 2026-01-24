@@ -82,6 +82,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Agent Runtime 切换为 `@openai/agents-core`，移除本地 Agents SDK 依赖
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Auth 改为 access 内存 + refresh 安全存储（`src/main/membership-token-store.ts`）
 - 统一登录/注册为 email + OTP 验证流程，移除 pre-register
@@ -101,7 +102,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 ```
 apps/moryflow/pc/
 ├── 依赖 → packages/api（API 客户端）
-├── 依赖 → packages/agents-*（Agent 框架）
+├── 依赖 → packages/agents-* + @openai/agents-core（Agent 框架）
 ├── 依赖 → packages/types（共享类型）
 └── 功能文档 → docs/products/moryflow/features/cloud-sync/
 ```

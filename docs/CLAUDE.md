@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-24（packages/embed & packages/i18n Code Review 修复完成）
+> 最近更新：2026-01-26（OpenAI Agents 迁移 + AI SDK 版本统一）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,8 @@
 
 ## 最近更新
 
+- OpenAI Agents SDK RN 兼容性调研（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（2026-01-24：补充 moryflow/mobile 配置）
+- AI SDK 版本统一调研（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（2026-01-24：draft）
 - 全量 Code Review 计划：进度同步区记录 packages-types-api-config（2026-01-26）
 - packages/types + packages/api + packages/config Code Review：`docs/code-review/packages-types-api-config.md`（2026-01-26：修复完成）
 - 全量 Code Review 计划：进度同步区记录 packages-embed-i18n（2026-01-24）
@@ -83,7 +85,9 @@
 - 工程基线 / Root Tooling 修复完成：`docs/code-review/root-tooling.md`（2026-01-23：fix）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（2026-01-23：review）
 - 清理历史归档文档并移除目录：`docs/index.md`（2026-01-23）
-- 修正 Agents SDK 参考文档包名与文件命名：`docs/references/anyhunt-agents-sdk.md`（2026-01-23）
+- OpenAI Agents 迁移与 RN shim 方案：`docs/research/openai-agents-react-native-compatibility.md`（2026-01-26）
+- AI SDK 版本统一记录：`docs/research/ai-sdk-version-audit.md`（2026-01-26）
+- 移除本地 Agents SDK 参考文档，改用官方文档（2026-01-26）
 - 修正 Moryflow 同步方案的共享包引用：`docs/products/moryflow/research/sync-refactor-proposal.md`（2026-01-23）
 - 清理缺失文档引用（message-list-ui-code-review）：`docs/index.md`（2026-01-22）
 - 详细设计/方案文档修复：补齐 frontmatter、清理缺失索引、同步域名规划（2026-01-22）

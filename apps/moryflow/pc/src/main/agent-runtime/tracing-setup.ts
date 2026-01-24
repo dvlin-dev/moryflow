@@ -2,19 +2,16 @@
  * [PROVIDES]: setupAgentTracing - Agent 日志收集设置
  * [DEPENDS]: agents-core/tracing, membership-bridge
  * [POS]: PC 主进程模块，负责收集 Agent 执行日志并上报到后端
+ * [NOTE]: 使用本地 ServerTracingProcessor 适配 @openai/agents-core tracing
  */
 
-import {
-  addTraceProcessor,
-  setTracingDisabled,
-  ServerTracingProcessor,
-  type TraceBatchPayload,
-} from '@anyhunt/agents-core'
-import { MEMBERSHIP_API_URL } from '@anyhunt/api'
-import { membershipBridge } from '../membership-bridge.js'
+import { addTraceProcessor, setTracingDisabled } from '@openai/agents-core';
+import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import { membershipBridge } from '../membership-bridge.js';
+import { ServerTracingProcessor, type TraceBatchPayload } from './server-tracing-processor.js';
 
-const MAX_CACHED_TRACES = 100
-let failedTraces: TraceBatchPayload[] = []
+const MAX_CACHED_TRACES = 100;
+let failedTraces: TraceBatchPayload[] = [];
 
 /**
  * 发送 traces 到后端（底层 API）
@@ -27,10 +24,10 @@ async function postTraces(payload: TraceBatchPayload, token: string): Promise<vo
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
-  })
+  });
 
   if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
+    throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
   }
 }
 
@@ -38,9 +35,9 @@ async function postTraces(payload: TraceBatchPayload, token: string): Promise<vo
  * 缓存失败的 traces
  */
 function cacheFailedTraces(payload: TraceBatchPayload): void {
-  failedTraces.push(payload)
+  failedTraces.push(payload);
   if (failedTraces.length > MAX_CACHED_TRACES) {
-    failedTraces = failedTraces.slice(-MAX_CACHED_TRACES)
+    failedTraces = failedTraces.slice(-MAX_CACHED_TRACES);
   }
 }
 
@@ -48,19 +45,19 @@ function cacheFailedTraces(payload: TraceBatchPayload): void {
  * 尝试上报缓存的 traces
  */
 async function flushCachedTraces(): Promise<void> {
-  if (failedTraces.length === 0) return
+  if (failedTraces.length === 0) return;
 
-  const token = membershipBridge.getConfig().token
-  if (!token) return
+  const token = membershipBridge.getConfig().token;
+  if (!token) return;
 
-  const toRetry = [...failedTraces]
-  failedTraces = []
+  const toRetry = [...failedTraces];
+  failedTraces = [];
 
   for (const payload of toRetry) {
     try {
-      await postTraces(payload, token)
+      await postTraces(payload, token);
     } catch {
-      failedTraces.push(payload)
+      failedTraces.push(payload);
     }
   }
 }
@@ -69,19 +66,19 @@ async function flushCachedTraces(): Promise<void> {
  * 上报 Agent Traces 到后端
  */
 async function uploadTraces(payload: TraceBatchPayload): Promise<void> {
-  const token = membershipBridge.getConfig().token
+  const token = membershipBridge.getConfig().token;
 
   if (!token) {
-    cacheFailedTraces(payload)
-    return
+    cacheFailedTraces(payload);
+    return;
   }
 
   try {
-    await postTraces(payload, token)
-    await flushCachedTraces()
+    await postTraces(payload, token);
+    await flushCachedTraces();
   } catch (error) {
-    console.error('[agent-tracing] Failed to upload traces:', error)
-    cacheFailedTraces(payload)
+    console.error('[agent-tracing] Failed to upload traces:', error);
+    cacheFailedTraces(payload);
   }
 }
 
@@ -91,24 +88,24 @@ async function uploadTraces(payload: TraceBatchPayload): Promise<void> {
  */
 export function setupAgentTracing(): void {
   // 启用 tracing
-  setTracingDisabled(false)
+  setTracingDisabled(false);
 
   // 创建并注册 ServerTracingProcessor
   const processor = new ServerTracingProcessor({
     onBatchReady: uploadTraces,
     recordSuccessDetails: false, // 生产环境不记录成功详情
     recordErrorStack: process.env.NODE_ENV === 'development',
-  })
+  });
 
-  addTraceProcessor(processor)
+  addTraceProcessor(processor);
 
   // 登录状态变更时尝试上报缓存
   membershipBridge.addListener(() => {
-    const config = membershipBridge.getConfig()
+    const config = membershipBridge.getConfig();
     if (config.token) {
-      flushCachedTraces().catch(console.error)
+      flushCachedTraces().catch(console.error);
     }
-  })
+  });
 
-  console.log('[agent-tracing] Agent tracing initialized')
+  console.log('[agent-tracing] Agent tracing initialized');
 }

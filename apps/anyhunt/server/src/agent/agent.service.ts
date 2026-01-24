@@ -3,7 +3,7 @@
  *
  * [INPUT]: Agent 任务请求（可选 model；未传使用 Admin 默认）+ Browser ports
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @anyhunt/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（Runner 使用动态 provider）
+ * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（Runner 使用动态 provider）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,7 +17,7 @@ import {
   type AgentOutputType,
   type JsonSchemaDefinition,
   type StreamedRunResult,
-} from '@anyhunt/agents-core';
+} from '@openai/agents-core';
 import type { AgentTask } from '../../generated/prisma-main/client';
 import {
   BrowserAgentPortService,
@@ -565,7 +565,7 @@ export class AgentService {
         yield sseEvent;
       }
 
-      const finalOutput = streamResult.finalOutput as unknown;
+      const finalOutput = streamResult.finalOutput;
       const creditsUsed = this.billingService.calculateCreditsFromStream(
         streamResult,
         billing,

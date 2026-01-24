@@ -87,7 +87,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 | 场景            | 涉及文件                     | 注意事项                                         |
 | --------------- | ---------------------------- | ------------------------------------------------ |
-| 修改 Agent 运行 | `agent-runtime/`             | 注意与 packages/agents-\* 的配合                 |
+| 修改 Agent 运行 | `agent-runtime/`             | 注意与 packages/agents-\* + @openai/agents-core  |
 | 修改云同步      | `cloud-sync/`                | 参考 docs/products/moryflow/features/cloud-sync/ |
 | 修改文件操作    | `vault/`, `vault-watcher/`   | 注意文件权限和错误处理                           |
 | 修改 Ollama     | `ollama-service/`            | 注意进程管理                                     |
@@ -95,6 +95,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口
+- 新增 `server-tracing-processor.ts`，兼容新版 tracing 上报结构
+- Tracing 上报增加安全序列化，避免循环引用导致丢失
 - 新增 `membership-token-store.ts`，在主进程加密保存 refresh token
 - Auth IPC 通道补充 refresh token 读写，配合 renderer 端 `auth-session`
 - 新增外链 allowlist 与导航拦截，统一由主进程校验后打开外部链接
@@ -110,7 +113,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ```
 main/
-├── 依赖 → packages/agents-*（Agent 框架）
+├── 依赖 → packages/agents-* + @openai/agents-core（Agent 框架）
 ├── 依赖 → packages/api（API 客户端）
 ├── 通信 → preload（IPC 桥接）
 ├── 通信 → renderer（渲染进程）

@@ -5,8 +5,8 @@
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
-import { run, type Agent, type Session } from '@anyhunt/agents';
-import type { RunStreamEvent } from '@anyhunt/agents-core';
+import { run, type Agent, type Session } from '@openai/agents-core';
+import type { RunStreamEvent } from '@openai/agents-core';
 import {
   createAgentFactory,
   createModelFactory,

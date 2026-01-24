@@ -8,14 +8,14 @@
  *   - Mobile 端不支持 bash
  *   保留此文件作为非沙盒版本的备选实现
  */
-import { tool, type RunContext } from '@anyhunt/agents'
-import { z } from 'zod'
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter'
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime'
-import { toolSummarySchema, trimPreview } from '../shared'
+import { tool, type RunContext } from '@openai/agents-core';
+import { z } from 'zod';
+import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
+import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import { toolSummarySchema, trimPreview } from '../shared';
 
-const DEFAULT_TIMEOUT = 120_000 // 2 分钟
-const MAX_TIMEOUT = 600_000 // 10 分钟
+const DEFAULT_TIMEOUT = 120_000; // 2 分钟
+const MAX_TIMEOUT = 600_000; // 10 分钟
 
 const bashParams = z.object({
   summary: toolSummarySchema.default('bash'),
@@ -28,20 +28,20 @@ const bashParams = z.object({
     .max(MAX_TIMEOUT)
     .default(DEFAULT_TIMEOUT)
     .describe('超时时间（毫秒），默认 2 分钟，最大 3 分钟'),
-})
+});
 
 /**
  * 创建 bash 命令执行工具
  * 仅在桌面端可用
  */
 export const createBashTool = (capabilities: PlatformCapabilities, vaultUtils?: VaultUtils) => {
-  const { optional, logger, path: pathUtils } = capabilities
+  const { optional, logger, path: pathUtils } = capabilities;
 
   if (!optional?.executeShell) {
-    throw new Error('bash 工具需要 executeShell 能力')
+    throw new Error('bash 工具需要 executeShell 能力');
   }
 
-  const executeShell = optional.executeShell
+  const executeShell = optional.executeShell;
 
   return tool({
     name: 'bash',
@@ -49,42 +49,42 @@ export const createBashTool = (capabilities: PlatformCapabilities, vaultUtils?: 
       '在 Vault 目录下执行 shell 命令。可用于运行脚本、文档转换、Git 操作等。危险命令（如 rm -rf）请谨慎使用。',
     parameters: bashParams,
     async execute({ command, cwd, timeout }, runContext?: RunContext<AgentContext>) {
-      console.log('[tool] bash', { command, cwd, timeout })
+      console.log('[tool] bash', { command, cwd, timeout });
 
-      const vaultRoot = runContext?.context?.vaultRoot
+      const vaultRoot = runContext?.context?.vaultRoot;
       if (!vaultRoot) {
-        throw new Error('无法确定工作目录')
+        throw new Error('无法确定工作目录');
       }
 
       // 确定工作目录
-      let workDir: string
-      let relativeCwd: string
+      let workDir: string;
+      let relativeCwd: string;
 
       if (cwd && vaultUtils) {
-        const resolved = await vaultUtils.resolvePath(cwd)
-        workDir = resolved.absolute
-        relativeCwd = resolved.relative
+        const resolved = await vaultUtils.resolvePath(cwd);
+        workDir = resolved.absolute;
+        relativeCwd = resolved.relative;
       } else if (cwd) {
-        workDir = pathUtils.resolve(vaultRoot, cwd)
-        relativeCwd = cwd
+        workDir = pathUtils.resolve(vaultRoot, cwd);
+        relativeCwd = cwd;
       } else {
-        workDir = vaultRoot
-        relativeCwd = '.'
+        workDir = vaultRoot;
+        relativeCwd = '.';
       }
 
       // 安全检查：确保在 Vault 内
       if (!workDir.startsWith(vaultRoot)) {
-        throw new Error('工作目录必须在 Vault 内')
+        throw new Error('工作目录必须在 Vault 内');
       }
 
-      const startedAt = Date.now()
+      const startedAt = Date.now();
 
       try {
-        const result = await executeShell(command, workDir, timeout)
-        const durationMs = Date.now() - startedAt
+        const result = await executeShell(command, workDir, timeout);
+        const durationMs = Date.now() - startedAt;
 
-        const stdoutPreview = trimPreview(result.stdout)
-        const stderrPreview = trimPreview(result.stderr)
+        const stdoutPreview = trimPreview(result.stdout);
+        const stderrPreview = trimPreview(result.stderr);
 
         return {
           command,
@@ -95,11 +95,11 @@ export const createBashTool = (capabilities: PlatformCapabilities, vaultUtils?: 
           stdoutTruncated: stdoutPreview.truncated,
           stderr: stderrPreview.text,
           stderrTruncated: stderrPreview.truncated,
-        }
+        };
       } catch (error) {
-        logger.error('[bash] Command failed:', error)
-        throw error
+        logger.error('[bash] Command failed:', error);
+        throw error;
       }
     },
-  })
-}
+  });
+};

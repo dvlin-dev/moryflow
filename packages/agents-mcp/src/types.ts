@@ -3,38 +3,38 @@
  * 平台无关，供 PC 和 Mobile 复用
  */
 
-import type { Tool } from '@anyhunt/agents'
+import type { Tool } from '@openai/agents-core';
 
 /**
  * MCP 服务器连接状态
  */
-export type McpServerStatus = 'idle' | 'connecting' | 'connected' | 'failed'
+export type McpServerStatus = 'idle' | 'connecting' | 'connected' | 'failed';
 
 /**
  * MCP 服务器类型
  */
-export type McpServerType = 'stdio' | 'http'
+export type McpServerType = 'stdio' | 'http';
 
 /**
  * 单个 MCP 服务器的状态信息
  */
 export interface McpServerState {
   /** 服务器 ID */
-  id: string
+  id: string;
   /** 服务器名称 */
-  name: string
+  name: string;
   /** 服务器类型 */
-  type: McpServerType
+  type: McpServerType;
   /** 连接状态 */
-  status: McpServerStatus
+  status: McpServerStatus;
   /** 失败时的错误信息 */
-  error?: string
+  error?: string;
   /** 成功时的工具数量 */
-  toolCount?: number
+  toolCount?: number;
   /** 成功时的工具名称列表 */
-  toolNames?: string[]
+  toolNames?: string[];
   /** 连接成功时间戳 */
-  connectedAt?: number
+  connectedAt?: number;
 }
 
 /**
@@ -42,9 +42,9 @@ export interface McpServerState {
  */
 export interface McpStatusSnapshot {
   /** 所有服务器状态 */
-  servers: McpServerState[]
+  servers: McpServerState[];
   /** 是否正在重载 */
-  isReloading: boolean
+  isReloading: boolean;
 }
 
 /**
@@ -53,41 +53,41 @@ export interface McpStatusSnapshot {
 export type McpStatusEvent =
   | { type: 'reloading' }
   | { type: 'server-updated'; server: McpServerState }
-  | { type: 'reload-complete'; snapshot: McpStatusSnapshot }
+  | { type: 'reload-complete'; snapshot: McpStatusSnapshot };
 
 /**
  * Stdio 服务器配置
  */
 export interface McpStdioServerConfig {
-  id: string
-  enabled: boolean
-  name: string
-  command: string
-  args: string[]
-  cwd?: string
-  env?: Record<string, string>
-  autoApprove?: boolean
+  id: string;
+  enabled: boolean;
+  name: string;
+  command: string;
+  args: string[];
+  cwd?: string;
+  env?: Record<string, string>;
+  autoApprove?: boolean;
 }
 
 /**
  * HTTP (StreamableHttp) 服务器配置
  */
 export interface McpHttpServerConfig {
-  id: string
-  enabled: boolean
-  name: string
-  url: string
-  authorizationHeader?: string
-  headers?: Record<string, string>
-  autoApprove?: boolean
+  id: string;
+  enabled: boolean;
+  name: string;
+  url: string;
+  authorizationHeader?: string;
+  headers?: Record<string, string>;
+  autoApprove?: boolean;
 }
 
 /**
  * MCP 设置
  */
 export interface McpSettings {
-  stdio: McpStdioServerConfig[]
-  streamableHttp: McpHttpServerConfig[]
+  stdio: McpStdioServerConfig[];
+  streamableHttp: McpHttpServerConfig[];
 }
 
 /**
@@ -95,41 +95,41 @@ export interface McpSettings {
  */
 export type McpTestInput =
   | {
-      type: 'stdio'
+      type: 'stdio';
       config: {
-        name: string
-        command: string
-        args?: string[]
-        cwd?: string
-        env?: Record<string, string>
-      }
+        name: string;
+        command: string;
+        args?: string[];
+        cwd?: string;
+        env?: Record<string, string>;
+      };
     }
   | {
-      type: 'http'
+      type: 'http';
       config: {
-        name: string
-        url: string
-        authorizationHeader?: string
-        headers?: Record<string, string>
-      }
-    }
+        name: string;
+        url: string;
+        authorizationHeader?: string;
+        headers?: Record<string, string>;
+      };
+    };
 
 /**
  * 测试 MCP 服务器连接的结果
  */
 export interface McpTestResult {
-  success: boolean
-  toolCount?: number
-  toolNames?: string[]
-  error?: string
+  success: boolean;
+  toolCount?: number;
+  toolNames?: string[];
+  error?: string;
 }
 
 /**
  * 服务器连接结果
  */
 export interface ServerConnectionResult {
-  status: 'connected' | 'failed'
-  error?: Error
+  status: 'connected' | 'failed';
+  error?: Error;
 }
 
 /**
@@ -140,35 +140,35 @@ export interface McpManager<TContext = unknown> {
   /**
    * 获取当前已加载的 MCP 工具
    */
-  getTools(): Tool<TContext>[]
+  getTools(): Tool<TContext>[];
 
   /**
    * 调度 MCP 服务器重载（异步执行）
    */
-  scheduleReload(settings: McpSettings): void
+  scheduleReload(settings: McpSettings): void;
 
   /**
    * 等待当前重载完成
    */
-  ensureReady(): Promise<void>
+  ensureReady(): Promise<void>;
 
   /**
    * 设置重载完成后的回调
    */
-  setOnReload(callback: () => void): void
+  setOnReload(callback: () => void): void;
 
   /**
    * 获取当前 MCP 状态快照
    */
-  getStatus(): McpStatusSnapshot
+  getStatus(): McpStatusSnapshot;
 
   /**
    * 添加状态变更监听器
    */
-  addStatusListener(listener: (event: McpStatusEvent) => void): () => void
+  addStatusListener(listener: (event: McpStatusEvent) => void): () => void;
 
   /**
    * 测试单个 MCP 服务器连接
    */
-  testServer(input: McpTestInput): Promise<McpTestResult>
+  testServer(input: McpTestInput): Promise<McpTestResult>;
 }

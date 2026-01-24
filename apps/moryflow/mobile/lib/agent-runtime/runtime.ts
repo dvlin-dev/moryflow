@@ -5,7 +5,7 @@
  * 与 PC 端 apps/moryflow/pc/src/main/agent-runtime/index.ts 对应。
  */
 
-import { run, setTracingDisabled } from '@anyhunt/agents';
+import { run, setTracingDisabled } from '@openai/agents-core';
 import {
   createAgentFactory,
   createModelFactory,

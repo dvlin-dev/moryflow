@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-24
+date: 2026-01-26
 scope: monorepo
 status: active
 ---
@@ -92,6 +92,8 @@ status: active
 - 方案：Agent Browser Chat 流式消息分段（对齐 Moryflow/pc：UIMessageChunk 单协议）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（更新：2026-01-21）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-20）
+- 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）
+- 调研：AI SDK 版本统一（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（更新：2026-01-26）
 
 ## Skills（内部协作 / Prompt 规范）
 

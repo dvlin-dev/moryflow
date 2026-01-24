@@ -146,8 +146,8 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
       zustand:
         specifier: ^5.0.2
         version: 5.0.9(@types/react@19.1.17)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
@@ -204,8 +204,8 @@ importers:
   apps/anyhunt/console:
     dependencies:
       '@ai-sdk/react':
-        specifier: 3.0.3
-        version: 3.0.3(react@19.2.3)(zod@4.3.5)
+        specifier: 3.0.51
+        version: 3.0.51(react@19.2.3)(zod@4.3.6)
       '@anyhunt/embed-react':
         specifier: workspace:*
         version: link:../../../packages/embed-react
@@ -279,8 +279,8 @@ importers:
         specifier: ^2.11.5
         version: 2.27.1
       ai:
-        specifier: 6.0.3
-        version: 6.0.3(zod@4.3.5)
+        specifier: 6.0.49
+        version: 6.0.49(zod@4.3.6)
       better-auth:
         specifier: ^1.4.5
         version: 1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
@@ -318,8 +318,8 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       zod:
-        specifier: ^4.3.5
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
       zustand:
         specifier: ^5.0.2
         version: 5.0.9(@types/react@19.1.17)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
@@ -473,17 +473,11 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.9.3)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
 
   apps/anyhunt/server:
     dependencies:
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../../../packages/agents-core
-      '@anyhunt/agents-openai':
-        specifier: workspace:*
-        version: link:../../../packages/agents-openai
       '@aws-sdk/client-s3':
         specifier: ^3.700.0
         version: 3.962.0
@@ -520,6 +514,12 @@ importers:
       '@nestjs/throttler':
         specifier: ^6.5.0
         version: 6.5.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(reflect-metadata@0.2.2)
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@openai/agents-openai':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       '@paralleldrive/cuid2':
         specifier: ^3.0.4
         version: 3.0.6
@@ -566,8 +566,8 @@ importers:
         specifier: ^4.5.0
         version: 4.5.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(pino-http@11.0.0)(pino@10.1.0)(rxjs@7.8.2)
       openai:
-        specifier: ^6.15.0
-        version: 6.15.0(ws@8.18.3)(zod@4.3.5)
+        specifier: 6.16.0
+        version: 6.16.0(ws@8.18.3)(zod@4.3.6)
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -605,8 +605,8 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -790,8 +790,8 @@ importers:
   apps/moryflow/admin:
     dependencies:
       '@ai-sdk/react':
-        specifier: ^2.0.108
-        version: 2.0.120(react@19.2.3)(zod@4.3.5)
+        specifier: 3.0.51
+        version: 3.0.51(react@19.2.3)(zod@4.3.6)
       '@anyhunt/model-registry-data':
         specifier: workspace:*
         version: link:../../../packages/model-registry-data
@@ -910,8 +910,8 @@ importers:
         specifier: ^3.13.0
         version: 3.14.0
       ai:
-        specifier: 5.0.93
-        version: 5.0.93(zod@4.3.5)
+        specifier: 6.0.49
+        version: 6.0.49(zod@4.3.6)
       cmdk:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.1.9(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -961,8 +961,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.1.9(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
       zustand:
         specifier: ^5.0.2
         version: 5.0.9(@types/react@19.1.17)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
@@ -1119,17 +1119,14 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.9.3)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
 
   apps/moryflow/mobile:
     dependencies:
       '@ai-sdk/react':
-        specifier: 3.0.3
-        version: 3.0.3(react@19.1.0)(zod@3.25.76)
-      '@anyhunt/agents':
-        specifier: workspace:*
-        version: link:../../../packages/agents
+        specifier: 3.0.51
+        version: 3.0.51(react@19.1.0)(zod@4.3.6)
       '@anyhunt/agents-adapter':
         specifier: workspace:*
         version: link:../../../packages/agents-adapter
@@ -1159,7 +1156,7 @@ importers:
         version: link:../../../packages/types
       '@better-auth/expo':
         specifier: ^1.4.17
-        version: 1.4.17(26bi4yzkwfnty3owks5szbsxum)
+        version: 1.4.17(zp4ayxue6vr2np4rzcmpnvlkqm)
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.30)(react-dom@19.2.3(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -1172,6 +1169,9 @@ importers:
       '@kingstinct/react-native-healthkit':
         specifier: ^11.1.1
         version: 11.1.2(react-native-nitro-modules@0.30.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       '@react-native-async-storage/async-storage':
         specifier: ^2.1.2
         version: 2.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
@@ -1260,8 +1260,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       ai:
-        specifier: 6.0.3
-        version: 6.0.3(zod@3.25.76)
+        specifier: 6.0.49
+        version: 6.0.49(zod@4.3.6)
       better-auth:
         specifier: ^1.4.5
         version: 1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vite@6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
@@ -1415,12 +1415,15 @@ importers:
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
+      web-streams-polyfill:
+        specifier: 4.2.0
+        version: 4.2.0
       zeego:
         specifier: ^3.0.6
         version: 3.0.6(@react-native-menu/menu@1.2.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(@types/react-dom@19.1.9(@types/react@19.1.17))(@types/react@19.1.17)(react-dom@19.2.3(react@19.1.0))(react-native-ios-context-menu@3.2.1(react-native-ios-utilities@5.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-ios-utilities@5.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       zod:
-        specifier: ^3.25.40
-        version: 3.25.76
+        specifier: 4.3.6
+        version: 4.3.6
       zustand:
         specifier: ^5.0.2
         version: 5.0.9(@types/react@19.1.17)(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
@@ -1543,41 +1546,29 @@ importers:
   apps/moryflow/pc:
     dependencies:
       '@ai-sdk/anthropic':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@3.25.76)
+        specifier: 3.0.23
+        version: 3.0.23(zod@4.3.6)
       '@ai-sdk/google':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@3.25.76)
+        specifier: 3.0.13
+        version: 3.0.13(zod@4.3.6)
       '@ai-sdk/openai':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@3.25.76)
+        specifier: 3.0.18
+        version: 3.0.18(zod@4.3.6)
       '@ai-sdk/openai-compatible':
-        specifier: ^2.0.1
-        version: 2.0.2(zod@3.25.76)
+        specifier: 2.0.18
+        version: 2.0.18(zod@4.3.6)
       '@ai-sdk/xai':
-        specifier: ^3.0.1
-        version: 3.0.3(zod@3.25.76)
-      '@anyhunt/agents':
-        specifier: workspace:*
-        version: link:../../../packages/agents
+        specifier: 3.0.34
+        version: 3.0.34(zod@4.3.6)
       '@anyhunt/agents-adapter':
         specifier: workspace:*
         version: link:../../../packages/agents-adapter
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../../../packages/agents-core
-      '@anyhunt/agents-extensions':
-        specifier: workspace:*
-        version: link:../../../packages/agents-extensions
       '@anyhunt/agents-mcp':
         specifier: workspace:*
         version: link:../../../packages/agents-mcp
       '@anyhunt/agents-model-registry':
         specifier: workspace:*
         version: link:../../../packages/agents-model-registry
-      '@anyhunt/agents-openai':
-        specifier: workspace:*
-        version: link:../../../packages/agents-openai
       '@anyhunt/agents-runtime':
         specifier: workspace:*
         version: link:../../../packages/agents-runtime
@@ -1613,13 +1604,16 @@ importers:
         version: 1.0.0-beta.7(@types/react@19.1.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@modelcontextprotocol/sdk':
         specifier: ^1.17.2
-        version: 1.25.1(hono@4.10.6)(zod@3.25.76)
+        version: 1.25.1(hono@4.10.6)(zod@4.3.6)
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       '@openrouter/ai-sdk-provider':
-        specifier: ^1.2.8
-        version: 1.5.4(ai@6.0.3(zod@3.25.76))(zod@3.25.76)
+        specifier: 2.0.1
+        version: 2.0.1(ai@6.0.49(zod@4.3.6))(zod@4.3.6)
       ai:
-        specifier: 6.0.3
-        version: 6.0.3(zod@3.25.76)
+        specifier: 6.0.49
+        version: 6.0.49(zod@4.3.6)
       better-auth:
         specifier: ^1.4.5
         version: 1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@5.4.21(@types/node@18.19.130)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1))(webpack@5.103.0(@swc/core@1.15.8)))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@18.19.130)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
@@ -1639,18 +1633,18 @@ importers:
         specifier: ^3.3.2
         version: 3.3.3
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@ai-sdk/provider':
-        specifier: ^3.0.0
-        version: 3.0.1
+        specifier: 3.0.5
+        version: 3.0.5
       '@ai-sdk/provider-utils':
-        specifier: ^4.0.1
-        version: 4.0.2(zod@3.25.76)
+        specifier: 4.0.9
+        version: 4.0.9(zod@4.3.6)
       '@ai-sdk/react':
-        specifier: 3.0.3
-        version: 3.0.3(react@19.2.3)(zod@3.25.76)
+        specifier: 3.0.51
+        version: 3.0.51(react@19.2.3)(zod@4.3.6)
       '@ariakit/react':
         specifier: ^0.4.19
         version: 0.4.20(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2018,14 +2012,14 @@ importers:
   apps/moryflow/server:
     dependencies:
       '@ai-sdk/anthropic':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@4.3.5)
+        specifier: 3.0.23
+        version: 3.0.23(zod@4.3.6)
       '@ai-sdk/google':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@4.3.5)
+        specifier: 3.0.13
+        version: 3.0.13(zod@4.3.6)
       '@ai-sdk/openai':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@4.3.5)
+        specifier: 3.0.18
+        version: 3.0.18(zod@4.3.6)
       '@anyhunt/sync':
         specifier: workspace:*
         version: link:../../../packages/sync
@@ -2037,7 +2031,7 @@ importers:
         version: 3.962.0(@aws-sdk/client-s3@3.962.0)
       '@better-auth/expo':
         specifier: ^1.4.17
-        version: 1.4.17(re5lu6sink5hi4xgda4om2xgtu)
+        version: 1.4.17(6k6bckd4hsyanamkjtb6cee6tm)
       '@fal-ai/client':
         specifier: ^1.8.1
         version: 1.8.1
@@ -2069,8 +2063,8 @@ importers:
         specifier: ^6.5.0
         version: 6.5.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(reflect-metadata@0.2.2)
       '@openrouter/ai-sdk-provider':
-        specifier: ^1.5.4
-        version: 1.5.4(ai@6.0.3(zod@4.3.5))(zod@4.3.5)
+        specifier: 2.0.1
+        version: 2.0.1(ai@6.0.49(zod@4.3.6))(zod@4.3.6)
       '@paralleldrive/cuid2':
         specifier: ^3.0.4
         version: 3.0.6
@@ -2084,8 +2078,8 @@ importers:
         specifier: ^1.0.13
         version: 1.0.13
       ai:
-        specifier: ^6.0.3
-        version: 6.0.3(zod@4.3.5)
+        specifier: 6.0.49
+        version: 6.0.49(zod@4.3.6)
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.3
@@ -2118,10 +2112,10 @@ importers:
         version: 4.5.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(pino-http@11.0.0)(pino@10.1.0)(rxjs@7.8.2)
       nestjs-zod:
         specifier: ^5.0.1
-        version: 5.1.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/swagger@11.2.3(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2))(rxjs@7.8.2)(zod@4.3.5)
+        version: 5.1.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/swagger@11.2.3(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2))(rxjs@7.8.2)(zod@4.3.6)
       openai:
-        specifier: ^6
-        version: 6.15.0(ws@8.18.3)(zod@4.3.5)
+        specifier: 6.16.0
+        version: 6.16.0(ws@8.18.3)(zod@4.3.6)
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -2147,8 +2141,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -2358,99 +2352,20 @@ importers:
         specifier: ^4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/agents:
-    dependencies:
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
-      '@anyhunt/agents-openai':
-        specifier: workspace:*
-        version: link:../agents-openai
-      '@anyhunt/agents-realtime':
-        specifier: workspace:*
-        version: link:../agents-realtime
-      debug:
-        specifier: ^4.4.0
-        version: 4.4.3
-      openai:
-        specifier: ^6
-        version: 6.15.0(ws@8.18.3)(zod@3.25.76)
-    devDependencies:
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
-      zod:
-        specifier: ^3.25.40 || ^4.0
-        version: 3.25.76
-
   packages/agents-adapter:
     devDependencies:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/agents-core:
-    dependencies:
-      debug:
-        specifier: ^4.4.0
-        version: 4.4.3
-      openai:
-        specifier: ^6
-        version: 6.15.0(ws@8.18.3)(zod@3.25.76)
-    optionalDependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.17.2
-        version: 1.25.1(hono@4.10.6)(zod@3.25.76)
-    devDependencies:
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
-      zod:
-        specifier: ^3.25.40 || ^4.0
-        version: 3.25.76
-
-  packages/agents-extensions:
-    dependencies:
-      '@ai-sdk/provider':
-        specifier: ^3.0.0
-        version: 3.0.1
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      debug:
-        specifier: ^4.4.0
-        version: 4.4.3
-    devDependencies:
-      '@anyhunt/agents':
-        specifier: workspace:>=0.0.0
-        version: link:../agents
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
-      undici-types:
-        specifier: ^6.19.8
-        version: 6.21.0
-      ws:
-        specifier: ^8.18.1
-        version: 8.18.3
-      zod:
-        specifier: ^3.25.40 || ^4.0
-        version: 3.25.76
-
   packages/agents-mcp:
     dependencies:
-      '@anyhunt/agents':
-        specifier: workspace:*
-        version: link:../agents
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
       '@anyhunt/agents-runtime':
         specifier: workspace:*
         version: link:../agents-runtime
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
     devDependencies:
       typescript:
         specifier: ^5.7.2
@@ -2462,94 +2377,47 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
-  packages/agents-openai:
-    dependencies:
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
-      debug:
-        specifier: ^4.4.0
-        version: 4.4.3
-      openai:
-        specifier: ^6
-        version: 6.15.0(ws@8.18.3)(zod@3.25.76)
-    devDependencies:
-      '@ai-sdk/provider':
-        specifier: ^1.1.3
-        version: 1.1.3
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
-      zod:
-        specifier: ^3.25.40 || ^4.0
-        version: 3.25.76
-
-  packages/agents-realtime:
-    dependencies:
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      debug:
-        specifier: ^4.4.0
-        version: 4.4.3
-      ws:
-        specifier: ^8.18.1
-        version: 8.18.3
-    devDependencies:
-      '@types/debug':
-        specifier: ^4.1.12
-        version: 4.1.12
-      vite:
-        specifier: ^6.4.1
-        version: 6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
-      zod:
-        specifier: ^3.25.40 || ^4.0
-        version: 3.25.76
-
   packages/agents-runtime:
     dependencies:
       '@ai-sdk/anthropic':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@3.25.76)
+        specifier: 3.0.23
+        version: 3.0.23(zod@4.3.6)
       '@ai-sdk/google':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@3.25.76)
+        specifier: 3.0.13
+        version: 3.0.13(zod@4.3.6)
       '@ai-sdk/openai':
-        specifier: ^3.0.1
-        version: 3.0.2(zod@3.25.76)
+        specifier: 3.0.18
+        version: 3.0.18(zod@4.3.6)
       '@ai-sdk/openai-compatible':
-        specifier: ^2.0.1
-        version: 2.0.2(zod@3.25.76)
+        specifier: 2.0.18
+        version: 2.0.18(zod@4.3.6)
       '@ai-sdk/provider':
-        specifier: ^3.0.0
-        version: 3.0.1
+        specifier: 3.0.5
+        version: 3.0.5
       '@ai-sdk/xai':
-        specifier: ^3.0.1
-        version: 3.0.3(zod@3.25.76)
-      '@anyhunt/agents':
-        specifier: workspace:*
-        version: link:../agents
+        specifier: 3.0.34
+        version: 3.0.34(zod@4.3.6)
       '@anyhunt/agents-adapter':
         specifier: workspace:*
         version: link:../agents-adapter
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
-      '@anyhunt/agents-extensions':
-        specifier: workspace:*
-        version: link:../agents-extensions
       '@anyhunt/api':
         specifier: workspace:*
         version: link:../api
+      '@openai/agents':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@openai/agents-extensions':
+        specifier: 0.4.3
+        version: 0.4.3(@ai-sdk/provider@3.0.5)(@openai/agents@0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6))(ai@6.0.49(zod@4.3.6))(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       '@openrouter/ai-sdk-provider':
-        specifier: ^1.5.4
-        version: 1.5.4(ai@6.0.3(zod@3.25.76))(zod@3.25.76)
+        specifier: 2.0.1
+        version: 2.0.1(ai@6.0.49(zod@4.3.6))(zod@4.3.6)
       zod:
-        specifier: ^3.25.40
-        version: 3.25.76
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -2557,15 +2425,12 @@ importers:
 
   packages/agents-sandbox:
     dependencies:
-      '@anyhunt/agents':
-        specifier: workspace:*
-        version: link:../agents
-      '@anyhunt/agents-core':
-        specifier: workspace:*
-        version: link:../agents-core
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       zod:
-        specifier: ^3.25.40
-        version: 3.25.76
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/node':
         specifier: ^22.10.10
@@ -2579,15 +2444,15 @@ importers:
 
   packages/agents-tools:
     dependencies:
-      '@anyhunt/agents':
-        specifier: workspace:*
-        version: link:../agents
       '@anyhunt/agents-adapter':
         specifier: workspace:*
         version: link:../agents-adapter
       '@anyhunt/agents-runtime':
         specifier: workspace:*
         version: link:../agents-runtime
+      '@openai/agents-core':
+        specifier: 0.4.3
+        version: 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
       diff:
         specifier: ^7.0.0
         version: 7.0.0
@@ -2595,8 +2460,8 @@ importers:
         specifier: ^3.3.3
         version: 3.3.3
       zod:
-        specifier: ^3.25.40
-        version: 3.25.76
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/diff':
         specifier: ^7.0.2
@@ -2618,8 +2483,8 @@ importers:
   packages/config:
     dependencies:
       zod:
-        specifier: ^4.1.13
-        version: 4.3.5
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@anyhunt/eslint-config':
         specifier: workspace:*
@@ -2718,8 +2583,8 @@ importers:
   packages/sync:
     dependencies:
       zod:
-        specifier: ^3.24.3
-        version: 3.25.76
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -2969,8 +2834,8 @@ importers:
         specifier: ^12.9.3
         version: 12.10.0(@types/react@19.1.17)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       ai:
-        specifier: 6.0.3
-        version: 6.0.3(zod@4.3.5)
+        specifier: 6.0.49
+        version: 6.0.49(zod@4.3.6)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -3108,110 +2973,54 @@ packages:
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
-  '@ai-sdk/anthropic@3.0.2':
-    resolution: {integrity: sha512-D6iSsrOYryBSPsFtOiEDv54jnjVCU/flIuXdjuRY7LdikB0KGjpazN8Dt4ONXzL+ux69ds2nzFNKke/w/fgLAA==}
+  '@ai-sdk/anthropic@3.0.23':
+    resolution: {integrity: sha512-mu9djDW2kiJS/ihH5BwGy2c/zwSlcTjx1NWPvY/Ug12SWToqzozSyd1EIXRlfXyfwzL2CWrqMNyybqi9OVDXgg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.24':
-    resolution: {integrity: sha512-mflk80YF8hj8vrF9e1IHhovGKC1ubX+sY88pesSk3pUiXfH5VPO8dgzNnxjwsqsCZrnkHcztxS5cSl4TzSiEuA==}
+  '@ai-sdk/gateway@3.0.22':
+    resolution: {integrity: sha512-NgnlY73JNuooACHqUIz5uMOEWvqR1MMVbb2soGLMozLY1fgwEIF5iJFDAGa5/YArlzw2ATVU7zQu7HkR/FUjgA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@2.0.9':
-    resolution: {integrity: sha512-E6x4h5CPPPJ0za1r5HsLtHbeI+Tp3H+YFtcH8G3dSSPFE6w+PZINzB4NxLZmg1QqSeA5HTP3ZEzzsohp0o2GEw==}
+  '@ai-sdk/google@3.0.13':
+    resolution: {integrity: sha512-HYCh8miS4FLxOIpjo/BmoFVMO5BuxNpHVVDQkoJotoH8ZSFftkJJGGayIxQT/Lwx9GGvVVCOQ+lCdBBAnkl1sA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@3.0.2':
-    resolution: {integrity: sha512-giJEg9ob45htbu3iautK+2kvplY2JnTj7ir4wZzYSQWvqGatWfBBfDuNCU5wSJt9BCGjymM5ZS9ziD42JGCZBw==}
+  '@ai-sdk/openai-compatible@2.0.18':
+    resolution: {integrity: sha512-CMbsSDWzQT5y0woUWRqom+eUDsyB+btFyA68MGkrUOBWDDsmcCWt/DHUAAIWC5GO+hwcX4WXT2Q9KJQrQJ9RQg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/google@3.0.2':
-    resolution: {integrity: sha512-KyV4AR8fBKVCABfav3zGn/PY7cMDMt9m7yYhH+FJ7jLfBrEVdjT4sM0ojPFRHYUelXHl42oOAgpy3GWkeG6vtw==}
+  '@ai-sdk/openai@3.0.18':
+    resolution: {integrity: sha512-uYscTyoaWij9FoPpKRNK8YgtDEuPpQlqREYylJCA8o5YQVQXghV0Dwgk1ehPVpg6USIO4L0C8GqQJ4AMm/Xb1g==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai-compatible@2.0.2':
-    resolution: {integrity: sha512-9HFztZv9FBC7UxdLaA+gGKKEQjVNnI3nRmc6mRDPW5z5czvVKMrRgoXqjsYGbv+3giOXsVlRITHsrPswGn6O1w==}
+  '@ai-sdk/provider-utils@4.0.9':
+    resolution: {integrity: sha512-bB4r6nfhBOpmoS9mePxjRoCy+LnzP3AfhyMGCkGL4Mn9clVNlqEeKj26zEKEtB6yoSVcT1IQ0Zh9fytwMCDnow==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai@3.0.2':
-    resolution: {integrity: sha512-GONwavgSWtcWO+t9+GpGK8l7nIYh+zNtCL/NYDSeHxHiw6ksQS9XMRWrZyE5NpJ0EXNxSAWCHIDmb1WvTqhq9Q==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/provider-utils@3.0.17':
-    resolution: {integrity: sha512-TR3Gs4I3Tym4Ll+EPdzRdvo/rc8Js6c4nVhFLuvGLX/Y4V9ZcQMa/HTiYsHEgmYrf1zVi6Q145UEZUfleOwOjw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/provider-utils@3.0.20':
-    resolution: {integrity: sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/provider-utils@4.0.1':
-    resolution: {integrity: sha512-de2v8gH9zj47tRI38oSxhQIewmNc+OZjYIOOaMoVWKL65ERSav2PYYZHPSPCrfOeLMkv+Dyh8Y0QGwkO29wMWQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/provider-utils@4.0.2':
-    resolution: {integrity: sha512-KaykkuRBdF/ffpI5bwpL4aSCmO/99p8/ci+VeHwJO8tmvXtiVAb99QeyvvvXmL61e9Zrvv4GBGoajW19xdjkVQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/provider@1.1.3':
-    resolution: {integrity: sha512-qZMxYJ0qqX/RfnuIaab+zp8UAeJn/ygXXAffR5I4N0n1IrvA6qBsjc8hXLmBiMV2zoXlifkacF7sEFnYnjBcqg==}
+  '@ai-sdk/provider@3.0.5':
+    resolution: {integrity: sha512-2Xmoq6DBJqmSl80U6V9z5jJSJP7ehaJJQMy2iFUqTay06wdCqTnPVBBQbtEL8RCChenL+q5DC5H5WzU3vV3v8w==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/provider@2.0.0':
-    resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
-    engines: {node: '>=18'}
-
-  '@ai-sdk/provider@2.0.1':
-    resolution: {integrity: sha512-KCUwswvsC5VsW2PWFqF8eJgSCu5Ysj7m1TxiHTVA6g7k360bk0RNQENT8KTMAYEs+8fWPD3Uu4dEmzGHc+jGng==}
-    engines: {node: '>=18'}
-
-  '@ai-sdk/provider@3.0.0':
-    resolution: {integrity: sha512-m9ka3ptkPQbaHHZHqDXDF9C9B5/Mav0KTdky1k2HZ3/nrW2t1AgObxIVPyGDWQNS9FXT/FS6PIoSjpcP/No8rQ==}
-    engines: {node: '>=18'}
-
-  '@ai-sdk/provider@3.0.1':
-    resolution: {integrity: sha512-2lR4w7mr9XrydzxBSjir4N6YMGdXD+Np1Sh0RXABh7tWdNFFwIeRI1Q+SaYZMbfL8Pg8RRLcrxQm51yxTLhokg==}
-    engines: {node: '>=18'}
-
-  '@ai-sdk/react@2.0.120':
-    resolution: {integrity: sha512-x7Oa2LDRURc8uRnAdcEfydbHLSXGYjNaFlQrGuxZAMfqhLJQ+7x4K8Z6O5vnLt414mrPaVvgirfRqsP/nsxtnw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
-      zod: ^3.25.76 || ^4.1.8
-    peerDependenciesMeta:
-      zod:
-        optional: true
-
-  '@ai-sdk/react@3.0.3':
-    resolution: {integrity: sha512-mLIgQuBdIX9gxCYQN3Pv/J8ARoFreIKYr/TVQtI+FwEzejuGFimTyhDln7UIBfrnm3Mpn1xENIWZfDfCRF7wkw==}
+  '@ai-sdk/react@3.0.51':
+    resolution: {integrity: sha512-7nmCwEJM52NQZB4/ED8qJ4wbDg7EEWh94qJ7K9GSJxD6sWF3GOKrRZ5ivm4qNmKhY+JfCxCAxfghGY5mTKOsxw==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
 
-  '@ai-sdk/xai@3.0.3':
-    resolution: {integrity: sha512-Ts0RQ2yNlgX/mIj+1cvJvh/GYPZnXLe8Lzr4VFn9QNRjWJmRCQ1TSGymdmSB2dRHyBQU10acuem/bkkxFmL8vQ==}
+  '@ai-sdk/xai@3.0.34':
+    resolution: {integrity: sha512-SQxgUl+9P5R9QK7R2VYAJzqv8WhoOssCvK35IOx3N90ecoFrlUVMjs8lj8T0AIYPCDBU8ArhUQa29djDi48OMw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -4853,6 +4662,12 @@ packages:
     peerDependencies:
       hono: ^4
 
+  '@hono/node-server@1.19.9':
+    resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
+
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
     peerDependencies:
@@ -5365,6 +5180,16 @@ packages:
       '@cfworker/json-schema':
         optional: true
 
+  '@modelcontextprotocol/sdk@1.25.3':
+    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@cfworker/json-schema': ^4.1.1
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@cfworker/json-schema':
+        optional: true
+
   '@mozilla/readability@0.6.0':
     resolution: {integrity: sha512-juG5VWh4qAivzTAeMzvY9xs9HY5rAcr2E4I7tiSSCokRFi7XIZCAu92ZkSTsIj1OPceCifL3cpfteP3pDT9/QQ==}
     engines: {node: '>=14.0.0'}
@@ -5768,12 +5593,52 @@ packages:
     resolution: {integrity: sha512-hAX0pT/73190NLqBPPWSdBVGtbY6VOhWYK3qqHqtXQ1gK7kS2yz4+ivsN07hpJ6I3aeMtKP6J6npsEKOAzuTLA==}
     engines: {node: '>=20.0'}
 
-  '@openrouter/ai-sdk-provider@1.5.4':
-    resolution: {integrity: sha512-xrSQPUIH8n9zuyYZR0XK7Ba0h2KsjJcMkxnwaYfmv13pKs3sDkjPzVPPhlhzqBGddHb5cFEwJ9VFuFeDcxCDSw==}
+  '@openai/agents-core@0.4.3':
+    resolution: {integrity: sha512-2cz7ptgdHp2NzoN9uImBypRmR+e8ExvBXhxdDnNE6Cw0R8LQxd/KfdDupg7BB1inleOKLgDoasBXD7jRZ0iSQA==}
+    peerDependencies:
+      zod: ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@openai/agents-extensions@0.4.3':
+    resolution: {integrity: sha512-hwuO9SPYwOvUo0oTtSO81MisLo918E9LJVD1ZWfo4wT8aZaVU0ybPT47ok/a4wK8rfhfcbmZL3VUQT7MdchVdQ==}
+    peerDependencies:
+      '@ai-sdk/provider': ^2.0.0 || ^3.0.0
+      '@openai/agents': '>=0.0.0'
+      '@openai/codex-sdk': '>=0.86.0'
+      ai: ^6.0.0
+      ws: ^8.18.1
+      zod: ^4.0.0
+    peerDependenciesMeta:
+      '@ai-sdk/provider':
+        optional: true
+      '@openai/codex-sdk':
+        optional: true
+      ai:
+        optional: true
+
+  '@openai/agents-openai@0.4.3':
+    resolution: {integrity: sha512-dBQDr6IJR9+h/7+0Xn0CQhBbVWvn3PE3a56WuwbKr3cYHU9QxUbVrsRprx3ERboww2qy2D9Hk6Cik2q9MHDnZg==}
+    peerDependencies:
+      zod: ^4.0.0
+
+  '@openai/agents-realtime@0.4.3':
+    resolution: {integrity: sha512-hfe69MfEM0KRN/auLzca7UlMl8mcNMhnIQfOb01R0SbFpU1yl332kQEZw3a2o+n9YRCVAmP6QKuJjejsZwqbvg==}
+    peerDependencies:
+      zod: ^4.0.0
+
+  '@openai/agents@0.4.3':
+    resolution: {integrity: sha512-vj1vRkmhex4r+aQ3EjI9s9u4veFx/kT6NsZmj5qEvBTn8tk7HxPjZJR601dIVBISspH+dqh276I9e2thydPc3w==}
+    peerDependencies:
+      zod: ^4.0.0
+
+  '@openrouter/ai-sdk-provider@2.0.1':
+    resolution: {integrity: sha512-XPf0GjCiTpwmlrHqKAvxBcIntNG0awmrrqrCob1H+PjPLav4he8ZqbrlsbmalcpebTKfl39PJCpHuVW3XPA7vg==}
     engines: {node: '>=18'}
     peerDependencies:
-      ai: ^5.0.0
-      zod: ^3.24.1 || ^v4
+      ai: ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
 
   '@openrouter/sdk@0.1.27':
     resolution: {integrity: sha512-RH//L10bSmc81q25zAZudiI4kNkLgxF2E+WU42vghp3N6TEvZ6F0jK7uT3tOxkEn91gzmMw9YVmDENy7SJsajQ==}
@@ -9620,12 +9485,8 @@ packages:
     peerDependencies:
       react: '>= 16.8.0'
 
-  '@vercel/oidc@3.0.3':
-    resolution: {integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==}
-    engines: {node: '>= 20'}
-
-  '@vercel/oidc@3.0.5':
-    resolution: {integrity: sha512-fnYhv671l+eTTp48gB4zEsTW/YtRgRPnkI2nT7x6qw5rkI1Lq2hTmQIpHPgyThI0znLK+vX2n9XxKdXZ7BUbbw==}
+  '@vercel/oidc@3.1.0':
+    resolution: {integrity: sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w==}
     engines: {node: '>= 20'}
 
   '@vitejs/plugin-react-swc@3.11.0':
@@ -9899,20 +9760,8 @@ packages:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
 
-  ai@5.0.118:
-    resolution: {integrity: sha512-sKJHfhJkvAyq5NC3yJJ4R8Z3tn4pSHF760/jInKAtmLwPLWTHfGo293DSO4un8QUAgJOagHd09VSXOXv+STMNQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  ai@5.0.93:
-    resolution: {integrity: sha512-9eGcu+1PJgPg4pRNV4L7tLjRR3wdJC9CXQoNMvtqvYNOLZHFCzjHtVIOr2SIkoJJeu2+sOy3hyiSuTmy2MA40g==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  ai@6.0.3:
-    resolution: {integrity: sha512-OOo+/C+sEyscoLnbY3w42vjQDICioVNyS+F+ogwq6O5RJL/vgWGuiLzFwuP7oHTeni/MkmX8tIge48GTdaV7QQ==}
+  ai@6.0.49:
+    resolution: {integrity: sha512-LABniBX/0R6Tv+iUK5keUZhZLaZUe4YjP5M2rZ4wAdZ8iKV3EfTAoJxuL1aaWTSJKIilKa9QUEkCgnp89/32bw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -15042,8 +14891,8 @@ packages:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
 
-  openai@6.15.0:
-    resolution: {integrity: sha512-F1Lvs5BoVvmZtzkUEVyh8mDQPPFolq4F+xdsx/DO8Hee8YF3IGAlZqUIsF+DVGhqf4aU0a3bTghsxB6OIsRy1g==}
+  openai@6.16.0:
+    resolution: {integrity: sha512-fZ1uBqjFUjXzbGc35fFtYKEOxd20kd9fDpFeqWtsOZWiubY8CZ1NAlXHW3iathaFvqmNtCWMIsosCuyeI7Joxg==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -18264,6 +18113,10 @@ packages:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
     engines: {node: '>= 14'}
 
+  web-streams-polyfill@4.2.0:
+    resolution: {integrity: sha512-0rYDzGOh9EZpig92umN5g5D/9A1Kff7k0/mzPSSCY8jEQeYkgRMoY7LhbXtUCWzLCMX0TUE9aoHkjFNB7D9pfA==}
+    engines: {node: '>= 8'}
+
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -18600,8 +18453,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.3.5:
-    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
@@ -18649,184 +18502,74 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
-  '@ai-sdk/anthropic@3.0.2(zod@3.25.76)':
+  '@ai-sdk/anthropic@3.0.23(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@3.25.76)
-      zod: 3.25.76
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      zod: 4.3.6
 
-  '@ai-sdk/anthropic@3.0.2(zod@4.3.5)':
+  '@ai-sdk/gateway@3.0.22(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@4.3.5)
-      zod: 4.3.5
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      '@vercel/oidc': 3.1.0
+      zod: 4.3.6
 
-  '@ai-sdk/gateway@2.0.24(zod@4.3.5)':
+  '@ai-sdk/google@3.0.13(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider': 2.0.1
-      '@ai-sdk/provider-utils': 3.0.20(zod@4.3.5)
-      '@vercel/oidc': 3.0.5
-      zod: 4.3.5
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      zod: 4.3.6
 
-  '@ai-sdk/gateway@2.0.9(zod@4.3.5)':
+  '@ai-sdk/openai-compatible@2.0.18(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.17(zod@4.3.5)
-      '@vercel/oidc': 3.0.3
-      zod: 4.3.5
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      zod: 4.3.6
 
-  '@ai-sdk/gateway@3.0.2(zod@3.25.76)':
+  '@ai-sdk/openai@3.0.18(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
-      '@vercel/oidc': 3.0.5
-      zod: 3.25.76
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      zod: 4.3.6
 
-  '@ai-sdk/gateway@3.0.2(zod@4.3.5)':
+  '@ai-sdk/provider-utils@4.0.9(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.5)
-      '@vercel/oidc': 3.0.5
-      zod: 4.3.5
-
-  '@ai-sdk/google@3.0.2(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@3.25.76)
-      zod: 3.25.76
-
-  '@ai-sdk/google@3.0.2(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@4.3.5)
-      zod: 4.3.5
-
-  '@ai-sdk/openai-compatible@2.0.2(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@3.25.76)
-      zod: 3.25.76
-
-  '@ai-sdk/openai@3.0.2(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@3.25.76)
-      zod: 3.25.76
-
-  '@ai-sdk/openai@3.0.2(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@4.3.5)
-      zod: 4.3.5
-
-  '@ai-sdk/provider-utils@3.0.17(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider': 3.0.5
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
-      zod: 4.3.5
+      zod: 4.3.6
 
-  '@ai-sdk/provider-utils@3.0.20(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.1
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.0.6
-      zod: 4.3.5
-
-  '@ai-sdk/provider-utils@4.0.1(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.0.6
-      zod: 3.25.76
-
-  '@ai-sdk/provider-utils@4.0.1(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.0.6
-      zod: 4.3.5
-
-  '@ai-sdk/provider-utils@4.0.2(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.0.6
-      zod: 3.25.76
-
-  '@ai-sdk/provider-utils@4.0.2(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.1
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.0.6
-      zod: 4.3.5
-
-  '@ai-sdk/provider@1.1.3':
+  '@ai-sdk/provider@3.0.5':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/provider@2.0.0':
+  '@ai-sdk/react@3.0.51(react@19.1.0)(zod@4.3.6)':
     dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/provider@2.0.1':
-    dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/provider@3.0.0':
-    dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/provider@3.0.1':
-    dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/react@2.0.120(react@19.2.3)(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/provider-utils': 3.0.20(zod@4.3.5)
-      ai: 5.0.118(zod@4.3.5)
-      react: 19.2.3
-      swr: 2.3.8(react@19.2.3)
-      throttleit: 2.1.0
-    optionalDependencies:
-      zod: 4.3.5
-
-  '@ai-sdk/react@3.0.3(react@19.1.0)(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
-      ai: 6.0.3(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      ai: 6.0.49(zod@4.3.6)
       react: 19.1.0
       swr: 2.3.8(react@19.1.0)
       throttleit: 2.1.0
     transitivePeerDependencies:
       - zod
 
-  '@ai-sdk/react@3.0.3(react@19.2.3)(zod@3.25.76)':
+  '@ai-sdk/react@3.0.51(react@19.2.3)(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
-      ai: 6.0.3(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      ai: 6.0.49(zod@4.3.6)
       react: 19.2.3
       swr: 2.3.8(react@19.2.3)
       throttleit: 2.1.0
     transitivePeerDependencies:
       - zod
 
-  '@ai-sdk/react@3.0.3(react@19.2.3)(zod@4.3.5)':
+  '@ai-sdk/xai@3.0.34(zod@4.3.6)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.5)
-      ai: 6.0.3(zod@4.3.5)
-      react: 19.2.3
-      swr: 2.3.8(react@19.2.3)
-      throttleit: 2.1.0
-    transitivePeerDependencies:
-      - zod
-
-  '@ai-sdk/xai@3.0.3(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.2(zod@3.25.76)
-      '@ai-sdk/provider': 3.0.1
-      '@ai-sdk/provider-utils': 4.0.2(zod@3.25.76)
-      zod: 3.25.76
+      '@ai-sdk/openai-compatible': 2.0.18(zod@4.3.6)
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
+      zod: 4.3.6
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -20092,74 +19835,63 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)':
+  '@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)':
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@standard-schema/spec': 1.1.0
-      better-call: 1.1.7(zod@4.3.5)
+      better-call: 1.1.7(zod@4.3.6)
       jose: 6.1.3
       kysely: 0.28.9
       nanostores: 1.1.0
-      zod: 4.3.5
+      zod: 4.3.6
 
-  '@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@3.25.76))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)':
+  '@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)':
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@standard-schema/spec': 1.1.0
-      better-call: 1.1.8(zod@3.25.76)
+      better-call: 1.1.8(zod@4.3.6)
       jose: 6.1.3
       kysely: 0.28.9
       nanostores: 1.1.0
-      zod: 4.3.5
+      zod: 4.3.6
 
-  '@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)':
+  '@better-auth/expo@1.4.17(6k6bckd4hsyanamkjtb6cee6tm)':
     dependencies:
-      '@better-auth/utils': 0.3.0
-      '@better-fetch/fetch': 1.1.21
-      '@standard-schema/spec': 1.1.0
-      better-call: 1.1.8(zod@4.3.5)
-      jose: 6.1.3
-      kysely: 0.28.9
-      nanostores: 1.1.0
-      zod: 4.3.5
-
-  '@better-auth/expo@1.4.17(26bi4yzkwfnty3owks5szbsxum)':
-    dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@3.25.76))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-fetch/fetch': 1.1.21
-      better-auth: 1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vite@6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
-      better-call: 1.1.8(zod@4.3.5)
-      expo-network: 8.0.8(expo@54.0.30)(react@19.1.0)
-      zod: 4.3.5
-    optionalDependencies:
-      expo-constants: 18.0.12(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
-      expo-linking: 8.0.11(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
-      expo-web-browser: 15.0.10(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
-
-  '@better-auth/expo@1.4.17(re5lu6sink5hi4xgda4om2xgtu)':
-    dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
       '@better-fetch/fetch': 1.1.21
       better-auth: 1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0(@swc/core@1.15.8)))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@22.19.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
-      better-call: 1.1.8(zod@4.3.5)
+      better-call: 1.1.8(zod@4.3.6)
       expo-network: 8.0.8(expo@54.0.30)(react@19.2.3)
-      zod: 4.3.5
+      zod: 4.3.6
     optionalDependencies:
       expo-constants: 18.0.12(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.2.3))
       expo-linking: 8.0.11(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.2.3))(react@19.2.3)
       expo-web-browser: 15.0.10(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.2.3))
 
-  '@better-auth/telemetry@1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))':
+  '@better-auth/expo@1.4.17(zp4ayxue6vr2np4rzcmpnvlkqm)':
     dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-fetch/fetch': 1.1.21
+      better-auth: 1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vite@6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
+      better-call: 1.1.8(zod@4.3.6)
+      expo-network: 8.0.8(expo@54.0.30)(react@19.1.0)
+      zod: 4.3.6
+    optionalDependencies:
+      expo-constants: 18.0.12(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
+      expo-linking: 8.0.11(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo-web-browser: 15.0.10(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
+
+  '@better-auth/telemetry@1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))':
+    dependencies:
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
 
-  '@better-auth/telemetry@1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@3.25.76))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))':
+  '@better-auth/telemetry@1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))':
     dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@3.25.76))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
 
@@ -21239,7 +20971,7 @@ snapshots:
       '@content-collections/core': 0.13.1(typescript@5.9.3)
       '@content-collections/mdx': 0.2.2(@content-collections/core@0.13.1(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       fumadocs-core: 15.8.5(@tanstack/react-router@1.144.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@types/react@19.1.17)(lucide-react@0.553.0(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-router@7.11.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
-      zod: 4.3.5
+      zod: 4.3.6
 
   '@gar/promisify@1.1.3': {}
 
@@ -21286,6 +21018,11 @@ snapshots:
   '@hono/node-server@1.19.7(hono@4.10.6)':
     dependencies:
       hono: 4.10.6
+
+  '@hono/node-server@1.19.9(hono@4.10.6)':
+    dependencies:
+      hono: 4.10.6
+    optional: true
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.70.0(react@19.2.3))':
     dependencies:
@@ -21908,7 +21645,7 @@ snapshots:
 
   '@mixmark-io/domino@2.2.0': {}
 
-  '@modelcontextprotocol/sdk@1.25.1(hono@4.10.6)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.25.1(hono@4.10.6)(zod@4.3.6)':
     dependencies:
       '@hono/node-server': 1.19.7(hono@4.10.6)
       ajv: 8.17.1
@@ -21924,11 +21661,34 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.1(zod@3.25.76)
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
     transitivePeerDependencies:
       - hono
       - supports-color
+
+  '@modelcontextprotocol/sdk@1.25.3(hono@4.10.6)(zod@4.3.6)':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.10.6)
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      content-type: 1.0.5
+      cors: 2.8.5
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.0.6
+      express: 5.2.1
+      express-rate-limit: 7.5.1(express@5.2.1)
+      jose: 6.1.3
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
+    transitivePeerDependencies:
+      - hono
+      - supports-color
+    optional: true
 
   '@mozilla/readability@0.6.0': {}
 
@@ -22280,21 +22040,86 @@ snapshots:
 
   '@oozcitak/util@10.0.0': {}
 
-  '@openrouter/ai-sdk-provider@1.5.4(ai@6.0.3(zod@3.25.76))(zod@3.25.76)':
+  '@openai/agents-core@0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)':
     dependencies:
-      '@openrouter/sdk': 0.1.27
-      ai: 6.0.3(zod@3.25.76)
-      zod: 3.25.76
+      debug: 4.4.3
+      openai: 6.16.0(ws@8.18.3)(zod@4.3.6)
+    optionalDependencies:
+      '@modelcontextprotocol/sdk': 1.25.3(hono@4.10.6)(zod@4.3.6)
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - hono
+      - supports-color
+      - ws
 
-  '@openrouter/ai-sdk-provider@1.5.4(ai@6.0.3(zod@4.3.5))(zod@4.3.5)':
+  '@openai/agents-extensions@0.4.3(@ai-sdk/provider@3.0.5)(@openai/agents@0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6))(ai@6.0.49(zod@4.3.6))(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)':
+    dependencies:
+      '@openai/agents': 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@openai/agents-core': 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@types/ws': 8.18.1
+      debug: 4.4.3
+      ws: 8.18.3
+      zod: 4.3.6
+    optionalDependencies:
+      '@ai-sdk/provider': 3.0.5
+      ai: 6.0.49(zod@4.3.6)
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - hono
+      - supports-color
+
+  '@openai/agents-openai@0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)':
+    dependencies:
+      '@openai/agents-core': 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      debug: 4.4.3
+      openai: 6.16.0(ws@8.18.3)(zod@4.3.6)
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - hono
+      - supports-color
+      - ws
+
+  '@openai/agents-realtime@0.4.3(hono@4.10.6)(zod@4.3.6)':
+    dependencies:
+      '@openai/agents-core': 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@types/ws': 8.18.1
+      debug: 4.4.3
+      ws: 8.18.3
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - bufferutil
+      - hono
+      - supports-color
+      - utf-8-validate
+
+  '@openai/agents@0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)':
+    dependencies:
+      '@openai/agents-core': 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@openai/agents-openai': 0.4.3(hono@4.10.6)(ws@8.18.3)(zod@4.3.6)
+      '@openai/agents-realtime': 0.4.3(hono@4.10.6)(zod@4.3.6)
+      debug: 4.4.3
+      openai: 6.16.0(ws@8.18.3)(zod@4.3.6)
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - bufferutil
+      - hono
+      - supports-color
+      - utf-8-validate
+      - ws
+
+  '@openrouter/ai-sdk-provider@2.0.1(ai@6.0.49(zod@4.3.6))(zod@4.3.6)':
     dependencies:
       '@openrouter/sdk': 0.1.27
-      ai: 6.0.3(zod@4.3.5)
-      zod: 4.3.5
+      ai: 6.0.49(zod@4.3.6)
+      zod: 4.3.6
 
   '@openrouter/sdk@0.1.27':
     dependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
   '@opentelemetry/api@1.9.0': {}
 
@@ -24831,7 +24656,7 @@ snapshots:
       '@scalar/helpers': 0.2.4
       nanoid: 5.1.5
       type-fest: 5.0.0
-      zod: 4.3.5
+      zod: 4.3.6
 
   '@scarf/scarf@1.4.0': {}
 
@@ -27390,9 +27215,7 @@ snapshots:
       '@use-gesture/core': 10.3.1
       react: 19.2.3
 
-  '@vercel/oidc@3.0.3': {}
-
-  '@vercel/oidc@3.0.5': {}
+  '@vercel/oidc@3.1.0': {}
 
   '@vitejs/plugin-react-swc@3.11.0(vite@5.4.21(@types/node@18.19.130)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1))':
     dependencies:
@@ -27844,37 +27667,13 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@5.0.118(zod@4.3.5):
+  ai@6.0.49(zod@4.3.6):
     dependencies:
-      '@ai-sdk/gateway': 2.0.24(zod@4.3.5)
-      '@ai-sdk/provider': 2.0.1
-      '@ai-sdk/provider-utils': 3.0.20(zod@4.3.5)
+      '@ai-sdk/gateway': 3.0.22(zod@4.3.6)
+      '@ai-sdk/provider': 3.0.5
+      '@ai-sdk/provider-utils': 4.0.9(zod@4.3.6)
       '@opentelemetry/api': 1.9.0
-      zod: 4.3.5
-
-  ai@5.0.93(zod@4.3.5):
-    dependencies:
-      '@ai-sdk/gateway': 2.0.9(zod@4.3.5)
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.17(zod@4.3.5)
-      '@opentelemetry/api': 1.9.0
-      zod: 4.3.5
-
-  ai@6.0.3(zod@3.25.76):
-    dependencies:
-      '@ai-sdk/gateway': 3.0.2(zod@3.25.76)
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
-      '@opentelemetry/api': 1.9.0
-      zod: 3.25.76
-
-  ai@6.0.3(zod@4.3.5):
-    dependencies:
-      '@ai-sdk/gateway': 3.0.2(zod@4.3.5)
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.5)
-      '@opentelemetry/api': 1.9.0
-      zod: 4.3.5
+      zod: 4.3.6
 
   ajv-formats@2.1.1(ajv@8.17.1):
     optionalDependencies:
@@ -28399,18 +28198,18 @@ snapshots:
 
   better-auth@1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vite@6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@3.25.76))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
       '@noble/hashes': 2.0.1
-      better-call: 1.1.7(zod@4.3.5)
+      better-call: 1.1.7(zod@4.3.6)
       defu: 6.1.4
       jose: 6.1.3
       kysely: 0.28.9
       nanostores: 1.1.0
-      zod: 4.3.5
+      zod: 4.3.6
     optionalDependencies:
       '@prisma/client': 7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3)
       '@tanstack/react-start': 1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.1.0))(react@19.1.0)(vite@6.4.1(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0)
@@ -28423,18 +28222,18 @@ snapshots:
 
   better-auth@1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@5.4.21(@types/node@18.19.130)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1))(webpack@5.103.0(@swc/core@1.15.8)))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@18.19.130)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
       '@noble/hashes': 2.0.1
-      better-call: 1.1.7(zod@4.3.5)
+      better-call: 1.1.7(zod@4.3.6)
       defu: 6.1.4
       jose: 6.1.3
       kysely: 0.28.9
       nanostores: 1.1.0
-      zod: 4.3.5
+      zod: 4.3.6
     optionalDependencies:
       '@prisma/client': 7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3)
       '@tanstack/react-start': 1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@5.4.21(@types/node@18.19.130)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1))(webpack@5.103.0(@swc/core@1.15.8))
@@ -28447,18 +28246,18 @@ snapshots:
 
   better-auth@1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0(@swc/core@1.15.8)))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@22.19.3)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
       '@noble/hashes': 2.0.1
-      better-call: 1.1.7(zod@4.3.5)
+      better-call: 1.1.7(zod@4.3.6)
       defu: 6.1.4
       jose: 6.1.3
       kysely: 0.28.9
       nanostores: 1.1.0
-      zod: 4.3.5
+      zod: 4.3.6
     optionalDependencies:
       '@prisma/client': 7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3)
       '@tanstack/react-start': 1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0(@swc/core@1.15.8))
@@ -28471,18 +28270,18 @@ snapshots:
 
   better-auth@1.4.10(@prisma/client@7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3))(@tanstack/react-start@1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0))(mysql2@3.15.3)(pg@8.16.3)(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
-      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
-      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
+      '@better-auth/core': 1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/telemetry': 1.4.10(@better-auth/core@1.4.10(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.6))(jose@6.1.3)(kysely@0.28.9)(nanostores@1.1.0))
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
       '@noble/hashes': 2.0.1
-      better-call: 1.1.7(zod@4.3.5)
+      better-call: 1.1.7(zod@4.3.6)
       defu: 6.1.4
       jose: 6.1.3
       kysely: 0.28.9
       nanostores: 1.1.0
-      zod: 4.3.5
+      zod: 4.3.6
     optionalDependencies:
       '@prisma/client': 7.2.0(prisma@7.2.0(@types/react@19.1.17)(magicast@0.3.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))(typescript@5.9.3)
       '@tanstack/react-start': 1.145.5(crossws@0.4.1(srvx@0.10.0))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))(webpack@5.103.0)
@@ -28493,32 +28292,23 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
       vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  better-call@1.1.7(zod@4.3.5):
+  better-call@1.1.7(zod@4.3.6):
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       rou3: 0.7.12
       set-cookie-parser: 2.7.2
     optionalDependencies:
-      zod: 4.3.5
+      zod: 4.3.6
 
-  better-call@1.1.8(zod@3.25.76):
+  better-call@1.1.8(zod@4.3.6):
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       rou3: 0.7.12
       set-cookie-parser: 2.7.2
     optionalDependencies:
-      zod: 3.25.76
-
-  better-call@1.1.8(zod@4.3.5):
-    dependencies:
-      '@better-auth/utils': 0.3.0
-      '@better-fetch/fetch': 1.1.21
-      rou3: 0.7.12
-      set-cookie-parser: 2.7.2
-    optionalDependencies:
-      zod: 4.3.5
+      zod: 4.3.6
 
   better-opn@3.0.2:
     dependencies:
@@ -30254,8 +30044,8 @@ snapshots:
       '@babel/parser': 7.28.5
       eslint: 9.39.2(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 5.0.0(zod@3.25.76)
+      zod: 4.3.6
+      zod-validation-error: 5.0.0(zod@4.3.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -32787,7 +32577,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 24.10.4
+      '@types/node': 22.19.3
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -34269,12 +34059,12 @@ snapshots:
       pino-http: 11.0.0
       rxjs: 7.8.2
 
-  nestjs-zod@5.1.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/swagger@11.2.3(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2))(rxjs@7.8.2)(zod@4.3.5):
+  nestjs-zod@5.1.0(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/swagger@11.2.3(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2))(rxjs@7.8.2)(zod@4.3.6):
     dependencies:
       '@nestjs/common': 11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       deepmerge: 4.3.1
       rxjs: 7.8.2
-      zod: 4.3.5
+      zod: 4.3.6
     optionalDependencies:
       '@nestjs/swagger': 11.2.3(@nestjs/common@11.1.11(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)
 
@@ -34552,15 +34342,10 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openai@6.15.0(ws@8.18.3)(zod@3.25.76):
+  openai@6.16.0(ws@8.18.3)(zod@4.3.6):
     optionalDependencies:
       ws: 8.18.3
-      zod: 3.25.76
-
-  openai@6.15.0(ws@8.18.3)(zod@4.3.5):
-    optionalDependencies:
-      ws: 8.18.3
-      zod: 4.3.5
+      zod: 4.3.6
 
   optionator@0.9.4:
     dependencies:
@@ -38498,6 +38283,8 @@ snapshots:
 
   web-streams-polyfill@4.0.0-beta.3: {}
 
+  web-streams-polyfill@4.2.0: {}
+
   webidl-conversions@3.0.1: {}
 
   webidl-conversions@5.0.0: {}
@@ -38915,19 +38702,19 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-to-json-schema@3.25.1(zod@3.25.76):
+  zod-to-json-schema@3.25.1(zod@4.3.6):
     dependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
-  zod-validation-error@5.0.0(zod@3.25.76):
+  zod-validation-error@5.0.0(zod@4.3.6):
     dependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
   zod@3.22.3: {}
 
   zod@3.25.76: {}
 
-  zod@4.3.5: {}
+  zod@4.3.6: {}
 
   zustand@4.5.7(@types/react@19.1.17)(react@19.2.3):
     dependencies:

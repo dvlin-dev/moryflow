@@ -38,7 +38,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "zod": "^4.1.13"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@anyhunt/eslint-config": "workspace:*",

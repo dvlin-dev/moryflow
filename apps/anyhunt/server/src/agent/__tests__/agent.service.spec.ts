@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentService } from '../agent.service';
 import { AgentBillingService } from '../agent-billing.service';
 import { AgentStreamProcessor } from '../agent-stream.processor';
-import { Runner, type StreamRunOptions } from '@anyhunt/agents-core';
+import { Runner, type StreamRunOptions } from '@openai/agents-core';
 import type { BrowserAgentPortService } from '../../browser/ports';
 import type { AgentTaskRepository } from '../agent-task.repository';
 import type { AgentTaskProgressStore } from '../agent-task.progress.store';

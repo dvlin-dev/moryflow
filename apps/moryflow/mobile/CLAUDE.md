@@ -65,6 +65,9 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Agent Runtime 切换为 `@openai/agents-core`，新增 RN shim 与 streams polyfill
+- RN shim 移除 `any` 类型，遵循移动端 lint 规则
+- Polyfills 改为同步加载，补齐 streams 兜底
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - 动态路由跳转统一使用对象形式 `{ pathname, params }`，避免 `any` 断言
 - Tab 导航改为真实 Tabs；「快速创建草稿」为动作按钮，不再是路由页重定向
@@ -84,7 +87,7 @@ apps/mobile/
 ├── 依赖 → packages/api（API 客户端）
 ├── 依赖 → packages/i18n（国际化）
 ├── 依赖 → packages/types（共享类型）
-└── 依赖 → packages/agents-*（Agent 框架）
+└── 依赖 → packages/agents-* + @openai/agents-core（Agent 框架）
 ```
 
 ## 样式规范

@@ -54,7 +54,7 @@ git clone https://github.com/mendableai/firecrawl.git archive/external-repos/fir
 ├─────────────────────────────────────────────────────────────────┤
 │  L3: Agent (智能数据收集)                                        │
 │      POST /api/v1/agent                                         │
-│      - 基于 @anyhunt/agents-core SDK 实现                        │
+│      - 基于 @openai/agents-core SDK 实现                        │
 │      - L2 Browser 能力封装为 Tools                              │
 │      - prompt 驱动，LLM 自动决策                                │
 │      - 返回结构化数据                                            │
@@ -401,18 +401,18 @@ model AgentTaskCharge {
 - `src/actions.ts` - 命令执行器
 - `src/browser.ts` - BrowserManager
 
-**@anyhunt/agents-core**：
+**@openai/agents-core（上游源码）**：
 
-- `packages/agents-core/src/agent.ts` - Agent 定义
-- `packages/agents-core/src/tool.ts` - Tool 抽象
-- `packages/agents-core/src/run.ts` - 执行入口
+- https://github.com/openai/openai-agents-js/blob/main/packages/agents-core/src/agent.ts - Agent 定义
+- https://github.com/openai/openai-agents-js/blob/main/packages/agents-core/src/tool.ts - Tool 抽象
+- https://github.com/openai/openai-agents-js/blob/main/packages/agents-core/src/run.ts - 执行入口
 
 ### C. 相关文档
 
-- **[@anyhunt/agents SDK 参考](../references/anyhunt-agents-sdk.md)** - L3 Agent 实现的核心依赖
+- **[OpenAI Agents 官方文档](https://openai.github.io/openai-agents-js/)** - SDK 参考与 API 说明
 - **[Playwright ARIA Snapshot API](https://playwright.dev/docs/aria-snapshot)** - 快照实现参考
 - **[ARIA 角色参考](https://www.w3.org/TR/wai-aria-1.2/#role_definitions)** - 可访问性角色定义
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-01-14_
+_版本: 1.0 | 更新日期: 2026-01-26_

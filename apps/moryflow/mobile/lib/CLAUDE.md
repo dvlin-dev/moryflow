@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Agent Runtime 改为使用 `@openai/agents-core` 类型与运行入口，移除 `@anyhunt/agents` 依赖
 - Server 会员导出收敛，移除未使用的等级比较/优先级常量
 - Cloud Sync 与 Vault 日志统一通过 `createLogger()` 输出
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖

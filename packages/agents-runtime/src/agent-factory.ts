@@ -1,18 +1,18 @@
-import { Agent, type Tool } from '@anyhunt/agents'
+import { Agent, type Tool } from '@openai/agents-core';
 
-import type { ModelFactory } from './model-factory'
-import { getMorySystemPrompt } from './prompt'
-import type { AgentContext } from './types'
+import type { ModelFactory } from './model-factory';
+import { getMorySystemPrompt } from './prompt';
+import type { AgentContext } from './types';
 
 export interface AgentFactoryOptions {
-  getModelFactory(): ModelFactory
-  baseTools: Tool<AgentContext>[]
-  getMcpTools(): Tool<AgentContext>[]
+  getModelFactory(): ModelFactory;
+  baseTools: Tool<AgentContext>[];
+  getMcpTools(): Tool<AgentContext>[];
 }
 
 export interface AgentFactory {
-  getAgent(preferredModelId?: string): { agent: Agent<AgentContext>; modelId: string }
-  invalidate(): void
+  getAgent(preferredModelId?: string): { agent: Agent<AgentContext>; modelId: string };
+  invalidate(): void;
 }
 
 /**
@@ -24,31 +24,31 @@ export const createAgentFactory = ({
   baseTools,
   getMcpTools,
 }: AgentFactoryOptions): AgentFactory => {
-  const agentCache = new Map<string, Agent<AgentContext>>()
+  const agentCache = new Map<string, Agent<AgentContext>>();
 
   const buildAgent = (modelId: string) => {
-    const { baseModel } = getModelFactory().buildModel(modelId)
+    const { baseModel } = getModelFactory().buildModel(modelId);
     return new Agent({
       name: 'Mory',
       instructions: getMorySystemPrompt(),
       model: baseModel,
       tools: [...baseTools, ...getMcpTools()],
-    })
-  }
+    });
+  };
 
   const getAgent = (preferredModelId?: string) => {
-    const { modelId } = getModelFactory().buildModel(preferredModelId)
-    let agent = agentCache.get(modelId)
+    const { modelId } = getModelFactory().buildModel(preferredModelId);
+    let agent = agentCache.get(modelId);
     if (!agent) {
-      agent = buildAgent(modelId)
-      agentCache.set(modelId, agent)
+      agent = buildAgent(modelId);
+      agentCache.set(modelId, agent);
     }
-    return { agent, modelId }
-  }
+    return { agent, modelId };
+  };
 
   const invalidate = () => {
-    agentCache.clear()
-  }
+    agentCache.clear();
+  };
 
-  return { getAgent, invalidate }
-}
+  return { getAgent, invalidate };
+};

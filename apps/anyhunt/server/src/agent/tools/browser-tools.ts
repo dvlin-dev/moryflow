@@ -2,13 +2,13 @@
  * Browser Tools for Agent
  *
  * [PROVIDES]: Agent 可使用的浏览器操作工具
- * [DEPENDS]: @anyhunt/agents-core, browser/ports
+ * [DEPENDS]: @openai/agents-core, browser/ports
  * [POS]: 将 L2 Browser API 封装为 Agent Tools（通过 ports/facade 隔离 Playwright 类型，支持取消）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { tool, type RunContext, type Tool } from '@anyhunt/agents-core';
+import { tool, type RunContext, type Tool } from '@openai/agents-core';
 import { z } from 'zod';
 import type { BrowserAgentPort } from '../../browser/ports';
 import { zodToJsonSchema } from './zod-to-json-schema';

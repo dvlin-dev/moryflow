@@ -8,9 +8,9 @@
  * uiMessages 由 chat-request.ts 单独管理。
  */
 
-import type { Session } from '@anyhunt/agents'
-import { createSessionAdapter } from '@anyhunt/agents-runtime'
-import { desktopSessionStore } from '../../chat-session-store/index.js'
+import type { Session } from '@openai/agents-core';
+import { createSessionAdapter } from '@anyhunt/agents-runtime';
+import { desktopSessionStore } from '../../chat-session-store/index.js';
 
 /**
  * 创建 PC 端 ChatSession
@@ -19,5 +19,5 @@ import { desktopSessionStore } from '../../chat-session-store/index.js'
  * @returns SDK Session 接口实例
  */
 export const createChatSession = (chatId: string): Session => {
-  return createSessionAdapter(chatId, desktopSessionStore)
-}
+  return createSessionAdapter(chatId, desktopSessionStore);
+};
