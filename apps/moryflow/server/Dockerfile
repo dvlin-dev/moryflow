@@ -5,20 +5,20 @@
 FROM node:20-alpine AS base
 
 # 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 WORKDIR /app
 
 # 依赖安装阶段 - 安装所有依赖（用于构建）
 FROM base AS deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/moryflow/server/package.json ./apps/moryflow/server/
 COPY packages/sync/package.json ./packages/sync/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server...
 
 # 生产依赖阶段 - 仅安装生产依赖
 FROM base AS prod-deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/moryflow/server/package.json ./apps/moryflow/server/
 COPY packages/sync/package.json ./packages/sync/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server... --prod
@@ -30,7 +30,7 @@ COPY --from=deps /app/apps/moryflow/server/node_modules ./apps/moryflow/server/n
 COPY --from=deps /app/packages/sync/node_modules ./packages/sync/node_modules
 COPY apps/moryflow/server ./apps/moryflow/server
 COPY packages/sync ./packages/sync
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc tsconfig.base.json tsconfig.agents.json ./
 
 # 构建 sync 包
 WORKDIR /app/packages/sync

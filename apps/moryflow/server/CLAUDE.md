@@ -52,6 +52,7 @@ module-name/
 
 ## 近期变更
 
+- Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307
 - AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
 - AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
 - CreditService：新增欠费记录与付费积分优先抵扣
@@ -76,6 +77,7 @@ module-name/
 - Common：补齐 ZodValidationPipe，用于 controller 级别 schema 校验
 - Auth：补齐 JWKS e2e 验签测试
 - E2E：Admin/AI Proxy/License 测试对齐 subscription tier 与 access JWT 认证
+- Build：补齐 @ai-sdk/provider-utils 与 jose 依赖，修复 Docker 构建 TS2307
 
 ## 错误信息规范
 
