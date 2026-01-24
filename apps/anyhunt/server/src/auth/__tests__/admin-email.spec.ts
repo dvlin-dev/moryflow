@@ -9,7 +9,7 @@ describe('isAdminEmail', () => {
 
   it('matches emails case-insensitively with trimming', () => {
     const raw = ' dvlindev@qq.com ,Other@Example.com ';
-    expect(isAdminEmail('ADMIN@DVLIN.COM', raw)).toBe(true);
+    expect(isAdminEmail('DVLINDEV@QQ.COM', raw)).toBe(true);
     expect(isAdminEmail('other@example.com', raw)).toBe(true);
   });
 
