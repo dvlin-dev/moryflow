@@ -9,6 +9,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ## 最近更新
 
 - Console Playground Browser 路由测试使用 `app.listen(0)`，减少并发测试下的连接重置
+- Browser CDP 连接新增白名单/私网策略环境变量（`.env.example`）
 
 ## Responsibilities
 

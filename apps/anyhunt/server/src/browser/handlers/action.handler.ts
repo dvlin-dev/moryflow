@@ -3,7 +3,7 @@
  *
  * [INPUT]: BrowserSession + ActionInput
  * [OUTPUT]: ActionResponse
- * [POS]: 执行浏览器操作，支持 @ref 语法与等待条件
+ * [POS]: 执行浏览器操作，支持 @ref 语法与等待条件（含必要参数校验）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -29,6 +29,31 @@ export class ActionHandler {
     const { type, selector, timeout = 5000 } = action;
 
     try {
+      const requiresSelector = new Set<ActionInput['type']>([
+        'click',
+        'dblclick',
+        'fill',
+        'type',
+        'hover',
+        'focus',
+        'blur',
+        'check',
+        'uncheck',
+        'selectOption',
+        'scrollIntoView',
+        'getText',
+        'getInnerHTML',
+        'getAttribute',
+        'getInputValue',
+        'isVisible',
+        'isEnabled',
+        'isChecked',
+      ]);
+
+      if (requiresSelector.has(type) && !selector) {
+        throw new Error(`selector is required for action type ${type}`);
+      }
+
       // 解析选择器（如果需要）
       let locator: Locator | undefined;
       if (selector) {

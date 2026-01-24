@@ -4,6 +4,8 @@
  * [DEFINES]: ActionTypeEnum, ActionSchema
  * [USED_BY]: browser-session.controller.ts, action.handler.ts
  * [POS]: 浏览器动作的请求验证
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { z } from 'zod';
@@ -68,7 +70,7 @@ const WaitForSchema = z.object({
 });
 
 /** 执行动作请求 */
-export const ActionSchema = z.object({
+const BaseActionSchema = z.object({
   /** 动作类型 */
   type: ActionTypeEnum,
   /** 元素选择器（支持 @ref 格式或 CSS 选择器） */
@@ -91,6 +93,105 @@ export const ActionSchema = z.object({
   timeout: z.number().int().min(100).max(30000).default(5000),
   /** click 选项 */
   clickOptions: ClickOptionsSchema.optional(),
+});
+
+const ACTIONS_REQUIRE_SELECTOR = new Set<ActionType>([
+  'click',
+  'dblclick',
+  'fill',
+  'type',
+  'hover',
+  'focus',
+  'blur',
+  'check',
+  'uncheck',
+  'selectOption',
+  'scrollIntoView',
+  'getText',
+  'getInnerHTML',
+  'getAttribute',
+  'getInputValue',
+  'isVisible',
+  'isEnabled',
+  'isChecked',
+]);
+
+export const ActionSchema = BaseActionSchema.superRefine((value, ctx) => {
+  if (ACTIONS_REQUIRE_SELECTOR.has(value.type) && !value.selector) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['selector'],
+      message: `selector is required for action type ${value.type}`,
+    });
+  }
+
+  if (value.type === 'fill' || value.type === 'type') {
+    if (value.value === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['value'],
+        message: `${value.type} requires a value`,
+      });
+    }
+  }
+
+  if (value.type === 'selectOption') {
+    if (!value.options || value.options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['options'],
+        message: 'selectOption requires options',
+      });
+    }
+  }
+
+  if (value.type === 'press') {
+    if (!value.key) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['key'],
+        message: 'press requires a key',
+      });
+    }
+  }
+
+  if (value.type === 'getAttribute') {
+    if (!value.attribute) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['attribute'],
+        message: 'getAttribute requires an attribute name',
+      });
+    }
+  }
+
+  if (value.type === 'wait') {
+    if (!value.waitFor) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['waitFor'],
+        message: 'wait requires a waitFor condition',
+      });
+      return;
+    }
+
+    const hasCondition = Boolean(
+      value.waitFor.time !== undefined ||
+      value.waitFor.selector ||
+      value.waitFor.selectorGone ||
+      value.waitFor.url ||
+      value.waitFor.text ||
+      value.waitFor.networkIdle,
+    );
+
+    if (!hasCondition) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['waitFor'],
+        message: 'wait requires at least one condition',
+      });
+    }
+  }
 });
 
 export type ActionInput = z.infer<typeof ActionSchema>;

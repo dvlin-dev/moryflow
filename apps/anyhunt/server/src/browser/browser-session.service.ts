@@ -4,12 +4,12 @@
  * [INPUT]: 会话操作请求
  * [OUTPUT]: 会话信息、快照、操作结果
  * [POS]: L2 Browser API 业务逻辑层，整合 SessionManager、SnapshotService、ActionHandler、
- *        CdpConnector、NetworkInterceptor、StoragePersistence（含会话清理）
+ *        CdpConnector、NetworkInterceptor、StoragePersistence（会话清理由 SessionManager 统一处理）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UrlValidator } from '../common';
 import { SessionManager } from './session';
 import { SnapshotService } from './snapshot';
@@ -52,8 +52,6 @@ export class UrlNotAllowedError extends Error {
 
 @Injectable()
 export class BrowserSessionService {
-  private readonly logger = new Logger(BrowserSessionService.name);
-
   constructor(
     private readonly sessionManager: SessionManager,
     private readonly snapshotService: SnapshotService,
@@ -120,14 +118,6 @@ export class BrowserSessionService {
    */
   async closeSession(userId: string, sessionId: string): Promise<void> {
     this.assertSessionAccess(userId, sessionId);
-    try {
-      await this.networkInterceptor.cleanupSession(sessionId);
-    } catch (error) {
-      this.logger.warn(
-        `Failed to cleanup network interceptor for session ${sessionId}: ${error}`,
-      );
-    }
-
     await this.sessionManager.closeSession(sessionId);
   }
 
@@ -149,6 +139,8 @@ export class BrowserSessionService {
     const session = this.getSessionForUser(userId, sessionId);
 
     await session.page.goto(url, { waitUntil, timeout });
+    session.refs = new Map();
+    this.snapshotService.clearCache(sessionId);
 
     let title: string | null = null;
     try {
@@ -327,7 +319,13 @@ export class BrowserSessionService {
     options?: CreateWindowInput,
   ): Promise<WindowInfo> {
     this.assertSessionAccess(userId, sessionId);
-    return this.sessionManager.createWindow(sessionId, options);
+    const windowInfo = await this.sessionManager.createWindow(
+      sessionId,
+      options,
+    );
+    const session = this.getSessionForUser(userId, sessionId);
+    await this.networkInterceptor.registerContext(sessionId, session.context);
+    return windowInfo;
   }
 
   /**
@@ -411,7 +409,12 @@ export class BrowserSessionService {
     rules: InterceptRule[],
   ): Promise<{ rulesCount: number }> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.networkInterceptor.setRules(sessionId, session.page, rules);
+    await Promise.all(
+      session.windows.map((window) =>
+        this.networkInterceptor.registerContext(sessionId, window.context),
+      ),
+    );
+    return this.networkInterceptor.setRules(sessionId, session.context, rules);
   }
 
   /**
@@ -423,7 +426,12 @@ export class BrowserSessionService {
     rule: InterceptRule,
   ): Promise<{ ruleId: string }> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.networkInterceptor.addRule(sessionId, session.page, rule);
+    await Promise.all(
+      session.windows.map((window) =>
+        this.networkInterceptor.registerContext(sessionId, window.context),
+      ),
+    );
+    return this.networkInterceptor.addRule(sessionId, session.context, rule);
   }
 
   /**

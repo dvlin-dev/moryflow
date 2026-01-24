@@ -3,13 +3,13 @@
  *
  * [INPUT]: 拦截规则、请求事件
  * [OUTPUT]: 修改后的请求/响应或 mock 数据
- * [POS]: 管理网络拦截规则，支持请求头修改、响应 mock、请求阻止
+ * [POS]: 管理网络拦截规则（基于 BrowserContext），支持请求头修改、响应 mock、请求阻止
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import type { Page, Route, Request, Response } from 'playwright';
+import type { BrowserContext, Route, Request } from 'playwright';
 import type { InterceptRule, NetworkRequestRecord } from '../dto';
 import { UrlValidator } from '../../common/validators/url.validator';
 
@@ -19,10 +19,10 @@ interface SessionInterceptState {
   rules: Map<string, InterceptRule>;
   /** 请求记录（最近 100 条） */
   requestHistory: NetworkRequestRecord[];
-  /** 是否已启用路由拦截 */
-  routingEnabled: boolean;
-  /** 清理函数 */
-  cleanup?: () => Promise<void>;
+  /** 已注册的 BrowserContext */
+  contexts: Set<BrowserContext>;
+  /** 每个 Context 对应的路由处理器 */
+  handlers: Map<BrowserContext, (route: Route, request: Request) => void>;
 }
 
 /** 拦截规则无效错误 */
@@ -51,10 +51,12 @@ export class NetworkInterceptorService {
    */
   async setRules(
     sessionId: string,
-    page: Page,
+    context: BrowserContext,
     rules: InterceptRule[],
   ): Promise<{ rulesCount: number }> {
     const state = this.getOrCreateState(sessionId);
+
+    await this.registerContext(sessionId, context);
 
     // 验证规则
     for (const rule of rules) {
@@ -70,9 +72,11 @@ export class NetworkInterceptorService {
       state.rules.set(ruleId, { ...rule, id: ruleId });
     }
 
-    // 启用路由拦截（如果尚未启用）
-    if (!state.routingEnabled && rules.length > 0) {
-      await this.enableRouting(sessionId, page, state);
+    // 启用或关闭路由拦截
+    if (rules.length > 0) {
+      await this.enableRouting(sessionId, state);
+    } else {
+      await this.disableRouting(state);
     }
 
     this.logger.debug(
@@ -87,10 +91,12 @@ export class NetworkInterceptorService {
    */
   async addRule(
     sessionId: string,
-    page: Page,
+    context: BrowserContext,
     rule: InterceptRule,
   ): Promise<{ ruleId: string }> {
     const state = this.getOrCreateState(sessionId);
+
+    await this.registerContext(sessionId, context);
 
     this.validateRule(rule);
 
@@ -98,8 +104,8 @@ export class NetworkInterceptorService {
     state.rules.set(ruleId, { ...rule, id: ruleId });
 
     // 启用路由拦截（如果尚未启用）
-    if (!state.routingEnabled) {
-      await this.enableRouting(sessionId, page, state);
+    if (state.rules.size === 1) {
+      await this.enableRouting(sessionId, state);
     }
 
     this.logger.debug(
@@ -119,6 +125,14 @@ export class NetworkInterceptorService {
     }
 
     const deleted = state.rules.delete(ruleId);
+
+    if (deleted && state.rules.size === 0) {
+      this.disableRouting(state).catch((error) => {
+        this.logger.warn(
+          `Failed to disable routing for session ${sessionId}: ${error}`,
+        );
+      });
+    }
 
     if (deleted) {
       this.logger.debug(
@@ -141,12 +155,7 @@ export class NetworkInterceptorService {
 
     state.rules.clear();
 
-    // 禁用路由拦截
-    if (state.routingEnabled && state.cleanup) {
-      await state.cleanup();
-      state.routingEnabled = false;
-      state.cleanup = undefined;
-    }
+    await this.disableRouting(state);
 
     this.logger.debug(`Cleared all intercept rules for session ${sessionId}`);
   }
@@ -207,9 +216,7 @@ export class NetworkInterceptorService {
   async cleanupSession(sessionId: string): Promise<void> {
     const state = this.sessionStates.get(sessionId);
     if (state) {
-      if (state.cleanup) {
-        await state.cleanup();
-      }
+      await this.disableRouting(state);
       this.sessionStates.delete(sessionId);
       this.logger.debug(
         `Cleaned up network interceptor for session ${sessionId}`,
@@ -218,31 +225,77 @@ export class NetworkInterceptorService {
   }
 
   /**
+   * 注册 Context（多窗口/多标签页统一拦截）
+   */
+  async registerContext(
+    sessionId: string,
+    context: BrowserContext,
+  ): Promise<void> {
+    const state = this.getOrCreateState(sessionId);
+    if (!state.contexts.has(context)) {
+      state.contexts.add(context);
+    }
+
+    if (state.rules.size > 0 && !state.handlers.has(context)) {
+      await this.attachContextRouting(sessionId, state, context);
+    }
+  }
+
+  /**
    * 启用路由拦截
    */
   private async enableRouting(
     sessionId: string,
-    page: Page,
     state: SessionInterceptState,
   ): Promise<void> {
-    // 设置路由处理器
-    const handler = async (route: Route, request: Request) => {
-      await this.handleRoute(sessionId, state, route, request);
+    const attachPromises = Array.from(state.contexts).map((context) =>
+      this.attachContextRouting(sessionId, state, context),
+    );
+    await Promise.all(attachPromises);
+  }
+
+  private async attachContextRouting(
+    sessionId: string,
+    state: SessionInterceptState,
+    context: BrowserContext,
+  ): Promise<void> {
+    if (state.handlers.has(context)) {
+      return;
+    }
+
+    const handler = (route: Route, request: Request) => {
+      this.handleRoute(sessionId, state, route, request).catch((error) => {
+        this.logger.warn(
+          `Network interceptor error for session ${sessionId}: ${error}`,
+        );
+        route.abort('blockedbyclient').catch(() => {
+          // 忽略 abort 失败
+        });
+      });
     };
 
-    // 拦截所有请求
-    await page.route('**/*', handler);
-
-    state.routingEnabled = true;
-    state.cleanup = async () => {
-      try {
-        await page.unroute('**/*', handler);
-      } catch {
-        // 页面可能已关闭，忽略错误
-      }
-    };
-
+    await context.route('**/*', handler);
+    state.handlers.set(context, handler);
     this.logger.debug(`Enabled routing for session ${sessionId}`);
+  }
+
+  private async disableRouting(state: SessionInterceptState): Promise<void> {
+    const entries = Array.from(state.handlers.entries());
+    if (entries.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      entries.map(async ([context, handler]) => {
+        try {
+          await context.unroute('**/*', handler);
+        } catch {
+          // Context 可能已关闭，忽略错误
+        }
+      }),
+    );
+
+    state.handlers.clear();
   }
 
   /**
@@ -454,7 +507,8 @@ export class NetworkInterceptorService {
       state = {
         rules: new Map(),
         requestHistory: [],
-        routingEnabled: false,
+        contexts: new Set(),
+        handlers: new Map(),
       };
       this.sessionStates.set(sessionId, state);
     }

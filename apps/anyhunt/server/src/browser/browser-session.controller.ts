@@ -4,6 +4,8 @@
  * [INPUT]: L2 Browser API 请求
  * [OUTPUT]: 会话信息、快照、操作结果
  * [POS]: L2 Browser API 控制器，路由 /api/v1/browser/*
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -39,7 +41,9 @@ import {
   SessionNotFoundError,
   SessionExpiredError,
   SessionOwnershipError,
+  SessionOperationNotAllowedError,
 } from './session';
+import { BrowserUnavailableError } from './browser-pool';
 import type { CurrentUserDto } from '../types';
 import {
   CreateSessionSchema,
@@ -66,7 +70,7 @@ import {
   type ExportStorageInput,
   type ImportStorageInput,
 } from './dto';
-import { CdpConnectionError, CdpEndpointError } from './cdp';
+import { CdpConnectionError, CdpEndpointError, CdpPolicyError } from './cdp';
 import { InvalidInterceptRuleError } from './network';
 import { StorageImportError, StorageExportError } from './persistence';
 
@@ -603,67 +607,61 @@ export class BrowserSessionController {
    */
   private handleSessionError(error: unknown): never {
     if (error instanceof SessionNotFoundError) {
-      throw new HttpException(
-        { error: 'Session not found', message: error.message },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
     }
 
     if (error instanceof SessionExpiredError) {
-      throw new HttpException(
-        { error: 'Session expired', message: error.message },
-        HttpStatus.GONE,
-      );
+      throw new HttpException('Session expired', HttpStatus.GONE);
     }
 
     if (error instanceof SessionOwnershipError) {
-      throw new HttpException(
-        { error: 'Session forbidden', message: error.message },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException('Session forbidden', HttpStatus.FORBIDDEN);
+    }
+
+    if (error instanceof SessionOperationNotAllowedError) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
 
     if (error instanceof UrlNotAllowedError) {
+      throw new HttpException('URL not allowed', HttpStatus.FORBIDDEN);
+    }
+
+    if (error instanceof BrowserUnavailableError) {
       throw new HttpException(
-        { error: 'URL not allowed', message: error.message },
-        HttpStatus.FORBIDDEN,
+        'Browser capacity is currently unavailable. Please retry later.',
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
 
     // P2.1 CDP 错误
     if (error instanceof CdpConnectionError) {
       throw new HttpException(
-        { error: 'CDP connection failed', message: error.message },
+        'CDP connection failed',
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
 
     if (error instanceof CdpEndpointError) {
-      throw new HttpException(
-        { error: 'Invalid CDP endpoint', message: error.message },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Invalid CDP endpoint', HttpStatus.BAD_REQUEST);
+    }
+
+    if (error instanceof CdpPolicyError) {
+      throw new HttpException(error.message, HttpStatus.FORBIDDEN);
     }
 
     // P2.2 网络拦截错误
     if (error instanceof InvalidInterceptRuleError) {
-      throw new HttpException(
-        { error: 'Invalid intercept rule', message: error.message },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
 
     // P2.3 存储持久化错误
     if (error instanceof StorageImportError) {
-      throw new HttpException(
-        { error: 'Storage import failed', message: error.message },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Storage import failed', HttpStatus.BAD_REQUEST);
     }
 
     if (error instanceof StorageExportError) {
       throw new HttpException(
-        { error: 'Storage export failed', message: error.message },
+        'Storage export failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

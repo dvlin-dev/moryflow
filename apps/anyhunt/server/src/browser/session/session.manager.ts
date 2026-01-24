@@ -3,7 +3,7 @@
  *
  * [INPUT]: 会话创建/管理请求（含上下文配置）
  * [OUTPUT]: BrowserSession 实例
- * [POS]: 管理浏览器会话生命周期，包含 Ref 映射与窗口/标签页状态
+ * [POS]: 管理浏览器会话生命周期，包含 Ref 映射与窗口/标签页状态（含拦截/快照清理）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,6 +11,8 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import type { BrowserContext, Page, Locator, Dialog } from 'playwright';
 import { BrowserPool } from '../browser-pool';
+import { NetworkInterceptorService } from '../network';
+import { SnapshotService } from '../snapshot';
 import type { BrowserContextOptions } from '../browser.types';
 import type {
   CreateSessionInput,
@@ -115,6 +117,14 @@ export class SessionOwnershipError extends Error {
   }
 }
 
+/** Session 操作不允许 */
+export class SessionOperationNotAllowedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SessionOperationNotAllowedError';
+  }
+}
+
 @Injectable()
 export class SessionManager implements OnModuleDestroy {
   private readonly logger = new Logger(SessionManager.name);
@@ -128,7 +138,11 @@ export class SessionManager implements OnModuleDestroy {
   /** 默认超时时间（5 分钟） */
   private readonly DEFAULT_TIMEOUT = 5 * 60 * 1000;
 
-  constructor(private readonly browserPool: BrowserPool) {
+  constructor(
+    private readonly browserPool: BrowserPool,
+    private readonly networkInterceptor: NetworkInterceptorService,
+    private readonly snapshotService: SnapshotService,
+  ) {
     this.startCleanupTimer();
   }
 
@@ -328,6 +342,7 @@ export class SessionManager implements OnModuleDestroy {
         }
       }
       this.logger.debug(`CDP session disconnected: ${sessionId}`);
+      await this.cleanupSessionResources(sessionId);
       return;
     }
 
@@ -343,6 +358,7 @@ export class SessionManager implements OnModuleDestroy {
     });
 
     await Promise.all(releasePromises);
+    await this.cleanupSessionResources(sessionId);
     this.logger.debug(
       `Session closed: ${sessionId}, released ${session.windows.length} window(s)`,
     );
@@ -663,6 +679,12 @@ export class SessionManager implements OnModuleDestroy {
   ): Promise<WindowInfo> {
     const session = this.getSession(sessionId);
 
+    if (session.isCdpConnection) {
+      throw new SessionOperationNotAllowedError(
+        'Creating a new window is not supported for CDP sessions.',
+      );
+    }
+
     // 从浏览器池获取新的上下文
     const newContext = await this.browserPool.acquireContext(
       this.toWindowContextOptions(options),
@@ -969,5 +991,17 @@ export class SessionManager implements OnModuleDestroy {
         );
       }
     }
+  }
+
+  private async cleanupSessionResources(sessionId: string): Promise<void> {
+    try {
+      await this.networkInterceptor.cleanupSession(sessionId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to cleanup network interceptor for session ${sessionId}: ${error}`,
+      );
+    }
+
+    this.snapshotService.clearCache(sessionId);
   }
 }

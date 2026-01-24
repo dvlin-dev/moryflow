@@ -1,11 +1,18 @@
 /**
- * Browser 模块常量配置
+ * [PROVIDES]: Browser 模块运行时配置常量
+ * [DEPENDS]: process.env, os.cpus/totalmem/freemem
+ * [POS]: BrowserPool 与 CDP 策略配置来源
  *
  * 支持环境变量覆盖：
  * - BROWSER_POOL_SIZE: 浏览器池大小 (1-32)
  * - BROWSER_WARMUP_COUNT: 预热浏览器数量 (1-8)
  * - MAX_PAGES_PER_BROWSER: 单个浏览器最大页面数 (1-50)
  * - BROWSER_IDLE_TIMEOUT: 空闲回收时间（秒，60-3600）
+ * - BROWSER_CDP_ALLOWED_HOSTS: 允许的 CDP 主机（逗号分隔）
+ * - BROWSER_CDP_ALLOW_PORT: 是否允许使用 port 参数（默认 false）
+ * - BROWSER_CDP_ALLOW_PRIVATE_HOSTS: 是否允许私网/本地主机（默认 false）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { cpus, totalmem, freemem } from 'os';
@@ -32,6 +39,17 @@ function parseEnvInt(
   if (Number.isNaN(parsed)) return undefined;
   // 强制边界约束
   return Math.max(min, Math.min(max, parsed));
+}
+
+/**
+ * 解析逗号分隔的字符串为列表
+ */
+function parseEnvList(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 }
 
 /**
@@ -134,3 +152,16 @@ export const DEFAULT_VIEWPORT_HEIGHT = 800;
 
 /** 最大并发页面数 */
 export const MAX_CONCURRENT_PAGES = BROWSER_POOL_SIZE * MAX_PAGES_PER_BROWSER;
+
+/** 允许的 CDP 主机列表（空表示禁用 CDP） */
+export const BROWSER_CDP_ALLOWED_HOSTS = parseEnvList(
+  process.env.BROWSER_CDP_ALLOWED_HOSTS,
+);
+
+/** 是否允许通过 port 获取 CDP wsEndpoint */
+export const BROWSER_CDP_ALLOW_PORT =
+  process.env.BROWSER_CDP_ALLOW_PORT === 'true';
+
+/** 是否允许私网/本地主机的 CDP 连接 */
+export const BROWSER_CDP_ALLOW_PRIVATE_HOSTS =
+  process.env.BROWSER_CDP_ALLOW_PRIVATE_HOSTS === 'true';

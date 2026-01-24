@@ -4,10 +4,19 @@
  * [INPUT]: CDP WebSocket 端点或端口
  * [OUTPUT]: 已连接的 Browser 实例
  * [POS]: 连接已运行的浏览器实例（调试用），支持 Electron、远程浏览器等
+ *
+ * [SECURITY]: 必须通过允许主机白名单 + SSRF 校验，默认拒绝未授权地址
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { chromium, type Browser, type BrowserContext } from 'playwright';
+import { UrlValidator } from '../../common/validators/url.validator';
+import {
+  BROWSER_CDP_ALLOWED_HOSTS,
+  BROWSER_CDP_ALLOW_PORT,
+  BROWSER_CDP_ALLOW_PRIVATE_HOSTS,
+} from '../browser.constants';
 
 /** CDP 连接选项 */
 export interface CdpConnectOptions {
@@ -48,6 +57,14 @@ export class CdpEndpointError extends Error {
   }
 }
 
+/** CDP 连接策略错误 */
+export class CdpPolicyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CdpPolicyError';
+  }
+}
+
 @Injectable()
 export class CdpConnectorService {
   private readonly logger = new Logger(CdpConnectorService.name);
@@ -57,6 +74,8 @@ export class CdpConnectorService {
 
   /** 已建立的 CDP 连接 */
   private readonly connections = new Map<string, CdpConnection>();
+
+  constructor(private readonly urlValidator: UrlValidator) {}
 
   /**
    * 连接到已运行的浏览器
@@ -71,6 +90,8 @@ export class CdpConnectorService {
 
     // 获取 WebSocket 端点
     const wsEndpoint = await this.resolveWsEndpoint(options);
+
+    await this.assertEndpointAllowed(wsEndpoint);
 
     this.logger.debug(`Connecting to CDP endpoint: ${wsEndpoint}`);
 
@@ -160,6 +181,10 @@ export class CdpConnectorService {
    * 检查 CDP 端口是否可用
    */
   async isPortAvailable(port: number): Promise<boolean> {
+    if (!BROWSER_CDP_ALLOW_PORT) {
+      return false;
+    }
+
     try {
       const wsEndpoint = await this.getWsEndpointFromPort(port);
       return wsEndpoint !== null;
@@ -182,6 +207,28 @@ export class CdpConnectorService {
 
     // 使用端口获取 wsEndpoint
     if (options.port) {
+      if (!BROWSER_CDP_ALLOW_PORT) {
+        throw new CdpPolicyError(
+          'CDP port-based connection is disabled. Use wsEndpoint instead.',
+        );
+      }
+      const allowlist = BROWSER_CDP_ALLOWED_HOSTS.map((host) =>
+        host.trim().toLowerCase(),
+      ).filter(Boolean);
+      if (allowlist.length === 0) {
+        throw new CdpPolicyError(
+          'CDP connection is disabled. Configure BROWSER_CDP_ALLOWED_HOSTS to enable.',
+        );
+      }
+      const localhostAllowed =
+        this.isHostAllowed('localhost', allowlist) ||
+        this.isHostAllowed('127.0.0.1', allowlist) ||
+        this.isHostAllowed('::1', allowlist);
+      if (!localhostAllowed) {
+        throw new CdpPolicyError(
+          'CDP port-based connection requires localhost to be allowlisted.',
+        );
+      }
       const wsEndpoint = await this.getWsEndpointFromPort(options.port);
       if (!wsEndpoint) {
         throw new CdpConnectionError(
@@ -226,5 +273,48 @@ export class CdpConnectorService {
     } catch {
       return false;
     }
+  }
+
+  private async assertEndpointAllowed(wsEndpoint: string): Promise<void> {
+    const url = new URL(wsEndpoint);
+    const hostname = url.hostname.toLowerCase();
+    const allowedHosts = BROWSER_CDP_ALLOWED_HOSTS.map((host) =>
+      host.trim().toLowerCase(),
+    ).filter(Boolean);
+
+    if (allowedHosts.length === 0) {
+      throw new CdpPolicyError(
+        'CDP connection is disabled. Configure BROWSER_CDP_ALLOWED_HOSTS to enable.',
+      );
+    }
+
+    if (!this.isHostAllowed(hostname, allowedHosts)) {
+      throw new CdpPolicyError(`CDP host is not allowed: ${hostname}.`);
+    }
+
+    if (!BROWSER_CDP_ALLOW_PRIVATE_HOSTS) {
+      const normalizedUrl = this.normalizeWsEndpoint(wsEndpoint);
+      const allowed = await this.urlValidator.isAllowed(normalizedUrl);
+      if (!allowed) {
+        throw new CdpPolicyError('CDP endpoint is not allowed by SSRF policy.');
+      }
+    }
+  }
+
+  private normalizeWsEndpoint(endpoint: string): string {
+    if (endpoint.startsWith('ws://')) {
+      return endpoint.replace(/^ws:/i, 'http:');
+    }
+    return endpoint.replace(/^wss:/i, 'https:');
+  }
+
+  private isHostAllowed(hostname: string, allowlist: string[]): boolean {
+    return allowlist.some((entry) => {
+      if (entry.startsWith('*.')) {
+        const suffix = entry.slice(2);
+        return hostname === suffix || hostname.endsWith(`.${suffix}`);
+      }
+      return hostname === entry;
+    });
   }
 }

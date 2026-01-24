@@ -21,9 +21,12 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - **禁止透传 Playwright 类型** 到 agent/tools 或 agents-core 泛型
 - **ApiKeyGuard 依赖**：Browser L2 API 使用 `ApiKeyGuard`，对应模块必须导入 `ApiKeyModule`，否则会导致 Nest 启动失败
 - **SSRF 防护强制**：openUrl 必须通过 UrlValidator 校验；BrowserPool/NetworkInterceptor 负责拦截子请求
+- **CDP 连接白名单**：必须配置 `BROWSER_CDP_ALLOWED_HOSTS` 才能启用 CDP；`port` 连接默认关闭，仅允许白名单内主机
+- **CDP 私网策略**：默认禁止私网/本地主机，除非显式开启 `BROWSER_CDP_ALLOW_PRIVATE_HOSTS`
 - **会话归属强校验**：所有 session 操作必须携带 `userId`，`SessionManager` 统一校验 owner
 - **用户可见错误信息使用英文**
 - **CreateSession 参数必须透传到 BrowserPool**，禁止硬编码上下文配置
+- **网络拦截基于 Context**：新增窗口需注册 Context，确保拦截规则覆盖所有页面
 
 ## File Structure
 
