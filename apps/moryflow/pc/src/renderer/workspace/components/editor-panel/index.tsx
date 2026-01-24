@@ -1,26 +1,27 @@
-import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react'
-import { PanelRightIcon, Share2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { Alert, AlertDescription } from '@anyhunt/ui/components/alert'
-import { Button } from '@anyhunt/ui/components/button'
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
-import { Skeleton } from '@anyhunt/ui/components/skeleton'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
-import { SharePopover } from '@/components/share'
-import { useTranslation } from '@/lib/i18n'
-import type { EditorPanelProps } from './const'
+import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
+import { Share01Icon, ViewSidebarRightIcon } from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+import { SharePopover } from '@/components/share';
+import { useTranslation } from '@/lib/i18n';
+import type { EditorPanelProps } from './const';
 
 const LazyNotionEditor = lazy(() =>
   import('@/components/editor').then((mod) => ({
-    default: mod.NotionEditor
+    default: mod.NotionEditor,
   }))
-)
+);
 
 /** 从文件名中提取标题（去除 .md 扩展名） */
-const extractTitle = (name: string): string => name.replace(/\.md$/, '')
+const extractTitle = (name: string): string => name.replace(/\.md$/, '');
 
 /** 防抖延迟（毫秒） */
-const RENAME_DEBOUNCE_MS = 300
+const RENAME_DEBOUNCE_MS = 300;
 
 export const EditorPanel = ({
   activeDoc,
@@ -37,14 +38,14 @@ export const EditorPanel = ({
   onPublished,
   onNavigateToSites,
 }: EditorPanelProps) => {
-  const { t } = useTranslation('workspace')
+  const { t } = useTranslation('workspace');
 
   // 标题编辑状态
-  const [editingTitle, setEditingTitle] = useState('')
-  const [isRenaming, setIsRenaming] = useState(false)
-  const renameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [editingTitle, setEditingTitle] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const renameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 记录当前正在编辑的文件路径，用于检测文件切换
-  const currentPathRef = useRef<string | null>(null)
+  const currentPathRef = useRef<string | null>(null);
 
   // 同步标题状态（文件切换或外部更新时）
   useEffect(() => {
@@ -52,88 +53,88 @@ export const EditorPanel = ({
       // 文件切换时，取消之前的防抖定时器
       if (currentPathRef.current !== activeDoc.path) {
         if (renameTimeoutRef.current) {
-          clearTimeout(renameTimeoutRef.current)
-          renameTimeoutRef.current = null
+          clearTimeout(renameTimeoutRef.current);
+          renameTimeoutRef.current = null;
         }
-        currentPathRef.current = activeDoc.path
+        currentPathRef.current = activeDoc.path;
       }
-      setEditingTitle(extractTitle(activeDoc.name))
+      setEditingTitle(extractTitle(activeDoc.name));
     }
-  }, [activeDoc?.path, activeDoc?.name])
+  }, [activeDoc?.path, activeDoc?.name]);
 
   // 清理定时器
   useEffect(() => {
     return () => {
       if (renameTimeoutRef.current) {
-        clearTimeout(renameTimeoutRef.current)
+        clearTimeout(renameTimeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   // 执行重命名
   const doRename = useCallback(
     async (newTitle: string) => {
-      if (!activeDoc || isRenaming) return
+      if (!activeDoc || isRenaming) return;
 
-      const trimmedTitle = newTitle.trim()
-      const currentTitle = extractTitle(activeDoc.name)
+      const trimmedTitle = newTitle.trim();
+      const currentTitle = extractTitle(activeDoc.name);
 
       // 标题未变化或为空，不执行重命名
       if (!trimmedTitle || trimmedTitle === currentTitle) {
-        return
+        return;
       }
 
-      setIsRenaming(true)
+      setIsRenaming(true);
       try {
-        await onRename(activeDoc.path, trimmedTitle)
-        toast.success(t('renameSuccess'))
+        await onRename(activeDoc.path, trimmedTitle);
+        toast.success(t('renameSuccess'));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : t('renameFailed'))
+        toast.error(err instanceof Error ? err.message : t('renameFailed'));
         // 恢复原标题
-        setEditingTitle(currentTitle)
+        setEditingTitle(currentTitle);
       } finally {
-        setIsRenaming(false)
+        setIsRenaming(false);
       }
     },
     [activeDoc, isRenaming, onRename, t]
-  )
+  );
 
   // 标题变化处理（带防抖）
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newTitle = e.target.value
-      setEditingTitle(newTitle)
+      const newTitle = e.target.value;
+      setEditingTitle(newTitle);
 
       // 清除之前的定时器
       if (renameTimeoutRef.current) {
-        clearTimeout(renameTimeoutRef.current)
+        clearTimeout(renameTimeoutRef.current);
       }
 
       // 设置新的防抖定时器
       renameTimeoutRef.current = setTimeout(() => {
-        doRename(newTitle)
-      }, RENAME_DEBOUNCE_MS)
+        doRename(newTitle);
+      }, RENAME_DEBOUNCE_MS);
     },
     [doRename]
-  )
+  );
 
   // 回车确认重命名（立即执行，不等防抖）
   const handleTitleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        e.preventDefault()
+        e.preventDefault();
         // 取消防抖定时器
         if (renameTimeoutRef.current) {
-          clearTimeout(renameTimeoutRef.current)
-          renameTimeoutRef.current = null
+          clearTimeout(renameTimeoutRef.current);
+          renameTimeoutRef.current = null;
         }
-        doRename(editingTitle)
+        doRename(editingTitle);
         // 失焦
-        e.currentTarget.blur()
+        e.currentTarget.blur();
       }
     },
     [doRename, editingTitle]
-  )
+  );
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
@@ -148,12 +149,8 @@ export const EditorPanel = ({
             onPublished={onPublished}
             onNavigateToSites={onNavigateToSites}
           >
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 gap-1.5 px-2.5 text-xs font-medium"
-            >
-              <Share2 className="size-3.5" />
+            <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
+              <Icon icon={Share01Icon} className="size-3.5" />
               Share
             </Button>
           </SharePopover>
@@ -168,7 +165,7 @@ export const EditorPanel = ({
                   className="text-muted-foreground transition-colors hover:text-foreground"
                   onClick={onToggleChat}
                 >
-                  <PanelRightIcon className="size-4" />
+                  <Icon icon={ViewSidebarRightIcon} className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left">{t('expand')}</TooltipContent>
@@ -236,5 +233,5 @@ export const EditorPanel = ({
         )}
       </div>
     </section>
-  )
-}
+  );
+};

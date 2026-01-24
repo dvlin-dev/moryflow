@@ -26,6 +26,13 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - Providers 左侧列表仅保留“会员模型 + Providers”两类；Providers 内部排序为启用在上、未启用在下，并在切换 active provider 时才刷新顺序（避免编辑时跳动）
 - 全局样式引入 `/ui/styles`，Electron 专属样式保留在 `src/renderer/global.css`
 - `electron.vite.config.ts` 需为 `/ui/styles` 设置别名，避免解析到 `packages/ui/src`
+- 外链打开与窗口导航必须走主进程 allowlist 校验（`MORYFLOW_EXTERNAL_HOST_ALLOWLIST` 可扩展）
+- 图标库统一 Hugeicons（`@hugeicons/core-free-icons` + `Icon` 组件）
+- Renderer 使用 Vitest + RTL 补齐核心 hooks 单测
+- Vitest 配置需确保 React 单实例（alias/dedupe），hooks 单测可 mock i18n
+- E2E 基线使用 Playwright（Electron），核心流程需覆盖创建 Vault/笔记与入口页
+- E2E 运行可使用 `MORYFLOW_E2E_USER_DATA`/`MORYFLOW_E2E_RESET` 隔离与重置数据
+- preload 构建需输出 CJS（sandbox 下 ESM preload 会报错）
 
 ## 技术栈
 
@@ -59,6 +66,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 | `src/preload/`                 | 目录 | 预加载脚本（IPC 桥接）  |
 | `src/shared/`                  | 目录 | 主进程/渲染进程共享代码 |
 | `src/shared/ipc/`              | 目录 | IPC 通道定义            |
+| `tests/`                       | 目录 | Playwright E2E 测试     |
+| `playwright.config.ts`         | 配置 | Playwright 配置         |
 
 ## 常见修改场景
 
@@ -73,15 +82,27 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Agent Runtime 切换为 `@openai/agents-core`，移除本地 Agents SDK 依赖
+- 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Auth 改为 access 内存 + refresh 安全存储（`src/main/membership-token-store.ts`）
 - 统一登录/注册为 email + OTP 验证流程，移除 pre-register
+- 主窗口安全收敛：启用 sandbox + 外链 allowlist + 导航拦截
+- Renderer 文案英文化与 Hugeicons 替换；补充 hooks 单测
+- 补齐 Playwright E2E 基线与核心流程覆盖
+- Vitest 单测对齐 React 19.2.3，并移除 i18n 依赖避免重复 React
+- Playwright E2E 适配 ESM（使用 import.meta.url 获取路径）
+- Playwright E2E 增加 userData/重置开关，保证 onboarding 稳定出现
+- preload 产物改为 CJS 输出，Playwright E2E 可正常挂载 desktopAPI
+- Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
+- external-links 安全校验补齐路径边界与单测
+- 站点发布模板新增 `lang`/`description` 占位符，构建链路默认 `en`
 
 ## 依赖关系
 
 ```
 apps/moryflow/pc/
 ├── 依赖 → packages/api（API 客户端）
-├── 依赖 → packages/agents-*（Agent 框架）
+├── 依赖 → packages/agents-* + @openai/agents-core（Agent 框架）
 ├── 依赖 → packages/types（共享类型）
 └── 功能文档 → docs/products/moryflow/features/cloud-sync/
 ```

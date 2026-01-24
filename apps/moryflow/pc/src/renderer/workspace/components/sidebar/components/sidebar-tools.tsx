@@ -1,20 +1,18 @@
 /**
  * [PROPS]: { vault, onSettingsOpen }
  * [EMITS]: onSettingsOpen - 设置按钮点击事件
- * [POS]: 侧边栏工具区组件（仅图标，一行两个）
+ * [POS]: 侧边栏工具区组件（仅图标，一行两个，含 E2E 选择器）
  */
 
-import { Settings } from 'lucide-react'
-import { SyncStatusIndicator, SyncStatusHoverCard } from '@/components/cloud-sync'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
-import { useTranslation } from '@/lib/i18n'
-import type { SidebarToolsProps } from '../const'
+import { Settings02Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { SyncStatusIndicator, SyncStatusHoverCard } from '@/components/cloud-sync';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+import { useTranslation } from '@/lib/i18n';
+import type { SidebarToolsProps } from '../const';
 
-export const SidebarTools = ({
-  vault,
-  onSettingsOpen,
-}: SidebarToolsProps) => {
-  const { t } = useTranslation('workspace')
+export const SidebarTools = ({ vault, onSettingsOpen }: SidebarToolsProps) => {
+  const { t } = useTranslation('workspace');
 
   return (
     <div className="flex shrink-0 items-center justify-between py-1.5 pl-2.5 pr-2">
@@ -39,12 +37,13 @@ export const SidebarTools = ({
             type="button"
             className="text-muted-foreground transition-colors hover:text-foreground"
             onClick={() => onSettingsOpen('account')}
+            data-testid="sidebar-settings-button"
           >
-            <Settings className="size-4" />
+            <Icon icon={Settings02Icon} className="size-4" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top">{t('settingsLabel')}</TooltipContent>
       </Tooltip>
     </div>
-  )
-}
+  );
+};

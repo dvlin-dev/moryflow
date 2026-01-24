@@ -12,9 +12,8 @@
     }
   },
   "dependencies": {
-    "@anyhunt/agents": "workspace:*",
-    "@anyhunt/agents-core": "workspace:*",
-    "@anyhunt/agents-runtime": "workspace:*"
+    "@anyhunt/agents-runtime": "workspace:*",
+    "@openai/agents-core": "0.4.3"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

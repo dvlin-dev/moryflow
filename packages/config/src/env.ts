@@ -2,6 +2,7 @@
  * [DEFINES]: 环境变量验证和类型安全配置
  * [USED_BY]: 所有产品服务端
  * [POS]: 统一环境变量管理
+ * [NOTE]: Zod v4 flatten 类型补正，确保错误信息可读性
  */
 
 import { z } from 'zod';
@@ -30,10 +31,10 @@ export function validateEnv<T extends z.ZodTypeAny>(
   const result = schema.safeParse(env);
 
   if (!result.success) {
-    const errors = result.error.flatten().fieldErrors;
+    const errors = result.error.flatten().fieldErrors as Record<string, string[] | undefined>;
     const errorMessages = Object.entries(errors)
       .map(([key, msgs]) => {
-        const messages = msgs || [];
+        const messages = Array.isArray(msgs) ? msgs : [];
         return '  ' + key + ': ' + messages.join(', ');
       })
       .join('\n');

@@ -13,7 +13,7 @@ import type {
   StreamedRunResult,
   Usage,
   AgentOutputType,
-} from '@anyhunt/agents-core';
+} from '@openai/agents-core';
 import { QuotaService } from '../quota/quota.service';
 import {
   DuplicateRefundError,
@@ -49,7 +49,7 @@ export class CreditsExceededError extends Error {
   }
 }
 
-type BrowserAgent = import('@anyhunt/agents-core').Agent<
+type BrowserAgent = import('@openai/agents-core').Agent<
   BrowserAgentContext,
   AgentOutputType
 >;

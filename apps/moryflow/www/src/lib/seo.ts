@@ -1,7 +1,7 @@
 /**
- * [PROVIDES]: SEO configuration and metadata generation utilities
- * [DEPENDS]: None
- * [POS]: Core SEO utility for the website, used by all pages
+ * [PROVIDES]: SEO 配置与元数据生成工具
+ * [DEPENDS]: 无
+ * [POS]: 官网全局 SEO 工具
  */
 
 export const siteConfig = {
@@ -9,8 +9,8 @@ export const siteConfig = {
   title: 'Moryflow - Your AI Knowledge Assistant',
   description:
     'Not a chatbot, a thinking companion. Local-first, privacy-focused AI note-taking tool.',
-  url: 'https://moryflow.com',
-  ogImage: 'https://moryflow.com/og-image.png',
+  url: 'https://www.moryflow.com',
+  ogImage: 'https://www.moryflow.com/og-image.svg',
   twitter: '@moryflow',
   locale: 'en_US',
 };
@@ -25,9 +25,6 @@ interface PageMeta {
   modifiedTime?: string;
 }
 
-/**
- * Generate page SEO metadata
- */
 export function generateMeta(page: PageMeta = {}) {
   const title = page.title ? `${page.title} | ${siteConfig.name}` : siteConfig.title;
   const description = page.description || siteConfig.description;
@@ -35,7 +32,7 @@ export function generateMeta(page: PageMeta = {}) {
   const image = page.image || siteConfig.ogImage;
 
   const meta = [
-    // Basic SEO
+    // 基础 SEO
     { title },
     { name: 'description', content: description },
     { name: 'robots', content: 'index, follow' },
@@ -52,7 +49,7 @@ export function generateMeta(page: PageMeta = {}) {
     { property: 'og:locale', content: siteConfig.locale },
     { property: 'og:site_name', content: siteConfig.name },
 
-    // Twitter Card
+    // Twitter 卡片
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:site', content: siteConfig.twitter },
     { name: 'twitter:title', content: title },
@@ -60,7 +57,7 @@ export function generateMeta(page: PageMeta = {}) {
     { name: 'twitter:image', content: image },
   ];
 
-  // Article-specific metadata
+  // 文章类型元数据
   if (page.type === 'article') {
     if (page.publishedTime) {
       meta.push({ property: 'article:published_time', content: page.publishedTime });

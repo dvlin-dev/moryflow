@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-25（补充 Auth test:e2e 与全量测试记录；Mobile refresh 网络异常清理；补充 X-App-Platform 调研结论）
+> 最近更新：2026-01-26（OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 
 ## 项目概述
 
@@ -159,8 +159,7 @@ Anyhunt/
 │   └── scraper-core/                # 抓取核心（来自 Fetchx）
 ├── tooling/
 │   ├── eslint-config/               # ESLint 配置
-│   ├── typescript-config/           # TypeScript 配置
-│   └── tailwind-config/             # Tailwind 配置
+│   └── typescript-config/           # TypeScript 配置
 ├── deploy/                          # 部署配置目录
 │   ├── infra/                       # 基础设施（DB、Redis；含测试环境）
 │   └── moryflow/                    # Moryflow 一套 docker compose（4c6g）
@@ -651,7 +650,7 @@ pnpm lint
 | 共享包   | `@anyhunt/{name}`          | `@anyhunt/types`、`@anyhunt/api`、`@anyhunt/sync`     |
 | UI 包    | `@anyhunt/ui`              | 唯一                                                  |
 | 配置包   | `@anyhunt/{name}-config`   | `@anyhunt/eslint-config`                              |
-| Agent 包 | `@anyhunt/agents-{name}`   | `@anyhunt/agents-core`                                |
+| Agent 包 | `@anyhunt/agents-{name}`   | `@anyhunt/agents-runtime`                             |
 
 ---
 

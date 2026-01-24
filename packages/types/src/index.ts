@@ -9,5 +9,4 @@
 // 平台通用类型
 export * from './common';
 
-// 产品特定类型（命名空间导出）
-export * from './products';
+// 产品特定类型已收敛到各产品内部，避免跨业务线耦合

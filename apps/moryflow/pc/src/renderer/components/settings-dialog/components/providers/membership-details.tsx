@@ -1,6 +1,13 @@
 import { Badge } from '@anyhunt/ui/components/badge';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { Crown, Sparkles, Zap, Info, Lock } from 'lucide-react';
+import {
+  CrownIcon,
+  InformationCircleIcon,
+  LockIcon,
+  SparklesIcon,
+  ZapIcon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { useAuth, TIER_DISPLAY_NAMES, type MembershipModel } from '@/lib/server';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { cn } from '@/lib/utils';
@@ -17,8 +24,8 @@ export const MembershipDetails = () => {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div className="space-y-2">
-          <Crown className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">登录后可使用会员模型</p>
+          <Icon icon={CrownIcon} className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">Sign in to access membership models</p>
         </div>
       </div>
     );
@@ -30,12 +37,12 @@ export const MembershipDetails = () => {
       <div className="shrink-0 border-b p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Crown className="h-5 w-5 text-primary" />
+            <Icon icon={CrownIcon} className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-medium">会员模型</h3>
+            <h3 className="font-medium">Membership models</h3>
             <p className="text-xs text-muted-foreground">
-              {user.tierInfo.displayName} · {user.credits.total} 积分可用
+              {user.tierInfo.displayName} · {user.credits.total} credits available
             </p>
           </div>
         </div>
@@ -44,8 +51,11 @@ export const MembershipDetails = () => {
       {/* 提示信息 */}
       <div className="shrink-0 border-b bg-muted/30 px-4 py-3">
         <div className="flex gap-2 text-xs text-muted-foreground">
-          <Info className="h-4 w-4 shrink-0" />
-          <p>会员模型由平台提供，使用时消耗积分，无需配置 API Key</p>
+          <Icon icon={InformationCircleIcon} className="h-4 w-4 shrink-0" />
+          <p>
+            Membership models are provided by the platform. Usage consumes credits, no API key
+            required.
+          </p>
         </div>
       </div>
 
@@ -67,16 +77,16 @@ export const MembershipDetails = () => {
       {/* 底部积分信息 */}
       <div className="shrink-0 border-t bg-muted/30 px-4 py-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">当前积分余额</span>
+          <span className="text-muted-foreground">Current credits</span>
           <div className="flex items-center gap-4">
             <span>
-              每日: <strong>{user.credits.daily}</strong>
+              Daily: <strong>{user.credits.daily}</strong>
             </span>
             <span>
-              订阅: <strong>{user.credits.subscription}</strong>
+              Subscription: <strong>{user.credits.subscription}</strong>
             </span>
             <span>
-              购买: <strong>{user.credits.purchased}</strong>
+              Purchased: <strong>{user.credits.purchased}</strong>
             </span>
           </div>
         </div>
@@ -94,8 +104,8 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
   if (models.length === 0) {
     return (
       <div className="py-12 text-center">
-        <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
-        <p className="mt-3 text-sm text-muted-foreground">暂无会员模型</p>
+        <Icon icon={SparklesIcon} className="mx-auto h-10 w-10 text-muted-foreground/50" />
+        <p className="mt-3 text-sm text-muted-foreground">No membership models yet</p>
       </div>
     );
   }
@@ -106,8 +116,8 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
       {availableModels.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Zap className="h-4 w-4 text-primary" />
-            <span>可用模型</span>
+            <Icon icon={ZapIcon} className="h-4 w-4 text-primary" />
+            <span>Available models</span>
             {availableModels.length > 1 && (
               <Badge variant="secondary" className="text-xs">
                 {availableModels.length}
@@ -126,8 +136,8 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
       {lockedModels.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Lock className="h-4 w-4" />
-            <span>升级后可用</span>
+            <Icon icon={LockIcon} className="h-4 w-4" />
+            <span>Unlocked with higher tier</span>
             {lockedModels.length > 1 && (
               <Badge variant="outline" className="text-xs">
                 {lockedModels.length}
@@ -163,13 +173,13 @@ const ModelItem = ({ model, locked }: { model: MembershipModel; locked?: boolean
         </span>
         {locked ? (
           <Badge variant="outline" className="shrink-0 text-xs">
-            <Lock className="mr-1 h-3 w-3" />
+            <Icon icon={LockIcon} className="mr-1 h-3 w-3" />
             {tierName}
           </Badge>
         ) : (
           <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-xs">
-            <Zap className="mr-1 h-3 w-3" />
-            可用
+            <Icon icon={ZapIcon} className="mr-1 h-3 w-3" />
+            Available
           </Badge>
         )}
       </div>

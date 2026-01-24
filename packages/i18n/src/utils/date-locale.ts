@@ -1,3 +1,11 @@
+/**
+ * [PROVIDES]: getDateLocale, getDateFormat, dateLocaleUtils
+ * [DEPENDS]: date-fns/locale
+ * [POS]: date-fns locale 与格式映射
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
+ */
+
 import { Locale } from 'date-fns';
 import { zhCN, enUS, ja, de, ar } from 'date-fns/locale';
 

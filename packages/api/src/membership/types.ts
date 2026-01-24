@@ -1,7 +1,9 @@
 /**
- * Membership 类型定义
+ * [DEFINES]: Membership 类型与 DTO
+ * [USED_BY]: Moryflow PC/Mobile
+ * [POS]: 会员模块共享类型定义
  *
- * 会员系统相关的类型，供 PC 和 Mobile 共用
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 // ── 会员等级 ──────────────────────────────────────────────

@@ -18,7 +18,7 @@ export default defineConfig({
       },
       sitemap: {
         enabled: true,
-        host: 'https://moryflow.com',
+        host: 'https://www.moryflow.com',
       },
     }),
     nitro(),

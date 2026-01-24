@@ -1,4 +1,12 @@
-import { contextBridge, ipcRenderer, shell } from 'electron';
+/**
+ * [PROVIDES]: Renderer IPC bridge (desktopAPI)
+ * [DEPENDS]: electron ipcRenderer, shared IPC types
+ * [POS]: Preload bridge (secure channel surface)
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { contextBridge, ipcRenderer } from 'electron';
 import type { UIMessageChunk } from 'ai';
 
 import type {
@@ -26,7 +34,7 @@ const api: DesktopApi = {
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
   },
   payment: {
-    openCheckout: (url) => shell.openExternal(url),
+    openCheckout: (url) => ipcRenderer.invoke('shell:openExternal', { url }).then(() => undefined),
     onSuccess: (handler) => {
       const listener = () => handler();
       ipcRenderer.on('payment:success', listener);

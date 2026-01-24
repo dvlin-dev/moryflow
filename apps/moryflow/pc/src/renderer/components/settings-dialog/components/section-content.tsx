@@ -1,3 +1,11 @@
+/**
+ * [PROPS]: SectionContentProps - 设置页分区渲染参数
+ * [EMITS]: none
+ * [POS]: Settings Dialog 分区内容渲染
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import type { UseFieldArrayReturn } from 'react-hook-form';
 import type { FormValues, SettingsSection } from '../const';
 import type { SettingsDialogState } from '../use-settings-dialog';
@@ -40,7 +48,7 @@ export const SectionContent = ({
   }
   if (section === 'general') {
     return meta.isLoading ? (
-      <LoadingHint text="正在加载配置…" />
+      <LoadingHint text="Loading settings..." />
     ) : (
       <GeneralSection control={form.control} />
     );

@@ -4,13 +4,18 @@
  */
 
 import { useState } from 'react';
-import { Loader2, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Icon } from '@/components/ui/icon';
+import {
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Image01Icon,
+  Loading01Icon,
+} from '@hugeicons/core-free-icons';
 import {
   Select,
   SelectContent,
@@ -19,11 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 import {
   IMAGE_MODELS,
@@ -33,11 +34,7 @@ import {
   OUTPUT_FORMATS,
   type ImageModel,
 } from '../const';
-import {
-  generateImage,
-  type ImageGenerationRequest,
-  type ImageGenerationResponse,
-} from '../api';
+import { generateImage, type ImageGenerationRequest, type ImageGenerationResponse } from '../api';
 import { ApiError } from '@/lib/api-client';
 
 /** 生成结果 */
@@ -128,7 +125,7 @@ export function ImageGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5" />
+            <Icon icon={Image01Icon} className="h-5 w-5" />
             生成参数
           </CardTitle>
         </CardHeader>
@@ -252,9 +249,7 @@ export function ImageGenerator() {
                   type="number"
                   placeholder="随机"
                   value={seed ?? ''}
-                  onChange={(e) =>
-                    setSeed(e.target.value ? parseInt(e.target.value) : undefined)
-                  }
+                  onChange={(e) => setSeed(e.target.value ? parseInt(e.target.value) : undefined)}
                 />
               </div>
               <div className="flex items-center space-x-2 pt-6">
@@ -270,20 +265,14 @@ export function ImageGenerator() {
 
           {/* 错误提示 */}
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
 
           {/* 提交按钮 */}
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !prompt.trim()}
-            className="w-full"
-          >
+          <Button onClick={handleSubmit} disabled={loading || !prompt.trim()} className="w-full">
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
                 生成中...
               </>
             ) : (
@@ -307,7 +296,7 @@ export function ImageGenerator() {
 
           {loading && (
             <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Icon icon={Loading01Icon} className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
 
@@ -316,10 +305,7 @@ export function ImageGenerator() {
               {/* 图片展示 */}
               <div className="grid grid-cols-2 gap-4">
                 {result.response.data.map((img, index) => (
-                  <div
-                    key={index}
-                    className="overflow-hidden rounded-lg border bg-muted"
-                  >
+                  <div key={index} className="overflow-hidden rounded-lg border bg-muted">
                     {img.url ? (
                       <img
                         src={img.url}
@@ -352,9 +338,9 @@ export function ImageGenerator() {
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full">
                     {rawResponseOpen ? (
-                      <ChevronUp className="mr-2 h-4 w-4" />
+                      <Icon icon={ArrowUp01Icon} className="mr-2 h-4 w-4" />
                     ) : (
-                      <ChevronDown className="mr-2 h-4 w-4" />
+                      <Icon icon={ArrowDown01Icon} className="mr-2 h-4 w-4" />
                     )}
                     原始响应
                   </Button>

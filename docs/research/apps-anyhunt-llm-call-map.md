@@ -7,19 +7,19 @@ status: draft
 
 > 目标：把 `apps/anyhunt/*` 里所有“大模型相关调用”（Agent + LLM + Embedding）按**入口 → 路由/配置 → 调用边界 → 计费/流式**梳理清楚，便于整体 Code Review 与后续重构。
 >
-> 说明：本文只梳理 `apps/anyhunt/*` 的调用逻辑与边界；底层实现（如 `@anyhunt/agents-core`、`@anyhunt/agents-openai`）只作为依赖说明，不展开其内部细节。
+> 说明：本文只梳理 `apps/anyhunt/*` 的调用逻辑与边界；底层实现（如 `@openai/agents-core`、`@openai/agents-openai`）只作为依赖说明，不展开其内部细节。
 
 ## 1. 总览：哪里会触发“大模型调用”
 
 ### 1.1 服务端（真正发起模型请求）
 
-| 能力                                      | 入口 API                            | 关键文件（调用点）                                       | 实际调用方式                                           |
-| ----------------------------------------- | ----------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
-| LLM Admin 配置（Provider/Model/Settings） | `GET/PUT /api/v1/admin/llm/*`       | `apps/anyhunt/server/src/llm/*`                          | 不调用模型；只做密钥加解密与路由配置                   |
-| Extract（结构化提取）                     | `POST /api/v1/extract`              | `apps/anyhunt/server/src/extract/extract.service.ts`     | OpenAI SDK：`chat.completions.create/parse`            |
-| Agent（浏览器工具调用编排，SSE）          | `POST /api/v1/agent`                | `apps/anyhunt/server/src/agent/agent.service.ts`         | `@anyhunt/agents-core` + `Model`（由 `llm/` 路由构建） |
-| Digest（摘要/叙事/解释）                  | 多个 Digest run/投递流程内部触发    | `apps/anyhunt/server/src/digest/services/ai.service.ts`  | OpenAI SDK：`chat.completions.create`                  |
-| Embedding（向量）                         | 被 Memory/Search/Extract 等间接依赖 | `apps/anyhunt/server/src/embedding/embedding.service.ts` | OpenAI SDK：`embeddings.create`                        |
+| 能力                                      | 入口 API                            | 关键文件（调用点）                                       | 实际调用方式                                          |
+| ----------------------------------------- | ----------------------------------- | -------------------------------------------------------- | ----------------------------------------------------- |
+| LLM Admin 配置（Provider/Model/Settings） | `GET/PUT /api/v1/admin/llm/*`       | `apps/anyhunt/server/src/llm/*`                          | 不调用模型；只做密钥加解密与路由配置                  |
+| Extract（结构化提取）                     | `POST /api/v1/extract`              | `apps/anyhunt/server/src/extract/extract.service.ts`     | OpenAI SDK：`chat.completions.create/parse`           |
+| Agent（浏览器工具调用编排，SSE）          | `POST /api/v1/agent`                | `apps/anyhunt/server/src/agent/agent.service.ts`         | `@openai/agents-core` + `Model`（由 `llm/` 路由构建） |
+| Digest（摘要/叙事/解释）                  | 多个 Digest run/投递流程内部触发    | `apps/anyhunt/server/src/digest/services/ai.service.ts`  | OpenAI SDK：`chat.completions.create`                 |
+| Embedding（向量）                         | 被 Memory/Search/Extract 等间接依赖 | `apps/anyhunt/server/src/embedding/embedding.service.ts` | OpenAI SDK：`embeddings.create`                       |
 
 ### 1.2 前端（只负责传参/展示，不直接调用模型）
 
@@ -107,7 +107,7 @@ resolveUpstream({ purpose, requestedModelId? }):
 
 这里分两条“调用形态”：
 
-1. **Agent 路径（`LlmRoutingService`）**：返回 `@anyhunt/agents-core` 的 `Model`
+1. **Agent 路径（`LlmRoutingService`）**：返回 `@openai/agents-core` 的 `Model`
 2. **OpenAI SDK 路径（`LlmOpenAiClientService`）**：返回 OpenAI SDK client（用于 `chat.completions.*` / `embeddings.*`）
 
 Agent 路由（伪代码，文件：`apps/anyhunt/server/src/llm/llm-routing.service.ts`）：
@@ -269,7 +269,7 @@ executeTask(input, userId):
 
 3. **流式事件转换**
    - 位置：`apps/anyhunt/server/src/agent/agent-stream.processor.ts`
-   - 将 `@anyhunt/agents-core` 的 stream event 转为 SSE：`thinking/tool_call/tool_result/progress/...`
+   - 将 `@openai/agents-core` 的 stream event 转为 SSE：`thinking/tool_call/tool_result/progress/...`
 
 4. **取消语义**
    - AbortSignal（本进程内硬取消）

@@ -1,21 +1,21 @@
 /**
  * 订阅管理页面
  */
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   PageHeader,
   TableSkeleton,
   SimplePagination,
   StatusBadge,
   SUBSCRIPTION_STATUS_CONFIG,
-} from '@/components/shared'
+} from '@/components/shared';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -23,10 +23,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { usePagination } from '@/hooks'
-import { formatDate } from '@/lib/format'
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { usePagination } from '@/hooks';
+import { formatDate } from '@/lib/format';
 import {
   useSubscriptions,
   useCancelSubscription,
@@ -34,51 +34,52 @@ import {
   SUBSCRIPTION_TABLE_COLUMNS,
   SubscriptionDetailDialog,
   CancelSubscriptionDialog,
-} from '@/features/payment'
-import type { Subscription } from '@/types/payment'
-import { Eye, XCircle } from 'lucide-react'
+} from '@/features/payment';
+import type { Subscription } from '@/types/payment';
+import { CancelCircleIcon, ViewIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 export default function SubscriptionsPage() {
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [selectedSub, setSelectedSub] = useState<Subscription | null>(null)
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [cancelOpen, setCancelOpen] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
-  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE })
+  const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
   const { data, isLoading } = useSubscriptions({
     page,
     pageSize: PAGE_SIZE,
     status: selectedStatus,
-  })
+  });
 
-  const cancelMutation = useCancelSubscription()
+  const cancelMutation = useCancelSubscription();
 
-  const subscriptions = data?.subscriptions || []
-  const totalPages = getTotalPages(data?.pagination.count || 0)
+  const subscriptions = data?.subscriptions || [];
+  const totalPages = getTotalPages(data?.pagination.count || 0);
 
   const handleViewDetail = (sub: Subscription) => {
-    setSelectedSub(sub)
-    setDetailOpen(true)
-  }
+    setSelectedSub(sub);
+    setDetailOpen(true);
+  };
 
   const handleCancel = (sub: Subscription) => {
-    setSelectedSub(sub)
-    setCancelOpen(true)
-  }
+    setSelectedSub(sub);
+    setCancelOpen(true);
+  };
 
   const confirmCancel = () => {
     if (selectedSub) {
       cancelMutation.mutate(selectedSub.id, {
         onSuccess: () => {
-          setCancelOpen(false)
-          setSelectedSub(null)
+          setCancelOpen(false);
+          setSelectedSub(null);
         },
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -89,8 +90,8 @@ export default function SubscriptionsPage() {
         <Select
           value={selectedStatus}
           onValueChange={(v) => {
-            setSelectedStatus(v)
-            resetPage()
+            setSelectedStatus(v);
+            resetPage();
           }}
         >
           <SelectTrigger className="w-40">
@@ -141,7 +142,7 @@ export default function SubscriptionsPage() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" onClick={() => handleViewDetail(sub)}>
-                        <Eye className="h-4 w-4" />
+                        <Icon icon={ViewIcon} className="h-4 w-4" />
                       </Button>
                       {(sub.status === 'active' || sub.status === 'trialing') && (
                         <Button
@@ -150,7 +151,7 @@ export default function SubscriptionsPage() {
                           onClick={() => handleCancel(sub)}
                           className="text-destructive hover:text-destructive"
                         >
-                          <XCircle className="h-4 w-4" />
+                          <Icon icon={CancelCircleIcon} className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -189,5 +190,5 @@ export default function SubscriptionsPage() {
         isLoading={cancelMutation.isPending}
       />
     </div>
-  )
+  );
 }

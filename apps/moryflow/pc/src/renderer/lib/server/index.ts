@@ -32,10 +32,6 @@ export {
   buildMembershipModelId,
   TIER_DISPLAY_NAMES,
   TIER_COLORS,
-  TIER_PRIORITY,
-  compareTiers,
-  isTierSufficient,
-  AUTH_ERROR_MESSAGES,
   parseAuthError,
 } from '@anyhunt/api';
 

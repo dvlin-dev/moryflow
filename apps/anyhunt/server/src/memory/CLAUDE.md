@@ -21,6 +21,7 @@ Memox 核心记忆模块（Mem0 V1 对齐）。负责 Memory 的创建、检索�
 - Memory export（R2 存储）
 - enable_graph 时抽取 entities/relations
 - LLM 生成 categories/keywords（失败时降级为关键词抽取）
+- LLM 调用使用 @openai/agents-core ModelRequest/ModelResponse（默认模型设置）
 - includes/excludes/custom_instructions/custom_categories 生效
 - async_mode 控制并行处理
 - Mem0 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains/\*）

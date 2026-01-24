@@ -20,8 +20,9 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - 使用 TailwindCSS 4 + shadcn/ui 组件库
 - 状态管理使用 Zustand
 - 数据获取使用 TanStack Query
-- 路由使用 TanStack Router
+- 路由使用 React Router
 - 表单使用 react-hook-form + zod
+- 图标统一使用 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`），禁止 `lucide-react` / `@tabler/icons-react`
 
 ## 技术栈
 
@@ -32,7 +33,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 | TailwindCSS 4   | 样式系统 |
 | shadcn/ui       | 组件库   |
 | TanStack Query  | 数据获取 |
-| TanStack Router | 路由     |
+| React Router    | 路由     |
 | Zustand         | 状态管理 |
 | react-hook-form | 表单处理 |
 
@@ -90,6 +91,9 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - 表单内监听字段值优先使用 `useWatch`，避免 `form.watch()` 带来的编译器警告
 - 复杂弹窗表单通过 `key` 触发重挂载，替代 effect 内的状态重置
 - Auth 改为 access 内存 + refresh（/api/auth/refresh），移除 localStorage token
+- 管理后台仅允许管理员登录（非管理员会被拒绝）
+- React Query 客户端统一在入口初始化，避免重复 Provider
+- Spinner 只接收样式类与尺寸参数，避免误传 icon
 
 ## 依赖关系
 

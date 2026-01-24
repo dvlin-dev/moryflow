@@ -7,8 +7,8 @@
  */
 
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { OpenAIProvider } from '@anyhunt/agents-openai';
-import type { ModelProvider } from '@anyhunt/agents-core';
+import { OpenAIProvider } from '@openai/agents-openai';
+import type { ModelProvider } from '@openai/agents-core';
 import type { ResolvedLlmRoute } from './llm.types';
 import type { LlmProviderType } from './dto';
 import {

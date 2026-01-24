@@ -22,6 +22,7 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
 - 加密主密钥来自环境变量 `ANYHUNT_LLM_SECRET_KEY`（base64 32 bytes）
 - 不在 API Key 上配置模型开关；API Key 仅用于鉴权与计费归属
 - 不做历史兼容：旧的 API Key LLM policy 字段已移除
+- `LlmRoutingService` 使用 `@openai/agents-openai` 提供的 `OpenAIProvider`
 
 ## File Structure
 

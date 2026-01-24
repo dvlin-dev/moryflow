@@ -4,7 +4,7 @@
  * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问 Vault 外路径时弹出
  */
 
-import { FolderOpen } from 'lucide-react'
+import { FolderOpenIcon } from '@hugeicons/core-free-icons';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,14 +12,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog'
-import { Button } from '@anyhunt/ui/components/button'
-import type { AuthChoice } from '@anyhunt/agents-sandbox'
+} from '@anyhunt/ui/components/alert-dialog';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import type { AuthChoice } from '@anyhunt/agents-sandbox';
 
 interface SandboxAuthDialogProps {
-  open: boolean
-  path: string
-  onResponse: (choice: AuthChoice) => void
+  open: boolean;
+  path: string;
+  onResponse: (choice: AuthChoice) => void;
 }
 
 export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogProps) {
@@ -29,7 +30,7 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
         <AlertDialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-              <FolderOpen className="h-5 w-5 text-muted-foreground" />
+              <Icon icon={FolderOpenIcon} className="h-5 w-5 text-muted-foreground" />
             </div>
             <AlertDialogTitle>Access External File</AlertDialogTitle>
           </div>
@@ -43,26 +44,17 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-row gap-2 sm:justify-end">
-          <Button
-            variant="outline"
-            onClick={() => onResponse('deny')}
-          >
+          <Button variant="outline" onClick={() => onResponse('deny')}>
             Deny
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => onResponse('allow_once')}
-          >
+          <Button variant="secondary" onClick={() => onResponse('allow_once')}>
             Allow Once
           </Button>
-          <Button
-            variant="default"
-            onClick={() => onResponse('allow_always')}
-          >
+          <Button variant="default" onClick={() => onResponse('allow_always')}>
             Always Allow
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

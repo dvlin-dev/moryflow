@@ -2,11 +2,12 @@
  * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂
  * [DEPENDS]: agents, agents-runtime, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
+ * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
-import { run, type Agent, type Session } from '@anyhunt/agents';
-import type { RunStreamEvent } from '@anyhunt/agents-core';
+import { run, user, type Agent } from '@openai/agents-core';
+import type { RunStreamEvent } from '@openai/agents-core';
 import {
   createAgentFactory,
   createModelFactory,
@@ -16,6 +17,7 @@ import {
   type AgentContext,
   type AgentAttachmentContext,
   type ModelFactory,
+  type Session,
 } from '@anyhunt/agents-runtime';
 import { createBaseTools } from '@anyhunt/agents-tools';
 import { createSandboxBashTool } from '@anyhunt/agents-sandbox';
@@ -235,13 +237,29 @@ export const createAgentRuntime = (): AgentRuntime => {
         buildModel: modelFactory.buildModel,
       };
 
-      const result = await run(agent, inputWithContext, {
+      const history = await session.getItems();
+      const userItem = user(inputWithContext);
+      const runInput = history.length > 0 ? [...history, userItem] : [userItem];
+      await session.addItems([userItem]);
+
+      const result = await run(agent, runInput, {
         stream: true,
         maxTurns: MAX_AGENT_TURNS,
         signal,
-        session,
         context: agentContext,
       });
+
+      void result.completed
+        .then(async () => {
+          const outputItems = result.output;
+          if (outputItems.length > 0) {
+            await session.addItems(outputItems);
+          }
+        })
+        .catch((error) => {
+          console.warn('[agent-runtime] 会话输出持久化失败', error);
+        });
+
       return { result, agent, toolNames: agent.tools.map((tool) => tool.name) };
     },
     async generateTitle(userMessage: string, preferredModelId?: string): Promise<string> {

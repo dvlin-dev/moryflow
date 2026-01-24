@@ -9,27 +9,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { TableSkeleton } from '@/components/shared'
-import { Eye, Trash2 } from 'lucide-react'
-import { formatBytes } from '../const'
-import { formatDate } from '@/lib/format'
-import type { VaultListItem } from '@/types/storage'
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { TableSkeleton } from '@/components/shared';
+import { Icon } from '@/components/ui/icon';
+import { Delete01Icon, ViewIcon } from '@hugeicons/core-free-icons';
+import { formatBytes } from '../const';
+import { formatDate } from '@/lib/format';
+import type { VaultListItem } from '@/types/storage';
 
 interface VaultListTableProps {
-  vaults: VaultListItem[]
-  isLoading: boolean
-  onViewDetail: (vault: VaultListItem) => void
-  onDelete: (vault: VaultListItem) => void
+  vaults: VaultListItem[];
+  isLoading: boolean;
+  onViewDetail: (vault: VaultListItem) => void;
+  onDelete: (vault: VaultListItem) => void;
 }
 
-export function VaultListTable({
-  vaults,
-  isLoading,
-  onViewDetail,
-  onDelete,
-}: VaultListTableProps) {
+export function VaultListTable({ vaults, isLoading, onViewDetail, onDelete }: VaultListTableProps) {
   if (isLoading) {
     return (
       <TableSkeleton
@@ -44,15 +40,11 @@ export function VaultListTable({
         ]}
         rows={10}
       />
-    )
+    );
   }
 
   if (vaults.length === 0) {
-    return (
-      <div className="text-center py-10 text-muted-foreground">
-        暂无数据
-      </div>
-    )
+    return <div className="text-center py-10 text-muted-foreground">暂无数据</div>;
   }
 
   return (
@@ -90,7 +82,7 @@ export function VaultListTable({
                   onClick={() => onViewDetail(vault)}
                   title="查看详情"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Icon icon={ViewIcon} className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -99,7 +91,7 @@ export function VaultListTable({
                   title="删除"
                   className="text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Icon icon={Delete01Icon} className="h-4 w-4" />
                 </Button>
               </div>
             </TableCell>
@@ -107,5 +99,5 @@ export function VaultListTable({
         ))}
       </TableBody>
     </Table>
-  )
+  );
 }

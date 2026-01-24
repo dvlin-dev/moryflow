@@ -1,10 +1,7 @@
-import { useState, useCallback, useMemo } from 'react'
-import { AtSignIcon, FileTextIcon, SearchIcon } from 'lucide-react'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@anyhunt/ui/components/popover'
+import { useState, useCallback, useMemo } from 'react';
+import { AtIcon, File01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 import {
   Command,
   CommandEmpty,
@@ -12,19 +9,19 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@anyhunt/ui/components/command'
-import { cn } from '@/lib/utils'
-import { useTranslation } from '@/lib/i18n'
-import type { FlatFile } from '@/workspace/utils'
-import type { ContextFileTag } from '../context-file-tags'
+} from '@anyhunt/ui/components/command';
+import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
+import type { FlatFile } from '@/workspace/utils';
+import type { ContextFileTag } from '../context-file-tags';
 
 type FileContextAdderProps = {
-  disabled?: boolean
+  disabled?: boolean;
   /** 工作区所有文件 */
-  allFiles?: FlatFile[]
-  existingFiles?: ContextFileTag[]
-  onAddFile: (file: ContextFileTag) => void
-}
+  allFiles?: FlatFile[];
+  existingFiles?: ContextFileTag[];
+  onAddFile: (file: ContextFileTag) => void;
+};
 
 export const FileContextAdder = ({
   disabled,
@@ -32,15 +29,15 @@ export const FileContextAdder = ({
   existingFiles = [],
   onAddFile,
 }: FileContextAdderProps) => {
-  const { t } = useTranslation('chat')
-  const [open, setOpen] = useState(false)
-  const hasFiles = existingFiles.length > 0
+  const { t } = useTranslation('chat');
+  const [open, setOpen] = useState(false);
+  const hasFiles = existingFiles.length > 0;
 
   // 过滤掉已经添加的文件
   const availableFiles = useMemo(() => {
-    const existingPaths = new Set(existingFiles.map((f) => f.path))
-    return allFiles.filter((f) => !existingPaths.has(f.path))
-  }, [allFiles, existingFiles])
+    const existingPaths = new Set(existingFiles.map((f) => f.path));
+    return allFiles.filter((f) => !existingPaths.has(f.path));
+  }, [allFiles, existingFiles]);
 
   const handleSelectFile = useCallback(
     (file: FlatFile) => {
@@ -48,12 +45,12 @@ export const FileContextAdder = ({
         id: `manual-${file.path}`,
         name: file.name,
         path: file.path,
-      }
-      onAddFile(newFile)
-      setOpen(false)
+      };
+      onAddFile(newFile);
+      setOpen(false);
     },
     [onAddFile]
-  )
+  );
 
   // 渲染触发按钮：有文件时只显示 @ icon，无文件时显示完整内容
   const renderTrigger = () => (
@@ -68,26 +65,21 @@ export const FileContextAdder = ({
         hasFiles ? 'size-7 justify-center' : 'h-7 px-3 text-sm'
       )}
     >
-      <AtSignIcon className="size-4 shrink-0" />
+      <Icon icon={AtIcon} className="size-4 shrink-0" />
       {!hasFiles && <span>{t('addContext')}</span>}
     </button>
-  )
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{renderTrigger()}</PopoverTrigger>
-      <PopoverContent
-        className="w-72 p-0"
-        align="start"
-        side="top"
-        sideOffset={8}
-      >
+      <PopoverContent className="w-72 p-0" align="start" side="top" sideOffset={8}>
         <Command>
           <CommandInput placeholder={t('searchDocs')} className="h-9" />
           <CommandList>
             <CommandEmpty>
               <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
-                <SearchIcon className="size-8 opacity-50" />
+                <Icon icon={Search01Icon} className="size-8 opacity-50" />
                 <span className="text-sm">{t('notFound')}</span>
               </div>
             </CommandEmpty>
@@ -101,12 +93,10 @@ export const FileContextAdder = ({
                     onSelect={() => handleSelectFile(file)}
                     className="flex items-center gap-2"
                   >
-                    <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
+                    <Icon icon={File01Icon} className="size-4 shrink-0 text-muted-foreground" />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm">{file.name}</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {file.path}
-                      </span>
+                      <span className="truncate text-xs text-muted-foreground">{file.path}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -126,7 +116,7 @@ export const FileContextAdder = ({
         </Command>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
 
-export type { FileContextAdderProps }
+export type { FileContextAdderProps };

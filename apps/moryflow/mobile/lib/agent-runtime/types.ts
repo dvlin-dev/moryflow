@@ -2,13 +2,13 @@
  * Mobile Agent Runtime 类型定义
  */
 
-import type { Agent, RunStreamEvent } from '@anyhunt/agents';
+import type { Agent, RunStreamEvent } from '@openai/agents-core';
 import type {
   AgentContext,
   AgentChatContext,
   AgentAttachmentContext,
+  Session,
 } from '@anyhunt/agents-runtime';
-import type { Session } from '@anyhunt/agents';
 
 // ============ Runtime 选项 ============
 

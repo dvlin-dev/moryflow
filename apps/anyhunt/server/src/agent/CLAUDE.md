@@ -1,6 +1,6 @@
 # Agent
 
-> L3 Agent API（SSE）+ Browser Tools（基于 `@anyhunt/agents-core`）
+> L3 Agent API（SSE）+ Browser Tools（基于 `@openai/agents-core`）
 
 ## Overview
 
@@ -18,6 +18,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 ## Constraints
 
 - **Ports 边界**：Agent 只能依赖 `src/browser/ports/*`（禁止直接依赖 Playwright 类型）
+- **SDK 依赖**：统一使用 `@openai/agents-core@0.4.3`，不引入 realtime
 - **ApiKeyGuard 依赖**：Agent L3 API 使用 `ApiKeyGuard`，对应模块必须导入 `ApiKeyModule`，否则会导致 Nest 启动失败
 - **LLM API 约束**：只允许使用 `/chat/completions`（`useResponses=false`），禁止 Responses API（避免网关不兼容导致 400）
 - **网关兼容性**：对“纯文本输出”任务需移除 `response_format: { type: 'text' }`（部分 OpenAI-compatible 网关会对该字段报 400）；实现见 `AgentService.buildAgent`

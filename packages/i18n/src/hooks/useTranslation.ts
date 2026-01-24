@@ -1,5 +1,9 @@
 /**
- * 通用翻译 Hook - 类型安全，自动推断
+ * [PROVIDES]: useTranslation
+ * [DEPENDS]: react-i18next, ../core/types
+ * [POS]: 通用翻译 Hook（类型安全）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */
 
 import { useTranslation as useI18nextTranslation } from 'react-i18next';

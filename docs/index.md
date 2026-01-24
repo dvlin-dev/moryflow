@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-25
+date: 2026-01-26
 scope: monorepo
 status: active
 ---
@@ -65,7 +65,7 @@ status: active
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-26，packages/agents\* 清单调整 + 进度同步区合并）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
 - Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-01-25，修复完成）
@@ -79,6 +79,13 @@ status: active
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（更新：2026-01-26，修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Memox Core 对标 Mem0 改造计划：`docs/code-review/anyhunt-server-memox-core.md`（更新：2026-01-24；实施进度同步；Filters DSL；R2 导出；Token 认证一致；Graph/Relation 公共 API 删除；entities 语义替换）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（更新：2026-01-26，修复完成 + preload CJS）
+- Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（更新：2026-01-24，修复完成）
+- packages/ui Code Review：`docs/code-review/packages-ui.md`（更新：2026-01-24，修复完成）
+- packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（更新：2026-01-24，修复完成）
+- packages/types + packages/api + packages/config Code Review：`docs/code-review/packages-types-api-config.md`（更新：2026-01-26，修复完成）
+- packages/agents\* Code Review：`docs/code-review/packages-agents.md`（更新：2026-01-24，修复完成）
+- tooling/\* Code Review：`docs/code-review/tooling-config.md`（更新：2026-01-24，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
 - 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）
 - Moryflow Vectorize 将由 Anyhunt Memox 替换：已标记暂不处理（详见 `docs/code-review/index.md`）
@@ -94,6 +101,8 @@ status: active
 - 方案：Agent Browser Chat 流式消息分段（对齐 Moryflow/pc：UIMessageChunk 单协议）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（更新：2026-01-21）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-20）
+- 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）
+- 调研：AI SDK 版本统一（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（更新：2026-01-26）
 
 ## Skills（内部协作 / Prompt 规范）
 

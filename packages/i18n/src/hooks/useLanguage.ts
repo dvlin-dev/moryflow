@@ -1,11 +1,15 @@
 /**
- * 语言管理 Hook
+ * [PROVIDES]: useLanguage
+ * [DEPENDS]: react-i18next, ../core/constants, ../utils/validation
+ * [POS]: 语言切换与语言列表管理
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */
 
 import { useTranslation as useI18nextTranslation } from 'react-i18next';
 import { useCallback, useState, useMemo } from 'react';
 import type { UseLanguageReturn, SupportedLanguage, LanguageConfig } from '../core/types';
-import { LANGUAGE_LIST, SUPPORTED_LANGUAGES } from '../core/constants';
+import { LANGUAGE_LIST, SUPPORTED_LANGUAGES, LANGUAGE_STORAGE_KEY } from '../core/constants';
 import { isValidLanguage } from '../utils/validation';
 
 /**
@@ -29,7 +33,7 @@ export function useLanguage(): UseLanguageReturn & {
         await i18n.changeLanguage(language);
         // 保存语言偏好（如果有存储实现）
         if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem('moryflow_language', language);
+          localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
         }
       } finally {
         setIsChanging(false);

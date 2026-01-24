@@ -7,7 +7,7 @@
  */
 
 import type { LlmProviderType } from './dto';
-import type { Model, ModelProvider } from '@anyhunt/agents-core';
+import type { Model, ModelProvider } from '@openai/agents-core';
 
 export type LlmProviderListItem = {
   id: string;

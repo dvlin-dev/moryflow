@@ -4,10 +4,10 @@
  * [POS]: 沙盒设置组件，用于切换沙盒模式和管理授权路径
  */
 
-import { useCallback, useEffect, useState } from 'react'
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group'
-import { Label } from '@anyhunt/ui/components/label'
-import { Button } from '@anyhunt/ui/components/button'
+import { useCallback, useEffect, useState } from 'react';
+import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
+import { Label } from '@anyhunt/ui/components/label';
+import { Button } from '@anyhunt/ui/components/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,69 +17,76 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog'
-import { ShieldIcon, ShieldOffIcon, FolderIcon, XIcon, Trash2Icon } from 'lucide-react'
-import { useTranslation } from '@/lib/i18n'
-import type { SandboxMode } from '@anyhunt/agents-sandbox'
-import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc'
+} from '@anyhunt/ui/components/alert-dialog';
+import {
+  Cancel01Icon,
+  Delete02Icon,
+  Folder01Icon,
+  Shield01Icon,
+  Shield02Icon,
+} from '@hugeicons/core-free-icons';
+import { useTranslation } from '@/lib/i18n';
+import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
+import type { SandboxMode } from '@anyhunt/agents-sandbox';
+import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc';
 
 type ModeOption = {
-  value: SandboxMode
-  labelKey: 'sandboxModeNormal' | 'sandboxModeUnrestricted'
-  descriptionKey: 'sandboxModeNormalDescription' | 'sandboxModeUnrestrictedDescription'
-  icon: typeof ShieldIcon
-}
+  value: SandboxMode;
+  labelKey: 'sandboxModeNormal' | 'sandboxModeUnrestricted';
+  descriptionKey: 'sandboxModeNormalDescription' | 'sandboxModeUnrestrictedDescription';
+  icon: HugeIcon;
+};
 
 const MODE_OPTIONS: ModeOption[] = [
   {
     value: 'normal',
     labelKey: 'sandboxModeNormal',
     descriptionKey: 'sandboxModeNormalDescription',
-    icon: ShieldIcon,
+    icon: Shield01Icon,
   },
   {
     value: 'unrestricted',
     labelKey: 'sandboxModeUnrestricted',
     descriptionKey: 'sandboxModeUnrestrictedDescription',
-    icon: ShieldOffIcon,
+    icon: Shield02Icon,
   },
-]
+];
 
 export const SandboxSettings = () => {
-  const { t } = useTranslation('settings')
-  const [settings, setSettings] = useState<SandboxSettingsType | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const { t } = useTranslation('settings');
+  const [settings, setSettings] = useState<SandboxSettingsType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // 加载设置
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const result = await window.desktopAPI.sandbox.getSettings()
-        setSettings(result)
+        const result = await window.desktopAPI.sandbox.getSettings();
+        setSettings(result);
       } catch (error) {
-        console.error('[sandbox-settings] failed to load settings:', error)
+        console.error('[sandbox-settings] failed to load settings:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    loadSettings()
-  }, [])
+    };
+    loadSettings();
+  }, []);
 
   // 切换模式
   const handleModeChange = useCallback(async (mode: SandboxMode) => {
     try {
-      await window.desktopAPI.sandbox.setMode(mode)
-      setSettings((prev: SandboxSettingsType | null) => (prev ? { ...prev, mode } : null))
+      await window.desktopAPI.sandbox.setMode(mode);
+      setSettings((prev: SandboxSettingsType | null) => (prev ? { ...prev, mode } : null));
     } catch (error) {
-      console.error('[sandbox-settings] failed to set mode:', error)
+      console.error('[sandbox-settings] failed to set mode:', error);
     }
-  }, [])
+  }, []);
 
   // 移除授权路径
   const handleRemovePath = useCallback(async (path: string) => {
     try {
-      await window.desktopAPI.sandbox.removeAuthorizedPath(path)
+      await window.desktopAPI.sandbox.removeAuthorizedPath(path);
       setSettings((prev: SandboxSettingsType | null) =>
         prev
           ? {
@@ -87,23 +94,25 @@ export const SandboxSettings = () => {
               authorizedPaths: prev.authorizedPaths.filter((p: string) => p !== path),
             }
           : null
-      )
+      );
     } catch (error) {
-      console.error('[sandbox-settings] failed to remove path:', error)
+      console.error('[sandbox-settings] failed to remove path:', error);
     }
-  }, [])
+  }, []);
 
   // 清除所有授权路径
   const handleClearAllPaths = useCallback(async () => {
     try {
-      await window.desktopAPI.sandbox.clearAuthorizedPaths()
-      setSettings((prev: SandboxSettingsType | null) => (prev ? { ...prev, authorizedPaths: [] } : null))
+      await window.desktopAPI.sandbox.clearAuthorizedPaths();
+      setSettings((prev: SandboxSettingsType | null) =>
+        prev ? { ...prev, authorizedPaths: [] } : null
+      );
     } catch (error) {
-      console.error('[sandbox-settings] failed to clear paths:', error)
+      console.error('[sandbox-settings] failed to clear paths:', error);
     } finally {
-      setShowClearConfirm(false)
+      setShowClearConfirm(false);
     }
-  }, [])
+  }, []);
 
   if (loading) {
     return (
@@ -114,11 +123,11 @@ export const SandboxSettings = () => {
           <div className="h-16 rounded-xl bg-muted/50" />
         </div>
       </div>
-    )
+    );
   }
 
   if (!settings) {
-    return null
+    return null;
   }
 
   return (
@@ -127,9 +136,7 @@ export const SandboxSettings = () => {
       <div className="space-y-3">
         <div>
           <h3 className="text-sm font-medium">{t('sandboxMode')}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {t('sandboxSettingsDescription')}
-          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t('sandboxSettingsDescription')}</p>
         </div>
         <RadioGroup
           value={settings.mode}
@@ -137,8 +144,8 @@ export const SandboxSettings = () => {
           className="grid gap-3 sm:grid-cols-2"
         >
           {MODE_OPTIONS.map((option) => {
-            const Icon = option.icon
-            const isSelected = settings.mode === option.value
+            const OptionIcon = option.icon;
+            const isSelected = settings.mode === option.value;
             return (
               <Label
                 key={option.value}
@@ -155,7 +162,7 @@ export const SandboxSettings = () => {
                       isSelected ? 'bg-foreground text-background' : 'bg-muted'
                     }`}
                   >
-                    <Icon className="size-3.5" />
+                    <Icon icon={OptionIcon} className="size-3.5" />
                   </div>
                   <span className="font-medium">{t(option.labelKey)}</span>
                 </div>
@@ -163,7 +170,7 @@ export const SandboxSettings = () => {
                   {t(option.descriptionKey)}
                 </span>
               </Label>
-            )
+            );
           })}
         </RadioGroup>
       </div>
@@ -185,7 +192,7 @@ export const SandboxSettings = () => {
               onClick={() => setShowClearConfirm(true)}
               className="text-destructive hover:text-destructive"
             >
-              <Trash2Icon className="mr-1.5 size-3.5" />
+              <Icon icon={Delete02Icon} className="mr-1.5 size-3.5" />
               {t('sandboxClearAllPaths')}
             </Button>
           )}
@@ -198,11 +205,8 @@ export const SandboxSettings = () => {
         ) : (
           <div className="space-y-2">
             {settings.authorizedPaths.map((path) => (
-              <div
-                key={path}
-                className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2"
-              >
-                <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
+              <div key={path} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+                <Icon icon={Folder01Icon} className="size-4 shrink-0 text-muted-foreground" />
                 <code className="flex-1 truncate text-xs">{path}</code>
                 <Button
                   type="button"
@@ -211,7 +215,7 @@ export const SandboxSettings = () => {
                   className="size-6 shrink-0"
                   onClick={() => handleRemovePath(path)}
                 >
-                  <XIcon className="size-3.5" />
+                  <Icon icon={Cancel01Icon} className="size-3.5" />
                 </Button>
               </div>
             ))}
@@ -224,9 +228,7 @@ export const SandboxSettings = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('sandboxClearAllPaths')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('sandboxClearAllConfirm')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('sandboxClearAllConfirm')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
@@ -240,5 +242,5 @@ export const SandboxSettings = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
+  );
+};

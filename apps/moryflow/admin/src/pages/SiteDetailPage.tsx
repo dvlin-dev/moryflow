@@ -36,17 +36,18 @@ import {
   SiteTypeBadge,
 } from '@/features/sites';
 import {
-  ArrowLeft,
-  Globe,
-  User,
-  FileText,
-  Power,
-  PowerOff,
-  Trash2,
-  ExternalLink,
-  Calendar,
-  Eye,
-} from 'lucide-react';
+  ArrowLeft01Icon,
+  Calendar01Icon,
+  Delete01Icon,
+  File01Icon,
+  GlobeIcon,
+  LinkSquare02Icon,
+  ToggleOffIcon,
+  ToggleOnIcon,
+  UserIcon,
+  ViewIcon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
 export default function SiteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -113,29 +114,29 @@ export default function SiteDetailPage() {
         action={
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => navigate('/sites')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <Icon icon={ArrowLeft01Icon} className="h-4 w-4 mr-2" />
               返回列表
             </Button>
             <Button variant="outline" asChild>
               <a href={site.url} target="_blank" rel="noopener noreferrer">
-                <Eye className="h-4 w-4 mr-2" />
+                <Icon icon={ViewIcon} className="h-4 w-4 mr-2" />
                 预览站点
               </a>
             </Button>
             {site.status === 'ACTIVE' && (
               <Button variant="outline" onClick={() => setActionType('offline')}>
-                <PowerOff className="h-4 w-4 mr-2" />
+                <Icon icon={ToggleOffIcon} className="h-4 w-4 mr-2" />
                 下线
               </Button>
             )}
             {site.status === 'OFFLINE' && (
               <Button variant="outline" onClick={() => setActionType('online')}>
-                <Power className="h-4 w-4 mr-2" />
+                <Icon icon={ToggleOnIcon} className="h-4 w-4 mr-2" />
                 上线
               </Button>
             )}
             <Button variant="destructive" onClick={() => setActionType('delete')}>
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Icon icon={Delete01Icon} className="h-4 w-4 mr-2" />
               删除
             </Button>
           </div>
@@ -147,7 +148,7 @@ export default function SiteDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Globe className="h-4 w-4" />
+              <Icon icon={GlobeIcon} className="h-4 w-4" />
               基本信息
             </CardTitle>
           </CardHeader>
@@ -197,7 +198,7 @@ export default function SiteDetailPage() {
                 className="mt-1 text-sm text-blue-600 hover:underline flex items-center gap-1"
               >
                 {site.url}
-                <ExternalLink className="h-3 w-3" />
+                <Icon icon={LinkSquare02Icon} className="h-3 w-3" />
               </a>
             </div>
           </CardContent>
@@ -207,7 +208,7 @@ export default function SiteDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <User className="h-4 w-4" />
+              <Icon icon={UserIcon} className="h-4 w-4" />
               所有者信息
             </CardTitle>
           </CardHeader>
@@ -249,7 +250,7 @@ export default function SiteDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="h-4 w-4" />
+              <Icon icon={Calendar01Icon} className="h-4 w-4" />
               时间信息
             </CardTitle>
           </CardHeader>
@@ -284,7 +285,7 @@ export default function SiteDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-4 w-4" />
+            <Icon icon={File01Icon} className="h-4 w-4" />
             页面列表 ({site.pages.length})
           </CardTitle>
         </CardHeader>

@@ -4,19 +4,20 @@
  * [POS]: 侧边栏文件列表区组件
  */
 
-import { FilePlus, FolderPlus } from 'lucide-react'
-import type { VaultTreeNode } from '@shared/ipc'
-import { Alert, AlertDescription } from '@anyhunt/ui/components/alert'
+import { FileAddIcon, FolderAddIcon } from '@hugeicons/core-free-icons';
+import type { VaultTreeNode } from '@shared/ipc';
+import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '@anyhunt/ui/components/context-menu'
-import { Skeleton } from '@anyhunt/ui/components/skeleton'
-import { VaultFiles } from '@/components/vault-files'
-import { useTranslation } from '@/lib/i18n'
-import type { SidebarFilesProps } from '../const'
+} from '@anyhunt/ui/components/context-menu';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import { VaultFiles } from '@/components/vault-files';
+import { useTranslation } from '@/lib/i18n';
+import type { SidebarFilesProps } from '../const';
 
 const LoadingPlaceholder = () => (
   <div className="space-y-2 px-3 pt-3">
@@ -24,7 +25,7 @@ const LoadingPlaceholder = () => (
       <Skeleton key={index} className="h-4 w-full bg-muted/40" />
     ))}
   </div>
-)
+);
 
 export const SidebarFiles = ({
   vault,
@@ -45,10 +46,10 @@ export const SidebarFiles = ({
   onCreateFolderInRoot,
   onPublish,
 }: SidebarFilesProps) => {
-  const { t } = useTranslation('workspace')
+  const { t } = useTranslation('workspace');
 
   if (treeState === 'loading') {
-    return <LoadingPlaceholder />
+    return <LoadingPlaceholder />;
   }
 
   if (treeState === 'error') {
@@ -56,11 +57,11 @@ export const SidebarFiles = ({
       <Alert variant="destructive" className="m-3">
         <AlertDescription>{treeError}</AlertDescription>
       </Alert>
-    )
+    );
   }
 
   if (treeState !== 'idle') {
-    return null
+    return null;
   }
 
   return (
@@ -87,14 +88,14 @@ export const SidebarFiles = ({
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={onCreateFileInRoot}>
-          <FilePlus className="mr-2 h-4 w-4" />
+          <Icon icon={FileAddIcon} className="mr-2 h-4 w-4" />
           {t('newNote')}
         </ContextMenuItem>
         <ContextMenuItem onClick={onCreateFolderInRoot}>
-          <FolderPlus className="mr-2 h-4 w-4" />
+          <Icon icon={FolderAddIcon} className="mr-2 h-4 w-4" />
           {t('newFolder')}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  )
-}
+  );
+};

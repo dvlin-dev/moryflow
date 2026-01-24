@@ -1,16 +1,24 @@
 // @ts-check
+/**
+ * [PROVIDES]: NestJS ESLint 配置（Node/TS/Prettier 统一规范）
+ * [DEPENDS]: typescript-eslint, eslint-plugin-prettier, globals
+ * [POS]: 后端服务 ESLint 规则入口，供 NestJS 服务复用
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-
-/**
- * NestJS 后端 ESLint 配置
- * 适用于所有 NestJS 服务
- */
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', '**/coverage/**', 'eslint.config.mjs'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.turbo/**',
+      '**/coverage/**',
+      'eslint.config.mjs',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -20,6 +28,7 @@ export default tseslint.config(
       globals: {
         ...globals.node,
         ...globals.jest,
+        ...globals.vitest,
       },
       sourceType: 'commonjs',
       parserOptions: {

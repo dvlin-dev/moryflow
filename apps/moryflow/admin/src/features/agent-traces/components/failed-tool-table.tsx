@@ -2,7 +2,7 @@
  * 失败 Tool 列表表格
  */
 
-import { TableSkeleton } from '@/components/shared'
+import { TableSkeleton } from '@/components/shared';
 import {
   Table,
   TableBody,
@@ -10,17 +10,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Eye, XCircle } from 'lucide-react'
-import { formatDateTime, formatDuration } from '@/lib/format'
-import { ErrorTypeBadge } from './trace-status-badge'
-import type { AgentSpan } from '../types'
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { CancelCircleIcon, ViewIcon } from '@hugeicons/core-free-icons';
+import { formatDateTime, formatDuration } from '@/lib/format';
+import { ErrorTypeBadge } from './trace-status-badge';
+import type { AgentSpan } from '../types';
 
 interface FailedToolTableProps {
-  spans: AgentSpan[]
-  isLoading?: boolean
-  onViewDetail: (span: AgentSpan) => void
+  spans: AgentSpan[];
+  isLoading?: boolean;
+  onViewDetail: (span: AgentSpan) => void;
 }
 
 const TABLE_COLUMNS = [
@@ -31,7 +32,7 @@ const TABLE_COLUMNS = [
   { width: 'w-24' },
   { width: 'w-16' },
   { width: 'w-16' },
-]
+];
 
 export function FailedToolTable({ spans, isLoading, onViewDetail }: FailedToolTableProps) {
   return (
@@ -75,12 +76,8 @@ export function FailedToolTable({ spans, isLoading, onViewDetail }: FailedToolTa
                   {formatDuration(span.duration)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewDetail(span)}
-                  >
-                    <Eye className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" onClick={() => onViewDetail(span)}>
+                    <Icon icon={ViewIcon} className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -88,7 +85,10 @@ export function FailedToolTable({ spans, isLoading, onViewDetail }: FailedToolTa
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-12">
-                <XCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <Icon
+                  icon={CancelCircleIcon}
+                  className="h-12 w-12 mx-auto text-muted-foreground mb-4"
+                />
                 <p className="text-muted-foreground">暂无失败记录</p>
               </TableCell>
             </TableRow>
@@ -96,5 +96,5 @@ export function FailedToolTable({ spans, isLoading, onViewDetail }: FailedToolTa
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

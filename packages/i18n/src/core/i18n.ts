@@ -1,5 +1,9 @@
 /**
- * i18n 核心初始化模块
+ * [INPUT]: I18nInitConfig
+ * [OUTPUT]: i18n instance
+ * [POS]: i18n 核心初始化模块
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */
 
 import i18next, { type i18n as I18nInstance } from 'i18next';
@@ -49,7 +53,7 @@ export async function initI18n(config: I18nInitConfig = {}): Promise<I18nInstanc
 }
 
 /**
- * 同步初始化 i18n（兼容旧代码）
+ * 同步初始化 i18n（非异步初始化场景）
  */
 export function initI18nSync(config: I18nInitConfig = {}): I18nInstance {
   if (globalI18nInstance && globalI18nInstance.isInitialized) {

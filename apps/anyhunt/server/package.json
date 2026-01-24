@@ -42,8 +42,8 @@
     "prisma:studio:vector": "prisma studio --schema=prisma/vector/schema.prisma"
   },
   "dependencies": {
-    "@anyhunt/agents-core": "workspace:*",
-    "@anyhunt/agents-openai": "workspace:*",
+    "@openai/agents-core": "0.4.3",
+    "@openai/agents-openai": "0.4.3",
     "@aws-sdk/client-s3": "^3.700.0",
     "@aws-sdk/lib-storage": "^3.700.0",
     "@mozilla/readability": "^0.6.0",
@@ -72,7 +72,7 @@
     "mime-types": "^3.0.2",
     "minimatch": "^10.1.1",
     "nestjs-pino": "^4.5.0",
-    "openai": "^6.15.0",
+    "openai": "6.16.0",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
@@ -85,7 +85,7 @@
     "sharp": "^0.33.5",
     "turndown": "^7.2.2",
     "turndown-plugin-gfm": "^1.0.2",
-    "zod": "^4.1.13"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

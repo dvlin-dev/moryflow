@@ -86,4 +86,53 @@ describe('AuthStore', () => {
     expect(state.user?.id).toBe('admin-1');
     expect(state.isAuthenticated).toBe(true);
   });
+
+  it('bootstrap 对非管理员会清空认证状态', async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.endsWith('/api/auth/refresh')) {
+        return createResponse({ accessToken: 'access-boot' });
+      }
+      if (url.endsWith('/api/admin/me')) {
+        return createResponse({
+          user: { id: 'user-1', email: 'user@example.com', isAdmin: false },
+        });
+      }
+      return createResponse({});
+    });
+
+    await useAuthStore.getState().bootstrap();
+
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+  });
+
+  it('signIn 会拒绝非管理员账号', async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.endsWith('/api/auth/sign-in/email')) {
+        return createResponse({});
+      }
+      if (url.endsWith('/api/auth/refresh')) {
+        return createResponse({ accessToken: 'access-sign-in' });
+      }
+      if (url.endsWith('/api/admin/me')) {
+        return createResponse({
+          user: { id: 'user-2', email: 'user@example.com', isAdmin: false },
+        });
+      }
+      return createResponse({});
+    });
+
+    await expect(useAuthStore.getState().signIn('user@example.com', 'pass')).rejects.toThrow(
+      'Admin access required'
+    );
+
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+  });
 });

@@ -4,19 +4,20 @@
  * [POS]: 单个 Tab 项组件
  */
 
-import { FileTextIcon, Globe, Sparkles, XIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import type { SaveState, SelectedFile } from '@/workspace/const'
-import { AI_TAB_ID, SITES_TAB_ID, formatTabLabel, isToolTab } from '../helper'
+import { Cancel01Icon, File01Icon, GlobeIcon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { cn } from '@/lib/utils';
+import type { SaveState, SelectedFile } from '@/workspace/const';
+import { AI_TAB_ID, SITES_TAB_ID, formatTabLabel, isToolTab } from '../helper';
 
 type TabItemProps = {
-  tab: SelectedFile
-  isActive: boolean
-  showSaveIndicator: boolean
-  saveState: SaveState
-  onSelect: () => void
-  onClose: () => void
-}
+  tab: SelectedFile;
+  isActive: boolean;
+  showSaveIndicator: boolean;
+  saveState: SaveState;
+  onSelect: () => void;
+  onClose: () => void;
+};
 
 export const TabItem = ({
   tab,
@@ -26,19 +27,19 @@ export const TabItem = ({
   onSelect,
   onClose,
 }: TabItemProps) => {
-  const isAITab = tab.path === AI_TAB_ID
-  const isSitesTab = tab.path === SITES_TAB_ID
-  const isTool = isToolTab(tab.path)
+  const isAITab = tab.path === AI_TAB_ID;
+  const isSitesTab = tab.path === SITES_TAB_ID;
+  const isTool = isToolTab(tab.path);
 
   const renderIcon = () => {
     if (isAITab) {
-      return <Sparkles className="size-3.5 shrink-0 text-violet-500" />
+      return <Icon icon={SparklesIcon} className="size-3.5 shrink-0 text-violet-500" />;
     }
     if (isSitesTab) {
-      return <Globe className="size-3.5 shrink-0 text-blue-500" />
+      return <Icon icon={GlobeIcon} className="size-3.5 shrink-0 text-blue-500" />;
     }
-    return <FileTextIcon className="size-3.5 shrink-0 opacity-60" />
-  }
+    return <Icon icon={File01Icon} className="size-3.5 shrink-0 opacity-60" />;
+  };
 
   return (
     <button
@@ -65,12 +66,7 @@ export const TabItem = ({
 
       {renderIcon()}
 
-      <span
-        className={cn(
-          'max-w-[120px] truncate',
-          !tab.pinned && !isTool && 'italic'
-        )}
-      >
+      <span className={cn('max-w-[120px] truncate', !tab.pinned && !isTool && 'italic')}>
         {formatTabLabel(tab.name)}
       </span>
 
@@ -84,18 +80,18 @@ export const TabItem = ({
           'hover:bg-foreground/10'
         )}
         onClick={(e) => {
-          e.stopPropagation()
-          onClose()
+          e.stopPropagation();
+          onClose();
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            e.stopPropagation()
-            onClose()
+            e.stopPropagation();
+            onClose();
           }
         }}
       >
-        <XIcon className="size-3" />
+        <Icon icon={Cancel01Icon} className="size-3" />
       </span>
     </button>
-  )
-}
+  );
+};

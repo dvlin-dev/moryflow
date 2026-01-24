@@ -1,10 +1,12 @@
 /**
- * [PROVIDES]: Dynamic sitemap.xml generation
- * [DEPENDS]: None
- * [POS]: Core SEO route for search engine indexing
+ * [PROVIDES]: 动态 sitemap.xml 输出
+ * [DEPENDS]: 无
+ * [POS]: 官网 SEO 路由（索引入口）
  */
 
-const BASE_URL = 'https://moryflow.com';
+import { defineEventHandler } from 'h3';
+
+const BASE_URL = 'https://www.moryflow.com';
 
 const pages = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },

@@ -11,7 +11,13 @@ import { formatDateTime, formatNumber } from '@/lib/format';
 import { useUserDetail, useGrantCredits, GrantCreditsDialog } from '@/features/users';
 import type { CreditType } from '@/types/api';
 import { UserStorageCard } from '@/features/storage';
-import { ArrowLeft, CreditCard, Trash2, User } from 'lucide-react';
+import {
+  ArrowLeft01Icon,
+  CreditCardIcon,
+  Delete01Icon,
+  UserIcon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
 /** 删除原因映射 */
 const DELETION_REASON_LABELS: Record<string, string> = {
@@ -69,11 +75,11 @@ export default function UserDetailPage() {
         action={
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate('/users')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <Icon icon={ArrowLeft01Icon} className="h-4 w-4 mr-2" />
               返回列表
             </Button>
             <Button onClick={() => setShowGrantDialog(true)}>
-              <CreditCard className="h-4 w-4 mr-2" />
+              <Icon icon={CreditCardIcon} className="h-4 w-4 mr-2" />
               发放积分
             </Button>
           </div>
@@ -85,7 +91,7 @@ export default function UserDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <User className="h-4 w-4" />
+              <Icon icon={UserIcon} className="h-4 w-4" />
               基本信息
             </CardTitle>
           </CardHeader>
@@ -127,7 +133,7 @@ export default function UserDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <CreditCard className="h-4 w-4" />
+              <Icon icon={CreditCardIcon} className="h-4 w-4" />
               积分余额
             </CardTitle>
           </CardHeader>
@@ -157,7 +163,7 @@ export default function UserDetailPage() {
         <Card className="border-red-200 bg-red-50/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base text-red-700">
-              <Trash2 className="h-4 w-4" />
+              <Icon icon={Delete01Icon} className="h-4 w-4" />
               账户已删除
             </CardTitle>
           </CardHeader>

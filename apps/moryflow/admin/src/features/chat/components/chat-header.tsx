@@ -2,7 +2,7 @@
  * 聊天头部组件
  * 包含历史对话下拉（占位）和新建对话按钮（占位）
  */
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +10,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
-import { MoreHorizontalIcon, PlusIcon } from 'lucide-react'
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Icon } from '@/components/ui/icon';
+import { Add01Icon, More01Icon } from '@hugeicons/core-free-icons';
 
 export function ChatHeader() {
   return (
@@ -31,7 +32,7 @@ export function ChatHeader() {
                     className="size-8 text-muted-foreground hover:text-foreground"
                     aria-label="历史对话"
                   >
-                    <MoreHorizontalIcon className="size-4" />
+                    <Icon icon={More01Icon} className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -58,7 +59,7 @@ export function ChatHeader() {
                 aria-label="新对话"
                 disabled
               >
-                <PlusIcon className="size-4" />
+                <Icon icon={Add01Icon} className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>新对话（暂未实现）</TooltipContent>
@@ -66,5 +67,5 @@ export function ChatHeader() {
         </div>
       </header>
     </TooltipProvider>
-  )
+  );
 }

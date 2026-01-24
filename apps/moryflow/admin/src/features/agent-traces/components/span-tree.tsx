@@ -3,68 +3,77 @@
  * 展示 Agent 执行链路
  */
 
-import { useState } from 'react'
-import { cn } from '@/lib/utils'
-import { ChevronRight, ChevronDown, Bot, Wrench, Zap, ArrowRightLeft, Shield } from 'lucide-react'
-import { formatDuration } from '@/lib/format'
-import { SpanStatusBadge } from './trace-status-badge'
-import type { AgentSpan, SpanType } from '../types'
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { Icon } from '@/components/ui/icon';
+import {
+  ArrowDown01Icon,
+  ArrowLeftRightIcon,
+  ArrowRight01Icon,
+  Robot01Icon,
+  Shield01Icon,
+  Wrench01Icon,
+  ZapIcon,
+} from '@hugeicons/core-free-icons';
+import { formatDuration } from '@/lib/format';
+import { SpanStatusBadge } from './trace-status-badge';
+import type { AgentSpan, SpanType } from '../types';
 
 interface SpanTreeProps {
-  spans: AgentSpan[]
-  onSelectSpan?: (span: AgentSpan) => void
-  selectedSpanId?: string
+  spans: AgentSpan[];
+  onSelectSpan?: (span: AgentSpan) => void;
+  selectedSpanId?: string;
 }
 
 interface SpanNode extends AgentSpan {
-  children: SpanNode[]
+  children: SpanNode[];
 }
 
 // Span 类型图标
 const SPAN_TYPE_ICONS: Record<SpanType, React.ReactNode> = {
-  agent: <Bot className="h-4 w-4 text-blue-500" />,
-  function: <Wrench className="h-4 w-4 text-cyan-500" />,
-  generation: <Zap className="h-4 w-4 text-purple-500" />,
-  handoff: <ArrowRightLeft className="h-4 w-4 text-orange-500" />,
-  guardrail: <Shield className="h-4 w-4 text-yellow-500" />,
-  custom: <Wrench className="h-4 w-4 text-gray-500" />,
-}
+  agent: <Icon icon={Robot01Icon} className="h-4 w-4 text-blue-500" />,
+  function: <Icon icon={Wrench01Icon} className="h-4 w-4 text-cyan-500" />,
+  generation: <Icon icon={ZapIcon} className="h-4 w-4 text-purple-500" />,
+  handoff: <Icon icon={ArrowLeftRightIcon} className="h-4 w-4 text-orange-500" />,
+  guardrail: <Icon icon={Shield01Icon} className="h-4 w-4 text-yellow-500" />,
+  custom: <Icon icon={Wrench01Icon} className="h-4 w-4 text-gray-500" />,
+};
 
 // 构建树形结构
 function buildTree(spans: AgentSpan[]): SpanNode[] {
-  const spanMap = new Map<string, SpanNode>()
-  const roots: SpanNode[] = []
+  const spanMap = new Map<string, SpanNode>();
+  const roots: SpanNode[] = [];
 
   // 先创建所有节点
   for (const span of spans) {
-    spanMap.set(span.spanId, { ...span, children: [] })
+    spanMap.set(span.spanId, { ...span, children: [] });
   }
 
   // 建立父子关系
   for (const span of spans) {
-    const node = spanMap.get(span.spanId)!
+    const node = spanMap.get(span.spanId)!;
     if (span.parentSpanId && spanMap.has(span.parentSpanId)) {
-      spanMap.get(span.parentSpanId)!.children.push(node)
+      spanMap.get(span.parentSpanId)!.children.push(node);
     } else {
-      roots.push(node)
+      roots.push(node);
     }
   }
 
-  return roots
+  return roots;
 }
 
 interface SpanNodeItemProps {
-  node: SpanNode
-  depth: number
-  onSelect?: (span: AgentSpan) => void
-  selectedSpanId?: string
+  node: SpanNode;
+  depth: number;
+  onSelect?: (span: AgentSpan) => void;
+  selectedSpanId?: string;
 }
 
 function SpanNodeItem({ node, depth, onSelect, selectedSpanId }: SpanNodeItemProps) {
-  const [expanded, setExpanded] = useState(true)
-  const hasChildren = node.children.length > 0
-  const isSelected = node.spanId === selectedSpanId
-  const isFailed = node.status === 'failed'
+  const [expanded, setExpanded] = useState(true);
+  const hasChildren = node.children.length > 0;
+  const isSelected = node.spanId === selectedSpanId;
+  const isFailed = node.status === 'failed';
 
   return (
     <div>
@@ -72,7 +81,7 @@ function SpanNodeItem({ node, depth, onSelect, selectedSpanId }: SpanNodeItemPro
         className={cn(
           'flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors',
           isSelected && 'bg-muted',
-          isFailed && 'bg-red-50 dark:bg-red-950/30',
+          isFailed && 'bg-red-50 dark:bg-red-950/30'
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect?.(node)}
@@ -82,14 +91,14 @@ function SpanNodeItem({ node, depth, onSelect, selectedSpanId }: SpanNodeItemPro
           <button
             className="p-0.5 hover:bg-muted rounded"
             onClick={(e) => {
-              e.stopPropagation()
-              setExpanded(!expanded)
+              e.stopPropagation();
+              setExpanded(!expanded);
             }}
           >
             {expanded ? (
-              <ChevronDown className="h-3 w-3" />
+              <Icon icon={ArrowDown01Icon} className="h-3 w-3" />
             ) : (
-              <ChevronRight className="h-3 w-3" />
+              <Icon icon={ArrowRight01Icon} className="h-3 w-3" />
             )}
           </button>
         ) : (
@@ -126,18 +135,14 @@ function SpanNodeItem({ node, depth, onSelect, selectedSpanId }: SpanNodeItemPro
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export function SpanTree({ spans, onSelectSpan, selectedSpanId }: SpanTreeProps) {
-  const tree = buildTree(spans)
+  const tree = buildTree(spans);
 
   if (spans.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        暂无执行记录
-      </div>
-    )
+    return <div className="text-center py-8 text-muted-foreground">暂无执行记录</div>;
   }
 
   return (
@@ -152,5 +157,5 @@ export function SpanTree({ spans, onSelectSpan, selectedSpanId }: SpanTreeProps)
         />
       ))}
     </div>
-  )
+  );
 }

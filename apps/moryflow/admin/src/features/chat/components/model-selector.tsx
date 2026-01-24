@@ -1,28 +1,25 @@
 /**
  * 模型选择器组件
  */
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { CheckIcon, ChevronDownIcon, SparklesIcon } from 'lucide-react'
-import { useState } from 'react'
-import type { ModelGroup } from '../types'
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Icon } from '@/components/ui/icon';
+import { AiMagicIcon, ArrowDown01Icon, CheckmarkSquare01Icon } from '@hugeicons/core-free-icons';
+import { useState } from 'react';
+import type { ModelGroup } from '../types';
 
 interface ModelSelectorProps {
-  modelGroups: ModelGroup[]
-  selectedModelId: string | null
-  onSelectModel: (id: string) => void
-  disabled?: boolean
+  modelGroups: ModelGroup[];
+  selectedModelId: string | null;
+  onSelectModel: (id: string) => void;
+  disabled?: boolean;
 }
 
 export function ModelSelector({
@@ -31,26 +28,19 @@ export function ModelSelector({
   onSelectModel,
   disabled,
 }: ModelSelectorProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
-  const selectedModel = modelGroups
-    .flatMap((g) => g.options)
-    .find((m) => m.id === selectedModelId)
+  const selectedModel = modelGroups.flatMap((g) => g.options).find((m) => m.id === selectedModelId);
 
-  const hasModels = modelGroups.some((g) => g.options.length > 0)
+  const hasModels = modelGroups.some((g) => g.options.length > 0);
 
   if (!hasModels) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled
-        className="h-8 gap-1.5 text-muted-foreground"
-      >
-        <SparklesIcon className="size-3.5" />
+      <Button variant="ghost" size="sm" disabled className="h-8 gap-1.5 text-muted-foreground">
+        <Icon icon={AiMagicIcon} className="size-3.5" />
         <span>无可用模型</span>
       </Button>
-    )
+    );
   }
 
   return (
@@ -62,10 +52,8 @@ export function ModelSelector({
           disabled={disabled}
           className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
         >
-          <span className="max-w-32 truncate">
-            {selectedModel?.name ?? '选择模型'}
-          </span>
-          <ChevronDownIcon className="size-3 opacity-50" />
+          <span className="max-w-32 truncate">{selectedModel?.name ?? '选择模型'}</span>
+          <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="start" side="top">
@@ -79,14 +67,14 @@ export function ModelSelector({
                     key={option.id}
                     value={option.id}
                     onSelect={() => {
-                      onSelectModel(option.id)
-                      setOpen(false)
+                      onSelectModel(option.id);
+                      setOpen(false);
                     }}
                     className="gap-2 text-sm"
                   >
                     <span className="flex-1 truncate">{option.name}</span>
                     {selectedModelId === option.id && (
-                      <CheckIcon className="size-4 shrink-0" />
+                      <Icon icon={CheckmarkSquare01Icon} className="size-4 shrink-0" />
                     )}
                   </CommandItem>
                 ))}
@@ -96,5 +84,5 @@ export function ModelSelector({
         </Command>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

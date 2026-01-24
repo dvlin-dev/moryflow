@@ -28,6 +28,7 @@
 - Origin 校验仅用于 Web 请求，Device 以 `X-App-Platform` 分流
 - `AuthTokensController` 必须先于 `AuthController` 注册，避免 `/api/auth/*` 被兜底 handler 拦截
 - 内部服务可通过 `AuthTokensService` 签发 access JWT（Vectorize Worker 使用 JWKS 验签）
+- Expo 插件需显式声明 `BetterAuthPlugin` 类型，避免 `no-unsafe-call`
 
 ## 依赖
 

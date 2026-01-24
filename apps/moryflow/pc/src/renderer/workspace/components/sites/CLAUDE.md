@@ -10,7 +10,7 @@
 | `site-list.tsx`          | 站点列表组件，包含 Header 和卡片网格      |
 | `site-card.tsx`          | 站点卡片组件，显示状态、URL、操作菜单     |
 | `site-detail.tsx`        | 站点详情页，设置编辑、操作按钮            |
-| `site-empty-state.tsx`   | 空状态组件                                |
+| `site-empty-state.tsx`   | 空状态组件（含 E2E 选择器）               |
 | `file-picker-dialog.tsx` | 文件选择对话框，两级结构（工作区 → 文件） |
 | `const.ts`               | 类型定义、辅助函数                        |
 
@@ -58,6 +58,10 @@ SitesPage
 - `@/components/ui/*` - shadcn/ui 组件
 - `@/components/share/const` - 共享类型和工具函数
 - `@/components/site-publish` - PublishDialog 组件
+
+## E2E 约定
+
+- 空状态根节点提供 `data-testid="sites-empty-state"`，用于 Playwright 稳定定位
 
 ## 相关文档
 

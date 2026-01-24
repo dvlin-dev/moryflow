@@ -2,7 +2,7 @@
  * 告警规则表格
  */
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -10,16 +10,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { Skeleton } from '@/components/ui/skeleton'
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,41 +29,47 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { MoreHorizontal, Pencil, Trash2, Bell } from 'lucide-react'
-import { AlertLevelBadge, AlertTypeBadge } from './alert-badges'
-import { useUpdateAlertRule, useDeleteAlertRule } from '../hooks'
-import type { AlertRule } from '../types'
+} from '@/components/ui/alert-dialog';
+import { Icon } from '@/components/ui/icon';
+import {
+  Delete01Icon,
+  More01Icon,
+  Notification01Icon,
+  PencilEdit01Icon,
+} from '@hugeicons/core-free-icons';
+import { AlertLevelBadge, AlertTypeBadge } from './alert-badges';
+import { useUpdateAlertRule, useDeleteAlertRule } from '../hooks';
+import type { AlertRule } from '../types';
 
 interface AlertRulesTableProps {
-  rules: AlertRule[]
-  isLoading?: boolean
-  onEdit: (rule: AlertRule) => void
+  rules: AlertRule[];
+  isLoading?: boolean;
+  onEdit: (rule: AlertRule) => void;
 }
 
 export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTableProps) {
-  const [deleteRule, setDeleteRule] = useState<AlertRule | null>(null)
-  const updateMutation = useUpdateAlertRule()
-  const deleteMutation = useDeleteAlertRule()
+  const [deleteRule, setDeleteRule] = useState<AlertRule | null>(null);
+  const updateMutation = useUpdateAlertRule();
+  const deleteMutation = useDeleteAlertRule();
 
   const handleToggle = async (rule: AlertRule) => {
     await updateMutation.mutateAsync({
       id: rule.id,
       dto: { enabled: !rule.enabled },
-    })
-  }
+    });
+  };
 
   const handleDelete = async () => {
-    if (!deleteRule) return
-    await deleteMutation.mutateAsync(deleteRule.id)
-    setDeleteRule(null)
-  }
+    if (!deleteRule) return;
+    await deleteMutation.mutateAsync(deleteRule.id);
+    setDeleteRule(null);
+  };
 
   const formatCooldown = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
-    return `${Math.floor(seconds / 3600)}h`
-  }
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    return `${Math.floor(seconds / 3600)}h`;
+  };
 
   if (isLoading) {
     return (
@@ -82,30 +88,40 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
           <TableBody>
             {Array.from({ length: 3 }).map((_, i) => (
               <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-12" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-8" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-    )
+    );
   }
 
   if (rules.length === 0) {
     return (
       <div className="rounded-lg border p-12 text-center">
-        <Bell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <Icon icon={Notification01Icon} className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <p className="text-muted-foreground">暂无告警规则</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          创建第一个告警规则开始监控
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">创建第一个告警规则开始监控</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -132,9 +148,7 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
                 <TableCell>
                   <AlertLevelBadge level={rule.level} />
                 </TableCell>
-                <TableCell className="font-mono text-sm">
-                  {formatCooldown(rule.cooldown)}
-                </TableCell>
+                <TableCell className="font-mono text-sm">{formatCooldown(rule.cooldown)}</TableCell>
                 <TableCell>
                   <Switch
                     checked={rule.enabled}
@@ -146,19 +160,19 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
+                        <Icon icon={More01Icon} className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onEdit(rule)}>
-                        <Pencil className="mr-2 h-4 w-4" />
+                        <Icon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
                         编辑
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => setDeleteRule(rule)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Icon icon={Delete01Icon} className="mr-2 h-4 w-4" />
                         删除
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -190,5 +204,5 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }

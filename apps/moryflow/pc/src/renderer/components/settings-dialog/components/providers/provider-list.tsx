@@ -2,7 +2,8 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@anyhunt/ui/components/switch';
 import { Button } from '@anyhunt/ui/components/button';
 import { Separator } from '@anyhunt/ui/components/separator';
-import { Plus } from 'lucide-react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { getSortedProviders } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import { useAuth, MEMBERSHIP_PROVIDER_ID } from '@/lib/server';
@@ -224,7 +225,7 @@ export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) 
           className="w-full justify-start gap-2"
           onClick={handleAddCustomProvider}
         >
-          <Plus className="h-4 w-4" />
+          <Icon icon={Add01Icon} className="h-4 w-4" />
           {t('addCustomProvider')}
         </Button>
       </div>

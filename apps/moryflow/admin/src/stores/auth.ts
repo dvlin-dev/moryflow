@@ -75,6 +75,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error('Admin session not found');
       }
 
+      if (!data.user.isAdmin) {
+        throw new Error('Admin access required');
+      }
+
       set({ user: data.user, isAuthenticated: true });
     } catch {
       set({ user: null, accessToken: null, isAuthenticated: false });
@@ -107,6 +111,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (!data.user) {
       throw new Error('Admin session not found');
+    }
+
+    if (!data.user.isAdmin) {
+      set({ user: null, accessToken: null, isAuthenticated: false });
+      throw new Error('Admin access required');
     }
 
     set({ user: data.user, isAuthenticated: true });

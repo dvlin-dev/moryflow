@@ -14,7 +14,8 @@ import { useAuthStore } from '@/stores/auth';
 import { API_BASE_URL } from '@/lib/api-base';
 import { AI_PROXY_API } from '@/lib/api-paths';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircleIcon } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { AlertCircleIcon } from '@hugeicons/core-free-icons';
 
 interface Message {
   id: string;
@@ -214,7 +215,7 @@ export function ChatPane() {
       {displayError && (
         <div className="px-4 pt-4">
           <Alert variant="destructive">
-            <AlertCircleIcon className="size-4" />
+            <Icon icon={AlertCircleIcon} className="size-4" />
             <AlertDescription>
               {displayError instanceof Error ? displayError.message : '发生错误'}
             </AlertDescription>

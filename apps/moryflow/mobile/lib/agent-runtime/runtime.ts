@@ -5,7 +5,7 @@
  * 与 PC 端 apps/moryflow/pc/src/main/agent-runtime/index.ts 对应。
  */
 
-import { run, setTracingDisabled } from '@anyhunt/agents';
+import { run, setTracingDisabled, user } from '@openai/agents-core';
 import {
   createAgentFactory,
   createModelFactory,
@@ -137,13 +137,28 @@ function createRuntimeInstance(): MobileAgentRuntime {
       };
 
       // 使用 expo/fetch 支持流式响应
-      const result = await run(agent, inputWithContext, {
+      const history = await session.getItems();
+      const userItem = user(inputWithContext);
+      const runInput = history.length > 0 ? [...history, userItem] : [userItem];
+      await session.addItems([userItem]);
+
+      const result = await run(agent, runInput, {
         stream: true,
         maxTurns: MAX_AGENT_TURNS,
         signal,
-        session,
         context: agentContext,
       });
+
+      void result.completed
+        .then(async () => {
+          const outputItems = result.output;
+          if (outputItems.length > 0) {
+            await session.addItems(outputItems);
+          }
+        })
+        .catch((error) => {
+          console.warn('[mobile-agent-runtime] 会话输出持久化失败', error);
+        });
 
       return {
         result,

@@ -3,13 +3,13 @@
  *
  * [INPUT]: Agent 运行时流式事件
  * [OUTPUT]: SSE 格式的事件流
- * [POS]: 将 @anyhunt/agents-core 的流式事件转换为前端可消费的 SSE 事件
+ * [POS]: 将 @openai/agents-core 的流式事件转换为前端可消费的 SSE 事件
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import type { RunStreamEvent, StreamedRunResult } from '@anyhunt/agents-core';
+import type { RunStreamEvent, StreamedRunResult } from '@openai/agents-core';
 import { randomUUID } from 'node:crypto';
 import { AgentTaskProgressStore } from './agent-task.progress.store';
 import {

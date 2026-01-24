@@ -1,5 +1,9 @@
 /**
- * 验证工具函数
+ * [PROVIDES]: isValidLanguage
+ * [DEPENDS]: ../core/constants
+ * [POS]: i18n 语言校验工具
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */
 
 import type { SupportedLanguage } from '../core/types';

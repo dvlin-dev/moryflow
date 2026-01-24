@@ -3,19 +3,20 @@
  * 支持二级可折叠菜单
  */
 import {
-  LayoutDashboard,
-  Command,
-  CreditCard,
-  Settings,
-  Cpu,
-  Wrench,
-  Cloud,
-  Globe,
-  Activity,
-} from 'lucide-react'
+  Activity01Icon,
+  CloudIcon,
+  CommandIcon,
+  CpuIcon,
+  CreditCardIcon,
+  DashboardSquare01Icon,
+  GlobeIcon,
+  Settings01Icon,
+  Wrench01Icon,
+} from '@hugeicons/core-free-icons';
 
-import { NavMain, type NavGroup } from '@/components/layout/nav-main'
-import { NavUser } from '@/components/layout/nav-user'
+import { NavMain, type NavGroup } from '@/components/layout/nav-main';
+import { NavUser } from '@/components/layout/nav-user';
+import { Icon } from '@/components/ui/icon';
 import {
   Sidebar,
   SidebarContent,
@@ -24,20 +25,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
+} from '@/components/ui/sidebar';
 
 // 导航分组配置
 const navGroups: NavGroup[] = [
   {
     // 概览 - 无分组标签
-    items: [{ title: '仪表盘', url: '/', icon: LayoutDashboard }],
+    items: [{ title: '仪表盘', url: '/', icon: DashboardSquare01Icon }],
   },
   {
     label: '支付管理',
     items: [
       {
         title: '支付',
-        icon: CreditCard,
+        icon: CreditCardIcon,
         items: [
           { title: '订阅管理', url: '/subscriptions' },
           { title: '订单管理', url: '/orders' },
@@ -51,7 +52,7 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: '模型配置',
-        icon: Cpu,
+        icon: CpuIcon,
         items: [
           { title: '提供商', url: '/providers' },
           { title: '模型', url: '/models' },
@@ -59,7 +60,7 @@ const navGroups: NavGroup[] = [
       },
       {
         title: 'Agent 追踪',
-        icon: Activity,
+        icon: Activity01Icon,
         items: [
           { title: '概览', url: '/agent-traces' },
           { title: '失败记录', url: '/agent-traces/failed' },
@@ -75,12 +76,12 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: '站点管理',
-        icon: Globe,
+        icon: GlobeIcon,
         url: '/sites',
       },
       {
         title: '云同步',
-        icon: Cloud,
+        icon: CloudIcon,
         url: '/storage',
       },
     ],
@@ -90,7 +91,7 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: '管理',
-        icon: Settings,
+        icon: Settings01Icon,
         items: [
           { title: '用户管理', url: '/users' },
           { title: '操作日志', url: '/logs' },
@@ -104,7 +105,7 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: '测试',
-        icon: Wrench,
+        icon: Wrench01Icon,
         items: [
           { title: '支付测试', url: '/payment-test' },
           { title: '邮件测试', url: '/email-test' },
@@ -114,15 +115,15 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
-]
+];
 
 export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user?: {
-    id: string
-    email: string
-    name?: string
-    avatar?: string
-  }
+    id: string;
+    email: string;
+    name?: string;
+    avatar?: string;
+  };
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
@@ -131,12 +132,9 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
+            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="/">
-                <Command className="!size-5" />
+                <Icon icon={CommandIcon} className="!size-5" />
                 <span className="text-base font-semibold">Moryflow</span>
               </a>
             </SidebarMenuButton>
@@ -158,5 +156,5 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         )}
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

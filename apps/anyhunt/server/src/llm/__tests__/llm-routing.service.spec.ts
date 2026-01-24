@@ -4,8 +4,8 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { OpenAIProvider } from '@anyhunt/agents-openai';
-import type { Model } from '@anyhunt/agents-core';
+import { OpenAIProvider } from '@openai/agents-openai';
+import type { Model } from '@openai/agents-core';
 import type { LlmUpstreamResolverService } from '../llm-upstream-resolver.service';
 
 function createMockUpstream(params: {

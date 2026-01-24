@@ -2,18 +2,25 @@
  * 支付测试页面
  * 用于测试各产品的支付流程
  */
-import { useState } from 'react'
-import { PageHeader } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
-import { ExternalLink, CreditCard, Coins, Key, Loader2 } from 'lucide-react'
-import { apiClient } from '@/lib/api-client'
-import { ADMIN_API } from '@/lib/api-paths'
+import { useState } from 'react';
+import { PageHeader } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import {
+  Coins01Icon,
+  CreditCardIcon,
+  Key01Icon,
+  LinkSquare02Icon,
+  Loading01Icon,
+} from '@hugeicons/core-free-icons';
+import { apiClient } from '@/lib/api-client';
+import { ADMIN_API } from '@/lib/api-paths';
+import { Icon } from '@/components/ui/icon';
 
 // 产品配置（与后端保持一致）
 const PRODUCTS = {
@@ -87,48 +94,48 @@ const PRODUCTS = {
       devices: 5,
     },
   ],
-}
+};
 
 interface ProductCardProps {
   product: {
-    id: string
-    envKey: string
-    name: string
-    description: string
-    price: number
-    credits?: number
-    cycle?: string
-    tier?: string
-    devices?: number
-  }
-  type: 'subscription' | 'credits' | 'license'
-  testUserId: string
-  onCheckout: (productEnvKey: string) => Promise<void>
-  isLoading: boolean
+    id: string;
+    envKey: string;
+    name: string;
+    description: string;
+    price: number;
+    credits?: number;
+    cycle?: string;
+    tier?: string;
+    devices?: number;
+  };
+  type: 'subscription' | 'credits' | 'license';
+  testUserId: string;
+  onCheckout: (productEnvKey: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 function ProductCard({ product, type, testUserId, onCheckout, isLoading }: ProductCardProps) {
   const getTypeIcon = () => {
     switch (type) {
       case 'subscription':
-        return <CreditCard className="h-5 w-5" />
+        return <Icon icon={CreditCardIcon} className="h-5 w-5" />;
       case 'credits':
-        return <Coins className="h-5 w-5" />
+        return <Icon icon={Coins01Icon} className="h-5 w-5" />;
       case 'license':
-        return <Key className="h-5 w-5" />
+        return <Icon icon={Key01Icon} className="h-5 w-5" />;
     }
-  }
+  };
 
   const getTypeBadge = () => {
     switch (type) {
       case 'subscription':
-        return <Badge variant="default">订阅</Badge>
+        return <Badge variant="default">订阅</Badge>;
       case 'credits':
-        return <Badge variant="secondary">积分包</Badge>
+        return <Badge variant="secondary">积分包</Badge>;
       case 'license':
-        return <Badge className="bg-yellow-500">永久授权</Badge>
+        return <Badge className="bg-yellow-500">永久授权</Badge>;
     }
-  }
+  };
 
   return (
     <Card className="flex flex-col">
@@ -147,7 +154,8 @@ function ProductCard({ product, type, testUserId, onCheckout, isLoading }: Produ
           <div className="text-3xl font-bold">${product.price}</div>
           {product.credits && (
             <p className="text-sm text-muted-foreground">
-              {product.credits.toLocaleString()} 积分{product.cycle === 'monthly' ? '/月' : product.cycle === 'yearly' ? '/月' : ''}
+              {product.credits.toLocaleString()} 积分
+              {product.cycle === 'monthly' ? '/月' : product.cycle === 'yearly' ? '/月' : ''}
             </p>
           )}
           {product.devices && (
@@ -160,38 +168,36 @@ function ProductCard({ product, type, testUserId, onCheckout, isLoading }: Produ
           )}
         </div>
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground font-mono break-all">
-            ENV: {product.envKey}
-          </p>
+          <p className="text-xs text-muted-foreground font-mono break-all">ENV: {product.envKey}</p>
           <Button
             className="w-full"
             onClick={() => onCheckout(product.envKey)}
             disabled={!testUserId || isLoading}
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Icon icon={Loading01Icon} className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <ExternalLink className="h-4 w-4 mr-2" />
+              <Icon icon={LinkSquare02Icon} className="h-4 w-4 mr-2" />
             )}
             {!testUserId ? '请先输入用户 ID' : '测试购买'}
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export default function PaymentTestPage() {
-  const [testUserId, setTestUserId] = useState('')
-  const [loadingProduct, setLoadingProduct] = useState<string | null>(null)
+  const [testUserId, setTestUserId] = useState('');
+  const [loadingProduct, setLoadingProduct] = useState<string | null>(null);
 
   const handleCheckout = async (productEnvKey: string) => {
     if (!testUserId) {
-      toast.error('请输入测试用户 ID')
-      return
+      toast.error('请输入测试用户 ID');
+      return;
     }
 
-    setLoadingProduct(productEnvKey)
+    setLoadingProduct(productEnvKey);
 
     try {
       // 调用后端 API 创建 checkout session
@@ -203,29 +209,26 @@ export default function PaymentTestPage() {
           successUrl: `${window.location.origin}/payment-test?success=true`,
           cancelUrl: `${window.location.origin}/payment-test?canceled=true`,
         }
-      )
+      );
 
       if (data.checkoutUrl) {
         // 在新窗口打开 Creem checkout 页面
-        window.open(data.checkoutUrl, '_blank')
-        toast.success('已打开支付页面')
+        window.open(data.checkoutUrl, '_blank');
+        toast.success('已打开支付页面');
       } else {
-        throw new Error(data.error || 'No checkout URL returned')
+        throw new Error(data.error || 'No checkout URL returned');
       }
     } catch (error) {
-      console.error('Checkout error:', error)
-      toast.error(error instanceof Error ? error.message : '创建支付失败')
+      console.error('Checkout error:', error);
+      toast.error(error instanceof Error ? error.message : '创建支付失败');
     } finally {
-      setLoadingProduct(null)
+      setLoadingProduct(null);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="支付测试"
-        description="测试各产品的支付流程（使用 Creem 测试模式）"
-      />
+      <PageHeader title="支付测试" description="测试各产品的支付流程（使用 Creem 测试模式）" />
 
       {/* 测试配置 */}
       <Card className={!testUserId ? 'border-yellow-500 dark:border-yellow-600' : ''}>
@@ -258,11 +261,11 @@ export default function PaymentTestPage() {
               variant="outline"
               onClick={() => {
                 // 可以从 URL 参数获取成功/取消状态
-                const params = new URLSearchParams(window.location.search)
+                const params = new URLSearchParams(window.location.search);
                 if (params.get('success')) {
-                  toast.success('支付成功！请检查用户状态')
+                  toast.success('支付成功！请检查用户状态');
                 } else if (params.get('canceled')) {
-                  toast.info('支付已取消')
+                  toast.info('支付已取消');
                 }
               }}
             >
@@ -343,5 +346,5 @@ export default function PaymentTestPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

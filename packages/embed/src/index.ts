@@ -1,9 +1,13 @@
 /**
- * /embed - oEmbed API 客户端
+ * [PROVIDES]: createEmbedClient, EmbedClient, Embed* types, EmbedError, detectProvider
+ * [DEPENDS]: ./client, ./types, ./errors, ./utils
+ * [POS]: @anyhunt/embed 包入口
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
  */
 
 // Client
-export { createEmbedClient, type EmbedClient } from './client.ts';
+export { createEmbedClient, type EmbedClient } from './client';
 
 // Types
 export type {
@@ -13,10 +17,10 @@ export type {
   EmbedClientConfig,
   EmbedOptions,
   EmbedData,
-} from './types.ts';
+} from './types';
 
 // Errors
-export { EmbedError, NetworkError, ApiError } from './errors.ts';
+export { EmbedError, NetworkError, ApiError } from './errors';
 
 // Utils
-export { detectProvider, isSupported } from './utils/index.ts';
+export { detectProvider, isSupported } from './utils';

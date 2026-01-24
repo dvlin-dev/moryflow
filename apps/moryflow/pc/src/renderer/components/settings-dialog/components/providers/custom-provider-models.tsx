@@ -10,7 +10,8 @@ import { useMemo, useState } from 'react';
 import { Button } from '@anyhunt/ui/components/button';
 import { Label } from '@anyhunt/ui/components/label';
 import { Switch } from '@anyhunt/ui/components/switch';
-import { Plus, Trash2 } from 'lucide-react';
+import { Add01Icon, Delete01Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { AddCustomProviderModelDialog } from './add-custom-provider-model-dialog';
 
 export type CustomProviderModel = {
@@ -41,7 +42,7 @@ export const CustomProviderModels = ({
       <div className="flex items-center justify-between">
         <Label>Models</Label>
         <Button type="button" variant="outline" size="icon" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" />
+          <Icon icon={Add01Icon} className="h-4 w-4" />
         </Button>
       </div>
 
@@ -74,7 +75,7 @@ export const CustomProviderModels = ({
                   }}
                   aria-label="Delete model"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Icon icon={Delete01Icon} className="h-4 w-4" />
                 </Button>
                 <Switch
                   checked={model.enabled}

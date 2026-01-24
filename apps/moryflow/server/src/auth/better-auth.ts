@@ -1,5 +1,5 @@
 /**
- * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/Expo 插件
+ * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/Expo 插件（BetterAuthPlugin）
  * [OUTPUT]: Better Auth 实例（Moryflow 专用配置）
  * [POS]: Auth 配置入口
  *
@@ -11,6 +11,7 @@ import {
   APIError,
   type SecondaryStorage,
   type Auth as BetterAuthInstance,
+  type BetterAuthPlugin,
 } from 'better-auth';
 import { expo } from '@better-auth/expo';
 import { emailOTP } from 'better-auth/plugins/email-otp';
@@ -166,7 +167,7 @@ export function createBetterAuth(
       },
     },
     plugins: [
-      expo(),
+      (expo as () => BetterAuthPlugin)(),
       jwt(jwtOptions),
       // Email OTP 插件：邮箱验证码验证
       emailOTP({

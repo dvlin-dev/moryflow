@@ -1,16 +1,27 @@
-import type { AgentInputItem, Session } from '@anyhunt/agents'
-import type { TokenUsage } from './types'
+import type { AgentInputItem } from '@openai/agents-core';
+import type { TokenUsage } from './types';
 
 /**
  * 会话摘要信息
  */
 export interface ChatSessionSummary {
-  id: string
-  title: string
-  createdAt: number
-  updatedAt: number
-  preferredModelId?: string
-  tokenUsage?: TokenUsage
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  preferredModelId?: string;
+  tokenUsage?: TokenUsage;
+}
+
+/**
+ * 会话接口（与 SDK 解耦的本地约束）
+ */
+export interface Session {
+  getSessionId(): Promise<string>;
+  getItems(limit?: number): Promise<AgentInputItem[]>;
+  addItems(items: AgentInputItem[]): Promise<void>;
+  popItem(): Promise<AgentInputItem | undefined>;
+  clearSession(): Promise<void>;
 }
 
 /**
@@ -19,51 +30,48 @@ export interface ChatSessionSummary {
  */
 export interface SessionStore {
   /** 获取所有会话列表 */
-  getSessions(): Promise<ChatSessionSummary[]>
+  getSessions(): Promise<ChatSessionSummary[]>;
   /** 创建新会话 */
-  createSession(title?: string): Promise<ChatSessionSummary>
+  createSession(title?: string): Promise<ChatSessionSummary>;
   /** 更新会话 */
-  updateSession(id: string, updates: Partial<ChatSessionSummary>): Promise<void>
+  updateSession(id: string, updates: Partial<ChatSessionSummary>): Promise<void>;
   /** 删除会话 */
-  deleteSession(id: string): Promise<void>
+  deleteSession(id: string): Promise<void>;
   /** 获取会话历史 */
-  getHistory(chatId: string): Promise<AgentInputItem[]>
+  getHistory(chatId: string): Promise<AgentInputItem[]>;
   /** 追加历史 */
-  appendHistory(chatId: string, items: AgentInputItem[]): Promise<void>
+  appendHistory(chatId: string, items: AgentInputItem[]): Promise<void>;
   /** 弹出最后一条历史 */
-  popHistory(chatId: string): Promise<AgentInputItem | undefined>
+  popHistory(chatId: string): Promise<AgentInputItem | undefined>;
   /** 清空历史 */
-  clearHistory(chatId: string): Promise<void>
+  clearHistory(chatId: string): Promise<void>;
 }
 
 /**
  * 创建 SDK Session 适配器
  */
-export const createSessionAdapter = (
-  chatId: string,
-  store: SessionStore
-): Session => ({
+export const createSessionAdapter = (chatId: string, store: SessionStore): Session => ({
   async getSessionId() {
-    return chatId
+    return chatId;
   },
 
   async getItems(limit?: number) {
-    const history = await store.getHistory(chatId)
+    const history = await store.getHistory(chatId);
     if (limit === undefined || limit >= history.length) {
-      return history
+      return history;
     }
-    return history.slice(-limit)
+    return history.slice(-limit);
   },
 
   async addItems(items: AgentInputItem[]) {
-    await store.appendHistory(chatId, items)
+    await store.appendHistory(chatId, items);
   },
 
   async popItem() {
-    return store.popHistory(chatId)
+    return store.popHistory(chatId);
   },
 
   async clearSession() {
-    await store.clearHistory(chatId)
+    await store.clearHistory(chatId);
   },
-})
+});

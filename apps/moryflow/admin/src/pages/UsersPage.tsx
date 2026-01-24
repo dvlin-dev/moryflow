@@ -25,7 +25,8 @@ import { formatDate, formatNumber } from '@/lib/format';
 import { TIER_OPTIONS } from '@/constants/tier';
 import { useUsers, useSetUserTier, SetTierDialog } from '@/features/users';
 import type { User, UserTier } from '@/types/api';
-import { Eye, Settings } from 'lucide-react';
+import { Setting06Icon, ViewIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 
 const PAGE_SIZE = 20;
 
@@ -193,7 +194,7 @@ export default function UsersPage() {
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="sm" asChild>
                         <Link to={`/users/${user.id}`}>
-                          <Eye className="h-4 w-4 mr-1" />
+                          <Icon icon={ViewIcon} className="h-4 w-4 mr-1" />
                           详情
                         </Link>
                       </Button>
@@ -203,7 +204,7 @@ export default function UsersPage() {
                         onClick={() => handleOpenTierDialog(user)}
                         disabled={!!user.deletedAt}
                       >
-                        <Settings className="h-4 w-4 mr-1" />
+                        <Icon icon={Setting06Icon} className="h-4 w-4 mr-1" />
                         等级
                       </Button>
                     </div>

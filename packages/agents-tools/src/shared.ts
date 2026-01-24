@@ -1,7 +1,7 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 // 重新导出 runtime 包的 getVaultRootFromContext，避免重复定义
-export { getVaultRootFromContext } from '@anyhunt/agents-runtime'
+export { getVaultRootFromContext } from '@anyhunt/agents-runtime';
 
 /**
  * 工具操作摘要 schema
@@ -15,10 +15,10 @@ export const toolSummarySchema = z
     'A brief one-sentence description of what you are doing. ' +
       "IMPORTANT: Use the same language as the user's conversation. " +
       'Examples: "Reading project config" (English), "读取项目配置" (Chinese)'
-  )
+  );
 
 /** 预览最大长度 */
-export const MAX_PREVIEW_LENGTH = 32 * 1024
+export const MAX_PREVIEW_LENGTH = 32 * 1024;
 
 /** 二进制文件扩展名 */
 export const BINARY_EXTENSIONS = new Set([
@@ -29,26 +29,26 @@ export const BINARY_EXTENSIONS = new Set([
   '.bmp',
   '.svg',
   '.webp',
-])
+]);
 
 /** 大文件阈值 */
-export const LARGE_FILE_THRESHOLD = MAX_PREVIEW_LENGTH * 8
+export const LARGE_FILE_THRESHOLD = MAX_PREVIEW_LENGTH * 8;
 
 /** 最大行数 */
-export const MAX_LINES = 2000
+export const MAX_LINES = 2000;
 
 /** 最大行长度 */
-export const MAX_LINE_LENGTH = 2000
+export const MAX_LINE_LENGTH = 2000;
 
 /**
  * 截断预览内容
  */
 export const trimPreview = (content: string) => {
   if (content.length <= MAX_PREVIEW_LENGTH) {
-    return { text: content, truncated: false }
+    return { text: content, truncated: false };
   }
-  return { text: content.slice(0, MAX_PREVIEW_LENGTH), truncated: true }
-}
+  return { text: content.slice(0, MAX_PREVIEW_LENGTH), truncated: true };
+};
 
 /**
  * 规范化相对路径（使用 / 分隔符）
@@ -56,13 +56,18 @@ export const trimPreview = (content: string) => {
 export const normalizeRelativePath = (
   root: string,
   absolutePath: string,
-  pathSep: string
+  pathUtils: {
+    relative: (from: string, to: string) => string;
+    isAbsolute: (path: string) => boolean;
+    sep: string;
+  }
 ): string => {
-  const relative = absolutePath.startsWith(root)
-    ? absolutePath.slice(root.length).replace(/^[/\\]/, '')
-    : absolutePath
-  return relative.split(pathSep).join('/') || '.'
-}
+  const relative = pathUtils.relative(root, absolutePath);
+  const isInsideRoot =
+    relative === '' || (!relative.startsWith('..') && !pathUtils.isAbsolute(relative));
+  const normalized = (isInsideRoot ? relative : absolutePath).split(pathUtils.sep).join('/');
+  return normalized || '.';
+};
 
 /**
  * 分片读取工具的行处理
@@ -72,25 +77,25 @@ export const sliceLinesForReadTool = (
   offset?: number,
   limit?: number
 ): { content: string; offset: number; limit: number; truncated: boolean } => {
-  const start = offset && offset > 0 ? offset - 1 : 0
-  const clampedLimit = Math.min(limit ?? MAX_LINES, MAX_LINES)
-  const end = Math.min(start + clampedLimit, lines.length)
+  const start = offset && offset > 0 ? offset - 1 : 0;
+  const clampedLimit = Math.min(limit ?? MAX_LINES, MAX_LINES);
+  const end = Math.min(start + clampedLimit, lines.length);
 
-  let lineTruncated = false
+  let lineTruncated = false;
   const sliced = lines.slice(start, end).map((line) => {
     if (line.length > MAX_LINE_LENGTH) {
-      lineTruncated = true
-      return `${line.slice(0, MAX_LINE_LENGTH)}…[truncated]`
+      lineTruncated = true;
+      return `${line.slice(0, MAX_LINE_LENGTH)}…[truncated]`;
     }
-    return line
-  })
+    return line;
+  });
 
-  const truncated = lineTruncated || start > 0 || end < lines.length
+  const truncated = lineTruncated || start > 0 || end < lines.length;
 
   return {
     content: sliced.join('\n'),
     offset: start + 1,
     limit: clampedLimit,
     truncated,
-  }
-}
+  };
+};

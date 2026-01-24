@@ -21,13 +21,8 @@ export {
   // 等级配置
   TIER_DISPLAY_NAMES,
   TIER_COLORS,
-  TIER_PRIORITY,
-  TIER_INFO_CONFIG,
-  compareTiers,
-  isTierSufficient,
   getTierInfo,
   // 错误处理
-  AUTH_ERROR_MESSAGES,
   parseAuthError,
   // API URL
   MEMBERSHIP_API_URL,

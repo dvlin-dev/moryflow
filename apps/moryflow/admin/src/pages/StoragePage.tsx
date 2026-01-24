@@ -9,7 +9,8 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader, SimplePagination } from '@/components/shared';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, X } from 'lucide-react';
+import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
 import {
   useStorageStats,
   useVaultList,
@@ -104,7 +105,7 @@ export default function StoragePage() {
             当前筛选：用户 ID <code className="px-1 bg-background rounded">{urlUserId}</code>
           </span>
           <Button variant="ghost" size="sm" onClick={clearUserFilter}>
-            <X className="h-4 w-4 mr-1" />
+            <Icon icon={Cancel01Icon} className="h-4 w-4 mr-1" />
             清除筛选
           </Button>
         </div>
@@ -113,7 +114,10 @@ export default function StoragePage() {
       {/* 搜索栏 */}
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Icon
+            icon={Search01Icon}
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             placeholder="搜索用户邮箱或 Vault 名称..."
             value={searchInput}

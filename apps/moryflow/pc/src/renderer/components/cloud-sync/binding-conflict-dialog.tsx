@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { CloudOff, CloudUpload } from 'lucide-react'
+import { CloudIcon, CloudUploadIcon } from '@hugeicons/core-free-icons';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -14,14 +14,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog'
-import { Button } from '@anyhunt/ui/components/button'
-import type { BindingConflictChoice } from '@shared/ipc'
+} from '@anyhunt/ui/components/alert-dialog';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import type { BindingConflictChoice } from '@shared/ipc';
 
 interface BindingConflictDialogProps {
-  open: boolean
-  vaultName: string
-  onChoice: (choice: BindingConflictChoice) => void
+  open: boolean;
+  vaultName: string;
+  onChoice: (choice: BindingConflictChoice) => void;
 }
 
 export function BindingConflictDialog({ open, vaultName, onChoice }: BindingConflictDialogProps) {
@@ -31,7 +32,7 @@ export function BindingConflictDialog({ open, vaultName, onChoice }: BindingConf
         <AlertDialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-              <CloudOff className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <Icon icon={CloudIcon} className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <AlertDialogTitle>Workspace Sync Conflict</AlertDialogTitle>
           </div>
@@ -49,15 +50,15 @@ export function BindingConflictDialog({ open, vaultName, onChoice }: BindingConf
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={() => onChoice('stay_offline')} className="gap-2">
-            <CloudOff className="h-4 w-4" />
+            <Icon icon={CloudIcon} className="h-4 w-4" />
             Stay Offline
           </Button>
           <Button variant="default" onClick={() => onChoice('sync_to_current')} className="gap-2">
-            <CloudUpload className="h-4 w-4" />
+            <Icon icon={CloudUploadIcon} className="h-4 w-4" />
             Sync to Current Account
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

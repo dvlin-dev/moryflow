@@ -1,3 +1,11 @@
+/**
+ * [PROVIDES]: formatSmartRelativeTime, formatDate
+ * [DEPENDS]: date-fns, ./date-locale, ../core/i18n
+ * [POS]: 日期/相对时间格式化工具
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
+ */
+
 import { format, formatDistance } from 'date-fns';
 import { getDateLocale, getDateFormat } from './date-locale';
 import { getI18nInstance } from '../core/i18n';

@@ -6,77 +6,68 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { Button } from '@anyhunt/ui/components/button'
-import { Input } from '@anyhunt/ui/components/input'
-import { Label } from '@anyhunt/ui/components/label'
-import { Textarea } from '@anyhunt/ui/components/textarea'
-import { Checkbox } from '@anyhunt/ui/components/checkbox'
-import type { Site } from '../../../shared/ipc/site-publish'
-import type { SiteSettings } from './const'
+import { useState, useEffect } from 'react';
+import { ArrowLeft01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { Input } from '@anyhunt/ui/components/input';
+import { Label } from '@anyhunt/ui/components/label';
+import { Textarea } from '@anyhunt/ui/components/textarea';
+import { Checkbox } from '@anyhunt/ui/components/checkbox';
+import type { Site } from '../../../shared/ipc/site-publish';
+import type { SiteSettings } from './const';
 
 interface SiteSettingsPanelProps {
-  site: Site
-  onBack: () => void
-  onSettingsChange: (settings: Partial<SiteSettings>) => Promise<void>
+  site: Site;
+  onBack: () => void;
+  onSettingsChange: (settings: Partial<SiteSettings>) => Promise<void>;
 }
 
-export function SiteSettingsPanel({
-  site,
-  onBack,
-  onSettingsChange,
-}: SiteSettingsPanelProps) {
-  const [title, setTitle] = useState(site.title || '')
-  const [description, setDescription] = useState(site.description || '')
-  const [showWatermark, setShowWatermark] = useState(site.showWatermark)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string>()
+export function SiteSettingsPanel({ site, onBack, onSettingsChange }: SiteSettingsPanelProps) {
+  const [title, setTitle] = useState(site.title || '');
+  const [description, setDescription] = useState(site.description || '');
+  const [showWatermark, setShowWatermark] = useState(site.showWatermark);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
 
   // 同步 site 变化
   useEffect(() => {
-    setTitle(site.title || '')
-    setDescription(site.description || '')
-    setShowWatermark(site.showWatermark)
-  }, [site])
+    setTitle(site.title || '');
+    setDescription(site.description || '');
+    setShowWatermark(site.showWatermark);
+  }, [site]);
 
   // 检查是否有变更
   const hasChanges =
     title !== (site.title || '') ||
     description !== (site.description || '') ||
-    showWatermark !== site.showWatermark
+    showWatermark !== site.showWatermark;
 
   const handleSave = async () => {
-    if (!hasChanges) return
+    if (!hasChanges) return;
 
-    setSaving(true)
-    setError(undefined)
+    setSaving(true);
+    setError(undefined);
 
     try {
       await onSettingsChange({
         title: title || undefined,
         description: description || undefined,
         showWatermark,
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={onBack}
-          disabled={saving}
-        >
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onBack} disabled={saving}>
+          <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium">Site settings</span>
       </div>
@@ -122,10 +113,7 @@ export function SiteSettingsPanel({
           onCheckedChange={(checked) => setShowWatermark(checked === true)}
           disabled={saving}
         />
-        <Label
-          htmlFor="show-watermark"
-          className="text-sm font-normal cursor-pointer"
-        >
+        <Label htmlFor="show-watermark" className="text-sm font-normal cursor-pointer">
           Show watermark
         </Label>
       </div>
@@ -137,14 +125,10 @@ export function SiteSettingsPanel({
       <div className="border-t border-dashed border-border" />
 
       {/* Save Button */}
-      <Button
-        className="w-full"
-        onClick={handleSave}
-        disabled={!hasChanges || saving}
-      >
+      <Button className="w-full" onClick={handleSave} disabled={!hasChanges || saving}>
         {saving ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
             Saving...
           </>
         ) : (
@@ -152,5 +136,5 @@ export function SiteSettingsPanel({
         )}
       </Button>
     </div>
-  )
+  );
 }

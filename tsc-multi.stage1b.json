@@ -1,7 +1,0 @@
-{
-  "targets": [
-    { "extname": ".js", "module": "commonjs", "moduleResolution": "node" },
-    { "extname": ".mjs", "module": "esnext" }
-  ],
-  "projects": ["packages/agents-openai/tsconfig.json", "packages/agents-realtime/tsconfig.json"]
-}

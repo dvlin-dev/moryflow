@@ -1,15 +1,14 @@
-import type { RunContext } from '@anyhunt/agents'
-import type { Model } from '@anyhunt/agents-core'
+import type { RunContext, Model } from '@openai/agents-core';
 
 /**
  * 附件上下文
  */
 export interface AgentAttachmentContext {
-  filename?: string
-  mediaType?: string
-  content?: string
-  truncated?: boolean
-  filePath?: string
+  filename?: string;
+  mediaType?: string;
+  content?: string;
+  truncated?: boolean;
+  filePath?: string;
 }
 
 /**
@@ -17,15 +16,15 @@ export interface AgentAttachmentContext {
  */
 export interface AgentChatContext {
   /** 当前聚焦的文件路径（相对 Vault） */
-  filePath?: string
+  filePath?: string;
   /** 额外的上下文摘要 */
-  summary?: string
+  summary?: string;
 }
 
 /**
  * 模型构建器函数类型
  */
-export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: Model }
+export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: Model };
 
 /**
  * Agent 运行时上下文
@@ -33,13 +32,13 @@ export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: M
  */
 export interface AgentContext {
   /** 当前 Vault 的根目录绝对路径 */
-  vaultRoot: string
+  vaultRoot: string;
   /** 当前会话 ID */
-  chatId: string
+  chatId: string;
   /** 可选的用户标识 */
-  userId?: string
+  userId?: string;
   /** 模型构建器，用于子代理创建时获取配置好的模型 */
-  buildModel?: ModelBuilder
+  buildModel?: ModelBuilder;
 }
 
 /**
@@ -47,7 +46,7 @@ export interface AgentContext {
  */
 export const getVaultRootFromContext = (
   runContext?: RunContext<AgentContext>
-): string | undefined => runContext?.context?.vaultRoot
+): string | undefined => runContext?.context?.vaultRoot;
 
 /**
  * 服务商 SDK 类型
@@ -58,41 +57,41 @@ export type ProviderSdkType =
   | 'google'
   | 'xai'
   | 'openrouter'
-  | 'openai-compatible'
+  | 'openai-compatible';
 
 /**
  * 用户模型配置
  */
 export interface UserModelConfig {
-  id: string
-  enabled: boolean
-  isCustom?: boolean
+  id: string;
+  enabled: boolean;
+  isCustom?: boolean;
 }
 
 /**
  * 用户服务商配置
  */
 export interface UserProviderConfig {
-  providerId: string
-  enabled: boolean
-  apiKey: string | null
-  baseUrl?: string | null
-  models: UserModelConfig[]
-  defaultModelId?: string | null
+  providerId: string;
+  enabled: boolean;
+  apiKey: string | null;
+  baseUrl?: string | null;
+  models: UserModelConfig[];
+  defaultModelId?: string | null;
 }
 
 /**
  * 自定义服务商配置
  */
 export interface CustomProviderConfig {
-  providerId: string
-  name: string
-  enabled: boolean
-  sdkType: ProviderSdkType
-  apiKey: string | null
-  baseUrl?: string | null
-  models: UserModelConfig[]
-  defaultModelId?: string | null
+  providerId: string;
+  name: string;
+  enabled: boolean;
+  sdkType: ProviderSdkType;
+  apiKey: string | null;
+  baseUrl?: string | null;
+  models: UserModelConfig[];
+  defaultModelId?: string | null;
 }
 
 /**
@@ -100,7 +99,7 @@ export interface CustomProviderConfig {
  */
 export interface AgentModelSettings {
   /** 全局默认模型 ID（格式: providerId/modelId） */
-  defaultModel: string | null
+  defaultModel: string | null;
 }
 
 /**
@@ -108,31 +107,31 @@ export interface AgentModelSettings {
  */
 export interface AgentSettings {
   /** 全局模型设置 */
-  model: AgentModelSettings
+  model: AgentModelSettings;
   /** 预设服务商配置 */
-  providers: UserProviderConfig[]
+  providers: UserProviderConfig[];
   /** 自定义服务商配置 */
-  customProviders: CustomProviderConfig[]
+  customProviders: CustomProviderConfig[];
 }
 
 /**
  * 预设服务商定义
  */
 export interface PresetProvider {
-  id: string
-  name: string
-  sdkType: ProviderSdkType
-  modelIds: string[]
-  defaultBaseUrl?: string
+  id: string;
+  name: string;
+  sdkType: ProviderSdkType;
+  modelIds: string[];
+  defaultBaseUrl?: string;
 }
 
 /**
  * Token 使用量
  */
 export interface TokenUsage {
-  promptTokens: number
-  completionTokens: number
-  totalTokens: number
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 }
 
 /**
@@ -140,7 +139,7 @@ export interface TokenUsage {
  */
 export interface ReasoningConfig {
   /** 是否启用 reasoning */
-  enabled: boolean
+  enabled: boolean;
 
   /**
    * 思考强度等级（OpenRouter/OpenAI 风格）
@@ -151,16 +150,16 @@ export interface ReasoningConfig {
    * - minimal: ~10% max_tokens
    * - none: 禁用
    */
-  effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none'
+  effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
 
   /** 思考 token 预算（Anthropic/Gemini 风格） */
-  maxTokens?: number
+  maxTokens?: number;
 
   /** 是否在响应中排除思考内容 */
-  exclude?: boolean
+  exclude?: boolean;
 
   /** 是否包含思考内容（Gemini 风格） */
-  includeThoughts?: boolean
+  includeThoughts?: boolean;
 }
 
 /**
@@ -168,11 +167,11 @@ export interface ReasoningConfig {
  */
 export interface MembershipConfig {
   /** 是否启用会员模型 */
-  enabled: boolean
+  enabled: boolean;
   /** 会员 API 地址 */
-  apiUrl: string
+  apiUrl: string;
   /** 用户的 session token */
-  token: string | null
+  token: string | null;
 }
 
 // 从共享包重新导出会员模型相关常量和工具函数
@@ -181,4 +180,4 @@ export {
   isMembershipModelId,
   extractMembershipModelId,
   buildMembershipModelId,
-} from '@anyhunt/api'
+} from '@anyhunt/api';

@@ -43,7 +43,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Creem 产品映射以 `payment.constants.ts` 为准，`.env.example` 的 JSON 变量仅作占位
 - 反代部署必须启用 `trust proxy`（Express）：否则 `req.protocol`/secure cookie/回调 URL 在反代下会被错误识别为 http
 - 管理员权限通过 `ADMIN_EMAILS` 邮箱白名单授予（注册后自动标记为 `isAdmin`，已有账号在会话获取阶段补写；不在启动期注入密码）
-- Agent + `@anyhunt/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
+- Agent + `@openai/agents-core` 集成时，避免将 Playwright 等重类型透传到 `Tool<Context>` / `Agent<TContext>` 泛型推断（容易触发 `tsc` OOM）；优先在 agent 层做类型边界降级
 - Agent 访问浏览器能力必须通过 `BrowserAgentPort`（禁止直接依赖 `BrowserSession` / Playwright 类型）
 - Agent 任务必须支持硬取消（AbortSignal）与分段配额检查（每 100 credits）
 - Agent 的 LLM 能力由 Admin 配置的 `LlmProvider/LlmModel/LlmSettings` 决定；请求可选传 `model`，不传则使用 Admin 默认模型
@@ -53,8 +53,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - `prisma db push` 仅限本地/测试环境使用，生产只允许 `migrate deploy`
 - `vitest` 默认只跑单元测试：`*.integration.spec.ts` / `*.e2e.spec.ts` 需显式设置 `RUN_INTEGRATION_TESTS=1` 才会被包含
 - Docker 入口使用本地 `node_modules/.bin/prisma` 执行迁移，勿移除 `prisma` 依赖
-- Docker 构建若依赖 workspace 包（例如 `@anyhunt/agents-core`），禁止跨 stage `COPY node_modules`（Docker 会解引用 workspace symlink，导致依赖解析到“只剩 package.json”的空壳包）；应在同一个 stage 内 `pnpm install`，并在安装前 `COPY` 相关 workspace 包的 `package.json`
-- Docker 构建默认使用 `pnpm install --ignore-scripts`：workspace 包的 `dist/` 不会自动生成；必须在 `builder` 阶段显式构建（本项目通过 `pnpm dlx tsc-multi` **按依赖顺序**构建 `agents-core` → `agents-openai`）
+- Docker 构建依赖 npm 包（不再依赖 workspace Agents SDK），仍需避免跨 stage `COPY node_modules` 导致依赖路径被解引用
 - 如果 workspace 包的 `tsconfig` 通过 `extends` 引用根配置（例如 `../../tsconfig.agents.json`），Docker 构建必须一并 `COPY` 根 tsconfig，否则会触发 `TS5083` 并导致编译选项回退
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃

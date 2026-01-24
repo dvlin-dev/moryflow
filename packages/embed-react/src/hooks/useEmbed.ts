@@ -1,9 +1,16 @@
 /**
- * useEmbed hook - 获取 oEmbed 数据
+ * [PROVIDES]: useEmbed
+ * [DEPENDS]: useEmbedContext, @anyhunt/embed
+ * [POS]: oEmbed 获取 Hook
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed-react/CLAUDE.md
  */
+
+'use client';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { EmbedData, EmbedOptions, EmbedError } from '@anyhunt/embed';
-import { useEmbedContext } from './useEmbedContext.ts';
+import { useEmbedContext } from './useEmbedContext';
 
 export interface UseEmbedOptions extends EmbedOptions {
   /** 是否启用请求，默认 true */
@@ -22,6 +29,8 @@ export function useEmbed(url: string | undefined, options?: UseEmbedOptions): Us
   const [data, setData] = useState<EmbedData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<EmbedError | null>(null);
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
 
   const { enabled = true, theme, maxWidth, maxHeight } = options || {};
   const effectiveTheme = theme ?? globalTheme;
@@ -30,8 +39,16 @@ export function useEmbed(url: string | undefined, options?: UseEmbedOptions): Us
   const optionsRef = useRef({ maxWidth, maxHeight, effectiveTheme });
   optionsRef.current = { maxWidth, maxHeight, effectiveTheme };
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const fetchData = useCallback(async () => {
-    if (!url || !client || !enabled) return;
+    if (!isMountedRef.current || !url || !client || !enabled) return;
+    const requestId = ++requestIdRef.current;
+    const shouldUpdate = () => isMountedRef.current && requestId === requestIdRef.current;
 
     setIsLoading(true);
     setError(null);
@@ -43,12 +60,18 @@ export function useEmbed(url: string | undefined, options?: UseEmbedOptions): Us
         maxHeight,
         theme: effectiveTheme,
       });
-      setData(result);
+      if (shouldUpdate()) {
+        setData(result);
+      }
     } catch (err) {
-      setError(err as EmbedError);
-      setData(null);
+      if (shouldUpdate()) {
+        setError(err as EmbedError);
+        setData(null);
+      }
     } finally {
-      setIsLoading(false);
+      if (shouldUpdate()) {
+        setIsLoading(false);
+      }
     }
   }, [url, client, enabled]);
 

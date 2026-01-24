@@ -2,6 +2,7 @@
  * [INPUT]: messages, custom instructions, custom categories
  * [OUTPUT]: memories/tags/graph from LLM
  * [POS]: Memory LLM 推断与抽取服务（Mem0 aligned）
+ * [NOTE]: 直连 @openai/agents-core ModelRequest/ModelResponse 进行抽取调用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,8 +12,8 @@ import type {
   AgentOutputItem,
   ModelRequest,
   ModelResponse,
-} from '@anyhunt/agents-core';
-import { getDefaultModelSettings } from '@anyhunt/agents-core';
+} from '@openai/agents-core';
+import { getDefaultModelSettings } from '@openai/agents-core';
 import { LlmRoutingService } from '../../llm';
 
 const MEMORY_INFER_PROMPT = `You are a memory extraction assistant.
@@ -216,7 +217,6 @@ export class MemoryLlmService {
       input,
       modelSettings: getDefaultModelSettings(),
       tools: [],
-      toolsExplicitlyProvided: true,
       outputType: 'text',
       handoffs: [],
       tracing: false,

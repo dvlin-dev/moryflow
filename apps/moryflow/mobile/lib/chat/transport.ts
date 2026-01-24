@@ -6,7 +6,7 @@
  */
 
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import type { RunItemStreamEvent } from '@anyhunt/agents';
+import type { RunItemStreamEvent } from '@openai/agents-core';
 import { createSessionAdapter } from '@anyhunt/agents-runtime';
 import type { AgentChatContext, AgentAttachmentContext } from '@anyhunt/agents-runtime';
 import { getAgentRuntime, mobileSessionStore, createLogger } from '@/lib/agent-runtime';

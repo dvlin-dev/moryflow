@@ -1,11 +1,11 @@
 /**
  * 日志存储管理页面
  */
-import { useState } from 'react'
-import { PageHeader } from '@/components/shared'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react';
+import { PageHeader } from '@/components/shared';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,48 +15,52 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { useActivityLogStorageStats, useCleanupActivityLogs } from '@/features/admin-logs'
-import { formatDateTime } from '@/lib/format'
-import { Database, Trash2, Clock, BarChart3, AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+} from '@/components/ui/alert-dialog';
+import { useActivityLogStorageStats, useCleanupActivityLogs } from '@/features/admin-logs';
+import { formatDateTime } from '@/lib/format';
+import {
+  Alert01Icon,
+  Chart01Icon,
+  Clock01Icon,
+  DatabaseIcon,
+  Delete01Icon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@/components/ui/icon';
+import { toast } from 'sonner';
 
 export default function LogStoragePage() {
-  const [cleanupDays, setCleanupDays] = useState('30')
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [cleanupDays, setCleanupDays] = useState('30');
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const { data: stats, isLoading } = useActivityLogStorageStats()
-  const cleanupMutation = useCleanupActivityLogs()
+  const { data: stats, isLoading } = useActivityLogStorageStats();
+  const cleanupMutation = useCleanupActivityLogs();
 
   const handleCleanup = async () => {
-    const days = parseInt(cleanupDays, 10)
+    const days = parseInt(cleanupDays, 10);
     if (isNaN(days) || days < 1) {
-      toast.error('请输入有效的天数')
-      return
+      toast.error('请输入有效的天数');
+      return;
     }
 
     try {
-      const result = await cleanupMutation.mutateAsync(days)
-      toast.success(`成功清理 ${result.deletedCount} 条日志`)
-      setShowConfirm(false)
+      const result = await cleanupMutation.mutateAsync(days);
+      toast.success(`成功清理 ${result.deletedCount} 条日志`);
+      setShowConfirm(false);
     } catch {
-      toast.error('清理失败')
+      toast.error('清理失败');
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="日志存储管理"
-        description="查看日志存储统计，清理旧日志"
-      />
+      <PageHeader title="日志存储管理" description="查看日志存储统计，清理旧日志" />
 
       {/* 统计卡片 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">总日志数</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={DatabaseIcon} className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -68,7 +72,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">估算存储</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={Chart01Icon} className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -80,7 +84,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">最早日志</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Icon icon={Clock01Icon} className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-sm font-medium">
@@ -96,7 +100,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">错误日志</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <Icon icon={Alert01Icon} className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
@@ -166,9 +170,7 @@ export default function LogStoragePage() {
       <Card>
         <CardHeader>
           <CardTitle>清理旧日志</CardTitle>
-          <CardDescription>
-            删除指定天数之前的日志记录。此操作不可撤销。
-          </CardDescription>
+          <CardDescription>删除指定天数之前的日志记录。此操作不可撤销。</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
@@ -189,7 +191,7 @@ export default function LogStoragePage() {
               onClick={() => setShowConfirm(true)}
               disabled={cleanupMutation.isPending}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Icon icon={Delete01Icon} className="h-4 w-4 mr-2" />
               清理日志
             </Button>
           </div>
@@ -217,5 +219,5 @@ export default function LogStoragePage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

@@ -127,6 +127,7 @@ pnpm dev
 | `{{STYLES}}`              | 核心 CSS 样式  | `renderer/index.ts` |
 | `{{THEME_INIT_SCRIPT}}`   | 主题初始化脚本 | `renderer/index.ts` |
 | `{{THEME_TOGGLE_SCRIPT}}` | 主题切换脚本   | `renderer/index.ts` |
+| `{{MENU_TOGGLE_SCRIPT}}`  | 菜单切换脚本   | `renderer/index.ts` |
 
 ### 页面占位符 (page.html)
 
@@ -148,7 +149,9 @@ pnpm dev
 | 占位符                  | 说明           |
 | ----------------------- | -------------- |
 | `{{INDEX_PAGE_STYLES}}` | 目录页额外样式 |
+| `{{lang}}`              | 语言代码       |
 | `{{siteTitle}}`         | 站点标题       |
+| `{{description}}`       | 页面描述       |
 | `{{navItems}}`          | 导航列表 HTML  |
 
 ### 404 页占位符 (404.html)
@@ -156,7 +159,9 @@ pnpm dev
 | 占位符                  | 说明           |
 | ----------------------- | -------------- |
 | `{{ERROR_PAGE_STYLES}}` | 404 页额外样式 |
+| `{{lang}}`              | 语言代码       |
 | `{{siteTitle}}`         | 站点标题       |
+| `{{description}}`       | 页面描述       |
 
 ## 技术栈
 

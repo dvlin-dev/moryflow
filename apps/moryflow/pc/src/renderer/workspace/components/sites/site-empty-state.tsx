@@ -1,20 +1,24 @@
 /**
  * [PROPS]: { onPublishClick }
  * [EMITS]: onPublishClick() - 点击发布按钮
- * [POS]: Sites CMS 的空状态组件
+ * [POS]: Sites CMS 的空状态组件（含 E2E 选择器）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Globe } from 'lucide-react'
-import { Button } from '@anyhunt/ui/components/button'
-import type { SiteEmptyStateProps } from './const'
+import { GlobeIcon } from '@hugeicons/core-free-icons';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import type { SiteEmptyStateProps } from './const';
 
 export function SiteEmptyState({ onPublishClick }: SiteEmptyStateProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+    <div
+      className="flex h-full flex-col items-center justify-center gap-4 text-center"
+      data-testid="sites-empty-state"
+    >
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-        <Globe className="h-8 w-8 text-muted-foreground" />
+        <Icon icon={GlobeIcon} className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-1">
         <h3 className="text-base font-medium">No sites yet</h3>
@@ -26,5 +30,5 @@ export function SiteEmptyState({ onPublishClick }: SiteEmptyStateProps) {
       </div>
       <Button onClick={onPublishClick}>Publish a page</Button>
     </div>
-  )
+  );
 }

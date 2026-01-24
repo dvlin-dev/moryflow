@@ -5,34 +5,34 @@
  * 需要先调用 initMobileGlob() 初始化 glob 实现。
  */
 
-import type { Tool } from '@anyhunt/agents'
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter'
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime'
+import type { Tool } from '@openai/agents-core';
+import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
+import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
 
-import { createReadTool } from './file/read-tool'
-import { createWriteTool } from './file/write-tool'
-import { createEditTool } from './file/edit-tool'
-import { createDeleteTool } from './file/delete-tool'
-import { createMoveTool } from './file/move-tool'
-import { createLsTool } from './file/ls-tool'
-import { createGlobTool } from './search/glob-tool'
-import { createGrepTool } from './search/grep-tool'
-import { createSearchInFileTool } from './search/search-in-file-tool'
-import { createWebFetchTool } from './web/web-fetch-tool'
-import { createWebSearchTool } from './web/web-search-tool'
-import { createGenerateImageTool } from './image/generate-image-tool'
-import { createManagePlanTool } from './task/manage-plan'
-import { isGlobImplInitialized, initMobileGlob } from './glob/glob-mobile'
+import { createReadTool } from './file/read-tool';
+import { createWriteTool } from './file/write-tool';
+import { createEditTool } from './file/edit-tool';
+import { createDeleteTool } from './file/delete-tool';
+import { createMoveTool } from './file/move-tool';
+import { createLsTool } from './file/ls-tool';
+import { createGlobTool } from './search/glob-tool';
+import { createGrepTool } from './search/grep-tool';
+import { createSearchInFileTool } from './search/search-in-file-tool';
+import { createWebFetchTool } from './web/web-fetch-tool';
+import { createWebSearchTool } from './web/web-search-tool';
+import { createGenerateImageTool } from './image/generate-image-tool';
+import { createManagePlanTool } from './task/manage-plan';
+import { isGlobImplInitialized, initMobileGlob } from './glob/glob-mobile';
 
 /**
  * 工具上下文
  */
 export interface ToolsContext {
-  capabilities: PlatformCapabilities
-  crypto: CryptoUtils
-  vaultUtils: VaultUtils
+  capabilities: PlatformCapabilities;
+  crypto: CryptoUtils;
+  vaultUtils: VaultUtils;
   /** Web 搜索 API Key（可选） */
-  webSearchApiKey?: string
+  webSearchApiKey?: string;
 }
 
 /**
@@ -40,7 +40,7 @@ export interface ToolsContext {
  */
 function ensureMobileGlobInitialized(capabilities: PlatformCapabilities): void {
   if (!isGlobImplInitialized()) {
-    initMobileGlob(capabilities)
+    initMobileGlob(capabilities);
   }
 }
 
@@ -52,10 +52,10 @@ function ensureMobileGlobInitialized(capabilities: PlatformCapabilities): void {
  * - task 工具（移动端暂不支持子代理）
  */
 export const createMobileToolsWithoutTask = (ctx: ToolsContext): Tool<AgentContext>[] => {
-  const { capabilities, crypto, vaultUtils, webSearchApiKey } = ctx
+  const { capabilities, crypto, vaultUtils, webSearchApiKey } = ctx;
 
   // 确保 glob 实现已初始化
-  ensureMobileGlobInitialized(capabilities)
+  ensureMobileGlobInitialized(capabilities);
 
   const tools: Tool<AgentContext>[] = [
     // 文件操作工具
@@ -80,13 +80,13 @@ export const createMobileToolsWithoutTask = (ctx: ToolsContext): Tool<AgentConte
 
     // 任务管理工具
     createManagePlanTool(),
-  ]
+  ];
 
-  return tools
-}
+  return tools;
+};
 
 /**
  * createMobileTools 的别名
  * 与 createMobileToolsWithoutTask 相同（移动端暂不支持 task 子代理）
  */
-export const createMobileTools = createMobileToolsWithoutTask
+export const createMobileTools = createMobileToolsWithoutTask;

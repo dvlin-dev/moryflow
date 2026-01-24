@@ -22,9 +22,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@anyhunt/agents": "workspace:*",
-    "@anyhunt/agents-core": "workspace:*",
-    "zod": "^3.25.40"
+    "@openai/agents-core": "0.4.3",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.10",

@@ -1,5 +1,9 @@
 /**
- * Embed API 客户端
+ * [INPUT]: EmbedClientConfig, EmbedOptions
+ * [OUTPUT]: EmbedData | EmbedError
+ * [POS]: Embed API 客户端，供 @anyhunt/embed 与 @anyhunt/embed-react 调用
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed/CLAUDE.md
  */
 import type {
   EmbedClientConfig,
@@ -7,8 +11,8 @@ import type {
   EmbedData,
   EmbedResponse,
   EmbedErrorResponse,
-} from './types.ts';
-import { ApiError, NetworkError } from './errors.ts';
+} from './types';
+import { ApiError, NetworkError } from './errors';
 
 const DEFAULT_BASE_URL = 'https://server.anyhunt.app';
 const DEFAULT_TIMEOUT = 30000;
@@ -23,13 +27,14 @@ export interface EmbedClient {
  */
 export function createEmbedClient(config: EmbedClientConfig): EmbedClient {
   const { apiKey, baseUrl = DEFAULT_BASE_URL, timeout = DEFAULT_TIMEOUT } = config;
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
 
   async function fetchEmbed(url: string, options?: EmbedOptions): Promise<EmbedData> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const response = await fetch(`${baseUrl}/api/v1/oembed`, {
+      const response = await fetch(`${normalizedBaseUrl}/api/v1/oembed`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

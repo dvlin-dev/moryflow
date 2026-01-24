@@ -4,78 +4,79 @@
  * [POS]: Notion 风格搜索对话框，固定高度
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FileText, FolderOpen, SearchIcon } from 'lucide-react'
-import { Command as CommandPrimitive } from 'cmdk'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { File01Icon, FolderOpenIcon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Command as CommandPrimitive } from 'cmdk';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@anyhunt/ui/components/dialog'
-import { cn } from '@/lib/utils'
-import { useTranslation } from '@/lib/i18n'
-import type { SearchDialogProps } from './const'
-import { flattenTree, fuzzySearch, formatDisplayName } from './helper'
+} from '@anyhunt/ui/components/dialog';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
+import type { SearchDialogProps } from './const';
+import { flattenTree, fuzzySearch, formatDisplayName } from './helper';
 
 export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchDialogProps) => {
-  const { t } = useTranslation('workspace')
-  const [query, setQuery] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const { t } = useTranslation('workspace');
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // 扁平化文件树（只在 tree 变化时重新计算）
-  const flatFiles = useMemo(() => flattenTree(tree), [tree])
+  const flatFiles = useMemo(() => flattenTree(tree), [tree]);
 
   // 搜索结果
-  const searchResults = useMemo(() => fuzzySearch(flatFiles, query), [flatFiles, query])
+  const searchResults = useMemo(() => fuzzySearch(flatFiles, query), [flatFiles, query]);
 
   // 最近文件（无搜索词时显示）
   const recentFiles = useMemo(
     () => [...flatFiles].sort((a, b) => (b.node.mtime ?? 0) - (a.node.mtime ?? 0)).slice(0, 8),
     [flatFiles]
-  )
+  );
 
-  const hasQuery = query.trim().length > 0
-  const displayResults = hasQuery ? searchResults : recentFiles
-  const hasResults = displayResults.length > 0
+  const hasQuery = query.trim().length > 0;
+  const displayResults = hasQuery ? searchResults : recentFiles;
+  const hasResults = displayResults.length > 0;
 
   // 处理选择文件
   const handleSelect = useCallback(
     (path: string) => {
       const result =
         flatFiles.find((r) => r.node.path === path) ||
-        searchResults.find((r) => r.node.path === path)
+        searchResults.find((r) => r.node.path === path);
       if (result) {
-        onSelectFile(result.node)
-        onOpenChange(false)
-        setQuery('')
+        onSelectFile(result.node);
+        onOpenChange(false);
+        setQuery('');
       }
     },
     [flatFiles, searchResults, onSelectFile, onOpenChange]
-  )
+  );
 
   // 对话框关闭时重置搜索
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      onOpenChange(open)
+      onOpenChange(open);
       if (!open) {
-        setQuery('')
+        setQuery('');
       }
     },
     [onOpenChange]
-  )
+  );
 
   // 打开时聚焦输入框
   useEffect(() => {
     if (open) {
       // 延迟聚焦，确保动画完成
       const timer = setTimeout(() => {
-        inputRef.current?.focus()
-      }, 50)
-      return () => clearTimeout(timer)
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [open])
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -90,7 +91,7 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
         <CommandPrimitive className="flex h-full flex-col" shouldFilter={false}>
           {/* 搜索输入框 */}
           <div className="flex h-12 items-center gap-2 border-b border-border/40 px-3">
-            <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+            <Icon icon={Search01Icon} className="size-4 shrink-0 text-muted-foreground" />
             <CommandPrimitive.Input
               ref={inputRef}
               value={query}
@@ -118,12 +119,12 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
                       'transition-colors duration-fast'
                     )}
                   >
-                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                    <Icon icon={File01Icon} className="size-4 shrink-0 text-muted-foreground" />
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate">{formatDisplayName(result.node.name)}</span>
                       {result.relativePath && (
                         <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                          <FolderOpen className="size-3" />
+                          <Icon icon={FolderOpenIcon} className="size-3" />
                           {result.relativePath}
                         </span>
                       )}
@@ -134,7 +135,7 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
             ) : (
               <CommandPrimitive.Empty className="py-6 text-center">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <FileText className="size-8 opacity-50" />
+                  <Icon icon={File01Icon} className="size-8 opacity-50" />
                   <span className="text-sm">{hasQuery ? t('noSearchResults') : t('noFiles')}</span>
                 </div>
               </CommandPrimitive.Empty>
@@ -143,5 +144,5 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
         </CommandPrimitive>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
