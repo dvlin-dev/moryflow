@@ -1,6 +1,6 @@
 ---
 title: 全量 Code Review 计划（索引）
-date: 2026-01-22
+date: 2026-01-26
 scope: monorepo
 status: active
 ---
@@ -163,14 +163,14 @@ status: active
 - 官网：`apps/moryflow/www/`
 - 发布站点模板：`apps/moryflow/site-template/`
 
-| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status |
-| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | todo   |
-| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo   |
-| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo   |
-| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | todo   |
-| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo   |
-| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | todo   |
+| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
+| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | todo                           |
+| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
+| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
+| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |
+| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                           |
+| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | todo                           |
 
 ### Phase 4 - packages/_ 与 tooling/_（平台基建与复用质量）
 
@@ -253,16 +253,18 @@ status: draft
 
 > 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
 
-| 日期       | 模块                         | 结论摘要                                                                   | 修复记录（PR/commit） | 状态        |
-| ---------- | ---------------------------- | -------------------------------------------------------------------------- | --------------------- | ----------- |
-| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）         | -                     | in_progress |
-| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                | -                     | done        |
-| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                             | -                     | done        |
-| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流 | -                     | in_progress |
-| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）            | -                     | done        |
-| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                | -                     | in_progress |
-| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）         | -                     | done        |
-| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                              | -                     | in_progress |
-| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）       | -                     | done        |
-| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                 | -                     | done        |
-| 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                | -                     | in_progress |
+| 日期       | 模块                         | 结论摘要                                                                     | 修复记录（PR/commit） | 状态        |
+| ---------- | ---------------------------- | ---------------------------------------------------------------------------- | --------------------- | ----------- |
+| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）           | -                     | in_progress |
+| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                  | -                     | done        |
+| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                               | -                     | done        |
+| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流   | -                     | in_progress |
+| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）              | -                     | done        |
+| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                  | -                     | in_progress |
+| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）           | -                     | done        |
+| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                                | -                     | in_progress |
+| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）         | -                     | done        |
+| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                   | -                     | done        |
+| 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                  | -                     | in_progress |
+| 2026-01-24 | moryflow-pc                  | 完成 review 并补充修复方案；存在外链导航安全、Zod 规范、性能与测试缺口等问题 | -                     | in_progress |
+| 2026-01-25 | moryflow-pc                  | 修复完成：外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测；E2E 待补  | -                     | in_progress |

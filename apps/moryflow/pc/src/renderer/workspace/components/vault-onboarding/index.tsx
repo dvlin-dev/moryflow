@@ -1,37 +1,51 @@
-import { useState, useCallback } from 'react'
-import { Button } from '@anyhunt/ui/components/button'
-import { Input } from '@anyhunt/ui/components/input'
-import { ArrowLeft, FolderPlus, FolderOpen, Cloud } from 'lucide-react'
-import { useTranslation } from '@/lib/i18n'
-import type { VaultOnboardingProps, OnboardingView } from './const'
-import { getOpenButtonLabel, getCreateButtonLabel } from './handle'
+/**
+ * [PROPS]: VaultOnboardingProps
+ * [EMITS]: onOpenVault/onSelectDirectory/onCreateVault
+ * [POS]: 首次进入的 Vault 选择与创建引导
+ */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TranslateFunction = (key: any) => string
+import { useState, useCallback } from 'react';
+import { Button } from '@anyhunt/ui/components/button';
+import { Input } from '@anyhunt/ui/components/input';
+import {
+  ArrowLeft01Icon,
+  CloudIcon,
+  FolderAddIcon,
+  FolderOpenIcon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import type { HugeIcon } from '@anyhunt/ui/components/icon';
+import { useTranslation } from '@/lib/i18n';
+import type { VaultOnboardingProps, OnboardingView } from './const';
+import { getOpenButtonLabel, getCreateButtonLabel } from './handle';
+
+type TranslateFunction = (key: any) => string;
 
 /** 选项卡组件 */
 const OptionRow = ({
-  icon: Icon,
+  icon,
   title,
   description,
   action,
   actionLabel,
+  buttonTestId,
   disabled,
   comingSoon,
   comingSoonLabel,
 }: {
-  icon: React.ElementType
-  title: string
-  description: string
-  action?: () => void
-  actionLabel?: string
-  disabled?: boolean
-  comingSoon?: boolean
-  comingSoonLabel?: string
+  icon: HugeIcon;
+  title: string;
+  description: string;
+  action?: () => void;
+  actionLabel?: string;
+  buttonTestId?: string;
+  disabled?: boolean;
+  comingSoon?: boolean;
+  comingSoonLabel?: string;
 }) => (
   <div className="flex items-center justify-between py-4 border-b border-border/50 last:border-b-0">
     <div className="flex items-center gap-4">
-      <Icon className="h-5 w-5 text-muted-foreground" />
+      <Icon icon={icon} className="h-5 w-5 text-muted-foreground" />
       <div>
         <h3 className="text-sm font-medium">{title}</h3>
         <p className="text-xs text-muted-foreground">{description}</p>
@@ -48,12 +62,13 @@ const OptionRow = ({
         onClick={action}
         disabled={disabled}
         className="min-w-[72px]"
+        data-testid={buttonTestId}
       >
         {actionLabel}
       </Button>
     )}
   </div>
-)
+);
 
 /** 主视图 - 选项列表 */
 const MainView = ({
@@ -62,37 +77,39 @@ const MainView = ({
   onOpenVault,
   t,
 }: {
-  isPickingVault: boolean
-  onCreateClick: () => void
-  onOpenVault: () => Promise<void>
-  t: TranslateFunction
+  isPickingVault: boolean;
+  onCreateClick: () => void;
+  onOpenVault: () => Promise<void>;
+  t: TranslateFunction;
 }) => (
   <div className="space-y-1">
     <OptionRow
-      icon={FolderPlus}
+      icon={FolderAddIcon}
       title={t('createVaultTitle')}
       description={t('createVaultDescription')}
       action={onCreateClick}
       actionLabel={t('create')}
+      buttonTestId="vault-onboarding-create"
       disabled={isPickingVault}
     />
     <OptionRow
-      icon={FolderOpen}
+      icon={FolderOpenIcon}
       title={t('openLocalVaultTitle')}
       description={t('openLocalVaultDescription')}
       action={() => void onOpenVault()}
       actionLabel={getOpenButtonLabel(isPickingVault, t)}
+      buttonTestId="vault-onboarding-open"
       disabled={isPickingVault}
     />
     <OptionRow
-      icon={Cloud}
+      icon={CloudIcon}
       title={t('syncRemoteVaultTitle')}
       description={t('syncRemoteVaultDescription')}
       comingSoon
       comingSoonLabel={t('comingSoon')}
     />
   </div>
-)
+);
 
 /** 创建仓库视图 */
 const CreateView = ({
@@ -105,21 +122,21 @@ const CreateView = ({
   onCreate,
   t,
 }: {
-  isPickingVault: boolean
-  vaultName: string
-  selectedPath: string | null
-  onVaultNameChange: (name: string) => void
-  onBack: () => void
-  onBrowse: () => void
-  onCreate: () => void
-  t: TranslateFunction
+  isPickingVault: boolean;
+  vaultName: string;
+  selectedPath: string | null;
+  onVaultNameChange: (name: string) => void;
+  onBack: () => void;
+  onBrowse: () => void;
+  onCreate: () => void;
+  t: TranslateFunction;
 }) => (
   <div className="space-y-6">
     <button
       onClick={onBack}
       className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
-      <ArrowLeft className="h-4 w-4" />
+      <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
       {t('back')}
     </button>
     <h2 className="text-base font-medium">{t('createLocalVault')}</h2>
@@ -134,6 +151,7 @@ const CreateView = ({
           onChange={(e) => onVaultNameChange(e.target.value)}
           placeholder={t('vaultName')}
           className="w-[200px] text-right"
+          data-testid="vault-onboarding-name"
         />
       </div>
       <div className="flex items-center justify-between py-3 border-b border-border/50">
@@ -141,7 +159,10 @@ const CreateView = ({
           <h3 className="text-sm font-medium">{t('vaultLocation')}</h3>
           <p className="text-xs text-muted-foreground">
             {selectedPath ? (
-              <>{t('vaultWillBeSavedAt')}<span className="text-primary">{selectedPath}</span></>
+              <>
+                {t('vaultWillBeSavedAt')}
+                <span className="text-primary">{selectedPath}</span>
+              </>
             ) : (
               t('clickToSelectLocation')
             )}
@@ -152,6 +173,7 @@ const CreateView = ({
           size="sm"
           onClick={onBrowse}
           disabled={isPickingVault}
+          data-testid="vault-onboarding-browse"
         >
           {t('browse')}
         </Button>
@@ -162,12 +184,13 @@ const CreateView = ({
         onClick={onCreate}
         disabled={isPickingVault || !vaultName.trim() || !selectedPath}
         className="min-w-[80px]"
+        data-testid="vault-onboarding-confirm"
       >
         {getCreateButtonLabel(isPickingVault, t)}
       </Button>
     </div>
   </div>
-)
+);
 
 export const VaultOnboarding = ({
   isPickingVault,
@@ -176,35 +199,38 @@ export const VaultOnboarding = ({
   onSelectDirectory,
   onCreateVault,
 }: VaultOnboardingProps) => {
-  const { t } = useTranslation('workspace')
-  const [view, setView] = useState<OnboardingView>('main')
-  const [vaultName, setVaultName] = useState('')
-  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const { t } = useTranslation('workspace');
+  const [view, setView] = useState<OnboardingView>('main');
+  const [vaultName, setVaultName] = useState('');
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   const handleCreateClick = useCallback(() => {
-    setView('create')
-  }, [])
+    setView('create');
+  }, []);
 
   const handleBack = useCallback(() => {
-    setView('main')
-    setVaultName('')
-    setSelectedPath(null)
-  }, [])
+    setView('main');
+    setVaultName('');
+    setSelectedPath(null);
+  }, []);
 
   const handleBrowse = useCallback(async () => {
-    const path = await onSelectDirectory()
+    const path = await onSelectDirectory();
     if (path) {
-      setSelectedPath(path)
+      setSelectedPath(path);
     }
-  }, [onSelectDirectory])
+  }, [onSelectDirectory]);
 
   const handleCreate = useCallback(async () => {
-    if (!vaultName.trim() || !selectedPath) return
-    await onCreateVault(vaultName.trim(), selectedPath)
-  }, [vaultName, selectedPath, onCreateVault])
+    if (!vaultName.trim() || !selectedPath) return;
+    await onCreateVault(vaultName.trim(), selectedPath);
+  }, [vaultName, selectedPath, onCreateVault]);
 
   return (
-    <section className="flex h-full w-full flex-col items-center justify-center">
+    <section
+      className="flex h-full w-full flex-col items-center justify-center"
+      data-testid="vault-onboarding"
+    >
       <div className="w-full max-w-md space-y-8 px-6">
         {/* Logo 和应用名称 */}
         <div className="flex flex-col items-center space-y-4">
@@ -243,5 +269,5 @@ export const VaultOnboarding = ({
         )}
       </div>
     </section>
-  )
-}
+  );
+};

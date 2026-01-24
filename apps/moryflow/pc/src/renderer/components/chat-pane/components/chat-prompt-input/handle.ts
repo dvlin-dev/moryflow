@@ -1,3 +1,11 @@
+/**
+ * [PROVIDES]: Chat Prompt Input 文件预览与模型查找工具
+ * [DEPENDS]: ai FileUIPart, ChatFileContextMetadata
+ * [POS]: 输入框附件预览与模型选择辅助逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import type { FileUIPart } from 'ai';
 import type { ChatFileContextMetadata } from '@anyhunt/types';
 
@@ -76,7 +84,7 @@ export const extractPreviewFromDataUrl = (
     }
     const truncated = text.length > PREVIEW_CHAR_LIMIT;
     return {
-      text: truncated ? `${text.slice(0, PREVIEW_CHAR_LIMIT)}\n...(内容过长，已截断)` : text,
+      text: truncated ? `${text.slice(0, PREVIEW_CHAR_LIMIT)}\n...(content truncated)` : text,
       truncated,
     };
   } catch (error) {

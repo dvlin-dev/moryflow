@@ -2,7 +2,7 @@
  * 删除账户对话框
  */
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,81 +13,80 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@anyhunt/ui/components/alert-dialog'
-import { Button } from '@anyhunt/ui/components/button'
-import { Input } from '@anyhunt/ui/components/input'
-import { Label } from '@anyhunt/ui/components/label'
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group'
-import { Textarea } from '@anyhunt/ui/components/textarea'
-import { Loader2, Trash2, AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
-import { deleteAccount } from '@/lib/server/api'
-import { DELETION_REASONS, type DeletionReasonCode } from '@anyhunt/api'
-import { useTranslation } from '@/lib/i18n'
-import type { UserInfo } from '@/lib/server/types'
+} from '@anyhunt/ui/components/alert-dialog';
+import { Button } from '@anyhunt/ui/components/button';
+import { Input } from '@anyhunt/ui/components/input';
+import { Label } from '@anyhunt/ui/components/label';
+import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
+import { Textarea } from '@anyhunt/ui/components/textarea';
+import { Alert01Icon, Delete01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
+import { deleteAccount } from '@/lib/server/api';
+import { DELETION_REASONS, type DeletionReasonCode } from '@anyhunt/api';
+import { useTranslation } from '@/lib/i18n';
+import { Icon } from '@anyhunt/ui/components/icon';
+import type { UserInfo } from '@/lib/server/types';
 
 type DeleteAccountDialogProps = {
-  user: UserInfo
-  onDeleted: () => void
-}
+  user: UserInfo;
+  onDeleted: () => void;
+};
 
 export const DeleteAccountDialog = ({ user, onDeleted }: DeleteAccountDialogProps) => {
-  const { t } = useTranslation('settings')
-  const [open, setOpen] = useState(false)
-  const [reason, setReason] = useState<DeletionReasonCode | ''>('')
-  const [feedback, setFeedback] = useState('')
-  const [confirmation, setConfirmation] = useState('')
-  const [isDeleting, setIsDeleting] = useState(false)
+  const { t } = useTranslation('settings');
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<DeletionReasonCode | ''>('');
+  const [feedback, setFeedback] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const isValid = reason !== '' && confirmation === user.email
+  const isValid = reason !== '' && confirmation === user.email;
 
   const handleDelete = async () => {
-    if (!reason || confirmation !== user.email) return
+    if (!reason || confirmation !== user.email) return;
 
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
       await deleteAccount({
         reason,
         feedback: feedback.trim() || undefined,
         confirmation,
-      })
-      toast.success(t('deleteAccountSuccess'))
-      setOpen(false)
-      onDeleted()
+      });
+      toast.success(t('deleteAccountSuccess'));
+      setOpen(false);
+      onDeleted();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('deleteAccountError'))
+      toast.error(error instanceof Error ? error.message : t('deleteAccountError'));
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   const handleOpenChange = (open: boolean) => {
-    setOpen(open)
+    setOpen(open);
     if (!open) {
       // 重置表单
-      setReason('')
-      setFeedback('')
-      setConfirmation('')
+      setReason('');
+      setFeedback('');
+      setConfirmation('');
     }
-  }
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Icon icon={Delete01Icon} className="mr-2 h-4 w-4" />
           {t('deleteAccount')}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <Icon icon={Alert01Icon} className="h-5 w-5 text-destructive" />
             {t('deleteAccountTitle')}
           </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('deleteAccountWarning')}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{t('deleteAccountWarning')}</AlertDialogDescription>
         </AlertDialogHeader>
 
         <div className="space-y-4 py-4">
@@ -120,9 +119,7 @@ export const DeleteAccountDialog = ({ user, onDeleted }: DeleteAccountDialogProp
               maxLength={500}
               rows={3}
             />
-            <p className="text-xs text-muted-foreground text-right">
-              {feedback.length}/500
-            </p>
+            <p className="text-xs text-muted-foreground text-right">{feedback.length}/500</p>
           </div>
 
           {/* 确认输入 */}
@@ -147,11 +144,11 @@ export const DeleteAccountDialog = ({ user, onDeleted }: DeleteAccountDialogProp
             disabled={!isValid || isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isDeleting && <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />}
             {isDeleting ? t('deleting') : t('confirmDeleteAccount')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
-}
+  );
+};

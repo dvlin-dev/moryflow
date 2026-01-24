@@ -2,46 +2,48 @@
  * [PROPS]: { open, onOpenChange, onAdd, existingModelIds }
  * [EMITS]: onAdd(formData) - 提交添加模型
  * [POS]: 添加自定义模型弹窗，支持从模型数据库搜索和自动填充
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog'
-import { Input } from '@anyhunt/ui/components/input'
-import { Label } from '@anyhunt/ui/components/label'
-import { Button } from '@anyhunt/ui/components/button'
-import { Checkbox } from '@anyhunt/ui/components/checkbox'
-import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data'
-import type { ModelModality } from '@shared/model-registry'
+} from '@anyhunt/ui/components/dialog';
+import { Input } from '@anyhunt/ui/components/input';
+import { Label } from '@anyhunt/ui/components/label';
+import { Button } from '@anyhunt/ui/components/button';
+import { Checkbox } from '@anyhunt/ui/components/checkbox';
+import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data';
+import type { ModelModality } from '@shared/model-registry';
 
 /** 自定义模型能力 */
 export type CustomCapabilities = {
-  attachment: boolean
-  reasoning: boolean
-  temperature: boolean
-  toolCall: boolean
-}
+  attachment: boolean;
+  reasoning: boolean;
+  temperature: boolean;
+  toolCall: boolean;
+};
 
 export type AddModelFormData = {
-  id: string
-  name: string
-  contextSize: number
-  outputSize: number
-  capabilities: CustomCapabilities
-  inputModalities: ModelModality[]
-}
+  id: string;
+  name: string;
+  contextSize: number;
+  outputSize: number;
+  capabilities: CustomCapabilities;
+  inputModalities: ModelModality[];
+};
 
 type AddModelDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onAdd: (data: AddModelFormData) => void
-  existingModelIds: string[]
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (data: AddModelFormData) => void;
+  existingModelIds: string[];
+};
 
 /** 默认值 */
 const DEFAULT_CAPABILITIES: CustomCapabilities = {
@@ -49,26 +51,43 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
   reasoning: false,
   temperature: true,
   toolCall: true,
-}
+};
 
-const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text']
+const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
 
 /** 输入模态选项 */
 const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
-  { value: 'text', label: '文本' },
-  { value: 'image', label: '图片' },
-  { value: 'audio', label: '音频' },
-  { value: 'video', label: '视频' },
+  { value: 'text', label: 'Text' },
+  { value: 'image', label: 'Image' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'video', label: 'Video' },
   { value: 'pdf', label: 'PDF' },
-]
+];
 
 /** 能力选项 */
-const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; description: string }[] = [
-  { key: 'attachment', label: '多模态输入', description: '支持图片、文件等附件' },
-  { key: 'reasoning', label: '推理模式', description: '支持深度思考/推理' },
-  { key: 'temperature', label: '温度调节', description: '支持调节生成随机性' },
-  { key: 'toolCall', label: '工具调用', description: '支持 Function Calling' },
-]
+const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; description: string }[] =
+  [
+    {
+      key: 'attachment',
+      label: 'Multimodal input',
+      description: 'Supports images, files, and other attachments',
+    },
+    {
+      key: 'reasoning',
+      label: 'Reasoning mode',
+      description: 'Supports deep reasoning',
+    },
+    {
+      key: 'temperature',
+      label: 'Temperature control',
+      description: 'Adjusts generation randomness',
+    },
+    {
+      key: 'toolCall',
+      label: 'Tool calling',
+      description: 'Supports function calling',
+    },
+  ];
 
 export const AddModelDialog = ({
   open,
@@ -76,76 +95,76 @@ export const AddModelDialog = ({
   onAdd,
   existingModelIds,
 }: AddModelDialogProps) => {
-  const [modelId, setModelId] = useState('')
-  const [modelName, setModelName] = useState('')
-  const [contextSize, setContextSize] = useState(128000)
-  const [outputSize, setOutputSize] = useState(16384)
-  const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES)
-  const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES)
-  const [error, setError] = useState<string | null>(null)
+  const [modelId, setModelId] = useState('');
+  const [modelName, setModelName] = useState('');
+  const [contextSize, setContextSize] = useState(128000);
+  const [outputSize, setOutputSize] = useState(16384);
+  const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
+  const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
+  const [error, setError] = useState<string | null>(null);
 
   // 搜索相关状态
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // 搜索建议
   const suggestions = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) return []
-    return searchModels({ query: searchQuery, limit: 8, mode: 'chat' })
-  }, [searchQuery])
+    if (!searchQuery.trim() || searchQuery.length < 2) return [];
+    return searchModels({ query: searchQuery, limit: 8, mode: 'chat' });
+  }, [searchQuery]);
 
   const resetForm = () => {
-    setModelId('')
-    setModelName('')
-    setContextSize(128000)
-    setOutputSize(16384)
-    setCapabilities(DEFAULT_CAPABILITIES)
-    setInputModalities(DEFAULT_INPUT_MODALITIES)
-    setError(null)
-    setSearchQuery('')
-    setShowSuggestions(false)
-  }
+    setModelId('');
+    setModelName('');
+    setContextSize(128000);
+    setOutputSize(16384);
+    setCapabilities(DEFAULT_CAPABILITIES);
+    setInputModalities(DEFAULT_INPUT_MODALITIES);
+    setError(null);
+    setSearchQuery('');
+    setShowSuggestions(false);
+  };
 
   /** 从模型数据库选择并自动填充 */
   const handleSelectModel = (model: ModelInfo) => {
-    setModelId(model.id)
-    setModelName(model.displayName)
-    setContextSize(model.maxContextTokens)
-    setOutputSize(model.maxOutputTokens)
+    setModelId(model.id);
+    setModelName(model.displayName);
+    setContextSize(model.maxContextTokens);
+    setOutputSize(model.maxOutputTokens);
     setCapabilities({
       attachment: model.capabilities.vision,
       reasoning: model.capabilities.reasoning,
       temperature: true,
       toolCall: model.capabilities.tools,
-    })
+    });
 
-    const modalities: ModelModality[] = ['text']
-    if (model.capabilities.vision) modalities.push('image')
-    if (model.capabilities.audio) modalities.push('audio')
-    if (model.capabilities.pdf) modalities.push('pdf')
-    setInputModalities(modalities)
+    const modalities: ModelModality[] = ['text'];
+    if (model.capabilities.vision) modalities.push('image');
+    if (model.capabilities.audio) modalities.push('audio');
+    if (model.capabilities.pdf) modalities.push('pdf');
+    setInputModalities(modalities);
 
-    setSearchQuery('')
-    setShowSuggestions(false)
-  }
+    setSearchQuery('');
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = () => {
-    setError(null)
+    setError(null);
 
-    const trimmedId = modelId.trim()
-    const trimmedName = modelName.trim()
+    const trimmedId = modelId.trim();
+    const trimmedName = modelName.trim();
 
     if (!trimmedId) {
-      setError('请填写模型 ID')
-      return
+      setError('Model ID is required');
+      return;
     }
     if (!trimmedName) {
-      setError('请填写模型名称')
-      return
+      setError('Model name is required');
+      return;
     }
     if (existingModelIds.includes(trimmedId)) {
-      setError('模型 ID 已存在')
-      return
+      setError('Model ID already exists');
+      return;
     }
 
     onAdd({
@@ -155,56 +174,56 @@ export const AddModelDialog = ({
       outputSize,
       capabilities,
       inputModalities,
-    })
+    });
 
-    resetForm()
-    onOpenChange(false)
-  }
+    resetForm();
+    onOpenChange(false);
+  };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      resetForm()
+      resetForm();
     }
-    onOpenChange(newOpen)
-  }
+    onOpenChange(newOpen);
+  };
 
   const toggleCapability = (key: keyof CustomCapabilities) => {
-    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const toggleModality = (modality: ModelModality) => {
     setInputModalities((prev) => {
       if (prev.includes(modality)) {
-        if (modality === 'text' && prev.length === 1) return prev
-        return prev.filter((m) => m !== modality)
+        if (modality === 'text' && prev.length === 1) return prev;
+        return prev.filter((m) => m !== modality);
       }
-      return [...prev, modality]
-    })
-  }
+      return [...prev, modality];
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>添加自定义模型</DialogTitle>
+          <DialogTitle>Add custom model</DialogTitle>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             {/* 模型搜索（快速填充） */}
             <div className="space-y-2">
-              <Label>从模型库搜索</Label>
+              <Label>Search model library</Label>
               <div className="relative">
                 <Input
-                  placeholder="搜索模型，如 gpt-4o、claude-3..."
+                  placeholder="Search models, e.g. gpt-4o, claude-3..."
                   value={searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    setShowSuggestions(true)
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => {
                     // 延迟关闭，允许点击选项
-                    setTimeout(() => setShowSuggestions(false), 200)
+                    setTimeout(() => setShowSuggestions(false), 200);
                   }}
                 />
                 {showSuggestions && suggestions.length > 0 && (
@@ -214,8 +233,8 @@ export const AddModelDialog = ({
                         key={model.id}
                         className="px-3 py-2 hover:bg-muted cursor-pointer flex justify-between items-start"
                         onMouseDown={(e) => {
-                          e.preventDefault()
-                          handleSelectModel(model)
+                          e.preventDefault();
+                          handleSelectModel(model);
                         }}
                       >
                         <div className="min-w-0 flex-1">
@@ -236,7 +255,7 @@ export const AddModelDialog = ({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                从 {getModelCount()} 个模型中搜索，点击自动填充参数
+                Search {getModelCount()} models and click to autofill.
               </p>
             </div>
 
@@ -245,53 +264,55 @@ export const AddModelDialog = ({
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">或手动填写</span>
+                <span className="bg-background px-2 text-muted-foreground">Or fill manually</span>
               </div>
             </div>
 
             {/* 基本信息 */}
             <div className="space-y-2">
               <Label htmlFor="add-model-id">
-                模型 ID <span className="text-destructive">*</span>
+                Model ID <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="add-model-id"
-                placeholder="例如: gpt-4o-2024-11-20"
+                placeholder="e.g. gpt-4o-2024-11-20"
                 value={modelId}
                 onChange={(e) => setModelId(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleSubmit()
+                    e.preventDefault();
+                    handleSubmit();
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">API 调用时使用的模型标识符</p>
+              <p className="text-xs text-muted-foreground">
+                Used as the model identifier in API calls
+              </p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="add-model-name">
-                模型名称 <span className="text-destructive">*</span>
+                Model name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="add-model-name"
-                placeholder="例如: GPT-4o (2024-11)"
+                placeholder="e.g. GPT-4o (2024-11)"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleSubmit()
+                    e.preventDefault();
+                    handleSubmit();
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">显示在界面上的名称</p>
+              <p className="text-xs text-muted-foreground">Shown in the UI</p>
             </div>
 
             {/* Token 限制 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="add-context-size">上下文窗口</Label>
+                <Label htmlFor="add-context-size">Context window</Label>
                 <Input
                   id="add-context-size"
                   type="number"
@@ -306,7 +327,7 @@ export const AddModelDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="add-output-size">最大输出</Label>
+                <Label htmlFor="add-output-size">Max output</Label>
                 <Input
                   id="add-output-size"
                   type="number"
@@ -323,7 +344,7 @@ export const AddModelDialog = ({
 
             {/* 模型能力 */}
             <div className="space-y-3">
-              <Label>模型能力</Label>
+              <Label>Model capabilities</Label>
               <div className="grid grid-cols-2 gap-3">
                 {CAPABILITY_OPTIONS.map((option) => (
                   <div
@@ -350,17 +371,19 @@ export const AddModelDialog = ({
 
             {/* 输入模态 */}
             <div className="space-y-3">
-              <Label>支持的输入类型</Label>
+              <Label>Supported input types</Label>
               <div className="flex flex-wrap gap-2">
                 {INPUT_MODALITY_OPTIONS.map((option) => {
-                  const isDisabled = option.value === 'text' && inputModalities.length === 1
+                  const isDisabled = option.value === 'text' && inputModalities.length === 1;
                   return (
                     <div
                       key={option.value}
                       role="button"
                       tabIndex={isDisabled ? -1 : 0}
                       onClick={() => !isDisabled && toggleModality(option.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !isDisabled && toggleModality(option.value)}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && !isDisabled && toggleModality(option.value)
+                      }
                       aria-disabled={isDisabled}
                       className="flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-muted/50 transition-colors cursor-pointer aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent"
                     >
@@ -372,11 +395,11 @@ export const AddModelDialog = ({
                       />
                       <span className="text-sm">{option.label}</span>
                     </div>
-                  )
+                  );
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                选择模型支持的输入类型，文本为必选
+                Select the input types supported by this model. Text is required.
               </p>
             </div>
 
@@ -385,14 +408,14 @@ export const AddModelDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              取消
+              Cancel
             </Button>
             <Button type="button" onClick={handleSubmit}>
-              添加
+              Add
             </Button>
           </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};

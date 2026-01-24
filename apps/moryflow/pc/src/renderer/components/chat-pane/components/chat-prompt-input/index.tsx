@@ -1,3 +1,11 @@
+/**
+ * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型
+ * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
+ * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
 import {
@@ -29,20 +37,21 @@ import {
   ModelSelectorFooter,
 } from '@anyhunt/ui/ai/model-selector';
 import {
-  CheckIcon,
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  ArrowUpRight01Icon,
+  Attachment01Icon,
+  CheckmarkCircle01Icon,
+  Mic01Icon,
+  Settings02Icon,
   SparklesIcon,
-  SquareIcon,
-  ArrowUpIcon,
-  Settings2Icon,
-  ChevronDownIcon,
-  PaperclipIcon,
-  ArrowUpRightIcon,
-  MicIcon,
-} from 'lucide-react';
+  StopIcon,
+} from '@hugeicons/core-free-icons';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { TIER_DISPLAY_NAMES } from '@/lib/server';
 import { McpSelector } from '@/components/ai-elements/mcp-selector';
 import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
@@ -254,9 +263,9 @@ export const ChatPromptInput = ({
       )}
     >
       {isSpeechActive ? (
-        <SquareIcon className="size-3.5 fill-current" />
+        <Icon icon={StopIcon} className="size-3.5 fill-current" />
       ) : (
-        <MicIcon className="size-4" />
+        <Icon icon={Mic01Icon} className="size-4" />
       )}
     </InputGroupButton>
   );
@@ -264,7 +273,7 @@ export const ChatPromptInput = ({
   const renderActionMenu = () => (
     <PromptInputActionMenu>
       <PromptInputActionMenuTrigger aria-label={t('addFile')} disabled={isDisabled}>
-        <PaperclipIcon className="size-4" />
+        <Icon icon={Attachment01Icon} className="size-4" />
       </PromptInputActionMenuTrigger>
       <PromptInputActionMenuContent>
         <PromptInputActionAddAttachments />
@@ -297,12 +306,12 @@ export const ChatPromptInput = ({
                     variant="outline"
                     className="ml-auto shrink-0 text-xs px-1.5 py-0 h-5 gap-0.5"
                   >
-                    <ArrowUpRightIcon className="size-3" />
+                    <Icon icon={ArrowUpRight01Icon} className="size-3" />
                     {TIER_DISPLAY_NAMES[option.requiredTier as keyof typeof TIER_DISPLAY_NAMES] ||
                       t('upgrade')}
                   </Badge>
                 ) : selectedModelId === option.id ? (
-                  <CheckIcon className="ml-auto size-4 shrink-0" />
+                  <Icon icon={CheckmarkCircle01Icon} className="ml-auto size-4 shrink-0" />
                 ) : null}
               </ModelSelectorItem>
             ))}
@@ -320,7 +329,7 @@ export const ChatPromptInput = ({
             onOpenSettings?.('providers');
           }}
         >
-          <Settings2Icon className="mr-2 size-3.5" />
+          <Icon icon={Settings02Icon} className="mr-2 size-3.5" />
           {t('modelSettings')}
         </Button>
       </ModelSelectorFooter>
@@ -333,7 +342,7 @@ export const ChatPromptInput = ({
         <ModelSelectorTrigger asChild>
           <PromptInputButton aria-label={t('switchModel')} disabled={isDisabled}>
             <span>{selectedModel?.name ?? t('selectModel')}</span>
-            <ChevronDownIcon className="size-3 opacity-50" />
+            <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
           </PromptInputButton>
         </ModelSelectorTrigger>
         {renderModelSelectorList()}
@@ -345,7 +354,7 @@ export const ChatPromptInput = ({
         disabled={isDisabled}
         onClick={() => onOpenSettings?.('providers')}
       >
-        <SparklesIcon className="size-4" />
+        <Icon icon={SparklesIcon} className="size-4" />
         <span>{t('setupModel')}</span>
       </PromptInputButton>
     );
@@ -361,11 +370,11 @@ export const ChatPromptInput = ({
         disabled={isDisabled}
         className="rounded-full bg-white text-black hover:bg-gray-100"
       >
-        <SquareIcon className="size-4 fill-current" />
+        <Icon icon={StopIcon} className="size-4 fill-current" />
       </InputGroupButton>
     ) : (
       <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full">
-        <ArrowUpIcon className="size-4" />
+        <Icon icon={ArrowUp01Icon} className="size-4" />
       </PromptInputSubmit>
     );
 

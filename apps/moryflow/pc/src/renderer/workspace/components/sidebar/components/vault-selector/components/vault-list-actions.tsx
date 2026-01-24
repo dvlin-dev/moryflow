@@ -4,11 +4,12 @@
  * [POS]: Vault 列表操作区组件（新建/打开文件夹）
  */
 
-import { FolderPlus, Plus } from 'lucide-react'
-import { Button } from '@anyhunt/ui/components/button'
-import { Input } from '@anyhunt/ui/components/input'
-import { useTranslation } from '@/lib/i18n'
-import type { VaultListActionsProps } from '../const'
+import { Add01Icon, FolderAddIcon } from '@hugeicons/core-free-icons';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { Input } from '@anyhunt/ui/components/input';
+import { useTranslation } from '@/lib/i18n';
+import type { VaultListActionsProps } from '../const';
 
 export const VaultListActions = ({
   isCreating,
@@ -19,8 +20,8 @@ export const VaultListActions = ({
   onConfirmCreate,
   onOpenFolder,
 }: VaultListActionsProps) => {
-  const { t } = useTranslation('workspace')
-  const { t: tCommon } = useTranslation('common')
+  const { t } = useTranslation('workspace');
+  const { t: tCommon } = useTranslation('common');
 
   // 创建模式
   if (isCreating) {
@@ -33,15 +34,15 @@ export const VaultListActions = ({
           className="h-7 flex-1"
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === 'Enter') onConfirmCreate()
-            if (e.key === 'Escape') onCancelCreate()
+            if (e.key === 'Enter') onConfirmCreate();
+            if (e.key === 'Escape') onCancelCreate();
           }}
         />
         <Button size="sm" className="h-7" onClick={onConfirmCreate}>
           {tCommon('create')}
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -51,7 +52,7 @@ export const VaultListActions = ({
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
         onClick={onStartCreate}
       >
-        <FolderPlus className="size-4 text-muted-foreground" />
+        <Icon icon={FolderAddIcon} className="size-4 text-muted-foreground" />
         {t('newWorkspace')}
       </button>
       <button
@@ -59,9 +60,9 @@ export const VaultListActions = ({
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
         onClick={onOpenFolder}
       >
-        <Plus className="size-4 text-muted-foreground" />
+        <Icon icon={Add01Icon} className="size-4 text-muted-foreground" />
         {t('openExistingFolder')}
       </button>
     </>
-  )
-}
+  );
+};

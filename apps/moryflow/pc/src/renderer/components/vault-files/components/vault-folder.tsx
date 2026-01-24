@@ -4,9 +4,10 @@
  * [POS]: 文件树中的文件夹节点组件，支持拖拽和右键菜单
  */
 
-import { useMemo, type DragEvent } from 'react'
-import { FolderIcon, FolderOpenIcon } from 'lucide-react'
-import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu'
+import { useMemo, type DragEvent } from 'react';
+import { Folder01Icon, FolderOpenIcon } from '@hugeicons/core-free-icons';
+import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
+import { Icon } from '@anyhunt/ui/components/icon';
 import {
   FolderItem as FolderItemPrimitive,
   FolderHeader as FolderHeaderPrimitive,
@@ -16,22 +17,29 @@ import {
   FolderIcon as FolderIconPrimitive,
   FileLabel as FileLabelPrimitive,
   FolderPanel as FolderPanelPrimitive,
-} from '@anyhunt/ui/animate/primitives/base/files'
-import { useTranslation } from '@/lib/i18n'
-import { cn } from '@/lib/utils'
-import type { VaultTreeNode } from '@shared/ipc'
-import type { ContextMenuAction } from '../const'
-import { useVaultFiles } from '../context'
-import { createDragData, FOLDER_MENU_ITEMS, isValidDrag, parseDragData, sortNodes, validateDrop } from '../handle'
-import { NodeContextMenu } from './node-context-menu'
-import { VaultFile } from './vault-file'
+} from '@anyhunt/ui/animate/primitives/base/files';
+import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
+import type { VaultTreeNode } from '@shared/ipc';
+import type { ContextMenuAction } from '../const';
+import { useVaultFiles } from '../context';
+import {
+  createDragData,
+  FOLDER_MENU_ITEMS,
+  isValidDrag,
+  parseDragData,
+  sortNodes,
+  validateDrop,
+} from '../handle';
+import { NodeContextMenu } from './node-context-menu';
+import { VaultFile } from './vault-file';
 
 type VaultFolderProps = {
-  node: VaultTreeNode
-}
+  node: VaultTreeNode;
+};
 
 export const VaultFolder = ({ node }: VaultFolderProps) => {
-  const { t } = useTranslation('workspace')
+  const { t } = useTranslation('workspace');
   const {
     selectedId,
     onSelectNode,
@@ -45,22 +53,22 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
     setDraggedNodeId,
     dropTargetId,
     setDropTargetId,
-  } = useVaultFiles()
+  } = useVaultFiles();
 
-  const isSelected = selectedId === node.id
-  const isDragging = draggedNodeId === node.id
-  const isDropTarget = dropTargetId === node.id
-  const hasChildren = node.hasChildren ?? Boolean(node.children?.length)
+  const isSelected = selectedId === node.id;
+  const isDragging = draggedNodeId === node.id;
+  const isDropTarget = dropTargetId === node.id;
+  const hasChildren = node.hasChildren ?? Boolean(node.children?.length);
 
   // memo 避免每次渲染都重新排序
   const sortedChildren = useMemo(
     () => (node.children ? sortNodes(node.children) : []),
     [node.children]
-  )
+  );
 
   const handleClick = () => {
-    onSelectNode?.(node)
-  }
+    onSelectNode?.(node);
+  };
 
   const handleMenuAction = (action: ContextMenuAction) => {
     const actions: Partial<Record<ContextMenuAction, () => void>> = {
@@ -69,59 +77,59 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
       createFile: () => onCreateFile?.(node),
       showInFinder: () => onShowInFinder?.(node),
       publish: () => onPublish?.(node),
-    }
-    actions[action]?.()
-  }
+    };
+    actions[action]?.();
+  };
 
   const handleDragStart = (e: DragEvent) => {
-    e.stopPropagation()
-    const dragData = createDragData(node)
-    e.dataTransfer.setData('application/json', JSON.stringify(dragData))
-    e.dataTransfer.effectAllowed = 'move'
-    setDraggedNodeId(node.id)
-  }
+    e.stopPropagation();
+    const dragData = createDragData(node);
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedNodeId(node.id);
+  };
 
   const handleDragEnd = () => {
-    setDraggedNodeId(null)
-    setDropTargetId(null)
-  }
+    setDraggedNodeId(null);
+    setDropTargetId(null);
+  };
 
   const handleDragOver = (e: DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     // 在 dragOver 中使用 isValidDrag 检查（因为 getData 在 dragOver 中返回空）
-    if (!isValidDrag(e.dataTransfer)) return
-    e.dataTransfer.dropEffect = 'move'
+    if (!isValidDrag(e.dataTransfer)) return;
+    e.dataTransfer.dropEffect = 'move';
     // 持续更新 dropTargetId
     if (dropTargetId !== node.id) {
-      setDropTargetId(node.id)
+      setDropTargetId(node.id);
     }
-  }
+  };
 
   const handleDrop = async (e: DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const dragData = parseDragData(e.dataTransfer)
-    if (!dragData) return
+    e.preventDefault();
+    e.stopPropagation();
+    const dragData = parseDragData(e.dataTransfer);
+    if (!dragData) return;
 
-    const validation = validateDrop(dragData, node)
+    const validation = validateDrop(dragData, node);
     if (!validation.canDrop) {
-      const errorKey = (validation.reasonKey ?? 'cannotMoveHere') as Parameters<typeof t>[0]
-      window.alert(t(errorKey))
-      setDraggedNodeId(null)
-      setDropTargetId(null)
-      return
+      const errorKey = (validation.reasonKey ?? 'cannotMoveHere') as Parameters<typeof t>[0];
+      window.alert(t(errorKey));
+      setDraggedNodeId(null);
+      setDropTargetId(null);
+      return;
     }
 
     try {
-      await onMove?.(dragData.nodePath, node.path)
+      await onMove?.(dragData.nodePath, node.path);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : t('moveFailed'))
+      window.alert(error instanceof Error ? error.message : t('moveFailed'));
     } finally {
-      setDraggedNodeId(null)
-      setDropTargetId(null)
+      setDraggedNodeId(null);
+      setDropTargetId(null);
     }
-  }
+  };
 
   return (
     <FolderItemPrimitive value={node.path} className="w-full min-w-0">
@@ -134,7 +142,10 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              className={cn('w-full min-w-0 cursor-pointer select-none', isDragging && 'opacity-50')}
+              className={cn(
+                'w-full min-w-0 cursor-pointer select-none',
+                isDragging && 'opacity-50'
+              )}
             >
               <FolderTriggerPrimitive className="w-full min-w-0 text-start" onClick={handleClick}>
                 <FolderHighlightPrimitive className="w-full min-w-0 overflow-hidden">
@@ -147,8 +158,12 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
                   >
                     <FolderIconPrimitive
                       className="shrink-0"
-                      closeIcon={<FolderIcon className="size-4 text-muted-foreground" />}
-                      openIcon={<FolderOpenIcon className="size-4 text-muted-foreground" />}
+                      closeIcon={
+                        <Icon icon={Folder01Icon} className="size-4 text-muted-foreground" />
+                      }
+                      openIcon={
+                        <Icon icon={FolderOpenIcon} className="size-4 text-muted-foreground" />
+                      }
                     />
                     <FileLabelPrimitive className="min-w-0 flex-1 truncate text-sm font-medium">
                       {node.name}
@@ -176,5 +191,5 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
         </FolderPanelPrimitive>
       )}
     </FolderItemPrimitive>
-  )
-}
+  );
+};

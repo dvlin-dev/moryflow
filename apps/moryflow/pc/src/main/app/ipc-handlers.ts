@@ -1,5 +1,5 @@
 /**
- * [INPUT]: IPC payloads from renderer/preload
+ * [INPUT]: IPC payloads from renderer/preload（含外链打开请求）
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
  *
@@ -64,10 +64,16 @@ import {
 } from '../cloud-sync/index.js';
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
+import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
 };
+
+const externalLinkPolicy = createExternalLinkPolicy({
+  allowLocalhostHttp: !app.isPackaged,
+  hostAllowlist: process.env['MORYFLOW_EXTERNAL_HOST_ALLOWLIST'],
+});
 
 /** 广播事件到所有窗口 */
 const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
@@ -81,6 +87,13 @@ const broadcastToAllWindows = <T>(channel: string, payload: T): void => {
  */
 export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandlersOptions) => {
   ipcMain.handle('app:getVersion', () => app.getVersion());
+  ipcMain.handle('shell:openExternal', async (_event, payload) => {
+    const url = typeof payload?.url === 'string' ? payload.url : '';
+    if (!url) {
+      return;
+    }
+    await openExternalSafe(url, externalLinkPolicy);
+  });
   ipcMain.handle('vault:getRecent', () => getStoredVault());
   ipcMain.handle('vault:open', (_event, payload) => openVault(payload ?? {}));
   ipcMain.handle('vault:create', (_event, payload) => createVault(payload ?? {}));

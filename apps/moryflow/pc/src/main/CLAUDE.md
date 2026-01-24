@@ -21,6 +21,13 @@ PC 端 Electron 应用的主进程，负责系统级操作、文件访问、网�
 - 与渲染进程通过 IPC 通信
 - 敏感操作（文件、网络）必须在主进程执行
 - 长时间操作需考虑不阻塞主进程
+- 外链打开必须经 `external-links` allowlist 校验，额外域名通过 `MORYFLOW_EXTERNAL_HOST_ALLOWLIST` 注入
+- 主窗口必须拦截 `will-navigate`/`will-redirect`，仅允许内部资源导航
+- E2E 测试（`MORYFLOW_E2E=true`）禁止自动打开 DevTools
+- E2E 测试可通过 `MORYFLOW_E2E_USER_DATA` 指定独立 userData 目录
+- E2E 测试可通过 `MORYFLOW_E2E_RESET=true` 清理 Vault store（仅测试用）
+- Vault store 与 pc-settings 在 E2E 下使用 `MORYFLOW_E2E_USER_DATA/stores`
+- preload 构建需输出 CJS（sandbox 下 ESM preload 会报错）
 
 ## 成员清单
 
@@ -90,6 +97,14 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 - 新增 `membership-token-store.ts`，在主进程加密保存 refresh token
 - Auth IPC 通道补充 refresh token 读写，配合 renderer 端 `auth-session`
+- 新增外链 allowlist 与导航拦截，统一由主进程校验后打开外部链接
+- E2E 模式关闭自动 DevTools，避免干扰 Playwright 运行
+- 移除 `enableRemoteModule` 配置，保持 Electron 类型兼容
+- E2E 支持指定 userData 路径，避免本地数据污染测试
+- E2E 支持重置 Vault store，确保首次启动进入 onboarding
+- E2E 下 vault-store/pc-settings 指向隔离目录，避免读取本机历史数据
+- preload 产物改为 CJS，`resolvePreloadPath` 优先加载 `dist/preload/index.js`
+- external-links 使用路径 relative 校验，补齐 allowlist/导航单测
 
 ## 依赖关系
 

@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-25（Billing & Payment 修复完成；新增 Moryflow PC 自动更新 R2 Runbook）
+> 最近更新：2026-01-26（Moryflow PC preload CJS 兼容修复）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,10 @@
 
 ## 最近更新
 
+- Moryflow PC Code Review：修复 preload 在 sandbox 下的 ESM 兼容问题（2026-01-26）
+- Moryflow PC Code Review：补齐 React 单测稳定性（i18n mock + React 版本对齐）（2026-01-26）
+- Moryflow PC Code Review：修复完成（外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测、E2E 基线）（2026-01-25）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-01-24：review + 方案）
 - Anyhunt Server API Key & Quota：修复完成（有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐）（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：标记修复完成（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：`docs/code-review/anyhunt-server-api-key-quota.md`（2026-01-25：review）

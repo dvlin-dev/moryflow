@@ -1,38 +1,40 @@
 /**
  * [PROPS]: { onSearch, onOpenAI, onSites }
  * [EMITS]: onSearch, onOpenAI, onSites - 导航按钮点击事件
- * [POS]: 侧边栏功能导航区组件
+ * [POS]: 侧边栏功能导航区组件（含 E2E 选择器）
  */
 
-import { Search, Sparkles, Globe } from 'lucide-react'
-import { useTranslation } from '@/lib/i18n'
-import type { SidebarNavProps } from '../const'
+import { GlobeIcon, Search01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
+import { useTranslation } from '@/lib/i18n';
+import type { SidebarNavProps } from '../const';
 
 type NavItemProps = {
-  icon: React.ElementType
-  label: string
-  onClick: () => void
-}
+  icon: HugeIcon;
+  label: string;
+  onClick: () => void;
+};
 
-const NavItem = ({ icon: Icon, label, onClick }: NavItemProps) => (
+const NavItem = ({ icon, label, onClick, testId }: NavItemProps & { testId?: string }) => (
   <button
     type="button"
     className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
     onClick={onClick}
+    data-testid={testId}
   >
-    <Icon className="size-4 shrink-0" />
+    <Icon icon={icon} className="size-4 shrink-0" />
     <span className="truncate">{label}</span>
   </button>
-)
+);
 
 export const SidebarNav = ({ onSearch, onOpenAI, onSites }: SidebarNavProps) => {
-  const { t } = useTranslation('workspace')
+  const { t } = useTranslation('workspace');
 
   return (
     <nav className="shrink-0 space-y-0.5 px-2 py-2">
-      <NavItem icon={Search} label={t('search')} onClick={onSearch} />
-      <NavItem icon={Sparkles} label="Mory AI" onClick={onOpenAI} />
-      <NavItem icon={Globe} label="Sites" onClick={onSites} />
+      <NavItem icon={Search01Icon} label={t('search')} onClick={onSearch} />
+      <NavItem icon={SparklesIcon} label="Mory AI" onClick={onOpenAI} />
+      <NavItem icon={GlobeIcon} label="Sites" onClick={onSites} testId="sidebar-nav-sites" />
     </nav>
-  )
-}
+  );
+};

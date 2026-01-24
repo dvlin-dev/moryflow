@@ -1,43 +1,56 @@
-import { useState, useEffect } from 'react'
+/**
+ * [PROPS]: EditModelDialogProps - 编辑模型配置所需参数
+ * [EMITS]: onSave(data) - 提交模型配置
+ * [POS]: Providers 模型编辑弹窗
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog'
-import { Input } from '@anyhunt/ui/components/input'
-import { Label } from '@anyhunt/ui/components/label'
-import { Button } from '@anyhunt/ui/components/button'
-import { Checkbox } from '@anyhunt/ui/components/checkbox'
-import type { ModelModality } from '@shared/model-registry'
-import type { CustomCapabilities } from './add-model-dialog'
+} from '@anyhunt/ui/components/dialog';
+import { Input } from '@anyhunt/ui/components/input';
+import { Label } from '@anyhunt/ui/components/label';
+import { Button } from '@anyhunt/ui/components/button';
+import { Checkbox } from '@anyhunt/ui/components/checkbox';
+import type { ModelModality } from '@shared/model-registry';
+import type { CustomCapabilities } from './add-model-dialog';
 
 export type EditModelFormData = {
-  id: string
-  name: string
-  contextSize: number
-  outputSize: number
-  capabilities: CustomCapabilities
-  inputModalities: ModelModality[]
-}
+  id: string;
+  name: string;
+  contextSize: number;
+  outputSize: number;
+  capabilities: CustomCapabilities;
+  inputModalities: ModelModality[];
+};
 
 export type EditModelInitialData = {
-  id: string
-  name: string
-  isPreset: boolean
-  isCustom?: boolean
-  capabilities?: { reasoning: boolean; attachment: boolean; toolCall?: boolean; temperature?: boolean }
-  limits: { context: number; output: number }
-  inputModalities?: ModelModality[]
-}
+  id: string;
+  name: string;
+  isPreset: boolean;
+  isCustom?: boolean;
+  capabilities?: {
+    reasoning: boolean;
+    attachment: boolean;
+    toolCall?: boolean;
+    temperature?: boolean;
+  };
+  limits: { context: number; output: number };
+  inputModalities?: ModelModality[];
+};
 
 type EditModelDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSave: (data: EditModelFormData) => void
-  initialData: EditModelInitialData | null
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: EditModelFormData) => void;
+  initialData: EditModelInitialData | null;
+};
 
 /** 默认能力 */
 const DEFAULT_CAPABILITIES: CustomCapabilities = {
@@ -45,26 +58,43 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
   reasoning: false,
   temperature: true,
   toolCall: true,
-}
+};
 
-const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text']
+const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
 
 /** 输入模态选项 */
 const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
-  { value: 'text', label: '文本' },
-  { value: 'image', label: '图片' },
-  { value: 'audio', label: '音频' },
-  { value: 'video', label: '视频' },
+  { value: 'text', label: 'Text' },
+  { value: 'image', label: 'Image' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'video', label: 'Video' },
   { value: 'pdf', label: 'PDF' },
-]
+];
 
 /** 能力选项 */
-const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; description: string }[] = [
-  { key: 'attachment', label: '多模态输入', description: '支持图片、文件等附件' },
-  { key: 'reasoning', label: '推理模式', description: '支持深度思考/推理' },
-  { key: 'temperature', label: '温度调节', description: '支持调节生成随机性' },
-  { key: 'toolCall', label: '工具调用', description: '支持 Function Calling' },
-]
+const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; description: string }[] =
+  [
+    {
+      key: 'attachment',
+      label: 'Multimodal input',
+      description: 'Supports images, files, and other attachments',
+    },
+    {
+      key: 'reasoning',
+      label: 'Reasoning mode',
+      description: 'Supports deep reasoning',
+    },
+    {
+      key: 'temperature',
+      label: 'Temperature control',
+      description: 'Adjusts generation randomness',
+    },
+    {
+      key: 'toolCall',
+      label: 'Tool calling',
+      description: 'Supports function calling',
+    },
+  ];
 
 export const EditModelDialog = ({
   open,
@@ -72,37 +102,37 @@ export const EditModelDialog = ({
   onSave,
   initialData,
 }: EditModelDialogProps) => {
-  const [modelName, setModelName] = useState('')
-  const [contextSize, setContextSize] = useState(128000)
-  const [outputSize, setOutputSize] = useState(16384)
-  const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES)
-  const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES)
-  const [error, setError] = useState<string | null>(null)
+  const [modelName, setModelName] = useState('');
+  const [contextSize, setContextSize] = useState(128000);
+  const [outputSize, setOutputSize] = useState(16384);
+  const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
+  const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
+  const [error, setError] = useState<string | null>(null);
 
   // 当初始数据变化时，重置表单
   useEffect(() => {
     if (initialData && open) {
-      setModelName(initialData.name)
-      setContextSize(initialData.limits.context)
-      setOutputSize(initialData.limits.output)
+      setModelName(initialData.name);
+      setContextSize(initialData.limits.context);
+      setOutputSize(initialData.limits.output);
       setCapabilities({
         attachment: initialData.capabilities?.attachment ?? false,
         reasoning: initialData.capabilities?.reasoning ?? false,
         temperature: initialData.capabilities?.temperature ?? true,
         toolCall: initialData.capabilities?.toolCall ?? true,
-      })
-      setInputModalities(initialData.inputModalities || ['text'])
-      setError(null)
+      });
+      setInputModalities(initialData.inputModalities || ['text']);
+      setError(null);
     }
-  }, [initialData, open])
+  }, [initialData, open]);
 
   const handleSubmit = () => {
-    setError(null)
+    setError(null);
 
-    const trimmedName = modelName.trim()
+    const trimmedName = modelName.trim();
     if (!trimmedName) {
-      setError('请填写模型名称')
-      return
+      setError('Model name is required');
+      return;
     }
 
     onSave({
@@ -112,70 +142,72 @@ export const EditModelDialog = ({
       outputSize,
       capabilities,
       inputModalities,
-    })
+    });
 
-    onOpenChange(false)
-  }
+    onOpenChange(false);
+  };
 
   const toggleCapability = (key: keyof CustomCapabilities) => {
-    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const toggleModality = (modality: ModelModality) => {
     setInputModalities((prev) => {
       if (prev.includes(modality)) {
-        if (modality === 'text' && prev.length === 1) return prev
-        return prev.filter((m) => m !== modality)
+        if (modality === 'text' && prev.length === 1) return prev;
+        return prev.filter((m) => m !== modality);
       }
-      return [...prev, modality]
-    })
-  }
+      return [...prev, modality];
+    });
+  };
 
-  if (!initialData) return null
+  if (!initialData) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {initialData.isPreset ? '自定义模型配置' : '编辑自定义模型'}
+            {initialData.isPreset ? 'Customize preset model' : 'Edit custom model'}
           </DialogTitle>
         </DialogHeader>
         <div>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             {/* 模型 ID（只读） */}
             <div className="space-y-2">
-              <Label>模型 ID</Label>
+              <Label>Model ID</Label>
               <Input value={initialData.id} disabled className="bg-muted" />
               <p className="text-xs text-muted-foreground">
-                {initialData.isPreset ? '预设模型 ID 不可修改' : 'API 调用时使用的模型标识符'}
+                {initialData.isPreset
+                  ? 'Preset model IDs cannot be changed'
+                  : 'Used as the model identifier in API calls'}
               </p>
             </div>
 
             {/* 模型名称 */}
             <div className="space-y-2">
               <Label htmlFor="edit-model-name">
-                显示名称 <span className="text-destructive">*</span>
+                Display name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="edit-model-name"
-                placeholder="例如: GPT-4o (2024-11)"
+                placeholder="e.g. GPT-4o (2024-11)"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleSubmit()
+                    e.preventDefault();
+                    handleSubmit();
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">显示在界面上的名称</p>
+              <p className="text-xs text-muted-foreground">Shown in the UI</p>
             </div>
 
             {/* Token 限制 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-context-size">上下文窗口</Label>
+                <Label htmlFor="edit-context-size">Context window</Label>
                 <Input
                   id="edit-context-size"
                   type="number"
@@ -190,7 +222,7 @@ export const EditModelDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-output-size">最大输出</Label>
+                <Label htmlFor="edit-output-size">Max output</Label>
                 <Input
                   id="edit-output-size"
                   type="number"
@@ -207,7 +239,7 @@ export const EditModelDialog = ({
 
             {/* 模型能力 */}
             <div className="space-y-3">
-              <Label>模型能力</Label>
+              <Label>Model capabilities</Label>
               <div className="grid grid-cols-2 gap-3">
                 {CAPABILITY_OPTIONS.map((option) => (
                   <div
@@ -234,17 +266,19 @@ export const EditModelDialog = ({
 
             {/* 输入模态 */}
             <div className="space-y-3">
-              <Label>支持的输入类型</Label>
+              <Label>Supported input types</Label>
               <div className="flex flex-wrap gap-2">
                 {INPUT_MODALITY_OPTIONS.map((option) => {
-                  const isDisabled = option.value === 'text' && inputModalities.length === 1
+                  const isDisabled = option.value === 'text' && inputModalities.length === 1;
                   return (
                     <div
                       key={option.value}
                       role="button"
                       tabIndex={isDisabled ? -1 : 0}
                       onClick={() => !isDisabled && toggleModality(option.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !isDisabled && toggleModality(option.value)}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && !isDisabled && toggleModality(option.value)
+                      }
                       aria-disabled={isDisabled}
                       className="flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-muted/50 transition-colors cursor-pointer aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent"
                     >
@@ -256,11 +290,11 @@ export const EditModelDialog = ({
                       />
                       <span className="text-sm">{option.label}</span>
                     </div>
-                  )
+                  );
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                选择模型支持的输入类型，文本为必选
+                Select the input types supported by this model. Text is required.
               </p>
             </div>
 
@@ -269,14 +303,14 @@ export const EditModelDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              取消
+              Cancel
             </Button>
             <Button type="button" onClick={handleSubmit}>
-              保存
+              Save
             </Button>
           </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};

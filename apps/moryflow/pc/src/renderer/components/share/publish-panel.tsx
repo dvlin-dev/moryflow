@@ -6,36 +6,37 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { useState } from 'react'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { Button } from '@anyhunt/ui/components/button'
-import { Label } from '@anyhunt/ui/components/label'
-import { Progress } from '@anyhunt/ui/components/progress'
-import { SubdomainInput } from './subdomain-input'
-import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish'
-import type { SubdomainStatus } from './const'
+import { useState } from 'react';
+import { ArrowLeft01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { Button } from '@anyhunt/ui/components/button';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { Label } from '@anyhunt/ui/components/label';
+import { Progress } from '@anyhunt/ui/components/progress';
+import { SubdomainInput } from './subdomain-input';
+import type { Site, BuildProgressEvent } from '../../../shared/ipc/site-publish';
+import type { SubdomainStatus } from './const';
 
 interface PublishPanelProps {
-  fileTitle?: string
-  onBack: () => void
-  onPublished: (site: Site) => void
+  fileTitle?: string;
+  onBack: () => void;
+  onPublished: (site: Site) => void;
   // 状态（从 Hook 传入）
-  subdomain: string
-  setSubdomain: (value: string) => void
-  subdomainStatus: SubdomainStatus
-  subdomainMessage?: string
-  publishing: boolean
-  progress: BuildProgressEvent | null
-  onPublish: () => Promise<void>
+  subdomain: string;
+  setSubdomain: (value: string) => void;
+  subdomainStatus: SubdomainStatus;
+  subdomainMessage?: string;
+  publishing: boolean;
+  progress: BuildProgressEvent | null;
+  onPublish: () => Promise<void>;
 }
 
 /** 计算进度百分比 */
 function getProgressPercent(progress: BuildProgressEvent | null): number {
-  if (!progress) return 0
-  if (progress.phase === 'done') return 100
-  if (progress.phase === 'error') return 0
-  if (progress.total === 0) return 0
-  return Math.round((progress.current / progress.total) * 100)
+  if (!progress) return 0;
+  if (progress.phase === 'done') return 100;
+  if (progress.phase === 'error') return 0;
+  if (progress.total === 0) return 0;
+  return Math.round((progress.current / progress.total) * 100);
 }
 
 export function PublishPanel({
@@ -48,19 +49,18 @@ export function PublishPanel({
   progress,
   onPublish,
 }: PublishPanelProps) {
-  const [error, setError] = useState<string>()
+  const [error, setError] = useState<string>();
 
-  const canPublish =
-    !publishing && subdomain && subdomainStatus === 'available'
+  const canPublish = !publishing && subdomain && subdomainStatus === 'available';
 
   const handlePublish = async () => {
-    setError(undefined)
+    setError(undefined);
     try {
-      await onPublish()
+      await onPublish();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Publish failed')
+      setError(err instanceof Error ? err.message : 'Publish failed');
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -73,7 +73,7 @@ export function PublishPanel({
           onClick={onBack}
           disabled={publishing}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium">Publish</span>
       </div>
@@ -102,22 +102,16 @@ export function PublishPanel({
       )}
 
       {/* Error */}
-      {error && (
-        <p className="text-xs text-destructive">{error}</p>
-      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
 
       {/* Separator */}
       <div className="border-t border-dashed border-border" />
 
       {/* Publish Button */}
-      <Button
-        className="w-full"
-        onClick={handlePublish}
-        disabled={!canPublish}
-      >
+      <Button className="w-full" onClick={handlePublish} disabled={!canPublish}>
         {publishing ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
             Publishing...
           </>
         ) : (
@@ -125,5 +119,5 @@ export function PublishPanel({
         )}
       </Button>
     </div>
-  )
+  );
 }

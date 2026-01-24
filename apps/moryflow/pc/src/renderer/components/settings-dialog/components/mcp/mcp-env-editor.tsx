@@ -1,18 +1,19 @@
-import { useFieldArray, type Control } from 'react-hook-form'
-import { Button } from '@anyhunt/ui/components/button'
-import { Input } from '@anyhunt/ui/components/input'
-import { Label } from '@anyhunt/ui/components/label'
-import { PlusIcon, Trash2Icon, EyeIcon, EyeOffIcon } from 'lucide-react'
-import { useState } from 'react'
-import type { FormValues } from '../../const'
+import { useFieldArray, type Control } from 'react-hook-form';
+import { Button } from '@anyhunt/ui/components/button';
+import { Input } from '@anyhunt/ui/components/input';
+import { Label } from '@anyhunt/ui/components/label';
+import { Add01Icon, Delete01Icon, ViewIcon, ViewOffIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { useState } from 'react';
+import type { FormValues } from '../../const';
 
 type McpEnvEditorProps = {
-  control: Control<FormValues>
-  name: `mcp.stdio.${number}.env` | `mcp.streamableHttp.${number}.headers`
-  label: string
-  keyPlaceholder?: string
-  valuePlaceholder?: string
-}
+  control: Control<FormValues>;
+  name: `mcp.stdio.${number}.env` | `mcp.streamableHttp.${number}.headers`;
+  label: string;
+  keyPlaceholder?: string;
+  valuePlaceholder?: string;
+};
 
 export const McpEnvEditor = ({
   control,
@@ -21,20 +22,20 @@ export const McpEnvEditor = ({
   keyPlaceholder = 'KEY',
   valuePlaceholder = 'value',
 }: McpEnvEditorProps) => {
-  const { fields, append, remove } = useFieldArray({ control, name })
-  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set())
+  const { fields, append, remove } = useFieldArray({ control, name });
+  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
 
   const toggleVisibility = (index: number) => {
     setVisibleIndices((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(index)) {
-        next.delete(index)
+        next.delete(index);
       } else {
-        next.add(index)
+        next.add(index);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -46,19 +47,19 @@ export const McpEnvEditor = ({
           variant="outline"
           onClick={() => append({ key: '', value: '' })}
         >
-          <PlusIcon className="mr-1 size-3" />
-          添加
+          <Icon icon={Add01Icon} className="mr-1 size-3" />
+          Add
         </Button>
       </div>
       {fields.length === 0 ? (
-        <p className="text-xs text-muted-foreground">还没有，点添加新增</p>
+        <p className="text-xs text-muted-foreground">No entries yet. Add one to get started.</p>
       ) : (
         <div className="space-y-2">
           {fields.map((field, index) => {
-            const isVisible = visibleIndices.has(index)
+            const isVisible = visibleIndices.has(index);
             // 动态构建字段路径
-            const keyPath = `${name}.${index}.key` as const
-            const valuePath = `${name}.${index}.value` as const
+            const keyPath = `${name}.${index}.key` as const;
+            const valuePath = `${name}.${index}.value` as const;
 
             return (
               <div key={field.id} className="flex items-center gap-2">
@@ -83,25 +84,23 @@ export const McpEnvEditor = ({
                     onClick={() => toggleVisibility(index)}
                   >
                     {isVisible ? (
-                      <EyeOffIcon className="size-4 text-muted-foreground" />
+                      <Icon icon={ViewOffIcon} className="size-4 text-muted-foreground" />
                     ) : (
-                      <EyeIcon className="size-4 text-muted-foreground" />
+                      <Icon icon={ViewIcon} className="size-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => remove(index)}
-                >
-                  <Trash2Icon className="size-4 text-muted-foreground hover:text-destructive" />
+                <Button type="button" size="icon" variant="ghost" onClick={() => remove(index)}>
+                  <Icon
+                    icon={Delete01Icon}
+                    className="size-4 text-muted-foreground hover:text-destructive"
+                  />
                 </Button>
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
-}
+  );
+};

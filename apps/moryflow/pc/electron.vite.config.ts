@@ -14,6 +14,12 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       outDir: 'dist/preload',
+      rollupOptions: {
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js',
+        },
+      },
     },
   },
   renderer: {
@@ -58,7 +64,10 @@ export default defineConfig({
           replacement: resolve(__dirname, '../../../packages/tiptap/src/$1'),
         },
         { find: '@anyhunt/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
-        { find: '@anyhunt/tiptap', replacement: resolve(__dirname, '../../../packages/tiptap/src') },
+        {
+          find: '@anyhunt/tiptap',
+          replacement: resolve(__dirname, '../../../packages/tiptap/src'),
+        },
       ],
       dedupe: ['react', 'react-dom'],
     },

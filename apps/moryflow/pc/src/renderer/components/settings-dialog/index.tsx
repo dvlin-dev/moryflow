@@ -1,20 +1,32 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@anyhunt/ui/components/dialog'
-import { Button } from '@anyhunt/ui/components/button'
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
-import { Loader2Icon } from 'lucide-react'
-import { sectionContentLayout, settingsSections, type SettingsDialogProps } from './const'
-import { useSettingsDialogState } from './use-settings-dialog'
-import { SectionNavigation } from './components/section-navigation'
-import { SectionContent } from './components/section-content'
-import { useTranslation } from '@/lib/i18n'
+/**
+ * [PROPS]: SettingsDialogProps
+ * [EMITS]: onOpenChange
+ * [POS]: 设置对话框入口
+ */
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@anyhunt/ui/components/dialog';
+import { Button } from '@anyhunt/ui/components/button';
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Loading03Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { sectionContentLayout, settingsSections, type SettingsDialogProps } from './const';
+import { useSettingsDialogState } from './use-settings-dialog';
+import { SectionNavigation } from './components/section-navigation';
+import { SectionContent } from './components/section-content';
+import { useTranslation } from '@/lib/i18n';
 
 export const SETTINGS_CHUNK_HASH =
   typeof import.meta.url === 'string'
     ? import.meta.url.match(/([A-Za-z0-9]{8,})\.(?:m?js|js)/)?.[1]
-    : undefined
+    : undefined;
 
-export const SettingsDialog = ({ open, onOpenChange, initialSection, vaultPath }: SettingsDialogProps) => {
-  const { t } = useTranslation('settings')
+export const SettingsDialog = ({
+  open,
+  onOpenChange,
+  initialSection,
+  vaultPath,
+}: SettingsDialogProps) => {
+  const { t } = useTranslation('settings');
   const {
     meta,
     navigation,
@@ -22,12 +34,12 @@ export const SettingsDialog = ({ open, onOpenChange, initialSection, vaultPath }
     mcpArrays,
     providers,
     actions: { handleSave, handleClose },
-  } = useSettingsDialogState({ open, onOpenChange, initialSection })
+  } = useSettingsDialogState({ open, onOpenChange, initialSection });
 
   // 表单验证失败时的处理
   const handleInvalid = (errors: Record<string, unknown>) => {
-    console.warn('[settings-dialog] form validation failed:', errors)
-  }
+    console.warn('[settings-dialog] form validation failed:', errors);
+  };
 
   const sectionContent = (
     <SectionContent
@@ -38,13 +50,14 @@ export const SettingsDialog = ({ open, onOpenChange, initialSection, vaultPath }
       mcp={{ stdioArray: mcpArrays.stdioArray, httpArray: mcpArrays.httpArray }}
       vaultPath={vaultPath}
     />
-  )
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex h-[80vh] w-[90vw] max-w-[1200px]! flex-col overflow-hidden p-0"
         showCloseButton={!meta.isSaving}
+        data-testid="settings-dialog"
       >
         <DialogHeader className="shrink-0 px-6 pt-5 pb-0">
           <DialogTitle className="text-base">{t('settings')}</DialogTitle>
@@ -60,7 +73,7 @@ export const SettingsDialog = ({ open, onOpenChange, initialSection, vaultPath }
               onSectionChange={navigation.setActiveSection}
             />
             <section className="min-h-0 flex-1 overflow-hidden rounded-xl bg-muted/30">
-              {sectionContentLayout[navigation.activeSection]?.useScrollArea ?? true ? (
+              {(sectionContentLayout[navigation.activeSection]?.useScrollArea ?? true) ? (
                 <ScrollArea className="h-full">
                   <div className="p-4">{sectionContent}</div>
                 </ScrollArea>
@@ -74,12 +87,12 @@ export const SettingsDialog = ({ open, onOpenChange, initialSection, vaultPath }
               {t('cancel')}
             </Button>
             <Button type="submit" disabled={meta.isSaving || meta.isLoading}>
-              {meta.isSaving && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+              {meta.isSaving && <Icon icon={Loading03Icon} className="mr-2 size-4 animate-spin" />}
               {t('saveSettings')}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};

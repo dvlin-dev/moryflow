@@ -21,6 +21,11 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - 重操作（网络请求、文件操作）需委托给主进程
 - 聊天消息扩展字段统一使用 `metadata.chat`；文件附件预览统一使用 `providerMetadata.chat`
 - 聊天消息列表与输入框 UI 统一使用 `@anyhunt/ui/ai/*` 组件
+- 所有用户可见文案必须为英文
+- 图标统一使用 Hugeicons（`@hugeicons/core-free-icons` + `Icon` 组件），禁止 `lucide-react`
+- 前端表单必须使用 `zod/v3`（RHF 兼容层）
+- 核心 hooks 需有 Vitest 单测覆盖（jsdom + RTL）
+- E2E 测试使用 `data-testid` 作为稳定选择器（避免依赖文案）
 
 ## 成员清单
 
@@ -92,6 +97,11 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Auth 改为 access 内存 + refresh 轮换，移除 pre-register
 - Auth 表单：FormProvider props 做类型桥接，规避 react-hook-form 重复安装的类型冲突
 - 模型选择禁用项移除占位日志，保持交互收敛
+- Chat 输入与设置/发布等 UI 文案统一英文
+- 文件树展开路径加载并发化，清理无效路径并保持 UI 响应
+- 新增 Renderer hooks 单测（useVaultTreeState/useDocumentState/useChatSessions）
+- hooks 单测使用 i18n mock，避免重复 React 实例导致测试崩溃
+- 新增 Playwright E2E：创建 Vault、创建笔记自动保存、Settings 与 Sites 入口覆盖
 
 ## 依赖关系
 

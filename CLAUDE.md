@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-25（补充 Auth test:e2e 与全量测试记录；Mobile refresh 网络异常清理；补充 X-App-Platform 调研结论）
+> 最近更新：2026-01-26（Moryflow PC 单测稳定性修复；根依赖对齐 React 19.2.3）
 
 ## 项目概述
 

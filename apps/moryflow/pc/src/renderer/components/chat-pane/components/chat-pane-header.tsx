@@ -1,6 +1,6 @@
-import { memo, useMemo, useState } from 'react'
-import type { ChatSessionSummary } from '@shared/ipc'
-import { Button } from '@anyhunt/ui/components/button'
+import { memo, useMemo, useState } from 'react';
+import type { ChatSessionSummary } from '@shared/ipc';
+import { Button } from '@anyhunt/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,21 +8,28 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
-import { useTranslation } from '@/lib/i18n'
-import { CheckIcon, MoreHorizontalIcon, PanelRightIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+} from '@anyhunt/ui/components/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+import {
+  Add01Icon,
+  Delete02Icon,
+  MoreHorizontalIcon,
+  Tick02Icon,
+  ViewSidebarRightIcon,
+} from '@hugeicons/core-free-icons';
+import { useTranslation } from '@/lib/i18n';
+import { Icon } from '@anyhunt/ui/components/icon';
 
 type ChatPaneHeaderProps = {
-  sessions: ChatSessionSummary[]
-  activeSession: ChatSessionSummary | null
-  onSelectSession: (sessionId: string) => void
-  onCreateSession: () => void | Promise<unknown>
-  onDeleteSession: (sessionId: string) => void | Promise<unknown>
-  isSessionReady: boolean
-  collapsed?: boolean
-  onToggleCollapse?: () => void
-}
+  sessions: ChatSessionSummary[];
+  activeSession: ChatSessionSummary | null;
+  onSelectSession: (sessionId: string) => void;
+  onCreateSession: () => void | Promise<unknown>;
+  onDeleteSession: (sessionId: string) => void | Promise<unknown>;
+  isSessionReady: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+};
 
 export const ChatPaneHeader = memo(
   ({
@@ -35,7 +42,7 @@ export const ChatPaneHeader = memo(
     collapsed,
     onToggleCollapse,
   }: ChatPaneHeaderProps) => {
-    const { t } = useTranslation('chat')
+    const { t } = useTranslation('chat');
 
     return (
       <header className="flex shrink-0 items-center justify-between p-2">
@@ -49,7 +56,7 @@ export const ChatPaneHeader = memo(
               onClick={onToggleCollapse}
               aria-label={collapsed ? t('expand') : t('collapse')}
             >
-              <PanelRightIcon className="size-4" />
+              <Icon icon={ViewSidebarRightIcon} className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">{collapsed ? t('expand') : t('collapse')}</TooltipContent>
@@ -78,28 +85,28 @@ export const ChatPaneHeader = memo(
                 disabled={!isSessionReady}
                 aria-label={t('newConversation')}
               >
-                <PlusIcon className="size-4" />
+                <Icon icon={Add01Icon} className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('newConversation')}</TooltipContent>
           </Tooltip>
         </div>
       </header>
-    )
+    );
   }
-)
+);
 
-ChatPaneHeader.displayName = 'ChatPaneHeader'
+ChatPaneHeader.displayName = 'ChatPaneHeader';
 
 type HistoryDropdownProps = {
-  sessions: ChatSessionSummary[]
-  activeSession: ChatSessionSummary | null
-  onSelectSession: (sessionId: string) => void
-  onDeleteSession: (sessionId: string) => void | Promise<unknown>
-  disabled?: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: any
-}
+  sessions: ChatSessionSummary[];
+  activeSession: ChatSessionSummary | null;
+  onSelectSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => void | Promise<unknown>;
+  disabled?: boolean;
+
+  t: any;
+};
 
 const HistoryDropdown = ({
   sessions,
@@ -109,7 +116,7 @@ const HistoryDropdown = ({
   disabled,
   t,
 }: HistoryDropdownProps) => {
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const items = useMemo(
     () =>
@@ -124,13 +131,13 @@ const HistoryDropdown = ({
             },
           ],
     [sessions, t]
-  )
+  );
 
   const handleDelete = (event: React.MouseEvent, sessionId: string) => {
-    event.stopPropagation()
-    event.preventDefault()
-    void onDeleteSession(sessionId)
-  }
+    event.stopPropagation();
+    event.preventDefault();
+    void onDeleteSession(sessionId);
+  };
 
   return (
     <DropdownMenu>
@@ -144,30 +151,32 @@ const HistoryDropdown = ({
               disabled={disabled}
               aria-label={t('history')}
             >
-              <MoreHorizontalIcon className="size-4" />
+              <Icon icon={MoreHorizontalIcon} className="size-4" />
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent>{t('history')}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">{t('history')}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          {t('history')}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div className="max-h-64 overflow-y-auto">
           {items.map((session) => {
-            const isActive = activeSession?.id === session.id
-            const isHovered = hoveredId === session.id
-            const isPlaceholder = session.id === '__placeholder__'
+            const isActive = activeSession?.id === session.id;
+            const isHovered = hoveredId === session.id;
+            const isPlaceholder = session.id === '__placeholder__';
 
             return (
               <DropdownMenuItem
                 key={session.id}
                 onSelect={(event) => {
-                  event.preventDefault()
+                  event.preventDefault();
                   if (disabled) {
-                    return
+                    return;
                   }
-                  onSelectSession(session.id)
+                  onSelectSession(session.id);
                 }}
                 onMouseEnter={() => setHoveredId(session.id)}
                 onMouseLeave={() => setHoveredId(null)}
@@ -190,19 +199,21 @@ const HistoryDropdown = ({
                     className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                     aria-label={t('deleteChat')}
                   >
-                    <Trash2Icon className="size-3.5" />
+                    <Icon icon={Delete02Icon} className="size-3.5" />
                   </button>
                 )}
                 {/* 当前对话对号 */}
-                {isActive && <CheckIcon className="size-4 shrink-0 text-muted-foreground" />}
+                {isActive && (
+                  <Icon icon={Tick02Icon} className="size-4 shrink-0 text-muted-foreground" />
+                )}
               </DropdownMenuItem>
-            )
+            );
           })}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
+  );
+};
 
 const formatSessionTimestamp = (timestamp: number) => {
   try {
@@ -212,8 +223,8 @@ const formatSessionTimestamp = (timestamp: number) => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(new Date(timestamp))
+    }).format(new Date(timestamp));
   } catch {
-    return ''
+    return '';
   }
-}
+};

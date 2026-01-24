@@ -1,6 +1,9 @@
 /**
- * 语音输入辅助函数
- * 处理音频录制和转录
+ * [PROVIDES]: 语音录制与转录辅助函数
+ * [DEPENDS]: MEMBERSHIP_API_URL, getAccessToken
+ * [POS]: Chat Prompt Input 语音流程工具
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { MEMBERSHIP_API_URL } from '@/lib/server/const';
@@ -99,7 +102,7 @@ export async function transcribeAudio(options: TranscribeOptions): Promise<Trans
   // 获取认证 token
   const token = getAccessToken();
   if (!token) {
-    throw new SpeechError('未登录，请先登录后再试', 'AUTH_ERROR');
+    throw new SpeechError('Please sign in to use voice transcription.', 'AUTH_ERROR');
   }
 
   const baseUrl = getApiBaseUrl();
@@ -117,11 +120,11 @@ export async function transcribeAudio(options: TranscribeOptions): Promise<Trans
     if (!response.ok) {
       // 认证错误
       if (response.status === 401) {
-        throw new SpeechError('登录已过期，请重新登录', 'AUTH_ERROR');
+        throw new SpeechError('Your session expired. Please sign in again.', 'AUTH_ERROR');
       }
       // 业务错误
-      const error = await response.json().catch(() => ({ message: '转录失败' }));
-      throw new SpeechError(error.message || '转录失败', 'TRANSCRIPTION_ERROR');
+      const error = await response.json().catch(() => ({ message: 'Transcription failed' }));
+      throw new SpeechError(error.message || 'Transcription failed', 'TRANSCRIPTION_ERROR');
     }
 
     return response.json();
@@ -132,13 +135,21 @@ export async function transcribeAudio(options: TranscribeOptions): Promise<Trans
     }
     // 超时错误
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new SpeechError('请求超时，请检查网络后重试', 'TIMEOUT_ERROR', error);
+      throw new SpeechError(
+        'Request timed out. Please check your connection and try again.',
+        'TIMEOUT_ERROR',
+        error
+      );
     }
     // 网络错误
     if (error instanceof TypeError) {
-      throw new SpeechError('网络连接失败，请检查网络设置', 'NETWORK_ERROR', error);
+      throw new SpeechError('Network error. Please check your connection.', 'NETWORK_ERROR', error);
     }
-    throw new SpeechError('转录失败，请稍后重试', 'TRANSCRIPTION_ERROR', error);
+    throw new SpeechError(
+      'Transcription failed. Please try again later.',
+      'TRANSCRIPTION_ERROR',
+      error
+    );
   } finally {
     clearTimeout(timeoutId);
   }

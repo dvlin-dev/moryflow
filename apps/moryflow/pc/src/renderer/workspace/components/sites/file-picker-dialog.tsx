@@ -10,64 +10,71 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { File, Folder, ChevronRight, ChevronDown, FolderOpen } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  ArrowDown01Icon,
+  ArrowRight01Icon,
+  File01Icon,
+  Folder01Icon,
+  FolderOpenIcon,
+} from '@hugeicons/core-free-icons';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog'
-import { Button } from '@anyhunt/ui/components/button'
-import { Checkbox } from '@anyhunt/ui/components/checkbox'
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area'
-import { Skeleton } from '@anyhunt/ui/components/skeleton'
-import type { VaultTreeNode, VaultItem } from '../../../../shared/ipc/vault'
-import { SKELETON_PLACEHOLDER_COUNT } from './const'
+} from '@anyhunt/ui/components/dialog';
+import { Button } from '@anyhunt/ui/components/button';
+import { Checkbox } from '@anyhunt/ui/components/checkbox';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import type { VaultTreeNode, VaultItem } from '../../../../shared/ipc/vault';
+import { SKELETON_PLACEHOLDER_COUNT } from './const';
 
 /** 生成骨架屏占位符序列 */
-const SKELETON_PLACEHOLDERS = Array.from({ length: SKELETON_PLACEHOLDER_COUNT }, (_, i) => i)
+const SKELETON_PLACEHOLDERS = Array.from({ length: SKELETON_PLACEHOLDER_COUNT }, (_, i) => i);
 
 interface FilePickerDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSelect: (paths: string[]) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (paths: string[]) => void;
   /** 当前工作区路径 */
-  currentVaultPath: string
+  currentVaultPath: string;
   /** 当前工作区文件树（已加载） */
-  currentTree: VaultTreeNode[]
+  currentTree: VaultTreeNode[];
 }
 
 /** 工作区及其文件树 */
 interface VaultWithTree {
-  vault: VaultItem
-  tree: VaultTreeNode[]
-  loading: boolean
-  loaded: boolean
+  vault: VaultItem;
+  tree: VaultTreeNode[];
+  loading: boolean;
+  loaded: boolean;
 }
 
 /** 递归获取文件夹下所有 .md 文件路径 */
 function getMarkdownFiles(node: VaultTreeNode): string[] {
   if (node.type === 'file') {
-    return node.path.endsWith('.md') ? [node.path] : []
+    return node.path.endsWith('.md') ? [node.path] : [];
   }
-  return node.children?.flatMap(getMarkdownFiles) ?? []
+  return node.children?.flatMap(getMarkdownFiles) ?? [];
 }
 
 /** 递归获取树下所有 .md 文件路径 */
 function getAllMarkdownFiles(nodes: VaultTreeNode[]): string[] {
-  return nodes.flatMap(getMarkdownFiles)
+  return nodes.flatMap(getMarkdownFiles);
 }
 
 /** 排序节点：文件夹在前，按名称排序 */
 function sortNodes(nodes: VaultTreeNode[]): VaultTreeNode[] {
   return [...nodes].sort((a, b) => {
     if (a.type !== b.type) {
-      return a.type === 'folder' ? -1 : 1
+      return a.type === 'folder' ? -1 : 1;
     }
-    return a.name.localeCompare(b.name)
-  })
+    return a.name.localeCompare(b.name);
+  });
 }
 
 /** 文件节点组件 */
@@ -76,12 +83,12 @@ function FileNode({
   selected,
   onToggle,
 }: {
-  node: VaultTreeNode
-  selected: boolean
-  onToggle: (path: string) => void
+  node: VaultTreeNode;
+  selected: boolean;
+  onToggle: (path: string) => void;
 }) {
-  const isMd = node.path.endsWith('.md')
-  if (!isMd) return null
+  const isMd = node.path.endsWith('.md');
+  if (!isMd) return null;
 
   return (
     <div
@@ -93,10 +100,10 @@ function FileNode({
         onCheckedChange={() => onToggle(node.path)}
         onClick={(e) => e.stopPropagation()}
       />
-      <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <Icon icon={File01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="truncate text-sm">{node.name.replace(/\.md$/, '')}</span>
     </div>
-  )
+  );
 }
 
 /** 文件夹节点组件 */
@@ -107,33 +114,33 @@ function FolderNode({
   onToggleSelect,
   onToggleExpand,
 }: {
-  node: VaultTreeNode
-  selectedPaths: Set<string>
-  expandedPaths: Set<string>
-  onToggleSelect: (path: string) => void
-  onToggleExpand: (path: string) => void
+  node: VaultTreeNode;
+  selectedPaths: Set<string>;
+  expandedPaths: Set<string>;
+  onToggleSelect: (path: string) => void;
+  onToggleExpand: (path: string) => void;
 }) {
-  const expanded = expandedPaths.has(node.path)
-  const mdFiles = useMemo(() => getMarkdownFiles(node), [node])
-  const selectedCount = mdFiles.filter((p) => selectedPaths.has(p)).length
-  const allSelected = mdFiles.length > 0 && selectedCount === mdFiles.length
-  const someSelected = selectedCount > 0 && selectedCount < mdFiles.length
+  const expanded = expandedPaths.has(node.path);
+  const mdFiles = useMemo(() => getMarkdownFiles(node), [node]);
+  const selectedCount = mdFiles.filter((p) => selectedPaths.has(p)).length;
+  const allSelected = mdFiles.length > 0 && selectedCount === mdFiles.length;
+  const someSelected = selectedCount > 0 && selectedCount < mdFiles.length;
 
   const handleFolderClick = () => {
-    onToggleExpand(node.path)
-  }
+    onToggleExpand(node.path);
+  };
 
   const handleCheckboxChange = () => {
     if (allSelected) {
       mdFiles.forEach((p) => {
-        if (selectedPaths.has(p)) onToggleSelect(p)
-      })
+        if (selectedPaths.has(p)) onToggleSelect(p);
+      });
     } else {
       mdFiles.forEach((p) => {
-        if (!selectedPaths.has(p)) onToggleSelect(p)
-      })
+        if (!selectedPaths.has(p)) onToggleSelect(p);
+      });
     }
-  }
+  };
 
   return (
     <div>
@@ -150,16 +157,14 @@ function FolderNode({
           disabled={mdFiles.length === 0}
         />
         {expanded ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Icon icon={ArrowDown01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Icon icon={ArrowRight01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
-        <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <Icon icon={Folder01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm font-medium">{node.name}</span>
         {selectedCount > 0 && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {selectedCount}
-          </span>
+          <span className="ml-auto text-xs text-muted-foreground">{selectedCount}</span>
         )}
       </div>
       {expanded && node.children && (
@@ -186,7 +191,7 @@ function FolderNode({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 /** 工作区节点组件 */
@@ -200,62 +205,62 @@ function VaultNode({
   onToggleExpand,
   onExpandVault,
 }: {
-  vaultData: VaultWithTree
-  isCurrentVault: boolean
-  selectedPaths: Set<string>
-  expandedPaths: Set<string>
-  onToggleSelect: (path: string) => void
-  onSelectFiles: (paths: string[]) => void
-  onToggleExpand: (path: string) => void
-  onExpandVault: (vaultPath: string) => void
+  vaultData: VaultWithTree;
+  isCurrentVault: boolean;
+  selectedPaths: Set<string>;
+  expandedPaths: Set<string>;
+  onToggleSelect: (path: string) => void;
+  onSelectFiles: (paths: string[]) => void;
+  onToggleExpand: (path: string) => void;
+  onExpandVault: (vaultPath: string) => void;
 }) {
-  const { vault, tree, loading, loaded } = vaultData
-  const vaultKey = `vault:${vault.path}`
-  const expanded = expandedPaths.has(vaultKey)
-  const selectAfterLoadRef = useRef(false)
+  const { vault, tree, loading, loaded } = vaultData;
+  const vaultKey = `vault:${vault.path}`;
+  const expanded = expandedPaths.has(vaultKey);
+  const selectAfterLoadRef = useRef(false);
 
-  const allMdFiles = useMemo(() => getAllMarkdownFiles(tree), [tree])
-  const selectedCount = allMdFiles.filter((p) => selectedPaths.has(p)).length
-  const allSelected = allMdFiles.length > 0 && selectedCount === allMdFiles.length
-  const someSelected = selectedCount > 0 && selectedCount < allMdFiles.length
+  const allMdFiles = useMemo(() => getAllMarkdownFiles(tree), [tree]);
+  const selectedCount = allMdFiles.filter((p) => selectedPaths.has(p)).length;
+  const allSelected = allMdFiles.length > 0 && selectedCount === allMdFiles.length;
+  const someSelected = selectedCount > 0 && selectedCount < allMdFiles.length;
 
   const handleVaultClick = () => {
     // 非当前工作区且未加载时，需要加载文件树
     if (!isCurrentVault && !loaded && !loading) {
-      onExpandVault(vault.path)
+      onExpandVault(vault.path);
     }
-    onToggleExpand(vaultKey)
-  }
+    onToggleExpand(vaultKey);
+  };
 
   const handleCheckboxChange = () => {
     // 非当前工作区且未加载时，先加载再选中
     if (!isCurrentVault && !loaded && !loading) {
-      selectAfterLoadRef.current = true
-      onExpandVault(vault.path)
-      return
+      selectAfterLoadRef.current = true;
+      onExpandVault(vault.path);
+      return;
     }
     // 切换选中状态
     if (allSelected) {
       allMdFiles.forEach((p) => {
-        if (selectedPaths.has(p)) onToggleSelect(p)
-      })
+        if (selectedPaths.has(p)) onToggleSelect(p);
+      });
     } else {
       allMdFiles.forEach((p) => {
-        if (!selectedPaths.has(p)) onToggleSelect(p)
-      })
+        if (!selectedPaths.has(p)) onToggleSelect(p);
+      });
     }
-  }
+  };
 
   // 加载完成后自动选中
   useEffect(() => {
     if (loaded && selectAfterLoadRef.current) {
-      selectAfterLoadRef.current = false
+      selectAfterLoadRef.current = false;
       // 使用批量选择，避免多次触发状态更新
-      onSelectFiles(allMdFiles)
+      onSelectFiles(allMdFiles);
     }
-  }, [loaded, allMdFiles, onSelectFiles])
+  }, [loaded, allMdFiles, onSelectFiles]);
 
-  const sortedTree = useMemo(() => sortNodes(tree), [tree])
+  const sortedTree = useMemo(() => sortNodes(tree), [tree]);
 
   return (
     <div>
@@ -272,12 +277,12 @@ function VaultNode({
           disabled={loading}
         />
         {expanded ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Icon icon={ArrowDown01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Icon icon={ArrowRight01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-          <FolderOpen className="h-3.5 w-3.5 text-primary" />
+          <Icon icon={FolderOpenIcon} className="h-3.5 w-3.5 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">
@@ -301,9 +306,7 @@ function VaultNode({
               ))}
             </div>
           ) : tree.length === 0 ? (
-            <div className="py-2 pl-2 text-xs text-muted-foreground">
-              No markdown files
-            </div>
+            <div className="py-2 pl-2 text-xs text-muted-foreground">No markdown files</div>
           ) : (
             sortedTree.map((node) =>
               node.type === 'folder' ? (
@@ -328,7 +331,7 @@ function VaultNode({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export function FilePickerDialog({
@@ -338,19 +341,19 @@ export function FilePickerDialog({
   currentVaultPath,
   currentTree,
 }: FilePickerDialogProps) {
-  const [vaultsData, setVaultsData] = useState<VaultWithTree[]>([])
-  const [vaultsLoading, setVaultsLoading] = useState(true)
-  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
+  const [vaultsData, setVaultsData] = useState<VaultWithTree[]>([]);
+  const [vaultsLoading, setVaultsLoading] = useState(true);
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
 
   // 加载工作区列表
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const loadVaults = async () => {
-      setVaultsLoading(true)
+      setVaultsLoading(true);
       try {
-        const list = await window.desktopAPI.vault.getVaults()
+        const list = await window.desktopAPI.vault.getVaults();
         setVaultsData(
           list.map((vault) => ({
             vault,
@@ -359,91 +362,85 @@ export function FilePickerDialog({
             loading: false,
             loaded: vault.path === currentVaultPath, // 当前工作区已加载
           }))
-        )
+        );
       } catch {
-        setVaultsData([])
+        setVaultsData([]);
       } finally {
-        setVaultsLoading(false)
+        setVaultsLoading(false);
       }
-    }
-    loadVaults()
-  }, [open, currentVaultPath, currentTree])
+    };
+    loadVaults();
+  }, [open, currentVaultPath, currentTree]);
 
   // 重置状态
   useEffect(() => {
     if (!open) {
-      setSelectedPaths(new Set())
-      setExpandedPaths(new Set())
+      setSelectedPaths(new Set());
+      setExpandedPaths(new Set());
     }
-  }, [open])
+  }, [open]);
 
   // 展开其他工作区时加载文件树（使用 readTree）
   const handleExpandVault = useCallback(async (vaultPath: string) => {
     setVaultsData((prev) =>
-      prev.map((v) =>
-        v.vault.path === vaultPath ? { ...v, loading: true } : v
-      )
-    )
+      prev.map((v) => (v.vault.path === vaultPath ? { ...v, loading: true } : v))
+    );
 
     try {
       // 使用 readTree 获取完整嵌套的文件树
-      const nodes = await window.desktopAPI.vault.readTree(vaultPath)
+      const nodes = await window.desktopAPI.vault.readTree(vaultPath);
       setVaultsData((prev) =>
         prev.map((v) =>
-          v.vault.path === vaultPath
-            ? { ...v, tree: nodes, loading: false, loaded: true }
-            : v
+          v.vault.path === vaultPath ? { ...v, tree: nodes, loading: false, loaded: true } : v
         )
-      )
+      );
     } catch {
       setVaultsData((prev) =>
         prev.map((v) =>
-          v.vault.path === vaultPath
-            ? { ...v, tree: [], loading: false, loaded: true }
-            : v
+          v.vault.path === vaultPath ? { ...v, tree: [], loading: false, loaded: true } : v
         )
-      )
+      );
     }
-  }, [])
+  }, []);
 
   const handleToggleSelect = useCallback((path: string) => {
     setSelectedPaths((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(path)) {
-        next.delete(path)
+        next.delete(path);
       } else {
-        next.add(path)
+        next.add(path);
       }
-      return next
-    })
-  }, [])
+      return next;
+    });
+  }, []);
 
   // 批量添加文件到选中集合
   const handleSelectFiles = useCallback((paths: string[]) => {
     setSelectedPaths((prev) => {
-      const next = new Set(prev)
-      paths.forEach((p) => next.add(p))
-      return next
-    })
-  }, [])
+      const next = new Set(prev);
+      paths.forEach((p) => next.add(p));
+      return next;
+    });
+  }, []);
 
   const handleToggleExpand = useCallback((path: string) => {
     setExpandedPaths((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(path)) {
-        next.delete(path)
+        next.delete(path);
       } else {
-        next.add(path)
+        next.add(path);
       }
-      return next
-    })
-  }, [])
+      return next;
+    });
+  }, []);
 
   const handleConfirm = useCallback(() => {
-    if (selectedPaths.size === 0) return
-    onSelect(Array.from(selectedPaths))
-    onOpenChange(false)
-  }, [selectedPaths, onSelect, onOpenChange])
+    if (selectedPaths.size === 0) return;
+    onSelect(Array.from(selectedPaths));
+    onOpenChange(false);
+  }, [selectedPaths, onSelect, onOpenChange]);
 
   const renderContent = () => {
     if (vaultsLoading) {
@@ -453,7 +450,7 @@ export function FilePickerDialog({
             <Skeleton key={i} className="h-11 w-full" />
           ))}
         </div>
-      )
+      );
     }
 
     if (vaultsData.length === 0) {
@@ -461,7 +458,7 @@ export function FilePickerDialog({
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           No workspaces found
         </div>
-      )
+      );
     }
 
     return (
@@ -480,8 +477,8 @@ export function FilePickerDialog({
           />
         ))}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -490,9 +487,7 @@ export function FilePickerDialog({
           <DialogTitle>Select files to publish</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[400px] pr-4">
-          {renderContent()}
-        </ScrollArea>
+        <ScrollArea className="h-[400px] pr-4">{renderContent()}</ScrollArea>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -504,5 +499,5 @@ export function FilePickerDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

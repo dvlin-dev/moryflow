@@ -4,14 +4,15 @@
  * [POS]: 语言切换组件，用于设置页面通用 tab
  */
 
-import { useLanguage, useTranslation } from '@/lib/i18n'
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group'
-import { Label } from '@anyhunt/ui/components/label'
-import { GlobeIcon } from 'lucide-react'
+import { useLanguage, useTranslation } from '@/lib/i18n';
+import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
+import { Label } from '@anyhunt/ui/components/label';
+import { GlobeIcon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
 
 export function LanguageSwitcher() {
-  const { t } = useTranslation('settings')
-  const { currentLanguage, changeLanguage, languages, isChanging } = useLanguage()
+  const { t } = useTranslation('settings');
+  const { currentLanguage, changeLanguage, languages, isChanging } = useLanguage();
 
   return (
     <div className="space-y-3">
@@ -23,7 +24,7 @@ export function LanguageSwitcher() {
         className="grid gap-3 sm:grid-cols-3"
       >
         {languages.map((lang) => {
-          const isSelected = currentLanguage === lang.code
+          const isSelected = currentLanguage === lang.code;
           return (
             <Label
               key={lang.code}
@@ -40,15 +41,15 @@ export function LanguageSwitcher() {
                     isSelected ? 'bg-foreground text-background' : 'bg-muted'
                   }`}
                 >
-                  {isSelected ? lang.flag : <GlobeIcon className="size-3.5" />}
+                  {isSelected ? lang.flag : <Icon icon={GlobeIcon} className="size-3.5" />}
                 </div>
                 <span className="font-medium">{lang.name}</span>
               </div>
               <span className="pl-[38px] text-xs text-muted-foreground">{lang.nativeName}</span>
             </Label>
-          )
+          );
         })}
       </RadioGroup>
     </div>
-  )
+  );
 }

@@ -1,29 +1,30 @@
-import { Button } from '@anyhunt/ui/components/button'
-import { Badge } from '@anyhunt/ui/components/badge'
-import { PlusIcon } from 'lucide-react'
-import { MCP_PRESETS, type McpPreset } from './mcp-presets'
+import { Button } from '@anyhunt/ui/components/button';
+import { Badge } from '@anyhunt/ui/components/badge';
+import { Add01Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { MCP_PRESETS, type McpPreset } from './mcp-presets';
 
 type McpEmptyStateProps = {
-  onAdd: () => void
-  onAddPreset: (preset: McpPreset) => void
-}
+  onAdd: () => void;
+  onAddPreset: (preset: McpPreset) => void;
+};
 
 export const McpEmptyState = ({ onAdd, onAddPreset }: McpEmptyStateProps) => (
   <div className="flex h-full flex-col items-center justify-center gap-6 p-8 text-center">
     <div className="space-y-2">
-      <p className="text-lg font-medium">还没有 MCP</p>
+      <p className="text-lg font-medium">No MCP servers yet</p>
       <p className="text-sm text-muted-foreground">
-        MCP 让 AI 能调用外部工具，比如搜索、抓取网页。
+        MCP lets AI call external tools like search and web scraping.
       </p>
     </div>
 
     <Button type="button" onClick={onAdd}>
-      <PlusIcon className="mr-2 size-4" />
-      添加服务器
+      <Icon icon={Add01Icon} className="mr-2 size-4" />
+      Add server
     </Button>
 
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">或从预设添加：</p>
+      <p className="text-xs text-muted-foreground">Or start from a preset:</p>
       <div className="flex flex-wrap justify-center gap-2">
         {MCP_PRESETS.map((preset) => (
           <Badge
@@ -39,7 +40,7 @@ export const McpEmptyState = ({ onAdd, onAddPreset }: McpEmptyStateProps) => (
           </Badge>
         ))}
       </div>
-      <p className="text-[10px] text-muted-foreground">* 需要配置环境变量</p>
+      <p className="text-[10px] text-muted-foreground">* Requires environment variables</p>
     </div>
   </div>
-)
+);

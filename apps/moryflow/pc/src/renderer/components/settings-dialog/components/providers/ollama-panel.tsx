@@ -13,7 +13,15 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Switch } from '@anyhunt/ui/components/switch';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { ExternalLink, RefreshCw, Search, Download, Trash2, Loader2 } from 'lucide-react';
+import {
+  Delete01Icon,
+  Download01Icon,
+  LinkSquare01Icon,
+  Loading03Icon,
+  RefreshIcon,
+  Search01Icon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { getProviderById } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { OllamaLocalModel, OllamaConnectionResult } from '@shared/ipc';
@@ -83,7 +91,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
     setIsLoading(true);
     try {
       const result = await window.desktopAPI?.ollama.checkConnection(customBaseUrl);
-      setConnectionStatus(result ?? { connected: false, error: '未知错误' });
+      setConnectionStatus(result ?? { connected: false, error: 'Unknown error' });
     } catch (error) {
       setConnectionStatus({
         connected: false,
@@ -183,7 +191,9 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
   // 等待配置创建完成后再渲染表单，避免 register 创建不完整的对象
   if (presetIndex < 0) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">加载中...</div>
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
     );
   }
 
@@ -204,14 +214,14 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             rel="noopener noreferrer"
             className="text-primary hover:underline flex items-center gap-1 text-sm"
           >
-            模型库 <ExternalLink className="h-3 w-3" />
+            Model Library <Icon icon={LinkSquare01Icon} className="h-3 w-3" />
           </a>
         </div>
 
         {/* 连接状态 */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>连接状态</Label>
+            <Label>Connection status</Label>
             <Button
               type="button"
               variant="ghost"
@@ -219,7 +229,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
               onClick={handleRefresh}
               disabled={isLoading}
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <Icon icon={RefreshIcon} className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
           <div className="flex items-center gap-2 p-3 rounded-md border bg-muted/30">
@@ -230,45 +240,48 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             />
             <span className="text-sm">
               {connectionStatus?.connected
-                ? `已连接 (v${connectionStatus.version})`
-                : connectionStatus?.error || '未连接'}
+                ? `Connected (v${connectionStatus.version})`
+                : connectionStatus?.error || 'Disconnected'}
             </span>
           </div>
         </div>
 
         {/* 服务地址 */}
         <div className="space-y-2">
-          <Label htmlFor="ollama-base-url">服务地址（可选）</Label>
+          <Label htmlFor="ollama-base-url">Service URL (optional)</Label>
           <Input
             id="ollama-base-url"
             placeholder={preset.nativeApiBaseUrl}
             {...register(`providers.${presetIndex}.baseUrl` as const)}
             onBlur={handleRefresh}
           />
-          <p className="text-xs text-muted-foreground">留空使用默认地址</p>
+          <p className="text-xs text-muted-foreground">Leave empty to use the default</p>
         </div>
 
         {/* 本地模型 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label>本地模型</Label>
-            <span className="text-xs text-muted-foreground">{localModels.length} 个模型</span>
+            <Label>Local models</Label>
+            <span className="text-xs text-muted-foreground">{localModels.length} models</span>
           </div>
 
           {/* 搜索和下载 */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Icon
+                icon={Search01Icon}
+                className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+              />
               <Input
-                placeholder="搜索模型..."
+                placeholder="Search models..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Button type="button" variant="outline" onClick={() => setLibraryOpen(true)}>
-              <Download className="h-4 w-4 mr-1" />
-              下载模型
+              <Icon icon={Download01Icon} className="h-4 w-4 mr-1" />
+              Download models
             </Button>
           </div>
 
@@ -289,24 +302,24 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
                         <span className="text-sm font-medium truncate">{model.id}</span>
                         {model.capabilities.reasoning && (
                           <Badge variant="secondary" className="text-xs">
-                            推理
+                            Reasoning
                           </Badge>
                         )}
                         {model.capabilities.attachment && (
                           <Badge variant="secondary" className="text-xs">
-                            多模态
+                            Multimodal
                           </Badge>
                         )}
                         {model.capabilities.toolCall && (
                           <Badge variant="secondary" className="text-xs">
-                            工具
+                            Tools
                           </Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
                         <span>{formatSize(model.size)}</span>
                         <span>{model.details.quantization_level}</span>
-                        <span>上下文: {Math.round(model.limits.context / 1000)}K</span>
+                        <span>Context: {Math.round(model.limits.context / 1000)}K</span>
                         <button
                           type="button"
                           className="text-destructive hover:underline disabled:opacity-50"
@@ -314,9 +327,9 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
                           disabled={isDeleting}
                         >
                           {isDeleting ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Icon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Trash2 className="h-3 w-3" />
+                            <Icon icon={Delete01Icon} className="h-3 w-3" />
                           )}
                         </button>
                       </div>
@@ -330,27 +343,27 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
               })}
               {filteredModels.length === 0 && localModels.length > 0 && (
                 <div className="text-center text-sm text-muted-foreground py-4">
-                  没有找到匹配的模型
+                  No matching models found
                 </div>
               )}
               {localModels.length === 0 && (
                 <div className="text-center text-sm text-muted-foreground py-8">
-                  <p>暂无本地模型</p>
-                  <p className="mt-1">点击「下载模型」从模型库获取</p>
+                  <p>No local models</p>
+                  <p className="mt-1">Click “Download models” to get them from the library</p>
                 </div>
               )}
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground py-8">
-              <p>无法连接到 Ollama 服务</p>
-              <p className="mt-1">请确保 Ollama 已安装并运行</p>
+              <p>Unable to connect to Ollama</p>
+              <p className="mt-1">Make sure Ollama is installed and running</p>
               <a
                 href="https://ollama.com/download"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline mt-2 inline-block"
               >
-                下载 Ollama
+                Download Ollama
               </a>
             </div>
           )}

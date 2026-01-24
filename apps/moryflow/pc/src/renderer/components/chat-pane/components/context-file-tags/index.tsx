@@ -1,21 +1,22 @@
-import { FileTextIcon, XIcon } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip'
-import { useTranslation } from '@/lib/i18n'
+import { Cancel01Icon, File01Icon } from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+import { useTranslation } from '@/lib/i18n';
 
 type ContextFileTag = {
-  id: string
-  name: string
-  path: string
-}
+  id: string;
+  name: string;
+  path: string;
+};
 
 type ContextFileTagsProps = {
-  files: ContextFileTag[]
-  onRemove?: (id: string) => void
-}
+  files: ContextFileTag[];
+  onRemove?: (id: string) => void;
+};
 
 export const ContextFileTags = ({ files, onRemove }: ContextFileTagsProps) => {
   if (files.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -24,21 +25,21 @@ export const ContextFileTags = ({ files, onRemove }: ContextFileTagsProps) => {
         <ContextFileTagItem key={file.id} file={file} onRemove={onRemove} />
       ))}
     </>
-  )
-}
+  );
+};
 
 type ContextFileTagItemProps = {
-  file: ContextFileTag
-  onRemove?: (id: string) => void
-}
+  file: ContextFileTag;
+  onRemove?: (id: string) => void;
+};
 
 const ContextFileTagItem = ({ file, onRemove }: ContextFileTagItemProps) => {
-  const { t } = useTranslation('chat')
+  const { t } = useTranslation('chat');
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <div className="group relative flex h-7 cursor-default items-center gap-1.5 rounded-full border border-border-muted bg-muted/50 pl-2 pr-1.5 text-xs font-medium text-foreground transition-colors duration-fast hover:bg-muted">
-          <FileTextIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          <Icon icon={File01Icon} className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="max-w-32 truncate">{file.name}</span>
           {onRemove && (
             <button
@@ -47,7 +48,7 @@ const ContextFileTagItem = ({ file, onRemove }: ContextFileTagItemProps) => {
               onClick={() => onRemove(file.id)}
               aria-label={t('removeReference')}
             >
-              <XIcon className="size-3.5" />
+              <Icon icon={Cancel01Icon} className="size-3.5" />
             </button>
           )}
         </div>
@@ -56,7 +57,7 @@ const ContextFileTagItem = ({ file, onRemove }: ContextFileTagItemProps) => {
         <p className="truncate text-xs">{file.path}</p>
       </TooltipContent>
     </Tooltip>
-  )
-}
+  );
+};
 
-export type { ContextFileTag, ContextFileTagsProps }
+export type { ContextFileTag, ContextFileTagsProps };

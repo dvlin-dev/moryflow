@@ -20,7 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@anyhunt/ui/components/select';
-import { ExternalLink, Trash2, Check, Loader2, Search, Plus, Settings2 } from 'lucide-react';
+import {
+  Add01Icon,
+  CheckmarkCircle01Icon,
+  Delete01Icon,
+  LinkSquare01Icon,
+  Loading03Icon,
+  Search01Icon,
+  Settings01Icon,
+} from '@hugeicons/core-free-icons';
+import { Icon } from '@anyhunt/ui/components/icon';
 import { getProviderById, modelRegistry } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { AgentProviderTestInput, ProviderSdkType } from '@shared/ipc';
@@ -560,7 +569,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline flex items-center gap-1 text-sm"
               >
-                {t('documentation')} <ExternalLink className="h-3 w-3" />
+                {t('documentation')} <Icon icon={LinkSquare01Icon} className="h-3 w-3" />
               </a>
             </div>
           </div>
@@ -582,8 +591,12 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
                 onClick={handleTest}
                 disabled={testStatus === 'testing'}
               >
-                {testStatus === 'testing' && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                {testStatus === 'success' && <Check className="h-4 w-4 text-green-500 mr-1" />}
+                {testStatus === 'testing' && (
+                  <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin mr-1" />
+                )}
+                {testStatus === 'success' && (
+                  <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4 text-green-500 mr-1" />
+                )}
                 {testStatus === 'idle' || testStatus === 'error' ? t('testButton') : ''}
               </Button>
             </div>
@@ -614,7 +627,10 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
             {/* 搜索和添加 */}
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Icon
+                  icon={Search01Icon}
+                  className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                   placeholder={t('searchModels')}
                   className="pl-8"
@@ -628,7 +644,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
                 size="icon"
                 onClick={() => setAddModelOpen(true)}
               >
-                <Plus className="h-4 w-4" />
+                <Icon icon={Add01Icon} className="h-4 w-4" />
               </Button>
             </div>
 
@@ -688,7 +704,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
                         onClick={() => handleEditModel(model)}
                         title={t('configureModel')}
                       >
-                        <Settings2 className="size-4" />
+                        <Icon icon={Settings01Icon} className="size-4" />
                       </button>
                       <Switch
                         checked={isEnabled}
@@ -811,8 +827,12 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
                 onClick={handleTest}
                 disabled={testStatus === 'testing'}
               >
-                {testStatus === 'testing' && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                {testStatus === 'success' && <Check className="h-4 w-4 text-green-500 mr-1" />}
+                {testStatus === 'testing' && (
+                  <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin mr-1" />
+                )}
+                {testStatus === 'success' && (
+                  <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4 text-green-500 mr-1" />
+                )}
                 {testStatus === 'idle' || testStatus === 'error' ? t('testButton') : ''}
               </Button>
             </div>
@@ -844,7 +864,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
               size="sm"
               onClick={() => handleRemoveCustomProvider(customIndex)}
             >
-              <Trash2 className="h-4 w-4 mr-1" />
+              <Icon icon={Delete01Icon} className="h-4 w-4 mr-1" />
               {t('deleteProvider')}
             </Button>
           </div>
