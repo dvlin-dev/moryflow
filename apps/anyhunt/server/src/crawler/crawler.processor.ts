@@ -1,7 +1,7 @@
 /**
  * [INPUT]: CrawlJobData from BullMQ queue - crawlJobId, batch processing state
  * [OUTPUT]: void - updates CrawlJob/CrawlPage and triggers webhook on completion
- * [POS]: BullMQ worker for Crawl API（按批次抓取页面并聚合结果）
+ * [POS]: BullMQ worker for Crawl API（按批次抓取页面并聚合结果，终态保护）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -107,7 +107,7 @@ export class CrawlerProcessor extends WorkerHost {
       where: { id: crawlJobId },
     });
 
-    if (!crawlJob || crawlJob.status === 'CANCELLED') {
+    if (!crawlJob || crawlJob.status !== 'CRAWLING') {
       return;
     }
 
@@ -249,6 +249,15 @@ export class CrawlerProcessor extends WorkerHost {
    */
   private async handleCrawlCheck(data: CrawlJobData): Promise<void> {
     const { crawlJobId } = data;
+
+    const crawlJob = await this.prisma.crawlJob.findUnique({
+      where: { id: crawlJobId },
+      select: { status: true },
+    });
+
+    if (!crawlJob || crawlJob.status !== 'CRAWLING') {
+      return;
+    }
 
     // 检查是否有正在处理的页面
     const processingCount = await this.prisma.crawlPage.count({

@@ -13,6 +13,7 @@ describe('SourceSchedulerProcessor', () => {
   let processor: SourceSchedulerProcessor;
   let mockPrisma: any;
   let mockRefreshQueue: any;
+  let mockRedis: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrisma();
@@ -21,14 +22,20 @@ describe('SourceSchedulerProcessor', () => {
       add: vi.fn(),
     };
 
+    mockRedis = {
+      setnx: vi.fn().mockResolvedValue(true),
+      del: vi.fn().mockResolvedValue(undefined),
+    };
+
     processor = new SourceSchedulerProcessor(
       mockPrisma as any,
+      mockRedis as any,
       mockRefreshQueue as any,
     );
   });
 
   describe('process', () => {
-    const mockJob = {};
+    const mockJob = { id: 'job-1' };
 
     it('should schedule RSS sources for refresh', async () => {
       const sources = [
@@ -58,6 +65,16 @@ describe('SourceSchedulerProcessor', () => {
           attempts: 3,
         }),
       );
+    });
+
+    it('should skip when scheduler lock not acquired', async () => {
+      mockRedis.setnx.mockResolvedValue(false);
+
+      const result = await processor.process(mockJob as any);
+
+      expect(result).toEqual({ scheduled: 0, total: 0 });
+      expect(mockRefreshQueue.add).not.toHaveBeenCalled();
+      expect(mockPrisma.digestSource.findMany).not.toHaveBeenCalled();
     });
 
     it('should schedule Site Crawl sources', async () => {

@@ -51,6 +51,7 @@ describe('createQueueEvents', () => {
         host: 'localhost',
         port: 6379,
         password: undefined,
+        username: undefined,
       },
     });
   });
@@ -67,6 +68,46 @@ describe('createQueueEvents', () => {
         host: 'redis.example.com',
         port: 6380,
         password: 'secret',
+        username: undefined,
+      },
+    });
+  });
+
+  it('should parse Redis URL with username and db', () => {
+    const mockConfigService = {
+      get: vi
+        .fn()
+        .mockReturnValue('redis://user:secret@redis.example.com:6380/2'),
+    };
+
+    createQueueEvents('queue-db', mockConfigService as any);
+
+    expect(captured.options).toEqual({
+      connection: {
+        host: 'redis.example.com',
+        port: 6380,
+        username: 'user',
+        password: 'secret',
+        db: 2,
+      },
+    });
+  });
+
+  it('should enable TLS for rediss scheme', () => {
+    const mockConfigService = {
+      get: vi.fn().mockReturnValue('rediss://:secret@redis.example.com:6380/1'),
+    };
+
+    createQueueEvents('queue-tls', mockConfigService as any);
+
+    expect(captured.options).toEqual({
+      connection: {
+        host: 'redis.example.com',
+        port: 6380,
+        password: 'secret',
+        username: undefined,
+        db: 1,
+        tls: {},
       },
     });
   });
@@ -83,6 +124,7 @@ describe('createQueueEvents', () => {
         host: 'localhost',
         port: 6379,
         password: undefined,
+        username: undefined,
       },
     });
   });

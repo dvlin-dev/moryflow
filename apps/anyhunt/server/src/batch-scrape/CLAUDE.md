@@ -13,6 +13,7 @@ Batch scraping API for processing multiple URLs in a single request. Creates asy
 - Queue individual URL processing via BullMQ
 - Track progress and aggregate results
 - Webhook notification on completion
+- 幂等进度：以 Item 状态统计为准，避免重试导致计数偏差
 
 ## Constraints
 

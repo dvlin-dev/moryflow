@@ -4,6 +4,7 @@
  */
 
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { AdminService } from './admin.service';
 import { AdminJobsService } from './admin-jobs.service';
 import { AdminQueueService } from './admin-queue.service';
@@ -18,9 +19,27 @@ import { AdminQueueController } from './admin-queue.controller';
 import { AdminBrowserController } from './admin-browser.controller';
 import { QueueModule } from '../queue';
 import { AdminUserCreditsService } from './admin-user-credits.service';
+import {
+  DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE,
+  DIGEST_SUBSCRIPTION_RUN_QUEUE,
+  DIGEST_SOURCE_SCHEDULER_QUEUE,
+  DIGEST_SOURCE_REFRESH_QUEUE,
+  DIGEST_WEBHOOK_DELIVERY_QUEUE,
+  DIGEST_EMAIL_DELIVERY_QUEUE,
+} from '../queue/queue.constants';
 
 @Module({
-  imports: [QueueModule],
+  imports: [
+    QueueModule,
+    BullModule.registerQueue(
+      { name: DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE },
+      { name: DIGEST_SUBSCRIPTION_RUN_QUEUE },
+      { name: DIGEST_SOURCE_SCHEDULER_QUEUE },
+      { name: DIGEST_SOURCE_REFRESH_QUEUE },
+      { name: DIGEST_WEBHOOK_DELIVERY_QUEUE },
+      { name: DIGEST_EMAIL_DELIVERY_QUEUE },
+    ),
+  ],
   controllers: [
     AdminDashboardController,
     AdminUsersController,

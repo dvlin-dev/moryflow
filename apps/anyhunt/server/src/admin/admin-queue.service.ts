@@ -7,19 +7,29 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job } from 'bullmq';
 import {
-  SCREENSHOT_QUEUE,
   SCRAPE_QUEUE,
   CRAWL_QUEUE,
   BATCH_SCRAPE_QUEUE,
+  DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE,
+  DIGEST_SUBSCRIPTION_RUN_QUEUE,
+  DIGEST_SOURCE_SCHEDULER_QUEUE,
+  DIGEST_SOURCE_REFRESH_QUEUE,
+  DIGEST_WEBHOOK_DELIVERY_QUEUE,
+  DIGEST_EMAIL_DELIVERY_QUEUE,
 } from '../queue/queue.constants';
 import type { QueueJobsQuery } from './dto';
 
 // 队列名称映射
 const QUEUE_NAMES = [
-  SCREENSHOT_QUEUE,
   SCRAPE_QUEUE,
   CRAWL_QUEUE,
   BATCH_SCRAPE_QUEUE,
+  DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE,
+  DIGEST_SUBSCRIPTION_RUN_QUEUE,
+  DIGEST_SOURCE_SCHEDULER_QUEUE,
+  DIGEST_SOURCE_REFRESH_QUEUE,
+  DIGEST_WEBHOOK_DELIVERY_QUEUE,
+  DIGEST_EMAIL_DELIVERY_QUEUE,
 ] as const;
 
 @Injectable()
@@ -27,16 +37,32 @@ export class AdminQueueService {
   private readonly queues: Map<string, Queue>;
 
   constructor(
-    @InjectQueue(SCREENSHOT_QUEUE) private screenshotQueue: Queue,
     @InjectQueue(SCRAPE_QUEUE) private scrapeQueue: Queue,
     @InjectQueue(CRAWL_QUEUE) private crawlQueue: Queue,
     @InjectQueue(BATCH_SCRAPE_QUEUE) private batchScrapeQueue: Queue,
+    @InjectQueue(DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE)
+    private digestSubscriptionSchedulerQueue: Queue,
+    @InjectQueue(DIGEST_SUBSCRIPTION_RUN_QUEUE)
+    private digestSubscriptionRunQueue: Queue,
+    @InjectQueue(DIGEST_SOURCE_SCHEDULER_QUEUE)
+    private digestSourceSchedulerQueue: Queue,
+    @InjectQueue(DIGEST_SOURCE_REFRESH_QUEUE)
+    private digestSourceRefreshQueue: Queue,
+    @InjectQueue(DIGEST_WEBHOOK_DELIVERY_QUEUE)
+    private digestWebhookDeliveryQueue: Queue,
+    @InjectQueue(DIGEST_EMAIL_DELIVERY_QUEUE)
+    private digestEmailDeliveryQueue: Queue,
   ) {
     this.queues = new Map([
-      [SCREENSHOT_QUEUE, screenshotQueue],
       [SCRAPE_QUEUE, scrapeQueue],
       [CRAWL_QUEUE, crawlQueue],
       [BATCH_SCRAPE_QUEUE, batchScrapeQueue],
+      [DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE, digestSubscriptionSchedulerQueue],
+      [DIGEST_SUBSCRIPTION_RUN_QUEUE, digestSubscriptionRunQueue],
+      [DIGEST_SOURCE_SCHEDULER_QUEUE, digestSourceSchedulerQueue],
+      [DIGEST_SOURCE_REFRESH_QUEUE, digestSourceRefreshQueue],
+      [DIGEST_WEBHOOK_DELIVERY_QUEUE, digestWebhookDeliveryQueue],
+      [DIGEST_EMAIL_DELIVERY_QUEUE, digestEmailDeliveryQueue],
     ]);
   }
 

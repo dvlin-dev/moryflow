@@ -25,6 +25,7 @@ Core scraping engine for web content extraction. Handles single URL scraping wit
 - 异步任务失败退费依赖 `ScrapeJob.quotaBreakdown`（按扣费交易分解，幂等）
 - 套餐判断基于有效订阅（仅 ACTIVE 计入付费 tier）
 - BrowserPool enforces network-level SSRF guard for sub-requests
+- QueueEvents 仅用于同步等待，服务关闭时释放连接
 
 ## 同步/异步模式
 

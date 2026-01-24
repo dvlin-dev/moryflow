@@ -3,7 +3,7 @@
  *
  * [INPUT]: 定时触发（BullMQ Repeatable Job）
  * [OUTPUT]: 创建待执行的 Subscription Run Jobs
- * [POS]: BullMQ Worker - 扫描到期订阅并创建运行任务
+ * [POS]: BullMQ Worker - 扫描到期订阅并创建运行任务（带分布式锁）
  */
 
 import { Processor, WorkerHost } from '@nestjs/bullmq';
@@ -11,6 +11,7 @@ import { Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisService } from '../../redis/redis.service';
 import { DigestSubscriptionService } from '../services/subscription.service';
 import { DigestRunService } from '../services/run.service';
 import {
@@ -23,11 +24,13 @@ import { getNextRunTime } from '../utils/cron.utils';
 @Processor(DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE)
 export class SubscriptionSchedulerProcessor extends WorkerHost {
   private readonly logger = new Logger(SubscriptionSchedulerProcessor.name);
+  private readonly lockKey = 'digest:scheduler:subscription';
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly subscriptionService: DigestSubscriptionService,
     private readonly runService: DigestRunService,
+    private readonly redis: RedisService,
     @InjectQueue(DIGEST_SUBSCRIPTION_RUN_QUEUE)
     private readonly runQueue: Queue<DigestSubscriptionRunJobData>,
   ) {
@@ -37,6 +40,16 @@ export class SubscriptionSchedulerProcessor extends WorkerHost {
   async process(_job: Job): Promise<{ scheduled: number; total: number }> {
     void _job; // WorkerHost requires job parameter
     this.logger.debug('Running subscription scheduler scan');
+
+    const lockAcquired = await this.redis.setnx(
+      this.lockKey,
+      String(_job.id ?? 'scheduler'),
+      120,
+    );
+    if (!lockAcquired) {
+      this.logger.debug('Scheduler lock not acquired, skipping');
+      return { scheduled: 0, total: 0 };
+    }
 
     try {
       // 1. 查找需要运行的订阅
@@ -128,6 +141,8 @@ export class SubscriptionSchedulerProcessor extends WorkerHost {
     } catch (error) {
       this.logger.error('Subscription scheduler failed:', error);
       throw error;
+    } finally {
+      await this.redis.del(this.lockKey);
     }
   }
 }

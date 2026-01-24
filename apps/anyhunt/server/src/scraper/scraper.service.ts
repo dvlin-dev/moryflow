@@ -2,11 +2,11 @@
  * [INPUT]: ScrapeOptions - URL, formats, wait options, actions, sync mode
  * [OUTPUT]: ScrapeResult (sync) | JobId (async) - Based on sync option
  * [POS]: Core scraping orchestrator, handles cache, queue, and quota coordination
- *        使用有效订阅（ACTIVE）决定水印/保留等策略
+ *        使用有效订阅（ACTIVE）决定水印/保留等策略，QueueEvents 同步等待并在关闭时释放
  *
  * [PROTOCOL]: When this file changes, update this header and src/scraper/CLAUDE.md
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, type QueueEvents } from 'bullmq';
@@ -22,7 +22,7 @@ import { BillingService } from '../billing/billing.service';
 import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 @Injectable()
-export class ScraperService {
+export class ScraperService implements OnModuleDestroy {
   private readonly logger = new Logger(ScraperService.name);
   private readonly queueEvents: QueueEvents;
   private readonly cacheTtlMs: number;
@@ -39,6 +39,12 @@ export class ScraperService {
 
     // 用于等待任务完成
     this.queueEvents = createQueueEvents(SCRAPE_QUEUE, config);
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.queueEvents.close().catch((error) => {
+      this.logger.warn('Failed to close QueueEvents', error);
+    });
   }
 
   /**

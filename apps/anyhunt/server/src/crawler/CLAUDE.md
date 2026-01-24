@@ -6,6 +6,10 @@
 
 Multi-page crawling engine for extracting content from entire websites. Uses async job processing to handle large crawl operations.
 
+## 最近更新
+
+- sync 等待单测提前绑定 rejects 断言，避免 fake timers 触发未处理 rejection
+
 ## Responsibilities
 
 - Crawl websites starting from a URL
@@ -13,6 +17,7 @@ Multi-page crawling engine for extracting content from entire websites. Uses asy
 - Queue and process pages via BullMQ
 - Aggregate results from multiple pages
 - Respect crawl limits and depth
+- 终态任务保护（COMPLETED/FAILED 不再继续批处理）
 
 ## Constraints
 
@@ -29,7 +34,7 @@ API 支持 `sync` 参数控制返回方式：
 
 | sync 值 | 行为                                    | 返回类型         | 超时默认值 |
 | ------- | --------------------------------------- | ---------------- | ---------- |
-| `true`  | **默认**：等待爬取完成后返回完整结果    | `CrawlStatus`    | 5 分钟     |
+| `true`  | **默认**：轮询数据库状态直到完成/失败   | `CrawlStatus`    | 5 分钟     |
 | `false` | 立即返回任务 ID，客户端通过轮询获取结果 | `{ id, status }` | N/A        |
 
 Console Playground 强制使用同步模式，确保用户体验一致。

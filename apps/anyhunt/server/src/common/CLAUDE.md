@@ -6,6 +6,10 @@
 
 Shared infrastructure components used across all modules. Contains guards, decorators, pipes, filters, validators, and utilities.
 
+## 最近更新
+
+- UrlValidator 单测使用 `vi.resetModules()` + 动态导入，确保 DNS mock 对每次测试生效
+
 ## Responsibilities
 
 - Request validation (ZodValidationPipe)

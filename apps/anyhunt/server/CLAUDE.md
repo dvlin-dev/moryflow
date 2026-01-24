@@ -6,6 +6,10 @@
 
 Backend API + Web Data Engine built with NestJS. Core service for web scraping, crawling, and data extraction.
 
+## 最近更新
+
+- Console Playground Browser 路由测试使用 `app.listen(0)`，减少并发测试下的连接重置
+
 ## Responsibilities
 
 - Handle API requests for scraping, crawling, map, extract, search, batch-scrape

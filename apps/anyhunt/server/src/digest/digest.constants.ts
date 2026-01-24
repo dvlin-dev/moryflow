@@ -256,20 +256,3 @@ export const NOTIFICATION = {
   /** 时间戳 header 名称 */
   timestampHeader: 'X-Digest-Timestamp',
 } as const;
-
-// ========== BullMQ 队列名称 ==========
-
-export const QUEUE_NAMES = {
-  /** 订阅调度队列 */
-  subscriptionScheduler: 'digest-subscription-scheduler',
-  /** Topic Edition 调度队列 */
-  topicScheduler: 'digest-topic-scheduler',
-  /** 订阅执行队列 */
-  subscriptionRun: 'digest-subscription-run',
-  /** Topic Edition 执行队列 */
-  topicEditionRun: 'digest-topic-edition-run',
-  /** 内容入池队列 */
-  contentIngest: 'digest-content-ingest',
-  /** Source 刷新队列 */
-  sourceRefresh: 'digest-source-refresh',
-} as const;

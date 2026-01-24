@@ -1,39 +1,40 @@
 /**
  * [INPUT]: CrawlOptions - URL, depth limit, page limit, filters, sync mode
  * [OUTPUT]: CrawlStatus (sync) | { id, status } (async)
- * [POS]: Crawl job orchestrator, manages URL frontier and page queue
+ * [POS]: Crawl job orchestrator, manages URL frontier and page queue, sync waits on DB status
  *
  * [PROTOCOL]: When this file changes, update this header and src/crawler/CLAUDE.md
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue, type QueueEvents } from 'bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma-main/client';
 import { UrlValidator } from '../common/validators/url.validator';
-import { CRAWL_QUEUE, createQueueEvents } from '../queue';
+import { CRAWL_QUEUE } from '../queue';
 import { BillingService } from '../billing/billing.service';
 import type { CrawlOptions } from './dto/crawl.dto';
 import type { CrawlStatus, CrawlPageResult } from './crawler.types';
-import { CrawlJobNotFoundError, CrawlFailedError } from './crawler.errors';
-import { DEFAULT_CRAWL_TIMEOUT } from './crawler.constants';
+import {
+  CrawlJobNotFoundError,
+  CrawlFailedError,
+  CrawlTimeoutError,
+} from './crawler.errors';
+import {
+  CRAWL_STATUS_POLL_INTERVAL_MS,
+  DEFAULT_CRAWL_TIMEOUT,
+} from './crawler.constants';
 
 @Injectable()
 export class CrawlerService {
   private readonly logger = new Logger(CrawlerService.name);
-  private readonly queueEvents: QueueEvents;
 
   constructor(
     private prisma: PrismaService,
     private urlValidator: UrlValidator,
     @InjectQueue(CRAWL_QUEUE) private crawlQueue: Queue,
     private billingService: BillingService,
-    config: ConfigService,
-  ) {
-    // 用于等待任务完成
-    this.queueEvents = createQueueEvents(CRAWL_QUEUE, config);
-  }
+  ) {}
 
   /**
    * 启动爬取任务
@@ -157,23 +158,36 @@ export class CrawlerService {
     jobId: string,
     timeout: number,
   ): Promise<CrawlStatus> {
-    const queueJob = await this.crawlQueue.getJob(jobId);
-    if (!queueJob) {
-      throw new CrawlJobNotFoundError(jobId);
-    }
+    const startedAt = Date.now();
 
-    await queueJob.waitUntilFinished(this.queueEvents, timeout);
-
-    const status = await this.getStatus(jobId);
+    let status = await this.getStatus(jobId);
     if (!status) {
       throw new CrawlJobNotFoundError(jobId);
     }
 
-    if (status.status === 'FAILED') {
-      throw new CrawlFailedError(status.startUrl, 'Crawl job failed');
+    while (Date.now() - startedAt < timeout) {
+      if (status.status === 'COMPLETED') {
+        return status;
+      }
+      if (status.status === 'FAILED') {
+        throw new CrawlFailedError(status.startUrl, 'Crawl job failed');
+      }
+      if (status.status === 'CANCELLED') {
+        throw new CrawlFailedError(status.startUrl, 'Crawl job cancelled');
+      }
+
+      await this.delay(CRAWL_STATUS_POLL_INTERVAL_MS);
+      status = await this.getStatus(jobId);
+      if (!status) {
+        throw new CrawlJobNotFoundError(jobId);
+      }
     }
 
-    return status;
+    throw new CrawlTimeoutError(jobId, timeout);
+  }
+
+  private async delay(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

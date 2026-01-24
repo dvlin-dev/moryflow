@@ -3,7 +3,7 @@
  *
  * [INPUT]: DigestRun 完成事件、订阅配置
  * [OUTPUT]: 入队 Webhook/Email 投递任务
- * [POS]: 通知调度核心，检查配置并分发到对应投递队列
+ * [POS]: 通知调度核心，检查配置并分发到对应投递队列（jobId 去重）
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -160,6 +160,7 @@ export class DigestNotificationService {
     };
 
     const job = await this.webhookQueue.add('deliver', jobData, {
+      jobId: `digest-webhook-${event.runId}`,
       attempts: NOTIFICATION.webhookMaxRetries,
       backoff: {
         type: 'exponential',
@@ -225,6 +226,7 @@ export class DigestNotificationService {
     };
 
     const job = await this.emailQueue.add('deliver', jobData, {
+      jobId: `digest-email-${event.runId}`,
       attempts: NOTIFICATION.emailMaxRetries,
       backoff: {
         type: 'exponential',

@@ -27,6 +27,7 @@ import {
   DigestNotificationService,
   DigestWelcomeConfigService,
   DigestWelcomePagesService,
+  DigestSchedulerService,
 } from './services';
 
 // Processors
@@ -57,9 +58,6 @@ import {
 import {
   DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE,
   DIGEST_SUBSCRIPTION_RUN_QUEUE,
-  DIGEST_TOPIC_SCHEDULER_QUEUE,
-  DIGEST_TOPIC_EDITION_QUEUE,
-  DIGEST_CONTENT_INGEST_QUEUE,
   DIGEST_SOURCE_REFRESH_QUEUE,
   DIGEST_SOURCE_SCHEDULER_QUEUE,
   DIGEST_WEBHOOK_DELIVERY_QUEUE,
@@ -90,9 +88,6 @@ import { MapModule } from '../map/map.module';
     BullModule.registerQueue(
       { name: DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE },
       { name: DIGEST_SUBSCRIPTION_RUN_QUEUE },
-      { name: DIGEST_TOPIC_SCHEDULER_QUEUE },
-      { name: DIGEST_TOPIC_EDITION_QUEUE },
-      { name: DIGEST_CONTENT_INGEST_QUEUE },
       { name: DIGEST_SOURCE_REFRESH_QUEUE },
       { name: DIGEST_SOURCE_SCHEDULER_QUEUE },
       { name: DIGEST_WEBHOOK_DELIVERY_QUEUE },
@@ -135,6 +130,7 @@ import { MapModule } from '../map/map.module';
     DigestNotificationService,
     DigestWelcomeConfigService,
     DigestWelcomePagesService,
+    DigestSchedulerService,
 
     // Processors
     SubscriptionSchedulerProcessor,

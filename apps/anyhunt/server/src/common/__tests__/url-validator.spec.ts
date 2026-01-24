@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { isIP } from 'node:net';
 import { lookup } from 'node:dns/promises';
-import { UrlValidator } from '../validators/url.validator';
+import type { UrlValidator } from '../validators/url.validator';
 
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(),
@@ -38,7 +38,7 @@ const resolveHost = (hostname: string): string[] => {
 describe('UrlValidator', () => {
   let validator: UrlValidator;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     lookupMock.mockImplementation((async (
       hostname: string,
       options?: { all?: boolean },
@@ -60,6 +60,8 @@ describe('UrlValidator', () => {
 
       return results[0];
     }) as typeof lookup);
+    vi.resetModules();
+    const { UrlValidator } = await import('../validators/url.validator');
     validator = new UrlValidator();
   });
 

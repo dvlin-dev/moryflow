@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Anyhunt Server Queue/异步一致性 Code Review：`docs/code-review/anyhunt-server-queue.md`（2026-01-24：修复完成）
 - Anyhunt Server SSRF & Network Isolation Code Review：`docs/code-review/anyhunt-server-ssrf-sandbox.md`（2026-01-26：修复完成）
 - Anyhunt Server API Key & Quota：修复完成（有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐）（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：标记修复完成（2026-01-25）

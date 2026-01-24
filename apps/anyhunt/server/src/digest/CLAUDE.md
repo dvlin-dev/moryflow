@@ -79,8 +79,11 @@ type PaginatedResponse<T> = {
 
 ## 队列与投递
 
+- `DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE`：订阅调度（定时扫描 `nextRunAt`，Redis 锁避免重复调度）
 - `DIGEST_SUBSCRIPTION_RUN_QUEUE`：订阅执行（核心 Processor：`subscription-run.processor.ts`）
+- `DIGEST_SOURCE_SCHEDULER_QUEUE` / `DIGEST_SOURCE_REFRESH_QUEUE`：Source 调度与刷新
 - `DIGEST_EMAIL_DELIVERY_QUEUE` / `DIGEST_WEBHOOK_DELIVERY_QUEUE`：投递通道
+- `DigestSchedulerService` 启动时注册 Repeatable Jobs（默认每 60s）
 - Email 链接使用 `ANYHUNT_WWW_URL` 生成（默认 `https://anyhunt.app`），用于：
   - Inbox 查看链接
   - Unsubscribe 链接

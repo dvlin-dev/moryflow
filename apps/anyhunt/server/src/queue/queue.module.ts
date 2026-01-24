@@ -2,24 +2,11 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import {
-  SCREENSHOT_QUEUE,
   SCRAPE_QUEUE,
   CRAWL_QUEUE,
   BATCH_SCRAPE_QUEUE,
 } from './queue.constants';
-
-/**
- * 解析 Redis URL 为 ioredis 连接选项
- */
-function parseRedisUrl(url: string) {
-  const parsed = new URL(url);
-  return {
-    host: parsed.hostname,
-    port: parseInt(parsed.port, 10) || 6379,
-    password: parsed.password || undefined,
-    username: parsed.username !== 'default' ? parsed.username : undefined,
-  };
-}
+import { parseRedisUrl } from './queue.utils';
 
 @Module({
   imports: [
@@ -44,9 +31,6 @@ function parseRedisUrl(url: string) {
           },
         };
       },
-    }),
-    BullModule.registerQueue({
-      name: SCREENSHOT_QUEUE,
     }),
     BullModule.registerQueue({
       name: SCRAPE_QUEUE,

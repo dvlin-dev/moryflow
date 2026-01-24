@@ -8,7 +8,8 @@ import type { PrismaService } from '../../prisma/prisma.service';
 import type { UrlValidator } from '../../common/validators/url.validator';
 import type { Queue } from 'bullmq';
 import type { BillingService } from '../../billing/billing.service';
-import type { ConfigService } from '@nestjs/config';
+import { CRAWL_STATUS_POLL_INTERVAL_MS } from '../crawler.constants';
+import { CrawlFailedError, CrawlTimeoutError } from '../crawler.errors';
 
 describe('CrawlerService', () => {
   let service: CrawlerService;
@@ -33,9 +34,6 @@ describe('CrawlerService', () => {
   let mockBillingService: {
     deductOrThrow: ReturnType<typeof vi.fn>;
     refundOnFailure: ReturnType<typeof vi.fn>;
-  };
-  let mockConfigService: {
-    get: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -65,16 +63,11 @@ describe('CrawlerService', () => {
       refundOnFailure: vi.fn().mockResolvedValue({ success: true }),
     };
 
-    mockConfigService = {
-      get: vi.fn().mockReturnValue('redis://localhost:6379'),
-    };
-
     service = new CrawlerService(
       mockPrisma as unknown as PrismaService,
       mockUrlValidator as unknown as UrlValidator,
       mockQueue as unknown as Queue,
       mockBillingService as unknown as BillingService,
-      mockConfigService as unknown as ConfigService,
     );
   });
 
@@ -138,6 +131,123 @@ describe('CrawlerService', () => {
       const result = await service.startCrawl('user_1', mockOptions);
 
       expect(result).toEqual(mockJob);
+    });
+
+    it('should wait for completion in sync mode', async () => {
+      vi.useFakeTimers();
+      const baseJob = {
+        id: 'crawl_1',
+        status: 'PENDING',
+        startUrl: 'https://example.com',
+        totalUrls: 1,
+        completedUrls: 0,
+        failedUrls: 0,
+        createdAt: new Date(),
+        startedAt: new Date(),
+        completedAt: null,
+      };
+      mockPrisma.crawlJob.create.mockResolvedValue(baseJob);
+      mockQueue.add.mockResolvedValue({ id: 'queue_job_1' });
+
+      const statusSequence = [
+        { ...baseJob, status: 'CRAWLING' },
+        { ...baseJob, status: 'COMPLETED', completedAt: new Date() },
+      ];
+      let call = 0;
+      mockPrisma.crawlJob.findUnique.mockImplementation(() => {
+        const index = Math.min(call, statusSequence.length - 1);
+        call += 1;
+        return Promise.resolve(statusSequence[index]);
+      });
+      mockPrisma.crawlPage.findMany.mockResolvedValue([
+        { url: 'https://example.com', depth: 0, result: { markdown: 'Home' } },
+      ]);
+
+      const promise = service.startCrawl('user_1', {
+        ...mockOptions,
+        sync: true,
+        timeout: CRAWL_STATUS_POLL_INTERVAL_MS * 2,
+      });
+
+      await vi.advanceTimersByTimeAsync(CRAWL_STATUS_POLL_INTERVAL_MS);
+      const result = await promise;
+
+      expect(result.status).toBe('COMPLETED');
+      vi.useRealTimers();
+    });
+
+    it('should throw when crawl fails in sync mode', async () => {
+      vi.useFakeTimers();
+      const baseJob = {
+        id: 'crawl_1',
+        status: 'PENDING',
+        startUrl: 'https://example.com',
+        totalUrls: 1,
+        completedUrls: 0,
+        failedUrls: 0,
+        createdAt: new Date(),
+        startedAt: new Date(),
+        completedAt: null,
+      };
+      mockPrisma.crawlJob.create.mockResolvedValue(baseJob);
+      mockQueue.add.mockResolvedValue({ id: 'queue_job_1' });
+
+      const statusSequence = [
+        { ...baseJob, status: 'CRAWLING' },
+        { ...baseJob, status: 'FAILED', completedAt: new Date() },
+      ];
+      let call = 0;
+      mockPrisma.crawlJob.findUnique.mockImplementation(() => {
+        const index = Math.min(call, statusSequence.length - 1);
+        call += 1;
+        return Promise.resolve(statusSequence[index]);
+      });
+
+      const promise = service.startCrawl('user_1', {
+        ...mockOptions,
+        sync: true,
+        timeout: CRAWL_STATUS_POLL_INTERVAL_MS * 2,
+      });
+
+      const expectation =
+        expect(promise).rejects.toBeInstanceOf(CrawlFailedError);
+      await vi.advanceTimersByTimeAsync(CRAWL_STATUS_POLL_INTERVAL_MS);
+      await expectation;
+      vi.useRealTimers();
+    });
+
+    it('should throw timeout when crawl does not finish', async () => {
+      vi.useFakeTimers();
+      const baseJob = {
+        id: 'crawl_1',
+        status: 'PENDING',
+        startUrl: 'https://example.com',
+        totalUrls: 1,
+        completedUrls: 0,
+        failedUrls: 0,
+        createdAt: new Date(),
+        startedAt: new Date(),
+        completedAt: null,
+      };
+      mockPrisma.crawlJob.create.mockResolvedValue(baseJob);
+      mockQueue.add.mockResolvedValue({ id: 'queue_job_1' });
+
+      mockPrisma.crawlJob.findUnique.mockResolvedValue({
+        ...baseJob,
+        status: 'CRAWLING',
+      });
+
+      const promise = service.startCrawl('user_1', {
+        ...mockOptions,
+        sync: true,
+        timeout: CRAWL_STATUS_POLL_INTERVAL_MS,
+      });
+
+      const expectation =
+        expect(promise).rejects.toBeInstanceOf(CrawlTimeoutError);
+      await vi.advanceTimersByTimeAsync(CRAWL_STATUS_POLL_INTERVAL_MS + 1);
+      await expectation;
+      vi.useRealTimers();
     });
 
     // SSRF 防护测试

@@ -1,7 +1,7 @@
 /**
  * [INPUT]: BatchScrapeJobData - Job ID and scrape options from BullMQ
  * [OUTPUT]: void - Updates database and triggers webhooks
- * [POS]: BullMQ worker that processes batch scrape jobs concurrently
+ * [POS]: BullMQ worker that processes batch scrape jobs concurrently with idempotent progress
  *
  * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
  */
@@ -45,11 +45,26 @@ export class BatchScrapeProcessor extends WorkerHost {
 
     this.logger.debug(`Processing batch scrape job: ${batchJobId}`);
 
-    // 更新状态
-    const batch = await this.prisma.batchScrapeJob.update({
+    const batch = await this.prisma.batchScrapeJob.findUnique({
       where: { id: batchJobId },
-      data: { status: 'PROCESSING' },
     });
+
+    if (!batch) {
+      this.logger.warn(`Batch scrape job not found: ${batchJobId}`);
+      return;
+    }
+
+    if (batch.status === 'COMPLETED' || batch.status === 'FAILED') {
+      this.logger.debug(`Batch scrape job already finalized: ${batchJobId}`);
+      return;
+    }
+
+    if (batch.status !== 'PROCESSING') {
+      await this.prisma.batchScrapeJob.update({
+        where: { id: batchJobId },
+        data: { status: 'PROCESSING' },
+      });
+    }
 
     // 获取所有待处理项
     const items = await this.prisma.batchScrapeItem.findMany({
@@ -57,10 +72,25 @@ export class BatchScrapeProcessor extends WorkerHost {
       orderBy: { order: 'asc' },
     });
 
+    const [initialCompleted, initialFailed] = await Promise.all([
+      this.prisma.batchScrapeItem.count({
+        where: { batchJobId, status: 'COMPLETED' },
+      }),
+      this.prisma.batchScrapeItem.count({
+        where: { batchJobId, status: 'FAILED' },
+      }),
+    ]);
+
+    let completedCount = initialCompleted;
+    let failedCount = initialFailed;
+
+    if (items.length === 0) {
+      await this.finalizeBatch(batchJobId, batch, completedCount, failedCount);
+      return;
+    }
+
     // 分块并发处理
     const chunks = this.chunkArray(items, this.concurrency);
-    let completedCount = 0;
-    let failedCount = 0;
 
     for (const chunk of chunks) {
       const results = await Promise.allSettled(
@@ -87,11 +117,37 @@ export class BatchScrapeProcessor extends WorkerHost {
       });
     }
 
-    // 完成批次
+    await this.finalizeBatch(batchJobId, batch, completedCount, failedCount);
+  }
+
+  private async finalizeBatch(
+    batchJobId: string,
+    batch: {
+      id: string;
+      userId: string;
+      totalUrls: number;
+      webhookUrl: string | null;
+      quotaDeducted: boolean;
+      quotaBreakdown: unknown;
+      billingKey: string | null;
+    },
+    completedCount: number,
+    failedCount: number,
+  ): Promise<void> {
+    const totalProcessed = completedCount + failedCount;
+    if (totalProcessed < batch.totalUrls) {
+      return;
+    }
+
+    const finalStatus =
+      completedCount === 0 && failedCount > 0 ? 'FAILED' : 'COMPLETED';
+
     const updatedBatch = await this.prisma.batchScrapeJob.update({
       where: { id: batchJobId },
       data: {
-        status: failedCount === items.length ? 'FAILED' : 'COMPLETED',
+        status: finalStatus,
+        completedUrls: completedCount,
+        failedUrls: failedCount,
         completedAt: new Date(),
       },
     });

@@ -103,6 +103,7 @@ describe('DigestNotificationService', () => {
           }),
         }),
         expect.objectContaining({
+          jobId: 'digest-webhook-run-1',
           attempts: NOTIFICATION.webhookMaxRetries,
           backoff: expect.objectContaining({
             type: 'exponential',
@@ -167,10 +168,12 @@ describe('DigestNotificationService', () => {
           emailSubject: 'Your Digest: AI News - 5 new items',
           subscriptionName: 'AI News',
           itemsCount: 5,
-          viewUrl: 'https://anyhunt.app/inbox?subscriptionId=sub-1&state=UNREAD',
+          viewUrl:
+            'https://anyhunt.app/inbox?subscriptionId=sub-1&state=UNREAD',
           unsubscribeUrl: 'https://anyhunt.app/subscriptions/sub-1',
         }),
         expect.objectContaining({
+          jobId: 'digest-email-run-1',
           attempts: NOTIFICATION.emailMaxRetries,
         }),
       );
@@ -215,7 +218,9 @@ describe('DigestNotificationService', () => {
             /\[AI News\] 5 new items - \d+\/\d+\/\d+/,
           ),
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'digest-email-run-1',
+        }),
       );
     });
 
@@ -261,7 +266,9 @@ describe('DigestNotificationService', () => {
         expect.objectContaining({
           event: 'digest.run.failed',
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'digest-webhook-run-1',
+        }),
       );
     });
 
@@ -323,7 +330,9 @@ describe('DigestNotificationService', () => {
             narrativeMarkdown: '## Digest Summary',
           }),
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'digest-webhook-run-1',
+        }),
       );
     });
 
@@ -357,7 +366,9 @@ describe('DigestNotificationService', () => {
             },
           ],
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'digest-email-run-1',
+        }),
       );
     });
   });

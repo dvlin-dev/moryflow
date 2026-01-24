@@ -45,7 +45,7 @@ describe('Console Playground Browser routing', () => {
       next();
     });
 
-    await app.init();
+    await app.listen(0);
   });
 
   afterAll(async () => {

@@ -1,11 +1,11 @@
 /**
  * [INPUT]: BatchScrapeOptions - URLs list and scrape configuration, sync mode
  * [OUTPUT]: BatchScrapeStatus (sync) | { id, status, totalUrls } (async)
- * [POS]: Core batch scrape logic - job creation, status tracking, history
+ * [POS]: Core batch scrape logic - job creation, status tracking, history, QueueEvents lifecycle
  *
  * [PROTOCOL]: When this file changes, update this header and src/batch-scrape/CLAUDE.md
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, type QueueEvents } from 'bullmq';
@@ -20,7 +20,7 @@ import { BatchJobNotFoundError } from './batch-scrape.errors';
 import { DEFAULT_BATCH_TIMEOUT } from './batch-scrape.constants';
 
 @Injectable()
-export class BatchScrapeService {
+export class BatchScrapeService implements OnModuleDestroy {
   private readonly logger = new Logger(BatchScrapeService.name);
   private readonly queueEvents: QueueEvents;
 
@@ -33,6 +33,12 @@ export class BatchScrapeService {
   ) {
     // 用于等待任务完成
     this.queueEvents = createQueueEvents(BATCH_SCRAPE_QUEUE, config);
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.queueEvents.close().catch((error) => {
+      this.logger.warn('Failed to close QueueEvents', error);
+    });
   }
 
   /**

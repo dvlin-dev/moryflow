@@ -15,6 +15,7 @@ describe('SubscriptionSchedulerProcessor', () => {
   let mockSubscriptionService: any;
   let mockRunService: any;
   let mockRunQueue: any;
+  let mockRedis: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrisma();
@@ -32,16 +33,22 @@ describe('SubscriptionSchedulerProcessor', () => {
       add: vi.fn(),
     };
 
+    mockRedis = {
+      setnx: vi.fn().mockResolvedValue(true),
+      del: vi.fn().mockResolvedValue(undefined),
+    };
+
     processor = new SubscriptionSchedulerProcessor(
       mockPrisma as any,
       mockSubscriptionService as any,
       mockRunService as any,
+      mockRedis as any,
       mockRunQueue as any,
     );
   });
 
   describe('process', () => {
-    const mockJob = {};
+    const mockJob = { id: 'job-1' };
 
     it('should schedule subscriptions to run', async () => {
       const subscriptions = [
@@ -78,6 +85,18 @@ describe('SubscriptionSchedulerProcessor', () => {
       expect(result).toEqual({ scheduled: 2, total: 2 });
       expect(mockRunService.createRun).toHaveBeenCalledTimes(2);
       expect(mockRunQueue.add).toHaveBeenCalledTimes(2);
+    });
+
+    it('should skip when scheduler lock not acquired', async () => {
+      mockRedis.setnx.mockResolvedValue(false);
+
+      const result = await processor.process(mockJob as any);
+
+      expect(result).toEqual({ scheduled: 0, total: 0 });
+      expect(mockRunQueue.add).not.toHaveBeenCalled();
+      expect(
+        mockSubscriptionService.findSubscriptionsToSchedule,
+      ).not.toHaveBeenCalled();
     });
 
     it('should return empty result when no subscriptions to schedule', async () => {
