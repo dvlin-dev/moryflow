@@ -38,6 +38,7 @@
 
 ## 近期变更
 
+- 修复 dist 声明缺失 Tasks Store 导出，保障下游类型检查（2026-01-25）
 - 统一路径归一化，避免 Vault 前缀穿越
 - `web_fetch` 增加 URL 安全校验
 - 新增 Tasks Store 接口与 SQLite schema/migrations 规范（2026-01-25）
