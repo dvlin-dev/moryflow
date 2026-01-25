@@ -67,6 +67,7 @@ status: active
 ## Code Review（全量评审计划与进度）
 
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-26，packages/agents\* 清单调整 + 进度同步区合并）
+- Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
 - Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-01-25，修复完成）

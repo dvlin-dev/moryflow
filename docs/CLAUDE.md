@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（2026-01-25：review）
 - Moryflow 云同步文档收敛为单一方案（统一技术方案/绑定/实施现状）（2026-01-25）
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（2026-01-26：修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Browser Code Review：`docs/code-review/anyhunt-server-browser.md`（2026-01-26：修复完成）
