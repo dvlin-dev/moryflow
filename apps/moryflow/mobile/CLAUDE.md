@@ -81,6 +81,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - ChatInputBar 移除附件占位回调，避免空实现代码
 - Chat Header 新增 Tasks 入口与 TasksSheet（列表 + 详情）
 - Auth 交互改为 access 内存 + refresh 安全存储，移除 pre-register 与忘记密码入口
+- Auth：access token 持久化（Zustand + SecureStore），启动直用并支持预刷新
 - Auth：接入 `@better-auth/expo`，移动端 Cookie/Session 由 SecureStore 管理
 - Auth Session refresh 增加网络失败清理，避免初始化阶段因网络异常中断
 - Auth Session 单元测试补齐（vitest）

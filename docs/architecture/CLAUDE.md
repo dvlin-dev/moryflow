@@ -23,6 +23,7 @@
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
+- `auth/moryflow-pc-mobile-access-token-upgrade.md`：Moryflow PC/Mobile Access Token 持久化升级方案（draft）。
 - `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
@@ -73,6 +74,8 @@
 - `auth/unified-auth-rebuild-file-map.md`：补充 Mobile refresh 网络异常修复与 `X-App-Platform` 传递范围结论。
 - `auth/access-token-storage-plan.md`：补充未登录/refresh 失效/过期处理（2026-01-25）。
 - `auth/access-token-storage-plan.md`：补充 PC/移动端安全存储与 Device refresh 流程（2026-01-25）。
+- `auth/moryflow-pc-mobile-access-token-upgrade.md`：新增 Moryflow PC/Mobile Access Token 持久化升级方案（2026-01-25）。
+- `auth/moryflow-pc-mobile-access-token-upgrade.md`：明确三项最佳实践决策（keytar/失败边界/Resume）并细化执行清单（2026-01-25）。
 - `api-client-unification.md`：新增 API Client 统一封装方案（2026-01-26）。
 - `api-client-unification.md`：补充 React Query Web/PC/移动端用法与复用策略（2026-01-26）。
 - `api-client-unification.md`：统一响应为 raw JSON + RFC7807，并新增一次性执行计划（2026-01-26）。

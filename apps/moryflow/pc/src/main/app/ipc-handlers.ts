@@ -50,7 +50,18 @@ import type { VaultWatcherController } from '../vault-watcher/index.js';
 import { getRuntime } from '../chat/runtime.js';
 import * as ollamaService from '../ollama-service/index.js';
 import { membershipBridge } from '../membership-bridge.js';
-import { getRefreshToken, setRefreshToken, clearRefreshToken } from '../membership-token-store.js';
+import {
+  isSecureStorageAvailable,
+  getRefreshToken,
+  setRefreshToken,
+  clearRefreshToken,
+  getAccessToken,
+  setAccessToken,
+  clearAccessToken,
+  getAccessTokenExpiresAt,
+  setAccessTokenExpiresAt,
+  clearAccessTokenExpiresAt,
+} from '../membership-token-store.js';
 import path from 'node:path';
 import {
   cloudSyncEngine,
@@ -511,18 +522,48 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     membershipBridge.setEnabled(enabled);
   });
 
-  ipcMain.handle('membership:getRefreshToken', () => getRefreshToken());
+  ipcMain.handle('membership:isSecureStorageAvailable', async () => isSecureStorageAvailable());
 
-  ipcMain.handle('membership:setRefreshToken', (_event, payload) => {
+  ipcMain.handle('membership:getRefreshToken', async () => getRefreshToken());
+
+  ipcMain.handle('membership:setRefreshToken', async (_event, payload) => {
     if (typeof payload === 'string' && payload.trim()) {
-      setRefreshToken(payload.trim());
+      await setRefreshToken(payload.trim());
       return;
     }
-    clearRefreshToken();
+    await clearRefreshToken();
   });
 
-  ipcMain.handle('membership:clearRefreshToken', () => {
-    clearRefreshToken();
+  ipcMain.handle('membership:clearRefreshToken', async () => {
+    await clearRefreshToken();
+  });
+
+  ipcMain.handle('membership:getAccessToken', async () => getAccessToken());
+
+  ipcMain.handle('membership:setAccessToken', async (_event, payload) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      await setAccessToken(payload.trim());
+      return;
+    }
+    await clearAccessToken();
+  });
+
+  ipcMain.handle('membership:clearAccessToken', async () => {
+    await clearAccessToken();
+  });
+
+  ipcMain.handle('membership:getAccessTokenExpiresAt', async () => getAccessTokenExpiresAt());
+
+  ipcMain.handle('membership:setAccessTokenExpiresAt', async (_event, payload) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      await setAccessTokenExpiresAt(payload.trim());
+      return;
+    }
+    await clearAccessTokenExpiresAt();
+  });
+
+  ipcMain.handle('membership:clearAccessTokenExpiresAt', async () => {
+    await clearAccessTokenExpiresAt();
   });
 
   // ── Cloud Sync ────────────────────────────────────────────────

@@ -107,6 +107,9 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - 新增 Renderer hooks 单测（useVaultTreeState/useDocumentState/useChatSessions）
 - hooks 单测使用 i18n mock，避免重复 React 实例导致测试崩溃
 - 新增 Playwright E2E：创建 Vault、创建笔记自动保存、Settings 与 Sites 入口覆盖
+- Desktop Auth Session：access token 持久化存储 + ensureAccessToken 单测使用长过期窗口
+- Desktop Auth Session：网络失败不清理 token，窗口恢复触发 ensureAccessToken
+- Desktop Auth Session：keytar 不可用时提示启用系统凭据
 
 ## 依赖关系
 

@@ -1,6 +1,6 @@
 /**
- * [PROVIDES]: MembershipProvider 与认证/模型 hooks
- * [DEPENDS]: server/api, auth-session, storage
+ * [PROVIDES]: MembershipProvider 与认证/模型 hooks（含 Resume 校验）
+ * [DEPENDS]: server/api, auth-session, auth-store, storage, AppState
  * [POS]: Mobile 端会员认证与模型状态中心
  */
 
@@ -11,8 +11,10 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   type ReactNode,
 } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import { parseAuthError } from '@anyhunt/api';
 import {
   getStoredRefreshToken,
@@ -23,9 +25,15 @@ import {
 import { syncMembershipConfig } from '@/lib/agent-runtime/membership-bridge';
 import { fetchCurrentUser, fetchMembershipModels, ServerApiError } from './api';
 import { signInWithEmail, signUpWithEmail, extractUser } from './auth-api';
-import { refreshAccessToken, clearAuthSession, logoutFromServer } from './auth-session';
+import {
+  ensureAccessToken,
+  refreshAccessToken,
+  clearAuthSession,
+  logoutFromServer,
+} from './auth-session';
 import { createTempUserInfo, convertApiModels } from './helper';
 import type { UserInfo, MembershipModel } from './types';
+import { authStore, waitForAuthHydration } from './auth-store';
 
 // ── Context 定义 ─────────────────────────────────────────
 
@@ -88,6 +96,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
   const getPendingSignup = useCallback(() => pendingSignup, [pendingSignup]);
   const clearPendingSignup = useCallback(() => setPendingSignup(null), []);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
 
   // 设置用户并同步缓存
   const setUser = useCallback((newUser: UserInfo | null) => {
@@ -133,10 +142,12 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
   // 初始化：从缓存恢复，后台同步
   const initialize = useCallback(async () => {
+    await waitForAuthHydration();
     const refreshToken = await getStoredRefreshToken();
     const cachedUser = await getStoredUserCache();
 
     if (!refreshToken) {
+      authStore.getState().clearAccessToken();
       await clearStoredUserCache();
       setUser(null);
       setModels([]);
@@ -149,8 +160,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       setUser(cachedUser);
       setIsInitializing(false);
       loadModels();
-      // 后台静默同步
-      const refreshed = await refreshAccessToken();
+      const refreshed = await ensureAccessToken();
       if (!refreshed) {
         await clearAuthSession();
         await clearStoredUserCache();
@@ -162,7 +172,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const refreshed = await refreshAccessToken();
+    const refreshed = await ensureAccessToken();
     if (!refreshed) {
       await clearAuthSession();
       await clearStoredUserCache();
@@ -184,6 +194,19 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appState.current.match(/inactive|background/) && nextState === 'active') {
+        void ensureAccessToken();
+      }
+      appState.current = nextState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // 同步会员配置到 Agent Runtime
   useEffect(() => {
