@@ -1,7 +1,7 @@
 /**
  * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
  * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
- * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation）
+ * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation/Doom Loop）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,6 +42,7 @@ import { getMembershipConfig } from './membership-bridge';
 import { initVaultManager } from '../vault';
 import { createMobileToolOutputStorage } from './tool-output-storage';
 import { initPermissionRuntime } from './permission-runtime';
+import { initDoomLoopRuntime } from './doom-loop-runtime';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -172,8 +173,18 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   });
 
   const permissionRuntime = initPermissionRuntime({ capabilities });
+  const doomLoopRuntime = initDoomLoopRuntime({
+    uiAvailable: true,
+    shouldSkip: ({ callId }) => {
+      if (!callId) return false;
+      const decision = permissionRuntime.getDecision(callId);
+      return decision?.decision === 'deny';
+    },
+  });
   const baseTools = wrapToolsWithOutputTruncation(
-    permissionRuntime.wrapTools(createMobileTools({ capabilities, crypto, vaultUtils })),
+    doomLoopRuntime.wrapTools(
+      permissionRuntime.wrapTools(createMobileTools({ capabilities, crypto, vaultUtils }))
+    ),
     toolOutputPostProcessor
   );
   toolNames = baseTools.map((tool) => tool.name);

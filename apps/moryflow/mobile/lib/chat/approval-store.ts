@@ -9,6 +9,7 @@
 import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
 import type { AgentContext } from '@anyhunt/agents-runtime';
 import { getPermissionRuntime } from '@/lib/agent-runtime/permission-runtime';
+import { getDoomLoopRuntime } from '@/lib/agent-runtime/doom-loop-runtime';
 import { generateUUID } from '@/lib/utils/uuid';
 
 export type ApprovalGate = {
@@ -97,14 +98,21 @@ export const approveToolRequest = async (input: {
 
   entry.gate.state.approve(entry.item);
 
+  const doomLoopRuntime = getDoomLoopRuntime();
+  doomLoopRuntime?.approve(entry.toolCallId, input.remember);
+
   const permissionRuntime = getPermissionRuntime();
   if (permissionRuntime) {
     const record = permissionRuntime.getDecision(entry.toolCallId);
-    if (record) {
-      if (input.remember === 'always') {
-        await permissionRuntime.persistAlwaysRules(record);
+    if (record?.decision === 'ask') {
+      try {
+        if (input.remember === 'always') {
+          await permissionRuntime.persistAlwaysRules(record);
+        }
+        await permissionRuntime.recordDecision(record, 'allow');
+      } catch (error) {
+        console.error('[approval-store] failed to persist permission decision', error);
       }
-      await permissionRuntime.recordDecision(record, 'allow');
     }
   }
 
@@ -118,7 +126,14 @@ export const approveToolRequest = async (input: {
 export const clearApprovalGate = (chatId: string): void => {
   const gate = approvalGates.get(chatId);
   if (!gate) return;
+  const doomLoopRuntime = getDoomLoopRuntime();
+  const permissionRuntime = getPermissionRuntime();
   for (const approvalId of gate.pendingIds) {
+    const entry = approvalEntries.get(approvalId);
+    if (entry) {
+      doomLoopRuntime?.clear(entry.toolCallId);
+      permissionRuntime?.clearDecision(entry.toolCallId);
+    }
     approvalEntries.delete(approvalId);
   }
   gate.pendingIds.clear();

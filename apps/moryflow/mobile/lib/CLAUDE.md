@@ -52,6 +52,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
+- Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always
 - Agent Runtime 增加 compaction 发送前预处理，仅在同一模型内跳过重复压缩，保证 UI/历史一致
 - Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要
 - 修复审批续跑输出持久化与 abort 收敛，审计写入改为串行

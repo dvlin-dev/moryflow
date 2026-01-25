@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、输出截断、会话压缩与预处理）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、输出截断、Doom Loop、会话压缩与预处理）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
@@ -59,6 +59,7 @@ import { membershipBridge } from '../membership-bridge.js';
 import { setupAgentTracing } from './tracing-setup.js';
 import { createDesktopToolOutputStorage } from './tool-output-storage.js';
 import { initPermissionRuntime } from './permission-runtime.js';
+import { initDoomLoopRuntime } from './doom-loop-runtime.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -260,10 +261,19 @@ export const createAgentRuntime = (): AgentRuntime => {
     capabilities,
     getMcpServerIds: () => mcpManager.getStatus().servers.map((server) => server.id),
   });
+  const doomLoopRuntime = initDoomLoopRuntime({
+    uiAvailable: true,
+    shouldSkip: ({ callId }) => {
+      if (!callId) return false;
+      const decision = permissionRuntime.getDecision(callId);
+      return decision?.decision === 'deny';
+    },
+  });
 
   const toolsWithPermission = permissionRuntime.wrapTools([...baseTools, sandboxBashTool]);
+  const toolsWithDoomLoop = doomLoopRuntime.wrapTools(toolsWithPermission);
   const toolsWithTruncation = wrapToolsWithOutputTruncation(
-    toolsWithPermission,
+    toolsWithDoomLoop,
     toolOutputPostProcessor
   );
 
@@ -282,7 +292,7 @@ export const createAgentRuntime = (): AgentRuntime => {
     baseTools: toolsWithTruncation,
     getMcpTools: () =>
       wrapToolsWithOutputTruncation(
-        permissionRuntime.wrapTools(mcpManager.getTools()),
+        doomLoopRuntime.wrapTools(permissionRuntime.wrapTools(mcpManager.getTools())),
         toolOutputPostProcessor
       ),
     getInstructions: () => resolveSystemPrompt(getAgentSettings()),

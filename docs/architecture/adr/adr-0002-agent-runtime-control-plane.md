@@ -171,6 +171,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 2. 命中阈值时触发 `doom_loop` 审批（only once/always）。
 3. 用户选择继续时重置计数并进入冷却窗口；选择停止时终止 run。
 
+**进度**
+
+- 2026-01-27：完成 PC + Mobile Doom Loop 落地（重复检测、审批接入、冷却与会话级 always）。
+
 **验收**
 
 - 连续相同 tool + 相同 args 能被检测并中断/继续。
@@ -263,7 +267,7 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 
 假设一段对话如下（简化）：
 
-1. 用户：请统计本仓库 TODO 列表并汇总。
+1. 用户：请统计本仓库待办列表并汇总。
 2. Agent 调用 `grep` → 输出 2 万行（已截断，完整输出落盘到 `Vault/.agent-output/2026-01-26-todo.jsonl`）。
 3. Agent 基于结果生成汇总并给出结论。
 4. 又经过多轮工具调用（read/ls/search_in_file）持续堆积输出，历史体积触发阈值。
@@ -272,7 +276,7 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 
 - **旧的 tool output items 会从上下文中移除**（只影响下一次 `run()` 的输入，不删除落盘文件）。
 - **tool input 与结果摘要会保留**，并生成一条系统摘要写入历史：
-  - `【会话摘要】已完成：扫描 TODO 并分类；当前进度：已标注高优先级 12 项；涉及文件：docs/index.md、apps/...；下一步：逐条确认 TODO 归属并分配负责人。`
+  - `【会话摘要】已完成：扫描待办并分类；当前进度：已标注高优先级 12 项；涉及文件：docs/index.md、apps/...；下一步：逐条确认待办归属并分配负责人。`
 - 最近 3 轮 user/assistant 对话完整保留，保证上下文连续。
 - 若要回溯完整输出，仍可通过 `Vault/.agent-output/2026-01-26-todo.jsonl` 查看（UI 也保留“查看完整输出”入口）。
 
@@ -284,10 +288,12 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   - `maxAttempts = 3`（单次 run 内的重试循环）
   - `maxToolCalls = 60`（单次 run 工具调用上限）
   - `sameToolThreshold = 5`（相同 tool + 相同 args 连续次数）
+  - `maxSignatureBytes = 8KB`（参数哈希上限；超限仅按 toolName 计数）
+  - `cooldownToolCalls = 3`（审批通过后跳过 3 次工具检测）
 - **判定与处理**：
   - 命中阈值 → 标记 `doom_loop`。
   - 若 UI/IPC 可用：`ask` 用户继续（once/always）；中止通过全局 Stop/Cancel。
-  - `always` 仅本次会话生效，不做持久化。
+  - `always` 仅本次会话生效，不做持久化；触发后自动跳过审批并重置计数。
   - 无 UI 时默认 **终止** 并返回可读错误（提示用户调整指令）。
 - **计数口径**：
   - `sameToolThreshold` 使用稳定化后的参数哈希（stable JSON），参数超限时仅按 toolName 计数。

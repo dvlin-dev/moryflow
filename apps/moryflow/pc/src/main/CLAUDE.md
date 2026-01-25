@@ -95,6 +95,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
+- agent-runtime README 对齐 ADR-0002 控制面落地说明
+- Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always
 - Chat 会话压缩预处理：发送前执行 compaction，IPC 返回 UI 消息并仅在同一模型内跳过重复压缩
 - ChatSessionStore 清空 history 同步清空 uiMessages，避免索引错位
 - Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要

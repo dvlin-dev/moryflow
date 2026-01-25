@@ -6,5 +6,5 @@
 2. 注册本地工具、MCP 连接以及多智能体编排拓扑。
 3. 向 Electron 主进程暴露 `runChatTurn` 等方法，供 IPC 聊天管道调用。
 
-当前仅保留最小化骨架，后续按 OpenAI Agents 官方文档的 TODO 依次补齐：
-https://openai.github.io/openai-agents-js/
+该目录作为 PC 端 Agent Runtime 主入口，控制面能力以 ADR-0002 为实现基线逐项落地。
+细节以 docs/architecture/adr/adr-0002-agent-runtime-control-plane.md 为准。

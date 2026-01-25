@@ -32,6 +32,8 @@
 
 ## 近期更新
 
+- `adr/adr-0002-agent-runtime-control-plane.md`：示例文案统一为“待办”表述（2026-01-27）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：P1-4 Doom Loop 落地完成（PC + Mobile）（2026-01-27）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充 compaction 摘要输入裁剪规则（2026-01-27）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充 compaction 上下文窗口来源与发送前预处理（2026-01-27）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P1-3 会话压缩落地完成（PC + Mobile）（2026-01-26）。

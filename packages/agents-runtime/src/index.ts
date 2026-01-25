@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction - Agent 运行时核心
+ * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction/DoomLoop - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -103,3 +103,19 @@ export {
 } from './permission';
 
 export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';
+
+// Doom Loop
+export {
+  createDoomLoopGuard,
+  wrapToolWithDoomLoop,
+  wrapToolsWithDoomLoop,
+  DEFAULT_DOOM_LOOP_CONFIG,
+  DoomLoopError,
+  type DoomLoopAction,
+  type DoomLoopApprovalInfo,
+  type DoomLoopCheckInput,
+  type DoomLoopConfig,
+  type DoomLoopDecision,
+  type DoomLoopGuard,
+  type DoomLoopReason,
+} from './doom-loop';
