@@ -1,5 +1,5 @@
 import { z, type ZodNumber } from 'zod';
-import { getMorySystemPrompt } from '@anyhunt/agents-runtime';
+import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
 import type { AgentSettings } from '../../shared/ipc.js';
 
 // MCP 服务器配置 Schema

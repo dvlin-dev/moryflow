@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 设置注入）
- * [DEPENDS]: agents, agents-runtime, agents-tools - Agent 框架核心
+ * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
  *
@@ -14,12 +14,12 @@ import {
   createVaultUtils,
   applyContextToInput,
   generateChatTitle,
-  getMorySystemPrompt,
   type AgentContext,
   type AgentAttachmentContext,
   type ModelFactory,
   type Session,
 } from '@anyhunt/agents-runtime';
+import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
 import { createBaseTools } from '@anyhunt/agents-tools';
 import { createSandboxBashTool } from '@anyhunt/agents-sandbox';
 

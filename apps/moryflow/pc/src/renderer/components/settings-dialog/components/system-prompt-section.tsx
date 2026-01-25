@@ -1,7 +1,7 @@
 /**
  * [PROPS]: SystemPromptSectionProps - System Prompt 设置表单
  * [EMITS]: none
- * [POS]: Settings Dialog 的 System Prompt 标签页
+ * [POS]: Settings Dialog 的 System Prompt 标签页（renderer 安全导入 prompt）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,7 +19,7 @@ import { Input } from '@anyhunt/ui/components/input';
 import { Label } from '@anyhunt/ui/components/label';
 import { Button } from '@anyhunt/ui/components/button';
 import { Switch } from '@anyhunt/ui/components/switch';
-import { getMorySystemPrompt } from '@anyhunt/agents-runtime';
+import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
 import { useTranslation } from '@/lib/i18n';
 import type { FormValues } from '../const';
 
