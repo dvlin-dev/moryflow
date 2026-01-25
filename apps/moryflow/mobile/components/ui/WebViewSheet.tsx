@@ -16,7 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
-import { XIcon } from 'lucide-react-native';
+import { XIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 
@@ -103,18 +104,32 @@ export function WebViewSheet({ visible, onClose, url, title }: WebViewSheetProps
   // 渲染 Header
   const renderHeader = () => {
     const headerContent = (
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 }}>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+        }}>
         <View style={{ width: 32 }} />
         {title && (
           <Text
-            style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600', color: colors.textPrimary }}
-            numberOfLines={1}
-          >
+            style={{
+              flex: 1,
+              textAlign: 'center',
+              fontSize: 16,
+              fontWeight: '600',
+              color: colors.textPrimary,
+            }}
+            numberOfLines={1}>
             {title}
           </Text>
         )}
-        <Pressable onPress={onClose} style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
-          <XIcon size={20} color={colors.textSecondary} />
+        <Pressable
+          onPress={onClose}
+          style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon as={XIcon} size={20} color={colors.textSecondary} />
         </Pressable>
       </View>
     );
@@ -132,10 +147,15 @@ export function WebViewSheet({ visible, onClose, url, title }: WebViewSheetProps
     // Fallback: BlurView
     return (
       <View style={{ borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
-        <BlurView intensity={isDark ? 60 : 80} tint={isDark ? 'dark' : 'light'} style={{ height: 48 }}>
+        <BlurView
+          intensity={isDark ? 60 : 80}
+          tint={isDark ? 'dark' : 'light'}
+          style={{ height: 48 }}>
           <View
-            style={{ flex: 1, backgroundColor: isDark ? 'rgba(20, 20, 22, 0.9)' : 'rgba(255, 255, 255, 0.9)' }}
-          >
+            style={{
+              flex: 1,
+              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+            }}>
             {headerContent}
           </View>
         </BlurView>
@@ -145,7 +165,16 @@ export function WebViewSheet({ visible, onClose, url, title }: WebViewSheetProps
 
   // WebView 加载指示器
   const renderLoading = () => (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
       <ActivityIndicator size="large" color={colors.spinner} />
     </View>
   );
@@ -166,8 +195,7 @@ export function WebViewSheet({ visible, onClose, url, title }: WebViewSheetProps
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 20,
-      }}
-    >
+      }}>
       <View
         style={{
           flex: 1,
@@ -175,8 +203,7 @@ export function WebViewSheet({ visible, onClose, url, title }: WebViewSheetProps
           borderTopRightRadius: 20,
           overflow: 'hidden',
           backgroundColor: sheetBackground,
-        }}
-      >
+        }}>
         {renderHeader()}
         <WebView
           source={{ uri: url }}

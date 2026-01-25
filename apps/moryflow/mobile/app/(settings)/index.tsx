@@ -4,70 +4,61 @@
  * [POS]: 设置主页，iOS 原生风格
  */
 
-import { View, ScrollView, Modal, ActivityIndicator } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
-import {
-  PaletteIcon,
-  KeyIcon,
-  LogOutIcon,
-  Trash2Icon,
-  CloudIcon,
-} from 'lucide-react-native'
-import * as React from 'react'
+import { View, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { PaletteIcon, KeyIcon, LogOutIcon, Trash2Icon, CloudIcon } from '@/components/ui/icons';
+import * as React from 'react';
 
-import { Text } from '@/components/ui/text'
-import { useAuth, useUser } from '@/lib/contexts/auth.context'
-import { useAuthGuard } from '@/lib/contexts/auth-guard.context'
-import { useThemeColors } from '@/lib/theme'
-import { useTranslation } from '@/lib/i18n'
-import { MembershipCard, UpgradeSheet } from '@/components/membership'
+import { Text } from '@/components/ui/text';
+import { useAuth, useUser } from '@/lib/contexts/auth.context';
+import { useAuthGuard } from '@/lib/contexts/auth-guard.context';
+import { useThemeColors } from '@/lib/theme';
+import { useTranslation } from '@/lib/i18n';
+import { MembershipCard, UpgradeSheet } from '@/components/membership';
 import {
   SettingsGroup,
   SettingsRow,
   SettingsSeparator,
   LanguageSelector,
-} from '@/components/settings'
+} from '@/components/settings';
 
 export default function SettingsScreen() {
-  const { user, isSignedIn } = useUser()
-  const { signOut } = useAuth()
-  const { requireAuth } = useAuthGuard()
-  const [isSigningOut, setIsSigningOut] = React.useState(false)
-  const [showUpgradeSheet, setShowUpgradeSheet] = React.useState(false)
-  const insets = useSafeAreaInsets()
-  const colors = useThemeColors()
-  const { t } = useTranslation('settings')
-  const { t: tAuth } = useTranslation('auth')
-  const { t: tUser } = useTranslation('user')
-  const { t: tCommon } = useTranslation('common')
+  const { user, isSignedIn } = useUser();
+  const { signOut } = useAuth();
+  const { requireAuth } = useAuthGuard();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [showUpgradeSheet, setShowUpgradeSheet] = React.useState(false);
+  const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
+  const { t } = useTranslation('settings');
+  const { t: tAuth } = useTranslation('auth');
+  const { t: tUser } = useTranslation('user');
+  const { t: tCommon } = useTranslation('common');
 
-  const handleAppearance = () => router.push('/(settings)/appearance')
-  const handleCloudSync = () => router.push('/(settings)/cloud-sync')
+  const handleAppearance = () => router.push('/(settings)/appearance');
+  const handleCloudSync = () => router.push('/(settings)/cloud-sync');
 
   const handleChangePassword = () => {
     requireAuth('access_settings', () => {
-      router.push('/(settings)/change-password')
-    })
-  }
+      router.push('/(settings)/change-password');
+    });
+  };
 
   const handleSignOut = async () => {
-    setIsSigningOut(true)
+    setIsSigningOut(true);
     try {
-      await signOut()
+      await signOut();
     } finally {
-      setIsSigningOut(false)
+      setIsSigningOut(false);
     }
-  }
+  };
 
-  const handleDeleteAccount = () => router.push('/(settings)/delete-account')
+  const handleDeleteAccount = () => router.push('/(settings)/delete-account');
 
   return (
-    <View className="flex-1 bg-page-background">
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-      >
+    <View className="bg-page-background flex-1">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
         {/* 会员卡 */}
         <View className="py-4">
           <MembershipCard onUpgradePress={() => setShowUpgradeSheet(true)} />
@@ -75,11 +66,11 @@ export default function SettingsScreen() {
 
         {/* 用户信息 */}
         {isSignedIn && (
-          <View className="px-5 py-2 mb-2">
-            <Text className="text-xl font-semibold text-foreground">
+          <View className="mb-2 px-5 py-2">
+            <Text className="text-foreground text-xl font-semibold">
               {user?.name || tUser('defaultUsername')}
             </Text>
-            <Text className="text-[15px] text-muted-foreground mt-1">
+            <Text className="text-muted-foreground mt-1 text-[15px]">
               {user?.email || tUser('noEmail')}
             </Text>
           </View>
@@ -150,10 +141,9 @@ export default function SettingsScreen() {
         visible={showUpgradeSheet}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowUpgradeSheet(false)}
-      >
+        onRequestClose={() => setShowUpgradeSheet(false)}>
         <UpgradeSheet onClose={() => setShowUpgradeSheet(false)} />
       </Modal>
     </View>
-  )
+  );
 }

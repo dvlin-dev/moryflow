@@ -20,6 +20,7 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { useTranslation } from '@anyhunt/i18n';
 import {
@@ -31,7 +32,7 @@ import {
   ImageIcon,
   FileCodeIcon,
   PlusIcon,
-} from 'lucide-react-native';
+} from '@/components/ui/icons';
 import * as ZeegoContextMenu from 'zeego/context-menu';
 import type { VaultTreeNode } from '@/lib/vault';
 import { readTree, onVaultChange, moveFile, deleteFile } from '@/lib/vault';
@@ -239,7 +240,7 @@ const FileItem = React.memo(function FileItem({
               </ContextMenu.Items>
               <ContextMenu.Trigger>
                 <View className="h-10 w-10 items-center justify-center">
-                  <PlusIcon size={22} color={colors.iconMuted} />
+                  <Icon as={PlusIcon} size={22} color={colors.iconMuted} />
                 </View>
               </ContextMenu.Trigger>
             </ContextMenu>
@@ -255,7 +256,7 @@ const FileItem = React.memo(function FileItem({
           stopPropagation(e);
           handleCreateFile();
         }}>
-        <PlusIcon size={22} color={colors.iconMuted} />
+        <Icon as={PlusIcon} size={22} color={colors.iconMuted} />
       </Pressable>
     );
   };
@@ -267,14 +268,18 @@ const FileItem = React.memo(function FileItem({
       {/* 展开/收起箭头（仅文件夹） */}
       {isDirectory ? (
         <View className="mr-1">
-          <ChevronIcon size={18} color={colors.textTertiary} />
+          <Icon as={ChevronIcon} size={18} color={colors.textTertiary} />
         </View>
       ) : (
         <View className="w-[22px]" />
       )}
 
       {/* 类型图标 */}
-      <IconComponent size={22} color={isDirectory ? colors.textSecondary : colors.textTertiary} />
+      <Icon
+        as={IconComponent}
+        size={22}
+        color={isDirectory ? colors.textSecondary : colors.textTertiary}
+      />
 
       {/* 文件名 */}
       <Text className="text-foreground ml-2.5 flex-1 text-[17px]" numberOfLines={1}>
@@ -415,7 +420,7 @@ function EmptyState({ text }: { text: string }) {
   const colors = useThemeColors();
   return (
     <View className="flex-1 items-center justify-center py-20">
-      <FolderIcon size={64} color={colors.textTertiary} opacity={0.3} />
+      <Icon as={FolderIcon} size={64} color={colors.textTertiary} opacity={0.3} />
       <Text className="text-muted-foreground mt-4">{text}</Text>
     </View>
   );

@@ -34,28 +34,32 @@ export function BindingConflictDialog({ open, vaultName, onChoice }: BindingConf
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
               <Icon icon={CloudIcon} className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
-            <AlertDialogTitle>Workspace Sync Conflict</AlertDialogTitle>
+            <AlertDialogTitle>This workspace is linked to another account.</AlertDialogTitle>
           </div>
           <AlertDialogDescription asChild>
-            <div className="space-y-3">
-              <p>
-                The workspace <strong className="text-foreground">{vaultName}</strong> was synced
-                with a different account.
-              </p>
+            <div className="space-y-2">
               <p className="text-muted-foreground">
-                Choose how to proceed with the current account:
+                {vaultName ? (
+                  <>
+                    Workspace <strong className="text-foreground">{vaultName}</strong> is already
+                    linked elsewhere.
+                  </>
+                ) : (
+                  <>This workspace is already linked elsewhere.</>
+                )}
               </p>
+              <p className="text-muted-foreground">Choose how to continue with this account.</p>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={() => onChoice('stay_offline')} className="gap-2">
             <Icon icon={CloudIcon} className="h-4 w-4" />
-            Stay Offline
+            Keep offline
           </Button>
           <Button variant="default" onClick={() => onChoice('sync_to_current')} className="gap-2">
             <Icon icon={CloudUploadIcon} className="h-4 w-4" />
-            Sync to Current Account
+            Use this account
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

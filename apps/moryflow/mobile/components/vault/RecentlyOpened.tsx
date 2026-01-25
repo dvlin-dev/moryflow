@@ -9,7 +9,8 @@ import { View, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
-import { FileTextIcon } from 'lucide-react-native';
+import { FileTextIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { useRecentlyOpened, type RecentlyOpenedItem } from '@/lib/vault/recently-opened';
 
 interface RecentlyOpenedProps {
@@ -38,7 +39,7 @@ const RecentCard = React.memo(function RecentCard({
         {item.icon ? (
           <Text className="text-[18px]">{item.icon}</Text>
         ) : (
-          <FileTextIcon size={18} color={colors.textSecondary} />
+          <Icon as={FileTextIcon} size={18} color={colors.textSecondary} />
         )}
       </View>
 

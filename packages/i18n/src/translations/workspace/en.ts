@@ -141,6 +141,8 @@ const en = {
   allChangesSynced: 'All changes synced to cloud',
   syncing: 'Syncing',
   syncingChanges: 'Syncing changes...',
+  needsAttention: 'Needs attention',
+  syncPausedDescription: 'Sync paused. Check your connection.',
   offline: 'Offline',
   networkUnavailable: 'Network unavailable',
   notEnabled: 'Not Enabled',

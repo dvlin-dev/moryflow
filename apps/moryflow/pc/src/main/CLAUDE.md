@@ -99,6 +99,13 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Agent Runtime/Agent 设置改用 `@anyhunt/agents-runtime/prompt` 读取 system prompt
 - Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）
+- Cloud Sync：收敛 diff/execute/commit 流程，commit 成功后更新 FileIndex
+- Cloud Sync：支持 expectedHash 乐观锁、rename 路径同步与冲突副本上传
+- Cloud Sync：账号切换增加绑定冲突检测（缺失 userId 视为冲突）
+- Cloud Sync：本地变更检测增加 mtime/size 预过滤并回写 lastSyncedSize/lastSyncedMtime
+- Cloud Sync：增加哈希缓存，未同步但未改动文件避免重复读盘
+- Cloud Sync：upload 无 pendingChanges 时回退到 entry 时钟，避免 clock 回退
+- FileIndex：无效存储记录告警并重置
 - 新增 `server-tracing-processor.ts`，兼容新版 tracing 上报结构
 - Tracing 上报增加安全序列化，避免循环引用导致丢失
 - 新增 `membership-token-store.ts`，在主进程加密保存 refresh token

@@ -20,14 +20,14 @@ import {
   SparklesIcon,
   ChevronRightIcon,
   CrownIcon,
-  type LucideIcon,
-} from 'lucide-react-native';
+  type AppIcon,
+} from '@/components/ui/icons';
 
 // 会员等级配置
 type TierKey = 'free' | 'basic' | 'pro' | 'license';
 
 interface TierConfig {
-  icon: LucideIcon;
+  icon: AppIcon;
   colorKey: 'tierFree' | 'tierBasic' | 'tierPro' | 'tierLicense';
   bgClass: string;
   textClass: string;

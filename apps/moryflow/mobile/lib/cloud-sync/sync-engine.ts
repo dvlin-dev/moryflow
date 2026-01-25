@@ -1,6 +1,6 @@
 /**
  * [INPUT]: vaultPath, 文件变更事件
- * [OUTPUT]: 同步状态、同步结果
+ * [OUTPUT]: 同步状态、同步结果（提交成功后回写 FileIndex）
  * [POS]: Cloud Sync 同步引擎入口，协调各模块，管理同步状态
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -12,9 +12,10 @@ import { fileIndexManager } from '@/lib/vault/file-index';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
 import { readSettings, readBinding, writeSettings } from './store';
-import { collectLocalFiles } from './file-collector';
-import { executeActions } from './executor';
+import { detectLocalChanges } from './file-collector';
+import { executeActions, applyChangesToFileIndex } from './executor';
 import { tryAutoBinding, resetAutoBindingState, setRetryCallback } from './auto-binding';
+import { checkAndResolveBindingConflict, resetBindingConflictState } from './binding-conflict';
 import {
   SYNC_DEBOUNCE_DELAY,
   createDefaultSettings,
@@ -152,17 +153,21 @@ const performSyncInternal = async (): Promise<void> => {
     store.setStatus('syncing');
     store.setError(null);
 
-    // 收集本地文件
-    const localFiles = await collectLocalFiles(vaultPath);
+    // 收集本地变更
+    const { dtos, pendingChanges, localStates } = await detectLocalChanges(
+      vaultPath,
+      settings.deviceId
+    );
+    store.setPendingCount(pendingChanges.size);
 
     // 获取同步差异
     const { actions } = await cloudSyncApi.syncDiff({
       vaultId,
       deviceId: settings.deviceId,
-      localFiles,
+      localFiles: dtos,
     });
 
-    if (actions.length === 0) {
+    if (actions.length === 0 && pendingChanges.size === 0) {
       store.setLastSync(Date.now());
       store.setPendingCount(0);
       store.setStatus('idle');
@@ -170,24 +175,41 @@ const performSyncInternal = async (): Promise<void> => {
     }
 
     // 执行同步操作
-    const { completed, deleted, errors } = await executeActions(actions, vaultPath);
+    const executeResult = await executeActions(
+      actions,
+      vaultPath,
+      settings.deviceId,
+      pendingChanges,
+      localStates
+    );
 
-    if (errors.length > 0) {
-      console.warn(`[CloudSync] ${errors.length} action(s) failed`);
+    if (executeResult.errors.length > 0) {
+      console.warn(`[CloudSync] ${executeResult.errors.length} action(s) failed`);
     }
 
     // 提交同步结果
-    if (completed.length > 0 || deleted.length > 0) {
+    if (executeResult.completed.length > 0 || executeResult.deleted.length > 0) {
       const commitResult = await cloudSyncApi.syncCommit({
         vaultId,
         deviceId: settings.deviceId,
-        completed,
-        deleted,
+        completed: executeResult.completed,
+        deleted: executeResult.deleted,
         vectorizeEnabled: settings.vectorizeEnabled,
       });
 
       if (!commitResult.success && commitResult.conflicts) {
         console.warn('[CloudSync] Commit has conflicts:', commitResult.conflicts);
+      }
+
+      if (commitResult.success) {
+        const completedIds = new Set(executeResult.completed.map((c) => c.fileId));
+        await applyChangesToFileIndex(
+          vaultPath,
+          pendingChanges,
+          executeResult,
+          completedIds,
+          localStates
+        );
       }
     }
 
@@ -243,6 +265,15 @@ export const cloudSyncEngine = {
       return;
     }
 
+    // 绑定冲突检查
+    const conflictResult = await checkAndResolveBindingConflict(vaultPath);
+    if (conflictResult.hasConflict && conflictResult.choice === 'stay_offline') {
+      store.setStatus('offline');
+      store.setVault(vaultPath, null, null);
+      store.setError('Workspace bound to different account');
+      return;
+    }
+
     // 加载 fileIndex 并扫描
     await fileIndexManager.load(vaultPath);
     const created = await fileIndexManager.scanAndCreateIds(vaultPath);
@@ -291,6 +322,7 @@ export const cloudSyncEngine = {
 
     syncLock = false;
     resetAutoBindingState();
+    resetBindingConflictState();
 
     store.setStatus('disabled');
     store.setVault(null, null, null);

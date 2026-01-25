@@ -65,11 +65,13 @@ status: active
   - 入口：`docs/products/moryflow/index.md`
   - 发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`
   - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
+  - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
+  - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-25，packages/agents\* 清单调整 + 进度同步区合并）
-- PR-60 Agent Browser 改动 Code Review：`docs/code-review/anyhunt-server-agent-browser-pr60.md`（更新：2026-01-25，修复完成）
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-26，packages/agents\* 清单调整 + 进度同步区合并）
+- Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
 - Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-01-25，修复完成）

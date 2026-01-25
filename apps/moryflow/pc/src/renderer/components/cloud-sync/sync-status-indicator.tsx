@@ -1,10 +1,13 @@
 /**
- * 云同步状态指示器
- * 显示当前同步状态，点击可查看详情或触发同步
+ * [PROPS]: vaultPath, onOpenSettings, compact
+ * [EMITS]: onOpenSettings? - 点击时触发
+ * [POS]: 云同步状态指示器（顶部/列表状态展示）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useCallback, useMemo } from 'react';
-import { AlertCircleIcon, CloudIcon, Loading03Icon, RefreshIcon } from '@hugeicons/core-free-icons';
+import { AlertCircleIcon, CloudIcon, Loading03Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@anyhunt/ui/components/button';
 import { Icon } from '@anyhunt/ui/components/icon';
 import {
@@ -15,7 +18,6 @@ import {
 } from '@anyhunt/ui/components/tooltip';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
-import type { SyncEngineStatus } from '@shared/ipc';
 import type { HugeIcon } from '@anyhunt/ui/components/icon';
 
 type StatusConfig = {
@@ -26,8 +28,10 @@ type StatusConfig = {
   animate?: boolean;
 };
 
-const getStatusConfig = (t: any): Record<SyncEngineStatus, StatusConfig> => ({
-  idle: {
+type DisplayStatusKey = 'synced' | 'syncing' | 'needsAttention';
+
+const getStatusConfig = (t: any): Record<DisplayStatusKey, StatusConfig> => ({
+  synced: {
     icon: CloudIcon,
     label: t('synced'),
     description: t('allChangesSynced'),
@@ -40,17 +44,11 @@ const getStatusConfig = (t: any): Record<SyncEngineStatus, StatusConfig> => ({
     className: 'text-primary',
     animate: true,
   },
-  offline: {
-    icon: CloudIcon,
-    label: t('offline'),
-    description: t('networkUnavailable'),
-    className: 'text-muted-foreground',
-  },
-  disabled: {
-    icon: CloudIcon,
-    label: t('notEnabled'),
-    description: t('cloudSyncNotEnabled'),
-    className: 'text-muted-foreground',
+  needsAttention: {
+    icon: AlertCircleIcon,
+    label: t('needsAttention'),
+    description: t('syncPausedDescription'),
+    className: 'text-amber-500',
   },
 });
 
@@ -69,66 +67,40 @@ export const SyncStatusIndicator = ({
 }: SyncStatusIndicatorProps) => {
   const { t } = useTranslation('workspace');
   const STATUS_CONFIG = useMemo(() => getStatusConfig(t), [t]);
-  const { status, binding, triggerSync } = useCloudSync(vaultPath);
+  const { status, binding } = useCloudSync(vaultPath);
+
+  const isSyncing = status?.engineStatus === 'syncing';
+  const needsAttention =
+    !binding ||
+    status?.engineStatus === 'offline' ||
+    status?.engineStatus === 'disabled' ||
+    !!status?.error;
 
   // 计算显示状态
-  const displayStatus = useMemo((): StatusConfig & { hasError: boolean } => {
-    // 未绑定 vault 时显示为未启用
-    if (!binding) {
-      return { ...STATUS_CONFIG.disabled, hasError: false };
-    }
+  const displayStatus = useMemo((): StatusConfig => {
+    if (isSyncing) return STATUS_CONFIG.syncing;
+    if (needsAttention) return STATUS_CONFIG.needsAttention;
+    return STATUS_CONFIG.synced;
+  }, [STATUS_CONFIG, isSyncing, needsAttention]);
 
-    // 有错误时特殊显示
-    if (status?.error) {
-      return {
-        icon: AlertCircleIcon,
-        label: t('syncFailed'),
-        description: status.error,
-        className: 'text-destructive',
-        hasError: true,
-      };
-    }
-
-    const engineStatus = status?.engineStatus ?? 'disabled';
-    return { ...STATUS_CONFIG[engineStatus], hasError: false };
-  }, [status, binding, t, STATUS_CONFIG]);
-
-  // 处理点击
+  // 处理点击（仅打开设置）
   const handleClick = useCallback(() => {
-    if (!binding && onOpenSettings) {
-      // 未绑定时打开设置
-      onOpenSettings();
-      return;
-    }
-
-    if (displayStatus.hasError || status?.engineStatus === 'idle') {
-      // 有错误或空闲时触发同步
-      void triggerSync();
-    }
-  }, [binding, displayStatus.hasError, status?.engineStatus, triggerSync, onOpenSettings]);
+    onOpenSettings?.();
+  }, [onOpenSettings]);
 
   const statusIcon = displayStatus.icon;
-  const pendingCount = status?.pendingCount ?? 0;
 
   // 构建完整描述
   const tooltipContent = useMemo(() => {
     const lines: string[] = [displayStatus.description];
-
-    if (binding) {
-      lines.push(`Vault: ${binding.vaultName}`);
-    }
-
-    if (pendingCount > 0) {
-      lines.push(t('filesPending', { count: pendingCount }));
-    }
-
     if (status?.lastSyncAt) {
       const lastSync = new Date(status.lastSyncAt);
       lines.push(`${t('lastSync')}: ${lastSync.toLocaleTimeString()}`);
+    } else {
+      lines.push(`${t('lastSync')}: ${t('neverSynced')}`);
     }
-
     return lines;
-  }, [displayStatus.description, binding, pendingCount, status?.lastSyncAt, t]);
+  }, [displayStatus.description, status?.lastSyncAt, t]);
 
   // compact 模式：仅显示图标按钮，详情由 SyncStatusHoverCard 提供
   if (compact) {
@@ -156,11 +128,6 @@ export const SyncStatusIndicator = ({
               className={`h-3.5 w-3.5 ${displayStatus.className} ${displayStatus.animate ? 'animate-spin' : ''}`}
             />
             <span className="text-muted-foreground">{displayStatus.label}</span>
-            {pendingCount > 0 && (
-              <span className="ml-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                {pendingCount}
-              </span>
-            )}
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-[220px] text-xs">
@@ -170,12 +137,6 @@ export const SyncStatusIndicator = ({
                 {line}
               </p>
             ))}
-            {(displayStatus.hasError || status?.engineStatus === 'idle') && binding && (
-              <p className="mt-1 flex items-center gap-1 text-primary">
-                <Icon icon={RefreshIcon} className="h-3 w-3" />
-                {t('clickToSync')}
-              </p>
-            )}
           </div>
         </TooltipContent>
       </Tooltip>

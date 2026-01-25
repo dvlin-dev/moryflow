@@ -4,48 +4,42 @@
  * [POS]: 外观设置页，iOS 原生风格
  */
 
-import { View, ActivityIndicator } from 'react-native'
-import { CheckIcon, SunIcon, MoonIcon, MonitorIcon } from 'lucide-react-native'
-import * as React from 'react'
+import { View, ActivityIndicator } from 'react-native';
+import { CheckIcon, SunIcon, MoonIcon, MonitorIcon } from '@/components/ui/icons';
+import * as React from 'react';
 
-import { Icon } from '@/components/ui/icon'
-import { useTheme, type Theme } from '@/lib/hooks/use-theme'
-import { useThemeColors } from '@/lib/theme'
-import { useTranslation } from '@anyhunt/i18n'
-import {
-  SettingsGroup,
-  SettingsRow,
-  SettingsSeparator,
-} from '@/components/settings'
+import { Icon } from '@/components/ui/icon';
+import { useTheme, type Theme } from '@/lib/hooks/use-theme';
+import { useThemeColors } from '@/lib/theme';
+import { useTranslation } from '@anyhunt/i18n';
+import { SettingsGroup, SettingsRow, SettingsSeparator } from '@/components/settings';
 
 export default function AppearanceScreen() {
-  const { theme, setTheme, isLoading } = useTheme()
-  const colors = useThemeColors()
-  const { t } = useTranslation('common')
+  const { theme, setTheme, isLoading } = useTheme();
+  const colors = useThemeColors();
+  const { t } = useTranslation('common');
 
   const handleThemeChange = React.useCallback(
     (newTheme: Theme) => {
-      setTheme(newTheme)
+      setTheme(newTheme);
     },
     [setTheme]
-  )
+  );
 
   // 选中标记
   const renderCheckmark = (isSelected: boolean) =>
-    isSelected ? (
-      <Icon as={CheckIcon} size={20} color={colors.primary} />
-    ) : undefined
+    isSelected ? <Icon as={CheckIcon} size={20} color={colors.primary} /> : undefined;
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-page-background items-center justify-center">
+      <View className="bg-page-background flex-1 items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
-    )
+    );
   }
 
   return (
-    <View className="flex-1 bg-page-background">
+    <View className="bg-page-background flex-1">
       <View className="pt-6">
         <SettingsGroup title={t('selectThemeMode')}>
           <SettingsRow
@@ -77,5 +71,5 @@ export default function AppearanceScreen() {
         </SettingsGroup>
       </View>
     </View>
-  )
+  );
 }

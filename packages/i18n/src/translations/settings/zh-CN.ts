@@ -281,6 +281,7 @@ const zhCN = {
   cloudSyncDisabled: '云同步功能未启用',
   cloudSyncEnableFailed: '云同步启用失败，请稍后重试',
   cloudSyncSyncing: '同步中...',
+  cloudSyncNeedsAttention: '需要注意',
   cloudSyncSynced: '已同步',
   cloudSyncFailed: '同步失败',
   cloudSyncNotEnabled: '未启用',

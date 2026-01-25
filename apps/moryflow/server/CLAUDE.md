@@ -57,6 +57,10 @@ module-name/
 - AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
 - AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
 - CreditService：新增欠费记录与付费积分优先抵扣
+- Sync：差异计算抽离为纯函数模块，补齐 rename/clock fast-forward 与冲突副本处理
+- Sync：预签名 URL 生成前校验存储配置，额度预检包含冲突副本
+- Quota：拆分单文件大小与增量存储校验，统一 Sync 额度判断
+- Sync：冲突额度增量按本地文件大小计算，避免误判
 - Auth：access JWT + refresh rotation + JWKS，移除 pre-register 与旧 bearer 交互
 - Auth：Web/设备端区分 CSRF（Web 开启、设备端允许无 Origin），补充 origin 白名单工具与单测
 - Auth：接入 Expo plugin（`@better-auth/expo`），`TRUSTED_ORIGINS` 示例包含 `moryflow://`

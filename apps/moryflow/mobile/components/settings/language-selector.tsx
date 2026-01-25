@@ -1,40 +1,40 @@
-import React from 'react'
-import { View, Pressable, Platform, Alert } from 'react-native'
-import { Text } from '@/components/ui/text'
-import { Icon } from '@/components/ui/icon'
-import { useThemeColors } from '@/lib/theme'
-import { ChevronRightIcon, GlobeIcon } from 'lucide-react-native'
+import React from 'react';
+import { View, Pressable, Platform, Alert } from 'react-native';
+import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
+import { useThemeColors } from '@/lib/theme';
+import { ChevronRightIcon, GlobeIcon } from '@/components/ui/icons';
 import {
   useLanguage,
   useTranslation,
   type SupportedLanguage,
   SUPPORTED_LANGUAGES,
-} from '@anyhunt/i18n'
+} from '@anyhunt/i18n';
 
 // iOS 平台动态导入 SwiftUI 组件
 type PickerType = React.ComponentType<{
-  options: string[]
-  selectedIndex: number
-  onOptionSelected: (event: { nativeEvent: { index: number } }) => void
-  variant?: 'menu' | 'segmented' | 'wheel'
-}> | null
+  options: string[];
+  selectedIndex: number;
+  onOptionSelected: (event: { nativeEvent: { index: number } }) => void;
+  variant?: 'menu' | 'segmented' | 'wheel';
+}> | null;
 
 type HostType = React.ComponentType<{
-  matchContents?: boolean
-  style?: React.CSSProperties
-  children?: React.ReactNode
-}> | null
+  matchContents?: boolean;
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+}> | null;
 
-let Picker: PickerType = null
-let Host: HostType = null
+let Picker: PickerType = null;
+let Host: HostType = null;
 
 if (Platform.OS === 'ios') {
   try {
-    const swiftUI = require('@expo/ui/swift-ui')
-    Picker = swiftUI.Picker as PickerType
-    Host = swiftUI.Host as HostType
+    const swiftUI = require('@expo/ui/swift-ui');
+    Picker = swiftUI.Picker as PickerType;
+    Host = swiftUI.Host as HostType;
   } catch (error) {
-    console.warn('[@expo/ui/swift-ui] 组件加载失败，回退到 Alert:', error)
+    console.warn('[@expo/ui/swift-ui] 组件加载失败，回退到 Alert:', error);
   }
 }
 
@@ -43,47 +43,47 @@ function showAndroidLanguageAlert(
   onLanguageSelect: (language: SupportedLanguage) => void,
   title: string
 ): void {
-  const languages = Object.keys(SUPPORTED_LANGUAGES) as SupportedLanguage[]
+  const languages = Object.keys(SUPPORTED_LANGUAGES) as SupportedLanguage[];
 
   const buttons = languages.map((lang) => {
-    const info = SUPPORTED_LANGUAGES[lang]
-    const isCurrent = lang === currentLanguage
+    const info = SUPPORTED_LANGUAGES[lang];
+    const isCurrent = lang === currentLanguage;
     return {
       text: `${isCurrent ? '✓ ' : ''}${info.nativeName}`,
       onPress: () => {
         if (!isCurrent) {
-          onLanguageSelect(lang)
+          onLanguageSelect(lang);
         }
       },
-    }
-  })
+    };
+  });
 
-  Alert.alert(title, undefined, buttons, { cancelable: true })
+  Alert.alert(title, undefined, buttons, { cancelable: true });
 }
 
 function IOSLanguagePicker(): React.JSX.Element {
-  const { currentLanguage, changeLanguage } = useLanguage()
-  const { t } = useTranslation('settings')
-  const colors = useThemeColors()
+  const { currentLanguage, changeLanguage } = useLanguage();
+  const { t } = useTranslation('settings');
+  const colors = useThemeColors();
 
-  const languages = Object.keys(SUPPORTED_LANGUAGES) as SupportedLanguage[]
-  const languageOptions = languages.map((lang) => SUPPORTED_LANGUAGES[lang].nativeName)
-  const selectedIndex = languages.indexOf(currentLanguage)
+  const languages = Object.keys(SUPPORTED_LANGUAGES) as SupportedLanguage[];
+  const languageOptions = languages.map((lang) => SUPPORTED_LANGUAGES[lang].nativeName);
+  const selectedIndex = languages.indexOf(currentLanguage);
 
   const handleLanguageChange = (event: { nativeEvent: { index: number } }): void => {
-    const newIndex = event.nativeEvent.index
-    const newLanguage = languages[newIndex]
+    const newIndex = event.nativeEvent.index;
+    const newLanguage = languages[newIndex];
     if (newLanguage && newLanguage !== currentLanguage) {
-      changeLanguage(newLanguage)
+      changeLanguage(newLanguage);
     }
-  }
+  };
 
   if (Picker && Host) {
     return (
-      <View className="flex-row items-center justify-between px-4 py-3 min-h-[44px]">
+      <View className="min-h-[44px] flex-row items-center justify-between px-4 py-3">
         <View className="flex-row items-center">
           <Icon as={GlobeIcon} size={22} color={colors.primary} style={{ marginRight: 12 }} />
-          <Text className="text-[17px] text-foreground">{t('language')}</Text>
+          <Text className="text-foreground text-[17px]">{t('language')}</Text>
         </View>
 
         <View style={{ marginRight: -12 }}>
@@ -97,49 +97,46 @@ function IOSLanguagePicker(): React.JSX.Element {
           </Host>
         </View>
       </View>
-    )
+    );
   }
 
-  return <AndroidLanguageSelector />
+  return <AndroidLanguageSelector />;
 }
 
 function AndroidLanguageSelector(): React.JSX.Element {
-  const { currentLanguage, changeLanguage } = useLanguage()
-  const { t } = useTranslation('settings')
-  const colors = useThemeColors()
+  const { currentLanguage, changeLanguage } = useLanguage();
+  const { t } = useTranslation('settings');
+  const colors = useThemeColors();
 
-  const currentLanguageInfo = SUPPORTED_LANGUAGES[currentLanguage]
+  const currentLanguageInfo = SUPPORTED_LANGUAGES[currentLanguage];
 
   const handleLanguageSelect = (language: SupportedLanguage): void => {
-    changeLanguage(language)
-  }
+    changeLanguage(language);
+  };
 
   const showLanguageMenu = (): void => {
-    showAndroidLanguageAlert(currentLanguage, handleLanguageSelect, t('selectLanguage'))
-  }
+    showAndroidLanguageAlert(currentLanguage, handleLanguageSelect, t('selectLanguage'));
+  };
 
   return (
     <Pressable
       onPress={showLanguageMenu}
-      className="flex-row items-center justify-between px-4 py-3 min-h-[44px] active:bg-surface-pressed"
-    >
+      className="active:bg-surface-pressed min-h-[44px] flex-row items-center justify-between px-4 py-3">
       <View className="flex-row items-center">
         <Icon as={GlobeIcon} size={22} color={colors.primary} style={{ marginRight: 12 }} />
-        <Text className="text-[17px] text-foreground">{t('language')}</Text>
+        <Text className="text-foreground text-[17px]">{t('language')}</Text>
       </View>
       <View className="flex-row items-center gap-2">
-        <Text className="text-[17px] text-muted-foreground">
-          {currentLanguageInfo.nativeName}
-        </Text>
+        <Text className="text-muted-foreground text-[17px]">{currentLanguageInfo.nativeName}</Text>
         <Icon as={ChevronRightIcon} size={18} color={colors.iconMuted} />
       </View>
     </Pressable>
-  )
+  );
 }
 
 export function LanguageSelector(): React.JSX.Element {
   if (Platform.OS === 'ios' && Picker && Host) {
-    return <IOSLanguagePicker />
+    return <IOSLanguagePicker />;
   }
-  return <AndroidLanguageSelector />
+  return <AndroidLanguageSelector />;
 }

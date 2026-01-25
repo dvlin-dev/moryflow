@@ -132,6 +132,8 @@ const zhCN: Record<keyof typeof en, string> = {
   allChangesSynced: '所有更改已同步到云端',
   syncing: '同步中',
   syncingChanges: '正在同步更改...',
+  needsAttention: '需要注意',
+  syncPausedDescription: '同步已暂停，请检查网络。',
   offline: '离线',
   networkUnavailable: '网络连接不可用',
   notEnabled: '未启用',

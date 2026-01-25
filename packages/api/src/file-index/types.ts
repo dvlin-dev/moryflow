@@ -6,7 +6,6 @@
  * [PROTOCOL]: 本文件变更时，必须同步更新：
  * - apps/moryflow/pc/src/main/cloud-sync/file-index/
  * - apps/moryflow/mobile/lib/vault/file-index/
- * - packages/sync/src/types.ts
  */
 
 import type { VectorClock } from '@anyhunt/sync';
@@ -29,19 +28,16 @@ export interface FileEntry {
   lastSyncedHash: string | null;
   /** 上次同步成功时的时钟状态 */
   lastSyncedClock: VectorClock;
-}
-
-/** 旧版 FileEntry（用于迁移） */
-export interface LegacyFileEntry {
-  id: string;
-  path: string;
-  createdAt: number;
+  /** 上次同步成功时的文件大小（字节） */
+  lastSyncedSize?: number | null;
+  /** 上次同步成功时的修改时间（毫秒时间戳） */
+  lastSyncedMtime?: number | null;
 }
 
 /** 存储格式 */
 export interface FileIndexStore {
   /** 版本号：2 表示向量时钟版本 */
-  version?: number;
+  version: 2;
   files: FileEntry[];
 }
 

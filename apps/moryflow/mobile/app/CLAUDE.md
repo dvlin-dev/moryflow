@@ -71,6 +71,8 @@ Mobile 端页面路由目录，基于 Expo Router 的文件系统路由。
 
 ## 近期变更
 
+- 云同步设置页精简为状态卡 + 主开关；Sync now 入口统一到 Workspace Sheet
+- 页面图标统一为 Hugeicons（app 路由页面）
 - 动态路由跳转优先使用 `{ pathname: '/(editor)/[fileId]', params: { fileId } }` 形式
 - Tab 导航使用真实 Tabs；「快速创建草稿」为动作按钮（不再使用路由页重定向）
 - 编辑器标题输入统一抽成 `TitleInput`，修复暗黑模式下标题颜色未适配的问题

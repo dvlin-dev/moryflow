@@ -4,13 +4,13 @@
  * [POS]: Vault 列表项组件，支持原生上下文菜单
  */
 
-import { View, Pressable } from 'react-native'
-import * as ContextMenu from 'zeego/context-menu'
-import { useTranslation } from '@anyhunt/i18n'
-import { Text } from '@/components/ui/text'
-import { Icon } from '@/components/ui/icon'
-import { CheckIcon } from 'lucide-react-native'
-import { PRESSED_BACKGROUND, SHEET_STYLES, type VaultItemProps } from '../const'
+import { View, Pressable } from 'react-native';
+import * as ContextMenu from 'zeego/context-menu';
+import { useTranslation } from '@anyhunt/i18n';
+import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
+import { CheckIcon } from '@/components/ui/icons';
+import { PRESSED_BACKGROUND, SHEET_STYLES, type VaultItemProps } from '../const';
 
 export function VaultItem({
   vault,
@@ -22,8 +22,8 @@ export function VaultItem({
   colors,
   isDark,
 }: VaultItemProps) {
-  const { t } = useTranslation('workspace')
-  const { t: tc } = useTranslation('common')
+  const { t } = useTranslation('workspace');
+  const { t: tc } = useTranslation('common');
 
   const itemContent = (
     <View
@@ -32,25 +32,23 @@ export function VaultItem({
         alignItems: 'center',
         padding: SHEET_STYLES.itemPadding,
         backgroundColor: 'transparent',
-      }}
-    >
+      }}>
       <Text
         style={{
           fontSize: 17,
           fontWeight: isCurrent ? '500' : '400',
           color: colors.textPrimary,
           flex: 1,
-        }}
-      >
+        }}>
         {vault.name}
       </Text>
       {isCurrent && <Icon as={CheckIcon} size={20} color={colors.primary} />}
     </View>
-  )
+  );
 
   // 当前 vault 不显示 context menu
   if (isCurrent) {
-    return itemContent
+    return itemContent;
   }
 
   return (
@@ -66,8 +64,7 @@ export function VaultItem({
                 : PRESSED_BACKGROUND.light
               : 'transparent',
             opacity: isOperating ? 0.5 : 1,
-          })}
-        >
+          })}>
           {itemContent}
         </Pressable>
       </ContextMenu.Trigger>
@@ -86,5 +83,5 @@ export function VaultItem({
         </ContextMenu.Item>
       </ContextMenu.Content>
     </ContextMenu.Root>
-  )
+  );
 }

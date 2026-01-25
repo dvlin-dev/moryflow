@@ -14,7 +14,7 @@ import {
   BottomSheetScrollView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { RefreshCwIcon, SettingsIcon, PlusIcon } from 'lucide-react-native';
+import { RefreshCwIcon, SettingsIcon, PlusIcon } from '@/components/ui/icons';
 import { Text } from '@/components/ui/text';
 
 import {

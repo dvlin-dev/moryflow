@@ -272,6 +272,7 @@ const ar = {
   cloudSyncDisabled: 'المزامنة السحابية معطّلة',
   cloudSyncEnableFailed: 'فشل تفعيل المزامنة السحابية. يرجى المحاولة لاحقًا',
   cloudSyncSyncing: 'جاري المزامنة...',
+  cloudSyncNeedsAttention: 'يتطلب الانتباه',
   cloudSyncSynced: 'تمت المزامنة',
   cloudSyncFailed: 'فشلت المزامنة',
   cloudSyncNotEnabled: 'غير مفعّل',

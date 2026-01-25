@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useUser } from '@/lib/contexts/auth.context';
-import type { LucideIcon } from 'lucide-react-native';
+import type { AppIcon } from '@/components/ui/icons';
 import * as React from 'react';
 import { View, Pressable } from 'react-native';
 import { useThemeColors } from '@/lib/theme';
@@ -10,11 +10,11 @@ import { useThemeColors } from '@/lib/theme';
 export interface UserAvatarProps extends Omit<React.ComponentProps<typeof Avatar>, 'alt'> {
   size?: string;
   showEditIcon?: boolean;
-  editIcon?: LucideIcon;
+  editIcon?: AppIcon;
   onEdit?: () => void;
 }
 
-export function UserAvatar({ 
+export function UserAvatar({
   size = 'size-20',
   showEditIcon = false,
   editIcon: EditIcon,
@@ -25,22 +25,22 @@ export function UserAvatar({
   const theme = useThemeColors();
 
   const { initials, userName } = React.useMemo(() => {
-    const userName = user?.name || user?.email || 'Unknown'
+    const userName = user?.name || user?.email || 'Unknown';
     const initials = userName
       .split(/[\s@]/)
       .filter(Boolean)
       .slice(0, 1)
       .map((part: string) => part[0])
       .join('')
-      .toUpperCase()
+      .toUpperCase();
 
-    return { initials, userName }
-  }, [user?.name, user?.email])
+    return { initials, userName };
+  }, [user?.name, user?.email]);
 
   const AvatarComponent = (
     <Avatar alt={`${userName}'s avatar`} className={size} {...avatarProps}>
       <AvatarFallback className="bg-primary/10">
-        <Text className="text-primary font-semibold text-lg">{initials}</Text>
+        <Text className="text-primary text-lg font-semibold">{initials}</Text>
       </AvatarFallback>
     </Avatar>
   );
@@ -49,10 +49,9 @@ export function UserAvatar({
     return (
       <View className="relative">
         {AvatarComponent}
-        <Pressable 
+        <Pressable
           onPress={onEdit}
-          className="absolute -bottom-1 -right-1 bg-primary rounded-full p-2"
-        >
+          className="bg-primary absolute -right-1 -bottom-1 rounded-full p-2">
           <Icon as={EditIcon} className="size-4" color={theme.textInverse} />
         </Pressable>
       </View>

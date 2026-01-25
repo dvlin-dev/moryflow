@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { XIcon, CheckIcon, SparklesIcon, LockIcon } from 'lucide-react-native';
+import { XIcon, CheckIcon, SparklesIcon, LockIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import type { UnifiedModel } from '@/lib/models';
 
 interface ModelPickerSheetProps {
@@ -44,13 +45,13 @@ export function ModelPickerSheet({
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="bg-background flex-1">
       {/* Header - 使用 style 处理动态 insets */}
       <View style={{ paddingTop: insets.top + 12 }}>
         <View className="flex-row items-center justify-between px-4 pb-3">
-          <Text className="text-[17px] font-semibold text-foreground">选择模型</Text>
-          <Pressable className="w-10 h-10 items-center justify-center" onPress={onClose}>
-            <XIcon size={22} color={colors.foreground} />
+          <Text className="text-foreground text-[17px] font-semibold">选择模型</Text>
+          <Pressable className="h-10 w-10 items-center justify-center" onPress={onClose}>
+            <Icon as={XIcon} size={22} color={colors.foreground} />
           </Pressable>
         </View>
       </View>
@@ -58,10 +59,10 @@ export function ModelPickerSheet({
       {/* List */}
       <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
         {models.length === 0 ? (
-          <View className="items-center justify-center py-[60px] gap-2">
-            <SparklesIcon size={48} color={colors.mutedForeground} />
-            <Text className="text-[15px] mt-2 text-muted-foreground">暂无可用模型</Text>
-            <Text className="text-[13px] text-muted-foreground">请登录以查看会员模型</Text>
+          <View className="items-center justify-center gap-2 py-[60px]">
+            <Icon as={SparklesIcon} size={48} color={colors.mutedForeground} />
+            <Text className="text-muted-foreground mt-2 text-[15px]">暂无可用模型</Text>
+            <Text className="text-muted-foreground text-[13px]">请登录以查看会员模型</Text>
           </View>
         ) : (
           models.map((model) => {
@@ -71,36 +72,36 @@ export function ModelPickerSheet({
               <Pressable
                 key={model.id}
                 className={cn(
-                  'flex-row items-center justify-between py-[14px] px-4 rounded-xl mb-2',
+                  'mb-2 flex-row items-center justify-between rounded-xl px-4 py-[14px]',
                   isSelected && 'bg-accent',
                   isLocked && 'opacity-70'
                 )}
-                onPress={() => handleModelPress(model)}
-              >
-                <View className="flex-1 mr-3">
+                onPress={() => handleModelPress(model)}>
+                <View className="mr-3 flex-1">
                   <View className="flex-row items-center">
                     <Text
                       className={cn(
-                        'text-base font-medium mb-0.5',
+                        'mb-0.5 text-base font-medium',
                         isLocked ? 'text-muted-foreground' : 'text-foreground'
                       )}
-                      numberOfLines={1}
-                    >
+                      numberOfLines={1}>
                       {model.name}
                     </Text>
                     {isLocked && (
                       <View className="ml-1.5">
-                        <LockIcon size={14} color={colors.mutedForeground} />
+                        <Icon as={LockIcon} size={14} color={colors.mutedForeground} />
                       </View>
                     )}
                   </View>
                   {model.provider && (
-                    <Text className="text-[13px] text-muted-foreground" numberOfLines={1}>
+                    <Text className="text-muted-foreground text-[13px]" numberOfLines={1}>
                       {model.provider}
                     </Text>
                   )}
                 </View>
-                {isSelected && !isLocked && <CheckIcon size={20} color={colors.primary} />}
+                {isSelected && !isLocked && (
+                  <Icon as={CheckIcon} size={20} color={colors.primary} />
+                )}
               </Pressable>
             );
           })

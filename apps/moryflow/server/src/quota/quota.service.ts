@@ -106,16 +106,14 @@ export class QuotaService {
   }
 
   /**
-   * 检查是否可以上传文件
+   * 检查单文件大小限制
    */
-  async checkUploadAllowed(
-    userId: string,
+  checkFileSizeAllowed(
     tier: SubscriptionTier,
     fileSize: number,
-  ): Promise<QuotaCheckResult> {
+  ): QuotaCheckResult {
     const config = getQuotaConfig(tier);
 
-    // 检查单文件大小
     if (fileSize > config.maxFileSize) {
       return {
         allowed: false,
@@ -125,10 +123,25 @@ export class QuotaService {
       };
     }
 
-    // 检查总存储空间
+    return { allowed: true };
+  }
+
+  /**
+   * 检查总存储空间（按增量）
+   */
+  async checkStorageAllowed(
+    userId: string,
+    tier: SubscriptionTier,
+    sizeDelta: number,
+  ): Promise<QuotaCheckResult> {
+    if (sizeDelta <= 0) {
+      return { allowed: true };
+    }
+
+    const config = getQuotaConfig(tier);
     const usage = await this.getOrCreateUsage(userId);
     const currentStorage = Number(usage.storageUsed);
-    const newStorage = currentStorage + fileSize;
+    const newStorage = currentStorage + sizeDelta;
 
     if (newStorage > config.maxStorage) {
       return {
