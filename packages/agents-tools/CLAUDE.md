@@ -7,7 +7,8 @@
 - 文件工具：read/write/edit/delete/move/ls
 - 搜索工具：glob/grep/search_in_file
 - 网络工具：web_fetch/web_search
-- 任务工具：manage_plan/task
+- 任务工具：tasks\_\* / task
+- 任务存储规范：Tasks Store 接口 + SQLite schema/migrations
 - 图片工具：generate_image
 - 工具集装配：`createBaseTools` / `createMobileTools`
 
@@ -18,6 +19,9 @@
 - `src/create-tools.ts`：基础工具集（可选 bash）
 - `src/create-tools-mobile.ts`：移动端工具集
 - `src/shared.ts`：工具共用常量与帮助函数
+- `src/task/tasks-store.ts`：Tasks Store 接口与 SQLite schema/migrations 规范
+- `src/task/tasks-tools.ts`：Tasks 工具集（tasks\_\*）
+- `src/task/task-labels.ts`：Tasks 展示层文案映射（PC/Mobile 共享）
 
 ## 约束与约定
 
@@ -36,7 +40,11 @@
 
 - 统一路径归一化，避免 Vault 前缀穿越
 - `web_fetch` 增加 URL 安全校验
+- 新增 Tasks Store 接口与 SQLite schema/migrations 规范（2026-01-25）
+- 新增 tasks\_\* 工具并移除 manage_plan（2026-01-25）
+- Tasks Store 改为显式 chatId 参数，tasks_graph 使用安全节点 ID（2026-01-25）
+- tasks_graph 增强 mermaid label 安全处理（2026-01-25）
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-01-24_
+_版本: 1.0 | 更新日期: 2026-01-25_

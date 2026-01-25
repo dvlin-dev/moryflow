@@ -13,7 +13,8 @@ import { createGrepTool } from './search/grep-tool';
 import { createSearchInFileTool } from './search/search-in-file-tool';
 import { createWebFetchTool } from './web/web-fetch-tool';
 import { createWebSearchTool } from './web/web-search-tool';
-import { createManagePlanTool } from './task/manage-plan';
+import type { TasksStore } from './task/tasks-store';
+import { createTasksTools } from './task/tasks-tools';
 import { createTaskTool, type SubAgentToolsConfig } from './task/task-tool';
 import { createBashTool } from './platform/bash-tool';
 import { createGenerateImageTool } from './image/generate-image-tool';
@@ -38,6 +39,7 @@ export interface ToolsContext {
   capabilities: PlatformCapabilities;
   crypto: CryptoUtils;
   vaultUtils: VaultUtils;
+  tasksStore: TasksStore;
   /** 是否启用 bash 工具（仅桌面端） */
   enableBash?: boolean;
   /** Web 搜索 API Key（可选） */
@@ -51,7 +53,7 @@ export const createBaseToolsWithoutTask = (ctx: ToolsContext): Tool<AgentContext
   // 确保 glob 实现已初始化
   ensureGlobInitialized();
 
-  const { capabilities, crypto, vaultUtils, enableBash = false, webSearchApiKey } = ctx;
+  const { capabilities, crypto, vaultUtils, tasksStore, enableBash = false, webSearchApiKey } = ctx;
 
   const tools: Tool<AgentContext>[] = [
     // 文件操作工具
@@ -74,8 +76,8 @@ export const createBaseToolsWithoutTask = (ctx: ToolsContext): Tool<AgentContext
     // 图片生成工具
     createGenerateImageTool(capabilities),
 
-    // 任务管理工具
-    createManagePlanTool(),
+    // Tasks 工具
+    ...createTasksTools(tasksStore),
   ];
 
   // 仅桌面端启用 bash 工具
@@ -93,7 +95,7 @@ export const createBaseTools = (ctx: ToolsContext): Tool<AgentContext>[] => {
   // 确保 glob 实现已初始化
   ensureGlobInitialized();
 
-  const { capabilities, crypto, vaultUtils, enableBash = false, webSearchApiKey } = ctx;
+  const { capabilities, crypto, vaultUtils, tasksStore, enableBash = false, webSearchApiKey } = ctx;
 
   // 先创建所有工具实例，避免重复创建
   const readTool = createReadTool(capabilities, vaultUtils);
@@ -108,7 +110,7 @@ export const createBaseTools = (ctx: ToolsContext): Tool<AgentContext>[] => {
   const webFetchTool = createWebFetchTool(capabilities);
   const webSearchTool = createWebSearchTool(capabilities, webSearchApiKey);
   const generateImageTool = createGenerateImageTool(capabilities);
-  const managePlanTool = createManagePlanTool();
+  const tasksTools = createTasksTools(tasksStore);
 
   // 组装基础工具集
   const tools: Tool<AgentContext>[] = [
@@ -124,7 +126,7 @@ export const createBaseTools = (ctx: ToolsContext): Tool<AgentContext>[] => {
     webFetchTool,
     webSearchTool,
     generateImageTool,
-    managePlanTool,
+    ...tasksTools,
   ];
 
   // 仅桌面端启用 bash 工具
