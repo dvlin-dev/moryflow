@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-26
+date: 2026-01-24
 scope: monorepo
 status: active
 ---
@@ -29,7 +29,9 @@ status: active
 - Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
+- OpenCode 架构分析与 Agents 对齐建议：`docs/architecture/docs/opencode-architecture.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`
+- ADR-0002 Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`
 
 ## Guides（开发指南 / 可复用做法）
 

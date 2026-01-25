@@ -167,6 +167,8 @@ const de = {
   account: 'Konto',
   accountDescription: 'Anmeldung & Mitgliedschaft',
   generalDescription: 'Aussehen & Einstellungen',
+  systemPrompt: 'System Prompt',
+  systemPromptDescription: 'Prompt & Parameter',
   providers: 'KI-Anbieter',
   providersDescription: 'API-Schlüssel & Modelle',
   mcp: 'MCP',
@@ -181,6 +183,26 @@ const de = {
     'Format: anbieter_id/modell_id. Bei leer wird das Standardmodell des ersten aktivierten Anbieters verwendet.',
   defaultModelConfigDescription:
     'Bitte konfigurieren Sie Anbieter und Modelle auf der Seite "KI-Anbieter" und legen Sie hier das globale Standardmodell fest.',
+
+  // ========== System Prompt ==========
+  systemPromptModeLabel: 'Modus',
+  systemPromptModeHint: 'Im Standardmodus werden Prompt und Parameter ausgeblendet.',
+  systemPromptModeDefault: 'Standard verwenden',
+  systemPromptModeCustom: 'Benutzerdefiniert',
+  systemPromptDefaultHint: 'Verwendet den eingebauten Prompt und Standard-Parameter.',
+  systemPromptTemplateLabel: 'System Prompt',
+  systemPromptTemplatePlaceholder: 'System Prompt eingeben...',
+  systemPromptTemplateHint: 'Benutzerdefinierter Prompt ersetzt den Standard.',
+  systemPromptResetTemplate: 'Standardvorlage wiederherstellen',
+  systemPromptAdvancedLabel: 'Erweitert (Optional)',
+  systemPromptAdvancedHint: 'Nur verwenden, wenn du das Modellverhalten anpassen willst.',
+  systemPromptParamsLabel: 'Modellparameter',
+  systemPromptParamsHint: 'Überschreibungen gelten nur, wenn aktiviert.',
+  systemPromptUseDefaultLabel: 'Modellstandard verwenden',
+  systemPromptUseDefaultHint: 'Modellstandard wird verwendet.',
+  systemPromptTemperatureLabel: 'Temperature',
+  systemPromptTopPLabel: 'Top P',
+  systemPromptMaxTokensLabel: 'Max Tokens',
 
   // ========== KI-Anbieter ==========
   sdkTypeOpenAICompatible: 'OpenAI-kompatibel',

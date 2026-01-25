@@ -1,1354 +1,594 @@
 ---
-title: OpenCode 架构分析与 Aiget 优化建议
-date: 2026-01-12
-scope: moryflow/agents
+title: OpenCode 架构分析与 Anyhunt/Moryflow Agents 对齐建议
+date: 2026-01-24
+scope: agents-runtime
 status: proposal
 ---
 
-# OpenCode 架构分析与 Aiget 优化建议
+# OpenCode 架构分析与 Anyhunt/Moryflow Agents 对齐建议
 
-> 本文档分析 OpenCode（开源 AI 编码助手）的架构模式，并提出针对 Aiget（尤其是 Moryflow 的 Agent Runtime）可落地的优化建议。
-> 参考快照：`.opencode-ref/`（opencode@`f1a13f25a410ba79fd1537a4ac0df5864ac14530`，拉取日期：2026-01-12）。本文中的 OpenCode 细节以该快照为准。
+> 本文档基于 **OpenCode 最新代码** 与 **Anyhunt/Moryflow 当前代码**做对比分析，聚焦 Agent Runtime 的可借鉴点与落地路径。
+> OpenCode 参考快照：`.opencode-ref/`（opencode@`04b511e1fe135b70256c6aa4f41b81ce2571276c`，分支：`dev`，提交日期：2026-01-24）。
 
-## 使用指南：先准备参考项目快照（Snapshot）
+## 范围声明
 
-> 背景：参考项目（如 OpenCode）不会被提交到本仓库（通常在 `.gitignore` 中），因此当你把本分支拉到另一台机器后，**本地不会自动带上 `.opencode-ref/`**。
-> 在阅读/对照本文档前，请先确认参考快照已存在且版本一致。
+- 本文仅对齐 **ADR-0002 控制面**（Compaction / Permission / Truncation / Doom Loop / 审批与审计 / 模式切换 / 配置与外部化 / Hook）。
+- 首期落地仅覆盖 **Moryflow PC Runtime**。
+- 事件总线、工具缓存、并发控制等非控制面能力不在本轮范围。
+
+## 使用指南：准备参考快照（Snapshot）
+
+> 背景：参考项目不会提交到本仓库，因此切到另一台机器时不会自动带上 `.opencode-ref/`。
+> 阅读本文前请确认本地快照与本文一致。
 
 ### 1) 检查快照是否存在
 
 - 仓库根目录下应存在：`.opencode-ref/`
-- 且应能取到对应 commit：`f1a13f25a410ba79fd1537a4ac0df5864ac14530`
+- commit 应为：`04b511e1fe135b70256c6aa4f41b81ce2571276c`
 
-### 2) 如果不存在：拉取并固定到本文档使用的 commit
+### 2) 如果不存在：拉取并固定到本文 commit
 
 ```bash
-# 在 Aiget 仓库根目录执行
+# 在仓库根目录执行
+
 git clone https://github.com/anomalyco/opencode .opencode-ref
-git -C .opencode-ref checkout f1a13f25a410ba79fd1537a4ac0df5864ac14530
+
+git -C .opencode-ref checkout 04b511e1fe135b70256c6aa4f41b81ce2571276c
 ```
 
 ### 3) 如果已存在但版本不一致：切换到对应 commit
 
 ```bash
+
 git -C .opencode-ref fetch --all --tags
-git -C .opencode-ref checkout f1a13f25a410ba79fd1537a4ac0df5864ac14530
+
+git -C .opencode-ref checkout 04b511e1fe135b70256c6aa4f41b81ce2571276c
 ```
-
-## 目录
-
-1. [OpenCode 项目概述](#1-opencode-项目概述)
-2. [基础设施改进](#2-基础设施改进)
-   - 2.1 类型安全事件总线
-   - 2.2 分层配置系统
-   - 2.3 权限系统
-   - 2.4 Zod 工具系统
-3. [Moryflow AI 工作流改进](#3-moryflow-ai-工作流改进)
-   - 3.1 会话压缩（Token 感知）
-   - 3.2 Agent 定义系统
-   - 3.3 流式处理增强
-   - 3.4 Doom Loop 保护
-   - 3.5 工具结果缓存
-   - 3.6 并行工具执行
-4. [对比分析：Moryflow 现有 vs OpenCode](#4-对比分析)
-5. [优先级排序与实施路径](#5-优先级排序与实施路径)
-6. [参考文件索引](#6-参考文件索引)
 
 ---
 
-## 1. OpenCode 项目概述
+## 1. OpenCode 最新架构概览（2026-01）
 
-**OpenCode** 是一个开源的 AI 编码助手，类似 Claude Code / Cursor 的替代品。
+**定位**：开源 AI 编码助手（CLI/桌面/Web/插件/SDK 一体）。
 
-### 基本信息
-
-| 项目     | 详情                                                                       |
-| -------- | -------------------------------------------------------------------------- |
-| 仓库     | https://github.com/anomalyco/opencode                                      |
-| 许可     | MIT                                                                        |
-| 本地快照 | `.opencode-ref/`（git commit: `f1a13f25a410ba79fd1537a4ac0df5864ac14530`） |
-| 架构     | Monorepo（Turborepo + Bun）                                                |
-
-### 技术栈
-
-| 层级     | 技术                                                                           |
-| -------- | ------------------------------------------------------------------------------ |
-| 运行时   | Bun（主）/ Node.js（部分场景）                                                 |
-| 语言     | TypeScript (严格模式)                                                          |
-| UI       | SolidJS + OpenTUI（终端/应用 UI），Astro（Web/Docs），Tauri（Desktop Wrapper） |
-| HTTP     | Hono（部分服务端路由）                                                         |
-| LLM      | Vercel AI SDK（`ai` + `@ai-sdk/*` 多提供商）                                   |
-| 验证     | Zod                                                                            |
-| 本地存储 | 文件存储（JSON；非 SQLite）                                                    |
-
-### 核心架构
+### 1.1 Monorepo 结构（关键包）
 
 ```
 .opencode-ref/
 ├── packages/
-│   ├── opencode/          # 核心引擎（Agent/Session/Tool/Permission/Bus/...）
-│   │   ├── src/
-│   │   │   ├── agent/     # Agent 定义与配置
-│   │   │   ├── bus/       # 事件总线
-│   │   │   ├── config/    # 分层配置
-│   │   │   ├── permission/# 权限系统
-│   │   │   ├── provider/  # LLM 提供商抽象
-│   │   │   ├── session/   # 会话管理
-│   │   │   └── tool/      # 23 个内置工具
-│   │   └── ...
-│   ├── plugin/            # 插件 SDK（@opencode-ai/plugin；Hooks 扩展点）
-│   ├── sdk/               # TypeScript SDK（@opencode-ai/sdk）
-│   ├── app/               # 主应用 UI（SolidJS）
-│   ├── desktop/           # 桌面端（Tauri，包装 app）
-│   └── web/               # 网站/文档（Astro + Solid）
-├── .opencode/             # 项目内扩展目录（agent/command/tool）
-└── opencode.json          # 项目级配置（JSONC）
+│   ├── opencode/     # 核心引擎（Agent/Session/Tool/Permission/Config/Bus/...）
+│   ├── plugin/       # 插件 SDK（@opencode-ai/plugin）
+│   ├── sdk/          # OpenCode SDK（@opencode-ai/sdk）
+│   ├── app/          # 主 UI（SolidJS）
+│   ├── desktop/      # 桌面端（Tauri wrapper）
+│   ├── web/          # 官网/文档（Astro + Solid）
+│   ├── console/      # Web Console
+│   ├── extensions/   # 扩展生态
+│   ├── function/     # Function/Serverless 相关
+│   ├── identity/     # 身份相关
+│   ├── slack/        # Slack 集成
+│   ├── ui/           # UI 组件库
+│   └── util/         # 通用工具
+└── .opencode/        # 项目级扩展目录（agent/command/tool/...）
 ```
+
+### 1.2 技术栈要点
+
+- 运行时：Bun + Node（部分场景）
+- LLM：Vercel AI SDK（`ai`）+ 多 provider 适配
+- 配置：JSONC + Markdown frontmatter + `.opencode/` 目录扫描
+- 工具：内置工具 + 插件/本地工具发现机制
+- 权限：Pattern + Action（allow/deny/ask）
+- 事件：进程内 Bus + GlobalBus 跨 UI/CLI 订阅
 
 ---
 
-## 2. 基础设施改进
+## 2. OpenCode 值得借鉴的关键设计
 
-### 2.1 类型安全事件总线
+### 2.1 分层配置 + `.opencode/` 扩展目录
 
-**OpenCode 实现**: `packages/opencode/src/bus/`
+**关键点**
 
-OpenCode 使用类型安全的发布/订阅系统实现松耦合通信。
+- 多层配置合并：远端 `.well-known` → 全局 → 自定义路径 → 项目 → 内联变量
+- `.opencode/` 目录支持 agent/command/mode/plugin/tool 扫描
+- JSONC 支持 `{env:VAR}` / `{file:path}` 注入
 
-#### 核心代码
+**价值**
 
-```typescript
-// 简化节选（以 `.opencode-ref/packages/opencode/src/bus/*` 为准）
-import z from 'zod';
+- 组织级统一默认配置 + 项目级覆盖
+- Agent/Command/Tool 不必写死在代码中
 
-export namespace BusEvent {
-  export type Definition = ReturnType<typeof define>;
+**参考实现**
 
-  const registry = new Map<string, Definition>();
+- `.opencode-ref/packages/opencode/src/config/config.ts`
+- `.opencode-ref/packages/opencode/src/config/markdown.ts`
 
-  export function define<Type extends string, Properties extends z.ZodType>(
-    type: Type,
-    properties: Properties
-  ) {
-    const def = { type, properties };
-    registry.set(type, def);
-    return def;
-  }
-}
+### 2.2 权限系统（PermissionNext）
 
-export namespace Bus {
-  type Subscription = (event: any) => void | Promise<void>;
-  const subscriptions = new Map<string, Subscription[]>();
+**关键点**
 
-  export async function publish(def: BusEvent.Definition, properties: any) {
-    const payload = { type: def.type, properties };
-    const pending: Promise<unknown>[] = [];
+- `allow / deny / ask` + 通配符匹配
+- 权限请求通过 Bus 发布事件，UI 侧做审批
+- 支持「once/always/reject」与持久化规则
 
-    for (const key of [def.type, '*']) {
-      for (const sub of subscriptions.get(key) ?? []) {
-        pending.push(Promise.resolve(sub(payload)));
-      }
-    }
+**价值**
 
-    // 同步到全局 bus（用于跨 UI / CLI 层通信）
-    GlobalBus.emit('event', { directory: Instance.directory, payload });
-    await Promise.all(pending);
-  }
-}
-```
+- 工具执行可控，尤其是写入/执行类操作
+- 权限规则可随 Agent / 用户配置调整
 
-#### 事件定义示例
+**参考实现**
 
-```typescript
-// 会话压缩事件
-export const Event = {
-  Compacted: BusEvent.define(
-    'session.compacted',
-    z.object({
-      sessionID: z.string(),
-    })
-  ),
-};
+- `.opencode-ref/packages/opencode/src/permission/next.ts`
+- `.opencode-ref/packages/opencode/src/agent/agent.ts`（默认权限策略）
 
-// 权限事件
-export const Event = {
-  Asked: BusEvent.define('permission.asked', Request),
-  Replied: BusEvent.define(
-    'permission.replied',
-    z.object({
-      sessionID: z.string(),
-      requestID: z.string(),
-      reply: Reply,
-    })
-  ),
-};
-```
+### 2.3 会话压缩（Token-aware compaction）
 
-#### Aiget 应用场景
+**关键点**
 
-> 说明：OpenCode 的 Bus 是“进程内 / 实例内”的事件总线。Aiget 若需要跨进程（Electron main ↔ renderer）或跨服务（server ↔ console）通信，建议在事件总线之上加 IPC/WebSocket/队列适配层，而不是直接把进程内 Bus 当作分布式消息系统使用。
+- `isOverflow` + `prune`：优先修剪旧工具输出
+- `compaction` Agent 生成摘要并插入新消息
+- 可通过 Config / Plugin hooks 关闭或扩展
 
-| 场景     | 事件                     | 发布者        | 订阅者                        |
-| -------- | ------------------------ | ------------- | ----------------------------- |
-| 会话压缩 | `session.compacted`      | Agent Runtime | UI（展示“已压缩/可继续”提示） |
-| 同步状态 | `sync.started/completed` | Moryflow PC   | UI 状态栏                     |
-| 配额更新 | `quota.updated`          | Aiget Server  | Console 仪表盘                |
-| MCP 重载 | `mcp.reloaded`           | Agent Runtime | UI 工具列表                   |
+**价值**
 
-#### 建议包结构
+- 高效控制上下文窗口，减少“死循环 + 长对话爆窗”
 
-```
-packages/event-bus/
-├── src/
-│   ├── index.ts           # 主导出
-│   ├── bus.ts             # 核心 Bus
-│   ├── bus-event.ts       # 事件定义助手
-│   ├── events/
-│   │   ├── memory.events.ts
-│   │   ├── sync.events.ts
-│   │   └── quota.events.ts
-│   └── adapters/
-│       ├── nestjs.ts      # @Injectable() 服务
-│       ├── electron.ts    # IPC 桥接
-│       └── websocket.ts   # 实时推送
-├── package.json
-└── tsc-multi.json
-```
+**参考实现**
+
+- `.opencode-ref/packages/opencode/src/session/compaction.ts`
+- `.opencode-ref/packages/opencode/src/session/processor.ts`
+
+### 2.4 流式事件增强 + Doom Loop 保护
+
+**关键点**
+
+- 流式事件涵盖 reasoning/tool-input start-delta-end
+- 发现连续重复 tool-call 触发 `doom_loop` 权限审批
+
+**价值**
+
+- UI 可实时显示“工具参数构建中”“推理中”
+- Doom loop 由用户决策中止或继续
+
+**参考实现**
+
+- `.opencode-ref/packages/opencode/src/session/processor.ts`
+
+### 2.5 工具输出截断与外置存储
+
+**关键点**
+
+- 统一截断策略（行/字节）
+- 输出写入 `Global.Path.data/tool-output`
+- 提示用户使用工具读取指定文件而非直接塞上下文
+
+**价值**
+
+- 避免长输出拖垮上下文
+- 将“完整输出”转成可控文件读取流程
+
+**参考实现**
+
+- `.opencode-ref/packages/opencode/src/tool/truncation.ts`
+
+### 2.6 Plugin Hooks（跨层扩展点）
+
+**关键点**
+
+- `chat.params`/`chat.headers`/`tool.execute.before`/`tool.execute.after`
+- `experimental.chat.messages.transform` / `experimental.chat.system.transform`
+- Tool SDK 内置 `context.ask()` 与权限协作
+
+**价值**
+
+- 插件可定制系统提示、参数、输出加工、审批流程
+
+**参考实现**
+
+- `.opencode-ref/packages/plugin/src/index.ts`
+- `.opencode-ref/packages/plugin/src/tool.ts`
+
+### 2.7 Tool Registry & 自定义工具发现
+
+**关键点**
+
+- 内置工具 + `.opencode/tools` + plugin tools 合并
+- 统一 Tool 定义 + 参数 schema + 输出截断
+
+**价值**
+
+- 工具生态可扩展，且统一遵守权限/截断规则
+
+**参考实现**
+
+- `.opencode-ref/packages/opencode/src/tool/registry.ts`
 
 ---
 
-### 2.2 分层配置系统
+## 3. Anyhunt/Moryflow 当前 Agents 架构（2026-01）
 
-**OpenCode 实现**: `packages/opencode/src/config/`
+### 3.1 核心包与职责
 
-OpenCode 支持三级配置覆盖：全局 → 项目 → 内联。
+| 模块                      | 作用                                                                | 关键文件                                                          |
+| ------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `@anyhunt/agents-runtime` | 平台无关运行时（ModelFactory/AgentFactory/Session/Vault/Reasoning） | `packages/agents-runtime/src/index.ts`                            |
+| `@anyhunt/agents-tools`   | 工具集合（文件/搜索/web/task/plan）                                 | `packages/agents-tools/src/create-tools.ts`                       |
+| `@anyhunt/agents-mcp`     | MCP 工具桥接                                                        | `packages/agents-mcp/src/tools.ts`                                |
+| `@anyhunt/agents-sandbox` | Shell 沙盒与路径授权                                                | `packages/agents-sandbox/src/authorization/path-authorization.ts` |
+| Moryflow PC Runtime       | 实际运行入口（创建 tools、agent、mcp manager）                      | `apps/moryflow/pc/src/main/agent-runtime/index.ts`                |
 
-#### 配置层级
+### 3.2 运行时核心要点
 
-```
-~/.config/opencode/config.json   # 全局配置
-    ↓ 覆盖
-./opencode.json                   # 项目配置
-    ↓ 覆盖
-Agent frontmatter / CLI flags     # 内联配置
-```
+- 基于 `@openai/agents-core` + `@openai/agents-extensions`（非自研框架）
+- Agent 工厂缓存按 `modelId` 构建（`createAgentFactory`）
+- ModelFactory 统一管理 providers & reasoning 参数
+- 会话历史由 `SessionStore` 管理，`SessionAdapter` 拼装输入
+- 工具集包含子代理 `task`（explore/research/batch）与 `manage_plan`
+- Web Fetch 内置 SSRF 防护 + 内容截断
+- Shell 工具走 `agents-sandbox`（路径授权 + 沙盒执行）
 
-#### 配置格式 (JSONC)
+**参考实现**
 
-```jsonc
-// opencode.json
+- `packages/agents-runtime/src/agent-factory.ts`
+- `packages/agents-runtime/src/model-factory.ts`
+- `packages/agents-runtime/src/session.ts`
+- `packages/agents-runtime/src/auto-continue.ts`
+- `packages/agents-tools/src/task/task-tool.ts`
+- `packages/agents-tools/src/task/manage-plan.ts`
+- `packages/agents-tools/src/web/web-fetch-tool.ts`
+
+---
+
+## 4. 对比分析与可借鉴清单
+
+### 4.1 能力对比
+
+| 能力         | OpenCode                                | Anyhunt/Moryflow 现状       | 差距/建议                                                |
+| ------------ | --------------------------------------- | --------------------------- | -------------------------------------------------------- |
+| 配置分层     | 远端/全局/项目/内联 + `.opencode/` 扫描 | 主要由 App 侧 Settings 注入 | **建议**：引入用户级扩展目录 + 内联覆盖                  |
+| 权限系统     | 规则集 + ask/allow/deny + UI 审批       | 沙盒路径授权（仅 shell）    | **建议**：扩展为通用 Tool 权限层（read/edit/bash/web）   |
+| 会话压缩     | Token-aware + compaction agent          | 无                          | **建议**：引入 history 修剪 + 摘要重写                   |
+| Doom Loop    | 工具重复检测 + ask 审批                 | 仅 maxTurns                 | **建议**：增加重复工具检测 + 保护阈值                    |
+| Hook 扩展点  | 多 Hook + Tool SDK                      | 无                          | **建议**：提供 runtime hook 接口（params/messages/tool） |
+| 工具输出截断 | 统一截断 + 外置存储                     | 仅 read/preview 局部截断    | **建议**：统一 tool 输出截断 + 文件落地                  |
+| 工具发现     | 内置 + 插件 + 本地扫描                  | 固定工具集                  | **建议**：允许用户级 tool/agent 定义                     |
+
+---
+
+## 5. 建议落地路径（优先级）
+
+> 已确认：本轮 **P0/P1/P2 全部落地**；Vault 外 `read` 默认 **ask**；审批 UI 已具备；工具输出截断需提供“查看完整输出”入口。
+> 补充：**审批只在“有风险操作”触发**；输入框左侧增加模式切换（`Agent` / `Agent-完全访问权限`）。
+> 补充：审批按钮仅保留 `once / always`；规则仅**用户级**持久化（无项目级）；配置层仅**用户级 + 内联**。
+
+### P0（立即收益）
+
+1. **会话压缩（Compaction）**
+   - **触发条件**：在 `run()` 之前计算「历史上下文的近似体积」与目标模型 context window；当接近阈值时触发压缩。
+   - **裁剪顺序**：
+     - 先保护最近 N 轮 user/assistant（例如 2~4 轮）。
+     - 优先修剪旧的 tool output（read/web_fetch/search 等），保留 tool input / 关键行动记录。
+     - 若仍超阈值，再进入摘要阶段。
+   - **摘要阶段**：
+     - 调用专用 compaction agent 生成「下一步可继续工作的摘要」。
+     - 用 `SessionStore.clearHistory + appendHistory([summaryItem, ...tail])` 重写历史。
+   - **产物与可观测性**：
+     - 保存 summary item（便于 UI 展示“已压缩”）。
+     - 记录压缩前/后体积与被丢弃的 tool 统计，方便调参。
+
+2. **Doom Loop 检测**
+   - **监控维度**：
+     - 单次 run 的总工具调用数（maxToolCalls）。
+     - 连续相同 tool + 相同 args 的次数（sameToolThreshold）。
+     - 连续失败/重试次数（maxAttempts）。
+   - **判定逻辑**：
+     - 达到阈值 → 标记为 `doom_loop` 状态。
+     - 触发后走 UI 审批；仅提供 `once / always`（继续执行）。
+   - **处理策略**：
+     - 默认 `ask`：允许用户继续或中止。
+     - 若用户选择继续（once/always）→ 重置计数或设定冷却窗口。
+     - 若用户中止 → 终止 run 并返回可读错误（通过全局 Stop/Cancel）。
+
+### P1（体验增强）
+
+3. **统一工具输出截断**
+   - **统一入口**：为所有工具增加「输出后处理」层（类似 OpenCode 的 Truncate），统一做行数/字节数限制。
+   - **落地规则**：
+     - 输出超限 → 写入 Vault 或临时目录（例如 `vault/.agent-output/`）。
+     - 返回「截断预览 + 文件路径 + 下一步建议（read/grep）」。
+   - **UI 反馈**：
+     - 标记“已截断”，避免用户误以为完整结果。
+     - **必须在聊天消息内提供完整输出入口**（打开文件），便于查看完整结果。
+
+4. **权限系统扩展**
+   - **权限域设计**：`read / edit / bash / web_fetch / web_search / mcp` 等。
+   - **评估流程**：
+     - tool 执行前 → 根据 `permission + pattern` 计算 action（allow/deny/ask）。
+     - `ask` 走 IPC/UI 审批 → 仅提供 `once / always`。
+     - `always` 写入**用户级**持久化规则（无项目级）。
+   - **与沙盒对齐**：
+     - bash 仍走沙盒授权逻辑，但统一入口由权限系统触发。
+     - read/edit 只允许 Vault 内路径；**Vault 外 read 默认 `ask`**；edit/write/move/delete 默认 `deny`。
+   - **审批最小化原则**：
+     - 只对「高风险操作」触发审批（Vault 外读、敏感文件、bash、未知 MCP）。
+     - 低风险操作（Vault 内 read/edit、web_fetch/search）默认不弹审批。
+     - 若用户选择 `Always allow`，后续同类操作不再弹窗。
+
+5. **系统提示词与参数设置**
+   - **入口**：设置弹窗新增「System Prompt」Tab。
+   - **模式**：
+     - 默认：隐藏 prompt 与参数，不向用户暴露；运行时使用内置默认提示词与模型默认参数。
+     - 自定义：展示 prompt 与参数；初始化为默认模板 + 默认参数，用户可编辑。
+   - **系统提示词**：
+     - 自定义内容直接替换默认提示词（不拼接）。
+     - 默认模板不使用 `{{current_time}}` 等动态占位符。
+   - **参数范围**：仅暴露 `temperature / topP / maxTokens`；默认使用模型默认值，仅对开启覆盖的参数注入 `modelSettings`。
+
+### P2（可扩展性）
+
+6. **Config/Agent/Tool 外部化**
+   - **配置分层**：`~/.moryflow/config.jsonc`（用户级）→ 内联配置（UI/CLI 参数，最高优先级）。
+   - **Agent Markdown**：
+     - frontmatter 描述 `model / tools / permission / temperature / steps`。
+     - body 作为 system prompt（支持多段模块化模板）。
+   - **Tool 外部化**：
+     - 用户级 `~/.moryflow/tools/*.ts` 自动加载（桌面端可用）。
+     - 统一 schema 校验 + 输出截断 + 权限控制。
+     - **安全边界**：仅桌面端启用动态工具加载，避免在 server 侧加载任意代码。
+
+7. **Plugin Hook 接口**
+   - **最小 Hook 集合**：
+     - `chat.params`：改温度/推理参数/headers。
+     - `chat.system`：系统提示拼接或替换。
+     - `tool.before / tool.after`：工具参数与输出拦截。
+   - **执行策略**：
+     - Hook 失败不影响主流程（fail-safe）。
+     - 明确 Hook 顺序：内置 → 用户。
+   - **用途示例**：
+     - 注入企业合规提示、日志追踪、工具输出格式化等。
+
+### 输入框模式切换（Agent / Agent-完全访问权限）
+
+**目标**：在消息列表内减少审批频率，同时给高级用户明确的“全权限会话”入口。
+
+**UI 位置**：
+
+- 输入框下方工具栏左侧（与模型选择、上下文范围同一层级）。
+- 形态：分段按钮或下拉（默认 `Agent`）。
+
+**模式定义**：
+
+- `Agent`：默认安全模式，遵循权限策略与风险审批（仅高风险 ask）。
+- `Agent-完全访问权限`：会话级覆盖策略，将高风险操作默认 `allow`（不弹审批），**敏感文件也不提示**；仍记录审计日志；仅保留系统级硬限制（例如 OS/沙盒能力限制）。
+
+**交互细节**：
+
+- 切换到全权限时弹出一次性确认（说明风险 + 当前仅对本次会话生效）。
+- 列表中显示当前模式标识（例如输入框上方小徽标）。
+- 权限卡片仍可用于展示“自动批准记录”（非阻断），便于回溯。
+
+### 审批 UI（消息列表内）
+
+**原则**：不弹窗、不中断阅读流，审批只在高风险时出现，样式接近 Notion 的“轻量卡片”。
+
+**复用现有能力**：
+
+- 复用 `MessageList`/`MessageItem` 渲染体系（参考 `docs/architecture/ui-message-list-unification.md`）。
+- 优先复用 `@anyhunt/ui/ai/confirmation`，不满足时允许改造组件。
+- 事件通道沿用现有 runtime → UI 消息流协议（与 `UIMessageChunk` 同一序列）。
+  - 参考 `docs/research/agent-browser-chat-streaming-uimessagechunk.md` 的消息分段规范。
+
+**消息形态**：
+
+- `type: approval`（系统消息），插入在触发审批的 assistant/tool 输出附近。
+- 字段建议：`id`、`permissionDomain`、`summary`、`targets`、`riskFlags`、`argsPreview`、`rulePattern`。
+
+**交互**：
+
+- 仅两个按钮：`Allow once` / `Always allow`。
+- **拒绝**：通过全局 Stop/Cancel 中止 run（避免卡片上再加按钮）。
+- 处理后卡片变为只读状态并展示审批结果（once/always）。
+
+**状态**：
+
+- `pending` / `approved-once` / `approved-always` / `stopped`。
+
+**字段结构（JSON 草案）**：
+
+```json
 {
-  "$schema": "https://opencode.ai/config.schema.json",
-
-  // 模型配置
-  "model": {
-    "default": "anthropic/claude-sonnet-4-20250514",
-  },
-
-  // 提供商密钥
-  "provider": {
-    "anthropic": {
-      "api_key": "{env:ANTHROPIC_API_KEY}", // 环境变量引用
-    },
-    "openai": {
-      "api_key": "{file:~/.secrets/openai.txt}", // 文件引用
-    },
-  },
-
-  // MCP 服务器
-  "mcp": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./"],
-    },
-  },
-
-  // 权限规则
-  "permission": {
-    "read": "allow",
-    "edit": {
-      "*": "ask",
-      "*.md": "allow",
-    },
-    "bash": "ask",
-  },
+  "type": "approval",
+  "id": "perm_01H...",
+  "permissionDomain": "read",
+  "summary": "Read file outside Vault",
+  "targets": ["/Users/.../secrets.json"],
+  "riskFlags": ["outside_vault", "sensitive"],
+  "argsPreview": "{ path: ... }",
+  "rulePattern": "read:/Users/**",
+  "createdAt": "2026-01-24T12:00:00Z"
 }
 ```
 
-#### 特殊语法
+**状态机**：
 
-| 语法          | 说明       | 示例                        |
-| ------------- | ---------- | --------------------------- |
-| `{env:VAR}`   | 环境变量   | `{env:OPENAI_API_KEY}`      |
-| `{file:path}` | 文件内容   | `{file:~/.secrets/key.txt}` |
-| `{shell:cmd}` | Shell 输出 | `{shell:cat ~/.key}`        |
+- `pending` → `approved-once`（单次放行）
+- `pending` → `approved-always`（写入用户级规则）
+- `pending` → `stopped`（用户点击 Stop/Cancel）
 
-#### Aiget 应用建议
+**全权限模式（静默记录）**：
 
-```typescript
-// packages/config/src/loader.ts（建议新增）
-// 注意：Aiget / Moryflow 两条业务线不共享账号/Token/数据库，建议配置也按 product 分隔。
-export function loadConfig(input: { directory: string; product: 'aiget' | 'moryflow' }): Config {
-  const global = readConfig(`~/.config/${input.product}/config.json`);
-  const project = readConfig(`${input.directory}/${input.product}.json`);
+- `Agent-完全访问权限` 模式下不显示审批卡片。
+- 仅在审计日志记录“自动批准事件”，不打断消息流。
 
-  return deepMerge(global, project);
-}
+**审计字段（最小集合）**：
 
-export function resolveValue(value: string): string {
-  if (value.startsWith('{env:')) {
-    const key = value.slice(5, -1);
-    return process.env[key] ?? '';
-  }
-  if (value.startsWith('{file:')) {
-    const path = value.slice(6, -1);
-    return fs.readFileSync(expandPath(path), 'utf-8').trim();
-  }
-  return value;
-}
+- `eventId`：唯一 ID
+- `sessionId`：会话 ID
+- `mode`：`agent` / `full_access`
+- `decision`：`once` / `always` / `auto`（全权限静默）
+- `permissionDomain`：`read/edit/bash/web_fetch/web_search/mcp`
+- `targets`：路径/域名/命令摘要
+- `rulePattern`：若为 always
+- `timestamp`：ISO 时间
+
+**审计落地位置**：
+
+- 首选：Runtime 内的轻量审计日志（与 session 记录同源存储，便于回放）。
+- UI 不展示（全权限静默）；仅在开发排查或导出日志时可见。
+
+**审计日志格式（JSON Lines）**：
+
 ```
+{"eventId":"perm_evt_01H...","sessionId":"sess_01H...","mode":"full_access","decision":"auto","permissionDomain":"read","targets":["/Users/.../secrets.json"],"rulePattern":null,"timestamp":"2026-01-24T12:00:00Z"}
+```
+
+**导出入口（仅开发/诊断）**：
+
+- 通过运行时诊断入口导出（不在 C 端 UI 暴露）。
+- 仅用于排查审批争议或安全事件，不进入普通用户路径。
 
 ---
 
-### 2.3 权限系统
+## 6. 落地任务清单（含验收点）
 
-**OpenCode 实现**: `packages/opencode/src/permission/next.ts`
+> 说明：以下清单是“把 P0/P1/P2 变成可执行任务”的拆解，不是代码实现。每项都包含验收标准，方便你判断是否真的落地。
 
-基于模式匹配的细粒度权限控制。
+### P0-1 会话压缩（Compaction）
 
-#### 核心概念
+**任务**
 
-```typescript
-// 权限动作
-export const Action = z.enum(['allow', 'deny', 'ask']);
+1. 在 `run()` 前计算历史上下文的“近似体积”（token 估算或字符/字节近似），并结合模型 context window 判断是否接近阈值。
+2. 增加「修剪策略」：保护最近 N 轮对话，优先清理旧的工具输出（read/web_fetch/search 等），保留关键输入与执行结果。
+3. 触发摘要模式时，调用 compaction agent 生成摘要，并用 `clearHistory + appendHistory` 重写历史。
+4. 记录压缩前/后体积、摘要长度、被丢弃的 tool 类型等指标，便于调参。
 
-// 权限规则
-export const Rule = z.object({
-  permission: z.string(), // 权限类型: read, edit, bash, etc.
-  pattern: z.string(), // 匹配模式: *, *.env, src/**/*.ts
-  action: Action, // 动作
-});
+**验收**
 
-// 规则集
-export type Ruleset = Rule[];
-```
+- 长对话在接近阈值时触发压缩，不会直接失败或崩溃。
+- 历史重写后，下一轮对话仍可基于摘要正常继续。
+- UI 能看到“已压缩”提示（或日志中可追踪）。
 
-#### 规则评估
+### P0-2 Doom Loop 检测
 
-```typescript
-export function evaluate(permission: string, pattern: string, ...rulesets: Ruleset[]): Rule {
-  const merged = merge(...rulesets);
+**任务**
 
-  // 从后往前匹配（后面的规则优先级更高）
-  const match = merged.findLast(
-    (rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern)
-  );
+1. 跟踪单次 run 的工具调用序列、总次数、连续重复调用次数。
+2. 当触发阈值时进入 `doom_loop` 状态并触发审批（仅 `once / always` 继续；always 仅会话内有效）。
+3. 支持用户中止或继续，并在继续后设定冷却或重置计数。
 
-  return match ?? { action: 'ask', permission, pattern: '*' };
-}
-```
+**验收**
 
-#### 权限请求流程
+- 连续相同 tool + 相同 args 的重复调用会被检测出来。
+- 用户中止后，run 能被终止且返回可读错误（由全局 Stop/Cancel 触发）。
+- 相关事件/日志可追踪（方便排查）。
 
-```
-工具请求执行
-    ↓
-evaluate(permission, pattern, ruleset)
-    ↓
-┌─ action === 'allow' → 执行
-├─ action === 'deny'  → 抛出 DeniedError
-└─ action === 'ask'   → 发布 Event.Asked
-                            ↓
-                        UI 显示审批对话框
-                            ↓
-                        用户选择: once / always / reject
-                            ↓
-                        发布 Event.Replied
-                            ↓
-                        继续/中止执行
-```
+### P1-3 工具输出统一截断
 
-#### Aiget 应用场景
+**任务**
 
-| 场景       | 权限    | 模式            | 动作   |
-| ---------- | ------- | --------------- | ------ |
-| 读取 .env  | `read`  | `*.env`         | `deny` |
-| 写入配置   | `edit`  | `config/*.json` | `ask`  |
-| 执行 Shell | `bash`  | `*`             | `ask`  |
-| 网络请求   | `fetch` | `localhost:*`   | `deny` |
+1. 在工具执行完成后增加统一输出后处理层（按行数/字节截断）。
+2. 超限输出落地到 Vault 或临时目录，并返回“截断预览 + 文件路径 + 下一步建议”。
+3. UI 标记输出被截断，并在聊天消息内提供“查看完整输出”入口（打开文件；桌面端可直接调用系统打开）。
 
----
+**验收**
 
-### 2.4 Zod 工具系统
+- 大输出不再塞满上下文；模型仍可继续执行下一轮。
+- 可通过 `read/grep` 等工具读取完整输出。
+- UI/日志中明确标识“截断”，并可进入完整输出。
 
-**OpenCode 实现**: `packages/plugin/src/tool.ts`
+### P1-4 工具权限系统扩展
 
-统一的工具定义模式，支持 AI Agent 和 REST API 双重调用。
+**任务**
 
-#### 工具定义
+1. 定义统一权限域（read/edit/bash/web_fetch/web_search/mcp 等）。
+2. 在工具执行前计算 `permission + pattern` → action（allow/deny/ask）。
+3. 结合 UI/IPC 仅支持 `once / always`，always 规则持久化到**用户级**。
+4. 与现有沙盒路径授权对齐（bash 权限仍走沙盒，但触发由统一入口管理）。
 
-```typescript
-// `.opencode-ref/packages/plugin/src/tool.ts`（节选）
-import { z } from 'zod';
+**验收**
 
-export type ToolContext = {
-  sessionID: string;
-  messageID: string;
-  agent: string;
-  abort: AbortSignal;
-};
+- Vault 外路径的 read 默认 `ask`（read 域包含 `read/ls/glob/grep/search_in_file`）；edit/write/move/delete 默认 `deny`。
+- “always” 规则仅用户级持久化并在后续调用生效。
+- 权限逻辑有最小单测覆盖（评估+持久化）。
 
-export function tool<Args extends z.ZodRawShape>(input: {
-  description: string;
-  args: Args;
-  execute(args: z.infer<z.ZodObject<Args>>, context: ToolContext): Promise<string>;
-}) {
-  return input;
-}
+### P2-5 Config/Agent/Tool 外部化
 
-tool.schema = z;
-```
+**任务**
 
-#### 工具示例
+1. 设计多层配置加载顺序（用户级 → 内联覆盖）。
+2. 支持 Markdown Agent（frontmatter + prompt body，用户级）。
+3. 支持用户级 tool 动态加载（仅桌面端），并接入权限与截断。
+4. 解析配置建议使用 JSONC（`jsonc-parser`）与 Markdown frontmatter（`gray-matter`）；工具编译建议使用 `esbuild`。
 
-```typescript
-// .opencode/tool/github-triage.ts
-import { tool } from '@opencode-ai/plugin';
+**验收**
 
-const DESCRIPTION = `
-Triage GitHub issues by assigning labels and assignees.
-`;
+- 同名配置可被覆盖，加载顺序清晰可验证。
+- 用户级 agent 文件可被识别并用于运行。
+- Tool 动态加载仅在 desktop 环境生效，server 侧禁用。
 
-export default tool({
-  description: DESCRIPTION,
-  args: {
-    assignee: tool.schema
-      .enum(['alice', 'bob', 'charlie'])
-      .describe('The assignee username')
-      .default('alice'),
-    labels: tool.schema.array(tool.schema.enum(['bug', 'feature', 'docs'])).default([]),
-    issue_number: tool.schema.number().describe('GitHub issue number'),
-  },
-  async execute(args, context) {
-    const { assignee, labels, issue_number } = args;
+### P2-6 Plugin Hook 接口
 
-    // 使用环境变量
-    const token = process.env.GITHUB_TOKEN;
+**任务**
 
-    // 调用 GitHub API
-    const result = await github.updateIssue(issue_number, {
-      assignee,
-      labels,
-    });
+1. 定义最小 Hook 集合：`chat.params`、`chat.system`、`tool.before`、`tool.after`。
+2. 约定 Hook 执行顺序（内置 → 用户）并做 fail-safe。
+3. 提供示例 Hook（改温度、追加系统提示、格式化输出）。
 
-    return `Issue #${issue_number} updated: assigned to ${assignee}`;
-  },
-});
-```
+**验收**
 
-#### Aiget 工具包结构
-
-```
-packages/agents-tools/
-├── src/
-│   ├── index.ts
-│   ├── create-tools.ts     # 工具集创建器（现有）
-│   ├── file/               # 文件类工具（现有）
-│   ├── search/             # 搜索类工具（现有）
-│   ├── web/                # Web 工具（现有）
-│   ├── task/               # Task / SubAgent（现有）
-│   ├── fetchx/             # （建议新增）网页抓取能力工具
-│   └── memox/              # （建议新增）记忆/知识图谱能力工具
-```
-
-> 补充：Aiget 当前已经在 `@aiget/agents-core` 暴露了 `tool({ name, description, parameters, execute })` 辅助函数，并在 `packages/agents-tools` 中实际使用（例如 `read`/`glob`/`grep`/`web_search`）。因此这里更多是“把 Fetchx/Memox 能力接入现有工具体系”，而不是重新发明一套 tool SDK。
+- Hook 能实际改变模型参数或 system prompt。
+- Hook 执行失败不会中断主流程。
+- 输出可被 Hook 后处理并正确返回。
 
 ---
 
-## 3. Moryflow AI 工作流改进
+## 7. 策略基线（已定）
 
-### 3.1 会话压缩（Token 感知）
+> 详细策略以 ADR 为准：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`。
+> 本节为执行基线摘要，变更需先更新 ADR 再同步此处。
 
-**OpenCode 实现**: `packages/opencode/src/session/compaction.ts`
-
-这是对 Moryflow 最有价值的改进之一。当前 Moryflow 会将完整对话历史发送给模型，可能导致 Token 溢出。
-
-#### OpenCode 压缩策略
-
-```typescript
-export namespace SessionCompaction {
-  // 常量配置
-  export const PRUNE_MINIMUM = 20_000;   // 最少修剪 20K tokens
-  export const PRUNE_PROTECT = 40_000;   // 保护最近 40K tokens
-
-  const PRUNE_PROTECTED_TOOLS = ['skill']; // 不修剪的工具
-
-  // 检测是否溢出
-  export async function isOverflow(input: {
-    tokens: MessageV2.Assistant['tokens'];
-    model: Provider.Model;
-  }) {
-    const context = input.model.limit.context;
-    if (context === 0) return false;
-
-    const count = input.tokens.input + input.tokens.cache.read + input.tokens.output;
-    const output = Math.min(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX);
-    const usable = context - output;
-
-    return count > usable;
-  }
-
-  // 修剪旧工具输出
-  export async function prune(input: { sessionID: string }) {
-    const msgs = await Session.messages({ sessionID: input.sessionID });
-    let total = 0;
-    let pruned = 0;
-    const toPrune = [];
-    let turns = 0;
-
-    // 从后往前遍历
-    loop: for (let msgIndex = msgs.length - 1; msgIndex >= 0; msgIndex--) {
-      const msg = msgs[msgIndex];
-      if (msg.info.role === 'user') turns++;
-      if (turns < 2) continue; // 保护最近 2 轮
-      if (msg.info.role === 'assistant' && msg.info.summary) break loop;
-
-      for (let partIndex = msg.parts.length - 1; partIndex >= 0; partIndex--) {
-        const part = msg.parts[partIndex];
-        if (part.type === 'tool' && part.state.status === 'completed') {
-          if (PRUNE_PROTECTED_TOOLS.includes(part.tool)) continue;
-          if (part.state.time.compacted) break loop;
-
-          const estimate = Token.estimate(part.state.output);
-          total += estimate;
-
-          if (total > PRUNE_PROTECT) {
-            pruned += estimate;
-            toPrune.push(part);
-          }
-        }
-      }
-    }
-
-    // 执行修剪
-    if (pruned > PRUNE_MINIMUM) {
-      for (const part of toPrune) {
-        part.state.time.compacted = Date.now();
-        await Session.updatePart(part);
-      }
-    }
-  }
-
-  // 生成上下文摘要
-  export async function process(input: {
-    parentID: string;
-    messages: MessageV2.WithParts[];
-    sessionID: string;
-    abort: AbortSignal;
-    auto: boolean;
-  }) {
-    const agent = await Agent.get('compaction');
-    const model = /* ... */;
-
-    // 创建摘要消息
-    const msg = await Session.updateMessage({
-      role: 'assistant',
-      mode: 'compaction',
-      summary: true,
-      // ...
-    });
-
-    // 调用 LLM 生成摘要
-    const promptText = `
-      Provide a detailed prompt for continuing our conversation above.
-      Focus on information that would be helpful for continuing:
-      - what we did
-      - what we're doing
-      - which files we're working on
-      - what we're going to do next
-
-      The new session will not have access to our conversation.
-    `;
-
-    const result = await processor.process({
-      messages: [
-        ...MessageV2.toModelMessage(input.messages),
-        { role: 'user', content: [{ type: 'text', text: promptText }] },
-      ],
-      // ...
-    });
-
-    Bus.publish(Event.Compacted, { sessionID: input.sessionID });
-    return 'continue';
-  }
-}
-```
-
-#### Moryflow 集成建议
-
-Moryflow 当前的会话存储模型是 `AgentInputItem[]`（见 `packages/agents-runtime/src/session.ts` 的 `SessionStore` / `createSessionAdapter`），与 OpenCode 的 `MessageV2 + Part` 模型不同；因此更推荐把 compaction 设计成“输入裁剪 / history 重写”两步：
-
-1. **输入裁剪**：通过 `Runner.sessionInputCallback` 在送给模型前裁剪历史（优先丢弃旧 tool output / reasoning）。
-2. **history 重写（可选）**：当需要长期持久化时，用 `clearHistory + appendHistory` 把历史重写为「摘要 + 最近 N 轮」，避免本地存储无限膨胀。
-
-```typescript
-// packages/agents-runtime/src/session-compaction.ts（建议新增）
-import type { AgentInputItem } from '@aiget/agents';
-import { getModelContextWindow } from '@aiget/agents-model-registry';
-import type { SessionStore } from './session';
-
-export type CompactionConfig = {
-  /** 保护最近多少轮 user 消息（例如 2~4 轮） */
-  protectRecentTurns: number;
-  /**
-   * 触发阈值：当 history 近似 token/体积超过阈值则尝试压缩
-   * 注：没有 tokenizer 时可先用字符数/JSON 大小做近似；后续再接入精确 token 估算
-   */
-  maxApproxChars: number;
-};
-
-export async function compactSessionIfNeeded(input: {
-  chatId: string;
-  store: SessionStore;
-  modelId: string;
-  config: CompactionConfig;
-}): Promise<{ compacted: boolean; summaryItem?: AgentInputItem }> {
-  const history = await input.store.getHistory(input.chatId);
-  const contextWindow = getModelContextWindow(input.modelId);
-  void contextWindow; // 用于后续更精确的阈值策略
-
-  // TODO: 1) 判断是否接近 overflow（可用 contextWindow + 近似/精确 token 估算）
-  // TODO: 2) 生成摘要（可用专用 compaction agent，输出为 System/Assistant message item）
-  // TODO: 3) 重写历史：clearHistory + appendHistory([summaryItem, ...tailItems])
-  return { compacted: false };
-}
-```
-
-#### Moryflow 现有 vs 建议
-
-| 方面         | Moryflow 现有 | 建议改进                                                                     |
-| ------------ | ------------- | ---------------------------------------------------------------------------- |
-| Token 跟踪   | ✅ 有 (usage) | 保持                                                                         |
-| 溢出检测     | ❌ 无         | 增加“接近 context window”检测（`@aiget/agents-model-registry` + token 估算） |
-| 输入裁剪     | ❌ 无         | 增加 `sessionInputCallback` 裁剪（优先丢弃旧 tool output / reasoning）       |
-| history 重写 | ❌ 无         | 生成摘要并重写历史（`clearHistory + appendHistory`）                         |
-| 配置化       | -             | 添加 `CompactionConfig`（阈值/保护轮数/策略开关）                            |
+- **Compaction**：0.8 × usable 阈值触发；保护最近 3 轮；优先修剪旧 tool output；摘要重写历史。
+- **Doom Loop**：`maxAttempts=3`、`maxToolCalls=60`、`sameToolThreshold=5`；默认 ask 或终止。
+- **Truncation**：`maxLines=2000`、`maxBytes=50KB`；输出落地到 `Vault/.agent-output/`；保留 7 天。
+- **UI 入口**：截断输出在聊天消息内提示，并提供“查看完整输出”（打开文件；桌面端可直接调用系统打开）。
+- **Permission**：read Vault 内 allow、敏感文件 ask（read 域包含 `read/ls/glob/grep/search_in_file`）；edit/write/move/delete Vault 外 deny；bash 永远 ask；审批仅 `once / always`。
+- **配置持久化**：用户级 JSONC（`~/.moryflow/config.jsonc` / `~/.anyhunt/config.jsonc`），仅保存规则与阈值。
+- **外部化/Hook**：用户级 → 内联覆盖；Hook 顺序内置 → 用户，失败不阻断。
 
 ---
 
-### 3.2 Agent 定义系统
+## 8. 参考文件索引
 
-**OpenCode 实现**: `packages/opencode/src/agent/agent.ts` + `.opencode/agent/`
+### OpenCode
 
-OpenCode 支持用 Markdown + YAML frontmatter 定义 Agent，非常灵活。
+- Bus：`.opencode-ref/packages/opencode/src/bus/index.ts`
+- Config：`.opencode-ref/packages/opencode/src/config/config.ts`
+- Config Markdown：`.opencode-ref/packages/opencode/src/config/markdown.ts`
+- Permission：`.opencode-ref/packages/opencode/src/permission/next.ts`
+- Agent：`.opencode-ref/packages/opencode/src/agent/agent.ts`
+- Compaction：`.opencode-ref/packages/opencode/src/session/compaction.ts`
+- Session Processor：`.opencode-ref/packages/opencode/src/session/processor.ts`
+- LLM Stream：`.opencode-ref/packages/opencode/src/session/llm.ts`
+- Tool Registry：`.opencode-ref/packages/opencode/src/tool/registry.ts`
+- Tool Truncation：`.opencode-ref/packages/opencode/src/tool/truncation.ts`
+- Plugin SDK：`.opencode-ref/packages/plugin/src/index.ts`
+- Tool SDK：`.opencode-ref/packages/plugin/src/tool.ts`
 
-#### Agent 定义格式
+### Anyhunt/Moryflow
 
-```markdown
----
-mode: primary # primary | subagent | all
-model: opencode/claude-haiku-4-5
-color: '#44BA81' # UI 显示颜色
-hidden: false # 是否在切换器中隐藏
-tools:
-  '*': true # 默认允许所有工具
-  'bash': false # 禁用 bash
-permission:
-  read: allow
-  edit: ask
-  bash: deny
-temperature: 0.7
-topP: 0.9
-steps: 10 # 最大工具调用轮数
----
-
-You are a research assistant specialized in gathering information.
-
-## Responsibilities
-
-- Search the web for relevant information
-- Read and summarize documents
-- Extract key facts and data
-
-## Guidelines
-
-- Always cite sources
-- Prefer official documentation
-- Cross-reference multiple sources
-```
-
-#### Agent 解析
-
-```typescript
-// agent.ts
-export namespace Agent {
-  export const Info = z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    mode: z.enum(['subagent', 'primary', 'all']),
-    native: z.boolean().optional(),
-    hidden: z.boolean().optional(),
-    topP: z.number().optional(),
-    temperature: z.number().optional(),
-    color: z.string().optional(),
-    permission: PermissionNext.Ruleset,
-    model: z
-      .object({
-        modelID: z.string(),
-        providerID: z.string(),
-      })
-      .optional(),
-    prompt: z.string().optional(),
-    options: z.record(z.string(), z.any()),
-    steps: z.number().int().positive().optional(),
-  });
-
-  export async function get(name: string): Promise<Info> {
-    // 1. 检查内置 Agent
-    const builtin = await getBuiltin(name);
-    if (builtin) return builtin;
-
-    // 2. 检查用户自定义 Agent
-    const custom = await loadFromFile(`.opencode/agent/${name}.md`);
-    if (custom) return parseAgentMarkdown(custom);
-
-    throw new Error(`Agent "${name}" not found`);
-  }
-
-  function parseAgentMarkdown(content: string): Info {
-    const { frontmatter, body } = parseFrontmatter(content);
-    return {
-      ...frontmatter,
-      prompt: body,
-    };
-  }
-}
-```
-
-#### Moryflow 集成建议
-
-当前 Moryflow 的 Agent 配置在代码中硬编码。建议：
-
-```typescript
-// packages/agents-runtime/src/agent-loader.ts（建议新增）
-
-export interface AgentDefinition {
-  name: string;
-  mode: 'primary' | 'subagent';
-  model?: { provider: string; model: string };
-  tools?: Record<string, boolean>;
-  temperature?: number;
-  maxSteps?: number;
-  systemPrompt: string;
-}
-
-export async function loadAgent(name: string, searchPaths: string[]): Promise<AgentDefinition> {
-  for (const basePath of searchPaths) {
-    const filePath = path.join(basePath, `${name}.md`);
-    if (await fs.exists(filePath)) {
-      const content = await fs.readFile(filePath, 'utf-8');
-      return parseAgentMarkdown(content);
-    }
-  }
-  throw new Error(`Agent "${name}" not found`);
-}
-
-// 使用示例
-const researchAgent = await loadAgent('research', [
-  './moryflow/agents', // 项目级
-  '~/.moryflow/agents', // 用户级
-]);
-```
-
-#### 建议的 Agent 目录结构
-
-```
-apps/moryflow/pc/
-├── agents/                    # 内置 Agent
-│   ├── default.md             # 默认对话 Agent
-│   ├── research.md            # 研究助手
-│   ├── writing.md             # 写作助手
-│   └── coding.md              # 编码助手
-└── ...
-
-~/.moryflow/
-├── agents/                    # 用户自定义 Agent
-│   └── my-custom-agent.md
-└── config.json
-```
+- Runtime 导出：`packages/agents-runtime/src/index.ts`
+- Agent 工厂：`packages/agents-runtime/src/agent-factory.ts`
+- Model 工厂：`packages/agents-runtime/src/model-factory.ts`
+- Session 适配：`packages/agents-runtime/src/session.ts`
+- 自动续写：`packages/agents-runtime/src/auto-continue.ts`
+- 工具集：`packages/agents-tools/src/create-tools.ts`
+- Task 子代理：`packages/agents-tools/src/task/task-tool.ts`
+- 计划管理：`packages/agents-tools/src/task/manage-plan.ts`
+- Web Fetch：`packages/agents-tools/src/web/web-fetch-tool.ts`
+- MCP 工具桥接：`packages/agents-mcp/src/tools.ts`
+- 沙盒授权：`packages/agents-sandbox/src/authorization/path-authorization.ts`
+- PC 端运行入口：`apps/moryflow/pc/src/main/agent-runtime/index.ts`
 
 ---
 
-### 3.3 流式处理增强
-
-**OpenCode 实现**: `packages/opencode/src/session/processor.ts`
-
-OpenCode 的流式处理支持多种事件类型。
-
-#### 事件类型
-
-```typescript
-// 原始模型流事件
-for await (const value of stream.fullStream) {
-  switch (value.type) {
-    case 'reasoning-delta': // 推理过程（o1/o3）
-      // 增量推理文本
-      break;
-
-    case 'text-delta': // 文本输出
-      // 增量输出文本
-      break;
-
-    case 'tool-call': // 工具调用（完整）
-      // { toolCallId, toolName, args }
-      break;
-
-    case 'tool-call-delta': // 工具调用（增量）
-      // { toolCallId, argsTextDelta }
-      break;
-
-    case 'tool-call-result': // 工具结果
-      // { toolCallId, result }
-      break;
-  }
-}
-```
-
-#### Moryflow 现有流式类型
-
-```typescript
-// packages/agents-core/src/events.ts
-type RunStreamEvent =
-  | RunRawModelStreamEvent // 原始模型事件（ResponseStreamEvent）
-  | RunItemStreamEvent // 结构化运行事件（message/tool/handoff/...）
-  | RunAgentUpdatedStreamEvent; // Agent 切换事件
-
-// RunItemStreamEvent.name 包括:
-// - 'message_output_created'
-// - 'tool_called'
-// - 'tool_output'
-// - 'reasoning_item_created'
-```
-
-> 现状补充：`ResponseStreamEvent`（`packages/agents-core/src/types/protocol.ts`）目前只显式建模了 `output_text_delta` / `response_started` / `response_done` / `model`（透传 provider 原始事件）。因此 “tool-call-delta / reasoning-delta” 要做到稳定可用，需要扩展协议或从 `model.event` 中解析不同 provider 的 payload。
-
-#### 建议增强
-
-```typescript
-// 1. 添加 reasoning 显示支持
-interface ReasoningStreamEvent {
-  type: 'reasoning_delta';
-  text: string;
-}
-
-// 2. 添加 tool-call-delta 支持（实时显示参数构建）
-interface ToolCallDeltaEvent {
-  type: 'tool_call_delta';
-  toolCallId: string;
-  argsTextDelta: string;
-}
-
-// 3. 在 UI 中显示
-function ChatMessage({ event }) {
-  if (event.type === 'reasoning_delta') {
-    return <ReasoningBlock text={event.text} />;
-  }
-  if (event.type === 'tool_call_delta') {
-    return <ToolCallProgress id={event.toolCallId} args={event.argsTextDelta} />;
-  }
-  // ...
-}
-```
-
----
-
-### 3.4 Doom Loop 保护
-
-**OpenCode 实现**: `packages/opencode/src/session/processor.ts`
-
-防止 AI 陷入无限工具调用循环。
-
-#### OpenCode 实现
-
-```typescript
-export function create(input: {
-  assistantMessage: MessageV2.Assistant;
-  sessionID: string;
-  model: Provider.Model;
-  abort: AbortSignal;
-}) {
-  let attempt = 0;
-  const MAX_ATTEMPTS = 3;
-
-  return {
-    async process(streamInput: LLM.StreamInput) {
-      while (true) {
-        attempt++;
-
-        // Doom loop 检测
-        if (attempt > MAX_ATTEMPTS) {
-          log.warn('Doom loop detected, stopping');
-          return 'stop';
-        }
-
-        const stream = await LLM.stream(streamInput);
-
-        for await (const value of stream.fullStream) {
-          // 处理事件...
-        }
-
-        // 检查是否需要继续
-        if (shouldStop()) {
-          return 'stop';
-        }
-      }
-    },
-  };
-}
-```
-
-#### Moryflow 集成建议
-
-```typescript
-// packages/agents-core/src/runImplementation.ts
-
-const DOOM_LOOP_CONFIG = {
-  maxAttempts: 3,           // 最大重试次数
-  maxToolCalls: 50,         // 单次运行最大工具调用
-  sameToolThreshold: 5,     // 相同工具连续调用阈值
-};
-
-async function executeRun(...) {
-  let attempt = 0;
-  let totalToolCalls = 0;
-  const toolCallHistory: string[] = [];
-
-  while (true) {
-    attempt++;
-
-    // 检测 doom loop
-    if (attempt > DOOM_LOOP_CONFIG.maxAttempts) {
-      throw new DoomLoopError('Max attempts exceeded');
-    }
-
-    if (totalToolCalls > DOOM_LOOP_CONFIG.maxToolCalls) {
-      throw new DoomLoopError('Max tool calls exceeded');
-    }
-
-    // 检测相同工具重复调用
-    const recentTools = toolCallHistory.slice(-DOOM_LOOP_CONFIG.sameToolThreshold);
-    if (recentTools.length === DOOM_LOOP_CONFIG.sameToolThreshold &&
-        recentTools.every(t => t === recentTools[0])) {
-      throw new DoomLoopError(`Tool "${recentTools[0]}" called repeatedly`);
-    }
-
-    // 执行...
-    for (const toolCall of toolCalls) {
-      totalToolCalls++;
-      toolCallHistory.push(toolCall.name);
-    }
-  }
-}
-```
-
-#### Moryflow 现有 vs 建议
-
-| 方面         | Moryflow 现有 | 建议改进 |
-| ------------ | ------------- | -------- |
-| 最大轮数     | ✅ maxTurns   | 保持     |
-| 工具调用计数 | ❌ 无         | 添加     |
-| 重复检测     | ❌ 无         | 添加     |
-| 错误处理     | ⚠️ 基础       | 增强     |
-
----
-
-### 3.5 工具结果缓存
-
-**现状**: Moryflow 不缓存工具结果，重复调用会重新执行。
-
-#### 建议实现
-
-```typescript
-// packages/agents-core/src/tool-cache.ts（建议新增）
-
-interface CacheEntry {
-  result: string;
-  timestamp: number;
-  hash: string;
-}
-
-export class ToolResultCache {
-  private cache = new Map<string, CacheEntry>();
-  private ttl: number;
-
-  constructor(ttlMs: number = 5 * 60 * 1000) {
-    // 默认 5 分钟
-    this.ttl = ttlMs;
-  }
-
-  private getKey(toolName: string, args: unknown): string {
-    return `${toolName}:${hashObject(args)}`;
-  }
-
-  async get(toolName: string, args: unknown): Promise<string | null> {
-    const key = this.getKey(toolName, args);
-    const entry = this.cache.get(key);
-
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.result;
-  }
-
-  async set(toolName: string, args: unknown, result: string): Promise<void> {
-    const key = this.getKey(toolName, args);
-    this.cache.set(key, {
-      result,
-      timestamp: Date.now(),
-      hash: key,
-    });
-  }
-}
-
-// 可缓存的工具类型
-const CACHEABLE_TOOLS = [
-  'read', // 文件内容（除非被修改）
-  'web_search', // 搜索结果
-  'glob', // 文件列表
-  'grep', // 搜索结果
-];
-```
-
----
-
-### 3.6 并行工具执行
-
-**现状（已具备）**：`packages/agents-core/src/runImplementation.ts` 的 `executeFunctionToolCalls()` 已通过 `Promise.all(...)` 并发执行同一轮模型输出的多个 Function Tool Call。
-
-这一点与 OpenCode 的理念一致：**能并行就并行**。但在工程上，真正缺的通常不是“能不能并行”，而是：
-
-1. **并发上限**：避免瞬时把 FS / HTTP / MCP 打爆（尤其是同时触发多个网络工具）。
-2. **互斥/依赖**：写入类工具、同一路径操作、同一资源（如同一 session/vault）的串行化。
-3. **可观测性**：每个工具的排队/开始/结束/耗时，以及被限流的原因（便于 UX 和调参）。
-
-#### 建议实现
-
-```typescript
-// 建议：在现有 `executeFunctionToolCalls()` 之上增加“并发控制 + 写入互斥”层（伪代码）
-//
-// 现有（节选）：
-// const results = await Promise.all(toolRuns.map(runSingleTool));
-//
-// 建议改为（示意）：
-// const limit = createLimiter(maxConcurrentTools);
-// const results = await Promise.all(toolRuns.map((toolRun) => {
-//   const resource = getResourceKey(toolRun); // e.g. `fs:${absPath}` / `mcp:${server}` / null
-//   return runWithOptionalLock(resource, () => limit(() => runSingleTool(toolRun)));
-// }));
-//
-// 说明：
-// - `maxConcurrentTools` 建议可配置（默认 4~8），避免 IO 风暴
-// - 写入类工具（write/edit/move/delete/apply_patch/shell）建议按资源加锁
-// - 读操作可自由并发（但依然建议受总并发上限约束）
-```
-
----
-
-## 4. 对比分析
-
-### Moryflow 现有架构 vs OpenCode
-
-| 特性           | Moryflow                           | OpenCode                                   | 差距            |
-| -------------- | ---------------------------------- | ------------------------------------------ | --------------- |
-| **Agent 框架** | ✅ 基于 OpenAI SDK                 | ✅ 自研                                    | 相当            |
-| **工具系统**   | ✅ FunctionTool                    | ✅ Zod Tool                                | 相当            |
-| **流式处理**   | ✅ RunStreamEvent                  | ✅ fullStream                              | 相当            |
-| **工具审批**   | ✅ ToolApprovalFunction            | ✅ Permission ask                          | 相当            |
-| **MCP 支持**   | ✅ agents-mcp                      | ✅ 内置                                    | 相当            |
-| **多 Agent**   | ✅ Handoff                         | ✅ Agent 切换                              | 相当            |
-| **Session**    | ✅ SessionStore                    | ✅ Session 接口                            | 相当            |
-| **Token 压缩** | ❌ 无                              | ✅ Compaction                              | **差距大**      |
-| **Agent 配置** | ⚠️ 代码中                          | ✅ Markdown                                | **可改进**      |
-| **事件总线**   | ❌ 无                              | ✅ Bus                                     | **可添加**      |
-| **分层配置**   | ⚠️ 基础                            | ✅ 完善                                    | **可改进**      |
-| **Doom Loop**  | ⚠️ maxTurns                        | ✅ 多维检测                                | **可增强**      |
-| **工具缓存**   | ❌ 无                              | ⚠️ 部分                                    | **可添加**      |
-| **工具并发**   | ✅ 同一轮工具并发（`Promise.all`） | ✅（AI SDK；并发取决于 provider/工具实现） | 需补齐限流/互斥 |
-
-### Moryflow 优势
-
-1. **平台适配**: 完善的 Electron/Node.js/移动端适配层
-2. **多提供商**: 支持 OpenAI/Anthropic/Google/XAI/OpenRouter
-3. **实时语音**: agents-realtime 包
-4. **Guardrails**: 输入/输出安全验证
-5. **沙盒执行**: 安全的 Shell 执行环境
-
-### OpenCode 可借鉴的优势
-
-1. **Token 感知压缩**: 智能修剪旧工具输出
-2. **Markdown Agent**: 灵活的 Agent 定义
-3. **插件系统**: Hooks 扩展点（可改写 params/messages/system、拦截工具执行等）
-4. **事件驱动**: 松耦合通信
-5. **分层配置**: 全局/项目/内联覆盖
-
----
-
-## 5. 优先级排序与实施路径
-
-### 优先级矩阵
-
-| 特性                  | 工作量 | 影响 | 紧迫性 | 优先级 |
-| --------------------- | ------ | ---- | ------ | ------ |
-| 会话压缩              | 中     | 高   | 高     | **P0** |
-| Doom Loop 增强        | 低     | 中   | 高     | **P1** |
-| Markdown Agent        | 中     | 中   | 中     | P2     |
-| 事件总线              | 中     | 中   | 低     | P2     |
-| 工具缓存              | 低     | 中   | 低     | P3     |
-| 并发控制（限流/互斥） | 中     | 中   | 低     | P3     |
-| 分层配置              | 中     | 低   | 低     | P4     |
-
-### 实施路径
-
-#### 阶段 1: AI 工作流核心改进 (2-3 周)
-
-1. **会话压缩** (P0)
-   - 添加 `isOverflow()` 检测
-   - 实现 `prune()` 修剪逻辑
-   - 可选: 添加上下文摘要生成
-
-2. **Doom Loop 增强** (P1)
-   - 添加工具调用计数
-   - 添加重复检测
-   - 改进错误消息
-
-#### 阶段 2: 开发体验改进 (2-3 周)
-
-3. **Markdown Agent** (P2)
-   - 实现 Agent 加载器
-   - 定义内置 Agent
-   - 支持用户自定义
-
-4. **事件总线** (P2)
-   - 创建 `@aiget/event-bus` 包
-   - 集成到 agent-runtime
-   - 添加 Electron IPC 适配
-
-#### 阶段 3: 性能优化 (2-3 周)
-
-5. **工具缓存** (P3)
-   - 实现 `ToolResultCache`
-   - 标记可缓存工具
-   - 配置 TTL
-
-6. **并发控制（限流/互斥）** (P3)
-   - 增加工具并发上限（默认值 + 可配置）
-   - 写入类工具按资源加锁（避免竞态/破坏性写入）
-   - 性能与稳定性测试（尤其是 Web/MCP 工具）
-
-#### 阶段 4: 基础设施 (按需)
-
-7. **分层配置** (P4)
-   - 定义配置 schema
-   - 实现加载器
-   - 迁移现有配置
-
----
-
-## 6. 参考文件索引
-
-### OpenCode 核心文件
-
-| 文件       | 功能       | 路径                                                        |
-| ---------- | ---------- | ----------------------------------------------------------- |
-| Bus 实现   | 事件总线   | `.opencode-ref/packages/opencode/src/bus/index.ts`          |
-| 事件定义   | 事件类型   | `.opencode-ref/packages/opencode/src/bus/bus-event.ts`      |
-| 会话压缩   | Token 管理 | `.opencode-ref/packages/opencode/src/session/compaction.ts` |
-| 会话处理   | 流式处理   | `.opencode-ref/packages/opencode/src/session/processor.ts`  |
-| 权限系统   | 访问控制   | `.opencode-ref/packages/opencode/src/permission/next.ts`    |
-| Agent 定义 | Agent 配置 | `.opencode-ref/packages/opencode/src/agent/agent.ts`        |
-| 工具定义   | 工具 SDK   | `.opencode-ref/packages/plugin/src/tool.ts`                 |
-| 插件钩子   | 扩展点     | `.opencode-ref/packages/plugin/src/index.ts`                |
-
-### Moryflow 核心文件
-
-| 文件         | 功能           | 路径                                                          |
-| ------------ | -------------- | ------------------------------------------------------------- |
-| Agent 运行时 | 主入口         | `apps/moryflow/pc/src/main/agent-runtime/index.ts`            |
-| MCP 管理     | 服务器生命周期 | `apps/moryflow/pc/src/main/agent-runtime/core/mcp-manager.ts` |
-| Chat 请求    | IPC 处理       | `apps/moryflow/pc/src/main/chat/chat-request.ts`              |
-| Agent 核心   | Agent 定义     | `packages/agents-core/src/agent.ts`                           |
-| 运行实现     | 执行循环       | `packages/agents-core/src/runImplementation.ts`               |
-| Stream 事件  | 流式事件类型   | `packages/agents-core/src/events.ts`                          |
-| 工具定义     | 工具抽象       | `packages/agents-core/src/tool.ts`                            |
-| Session      | 会话接口       | `packages/agents-core/src/memory/session.ts`                  |
-| SessionStore | 会话存储适配   | `packages/agents-runtime/src/session.ts`                      |
-
----
-
-## 附录 A: OpenCode 插件钩子列表
-
-```typescript
-export type Hooks = {
-  // 认证
-  auth?: AuthHook;
-
-  // Chat 生命周期
-  'chat.message'?: (input, output: { message; parts }) => Promise<void>;
-  'chat.params'?: (input, output: { temperature; topP; topK }) => Promise<void>;
-
-  // 工具执行
-  'tool.execute.before'?: (input, output: { args }) => Promise<void>;
-  'tool.execute.after'?: (input, output: { title; output; metadata }) => Promise<void>;
-
-  // 实验性钩子
-  'experimental.session.compacting'?: (input, output: { context; prompt }) => Promise<void>;
-  'experimental.chat.messages.transform'?: (input, output: { messages }) => Promise<void>;
-  'experimental.chat.system.transform'?: (input, output: { system }) => Promise<void>;
-};
-```
-
----
-
-## 附录 B: Aiget 事件定义建议
-
-```typescript
-// packages/event-bus/src/events/index.ts
-
-import { z } from 'zod';
-import { BusEvent } from '../bus-event';
-
-// 注意：以下事件 payload 仅示意；字段以实际业务模型/隐私策略为准。
-// 建议：事件尽量只携带 ID / 统计信息，避免携带正文或敏感数据（如 content / query / 完整 args 等）。
-
-// Memory 事件 (Memox)
-export const MemoryEvents = {
-  Created: BusEvent.define(
-    'memory.created',
-    z.object({
-      id: z.string(),
-      apiKeyId: z.string(),
-    })
-  ),
-  Updated: BusEvent.define(
-    'memory.updated',
-    z.object({
-      id: z.string(),
-      apiKeyId: z.string(),
-      changes: z.record(z.unknown()),
-    })
-  ),
-  Deleted: BusEvent.define(
-    'memory.deleted',
-    z.object({
-      id: z.string(),
-      apiKeyId: z.string(),
-    })
-  ),
-  Searched: BusEvent.define(
-    'memory.searched',
-    z.object({
-      apiKeyId: z.string(),
-      resultCount: z.number(),
-    })
-  ),
-};
-
-// Sync 事件 (Moryflow)
-export const SyncEvents = {
-  Started: BusEvent.define(
-    'sync.started',
-    z.object({
-      vaultId: z.string(),
-      direction: z.enum(['up', 'down', 'both']),
-    })
-  ),
-  Progress: BusEvent.define(
-    'sync.progress',
-    z.object({
-      vaultId: z.string(),
-      current: z.number(),
-      total: z.number(),
-    })
-  ),
-  Completed: BusEvent.define(
-    'sync.completed',
-    z.object({
-      vaultId: z.string(),
-      filesChanged: z.number(),
-    })
-  ),
-  Conflict: BusEvent.define(
-    'sync.conflict',
-    z.object({
-      vaultId: z.string(),
-      filePath: z.string(),
-    })
-  ),
-  Error: BusEvent.define(
-    'sync.error',
-    z.object({
-      vaultId: z.string(),
-      error: z.string(),
-    })
-  ),
-};
-
-// Agent 事件 (Moryflow)
-export const AgentEvents = {
-  Started: BusEvent.define(
-    'agent.started',
-    z.object({
-      sessionId: z.string(),
-      agentName: z.string(),
-    })
-  ),
-  ToolCalled: BusEvent.define(
-    'agent.tool_called',
-    z.object({
-      sessionId: z.string(),
-      toolName: z.string(),
-    })
-  ),
-  Completed: BusEvent.define(
-    'agent.completed',
-    z.object({
-      sessionId: z.string(),
-      tokensUsed: z.number(),
-    })
-  ),
-  Error: BusEvent.define(
-    'agent.error',
-    z.object({
-      sessionId: z.string(),
-      message: z.string(),
-    })
-  ),
-};
-
-// Quota 事件 (Aiget Dev)
-export const QuotaEvents = {
-  Updated: BusEvent.define(
-    'quota.updated',
-    z.object({
-      apiKeyId: z.string(),
-      type: z.enum(['credits', 'rate_limit']),
-      remaining: z.number(),
-    })
-  ),
-  Exceeded: BusEvent.define(
-    'quota.exceeded',
-    z.object({
-      apiKeyId: z.string(),
-      type: z.enum(['credits', 'rate_limit']),
-      limit: z.number(),
-    })
-  ),
-};
-```
-
----
-
-_文档版本: 1.2 | 最近审阅: 2026-01-12 | OpenCode 快照: opencode@`f1a13f25a410ba79fd1537a4ac0df5864ac14530`（`.opencode-ref/`）_
+_文档版本: 2.4 | 最近更新: 2026-01-24 | OpenCode 快照: opencode@`04b511e1fe135b70256c6aa4f41b81ce2571276c`（`.opencode-ref/`）_

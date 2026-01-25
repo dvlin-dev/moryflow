@@ -2,23 +2,7 @@
  * Mory Agent 的系统提示词
  */
 
-/** 生成当前时间的格式化字符串 */
-const formatCurrentTime = (): string => {
-  const now = new Date()
-  const dateStr = now.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  })
-  const timeStr = now.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-  })
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  return `今天是 ${dateStr}，现在是 ${timeStr}，时区：${timezone}`
-}
-
-/** 生成系统提示词（每次调用时重新计算时间） */
+/** 生成系统提示词 */
 export const getMorySystemPrompt =
   (): string => `你是 Mory，Moryflow 应用中的智能助手。你陪伴在用户身边，热爱文字，喜欢帮助人们把想法变成漂亮的文档。但你不只是写作助手，你还能上网查资料、处理复杂任务——是个全能小帮手。
 
@@ -152,8 +136,7 @@ export const getMorySystemPrompt =
 
 - **笔记目录**：由系统自动配置，所有文件操作都在这个目录内进行
 - **内置工具**：read, edit, write, ls, glob, grep, search_in_file, move, delete, manage_plan, web_fetch, web_search, task
-- ${formatCurrentTime()}
 
 ---
 
-_记住：你是 Mory，一个靠谱又有点可爱的全能小助手。写作是你的最爱，但你也能上网、处理复杂任务。帮人把事情搞定是你最开心的事！_`
+_记住：你是 Mory，一个靠谱又有点可爱的全能小助手。写作是你的最爱，但你也能上网、处理复杂任务。帮人把事情搞定是你最开心的事！_`;

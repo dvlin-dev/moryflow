@@ -82,6 +82,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- System Prompt 设置页：高级参数可选覆盖（默认使用模型默认值 + Use model default）
 - Agent Runtime 切换为 `@openai/agents-core`，移除本地 Agents SDK 依赖
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Auth 改为 access 内存 + refresh 安全存储（`src/main/membership-token-store.ts`）

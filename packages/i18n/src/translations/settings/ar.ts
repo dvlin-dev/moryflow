@@ -166,6 +166,8 @@ const ar = {
   account: 'الحساب',
   accountDescription: 'تسجيل الدخول والعضوية',
   generalDescription: 'المظهر والتفضيلات',
+  systemPrompt: 'نص النظام',
+  systemPromptDescription: 'الموجه والمعلمات',
   providers: 'مزودو الذكاء الاصطناعي',
   providersDescription: 'مفاتيح API والنماذج',
   mcp: 'MCP',
@@ -180,6 +182,26 @@ const ar = {
     'التنسيق: معرف_المزود/معرف_النموذج. إذا تُرك فارغًا، سيتم استخدام النموذج الافتراضي للمزود الأول المفعّل.',
   defaultModelConfigDescription:
     'يرجى تكوين المزودين والنماذج في صفحة "مزودو الذكاء الاصطناعي"، ثم قم بتعيين النموذج الافتراضي العام هنا.',
+
+  // ========== System Prompt ==========
+  systemPromptModeLabel: 'الوضع',
+  systemPromptModeHint: 'الوضع الافتراضي يُخفي الموجه والمعلمات.',
+  systemPromptModeDefault: 'استخدام الافتراضي',
+  systemPromptModeCustom: 'مخصص',
+  systemPromptDefaultHint: 'يتم استخدام الموجه المدمج وإعدادات النموذج الافتراضية.',
+  systemPromptTemplateLabel: 'نص النظام',
+  systemPromptTemplatePlaceholder: 'أدخل نص النظام...',
+  systemPromptTemplateHint: 'الموجه المخصص يستبدل الافتراضي.',
+  systemPromptResetTemplate: 'إعادة ضبط القالب الافتراضي',
+  systemPromptAdvancedLabel: 'متقدم (اختياري)',
+  systemPromptAdvancedHint: 'استخدمه فقط إذا أردت تغيير سلوك النموذج.',
+  systemPromptParamsLabel: 'معلمات النموذج',
+  systemPromptParamsHint: 'تُطبق التجاوزات فقط عند تفعيلها.',
+  systemPromptUseDefaultLabel: 'استخدام افتراضيات النموذج',
+  systemPromptUseDefaultHint: 'يتم استخدام افتراضيات النموذج.',
+  systemPromptTemperatureLabel: 'Temperature',
+  systemPromptTopPLabel: 'Top P',
+  systemPromptMaxTokensLabel: 'Max Tokens',
 
   // ========== مزودو الذكاء الاصطناعي ==========
   sdkTypeOpenAICompatible: 'متوافق مع OpenAI',

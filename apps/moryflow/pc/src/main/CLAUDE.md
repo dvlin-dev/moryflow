@@ -95,6 +95,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Runtime 支持 system prompt/模型参数注入，参数改为可选覆盖并默认使用模型默认值
 - Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）
 - 新增 `server-tracing-processor.ts`，兼容新版 tracing 上报结构

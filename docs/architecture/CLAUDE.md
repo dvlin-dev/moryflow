@@ -24,12 +24,19 @@
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
+- `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（Compaction/Permission/Truncation）决策。
 - `ui-message-list-unification.md`：消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一，先对齐样式再统一抽象）。
+- `docs/opencode-architecture.md`：OpenCode 架构分析与 Anyhunt/Moryflow Agents 对齐建议（持续更新）。
 
 > 说明：部署/操作类文档已迁移到 `docs/runbooks/`；开发指南类文档已迁移到 `docs/guides/`；旧计划文档归档于 `docs/_archived/`。
 
 ## 近期更新
 
+- `adr/adr-0002-agent-runtime-control-plane.md`：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）。
+- `docs/opencode-architecture.md`：补充设置弹窗 System Prompt/参数自定义（2026-01-26）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充范围与实施原则，明确聊天消息内打开文件（2026-01-24）。
+- `docs/opencode-architecture.md`：增加范围声明并移除非控制面项，统一审计 mode 命名（2026-01-24）。
 - `domains-and-deployment.md`：补充发布站点仅允许 GET/HEAD 与状态页禁缓存约束。
 - `domains-and-deployment.md`：补充 `_meta.json` 解析/结构异常按 OFFLINE 处理。
 - `domains-and-deployment.md` 补充 `rss.anyhunt.app`（Digest RSS 入口）说明。
@@ -48,4 +55,26 @@
 - `auth/unified-auth-rebuild-plan.md`：调整 anyhunt.app 为 C 端主战场并完成 www 对齐事项。
 - `auth/unified-auth-rebuild-plan.md`：补充执行结果与清理项记录。
 - `auth/unified-auth-rebuild-plan.md`：补充 `test:e2e` 与 `pnpm test` 验证记录。
+- `adr/adr-0002-agent-runtime-control-plane.md`：新增 Agent Runtime 控制面 ADR（2026-01-24）。
+- `docs/opencode-architecture.md`：补充落地任务清单与验收点（2026-01-24）。
+- `docs/opencode-architecture.md`：补充策略基线与 ADR 对齐（2026-01-24）。
+- `docs/opencode-architecture.md`：补充落地路径核心逻辑说明（2026-01-24）。
+- `docs/opencode-architecture.md`：确认 P0/P1/P2 全量落地 + Vault 外 read=ask + 截断展示入口（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充 read 域覆盖文件工具 + 完整输出系统打开 + 复用 confirmation 组件（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充 Doom Loop `always` 仅会话内有效（2026-01-24）。
+- `docs/opencode-architecture.md`：补充 read 域范围 + 审批 UI 复用 + 外部化依赖建议（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充截断展示入口要求（2026-01-24）。
+- `docs/opencode-architecture.md`：补充审批最小化原则 + 输入框模式切换（2026-01-24）。
+- `docs/opencode-architecture.md`：简化审批按钮（once/always）与配置层（仅用户级 + 内联）（2026-01-24）。
+- `docs/opencode-architecture.md`：补充消息列表内审批 UI 方案（2026-01-24）。
+- `docs/opencode-architecture.md`：补充审批卡片字段/状态机与全权限静默记录（2026-01-24）。
+- `docs/opencode-architecture.md`：补充审批审计字段与审计落地位置（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充审计字段与落地位置（2026-01-24）。
+- `docs/opencode-architecture.md`：补充审计日志格式与导出入口（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充审计日志格式（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充全权限静默记录（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充 Agent/全权限模式切换与审批最小化（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：配置层与规则持久化简化为用户级（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：修正策略基线文本与 Doom Loop 列表格式（2026-01-24）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充配置格式、规则匹配与审计落地规范（2026-01-24）。
 - `auth/unified-auth-rebuild-file-map.md`：补充 Mobile refresh 网络异常修复与 `X-App-Platform` 传递范围结论。

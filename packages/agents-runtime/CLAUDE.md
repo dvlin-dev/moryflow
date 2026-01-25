@@ -30,6 +30,7 @@
 
 ## 近期变更
 
+- Agent 工厂支持注入 system prompt/model settings；默认 system prompt 去除时间占位
 - 修复 Vault 路径边界校验，避免前缀穿越
 - Session 接口本地化，运行时负责会话历史拼装与输出追加
 
