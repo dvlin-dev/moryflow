@@ -1,7 +1,7 @@
 /**
  * [INPUT]: vaultPath, deviceId
  * [OUTPUT]: DetectChangesResult（dtos/pendingChanges/localStates）
- * [POS]: 收集本地文件元数据，用于同步差异计算（支持 mtime/size 预过滤）
+ * [POS]: 收集本地文件元数据，用于同步差异计算（支持 mtime/size 预过滤与超限文件跳过）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -103,10 +103,19 @@ export const detectLocalChanges = async (
           ? info.modificationTime
           : (file.modificationTime ?? null);
 
-      if (size && size > MAX_SYNC_FILE_SIZE) {
+      if (size > MAX_SYNC_FILE_SIZE) {
         console.warn(
           `[CloudSync] Skipping large file (${(size / 1024 / 1024).toFixed(1)}MB): ${entry.path}`
         );
+        snapshots.push({
+          fileId: entry.id,
+          path: entry.path,
+          size: typeof entry.lastSyncedSize === 'number' ? entry.lastSyncedSize : size,
+          mtime: typeof entry.lastSyncedMtime === 'number' ? entry.lastSyncedMtime : mtime,
+          contentHash: entry.lastSyncedHash ?? '',
+          exists: true,
+          skipped: true,
+        });
         continue;
       }
 

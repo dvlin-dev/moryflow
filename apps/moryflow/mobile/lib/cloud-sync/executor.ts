@@ -1,7 +1,7 @@
 /**
  * [INPUT]: SyncActionDto[], vaultPath
  * [OUTPUT]: ExecuteResult (completed, deleted, errors)
- * [POS]: 执行具体的同步操作（上传、下载、删除、冲突处理，写回 size/mtime）
+ * [POS]: 执行具体的同步操作（上传、下载、删除、冲突处理，写回 size/mtime，清理旧路径）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -140,6 +140,18 @@ export const executeAction = async (
             mtime: localState.mtime,
           });
           break;
+        }
+      }
+
+      if (localState && localState.path !== action.path) {
+        const fromAbs = Paths.join(vaultPath, localState.path);
+        const fromFile = new File(fromAbs);
+        if (fromFile.exists) {
+          try {
+            fromFile.delete();
+          } catch {
+            // 旧文件删除失败则继续，避免阻塞下载
+          }
         }
       }
 

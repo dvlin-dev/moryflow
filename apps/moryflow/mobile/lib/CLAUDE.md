@@ -60,6 +60,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Cloud Sync：拆分检测/执行/提交流程并补齐冲突副本上传、向量时钟合并与单测
 - Cloud Sync：detectLocalChanges 使用 mtime/size 预过滤 + hash 缓存
 - Cloud Sync：冲突流程先上传副本再提交，缺失冲突元数据显式报错，下载跳过重命名失败回退
+- Cloud Sync：超限文件标记为 skipped，避免误删并补齐回归测试
+- Cloud Sync：下载重命名时清理旧路径，避免重复条目
 - FileIndex：无效存储记录告警并重置
 - FileIndex：lastSyncedSize/lastSyncedMtime 用于本地变更预过滤
 - Cloud Sync 与 Vault 日志统一通过 `createLogger()` 输出

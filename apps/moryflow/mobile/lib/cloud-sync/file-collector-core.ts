@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: buildLocalChanges, 本地变更差异计算（基于快照 hash/size/mtime）
+ * [PROVIDES]: buildLocalChanges, 本地变更差异计算（基于快照 hash/size/mtime/skipped）
  * [DEPENDS]: @anyhunt/sync（向量时钟）
  * [POS]: Cloud Sync 纯逻辑模块（不依赖 RN/Expo）
  *
@@ -42,6 +42,7 @@ export interface FileSnapshot {
   mtime: number | null;
   contentHash: string;
   exists: boolean;
+  skipped?: boolean;
 }
 
 // ── 工具函数 ────────────────────────────────────────────────
@@ -69,6 +70,28 @@ export function buildLocalChanges(
 
   for (const entry of entries) {
     const snapshot = snapshotMap.get(entry.id);
+
+    if (snapshot?.skipped) {
+      if (entry.lastSyncedHash !== null) {
+        dtos.push({
+          fileId: entry.id,
+          path: entry.path,
+          title: extractTitleFromPath(entry.path),
+          size: snapshot.size,
+          contentHash: snapshot.contentHash,
+          vectorClock: entry.vectorClock,
+        });
+
+        localStates.set(entry.id, {
+          fileId: entry.id,
+          path: entry.path,
+          contentHash: snapshot.contentHash,
+          size: snapshot.size,
+          mtime: snapshot.mtime,
+        });
+      }
+      continue;
+    }
 
     if (snapshot?.exists) {
       const hasChanged = snapshot.contentHash !== entry.lastSyncedHash;

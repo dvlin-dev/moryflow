@@ -1,7 +1,7 @@
 /**
  * [INPUT]: SyncActionDto[], vaultPath, deviceId, pendingChanges, localStates
  * [OUTPUT]: ExecuteResult（completed/deleted/errors）+ 提交后 FileIndex 变更
- * [POS]: PC 云同步执行器，负责本地变更检测与同步动作执行
+ * [POS]: PC 云同步执行器，负责本地变更检测与同步动作执行（提交时保证时钟不回退）
  *
  * 核心原则：状态变更只在 commit 成功后执行
  * - detectLocalChanges: 只读，支持 mtime/size 预过滤以减少哈希
@@ -315,6 +315,8 @@ export const executeAction = async (
       }
       const hash = computeBufferHash(content);
       const pending = pendingChanges.get(action.fileId);
+      const localEntry = getEntry(vaultPath, action.fileId);
+      const fallbackClock = localEntry?.vectorClock ?? {};
       completed.push({
         fileId: action.fileId,
         action: 'upload',
@@ -322,7 +324,7 @@ export const executeAction = async (
         title: extractTitle(action.path),
         size: content.length,
         contentHash: hash,
-        vectorClock: pending?.vectorClock ?? {},
+        vectorClock: pending?.vectorClock ?? fallbackClock,
         expectedHash: pending?.expectedHash,
       });
       break;

@@ -1,7 +1,7 @@
 /**
  * [INPUT]: (SyncDiffRequest, SyncCommitRequest) - 本地文件清单与同步提交请求
  * [OUTPUT]: (SyncActions[], 预签名URL) - 同步指令与 R2 上传/下载链接
- * [POS]: 云同步核心服务，基于向量时钟实现双向差异计算、冲突解决
+ * [POS]: 云同步核心服务，基于向量时钟实现双向差异计算、冲突解决与额度校验
  * [DOC]: docs/products/moryflow/research/sync-refactor-proposal.md
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -22,6 +22,7 @@ import { VectorizeService } from '../vectorize';
 import { getMimeType, getFileName } from '../storage/mime-utils';
 import type { SubscriptionTier, PaginationParams } from '../types';
 import { computeSyncActions, type RemoteFile } from './sync-diff';
+import { computeUploadQuotaStats } from './sync-quota';
 import type {
   SyncDiffRequestDto,
   SyncDiffResponseDto,
@@ -314,36 +315,11 @@ export class SyncService {
   ): Promise<void> {
     if (actions.length === 0) return;
 
-    const localMap = new Map(localFiles.map((f) => [f.fileId, f]));
-    const remoteMap = new Map(remoteFiles.map((f) => [f.id, f]));
-
-    const uploadSizes: number[] = [];
-    let totalNewSize = 0;
-
-    for (const action of actions) {
-      if (action.action === 'upload') {
-        const local = localMap.get(action.fileId);
-        if (!local) continue;
-        uploadSizes.push(local.size);
-        const existingSize = remoteMap.get(action.fileId)?.size ?? 0;
-        const diff = local.size - existingSize;
-        if (diff > 0) totalNewSize += diff;
-      }
-
-      if (action.action === 'conflict') {
-        const local = localMap.get(action.fileId);
-        const remote = remoteMap.get(action.fileId);
-        const localSize = local?.size ?? 0;
-        const remoteSize = remote?.size ?? 0;
-
-        uploadSizes.push(localSize);
-        uploadSizes.push(remoteSize);
-
-        const diff = localSize - remoteSize;
-        if (diff > 0) totalNewSize += diff;
-        totalNewSize += remoteSize;
-      }
-    }
+    const { uploadSizes, totalNewSize } = computeUploadQuotaStats(
+      localFiles,
+      remoteFiles,
+      actions,
+    );
 
     if (uploadSizes.length > 0) {
       const maxSize = uploadSizes.reduce((max, size) => Math.max(max, size), 0);

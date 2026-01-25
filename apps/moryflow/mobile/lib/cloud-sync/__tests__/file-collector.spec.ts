@@ -103,4 +103,57 @@ describe('buildLocalChanges', () => {
     expect(pendingChanges.get(entry.id)?.type).toBe('new');
     expect(pendingChanges.get(entry.id)?.expectedHash).toBeUndefined();
   });
+
+  it('keeps synced files stable when snapshot is skipped', () => {
+    const entry = baseEntry({
+      lastSyncedHash: 'hash-1',
+      lastSyncedSize: 10,
+      lastSyncedMtime: 100,
+      vectorClock: { [deviceId]: 2 },
+    });
+    const { dtos, pendingChanges, localStates } = buildLocalChanges(
+      [entry],
+      [
+        {
+          fileId: entry.id,
+          path: entry.path,
+          size: 10,
+          mtime: 100,
+          contentHash: 'hash-1',
+          exists: true,
+          skipped: true,
+        },
+      ],
+      deviceId
+    );
+
+    expect(dtos).toHaveLength(1);
+    expect(dtos[0].contentHash).toBe('hash-1');
+    expect(dtos[0].vectorClock[deviceId]).toBe(2);
+    expect(pendingChanges.size).toBe(0);
+    expect(localStates.get(entry.id)?.contentHash).toBe('hash-1');
+  });
+
+  it('ignores skipped snapshots for never-synced files', () => {
+    const entry = baseEntry({ lastSyncedHash: null });
+    const { dtos, pendingChanges, localStates } = buildLocalChanges(
+      [entry],
+      [
+        {
+          fileId: entry.id,
+          path: entry.path,
+          size: 100,
+          mtime: 200,
+          contentHash: '',
+          exists: true,
+          skipped: true,
+        },
+      ],
+      deviceId
+    );
+
+    expect(dtos).toHaveLength(0);
+    expect(pendingChanges.size).toBe(0);
+    expect(localStates.size).toBe(0);
+  });
 });

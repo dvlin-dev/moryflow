@@ -368,4 +368,50 @@ describe('executor', () => {
     expect(removeEntry).toHaveBeenCalledWith(vaultPath, 'file-3');
     expect(saveFileIndex).toHaveBeenCalledWith(vaultPath);
   });
+
+  it('removes old path when download moves to new path', async () => {
+    setFile('/vault/old.md', 'local', 111);
+
+    vi.mocked(cloudSyncApi.downloadFile).mockResolvedValue('remote');
+
+    const pendingChanges = new Map();
+    const localStates = new Map([
+      [
+        'file-1',
+        {
+          fileId: 'file-1',
+          path: 'old.md',
+          contentHash: 'hash:local',
+          size: 5,
+          mtime: 111,
+        },
+      ],
+    ]);
+
+    const completed: CompletedFileDto[] = [];
+    const deleted: string[] = [];
+    const downloadedEntries: DownloadedEntry[] = [];
+    const conflictEntries: ConflictEntry[] = [];
+
+    await executeAction(
+      {
+        action: 'download',
+        fileId: 'file-1',
+        path: 'new.md',
+        url: 'https://download',
+        contentHash: 'hash:remote',
+      },
+      vaultPath,
+      deviceId,
+      pendingChanges,
+      localStates,
+      completed,
+      deleted,
+      downloadedEntries,
+      conflictEntries
+    );
+
+    expect(files.has('/vault/old.md')).toBe(false);
+    expect(files.get('/vault/new.md')?.content).toBe('remote');
+  });
 });
