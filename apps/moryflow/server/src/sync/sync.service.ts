@@ -7,12 +7,13 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
 import {
-  compareVectorClocks,
-  type VectorClock,
-  type ClockRelation,
-} from '@anyhunt/sync';
+  Injectable,
+  ForbiddenException,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { type VectorClock } from '@anyhunt/sync';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
 import { QuotaService } from '../quota';
@@ -20,6 +21,7 @@ import { StorageClient } from '../storage';
 import { VectorizeService } from '../vectorize';
 import { getMimeType, getFileName } from '../storage/mime-utils';
 import type { SubscriptionTier, PaginationParams } from '../types';
+import { computeSyncActions, type RemoteFile } from './sync-diff';
 import type {
   SyncDiffRequestDto,
   SyncDiffResponseDto,
@@ -37,19 +39,6 @@ import type {
 const DEFAULT_LIMIT = 100;
 /** 最大分页限制 */
 const MAX_LIMIT = 1000;
-
-// ── 类型定义 ────────────────────────────────────────────────
-
-/** 远端文件类型（用于 diff 计算） */
-interface RemoteFile {
-  id: string;
-  path: string;
-  title: string;
-  size: number;
-  contentHash: string;
-  vectorClock: VectorClock;
-  isDeleted: boolean;
-}
 
 @Injectable()
 export class SyncService {
@@ -75,9 +64,6 @@ export class SyncService {
 
     // 验证 Vault 所有权
     await this.vaultService.getVault(userId, vaultId);
-
-    // 检查上传文件的额度
-    await this.validateUploadQuota(userId, tier, localFiles);
 
     // 获取设备信息（设备名称用于冲突命名）
     const device = await this.prisma.vaultDevice.findUnique({
@@ -113,7 +99,20 @@ export class SyncService {
     }));
 
     // 计算差异
-    const actions = this.computeDiff(localFiles, remoteFilesTyped, deviceName);
+    const actions = computeSyncActions(
+      localFiles,
+      remoteFilesTyped,
+      deviceName,
+    );
+
+    // 检查上传文件的额度（包含冲突副本）
+    await this.validateUploadQuota(
+      userId,
+      tier,
+      localFiles,
+      remoteFilesTyped,
+      actions,
+    );
 
     // 为需要上传/下载的文件生成预签名 URL
     const actionsWithUrls = this.generatePresignUrls(userId, vaultId, actions);
@@ -310,294 +309,63 @@ export class SyncService {
     userId: string,
     tier: SubscriptionTier,
     localFiles: LocalFileDto[],
-  ): Promise<void> {
-    // 过滤掉删除操作（contentHash 为空）
-    const filesToUpload = localFiles.filter((f) => f.contentHash !== '');
-    if (filesToUpload.length === 0) return;
-
-    // 检查最大单文件
-    const maxFile = filesToUpload.reduce((max, file) =>
-      file.size > max.size ? file : max,
-    );
-
-    const singleFileCheck = await this.quotaService.checkUploadAllowed(
-      userId,
-      tier,
-      maxFile.size,
-    );
-    if (!singleFileCheck.allowed) {
-      throw new ForbiddenException(
-        `File "${maxFile.path}" exceeds size limit: ${singleFileCheck.reason}`,
-      );
-    }
-
-    // 计算增量存储
-    const existingFiles = await this.prisma.syncFile.findMany({
-      where: { id: { in: filesToUpload.map((f) => f.fileId) } },
-      select: { id: true, size: true },
-    });
-
-    const existingMap = new Map(existingFiles.map((f) => [f.id, f.size]));
-
-    let totalNewSize = 0;
-    for (const file of filesToUpload) {
-      const existingSize = existingMap.get(file.fileId) ?? 0;
-      const sizeDiff = file.size - existingSize;
-      if (sizeDiff > 0) totalNewSize += sizeDiff;
-    }
-
-    if (totalNewSize > 0) {
-      const storageCheck = await this.quotaService.checkUploadAllowed(
-        userId,
-        tier,
-        totalNewSize,
-      );
-      if (!storageCheck.allowed) {
-        throw new ForbiddenException(
-          `Storage quota exceeded: ${storageCheck.reason}`,
-        );
-      }
-    }
-  }
-
-  /**
-   * 计算同步差异（基于向量时钟）
-   */
-  private computeDiff(
-    localFiles: LocalFileDto[],
     remoteFiles: RemoteFile[],
-    deviceName: string,
-  ): SyncActionDto[] {
-    const actions: SyncActionDto[] = [];
+    actions: SyncActionDto[],
+  ): Promise<void> {
+    if (actions.length === 0) return;
+
     const localMap = new Map(localFiles.map((f) => [f.fileId, f]));
     const remoteMap = new Map(remoteFiles.map((f) => [f.id, f]));
 
-    // 1. 处理本地存在的文件
-    for (const local of localFiles) {
-      const remote = remoteMap.get(local.fileId);
-      const action = this.resolveFile(local, remote, deviceName);
-      if (action) actions.push(action);
-    }
+    const uploadSizes: number[] = [];
+    let totalNewSize = 0;
 
-    // 2. 处理远端有、本地无的文件（远端新增）
-    for (const remote of remoteFiles) {
-      if (!localMap.has(remote.id) && !remote.isDeleted) {
-        actions.push(this.createDownloadAction(remote));
+    for (const action of actions) {
+      if (action.action === 'upload') {
+        const local = localMap.get(action.fileId);
+        if (!local) continue;
+        uploadSizes.push(local.size);
+        const existingSize = remoteMap.get(action.fileId)?.size ?? 0;
+        const diff = local.size - existingSize;
+        if (diff > 0) totalNewSize += diff;
+      }
+
+      if (action.action === 'conflict') {
+        const local = localMap.get(action.fileId);
+        const remote = remoteMap.get(action.fileId);
+        const localSize = local?.size ?? 0;
+        const remoteSize = remote?.size ?? 0;
+
+        uploadSizes.push(localSize);
+        uploadSizes.push(remoteSize);
+
+        const diff = localSize - remoteSize;
+        if (diff > 0) totalNewSize += diff;
+        totalNewSize += remoteSize;
       }
     }
 
-    return actions;
-  }
-
-  /**
-   * 解析单个文件的同步操作
-   */
-  private resolveFile(
-    local: LocalFileDto,
-    remote: RemoteFile | undefined,
-    deviceName: string,
-  ): SyncActionDto | null {
-    const isLocalDeleted = local.contentHash === '';
-
-    // Case 1: 本地新增（远端不存在）
-    if (!remote) {
-      return isLocalDeleted ? null : this.createUploadAction(local);
-    }
-
-    const isRemoteDeleted = remote.isDeleted;
-    const relation = compareVectorClocks(local.vectorClock, remote.vectorClock);
-
-    // Case 2: 双方都删除
-    if (isLocalDeleted && isRemoteDeleted) {
-      return null;
-    }
-
-    // Case 3: 本地删除，远端存在
-    if (isLocalDeleted && !isRemoteDeleted) {
-      return this.resolveLocalDeleted(local, remote, relation);
-    }
-
-    // Case 4: 远端删除，本地存在
-    if (!isLocalDeleted && isRemoteDeleted) {
-      return this.resolveRemoteDeleted(local, remote, relation);
-    }
-
-    // Case 5: 双方都存在
-    return this.resolveBothExist(local, remote, relation, deviceName);
-  }
-
-  /**
-   * 本地删除，远端存在
-   */
-  private resolveLocalDeleted(
-    local: LocalFileDto,
-    remote: RemoteFile,
-    relation: ClockRelation,
-  ): SyncActionDto {
-    switch (relation) {
-      case 'after':
-        // 本地删除更新 → 执行删除
-        return { fileId: local.fileId, path: local.path, action: 'delete' };
-
-      case 'before':
-        // 远端有新版本 → 恢复文件
-        return this.createDownloadAction(remote);
-
-      case 'concurrent':
-        // 并发：本地删除 vs 远端修改 → 保留远端（修改优先于删除）
-        return this.createDownloadAction(remote);
-
-      case 'equal':
-        // 异常状态
-        this.logger.error(
-          `Invalid state: equal clock but different delete status: ${local.fileId}`,
-        );
-        return this.createDownloadAction(remote);
-
-      default: {
-        const _exhaustive: never = relation;
-        throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
+    if (uploadSizes.length > 0) {
+      const maxSize = uploadSizes.reduce((max, size) => Math.max(max, size), 0);
+      const singleFileCheck = this.quotaService.checkFileSizeAllowed(
+        tier,
+        maxSize,
+      );
+      if (!singleFileCheck.allowed) {
+        throw new ForbiddenException(singleFileCheck.reason);
       }
     }
-  }
 
-  /**
-   * 远端删除，本地存在
-   */
-  private resolveRemoteDeleted(
-    local: LocalFileDto,
-    remote: RemoteFile,
-    relation: ClockRelation,
-  ): SyncActionDto {
-    switch (relation) {
-      case 'after':
-        // 本地有新修改 → 恢复上传
-        return this.createUploadAction(local);
-
-      case 'before':
-        // 远端删除更新 → 执行删除
-        return { fileId: local.fileId, path: local.path, action: 'delete' };
-
-      case 'concurrent':
-        // 并发：本地修改 vs 远端删除 → 保留本地（修改优先于删除）
-        return this.createUploadAction(local);
-
-      case 'equal':
-        // 异常状态
-        this.logger.error(
-          `Invalid state: equal clock but different delete status: ${local.fileId}`,
-        );
-        return { fileId: local.fileId, path: local.path, action: 'delete' };
-
-      default: {
-        const _exhaustive: never = relation;
-        throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
-      }
+    const storageCheck = await this.quotaService.checkStorageAllowed(
+      userId,
+      tier,
+      totalNewSize,
+    );
+    if (!storageCheck.allowed) {
+      throw new ForbiddenException(
+        storageCheck.reason ?? 'Storage quota exceeded',
+      );
     }
-  }
-
-  /**
-   * 双方都存在
-   */
-  private resolveBothExist(
-    local: LocalFileDto,
-    remote: RemoteFile,
-    relation: ClockRelation,
-    deviceName: string,
-  ): SyncActionDto | null {
-    // 内容相同
-    if (local.contentHash === remote.contentHash) {
-      // 路径不同且本地更新 → 上传（更新路径）
-      if (local.path !== remote.path && relation === 'after') {
-        return this.createUploadAction(local);
-      }
-      return null;
-    }
-
-    // 内容不同
-    switch (relation) {
-      case 'after':
-        return this.createUploadAction(local);
-
-      case 'before':
-        return this.createDownloadAction(remote);
-
-      case 'equal':
-        // 时钟相等但内容不同，异常情况
-        this.logger.warn(`Clock equal but content differs: ${local.fileId}`);
-        return this.createConflictAction(local, remote, deviceName);
-
-      case 'concurrent':
-        return this.createConflictAction(local, remote, deviceName);
-
-      default: {
-        const _exhaustive: never = relation;
-        throw new Error(`Unknown clock relation: ${String(_exhaustive)}`);
-      }
-    }
-  }
-
-  private createUploadAction(local: LocalFileDto): SyncActionDto {
-    return {
-      fileId: local.fileId,
-      path: local.path,
-      action: 'upload',
-      size: local.size,
-      contentHash: local.contentHash,
-    };
-  }
-
-  private createDownloadAction(remote: RemoteFile): SyncActionDto {
-    return {
-      fileId: remote.id,
-      path: remote.path,
-      action: 'download',
-      size: remote.size,
-      contentHash: remote.contentHash,
-      remoteVectorClock: remote.vectorClock,
-    };
-  }
-
-  private createConflictAction(
-    local: LocalFileDto,
-    remote: RemoteFile,
-    deviceName: string,
-  ): SyncActionDto {
-    return {
-      fileId: local.fileId,
-      path: local.path,
-      action: 'conflict',
-      size: remote.size,
-      contentHash: remote.contentHash,
-      remoteVectorClock: remote.vectorClock,
-      conflictRename: this.generateConflictName(remote.path, deviceName),
-      // 服务端生成冲突副本的 fileId，确保客户端和服务端使用相同的 ID
-      conflictCopyId: crypto.randomUUID(),
-    };
-  }
-
-  /**
-   * 生成冲突文件名
-   */
-  private generateConflictName(path: string, deviceName: string): string {
-    const lastSlashIndex = path.lastIndexOf('/');
-    const dir =
-      lastSlashIndex !== -1 ? path.substring(0, lastSlashIndex + 1) : '';
-    const fileName =
-      lastSlashIndex !== -1 ? path.substring(lastSlashIndex + 1) : path;
-
-    const lastDotIndex = fileName.lastIndexOf('.');
-    const ext = lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : '';
-    const base =
-      lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
-
-    const truncatedDeviceName =
-      deviceName.length > 30 ? deviceName.substring(0, 30) + '...' : deviceName;
-
-    const now = new Date();
-    const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    return `${dir}${base} (${truncatedDeviceName} - ${timestamp})${ext}`;
   }
 
   /**
@@ -616,6 +384,10 @@ export class SyncService {
     );
 
     if (needUrls.length === 0) return actions;
+
+    if (!this.storageClient.isConfigured()) {
+      throw new ServiceUnavailableException('Storage not configured');
+    }
 
     const urlRequests: Array<{
       fileId: string;

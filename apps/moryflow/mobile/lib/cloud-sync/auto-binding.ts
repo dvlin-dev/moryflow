@@ -10,6 +10,7 @@ import { Paths } from 'expo-file-system';
 import { createLogger } from '@/lib/agent-runtime';
 import { cloudSyncApi, CloudSyncApiError } from './api-client';
 import { readBinding, writeBinding, readSettings } from './store';
+import { fetchCurrentUserId } from './user-info';
 import type { VaultBinding } from './const';
 
 // ── 常量 ────────────────────────────────────────────────────
@@ -103,6 +104,11 @@ async function performAutoBinding(vaultPath: string): Promise<VaultBinding> {
 
   logger.info('Attempting auto binding:', { vaultPath, localVaultName });
 
+  const userId = await fetchCurrentUserId();
+  if (!userId) {
+    throw new Error('Cannot determine current user ID');
+  }
+
   const { vaults } = await cloudSyncApi.listVaults();
   const matched = vaults.find((v) => v.name === localVaultName);
 
@@ -127,6 +133,7 @@ async function performAutoBinding(vaultPath: string): Promise<VaultBinding> {
     vaultId,
     vaultName,
     boundAt: Date.now(),
+    userId,
   };
   await writeBinding(binding);
 

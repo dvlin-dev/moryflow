@@ -11,7 +11,7 @@ archived_date: 2026-01-12
 [OUTPUT]: 对比分析与取舍依据（用于长期参考）
 [POS]: 归档：同步方案调研（不代表当前实现）
 
-[PROTOCOL]: 本文件为归档研究；若用于推动实现，请先提炼结论到 `docs/products/moryflow/features/cloud-sync/tech.md` 或新增 ADR。
+[PROTOCOL]: 本文件为归档研究；若用于推动实现，请先提炼结论到 `docs/products/moryflow/features/cloud-sync/unified-implementation.md` 或新增 ADR。
 -->
 
 # 笔记同步方案深度分析

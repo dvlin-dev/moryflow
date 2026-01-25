@@ -11,13 +11,9 @@ import { createLogger } from '@/lib/agent-runtime';
 import {
   STORE_KEYS,
   createDefaultSettings,
-  generateDeviceId,
   type CloudSyncSettings,
   type VaultBinding,
 } from './const';
-
-// UUID 格式校验正则
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const logger = createLogger('[CloudSync]');
 
 // ── Settings ────────────────────────────────────────────────
@@ -27,13 +23,14 @@ export const readSettings = async (): Promise<CloudSyncSettings> => {
     const stored = await SecureStore.getItemAsync(STORE_KEYS.SETTINGS);
     if (stored) {
       const settings = JSON.parse(stored) as CloudSyncSettings;
-      // 迁移：如果 deviceId 不是有效 UUID 格式，重新生成
-      if (!UUID_REGEX.test(settings.deviceId)) {
-        logger.info('Migrating invalid deviceId to UUID format');
-        settings.deviceId = generateDeviceId();
-        await writeSettings(settings);
+      if (
+        typeof settings?.syncEnabled === 'boolean' &&
+        typeof settings?.vectorizeEnabled === 'boolean' &&
+        typeof settings?.deviceId === 'string' &&
+        typeof settings?.deviceName === 'string'
+      ) {
+        return settings;
       }
-      return settings;
     }
   } catch (error) {
     logger.error('Failed to read settings:', error);
@@ -57,7 +54,25 @@ export const readBindings = async (): Promise<Record<string, VaultBinding>> => {
   try {
     const stored = await SecureStore.getItemAsync(STORE_KEYS.BINDINGS);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored) as Record<string, Partial<VaultBinding>>;
+      const sanitized: Record<string, VaultBinding> = {};
+      for (const [key, binding] of Object.entries(parsed)) {
+        const localPath = typeof binding?.localPath === 'string' ? binding.localPath : key;
+        if (
+          typeof binding?.vaultId === 'string' &&
+          typeof binding?.vaultName === 'string' &&
+          typeof binding?.boundAt === 'number'
+        ) {
+          sanitized[key] = {
+            localPath,
+            vaultId: binding.vaultId,
+            vaultName: binding.vaultName,
+            boundAt: binding.boundAt,
+            userId: typeof binding?.userId === 'string' ? binding.userId : '',
+          };
+        }
+      }
+      return sanitized;
     }
   } catch (error) {
     logger.error('Failed to read bindings:', error);

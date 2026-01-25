@@ -55,6 +55,13 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Agent Runtime 改为使用 `@openai/agents-core` 类型与运行入口，移除 `@anyhunt/agents` 依赖
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）
 - Server 会员导出收敛，移除未使用的等级比较/优先级常量
+- Cloud Sync：Mobile 端绑定写入 userId，账号切换触发绑定冲突处理与用户选择
+- Cloud Sync：FileIndex v2 严格校验，提交成功后统一回写 lastSyncedHash/Clock/Size/Mtime
+- Cloud Sync：拆分检测/执行/提交流程并补齐冲突副本上传、向量时钟合并与单测
+- Cloud Sync：detectLocalChanges 使用 mtime/size 预过滤 + hash 缓存
+- Cloud Sync：冲突流程先上传副本再提交，缺失冲突元数据显式报错，下载跳过重命名失败回退
+- FileIndex：无效存储记录告警并重置
+- FileIndex：lastSyncedSize/lastSyncedMtime 用于本地变更预过滤
 - Cloud Sync 与 Vault 日志统一通过 `createLogger()` 输出
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖
 - 拆分并收敛全局 UI 状态：新增 `ChatSheetProvider`，移除无用的 TabBar 显隐 Context/Hook

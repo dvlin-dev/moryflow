@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-26
+date: 2026-01-25
 scope: monorepo
 status: active
 ---
@@ -62,6 +62,7 @@ status: active
   - 入口：`docs/products/moryflow/index.md`
   - 发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`
   - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
+  - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
 
 ## Code Review（全量评审计划与进度）
 
