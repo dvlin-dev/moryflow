@@ -66,6 +66,11 @@ export const clearAuthSession = async () => {
   await clearAuthCookieStorage();
 };
 
+export const shouldClearAuthSessionAfterEnsureFailure = async (): Promise<boolean> => {
+  const refreshToken = await getStoredRefreshToken();
+  return !refreshToken;
+};
+
 export const refreshAccessToken = async (): Promise<boolean> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {

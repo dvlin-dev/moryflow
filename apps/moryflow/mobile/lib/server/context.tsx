@@ -29,6 +29,7 @@ import {
   ensureAccessToken,
   refreshAccessToken,
   clearAuthSession,
+  shouldClearAuthSessionAfterEnsureFailure,
   logoutFromServer,
 } from './auth-session';
 import { createTempUserInfo, convertApiModels } from './helper';
@@ -162,6 +163,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       loadModels();
       const refreshed = await ensureAccessToken();
       if (!refreshed) {
+        const shouldClear = await shouldClearAuthSessionAfterEnsureFailure();
+        if (!shouldClear) {
+          return;
+        }
         await clearAuthSession();
         await clearStoredUserCache();
         setUser(null);
@@ -174,6 +179,11 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
     const refreshed = await ensureAccessToken();
     if (!refreshed) {
+      const shouldClear = await shouldClearAuthSessionAfterEnsureFailure();
+      if (!shouldClear) {
+        setIsInitializing(false);
+        return;
+      }
       await clearAuthSession();
       await clearStoredUserCache();
       setUser(null);

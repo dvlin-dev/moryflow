@@ -106,4 +106,26 @@ describe('auth-session', () => {
     expect(result).toBe(true);
     expect(getAccessToken()).toBe('access');
   });
+
+  it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 存在时返回 false', async () => {
+    const storage = await import('../storage');
+
+    vi.mocked(storage.getStoredRefreshToken).mockResolvedValue('rt');
+
+    const { shouldClearAuthSessionAfterEnsureFailure } = await import('../auth-session');
+    const result = await shouldClearAuthSessionAfterEnsureFailure();
+
+    expect(result).toBe(false);
+  });
+
+  it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 缺失时返回 true', async () => {
+    const storage = await import('../storage');
+
+    vi.mocked(storage.getStoredRefreshToken).mockResolvedValue(null);
+
+    const { shouldClearAuthSessionAfterEnsureFailure } = await import('../auth-session');
+    const result = await shouldClearAuthSessionAfterEnsureFailure();
+
+    expect(result).toBe(true);
+  });
 });

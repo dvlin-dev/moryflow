@@ -80,6 +80,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Auth Session 单元测试新增（`lib/server/__tests__/auth-session.spec.ts`）
 - Auth Store：access token 允许空 expiresAt，保持持久化一致
 - Auth Session：网络失败不清理 refresh token，App Resume 触发 ensureAccessToken
+- Auth 初始化：refresh 失败时保留 refresh token，避免离线启动误清理
 - Membership Context 依赖清理与 signUp 参数收敛，避免无用依赖/参数
 
 ## 依赖关系
