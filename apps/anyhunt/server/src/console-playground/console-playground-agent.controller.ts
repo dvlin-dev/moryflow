@@ -220,13 +220,27 @@ export class ConsolePlaygroundAgentController {
       params.id,
     );
 
-    if (!result.success && result.message === 'Task not found') {
+    if (result.status === 'not_found') {
       throw new HttpException(
-        { message: 'Task not found' },
+        { code: 'TASK_NOT_FOUND', message: 'Task not found' },
         HttpStatus.NOT_FOUND,
       );
     }
 
-    return result;
+    if (result.status === 'invalid_status') {
+      throw new HttpException(
+        {
+          code: 'TASK_STATUS_INVALID',
+          message: `Cannot cancel task in '${result.currentStatus}' status`,
+          details: {
+            currentStatus: result.currentStatus,
+            creditsUsed: result.creditsUsed,
+          },
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    return { status: 'cancelled', creditsUsed: result.creditsUsed };
   }
 }

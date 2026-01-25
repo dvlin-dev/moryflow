@@ -3,8 +3,8 @@
  * 单一职责：HTTP 请求（纯函数），不含业务逻辑
  */
 
-import { membershipBridge } from '../../membership-bridge.js'
-import { createLogger } from '../logger.js'
+import { membershipBridge } from '../../membership-bridge.js';
+import { createLogger } from '../logger.js';
 import type {
   VaultDto,
   VaultListDto,
@@ -19,9 +19,9 @@ import type {
   SearchRequest,
   SearchResponse,
   UsageResponse,
-} from './types.js'
+} from './types.js';
 
-const log = createLogger('api')
+const log = createLogger('api');
 
 // ── HTTP 错误类型 ───────────────────────────────────────────
 
@@ -31,29 +31,29 @@ export class CloudSyncApiError extends Error {
     public readonly status: number,
     public readonly code?: string
   ) {
-    super(message)
-    this.name = 'CloudSyncApiError'
+    super(message);
+    this.name = 'CloudSyncApiError';
   }
 
   get isUnauthorized(): boolean {
-    return this.status === 401
+    return this.status === 401;
   }
 
   get isQuotaExceeded(): boolean {
-    return this.status === 403
+    return this.status === 403;
   }
 
   get isServerError(): boolean {
-    return this.status >= 500
+    return this.status >= 500;
   }
 }
 
 // ── 基础请求函数 ────────────────────────────────────────────
 
 const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
-  const config = membershipBridge.getConfig()
+  const config = membershipBridge.getConfig();
   if (!config.token) {
-    throw new CloudSyncApiError('Please log in first', 401, 'UNAUTHORIZED')
+    throw new CloudSyncApiError('Please log in first', 401, 'UNAUTHORIZED');
   }
 
   const res = await fetch(`${config.apiUrl}${path}`, {
@@ -63,42 +63,41 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
       Authorization: `Bearer ${config.token}`,
       ...options.headers,
     },
-  })
+  });
 
   if (!res.ok) {
-    const errorText = await res.text().catch(() => '')
-    let error: { message?: string; code?: string } = { message: `Request failed: ${res.status}` }
+    const errorText = await res.text().catch(() => '');
+    let error: { message?: string; code?: string } = { message: `Request failed: ${res.status}` };
     try {
       if (errorText) {
-        error = JSON.parse(errorText)
+        error = JSON.parse(errorText);
       }
     } catch {
       // If not JSON, use raw text
-      error.message = errorText || `Request failed: ${res.status}`
+      error.message = errorText || `Request failed: ${res.status}`;
     }
-    log.error(`${path} failed:`, res.status, errorText)
+    log.error(`${path} failed:`, res.status, errorText);
     throw new CloudSyncApiError(
       error.message || `Request failed: ${res.status}`,
       res.status,
       error.code
-    )
+    );
   }
 
   // 204 No Content
   if (res.status === 204) {
-    return undefined as T
+    return undefined as T;
   }
 
-  return res.json()
-}
+  return res.json();
+};
 
 // ── API 方法（纯函数）────────────────────────────────────────
 
 export const cloudSyncApi = {
   // ── Vault ─────────────────────────────────────────────────
 
-  listVaults: (): Promise<VaultListDto> =>
-    request('/api/vaults'),
+  listVaults: (): Promise<VaultListDto> => request('/api/vaults'),
 
   createVault: (name: string): Promise<VaultDto> =>
     request('/api/vaults', {
@@ -106,8 +105,7 @@ export const cloudSyncApi = {
       body: JSON.stringify({ name }),
     }),
 
-  getVault: (vaultId: string): Promise<VaultDto> =>
-    request(`/api/vaults/${vaultId}`),
+  getVault: (vaultId: string): Promise<VaultDto> => request(`/api/vaults/${vaultId}`),
 
   deleteVault: (vaultId: string): Promise<void> =>
     request(`/api/vaults/${vaultId}`, { method: 'DELETE' }),
@@ -144,7 +142,7 @@ export const cloudSyncApi = {
       body: JSON.stringify(payload),
     }),
 
-  deleteVector: (fileId: string): Promise<{ success: boolean }> =>
+  deleteVector: (fileId: string): Promise<void> =>
     request(`/api/vectorize/file/${fileId}`, { method: 'DELETE' }),
 
   getVectorizeStatus: (fileId: string): Promise<VectorizeStatusResponse> =>
@@ -160,6 +158,5 @@ export const cloudSyncApi = {
 
   // ── Usage ─────────────────────────────────────────────────
 
-  getUsage: (): Promise<UsageResponse> =>
-    request('/api/usage'),
-} as const
+  getUsage: (): Promise<UsageResponse> => request('/api/usage'),
+} as const;

@@ -209,7 +209,6 @@ export type AgentOutput =
     };
 
 export type AgentCancelResponse = {
-  success: boolean;
-  message: string;
+  status: 'cancelled';
   creditsUsed?: number;
 };

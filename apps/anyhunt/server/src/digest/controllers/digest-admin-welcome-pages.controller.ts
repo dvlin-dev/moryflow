@@ -14,6 +14,8 @@ import {
   Param,
   Post,
   Put,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -63,31 +65,34 @@ export class DigestAdminWelcomePagesController {
   @Put('reorder')
   @ApiOperation({ summary: 'Reorder welcome pages (admin)' })
   @ApiOkResponse({ description: 'OK' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async reorderPages(
     @Body(new ZodValidationPipe(ReorderWelcomePagesSchema))
     input: ReorderWelcomePagesInput,
-  ) {
+  ): Promise<void> {
     await this.welcomePagesService.reorderAdminPages(input.ids);
-    return { success: true };
+    return;
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update welcome page (admin)' })
   @ApiOkResponse({ description: 'OK' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async updatePage(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(UpdateWelcomePageSchema))
     input: UpdateWelcomePageInput,
-  ) {
+  ): Promise<void> {
     await this.welcomePagesService.updateAdminPage(id, input);
-    return { success: true };
+    return;
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete welcome page (admin)' })
   @ApiOkResponse({ description: 'OK' })
-  async deletePage(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deletePage(@Param('id') id: string): Promise<void> {
     await this.welcomePagesService.deleteAdminPage(id);
-    return { success: true };
+    return;
   }
 }

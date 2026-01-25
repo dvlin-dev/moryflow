@@ -12,12 +12,25 @@ import { API_BASE_URL } from './api-base';
 export class ApiError extends Error {
   status: number;
   code: string;
+  details?: unknown;
+  requestId?: string;
+  errors?: Array<{ field?: string; message: string }>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    requestId?: string,
+    errors?: Array<{ field?: string; message: string }>
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.details = details;
+    this.requestId = requestId;
+    this.errors = errors;
   }
 
   /** 是否为认证错误 */
@@ -44,10 +57,15 @@ export class ApiError extends Error {
 /**
  * API 响应错误结构
  */
-interface ApiErrorResponse {
-  error?: string;
-  message?: string;
-  code?: string;
+interface ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  code: string;
+  requestId?: string;
+  details?: unknown;
+  errors?: Array<{ field?: string; message: string }>;
 }
 
 class ApiClient {
@@ -62,24 +80,36 @@ class ApiClient {
    * 统一错误处理，401/403 自动登出
    */
   private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      // 解析错误响应
-      const errorData: ApiErrorResponse = await response.json().catch(() => ({}));
+    if (response.status === 204) {
+      return undefined as T;
+    }
 
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    const payload = isJson ? await response.json().catch(() => ({})) : undefined;
+
+    if (!response.ok) {
+      const problem = payload as ProblemDetails;
+      const message =
+        typeof problem?.detail === 'string' ? problem.detail : `请求失败 (${response.status})`;
+      const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
+      const requestId = response.headers.get('x-request-id') ?? undefined;
       throw new ApiError(
         response.status,
-        errorData.code || errorData.error || 'UNKNOWN_ERROR',
-        errorData.message || `请求失败 (${response.status})`
+        code,
+        message,
+        problem?.details,
+        problem?.requestId ?? requestId,
+        problem?.errors
       );
     }
 
-    // 处理空响应
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    if (!isJson) {
       return {} as T;
     }
 
-    return response.json();
+    return payload as T;
   }
 
   /**

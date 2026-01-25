@@ -6,6 +6,10 @@
 
 Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权限。基于 React + Vite。
 
+## 最近更新
+
+- Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
+
 ## 职责
 
 - 系统仪表盘与关键指标

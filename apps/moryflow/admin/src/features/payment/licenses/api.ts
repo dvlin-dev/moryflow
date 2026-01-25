@@ -10,13 +10,13 @@
  *
  * 此设计与其他 payment 子模块（订阅、订单、优惠码）不同，它们仅供管理员使用。
  */
-import { apiClient } from '@/lib/api-client'
-import type { LicenseListResponse } from '@/types/payment'
+import { apiClient } from '@/lib/api-client';
+import type { LicenseListResponse } from '@/types/payment';
 
 export interface LicensesQueryParams {
-  limit: number
-  offset: number
-  status?: string
+  limit: number;
+  offset: number;
+  status?: string;
 }
 
 export const licensesApi = {
@@ -25,14 +25,13 @@ export const licensesApi = {
     const searchParams = new URLSearchParams({
       limit: String(params.limit),
       offset: String(params.offset),
-    })
+    });
     if (params.status && params.status !== 'all') {
-      searchParams.set('status', params.status)
+      searchParams.set('status', params.status);
     }
-    return apiClient.get(`/license?${searchParams}`)
+    return apiClient.get(`/license?${searchParams}`);
   },
 
   /** 撤销 License */
-  revoke: (id: string): Promise<{ success: boolean }> =>
-    apiClient.post(`/license/${id}/revoke`),
-}
+  revoke: (id: string): Promise<void> => apiClient.post(`/license/${id}/revoke`),
+};

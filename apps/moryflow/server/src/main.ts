@@ -16,12 +16,14 @@ import {
   type Request,
   type Response,
 } from 'express';
+import { randomUUID } from 'crypto';
 import { AppModule } from './app.module';
 import {
   OpenApiService,
   SCALAR_CONFIG,
   createScalarMiddleware,
 } from './openapi';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 // 公开 API 模块
 import { HealthModule } from './health';
@@ -113,6 +115,21 @@ async function bootstrap() {
   // 增加请求体大小限制（默认 100kb，增加到 50mb）
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
+
+  // 请求 ID（用于 RFC7807 错误体与链路排查）
+  app.use((req: Request, res: Response, next: (err?: unknown) => void) => {
+    const header = req.headers['x-request-id'];
+    const requestId =
+      typeof header === 'string' && header.trim().length > 0
+        ? header
+        : randomUUID();
+    (req as Request & { requestId?: string }).requestId = requestId;
+    res.setHeader('X-Request-Id', requestId);
+    next();
+  });
+
+  // 全局异常过滤器
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // CORS 配置 - 生产环境必须配置 ALLOWED_ORIGINS
   // 支持通配符子域名，如 https://*.moryflow.com

@@ -15,13 +15,24 @@ export class ApiClientError extends Error {
   status: number;
   code: string;
   details?: unknown;
+  requestId?: string;
+  errors?: Array<{ field?: string; message: string }>;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    requestId?: string,
+    errors?: Array<{ field?: string; message: string }>
+  ) {
     super(message);
     this.name = 'ApiClientError';
     this.status = status;
     this.code = code;
     this.details = details;
+    this.requestId = requestId;
+    this.errors = errors;
   }
 
   get isUnauthorized(): boolean {
@@ -37,13 +48,15 @@ export class ApiClientError extends Error {
   }
 }
 
-interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
+interface ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  code: string;
+  requestId?: string;
+  details?: unknown;
+  errors?: Array<{ field?: string; message: string }>;
 }
 
 class ApiClient {
@@ -75,12 +88,17 @@ class ApiClient {
   }
 
   private throwApiError(status: number, json: unknown): never {
-    const errorResponse = json as ApiErrorResponse;
+    const problem = json as ProblemDetails;
+    const message =
+      typeof problem?.detail === 'string' ? problem.detail : `Request failed (${status})`;
+    const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
     throw new ApiClientError(
       status,
-      errorResponse.error?.code || 'UNKNOWN_ERROR',
-      errorResponse.error?.message || `Request failed (${status})`,
-      errorResponse.error?.details
+      code,
+      message,
+      problem?.details,
+      problem?.requestId,
+      problem?.errors
     );
   }
 
@@ -89,21 +107,20 @@ class ApiClient {
       return undefined as T;
     }
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      if (!response.ok) {
-        throw new ApiClientError(response.status, 'NETWORK_ERROR', 'Request failed');
-      }
-      return {} as T;
-    }
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    const json = isJson ? await this.safeParseJson(response) : undefined;
 
-    const json = await this.safeParseJson(response);
-
-    if (!response.ok || (json as { success?: boolean }).success === false) {
+    if (!response.ok) {
       this.throwApiError(response.status, json);
     }
 
-    return (json as { data: T }).data;
+    if (!isJson) {
+      return {} as T;
+    }
+
+    return json as T;
   }
 
   private async fetchWithAuth(

@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { API_BASE_URL } from '@/lib/api-base';
 import { USER_API } from '@/lib/api-paths';
+import type { ProblemDetails } from '@anyhunt/types';
 
 /** Console 用户信息（来自 /api/v1/user/me） */
 export interface AuthUser {
@@ -34,37 +35,21 @@ type AuthResponse = {
   accessToken?: string;
 };
 
-type ApiEnvelope<T> = {
-  success: boolean;
-  data?: T;
-  error?: { message?: string };
-  timestamp?: string;
-};
-
-const unwrapApiResponse = <T>(payload: unknown): T => {
-  if (payload && typeof payload === 'object' && 'success' in payload) {
-    const response = payload as ApiEnvelope<T>;
-    if (response.success === false) {
-      const message = response.error?.message || 'Request failed';
-      throw new Error(message);
-    }
-    if ('data' in response) {
-      return response.data as T;
-    }
-  }
-  return payload as T;
-};
-
 let refreshPromise: Promise<boolean> | null = null;
+
+const getProblemMessage = (payload: unknown, fallback: string): string => {
+  const problem = payload as ProblemDetails;
+  return typeof problem?.detail === 'string' ? problem.detail : fallback;
+};
 
 const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = typeof data?.message === 'string' ? data.message : 'Request failed';
+    const message = getProblemMessage(data, 'Request failed');
     throw new Error(message);
   }
-  return unwrapApiResponse<T>(data);
+  return data as T;
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({

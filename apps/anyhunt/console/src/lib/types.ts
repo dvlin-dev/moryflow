@@ -5,22 +5,16 @@
  * [POS]: Core type definitions for API responses and pagination
  */
 
-/** API 响应包装 */
-export interface ApiResponse<T> {
-  success: boolean
-  data: T
-}
-
 /** 分页参数 */
 export interface Pagination {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 /** 分页响应 */
 export interface PaginatedResponse<T> {
-  items: T[]
-  pagination: Pagination
+  items: T[];
+  pagination: Pagination;
 }

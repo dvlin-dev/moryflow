@@ -6,6 +6,10 @@
 
 Quota management system for tracking and limiting API usage. Handles daily free credits (FREE), monthly subscription quotas, and pay-as-you-go credits.
 
+## 最近更新
+
+- Quota API 错误响应统一为 RFC7807（移除 success/data 包装）
+
 ## Responsibilities
 
 - Track user quota consumption

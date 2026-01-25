@@ -7,7 +7,7 @@
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/CLAUDE.md`
  */
 
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { Logger, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
@@ -18,9 +18,9 @@ import {
   type Response,
   type NextFunction,
 } from 'express';
+import { randomUUID } from 'crypto';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { matchOrigin } from './common/utils';
 import { DEVICE_PLATFORM_ALLOWLIST } from './auth/auth.constants';
@@ -113,6 +113,18 @@ async function bootstrap() {
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
 
+  // 请求 ID（用于 RFC7807 错误体与链路排查）
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const header = req.headers['x-request-id'];
+    const requestId =
+      typeof header === 'string' && header.trim().length > 0
+        ? header
+        : randomUUID();
+    (req as Request & { requestId?: string }).requestId = requestId;
+    res.setHeader('X-Request-Id', requestId);
+    next();
+  });
+
   // 全局 API 前缀
   app.setGlobalPrefix('api', {
     exclude: ['health', 'health/(.*)', 'webhooks/(.*)'],
@@ -123,10 +135,6 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
-
-  // 全局响应拦截器
-  const reflector = app.get(Reflector);
-  app.useGlobalInterceptors(new ResponseInterceptor(reflector));
 
   // 全局异常过滤器
   app.useGlobalFilters(new HttpExceptionFilter());

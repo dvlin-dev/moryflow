@@ -22,6 +22,17 @@ import type {
   DeleteAccountRequest,
 } from './types';
 
+type ProblemDetails = {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  code: string;
+  requestId?: string;
+  details?: unknown;
+  errors?: Array<{ field?: string; message: string }>;
+};
+
 /** 创建 Server API 客户端 */
 export function createServerApiClient(config: ServerApiClientConfig): ServerApiClient {
   const { baseUrl, tokenProvider, onUnauthorized, plugins = [] } = config;
@@ -67,12 +78,25 @@ export function createServerApiClient(config: ServerApiClientConfig): ServerApiC
           return request<T>(path, options, attempt + 1);
         }
       }
-      const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+      const contentType = response.headers.get('content-type') ?? '';
+      const isJson =
+        contentType.includes('application/json') ||
+        contentType.includes('application/problem+json');
+      const payload = isJson
+        ? ((await response.json().catch(() => ({}))) as ProblemDetails)
+        : undefined;
+      const message =
+        typeof payload?.detail === 'string' ? payload.detail : `Request failed: ${response.status}`;
+      const code = typeof payload?.code === 'string' ? payload.code : undefined;
+      const requestId = payload?.requestId ?? response.headers.get('x-request-id') ?? undefined;
       throw new ServerApiError(
         response.status,
-        (errorData.message as string) || `Request failed: ${response.status}`,
-        errorData.code as string | undefined,
-        errorData
+        message,
+        code,
+        payload?.details,
+        requestId,
+        payload?.errors
       );
     }
 

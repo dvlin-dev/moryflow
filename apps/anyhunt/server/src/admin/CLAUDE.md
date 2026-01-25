@@ -6,6 +6,10 @@
 
 Admin 模块提供运营管理后台接口（统计、用户、订单、队列、浏览器池等），只允许管理员访问。
 
+## 最近更新
+
+- Admin Queue 操作响应改为 raw JSON（返回 jobId/retried/removed/paused）
+
 > 注意：Digest 的 Admin API 不在本模块实现。所有 `/api/v1/admin/digest/*` 路由由 `src/digest/controllers/digest-admin.controller.ts` 负责，避免重复注册导致路由冲突。
 
 ## 职责范围

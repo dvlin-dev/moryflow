@@ -873,18 +873,22 @@ export class AgentService {
   async cancelTask(
     taskId: string,
     userId: string,
-  ): Promise<{ success: boolean; message: string; creditsUsed?: number }> {
+  ): Promise<
+    | { status: 'not_found' }
+    | { status: 'invalid_status'; currentStatus: string; creditsUsed?: number }
+    | { status: 'cancelled'; creditsUsed?: number }
+  > {
     const task = await this.taskRepository.getTaskForUser(taskId, userId);
 
     if (!task) {
-      return { success: false, message: 'Task not found' };
+      return { status: 'not_found' };
     }
 
     const status = task.status.toLowerCase();
     if (status !== 'pending' && status !== 'processing') {
       return {
-        success: false,
-        message: `Cannot cancel task in '${status}' status`,
+        status: 'invalid_status',
+        currentStatus: status,
         creditsUsed: task.creditsUsed ?? undefined,
       };
     }
@@ -917,8 +921,8 @@ export class AgentService {
       const latest = await this.taskRepository.getTaskForUser(taskId, userId);
       const latestStatus = latest?.status.toLowerCase() ?? status;
       return {
-        success: false,
-        message: `Cannot cancel task in '${latestStatus}' status`,
+        status: 'invalid_status',
+        currentStatus: latestStatus,
         creditsUsed: latest?.creditsUsed ?? task.creditsUsed ?? undefined,
       };
     }
@@ -944,8 +948,7 @@ export class AgentService {
 
     this.logger.log(`Task ${taskId} cancelled by user`);
     return {
-      success: true,
-      message: 'Task cancelled successfully',
+      status: 'cancelled',
       creditsUsed: progress?.creditsUsed ?? task.creditsUsed ?? undefined,
     };
   }

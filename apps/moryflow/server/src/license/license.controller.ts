@@ -13,6 +13,8 @@ import {
   BadRequestException,
   NotFoundException,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -102,12 +104,13 @@ export class LicenseController {
     summary: '停用 License',
     description: '停用指定设备上的 License (公开接口, 限速 5次/分钟)',
   })
-  @ApiResponse({ status: 200, description: '停用成功' })
+  @ApiResponse({ status: 204, description: '停用成功' })
   @ApiResponse({ status: 400, description: '请求参数错误' })
   @ApiResponse({ status: 429, description: '请求过于频繁' })
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 每分钟最多 5 次
   @Post('deactivate')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deactivateLicense(@Body() body: DeactivateLicenseDto) {
     const parsed = DeactivateLicenseSchema.safeParse(body);
     if (!parsed.success) {
@@ -118,7 +121,9 @@ export class LicenseController {
       parsed.data.licenseKey,
       parsed.data.instanceId,
     );
-    return { success };
+    if (!success) {
+      throw new NotFoundException('License activation not found');
+    }
   }
 
   /**
@@ -206,18 +211,18 @@ export class LicenseController {
   })
   @ApiBearerAuth('bearer')
   @ApiParam({ name: 'id', description: 'License ID' })
-  @ApiResponse({ status: 200, description: '撤销成功' })
+  @ApiResponse({ status: 204, description: '撤销成功' })
   @ApiResponse({ status: 401, description: '未认证' })
   @ApiResponse({ status: 403, description: '无管理员权限' })
   @ApiResponse({ status: 404, description: 'License 不存在' })
   @Post(':id/revoke')
   @UseGuards(AdminGuard)
   @SkipThrottle()
+  @HttpCode(HttpStatus.NO_CONTENT)
   async revokeLicense(@Param('id') id: string) {
     const success = await this.licenseService.revokeLicense(id);
     if (!success) {
       throw new NotFoundException('License not found');
     }
-    return { success };
   }
 }

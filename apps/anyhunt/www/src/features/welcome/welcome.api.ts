@@ -8,30 +8,41 @@
 import { ApiError } from '@/lib/api';
 import type { WelcomeOverviewPublic, WelcomePagePublic } from './welcome.types';
 
-interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
+interface ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  code: string;
+  requestId?: string;
+  details?: unknown;
+  errors?: Array<{ field?: string; message: string }>;
 }
 
-interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-  };
+async function throwApiError(response: Response): Promise<never> {
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJson =
+    contentType.includes('application/json') || contentType.includes('application/problem+json');
+  const payload = isJson ? await response.json().catch(() => ({})) : {};
+  const problem = payload as ProblemDetails;
+  const message =
+    typeof problem?.detail === 'string' ? problem.detail : `Request failed (${response.status})`;
+  const code = typeof problem?.code === 'string' ? problem.code : undefined;
+  throw new ApiError(
+    message,
+    response.status,
+    code,
+    problem?.details,
+    problem?.requestId,
+    problem?.errors
+  );
 }
 
-type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-function handleApiResponse<T>(response: Response, json: ApiResponse<T>): T {
-  if (!response.ok || !json.success) {
-    const errorJson = json as ApiErrorResponse;
-    throw new ApiError(
-      errorJson.error?.message || `Request failed (${response.status})`,
-      errorJson.error?.code
-    );
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    await throwApiError(response);
   }
-  return json.data;
+  return (await response.json()) as T;
 }
 
 function getClientLocale(): string {
@@ -48,8 +59,7 @@ export async function getWelcomeOverview(apiUrl: string): Promise<WelcomeOvervie
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<WelcomeOverviewPublic>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<WelcomeOverviewPublic>(response);
 }
 
 export async function getWelcomePage(apiUrl: string, slug: string): Promise<WelcomePagePublic> {
@@ -64,6 +74,5 @@ export async function getWelcomePage(apiUrl: string, slug: string): Promise<Welc
     }
   );
 
-  const json = (await response.json()) as ApiResponse<WelcomePagePublic>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<WelcomePagePublic>(response);
 }

@@ -1,7 +1,7 @@
 /**
  * Providers API
  */
-import { adminApi } from '../../lib/api'
+import { adminApi } from '../../lib/api';
 import type {
   AiProvider,
   PresetProvider,
@@ -9,7 +9,7 @@ import type {
   PresetProvidersResponse,
   CreateProviderRequest,
   UpdateProviderRequest,
-} from '../../types/api'
+} from '../../types/api';
 
 export const providersApi = {
   /** 获取预设 Provider 列表 */
@@ -30,7 +30,7 @@ export const providersApi = {
     adminApi.put<{ provider: AiProvider }>(`/ai/providers/${id}`, data),
 
   /** 删除 Provider */
-  delete: (id: string) => adminApi.delete<{ success: boolean }>(`/ai/providers/${id}`),
-}
+  delete: (id: string) => adminApi.delete<void>(`/ai/providers/${id}`),
+};
 
-export type { AiProvider, PresetProvider, CreateProviderRequest, UpdateProviderRequest }
+export type { AiProvider, PresetProvider, CreateProviderRequest, UpdateProviderRequest };

@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-24（Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
+> 最近更新：2026-01-26（统一响应为 raw JSON + RFC7807；API Client 统一封装方案与 access token 本地存储方案补充；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 
 ## 项目概述
 
@@ -215,6 +215,7 @@ Anyhunt/
 | [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
 | [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)         | Auth 交互统一与数据库重置改造方案                         |
 | [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md) | Auth 统一改造涉及文件与模块清单                           |
+| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                         | API Client 统一封装方案（Anyhunt + Moryflow）             |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
 | [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                   |

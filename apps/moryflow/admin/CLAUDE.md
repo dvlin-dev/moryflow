@@ -86,6 +86,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
 - Dashboard：同步文件数卡片改用 `FileSyncIcon`，修复 Hugeicons 导出缺失导致的构建错误
 - `src/components/ui` 与 `src/components/shared` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - `src/features/` 与 `src/pages/` 避免在 `useEffect` 中设置派生状态，优先使用派生值

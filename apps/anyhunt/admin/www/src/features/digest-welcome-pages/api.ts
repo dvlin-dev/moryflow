@@ -24,14 +24,17 @@ export async function createAdminWelcomePage(
   return apiClient.post<{ id: string }>(ADMIN_API.DIGEST_WELCOME_PAGES, input);
 }
 
-export async function updateAdminWelcomePage(id: string, input: UpdateWelcomePageInput) {
-  return apiClient.put<{ success: true }>(`${ADMIN_API.DIGEST_WELCOME_PAGES}/${id}`, input);
+export async function updateAdminWelcomePage(
+  id: string,
+  input: UpdateWelcomePageInput
+): Promise<void> {
+  return apiClient.put<void>(`${ADMIN_API.DIGEST_WELCOME_PAGES}/${id}`, input);
 }
 
-export async function reorderAdminWelcomePages(input: ReorderWelcomePagesInput) {
-  return apiClient.put<{ success: true }>(`${ADMIN_API.DIGEST_WELCOME_PAGES}/reorder`, input);
+export async function reorderAdminWelcomePages(input: ReorderWelcomePagesInput): Promise<void> {
+  return apiClient.put<void>(`${ADMIN_API.DIGEST_WELCOME_PAGES}/reorder`, input);
 }
 
-export async function deleteAdminWelcomePage(id: string) {
-  return apiClient.delete<{ success: true }>(`${ADMIN_API.DIGEST_WELCOME_PAGES}/${id}`);
+export async function deleteAdminWelcomePage(id: string): Promise<void> {
+  return apiClient.delete<void>(`${ADMIN_API.DIGEST_WELCOME_PAGES}/${id}`);
 }

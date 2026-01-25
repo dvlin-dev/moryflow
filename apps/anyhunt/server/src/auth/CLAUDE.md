@@ -6,6 +6,10 @@
 
 Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力与 access/refresh token 策略落地。
 
+## 最近更新
+
+- Auth refresh/logout 接口改为 raw JSON 响应，错误统一为 RFC7807
+
 ## 职责范围
 
 - 邮箱+密码、邮箱 OTP 登录/注册（Better Auth）

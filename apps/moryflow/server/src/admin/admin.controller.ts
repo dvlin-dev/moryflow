@@ -18,6 +18,8 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -229,11 +231,12 @@ export class AdminController {
 
   @ApiOperation({ summary: '发放积分', description: '手动为用户发放积分' })
   @ApiParam({ name: 'userId', description: '用户 ID' })
-  @ApiResponse({ status: 200, description: '发放成功' })
+  @ApiResponse({ status: 204, description: '发放成功' })
   @ApiResponse({ status: 400, description: '无效的积分类型或数量' })
   @ApiResponse({ status: 401, description: '未认证' })
   @ApiResponse({ status: 403, description: '无管理员权限' })
   @Post('users/:userId/credits')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async grantCredits(
     @CurrentUser() user: CurrentUserDto,
     @Param('userId') userId: string,
@@ -249,7 +252,6 @@ export class AdminController {
       parsed.data.amount,
       user.id,
     );
-    return { success: true };
   }
 
   @ApiOperation({
@@ -319,11 +321,12 @@ export class AdminController {
     summary: '发送邮件',
     description: '向指定邮箱发送自定义邮件',
   })
-  @ApiResponse({ status: 200, description: '发送成功' })
+  @ApiResponse({ status: 204, description: '发送成功' })
   @ApiResponse({ status: 400, description: '参数错误' })
   @ApiResponse({ status: 401, description: '未认证' })
   @ApiResponse({ status: 403, description: '无管理员权限' })
   @Post('email/send')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async sendEmail(
     @CurrentUser() user: CurrentUserDto,
     @Body() body: { to: string; subject: string; html: string },
@@ -338,6 +341,5 @@ export class AdminController {
       parsed.data.html,
       user.id,
     );
-    return { success: true };
   }
 }

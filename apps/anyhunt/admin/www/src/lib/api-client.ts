@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useAuthStore, getAccessToken } from '@/stores/auth';
-import type { PaginationMeta, ApiErrorResponse } from '@anyhunt/types';
+import type { ProblemDetails } from '@anyhunt/types';
 import { API_BASE_URL } from './api-base';
 
 /**
@@ -16,13 +16,24 @@ export class ApiError extends Error {
   status: number;
   code: string;
   details?: unknown;
+  requestId?: string;
+  errors?: Array<{ field?: string; message: string }>;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    requestId?: string,
+    errors?: Array<{ field?: string; message: string }>
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.details = details;
+    this.requestId = requestId;
+    this.errors = errors;
   }
 
   get isUnauthorized(): boolean {
@@ -40,12 +51,6 @@ export class ApiError extends Error {
   get isServerError(): boolean {
     return this.status >= 500;
   }
-}
-
-/** 分页结果 */
-export interface PaginatedResult<T> {
-  data: T[];
-  meta: PaginationMeta;
 }
 
 class ApiClient {
@@ -85,43 +90,44 @@ class ApiClient {
   /**
    * 处理错误响应
    */
-  private throwApiError(status: number, json: unknown): never {
-    const errorResponse = json as ApiErrorResponse;
+  private throwApiError(status: number, json: unknown, requestId?: string): never {
+    const problem = json as ProblemDetails;
+    const message =
+      typeof problem?.detail === 'string' ? problem.detail : `Request failed (${status})`;
+    const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
     throw new ApiError(
       status,
-      errorResponse.error?.code || 'UNKNOWN_ERROR',
-      errorResponse.error?.message || `Request failed (${status})`,
-      errorResponse.error?.details
+      code,
+      message,
+      problem?.details,
+      problem?.requestId ?? requestId,
+      problem?.errors
     );
   }
 
   /**
-   * 处理响应 - 自动解包 data 字段
+   * 处理响应 - raw JSON
    */
   private async handleResponse<T>(response: Response): Promise<T> {
-    // 204 No Content
     if (response.status === 204) {
       return undefined as T;
     }
 
-    // 非 JSON 响应
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      if (!response.ok) {
-        throw new ApiError(response.status, 'NETWORK_ERROR', 'Request failed');
-      }
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    const json = isJson ? await this.safeParseJson(response) : undefined;
+
+    if (!response.ok) {
+      const requestId = response.headers.get('x-request-id') ?? undefined;
+      this.throwApiError(response.status, json, requestId || undefined);
+    }
+
+    if (!isJson) {
       return {} as T;
     }
 
-    const json = await this.safeParseJson(response);
-
-    // 处理错误响应
-    if (!response.ok || (json as { success?: boolean }).success === false) {
-      this.throwApiError(response.status, json);
-    }
-
-    // 成功响应 - 自动解包 data 字段
-    return (json as { data: T }).data;
+    return json as T;
   }
 
   /**
@@ -187,32 +193,15 @@ class ApiClient {
   }
 
   /**
-   * GET 分页请求 - 返回 data + meta
-   */
-  async getPaginated<T>(endpoint: string): Promise<PaginatedResult<T>> {
-    const response = await this.fetchWithAuth(endpoint);
-
-    const json = await this.safeParseJson(response);
-
-    if (!response.ok || (json as { success?: boolean }).success === false) {
-      this.throwApiError(response.status, json);
-    }
-
-    const typedJson = json as { data: T[]; meta: PaginationMeta };
-    return {
-      data: typedJson.data,
-      meta: typedJson.meta,
-    };
-  }
-
-  /**
    * GET Blob 请求（用于文件下载）
    */
   async getBlob(endpoint: string): Promise<Blob> {
     const response = await this.fetchWithAuth(endpoint);
 
     if (!response.ok) {
-      throw new ApiError(response.status, 'DOWNLOAD_ERROR', 'Download failed');
+      const json = await this.safeParseJson(response);
+      const requestId = response.headers.get('x-request-id') ?? undefined;
+      this.throwApiError(response.status, json, requestId || undefined);
     }
 
     return response.blob();
@@ -229,7 +218,9 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new ApiError(response.status, 'DOWNLOAD_ERROR', 'Download failed');
+      const json = await this.safeParseJson(response);
+      const requestId = response.headers.get('x-request-id') ?? undefined;
+      this.throwApiError(response.status, json, requestId || undefined);
     }
 
     return response.blob();

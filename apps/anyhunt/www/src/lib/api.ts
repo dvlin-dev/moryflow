@@ -80,43 +80,69 @@ export interface SearchResult {
 // ============== Error ==============
 
 export class ApiError extends Error {
+  status: number;
+  code?: string;
+  details?: unknown;
+  requestId?: string;
+  errors?: Array<{ field?: string; message: string }>;
+
   constructor(
     message: string,
-    public readonly code?: string
+    status: number,
+    code?: string,
+    details?: unknown,
+    requestId?: string,
+    errors?: Array<{ field?: string; message: string }>
   ) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+    this.requestId = requestId;
+    this.errors = errors;
   }
 }
 
-// ============== API Response Types ==============
+// ============== Problem Details ==============
 
-interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
+interface ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  code: string;
+  requestId?: string;
+  details?: unknown;
+  errors?: Array<{ field?: string; message: string }>;
 }
-
-interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-  };
-}
-
-type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 // ============== Helper ==============
 
-function handleApiResponse<T>(response: Response, json: ApiResponse<T>): T {
-  if (!response.ok || !json.success) {
-    const errorJson = json as ApiErrorResponse;
-    throw new ApiError(
-      errorJson.error?.message || `Request failed (${response.status})`,
-      errorJson.error?.code
-    );
+async function throwApiError(response: Response): Promise<never> {
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJson =
+    contentType.includes('application/json') || contentType.includes('application/problem+json');
+  const payload = isJson ? await response.json().catch(() => ({})) : {};
+  const problem = payload as ProblemDetails;
+  const message =
+    typeof problem?.detail === 'string' ? problem.detail : `Request failed (${response.status})`;
+  const code = typeof problem?.code === 'string' ? problem.code : undefined;
+  throw new ApiError(
+    message,
+    response.status,
+    code,
+    problem?.details,
+    problem?.requestId,
+    problem?.errors
+  );
+}
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    await throwApiError(response);
   }
-  return json.data;
+  return (await response.json()) as T;
 }
 
 // ============== API Functions ==============
@@ -132,8 +158,7 @@ export async function checkVerifyStatus(apiUrl: string): Promise<{ verified: boo
     if (!response.ok) {
       return { verified: false };
     }
-    const json = (await response.json()) as ApiResponse<{ verified: boolean }>;
-    return json.success ? json.data : { verified: false };
+    return parseJsonResponse<{ verified: boolean }>(response);
   } catch {
     return { verified: false };
   }
@@ -166,11 +191,10 @@ export async function captureScreenshot(
     height?: number;
   }
 
-  const json = (await response.json()) as ApiResponse<ScreenshotData>;
-  const data = handleApiResponse(response, json);
+  const data = await parseJsonResponse<ScreenshotData>(response);
 
   if (!data.imageDataUrl) {
-    throw new ApiError('No screenshot data returned');
+    throw new ApiError('No screenshot data returned', 500);
   }
 
   return {
@@ -211,8 +235,7 @@ export async function scrapeUrl(
     body: JSON.stringify(body),
   });
 
-  const json = (await response.json()) as ApiResponse<ScrapeResult>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<ScrapeResult>(response);
 }
 
 /**
@@ -242,8 +265,7 @@ export async function mapSite(
     body: JSON.stringify(body),
   });
 
-  const json = (await response.json()) as ApiResponse<MapResult>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<MapResult>(response);
 }
 
 /**
@@ -273,8 +295,7 @@ export async function crawlSite(
     body: JSON.stringify(body),
   });
 
-  const json = (await response.json()) as ApiResponse<CrawlResult>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<CrawlResult>(response);
 }
 
 /**
@@ -304,8 +325,7 @@ export async function extractData(
     body: JSON.stringify(body),
   });
 
-  const json = (await response.json()) as ApiResponse<ExtractResult>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<ExtractResult>(response);
 }
 
 /**
@@ -333,6 +353,5 @@ export async function searchWeb(
     body: JSON.stringify(body),
   });
 
-  const json = (await response.json()) as ApiResponse<SearchResult>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<SearchResult>(response);
 }

@@ -84,7 +84,6 @@ describe('OembedService', () => {
       });
 
       expect(result).toMatchObject({
-        success: true,
         data: mockOembedData,
         meta: {
           provider: 'youtube',
@@ -108,7 +107,6 @@ describe('OembedService', () => {
         { maxwidth: undefined, maxheight: undefined, theme: undefined },
       );
       expect(result).toMatchObject({
-        success: true,
         data: mockOembedData,
         meta: {
           provider: 'youtube',
@@ -160,7 +158,8 @@ describe('OembedService', () => {
 
       // 应该继续从 provider 获取数据
       expect(mockProvider.fetch).toHaveBeenCalled();
-      expect(result.success).toBe(true);
+      expect(result.meta.cached).toBe(false);
+      expect(result.data).toEqual(mockOembedData);
     });
 
     it('should handle cache write errors gracefully', async () => {
@@ -174,8 +173,8 @@ describe('OembedService', () => {
         url: 'https://youtube.com/watch?v=123',
       });
 
-      expect(result.success).toBe(true);
       expect(result.data).toEqual(mockOembedData);
+      expect(result.meta.cached).toBe(false);
     });
   });
 

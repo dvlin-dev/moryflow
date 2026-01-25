@@ -73,34 +73,45 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// ============== API Response Types ==============
+// ============== Problem Details ==============
 
-interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
+interface ProblemDetails {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  code: string;
+  requestId?: string;
+  details?: unknown;
+  errors?: Array<{ field?: string; message: string }>;
 }
-
-interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-  };
-}
-
-type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 // ============== Helper ==============
 
-function handleApiResponse<T>(response: Response, json: ApiResponse<T>): T {
-  if (!response.ok || !json.success) {
-    const errorJson = json as ApiErrorResponse;
-    throw new ApiError(
-      errorJson.error?.message || `Request failed (${response.status})`,
-      errorJson.error?.code
-    );
+async function throwApiError(response: Response): Promise<never> {
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJson =
+    contentType.includes('application/json') || contentType.includes('application/problem+json');
+  const payload = isJson ? await response.json().catch(() => ({})) : {};
+  const problem = payload as ProblemDetails;
+  const message =
+    typeof problem?.detail === 'string' ? problem.detail : `Request failed (${response.status})`;
+  const code = typeof problem?.code === 'string' ? problem.code : undefined;
+  throw new ApiError(
+    message,
+    response.status,
+    code,
+    problem?.details,
+    problem?.requestId,
+    problem?.errors
+  );
+}
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    await throwApiError(response);
   }
-  return json.data;
+  return (await response.json()) as T;
 }
 
 // ============== API Functions ==============
@@ -132,8 +143,7 @@ export async function getPublicTopics(
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<PaginatedResponse<DigestTopicSummary>>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<PaginatedResponse<DigestTopicSummary>>(response);
 }
 
 /**
@@ -169,8 +179,7 @@ export async function getTopicBySlug(apiUrl: string, slug: string): Promise<Dige
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<DigestTopicDetail>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<DigestTopicDetail>(response);
 }
 
 /**
@@ -196,8 +205,7 @@ export async function getTopicEditions(
     }
   );
 
-  const json = (await response.json()) as ApiResponse<PaginatedResponse<DigestEditionSummary>>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<PaginatedResponse<DigestEditionSummary>>(response);
 }
 
 /**
@@ -213,11 +221,10 @@ export async function getEditionById(
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<{
+  const result = await parseJsonResponse<{
     edition: DigestEditionSummary;
     items: DigestEditionItem[];
-  }>;
-  const result = handleApiResponse(response, json);
+  }>(response);
   return { ...result.edition, items: result.items };
 }
 
@@ -235,6 +242,5 @@ export async function reportTopic(
     body: JSON.stringify(input),
   });
 
-  const json = (await response.json()) as ApiResponse<{ reportId: string; message: string }>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<{ reportId: string; message: string }>(response);
 }
