@@ -228,6 +228,74 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 
 - 2026-01-29：完成 PC + Mobile 用户级 JSONC 配置读取与 Agent Markdown 支持；桌面端按开关加载外部 tools。
 
+**示例**
+
+**1) 用户级 JSONC（配置 + Hook）**
+
+> 路径：PC `~/.moryflow/config.jsonc`；Mobile `Paths.document/.moryflow/config.jsonc`  
+> 说明：`tools.external` 仅 PC 生效，Mobile 忽略。
+
+```jsonc
+{
+  // 用户级配置
+  "agents": {
+    "runtime": {
+      "mode": { "default": "agent" },
+      "agent": { "id": "writer" },
+      "tools": { "external": { "enabled": true } },
+      "hooks": {
+        "chat": {
+          "system": { "mode": "append", "text": "You must reply in short bullet points." },
+          "params": { "temperature": 0.2, "maxTokens": 512 },
+        },
+        "tool": {
+          "before": [{ "tool": "read", "mergeInput": { "encoding": "utf-8" } }],
+          "after": [{ "tool": "read", "prependText": "[preview]\\n" }],
+        },
+      },
+    },
+  },
+}
+```
+
+**2) Agent Markdown**
+
+> 路径：PC `~/.moryflow/agents/*.md`；Mobile `Paths.document/.moryflow/agents/*.md`
+
+```markdown
+---
+{
+  'id': 'writer',
+  'name': 'Writer',
+  'description': 'Short, factual answers.',
+  'modelSettings': { 'temperature': 0.2, 'maxTokens': 512 },
+}
+---
+
+You are a concise writing assistant. Always respond with short bullet points.
+```
+
+**3) 外部工具模块（仅 PC）**
+
+> 路径：`~/.moryflow/tools/*.ts|*.js`  
+> 说明：支持 `default` / `createTools` / `tools` 导出。
+
+```ts
+import { tool } from '@openai/agents-core';
+import { z } from 'zod';
+
+export const createTools = () => [
+  tool({
+    name: 'hello',
+    description: 'Say hello to a name.',
+    parameters: z.object({ name: z.string() }),
+    async execute({ name }) {
+      return `Hello ${name}`;
+    },
+  }),
+];
+```
+
 ### P2-8 Plugin Hook 接口
 
 **任务**
