@@ -63,13 +63,68 @@ Anyhunt 当前业务接口仅接受 `Authorization: Bearer <accessToken>`。acce
    - 允许“先用持久化 token 立即请求 + 后台 refresh 更新”。
    - 参考 `async-parallel`：refresh 不再成为所有请求的前置依赖。
 
-### PC / 移动端
+### PC / 移动端（Device Refresh）
 
-- 同样使用 Zustand store，但 persist 存储实现替换为系统安全存储：
-  - Expo: `SecureStore`
-  - iOS/macOS: Keychain
-  - Android: Keystore
-  - Electron: `keytar`（或平台安全存储适配层）
+> 依据 `apps/anyhunt/server/src/auth/CLAUDE.md`：Device 端 refresh token 通过请求体传递，并携带 `X-App-Platform`（跳过 Origin 校验）。
+
+#### 存储与职责拆分
+
+1. **Zustand Store 仍为单一数据源**
+   - `accessToken` / `accessTokenExpiresAt` / `isHydrated` / `lastUpdatedAt`
+   - API 仅从 store 读取，不直接访问持久化层
+
+2. **安全存储适配层（Persist Storage Adapter）**
+   - 用“平台安全存储”替代 Web 的 localStorage，作为 Persist 后端：
+     - **Expo/React Native**：`expo-secure-store`
+     - **iOS/macOS**：Keychain（SecureStore 底层实现）
+     - **Android**：Keystore（SecureStore 底层实现）
+     - **Electron**：`keytar`（主进程）+ IPC 透传到 renderer
+   - Access Token 与 Refresh Token 不再落盘明文文件（避免磁盘明文泄露）
+
+3. **Refresh Token 的单独职责**
+   - Web：refresh token 仍只存在 HttpOnly Cookie
+   - Device：refresh token 由安全存储负责（不进 Zustand store）
+   - 只有 refresh 时读取 refresh token（避免到处传播）
+
+#### Device Refresh 请求约定
+
+```text
+POST /api/auth/refresh
+Headers:
+  X-App-Platform: ios | android | mobile | desktop | electron | cli
+Body:
+  { refreshToken: "..." }
+Response:
+  { accessToken, accessTokenExpiresAt, refreshToken }
+```
+
+- refresh token 每次 refresh 轮换（rotation on）
+- refresh 失败（401/403）= 视为未登录，清空本地状态并引导登录
+
+#### 设备端生命周期（建议）
+
+1. **启动**
+   - 从安全存储加载 refresh token
+   - 从 Zustand hydrate access token
+   - access token 过期/即将过期 → 触发 refresh
+
+2. **登录成功**
+   - 写入 access token 到 store（自动落盘）
+   - 写入 refresh token 到安全存储（仅此处）
+
+3. **refresh 成功**
+   - 更新 access token（store）
+   - 更新 refresh token（安全存储）
+
+4. **登出 / refresh 失败**
+   - 清空 store
+   - 清空安全存储（refresh token）
+
+#### 安全与一致性注意事项
+
+- **多端并发登录**：refresh 轮换会使旧 refresh 失效，旧设备需重新登录。
+- **离线场景**：access token 过期且 refresh 不可达时，进入未登录态并提示重试。
+- **跨进程安全**（Electron）：仅主进程访问系统凭据，renderer 通过 IPC 调用。
 
 ## Web 端数据结构建议
 

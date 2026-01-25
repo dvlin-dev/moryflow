@@ -68,3 +68,4 @@
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充配置格式、规则匹配与审计落地规范（2026-01-24）。
 - `auth/unified-auth-rebuild-file-map.md`：补充 Mobile refresh 网络异常修复与 `X-App-Platform` 传递范围结论。
 - `auth/access-token-storage-plan.md`：补充未登录/refresh 失效/过期处理（2026-01-25）。
+- `auth/access-token-storage-plan.md`：补充 PC/移动端安全存储与 Device refresh 流程（2026-01-25）。
