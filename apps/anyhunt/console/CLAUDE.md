@@ -102,6 +102,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Graph 可视化回调统一为 NodeObject 入参，避免强类型不匹配
 - Memox threshold 数字输入显式归一，避免 unknown value 类型报错
 - 修复用户资料响应包装未解包导致 Sidebar split 崩溃
+- 修复 console auth response 解包类型导致构建失败
 
 ## Feature Module Structure
 

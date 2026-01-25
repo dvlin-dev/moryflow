@@ -34,24 +34,22 @@ type AuthResponse = {
   accessToken?: string;
 };
 
-type ApiSuccess<T> = {
-  success: true;
-  data: T;
-  timestamp: string;
+type ApiEnvelope<T> = {
+  success: boolean;
+  data?: T;
+  error?: { message?: string };
+  timestamp?: string;
 };
 
 const unwrapApiResponse = <T>(payload: unknown): T => {
   if (payload && typeof payload === 'object' && 'success' in payload) {
-    const response = payload as ApiSuccess<T> & {
-      success?: boolean;
-      error?: { message?: string };
-    };
+    const response = payload as ApiEnvelope<T>;
     if (response.success === false) {
       const message = response.error?.message || 'Request failed';
       throw new Error(message);
     }
     if ('data' in response) {
-      return response.data;
+      return response.data as T;
     }
   }
   return payload as T;
