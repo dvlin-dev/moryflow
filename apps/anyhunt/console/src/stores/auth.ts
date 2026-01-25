@@ -34,6 +34,29 @@ type AuthResponse = {
   accessToken?: string;
 };
 
+type ApiSuccess<T> = {
+  success: true;
+  data: T;
+  timestamp: string;
+};
+
+const unwrapApiResponse = <T>(payload: unknown): T => {
+  if (payload && typeof payload === 'object' && 'success' in payload) {
+    const response = payload as ApiSuccess<T> & {
+      success?: boolean;
+      error?: { message?: string };
+    };
+    if (response.success === false) {
+      const message = response.error?.message || 'Request failed';
+      throw new Error(message);
+    }
+    if ('data' in response) {
+      return response.data;
+    }
+  }
+  return payload as T;
+};
+
 let refreshPromise: Promise<boolean> | null = null;
 
 const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
@@ -43,7 +66,7 @@ const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> 
     const message = typeof data?.message === 'string' ? data.message : 'Request failed';
     throw new Error(message);
   }
-  return data as T;
+  return unwrapApiResponse<T>(data);
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({

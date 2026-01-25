@@ -55,11 +55,15 @@ describe('AuthStore', () => {
       .mockResolvedValueOnce(jsonResponse({ accessToken: 'token_abc' }))
       .mockResolvedValueOnce(
         jsonResponse({
-          id: 'user_1',
-          email: 'user@example.com',
-          name: null,
-          subscriptionTier: 'FREE',
-          isAdmin: false,
+          success: true,
+          data: {
+            id: 'user_1',
+            email: 'user@example.com',
+            name: null,
+            subscriptionTier: 'FREE',
+            isAdmin: false,
+          },
+          timestamp: '2026-01-25T08:00:00.000Z',
         })
       );
 
