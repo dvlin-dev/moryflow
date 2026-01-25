@@ -64,6 +64,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 | `features/inbox/`        | Inbox reader panes              |
 | `hooks/`                 | Custom hooks                    |
 | `lib/`                   | API calls, utilities            |
+| `stores/`                | Zustand stores (auth/session)   |
 | `types/`                 | Type definitions                |
 | `styles/`                | Global styles                   |
 
@@ -140,10 +141,11 @@ routes/
 | File                              | Description                               |
 | --------------------------------- | ----------------------------------------- |
 | `lib/api-base.ts`                 | API base URL 解析                         |
-| `lib/auth-session.ts`             | Access Token 内存态 + refresh/logout      |
+| `lib/auth-session.ts`             | Access Token 生命周期（store + refresh）  |
 | `lib/api-client.ts`               | API client（Bearer + refresh）            |
 | `lib/api-paths.ts`                | Centralized API path constants            |
 | `lib/env.ts`                      | Public environment config                 |
+| `stores/auth-store.ts`            | Access token store + persistence          |
 | `hooks/useCaptchaVerification.ts` | Turnstile captcha hook                    |
 | `hooks/useKeyboardShortcuts.ts`   | Reader keyboard shortcuts                 |
 | `hooks/useIsMobile.ts`            | Mobile detection hook                     |
@@ -217,6 +219,7 @@ routes/
 www/
 ├── @tanstack/start - SSR framework
 ├── @tanstack/react-query - Data fetching
+├── zustand - Auth store + persistence
 ├── /ui - UI components
 ├── @hugeicons/core-free-icons - Icon library
 ├── turnstile - Cloudflare captcha

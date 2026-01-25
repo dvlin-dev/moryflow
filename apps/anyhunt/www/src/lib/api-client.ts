@@ -5,7 +5,8 @@
  */
 
 import { API_BASE_URL } from './api-base';
-import { getAccessToken, refreshAccessToken, logout } from './auth-session';
+import { refreshAccessToken, logout } from './auth-session';
+import { authStore, isAccessTokenExpiringSoon } from '@/stores/auth-store';
 
 /**
  * API Error
@@ -110,7 +111,12 @@ class ApiClient {
     options?: RequestInit,
     attempt = 0
   ): Promise<Response> {
-    const token = getAccessToken();
+    const { accessToken, accessTokenExpiresAt } = authStore.getState();
+    if (accessToken && isAccessTokenExpiringSoon(accessTokenExpiresAt)) {
+      await refreshAccessToken();
+    }
+
+    const token = authStore.getState().accessToken;
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       ...options,
       headers: this.buildHeaders(options?.headers, token),
