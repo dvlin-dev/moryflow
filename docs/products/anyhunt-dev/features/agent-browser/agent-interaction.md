@@ -43,6 +43,7 @@ status: active
 - **语义定位器**：支持 role/text/label/placeholder/alt/title/testId（可减少 CSS 选择器依赖）。
 - **错误建议**：`ActionResponse` 返回 `suggestion` 时，应优先按建议重试（如 wait/loadState）。
 - **批量动作**：`stopOnError` 默认为 true；建议把强相关的连续动作合并，失败时减少回滚复杂度。
+- **文件上传**：`upload` 动作仅接受 Base64 payload（禁止传服务器本地路径）。
 
 ## 限制与非目标
 
