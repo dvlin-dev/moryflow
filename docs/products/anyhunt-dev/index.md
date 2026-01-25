@@ -1,6 +1,6 @@
 ---
 title: Anyhunt Dev（内部方案）
-date: 2026-01-23
+date: 2026-01-25
 scope: anyhunt.app, server.anyhunt.app
 status: active
 ---
@@ -23,6 +23,8 @@ status: active
 
 - v2 智能信息订阅：`docs/products/anyhunt-dev/features/v2-intelligent-digest.md`
 - 统一登录与 Digest 前端架构（提案）：`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`
+- Agent Browser 架构：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`
+- Agent 与 Browser 交互规范：`docs/products/anyhunt-dev/features/agent-browser/agent-interaction.md`
 - 首页 Reader 三栏布局设计（历史方案，已被替代）：`docs/products/anyhunt-dev/features/homepage-reader-redesign.md`
 - 首页 Discover 增强（历史方案，已被替代）：`docs/products/anyhunt-dev/features/homepage-redesign.md`
 - Reader 顶部导航 + Explore Topics 专用页（已实现）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`

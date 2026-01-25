@@ -2,6 +2,8 @@
  * [DEFINES]: Agent/Browser Playground 类型
  * [USED_BY]: api.ts, transport/*, components/*
  * [POS]: Console Agent Browser Playground 类型定义
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 export type BrowserSessionInfo = {
@@ -10,6 +12,8 @@ export type BrowserSessionInfo = {
   expiresAt: string;
   url: string | null;
   title: string | null;
+  isCdpConnection?: boolean;
+  wsEndpoint?: string;
 };
 
 export type BrowserOpenResponse = {
@@ -43,6 +47,12 @@ export type BrowserActionResponse = {
   success: boolean;
   result?: unknown;
   error?: string;
+  suggestion?: string;
+};
+
+export type BrowserActionBatchResponse = {
+  success: boolean;
+  results: BrowserActionResponse[];
 };
 
 export type BrowserScreenshotResponse = {
@@ -67,6 +77,39 @@ export type BrowserWindowInfo = {
   tabCount: number;
 };
 
+export type BrowserHeadersResult = {
+  scope: 'global' | 'origin';
+  origin?: string;
+};
+
+export type BrowserConsoleMessage = {
+  type: string;
+  text: string;
+  timestamp: number;
+};
+
+export type BrowserPageError = {
+  message: string;
+  timestamp: number;
+};
+
+export type BrowserTraceStartResult = {
+  started: boolean;
+};
+
+export type BrowserTraceStopResult = {
+  data?: string;
+};
+
+export type BrowserHarStartResult = {
+  started: boolean;
+};
+
+export type BrowserHarStopResult = {
+  requestCount: number;
+  requests?: BrowserNetworkRequestRecord[];
+};
+
 export type BrowserNetworkRequestRecord = {
   id: string;
   url: string;
@@ -84,6 +127,36 @@ export type BrowserStorageExportResult = {
   localStorage: Record<string, Record<string, string>>;
   sessionStorage?: Record<string, Record<string, string>>;
   exportedAt: string;
+};
+
+export type BrowserProfileSaveResult = {
+  profileId: string;
+  storedAt: string;
+  size: number;
+};
+
+export type BrowserProfileLoadResult = {
+  imported: {
+    cookies: number;
+    localStorage: number;
+    sessionStorage: number;
+  };
+};
+
+export type BrowserStreamTokenResult = {
+  token: string;
+  wsUrl: string;
+  expiresAt: number;
+};
+
+export type BrowserStreamStatus = {
+  connected: boolean;
+  screencasting: boolean;
+};
+
+export type BrowserStreamFrame = {
+  data: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type AgentTaskProgress = {

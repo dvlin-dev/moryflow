@@ -41,12 +41,14 @@
 
 ## 最近更新
 
+- Agent Browser 文档收敛（架构 + Agent 交互）：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`（2026-01-25，Agent 交互按最新策略重写）
+- PR-60 Agent Browser 改动 Code Review：`docs/code-review/anyhunt-server-agent-browser-pr60.md`（2026-01-25：修复完成）
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（2026-01-26：修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Browser Code Review：`docs/code-review/anyhunt-server-browser.md`（2026-01-26：修复完成）
 - Anyhunt Server Prisma/迁移/多数据库边界 Code Review：`docs/code-review/anyhunt-server-prisma.md`（2026-01-26：review 完成）
 - Anyhunt Server Scraper/Crawler/Extract/Map Code Review：`docs/code-review/anyhunt-server-fetchx-core.md`（2026-01-26：修复完成）
 - Anyhunt Server SSRF & Network Isolation Code Review：`docs/code-review/anyhunt-server-ssrf-sandbox.md`（2026-01-26：修复完成）
-- 全量 Code Review 计划：packages/agents\* 范围调整（迁移至 `@openai/agents-core`）`docs/code-review/index.md`（2026-01-26）
+- 全量 Code Review 计划：packages/agents\* 范围调整（迁移至 `@openai/agents-core`）`docs/code-review/index.md`（2026-01-25）
 - 全量 Code Review 计划：进度同步区记录 packages-types-api-config（2026-01-26）
 - packages/types + packages/api + packages/config Code Review：`docs/code-review/packages-types-api-config.md`（2026-01-26：修复完成）
 - Moryflow PC Code Review：修复 preload 在 sandbox 下的 ESM 兼容问题（2026-01-26）
@@ -103,7 +105,7 @@
 - 修正 Moryflow 同步方案的共享包引用：`docs/products/moryflow/research/sync-refactor-proposal.md`（2026-01-23）
 - 清理缺失文档引用（message-list-ui-code-review）：`docs/index.md`（2026-01-22）
 - 详细设计/方案文档修复：补齐 frontmatter、清理缺失索引、同步域名规划（2026-01-22）
-- 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（2026-01-22：review）
+- 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（2026-01-25：review）
 - deploy/infra 测试环境修复（healthcheck/健康轮询/容器名冲突）：`docs/code-review/deploy-infra.md`（2026-01-22：done）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（2026-01-22：review）
 - 清理 auth-client/旧拆包引用：`docs/runbooks/deploy/anyhunt-dokploy.md`、`docs/products/anyhunt-dev/migrations/fetchx-integration.md`（2026-01-23：runbook）
@@ -115,7 +117,7 @@
 - 全量 Code Review（模块拆分 + 优先级 + 进度索引）：`docs/code-review/index.md`（2026-01-21：active）
 - 工程基线：同步 `pnpm-lock.yaml` 并验证 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（2026-01-21：completed）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`（2026-01-21：completed，MessageList 已补齐）
-- Console Agent Browser Chat：UIMessageChunk 流式分段（对齐 Moryflow/pc）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（2026-01-21：draft）
+- Agent Browser 交互规范（Agent Tools + 交互流程）：`docs/products/anyhunt-dev/features/agent-browser/agent-interaction.md`（2026-01-25）
 - Anyhunt Server：Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`（2026-01-20：draft）
 - Anyhunt Server：LLM Admin 配置改造进度（Agent + Extract）：`docs/architecture/llm-admin-provider-rollout.md`（2026-01-20：draft）
 - apps/anyhunt：大模型调用逻辑梳理（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（2026-01-20：draft）
@@ -126,8 +128,7 @@
 - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`（分支视图用 ViewModel 收敛 Props，按域拆分 SRP 组件，保持现有懒加载与错误边界策略）
 - Aiget → Anyhunt 全量品牌迁移（无历史兼容）：`docs/migrations/aiget-to-anyhunt.md`（域名/包名/环境变量/API Key 前缀/Prisma 迁移重置）
 - Anyhunt Dokploy 多项目部署清单：`docs/runbooks/deploy/anyhunt-dokploy.md`（补充 `ADMIN_EMAILS` 管理员白名单与旧路径报错排查）
-- Console Agent Browser Playground 设计方案（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（2026-01-20：独立模块路径 `/agent-browser/*`）
+- Console Agent Browser Playground：统一文档入口（`docs/products/anyhunt-dev/features/agent-browser/`）
 - Agent：API Key 级别 LLM 策略 + 输出 Schema 入参收紧方案：`docs/research/agent-llm-policy-and-output-schema.md`（2026-01-20：draft）
 - Console Fetchx 路由调整：`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`（2026-01-20：更新为 `/fetchx/*`）
-- Console API 版本化：`docs/research/console-agent-browser-playground-design.md`（2026-01-20：统一 `/api/v1/console/*`）
 - Skill：`code-simplifier` 文档中文化：`docs/skill/code-simplifier.md`（2026-01-19）

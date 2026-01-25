@@ -83,4 +83,25 @@ describe('CdpConnectorService', () => {
     await service.connect({ wsEndpoint: 'ws://example.com:9222' });
     expect(connectOverCDP).toHaveBeenCalledTimes(1);
   });
+
+  it('requires Browserbase env when provider is browserbase', async () => {
+    process.env.BROWSERBASE_API_KEY = '';
+    process.env.BROWSERBASE_PROJECT_ID = '';
+    const { CdpConnectorService, CdpConnectionError } = await loadService();
+    const service = new CdpConnectorService(createUrlValidator(true));
+
+    await expect(
+      service.connect({ provider: 'browserbase' }),
+    ).rejects.toBeInstanceOf(CdpConnectionError);
+  });
+
+  it('requires Browser Use env when provider is browseruse', async () => {
+    process.env.BROWSER_USE_API_KEY = '';
+    const { CdpConnectorService, CdpConnectionError } = await loadService();
+    const service = new CdpConnectorService(createUrlValidator(true));
+
+    await expect(
+      service.connect({ provider: 'browseruse' }),
+    ).rejects.toBeInstanceOf(CdpConnectionError);
+  });
 });

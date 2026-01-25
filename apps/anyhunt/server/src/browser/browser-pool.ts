@@ -360,6 +360,24 @@ export class BrowserPool implements OnModuleInit, OnModuleDestroy {
         viewport,
         // User-Agent
         userAgent: options?.userAgent,
+        // locale/timezone
+        locale: options?.locale,
+        timezoneId: options?.timezoneId,
+        // geolocation
+        geolocation: options?.geolocation,
+        // media
+        colorScheme: options?.colorScheme,
+        reducedMotion: options?.reducedMotion,
+        // headers / credentials
+        extraHTTPHeaders: options?.extraHTTPHeaders,
+        httpCredentials: options?.httpCredentials,
+        // device options
+        deviceScaleFactor: options?.deviceScaleFactor,
+        isMobile: options?.isMobile,
+        hasTouch: options?.hasTouch,
+        // downloads / recording
+        acceptDownloads: options?.acceptDownloads,
+        recordVideo: options?.recordVideo,
       });
 
       await this.attachNetworkGuard(context);

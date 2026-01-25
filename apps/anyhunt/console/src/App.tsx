@@ -25,7 +25,10 @@ import AgentBrowserOverviewPage from './pages/agent-browser/AgentBrowserOverview
 import AgentBrowserBrowserPage from './pages/agent-browser/AgentBrowserBrowserPage';
 import AgentBrowserAgentPage from './pages/agent-browser/AgentBrowserAgentPage';
 import AgentBrowserNetworkPage from './pages/agent-browser/AgentBrowserNetworkPage';
+import AgentBrowserDiagnosticsPage from './pages/agent-browser/AgentBrowserDiagnosticsPage';
 import AgentBrowserStoragePage from './pages/agent-browser/AgentBrowserStoragePage';
+import AgentBrowserProfilePage from './pages/agent-browser/AgentBrowserProfilePage';
+import AgentBrowserStreamingPage from './pages/agent-browser/AgentBrowserStreamingPage';
 import AgentBrowserCdpPage from './pages/agent-browser/AgentBrowserCdpPage';
 import MemoriesPage from './pages/MemoriesPage';
 import EntitiesPage from './pages/EntitiesPage';
@@ -112,7 +115,10 @@ function App() {
               <Route path="browser" element={<AgentBrowserBrowserPage />} />
               <Route path="agent" element={<AgentBrowserAgentPage />} />
               <Route path="network" element={<AgentBrowserNetworkPage />} />
+              <Route path="diagnostics" element={<AgentBrowserDiagnosticsPage />} />
               <Route path="storage" element={<AgentBrowserStoragePage />} />
+              <Route path="profile" element={<AgentBrowserProfilePage />} />
+              <Route path="streaming" element={<AgentBrowserStreamingPage />} />
               <Route path="cdp" element={<AgentBrowserCdpPage />} />
             </Route>
 

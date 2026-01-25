@@ -87,8 +87,10 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 近期变更
 
 - Agent Browser Playground 页面新增错误边界与分区组件，提升稳定性
+- Agent Browser 页面与 Playground 组件补齐 Header/PROTOCOL 规范
 - Agent Browser 从 Fetchx Playground 独立为模块导航
-- Agent Browser 拆分为 Overview/Browser/Agent/Network/Storage/CDP 多页面
+- Agent Browser 拆分为 Overview/Browser/Agent/Network/Diagnostics/Storage/Profile/Streaming/CDP 多页面
+- Agent Browser Playground 补齐 ActionBatch/Headers/Diagnostics/Profile/Streaming 表单与预览
 - Agent Browser Agent 页面调整为纯聊天视图（消息列表 + 输入），API Key 自动选择并补充无 Key 引导
 - Agent Browser Agent SSE 改为 `ai` 的 `UIMessageChunk` 单协议（`start/finish` + `text-*` + `tool-*`），transport 透传，避免双状态机
 - Agent Browser 在 tool 边界结束当前文本段，形成多个 `text` part，与 tool part 按顺序交错展示

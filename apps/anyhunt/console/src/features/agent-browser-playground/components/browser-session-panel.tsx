@@ -1,77 +1,79 @@
 /**
- * [PROPS]: BrowserSessionPanelProps（sections 可按页面裁剪）
+ * [PROPS]: BrowserSessionPanelProps（sections 覆盖 actionBatch/headers/diagnostics/profile/stream）
  * [EMITS]: onSessionChange
- * [POS]: Browser Playground 操作面板（分区组件）
+ * [POS]: Browser Playground 操作面板（分区组件 + streaming hook）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useEffect, useState } from 'react';
-import { useForm, useWatch, type UseFormReturn } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
-  Textarea,
-} from '@anyhunt/ui';
-import { CodeBlock } from '@anyhunt/ui/ai/code-block';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
 import {
   browserSessionSchema,
   browserOpenSchema,
   browserSnapshotSchema,
   browserDeltaSnapshotSchema,
   browserActionSchema,
+  browserActionBatchSchema,
   browserScreenshotSchema,
   browserTabsSchema,
   browserWindowsSchema,
   browserInterceptSchema,
+  browserHeadersSchema,
   browserNetworkHistorySchema,
+  browserDiagnosticsLogSchema,
+  browserDiagnosticsTraceSchema,
+  browserDiagnosticsHarSchema,
   browserStorageSchema,
+  browserProfileSchema,
+  browserStreamSchema,
   browserCdpSchema,
   type BrowserSessionValues,
   type BrowserOpenValues,
   type BrowserSnapshotValues,
   type BrowserDeltaSnapshotValues,
   type BrowserActionValues,
+  type BrowserActionBatchValues,
   type BrowserScreenshotValues,
   type BrowserTabsValues,
   type BrowserWindowsValues,
   type BrowserInterceptValues,
+  type BrowserHeadersValues,
   type BrowserNetworkHistoryValues,
+  type BrowserDiagnosticsLogValues,
+  type BrowserDiagnosticsTraceValues,
+  type BrowserDiagnosticsHarValues,
   type BrowserStorageValues,
+  type BrowserProfileValues,
+  type BrowserStreamValues,
   type BrowserCdpValues,
 } from '../schemas';
+import { useBrowserStream } from '../hooks/use-browser-stream';
 import {
   addInterceptRule,
   clearInterceptRules,
   clearNetworkHistory,
+  clearBrowserConsoleMessages,
+  clearBrowserHeaders,
+  clearBrowserPageErrors,
   clearBrowserStorage,
   closeBrowserSession,
   closeBrowserTab,
   closeBrowserWindow,
   connectBrowserCdp,
+  createBrowserStreamToken,
   createBrowserSession,
   createBrowserTab,
   createBrowserWindow,
   executeBrowserAction,
+  executeBrowserActionBatch,
   exportBrowserStorage,
+  getBrowserConsoleMessages,
   getBrowserDeltaSnapshot,
+  getBrowserPageErrors,
   getBrowserScreenshot,
   getBrowserSessionStatus,
   getBrowserSnapshot,
@@ -79,27 +81,60 @@ import {
   getInterceptRules,
   getNetworkHistory,
   importBrowserStorage,
+  loadBrowserProfile,
   listBrowserTabs,
   listBrowserWindows,
   openBrowserUrl,
   removeInterceptRule,
+  saveBrowserProfile,
+  setBrowserHeaders,
   setInterceptRules,
+  startBrowserHar,
+  startBrowserTrace,
+  stopBrowserHar,
+  stopBrowserTrace,
   switchBrowserTab,
   switchBrowserWindow,
 } from '../api';
 import type {
+  BrowserActionBatchResponse,
   BrowserActionResponse,
+  BrowserConsoleMessage,
   BrowserDeltaSnapshotResponse,
+  BrowserHarStopResult,
+  BrowserHeadersResult,
   BrowserNetworkRequestRecord,
   BrowserOpenResponse,
+  BrowserPageError,
+  BrowserProfileLoadResult,
+  BrowserProfileSaveResult,
   BrowserScreenshotResponse,
   BrowserSessionInfo,
   BrowserSnapshotResponse,
   BrowserStorageExportResult,
   BrowserTabInfo,
+  BrowserTraceStopResult,
   BrowserWindowInfo,
 } from '../types';
-import { CollapsibleSection } from '../../playground-shared/components/collapsible-section';
+import {
+  ActionBatchSection,
+  ActionSection,
+  CdpSection,
+  DeltaSnapshotSection,
+  DiagnosticsSection,
+  HeadersSection,
+  InterceptSection,
+  NetworkHistorySection,
+  OpenUrlSection,
+  ProfileSection,
+  ScreenshotSection,
+  SessionSection,
+  SnapshotSection,
+  StorageSection,
+  StreamingSection,
+  TabsSection,
+  WindowsSection,
+} from './browser-session-sections';
 
 const parseJson = <T,>(value?: string): T | null => {
   if (!value) return null;
@@ -110,7 +145,16 @@ const parseJson = <T,>(value?: string): T | null => {
   }
 };
 
-const formatJson = (value: unknown) => JSON.stringify(value ?? {}, null, 2);
+const parseJsonArray = <T,>(value?: string): T[] | null => {
+  const parsed = parseJson<unknown>(value);
+  return Array.isArray(parsed) ? (parsed as T[]) : null;
+};
+
+const parseJsonObject = <T extends Record<string, unknown>>(value?: string): T | null => {
+  const parsed = parseJson<unknown>(value);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  return parsed as T;
+};
 
 export type BrowserSessionSection =
   | 'session'
@@ -118,12 +162,17 @@ export type BrowserSessionSection =
   | 'snapshot'
   | 'delta'
   | 'action'
+  | 'actionBatch'
   | 'screenshot'
   | 'tabs'
   | 'windows'
   | 'intercept'
+  | 'headers'
   | 'network'
+  | 'diagnostics'
   | 'storage'
+  | 'profile'
+  | 'stream'
   | 'cdp';
 
 const defaultSections: BrowserSessionSection[] = [
@@ -132,12 +181,17 @@ const defaultSections: BrowserSessionSection[] = [
   'snapshot',
   'delta',
   'action',
+  'actionBatch',
   'screenshot',
   'tabs',
   'windows',
   'intercept',
+  'headers',
   'network',
+  'diagnostics',
   'storage',
+  'profile',
+  'stream',
   'cdp',
 ];
 
@@ -163,13 +217,34 @@ export function BrowserSessionPanel({
   const [snapshot, setSnapshot] = useState<BrowserSnapshotResponse | null>(null);
   const [deltaSnapshot, setDeltaSnapshot] = useState<BrowserDeltaSnapshotResponse | null>(null);
   const [actionResult, setActionResult] = useState<BrowserActionResponse | null>(null);
+  const [actionBatchResult, setActionBatchResult] = useState<BrowserActionBatchResponse | null>(
+    null
+  );
   const [screenshot, setScreenshot] = useState<BrowserScreenshotResponse | null>(null);
   const [tabs, setTabs] = useState<BrowserTabInfo[] | null>(null);
   const [windows, setWindows] = useState<BrowserWindowInfo[] | null>(null);
   const [dialogHistory, setDialogHistory] = useState<unknown[]>([]);
   const [interceptRules, setInterceptRulesState] = useState<unknown[] | null>(null);
+  const [headersResult, setHeadersResult] = useState<BrowserHeadersResult | null>(null);
   const [networkHistory, setNetworkHistory] = useState<BrowserNetworkRequestRecord[] | null>(null);
+  const [consoleMessages, setConsoleMessages] = useState<BrowserConsoleMessage[] | null>(null);
+  const [pageErrors, setPageErrors] = useState<BrowserPageError[] | null>(null);
+  const [traceResult, setTraceResult] = useState<BrowserTraceStopResult | null>(null);
+  const [harResult, setHarResult] = useState<BrowserHarStopResult | null>(null);
   const [storageExport, setStorageExport] = useState<BrowserStorageExportResult | null>(null);
+  const [profileSaveResult, setProfileSaveResult] = useState<BrowserProfileSaveResult | null>(null);
+  const [profileLoadResult, setProfileLoadResult] = useState<BrowserProfileLoadResult | null>(null);
+  const {
+    streamToken,
+    setStreamToken,
+    streamStatus,
+    streamFrame,
+    streamError,
+    setStreamError,
+    streamImageRef,
+    resetStream,
+    handlers: streamHandlers,
+  } = useBrowserStream();
   const [cdpSession, setCdpSession] = useState<BrowserSessionInfo | null>(null);
 
   const [sessionOpen, setSessionOpen] = useState(true);
@@ -177,20 +252,36 @@ export function BrowserSessionPanel({
   const [snapshotOpen, setSnapshotOpen] = useState(false);
   const [deltaSnapshotOpen, setDeltaSnapshotOpen] = useState(false);
   const [actionOpen, setActionOpen] = useState(false);
+  const [actionBatchOpen, setActionBatchOpen] = useState(false);
   const [screenshotOpen, setScreenshotOpen] = useState(false);
   const [tabsOpen, setTabsOpen] = useState(false);
   const [windowsOpen, setWindowsOpen] = useState(false);
   const [interceptOpen, setInterceptOpen] = useState(false);
+  const [headersOpen, setHeadersOpen] = useState(false);
   const [networkOpen, setNetworkOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [storageOpen, setStorageOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [streamOpen, setStreamOpen] = useState(false);
   const [cdpOpen, setCdpOpen] = useState(false);
 
   const sessionForm = useForm<BrowserSessionValues>({
     resolver: zodResolver(browserSessionSchema),
     defaultValues: {
       sessionId: '',
+      device: '',
+      userAgent: '',
+      locale: '',
+      timezoneId: '',
+      permissionsJson: '',
+      headersJson: '',
+      httpUsername: '',
+      httpPassword: '',
       javaScriptEnabled: true,
       ignoreHTTPSErrors: true,
+      offline: false,
+      acceptDownloads: true,
+      recordVideoEnabled: false,
     },
   });
 
@@ -204,7 +295,7 @@ export function BrowserSessionPanel({
 
   const openForm = useForm<BrowserOpenValues>({
     resolver: zodResolver(browserOpenSchema),
-    defaultValues: { url: '', waitUntil: 'domcontentloaded' },
+    defaultValues: { url: '', waitUntil: 'domcontentloaded', headersJson: '' },
   });
 
   const snapshotForm = useForm<BrowserSnapshotValues>({
@@ -222,6 +313,11 @@ export function BrowserSessionPanel({
     defaultValues: { actionJson: '' },
   });
 
+  const actionBatchForm = useForm<BrowserActionBatchValues>({
+    resolver: zodResolver(browserActionBatchSchema),
+    defaultValues: { actionsJson: '', stopOnError: true },
+  });
+
   const screenshotForm = useForm<BrowserScreenshotValues>({
     resolver: zodResolver(browserScreenshotSchema),
     defaultValues: { format: 'png', fullPage: false },
@@ -234,7 +330,20 @@ export function BrowserSessionPanel({
 
   const windowsForm = useForm<BrowserWindowsValues>({
     resolver: zodResolver(browserWindowsSchema),
-    defaultValues: { windowIndex: undefined },
+    defaultValues: {
+      windowIndex: undefined,
+      device: '',
+      userAgent: '',
+      locale: '',
+      timezoneId: '',
+      permissionsJson: '',
+      headersJson: '',
+      httpUsername: '',
+      httpPassword: '',
+      offline: false,
+      acceptDownloads: true,
+      recordVideoEnabled: false,
+    },
   });
 
   const interceptForm = useForm<BrowserInterceptValues>({
@@ -242,9 +351,29 @@ export function BrowserSessionPanel({
     defaultValues: { rulesJson: '', ruleJson: '', ruleId: '' },
   });
 
+  const headersForm = useForm<BrowserHeadersValues>({
+    resolver: zodResolver(browserHeadersSchema),
+    defaultValues: { origin: '', headersJson: '', clearGlobal: false },
+  });
+
   const networkForm = useForm<BrowserNetworkHistoryValues>({
     resolver: zodResolver(browserNetworkHistorySchema),
     defaultValues: { limit: undefined, urlFilter: '' },
+  });
+
+  const diagnosticsLogForm = useForm<BrowserDiagnosticsLogValues>({
+    resolver: zodResolver(browserDiagnosticsLogSchema),
+    defaultValues: { limit: undefined },
+  });
+
+  const diagnosticsTraceForm = useForm<BrowserDiagnosticsTraceValues>({
+    resolver: zodResolver(browserDiagnosticsTraceSchema),
+    defaultValues: { screenshots: true, snapshots: true, store: true },
+  });
+
+  const diagnosticsHarForm = useForm<BrowserDiagnosticsHarValues>({
+    resolver: zodResolver(browserDiagnosticsHarSchema),
+    defaultValues: { clear: false, includeRequests: true },
   });
 
   const storageForm = useForm<BrowserStorageValues>({
@@ -252,9 +381,19 @@ export function BrowserSessionPanel({
     defaultValues: { exportOptionsJson: '', importDataJson: '' },
   });
 
+  const profileForm = useForm<BrowserProfileValues>({
+    resolver: zodResolver(browserProfileSchema),
+    defaultValues: { profileId: '', includeSessionStorage: false, loadProfileId: '' },
+  });
+
+  const streamForm = useForm<BrowserStreamValues>({
+    resolver: zodResolver(browserStreamSchema),
+    defaultValues: { expiresIn: 300 },
+  });
+
   const cdpForm = useForm<BrowserCdpValues>({
     resolver: zodResolver(browserCdpSchema),
-    defaultValues: { wsEndpoint: '', port: undefined, timeout: 30000 },
+    defaultValues: { provider: undefined, wsEndpoint: '', port: undefined, timeout: 30000 },
   });
 
   const watchedSessionId = useWatch({ control: sessionForm.control, name: 'sessionId' });
@@ -278,17 +417,87 @@ export function BrowserSessionPanel({
       return;
     }
 
+    const permissions = parseJsonArray<string>(values.permissionsJson ?? '');
+    if (values.permissionsJson && !permissions) {
+      sessionForm.setError('permissionsJson', { message: 'Invalid JSON array' });
+      return;
+    }
+
+    const headers = parseJsonObject<Record<string, string>>(values.headersJson ?? '');
+    if (values.headersJson && !headers) {
+      sessionForm.setError('headersJson', { message: 'Invalid JSON object' });
+      return;
+    }
+
+    const hasGeoLat = values.geolocationLat !== undefined;
+    const hasGeoLng = values.geolocationLng !== undefined;
+    if ((hasGeoLat || hasGeoLng) && (!hasGeoLat || !hasGeoLng)) {
+      sessionForm.setError('geolocationLat', {
+        message: 'Latitude and longitude are required',
+      });
+      sessionForm.setError('geolocationLng', {
+        message: 'Latitude and longitude are required',
+      });
+      return;
+    }
+
+    const hasHttpUser = Boolean(values.httpUsername);
+    const hasHttpPass = Boolean(values.httpPassword);
+    if (hasHttpUser !== hasHttpPass) {
+      sessionForm.setError('httpUsername', { message: 'Username and password are required' });
+      sessionForm.setError('httpPassword', { message: 'Username and password are required' });
+      return;
+    }
+
     const options: Record<string, unknown> = {
       timeout: values.timeout,
-      userAgent: values.userAgent || undefined,
+      device: values.device?.trim() || undefined,
+      userAgent: values.userAgent?.trim() || undefined,
       javaScriptEnabled: values.javaScriptEnabled,
       ignoreHTTPSErrors: values.ignoreHTTPSErrors,
+      locale: values.locale?.trim() || undefined,
+      timezoneId: values.timezoneId?.trim() || undefined,
+      colorScheme: values.colorScheme,
+      reducedMotion: values.reducedMotion,
+      offline: values.offline,
+      acceptDownloads: values.acceptDownloads,
     };
 
     if (values.viewportWidth && values.viewportHeight) {
       options.viewport = {
         width: values.viewportWidth,
         height: values.viewportHeight,
+      };
+    }
+
+    if (hasGeoLat && hasGeoLng) {
+      options.geolocation = {
+        latitude: values.geolocationLat as number,
+        longitude: values.geolocationLng as number,
+        accuracy: values.geolocationAccuracy,
+      };
+    }
+
+    if (permissions) {
+      options.permissions = permissions;
+    }
+
+    if (headers) {
+      options.headers = headers;
+    }
+
+    if (hasHttpUser && hasHttpPass) {
+      options.httpCredentials = {
+        username: values.httpUsername ?? '',
+        password: values.httpPassword ?? '',
+      };
+    }
+
+    if (values.recordVideoEnabled) {
+      options.recordVideo = {
+        enabled: true,
+        width: values.recordVideoWidth,
+        height: values.recordVideoHeight,
       };
     }
 
@@ -324,13 +533,22 @@ export function BrowserSessionPanel({
       setSnapshot(null);
       setDeltaSnapshot(null);
       setActionResult(null);
+      setActionBatchResult(null);
       setScreenshot(null);
       setTabs(null);
       setWindows(null);
       setDialogHistory([]);
       setInterceptRulesState(null);
+      setHeadersResult(null);
       setNetworkHistory(null);
+      setConsoleMessages(null);
+      setPageErrors(null);
+      setTraceResult(null);
+      setHarResult(null);
       setStorageExport(null);
+      setProfileSaveResult(null);
+      setProfileLoadResult(null);
+      resetStream();
       sessionForm.setValue('sessionId', '');
       toast.success('Session closed');
     } catch (error) {
@@ -341,8 +559,18 @@ export function BrowserSessionPanel({
   const handleOpenUrl = async (values: BrowserOpenValues) => {
     const sessionId = requireSession();
     if (!sessionId || !apiKeyId) return;
+    const headers = parseJsonObject<Record<string, string>>(values.headersJson ?? '');
+    if (values.headersJson && !headers) {
+      openForm.setError('headersJson', { message: 'Invalid JSON object' });
+      return;
+    }
     try {
-      const result = await openBrowserUrl(apiKeyId, sessionId, values);
+      const result = await openBrowserUrl(apiKeyId, sessionId, {
+        url: values.url,
+        waitUntil: values.waitUntil,
+        timeout: values.timeout,
+        headers: headers ?? undefined,
+      });
       setOpenResult(result);
       toast.success('URL opened');
     } catch (error) {
@@ -388,6 +616,26 @@ export function BrowserSessionPanel({
       toast.success('Action executed');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Action failed');
+    }
+  };
+
+  const handleActionBatch = async (values: BrowserActionBatchValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    const parsed = parseJsonArray<Record<string, unknown>>(values.actionsJson ?? '');
+    if (!parsed) {
+      actionBatchForm.setError('actionsJson', { message: 'Invalid JSON array' });
+      return;
+    }
+    try {
+      const result = await executeBrowserActionBatch(apiKeyId, sessionId, {
+        actions: parsed,
+        stopOnError: values.stopOnError,
+      });
+      setActionBatchResult(result);
+      toast.success('Batch actions executed');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Batch actions failed');
     }
   };
 
@@ -459,6 +707,38 @@ export function BrowserSessionPanel({
   const handleCreateWindow = async (values: BrowserWindowsValues) => {
     const sessionId = requireSession();
     if (!sessionId || !apiKeyId) return;
+    const permissions = parseJsonArray<string>(values.permissionsJson ?? '');
+    if (values.permissionsJson && !permissions) {
+      windowsForm.setError('permissionsJson', { message: 'Invalid JSON array' });
+      return;
+    }
+
+    const headers = parseJsonObject<Record<string, string>>(values.headersJson ?? '');
+    if (values.headersJson && !headers) {
+      windowsForm.setError('headersJson', { message: 'Invalid JSON object' });
+      return;
+    }
+
+    const hasGeoLat = values.geolocationLat !== undefined;
+    const hasGeoLng = values.geolocationLng !== undefined;
+    if ((hasGeoLat || hasGeoLng) && (!hasGeoLat || !hasGeoLng)) {
+      windowsForm.setError('geolocationLat', {
+        message: 'Latitude and longitude are required',
+      });
+      windowsForm.setError('geolocationLng', {
+        message: 'Latitude and longitude are required',
+      });
+      return;
+    }
+
+    const hasHttpUser = Boolean(values.httpUsername);
+    const hasHttpPass = Boolean(values.httpPassword);
+    if (hasHttpUser !== hasHttpPass) {
+      windowsForm.setError('httpUsername', { message: 'Username and password are required' });
+      windowsForm.setError('httpPassword', { message: 'Username and password are required' });
+      return;
+    }
+
     const options: Record<string, unknown> = {};
     if (values.viewportWidth && values.viewportHeight) {
       options.viewport = {
@@ -466,8 +746,51 @@ export function BrowserSessionPanel({
         height: values.viewportHeight,
       };
     }
-    if (values.userAgent) {
-      options.userAgent = values.userAgent;
+    if (values.device?.trim()) {
+      options.device = values.device.trim();
+    }
+    if (values.userAgent?.trim()) {
+      options.userAgent = values.userAgent.trim();
+    }
+    if (values.locale?.trim()) {
+      options.locale = values.locale.trim();
+    }
+    if (values.timezoneId?.trim()) {
+      options.timezoneId = values.timezoneId.trim();
+    }
+    if (values.colorScheme) {
+      options.colorScheme = values.colorScheme;
+    }
+    if (values.reducedMotion) {
+      options.reducedMotion = values.reducedMotion;
+    }
+    options.offline = values.offline;
+    options.acceptDownloads = values.acceptDownloads;
+    if (permissions) {
+      options.permissions = permissions;
+    }
+    if (headers) {
+      options.headers = headers;
+    }
+    if (hasGeoLat && hasGeoLng) {
+      options.geolocation = {
+        latitude: values.geolocationLat as number,
+        longitude: values.geolocationLng as number,
+        accuracy: values.geolocationAccuracy,
+      };
+    }
+    if (hasHttpUser && hasHttpPass) {
+      options.httpCredentials = {
+        username: values.httpUsername ?? '',
+        password: values.httpPassword ?? '',
+      };
+    }
+    if (values.recordVideoEnabled) {
+      options.recordVideo = {
+        enabled: true,
+        width: values.recordVideoWidth,
+        height: values.recordVideoHeight,
+      };
     }
     try {
       await createBrowserWindow(apiKeyId, sessionId, options);
@@ -607,6 +930,45 @@ export function BrowserSessionPanel({
     }
   };
 
+  const handleSetHeaders = async (values: BrowserHeadersValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    const headers = parseJsonObject<Record<string, string>>(values.headersJson ?? '');
+    if (!headers) {
+      headersForm.setError('headersJson', { message: 'Invalid JSON object' });
+      return;
+    }
+    try {
+      const result = await setBrowserHeaders(apiKeyId, sessionId, {
+        origin: values.origin?.trim() || undefined,
+        headers,
+      });
+      setHeadersResult(result);
+      toast.success('Headers updated');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to set headers');
+    }
+  };
+
+  const handleClearHeaders = async (values: BrowserHeadersValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    if (!values.clearGlobal && !values.origin?.trim()) {
+      toast.error('Specify an origin or enable clear global');
+      return;
+    }
+    try {
+      await clearBrowserHeaders(apiKeyId, sessionId, {
+        origin: values.origin?.trim() || undefined,
+        clearGlobal: values.clearGlobal || undefined,
+      });
+      setHeadersResult(null);
+      toast.success('Headers cleared');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to clear headers');
+    }
+  };
+
   const handleNetworkHistory = async (values: BrowserNetworkHistoryValues) => {
     const sessionId = requireSession();
     if (!sessionId || !apiKeyId) return;
@@ -628,6 +990,105 @@ export function BrowserSessionPanel({
       toast.success('Network history cleared');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to clear history');
+    }
+  };
+
+  const handleFetchConsoleMessages = async (values: BrowserDiagnosticsLogValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      const list = await getBrowserConsoleMessages(apiKeyId, sessionId, values);
+      setConsoleMessages(list);
+      toast.success('Console messages loaded');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load console messages');
+    }
+  };
+
+  const handleClearConsoleMessages = async () => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      await clearBrowserConsoleMessages(apiKeyId, sessionId);
+      setConsoleMessages([]);
+      toast.success('Console messages cleared');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to clear console messages');
+    }
+  };
+
+  const handleFetchPageErrors = async (values: BrowserDiagnosticsLogValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      const list = await getBrowserPageErrors(apiKeyId, sessionId, values);
+      setPageErrors(list);
+      toast.success('Page errors loaded');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load page errors');
+    }
+  };
+
+  const handleClearPageErrors = async () => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      await clearBrowserPageErrors(apiKeyId, sessionId);
+      setPageErrors([]);
+      toast.success('Page errors cleared');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to clear page errors');
+    }
+  };
+
+  const handleStartTrace = async (values: BrowserDiagnosticsTraceValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      await startBrowserTrace(apiKeyId, sessionId, {
+        screenshots: values.screenshots,
+        snapshots: values.snapshots,
+      });
+      toast.success('Tracing started');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to start tracing');
+    }
+  };
+
+  const handleStopTrace = async (values: BrowserDiagnosticsTraceValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      const result = await stopBrowserTrace(apiKeyId, sessionId, { store: values.store });
+      setTraceResult(result);
+      toast.success('Tracing stopped');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to stop tracing');
+    }
+  };
+
+  const handleStartHar = async (values: BrowserDiagnosticsHarValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      await startBrowserHar(apiKeyId, sessionId, { clear: values.clear });
+      toast.success('HAR recording started');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to start HAR recording');
+    }
+  };
+
+  const handleStopHar = async (values: BrowserDiagnosticsHarValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      const result = await stopBrowserHar(apiKeyId, sessionId, {
+        includeRequests: values.includeRequests,
+      });
+      setHarResult(result);
+      toast.success('HAR recording stopped');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to stop HAR recording');
     }
   };
 
@@ -671,10 +1132,66 @@ export function BrowserSessionPanel({
     }
   };
 
+  const handleSaveProfile = async (values: BrowserProfileValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      const result = await saveBrowserProfile(apiKeyId, sessionId, {
+        profileId: values.profileId?.trim() || undefined,
+        includeSessionStorage: values.includeSessionStorage,
+      });
+      setProfileSaveResult(result);
+      toast.success('Profile saved');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Profile save failed');
+    }
+  };
+
+  const handleLoadProfile = async (values: BrowserProfileValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    if (!values.loadProfileId?.trim()) {
+      profileForm.setError('loadProfileId', { message: 'Profile ID is required' });
+      return;
+    }
+    try {
+      const result = await loadBrowserProfile(apiKeyId, sessionId, {
+        profileId: values.loadProfileId.trim(),
+      });
+      setProfileLoadResult(result);
+      toast.success('Profile loaded');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Profile load failed');
+    }
+  };
+
+  const handleCreateStreamToken = async (values: BrowserStreamValues) => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKeyId) return;
+    try {
+      const tokenResult = await createBrowserStreamToken(apiKeyId, sessionId, values);
+      setStreamToken(tokenResult);
+      setStreamError(null);
+      toast.success('Stream token created');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Stream token creation failed');
+    }
+  };
+
+  const handleDisconnectStream = () => {
+    resetStream();
+    toast.success('Stream disconnected');
+  };
+
   const handleConnectCdp = async (values: BrowserCdpValues) => {
     if (!apiKeyId) return;
     try {
-      const result = await connectBrowserCdp(apiKeyId, values);
+      const result = await connectBrowserCdp(apiKeyId, {
+        provider: values.provider,
+        wsEndpoint: values.wsEndpoint?.trim() || undefined,
+        port: values.port,
+        timeout: values.timeout,
+      });
       setCdpSession(result);
       if (result?.id) {
         sessionForm.setValue('sessionId', result.id);
@@ -746,6 +1263,16 @@ export function BrowserSessionPanel({
             result={actionResult}
           />
         )}
+        {hasSection('actionBatch') && (
+          <ActionBatchSection
+            apiKeyId={apiKeyId}
+            form={actionBatchForm}
+            open={actionBatchOpen}
+            onOpenChange={setActionBatchOpen}
+            onSubmit={handleActionBatch}
+            result={actionBatchResult}
+          />
+        )}
         {hasSection('screenshot') && (
           <ScreenshotSection
             apiKeyId={apiKeyId}
@@ -798,6 +1325,17 @@ export function BrowserSessionPanel({
             onListRules={handleListRules}
           />
         )}
+        {hasSection('headers') && (
+          <HeadersSection
+            apiKeyId={apiKeyId}
+            form={headersForm}
+            open={headersOpen}
+            onOpenChange={setHeadersOpen}
+            result={headersResult}
+            onSetHeaders={handleSetHeaders}
+            onClearHeaders={handleClearHeaders}
+          />
+        )}
         {hasSection('network') && (
           <NetworkHistorySection
             apiKeyId={apiKeyId}
@@ -807,6 +1345,28 @@ export function BrowserSessionPanel({
             history={networkHistory}
             onFetch={handleNetworkHistory}
             onClear={handleClearNetworkHistory}
+          />
+        )}
+        {hasSection('diagnostics') && (
+          <DiagnosticsSection
+            apiKeyId={apiKeyId}
+            logForm={diagnosticsLogForm}
+            traceForm={diagnosticsTraceForm}
+            harForm={diagnosticsHarForm}
+            open={diagnosticsOpen}
+            onOpenChange={setDiagnosticsOpen}
+            consoleMessages={consoleMessages}
+            pageErrors={pageErrors}
+            traceResult={traceResult}
+            harResult={harResult}
+            onFetchConsole={handleFetchConsoleMessages}
+            onClearConsole={handleClearConsoleMessages}
+            onFetchErrors={handleFetchPageErrors}
+            onClearErrors={handleClearPageErrors}
+            onStartTrace={handleStartTrace}
+            onStopTrace={handleStopTrace}
+            onStartHar={handleStartHar}
+            onStopHar={handleStopHar}
           />
         )}
         {hasSection('storage') && (
@@ -821,6 +1381,38 @@ export function BrowserSessionPanel({
             onClear={handleClearStorage}
           />
         )}
+        {hasSection('profile') && (
+          <ProfileSection
+            apiKeyId={apiKeyId}
+            form={profileForm}
+            open={profileOpen}
+            onOpenChange={setProfileOpen}
+            saveResult={profileSaveResult}
+            loadResult={profileLoadResult}
+            onSave={handleSaveProfile}
+            onLoad={handleLoadProfile}
+          />
+        )}
+        {hasSection('stream') && (
+          <StreamingSection
+            apiKeyId={apiKeyId}
+            form={streamForm}
+            open={streamOpen}
+            onOpenChange={setStreamOpen}
+            token={streamToken}
+            status={streamStatus}
+            frame={streamFrame}
+            error={streamError}
+            imageRef={streamImageRef}
+            onCreateToken={handleCreateStreamToken}
+            onDisconnect={handleDisconnectStream}
+            onPointerDown={streamHandlers.onPointerDown}
+            onPointerUp={streamHandlers.onPointerUp}
+            onWheel={streamHandlers.onWheel}
+            onKeyDown={streamHandlers.onKeyDown}
+            onKeyUp={streamHandlers.onKeyUp}
+          />
+        )}
         {hasSection('cdp') && (
           <CdpSection
             apiKeyId={apiKeyId}
@@ -833,976 +1425,5 @@ export function BrowserSessionPanel({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-type SessionSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserSessionValues>;
-  sessionInfo: BrowserSessionInfo | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreate: (values: BrowserSessionValues) => void;
-  onStatus: () => void;
-  onClose: () => void;
-};
-
-function SessionSection({
-  apiKeyId,
-  form,
-  sessionInfo,
-  open,
-  onOpenChange,
-  onCreate,
-  onStatus,
-  onClose,
-}: SessionSectionProps) {
-  return (
-    <CollapsibleSection title="Session" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onCreate)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="sessionId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Session ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="session_xxx" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="viewportWidth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Viewport Width</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="1280" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="viewportHeight"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Viewport Height</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="800" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="timeout"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Timeout (ms)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="300000" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="userAgent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>User Agent</FormLabel>
-                <FormControl>
-                  <Input placeholder="Custom UA" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-wrap gap-6">
-            <FormField
-              control={form.control}
-              name="javaScriptEnabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3">
-                  <FormLabel>JavaScript</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="ignoreHTTPSErrors"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3">
-                  <FormLabel>Ignore HTTPS Errors</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={!apiKeyId}>
-              Create Session
-            </Button>
-            <Button type="button" variant="outline" onClick={onStatus} disabled={!apiKeyId}>
-              Get Status
-            </Button>
-            <Button type="button" variant="ghost" onClick={onClose} disabled={!apiKeyId}>
-              Close Session
-            </Button>
-          </div>
-          {sessionInfo && <CodeBlock code={formatJson(sessionInfo)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type OpenUrlSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserOpenValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: BrowserOpenValues) => void;
-  result: BrowserOpenResponse | null;
-};
-
-function OpenUrlSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  onSubmit,
-  result,
-}: OpenUrlSectionProps) {
-  return (
-    <CollapsibleSection title="Open URL" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="waitUntil"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Wait Until</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="load">load</SelectItem>
-                      <SelectItem value="domcontentloaded">domcontentloaded</SelectItem>
-                      <SelectItem value="networkidle">networkidle</SelectItem>
-                      <SelectItem value="commit">commit</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="timeout"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Timeout (ms)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="30000" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button type="submit" disabled={!apiKeyId}>
-            Open URL
-          </Button>
-          {result && <CodeBlock code={formatJson(result)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type SnapshotSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserSnapshotValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: BrowserSnapshotValues) => void;
-  result: BrowserSnapshotResponse | null;
-};
-
-function SnapshotSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  onSubmit,
-  result,
-}: SnapshotSectionProps) {
-  return (
-    <CollapsibleSection title="Snapshot" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex flex-wrap gap-6">
-            <FormField
-              control={form.control}
-              name="interactive"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3">
-                  <FormLabel>Interactive Only</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="compact"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3">
-                  <FormLabel>Compact</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="maxDepth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max Depth</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="20" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="scope"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Scope Selector</FormLabel>
-                  <FormControl>
-                    <Input placeholder="#content" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button type="submit" disabled={!apiKeyId}>
-            Capture Snapshot
-          </Button>
-          {result && <CodeBlock code={formatJson(result)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type DeltaSnapshotSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserDeltaSnapshotValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: BrowserDeltaSnapshotValues) => void;
-  result: BrowserDeltaSnapshotResponse | null;
-};
-
-function DeltaSnapshotSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  onSubmit,
-  result,
-}: DeltaSnapshotSectionProps) {
-  return (
-    <CollapsibleSection title="Delta Snapshot" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="delta"
-            render={({ field }) => (
-              <FormItem className="flex items-center gap-3">
-                <FormLabel>Delta Mode</FormLabel>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={!apiKeyId}>
-            Capture Delta
-          </Button>
-          {result && <CodeBlock code={formatJson(result)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type ActionSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserActionValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: BrowserActionValues) => void;
-  result: BrowserActionResponse | null;
-};
-
-function ActionSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  onSubmit,
-  result,
-}: ActionSectionProps) {
-  return (
-    <CollapsibleSection title="Action" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="actionJson"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Action JSON</FormLabel>
-                <FormControl>
-                  <Textarea rows={4} placeholder='{"type":"click","selector":"@e1"}' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={!apiKeyId}>
-            Execute Action
-          </Button>
-          {result && <CodeBlock code={formatJson(result)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type ScreenshotSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserScreenshotValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (values: BrowserScreenshotValues) => void;
-  result: BrowserScreenshotResponse | null;
-};
-
-function ScreenshotSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  onSubmit,
-  result,
-}: ScreenshotSectionProps) {
-  return (
-    <CollapsibleSection title="Screenshot" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="selector"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Selector (optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="#main" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="grid gap-4 md:grid-cols-3">
-            <FormField
-              control={form.control}
-              name="format"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Format</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="png" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="png">png</SelectItem>
-                      <SelectItem value="jpeg">jpeg</SelectItem>
-                      <SelectItem value="webp">webp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="quality"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quality</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="80" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="fullPage"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3">
-                  <FormLabel>Full Page</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button type="submit" disabled={!apiKeyId}>
-            Capture Screenshot
-          </Button>
-          {result && (
-            <div className="space-y-2">
-              <CodeBlock code={formatJson(result)} language="json" />
-              <img
-                src={`data:${result.mimeType};base64,${result.data}`}
-                alt="Screenshot"
-                className="max-h-64 rounded-md border border-border-muted"
-              />
-            </div>
-          )}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type TabsSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserTabsValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  tabs: BrowserTabInfo[] | null;
-  dialogHistory: unknown[];
-  onCreateTab: () => void;
-  onListTabs: () => void;
-  onSwitchTab: (values: BrowserTabsValues) => void;
-  onCloseTab: (values: BrowserTabsValues) => void;
-  onDialogHistory: () => void;
-};
-
-function TabsSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  tabs,
-  dialogHistory,
-  onCreateTab,
-  onListTabs,
-  onSwitchTab,
-  onCloseTab,
-  onDialogHistory,
-}: TabsSectionProps) {
-  return (
-    <CollapsibleSection title="Tabs" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form className="space-y-4">
-          <FormField
-            control={form.control}
-            name="tabIndex"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tab Index</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="0" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={onCreateTab} disabled={!apiKeyId}>
-              Create Tab
-            </Button>
-            <Button type="button" variant="outline" onClick={onListTabs} disabled={!apiKeyId}>
-              List Tabs
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={form.handleSubmit(onSwitchTab)}
-              disabled={!apiKeyId}
-            >
-              Activate Tab
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={form.handleSubmit(onCloseTab)}
-              disabled={!apiKeyId}
-            >
-              Close Tab
-            </Button>
-          </div>
-          {tabs && <CodeBlock code={formatJson(tabs)} language="json" />}
-          <Button type="button" variant="outline" onClick={onDialogHistory}>
-            Get Dialog History
-          </Button>
-          {dialogHistory.length > 0 && (
-            <CodeBlock code={formatJson(dialogHistory)} language="json" />
-          )}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type WindowsSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserWindowsValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  windows: BrowserWindowInfo[] | null;
-  onCreateWindow: (values: BrowserWindowsValues) => void;
-  onListWindows: () => void;
-  onSwitchWindow: (values: BrowserWindowsValues) => void;
-  onCloseWindow: (values: BrowserWindowsValues) => void;
-};
-
-function WindowsSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  windows,
-  onCreateWindow,
-  onListWindows,
-  onSwitchWindow,
-  onCloseWindow,
-}: WindowsSectionProps) {
-  return (
-    <CollapsibleSection title="Windows" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form className="space-y-4">
-          <FormField
-            control={form.control}
-            name="windowIndex"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Window Index</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="0" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="viewportWidth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Viewport Width</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="1280" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="viewportHeight"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Viewport Height</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="800" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="userAgent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>User Agent</FormLabel>
-                <FormControl>
-                  <Input placeholder="Custom UA" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onCreateWindow)} disabled={!apiKeyId}>
-              Create Window
-            </Button>
-            <Button type="button" variant="outline" onClick={onListWindows} disabled={!apiKeyId}>
-              List Windows
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={form.handleSubmit(onSwitchWindow)}
-              disabled={!apiKeyId}
-            >
-              Activate Window
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={form.handleSubmit(onCloseWindow)}
-              disabled={!apiKeyId}
-            >
-              Close Window
-            </Button>
-          </div>
-          {windows && <CodeBlock code={formatJson(windows)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type InterceptSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserInterceptValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  rules: unknown[] | null;
-  onSetRules: (values: BrowserInterceptValues) => void;
-  onAddRule: (values: BrowserInterceptValues) => void;
-  onRemoveRule: (values: BrowserInterceptValues) => void;
-  onClearRules: () => void;
-  onListRules: () => void;
-};
-
-function InterceptSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  rules,
-  onSetRules,
-  onAddRule,
-  onRemoveRule,
-  onClearRules,
-  onListRules,
-}: InterceptSectionProps) {
-  return (
-    <CollapsibleSection title="Network Intercept" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form className="space-y-4">
-          <FormField
-            control={form.control}
-            name="rulesJson"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Rules JSON (array)</FormLabel>
-                <FormControl>
-                  <Textarea rows={4} placeholder="[]" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ruleJson"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Single Rule JSON</FormLabel>
-                <FormControl>
-                  <Textarea rows={3} placeholder='{"urlPattern":"*"}' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ruleId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Rule ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="rule_123" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onSetRules)} disabled={!apiKeyId}>
-              Set Rules
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={form.handleSubmit(onAddRule)}
-              disabled={!apiKeyId}
-            >
-              Add Rule
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={form.handleSubmit(onRemoveRule)}
-              disabled={!apiKeyId}
-            >
-              Remove Rule
-            </Button>
-            <Button type="button" variant="ghost" onClick={onClearRules} disabled={!apiKeyId}>
-              Clear Rules
-            </Button>
-            <Button type="button" variant="outline" onClick={onListRules} disabled={!apiKeyId}>
-              List Rules
-            </Button>
-          </div>
-          {rules && <CodeBlock code={formatJson(rules)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type NetworkHistorySectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserNetworkHistoryValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  history: BrowserNetworkRequestRecord[] | null;
-  onFetch: (values: BrowserNetworkHistoryValues) => void;
-  onClear: () => void;
-};
-
-function NetworkHistorySection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  history,
-  onFetch,
-  onClear,
-}: NetworkHistorySectionProps) {
-  return (
-    <CollapsibleSection title="Network History" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="limit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Limit</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="50" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="urlFilter"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL Filter</FormLabel>
-                  <FormControl>
-                    <Input placeholder="*.png" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onFetch)} disabled={!apiKeyId}>
-              Get History
-            </Button>
-            <Button type="button" variant="ghost" onClick={onClear} disabled={!apiKeyId}>
-              Clear History
-            </Button>
-          </div>
-          {history && <CodeBlock code={formatJson(history)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type StorageSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserStorageValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  exportResult: BrowserStorageExportResult | null;
-  onExport: (values: BrowserStorageValues) => void;
-  onImport: (values: BrowserStorageValues) => void;
-  onClear: () => void;
-};
-
-function StorageSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  exportResult,
-  onExport,
-  onImport,
-  onClear,
-}: StorageSectionProps) {
-  return (
-    <CollapsibleSection title="Storage" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form className="space-y-4">
-          <FormField
-            control={form.control}
-            name="exportOptionsJson"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Export Options JSON</FormLabel>
-                <FormControl>
-                  <Textarea rows={3} placeholder='{"include":{"cookies":true}}' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="importDataJson"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Import Data JSON</FormLabel>
-                <FormControl>
-                  <Textarea rows={3} placeholder='{"cookies":[]}' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onExport)} disabled={!apiKeyId}>
-              Export
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={form.handleSubmit(onImport)}
-              disabled={!apiKeyId}
-            >
-              Import
-            </Button>
-            <Button type="button" variant="ghost" onClick={onClear} disabled={!apiKeyId}>
-              Clear
-            </Button>
-          </div>
-          {exportResult && <CodeBlock code={formatJson(exportResult)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
-  );
-}
-
-type CdpSectionProps = {
-  apiKeyId: string;
-  form: UseFormReturn<BrowserCdpValues>;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  session: BrowserSessionInfo | null;
-  onConnect: (values: BrowserCdpValues) => void;
-};
-
-function CdpSection({ apiKeyId, form, open, onOpenChange, session, onConnect }: CdpSectionProps) {
-  return (
-    <CollapsibleSection title="CDP Connect" open={open} onOpenChange={onOpenChange}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onConnect)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="wsEndpoint"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>WebSocket Endpoint</FormLabel>
-                <FormControl>
-                  <Input placeholder="ws://localhost:9222/devtools/browser/..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="port"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Port</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="9222" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="timeout"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Timeout (ms)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="30000" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button type="submit" disabled={!apiKeyId}>
-            Connect CDP
-          </Button>
-          {session && <CodeBlock code={formatJson(session)} language="json" />}
-        </form>
-      </Form>
-    </CollapsibleSection>
   );
 }

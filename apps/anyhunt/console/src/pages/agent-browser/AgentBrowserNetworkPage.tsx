@@ -2,6 +2,8 @@
  * [PROPS]: None
  * [EMITS]: None
  * [POS]: Agent Browser 网络相关页
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
 import { useOutletContext } from 'react-router-dom';
@@ -12,7 +14,7 @@ import {
 import type { AgentBrowserOutletContext } from './AgentBrowserLayoutPage';
 import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 
-const networkSections: BrowserSessionSection[] = ['session', 'intercept', 'network'];
+const networkSections: BrowserSessionSection[] = ['session', 'intercept', 'headers', 'network'];
 
 export default function AgentBrowserNetworkPage() {
   const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
@@ -28,7 +30,7 @@ export default function AgentBrowserNetworkPage() {
       onSessionChange={setSessionId}
       sections={networkSections}
       title="Network"
-      description="Configure intercept rules and inspect network history."
+      description="Configure headers, intercept rules, and inspect network history."
     />
   );
 }

@@ -2,6 +2,8 @@
  * [PROPS]: AppSidebarProps
  * [EMITS]: None
  * [POS]: Anyhunt 控制台侧边栏
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import {
   DashboardSquare01Icon,
@@ -55,7 +57,10 @@ const navGroups: NavGroup[] = [
           { title: 'Browser', url: '/agent-browser/browser' },
           { title: 'Agent', url: '/agent-browser/agent' },
           { title: 'Network', url: '/agent-browser/network' },
+          { title: 'Diagnostics', url: '/agent-browser/diagnostics' },
           { title: 'Storage', url: '/agent-browser/storage' },
+          { title: 'Profile', url: '/agent-browser/profile' },
+          { title: 'Streaming', url: '/agent-browser/streaming' },
           { title: 'CDP', url: '/agent-browser/cdp' },
         ],
       },

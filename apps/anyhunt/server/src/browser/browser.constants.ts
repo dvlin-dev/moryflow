@@ -11,6 +11,10 @@
  * - BROWSER_CDP_ALLOWED_HOSTS: 允许的 CDP 主机（逗号分隔）
  * - BROWSER_CDP_ALLOW_PORT: 是否允许使用 port 参数（默认 false）
  * - BROWSER_CDP_ALLOW_PRIVATE_HOSTS: 是否允许私网/本地主机（默认 false）
+ * - BROWSER_DOWNLOAD_MAX_MB: 单次下载最大大小（MB，1-200）
+ * - BROWSER_UPLOAD_MAX_MB: 单次上传最大大小（MB，1-50）
+ * - BROWSER_STREAM_SECURE: 是否使用 wss（默认 false）
+ * - BROWSER_STREAM_MAX_CLIENTS: 每个 Session 最大并发流式连接数（1-5）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -23,6 +27,9 @@ const LIMITS = {
   WARMUP_COUNT: { min: 1, max: 8 },
   MAX_PAGES: { min: 1, max: 50 },
   IDLE_TIMEOUT: { min: 60, max: 3600 }, // 秒
+  DOWNLOAD_MAX_MB: { min: 1, max: 200 },
+  UPLOAD_MAX_MB: { min: 1, max: 50 },
+  STREAM_MAX_CLIENTS: { min: 1, max: 5 },
 } as const;
 
 /**
@@ -165,3 +172,35 @@ export const BROWSER_CDP_ALLOW_PORT =
 /** 是否允许私网/本地主机的 CDP 连接 */
 export const BROWSER_CDP_ALLOW_PRIVATE_HOSTS =
   process.env.BROWSER_CDP_ALLOW_PRIVATE_HOSTS === 'true';
+
+/** 单次下载最大大小（字节） */
+export const BROWSER_DOWNLOAD_MAX_BYTES =
+  (parseEnvInt(
+    process.env.BROWSER_DOWNLOAD_MAX_MB,
+    LIMITS.DOWNLOAD_MAX_MB.min,
+    LIMITS.DOWNLOAD_MAX_MB.max,
+  ) ?? 20) *
+  1024 *
+  1024;
+
+/** 单次上传最大大小（字节） */
+export const BROWSER_UPLOAD_MAX_BYTES =
+  (parseEnvInt(
+    process.env.BROWSER_UPLOAD_MAX_MB,
+    LIMITS.UPLOAD_MAX_MB.min,
+    LIMITS.UPLOAD_MAX_MB.max,
+  ) ?? 10) *
+  1024 *
+  1024;
+
+/** Streaming 是否使用 wss */
+export const BROWSER_STREAM_SECURE =
+  process.env.BROWSER_STREAM_SECURE === 'true';
+
+/** Streaming 每个 Session 最大连接数 */
+export const BROWSER_STREAM_MAX_CLIENTS =
+  parseEnvInt(
+    process.env.BROWSER_STREAM_MAX_CLIENTS,
+    LIMITS.STREAM_MAX_CLIENTS.min,
+    LIMITS.STREAM_MAX_CLIENTS.max,
+  ) ?? 1;

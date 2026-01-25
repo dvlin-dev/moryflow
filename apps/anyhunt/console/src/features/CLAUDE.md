@@ -64,6 +64,12 @@ export function useApiKeys() {
 - Agent Browser Playground：Stream 请求改为强制携带 access token，移除 cookie-only 依赖
 - Agent Browser Playground：补充 Reasoning/Progress 映射、stream abort 处理、错误边界与分区组件
 - Agent Browser Playground：BrowserSessionPanel 支持 sections 裁剪，配合多页面拆分
+- Agent Browser Playground：补齐 ActionBatch/Headers/Diagnostics/Profile/Streaming UI 与路由导航
+- Agent Browser Playground：BrowserSessionPanel 分区组件拆分为独立文件（browser-session-sections.tsx）
+- Agent Browser Playground：Streaming 逻辑抽离为 hook，降低 BrowserSessionPanel 复杂度
+- Agent Browser Playground：Screenshot 选项收敛为 png/jpeg，与后端能力对齐
+- Agent Browser Playground：Streaming 断开时清理 frame；截图质量仅对 jpeg 生效
+- Agent Browser Playground：schemas/types/panel 等补齐 Header/PROTOCOL 规范
 - Agent Browser Playground：Agent Chat 改为纯消息 UI，SSE 流显式发送 `start` 以保证消息追加
 - Agent Browser Playground：`thinking/progress` 事件按文本输出，避免误入 Reasoning
 - Agent Browser Playground：消息列表与输入框切换为 `@anyhunt/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染

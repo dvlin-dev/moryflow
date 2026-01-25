@@ -17,6 +17,8 @@ import type {
   SnapshotResponse,
   ActionInput,
   ActionResponse,
+  ActionBatchInput,
+  ActionBatchResponse,
 } from '../dto';
 
 /** Agent 侧会话句柄（避免透传 Playwright 类型） */
@@ -54,6 +56,10 @@ export interface BrowserAgentPort {
     sessionId: string,
     action: ActionInput,
   ): Promise<ActionResponse>;
+  executeActionBatch(
+    sessionId: string,
+    input: ActionBatchInput,
+  ): Promise<ActionBatchResponse>;
   search(sessionId: string, query: string): Promise<BrowserAgentSearchResult>;
 }
 
@@ -96,6 +102,12 @@ export class BrowserAgentPortService {
         action: ActionInput,
       ): Promise<ActionResponse> => {
         return this.sessionService.executeAction(userId, sessionId, action);
+      },
+      executeActionBatch: async (
+        sessionId: string,
+        input: ActionBatchInput,
+      ): Promise<ActionBatchResponse> => {
+        return this.sessionService.executeActionBatch(userId, sessionId, input);
       },
       search: async (
         sessionId: string,

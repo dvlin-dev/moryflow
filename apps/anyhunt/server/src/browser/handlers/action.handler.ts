@@ -9,9 +9,22 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import type { Locator, Page } from 'playwright';
+import { promises as fs } from 'node:fs';
+import { basename, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
+import type { Locator, Page, Download } from 'playwright';
 import { SessionManager, type BrowserSession } from '../session';
-import type { ActionInput, ActionResponse } from '../dto';
+import {
+  BROWSER_DOWNLOAD_MAX_BYTES,
+  BROWSER_UPLOAD_MAX_BYTES,
+} from '../browser.constants';
+import type {
+  ActionInput,
+  ActionResponse,
+  LocatorInput,
+  LocatorSelectorInput,
+} from '../dto';
 
 @Injectable()
 export class ActionHandler {
@@ -26,10 +39,12 @@ export class ActionHandler {
     session: BrowserSession,
     action: ActionInput,
   ): Promise<ActionResponse> {
-    const { type, selector, timeout = 5000 } = action;
+    const { type, timeout = 5000 } = action;
+    const page = this.sessionManager.getActivePage(session);
+    const context = this.sessionManager.getActiveContext(session);
 
     try {
-      const requiresSelector = new Set<ActionInput['type']>([
+      const requiresTarget = new Set<ActionInput['type']>([
         'click',
         'dblclick',
         'fill',
@@ -41,38 +56,38 @@ export class ActionHandler {
         'uncheck',
         'selectOption',
         'scrollIntoView',
+        'upload',
+        'highlight',
         'getText',
         'getInnerHTML',
         'getAttribute',
         'getInputValue',
+        'getCount',
+        'getBoundingBox',
         'isVisible',
         'isEnabled',
         'isChecked',
       ]);
 
-      if (requiresSelector.has(type) && !selector) {
-        throw new Error(`selector is required for action type ${type}`);
+      const locator = this.resolveActionLocator(session, action);
+      if (requiresTarget.has(type) && !locator) {
+        throw new Error(
+          `selector or locator is required for action type ${type}`,
+        );
       }
 
-      // 解析选择器（如果需要）
-      let locator: Locator | undefined;
-      if (selector) {
-        locator = this.sessionManager.resolveSelector(session, selector);
-      }
-
-      // 根据动作类型执行
       switch (type) {
         // ===== 导航 =====
         case 'back':
-          await session.page.goBack({ timeout });
+          await page.goBack({ timeout });
           return { success: true };
 
         case 'forward':
-          await session.page.goForward({ timeout });
+          await page.goForward({ timeout });
           return { success: true };
 
         case 'reload':
-          await session.page.reload({ timeout });
+          await page.reload({ timeout });
           return { success: true };
 
         // ===== 交互 =====
@@ -107,7 +122,7 @@ export class ActionHandler {
           if (locator) {
             await locator.press(action.key, { timeout });
           } else {
-            await session.page.keyboard.press(action.key);
+            await page.keyboard.press(action.key);
           }
           return { success: true };
 
@@ -138,9 +153,29 @@ export class ActionHandler {
           await locator!.selectOption(action.options, { timeout });
           return { success: true };
 
+        case 'drag': {
+          const source = this.resolveLocatorInput(session, action.source!);
+          const target = this.resolveLocatorInput(session, action.target!);
+          await source.dragTo(target, { timeout });
+          return { success: true };
+        }
+
+        case 'upload': {
+          if (!action.files) {
+            throw new Error('upload requires files');
+          }
+          const filePayloads = this.buildUploadPayloads(action.files);
+          await locator!.setInputFiles(filePayloads);
+          return { success: true, result: { count: filePayloads.length } };
+        }
+
+        case 'highlight':
+          await this.highlightLocator(locator!);
+          return { success: true };
+
         // ===== 滚动 =====
         case 'scroll':
-          return await this.handleScroll(session.page, action);
+          return await this.handleScroll(page, action, locator);
 
         case 'scrollIntoView':
           await locator!.scrollIntoViewIfNeeded({ timeout });
@@ -148,7 +183,44 @@ export class ActionHandler {
 
         // ===== 等待 =====
         case 'wait':
-          return await this.handleWait(session, action);
+          return await this.handleWait(session, page, action);
+
+        // ===== 脚本 / 内容 =====
+        case 'evaluate': {
+          if (!action.script) {
+            throw new Error('evaluate requires script');
+          }
+          const result = await page.evaluate(action.script, action.arg);
+          return { success: true, result };
+        }
+
+        case 'setContent': {
+          if (!action.html) {
+            throw new Error('setContent requires html');
+          }
+          await page.setContent(action.html, {
+            waitUntil: 'domcontentloaded',
+          });
+          return { success: true };
+        }
+
+        case 'pdf': {
+          const buffer = await page.pdf({
+            format: action.pdfFormat ?? 'A4',
+            printBackground: true,
+          });
+          return {
+            success: true,
+            result: {
+              data: buffer.toString('base64'),
+              mimeType: 'application/pdf',
+              size: buffer.length,
+            },
+          };
+        }
+
+        case 'download':
+          return await this.handleDownload(page, locator, action, timeout);
 
         // ===== 信息获取 =====
         case 'getText': {
@@ -176,6 +248,16 @@ export class ActionHandler {
           return { success: true, result: value };
         }
 
+        case 'getCount': {
+          const count = await locator!.count();
+          return { success: true, result: count };
+        }
+
+        case 'getBoundingBox': {
+          const box = await locator!.boundingBox();
+          return { success: true, result: box };
+        }
+
         // ===== 状态检查 =====
         case 'isVisible': {
           const visible = await locator!.isVisible();
@@ -192,13 +274,79 @@ export class ActionHandler {
           return { success: true, result: checked };
         }
 
+        // ===== 运行时环境 =====
+        case 'setViewport': {
+          if (!action.viewport) {
+            throw new Error('setViewport requires viewport');
+          }
+          await page.setViewportSize(action.viewport);
+          return { success: true };
+        }
+
+        case 'setGeolocation': {
+          if (!action.geolocation) {
+            throw new Error('setGeolocation requires geolocation');
+          }
+          await context.setGeolocation(action.geolocation);
+          return { success: true };
+        }
+
+        case 'setPermissions': {
+          if (!action.permissions || action.permissions.length === 0) {
+            throw new Error('setPermissions requires permissions');
+          }
+          await context.grantPermissions(action.permissions);
+          return { success: true };
+        }
+
+        case 'clearPermissions': {
+          await context.clearPermissions();
+          return { success: true };
+        }
+
+        case 'setMedia': {
+          await page.emulateMedia({
+            colorScheme: action.colorScheme,
+            reducedMotion: action.reducedMotion,
+          });
+          return { success: true };
+        }
+
+        case 'setOffline': {
+          if (action.offline === undefined) {
+            throw new Error('setOffline requires offline');
+          }
+          await context.setOffline(action.offline);
+          return { success: true };
+        }
+
+        case 'setHeaders': {
+          if (!action.headers) {
+            throw new Error('setHeaders requires headers');
+          }
+          await context.setExtraHTTPHeaders(action.headers);
+          return { success: true };
+        }
+
+        case 'setHttpCredentials': {
+          if (!action.httpCredentials) {
+            throw new Error('setHttpCredentials requires httpCredentials');
+          }
+          await context.setHTTPCredentials(action.httpCredentials);
+          return { success: true };
+        }
+
         default: {
           const actionType = String(type);
           throw new Error(`Unknown action type: ${actionType}`);
         }
       }
     } catch (error) {
-      return this.toAIFriendlyError(error, selector);
+      const selectorLabel =
+        action.selector ??
+        (action.locator ? this.describeLocator(action.locator) : undefined) ??
+        (action.type === 'press' ? action.key : undefined);
+      return this.toAIFriendlyError(error, selectorLabel);
     }
   }
 
@@ -227,8 +375,33 @@ export class ActionHandler {
   private async handleScroll(
     page: Page,
     action: ActionInput,
+    locator?: Locator,
   ): Promise<ActionResponse> {
     const { direction = 'down', distance = 300 } = action;
+
+    if (locator) {
+      await locator.evaluate(
+        (element, payload: { direction: string; distance: number }) => {
+          const { direction, distance } = payload;
+          switch (direction) {
+            case 'up':
+              element.scrollBy(0, -distance);
+              break;
+            case 'down':
+              element.scrollBy(0, distance);
+              break;
+            case 'left':
+              element.scrollBy(-distance, 0);
+              break;
+            case 'right':
+              element.scrollBy(distance, 0);
+              break;
+          }
+        },
+        { direction, distance },
+      );
+      return { success: true };
+    }
 
     let deltaX = 0;
     let deltaY = 0;
@@ -257,6 +430,7 @@ export class ActionHandler {
    */
   private async handleWait(
     session: BrowserSession,
+    page: Page,
     action: ActionInput,
   ): Promise<ActionResponse> {
     const { waitFor, timeout = 5000 } = action;
@@ -266,7 +440,7 @@ export class ActionHandler {
     }
 
     if (waitFor.time !== undefined) {
-      await session.page.waitForTimeout(waitFor.time);
+      await page.waitForTimeout(waitFor.time);
       return { success: true };
     }
 
@@ -289,12 +463,12 @@ export class ActionHandler {
     }
 
     if (waitFor.url) {
-      await session.page.waitForURL(waitFor.url, { timeout });
+      await page.waitForURL(waitFor.url, { timeout });
       return { success: true };
     }
 
     if (waitFor.text) {
-      await session.page.waitForFunction(
+      await page.waitForFunction(
         (text) => document.body.textContent?.includes(text),
         waitFor.text,
         { timeout },
@@ -303,11 +477,196 @@ export class ActionHandler {
     }
 
     if (waitFor.networkIdle) {
-      await session.page.waitForLoadState('networkidle', { timeout });
+      await page.waitForLoadState('networkidle', { timeout });
       return { success: true };
     }
 
+    if (waitFor.loadState) {
+      await page.waitForLoadState(waitFor.loadState, { timeout });
+      return { success: true };
+    }
+
+    if (waitFor.function) {
+      await page.waitForFunction(waitFor.function, { timeout });
+      return { success: true };
+    }
+
+    if (waitFor.download) {
+      const download = await page.waitForEvent('download', { timeout });
+      return {
+        success: true,
+        result: {
+          url: download.url(),
+          filename: download.suggestedFilename(),
+        },
+      };
+    }
+
     throw new Error('wait requires at least one condition');
+  }
+
+  private resolveActionLocator(
+    session: BrowserSession,
+    action: ActionInput,
+  ): Locator | undefined {
+    if (action.locator) {
+      return this.sessionManager.resolveLocator(session, action.locator);
+    }
+    if (action.selector) {
+      return this.sessionManager.resolveSelector(session, action.selector);
+    }
+    return undefined;
+  }
+
+  private resolveLocatorInput(
+    session: BrowserSession,
+    input: LocatorSelectorInput,
+  ): Locator {
+    return this.sessionManager.resolveLocatorInput(session, input);
+  }
+
+  private async highlightLocator(locator: Locator): Promise<void> {
+    await locator.evaluate((element) => {
+      element.scrollIntoView({ block: 'center', inline: 'center' });
+      const previous = (element as HTMLElement).style.outline;
+      (element as HTMLElement).style.outline = '2px solid #ff7a00';
+      setTimeout(() => {
+        (element as HTMLElement).style.outline = previous;
+      }, 1200);
+    });
+  }
+
+  private async handleDownload(
+    page: Page,
+    locator: Locator | undefined,
+    action: ActionInput,
+    timeout: number,
+  ): Promise<ActionResponse> {
+    const downloadPromise = page.waitForEvent('download', { timeout });
+
+    if (locator) {
+      await locator.click({ timeout });
+    }
+
+    const download = await downloadPromise;
+    const filename = this.sanitizeFilename(download.suggestedFilename());
+
+    if (action.storeDownload === false) {
+      await download.delete().catch(() => undefined);
+      return {
+        success: true,
+        result: {
+          url: download.url(),
+          filename,
+        },
+      };
+    }
+
+    let filePath: string | null = null;
+    let savedCopy = false;
+
+    try {
+      const originalPath = await download.path();
+      if (originalPath) {
+        filePath = originalPath;
+      } else {
+        filePath = await this.saveDownload(download);
+        savedCopy = true;
+      }
+
+      const stats = await fs.stat(filePath);
+      if (stats.size > BROWSER_DOWNLOAD_MAX_BYTES) {
+        return {
+          success: false,
+          error: `Download size exceeds limit (${BROWSER_DOWNLOAD_MAX_BYTES} bytes).`,
+        };
+      }
+
+      const data = await fs.readFile(filePath);
+
+      return {
+        success: true,
+        result: {
+          url: download.url(),
+          filename,
+          data: data.toString('base64'),
+          size: data.length,
+        },
+      };
+    } finally {
+      if (filePath) {
+        await this.cleanupDownload(download, filePath, savedCopy);
+      } else {
+        await download.delete().catch(() => undefined);
+      }
+    }
+  }
+
+  private async saveDownload(download: Download): Promise<string> {
+    const filePath = join(tmpdir(), `anyhunt-download-${randomUUID()}`);
+    await download.saveAs(filePath);
+    return filePath;
+  }
+
+  private async cleanupDownload(
+    download: Download,
+    filePath: string,
+    savedCopy: boolean,
+  ): Promise<void> {
+    if (savedCopy) {
+      await fs.unlink(filePath).catch(() => undefined);
+    }
+    await download.delete().catch(() => undefined);
+  }
+
+  private sanitizeFilename(name: string): string {
+    const base = basename(name);
+    const sanitized = base.replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 200);
+    return sanitized.length > 0 ? sanitized : 'download';
+  }
+
+  private buildUploadPayloads(files: NonNullable<ActionInput['files']>): Array<{
+    name: string;
+    mimeType: string;
+    buffer: Buffer;
+  }> {
+    const payloads = Array.isArray(files) ? files : [files];
+    return payloads.map((file) => {
+      const buffer = Buffer.from(file.dataBase64, 'base64');
+      if (buffer.length > BROWSER_UPLOAD_MAX_BYTES) {
+        throw new Error(
+          `Upload file too large (max ${BROWSER_UPLOAD_MAX_BYTES} bytes).`,
+        );
+      }
+      return {
+        name: this.sanitizeFilename(file.name),
+        mimeType: file.mimeType ?? 'application/octet-stream',
+        buffer,
+      };
+    });
+  }
+
+  private describeLocator(locator: LocatorInput): string {
+    switch (locator.type) {
+      case 'selector':
+        return locator.selector;
+      case 'role':
+        return `role=${locator.role}${locator.name ? ` name=${locator.name}` : ''}`;
+      case 'text':
+        return `text=${locator.text}`;
+      case 'label':
+        return `label=${locator.label}`;
+      case 'placeholder':
+        return `placeholder=${locator.placeholder}`;
+      case 'alt':
+        return `alt=${locator.alt}`;
+      case 'title':
+        return `title=${locator.title}`;
+      case 'testId':
+        return `testId=${locator.testId}`;
+      default:
+        return 'locator';
+    }
   }
 
   /**
@@ -345,6 +704,25 @@ export class ActionHandler {
         success: false,
         error: `Element not found: ${selector ?? 'unknown'}`,
         suggestion: `Run 'snapshot' to verify the element exists and get its current ref.`,
+      };
+    }
+
+    if (message.includes('Execution context was destroyed')) {
+      return {
+        success: false,
+        error: 'Page navigated or reloaded during action.',
+        suggestion: 'Wait for the page to settle and retry the action.',
+      };
+    }
+
+    if (
+      message.includes('Target closed') ||
+      message.includes('has been closed')
+    ) {
+      return {
+        success: false,
+        error: 'Page or context was closed.',
+        suggestion: 'Create a new session or reopen the page before retrying.',
       };
     }
 
