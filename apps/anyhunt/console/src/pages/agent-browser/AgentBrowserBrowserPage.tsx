@@ -2,6 +2,8 @@
  * [PROPS]: None
  * [EMITS]: None
  * [POS]: Agent Browser 浏览器能力页
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
 import { useOutletContext } from 'react-router-dom';
@@ -18,6 +20,7 @@ const browserSections: BrowserSessionSection[] = [
   'snapshot',
   'delta',
   'action',
+  'actionBatch',
   'screenshot',
   'tabs',
   'windows',
@@ -37,7 +40,7 @@ export default function AgentBrowserBrowserPage() {
       onSessionChange={setSessionId}
       sections={browserSections}
       title="Browser"
-      description="Create sessions, open pages, and run browser actions."
+      description="Create sessions, open pages, and run browser actions or batches."
     />
   );
 }

@@ -197,7 +197,7 @@ describe('AuthService', () => {
 
     it('should promote admin when email matches ADMIN_EMAILS', async () => {
       const originalAdminEmails = process.env.ADMIN_EMAILS;
-      process.env.ADMIN_EMAILS = 'admin@dvlin.com';
+      process.env.ADMIN_EMAILS = 'dvlindev@qq.com';
 
       mockAuth.api.getSession.mockResolvedValue({
         user: { id: 'user_1' },
@@ -205,7 +205,7 @@ describe('AuthService', () => {
       });
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user_1',
-        email: 'admin@dvlin.com',
+        email: 'dvlindev@qq.com',
         name: 'Admin User',
         isAdmin: false,
         deletedAt: null,

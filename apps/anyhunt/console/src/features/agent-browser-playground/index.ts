@@ -2,6 +2,8 @@
  * [PROVIDES]: Agent Browser Playground 模块导出
  * [DEPENDS]: components, api, schemas
  * [POS]: Console Agent Browser Playground 入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 export { AgentRunPanel } from './components/agent-run-panel';

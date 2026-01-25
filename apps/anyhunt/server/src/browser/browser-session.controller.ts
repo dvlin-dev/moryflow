@@ -15,10 +15,12 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
   HttpException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -51,28 +53,56 @@ import {
   SnapshotSchema,
   DeltaSnapshotSchema,
   ActionSchema,
+  ActionBatchSchema,
   ScreenshotSchema,
   CreateWindowSchema,
-  ConnectCdpSchema,
+  ConnectCdpSchemaRefined,
   SetInterceptRulesSchema,
   InterceptRuleSchema,
+  SetHeadersSchema,
+  ClearHeadersSchema,
+  TraceStartSchema,
+  TraceStopSchema,
+  HarStartSchema,
+  HarStopSchema,
+  LogQuerySchema,
   ExportStorageSchema,
   ImportStorageSchema,
+  SaveProfileSchema,
+  LoadProfileSchema,
+  CreateStreamSchema,
   type CreateSessionInput,
   type OpenUrlInput,
   type SnapshotInput,
   type DeltaSnapshotInput,
   type ActionInput,
+  type ActionBatchInput,
+  type ActionBatchResponse,
   type ScreenshotInput,
   type CreateWindowInput,
   type ConnectCdpInput,
   type InterceptRule,
+  type SetHeadersInput,
+  type ClearHeadersInput,
   type ExportStorageInput,
   type ImportStorageInput,
+  type TraceStartInput,
+  type TraceStopInput,
+  type HarStartInput,
+  type HarStopInput,
+  type LogQueryInput,
+  type SaveProfileInput,
+  type LoadProfileInput,
+  type CreateStreamInput,
 } from './dto';
 import { CdpConnectionError, CdpEndpointError, CdpPolicyError } from './cdp';
 import { InvalidInterceptRuleError } from './network';
-import { StorageImportError, StorageExportError } from './persistence';
+import {
+  StorageImportError,
+  StorageExportError,
+  ProfilePersistenceNotConfiguredError,
+} from './persistence';
+import { StreamNotConfiguredError } from './streaming';
 
 @ApiTags('Browser')
 @ApiSecurity('apiKey')
@@ -186,6 +216,26 @@ export class BrowserSessionController {
     }
   }
 
+  @Post(':id/action/batch')
+  @ApiOperation({ summary: 'Execute a batch of actions in the session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiOkResponse({ description: 'Batch action result' })
+  async executeActionBatch(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ActionBatchSchema)) input: ActionBatchInput,
+  ): Promise<ActionBatchResponse | undefined> {
+    try {
+      return await this.browserSessionService.executeActionBatch(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
   @Post(':id/screenshot')
   @ApiOperation({ summary: 'Take a screenshot of the page' })
   @ApiParam({ name: 'id', description: 'Session ID' })
@@ -247,13 +297,13 @@ export class BrowserSessionController {
   async switchTab(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('tabIndex') tabIndex: string,
+    @Param('tabIndex', ParseIntPipe) tabIndex: number,
   ) {
     try {
       return await this.browserSessionService.switchTab(
         user.id,
         sessionId,
-        parseInt(tabIndex, 10),
+        tabIndex,
       );
     } catch (error) {
       this.handleSessionError(error);
@@ -268,14 +318,10 @@ export class BrowserSessionController {
   async closeTab(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('tabIndex') tabIndex: string,
+    @Param('tabIndex', ParseIntPipe) tabIndex: number,
   ) {
     try {
-      await this.browserSessionService.closeTab(
-        user.id,
-        sessionId,
-        parseInt(tabIndex, 10),
-      );
+      await this.browserSessionService.closeTab(user.id, sessionId, tabIndex);
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -345,13 +391,13 @@ export class BrowserSessionController {
   async switchWindow(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('windowIndex') windowIndex: string,
+    @Param('windowIndex', ParseIntPipe) windowIndex: number,
   ) {
     try {
       return await this.browserSessionService.switchWindow(
         user.id,
         sessionId,
-        parseInt(windowIndex, 10),
+        windowIndex,
       );
     } catch (error) {
       this.handleSessionError(error);
@@ -366,13 +412,13 @@ export class BrowserSessionController {
   async closeWindow(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('windowIndex') windowIndex: string,
+    @Param('windowIndex', ParseIntPipe) windowIndex: number,
   ) {
     try {
       await this.browserSessionService.closeWindow(
         user.id,
         sessionId,
-        parseInt(windowIndex, 10),
+        windowIndex,
       );
     } catch (error) {
       this.handleSessionError(error);
@@ -386,7 +432,8 @@ export class BrowserSessionController {
   @ApiCreatedResponse({ description: 'CDP session created successfully' })
   async connectCdp(
     @CurrentUser() user: CurrentUserDto,
-    @Body(new ZodValidationPipe(ConnectCdpSchema)) options: ConnectCdpInput,
+    @Body(new ZodValidationPipe(ConnectCdpSchemaRefined))
+    options: ConnectCdpInput,
   ) {
     try {
       return await this.browserSessionService.connectCdp(user.id, options);
@@ -514,6 +561,253 @@ export class BrowserSessionController {
   ) {
     try {
       this.browserSessionService.clearNetworkHistory(user.id, sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  // ==================== P2.2.1 Headers ====================
+
+  @Post(':id/headers')
+  @ApiOperation({ summary: 'Set global/origin-scoped headers' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async setHeaders(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(SetHeadersSchema)) input: SetHeadersInput,
+  ) {
+    try {
+      return await this.browserSessionService.setHeaders(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/headers/clear')
+  @ApiOperation({ summary: 'Clear headers (global/scoped)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async clearHeaders(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ClearHeadersSchema)) input: ClearHeadersInput,
+  ) {
+    try {
+      return await this.browserSessionService.clearHeaders(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  // ==================== P2.3 诊断与观测 ====================
+
+  @Get(':id/console')
+  @ApiOperation({ summary: 'Get console messages' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  getConsoleMessages(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Query(new ZodValidationPipe(LogQuerySchema)) query: LogQueryInput,
+  ) {
+    try {
+      return this.browserSessionService.getConsoleMessages(
+        user.id,
+        sessionId,
+        query,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Delete(':id/console')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Clear console messages' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  clearConsoleMessages(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
+    try {
+      this.browserSessionService.clearConsoleMessages(user.id, sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Get(':id/errors')
+  @ApiOperation({ summary: 'Get page errors' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  getPageErrors(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Query(new ZodValidationPipe(LogQuerySchema)) query: LogQueryInput,
+  ) {
+    try {
+      return this.browserSessionService.getPageErrors(
+        user.id,
+        sessionId,
+        query,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Delete(':id/errors')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Clear page errors' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  clearPageErrors(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
+    try {
+      this.browserSessionService.clearPageErrors(user.id, sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/trace/start')
+  @ApiOperation({ summary: 'Start tracing' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async startTrace(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(TraceStartSchema)) input: TraceStartInput,
+  ) {
+    try {
+      return await this.browserSessionService.startTrace(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/trace/stop')
+  @ApiOperation({ summary: 'Stop tracing' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async stopTrace(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(TraceStopSchema)) input: TraceStopInput,
+  ) {
+    try {
+      return await this.browserSessionService.stopTrace(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/har/start')
+  @ApiOperation({ summary: 'Start HAR recording' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async startHar(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(HarStartSchema)) input: HarStartInput,
+  ) {
+    try {
+      return await this.browserSessionService.startHar(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/har/stop')
+  @ApiOperation({ summary: 'Stop HAR recording' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async stopHar(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(HarStopSchema)) input: HarStopInput,
+  ) {
+    try {
+      return await this.browserSessionService.stopHar(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  // ==================== P2.3.1 Profile ====================
+
+  @Post(':id/profile/save')
+  @ApiOperation({ summary: 'Save profile (storage snapshot)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async saveProfile(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(SaveProfileSchema)) input: SaveProfileInput,
+  ) {
+    try {
+      return await this.browserSessionService.saveProfile(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  @Post(':id/profile/load')
+  @ApiOperation({ summary: 'Load profile into session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async loadProfile(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(LoadProfileSchema)) input: LoadProfileInput,
+  ) {
+    try {
+      return await this.browserSessionService.loadProfile(
+        user.id,
+        sessionId,
+        input,
+      );
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
+  // ==================== P2.3.2 Streaming ====================
+
+  @Post(':id/stream')
+  @ApiOperation({ summary: 'Create streaming token' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  createStreamToken(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(CreateStreamSchema)) input: CreateStreamInput,
+  ) {
+    try {
+      return this.browserSessionService.createStreamToken(
+        user.id,
+        sessionId,
+        input,
+      );
     } catch (error) {
       this.handleSessionError(error);
     }
@@ -664,6 +958,14 @@ export class BrowserSessionController {
         'Storage export failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+
+    if (error instanceof ProfilePersistenceNotConfiguredError) {
+      throw new HttpException(error.message, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    if (error instanceof StreamNotConfiguredError) {
+      throw new HttpException(error.message, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     // 重新抛出其他错误

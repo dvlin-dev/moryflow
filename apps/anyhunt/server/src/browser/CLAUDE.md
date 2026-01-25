@@ -6,13 +6,24 @@
 
 Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执行，并通过 ports/facade 向 Agent 模块提供轻量接口，避免 Playwright 重类型进入 Agent 泛型推断。
 
+## 最近更新
+
+- Streaming token/stream 过期与会话清理，空闲时释放 CDP session
+- Trace 结束后清理本地文件，不返回内部路径
+- Tabs/Windows 索引参数使用 400 返回（ParseIntPipe + SessionOperationNotAllowedError）
+- diagnostics/streaming/persistence/dto 导出补齐 Header/PROTOCOL 规范
+- download/upload 安全收敛：上传仅允许 Base64 payload，下载限制大小并清理临时文件
+- ActionHandler 补测：文件名清理/Base64 payload/超限拒绝；下载异常路径统一清理
+- upload Base64 长度校验前置；Streaming token 单次使用与最大连接数补测
+
 ## Responsibilities
 
 - BrowserPool 管理（Chromium 实例池）
 - 会话生命周期管理（SessionManager）
-- CreateSession 上下文配置（viewport/userAgent/JS/HTTPS）
+- CreateSession 上下文配置（viewport/userAgent/JS/HTTPS/device/locale/timezone）
 - 快照/动作执行（SnapshotService、ActionHandler）
-- P2 扩展：CDP、网络拦截、会话持久化、增量快照
+- 语义定位/批量动作（role/text/label/placeholder/alt/title/testId + ActionBatch）
+- P2 扩展：CDP、网络拦截、会话持久化、Profile、诊断、Streaming、增量快照
 - Agent 端口：`BrowserAgentPortService`（禁止暴露 Playwright 类型）
 
 ## Constraints
@@ -27,6 +38,11 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - **用户可见错误信息使用英文**
 - **CreateSession 参数必须透传到 BrowserPool**，禁止硬编码上下文配置
 - **网络拦截基于 Context**：新增窗口需注册 Context，确保拦截规则覆盖所有页面
+- **Streaming 需显式配置**：`BROWSER_STREAM_PORT` 未设置时禁用流式预览
+- **Streaming 安全**：必须绑定 `BROWSER_STREAM_HOST`；`BROWSER_STREAM_MAX_CLIENTS` 限制并发连接；`BROWSER_STREAM_SECURE` 控制 ws/wss
+- **Profile 持久化依赖 R2 配置**：未配置 R2 时禁用 Profile 保存/加载
+- **上传限制**：`upload` 动作仅接受 Base64 payload，禁止服务器本地路径
+- **下载限制**：受 `BROWSER_DOWNLOAD_MAX_MB` 约束，超限直接失败并清理临时文件
 
 ## File Structure
 
@@ -41,7 +57,9 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 | `ports/`                        | Agent 端口（BrowserAgentPort）        |
 | `cdp/`                          | CDP 连接                              |
 | `network/`                      | 网络拦截                              |
-| `persistence/`                  | 存储导入导出                          |
+| `diagnostics/`                  | console/pageerror/trace               |
+| `streaming/`                    | WebSocket screencast + 输入注入       |
+| `persistence/`                  | storage/profile 持久化                |
 
 ## Ports
 
@@ -52,6 +70,7 @@ export interface BrowserAgentPort {
   openUrl(sessionId: string, input: OpenUrlInput): Promise<{ success: boolean; url: string; title: string | null }>;
   snapshot(sessionId: string, options?: Partial<SnapshotInput>): Promise<SnapshotResponse>;
   executeAction(sessionId: string, action: ActionInput): Promise<ActionResponse>;
+  executeActionBatch(sessionId: string, input: ActionBatchInput): Promise<ActionBatchResponse>;
   search(sessionId: string, query: string): Promise<BrowserAgentSearchResult>;
 }
 ```

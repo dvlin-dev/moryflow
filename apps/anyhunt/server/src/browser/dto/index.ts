@@ -3,6 +3,8 @@
  *
  * [PROVIDES]: 所有 Browser API 的请求/响应类型
  * [POS]: 按需导出，减少类型推断负担
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 // 共享类型
@@ -29,8 +31,15 @@ export {
   ActionSchema,
   type ActionType,
   type ActionInput,
+  type LocatorInput,
+  type LocatorSelectorInput,
 } from './action.schema';
 export type { ActionResponse } from './action.schema';
+export {
+  ActionBatchSchema,
+  type ActionBatchInput,
+} from './action-batch.schema';
+export type { ActionBatchResponse } from './action-batch.schema';
 
 // 截图
 export { ScreenshotSchema, type ScreenshotInput } from './screenshot.schema';
@@ -41,7 +50,11 @@ export { CreateWindowSchema, type CreateWindowInput } from './window.schema';
 export type { WindowInfo } from './window.schema';
 
 // CDP 连接
-export { ConnectCdpSchema, type ConnectCdpInput } from './cdp.schema';
+export {
+  ConnectCdpSchema,
+  ConnectCdpSchemaRefined,
+  type ConnectCdpInput,
+} from './cdp.schema';
 export type { CdpSessionInfo } from './cdp.schema';
 
 // 网络拦截
@@ -51,6 +64,8 @@ export type {
   SetInterceptRulesInput,
   NetworkRequestRecord,
 } from './network.schema';
+export { SetHeadersSchema, ClearHeadersSchema } from './headers.schema';
+export type { SetHeadersInput, ClearHeadersInput } from './headers.schema';
 
 // 会话持久化
 export { ExportStorageSchema, ImportStorageSchema } from './storage.schema';
@@ -60,3 +75,27 @@ export type {
   StorageExportResult,
   CookieData,
 } from './storage.schema';
+
+// 诊断与观测
+export {
+  TraceStartSchema,
+  TraceStopSchema,
+  HarStartSchema,
+  HarStopSchema,
+  LogQuerySchema,
+} from './diagnostics.schema';
+export type {
+  TraceStartInput,
+  TraceStopInput,
+  HarStartInput,
+  HarStopInput,
+  LogQueryInput,
+} from './diagnostics.schema';
+
+// Profile
+export { SaveProfileSchema, LoadProfileSchema } from './profile.schema';
+export type { SaveProfileInput, LoadProfileInput } from './profile.schema';
+
+// Streaming
+export { CreateStreamSchema } from './stream.schema';
+export type { CreateStreamInput } from './stream.schema';

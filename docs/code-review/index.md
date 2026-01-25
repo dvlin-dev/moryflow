@@ -1,6 +1,6 @@
 ---
 title: 全量 Code Review 计划（索引）
-date: 2026-01-24
+date: 2026-01-25
 scope: monorepo
 status: active
 ---
@@ -62,6 +62,10 @@ status: active
 3. **可观测性**：日志/trace/metrics 是否能定位问题（request id、关键维度、错误分层）。
 4. **测试**：单测覆盖核心逻辑；集成测试覆盖 DB/Redis；E2E 覆盖关键流程（如有前端），并遵守仓库测试门禁要求。
 5. **修复闭环**：每个问题必须对应修复 PR/commit 或明确“弃修原因 + 风险接受人 + 截止日期”。修复中涉及“非行为变更”的重构时，必须遵循 `docs/skill/code-simplifier.md`。
+
+## PR Review 记录
+
+- PR-60 Agent Browser 改动 Code Review：`docs/code-review/anyhunt-server-agent-browser-pr60.md`（2026-01-25，修复完成）
 
 ## 统一审查标准（强制）
 
