@@ -32,6 +32,7 @@
 
 ## 近期更新
 
+- `adr/adr-0002-agent-runtime-control-plane.md`：P2-7/P2-8 外部化与 Hook 落地完成（2026-01-29）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P1-5 模式切换落地完成（PC + Mobile）（2026-01-28）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：示例文案统一为“待办”表述（2026-01-27）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P1-4 Doom Loop 落地完成（PC + Mobile）（2026-01-27）。

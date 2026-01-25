@@ -65,6 +65,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）
 - Chat 会话模式切换补齐审计与会话 mode 归一化
 - AI 工具输出新增统一截断与完整输出弹层（Mobile）
 - 云同步 UI 精简（状态卡 + 主开关 + Advanced），同步入口统一到 Workspace Sheet

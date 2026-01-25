@@ -30,6 +30,8 @@
 
 ## 近期变更
 
+- Hook 工具合并单测改用宽松参数 schema，避免注入字段被 Zod 默认剥离
+- 新增运行时 JSONC 配置解析（runtime-config）、Agent Markdown 解析与 Hook 包装器（chat/system/params + tool before/after）
 - 新增会话模式切换审计事件类型（ModeSwitchAuditEvent），会话 mode 改为必填
 - 新增 AgentAccessMode 与会话 mode 字段，权限记录支持全权限模式
 - 新增 Doom Loop 守卫与工具包装，包含稳定化参数哈希、冷却与会话级 always 记忆
@@ -48,4 +50,4 @@
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-01-27_
+_版本: 1.0 | 更新日期: 2026-01-30_

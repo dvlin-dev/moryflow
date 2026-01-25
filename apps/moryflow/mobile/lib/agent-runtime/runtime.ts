@@ -1,16 +1,24 @@
 /**
  * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
  * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
- * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入）
+ * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入 + Hook/Agent 配置 + runtime config 兜底）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { UIMessage } from 'ai';
-import { run, setTracingDisabled, user, type AgentInputItem } from '@openai/agents-core';
+import {
+  run,
+  setTracingDisabled,
+  user,
+  type AgentInputItem,
+  type ModelSettings,
+} from '@openai/agents-core';
 import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
+  applyChatParamsHook,
+  applyChatSystemHook,
   applyContextToInput,
   compactHistory,
   createCompactionPreflightGate,
@@ -20,16 +28,21 @@ import {
   createToolOutputPostProcessor,
   createVaultUtils,
   extractMembershipModelId,
+  getMorySystemPrompt,
   resolveContextWindow,
   generateChatTitle,
   generateCompactionSummary,
   isMembershipModelId,
+  wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
   type AgentFactory,
   type AgentContext,
   type ModelFactory,
   type CompactionResult,
   type AgentSettings,
+  type AgentRuntimeConfig,
+  type RuntimeHooksConfig,
+  type AgentMarkdownDefinition,
 } from '@anyhunt/agents-runtime';
 import { createMobileTools } from '@anyhunt/agents-tools';
 import { getModelById, providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
@@ -43,6 +56,8 @@ import { initVaultManager } from '../vault';
 import { createMobileToolOutputStorage } from './tool-output-storage';
 import { initPermissionRuntime } from './permission-runtime';
 import { initDoomLoopRuntime } from './doom-loop-runtime';
+import { getRuntimeConfig } from './runtime-config';
+import { findAgentById, loadAgentDefinitions } from './agent-store';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -66,6 +81,16 @@ const resolveCompactionContextWindow = (
   });
 };
 
+const resolveRuntimeSystemPrompt = (): string => {
+  const base = selectedAgent?.systemPrompt ?? getMorySystemPrompt();
+  return applyChatSystemHook(base, runtimeHooks?.chat?.system);
+};
+
+const resolveRuntimeModelSettings = (): ModelSettings | undefined => {
+  const base = selectedAgent?.modelSettings as ModelSettings | undefined;
+  return applyChatParamsHook(base, runtimeHooks?.chat?.params);
+};
+
 // ============ 内部状态 ============
 
 let runtime: MobileAgentRuntime | null = null;
@@ -73,6 +98,9 @@ let agentFactory: AgentFactory | null = null;
 let modelFactory: ModelFactory | null = null;
 let vaultRoot: string | null = null;
 let toolNames: string[] = [];
+let runtimeConfig: AgentRuntimeConfig = {};
+let runtimeHooks: RuntimeHooksConfig | undefined;
+let selectedAgent: AgentMarkdownDefinition | null = null;
 
 const COMPACTION_PREPARE_TTL_MS = 60_000;
 const compactionPreflightGate = createCompactionPreflightGate({
@@ -96,11 +124,15 @@ const applyCompactionIfNeeded = async (input: {
   const resolvedModelId = modelId ?? agentFactory.getAgent(preferredModelId).modelId;
   const history = await session.getItems();
   const settings = getSettings();
+  const contextWindow =
+    runtimeConfig.compaction?.contextWindow ??
+    resolveCompactionContextWindow(resolvedModelId, settings);
   const compaction = await compactHistory({
     history,
     config: {
       ...DEFAULT_COMPACTION_CONFIG,
-      contextWindow: resolveCompactionContextWindow(resolvedModelId, settings),
+      ...(runtimeConfig.compaction ?? {}),
+      contextWindow,
     },
     summaryBuilder: async (items) => {
       const { model } = modelFactory.buildRawModel(resolvedModelId);
@@ -144,6 +176,13 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   }
 
   const settings = await loadSettings();
+  runtimeConfig = await getRuntimeConfig();
+  runtimeHooks = runtimeConfig.hooks;
+  const agentDefinitions = await loadAgentDefinitions();
+  selectedAgent = findAgentById(agentDefinitions, runtimeConfig.agent?.id);
+  if (runtimeConfig.agent?.id && !selectedAgent) {
+    logger.warn('Agent not found:', runtimeConfig.agent.id);
+  }
   const capabilities = createMobileCapabilities();
   const crypto = createMobileCrypto();
 
@@ -156,13 +195,17 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     return vaultRoot;
   });
 
+  const toolOutputConfig = {
+    ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    ...(runtimeConfig.truncation ?? {}),
+  };
   const toolOutputStorage = createMobileToolOutputStorage({
     crypto,
-    ttlDays: DEFAULT_TOOL_OUTPUT_TRUNCATION.ttlDays,
+    ttlDays: toolOutputConfig.ttlDays,
   });
 
   const toolOutputPostProcessor = createToolOutputPostProcessor({
-    config: DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    config: toolOutputConfig,
     storage: toolOutputStorage,
     buildHint: ({ fullPath }) => {
       if (!fullPath) {
@@ -175,6 +218,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   const permissionRuntime = initPermissionRuntime({ capabilities });
   const doomLoopRuntime = initDoomLoopRuntime({
     uiAvailable: true,
+    config: runtimeConfig.doomLoop,
     shouldSkip: ({ callId }) => {
       if (!callId) return false;
       const decision = permissionRuntime.getDecision(callId);
@@ -183,7 +227,9 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   });
   const baseTools = wrapToolsWithOutputTruncation(
     doomLoopRuntime.wrapTools(
-      permissionRuntime.wrapTools(createMobileTools({ capabilities, crypto, vaultUtils }))
+      permissionRuntime.wrapTools(
+        wrapToolsWithHooks(createMobileTools({ capabilities, crypto, vaultUtils }), runtimeHooks)
+      )
     ),
     toolOutputPostProcessor
   );
@@ -204,6 +250,8 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     getModelFactory: () => modelFactory!,
     baseTools,
     getMcpTools: () => [], // 移动端暂不支持 MCP
+    getInstructions: resolveRuntimeSystemPrompt,
+    getModelSettings: resolveRuntimeModelSettings,
   });
 
   onSettingsChange((next: AgentSettings) => {
@@ -268,8 +316,9 @@ function createRuntimeInstance(): MobileAgentRuntime {
           ).effectiveHistory;
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
+      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
       const agentContext: AgentContext = {
-        mode: mode ?? 'agent',
+        mode: effectiveMode,
         vaultRoot,
         chatId,
         buildModel: modelFactory?.buildModel,
@@ -385,7 +434,9 @@ export async function prepareCompaction(params: {
  * 创建新的聊天会话
  */
 export async function createChatSession(title?: string) {
-  return mobileSessionStore.createSession(title);
+  const config = await getRuntimeConfig();
+  runtimeConfig = config;
+  return mobileSessionStore.createSession(title, config.mode?.default);
 }
 
 /**

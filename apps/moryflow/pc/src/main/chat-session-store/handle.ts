@@ -1,5 +1,5 @@
 /**
- * [INPUT]: 会话标题/历史/模式更新
+ * [INPUT]: 会话标题/历史/模式更新（含默认 mode 注入）
  * [OUTPUT]: 会话摘要与历史变更
  * [POS]: PC 聊天会话存储核心实现
  *
@@ -9,6 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
+import type { AgentAccessMode } from '@anyhunt/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';
@@ -78,15 +79,20 @@ export const chatSessionStore = {
     const sessions = sortByUpdatedAt(Object.values(readSessions()));
     return sessions.map(toSummary);
   },
-  create(input?: { title?: string; preferredModelId?: string }): ChatSessionSummary {
+  create(input?: {
+    title?: string;
+    preferredModelId?: string;
+    mode?: AgentAccessMode;
+  }): ChatSessionSummary {
     const now = Date.now();
     const title = normalizeTitle(input?.title) ?? `对话 ${takeSequence()}`;
+    const mode = input?.mode === 'full_access' || input?.mode === 'agent' ? input?.mode : 'agent';
     const session: PersistedChatSession = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
-      mode: 'agent',
+      mode,
       preferredModelId: input?.preferredModelId,
       history: [],
     };

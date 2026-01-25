@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、输出截断、Doom Loop、会话压缩与预处理、模式注入）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、Hook/Agent 配置、外部工具加载、输出截断、Doom Loop、会话压缩与预处理、模式注入）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
@@ -10,6 +10,7 @@ import {
   run,
   user,
   type Agent,
+  type Tool,
   type ModelSettings,
   type AgentInputItem,
   type RunState,
@@ -18,6 +19,8 @@ import type { RunStreamEvent } from '@openai/agents-core';
 import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
   DEFAULT_COMPACTION_CONFIG,
+  applyChatParamsHook,
+  applyChatSystemHook,
   applyContextToInput,
   compactHistory,
   createCompactionPreflightGate,
@@ -30,7 +33,11 @@ import {
   generateChatTitle,
   extractMembershipModelId,
   isMembershipModelId,
+  wrapToolsWithHooks,
   wrapToolsWithOutputTruncation,
+  type AgentMarkdownDefinition,
+  type ChatParamsHook,
+  type ChatSystemHook,
   type AgentContext,
   type AgentAccessMode,
   type AgentAttachmentContext,
@@ -61,6 +68,9 @@ import { setupAgentTracing } from './tracing-setup.js';
 import { createDesktopToolOutputStorage } from './tool-output-storage.js';
 import { initPermissionRuntime } from './permission-runtime.js';
 import { initDoomLoopRuntime } from './doom-loop-runtime.js';
+import { findAgentById, loadAgentDefinitionsSync } from './agent-store.js';
+import { loadExternalTools } from './external-tools.js';
+import { getRuntimeConfigSync } from './runtime-config.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -164,19 +174,30 @@ export type AgentRuntime = {
   reloadMcp(): void;
 };
 
-const resolveSystemPrompt = (settings: AgentSettings): string => {
-  if (
-    settings.systemPrompt?.mode === 'custom' &&
-    settings.systemPrompt.template.trim().length > 0
-  ) {
-    return settings.systemPrompt.template;
-  }
-  return getMorySystemPrompt();
+const resolveSystemPrompt = (
+  settings: AgentSettings,
+  agentDefinition?: AgentMarkdownDefinition | null,
+  hook?: ChatSystemHook
+): string => {
+  const base =
+    agentDefinition?.systemPrompt ??
+    (settings.systemPrompt?.mode === 'custom' && settings.systemPrompt.template.trim().length > 0
+      ? settings.systemPrompt.template
+      : getMorySystemPrompt());
+  return applyChatSystemHook(base, hook);
 };
 
-const resolveModelSettings = (settings: AgentSettings): ModelSettings | undefined => {
+const resolveModelSettings = (
+  settings: AgentSettings,
+  agentDefinition?: AgentMarkdownDefinition | null,
+  hook?: ChatParamsHook
+): ModelSettings | undefined => {
+  const fromAgent = agentDefinition?.modelSettings;
+  if (fromAgent) {
+    return applyChatParamsHook(fromAgent as ModelSettings, hook);
+  }
   if (settings.systemPrompt?.mode !== 'custom') {
-    return undefined;
+    return applyChatParamsHook(undefined, hook);
   }
   const modelSettings: Partial<ModelSettings> = {};
   if (settings.modelParams.temperature.mode === 'custom') {
@@ -188,7 +209,9 @@ const resolveModelSettings = (settings: AgentSettings): ModelSettings | undefine
   if (settings.modelParams.maxTokens.mode === 'custom') {
     modelSettings.maxTokens = settings.modelParams.maxTokens.value;
   }
-  return Object.keys(modelSettings).length > 0 ? (modelSettings as ModelSettings) : undefined;
+  const resolved =
+    Object.keys(modelSettings).length > 0 ? (modelSettings as ModelSettings) : undefined;
+  return applyChatParamsHook(resolved, hook);
 };
 
 const resolveCompactionContextWindow = (
@@ -206,6 +229,14 @@ const resolveCompactionContextWindow = (
 };
 
 export const createAgentRuntime = (): AgentRuntime => {
+  const runtimeConfig = getRuntimeConfigSync();
+  const runtimeHooks = runtimeConfig.hooks;
+  const agentDefinitions = loadAgentDefinitionsSync();
+  const selectedAgent = findAgentById(agentDefinitions, runtimeConfig.agent?.id);
+  if (runtimeConfig.agent?.id && !selectedAgent) {
+    console.warn('[agent-runtime] Agent not found:', runtimeConfig.agent.id);
+  }
+
   // 创建平台能力和工具
   const capabilities = createDesktopCapabilities();
   const crypto = createDesktopCrypto();
@@ -217,10 +248,14 @@ export const createAgentRuntime = (): AgentRuntime => {
     return vaultInfo.path;
   });
 
+  const toolOutputConfig = {
+    ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    ...(runtimeConfig.truncation ?? {}),
+  };
   const toolOutputStorage = createDesktopToolOutputStorage({
     capabilities,
     crypto,
-    ttlDays: DEFAULT_TOOL_OUTPUT_TRUNCATION.ttlDays,
+    ttlDays: toolOutputConfig.ttlDays,
   });
 
   const isWithinVault = (vaultRoot: string | undefined, targetPath: string): boolean => {
@@ -231,7 +266,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   const toolOutputPostProcessor = createToolOutputPostProcessor({
-    config: DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    config: toolOutputConfig,
     storage: toolOutputStorage,
     buildHint: ({ fullPath, runContext }) => {
       if (!fullPath) {
@@ -268,6 +303,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
   const doomLoopRuntime = initDoomLoopRuntime({
     uiAvailable: true,
+    config: runtimeConfig.doomLoop,
     shouldSkip: ({ callId }) => {
       if (!callId) return false;
       const decision = permissionRuntime.getDecision(callId);
@@ -275,12 +311,15 @@ export const createAgentRuntime = (): AgentRuntime => {
     },
   });
 
-  const toolsWithPermission = permissionRuntime.wrapTools([...baseTools, sandboxBashTool]);
-  const toolsWithDoomLoop = doomLoopRuntime.wrapTools(toolsWithPermission);
-  const toolsWithTruncation = wrapToolsWithOutputTruncation(
-    toolsWithDoomLoop,
-    toolOutputPostProcessor
-  );
+  const buildRuntimeTools = (extraTools: Tool<AgentContext>[] = []) => {
+    const base = [...baseTools, sandboxBashTool, ...extraTools];
+    const withHooks = wrapToolsWithHooks(base, runtimeHooks);
+    const withPermission = permissionRuntime.wrapTools(withHooks);
+    const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
+    return wrapToolsWithOutputTruncation(withDoomLoop, toolOutputPostProcessor);
+  };
+
+  let toolsWithTruncation = buildRuntimeTools();
 
   // 创建模型工厂
   const initialSettings = getAgentSettings();
@@ -292,19 +331,66 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
 
   // 创建 Agent 工厂
-  const agentFactory = createAgentFactory({
+  let agentFactory = createAgentFactory({
     getModelFactory: () => modelFactory,
     baseTools: toolsWithTruncation,
     getMcpTools: () =>
       wrapToolsWithOutputTruncation(
-        doomLoopRuntime.wrapTools(permissionRuntime.wrapTools(mcpManager.getTools())),
+        doomLoopRuntime.wrapTools(
+          permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+        ),
         toolOutputPostProcessor
       ),
-    getInstructions: () => resolveSystemPrompt(getAgentSettings()),
-    getModelSettings: () => resolveModelSettings(getAgentSettings()),
+    getInstructions: () =>
+      resolveSystemPrompt(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.system),
+    getModelSettings: () =>
+      resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
   });
 
-  mcpManager.setOnReload(agentFactory.invalidate);
+  const reloadExternalTools = async () => {
+    if (!runtimeConfig.tools?.external?.enabled) return;
+    try {
+      const externalTools = await loadExternalTools({ capabilities, crypto, vaultUtils });
+      if (externalTools.length === 0) return;
+      toolsWithTruncation = buildRuntimeTools(externalTools);
+      agentFactory = createAgentFactory({
+        getModelFactory: () => modelFactory,
+        baseTools: toolsWithTruncation,
+        getMcpTools: () =>
+          wrapToolsWithOutputTruncation(
+            doomLoopRuntime.wrapTools(
+              permissionRuntime.wrapTools(wrapToolsWithHooks(mcpManager.getTools(), runtimeHooks))
+            ),
+            toolOutputPostProcessor
+          ),
+        getInstructions: () =>
+          resolveSystemPrompt(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.system),
+        getModelSettings: () =>
+          resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
+      });
+      agentFactory.invalidate();
+    } catch (error) {
+      console.warn('[agent-runtime] failed to load external tools', error);
+    }
+  };
+
+  let externalToolsLoaded = false;
+  let externalToolsLoading: Promise<void> | null = null;
+
+  const ensureExternalTools = async () => {
+    if (!runtimeConfig.tools?.external?.enabled) return;
+    if (externalToolsLoaded) return;
+    if (!externalToolsLoading) {
+      externalToolsLoading = reloadExternalTools().finally(() => {
+        externalToolsLoaded = true;
+      });
+    }
+    await externalToolsLoading;
+  };
+
+  void ensureExternalTools();
+
+  mcpManager.setOnReload(() => agentFactory.invalidate());
   mcpManager.scheduleReload(initialSettings.mcp);
 
   // 监听会员状态变更
@@ -386,11 +472,15 @@ export const createAgentRuntime = (): AgentRuntime => {
     const resolvedModelId = modelId ?? agentFactory.getAgent(preferredModelId).modelId;
     const history = await session.getItems();
     const settings = getAgentSettings();
+    const contextWindow =
+      runtimeConfig.compaction?.contextWindow ??
+      resolveCompactionContextWindow(resolvedModelId, settings);
     const compaction = await compactHistory({
       history,
       config: {
         ...DEFAULT_COMPACTION_CONFIG,
-        contextWindow: resolveCompactionContextWindow(resolvedModelId, settings),
+        ...(runtimeConfig.compaction ?? {}),
+        contextWindow,
       },
       summaryBuilder: async (items) => {
         const { model } = modelFactory.buildRawModel(resolvedModelId);
@@ -452,6 +542,7 @@ export const createAgentRuntime = (): AgentRuntime => {
         throw new Error('尚未选择 Vault，无法启动对话');
       }
       await mcpManager.ensureReady();
+      await ensureExternalTools();
       const { agent, modelId } = agentFactory.getAgent(preferredModelId);
       const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
         ? await session.getItems()
@@ -466,8 +557,9 @@ export const createAgentRuntime = (): AgentRuntime => {
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
 
+      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
       const agentContext: AgentContext = {
-        mode: mode ?? 'agent',
+        mode: effectiveMode,
         vaultRoot: vaultInfo.path,
         chatId,
         buildModel: modelFactory.buildModel,

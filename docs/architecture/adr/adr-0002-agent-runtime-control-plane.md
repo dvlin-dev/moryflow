@@ -224,6 +224,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - 用户级 agent 文件可识别并用于运行。
 - Tool 动态加载仅在 desktop 环境生效。
 
+**进度**
+
+- 2026-01-29：完成 PC + Mobile 用户级 JSONC 配置读取与 Agent Markdown 支持；桌面端按开关加载外部 tools。
+
 ### P2-8 Plugin Hook 接口
 
 **任务**
@@ -237,6 +241,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - Hook 能改变模型参数或 system prompt。
 - Hook 失败不会中断主流程。
 - 输出可被 Hook 后处理并正确返回。
+
+**进度**
+
+- 2026-01-29：完成 `chat.params`/`chat.system`/`tool.before`/`tool.after` hook，顺序内置→用户，失败不阻断。
 
 ## 策略细则（执行基线）
 
@@ -340,7 +348,8 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - **配置层级**：
   - 用户级：`~/.moryflow/config.jsonc` / `~/.anyhunt/config.jsonc`
   - 内联：UI/CLI 传入配置（最高优先级）
-- **Agent 外部化**：`~/.moryflow/agents/*.md`。
+- **移动端路径**：`Paths.document/.moryflow/`（`config.jsonc`、`agents/`）。
+- **Agent 外部化**：`~/.moryflow/agents/*.md`（JSONC frontmatter + prompt body）。
 - **Tool 外部化**：`~/.moryflow/tools/*.ts`（仅桌面端启用，需显式开关）。
 - **Hook 顺序**：内置 → 用户；失败不阻断主流程（fail-safe）。
 
@@ -364,10 +373,22 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 {
   "agents": {
     "runtime": {
+      "agent": { "id": "writer" },
       "mode": { "default": "agent" },
-      "compaction": { "maxChars": 120000, "recentTurns": 3 },
+      "compaction": { "fallbackCharLimit": 120000, "protectedTurns": 3 },
       "truncation": { "maxLines": 2000, "maxBytes": 51200, "ttlDays": 7 },
       "doomLoop": { "maxAttempts": 3, "maxToolCalls": 60, "sameToolThreshold": 5 },
+      "tools": { "external": { "enabled": true } },
+      "hooks": {
+        "chat": {
+          "system": { "mode": "append", "text": "You must reply in Markdown." },
+          "params": { "temperature": 0.2, "maxTokens": 2048 },
+        },
+        "tool": {
+          "before": [{ "tool": "read", "mergeInput": { "offset": 1 } }],
+          "after": [{ "tool": "read", "appendText": "\\n[read completed]" }],
+        },
+      },
       "permission": {
         "rules": [
           { "domain": "read", "pattern": "vault:**/*.md", "decision": "allow" },
@@ -379,6 +400,28 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   },
 }
 ```
+
+**Agent Markdown 示例（JSONC frontmatter）**
+
+```md
+---
+{
+  'id': 'writer',
+  'name': 'Writer',
+  'description': 'Write succinctly',
+  'modelSettings': { 'temperature': 0.2 },
+}
+---
+
+You are a writing assistant. Keep responses short and clear.
+```
+
+**Hook 规则说明**
+
+- `chat.system`：`append|prepend|replace`（默认 append）。
+- `chat.params`：覆盖 ModelSettings（仅允许已知字段）。
+- `tool.before.mergeInput`：仅对可解析为 JSON object 的输入生效；作为默认值，**不会覆盖已有输入参数**。
+- `tool.after.prependText/appendText`：仅对字符串输出生效。
 
 ### H. 审批与审计落地
 

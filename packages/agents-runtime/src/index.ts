@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction/DoomLoop - Agent 运行时核心
+ * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction/DoomLoop/RuntimeConfig/Hooks/AgentMarkdown - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -104,6 +104,27 @@ export {
 export { type ModeSwitchAuditEvent } from './mode-audit';
 
 export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';
+
+// Runtime Config / Hooks / Agent Markdown
+export {
+  parseRuntimeConfig,
+  mergeRuntimeConfig,
+  type AgentRuntimeConfig,
+  type RuntimeConfigParseResult,
+} from './runtime-config';
+export {
+  applyChatParamsHook,
+  applyChatSystemHook,
+  sanitizeHooksConfig,
+  sanitizeModelSettings,
+  wrapToolWithHooks,
+  wrapToolsWithHooks,
+  type ChatParamsHook,
+  type ChatSystemHook,
+  type RuntimeHooksConfig,
+  type ToolHookRule,
+} from './hooks';
+export { parseAgentMarkdown, type AgentMarkdownDefinition } from './agent-markdown';
 
 // Doom Loop
 export {

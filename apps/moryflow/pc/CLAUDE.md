@@ -82,6 +82,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook；桌面端可按开关加载外部工具
 - Chat 会话模式切换补齐审计与 mode 归一化，避免缺失字段导致异常
 - Chat 会话模式切换：IPC/存储/渲染联动，全权限模式自动放行且保留审计
 - Chat 会话压缩新增发送前预处理与 IPC 同步，避免 UI/历史错位

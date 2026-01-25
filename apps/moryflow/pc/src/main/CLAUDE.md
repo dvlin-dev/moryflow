@@ -95,6 +95,10 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Markdown 去重移除时补齐索引守卫，runtime config 仅保留必要导出
+- Agent Markdown 读取补齐空值守卫，避免重复 ID 处理时类型收敛报错
+- Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，桌面端按开关加载外部工具
+- 新建会话读取 runtime 默认 mode（config.jsonc）
 - Chat 会话模式切换补齐审计：主进程记录 mode switch JSONL，更新前校验并写入
 - ChatSessionStore 读取时归一化会话 mode，避免缺失字段导致异常
 - Chat 会话模式切换：会话级模式存储、IPC 更新入口与运行时注入，全权限自动放行并审计

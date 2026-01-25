@@ -1,5 +1,5 @@
 /**
- * [INPUT]: Chat IPC 请求与会话管理指令
+ * [INPUT]: Chat IPC 请求与会话管理指令（含 runtime 默认 mode）
  * [OUTPUT]: 会话变更事件/执行结果
  * [POS]: PC 端聊天 IPC handlers
  *
@@ -25,6 +25,7 @@ import { approveToolRequest, clearApprovalGate } from './approval-store.js';
 import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
 import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
+import { getRuntimeConfig } from '../agent-runtime/runtime-config.js';
 
 const sessions = new Map<
   string,
@@ -68,8 +69,9 @@ export const registerChatHandlers = () => {
     return chatSessionStore.list();
   });
 
-  ipcMain.handle('chat:sessions:create', () => {
-    const session = chatSessionStore.create();
+  ipcMain.handle('chat:sessions:create', async () => {
+    const runtimeConfig = await getRuntimeConfig();
+    const session = chatSessionStore.create({ mode: runtimeConfig.mode?.default });
     broadcastSessionEvent({ type: 'created', session });
     return session;
   });

@@ -52,6 +52,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Mobile Runtime 读取 JSONC 配置增加容错降级，创建会话前确保加载默认 mode
+- Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，创建会话读取默认 mode
 - Chat 会话模式切换补齐审计写入，SessionStore 读写时归一化 mode
 - Agent Runtime 支持会话级模式注入，权限自动放行并记录审计
 - 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存

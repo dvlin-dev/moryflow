@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime';
 
 // ============ 常量 ============
 
@@ -142,15 +142,19 @@ class MobileSessionStoreImpl implements SessionStore {
   /**
    * 创建新会话
    */
-  async createSession(title: string = '新对话'): Promise<ChatSessionSummary> {
+  async createSession(
+    title: string = '新对话',
+    mode?: AgentAccessMode
+  ): Promise<ChatSessionSummary> {
     const sessions = await this.getSessions();
     const now = Date.now();
+    const normalizedMode = mode === 'full_access' || mode === 'agent' ? mode : 'agent';
     const session: ChatSessionSummary = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
-      mode: 'agent',
+      mode: normalizedMode,
     };
     sessions.unshift(session);
     await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
@@ -333,7 +337,8 @@ export const mobileSessionStore = new MobileSessionStoreImpl();
  * 快捷方法导出
  */
 export const getSessions = () => mobileSessionStore.getSessions();
-export const createSession = (title?: string) => mobileSessionStore.createSession(title);
+export const createSession = (title?: string, mode?: AgentAccessMode) =>
+  mobileSessionStore.createSession(title, mode);
 export const updateSession = (id: string, updates: Partial<ChatSessionSummary>) =>
   mobileSessionStore.updateSession(id, updates);
 export const deleteSession = (id: string) => mobileSessionStore.deleteSession(id);

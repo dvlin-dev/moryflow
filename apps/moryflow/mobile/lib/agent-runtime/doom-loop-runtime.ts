@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Mobile Doom Loop Runtime 组装（守卫与工具包装）
+ * [PROVIDES]: Mobile Doom Loop Runtime 组装（守卫与工具包装 + 配置覆盖）
  * [DEPENDS]: agents-runtime/doom-loop
  * [POS]: Mobile Agent Runtime Doom Loop 入口，供审批与工具包装复用
  *
@@ -13,6 +13,7 @@ import {
   wrapToolsWithDoomLoop,
   type DoomLoopApprovalInfo,
   type DoomLoopCheckInput,
+  type DoomLoopConfig,
 } from '@anyhunt/agents-runtime';
 import type { AgentContext } from '@anyhunt/agents-runtime';
 
@@ -27,10 +28,11 @@ let doomLoopRuntime: DoomLoopRuntime | null = null;
 
 export const createDoomLoopRuntime = (input: {
   uiAvailable: boolean;
+  config?: Partial<DoomLoopConfig>;
   shouldSkip?: (input: DoomLoopCheckInput) => boolean;
 }): DoomLoopRuntime => {
   const guard = createDoomLoopGuard({
-    config: DEFAULT_DOOM_LOOP_CONFIG,
+    config: { ...DEFAULT_DOOM_LOOP_CONFIG, ...(input.config ?? {}) },
     uiAvailable: input.uiAvailable,
     shouldSkip: input.shouldSkip,
   });
@@ -45,6 +47,7 @@ export const createDoomLoopRuntime = (input: {
 
 export const initDoomLoopRuntime = (input: {
   uiAvailable: boolean;
+  config?: Partial<DoomLoopConfig>;
   shouldSkip?: (input: DoomLoopCheckInput) => boolean;
 }): DoomLoopRuntime => {
   doomLoopRuntime = createDoomLoopRuntime(input);
