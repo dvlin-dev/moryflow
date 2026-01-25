@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Agent Browser 对比与改进清单（agent-browser vs anyhunt server）：`docs/research/agent-browser-gap.md`（2026-01-24：best practices + Console UI 落地完成；复跑测试；补齐 Header/PROTOCOL）
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（2026-01-26：修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Browser Code Review：`docs/code-review/anyhunt-server-browser.md`（2026-01-26：修复完成）
 - Anyhunt Server Prisma/迁移/多数据库边界 Code Review：`docs/code-review/anyhunt-server-prisma.md`（2026-01-26：review 完成）

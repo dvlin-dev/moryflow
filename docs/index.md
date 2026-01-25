@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-26
+date: 2026-01-24
 scope: monorepo
 status: active
 ---
@@ -97,6 +97,7 @@ status: active
 ## Research（调研 / 功能需求）
 
 - Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`
+- 调研：Agent Browser 对比与改进清单（agent-browser vs anyhunt server）：`docs/research/agent-browser-gap.md`（更新：2026-01-24，best practices + Console UI 落地完成；复跑测试；补齐 Header/PROTOCOL）
 - 设计方案：Console Agent Browser Playground（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（更新：2026-01-20，独立模块 + 多页面拆分）
 - 方案：Agent Browser Chat 流式消息分段（对齐 Moryflow/pc：UIMessageChunk 单协议）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（更新：2026-01-21）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
