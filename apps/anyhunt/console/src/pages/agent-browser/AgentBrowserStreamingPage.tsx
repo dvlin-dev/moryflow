@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Agent Browser 浏览器能力页
+ * [POS]: Agent Browser Streaming 预览页
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -14,23 +14,13 @@ import {
 import type { AgentBrowserOutletContext } from './AgentBrowserLayoutPage';
 import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 
-const browserSections: BrowserSessionSection[] = [
-  'session',
-  'open',
-  'snapshot',
-  'delta',
-  'action',
-  'actionBatch',
-  'screenshot',
-  'tabs',
-  'windows',
-];
+const streamingSections: BrowserSessionSection[] = ['session', 'stream'];
 
-export default function AgentBrowserBrowserPage() {
+export default function AgentBrowserStreamingPage() {
   const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
   if (!apiKeyId) {
-    return <AgentBrowserEmptyState />;
+    return <AgentBrowserEmptyState description="Select an API key to preview streaming." />;
   }
 
   return (
@@ -38,9 +28,9 @@ export default function AgentBrowserBrowserPage() {
       apiKeyId={apiKeyId}
       sessionId={sessionId}
       onSessionChange={setSessionId}
-      sections={browserSections}
-      title="Browser"
-      description="Create sessions, open pages, and run browser actions or batches."
+      sections={streamingSections}
+      title="Streaming"
+      description="Preview the live browser stream and send input events."
     />
   );
 }

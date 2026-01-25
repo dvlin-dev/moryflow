@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Agent Browser 浏览器能力页
+ * [POS]: Agent Browser Profile 持久化页
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -14,23 +14,13 @@ import {
 import type { AgentBrowserOutletContext } from './AgentBrowserLayoutPage';
 import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 
-const browserSections: BrowserSessionSection[] = [
-  'session',
-  'open',
-  'snapshot',
-  'delta',
-  'action',
-  'actionBatch',
-  'screenshot',
-  'tabs',
-  'windows',
-];
+const profileSections: BrowserSessionSection[] = ['session', 'profile'];
 
-export default function AgentBrowserBrowserPage() {
+export default function AgentBrowserProfilePage() {
   const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
   if (!apiKeyId) {
-    return <AgentBrowserEmptyState />;
+    return <AgentBrowserEmptyState description="Select an API key to manage profiles." />;
   }
 
   return (
@@ -38,9 +28,9 @@ export default function AgentBrowserBrowserPage() {
       apiKeyId={apiKeyId}
       sessionId={sessionId}
       onSessionChange={setSessionId}
-      sections={browserSections}
-      title="Browser"
-      description="Create sessions, open pages, and run browser actions or batches."
+      sections={profileSections}
+      title="Profile"
+      description="Save and restore browser storage profiles."
     />
   );
 }
