@@ -118,11 +118,16 @@ const ar = {
 
   // إجراءات الأداة
   fileWritten: 'تم كتابة الملف',
-  targetFile: 'الملف الهدف:',
+  targetFile: 'الملف الهدف',
   contentTooLong: 'المحتوى طويل جداً، تم اقتطاعه. شاهد النسخة الكاملة في الملف المحلي.',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: 'تم الكتابة',
   applyToFile: 'تطبيق على الملف',
   noTasks: 'لا توجد مهام',
+  openFileFailed: 'Failed to open file',
 
   // المرفقات
   contextInjected: 'تم الحقن',

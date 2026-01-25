@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentFactory, createModelFactory, createVaultUtils - Agent 运行时核心
+ * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ToolOutputTruncation - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -42,3 +42,19 @@ export {
 
 // 标题生成
 export { generateChatTitle } from './title-generator';
+
+// Tool 输出截断
+export {
+  DEFAULT_TOOL_OUTPUT_TRUNCATION,
+  createToolOutputPostProcessor,
+  isTruncatedToolOutput,
+  wrapToolWithOutputTruncation,
+  wrapToolsWithOutputTruncation,
+  type ToolOutputTruncationConfig,
+  type ToolOutputStorage,
+  type ToolOutputStorageWriteInput,
+  type ToolOutputStorageWriteResult,
+  type ToolOutputPostProcessor,
+  type ToolOutputPostProcessorOptions,
+  type TruncatedToolOutput,
+} from './tool-output';

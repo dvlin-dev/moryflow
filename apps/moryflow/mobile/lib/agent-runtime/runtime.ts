@@ -1,18 +1,22 @@
 /**
- * Mobile Agent Runtime 核心逻辑
+ * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
+ * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
+ * [POS]: Mobile Agent Runtime 入口与生命周期管理
  *
- * 负责 Agent 初始化、运行时管理和聊天执行。
- * 与 PC 端 apps/moryflow/pc/src/main/agent-runtime/index.ts 对应。
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { run, setTracingDisabled, user } from '@openai/agents-core';
 import {
+  DEFAULT_TOOL_OUTPUT_TRUNCATION,
+  applyContextToInput,
   createAgentFactory,
   createModelFactory,
-  createVaultUtils,
   createSessionAdapter,
-  applyContextToInput,
+  createToolOutputPostProcessor,
+  createVaultUtils,
   generateChatTitle,
+  wrapToolsWithOutputTruncation,
   type AgentFactory,
   type AgentContext,
   type ModelFactory,
@@ -28,6 +32,7 @@ import { mobileSessionStore } from './session-store';
 import { loadSettings, onSettingsChange } from './settings-store';
 import { getMembershipConfig } from './membership-bridge';
 import { initVaultManager } from '../vault';
+import { createMobileToolOutputStorage } from './tool-output-storage';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -69,7 +74,26 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     return vaultRoot;
   });
 
-  const baseTools = createMobileTools({ capabilities, crypto, vaultUtils });
+  const toolOutputStorage = createMobileToolOutputStorage({
+    crypto,
+    ttlDays: DEFAULT_TOOL_OUTPUT_TRUNCATION.ttlDays,
+  });
+
+  const toolOutputPostProcessor = createToolOutputPostProcessor({
+    config: DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    storage: toolOutputStorage,
+    buildHint: ({ fullPath }) => {
+      if (!fullPath) {
+        return 'Full output could not be saved. Please retry the command if needed.';
+      }
+      return `Full output saved at ${fullPath}. Open it in the app to view the full content.`;
+    },
+  });
+
+  const baseTools = wrapToolsWithOutputTruncation(
+    createMobileTools({ capabilities, crypto, vaultUtils }),
+    toolOutputPostProcessor
+  );
   toolNames = baseTools.map((tool) => tool.name);
   if (__DEV__) {
     logger.debug('加载的工具:', toolNames);

@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: 沙盒化的 bash 工具
  * [DEPENDS]: sandbox-manager, /agents
- * [POS]: 替代原有的 bash 工具，添加沙盒保护
+ * [POS]: 替代原有 bash 工具，添加沙盒保护并交由 runtime 统一截断
  */
 
 import { tool, type RunContext } from '@openai/agents-core';
@@ -43,22 +43,6 @@ const bashParams = z.object({
     .default(DEFAULT_TIMEOUT)
     .describe('超时时间（毫秒），默认 2 分钟，最大 3 分钟'),
 });
-
-/** 输出截断配置 */
-const MAX_OUTPUT_LENGTH = 10000;
-const TRUNCATE_MARKER = '\n... [output truncated] ...\n';
-
-/** 截断输出 */
-function trimPreview(text: string): { text: string; truncated: boolean } {
-  if (text.length <= MAX_OUTPUT_LENGTH) {
-    return { text, truncated: false };
-  }
-  const half = Math.floor((MAX_OUTPUT_LENGTH - TRUNCATE_MARKER.length) / 2);
-  return {
-    text: text.slice(0, half) + TRUNCATE_MARKER + text.slice(-half),
-    truncated: true,
-  };
-}
 
 /** 沙盒 bash 工具选项 */
 export interface SandboxBashToolOptions {
@@ -132,18 +116,13 @@ export function createSandboxBashTool(options: SandboxBashToolOptions) {
         );
 
         const durationMs = Date.now() - startedAt;
-        const stdoutPreview = trimPreview(result.stdout);
-        const stderrPreview = trimPreview(result.stderr);
-
         return {
           command,
           cwd: relativeCwd,
           exitCode: result.exitCode,
           durationMs,
-          stdout: stdoutPreview.text,
-          stdoutTruncated: stdoutPreview.truncated,
-          stderr: stderrPreview.text,
-          stderrTruncated: stderrPreview.truncated,
+          stdout: result.stdout,
+          stderr: result.stderr,
         };
       } catch (error) {
         logger.error('command failed', error);

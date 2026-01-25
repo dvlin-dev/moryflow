@@ -148,6 +148,9 @@ export const ChatMessage = ({
       error: t('errorLabel'),
       targetFile: t('targetFile'),
       contentTooLong: t('contentTooLong'),
+      outputTruncated: t('outputTruncated'),
+      viewFullOutput: t('viewFullOutput'),
+      fullOutputPath: t('fullOutputPath'),
       applyToFile: t('applyToFile'),
       applied: t('written'),
       applying: t('applyToFile'),
@@ -155,6 +158,22 @@ export const ChatMessage = ({
       tasksCompleted: (completed: number, total: number) =>
         t('tasksCompleted', { completed, total }),
     }),
+    [t]
+  );
+
+  const handleOpenFullOutput = useCallback(
+    async (fullPath: string) => {
+      if (typeof window === 'undefined' || !window.desktopAPI?.files?.openPath) {
+        toast.error(t('openFileFailed'));
+        return;
+      }
+      try {
+        await window.desktopAPI.files.openPath({ path: fullPath });
+      } catch (error) {
+        console.error(error);
+        toast.error(error instanceof Error ? error.message : t('openFileFailed'));
+      }
+    },
     [t]
   );
 
@@ -204,6 +223,7 @@ export const ChatMessage = ({
             output={part.output}
             errorText={part.errorText}
             labels={toolOutputLabels}
+            onOpenFullOutput={handleOpenFullOutput}
             onApplyDiff={canApplyDiff ? handleApplyDiff : undefined}
             onApplyDiffSuccess={canApplyDiff ? handleApplyDiffSuccess : undefined}
             onApplyDiffError={canApplyDiff ? handleApplyDiffError : undefined}

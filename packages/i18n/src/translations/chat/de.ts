@@ -119,11 +119,16 @@ const de = {
 
   // Tool-Aktionen
   fileWritten: 'Datei geschrieben',
-  targetFile: 'Zieldatei:',
+  targetFile: 'Zieldatei',
   contentTooLong: 'Inhalt zu lang, gekürzt. Vollständige Version in lokaler Datei ansehen.',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: 'Geschrieben',
   applyToFile: 'Auf Datei anwenden',
   noTasks: 'Keine Aufgaben',
+  openFileFailed: 'Failed to open file',
 
   // Anhänge
   contextInjected: 'Eingefügt',

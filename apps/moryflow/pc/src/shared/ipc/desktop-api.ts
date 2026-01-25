@@ -1,3 +1,11 @@
+/**
+ * [DEFINES]: DesktopApi IPC 类型定义
+ * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
+ * [POS]: PC IPC 类型入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 import type {
   AgentChatRequestOptions,
@@ -146,6 +154,7 @@ export type DesktopApi = {
     move: (input: { path: string; targetDir: string }) => Promise<{ path: string }>;
     delete: (input: { path: string }) => Promise<void>;
     showInFinder: (input: { path: string }) => Promise<void>;
+    openPath: (input: { path: string }) => Promise<void>;
   };
   events: {
     /**

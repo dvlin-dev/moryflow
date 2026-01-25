@@ -117,11 +117,16 @@ const en = {
 
   // Tool actions
   fileWritten: 'File written',
-  targetFile: 'Target file:',
+  targetFile: 'Target file',
   contentTooLong: 'Content too long, truncated. See full version in local file.',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: 'Written',
   applyToFile: 'Apply to file',
   noTasks: 'No tasks',
+  openFileFailed: 'Failed to open file',
 
   // Attachments
   contextInjected: 'Injected',

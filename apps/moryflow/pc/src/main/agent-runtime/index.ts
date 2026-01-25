@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 设置注入）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入与输出截断）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
@@ -9,11 +9,14 @@
 import { run, user, type Agent, type ModelSettings } from '@openai/agents-core';
 import type { RunStreamEvent } from '@openai/agents-core';
 import {
+  DEFAULT_TOOL_OUTPUT_TRUNCATION,
+  applyContextToInput,
   createAgentFactory,
   createModelFactory,
+  createToolOutputPostProcessor,
   createVaultUtils,
-  applyContextToInput,
   generateChatTitle,
+  wrapToolsWithOutputTruncation,
   type AgentContext,
   type AgentAttachmentContext,
   type ModelFactory,
@@ -39,6 +42,7 @@ import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapte
 import { createMcpManager } from './core/mcp-manager.js';
 import { membershipBridge } from '../membership-bridge.js';
 import { setupAgentTracing } from './tracing-setup.js';
+import { createDesktopToolOutputStorage } from './tool-output-storage.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -165,6 +169,34 @@ export const createAgentRuntime = (): AgentRuntime => {
     return vaultInfo.path;
   });
 
+  const toolOutputStorage = createDesktopToolOutputStorage({
+    capabilities,
+    crypto,
+    ttlDays: DEFAULT_TOOL_OUTPUT_TRUNCATION.ttlDays,
+  });
+
+  const isWithinVault = (vaultRoot: string | undefined, targetPath: string): boolean => {
+    if (!vaultRoot) return false;
+    const relative = capabilities.path.relative(vaultRoot, targetPath);
+    if (relative === '') return true;
+    return !relative.startsWith('..') && !capabilities.path.isAbsolute(relative);
+  };
+
+  const toolOutputPostProcessor = createToolOutputPostProcessor({
+    config: DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    storage: toolOutputStorage,
+    buildHint: ({ fullPath, runContext }) => {
+      if (!fullPath) {
+        return 'Full output could not be saved. Please retry the command if needed.';
+      }
+      const vaultRoot = runContext?.context?.vaultRoot;
+      if (isWithinVault(vaultRoot, fullPath)) {
+        return `Full output saved at ${fullPath}. Use read/grep or open the file to inspect it.`;
+      }
+      return `Full output saved at ${fullPath}. Open the file to view the full content.`;
+    },
+  });
+
   // 创建工具集（不含 bash，bash 使用沙盒版本）
   const baseTools = createBaseTools({
     capabilities,
@@ -178,7 +210,11 @@ export const createAgentRuntime = (): AgentRuntime => {
     getSandbox: getSandboxManager,
     onAuthRequest: requestPathAuthorization,
   });
-  baseTools.push(sandboxBashTool);
+
+  const toolsWithTruncation = wrapToolsWithOutputTruncation(
+    [...baseTools, sandboxBashTool],
+    toolOutputPostProcessor
+  );
 
   // 创建模型工厂
   const initialSettings = getAgentSettings();
@@ -195,8 +231,8 @@ export const createAgentRuntime = (): AgentRuntime => {
   // 创建 Agent 工厂
   const agentFactory = createAgentFactory({
     getModelFactory: () => modelFactory,
-    baseTools,
-    getMcpTools: mcpManager.getTools,
+    baseTools: toolsWithTruncation,
+    getMcpTools: () => wrapToolsWithOutputTruncation(mcpManager.getTools(), toolOutputPostProcessor),
     getInstructions: () => resolveSystemPrompt(getAgentSettings()),
     getModelSettings: () => resolveModelSettings(getAgentSettings()),
   });

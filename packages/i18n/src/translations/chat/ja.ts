@@ -117,12 +117,17 @@ const ja = {
 
   // ツール操作
   fileWritten: 'ファイルに書き込みました',
-  targetFile: '対象ファイル：',
+  targetFile: '対象ファイル',
   contentTooLong:
     '内容が長すぎるため切り捨てられました。ローカルファイルで全文を確認してください。',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: '書き込み済み',
   applyToFile: 'ファイルに適用',
   noTasks: 'タスクがありません',
+  openFileFailed: 'Failed to open file',
 
   // 添付ファイル
   contextInjected: '注入済み',

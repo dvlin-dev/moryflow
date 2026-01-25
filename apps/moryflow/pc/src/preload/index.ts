@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Renderer IPC bridge (desktopAPI)
+ * [PROVIDES]: Renderer IPC bridge (desktopAPI + 工具输出文件打开)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  *
@@ -104,6 +104,7 @@ const api: DesktopApi = {
     move: (input) => ipcRenderer.invoke('files:move', input),
     delete: (input) => ipcRenderer.invoke('files:delete', input),
     showInFinder: (input) => ipcRenderer.invoke('files:showInFinder', input),
+    openPath: (input) => ipcRenderer.invoke('files:openPath', input),
   },
   events: {
     onVaultFsEvent: (handler) => {

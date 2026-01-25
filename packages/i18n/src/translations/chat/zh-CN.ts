@@ -116,11 +116,16 @@ const zhCN = {
 
   // 工具操作
   fileWritten: '已写入文件',
-  targetFile: '目标文件：',
+  targetFile: '目标文件',
   contentTooLong: '内容太长，已截断，在本地文件查看完整版。',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: '已写入',
   applyToFile: '应用到文件',
   noTasks: '暂无任务',
+  openFileFailed: 'Failed to open file',
 
   // 附件
   contextInjected: '已注入',

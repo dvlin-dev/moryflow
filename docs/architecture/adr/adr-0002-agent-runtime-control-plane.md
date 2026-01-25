@@ -120,6 +120,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - PC 可直接打开完整输出；Mobile 可在聊天内弹层查看。
 - UI 清晰标识“已截断”，并提供可追踪路径。
 
+**进度**
+
+- 2026-01-25：已完成 Moryflow PC + Mobile 落地（统一后处理截断、Vault/应用目录落盘、聊天内“查看完整输出”、TTL 清理）。
+
 ### P0-2 工具权限系统扩展（Permission）
 
 **任务**

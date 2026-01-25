@@ -44,6 +44,7 @@
 - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（2026-01-25：review）
 - Moryflow 云同步文档收敛为单一方案（统一技术方案/绑定/实施现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`（2026-01-25）
+- ADR-0002：P0-1 工具输出截断落地进度更新（2026-01-25）
 - ADR-0002：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）
 - ADR-0002：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）
 - ADR-0002：合并 OpenCode 对标与落地清单，删除独立对标文档（2026-01-26）

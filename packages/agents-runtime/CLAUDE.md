@@ -30,10 +30,12 @@
 
 ## 近期变更
 
+- Tool 输出截断包装明确仅支持 function 工具，避免隐式跳过
 - Agent 工厂支持注入 system prompt/model settings；默认 system prompt 去除时间占位
 - 修复 Vault 路径边界校验，避免前缀穿越
 - Session 接口本地化，运行时负责会话历史拼装与输出追加
 - 新增 `./prompt` 子入口，供渲染进程安全引用 system prompt
+- 新增 Tool 输出统一截断模块与包装器，附带单元测试
 
 ---
 

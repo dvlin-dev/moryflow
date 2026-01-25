@@ -32,6 +32,7 @@
 
 ## 近期更新
 
+- `adr/adr-0002-agent-runtime-control-plane.md`：P0-1 工具输出截断落地进度更新（2026-01-25）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：合并 OpenCode 对标与落地清单，删除独立对标文档（2026-01-26）。

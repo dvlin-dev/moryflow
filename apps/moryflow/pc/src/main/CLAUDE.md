@@ -95,6 +95,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Runtime tool-output storage 移除未使用导出
+- Agent Runtime 新增工具输出统一截断与落盘清理；IPC 增加 `files:openPath`
 - Agent Runtime 支持 system prompt/模型参数注入，参数改为可选覆盖并默认使用模型默认值
 - Agent Runtime/Agent 设置改用 `@anyhunt/agents-runtime/prompt` 读取 system prompt
 - Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口
