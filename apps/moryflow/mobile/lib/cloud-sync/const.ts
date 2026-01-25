@@ -9,6 +9,7 @@
 import { Platform } from 'react-native';
 import { Paths } from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
+import { formatSmartRelativeTime } from '@anyhunt/i18n';
 
 // ── 同步配置 ────────────────────────────────────────────────
 
@@ -113,10 +114,8 @@ export function formatStorageSize(bytes: number): string {
 
 /** 格式化最后同步时间 */
 export function formatLastSyncTime(lastSyncAt: number | null): string {
-  if (!lastSyncAt) return '从未同步';
-  const diff = Date.now() - lastSyncAt;
-  if (diff < 60000) return '刚刚';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
-  return `${Math.floor(diff / 86400000)} 天前`;
+  if (!lastSyncAt) return '';
+  const formatted = formatSmartRelativeTime(new Date(lastSyncAt));
+  if (formatted) return formatted;
+  return new Date(lastSyncAt).toLocaleString();
 }

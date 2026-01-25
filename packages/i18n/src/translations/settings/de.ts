@@ -253,6 +253,7 @@ const de = {
   cloudSyncEnableFailed:
     'Aktivierung der Cloud-Synchronisierung fehlgeschlagen. Bitte später erneut versuchen',
   cloudSyncSyncing: 'Synchronisiere...',
+  cloudSyncNeedsAttention: 'Aufmerksamkeit erforderlich',
   cloudSyncSynced: 'Synchronisiert',
   cloudSyncFailed: 'Synchronisierung fehlgeschlagen',
   cloudSyncNotEnabled: 'Nicht aktiviert',

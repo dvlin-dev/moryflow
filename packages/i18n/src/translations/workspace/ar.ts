@@ -132,6 +132,8 @@ const ar: Record<keyof typeof en, string> = {
   allChangesSynced: 'تمت مزامنة جميع التغييرات',
   syncing: 'جارٍ المزامنة',
   syncingChanges: 'جارٍ مزامنة التغييرات...',
+  needsAttention: 'يتطلب الانتباه',
+  syncPausedDescription: 'تم إيقاف المزامنة مؤقتًا. تحقق من الاتصال.',
   offline: 'غير متصل',
   networkUnavailable: 'الشبكة غير متوفرة',
   notEnabled: 'غير مفعل',

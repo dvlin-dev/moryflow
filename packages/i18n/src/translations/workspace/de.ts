@@ -134,6 +134,8 @@ const de: Record<keyof typeof en, string> = {
   allChangesSynced: 'Alle Änderungen wurden synchronisiert',
   syncing: 'Synchronisiere',
   syncingChanges: 'Änderungen werden synchronisiert...',
+  needsAttention: 'Aufmerksamkeit erforderlich',
+  syncPausedDescription: 'Synchronisierung pausiert. Verbindung prüfen.',
   offline: 'Offline',
   networkUnavailable: 'Netzwerk nicht verfügbar',
   notEnabled: 'Nicht aktiviert',

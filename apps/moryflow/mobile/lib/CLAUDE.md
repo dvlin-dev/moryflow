@@ -63,6 +63,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Cloud Sync：超限文件标记为 skipped，避免误删并补齐回归测试
 - Cloud Sync：下载重命名时清理旧路径，避免重复条目
 - FileIndex：无效存储记录告警并重置
+- Cloud Sync：最后同步时间使用 i18n 格式化，移除硬编码中文
 - FileIndex：lastSyncedSize/lastSyncedMtime 用于本地变更预过滤
 - Cloud Sync 与 Vault 日志统一通过 `createLogger()` 输出
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖

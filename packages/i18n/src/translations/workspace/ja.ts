@@ -132,6 +132,8 @@ const ja: Record<keyof typeof en, string> = {
   allChangesSynced: 'すべての変更がクラウドに同期されました',
   syncing: '同期中',
   syncingChanges: '変更を同期中...',
+  needsAttention: '注意が必要',
+  syncPausedDescription: '同期が一時停止されました。接続を確認してください。',
   offline: 'オフライン',
   networkUnavailable: 'ネットワーク接続がありません',
   notEnabled: '無効',

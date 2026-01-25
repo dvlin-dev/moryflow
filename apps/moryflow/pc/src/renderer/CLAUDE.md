@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 云同步 UI 精简：HoverCard 只保留状态/描述/最后同步/单一操作入口；设置页主视图仅开关+状态
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Chat Pane 消息列表：ToolInput 空输入保护、Hugeicons 替换、渲染性能优化与条件渲染收敛
 - Auth 改为 access 内存 + refresh 轮换，移除 pre-register

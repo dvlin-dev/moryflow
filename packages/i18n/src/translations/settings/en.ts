@@ -259,6 +259,7 @@ const en = {
   cloudSyncDisabled: 'Cloud sync disabled',
   cloudSyncEnableFailed: 'Failed to enable cloud sync, please try again',
   cloudSyncSyncing: 'Syncing...',
+  cloudSyncNeedsAttention: 'Needs attention',
   cloudSyncSynced: 'Synced',
   cloudSyncFailed: 'Sync failed',
   cloudSyncNotEnabled: 'Not enabled',

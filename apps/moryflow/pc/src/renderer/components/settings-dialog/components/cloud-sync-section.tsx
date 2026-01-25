@@ -1,12 +1,16 @@
 /**
- * 云同步设置 Section
- * 简化版：一个开关控制云同步，自动绑定
+ * [PROPS]: vaultPath
+ * [EMITS]: none
+ * [POS]: 云同步设置区块（主开关 + 状态 + Advanced）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircleIcon,
   CheckmarkCircle01Icon,
+  ChevronDown as ChevronDownIcon,
   CloudIcon,
   FolderSyncIcon,
   HardDriveIcon,
@@ -18,12 +22,18 @@ import { Icon } from '@anyhunt/ui/components/icon';
 import { toast } from 'sonner';
 import { Switch } from '@anyhunt/ui/components/switch';
 import { Button } from '@anyhunt/ui/components/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@anyhunt/ui/components/collapsible';
 import { Label } from '@anyhunt/ui/components/label';
 import { Progress } from '@anyhunt/ui/components/progress';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { useAuth } from '@/lib/server';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import type { CloudUsageInfo } from '@shared/ipc';
 
 type CloudSyncSectionProps = {
@@ -33,16 +43,16 @@ type CloudSyncSectionProps = {
 export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const { t } = useTranslation('settings');
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { status, settings, binding, isLoaded, updateSettings, triggerSync, bindVault, getUsage } =
+  const { status, settings, binding, isLoaded, updateSettings, bindVault, getUsage } =
     useCloudSync(vaultPath);
 
   // 用量信息
   const [usage, setUsage] = useState<CloudUsageInfo | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // 操作状态
   const [syncToggling, setSyncToggling] = useState(false);
-  const [syncingManually, setSyncingManually] = useState(false);
 
   // 加载用量信息
   const loadUsage = useCallback(async () => {
@@ -58,10 +68,11 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
 
   // 初始加载用量
   useEffect(() => {
+    if (!showAdvanced) return;
     if (isAuthenticated && isLoaded && binding) {
       void loadUsage();
     }
-  }, [isAuthenticated, isLoaded, binding, loadUsage]);
+  }, [showAdvanced, isAuthenticated, isLoaded, binding, loadUsage]);
 
   // 处理云同步开关（核心逻辑：自动绑定）
   const handleSyncToggle = useCallback(
@@ -104,17 +115,6 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     [updateSettings]
   );
 
-  // 手动触发同步
-  const handleManualSync = useCallback(async () => {
-    setSyncingManually(true);
-    try {
-      await triggerSync();
-      toast.success(t('cloudSyncTriggered'));
-    } finally {
-      setTimeout(() => setSyncingManually(false), 1000);
-    }
-  }, [triggerSync, t]);
-
   // 未登录状态
   if (authLoading) {
     return (
@@ -150,8 +150,36 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     );
   }
 
-  const isSyncing = status?.engineStatus === 'syncing' || syncingManually;
+  const isSyncing = status?.engineStatus === 'syncing';
   const isEnabled = binding && settings?.syncEnabled;
+  const engineStatus = status?.engineStatus ?? 'disabled';
+  const needsAttention =
+    !binding || engineStatus === 'offline' || engineStatus === 'disabled' || !!status?.error;
+
+  const statusSummary = useMemo(
+    () =>
+      isSyncing
+        ? { icon: Loading03Icon, label: t('cloudSyncSyncing'), colorClass: 'text-primary' }
+        : needsAttention
+          ? {
+              icon: AlertCircleIcon,
+              label: t('cloudSyncNeedsAttention'),
+              colorClass: 'text-amber-500',
+            }
+          : {
+              icon: CheckmarkCircle01Icon,
+              label: t('cloudSyncSynced'),
+              colorClass: 'text-success',
+            },
+    [isSyncing, needsAttention, t]
+  );
+
+  const lastSyncLabel = useMemo(() => {
+    if (!status?.lastSyncAt) return t('cloudSyncNeverSynced');
+    return t('cloudSyncLastSync', {
+      time: new Date(status.lastSyncAt).toLocaleTimeString(),
+    });
+  }, [status?.lastSyncAt, t]);
 
   return (
     <div className="space-y-6">
@@ -185,162 +213,144 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
         </div>
 
         {/* 同步状态 */}
-        {isEnabled && status && (
-          <div className="mt-4 flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {status.engineStatus === 'syncing' ? (
-                <>
-                  <Icon icon={Loading03Icon} className="h-3.5 w-3.5 animate-spin text-primary" />
-                  <span>{t('cloudSyncSyncing')}</span>
-                </>
-              ) : status.error ? (
-                <>
-                  <Icon icon={AlertCircleIcon} className="h-3.5 w-3.5 text-destructive" />
-                  <span>{t('cloudSyncFailed')}</span>
-                </>
-              ) : (
-                <>
-                  <Icon icon={CheckmarkCircle01Icon} className="h-3.5 w-3.5 text-success" />
-                  <span>{t('cloudSyncSynced')}</span>
-                </>
-              )}
-              {status.pendingCount > 0 && (
-                <span>· {t('cloudSyncPendingFiles', { count: status.pendingCount })}</span>
-              )}
-              {status.lastSyncAt && (
-                <span>
-                  ·{' '}
-                  {t('cloudSyncLastSync', {
-                    time: new Date(status.lastSyncAt).toLocaleTimeString(),
-                  })}
-                </span>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleManualSync}
-              disabled={isSyncing}
-              className="h-7 px-2"
-            >
-              {isSyncing ? (
-                <Icon icon={Loading03Icon} className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Icon icon={RefreshIcon} className="h-3.5 w-3.5" />
-              )}
-            </Button>
+        {status && (
+          <div className="mt-4 flex items-center gap-2 border-t pt-4 text-xs text-muted-foreground">
+            <Icon
+              icon={statusSummary.icon}
+              className={cn('h-3.5 w-3.5', statusSummary.colorClass, isSyncing && 'animate-spin')}
+            />
+            <span className={cn('font-medium', statusSummary.colorClass)}>
+              {statusSummary.label}
+            </span>
+            <span>· {lastSyncLabel}</span>
           </div>
         )}
-
-        {status?.error && <p className="mt-2 text-xs text-destructive">{status.error}</p>}
       </div>
 
-      {/* 智能索引开关 */}
-      <div className="flex items-center justify-between rounded-xl bg-background p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-            <Icon icon={SparklesIcon} className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div>
-            <Label htmlFor="vectorize-enabled" className="text-sm font-medium">
-              {t('smartIndex')}
-            </Label>
-            <p className="text-xs text-muted-foreground">{t('smartIndexDescription')}</p>
-          </div>
-        </div>
-        <Switch
-          id="vectorize-enabled"
-          checked={settings?.vectorizeEnabled ?? false}
-          onCheckedChange={handleVectorizeToggle}
-          disabled={!isEnabled}
-        />
-      </div>
-
-      {/* 用量信息 */}
-      {isEnabled && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">{t('usage')}</h4>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={loadUsage}
-              disabled={usageLoading}
-              className="h-7 px-2 text-xs"
-            >
-              {usageLoading ? (
-                <Icon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
-              ) : (
-                <Icon icon={RefreshIcon} className="h-3 w-3" />
-              )}
-            </Button>
-          </div>
-
-          {usageLoading && !usage ? (
-            <div className="space-y-3">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          ) : usage ? (
-            <div className="space-y-3">
-              <div className="rounded-xl bg-background p-4">
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Icon icon={HardDriveIcon} className="h-4 w-4 text-muted-foreground" />
-                    <span>{t('storageSpace')}</span>
-                  </div>
-                  <span className="text-muted-foreground">
-                    {formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}
-                  </span>
-                </div>
-                <Progress value={usage.storage.percentage} className="h-2" />
-              </div>
-
-              <div className="rounded-xl bg-background p-4">
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Icon icon={SparklesIcon} className="h-4 w-4 text-muted-foreground" />
-                    <span>{t('smartIndex')}</span>
-                  </div>
-                  <span className="text-muted-foreground">
-                    {t('filesCount', { count: usage.vectorized.count })} / {usage.vectorized.limit}
-                  </span>
-                </div>
-                <Progress value={usage.vectorized.percentage} className="h-2" />
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                {t('currentPlan', {
-                  plan: usage.plan,
-                  size: formatBytes(usage.fileLimit.maxFileSize),
-                })}
-              </p>
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {/* 设备信息 */}
-      {settings && (
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium">{t('deviceInfo')}</h4>
-          <div className="rounded-xl bg-background p-4">
+      <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+        <CollapsibleTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-2 w-full justify-between px-2 text-sm"
+          >
+            <span className="text-sm font-medium">{t('advanced')}</span>
+            <Icon
+              icon={ChevronDownIcon}
+              className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-4 space-y-6">
+          {/* 智能索引开关 */}
+          <div className="flex items-center justify-between rounded-xl bg-background p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                <Icon icon={HardDriveIcon} className="h-4 w-4 text-muted-foreground" />
+                <Icon icon={SparklesIcon} className="h-4 w-4 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm font-medium">{settings.deviceName}</p>
-                <p className="font-mono text-xs text-muted-foreground">
-                  {settings.deviceId.slice(0, 8)}...
-                </p>
+                <Label htmlFor="vectorize-enabled" className="text-sm font-medium">
+                  {t('smartIndex')}
+                </Label>
+                <p className="text-xs text-muted-foreground">{t('smartIndexDescription')}</p>
               </div>
             </div>
+            <Switch
+              id="vectorize-enabled"
+              checked={settings?.vectorizeEnabled ?? false}
+              onCheckedChange={handleVectorizeToggle}
+              disabled={!isEnabled}
+            />
           </div>
-        </div>
-      )}
+
+          {/* 用量信息 */}
+          {isEnabled && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium">{t('usage')}</h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadUsage}
+                  disabled={usageLoading}
+                  className="h-7 px-2 text-xs"
+                >
+                  {usageLoading ? (
+                    <Icon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Icon icon={RefreshIcon} className="h-3 w-3" />
+                  )}
+                </Button>
+              </div>
+
+              {usageLoading && !usage ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : usage ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl bg-background p-4">
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <Icon icon={HardDriveIcon} className="h-4 w-4 text-muted-foreground" />
+                        <span>{t('storageSpace')}</span>
+                      </div>
+                      <span className="text-muted-foreground">
+                        {formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}
+                      </span>
+                    </div>
+                    <Progress value={usage.storage.percentage} className="h-2" />
+                  </div>
+
+                  <div className="rounded-xl bg-background p-4">
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <Icon icon={SparklesIcon} className="h-4 w-4 text-muted-foreground" />
+                        <span>{t('smartIndex')}</span>
+                      </div>
+                      <span className="text-muted-foreground">
+                        {t('filesCount', { count: usage.vectorized.count })} /{' '}
+                        {usage.vectorized.limit}
+                      </span>
+                    </div>
+                    <Progress value={usage.vectorized.percentage} className="h-2" />
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    {t('currentPlan', {
+                      plan: usage.plan,
+                      size: formatBytes(usage.fileLimit.maxFileSize),
+                    })}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* 设备信息 */}
+          {settings && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">{t('deviceInfo')}</h4>
+              <div className="rounded-xl bg-background p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                    <Icon icon={HardDriveIcon} className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{settings.deviceName}</p>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {settings.deviceId.slice(0, 8)}...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };

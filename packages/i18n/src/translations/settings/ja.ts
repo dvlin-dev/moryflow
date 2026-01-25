@@ -249,6 +249,7 @@ const ja = {
   cloudSyncDisabled: 'クラウド同期が無効です',
   cloudSyncEnableFailed: 'クラウド同期の有効化に失敗しました。後でもう一度お試しください',
   cloudSyncSyncing: '同期中...',
+  cloudSyncNeedsAttention: '注意が必要',
   cloudSyncSynced: '同期完了',
   cloudSyncFailed: '同期失敗',
   cloudSyncNotEnabled: '未有効',
