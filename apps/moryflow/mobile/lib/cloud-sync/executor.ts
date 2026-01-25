@@ -1,7 +1,7 @@
 /**
  * [INPUT]: SyncActionDto[], vaultPath
  * [OUTPUT]: ExecuteResult (completed, deleted, errors)
- * [POS]: 执行具体的同步操作（上传、下载、删除、冲突处理，写回 size/mtime，清理旧路径）
+ * [POS]: 执行具体的同步操作（上传、下载、删除、冲突处理，写回 size/mtime，冲突副本写入 FileIndex）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -239,9 +239,36 @@ export const executeAction = async (
       const remoteHash = action.contentHash ?? (await computeHash(remoteContent));
       const remoteBytes = encoder.encode(remoteContent);
       const conflictInfo = readFileInfo(new File(conflictAbsPath));
+      const remoteClock = action.remoteVectorClock ?? createEmptyClock();
+      const conflictCopySize = conflictInfo.size;
+      const conflictCopyMtime = conflictInfo.mtime;
 
       // 3. 先上传冲突副本，确保远端版本被保留
       await cloudSyncApi.uploadFile(action.conflictCopyUploadUrl, remoteBytes);
+
+      const existingConflictCopy = getEntry(vaultPath, action.conflictCopyId);
+      if (existingConflictCopy) {
+        updateEntry(vaultPath, action.conflictCopyId, {
+          path: action.conflictRename,
+          vectorClock: remoteClock,
+          lastSyncedHash: remoteHash,
+          lastSyncedClock: remoteClock,
+          lastSyncedSize: conflictCopySize,
+          lastSyncedMtime: conflictCopyMtime,
+        });
+      } else {
+        addEntry(vaultPath, {
+          id: action.conflictCopyId,
+          path: action.conflictRename,
+          createdAt: Date.now(),
+          vectorClock: remoteClock,
+          lastSyncedHash: remoteHash,
+          lastSyncedClock: remoteClock,
+          lastSyncedSize: conflictCopySize,
+          lastSyncedMtime: conflictCopyMtime,
+        });
+      }
+      await saveFileIndex(vaultPath);
 
       // 4. 上传本地版本覆盖云端
       await cloudSyncApi.uploadFile(action.uploadUrl, localBytes);
@@ -249,7 +276,6 @@ export const executeAction = async (
       // 合并本地和远端的向量时钟
       const pending = pendingChanges.get(action.fileId);
       const localClock = pending?.vectorClock ?? getVectorClock(vaultPath, action.fileId);
-      const remoteClock = action.remoteVectorClock ?? createEmptyClock();
       const mergedClock = mergeVectorClocks(localClock, remoteClock);
       const finalClock = incrementClock(mergedClock, deviceId);
 
@@ -285,8 +311,8 @@ export const executeAction = async (
         conflictCopyPath: action.conflictRename,
         conflictCopyClock: remoteClock,
         conflictCopyHash: remoteHash,
-        conflictCopySize: conflictInfo.size ?? remoteBytes.length,
-        conflictCopyMtime: conflictInfo.mtime ?? null,
+        conflictCopySize: conflictCopySize,
+        conflictCopyMtime: conflictCopyMtime,
       });
       break;
     }
@@ -436,16 +462,28 @@ export const applyChangesToFileIndex = async (
       lastSyncedMtime: conflict.originalMtime,
     });
 
-    addEntry(vaultPath, {
-      id: conflict.conflictCopyId,
-      path: conflict.conflictCopyPath,
-      createdAt: Date.now(),
-      vectorClock: conflict.conflictCopyClock,
-      lastSyncedHash: conflict.conflictCopyHash,
-      lastSyncedClock: conflict.conflictCopyClock,
-      lastSyncedSize: conflict.conflictCopySize,
-      lastSyncedMtime: conflict.conflictCopyMtime,
-    });
+    const existingConflictCopy = getEntry(vaultPath, conflict.conflictCopyId);
+    if (existingConflictCopy) {
+      updateEntry(vaultPath, conflict.conflictCopyId, {
+        path: conflict.conflictCopyPath,
+        vectorClock: conflict.conflictCopyClock,
+        lastSyncedHash: conflict.conflictCopyHash,
+        lastSyncedClock: conflict.conflictCopyClock,
+        lastSyncedSize: conflict.conflictCopySize,
+        lastSyncedMtime: conflict.conflictCopyMtime,
+      });
+    } else {
+      addEntry(vaultPath, {
+        id: conflict.conflictCopyId,
+        path: conflict.conflictCopyPath,
+        createdAt: Date.now(),
+        vectorClock: conflict.conflictCopyClock,
+        lastSyncedHash: conflict.conflictCopyHash,
+        lastSyncedClock: conflict.conflictCopyClock,
+        lastSyncedSize: conflict.conflictCopySize,
+        lastSyncedMtime: conflict.conflictCopyMtime,
+      });
+    }
   }
 
   await saveFileIndex(vaultPath);

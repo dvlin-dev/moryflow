@@ -58,6 +58,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Cloud Sync：Mobile 端绑定写入 userId，账号切换触发绑定冲突处理与用户选择
 - Cloud Sync：FileIndex v2 严格校验，提交成功后统一回写 lastSyncedHash/Clock/Size/Mtime
 - Cloud Sync：拆分检测/执行/提交流程并补齐冲突副本上传、向量时钟合并与单测
+- Cloud Sync：冲突副本上传后即时写入 FileIndex，避免提交失败导致重复文件
 - Cloud Sync：detectLocalChanges 使用 mtime/size 预过滤 + hash 缓存
 - Cloud Sync：冲突流程先上传副本再提交，缺失冲突元数据显式报错，下载跳过重命名失败回退
 - Cloud Sync：超限文件标记为 skipped，避免误删并补齐回归测试

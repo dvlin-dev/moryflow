@@ -2,6 +2,8 @@
  * [INPUT]: executor actions
  * [OUTPUT]: execution results and FileIndex writebacks
  * [POS]: Mobile Cloud Sync executor tests
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
@@ -195,7 +197,9 @@ describe('executor', () => {
       lastSyncedSize: null,
       lastSyncedMtime: null,
     };
-    vi.mocked(getEntry).mockReturnValue(existingEntry);
+    vi.mocked(getEntry).mockImplementation((_, fileId) =>
+      fileId === 'file-1' ? existingEntry : undefined
+    );
 
     const pendingChanges = new Map([
       [
@@ -263,6 +267,15 @@ describe('executor', () => {
 
     expect(completed[0]?.vectorClock?.[deviceId]).toBe(3);
     expect(completed.some((item) => item.fileId === 'conflict-id')).toBe(true);
+    expect(addEntry).toHaveBeenCalledWith(
+      vaultPath,
+      expect.objectContaining({
+        id: 'conflict-id',
+        path: 'note (conflict).md',
+        lastSyncedHash: 'hash:remote',
+      })
+    );
+    expect(saveFileIndex).toHaveBeenCalledWith(vaultPath);
   });
 
   it('applyChangesToFileIndex writes back size/mtime', async () => {
