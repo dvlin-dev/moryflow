@@ -17,6 +17,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Docker 构建补齐 @anyhunt/types 与 typescript-config 依赖，避免 build 缺失
 - Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，并统一 ProblemDetails 类型来源
 - 补齐 API client 非 JSON 回归测试，新增 `test:unit`
 
