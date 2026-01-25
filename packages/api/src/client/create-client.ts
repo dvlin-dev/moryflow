@@ -9,6 +9,7 @@
 import { USER_API, OPENAI_API, PAYMENT_API } from '../paths';
 import { getTierInfo } from '../membership/const';
 import { ServerApiError } from './error';
+import type { ProblemDetails } from '@anyhunt/types';
 import type {
   ServerApiClientConfig,
   ServerApiClient,
@@ -21,17 +22,6 @@ import type {
   CreateCheckoutResponse,
   DeleteAccountRequest,
 } from './types';
-
-type ProblemDetails = {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  code: string;
-  requestId?: string;
-  details?: unknown;
-  errors?: Array<{ field?: string; message: string }>;
-};
 
 /** 创建 Server API 客户端 */
 export function createServerApiClient(config: ServerApiClientConfig): ServerApiClient {
@@ -71,6 +61,22 @@ export function createServerApiClient(config: ServerApiClientConfig): ServerApiC
       plugin.onResponse?.(response);
     }
 
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    let parsedBody: unknown;
+    let parsedOk = false;
+
+    if (isJson) {
+      try {
+        parsedBody = await response.json();
+        parsedOk = true;
+      } catch {
+        parsedOk = false;
+      }
+    }
+
     if (!response.ok) {
       if (response.status === 401 && onUnauthorized) {
         const shouldRetry = await onUnauthorized();
@@ -79,33 +85,35 @@ export function createServerApiClient(config: ServerApiClientConfig): ServerApiC
         }
       }
 
-      const contentType = response.headers.get('content-type') ?? '';
-      const isJson =
-        contentType.includes('application/json') ||
-        contentType.includes('application/problem+json');
-      const payload = isJson
-        ? ((await response.json().catch(() => ({}))) as ProblemDetails)
-        : undefined;
+      const payload = parsedOk ? (parsedBody as ProblemDetails) : undefined;
       const message =
         typeof payload?.detail === 'string' ? payload.detail : `Request failed: ${response.status}`;
       const code = typeof payload?.code === 'string' ? payload.code : undefined;
-      const requestId = payload?.requestId ?? response.headers.get('x-request-id') ?? undefined;
       throw new ServerApiError(
         response.status,
         message,
         code,
         payload?.details,
-        requestId,
+        payload?.requestId ?? requestId,
         payload?.errors
       );
     }
 
-    // 204 No Content
     if (response.status === 204) {
       return undefined as T;
     }
 
-    return response.json() as Promise<T>;
+    if (!isJson || !parsedOk) {
+      throw new ServerApiError(
+        response.status,
+        'Unexpected response format',
+        'UNEXPECTED_RESPONSE',
+        undefined,
+        requestId
+      );
+    }
+
+    return parsedBody as T;
   }
 
   // 返回 API 方法

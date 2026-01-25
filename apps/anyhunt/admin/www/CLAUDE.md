@@ -9,6 +9,8 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 ## 最近更新
 
 - Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
+- Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
+- 补齐 API client 非 JSON 回归测试，新增 `test:unit`
 
 ## 职责
 
@@ -50,6 +52,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 ## 测试
 
 - E2E：`pnpm test:e2e`（Playwright，启动本地 Vite dev server）
+- 单元测试：`pnpm test:unit`
 
 ## 目录结构
 

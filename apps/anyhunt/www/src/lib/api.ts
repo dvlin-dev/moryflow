@@ -1,3 +1,5 @@
+import type { ProblemDetails } from '@anyhunt/types';
+
 // ============== Types ==============
 
 export interface CaptureResult {
@@ -104,19 +106,6 @@ export class ApiError extends Error {
   }
 }
 
-// ============== Problem Details ==============
-
-interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  code: string;
-  requestId?: string;
-  details?: unknown;
-  errors?: Array<{ field?: string; message: string }>;
-}
-
 // ============== Helper ==============
 
 async function throwApiError(response: Response): Promise<never> {
@@ -128,21 +117,45 @@ async function throwApiError(response: Response): Promise<never> {
   const message =
     typeof problem?.detail === 'string' ? problem.detail : `Request failed (${response.status})`;
   const code = typeof problem?.code === 'string' ? problem.code : undefined;
-  throw new ApiError(
-    message,
-    response.status,
-    code,
-    problem?.details,
-    problem?.requestId,
-    problem?.errors
-  );
+  const requestId = problem?.requestId ?? response.headers.get('x-request-id') ?? undefined;
+  throw new ApiError(message, response.status, code, problem?.details, requestId, problem?.errors);
 }
 
-async function parseJsonResponse<T>(response: Response): Promise<T> {
+export async function parseJsonResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     await throwApiError(response);
   }
-  return (await response.json()) as T;
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJson =
+    contentType.includes('application/json') || contentType.includes('application/problem+json');
+  const requestId = response.headers.get('x-request-id') ?? undefined;
+
+  if (!isJson) {
+    throw new ApiError(
+      'Unexpected response format',
+      response.status,
+      'UNEXPECTED_RESPONSE',
+      undefined,
+      requestId
+    );
+  }
+
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new ApiError(
+      'Invalid JSON response',
+      response.status,
+      'UNEXPECTED_RESPONSE',
+      undefined,
+      requestId
+    );
+  }
 }
 
 // ============== API Functions ==============

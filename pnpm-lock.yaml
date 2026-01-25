@@ -200,6 +200,9 @@ importers:
       vite:
         specifier: ^7.2.4
         version: 7.3.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   apps/anyhunt/console:
     dependencies:
@@ -713,6 +716,9 @@ importers:
 
   apps/anyhunt/www:
     dependencies:
+      '@anyhunt/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
       '@anyhunt/ui':
         specifier: workspace:*
         version: link:../../../packages/ui
@@ -804,6 +810,9 @@ importers:
       '@anyhunt/model-registry-data':
         specifier: workspace:*
         version: link:../../../packages/model-registry-data
+      '@anyhunt/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2502,10 +2511,16 @@ importers:
       '@anyhunt/sync':
         specifier: workspace:*
         version: link:../sync
+      '@anyhunt/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.1)(sass-embedded@1.97.1)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/config:
     dependencies:

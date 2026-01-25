@@ -15,6 +15,11 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - 管理日志审计
 - 数据仪表盘
 
+## 近期变更
+
+- Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，并统一 ProblemDetails 类型来源
+- 补齐 API client 非 JSON 回归测试，新增 `test:unit`
+
 ## 约束
 
 - 使用 TailwindCSS 4 + shadcn/ui 组件库
@@ -23,6 +28,10 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - 路由使用 React Router
 - 表单使用 react-hook-form + zod
 - 图标统一使用 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`），禁止 `lucide-react` / `@tabler/icons-react`
+
+## 测试
+
+- 单元测试：`pnpm test:unit`
 
 ## 技术栈
 

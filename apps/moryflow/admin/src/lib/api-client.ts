@@ -4,6 +4,7 @@
  */
 import { useAuthStore, getAccessToken } from '../stores/auth';
 import { API_BASE_URL } from './api-base';
+import type { ProblemDetails } from '@anyhunt/types';
 
 /**
  * API 错误类
@@ -54,20 +55,6 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * API 响应错误结构
- */
-interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  code: string;
-  requestId?: string;
-  details?: unknown;
-  errors?: Array<{ field?: string; message: string }>;
-}
-
 class ApiClient {
   private baseURL: string;
 
@@ -87,14 +74,23 @@ class ApiClient {
     const contentType = response.headers.get('content-type') ?? '';
     const isJson =
       contentType.includes('application/json') || contentType.includes('application/problem+json');
-    const payload = isJson ? await response.json().catch(() => ({})) : undefined;
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    let parsed: { parsed: boolean; value: unknown } | undefined;
+    if (isJson) {
+      try {
+        parsed = { parsed: true, value: await response.json() };
+      } catch {
+        parsed = { parsed: false, value: undefined };
+      }
+    }
 
     if (!response.ok) {
-      const problem = payload as ProblemDetails;
+      const problem = parsed?.parsed ? (parsed.value as ProblemDetails) : undefined;
       const message =
-        typeof problem?.detail === 'string' ? problem.detail : `请求失败 (${response.status})`;
+        typeof problem?.detail === 'string'
+          ? problem.detail
+          : `Request failed (${response.status})`;
       const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
-      const requestId = response.headers.get('x-request-id') ?? undefined;
       throw new ApiError(
         response.status,
         code,
@@ -105,11 +101,17 @@ class ApiClient {
       );
     }
 
-    if (!isJson) {
-      return {} as T;
+    if (!isJson || !parsed?.parsed) {
+      throw new ApiError(
+        response.status,
+        'UNEXPECTED_RESPONSE',
+        'Unexpected response format',
+        undefined,
+        requestId
+      );
     }
 
-    return payload as T;
+    return parsed.value as T;
   }
 
   /**

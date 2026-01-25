@@ -7,6 +7,7 @@
 import { API_BASE_URL } from './api-base';
 import { refreshAccessToken, logout } from './auth-session';
 import { authStore, isAccessTokenExpiringSoon } from '@/stores/auth-store';
+import type { ProblemDetails } from '@anyhunt/types';
 
 /**
  * API Error
@@ -48,17 +49,6 @@ export class ApiClientError extends Error {
   }
 }
 
-interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  code: string;
-  requestId?: string;
-  details?: unknown;
-  errors?: Array<{ field?: string; message: string }>;
-}
-
 class ApiClient {
   private baseURL: string;
 
@@ -79,15 +69,18 @@ class ApiClient {
     return headers;
   }
 
-  private async safeParseJson(response: Response): Promise<unknown> {
+  private async safeParseJson(response: Response): Promise<{
+    parsed: boolean;
+    value: unknown;
+  }> {
     try {
-      return await response.json();
+      return { parsed: true, value: await response.json() };
     } catch {
-      return {};
+      return { parsed: false, value: undefined };
     }
   }
 
-  private throwApiError(status: number, json: unknown): never {
+  private throwApiError(status: number, json: unknown, requestId?: string): never {
     const problem = json as ProblemDetails;
     const message =
       typeof problem?.detail === 'string' ? problem.detail : `Request failed (${status})`;
@@ -97,7 +90,7 @@ class ApiClient {
       code,
       message,
       problem?.details,
-      problem?.requestId,
+      problem?.requestId ?? requestId,
       problem?.errors
     );
   }
@@ -110,17 +103,24 @@ class ApiClient {
     const contentType = response.headers.get('content-type') ?? '';
     const isJson =
       contentType.includes('application/json') || contentType.includes('application/problem+json');
-    const json = isJson ? await this.safeParseJson(response) : undefined;
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    const parsed = isJson ? await this.safeParseJson(response) : undefined;
 
     if (!response.ok) {
-      this.throwApiError(response.status, json);
+      this.throwApiError(response.status, parsed?.value, requestId);
     }
 
-    if (!isJson) {
-      return {} as T;
+    if (!isJson || !parsed?.parsed) {
+      throw new ApiClientError(
+        response.status,
+        'UNEXPECTED_RESPONSE',
+        'Unexpected response format',
+        undefined,
+        requestId
+      );
     }
 
-    return json as T;
+    return parsed.value as T;
   }
 
   private async fetchWithAuth(

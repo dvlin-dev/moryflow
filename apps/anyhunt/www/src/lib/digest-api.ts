@@ -5,7 +5,7 @@
  * [POS]: API client for public digest pages (no auth required)
  */
 
-import { ApiError } from './api';
+import { parseJsonResponse } from './api';
 
 // ============== Types ==============
 
@@ -71,47 +71,6 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-// ============== Problem Details ==============
-
-interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  code: string;
-  requestId?: string;
-  details?: unknown;
-  errors?: Array<{ field?: string; message: string }>;
-}
-
-// ============== Helper ==============
-
-async function throwApiError(response: Response): Promise<never> {
-  const contentType = response.headers.get('content-type') ?? '';
-  const isJson =
-    contentType.includes('application/json') || contentType.includes('application/problem+json');
-  const payload = isJson ? await response.json().catch(() => ({})) : {};
-  const problem = payload as ProblemDetails;
-  const message =
-    typeof problem?.detail === 'string' ? problem.detail : `Request failed (${response.status})`;
-  const code = typeof problem?.code === 'string' ? problem.code : undefined;
-  throw new ApiError(
-    message,
-    response.status,
-    code,
-    problem?.details,
-    problem?.requestId,
-    problem?.errors
-  );
-}
-
-async function parseJsonResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    await throwApiError(response);
-  }
-  return (await response.json()) as T;
 }
 
 // ============== API Functions ==============

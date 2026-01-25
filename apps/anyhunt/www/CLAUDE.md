@@ -39,6 +39,9 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 - Dockerfile 补齐 `packages/types` 的 workspace package 依赖拷贝，避免 pnpm install 报 `WORKSPACE_PKG_NOT_FOUND`
 - www API client + Digest API 切换 raw JSON + RFC7807 错误体解析
+- www API client/公有 API 调用对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
+- Welcome API 复用 `parseJsonResponse`，移除重复错误解析逻辑
+- 新增 `parseJsonResponse` 非 JSON/无效 JSON 单元测试
 
 ## 环境变量
 

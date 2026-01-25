@@ -8,7 +8,7 @@
  */
 
 import { NestFactory } from '@nestjs/core';
-import { Logger, VersioningType } from '@nestjs/common';
+import { HttpStatus, Logger, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
   json,
@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { matchOrigin } from './common/utils';
+import { buildProblemDetails, getRequestId, matchOrigin } from './common/utils';
 import { DEVICE_PLATFORM_ALLOWLIST } from './auth/auth.constants';
 import { getTrustedOrigins } from './auth/auth.config';
 
@@ -160,7 +160,16 @@ async function bootstrap() {
       const normalized =
         typeof platform === 'string' ? platform.toLowerCase() : '';
       if (!DEVICE_PLATFORM_ALLOWLIST.has(normalized)) {
-        res.status(403).json({ message: 'Missing origin' });
+        const problem = buildProblemDetails({
+          status: HttpStatus.FORBIDDEN,
+          code: 'FORBIDDEN',
+          message: 'Missing origin',
+          requestId: getRequestId(req),
+        });
+        res
+          .status(HttpStatus.FORBIDDEN)
+          .type('application/problem+json')
+          .json(problem);
         return;
       }
     }

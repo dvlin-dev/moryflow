@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-26（统一响应为 raw JSON + RFC7807；API Client 统一封装方案与 access token 本地存储方案补充；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
+> 最近更新：2026-01-27（RFC7807 错误体边界完善、请求 Origin 缺失统一返回问题详情、API 客户端非 JSON 响应保护、ProblemDetails 类型统一、补齐 test:unit 与回归测试；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 
 ## 项目概述
 
@@ -46,7 +46,7 @@ pnpm --filter @anyhunt/anyhunt-server test:e2e
 
 ```bash
 # 运行单元测试
-pnpm --filter @anyhunt/admin test
+pnpm --filter @anyhunt/admin test:unit
 
 # 运行 Playwright E2E 测试
 pnpm --filter @anyhunt/admin test:e2e

@@ -6,6 +6,11 @@
 
 Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取能力与配置 Webhook。基于 React + Vite。
 
+## 最近更新
+
+- API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，避免静默失败
+- 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本
+
 ## 职责
 
 - 用量与额度概览
@@ -54,6 +59,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 测试
 
 - E2E：`pnpm test:e2e`（Playwright，启动本地 Vite dev server）
+- 单元测试：`pnpm test:unit`
 
 ## 目录结构
 

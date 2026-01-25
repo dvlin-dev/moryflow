@@ -79,11 +79,14 @@ class ApiClient {
   /**
    * 安全解析 JSON
    */
-  private async safeParseJson(response: Response): Promise<unknown> {
+  private async safeParseJson(response: Response): Promise<{
+    parsed: boolean;
+    value: unknown;
+  }> {
     try {
-      return await response.json();
+      return { parsed: true, value: await response.json() };
     } catch {
-      return {};
+      return { parsed: false, value: undefined };
     }
   }
 
@@ -116,18 +119,24 @@ class ApiClient {
     const contentType = response.headers.get('content-type') ?? '';
     const isJson =
       contentType.includes('application/json') || contentType.includes('application/problem+json');
-    const json = isJson ? await this.safeParseJson(response) : undefined;
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    const parsed = isJson ? await this.safeParseJson(response) : undefined;
 
     if (!response.ok) {
-      const requestId = response.headers.get('x-request-id') ?? undefined;
-      this.throwApiError(response.status, json, requestId || undefined);
+      this.throwApiError(response.status, parsed?.value, requestId);
     }
 
-    if (!isJson) {
-      return {} as T;
+    if (!isJson || !parsed?.parsed) {
+      throw new ApiError(
+        response.status,
+        'UNEXPECTED_RESPONSE',
+        'Unexpected response format',
+        undefined,
+        requestId
+      );
     }
 
-    return json as T;
+    return parsed.value as T;
   }
 
   /**
@@ -199,9 +208,9 @@ class ApiClient {
     const response = await this.fetchWithAuth(endpoint);
 
     if (!response.ok) {
-      const json = await this.safeParseJson(response);
+      const parsed = await this.safeParseJson(response);
       const requestId = response.headers.get('x-request-id') ?? undefined;
-      this.throwApiError(response.status, json, requestId || undefined);
+      this.throwApiError(response.status, parsed.value, requestId || undefined);
     }
 
     return response.blob();
@@ -218,9 +227,9 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const json = await this.safeParseJson(response);
+      const parsed = await this.safeParseJson(response);
       const requestId = response.headers.get('x-request-id') ?? undefined;
-      this.throwApiError(response.status, json, requestId || undefined);
+      this.throwApiError(response.status, parsed.value, requestId || undefined);
     }
 
     return response.blob();
