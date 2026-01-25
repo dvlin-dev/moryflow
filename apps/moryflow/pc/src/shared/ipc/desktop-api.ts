@@ -172,6 +172,9 @@ export type DesktopApi = {
       agentOptions?: AgentChatRequestOptions;
     }) => Promise<{ ok: boolean }>;
     stop: (payload: { channel: string }) => Promise<{ ok: boolean }>;
+    approveTool: (payload: { approvalId: string; remember?: 'once' | 'always' }) => Promise<{
+      ok: boolean;
+    }>;
     /**
      * 订阅流式响应，回调收到 null 表示流结束。
      */

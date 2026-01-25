@@ -111,6 +111,14 @@ const ar = {
   statusError: 'خطأ',
   statusSkipped: 'تم التخطي',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // تسميات الأداة
   parameters: 'المعلمات',
   errorLabel: 'خطأ',

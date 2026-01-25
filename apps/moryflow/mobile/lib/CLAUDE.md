@@ -52,6 +52,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Mobile AgentStreamResult 增补 RunState/输出只读字段，支持审批恢复与输出持久化
+- Chat Transport 支持工具权限审批（中断/恢复 + JSONC 规则落地）
 - Agent Runtime 新增工具输出统一截断与落盘清理（Mobile）
 - Agent Runtime 改为使用 `@openai/agents-core` 类型与运行入口，移除 `@anyhunt/agents` 依赖
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）

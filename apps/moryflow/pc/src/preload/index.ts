@@ -121,6 +121,7 @@ const api: DesktopApi = {
   chat: {
     send: (payload) => ipcRenderer.invoke('chat:agent-request', payload ?? {}),
     stop: (payload) => ipcRenderer.invoke('chat:agent-stop', payload ?? {}),
+    approveTool: (payload) => ipcRenderer.invoke('chat:approve-tool', payload ?? {}),
     onChunk: (channel, handler) => {
       const listener = (_event: Electron.IpcRendererEvent, chunk: UIMessageChunk | null) =>
         handler(chunk);

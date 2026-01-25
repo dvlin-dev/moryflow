@@ -33,6 +33,7 @@ import { loadSettings, onSettingsChange } from './settings-store';
 import { getMembershipConfig } from './membership-bridge';
 import { initVaultManager } from '../vault';
 import { createMobileToolOutputStorage } from './tool-output-storage';
+import { initPermissionRuntime } from './permission-runtime';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -90,8 +91,9 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     },
   });
 
+  const permissionRuntime = initPermissionRuntime({ capabilities });
   const baseTools = wrapToolsWithOutputTruncation(
-    createMobileTools({ capabilities, crypto, vaultUtils }),
+    permissionRuntime.wrapTools(createMobileTools({ capabilities, crypto, vaultUtils })),
     toolOutputPostProcessor
   );
   toolNames = baseTools.map((tool) => tool.name);

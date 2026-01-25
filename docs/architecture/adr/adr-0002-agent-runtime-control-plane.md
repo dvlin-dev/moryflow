@@ -140,6 +140,11 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - `always` 规则用户级生效；会话内可复用。
 - 审批走中断/恢复，流程可追踪且不会卡死会话。
 
+**进度**
+
+- 2026-01-26：确认审批 UI 放在工具卡内（once/always），权限规则直接写入用户级 JSONC（不做运行时存储过渡），Mobile 审计路径为 `Paths.document/agent-audit`。
+- 2026-01-26：完成 PC + Mobile 权限落地（RunState 中断/恢复、tool-approval-request、审批卡与 JSONC 规则持久化、审计记录）。
+
 ### P1-3 会话压缩（Compaction）
 
 **任务**

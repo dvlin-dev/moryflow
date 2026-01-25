@@ -32,6 +32,8 @@
 
 ## 近期更新
 
+- `adr/adr-0002-agent-runtime-control-plane.md`：P0-2 权限系统落地完成（审批卡/JSONC/审计）（2026-01-26）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：确认 P0-2 权限落地细节（审批卡位置、规则直接写 JSONC、Mobile 审计路径）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P0-1 工具输出截断落地进度更新（2026-01-25）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）。

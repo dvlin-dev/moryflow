@@ -1,10 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import {
-  RunToolCallItem,
-  RunToolCallOutputItem,
-  RunToolApprovalItem,
-  RunItemStreamEvent,
-} from '@openai/agents-core';
+import { RunToolCallItem, RunToolCallOutputItem, RunItemStreamEvent } from '@openai/agents-core';
 import type { UIMessage, UIMessageChunk, UIMessageStreamWriter } from 'ai';
 
 type ToolCallInputInfo = {
@@ -136,27 +131,6 @@ export const mapRunToolEventToChunk = (
       providerExecuted: info.providerExecuted,
       dynamic: dynamicFlag(info.toolName),
     } as UIMessageChunk;
-  }
-
-  if (event.name === 'tool_approval_requested' && event.item instanceof RunToolApprovalItem) {
-    // 透传审批事件，供前端审批抽屉监听
-    const raw = (event.item.rawItem ?? {}) as Record<string, unknown>;
-    const callId =
-      typeof raw.callId === 'string'
-        ? raw.callId
-        : typeof raw.id === 'string'
-          ? raw.id
-          : randomUUID();
-    const providerExecuted =
-      typeof raw.providerExecuted === 'boolean' ? raw.providerExecuted : undefined;
-    return {
-      type: 'tool-input-available',
-      toolCallId: callId,
-      toolName: 'await_human_confirmation',
-      input: raw.input ?? null,
-      providerExecuted,
-      dynamic: true,
-    };
   }
 
   return null;

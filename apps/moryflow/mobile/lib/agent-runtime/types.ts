@@ -2,7 +2,7 @@
  * Mobile Agent Runtime 类型定义
  */
 
-import type { Agent, RunStreamEvent } from '@openai/agents-core';
+import type { Agent, RunStreamEvent, RunState, AgentInputItem } from '@openai/agents-core';
 import type {
   AgentContext,
   AgentChatContext,
@@ -35,8 +35,10 @@ export interface MobileAgentRuntimeOptions {
  * 流式运行结果
  */
 export interface MobileAgentStreamResult extends AsyncIterable<RunStreamEvent> {
-  completed: Promise<void>;
-  finalOutput?: string;
+  readonly completed: Promise<void>;
+  readonly finalOutput?: unknown;
+  readonly state: RunState<AgentContext, Agent<AgentContext>>;
+  readonly output: AgentInputItem[];
 }
 
 /**

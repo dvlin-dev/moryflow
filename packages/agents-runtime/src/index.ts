@@ -58,3 +58,27 @@ export {
   type ToolOutputPostProcessorOptions,
   type TruncatedToolOutput,
 } from './tool-output';
+
+// Permission
+export {
+  buildDefaultPermissionRules,
+  createPermissionDeniedOutput,
+  evaluatePermissionDecision,
+  isPermissionDeniedOutput,
+  isPermissionRule,
+  resolveToolPermissionTargets,
+  wrapToolWithPermission,
+  wrapToolsWithPermission,
+  type PermissionAuditEvent,
+  type PermissionCheck,
+  type PermissionCheckInput,
+  type PermissionCheckResult,
+  type PermissionDecision,
+  type PermissionDecisionInfo,
+  type PermissionDeniedOutput,
+  type PermissionDomain,
+  type PermissionRule,
+  type PermissionTargets,
+} from './permission';
+
+export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';

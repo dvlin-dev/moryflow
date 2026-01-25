@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { isFileUIPart, isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
 import type { FileUIPart, ToolUIPart, UIMessage } from 'ai';
@@ -32,6 +32,14 @@ import { Icon } from '@anyhunt/ui/components/icon';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
 import { Shimmer } from '@anyhunt/ui/ai/shimmer';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
+import {
+  Confirmation,
+  ConfirmationActions,
+  ConfirmationAction,
+  ConfirmationAccepted,
+  ConfirmationRequest,
+  ConfirmationTitle,
+} from '@anyhunt/ui/ai/confirmation';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 import type { ToolDiffResult, ToolState } from '@anyhunt/ui/ai/tool';
@@ -55,6 +63,7 @@ export const ChatMessage = ({
   isPlaceholder,
   isLastAssistant,
   actions,
+  onToolApproval,
 }: ChatMessageProps) => {
   const handleRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -116,6 +125,7 @@ export const ChatMessage = ({
 
   const isStreaming = status === 'streaming' || status === 'submitted';
   const isUser = message.role === 'user';
+  const [approvingIds, setApprovingIds] = useState<string[]>([]);
 
   const handleResend = useCallback(() => {
     actions?.onResend?.(messageIndex);
@@ -209,6 +219,21 @@ export const ChatMessage = ({
 
   const renderTool = (part: ToolUIPart, index: number) => {
     const hasToolInput = part.input !== undefined;
+    const approvalId = part.approval?.id;
+    const approvalVisible =
+      part.state === 'approval-requested' || part.state === 'approval-responded';
+    const isApproving = approvalId ? approvingIds.includes(approvalId) : false;
+    const handleApproval = async (remember: 'once' | 'always') => {
+      if (!approvalId || !onToolApproval) {
+        return;
+      }
+      setApprovingIds((prev) => (prev.includes(approvalId) ? prev : [...prev, approvalId]));
+      try {
+        await Promise.resolve(onToolApproval({ approvalId, remember }));
+      } finally {
+        setApprovingIds((prev) => prev.filter((id) => id !== approvalId));
+      }
+    };
     return (
       <Tool key={`${message.id}-tool-${index}`} defaultOpen={false}>
         <ToolHeader
@@ -219,6 +244,38 @@ export const ChatMessage = ({
         />
         <ToolContent>
           {hasToolInput ? <ToolInput input={part.input} label={t('parameters')} /> : null}
+          {approvalVisible && approvalId ? (
+            <div className="px-4 pb-2">
+              <Confirmation
+                state={part.state as ToolState}
+                approval={part.approval}
+                className="border border-border-muted"
+              >
+                <ConfirmationTitle>{t('approvalRequired')}</ConfirmationTitle>
+                <ConfirmationRequest>
+                  <p className="text-sm text-muted-foreground">{t('approvalRequestHint')}</p>
+                </ConfirmationRequest>
+                <ConfirmationAccepted>
+                  <p className="text-sm text-muted-foreground">{t('approvalGranted')}</p>
+                </ConfirmationAccepted>
+                <ConfirmationActions>
+                  <ConfirmationAction
+                    variant="secondary"
+                    onClick={() => handleApproval('once')}
+                    disabled={isApproving}
+                  >
+                    {t('approveOnce')}
+                  </ConfirmationAction>
+                  <ConfirmationAction
+                    onClick={() => handleApproval('always')}
+                    disabled={isApproving}
+                  >
+                    {t('approveAlways')}
+                  </ConfirmationAction>
+                </ConfirmationActions>
+              </Confirmation>
+            </div>
+          ) : null}
           <ToolOutput
             output={part.output}
             errorText={part.errorText}

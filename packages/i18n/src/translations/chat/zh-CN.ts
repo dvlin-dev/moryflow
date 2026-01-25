@@ -109,6 +109,14 @@ const zhCN = {
   statusError: '出错了',
   statusSkipped: '已跳过',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // 工具标签
   parameters: '参数',
   errorLabel: '错误',

@@ -6,7 +6,14 @@
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
-import { run, user, type Agent, type ModelSettings } from '@openai/agents-core';
+import {
+  run,
+  user,
+  type Agent,
+  type ModelSettings,
+  type AgentInputItem,
+  type RunState,
+} from '@openai/agents-core';
 import type { RunStreamEvent } from '@openai/agents-core';
 import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
@@ -43,6 +50,7 @@ import { createMcpManager } from './core/mcp-manager.js';
 import { membershipBridge } from '../membership-bridge.js';
 import { setupAgentTracing } from './tracing-setup.js';
 import { createDesktopToolOutputStorage } from './tool-output-storage.js';
+import { initPermissionRuntime } from './permission-runtime.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -89,9 +97,13 @@ export type AgentRuntimeOptions = {
  */
 export interface AgentStreamResult extends AsyncIterable<RunStreamEvent> {
   /** 等待流完成 */
-  completed: Promise<void>;
-  /** 最终输出文本 */
-  finalOutput?: string;
+  readonly completed: Promise<void>;
+  /** 最终输出 */
+  readonly finalOutput?: unknown;
+  /** RunState（用于审批中断恢复） */
+  readonly state: RunState<AgentContext, Agent<AgentContext>>;
+  /** 本次 run 的输出 item */
+  readonly output: AgentInputItem[];
 }
 
 /**
@@ -211,8 +223,17 @@ export const createAgentRuntime = (): AgentRuntime => {
     onAuthRequest: requestPathAuthorization,
   });
 
+  // 创建 MCP 管理器
+  const mcpManager = createMcpManager();
+
+  const permissionRuntime = initPermissionRuntime({
+    capabilities,
+    getMcpServerIds: () => mcpManager.getStatus().servers.map((server) => server.id),
+  });
+
+  const toolsWithPermission = permissionRuntime.wrapTools([...baseTools, sandboxBashTool]);
   const toolsWithTruncation = wrapToolsWithOutputTruncation(
-    [...baseTools, sandboxBashTool],
+    toolsWithPermission,
     toolOutputPostProcessor
   );
 
@@ -225,14 +246,15 @@ export const createAgentRuntime = (): AgentRuntime => {
     membership: membershipBridge.getConfig(),
   });
 
-  // 创建 MCP 管理器
-  const mcpManager = createMcpManager();
-
   // 创建 Agent 工厂
   const agentFactory = createAgentFactory({
     getModelFactory: () => modelFactory,
     baseTools: toolsWithTruncation,
-    getMcpTools: () => wrapToolsWithOutputTruncation(mcpManager.getTools(), toolOutputPostProcessor),
+    getMcpTools: () =>
+      wrapToolsWithOutputTruncation(
+        permissionRuntime.wrapTools(mcpManager.getTools()),
+        toolOutputPostProcessor
+      ),
     getInstructions: () => resolveSystemPrompt(getAgentSettings()),
     getModelSettings: () => resolveModelSettings(getAgentSettings()),
   });

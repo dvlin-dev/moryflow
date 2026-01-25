@@ -110,6 +110,14 @@ const en = {
   statusError: 'Error',
   statusSkipped: 'Skipped',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // Tool labels
   parameters: 'Parameters',
   errorLabel: 'Error',

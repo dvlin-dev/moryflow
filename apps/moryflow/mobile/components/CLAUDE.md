@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- AI Tool 新增权限审批卡（once/always）
 - AI ToolOutput 新增截断输出组件与完整内容弹层
 - Mobile 图标库切换为 Hugeicons，新增 `ui/icons.ts` 统一出口与 `ui/icon.tsx` 封装
 - 云同步相关组件状态文案统一为 Syncing/Synced/Needs attention，移除 raw error 展示

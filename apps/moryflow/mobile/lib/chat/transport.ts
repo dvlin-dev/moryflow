@@ -6,13 +6,25 @@
  */
 
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import type { RunItemStreamEvent } from '@openai/agents-core';
+import type { Agent, RunItemStreamEvent, RunState, RunToolApprovalItem } from '@openai/agents-core';
+import { run } from '@openai/agents-core';
 import { createSessionAdapter } from '@anyhunt/agents-runtime';
-import type { AgentChatContext, AgentAttachmentContext } from '@anyhunt/agents-runtime';
+import type {
+  AgentChatContext,
+  AgentAttachmentContext,
+  AgentContext,
+} from '@anyhunt/agents-runtime';
 import { getAgentRuntime, mobileSessionStore, createLogger } from '@/lib/agent-runtime';
 import { generateUUID } from '@/lib/utils/uuid';
 import { extractTextFromParts } from './utils';
 import { mapRunToolEventToChunk } from './tool-chunks';
+import {
+  createApprovalGate,
+  registerApprovalRequest,
+  waitForApprovals,
+  hasPendingApprovals,
+  clearApprovalGate,
+} from './approval-store';
 
 const logger = createLogger('[Transport]');
 
@@ -48,15 +60,6 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
     }
 
     const session = createSessionAdapter(chatId, mobileSessionStore);
-    const { result, toolNames } = await runtime.runChatTurn({
-      chatId,
-      input,
-      preferredModelId: this.options.preferredModelId,
-      context: this.options.context,
-      attachments: this.options.attachments,
-      session,
-      signal: abortSignal,
-    });
 
     // 生成固定的消息 ID，整轮对话使用同一个
     const textMessageId = generateUUID();
@@ -66,103 +69,210 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
 
     return new ReadableStream<UIMessageChunk>({
       async start(controller) {
+        let resumedState: RunState<AgentContext, Agent<AgentContext>> | null = null;
+        let activeAgent: Agent<AgentContext> | null = null;
+        let persistedOutputCount = 0;
+
+        const resolveToolCallId = (item: RunToolApprovalItem): string => {
+          const raw = item.rawItem as Record<string, unknown> | undefined;
+          const callId =
+            typeof raw?.callId === 'string' && raw.callId.length > 0 ? raw.callId : undefined;
+          const rawId = typeof raw?.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
+          const providerData = raw?.providerData as Record<string, unknown> | undefined;
+          const providerId =
+            typeof providerData?.id === 'string' && providerData.id.length > 0
+              ? providerData.id
+              : undefined;
+          return callId ?? rawId ?? providerId ?? generateUUID();
+        };
+
         try {
           controller.enqueue({ type: 'start' });
 
-          for await (const event of result) {
-            const eventType = getEventType(event);
+          while (true) {
+            if (abortSignal?.aborted) {
+              clearApprovalGate(chatId);
+              break;
+            }
 
-            // 检测事件类型（优先使用 type 属性，fallback 到构造函数名）
-            const isToolEvent = isEventType(
-              event,
-              eventType,
-              'run_item_stream_event',
-              'RunItemStreamEvent'
-            );
-            const isModelEvent = isEventType(
-              event,
-              eventType,
-              'raw_model_stream_event',
-              'RunRawModelStreamEvent'
-            );
+            const { result, toolNames, agent } = resumedState
+              ? {
+                  result: await run(activeAgent as Agent<AgentContext>, resumedState, {
+                    stream: true,
+                    signal: abortSignal,
+                  }),
+                  toolNames: (activeAgent as Agent<AgentContext>).tools.map((tool) => tool.name),
+                  agent: activeAgent as Agent<AgentContext>,
+                }
+              : await runtime.runChatTurn({
+                  chatId,
+                  input,
+                  preferredModelId: this.options.preferredModelId,
+                  context: this.options.context,
+                  attachments: this.options.attachments,
+                  session,
+                  signal: abortSignal,
+                });
 
-            // 处理工具事件
-            if (isToolEvent) {
-              const itemEvent = event as RunItemStreamEvent;
-              if (__DEV__) {
-                logToolEvent(itemEvent, eventType);
+            if (!activeAgent) {
+              activeAgent = agent as Agent<AgentContext>;
+            }
+
+            const approvalGate = createApprovalGate({
+              chatId,
+              state: result.state as RunState<AgentContext, Agent<AgentContext>>,
+            });
+
+            for await (const event of result) {
+              if (abortSignal?.aborted) {
+                break;
               }
-              const chunk = mapRunToolEventToChunk(itemEvent, toolNames);
-              if (__DEV__) {
-                logger.debug('Tool chunk:', chunk ? JSON.stringify(chunk).slice(0, 200) : 'null');
+              const eventType = getEventType(event);
+
+              // 检测事件类型（优先使用 type 属性，fallback 到构造函数名）
+              const isToolEvent = isEventType(
+                event,
+                eventType,
+                'run_item_stream_event',
+                'RunItemStreamEvent'
+              );
+              const isModelEvent = isEventType(
+                event,
+                eventType,
+                'raw_model_stream_event',
+                'RunRawModelStreamEvent'
+              );
+
+              // 处理工具事件
+              if (isToolEvent) {
+                const itemEvent = event as RunItemStreamEvent;
+                const itemType = getRunItemType(itemEvent.item);
+                if (
+                  itemEvent.name === 'tool_approval_requested' &&
+                  itemType === 'tool_approval_item'
+                ) {
+                  const approvalItem = itemEvent.item as RunToolApprovalItem;
+                  const toolCallId = resolveToolCallId(approvalItem);
+                  const approvalId = registerApprovalRequest(approvalGate, {
+                    toolCallId,
+                    item: approvalItem,
+                  });
+                  controller.enqueue({
+                    type: 'tool-approval-request',
+                    approvalId,
+                    toolCallId,
+                  });
+                  continue;
+                }
+
+                if (__DEV__) {
+                  logToolEvent(itemEvent, eventType);
+                }
+                const chunk = mapRunToolEventToChunk(itemEvent, toolNames);
+                if (__DEV__) {
+                  logger.debug('Tool chunk:', chunk ? JSON.stringify(chunk).slice(0, 200) : 'null');
+                }
+                if (chunk) {
+                  controller.enqueue(chunk);
+                }
+                continue;
               }
-              if (chunk) {
-                controller.enqueue(chunk);
+
+              // 处理 Model 流事件
+              if (isModelEvent) {
+                const extracted = extractModelStreamEvent(event);
+
+                // reasoning 增量
+                if (extracted.reasoningDelta) {
+                  if (!reasoningStarted) {
+                    controller.enqueue({ type: 'reasoning-start', id: reasoningMessageId });
+                    reasoningStarted = true;
+                  }
+                  controller.enqueue({
+                    type: 'reasoning-delta',
+                    id: reasoningMessageId,
+                    delta: extracted.reasoningDelta,
+                  });
+                }
+
+                // 文本增量
+                if (extracted.deltaText) {
+                  // 在开始文本之前，结束 reasoning
+                  if (reasoningStarted) {
+                    controller.enqueue({ type: 'reasoning-end', id: reasoningMessageId });
+                    reasoningStarted = false;
+                  }
+                  if (!textStarted) {
+                    controller.enqueue({ type: 'text-start', id: textMessageId });
+                    textStarted = true;
+                  }
+                  controller.enqueue({
+                    type: 'text-delta',
+                    id: textMessageId,
+                    delta: extracted.deltaText,
+                  });
+                }
+
+                // 流结束
+                if (extracted.isDone) {
+                  if (reasoningStarted) {
+                    controller.enqueue({ type: 'reasoning-end', id: reasoningMessageId });
+                    reasoningStarted = false;
+                  }
+                  if (textStarted) {
+                    controller.enqueue({ type: 'text-end', id: textMessageId });
+                    textStarted = false;
+                  }
+                }
               }
+            }
+
+            // 确保 reasoning 和文本流正确结束
+            if (reasoningStarted) {
+              controller.enqueue({ type: 'reasoning-end', id: reasoningMessageId });
+              reasoningStarted = false;
+            }
+            if (textStarted) {
+              controller.enqueue({ type: 'text-end', id: textMessageId });
+              textStarted = false;
+            }
+
+            await result.completed;
+
+            if (resumedState) {
+              const outputItems = result.output.slice(persistedOutputCount);
+              if (outputItems.length > 0) {
+                await session.addItems(outputItems);
+              }
+            }
+            persistedOutputCount = result.output.length;
+
+            if (abortSignal?.aborted) {
+              clearApprovalGate(chatId);
+              break;
+            }
+
+            if (hasPendingApprovals(approvalGate)) {
+              await waitForApprovals(approvalGate);
+              clearApprovalGate(chatId);
+              if (abortSignal?.aborted) {
+                break;
+              }
+              resumedState = result.state as RunState<AgentContext, Agent<AgentContext>>;
               continue;
             }
 
-            // 处理 Model 流事件
-            if (isModelEvent) {
-              const extracted = extractModelStreamEvent(event);
-
-              // reasoning 增量
-              if (extracted.reasoningDelta) {
-                if (!reasoningStarted) {
-                  controller.enqueue({ type: 'reasoning-start', id: reasoningMessageId });
-                  reasoningStarted = true;
-                }
-                controller.enqueue({
-                  type: 'reasoning-delta',
-                  id: reasoningMessageId,
-                  delta: extracted.reasoningDelta,
-                });
-              }
-
-              // 文本增量
-              if (extracted.deltaText) {
-                // 在开始文本之前，结束 reasoning
-                if (reasoningStarted) {
-                  controller.enqueue({ type: 'reasoning-end', id: reasoningMessageId });
-                  reasoningStarted = false;
-                }
-                if (!textStarted) {
-                  controller.enqueue({ type: 'text-start', id: textMessageId });
-                  textStarted = true;
-                }
-                controller.enqueue({
-                  type: 'text-delta',
-                  id: textMessageId,
-                  delta: extracted.deltaText,
-                });
-              }
-
-              // 流结束
-              if (extracted.isDone) {
-                if (reasoningStarted) {
-                  controller.enqueue({ type: 'reasoning-end', id: reasoningMessageId });
-                  reasoningStarted = false;
-                }
-                if (textStarted) {
-                  controller.enqueue({ type: 'text-end', id: textMessageId });
-                  textStarted = false;
-                }
-              }
-            }
-          }
-
-          // 确保 reasoning 和文本流正确结束
-          if (reasoningStarted) {
-            controller.enqueue({ type: 'reasoning-end', id: reasoningMessageId });
-          }
-          if (textStarted) {
-            controller.enqueue({ type: 'text-end', id: textMessageId });
+            clearApprovalGate(chatId);
+            resumedState = null;
+            break;
           }
 
           controller.enqueue({ type: 'finish', finishReason: 'stop' });
           controller.close();
         } catch (error) {
           controller.error(error);
+        } finally {
+          clearApprovalGate(chatId);
         }
       },
     });
@@ -181,6 +291,35 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
 function getEventType(event: unknown): string | undefined {
   if (!event || typeof event !== 'object') return undefined;
   return (event as { type?: string }).type;
+}
+
+type RunItemType =
+  | 'tool_call_item'
+  | 'tool_call_output_item'
+  | 'tool_approval_item'
+  | 'message_output_item'
+  | 'reasoning_item'
+  | 'handoff_call_item'
+  | 'handoff_output_item';
+
+function getRunItemType(item: unknown): RunItemType | undefined {
+  if (!item || typeof item !== 'object') return undefined;
+  const typeFromProp = (item as { type?: RunItemType }).type;
+  if (typeFromProp) return typeFromProp;
+  if (__DEV__) {
+    const ctorName = (item as object).constructor?.name;
+    const ctorToType: Record<string, RunItemType> = {
+      RunToolCallItem: 'tool_call_item',
+      RunToolCallOutputItem: 'tool_call_output_item',
+      RunToolApprovalItem: 'tool_approval_item',
+      RunMessageOutputItem: 'message_output_item',
+      RunReasoningItem: 'reasoning_item',
+      RunHandoffCallItem: 'handoff_call_item',
+      RunHandoffOutputItem: 'handoff_output_item',
+    };
+    return ctorToType[ctorName ?? ''];
+  }
+  return undefined;
 }
 
 /**

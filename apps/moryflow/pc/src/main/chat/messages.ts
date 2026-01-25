@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import type { UIMessage, UIMessageChunk, UIMessageStreamWriter, FileUIPart } from 'ai';
 import { isFileUIPart, isTextUIPart, readUIMessageStream } from 'ai';
-import { RunItemStreamEvent, RunRawModelStreamEvent } from '@openai/agents-core';
+import {
+  RunItemStreamEvent,
+  RunRawModelStreamEvent,
+  RunToolApprovalItem,
+} from '@openai/agents-core';
 
 import type { TokenUsage } from '../../shared/ipc.js';
 import type { AgentStreamResult } from '../agent-runtime/index.js';
@@ -86,6 +90,7 @@ export const streamAgentRun = async ({
   toolNames,
   signal,
   messageId,
+  onToolApprovalRequest,
 }: {
   writer: UIMessageStreamWriter<UIMessage>;
   result: AgentStreamResult;
@@ -93,6 +98,10 @@ export const streamAgentRun = async ({
   signal?: AbortSignal;
   /** 消息 ID，整轮对话使用同一个 ID */
   messageId?: string;
+  onToolApprovalRequest?: (item: RunToolApprovalItem) => {
+    approvalId: string;
+    toolCallId: string;
+  } | null;
 }): Promise<StreamAgentRunResult> => {
   // 使用固定的消息 ID，整轮对话只用一个
   const textMessageId = messageId ?? randomUUID();
@@ -173,12 +182,43 @@ export const streamAgentRun = async ({
     }
   };
 
+  const resolveToolCallId = (item: RunToolApprovalItem): string => {
+    const raw = item.rawItem as Record<string, unknown> | undefined;
+    const callId =
+      typeof raw?.callId === 'string' && raw.callId.length > 0 ? raw.callId : undefined;
+    const rawId = typeof raw?.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
+    const providerData = raw?.providerData as Record<string, unknown> | undefined;
+    const providerId =
+      typeof providerData?.id === 'string' && providerData.id.length > 0
+        ? providerData.id
+        : undefined;
+    return callId ?? rawId ?? providerId ?? randomUUID();
+  };
+
   try {
     for await (const event of result) {
       if (isAborted()) break;
 
       // 处理工具调用事件
       if (event instanceof RunItemStreamEvent) {
+        if (event.name === 'tool_approval_requested' && event.item instanceof RunToolApprovalItem) {
+          const approval = onToolApprovalRequest?.(event.item);
+          if (!approval) {
+            continue;
+          }
+          const toolCallId = approval.toolCallId ?? resolveToolCallId(event.item);
+          const approvalId = approval.approvalId ?? randomUUID();
+          try {
+            writer.write({
+              type: 'tool-approval-request',
+              approvalId,
+              toolCallId,
+            });
+          } catch (error) {
+            console.warn('[chat] failed to write tool approval request', error);
+          }
+          continue;
+        }
         const chunk = mapRunToolEventToChunk(event, toolNames);
         if (chunk) {
           try {
