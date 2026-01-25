@@ -1,7 +1,6 @@
 /**
  * Browser 类型定义
  */
-export type { ApiResponse } from '@/lib/types';
 
 /** 单个浏览器实例状态 */
 export interface BrowserInstanceStatus {

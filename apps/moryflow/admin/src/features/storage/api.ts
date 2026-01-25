@@ -2,7 +2,7 @@
  * 云同步管理 API
  */
 
-import { adminApi } from '@/lib/api'
+import { adminApi } from '@/lib/api';
 import type {
   StorageStats,
   VaultListResponse,
@@ -13,19 +13,19 @@ import type {
   UserStorageListParams,
   VectorizedFileListResponse,
   VectorizedFileListParams,
-} from '@/types/storage'
+} from '@/types/storage';
 
 /**
  * 构建查询字符串
  */
 function buildQueryString(params: Record<string, unknown>): string {
-  const searchParams = new URLSearchParams()
+  const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
-      searchParams.set(key, String(value))
+      searchParams.set(key, String(value));
     }
-  })
-  return searchParams.toString()
+  });
+  return searchParams.toString();
 }
 
 export const storageApi = {
@@ -42,8 +42,8 @@ export const storageApi = {
    * 获取 Vault 列表
    */
   getVaultList: (params: VaultListParams) => {
-    const qs = buildQueryString(params as Record<string, unknown>)
-    return adminApi.get<VaultListResponse>(`/storage/vaults${qs ? `?${qs}` : ''}`)
+    const qs = buildQueryString(params as Record<string, unknown>);
+    return adminApi.get<VaultListResponse>(`/storage/vaults${qs ? `?${qs}` : ''}`);
   },
 
   /**
@@ -54,7 +54,7 @@ export const storageApi = {
   /**
    * 删除 Vault
    */
-  deleteVault: (id: string) => adminApi.delete<{ success: boolean }>(`/storage/vaults/${id}`),
+  deleteVault: (id: string) => adminApi.delete<void>(`/storage/vaults/${id}`),
 
   // ==================== 用户存储管理 ====================
 
@@ -62,8 +62,8 @@ export const storageApi = {
    * 获取用户存储列表
    */
   getUserStorageList: (params: UserStorageListParams) => {
-    const qs = buildQueryString(params as Record<string, unknown>)
-    return adminApi.get<UserStorageListResponse>(`/storage/users${qs ? `?${qs}` : ''}`)
+    const qs = buildQueryString(params as Record<string, unknown>);
+    return adminApi.get<UserStorageListResponse>(`/storage/users${qs ? `?${qs}` : ''}`);
   },
 
   /**
@@ -78,13 +78,12 @@ export const storageApi = {
    * 获取向量化文件列表
    */
   getVectorizedFileList: (params: VectorizedFileListParams) => {
-    const qs = buildQueryString(params as Record<string, unknown>)
-    return adminApi.get<VectorizedFileListResponse>(`/storage/vectorized${qs ? `?${qs}` : ''}`)
+    const qs = buildQueryString(params as Record<string, unknown>);
+    return adminApi.get<VectorizedFileListResponse>(`/storage/vectorized${qs ? `?${qs}` : ''}`);
   },
 
   /**
    * 删除向量化记录
    */
-  deleteVectorizedFile: (id: string) =>
-    adminApi.delete<{ success: boolean }>(`/storage/vectorized/${id}`),
-}
+  deleteVectorizedFile: (id: string) => adminApi.delete<void>(`/storage/vectorized/${id}`),
+};

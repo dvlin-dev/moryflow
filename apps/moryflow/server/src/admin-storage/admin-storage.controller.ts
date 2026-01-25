@@ -11,6 +11,8 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -108,10 +110,11 @@ export class AdminStorageController {
     description: '删除指定 Vault（包含 R2 文件）',
   })
   @ApiParam({ name: 'id', description: 'Vault ID' })
-  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 204, description: '删除成功' })
   @ApiResponse({ status: 404, description: 'Vault 不存在' })
   @Delete('vaults/:id')
-  async deleteVault(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteVault(@Param('id') id: string): Promise<void> {
     return this.adminStorageService.deleteVault(id);
   }
 
@@ -217,10 +220,11 @@ export class AdminStorageController {
     description: '删除指定的向量化记录',
   })
   @ApiParam({ name: 'id', description: '向量化记录 ID' })
-  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 204, description: '删除成功' })
   @ApiResponse({ status: 404, description: '记录不存在' })
   @Delete('vectorized/:id')
-  async deleteVectorizedFile(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteVectorizedFile(@Param('id') id: string): Promise<void> {
     return this.adminStorageService.deleteVectorizedFile(id);
   }
 }

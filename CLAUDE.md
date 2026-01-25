@@ -2,6 +2,7 @@
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
 > 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
+> 最近更新：2026-01-27（RFC7807 错误体边界完善、请求 Origin 缺失统一返回问题详情、API 客户端非 JSON 响应保护、ProblemDetails 类型统一、补齐 test:unit 与回归测试；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 
 ## 项目概述
 
@@ -46,7 +47,7 @@ pnpm --filter @anyhunt/anyhunt-server test:e2e
 
 ```bash
 # 运行单元测试
-pnpm --filter @anyhunt/admin test
+pnpm --filter @anyhunt/admin test:unit
 
 # 运行 Playwright E2E 测试
 pnpm --filter @anyhunt/admin test:e2e
@@ -215,6 +216,7 @@ Anyhunt/
 | [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
 | [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)         | Auth 交互统一与数据库重置改造方案                         |
 | [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md) | Auth 统一改造涉及文件与模块清单                           |
+| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                         | API Client 统一封装方案（Anyhunt + Moryflow）             |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
 | [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                 | Moryflow Agent Tasks 系统方案（替代 Plan）                |

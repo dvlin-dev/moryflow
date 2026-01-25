@@ -38,3 +38,6 @@ const client = createServerApiClient({
 - `MEMBERSHIP_API_URL` 默认值对齐 `app.moryflow.com`
 - FileIndex 类型收敛为 v2（向量时钟），移除旧版兼容结构
 - FileIndex 增加 `lastSyncedSize/lastSyncedMtime` 字段用于本地变更预过滤
+- 错误解析统一为 RFC7807（ProblemDetails），补齐 requestId 与 errors 透传
+- 非 JSON 成功响应视为异常（`UNEXPECTED_RESPONSE`）
+- 新增 create-client 非 JSON 回归测试，补齐 `test:unit`

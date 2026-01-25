@@ -1,6 +1,6 @@
 /**
  * AI Image 模块异常定义
- * 独立的异常类，返回 OpenAI 兼容格式
+ * 独立的异常类，输出 RFC7807 所需字段
  */
 
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -35,13 +35,7 @@ export abstract class AiImageException extends HttpException {
     status: HttpStatus,
   ) {
     super(
-      {
-        error: {
-          message: errorMessage,
-          type: errorType,
-          code: errorCode,
-        },
-      },
+      { code: errorCode, message: errorMessage, details: { type: errorType } },
       status,
     );
   }

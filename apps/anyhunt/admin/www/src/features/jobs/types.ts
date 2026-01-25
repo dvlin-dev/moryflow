@@ -1,7 +1,7 @@
 /**
  * Jobs 类型定义
  */
-export type { ApiResponse, Pagination, PaginatedResponse } from '@/lib/types';
+export type { Pagination, PaginatedResponse } from '@/lib/types';
 
 /** 任务状态 */
 export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';

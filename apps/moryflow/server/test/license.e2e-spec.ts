@@ -145,15 +145,13 @@ describe('License Controller (e2e)', () => {
       });
 
       if (license?.activations[0]) {
-        const response = await request(app.getHttpServer())
+        await request(app.getHttpServer())
           .post('/license/deactivate')
           .send({
             licenseKey: testLicenseKey,
             instanceId: license.activations[0].instanceId,
           })
-          .expect(201);
-
-        expect(response.body.success).toBe(true);
+          .expect(204);
       }
     });
   });

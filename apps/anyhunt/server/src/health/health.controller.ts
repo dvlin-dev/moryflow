@@ -9,7 +9,6 @@
 import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from '../auth/decorators';
-import { SkipResponseWrap } from '../common/decorators';
 import { PrismaService } from '../prisma';
 import { RedisService } from '../redis';
 
@@ -38,7 +37,6 @@ interface HealthVersionResponse {
 
 @ApiTags('Health')
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
-@SkipResponseWrap()
 export class HealthController {
   private readonly startTime = Date.now();
 

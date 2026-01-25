@@ -53,15 +53,12 @@ curl -X POST https://server.anyhunt.app/api/v1/batch/scrape \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "batch_abc123",
-    "status": "PENDING",
-    "totalUrls": 3,
-    "completedUrls": 0,
-    "failedUrls": 0,
-    "createdAt": "2024-01-15T10:30:00.000Z"
-  }
+  "id": "batch_abc123",
+  "status": "PENDING",
+  "totalUrls": 3,
+  "completedUrls": 0,
+  "failedUrls": 0,
+  "createdAt": "2024-01-15T10:30:00.000Z"
 }
 ```
 
@@ -75,15 +72,12 @@ GET /api/v1/batch/scrape/:id
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "batch_abc123",
-    "status": "PROCESSING",
-    "totalUrls": 3,
-    "completedUrls": 2,
-    "failedUrls": 0,
-    "createdAt": "2024-01-15T10:30:00.000Z"
-  }
+  "id": "batch_abc123",
+  "status": "PROCESSING",
+  "totalUrls": 3,
+  "completedUrls": 2,
+  "failedUrls": 0,
+  "createdAt": "2024-01-15T10:30:00.000Z"
 }
 ```
 
@@ -91,42 +85,39 @@ GET /api/v1/batch/scrape/:id
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "batch_abc123",
-    "status": "COMPLETED",
-    "totalUrls": 3,
-    "completedUrls": 3,
-    "failedUrls": 0,
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "completedAt": "2024-01-15T10:30:15.000Z",
-    "data": [
-      {
-        "url": "https://example.com/page-1",
-        "status": "COMPLETED",
-        "result": {
-          "markdown": "# Page 1\n\nContent...",
-          "links": ["https://example.com/other"]
-        }
-      },
-      {
-        "url": "https://example.com/page-2",
-        "status": "COMPLETED",
-        "result": {
-          "markdown": "# Page 2\n\nContent...",
-          "links": []
-        }
-      },
-      {
-        "url": "https://example.com/page-3",
-        "status": "COMPLETED",
-        "result": {
-          "markdown": "# Page 3\n\nContent...",
-          "links": []
-        }
+  "id": "batch_abc123",
+  "status": "COMPLETED",
+  "totalUrls": 3,
+  "completedUrls": 3,
+  "failedUrls": 0,
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "completedAt": "2024-01-15T10:30:15.000Z",
+  "data": [
+    {
+      "url": "https://example.com/page-1",
+      "status": "COMPLETED",
+      "result": {
+        "markdown": "# Page 1\n\nContent...",
+        "links": ["https://example.com/other"]
       }
-    ]
-  }
+    },
+    {
+      "url": "https://example.com/page-2",
+      "status": "COMPLETED",
+      "result": {
+        "markdown": "# Page 2\n\nContent...",
+        "links": []
+      }
+    },
+    {
+      "url": "https://example.com/page-3",
+      "status": "COMPLETED",
+      "result": {
+        "markdown": "# Page 3\n\nContent...",
+        "links": []
+      }
+    }
+  ]
 }
 ```
 
@@ -163,19 +154,16 @@ GET /api/v1/batch/scrape
 ### Response
 
 ```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "batch_abc123",
-      "status": "COMPLETED",
-      "totalUrls": 3,
-      "completedUrls": 3,
-      "failedUrls": 0,
-      "createdAt": "2024-01-15T10:30:00.000Z"
-    }
-  ]
-}
+[
+  {
+    "id": "batch_abc123",
+    "status": "COMPLETED",
+    "totalUrls": 3,
+    "completedUrls": 3,
+    "failedUrls": 0,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+]
 ```
 
 ## Webhook Payload
@@ -220,7 +208,7 @@ const response = await fetch('https://server.anyhunt.app/api/v1/batch/scrape', {
   }),
 });
 
-const { data } = await response.json();
+const data = await response.json();
 console.log('Batch job ID:', data.id);
 
 // Poll for results
@@ -233,12 +221,12 @@ const checkStatus = async (id) => {
 
 // Wait for completion
 let status = await checkStatus(data.id);
-while (status.data.status === 'PROCESSING') {
+while (status.status === 'PROCESSING') {
   await new Promise(r => setTimeout(r, 2000));
   status = await checkStatus(data.id);
 }
 
-console.log('Results:', status.data.data);
+console.log('Results:', status.data);
 ```
 
 ### Python
@@ -266,7 +254,7 @@ response = requests.post(
     },
 )
 
-batch_id = response.json()['data']['id']
+batch_id = response.json()['id']
 print(f'Batch job ID: {batch_id}')
 
 # Poll for results
@@ -276,11 +264,11 @@ while True:
         headers={'Authorization': 'Bearer ah_your_api_key'},
     ).json()
 
-    if status['data']['status'] != 'PROCESSING':
+    if status['status'] != 'PROCESSING':
         break
     time.sleep(2)
 
-print('Results:', status['data']['data'])
+print('Results:', status['data'])
 ```
 
 ## Best Practices

@@ -24,12 +24,8 @@ curl -X POST https://server.anyhunt.app/api/v1/scrape \\
 
 # Response:
 {
-  "success": true,
-  "data": {
-    "id": "job_abc123",
-    "status": "PENDING"
-  },
-  "timestamp": "2026-01-07T00:00:00.000Z"
+  "id": "job_abc123",
+  "status": "PENDING"
 }`,
   crawl: `# Crawl an entire website
 curl -X POST https://server.anyhunt.app/api/v1/crawl \\
@@ -44,12 +40,8 @@ curl -X POST https://server.anyhunt.app/api/v1/crawl \\
 
 # Response:
 {
-  "success": true,
-  "data": {
-    "id": "crawl_abc123",
-    "status": "PENDING"
-  },
-  "timestamp": "2026-01-07T00:00:00.000Z"
+  "id": "crawl_abc123",
+  "status": "PENDING"
 }`,
   extract: `# Extract structured data with AI
 curl -X POST https://server.anyhunt.app/api/v1/extract \\
@@ -70,9 +62,9 @@ curl -X POST https://server.anyhunt.app/api/v1/extract \\
 
 # Response:
 {
-  "success": true,
-  "data": { "name": "Premium Widget", "price": 29.99, "description": "..." },
-  "timestamp": "2026-01-07T00:00:00.000Z"
+  "name": "Premium Widget",
+  "price": 29.99,
+  "description": "..."
 }`,
 };
 

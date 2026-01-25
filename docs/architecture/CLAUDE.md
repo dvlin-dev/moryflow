@@ -23,6 +23,7 @@
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
+- `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
@@ -71,3 +72,11 @@
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充配置格式、规则匹配与审计落地规范（2026-01-24）。
 - `auth/unified-auth-rebuild-file-map.md`：补充 Mobile refresh 网络异常修复与 `X-App-Platform` 传递范围结论。
 - `auth/access-token-storage-plan.md`：补充未登录/refresh 失效/过期处理（2026-01-25）。
+- `auth/access-token-storage-plan.md`：补充 PC/移动端安全存储与 Device refresh 流程（2026-01-25）。
+- `api-client-unification.md`：新增 API Client 统一封装方案（2026-01-26）。
+- `api-client-unification.md`：补充 React Query Web/PC/移动端用法与复用策略（2026-01-26）。
+- `api-client-unification.md`：统一响应为 raw JSON + RFC7807，并新增一次性执行计划（2026-01-26）。
+- `api-client-unification.md`：删除 envelope 过渡适配，明确不做历史兼容（2026-01-26）。
+- `api-client-unification.md`：修正文档冲突项，删除 envelope 相关内容（2026-01-26）。
+- `api-client-unification.md`：补充 requestId 约定与校验错误示例（2026-01-26）。
+- `api-client-unification.md`：补充 errors 数组原因与前端展示建议（2026-01-26）。

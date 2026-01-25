@@ -201,7 +201,7 @@ export default function PaymentTestPage() {
 
     try {
       // 调用后端 API 创建 checkout session
-      const data = await apiClient.post<{ success: boolean; checkoutUrl?: string; error?: string }>(
+      const data = await apiClient.post<{ checkoutUrl: string }>(
         `${ADMIN_API.PAYMENT}/test-checkout`,
         {
           productEnvKey,
@@ -216,7 +216,7 @@ export default function PaymentTestPage() {
         window.open(data.checkoutUrl, '_blank');
         toast.success('已打开支付页面');
       } else {
-        throw new Error(data.error || 'No checkout URL returned');
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Checkout error:', error);

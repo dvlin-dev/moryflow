@@ -145,13 +145,11 @@ describe('Admin Controller (e2e)', () => {
 
   describe('POST /api/admin/users/:id/credits', () => {
     it('应该发放积分', async () => {
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post(`/api/admin/users/${testUserId}/credits`)
         .set('Authorization', `Bearer ${adminAccessToken}`)
         .send({ type: 'purchased', amount: 100 })
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
+        .expect(204);
     });
   });
 

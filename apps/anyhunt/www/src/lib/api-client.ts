@@ -7,6 +7,7 @@
 import { API_BASE_URL } from './api-base';
 import { refreshAccessToken, logout } from './auth-session';
 import { authStore, isAccessTokenExpiringSoon } from '@/stores/auth-store';
+import type { ProblemDetails } from '@anyhunt/types';
 
 /**
  * API Error
@@ -15,13 +16,24 @@ export class ApiClientError extends Error {
   status: number;
   code: string;
   details?: unknown;
+  requestId?: string;
+  errors?: Array<{ field?: string; message: string }>;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    requestId?: string,
+    errors?: Array<{ field?: string; message: string }>
+  ) {
     super(message);
     this.name = 'ApiClientError';
     this.status = status;
     this.code = code;
     this.details = details;
+    this.requestId = requestId;
+    this.errors = errors;
   }
 
   get isUnauthorized(): boolean {
@@ -35,15 +47,6 @@ export class ApiClientError extends Error {
   get isNotFound(): boolean {
     return this.status === 404;
   }
-}
-
-interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
 }
 
 class ApiClient {
@@ -66,21 +69,29 @@ class ApiClient {
     return headers;
   }
 
-  private async safeParseJson(response: Response): Promise<unknown> {
+  private async safeParseJson(response: Response): Promise<{
+    parsed: boolean;
+    value: unknown;
+  }> {
     try {
-      return await response.json();
+      return { parsed: true, value: await response.json() };
     } catch {
-      return {};
+      return { parsed: false, value: undefined };
     }
   }
 
-  private throwApiError(status: number, json: unknown): never {
-    const errorResponse = json as ApiErrorResponse;
+  private throwApiError(status: number, json: unknown, requestId?: string): never {
+    const problem = json as ProblemDetails;
+    const message =
+      typeof problem?.detail === 'string' ? problem.detail : `Request failed (${status})`;
+    const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
     throw new ApiClientError(
       status,
-      errorResponse.error?.code || 'UNKNOWN_ERROR',
-      errorResponse.error?.message || `Request failed (${status})`,
-      errorResponse.error?.details
+      code,
+      message,
+      problem?.details,
+      problem?.requestId ?? requestId,
+      problem?.errors
     );
   }
 
@@ -89,21 +100,27 @@ class ApiClient {
       return undefined as T;
     }
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      if (!response.ok) {
-        throw new ApiClientError(response.status, 'NETWORK_ERROR', 'Request failed');
-      }
-      return {} as T;
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    const parsed = isJson ? await this.safeParseJson(response) : undefined;
+
+    if (!response.ok) {
+      this.throwApiError(response.status, parsed?.value, requestId);
     }
 
-    const json = await this.safeParseJson(response);
-
-    if (!response.ok || (json as { success?: boolean }).success === false) {
-      this.throwApiError(response.status, json);
+    if (!isJson || !parsed?.parsed) {
+      throw new ApiClientError(
+        response.status,
+        'UNEXPECTED_RESPONSE',
+        'Unexpected response format',
+        undefined,
+        requestId
+      );
     }
 
-    return (json as { data: T }).data;
+    return parsed.value as T;
   }
 
   private async fetchWithAuth(

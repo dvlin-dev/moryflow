@@ -42,7 +42,18 @@ describe('AuthStore', () => {
   });
 
   it('refreshAccessToken 应在失败时清空 accessToken', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'Unauthorized' }, 401));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          type: 'https://anyhunt.app/errors/UNAUTHORIZED',
+          title: 'Unauthorized',
+          status: 401,
+          detail: 'Unauthorized',
+          code: 'UNAUTHORIZED',
+        },
+        401
+      )
+    );
 
     const result = await useAuthStore.getState().refreshAccessToken();
 

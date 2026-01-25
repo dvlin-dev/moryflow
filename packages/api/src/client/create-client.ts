@@ -9,6 +9,7 @@
 import { USER_API, OPENAI_API, PAYMENT_API } from '../paths';
 import { getTierInfo } from '../membership/const';
 import { ServerApiError } from './error';
+import type { ProblemDetails } from '@anyhunt/types';
 import type {
   ServerApiClientConfig,
   ServerApiClient,
@@ -60,6 +61,22 @@ export function createServerApiClient(config: ServerApiClientConfig): ServerApiC
       plugin.onResponse?.(response);
     }
 
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    let parsedBody: unknown;
+    let parsedOk = false;
+
+    if (isJson) {
+      try {
+        parsedBody = await response.json();
+        parsedOk = true;
+      } catch {
+        parsedOk = false;
+      }
+    }
+
     if (!response.ok) {
       if (response.status === 401 && onUnauthorized) {
         const shouldRetry = await onUnauthorized();
@@ -67,21 +84,36 @@ export function createServerApiClient(config: ServerApiClientConfig): ServerApiC
           return request<T>(path, options, attempt + 1);
         }
       }
-      const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+      const payload = parsedOk ? (parsedBody as ProblemDetails) : undefined;
+      const message =
+        typeof payload?.detail === 'string' ? payload.detail : `Request failed: ${response.status}`;
+      const code = typeof payload?.code === 'string' ? payload.code : undefined;
       throw new ServerApiError(
         response.status,
-        (errorData.message as string) || `Request failed: ${response.status}`,
-        errorData.code as string | undefined,
-        errorData
+        message,
+        code,
+        payload?.details,
+        payload?.requestId ?? requestId,
+        payload?.errors
       );
     }
 
-    // 204 No Content
     if (response.status === 204) {
       return undefined as T;
     }
 
-    return response.json() as Promise<T>;
+    if (!isJson || !parsedOk) {
+      throw new ServerApiError(
+        response.status,
+        'Unexpected response format',
+        'UNEXPECTED_RESPONSE',
+        undefined,
+        requestId
+      );
+    }
+
+    return parsedBody as T;
   }
 
   // 返回 API 方法

@@ -116,7 +116,7 @@ export class AiAdminService {
 
     this.logger.log(`Created provider: ${provider.id}`);
 
-    return { success: true, provider };
+    return { provider };
   }
 
   /**
@@ -138,7 +138,7 @@ export class AiAdminService {
 
     this.logger.log(`Updated provider: ${id}`);
 
-    return { success: true, provider };
+    return { provider };
   }
 
   /**
@@ -152,7 +152,7 @@ export class AiAdminService {
 
     await this.prisma.aiProvider.delete({ where: { id } });
     this.logger.log(`Deleted provider: ${id}`);
-    return { success: true };
+    return;
   }
 
   // ==================== Model 管理 ====================
@@ -223,7 +223,7 @@ export class AiAdminService {
     });
 
     this.logger.log(`Created model: ${model.id}`);
-    return { success: true, model };
+    return { model };
   }
 
   /**
@@ -266,7 +266,7 @@ export class AiAdminService {
     });
 
     this.logger.log(`Updated model: ${id}`);
-    return { success: true, model };
+    return { model };
   }
 
   /**
@@ -280,6 +280,6 @@ export class AiAdminService {
 
     await this.prisma.aiModel.delete({ where: { id } });
     this.logger.log(`Deleted model: ${id}`);
-    return { success: true };
+    return;
   }
 }

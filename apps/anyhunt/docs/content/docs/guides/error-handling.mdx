@@ -9,16 +9,17 @@ Learn how to handle errors from Anyhunt APIs and implement robust retry strategi
 
 ## Error Response Format
 
-All API errors follow a consistent format:
+All API errors follow RFC 7807 (Problem Details):
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human-readable error message",
-    "details": {}
-  }
+  "type": "https://anyhunt.app/errors/ERROR_CODE",
+  "title": "Error Title",
+  "status": 400,
+  "detail": "Human-readable error message",
+  "code": "ERROR_CODE",
+  "requestId": "req_123",
+  "details": {}
 }
 ```
 
@@ -55,16 +56,16 @@ When rate limited, the response includes retry information:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "RATE_LIMITED",
-    "message": "Too many requests",
-    "details": {
-      "retryAfter": 60,
-      "limit": 100,
-      "remaining": 0,
-      "resetAt": "2024-01-15T11:00:00.000Z"
-    }
+  "type": "https://anyhunt.app/errors/RATE_LIMITED",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Too many requests",
+  "code": "RATE_LIMITED",
+  "details": {
+    "retryAfter": 60,
+    "limit": 100,
+    "remaining": 0,
+    "resetAt": "2024-01-15T11:00:00.000Z"
   }
 }
 ```
@@ -82,15 +83,15 @@ When rate limited, the response includes retry information:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "QUOTA_EXCEEDED",
-    "message": "Monthly quota exceeded",
-    "details": {
-      "quota": 10000,
-      "used": 10000,
-      "resetAt": "2024-02-01T00:00:00.000Z"
-    }
+  "type": "https://anyhunt.app/errors/QUOTA_EXCEEDED",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Monthly quota exceeded",
+  "code": "QUOTA_EXCEEDED",
+  "details": {
+    "quota": 10000,
+    "used": 10000,
+    "resetAt": "2024-02-01T00:00:00.000Z"
   }
 }
 ```
@@ -99,14 +100,14 @@ When rate limited, the response includes retry information:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "PAGE_TIMEOUT",
-    "message": "Page load timed out after 30000ms",
-    "details": {
-      "url": "https://slow-website.com",
-      "timeout": 30000
-    }
+  "type": "https://anyhunt.app/errors/PAGE_TIMEOUT",
+  "title": "Gateway Timeout",
+  "status": 504,
+  "detail": "Page load timed out after 30000ms",
+  "code": "PAGE_TIMEOUT",
+  "details": {
+    "url": "https://slow-website.com",
+    "timeout": 30000
   }
 }
 ```
@@ -132,19 +133,21 @@ async function scrapeWithRetry(url, options, maxRetries = 3) {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok) {
         return data;
       }
 
+      const code = data.code;
+      const detail = data.detail || `Request failed (${response.status})`;
+
       // Don't retry client errors (except rate limits)
-      if (response.status >= 400 && response.status < 500
-          && data.error?.code !== 'RATE_LIMITED') {
-        throw new Error(`Client error: ${data.error?.message}`);
+      if (response.status >= 400 && response.status < 500 && code !== 'RATE_LIMITED') {
+        throw new Error(`Client error: ${detail}`);
       }
 
       // Handle rate limiting
-      if (data.error?.code === 'RATE_LIMITED') {
-        const retryAfter = data.error.details?.retryAfter || 60;
+      if (code === 'RATE_LIMITED') {
+        const retryAfter = data.details?.retryAfter || 60;
         console.log(`Rate limited. Waiting ${retryAfter}s...`);
         await sleep(retryAfter * 1000);
         continue;
@@ -198,19 +201,19 @@ def scrape_with_retry(
 
             data = response.json()
 
-            if data.get('success'):
+            if response.ok:
                 return data
 
-            error = data.get('error', {})
-            error_code = error.get('code')
+            error_code = data.get('code')
+            detail = data.get('detail') or f"Request failed ({response.status_code})"
 
             # Don't retry client errors (except rate limits)
             if 400 <= response.status_code < 500 and error_code != 'RATE_LIMITED':
-                raise Exception(f"Client error: {error.get('message')}")
+                raise Exception(f"Client error: {detail}")
 
             # Handle rate limiting
             if error_code == 'RATE_LIMITED':
-                retry_after = error.get('details', {}).get('retryAfter', 60)
+                retry_after = data.get('details', {}).get('retryAfter', 60)
                 print(f"Rate limited. Waiting {retry_after}s...")
                 time.sleep(retry_after)
                 continue
@@ -298,7 +301,7 @@ async function scrapeBatchWithFallback(urls) {
   for (const url of urls) {
     try {
       const result = await scrapeWithRetry(url);
-      results.push({ url, success: true, data: result.data });
+      results.push({ url, success: true, data: result });
     } catch (error) {
       errors.push({ url, success: false, error: error.message });
       // Continue processing other URLs
@@ -315,7 +318,7 @@ async function scrapeBatchWithFallback(urls) {
 
 ## Best Practices
 
-1. **Always check `success` field** - Don't assume requests succeed
+1. **Check HTTP status** - Use `response.ok` and parse RFC7807 error bodies
 2. **Implement retries** - Use exponential backoff for transient errors
 3. **Respect rate limits** - Use `Retry-After` header values
 4. **Log errors** - Keep records for debugging

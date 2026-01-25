@@ -2,7 +2,7 @@
  * Alerts API
  */
 
-import { apiClient } from '../../lib/api-client'
+import { apiClient } from '../../lib/api-client';
 import type {
   AlertRule,
   AlertRulesResponse,
@@ -12,22 +12,22 @@ import type {
   UpdateAlertRuleDto,
   AlertRulesQuery,
   AlertHistoryQuery,
-} from './types'
+} from './types';
 
-const BASE_PATH = '/api/admin/alerts'
+const BASE_PATH = '/api/admin/alerts';
 
 /**
  * 构建查询字符串
  */
 function buildQueryString<T extends object>(params: T): string {
-  const searchParams = new URLSearchParams()
+  const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, String(value))
+      searchParams.append(key, String(value));
     }
   }
-  const qs = searchParams.toString()
-  return qs ? `?${qs}` : ''
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : '';
 }
 
 export const alertsApi = {
@@ -44,8 +44,7 @@ export const alertsApi = {
   /**
    * 获取单个规则
    */
-  getRule: (id: string) =>
-    apiClient.get<{ rule: AlertRule }>(`${BASE_PATH}/rules/${id}`),
+  getRule: (id: string) => apiClient.get<{ rule: AlertRule }>(`${BASE_PATH}/rules/${id}`),
 
   /**
    * 创建规则
@@ -62,8 +61,7 @@ export const alertsApi = {
   /**
    * 删除规则
    */
-  deleteRule: (id: string) =>
-    apiClient.delete<{ success: boolean }>(`${BASE_PATH}/rules/${id}`),
+  deleteRule: (id: string) => apiClient.delete<void>(`${BASE_PATH}/rules/${id}`),
 
   // ==========================================
   // 告警历史
@@ -83,13 +81,10 @@ export const alertsApi = {
    * 获取告警统计
    */
   getStats: (days?: number) =>
-    apiClient.get<AlertStatsResponse>(
-      `${BASE_PATH}/stats${days ? `?days=${days}` : ''}`,
-    ),
+    apiClient.get<AlertStatsResponse>(`${BASE_PATH}/stats${days ? `?days=${days}` : ''}`),
 
   /**
    * 手动触发检测
    */
-  triggerDetection: () =>
-    apiClient.post<{ success: boolean; message: string }>(`${BASE_PATH}/detect`),
-}
+  triggerDetection: () => apiClient.post<void>(`${BASE_PATH}/detect`),
+};

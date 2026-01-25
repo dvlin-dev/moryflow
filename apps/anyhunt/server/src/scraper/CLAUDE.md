@@ -6,6 +6,10 @@
 
 Core scraping engine for web content extraction. Handles single URL scraping with support for screenshots, markdown, HTML, links, and metadata.
 
+## 最近更新
+
+- Scraper 错误响应统一为 RFC7807（移除 success/data 包装）
+
 ## Responsibilities
 
 - Browser-based page rendering via Playwright

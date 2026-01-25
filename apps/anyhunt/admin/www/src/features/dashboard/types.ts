@@ -1,7 +1,6 @@
 /**
  * Dashboard 类型定义
  */
-export type { ApiResponse } from '@/lib/types';
 
 /** 仪表盘统计数据 */
 export interface DashboardStats {

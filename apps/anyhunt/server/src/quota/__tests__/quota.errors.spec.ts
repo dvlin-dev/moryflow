@@ -36,21 +36,21 @@ describe('Quota Errors', () => {
 
     it('should format message correctly', () => {
       const error = new QuotaExceededError(5, 10);
-      const response = error.getResponse() as { error: { message: string } };
+      const response = error.getResponse() as { message: string };
 
-      expect(response.error.message).toContain('Available: 5');
-      expect(response.error.message).toContain('Required: 10');
+      expect(response.message).toContain('Available: 5');
+      expect(response.message).toContain('Required: 10');
     });
 
     it('should return structured response', () => {
       const error = new QuotaExceededError(0, 1);
       const response = error.getResponse() as {
-        success: boolean;
-        error: { code: string; message: string; details: unknown };
+        code: string;
+        message: string;
+        details: unknown;
       };
 
-      expect(response.success).toBe(false);
-      expect(response.error.code).toBe(QuotaErrorCode.QUOTA_EXCEEDED);
+      expect(response.code).toBe(QuotaErrorCode.QUOTA_EXCEEDED);
     });
   });
 
@@ -100,9 +100,9 @@ describe('Quota Errors', () => {
 
     it('should include reason in message', () => {
       const error = new InvalidRefundError('Invalid source');
-      const response = error.getResponse() as { error: { message: string } };
+      const response = error.getResponse() as { message: string };
 
-      expect(response.error.message).toContain('Invalid source');
+      expect(response.message).toContain('Invalid source');
     });
   });
 
@@ -176,9 +176,9 @@ describe('Quota Errors', () => {
 
     it('should format message with limit', () => {
       const error = new ConcurrentLimitExceededError(10, 10);
-      const response = error.getResponse() as { error: { message: string } };
+      const response = error.getResponse() as { message: string };
 
-      expect(response.error.message).toContain('Limit: 10');
+      expect(response.message).toContain('Limit: 10');
     });
   });
 
@@ -198,9 +198,9 @@ describe('Quota Errors', () => {
 
     it('should format message correctly', () => {
       const error = new RateLimitExceededError(30, 'minute');
-      const response = error.getResponse() as { error: { message: string } };
+      const response = error.getResponse() as { message: string };
 
-      expect(response.error.message).toContain('30 requests per minute');
+      expect(response.message).toContain('30 requests per minute');
     });
   });
 

@@ -26,6 +26,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiNotFoundResponse,
+  ApiConflictResponse,
   ApiParam,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -208,13 +209,13 @@ export class AgentController {
     schema: {
       type: 'object',
       properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
+        status: { type: 'string', enum: ['cancelled'] },
         creditsUsed: { type: 'number' },
       },
     },
   })
   @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiConflictResponse({ description: 'Task cannot be cancelled' })
   async cancelTask(
     @CurrentUser() user: CurrentUserDto,
     @Param(new ZodValidationPipe(AgentTaskIdParamSchema))
@@ -222,13 +223,27 @@ export class AgentController {
   ) {
     const result = await this.agentService.cancelTask(params.id, user.id);
 
-    if (!result.success && result.message === 'Task not found') {
+    if (result.status === 'not_found') {
       throw new HttpException(
-        { message: 'Task not found' },
+        { code: 'TASK_NOT_FOUND', message: 'Task not found' },
         HttpStatus.NOT_FOUND,
       );
     }
 
-    return result;
+    if (result.status === 'invalid_status') {
+      throw new HttpException(
+        {
+          code: 'TASK_STATUS_INVALID',
+          message: `Cannot cancel task in '${result.currentStatus}' status`,
+          details: {
+            currentStatus: result.currentStatus,
+            creditsUsed: result.creditsUsed,
+          },
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    return { status: 'cancelled', creditsUsed: result.creditsUsed };
   }
 }

@@ -1,6 +1,6 @@
 /**
  * [INPUT]: API 请求 (Authorization: Token apiKey 认证)
- * [OUTPUT]: QuotaStatusResponseDto
+ * [OUTPUT]: QuotaStatusDto
  * [POS]: 配额模块 API 路由，提供公开 API 端点
  */
 
@@ -11,7 +11,7 @@ import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { CurrentApiKey } from '../api-key/api-key.decorators';
 import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 import { Public } from '../auth';
-import { QuotaStatusResponseDto } from './dto';
+import { QuotaStatusDto } from './dto';
 
 @Public()
 @Controller({ path: 'quota', version: '1' })
@@ -26,8 +26,10 @@ export class QuotaController {
    * 需要 apiKey 认证（Authorization: Token <apiKey>）
    */
   @Get()
-  @ApiOkResponse({ description: 'Quota status', type: QuotaStatusResponseDto })
-  async getQuotaStatus(@CurrentApiKey() apiKey: ApiKeyValidationResult) {
+  @ApiOkResponse({ description: 'Quota status', type: QuotaStatusDto })
+  async getQuotaStatus(
+    @CurrentApiKey() apiKey: ApiKeyValidationResult,
+  ): Promise<QuotaStatusDto> {
     const status = await this.quotaService.getStatus(apiKey.userId);
 
     return {

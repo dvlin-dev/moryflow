@@ -16,6 +16,8 @@ import {
   Param,
   Query,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { AdminGuard } from '../../common/guards';
 import { AlertService, AlertDetectorService } from '../../alert';
@@ -82,9 +84,9 @@ export class AdminAlertController {
    * 删除规则
    */
   @Delete('rules/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteRule(@Param('id') id: string) {
     await this.alertService.deleteRule(id);
-    return { success: true };
   }
 
   // ==========================================
@@ -124,8 +126,8 @@ export class AdminAlertController {
    * 手动触发告警检测
    */
   @Post('detect')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async triggerDetection() {
     await this.alertDetectorService.triggerDetection();
-    return { success: true, message: 'Detection triggered' };
   }
 }

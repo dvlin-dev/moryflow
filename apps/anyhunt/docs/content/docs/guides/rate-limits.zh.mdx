@@ -96,10 +96,12 @@ X-RateLimit-Reset: 1704067200
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "RATE_LIMITED",
-    "message": "请求过于频繁。请稍后再试。",
+  "type": "https://anyhunt.app/errors/RATE_LIMITED",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "请求过于频繁。请稍后再试。",
+  "code": "RATE_LIMITED",
+  "details": {
     "retryAfter": 15
   }
 }

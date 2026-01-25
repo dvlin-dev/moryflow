@@ -96,10 +96,12 @@ When rate limited, you'll receive:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "RATE_LIMITED",
-    "message": "Too many requests. Please try again later.",
+  "type": "https://anyhunt.app/errors/RATE_LIMITED",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Too many requests. Please try again later.",
+  "code": "RATE_LIMITED",
+  "details": {
     "retryAfter": 15
   }
 }

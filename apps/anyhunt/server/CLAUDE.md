@@ -13,6 +13,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Browser CDP 连接新增白名单/私网策略环境变量（`.env.example`）
 - Browser Streaming/Provider 环境变量补齐（`.env.example`）
 - Memox Memory 对齐 Mem0：新增 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains）、导出/历史/反馈与 Token 认证一致
+- 统一响应为 raw JSON + RFC7807 错误体，移除全局 response 包装并补齐 requestId 输出
+- Common：补齐 RFC7807 工具函数与 Origin 缺失场景的错误体一致性，避免 500 信息泄露
 
 ## Responsibilities
 

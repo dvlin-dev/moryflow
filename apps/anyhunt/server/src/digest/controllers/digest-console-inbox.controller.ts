@@ -14,6 +14,8 @@ import {
   Param,
   Query,
   Body,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -85,14 +87,15 @@ export class DigestConsoleInboxController {
   @ApiOperation({ summary: 'Update inbox item state' })
   @ApiParam({ name: 'id', description: 'Inbox item ID' })
   @ApiOkResponse({ description: 'Item state updated' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async updateState(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(UpdateInboxItemSchema))
     input: UpdateInboxItemInput,
-  ) {
+  ): Promise<void> {
     await this.inboxService.updateItemState(user.id, id, input);
-    return { success: true };
+    return;
   }
 
   /**

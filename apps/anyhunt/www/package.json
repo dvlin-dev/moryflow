@@ -12,6 +12,7 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@anyhunt/types": "workspace:*",
     "@anyhunt/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@hugeicons/core-free-icons": "^3.1.1",

@@ -54,6 +54,8 @@ module-name/
 
 - Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307
 - Build：移除 sync 包 node_modules 的 COPY（hoisted 模式下路径不存在），避免 Docker 构建失败
+- 统一响应为 raw JSON + RFC7807 错误体，新增 requestId 输出
+- Common：RFC7807 过滤器避免泄露未捕获错误信息
 - AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
 - AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
 - CreditService：新增欠费记录与付费积分优先抵扣

@@ -13,6 +13,8 @@ import {
   UseGuards,
   Req,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
@@ -56,11 +58,11 @@ export class VectorizeController {
 
   @Delete('file/:fileId')
   @ApiOperation({ summary: '删除文件向量' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteVector(
     @Req() req: AuthenticatedRequest,
     @Param('fileId') fileId: string,
-  ): Promise<{ success: boolean }> {
+  ): Promise<void> {
     await this.vectorizeService.deleteVector(req.user.id, fileId);
-    return { success: true };
   }
 }

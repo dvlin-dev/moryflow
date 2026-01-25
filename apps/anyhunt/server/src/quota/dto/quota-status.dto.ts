@@ -40,10 +40,3 @@ export class QuotaStatusDto {
   /** 当前周期开始时间 (ISO 8601) */
   periodStartsAt: string;
 }
-
-/** 配额查询 API 响应 */
-export class QuotaStatusResponseDto {
-  success: true;
-  data: QuotaStatusDto;
-  timestamp: string;
-}

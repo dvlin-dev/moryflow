@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { API_BASE_URL } from '@/lib/api-base';
 import { USER_API } from '@/lib/api-paths';
+import type { ProblemDetails } from '@anyhunt/types';
 
 /** Console 用户信息（来自 /api/v1/user/me） */
 export interface AuthUser {
@@ -36,11 +37,16 @@ type AuthResponse = {
 
 let refreshPromise: Promise<boolean> | null = null;
 
+const getProblemMessage = (payload: unknown, fallback: string): string => {
+  const problem = payload as ProblemDetails;
+  return typeof problem?.detail === 'string' ? problem.detail : fallback;
+};
+
 const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = typeof data?.message === 'string' ? data.message : 'Request failed';
+    const message = getProblemMessage(data, 'Request failed');
     throw new Error(message);
   }
   return data as T;

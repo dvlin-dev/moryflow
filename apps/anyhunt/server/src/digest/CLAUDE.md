@@ -10,6 +10,10 @@
 
 Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → 抓取/筛选 → 生成摘要/叙事 → 投递到 Inbox/Webhook/Email）。
 
+## 最近更新
+
+- Console/Admin Digest 写操作统一返回 204，错误体按 RFC7807 输出
+
 ## 职责边界
 
 - **本模块负责**

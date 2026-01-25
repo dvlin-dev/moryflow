@@ -116,11 +116,8 @@ API 返回任务 ID。通过轮询 `GET /api/v1/scrape/:id` 获取结果。
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "scrape_abc123",
-    "status": "PENDING"
-  }
+  "id": "scrape_abc123",
+  "status": "PENDING"
 }
 ```
 
@@ -130,24 +127,21 @@ API 返回任务 ID。通过轮询 `GET /api/v1/scrape/:id` 获取结果。
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "scrape_abc123",
-    "url": "https://example.com/article",
-    "fromCache": true,
-    "markdown": "# 文章标题\n\n文章内容...",
-    "screenshot": {
-      "url": "https://cdn.anyhunt.app/scraper/scrape_abc123.webp",
-      "width": 1920,
-      "height": 3500,
-      "format": "webp",
-      "fileSize": 245000,
-      "expiresAt": "2024-02-15T10:30:00.000Z"
-    },
-    "metadata": {
-      "title": "文章标题",
-      "description": "文章描述"
-    }
+  "id": "scrape_abc123",
+  "url": "https://example.com/article",
+  "fromCache": true,
+  "markdown": "# 文章标题\n\n文章内容...",
+  "screenshot": {
+    "url": "https://cdn.anyhunt.app/scraper/scrape_abc123.webp",
+    "width": 1920,
+    "height": 3500,
+    "format": "webp",
+    "fileSize": 245000,
+    "expiresAt": "2024-02-15T10:30:00.000Z"
+  },
+  "metadata": {
+    "title": "文章标题",
+    "description": "文章描述"
   }
 }
 ```
@@ -164,32 +158,29 @@ GET /api/v1/scrape/:id
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "scrape_abc123",
-    "url": "https://example.com/article",
-    "status": "COMPLETED",
-    "fromCache": false,
-    "markdown": "# 文章标题\n\n内容...",
-    "metadata": {
-      "title": "文章标题",
-      "description": "文章描述"
-    },
-    "screenshot": {
-      "url": "https://cdn.anyhunt.app/scraper/scrape_abc123.webp",
-      "width": 1920,
-      "height": 3500,
-      "format": "webp",
-      "fileSize": 245000
-    },
-    "timings": {
-      "queueWaitMs": 50,
-      "fetchMs": 1200,
-      "renderMs": 500,
-      "transformMs": 100,
-      "screenshotMs": 800,
-      "totalMs": 2650
-    }
+  "id": "scrape_abc123",
+  "url": "https://example.com/article",
+  "status": "COMPLETED",
+  "fromCache": false,
+  "markdown": "# 文章标题\n\n内容...",
+  "metadata": {
+    "title": "文章标题",
+    "description": "文章描述"
+  },
+  "screenshot": {
+    "url": "https://cdn.anyhunt.app/scraper/scrape_abc123.webp",
+    "width": 1920,
+    "height": 3500,
+    "format": "webp",
+    "fileSize": 245000
+  },
+  "timings": {
+    "queueWaitMs": 50,
+    "fetchMs": 1200,
+    "renderMs": 500,
+    "transformMs": 100,
+    "screenshotMs": 800,
+    "totalMs": 2650
   }
 }
 ```
@@ -221,19 +212,16 @@ GET /api/v1/scrape
 ### 响应
 
 ```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "scrape_abc123",
-      "url": "https://example.com",
-      "status": "COMPLETED",
-      "fromCache": false,
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "completedAt": "2024-01-15T10:30:02.650Z"
-    }
-  ]
-}
+[
+  {
+    "id": "scrape_abc123",
+    "url": "https://example.com",
+    "status": "COMPLETED",
+    "fromCache": false,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "completedAt": "2024-01-15T10:30:02.650Z"
+  }
+]
 ```
 
 ## 代码示例
@@ -255,7 +243,7 @@ const response = await fetch('https://server.anyhunt.app/api/v1/scrape', {
   }),
 });
 
-const { data } = await response.json();
+const data = await response.json();
 
 // 如果缓存命中，数据已经可用
 if (data.fromCache) {
@@ -271,7 +259,7 @@ async function pollForResult(id) {
     const res = await fetch(`https://server.anyhunt.app/api/v1/scrape/${id}`, {
       headers: { 'Authorization': 'Bearer ah_your_api_key' },
     });
-    const { data } = await res.json();
+    const data = await res.json();
     if (data.status === 'COMPLETED') return data;
     if (data.status === 'FAILED') throw new Error(data.error?.message);
     await new Promise(r => setTimeout(r, 1000)); // 等待 1 秒
@@ -299,7 +287,7 @@ response = requests.post(
     },
 )
 
-data = response.json()['data']
+data = response.json()
 
 # 如果缓存命中，数据已经可用
 if data.get('fromCache'):
@@ -311,7 +299,7 @@ else:
             f"https://server.anyhunt.app/api/v1/scrape/{data['id']}",
             headers={'Authorization': 'Bearer ah_your_api_key'}
         )
-        result = res.json()['data']
+        result = res.json()
         if result['status'] == 'COMPLETED':
             print(result['markdown'])
             break

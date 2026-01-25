@@ -183,9 +183,7 @@ export interface MapRequest {
 }
 
 /**
- * Map 响应
- * 注意：apiClient 会自动解包 data，所以这里不包含 success 字段
- * 错误情况由 apiClient 抛出异常处理
+ * Map 响应（raw JSON）
  */
 export interface MapResponse {
   links: string[];
@@ -200,9 +198,7 @@ export interface ExtractRequest {
 }
 
 /**
- * Extract 响应
- * 注意：apiClient 会自动解包 data，所以这里不包含 success 字段
- * 错误情况由 apiClient 抛出异常处理
+ * Extract 响应（raw JSON）
  */
 export interface ExtractResponse {
   data: Record<string, unknown>;
@@ -228,9 +224,7 @@ export interface SearchResult {
 }
 
 /**
- * Search 响应
- * 注意：apiClient 会自动解包 data，所以这里不包含 success 字段
- * 错误情况由 apiClient 抛出异常处理
+ * Search 响应（raw JSON）
  */
 export interface SearchResponse {
   query: string;

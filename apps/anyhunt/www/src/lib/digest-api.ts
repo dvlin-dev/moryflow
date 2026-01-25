@@ -5,7 +5,7 @@
  * [POS]: API client for public digest pages (no auth required)
  */
 
-import { ApiError } from './api';
+import { parseJsonResponse } from './api';
 
 // ============== Types ==============
 
@@ -73,36 +73,6 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// ============== API Response Types ==============
-
-interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
-}
-
-interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-  };
-}
-
-type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-// ============== Helper ==============
-
-function handleApiResponse<T>(response: Response, json: ApiResponse<T>): T {
-  if (!response.ok || !json.success) {
-    const errorJson = json as ApiErrorResponse;
-    throw new ApiError(
-      errorJson.error?.message || `Request failed (${response.status})`,
-      errorJson.error?.code
-    );
-  }
-  return json.data;
-}
-
 // ============== API Functions ==============
 
 export type TopicSort = 'trending' | 'latest' | 'most_followed' | 'quality';
@@ -132,8 +102,7 @@ export async function getPublicTopics(
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<PaginatedResponse<DigestTopicSummary>>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<PaginatedResponse<DigestTopicSummary>>(response);
 }
 
 /**
@@ -169,8 +138,7 @@ export async function getTopicBySlug(apiUrl: string, slug: string): Promise<Dige
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<DigestTopicDetail>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<DigestTopicDetail>(response);
 }
 
 /**
@@ -196,8 +164,7 @@ export async function getTopicEditions(
     }
   );
 
-  const json = (await response.json()) as ApiResponse<PaginatedResponse<DigestEditionSummary>>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<PaginatedResponse<DigestEditionSummary>>(response);
 }
 
 /**
@@ -213,11 +180,10 @@ export async function getEditionById(
     headers: { 'Content-Type': 'application/json' },
   });
 
-  const json = (await response.json()) as ApiResponse<{
+  const result = await parseJsonResponse<{
     edition: DigestEditionSummary;
     items: DigestEditionItem[];
-  }>;
-  const result = handleApiResponse(response, json);
+  }>(response);
   return { ...result.edition, items: result.items };
 }
 
@@ -235,6 +201,5 @@ export async function reportTopic(
     body: JSON.stringify(input),
   });
 
-  const json = (await response.json()) as ApiResponse<{ reportId: string; message: string }>;
-  return handleApiResponse(response, json);
+  return parseJsonResponse<{ reportId: string; message: string }>(response);
 }

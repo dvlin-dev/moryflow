@@ -61,11 +61,8 @@ API 返回任务 ID。通过轮询 `GET /api/v1/crawl/:id` 获取状态和结果
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "crawl_abc123",
-    "status": "PENDING"
-  }
+  "id": "crawl_abc123",
+  "status": "PENDING"
 }
 ```
 
@@ -81,17 +78,14 @@ GET /api/v1/crawl/:id
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "crawl_abc123",
-    "status": "PROCESSING",
-    "startUrl": "https://docs.example.com",
-    "totalUrls": 45,
-    "completedUrls": 32,
-    "failedUrls": 2,
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "startedAt": "2024-01-15T10:30:01.000Z"
-  }
+  "id": "crawl_abc123",
+  "status": "PROCESSING",
+  "startUrl": "https://docs.example.com",
+  "totalUrls": 45,
+  "completedUrls": 32,
+  "failedUrls": 2,
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "startedAt": "2024-01-15T10:30:01.000Z"
 }
 ```
 
@@ -99,30 +93,27 @@ GET /api/v1/crawl/:id
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "crawl_abc123",
-    "status": "COMPLETED",
-    "startUrl": "https://docs.example.com",
-    "totalUrls": 45,
-    "completedUrls": 43,
-    "failedUrls": 2,
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "startedAt": "2024-01-15T10:30:01.000Z",
-    "completedAt": "2024-01-15T10:32:15.000Z",
-    "data": [
-      {
-        "url": "https://docs.example.com/intro",
-        "depth": 1,
-        "markdown": "# 简介\n\n欢迎使用...",
-        "metadata": {
-          "title": "简介",
-          "description": "入门指南"
-        },
-        "links": ["https://docs.example.com/setup", "..."]
-      }
-    ]
-  }
+  "id": "crawl_abc123",
+  "status": "COMPLETED",
+  "startUrl": "https://docs.example.com",
+  "totalUrls": 45,
+  "completedUrls": 43,
+  "failedUrls": 2,
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "startedAt": "2024-01-15T10:30:01.000Z",
+  "completedAt": "2024-01-15T10:32:15.000Z",
+  "data": [
+    {
+      "url": "https://docs.example.com/intro",
+      "depth": 1,
+      "markdown": "# 简介\n\n欢迎使用...",
+      "metadata": {
+        "title": "简介",
+        "description": "入门指南"
+      },
+      "links": ["https://docs.example.com/setup", "..."]
+    }
+  ]
 }
 ```
 
@@ -148,11 +139,8 @@ DELETE /api/v1/crawl/:id
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "crawl_abc123",
-    "status": "CANCELLED"
-  }
+  "id": "crawl_abc123",
+  "status": "CANCELLED"
 }
 ```
 
@@ -172,20 +160,17 @@ GET /api/v1/crawl
 ### 响应
 
 ```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "crawl_abc123",
-      "status": "COMPLETED",
-      "startUrl": "https://docs.example.com",
-      "totalUrls": 45,
-      "completedUrls": 43,
-      "failedUrls": 2,
-      "createdAt": "2024-01-15T10:30:00.000Z"
-    }
-  ]
-}
+[
+  {
+    "id": "crawl_abc123",
+    "status": "COMPLETED",
+    "startUrl": "https://docs.example.com",
+    "totalUrls": 45,
+    "completedUrls": 43,
+    "failedUrls": 2,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+]
 ```
 
 ## Webhook 负载

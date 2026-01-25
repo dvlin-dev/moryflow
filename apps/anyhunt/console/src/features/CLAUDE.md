@@ -77,6 +77,7 @@ export function useApiKeys() {
 - Agent Browser Playground：输入提交失败保留内容，交由上层提示错误
 - Agent Browser Playground：消息列表组件拆分与渲染性能优化（单次遍历 + 子组件化）
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
+- Playground 类型与 API 解包统一为 raw JSON + RFC7807（移除 success/data 包装）
 
 ## 依赖
 

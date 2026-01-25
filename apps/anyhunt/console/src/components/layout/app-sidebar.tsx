@@ -110,6 +110,14 @@ export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
+  const displayUser = user
+    ? {
+        name: user.name?.trim() || (user.email ? user.email.split('@')[0] : 'User'),
+        email: user.email ?? '',
+        avatar: user.avatar ?? '',
+      }
+    : null;
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -127,17 +135,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarContent>
         <NavMain groups={navGroups} />
       </SidebarContent>
-      <SidebarFooter>
-        {user && (
-          <NavUser
-            user={{
-              name: user.name || user.email.split('@')[0],
-              email: user.email,
-              avatar: user.avatar || '',
-            }}
-          />
-        )}
-      </SidebarFooter>
+      <SidebarFooter>{displayUser && <NavUser user={displayUser} />}</SidebarFooter>
     </Sidebar>
   );
 }

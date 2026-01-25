@@ -80,7 +80,7 @@ export function parsePositiveInt(
 
 /**
  * Create a paginated result
- * The response interceptor will transform this to { success, data, meta, timestamp }
+ * 直接返回分页结构，避免额外包装
  */
 export function createPaginatedResult<T>(
   items: T[],

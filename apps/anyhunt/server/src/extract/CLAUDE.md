@@ -6,6 +6,10 @@
 
 AI-powered structured data extraction API. Scrapes web pages and uses LLM to extract structured data according to a user-defined JSON Schema.
 
+## 最近更新
+
+- Extract 错误响应统一为 RFC7807（移除 success/data 包装）
+
 ## Responsibilities
 
 - Scrape pages and extract content
