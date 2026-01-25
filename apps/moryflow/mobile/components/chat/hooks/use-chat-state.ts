@@ -16,6 +16,8 @@ interface UseChatStateOptions {
   activeSessionId: string | null;
   /** 选中的模型 ID */
   selectedModelId: string | null;
+  /** 会话级访问模式 */
+  mode?: import('@anyhunt/agents-runtime').AgentAccessMode;
   /** 刷新会话列表回调 */
   refreshSessions: () => void;
 }
@@ -49,12 +51,17 @@ interface UseChatStateResult {
 export function useChatState({
   activeSessionId,
   selectedModelId,
+  mode,
   refreshSessions,
 }: UseChatStateOptions): UseChatStateResult {
   // Transport - 依赖 selectedModelId
   const transport = useMemo(
-    () => new MobileChatTransport({ preferredModelId: selectedModelId ?? undefined }),
-    [selectedModelId]
+    () =>
+      new MobileChatTransport({
+        preferredModelId: selectedModelId ?? undefined,
+        mode,
+      }),
+    [selectedModelId, mode]
   );
 
   // Chat 状态

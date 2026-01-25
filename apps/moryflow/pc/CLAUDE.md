@@ -82,6 +82,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Chat 会话模式切换：IPC/存储/渲染联动，全权限模式自动放行且保留审计
 - Chat 会话压缩新增发送前预处理与 IPC 同步，避免 UI/历史错位
 - Chat 工具审批链路贯通：IPC `chat:approve-tool` + 审批卡交互
 - Agent 工具输出统一截断，聊天内支持打开完整输出文件

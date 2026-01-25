@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Chat 输入工具栏新增会话模式切换与全权限确认弹窗
 - Chat hook 发送前加入 compaction 预处理，避免消息列表与历史错位
 - AI Tool 新增权限审批卡（once/always）
 - AI ToolOutput 新增截断输出组件与完整内容弹层

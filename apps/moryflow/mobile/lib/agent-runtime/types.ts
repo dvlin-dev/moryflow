@@ -9,6 +9,7 @@ import type {
   AgentAttachmentContext,
   Session,
   CompactionResult,
+  AgentAccessMode,
 } from '@anyhunt/agents-runtime';
 
 // ============ Runtime 选项 ============
@@ -22,6 +23,8 @@ export interface MobileAgentRuntimeOptions {
   preferredModelId?: string;
   /** 结构化上下文信息 */
   context?: AgentChatContext;
+  /** 会话级访问模式 */
+  mode?: AgentAccessMode;
   /** SDK Session 实例 */
   session: Session;
   /** 附件上下文 */

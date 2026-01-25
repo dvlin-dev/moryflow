@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理）
+ * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理/会话模式更新）
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
  *
@@ -207,6 +207,11 @@ export type DesktopApi = {
     }) => Promise<{ ok: boolean }>;
     /** 从指定位置分支出新会话 */
     forkSession: (input: { sessionId: string; atIndex: number }) => Promise<ChatSessionSummary>;
+    /** 更新会话访问模式 */
+    updateSessionMode: (input: {
+      sessionId: string;
+      mode: ChatSessionSummary['mode'];
+    }) => Promise<ChatSessionSummary>;
     onSessionEvent: (handler: (event: ChatSessionEvent) => void) => () => void;
     applyEdit?: (input: AgentApplyEditInput) => Promise<AgentApplyEditResult>;
   };

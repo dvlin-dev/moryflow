@@ -43,6 +43,7 @@ export const ChatPane = ({
     activeSessionId,
     selectSession,
     createSession,
+    updateSessionMode,
     deleteSession,
     isReady: sessionsReady,
   } = useChatSessions();
@@ -217,6 +218,21 @@ export const ChatPane = ({
     [addToolApprovalResponse, t]
   );
 
+  const handleModeChange = useCallback(
+    async (mode: 'agent' | 'full_access') => {
+      if (!activeSessionId || !mode) {
+        return;
+      }
+      try {
+        await updateSessionMode(activeSessionId, mode);
+      } catch (error) {
+        console.error('[chat-pane] failed to update session mode', error);
+        toast.error(t('updateModeFailed'));
+      }
+    },
+    [activeSessionId, updateSessionMode, t]
+  );
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       <ChatPaneHeader
@@ -266,6 +282,8 @@ export const ChatPane = ({
           todoSnapshot={todoSnapshot}
           tokenUsage={activeSession?.tokenUsage}
           contextWindow={getModelContextWindow(selectedModelId)}
+          mode={activeSession?.mode ?? 'agent'}
+          onModeChange={handleModeChange}
         />
       </div>
     </div>

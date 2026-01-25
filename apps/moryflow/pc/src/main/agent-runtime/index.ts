@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、输出截断、Doom Loop、会话压缩与预处理）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、输出截断、Doom Loop、会话压缩与预处理、模式注入）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
@@ -32,6 +32,7 @@ import {
   isMembershipModelId,
   wrapToolsWithOutputTruncation,
   type AgentContext,
+  type AgentAccessMode,
   type AgentAttachmentContext,
   type ModelFactory,
   type CompactionResult,
@@ -86,6 +87,10 @@ export type AgentRuntimeOptions = {
    * 结构化上下文信息（当前文件、摘要等）。
    */
   context?: AgentChatContext;
+  /**
+   * 会话级访问模式。
+   */
+  mode?: AgentAccessMode;
   /**
    * SDK Session 实例，用于管理多轮对话历史。
    */
@@ -428,7 +433,16 @@ export const createAgentRuntime = (): AgentRuntime => {
       compactionPreflightGate.markPrepared(chatId, modelId);
       return compaction;
     },
-    async runChatTurn({ chatId, input, preferredModelId, context, session, attachments, signal }) {
+    async runChatTurn({
+      chatId,
+      input,
+      preferredModelId,
+      context,
+      mode,
+      session,
+      attachments,
+      signal,
+    }) {
       const trimmed = input.trim();
       if (!trimmed) {
         throw new Error('输入不能为空');
@@ -453,6 +467,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
 
       const agentContext: AgentContext = {
+        mode: mode ?? 'agent',
         vaultRoot: vaultInfo.path,
         chatId,
         buildModel: modelFactory.buildModel,

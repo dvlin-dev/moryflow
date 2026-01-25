@@ -46,3 +46,27 @@ describe('chatSessionStore.clearHistory', () => {
     expect(sessions.session.uiMessages).toBeUndefined();
   });
 });
+
+describe('chatSessionStore.mode', () => {
+  beforeEach(() => {
+    sessions = {
+      session: {
+        id: 'session',
+        title: 'Test',
+        createdAt: 1,
+        updatedAt: 1,
+        history: [],
+      },
+    };
+  });
+
+  it('defaults mode to agent in summary', () => {
+    const summary = chatSessionStore.getSummary('session');
+    expect(summary.mode).toBe('agent');
+  });
+
+  it('updates mode via updateSessionMeta', () => {
+    chatSessionStore.updateSessionMeta('session', { mode: 'full_access' });
+    expect(sessions.session.mode).toBe('full_access');
+  });
+});

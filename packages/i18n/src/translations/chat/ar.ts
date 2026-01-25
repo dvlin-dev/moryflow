@@ -94,6 +94,16 @@ const ar = {
   allDocsAdded: 'تمت إضافة جميع الملفات',
   noOpenDocs: 'لا توجد ملفات في مساحة العمل',
   upgrade: 'ترقية',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{completed}} من {{total}} مهام مكتملة',

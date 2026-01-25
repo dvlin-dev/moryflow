@@ -95,6 +95,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 会话模式切换：会话级模式存储、IPC 更新入口与运行时注入，全权限自动放行并审计
 - 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
 - agent-runtime README 对齐 ADR-0002 控制面落地说明
 - Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always

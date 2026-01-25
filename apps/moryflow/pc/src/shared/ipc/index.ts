@@ -10,6 +10,7 @@ export type {
 export type {
   AgentChatContext,
   AgentChatRequestOptions,
+  AgentAccessMode,
   ChatSessionSummary,
   ChatSessionEvent,
   UIMessage,

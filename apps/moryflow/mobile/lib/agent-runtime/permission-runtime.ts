@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Mobile Permission Runtime 组装（规则评估/审计/包装）
+ * [PROVIDES]: Mobile Permission Runtime 组装（规则评估/审计/包装/全权限自动放行）
  * [DEPENDS]: agents-runtime/permission, agents-adapter
  * [POS]: Mobile Agent Runtime 权限控制入口
  *
@@ -19,11 +19,14 @@ import {
   type PermissionDecisionInfo,
   type PermissionRule,
 } from '@anyhunt/agents-runtime';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode, AgentContext } from '@anyhunt/agents-runtime';
 import { createMobilePermissionRuleStore } from './permission-store';
 import { createMobilePermissionAuditWriter } from './permission-audit';
 
-type PermissionDecisionRecord = PermissionDecisionInfo & { sessionId: string };
+type PermissionDecisionRecord = PermissionDecisionInfo & {
+  sessionId: string;
+  mode: AgentAccessMode;
+};
 
 export type PermissionRuntime = {
   wrapTools: (tools: Tool<AgentContext>[]) => Tool<AgentContext>[];
@@ -47,12 +50,32 @@ export const createPermissionRuntime = (input: {
   const auditWriter = createMobilePermissionAuditWriter();
   const decisionStore = new Map<string, PermissionDecisionRecord>();
 
+  const resolveMode = (runContext?: RunContext<AgentContext>): AgentAccessMode =>
+    runContext?.context?.mode ?? 'agent';
+
+  const applyFullAccessOverride = (
+    info: PermissionDecisionInfo,
+    mode: AgentAccessMode
+  ): PermissionDecisionInfo => {
+    if (mode !== 'full_access' || info.decision === 'allow') {
+      return info;
+    }
+    return {
+      ...info,
+      decision: 'allow',
+      rule: undefined,
+      rulePattern: 'full_access',
+    };
+  };
+
   const buildRecord = (
     info: PermissionDecisionInfo,
+    mode: AgentAccessMode,
     runContext?: RunContext<AgentContext>
   ): PermissionDecisionRecord => ({
     ...info,
     sessionId: runContext?.context?.chatId ?? 'unknown',
+    mode,
   });
 
   const recordDecision = async (
@@ -63,7 +86,7 @@ export const createPermissionRuntime = (input: {
     await auditWriter.append({
       eventId: randomUUID(),
       sessionId: record.sessionId,
-      mode: 'agent',
+      mode: record.mode,
       decision: decisionOverride ?? record.decision,
       permissionDomain: record.domain,
       targets: record.targets,
@@ -105,12 +128,14 @@ export const createPermissionRuntime = (input: {
           callId,
           ...decision,
         };
-        const record = buildRecord(info, runContext);
+        const mode = resolveMode(runContext);
+        const resolvedInfo = applyFullAccessOverride(info, mode);
+        const record = buildRecord(resolvedInfo, mode, runContext);
         if (callId) {
           decisionStore.set(callId, record);
         }
         await recordDecision(record);
-        return info;
+        return resolvedInfo;
       },
       {
         onClearDecision: (callId) => decisionStore.delete(callId),

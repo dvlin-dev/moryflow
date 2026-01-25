@@ -93,6 +93,16 @@ const ja = {
   allDocsAdded: 'すべてのファイルが追加されました',
   noOpenDocs: 'ワークスペースにファイルがありません',
   upgrade: 'アップグレード',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{total}}件中{{completed}}件完了',

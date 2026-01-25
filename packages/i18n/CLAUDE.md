@@ -20,6 +20,7 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- chat 命名空间新增会话模式切换与确认文案
 - chat 命名空间新增工具审批卡相关文案
 - chat 命名空间新增工具输出截断相关文案
 - settings 文案更新 System Prompt 高级可选参数与默认覆盖提示

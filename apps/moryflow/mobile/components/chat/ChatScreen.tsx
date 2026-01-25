@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { showHeader?, isInSheet?, onClose? } - 聊天屏幕配置
  * [EMITS]: 无
- * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致
+ * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致（含会话模式切换）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -69,6 +69,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     activeSessionId,
     selectSession,
     createSession,
+    updateSessionMode,
     deleteSession,
     refreshSessions,
     isReady: sessionsReady,
@@ -101,6 +102,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
   } = useChatState({
     activeSessionId,
     selectedModelId,
+    mode: activeSession?.mode ?? 'agent',
     refreshSessions,
   });
 
@@ -162,6 +164,16 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     [addToolApprovalResponse, t]
   );
 
+  const handleModeChange = React.useCallback(
+    (mode: 'agent' | 'full_access') => {
+      if (!activeSessionId || !mode) {
+        return;
+      }
+      updateSessionMode(activeSessionId, mode);
+    },
+    [activeSessionId, updateSessionMode]
+  );
+
   // 渲染
   const isDark = colorScheme === 'dark';
   const isReady = isInitialized && sessionsReady;
@@ -208,6 +220,8 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
             onModelChange={selectModel}
             isInSheet={isInSheet}
             disableBottomPadding={true}
+            mode={activeSession?.mode ?? 'agent'}
+            onModeChange={handleModeChange}
           />
 
           {/* 动态高度：依赖 insets，需保留 style */}

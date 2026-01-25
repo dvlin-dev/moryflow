@@ -120,6 +120,19 @@ export const registerChatHandlers = () => {
   });
 
   ipcMain.handle(
+    'chat:sessions:updateMode',
+    (_event, payload: { sessionId: string; mode: 'agent' | 'full_access' }) => {
+      const { sessionId, mode } = payload ?? {};
+      if (!sessionId || (mode !== 'agent' && mode !== 'full_access')) {
+        throw new Error('Invalid session mode update request.');
+      }
+      const session = chatSessionStore.updateSessionMeta(sessionId, { mode });
+      broadcastSessionEvent({ type: 'updated', session });
+      return session;
+    }
+  );
+
+  ipcMain.handle(
     'chat:sessions:prepareCompaction',
     async (_event, payload: { sessionId: string; preferredModelId?: string }) => {
       const { sessionId, preferredModelId } = payload ?? {};

@@ -1,31 +1,33 @@
-import type { ChatStatus } from 'ai'
+import type { ChatStatus } from 'ai';
 
-import { CardFooter } from '@anyhunt/ui/components/card'
-import type { SettingsSection } from '@/components/settings-dialog/const'
-import type { PlanSnapshot, TokenUsage } from '@shared/ipc'
+import { CardFooter } from '@anyhunt/ui/components/card';
+import type { SettingsSection } from '@/components/settings-dialog/const';
+import type { PlanSnapshot, TokenUsage, ChatSessionSummary } from '@shared/ipc';
 
-import { ChatPromptInput } from './chat-prompt-input'
-import type { ChatSubmitPayload } from './chat-prompt-input/const'
-import type { ModelGroup } from '../models'
+import { ChatPromptInput } from './chat-prompt-input';
+import type { ChatSubmitPayload } from './chat-prompt-input/const';
+import type { ModelGroup } from '../models';
 
 type Props = {
-  status: ChatStatus
-  inputError: string | null
-  onSubmit: (payload: ChatSubmitPayload) => Promise<void>
-  onStop: () => void
-  onInputError: (message: string) => void
-  onOpenSettings?: (section?: SettingsSection) => void
-  activeFilePath?: string | null
-  activeFileContent?: string | null
-  vaultPath?: string | null
-  modelGroups: ModelGroup[]
-  selectedModelId?: string | null
-  onSelectModel: (id: string) => void
-  disabled: boolean
-  todoSnapshot: PlanSnapshot | null
-  tokenUsage?: TokenUsage | null
-  contextWindow?: number
-}
+  status: ChatStatus;
+  inputError: string | null;
+  onSubmit: (payload: ChatSubmitPayload) => Promise<void>;
+  onStop: () => void;
+  onInputError: (message: string) => void;
+  onOpenSettings?: (section?: SettingsSection) => void;
+  activeFilePath?: string | null;
+  activeFileContent?: string | null;
+  vaultPath?: string | null;
+  modelGroups: ModelGroup[];
+  selectedModelId?: string | null;
+  onSelectModel: (id: string) => void;
+  disabled: boolean;
+  todoSnapshot: PlanSnapshot | null;
+  tokenUsage?: TokenUsage | null;
+  contextWindow?: number;
+  mode: NonNullable<ChatSessionSummary['mode']>;
+  onModeChange: (mode: NonNullable<ChatSessionSummary['mode']>) => void;
+};
 
 export const ChatFooter = ({
   status,
@@ -44,6 +46,8 @@ export const ChatFooter = ({
   todoSnapshot,
   tokenUsage,
   contextWindow,
+  mode,
+  onModeChange,
 }: Props) => (
   <CardFooter className="shrink-0 flex-col items-stretch gap-2 p-3">
     <ChatPromptInput
@@ -62,7 +66,9 @@ export const ChatFooter = ({
       todoSnapshot={todoSnapshot}
       tokenUsage={tokenUsage}
       contextWindow={contextWindow}
+      mode={mode}
+      onModeChange={onModeChange}
     />
     {inputError && <p className="px-1 text-xs text-destructive">{inputError}</p>}
   </CardFooter>
-)
+);

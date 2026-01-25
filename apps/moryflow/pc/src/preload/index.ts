@@ -134,6 +134,7 @@ const api: DesktopApi = {
     generateSessionTitle: (input) => ipcRenderer.invoke('chat:sessions:generateTitle', input ?? {}),
     deleteSession: (input) => ipcRenderer.invoke('chat:sessions:delete', input ?? {}),
     getSessionMessages: (input) => ipcRenderer.invoke('chat:sessions:getMessages', input ?? {}),
+    updateSessionMode: (input) => ipcRenderer.invoke('chat:sessions:updateMode', input ?? {}),
     prepareCompaction: (input) =>
       ipcRenderer.invoke('chat:sessions:prepareCompaction', input ?? {}),
     truncateSession: (input) => ipcRenderer.invoke('chat:sessions:truncate', input ?? {}),

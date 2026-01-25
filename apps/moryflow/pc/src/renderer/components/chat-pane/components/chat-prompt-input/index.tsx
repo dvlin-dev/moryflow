@@ -1,5 +1,5 @@
 /**
- * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型
+ * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择
  *
@@ -52,6 +52,16 @@ import { TIER_DISPLAY_NAMES } from '@/lib/server';
 import { McpSelector } from '@/components/ai-elements/mcp-selector';
 import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
 import { Icon } from '@anyhunt/ui/components/icon';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@anyhunt/ui/components/alert-dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
@@ -87,11 +97,14 @@ export const ChatPromptInput = ({
   todoSnapshot,
   tokenUsage,
   contextWindow = DEFAULT_CONTEXT_WINDOW,
+  mode,
+  onModeChange,
 }: ChatPromptInputProps) => {
   const { t } = useTranslation('chat');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([]);
+  const [modeConfirmOpen, setModeConfirmOpen] = useState(false);
 
   // 获取工作区所有文件
   const { files: workspaceFiles } = useWorkspaceFiles(vaultPath ?? null);
@@ -106,6 +119,7 @@ export const ChatPromptInput = ({
   );
   const canStop = status === 'submitted' || status === 'streaming';
   const isDisabled = Boolean(disabled);
+  const accessMode = mode ?? 'agent';
 
   // 语音录制 hook
   const handleTranscribed = useCallback((text: string) => {
@@ -359,6 +373,34 @@ export const ChatPromptInput = ({
       </PromptInputButton>
     );
 
+  const handleModeToggle = useCallback(() => {
+    if (isDisabled) {
+      return;
+    }
+    if (accessMode === 'full_access') {
+      onModeChange('agent');
+      return;
+    }
+    setModeConfirmOpen(true);
+  }, [accessMode, isDisabled, onModeChange]);
+
+  const confirmFullAccess = useCallback(() => {
+    setModeConfirmOpen(false);
+    onModeChange('full_access');
+  }, [onModeChange]);
+
+  const renderModeSwitch = () => (
+    <PromptInputButton
+      type="button"
+      aria-label={accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}
+      disabled={isDisabled}
+      onClick={handleModeToggle}
+      className={cn('gap-1.5', accessMode === 'full_access' && 'border-orange-200 text-orange-600')}
+    >
+      <span>{accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}</span>
+    </PromptInputButton>
+  );
+
   const renderSubmitAction = () =>
     canStop ? (
       <InputGroupButton
@@ -402,6 +444,7 @@ export const ChatPromptInput = ({
         </div>
       ) : (
         <PromptInputTools>
+          {renderModeSwitch()}
           {renderActionMenu()}
           {renderModelSelector()}
           <McpSelector disabled={isDisabled} onOpenSettings={onOpenSettings} />
@@ -431,6 +474,18 @@ export const ChatPromptInput = ({
       {renderAttachments()}
       {renderTextarea()}
       {renderFooterActions()}
+      <AlertDialog open={modeConfirmOpen} onOpenChange={setModeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('fullAccessConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('fullAccessConfirmDescription')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmFullAccess}>{t('confirmSwitch')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PromptInput>
   );
 };

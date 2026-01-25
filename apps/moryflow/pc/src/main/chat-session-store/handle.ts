@@ -1,3 +1,11 @@
+/**
+ * [INPUT]: 会话标题/历史/模式更新
+ * [OUTPUT]: 会话摘要与历史变更
+ * [POS]: PC 聊天会话存储核心实现
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
@@ -18,6 +26,7 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   updatedAt: session.updatedAt,
   preferredModelId: session.preferredModelId,
   tokenUsage: session.tokenUsage,
+  mode: session.mode ?? 'agent',
 });
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
@@ -77,6 +86,7 @@ export const chatSessionStore = {
       title,
       createdAt: now,
       updatedAt: now,
+      mode: 'agent',
       preferredModelId: input?.preferredModelId,
       history: [],
     };
@@ -165,6 +175,7 @@ export const chatSessionStore = {
       uiMessages?: UIMessage[];
       preferredModelId?: string;
       tokenUsage?: TokenUsage;
+      mode?: ChatSessionSummary['mode'];
     }
   ): ChatSessionSummary {
     const session = updateSession(sessionId, (existing) => {
@@ -173,6 +184,9 @@ export const chatSessionStore = {
       }
       if (data.preferredModelId) {
         existing.preferredModelId = data.preferredModelId;
+      }
+      if (data.mode !== undefined) {
+        existing.mode = data.mode;
       }
       // 累积 token 使用量
       if (data.tokenUsage) {
@@ -275,6 +289,7 @@ export const chatSessionStore = {
       title: `${source.title} (分支)`,
       createdAt: now,
       updatedAt: now,
+      mode: source.mode ?? 'agent',
       preferredModelId: source.preferredModelId,
       history: forkedHistory,
       // 保持原始 history 索引映射，只替换 sessionId 前缀

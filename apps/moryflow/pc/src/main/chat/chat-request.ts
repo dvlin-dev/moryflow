@@ -54,6 +54,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
     }
     const sessionSummary = chatSessionStore.getSummary(chatId);
     const preferredModelId = agentOptions?.preferredModelId ?? sessionSummary.preferredModelId;
+    const sessionMode = sessionSummary.mode ?? 'agent';
 
     const latestUserMessage = findLatestUserMessage(messages);
     if (!latestUserMessage) {
@@ -121,6 +122,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   context: agentOptions?.context,
                   session,
                   attachments: attachmentContexts,
+                  mode: sessionMode,
                   signal: abortController.signal,
                 });
 

@@ -142,6 +142,7 @@ class MobileSessionStoreImpl implements SessionStore {
       title,
       createdAt: now,
       updatedAt: now,
+      mode: 'agent',
     };
     sessions.unshift(session);
     await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));

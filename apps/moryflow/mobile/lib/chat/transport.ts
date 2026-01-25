@@ -13,6 +13,7 @@ import type {
   AgentChatContext,
   AgentAttachmentContext,
   AgentContext,
+  AgentAccessMode,
 } from '@anyhunt/agents-runtime';
 import { getAgentRuntime, mobileSessionStore, createLogger } from '@/lib/agent-runtime';
 import { generateUUID } from '@/lib/utils/uuid';
@@ -34,6 +35,7 @@ export interface MobileChatTransportOptions {
   preferredModelId?: string;
   context?: AgentChatContext;
   attachments?: AgentAttachmentContext[];
+  mode?: AgentAccessMode;
 }
 
 /**
@@ -110,6 +112,7 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
                   preferredModelId: this.options.preferredModelId,
                   context: this.options.context,
                   attachments: this.options.attachments,
+                  mode: this.options.mode,
                   session,
                   signal: abortSignal,
                 });

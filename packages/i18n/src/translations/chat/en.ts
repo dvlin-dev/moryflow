@@ -93,6 +93,16 @@ const en = {
   allDocsAdded: 'All files have been added',
   noOpenDocs: 'No files in workspace',
   upgrade: 'Upgrade',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{completed}} of {{total}} tasks completed',

@@ -1,7 +1,7 @@
 /**
  * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
  * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
- * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation/Doom Loop）
+ * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -240,7 +240,8 @@ function createRuntimeInstance(): MobileAgentRuntime {
       return compaction;
     },
     async runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult> {
-      const { chatId, input, preferredModelId, context, session, attachments, signal } = options;
+      const { chatId, input, preferredModelId, context, session, attachments, signal, mode } =
+        options;
 
       const trimmed = input.trim();
       if (!trimmed) throw new Error('输入不能为空');
@@ -268,6 +269,7 @@ function createRuntimeInstance(): MobileAgentRuntime {
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
       const agentContext: AgentContext = {
+        mode: mode ?? 'agent',
         vaultRoot,
         chatId,
         buildModel: modelFactory?.buildModel,
@@ -349,6 +351,7 @@ export async function runChatTurn(params: {
   preferredModelId?: string;
   context?: import('@anyhunt/agents-runtime').AgentChatContext;
   attachments?: import('@anyhunt/agents-runtime').AgentAttachmentContext[];
+  mode?: import('@anyhunt/agents-runtime').AgentAccessMode;
   signal?: AbortSignal;
 }): Promise<MobileChatTurnResult> {
   const rt = await getAgentRuntime();

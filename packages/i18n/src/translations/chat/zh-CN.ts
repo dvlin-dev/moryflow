@@ -92,6 +92,16 @@ const zhCN = {
   allDocsAdded: '所有文件都已添加',
   noOpenDocs: '工作区没有文件',
   upgrade: '升级',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '已完成 {{completed}}/{{total}} 个任务',
