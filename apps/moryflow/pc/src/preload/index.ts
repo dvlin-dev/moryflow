@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Renderer IPC bridge (desktopAPI + 会话/工具输出能力)
+ * [PROVIDES]: Renderer IPC bridge (desktopAPI + membership auth storage + 会话/工具输出能力)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  *
@@ -16,6 +16,7 @@ import type {
   DesktopApi,
   McpStatusEvent,
   OllamaPullProgressEvent,
+  TasksChangeEvent,
   VaultFsEvent,
   VaultItem,
   BuildProgressEvent,
@@ -29,6 +30,14 @@ const api: DesktopApi = {
   membership: {
     syncToken: (token) => ipcRenderer.invoke('membership:syncToken', token),
     syncEnabled: (enabled) => ipcRenderer.invoke('membership:syncEnabled', enabled),
+    isSecureStorageAvailable: () => ipcRenderer.invoke('membership:isSecureStorageAvailable'),
+    getAccessToken: () => ipcRenderer.invoke('membership:getAccessToken'),
+    setAccessToken: (token) => ipcRenderer.invoke('membership:setAccessToken', token),
+    clearAccessToken: () => ipcRenderer.invoke('membership:clearAccessToken'),
+    getAccessTokenExpiresAt: () => ipcRenderer.invoke('membership:getAccessTokenExpiresAt'),
+    setAccessTokenExpiresAt: (expiresAt) =>
+      ipcRenderer.invoke('membership:setAccessTokenExpiresAt', expiresAt),
+    clearAccessTokenExpiresAt: () => ipcRenderer.invoke('membership:clearAccessTokenExpiresAt'),
     getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),
@@ -166,6 +175,16 @@ const api: DesktopApi = {
     },
     testMcpServer: (input) => ipcRenderer.invoke('agent:mcp:testServer', input ?? {}),
     reloadMcp: () => ipcRenderer.invoke('agent:mcp:reload'),
+  },
+  tasks: {
+    list: (input) => ipcRenderer.invoke('tasks:list', input ?? {}),
+    get: (input) => ipcRenderer.invoke('tasks:get', input ?? {}),
+    onChanged: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: TasksChangeEvent) =>
+        handler(payload);
+      ipcRenderer.on('tasks:changed', listener);
+      return () => ipcRenderer.removeListener('tasks:changed', listener);
+    },
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {

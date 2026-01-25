@@ -25,7 +25,12 @@ describe('auth-session', () => {
   });
 
   it('refreshAccessToken 成功时写入 accessToken', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ accessToken: 'token_123' }));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        accessToken: 'token_123',
+        accessTokenExpiresAt: '2026-01-25T12:00:00.000Z',
+      })
+    );
 
     const { refreshAccessToken, getAccessToken } = await import('../auth-session');
     const result = await refreshAccessToken();
@@ -45,7 +50,12 @@ describe('auth-session', () => {
   });
 
   it('logout 应清空 accessToken，即使请求失败', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ accessToken: 'token_abc' }));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        accessToken: 'token_abc',
+        accessTokenExpiresAt: '2026-01-25T12:00:00.000Z',
+      })
+    );
 
     const { refreshAccessToken, getAccessToken, logout } = await import('../auth-session');
     await refreshAccessToken();

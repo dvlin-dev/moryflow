@@ -331,7 +331,7 @@ export const createTools = () => [
 - **保护策略**：
   - 保护最近 **3 轮 user/assistant**。
   - 优先清理旧的 **tool output**，保留 tool input/结果摘要。
-  - 受保护的工具输出（默认）：`task`、`manage_plan`、`write`、`edit`、`move`、`delete`。
+- 受保护的工具输出（默认）：`task`、`tasks_*`、`write`、`edit`、`move`、`delete`。
 - **摘要重写**：
   - 使用 compaction agent 生成摘要，要求包含：已完成事项、当前进度、涉及文件、下一步。
   - 摘要输入优先使用未裁剪历史，按 prompt 上限截断；若超限或为空则降级使用已裁剪历史。

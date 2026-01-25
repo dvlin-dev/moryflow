@@ -11,6 +11,7 @@ import {
   Query,
   Req,
   Res,
+  HttpCode,
   HttpException,
   HttpStatus,
   Logger,
@@ -23,7 +24,6 @@ import { Readable } from 'stream';
 import { R2Service, StorageException, StorageErrorCode } from './r2.service';
 import { getContentDisposition } from './mime-utils';
 import { Public } from '../auth/decorators';
-import { SkipResponseWrap } from '../common/decorators';
 import {
   MAX_UPLOAD_SIZE,
   UUID_REGEX,
@@ -33,7 +33,6 @@ import {
 
 @ApiTags('Storage')
 @Controller({ path: 'storage', version: '1' })
-@SkipResponseWrap()
 export class StorageController {
   private readonly logger = new Logger(StorageController.name);
   private readonly apiSecret: string;
@@ -167,6 +166,7 @@ export class StorageController {
   @ApiQuery({ name: 'expires', description: '过期时间戳' })
   @ApiQuery({ name: 'sig', description: '签名' })
   @ApiQuery({ name: 'filename', description: '原始文件名', required: false })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async uploadFile(
     @Param('userId') userId: string,
     @Param('vaultId') vaultId: string,
@@ -176,7 +176,7 @@ export class StorageController {
     @Query('contentType') contentType: string = 'application/octet-stream',
     @Query('filename') filename: string | undefined,
     @Req() req: Request,
-  ): Promise<{ success: boolean }> {
+  ): Promise<void> {
     this.logger.debug(
       `Upload request: userId=${userId}, vaultId=${vaultId}, fileId=${fileId}, ` +
         `contentType=${contentType}, filename=${filename}`,
@@ -232,7 +232,7 @@ export class StorageController {
       );
 
       this.logger.debug(`Uploaded file: ${userId}/${vaultId}/${fileId}`);
-      return { success: true };
+      return;
     } catch (error) {
       // 处理大小限制错误
       if (error instanceof Error && error.message.includes('too large')) {

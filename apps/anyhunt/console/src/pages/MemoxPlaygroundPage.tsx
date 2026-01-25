@@ -571,57 +571,55 @@ export default function MemoxPlaygroundPage() {
                         )}
                       />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Infer Memory</FormLabel>
-                          <p className="text-xs text-muted-foreground">Use LLM to infer memory</p>
-                        </div>
-                        <FormField
-                          control={createForm.control}
-                          name="infer"
-                          render={({ field }) => (
+                      <FormField
+                        control={createForm.control}
+                        name="infer"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Infer Memory</FormLabel>
+                              <FormDescription>Use LLM to infer memory</FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Async Mode</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Process multiple memories in parallel
-                          </p>
-                        </div>
-                        <FormField
-                          control={createForm.control}
-                          name="async_mode"
-                          render={({ field }) => (
+                      <FormField
+                        control={createForm.control}
+                        name="async_mode"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Async Mode</FormLabel>
+                              <FormDescription>
+                                Process multiple memories in parallel
+                              </FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Enable Graph</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Extract entities and relations
-                          </p>
-                        </div>
-                        <FormField
-                          control={createForm.control}
-                          name="enable_graph"
-                          render={({ field }) => (
+                      <FormField
+                        control={createForm.control}
+                        name="enable_graph"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Enable Graph</FormLabel>
+                              <FormDescription>Extract entities and relations</FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
                       <Button
                         type="submit"
@@ -798,77 +796,77 @@ export default function MemoxPlaygroundPage() {
                         )}
                       />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Keyword Search</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Use keyword search instead of embeddings
-                          </p>
-                        </div>
-                        <FormField
-                          control={searchForm.control}
-                          name="keyword_search"
-                          render={({ field }) => (
+                      <FormField
+                        control={searchForm.control}
+                        name="keyword_search"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Keyword Search</FormLabel>
+                              <FormDescription>
+                                Use keyword search instead of embeddings
+                              </FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Rerank</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Rerank results using query relevance
-                          </p>
-                        </div>
-                        <FormField
-                          control={searchForm.control}
-                          name="rerank"
-                          render={({ field }) => (
+                      <FormField
+                        control={searchForm.control}
+                        name="rerank"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Rerank</FormLabel>
+                              <FormDescription>
+                                Rerank results using query relevance
+                              </FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Filter Memories</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Apply filters and metadata constraints
-                          </p>
-                        </div>
-                        <FormField
-                          control={searchForm.control}
-                          name="filter_memories"
-                          render={({ field }) => (
+                      <FormField
+                        control={searchForm.control}
+                        name="filter_memories"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Filter Memories</FormLabel>
+                              <FormDescription>
+                                Apply filters and metadata constraints
+                              </FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
-                      <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                        <div>
-                          <FormLabel>Metadata Only</FormLabel>
-                          <p className="text-xs text-muted-foreground">
-                            Search only using metadata and filters
-                          </p>
-                        </div>
-                        <FormField
-                          control={searchForm.control}
-                          name="only_metadata_based_search"
-                          render={({ field }) => (
+                      <FormField
+                        control={searchForm.control}
+                        name="only_metadata_based_search"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
+                            <div className="space-y-1">
+                              <FormLabel>Metadata Only</FormLabel>
+                              <FormDescription>
+                                Search only using metadata and filters
+                              </FormDescription>
+                            </div>
                             <FormControl>
                               <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                          )}
-                        />
-                      </div>
+                          </FormItem>
+                        )}
+                      />
 
                       <Button
                         type="submit"

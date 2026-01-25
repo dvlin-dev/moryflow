@@ -42,7 +42,7 @@ describe('hooks', () => {
     const baseTool = tool({
       name: 'echo',
       description: 'echo tool',
-      parameters: z.record(z.unknown()),
+      parameters: z.object({}).passthrough(),
       async execute(input) {
         return JSON.stringify(input);
       },

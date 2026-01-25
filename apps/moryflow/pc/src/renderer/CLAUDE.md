@@ -107,10 +107,14 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Auth 表单：FormProvider props 做类型桥接，规避 react-hook-form 重复安装的类型冲突
 - 模型选择禁用项移除占位日志，保持交互收敛
 - Chat 输入与设置/发布等 UI 文案统一英文
+- Chat Pane 新增 Tasks 面板（Sheet 列表 + 详情），通过 desktopAPI.tasks 只读刷新
 - 文件树展开路径加载并发化，清理无效路径并保持 UI 响应
 - 新增 Renderer hooks 单测（useVaultTreeState/useDocumentState/useChatSessions）
 - hooks 单测使用 i18n mock，避免重复 React 实例导致测试崩溃
 - 新增 Playwright E2E：创建 Vault、创建笔记自动保存、Settings 与 Sites 入口覆盖
+- Desktop Auth Session：access token 持久化存储 + ensureAccessToken 单测使用长过期窗口
+- Desktop Auth Session：网络失败不清理 token，窗口恢复触发 ensureAccessToken
+- Desktop Auth Session：keytar 不可用时提示启用系统凭据
 
 ## 依赖关系
 

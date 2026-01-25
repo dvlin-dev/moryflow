@@ -1,6 +1,6 @@
 /**
  * AI Proxy 自定义异常
- * 类型安全的错误处理，避免字符串匹配
+ * 类型安全的错误处理，输出 RFC7807 所需字段
  */
 
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -36,13 +36,7 @@ export abstract class AiProxyException extends HttpException {
     status: HttpStatus,
   ) {
     super(
-      {
-        error: {
-          message: errorMessage,
-          type: errorType,
-          code: errorCode,
-        },
-      },
+      { code: errorCode, message: errorMessage, details: { type: errorType } },
       status,
     );
   }

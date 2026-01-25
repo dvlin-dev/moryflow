@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理/会话模式更新）
+ * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理/模式更新等渲染端契约）
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
  *
@@ -59,6 +59,13 @@ import type {
   SubdomainSuggestResult,
 } from './site-publish';
 import type { SandboxApi } from './sandbox';
+import type {
+  TaskRecord,
+  TaskDetailResult,
+  TasksListInput,
+  TasksGetInput,
+  TasksChangeEvent,
+} from './tasks';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -67,6 +74,20 @@ export type DesktopApi = {
     syncToken: (token: string | null) => Promise<void>;
     /** 同步会员模型启用状态 */
     syncEnabled: (enabled: boolean) => Promise<void>;
+    /** 安全存储是否可用（keytar） */
+    isSecureStorageAvailable: () => Promise<boolean>;
+    /** 获取 access token（安全存储） */
+    getAccessToken: () => Promise<string | null>;
+    /** 保存 access token（安全存储） */
+    setAccessToken: (token: string) => Promise<void>;
+    /** 清理 access token（安全存储） */
+    clearAccessToken: () => Promise<void>;
+    /** 获取 access token 过期时间（安全存储） */
+    getAccessTokenExpiresAt: () => Promise<string | null>;
+    /** 保存 access token 过期时间（安全存储） */
+    setAccessTokenExpiresAt: (expiresAt: string) => Promise<void>;
+    /** 清理 access token 过期时间（安全存储） */
+    clearAccessTokenExpiresAt: () => Promise<void>;
     /** 获取 refresh token（安全存储） */
     getRefreshToken: () => Promise<string | null>;
     /** 保存 refresh token（安全存储） */
@@ -227,6 +248,11 @@ export type DesktopApi = {
     testMcpServer: (input: McpTestInput) => Promise<McpTestResult>;
     /** 重新加载 MCP 配置 */
     reloadMcp: () => Promise<void>;
+  };
+  tasks: {
+    list: (input: TasksListInput) => Promise<TaskRecord[]>;
+    get: (input: TasksGetInput) => Promise<TaskDetailResult | null>;
+    onChanged: (handler: (event: TasksChangeEvent) => void) => () => void;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

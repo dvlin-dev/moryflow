@@ -1,7 +1,7 @@
 /**
  * Orders 类型定义
  */
-export type { ApiResponse, Pagination, PaginatedResponse } from '@/lib/types';
+export type { Pagination, PaginatedResponse } from '@/lib/types';
 
 /** 订单类型 */
 export type OrderType = 'subscription' | 'quota_purchase';

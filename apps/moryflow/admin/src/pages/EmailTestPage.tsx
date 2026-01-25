@@ -30,7 +30,7 @@ export default function EmailTestPage() {
     setIsSending(true);
 
     try {
-      await apiClient.post<{ success: boolean }>(`${ADMIN_API.EMAIL}/send`, {
+      await apiClient.post<void>(`${ADMIN_API.EMAIL}/send`, {
         to,
         subject,
         html,

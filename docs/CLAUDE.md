@@ -51,6 +51,19 @@
 - ADR-0002：补充 Compaction“裁剪旧工具输出”示例（2026-01-26）
 - ADR-0002：P0-2 权限系统落地完成（审批卡/JSONC/审计）（2026-01-26）
 - ADR-0002：确认 P0-2 权限落地细节（审批卡位置、规则直接写 JSONC、Mobile 审计路径）（2026-01-26）
+- API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`（2026-01-26：draft）
+- API Client 方案补充 React Query（Web/PC/移动端）与复用策略：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案统一响应为 raw JSON + RFC7807（含一次性执行计划）：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案删除 envelope 过渡适配，明确不做历史兼容：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案清理 envelope 相关内容：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案补充 requestId 约定与校验错误示例：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案补充 errors 数组原因与前端展示建议：`docs/architecture/api-client-unification.md`（2026-01-26）
+- Moryflow Agent Tasks 系统方案（IPC + PC/Mobile UI + 执行清单完成 + 单元测试覆盖 + 子代理同步测试）：`docs/architecture/agent-tasks-system.md`（2026-01-25：completed）
+- Moryflow Agent Tasks 系统方案：修正 Mobile SQLite 打开方式（2026-01-25）
+- Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25：draft）
+- Auth access token 设备端方案补充（PC/移动端安全存储 + Device refresh）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25）
+- Moryflow PC/Mobile Access Token 持久化升级方案：`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`（2026-01-25：draft）
+- Moryflow PC/Mobile Access Token 升级方案明确决策与执行清单：`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`（2026-01-25）
 - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（2026-01-25：review）
 - Moryflow 云同步文档收敛为单一方案（统一技术方案/绑定/实施现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`（2026-01-25）

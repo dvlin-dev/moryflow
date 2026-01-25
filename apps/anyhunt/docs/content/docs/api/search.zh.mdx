@@ -67,33 +67,30 @@ curl -X POST https://server.anyhunt.app/api/v1/search \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "query": "网页抓取最佳实践",
-    "numberOfResults": 10,
-    "results": [
-      {
-        "title": "网页抓取最佳实践指南",
-        "url": "https://example.com/guide",
-        "description": "学习合规网页抓取的最佳实践...",
-        "engine": "google",
-        "score": 0.95,
-        "publishedDate": "2024-01-10"
-      },
-      {
-        "title": "如何负责任地抓取网站",
-        "url": "https://example.org/scraping",
-        "description": "负责任网页抓取的全面指南...",
-        "engine": "bing",
-        "score": 0.92
-      }
-    ],
-    "suggestions": [
-      "网页抓取 python",
-      "网页抓取工具",
-      "网页抓取合法性"
-    ]
-  }
+  "query": "网页抓取最佳实践",
+  "numberOfResults": 10,
+  "results": [
+    {
+      "title": "网页抓取最佳实践指南",
+      "url": "https://example.com/guide",
+      "description": "学习合规网页抓取的最佳实践...",
+      "engine": "google",
+      "score": 0.95,
+      "publishedDate": "2024-01-10"
+    },
+    {
+      "title": "如何负责任地抓取网站",
+      "url": "https://example.org/scraping",
+      "description": "负责任网页抓取的全面指南...",
+      "engine": "bing",
+      "score": 0.92
+    }
+  ],
+  "suggestions": [
+    "网页抓取 python",
+    "网页抓取工具",
+    "网页抓取合法性"
+  ]
 }
 ```
 
@@ -120,20 +117,17 @@ curl -X POST https://server.anyhunt.app/api/v1/search \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "query": "网页抓取教程",
-    "numberOfResults": 5,
-    "results": [
-      {
-        "title": "网页抓取教程",
-        "url": "https://example.com/tutorial",
-        "description": "分步网页抓取指南...",
-        "engine": "google",
-        "content": "# 网页抓取教程\n\n在本教程中，你将学习..."
-      }
-    ]
-  }
+  "query": "网页抓取教程",
+  "numberOfResults": 5,
+  "results": [
+    {
+      "title": "网页抓取教程",
+      "url": "https://example.com/tutorial",
+      "description": "分步网页抓取指南...",
+      "engine": "google",
+      "content": "# 网页抓取教程\n\n在本教程中，你将学习..."
+    }
+  ]
 }
 ```
 
@@ -147,15 +141,12 @@ GET /api/v1/search/autocomplete?q=网页抓取
 
 ```json
 {
-  "success": true,
-  "data": {
-    "suggestions": [
-      "网页抓取",
-      "网页抓取 python",
-      "网页抓取工具",
-      "网页抓取器"
-    ]
-  }
+  "suggestions": [
+    "网页抓取",
+    "网页抓取 python",
+    "网页抓取工具",
+    "网页抓取器"
+  ]
 }
 ```
 
@@ -178,7 +169,7 @@ const response = await fetch('https://server.anyhunt.app/api/v1/search', {
   }),
 });
 
-const { data } = await response.json();
+const data = await response.json();
 console.log(`找到 ${data.numberOfResults} 个结果`);
 data.results.forEach(r => console.log(r.title, r.url));
 ```
@@ -205,7 +196,7 @@ response = requests.post(
     },
 )
 
-results = response.json()['data']['results']
+results = response.json()['results']
 for r in results:
     print(f"标题: {r['title']}")
     print(f"内容预览: {r.get('content', '')[:200]}...")

@@ -21,6 +21,7 @@ import {
   ApiParam,
   ApiBearerAuth,
   ApiCookieAuth,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { AuthGuard, CurrentUser } from '../auth';
 import type { CurrentUserDto } from '../types/user.types';
@@ -49,15 +50,14 @@ export class AgentTraceController {
    * POST /v1/agent-traces
    */
   @Post()
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: '上报 Agent Traces' })
-  @ApiOkResponse({ description: '上报成功' })
+  @ApiResponse({ status: 204, description: '上报成功' })
   async uploadTraces(
     @CurrentUser() user: CurrentUserDto,
     @Body() body: UploadTracesDto,
   ) {
     await this.service.saveTraces(user.id, body.traces);
-    return { success: true };
   }
 
   // ==========================================

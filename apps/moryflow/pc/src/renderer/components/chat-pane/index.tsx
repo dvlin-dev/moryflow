@@ -15,10 +15,10 @@ import {
   useConversationLayout,
   useMessageActions,
   useStoredMessages,
-  useTodoSnapshot,
 } from './hooks';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
+import { TasksPanel } from './components/tasks-panel';
 import { buildMembershipModelGroup } from './models';
 import type { ChatSubmitPayload } from './components/chat-prompt-input/const';
 import { createMessageMetadata } from './types/message';
@@ -85,13 +85,13 @@ export const ChatPane = ({
     id: activeSessionId ?? 'pending',
     transport,
   });
+  const [tasksOpen, setTasksOpen] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
   // 追踪错误是否由于模型未设置引起，用于后续清理
   const [isModelSetupError, setIsModelSetupError] = useState(false);
   const { conversationContextRef, registerMessageRef, renderMessages, getMessageLayout } =
     useConversationLayout(messages, status);
   useStoredMessages({ activeSessionId, setMessages });
-  const { todoSnapshot } = useTodoSnapshot({ messages, activeSessionId });
 
   // 消息操作（重发、重试、编辑重发、分支）
   const messageActions = useMessageActions({
@@ -235,6 +235,7 @@ export const ChatPane = ({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
+      <TasksPanel open={tasksOpen} onOpenChange={setTasksOpen} activeSessionId={activeSessionId} />
       <ChatPaneHeader
         sessions={sessions}
         activeSession={activeSession}
@@ -244,6 +245,7 @@ export const ChatPane = ({
         isSessionReady={sessionsReady}
         collapsed={collapsed}
         onToggleCollapse={onToggleCollapse}
+        onOpenTasks={() => setTasksOpen((prev) => !prev)}
       />
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden transition-opacity duration-200 ${
@@ -279,7 +281,6 @@ export const ChatPane = ({
           onSelectModel={setSelectedModelId}
           disabled={!sessionsReady || !activeSessionId}
           onOpenSettings={onOpenSettings}
-          todoSnapshot={todoSnapshot}
           tokenUsage={activeSession?.tokenUsage}
           contextWindow={getModelContextWindow(selectedModelId)}
           mode={activeSession?.mode ?? 'agent'}

@@ -29,6 +29,7 @@ type ChatPaneHeaderProps = {
   isSessionReady: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  onOpenTasks?: () => void;
 };
 
 export const ChatPaneHeader = memo(
@@ -41,6 +42,7 @@ export const ChatPaneHeader = memo(
     isSessionReady,
     collapsed,
     onToggleCollapse,
+    onOpenTasks,
   }: ChatPaneHeaderProps) => {
     const { t } = useTranslation('chat');
 
@@ -67,6 +69,22 @@ export const ChatPaneHeader = memo(
             collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
           }`}
         >
+          {onOpenTasks && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground transition-colors duration-fast hover:text-foreground"
+                  onClick={onOpenTasks}
+                  aria-label="Tasks"
+                >
+                  <Icon icon={Tick02Icon} className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Tasks</TooltipContent>
+            </Tooltip>
+          )}
           <HistoryDropdown
             sessions={sessions}
             activeSession={activeSession}

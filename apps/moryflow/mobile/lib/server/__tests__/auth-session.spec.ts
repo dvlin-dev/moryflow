@@ -5,12 +5,18 @@
  */
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 
-const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
+const fetchMock = vi.fn<typeof fetch>();
 
 vi.mock('../storage', () => ({
   getStoredRefreshToken: vi.fn(),
   setStoredRefreshToken: vi.fn(),
   clearStoredRefreshToken: vi.fn(),
+}));
+
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => undefined),
+  deleteItemAsync: vi.fn(async () => undefined),
 }));
 
 vi.mock('../auth-client', () => ({
@@ -41,7 +47,7 @@ describe('auth-session', () => {
     vi.clearAllMocks();
   });
 
-  it('refreshAccessToken 网络失败时应清理 session', async () => {
+  it('refreshAccessToken 网络失败时不清理 session', async () => {
     const storage = await import('../storage');
     const authClient = await import('../auth-client');
 
@@ -55,8 +61,8 @@ describe('auth-session', () => {
 
     expect(result).toBe(false);
     expect(getAccessToken()).toBeNull();
-    expect(storage.clearStoredRefreshToken).toHaveBeenCalled();
-    expect(authClient.clearAuthCookieStorage).toHaveBeenCalled();
+    expect(storage.clearStoredRefreshToken).not.toHaveBeenCalled();
+    expect(authClient.clearAuthCookieStorage).not.toHaveBeenCalled();
   });
 
   it('refreshAccessToken 成功时更新 access/refresh', async () => {
@@ -67,7 +73,11 @@ describe('auth-session', () => {
     vi.mocked(authClient.getAuthCookie).mockReturnValue('');
 
     fetchMock.mockResolvedValueOnce(
-      jsonResponse({ accessToken: 'access', refreshToken: 'refresh-next' })
+      jsonResponse({
+        accessToken: 'access',
+        accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+        refreshToken: 'refresh-next',
+      })
     );
 
     const { refreshAccessToken, getAccessToken } = await import('../auth-session');
@@ -76,5 +86,46 @@ describe('auth-session', () => {
     expect(result).toBe(true);
     expect(getAccessToken()).toBe('access');
     expect(storage.setStoredRefreshToken).toHaveBeenCalledWith('refresh-next');
+  });
+
+  it('ensureAccessToken 在无 token 时触发 refresh', async () => {
+    const storage = await import('../storage');
+
+    vi.mocked(storage.getStoredRefreshToken).mockResolvedValue('rt');
+
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        accessToken: 'access',
+        accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+      })
+    );
+
+    const { ensureAccessToken, getAccessToken } = await import('../auth-session');
+    const result = await ensureAccessToken();
+
+    expect(result).toBe(true);
+    expect(getAccessToken()).toBe('access');
+  });
+
+  it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 存在时返回 false', async () => {
+    const storage = await import('../storage');
+
+    vi.mocked(storage.getStoredRefreshToken).mockResolvedValue('rt');
+
+    const { shouldClearAuthSessionAfterEnsureFailure } = await import('../auth-session');
+    const result = await shouldClearAuthSessionAfterEnsureFailure();
+
+    expect(result).toBe(false);
+  });
+
+  it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 缺失时返回 true', async () => {
+    const storage = await import('../storage');
+
+    vi.mocked(storage.getStoredRefreshToken).mockResolvedValue(null);
+
+    const { shouldClearAuthSessionAfterEnsureFailure } = await import('../auth-session');
+    const result = await shouldClearAuthSessionAfterEnsureFailure();
+
+    expect(result).toBe(true);
   });
 });

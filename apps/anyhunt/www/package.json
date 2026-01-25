@@ -12,6 +12,7 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@anyhunt/types": "workspace:*",
     "@anyhunt/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@hugeicons/core-free-icons": "^3.1.1",
@@ -27,7 +28,8 @@
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.62.0",
     "react-markdown": "^10.1.0",
-    "rehype-sanitize": "^6.0.0"
+    "rehype-sanitize": "^6.0.0",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",

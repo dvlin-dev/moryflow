@@ -28,9 +28,9 @@ import {
 
 export interface NavUserProps {
   user: {
-    name: string;
-    email: string;
-    avatar: string;
+    name?: string | null;
+    email?: string | null;
+    avatar?: string | null;
   };
 }
 
@@ -44,10 +44,11 @@ export function NavUser({ user }: NavUserProps) {
     navigate('/login');
   };
 
-  // 获取用户名首字母作为头像 fallback
-  const initials = user.name
+  const displayName = user.name?.trim() || user.email?.split('@')[0] || 'User';
+  const initials = displayName
     .split(' ')
-    .map((n) => n[0])
+    .filter(Boolean)
+    .map((part) => part[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
@@ -62,12 +63,12 @@ export function NavUser({ user }: NavUserProps) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user.avatar ?? ''} alt={displayName} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                <span className="truncate font-medium">{displayName}</span>
+                <span className="text-muted-foreground truncate text-xs">{user.email ?? ''}</span>
               </div>
               <Icon icon={MoreVerticalIcon} className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -81,12 +82,12 @@ export function NavUser({ user }: NavUserProps) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={user.avatar ?? ''} alt={displayName} />
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                  <span className="truncate font-medium">{displayName}</span>
+                  <span className="text-muted-foreground truncate text-xs">{user.email ?? ''}</span>
                 </div>
               </div>
             </DropdownMenuLabel>

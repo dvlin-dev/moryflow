@@ -10,13 +10,14 @@ Shared infrastructure components used across all modules. Contains guards, decor
 
 - UrlValidator 单测使用 `vi.resetModules()` + 动态导入，确保 DNS mock 对每次测试生效
 - BaseRepository 注释同步为 MemoxEntity/Memory
+- HttpExceptionFilter 切换 RFC7807 错误体，移除 response 包装逻辑
+- 新增 ProblemDetails 工具函数并用于统一构建错误体与请求 ID
 
 ## Responsibilities
 
 - Request validation (ZodValidationPipe)
 - Exception handling (HttpExceptionFilter)
 - URL security validation (SSRF protection)
-- Response transformation
 - Rate limiting
 - Shared utilities (crypto, HTTP, JSON, pagination, origin match)
 - BaseRepository for apiKey-isolated tables
@@ -33,7 +34,6 @@ Shared infrastructure components used across all modules. Contains guards, decor
 | Directory      | Description                             |
 | -------------- | --------------------------------------- |
 | `guards/`      | Authentication and rate limiting guards |
-| `decorators/`  | Custom decorators for controllers       |
 | `pipes/`       | Request validation pipes                |
 | `filters/`     | Exception filters                       |
 | `validators/`  | URL and input validators                |
@@ -49,10 +49,9 @@ Shared infrastructure components used across all modules. Contains guards, decor
 | ---------------------------------- | --------- | --------------------------------------- |
 | `base.repository.ts`               | Utility   | Base repository with apiKeyId isolation |
 | `pipes/zod-validation.pipe.ts`     | Pipe      | Global Zod schema validation            |
-| `filters/http-exception.filter.ts` | Filter    | Unified error response format           |
+| `filters/http-exception.filter.ts` | Filter    | RFC7807 error response format           |
 | `validators/url.validator.ts`      | Validator | SSRF protection, URL validation         |
 | `guards/user-throttler.guard.ts`   | Guard     | User-based rate limiting                |
-| `decorators/response.decorator.ts` | Decorator | Response transformation                 |
 | `utils/crypto.utils.ts`            | Utility   | Hash, encryption functions              |
 | `utils/http.utils.ts`              | Utility   | HTTP client helpers                     |
 | `utils/json.utils.ts`              | Utility   | Prisma JSON → Record conversion         |
@@ -84,13 +83,12 @@ if (!allowed) throw new UrlNotAllowedError(url);
 
 ## Common Modification Scenarios
 
-| Scenario              | Files to Modify                    | Notes                  |
-| --------------------- | ---------------------------------- | ---------------------- |
-| Add global validation | `pipes/`                           | Register in app.module |
-| Add new error code    | `constants/error-codes.ts`         | Use in error classes   |
-| Add security check    | `validators/`                      | Apply in controllers   |
-| Add response wrapper  | `decorators/response.decorator.ts` |                        |
-| Add rate limit rule   | `guards/user-throttler.guard.ts`   |                        |
+| Scenario              | Files to Modify                  | Notes                  |
+| --------------------- | -------------------------------- | ---------------------- |
+| Add global validation | `pipes/`                         | Register in app.module |
+| Add new error code    | `constants/error-codes.ts`       | Use in error classes   |
+| Add security check    | `validators/`                    | Apply in controllers   |
+| Add rate limit rule   | `guards/user-throttler.guard.ts` |                        |
 
 ## Usage Examples
 
@@ -108,13 +106,6 @@ const allowed = await urlValidator.isAllowed(url);
 if (!allowed) {
   throw new UrlNotAllowedError(url);
 }
-```
-
-### Response Decorator
-
-```typescript
-@ApiSuccessResponse(ScrapeResponseDto)
-async scrape() { ... }
 ```
 
 ## Dependencies

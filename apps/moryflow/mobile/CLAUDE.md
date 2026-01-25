@@ -11,6 +11,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - 提供移动端用户界面
 - 本地笔记编辑与管理
 - AI 对话交互
+- Agent Tasks 面板（列表 + 详情）
 - 云同步客户端
 
 ## 约束
@@ -68,6 +69,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）
 - Chat 会话模式切换补齐审计与会话 mode 归一化
 - AI 工具输出新增统一截断与完整输出弹层（Mobile）
+- TasksSheet 移除未使用 TaskStatus 导入，修复 lint
 - 云同步 UI 精简（状态卡 + 主开关 + Advanced），同步入口统一到 Workspace Sheet
 - 图标库统一为 Hugeicons（Mobile 端唯一出口在 `components/ui/icons.ts`）
 - Agent Runtime 切换为 `@openai/agents-core`，新增 RN shim 与 streams polyfill
@@ -80,10 +82,13 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - 日志输出统一走 `createLogger()`，减少直接 `console.*` 调用
 - ESLint 补充 React 版本检测配置，移除 lint 警告提示
 - ChatInputBar 移除附件占位回调，避免空实现代码
+- Chat Header 新增 Tasks 入口与 TasksSheet（列表 + 详情）
 - Auth 交互改为 access 内存 + refresh 安全存储，移除 pre-register 与忘记密码入口
+- Auth：access token 持久化（Zustand + SecureStore），启动直用并支持预刷新
 - Auth：接入 `@better-auth/expo`，移动端 Cookie/Session 由 SecureStore 管理
 - Auth Session refresh 增加网络失败清理，避免初始化阶段因网络异常中断
 - Auth Session 单元测试补齐（vitest）
+- Vitest 增加 react-native alias + mock，避免解析 Flow 语法失败
 
 ## 依赖关系
 

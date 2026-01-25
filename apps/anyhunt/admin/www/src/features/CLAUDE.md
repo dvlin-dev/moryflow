@@ -6,6 +6,10 @@
 
 管理后台的功能模块集合，按监控/运营领域拆分，并通过 React Query 轮询刷新。
 
+## 最近更新
+
+- Feature types 与 API 返回结构改为 raw JSON + RFC7807（移除 success/data 包装）
+
 ## 模块结构
 
 ```

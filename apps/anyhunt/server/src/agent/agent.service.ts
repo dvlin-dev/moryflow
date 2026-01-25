@@ -45,7 +45,7 @@ import type {
 
 export { TaskCancelledError } from './agent-stream.processor';
 
-const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页数据收集助手。
+const SYSTEM_INSTRUCTIONS = `你是 Browser Agent，一个专业的网页数据收集助手。
 
 你的任务是根据用户的 prompt，通过浏览器操作找到并提取所需数据。
 
@@ -62,8 +62,7 @@ const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页
 - 每次操作后都应获取新的 snapshot 以了解页面变化
 - 使用 @ref 格式（如 @e1）进行元素定位，比 CSS 选择器更可靠
 - 连续操作优先使用 browser_action_batch，减少往返
-- 如果页面需要登录，提示用户无法访问
-- 遇到验证码或反爬机制时，返回错误信息
+- 应尽量解决用户的问题，如果实在解决不了，返回 agent 友好的错误信息
 - 控制操作次数，避免无限循环`;
 
 interface RunningTask {
@@ -873,18 +872,22 @@ export class AgentService {
   async cancelTask(
     taskId: string,
     userId: string,
-  ): Promise<{ success: boolean; message: string; creditsUsed?: number }> {
+  ): Promise<
+    | { status: 'not_found' }
+    | { status: 'invalid_status'; currentStatus: string; creditsUsed?: number }
+    | { status: 'cancelled'; creditsUsed?: number }
+  > {
     const task = await this.taskRepository.getTaskForUser(taskId, userId);
 
     if (!task) {
-      return { success: false, message: 'Task not found' };
+      return { status: 'not_found' };
     }
 
     const status = task.status.toLowerCase();
     if (status !== 'pending' && status !== 'processing') {
       return {
-        success: false,
-        message: `Cannot cancel task in '${status}' status`,
+        status: 'invalid_status',
+        currentStatus: status,
         creditsUsed: task.creditsUsed ?? undefined,
       };
     }
@@ -917,8 +920,8 @@ export class AgentService {
       const latest = await this.taskRepository.getTaskForUser(taskId, userId);
       const latestStatus = latest?.status.toLowerCase() ?? status;
       return {
-        success: false,
-        message: `Cannot cancel task in '${latestStatus}' status`,
+        status: 'invalid_status',
+        currentStatus: latestStatus,
         creditsUsed: latest?.creditsUsed ?? task.creditsUsed ?? undefined,
       };
     }
@@ -944,8 +947,7 @@ export class AgentService {
 
     this.logger.log(`Task ${taskId} cancelled by user`);
     return {
-      success: true,
-      message: 'Task cancelled successfully',
+      status: 'cancelled',
       creditsUsed: progress?.creditsUsed ?? task.creditsUsed ?? undefined,
     };
   }

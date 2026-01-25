@@ -14,16 +14,26 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/moryflow/admin/package.json ./apps/moryflow/admin/
 COPY packages/model-registry-data/package.json ./packages/model-registry-data/
+COPY packages/types/package.json ./packages/types/
+COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
 # 安装依赖（使用 --ignore-scripts 跳过根目录的 postinstall，因为 admin 不依赖这些包）
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/admin...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts \
+  --filter @moryflow/admin... \
+  --filter @anyhunt/model-registry-data... \
+  --filter @anyhunt/types...
 
 # 复制源代码
 COPY apps/moryflow/admin ./apps/moryflow/admin
 COPY packages/model-registry-data ./packages/model-registry-data
+COPY packages/types ./packages/types
+COPY tooling/typescript-config ./tooling/typescript-config
 
 # 先构建依赖的 workspace 包
 WORKDIR /app/packages/model-registry-data
+RUN pnpm build
+
+WORKDIR /app/packages/types
 RUN pnpm build
 
 WORKDIR /app/apps/moryflow/admin

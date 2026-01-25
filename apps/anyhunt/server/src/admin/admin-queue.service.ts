@@ -209,7 +209,7 @@ export class AdminQueueService {
     }
 
     await job.retry();
-    return { success: true, jobId };
+    return { jobId };
   }
 
   /**
@@ -222,7 +222,7 @@ export class AdminQueueService {
     // 使用 Promise.all 并行重试，提升性能
     await Promise.all(failed.map((job) => job.retry()));
 
-    return { success: true, retried: failed.length };
+    return { retried: failed.length };
   }
 
   /**
@@ -235,7 +235,7 @@ export class AdminQueueService {
 
     const removed = await queue.clean(grace, limit, status);
 
-    return { success: true, removed: removed.length };
+    return { removed: removed.length };
   }
 
   /**
@@ -244,7 +244,7 @@ export class AdminQueueService {
   async pauseQueue(name: string) {
     const queue = this.getQueue(name);
     await queue.pause();
-    return { success: true, paused: true };
+    return { paused: true };
   }
 
   /**
@@ -253,7 +253,7 @@ export class AdminQueueService {
   async resumeQueue(name: string) {
     const queue = this.getQueue(name);
     await queue.resume();
-    return { success: true, paused: false };
+    return { paused: false };
   }
 
   /**

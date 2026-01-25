@@ -16,8 +16,12 @@ src/
 ## 导入方式
 
 ```typescript
-import type { ChatAttachment, PaginationMeta, ApiErrorResponse } from '@anyhunt/types';
+import type { ChatAttachment, PaginationMeta, ProblemDetails } from '@anyhunt/types';
 ```
+
+## 最近更新
+
+- 新增 ProblemDetails（RFC7807 错误结构）
 
 ## 类型规范
 

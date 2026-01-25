@@ -6,7 +6,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { OEMBED_CACHE_PREFIX } from './oembed.constants';
 import type { OembedRequestDto } from './dto/oembed-request.dto';
-import type { OembedSuccessResponse } from './dto/oembed-response.dto';
+import type { OembedResponse } from './dto/oembed-response.dto';
 import { UnsupportedProviderError } from './oembed.errors';
 import type { OembedData, OembedOptions } from './oembed.types';
 import { ProviderFactory } from './providers';
@@ -23,7 +23,7 @@ export class OembedService {
   /**
    * 获取 oEmbed 数据
    */
-  async fetch(request: OembedRequestDto): Promise<OembedSuccessResponse> {
+  async fetch(request: OembedRequestDto): Promise<OembedResponse> {
     const { url, maxwidth, maxheight, theme } = request;
 
     // 获取匹配的 Provider
@@ -40,7 +40,6 @@ export class OembedService {
     if (cached) {
       this.logger.debug(`Cache hit for ${provider.name}: ${url}`);
       return {
-        success: true,
         data: cached,
         meta: {
           provider: provider.name,
@@ -58,7 +57,6 @@ export class OembedService {
     await this.setCache(cacheKey, data, provider.cacheTtlSeconds);
 
     return {
-      success: true,
       data,
       meta: {
         provider: provider.name,

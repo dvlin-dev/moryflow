@@ -122,3 +122,7 @@ This is a standalone app, no exports to other packages.
 - `content-collections` 是构建期生成的虚拟模块；TypeScript 类型通过本仓库的 `src/content-collections.d.ts` 提供（不依赖生成目录）。
 - API 示例统一使用 `https://server.anyhunt.app/api/v1` 作为 Base URL。
 - Docs 顶部导航 GitHub 链接固定为 `https://github.com/anyhunt`。
+
+## Recent Changes
+
+- API 示例统一为 raw JSON 成功体 + RFC7807 错误体，移除 `success/data` 包装示例

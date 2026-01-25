@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.agents.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
-  },
-  "exclude": ["dist/**", "test/**"]
-}
-

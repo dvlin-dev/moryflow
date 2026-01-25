@@ -67,33 +67,30 @@ curl -X POST https://server.anyhunt.app/api/v1/search \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "query": "web scraping best practices",
-    "numberOfResults": 10,
-    "results": [
-      {
-        "title": "Web Scraping Best Practices Guide",
-        "url": "https://example.com/guide",
-        "description": "Learn the best practices for ethical web scraping...",
-        "engine": "google",
-        "score": 0.95,
-        "publishedDate": "2024-01-10"
-      },
-      {
-        "title": "How to Scrape Websites Responsibly",
-        "url": "https://example.org/scraping",
-        "description": "A comprehensive guide to responsible web scraping...",
-        "engine": "bing",
-        "score": 0.92
-      }
-    ],
-    "suggestions": [
-      "web scraping python",
-      "web scraping tools",
-      "web scraping legal"
-    ]
-  }
+  "query": "web scraping best practices",
+  "numberOfResults": 10,
+  "results": [
+    {
+      "title": "Web Scraping Best Practices Guide",
+      "url": "https://example.com/guide",
+      "description": "Learn the best practices for ethical web scraping...",
+      "engine": "google",
+      "score": 0.95,
+      "publishedDate": "2024-01-10"
+    },
+    {
+      "title": "How to Scrape Websites Responsibly",
+      "url": "https://example.org/scraping",
+      "description": "A comprehensive guide to responsible web scraping...",
+      "engine": "bing",
+      "score": 0.92
+    }
+  ],
+  "suggestions": [
+    "web scraping python",
+    "web scraping tools",
+    "web scraping legal"
+  ]
 }
 ```
 
@@ -120,20 +117,17 @@ curl -X POST https://server.anyhunt.app/api/v1/search \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "query": "web scraping tutorial",
-    "numberOfResults": 5,
-    "results": [
-      {
-        "title": "Web Scraping Tutorial",
-        "url": "https://example.com/tutorial",
-        "description": "Step-by-step web scraping guide...",
-        "engine": "google",
-        "content": "# Web Scraping Tutorial\n\nIn this tutorial, you'll learn..."
-      }
-    ]
-  }
+  "query": "web scraping tutorial",
+  "numberOfResults": 5,
+  "results": [
+    {
+      "title": "Web Scraping Tutorial",
+      "url": "https://example.com/tutorial",
+      "description": "Step-by-step web scraping guide...",
+      "engine": "google",
+      "content": "# Web Scraping Tutorial\n\nIn this tutorial, you'll learn..."
+    }
+  ]
 }
 ```
 
@@ -147,15 +141,12 @@ GET /api/v1/search/autocomplete?q=web+scrap
 
 ```json
 {
-  "success": true,
-  "data": {
-    "suggestions": [
-      "web scraping",
-      "web scraping python",
-      "web scraping tools",
-      "web scraper"
-    ]
-  }
+  "suggestions": [
+    "web scraping",
+    "web scraping python",
+    "web scraping tools",
+    "web scraper"
+  ]
 }
 ```
 
@@ -178,7 +169,7 @@ const response = await fetch('https://server.anyhunt.app/api/v1/search', {
   }),
 });
 
-const { data } = await response.json();
+const data = await response.json();
 console.log(`Found ${data.numberOfResults} results`);
 data.results.forEach(r => console.log(r.title, r.url));
 ```
@@ -205,7 +196,7 @@ response = requests.post(
     },
 )
 
-results = response.json()['data']['results']
+results = response.json()['results']
 for r in results:
     print(f"Title: {r['title']}")
     print(f"Content preview: {r.get('content', '')[:200]}...")

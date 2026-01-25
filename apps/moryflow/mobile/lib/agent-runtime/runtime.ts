@@ -1,7 +1,7 @@
 /**
  * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
  * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
- * [POS]: Mobile Agent Runtime 入口与生命周期管理（含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入 + Hook/Agent 配置 + runtime config 兜底）
+ * [POS]: Mobile 端 Agent Runtime 主入口（与 PC runtime 对齐，含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入 + Hook/Agent 配置 + runtime config 兜底）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -58,6 +58,7 @@ import { initPermissionRuntime } from './permission-runtime';
 import { initDoomLoopRuntime } from './doom-loop-runtime';
 import { getRuntimeConfig } from './runtime-config';
 import { findAgentById, loadAgentDefinitions } from './agent-store';
+import { getSharedTasksStore } from './tasks-service';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -195,6 +196,7 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     return vaultRoot;
   });
 
+  const tasksStore = getSharedTasksStore();
   const toolOutputConfig = {
     ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
     ...(runtimeConfig.truncation ?? {}),
@@ -228,7 +230,10 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   const baseTools = wrapToolsWithOutputTruncation(
     doomLoopRuntime.wrapTools(
       permissionRuntime.wrapTools(
-        wrapToolsWithHooks(createMobileTools({ capabilities, crypto, vaultUtils }), runtimeHooks)
+        wrapToolsWithHooks(
+          createMobileTools({ capabilities, crypto, vaultUtils, tasksStore }),
+          runtimeHooks
+        )
       )
     ),
     toolOutputPostProcessor

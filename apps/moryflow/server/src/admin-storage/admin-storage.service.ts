@@ -228,7 +228,7 @@ export class AdminStorageService {
   /**
    * 删除 Vault（包含 R2 文件）
    */
-  async deleteVault(vaultId: string): Promise<{ success: boolean }> {
+  async deleteVault(vaultId: string): Promise<void> {
     const vault = await this.prisma.vault.findUnique({
       where: { id: vaultId },
       include: {
@@ -254,7 +254,7 @@ export class AdminStorageService {
 
     this.logger.log(`Deleted vault ${vaultId} with ${fileIds.length} files`);
 
-    return { success: true };
+    return;
   }
 
   /**
@@ -449,7 +449,7 @@ export class AdminStorageService {
   /**
    * 删除向量化记录
    */
-  async deleteVectorizedFile(id: string): Promise<{ success: boolean }> {
+  async deleteVectorizedFile(id: string): Promise<void> {
     const file = await this.prisma.vectorizedFile.findUnique({
       where: { id },
     });
@@ -474,7 +474,7 @@ export class AdminStorageService {
       data: { vectorizedCount: { decrement: 1 } },
     });
 
-    return { success: true };
+    return;
   }
 
   /**

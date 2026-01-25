@@ -24,9 +24,7 @@ COPY packages/sync/package.json ./packages/sync/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server... --prod
 
 # 构建阶段
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/moryflow/server/node_modules ./apps/moryflow/server/node_modules
+FROM deps AS builder
 COPY apps/moryflow/server ./apps/moryflow/server
 COPY packages/sync ./packages/sync
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc tsconfig.base.json tsconfig.agents.json ./
@@ -68,8 +66,8 @@ RUN pnpm add -g prisma
 WORKDIR /app
 
 # 复制根目录 node_modules（包含 .pnpm，保持符号链接结构完整）
-COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=deps --chown=nestjs:nodejs /app/apps/moryflow/server/node_modules ./apps/moryflow/server/node_modules
+COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=nestjs:nodejs /app/apps/moryflow/server/node_modules ./apps/moryflow/server/node_modules
 
 # 复制 sync 包（运行时依赖）
 COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/dist ./packages/sync/dist

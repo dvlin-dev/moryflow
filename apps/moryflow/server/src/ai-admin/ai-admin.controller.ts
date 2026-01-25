@@ -14,6 +14,8 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -109,10 +111,11 @@ export class AiAdminController {
     description: '删除 AI Provider 配置',
   })
   @ApiParam({ name: 'id', description: 'Provider ID' })
-  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 204, description: '删除成功' })
   @ApiResponse({ status: 404, description: 'Provider 不存在' })
   @Delete('providers/:id')
-  deleteProvider(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteProvider(@Param('id') id: string): Promise<void> {
     return this.aiAdminService.deleteProvider(id);
   }
 
@@ -175,10 +178,11 @@ export class AiAdminController {
 
   @ApiOperation({ summary: '删除 Model', description: '删除 AI Model 配置' })
   @ApiParam({ name: 'id', description: 'Model ID' })
-  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 204, description: '删除成功' })
   @ApiResponse({ status: 404, description: 'Model 不存在' })
   @Delete('models/:id')
-  deleteModel(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteModel(@Param('id') id: string): Promise<void> {
     return this.aiAdminService.deleteModel(id);
   }
 }

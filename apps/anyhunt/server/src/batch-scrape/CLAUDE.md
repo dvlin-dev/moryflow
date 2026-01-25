@@ -6,6 +6,10 @@
 
 Batch scraping API for processing multiple URLs in a single request. Creates async jobs that process URLs concurrently and aggregate results.
 
+## 最近更新
+
+- 错误响应统一为 RFC7807（移除 success/data 包装）
+
 ## Responsibilities
 
 - Accept batch URL lists for scraping

@@ -52,7 +52,18 @@ import type { VaultWatcherController } from '../vault-watcher/index.js';
 import { getRuntime } from '../chat/runtime.js';
 import * as ollamaService from '../ollama-service/index.js';
 import { membershipBridge } from '../membership-bridge.js';
-import { getRefreshToken, setRefreshToken, clearRefreshToken } from '../membership-token-store.js';
+import {
+  isSecureStorageAvailable,
+  getRefreshToken,
+  setRefreshToken,
+  clearRefreshToken,
+  getAccessToken,
+  setAccessToken,
+  clearAccessToken,
+  getAccessTokenExpiresAt,
+  setAccessTokenExpiresAt,
+  clearAccessTokenExpiresAt,
+} from '../membership-token-store.js';
 import {
   cloudSyncEngine,
   cloudSyncApi,
@@ -66,6 +77,7 @@ import {
 import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js';
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
+import { getTaskDetail, listTasks } from '../tasks/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -290,6 +302,30 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
   });
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
+  ipcMain.handle('tasks:list', async (_event, payload) => {
+    const chatId = typeof payload?.chatId === 'string' ? payload.chatId : '';
+    if (!chatId) return [];
+    const query = {
+      status: Array.isArray(payload?.status) ? payload.status : undefined,
+      priority: Array.isArray(payload?.priority) ? payload.priority : undefined,
+      owner:
+        payload?.owner === null
+          ? null
+          : typeof payload?.owner === 'string'
+            ? payload.owner
+            : undefined,
+      search: typeof payload?.search === 'string' ? payload.search : undefined,
+      includeArchived:
+        typeof payload?.includeArchived === 'boolean' ? payload.includeArchived : undefined,
+    };
+    return listTasks(chatId, query);
+  });
+  ipcMain.handle('tasks:get', async (_event, payload) => {
+    const chatId = typeof payload?.chatId === 'string' ? payload.chatId : '';
+    const taskId = typeof payload?.taskId === 'string' ? payload.taskId : '';
+    if (!chatId || !taskId) return null;
+    return getTaskDetail(chatId, taskId);
+  });
   ipcMain.handle('agent:test-provider', async (_event, payload) => {
     const { providerId, apiKey, baseUrl, modelId, sdkType } = payload ?? {};
     if (!apiKey || typeof apiKey !== 'string') {
@@ -514,18 +550,48 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     membershipBridge.setEnabled(enabled);
   });
 
-  ipcMain.handle('membership:getRefreshToken', () => getRefreshToken());
+  ipcMain.handle('membership:isSecureStorageAvailable', async () => isSecureStorageAvailable());
 
-  ipcMain.handle('membership:setRefreshToken', (_event, payload) => {
+  ipcMain.handle('membership:getRefreshToken', async () => getRefreshToken());
+
+  ipcMain.handle('membership:setRefreshToken', async (_event, payload) => {
     if (typeof payload === 'string' && payload.trim()) {
-      setRefreshToken(payload.trim());
+      await setRefreshToken(payload.trim());
       return;
     }
-    clearRefreshToken();
+    await clearRefreshToken();
   });
 
-  ipcMain.handle('membership:clearRefreshToken', () => {
-    clearRefreshToken();
+  ipcMain.handle('membership:clearRefreshToken', async () => {
+    await clearRefreshToken();
+  });
+
+  ipcMain.handle('membership:getAccessToken', async () => getAccessToken());
+
+  ipcMain.handle('membership:setAccessToken', async (_event, payload) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      await setAccessToken(payload.trim());
+      return;
+    }
+    await clearAccessToken();
+  });
+
+  ipcMain.handle('membership:clearAccessToken', async () => {
+    await clearAccessToken();
+  });
+
+  ipcMain.handle('membership:getAccessTokenExpiresAt', async () => getAccessTokenExpiresAt());
+
+  ipcMain.handle('membership:setAccessTokenExpiresAt', async (_event, payload) => {
+    if (typeof payload === 'string' && payload.trim()) {
+      await setAccessTokenExpiresAt(payload.trim());
+      return;
+    }
+    await clearAccessTokenExpiresAt();
+  });
+
+  ipcMain.handle('membership:clearAccessTokenExpiresAt', async () => {
+    await clearAccessTokenExpiresAt();
   });
 
   // ── Cloud Sync ────────────────────────────────────────────────

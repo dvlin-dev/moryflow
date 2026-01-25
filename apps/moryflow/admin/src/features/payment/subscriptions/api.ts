@@ -1,13 +1,13 @@
 /**
  * 订阅 API
  */
-import { adminApi } from '@/lib/api'
-import type { SubscriptionListResponse, Subscription } from '@/types/payment'
+import { adminApi } from '@/lib/api';
+import type { SubscriptionListResponse, Subscription } from '@/types/payment';
 
 export interface SubscriptionsQueryParams {
-  limit: number
-  offset: number
-  status?: string
+  limit: number;
+  offset: number;
+  status?: string;
 }
 
 export const subscriptionsApi = {
@@ -16,11 +16,11 @@ export const subscriptionsApi = {
     const searchParams = new URLSearchParams({
       limit: String(params.limit),
       offset: String(params.offset),
-    })
+    });
     if (params.status && params.status !== 'all') {
-      searchParams.set('status', params.status)
+      searchParams.set('status', params.status);
     }
-    return adminApi.get(`/payment/subscriptions?${searchParams}`)
+    return adminApi.get(`/payment/subscriptions?${searchParams}`);
   },
 
   /** 获取订阅详情 */
@@ -28,6 +28,6 @@ export const subscriptionsApi = {
     adminApi.get(`/payment/subscriptions/${id}`),
 
   /** 取消订阅 */
-  cancel: (id: string, cancelAtPeriodEnd = true): Promise<{ success: boolean }> =>
+  cancel: (id: string, cancelAtPeriodEnd = true): Promise<void> =>
     adminApi.post(`/payment/subscriptions/${id}/cancel`, { cancelAtPeriodEnd }),
-}
+};

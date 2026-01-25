@@ -3,9 +3,8 @@
  */
 import type { OembedData } from '../oembed.types';
 
-/** API 成功响应 */
-export interface OembedSuccessResponse {
-  success: true;
+/** API 响应 */
+export interface OembedResponse {
   data: OembedData;
   meta: {
     provider: string;

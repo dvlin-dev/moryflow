@@ -1,7 +1,7 @@
 /**
  * Queues 类型定义
  */
-export type { ApiResponse, Pagination } from '@/lib/types';
+export type { Pagination } from '@/lib/types';
 import type { Pagination } from '@/lib/types';
 
 /** 队列名称 */
@@ -64,7 +64,6 @@ export interface QueueJobsResponse {
 
 /** 操作结果 */
 export interface QueueOperationResult {
-  success: boolean;
   retried?: number;
   removed?: number;
   paused?: boolean;

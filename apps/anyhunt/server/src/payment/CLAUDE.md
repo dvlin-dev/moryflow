@@ -6,6 +6,10 @@
 
 Payment processing integration with Creem. Handles subscriptions, tier upgrades, and pay-as-you-go quota purchases.
 
+## 最近更新
+
+- Webhook 与 Console 端错误响应统一为 RFC7807（移除 success/data 包装）
+
 ## Responsibilities
 
 - Subscription management (create, upgrade, cancel)

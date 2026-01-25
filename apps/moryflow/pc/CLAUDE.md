@@ -13,6 +13,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - AI 对话交互（支持本地 Ollama）
 - 本地文件系统访问
 - 云同步客户端
+- Agent Tasks 面板（列表 + 详情）
 
 ## 约束
 
@@ -91,7 +92,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - System Prompt 设置页：高级参数可选覆盖（默认使用模型默认值 + Use model default）
 - Agent Runtime 切换为 `@openai/agents-core`，移除本地 Agents SDK 依赖
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
-- Auth 改为 access 内存 + refresh 安全存储（`src/main/membership-token-store.ts`）
+- Auth：access/refresh token 统一使用 keytar 系统凭据存储（仅主进程）
+- Auth：access token 持久化（Zustand + IPC），支持预刷新/Resume 校验与网络失败不清理
 - 统一登录/注册为 email + OTP 验证流程，移除 pre-register
 - 主窗口安全收敛：启用 sandbox + 外链 allowlist + 导航拦截
 - Renderer 文案英文化与 Hugeicons 替换；补充 hooks 单测
@@ -103,6 +105,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
 - external-links 安全校验补齐路径边界与单测
 - 站点发布模板新增 `lang`/`description` 占位符，构建链路默认 `en`
+- 新增 Tasks 面板（Chat Pane 内）与 tasks:list/get 只读 IPC 接口
 
 ## 依赖关系
 

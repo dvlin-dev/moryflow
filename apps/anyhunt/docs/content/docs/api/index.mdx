@@ -69,28 +69,26 @@ curl -X POST https://server.anyhunt.app/api/v1/scrape \
 
 ## Response Format
 
-All API responses follow a consistent format:
+All API responses follow standard HTTP semantics:
 
-### Success Response
+### Success Response (raw JSON)
 
 ```json
 {
-  "success": true,
-  "data": {
-    // Response data
-  }
+  // Response data
 }
 ```
 
-### Error Response
+### Error Response (RFC7807)
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human-readable error message"
-  }
+  "type": "https://anyhunt.app/errors/ERROR_CODE",
+  "title": "Error Title",
+  "status": 400,
+  "detail": "Human-readable error message",
+  "code": "ERROR_CODE",
+  "requestId": "req_123"
 }
 ```
 

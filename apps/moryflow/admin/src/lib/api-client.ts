@@ -4,6 +4,7 @@
  */
 import { useAuthStore, getAccessToken } from '../stores/auth';
 import { API_BASE_URL } from './api-base';
+import type { ProblemDetails } from '@anyhunt/types';
 
 /**
  * API 错误类
@@ -12,12 +13,25 @@ import { API_BASE_URL } from './api-base';
 export class ApiError extends Error {
   status: number;
   code: string;
+  details?: unknown;
+  requestId?: string;
+  errors?: Array<{ field?: string; message: string }>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    requestId?: string,
+    errors?: Array<{ field?: string; message: string }>
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.details = details;
+    this.requestId = requestId;
+    this.errors = errors;
   }
 
   /** 是否为认证错误 */
@@ -41,15 +55,6 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * API 响应错误结构
- */
-interface ApiErrorResponse {
-  error?: string;
-  message?: string;
-  code?: string;
-}
-
 class ApiClient {
   private baseURL: string;
 
@@ -62,24 +67,51 @@ class ApiClient {
    * 统一错误处理，401/403 自动登出
    */
   private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      // 解析错误响应
-      const errorData: ApiErrorResponse = await response.json().catch(() => ({}));
+    if (response.status === 204) {
+      return undefined as T;
+    }
 
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson =
+      contentType.includes('application/json') || contentType.includes('application/problem+json');
+    const requestId = response.headers.get('x-request-id') ?? undefined;
+    let parsed: { parsed: boolean; value: unknown } | undefined;
+    if (isJson) {
+      try {
+        parsed = { parsed: true, value: await response.json() };
+      } catch {
+        parsed = { parsed: false, value: undefined };
+      }
+    }
+
+    if (!response.ok) {
+      const problem = parsed?.parsed ? (parsed.value as ProblemDetails) : undefined;
+      const message =
+        typeof problem?.detail === 'string'
+          ? problem.detail
+          : `Request failed (${response.status})`;
+      const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
       throw new ApiError(
         response.status,
-        errorData.code || errorData.error || 'UNKNOWN_ERROR',
-        errorData.message || `请求失败 (${response.status})`
+        code,
+        message,
+        problem?.details,
+        problem?.requestId ?? requestId,
+        problem?.errors
       );
     }
 
-    // 处理空响应
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      return {} as T;
+    if (!isJson || !parsed?.parsed) {
+      throw new ApiError(
+        response.status,
+        'UNEXPECTED_RESPONSE',
+        'Unexpected response format',
+        undefined,
+        requestId
+      );
     }
 
-    return response.json();
+    return parsed.value as T;
   }
 
   /**

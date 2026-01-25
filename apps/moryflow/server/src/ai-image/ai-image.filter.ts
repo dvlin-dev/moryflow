@@ -1,6 +1,6 @@
 /**
  * AI Image Exception Filter
- * 统一处理 AI Image 模块的异常，返回 OpenAI 兼容格式
+ * 统一处理 AI Image 模块异常，返回 RFC7807
  */
 
 import {
@@ -11,8 +11,25 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { AiImageException } from './exceptions';
+import {
+  buildProblemDetails,
+  getRequestId,
+  normalizeValidationErrors,
+} from '../common/utils/problem-details';
+
+const HTTP_STATUS_CODES: Record<number, string> = {
+  400: 'BAD_REQUEST',
+  401: 'UNAUTHORIZED',
+  402: 'PAYMENT_REQUIRED',
+  403: 'FORBIDDEN',
+  404: 'NOT_FOUND',
+  409: 'CONFLICT',
+  422: 'VALIDATION_ERROR',
+  429: 'TOO_MANY_REQUESTS',
+  500: 'INTERNAL_ERROR',
+};
 
 @Catch()
 export class AiImageExceptionFilter implements ExceptionFilter {
@@ -20,6 +37,7 @@ export class AiImageExceptionFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
+    const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
 
     // 如果响应已经发送，不再处理
@@ -29,11 +47,23 @@ export class AiImageExceptionFilter implements ExceptionFilter {
     }
 
     // AI Image 自定义异常
+    const requestId = getRequestId(request);
+
     if (exception instanceof AiImageException) {
       this.logger.warn(
         `[AiImageException] ${exception.errorCode}: ${exception.errorMessage}`,
       );
-      response.status(exception.getStatus()).json(exception.getResponse());
+      const problem = buildProblemDetails({
+        status: exception.getStatus(),
+        code: exception.errorCode,
+        message: exception.errorMessage,
+        requestId,
+        details: { type: exception.errorType },
+      });
+      response
+        .status(exception.getStatus())
+        .type('application/problem+json')
+        .json(problem);
       return;
     }
 
@@ -46,30 +76,42 @@ export class AiImageExceptionFilter implements ExceptionFilter {
         `[HttpException] status=${status}, response=${JSON.stringify(exceptionResponse)}`,
       );
 
-      // 如果已经是 OpenAI 格式，直接返回
-      if (
-        typeof exceptionResponse === 'object' &&
-        exceptionResponse !== null &&
-        'error' in exceptionResponse
-      ) {
-        response.status(status).json(exceptionResponse);
-        return;
-      }
+      const responseObj =
+        typeof exceptionResponse === 'object' && exceptionResponse !== null
+          ? (exceptionResponse as Record<string, unknown>)
+          : undefined;
+      const errorObj =
+        responseObj?.error && typeof responseObj.error === 'object'
+          ? (responseObj.error as Record<string, unknown>)
+          : undefined;
+      const source = errorObj ?? responseObj ?? {};
 
-      // 转换为 OpenAI 格式
       const message =
         typeof exceptionResponse === 'string'
           ? exceptionResponse
-          : (exceptionResponse as { message?: string }).message ||
-            'Request failed';
+          : (source as { message?: string }).message || 'Request failed';
+      const code =
+        typeof (source as { code?: unknown }).code === 'string'
+          ? (source as { code: string }).code
+          : HTTP_STATUS_CODES[status] || 'UNKNOWN_ERROR';
+      const details =
+        source && typeof source === 'object' && 'details' in source
+          ? (source as { details?: unknown }).details
+          : undefined;
+      const validationErrors =
+        normalizeValidationErrors(responseObj?.message) ??
+        normalizeValidationErrors(responseObj?.errors);
 
-      response.status(status).json({
-        error: {
-          message,
-          type: this.getErrorType(status),
-          code: this.getErrorCode(status),
-        },
+      const problem = buildProblemDetails({
+        status,
+        code: validationErrors ? 'VALIDATION_ERROR' : code,
+        message: validationErrors ? 'Validation failed' : message,
+        requestId,
+        details,
+        errors: validationErrors,
       });
+
+      response.status(status).type('application/problem+json').json(problem);
       return;
     }
 
@@ -88,42 +130,16 @@ export class AiImageExceptionFilter implements ExceptionFilter {
       this.logger.error('[UpstreamError] Unknown error type', exception);
     }
 
-    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-      error: {
-        message: errorMessage,
-        type: 'api_error',
-        code: 'internal_error',
-      },
+    const problem = buildProblemDetails({
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      code: 'INTERNAL_ERROR',
+      message: errorMessage,
+      requestId,
     });
-  }
 
-  private getErrorType(status: number): string {
-    switch (status) {
-      case 400:
-        return 'invalid_request_error';
-      case 401:
-        return 'authentication_error';
-      case 403:
-        return 'permission_error';
-      case 429:
-        return 'rate_limit_error';
-      default:
-        return 'api_error';
-    }
-  }
-
-  private getErrorCode(status: number): string {
-    switch (status) {
-      case 400:
-        return 'invalid_request';
-      case 401:
-        return 'invalid_api_key';
-      case 403:
-        return 'insufficient_quota';
-      case 429:
-        return 'rate_limit_exceeded';
-      default:
-        return 'internal_error';
-    }
+    response
+      .status(HttpStatus.INTERNAL_SERVER_ERROR)
+      .type('application/problem+json')
+      .json(problem);
   }
 }

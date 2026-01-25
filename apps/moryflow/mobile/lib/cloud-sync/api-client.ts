@@ -199,7 +199,7 @@ export const cloudSyncApi = {
       body: JSON.stringify(payload),
     }),
 
-  deleteVector: (fileId: string): Promise<{ success: boolean }> =>
+  deleteVector: (fileId: string): Promise<void> =>
     request(`/api/vectorize/file/${fileId}`, { method: 'DELETE' }),
 
   getVectorizeStatus: (fileId: string): Promise<VectorizeStatusResponse> =>

@@ -69,28 +69,26 @@ curl -X POST https://server.anyhunt.app/api/v1/scrape \
 
 ## 响应格式
 
-所有 API 响应遵循统一格式：
+所有 API 响应遵循标准 HTTP 语义：
 
-### 成功响应
+### 成功响应（raw JSON）
 
 ```json
 {
-  "success": true,
-  "data": {
-    // 响应数据
-  }
+  // 响应数据
 }
 ```
 
-### 错误响应
+### 错误响应（RFC7807）
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "可读的错误信息"
-  }
+  "type": "https://anyhunt.app/errors/ERROR_CODE",
+  "title": "Error Title",
+  "status": 400,
+  "detail": "可读的错误信息",
+  "code": "ERROR_CODE",
+  "requestId": "req_123"
 }
 ```
 

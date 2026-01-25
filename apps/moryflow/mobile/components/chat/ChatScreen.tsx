@@ -3,7 +3,7 @@
  * [EMITS]: 无
  * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致（含会话模式切换）
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import * as React from 'react';
@@ -21,6 +21,7 @@ import { ChatInputBar, type SendMessagePayload } from './ChatInputBar';
 import { ModelPickerSheet } from './ModelPickerSheet';
 import { SessionSwitcher } from './SessionSwitcher';
 import { UpgradeSheet } from '@/components/membership';
+import { TasksSheet } from './TasksSheet';
 import { ChatProvider, useChatLayout, useMessageAnimation } from './contexts';
 import { ChatMessageList, ChatErrorBanner, ChatInitBanner, ChatEmptyState } from './components';
 import { useChatRuntime, useChatState, useModalState } from './hooks';
@@ -129,6 +130,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
 
   // 输入状态
   const [input, setInput] = React.useState('');
+  const [showTasks, setShowTasks] = React.useState(false);
 
   // 事件处理
   const handleSend = async (payload: SendMessagePayload) => {
@@ -186,6 +188,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
           onTitlePress={openSessionSwitcher}
           onNewConversation={() => createSession()}
           onHistoryPress={openSessionSwitcher}
+          onTasksPress={() => setShowTasks(true)}
           isInSheet={isInSheet}
         />
       )}
@@ -260,6 +263,18 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         presentationStyle="pageSheet"
         onRequestClose={closeUpgradeSheet}>
         <UpgradeSheet model={lockedModel} onClose={closeUpgradeSheet} />
+      </Modal>
+
+      <Modal
+        visible={showTasks}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowTasks(false)}>
+        <TasksSheet
+          visible={showTasks}
+          onClose={() => setShowTasks(false)}
+          activeSessionId={activeSessionId}
+        />
       </Modal>
     </View>
   );

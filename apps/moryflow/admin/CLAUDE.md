@@ -15,6 +15,12 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - 管理日志审计
 - 数据仪表盘
 
+## 近期变更
+
+- Docker 构建补齐 @anyhunt/types 与 typescript-config 依赖，避免 build 缺失
+- Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，并统一 ProblemDetails 类型来源
+- 补齐 API client 非 JSON 回归测试，新增 `test:unit`
+
 ## 约束
 
 - 使用 TailwindCSS 4 + shadcn/ui 组件库
@@ -23,6 +29,10 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - 路由使用 React Router
 - 表单使用 react-hook-form + zod
 - 图标统一使用 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`），禁止 `lucide-react` / `@tabler/icons-react`
+
+## 测试
+
+- 单元测试：`pnpm test:unit`
 
 ## 技术栈
 
@@ -86,6 +96,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
 - Dashboard：同步文件数卡片改用 `FileSyncIcon`，修复 Hugeicons 导出缺失导致的构建错误
 - `src/components/ui` 与 `src/components/shared` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - `src/features/` 与 `src/pages/` 避免在 `useEffect` 中设置派生状态，优先使用派生值

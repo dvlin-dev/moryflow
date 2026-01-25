@@ -1,9 +1,0 @@
-{
-  "title": "设置配置",
-  "pages": [
-    "ai-models",
-    "ollama",
-    "custom-provider",
-    "theme"
-  ]
-}

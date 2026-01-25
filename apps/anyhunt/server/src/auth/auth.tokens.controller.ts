@@ -17,7 +17,6 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { CookieOptions, Request, Response } from 'express';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { SkipResponseWrap } from '../common/decorators';
 import { Public } from './decorators';
 import { AuthTokensService } from './auth.tokens.service';
 import { AuthService } from './auth.service';
@@ -44,7 +43,6 @@ import { applyAuthResponse, buildAuthRequest } from './auth.handler.utils';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: VERSION_NEUTRAL })
-@SkipResponseWrap()
 export class AuthTokensController {
   constructor(
     private readonly tokensService: AuthTokensService,

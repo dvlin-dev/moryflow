@@ -27,8 +27,11 @@ status: active
 - Auth 拆分文档：`docs/architecture/auth/`
 - Auth 交互统一与数据库重置方案：`docs/architecture/auth/unified-auth-rebuild-plan.md`
 - Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`
+- Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`
+- API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
+- Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`
 - ADR-0002 Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`
 

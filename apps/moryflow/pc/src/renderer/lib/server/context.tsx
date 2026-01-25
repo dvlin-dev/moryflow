@@ -1,7 +1,17 @@
+/**
+ * [PROVIDES]: AuthProvider 与会员/模型状态 hooks（含 Resume 校验）
+ * [DEPENDS]: server/api, auth-session, auth-store, sonner toast
+ * [POS]: PC 端会员认证与模型状态中心
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ */
+
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { parseAuthError } from '@anyhunt/api';
 import { signIn } from './client';
 import {
+  ensureAccessToken,
   refreshAccessToken,
   getAccessToken,
   clearAuthSession,
@@ -9,6 +19,7 @@ import {
 } from './auth-session';
 import { fetchCurrentUser, fetchMembershipModels } from './api';
 import type { UserInfo, MembershipModel, MembershipAuthState } from './types';
+import { waitForAuthHydration } from './auth-store';
 
 /** 会员模型启用状态的存储 key */
 const MEMBERSHIP_ENABLED_KEY = 'moryflow_membership_enabled';
@@ -117,10 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loadUser = useCallback(async () => {
+    await waitForAuthHydration();
     const cachedUser = getStoredUserInfo();
     console.log('[AuthProvider] loadUser called, hasCachedUser:', !!cachedUser);
 
-    const refreshed = await refreshAccessToken();
+    const refreshed = await ensureAccessToken();
     const token = getAccessToken();
     if (!refreshed || !token) {
       setUser(null);
@@ -162,6 +174,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 初始化时同步启用状态到 main 进程
     syncEnabledToMain(membershipEnabled);
   }, [loadUser, membershipEnabled]);
+
+  useEffect(() => {
+    const checkSecureStorage = async () => {
+      const api = window.desktopAPI?.membership;
+      if (!api?.isSecureStorageAvailable) {
+        return;
+      }
+      const available = await api.isSecureStorageAvailable();
+      if (!available) {
+        toast.error('Secure storage is unavailable. Please enable system keychain to sign in.');
+      }
+    };
+
+    void checkSecureStorage();
+  }, []);
+
+  useEffect(() => {
+    const handleResume = () => {
+      void ensureAccessToken();
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleResume();
+      }
+    };
+
+    window.addEventListener('focus', handleResume);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleResume);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {

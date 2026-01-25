@@ -1,25 +1,53 @@
 /**
- * [PROVIDES]: access token 内存态 + refresh/logout 流程
- * [DEPENDS]: /api/auth/refresh, /api/auth/logout
- * [POS]: www 端 Access Token 会话管理（不落地存储）
+ * [PROVIDES]: access token store + refresh/logout 流程
+ * [DEPENDS]: /api/auth/refresh, /api/auth/logout, auth-store
+ * [POS]: www 端 Access Token 会话管理（Zustand store + refresh 轮换）
  */
 
 import { API_BASE_URL } from './api-base';
+import {
+  authStore,
+  ACCESS_TOKEN_SKEW_MS,
+  isAccessTokenExpiringSoon,
+  waitForAuthHydration,
+} from '@/stores/auth-store';
 
 type AuthResponse = {
   accessToken?: string;
+  accessTokenExpiresAt?: string;
 };
 
 const AUTH_BASE_URL = `${API_BASE_URL}/api/auth`;
 
-let accessToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
+let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const setAccessToken = (token: string | null) => {
-  accessToken = token;
+const scheduleRefresh = (expiresAt?: string | null) => {
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = null;
+  }
+
+  if (!expiresAt) {
+    return;
+  }
+
+  const timestamp = Date.parse(expiresAt);
+  if (Number.isNaN(timestamp)) {
+    return;
+  }
+
+  const delay = Math.max(0, timestamp - Date.now() - ACCESS_TOKEN_SKEW_MS);
+  refreshTimeout = setTimeout(() => {
+    void refreshAccessToken();
+  }, delay);
+
+  if (typeof refreshTimeout === 'object' && 'unref' in refreshTimeout) {
+    refreshTimeout.unref();
+  }
 };
 
-export const getAccessToken = () => accessToken;
+export const getAccessToken = () => authStore.getState().accessToken;
 
 const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init);
@@ -39,16 +67,19 @@ export const refreshAccessToken = async (): Promise<boolean> => {
         headers: { 'Content-Type': 'application/json' },
       });
 
-      if (!data?.accessToken) {
-        setAccessToken(null);
+      if (!data?.accessToken || !data?.accessTokenExpiresAt) {
+        authStore.getState().clearAccessToken();
+        scheduleRefresh(null);
         return false;
       }
 
-      setAccessToken(data.accessToken);
+      authStore.getState().setAccessToken(data.accessToken, data.accessTokenExpiresAt);
+      scheduleRefresh(data.accessTokenExpiresAt);
       return true;
     })()
       .catch(() => {
-        setAccessToken(null);
+        authStore.getState().clearAccessToken();
+        scheduleRefresh(null);
         return false;
       })
       .finally(() => {
@@ -60,7 +91,15 @@ export const refreshAccessToken = async (): Promise<boolean> => {
 };
 
 export const bootstrapAuth = async () => {
-  await refreshAccessToken();
+  await waitForAuthHydration();
+
+  const { accessToken, accessTokenExpiresAt } = authStore.getState();
+  if (!accessToken || isAccessTokenExpiringSoon(accessTokenExpiresAt)) {
+    void refreshAccessToken();
+    return;
+  }
+
+  scheduleRefresh(accessTokenExpiresAt);
 };
 
 export const logout = async () => {
@@ -70,5 +109,6 @@ export const logout = async () => {
     headers: { 'Content-Type': 'application/json' },
   }).catch(() => undefined);
 
-  setAccessToken(null);
+  authStore.getState().clearAccessToken();
+  scheduleRefresh(null);
 };

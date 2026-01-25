@@ -6,6 +6,13 @@
 
 Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取能力与配置 Webhook。基于 React + Vite。
 
+## 最近更新
+
+- API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，避免静默失败
+- 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本
+- Memox Playground 表单修复 FormField 上下文错误，并补齐回归测试
+- 测试环境补齐 ResizeObserver/matchMedia mock，避免 UI 组件报错
+
 ## 职责
 
 - 用量与额度概览
@@ -54,6 +61,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 测试
 
 - E2E：`pnpm test:e2e`（Playwright，启动本地 Vite dev server）
+- 单元测试：`pnpm test:unit`
 
 ## 目录结构
 
@@ -101,6 +109,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Memox/Graph 表单使用 zod input/output 区分，修复 RHF resolver 类型冲突
 - Graph 可视化回调统一为 NodeObject 入参，避免强类型不匹配
 - Memox threshold 数字输入显式归一，避免 unknown value 类型报错
+- Console API client 切换 raw JSON + RFC7807 错误体解析，auth store 同步收敛错误处理
+- NavUser 增加 name/email fallback，避免用户信息未就绪导致 split 崩溃
 
 ## Feature Module Structure
 

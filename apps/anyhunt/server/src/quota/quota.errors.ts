@@ -36,17 +36,7 @@ export abstract class QuotaError extends HttpException {
     status: HttpStatus,
     public readonly details?: Record<string, unknown>,
   ) {
-    super(
-      {
-        success: false,
-        error: {
-          code,
-          message,
-          details,
-        },
-      },
-      status,
-    );
+    super({ code, message, details }, status);
     this.message = message;
   }
 }

@@ -2,7 +2,7 @@ import type { ChatStatus } from 'ai';
 
 import { CardFooter } from '@anyhunt/ui/components/card';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { PlanSnapshot, TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 
 import { ChatPromptInput } from './chat-prompt-input';
 import type { ChatSubmitPayload } from './chat-prompt-input/const';
@@ -22,7 +22,6 @@ type Props = {
   selectedModelId?: string | null;
   onSelectModel: (id: string) => void;
   disabled: boolean;
-  todoSnapshot: PlanSnapshot | null;
   tokenUsage?: TokenUsage | null;
   contextWindow?: number;
   mode: ChatSessionSummary['mode'];
@@ -43,7 +42,6 @@ export const ChatFooter = ({
   selectedModelId,
   onSelectModel,
   disabled,
-  todoSnapshot,
   tokenUsage,
   contextWindow,
   mode,
@@ -63,7 +61,6 @@ export const ChatFooter = ({
       onSelectModel={onSelectModel}
       disabled={disabled}
       onOpenSettings={onOpenSettings}
-      todoSnapshot={todoSnapshot}
       tokenUsage={tokenUsage}
       contextWindow={contextWindow}
       mode={mode}

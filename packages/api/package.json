@@ -27,12 +27,15 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc-multi",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/sync": "workspace:*"
+    "@anyhunt/sync": "workspace:*",
+    "@anyhunt/types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   }
 }

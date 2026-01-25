@@ -6,6 +6,10 @@
 
 oEmbed provider support for fetching embed data from various media platforms. Uses a plugin-based provider architecture.
 
+## 最近更新
+
+- oEmbed 错误响应统一为 RFC7807（移除 success/data 包装）
+
 ## Responsibilities
 
 - Fetch oEmbed data from supported providers

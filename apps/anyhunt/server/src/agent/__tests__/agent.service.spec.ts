@@ -521,7 +521,10 @@ describe('AgentService', () => {
 
     const result = await service.cancelTask('task_1', 'user_1');
 
-    expect(result.success).toBe(true);
+    expect(result.status).toBe('cancelled');
+    if (result.status !== 'cancelled') {
+      throw new Error('Expected cancelled status');
+    }
     expect(result.creditsUsed).toBe(12);
     expect(mockProgressStore.requestCancel).toHaveBeenCalledWith('task_1');
     expect(mockTaskRepository.updateTaskIfStatus).toHaveBeenCalledWith(
@@ -566,8 +569,11 @@ describe('AgentService', () => {
 
     const result = await service.cancelTask('task_2', 'user_1');
 
-    expect(result.success).toBe(false);
-    expect(result.message).toContain('Cannot cancel');
+    expect(result.status).toBe('invalid_status');
+    if (result.status !== 'invalid_status') {
+      throw new Error('Expected invalid_status');
+    }
+    expect(result.currentStatus).toBe('completed');
     expect(result.creditsUsed).toBe(5);
   });
 
