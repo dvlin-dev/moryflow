@@ -57,7 +57,6 @@ import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useTranslation } from '@/lib/i18n';
 
-import { TodoPanel } from '../todo-panel';
 import { ContextFileTags, type ContextFileTag } from '../context-file-tags';
 import { FileContextAdder } from '../file-context-adder';
 import { TokenUsageIndicator } from '../token-usage-indicator';
@@ -84,7 +83,6 @@ export const ChatPromptInput = ({
   onSelectModel,
   disabled,
   onOpenSettings,
-  todoSnapshot,
   tokenUsage,
   contextWindow = DEFAULT_CONTEXT_WINDOW,
 }: ChatPromptInputProps) => {
@@ -426,7 +424,6 @@ export const ChatPromptInput = ({
       className="**:data-[slot=input-group]:rounded-xl **:data-[slot=input-group]:shadow-lg **:data-[slot=input-group]:border-border-muted **:data-[slot=input-group]:overflow-hidden"
     >
       {/* 只在对话进行中显示 plan 面板 */}
-      {canStop && <TodoPanel data={todoSnapshot} />}
       {renderFileReferenceArea()}
       {renderAttachments()}
       {renderTextarea()}

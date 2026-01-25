@@ -25,6 +25,7 @@
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
 - `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
+- `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
 - `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（Compaction/Permission/Truncation）决策。
 - `ui-message-list-unification.md`：消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一，先对齐样式再统一抽象）。
@@ -34,6 +35,8 @@
 
 ## 近期更新
 
+- `agent-tasks-system.md`：落地 TasksStore 单例、只读 IPC、PC/Mobile Tasks UI，并补充子代理同步测试与执行清单完成记录（2026-01-25）。
+- `agent-tasks-system.md`：修正 Mobile SQLite 路径约定为 databaseName + directory（2026-01-25）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：合并 OpenCode 对标与落地清单，删除独立对标文档（2026-01-26）。

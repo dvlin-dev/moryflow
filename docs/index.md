@@ -31,6 +31,7 @@ status: active
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
+- Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`
 - ADR-0002 Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`
 

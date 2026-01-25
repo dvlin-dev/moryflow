@@ -51,6 +51,13 @@ import type {
   SubdomainSuggestResult,
 } from './site-publish';
 import type { SandboxApi } from './sandbox';
+import type {
+  TaskRecord,
+  TaskDetailResult,
+  TasksListInput,
+  TasksGetInput,
+  TasksChangeEvent,
+} from './tasks';
 
 export type DesktopApi = {
   getAppVersion: () => Promise<string>;
@@ -203,6 +210,11 @@ export type DesktopApi = {
     testMcpServer: (input: McpTestInput) => Promise<McpTestResult>;
     /** 重新加载 MCP 配置 */
     reloadMcp: () => Promise<void>;
+  };
+  tasks: {
+    list: (input: TasksListInput) => Promise<TaskRecord[]>;
+    get: (input: TasksGetInput) => Promise<TaskDetailResult | null>;
+    onChanged: (handler: (event: TasksChangeEvent) => void) => () => void;
   };
   testAgentProvider: (input: AgentProviderTestInput) => Promise<AgentProviderTestResult>;
   maintenance?: {

@@ -41,6 +41,8 @@
 
 ## 最近更新
 
+- Moryflow Agent Tasks 系统方案（IPC + PC/Mobile UI + 执行清单完成 + 单元测试覆盖 + 子代理同步测试）：`docs/architecture/agent-tasks-system.md`（2026-01-25：completed）
+- Moryflow Agent Tasks 系统方案：修正 Mobile SQLite 打开方式（2026-01-25）
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`（2026-01-26：draft）
 - API Client 方案补充 React Query（Web/PC/移动端）与复用策略：`docs/architecture/api-client-unification.md`（2026-01-26）
 - API Client 方案统一响应为 raw JSON + RFC7807（含一次性执行计划）：`docs/architecture/api-client-unification.md`（2026-01-26）

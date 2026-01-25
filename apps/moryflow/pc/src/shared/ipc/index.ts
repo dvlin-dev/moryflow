@@ -39,11 +39,22 @@ export type {
 
 export type { ResetAppResult } from './maintenance';
 
-export type { PlanTask, PlanSnapshot } from './todo';
-
 export type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 
 export type { AgentProviderTestInput, AgentProviderTestResult } from './provider-test';
+
+export type {
+  TaskStatus,
+  TaskPriority,
+  TaskRecord,
+  TaskDependency,
+  TaskNote,
+  TaskFile,
+  TasksListInput,
+  TasksGetInput,
+  TaskDetailResult,
+  TasksChangeEvent,
+} from './tasks';
 
 export type {
   McpServerStatus,

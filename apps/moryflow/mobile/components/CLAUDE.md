@@ -81,6 +81,8 @@ const colors = useThemeColors()
 - Workspace Sheet 保留唯一 Sync now 入口，状态卡仅展示状态与最后同步时间
 - Workspace Sheet 最后同步时间改为 i18n 格式化，避免硬编码中文
 - iOS 原生 ContextMenu 组件使用显式类型定义，避免 `any` 与类型漂移
+- Chat 组件新增 TasksSheet（列表 + 详情）与 Tasks 入口按钮
+- Chat 组件 Header/TasksSheet 协议标注统一为 CLAUDE.md
 - `LiquidGlassTabBar` 以 Tabs 状态为唯一数据源渲染/导航，「快速创建草稿」为独立动作按钮
 - `EditorWebView` 注入主题相关样式，确保内容 placeholder 在暗黑模式下可见
 - `MessageBubble` 补齐动画 useEffect 依赖，消除 hooks lint 警告

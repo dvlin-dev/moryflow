@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
-import { ClockIcon, PlusIcon } from '@/components/ui/icons';
+import { ClockIcon, PlusIcon, List as ListIcon } from '@/components/ui/icons';
 import { Icon } from '@/components/ui/icon';
 
 interface ChatHeaderProps {
@@ -14,6 +14,7 @@ interface ChatHeaderProps {
   onTitlePress?: () => void;
   onNewConversation?: () => void;
   onHistoryPress?: () => void;
+  onTasksPress?: () => void;
   /** 是否在 Sheet 中使用（不需要顶部安全区域） */
   isInSheet?: boolean;
 }
@@ -23,6 +24,7 @@ export function ChatHeader({
   onTitlePress,
   onNewConversation,
   onHistoryPress,
+  onTasksPress,
   isInSheet = false,
 }: ChatHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -90,11 +92,18 @@ export function ChatHeader({
         </Text>
       </Pressable>
 
-      {/* 右侧：新建对话按钮 */}
-      {renderGlassButton(
-        <Icon as={PlusIcon} size={18} color={colors.textPrimary} />,
-        onNewConversation
-      )}
+      {/* 右侧：Tasks + 新建对话按钮 */}
+      <View className="flex-row items-center gap-2">
+        {onTasksPress &&
+          renderGlassButton(
+            <Icon as={ListIcon} size={18} color={colors.textPrimary} />,
+            onTasksPress
+          )}
+        {renderGlassButton(
+          <Icon as={PlusIcon} size={18} color={colors.textPrimary} />,
+          onNewConversation
+        )}
+      </View>
     </View>
   );
 
