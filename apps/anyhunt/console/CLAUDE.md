@@ -10,6 +10,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 - API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，避免静默失败
 - 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本
+- Memox Playground 表单修复 FormField 上下文错误，并补齐回归测试
+- 测试环境补齐 ResizeObserver/matchMedia mock，避免 UI 组件报错
 
 ## 职责
 
