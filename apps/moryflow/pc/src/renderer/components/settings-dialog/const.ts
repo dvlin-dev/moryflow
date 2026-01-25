@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: SettingsDialog form schema + types
+ * [DEFINES]: SettingsDialog form schema + types（含 system prompt/params）
  * [USED_BY]: settings-dialog components
  * [POS]: Settings form schema source of truth
  *
@@ -7,13 +7,21 @@
  */
 
 import type { ReactNode } from 'react';
-import { z } from 'zod/v3';
+import { z, type ZodNumber } from 'zod/v3';
 
-export type SettingsSection = 'account' | 'general' | 'providers' | 'mcp' | 'cloud-sync' | 'about';
+export type SettingsSection =
+  | 'account'
+  | 'general'
+  | 'system-prompt'
+  | 'providers'
+  | 'mcp'
+  | 'cloud-sync'
+  | 'about';
 
 export const settingsSections = [
   { id: 'account', labelKey: 'account', descriptionKey: 'accountDescription' },
   { id: 'general', labelKey: 'general', descriptionKey: 'generalDescription' },
+  { id: 'system-prompt', labelKey: 'systemPrompt', descriptionKey: 'systemPromptDescription' },
   { id: 'providers', labelKey: 'providers', descriptionKey: 'providersDescription' },
   { id: 'mcp', labelKey: 'mcp', descriptionKey: 'mcpDescription' },
   { id: 'cloud-sync', labelKey: 'cloudSync', descriptionKey: 'cloudSyncDescription' },
@@ -23,6 +31,7 @@ export const settingsSections = [
 export const sectionContentLayout: Record<SettingsSection, { useScrollArea: boolean }> = {
   account: { useScrollArea: true },
   general: { useScrollArea: true },
+  'system-prompt': { useScrollArea: true },
   providers: { useScrollArea: false },
   mcp: { useScrollArea: false },
   'cloud-sync': { useScrollArea: true },
@@ -120,10 +129,29 @@ export const customProviderConfigSchema = z.object({
   defaultModelId: z.string().nullable().optional().default(null),
 });
 
+export const systemPromptSchema = z.object({
+  mode: z.enum(['default', 'custom']).default('default'),
+  template: z.string().default(''),
+});
+
+const modelParamEntrySchema = (valueSchema: ZodNumber) =>
+  z.object({
+    mode: z.enum(['default', 'custom']).default('default'),
+    value: valueSchema,
+  });
+
+export const modelParamsSchema = z.object({
+  temperature: modelParamEntrySchema(z.coerce.number().min(0).max(2)),
+  topP: modelParamEntrySchema(z.coerce.number().min(0).max(1)),
+  maxTokens: modelParamEntrySchema(z.coerce.number().int().min(1)),
+});
+
 export const formSchema = z.object({
   model: z.object({
     defaultModel: z.string().nullable().optional().default(null),
   }),
+  systemPrompt: systemPromptSchema,
+  modelParams: modelParamsSchema,
   mcp: z.object({
     stdio: z.array(stdioEntrySchema),
     streamableHttp: z.array(httpEntrySchema),
@@ -157,6 +185,15 @@ export type ServerEntriesProps<TField> = {
 export const defaultValues: FormValues = {
   model: {
     defaultModel: null,
+  },
+  systemPrompt: {
+    mode: 'default',
+    template: '',
+  },
+  modelParams: {
+    temperature: { mode: 'default', value: 0.7 },
+    topP: { mode: 'default', value: 1 },
+    maxTokens: { mode: 'default', value: 4096 },
   },
   mcp: {
     stdio: [],

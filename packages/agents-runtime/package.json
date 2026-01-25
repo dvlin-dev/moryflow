@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
+    },
+    "./prompt": {
+      "types": "./dist/prompt.d.ts",
+      "require": "./dist/prompt.js",
+      "import": "./dist/prompt.mjs"
     }
   },
   "files": [
