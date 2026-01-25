@@ -1,10 +1,10 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 设置注入）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 tasks store 注入与 prompt/params 设置）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import { run, user, type Agent, type ModelSettings } from '@openai/agents-core';
 import type { RunStreamEvent } from '@openai/agents-core';
@@ -39,6 +39,7 @@ import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapte
 import { createMcpManager } from './core/mcp-manager.js';
 import { membershipBridge } from '../membership-bridge.js';
 import { setupAgentTracing } from './tracing-setup.js';
+import { getSharedTasksStore } from './shared-tasks-store.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -164,12 +165,14 @@ export const createAgentRuntime = (): AgentRuntime => {
     }
     return vaultInfo.path;
   });
+  const tasksStore = getSharedTasksStore();
 
   // 创建工具集（不含 bash，bash 使用沙盒版本）
   const baseTools = createBaseTools({
     capabilities,
     crypto,
     vaultUtils,
+    tasksStore,
     enableBash: false, // 禁用默认 bash，使用沙盒版本
   });
 

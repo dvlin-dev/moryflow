@@ -13,6 +13,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - AI 对话交互（支持本地 Ollama）
 - 本地文件系统访问
 - 云同步客户端
+- Agent Tasks 面板（列表 + 详情）
 
 ## 约束
 
@@ -97,6 +98,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - Playwright E2E 增加失败诊断输出（stdout/stderr/页面 URL）并启用失败截图
 - external-links 安全校验补齐路径边界与单测
 - 站点发布模板新增 `lang`/`description` 占位符，构建链路默认 `en`
+- 新增 Tasks 面板（Chat Pane 内）与 tasks:list/get 只读 IPC 接口
 
 ## 依赖关系
 

@@ -16,6 +16,7 @@ import type {
   DesktopApi,
   McpStatusEvent,
   OllamaPullProgressEvent,
+  TasksChangeEvent,
   VaultFsEvent,
   VaultItem,
   BuildProgressEvent,
@@ -161,6 +162,16 @@ const api: DesktopApi = {
     },
     testMcpServer: (input) => ipcRenderer.invoke('agent:mcp:testServer', input ?? {}),
     reloadMcp: () => ipcRenderer.invoke('agent:mcp:reload'),
+  },
+  tasks: {
+    list: (input) => ipcRenderer.invoke('tasks:list', input ?? {}),
+    get: (input) => ipcRenderer.invoke('tasks:get', input ?? {}),
+    onChanged: (handler) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: TasksChangeEvent) =>
+        handler(payload);
+      ipcRenderer.on('tasks:changed', listener);
+      return () => ipcRenderer.removeListener('tasks:changed', listener);
+    },
   },
   testAgentProvider: (input) => ipcRenderer.invoke('agent:test-provider', input ?? {}),
   maintenance: {
