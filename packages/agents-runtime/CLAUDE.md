@@ -41,6 +41,7 @@
 - 修复 ls 默认路径权限评估与 MCP 工具 serverId 绑定
 - 修正 JSONC 解析错误类型与 Permission 包装的 RunContext 兼容
 - 新增 Permission 规则评估与 JSONC 读写工具，支持拒绝输出与规则匹配
+- 修复 tool.before 仅支持 JSON 字符串输入的问题，支持直接合并对象参数
 - Tool 输出截断包装明确仅支持 function 工具，避免隐式跳过
 - Agent 工厂支持注入 system prompt/model settings；默认 system prompt 去除时间占位
 - 修复 Vault 路径边界校验，避免前缀穿越
@@ -51,4 +52,4 @@
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-01-30_
+_版本: 1.0 | 更新日期: 2026-01-26_

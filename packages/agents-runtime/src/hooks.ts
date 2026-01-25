@@ -87,15 +87,21 @@ const safeJsonParse = (value: string): unknown => {
   }
 };
 
-const applyToolBefore = (input: string, rule: ToolHookRule): string => {
-  if (!rule.mergeInput) {
+const isMergeableRecord = (value: unknown): value is Record<string, unknown> =>
+  isRecord(value) && !Array.isArray(value);
+
+const applyToolBefore = (input: unknown, rule: ToolHookRule): unknown => {
+  if (!isMergeableRecord(rule.mergeInput)) {
     return input;
   }
-  if (!isRecord(rule.mergeInput)) {
+  if (isMergeableRecord(input)) {
+    return { ...rule.mergeInput, ...input };
+  }
+  if (typeof input !== 'string') {
     return input;
   }
   const parsed = safeJsonParse(input);
-  if (!isRecord(parsed)) {
+  if (!isMergeableRecord(parsed)) {
     return input;
   }
   return JSON.stringify({ ...rule.mergeInput, ...parsed });
@@ -246,7 +252,7 @@ export const wrapToolWithHooks = (
   const wrapped: FunctionTool<AgentContext> = {
     ...tool,
     async invoke(runContext, input, details) {
-      let nextInput = input;
+      let nextInput: unknown = input;
       if (beforeRules.length > 0) {
         try {
           for (const rule of beforeRules) {
@@ -259,7 +265,12 @@ export const wrapToolWithHooks = (
         }
       }
 
-      const output = await tool.invoke(runContext, nextInput, details);
+      const invokeTool = tool.invoke as (
+        runContext: Parameters<FunctionTool<AgentContext>['invoke']>[0],
+        input: unknown,
+        details?: Parameters<FunctionTool<AgentContext>['invoke']>[2]
+      ) => Promise<unknown>;
+      const output = await invokeTool(runContext, nextInput, details);
 
       if (afterRules.length > 0) {
         try {
