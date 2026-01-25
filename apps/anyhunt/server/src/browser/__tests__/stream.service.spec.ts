@@ -33,7 +33,8 @@ describe('BrowserStreamService', () => {
     (service as any).host = 'localhost';
 
     const result = service.createToken('session', 60);
-    expect(result.wsUrl).toContain('ws://localhost:9223');
+    const scheme = process.env.BROWSER_STREAM_SECURE === 'true' ? 'wss' : 'ws';
+    expect(result.wsUrl).toContain(`${scheme}://localhost:9223`);
     expect(result.token).toBeDefined();
     expect(result.expiresAt).toBeGreaterThan(Date.now());
   });

@@ -118,6 +118,18 @@ const ClickOptionsSchema = z.object({
   modifiers: z.array(z.enum(['Alt', 'Control', 'Meta', 'Shift'])).optional(),
 });
 
+/** 上传文件 payload（Base64） */
+const UploadFileSchema = z.object({
+  name: z.string().min(1).max(200),
+  mimeType: z.string().max(200).optional(),
+  dataBase64: z.string().min(1),
+});
+
+const UploadFilesSchema = z.union([
+  UploadFileSchema,
+  z.array(UploadFileSchema).min(1).max(10),
+]);
+
 /** 等待条件 Schema */
 const WaitForSchema = z.object({
   /** 等待时间（毫秒） */
@@ -154,8 +166,8 @@ const BaseActionSchema = z.object({
   target: LocatorInputSchema.optional(),
   /** fill/type 的值 */
   value: z.string().max(10000).optional(),
-  /** upload 的文件路径 */
-  files: z.union([z.string(), z.array(z.string())]).optional(),
+  /** upload 的文件 payload（Base64） */
+  files: UploadFilesSchema.optional(),
   /** press 的按键 */
   key: z.string().max(50).optional(),
   /** getAttribute 的属性名 */

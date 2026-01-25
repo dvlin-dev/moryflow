@@ -9,11 +9,16 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { mkdirSync, promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import { promises as fs } from 'node:fs';
+import { basename, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
 import type { Locator, Page, Download } from 'playwright';
 import { SessionManager, type BrowserSession } from '../session';
+import {
+  BROWSER_DOWNLOAD_MAX_BYTES,
+  BROWSER_UPLOAD_MAX_BYTES,
+} from '../browser.constants';
 import type {
   ActionInput,
   ActionResponse,
@@ -24,7 +29,6 @@ import type {
 @Injectable()
 export class ActionHandler {
   private readonly logger = new Logger(ActionHandler.name);
-  private readonly downloadDir = join(tmpdir(), 'anyhunt-browser-downloads');
 
   constructor(private readonly sessionManager: SessionManager) {}
 
@@ -36,6 +40,8 @@ export class ActionHandler {
     action: ActionInput,
   ): Promise<ActionResponse> {
     const { type, timeout = 5000 } = action;
+    const page = this.sessionManager.getActivePage(session);
+    const context = this.sessionManager.getActiveContext(session);
 
     try {
       const requiresTarget = new Set<ActionInput['type']>([
@@ -73,15 +79,15 @@ export class ActionHandler {
       switch (type) {
         // ===== 导航 =====
         case 'back':
-          await session.page.goBack({ timeout });
+          await page.goBack({ timeout });
           return { success: true };
 
         case 'forward':
-          await session.page.goForward({ timeout });
+          await page.goForward({ timeout });
           return { success: true };
 
         case 'reload':
-          await session.page.reload({ timeout });
+          await page.reload({ timeout });
           return { success: true };
 
         // ===== 交互 =====
@@ -116,7 +122,7 @@ export class ActionHandler {
           if (locator) {
             await locator.press(action.key, { timeout });
           } else {
-            await session.page.keyboard.press(action.key);
+            await page.keyboard.press(action.key);
           }
           return { success: true };
 
@@ -158,8 +164,9 @@ export class ActionHandler {
           if (!action.files) {
             throw new Error('upload requires files');
           }
-          await locator!.setInputFiles(action.files);
-          return { success: true };
+          const filePayloads = this.buildUploadPayloads(action.files);
+          await locator!.setInputFiles(filePayloads);
+          return { success: true, result: { count: filePayloads.length } };
         }
 
         case 'highlight':
@@ -168,7 +175,7 @@ export class ActionHandler {
 
         // ===== 滚动 =====
         case 'scroll':
-          return await this.handleScroll(session.page, action, locator);
+          return await this.handleScroll(page, action, locator);
 
         case 'scrollIntoView':
           await locator!.scrollIntoViewIfNeeded({ timeout });
@@ -176,14 +183,14 @@ export class ActionHandler {
 
         // ===== 等待 =====
         case 'wait':
-          return await this.handleWait(session, action);
+          return await this.handleWait(session, page, action);
 
         // ===== 脚本 / 内容 =====
         case 'evaluate': {
           if (!action.script) {
             throw new Error('evaluate requires script');
           }
-          const result = await session.page.evaluate(action.script, action.arg);
+          const result = await page.evaluate(action.script, action.arg);
           return { success: true, result };
         }
 
@@ -191,14 +198,14 @@ export class ActionHandler {
           if (!action.html) {
             throw new Error('setContent requires html');
           }
-          await session.page.setContent(action.html, {
+          await page.setContent(action.html, {
             waitUntil: 'domcontentloaded',
           });
           return { success: true };
         }
 
         case 'pdf': {
-          const buffer = await session.page.pdf({
+          const buffer = await page.pdf({
             format: action.pdfFormat ?? 'A4',
             printBackground: true,
           });
@@ -213,7 +220,7 @@ export class ActionHandler {
         }
 
         case 'download':
-          return await this.handleDownload(session, locator, action, timeout);
+          return await this.handleDownload(page, locator, action, timeout);
 
         // ===== 信息获取 =====
         case 'getText': {
@@ -272,7 +279,7 @@ export class ActionHandler {
           if (!action.viewport) {
             throw new Error('setViewport requires viewport');
           }
-          await session.page.setViewportSize(action.viewport);
+          await page.setViewportSize(action.viewport);
           return { success: true };
         }
 
@@ -280,7 +287,7 @@ export class ActionHandler {
           if (!action.geolocation) {
             throw new Error('setGeolocation requires geolocation');
           }
-          await session.context.setGeolocation(action.geolocation);
+          await context.setGeolocation(action.geolocation);
           return { success: true };
         }
 
@@ -288,17 +295,17 @@ export class ActionHandler {
           if (!action.permissions || action.permissions.length === 0) {
             throw new Error('setPermissions requires permissions');
           }
-          await session.context.grantPermissions(action.permissions);
+          await context.grantPermissions(action.permissions);
           return { success: true };
         }
 
         case 'clearPermissions': {
-          await session.context.clearPermissions();
+          await context.clearPermissions();
           return { success: true };
         }
 
         case 'setMedia': {
-          await session.page.emulateMedia({
+          await page.emulateMedia({
             colorScheme: action.colorScheme,
             reducedMotion: action.reducedMotion,
           });
@@ -309,7 +316,7 @@ export class ActionHandler {
           if (action.offline === undefined) {
             throw new Error('setOffline requires offline');
           }
-          await session.context.setOffline(action.offline);
+          await context.setOffline(action.offline);
           return { success: true };
         }
 
@@ -317,7 +324,7 @@ export class ActionHandler {
           if (!action.headers) {
             throw new Error('setHeaders requires headers');
           }
-          await session.context.setExtraHTTPHeaders(action.headers);
+          await context.setExtraHTTPHeaders(action.headers);
           return { success: true };
         }
 
@@ -325,7 +332,7 @@ export class ActionHandler {
           if (!action.httpCredentials) {
             throw new Error('setHttpCredentials requires httpCredentials');
           }
-          await session.context.setHTTPCredentials(action.httpCredentials);
+          await context.setHTTPCredentials(action.httpCredentials);
           return { success: true };
         }
 
@@ -423,6 +430,7 @@ export class ActionHandler {
    */
   private async handleWait(
     session: BrowserSession,
+    page: Page,
     action: ActionInput,
   ): Promise<ActionResponse> {
     const { waitFor, timeout = 5000 } = action;
@@ -432,7 +440,7 @@ export class ActionHandler {
     }
 
     if (waitFor.time !== undefined) {
-      await session.page.waitForTimeout(waitFor.time);
+      await page.waitForTimeout(waitFor.time);
       return { success: true };
     }
 
@@ -455,12 +463,12 @@ export class ActionHandler {
     }
 
     if (waitFor.url) {
-      await session.page.waitForURL(waitFor.url, { timeout });
+      await page.waitForURL(waitFor.url, { timeout });
       return { success: true };
     }
 
     if (waitFor.text) {
-      await session.page.waitForFunction(
+      await page.waitForFunction(
         (text) => document.body.textContent?.includes(text),
         waitFor.text,
         { timeout },
@@ -469,22 +477,22 @@ export class ActionHandler {
     }
 
     if (waitFor.networkIdle) {
-      await session.page.waitForLoadState('networkidle', { timeout });
+      await page.waitForLoadState('networkidle', { timeout });
       return { success: true };
     }
 
     if (waitFor.loadState) {
-      await session.page.waitForLoadState(waitFor.loadState, { timeout });
+      await page.waitForLoadState(waitFor.loadState, { timeout });
       return { success: true };
     }
 
     if (waitFor.function) {
-      await session.page.waitForFunction(waitFor.function, { timeout });
+      await page.waitForFunction(waitFor.function, { timeout });
       return { success: true };
     }
 
     if (waitFor.download) {
-      const download = await session.page.waitForEvent('download', { timeout });
+      const download = await page.waitForEvent('download', { timeout });
       return {
         success: true,
         result: {
@@ -529,54 +537,113 @@ export class ActionHandler {
   }
 
   private async handleDownload(
-    session: BrowserSession,
+    page: Page,
     locator: Locator | undefined,
     action: ActionInput,
     timeout: number,
   ): Promise<ActionResponse> {
-    mkdirSync(this.downloadDir, { recursive: true });
-
-    const downloadPromise = session.page.waitForEvent('download', { timeout });
+    const downloadPromise = page.waitForEvent('download', { timeout });
 
     if (locator) {
       await locator.click({ timeout });
     }
 
     const download = await downloadPromise;
-    const filePath = await this.saveDownload(download);
+    const filename = this.sanitizeFilename(download.suggestedFilename());
 
     if (action.storeDownload === false) {
+      await download.delete().catch(() => undefined);
       return {
         success: true,
         result: {
           url: download.url(),
-          filename: download.suggestedFilename(),
+          filename,
         },
       };
     }
 
-    const data = await fs.readFile(filePath);
-    await fs.unlink(filePath).catch(() => undefined);
+    let filePath: string | null = null;
+    let savedCopy = false;
 
-    return {
-      success: true,
-      result: {
-        url: download.url(),
-        filename: download.suggestedFilename(),
-        data: data.toString('base64'),
-        size: data.length,
-      },
-    };
+    try {
+      const originalPath = await download.path();
+      if (originalPath) {
+        filePath = originalPath;
+      } else {
+        filePath = await this.saveDownload(download);
+        savedCopy = true;
+      }
+
+      const stats = await fs.stat(filePath);
+      if (stats.size > BROWSER_DOWNLOAD_MAX_BYTES) {
+        return {
+          success: false,
+          error: `Download size exceeds limit (${BROWSER_DOWNLOAD_MAX_BYTES} bytes).`,
+        };
+      }
+
+      const data = await fs.readFile(filePath);
+
+      return {
+        success: true,
+        result: {
+          url: download.url(),
+          filename,
+          data: data.toString('base64'),
+          size: data.length,
+        },
+      };
+    } finally {
+      if (filePath) {
+        await this.cleanupDownload(download, filePath, savedCopy);
+      } else {
+        await download.delete().catch(() => undefined);
+      }
+    }
   }
 
   private async saveDownload(download: Download): Promise<string> {
-    const safeName = download.suggestedFilename().replace(/\\s+/g, '_');
-    const filePath = join(
-      this.downloadDir,
-      `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeName}`,
-    );
+    const filePath = join(tmpdir(), `anyhunt-download-${randomUUID()}`);
     await download.saveAs(filePath);
     return filePath;
+  }
+
+  private async cleanupDownload(
+    download: Download,
+    filePath: string,
+    savedCopy: boolean,
+  ): Promise<void> {
+    if (savedCopy) {
+      await fs.unlink(filePath).catch(() => undefined);
+    }
+    await download.delete().catch(() => undefined);
+  }
+
+  private sanitizeFilename(name: string): string {
+    const base = basename(name);
+    const sanitized = base.replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 200);
+    return sanitized.length > 0 ? sanitized : 'download';
+  }
+
+  private buildUploadPayloads(files: NonNullable<ActionInput['files']>): Array<{
+    name: string;
+    mimeType: string;
+    buffer: Buffer;
+  }> {
+    const payloads = Array.isArray(files) ? files : [files];
+    return payloads.map((file) => {
+      const buffer = Buffer.from(file.dataBase64, 'base64');
+      if (buffer.length > BROWSER_UPLOAD_MAX_BYTES) {
+        throw new Error(
+          `Upload file too large (max ${BROWSER_UPLOAD_MAX_BYTES} bytes).`,
+        );
+      }
+      return {
+        name: this.sanitizeFilename(file.name),
+        mimeType: file.mimeType ?? 'application/octet-stream',
+        buffer,
+      };
+    });
   }
 
   private describeLocator(locator: LocatorInput): string {

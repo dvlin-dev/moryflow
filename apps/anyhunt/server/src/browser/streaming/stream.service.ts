@@ -19,6 +19,10 @@ import { randomUUID } from 'crypto';
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import type { CDPSession } from 'playwright';
 import { SessionManager } from '../session';
+import {
+  BROWSER_STREAM_MAX_CLIENTS,
+  BROWSER_STREAM_SECURE,
+} from '../browser.constants';
 
 interface StreamToken {
   token: string;
@@ -103,6 +107,7 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly streams = new Map<string, StreamSession>();
   private port = 0;
   private host = 'localhost';
+  private maxClients = 1;
   private cleanupTimer: NodeJS.Timeout | null = null;
   private readonly CLEANUP_INTERVAL_MS = 30 * 1000;
 
@@ -120,6 +125,7 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
       'BROWSER_STREAM_HOST',
       'localhost',
     );
+    this.maxClients = BROWSER_STREAM_MAX_CLIENTS;
 
     if (Number.isNaN(this.port) || this.port <= 0) {
       this.logger.debug(
@@ -128,7 +134,7 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.wss = new WebSocketServer({ port: this.port });
+    this.wss = new WebSocketServer({ host: this.host, port: this.port });
     this.wss.on('connection', (ws, request) => {
       void this.handleConnection(ws, request.url ?? '').catch((error) => {
         this.logger.warn(`Stream connection error: ${error}`);
@@ -183,9 +189,10 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
       expiresAt,
     });
 
+    const protocol = BROWSER_STREAM_SECURE ? 'wss' : 'ws';
     return {
       token,
-      wsUrl: `ws://${this.host}:${this.port}/browser/stream?token=${token}`,
+      wsUrl: `${protocol}://${this.host}:${this.port}/browser/stream?token=${token}`,
       expiresAt,
     };
   }
@@ -210,11 +217,16 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
       ws.close();
       return;
     }
+    this.tokens.delete(token);
 
     const stream = await this.ensureStream(tokenInfo.sessionId).catch(
       () => null,
     );
     if (!stream) {
+      ws.close();
+      return;
+    }
+    if (stream.clients.size >= this.maxClients) {
       ws.close();
       return;
     }
@@ -256,7 +268,9 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
     if (existing) return existing;
 
     const session = this.sessionManager.getSession(sessionId);
-    const cdpSession = await session.context.newCDPSession(session.page);
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    const cdpSession = await context.newCDPSession(page);
 
     const stream: StreamSession = {
       sessionId,
@@ -291,7 +305,8 @@ export class BrowserStreamService implements OnModuleInit, OnModuleDestroy {
     if (stream.isScreencastActive) return;
 
     const session = this.sessionManager.getSession(stream.sessionId);
-    const viewport = session.page.viewportSize() ?? {
+    const page = this.sessionManager.getActivePage(session);
+    const viewport = page.viewportSize() ?? {
       width: 1280,
       height: 720,
     };

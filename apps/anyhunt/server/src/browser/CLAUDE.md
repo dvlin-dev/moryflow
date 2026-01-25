@@ -12,6 +12,8 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - Trace 结束后清理本地文件，不返回内部路径
 - Tabs/Windows 索引参数使用 400 返回（ParseIntPipe + SessionOperationNotAllowedError）
 - diagnostics/streaming/persistence/dto 导出补齐 Header/PROTOCOL 规范
+- download/upload 安全收敛：上传仅允许 Base64 payload，下载限制大小并清理临时文件
+- ActionHandler 补测：文件名清理/Base64 payload/超限拒绝；下载异常路径统一清理
 
 ## Responsibilities
 
@@ -36,7 +38,10 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - **CreateSession 参数必须透传到 BrowserPool**，禁止硬编码上下文配置
 - **网络拦截基于 Context**：新增窗口需注册 Context，确保拦截规则覆盖所有页面
 - **Streaming 需显式配置**：`BROWSER_STREAM_PORT` 未设置时禁用流式预览
+- **Streaming 安全**：必须绑定 `BROWSER_STREAM_HOST`；`BROWSER_STREAM_MAX_CLIENTS` 限制并发连接；`BROWSER_STREAM_SECURE` 控制 ws/wss
 - **Profile 持久化依赖 R2 配置**：未配置 R2 时禁用 Profile 保存/加载
+- **上传限制**：`upload` 动作仅接受 Base64 payload，禁止服务器本地路径
+- **下载限制**：受 `BROWSER_DOWNLOAD_MAX_MB` 约束，超限直接失败并清理临时文件
 
 ## File Structure
 

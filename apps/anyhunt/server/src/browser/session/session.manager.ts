@@ -3,7 +3,7 @@
  *
  * [INPUT]: 会话创建/管理请求（含上下文配置）
  * [OUTPUT]: BrowserSession 实例
- * [POS]: 管理浏览器会话生命周期，包含 Ref 映射与窗口/标签页状态（含拦截/快照清理）
+ * [POS]: 管理浏览器会话生命周期，窗口/标签页为单一数据源（含拦截/快照清理）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -76,14 +76,6 @@ export interface BrowserSession {
   windows: WindowData[];
   /** 当前活跃窗口索引 */
   activeWindowIndex: number;
-  /** Playwright BrowserContext（当前活跃窗口） */
-  context: BrowserContext;
-  /** 当前活跃 Page */
-  page: Page;
-  /** 所有页面（当前活跃窗口的多标签页支持） */
-  pages: Page[];
-  /** 当前活跃页面索引（当前活跃窗口） */
-  activePageIndex: number;
   /** 元素引用映射（每次 snapshot 后更新） */
   refs: Map<string, RefData>;
   /** 对话框历史记录（最近 10 条） */
@@ -214,11 +206,6 @@ export class SessionManager implements OnModuleDestroy {
       // 多窗口支持
       windows: [initialWindow],
       activeWindowIndex: 0,
-      // 当前活跃窗口的快捷引用（向后兼容）
-      context,
-      page,
-      pages: [page],
-      activePageIndex: 0,
       refs: new Map(),
       dialogHistory: [],
       createdAt: now,
@@ -314,6 +301,31 @@ export class SessionManager implements OnModuleDestroy {
     }
 
     return session;
+  }
+
+  /**
+   * 获取当前活跃窗口
+   */
+  getActiveWindow(session: BrowserSession): WindowData {
+    const activeWindow = session.windows[session.activeWindowIndex];
+    if (!activeWindow) {
+      throw new SessionOperationNotAllowedError('Active window not available');
+    }
+    return activeWindow;
+  }
+
+  /**
+   * 获取当前活跃页面
+   */
+  getActivePage(session: BrowserSession): Page {
+    return this.getActiveWindow(session).page;
+  }
+
+  /**
+   * 获取当前活跃上下文
+   */
+  getActiveContext(session: BrowserSession): BrowserContext {
+    return this.getActiveWindow(session).context;
   }
 
   /**
@@ -417,10 +429,6 @@ export class SessionManager implements OnModuleDestroy {
       ownerUserId,
       windows: [initialWindow],
       activeWindowIndex: 0,
-      context,
-      page,
-      pages: initialWindow.pages,
-      activePageIndex: 0,
       refs: new Map(),
       dialogHistory: [],
       createdAt: now,
@@ -453,12 +461,13 @@ export class SessionManager implements OnModuleDestroy {
     title: string | null;
   } {
     const session = this.getSession(sessionId);
+    const page = this.getActivePage(session);
 
     return {
       id: session.id,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
-      url: session.page.url() || null,
+      url: page.url() || null,
       title: null, // 标题需要异步获取，这里返回 null
     };
   }
@@ -475,6 +484,7 @@ export class SessionManager implements OnModuleDestroy {
    * 解析选择器（支持 @ref 格式）
    */
   resolveSelector(session: BrowserSession, selector: string): Locator {
+    const page = this.getActivePage(session);
     // @ref 格式：@e1, @e2, ...
     if (selector.startsWith('@')) {
       const refKey = selector.slice(1);
@@ -487,7 +497,7 @@ export class SessionManager implements OnModuleDestroy {
       }
 
       // 使用语义定位器
-      let locator = session.page.getByRole(
+      let locator = page.getByRole(
         refData.role as Parameters<Page['getByRole']>[0],
         {
           name: refData.name,
@@ -504,14 +514,14 @@ export class SessionManager implements OnModuleDestroy {
     }
 
     // 普通 CSS 选择器
-    return session.page.locator(selector);
+    return page.locator(selector);
   }
 
   /**
    * 解析语义定位器
    */
   resolveLocator(session: BrowserSession, locator: LocatorInput): Locator {
-    const page = session.page;
+    const page = this.getActivePage(session);
 
     switch (locator.type) {
       case 'selector':
@@ -578,9 +588,6 @@ export class SessionManager implements OnModuleDestroy {
     // 切换到新标签页
     activeWindow.activePageIndex = newIndex;
     activeWindow.page = newPage;
-
-    // 同步到会话
-    this.syncWindowToSession(session);
 
     // 清除 refs（新页面没有元素）
     session.refs = new Map();
@@ -655,9 +662,6 @@ export class SessionManager implements OnModuleDestroy {
     activeWindow.activePageIndex = tabIndex;
     activeWindow.page = targetPage;
 
-    // 同步到会话
-    this.syncWindowToSession(session);
-
     // 清除 refs（需要重新获取快照）
     session.refs = new Map();
 
@@ -722,8 +726,6 @@ export class SessionManager implements OnModuleDestroy {
       if (newActiveIndex >= 0) {
         activeWindow.activePageIndex = newActiveIndex;
         activeWindow.page = activeWindow.pages[newActiveIndex];
-        // 同步到会话
-        this.syncWindowToSession(session);
         session.refs = new Map();
       }
     }
@@ -787,10 +789,6 @@ export class SessionManager implements OnModuleDestroy {
 
     // 切换到新窗口
     session.activeWindowIndex = newIndex;
-    session.context = newContext;
-    session.page = newPage;
-    session.pages = [newPage];
-    session.activePageIndex = 0;
 
     // 清除 refs（新窗口没有元素）
     session.refs = new Map();
@@ -1030,10 +1028,6 @@ export class SessionManager implements OnModuleDestroy {
 
     // 更新活跃窗口
     session.activeWindowIndex = windowIndex;
-    session.context = targetWindow.context;
-    session.page = targetWindow.page;
-    session.pages = targetWindow.pages;
-    session.activePageIndex = targetWindow.activePageIndex;
 
     // 清除 refs（需要重新获取快照）
     session.refs = new Map();
@@ -1107,12 +1101,7 @@ export class SessionManager implements OnModuleDestroy {
       }
 
       if (newActiveIndex >= 0) {
-        const newWindow = session.windows[newActiveIndex];
         session.activeWindowIndex = newActiveIndex;
-        session.context = newWindow.context;
-        session.page = newWindow.page;
-        session.pages = newWindow.pages;
-        session.activePageIndex = newWindow.activePageIndex;
         session.refs = new Map();
       }
     }
@@ -1129,18 +1118,6 @@ export class SessionManager implements OnModuleDestroy {
     }
 
     this.logger.debug(`Closed window ${windowIndex} in session ${sessionId}`);
-  }
-
-  /**
-   * 同步当前窗口状态到会话
-   * 在标签页操作后调用，确保会话的快捷引用与当前窗口同步
-   */
-  private syncWindowToSession(session: BrowserSession): void {
-    const activeWindow = session.windows[session.activeWindowIndex];
-    session.context = activeWindow.context;
-    session.page = activeWindow.page;
-    session.pages = activeWindow.pages;
-    session.activePageIndex = activeWindow.activePageIndex;
   }
 
   /**

@@ -116,10 +116,11 @@ export class BrowserSessionService {
     sessionId: string,
   ): Promise<SessionInfo> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     let title: string | null = null;
     try {
-      title = await session.page.title();
+      title = await page.title();
     } catch {
       // 忽略标题获取失败
     }
@@ -128,7 +129,7 @@ export class BrowserSessionService {
       id: session.id,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
-      url: session.page.url() || null,
+      url: page.url() || null,
       title,
     };
   }
@@ -163,30 +164,32 @@ export class BrowserSessionService {
     }
 
     const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
 
     if (headers) {
       await this.networkInterceptor.setScopedHeaders(
         sessionId,
-        session.context,
+        context,
         url,
         headers,
       );
     }
 
-    await session.page.goto(url, { waitUntil, timeout });
+    await page.goto(url, { waitUntil, timeout });
     session.refs = new Map();
     this.snapshotService.clearCache(sessionId);
 
     let title: string | null = null;
     try {
-      title = await session.page.title();
+      title = await page.title();
     } catch {
       // 忽略
     }
 
     return {
       success: true,
-      url: session.page.url(),
+      url: page.url(),
       title,
     };
   }
@@ -200,9 +203,10 @@ export class BrowserSessionService {
     options?: Partial<SnapshotInput>,
   ): Promise<SnapshotResponse> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     const { snapshot, refs } = await this.snapshotService.capture(
-      session.page,
+      page,
       options,
     );
 
@@ -259,6 +263,7 @@ export class BrowserSessionService {
     options?: Partial<ScreenshotInput>,
   ): Promise<ScreenshotResponse> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     const {
       selector,
@@ -267,7 +272,9 @@ export class BrowserSessionService {
       quality,
     } = options ?? {};
 
-    const screenshotOptions: Parameters<typeof session.page.screenshot>[0] = {
+    const screenshotOptions: NonNullable<
+      Parameters<typeof page.screenshot>[0]
+    > = {
       type: format,
     };
 
@@ -290,16 +297,16 @@ export class BrowserSessionService {
       height = box?.height ?? 0;
     } else {
       // 页面截图
-      buffer = await session.page.screenshot({
+      buffer = await page.screenshot({
         ...screenshotOptions,
         fullPage,
       });
 
       // 获取视口尺寸
-      const viewportSize = session.page.viewportSize();
+      const viewportSize = page.viewportSize();
       if (fullPage) {
         // 全页截图需要获取实际尺寸
-        const metrics = await session.page.evaluate(() => ({
+        const metrics = await page.evaluate(() => ({
           width: document.documentElement.scrollWidth,
           height: document.documentElement.scrollHeight,
         }));
@@ -384,7 +391,11 @@ export class BrowserSessionService {
       options,
     );
     const session = this.getSessionForUser(userId, sessionId);
-    await this.networkInterceptor.registerContext(sessionId, session.context);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
+    await this.networkInterceptor.registerContext(
+      sessionId,
+      activeWindow.context,
+    );
     return windowInfo;
   }
 
@@ -448,11 +459,12 @@ export class BrowserSessionService {
       userId,
     );
 
+    const page = this.sessionManager.getActivePage(session);
     return {
       id: session.id,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
-      url: session.page.url() || null,
+      url: page.url() || null,
       title: null,
       isCdpConnection: true,
       wsEndpoint: connection.wsEndpoint,
@@ -470,12 +482,17 @@ export class BrowserSessionService {
     rules: InterceptRule[],
   ): Promise<{ rulesCount: number }> {
     const session = this.getSessionForUser(userId, sessionId);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
     await Promise.all(
       session.windows.map((window) =>
         this.networkInterceptor.registerContext(sessionId, window.context),
       ),
     );
-    return this.networkInterceptor.setRules(sessionId, session.context, rules);
+    return this.networkInterceptor.setRules(
+      sessionId,
+      activeWindow.context,
+      rules,
+    );
   }
 
   /**
@@ -487,12 +504,17 @@ export class BrowserSessionService {
     rule: InterceptRule,
   ): Promise<{ ruleId: string }> {
     const session = this.getSessionForUser(userId, sessionId);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
     await Promise.all(
       session.windows.map((window) =>
         this.networkInterceptor.registerContext(sessionId, window.context),
       ),
     );
-    return this.networkInterceptor.addRule(sessionId, session.context, rule);
+    return this.networkInterceptor.addRule(
+      sessionId,
+      activeWindow.context,
+      rule,
+    );
   }
 
   /**
@@ -551,11 +573,12 @@ export class BrowserSessionService {
     input: SetHeadersInput,
   ): Promise<{ scope: 'global' | 'origin'; origin?: string }> {
     const session = this.getSessionForUser(userId, sessionId);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
 
     if (input.origin) {
       await this.networkInterceptor.setScopedHeaders(
         sessionId,
-        session.context,
+        activeWindow.context,
         input.origin,
         input.headers,
       );
@@ -604,11 +627,9 @@ export class BrowserSessionService {
     options?: ExportStorageInput,
   ): Promise<StorageExportResult> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.storagePersistence.exportStorage(
-      session.context,
-      session.page,
-      options,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.storagePersistence.exportStorage(context, page, options);
   }
 
   /**
@@ -622,11 +643,9 @@ export class BrowserSessionService {
     imported: { cookies: number; localStorage: number; sessionStorage: number };
   }> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.storagePersistence.importStorage(
-      session.context,
-      session.page,
-      data,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.storagePersistence.importStorage(context, page, data);
   }
 
   /**
@@ -642,11 +661,9 @@ export class BrowserSessionService {
     },
   ): Promise<void> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.storagePersistence.clearStorage(
-      session.context,
-      session.page,
-      options,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.storagePersistence.clearStorage(context, page, options);
   }
 
   // ==================== P2.3.1 Profile 持久化 ====================
@@ -657,12 +674,9 @@ export class BrowserSessionService {
     input: SaveProfileInput,
   ): Promise<{ profileId: string; storedAt: string; size: number }> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.profilePersistence.saveProfile(
-      userId,
-      session.context,
-      session.page,
-      input,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.profilePersistence.saveProfile(userId, context, page, input);
   }
 
   async loadProfile(
@@ -673,12 +687,9 @@ export class BrowserSessionService {
     imported: { cookies: number; localStorage: number; sessionStorage: number };
   }> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.profilePersistence.loadProfile(
-      userId,
-      session.context,
-      session.page,
-      input,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.profilePersistence.loadProfile(userId, context, page, input);
   }
 
   // ==================== P2.3.2 诊断与观测 ====================
@@ -716,19 +727,17 @@ export class BrowserSessionService {
     input: TraceStartInput,
   ): Promise<{ started: boolean }> {
     const session = this.getSessionForUser(userId, sessionId);
-    await this.diagnosticsService.startTracing(
-      sessionId,
-      session.context,
-      input,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    await this.diagnosticsService.startTracing(sessionId, context, input);
     return { started: true };
   }
 
   async stopTrace(userId: string, sessionId: string, input: TraceStopInput) {
     const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
     return this.diagnosticsService.stopTracing(
       sessionId,
-      session.context,
+      context,
       input.store ?? true,
     );
   }
@@ -788,10 +797,11 @@ export class BrowserSessionService {
     options?: Partial<DeltaSnapshotInput>,
   ): Promise<DeltaSnapshotResponse> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     const { snapshot, refs } = await this.snapshotService.captureDelta(
       sessionId,
-      session.page,
+      page,
       options,
     );
 

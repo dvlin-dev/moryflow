@@ -111,6 +111,27 @@ describe('ActionSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('requires files for upload', () => {
+    const result = ActionSchema.safeParse({
+      type: 'upload',
+      selector: '#file',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts upload payload', () => {
+    const result = ActionSchema.safeParse({
+      type: 'upload',
+      selector: '#file',
+      files: {
+        name: 'demo.txt',
+        mimeType: 'text/plain',
+        dataBase64: Buffer.from('hello').toString('base64'),
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('requires media settings for setMedia', () => {
     const result = ActionSchema.safeParse({
       type: 'setMedia',
