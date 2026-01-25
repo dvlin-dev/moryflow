@@ -11,6 +11,7 @@
 import { tool, type RunContext, type Tool } from '@openai/agents-core';
 import { z } from 'zod';
 import type { BrowserAgentPort } from '../../browser/ports';
+import { ActionSchema, ActionBatchSchema } from '../../browser/dto';
 import { zodToJsonSchema } from './zod-to-json-schema';
 
 export interface BrowserAgentContext {
@@ -65,6 +66,12 @@ const waitSchema = z.object({
   text: z.string().optional().describe('等待文本出现'),
   url: z.string().optional().describe('等待 URL 变化'),
   networkIdle: z.boolean().optional().describe('等待网络空闲'),
+  loadState: z
+    .enum(['load', 'domcontentloaded', 'networkidle'])
+    .optional()
+    .describe('等待加载状态'),
+  function: z.string().optional().describe('等待 JS 函数返回 true'),
+  download: z.boolean().optional().describe('等待下载触发'),
 });
 
 const pressSchema = z.object({
@@ -267,4 +274,27 @@ export const browserTools: Tool<BrowserAgentContext>[] = [
   scrollTool,
   waitTool,
   searchTool,
+  tool({
+    name: 'browser_action',
+    description:
+      '执行任意浏览器动作（支持语义定位、下载、PDF、trace、media 等高级能力）。',
+    parameters: zodToJsonSchema(ActionSchema),
+    execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+      const parsed = ActionSchema.parse(input);
+      const { browser, getSessionId } = getBrowserContext(runContext);
+      const sessionId = await getSessionId();
+      return browser.executeAction(sessionId, parsed);
+    },
+  }),
+  tool({
+    name: 'browser_action_batch',
+    description: '批量执行浏览器动作，减少往返。',
+    parameters: zodToJsonSchema(ActionBatchSchema),
+    execute: async (input: unknown, runContext?: BrowserToolRunContext) => {
+      const parsed = ActionBatchSchema.parse(input);
+      const { browser, getSessionId } = getBrowserContext(runContext);
+      const sessionId = await getSessionId();
+      return browser.executeActionBatch(sessionId, parsed);
+    },
+  }),
 ];

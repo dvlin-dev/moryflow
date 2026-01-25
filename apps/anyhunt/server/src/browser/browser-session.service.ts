@@ -16,7 +16,12 @@ import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
 import { CdpConnectorService } from './cdp';
 import { NetworkInterceptorService } from './network';
-import { StoragePersistenceService } from './persistence';
+import {
+  StoragePersistenceService,
+  ProfilePersistenceService,
+} from './persistence';
+import { BrowserDiagnosticsService } from './diagnostics';
+import { BrowserStreamService } from './streaming';
 import type {
   CreateSessionInput,
   CreateWindowInput,
@@ -24,9 +29,13 @@ import type {
   SnapshotInput,
   DeltaSnapshotInput,
   ActionInput,
+  ActionBatchInput,
+  ActionBatchResponse,
   ScreenshotInput,
   ConnectCdpInput,
   InterceptRule,
+  SetHeadersInput,
+  ClearHeadersInput,
   ExportStorageInput,
   ImportStorageInput,
   SessionInfo,
@@ -38,6 +47,14 @@ import type {
   WindowInfo,
   NetworkRequestRecord,
   StorageExportResult,
+  TraceStartInput,
+  TraceStopInput,
+  HarStartInput,
+  HarStopInput,
+  LogQueryInput,
+  SaveProfileInput,
+  LoadProfileInput,
+  CreateStreamInput,
 } from './dto';
 
 /** URL 验证失败错误 */
@@ -60,6 +77,9 @@ export class BrowserSessionService {
     private readonly cdpConnector: CdpConnectorService,
     private readonly networkInterceptor: NetworkInterceptorService,
     private readonly storagePersistence: StoragePersistenceService,
+    private readonly profilePersistence: ProfilePersistenceService,
+    private readonly diagnosticsService: BrowserDiagnosticsService,
+    private readonly streamService: BrowserStreamService,
   ) {}
 
   private assertSessionAccess(userId: string, sessionId: string): void {
@@ -119,6 +139,7 @@ export class BrowserSessionService {
   async closeSession(userId: string, sessionId: string): Promise<void> {
     this.assertSessionAccess(userId, sessionId);
     await this.sessionManager.closeSession(sessionId);
+    await this.streamService.cleanupSession(sessionId).catch(() => undefined);
   }
 
   /**
@@ -129,7 +150,12 @@ export class BrowserSessionService {
     sessionId: string,
     options: OpenUrlInput,
   ): Promise<{ success: boolean; url: string; title: string | null }> {
-    const { url, waitUntil = 'domcontentloaded', timeout = 30000 } = options;
+    const {
+      url,
+      waitUntil = 'domcontentloaded',
+      timeout = 30000,
+      headers,
+    } = options;
 
     // SSRF 防护
     if (!(await this.urlValidator.isAllowed(url))) {
@@ -137,6 +163,15 @@ export class BrowserSessionService {
     }
 
     const session = this.getSessionForUser(userId, sessionId);
+
+    if (headers) {
+      await this.networkInterceptor.setScopedHeaders(
+        sessionId,
+        session.context,
+        url,
+        headers,
+      );
+    }
 
     await session.page.goto(url, { waitUntil, timeout });
     session.refs = new Map();
@@ -188,6 +223,31 @@ export class BrowserSessionService {
     const session = this.getSessionForUser(userId, sessionId);
 
     return this.actionHandler.execute(session, action);
+  }
+
+  /**
+   * 批量执行动作
+   */
+  async executeActionBatch(
+    userId: string,
+    sessionId: string,
+    input: ActionBatchInput,
+  ): Promise<ActionBatchResponse> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const results: ActionResponse[] = [];
+
+    for (const action of input.actions) {
+      const result = await this.actionHandler.execute(session, action);
+      results.push(result);
+      if (!result.success && input.stopOnError) {
+        break;
+      }
+    }
+
+    return {
+      success: results.every((result) => result.success),
+      results,
+    };
   }
 
   /**
@@ -371,6 +431,7 @@ export class BrowserSessionService {
   ): Promise<CdpSessionInfo> {
     // 建立 CDP 连接
     const connection = await this.cdpConnector.connect({
+      provider: options.provider,
       wsEndpoint: options.wsEndpoint,
       port: options.port,
       timeout: options.timeout,
@@ -482,6 +543,56 @@ export class BrowserSessionService {
     this.networkInterceptor.clearHistory(sessionId);
   }
 
+  // ==================== P2.2.1 Headers ====================
+
+  async setHeaders(
+    userId: string,
+    sessionId: string,
+    input: SetHeadersInput,
+  ): Promise<{ scope: 'global' | 'origin'; origin?: string }> {
+    const session = this.getSessionForUser(userId, sessionId);
+
+    if (input.origin) {
+      await this.networkInterceptor.setScopedHeaders(
+        sessionId,
+        session.context,
+        input.origin,
+        input.headers,
+      );
+      return { scope: 'origin', origin: input.origin };
+    }
+
+    await Promise.all(
+      session.windows.map((window) =>
+        window.context.setExtraHTTPHeaders(input.headers),
+      ),
+    );
+    return { scope: 'global' };
+  }
+
+  async clearHeaders(
+    userId: string,
+    sessionId: string,
+    input: ClearHeadersInput,
+  ): Promise<void> {
+    const session = this.getSessionForUser(userId, sessionId);
+
+    if (input.clearGlobal) {
+      await Promise.all(
+        session.windows.map((window) => window.context.setExtraHTTPHeaders({})),
+      );
+    }
+
+    if (input.origin) {
+      await this.networkInterceptor.clearScopedHeaders(sessionId, input.origin);
+      return;
+    }
+
+    if (!input.origin) {
+      await this.networkInterceptor.clearScopedHeaders(sessionId);
+    }
+  }
+
   // ==================== P2.3 会话持久化 ====================
 
   /**
@@ -536,6 +647,134 @@ export class BrowserSessionService {
       session.page,
       options,
     );
+  }
+
+  // ==================== P2.3.1 Profile 持久化 ====================
+
+  async saveProfile(
+    userId: string,
+    sessionId: string,
+    input: SaveProfileInput,
+  ): Promise<{ profileId: string; storedAt: string; size: number }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    return this.profilePersistence.saveProfile(
+      userId,
+      session.context,
+      session.page,
+      input,
+    );
+  }
+
+  async loadProfile(
+    userId: string,
+    sessionId: string,
+    input: LoadProfileInput,
+  ): Promise<{
+    imported: { cookies: number; localStorage: number; sessionStorage: number };
+  }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    return this.profilePersistence.loadProfile(
+      userId,
+      session.context,
+      session.page,
+      input,
+    );
+  }
+
+  // ==================== P2.3.2 诊断与观测 ====================
+
+  getConsoleMessages(
+    userId: string,
+    sessionId: string,
+    options?: LogQueryInput,
+  ) {
+    this.assertSessionAccess(userId, sessionId);
+    return this.diagnosticsService.getConsoleMessages(
+      sessionId,
+      options?.limit,
+    );
+  }
+
+  clearConsoleMessages(userId: string, sessionId: string): void {
+    this.assertSessionAccess(userId, sessionId);
+    this.diagnosticsService.clearConsoleMessages(sessionId);
+  }
+
+  getPageErrors(userId: string, sessionId: string, options?: LogQueryInput) {
+    this.assertSessionAccess(userId, sessionId);
+    return this.diagnosticsService.getPageErrors(sessionId, options?.limit);
+  }
+
+  clearPageErrors(userId: string, sessionId: string): void {
+    this.assertSessionAccess(userId, sessionId);
+    this.diagnosticsService.clearPageErrors(sessionId);
+  }
+
+  async startTrace(
+    userId: string,
+    sessionId: string,
+    input: TraceStartInput,
+  ): Promise<{ started: boolean }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    await this.diagnosticsService.startTracing(
+      sessionId,
+      session.context,
+      input,
+    );
+    return { started: true };
+  }
+
+  async stopTrace(userId: string, sessionId: string, input: TraceStopInput) {
+    const session = this.getSessionForUser(userId, sessionId);
+    return this.diagnosticsService.stopTracing(
+      sessionId,
+      session.context,
+      input.store ?? true,
+    );
+  }
+
+  async startHar(
+    userId: string,
+    sessionId: string,
+    input: HarStartInput,
+  ): Promise<{ started: boolean }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const windows = session.windows;
+    for (let i = 0; i < windows.length; i++) {
+      await this.networkInterceptor.startRecording(
+        sessionId,
+        windows[i].context,
+        {
+          clear: input.clear && i === 0,
+        },
+      );
+    }
+    return { started: true };
+  }
+
+  async stopHar(
+    userId: string,
+    sessionId: string,
+    input: HarStopInput,
+  ): Promise<{ requestCount: number; requests?: NetworkRequestRecord[] }> {
+    this.assertSessionAccess(userId, sessionId);
+    const records = await this.networkInterceptor.stopRecording(sessionId);
+    return {
+      requestCount: records.length,
+      requests: input.includeRequests ? records : undefined,
+    };
+  }
+
+  // ==================== P2.3.3 Streaming ====================
+
+  createStreamToken(
+    userId: string,
+    sessionId: string,
+    input: CreateStreamInput,
+  ): { token: string; wsUrl: string; expiresAt: number } {
+    this.assertSessionAccess(userId, sessionId);
+    const expiresIn = input.expiresIn ?? 300;
+    return this.streamService.createToken(sessionId, expiresIn);
   }
 
   // ==================== P2.4 增量快照 ====================

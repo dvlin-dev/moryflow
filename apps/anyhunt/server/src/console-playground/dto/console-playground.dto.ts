@@ -21,13 +21,24 @@ import {
   SnapshotSchema,
   DeltaSnapshotSchema,
   ActionSchema,
+  ActionBatchSchema,
   ScreenshotSchema,
   CreateWindowSchema,
-  ConnectCdpSchema,
+  ConnectCdpSchemaRefined,
   SetInterceptRulesSchema,
   InterceptRuleSchema,
   ExportStorageSchema,
   ImportStorageSchema,
+  SetHeadersSchema,
+  ClearHeadersSchema,
+  TraceStartSchema,
+  TraceStopSchema,
+  HarStartSchema,
+  HarStopSchema,
+  LogQuerySchema,
+  SaveProfileSchema,
+  LoadProfileSchema,
+  CreateStreamSchema,
 } from '../../browser/dto';
 import { AgentTaskIdParamSchema, CreateAgentTaskSchema } from '../../agent/dto';
 
@@ -120,6 +131,15 @@ export type ConsoleBrowserActionDto = z.infer<
 >;
 
 /**
+ * Console Browser 批量 Action
+ */
+export const ConsoleBrowserActionBatchSchema =
+  BaseConsolePlaygroundSchema.merge(ActionBatchSchema);
+export type ConsoleBrowserActionBatchDto = z.infer<
+  typeof ConsoleBrowserActionBatchSchema
+>;
+
+/**
  * Console Browser Screenshot
  */
 export const ConsoleBrowserScreenshotSchema =
@@ -140,8 +160,9 @@ export type ConsoleBrowserCreateWindowDto = z.infer<
 /**
  * Console Browser CDP 连接
  */
-export const ConsoleBrowserConnectCdpSchema =
-  BaseConsolePlaygroundSchema.merge(ConnectCdpSchema);
+export const ConsoleBrowserConnectCdpSchema = BaseConsolePlaygroundSchema.merge(
+  ConnectCdpSchemaRefined,
+);
 export type ConsoleBrowserConnectCdpDto = z.infer<
   typeof ConsoleBrowserConnectCdpSchema
 >;
@@ -180,6 +201,78 @@ export const ConsoleBrowserImportStorageSchema =
   BaseConsolePlaygroundSchema.merge(ImportStorageSchema);
 export type ConsoleBrowserImportStorageDto = z.infer<
   typeof ConsoleBrowserImportStorageSchema
+>;
+
+/**
+ * Console Browser Headers
+ */
+export const ConsoleBrowserSetHeadersSchema =
+  BaseConsolePlaygroundSchema.merge(SetHeadersSchema);
+export type ConsoleBrowserSetHeadersDto = z.infer<
+  typeof ConsoleBrowserSetHeadersSchema
+>;
+
+export const ConsoleBrowserClearHeadersSchema =
+  BaseConsolePlaygroundSchema.merge(ClearHeadersSchema);
+export type ConsoleBrowserClearHeadersDto = z.infer<
+  typeof ConsoleBrowserClearHeadersSchema
+>;
+
+/**
+ * Console Browser Diagnostics
+ */
+export const ConsoleBrowserTraceStartSchema =
+  BaseConsolePlaygroundSchema.merge(TraceStartSchema);
+export type ConsoleBrowserTraceStartDto = z.infer<
+  typeof ConsoleBrowserTraceStartSchema
+>;
+
+export const ConsoleBrowserTraceStopSchema =
+  BaseConsolePlaygroundSchema.merge(TraceStopSchema);
+export type ConsoleBrowserTraceStopDto = z.infer<
+  typeof ConsoleBrowserTraceStopSchema
+>;
+
+export const ConsoleBrowserHarStartSchema =
+  BaseConsolePlaygroundSchema.merge(HarStartSchema);
+export type ConsoleBrowserHarStartDto = z.infer<
+  typeof ConsoleBrowserHarStartSchema
+>;
+
+export const ConsoleBrowserHarStopSchema =
+  BaseConsolePlaygroundSchema.merge(HarStopSchema);
+export type ConsoleBrowserHarStopDto = z.infer<
+  typeof ConsoleBrowserHarStopSchema
+>;
+
+export const ConsoleBrowserLogQuerySchema =
+  BaseConsolePlaygroundSchema.merge(LogQuerySchema);
+export type ConsoleBrowserLogQueryDto = z.infer<
+  typeof ConsoleBrowserLogQuerySchema
+>;
+
+/**
+ * Console Browser Profiles
+ */
+export const ConsoleBrowserSaveProfileSchema =
+  BaseConsolePlaygroundSchema.merge(SaveProfileSchema);
+export type ConsoleBrowserSaveProfileDto = z.infer<
+  typeof ConsoleBrowserSaveProfileSchema
+>;
+
+export const ConsoleBrowserLoadProfileSchema =
+  BaseConsolePlaygroundSchema.merge(LoadProfileSchema);
+export type ConsoleBrowserLoadProfileDto = z.infer<
+  typeof ConsoleBrowserLoadProfileSchema
+>;
+
+/**
+ * Console Browser Streaming
+ */
+export const ConsoleBrowserCreateStreamSchema =
+  BaseConsolePlaygroundSchema.merge(CreateStreamSchema);
+export type ConsoleBrowserCreateStreamDto = z.infer<
+  typeof ConsoleBrowserCreateStreamSchema
 >;
 
 /**

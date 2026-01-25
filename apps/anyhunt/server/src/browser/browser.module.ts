@@ -24,15 +24,21 @@ import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
 import { CdpConnectorService } from './cdp';
 import { NetworkInterceptorService } from './network';
-import { StoragePersistenceService } from './persistence';
+import {
+  StoragePersistenceService,
+  ProfilePersistenceService,
+} from './persistence';
+import { BrowserDiagnosticsService } from './diagnostics';
+import { BrowserStreamService } from './streaming';
 import { BrowserSessionService } from './browser-session.service';
 import { BrowserSessionController } from './browser-session.controller';
 import { BrowserAgentPortService } from './ports';
 import { ApiKeyModule } from '../api-key';
+import { StorageModule } from '../storage';
 
 @Global()
 @Module({
-  imports: [ApiKeyModule],
+  imports: [ApiKeyModule, StorageModule],
   controllers: [BrowserSessionController],
   providers: [
     // 基础设施
@@ -45,6 +51,9 @@ import { ApiKeyModule } from '../api-key';
     CdpConnectorService,
     NetworkInterceptorService,
     StoragePersistenceService,
+    ProfilePersistenceService,
+    BrowserDiagnosticsService,
+    BrowserStreamService,
     // 聚合服务
     BrowserSessionService,
     // Agent 端口（隔离 Playwright 类型）
@@ -58,6 +67,9 @@ import { ApiKeyModule } from '../api-key';
     CdpConnectorService,
     NetworkInterceptorService,
     StoragePersistenceService,
+    ProfilePersistenceService,
+    BrowserDiagnosticsService,
+    BrowserStreamService,
     BrowserSessionService,
     BrowserAgentPortService,
   ],

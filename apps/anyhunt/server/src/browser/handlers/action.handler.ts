@@ -9,13 +9,22 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import type { Locator, Page } from 'playwright';
+import { mkdirSync, promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import type { Locator, Page, Download } from 'playwright';
 import { SessionManager, type BrowserSession } from '../session';
-import type { ActionInput, ActionResponse } from '../dto';
+import type {
+  ActionInput,
+  ActionResponse,
+  LocatorInput,
+  LocatorSelectorInput,
+} from '../dto';
 
 @Injectable()
 export class ActionHandler {
   private readonly logger = new Logger(ActionHandler.name);
+  private readonly downloadDir = join(tmpdir(), 'anyhunt-browser-downloads');
 
   constructor(private readonly sessionManager: SessionManager) {}
 
@@ -26,10 +35,10 @@ export class ActionHandler {
     session: BrowserSession,
     action: ActionInput,
   ): Promise<ActionResponse> {
-    const { type, selector, timeout = 5000 } = action;
+    const { type, timeout = 5000 } = action;
 
     try {
-      const requiresSelector = new Set<ActionInput['type']>([
+      const requiresTarget = new Set<ActionInput['type']>([
         'click',
         'dblclick',
         'fill',
@@ -41,26 +50,26 @@ export class ActionHandler {
         'uncheck',
         'selectOption',
         'scrollIntoView',
+        'upload',
+        'highlight',
         'getText',
         'getInnerHTML',
         'getAttribute',
         'getInputValue',
+        'getCount',
+        'getBoundingBox',
         'isVisible',
         'isEnabled',
         'isChecked',
       ]);
 
-      if (requiresSelector.has(type) && !selector) {
-        throw new Error(`selector is required for action type ${type}`);
+      const locator = this.resolveActionLocator(session, action);
+      if (requiresTarget.has(type) && !locator) {
+        throw new Error(
+          `selector or locator is required for action type ${type}`,
+        );
       }
 
-      // 解析选择器（如果需要）
-      let locator: Locator | undefined;
-      if (selector) {
-        locator = this.sessionManager.resolveSelector(session, selector);
-      }
-
-      // 根据动作类型执行
       switch (type) {
         // ===== 导航 =====
         case 'back':
@@ -138,9 +147,28 @@ export class ActionHandler {
           await locator!.selectOption(action.options, { timeout });
           return { success: true };
 
+        case 'drag': {
+          const source = this.resolveLocatorInput(session, action.source!);
+          const target = this.resolveLocatorInput(session, action.target!);
+          await source.dragTo(target, { timeout });
+          return { success: true };
+        }
+
+        case 'upload': {
+          if (!action.files) {
+            throw new Error('upload requires files');
+          }
+          await locator!.setInputFiles(action.files);
+          return { success: true };
+        }
+
+        case 'highlight':
+          await this.highlightLocator(locator!);
+          return { success: true };
+
         // ===== 滚动 =====
         case 'scroll':
-          return await this.handleScroll(session.page, action);
+          return await this.handleScroll(session.page, action, locator);
 
         case 'scrollIntoView':
           await locator!.scrollIntoViewIfNeeded({ timeout });
@@ -149,6 +177,43 @@ export class ActionHandler {
         // ===== 等待 =====
         case 'wait':
           return await this.handleWait(session, action);
+
+        // ===== 脚本 / 内容 =====
+        case 'evaluate': {
+          if (!action.script) {
+            throw new Error('evaluate requires script');
+          }
+          const result = await session.page.evaluate(action.script, action.arg);
+          return { success: true, result };
+        }
+
+        case 'setContent': {
+          if (!action.html) {
+            throw new Error('setContent requires html');
+          }
+          await session.page.setContent(action.html, {
+            waitUntil: 'domcontentloaded',
+          });
+          return { success: true };
+        }
+
+        case 'pdf': {
+          const buffer = await session.page.pdf({
+            format: action.pdfFormat ?? 'A4',
+            printBackground: true,
+          });
+          return {
+            success: true,
+            result: {
+              data: buffer.toString('base64'),
+              mimeType: 'application/pdf',
+              size: buffer.length,
+            },
+          };
+        }
+
+        case 'download':
+          return await this.handleDownload(session, locator, action, timeout);
 
         // ===== 信息获取 =====
         case 'getText': {
@@ -176,6 +241,16 @@ export class ActionHandler {
           return { success: true, result: value };
         }
 
+        case 'getCount': {
+          const count = await locator!.count();
+          return { success: true, result: count };
+        }
+
+        case 'getBoundingBox': {
+          const box = await locator!.boundingBox();
+          return { success: true, result: box };
+        }
+
         // ===== 状态检查 =====
         case 'isVisible': {
           const visible = await locator!.isVisible();
@@ -192,13 +267,79 @@ export class ActionHandler {
           return { success: true, result: checked };
         }
 
+        // ===== 运行时环境 =====
+        case 'setViewport': {
+          if (!action.viewport) {
+            throw new Error('setViewport requires viewport');
+          }
+          await session.page.setViewportSize(action.viewport);
+          return { success: true };
+        }
+
+        case 'setGeolocation': {
+          if (!action.geolocation) {
+            throw new Error('setGeolocation requires geolocation');
+          }
+          await session.context.setGeolocation(action.geolocation);
+          return { success: true };
+        }
+
+        case 'setPermissions': {
+          if (!action.permissions || action.permissions.length === 0) {
+            throw new Error('setPermissions requires permissions');
+          }
+          await session.context.grantPermissions(action.permissions);
+          return { success: true };
+        }
+
+        case 'clearPermissions': {
+          await session.context.clearPermissions();
+          return { success: true };
+        }
+
+        case 'setMedia': {
+          await session.page.emulateMedia({
+            colorScheme: action.colorScheme,
+            reducedMotion: action.reducedMotion,
+          });
+          return { success: true };
+        }
+
+        case 'setOffline': {
+          if (action.offline === undefined) {
+            throw new Error('setOffline requires offline');
+          }
+          await session.context.setOffline(action.offline);
+          return { success: true };
+        }
+
+        case 'setHeaders': {
+          if (!action.headers) {
+            throw new Error('setHeaders requires headers');
+          }
+          await session.context.setExtraHTTPHeaders(action.headers);
+          return { success: true };
+        }
+
+        case 'setHttpCredentials': {
+          if (!action.httpCredentials) {
+            throw new Error('setHttpCredentials requires httpCredentials');
+          }
+          await session.context.setHTTPCredentials(action.httpCredentials);
+          return { success: true };
+        }
+
         default: {
           const actionType = String(type);
           throw new Error(`Unknown action type: ${actionType}`);
         }
       }
     } catch (error) {
-      return this.toAIFriendlyError(error, selector);
+      const selectorLabel =
+        action.selector ??
+        (action.locator ? this.describeLocator(action.locator) : undefined) ??
+        (action.type === 'press' ? action.key : undefined);
+      return this.toAIFriendlyError(error, selectorLabel);
     }
   }
 
@@ -227,8 +368,33 @@ export class ActionHandler {
   private async handleScroll(
     page: Page,
     action: ActionInput,
+    locator?: Locator,
   ): Promise<ActionResponse> {
     const { direction = 'down', distance = 300 } = action;
+
+    if (locator) {
+      await locator.evaluate(
+        (element, payload: { direction: string; distance: number }) => {
+          const { direction, distance } = payload;
+          switch (direction) {
+            case 'up':
+              element.scrollBy(0, -distance);
+              break;
+            case 'down':
+              element.scrollBy(0, distance);
+              break;
+            case 'left':
+              element.scrollBy(-distance, 0);
+              break;
+            case 'right':
+              element.scrollBy(distance, 0);
+              break;
+          }
+        },
+        { direction, distance },
+      );
+      return { success: true };
+    }
 
     let deltaX = 0;
     let deltaY = 0;
@@ -307,7 +473,133 @@ export class ActionHandler {
       return { success: true };
     }
 
+    if (waitFor.loadState) {
+      await session.page.waitForLoadState(waitFor.loadState, { timeout });
+      return { success: true };
+    }
+
+    if (waitFor.function) {
+      await session.page.waitForFunction(waitFor.function, { timeout });
+      return { success: true };
+    }
+
+    if (waitFor.download) {
+      const download = await session.page.waitForEvent('download', { timeout });
+      return {
+        success: true,
+        result: {
+          url: download.url(),
+          filename: download.suggestedFilename(),
+        },
+      };
+    }
+
     throw new Error('wait requires at least one condition');
+  }
+
+  private resolveActionLocator(
+    session: BrowserSession,
+    action: ActionInput,
+  ): Locator | undefined {
+    if (action.locator) {
+      return this.sessionManager.resolveLocator(session, action.locator);
+    }
+    if (action.selector) {
+      return this.sessionManager.resolveSelector(session, action.selector);
+    }
+    return undefined;
+  }
+
+  private resolveLocatorInput(
+    session: BrowserSession,
+    input: LocatorSelectorInput,
+  ): Locator {
+    return this.sessionManager.resolveLocatorInput(session, input);
+  }
+
+  private async highlightLocator(locator: Locator): Promise<void> {
+    await locator.evaluate((element) => {
+      element.scrollIntoView({ block: 'center', inline: 'center' });
+      const previous = (element as HTMLElement).style.outline;
+      (element as HTMLElement).style.outline = '2px solid #ff7a00';
+      setTimeout(() => {
+        (element as HTMLElement).style.outline = previous;
+      }, 1200);
+    });
+  }
+
+  private async handleDownload(
+    session: BrowserSession,
+    locator: Locator | undefined,
+    action: ActionInput,
+    timeout: number,
+  ): Promise<ActionResponse> {
+    mkdirSync(this.downloadDir, { recursive: true });
+
+    const downloadPromise = session.page.waitForEvent('download', { timeout });
+
+    if (locator) {
+      await locator.click({ timeout });
+    }
+
+    const download = await downloadPromise;
+    const filePath = await this.saveDownload(download);
+
+    if (action.storeDownload === false) {
+      return {
+        success: true,
+        result: {
+          url: download.url(),
+          filename: download.suggestedFilename(),
+        },
+      };
+    }
+
+    const data = await fs.readFile(filePath);
+    await fs.unlink(filePath).catch(() => undefined);
+
+    return {
+      success: true,
+      result: {
+        url: download.url(),
+        filename: download.suggestedFilename(),
+        data: data.toString('base64'),
+        size: data.length,
+      },
+    };
+  }
+
+  private async saveDownload(download: Download): Promise<string> {
+    const safeName = download.suggestedFilename().replace(/\\s+/g, '_');
+    const filePath = join(
+      this.downloadDir,
+      `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeName}`,
+    );
+    await download.saveAs(filePath);
+    return filePath;
+  }
+
+  private describeLocator(locator: LocatorInput): string {
+    switch (locator.type) {
+      case 'selector':
+        return locator.selector;
+      case 'role':
+        return `role=${locator.role}${locator.name ? ` name=${locator.name}` : ''}`;
+      case 'text':
+        return `text=${locator.text}`;
+      case 'label':
+        return `label=${locator.label}`;
+      case 'placeholder':
+        return `placeholder=${locator.placeholder}`;
+      case 'alt':
+        return `alt=${locator.alt}`;
+      case 'title':
+        return `title=${locator.title}`;
+      case 'testId':
+        return `testId=${locator.testId}`;
+      default:
+        return 'locator';
+    }
   }
 
   /**
@@ -345,6 +637,25 @@ export class ActionHandler {
         success: false,
         error: `Element not found: ${selector ?? 'unknown'}`,
         suggestion: `Run 'snapshot' to verify the element exists and get its current ref.`,
+      };
+    }
+
+    if (message.includes('Execution context was destroyed')) {
+      return {
+        success: false,
+        error: 'Page navigated or reloaded during action.',
+        suggestion: 'Wait for the page to settle and retry the action.',
+      };
+    }
+
+    if (
+      message.includes('Target closed') ||
+      message.includes('has been closed')
+    ) {
+      return {
+        success: false,
+        error: 'Page or context was closed.',
+        suggestion: 'Create a new session or reopen the page before retrying.',
       };
     }
 

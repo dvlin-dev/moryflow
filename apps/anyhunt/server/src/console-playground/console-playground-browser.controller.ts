@@ -19,6 +19,7 @@ import {
   HttpCode,
   HttpStatus,
   HttpException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -37,17 +38,24 @@ import {
   SessionNotFoundError,
   SessionExpiredError,
   SessionOwnershipError,
+  SessionOperationNotAllowedError,
 } from '../browser/session';
 import { UrlNotAllowedError } from '../browser/browser-session.service';
 import { CdpConnectionError, CdpEndpointError } from '../browser/cdp';
 import { InvalidInterceptRuleError } from '../browser/network';
-import { StorageExportError, StorageImportError } from '../browser/persistence';
+import {
+  StorageExportError,
+  StorageImportError,
+  ProfilePersistenceNotConfiguredError,
+} from '../browser/persistence';
+import { StreamNotConfiguredError } from '../browser/streaming';
 import {
   ConsoleBrowserSessionSchema,
   ConsoleBrowserOpenSchema,
   ConsoleBrowserSnapshotSchema,
   ConsoleBrowserDeltaSnapshotSchema,
   ConsoleBrowserActionSchema,
+  ConsoleBrowserActionBatchSchema,
   ConsoleBrowserScreenshotSchema,
   ConsoleBrowserCreateWindowSchema,
   ConsoleBrowserConnectCdpSchema,
@@ -55,6 +63,16 @@ import {
   ConsoleBrowserInterceptRuleSchema,
   ConsoleBrowserExportStorageSchema,
   ConsoleBrowserImportStorageSchema,
+  ConsoleBrowserSetHeadersSchema,
+  ConsoleBrowserClearHeadersSchema,
+  ConsoleBrowserTraceStartSchema,
+  ConsoleBrowserTraceStopSchema,
+  ConsoleBrowserHarStartSchema,
+  ConsoleBrowserHarStopSchema,
+  ConsoleBrowserLogQuerySchema,
+  ConsoleBrowserSaveProfileSchema,
+  ConsoleBrowserLoadProfileSchema,
+  ConsoleBrowserCreateStreamSchema,
   ApiKeyIdQuerySchema,
   BrowserNetworkHistoryQuerySchema,
   type ConsoleBrowserSessionDto,
@@ -62,6 +80,7 @@ import {
   type ConsoleBrowserSnapshotDto,
   type ConsoleBrowserDeltaSnapshotDto,
   type ConsoleBrowserActionDto,
+  type ConsoleBrowserActionBatchDto,
   type ConsoleBrowserScreenshotDto,
   type ConsoleBrowserCreateWindowDto,
   type ConsoleBrowserConnectCdpDto,
@@ -69,6 +88,16 @@ import {
   type ConsoleBrowserInterceptRuleDto,
   type ConsoleBrowserExportStorageDto,
   type ConsoleBrowserImportStorageDto,
+  type ConsoleBrowserSetHeadersDto,
+  type ConsoleBrowserClearHeadersDto,
+  type ConsoleBrowserTraceStartDto,
+  type ConsoleBrowserTraceStopDto,
+  type ConsoleBrowserHarStartDto,
+  type ConsoleBrowserHarStopDto,
+  type ConsoleBrowserLogQueryDto,
+  type ConsoleBrowserSaveProfileDto,
+  type ConsoleBrowserLoadProfileDto,
+  type ConsoleBrowserCreateStreamDto,
   type ApiKeyIdQueryDto,
   type BrowserNetworkHistoryQueryDto,
 } from './dto';
@@ -187,6 +216,26 @@ export class ConsolePlaygroundBrowserController {
     );
   }
 
+  @Post('session/:id/action/batch')
+  @ApiOperation({ summary: 'Execute batch actions (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async executeActionBatch(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserActionBatchSchema))
+    dto: ConsoleBrowserActionBatchDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.executeBrowserActionBatch(
+        user.id,
+        apiKeyId,
+        sessionId,
+        input,
+      ),
+    );
+  }
+
   @Post('session/:id/screenshot')
   @ApiOperation({ summary: 'Screenshot (console proxy)' })
   @ApiParam({ name: 'id', description: 'Session ID' })
@@ -240,7 +289,7 @@ export class ConsolePlaygroundBrowserController {
   async switchTab(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('tabIndex') tabIndex: string,
+    @Param('tabIndex', ParseIntPipe) tabIndex: number,
     @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
   ) {
     return this.withBrowserErrors(() =>
@@ -248,7 +297,7 @@ export class ConsolePlaygroundBrowserController {
         user.id,
         query.apiKeyId,
         sessionId,
-        parseInt(tabIndex, 10),
+        tabIndex,
       ),
     );
   }
@@ -261,7 +310,7 @@ export class ConsolePlaygroundBrowserController {
   async closeTab(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('tabIndex') tabIndex: string,
+    @Param('tabIndex', ParseIntPipe) tabIndex: number,
     @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
   ) {
     return this.withBrowserErrors(() =>
@@ -269,7 +318,7 @@ export class ConsolePlaygroundBrowserController {
         user.id,
         query.apiKeyId,
         sessionId,
-        parseInt(tabIndex, 10),
+        tabIndex,
       ),
     );
   }
@@ -325,7 +374,7 @@ export class ConsolePlaygroundBrowserController {
   async switchWindow(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('windowIndex') windowIndex: string,
+    @Param('windowIndex', ParseIntPipe) windowIndex: number,
     @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
   ) {
     return this.withBrowserErrors(() =>
@@ -333,7 +382,7 @@ export class ConsolePlaygroundBrowserController {
         user.id,
         query.apiKeyId,
         sessionId,
-        parseInt(windowIndex, 10),
+        windowIndex,
       ),
     );
   }
@@ -346,7 +395,7 @@ export class ConsolePlaygroundBrowserController {
   async closeWindow(
     @CurrentUser() user: CurrentUserDto,
     @Param('id') sessionId: string,
-    @Param('windowIndex') windowIndex: string,
+    @Param('windowIndex', ParseIntPipe) windowIndex: number,
     @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
   ) {
     return this.withBrowserErrors(() =>
@@ -354,7 +403,7 @@ export class ConsolePlaygroundBrowserController {
         user.id,
         query.apiKeyId,
         sessionId,
-        parseInt(windowIndex, 10),
+        windowIndex,
       ),
     );
   }
@@ -504,6 +553,224 @@ export class ConsolePlaygroundBrowserController {
     );
   }
 
+  // ==================== Headers ====================
+
+  @Post('session/:id/headers')
+  @ApiOperation({ summary: 'Set headers (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async setHeaders(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserSetHeadersSchema))
+    dto: ConsoleBrowserSetHeadersDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.setBrowserHeaders(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  @Post('session/:id/headers/clear')
+  @ApiOperation({ summary: 'Clear headers (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async clearHeaders(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserClearHeadersSchema))
+    dto: ConsoleBrowserClearHeadersDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.clearBrowserHeaders(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  // ==================== Diagnostics ====================
+
+  @Get('session/:id/console')
+  @ApiOperation({ summary: 'Get console messages (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async getConsoleMessages(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Query(new ZodValidationPipe(ConsoleBrowserLogQuerySchema))
+    query: ConsoleBrowserLogQueryDto,
+  ) {
+    return this.withBrowserErrors(() =>
+      this.service.getBrowserConsoleMessages(
+        user.id,
+        query.apiKeyId,
+        sessionId,
+        query,
+      ),
+    );
+  }
+
+  @Delete('session/:id/console')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Clear console messages (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async clearConsoleMessages(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
+  ) {
+    return this.withBrowserErrors(() =>
+      this.service.clearBrowserConsoleMessages(
+        user.id,
+        query.apiKeyId,
+        sessionId,
+      ),
+    );
+  }
+
+  @Get('session/:id/errors')
+  @ApiOperation({ summary: 'Get page errors (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async getPageErrors(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Query(new ZodValidationPipe(ConsoleBrowserLogQuerySchema))
+    query: ConsoleBrowserLogQueryDto,
+  ) {
+    return this.withBrowserErrors(() =>
+      this.service.getBrowserPageErrors(
+        user.id,
+        query.apiKeyId,
+        sessionId,
+        query,
+      ),
+    );
+  }
+
+  @Delete('session/:id/errors')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Clear page errors (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async clearPageErrors(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
+  ) {
+    return this.withBrowserErrors(() =>
+      this.service.clearBrowserPageErrors(user.id, query.apiKeyId, sessionId),
+    );
+  }
+
+  @Post('session/:id/trace/start')
+  @ApiOperation({ summary: 'Start tracing (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async startTrace(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserTraceStartSchema))
+    dto: ConsoleBrowserTraceStartDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.startBrowserTrace(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  @Post('session/:id/trace/stop')
+  @ApiOperation({ summary: 'Stop tracing (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async stopTrace(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserTraceStopSchema))
+    dto: ConsoleBrowserTraceStopDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.stopBrowserTrace(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  @Post('session/:id/har/start')
+  @ApiOperation({ summary: 'Start HAR recording (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async startHar(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserHarStartSchema))
+    dto: ConsoleBrowserHarStartDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.startBrowserHar(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  @Post('session/:id/har/stop')
+  @ApiOperation({ summary: 'Stop HAR recording (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async stopHar(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserHarStopSchema))
+    dto: ConsoleBrowserHarStopDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.stopBrowserHar(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  // ==================== Profile ====================
+
+  @Post('session/:id/profile/save')
+  @ApiOperation({ summary: 'Save profile (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async saveProfile(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserSaveProfileSchema))
+    dto: ConsoleBrowserSaveProfileDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.saveBrowserProfile(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  @Post('session/:id/profile/load')
+  @ApiOperation({ summary: 'Load profile (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async loadProfile(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserLoadProfileSchema))
+    dto: ConsoleBrowserLoadProfileDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.loadBrowserProfile(user.id, apiKeyId, sessionId, input),
+    );
+  }
+
+  // ==================== Streaming ====================
+
+  @Post('session/:id/stream')
+  @ApiOperation({ summary: 'Create stream token (console proxy)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async createStreamToken(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+    @Body(new ZodValidationPipe(ConsoleBrowserCreateStreamSchema))
+    dto: ConsoleBrowserCreateStreamDto,
+  ) {
+    const { apiKeyId, ...input } = dto;
+    return this.withBrowserErrors(() =>
+      this.service.createBrowserStreamToken(
+        user.id,
+        apiKeyId,
+        sessionId,
+        input,
+      ),
+    );
+  }
+
   // ==================== Storage ====================
 
   @Post('session/:id/storage/export')
@@ -580,6 +847,13 @@ export class ConsolePlaygroundBrowserController {
       );
     }
 
+    if (error instanceof SessionOperationNotAllowedError) {
+      throw new HttpException(
+        { error: 'Session operation not allowed', message: error.message },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (error instanceof UrlNotAllowedError) {
       throw new HttpException(
         { error: 'URL not allowed', message: error.message },
@@ -619,6 +893,20 @@ export class ConsolePlaygroundBrowserController {
       throw new HttpException(
         { error: 'Storage export failed', message: error.message },
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    if (error instanceof ProfilePersistenceNotConfiguredError) {
+      throw new HttpException(
+        { error: 'Profile storage not configured', message: error.message },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+
+    if (error instanceof StreamNotConfiguredError) {
+      throw new HttpException(
+        { error: 'Streaming disabled', message: error.message },
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
 
