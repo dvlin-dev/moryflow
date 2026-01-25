@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Renderer IPC bridge (desktopAPI)
+ * [PROVIDES]: Renderer IPC bridge (desktopAPI, membership auth storage)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  *
@@ -30,6 +30,14 @@ const api: DesktopApi = {
   membership: {
     syncToken: (token) => ipcRenderer.invoke('membership:syncToken', token),
     syncEnabled: (enabled) => ipcRenderer.invoke('membership:syncEnabled', enabled),
+    isSecureStorageAvailable: () => ipcRenderer.invoke('membership:isSecureStorageAvailable'),
+    getAccessToken: () => ipcRenderer.invoke('membership:getAccessToken'),
+    setAccessToken: (token) => ipcRenderer.invoke('membership:setAccessToken', token),
+    clearAccessToken: () => ipcRenderer.invoke('membership:clearAccessToken'),
+    getAccessTokenExpiresAt: () => ipcRenderer.invoke('membership:getAccessTokenExpiresAt'),
+    setAccessTokenExpiresAt: (expiresAt) =>
+      ipcRenderer.invoke('membership:setAccessTokenExpiresAt', expiresAt),
+    clearAccessTokenExpiresAt: () => ipcRenderer.invoke('membership:clearAccessTokenExpiresAt'),
     getRefreshToken: () => ipcRenderer.invoke('membership:getRefreshToken'),
     setRefreshToken: (token) => ipcRenderer.invoke('membership:setRefreshToken', token),
     clearRefreshToken: () => ipcRenderer.invoke('membership:clearRefreshToken'),

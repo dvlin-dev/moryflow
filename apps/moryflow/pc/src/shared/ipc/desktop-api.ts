@@ -1,3 +1,11 @@
+/**
+ * [DEFINES]: DesktopApi IPC 结构与渲染进程可用的类型契约
+ * [USED_BY]: preload/index.ts, renderer 侧 API 调用
+ * [POS]: 主/渲染进程 IPC 通道类型入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ */
+
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 import type {
   AgentChatRequestOptions,
@@ -66,6 +74,20 @@ export type DesktopApi = {
     syncToken: (token: string | null) => Promise<void>;
     /** 同步会员模型启用状态 */
     syncEnabled: (enabled: boolean) => Promise<void>;
+    /** 安全存储是否可用（keytar） */
+    isSecureStorageAvailable: () => Promise<boolean>;
+    /** 获取 access token（安全存储） */
+    getAccessToken: () => Promise<string | null>;
+    /** 保存 access token（安全存储） */
+    setAccessToken: (token: string) => Promise<void>;
+    /** 清理 access token（安全存储） */
+    clearAccessToken: () => Promise<void>;
+    /** 获取 access token 过期时间（安全存储） */
+    getAccessTokenExpiresAt: () => Promise<string | null>;
+    /** 保存 access token 过期时间（安全存储） */
+    setAccessTokenExpiresAt: (expiresAt: string) => Promise<void>;
+    /** 清理 access token 过期时间（安全存储） */
+    clearAccessTokenExpiresAt: () => Promise<void>;
     /** 获取 refresh token（安全存储） */
     getRefreshToken: () => Promise<string | null>;
     /** 保存 refresh token（安全存储） */

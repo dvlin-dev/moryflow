@@ -3,6 +3,7 @@
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
 > 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 > 最近更新：2026-01-27（RFC7807 错误体边界完善、请求 Origin 缺失统一返回问题详情、API 客户端非 JSON 响应保护、ProblemDetails 类型统一、补齐 test:unit 与回归测试；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
+> 最近更新：2026-01-25（构建链路修复：tsc-multi stage1 补齐 packages/types；typecheck/test:unit 前置 build:packages）
 
 ## 项目概述
 
@@ -210,28 +211,29 @@ Anyhunt/
 
 ## 文档索引
 
-| 文档                                                                                                                   | 说明                                                      |
-| ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [`docs/index.md`](./docs/index.md)                                                                                     | docs/ 统一入口索引（内部协作）                            |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                             | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
-| [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)         | Auth 交互统一与数据库重置改造方案                         |
-| [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md) | Auth 统一改造涉及文件与模块清单                           |
-| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                         | API Client 统一封装方案（Anyhunt + Moryflow）             |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
-| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
-| [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                 | Moryflow Agent Tasks 系统方案（替代 Plan）                |
-| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                   |
-| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                 | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |
-| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md) | Runbook：megaboxpro（1panel）反代路由配置                 |
-| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                               | Runbook：Moryflow docker compose 部署                     |
-| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                       | Guide：Auth 流程与接口约定                                |
-| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                     | Guide：Zod + RHF 兼容性（zod/v3）                         |
-| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                           | Guide：从 Monorepo 开源拆分单个包（Git Subtree）          |
-| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                         | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）     |
-| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                           | Anyhunt Dev：内部方案入口                                 |
-| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                 | Moryflow：内部方案入口                                    |
-| `apps/*/CLAUDE.md`                                                                                                     | 各应用的详细文档                                          |
-| `packages/*/CLAUDE.md`                                                                                                 | 各包的详细文档                                            |
+| 文档                                                                                                                                       | 说明                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [`docs/index.md`](./docs/index.md)                                                                                                         | docs/ 统一入口索引（内部协作）                            |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                                                 | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
+| [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)                             | Auth 交互统一与数据库重置改造方案                         |
+| [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md)                     | Auth 统一改造涉及文件与模块清单                           |
+| [`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`](./docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md) | Moryflow PC/Mobile Access Token 持久化升级方案            |
+| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）             |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
+| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
+| [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                                     | Moryflow Agent Tasks 系统方案（替代 Plan）                |
+| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)                           | ADR：两条业务线永不互通                                   |
+| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                                     | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |
+| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md)                     | Runbook：megaboxpro（1panel）反代路由配置                 |
+| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                                                   | Runbook：Moryflow docker compose 部署                     |
+| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                                           | Guide：Auth 流程与接口约定                                |
+| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                                         | Guide：Zod + RHF 兼容性（zod/v3）                         |
+| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                                               | Guide：从 Monorepo 开源拆分单个包（Git Subtree）          |
+| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                                             | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）     |
+| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                                               | Anyhunt Dev：内部方案入口                                 |
+| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                                     | Moryflow：内部方案入口                                    |
+| `apps/*/CLAUDE.md`                                                                                                                         | 各应用的详细文档                                          |
+| `packages/*/CLAUDE.md`                                                                                                                     | 各包的详细文档                                            |
 
 ## 外部仓库快照（仅查阅）
 

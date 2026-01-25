@@ -76,8 +76,11 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Mobile Tasks Hook 协议标注统一为 CLAUDE.md
 - Auth 相关请求改为 access 内存 + refresh 安全存储，新增 `lib/server/auth-session.ts`
 - Auth：接入 `@better-auth/expo`（新增 `auth-client.ts`/`auth-platform.ts`），refresh 使用 SecureStore cookie + `X-App-Platform`
-- Auth Session refresh 增加网络失败清理，避免请求异常导致初始化抛错
+- Auth Session refresh 改为网络失败不清理，保留 refresh 并等待恢复
 - Auth Session 单元测试新增（`lib/server/__tests__/auth-session.spec.ts`）
+- Auth Store：access token 允许空 expiresAt，保持持久化一致
+- Auth Session：网络失败不清理 refresh token，App Resume 触发 ensureAccessToken
+- Auth 初始化：refresh 失败时保留 refresh token，避免离线启动误清理
 - Membership Context 依赖清理与 signUp 参数收敛，避免无用依赖/参数
 
 ## 依赖关系
