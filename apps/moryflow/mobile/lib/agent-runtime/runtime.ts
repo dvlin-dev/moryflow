@@ -1,8 +1,9 @@
 /**
- * Mobile Agent Runtime 核心逻辑
+ * [INPUT]: MobileAgentRuntimeOptions + 会话/模型/工具配置
+ * [OUTPUT]: MobileAgentRuntime - 负责对话执行与运行时管理
+ * [POS]: Mobile 端 Agent Runtime 主入口（与 PC runtime 对齐）
  *
- * 负责 Agent 初始化、运行时管理和聊天执行。
- * 与 PC 端 apps/moryflow/pc/src/main/agent-runtime/index.ts 对应。
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { run, setTracingDisabled, user } from '@openai/agents-core';
@@ -28,6 +29,7 @@ import { mobileSessionStore } from './session-store';
 import { loadSettings, onSettingsChange } from './settings-store';
 import { getMembershipConfig } from './membership-bridge';
 import { initVaultManager } from '../vault';
+import { getSharedTasksStore } from './tasks-service';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
 import { MAX_AGENT_TURNS } from './types';
@@ -69,7 +71,8 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     return vaultRoot;
   });
 
-  const baseTools = createMobileTools({ capabilities, crypto, vaultUtils });
+  const tasksStore = getSharedTasksStore();
+  const baseTools = createMobileTools({ capabilities, crypto, vaultUtils, tasksStore });
   toolNames = baseTools.map((tool) => tool.name);
   if (__DEV__) {
     logger.debug('加载的工具:', toolNames);

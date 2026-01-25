@@ -3,37 +3,33 @@
  * [EMITS]: 无
  * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import * as React from 'react'
-import { View, Modal } from 'react-native'
-import Animated, { useAnimatedStyle } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useTheme } from '@/lib/hooks/use-theme'
-import { useTranslation } from '@/lib/i18n'
-import { useModels, useSelectedModel } from '@/lib/models'
-import { useChatSessions } from '@/lib/hooks/use-chat-sessions'
-import { useStoredMessages } from '@/lib/hooks/use-stored-messages'
-import { ChatHeader } from './ChatHeader'
-import { ChatInputBar, type SendMessagePayload } from './ChatInputBar'
-import { ModelPickerSheet } from './ModelPickerSheet'
-import { SessionSwitcher } from './SessionSwitcher'
-import { UpgradeSheet } from '@/components/membership'
-import { ChatProvider, useChatLayout, useMessageAnimation } from './contexts'
-import {
-  ChatMessageList,
-  ChatErrorBanner,
-  ChatInitBanner,
-  ChatEmptyState,
-} from './components'
-import { useChatRuntime, useChatState, useModalState } from './hooks'
-import { cn } from '@/lib/utils'
+import * as React from 'react';
+import { View, Modal } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/hooks/use-theme';
+import { useTranslation } from '@/lib/i18n';
+import { useModels, useSelectedModel } from '@/lib/models';
+import { useChatSessions } from '@/lib/hooks/use-chat-sessions';
+import { useStoredMessages } from '@/lib/hooks/use-stored-messages';
+import { ChatHeader } from './ChatHeader';
+import { ChatInputBar, type SendMessagePayload } from './ChatInputBar';
+import { ModelPickerSheet } from './ModelPickerSheet';
+import { SessionSwitcher } from './SessionSwitcher';
+import { UpgradeSheet } from '@/components/membership';
+import { TasksSheet } from './TasksSheet';
+import { ChatProvider, useChatLayout, useMessageAnimation } from './contexts';
+import { ChatMessageList, ChatErrorBanner, ChatInitBanner, ChatEmptyState } from './components';
+import { useChatRuntime, useChatState, useModalState } from './hooks';
+import { cn } from '@/lib/utils';
 
 interface ChatScreenProps {
-  showHeader?: boolean
-  isInSheet?: boolean
-  onClose?: () => void
+  showHeader?: boolean;
+  isInSheet?: boolean;
+  onClose?: () => void;
 }
 
 /**
@@ -44,29 +40,26 @@ export function ChatScreen(props: ChatScreenProps) {
     <ChatProvider isInSheet={props.isInSheet}>
       <ChatScreenContent {...props} />
     </ChatProvider>
-  )
+  );
 }
 
 /**
  * ChatScreen 内容组件
  */
 function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenProps) {
-  const { t } = useTranslation('chat')
-  const { colorScheme } = useTheme()
-  const insets = useSafeAreaInsets()
+  const { t } = useTranslation('chat');
+  const { colorScheme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Context hooks
-  const { keyboardHeight } = useChatLayout()
-  const { markMessagesAsAnimated } = useMessageAnimation()
+  const { keyboardHeight } = useChatLayout();
+  const { markMessagesAsAnimated } = useMessageAnimation();
 
   // 键盘占位动画
-  const keyboardSpacerStyle = useAnimatedStyle(
-    () => ({ height: keyboardHeight.value }),
-    []
-  )
+  const keyboardSpacerStyle = useAnimatedStyle(() => ({ height: keyboardHeight.value }), []);
 
   // Runtime 初始化
-  const { isInitialized } = useChatRuntime()
+  const { isInitialized } = useChatRuntime();
 
   // 会话管理
   const {
@@ -78,20 +71,20 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     deleteSession,
     refreshSessions,
     isReady: sessionsReady,
-  } = useChatSessions()
+  } = useChatSessions();
 
   // Sheet 模式：挂载时创建新会话
-  const hasCreatedNewSessionRef = React.useRef(false)
+  const hasCreatedNewSessionRef = React.useRef(false);
   React.useEffect(() => {
     if (isInSheet && sessionsReady && !hasCreatedNewSessionRef.current) {
-      hasCreatedNewSessionRef.current = true
-      createSession()
+      hasCreatedNewSessionRef.current = true;
+      createSession();
     }
-  }, [isInSheet, sessionsReady, createSession])
+  }, [isInSheet, sessionsReady, createSession]);
 
   // 模型管理
-  const { allModels } = useModels()
-  const { model: selectedModel, modelId: selectedModelId, selectModel } = useSelectedModel()
+  const { allModels } = useModels();
+  const { model: selectedModel, modelId: selectedModelId, selectModel } = useSelectedModel();
 
   // 聊天状态
   const {
@@ -107,7 +100,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     activeSessionId,
     selectedModelId,
     refreshSessions,
-  })
+  });
 
   // 加载历史消息
   const { isLoadingHistory } = useStoredMessages({
@@ -115,7 +108,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     setMessages,
     onHistoryLoaded: markMessagesAsAnimated,
     delayMs: isInSheet ? 100 : 0,
-  })
+  });
 
   // Modal 状态
   const {
@@ -128,27 +121,28 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     closeSessionSwitcher,
     handleLockedModelPress,
     closeUpgradeSheet,
-  } = useModalState()
+  } = useModalState();
 
   // 输入状态
-  const [input, setInput] = React.useState('')
+  const [input, setInput] = React.useState('');
+  const [showTasks, setShowTasks] = React.useState(false);
 
   // 事件处理
   const handleSend = async (payload: SendMessagePayload) => {
-    if (!payload.text || isLoading || !isInitialized || !sessionsReady) return
+    if (!payload.text || isLoading || !isInitialized || !sessionsReady) return;
 
-    setInput('')
-    await sendMessage(payload)
-  }
+    setInput('');
+    await sendMessage(payload);
+  };
 
   const handleModelSelect = (modelId: string) => {
-    selectModel(modelId)
-    closeModelPicker()
-  }
+    selectModel(modelId);
+    closeModelPicker();
+  };
 
   // 渲染
-  const isDark = colorScheme === 'dark'
-  const isReady = isInitialized && sessionsReady
+  const isDark = colorScheme === 'dark';
+  const isReady = isInitialized && sessionsReady;
 
   return (
     <View className={cn('flex-1', isDark ? 'bg-[rgb(10,10,12)]' : 'bg-background')}>
@@ -158,6 +152,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
           onTitlePress={openSessionSwitcher}
           onNewConversation={() => createSession()}
           onHistoryPress={openSessionSwitcher}
+          onTasksPress={() => setShowTasks(true)}
           isInSheet={isInSheet}
         />
       )}
@@ -175,7 +170,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
           />
         )}
 
-        <View className="absolute left-0 right-0 bottom-0">
+        <View className="absolute right-0 bottom-0 left-0">
           {error && <ChatErrorBanner error={error} />}
 
           <ChatInputBar
@@ -213,8 +208,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         visible={showModelPicker}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={closeModelPicker}
-      >
+        onRequestClose={closeModelPicker}>
         <ModelPickerSheet
           models={allModels}
           currentModelId={selectedModelId ?? undefined}
@@ -228,10 +222,21 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
         visible={showUpgradeSheet}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={closeUpgradeSheet}
-      >
+        onRequestClose={closeUpgradeSheet}>
         <UpgradeSheet model={lockedModel} onClose={closeUpgradeSheet} />
       </Modal>
+
+      <Modal
+        visible={showTasks}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowTasks(false)}>
+        <TasksSheet
+          visible={showTasks}
+          onClose={() => setShowTasks(false)}
+          activeSessionId={activeSessionId}
+        />
+      </Modal>
     </View>
-  )
+  );
 }

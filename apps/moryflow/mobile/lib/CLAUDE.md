@@ -70,6 +70,10 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - i18n Provider 的初始化依赖以实例为准，避免遗漏依赖
 - 拆分并收敛全局 UI 状态：新增 `ChatSheetProvider`，移除无用的 TabBar 显隐 Context/Hook
 - Agent Runtime 日志适配器将 debug/info 限制为开发环境输出，避免 console lint 警告
+- 新增 Mobile TasksService（共享 TasksStore + onTasksChange）与 `use-tasks` Hook
+- Mobile TasksStore 修正 Vault 内 SQLite 路径，显式 chatId 传递与 WAL 变更轮询
+- Mobile TasksStore 增加 openDatabase 路径单测（2026-01-25）
+- Mobile Tasks Hook 协议标注统一为 CLAUDE.md
 - Auth 相关请求改为 access 内存 + refresh 安全存储，新增 `lib/server/auth-session.ts`
 - Auth：接入 `@better-auth/expo`（新增 `auth-client.ts`/`auth-platform.ts`），refresh 使用 SecureStore cookie + `X-App-Platform`
 - Auth Session refresh 增加网络失败清理，避免请求异常导致初始化抛错
