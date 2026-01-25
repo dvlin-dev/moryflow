@@ -1,5 +1,0 @@
-export { Hero } from './Hero'
-export { AgentShowcase } from './AgentShowcase'
-export { CapabilitiesSection } from './CapabilitiesSection'
-export { WhyLocalSection } from './WhyLocalSection'
-export { DownloadCTA } from './DownloadCTA'

@@ -45,7 +45,7 @@ import type {
 
 export { TaskCancelledError } from './agent-stream.processor';
 
-const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页数据收集助手。
+const SYSTEM_INSTRUCTIONS = `你是 Browser Agent，一个专业的网页数据收集助手。
 
 你的任务是根据用户的 prompt，通过浏览器操作找到并提取所需数据。
 
@@ -62,8 +62,7 @@ const SYSTEM_INSTRUCTIONS = `你是 Fetchx Browser Agent，一个专业的网页
 - 每次操作后都应获取新的 snapshot 以了解页面变化
 - 使用 @ref 格式（如 @e1）进行元素定位，比 CSS 选择器更可靠
 - 连续操作优先使用 browser_action_batch，减少往返
-- 如果页面需要登录，提示用户无法访问
-- 遇到验证码或反爬机制时，返回错误信息
+- 应尽量解决用户的问题，如果实在解决不了，返回 agent 友好的错误信息
 - 控制操作次数，避免无限循环`;
 
 interface RunningTask {
