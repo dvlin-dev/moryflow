@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- 修复审批续跑输出持久化与 abort 收敛，审计写入改为串行
 - Mobile AgentStreamResult 增补 RunState/输出只读字段，支持审批恢复与输出持久化
 - Chat Transport 支持工具权限审批（中断/恢复 + JSONC 规则落地）
 - Agent Runtime 新增工具输出统一截断与落盘清理（Mobile）

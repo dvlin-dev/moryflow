@@ -23,17 +23,28 @@ const ensureAuditDir = (): Directory => {
   return dir;
 };
 
-export const createMobilePermissionAuditWriter = (): MobilePermissionAuditWriter => ({
-  async append(event) {
-    const dir = ensureAuditDir();
-    const filePath = Paths.join(dir.uri, `${event.sessionId}.jsonl`);
-    const file = new File(filePath);
-    const line = `${JSON.stringify(event)}\n`;
-    if (file.exists) {
-      const existing = await file.text();
-      file.write(existing + line);
-    } else {
-      file.write(line);
-    }
-  },
-});
+export const createMobilePermissionAuditWriter = (): MobilePermissionAuditWriter => {
+  let pendingWrite = Promise.resolve();
+
+  const append = async (event: PermissionAuditEvent): Promise<void> => {
+    pendingWrite = pendingWrite
+      .catch((error) => {
+        console.warn('[permission] audit write failed, retrying', error);
+      })
+      .then(async () => {
+        const dir = ensureAuditDir();
+        const filePath = Paths.join(dir.uri, `${event.sessionId}.jsonl`);
+        const file = new File(filePath);
+        const line = `${JSON.stringify(event)}\n`;
+        if (file.exists) {
+          const existing = await file.text();
+          file.write(existing + line);
+        } else {
+          file.write(line);
+        }
+      });
+    return pendingWrite;
+  };
+
+  return { append };
+};

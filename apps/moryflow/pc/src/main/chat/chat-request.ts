@@ -84,7 +84,6 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
         let currentInput = userInput;
         let resumedState: RunState<AgentContext, Agent<AgentContext>> | null = null;
         let activeAgent: Agent<AgentContext> | null = null;
-        let persistedOutputCount = 0;
 
         const resolveToolCallId = (item: RunToolApprovalItem): string => {
           const raw = item.rawItem as Record<string, unknown> | undefined;
@@ -161,12 +160,11 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
 
             // 手动追加续跑输出（首次运行由 runtime 负责持久化）
             if (resumedState) {
-              const outputItems = result.output.slice(persistedOutputCount);
+              const outputItems = result.output;
               if (outputItems.length > 0) {
                 await session.addItems(outputItems);
               }
             }
-            persistedOutputCount = result.output.length;
 
             // 检查是否被中断
             if (abortController.signal.aborted) {

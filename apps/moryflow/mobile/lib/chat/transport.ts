@@ -71,7 +71,7 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
       async start(controller) {
         let resumedState: RunState<AgentContext, Agent<AgentContext>> | null = null;
         let activeAgent: Agent<AgentContext> | null = null;
-        let persistedOutputCount = 0;
+        let closed = false;
 
         const resolveToolCallId = (item: RunToolApprovalItem): string => {
           const raw = item.rawItem as Record<string, unknown> | undefined;
@@ -240,12 +240,11 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
             await result.completed;
 
             if (resumedState) {
-              const outputItems = result.output.slice(persistedOutputCount);
+              const outputItems = result.output;
               if (outputItems.length > 0) {
                 await session.addItems(outputItems);
               }
             }
-            persistedOutputCount = result.output.length;
 
             if (abortSignal?.aborted) {
               clearApprovalGate(chatId);
@@ -269,8 +268,18 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
 
           controller.enqueue({ type: 'finish', finishReason: 'stop' });
           controller.close();
+          closed = true;
         } catch (error) {
+          if (abortSignal?.aborted || isAbortError(error)) {
+            if (!closed) {
+              controller.enqueue({ type: 'finish', finishReason: 'stop' });
+              controller.close();
+              closed = true;
+            }
+            return;
+          }
           controller.error(error);
+          closed = true;
         } finally {
           clearApprovalGate(chatId);
         }
@@ -354,6 +363,14 @@ function logToolEvent(itemEvent: RunItemStreamEvent, eventType: string | undefin
     itemCtor: itemObj?.constructor?.name,
   });
 }
+
+const isAbortError = (error: unknown): boolean => {
+  if (!error) return false;
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'AbortError';
+  }
+  return error instanceof Error && error.name === 'AbortError';
+};
 
 /** 流事件提取结果 */
 interface StreamEventResult {

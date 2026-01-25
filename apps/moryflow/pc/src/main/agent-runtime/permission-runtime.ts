@@ -37,10 +37,6 @@ export type PermissionRuntime = {
   ) => Promise<void>;
 };
 
-const getMcpServerIdFromTool = (tool: Tool<AgentContext>): string | undefined => {
-  return (tool as { __mcpServerId?: string }).__mcpServerId;
-};
-
 let permissionRuntime: PermissionRuntime | null = null;
 
 export const createPermissionRuntime = (input: {
@@ -89,17 +85,14 @@ export const createPermissionRuntime = (input: {
   const wrapTools = (tools: Tool<AgentContext>[]): Tool<AgentContext>[] =>
     wrapToolsWithPermission(
       tools,
-      async ({ toolName, input, callId, runContext }) => {
+      async ({ toolName, input, callId, runContext, mcpServerId }) => {
         const targets = resolveToolPermissionTargets({
           toolName,
           input,
           callId,
           runContext,
           pathUtils: capabilities.path,
-          mcpServerId: getMcpServerIdFromTool(
-            tools.find((tool) => tool.name === toolName) ??
-              ({ name: toolName } as Tool<AgentContext>)
-          ),
+          mcpServerId,
         });
         if (!targets) return null;
         const userRules = await ruleStore.getRules();

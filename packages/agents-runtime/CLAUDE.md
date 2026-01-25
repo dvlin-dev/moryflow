@@ -30,6 +30,7 @@
 
 ## 近期变更
 
+- 修复 ls 默认路径权限评估与 MCP 工具 serverId 绑定
 - 修正 JSONC 解析错误类型与 Permission 包装的 RunContext 兼容
 - 新增 Permission 规则评估与 JSONC 读写工具，支持拒绝输出与规则匹配
 - Tool 输出截断包装明确仅支持 function 工具，避免隐式跳过

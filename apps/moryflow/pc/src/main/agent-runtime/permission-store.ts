@@ -60,7 +60,7 @@ export const createDesktopPermissionRuleStore = (): DesktopPermissionRuleStore =
   let cachedContent: string | null = null;
 
   const loadRules = async (): Promise<PermissionRule[]> => {
-    if (cachedRules) return cachedRules;
+    if (cachedRules !== null) return cachedRules;
     const content = await readConfigFile();
     const { data, errors } = parseJsonc(content);
     if (errors.length > 0) {

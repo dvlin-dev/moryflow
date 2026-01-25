@@ -79,6 +79,10 @@ const PERMISSION_DENIED_MESSAGE = 'Permission denied by policy.';
 
 const SENSITIVE_FILE_PATTERNS = ['**/*.env*', '**/*.pem', '**/*.key'];
 
+const getMcpServerIdFromTool = (tool: Tool<AgentContext>): string | undefined => {
+  return (tool as { __mcpServerId?: string }).__mcpServerId;
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
@@ -220,10 +224,16 @@ export const resolveToolPermissionTargets = ({
 
   switch (toolName) {
     case 'read':
-    case 'ls':
     case 'search_in_file': {
       const pathValue = getString(input.path);
       if (!pathValue) return null;
+      return {
+        domain: 'read',
+        targets: [buildFileTarget(pathValue, runContext, pathUtils)],
+      };
+    }
+    case 'ls': {
+      const pathValue = getString(input.path) ?? '.';
       return {
         domain: 'read',
         targets: [buildFileTarget(pathValue, runContext, pathUtils)],
@@ -356,6 +366,7 @@ export const wrapToolWithPermission = (
       input,
       callId,
       runContext: runContext as RunContext<AgentContext>,
+      mcpServerId: getMcpServerIdFromTool(tool),
     });
     if (info && callId) {
       decisionCache.set(callId, info);
