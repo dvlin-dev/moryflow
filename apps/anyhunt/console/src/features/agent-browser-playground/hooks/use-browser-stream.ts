@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: Streaming 状态 + WebSocket 管理 + 输入事件处理
  * [DEPENDS]: BrowserStream* 类型
- * [POS]: Agent Browser Playground 的 Streaming 行为封装
+ * [POS]: Agent Browser Playground 的 Streaming 行为封装（断开清理 frame）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -103,6 +103,7 @@ export const useBrowserStream = () => {
       setStreamStatus((prev) =>
         prev ? { ...prev, connected: false } : { connected: false, screencasting: false }
       );
+      setStreamFrame(null);
     };
 
     return () => {

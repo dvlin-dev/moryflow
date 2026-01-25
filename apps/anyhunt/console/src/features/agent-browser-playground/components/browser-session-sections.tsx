@@ -1,13 +1,13 @@
 /**
  * [PROPS]: SessionSectionProps/OpenUrlSectionProps/.../CdpSectionProps
  * [EMITS]: onCreate/onSubmit/onFetch/onClear/onConnect/onPointerDown 等回调
- * [POS]: Browser Playground 分区 UI 组件集合
+ * [POS]: Browser Playground 分区 UI 组件集合（截图质量仅对 jpeg 生效）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { KeyboardEvent, MutableRefObject, PointerEvent, WheelEvent } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
+import { useWatch, type UseFormReturn } from 'react-hook-form';
 import {
   Button,
   Form,
@@ -787,6 +787,9 @@ function ScreenshotSection({
   onSubmit,
   result,
 }: ScreenshotSectionProps) {
+  const format = useWatch({ control: form.control, name: 'format' });
+  const isJpeg = format === 'jpeg';
+
   return (
     <CollapsibleSection title="Screenshot" open={open} onOpenChange={onOpenChange}>
       <Form {...form}>
@@ -831,7 +834,7 @@ function ScreenshotSection({
                 <FormItem>
                   <FormLabel>Quality</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="80" {...field} />
+                    <Input type="number" placeholder="80" disabled={!isJpeg} {...field} />
                   </FormControl>
                 </FormItem>
               )}
