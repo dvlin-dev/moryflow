@@ -20,6 +20,7 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- settings 文案更新 System Prompt 高级可选参数与默认覆盖提示
 - 清理未使用常量（cookie/header/日期模板等）并统一 storage key 使用
 - 补齐核心入口/Hook/Utils 的文件头注释
 - 移除 `test` 脚本（无测试时不触发空运行）

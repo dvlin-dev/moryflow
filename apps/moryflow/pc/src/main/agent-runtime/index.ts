@@ -1,12 +1,12 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂
- * [DEPENDS]: agents, agents-runtime, agents-tools - Agent 框架核心
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 设置注入）
+ * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
-import { run, user, type Agent } from '@openai/agents-core';
+import { run, user, type Agent, type ModelSettings } from '@openai/agents-core';
 import type { RunStreamEvent } from '@openai/agents-core';
 import {
   createAgentFactory,
@@ -19,10 +19,12 @@ import {
   type ModelFactory,
   type Session,
 } from '@anyhunt/agents-runtime';
+import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
 import { createBaseTools } from '@anyhunt/agents-tools';
 import { createSandboxBashTool } from '@anyhunt/agents-sandbox';
 
 import type {
+  AgentSettings,
   AgentChatContext,
   McpStatusSnapshot,
   McpStatusEvent,
@@ -124,6 +126,33 @@ export type AgentRuntime = {
   reloadMcp(): void;
 };
 
+const resolveSystemPrompt = (settings: AgentSettings): string => {
+  if (
+    settings.systemPrompt?.mode === 'custom' &&
+    settings.systemPrompt.template.trim().length > 0
+  ) {
+    return settings.systemPrompt.template;
+  }
+  return getMorySystemPrompt();
+};
+
+const resolveModelSettings = (settings: AgentSettings): ModelSettings | undefined => {
+  if (settings.systemPrompt?.mode !== 'custom') {
+    return undefined;
+  }
+  const modelSettings: Partial<ModelSettings> = {};
+  if (settings.modelParams.temperature.mode === 'custom') {
+    modelSettings.temperature = settings.modelParams.temperature.value;
+  }
+  if (settings.modelParams.topP.mode === 'custom') {
+    modelSettings.topP = settings.modelParams.topP.value;
+  }
+  if (settings.modelParams.maxTokens.mode === 'custom') {
+    modelSettings.maxTokens = settings.modelParams.maxTokens.value;
+  }
+  return Object.keys(modelSettings).length > 0 ? (modelSettings as ModelSettings) : undefined;
+};
+
 export const createAgentRuntime = (): AgentRuntime => {
   // 创建平台能力和工具
   const capabilities = createDesktopCapabilities();
@@ -168,6 +197,8 @@ export const createAgentRuntime = (): AgentRuntime => {
     getModelFactory: () => modelFactory,
     baseTools,
     getMcpTools: mcpManager.getTools,
+    getInstructions: () => resolveSystemPrompt(getAgentSettings()),
+    getModelSettings: () => resolveModelSettings(getAgentSettings()),
   });
 
   mcpManager.setOnReload(agentFactory.invalidate);
@@ -195,6 +226,19 @@ export const createAgentRuntime = (): AgentRuntime => {
       next.model.defaultModel !== previous.model.defaultModel ||
       JSON.stringify(next.providers) !== JSON.stringify(previous.providers) ||
       JSON.stringify(next.customProviders) !== JSON.stringify(previous.customProviders);
+    const promptChanged =
+      next.systemPrompt.mode !== previous.systemPrompt.mode ||
+      next.systemPrompt.template !== previous.systemPrompt.template;
+    const hasParamChanged = (
+      nextParam: AgentSettings['modelParams']['temperature'],
+      prevParam: AgentSettings['modelParams']['temperature']
+    ) =>
+      nextParam.mode !== prevParam.mode ||
+      (nextParam.mode === 'custom' && nextParam.value !== prevParam.value);
+    const modelParamsChanged =
+      hasParamChanged(next.modelParams.temperature, previous.modelParams.temperature) ||
+      hasParamChanged(next.modelParams.topP, previous.modelParams.topP) ||
+      hasParamChanged(next.modelParams.maxTokens, previous.modelParams.maxTokens);
     const mcpChanged =
       JSON.stringify(next.mcp.stdio) !== JSON.stringify(previous.mcp.stdio) ||
       JSON.stringify(next.mcp.streamableHttp) !== JSON.stringify(previous.mcp.streamableHttp);
@@ -211,6 +255,9 @@ export const createAgentRuntime = (): AgentRuntime => {
       } catch (error) {
         console.error('[agent-runtime] failed to reload model', error);
       }
+    }
+    if ((promptChanged || modelParamsChanged) && !modelChanged) {
+      agentFactory.invalidate();
     }
     if (mcpChanged) {
       mcpManager.scheduleReload(next.mcp);

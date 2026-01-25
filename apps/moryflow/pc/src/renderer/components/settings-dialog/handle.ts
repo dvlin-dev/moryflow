@@ -1,27 +1,32 @@
-import type { AgentSettings, AgentSettingsUpdate, UserProviderConfig, CustomProviderConfig } from '@shared/ipc'
-import type { FormValues } from './const'
+import type {
+  AgentSettings,
+  AgentSettingsUpdate,
+  UserProviderConfig,
+  CustomProviderConfig,
+} from '@shared/ipc';
+import type { FormValues } from './const';
 
-type EnvEntry = { key: string; value: string }
-type PartialEnvEntry = { key?: string; value?: string }
+type EnvEntry = { key: string; value: string };
+type PartialEnvEntry = { key?: string; value?: string };
 
 /** Record<string, string> -> 表单数组 */
 const envRecordToArray = (record?: Record<string, string>): EnvEntry[] => {
-  if (!record) return []
-  return Object.entries(record).map(([key, value]) => ({ key, value }))
-}
+  if (!record) return [];
+  return Object.entries(record).map(([key, value]) => ({ key, value }));
+};
 
 /** 表单数组 -> Record<string, string> */
 const envArrayToRecord = (entries?: PartialEnvEntry[]): Record<string, string> | undefined => {
-  if (!entries || entries.length === 0) return undefined
-  const result: Record<string, string> = {}
+  if (!entries || entries.length === 0) return undefined;
+  const result: Record<string, string> = {};
   for (const entry of entries) {
-    const key = entry.key?.trim()
+    const key = entry.key?.trim();
     if (key) {
-      result[key] = entry.value ?? ''
+      result[key] = entry.value ?? '';
     }
   }
-  return Object.keys(result).length > 0 ? result : undefined
-}
+  return Object.keys(result).length > 0 ? result : undefined;
+};
 
 /**
  * 将 AgentSettings 转换为表单数据
@@ -29,6 +34,15 @@ const envArrayToRecord = (entries?: PartialEnvEntry[]): Record<string, string> |
 export const settingsToForm = (settings: AgentSettings): FormValues => ({
   model: {
     defaultModel: settings.model.defaultModel,
+  },
+  systemPrompt: {
+    mode: settings.systemPrompt?.mode ?? 'default',
+    template: settings.systemPrompt?.template ?? '',
+  },
+  modelParams: {
+    temperature: settings.modelParams?.temperature ?? { mode: 'default', value: 0.7 },
+    topP: settings.modelParams?.topP ?? { mode: 'default', value: 1 },
+    maxTokens: settings.modelParams?.maxTokens ?? { mode: 'default', value: 4096 },
   },
   mcp: {
     stdio: settings.mcp.stdio.map((entry) => ({
@@ -86,28 +100,28 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
   ui: {
     theme: settings.ui?.theme ?? 'system',
   },
-})
+});
 
 /**
  * 将表单数据转换为 AgentSettingsUpdate
  */
 export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
   // 计算默认模型
-  let defaultModel = values.model.defaultModel
+  let defaultModel = values.model.defaultModel;
   if (!defaultModel) {
     // 查找第一个启用且配置了 API Key 的服务商的默认模型
     for (const provider of values.providers) {
       if (provider.enabled && provider.apiKey?.trim() && provider.defaultModelId) {
-        defaultModel = `${provider.providerId}/${provider.defaultModelId}`
-        break
+        defaultModel = `${provider.providerId}/${provider.defaultModelId}`;
+        break;
       }
     }
     // 如果预设服务商没有，查找自定义服务商
     if (!defaultModel) {
       for (const provider of values.customProviders) {
         if (provider.enabled && provider.apiKey?.trim() && provider.defaultModelId) {
-          defaultModel = `${provider.providerId}/${provider.defaultModelId}`
-          break
+          defaultModel = `${provider.providerId}/${provider.defaultModelId}`;
+          break;
         }
       }
     }
@@ -116,6 +130,15 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
   return {
     model: {
       defaultModel: defaultModel || null,
+    },
+    systemPrompt: {
+      mode: values.systemPrompt.mode,
+      template: values.systemPrompt.template.trim(),
+    },
+    modelParams: {
+      temperature: values.modelParams.temperature,
+      topP: values.modelParams.topP,
+      maxTokens: values.modelParams.maxTokens,
     },
     mcp: {
       stdio: values.mcp.stdio.map((entry) => ({
@@ -138,40 +161,44 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         autoApprove: entry.autoApprove || undefined,
       })),
     },
-    providers: values.providers.map((provider): UserProviderConfig => ({
-      providerId: provider.providerId,
-      enabled: provider.enabled,
-      apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
-      baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
-      models: provider.models.map((model) => ({
-        id: model.id,
-        enabled: model.enabled,
-        // 保存自定义模型的额外字段
-        isCustom: model.isCustom,
-        customName: model.customName,
-        customContext: model.customContext,
-        customOutput: model.customOutput,
-        customCapabilities: model.customCapabilities,
-        customInputModalities: model.customInputModalities,
-      })),
-      defaultModelId: provider.defaultModelId || null,
-    })),
-    customProviders: values.customProviders.map((provider): CustomProviderConfig => ({
-      providerId: provider.providerId,
-      name: provider.name.trim(),
-      enabled: provider.enabled,
-      apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
-      baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
-      sdkType: provider.sdkType,
-      models: provider.models.map((model) => ({
-        id: model.id,
-        name: model.name,
-        enabled: model.enabled,
-      })),
-      defaultModelId: provider.defaultModelId || null,
-    })),
+    providers: values.providers.map(
+      (provider): UserProviderConfig => ({
+        providerId: provider.providerId,
+        enabled: provider.enabled,
+        apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
+        baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
+        models: provider.models.map((model) => ({
+          id: model.id,
+          enabled: model.enabled,
+          // 保存自定义模型的额外字段
+          isCustom: model.isCustom,
+          customName: model.customName,
+          customContext: model.customContext,
+          customOutput: model.customOutput,
+          customCapabilities: model.customCapabilities,
+          customInputModalities: model.customInputModalities,
+        })),
+        defaultModelId: provider.defaultModelId || null,
+      })
+    ),
+    customProviders: values.customProviders.map(
+      (provider): CustomProviderConfig => ({
+        providerId: provider.providerId,
+        name: provider.name.trim(),
+        enabled: provider.enabled,
+        apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
+        baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
+        sdkType: provider.sdkType,
+        models: provider.models.map((model) => ({
+          id: model.id,
+          name: model.name,
+          enabled: model.enabled,
+        })),
+        defaultModelId: provider.defaultModelId || null,
+      })
+    ),
     ui: {
       theme: values.ui.theme,
     },
-  }
-}
+  };
+};

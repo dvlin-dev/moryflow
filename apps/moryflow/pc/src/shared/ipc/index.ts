@@ -5,7 +5,7 @@ export type {
   VaultCreateOptions,
   VaultTreeNode,
   VaultFsEvent,
-} from './vault'
+} from './vault';
 
 export type {
   AgentChatContext,
@@ -15,13 +15,18 @@ export type {
   UIMessage,
   UIMessageChunk,
   TokenUsage,
-} from './chat'
+} from './chat';
 
 export type {
   MCPStdioServerSetting,
   MCPStreamableHttpServerSetting,
   MCPSettings,
   AgentModelSettings,
+  AgentModelParamMode,
+  AgentModelParamSetting,
+  AgentSystemPromptMode,
+  AgentSystemPromptSettings,
+  AgentModelParams,
   AgentUISettings,
   AgentSettings,
   AgentSettingsUpdate,
@@ -30,15 +35,15 @@ export type {
   ProviderConfig,
   ProviderSdkType,
   UserModelConfig,
-} from './agent-settings'
+} from './agent-settings';
 
-export type { ResetAppResult } from './maintenance'
+export type { ResetAppResult } from './maintenance';
 
-export type { PlanTask, PlanSnapshot } from './todo'
+export type { PlanTask, PlanSnapshot } from './todo';
 
-export type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit'
+export type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
 
-export type { AgentProviderTestInput, AgentProviderTestResult } from './provider-test'
+export type { AgentProviderTestInput, AgentProviderTestResult } from './provider-test';
 
 export type {
   McpServerStatus,
@@ -47,7 +52,7 @@ export type {
   McpStatusEvent,
   McpTestInput,
   McpTestResult,
-} from './mcp-status'
+} from './mcp-status';
 
 export type {
   OllamaConnectionResult,
@@ -56,7 +61,7 @@ export type {
   OllamaPullProgressEvent,
   OllamaLibraryModel,
   OllamaLibrarySearchParams,
-} from './ollama'
+} from './ollama';
 
 export type {
   CloudSyncSettings,
@@ -80,16 +85,16 @@ export type {
   BindingConflictChoice,
   BindingConflictRequest,
   BindingConflictResponse,
-} from './cloud-sync'
+} from './cloud-sync';
 
-export type { DesktopApi } from './desktop-api'
+export type { DesktopApi } from './desktop-api';
 
 export type {
   SandboxAuthRequest,
   SandboxAuthResponse,
   SandboxSettings,
   SandboxApi,
-} from './sandbox'
+} from './sandbox';
 
 export type {
   Site,
@@ -108,4 +113,4 @@ export type {
   CreateSiteInput,
   UpdateSiteInput,
   LocalSiteBinding,
-} from './site-publish'
+} from './site-publish';

@@ -93,6 +93,8 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 设置弹窗 System Prompt：高级参数可选覆盖（Use model default）
+- 设置弹窗 System Prompt 改用 `@anyhunt/agents-runtime/prompt`，避免引入 server 依赖
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Chat Pane 消息列表：ToolInput 空输入保护、Hugeicons 替换、渲染性能优化与条件渲染收敛
 - Auth 改为 access 内存 + refresh 轮换，移除 pre-register

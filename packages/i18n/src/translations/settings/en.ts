@@ -166,6 +166,8 @@ const en = {
   account: 'Account',
   accountDescription: 'Login & Membership',
   generalDescription: 'Appearance & Preferences',
+  systemPrompt: 'System Prompt',
+  systemPromptDescription: 'Prompt & Parameters',
   providers: 'AI Providers',
   providersDescription: 'API Keys & Models',
   mcp: 'MCP',
@@ -180,6 +182,26 @@ const en = {
     "Format: provider_id/model_id. If empty, the first enabled provider's default model will be used.",
   defaultModelConfigDescription:
     'Please configure providers and models in "AI Providers" page, then set the global default model here.',
+
+  // ========== System Prompt ==========
+  systemPromptModeLabel: 'Mode',
+  systemPromptModeHint: 'Default hides prompt and parameters.',
+  systemPromptModeDefault: 'Use Default',
+  systemPromptModeCustom: 'Custom',
+  systemPromptDefaultHint: 'Using built-in system prompt and model defaults.',
+  systemPromptTemplateLabel: 'System Prompt',
+  systemPromptTemplatePlaceholder: 'Enter your system prompt...',
+  systemPromptTemplateHint: 'Custom prompt replaces the default.',
+  systemPromptResetTemplate: 'Reset to Default Template',
+  systemPromptAdvancedLabel: 'Advanced (Optional)',
+  systemPromptAdvancedHint: 'Only override if you want to change model behavior.',
+  systemPromptParamsLabel: 'Model Parameters',
+  systemPromptParamsHint: 'Overrides apply only when enabled.',
+  systemPromptUseDefaultLabel: 'Use model default',
+  systemPromptUseDefaultHint: 'Using model defaults.',
+  systemPromptTemperatureLabel: 'Temperature',
+  systemPromptTopPLabel: 'Top P',
+  systemPromptMaxTokensLabel: 'Max Tokens',
 
   // ========== AI 服务商 ==========
   // SDK 类型

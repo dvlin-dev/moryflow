@@ -1,4 +1,4 @@
-import { Agent, type Tool } from '@openai/agents-core';
+import { Agent, type ModelSettings, type Tool } from '@openai/agents-core';
 
 import type { ModelFactory } from './model-factory';
 import { getMorySystemPrompt } from './prompt';
@@ -8,6 +8,8 @@ export interface AgentFactoryOptions {
   getModelFactory(): ModelFactory;
   baseTools: Tool<AgentContext>[];
   getMcpTools(): Tool<AgentContext>[];
+  getInstructions?: () => string;
+  getModelSettings?: () => ModelSettings | undefined;
 }
 
 export interface AgentFactory {
@@ -23,17 +25,23 @@ export const createAgentFactory = ({
   getModelFactory,
   baseTools,
   getMcpTools,
+  getInstructions,
+  getModelSettings,
 }: AgentFactoryOptions): AgentFactory => {
   const agentCache = new Map<string, Agent<AgentContext>>();
 
   const buildAgent = (modelId: string) => {
     const { baseModel } = getModelFactory().buildModel(modelId);
-    return new Agent({
+    const instructions = getInstructions?.() ?? getMorySystemPrompt();
+    const modelSettings = getModelSettings?.();
+    const config = {
       name: 'Mory',
-      instructions: getMorySystemPrompt(),
+      instructions,
       model: baseModel,
       tools: [...baseTools, ...getMcpTools()],
-    });
+      ...(modelSettings ? { modelSettings } : {}),
+    };
+    return new Agent(config);
   };
 
   const getAgent = (preferredModelId?: string) => {

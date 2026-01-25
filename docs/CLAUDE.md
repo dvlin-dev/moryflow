@@ -41,6 +41,12 @@
 
 ## 最近更新
 
+- ADR-0002：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）
+- ADR-0002：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）
+- ADR-0002：合并 OpenCode 对标与落地清单，删除独立对标文档（2026-01-26）
+- ADR-0002：补充范围与实施原则，明确聊天消息内打开文件（2026-01-24）
+- ADR-0002：补充 read 域覆盖文件工具 + 完整输出系统打开 + 复用 confirmation 组件（2026-01-24）
+- ADR-0002：补充 Doom Loop `always` 仅会话内有效（2026-01-24）
 - Agent Browser 文档收敛（架构 + Agent 交互）：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`（2026-01-25，Agent 交互按最新策略重写）
 - PR-60 Agent Browser 改动 Code Review：`docs/code-review/anyhunt-server-agent-browser-pr60.md`（2026-01-25：修复完成）
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（2026-01-26：修复完成；EmbeddingService 保留确认）
@@ -54,6 +60,15 @@
 - Moryflow PC Code Review：修复 preload 在 sandbox 下的 ESM 兼容问题（2026-01-26）
 - Moryflow PC Code Review：补齐 React 单测稳定性（i18n mock + React 版本对齐）（2026-01-26）
 - Moryflow PC Code Review：修复完成（外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测、E2E 基线）（2026-01-25）
+- ADR：Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`（2026-01-24）
+- ADR-0002：补充截断展示入口要求（2026-01-24）
+- ADR-0002：补充 Agent/全权限模式切换与审批最小化（2026-01-24）
+- ADR-0002：配置层与规则持久化简化为用户级（2026-01-24）
+- ADR-0002：补充全权限静默记录（2026-01-24）
+- ADR-0002：补充审计字段与落地位置（2026-01-24）
+- ADR-0002：补充审计日志格式（2026-01-24）
+- ADR-0002：修正策略基线文本与 Doom Loop 列表格式（2026-01-24）
+- ADR-0002：补充配置格式、规则匹配与审计落地规范（2026-01-24）
 - Anyhunt Server Memox Core：对标 Mem0 改造计划更新（实施进度同步 + Filters DSL + R2 导出 + Token 认证一致）（2026-01-24）
 - Auth 域名与路由：Memox API 路径对齐（2026-01-24）
 - Anyhunt Server Memox Core Code Review：`docs/code-review/anyhunt-server-memox-core.md`（2026-01-24：review 完成）
