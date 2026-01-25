@@ -56,21 +56,18 @@ curl -X POST https://server.anyhunt.app/api/v1/extract \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "results": [
-      {
-        "url": "https://example.com/product/123",
-        "data": {
-          "name": "Wireless Headphones Pro",
-          "price": 199.99,
-          "currency": "USD",
-          "description": "Premium wireless headphones with noise cancellation",
-          "inStock": true
-        }
+  "results": [
+    {
+      "url": "https://example.com/product/123",
+      "data": {
+        "name": "Wireless Headphones Pro",
+        "price": 199.99,
+        "currency": "USD",
+        "description": "Premium wireless headphones with noise cancellation",
+        "inStock": true
       }
-    ]
-  }
+    }
+  ]
 }
 ```
 
@@ -80,15 +77,12 @@ If extraction fails for a URL:
 
 ```json
 {
-  "success": true,
-  "data": {
-    "results": [
-      {
-        "url": "https://example.com/product/123",
-        "error": "Failed to extract data: page content is empty"
-      }
-    ]
-  }
+  "results": [
+    {
+      "url": "https://example.com/product/123",
+      "error": "Failed to extract data: page content is empty"
+    }
+  ]
 }
 ```
 
@@ -194,7 +188,7 @@ const response = await fetch('https://server.anyhunt.app/api/v1/extract', {
   }),
 });
 
-const { data } = await response.json();
+const data = await response.json();
 console.log(data.results[0].data);
 ```
 
@@ -223,7 +217,7 @@ response = requests.post(
     },
 )
 
-results = response.json()['data']['results']
+results = response.json()['results']
 print(results[0]['data'])
 ```
 

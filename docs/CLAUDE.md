@@ -41,6 +41,13 @@
 
 ## 最近更新
 
+- API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`（2026-01-26：draft）
+- API Client 方案补充 React Query（Web/PC/移动端）与复用策略：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案统一响应为 raw JSON + RFC7807（含一次性执行计划）：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案删除 envelope 过渡适配，明确不做历史兼容：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案清理 envelope 相关内容：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案补充 requestId 约定与校验错误示例：`docs/architecture/api-client-unification.md`（2026-01-26）
+- API Client 方案补充 errors 数组原因与前端展示建议：`docs/architecture/api-client-unification.md`（2026-01-26）
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25：draft）
 - Auth access token 设备端方案补充（PC/移动端安全存储 + Device refresh）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25）
 - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）

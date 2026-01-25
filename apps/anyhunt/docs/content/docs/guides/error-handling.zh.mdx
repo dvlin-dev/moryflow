@@ -9,16 +9,17 @@ description: 理解错误码和实现重试策略
 
 ## 错误响应格式
 
-所有 API 错误遵循统一格式：
+所有 API 错误遵循 RFC7807（Problem Details）：
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "人类可读的错误信息",
-    "details": {}
-  }
+  "type": "https://anyhunt.app/errors/ERROR_CODE",
+  "title": "Error Title",
+  "status": 400,
+  "detail": "人类可读的错误信息",
+  "code": "ERROR_CODE",
+  "requestId": "req_123",
+  "details": {}
 }
 ```
 
@@ -55,16 +56,16 @@ description: 理解错误码和实现重试策略
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "RATE_LIMITED",
-    "message": "请求过于频繁",
-    "details": {
-      "retryAfter": 60,
-      "limit": 100,
-      "remaining": 0,
-      "resetAt": "2024-01-15T11:00:00.000Z"
-    }
+  "type": "https://anyhunt.app/errors/RATE_LIMITED",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "请求过于频繁",
+  "code": "RATE_LIMITED",
+  "details": {
+    "retryAfter": 60,
+    "limit": 100,
+    "remaining": 0,
+    "resetAt": "2024-01-15T11:00:00.000Z"
   }
 }
 ```
@@ -82,15 +83,15 @@ description: 理解错误码和实现重试策略
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "QUOTA_EXCEEDED",
-    "message": "月度配额已超限",
-    "details": {
-      "quota": 10000,
-      "used": 10000,
-      "resetAt": "2024-02-01T00:00:00.000Z"
-    }
+  "type": "https://anyhunt.app/errors/QUOTA_EXCEEDED",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "月度配额已超限",
+  "code": "QUOTA_EXCEEDED",
+  "details": {
+    "quota": 10000,
+    "used": 10000,
+    "resetAt": "2024-02-01T00:00:00.000Z"
   }
 }
 ```
@@ -99,14 +100,14 @@ description: 理解错误码和实现重试策略
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "PAGE_TIMEOUT",
-    "message": "页面加载超时，已等待 30000ms",
-    "details": {
-      "url": "https://slow-website.com",
-      "timeout": 30000
-    }
+  "type": "https://anyhunt.app/errors/PAGE_TIMEOUT",
+  "title": "Gateway Timeout",
+  "status": 504,
+  "detail": "页面加载超时，已等待 30000ms",
+  "code": "PAGE_TIMEOUT",
+  "details": {
+    "url": "https://slow-website.com",
+    "timeout": 30000
   }
 }
 ```
@@ -132,19 +133,21 @@ async function scrapeWithRetry(url, options, maxRetries = 3) {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok) {
         return data;
       }
 
+      const code = data.code;
+      const detail = data.detail || `请求失败 (${response.status})`;
+
       // 客户端错误不重试（限流除外）
-      if (response.status >= 400 && response.status < 500
-          && data.error?.code !== 'RATE_LIMITED') {
-        throw new Error(`客户端错误: ${data.error?.message}`);
+      if (response.status >= 400 && response.status < 500 && code !== 'RATE_LIMITED') {
+        throw new Error(`客户端错误: ${detail}`);
       }
 
       // 处理限流
-      if (data.error?.code === 'RATE_LIMITED') {
-        const retryAfter = data.error.details?.retryAfter || 60;
+      if (code === 'RATE_LIMITED') {
+        const retryAfter = data.details?.retryAfter || 60;
         console.log(`被限流。等待 ${retryAfter} 秒...`);
         await sleep(retryAfter * 1000);
         continue;
@@ -198,19 +201,19 @@ def scrape_with_retry(
 
             data = response.json()
 
-            if data.get('success'):
+            if response.ok:
                 return data
 
-            error = data.get('error', {})
-            error_code = error.get('code')
+            error_code = data.get('code')
+            detail = data.get('detail') or f"请求失败 ({response.status_code})"
 
             # 客户端错误不重试（限流除外）
             if 400 <= response.status_code < 500 and error_code != 'RATE_LIMITED':
-                raise Exception(f"客户端错误: {error.get('message')}")
+                raise Exception(f"客户端错误: {detail}")
 
             # 处理限流
             if error_code == 'RATE_LIMITED':
-                retry_after = error.get('details', {}).get('retryAfter', 60)
+                retry_after = data.get('details', {}).get('retryAfter', 60)
                 print(f"被限流。等待 {retry_after} 秒...")
                 time.sleep(retry_after)
                 continue
@@ -298,7 +301,7 @@ async function scrapeBatchWithFallback(urls) {
   for (const url of urls) {
     try {
       const result = await scrapeWithRetry(url);
-      results.push({ url, success: true, data: result.data });
+      results.push({ url, success: true, data: result });
     } catch (error) {
       errors.push({ url, success: false, error: error.message });
       // 继续处理其他 URL
@@ -315,7 +318,7 @@ async function scrapeBatchWithFallback(urls) {
 
 ## 最佳实践
 
-1. **始终检查 `success` 字段** - 不要假设请求成功
+1. **检查 HTTP 状态** - 使用 `response.ok` 并解析 RFC7807 错误体
 2. **实现重试机制** - 对瞬时错误使用指数退避
 3. **尊重频率限制** - 使用 `Retry-After` 响应头的值
 4. **记录错误日志** - 保留记录用于调试
