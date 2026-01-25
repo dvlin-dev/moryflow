@@ -41,6 +41,8 @@
 
 ## 最近更新
 
+- Moryflow Agent Tasks 系统方案（IPC + PC/Mobile UI + 执行清单完成 + 单元测试覆盖 + 子代理同步测试）：`docs/architecture/agent-tasks-system.md`（2026-01-25：completed）
+- Moryflow Agent Tasks 系统方案：修正 Mobile SQLite 打开方式（2026-01-25）
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25：draft）
 - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（2026-01-25：review）

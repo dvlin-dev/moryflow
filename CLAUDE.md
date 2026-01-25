@@ -1,7 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
-> 最近更新：2026-01-24（Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
+> 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 
 ## 项目概述
 
@@ -217,6 +217,7 @@ Anyhunt/
 | [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md) | Auth 统一改造涉及文件与模块清单                           |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                         | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)               | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
+| [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                 | Moryflow Agent Tasks 系统方案（替代 Plan）                |
 | [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)       | ADR：两条业务线永不互通                                   |
 | [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                 | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |
 | [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md) | Runbook：megaboxpro（1panel）反代路由配置                 |
