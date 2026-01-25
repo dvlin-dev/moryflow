@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Agent/Browser Playground API calls
+ * [PROVIDES]: Agent/Browser Playground API calls（含诊断/流式/Profile）
  * [DEPENDS]: apiClient, CONSOLE_PLAYGROUND_API
  * [POS]: Console Playground 代理请求封装
  *
@@ -13,14 +13,25 @@ import type {
   AgentEstimateResponse,
   AgentTaskResult,
   BrowserActionResponse,
+  BrowserActionBatchResponse,
+  BrowserConsoleMessage,
   BrowserDeltaSnapshotResponse,
+  BrowserHarStartResult,
+  BrowserHarStopResult,
+  BrowserHeadersResult,
   BrowserNetworkRequestRecord,
   BrowserOpenResponse,
+  BrowserPageError,
+  BrowserProfileLoadResult,
+  BrowserProfileSaveResult,
   BrowserScreenshotResponse,
   BrowserSessionInfo,
   BrowserSnapshotResponse,
   BrowserStorageExportResult,
+  BrowserStreamTokenResult,
   BrowserTabInfo,
+  BrowserTraceStartResult,
+  BrowserTraceStopResult,
   BrowserWindowInfo,
 } from './types';
 
@@ -109,6 +120,17 @@ export async function executeBrowserAction(
   return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/action`, {
     apiKeyId,
     ...action,
+  });
+}
+
+export async function executeBrowserActionBatch(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserActionBatchResponse> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/action/batch`, {
+    apiKeyId,
+    ...input,
   });
 }
 
@@ -282,6 +304,143 @@ export async function clearNetworkHistory(apiKeyId: string, sessionId: string) {
       apiKeyId,
     })
   );
+}
+
+export async function setBrowserHeaders(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserHeadersResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/headers`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function clearBrowserHeaders(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+) {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/headers/clear`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function getBrowserConsoleMessages(
+  apiKeyId: string,
+  sessionId: string,
+  options?: { limit?: number }
+): Promise<BrowserConsoleMessage[]> {
+  return apiClient.get(
+    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/console`, {
+      apiKeyId,
+      limit: options?.limit?.toString(),
+    })
+  );
+}
+
+export async function clearBrowserConsoleMessages(apiKeyId: string, sessionId: string) {
+  return apiClient.delete(
+    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/console`, { apiKeyId })
+  );
+}
+
+export async function getBrowserPageErrors(
+  apiKeyId: string,
+  sessionId: string,
+  options?: { limit?: number }
+): Promise<BrowserPageError[]> {
+  return apiClient.get(
+    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/errors`, {
+      apiKeyId,
+      limit: options?.limit?.toString(),
+    })
+  );
+}
+
+export async function clearBrowserPageErrors(apiKeyId: string, sessionId: string) {
+  return apiClient.delete(
+    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/errors`, { apiKeyId })
+  );
+}
+
+export async function startBrowserTrace(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserTraceStartResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/trace/start`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function stopBrowserTrace(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserTraceStopResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/trace/stop`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function startBrowserHar(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserHarStartResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/har/start`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function stopBrowserHar(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserHarStopResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/har/stop`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function saveBrowserProfile(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserProfileSaveResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/profile/save`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function loadBrowserProfile(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserProfileLoadResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/profile/load`, {
+    apiKeyId,
+    ...input,
+  });
+}
+
+export async function createBrowserStreamToken(
+  apiKeyId: string,
+  sessionId: string,
+  input: Record<string, unknown>
+): Promise<BrowserStreamTokenResult> {
+  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/stream`, {
+    apiKeyId,
+    ...input,
+  });
 }
 
 export async function exportBrowserStorage(

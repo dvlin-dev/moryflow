@@ -16,7 +16,12 @@ import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
 import { CdpConnectorService } from './cdp';
 import { NetworkInterceptorService } from './network';
-import { StoragePersistenceService } from './persistence';
+import {
+  StoragePersistenceService,
+  ProfilePersistenceService,
+} from './persistence';
+import { BrowserDiagnosticsService } from './diagnostics';
+import { BrowserStreamService } from './streaming';
 import type {
   CreateSessionInput,
   CreateWindowInput,
@@ -24,9 +29,13 @@ import type {
   SnapshotInput,
   DeltaSnapshotInput,
   ActionInput,
+  ActionBatchInput,
+  ActionBatchResponse,
   ScreenshotInput,
   ConnectCdpInput,
   InterceptRule,
+  SetHeadersInput,
+  ClearHeadersInput,
   ExportStorageInput,
   ImportStorageInput,
   SessionInfo,
@@ -38,6 +47,14 @@ import type {
   WindowInfo,
   NetworkRequestRecord,
   StorageExportResult,
+  TraceStartInput,
+  TraceStopInput,
+  HarStartInput,
+  HarStopInput,
+  LogQueryInput,
+  SaveProfileInput,
+  LoadProfileInput,
+  CreateStreamInput,
 } from './dto';
 
 /** URL 验证失败错误 */
@@ -60,6 +77,9 @@ export class BrowserSessionService {
     private readonly cdpConnector: CdpConnectorService,
     private readonly networkInterceptor: NetworkInterceptorService,
     private readonly storagePersistence: StoragePersistenceService,
+    private readonly profilePersistence: ProfilePersistenceService,
+    private readonly diagnosticsService: BrowserDiagnosticsService,
+    private readonly streamService: BrowserStreamService,
   ) {}
 
   private assertSessionAccess(userId: string, sessionId: string): void {
@@ -96,10 +116,11 @@ export class BrowserSessionService {
     sessionId: string,
   ): Promise<SessionInfo> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     let title: string | null = null;
     try {
-      title = await session.page.title();
+      title = await page.title();
     } catch {
       // 忽略标题获取失败
     }
@@ -108,7 +129,7 @@ export class BrowserSessionService {
       id: session.id,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
-      url: session.page.url() || null,
+      url: page.url() || null,
       title,
     };
   }
@@ -119,6 +140,7 @@ export class BrowserSessionService {
   async closeSession(userId: string, sessionId: string): Promise<void> {
     this.assertSessionAccess(userId, sessionId);
     await this.sessionManager.closeSession(sessionId);
+    await this.streamService.cleanupSession(sessionId).catch(() => undefined);
   }
 
   /**
@@ -129,7 +151,12 @@ export class BrowserSessionService {
     sessionId: string,
     options: OpenUrlInput,
   ): Promise<{ success: boolean; url: string; title: string | null }> {
-    const { url, waitUntil = 'domcontentloaded', timeout = 30000 } = options;
+    const {
+      url,
+      waitUntil = 'domcontentloaded',
+      timeout = 30000,
+      headers,
+    } = options;
 
     // SSRF 防护
     if (!(await this.urlValidator.isAllowed(url))) {
@@ -137,21 +164,32 @@ export class BrowserSessionService {
     }
 
     const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
 
-    await session.page.goto(url, { waitUntil, timeout });
+    if (headers) {
+      await this.networkInterceptor.setScopedHeaders(
+        sessionId,
+        context,
+        url,
+        headers,
+      );
+    }
+
+    await page.goto(url, { waitUntil, timeout });
     session.refs = new Map();
     this.snapshotService.clearCache(sessionId);
 
     let title: string | null = null;
     try {
-      title = await session.page.title();
+      title = await page.title();
     } catch {
       // 忽略
     }
 
     return {
       success: true,
-      url: session.page.url(),
+      url: page.url(),
       title,
     };
   }
@@ -165,9 +203,10 @@ export class BrowserSessionService {
     options?: Partial<SnapshotInput>,
   ): Promise<SnapshotResponse> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     const { snapshot, refs } = await this.snapshotService.capture(
-      session.page,
+      page,
       options,
     );
 
@@ -191,6 +230,31 @@ export class BrowserSessionService {
   }
 
   /**
+   * 批量执行动作
+   */
+  async executeActionBatch(
+    userId: string,
+    sessionId: string,
+    input: ActionBatchInput,
+  ): Promise<ActionBatchResponse> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const results: ActionResponse[] = [];
+
+    for (const action of input.actions) {
+      const result = await this.actionHandler.execute(session, action);
+      results.push(result);
+      if (!result.success && input.stopOnError) {
+        break;
+      }
+    }
+
+    return {
+      success: results.every((result) => result.success),
+      results,
+    };
+  }
+
+  /**
    * 获取截图
    */
   async getScreenshot(
@@ -199,6 +263,7 @@ export class BrowserSessionService {
     options?: Partial<ScreenshotInput>,
   ): Promise<ScreenshotResponse> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     const {
       selector,
@@ -207,7 +272,9 @@ export class BrowserSessionService {
       quality,
     } = options ?? {};
 
-    const screenshotOptions: Parameters<typeof session.page.screenshot>[0] = {
+    const screenshotOptions: NonNullable<
+      Parameters<typeof page.screenshot>[0]
+    > = {
       type: format,
     };
 
@@ -230,16 +297,16 @@ export class BrowserSessionService {
       height = box?.height ?? 0;
     } else {
       // 页面截图
-      buffer = await session.page.screenshot({
+      buffer = await page.screenshot({
         ...screenshotOptions,
         fullPage,
       });
 
       // 获取视口尺寸
-      const viewportSize = session.page.viewportSize();
+      const viewportSize = page.viewportSize();
       if (fullPage) {
         // 全页截图需要获取实际尺寸
-        const metrics = await session.page.evaluate(() => ({
+        const metrics = await page.evaluate(() => ({
           width: document.documentElement.scrollWidth,
           height: document.documentElement.scrollHeight,
         }));
@@ -324,7 +391,11 @@ export class BrowserSessionService {
       options,
     );
     const session = this.getSessionForUser(userId, sessionId);
-    await this.networkInterceptor.registerContext(sessionId, session.context);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
+    await this.networkInterceptor.registerContext(
+      sessionId,
+      activeWindow.context,
+    );
     return windowInfo;
   }
 
@@ -371,6 +442,7 @@ export class BrowserSessionService {
   ): Promise<CdpSessionInfo> {
     // 建立 CDP 连接
     const connection = await this.cdpConnector.connect({
+      provider: options.provider,
       wsEndpoint: options.wsEndpoint,
       port: options.port,
       timeout: options.timeout,
@@ -387,11 +459,12 @@ export class BrowserSessionService {
       userId,
     );
 
+    const page = this.sessionManager.getActivePage(session);
     return {
       id: session.id,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
-      url: session.page.url() || null,
+      url: page.url() || null,
       title: null,
       isCdpConnection: true,
       wsEndpoint: connection.wsEndpoint,
@@ -409,12 +482,17 @@ export class BrowserSessionService {
     rules: InterceptRule[],
   ): Promise<{ rulesCount: number }> {
     const session = this.getSessionForUser(userId, sessionId);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
     await Promise.all(
       session.windows.map((window) =>
         this.networkInterceptor.registerContext(sessionId, window.context),
       ),
     );
-    return this.networkInterceptor.setRules(sessionId, session.context, rules);
+    return this.networkInterceptor.setRules(
+      sessionId,
+      activeWindow.context,
+      rules,
+    );
   }
 
   /**
@@ -426,12 +504,17 @@ export class BrowserSessionService {
     rule: InterceptRule,
   ): Promise<{ ruleId: string }> {
     const session = this.getSessionForUser(userId, sessionId);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
     await Promise.all(
       session.windows.map((window) =>
         this.networkInterceptor.registerContext(sessionId, window.context),
       ),
     );
-    return this.networkInterceptor.addRule(sessionId, session.context, rule);
+    return this.networkInterceptor.addRule(
+      sessionId,
+      activeWindow.context,
+      rule,
+    );
   }
 
   /**
@@ -482,6 +565,57 @@ export class BrowserSessionService {
     this.networkInterceptor.clearHistory(sessionId);
   }
 
+  // ==================== P2.2.1 Headers ====================
+
+  async setHeaders(
+    userId: string,
+    sessionId: string,
+    input: SetHeadersInput,
+  ): Promise<{ scope: 'global' | 'origin'; origin?: string }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const activeWindow = this.sessionManager.getActiveWindow(session);
+
+    if (input.origin) {
+      await this.networkInterceptor.setScopedHeaders(
+        sessionId,
+        activeWindow.context,
+        input.origin,
+        input.headers,
+      );
+      return { scope: 'origin', origin: input.origin };
+    }
+
+    await Promise.all(
+      session.windows.map((window) =>
+        window.context.setExtraHTTPHeaders(input.headers),
+      ),
+    );
+    return { scope: 'global' };
+  }
+
+  async clearHeaders(
+    userId: string,
+    sessionId: string,
+    input: ClearHeadersInput,
+  ): Promise<void> {
+    const session = this.getSessionForUser(userId, sessionId);
+
+    if (input.clearGlobal) {
+      await Promise.all(
+        session.windows.map((window) => window.context.setExtraHTTPHeaders({})),
+      );
+    }
+
+    if (input.origin) {
+      await this.networkInterceptor.clearScopedHeaders(sessionId, input.origin);
+      return;
+    }
+
+    if (!input.origin) {
+      await this.networkInterceptor.clearScopedHeaders(sessionId);
+    }
+  }
+
   // ==================== P2.3 会话持久化 ====================
 
   /**
@@ -493,11 +627,9 @@ export class BrowserSessionService {
     options?: ExportStorageInput,
   ): Promise<StorageExportResult> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.storagePersistence.exportStorage(
-      session.context,
-      session.page,
-      options,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.storagePersistence.exportStorage(context, page, options);
   }
 
   /**
@@ -511,11 +643,9 @@ export class BrowserSessionService {
     imported: { cookies: number; localStorage: number; sessionStorage: number };
   }> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.storagePersistence.importStorage(
-      session.context,
-      session.page,
-      data,
-    );
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.storagePersistence.importStorage(context, page, data);
   }
 
   /**
@@ -531,11 +661,129 @@ export class BrowserSessionService {
     },
   ): Promise<void> {
     const session = this.getSessionForUser(userId, sessionId);
-    return this.storagePersistence.clearStorage(
-      session.context,
-      session.page,
-      options,
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.storagePersistence.clearStorage(context, page, options);
+  }
+
+  // ==================== P2.3.1 Profile 持久化 ====================
+
+  async saveProfile(
+    userId: string,
+    sessionId: string,
+    input: SaveProfileInput,
+  ): Promise<{ profileId: string; storedAt: string; size: number }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.profilePersistence.saveProfile(userId, context, page, input);
+  }
+
+  async loadProfile(
+    userId: string,
+    sessionId: string,
+    input: LoadProfileInput,
+  ): Promise<{
+    imported: { cookies: number; localStorage: number; sessionStorage: number };
+  }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
+    const page = this.sessionManager.getActivePage(session);
+    return this.profilePersistence.loadProfile(userId, context, page, input);
+  }
+
+  // ==================== P2.3.2 诊断与观测 ====================
+
+  getConsoleMessages(
+    userId: string,
+    sessionId: string,
+    options?: LogQueryInput,
+  ) {
+    this.assertSessionAccess(userId, sessionId);
+    return this.diagnosticsService.getConsoleMessages(
+      sessionId,
+      options?.limit,
     );
+  }
+
+  clearConsoleMessages(userId: string, sessionId: string): void {
+    this.assertSessionAccess(userId, sessionId);
+    this.diagnosticsService.clearConsoleMessages(sessionId);
+  }
+
+  getPageErrors(userId: string, sessionId: string, options?: LogQueryInput) {
+    this.assertSessionAccess(userId, sessionId);
+    return this.diagnosticsService.getPageErrors(sessionId, options?.limit);
+  }
+
+  clearPageErrors(userId: string, sessionId: string): void {
+    this.assertSessionAccess(userId, sessionId);
+    this.diagnosticsService.clearPageErrors(sessionId);
+  }
+
+  async startTrace(
+    userId: string,
+    sessionId: string,
+    input: TraceStartInput,
+  ): Promise<{ started: boolean }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
+    await this.diagnosticsService.startTracing(sessionId, context, input);
+    return { started: true };
+  }
+
+  async stopTrace(userId: string, sessionId: string, input: TraceStopInput) {
+    const session = this.getSessionForUser(userId, sessionId);
+    const context = this.sessionManager.getActiveContext(session);
+    return this.diagnosticsService.stopTracing(
+      sessionId,
+      context,
+      input.store ?? true,
+    );
+  }
+
+  async startHar(
+    userId: string,
+    sessionId: string,
+    input: HarStartInput,
+  ): Promise<{ started: boolean }> {
+    const session = this.getSessionForUser(userId, sessionId);
+    const windows = session.windows;
+    for (let i = 0; i < windows.length; i++) {
+      await this.networkInterceptor.startRecording(
+        sessionId,
+        windows[i].context,
+        {
+          clear: input.clear && i === 0,
+        },
+      );
+    }
+    return { started: true };
+  }
+
+  async stopHar(
+    userId: string,
+    sessionId: string,
+    input: HarStopInput,
+  ): Promise<{ requestCount: number; requests?: NetworkRequestRecord[] }> {
+    this.assertSessionAccess(userId, sessionId);
+    const records = await this.networkInterceptor.stopRecording(sessionId);
+    return {
+      requestCount: records.length,
+      requests: input.includeRequests ? records : undefined,
+    };
+  }
+
+  // ==================== P2.3.3 Streaming ====================
+
+  createStreamToken(
+    userId: string,
+    sessionId: string,
+    input: CreateStreamInput,
+  ): { token: string; wsUrl: string; expiresAt: number } {
+    this.assertSessionAccess(userId, sessionId);
+    const expiresIn = input.expiresIn ?? 300;
+    return this.streamService.createToken(sessionId, expiresIn);
   }
 
   // ==================== P2.4 增量快照 ====================
@@ -549,10 +797,11 @@ export class BrowserSessionService {
     options?: Partial<DeltaSnapshotInput>,
   ): Promise<DeltaSnapshotResponse> {
     const session = this.getSessionForUser(userId, sessionId);
+    const page = this.sessionManager.getActivePage(session);
 
     const { snapshot, refs } = await this.snapshotService.captureDelta(
       sessionId,
-      session.page,
+      page,
       options,
     );
 

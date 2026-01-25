@@ -3,22 +3,29 @@
  *
  * [INPUT]: 会话创建/管理请求（含上下文配置）
  * [OUTPUT]: BrowserSession 实例
- * [POS]: 管理浏览器会话生命周期，包含 Ref 映射与窗口/标签页状态（含拦截/快照清理）
+ * [POS]: 管理浏览器会话生命周期，窗口/标签页为单一数据源（含拦截/快照清理）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { devices } from 'playwright';
 import type { BrowserContext, Page, Locator, Dialog } from 'playwright';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { BrowserPool } from '../browser-pool';
 import { NetworkInterceptorService } from '../network';
 import { SnapshotService } from '../snapshot';
+import { BrowserDiagnosticsService } from '../diagnostics';
 import type { BrowserContextOptions } from '../browser.types';
 import type {
   CreateSessionInput,
   CreateWindowInput,
   RefData,
   WindowInfo,
+  LocatorInput,
+  LocatorSelectorInput,
 } from '../dto';
 
 /** 对话框记录 */
@@ -69,14 +76,6 @@ export interface BrowserSession {
   windows: WindowData[];
   /** 当前活跃窗口索引 */
   activeWindowIndex: number;
-  /** Playwright BrowserContext（当前活跃窗口） */
-  context: BrowserContext;
-  /** 当前活跃 Page */
-  page: Page;
-  /** 所有页面（当前活跃窗口的多标签页支持） */
-  pages: Page[];
-  /** 当前活跃页面索引（当前活跃窗口） */
-  activePageIndex: number;
   /** 元素引用映射（每次 snapshot 后更新） */
   refs: Map<string, RefData>;
   /** 对话框历史记录（最近 10 条） */
@@ -137,11 +136,13 @@ export class SessionManager implements OnModuleDestroy {
 
   /** 默认超时时间（5 分钟） */
   private readonly DEFAULT_TIMEOUT = 5 * 60 * 1000;
+  private readonly RECORDING_DIR = join(tmpdir(), 'anyhunt-browser-recordings');
 
   constructor(
     private readonly browserPool: BrowserPool,
     private readonly networkInterceptor: NetworkInterceptorService,
     private readonly snapshotService: SnapshotService,
+    private readonly diagnosticsService: BrowserDiagnosticsService,
   ) {
     this.startCleanupTimer();
   }
@@ -184,6 +185,9 @@ export class SessionManager implements OnModuleDestroy {
       await page.setViewportSize(options.viewport);
     }
 
+    await this.applyContextRuntimeOptions(context, options);
+    await this.applyPageRuntimeOptions(page, options);
+
     // 设置默认超时
     page.setDefaultTimeout(30000);
 
@@ -202,11 +206,6 @@ export class SessionManager implements OnModuleDestroy {
       // 多窗口支持
       windows: [initialWindow],
       activeWindowIndex: 0,
-      // 当前活跃窗口的快捷引用（向后兼容）
-      context,
-      page,
-      pages: [page],
-      activePageIndex: 0,
       refs: new Map(),
       dialogHistory: [],
       createdAt: now,
@@ -216,6 +215,7 @@ export class SessionManager implements OnModuleDestroy {
 
     // 设置对话框自动处理
     this.setupDialogHandler(session, page);
+    this.diagnosticsService.registerPage(sessionId, page);
 
     this.sessions.set(sessionId, session);
     this.logger.debug(
@@ -304,6 +304,31 @@ export class SessionManager implements OnModuleDestroy {
   }
 
   /**
+   * 获取当前活跃窗口
+   */
+  getActiveWindow(session: BrowserSession): WindowData {
+    const activeWindow = session.windows[session.activeWindowIndex];
+    if (!activeWindow) {
+      throw new SessionOperationNotAllowedError('Active window not available');
+    }
+    return activeWindow;
+  }
+
+  /**
+   * 获取当前活跃页面
+   */
+  getActivePage(session: BrowserSession): Page {
+    return this.getActiveWindow(session).page;
+  }
+
+  /**
+   * 获取当前活跃上下文
+   */
+  getActiveContext(session: BrowserSession): BrowserContext {
+    return this.getActiveWindow(session).context;
+  }
+
+  /**
    * 延长会话有效期
    */
   extendSession(sessionId: string, additionalMs: number): void {
@@ -385,6 +410,9 @@ export class SessionManager implements OnModuleDestroy {
       await page.setViewportSize(options.viewport);
     }
 
+    await this.applyContextRuntimeOptions(context, options);
+    await this.applyPageRuntimeOptions(page, options);
+
     page.setDefaultTimeout(30000);
 
     // 创建初始窗口数据
@@ -401,10 +429,6 @@ export class SessionManager implements OnModuleDestroy {
       ownerUserId,
       windows: [initialWindow],
       activeWindowIndex: 0,
-      context,
-      page,
-      pages: initialWindow.pages,
-      activePageIndex: 0,
       refs: new Map(),
       dialogHistory: [],
       createdAt: now,
@@ -416,6 +440,7 @@ export class SessionManager implements OnModuleDestroy {
 
     // 设置对话框自动处理
     this.setupDialogHandler(session, page);
+    this.diagnosticsService.registerPage(sessionId, page);
 
     this.sessions.set(sessionId, session);
     this.logger.debug(
@@ -436,12 +461,13 @@ export class SessionManager implements OnModuleDestroy {
     title: string | null;
   } {
     const session = this.getSession(sessionId);
+    const page = this.getActivePage(session);
 
     return {
       id: session.id,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
-      url: session.page.url() || null,
+      url: page.url() || null,
       title: null, // 标题需要异步获取，这里返回 null
     };
   }
@@ -458,6 +484,7 @@ export class SessionManager implements OnModuleDestroy {
    * 解析选择器（支持 @ref 格式）
    */
   resolveSelector(session: BrowserSession, selector: string): Locator {
+    const page = this.getActivePage(session);
     // @ref 格式：@e1, @e2, ...
     if (selector.startsWith('@')) {
       const refKey = selector.slice(1);
@@ -470,7 +497,7 @@ export class SessionManager implements OnModuleDestroy {
       }
 
       // 使用语义定位器
-      let locator = session.page.getByRole(
+      let locator = page.getByRole(
         refData.role as Parameters<Page['getByRole']>[0],
         {
           name: refData.name,
@@ -487,7 +514,56 @@ export class SessionManager implements OnModuleDestroy {
     }
 
     // 普通 CSS 选择器
-    return session.page.locator(selector);
+    return page.locator(selector);
+  }
+
+  /**
+   * 解析语义定位器
+   */
+  resolveLocator(session: BrowserSession, locator: LocatorInput): Locator {
+    const page = this.getActivePage(session);
+
+    switch (locator.type) {
+      case 'selector':
+        return this.resolveSelector(session, locator.selector);
+      case 'role':
+        return page.getByRole(
+          locator.role as Parameters<Page['getByRole']>[0],
+          {
+            name: locator.name,
+            exact: locator.exact,
+          },
+        );
+      case 'text':
+        return page.getByText(locator.text, { exact: locator.exact });
+      case 'label':
+        return page.getByLabel(locator.label, { exact: locator.exact });
+      case 'placeholder':
+        return page.getByPlaceholder(locator.placeholder, {
+          exact: locator.exact,
+        });
+      case 'alt':
+        return page.getByAltText(locator.alt, { exact: locator.exact });
+      case 'title':
+        return page.getByTitle(locator.title, { exact: locator.exact });
+      case 'testId':
+        return page.getByTestId(locator.testId);
+      default:
+        throw new Error('Unsupported locator type');
+    }
+  }
+
+  /**
+   * 解析 locator 输入（string 或 LocatorInput）
+   */
+  resolveLocatorInput(
+    session: BrowserSession,
+    input: LocatorSelectorInput,
+  ): Locator {
+    if (typeof input === 'string') {
+      return this.resolveSelector(session, input);
+    }
+    return this.resolveLocator(session, input);
   }
 
   // ==================== 多标签页管理 ====================
@@ -504,6 +580,7 @@ export class SessionManager implements OnModuleDestroy {
 
     // 设置对话框处理
     this.setupDialogHandler(session, newPage);
+    this.diagnosticsService.registerPage(sessionId, newPage);
 
     const newIndex = activeWindow.pages.length;
     activeWindow.pages.push(newPage);
@@ -511,9 +588,6 @@ export class SessionManager implements OnModuleDestroy {
     // 切换到新标签页
     activeWindow.activePageIndex = newIndex;
     activeWindow.page = newPage;
-
-    // 同步到会话
-    this.syncWindowToSession(session);
 
     // 清除 refs（新页面没有元素）
     session.refs = new Map();
@@ -571,7 +645,7 @@ export class SessionManager implements OnModuleDestroy {
     const activeWindow = session.windows[session.activeWindowIndex];
 
     if (tabIndex < 0 || tabIndex >= activeWindow.pages.length) {
-      throw new Error(
+      throw new SessionOperationNotAllowedError(
         `Invalid tab index: ${tabIndex}. Valid range: 0-${activeWindow.pages.length - 1}`,
       );
     }
@@ -579,15 +653,14 @@ export class SessionManager implements OnModuleDestroy {
     const targetPage = activeWindow.pages[tabIndex];
 
     if (targetPage.isClosed()) {
-      throw new Error(`Tab ${tabIndex} has been closed`);
+      throw new SessionOperationNotAllowedError(
+        `Tab ${tabIndex} has been closed`,
+      );
     }
 
     // 更新活跃页面
     activeWindow.activePageIndex = tabIndex;
     activeWindow.page = targetPage;
-
-    // 同步到会话
-    this.syncWindowToSession(session);
 
     // 清除 refs（需要重新获取快照）
     session.refs = new Map();
@@ -620,7 +693,7 @@ export class SessionManager implements OnModuleDestroy {
     const activeWindow = session.windows[session.activeWindowIndex];
 
     if (tabIndex < 0 || tabIndex >= activeWindow.pages.length) {
-      throw new Error(
+      throw new SessionOperationNotAllowedError(
         `Invalid tab index: ${tabIndex}. Valid range: 0-${activeWindow.pages.length - 1}`,
       );
     }
@@ -628,7 +701,9 @@ export class SessionManager implements OnModuleDestroy {
     // 不能关闭最后一个标签页
     const openTabs = activeWindow.pages.filter((p) => !p.isClosed());
     if (openTabs.length <= 1) {
-      throw new Error('Cannot close the last tab. Close the window instead.');
+      throw new SessionOperationNotAllowedError(
+        'Cannot close the last tab. Close the window instead.',
+      );
     }
 
     const targetPage = activeWindow.pages[tabIndex];
@@ -651,8 +726,6 @@ export class SessionManager implements OnModuleDestroy {
       if (newActiveIndex >= 0) {
         activeWindow.activePageIndex = newActiveIndex;
         activeWindow.page = activeWindow.pages[newActiveIndex];
-        // 同步到会话
-        this.syncWindowToSession(session);
         session.refs = new Map();
       }
     }
@@ -698,6 +771,9 @@ export class SessionManager implements OnModuleDestroy {
       await newPage.setViewportSize(options.viewport);
     }
 
+    await this.applyContextRuntimeOptions(newContext, options);
+    await this.applyPageRuntimeOptions(newPage, options);
+
     newPage.setDefaultTimeout(30000);
 
     // 创建窗口数据
@@ -713,16 +789,13 @@ export class SessionManager implements OnModuleDestroy {
 
     // 切换到新窗口
     session.activeWindowIndex = newIndex;
-    session.context = newContext;
-    session.page = newPage;
-    session.pages = [newPage];
-    session.activePageIndex = 0;
 
     // 清除 refs（新窗口没有元素）
     session.refs = new Map();
 
     // 设置对话框处理
     this.setupDialogHandler(session, newPage);
+    this.diagnosticsService.registerPage(sessionId, newPage);
 
     this.logger.debug(
       `New window created in session ${sessionId}, index: ${newIndex}`,
@@ -745,11 +818,40 @@ export class SessionManager implements OnModuleDestroy {
   ): BrowserContextOptions | undefined {
     if (!options) return undefined;
 
+    const deviceOptions = this.resolveDeviceOptions(options.device);
+    const recordVideo =
+      options.recordVideo?.enabled === true
+        ? {
+            dir: this.ensureRecordingDir(),
+            size:
+              options.recordVideo.width && options.recordVideo.height
+                ? {
+                    width: options.recordVideo.width,
+                    height: options.recordVideo.height,
+                  }
+                : undefined,
+          }
+        : undefined;
+
     return {
-      viewport: options.viewport,
-      userAgent: options.userAgent,
+      viewport: options.viewport ?? deviceOptions.viewport,
+      userAgent: options.userAgent ?? deviceOptions.userAgent,
       javaScriptEnabled: options.javaScriptEnabled,
       ignoreHTTPSErrors: options.ignoreHTTPSErrors,
+      locale: options.locale,
+      timezoneId: options.timezoneId,
+      geolocation: options.geolocation,
+      permissions: options.permissions,
+      colorScheme: options.colorScheme,
+      reducedMotion: options.reducedMotion,
+      extraHTTPHeaders: options.headers,
+      httpCredentials: options.httpCredentials,
+      deviceScaleFactor: deviceOptions.deviceScaleFactor,
+      isMobile: deviceOptions.isMobile,
+      hasTouch: deviceOptions.hasTouch,
+      acceptDownloads: options.acceptDownloads,
+      recordVideo,
+      offline: options.offline,
     };
   }
 
@@ -761,10 +863,106 @@ export class SessionManager implements OnModuleDestroy {
   ): BrowserContextOptions | undefined {
     if (!options) return undefined;
 
+    const deviceOptions = this.resolveDeviceOptions(options.device);
+    const recordVideo =
+      options.recordVideo?.enabled === true
+        ? {
+            dir: this.ensureRecordingDir(),
+            size:
+              options.recordVideo.width && options.recordVideo.height
+                ? {
+                    width: options.recordVideo.width,
+                    height: options.recordVideo.height,
+                  }
+                : undefined,
+          }
+        : undefined;
+
     return {
-      viewport: options.viewport,
-      userAgent: options.userAgent,
+      viewport: options.viewport ?? deviceOptions.viewport,
+      userAgent: options.userAgent ?? deviceOptions.userAgent,
+      locale: options.locale,
+      timezoneId: options.timezoneId,
+      geolocation: options.geolocation,
+      permissions: options.permissions,
+      colorScheme: options.colorScheme,
+      reducedMotion: options.reducedMotion,
+      extraHTTPHeaders: options.headers,
+      httpCredentials: options.httpCredentials,
+      deviceScaleFactor: deviceOptions.deviceScaleFactor,
+      isMobile: deviceOptions.isMobile,
+      hasTouch: deviceOptions.hasTouch,
+      acceptDownloads: options.acceptDownloads,
+      recordVideo,
+      offline: options.offline,
     };
+  }
+
+  private resolveDeviceOptions(
+    deviceName?: string,
+  ): Partial<BrowserContextOptions> {
+    if (!deviceName) {
+      return {};
+    }
+
+    const device = devices[deviceName];
+    if (!device) {
+      throw new Error(`Unknown device preset: ${deviceName}`);
+    }
+
+    return {
+      viewport: device.viewport,
+      userAgent: device.userAgent,
+      deviceScaleFactor: device.deviceScaleFactor,
+      isMobile: device.isMobile,
+      hasTouch: device.hasTouch,
+    };
+  }
+
+  private ensureRecordingDir(): string {
+    mkdirSync(this.RECORDING_DIR, { recursive: true });
+    return this.RECORDING_DIR;
+  }
+
+  private async applyContextRuntimeOptions(
+    context: BrowserContext,
+    options?: Partial<CreateSessionInput | CreateWindowInput>,
+  ): Promise<void> {
+    if (!options) return;
+
+    if (options.headers) {
+      await context.setExtraHTTPHeaders(options.headers);
+    }
+
+    if (options.httpCredentials) {
+      await context.setHTTPCredentials(options.httpCredentials);
+    }
+
+    if (options.geolocation) {
+      await context.setGeolocation(options.geolocation);
+    }
+
+    if (options.permissions && options.permissions.length > 0) {
+      await context.grantPermissions(options.permissions);
+    }
+
+    if (options.offline !== undefined) {
+      await context.setOffline(options.offline);
+    }
+  }
+
+  private async applyPageRuntimeOptions(
+    page: Page,
+    options?: Partial<CreateSessionInput | CreateWindowInput>,
+  ): Promise<void> {
+    if (!options) return;
+
+    if (options.colorScheme || options.reducedMotion) {
+      await page.emulateMedia({
+        colorScheme: options.colorScheme,
+        reducedMotion: options.reducedMotion,
+      });
+    }
   }
 
   /**
@@ -813,7 +1011,7 @@ export class SessionManager implements OnModuleDestroy {
     const session = this.getSession(sessionId);
 
     if (windowIndex < 0 || windowIndex >= session.windows.length) {
-      throw new Error(
+      throw new SessionOperationNotAllowedError(
         `Invalid window index: ${windowIndex}. Valid range: 0-${session.windows.length - 1}`,
       );
     }
@@ -823,15 +1021,13 @@ export class SessionManager implements OnModuleDestroy {
     // 检查窗口是否有效
     const openPages = targetWindow.pages.filter((p) => !p.isClosed());
     if (openPages.length === 0) {
-      throw new Error(`Window ${windowIndex} has no open pages`);
+      throw new SessionOperationNotAllowedError(
+        `Window ${windowIndex} has no open pages`,
+      );
     }
 
     // 更新活跃窗口
     session.activeWindowIndex = windowIndex;
-    session.context = targetWindow.context;
-    session.page = targetWindow.page;
-    session.pages = targetWindow.pages;
-    session.activePageIndex = targetWindow.activePageIndex;
 
     // 清除 refs（需要重新获取快照）
     session.refs = new Map();
@@ -866,7 +1062,7 @@ export class SessionManager implements OnModuleDestroy {
     const session = this.getSession(sessionId);
 
     if (windowIndex < 0 || windowIndex >= session.windows.length) {
-      throw new Error(
+      throw new SessionOperationNotAllowedError(
         `Invalid window index: ${windowIndex}. Valid range: 0-${session.windows.length - 1}`,
       );
     }
@@ -876,7 +1072,7 @@ export class SessionManager implements OnModuleDestroy {
       w.pages.some((p) => !p.isClosed()),
     );
     if (openWindows.length <= 1) {
-      throw new Error(
+      throw new SessionOperationNotAllowedError(
         'Cannot close the last window. Close the session instead.',
       );
     }
@@ -905,12 +1101,7 @@ export class SessionManager implements OnModuleDestroy {
       }
 
       if (newActiveIndex >= 0) {
-        const newWindow = session.windows[newActiveIndex];
         session.activeWindowIndex = newActiveIndex;
-        session.context = newWindow.context;
-        session.page = newWindow.page;
-        session.pages = newWindow.pages;
-        session.activePageIndex = newWindow.activePageIndex;
         session.refs = new Map();
       }
     }
@@ -927,18 +1118,6 @@ export class SessionManager implements OnModuleDestroy {
     }
 
     this.logger.debug(`Closed window ${windowIndex} in session ${sessionId}`);
-  }
-
-  /**
-   * 同步当前窗口状态到会话
-   * 在标签页操作后调用，确保会话的快捷引用与当前窗口同步
-   */
-  private syncWindowToSession(session: BrowserSession): void {
-    const activeWindow = session.windows[session.activeWindowIndex];
-    session.context = activeWindow.context;
-    session.page = activeWindow.page;
-    session.pages = activeWindow.pages;
-    session.activePageIndex = activeWindow.activePageIndex;
   }
 
   /**
@@ -1002,6 +1181,7 @@ export class SessionManager implements OnModuleDestroy {
       );
     }
 
+    this.diagnosticsService.cleanupSession(sessionId);
     this.snapshotService.clearCache(sessionId);
   }
 }

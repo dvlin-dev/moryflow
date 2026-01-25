@@ -17,6 +17,8 @@ export const CreateSessionSchema = z.object({
       height: z.number().int().min(240).max(2160).default(800),
     })
     .optional(),
+  /** 设备预设（Playwright devices 名称） */
+  device: z.string().max(100).optional(),
   /** 自定义 User-Agent */
   userAgent: z.string().max(500).optional(),
   /** 会话超时时间（毫秒，默认 5 分钟） */
@@ -25,6 +27,44 @@ export const CreateSessionSchema = z.object({
   javaScriptEnabled: z.boolean().default(true),
   /** 是否忽略 HTTPS 错误 */
   ignoreHTTPSErrors: z.boolean().default(true),
+  /** locale（需要新建 context 才生效） */
+  locale: z.string().max(50).optional(),
+  /** timezoneId（需要新建 context 才生效） */
+  timezoneId: z.string().max(50).optional(),
+  /** geolocation */
+  geolocation: z
+    .object({
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+      accuracy: z.number().min(0).max(10000).optional(),
+    })
+    .optional(),
+  /** permissions */
+  permissions: z.array(z.string()).max(50).optional(),
+  /** media */
+  colorScheme: z.enum(['light', 'dark', 'no-preference']).optional(),
+  reducedMotion: z.enum(['reduce', 'no-preference']).optional(),
+  /** offline（运行时可切换） */
+  offline: z.boolean().optional(),
+  /** 全局 headers */
+  headers: z.record(z.string(), z.string()).optional(),
+  /** HTTP 基本认证 */
+  httpCredentials: z
+    .object({
+      username: z.string().min(1).max(200),
+      password: z.string().min(1).max(200),
+    })
+    .optional(),
+  /** 是否接受下载 */
+  acceptDownloads: z.boolean().optional(),
+  /** 录屏（视频） */
+  recordVideo: z
+    .object({
+      enabled: z.boolean().default(false),
+      width: z.number().int().min(320).max(3840).optional(),
+      height: z.number().int().min(240).max(2160).optional(),
+    })
+    .optional(),
 });
 
 export type CreateSessionInput = z.infer<typeof CreateSessionSchema>;
@@ -39,6 +79,8 @@ export const OpenUrlSchema = z.object({
     .default('domcontentloaded'),
   /** 超时时间（毫秒） */
   timeout: z.number().int().min(1000).max(60000).default(30000),
+  /** scoped headers（仅对当前 origin 生效） */
+  headers: z.record(z.string(), z.string()).optional(),
 });
 
 export type OpenUrlInput = z.infer<typeof OpenUrlSchema>;

@@ -27,6 +27,34 @@ export interface BrowserContextOptions {
   javaScriptEnabled?: boolean;
   /** 是否忽略 HTTPS 错误 */
   ignoreHTTPSErrors?: boolean;
+  /** 语言 */
+  locale?: string;
+  /** 时区 */
+  timezoneId?: string;
+  /** 地理位置 */
+  geolocation?: { latitude: number; longitude: number; accuracy?: number };
+  /** 权限 */
+  permissions?: string[];
+  /** 媒体模拟 */
+  colorScheme?: 'light' | 'dark' | 'no-preference';
+  reducedMotion?: 'reduce' | 'no-preference';
+  /** 全局 headers */
+  extraHTTPHeaders?: Record<string, string>;
+  /** HTTP 基本认证 */
+  httpCredentials?: { username: string; password: string };
+  /** 设备参数 */
+  deviceScaleFactor?: number;
+  isMobile?: boolean;
+  hasTouch?: boolean;
+  /** 是否接受下载 */
+  acceptDownloads?: boolean;
+  /** 录屏参数 */
+  recordVideo?: {
+    dir: string;
+    size?: { width: number; height: number };
+  };
+  /** 运行时 offline 设置（需在 context 创建后应用） */
+  offline?: boolean;
 }
 
 /** 等待队列项 */

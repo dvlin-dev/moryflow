@@ -36,13 +36,24 @@ import type {
   SnapshotInput,
   DeltaSnapshotInput,
   ActionInput,
+  ActionBatchInput,
   ScreenshotInput,
   CreateWindowInput,
   ConnectCdpInput,
   InterceptRule,
+  SetHeadersInput,
+  ClearHeadersInput,
   ExportStorageInput,
   ImportStorageInput,
   NetworkRequestRecord,
+  TraceStartInput,
+  TraceStopInput,
+  HarStartInput,
+  HarStopInput,
+  LogQueryInput,
+  SaveProfileInput,
+  LoadProfileInput,
+  CreateStreamInput,
 } from '../browser/dto';
 import type { CreateAgentTaskInput, AgentStreamEvent } from '../agent/dto';
 
@@ -230,6 +241,20 @@ export class ConsolePlaygroundService {
     return this.browserSessionService.executeAction(userId, sessionId, action);
   }
 
+  async executeBrowserActionBatch(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: ActionBatchInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.executeActionBatch(
+      userId,
+      sessionId,
+      input,
+    );
+  }
+
   async getBrowserScreenshot(
     userId: string,
     apiKeyId: string,
@@ -412,6 +437,142 @@ export class ConsolePlaygroundService {
   ) {
     await this.validateApiKeyOwnership(userId, apiKeyId);
     return this.browserSessionService.clearNetworkHistory(userId, sessionId);
+  }
+
+  async setBrowserHeaders(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: SetHeadersInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.setHeaders(userId, sessionId, input);
+  }
+
+  async clearBrowserHeaders(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: ClearHeadersInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.clearHeaders(userId, sessionId, input);
+  }
+
+  async getBrowserConsoleMessages(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input?: LogQueryInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getConsoleMessages(
+      userId,
+      sessionId,
+      input,
+    );
+  }
+
+  async clearBrowserConsoleMessages(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.clearConsoleMessages(userId, sessionId);
+  }
+
+  async getBrowserPageErrors(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input?: LogQueryInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.getPageErrors(userId, sessionId, input);
+  }
+
+  async clearBrowserPageErrors(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.clearPageErrors(userId, sessionId);
+  }
+
+  async startBrowserTrace(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: TraceStartInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.startTrace(userId, sessionId, input);
+  }
+
+  async stopBrowserTrace(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: TraceStopInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.stopTrace(userId, sessionId, input);
+  }
+
+  async startBrowserHar(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: HarStartInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.startHar(userId, sessionId, input);
+  }
+
+  async stopBrowserHar(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: HarStopInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.stopHar(userId, sessionId, input);
+  }
+
+  async saveBrowserProfile(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: SaveProfileInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.saveProfile(userId, sessionId, input);
+  }
+
+  async loadBrowserProfile(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: LoadProfileInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.loadProfile(userId, sessionId, input);
+  }
+
+  async createBrowserStreamToken(
+    userId: string,
+    apiKeyId: string,
+    sessionId: string,
+    input: CreateStreamInput,
+  ) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+    return this.browserSessionService.createStreamToken(
+      userId,
+      sessionId,
+      input,
+    );
   }
 
   async exportBrowserStorage(

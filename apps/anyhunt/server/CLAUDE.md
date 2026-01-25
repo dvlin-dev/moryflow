@@ -11,6 +11,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Agent/LLM/Embedding：修复流式任务进度清理、补齐 LLM Settings 兜底，完善相关测试与文件头规范
 - Console Playground Browser 路由测试使用 `app.listen(0)`，减少并发测试下的连接重置
 - Browser CDP 连接新增白名单/私网策略环境变量（`.env.example`）
+- Browser Streaming/Provider 环境变量补齐（`.env.example`）
 - Memox Memory 对齐 Mem0：新增 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains）、导出/历史/反馈与 Token 认证一致
 
 ## Responsibilities

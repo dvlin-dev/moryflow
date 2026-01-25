@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-24
+date: 2026-01-25
 scope: monorepo
 status: active
 ---
@@ -56,6 +56,8 @@ status: active
   - 入口：`docs/products/anyhunt-dev/index.md`
   - Reader 顶部导航 + Explore Topics 专用页（提案）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
   - Admin：手动充值 Credits（已落地）：`docs/products/anyhunt-dev/features/admin-credits-and-entitlements.md`
+  - Agent Browser 架构：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`
+  - Agent 与 Browser 交互规范：`docs/products/anyhunt-dev/features/agent-browser/agent-interaction.md`
   - 免费用户每日赠送 100 Credits（方案）：`docs/products/anyhunt-dev/features/daily-free-credits.md`
   - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
   - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
@@ -66,7 +68,8 @@ status: active
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-26，packages/agents\* 清单调整 + 进度同步区合并）
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-25，packages/agents\* 清单调整 + 进度同步区合并）
+- PR-60 Agent Browser 改动 Code Review：`docs/code-review/anyhunt-server-agent-browser-pr60.md`（更新：2026-01-25，修复完成）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
 - Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-01-25，修复完成）
@@ -88,7 +91,7 @@ status: active
 - packages/agents\* Code Review：`docs/code-review/packages-agents.md`（更新：2026-01-24，修复完成）
 - tooling/\* Code Review：`docs/code-review/tooling-config.md`（更新：2026-01-24，修复完成）
 - deploy/infra 测试环境 Code Review：`docs/code-review/deploy-infra.md`（更新：2026-01-22，修复完成）
-- 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-22，修复完成）
+- 详细设计/方案文档 Code Review：`docs/code-review/design-docs.md`（更新：2026-01-25，修复完成）
 - Moryflow Vectorize 将由 Anyhunt Memox 替换：已标记暂不处理（详见 `docs/code-review/index.md`）
 
 ## Archived（归档）
@@ -97,9 +100,6 @@ status: active
 
 ## Research（调研 / 功能需求）
 
-- Fetchx Browser & Agent 功能需求（L2 Browser API + L3 Agent API）：`docs/research/agent-browser-integration.md`
-- 设计方案：Console Agent Browser Playground（L2 Browser + L3 Agent）：`docs/research/console-agent-browser-playground-design.md`（更新：2026-01-20，独立模块 + 多页面拆分）
-- 方案：Agent Browser Chat 流式消息分段（对齐 Moryflow/pc：UIMessageChunk 单协议）：`docs/research/agent-browser-chat-streaming-uimessagechunk.md`（更新：2026-01-21）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-20）
 - 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）

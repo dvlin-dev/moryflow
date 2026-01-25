@@ -23,6 +23,10 @@ interface SessionInterceptState {
   contexts: Set<BrowserContext>;
   /** 每个 Context 对应的路由处理器 */
   handlers: Map<BrowserContext, (route: Route, request: Request) => void>;
+  /** scoped headers（按 host 绑定） */
+  scopedHeaders: Map<string, Record<string, string>>;
+  /** 是否启用请求录制 */
+  recordingEnabled: boolean;
 }
 
 /** 拦截规则无效错误 */
@@ -73,7 +77,7 @@ export class NetworkInterceptorService {
     }
 
     // 启用或关闭路由拦截
-    if (rules.length > 0) {
+    if (this.shouldAttachRouting(state)) {
       await this.enableRouting(sessionId, state);
     } else {
       await this.disableRouting(state);
@@ -104,7 +108,7 @@ export class NetworkInterceptorService {
     state.rules.set(ruleId, { ...rule, id: ruleId });
 
     // 启用路由拦截（如果尚未启用）
-    if (state.rules.size === 1) {
+    if (this.shouldAttachRouting(state)) {
       await this.enableRouting(sessionId, state);
     }
 
@@ -126,7 +130,7 @@ export class NetworkInterceptorService {
 
     const deleted = state.rules.delete(ruleId);
 
-    if (deleted && state.rules.size === 0) {
+    if (deleted && !this.shouldAttachRouting(state)) {
       this.disableRouting(state).catch((error) => {
         this.logger.warn(
           `Failed to disable routing for session ${sessionId}: ${error}`,
@@ -155,7 +159,9 @@ export class NetworkInterceptorService {
 
     state.rules.clear();
 
-    await this.disableRouting(state);
+    if (!this.shouldAttachRouting(state)) {
+      await this.disableRouting(state);
+    }
 
     this.logger.debug(`Cleared all intercept rules for session ${sessionId}`);
   }
@@ -170,6 +176,110 @@ export class NetworkInterceptorService {
     }
 
     return Array.from(state.rules.values());
+  }
+
+  /**
+   * 设置 scoped headers（按 host 生效）
+   */
+  async setScopedHeaders(
+    sessionId: string,
+    context: BrowserContext,
+    origin: string,
+    headers: Record<string, string>,
+  ): Promise<{ origin: string; headersCount: number }> {
+    const state = this.getOrCreateState(sessionId);
+    await this.registerContext(sessionId, context);
+
+    const host = this.normalizeOriginHost(origin);
+    state.scopedHeaders.set(host, headers);
+
+    if (this.shouldAttachRouting(state)) {
+      await this.enableRouting(sessionId, state);
+    }
+
+    return { origin: host, headersCount: Object.keys(headers).length };
+  }
+
+  /**
+   * 清除 scoped headers
+   */
+  async clearScopedHeaders(sessionId: string, origin?: string): Promise<void> {
+    const state = this.sessionStates.get(sessionId);
+    if (!state) return;
+
+    if (origin) {
+      const host = this.normalizeOriginHost(origin);
+      state.scopedHeaders.delete(host);
+    } else {
+      state.scopedHeaders.clear();
+    }
+
+    if (!this.shouldAttachRouting(state)) {
+      await this.disableRouting(state);
+    }
+  }
+
+  /**
+   * 获取 scoped headers
+   */
+  getScopedHeaders(sessionId: string): Array<{
+    origin: string;
+    headers: Record<string, string>;
+  }> {
+    const state = this.sessionStates.get(sessionId);
+    if (!state) return [];
+
+    return Array.from(state.scopedHeaders.entries()).map(
+      ([origin, headers]) => ({
+        origin,
+        headers,
+      }),
+    );
+  }
+
+  /**
+   * 开始录制请求历史（用于 HAR）
+   */
+  async startRecording(
+    sessionId: string,
+    context: BrowserContext,
+    options?: { clear?: boolean },
+  ): Promise<void> {
+    const state = this.getOrCreateState(sessionId);
+    await this.registerContext(sessionId, context);
+
+    state.recordingEnabled = true;
+    if (options?.clear) {
+      state.requestHistory = [];
+    }
+
+    if (this.shouldAttachRouting(state)) {
+      await this.enableRouting(sessionId, state);
+    }
+  }
+
+  /**
+   * 停止录制请求历史
+   */
+  async stopRecording(sessionId: string): Promise<NetworkRequestRecord[]> {
+    const state = this.sessionStates.get(sessionId);
+    if (!state) return [];
+
+    state.recordingEnabled = false;
+
+    if (!this.shouldAttachRouting(state)) {
+      await this.disableRouting(state);
+    }
+
+    return [...state.requestHistory];
+  }
+
+  /**
+   * 是否正在录制
+   */
+  isRecording(sessionId: string): boolean {
+    const state = this.sessionStates.get(sessionId);
+    return Boolean(state?.recordingEnabled);
   }
 
   /**
@@ -236,7 +346,7 @@ export class NetworkInterceptorService {
       state.contexts.add(context);
     }
 
-    if (state.rules.size > 0 && !state.handlers.has(context)) {
+    if (this.shouldAttachRouting(state) && !state.handlers.has(context)) {
       await this.attachContextRouting(sessionId, state, context);
     }
   }
@@ -309,6 +419,7 @@ export class NetworkInterceptorService {
   ): Promise<void> {
     const url = request.url();
     const method = request.method();
+    const scopedHeaders = this.getScopedHeadersForUrl(state, url);
 
     // 记录请求
     const record: NetworkRequestRecord = {
@@ -360,7 +471,8 @@ export class NetworkInterceptorService {
     if (!matchingRule) {
       // 无匹配规则，继续原始请求
       this.addToHistory(state, record);
-      await route.continue();
+      await this.continueWithHeaders(route, request, scopedHeaders);
+      await this.attachResponse(record, request);
       return;
     }
 
@@ -400,17 +512,17 @@ export class NetworkInterceptorService {
     }
 
     // 处理请求头修改
-    if (matchingRule.modifyHeaders) {
+    if (matchingRule.modifyHeaders || scopedHeaders) {
       const modifiedHeaders = {
         ...request.headers(),
-        ...matchingRule.modifyHeaders,
+        ...(scopedHeaders ?? {}),
+        ...(matchingRule.modifyHeaders ?? {}),
       };
 
       this.addToHistory(state, record);
 
-      await route.continue({
-        headers: modifiedHeaders,
-      });
+      await route.continue({ headers: modifiedHeaders });
+      await this.attachResponse(record, request);
 
       this.logger.debug(`Modified headers for: ${method} ${url}`);
       return;
@@ -418,7 +530,8 @@ export class NetworkInterceptorService {
 
     // 默认继续请求
     this.addToHistory(state, record);
-    await route.continue();
+    await this.continueWithHeaders(route, request, scopedHeaders);
+    await this.attachResponse(record, request);
   }
 
   /**
@@ -498,6 +611,55 @@ export class NetworkInterceptorService {
     }
   }
 
+  private getScopedHeadersForUrl(
+    state: SessionInterceptState,
+    url: string,
+  ): Record<string, string> | null {
+    if (state.scopedHeaders.size === 0) {
+      return null;
+    }
+
+    try {
+      const host = new URL(url).host;
+      return state.scopedHeaders.get(host) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async continueWithHeaders(
+    route: Route,
+    request: Request,
+    scopedHeaders: Record<string, string> | null,
+  ): Promise<void> {
+    if (!scopedHeaders) {
+      await route.continue();
+      return;
+    }
+
+    await route.continue({
+      headers: {
+        ...request.headers(),
+        ...scopedHeaders,
+      },
+    });
+  }
+
+  private async attachResponse(
+    record: NetworkRequestRecord,
+    request: Request,
+  ): Promise<void> {
+    try {
+      const response = await request.response();
+      if (!response) return;
+
+      record.status = response.status();
+      record.responseHeaders = response.headers();
+    } catch {
+      // 忽略响应获取失败
+    }
+  }
+
   /**
    * 获取或创建会话状态
    */
@@ -509,6 +671,8 @@ export class NetworkInterceptorService {
         requestHistory: [],
         contexts: new Set(),
         handlers: new Map(),
+        scopedHeaders: new Map(),
+        recordingEnabled: false,
       };
       this.sessionStates.set(sessionId, state);
     }
@@ -527,6 +691,25 @@ export class NetworkInterceptorService {
    */
   private generateRequestId(): string {
     return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  private shouldAttachRouting(state: SessionInterceptState): boolean {
+    return (
+      state.rules.size > 0 ||
+      state.scopedHeaders.size > 0 ||
+      state.recordingEnabled
+    );
+  }
+
+  private normalizeOriginHost(origin: string): string {
+    try {
+      const url = origin.startsWith('http')
+        ? new URL(origin)
+        : new URL(`https://${origin}`);
+      return url.host;
+    } catch {
+      return origin;
+    }
   }
 
   private getProtocol(url: string): string | null {

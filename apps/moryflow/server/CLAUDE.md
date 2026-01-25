@@ -52,6 +52,8 @@ module-name/
 
 ## 近期变更
 
+- Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307
+- Build：移除 sync 包 node_modules 的 COPY（hoisted 模式下路径不存在），避免 Docker 构建失败
 - AI Proxy：欠费门禁 + 流式断连取消 + stop/n/user 透传 + backpressure 处理 + n 上限与并发收敛
 - AI Proxy/Image：计费日志包含欠费、providerOptions 类型收敛
 - CreditService：新增欠费记录与付费积分优先抵扣
@@ -68,7 +70,7 @@ module-name/
 - Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
 - Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
 - Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
-- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `app.moryflow.com`，`ADMIN_EMAILS=admin@dvlin.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
+- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `app.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
 - E2E 测试 setup 补充默认环境变量（BETTER_AUTH_SECRET、VECTORIZE_API_URL），避免缺失配置阻断启动
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`
@@ -76,6 +78,7 @@ module-name/
 - Common：补齐 ZodValidationPipe，用于 controller 级别 schema 校验
 - Auth：补齐 JWKS e2e 验签测试
 - E2E：Admin/AI Proxy/License 测试对齐 subscription tier 与 access JWT 认证
+- Build：补齐 @ai-sdk/provider-utils 与 jose 依赖，修复 Docker 构建 TS2307
 
 ## 错误信息规范
 

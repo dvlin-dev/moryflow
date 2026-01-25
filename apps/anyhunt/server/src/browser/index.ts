@@ -45,12 +45,18 @@ export {
   InvalidInterceptRuleError,
 } from './network';
 
-// P2: 会话持久化
+// P2: 会话持久化 / Profile
 export {
   StoragePersistenceService,
   StorageImportError,
   StorageExportError,
+  ProfilePersistenceService,
+  ProfilePersistenceNotConfiguredError,
 } from './persistence';
+
+// P2: 诊断与 Streaming
+export { BrowserDiagnosticsService } from './diagnostics';
+export { BrowserStreamService, StreamNotConfiguredError } from './streaming';
 
 // DTOs
 export * from './dto';

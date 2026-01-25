@@ -46,4 +46,31 @@ describe('NetworkInterceptorService', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(context.unroute).toHaveBeenCalled();
   });
+
+  it('attaches routing when scoped headers are set', async () => {
+    const service = new NetworkInterceptorService(createUrlValidator());
+    const context = createContext();
+
+    await service.setScopedHeaders(
+      'session-2',
+      context,
+      'https://example.com',
+      {
+        'x-test': '1',
+      },
+    );
+
+    expect(context.route).toHaveBeenCalled();
+  });
+
+  it('attaches routing when recording starts and removes when stopped', async () => {
+    const service = new NetworkInterceptorService(createUrlValidator());
+    const context = createContext();
+
+    await service.startRecording('session-3', context, { clear: true });
+    expect(context.route).toHaveBeenCalled();
+
+    await service.stopRecording('session-3');
+    expect(context.unroute).toHaveBeenCalled();
+  });
 });

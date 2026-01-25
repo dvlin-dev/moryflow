@@ -18,6 +18,18 @@ describe('ActionSchema', () => {
     }
   });
 
+  it('accepts locator for click', () => {
+    const result = ActionSchema.safeParse({
+      type: 'click',
+      locator: {
+        type: 'role',
+        role: 'button',
+        name: 'Submit',
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('requires value for fill', () => {
     const result = ActionSchema.safeParse({
       type: 'fill',
@@ -44,6 +56,26 @@ describe('ActionSchema', () => {
     }
   });
 
+  it('requires source and target for drag', () => {
+    const result = ActionSchema.safeParse({
+      type: 'drag',
+      source: '#drag',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts valid drag input', () => {
+    const result = ActionSchema.safeParse({
+      type: 'drag',
+      source: '#drag',
+      target: {
+        type: 'selector',
+        selector: '#drop',
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('requires key for press', () => {
     const result = ActionSchema.safeParse({
       type: 'press',
@@ -67,6 +99,44 @@ describe('ActionSchema', () => {
         result.error.issues.some((issue) => issue.path[0] === 'waitFor'),
       ).toBe(true);
     }
+  });
+
+  it('accepts waitFor download', () => {
+    const result = ActionSchema.safeParse({
+      type: 'wait',
+      waitFor: {
+        download: true,
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('requires files for upload', () => {
+    const result = ActionSchema.safeParse({
+      type: 'upload',
+      selector: '#file',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts upload payload', () => {
+    const result = ActionSchema.safeParse({
+      type: 'upload',
+      selector: '#file',
+      files: {
+        name: 'demo.txt',
+        mimeType: 'text/plain',
+        dataBase64: Buffer.from('hello').toString('base64'),
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('requires media settings for setMedia', () => {
+    const result = ActionSchema.safeParse({
+      type: 'setMedia',
+    });
+    expect(result.success).toBe(false);
   });
 
   it('accepts minimal valid action', () => {

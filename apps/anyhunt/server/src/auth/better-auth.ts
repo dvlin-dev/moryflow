@@ -1,6 +1,6 @@
 /**
  * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/ADMIN_EMAILS
- * [OUTPUT]: Better Auth 实例（Anyhunt Dev 专用配置）
+ * [OUTPUT]: Better Auth 实例（Anyhunt Dev 专用配置，OTP 验证后自动登录）
  * [POS]: Auth 配置入口
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/server/src/auth/CLAUDE.md`
@@ -105,6 +105,9 @@ export function createBetterAuth(
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
+    },
+    emailVerification: {
+      autoSignInAfterVerification: true,
     },
     session: {
       expiresIn: REFRESH_TOKEN_TTL_SECONDS,

@@ -11,6 +11,8 @@ import type { SessionInfo } from './types';
 
 /** CDP 连接请求 */
 export const ConnectCdpSchema = z.object({
+  /** 远程浏览器 Provider */
+  provider: z.enum(['browserbase', 'browseruse']).optional(),
   /** WebSocket 端点 URL（优先使用） */
   wsEndpoint: z.string().url().optional(),
   /** CDP 端口（使用 HTTP 获取 wsEndpoint） */
@@ -18,6 +20,18 @@ export const ConnectCdpSchema = z.object({
   /** 连接超时时间（毫秒） */
   timeout: z.number().int().min(1000).max(60000).default(30000),
 });
+
+export const ConnectCdpSchemaRefined = ConnectCdpSchema.superRefine(
+  (value, ctx) => {
+    if (!value.provider && !value.wsEndpoint && !value.port) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['provider'],
+        message: 'provider or wsEndpoint/port is required',
+      });
+    }
+  },
+);
 
 export type ConnectCdpInput = z.infer<typeof ConnectCdpSchema>;
 
