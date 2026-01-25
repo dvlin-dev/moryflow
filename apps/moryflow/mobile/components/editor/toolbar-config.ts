@@ -19,23 +19,23 @@ import {
   Table,
   Undo,
   Redo,
-  type LucideIcon,
-} from 'lucide-react-native'
-import type { EditorState, EditorCommand } from '@/lib/editor'
+  type AppIcon,
+} from '@/components/ui/icons';
+import type { EditorState, EditorCommand } from '@/lib/editor';
 
 /** 工具栏按钮配置 */
 export interface ToolbarButton {
-  id: string
-  icon: LucideIcon
-  command: EditorCommand
-  isActive?: (state: EditorState) => boolean
-  isDisabled?: (state: EditorState) => boolean
+  id: string;
+  icon: AppIcon;
+  command: EditorCommand;
+  isActive?: (state: EditorState) => boolean;
+  isDisabled?: (state: EditorState) => boolean;
 }
 
 /** 工具栏分组 */
 export interface ToolbarGroup {
-  id: string
-  buttons: ToolbarButton[]
+  id: string;
+  buttons: ToolbarButton[];
 }
 
 /** 工具栏配置 */
@@ -164,7 +164,7 @@ export const TOOLBAR_GROUPS: ToolbarGroup[] = [
       },
     ],
   },
-]
+];
 
 /** 图片插入请求标记 */
-export const IMAGE_REQUEST_MARKER = '__REQUEST_IMAGE__'
+export const IMAGE_REQUEST_MARKER = '__REQUEST_IMAGE__';

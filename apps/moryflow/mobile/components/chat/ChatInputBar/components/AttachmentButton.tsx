@@ -6,7 +6,8 @@
 
 import { View, Pressable, Platform, type StyleProp, type ViewStyle } from 'react-native';
 import type React from 'react';
-import { PaperclipIcon } from 'lucide-react-native';
+import { PaperclipIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 
 // iOS SwiftUI ContextMenu 动态加载
@@ -84,7 +85,7 @@ export function AttachmentButton({
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-              <PaperclipIcon size={20} color={colors.iconMuted} />
+              <Icon as={PaperclipIcon} size={20} color={colors.iconMuted} />
             </View>
           </ContextMenu.Trigger>
         </ContextMenu>
@@ -103,7 +104,7 @@ export function AttachmentButton({
       }}
       onPress={onFileSelect}
       disabled={disabled}>
-      <PaperclipIcon size={20} color={colors.iconMuted} />
+      <Icon as={PaperclipIcon} size={20} color={colors.iconMuted} />
     </Pressable>
   );
 }

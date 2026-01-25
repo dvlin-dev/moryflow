@@ -20,13 +20,14 @@ import {
   SearchIcon,
   SquarePenIcon,
   SparklesIcon,
-  type LucideIcon,
-} from 'lucide-react-native';
+  type AppIcon,
+} from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 
 const TAB_ITEM_DEFS = {
   index: { icon: HomeIcon, accessibilityLabel: 'Home' },
   search: { icon: SearchIcon, accessibilityLabel: 'Search' },
-} satisfies Record<string, { icon: LucideIcon; accessibilityLabel: string }>;
+} satisfies Record<string, { icon: AppIcon; accessibilityLabel: string }>;
 
 type TabKey = keyof typeof TAB_ITEM_DEFS;
 
@@ -143,7 +144,7 @@ export function LiquidGlassTabBar({
         accessibilityRole="button"
         accessibilityLabel="Quick create draft"
         style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
-        <SquarePenIcon size={24} color={colors.iconMuted} strokeWidth={1.5} />
+        <Icon as={SquarePenIcon} size={24} color={colors.iconMuted} strokeWidth={1.5} />
       </Pressable>
     </View>
   );
@@ -194,7 +195,7 @@ export function LiquidGlassTabBar({
         size={48}
         tintColor={colors.glassAiButton}
         fallbackColor={colors.glassAiButton}>
-        <SparklesIcon size={20} color={colors.glassAiButtonIcon} strokeWidth={2} />
+        <Icon as={SparklesIcon} size={20} color={colors.glassAiButtonIcon} strokeWidth={2} />
       </GlassButtonContainer>
     </Pressable>
   );

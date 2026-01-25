@@ -1,5 +1,9 @@
 /**
- * 首页 - 文件系统浏览器
+ * [PROPS]: 无
+ * [EMITS]: 无
+ * [POS]: 首页/文件系统浏览入口（含工作区选择与快速操作）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  *
  * 功能：
  * - 展示 Vault 中的文件和目录（支持展开/收起）
@@ -19,6 +23,7 @@ import { FileList } from '@/components/vault/FileList';
 import { RecentlyOpened } from '@/components/vault/RecentlyOpened';
 import { WebViewSheet } from '@/components/ui/WebViewSheet';
 import { GlassButton } from '@/components/ui/glass-button';
+import { Icon } from '@/components/ui/icon';
 import {
   useVault,
   useVaultTree,
@@ -34,7 +39,7 @@ import { addRecentlyOpened } from '@/lib/vault/recently-opened';
 import { useCloudSyncInit, useCloudSync } from '@/lib/cloud-sync';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '@/lib/theme';
-import { MoreHorizontalIcon, PlusIcon } from 'lucide-react-native';
+import { MoreHorizontalIcon, PlusIcon } from '@/components/ui/icons';
 import { useCallback, useState } from 'react';
 import type React from 'react';
 
@@ -271,7 +276,9 @@ export default function HomeScreen() {
 
   // 渲染右侧玻璃按钮（... 更多按钮）
   const renderHeaderButton = () => {
-    const icon = <MoreHorizontalIcon size={22} color={colors.textPrimary} strokeWidth={2} />;
+    const icon = (
+      <Icon as={MoreHorizontalIcon} size={22} color={colors.textPrimary} strokeWidth={2} />
+    );
 
     // iOS 原生 ContextMenu
     if (Platform.OS === 'ios' && ContextMenu && Host && Button) {
@@ -303,7 +310,7 @@ export default function HomeScreen() {
 
   // 渲染文件区 Section Header（带创建按钮）
   const renderFileSectionHeader = () => {
-    const plusIcon = <PlusIcon size={20} color={colors.textSecondary} />;
+    const plusIcon = <Icon as={PlusIcon} size={20} color={colors.textSecondary} />;
 
     // iOS 原生 ContextMenu
     if (Platform.OS === 'ios' && ContextMenu && Host && Button) {

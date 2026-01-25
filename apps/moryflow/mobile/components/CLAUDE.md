@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- Mobile 图标库切换为 Hugeicons，新增 `ui/icons.ts` 统一出口与 `ui/icon.tsx` 封装
 - iOS 原生 ContextMenu 组件使用显式类型定义，避免 `any` 与类型漂移
 - `LiquidGlassTabBar` 以 Tabs 状态为唯一数据源渲染/导航，「快速创建草稿」为独立动作按钮
 - `EditorWebView` 注入主题相关样式，确保内容 placeholder 在暗黑模式下可见

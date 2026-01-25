@@ -7,7 +7,8 @@
 
 import { Pressable, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDown } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { useMemo } from 'react';
 
@@ -43,9 +44,8 @@ export function ScrollToBottomButton({ onPress }: ScrollToBottomButtonProps) {
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(200)}
       onPress={onPress}
-      style={buttonStyle}
-    >
-      <ChevronDown size={20} color={colors.textSecondary} />
+      style={buttonStyle}>
+      <Icon as={ChevronDown} size={20} color={colors.textSecondary} />
     </AnimatedPressable>
   );
 }

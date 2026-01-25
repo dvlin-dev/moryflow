@@ -2,7 +2,7 @@ import { Stack, router } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { ChevronLeftIcon } from 'lucide-react-native';
+import { ChevronLeftIcon } from '@/components/ui/icons';
 import * as React from 'react';
 import { useTranslation } from '@/lib/i18n';
 import { ChangePasswordProvider, useChangePassword } from '@/lib/contexts/change-password.context';

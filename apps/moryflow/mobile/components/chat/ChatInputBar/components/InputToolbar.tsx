@@ -4,32 +4,33 @@
  * [POS]: 输入框底部工具栏，包含 @ 按钮、附件、模型选择器、语音、发送
  */
 
-import { View, Pressable } from 'react-native'
-import { AtSignIcon, ArrowUpIcon, SquareIcon, MicIcon } from 'lucide-react-native'
-import { useThemeColors } from '@/lib/theme'
-import { Text } from '@/components/ui/text'
-import { LiveWaveform } from '@/components/ui/live-waveform'
-import { AttachmentButton } from './AttachmentButton'
-import { ModelSelector } from './ModelSelector'
-import { cn } from '@/lib/utils'
-import type { VoiceState, ModelOption } from '../const'
+import { View, Pressable } from 'react-native';
+import { AtSignIcon, ArrowUpIcon, SquareIcon, MicIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
+import { useThemeColors } from '@/lib/theme';
+import { Text } from '@/components/ui/text';
+import { LiveWaveform } from '@/components/ui/live-waveform';
+import { AttachmentButton } from './AttachmentButton';
+import { ModelSelector } from './ModelSelector';
+import { cn } from '@/lib/utils';
+import type { VoiceState, ModelOption } from '../const';
 
 interface InputToolbarProps {
-  voiceState: VoiceState
-  isLoading?: boolean
-  canSend: boolean
-  showFilePanel: boolean
-  models?: ModelOption[]
-  currentModel?: string
-  onModelChange?: (modelId: string) => void
-  onAtPress: () => void
-  onStartVoice: () => void
-  onStopVoice: () => void
-  onSend: () => void
-  onStop?: () => void
-  onPhotoLibrary?: () => void
-  onCamera?: () => void
-  onFileSelect?: () => void
+  voiceState: VoiceState;
+  isLoading?: boolean;
+  canSend: boolean;
+  showFilePanel: boolean;
+  models?: ModelOption[];
+  currentModel?: string;
+  onModelChange?: (modelId: string) => void;
+  onAtPress: () => void;
+  onStartVoice: () => void;
+  onStopVoice: () => void;
+  onSend: () => void;
+  onStop?: () => void;
+  onPhotoLibrary?: () => void;
+  onCamera?: () => void;
+  onFileSelect?: () => void;
 }
 
 export function InputToolbar({
@@ -49,17 +50,17 @@ export function InputToolbar({
   onCamera,
   onFileSelect,
 }: InputToolbarProps) {
-  const colors = useThemeColors()
+  const colors = useThemeColors();
 
   const { isVoiceMode, isTranscribing, isRecording, meteringLevels, formattedDuration } =
-    voiceState
+    voiceState;
 
   // 渲染左侧工具按钮（非语音模式）
   const renderLeftTools = () => (
     <View className="flex-row items-center gap-1">
       {/* @ 按钮 */}
-      <Pressable className="w-9 h-9 items-center justify-center" onPress={onAtPress}>
-        <AtSignIcon size={20} color={showFilePanel ? colors.info : colors.iconMuted} />
+      <Pressable className="h-9 w-9 items-center justify-center" onPress={onAtPress}>
+        <Icon as={AtSignIcon} size={20} color={showFilePanel ? colors.info : colors.iconMuted} />
       </Pressable>
 
       {/* 附件按钮 */}
@@ -70,17 +71,13 @@ export function InputToolbar({
       />
 
       {/* 模型选择器 */}
-      <ModelSelector
-        models={models}
-        currentModel={currentModel}
-        onModelChange={onModelChange}
-      />
+      <ModelSelector models={models} currentModel={currentModel} onModelChange={onModelChange} />
     </View>
-  )
+  );
 
   // 渲染左侧波形（语音模式）
   const renderVoiceWaveform = () => (
-    <View className="flex-1 flex-row items-center gap-2 mr-2">
+    <View className="mr-2 flex-1 flex-row items-center gap-2">
       <LiveWaveform
         levels={meteringLevels}
         isActive={isRecording}
@@ -90,65 +87,62 @@ export function InputToolbar({
         minHeight={4}
         maxHeight={24}
       />
-      <Text className="text-[13px] font-mono text-muted-foreground min-w-[50px]">
+      <Text className="text-muted-foreground min-w-[50px] font-mono text-[13px]">
         {isTranscribing ? '转录中...' : formattedDuration}
       </Text>
     </View>
-  )
+  );
 
   // 渲染语音按钮
   const renderVoiceButton = () => {
     if (isVoiceMode) {
       return (
         <Pressable
-          className="w-8 h-8 rounded-full items-center justify-center bg-muted-foreground/35"
+          className="bg-muted-foreground/35 h-8 w-8 items-center justify-center rounded-full"
           onPress={onStopVoice}
-          disabled={isTranscribing}
-        >
-          <SquareIcon size={14} color="#FFFFFF" fill="#FFFFFF" />
+          disabled={isTranscribing}>
+          <Icon as={SquareIcon} size={14} color="#FFFFFF" fill="#FFFFFF" />
         </Pressable>
-      )
+      );
     }
 
     if (!isLoading) {
       return (
-        <Pressable className="w-8 h-8 items-center justify-center" onPress={onStartVoice}>
-          <MicIcon size={20} color={colors.iconMuted} />
+        <Pressable className="h-8 w-8 items-center justify-center" onPress={onStartVoice}>
+          <Icon as={MicIcon} size={20} color={colors.iconMuted} />
         </Pressable>
-      )
+      );
     }
 
-    return null
-  }
+    return null;
+  };
 
   // 渲染发送/停止按钮
   const renderSubmitButton = () => {
-    if (isVoiceMode) return null
+    if (isVoiceMode) return null;
 
     if (isLoading) {
       return (
         <Pressable
-          className="w-8 h-8 rounded-full items-center justify-center bg-muted-foreground/35"
-          onPress={onStop}
-        >
-          <SquareIcon size={14} color="#FFFFFF" fill="#FFFFFF" />
+          className="bg-muted-foreground/35 h-8 w-8 items-center justify-center rounded-full"
+          onPress={onStop}>
+          <Icon as={SquareIcon} size={14} color="#FFFFFF" fill="#FFFFFF" />
         </Pressable>
-      )
+      );
     }
 
     return (
       <Pressable
         className={cn(
-          'w-8 h-8 rounded-full items-center justify-center',
-          canSend ? 'bg-info' : 'bg-muted-foreground/25',
+          'h-8 w-8 items-center justify-center rounded-full',
+          canSend ? 'bg-info' : 'bg-muted-foreground/25'
         )}
         onPress={onSend}
-        disabled={!canSend}
-      >
-        <ArrowUpIcon size={18} color="#FFFFFF" strokeWidth={2.5} />
+        disabled={!canSend}>
+        <Icon as={ArrowUpIcon} size={18} color="#FFFFFF" strokeWidth={2.5} />
       </Pressable>
-    )
-  }
+    );
+  };
 
   return (
     <View className="flex-row items-center justify-between">
@@ -161,5 +155,5 @@ export function InputToolbar({
         {renderSubmitButton()}
       </View>
     </View>
-  )
+  );
 }

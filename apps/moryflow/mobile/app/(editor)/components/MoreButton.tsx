@@ -1,6 +1,7 @@
 import { Pressable, Alert, Platform, type StyleProp, type ViewStyle } from 'react-native';
 import type React from 'react';
-import { MoreHorizontalIcon } from 'lucide-react-native';
+import { MoreHorizontalIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { GlassButtonContainer } from './GlassButtonContainer';
 import { FLOATING_BUTTON_SIZE } from '../const';
@@ -50,7 +51,7 @@ export function MoreButton({ onSave, onDelete }: MoreButtonProps) {
 
   const glassButton = (
     <GlassButtonContainer>
-      <MoreHorizontalIcon size={20} color={colors.textPrimary} />
+      <Icon as={MoreHorizontalIcon} size={20} color={colors.textPrimary} />
     </GlassButtonContainer>
   );
 

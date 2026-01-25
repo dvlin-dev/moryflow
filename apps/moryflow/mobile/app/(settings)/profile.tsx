@@ -5,7 +5,7 @@ import { UserAvatar } from '@/components/user';
 import { useMembershipUser } from '@/lib/server';
 import { USERNAME_CONFIG } from '@/lib/constants/validation';
 import { router } from 'expo-router';
-import { MailIcon } from 'lucide-react-native';
+import { MailIcon } from '@/components/ui/icons';
 import * as React from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { useTranslation } from '@/lib/i18n';

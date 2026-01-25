@@ -7,7 +7,8 @@
 import React from 'react';
 import { View, ScrollView, Pressable, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Trash2Icon, CheckIcon } from 'lucide-react-native';
+import { Trash2Icon, CheckIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -50,15 +51,19 @@ export function SessionSwitcher({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-card">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}>
+      <View className="bg-card flex-1">
         {/* Header - 使用 style 处理动态 insets */}
         <View style={{ paddingTop: insets.top + 12 }}>
-          <View className="flex-row items-center justify-between px-4 pb-3 border-b border-border/10">
+          <View className="border-border/10 flex-row items-center justify-between border-b px-4 pb-3">
             <View className="w-[60px]" />
-            <Text className="text-[17px] font-semibold text-foreground">对话历史</Text>
+            <Text className="text-foreground text-[17px] font-semibold">对话历史</Text>
             <Pressable className="w-[60px] items-end" onPress={onClose}>
-              <Text className="text-[17px] font-medium text-primary">完成</Text>
+              <Text className="text-primary text-[17px] font-medium">完成</Text>
             </Pressable>
           </View>
         </View>
@@ -67,33 +72,38 @@ export function SessionSwitcher({
         <ScrollView className="flex-1 px-4 pt-2" showsVerticalScrollIndicator={false}>
           {sessions.length === 0 ? (
             <View className="flex-1 items-center justify-center py-10">
-              <Text className="text-[15px] text-muted-foreground">没有历史对话</Text>
+              <Text className="text-muted-foreground text-[15px]">没有历史对话</Text>
             </View>
           ) : (
             sessions.map((session) => {
               const isActive = session.id === activeSessionId;
               return (
-                <View key={session.id} className="flex-row items-center mb-1">
+                <View key={session.id} className="mb-1 flex-row items-center">
                   <Pressable
                     className={cn(
-                      'flex-1 flex-row items-center justify-between py-3 px-3 rounded-[10px]',
+                      'flex-1 flex-row items-center justify-between rounded-[10px] px-3 py-3',
                       isActive && 'bg-muted'
                     )}
-                    onPress={() => handleSelect(session.id)}
-                  >
-                    <View className="flex-1 mr-2">
-                      <Text className="text-base font-medium mb-0.5 text-foreground" numberOfLines={1}>
+                    onPress={() => handleSelect(session.id)}>
+                    <View className="mr-2 flex-1">
+                      <Text
+                        className="text-foreground mb-0.5 text-base font-medium"
+                        numberOfLines={1}>
                         {session.title}
                       </Text>
-                      <Text className="text-[13px] text-muted-foreground">{formatDate(session.updatedAt)}</Text>
+                      <Text className="text-muted-foreground text-[13px]">
+                        {formatDate(session.updatedAt)}
+                      </Text>
                     </View>
-                    {isActive && <CheckIcon size={18} color={colors.primary} />}
+                    {isActive && <Icon as={CheckIcon} size={18} color={colors.primary} />}
                   </Pressable>
 
                   {/* Delete button (don't show for active session if it's the only one) */}
                   {(sessions.length > 1 || !isActive) && (
-                    <Pressable className="w-10 h-10 items-center justify-center" onPress={() => onDelete(session.id)}>
-                      <Trash2Icon size={18} color={colors.destructive} />
+                    <Pressable
+                      className="h-10 w-10 items-center justify-center"
+                      onPress={() => onDelete(session.id)}>
+                      <Icon as={Trash2Icon} size={18} color={colors.destructive} />
                     </Pressable>
                   )}
                 </View>

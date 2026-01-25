@@ -4,26 +4,25 @@
  * 显示工具名称、状态和折叠控制
  */
 
-import * as React from 'react'
-import { View, Pressable } from 'react-native'
-import { Text } from '@/components/ui/text'
+import * as React from 'react';
+import { View, Pressable } from 'react-native';
+import { Text } from '@/components/ui/text';
+import { Circle, Loader2, Clock, CheckCircle, XCircle, ChevronDown } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
+import { useThemeColors } from '@/lib/theme';
 import {
-  Circle,
-  Loader2,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ChevronDown,
-} from 'lucide-react-native'
-import { useThemeColors } from '@/lib/theme'
-import { type ToolState, type ToolStatusConfig, TOOL_STATUS_CONFIG, getToolDisplayName } from './const'
+  type ToolState,
+  type ToolStatusConfig,
+  TOOL_STATUS_CONFIG,
+  getToolDisplayName,
+} from './const';
 
 interface ToolHeaderProps {
-  type: string
-  state: ToolState
-  input?: Record<string, unknown>
-  isOpen: boolean
-  onToggle: () => void
+  type: string;
+  state: ToolState;
+  input?: Record<string, unknown>;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 const ICON_MAP = {
@@ -32,47 +31,47 @@ const ICON_MAP = {
   clock: Clock,
   'check-circle': CheckCircle,
   'x-circle': XCircle,
-} as const
+} as const;
 
 export function ToolHeader({ type, state, input, isOpen, onToggle }: ToolHeaderProps) {
-  const colors = useThemeColors()
-  const displayName = getToolDisplayName(type, input)
-  const config = TOOL_STATUS_CONFIG[state]
+  const colors = useThemeColors();
+  const displayName = getToolDisplayName(type, input);
+  const config = TOOL_STATUS_CONFIG[state];
 
   return (
     <Pressable
       className="flex-row items-center justify-between p-3 active:opacity-70"
-      onPress={onToggle}
-    >
-      <View className="flex-row items-center gap-2 flex-1 mr-2">
-        <Text className="font-medium text-sm flex-shrink" numberOfLines={1}>
+      onPress={onToggle}>
+      <View className="mr-2 flex-1 flex-row items-center gap-2">
+        <Text className="flex-shrink text-sm font-medium" numberOfLines={1}>
           {displayName}
         </Text>
         <StatusIcon config={config} colors={colors} />
       </View>
-      <ChevronDown
+      <Icon
+        as={ChevronDown}
         size={16}
         color={colors.textSecondary}
         style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
       />
     </Pressable>
-  )
+  );
 }
 
 interface StatusIconProps {
-  config: ToolStatusConfig
-  colors: ReturnType<typeof useThemeColors>
+  config: ToolStatusConfig;
+  colors: ReturnType<typeof useThemeColors>;
 }
 
 function StatusIcon({ config, colors }: StatusIconProps) {
-  const Icon = ICON_MAP[config.iconName]
-  const color = getColorFromClass(config.colorClass, colors)
+  const iconSymbol = ICON_MAP[config.iconName];
+  const color = getColorFromClass(config.colorClass, colors);
 
   return (
     <View className={config.animate ? 'animate-spin' : undefined}>
-      <Icon size={14} color={color} />
+      <Icon as={iconSymbol} size={14} color={color} />
     </View>
-  )
+  );
 }
 
 function getColorFromClass(colorClass: string, colors: ReturnType<typeof useThemeColors>): string {
@@ -82,6 +81,6 @@ function getColorFromClass(colorClass: string, colors: ReturnType<typeof useThem
     'text-warning': colors.warning,
     'text-success': colors.success,
     'text-destructive': colors.error,
-  }
-  return mapping[colorClass] ?? colors.textSecondary
+  };
+  return mapping[colorClass] ?? colors.textSecondary;
 }

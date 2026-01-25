@@ -4,7 +4,8 @@
 
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { SearchIcon, FileIcon } from 'lucide-react-native';
+import { SearchIcon, FileIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 
 interface EmptyStateProps {
@@ -19,14 +20,14 @@ export function EmptyState({ hasQuery, query }: EmptyStateProps) {
     <View className="flex-1 items-center justify-center px-8">
       {hasQuery ? (
         <>
-          <SearchIcon size={48} color={colors.textTertiary} />
+          <Icon as={SearchIcon} size={48} color={colors.textTertiary} />
           <Text className="text-secondary-foreground mt-4 text-center text-[16px]">
             未找到 "{query}" 相关结果
           </Text>
         </>
       ) : (
         <>
-          <FileIcon size={48} color={colors.textTertiary} />
+          <Icon as={FileIcon} size={48} color={colors.textTertiary} />
           <Text className="text-secondary-foreground mt-4 text-center text-[16px]">
             打开一些文件后，它们会出现在这里
           </Text>

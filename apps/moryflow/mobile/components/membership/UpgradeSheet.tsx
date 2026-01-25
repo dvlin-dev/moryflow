@@ -16,7 +16,7 @@ import { useThemeColors } from '@/lib/theme';
 import { useMembershipUser, TIER_DISPLAY_NAMES, MEMBERSHIP_API_URL } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import type { UnifiedModel } from '@/lib/models';
-import { XIcon, CrownIcon, SparklesIcon, CheckIcon, LogInIcon } from 'lucide-react-native';
+import { XIcon, CrownIcon, SparklesIcon, CheckIcon, LogInIcon } from '@/components/ui/icons';
 
 // 升级网站地址（基于 API URL 推导）
 const UPGRADE_URL = MEMBERSHIP_API_URL.replace('/api', '').replace('api.', '') + '/pricing';

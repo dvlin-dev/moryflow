@@ -6,7 +6,8 @@
 
 import { View, Platform, type StyleProp, type ViewStyle } from 'react-native';
 import type React from 'react';
-import { ChevronDownIcon } from 'lucide-react-native';
+import { ChevronDownIcon } from '@/components/ui/icons';
+import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
 import type { ModelOption } from '../const';
@@ -87,7 +88,7 @@ export function ModelSelector({ models = [], currentModel, onModelChange }: Mode
                 numberOfLines={1}>
                 {currentModel || '选择模型'}
               </Text>
-              <ChevronDownIcon size={14} color={colors.iconMuted} />
+              <Icon as={ChevronDownIcon} size={14} color={colors.iconMuted} />
             </View>
           </ContextMenu.Trigger>
         </ContextMenu>
@@ -115,7 +116,7 @@ export function ModelSelector({ models = [], currentModel, onModelChange }: Mode
         numberOfLines={1}>
         {currentModel || '选择模型'}
       </Text>
-      <ChevronDownIcon size={14} color={colors.iconMuted} />
+      <Icon as={ChevronDownIcon} size={14} color={colors.iconMuted} />
     </View>
   );
 }
