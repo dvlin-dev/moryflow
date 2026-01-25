@@ -139,7 +139,7 @@ export type BrowserActionBatchValues = z.infer<typeof browserActionBatchSchema>;
 export const browserScreenshotSchema = z.object({
   selector: z.string().trim().optional(),
   fullPage: z.boolean(),
-  format: z.enum(['png', 'jpeg', 'webp']),
+  format: z.enum(['png', 'jpeg']),
   quality: z.coerce.number().int().min(1).max(100).optional(),
 });
 

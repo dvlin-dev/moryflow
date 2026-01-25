@@ -819,7 +819,6 @@ function ScreenshotSection({
                     <SelectContent>
                       <SelectItem value="png">png</SelectItem>
                       <SelectItem value="jpeg">jpeg</SelectItem>
-                      <SelectItem value="webp">webp</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>

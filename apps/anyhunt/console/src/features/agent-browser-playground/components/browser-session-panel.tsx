@@ -1,19 +1,12 @@
 /**
  * [PROPS]: BrowserSessionPanelProps（sections 覆盖 actionBatch/headers/diagnostics/profile/stream）
  * [EMITS]: onSessionChange
- * [POS]: Browser Playground 操作面板（分区组件）
+ * [POS]: Browser Playground 操作面板（分区组件 + streaming hook）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent,
-  type WheelEvent,
-  type KeyboardEvent,
-} from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -58,6 +51,7 @@ import {
   type BrowserStreamValues,
   type BrowserCdpValues,
 } from '../schemas';
+import { useBrowserStream } from '../hooks/use-browser-stream';
 import {
   addInterceptRule,
   clearInterceptRules,
@@ -118,9 +112,6 @@ import type {
   BrowserSessionInfo,
   BrowserSnapshotResponse,
   BrowserStorageExportResult,
-  BrowserStreamFrame,
-  BrowserStreamStatus,
-  BrowserStreamTokenResult,
   BrowserTabInfo,
   BrowserTraceStopResult,
   BrowserWindowInfo,
@@ -163,35 +154,6 @@ const parseJsonObject = <T extends Record<string, unknown>>(value?: string): T |
   const parsed = parseJson<unknown>(value);
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
   return parsed as T;
-};
-
-const getModifiers = (event: {
-  altKey?: boolean;
-  ctrlKey?: boolean;
-  metaKey?: boolean;
-  shiftKey?: boolean;
-}) => {
-  let modifiers = 0;
-  if (event.altKey) modifiers |= 1;
-  if (event.ctrlKey) modifiers |= 2;
-  if (event.metaKey) modifiers |= 4;
-  if (event.shiftKey) modifiers |= 8;
-  return modifiers;
-};
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const mapMouseButton = (button: number) => {
-  switch (button) {
-    case 0:
-      return 'left';
-    case 1:
-      return 'middle';
-    case 2:
-      return 'right';
-    default:
-      return 'none';
-  }
 };
 
 export type BrowserSessionSection =
@@ -272,13 +234,18 @@ export function BrowserSessionPanel({
   const [storageExport, setStorageExport] = useState<BrowserStorageExportResult | null>(null);
   const [profileSaveResult, setProfileSaveResult] = useState<BrowserProfileSaveResult | null>(null);
   const [profileLoadResult, setProfileLoadResult] = useState<BrowserProfileLoadResult | null>(null);
-  const [streamToken, setStreamToken] = useState<BrowserStreamTokenResult | null>(null);
-  const [streamStatus, setStreamStatus] = useState<BrowserStreamStatus | null>(null);
-  const [streamFrame, setStreamFrame] = useState<BrowserStreamFrame | null>(null);
-  const [streamError, setStreamError] = useState<string | null>(null);
+  const {
+    streamToken,
+    setStreamToken,
+    streamStatus,
+    streamFrame,
+    streamError,
+    setStreamError,
+    streamImageRef,
+    resetStream,
+    handlers: streamHandlers,
+  } = useBrowserStream();
   const [cdpSession, setCdpSession] = useState<BrowserSessionInfo | null>(null);
-  const streamSocketRef = useRef<WebSocket | null>(null);
-  const streamImageRef = useRef<HTMLImageElement | null>(null);
 
   const [sessionOpen, setSessionOpen] = useState(true);
   const [openUrlOpen, setOpenUrlOpen] = useState(true);
@@ -435,60 +402,6 @@ export function BrowserSessionPanel({
     onSessionChange?.(watchedSessionId || '');
   }, [watchedSessionId, onSessionChange]);
 
-  useEffect(() => {
-    if (!streamToken?.wsUrl) return;
-
-    const ws = new WebSocket(streamToken.wsUrl);
-    streamSocketRef.current = ws;
-
-    ws.onopen = () => {
-      setStreamStatus({ connected: true, screencasting: false });
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data as string) as {
-          type?: string;
-          connected?: boolean;
-          screencasting?: boolean;
-          data?: string;
-          metadata?: Record<string, unknown>;
-        };
-        if (payload.type === 'status') {
-          setStreamStatus({
-            connected: Boolean(payload.connected),
-            screencasting: Boolean(payload.screencasting),
-          });
-        }
-        if (payload.type === 'frame' && payload.data) {
-          setStreamFrame({ data: payload.data, metadata: payload.metadata });
-        }
-      } catch {
-        // ignore malformed messages
-      }
-    };
-
-    ws.onerror = () => {
-      setStreamError('Streaming connection error');
-    };
-
-    ws.onclose = () => {
-      setStreamStatus((prev) =>
-        prev ? { ...prev, connected: false } : { connected: false, screencasting: false }
-      );
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, [streamToken?.wsUrl]);
-
-  useEffect(() => {
-    return () => {
-      streamSocketRef.current?.close();
-    };
-  }, []);
-
   const requireSession = () => {
     const sessionId = sessionForm.getValues('sessionId')?.trim();
     if (!sessionId) {
@@ -496,38 +409,6 @@ export function BrowserSessionPanel({
       return null;
     }
     return sessionId;
-  };
-
-  const sendStreamMessage = (message: Record<string, unknown>) => {
-    const ws = streamSocketRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify(message));
-  };
-
-  const resolveStreamCoordinates = (
-    target: HTMLElement,
-    clientX: number,
-    clientY: number
-  ): { x: number; y: number } | null => {
-    const rect = streamImageRef.current?.getBoundingClientRect() ?? target.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return null;
-    const rawX = clamp(clientX - rect.left, 0, rect.width);
-    const rawY = clamp(clientY - rect.top, 0, rect.height);
-
-    const metadata = streamFrame?.metadata ?? {};
-    const targetWidth =
-      (typeof metadata.deviceWidth === 'number' && metadata.deviceWidth) ||
-      (typeof metadata.width === 'number' && metadata.width) ||
-      rect.width;
-    const targetHeight =
-      (typeof metadata.deviceHeight === 'number' && metadata.deviceHeight) ||
-      (typeof metadata.height === 'number' && metadata.height) ||
-      rect.height;
-
-    return {
-      x: (rawX / rect.width) * targetWidth,
-      y: (rawY / rect.height) * targetHeight,
-    };
   };
 
   const handleCreateSession = async (values: BrowserSessionValues) => {
@@ -642,17 +523,6 @@ export function BrowserSessionPanel({
     }
   };
 
-  const resetStreamState = () => {
-    if (streamSocketRef.current) {
-      streamSocketRef.current.close();
-      streamSocketRef.current = null;
-    }
-    setStreamToken(null);
-    setStreamStatus(null);
-    setStreamFrame(null);
-    setStreamError(null);
-  };
-
   const handleClose = async () => {
     const sessionId = requireSession();
     if (!sessionId || !apiKeyId) return;
@@ -678,7 +548,7 @@ export function BrowserSessionPanel({
       setStorageExport(null);
       setProfileSaveResult(null);
       setProfileLoadResult(null);
-      resetStreamState();
+      resetStream();
       sessionForm.setValue('sessionId', '');
       toast.success('Session closed');
     } catch (error) {
@@ -1309,83 +1179,8 @@ export function BrowserSessionPanel({
   };
 
   const handleDisconnectStream = () => {
-    resetStreamState();
+    resetStream();
     toast.success('Stream disconnected');
-  };
-
-  const handleStreamPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!streamFrame) return;
-    const coords = resolveStreamCoordinates(event.currentTarget, event.clientX, event.clientY);
-    if (!coords) return;
-    event.currentTarget.focus();
-    sendStreamMessage({
-      type: 'input_mouse',
-      eventType: 'mousePressed',
-      x: coords.x,
-      y: coords.y,
-      button: mapMouseButton(event.button),
-      clickCount: 1,
-      modifiers: getModifiers(event),
-    });
-  };
-
-  const handleStreamPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    if (!streamFrame) return;
-    const coords = resolveStreamCoordinates(event.currentTarget, event.clientX, event.clientY);
-    if (!coords) return;
-    sendStreamMessage({
-      type: 'input_mouse',
-      eventType: 'mouseReleased',
-      x: coords.x,
-      y: coords.y,
-      button: mapMouseButton(event.button),
-      clickCount: 1,
-      modifiers: getModifiers(event),
-    });
-  };
-
-  const handleStreamWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (!streamFrame) return;
-    const coords = resolveStreamCoordinates(event.currentTarget, event.clientX, event.clientY);
-    if (!coords) return;
-    event.preventDefault();
-    sendStreamMessage({
-      type: 'input_mouse',
-      eventType: 'mouseWheel',
-      x: coords.x,
-      y: coords.y,
-      deltaX: event.deltaX,
-      deltaY: event.deltaY,
-      modifiers: getModifiers(event),
-    });
-  };
-
-  const handleStreamKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    sendStreamMessage({
-      type: 'input_keyboard',
-      eventType: 'keyDown',
-      key: event.key,
-      code: event.code,
-      modifiers: getModifiers(event),
-    });
-    if (event.key.length === 1) {
-      sendStreamMessage({
-        type: 'input_keyboard',
-        eventType: 'char',
-        text: event.key,
-        modifiers: getModifiers(event),
-      });
-    }
-  };
-
-  const handleStreamKeyUp = (event: KeyboardEvent<HTMLDivElement>) => {
-    sendStreamMessage({
-      type: 'input_keyboard',
-      eventType: 'keyUp',
-      key: event.key,
-      code: event.code,
-      modifiers: getModifiers(event),
-    });
   };
 
   const handleConnectCdp = async (values: BrowserCdpValues) => {
@@ -1611,11 +1406,11 @@ export function BrowserSessionPanel({
             imageRef={streamImageRef}
             onCreateToken={handleCreateStreamToken}
             onDisconnect={handleDisconnectStream}
-            onPointerDown={handleStreamPointerDown}
-            onPointerUp={handleStreamPointerUp}
-            onWheel={handleStreamWheel}
-            onKeyDown={handleStreamKeyDown}
-            onKeyUp={handleStreamKeyUp}
+            onPointerDown={streamHandlers.onPointerDown}
+            onPointerUp={streamHandlers.onPointerUp}
+            onWheel={streamHandlers.onWheel}
+            onKeyDown={streamHandlers.onKeyDown}
+            onKeyUp={streamHandlers.onKeyUp}
           />
         )}
         {hasSection('cdp') && (
