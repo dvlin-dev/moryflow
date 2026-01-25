@@ -1,6 +1,6 @@
 ---
 title: 详细设计/方案文档 Code Review
-date: 2026-01-22
+date: 2026-01-25
 scope: docs/architecture, docs/research, docs/products
 status: done
 ---
@@ -33,7 +33,7 @@ status: done
   - `docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`
   - `docs/products/anyhunt-dev/features/homepage-reader-redesign.md`
   - `docs/products/anyhunt-dev/features/homepage-redesign.md`
-  - `docs/research/agent-browser-integration.md`
+  - `docs/products/anyhunt-dev/features/agent-browser/architecture.md`
 - [P2] 域名规划不一致：`docs/architecture/domains-and-deployment.md` 提及 `cdn.anyhunt.app`，`docs/products/anyhunt-dev/features/v2-intelligent-digest.md` 提及 `rss.anyhunt.app`，但根 `CLAUDE.md` 的域名规划未覆盖，需确认是否纳入正式域名表。（已修复）
 - [P2] 统一登录与 Digest 前端架构方案（`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`）涉及跨子域 session/cookie 变更，但未标注状态与是否已进入 `docs/architecture/auth/` 或 ADR，易造成“提案”与“最终决策”边界模糊。（已修复）
 
