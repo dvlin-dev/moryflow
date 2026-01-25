@@ -39,6 +39,94 @@ describe('BrowserStreamService', () => {
     expect(result.expiresAt).toBeGreaterThan(Date.now());
   });
 
+  it('consumes token on connect', async () => {
+    const service = new BrowserStreamService(
+      {} as SessionManager,
+      {} as ConfigService,
+    );
+
+    (service as any).wss = {};
+    (service as any).port = 9223;
+    (service as any).host = 'localhost';
+    (service as any).maxClients = 1;
+
+    const token = service.createToken('session-1', 60);
+
+    const cdpSession = {
+      send: vi.fn().mockResolvedValue(undefined),
+      detach: vi.fn().mockResolvedValue(undefined),
+    };
+    const stream = {
+      sessionId: 'session-1',
+      cdpSession,
+      clients: new Set(),
+      isScreencastActive: true,
+    };
+    (service as any).streams.set('session-1', stream);
+
+    const ws = {
+      send: vi.fn(),
+      close: vi.fn(),
+      on: vi.fn(),
+      readyState: 1,
+    };
+
+    await (service as any).handleConnection(
+      ws,
+      `/browser/stream?token=${token.token}`,
+    );
+
+    expect((service as any).tokens.has(token.token)).toBe(false);
+    expect(stream.clients.has(ws)).toBe(true);
+  });
+
+  it('rejects connection when max clients reached', async () => {
+    const service = new BrowserStreamService(
+      {} as SessionManager,
+      {} as ConfigService,
+    );
+
+    (service as any).wss = {};
+    (service as any).port = 9223;
+    (service as any).host = 'localhost';
+    (service as any).maxClients = 1;
+
+    const token = service.createToken('session-1', 60);
+
+    const cdpSession = {
+      send: vi.fn().mockResolvedValue(undefined),
+      detach: vi.fn().mockResolvedValue(undefined),
+    };
+    const existingClient = {
+      send: vi.fn(),
+      close: vi.fn(),
+      on: vi.fn(),
+      readyState: 1,
+    };
+    const stream = {
+      sessionId: 'session-1',
+      cdpSession,
+      clients: new Set([existingClient]),
+      isScreencastActive: true,
+    };
+    (service as any).streams.set('session-1', stream);
+
+    const ws = {
+      send: vi.fn(),
+      close: vi.fn(),
+      on: vi.fn(),
+      readyState: 1,
+    };
+
+    await (service as any).handleConnection(
+      ws,
+      `/browser/stream?token=${token.token}`,
+    );
+
+    expect(ws.close).toHaveBeenCalled();
+    expect(stream.clients.has(ws)).toBe(false);
+  });
+
   it('cleans up tokens and streams for a session', async () => {
     const service = new BrowserStreamService(
       {} as SessionManager,

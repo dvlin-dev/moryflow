@@ -14,6 +14,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - diagnostics/streaming/persistence/dto 导出补齐 Header/PROTOCOL 规范
 - download/upload 安全收敛：上传仅允许 Base64 payload，下载限制大小并清理临时文件
 - ActionHandler 补测：文件名清理/Base64 payload/超限拒绝；下载异常路径统一清理
+- upload Base64 长度校验前置；Streaming token 单次使用与最大连接数补测
 
 ## Responsibilities
 

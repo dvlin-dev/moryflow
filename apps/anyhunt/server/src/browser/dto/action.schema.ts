@@ -3,12 +3,15 @@
  *
  * [DEFINES]: ActionTypeEnum, ActionSchema
  * [USED_BY]: browser-session.controller.ts, action.handler.ts
- * [POS]: 浏览器动作的请求验证
+ * [POS]: 浏览器动作的请求验证（upload Base64 长度受限）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { z } from 'zod';
+import { BROWSER_UPLOAD_MAX_BYTES } from '../browser.constants';
+
+const MAX_UPLOAD_BASE64_LENGTH = Math.ceil(BROWSER_UPLOAD_MAX_BYTES / 3) * 4;
 
 /** 语义定位器 */
 const LocatorSchema = z.discriminatedUnion('type', [
@@ -122,7 +125,13 @@ const ClickOptionsSchema = z.object({
 const UploadFileSchema = z.object({
   name: z.string().min(1).max(200),
   mimeType: z.string().max(200).optional(),
-  dataBase64: z.string().min(1),
+  dataBase64: z
+    .string()
+    .min(1)
+    .max(
+      MAX_UPLOAD_BASE64_LENGTH,
+      `Base64 payload exceeds ${MAX_UPLOAD_BASE64_LENGTH} characters.`,
+    ),
 });
 
 const UploadFilesSchema = z.union([
