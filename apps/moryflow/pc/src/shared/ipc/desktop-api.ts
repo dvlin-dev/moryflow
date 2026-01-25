@@ -1,5 +1,5 @@
 /**
- * [DEFINES]: DesktopApi IPC 类型定义
+ * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理）
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
  *
@@ -190,6 +190,13 @@ export type DesktopApi = {
     }) => Promise<ChatSessionSummary | null>;
     deleteSession: (input: { sessionId: string }) => Promise<{ ok: boolean }>;
     getSessionMessages: (input: { sessionId: string }) => Promise<UIMessage[]>;
+    /**
+     * 发送前预处理会话压缩，必要时返回新的 UI 消息列表。
+     */
+    prepareCompaction: (input: {
+      sessionId: string;
+      preferredModelId?: string;
+    }) => Promise<{ changed: boolean; messages?: UIMessage[] }>;
     /** 截断会话历史到指定索引（用于重发、重试） */
     truncateSession: (input: { sessionId: string; index: number }) => Promise<{ ok: boolean }>;
     /** 替换指定索引的消息内容（用于编辑重发） */

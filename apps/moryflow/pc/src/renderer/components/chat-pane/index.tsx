@@ -99,6 +99,7 @@ export const ChatPane = ({
     setMessages,
     regenerate,
     selectSession,
+    preferredModelId: selectedModelId,
   });
 
   const hasModelOptions = useMemo(
@@ -139,6 +140,20 @@ export const ChatPane = ({
       const isFirstMessage = messages.length === 0;
 
       setInputError(null);
+
+      if (activeSessionId && window.desktopAPI?.chat?.prepareCompaction) {
+        try {
+          const result = await window.desktopAPI.chat.prepareCompaction({
+            sessionId: activeSessionId,
+            preferredModelId: selectedModelId ?? undefined,
+          });
+          if (result.changed && Array.isArray(result.messages)) {
+            setMessages(result.messages);
+          }
+        } catch (error) {
+          console.warn('[chat-pane] prepareCompaction failed', error);
+        }
+      }
 
       // 将附件存入消息的 metadata
       const metadata =

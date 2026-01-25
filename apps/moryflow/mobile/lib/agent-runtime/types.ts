@@ -8,6 +8,7 @@ import type {
   AgentChatContext,
   AgentAttachmentContext,
   Session,
+  CompactionResult,
 } from '@anyhunt/agents-runtime';
 
 // ============ Runtime 选项 ============
@@ -58,6 +59,12 @@ export interface MobileChatTurnResult {
 export interface MobileAgentRuntime {
   /** 执行单轮对话 */
   runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult>;
+  /** 预处理会话压缩（用于发送前同步 UI 状态） */
+  prepareCompaction(options: {
+    chatId: string;
+    preferredModelId?: string;
+    session: Session;
+  }): Promise<CompactionResult>;
   /** 获取 Vault 根目录 */
   getVaultRoot(): Promise<string>;
   /** 当前是否已初始化 */

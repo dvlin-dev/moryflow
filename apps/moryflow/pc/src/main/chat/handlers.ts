@@ -14,6 +14,7 @@ import { broadcastSessionEvent } from './broadcast.js';
 import { createChatRequestHandler } from './chat-request.js';
 import { approveToolRequest, clearApprovalGate } from './approval-store.js';
 import { getRuntime } from './runtime.js';
+import { createChatSession } from '../agent-runtime/index.js';
 
 const sessions = new Map<
   string,
@@ -117,6 +118,29 @@ export const registerChatHandlers = () => {
     }
     return chatSessionStore.getUiMessages(sessionId);
   });
+
+  ipcMain.handle(
+    'chat:sessions:prepareCompaction',
+    async (_event, payload: { sessionId: string; preferredModelId?: string }) => {
+      const { sessionId, preferredModelId } = payload ?? {};
+      if (!sessionId) {
+        throw new Error('sessionId 缺失');
+      }
+      const runtime = getRuntime();
+      const session = createChatSession(sessionId);
+      const compaction = await runtime.prepareCompaction({
+        chatId: sessionId,
+        preferredModelId,
+        session,
+      });
+      if (!compaction.historyChanged) {
+        return { changed: false };
+      }
+      const uiMessages = chatSessionStore.getUiMessages(sessionId);
+      chatSessionStore.updateSessionMeta(sessionId, { uiMessages });
+      return { changed: true, messages: uiMessages };
+    }
+  );
 
   ipcMain.handle(
     'chat:sessions:truncate',

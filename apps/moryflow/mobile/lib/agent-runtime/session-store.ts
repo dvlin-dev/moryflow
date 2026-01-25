@@ -213,7 +213,10 @@ class MobileSessionStoreImpl implements SessionStore {
    * 清空历史
    */
   async clearHistory(chatId: string): Promise<void> {
-    await AsyncStorage.removeItem(`${HISTORY_PREFIX}${chatId}`);
+    await AsyncStorage.multiRemove([
+      `${HISTORY_PREFIX}${chatId}`,
+      `${UI_MESSAGES_PREFIX}${chatId}`,
+    ]);
   }
 
   /**

@@ -95,6 +95,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 会话压缩预处理：发送前执行 compaction，IPC 返回 UI 消息并仅在同一模型内跳过重复压缩
+- ChatSessionStore 清空 history 同步清空 uiMessages，避免索引错位
+- Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要
 - 修复审批续跑输出持久化，避免多轮 run 丢失输出
 - AgentStreamResult 增补 RunState/输出只读字段，保障审批恢复与输出持久化
 - Chat Tool 权限审批：支持 RunState 中断/恢复、JSONC 规则落地与审计

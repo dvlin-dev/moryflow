@@ -7,7 +7,7 @@
 import { useMemo, useEffect, useRef, useCallback } from 'react';
 import { useChat, type UIMessage } from '@ai-sdk/react';
 import { MobileChatTransport } from '@/lib/chat';
-import { saveUiMessages, generateSessionTitle } from '@/lib/agent-runtime';
+import { saveUiMessages, generateSessionTitle, prepareCompaction } from '@/lib/agent-runtime';
 import { TEMP_AI_MESSAGE_ID } from '../contexts';
 import type { SendMessagePayload } from '../ChatInputBar';
 
@@ -110,6 +110,20 @@ export function useChatState({
     async (payload: SendMessagePayload) => {
       const isFirstMessage = messages.length === 0;
 
+      if (activeSessionId) {
+        try {
+          const result = await prepareCompaction({
+            chatId: activeSessionId,
+            preferredModelId: selectedModelId ?? undefined,
+          });
+          if (result.changed && Array.isArray(result.messages)) {
+            setMessages(result.messages);
+          }
+        } catch (err) {
+          console.warn('[useChatState] prepareCompaction failed:', err);
+        }
+      }
+
       // 发送消息，传递 text 和 metadata
       await sdkSendMessage({
         text: payload.text,
@@ -123,7 +137,14 @@ export function useChatState({
           .catch((err) => console.error('[useChatState] Failed to generate title:', err));
       }
     },
-    [messages.length, activeSessionId, selectedModelId, sdkSendMessage, refreshSessions]
+    [
+      messages.length,
+      activeSessionId,
+      selectedModelId,
+      sdkSendMessage,
+      refreshSessions,
+      setMessages,
+    ]
   );
 
   return {

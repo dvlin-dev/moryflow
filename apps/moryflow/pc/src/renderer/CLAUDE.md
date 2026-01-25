@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Chat Pane 发送/重试前触发 compaction 预处理，确保 UI 消息与历史索引一致
 - Chat 工具审批卡：支持 once/always 并同步主进程审批
 - ToolOutput 支持截断输出标识与“查看完整输出”入口
 - 云同步 UI 精简：HoverCard 只保留状态/描述/最后同步/单一操作入口；设置页主视图仅开关+状态

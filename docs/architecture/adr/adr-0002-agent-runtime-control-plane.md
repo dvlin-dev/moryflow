@@ -159,6 +159,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - 长对话接近阈值时触发压缩，避免上下文溢出。
 - 重写历史后可继续对话，摘要可被 UI/日志验证。
 
+**进度**
+
+- 2026-01-26：完成 PC + Mobile Compaction 落地（阈值判断、旧工具输出裁剪、摘要重写与统计记录）。
+
 ### P1-4 Doom Loop 检测
 
 **任务**
@@ -236,6 +240,9 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   - 若可拿到模型 context window：当「历史近似 token > 0.8 × usable」触发。
   - `usable = contextWindow - outputBudget`，默认 `outputBudget = min(4096, contextWindow × 0.2)`。
   - 无法拿到 context window 时，按 **120k 字符**阈值触发（可配置）。
+- **上下文窗口来源**：
+  - 优先使用用户配置的 `customContext`（模型自定义上下文）。
+  - 会员模型不读取自定义上下文，仅使用模型注册表限制。
 - **近似 token 估算**：默认按 `字符数 / 4` 估算；可替换为真实 tokenizer。
 - **保护策略**：
   - 保护最近 **3 轮 user/assistant**。
@@ -243,10 +250,33 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   - 受保护的工具输出（默认）：`task`、`manage_plan`、`write`、`edit`、`move`、`delete`。
 - **摘要重写**：
   - 使用 compaction agent 生成摘要，要求包含：已完成事项、当前进度、涉及文件、下一步。
+  - 摘要输入优先使用未裁剪历史，按 prompt 上限截断；若超限或为空则降级使用已裁剪历史。
   - 历史重写为 `[summaryItem, ...recentTurns]`。
   - summaryItem 使用 system 消息落地，前缀固定为 `【会话摘要】`，内容语言与对话一致。
 - **失败兜底**：摘要失败时仅执行 pruning，不阻断本次 run。
 - **可观测性**：记录压缩前/后体积、摘要长度、被丢弃工具类型统计。
+- **发送前预处理**：
+  - PC/Mobile 在发送前执行 compaction，并同步 UI 消息列表。
+  - 本回合 runtime 识别已预处理状态，避免重复压缩导致 UI/历史错位。
+
+**示例（理解“裁剪旧工具输出”）**
+
+假设一段对话如下（简化）：
+
+1. 用户：请统计本仓库 TODO 列表并汇总。
+2. Agent 调用 `grep` → 输出 2 万行（已截断，完整输出落盘到 `Vault/.agent-output/2026-01-26-todo.jsonl`）。
+3. Agent 基于结果生成汇总并给出结论。
+4. 又经过多轮工具调用（read/ls/search_in_file）持续堆积输出，历史体积触发阈值。
+
+触发 compaction 后的处理：
+
+- **旧的 tool output items 会从上下文中移除**（只影响下一次 `run()` 的输入，不删除落盘文件）。
+- **tool input 与结果摘要会保留**，并生成一条系统摘要写入历史：
+  - `【会话摘要】已完成：扫描 TODO 并分类；当前进度：已标注高优先级 12 项；涉及文件：docs/index.md、apps/...；下一步：逐条确认 TODO 归属并分配负责人。`
+- 最近 3 轮 user/assistant 对话完整保留，保证上下文连续。
+- 若要回溯完整输出，仍可通过 `Vault/.agent-output/2026-01-26-todo.jsonl` 查看（UI 也保留“查看完整输出”入口）。
+
+结论：**裁剪的是“上下文负载”，不是“历史文件”**；核心信息通过摘要与保护策略保留，完整输出仍可追溯。
 
 ### B. Doom Loop 策略
 

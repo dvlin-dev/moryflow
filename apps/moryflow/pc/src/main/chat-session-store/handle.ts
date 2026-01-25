@@ -144,6 +144,7 @@ export const chatSessionStore = {
   clearHistory(sessionId: string): void {
     updateSession(sessionId, (existing) => {
       existing.history = [];
+      existing.uiMessages = undefined;
     });
   },
   getUiMessages(sessionId: string): UIMessage[] {

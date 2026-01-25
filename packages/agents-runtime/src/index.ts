@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ToolOutputTruncation - Agent 运行时核心
+ * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -42,6 +42,27 @@ export {
 
 // 标题生成
 export { generateChatTitle } from './title-generator';
+
+// 上下文窗口解析
+export {
+  resolveContextWindow,
+  type ProviderModelContextSource,
+  type ResolveContextWindowInput,
+} from './context-window';
+
+// Compaction
+export {
+  compactHistory,
+  generateCompactionSummary,
+  DEFAULT_COMPACTION_CONFIG,
+  type CompactionConfig,
+  type CompactionResult,
+  type CompactionStats,
+} from './compaction';
+export {
+  createCompactionPreflightGate,
+  type CompactionPreflightGateOptions,
+} from './compaction-preflight';
 
 // Tool 输出截断
 export {

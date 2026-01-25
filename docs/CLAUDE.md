@@ -41,6 +41,9 @@
 
 ## 最近更新
 
+- ADR-0002：补充 compaction 摘要输入裁剪规则（2026-01-27）
+- ADR-0002：P1-3 会话压缩落地完成（PC + Mobile）（2026-01-26）
+- ADR-0002：补充 Compaction“裁剪旧工具输出”示例（2026-01-26）
 - ADR-0002：P0-2 权限系统落地完成（审批卡/JSONC/审计）（2026-01-26）
 - ADR-0002：确认 P0-2 权限落地细节（审批卡位置、规则直接写 JSONC、Mobile 审计路径）（2026-01-26）
 - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）

@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Renderer IPC bridge (desktopAPI + 工具输出文件打开)
+ * [PROVIDES]: Renderer IPC bridge (desktopAPI + 会话/工具输出能力)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  *
@@ -134,6 +134,8 @@ const api: DesktopApi = {
     generateSessionTitle: (input) => ipcRenderer.invoke('chat:sessions:generateTitle', input ?? {}),
     deleteSession: (input) => ipcRenderer.invoke('chat:sessions:delete', input ?? {}),
     getSessionMessages: (input) => ipcRenderer.invoke('chat:sessions:getMessages', input ?? {}),
+    prepareCompaction: (input) =>
+      ipcRenderer.invoke('chat:sessions:prepareCompaction', input ?? {}),
     truncateSession: (input) => ipcRenderer.invoke('chat:sessions:truncate', input ?? {}),
     replaceMessage: (input) => ipcRenderer.invoke('chat:sessions:replaceMessage', input ?? {}),
     forkSession: (input) => ipcRenderer.invoke('chat:sessions:fork', input ?? {}),

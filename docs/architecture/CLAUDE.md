@@ -32,6 +32,10 @@
 
 ## 近期更新
 
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充 compaction 摘要输入裁剪规则（2026-01-27）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充 compaction 上下文窗口来源与发送前预处理（2026-01-27）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：P1-3 会话压缩落地完成（PC + Mobile）（2026-01-26）。
+- `adr/adr-0002-agent-runtime-control-plane.md`：补充 Compaction“裁剪旧工具输出”示例（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P0-2 权限系统落地完成（审批卡/JSONC/审计）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：确认 P0-2 权限落地细节（审批卡位置、规则直接写 JSONC、Mobile 审计路径）（2026-01-26）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P0-1 工具输出截断落地进度更新（2026-01-25）。

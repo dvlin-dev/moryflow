@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入与输出截断）
+ * [PROVIDES]: createAgentRuntime - PC 端 Agent 运行时工厂（含 prompt/params 注入、输出截断、会话压缩与预处理）
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
@@ -17,16 +17,24 @@ import {
 import type { RunStreamEvent } from '@openai/agents-core';
 import {
   DEFAULT_TOOL_OUTPUT_TRUNCATION,
+  DEFAULT_COMPACTION_CONFIG,
   applyContextToInput,
+  compactHistory,
+  createCompactionPreflightGate,
   createAgentFactory,
   createModelFactory,
+  resolveContextWindow,
+  generateCompactionSummary,
   createToolOutputPostProcessor,
   createVaultUtils,
   generateChatTitle,
+  extractMembershipModelId,
+  isMembershipModelId,
   wrapToolsWithOutputTruncation,
   type AgentContext,
   type AgentAttachmentContext,
   type ModelFactory,
+  type CompactionResult,
   type Session,
 } from '@anyhunt/agents-runtime';
 import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
@@ -44,7 +52,7 @@ import type {
 import { requestPathAuthorization, getSandboxManager } from '../sandbox/index.js';
 import { getAgentSettings, onAgentSettingsChange } from '../agent-settings/index.js';
 import { getStoredVault } from '../vault.js';
-import { providerRegistry, toApiModelId } from '../../shared/model-registry/index.js';
+import { getModelById, providerRegistry, toApiModelId } from '../../shared/model-registry/index.js';
 import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapter.js';
 import { createMcpManager } from './core/mcp-manager.js';
 import { membershipBridge } from '../membership-bridge.js';
@@ -121,6 +129,14 @@ export type AgentRuntime = {
    */
   runChatTurn(options: AgentRuntimeOptions): Promise<ChatTurnResult>;
   /**
+   * 预处理会话压缩（用于发送前同步 UI 状态）。
+   */
+  prepareCompaction(options: {
+    chatId: string;
+    preferredModelId?: string;
+    session: Session;
+  }): Promise<CompactionResult>;
+  /**
    * 使用 AI 生成对话标题
    */
   generateTitle(userMessage: string, preferredModelId?: string): Promise<string>;
@@ -167,6 +183,20 @@ const resolveModelSettings = (settings: AgentSettings): ModelSettings | undefine
     modelSettings.maxTokens = settings.modelParams.maxTokens.value;
   }
   return Object.keys(modelSettings).length > 0 ? (modelSettings as ModelSettings) : undefined;
+};
+
+const resolveCompactionContextWindow = (
+  modelId: string,
+  settings: AgentSettings
+): number | undefined => {
+  if (!modelId) return undefined;
+  const isMembership = isMembershipModelId(modelId);
+  const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  return resolveContextWindow({
+    modelId: normalized,
+    providers: isMembership ? [] : settings.providers,
+    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+  });
 };
 
 export const createAgentRuntime = (): AgentRuntime => {
@@ -322,7 +352,72 @@ export const createAgentRuntime = (): AgentRuntime => {
     }
   });
 
+  const COMPACTION_PREPARE_TTL_MS = 60_000;
+  const compactionPreflightGate = createCompactionPreflightGate({
+    ttlMs: COMPACTION_PREPARE_TTL_MS,
+  });
+
+  const applyCompactionIfNeeded = async (input: {
+    chatId: string;
+    session: Session;
+    preferredModelId?: string;
+    modelId?: string;
+  }): Promise<{
+    compaction: CompactionResult;
+    effectiveHistory: AgentInputItem[];
+    modelId: string;
+  }> => {
+    const { chatId, session, preferredModelId, modelId } = input;
+    const resolvedModelId = modelId ?? agentFactory.getAgent(preferredModelId).modelId;
+    const history = await session.getItems();
+    const settings = getAgentSettings();
+    const compaction = await compactHistory({
+      history,
+      config: {
+        ...DEFAULT_COMPACTION_CONFIG,
+        contextWindow: resolveCompactionContextWindow(resolvedModelId, settings),
+      },
+      summaryBuilder: async (items) => {
+        const { model } = modelFactory.buildRawModel(resolvedModelId);
+        return generateCompactionSummary(model, items);
+      },
+    });
+
+    if (compaction.triggered) {
+      console.info('[agent-runtime] 会话压缩完成', {
+        chatId,
+        summaryApplied: compaction.summaryApplied,
+        beforeTokens: compaction.stats.beforeTokens,
+        afterTokens: compaction.stats.afterTokens,
+        summaryTokens: compaction.stats.summaryTokens,
+        droppedToolTypes: compaction.stats.droppedToolTypes,
+      });
+    }
+
+    if (compaction.triggered && compaction.historyChanged) {
+      await session.clearSession();
+      if (compaction.history.length > 0) {
+        await session.addItems(compaction.history);
+      }
+    }
+
+    return {
+      compaction,
+      effectiveHistory: compaction.triggered ? compaction.history : history,
+      modelId: resolvedModelId,
+    };
+  };
+
   return {
+    async prepareCompaction({ chatId, preferredModelId, session }) {
+      const { compaction, modelId } = await applyCompactionIfNeeded({
+        chatId,
+        preferredModelId,
+        session,
+      });
+      compactionPreflightGate.markPrepared(chatId, modelId);
+      return compaction;
+    },
     async runChatTurn({ chatId, input, preferredModelId, context, session, attachments, signal }) {
       const trimmed = input.trim();
       if (!trimmed) {
@@ -333,7 +428,18 @@ export const createAgentRuntime = (): AgentRuntime => {
         throw new Error('尚未选择 Vault，无法启动对话');
       }
       await mcpManager.ensureReady();
-      const { agent } = agentFactory.getAgent(preferredModelId);
+      const { agent, modelId } = agentFactory.getAgent(preferredModelId);
+      const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
+        ? await session.getItems()
+        : (
+            await applyCompactionIfNeeded({
+              chatId,
+              preferredModelId,
+              session,
+              modelId,
+            })
+          ).effectiveHistory;
+
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
 
       const agentContext: AgentContext = {
@@ -342,9 +448,8 @@ export const createAgentRuntime = (): AgentRuntime => {
         buildModel: modelFactory.buildModel,
       };
 
-      const history = await session.getItems();
       const userItem = user(inputWithContext);
-      const runInput = history.length > 0 ? [...history, userItem] : [userItem];
+      const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 
       const result = await run(agent, runInput, {

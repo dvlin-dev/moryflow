@@ -52,6 +52,8 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Agent Runtime 增加 compaction 发送前预处理，仅在同一模型内跳过重复压缩，保证 UI/历史一致
+- Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要
 - 修复审批续跑输出持久化与 abort 收敛，审计写入改为串行
 - Mobile AgentStreamResult 增补 RunState/输出只读字段，支持审批恢复与输出持久化
 - Chat Transport 支持工具权限审批（中断/恢复 + JSONC 规则落地）
