@@ -106,6 +106,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - 新增 TasksStore 单元测试与子代理同步工具测试，覆盖 chatId 隔离/依赖成环/乐观锁冲突/状态时间戳
 - TasksStore 改为显式 chatId 参数，状态时间戳保留并强化并发隔离
 - TasksStore 切换 Vault 时重置文件监听，避免跨 Vault 监听残留
+- TasksStore 查询支持显式筛选 archived 状态，避免默认过滤误伤
 - Cloud Sync：收敛 diff/execute/commit 流程，commit 成功后更新 FileIndex
 - Cloud Sync：支持 expectedHash 乐观锁、rename 路径同步与冲突副本上传
 - Cloud Sync：账号切换增加绑定冲突检测（缺失 userId 视为冲突）

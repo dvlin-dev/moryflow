@@ -223,6 +223,30 @@ describe('DesktopTasksStore', () => {
     expect(done.completedAt).not.toBeNull();
   });
 
+  it('returns archived tasks when explicitly filtered', async () => {
+    const store = createDesktopTasksStore(createCapabilities(), createCrypto());
+    await store.init({ vaultRoot });
+
+    const task = await store.createTask('chat-a', {
+      title: 'Task A',
+      description: 'desc',
+      priority: 'p1',
+    });
+
+    await store.setStatus('chat-a', task.id, {
+      status: 'archived',
+      expectedVersion: task.version,
+      summary: 'archived',
+    });
+
+    const defaultList = await store.listTasks('chat-a');
+    expect(defaultList).toHaveLength(0);
+
+    const archivedList = await store.listTasks('chat-a', { status: ['archived'] });
+    expect(archivedList).toHaveLength(1);
+    expect(archivedList[0].status).toBe('archived');
+  });
+
   it('retains started/completed timestamps across status changes', async () => {
     const store = createDesktopTasksStore(createCapabilities(), createCrypto());
     await store.init({ vaultRoot });

@@ -2,7 +2,7 @@
  * [INPUT]: TasksStoreContext(vaultRoot) + SQLite schema/migrations
  * [OUTPUT]: DesktopTasksStore - 基于 better-sqlite3 的 TasksStore 实现
  * [POS]: PC 主进程 Tasks 存储实现，供 tasks_* 工具调用
- * [UPDATE]: 2026-01-25 - 显式 chatId 参数/状态时间戳保留/重置文件监听
+ * [UPDATE]: 2026-01-25 - 显式 chatId 参数/状态时间戳保留/重置文件监听/归档状态可查询
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -62,18 +62,20 @@ class DesktopTasksStore implements TasksStore {
 
   async listTasks(chatId: string, query?: ListTasksQuery): Promise<TaskRecord[]> {
     this.ensureReady();
+    const statusFilter = query?.status ?? null;
+    const hasArchivedStatus = statusFilter?.includes('archived') ?? false;
     const includeArchived = query?.includeArchived ?? false;
 
     const conditions: string[] = ['chat_id = ?'];
     const params: unknown[] = [chatId];
 
-    if (!includeArchived) {
+    if (!includeArchived && !hasArchivedStatus) {
       conditions.push('status <> ?');
       params.push('archived');
     }
-    if (query?.status && query.status.length > 0) {
-      conditions.push(`status IN (${query.status.map(() => '?').join(',')})`);
-      params.push(...query.status);
+    if (statusFilter && statusFilter.length > 0) {
+      conditions.push(`status IN (${statusFilter.map(() => '?').join(',')})`);
+      params.push(...statusFilter);
     }
     if (query?.priority && query.priority.length > 0) {
       conditions.push(`priority IN (${query.priority.map(() => '?').join(',')})`);
