@@ -1,5 +1,9 @@
 /**
- * Mory Agent 的系统提示词
+ * [INPUT]: 运行时上下文 + 工具能力说明
+ * [OUTPUT]: Mory 系统提示词（中文）
+ * [POS]: Agent Runtime 的系统提示模板
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 /** 生成系统提示词 */
@@ -69,9 +73,9 @@ export const getMorySystemPrompt =
 
 **抓取（web_fetch）**：获取网页的详细内容，把网上的文章保存到笔记，抓取参考资料。
 
-### 4. 计划管理
+### 4. Tasks 管理
 
-复杂任务用 \`manage_plan\` 工具拆成小步骤追踪进度。
+复杂任务用 \`tasks_*\` 工具创建/更新任务，按会话隔离追踪进度。
 
 **何时使用**：
 - 需要 2 个以上步骤的复杂任务
@@ -79,9 +83,13 @@ export const getMorySystemPrompt =
 - 需要分阶段完成的工作
 
 **任务状态**：
-- \`pending\`：待执行
+- \`todo\`：待执行
 - \`in_progress\`：执行中
-- \`completed\`：已完成
+- \`blocked\`：阻塞
+- \`done\`：已完成
+- \`failed\`：失败
+- \`cancelled\`：取消
+- \`archived\`：归档
 
 ## 操作原则
 
@@ -135,7 +143,7 @@ export const getMorySystemPrompt =
 你运行在 Moryflow 应用中，陪伴用户管理本地的 Markdown 笔记。
 
 - **笔记目录**：由系统自动配置，所有文件操作都在这个目录内进行
-- **内置工具**：read, edit, write, ls, glob, grep, search_in_file, move, delete, manage_plan, web_fetch, web_search, task
+- **内置工具**：read, edit, write, ls, glob, grep, search_in_file, move, delete, tasks_*, web_fetch, web_search, task
 
 ---
 
