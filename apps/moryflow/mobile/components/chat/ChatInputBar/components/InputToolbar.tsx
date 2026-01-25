@@ -53,6 +53,8 @@ export function InputToolbar({
   isLoading = false,
   canSend,
   showFilePanel,
+  mode,
+  onModeChange,
   models,
   currentModel,
   onModelChange,
@@ -71,7 +73,7 @@ export function InputToolbar({
 
   const { isVoiceMode, isTranscribing, isRecording, meteringLevels, formattedDuration } =
     voiceState;
-  const accessMode = mode ?? 'agent';
+  const accessMode = mode;
 
   const handleModePress = () => {
     if (accessMode === 'full_access') {

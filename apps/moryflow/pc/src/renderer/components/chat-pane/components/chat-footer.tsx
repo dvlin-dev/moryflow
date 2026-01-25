@@ -25,8 +25,8 @@ type Props = {
   todoSnapshot: PlanSnapshot | null;
   tokenUsage?: TokenUsage | null;
   contextWindow?: number;
-  mode: NonNullable<ChatSessionSummary['mode']>;
-  onModeChange: (mode: NonNullable<ChatSessionSummary['mode']>) => void;
+  mode: ChatSessionSummary['mode'];
+  onModeChange: (mode: ChatSessionSummary['mode']) => void;
 };
 
 export const ChatFooter = ({

@@ -1,3 +1,12 @@
+/**
+ * [INPUT]: Chat IPC 请求与会话管理指令
+ * [OUTPUT]: 会话变更事件/执行结果
+ * [POS]: PC 端聊天 IPC handlers
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { randomUUID } from 'node:crypto';
 import { ipcMain } from 'electron';
 import type { UIMessageChunk } from 'ai';
 
@@ -15,6 +24,7 @@ import { createChatRequestHandler } from './chat-request.js';
 import { approveToolRequest, clearApprovalGate } from './approval-store.js';
 import { getRuntime } from './runtime.js';
 import { createChatSession } from '../agent-runtime/index.js';
+import { createDesktopModeSwitchAuditWriter } from '../agent-runtime/mode-audit.js';
 
 const sessions = new Map<
   string,
@@ -23,6 +33,7 @@ const sessions = new Map<
 
 export const registerChatHandlers = () => {
   const handleChatRequest = createChatRequestHandler(sessions);
+  const modeAuditWriter = createDesktopModeSwitchAuditWriter();
 
   // 创建依赖实例用于 apply-edit
   const capabilities = createDesktopCapabilities();
@@ -126,8 +137,24 @@ export const registerChatHandlers = () => {
       if (!sessionId || (mode !== 'agent' && mode !== 'full_access')) {
         throw new Error('Invalid session mode update request.');
       }
+      const current = chatSessionStore.getSummary(sessionId);
+      if (current.mode === mode) {
+        return current;
+      }
       const session = chatSessionStore.updateSessionMeta(sessionId, { mode });
       broadcastSessionEvent({ type: 'updated', session });
+      void modeAuditWriter
+        .append({
+          eventId: randomUUID(),
+          sessionId,
+          previousMode: current.mode,
+          nextMode: mode,
+          source: 'pc',
+          timestamp: Date.now(),
+        })
+        .catch((error) => {
+          console.warn('[chat] mode audit failed', error);
+        });
       return session;
     }
   );

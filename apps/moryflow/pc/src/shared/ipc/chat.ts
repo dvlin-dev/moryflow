@@ -45,7 +45,7 @@ export type ChatSessionSummary = {
   /** 会话累积的 token 使用量 */
   tokenUsage?: TokenUsage;
   /** 会话级访问模式 */
-  mode?: AgentAccessMode;
+  mode: AgentAccessMode;
 };
 
 export type ChatSessionEvent =

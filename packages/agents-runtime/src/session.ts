@@ -19,7 +19,7 @@ export interface ChatSessionSummary {
   updatedAt: number;
   preferredModelId?: string;
   tokenUsage?: TokenUsage;
-  mode?: AgentAccessMode;
+  mode: AgentAccessMode;
 }
 
 /**

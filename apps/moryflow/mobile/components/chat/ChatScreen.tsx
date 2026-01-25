@@ -166,7 +166,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
 
   const handleModeChange = React.useCallback(
     (mode: 'agent' | 'full_access') => {
-      if (!activeSessionId || !mode) {
+      if (!activeSessionId) {
         return;
       }
       updateSessionMode(activeSessionId, mode);

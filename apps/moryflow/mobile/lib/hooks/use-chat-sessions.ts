@@ -10,7 +10,9 @@ import {
   createSession as createSessionApi,
   deleteSession as deleteSessionApi,
   updateSession as updateSessionApi,
+  recordModeSwitch,
 } from '@/lib/agent-runtime';
+import { randomUUID } from 'expo-crypto';
 import type { ChatSessionSummary } from '@anyhunt/agents-runtime';
 
 // 重新导出类型
@@ -106,19 +108,28 @@ export function useChatSessions() {
 
   const updateSessionMode = useCallback(
     async (sessionId: string, mode: ChatSessionSummary['mode']) => {
-      if (!mode) {
-        return;
-      }
       try {
+        const previousMode = sessions.find((session) => session.id === sessionId)?.mode ?? 'agent';
+        if (previousMode === mode) {
+          return;
+        }
         await updateSessionApi(sessionId, { mode });
         setSessions((prev) =>
           prev.map((s) => (s.id === sessionId ? { ...s, mode, updatedAt: Date.now() } : s))
         );
+        void recordModeSwitch({
+          eventId: randomUUID(),
+          sessionId,
+          previousMode,
+          nextMode: mode,
+          source: 'mobile',
+          timestamp: Date.now(),
+        });
       } catch (error) {
         console.error('[useChatSessions] failed to update session mode', error);
       }
     },
-    []
+    [sessions]
   );
 
   const deleteSession = useCallback(

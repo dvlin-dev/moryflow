@@ -220,7 +220,7 @@ export const ChatPane = ({
 
   const handleModeChange = useCallback(
     async (mode: 'agent' | 'full_access') => {
-      if (!activeSessionId || !mode) {
+      if (!activeSessionId) {
         return;
       }
       try {

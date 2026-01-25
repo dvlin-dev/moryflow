@@ -56,6 +56,7 @@ export {
   saveUiMessages,
   clearUiMessages,
 } from './session-store';
+export { recordModeSwitch } from './mode-audit';
 
 // ============ 设置管理 ============
 

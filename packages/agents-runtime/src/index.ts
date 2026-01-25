@@ -101,6 +101,7 @@ export {
   type PermissionRule,
   type PermissionTargets,
 } from './permission';
+export { type ModeSwitchAuditEvent } from './mode-audit';
 
 export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';
 

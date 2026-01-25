@@ -120,12 +120,20 @@ class MobileSessionStoreImpl implements SessionStore {
       const valid = parsed.filter(
         (s) => s && typeof s.id === 'string' && typeof s.title === 'string'
       );
-      // 如果有损坏数据，保存清理后的结果
-      if (valid.length !== parsed.length) {
+      let changed = valid.length !== parsed.length;
+      const normalized = valid.map((session) => {
+        if (session.mode === 'agent' || session.mode === 'full_access') {
+          return session;
+        }
+        changed = true;
+        return { ...session, mode: 'agent' };
+      });
+      // 如果有损坏或缺失字段，保存清理后的结果
+      if (changed) {
         console.warn('[SessionStore] Cleaned', parsed.length - valid.length, 'corrupted sessions');
-        await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(valid));
+        await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(normalized));
       }
-      return valid;
+      return normalized;
     } catch {
       return [];
     }
@@ -156,11 +164,15 @@ class MobileSessionStoreImpl implements SessionStore {
     const sessions = await this.getSessions();
     const index = sessions.findIndex((s) => s.id === id);
     if (index >= 0) {
-      sessions[index] = {
+      const next = {
         ...sessions[index],
         ...updates,
         updatedAt: Date.now(),
       };
+      if (next.mode !== 'agent' && next.mode !== 'full_access') {
+        next.mode = 'agent';
+      }
+      sessions[index] = next;
       await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
     }
   }

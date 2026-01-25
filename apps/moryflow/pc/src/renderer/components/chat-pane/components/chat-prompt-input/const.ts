@@ -43,7 +43,7 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   /** 当前模型的 context window 大小 */
   contextWindow?: number;
   /** 会话级访问模式 */
-  mode: NonNullable<ChatSessionSummary['mode']>;
+  mode: ChatSessionSummary['mode'];
   /** 切换访问模式 */
-  onModeChange: (mode: NonNullable<ChatSessionSummary['mode']>) => void;
+  onModeChange: (mode: ChatSessionSummary['mode']) => void;
 };

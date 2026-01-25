@@ -54,7 +54,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
     }
     const sessionSummary = chatSessionStore.getSummary(chatId);
     const preferredModelId = agentOptions?.preferredModelId ?? sessionSummary.preferredModelId;
-    const sessionMode = sessionSummary.mode ?? 'agent';
+    const sessionMode = sessionSummary.mode;
 
     const latestUserMessage = findLatestUserMessage(messages);
     if (!latestUserMessage) {

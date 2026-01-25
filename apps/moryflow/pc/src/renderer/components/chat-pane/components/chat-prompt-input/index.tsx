@@ -119,7 +119,7 @@ export const ChatPromptInput = ({
   );
   const canStop = status === 'submitted' || status === 'streaming';
   const isDisabled = Boolean(disabled);
-  const accessMode = mode ?? 'agent';
+  const accessMode = mode;
 
   // 语音录制 hook
   const handleTranscribed = useCallback((text: string) => {

@@ -19,8 +19,33 @@ const store = new Store<ChatSessionStoreShape>({
   defaults: DEFAULT_STORE,
 });
 
+const isValidMode = (value: unknown): value is PersistedChatSession['mode'] =>
+  value === 'agent' || value === 'full_access';
+
+const normalizeSessions = (sessions: Record<string, PersistedChatSession>) => {
+  let changed = false;
+  const normalized: Record<string, PersistedChatSession> = {};
+
+  for (const [id, session] of Object.entries(sessions)) {
+    const nextMode = isValidMode(session.mode) ? session.mode : 'agent';
+    if (nextMode !== session.mode) {
+      changed = true;
+      normalized[id] = { ...session, mode: nextMode };
+    } else {
+      normalized[id] = session;
+    }
+  }
+
+  if (changed) {
+    store.set('sessions', normalized);
+  }
+
+  return normalized;
+};
+
 export const readSessions = () => {
-  return store.get('sessions') ?? DEFAULT_STORE.sessions;
+  const sessions = store.get('sessions') ?? DEFAULT_STORE.sessions;
+  return normalizeSessions(sessions);
 };
 
 export const writeSessions = (sessions: Record<string, PersistedChatSession>) => {

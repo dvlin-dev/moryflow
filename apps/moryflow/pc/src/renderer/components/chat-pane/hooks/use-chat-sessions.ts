@@ -106,7 +106,7 @@ export const useChatSessions = () => {
 
   const updateSessionMode = useCallback(
     async (sessionId: string, mode: ChatSessionSummary['mode']) => {
-      if (!window.desktopAPI?.chat || !mode) {
+      if (!window.desktopAPI?.chat) {
         return;
       }
       const session = await window.desktopAPI.chat.updateSessionMode({ sessionId, mode });

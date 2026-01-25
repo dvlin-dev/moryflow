@@ -36,6 +36,7 @@ describe('chatSessionStore.clearHistory', () => {
         updatedAt: 1,
         history,
         uiMessages,
+        mode: 'agent',
       },
     };
   });
@@ -56,6 +57,7 @@ describe('chatSessionStore.mode', () => {
         createdAt: 1,
         updatedAt: 1,
         history: [],
+        mode: 'agent',
       },
     };
   });

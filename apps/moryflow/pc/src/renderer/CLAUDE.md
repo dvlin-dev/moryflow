@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Chat 模式切换使用强制 mode 字段，移除冗余兜底与空值判断
 - Chat 输入栏新增会话级模式切换入口，全权限切换确认并回写会话
 - Chat Pane 发送/重试前触发 compaction 预处理，确保 UI 消息与历史索引一致
 - Chat 工具审批卡：支持 once/always 并同步主进程审批

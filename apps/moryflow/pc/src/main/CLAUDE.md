@@ -95,6 +95,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 会话模式切换补齐审计：主进程记录 mode switch JSONL，更新前校验并写入
+- ChatSessionStore 读取时归一化会话 mode，避免缺失字段导致异常
 - Chat 会话模式切换：会话级模式存储、IPC 更新入口与运行时注入，全权限自动放行并审计
 - 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
 - agent-runtime README 对齐 ADR-0002 控制面落地说明

@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Chat 会话模式切换补齐审计写入，SessionStore 读写时归一化 mode
 - Agent Runtime 支持会话级模式注入，权限自动放行并记录审计
 - 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
 - Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always

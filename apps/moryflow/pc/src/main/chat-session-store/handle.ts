@@ -26,7 +26,7 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   updatedAt: session.updatedAt,
   preferredModelId: session.preferredModelId,
   tokenUsage: session.tokenUsage,
-  mode: session.mode ?? 'agent',
+  mode: session.mode,
 });
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
@@ -289,7 +289,7 @@ export const chatSessionStore = {
       title: `${source.title} (分支)`,
       createdAt: now,
       updatedAt: now,
-      mode: source.mode ?? 'agent',
+      mode: source.mode,
       preferredModelId: source.preferredModelId,
       history: forkedHistory,
       // 保持原始 history 索引映射，只替换 sessionId 前缀

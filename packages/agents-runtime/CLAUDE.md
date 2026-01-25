@@ -30,6 +30,7 @@
 
 ## 近期变更
 
+- 新增会话模式切换审计事件类型（ModeSwitchAuditEvent），会话 mode 改为必填
 - 新增 AgentAccessMode 与会话 mode 字段，权限记录支持全权限模式
 - 新增 Doom Loop 守卫与工具包装，包含稳定化参数哈希、冷却与会话级 always 记忆
 - Compaction 摘要输入改为基于未裁剪历史并按 prompt 上限裁剪；新增预处理门闩工具
