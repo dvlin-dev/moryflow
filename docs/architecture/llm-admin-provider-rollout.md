@@ -1,8 +1,8 @@
 ---
 title: Anyhunt Server：LLM Admin 配置改造进度（Agent + Extract）
-date: 2026-01-20
+date: 2026-01-26
 scope: apps/anyhunt/server
-status: draft
+status: active
 ---
 
 ## 目标（不考虑历史兼容）
@@ -16,8 +16,9 @@ status: draft
 - [x] `llm/`：Provider/Model/Settings 的 CRUD（不返回明文 apiKey）
 - [x] `llm/`：路由解析器 `LlmUpstreamResolverService`（查库 + 选路由 + 解密）
 - [x] Agent：`LlmRoutingService.resolveAgentModel(model?)`
-- [x] Extract：`LlmOpenAiClientService` + `extract/ExtractLlmClient`
+- [x] Extract：`LlmLanguageModelService` + `extract/ExtractLlmClient`
 - [x] Settings 拆分默认值：`defaultAgentModelId` / `defaultExtractModelId`
+- [x] Console：Agent 模型选择 + 多轮对话输入
 
 ## 数据库变更与升级
 
@@ -27,6 +28,7 @@ status: draft
 - [x] 新增迁移：将 `LlmSettings.defaultModelId` 拆分为：
   - `defaultAgentModelId`
   - `defaultExtractModelId`
+- [x] 新增迁移：扩展 `LlmModel` 字段（displayName/pricing/tier/limits/capabilitiesJson）
 
 部署时需要执行：
 
@@ -41,4 +43,4 @@ status: draft
 ## 后续（可选）
 
 - [x] Admin Web：增加 LLM 配置页面（providers/models/settings）
-- [ ] Console：模型选择器（可选；不选则用 default）
+- [x] Console：模型选择器（不选则用 default）

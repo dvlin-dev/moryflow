@@ -2,6 +2,8 @@
  * [DEFINES]: CONSOLE_API, USER_API, PAYMENT_API, FETCHX_API, MEMOX_API, HEALTH_API, QUOTA_API
  * [USED_BY]: features/*, lib/api-client
  * [POS]: Console API 路径常量定义
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
 // 用户 API
@@ -34,6 +36,7 @@ export const CONSOLE_PLAYGROUND_API = {
   AGENT: '/api/v1/console/playground/agent',
   AGENT_STREAM: '/api/v1/console/playground/agent/stream',
   AGENT_ESTIMATE: '/api/v1/console/playground/agent/estimate',
+  AGENT_MODELS: '/api/v1/console/playground/agent/models',
 } as const;
 
 // Fetchx 核心 API（API Key 认证）

@@ -68,6 +68,16 @@ export class ConsolePlaygroundAgentController {
     });
   }
 
+  @Get('models')
+  @ApiOperation({ summary: 'List available agent models (console proxy)' })
+  @ApiOkResponse({ description: 'Available agent models' })
+  async listModels(
+    @CurrentUser() user: CurrentUserDto,
+    @Query(new ZodValidationPipe(ApiKeyIdQuerySchema)) query: ApiKeyIdQueryDto,
+  ) {
+    return this.service.listAgentModels(user.id, query.apiKeyId);
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Create agent task (console proxy) - JSON',

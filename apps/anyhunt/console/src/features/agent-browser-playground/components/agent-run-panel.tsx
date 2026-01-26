@@ -2,9 +2,11 @@
  * [PROPS]: AgentRunPanelProps
  * [EMITS]: None
  * [POS]: Agent Playground 聊天面板（共享输入框 + 消息列表）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
  */
 
-import { type FormEvent, useEffect, useMemo, useRef } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -21,15 +23,26 @@ import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
 import {
   PromptInput,
   PromptInputBody,
+  PromptInputButton,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
 } from '@anyhunt/ui/ai/prompt-input';
-import { StopIcon } from '@hugeicons/core-free-icons';
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from '@anyhunt/ui/ai/model-selector';
+import { ArrowDown01Icon, CheckmarkCircle01Icon, StopIcon } from '@hugeicons/core-free-icons';
 import { toast } from 'sonner';
 import { ConsoleAgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
+import { useAgentModels } from '../hooks/use-agent-models';
 import type { AgentOutput } from '../types';
 import { AgentMessageList } from './AgentMessageList';
 
@@ -43,17 +56,45 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
     defaultValues: { message: '' },
   });
 
+  const modelsQuery = useAgentModels(apiKeyId);
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+
   const optionsRef = useRef({
     apiKeyId,
     output: { type: 'text' } as AgentOutput,
+    modelId: undefined as string | undefined,
   });
+
+  const initialModelId = useMemo(() => {
+    if (!modelsQuery.data) {
+      return null;
+    }
+    const available = modelsQuery.data.models;
+    if (available.length === 0) {
+      return null;
+    }
+    const defaultModelId = modelsQuery.data.defaultModelId;
+    return (
+      available.find((model) => model.modelId === defaultModelId)?.modelId ??
+      available[0]?.modelId ??
+      null
+    );
+  }, [modelsQuery.data]);
+
+  const modelOptions = modelsQuery.data?.models ?? [];
+  const activeModelId =
+    selectedModelId && modelOptions.some((model) => model.modelId === selectedModelId)
+      ? selectedModelId
+      : initialModelId;
 
   useEffect(() => {
     optionsRef.current = {
       apiKeyId,
       output: { type: 'text' },
+      modelId: activeModelId ?? undefined,
     };
-  }, [apiKeyId]);
+  }, [apiKeyId, activeModelId]);
 
   const transport = useMemo(() => new ConsoleAgentChatTransport(optionsRef), []);
 
@@ -62,12 +103,19 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
     transport,
   });
 
+  const selectedModel = modelOptions.find((model) => model.modelId === activeModelId) ?? null;
+  const hasModelOptions = modelOptions.length > 0;
+
   const canStop = status === 'submitted' || status === 'streaming';
   const isDisabled = !apiKeyId;
 
   const handlePromptSubmit = ({ files }: PromptInputMessage, event: FormEvent<HTMLFormElement>) =>
     promptForm.handleSubmit(async (values) => {
       const prompt = values.message.trim();
+      if (!hasModelOptions || !activeModelId) {
+        toast.error('Select a model before sending.');
+        return;
+      }
       try {
         await sendMessage({ text: prompt, files });
         promptForm.reset({ message: '' });
@@ -84,6 +132,42 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
     }
     toast.error(issue.message);
   };
+
+  const renderModelSelector = () =>
+    hasModelOptions ? (
+      <ModelSelector onOpenChange={setModelSelectorOpen} open={modelSelectorOpen}>
+        <ModelSelectorTrigger asChild>
+          <PromptInputButton aria-label="Switch model" disabled={isDisabled}>
+            <span>{selectedModel?.displayName ?? selectedModel?.modelId ?? 'Select model'}</span>
+            <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
+          </PromptInputButton>
+        </ModelSelectorTrigger>
+        <ModelSelectorContent>
+          <ModelSelectorList>
+            <ModelSelectorEmpty>No model found</ModelSelectorEmpty>
+            {modelOptions.map((model) => (
+              <ModelSelectorItem
+                key={model.modelId}
+                value={model.modelId}
+                onSelect={() => {
+                  setSelectedModelId(model.modelId);
+                  setModelSelectorOpen(false);
+                }}
+              >
+                <ModelSelectorName>{model.displayName || model.modelId}</ModelSelectorName>
+                {activeModelId === model.modelId ? (
+                  <Icon icon={CheckmarkCircle01Icon} className="ml-auto size-4 shrink-0" />
+                ) : null}
+              </ModelSelectorItem>
+            ))}
+          </ModelSelectorList>
+        </ModelSelectorContent>
+      </ModelSelector>
+    ) : (
+      <PromptInputButton aria-label="Select model" disabled>
+        Select model
+      </PromptInputButton>
+    );
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -118,7 +202,7 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
             />
           </PromptInputBody>
           <PromptInputFooter>
-            <PromptInputTools />
+            <PromptInputTools>{renderModelSelector()}</PromptInputTools>
             <div className="flex items-center gap-2">
               {canStop ? (
                 <InputGroupButton

@@ -36,3 +36,4 @@
 - 2026-01-25：重置数据库并生成 init 迁移作为新基线。
 - 2026-01-25：新增 PaymentWebhookEvent 表，用于 Creem webhook 幂等去重。
 - 2026-01-26：迁移脚本统一使用 `prisma.*.config.ts`，测试使用 migrate deploy 校验迁移。
+- 2026-01-27：新增 `llm_model_alignment` 迁移（LlmModel 字段扩展），并重置主库。

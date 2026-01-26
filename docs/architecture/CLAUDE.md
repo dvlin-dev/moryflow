@@ -20,6 +20,7 @@
   - Anyhunt Dev：`anyhunt.app`（官网）+ `server.anyhunt.app`（API `/api/v1`）+ `docs.anyhunt.app`（文档）+ `console.anyhunt.app` / `admin.anyhunt.app`（Web 前端）
 - `admin-llm-provider-config.md`：Admin 动态配置 LLM Providers/Models（入库 baseUrl/apiKey，加密存储；Agent/Playground 运行时路由）。
 - `llm-admin-provider-rollout.md`：LLM Admin 配置改造进度（Agent + Extract；含 DB 升级要点与部署清单）。
+- `anyhunt-llm-provider-alignment.md`：Anyhunt LLM Provider 对齐进度（AI SDK + Console 模型选择）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
@@ -83,3 +84,5 @@
 - `api-client-unification.md`：修正文档冲突项，删除 envelope 相关内容（2026-01-26）。
 - `api-client-unification.md`：补充 requestId 约定与校验错误示例（2026-01-26）。
 - `api-client-unification.md`：补充 errors 数组原因与前端展示建议（2026-01-26）。
+- `anyhunt-llm-provider-alignment.md`：进度文档更新，补齐 Console Agent Browser 对齐项（2026-01-27）。
+- `anyhunt-llm-provider-alignment.md`：完成迁移重置与验证步骤，标记进度完成（2026-01-27）。

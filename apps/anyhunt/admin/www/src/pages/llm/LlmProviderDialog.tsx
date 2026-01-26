@@ -1,7 +1,7 @@
 /**
  * [PROPS]: LlmProviderDialogProps - open/mode/provider/defaults
  * [EMITS]: onClose/onSubmit - Provider 创建/更新动作
- * [POS]: Admin LLM Providers 的创建/编辑弹窗（不展示明文 apiKey）
+ * [POS]: Admin LLM Providers 的创建/编辑弹窗（支持 openai/openai-compatible/openrouter/anthropic/google）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -37,10 +37,11 @@ import type {
   LlmProviderListItem,
   LlmProviderType,
   UpdateLlmProviderInput,
+  LlmProviderPreset,
 } from '@/features/llm';
 
 const formSchema = z.object({
-  providerType: z.enum(['openai', 'openai_compatible', 'openrouter']),
+  providerType: z.string().trim().min(1),
   name: z.string().trim().min(1).max(100),
   apiKey: z.string().trim().max(5000),
   baseUrl: z.string().trim().url().or(z.literal('')),
@@ -54,6 +55,7 @@ export interface LlmProviderDialogProps {
   open: boolean;
   mode: 'create' | 'edit';
   provider: LlmProviderListItem | null;
+  presets: LlmProviderPreset[];
   onClose: () => void;
   onCreate: (input: CreateLlmProviderInput) => Promise<void>;
   onUpdate: (providerId: string, input: UpdateLlmProviderInput) => Promise<void>;
@@ -64,6 +66,7 @@ export function LlmProviderDialog({
   open,
   mode,
   provider,
+  presets,
   onClose,
   onCreate,
   onUpdate,
@@ -73,8 +76,9 @@ export function LlmProviderDialog({
 
   const defaults = useMemo<FormValues>(() => {
     if (isCreate) {
+      const firstPreset = presets[0]?.id ?? 'openai';
       return {
-        providerType: 'openai',
+        providerType: firstPreset,
         name: '',
         apiKey: '',
         baseUrl: '',
@@ -91,7 +95,7 @@ export function LlmProviderDialog({
       enabled: provider?.enabled ?? true,
       sortOrder: provider?.sortOrder ?? 0,
     };
-  }, [isCreate, provider]);
+  }, [isCreate, provider, presets]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -105,7 +109,26 @@ export function LlmProviderDialog({
     }
   }, [defaults, form, open]);
 
+  const watchedProviderType = form.watch('providerType');
   const watchedApiKey = form.watch('apiKey');
+  const selectedPreset = useMemo(() => {
+    return presets.find((preset) => preset.id === watchedProviderType);
+  }, [presets, watchedProviderType]);
+  const availablePresets = useMemo(() => {
+    const presetIds = new Set(presets.map((preset) => preset.id));
+    if (provider?.providerType && !presetIds.has(provider.providerType)) {
+      return [
+        ...presets,
+        {
+          id: provider.providerType,
+          name: provider.providerType,
+          sdkType: 'custom',
+          defaultBaseUrl: '',
+        },
+      ];
+    }
+    return presets;
+  }, [presets, provider?.providerType]);
 
   const submit = async (values: FormValues) => {
     if (isCreate) {
@@ -142,7 +165,7 @@ export function LlmProviderDialog({
 
   const title = isCreate ? 'New provider' : 'Edit provider';
   const description = isCreate
-    ? 'Create an OpenAI-compatible provider configuration (apiKey is encrypted in the database).'
+    ? 'Create a provider configuration (apiKey is encrypted in the database).'
     : 'Update provider settings. Current apiKey is never returned; setting a new apiKey is optional. Clear Base URL to use the provider default.';
 
   return (
@@ -172,11 +195,16 @@ export function LlmProviderDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="openai">openai</SelectItem>
-                      <SelectItem value="openai_compatible">openai_compatible</SelectItem>
-                      <SelectItem value="openrouter">openrouter</SelectItem>
+                      {availablePresets.map((preset) => (
+                        <SelectItem key={preset.id} value={preset.id}>
+                          {preset.name} ({preset.id})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {selectedPreset?.description ? (
+                    <p className="text-xs text-muted-foreground">{selectedPreset.description}</p>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
@@ -203,8 +231,17 @@ export function LlmProviderDialog({
                 <FormItem>
                   <FormLabel>Base URL (optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://api.openai.com/v1" autoComplete="off" />
+                    <Input
+                      {...field}
+                      placeholder={selectedPreset?.defaultBaseUrl || 'https://api.openai.com/v1'}
+                      autoComplete="off"
+                    />
                   </FormControl>
+                  {selectedPreset?.defaultBaseUrl ? (
+                    <p className="text-xs text-muted-foreground">
+                      Default: {selectedPreset.defaultBaseUrl}
+                    </p>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}

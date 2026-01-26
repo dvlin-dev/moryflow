@@ -13,6 +13,9 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 ## 最近更新
 
 - Console/Admin Digest 写操作统一返回 204，错误体按 RFC7807 输出
+- Digest LLM 调用改为 AI SDK（`generateText`）
+- Digest LLM resolved payload 移除未使用 upstreamModelId
+- DigestAiService 单测改为 hoisted mock + 动态导入（避免 ai mock 失效）
 
 ## 职责边界
 

@@ -1,7 +1,7 @@
 /**
  * Agent DTO - Zod Schemas
  *
- * [DEFINES]: L3 Agent API 请求/响应/Param Schema（输出格式收紧；model 可选，不传使用 Admin 默认）
+ * [DEFINES]: L3 Agent API 请求/响应/Param Schema（含 CreateAgentTaskBaseSchema；model 可选，不传使用 Admin 默认）
  * [USED_BY]: agent.controller.ts, agent.service.ts
  * [POS]: Zod schemas + 推断类型（单一数据源）
  *
@@ -296,14 +296,41 @@ export const AgentTaskIdParamSchema = z.object({
 });
 export type AgentTaskIdParamDto = z.infer<typeof AgentTaskIdParamSchema>;
 
-export const CreateAgentTaskSchema = z.object({
-  prompt: z.string().min(1).max(10000),
+export const AgentChatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().trim().min(1).max(10000),
+});
+export type AgentChatMessage = z.infer<typeof AgentChatMessageSchema>;
+
+export const CreateAgentTaskBaseSchema = z.object({
+  prompt: z.string().min(1).max(10000).optional(),
+  messages: z.array(AgentChatMessageSchema).min(1).max(100).optional(),
   urls: z.array(z.string().url()).max(10).optional(),
   model: z.string().trim().min(1).max(200).optional(),
   output: AgentOutputSchema,
   maxCredits: z.number().int().positive().optional(),
   stream: z.boolean().default(true),
 });
+
+const refineAgentTaskInput = (
+  data: z.infer<typeof CreateAgentTaskBaseSchema>,
+  ctx: z.RefinementCtx,
+) => {
+  if (!data.prompt && (!data.messages || data.messages.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'prompt or messages is required',
+      path: ['prompt'],
+    });
+  }
+};
+
+export const CreateAgentTaskSchema =
+  CreateAgentTaskBaseSchema.superRefine(refineAgentTaskInput);
+
+export const CreateAgentTaskConsoleSchema = CreateAgentTaskBaseSchema.omit({
+  stream: true,
+}).superRefine(refineAgentTaskInput);
 
 export type CreateAgentTaskInput = z.infer<typeof CreateAgentTaskSchema>;
 

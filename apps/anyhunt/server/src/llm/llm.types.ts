@@ -8,6 +8,7 @@
 
 import type { LlmProviderType } from './dto';
 import type { Model, ModelProvider } from '@openai/agents-core';
+import type { SubscriptionTier } from '../../generated/prisma-main/client';
 
 export type LlmProviderListItem = {
   id: string;
@@ -28,6 +29,14 @@ export type LlmModelListItem = {
   providerType: LlmProviderType;
   modelId: string;
   upstreamId: string;
+  displayName: string;
+  inputTokenPrice: number;
+  outputTokenPrice: number;
+  minTier: SubscriptionTier;
+  maxContextTokens: number;
+  maxOutputTokens: number;
+  capabilitiesJson: unknown;
+  sortOrder: number;
   enabled: boolean;
   createdAt: Date;
   updatedAt: Date;

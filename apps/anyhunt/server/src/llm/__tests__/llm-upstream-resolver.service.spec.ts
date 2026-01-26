@@ -24,7 +24,17 @@ function createMockPrisma(): PrismaService {
         }
         return [
           {
+            id: 'm1',
             upstreamId: DEFAULT_LLM_AGENT_MODEL_ID,
+            modelId: DEFAULT_LLM_AGENT_MODEL_ID,
+            displayName: 'GPT-4o',
+            inputTokenPrice: 0,
+            outputTokenPrice: 0,
+            minTier: 'FREE',
+            maxContextTokens: 128000,
+            maxOutputTokens: 4096,
+            capabilitiesJson: {},
+            sortOrder: 0,
             provider: {
               id: 'p1',
               providerType: 'openai',

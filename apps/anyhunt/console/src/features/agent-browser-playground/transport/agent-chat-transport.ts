@@ -2,6 +2,8 @@
  * [PROVIDES]: ConsoleAgentChatTransport (SSE + graceful abort)
  * [DEPENDS]: fetch, eventsource-parser, ai UIMessage, auth store
  * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（含 start 边界 + access token）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
  */
 
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
@@ -9,7 +11,7 @@ import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
 import { API_BASE_URL } from '@/lib/api-base';
 import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
 import { useAuthStore } from '@/stores/auth';
-import { extractPromptFromMessages } from '../agent-streaming';
+import { buildAgentChatMessages } from '../agent-streaming';
 import type { AgentOutput } from '../types';
 
 type SendOptions = Parameters<ChatTransport<UIMessage>['sendMessages']>[0];
@@ -18,6 +20,7 @@ export type AgentChatOptions = {
   apiKeyId: string;
   output?: AgentOutput;
   maxCredits?: number;
+  modelId?: string;
 };
 
 type AgentChatOptionsRef = { current: AgentChatOptions };
@@ -51,8 +54,8 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       throw new Error('API key is required');
     }
 
-    const prompt = extractPromptFromMessages(messages);
-    if (!prompt) {
+    const chatMessages = buildAgentChatMessages(messages);
+    if (chatMessages.length === 0) {
       throw new Error('Prompt is empty');
     }
 
@@ -71,7 +74,8 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       credentials: 'include',
       body: JSON.stringify({
         apiKeyId: requestApiKeyId,
-        prompt,
+        messages: chatMessages,
+        model: options.modelId,
         output: options.output ?? { type: 'text' },
         maxCredits: options.maxCredits,
       }),

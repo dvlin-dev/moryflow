@@ -302,7 +302,7 @@ model ApiKey {
 
 model LlmProvider {
   id              String   @id @default(cuid())
-  providerType    String // openai | openai_compatible | openrouter
+  providerType    String // openai | openai-compatible | openrouter | anthropic | google
   name            String
   apiKeyEncrypted String // 加密存储（AES-256-GCM），禁止明文入库
   baseUrl         String?
@@ -322,9 +322,17 @@ model LlmModel {
   providerId String
   modelId    String // 对外模型 ID（如 'gpt-4o'）
   upstreamId String // 上游模型 ID（如 'gpt-4o' 或 'openai/gpt-4o'）
-  enabled    Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  displayName      String
+  enabled          Boolean          @default(true)
+  inputTokenPrice  Float // 输入 token 价格（美元/1M）
+  outputTokenPrice Float // 输出 token 价格（美元/1M）
+  minTier          SubscriptionTier
+  maxContextTokens Int
+  maxOutputTokens  Int
+  capabilitiesJson Json // 模型能力配置（含 reasoning）
+  sortOrder        Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   provider LlmProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 

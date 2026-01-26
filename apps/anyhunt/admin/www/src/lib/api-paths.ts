@@ -17,6 +17,7 @@ export const ADMIN_API = {
   // LLM
   LLM_SETTINGS: '/api/v1/admin/llm/settings',
   LLM_PROVIDERS: '/api/v1/admin/llm/providers',
+  LLM_PROVIDER_PRESETS: '/api/v1/admin/llm/providers/presets',
   LLM_MODELS: '/api/v1/admin/llm/models',
   // Digest
   DIGEST_REPORTS: '/api/v1/admin/digest/reports',

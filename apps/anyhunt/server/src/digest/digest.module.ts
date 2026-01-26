@@ -3,6 +3,8 @@
  *
  * [PROVIDES]: 智能内容订阅系统 v2.0
  * [POS]: NestJS 模块定义，整合服务、处理器、控制器
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Module } from '@nestjs/common';
@@ -81,7 +83,7 @@ import { MapModule } from '../map/map.module';
     SearchModule,
     ScraperModule,
     BillingModule,
-    LlmModule, // 提供 LlmOpenAiClientService
+    LlmModule, // 提供 LlmLanguageModelService
     MapModule, // 提供 MapService
 
     // BullMQ 队列

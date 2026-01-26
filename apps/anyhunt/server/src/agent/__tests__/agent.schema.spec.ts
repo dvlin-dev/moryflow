@@ -10,6 +10,24 @@ describe('CreateAgentTaskSchema', () => {
     expect(parsed.output).toEqual({ type: 'text' });
   });
 
+  it('accepts message-based input', () => {
+    const parsed = CreateAgentTaskSchema.parse({
+      messages: [
+        { role: 'user', content: 'hello' },
+        { role: 'assistant', content: 'hi' },
+      ],
+      stream: false,
+    });
+    expect(parsed.messages?.length).toBe(2);
+  });
+
+  it('rejects missing prompt and messages', () => {
+    const result = CreateAgentTaskSchema.safeParse({
+      stream: false,
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects required keys not in properties', () => {
     const result = CreateAgentTaskSchema.safeParse({
       prompt: 'hello',

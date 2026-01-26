@@ -2,6 +2,8 @@
  * [DEFINES]: Extract 模块自定义错误类
  * [USED_BY]: extract.service.ts, extract.processor.ts
  * [POS]: 错误边界，提供清晰的错误类型和错误码
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -66,12 +68,12 @@ export class InvalidSchemaError extends ExtractError {
 
 /** LLM 错误 */
 export class LlmError extends ExtractError {
-  constructor(reason: string) {
+  constructor(reason: string, details?: Record<string, unknown>) {
     super(
       ExtractErrorCode.LLM_ERROR,
       `LLM processing error: ${reason}`,
       HttpStatus.BAD_GATEWAY,
-      { reason },
+      { reason, ...details },
     );
   }
 }

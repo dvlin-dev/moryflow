@@ -27,7 +27,7 @@ status: done
   - Admin API：`llm-admin.controller.ts`, `llm-admin.service.ts`
   - 运行时路由：`llm-upstream-resolver.service.ts`, `llm-routing.service.ts`
   - 密钥管理：`llm-secret.service.ts`
-  - OpenAI SDK 工厂：`llm-openai-client.service.ts`
+  - AI SDK 语言模型工厂：`llm-language-model.service.ts`
   - DTO：`dto/*.schema.ts`
 - Embedding 模块：`apps/anyhunt/server/src/embedding/`
 - Console Playground（Agent 相关代理）：`apps/anyhunt/server/src/console-playground/`

@@ -1,6 +1,6 @@
 ---
 title: apps/anyhunt：大模型调用逻辑梳理（Agent / LLM / Embedding）
-date: 2026-01-20
+date: 2026-01-26
 scope: apps/anyhunt (server + console/www proxies)
 status: draft
 ---
@@ -16,9 +16,9 @@ status: draft
 | 能力                                      | 入口 API                            | 关键文件（调用点）                                       | 实际调用方式                                          |
 | ----------------------------------------- | ----------------------------------- | -------------------------------------------------------- | ----------------------------------------------------- |
 | LLM Admin 配置（Provider/Model/Settings） | `GET/PUT /api/v1/admin/llm/*`       | `apps/anyhunt/server/src/llm/*`                          | 不调用模型；只做密钥加解密与路由配置                  |
-| Extract（结构化提取）                     | `POST /api/v1/extract`              | `apps/anyhunt/server/src/extract/extract.service.ts`     | OpenAI SDK：`chat.completions.create/parse`           |
+| Extract（结构化提取）                     | `POST /api/v1/extract`              | `apps/anyhunt/server/src/extract/extract.service.ts`     | AI SDK：`generateText/generateObject`                 |
 | Agent（浏览器工具调用编排，SSE）          | `POST /api/v1/agent`                | `apps/anyhunt/server/src/agent/agent.service.ts`         | `@openai/agents-core` + `Model`（由 `llm/` 路由构建） |
-| Digest（摘要/叙事/解释）                  | 多个 Digest run/投递流程内部触发    | `apps/anyhunt/server/src/digest/services/ai.service.ts`  | OpenAI SDK：`chat.completions.create`                 |
+| Digest（摘要/叙事/解释）                  | 多个 Digest run/投递流程内部触发    | `apps/anyhunt/server/src/digest/services/ai.service.ts`  | AI SDK：`generateText`                                |
 | Embedding（向量）                         | 被 Memory/Search/Extract 等间接依赖 | `apps/anyhunt/server/src/embedding/embedding.service.ts` | OpenAI SDK：`embeddings.create`                       |
 
 ### 1.2 前端（只负责传参/展示，不直接调用模型）
@@ -38,7 +38,7 @@ status: draft
 ### 2.1 数据结构（概念层）
 
 - `LlmProvider`（Admin 可配置）
-  - `providerType`: `openai | openai_compatible | openrouter | ...`
+  - `providerType`: `openai | openai-compatible | openrouter | anthropic | google | ...`
   - `baseUrl`
   - `apiKeyEncrypted`（AES-256-GCM，密文存储）
   - `sortOrder`（同名 model 绑定多个 provider 时用于择优）
@@ -46,7 +46,12 @@ status: draft
 - `LlmModel`（Admin 可配置）
   - `modelId`：对外可见的“标准模型名”（请求里传的 `model`）
   - `upstreamId`：上游真实 model id（发给网关/厂商）
+  - `displayName`
   - `enabled`
+  - `inputTokenPrice` / `outputTokenPrice`
+  - `minTier`
+  - `maxContextTokens` / `maxOutputTokens`
+  - `capabilitiesJson`（vision/tools/json + reasoning）
   - `providerId`
 - `LlmSettings`（全局默认值）
   - `defaultAgentModelId`
@@ -103,31 +108,29 @@ resolveUpstream({ purpose, requestedModelId? }):
   return { requestedModelId: effectiveModelId, upstreamModelId: selected.upstreamId, provider: selected.providerMeta, apiKey }
 ```
 
-### 2.4 “运行时路由”：构建可用的 `Model`（给 Agent）或 `OpenAI client`（给 Extract/Digest）
+### 2.4 “运行时路由”：构建可用的 `Model`（给 Agent）或 `LanguageModel`（给 Extract/Digest）
 
 这里分两条“调用形态”：
 
 1. **Agent 路径（`LlmRoutingService`）**：返回 `@openai/agents-core` 的 `Model`
-2. **OpenAI SDK 路径（`LlmOpenAiClientService`）**：返回 OpenAI SDK client（用于 `chat.completions.*` / `embeddings.*`）
+2. **AI SDK 路径（`LlmLanguageModelService`）**：返回 AI SDK `LanguageModel`
 
 Agent 路由（伪代码，文件：`apps/anyhunt/server/src/llm/llm-routing.service.ts`）：
 
 ```ts
 resolveAgentModel(modelId?):
-  resolved = upstream.resolveUpstream({ purpose: 'agent', requestedModelId: modelId })
-  provider = new OpenAIProvider({ apiKey: resolved.apiKey, baseURL: resolved.provider.baseUrl, useResponses: false })
-  model = await provider.getModel(resolved.upstreamModelId)
+  resolved = llmLanguageModel.resolveModel({ purpose: 'agent', requestedModelId: modelId })
+  model = aisdk(resolved.model)
   return { providerMeta, requestedModelId, upstreamModelId, model }
 ```
 
-OpenAI SDK client（伪代码，文件：`apps/anyhunt/server/src/llm/llm-openai-client.service.ts`）：
+AI SDK 语言模型（伪代码，文件：`apps/anyhunt/server/src/llm/llm-language-model.service.ts`）：
 
 ```ts
-resolveClient({ purpose, requestedModelId? }):
+resolveModel({ purpose, requestedModelId? }):
   resolved = upstream.resolveUpstream({ purpose, requestedModelId })
-  assert resolved.provider.providerType in ['openai', 'openai_compatible', 'openrouter']
-  client = new OpenAI({ apiKey: resolved.apiKey, baseURL: resolved.provider.baseUrl })
-  return { client, upstreamModelId: resolved.upstreamModelId, providerMeta }
+  model = ModelProviderFactory.create({ providerType, apiKey, baseUrl }, { upstreamId })
+  return { model, upstreamModelId: resolved.upstreamModelId, providerMeta }
 ```
 
 ## 3. Extract：结构化提取（Scrape → Prompt → Structured Output）
@@ -147,7 +150,7 @@ resolveClient({ purpose, requestedModelId? }):
 
 ```ts
 POST /extract({ urls, prompt?, schema?, systemPrompt?, model? }):
-  resolvedLlm = ExtractLlmClient.resolve(model) // -> llm/ resolveClient(purpose='extract')
+  resolvedLlm = ExtractLlmClient.resolve(model) // -> llm/ resolveModel(purpose='extract')
   billing = BillingService.deductOrThrow(userId, 'fetchx.extract', referenceId)
 
   zodSchema = schema ? jsonSchemaToZod(schema) : null
@@ -172,10 +175,8 @@ extractSingle(url):
 
 文件：`apps/anyhunt/server/src/extract/extract-llm.client.ts`
 
-- 文本：`client.chat.completions.create(...)`
-- 结构化：`client.chat.completions.parse(...)` + `zodResponseFormat(schema, schemaName)`
-
-这意味着 Extract 依赖“OpenAI Structured Outputs（或网关等价能力）”支持 `response_format`。
+- 文本：`generateText({ model, messages })`
+- 结构化：`generateObject({ model, schema, messages })`
 
 ## 4. Digest：摘要/叙事/解释（LLM 生成内容）
 
@@ -183,24 +184,18 @@ extractSingle(url):
 
 - Digest 内的所有 LLM 调用集中在：`apps/anyhunt/server/src/digest/services/ai.service.ts`
 - 模型路由：复用 `llm/` 的 Admin 配置（Digest 视为 `purpose='agent'`，使用 `defaultAgentModelId`）
-  - `DigestAiService.resolveLlm()` → `LlmOpenAiClientService.resolveClient({ purpose: 'agent' })`
+  - `DigestAiService.resolveLlm()` → `LlmLanguageModelService.resolveModel({ purpose: 'agent' })`
 
 ### 4.2 调用形态（伪代码）
 
 ```ts
 resolveLlm():
-  { client, upstreamModelId } = llmOpenAiClient.resolveClient({ purpose: 'agent' })
-  return { client, upstreamModelId }
+  { model, upstreamModelId } = llmLanguageModel.resolveModel({ purpose: 'agent' })
+  return { model, upstreamModelId }
 
 completeText({ systemPrompt, userPrompt }):
-  resp = client.chat.completions.create({
-    model: upstreamModelId,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-  })
-  return resp.choices[0]?.message?.content ?? ''
+  resp = generateText({ model, messages })
+  return resp.text ?? ''
 ```
 
 ### 4.3 三类生成：Summary / Narrative / Reason

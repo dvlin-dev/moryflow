@@ -1,60 +1,38 @@
 /**
  * [INPUT]: requested modelId (optional; fallback to Admin default by purpose)
- * [OUTPUT]: ResolvedLlmRoute（确定 provider + upstreamModelId + Model/ModelProvider 实例）
+ * [OUTPUT]: ResolvedLlmRoute（确定 provider + upstreamModelId + AI SDK Model/ModelProvider 实例）
  * [POS]: 运行时 LLM 路由器：将“对外 modelId”映射为“上游 upstreamId”，并加载对应 provider 的密钥/baseUrl
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { OpenAIProvider } from '@openai/agents-openai';
-import type { ModelProvider } from '@openai/agents-core';
+import { Injectable } from '@nestjs/common';
+import { aisdk } from '@openai/agents-extensions';
+import type { Model, ModelProvider } from '@openai/agents-core';
 import type { ResolvedLlmRoute } from './llm.types';
-import type { LlmProviderType } from './dto';
-import {
-  LlmUpstreamResolverService,
-  type LlmPurpose,
-} from './llm-upstream-resolver.service';
+import type { LlmPurpose } from './llm-upstream-resolver.service';
+import { LlmLanguageModelService } from './llm-language-model.service';
+
+class StaticModelProvider implements ModelProvider {
+  constructor(private readonly model: Model) {}
+
+  getModel(modelName?: string): Model {
+    void modelName;
+    return this.model;
+  }
+}
 
 @Injectable()
 export class LlmRoutingService {
-  constructor(private readonly upstream: LlmUpstreamResolverService) {}
-
-  private buildModelProviderOrThrow(params: {
-    providerType: LlmProviderType;
-    apiKey: string;
-    baseUrl: string | null;
-  }): ModelProvider {
-    const { providerType, apiKey, baseUrl } = params;
-
-    if (
-      providerType === 'openai' ||
-      providerType === 'openai_compatible' ||
-      providerType === 'openrouter'
-    ) {
-      return new OpenAIProvider({
-        apiKey,
-        baseURL: baseUrl ?? undefined,
-        useResponses: false,
-      });
-    }
-
-    throw new BadRequestException('LLM provider type is not supported');
-  }
+  constructor(private readonly models: LlmLanguageModelService) {}
 
   private async resolveModelInternal(params: {
     requestedModelId?: string;
     purpose: LlmPurpose;
   }): Promise<ResolvedLlmRoute> {
-    const resolved = await this.upstream.resolveUpstream(params);
-
-    const modelProvider = this.buildModelProviderOrThrow({
-      providerType: resolved.provider.providerType,
-      apiKey: resolved.apiKey,
-      baseUrl: resolved.provider.baseUrl,
-    });
-
-    const model = await modelProvider.getModel(resolved.upstreamModelId);
+    const resolved = await this.models.resolveModel(params);
+    const model = aisdk(resolved.model);
+    const modelProvider = new StaticModelProvider(model);
 
     return {
       requestedModelId: resolved.requestedModelId,

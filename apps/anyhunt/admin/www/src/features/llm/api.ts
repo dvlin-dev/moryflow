@@ -17,6 +17,7 @@ import type {
   CreateLlmModelInput,
   UpdateLlmModelInput,
   UpdateLlmSettingsInput,
+  LlmProviderPreset,
 } from './types';
 
 export const llmApi = {
@@ -29,6 +30,9 @@ export const llmApi = {
 
   listProviders(): Promise<LlmProviderListItem[]> {
     return apiClient.get(ADMIN_API.LLM_PROVIDERS);
+  },
+  listPresetProviders(): Promise<{ providers: LlmProviderPreset[] }> {
+    return apiClient.get(ADMIN_API.LLM_PROVIDER_PRESETS);
   },
   createProvider(input: CreateLlmProviderInput): Promise<LlmProviderListItem> {
     return apiClient.post(ADMIN_API.LLM_PROVIDERS, input);
