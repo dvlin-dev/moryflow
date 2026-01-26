@@ -1,3 +1,11 @@
+/**
+ * [PROVIDES]: createWriteTool, applyWriteOperation - 文件写入与 patch 写入工具
+ * [DEPENDS]: @openai/agents-core, zod, diff, agents-runtime VaultUtils
+ * [POS]: Agent 文件写入工具，实现 write 工具与 IPC 写入逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { tool, type RunContext } from '@openai/agents-core';
 import { applyPatch } from 'diff';
 import { z } from 'zod';
@@ -81,8 +89,8 @@ const writeParams = z.object({
   content: z.string().describe('要写入的完整内容'),
   base_sha: z
     .string()
+    .length(64)
     .optional()
-    .transform((v) => (v && v.length === 64 ? v : undefined))
     .describe('覆盖已有文件时必须提供，来自 read 返回的 sha256'),
   create_directories: z.boolean().default(false).describe('是否自动创建父目录'),
 });

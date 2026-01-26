@@ -38,6 +38,7 @@
 
 ## 近期变更
 
+- write 工具参数 schema 去除 transform，避免 JSON Schema 转换报错（2026-01-27）
 - bash 工具移除本地输出截断，统一交由 runtime 后处理
 - 修复 dist 声明缺失 Tasks Store 导出，保障下游类型检查（2026-01-25）
 - 统一路径归一化，避免 Vault 前缀穿越
