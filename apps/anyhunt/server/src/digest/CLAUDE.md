@@ -12,6 +12,7 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 ## 最近更新
 
+- DigestModule 显式导入 ApiKeyModule，避免 ApiKeyGuard 依赖缺失导致启动失败
 - Digest LLM 调用统一透传模型 maxOutputTokens
 - Console/Admin Digest 写操作统一返回 204，错误体按 RFC7807 输出
 - Digest LLM 调用改为 AI SDK（`generateText`）

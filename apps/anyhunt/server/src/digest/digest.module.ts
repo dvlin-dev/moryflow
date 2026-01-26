@@ -3,6 +3,7 @@
  *
  * [PROVIDES]: 智能内容订阅系统 v2.0
  * [POS]: NestJS 模块定义，整合服务、处理器、控制器
+ * [DEPENDS]: ApiKeyModule（ApiKeyGuard 依赖）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -67,6 +68,7 @@ import {
 } from '../queue/queue.constants';
 
 // Dependencies
+import { ApiKeyModule } from '../api-key';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
 import { SearchModule } from '../search/search.module';
@@ -78,6 +80,7 @@ import { MapModule } from '../map/map.module';
 @Module({
   imports: [
     // 依赖模块
+    ApiKeyModule,
     PrismaModule,
     RedisModule,
     SearchModule,
