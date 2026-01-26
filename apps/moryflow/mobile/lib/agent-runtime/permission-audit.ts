@@ -38,9 +38,9 @@ export const createMobilePermissionAuditWriter = (): MobilePermissionAuditWriter
         const line = `${JSON.stringify(event)}\n`;
         if (file.exists) {
           const existing = await file.text();
-          file.write(existing + line);
+          await file.write(existing + line);
         } else {
-          file.write(line);
+          await file.write(line);
         }
       });
     return pendingWrite;

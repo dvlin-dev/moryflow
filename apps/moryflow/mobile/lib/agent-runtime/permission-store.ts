@@ -33,9 +33,9 @@ const readConfigFile = async (): Promise<string> => {
   return file.text();
 };
 
-const writeConfigFile = (content: string): void => {
+const writeConfigFile = async (content: string): Promise<void> => {
   ensureConfigDir();
-  new File(CONFIG_PATH).write(content);
+  await new File(CONFIG_PATH).write(content);
 };
 
 const extractRules = (data: unknown): PermissionRule[] => {
@@ -73,7 +73,7 @@ export const createMobilePermissionRuleStore = (): MobilePermissionRuleStore => 
   const persistRules = async (rules: PermissionRule[]): Promise<PermissionRule[]> => {
     const base = cachedContent ?? (await readConfigFile());
     const updated = updateJsoncValue(base, ['agents', 'runtime', 'permission', 'rules'], rules);
-    writeConfigFile(updated);
+    await writeConfigFile(updated);
     cachedContent = updated;
     cachedRules = rules;
     return rules;

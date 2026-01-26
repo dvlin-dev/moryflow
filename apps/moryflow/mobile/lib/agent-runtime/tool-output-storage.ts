@@ -48,7 +48,7 @@ export const createMobileToolOutputStorage = (input: {
       const fileName = `tool-output-${Date.now()}-${fileSlug}-${crypto.randomUUID()}.txt`;
       const fullPath = Paths.join(dir.uri, fileName);
 
-      new File(fullPath).write(content);
+      await new File(fullPath).write(content);
 
       return { fullPath };
     },
