@@ -93,6 +93,16 @@ const ja = {
   allDocsAdded: 'すべてのファイルが追加されました',
   noOpenDocs: 'ワークスペースにファイルがありません',
   upgrade: 'アップグレード',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{total}}件中{{completed}}件完了',
@@ -110,6 +120,14 @@ const ja = {
   statusError: 'エラー',
   statusSkipped: 'スキップ',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // ツールラベル
   parameters: 'パラメータ',
   errorLabel: 'エラー',
@@ -117,12 +135,17 @@ const ja = {
 
   // ツール操作
   fileWritten: 'ファイルに書き込みました',
-  targetFile: '対象ファイル：',
+  targetFile: '対象ファイル',
   contentTooLong:
     '内容が長すぎるため切り捨てられました。ローカルファイルで全文を確認してください。',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: '書き込み済み',
   applyToFile: 'ファイルに適用',
   noTasks: 'タスクがありません',
+  openFileFailed: 'Failed to open file',
 
   // 添付ファイル
   contextInjected: '注入済み',

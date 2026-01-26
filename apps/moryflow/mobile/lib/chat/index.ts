@@ -6,5 +6,6 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-export { MobileChatTransport, type MobileChatTransportOptions } from './transport'
-export { extractTextFromParts } from './utils'
+export { MobileChatTransport, type MobileChatTransportOptions } from './transport';
+export { extractTextFromParts } from './utils';
+export { approveToolRequest } from './approval-store';

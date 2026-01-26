@@ -2,7 +2,7 @@ import type { ChatStatus } from 'ai';
 
 import { CardFooter } from '@anyhunt/ui/components/card';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { TokenUsage } from '@shared/ipc';
+import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 
 import { ChatPromptInput } from './chat-prompt-input';
 import type { ChatSubmitPayload } from './chat-prompt-input/const';
@@ -24,6 +24,8 @@ type Props = {
   disabled: boolean;
   tokenUsage?: TokenUsage | null;
   contextWindow?: number;
+  mode: ChatSessionSummary['mode'];
+  onModeChange: (mode: ChatSessionSummary['mode']) => void;
 };
 
 export const ChatFooter = ({
@@ -42,6 +44,8 @@ export const ChatFooter = ({
   disabled,
   tokenUsage,
   contextWindow,
+  mode,
+  onModeChange,
 }: Props) => (
   <CardFooter className="shrink-0 flex-col items-stretch gap-2 p-3">
     <ChatPromptInput
@@ -59,6 +63,8 @@ export const ChatFooter = ({
       onOpenSettings={onOpenSettings}
       tokenUsage={tokenUsage}
       contextWindow={contextWindow}
+      mode={mode}
+      onModeChange={onModeChange}
     />
     {inputError && <p className="px-1 text-xs text-destructive">{inputError}</p>}
   </CardFooter>

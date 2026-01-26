@@ -94,6 +94,16 @@ const ar = {
   allDocsAdded: 'تمت إضافة جميع الملفات',
   noOpenDocs: 'لا توجد ملفات في مساحة العمل',
   upgrade: 'ترقية',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{completed}} من {{total}} مهام مكتملة',
@@ -111,6 +121,14 @@ const ar = {
   statusError: 'خطأ',
   statusSkipped: 'تم التخطي',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // تسميات الأداة
   parameters: 'المعلمات',
   errorLabel: 'خطأ',
@@ -118,11 +136,16 @@ const ar = {
 
   // إجراءات الأداة
   fileWritten: 'تم كتابة الملف',
-  targetFile: 'الملف الهدف:',
+  targetFile: 'الملف الهدف',
   contentTooLong: 'المحتوى طويل جداً، تم اقتطاعه. شاهد النسخة الكاملة في الملف المحلي.',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: 'تم الكتابة',
   applyToFile: 'تطبيق على الملف',
   noTasks: 'لا توجد مهام',
+  openFileFailed: 'Failed to open file',
 
   // المرفقات
   contextInjected: 'تم الحقن',

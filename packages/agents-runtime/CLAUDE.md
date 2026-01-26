@@ -30,10 +30,24 @@
 
 ## 近期变更
 
+- Hook 工具合并单测改用宽松参数 schema，避免注入字段被 Zod 默认剥离
+- 新增运行时 JSONC 配置解析（runtime-config）、Agent Markdown 解析与 Hook 包装器（chat/system/params + tool before/after）
+- 新增会话模式切换审计事件类型（ModeSwitchAuditEvent），会话 mode 改为必填
+- 新增 AgentAccessMode 与会话 mode 字段，权限记录支持全权限模式
+- 新增 Doom Loop 守卫与工具包装，包含稳定化参数哈希、冷却与会话级 always 记忆
+- Compaction 摘要输入改为基于未裁剪历史并按 prompt 上限裁剪；新增预处理门闩工具
+- 新增上下文窗口解析工具（customContext 优先）并补齐单元测试
+- 新增 Compaction 模块：阈值触发、旧工具输出裁剪、摘要重写与统计输出
+- 修复 ls 默认路径权限评估与 MCP 工具 serverId 绑定
+- 修正 JSONC 解析错误类型与 Permission 包装的 RunContext 兼容
+- 新增 Permission 规则评估与 JSONC 读写工具，支持拒绝输出与规则匹配
+- 修复 tool.before 仅支持 JSON 字符串输入的问题，支持直接合并对象参数
+- Tool 输出截断包装明确仅支持 function 工具，避免隐式跳过
 - Agent 工厂支持注入 system prompt/model settings；默认 system prompt 去除时间占位
 - 修复 Vault 路径边界校验，避免前缀穿越
 - Session 接口本地化，运行时负责会话历史拼装与输出追加
 - 新增 `./prompt` 子入口，供渲染进程安全引用 system prompt
+- 新增 Tool 输出统一截断模块与包装器，附带单元测试
 - Prompt 更新为 tasks\_\* 任务模型（2026-01-25）
 
 ---

@@ -1,5 +1,8 @@
 /**
- * 命令执行输出组件
+ * [PROPS]: CommandOutputProps
+ * [POS]: Mobile 端命令执行结果展示
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import * as React from 'react';

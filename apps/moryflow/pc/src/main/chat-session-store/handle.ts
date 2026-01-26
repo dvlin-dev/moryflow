@@ -1,6 +1,15 @@
+/**
+ * [INPUT]: 会话标题/历史/模式更新（含默认 mode 注入）
+ * [OUTPUT]: 会话摘要与历史变更
+ * [POS]: PC 聊天会话存储核心实现
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
+import type { AgentAccessMode } from '@anyhunt/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';
@@ -18,6 +27,7 @@ const toSummary = (session: PersistedChatSession): ChatSessionSummary => ({
   updatedAt: session.updatedAt,
   preferredModelId: session.preferredModelId,
   tokenUsage: session.tokenUsage,
+  mode: session.mode,
 });
 
 const sortByUpdatedAt = (sessions: PersistedChatSession[]) =>
@@ -69,14 +79,20 @@ export const chatSessionStore = {
     const sessions = sortByUpdatedAt(Object.values(readSessions()));
     return sessions.map(toSummary);
   },
-  create(input?: { title?: string; preferredModelId?: string }): ChatSessionSummary {
+  create(input?: {
+    title?: string;
+    preferredModelId?: string;
+    mode?: AgentAccessMode;
+  }): ChatSessionSummary {
     const now = Date.now();
     const title = normalizeTitle(input?.title) ?? `对话 ${takeSequence()}`;
+    const mode = input?.mode === 'full_access' || input?.mode === 'agent' ? input?.mode : 'agent';
     const session: PersistedChatSession = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
+      mode,
       preferredModelId: input?.preferredModelId,
       history: [],
     };
@@ -144,6 +160,7 @@ export const chatSessionStore = {
   clearHistory(sessionId: string): void {
     updateSession(sessionId, (existing) => {
       existing.history = [];
+      existing.uiMessages = undefined;
     });
   },
   getUiMessages(sessionId: string): UIMessage[] {
@@ -164,6 +181,7 @@ export const chatSessionStore = {
       uiMessages?: UIMessage[];
       preferredModelId?: string;
       tokenUsage?: TokenUsage;
+      mode?: ChatSessionSummary['mode'];
     }
   ): ChatSessionSummary {
     const session = updateSession(sessionId, (existing) => {
@@ -172,6 +190,9 @@ export const chatSessionStore = {
       }
       if (data.preferredModelId) {
         existing.preferredModelId = data.preferredModelId;
+      }
+      if (data.mode !== undefined) {
+        existing.mode = data.mode;
       }
       // 累积 token 使用量
       if (data.tokenUsage) {
@@ -274,6 +295,7 @@ export const chatSessionStore = {
       title: `${source.title} (分支)`,
       createdAt: now,
       updatedAt: now,
+      mode: source.mode,
       preferredModelId: source.preferredModelId,
       history: forkedHistory,
       // 保持原始 history 索引映射，只替换 sessionId 前缀

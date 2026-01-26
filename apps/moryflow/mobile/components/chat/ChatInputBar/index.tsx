@@ -1,5 +1,5 @@
 /**
- * [PROPS]: input, onInputChange, onSend, onStop, isLoading, isInitialized, models, currentModelId, currentModel, onModelChange, isInSheet, disableBottomPadding
+ * [PROPS]: input, onInputChange, onSend, onStop, isLoading, isInitialized, mode, onModeChange, models, currentModelId, currentModel, onModelChange, isInSheet, disableBottomPadding
  * [EMITS]: onInputChange, onSend, onStop, onModelChange
  * [POS]: 聊天输入栏主组件，组合子组件实现完整功能
  */
@@ -23,6 +23,8 @@ export function ChatInputBar({
   onStop,
   isLoading = false,
   isInitialized = true,
+  mode,
+  onModeChange,
   models = [],
   currentModel,
   onModelChange,
@@ -169,6 +171,8 @@ export function ChatInputBar({
         isLoading={isLoading}
         canSend={canSend}
         showFilePanel={showFilePanel}
+        mode={mode}
+        onModeChange={onModeChange}
         models={models}
         currentModel={currentModel}
         onModelChange={onModelChange}

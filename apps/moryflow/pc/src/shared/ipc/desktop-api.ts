@@ -1,9 +1,9 @@
 /**
- * [DEFINES]: DesktopApi IPC 结构与渲染进程可用的类型契约
- * [USED_BY]: preload/index.ts, renderer 侧 API 调用
- * [POS]: 主/渲染进程 IPC 通道类型入口
+ * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理/模式更新等渲染端契约）
+ * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
+ * [POS]: PC IPC 类型入口
  *
- * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import type { AgentApplyEditInput, AgentApplyEditResult } from './apply-edit';
@@ -175,6 +175,7 @@ export type DesktopApi = {
     move: (input: { path: string; targetDir: string }) => Promise<{ path: string }>;
     delete: (input: { path: string }) => Promise<void>;
     showInFinder: (input: { path: string }) => Promise<void>;
+    openPath: (input: { path: string }) => Promise<void>;
   };
   events: {
     /**
@@ -192,6 +193,9 @@ export type DesktopApi = {
       agentOptions?: AgentChatRequestOptions;
     }) => Promise<{ ok: boolean }>;
     stop: (payload: { channel: string }) => Promise<{ ok: boolean }>;
+    approveTool: (payload: { approvalId: string; remember?: 'once' | 'always' }) => Promise<{
+      ok: boolean;
+    }>;
     /**
      * 订阅流式响应，回调收到 null 表示流结束。
      */
@@ -207,6 +211,13 @@ export type DesktopApi = {
     }) => Promise<ChatSessionSummary | null>;
     deleteSession: (input: { sessionId: string }) => Promise<{ ok: boolean }>;
     getSessionMessages: (input: { sessionId: string }) => Promise<UIMessage[]>;
+    /**
+     * 发送前预处理会话压缩，必要时返回新的 UI 消息列表。
+     */
+    prepareCompaction: (input: {
+      sessionId: string;
+      preferredModelId?: string;
+    }) => Promise<{ changed: boolean; messages?: UIMessage[] }>;
     /** 截断会话历史到指定索引（用于重发、重试） */
     truncateSession: (input: { sessionId: string; index: number }) => Promise<{ ok: boolean }>;
     /** 替换指定索引的消息内容（用于编辑重发） */
@@ -217,6 +228,11 @@ export type DesktopApi = {
     }) => Promise<{ ok: boolean }>;
     /** 从指定位置分支出新会话 */
     forkSession: (input: { sessionId: string; atIndex: number }) => Promise<ChatSessionSummary>;
+    /** 更新会话访问模式 */
+    updateSessionMode: (input: {
+      sessionId: string;
+      mode: ChatSessionSummary['mode'];
+    }) => Promise<ChatSessionSummary>;
     onSessionEvent: (handler: (event: ChatSessionEvent) => void) => () => void;
     applyEdit?: (input: AgentApplyEditInput) => Promise<AgentApplyEditResult>;
   };

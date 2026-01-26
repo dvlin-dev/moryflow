@@ -2,7 +2,7 @@ import type { ChatStatus, FileUIPart } from 'ai';
 
 import type { PromptInputProps } from '@anyhunt/ui/ai/prompt-input';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type { TokenUsage } from '@shared/ipc';
+import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 
 import type { ModelGroup } from '../../models';
 import type { MessageAttachment } from '../../types/attachment';
@@ -41,4 +41,8 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   tokenUsage?: TokenUsage | null;
   /** 当前模型的 context window 大小 */
   contextWindow?: number;
+  /** 会话级访问模式 */
+  mode: ChatSessionSummary['mode'];
+  /** 切换访问模式 */
+  onModeChange: (mode: ChatSessionSummary['mode']) => void;
 };

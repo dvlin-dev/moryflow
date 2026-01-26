@@ -1,6 +1,6 @@
 /**
  * [PROPS]: Tool* - 工具调用展示组件
- * [POS]: 聊天消息中工具输入/输出的通用 UI（含状态与结果展示）
+ * [POS]: 聊天消息中工具输入/输出的通用 UI（含状态、结果与截断预览）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -69,6 +69,9 @@ export type ToolOutputLabels = {
   stderr?: string;
   targetFile?: string;
   contentTooLong?: string;
+  outputTruncated?: string;
+  viewFullOutput?: string;
+  fullOutputPath?: string;
   applyToFile?: string;
   applying?: string;
   applied?: string;
@@ -80,6 +83,7 @@ export type ToolOutputProps = ComponentProps<'div'> & {
   output: ToolUIPart['output'];
   errorText: ToolUIPart['errorText'];
   labels?: ToolOutputLabels;
+  onOpenFullOutput?: (fullPath: string) => void | Promise<void>;
   onApplyDiff?: (result: ToolDiffResult) => void | Promise<void>;
   onApplyDiffSuccess?: (result: ToolDiffResult) => void;
   onApplyDiffError?: (error: unknown) => void;
@@ -217,6 +221,7 @@ export const ToolOutput = ({
   output,
   errorText,
   labels,
+  onOpenFullOutput,
   onApplyDiff,
   onApplyDiffError,
   onApplyDiffSuccess,
@@ -234,6 +239,9 @@ export const ToolOutput = ({
       stderr: labels?.stderr ?? 'stderr',
       targetFile: labels?.targetFile ?? 'Target file',
       contentTooLong: labels?.contentTooLong ?? 'Content too long',
+      outputTruncated: labels?.outputTruncated ?? 'Output truncated',
+      viewFullOutput: labels?.viewFullOutput ?? 'View full output',
+      fullOutputPath: labels?.fullOutputPath ?? 'Full output path',
       applyToFile: labels?.applyToFile ?? 'Apply to file',
       applying: labels?.applying ?? 'Applying...',
       applied: labels?.applied ?? 'Applied',
@@ -253,6 +261,7 @@ export const ToolOutput = ({
     onApplyDiff,
     onApplyDiffError,
     onApplyDiffSuccess,
+    onOpenFullOutput,
   });
 
   let content: ReactNode = specialized;
@@ -300,6 +309,7 @@ type SpecializedOptions = {
   onApplyDiff?: (result: ToolDiffResult) => void | Promise<void>;
   onApplyDiffSuccess?: (result: ToolDiffResult) => void;
   onApplyDiffError?: (error: unknown) => void;
+  onOpenFullOutput?: (fullPath: string) => void | Promise<void>;
 };
 
 const getSpecializedOutput = (
@@ -309,6 +319,15 @@ const getSpecializedOutput = (
 ): ReactNode => {
   if (!output || isValidElement(output)) {
     return null;
+  }
+  if (isTruncatedOutput(output)) {
+    return (
+      <TruncatedOutput
+        result={output}
+        labels={labels}
+        onOpenFullOutput={options.onOpenFullOutput}
+      />
+    );
   }
   if (isCommandResult(output)) {
     return <CommandOutput result={output} labels={labels} />;
@@ -320,6 +339,69 @@ const getSpecializedOutput = (
     return <TodoOutput result={output} labels={labels} />;
   }
   return null;
+};
+
+type TruncatedOutputResult = {
+  kind: 'truncated_output';
+  truncated: true;
+  preview: string;
+  fullPath: string;
+  hint?: string;
+  metadata?: {
+    lines?: number;
+    bytes?: number;
+    maxLines?: number;
+    maxBytes?: number;
+  };
+};
+
+const isTruncatedOutput = (value: unknown): value is TruncatedOutputResult => {
+  if (!value || typeof value !== 'object' || isValidElement(value)) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return record.kind === 'truncated_output' && typeof record.preview === 'string';
+};
+
+const TruncatedOutput = ({
+  result,
+  labels,
+  onOpenFullOutput,
+}: {
+  result: TruncatedOutputResult;
+  labels: Required<ToolOutputLabels>;
+  onOpenFullOutput?: (fullPath: string) => void | Promise<void>;
+}) => {
+  const hasPath = typeof result.fullPath === 'string' && result.fullPath.length > 0;
+  const handleOpen = () => {
+    if (!hasPath || !onOpenFullOutput) return;
+    void Promise.resolve(onOpenFullOutput(result.fullPath)).catch((error) => {
+      console.error('[tool-output] failed to open full output', error);
+    });
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border-muted/60 bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          {labels.outputTruncated}
+        </span>
+        {hasPath && onOpenFullOutput && (
+          <Button size="sm" variant="secondary" onClick={handleOpen} type="button">
+            {labels.viewFullOutput}
+          </Button>
+        )}
+      </div>
+      <CodeBlock code={result.preview} language="markdown" className="text-xs" />
+      {hasPath && (
+        <div className="text-xs text-muted-foreground">
+          {labels.fullOutputPath}:{' '}
+          <span className="font-mono break-all">{result.fullPath}</span>
+        </div>
+      )}
+      {result.hint && <p className="text-xs text-muted-foreground">{result.hint}</p>}
+    </div>
+  );
 };
 
 type CommandResult = {

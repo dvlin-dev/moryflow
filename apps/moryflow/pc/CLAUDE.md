@@ -83,6 +83,12 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook；桌面端可按开关加载外部工具
+- Chat 会话模式切换补齐审计与 mode 归一化，避免缺失字段导致异常
+- Chat 会话模式切换：IPC/存储/渲染联动，全权限模式自动放行且保留审计
+- Chat 会话压缩新增发送前预处理与 IPC 同步，避免 UI/历史错位
+- Chat 工具审批链路贯通：IPC `chat:approve-tool` + 审批卡交互
+- Agent 工具输出统一截断，聊天内支持打开完整输出文件
 - 补齐 keytar 类型声明，修复 typecheck 缺失模块
 - System Prompt 设置页：高级参数可选覆盖（默认使用模型默认值 + Use model default）
 - Agent Runtime 切换为 `@openai/agents-core`，移除本地 Agents SDK 依赖
