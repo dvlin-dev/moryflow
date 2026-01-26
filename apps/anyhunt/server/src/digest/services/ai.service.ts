@@ -3,12 +3,14 @@
  *
  * [INPUT]: 内容全文、订阅上下文、语言设置
  * [OUTPUT]: AI 生成的摘要、叙事稿、评分解释
- * [POS]: 处理所有 AI 调用，负责 LLM 交互和结果缓存
+ * [POS]: 处理所有 AI 调用，负责 LLM 交互和结果缓存（统一走 AI SDK，输出上限使用模型 maxOutputTokens）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import type OpenAI from 'openai';
-import { LlmOpenAiClientService } from '../../llm';
+import { generateText, type LanguageModel, type ModelMessage } from 'ai';
+import { LlmLanguageModelService } from '../../llm';
 import { AI_PROMPTS, AI_SUMMARY, BILLING } from '../digest.constants';
 import type { BillingBreakdown } from './run.service';
 
@@ -60,24 +62,24 @@ export interface AiGenerationResult<T> {
 }
 
 type DigestResolvedLlm = {
-  client: OpenAI;
-  upstreamModelId: string;
+  model: LanguageModel;
+  maxOutputTokens: number;
 };
 
 @Injectable()
 export class DigestAiService {
   private readonly logger = new Logger(DigestAiService.name);
 
-  constructor(private readonly llmOpenAiClient: LlmOpenAiClientService) {}
+  constructor(private readonly llmLanguageModel: LlmLanguageModelService) {}
 
   private async resolveLlm(): Promise<DigestResolvedLlm> {
-    const resolved = await this.llmOpenAiClient.resolveClient({
+    const resolved = await this.llmLanguageModel.resolveModel({
       purpose: 'agent',
     });
 
     return {
-      client: resolved.client,
-      upstreamModelId: resolved.upstreamModelId,
+      model: resolved.model,
+      maxOutputTokens: resolved.modelConfig.maxOutputTokens,
     };
   }
 
@@ -85,15 +87,18 @@ export class DigestAiService {
     resolved: DigestResolvedLlm,
     params: { systemPrompt: string; userPrompt: string },
   ): Promise<string> {
-    const response = await resolved.client.chat.completions.create({
-      model: resolved.upstreamModelId,
-      messages: [
-        { role: 'system', content: params.systemPrompt },
-        { role: 'user', content: params.userPrompt },
-      ],
+    const messages: ModelMessage[] = [
+      { role: 'system', content: params.systemPrompt },
+      { role: 'user', content: params.userPrompt },
+    ];
+
+    const result = await generateText({
+      model: resolved.model,
+      messages,
+      maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
     });
 
-    return response.choices[0]?.message?.content || '';
+    return result.text ?? '';
   }
 
   /**

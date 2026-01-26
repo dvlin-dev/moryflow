@@ -1,26 +1,32 @@
 /**
  * [PROVIDES]: resolve(), complete(), completeParsed(), stream() - Extract 用 LLM 能力
- * [DEPENDS]: llm/LlmOpenAiClientService + openai - OpenAI-compatible API client
- * [POS]: Extract 的 LLM 调用边界：只负责 Extract 场景的 prompt/structured-output 调用，不负责 provider 路由/密钥管理
+ * [DEPENDS]: llm/LlmLanguageModelService + ai - AI SDK LanguageModel
+ * [POS]: Extract 的 LLM 调用边界：只负责 Extract 场景的 prompt/structured-output 调用，不负责 provider 路由/密钥管理（输出上限使用模型 maxOutputTokens）
  *
  * [PROTOCOL]: When this file changes, update this header and src/extract/CLAUDE.md
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
-import { zodResponseFormat } from 'openai/helpers/zod';
-import type OpenAI from 'openai';
-import { LlmOpenAiClientService } from '../llm';
+import {
+  generateObject,
+  generateText,
+  streamText,
+  type LanguageModel,
+  type ModelMessage,
+} from 'ai';
+import { LlmLanguageModelService } from '../llm';
+import { LlmError } from './extract.errors';
 
 export type ExtractResolvedLlm = {
-  client: OpenAI;
+  model: LanguageModel;
   upstreamModelId: string;
+  maxOutputTokens: number;
 };
 
 interface CompletionOptions {
   systemPrompt: string;
   userPrompt: string;
-  responseFormat?: 'text' | 'json_object';
 }
 
 interface ParsedCompletionOptions<T> {
@@ -34,17 +40,18 @@ interface ParsedCompletionOptions<T> {
 export class ExtractLlmClient {
   private readonly logger = new Logger(ExtractLlmClient.name);
 
-  constructor(private readonly llmOpenAiClient: LlmOpenAiClientService) {}
+  constructor(private readonly llmLanguageModel: LlmLanguageModelService) {}
 
   async resolve(requestedModelId?: string): Promise<ExtractResolvedLlm> {
-    const resolved = await this.llmOpenAiClient.resolveClient({
+    const resolved = await this.llmLanguageModel.resolveModel({
       purpose: 'extract',
       requestedModelId,
     });
 
     return {
-      client: resolved.client,
+      model: resolved.model,
       upstreamModelId: resolved.upstreamModelId,
+      maxOutputTokens: resolved.modelConfig.maxOutputTokens,
     };
   }
 
@@ -55,23 +62,22 @@ export class ExtractLlmClient {
     resolved: ExtractResolvedLlm,
     options: CompletionOptions,
   ): Promise<string> {
-    const { systemPrompt, userPrompt, responseFormat = 'text' } = options;
+    const { systemPrompt, userPrompt } = options;
 
-    this.logger.debug(
-      `LLM request: model=${resolved.upstreamModelId}, format=${responseFormat}`,
-    );
+    this.logger.debug(`LLM request: model=${resolved.upstreamModelId}`);
 
-    const response = await resolved.client.chat.completions.create({
-      model: resolved.upstreamModelId,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      response_format:
-        responseFormat === 'json_object' ? { type: 'json_object' } : undefined,
+    const messages: ModelMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
+
+    const result = await generateText({
+      model: resolved.model,
+      messages,
+      maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
     });
 
-    return response.choices[0].message.content || '';
+    return result.text ?? '';
   }
 
   /**
@@ -87,21 +93,37 @@ export class ExtractLlmClient {
       `LLM structured request: model=${resolved.upstreamModelId}, schema=${schemaName}`,
     );
 
-    const response = await resolved.client.chat.completions.parse({
-      model: resolved.upstreamModelId,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      response_format: zodResponseFormat(schema, schemaName),
-    });
+    const messages: ModelMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
 
-    const parsed = response.choices[0].message.parsed;
-    if (!parsed) {
-      throw new Error('Failed to parse LLM response');
+    try {
+      const result = await generateObject({
+        model: resolved.model,
+        schema,
+        messages,
+        maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
+      });
+
+      if (!result.object) {
+        throw new LlmError('Structured output is empty', {
+          schema: schemaName,
+          model: resolved.upstreamModelId,
+        });
+      }
+
+      return result.object as T;
+    } catch (error) {
+      if (error instanceof LlmError) {
+        throw error;
+      }
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new LlmError(`Structured output failed: ${reason}`, {
+        schema: schemaName,
+        model: resolved.upstreamModelId,
+      });
     }
-
-    return parsed;
   }
 
   /**
@@ -115,19 +137,20 @@ export class ExtractLlmClient {
 
     this.logger.debug(`LLM stream request: model=${resolved.upstreamModelId}`);
 
-    const stream = await resolved.client.chat.completions.create({
-      model: resolved.upstreamModelId,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      stream: true,
+    const messages: ModelMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
+
+    const streamResult = streamText({
+      model: resolved.model,
+      messages,
+      maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
     });
 
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content;
-      if (content) {
-        yield content;
+    for await (const delta of streamResult.textStream) {
+      if (delta) {
+        yield delta;
       }
     }
   }

@@ -1,6 +1,6 @@
 ---
 title: Anyhunt Server：Admin 动态配置 LLM Providers/Models（参考 Moryflow）
-date: 2026-01-20
+date: 2026-01-26
 scope: apps/anyhunt/server
 status: implemented
 ---
@@ -21,7 +21,7 @@ Anyhunt Server 的 Agent/LLM 能力需要支持：
 
 1. Admin 后台可管理：
    - LLM Provider（`providerType/name/apiKey/baseUrl/enabled/sortOrder`）
-   - LLM Model（对外 `modelId` 与对上游 `upstreamId` 的映射、启用状态）
+   - LLM Model（对外 `modelId` 与对上游 `upstreamId` 的映射、能力/计费/额度）
    - 全局默认模型（`defaultAgentModelId` / `defaultExtractModelId`）
 2. API 层形态：
    - `model?: string`：可选，不传则走 default
@@ -41,7 +41,7 @@ Anyhunt Server 的 Agent/LLM 能力需要支持：
 
 用于管理员管理 provider 运行时配置（可启用多个 provider）。
 
-- `providerType`: `openai | openai_compatible | openrouter`
+- `providerType`: `openai | openai-compatible | openrouter | anthropic | google`
 - `apiKeyEncrypted`: 加密存储（服务端解密后用于请求）
 - `baseUrl`: 可选（未填则使用 provider 默认）
 - `enabled/sortOrder`
@@ -52,7 +52,12 @@ Anyhunt Server 的 Agent/LLM 能力需要支持：
 
 - `modelId`: 对外标准模型名（例如 `gpt-4o`）
 - `upstreamId`: 上游模型名（例如原生 OpenAI：`gpt-4o`；某些网关：`openai/gpt-4o`）
+- `displayName`
 - `enabled`
+- `inputTokenPrice` / `outputTokenPrice`（USD / 1M tokens）
+- `minTier`（订阅等级）
+- `maxContextTokens` / `maxOutputTokens`
+- `capabilitiesJson`（vision/tools/json + reasoning）
 - `providerId` 外键
 
 ### `LlmSettings`（单行）
@@ -74,8 +79,8 @@ Anyhunt Server 的 Agent/LLM 能力需要支持：
    - 只负责“查库 + 选路由 + 解密密钥”，输出 `{ apiKey, baseUrl, upstreamModelId }`
 4. `LlmRoutingService`（给 Agent 用）：
    - `resolveAgentModel(model?)` / `resolveExtractModel(model?)` → 返回 agents-core `Model`
-5. `LlmOpenAiClientService`（给 OpenAI SDK 场景用，如 Extract）：
-   - `resolveClient({ purpose, requestedModelId })` → 返回 OpenAI client + upstreamModelId
+5. `LlmLanguageModelService`（给 Extract/Digest 等 AI SDK 场景用）：
+   - `resolveModel({ purpose, requestedModelId })` → 返回 LanguageModel + upstreamModelId
 
 ## API 设计
 
@@ -84,6 +89,7 @@ Anyhunt Server 的 Agent/LLM 能力需要支持：
 - `GET /api/v1/admin/llm/settings`
 - `PUT /api/v1/admin/llm/settings`
 - `GET /api/v1/admin/llm/providers`
+- `GET /api/v1/admin/llm/providers/presets`
 - `POST /api/v1/admin/llm/providers`
 - `PATCH /api/v1/admin/llm/providers/:id`
 - `DELETE /api/v1/admin/llm/providers/:id`
@@ -119,7 +125,7 @@ Phase 1（本次）：
 - [x] Prisma：新增 `LlmProvider/LlmModel/LlmSettings`；删除 `ApiKey.llm*` 字段
 - [x] Server：新增 `llm/` 模块与 Admin API
 - [x] Agent：改为从 `LlmRoutingService` 获取 provider/model，不再读取 ApiKey LLM 字段
-- [x] Extract：改为从 `LlmOpenAiClientService` 获取 OpenAI client，不再读取 OpenAI baseUrl/model env
+- [x] Extract：改为从 `LlmLanguageModelService` 获取 AI SDK LanguageModel，不再读取 OpenAI baseUrl/model env
 - [x] 单测：覆盖路由选择（默认模型/歧义/不可用/disabled provider）与加解密
 
 Phase 2（后续）：

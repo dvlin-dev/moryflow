@@ -16,6 +16,14 @@ export type BrowserSessionInfo = {
   wsEndpoint?: string;
 };
 
+/**
+ * [DEFINES]: Agent/Browser Playground 类型定义
+ * [USED_BY]: agent-browser-playground/*, console-playground UI
+ * [POS]: Console Playground 的统一响应类型边界
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
+ */
+
 export type BrowserOpenResponse = {
   success: boolean;
   url: string;
@@ -182,6 +190,24 @@ export type AgentEstimateResponse = {
     toolCallEstimate: number;
     durationEstimate: number;
   };
+};
+
+export type AgentModelOption = {
+  modelId: string;
+  displayName: string;
+  providerName: string;
+  providerType: string;
+  inputTokenPrice: number;
+  outputTokenPrice: number;
+  minTier: string;
+  maxContextTokens: number;
+  maxOutputTokens: number;
+  capabilitiesJson: Record<string, unknown> | string;
+};
+
+export type AgentModelListResponse = {
+  defaultModelId: string;
+  models: AgentModelOption[];
 };
 
 export type JsonSchemaProperty = {

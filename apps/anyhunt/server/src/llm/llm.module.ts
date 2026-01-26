@@ -10,7 +10,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma';
 import { LlmAdminController } from './llm-admin.controller';
 import { LlmAdminService } from './llm-admin.service';
-import { LlmOpenAiClientService } from './llm-openai-client.service';
+import { LlmLanguageModelService } from './llm-language-model.service';
 import { LlmRoutingService } from './llm-routing.service';
 import { LlmSecretService } from './llm-secret.service';
 import { LlmUpstreamResolverService } from './llm-upstream-resolver.service';
@@ -21,10 +21,10 @@ import { LlmUpstreamResolverService } from './llm-upstream-resolver.service';
   providers: [
     LlmSecretService,
     LlmUpstreamResolverService,
+    LlmLanguageModelService,
     LlmAdminService,
     LlmRoutingService,
-    LlmOpenAiClientService,
   ],
-  exports: [LlmRoutingService, LlmOpenAiClientService],
+  exports: [LlmRoutingService, LlmLanguageModelService],
 })
 export class LlmModule {}

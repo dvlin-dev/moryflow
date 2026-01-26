@@ -9,11 +9,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  PRESET_LLM_PROVIDERS,
   DEFAULT_LLM_AGENT_MODEL_ID,
   DEFAULT_LLM_EXTRACT_MODEL_ID,
   DEFAULT_LLM_SETTINGS_ID,
 } from './llm.constants';
 import { LlmSecretService } from './llm-secret.service';
+import type { Prisma } from '../../generated/prisma-main/client';
 import type {
   CreateLlmProviderDto,
   UpdateLlmProviderDto,
@@ -139,14 +141,18 @@ export class LlmAdminService {
     });
   }
 
+  getPresetProviders() {
+    return { providers: PRESET_LLM_PROVIDERS };
+  }
+
   async listProviders(): Promise<LlmProviderListItem[]> {
     const providers = await this.prisma.llmProvider.findMany({
-      orderBy: [{ sortOrder: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
 
     return providers.map((p) => ({
       id: p.id,
-      providerType: p.providerType as LlmProviderListItem['providerType'],
+      providerType: p.providerType,
       name: p.name,
       baseUrl: p.baseUrl,
       enabled: p.enabled,
@@ -174,7 +180,7 @@ export class LlmAdminService {
 
     return {
       id: created.id,
-      providerType: created.providerType as LlmProviderListItem['providerType'],
+      providerType: created.providerType,
       name: created.name,
       baseUrl: created.baseUrl,
       enabled: created.enabled,
@@ -213,7 +219,7 @@ export class LlmAdminService {
 
     return {
       id: updated.id,
-      providerType: updated.providerType as LlmProviderListItem['providerType'],
+      providerType: updated.providerType,
       name: updated.name,
       baseUrl: updated.baseUrl,
       enabled: updated.enabled,
@@ -235,16 +241,24 @@ export class LlmAdminService {
   async listModels(): Promise<LlmModelListItem[]> {
     const models = await this.prisma.llmModel.findMany({
       include: { provider: true },
-      orderBy: [{ modelId: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ sortOrder: 'asc' }, { modelId: 'asc' }],
     });
 
     return models.map((m) => ({
       id: m.id,
       providerId: m.providerId,
       providerName: m.provider.name,
-      providerType: m.provider.providerType as LlmModelListItem['providerType'],
+      providerType: m.provider.providerType,
       modelId: m.modelId,
       upstreamId: m.upstreamId,
+      displayName: m.displayName,
+      inputTokenPrice: m.inputTokenPrice,
+      outputTokenPrice: m.outputTokenPrice,
+      minTier: m.minTier,
+      maxContextTokens: m.maxContextTokens,
+      maxOutputTokens: m.maxOutputTokens,
+      capabilitiesJson: m.capabilitiesJson,
+      sortOrder: m.sortOrder,
       enabled: m.enabled,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,
@@ -252,12 +266,33 @@ export class LlmAdminService {
   }
 
   async createModel(dto: CreateLlmModelDto): Promise<LlmModelListItem> {
+    const capabilitiesJson = {
+      vision: dto.capabilities?.vision ?? false,
+      tools: dto.capabilities?.tools ?? false,
+      json: dto.capabilities?.json ?? false,
+      maxContextTokens: dto.maxContextTokens,
+      maxOutputTokens: dto.maxOutputTokens,
+      reasoning: dto.reasoning ?? { enabled: false },
+    };
+
+    const capabilitiesJsonValue = JSON.parse(
+      JSON.stringify(capabilitiesJson),
+    ) as Prisma.InputJsonValue;
+
     const created = await this.prisma.llmModel.create({
       data: {
         providerId: dto.providerId,
         modelId: dto.modelId,
         upstreamId: dto.upstreamId,
+        displayName: dto.displayName,
         enabled: dto.enabled ?? true,
+        inputTokenPrice: dto.inputTokenPrice,
+        outputTokenPrice: dto.outputTokenPrice,
+        minTier: dto.minTier,
+        maxContextTokens: dto.maxContextTokens,
+        maxOutputTokens: dto.maxOutputTokens,
+        capabilitiesJson: capabilitiesJsonValue,
+        sortOrder: dto.sortOrder ?? 0,
       },
       include: { provider: true },
     });
@@ -266,10 +301,17 @@ export class LlmAdminService {
       id: created.id,
       providerId: created.providerId,
       providerName: created.provider.name,
-      providerType: created.provider
-        .providerType as LlmModelListItem['providerType'],
+      providerType: created.provider.providerType,
       modelId: created.modelId,
       upstreamId: created.upstreamId,
+      displayName: created.displayName,
+      inputTokenPrice: created.inputTokenPrice,
+      outputTokenPrice: created.outputTokenPrice,
+      minTier: created.minTier,
+      maxContextTokens: created.maxContextTokens,
+      maxOutputTokens: created.maxOutputTokens,
+      capabilitiesJson: created.capabilitiesJson,
+      sortOrder: created.sortOrder,
       enabled: created.enabled,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
@@ -286,7 +328,8 @@ export class LlmAdminService {
       select: {
         modelId: true,
         enabled: true,
-        provider: { select: { enabled: true } },
+        capabilitiesJson: true,
+        provider: { select: { enabled: true, name: true, providerType: true } },
       },
     });
 
@@ -310,13 +353,33 @@ export class LlmAdminService {
       });
     }
 
+    const updateData: Record<string, unknown> = { ...dto };
+    delete updateData.capabilities;
+    delete updateData.reasoning;
+
+    if (
+      dto.capabilities ||
+      dto.reasoning ||
+      dto.maxContextTokens !== undefined ||
+      dto.maxOutputTokens !== undefined
+    ) {
+      const existingCaps =
+        (current.capabilitiesJson as Record<string, unknown> | null) ?? {};
+      const nextCaps = {
+        ...existingCaps,
+        ...(dto.capabilities ?? {}),
+        maxContextTokens: dto.maxContextTokens ?? existingCaps.maxContextTokens,
+        maxOutputTokens: dto.maxOutputTokens ?? existingCaps.maxOutputTokens,
+        ...(dto.reasoning && { reasoning: dto.reasoning }),
+      };
+      updateData.capabilitiesJson = JSON.parse(
+        JSON.stringify(nextCaps),
+      ) as Prisma.InputJsonValue;
+    }
+
     const updated = await this.prisma.llmModel.update({
       where: { id: modelId },
-      data: {
-        modelId: dto.modelId,
-        upstreamId: dto.upstreamId,
-        enabled: dto.enabled,
-      },
+      data: updateData,
       include: { provider: true },
     });
 
@@ -324,10 +387,17 @@ export class LlmAdminService {
       id: updated.id,
       providerId: updated.providerId,
       providerName: updated.provider.name,
-      providerType: updated.provider
-        .providerType as LlmModelListItem['providerType'],
+      providerType: updated.provider.providerType,
       modelId: updated.modelId,
       upstreamId: updated.upstreamId,
+      displayName: updated.displayName,
+      inputTokenPrice: updated.inputTokenPrice,
+      outputTokenPrice: updated.outputTokenPrice,
+      minTier: updated.minTier,
+      maxContextTokens: updated.maxContextTokens,
+      maxOutputTokens: updated.maxOutputTokens,
+      capabilitiesJson: updated.capabilitiesJson,
+      sortOrder: updated.sortOrder,
       enabled: updated.enabled,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,

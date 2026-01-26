@@ -58,6 +58,11 @@ export class LlmAdminController {
     return this.llmAdminService.listProviders();
   }
 
+  @Get('providers/presets')
+  listPresetProviders() {
+    return this.llmAdminService.getPresetProviders();
+  }
+
   @Post('providers')
   createProvider(
     @Body(new ZodValidationPipe(CreateLlmProviderSchema))

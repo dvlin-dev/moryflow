@@ -24,6 +24,7 @@ import {
   useAdminLlmModels,
   useAdminLlmProviders,
   useAdminLlmSettings,
+  useAdminLlmProviderPresets,
   useCreateAdminLlmModel,
   useCreateAdminLlmProvider,
   useDeleteAdminLlmModel,
@@ -48,6 +49,7 @@ function uniqueStrings(values: string[]): string[] {
 export default function LlmPage() {
   const settingsQuery = useAdminLlmSettings();
   const providersQuery = useAdminLlmProviders();
+  const providerPresetsQuery = useAdminLlmProviderPresets();
   const modelsQuery = useAdminLlmModels();
 
   const updateSettingsMutation = useUpdateAdminLlmSettings();
@@ -60,6 +62,7 @@ export default function LlmPage() {
 
   const providers = providersQuery.data ?? [];
   const models = modelsQuery.data ?? [];
+  const providerPresets = providerPresetsQuery.data?.providers ?? [];
 
   const enabledProviderIds = useMemo(() => {
     return new Set(providers.filter((p) => p.enabled).map((p) => p.id));
@@ -240,6 +243,7 @@ export default function LlmPage() {
         open={providerDialogOpen}
         mode={providerDialogMode}
         provider={activeProvider}
+        presets={providerPresets}
         isSubmitting={createProviderMutation.isPending || updateProviderMutation.isPending}
         onClose={() => setProviderDialogOpen(false)}
         onCreate={async (input) => {

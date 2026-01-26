@@ -8,7 +8,12 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
-- Agent/LLM/Embedding：修复流式任务进度清理、补齐 LLM Settings 兜底，完善相关测试与文件头规范
+- Agent：请求支持多轮消息（messages），计费估算基于 message 总量
+- Console Playground：Agent DTO 复用 CreateAgentTaskConsoleSchema，避免 refine+omit 冲突
+- LLM：对齐 Moryflow AI SDK 模型工厂，新增 Anthropic/Google/OpenRouter 支持
+- LLM：扩展 Model 字段（displayName/pricing/tier/limits/capabilitiesJson），支持 OpenRouter reasoning 配置
+- Console Playground：新增 Agent 模型列表接口（供前端模型选择）
+- LLM/Extract/Digest：清理未使用配置项（responseFormat/upstreamModelId）
 - Console Playground Browser 路由测试使用 `app.listen(0)`，减少并发测试下的连接重置
 - Browser CDP 连接新增白名单/私网策略环境变量（`.env.example`）
 - Browser Streaming/Provider 环境变量补齐（`.env.example`）

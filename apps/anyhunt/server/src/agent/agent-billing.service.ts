@@ -331,7 +331,13 @@ export class AgentBillingService {
       durationEstimate: number;
     };
   } {
-    const promptTokens = Math.ceil(input.prompt.length / 4);
+    const messageChars = input.messages?.length
+      ? input.messages.reduce(
+          (total, message) => total + message.content.length,
+          0,
+        )
+      : (input.prompt?.length ?? 0);
+    const promptTokens = Math.ceil(messageChars / 4);
     const estimatedTotalTokens = promptTokens * 10;
 
     const urlCount = input.urls?.length ?? 1;

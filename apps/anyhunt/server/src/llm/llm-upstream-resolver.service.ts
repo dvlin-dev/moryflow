@@ -32,6 +32,18 @@ type Candidate = {
     apiKeyEncrypted: string;
     sortOrder: number;
   };
+  model: {
+    id: string;
+    modelId: string;
+    displayName: string;
+    inputTokenPrice: number;
+    outputTokenPrice: number;
+    minTier: string;
+    maxContextTokens: number;
+    maxOutputTokens: number;
+    capabilitiesJson: unknown;
+    sortOrder: number;
+  };
 };
 
 function normalizeRequestedModelId(modelId?: string): string | null {
@@ -86,7 +98,17 @@ export class LlmUpstreamResolverService {
         provider: { enabled: true },
       },
       select: {
+        id: true,
         upstreamId: true,
+        modelId: true,
+        displayName: true,
+        inputTokenPrice: true,
+        outputTokenPrice: true,
+        minTier: true,
+        maxContextTokens: true,
+        maxOutputTokens: true,
+        capabilitiesJson: true,
+        sortOrder: true,
         provider: {
           select: {
             id: true,
@@ -104,11 +126,23 @@ export class LlmUpstreamResolverService {
       upstreamId: m.upstreamId,
       provider: {
         id: m.provider.id,
-        providerType: m.provider.providerType as LlmProviderType,
+        providerType: m.provider.providerType,
         name: m.provider.name,
         baseUrl: m.provider.baseUrl,
         apiKeyEncrypted: m.provider.apiKeyEncrypted,
         sortOrder: m.provider.sortOrder,
+      },
+      model: {
+        id: m.id,
+        modelId: m.modelId,
+        displayName: m.displayName,
+        inputTokenPrice: m.inputTokenPrice,
+        outputTokenPrice: m.outputTokenPrice,
+        minTier: m.minTier,
+        maxContextTokens: m.maxContextTokens,
+        maxOutputTokens: m.maxOutputTokens,
+        capabilitiesJson: m.capabilitiesJson,
+        sortOrder: m.sortOrder,
       },
     }));
   }
@@ -138,6 +172,18 @@ export class LlmUpstreamResolverService {
       providerType: LlmProviderType;
       name: string;
       baseUrl: string | null;
+    };
+    model: {
+      id: string;
+      modelId: string;
+      displayName: string;
+      inputTokenPrice: number;
+      outputTokenPrice: number;
+      minTier: string;
+      maxContextTokens: number;
+      maxOutputTokens: number;
+      capabilitiesJson: unknown;
+      sortOrder: number;
     };
     apiKey: string;
   }> {
@@ -174,6 +220,7 @@ export class LlmUpstreamResolverService {
         name: selected.provider.name,
         baseUrl: selected.provider.baseUrl,
       },
+      model: selected.model,
       apiKey,
     };
   }

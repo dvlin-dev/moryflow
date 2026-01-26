@@ -11,6 +11,7 @@ import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
 import type {
   AgentCancelResponse,
   AgentEstimateResponse,
+  AgentModelListResponse,
   AgentTaskResult,
   BrowserActionResponse,
   BrowserActionBatchResponse,
@@ -481,6 +482,10 @@ export async function estimateAgentCost(
     apiKeyId,
     ...input,
   });
+}
+
+export async function listAgentModels(apiKeyId: string): Promise<AgentModelListResponse> {
+  return apiClient.get(withQuery(CONSOLE_PLAYGROUND_API.AGENT_MODELS, { apiKeyId }));
 }
 
 export async function executeAgentTask(

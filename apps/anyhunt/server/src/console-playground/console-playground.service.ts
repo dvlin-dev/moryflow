@@ -25,6 +25,7 @@ import { MapService } from '../map/map.service';
 import { ExtractService } from '../extract/extract.service';
 import { BrowserSessionService } from '../browser/browser-session.service';
 import { AgentService } from '../agent/agent.service';
+import { DEFAULT_LLM_AGENT_MODEL_ID } from '../llm/llm.constants';
 import type { ScrapeOptions } from '../scraper/dto/scrape.dto';
 import type { CrawlOptions } from '../crawler/dto/crawl.dto';
 import type { SearchOptions } from '../search/dto/search.dto';
@@ -163,6 +164,64 @@ export class ConsolePlaygroundService {
     await this.validateApiKeyOwnership(userId, apiKeyId);
     this.logger.log(`Console extract: user=${userId}, apiKey=${apiKeyId}`);
     return this.extractService.extract(userId, options);
+  }
+
+  async listAgentModels(userId: string, apiKeyId: string) {
+    await this.validateApiKeyOwnership(userId, apiKeyId);
+
+    const models = await this.prisma.llmModel.findMany({
+      where: {
+        enabled: true,
+        provider: { enabled: true },
+      },
+      include: {
+        provider: true,
+      },
+      orderBy: [{ modelId: 'asc' }, { provider: { sortOrder: 'desc' } }],
+    });
+
+    const byModelId = new Map<string, (typeof models)[number]>();
+    for (const model of models) {
+      const existing = byModelId.get(model.modelId);
+      if (!existing) {
+        byModelId.set(model.modelId, model);
+        continue;
+      }
+      if (model.provider.sortOrder > existing.provider.sortOrder) {
+        byModelId.set(model.modelId, model);
+        continue;
+      }
+      if (
+        model.provider.sortOrder === existing.provider.sortOrder &&
+        model.provider.id.localeCompare(existing.provider.id) < 0
+      ) {
+        byModelId.set(model.modelId, model);
+      }
+    }
+
+    const selected = Array.from(byModelId.values());
+    const defaultSettings = await this.prisma.llmSettings.findUnique({
+      where: { id: 'default' },
+      select: { defaultAgentModelId: true },
+    });
+    const defaultModelId =
+      defaultSettings?.defaultAgentModelId ?? DEFAULT_LLM_AGENT_MODEL_ID;
+
+    return {
+      defaultModelId,
+      models: selected.map((model) => ({
+        modelId: model.modelId,
+        displayName: model.displayName,
+        providerName: model.provider.name,
+        providerType: model.provider.providerType,
+        inputTokenPrice: model.inputTokenPrice,
+        outputTokenPrice: model.outputTokenPrice,
+        minTier: model.minTier,
+        maxContextTokens: model.maxContextTokens,
+        maxOutputTokens: model.maxOutputTokens,
+        capabilitiesJson: model.capabilitiesJson,
+      })),
+    };
   }
 
   // ==================== Browser Playground ====================

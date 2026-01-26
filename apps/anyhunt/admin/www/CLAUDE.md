@@ -11,6 +11,10 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
 - Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
 - 补齐 API client 非 JSON 回归测试，新增 `test:unit`
+- LLM 配置对齐 Moryflow：Provider presets + Model 价格/等级/上下文/能力/Reasoning
+- LLM Provider/Model 弹窗扩展能力字段（raw config、tiers、token limits）
+- LLM Model 弹窗修复 reasoning raw config 状态初始化与格式化
+- LLM Model 弹窗补齐 raw config JSON object 校验
 
 ## 职责
 

@@ -40,7 +40,10 @@ import {
   LoadProfileSchema,
   CreateStreamSchema,
 } from '../../browser/dto';
-import { AgentTaskIdParamSchema, CreateAgentTaskSchema } from '../../agent/dto';
+import {
+  AgentTaskIdParamSchema,
+  CreateAgentTaskConsoleSchema,
+} from '../../agent/dto';
 
 export { AgentTaskIdParamSchema };
 
@@ -279,7 +282,7 @@ export type ConsoleBrowserCreateStreamDto = z.infer<
  * Console Agent 任务
  */
 export const ConsoleAgentTaskInputSchema = BaseConsolePlaygroundSchema.merge(
-  CreateAgentTaskSchema.omit({ stream: true }),
+  CreateAgentTaskConsoleSchema,
 );
 export type ConsoleAgentTaskInputDto = z.infer<
   typeof ConsoleAgentTaskInputSchema

@@ -60,6 +60,9 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：Agent Chat 支持单页多轮对话 + 模型选择（对齐 Moryflow）
+- Agent Browser Playground：默认模型选择改为派生值，避免 effect 内 setState
+- Agent Browser Playground：模型列表变更时回退默认模型，防止选择失效
 - Memox Playground：补齐 includes/excludes/custom_instructions/custom_categories、filters/threshold/rerank 等高级字段
 - Agent Browser Playground：Stream 请求改为强制携带 access token，移除 cookie-only 依赖
 - Agent Browser Playground：补充 Reasoning/Progress 映射、stream abort 处理、错误边界与分区组件

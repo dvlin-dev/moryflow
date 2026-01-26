@@ -20,6 +20,7 @@ const llmKeys = {
   root: ['admin', 'llm'] as const,
   settings: () => [...llmKeys.root, 'settings'] as const,
   providers: () => [...llmKeys.root, 'providers'] as const,
+  providerPresets: () => [...llmKeys.root, 'provider-presets'] as const,
   models: () => [...llmKeys.root, 'models'] as const,
 };
 
@@ -44,6 +45,13 @@ export function useAdminLlmProviders() {
   return useQuery({
     queryKey: llmKeys.providers(),
     queryFn: () => llmApi.listProviders(),
+  });
+}
+
+export function useAdminLlmProviderPresets() {
+  return useQuery({
+    queryKey: llmKeys.providerPresets(),
+    queryFn: () => llmApi.listPresetProviders(),
   });
 }
 

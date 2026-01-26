@@ -3,7 +3,7 @@
  *
  * [INPUT]: Agent 任务请求（可选 model；未传使用 Admin 默认）+ Browser ports
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（Runner 使用动态 provider）
+ * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（输出上限遵循模型 maxOutputTokens）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -12,6 +12,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   Agent,
   Runner,
+  type AgentInputItem,
   type Model,
   type ModelProvider,
   type AgentOutputType,
@@ -37,6 +38,7 @@ import {
 } from './agent-stream.processor';
 import type {
   CreateAgentTaskInput,
+  AgentChatMessage,
   AgentOutput,
   AgentTaskResult,
   AgentStreamEvent,
@@ -149,12 +151,14 @@ export class AgentService {
 
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
+    let maxOutputTokens = 4096;
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
       );
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
+      maxOutputTokens = llmRoute.modelConfig.maxOutputTokens;
     } catch (error) {
       const llmConfigError =
         error instanceof Error ? error.message : String(error);
@@ -219,7 +223,7 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input, llmModel);
+      const agent = this.buildAgent(input, llmModel, maxOutputTokens);
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -244,12 +248,12 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const userPrompt = this.buildUserPrompt(input);
+      const runInput = this.buildRunInput(input);
 
       const runner = this.buildRunner(llmModelProvider);
       const streamResult: AgentStreamedResult = await runner.run(
         agent,
-        userPrompt,
+        runInput,
         {
           context,
           maxTurns: MAX_AGENT_TURNS,
@@ -467,12 +471,14 @@ export class AgentService {
 
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
+    let maxOutputTokens = 4096;
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
       );
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
+      maxOutputTokens = llmRoute.modelConfig.maxOutputTokens;
     } catch (error) {
       const llmConfigError =
         error instanceof Error ? error.message : String(error);
@@ -522,7 +528,7 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input, llmModel);
+      const agent = this.buildAgent(input, llmModel, maxOutputTokens);
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -547,14 +553,14 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const userPrompt = this.buildUserPrompt(input);
+      const runInput = this.buildRunInput(input);
 
       yield { type: 'textDelta', delta: '正在分析任务需求...\n' };
 
       const runner = this.buildRunner(llmModelProvider);
       const streamResult: AgentStreamedResult = await runner.run(
         agent,
-        userPrompt,
+        runInput,
         {
           context,
           maxTurns: MAX_AGENT_TURNS,
@@ -726,10 +732,13 @@ export class AgentService {
     }
   }
 
-  private buildAgent(input: CreateAgentTaskInput, model: Model): BrowserAgent {
-    // agents-openai 的 Chat Completions 实现会默认带上 `response_format: { type: 'text' }`。
-    // 部分 OpenAI-compatible 网关（尤其是 Gemini/Claude 代理）会对该字段报 400 invalid argument。
-    // 这里在“纯文本输出”场景下显式移除它（通过 providerData 覆盖为 undefined，使 JSON.stringify 丢弃字段）。
+  private buildAgent(
+    input: CreateAgentTaskInput,
+    model: Model,
+    maxOutputTokens: number,
+  ): BrowserAgent {
+    // AI SDK 适配的模型可能会携带 response_format；部分网关会对此报错。
+    // 在“纯文本输出”场景下显式移除它（通过 providerData 覆盖为 undefined，使 JSON.stringify 丢弃字段）。
     const providerData: Record<string, unknown> | undefined =
       input.output.type === 'json_schema'
         ? undefined
@@ -743,7 +752,7 @@ export class AgentService {
       outputType: buildAgentOutputType(input.output),
       modelSettings: {
         temperature: 0.7,
-        maxTokens: 4096,
+        maxTokens: Math.max(1, maxOutputTokens),
         ...(providerData ? { providerData } : {}),
       },
     });
@@ -754,11 +763,66 @@ export class AgentService {
   }
 
   private buildUserPrompt(input: CreateAgentTaskInput): string {
-    let userPrompt = input.prompt;
+    let userPrompt = input.prompt ?? '';
     if (input.urls?.length) {
       userPrompt += `\n\n起始 URL：${input.urls.join(', ')}`;
     }
     return userPrompt;
+  }
+
+  private buildRunInput(
+    input: CreateAgentTaskInput,
+  ): string | AgentInputItem[] {
+    if (!input.messages || input.messages.length === 0) {
+      return this.buildUserPrompt(input);
+    }
+
+    const items = this.buildInputItems(input.messages);
+    if (input.urls?.length) {
+      const lastUserIndex = [...items]
+        .reverse()
+        .findIndex((item) => (item as { role?: string }).role === 'user');
+      if (lastUserIndex >= 0) {
+        const index = items.length - 1 - lastUserIndex;
+        const current = items[index] as { content?: string };
+        if (typeof current.content === 'string') {
+          current.content += `\n\n起始 URL：${input.urls.join(', ')}`;
+        }
+      } else {
+        items.push({
+          role: 'user',
+          content: `起始 URL：${input.urls.join(', ')}`,
+        } as AgentInputItem);
+      }
+    }
+    return items;
+  }
+
+  private buildInputItems(messages: AgentChatMessage[]): AgentInputItem[] {
+    return messages.map((message) => {
+      if (message.role === 'assistant') {
+        return {
+          role: 'assistant',
+          status: 'completed',
+          content: [
+            {
+              type: 'output_text',
+              text: message.content,
+            },
+          ],
+        } as AgentInputItem;
+      }
+      if (message.role === 'system') {
+        return {
+          role: 'system',
+          content: message.content,
+        } as AgentInputItem;
+      }
+      return {
+        role: 'user',
+        content: message.content,
+      } as AgentInputItem;
+    });
   }
 
   private buildProgressFromTask(task: AgentTask): AgentTaskProgress | null {

@@ -8,7 +8,9 @@
 
 ## 最近更新
 
+- LLM Feature：新增 presets API + model capabilities/reasoning/tiers 支持
 - Feature types 与 API 返回结构改为 raw JSON + RFC7807（移除 success/data 包装）
+- LLM Feature：capabilities/Reasoning 解析工具补齐格式化与校验规则
 
 ## 模块结构
 

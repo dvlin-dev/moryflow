@@ -1,7 +1,7 @@
 /**
  * [PROPS]: LlmModelsCardProps - models list + callbacks
  * [EMITS]: onNew/onEdit/onDelete - Models 变更动作
- * [POS]: Admin LLM 配置页的 Models 区块（modelId → upstreamId）
+ * [POS]: Admin LLM 配置页的 Models 区块（完整模型能力与映射）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -63,9 +63,13 @@ export function LlmModelsCard({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
                 <TableHead>modelId</TableHead>
                 <TableHead>upstreamId</TableHead>
                 <TableHead>Provider</TableHead>
+                <TableHead>Tier</TableHead>
+                <TableHead>Pricing</TableHead>
+                <TableHead>Context</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Updated</TableHead>
                 <TableHead className="text-right" />
@@ -74,7 +78,7 @@ export function LlmModelsCard({
             <TableBody>
               {models.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                     No models yet. Create a provider first, then add a mapping.
                   </TableCell>
                 </TableRow>
@@ -84,6 +88,12 @@ export function LlmModelsCard({
                 const updatedAt = m.updatedAt ? formatRelativeTime(new Date(m.updatedAt)) : '';
                 return (
                   <TableRow key={m.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{m.displayName}</span>
+                        <span className="text-xs text-muted-foreground">{m.modelId}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{m.modelId}</TableCell>
                     <TableCell className="font-mono text-xs">{m.upstreamId}</TableCell>
                     <TableCell className="text-xs">
@@ -93,6 +103,13 @@ export function LlmModelsCard({
                           {m.providerType}
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-xs">{m.minTier}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      ${m.inputTokenPrice.toFixed(2)} / ${m.outputTokenPrice.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {m.maxContextTokens.toLocaleString()} / {m.maxOutputTokens.toLocaleString()}
                     </TableCell>
                     <TableCell>
                       {m.enabled ? (
