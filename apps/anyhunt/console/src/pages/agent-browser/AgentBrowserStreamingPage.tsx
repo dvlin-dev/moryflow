@@ -17,15 +17,15 @@ import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 const streamingSections: BrowserSessionSection[] = ['session', 'stream'];
 
 export default function AgentBrowserStreamingPage() {
-  const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState description="Select an API key to preview streaming." />;
   }
 
   return (
     <BrowserSessionPanel
-      apiKeyId={apiKeyId}
+      apiKey={apiKey}
       sessionId={sessionId}
       onSessionChange={setSessionId}
       sections={streamingSections}

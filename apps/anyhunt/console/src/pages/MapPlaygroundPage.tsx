@@ -31,7 +31,7 @@ import {
   Input,
   Switch,
 } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useMap, type MapRequest, type MapResponse } from '@/features/map-playground';
 import {
   ApiKeySelector,
@@ -52,9 +52,10 @@ export default function MapPlaygroundPage() {
   // 如果用户未手动选择，使用第一个活跃的 API Key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
-  const { mutate, isPending, data, error, reset } = useMap(effectiveKeyId);
+  const { mutate, isPending, data, error, reset } = useMap(apiKeyValue);
 
   const form = useForm<MapFormValues>({
     resolver: zodResolver(mapFormSchema),
@@ -219,7 +220,8 @@ export default function MapPlaygroundPage() {
                 <CodeExample
                   endpoint={FETCHX_API.MAP}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={lastRequest}
                 />
               </CardContent>

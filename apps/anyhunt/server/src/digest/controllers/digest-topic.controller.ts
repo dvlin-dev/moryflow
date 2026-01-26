@@ -1,9 +1,11 @@
 /**
- * Digest Console Topic Controller
+ * Digest Topic Controller
  *
  * [INPUT]: 话题管理请求（创建、更新、删除）
  * [OUTPUT]: DigestTopic 响应
- * [POS]: Console 话题管理 API（Session 认证）
+ * [POS]: Digest 话题管理 API（ApiKey 认证）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -14,22 +16,24 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
   HttpCode,
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
-  ApiCookieAuth,
+  ApiSecurity,
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser } from '../../auth';
+import { CurrentUser, Public } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
+import { ApiKeyGuard } from '../../api-key';
 import { DigestTopicService } from '../services/topic.service';
 import {
   CreateTopicSchema,
@@ -38,15 +42,17 @@ import {
   type UpdateTopicInput,
 } from '../dto';
 
-@ApiTags('Console - Digest Topics')
-@ApiCookieAuth()
-@Controller({ path: 'console/digest/topics', version: '1' })
-export class DigestConsoleTopicController {
+@ApiTags('Digest Topics')
+@ApiSecurity('apiKey')
+@Public()
+@Controller({ path: 'digest/topics', version: '1' })
+@UseGuards(ApiKeyGuard)
+export class DigestTopicController {
   constructor(private readonly topicService: DigestTopicService) {}
 
   /**
    * 获取用户创建的话题
-   * GET /api/console/digest/topics
+   * GET /api/digest/topics
    */
   @Get()
   @ApiOperation({ summary: 'List user created topics' })
@@ -60,7 +66,7 @@ export class DigestConsoleTopicController {
 
   /**
    * 获取单个话题详情
-   * GET /api/console/digest/topics/:id
+   * GET /api/digest/topics/:id
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get topic by ID' })
@@ -78,7 +84,7 @@ export class DigestConsoleTopicController {
 
   /**
    * 创建公开话题（从订阅发布）
-   * POST /api/console/digest/topics
+   * POST /api/digest/topics
    */
   @Post()
   @ApiOperation({ summary: 'Create a public topic from subscription' })
@@ -93,7 +99,7 @@ export class DigestConsoleTopicController {
 
   /**
    * 更新话题
-   * PATCH /api/console/digest/topics/:id
+   * PATCH /api/digest/topics/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update topic' })
@@ -110,7 +116,7 @@ export class DigestConsoleTopicController {
 
   /**
    * 删除话题
-   * DELETE /api/console/digest/topics/:id
+   * DELETE /api/digest/topics/:id
    */
   @Delete(':id')
   @ApiOperation({ summary: 'Delete topic' })

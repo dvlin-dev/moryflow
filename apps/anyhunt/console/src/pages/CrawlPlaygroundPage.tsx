@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { CrawlForm, CrawlResult, useCrawl } from '@/features/crawl-playground';
 import { CodeExample } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
@@ -19,9 +19,10 @@ export default function CrawlPlaygroundPage() {
   // 如果用户未手动选择，使用第一个活跃的 API Key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
-  const { crawl, isLoading, data, error, reset } = useCrawl(effectiveKeyId, {
+  const { crawl, isLoading, data, error, reset } = useCrawl(apiKeyValue, {
     onSuccess: (result: CrawlResponse) => {
       if (result.status === 'COMPLETED') {
         toast.success(`Crawl completed: ${result.data?.length || 0} pages`);
@@ -87,7 +88,8 @@ export default function CrawlPlaygroundPage() {
                 <CodeExample
                   endpoint={FETCHX_API.CRAWL}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={lastRequest}
                 />
               </CardContent>

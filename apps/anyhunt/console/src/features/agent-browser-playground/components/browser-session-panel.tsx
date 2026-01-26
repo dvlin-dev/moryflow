@@ -196,7 +196,7 @@ const defaultSections: BrowserSessionSection[] = [
 ];
 
 export interface BrowserSessionPanelProps {
-  apiKeyId: string;
+  apiKey: string;
   sessionId?: string;
   onSessionChange?: (sessionId: string) => void;
   sections?: BrowserSessionSection[];
@@ -205,7 +205,7 @@ export interface BrowserSessionPanelProps {
 }
 
 export function BrowserSessionPanel({
-  apiKeyId,
+  apiKey,
   sessionId,
   onSessionChange,
   sections = defaultSections,
@@ -412,7 +412,7 @@ export function BrowserSessionPanel({
   };
 
   const handleCreateSession = async (values: BrowserSessionValues) => {
-    if (!apiKeyId) {
+    if (!apiKey) {
       toast.error('Select an API key first');
       return;
     }
@@ -502,7 +502,7 @@ export function BrowserSessionPanel({
     }
 
     try {
-      const session = await createBrowserSession(apiKeyId, options);
+      const session = await createBrowserSession(apiKey, options);
       sessionForm.setValue('sessionId', session.id);
       setSessionInfo(session);
       toast.success('Session created');
@@ -513,9 +513,9 @@ export function BrowserSessionPanel({
 
   const handleStatus = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const status = await getBrowserSessionStatus(apiKeyId, sessionId);
+      const status = await getBrowserSessionStatus(apiKey, sessionId);
       setSessionInfo(status);
       toast.success('Session status loaded');
     } catch (error) {
@@ -525,9 +525,9 @@ export function BrowserSessionPanel({
 
   const handleClose = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await closeBrowserSession(apiKeyId, sessionId);
+      await closeBrowserSession(apiKey, sessionId);
       setSessionInfo(null);
       setOpenResult(null);
       setSnapshot(null);
@@ -558,14 +558,14 @@ export function BrowserSessionPanel({
 
   const handleOpenUrl = async (values: BrowserOpenValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const headers = parseJsonObject<Record<string, string>>(values.headersJson ?? '');
     if (values.headersJson && !headers) {
       openForm.setError('headersJson', { message: 'Invalid JSON object' });
       return;
     }
     try {
-      const result = await openBrowserUrl(apiKeyId, sessionId, {
+      const result = await openBrowserUrl(apiKey, sessionId, {
         url: values.url,
         waitUntil: values.waitUntil,
         timeout: values.timeout,
@@ -580,9 +580,9 @@ export function BrowserSessionPanel({
 
   const handleSnapshot = async (values: BrowserSnapshotValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const result = await getBrowserSnapshot(apiKeyId, sessionId, values);
+      const result = await getBrowserSnapshot(apiKey, sessionId, values);
       setSnapshot(result);
       toast.success('Snapshot captured');
     } catch (error) {
@@ -592,9 +592,9 @@ export function BrowserSessionPanel({
 
   const handleDeltaSnapshot = async (values: BrowserDeltaSnapshotValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const result = await getBrowserDeltaSnapshot(apiKeyId, sessionId, values);
+      const result = await getBrowserDeltaSnapshot(apiKey, sessionId, values);
       setDeltaSnapshot(result);
       toast.success('Delta snapshot captured');
     } catch (error) {
@@ -604,14 +604,14 @@ export function BrowserSessionPanel({
 
   const handleAction = async (values: BrowserActionValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const parsed = parseJson<Record<string, unknown>>(values.actionJson);
     if (!parsed) {
       actionForm.setError('actionJson', { message: 'Invalid JSON' });
       return;
     }
     try {
-      const result = await executeBrowserAction(apiKeyId, sessionId, parsed);
+      const result = await executeBrowserAction(apiKey, sessionId, parsed);
       setActionResult(result);
       toast.success('Action executed');
     } catch (error) {
@@ -621,14 +621,14 @@ export function BrowserSessionPanel({
 
   const handleActionBatch = async (values: BrowserActionBatchValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const parsed = parseJsonArray<Record<string, unknown>>(values.actionsJson ?? '');
     if (!parsed) {
       actionBatchForm.setError('actionsJson', { message: 'Invalid JSON array' });
       return;
     }
     try {
-      const result = await executeBrowserActionBatch(apiKeyId, sessionId, {
+      const result = await executeBrowserActionBatch(apiKey, sessionId, {
         actions: parsed,
         stopOnError: values.stopOnError,
       });
@@ -641,9 +641,9 @@ export function BrowserSessionPanel({
 
   const handleScreenshot = async (values: BrowserScreenshotValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const result = await getBrowserScreenshot(apiKeyId, sessionId, values);
+      const result = await getBrowserScreenshot(apiKey, sessionId, values);
       setScreenshot(result);
       toast.success('Screenshot captured');
     } catch (error) {
@@ -653,10 +653,10 @@ export function BrowserSessionPanel({
 
   const handleCreateTab = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await createBrowserTab(apiKeyId, sessionId);
-      const list = await listBrowserTabs(apiKeyId, sessionId);
+      await createBrowserTab(apiKey, sessionId);
+      const list = await listBrowserTabs(apiKey, sessionId);
       setTabs(list);
       toast.success('Tab created');
     } catch (error) {
@@ -666,9 +666,9 @@ export function BrowserSessionPanel({
 
   const handleListTabs = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const list = await listBrowserTabs(apiKeyId, sessionId);
+      const list = await listBrowserTabs(apiKey, sessionId);
       setTabs(list);
       toast.success('Tabs loaded');
     } catch (error) {
@@ -678,12 +678,12 @@ export function BrowserSessionPanel({
 
   const handleSwitchTab = async (values: BrowserTabsValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId || values.tabIndex === undefined) {
+    if (!sessionId || !apiKey || values.tabIndex === undefined) {
       toast.error('Tab index is required');
       return;
     }
     try {
-      await switchBrowserTab(apiKeyId, sessionId, values.tabIndex);
+      await switchBrowserTab(apiKey, sessionId, values.tabIndex);
       await handleListTabs();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to switch tab');
@@ -692,12 +692,12 @@ export function BrowserSessionPanel({
 
   const handleCloseTab = async (values: BrowserTabsValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId || values.tabIndex === undefined) {
+    if (!sessionId || !apiKey || values.tabIndex === undefined) {
       toast.error('Tab index is required');
       return;
     }
     try {
-      await closeBrowserTab(apiKeyId, sessionId, values.tabIndex);
+      await closeBrowserTab(apiKey, sessionId, values.tabIndex);
       await handleListTabs();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to close tab');
@@ -706,7 +706,7 @@ export function BrowserSessionPanel({
 
   const handleCreateWindow = async (values: BrowserWindowsValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const permissions = parseJsonArray<string>(values.permissionsJson ?? '');
     if (values.permissionsJson && !permissions) {
       windowsForm.setError('permissionsJson', { message: 'Invalid JSON array' });
@@ -793,8 +793,8 @@ export function BrowserSessionPanel({
       };
     }
     try {
-      await createBrowserWindow(apiKeyId, sessionId, options);
-      const list = await listBrowserWindows(apiKeyId, sessionId);
+      await createBrowserWindow(apiKey, sessionId, options);
+      const list = await listBrowserWindows(apiKey, sessionId);
       setWindows(list);
       toast.success('Window created');
     } catch (error) {
@@ -804,9 +804,9 @@ export function BrowserSessionPanel({
 
   const handleListWindows = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const list = await listBrowserWindows(apiKeyId, sessionId);
+      const list = await listBrowserWindows(apiKey, sessionId);
       setWindows(list);
       toast.success('Windows loaded');
     } catch (error) {
@@ -816,12 +816,12 @@ export function BrowserSessionPanel({
 
   const handleSwitchWindow = async (values: BrowserWindowsValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId || values.windowIndex === undefined) {
+    if (!sessionId || !apiKey || values.windowIndex === undefined) {
       toast.error('Window index is required');
       return;
     }
     try {
-      await switchBrowserWindow(apiKeyId, sessionId, values.windowIndex);
+      await switchBrowserWindow(apiKey, sessionId, values.windowIndex);
       await handleListWindows();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to switch window');
@@ -830,12 +830,12 @@ export function BrowserSessionPanel({
 
   const handleCloseWindow = async (values: BrowserWindowsValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId || values.windowIndex === undefined) {
+    if (!sessionId || !apiKey || values.windowIndex === undefined) {
       toast.error('Window index is required');
       return;
     }
     try {
-      await closeBrowserWindow(apiKeyId, sessionId, values.windowIndex);
+      await closeBrowserWindow(apiKey, sessionId, values.windowIndex);
       await handleListWindows();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to close window');
@@ -844,9 +844,9 @@ export function BrowserSessionPanel({
 
   const handleDialogHistory = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const history = await getDialogHistory(apiKeyId, sessionId);
+      const history = await getDialogHistory(apiKey, sessionId);
       setDialogHistory(history);
       toast.success('Dialog history loaded');
     } catch (error) {
@@ -856,15 +856,15 @@ export function BrowserSessionPanel({
 
   const handleSetRules = async (values: BrowserInterceptValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const parsed = parseJson<unknown[]>(values.rulesJson ?? '');
     if (!parsed) {
       interceptForm.setError('rulesJson', { message: 'Invalid JSON' });
       return;
     }
     try {
-      await setInterceptRules(apiKeyId, sessionId, parsed);
-      const list = await getInterceptRules(apiKeyId, sessionId);
+      await setInterceptRules(apiKey, sessionId, parsed);
+      const list = await getInterceptRules(apiKey, sessionId);
       setInterceptRulesState(list);
       toast.success('Rules updated');
     } catch (error) {
@@ -874,15 +874,15 @@ export function BrowserSessionPanel({
 
   const handleAddRule = async (values: BrowserInterceptValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const parsed = parseJson<Record<string, unknown>>(values.ruleJson ?? '');
     if (!parsed) {
       interceptForm.setError('ruleJson', { message: 'Invalid JSON' });
       return;
     }
     try {
-      await addInterceptRule(apiKeyId, sessionId, parsed);
-      const list = await getInterceptRules(apiKeyId, sessionId);
+      await addInterceptRule(apiKey, sessionId, parsed);
+      const list = await getInterceptRules(apiKey, sessionId);
       setInterceptRulesState(list);
       toast.success('Rule added');
     } catch (error) {
@@ -892,13 +892,13 @@ export function BrowserSessionPanel({
 
   const handleRemoveRule = async (values: BrowserInterceptValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId || !values.ruleId) {
+    if (!sessionId || !apiKey || !values.ruleId) {
       toast.error('Rule ID is required');
       return;
     }
     try {
-      await removeInterceptRule(apiKeyId, sessionId, values.ruleId);
-      const list = await getInterceptRules(apiKeyId, sessionId);
+      await removeInterceptRule(apiKey, sessionId, values.ruleId);
+      const list = await getInterceptRules(apiKey, sessionId);
       setInterceptRulesState(list);
       toast.success('Rule removed');
     } catch (error) {
@@ -908,9 +908,9 @@ export function BrowserSessionPanel({
 
   const handleClearRules = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await clearInterceptRules(apiKeyId, sessionId);
+      await clearInterceptRules(apiKey, sessionId);
       setInterceptRulesState([]);
       toast.success('Rules cleared');
     } catch (error) {
@@ -920,9 +920,9 @@ export function BrowserSessionPanel({
 
   const handleListRules = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const list = await getInterceptRules(apiKeyId, sessionId);
+      const list = await getInterceptRules(apiKey, sessionId);
       setInterceptRulesState(list);
       toast.success('Rules loaded');
     } catch (error) {
@@ -932,14 +932,14 @@ export function BrowserSessionPanel({
 
   const handleSetHeaders = async (values: BrowserHeadersValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const headers = parseJsonObject<Record<string, string>>(values.headersJson ?? '');
     if (!headers) {
       headersForm.setError('headersJson', { message: 'Invalid JSON object' });
       return;
     }
     try {
-      const result = await setBrowserHeaders(apiKeyId, sessionId, {
+      const result = await setBrowserHeaders(apiKey, sessionId, {
         origin: values.origin?.trim() || undefined,
         headers,
       });
@@ -952,13 +952,13 @@ export function BrowserSessionPanel({
 
   const handleClearHeaders = async (values: BrowserHeadersValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     if (!values.clearGlobal && !values.origin?.trim()) {
       toast.error('Specify an origin or enable clear global');
       return;
     }
     try {
-      await clearBrowserHeaders(apiKeyId, sessionId, {
+      await clearBrowserHeaders(apiKey, sessionId, {
         origin: values.origin?.trim() || undefined,
         clearGlobal: values.clearGlobal || undefined,
       });
@@ -971,9 +971,9 @@ export function BrowserSessionPanel({
 
   const handleNetworkHistory = async (values: BrowserNetworkHistoryValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const list = await getNetworkHistory(apiKeyId, sessionId, values);
+      const list = await getNetworkHistory(apiKey, sessionId, values);
       setNetworkHistory(list);
       toast.success('Network history loaded');
     } catch (error) {
@@ -983,9 +983,9 @@ export function BrowserSessionPanel({
 
   const handleClearNetworkHistory = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await clearNetworkHistory(apiKeyId, sessionId);
+      await clearNetworkHistory(apiKey, sessionId);
       setNetworkHistory([]);
       toast.success('Network history cleared');
     } catch (error) {
@@ -995,9 +995,9 @@ export function BrowserSessionPanel({
 
   const handleFetchConsoleMessages = async (values: BrowserDiagnosticsLogValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const list = await getBrowserConsoleMessages(apiKeyId, sessionId, values);
+      const list = await getBrowserConsoleMessages(apiKey, sessionId, values);
       setConsoleMessages(list);
       toast.success('Console messages loaded');
     } catch (error) {
@@ -1007,9 +1007,9 @@ export function BrowserSessionPanel({
 
   const handleClearConsoleMessages = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await clearBrowserConsoleMessages(apiKeyId, sessionId);
+      await clearBrowserConsoleMessages(apiKey, sessionId);
       setConsoleMessages([]);
       toast.success('Console messages cleared');
     } catch (error) {
@@ -1019,9 +1019,9 @@ export function BrowserSessionPanel({
 
   const handleFetchPageErrors = async (values: BrowserDiagnosticsLogValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const list = await getBrowserPageErrors(apiKeyId, sessionId, values);
+      const list = await getBrowserPageErrors(apiKey, sessionId, values);
       setPageErrors(list);
       toast.success('Page errors loaded');
     } catch (error) {
@@ -1031,9 +1031,9 @@ export function BrowserSessionPanel({
 
   const handleClearPageErrors = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await clearBrowserPageErrors(apiKeyId, sessionId);
+      await clearBrowserPageErrors(apiKey, sessionId);
       setPageErrors([]);
       toast.success('Page errors cleared');
     } catch (error) {
@@ -1043,9 +1043,9 @@ export function BrowserSessionPanel({
 
   const handleStartTrace = async (values: BrowserDiagnosticsTraceValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await startBrowserTrace(apiKeyId, sessionId, {
+      await startBrowserTrace(apiKey, sessionId, {
         screenshots: values.screenshots,
         snapshots: values.snapshots,
       });
@@ -1057,9 +1057,9 @@ export function BrowserSessionPanel({
 
   const handleStopTrace = async (values: BrowserDiagnosticsTraceValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const result = await stopBrowserTrace(apiKeyId, sessionId, { store: values.store });
+      const result = await stopBrowserTrace(apiKey, sessionId, { store: values.store });
       setTraceResult(result);
       toast.success('Tracing stopped');
     } catch (error) {
@@ -1069,9 +1069,9 @@ export function BrowserSessionPanel({
 
   const handleStartHar = async (values: BrowserDiagnosticsHarValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await startBrowserHar(apiKeyId, sessionId, { clear: values.clear });
+      await startBrowserHar(apiKey, sessionId, { clear: values.clear });
       toast.success('HAR recording started');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to start HAR recording');
@@ -1080,9 +1080,9 @@ export function BrowserSessionPanel({
 
   const handleStopHar = async (values: BrowserDiagnosticsHarValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const result = await stopBrowserHar(apiKeyId, sessionId, {
+      const result = await stopBrowserHar(apiKey, sessionId, {
         includeRequests: values.includeRequests,
       });
       setHarResult(result);
@@ -1094,10 +1094,10 @@ export function BrowserSessionPanel({
 
   const handleExportStorage = async (values: BrowserStorageValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const parsed = parseJson<Record<string, unknown>>(values.exportOptionsJson ?? '');
     try {
-      const result = await exportBrowserStorage(apiKeyId, sessionId, parsed ?? {});
+      const result = await exportBrowserStorage(apiKey, sessionId, parsed ?? {});
       setStorageExport(result);
       toast.success('Storage exported');
     } catch (error) {
@@ -1107,14 +1107,14 @@ export function BrowserSessionPanel({
 
   const handleImportStorage = async (values: BrowserStorageValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     const parsed = parseJson<Record<string, unknown>>(values.importDataJson ?? '');
     if (!parsed) {
       storageForm.setError('importDataJson', { message: 'Invalid JSON' });
       return;
     }
     try {
-      await importBrowserStorage(apiKeyId, sessionId, parsed);
+      await importBrowserStorage(apiKey, sessionId, parsed);
       toast.success('Storage imported');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Storage import failed');
@@ -1123,9 +1123,9 @@ export function BrowserSessionPanel({
 
   const handleClearStorage = async () => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      await clearBrowserStorage(apiKeyId, sessionId);
+      await clearBrowserStorage(apiKey, sessionId);
       toast.success('Storage cleared');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Storage clear failed');
@@ -1134,9 +1134,9 @@ export function BrowserSessionPanel({
 
   const handleSaveProfile = async (values: BrowserProfileValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const result = await saveBrowserProfile(apiKeyId, sessionId, {
+      const result = await saveBrowserProfile(apiKey, sessionId, {
         profileId: values.profileId?.trim() || undefined,
         includeSessionStorage: values.includeSessionStorage,
       });
@@ -1149,13 +1149,13 @@ export function BrowserSessionPanel({
 
   const handleLoadProfile = async (values: BrowserProfileValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     if (!values.loadProfileId?.trim()) {
       profileForm.setError('loadProfileId', { message: 'Profile ID is required' });
       return;
     }
     try {
-      const result = await loadBrowserProfile(apiKeyId, sessionId, {
+      const result = await loadBrowserProfile(apiKey, sessionId, {
         profileId: values.loadProfileId.trim(),
       });
       setProfileLoadResult(result);
@@ -1167,9 +1167,9 @@ export function BrowserSessionPanel({
 
   const handleCreateStreamToken = async (values: BrowserStreamValues) => {
     const sessionId = requireSession();
-    if (!sessionId || !apiKeyId) return;
+    if (!sessionId || !apiKey) return;
     try {
-      const tokenResult = await createBrowserStreamToken(apiKeyId, sessionId, values);
+      const tokenResult = await createBrowserStreamToken(apiKey, sessionId, values);
       setStreamToken(tokenResult);
       setStreamError(null);
       toast.success('Stream token created');
@@ -1184,9 +1184,9 @@ export function BrowserSessionPanel({
   };
 
   const handleConnectCdp = async (values: BrowserCdpValues) => {
-    if (!apiKeyId) return;
+    if (!apiKey) return;
     try {
-      const result = await connectBrowserCdp(apiKeyId, {
+      const result = await connectBrowserCdp(apiKey, {
         provider: values.provider,
         wsEndpoint: values.wsEndpoint?.trim() || undefined,
         port: values.port,
@@ -1213,7 +1213,7 @@ export function BrowserSessionPanel({
       <CardContent className="space-y-6">
         {hasSection('session') && (
           <SessionSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={sessionForm}
             sessionInfo={sessionInfo}
             open={sessionOpen}
@@ -1225,7 +1225,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('open') && (
           <OpenUrlSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={openForm}
             open={openUrlOpen}
             onOpenChange={setOpenUrlOpen}
@@ -1235,7 +1235,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('snapshot') && (
           <SnapshotSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={snapshotForm}
             open={snapshotOpen}
             onOpenChange={setSnapshotOpen}
@@ -1245,7 +1245,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('delta') && (
           <DeltaSnapshotSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={deltaSnapshotForm}
             open={deltaSnapshotOpen}
             onOpenChange={setDeltaSnapshotOpen}
@@ -1255,7 +1255,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('action') && (
           <ActionSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={actionForm}
             open={actionOpen}
             onOpenChange={setActionOpen}
@@ -1265,7 +1265,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('actionBatch') && (
           <ActionBatchSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={actionBatchForm}
             open={actionBatchOpen}
             onOpenChange={setActionBatchOpen}
@@ -1275,7 +1275,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('screenshot') && (
           <ScreenshotSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={screenshotForm}
             open={screenshotOpen}
             onOpenChange={setScreenshotOpen}
@@ -1285,7 +1285,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('tabs') && (
           <TabsSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={tabsForm}
             open={tabsOpen}
             onOpenChange={setTabsOpen}
@@ -1300,7 +1300,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('windows') && (
           <WindowsSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={windowsForm}
             open={windowsOpen}
             onOpenChange={setWindowsOpen}
@@ -1313,7 +1313,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('intercept') && (
           <InterceptSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={interceptForm}
             open={interceptOpen}
             onOpenChange={setInterceptOpen}
@@ -1327,7 +1327,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('headers') && (
           <HeadersSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={headersForm}
             open={headersOpen}
             onOpenChange={setHeadersOpen}
@@ -1338,7 +1338,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('network') && (
           <NetworkHistorySection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={networkForm}
             open={networkOpen}
             onOpenChange={setNetworkOpen}
@@ -1349,7 +1349,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('diagnostics') && (
           <DiagnosticsSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             logForm={diagnosticsLogForm}
             traceForm={diagnosticsTraceForm}
             harForm={diagnosticsHarForm}
@@ -1371,7 +1371,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('storage') && (
           <StorageSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={storageForm}
             open={storageOpen}
             onOpenChange={setStorageOpen}
@@ -1383,7 +1383,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('profile') && (
           <ProfileSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={profileForm}
             open={profileOpen}
             onOpenChange={setProfileOpen}
@@ -1395,7 +1395,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('stream') && (
           <StreamingSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={streamForm}
             open={streamOpen}
             onOpenChange={setStreamOpen}
@@ -1415,7 +1415,7 @@ export function BrowserSessionPanel({
         )}
         {hasSection('cdp') && (
           <CdpSection
-            apiKeyId={apiKeyId}
+            apiKey={apiKey}
             form={cdpForm}
             open={cdpOpen}
             onOpenChange={setCdpOpen}

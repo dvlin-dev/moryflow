@@ -30,6 +30,7 @@ import {
   useUpdateApiKey,
   CreateApiKeyDialog,
   DeleteApiKeyDialog,
+  maskApiKey,
 } from '@/features/api-keys';
 import type { ApiKey } from '@/features/api-keys';
 
@@ -42,9 +43,9 @@ export default function ApiKeysPage() {
   const { data: apiKeys, isLoading } = useApiKeys();
   const { mutate: updateKey } = useUpdateApiKey();
 
-  const handleCopyPrefix = async (apiKey: ApiKey) => {
+  const handleCopyKey = async (apiKey: ApiKey) => {
     try {
-      await navigator.clipboard.writeText(apiKey.keyPrefix);
+      await navigator.clipboard.writeText(apiKey.key);
       setCopiedId(apiKey.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
@@ -104,7 +105,7 @@ export default function ApiKeysPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Key Prefix</TableHead>
+                  <TableHead>Key</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Last Used</TableHead>
                   <TableHead>Expires</TableHead>
@@ -117,10 +118,10 @@ export default function ApiKeysPage() {
                     <TableCell className="font-medium">{apiKey.name}</TableCell>
                     <TableCell>
                       <button
-                        onClick={() => handleCopyPrefix(apiKey)}
+                        onClick={() => handleCopyKey(apiKey)}
                         className="inline-flex items-center gap-1.5 font-mono text-sm hover:text-primary transition-colors"
                       >
-                        {apiKey.keyPrefix}...
+                        {maskApiKey(apiKey.key)}
                         {copiedId === apiKey.id ? (
                           <Icon icon={Tick02Icon} className="h-3.5 w-3.5 text-green-600" />
                         ) : (

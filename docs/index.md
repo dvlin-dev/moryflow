@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-26
+date: 2026-02-01
 scope: monorepo
 status: active
 ---
@@ -29,6 +29,7 @@ status: active
 - Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
+- Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`

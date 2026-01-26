@@ -29,7 +29,7 @@ status: in_progress
 - **Search（Fetchx）不属于 Memox**：`/api/v1/search` 仍归 Fetchx，仅 Mem0 的 memory search 在 Memox 范围内。
 - **删除 Graph/Relation 公共 API**：不保留 `/api/v1/graph`、`/api/v1/relations` 对外路径；图谱关系仅由 Memory 输出聚合得到。
 - **Entities 语义切换为 Mem0**：entities 仅指 `user/agent/app/run` 等维度；图谱实体只存在于 Memory 输出（`entities/relations`）。
-- **鉴权统一为 Token**：全局改为 `Authorization: Token <API_KEY>`（影响所有 API Key 端点）。
+- **鉴权统一为 Bearer**：全局改为 `Authorization: Bearer <API_KEY>`（影响所有 API Key 端点）。
 - **Console 仅调用公共 API**：不再使用 `console/*` 的 Memox 专用接口。
 
 ## 关键决策与保留点（必须记录，防止遗失）
@@ -45,7 +45,7 @@ status: in_progress
 - Memory 全量对齐 Mem0 v1：`create/list/search/get/update/delete/history/batch/feedback/exports` 已实现。
 - Filters DSL 已实现：支持 `AND/OR/NOT` 与 `in/gte/lte/gt/lt/ne/contains/icontains/*`，用于 list/search/export。
 - `enable_graph` 已实现：基于现有 LLM 抽取 entities/relations。
-- Token 认证已统一：`Authorization: Token <API_KEY>`。
+- Bearer 认证已统一：`Authorization: Bearer <API_KEY>`。
 - R2 导出已实现：导出作业写入 R2 并通过 `/v1/exports/get` 获取。
 - Entities 语义已切换为 Mem0：仅 `user/agent/app/run`，Graph/Relation 公共 API 已删除。
 - 向量库迁移已重置为单一 init（无历史兼容）。
@@ -64,11 +64,10 @@ status: in_progress
 - 公网 API（API Key，`Authorization: Bearer <apiKey>`）：
   - Memory：`POST /api/v1/memories`（`userId + content + tags/source/importance`）、`POST /api/v1/memories/search`（`query + limit + threshold + userId`）、`GET /api/v1/memories`（`userId + limit/offset`）、`GET /api/v1/memories/:id`、`DELETE /api/v1/memories/:id`、`DELETE /api/v1/memories/user/:userId`。
   - Entity：`POST /api/v1/entities`、`POST /api/v1/entities/batch`、`GET /api/v1/entities`（`userId + type + limit/offset`）、`GET /api/v1/entities/:id`、`DELETE /api/v1/entities/:id`。
-  - Relation：`POST /api/v1/relations`、`POST /api/v1/relations/batch`、`GET /api/v1/relations`（`userId + type + limit/offset`）、`GET /api/v1/relations/entity/:entityId`、`DELETE /api/v1/relations/:id`。
-  - Graph：`GET /api/v1/graph`（`userId + limit`）、`POST /api/v1/graph/traverse`、`GET /api/v1/graph/path`、`GET /api/v1/graph/neighbors/:entityId`。
-- Console API（Session 认证）：
-  - Memories：`GET /api/v1/console/memories`（跨库分页）、`GET /api/v1/console/memories/export`（直接返回 JSON/CSV）。
-  - Entities：`GET /api/v1/console/entities`、`GET /api/v1/console/entities/types`、`DELETE /api/v1/console/entities/:id`。
+  - Entity Filters：`GET /api/v1/entities/filters`。
+  - Graph/Relation 公共 API 已删除（图谱由 Memories 响应聚合）。
+- Console 前端（API Key 认证）：
+  - Memories/Entities/Graph 均通过公网 API 访问与聚合。
 - Embedding：OpenAI embedding（`apps/anyhunt/server/src/embedding`），仅被 Memory 创建/搜索调用。
 - 存储：pgvector（`apps/anyhunt/server/prisma/vector/schema.prisma`）存 Memory/Entity/Relation。
 - 当前接口风格：`/api/v1/*` + camelCase 字段 + 全局响应包装（`success/data/timestamp`）。
@@ -76,8 +75,8 @@ status: in_progress
 ### 前端（Anyhunt Console）
 
 - Memox Playground：API Key 直连 `POST /api/v1/memories`、`POST /api/v1/memories/search`，表单字段为 `userId/content/agentId/sessionId/tags/source/importance`。
-- Memories/Entities 列表：走 Console API（Session 认证），展示 `content/tags/importance/source` 与 Entity `type/name/properties`。
-- Graph 页面：API Key 直连 `GET /api/v1/graph`，依赖 `userId` 查询图谱。
+- Memories/Entities 列表：API Key 直连 `/api/v1/memories` + `/api/v1/entities`。
+- Graph 页面：基于 `/api/v1/memories` 返回的 `entities/relations` 聚合渲染。
 
 **结论**：当前实现基于自定义 Memory/Entity/Relation/Graph 语义（camelCase + content/tags/importance/sessionId），与 Mem0 的 API 结构、字段语义与行为差异较大。
 
@@ -154,7 +153,7 @@ status: in_progress
    - 现状：`Authorization: Bearer <apiKey>`（服务端 guard 与 Console ApiKeyClient）。
    - Mem0：`Authorization: Token <apiKey>`。
    - 影响：文档与 SDK/示例对齐困难，增加迁移成本。
-   - **状态**：已修复（Token 认证统一）。
+   - **状态**：已确认使用 Bearer 并同步文档。
 
 5. **导出未走 R2，仍为同步导出**
    - 现状：Console 直接返回 CSV/JSON，未异步作业、未落 R2。
@@ -247,7 +246,7 @@ status: in_progress
   - `output_format`（v1.0 默认）
 - `version`（保留字段，当前仅接受 v1）
 - `org_id` / `project_id`（即使平台功能未启用，也需字段对齐）
-- 鉴权：`Authorization: Token <API_KEY>`（不再支持 Bearer）。
+- 鉴权：`Authorization: Bearer <API_KEY>`。
 
 ## 字段清单（对标 Mem0，作为 DTO 设计依据）
 

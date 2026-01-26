@@ -19,16 +19,17 @@ import { WEBHOOK_EVENTS, DEFAULT_WEBHOOK_EVENTS } from '../constants';
 import type { WebhookEvent } from '../types';
 
 interface CreateWebhookDialogProps {
+  apiKey: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateWebhookDialog({ open, onOpenChange }: CreateWebhookDialogProps) {
+export function CreateWebhookDialog({ apiKey, open, onOpenChange }: CreateWebhookDialogProps) {
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [events, setEvents] = useState<WebhookEvent[]>(DEFAULT_WEBHOOK_EVENTS);
 
-  const { mutate: create, isPending } = useCreateWebhook();
+  const { mutate: create, isPending } = useCreateWebhook(apiKey);
 
   const handleEventToggle = (event: WebhookEvent, checked: boolean) => {
     if (checked) {
@@ -39,7 +40,7 @@ export function CreateWebhookDialog({ open, onOpenChange }: CreateWebhookDialogP
   };
 
   const handleCreate = () => {
-    if (!name.trim() || !url.trim() || events.length === 0) return;
+    if (!apiKey || !name.trim() || !url.trim() || events.length === 0) return;
 
     create(
       { name: name.trim(), url: url.trim(), events },

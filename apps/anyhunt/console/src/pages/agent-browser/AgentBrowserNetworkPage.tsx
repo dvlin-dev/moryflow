@@ -17,15 +17,15 @@ import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 const networkSections: BrowserSessionSection[] = ['session', 'intercept', 'headers', 'network'];
 
 export default function AgentBrowserNetworkPage() {
-  const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState description="Select an API key to manage network settings." />;
   }
 
   return (
     <BrowserSessionPanel
-      apiKeyId={apiKeyId}
+      apiKey={apiKey}
       sessionId={sessionId}
       onSessionChange={setSessionId}
       sections={networkSections}

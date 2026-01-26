@@ -1,26 +1,16 @@
 /**
  * Scrape Playground API
- * 使用 Session 认证调用 Console Playground 代理接口
+ * 使用 API Key 调用公开 Scrape 接口
  */
 
-import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
-import { apiClient } from '@/lib/api-client';
+import { FETCHX_API } from '@/lib/api-paths';
+import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type { ScrapeRequest, ScrapeResponse } from '@/features/playground-shared';
-
-/**
- * Console Scrape 请求参数（包含 apiKeyId）
- */
-interface ConsoleScrapeRequest extends ScrapeRequest {
-  apiKeyId: string;
-}
 
 /**
  * 执行抓取请求
  */
-export async function scrape(apiKeyId: string, request: ScrapeRequest): Promise<ScrapeResponse> {
-  const consoleRequest: ConsoleScrapeRequest = {
-    ...request,
-    apiKeyId,
-  };
-  return apiClient.post<ScrapeResponse>(CONSOLE_PLAYGROUND_API.SCRAPE, consoleRequest);
+export async function scrape(apiKey: string, request: ScrapeRequest): Promise<ScrapeResponse> {
+  const client = new ApiKeyClient({ apiKey });
+  return client.post<ScrapeResponse>(FETCHX_API.SCRAPE, request);
 }

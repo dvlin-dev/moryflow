@@ -1,7 +1,7 @@
 /**
  * [INPUT]: CreateWebhookDto, UpdateWebhookDto - Webhook creation and update requests
  * [OUTPUT]: WebhookEntity - Webhook data or void for deletion
- * [POS]: Webhook CRUD API, called by Console frontend
+ * [POS]: Webhook CRUD API (ApiKey 认证，Console 与外部统一使用)
  *
  * [PROTOCOL]: When this file changes, you MUST update this header and the directory CLAUDE.md
  */
@@ -14,6 +14,7 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -27,8 +28,9 @@ import {
   ApiNotFoundResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser } from '../auth';
+import { CurrentUser, Public } from '../auth';
 import type { CurrentUserDto } from '../types';
+import { ApiKeyGuard } from '../api-key';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { WebhookService } from './webhook.service';
 import {
@@ -39,14 +41,16 @@ import {
 } from './dto';
 
 @ApiTags('Webhook')
-@ApiSecurity('session')
-@Controller({ path: 'console/webhooks', version: '1' })
+@ApiSecurity('apiKey')
+@Public()
+@Controller({ path: 'webhooks', version: '1' })
+@UseGuards(ApiKeyGuard)
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 
   /**
    * 创建 Webhook
-   * POST /api/console/webhooks
+   * POST /api/webhooks
    */
   @Post()
   @ApiOperation({ summary: 'Create a new webhook' })
@@ -61,7 +65,7 @@ export class WebhookController {
 
   /**
    * 获取所有 Webhooks
-   * GET /api/console/webhooks
+   * GET /api/webhooks
    */
   @Get()
   @ApiOperation({ summary: 'List all webhooks for current user' })
@@ -73,7 +77,7 @@ export class WebhookController {
 
   /**
    * 获取单个 Webhook
-   * GET /api/console/webhooks/:id
+   * GET /api/webhooks/:id
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get a single webhook' })
@@ -87,7 +91,7 @@ export class WebhookController {
 
   /**
    * 更新 Webhook
-   * PATCH /api/console/webhooks/:id
+   * PATCH /api/webhooks/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update a webhook' })
@@ -105,7 +109,7 @@ export class WebhookController {
 
   /**
    * 删除 Webhook
-   * DELETE /api/console/webhooks/:id
+   * DELETE /api/webhooks/:id
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -122,7 +126,7 @@ export class WebhookController {
 
   /**
    * 重新生成 Secret
-   * POST /api/console/webhooks/:id/regenerate-secret
+   * POST /api/webhooks/:id/regenerate-secret
    */
   @Post(':id/regenerate-secret')
   @ApiOperation({ summary: 'Regenerate webhook secret' })

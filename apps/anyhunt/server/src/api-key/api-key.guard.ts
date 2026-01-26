@@ -1,5 +1,5 @@
 /**
- * [INPUT]: Request with Authorization: Token <apiKey>
+ * [INPUT]: Request with Authorization: Bearer <apiKey>
  * [OUTPUT]: Boolean (allowed/denied), attaches ApiKeyValidationResult to request
  * [POS]: Authentication guard for public API endpoints, validates API keys (非全局 guard)
  *
@@ -23,7 +23,7 @@ export class ApiKeyGuard implements CanActivate {
     const authorization = request.headers.authorization;
     if (authorization && typeof authorization === 'string') {
       const [scheme, token] = authorization.split(' ');
-      if (scheme?.toLowerCase() === 'token' && token) {
+      if (scheme?.toLowerCase() === 'bearer' && token) {
         return token;
       }
     }
@@ -37,7 +37,7 @@ export class ApiKeyGuard implements CanActivate {
 
     if (!apiKey) {
       throw new ForbiddenException(
-        'Missing API key (use Authorization: Token <apiKey>)',
+        'Missing API key (use Authorization: Bearer <apiKey>)',
       );
     }
 

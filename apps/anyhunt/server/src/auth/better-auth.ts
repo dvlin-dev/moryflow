@@ -9,18 +9,12 @@ import { betterAuth, APIError, type SecondaryStorage } from 'better-auth';
 import { emailOTP } from 'better-auth/plugins/email-otp';
 import { jwt } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { createHash, randomBytes } from 'crypto';
 import type { PrismaClient } from '../../generated/prisma-main/client';
 import {
   SubscriptionTier,
   SubscriptionStatus,
 } from '../../generated/prisma-main/client';
 import { isDisposableEmail } from './email-validator';
-import {
-  API_KEY_PREFIX,
-  API_KEY_LENGTH,
-  KEY_PREFIX_DISPLAY_LENGTH,
-} from '../api-key/api-key.constants';
 import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
 import {
   getAuthBaseUrl,
@@ -184,27 +178,6 @@ export function createBetterAuth(
                     monthlyUsed: 0,
                     periodStartAt: now,
                     periodEndAt: periodEnd,
-                  },
-                });
-
-                // 创建默认 API Key
-                const apiKeyBytes = randomBytes(API_KEY_LENGTH);
-                const fullKey = `${API_KEY_PREFIX}${apiKeyBytes.toString('hex')}`;
-                const keyHash = createHash('sha256')
-                  .update(fullKey)
-                  .digest('hex');
-                const keyPrefix = fullKey.substring(
-                  0,
-                  KEY_PREFIX_DISPLAY_LENGTH,
-                );
-
-                await tx.apiKey.create({
-                  data: {
-                    userId: user.id,
-                    name: 'Default',
-                    keyPrefix,
-                    keyHash,
-                    isActive: true,
                   },
                 });
 

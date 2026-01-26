@@ -356,34 +356,34 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 **订阅管理**：
 
-| 方法   | 路径                                               | 说明                 |
-| ------ | -------------------------------------------------- | -------------------- |
-| POST   | `/api/v1/console/digest/subscriptions`             | 创建订阅             |
-| GET    | `/api/v1/console/digest/subscriptions`             | 列表                 |
-| GET    | `/api/v1/console/digest/subscriptions/:id`         | 详情                 |
-| PATCH  | `/api/v1/console/digest/subscriptions/:id`         | 更新/启停            |
-| DELETE | `/api/v1/console/digest/subscriptions/:id`         | 软删除               |
-| POST   | `/api/v1/console/digest/subscriptions/:id/run`     | 手动触发             |
-| POST   | `/api/v1/console/digest/subscriptions/:id/preview` | 预览（不写入 Inbox） |
-| GET    | `/api/v1/console/digest/subscriptions/:id/runs`    | 运行历史             |
+| 方法   | 路径                                       | 说明                 |
+| ------ | ------------------------------------------ | -------------------- |
+| POST   | `/api/v1/digest/subscriptions`             | 创建订阅             |
+| GET    | `/api/v1/digest/subscriptions`             | 列表                 |
+| GET    | `/api/v1/digest/subscriptions/:id`         | 详情                 |
+| PATCH  | `/api/v1/digest/subscriptions/:id`         | 更新/启停            |
+| DELETE | `/api/v1/digest/subscriptions/:id`         | 软删除               |
+| POST   | `/api/v1/digest/subscriptions/:id/run`     | 手动触发             |
+| POST   | `/api/v1/digest/subscriptions/:id/preview` | 预览（不写入 Inbox） |
+| GET    | `/api/v1/digest/subscriptions/:id/runs`    | 运行历史             |
 
 **Web Inbox**：
 
-| 方法  | 路径                                         | 说明          |
-| ----- | -------------------------------------------- | ------------- |
-| GET   | `/api/v1/console/digest/inbox/items`         | 条目列表      |
-| PATCH | `/api/v1/console/digest/inbox/items/:itemId` | 更新状态      |
-| GET   | `/api/v1/console/digest/inbox/stats`         | 未读/收藏计数 |
+| 方法  | 路径                                 | 说明          |
+| ----- | ------------------------------------ | ------------- |
+| GET   | `/api/v1/digest/inbox/items`         | 条目列表      |
+| PATCH | `/api/v1/digest/inbox/items/:itemId` | 更新状态      |
+| GET   | `/api/v1/digest/inbox/stats`         | 未读/收藏计数 |
 
 **Topic 管理**：
 
-| 方法   | 路径                                         | 说明             |
-| ------ | -------------------------------------------- | ---------------- |
-| POST   | `/api/v1/console/digest/topics`              | 发布 Topic       |
-| GET    | `/api/v1/console/digest/topics`              | 我的 Topics      |
-| PATCH  | `/api/v1/console/digest/topics/:id`          | 更新             |
-| DELETE | `/api/v1/console/digest/topics/:id`          | 删除（下架）     |
-| POST   | `/api/v1/console/digest/topics/:slug/follow` | 创建 Follow 订阅 |
+| 方法   | 路径                                 | 说明             |
+| ------ | ------------------------------------ | ---------------- |
+| POST   | `/api/v1/digest/topics`              | 发布 Topic       |
+| GET    | `/api/v1/digest/topics`              | 我的 Topics      |
+| PATCH  | `/api/v1/digest/topics/:id`          | 更新             |
+| DELETE | `/api/v1/digest/topics/:id`          | 删除（下架）     |
+| POST   | `/api/v1/digest/topics/:slug/follow` | 创建 Follow 订阅 |
 
 ### 7.2 Public API（ApiKeyGuard）
 

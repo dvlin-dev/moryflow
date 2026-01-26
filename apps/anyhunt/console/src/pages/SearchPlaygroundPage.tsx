@@ -30,7 +30,7 @@ import {
   Icon,
   Input,
 } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useSearch, type SearchRequest, type SearchResponse } from '@/features/search-playground';
 import {
   ApiKeySelector,
@@ -51,9 +51,10 @@ export default function SearchPlaygroundPage() {
   // 如果用户未手动选择，使用第一个活跃的 API Key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
-  const { mutate, isPending, data, error, reset } = useSearch(effectiveKeyId);
+  const { mutate, isPending, data, error, reset } = useSearch(apiKeyValue);
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
@@ -177,7 +178,8 @@ export default function SearchPlaygroundPage() {
                 <CodeExample
                   endpoint={FETCHX_API.SEARCH}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={lastRequest}
                 />
               </CardContent>

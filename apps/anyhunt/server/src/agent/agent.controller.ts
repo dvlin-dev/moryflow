@@ -34,6 +34,7 @@ import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { AgentService } from './agent.service';
+import { AgentModelService } from './agent-model.service';
 import {
   AgentTaskIdParamSchema,
   type AgentTaskIdParamDto,
@@ -48,7 +49,10 @@ import type { CurrentUserDto } from '../types';
 @Controller({ path: 'agent', version: '1' })
 @UseGuards(ApiKeyGuard)
 export class AgentController {
-  constructor(private readonly agentService: AgentService) {}
+  constructor(
+    private readonly agentService: AgentService,
+    private readonly agentModelService: AgentModelService,
+  ) {}
 
   /**
    * 创建 Agent 任务
@@ -122,6 +126,17 @@ export class AgentController {
     } finally {
       res.end();
     }
+  }
+
+  /**
+   * 获取可用 Agent 模型列表
+   * GET /api/v1/agent/models
+   */
+  @Get('models')
+  @ApiOperation({ summary: 'List available Agent models' })
+  @ApiOkResponse({ description: 'Agent model list' })
+  async listModels() {
+    return this.agentModelService.listModels();
   }
 
   /**

@@ -23,9 +23,9 @@ status: draft
 
 ### 1.2 前端（只负责传参/展示，不直接调用模型）
 
-- Console Playground（Session 认证代理）：
-  - `apps/anyhunt/console/src/lib/api-paths.ts`：`/api/v1/console/playground/agent/*`、`/api/v1/console/playground/extract`
-  - 服务端代理实现：`apps/anyhunt/server/src/console-playground/*`
+- Console Playground（API Key 直连公网 API）：
+  - `apps/anyhunt/console/src/lib/api-paths.ts`：`/api/v1/agent/*`、`/api/v1/extract`
+  - 认证方式：`Authorization: Bearer <apiKey>`
 - www Playground（匿名/半匿名演示，最终仍走 server 的 Extract/Scrape 等能力）：
   - `apps/anyhunt/server/src/demo/demo.service.ts` 间接调用 `ExtractService`
 
@@ -211,7 +211,7 @@ completeText({ systemPrompt, userPrompt }):
 ### 5.1 核心链路（从 API 到 LLM）
 
 - API（Public）：`POST /api/v1/agent`（ApiKeyGuard）
-- API（Console 代理）：`POST /api/v1/console/playground/agent`（AuthGuard，仅代理）
+- API（公网）：`POST /api/v1/agent`（ApiKeyGuard，默认 SSE）
 - 执行编排：`apps/anyhunt/server/src/agent/agent.service.ts`
 - 模型路由：`apps/anyhunt/server/src/llm/llm-routing.service.ts`（返回 `Model`）
 

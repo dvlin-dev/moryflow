@@ -21,6 +21,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -48,6 +55,7 @@ import {
   MAX_WEBHOOKS_PER_USER,
 } from '@/features/webhooks';
 import type { Webhook } from '@/features/webhooks';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 
 export default function WebhooksPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -56,9 +64,18 @@ export default function WebhooksPage() {
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
-  const { data: webhooks, isLoading } = useWebhooks();
-  const { mutate: updateWebhook } = useUpdateWebhook();
+  const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
+  const activeKeys = apiKeys.filter((key) => key.isActive);
+  const effectiveKeyId = selectedKeyId || activeKeys[0]?.id || '';
+  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
+  const hasActiveKey = Boolean(apiKeyValue);
+
+  const { data: webhooks = [], isLoading: isLoadingWebhooks } = useWebhooks(apiKeyValue);
+  const { mutate: updateWebhook } = useUpdateWebhook(apiKeyValue);
 
   const handleCopySecret = async (webhook: Webhook) => {
     try {
@@ -72,6 +89,10 @@ export default function WebhooksPage() {
   };
 
   const handleToggleActive = (webhook: Webhook) => {
+    if (!apiKeyValue) {
+      toast.error('Select an API key');
+      return;
+    }
     updateWebhook({
       id: webhook.id,
       data: { isActive: !webhook.isActive },
@@ -93,7 +114,7 @@ export default function WebhooksPage() {
     setRegenerateDialogOpen(true);
   };
 
-  const canCreate = !webhooks || webhooks.length < MAX_WEBHOOKS_PER_USER;
+  const canCreate = hasActiveKey && webhooks.length < MAX_WEBHOOKS_PER_USER;
 
   return (
     <div className="space-y-6">
@@ -110,6 +131,57 @@ export default function WebhooksPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>API Key</CardTitle>
+          <CardDescription>Select the API key used to manage webhooks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>API Key</Label>
+              <Select
+                value={effectiveKeyId}
+                onValueChange={setSelectedKeyId}
+                disabled={isLoadingKeys}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select API Key" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeKeys.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No active API keys
+                    </SelectItem>
+                  ) : (
+                    activeKeys.map((key) => (
+                      <SelectItem key={key.id} value={key.id}>
+                        {key.name} ({maskApiKey(key.key)})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Selected Key</Label>
+              <Input placeholder="Select an API key" value={apiKeyDisplay} readOnly />
+            </div>
+          </div>
+
+          {!hasActiveKey && (
+            <p className="text-xs text-muted-foreground mt-3">
+              Create an API key in{' '}
+              <a href="/api-keys" className="text-primary hover:underline">
+                API Keys
+              </a>{' '}
+              to manage webhooks.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Webhook List</CardTitle>
           <CardDescription>
             We send POST requests to your configured URL when screenshot tasks complete or fail. You
@@ -117,13 +189,19 @@ export default function WebhooksPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoadingKeys || (hasActiveKey && isLoadingWebhooks) ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : !webhooks?.length ? (
+          ) : !hasActiveKey ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                Select an API key to view and manage webhooks.
+              </p>
+            </div>
+          ) : webhooks.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">You haven't created any webhooks yet</p>
               <Button onClick={() => setCreateDialogOpen(true)}>
@@ -226,21 +304,28 @@ export default function WebhooksPage() {
         </CardContent>
       </Card>
 
-      <CreateWebhookDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <CreateWebhookDialog
+        apiKey={apiKeyValue}
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+      />
 
       <EditWebhookDialog
+        apiKey={apiKeyValue}
         webhook={selectedWebhook}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
       />
 
       <DeleteWebhookDialog
+        apiKey={apiKeyValue}
         webhook={selectedWebhook}
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       />
 
       <RegenerateSecretDialog
+        apiKey={apiKeyValue}
         webhook={selectedWebhook}
         open={regenerateDialogOpen}
         onOpenChange={setRegenerateDialogOpen}

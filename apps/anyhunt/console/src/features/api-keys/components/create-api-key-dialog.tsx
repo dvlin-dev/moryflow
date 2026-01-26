@@ -1,5 +1,8 @@
 /**
- * 创建 API Key 对话框
+ * [PROPS]: CreateApiKeyDialogProps
+ * [POS]: 创建 API Key 并展示可复制的明文密钥
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
 import { useState } from 'react';
 import { Alert01Icon, Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
@@ -68,7 +71,7 @@ export function CreateApiKeyDialog({ open, onOpenChange }: CreateApiKeyDialogPro
           <DialogTitle>{createdKey ? 'Save Your API Key' : 'Create API Key'}</DialogTitle>
           <DialogDescription>
             {createdKey
-              ? "Copy and save your API Key now. You won't be able to see it again after closing."
+              ? 'Copy and save your API key now. You can also copy it later from the API Keys list.'
               : 'Create a new API Key for your application.'}
           </DialogDescription>
         </DialogHeader>
@@ -78,7 +81,7 @@ export function CreateApiKeyDialog({ open, onOpenChange }: CreateApiKeyDialogPro
             <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
               <Icon icon={Alert01Icon} className="h-5 w-5 shrink-0" />
               <p className="text-sm">
-                This is the only time you'll see the full key. Make sure to save it!
+                Keep this key secret. You can copy it later from the API Keys list.
               </p>
             </div>
 

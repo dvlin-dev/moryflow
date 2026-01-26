@@ -1,13 +1,13 @@
 /**
  * Embed Playground Hooks
  */
-import { useMutation } from '@tanstack/react-query'
-import { fetchEmbed } from './api'
-import type { EmbedFormData, EmbedResult } from './types'
+import { useMutation } from '@tanstack/react-query';
+import { fetchEmbed } from './api';
+import type { EmbedFormData, EmbedResult } from './types';
 
 interface FetchEmbedParams {
-  apiKeyId: string
-  request: EmbedFormData
+  apiKey: string;
+  request: EmbedFormData;
 }
 
 /**
@@ -15,6 +15,6 @@ interface FetchEmbedParams {
  */
 export function useFetchEmbed() {
   return useMutation<EmbedResult, Error, FetchEmbedParams>({
-    mutationFn: ({ apiKeyId, request }) => fetchEmbed(apiKeyId, request),
-  })
+    mutationFn: ({ apiKey, request }) => fetchEmbed(apiKey, request),
+  });
 }

@@ -1,7 +1,7 @@
 /**
- * [PROVIDES]: ConsoleAgentChatTransport (SSE + graceful abort)
- * [DEPENDS]: fetch, eventsource-parser, ai UIMessage, auth store
- * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（含 start 边界 + access token）
+ * [PROVIDES]: AgentChatTransport (SSE + graceful abort)
+ * [DEPENDS]: fetch, eventsource-parser, ai UIMessage
+ * [POS]: 将 Agent SSE 转为 UIMessageChunk 流（ApiKey 认证）
  *
  * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
  */
@@ -9,15 +9,30 @@
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
 import { API_BASE_URL } from '@/lib/api-base';
-import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
-import { useAuthStore } from '@/stores/auth';
+import { AGENT_API } from '@/lib/api-paths';
 import { buildAgentChatMessages } from '../agent-streaming';
 import type { AgentOutput } from '../types';
 
 type SendOptions = Parameters<ChatTransport<UIMessage>['sendMessages']>[0];
 
+type AgentStreamEvent =
+  | { type: 'started'; id: string; expiresAt?: string }
+  | { type: 'textDelta'; delta: string }
+  | { type: 'reasoningDelta'; delta: string }
+  | { type: 'toolCall'; toolCallId: string; toolName: string; input?: unknown }
+  | {
+      type: 'toolResult';
+      toolCallId: string;
+      toolName: string;
+      output?: unknown;
+      errorText?: string;
+    }
+  | { type: 'progress'; message?: string }
+  | { type: 'complete'; data?: unknown; creditsUsed?: number }
+  | { type: 'failed'; error: string };
+
 export type AgentChatOptions = {
-  apiKeyId: string;
+  apiKey: string;
   output?: AgentOutput;
   maxCredits?: number;
   modelId?: string;
@@ -37,7 +52,7 @@ const buildErrorMessage = async (response: Response): Promise<string> => {
   }
 };
 
-export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
+export class AgentChatTransport implements ChatTransport<UIMessage> {
   private readonly optionsRef: AgentChatOptionsRef;
 
   constructor(optionsRef: AgentChatOptionsRef) {
@@ -49,8 +64,8 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
     abortSignal,
   }: SendOptions): Promise<ReadableStream<UIMessageChunk>> {
     const options = this.optionsRef.current;
-    const requestApiKeyId = options.apiKeyId;
-    if (!requestApiKeyId) {
+    const apiKey = options.apiKey;
+    if (!apiKey) {
       throw new Error('API key is required');
     }
 
@@ -59,25 +74,19 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
       throw new Error('Prompt is empty');
     }
 
-    const accessToken = await useAuthStore.getState().ensureAccessToken();
-    if (!accessToken) {
-      throw new Error('Missing access token');
-    }
-
-    const response = await fetch(`${API_BASE_URL}${CONSOLE_PLAYGROUND_API.AGENT_STREAM}`, {
+    const response = await fetch(`${API_BASE_URL}${AGENT_API.BASE}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${apiKey}`,
       },
-      credentials: 'include',
       body: JSON.stringify({
-        apiKeyId: requestApiKeyId,
         messages: chatMessages,
         model: options.modelId,
         output: options.output ?? { type: 'text' },
         maxCredits: options.maxCredits,
+        stream: true,
       }),
       signal: abortSignal,
     });
@@ -93,18 +102,46 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
 
     let taskId: string | null = null;
     let closed = false;
+    let textPartId: string | null = null;
+    let reasoningPartId: string | null = null;
+
+    const ensureTextPart = (controller: ReadableStreamDefaultController<UIMessageChunk>) => {
+      if (!textPartId) {
+        textPartId = taskId ? `${taskId}-text` : 'text-1';
+        controller.enqueue({ type: 'text-start', id: textPartId });
+      }
+      return textPartId;
+    };
+
+    const ensureReasoningPart = (controller: ReadableStreamDefaultController<UIMessageChunk>) => {
+      if (!reasoningPartId) {
+        reasoningPartId = taskId ? `${taskId}-reasoning` : 'reasoning-1';
+        controller.enqueue({ type: 'reasoning-start', id: reasoningPartId });
+      }
+      return reasoningPartId;
+    };
+
+    const finishStream = (
+      controller: ReadableStreamDefaultController<UIMessageChunk>,
+      finishReason?: 'stop' | 'error'
+    ) => {
+      if (textPartId) {
+        controller.enqueue({ type: 'text-end', id: textPartId });
+      }
+      if (reasoningPartId) {
+        controller.enqueue({ type: 'reasoning-end', id: reasoningPartId });
+      }
+      controller.enqueue({ type: 'finish', finishReason });
+      closed = true;
+    };
 
     const cancelRemote = async () => {
       if (!taskId) return;
       try {
-        await fetch(
-          `${API_BASE_URL}${CONSOLE_PLAYGROUND_API.AGENT}/${taskId}?apiKeyId=${requestApiKeyId}`,
-          {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${accessToken}` },
-            credentials: 'include',
-          }
-        );
+        await fetch(`${API_BASE_URL}${AGENT_API.BASE}/${taskId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
       } catch {
         // ignore cancellation errors
       }
@@ -117,29 +154,79 @@ export class ConsoleAgentChatTransport implements ChatTransport<UIMessage> {
         const parser = createParser({
           onEvent: (event: EventSourceMessage) => {
             if (!event.data) return;
-            let parsed: UIMessageChunk;
+            let parsed: AgentStreamEvent;
             try {
-              parsed = JSON.parse(event.data) as UIMessageChunk;
+              parsed = JSON.parse(event.data) as AgentStreamEvent;
             } catch {
               controller.enqueue({ type: 'error', errorText: 'Invalid stream payload' });
               if (!closed) {
-                closed = true;
+                finishStream(controller, 'error');
                 controller.close();
                 void reader.cancel();
               }
               return;
             }
 
-            if (parsed.type === 'start' && parsed.messageId) {
-              taskId = parsed.messageId;
-            }
-
-            controller.enqueue(parsed);
-
-            if (parsed.type === 'finish' && !closed) {
-              closed = true;
-              controller.close();
-              void reader.cancel();
+            switch (parsed.type) {
+              case 'started': {
+                taskId = parsed.id;
+                controller.enqueue({ type: 'start', messageId: parsed.id });
+                break;
+              }
+              case 'textDelta': {
+                const partId = ensureTextPart(controller);
+                controller.enqueue({ type: 'text-delta', id: partId, delta: parsed.delta });
+                break;
+              }
+              case 'reasoningDelta': {
+                const partId = ensureReasoningPart(controller);
+                controller.enqueue({ type: 'reasoning-delta', id: partId, delta: parsed.delta });
+                break;
+              }
+              case 'toolCall': {
+                controller.enqueue({
+                  type: 'tool-input-available',
+                  toolCallId: parsed.toolCallId,
+                  toolName: parsed.toolName,
+                  input: parsed.input ?? null,
+                });
+                break;
+              }
+              case 'toolResult': {
+                if (parsed.errorText) {
+                  controller.enqueue({
+                    type: 'tool-output-error',
+                    toolCallId: parsed.toolCallId,
+                    errorText: parsed.errorText,
+                  });
+                } else {
+                  controller.enqueue({
+                    type: 'tool-output-available',
+                    toolCallId: parsed.toolCallId,
+                    output: parsed.output ?? null,
+                  });
+                }
+                break;
+              }
+              case 'complete': {
+                finishStream(controller, 'stop');
+                controller.close();
+                void reader.cancel();
+                break;
+              }
+              case 'failed': {
+                controller.enqueue({ type: 'error', errorText: parsed.error });
+                finishStream(controller, 'error');
+                controller.close();
+                void reader.cancel();
+                break;
+              }
+              case 'progress': {
+                break;
+              }
+              default: {
+                break;
+              }
             }
           },
         });

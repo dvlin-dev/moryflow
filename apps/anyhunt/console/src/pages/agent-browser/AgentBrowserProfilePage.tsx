@@ -17,15 +17,15 @@ import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 const profileSections: BrowserSessionSection[] = ['session', 'profile'];
 
 export default function AgentBrowserProfilePage() {
-  const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState description="Select an API key to manage profiles." />;
   }
 
   return (
     <BrowserSessionPanel
-      apiKeyId={apiKeyId}
+      apiKey={apiKey}
       sessionId={sessionId}
       onSessionChange={setSessionId}
       sections={profileSections}

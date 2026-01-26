@@ -15,15 +15,15 @@ import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 const cdpSections: BrowserSessionSection[] = ['session', 'cdp'];
 
 export default function AgentBrowserCdpPage() {
-  const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState description="Select an API key to connect CDP." />;
   }
 
   return (
     <BrowserSessionPanel
-      apiKeyId={apiKeyId}
+      apiKey={apiKey}
       sessionId={sessionId}
       onSessionChange={setSessionId}
       sections={cdpSections}

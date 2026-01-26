@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { ScrapeForm, ScrapeResult, useScrape } from '@/features/scrape-playground';
 import { CodeExample, isScrapeError } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
@@ -19,9 +19,10 @@ export default function ScrapePlaygroundPage() {
   // 如果用户未手动选择，使用第一个活跃的 API Key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
-  const { scrape, isLoading, data, error, reset } = useScrape(effectiveKeyId, {
+  const { scrape, isLoading, data, error, reset } = useScrape(apiKeyValue, {
     onSuccess: (result: ScrapeResponse) => {
       if (isScrapeError(result)) {
         toast.error(`Scrape failed: ${result.error.message}`);
@@ -90,7 +91,8 @@ export default function ScrapePlaygroundPage() {
                 <CodeExample
                   endpoint={FETCHX_API.SCRAPE}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={lastRequest}
                 />
               </CardContent>

@@ -14,6 +14,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 - 流式输出：SSE（`textDelta/reasoningDelta/toolCall/toolResult/progress/complete/failed`）
 - Browser Tools：基于 `BrowserAgentPort`，提供语义定位与批量动作（`browser_action`/`browser_action_batch`）
 - 动态计费：分段 checkpoint（每 100 credits）+ 最终结算 + 失败退款
+- 模型列表：暴露可用模型与默认模型（`GET /api/v1/agent/models`）
 
 ## Constraints
 
@@ -52,6 +53,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 - `GET /api/v1/agent/:id`：查询任务状态（合并 DB + Redis）
 - `DELETE /api/v1/agent/:id`：取消任务（按已消耗结算，不退款）
 - `POST /api/v1/agent/estimate`：成本预估（免费）
+- `GET /api/v1/agent/models`：模型列表（Admin 配置）
 
 ## LLM Env（Admin 动态配置）
 

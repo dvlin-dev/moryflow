@@ -1,7 +1,6 @@
 /**
  * Crawl Playground Hooks
- * 使用 apiKeyId 调用 Console Playground 代理接口
- * Console Playground 强制同步模式，无需轮询
+ * 使用 API Key 调用公开 Crawl API
  */
 
 import { useCallback } from 'react';
@@ -16,12 +15,11 @@ interface UseCrawlOptions {
 
 /**
  * Crawl hook（同步模式，直接返回结果）
- * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ * @param apiKey - 完整 API Key
  */
-export function useCrawl(apiKeyId: string, options: UseCrawlOptions = {}) {
+export function useCrawl(apiKey: string, options: UseCrawlOptions = {}) {
   const mutation = useMutation({
-    // 同步模式，直接返回结果
-    mutationFn: (request: CrawlRequest) => crawl(apiKeyId, request),
+    mutationFn: (request: CrawlRequest) => crawl(apiKey, request),
     onSuccess: options.onSuccess,
     onError: options.onError,
   });

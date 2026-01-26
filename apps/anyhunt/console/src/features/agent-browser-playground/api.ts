@@ -1,13 +1,13 @@
 /**
  * [PROVIDES]: Agent/Browser Playground API calls（含诊断/流式/Profile）
- * [DEPENDS]: apiClient, CONSOLE_PLAYGROUND_API
- * [POS]: Console Playground 代理请求封装
+ * [DEPENDS]: ApiKeyClient, BROWSER_API, AGENT_API
+ * [POS]: Console 调用公网 API 的封装
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { apiClient } from '@/lib/api-client';
-import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
+import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
+import { AGENT_API, BROWSER_API } from '@/lib/api-paths';
 import type {
   AgentCancelResponse,
   AgentEstimateResponse,
@@ -47,6 +47,8 @@ const withQuery = (endpoint: string, query: Record<string, string | undefined>) 
   return queryString ? `${endpoint}?${queryString}` : endpoint;
 };
 
+const createClient = (apiKey: string) => new ApiKeyClient({ apiKey });
+
 const AGENT_TASK_ID_PATTERN = /^at_[a-z0-9]+_[a-z0-9]+$/;
 
 const assertAgentTaskId = (taskId: string) => {
@@ -56,460 +58,374 @@ const assertAgentTaskId = (taskId: string) => {
 };
 
 export async function createBrowserSession(
-  apiKeyId: string,
+  apiKey: string,
   options?: Record<string, unknown>
 ): Promise<BrowserSessionInfo> {
-  return apiClient.post(CONSOLE_PLAYGROUND_API.BROWSER_SESSION, {
-    apiKeyId,
-    ...(options ?? {}),
-  });
+  const client = createClient(apiKey);
+  return client.post(BROWSER_API.SESSION, options ?? {});
 }
 
 export async function getBrowserSessionStatus(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string
 ): Promise<BrowserSessionInfo> {
-  return apiClient.get(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}`, { apiKeyId })
-  );
+  const client = createClient(apiKey);
+  return client.get(`${BROWSER_API.SESSION}/${sessionId}`);
 }
 
-export async function closeBrowserSession(apiKeyId: string, sessionId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}`, { apiKeyId })
-  );
+export async function closeBrowserSession(apiKey: string, sessionId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}`);
 }
 
 export async function openBrowserUrl(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options: Record<string, unknown>
 ): Promise<BrowserOpenResponse> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/open`, {
-    apiKeyId,
-    ...options,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/open`, options);
 }
 
 export async function getBrowserSnapshot(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: Record<string, unknown>
 ): Promise<BrowserSnapshotResponse> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/snapshot`, {
-    apiKeyId,
-    ...(options ?? {}),
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/snapshot`, options ?? {});
 }
 
 export async function getBrowserDeltaSnapshot(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: Record<string, unknown>
 ): Promise<BrowserDeltaSnapshotResponse> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/snapshot/delta`, {
-    apiKeyId,
-    ...(options ?? {}),
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/snapshot/delta`, options ?? {});
 }
 
 export async function executeBrowserAction(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   action: Record<string, unknown>
 ): Promise<BrowserActionResponse> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/action`, {
-    apiKeyId,
-    ...action,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/action`, action);
 }
 
 export async function executeBrowserActionBatch(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserActionBatchResponse> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/action/batch`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/action/batch`, input);
 }
 
 export async function getBrowserScreenshot(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: Record<string, unknown>
 ): Promise<BrowserScreenshotResponse> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/screenshot`, {
-    apiKeyId,
-    ...(options ?? {}),
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/screenshot`, options ?? {});
 }
 
-export async function createBrowserTab(
-  apiKeyId: string,
-  sessionId: string
-): Promise<BrowserTabInfo> {
-  return apiClient.post(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/tabs`, { apiKeyId })
-  );
+export async function createBrowserTab(apiKey: string, sessionId: string): Promise<BrowserTabInfo> {
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/tabs`);
 }
 
 export async function listBrowserTabs(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string
 ): Promise<BrowserTabInfo[]> {
-  return apiClient.get(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/tabs`, { apiKeyId })
-  );
+  const client = createClient(apiKey);
+  return client.get(`${BROWSER_API.SESSION}/${sessionId}/tabs`);
 }
 
 export async function switchBrowserTab(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   tabIndex: number
 ): Promise<BrowserTabInfo> {
-  return apiClient.post(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/tabs/${tabIndex}/activate`, {
-      apiKeyId,
-    })
-  );
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/tabs/${tabIndex}/activate`);
 }
 
-export async function closeBrowserTab(apiKeyId: string, sessionId: string, tabIndex: number) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/tabs/${tabIndex}`, {
-      apiKeyId,
-    })
-  );
+export async function closeBrowserTab(apiKey: string, sessionId: string, tabIndex: number) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/tabs/${tabIndex}`);
 }
 
-export async function getDialogHistory(apiKeyId: string, sessionId: string): Promise<unknown[]> {
-  return apiClient.get<unknown[]>(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/dialogs`, {
-      apiKeyId,
-    })
-  );
+export async function getDialogHistory(apiKey: string, sessionId: string): Promise<unknown[]> {
+  const client = createClient(apiKey);
+  return client.get<unknown[]>(`${BROWSER_API.SESSION}/${sessionId}/dialogs`);
 }
 
 export async function createBrowserWindow(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: Record<string, unknown>
 ): Promise<BrowserWindowInfo> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/windows`, {
-    apiKeyId,
-    ...(options ?? {}),
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/windows`, options ?? {});
 }
 
 export async function listBrowserWindows(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string
 ): Promise<BrowserWindowInfo[]> {
-  return apiClient.get(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/windows`, { apiKeyId })
-  );
+  const client = createClient(apiKey);
+  return client.get(`${BROWSER_API.SESSION}/${sessionId}/windows`);
 }
 
 export async function switchBrowserWindow(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   windowIndex: number
 ): Promise<BrowserWindowInfo> {
-  return apiClient.post(
-    withQuery(
-      `${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/windows/${windowIndex}/activate`,
-      { apiKeyId }
-    )
-  );
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/windows/${windowIndex}/activate`);
 }
 
-export async function closeBrowserWindow(apiKeyId: string, sessionId: string, windowIndex: number) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/windows/${windowIndex}`, {
-      apiKeyId,
-    })
-  );
+export async function closeBrowserWindow(apiKey: string, sessionId: string, windowIndex: number) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/windows/${windowIndex}`);
 }
 
 export async function connectBrowserCdp(
-  apiKeyId: string,
+  apiKey: string,
   options: Record<string, unknown>
 ): Promise<BrowserSessionInfo> {
-  return apiClient.post<BrowserSessionInfo>(CONSOLE_PLAYGROUND_API.BROWSER_CDP_CONNECT, {
-    apiKeyId,
-    ...options,
-  });
+  const client = createClient(apiKey);
+  return client.post<BrowserSessionInfo>(BROWSER_API.CDP_CONNECT, options);
 }
 
-export async function setInterceptRules(apiKeyId: string, sessionId: string, rules: unknown[]) {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/intercept/rules`, {
-    apiKeyId,
-    rules,
-  });
+export async function setInterceptRules(apiKey: string, sessionId: string, rules: unknown[]) {
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/intercept/rules`, { rules });
 }
 
 export async function addInterceptRule(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   rule: Record<string, unknown>
 ) {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/intercept/rule`, {
-    apiKeyId,
-    ...rule,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/intercept/rule`, rule);
 }
 
-export async function removeInterceptRule(apiKeyId: string, sessionId: string, ruleId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/intercept/rule/${ruleId}`, {
-      apiKeyId,
-    })
-  );
+export async function removeInterceptRule(apiKey: string, sessionId: string, ruleId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/intercept/rule/${ruleId}`);
 }
 
-export async function clearInterceptRules(apiKeyId: string, sessionId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/intercept/rules`, {
-      apiKeyId,
-    })
-  );
+export async function clearInterceptRules(apiKey: string, sessionId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/intercept/rules`);
 }
 
-export async function getInterceptRules(apiKeyId: string, sessionId: string): Promise<unknown[]> {
-  return apiClient.get<unknown[]>(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/intercept/rules`, {
-      apiKeyId,
-    })
-  );
+export async function getInterceptRules(apiKey: string, sessionId: string): Promise<unknown[]> {
+  const client = createClient(apiKey);
+  return client.get<unknown[]>(`${BROWSER_API.SESSION}/${sessionId}/intercept/rules`);
 }
 
 export async function getNetworkHistory(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: { limit?: number; urlFilter?: string }
 ): Promise<BrowserNetworkRequestRecord[]> {
-  return apiClient.get(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/network/history`, {
-      apiKeyId,
+  const client = createClient(apiKey);
+  return client.get(
+    withQuery(`${BROWSER_API.SESSION}/${sessionId}/network/history`, {
       limit: options?.limit?.toString(),
       urlFilter: options?.urlFilter,
     })
   );
 }
 
-export async function clearNetworkHistory(apiKeyId: string, sessionId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/network/history`, {
-      apiKeyId,
-    })
-  );
+export async function clearNetworkHistory(apiKey: string, sessionId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/network/history`);
 }
 
 export async function setBrowserHeaders(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserHeadersResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/headers`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/headers`, input);
 }
 
 export async function clearBrowserHeaders(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ) {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/headers/clear`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/headers/clear`, input);
 }
 
 export async function getBrowserConsoleMessages(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: { limit?: number }
 ): Promise<BrowserConsoleMessage[]> {
-  return apiClient.get(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/console`, {
-      apiKeyId,
+  const client = createClient(apiKey);
+  return client.get(
+    withQuery(`${BROWSER_API.SESSION}/${sessionId}/console`, {
       limit: options?.limit?.toString(),
     })
   );
 }
 
-export async function clearBrowserConsoleMessages(apiKeyId: string, sessionId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/console`, { apiKeyId })
-  );
+export async function clearBrowserConsoleMessages(apiKey: string, sessionId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/console`);
 }
 
 export async function getBrowserPageErrors(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: { limit?: number }
 ): Promise<BrowserPageError[]> {
-  return apiClient.get(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/errors`, {
-      apiKeyId,
+  const client = createClient(apiKey);
+  return client.get(
+    withQuery(`${BROWSER_API.SESSION}/${sessionId}/errors`, {
       limit: options?.limit?.toString(),
     })
   );
 }
 
-export async function clearBrowserPageErrors(apiKeyId: string, sessionId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/errors`, { apiKeyId })
-  );
+export async function clearBrowserPageErrors(apiKey: string, sessionId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/errors`);
 }
 
 export async function startBrowserTrace(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserTraceStartResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/trace/start`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/trace/start`, input);
 }
 
 export async function stopBrowserTrace(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserTraceStopResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/trace/stop`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/trace/stop`, input);
 }
 
 export async function startBrowserHar(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserHarStartResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/har/start`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/har/start`, input);
 }
 
 export async function stopBrowserHar(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserHarStopResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/har/stop`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/har/stop`, input);
 }
 
 export async function saveBrowserProfile(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserProfileSaveResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/profile/save`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/profile/save`, input);
 }
 
 export async function loadBrowserProfile(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserProfileLoadResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/profile/load`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/profile/load`, input);
 }
 
 export async function createBrowserStreamToken(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   input: Record<string, unknown>
 ): Promise<BrowserStreamTokenResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/stream`, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/stream`, input);
 }
 
 export async function exportBrowserStorage(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   options?: Record<string, unknown>
 ): Promise<BrowserStorageExportResult> {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/storage/export`, {
-    apiKeyId,
-    ...(options ?? {}),
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/storage/export`, options ?? {});
 }
 
 export async function importBrowserStorage(
-  apiKeyId: string,
+  apiKey: string,
   sessionId: string,
   data: Record<string, unknown>
 ) {
-  return apiClient.post(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/storage/import`, {
-    apiKeyId,
-    ...data,
-  });
+  const client = createClient(apiKey);
+  return client.post(`${BROWSER_API.SESSION}/${sessionId}/storage/import`, data);
 }
 
-export async function clearBrowserStorage(apiKeyId: string, sessionId: string) {
-  return apiClient.delete(
-    withQuery(`${CONSOLE_PLAYGROUND_API.BROWSER_SESSION}/${sessionId}/storage`, {
-      apiKeyId,
-    })
-  );
+export async function clearBrowserStorage(apiKey: string, sessionId: string) {
+  const client = createClient(apiKey);
+  return client.delete(`${BROWSER_API.SESSION}/${sessionId}/storage`);
 }
 
 export async function estimateAgentCost(
-  apiKeyId: string,
+  apiKey: string,
   input: Record<string, unknown>
 ): Promise<AgentEstimateResponse> {
-  return apiClient.post(CONSOLE_PLAYGROUND_API.AGENT_ESTIMATE, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(AGENT_API.ESTIMATE, input);
 }
 
-export async function listAgentModels(apiKeyId: string): Promise<AgentModelListResponse> {
-  return apiClient.get(withQuery(CONSOLE_PLAYGROUND_API.AGENT_MODELS, { apiKeyId }));
+export async function listAgentModels(apiKey: string): Promise<AgentModelListResponse> {
+  const client = createClient(apiKey);
+  return client.get(AGENT_API.MODELS);
 }
 
 export async function executeAgentTask(
-  apiKeyId: string,
+  apiKey: string,
   input: Record<string, unknown>
 ): Promise<AgentTaskResult> {
-  return apiClient.post(CONSOLE_PLAYGROUND_API.AGENT, {
-    apiKeyId,
-    ...input,
-  });
+  const client = createClient(apiKey);
+  return client.post(AGENT_API.BASE, { ...input, stream: false });
 }
 
 export async function getAgentTaskStatus(
-  apiKeyId: string,
+  apiKey: string,
   taskId: string
 ): Promise<AgentTaskResult | null> {
   assertAgentTaskId(taskId);
-  return apiClient.get(withQuery(`${CONSOLE_PLAYGROUND_API.AGENT}/${taskId}`, { apiKeyId }));
+  const client = createClient(apiKey);
+  return client.get(`${AGENT_API.BASE}/${taskId}`);
 }
 
 export async function cancelAgentTask(
-  apiKeyId: string,
+  apiKey: string,
   taskId: string
 ): Promise<AgentCancelResponse> {
   assertAgentTaskId(taskId);
-  return apiClient.delete(withQuery(`${CONSOLE_PLAYGROUND_API.AGENT}/${taskId}`, { apiKeyId }));
+  const client = createClient(apiKey);
+  return client.delete(`${AGENT_API.BASE}/${taskId}`);
 }

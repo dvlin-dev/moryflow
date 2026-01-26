@@ -90,11 +90,11 @@ const statusLabel: Record<FlowStepStatus, string> = {
 };
 
 export interface FlowRunnerProps {
-  apiKeyId: string;
+  apiKey: string;
   onSessionChange?: (sessionId: string) => void;
 }
 
-export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
+export function FlowRunner({ apiKey, onSessionChange }: FlowRunnerProps) {
   const form = useForm<FlowRunnerValues>({
     resolver: zodResolver(flowRunnerSchema),
     defaultValues: {
@@ -123,7 +123,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
   }, [result]);
 
   const runFlow = async (values: FlowRunnerValues) => {
-    if (!apiKeyId) {
+    if (!apiKey) {
       toast.error('Select an API key first');
       return;
     }
@@ -137,13 +137,13 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
     try {
       activeStepId = 'create';
       updateStep('create', 'running');
-      session = await createBrowserSession(apiKeyId, {});
+      session = await createBrowserSession(apiKey, {});
       updateStep('create', 'success', session.id);
       onSessionChange?.(session.id);
 
       activeStepId = 'open';
       updateStep('open', 'running');
-      const open = await openBrowserUrl(apiKeyId, session.id, {
+      const open = await openBrowserUrl(apiKey, session.id, {
         url: values.targetUrl,
         waitUntil: 'domcontentloaded',
       });
@@ -151,14 +151,14 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
 
       activeStepId = 'snapshot';
       updateStep('snapshot', 'running');
-      const snapshot = await getBrowserSnapshot(apiKeyId, session.id, {
+      const snapshot = await getBrowserSnapshot(apiKey, session.id, {
         interactive: true,
       });
       updateStep('snapshot', 'success');
 
       activeStepId = 'screenshot';
       updateStep('screenshot', 'running');
-      const screenshot = await getBrowserScreenshot(apiKeyId, session.id, {
+      const screenshot = await getBrowserScreenshot(apiKey, session.id, {
         fullPage: true,
         format: 'png',
       });
@@ -166,7 +166,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
 
       activeStepId = 'estimate';
       updateStep('estimate', 'running');
-      const estimate = await estimateAgentCost(apiKeyId, {
+      const estimate = await estimateAgentCost(apiKey, {
         prompt: values.prompt,
         urls: parseUrls(values.targetUrl),
         output: parseSchemaJsonToAgentOutput(values.schemaJson),
@@ -176,7 +176,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
 
       activeStepId = 'agent';
       updateStep('agent', 'running');
-      const agent = await executeAgentTask(apiKeyId, {
+      const agent = await executeAgentTask(apiKey, {
         prompt: values.prompt,
         urls: parseUrls(values.targetUrl),
         output: parseSchemaJsonToAgentOutput(values.schemaJson),
@@ -189,7 +189,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
       if (!agent?.id) {
         throw new Error('Agent task id is missing');
       }
-      const status = await getAgentTaskStatus(apiKeyId, agent.id);
+      const status = await getAgentTaskStatus(apiKey, agent.id);
       const isCompleted = status?.status === 'completed';
       updateStep('status', isCompleted ? 'success' : 'failed', status?.status ?? 'unknown');
 
@@ -211,7 +211,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
       if (session) {
         try {
           updateStep('close', 'running');
-          await closeBrowserSession(apiKeyId, session.id);
+          await closeBrowserSession(apiKey, session.id);
           updateStep('close', 'success');
           onSessionChange?.('');
         } catch {
@@ -287,7 +287,7 @@ export function FlowRunner({ apiKeyId, onSessionChange }: FlowRunnerProps) {
               )}
             />
             <div className="md:col-span-2">
-              <Button type="submit" disabled={running || !apiKeyId}>
+              <Button type="submit" disabled={running || !apiKey}>
                 {running ? 'Running...' : 'Run Flow'}
               </Button>
             </div>

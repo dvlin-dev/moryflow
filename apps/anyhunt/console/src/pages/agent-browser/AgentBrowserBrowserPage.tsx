@@ -27,15 +27,15 @@ const browserSections: BrowserSessionSection[] = [
 ];
 
 export default function AgentBrowserBrowserPage() {
-  const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState />;
   }
 
   return (
     <BrowserSessionPanel
-      apiKeyId={apiKeyId}
+      apiKey={apiKey}
       sessionId={sessionId}
       onSessionChange={setSessionId}
       sections={browserSections}

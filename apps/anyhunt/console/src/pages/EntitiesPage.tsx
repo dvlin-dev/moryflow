@@ -19,7 +19,7 @@ import {
   Input,
   Label,
 } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useEntities, useEntityTypes, type Entity } from '@/features/memox';
 
 function EntityCard({ entity }: { entity: Entity }) {
@@ -62,10 +62,13 @@ function EntityCard({ entity }: { entity: Entity }) {
 export default function EntitiesPage() {
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [apiKeyInput, setApiKeyInput] = useState('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const apiKeyValue = apiKeyInput.trim();
+  const activeKeys = apiKeys.filter((key) => key.isActive);
+  const effectiveKeyId = selectedApiKeyId || activeKeys[0]?.id || '';
+  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
   const { data: entities = [], isLoading, error } = useEntities(apiKeyValue);
   const { data: entityTypes = [] } = useEntityTypes(apiKeyValue);
@@ -74,9 +77,6 @@ export default function EntitiesPage() {
     if (selectedType === 'all') return entities;
     return entities.filter((entity) => entity.type === selectedType);
   }, [entities, selectedType]);
-
-  const activeKeys = apiKeys.filter((key) => key.isActive);
-  const selectedKey = apiKeys.find((key) => key.id === selectedApiKeyId);
 
   return (
     <div className="container py-6 space-y-6">
@@ -99,7 +99,7 @@ export default function EntitiesPage() {
             <div className="space-y-2">
               <Label>API Key</Label>
               <Select
-                value={selectedApiKeyId}
+                value={effectiveKeyId}
                 onValueChange={setSelectedApiKeyId}
                 disabled={isLoadingKeys}
               >
@@ -114,7 +114,7 @@ export default function EntitiesPage() {
                   ) : (
                     activeKeys.map((key) => (
                       <SelectItem key={key.id} value={key.id}>
-                        {key.name} ({key.keyPrefix}...)
+                        {key.name} ({maskApiKey(key.key)})
                       </SelectItem>
                     ))
                   )}
@@ -123,17 +123,8 @@ export default function EntitiesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>API Key (Full)</Label>
-              <Input
-                placeholder="ah_..."
-                value={apiKeyInput}
-                onChange={(event) => setApiKeyInput(event.target.value)}
-              />
-              {selectedKey && (
-                <p className="text-xs text-muted-foreground">
-                  Selected: {selectedKey.name} ({selectedKey.keyPrefix}...)
-                </p>
-              )}
+              <Label>API Key</Label>
+              <Input placeholder="Select an API key" value={apiKeyDisplay} readOnly />
             </div>
 
             <div className="space-y-2">
@@ -160,7 +151,7 @@ export default function EntitiesPage() {
       {!apiKeyValue ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            Enter a full API key to load entities.
+            Select an API key to load entities.
           </CardContent>
         </Card>
       ) : isLoading ? (

@@ -10,11 +10,11 @@ import type { AgentBrowserOutletContext } from './AgentBrowserLayoutPage';
 import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 
 export default function AgentBrowserOverviewPage() {
-  const { apiKeyId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState />;
   }
 
-  return <FlowRunner apiKeyId={apiKeyId} onSessionChange={setSessionId} />;
+  return <FlowRunner apiKey={apiKey} onSessionChange={setSessionId} />;
 }

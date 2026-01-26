@@ -3,6 +3,7 @@
  */
 import { Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@anyhunt/ui';
 import type { ApiKey } from '@/features/api-keys';
+import { maskApiKey } from '@/features/api-keys';
 
 interface ApiKeySelectorProps {
   apiKeys: ApiKey[];
@@ -37,7 +38,7 @@ export function ApiKeySelector({
                 <span className="flex items-center gap-2">
                   <span>{key.name}</span>
                   <span className="text-muted-foreground font-mono text-xs">
-                    {key.keyPrefix}...
+                    {maskApiKey(key.key)}
                   </span>
                 </span>
               </SelectItem>

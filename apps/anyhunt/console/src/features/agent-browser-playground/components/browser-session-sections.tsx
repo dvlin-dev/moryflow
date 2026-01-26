@@ -75,7 +75,7 @@ import { CollapsibleSection } from '../../playground-shared/components/collapsib
 const formatJson = (value: unknown) => JSON.stringify(value ?? {}, null, 2);
 
 type SessionSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserSessionValues>;
   sessionInfo: BrowserSessionInfo | null;
   open: boolean;
@@ -86,7 +86,7 @@ type SessionSectionProps = {
 };
 
 function SessionSection({
-  apiKeyId,
+  apiKey,
   form,
   sessionInfo,
   open,
@@ -430,13 +430,13 @@ function SessionSection({
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={!apiKeyId}>
+            <Button type="submit" disabled={!apiKey}>
               Create Session
             </Button>
-            <Button type="button" variant="outline" onClick={onStatus} disabled={!apiKeyId}>
+            <Button type="button" variant="outline" onClick={onStatus} disabled={!apiKey}>
               Get Status
             </Button>
-            <Button type="button" variant="ghost" onClick={onClose} disabled={!apiKeyId}>
+            <Button type="button" variant="ghost" onClick={onClose} disabled={!apiKey}>
               Close Session
             </Button>
           </div>
@@ -448,7 +448,7 @@ function SessionSection({
 }
 
 type OpenUrlSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserOpenValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -457,7 +457,7 @@ type OpenUrlSectionProps = {
 };
 
 function OpenUrlSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -530,7 +530,7 @@ function OpenUrlSection({
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Open URL
           </Button>
           {result && <CodeBlock code={formatJson(result)} language="json" />}
@@ -541,7 +541,7 @@ function OpenUrlSection({
 }
 
 type SnapshotSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserSnapshotValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -550,7 +550,7 @@ type SnapshotSectionProps = {
 };
 
 function SnapshotSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -613,7 +613,7 @@ function SnapshotSection({
               )}
             />
           </div>
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Capture Snapshot
           </Button>
           {result && <CodeBlock code={formatJson(result)} language="json" />}
@@ -624,7 +624,7 @@ function SnapshotSection({
 }
 
 type DeltaSnapshotSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserDeltaSnapshotValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -633,7 +633,7 @@ type DeltaSnapshotSectionProps = {
 };
 
 function DeltaSnapshotSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -656,7 +656,7 @@ function DeltaSnapshotSection({
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Capture Delta
           </Button>
           {result && <CodeBlock code={formatJson(result)} language="json" />}
@@ -667,7 +667,7 @@ function DeltaSnapshotSection({
 }
 
 type ActionSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserActionValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -675,14 +675,7 @@ type ActionSectionProps = {
   result: BrowserActionResponse | null;
 };
 
-function ActionSection({
-  apiKeyId,
-  form,
-  open,
-  onOpenChange,
-  onSubmit,
-  result,
-}: ActionSectionProps) {
+function ActionSection({ apiKey, form, open, onOpenChange, onSubmit, result }: ActionSectionProps) {
   return (
     <CollapsibleSection title="Action" open={open} onOpenChange={onOpenChange}>
       <Form {...form}>
@@ -700,7 +693,7 @@ function ActionSection({
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Execute Action
           </Button>
           {result && <CodeBlock code={formatJson(result)} language="json" />}
@@ -711,7 +704,7 @@ function ActionSection({
 }
 
 type ActionBatchSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserActionBatchValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -720,7 +713,7 @@ type ActionBatchSectionProps = {
 };
 
 function ActionBatchSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -760,7 +753,7 @@ function ActionBatchSection({
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Execute Batch
           </Button>
           {result && <CodeBlock code={formatJson(result)} language="json" />}
@@ -771,7 +764,7 @@ function ActionBatchSection({
 }
 
 type ScreenshotSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserScreenshotValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -780,7 +773,7 @@ type ScreenshotSectionProps = {
 };
 
 function ScreenshotSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -852,7 +845,7 @@ function ScreenshotSection({
               )}
             />
           </div>
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Capture Screenshot
           </Button>
           {result && (
@@ -872,7 +865,7 @@ function ScreenshotSection({
 }
 
 type TabsSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserTabsValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -886,7 +879,7 @@ type TabsSectionProps = {
 };
 
 function TabsSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -915,17 +908,17 @@ function TabsSection({
             )}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={onCreateTab} disabled={!apiKeyId}>
+            <Button type="button" onClick={onCreateTab} disabled={!apiKey}>
               Create Tab
             </Button>
-            <Button type="button" variant="outline" onClick={onListTabs} disabled={!apiKeyId}>
+            <Button type="button" variant="outline" onClick={onListTabs} disabled={!apiKey}>
               List Tabs
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onSwitchTab)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Activate Tab
             </Button>
@@ -933,7 +926,7 @@ function TabsSection({
               type="button"
               variant="ghost"
               onClick={form.handleSubmit(onCloseTab)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Close Tab
             </Button>
@@ -952,7 +945,7 @@ function TabsSection({
 }
 
 type WindowsSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserWindowsValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -964,7 +957,7 @@ type WindowsSectionProps = {
 };
 
 function WindowsSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1270,17 +1263,17 @@ function WindowsSection({
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onCreateWindow)} disabled={!apiKeyId}>
+            <Button type="button" onClick={form.handleSubmit(onCreateWindow)} disabled={!apiKey}>
               Create Window
             </Button>
-            <Button type="button" variant="outline" onClick={onListWindows} disabled={!apiKeyId}>
+            <Button type="button" variant="outline" onClick={onListWindows} disabled={!apiKey}>
               List Windows
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onSwitchWindow)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Activate Window
             </Button>
@@ -1288,7 +1281,7 @@ function WindowsSection({
               type="button"
               variant="ghost"
               onClick={form.handleSubmit(onCloseWindow)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Close Window
             </Button>
@@ -1301,7 +1294,7 @@ function WindowsSection({
 }
 
 type InterceptSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserInterceptValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1314,7 +1307,7 @@ type InterceptSectionProps = {
 };
 
 function InterceptSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1368,14 +1361,14 @@ function InterceptSection({
             )}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onSetRules)} disabled={!apiKeyId}>
+            <Button type="button" onClick={form.handleSubmit(onSetRules)} disabled={!apiKey}>
               Set Rules
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onAddRule)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Add Rule
             </Button>
@@ -1383,14 +1376,14 @@ function InterceptSection({
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onRemoveRule)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Remove Rule
             </Button>
-            <Button type="button" variant="ghost" onClick={onClearRules} disabled={!apiKeyId}>
+            <Button type="button" variant="ghost" onClick={onClearRules} disabled={!apiKey}>
               Clear Rules
             </Button>
-            <Button type="button" variant="outline" onClick={onListRules} disabled={!apiKeyId}>
+            <Button type="button" variant="outline" onClick={onListRules} disabled={!apiKey}>
               List Rules
             </Button>
           </div>
@@ -1402,7 +1395,7 @@ function InterceptSection({
 }
 
 type HeadersSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserHeadersValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1412,7 +1405,7 @@ type HeadersSectionProps = {
 };
 
 function HeadersSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1462,14 +1455,14 @@ function HeadersSection({
             )}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onSetHeaders)} disabled={!apiKeyId}>
+            <Button type="button" onClick={form.handleSubmit(onSetHeaders)} disabled={!apiKey}>
               Set Headers
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onClearHeaders)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Clear Headers
             </Button>
@@ -1482,7 +1475,7 @@ function HeadersSection({
 }
 
 type NetworkHistorySectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserNetworkHistoryValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1492,7 +1485,7 @@ type NetworkHistorySectionProps = {
 };
 
 function NetworkHistorySection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1531,10 +1524,10 @@ function NetworkHistorySection({
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onFetch)} disabled={!apiKeyId}>
+            <Button type="button" onClick={form.handleSubmit(onFetch)} disabled={!apiKey}>
               Get History
             </Button>
-            <Button type="button" variant="ghost" onClick={onClear} disabled={!apiKeyId}>
+            <Button type="button" variant="ghost" onClick={onClear} disabled={!apiKey}>
               Clear History
             </Button>
           </div>
@@ -1546,7 +1539,7 @@ function NetworkHistorySection({
 }
 
 type DiagnosticsSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   logForm: UseFormReturn<BrowserDiagnosticsLogValues>;
   traceForm: UseFormReturn<BrowserDiagnosticsTraceValues>;
   harForm: UseFormReturn<BrowserDiagnosticsHarValues>;
@@ -1567,7 +1560,7 @@ type DiagnosticsSectionProps = {
 };
 
 function DiagnosticsSection({
-  apiKeyId,
+  apiKey,
   logForm,
   traceForm,
   harForm,
@@ -1607,22 +1600,22 @@ function DiagnosticsSection({
               <Button
                 type="button"
                 onClick={logForm.handleSubmit(onFetchConsole)}
-                disabled={!apiKeyId}
+                disabled={!apiKey}
               >
                 Get Console
               </Button>
-              <Button type="button" variant="ghost" onClick={onClearConsole} disabled={!apiKeyId}>
+              <Button type="button" variant="ghost" onClick={onClearConsole} disabled={!apiKey}>
                 Clear Console
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={logForm.handleSubmit(onFetchErrors)}
-                disabled={!apiKeyId}
+                disabled={!apiKey}
               >
                 Get Errors
               </Button>
-              <Button type="button" variant="ghost" onClick={onClearErrors} disabled={!apiKeyId}>
+              <Button type="button" variant="ghost" onClick={onClearErrors} disabled={!apiKey}>
                 Clear Errors
               </Button>
             </div>
@@ -1674,7 +1667,7 @@ function DiagnosticsSection({
               <Button
                 type="button"
                 onClick={traceForm.handleSubmit(onStartTrace)}
-                disabled={!apiKeyId}
+                disabled={!apiKey}
               >
                 Start Trace
               </Button>
@@ -1682,7 +1675,7 @@ function DiagnosticsSection({
                 type="button"
                 variant="outline"
                 onClick={traceForm.handleSubmit(onStopTrace)}
-                disabled={!apiKeyId}
+                disabled={!apiKey}
               >
                 Stop Trace
               </Button>
@@ -1719,14 +1712,14 @@ function DiagnosticsSection({
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={harForm.handleSubmit(onStartHar)} disabled={!apiKeyId}>
+              <Button type="button" onClick={harForm.handleSubmit(onStartHar)} disabled={!apiKey}>
                 Start HAR
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={harForm.handleSubmit(onStopHar)}
-                disabled={!apiKeyId}
+                disabled={!apiKey}
               >
                 Stop HAR
               </Button>
@@ -1740,7 +1733,7 @@ function DiagnosticsSection({
 }
 
 type StorageSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserStorageValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1751,7 +1744,7 @@ type StorageSectionProps = {
 };
 
 function StorageSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1791,18 +1784,18 @@ function StorageSection({
             )}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onExport)} disabled={!apiKeyId}>
+            <Button type="button" onClick={form.handleSubmit(onExport)} disabled={!apiKey}>
               Export
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onImport)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Import
             </Button>
-            <Button type="button" variant="ghost" onClick={onClear} disabled={!apiKeyId}>
+            <Button type="button" variant="ghost" onClick={onClear} disabled={!apiKey}>
               Clear
             </Button>
           </div>
@@ -1814,7 +1807,7 @@ function StorageSection({
 }
 
 type ProfileSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserProfileValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1825,7 +1818,7 @@ type ProfileSectionProps = {
 };
 
 function ProfileSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1876,14 +1869,14 @@ function ProfileSection({
             )}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={form.handleSubmit(onSave)} disabled={!apiKeyId}>
+            <Button type="button" onClick={form.handleSubmit(onSave)} disabled={!apiKey}>
               Save Profile
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={form.handleSubmit(onLoad)}
-              disabled={!apiKeyId}
+              disabled={!apiKey}
             >
               Load Profile
             </Button>
@@ -1897,7 +1890,7 @@ function ProfileSection({
 }
 
 type StreamingSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserStreamValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1916,7 +1909,7 @@ type StreamingSectionProps = {
 };
 
 function StreamingSection({
-  apiKeyId,
+  apiKey,
   form,
   open,
   onOpenChange,
@@ -1951,10 +1944,10 @@ function StreamingSection({
               )}
             />
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={form.handleSubmit(onCreateToken)} disabled={!apiKeyId}>
+              <Button type="button" onClick={form.handleSubmit(onCreateToken)} disabled={!apiKey}>
                 Create Token
               </Button>
-              <Button type="button" variant="outline" onClick={onDisconnect} disabled={!apiKeyId}>
+              <Button type="button" variant="outline" onClick={onDisconnect} disabled={!apiKey}>
                 Disconnect
               </Button>
             </div>
@@ -1992,7 +1985,7 @@ function StreamingSection({
 }
 
 type CdpSectionProps = {
-  apiKeyId: string;
+  apiKey: string;
   form: UseFormReturn<BrowserCdpValues>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -2000,7 +1993,7 @@ type CdpSectionProps = {
   onConnect: (values: BrowserCdpValues) => void;
 };
 
-function CdpSection({ apiKeyId, form, open, onOpenChange, session, onConnect }: CdpSectionProps) {
+function CdpSection({ apiKey, form, open, onOpenChange, session, onConnect }: CdpSectionProps) {
   return (
     <CollapsibleSection title="CDP Connect" open={open} onOpenChange={onOpenChange}>
       <Form {...form}>
@@ -2064,7 +2057,7 @@ function CdpSection({ apiKeyId, form, open, onOpenChange, session, onConnect }: 
               )}
             />
           </div>
-          <Button type="submit" disabled={!apiKeyId}>
+          <Button type="submit" disabled={!apiKey}>
             Connect CDP
           </Button>
           {session && <CodeBlock code={formatJson(session)} language="json" />}

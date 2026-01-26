@@ -1,39 +1,29 @@
 /**
  * Extract Playground 模块
- * 使用 Session 认证调用 Console Playground 代理接口
+ * 使用 API Key 调用公开 Extract API
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
-import { apiClient } from '@/lib/api-client';
+import { FETCHX_API } from '@/lib/api-paths';
+import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type { ExtractRequest, ExtractResponse } from '@/features/playground-shared';
 
 /**
- * Console Extract 请求参数（包含 apiKeyId）
- */
-interface ConsoleExtractRequest extends ExtractRequest {
-  apiKeyId: string;
-}
-
-/**
  * 执行 Extract 请求
- * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ * @param apiKey - 完整 API Key
  */
-export async function extract(apiKeyId: string, request: ExtractRequest): Promise<ExtractResponse> {
-  const consoleRequest: ConsoleExtractRequest = {
-    ...request,
-    apiKeyId,
-  };
-  return apiClient.post<ExtractResponse>(CONSOLE_PLAYGROUND_API.EXTRACT, consoleRequest);
+export async function extract(apiKey: string, request: ExtractRequest): Promise<ExtractResponse> {
+  const client = new ApiKeyClient({ apiKey });
+  return client.post<ExtractResponse>(FETCHX_API.EXTRACT, request);
 }
 
 /**
  * Extract hook
- * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ * @param apiKey - 完整 API Key
  */
-export function useExtract(apiKeyId: string) {
+export function useExtract(apiKey: string) {
   return useMutation({
-    mutationFn: (request: ExtractRequest) => extract(apiKeyId, request),
+    mutationFn: (request: ExtractRequest) => extract(apiKey, request),
   });
 }
 

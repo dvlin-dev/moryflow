@@ -4,6 +4,8 @@
  * [INPUT]: API Key CRUD 请求
  * [OUTPUT]: API Key 数据
  * [POS]: 控制台 API Key 管理接口（Session 认证）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -14,6 +16,7 @@ import {
   Delete,
   Body,
   Param,
+  Header,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -49,6 +52,7 @@ export class ApiKeyController {
    * POST /api/v1/console/api-keys
    */
   @Post()
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'Create a new API key' })
   @ApiCreatedResponse({ description: 'API key created successfully' })
   async create(
@@ -63,6 +67,7 @@ export class ApiKeyController {
    * GET /api/v1/console/api-keys
    */
   @Get()
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'List all API keys for current user' })
   @ApiOkResponse({ description: 'Successfully returned API keys list' })
   async findAll(@CurrentUser() user: CurrentUserDto) {
@@ -70,23 +75,11 @@ export class ApiKeyController {
   }
 
   /**
-   * Get a single API key
-   * GET /api/v1/console/api-keys/:id
-   */
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a single API key' })
-  @ApiParam({ name: 'id', description: 'API key ID' })
-  @ApiOkResponse({ description: 'Successfully returned API key' })
-  @ApiNotFoundResponse({ description: 'API key not found' })
-  async findOne(@CurrentUser() user: CurrentUserDto, @Param('id') id: string) {
-    return this.apiKeyService.findOne(user.id, id);
-  }
-
-  /**
    * Update an API key
    * PATCH /api/v1/console/api-keys/:id
    */
   @Patch(':id')
+  @Header('Cache-Control', 'no-store')
   @ApiOperation({ summary: 'Update an API key' })
   @ApiParam({ name: 'id', description: 'API key ID' })
   @ApiOkResponse({ description: 'API key updated successfully' })

@@ -10,7 +10,7 @@ import type { AgentBrowserOutletContext } from './AgentBrowserLayoutPage';
 import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 
 export default function AgentBrowserAgentPage() {
-  const { apiKeyId, hasApiKeys } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, hasApiKeys } = useOutletContext<AgentBrowserOutletContext>();
 
   if (!hasApiKeys) {
     return (
@@ -23,5 +23,5 @@ export default function AgentBrowserAgentPage() {
     );
   }
 
-  return <AgentRunPanel apiKeyId={apiKeyId} />;
+  return <AgentRunPanel apiKey={apiKey} />;
 }

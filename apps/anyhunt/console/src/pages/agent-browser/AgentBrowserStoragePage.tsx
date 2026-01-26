@@ -15,15 +15,15 @@ import { AgentBrowserEmptyState } from './AgentBrowserEmptyState';
 const storageSections: BrowserSessionSection[] = ['session', 'storage'];
 
 export default function AgentBrowserStoragePage() {
-  const { apiKeyId, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
+  const { apiKey, sessionId, setSessionId } = useOutletContext<AgentBrowserOutletContext>();
 
-  if (!apiKeyId) {
+  if (!apiKey) {
     return <AgentBrowserEmptyState description="Select an API key to manage browser storage." />;
   }
 
   return (
     <BrowserSessionPanel
-      apiKeyId={apiKeyId}
+      apiKey={apiKey}
       sessionId={sessionId}
       onSessionChange={setSessionId}
       sections={storageSections}

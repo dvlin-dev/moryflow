@@ -40,7 +40,7 @@ status: active
 ### apiKeyId 是什么
 
 - `apiKeyId` 是一把具体 key 的标识，用于轮换与追踪。
-- 明文 apiKey 只在创建时显示一次；数据库仅存 hash（SHA256）。
+- 明文 apiKey 入库存储（`keyValue`），列表接口返回 `key`；控制台前端脱敏展示并禁止响应缓存。
 
 ## Memox 数据隔离（最小可用）
 

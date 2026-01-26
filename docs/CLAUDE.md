@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-01-27（Anyhunt LLM Provider 对齐进度文档完成）
+> 最近更新：2026-02-01（Anyhunt Console 公共 API 化与 API Key 明文存储方案落地）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -51,8 +51,10 @@
 - ADR-0002：补充 Compaction“裁剪旧工具输出”示例（2026-01-26）
 - ADR-0002：P0-2 权限系统落地完成（审批卡/JSONC/审计）（2026-01-26）
 - ADR-0002：确认 P0-2 权限落地细节（审批卡位置、规则直接写 JSONC、Mobile 审计路径）（2026-01-26）
+- Auth API Key 文档：更新明文存储与前端脱敏展示约束（2026-01-27）
 - Moryflow Agent Tasks 系统方案（IPC + PC/Mobile UI + 执行清单完成 + 单元测试覆盖 + 子代理同步测试）：`docs/architecture/agent-tasks-system.md`（2026-01-25：completed）
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`（2026-01-27：done）
+- Anyhunt Console 公共 API 化与 API Key 明文存储方案：改为公网 API + 明文 key 返回，前端脱敏（2026-02-01：active）
 - Moryflow Agent Tasks 系统方案：修正 Mobile SQLite 打开方式（2026-01-25）
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`（2026-01-26：draft）
 - API Client 方案补充 React Query（Web/PC/移动端）与复用策略：`docs/architecture/api-client-unification.md`（2026-01-26）

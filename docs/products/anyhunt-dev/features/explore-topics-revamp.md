@@ -324,8 +324,8 @@ Welcome 必须“后台改完立即生效”，因此需要一条 public read + 
 - 搜索：`GET /api/v1/digest/topics?q=<query>&sort=trending`
 - Follow（存在时）：`POST /api/v1/digest/topics/:slug/follow`
 - 创建（不存在时，一键创建）：
-  1. `POST /api/v1/console/digest/subscriptions`（创建一个用户订阅）
-  2. `POST /api/v1/console/digest/topics`（从该 subscription 发布为 public topic）
+  1. `POST /api/v1/digest/subscriptions`（创建一个用户订阅）
+  2. `POST /api/v1/digest/topics`（从该 subscription 发布为 public topic）
 
 发布建议（默认值）：
 

@@ -15,17 +15,23 @@ import { useDeleteWebhook } from '../hooks';
 import type { Webhook } from '../types';
 
 interface DeleteWebhookDialogProps {
+  apiKey: string;
   webhook: Webhook | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function DeleteWebhookDialog({ webhook, open, onOpenChange }: DeleteWebhookDialogProps) {
-  const { mutate: deleteWebhook, isPending } = useDeleteWebhook();
+export function DeleteWebhookDialog({
+  apiKey,
+  webhook,
+  open,
+  onOpenChange,
+}: DeleteWebhookDialogProps) {
+  const { mutate: deleteWebhook, isPending } = useDeleteWebhook(apiKey);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!webhook) return;
+    if (!apiKey || !webhook) return;
 
     deleteWebhook(webhook.id, {
       onSuccess: () => {
