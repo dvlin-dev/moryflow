@@ -4,7 +4,15 @@
  */
 import { useMemo, useState } from 'react';
 import { Alert01Icon } from '@hugeicons/core-free-icons';
-import { PageHeader, Card, CardContent, Skeleton, Alert, AlertDescription, Icon } from '@anyhunt/ui';
+import {
+  PageHeader,
+  Card,
+  CardContent,
+  Skeleton,
+  Alert,
+  AlertDescription,
+  Icon,
+} from '@anyhunt/ui';
 import { useApiKeys } from '@/features/api-keys';
 import {
   EmbedForm,
@@ -28,16 +36,18 @@ export default function EmbedPlaygroundPage() {
   }, [apiKeys]);
 
   const activeKeyId = selectedKeyId || defaultKeyId;
+  const activeKey = apiKeys?.find((key) => key.id === activeKeyId) ?? null;
+  const apiKeyValue = activeKey?.key ?? '';
 
   const handleSubmit = (request: EmbedFormData) => {
-    if (!activeKeyId) return;
+    if (!apiKeyValue) return;
 
     setResult(null);
     setError(null);
 
     fetchEmbed(
       {
-        apiKeyId: activeKeyId,
+        apiKey: apiKeyValue,
         request,
       },
       {

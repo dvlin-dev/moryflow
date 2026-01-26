@@ -1,9 +1,11 @@
 /**
- * Digest Console Inbox Controller
+ * Digest Inbox Controller
  *
  * [INPUT]: 收件箱查询/操作请求
  * [OUTPUT]: Inbox 条目列表、统计、操作结果
- * [POS]: Console 收件箱管理 API（Session 认证）
+ * [POS]: Digest 收件箱管理 API（ApiKey 认证）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
@@ -14,19 +16,21 @@ import {
   Param,
   Query,
   Body,
+  UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
-  ApiCookieAuth,
+  ApiSecurity,
   ApiOperation,
   ApiOkResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser } from '../../auth';
+import { CurrentUser, Public } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
+import { ApiKeyGuard } from '../../api-key';
 import { DigestInboxService } from '../services/inbox.service';
 import { DigestContentService } from '../services/content.service';
 import {
@@ -36,10 +40,12 @@ import {
   type UpdateInboxItemInput,
 } from '../dto';
 
-@ApiTags('Console - Digest Inbox')
-@ApiCookieAuth()
-@Controller({ path: 'console/digest/inbox', version: '1' })
-export class DigestConsoleInboxController {
+@ApiTags('Digest Inbox')
+@ApiSecurity('apiKey')
+@Public()
+@Controller({ path: 'digest/inbox', version: '1' })
+@UseGuards(ApiKeyGuard)
+export class DigestInboxController {
   constructor(
     private readonly inboxService: DigestInboxService,
     private readonly contentService: DigestContentService,
@@ -47,7 +53,7 @@ export class DigestConsoleInboxController {
 
   /**
    * 获取收件箱条目列表
-   * GET /api/console/digest/inbox
+   * GET /api/digest/inbox
    */
   @Get()
   @ApiOperation({ summary: 'List inbox items' })
@@ -70,7 +76,7 @@ export class DigestConsoleInboxController {
 
   /**
    * 获取收件箱统计
-   * GET /api/console/digest/inbox/stats
+   * GET /api/digest/inbox/stats
    */
   @Get('stats')
   @ApiOperation({ summary: 'Get inbox statistics' })
@@ -81,7 +87,7 @@ export class DigestConsoleInboxController {
 
   /**
    * 更新条目状态（已读/收藏/不感兴趣）
-   * PATCH /api/console/digest/inbox/:id
+   * PATCH /api/digest/inbox/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update inbox item state' })
@@ -100,7 +106,7 @@ export class DigestConsoleInboxController {
 
   /**
    * 批量标记已读
-   * POST /api/console/digest/inbox/mark-all-read
+   * POST /api/digest/inbox/mark-all-read
    */
   @Post('mark-all-read')
   @ApiOperation({ summary: 'Mark all inbox items as read' })
@@ -115,7 +121,7 @@ export class DigestConsoleInboxController {
 
   /**
    * 获取条目全文内容
-   * GET /api/console/digest/inbox/:id/content
+   * GET /api/digest/inbox/:id/content
    */
   @Get(':id/content')
   @ApiOperation({ summary: 'Get inbox item full content' })

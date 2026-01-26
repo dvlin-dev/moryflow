@@ -43,7 +43,7 @@ Auth/控制台（示例）：
 API Key 与租户：
 
 - `tenants`
-- `api_keys`（只存 hash；明文仅创建时显示一次）
+- `api_keys`（明文存储 `keyValue`；控制台前端脱敏展示）
 - `api_key_policies`（动态限流/配额策略，按 `tenantId`）
 
 Memox（元数据，落在 `anyhunt-postgres`）：

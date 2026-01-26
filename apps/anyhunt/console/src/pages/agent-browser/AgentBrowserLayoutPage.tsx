@@ -12,7 +12,7 @@ import { ApiKeySelector } from '@/features/playground-shared';
 import { PlaygroundErrorBoundary } from '@/features/agent-browser-playground';
 
 export type AgentBrowserOutletContext = {
-  apiKeyId: string;
+  apiKey: string;
   hasApiKeys: boolean;
   sessionId: string;
   setSessionId: (sessionId: string) => void;
@@ -26,6 +26,8 @@ export default function AgentBrowserLayoutPage() {
 
   const activeKeyId =
     selectedKeyId || apiKeys.find((key) => key.isActive)?.id || apiKeys[0]?.id || '';
+  const activeKey = apiKeys.find((key) => key.id === activeKeyId) ?? null;
+  const apiKey = activeKey?.key ?? '';
   const hasApiKeys = apiKeys.length > 0;
 
   const handleKeyChange = (keyId: string) => {
@@ -51,7 +53,7 @@ export default function AgentBrowserLayoutPage() {
             <div>
               <h1 className="text-2xl font-semibold">Agent Browser</h1>
               <p className="mt-1 text-muted-foreground">
-                Run browser sessions and agent tasks with console proxy APIs.
+                Run browser sessions and agent tasks with public APIs.
               </p>
             </div>
 
@@ -74,7 +76,7 @@ export default function AgentBrowserLayoutPage() {
 
         <Outlet
           context={{
-            apiKeyId: activeKeyId,
+            apiKey,
             hasApiKeys,
             sessionId,
             setSessionId,

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Webhook notification system for sending event notifications to user-configured endpoints. Supports crawl and batch-scrape completion events.
+Webhook notification system for sending event notifications to user-configured endpoints. Supports screenshot completion/failure events.
 
 ## 最近更新
 
@@ -19,28 +19,28 @@ Webhook notification system for sending event notifications to user-configured e
 
 ## Constraints
 
-- Console endpoints use AuthGuard
+- Public endpoints use ApiKeyGuard
 - Webhook secrets regenerated on request
 - Retry with exponential backoff on failure
-- Events: crawl.completed, batch-scrape.completed
+- Events: screenshot.completed, screenshot.failed
 - Webhook URL must pass SSRF validation (async DNS via UrlValidator)
 
 ## File Structure
 
-| File                        | Type       | Description                  |
-| --------------------------- | ---------- | ---------------------------- |
-| `webhook.service.ts`        | Service    | Webhook CRUD and delivery    |
-| `webhook.controller.ts`     | Controller | Console management endpoints |
-| `webhook.module.ts`         | Module     | NestJS module definition     |
-| `webhook.constants.ts`      | Constants  | Event types, retry config    |
-| `webhook.errors.ts`         | Errors     | Custom exceptions            |
-| `dto/create-webhook.dto.ts` | DTO        | Create request schema        |
-| `dto/update-webhook.dto.ts` | DTO        | Update request schema        |
+| File                        | Type       | Description               |
+| --------------------------- | ---------- | ------------------------- |
+| `webhook.service.ts`        | Service    | Webhook CRUD and delivery |
+| `webhook.controller.ts`     | Controller | Public API endpoints      |
+| `webhook.module.ts`         | Module     | NestJS module definition  |
+| `webhook.constants.ts`      | Constants  | Event types, retry config |
+| `webhook.errors.ts`         | Errors     | Custom exceptions         |
+| `dto/create-webhook.dto.ts` | DTO        | Create request schema     |
+| `dto/update-webhook.dto.ts` | DTO        | Update request schema     |
 
 ## Webhook Flow
 
 ```
-Event Triggered (crawl completed)
+Event Triggered (screenshot completed)
     ↓
 Find user webhooks → Filter by event type
     ↓
@@ -52,10 +52,10 @@ On failure: Retry with backoff (max 3 attempts)
 
 ## Event Types
 
-| Event                    | Trigger            | Payload                    |
-| ------------------------ | ------------------ | -------------------------- |
-| `crawl.completed`        | Crawl job finished | Job ID, status, page count |
-| `batch-scrape.completed` | Batch job finished | Job ID, status, URL count  |
+| Event                  | Trigger                 | Payload                        |
+| ---------------------- | ----------------------- | ------------------------------ |
+| `screenshot.completed` | Screenshot job finished | Job ID, status, screenshot URL |
+| `screenshot.failed`    | Screenshot job failed   | Job ID, error details          |
 
 ## Signature Verification
 
@@ -80,11 +80,11 @@ const signature = crypto
 ## Delivery Integration
 
 ```typescript
-// In crawler.processor.ts or batch-scrape.processor.ts
-await this.webhookService.deliver(userId, 'crawl.completed', {
+// In screenshot.processor.ts
+await this.webhookService.deliver(userId, 'screenshot.completed', {
   jobId,
   status: 'completed',
-  pageCount: results.length,
+  screenshotUrl,
 });
 ```
 
@@ -95,7 +95,7 @@ webhook/
 ├── prisma/ - Webhook storage
 ├── redis/ - Delivery queue (optional)
 ├── common/services/webhook - Shared delivery utility
-└── auth/ - Session validation
+└── api-key/ - Public API auth
 ```
 
 ## Key Exports

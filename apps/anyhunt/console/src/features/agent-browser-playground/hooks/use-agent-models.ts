@@ -9,15 +9,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { listAgentModels } from '../api';
 
-export function useAgentModels(apiKeyId?: string) {
+export function useAgentModels(apiKey?: string) {
   return useQuery({
-    queryKey: ['agent-browser', 'models', apiKeyId],
+    queryKey: ['agent-browser', 'models', apiKey],
     queryFn: () => {
-      if (!apiKeyId) {
+      if (!apiKey) {
         throw new Error('API key is required');
       }
-      return listAgentModels(apiKeyId);
+      return listAgentModels(apiKey);
     },
-    enabled: Boolean(apiKeyId),
+    enabled: Boolean(apiKey),
   });
 }

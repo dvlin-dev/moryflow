@@ -39,7 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useGraph, type GraphNode, type GraphEdge, type GraphQueryParams } from '@/features/memox';
 
 // 表单 Schema
@@ -105,9 +105,13 @@ function transformGraphData(nodes: GraphNode[], edges: GraphEdge[]): ForceGraphD
 export default function GraphPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
-  const [apiKeyInput, setApiKeyInput] = useState('');
   const [queryParams, setQueryParams] = useState<GraphQueryParams | null>(null);
   const [hoveredNode, setHoveredNode] = useState<NodeObject | null>(null);
+  const activeKeys = apiKeys.filter((key) => key.isActive);
+  const effectiveKeyId = selectedKeyId || activeKeys[0]?.id || '';
+  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
   const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,12 +134,6 @@ export default function GraphPage() {
 
     return () => resizeObserver.disconnect();
   }, []);
-
-  // 计算 effective API key
-  const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
-  const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const activeKeys = apiKeys.filter((k) => k.isActive);
-  const apiKeyValue = apiKeyInput.trim();
 
   // 图谱查询
   const {
@@ -257,7 +255,7 @@ export default function GraphPage() {
                     ) : (
                       activeKeys.map((key) => (
                         <SelectItem key={key.id} value={key.id}>
-                          {key.name} ({key.keyPrefix}...)
+                          {key.name} ({maskApiKey(key.key)})
                         </SelectItem>
                       ))
                     )}
@@ -266,17 +264,8 @@ export default function GraphPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>API Key (Full)</Label>
-                <Input
-                  placeholder="ah_..."
-                  value={apiKeyInput}
-                  onChange={(event) => setApiKeyInput(event.target.value)}
-                />
-                {selectedKey && (
-                  <p className="text-xs text-muted-foreground">
-                    Selected: {selectedKey.name} ({selectedKey.keyPrefix}...)
-                  </p>
-                )}
+                <Label>API Key</Label>
+                <Input placeholder="Select an API key" value={apiKeyDisplay} readOnly />
               </div>
 
               <Form {...form}>

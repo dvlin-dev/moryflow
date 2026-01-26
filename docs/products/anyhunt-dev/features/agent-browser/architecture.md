@@ -57,8 +57,7 @@ status: active
 
 ## API 入口
 
-- L2 Browser API：`/api/v1/browser/*`
-- Console Playground 代理：`/api/v1/console/playground/browser/*`
+- L2 Browser API：`/api/v1/browser/session/*`
 
 ## Console 页面分区（/agent-browser）
 

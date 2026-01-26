@@ -18,8 +18,8 @@ export type BrowserSessionInfo = {
 
 /**
  * [DEFINES]: Agent/Browser Playground 类型定义
- * [USED_BY]: agent-browser-playground/*, console-playground UI
- * [POS]: Console Playground 的统一响应类型边界
+ * [USED_BY]: agent-browser-playground/*
+ * [POS]: Agent/Browser Playground 的统一响应类型边界
  *
  * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
  */

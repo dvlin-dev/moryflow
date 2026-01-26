@@ -19,21 +19,21 @@ feature-name/
 
 ## 功能清单
 
-| 功能                        | 说明                 | API 入口                       |
-| --------------------------- | -------------------- | ------------------------------ |
-| `api-keys/`                 | API Key 管理         | `/api/v1/console/api-keys`     |
-| `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth）   |
-| `playground-shared/`        | Playground 共享组件  | —                              |
-| `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`               |
-| `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`                |
-| `map-playground/`           | URL 发现测试         | `/api/v1/map`                  |
-| `extract-playground/`       | AI 数据提取测试      | `/api/v1/extract`              |
-| `search-playground/`        | 网页搜索测试         | `/api/v1/search`               |
-| `embed-playground/`         | Embed 测试           | Demo-only                      |
-| `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/console/playground/*` |
-| `memox/`                    | Memox 记忆管理       | `/api/v1/memories` (Token)     |
-| `settings/`                 | 账户设置             | `/api/v1/console/*`            |
-| `webhooks/`                 | Webhook 管理         | `/api/v1/console/webhooks`     |
+| 功能                        | 说明                 | API 入口                                      |
+| --------------------------- | -------------------- | --------------------------------------------- |
+| `api-keys/`                 | API Key 管理         | `/api/v1/console/api-keys`                    |
+| `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth）                  |
+| `playground-shared/`        | Playground 共享组件  | —                                             |
+| `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`                              |
+| `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`                               |
+| `map-playground/`           | URL 发现测试         | `/api/v1/map`                                 |
+| `extract-playground/`       | AI 数据提取测试      | `/api/v1/extract`                             |
+| `search-playground/`        | 网页搜索测试         | `/api/v1/search`                              |
+| `embed-playground/`         | Embed 测试           | Demo-only                                     |
+| `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/agent` + `/api/v1/browser/session/*` |
+| `memox/`                    | Memox 记忆管理       | `/api/v1/memories`（API Key）                 |
+| `settings/`                 | 账户设置             | `/api/v1/console/*`                           |
+| `webhooks/`                 | Webhook 管理         | `/api/v1/webhooks`                            |
 
 ## 常用模式
 
@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- API Key Create Dialog 文案与 ApiKeyClient 校验对齐（空 key 阻断请求）
 - Agent Browser Playground：Agent Chat 支持单页多轮对话 + 模型选择（对齐 Moryflow）
 - Agent Browser Playground：默认模型选择改为派生值，避免 effect 内 setState
 - Agent Browser Playground：模型列表变更时回退默认模型，防止选择失效
@@ -81,6 +82,9 @@ export function useApiKeys() {
 - Agent Browser Playground：消息列表组件拆分与渲染性能优化（单次遍历 + 子组件化）
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
 - Playground 类型与 API 解包统一为 raw JSON + RFC7807（移除 success/data 包装）
+- Console Playground/管理页统一改为 API Key 直连公网 API
+- API Key 列表返回明文 key，前端统一脱敏展示与 Copy
+- API Key 脱敏工具 `maskApiKey` 补齐单元测试
 
 ## 依赖
 

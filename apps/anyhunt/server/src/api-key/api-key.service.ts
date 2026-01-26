@@ -31,7 +31,6 @@ import {
   API_KEY_LENGTH,
   CACHE_PREFIX,
   CACHE_TTL_SECONDS,
-  KEY_PREFIX_DISPLAY_LENGTH,
   API_KEY_SELECT_FIELDS,
 } from './api-key.constants';
 
@@ -55,48 +54,37 @@ export class ApiKeyService {
   }
 
   /**
-   * 使用 SHA256 哈希 API Key
+   * 使用 SHA256 哈希 API Key（仅用于缓存 key，避免明文进入 Redis）
    */
   private hashKey(key: string): string {
     return createHash('sha256').update(key).digest('hex');
   }
 
   /**
-   * 提取显示用前缀
-   */
-  private getKeyPrefix(key: string): string {
-    return key.substring(0, KEY_PREFIX_DISPLAY_LENGTH);
-  }
-
-  /**
    * 创建新的 API Key
-   * @returns 包含完整密钥的结果（仅创建时返回完整密钥）
+   * @returns 包含完整密钥的结果（列表接口同样返回 key，由前端脱敏）
    */
   async create(
     userId: string,
     dto: CreateApiKeyDto,
   ): Promise<ApiKeyCreateResult> {
     const fullKey = this.generateKey();
-    const keyHash = this.hashKey(fullKey);
-    const keyPrefix = this.getKeyPrefix(fullKey);
 
     const apiKey = await this.prisma.apiKey.create({
       data: {
         userId,
         name: dto.name,
-        keyPrefix,
-        keyHash,
+        keyValue: fullKey,
         expiresAt: dto.expiresAt,
       },
     });
 
-    this.logger.log(`API key created for user ${userId}: ${keyPrefix}...`);
+    this.logger.log(`API key created for user ${userId}`);
 
     return {
       key: fullKey,
       id: apiKey.id,
       name: apiKey.name,
-      keyPrefix: apiKey.keyPrefix,
     };
   }
 
@@ -104,27 +92,21 @@ export class ApiKeyService {
    * 获取用户的所有 API Key 列表
    */
   async findAllByUser(userId: string): Promise<ApiKeyListItem[]> {
-    return this.prisma.apiKey.findMany({
+    const keys = await this.prisma.apiKey.findMany({
       where: { userId },
       select: API_KEY_SELECT_FIELDS,
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  /**
-   * 获取单个 API Key（必须属于指定用户）
-   */
-  async findOne(userId: string, keyId: string): Promise<ApiKeyListItem> {
-    const key = await this.prisma.apiKey.findFirst({
-      where: { id: keyId, userId },
-      select: API_KEY_SELECT_FIELDS,
+      orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
     });
 
-    if (!key) {
-      throw new NotFoundException('API key not found');
-    }
-
-    return key;
+    return keys.map((key) => ({
+      id: key.id,
+      name: key.name,
+      key: key.keyValue,
+      isActive: key.isActive,
+      lastUsedAt: key.lastUsedAt,
+      expiresAt: key.expiresAt,
+      createdAt: key.createdAt,
+    }));
   }
 
   /**
@@ -139,7 +121,7 @@ export class ApiKeyService {
       where: { id: keyId, userId },
       select: {
         id: true,
-        keyHash: true,
+        keyValue: true,
       },
     });
 
@@ -158,12 +140,20 @@ export class ApiKeyService {
 
     // 如果 Key 被停用，清除缓存
     if (dto.isActive !== undefined) {
-      await this.invalidateCache(existing.keyHash);
+      await this.invalidateCache(existing.keyValue);
     }
 
     this.logger.log(`API key updated: ${keyId}`);
 
-    return updated;
+    return {
+      id: updated.id,
+      name: updated.name,
+      key: updated.keyValue,
+      isActive: updated.isActive,
+      lastUsedAt: updated.lastUsedAt,
+      expiresAt: updated.expiresAt,
+      createdAt: updated.createdAt,
+    };
   }
 
   /**
@@ -173,7 +163,7 @@ export class ApiKeyService {
   async delete(userId: string, keyId: string): Promise<void> {
     const existing = await this.prisma.apiKey.findFirst({
       where: { id: keyId, userId },
-      select: { id: true, keyHash: true },
+      select: { id: true, keyValue: true },
     });
 
     if (!existing) {
@@ -185,7 +175,7 @@ export class ApiKeyService {
       where: { id: keyId },
     });
 
-    await this.invalidateCache(existing.keyHash);
+    await this.invalidateCache(existing.keyValue);
 
     this.logger.log(`API key deleted: ${keyId}`);
 
@@ -236,10 +226,10 @@ export class ApiKeyService {
       throw new ForbiddenException('Invalid API key format');
     }
 
-    const keyHash = this.hashKey(apiKey);
+    const cacheKey = this.hashKey(apiKey);
 
     // 先检查缓存
-    const cached = await this.getFromCache(keyHash);
+    const cached = await this.getFromCache(cacheKey);
     if (cached) {
       this.updateLastUsedAsync(cached.id);
       return cached;
@@ -247,7 +237,7 @@ export class ApiKeyService {
 
     // 查询数据库
     const key = await this.prisma.apiKey.findUnique({
-      where: { keyHash },
+      where: { keyValue: apiKey },
       include: {
         user: {
           include: {
@@ -292,7 +282,7 @@ export class ApiKeyService {
     };
 
     // 缓存结果
-    await this.setCache(keyHash, result);
+    await this.setCache(cacheKey, result);
 
     this.updateLastUsedAsync(key.id);
 
@@ -317,10 +307,10 @@ export class ApiKeyService {
    * 从缓存获取验证结果
    */
   private async getFromCache(
-    keyHash: string,
+    cacheKey: string,
   ): Promise<ApiKeyValidationResult | null> {
     try {
-      const cached = await this.redis.get(`${CACHE_PREFIX}${keyHash}`);
+      const cached = await this.redis.get(`${CACHE_PREFIX}${cacheKey}`);
       if (cached) {
         return this.normalizeCachedValidationResult(JSON.parse(cached));
       }
@@ -376,12 +366,12 @@ export class ApiKeyService {
    * 缓存验证结果
    */
   private async setCache(
-    keyHash: string,
+    cacheKey: string,
     result: ApiKeyValidationResult,
   ): Promise<void> {
     try {
       await this.redis.set(
-        `${CACHE_PREFIX}${keyHash}`,
+        `${CACHE_PREFIX}${cacheKey}`,
         JSON.stringify(result),
         CACHE_TTL_SECONDS,
       );
@@ -393,9 +383,10 @@ export class ApiKeyService {
   /**
    * 清除缓存
    */
-  private async invalidateCache(keyHash: string): Promise<void> {
+  private async invalidateCache(apiKeyValue: string): Promise<void> {
     try {
-      await this.redis.del(`${CACHE_PREFIX}${keyHash}`);
+      const cacheKey = this.hashKey(apiKeyValue);
+      await this.redis.del(`${CACHE_PREFIX}${cacheKey}`);
     } catch (err) {
       this.logger.warn(`Cache invalidate error: ${(err as Error).message}`);
     }

@@ -26,6 +26,7 @@
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
 - `auth/moryflow-pc-mobile-access-token-upgrade.md`：Moryflow PC/Mobile Access Token 持久化升级方案（draft）。
 - `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
+- `anyhunt-console-public-api-key-plan.md`：Console 公共 API 化与 API Key 明文存储方案（active）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
@@ -37,6 +38,8 @@
 
 ## 近期更新
 
+- `auth/quota-and-api-keys.md` 与 `auth/database.md`：更新 API Key 明文存储与前端脱敏展示约束（2026-01-27）。
+- `anyhunt-console-public-api-key-plan.md`：公网 API 化与明文 key 返回（2026-02-01）。
 - `agent-tasks-system.md`：落地 TasksStore 单例、只读 IPC、PC/Mobile Tasks UI，并补充子代理同步测试与执行清单完成记录（2026-01-25）。
 - `agent-tasks-system.md`：修正 Mobile SQLite 路径约定为 databaseName + directory（2026-01-25）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）。

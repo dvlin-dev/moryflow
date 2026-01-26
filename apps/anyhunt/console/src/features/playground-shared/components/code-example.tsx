@@ -9,18 +9,25 @@ interface CodeExampleProps {
   endpoint: string;
   method: string;
   apiKey: string;
+  apiKeyValue?: string;
   body?: unknown;
 }
 
-export function CodeExample({ endpoint, method, apiKey, body }: CodeExampleProps) {
+export function CodeExample({ endpoint, method, apiKey, apiKeyValue, body }: CodeExampleProps) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const baseUrl = import.meta.env.VITE_API_URL || 'https://server.anyhunt.app';
   const fullUrl = `${baseUrl}${endpoint}`;
+  const resolvedKey = apiKeyValue || apiKey;
 
   const curlCode = generateCurl(fullUrl, method, apiKey, body);
   const jsCode = generateJavaScript(fullUrl, method, apiKey, body);
   const pythonCode = generatePython(fullUrl, method, apiKey, body);
+  const curlCopyCode = apiKeyValue ? generateCurl(fullUrl, method, resolvedKey, body) : curlCode;
+  const jsCopyCode = apiKeyValue ? generateJavaScript(fullUrl, method, resolvedKey, body) : jsCode;
+  const pythonCopyCode = apiKeyValue
+    ? generatePython(fullUrl, method, resolvedKey, body)
+    : pythonCode;
 
   const copyToClipboard = async (code: string, type: string) => {
     await navigator.clipboard.writeText(code);
@@ -49,7 +56,7 @@ export function CodeExample({ endpoint, method, apiKey, body }: CodeExampleProps
           <CodeBlock
             code={curlCode}
             copied={copied === 'curl'}
-            onCopy={() => copyToClipboard(curlCode, 'curl')}
+            onCopy={() => copyToClipboard(curlCopyCode, 'curl')}
           />
         </TabsContent>
 
@@ -57,7 +64,7 @@ export function CodeExample({ endpoint, method, apiKey, body }: CodeExampleProps
           <CodeBlock
             code={jsCode}
             copied={copied === 'javascript'}
-            onCopy={() => copyToClipboard(jsCode, 'javascript')}
+            onCopy={() => copyToClipboard(jsCopyCode, 'javascript')}
           />
         </TabsContent>
 
@@ -65,7 +72,7 @@ export function CodeExample({ endpoint, method, apiKey, body }: CodeExampleProps
           <CodeBlock
             code={pythonCode}
             copied={copied === 'python'}
-            onCopy={() => copyToClipboard(pythonCode, 'python')}
+            onCopy={() => copyToClipboard(pythonCopyCode, 'python')}
           />
         </TabsContent>
       </Tabs>
@@ -104,7 +111,7 @@ function CodeBlock({
 
 function generateCurl(url: string, method: string, apiKey: string, body?: unknown): string {
   const lines = [`curl -X ${method} "${url}"`];
-  lines.push(`  -H "Authorization: Token ${apiKey}"`);
+  lines.push(`  -H "Authorization: Bearer ${apiKey}"`);
   lines.push(`  -H "Content-Type: application/json"`);
   if (body) {
     lines.push(`  -d '${JSON.stringify(body, null, 2)}'`);
@@ -116,7 +123,7 @@ function generateJavaScript(url: string, method: string, apiKey: string, body?: 
   return `const response = await fetch("${url}", {
   method: "${method}",
   headers: {
-    "Authorization": "Token ${apiKey}",
+    "Authorization": "Bearer ${apiKey}",
     "Content-Type": "application/json"
   }${
     body
@@ -143,7 +150,7 @@ function generatePython(url: string, method: string, apiKey: string, body?: unkn
 response = requests.${method.toLowerCase()}(
     "${url}",
     headers={
-        "Authorization": f"Token ${apiKey}",
+        "Authorization": f"Bearer ${apiKey}",
         "Content-Type": "application/json"
     }${
       body

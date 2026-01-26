@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '@anyhunt/ui';
 import { useDeleteApiKey } from '../hooks';
+import { maskApiKey } from '../utils';
 import type { ApiKey } from '../types';
 
 interface DeleteApiKeyDialogProps {
@@ -40,8 +41,9 @@ export function DeleteApiKeyDialog({ apiKey, open, onOpenChange }: DeleteApiKeyD
         <AlertDialogHeader>
           <AlertDialogTitle>Delete API Key?</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete <strong>{apiKey?.name}</strong> ({apiKey?.keyPrefix})?
-            This action cannot be undone. All requests using this key will immediately fail.
+            Are you sure you want to delete <strong>{apiKey?.name}</strong>{' '}
+            {apiKey ? `(${maskApiKey(apiKey.key)})` : ''}? This action cannot be undone. All
+            requests using this key will immediately fail.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

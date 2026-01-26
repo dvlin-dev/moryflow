@@ -23,14 +23,13 @@ export interface ApiKeyCreateResult {
   key: string;
   id: string;
   name: string;
-  keyPrefix: string;
 }
 
 /** API Key 列表项 */
 export interface ApiKeyListItem {
   id: string;
   name: string;
-  keyPrefix: string;
+  key: string;
   isActive: boolean;
   lastUsedAt: Date | null;
   expiresAt: Date | null;

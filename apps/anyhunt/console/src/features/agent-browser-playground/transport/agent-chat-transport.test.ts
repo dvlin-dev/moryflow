@@ -1,21 +1,13 @@
 /**
  * [INPUT]: Agent SSE events
  * [OUTPUT]: UIMessageChunk stream
- * [POS]: ConsoleAgentChatTransport 单元测试
+ * [POS]: AgentChatTransport 单元测试
  */
 
 import { ReadableStream as NodeReadableStream } from 'stream/web';
 import { describe, expect, it, vi } from 'vitest';
 import type { UIMessage, UIMessageChunk } from 'ai';
-import { ConsoleAgentChatTransport } from './agent-chat-transport';
-
-const ensureAccessToken = vi.fn().mockResolvedValue('token-1');
-
-vi.mock('@/stores/auth', () => ({
-  useAuthStore: {
-    getState: () => ({ ensureAccessToken }),
-  },
-}));
+import { AgentChatTransport } from './agent-chat-transport';
 
 const buildSseStream = (events: unknown[]) => {
   const encoder = new TextEncoder();
@@ -31,14 +23,12 @@ const buildSseStream = (events: unknown[]) => {
   });
 };
 
-describe('ConsoleAgentChatTransport', () => {
-  it('passes through UIMessageChunk SSE payloads', async () => {
+describe('AgentChatTransport', () => {
+  it('maps AgentStreamEvent payloads into UIMessageChunk stream', async () => {
     const stream = buildSseStream([
-      { type: 'start', messageId: 'task-1' },
-      { type: 'text-start', id: 'part-1' },
-      { type: 'text-delta', id: 'part-1', delta: 'Hello' },
-      { type: 'text-end', id: 'part-1' },
-      { type: 'finish' },
+      { type: 'started', id: 'task-1' },
+      { type: 'textDelta', delta: 'Hello' },
+      { type: 'complete' },
     ]);
 
     const fetchMock = vi.fn().mockResolvedValue(
@@ -50,8 +40,8 @@ describe('ConsoleAgentChatTransport', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      const optionsRef = { current: { apiKeyId: 'key-1', output: { type: 'text' } } };
-      const transport = new ConsoleAgentChatTransport(optionsRef);
+      const optionsRef = { current: { apiKey: 'key-1', output: { type: 'text' } } };
+      const transport = new AgentChatTransport(optionsRef);
 
       const messages: UIMessage[] = [
         {
@@ -68,10 +58,9 @@ describe('ConsoleAgentChatTransport', () => {
         abortSignal: undefined,
       });
 
-      expect(ensureAccessToken).toHaveBeenCalledTimes(1);
       const [, requestInit] = fetchMock.mock.calls[0] ?? [];
       const headers = (requestInit?.headers ?? {}) as Record<string, string>;
-      expect(headers.Authorization).toBe('Bearer token-1');
+      expect(headers.Authorization).toBe('Bearer key-1');
 
       const reader = resultStream.getReader();
       const chunks: UIMessageChunk[] = [];
@@ -82,10 +71,10 @@ describe('ConsoleAgentChatTransport', () => {
       }
 
       expect(chunks[0]).toEqual({ type: 'start', messageId: 'task-1' });
-      expect(chunks[1]).toEqual({ type: 'text-start', id: 'part-1' });
-      expect(chunks[2]).toEqual({ type: 'text-delta', id: 'part-1', delta: 'Hello' });
-      expect(chunks[3]).toEqual({ type: 'text-end', id: 'part-1' });
-      expect(chunks[4]).toEqual({ type: 'finish' });
+      expect(chunks[1]).toEqual({ type: 'text-start', id: 'task-1-text' });
+      expect(chunks[2]).toEqual({ type: 'text-delta', id: 'task-1-text', delta: 'Hello' });
+      expect(chunks[3]).toEqual({ type: 'text-end', id: 'task-1-text' });
+      expect(chunks[4]).toEqual({ type: 'finish', finishReason: 'stop' });
     } finally {
       vi.unstubAllGlobals();
     }

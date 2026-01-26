@@ -1,39 +1,29 @@
 /**
  * Search Playground 模块
- * 使用 Session 认证调用 Console Playground 代理接口
+ * 使用 API Key 调用公开 Search API
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { CONSOLE_PLAYGROUND_API } from '@/lib/api-paths';
-import { apiClient } from '@/lib/api-client';
+import { FETCHX_API } from '@/lib/api-paths';
+import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type { SearchRequest, SearchResponse } from '@/features/playground-shared';
 
 /**
- * Console Search 请求参数（包含 apiKeyId）
- */
-interface ConsoleSearchRequest extends SearchRequest {
-  apiKeyId: string;
-}
-
-/**
  * 执行 Search 请求
- * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ * @param apiKey - 完整 API Key
  */
-export async function search(apiKeyId: string, request: SearchRequest): Promise<SearchResponse> {
-  const consoleRequest: ConsoleSearchRequest = {
-    ...request,
-    apiKeyId,
-  };
-  return apiClient.post<SearchResponse>(CONSOLE_PLAYGROUND_API.SEARCH, consoleRequest);
+export async function search(apiKey: string, request: SearchRequest): Promise<SearchResponse> {
+  const client = new ApiKeyClient({ apiKey });
+  return client.post<SearchResponse>(FETCHX_API.SEARCH, request);
 }
 
 /**
  * Search hook
- * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ * @param apiKey - 完整 API Key
  */
-export function useSearch(apiKeyId: string) {
+export function useSearch(apiKey: string) {
   return useMutation({
-    mutationFn: (request: SearchRequest) => search(apiKeyId, request),
+    mutationFn: (request: SearchRequest) => search(apiKey, request),
   });
 }
 

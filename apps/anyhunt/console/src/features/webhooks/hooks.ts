@@ -1,92 +1,93 @@
 /**
  * Webhooks Hooks
  */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   getWebhooks,
   createWebhook,
   updateWebhook,
   deleteWebhook,
   regenerateWebhookSecret,
-} from './api'
-import type { CreateWebhookRequest, UpdateWebhookRequest } from './types'
+} from './api';
+import type { CreateWebhookRequest, UpdateWebhookRequest } from './types';
 
 /** Query Key 工厂 */
 export const webhookKeys = {
   all: ['webhooks'] as const,
-  list: () => [...webhookKeys.all, 'list'] as const,
-}
+  list: (apiKey: string) => [...webhookKeys.all, 'list', apiKey] as const,
+};
 
 /** 获取 Webhook 列表 */
-export function useWebhooks() {
+export function useWebhooks(apiKey: string) {
   return useQuery({
-    queryKey: webhookKeys.list(),
-    queryFn: getWebhooks,
-  })
+    queryKey: webhookKeys.list(apiKey),
+    queryFn: () => getWebhooks(apiKey),
+    enabled: !!apiKey,
+  });
 }
 
 /** 创建 Webhook */
-export function useCreateWebhook() {
-  const queryClient = useQueryClient()
+export function useCreateWebhook(apiKey: string) {
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateWebhookRequest) => createWebhook(data),
+    mutationFn: (data: CreateWebhookRequest) => createWebhook(apiKey, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: webhookKeys.all })
-      toast.success('Created successfully')
+      queryClient.invalidateQueries({ queryKey: webhookKeys.all });
+      toast.success('Created successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create')
+      toast.error(error.message || 'Failed to create');
     },
-  })
+  });
 }
 
 /** 更新 Webhook */
-export function useUpdateWebhook() {
-  const queryClient = useQueryClient()
+export function useUpdateWebhook(apiKey: string) {
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateWebhookRequest }) =>
-      updateWebhook(id, data),
+      updateWebhook(apiKey, id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: webhookKeys.all })
-      toast.success('Updated successfully')
+      queryClient.invalidateQueries({ queryKey: webhookKeys.all });
+      toast.success('Updated successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update')
+      toast.error(error.message || 'Failed to update');
     },
-  })
+  });
 }
 
 /** 删除 Webhook */
-export function useDeleteWebhook() {
-  const queryClient = useQueryClient()
+export function useDeleteWebhook(apiKey: string) {
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteWebhook(id),
+    mutationFn: (id: string) => deleteWebhook(apiKey, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: webhookKeys.all })
-      toast.success('Deleted successfully')
+      queryClient.invalidateQueries({ queryKey: webhookKeys.all });
+      toast.success('Deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete')
+      toast.error(error.message || 'Failed to delete');
     },
-  })
+  });
 }
 
 /** 重新生成 Secret */
-export function useRegenerateWebhookSecret() {
-  const queryClient = useQueryClient()
+export function useRegenerateWebhookSecret(apiKey: string) {
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => regenerateWebhookSecret(id),
+    mutationFn: (id: string) => regenerateWebhookSecret(apiKey, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: webhookKeys.all })
-      toast.success('Secret regenerated')
+      queryClient.invalidateQueries({ queryKey: webhookKeys.all });
+      toast.success('Secret regenerated');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to regenerate')
+      toast.error(error.message || 'Failed to regenerate');
     },
-  })
+  });
 }

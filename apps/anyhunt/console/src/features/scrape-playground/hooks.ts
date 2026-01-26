@@ -1,6 +1,6 @@
 /**
  * Scrape Playground Hooks
- * 使用 apiKeyId 调用 Console Playground 代理接口
+ * 使用 API Key 调用公开 Scrape API
  */
 
 import { useState, useCallback } from 'react';
@@ -15,15 +15,14 @@ interface UseScrapeOptions {
 
 /**
  * Scrape hook
- * @param apiKeyId - API Key 的 UUID（不是 keyPrefix）
+ * @param apiKey - 完整 API Key
  */
-export function useScrape(apiKeyId: string, options: UseScrapeOptions = {}) {
+export function useScrape(apiKey: string, options: UseScrapeOptions = {}) {
   const [progress, setProgress] = useState<ScrapeResponse | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (request: ScrapeRequest) => {
-      // Console Playground 代理是同步的，直接返回结果
-      const response = await scrape(apiKeyId, request);
+      const response = await scrape(apiKey, request);
       setProgress(response);
       return response;
     },

@@ -40,28 +40,28 @@ import {
 } from '@anyhunt/ui/ai/model-selector';
 import { ArrowDown01Icon, CheckmarkCircle01Icon, StopIcon } from '@hugeicons/core-free-icons';
 import { toast } from 'sonner';
-import { ConsoleAgentChatTransport } from '../transport/agent-chat-transport';
+import { AgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
 import { useAgentModels } from '../hooks/use-agent-models';
 import type { AgentOutput } from '../types';
 import { AgentMessageList } from './AgentMessageList';
 
 interface AgentRunPanelProps {
-  apiKeyId: string;
+  apiKey: string;
 }
 
-export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
+export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
   const promptForm = useForm<AgentPromptValues>({
     resolver: zodResolver(agentPromptSchema),
     defaultValues: { message: '' },
   });
 
-  const modelsQuery = useAgentModels(apiKeyId);
+  const modelsQuery = useAgentModels(apiKey);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
 
   const optionsRef = useRef({
-    apiKeyId,
+    apiKey,
     output: { type: 'text' } as AgentOutput,
     modelId: undefined as string | undefined,
   });
@@ -90,13 +90,13 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
 
   useEffect(() => {
     optionsRef.current = {
-      apiKeyId,
+      apiKey,
       output: { type: 'text' },
       modelId: activeModelId ?? undefined,
     };
-  }, [apiKeyId, activeModelId]);
+  }, [apiKey, activeModelId]);
 
-  const transport = useMemo(() => new ConsoleAgentChatTransport(optionsRef), []);
+  const transport = useMemo(() => new AgentChatTransport(optionsRef), []);
 
   const { messages, status, error, sendMessage, stop } = useChat({
     id: 'agent-browser-playground',
@@ -107,7 +107,7 @@ export function AgentRunPanel({ apiKeyId }: AgentRunPanelProps) {
   const hasModelOptions = modelOptions.length > 0;
 
   const canStop = status === 'submitted' || status === 'streaming';
-  const isDisabled = !apiKeyId;
+  const isDisabled = !apiKey;
 
   const handlePromptSubmit = ({ files }: PromptInputMessage, event: FormEvent<HTMLFormElement>) =>
     promptForm.handleSubmit(async (values) => {

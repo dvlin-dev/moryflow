@@ -19,12 +19,13 @@ import { WEBHOOK_EVENTS } from '../constants';
 import type { Webhook, WebhookEvent } from '../types';
 
 interface EditWebhookDialogProps {
+  apiKey: string;
   webhook: Webhook | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDialogProps) {
+export function EditWebhookDialog({ apiKey, webhook, open, onOpenChange }: EditWebhookDialogProps) {
   const handleClose = () => {
     onOpenChange(false);
   };
@@ -45,23 +46,24 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        <EditWebhookForm key={webhook.id} webhook={webhook} onClose={handleClose} />
+        <EditWebhookForm key={webhook.id} apiKey={apiKey} webhook={webhook} onClose={handleClose} />
       </DialogContent>
     </Dialog>
   );
 }
 
 interface EditWebhookFormProps {
+  apiKey: string;
   webhook: Webhook;
   onClose: () => void;
 }
 
-function EditWebhookForm({ webhook, onClose }: EditWebhookFormProps) {
+function EditWebhookForm({ apiKey, webhook, onClose }: EditWebhookFormProps) {
   const [name, setName] = useState(webhook.name);
   const [url, setUrl] = useState(webhook.url);
   const [events, setEvents] = useState<WebhookEvent[]>(webhook.events);
 
-  const { mutate: update, isPending } = useUpdateWebhook();
+  const { mutate: update, isPending } = useUpdateWebhook(apiKey);
 
   const handleEventToggle = (event: WebhookEvent, checked: boolean) => {
     if (checked) {
@@ -72,7 +74,7 @@ function EditWebhookForm({ webhook, onClose }: EditWebhookFormProps) {
   };
 
   const handleUpdate = () => {
-    if (!name.trim() || !url.trim() || events.length === 0) return;
+    if (!apiKey || !name.trim() || !url.trim() || events.length === 0) return;
 
     update(
       { id: webhook.id, data: { name: name.trim(), url: url.trim(), events } },

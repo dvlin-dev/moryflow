@@ -20,23 +20,16 @@ export const PAYMENT_API = {
 // Console 管理 API（Session 认证）
 export const CONSOLE_API = {
   API_KEYS: '/api/v1/console/api-keys',
-  WEBHOOKS: '/api/v1/console/webhooks',
-  OEMBED: '/api/v1/console/oembed',
 } as const;
 
-// Console Playground API（Session 认证，代理到实际服务）
-export const CONSOLE_PLAYGROUND_API = {
-  SCRAPE: '/api/v1/console/playground/scrape',
-  CRAWL: '/api/v1/console/playground/crawl',
-  MAP: '/api/v1/console/playground/map',
-  EXTRACT: '/api/v1/console/playground/extract',
-  SEARCH: '/api/v1/console/playground/search',
-  BROWSER_SESSION: '/api/v1/console/playground/browser/session',
-  BROWSER_CDP_CONNECT: '/api/v1/console/playground/browser/cdp/connect',
-  AGENT: '/api/v1/console/playground/agent',
-  AGENT_STREAM: '/api/v1/console/playground/agent/stream',
-  AGENT_ESTIMATE: '/api/v1/console/playground/agent/estimate',
-  AGENT_MODELS: '/api/v1/console/playground/agent/models',
+// Webhook API（API Key 认证）
+export const WEBHOOK_API = {
+  WEBHOOKS: '/api/v1/webhooks',
+} as const;
+
+// oEmbed API（API Key 认证）
+export const OEMBED_API = {
+  BASE: '/api/v1/oembed',
 } as const;
 
 // Fetchx 核心 API（API Key 认证）
@@ -64,6 +57,19 @@ export const MEMOX_API = {
   FEEDBACK: '/api/v1/feedback',
   EXPORTS: '/api/v1/exports',
   EXPORTS_GET: '/api/v1/exports/get',
+} as const;
+
+// Agent API（API Key 认证）
+export const AGENT_API = {
+  BASE: '/api/v1/agent',
+  ESTIMATE: '/api/v1/agent/estimate',
+  MODELS: '/api/v1/agent/models',
+} as const;
+
+// Browser API（API Key 认证）
+export const BROWSER_API = {
+  SESSION: '/api/v1/browser/session',
+  CDP_CONNECT: '/api/v1/browser/session/cdp/connect',
 } as const;
 
 // 健康检查

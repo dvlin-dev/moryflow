@@ -30,10 +30,9 @@ describe('ModelProviderFactory', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    if (!ModelProviderFactory) {
-      ({ ModelProviderFactory } =
-        await import('../providers/model-provider.factory'));
-    }
+    vi.resetModules();
+    ({ ModelProviderFactory } =
+      await import('../providers/model-provider.factory'));
   });
 
   it('creates openai model via chat', () => {

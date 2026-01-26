@@ -1,12 +1,12 @@
 ---
 title: Anyhunt Server Agent/LLM/Embedding Code Review
 date: 2026-01-26
-scope: apps/anyhunt/server (agent/llm/embedding/console-playground)
+scope: apps/anyhunt/server (agent/llm/embedding)
 status: done
 ---
 
 <!--
-[INPUT]: apps/anyhunt/server/src/agent, apps/anyhunt/server/src/llm, apps/anyhunt/server/src/embedding, apps/anyhunt/server/src/console-playground
+[INPUT]: apps/anyhunt/server/src/agent, apps/anyhunt/server/src/llm, apps/anyhunt/server/src/embedding
 [OUTPUT]: 风险清单 + 修复建议 + 进度记录
 [POS]: Phase 2 / P1 模块审查记录（Anyhunt Server：Agent/LLM/Embedding）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -30,9 +30,7 @@ status: done
   - AI SDK 语言模型工厂：`llm-language-model.service.ts`
   - DTO：`dto/*.schema.ts`
 - Embedding 模块：`apps/anyhunt/server/src/embedding/`
-- Console Playground（Agent 相关代理）：`apps/anyhunt/server/src/console-playground/`
-
-主要入口：
+  主要入口：
 
 - `POST /api/v1/agent`
 - `GET /api/v1/agent/:id`
@@ -41,9 +39,6 @@ status: done
 - `GET/PUT /api/v1/admin/llm/settings`
 - `GET/POST/PATCH/DELETE /api/v1/admin/llm/providers`
 - `GET/POST/PATCH/DELETE /api/v1/admin/llm/models`
-- `POST /api/v1/console/playground/agent`
-- `POST /api/v1/console/playground/agent/stream`
-- `POST /api/v1/console/playground/agent/estimate`
 
 关键依赖：
 
@@ -73,7 +68,7 @@ status: done
 - [P2] **部分关键文件缺少 [PROTOCOL] 头部约束说明（已修复）**
   - 影响：违反仓库强制的文件头规范，后续改动易漏同步 CLAUDE.md。
   - 修复：补齐 [PROTOCOL] 段落并同步模块 CLAUDE.md。
-  - 文件：`apps/anyhunt/server/src/embedding/embedding.service.ts`, `apps/anyhunt/server/src/embedding/embedding.module.ts`, `apps/anyhunt/server/src/console-playground/console-playground.controller.ts`
+  - 文件：`apps/anyhunt/server/src/embedding/embedding.service.ts`, `apps/anyhunt/server/src/embedding/embedding.module.ts`
 
 ## 已确认不处理
 

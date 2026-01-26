@@ -12,6 +12,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本
 - Memox Playground 表单修复 FormField 上下文错误，并补齐回归测试
 - 测试环境补齐 ResizeObserver/matchMedia mock，避免 UI 组件报错
+- Playground/管理页统一改为 API Key 直连公网 API（Bearer）
+- API Key 列表返回明文 key，前端统一脱敏展示与复制
 
 ## 职责
 
@@ -35,7 +37,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.anyhunt.app`（可用 `VITE_API_URL` 覆盖）
-- Agent Playground：JSON 任务使用 `POST /api/v1/console/playground/agent`；SSE 流式使用 `POST /api/v1/console/playground/agent/stream`（不再通过 body 里的 `stream` 开关复用同一路由）
+- Playground/管理页默认选中第一把 active API Key
+- Agent Playground：统一 `POST /api/v1/agent`（默认 SSE，`stream=false` 返回 JSON）
 - Agent Playground 入参使用 `output`（`text`/`json_schema`），不再发送旧的 `schema` 字段；模型/Provider 由 API Key 策略决定（不允许请求侧选择）
 - 本地开发默认走 Vite proxy（`VITE_API_URL` 留空）
 - Zustand 管理登录状态，React Query 管理数据
@@ -162,7 +165,11 @@ feature-name/
 // Console 管理 API（Session 认证）
 export const CONSOLE_API = {
   API_KEYS: '/api/v1/console/api-keys',
-  WEBHOOKS: '/api/v1/console/webhooks',
+} as const;
+
+// Webhook API（API Key 认证）
+export const WEBHOOK_API = {
+  WEBHOOKS: '/api/v1/webhooks',
 } as const;
 
 // Fetchx 核心 API（API Key 认证）

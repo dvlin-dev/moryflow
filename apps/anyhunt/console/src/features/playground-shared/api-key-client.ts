@@ -1,6 +1,9 @@
 /**
- * API Key 认证客户端
- * 用于 Memox Playground 调用需要 API Key 的 API
+ * [PROVIDES]: ApiKeyClient - API Key 认证请求封装
+ * [DEPENDS]: fetch
+ * [POS]: Console 调用公网 API 的基础客户端
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -28,6 +31,10 @@ export class ApiKeyClient {
     } = {}
   ): Promise<T> {
     const { method = 'GET', body, headers = {} } = options;
+    const apiKey = this.apiKey.trim();
+    if (!apiKey) {
+      throw new ApiKeyClientError('API key is required', 400, 'MISSING_API_KEY');
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -37,7 +44,7 @@ export class ApiKeyClient {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Token ${this.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           ...headers,
         },
         body: body ? JSON.stringify(body) : undefined,
@@ -55,6 +62,10 @@ export class ApiKeyClient {
           response.status,
           error.code
         );
+      }
+
+      if (response.status === 204) {
+        return undefined as T;
       }
 
       return response.json();
@@ -83,6 +94,18 @@ export class ApiKeyClient {
 
   async post<T>(endpoint: string, body?: unknown): Promise<T> {
     return this.request<T>(endpoint, { method: 'POST', body });
+  }
+
+  async put<T>(endpoint: string, body?: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PUT', body });
+  }
+
+  async patch<T>(endpoint: string, body?: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PATCH', body });
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }
 

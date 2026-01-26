@@ -280,8 +280,7 @@ model ApiKey {
   id         String    @id @default(cuid())
   userId     String
   name       String
-  keyPrefix  String // 展示用，如 "ah_abc1"
-  keyHash    String    @unique // SHA256(完整key)
+  keyValue   String    @unique // 明文 API Key（ah_ 前缀）
   isActive   Boolean   @default(true)
   lastUsedAt DateTime?
   expiresAt  DateTime?
@@ -293,7 +292,7 @@ model ApiKey {
   scrapeJobs  ScrapeJob[]
 
   @@index([userId])
-  @@index([keyHash])
+  @@index([keyValue])
 }
 
 // =============================================

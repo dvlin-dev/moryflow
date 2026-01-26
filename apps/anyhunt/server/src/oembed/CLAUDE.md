@@ -15,26 +15,23 @@ oEmbed provider support for fetching embed data from various media platforms. Us
 - Fetch oEmbed data from supported providers
 - Provider factory for extensible platform support
 - Cache oEmbed responses
-- Console UI for oEmbed management
 
 ## Constraints
 
 - Public API uses ApiKeyGuard
-- Console endpoints use AuthGuard
 - Provider implementations must extend BaseProvider
 - URL patterns defined in constants
 
 ## File Structure
 
-| File                           | Type       | Description                   |
-| ------------------------------ | ---------- | ----------------------------- |
-| `oembed.service.ts`            | Service    | Fetch and process oEmbed data |
-| `oembed.controller.ts`         | Controller | Public API `/v1/oembed`       |
-| `oembed-console.controller.ts` | Controller | Console UI endpoints          |
-| `oembed.module.ts`             | Module     | NestJS module definition      |
-| `oembed.constants.ts`          | Constants  | Provider URLs, patterns       |
-| `oembed.errors.ts`             | Errors     | Custom exceptions             |
-| `oembed.types.ts`              | Types      | oEmbed response types         |
+| File                   | Type       | Description                   |
+| ---------------------- | ---------- | ----------------------------- |
+| `oembed.service.ts`    | Service    | Fetch and process oEmbed data |
+| `oembed.controller.ts` | Controller | Public API `/v1/oembed`       |
+| `oembed.module.ts`     | Module     | NestJS module definition      |
+| `oembed.constants.ts`  | Constants  | Provider URLs, patterns       |
+| `oembed.errors.ts`     | Errors     | Custom exceptions             |
+| `oembed.types.ts`      | Types      | oEmbed response types         |
 
 ### Providers
 
@@ -87,7 +84,7 @@ class NewPlatformProvider extends BaseProvider {
 oembed/
 ├── redis/ - Response caching
 ├── api-key/ - Public API auth
-└── auth/ - Console auth
+└── api-key/ - Public API auth
 ```
 
 ## Key Exports

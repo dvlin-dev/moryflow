@@ -15,21 +15,23 @@ import { useRegenerateWebhookSecret } from '../hooks';
 import type { Webhook } from '../types';
 
 interface RegenerateSecretDialogProps {
+  apiKey: string;
   webhook: Webhook | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function RegenerateSecretDialog({
+  apiKey,
   webhook,
   open,
   onOpenChange,
 }: RegenerateSecretDialogProps) {
-  const { mutate: regenerate, isPending } = useRegenerateWebhookSecret();
+  const { mutate: regenerate, isPending } = useRegenerateWebhookSecret(apiKey);
 
   const handleRegenerate = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!webhook) return;
+    if (!apiKey || !webhook) return;
 
     regenerate(webhook.id, {
       onSuccess: () => {

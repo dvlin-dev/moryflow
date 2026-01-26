@@ -9,6 +9,7 @@ import type { PrismaService } from '../../prisma/prisma.service';
 import type { VectorPrismaService } from '../../vector-prisma/vector-prisma.service';
 import type { RedisService } from '../../redis/redis.service';
 import { API_KEY_PREFIX } from '../api-key.constants';
+import { createHash } from 'crypto';
 
 /**
  * Mock 类型定义
@@ -84,7 +85,7 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.create.mockResolvedValue({
         id: 'key_1',
         name: 'Test Key',
-        keyPrefix: 'ah_abcd1234',
+        keyValue: validApiKey,
       });
 
       const result = await service.create('user_1', {
@@ -97,11 +98,11 @@ describe('ApiKeyService', () => {
       expect(result.name).toBe('Test Key');
     });
 
-    it('should store hashed key in database', async () => {
+    it('should store plaintext key in database', async () => {
       mockPrisma.apiKey.create.mockResolvedValue({
         id: 'key_1',
         name: 'Test Key',
-        keyPrefix: 'ah_abcd1234',
+        keyValue: validApiKey,
       });
 
       await service.create('user_1', {
@@ -113,8 +114,7 @@ describe('ApiKeyService', () => {
         data: expect.objectContaining({
           userId: 'user_1',
           name: 'Test Key',
-          keyHash: expect.stringMatching(/^[a-f0-9]{64}$/), // SHA256 hash
-          keyPrefix: expect.stringMatching(/^ah_.{8}$/),
+          keyValue: expect.stringMatching(/^ah_[a-f0-9]{64}$/),
         }),
       });
     });
@@ -124,7 +124,7 @@ describe('ApiKeyService', () => {
       mockPrisma.apiKey.create.mockResolvedValue({
         id: 'key_1',
         name: 'Test Key',
-        keyPrefix: 'ah_abcd1234',
+        keyValue: validApiKey,
         expiresAt,
       });
 
@@ -143,8 +143,12 @@ describe('ApiKeyService', () => {
   describe('findAllByUser', () => {
     it('should return all keys for user', async () => {
       const keys = [
-        { id: 'key_1', name: 'Key 1', keyPrefix: 'ah_abc' },
-        { id: 'key_2', name: 'Key 2', keyPrefix: 'ah_def' },
+        { id: 'key_1', name: 'Key 1', keyValue: validApiKey },
+        {
+          id: 'key_2',
+          name: 'Key 2',
+          keyValue: `${API_KEY_PREFIX}${'b'.repeat(64)}`,
+        },
       ];
       mockPrisma.apiKey.findMany.mockResolvedValue(keys);
 
@@ -154,29 +158,8 @@ describe('ApiKeyService', () => {
       expect(mockPrisma.apiKey.findMany).toHaveBeenCalledWith({
         where: { userId: 'user_1' },
         select: expect.any(Object),
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
       });
-    });
-  });
-
-  // ============ findOne ============
-
-  describe('findOne', () => {
-    it('should return key when found', async () => {
-      const key = { id: 'key_1', name: 'Test Key' };
-      mockPrisma.apiKey.findFirst.mockResolvedValue(key);
-
-      const result = await service.findOne('user_1', 'key_1');
-
-      expect(result).toEqual(key);
-    });
-
-    it('should throw NotFoundException when key not found', async () => {
-      mockPrisma.apiKey.findFirst.mockResolvedValue(null);
-
-      await expect(service.findOne('user_1', 'nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
     });
   });
 
@@ -186,7 +169,7 @@ describe('ApiKeyService', () => {
     it('should update key name', async () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
-        keyHash: 'hash_1',
+        keyValue: validApiKey,
       });
       mockPrisma.apiKey.update.mockResolvedValue({
         id: 'key_1',
@@ -211,7 +194,7 @@ describe('ApiKeyService', () => {
     it('should invalidate cache when key is deactivated', async () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
-        keyHash: 'hash_1',
+        keyValue: validApiKey,
       });
       mockPrisma.apiKey.update.mockResolvedValue({
         id: 'key_1',
@@ -220,13 +203,14 @@ describe('ApiKeyService', () => {
 
       await service.update('user_1', 'key_1', { isActive: false });
 
-      expect(mockRedis.del).toHaveBeenCalledWith('apikey:hash_1');
+      const cacheKey = createHash('sha256').update(validApiKey).digest('hex');
+      expect(mockRedis.del).toHaveBeenCalledWith(`apikey:${cacheKey}`);
     });
 
     it('should invalidate cache when key is activated', async () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
-        keyHash: 'hash_1',
+        keyValue: validApiKey,
       });
       mockPrisma.apiKey.update.mockResolvedValue({
         id: 'key_1',
@@ -235,7 +219,8 @@ describe('ApiKeyService', () => {
 
       await service.update('user_1', 'key_1', { isActive: true });
 
-      expect(mockRedis.del).toHaveBeenCalledWith('apikey:hash_1');
+      const cacheKey = createHash('sha256').update(validApiKey).digest('hex');
+      expect(mockRedis.del).toHaveBeenCalledWith(`apikey:${cacheKey}`);
     });
   });
 
@@ -245,7 +230,7 @@ describe('ApiKeyService', () => {
     it('should delete key and invalidate cache', async () => {
       mockPrisma.apiKey.findFirst.mockResolvedValue({
         id: 'key_1',
-        keyHash: 'hash_1',
+        keyValue: validApiKey,
       });
       mockPrisma.apiKey.delete.mockResolvedValue({ id: 'key_1' });
 
@@ -254,7 +239,8 @@ describe('ApiKeyService', () => {
       expect(mockPrisma.apiKey.delete).toHaveBeenCalledWith({
         where: { id: 'key_1' },
       });
-      expect(mockRedis.del).toHaveBeenCalledWith('apikey:hash_1');
+      const cacheKey = createHash('sha256').update(validApiKey).digest('hex');
+      expect(mockRedis.del).toHaveBeenCalledWith(`apikey:${cacheKey}`);
     });
 
     it('should throw NotFoundException when key not found', async () => {

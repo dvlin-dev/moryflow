@@ -21,7 +21,7 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 ## 职责边界
 
 - **本模块负责**
-  - 订阅管理（Console）
+  - 订阅管理（ApiKeyGuard）
   - Run 执行与去重/二次投递策略（Processor + Service）
   - Inbox 管理（已投递内容的状态：已读/收藏/不感兴趣）
   - Public Topics（SEO 展示、Edition 列表与详情）
@@ -34,14 +34,14 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 > 统一版本：所有 Controller 必须使用 `version: '1'`。
 
-### Console（AuthGuard）
+### ApiKeyGuard（公网 API）
 
-- `GET /api/v1/console/digest/subscriptions`：订阅列表（`page/limit`）
-- `GET /api/v1/console/digest/subscriptions/:id`：订阅详情
-- `GET /api/v1/console/digest/subscriptions/:subscriptionId/runs`：运行历史（`page/limit`）
-- `GET /api/v1/console/digest/inbox`：Inbox 列表（`page/limit`）
-- `GET /api/v1/console/digest/inbox/stats`：Inbox 统计
-- `GET /api/v1/console/digest/inbox/:id/content`：Inbox 条目全文（`markdown` + `titleSnapshot/urlSnapshot`）
+- `GET /api/v1/digest/subscriptions`：订阅列表（`page/limit`）
+- `GET /api/v1/digest/subscriptions/:id`：订阅详情
+- `GET /api/v1/digest/subscriptions/:subscriptionId/runs`：运行历史（`page/limit`）
+- `GET /api/v1/digest/inbox`：Inbox 列表（`page/limit`）
+- `GET /api/v1/digest/inbox/stats`：Inbox 统计
+- `GET /api/v1/digest/inbox/:id/content`：Inbox 条目全文（`markdown` + `titleSnapshot/urlSnapshot`）
 
 ### Public（部分匿名）
 

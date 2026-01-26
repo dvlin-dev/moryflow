@@ -9,6 +9,7 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 ## 最近更新
 
 - Auth refresh/logout 接口改为 raw JSON 响应，错误统一为 RFC7807
+- 注册流程不再自动创建默认 API Key（由 Console 手动创建）
 
 ## 职责范围
 
@@ -35,6 +36,7 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 - 已有账号命中 `ADMIN_EMAILS` 时，在会话获取与 refresh 阶段补写 `isAdmin=true`
 - access token 中的 `subscriptionTier` 基于有效订阅（仅 ACTIVE 计入付费 tier）
 - 邮箱 OTP 验证成功后自动创建 session（`autoSignInAfterVerification=true`）
+- 注册流程不自动生成 API Key（由 Console 管理接口创建）
 
 ## 测试覆盖
 

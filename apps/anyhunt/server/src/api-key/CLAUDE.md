@@ -9,7 +9,8 @@ API key management for authenticating public API requests. Handles creation, val
 ## Responsibilities
 
 - Generate secure API keys with `ah_` prefix
-- Hash and store keys securely (SHA256)
+- Store plaintext `keyValue` (for list/copy in Console)
+- Use SHA256 hash only for Redis cache key
 - Validate API keys on requests
 - Track key usage and last used timestamp
 - Support key revocation and rotation
@@ -17,10 +18,10 @@ API key management for authenticating public API requests. Handles creation, val
 
 ## Constraints
 
-- Plaintext key shown only once on creation
-- Store only SHA256 hash in database
 - Keys must have `ah_` prefix
-- 明文 Key 仅创建时返回，后续不可读取
+- 明文 Key 存储在 `keyValue`，列表接口返回 `key`（前端脱敏展示）
+- 响应 `Cache-Control: no-store`，避免缓存明文 Key（create/list/update）
+- Redis 缓存使用 `sha256(apiKey)` 作为 key，避免明文进入缓存
 - subscriptionTier 仅在订阅 ACTIVE 时视为付费 tier
 
 ## File Structure
@@ -47,11 +48,11 @@ Example: ah_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ## Authentication Flow
 
 ```
-Request with Authorization: Token <apiKey>
+Request with Authorization: Bearer <apiKey>
     ↓
 ApiKeyGuard extracts key
     ↓
-Hash key → Query database
+Hash key → Check cache → Query database by keyValue
     ↓
 Found? → Attach to request context
     ↓

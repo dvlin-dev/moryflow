@@ -47,7 +47,7 @@ import {
   ScrollArea,
   Switch,
 } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import {
   useCreateMemory,
   useSearchMemories,
@@ -120,7 +120,6 @@ export default function MemoxPlaygroundPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'create' | 'search'>('create');
-  const [apiKeyInput, setApiKeyInput] = useState('');
 
   // 结果状态
   const [createdMemory, setCreatedMemory] = useState<Memory | null>(null);
@@ -133,7 +132,9 @@ export default function MemoxPlaygroundPage() {
   // 计算 effective API key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const activeKeys = apiKeys.filter((k) => k.isActive);
-  const apiKeyValue = apiKeyInput.trim();
+  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
   // Mutations
   const createMemoryMutation = useCreateMemory();
@@ -169,7 +170,7 @@ export default function MemoxPlaygroundPage() {
   // 创建记忆提交
   const handleCreate = async (values: CreateMemoryFormValues) => {
     if (!apiKeyValue) {
-      toast.error('Please enter a full API key');
+      toast.error('Select an API key');
       return;
     }
 
@@ -238,7 +239,7 @@ export default function MemoxPlaygroundPage() {
   // 搜索记忆提交
   const handleSearch = async (values: SearchMemoryFormValues) => {
     if (!apiKeyValue) {
-      toast.error('Please enter a full API key');
+      toast.error('Select an API key');
       return;
     }
 
@@ -352,7 +353,7 @@ export default function MemoxPlaygroundPage() {
                           <span className="flex items-center gap-2">
                             <span>{key.name}</span>
                             <span className="text-muted-foreground font-mono text-xs">
-                              {key.keyPrefix}...
+                              {maskApiKey(key.key)}
                             </span>
                           </span>
                         </SelectItem>
@@ -372,15 +373,8 @@ export default function MemoxPlaygroundPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>API Key (Full)</Label>
-                <Input
-                  placeholder="ah_..."
-                  value={apiKeyInput}
-                  onChange={(event) => setApiKeyInput(event.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Paste the full API key (only shown once when created).
-                </p>
+                <Label>API Key</Label>
+                <Input placeholder="Select an API key" value={apiKeyDisplay} readOnly />
               </div>
 
               {/* Tabs */}
@@ -903,7 +897,8 @@ export default function MemoxPlaygroundPage() {
                 <CodeExample
                   endpoint={MEMOX_API.MEMORIES}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={{
                     messages: [{ role: 'user', content: lastCreateRequest.message }],
                     user_id: lastCreateRequest.user_id,
@@ -953,7 +948,8 @@ export default function MemoxPlaygroundPage() {
                 <CodeExample
                   endpoint={MEMOX_API.MEMORIES_SEARCH}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={{
                     user_id: lastSearchRequest.user_id,
                     query: lastSearchRequest.query,

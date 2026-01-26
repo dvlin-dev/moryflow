@@ -44,10 +44,10 @@ import {
 
 // Controllers
 import {
-  DigestConsoleSubscriptionController,
-  DigestConsoleInboxController,
-  DigestConsoleRunController,
-  DigestConsoleTopicController,
+  DigestSubscriptionController,
+  DigestInboxController,
+  DigestRunController,
+  DigestTopicController,
   DigestPublicTopicController,
   DigestPublicWelcomeController,
   DigestPublicWelcomePagesController,
@@ -97,11 +97,11 @@ import { MapModule } from '../map/map.module';
     ),
   ],
   controllers: [
-    // Console 控制器（Session 认证）
-    DigestConsoleSubscriptionController,
-    DigestConsoleInboxController,
-    DigestConsoleRunController,
-    DigestConsoleTopicController,
+    // Digest 控制器（ApiKey 认证）
+    DigestSubscriptionController,
+    DigestInboxController,
+    DigestRunController,
+    DigestTopicController,
 
     // Public 控制器（部分需要认证）
     DigestPublicTopicController,

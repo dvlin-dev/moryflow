@@ -28,7 +28,6 @@ import { DemoModule } from './demo/demo.module';
 import { EmbeddingModule } from './embedding';
 import { MemoryModule } from './memory';
 import { EntityModule } from './entity';
-import { ConsolePlaygroundModule } from './console-playground';
 import { CommonModule } from './common';
 import { AgentModule } from './agent';
 import { DigestModule } from './digest';
@@ -68,7 +67,6 @@ import { LlmModule } from './llm';
     EmbeddingModule,
     MemoryModule,
     EntityModule,
-    ConsolePlaygroundModule,
     LlmModule,
     AgentModule,
     DigestModule,

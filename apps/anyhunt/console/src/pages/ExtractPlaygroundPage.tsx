@@ -26,7 +26,7 @@ import {
   Input,
   Textarea,
 } from '@anyhunt/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useExtract, type ExtractRequest } from '@/features/extract-playground';
 import {
   ApiKeySelector,
@@ -58,9 +58,10 @@ export default function ExtractPlaygroundPage() {
   // 如果用户未手动选择，使用第一个活跃的 API Key
   const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
   const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.keyPrefix ? `${selectedKey.keyPrefix}...` : '';
+  const apiKeyValue = selectedKey?.key ?? '';
+  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
 
-  const { mutate, isPending, data, error, reset } = useExtract(effectiveKeyId);
+  const { mutate, isPending, data, error, reset } = useExtract(apiKeyValue);
 
   const form = useForm<ExtractFormValues>({
     resolver: zodResolver(extractFormSchema),
@@ -248,7 +249,8 @@ export default function ExtractPlaygroundPage() {
                 <CodeExample
                   endpoint={FETCHX_API.EXTRACT}
                   method="POST"
-                  apiKey={apiKeyValue}
+                  apiKey={apiKeyDisplay}
+                  apiKeyValue={apiKeyValue}
                   body={lastRequest}
                 />
               </CardContent>
