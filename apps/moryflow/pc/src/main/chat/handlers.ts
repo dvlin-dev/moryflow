@@ -19,6 +19,7 @@ import {
 } from '../agent-runtime/desktop-adapter.js';
 import { getStoredVault } from '../vault.js';
 import { chatSessionStore } from '../chat-session-store/index.js';
+import { agentHistoryToUiMessages } from '../chat-session-store/ui-message.js';
 import { broadcastSessionEvent } from './broadcast.js';
 import { createChatRequestHandler } from './chat-request.js';
 import { approveToolRequest, clearApprovalGate } from './approval-store.js';
@@ -178,7 +179,8 @@ export const registerChatHandlers = () => {
       if (!compaction.historyChanged) {
         return { changed: false };
       }
-      const uiMessages = chatSessionStore.getUiMessages(sessionId);
+      // 从压缩后的历史重新生成 UI 消息，确保 UI 与 agent 历史一致
+      const uiMessages = agentHistoryToUiMessages(sessionId, compaction.history);
       chatSessionStore.updateSessionMeta(sessionId, { uiMessages });
       return { changed: true, messages: uiMessages };
     }

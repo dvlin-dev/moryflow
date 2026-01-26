@@ -49,7 +49,7 @@ import { getModelById, providerRegistry, toApiModelId } from '@anyhunt/agents-mo
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
-import { mobileSessionStore } from './session-store';
+import { mobileSessionStore, agentHistoryToUiMessages } from './session-store';
 import { loadSettings, onSettingsChange, getSettings } from './settings-store';
 import { getMembershipConfig } from './membership-bridge';
 import { initVaultManager } from '../vault';
@@ -430,7 +430,8 @@ export async function prepareCompaction(params: {
   if (!compaction.historyChanged) {
     return { changed: false };
   }
-  const uiMessages = await mobileSessionStore.getUiMessages(params.chatId);
+  // 从压缩后的历史重新生成 UI 消息，确保 UI 与 agent 历史一致
+  const uiMessages = agentHistoryToUiMessages(params.chatId, compaction.history);
   await mobileSessionStore.saveUiMessages(params.chatId, uiMessages);
   return { changed: true, messages: uiMessages };
 }

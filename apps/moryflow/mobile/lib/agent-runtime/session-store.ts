@@ -353,3 +353,6 @@ export const getUiMessages = (chatId: string) => mobileSessionStore.getUiMessage
 export const saveUiMessages = (chatId: string, messages: UIMessage[]) =>
   mobileSessionStore.saveUiMessages(chatId, messages);
 export const clearUiMessages = (chatId: string) => mobileSessionStore.clearUiMessages(chatId);
+
+// 导出转换函数供 compaction 使用
+export { agentHistoryToUiMessages };
