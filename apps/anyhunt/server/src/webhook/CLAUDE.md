@@ -9,6 +9,7 @@ Webhook notification system for sending event notifications to user-configured e
 ## 最近更新
 
 - Webhook 错误响应统一为 RFC7807（移除 success/data 包装）
+- WebhookModule 显式导入 ApiKeyModule，避免 ApiKeyGuard 依赖缺失导致启动失败
 
 ## Responsibilities
 
