@@ -176,7 +176,7 @@ export function LlmModelDialog({
   const [rawConfigError, setRawConfigError] = useState(false);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as never,
     values: defaults,
     mode: 'onChange',
   });
@@ -233,7 +233,11 @@ export function LlmModelDialog({
         minTier: values.minTier as SubscriptionTier,
         maxContextTokens: values.maxContextTokens,
         maxOutputTokens: values.maxOutputTokens,
-        capabilities: values.capabilities,
+        capabilities: {
+          ...values.capabilities,
+          maxContextTokens: values.maxContextTokens,
+          maxOutputTokens: values.maxOutputTokens,
+        },
         reasoning,
         sortOrder: values.sortOrder,
       };
@@ -252,7 +256,11 @@ export function LlmModelDialog({
       minTier: values.minTier as SubscriptionTier,
       maxContextTokens: values.maxContextTokens,
       maxOutputTokens: values.maxOutputTokens,
-      capabilities: values.capabilities,
+      capabilities: {
+        ...values.capabilities,
+        maxContextTokens: values.maxContextTokens,
+        maxOutputTokens: values.maxOutputTokens,
+      },
       reasoning,
       sortOrder: values.sortOrder,
     };
