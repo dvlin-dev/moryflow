@@ -126,3 +126,4 @@ This is a standalone app, no exports to other packages.
 ## Recent Changes
 
 - API 示例统一为 raw JSON 成功体 + RFC7807 错误体，移除 `success/data` 包装示例
+- Docker build 仅复制根 `node_modules`，避免 hoisted 模式缺失包级目录导致失败
