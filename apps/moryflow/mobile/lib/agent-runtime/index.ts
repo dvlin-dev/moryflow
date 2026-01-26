@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: initAgentRuntime, runChatTurn, createChatSession - Mobile Agent 运行时
+ * [PROVIDES]: initAgentRuntime, runChatTurn, prepareCompaction, createChatSession - Mobile Agent 运行时
  * [DEPENDS]: agents, agents-runtime, agents-tools - Agent 框架核心
  * [POS]: Mobile 端 Agent 运行时入口，与 PC 端 agent-runtime 对应，适配移动端平台
  *
@@ -13,10 +13,11 @@ export {
   getAgentRuntime,
   isRuntimeInitialized,
   runChatTurn,
+  prepareCompaction,
   createChatSession,
   getVaultRoot,
   generateSessionTitle,
-} from './runtime'
+} from './runtime';
 
 // ============ 类型定义 ============
 
@@ -25,8 +26,8 @@ export type {
   MobileAgentRuntimeOptions,
   MobileAgentStreamResult,
   MobileChatTurnResult,
-} from './types'
-export { MAX_AGENT_TURNS } from './types'
+} from './types';
+export { MAX_AGENT_TURNS } from './types';
 
 // ============ 平台适配 ============
 
@@ -35,9 +36,9 @@ export {
   createMobileCrypto,
   getDefaultVaultRoot,
   ensureVaultExists,
-} from './mobile-adapter'
+} from './mobile-adapter';
 
-export { createLogger, mobileFetch } from './adapters'
+export { createLogger, mobileFetch } from './adapters';
 
 // ============ 会话管理 ============
 
@@ -54,7 +55,8 @@ export {
   getUiMessages,
   saveUiMessages,
   clearUiMessages,
-} from './session-store'
+} from './session-store';
+export { recordModeSwitch } from './mode-audit';
 
 // ============ 设置管理 ============
 
@@ -72,7 +74,7 @@ export {
   type AgentSettings,
   type UserProviderConfig,
   type CustomProviderConfig,
-} from './settings-store'
+} from './settings-store';
 
 // ============ Membership Bridge ============
 
@@ -80,4 +82,4 @@ export {
   getMembershipConfig,
   setMembershipConfig,
   syncMembershipConfig,
-} from './membership-bridge'
+} from './membership-bridge';

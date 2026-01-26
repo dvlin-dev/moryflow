@@ -4,41 +4,45 @@
  * 管理聊天状态：Transport、消息、发送/停止
  */
 
-import { useMemo, useEffect, useRef, useCallback } from 'react'
-import { useChat, type UIMessage } from '@ai-sdk/react'
-import { MobileChatTransport } from '@/lib/chat'
-import { saveUiMessages, generateSessionTitle } from '@/lib/agent-runtime'
-import { TEMP_AI_MESSAGE_ID } from '../contexts'
-import type { SendMessagePayload } from '../ChatInputBar'
+import { useMemo, useEffect, useRef, useCallback } from 'react';
+import { useChat, type UIMessage } from '@ai-sdk/react';
+import { MobileChatTransport } from '@/lib/chat';
+import { saveUiMessages, generateSessionTitle, prepareCompaction } from '@/lib/agent-runtime';
+import { TEMP_AI_MESSAGE_ID } from '../contexts';
+import type { SendMessagePayload } from '../ChatInputBar';
 
 interface UseChatStateOptions {
   /** 当前会话 ID */
-  activeSessionId: string | null
+  activeSessionId: string | null;
   /** 选中的模型 ID */
-  selectedModelId: string | null
+  selectedModelId: string | null;
+  /** 会话级访问模式 */
+  mode?: import('@anyhunt/agents-runtime').AgentAccessMode;
   /** 刷新会话列表回调 */
-  refreshSessions: () => void
+  refreshSessions: () => void;
 }
 
 interface UseChatStateResult {
   /** 消息列表 */
-  messages: UIMessage[]
+  messages: UIMessage[];
   /** 用于显示的消息列表（可能包含占位消息） */
-  displayMessages: UIMessage[]
+  displayMessages: UIMessage[];
   /** 聊天状态 */
-  status: 'ready' | 'submitted' | 'streaming' | 'error'
+  status: 'ready' | 'submitted' | 'streaming' | 'error';
   /** 错误信息 */
-  error: Error | null
+  error: Error | null;
   /** 是否正在加载 */
-  isLoading: boolean
+  isLoading: boolean;
   /** 是否正在流式输出 */
-  isStreaming: boolean
+  isStreaming: boolean;
   /** 发送消息 */
-  sendMessage: (payload: SendMessagePayload) => Promise<void>
+  sendMessage: (payload: SendMessagePayload) => Promise<void>;
   /** 停止生成 */
-  stop: () => void
+  stop: () => void;
   /** 设置消息列表 */
-  setMessages: (messages: UIMessage[]) => void
+  setMessages: (messages: UIMessage[]) => void;
+  /** 更新工具审批状态 */
+  addToolApprovalResponse: (input: { id: string; approved: boolean; reason?: string }) => void;
 }
 
 /**
@@ -47,31 +51,44 @@ interface UseChatStateResult {
 export function useChatState({
   activeSessionId,
   selectedModelId,
+  mode,
   refreshSessions,
 }: UseChatStateOptions): UseChatStateResult {
   // Transport - 依赖 selectedModelId
   const transport = useMemo(
-    () => new MobileChatTransport({ preferredModelId: selectedModelId ?? undefined }),
-    [selectedModelId]
-  )
+    () =>
+      new MobileChatTransport({
+        preferredModelId: selectedModelId ?? undefined,
+        mode,
+      }),
+    [selectedModelId, mode]
+  );
 
   // Chat 状态
-  const { messages, status, error, sendMessage: sdkSendMessage, stop, setMessages } = useChat({
+  const {
+    messages,
+    status,
+    error,
+    sendMessage: sdkSendMessage,
+    stop,
+    setMessages,
+    addToolApprovalResponse,
+  } = useChat({
     id: activeSessionId ?? 'pending',
     transport,
-  })
+  });
 
   // 派生状态
-  const isLoading = status === 'submitted' || status === 'streaming'
-  const lastMessage = messages[messages.length - 1]
-  const isStreaming = status === 'streaming' && lastMessage?.role === 'assistant'
+  const isLoading = status === 'submitted' || status === 'streaming';
+  const lastMessage = messages[messages.length - 1];
+  const isStreaming = status === 'streaming' && lastMessage?.role === 'assistant';
 
   // 构建显示用的消息列表
   const displayMessages = useMemo(() => {
-    const needsPlaceholder = isLoading && lastMessage?.role === 'user'
+    const needsPlaceholder = isLoading && lastMessage?.role === 'user';
 
     if (!needsPlaceholder) {
-      return messages
+      return messages;
     }
 
     // 插入临时 AI 占位消息
@@ -80,41 +97,62 @@ export function useChatState({
       role: 'assistant' as const,
       parts: [],
       createdAt: new Date(),
-    }
-    return [...messages, placeholderMessage]
-  }, [messages, isLoading, lastMessage?.role])
+    };
+    return [...messages, placeholderMessage];
+  }, [messages, isLoading, lastMessage?.role]);
 
   // 保存消息到存储
-  const prevMessagesRef = useRef(messages)
+  const prevMessagesRef = useRef(messages);
   useEffect(() => {
     if (activeSessionId && messages.length > 0 && messages !== prevMessagesRef.current) {
-      prevMessagesRef.current = messages
+      prevMessagesRef.current = messages;
       saveUiMessages(activeSessionId, messages).catch((err) =>
         console.error('[useChatState] Failed to save messages:', err)
-      )
+      );
     }
-  }, [activeSessionId, messages])
+  }, [activeSessionId, messages]);
 
   // 发送消息（带标题生成）
   const sendMessage = useCallback(
     async (payload: SendMessagePayload) => {
-      const isFirstMessage = messages.length === 0
+      const isFirstMessage = messages.length === 0;
+
+      if (activeSessionId) {
+        try {
+          const result = await prepareCompaction({
+            chatId: activeSessionId,
+            preferredModelId: selectedModelId ?? undefined,
+          });
+          if (result.changed && Array.isArray(result.messages)) {
+            setMessages(result.messages);
+          }
+        } catch (err) {
+          console.warn('[useChatState] prepareCompaction failed:', err);
+        }
+      }
 
       // 发送消息，传递 text 和 metadata
       await sdkSendMessage({
         text: payload.text,
         metadata: payload.metadata,
-      })
+      });
 
       // 第一条消息时异步生成标题
       if (isFirstMessage && activeSessionId) {
         generateSessionTitle(activeSessionId, payload.text, selectedModelId ?? undefined)
           .then(refreshSessions)
-          .catch((err) => console.error('[useChatState] Failed to generate title:', err))
+          .catch((err) => console.error('[useChatState] Failed to generate title:', err));
       }
     },
-    [messages.length, activeSessionId, selectedModelId, sdkSendMessage, refreshSessions]
-  )
+    [
+      messages.length,
+      activeSessionId,
+      selectedModelId,
+      sdkSendMessage,
+      refreshSessions,
+      setMessages,
+    ]
+  );
 
   return {
     messages,
@@ -126,5 +164,6 @@ export function useChatState({
     sendMessage,
     stop,
     setMessages,
-  }
+    addToolApprovalResponse,
+  };
 }

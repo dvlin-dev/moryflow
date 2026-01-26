@@ -93,6 +93,16 @@ const en = {
   allDocsAdded: 'All files have been added',
   noOpenDocs: 'No files in workspace',
   upgrade: 'Upgrade',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{completed}} of {{total}} tasks completed',
@@ -110,6 +120,14 @@ const en = {
   statusError: 'Error',
   statusSkipped: 'Skipped',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // Tool labels
   parameters: 'Parameters',
   errorLabel: 'Error',
@@ -117,11 +135,16 @@ const en = {
 
   // Tool actions
   fileWritten: 'File written',
-  targetFile: 'Target file:',
+  targetFile: 'Target file',
   contentTooLong: 'Content too long, truncated. See full version in local file.',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: 'Written',
   applyToFile: 'Apply to file',
   noTasks: 'No tasks',
+  openFileFailed: 'Failed to open file',
 
   // Attachments
   contextInjected: 'Injected',

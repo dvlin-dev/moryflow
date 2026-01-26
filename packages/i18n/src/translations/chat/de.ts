@@ -95,6 +95,16 @@ const de = {
   allDocsAdded: 'Alle Dateien wurden hinzugefügt',
   noOpenDocs: 'Keine Dateien im Workspace',
   upgrade: 'Upgrade',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '{{completed}} von {{total}} Aufgaben erledigt',
@@ -112,6 +122,14 @@ const de = {
   statusError: 'Fehler',
   statusSkipped: 'Übersprungen',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // Tool-Labels
   parameters: 'Parameter',
   errorLabel: 'Fehler',
@@ -119,11 +137,16 @@ const de = {
 
   // Tool-Aktionen
   fileWritten: 'Datei geschrieben',
-  targetFile: 'Zieldatei:',
+  targetFile: 'Zieldatei',
   contentTooLong: 'Inhalt zu lang, gekürzt. Vollständige Version in lokaler Datei ansehen.',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: 'Geschrieben',
   applyToFile: 'Auf Datei anwenden',
   noTasks: 'Keine Aufgaben',
+  openFileFailed: 'Failed to open file',
 
   // Anhänge
   contextInjected: 'Eingefügt',

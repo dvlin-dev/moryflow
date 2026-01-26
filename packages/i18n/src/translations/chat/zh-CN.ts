@@ -92,6 +92,16 @@ const zhCN = {
   allDocsAdded: '所有文件都已添加',
   noOpenDocs: '工作区没有文件',
   upgrade: '升级',
+  updateModeFailed: 'Failed to update mode',
+
+  // Access mode
+  agentMode: 'Agent',
+  fullAccessMode: 'Full Access',
+  fullAccessConfirmTitle: 'Switch to full access?',
+  fullAccessConfirmDescription:
+    'Full access auto-approves risky actions and bypasses permission prompts for this session.',
+  confirmSwitch: 'Switch',
+  cancel: 'Cancel',
 
   // Todo panel
   tasksCompleted: '已完成 {{completed}}/{{total}} 个任务',
@@ -109,6 +119,14 @@ const zhCN = {
   statusError: '出错了',
   statusSkipped: '已跳过',
 
+  // Tool approval
+  approvalRequired: 'Approval required',
+  approvalRequestHint: 'Approve this tool call to continue.',
+  approvalGranted: 'Approval granted',
+  approveOnce: 'Approve once',
+  approveAlways: 'Always allow',
+  approvalFailed: 'Failed to approve tool',
+
   // 工具标签
   parameters: '参数',
   errorLabel: '错误',
@@ -116,11 +134,16 @@ const zhCN = {
 
   // 工具操作
   fileWritten: '已写入文件',
-  targetFile: '目标文件：',
+  targetFile: '目标文件',
   contentTooLong: '内容太长，已截断，在本地文件查看完整版。',
+  outputTruncated: 'Output truncated',
+  viewFullOutput: 'View full output',
+  fullOutputPath: 'Full output path',
+  fullOutputTitle: 'Full output',
   written: '已写入',
   applyToFile: '应用到文件',
   noTasks: '暂无任务',
+  openFileFailed: 'Failed to open file',
 
   // 附件
   contextInjected: '已注入',

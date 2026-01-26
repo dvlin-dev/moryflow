@@ -1,34 +1,63 @@
 /**
- * [INPUT]: MobileAgentRuntimeOptions + 会话/模型/工具配置
- * [OUTPUT]: MobileAgentRuntime - 负责对话执行与运行时管理
- * [POS]: Mobile 端 Agent Runtime 主入口（与 PC runtime 对齐）
+ * [INPUT]: Mobile 端聊天输入/上下文/会话/中断信号
+ * [OUTPUT]: Agent 运行结果流、会话历史更新与工具列表
+ * [POS]: Mobile 端 Agent Runtime 主入口（与 PC runtime 对齐，含 Compaction 预处理/Permission/Truncation/Doom Loop/模式注入 + Hook/Agent 配置 + runtime config 兜底）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { run, setTracingDisabled, user } from '@openai/agents-core';
+import type { UIMessage } from 'ai';
 import {
+  run,
+  setTracingDisabled,
+  user,
+  type AgentInputItem,
+  type ModelSettings,
+} from '@openai/agents-core';
+import {
+  DEFAULT_TOOL_OUTPUT_TRUNCATION,
+  DEFAULT_COMPACTION_CONFIG,
+  applyChatParamsHook,
+  applyChatSystemHook,
+  applyContextToInput,
+  compactHistory,
+  createCompactionPreflightGate,
   createAgentFactory,
   createModelFactory,
-  createVaultUtils,
   createSessionAdapter,
-  applyContextToInput,
+  createToolOutputPostProcessor,
+  createVaultUtils,
+  extractMembershipModelId,
+  getMorySystemPrompt,
+  resolveContextWindow,
   generateChatTitle,
+  generateCompactionSummary,
+  isMembershipModelId,
+  wrapToolsWithHooks,
+  wrapToolsWithOutputTruncation,
   type AgentFactory,
   type AgentContext,
   type ModelFactory,
-  type VaultUtils,
+  type CompactionResult,
   type AgentSettings,
+  type AgentRuntimeConfig,
+  type RuntimeHooksConfig,
+  type AgentMarkdownDefinition,
 } from '@anyhunt/agents-runtime';
 import { createMobileTools } from '@anyhunt/agents-tools';
-import { providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
+import { getModelById, providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
-import { mobileSessionStore } from './session-store';
-import { loadSettings, onSettingsChange } from './settings-store';
+import { mobileSessionStore, agentHistoryToUiMessages } from './session-store';
+import { loadSettings, onSettingsChange, getSettings } from './settings-store';
 import { getMembershipConfig } from './membership-bridge';
 import { initVaultManager } from '../vault';
+import { createMobileToolOutputStorage } from './tool-output-storage';
+import { initPermissionRuntime } from './permission-runtime';
+import { initDoomLoopRuntime } from './doom-loop-runtime';
+import { getRuntimeConfig } from './runtime-config';
+import { findAgentById, loadAgentDefinitions } from './agent-store';
 import { getSharedTasksStore } from './tasks-service';
 
 import type { MobileAgentRuntime, MobileAgentRuntimeOptions, MobileChatTurnResult } from './types';
@@ -39,14 +68,103 @@ const logger = createLogger('[Runtime]');
 // 禁用 tracing（Mobile 端的 AsyncLocalStorage 是简化实现）
 setTracingDisabled(true);
 
+const resolveCompactionContextWindow = (
+  modelId: string,
+  settings: AgentSettings
+): number | undefined => {
+  if (!modelId) return undefined;
+  const isMembership = isMembershipModelId(modelId);
+  const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
+  return resolveContextWindow({
+    modelId: normalized,
+    providers: isMembership ? [] : settings.providers,
+    getDefaultContext: (id) => getModelById(id)?.limits?.context,
+  });
+};
+
+const resolveRuntimeSystemPrompt = (): string => {
+  const base = selectedAgent?.systemPrompt ?? getMorySystemPrompt();
+  return applyChatSystemHook(base, runtimeHooks?.chat?.system);
+};
+
+const resolveRuntimeModelSettings = (): ModelSettings | undefined => {
+  const base = selectedAgent?.modelSettings as ModelSettings | undefined;
+  return applyChatParamsHook(base, runtimeHooks?.chat?.params);
+};
+
 // ============ 内部状态 ============
 
 let runtime: MobileAgentRuntime | null = null;
 let agentFactory: AgentFactory | null = null;
 let modelFactory: ModelFactory | null = null;
-let vaultUtils: VaultUtils | null = null;
 let vaultRoot: string | null = null;
 let toolNames: string[] = [];
+let runtimeConfig: AgentRuntimeConfig = {};
+let runtimeHooks: RuntimeHooksConfig | undefined;
+let selectedAgent: AgentMarkdownDefinition | null = null;
+
+const COMPACTION_PREPARE_TTL_MS = 60_000;
+const compactionPreflightGate = createCompactionPreflightGate({
+  ttlMs: COMPACTION_PREPARE_TTL_MS,
+});
+
+const applyCompactionIfNeeded = async (input: {
+  chatId: string;
+  session: ReturnType<typeof createSessionAdapter>;
+  preferredModelId?: string;
+  modelId?: string;
+}): Promise<{
+  compaction: CompactionResult;
+  effectiveHistory: AgentInputItem[];
+  modelId: string;
+}> => {
+  if (!agentFactory || !modelFactory) {
+    throw new Error('Agent Runtime 未初始化');
+  }
+  const { chatId, session, preferredModelId, modelId } = input;
+  const resolvedModelId = modelId ?? agentFactory.getAgent(preferredModelId).modelId;
+  const history = await session.getItems();
+  const settings = getSettings();
+  const contextWindow =
+    runtimeConfig.compaction?.contextWindow ??
+    resolveCompactionContextWindow(resolvedModelId, settings);
+  const compaction = await compactHistory({
+    history,
+    config: {
+      ...DEFAULT_COMPACTION_CONFIG,
+      ...(runtimeConfig.compaction ?? {}),
+      contextWindow,
+    },
+    summaryBuilder: async (items) => {
+      const { model } = modelFactory.buildRawModel(resolvedModelId);
+      return generateCompactionSummary(model, items);
+    },
+  });
+
+  if (compaction.triggered) {
+    logger.info('会话压缩完成', {
+      chatId,
+      summaryApplied: compaction.summaryApplied,
+      beforeTokens: compaction.stats.beforeTokens,
+      afterTokens: compaction.stats.afterTokens,
+      summaryTokens: compaction.stats.summaryTokens,
+      droppedToolTypes: compaction.stats.droppedToolTypes,
+    });
+  }
+
+  if (compaction.triggered && compaction.historyChanged) {
+    await session.clearSession();
+    if (compaction.history.length > 0) {
+      await session.addItems(compaction.history);
+    }
+  }
+
+  return {
+    compaction,
+    effectiveHistory: compaction.triggered ? compaction.history : history,
+    modelId: resolvedModelId,
+  };
+};
 
 // ============ 初始化 ============
 
@@ -59,6 +177,13 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   }
 
   const settings = await loadSettings();
+  runtimeConfig = await getRuntimeConfig();
+  runtimeHooks = runtimeConfig.hooks;
+  const agentDefinitions = await loadAgentDefinitions();
+  selectedAgent = findAgentById(agentDefinitions, runtimeConfig.agent?.id);
+  if (runtimeConfig.agent?.id && !selectedAgent) {
+    logger.warn('Agent not found:', runtimeConfig.agent.id);
+  }
   const capabilities = createMobileCapabilities();
   const crypto = createMobileCrypto();
 
@@ -66,13 +191,53 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
   const vault = await initVaultManager();
   vaultRoot = vault.path;
 
-  vaultUtils = createVaultUtils(capabilities, crypto, async () => {
+  const vaultUtils = createVaultUtils(capabilities, crypto, async () => {
     if (!vaultRoot) throw new Error('Vault 未初始化');
     return vaultRoot;
   });
 
   const tasksStore = getSharedTasksStore();
-  const baseTools = createMobileTools({ capabilities, crypto, vaultUtils, tasksStore });
+  const toolOutputConfig = {
+    ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
+    ...(runtimeConfig.truncation ?? {}),
+  };
+  const toolOutputStorage = createMobileToolOutputStorage({
+    crypto,
+    ttlDays: toolOutputConfig.ttlDays,
+  });
+
+  const toolOutputPostProcessor = createToolOutputPostProcessor({
+    config: toolOutputConfig,
+    storage: toolOutputStorage,
+    buildHint: ({ fullPath }) => {
+      if (!fullPath) {
+        return 'Full output could not be saved. Please retry the command if needed.';
+      }
+      return `Full output saved at ${fullPath}. Open it in the app to view the full content.`;
+    },
+  });
+
+  const permissionRuntime = initPermissionRuntime({ capabilities });
+  const doomLoopRuntime = initDoomLoopRuntime({
+    uiAvailable: true,
+    config: runtimeConfig.doomLoop,
+    shouldSkip: ({ callId }) => {
+      if (!callId) return false;
+      const decision = permissionRuntime.getDecision(callId);
+      return decision?.decision === 'deny';
+    },
+  });
+  const baseTools = wrapToolsWithOutputTruncation(
+    doomLoopRuntime.wrapTools(
+      permissionRuntime.wrapTools(
+        wrapToolsWithHooks(
+          createMobileTools({ capabilities, crypto, vaultUtils, tasksStore }),
+          runtimeHooks
+        )
+      )
+    ),
+    toolOutputPostProcessor
+  );
   toolNames = baseTools.map((tool) => tool.name);
   if (__DEV__) {
     logger.debug('加载的工具:', toolNames);
@@ -90,6 +255,8 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     getModelFactory: () => modelFactory!,
     baseTools,
     getMcpTools: () => [], // 移动端暂不支持 MCP
+    getInstructions: resolveRuntimeSystemPrompt,
+    getModelSettings: resolveRuntimeModelSettings,
   });
 
   onSettingsChange((next: AgentSettings) => {
@@ -116,15 +283,25 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
  */
 function createRuntimeInstance(): MobileAgentRuntime {
   return {
+    async prepareCompaction({ chatId, preferredModelId, session }) {
+      const { compaction, modelId } = await applyCompactionIfNeeded({
+        chatId,
+        session,
+        preferredModelId,
+      });
+      compactionPreflightGate.markPrepared(chatId, modelId);
+      return compaction;
+    },
     async runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult> {
-      const { chatId, input, preferredModelId, context, session, attachments, signal } = options;
+      const { chatId, input, preferredModelId, context, session, attachments, signal, mode } =
+        options;
 
       const trimmed = input.trim();
       if (!trimmed) throw new Error('输入不能为空');
       if (!vaultRoot) throw new Error('Vault 未初始化');
       if (!agentFactory) throw new Error('Agent Runtime 未初始化');
 
-      const { agent } = agentFactory.getAgent(preferredModelId);
+      const { agent, modelId } = agentFactory.getAgent(preferredModelId);
       if (__DEV__) {
         logger.debug(
           'runChatTurn agent.tools:',
@@ -132,17 +309,29 @@ function createRuntimeInstance(): MobileAgentRuntime {
         );
       }
 
+      const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
+        ? await session.getItems()
+        : (
+            await applyCompactionIfNeeded({
+              chatId,
+              session,
+              preferredModelId,
+              modelId,
+            })
+          ).effectiveHistory;
+
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
+      const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
       const agentContext: AgentContext = {
+        mode: effectiveMode,
         vaultRoot,
         chatId,
         buildModel: modelFactory?.buildModel,
       };
 
       // 使用 expo/fetch 支持流式响应
-      const history = await session.getItems();
       const userItem = user(inputWithContext);
-      const runInput = history.length > 0 ? [...history, userItem] : [userItem];
+      const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 
       const result = await run(agent, runInput, {
@@ -216,6 +405,7 @@ export async function runChatTurn(params: {
   preferredModelId?: string;
   context?: import('@anyhunt/agents-runtime').AgentChatContext;
   attachments?: import('@anyhunt/agents-runtime').AgentAttachmentContext[];
+  mode?: import('@anyhunt/agents-runtime').AgentAccessMode;
   signal?: AbortSignal;
 }): Promise<MobileChatTurnResult> {
   const rt = await getAgentRuntime();
@@ -224,10 +414,35 @@ export async function runChatTurn(params: {
 }
 
 /**
+ * 发送前预处理会话压缩
+ */
+export async function prepareCompaction(params: {
+  chatId: string;
+  preferredModelId?: string;
+}): Promise<{ changed: boolean; messages?: UIMessage[] }> {
+  const rt = await getAgentRuntime();
+  const session = createSessionAdapter(params.chatId, mobileSessionStore);
+  const compaction = await rt.prepareCompaction({
+    chatId: params.chatId,
+    preferredModelId: params.preferredModelId,
+    session,
+  });
+  if (!compaction.historyChanged) {
+    return { changed: false };
+  }
+  // 从压缩后的历史重新生成 UI 消息，确保 UI 与 agent 历史一致
+  const uiMessages = agentHistoryToUiMessages(params.chatId, compaction.history);
+  await mobileSessionStore.saveUiMessages(params.chatId, uiMessages);
+  return { changed: true, messages: uiMessages };
+}
+
+/**
  * 创建新的聊天会话
  */
 export async function createChatSession(title?: string) {
-  return mobileSessionStore.createSession(title);
+  const config = await getRuntimeConfig();
+  runtimeConfig = config;
+  return mobileSessionStore.createSession(title, config.mode?.default);
 }
 
 /**

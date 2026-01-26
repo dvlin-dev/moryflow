@@ -98,6 +98,24 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Markdown 去重移除时补齐索引守卫，runtime config 仅保留必要导出
+- Agent Markdown 读取补齐空值守卫，避免重复 ID 处理时类型收敛报错
+- Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，桌面端按开关加载外部工具
+- 新建会话读取 runtime 默认 mode（config.jsonc）
+- Chat 会话模式切换补齐审计：主进程记录 mode switch JSONL，更新前校验并写入
+- ChatSessionStore 读取时归一化会话 mode，避免缺失字段导致异常
+- Chat 会话模式切换：会话级模式存储、IPC 更新入口与运行时注入，全权限自动放行并审计
+- 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
+- agent-runtime README 对齐 ADR-0002 控制面落地说明
+- Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always
+- Chat 会话压缩预处理：发送前执行 compaction，IPC 返回 UI 消息并仅在同一模型内跳过重复压缩
+- ChatSessionStore 清空 history 同步清空 uiMessages，避免索引错位
+- Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要
+- 修复审批续跑输出持久化，避免多轮 run 丢失输出
+- AgentStreamResult 增补 RunState/输出只读字段，保障审批恢复与输出持久化
+- Chat Tool 权限审批：支持 RunState 中断/恢复、JSONC 规则落地与审计
+- Agent Runtime tool-output storage 移除未使用导出
+- Agent Runtime 新增工具输出统一截断与落盘清理；IPC 增加 `files:openPath`
 - Agent Runtime 支持 system prompt/模型参数注入，参数改为可选覆盖并默认使用模型默认值
 - Agent Runtime/Agent 设置改用 `@anyhunt/agents-runtime/prompt` 读取 system prompt
 - Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口

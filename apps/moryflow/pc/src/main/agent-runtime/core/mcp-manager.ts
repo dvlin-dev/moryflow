@@ -131,7 +131,7 @@ export const createMcpManager = (): McpManager<AgentContext> => {
       if (result.status === 'connected') {
         connectedServers.push(server);
         // 为每个服务器单独获取工具
-        const serverTools = await getToolsFromServers<AgentContext>([server]);
+        const serverTools = await getToolsFromServers<AgentContext>([{ server, id }]);
         mcpTools.push(...serverTools);
 
         // 更新服务器状态，包含工具名称

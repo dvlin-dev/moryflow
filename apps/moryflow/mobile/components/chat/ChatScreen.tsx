@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { showHeader?, isInSheet?, onClose? } - 聊天屏幕配置
  * [EMITS]: 无
- * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致
+ * [POS]: 聊天主屏幕，使用可组合架构与 PC 端 chat-pane 保持一致（含会话模式切换）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,6 +15,7 @@ import { useTranslation } from '@/lib/i18n';
 import { useModels, useSelectedModel } from '@/lib/models';
 import { useChatSessions } from '@/lib/hooks/use-chat-sessions';
 import { useStoredMessages } from '@/lib/hooks/use-stored-messages';
+import { toast } from '@/lib/contexts/toast.context';
 import { ChatHeader } from './ChatHeader';
 import { ChatInputBar, type SendMessagePayload } from './ChatInputBar';
 import { ModelPickerSheet } from './ModelPickerSheet';
@@ -25,6 +26,7 @@ import { ChatProvider, useChatLayout, useMessageAnimation } from './contexts';
 import { ChatMessageList, ChatErrorBanner, ChatInitBanner, ChatEmptyState } from './components';
 import { useChatRuntime, useChatState, useModalState } from './hooks';
 import { cn } from '@/lib/utils';
+import { approveToolRequest } from '@/lib/chat';
 
 interface ChatScreenProps {
   showHeader?: boolean;
@@ -68,6 +70,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     activeSessionId,
     selectSession,
     createSession,
+    updateSessionMode,
     deleteSession,
     refreshSessions,
     isReady: sessionsReady,
@@ -96,9 +99,11 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     sendMessage,
     stop,
     setMessages,
+    addToolApprovalResponse,
   } = useChatState({
     activeSessionId,
     selectedModelId,
+    mode: activeSession?.mode ?? 'agent',
     refreshSessions,
   });
 
@@ -140,6 +145,37 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
     closeModelPicker();
   };
 
+  const handleToolApproval = React.useCallback(
+    async (input: { approvalId: string; remember: 'once' | 'always' }) => {
+      if (!input.approvalId) return;
+      try {
+        await approveToolRequest({
+          approvalId: input.approvalId,
+          remember: input.remember,
+        });
+        addToolApprovalResponse({
+          id: input.approvalId,
+          approved: true,
+          reason: input.remember === 'always' ? 'always' : undefined,
+        });
+      } catch (error) {
+        console.error('[chat] approve tool failed', error);
+        toast(t('approvalFailed'), 'error');
+      }
+    },
+    [addToolApprovalResponse, t]
+  );
+
+  const handleModeChange = React.useCallback(
+    (mode: 'agent' | 'full_access') => {
+      if (!activeSessionId) {
+        return;
+      }
+      updateSessionMode(activeSessionId, mode);
+    },
+    [activeSessionId, updateSessionMode]
+  );
+
   // 渲染
   const isDark = colorScheme === 'dark';
   const isReady = isInitialized && sessionsReady;
@@ -167,6 +203,7 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
             messages={displayMessages}
             isStreaming={isStreaming}
             isInSheet={isInSheet}
+            onToolApproval={handleToolApproval}
           />
         )}
 
@@ -186,6 +223,8 @@ function ChatScreenContent({ showHeader = true, isInSheet = false }: ChatScreenP
             onModelChange={selectModel}
             isInSheet={isInSheet}
             disableBottomPadding={true}
+            mode={activeSession?.mode ?? 'agent'}
+            onModeChange={handleModeChange}
           />
 
           {/* 动态高度：依赖 insets，需保留 style */}

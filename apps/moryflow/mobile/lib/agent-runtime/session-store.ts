@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime';
 
 // ============ 常量 ============
 
@@ -120,12 +120,20 @@ class MobileSessionStoreImpl implements SessionStore {
       const valid = parsed.filter(
         (s) => s && typeof s.id === 'string' && typeof s.title === 'string'
       );
-      // 如果有损坏数据，保存清理后的结果
-      if (valid.length !== parsed.length) {
+      let changed = valid.length !== parsed.length;
+      const normalized = valid.map((session) => {
+        if (session.mode === 'agent' || session.mode === 'full_access') {
+          return session;
+        }
+        changed = true;
+        return { ...session, mode: 'agent' };
+      });
+      // 如果有损坏或缺失字段，保存清理后的结果
+      if (changed) {
         console.warn('[SessionStore] Cleaned', parsed.length - valid.length, 'corrupted sessions');
-        await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(valid));
+        await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(normalized));
       }
-      return valid;
+      return normalized;
     } catch {
       return [];
     }
@@ -134,14 +142,19 @@ class MobileSessionStoreImpl implements SessionStore {
   /**
    * 创建新会话
    */
-  async createSession(title: string = '新对话'): Promise<ChatSessionSummary> {
+  async createSession(
+    title: string = '新对话',
+    mode?: AgentAccessMode
+  ): Promise<ChatSessionSummary> {
     const sessions = await this.getSessions();
     const now = Date.now();
+    const normalizedMode = mode === 'full_access' || mode === 'agent' ? mode : 'agent';
     const session: ChatSessionSummary = {
       id: randomUUID(),
       title,
       createdAt: now,
       updatedAt: now,
+      mode: normalizedMode,
     };
     sessions.unshift(session);
     await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
@@ -155,11 +168,15 @@ class MobileSessionStoreImpl implements SessionStore {
     const sessions = await this.getSessions();
     const index = sessions.findIndex((s) => s.id === id);
     if (index >= 0) {
-      sessions[index] = {
+      const next = {
         ...sessions[index],
         ...updates,
         updatedAt: Date.now(),
       };
+      if (next.mode !== 'agent' && next.mode !== 'full_access') {
+        next.mode = 'agent';
+      }
+      sessions[index] = next;
       await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
     }
   }
@@ -213,7 +230,10 @@ class MobileSessionStoreImpl implements SessionStore {
    * 清空历史
    */
   async clearHistory(chatId: string): Promise<void> {
-    await AsyncStorage.removeItem(`${HISTORY_PREFIX}${chatId}`);
+    await AsyncStorage.multiRemove([
+      `${HISTORY_PREFIX}${chatId}`,
+      `${UI_MESSAGES_PREFIX}${chatId}`,
+    ]);
   }
 
   /**
@@ -317,7 +337,8 @@ export const mobileSessionStore = new MobileSessionStoreImpl();
  * 快捷方法导出
  */
 export const getSessions = () => mobileSessionStore.getSessions();
-export const createSession = (title?: string) => mobileSessionStore.createSession(title);
+export const createSession = (title?: string, mode?: AgentAccessMode) =>
+  mobileSessionStore.createSession(title, mode);
 export const updateSession = (id: string, updates: Partial<ChatSessionSummary>) =>
   mobileSessionStore.updateSession(id, updates);
 export const deleteSession = (id: string) => mobileSessionStore.deleteSession(id);
@@ -332,3 +353,6 @@ export const getUiMessages = (chatId: string) => mobileSessionStore.getUiMessage
 export const saveUiMessages = (chatId: string, messages: UIMessage[]) =>
   mobileSessionStore.saveUiMessages(chatId, messages);
 export const clearUiMessages = (chatId: string) => mobileSessionStore.clearUiMessages(chatId);
+
+// 导出转换函数供 compaction 使用
+export { agentHistoryToUiMessages };

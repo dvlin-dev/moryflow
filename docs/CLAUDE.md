@@ -41,6 +41,16 @@
 
 ## 最近更新
 
+- ADR-0002：补充外部化/Hook 示例（JSONC/Agent/Tool）（2026-01-30）
+- ADR-0002：P2-7/P2-8 外部化与 Hook 落地完成（2026-01-29）
+- ADR-0002：P1-5 模式切换落地完成（PC + Mobile）（2026-01-28）
+- ADR-0002：示例文案统一为“待办”表述（2026-01-27）
+- ADR-0002：P1-4 Doom Loop 落地完成（PC + Mobile）（2026-01-27）
+- ADR-0002：补充 compaction 摘要输入裁剪规则（2026-01-27）
+- ADR-0002：P1-3 会话压缩落地完成（PC + Mobile）（2026-01-26）
+- ADR-0002：补充 Compaction“裁剪旧工具输出”示例（2026-01-26）
+- ADR-0002：P0-2 权限系统落地完成（审批卡/JSONC/审计）（2026-01-26）
+- ADR-0002：确认 P0-2 权限落地细节（审批卡位置、规则直接写 JSONC、Mobile 审计路径）（2026-01-26）
 - Auth API Key 文档：更新明文存储与前端脱敏展示约束（2026-01-27）
 - Moryflow Agent Tasks 系统方案（IPC + PC/Mobile UI + 执行清单完成 + 单元测试覆盖 + 子代理同步测试）：`docs/architecture/agent-tasks-system.md`（2026-01-25：completed）
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`（2026-01-27：done）
@@ -53,6 +63,8 @@
 - API Client 方案清理 envelope 相关内容：`docs/architecture/api-client-unification.md`（2026-01-26）
 - API Client 方案补充 requestId 约定与校验错误示例：`docs/architecture/api-client-unification.md`（2026-01-26）
 - API Client 方案补充 errors 数组原因与前端展示建议：`docs/architecture/api-client-unification.md`（2026-01-26）
+- Moryflow Agent Tasks 系统方案（IPC + PC/Mobile UI + 执行清单完成 + 单元测试覆盖 + 子代理同步测试）：`docs/architecture/agent-tasks-system.md`（2026-01-25：completed）
+- Moryflow Agent Tasks 系统方案：修正 Mobile SQLite 打开方式（2026-01-25）
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25：draft）
 - Auth access token 设备端方案补充（PC/移动端安全存储 + Device refresh）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25）
 - Moryflow PC/Mobile Access Token 持久化升级方案：`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`（2026-01-25：draft）
@@ -60,6 +72,7 @@
 - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（2026-01-25：review）
 - Moryflow 云同步文档收敛为单一方案（统一技术方案/绑定/实施现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`（2026-01-25）
+- ADR-0002：P0-1 工具输出截断落地进度更新（2026-01-25）
 - ADR-0002：系统提示词参数改为高级可选覆盖（默认使用模型默认值）（2026-01-26）
 - ADR-0002：补充系统提示词/参数自定义（默认/自定义、参数范围、禁用时间占位符）（2026-01-26）
 - ADR-0002：合并 OpenCode 对标与落地清单，删除独立对标文档（2026-01-26）

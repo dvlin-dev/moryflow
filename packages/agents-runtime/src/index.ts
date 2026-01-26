@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: createAgentFactory, createModelFactory, createVaultUtils - Agent 运行时核心
+ * [PROVIDES]: createAgentFactory/createModelFactory/createVaultUtils/ContextWindow/ToolOutputTruncation/Compaction/DoomLoop/RuntimeConfig/Hooks/AgentMarkdown - Agent 运行时核心
  * [DEPENDS]: @openai/agents-core, @openai/agents-extensions - 底层 Agent 框架
  * [POS]: 平台无关的运行时抽象，被 pc/main 和 mobile 的 agent-runtime 依赖
  *
@@ -42,3 +42,102 @@ export {
 
 // 标题生成
 export { generateChatTitle } from './title-generator';
+
+// 上下文窗口解析
+export {
+  resolveContextWindow,
+  type ProviderModelContextSource,
+  type ResolveContextWindowInput,
+} from './context-window';
+
+// Compaction
+export {
+  compactHistory,
+  generateCompactionSummary,
+  DEFAULT_COMPACTION_CONFIG,
+  type CompactionConfig,
+  type CompactionResult,
+  type CompactionStats,
+} from './compaction';
+export {
+  createCompactionPreflightGate,
+  type CompactionPreflightGateOptions,
+} from './compaction-preflight';
+
+// Tool 输出截断
+export {
+  DEFAULT_TOOL_OUTPUT_TRUNCATION,
+  createToolOutputPostProcessor,
+  isTruncatedToolOutput,
+  wrapToolWithOutputTruncation,
+  wrapToolsWithOutputTruncation,
+  type ToolOutputTruncationConfig,
+  type ToolOutputStorage,
+  type ToolOutputStorageWriteInput,
+  type ToolOutputStorageWriteResult,
+  type ToolOutputPostProcessor,
+  type ToolOutputPostProcessorOptions,
+  type TruncatedToolOutput,
+} from './tool-output';
+
+// Permission
+export {
+  buildDefaultPermissionRules,
+  createPermissionDeniedOutput,
+  evaluatePermissionDecision,
+  isPermissionDeniedOutput,
+  isPermissionRule,
+  resolveToolPermissionTargets,
+  wrapToolWithPermission,
+  wrapToolsWithPermission,
+  type PermissionAuditEvent,
+  type PermissionCheck,
+  type PermissionCheckInput,
+  type PermissionCheckResult,
+  type PermissionDecision,
+  type PermissionDecisionInfo,
+  type PermissionDeniedOutput,
+  type PermissionDomain,
+  type PermissionRule,
+  type PermissionTargets,
+} from './permission';
+export { type ModeSwitchAuditEvent } from './mode-audit';
+
+export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';
+
+// Runtime Config / Hooks / Agent Markdown
+export {
+  parseRuntimeConfig,
+  mergeRuntimeConfig,
+  type AgentRuntimeConfig,
+  type RuntimeConfigParseResult,
+} from './runtime-config';
+export {
+  applyChatParamsHook,
+  applyChatSystemHook,
+  sanitizeHooksConfig,
+  sanitizeModelSettings,
+  wrapToolWithHooks,
+  wrapToolsWithHooks,
+  type ChatParamsHook,
+  type ChatSystemHook,
+  type RuntimeHooksConfig,
+  type ToolHookRule,
+} from './hooks';
+export { parseAgentMarkdown, type AgentMarkdownDefinition } from './agent-markdown';
+
+// Doom Loop
+export {
+  createDoomLoopGuard,
+  wrapToolWithDoomLoop,
+  wrapToolsWithDoomLoop,
+  DEFAULT_DOOM_LOOP_CONFIG,
+  DoomLoopError,
+  type DoomLoopAction,
+  type DoomLoopApprovalInfo,
+  type DoomLoopCheckInput,
+  type DoomLoopConfig,
+  type DoomLoopDecision,
+  type DoomLoopGuard,
+  type DoomLoopReason,
+} from './doom-loop';

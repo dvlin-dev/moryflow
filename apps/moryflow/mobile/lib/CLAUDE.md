@@ -52,6 +52,18 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Mobile Runtime 读取 JSONC 配置增加容错降级，创建会话前确保加载默认 mode
+- Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，创建会话读取默认 mode
+- Chat 会话模式切换补齐审计写入，SessionStore 读写时归一化 mode
+- Agent Runtime 支持会话级模式注入，权限自动放行并记录审计
+- 审批持久化失败不再阻断清理流程，取消/停止时同步清理 Doom Loop 与权限决策缓存
+- Agent Runtime 接入 Doom Loop 守卫：重复工具检测触发审批并支持会话级 always
+- Agent Runtime 增加 compaction 发送前预处理，仅在同一模型内跳过重复压缩，保证 UI/历史一致
+- Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要
+- 修复审批续跑输出持久化与 abort 收敛，审计写入改为串行
+- Mobile AgentStreamResult 增补 RunState/输出只读字段，支持审批恢复与输出持久化
+- Chat Transport 支持工具权限审批（中断/恢复 + JSONC 规则落地）
+- Agent Runtime 新增工具输出统一截断与落盘清理（Mobile）
 - Agent Runtime 改为使用 `@openai/agents-core` 类型与运行入口，移除 `@anyhunt/agents` 依赖
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）
 - Server 会员导出收敛，移除未使用的等级比较/优先级常量

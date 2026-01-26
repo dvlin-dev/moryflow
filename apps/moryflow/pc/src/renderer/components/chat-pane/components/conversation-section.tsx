@@ -30,6 +30,7 @@ type Props = ConversationLayoutContext & {
   status: ChatStatus;
   error?: Error | null;
   messageActions?: MessageActionHandlers;
+  onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
 };
 
 /**
@@ -44,6 +45,7 @@ export const ConversationSection = ({
   getMessageLayout,
   registerMessageRef,
   messageActions,
+  onToolApproval,
 }: Props) => {
   const { t } = useTranslation('chat');
 
@@ -83,6 +85,7 @@ export const ConversationSection = ({
                   isPlaceholder={isPlaceholder}
                   isLastAssistant={isLastAssistant}
                   actions={messageActions}
+                  onToolApproval={onToolApproval}
                 />
               );
             })}

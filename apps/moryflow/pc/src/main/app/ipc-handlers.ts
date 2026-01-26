@@ -1,5 +1,5 @@
 /**
- * [INPUT]: IPC payloads from renderer/preload（含外链打开请求）
+ * [INPUT]: IPC payloads from renderer/preload（含外链与工具输出文件打开请求）
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
  *
@@ -7,7 +7,8 @@
  */
 
 import { existsSync } from 'node:fs';
-import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'node:path';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { getProviderById, toApiModelId } from '../../shared/model-registry/index.js';
 import type { VaultTreeNode } from '../../shared/ipc.js';
 import {
@@ -36,6 +37,7 @@ import { getAgentSettings, updateAgentSettings } from '../agent-settings/index.j
 import { resetApp } from '../app-maintenance.js';
 import { getAllPreloadCache, setPreloadCache } from '../preload-cache.js';
 import { getPreloadConfig, setPreloadConfig } from '../preload-settings.js';
+import { isToolOutputPathAllowed } from '../agent-runtime/tool-output-storage.js';
 import {
   getExpandedPaths,
   setExpandedPaths,
@@ -62,7 +64,6 @@ import {
   setAccessTokenExpiresAt,
   clearAccessTokenExpiresAt,
 } from '../membership-token-store.js';
-import path from 'node:path';
 import {
   cloudSyncEngine,
   cloudSyncApi,
@@ -272,6 +273,33 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
   ipcMain.handle('files:move', (_event, payload) => moveVaultEntry(payload ?? {}));
   ipcMain.handle('files:delete', (_event, payload) => deleteVaultEntry(payload ?? {}));
   ipcMain.handle('files:showInFinder', (_event, payload) => showItemInFinder(payload ?? {}));
+  ipcMain.handle('files:openPath', async (_event, payload) => {
+    const targetPath = typeof payload?.path === 'string' ? payload.path : '';
+    if (!targetPath) {
+      throw new Error('Path is required');
+    }
+
+    const vaultInfo = await getStoredVault();
+    const resolvedPath = path.resolve(targetPath);
+    const allowed = isToolOutputPathAllowed({
+      targetPath: resolvedPath,
+      vaultRoot: vaultInfo?.path,
+      pathUtils: path,
+    });
+
+    if (!allowed) {
+      throw new Error('Path is not allowed');
+    }
+
+    if (!existsSync(resolvedPath)) {
+      throw new Error('File not found');
+    }
+
+    const openError = await shell.openPath(resolvedPath);
+    if (openError) {
+      throw new Error(openError);
+    }
+  });
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
   ipcMain.handle('tasks:list', async (_event, payload) => {

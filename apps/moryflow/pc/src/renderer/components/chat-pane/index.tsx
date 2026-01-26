@@ -5,6 +5,7 @@ import { IpcChatTransport } from '@/transport/ipc-chat-transport';
 import { getModelContextWindow } from '@shared/model-registry';
 import { useAuth } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
+import { toast } from 'sonner';
 
 import { type ChatPaneProps } from './const';
 import { ChatPaneHeader } from './components/chat-pane-header';
@@ -42,6 +43,7 @@ export const ChatPane = ({
     activeSessionId,
     selectSession,
     createSession,
+    updateSessionMode,
     deleteSession,
     isReady: sessionsReady,
   } = useChatSessions();
@@ -70,7 +72,16 @@ export const ChatPane = ({
     () => new IpcChatTransport(() => agentOptionsRef.current),
     [agentOptionsRef]
   );
-  const { messages, sendMessage, regenerate, status, stop, error, setMessages } = useChat({
+  const {
+    messages,
+    sendMessage,
+    regenerate,
+    status,
+    stop,
+    error,
+    setMessages,
+    addToolApprovalResponse,
+  } = useChat({
     id: activeSessionId ?? 'pending',
     transport,
   });
@@ -89,6 +100,7 @@ export const ChatPane = ({
     setMessages,
     regenerate,
     selectSession,
+    preferredModelId: selectedModelId,
   });
 
   const hasModelOptions = useMemo(
@@ -130,6 +142,20 @@ export const ChatPane = ({
 
       setInputError(null);
 
+      if (activeSessionId && window.desktopAPI?.chat?.prepareCompaction) {
+        try {
+          const result = await window.desktopAPI.chat.prepareCompaction({
+            sessionId: activeSessionId,
+            preferredModelId: selectedModelId ?? undefined,
+          });
+          if (result.changed && Array.isArray(result.messages)) {
+            setMessages(result.messages);
+          }
+        } catch (error) {
+          console.warn('[chat-pane] prepareCompaction failed', error);
+        }
+      }
+
       // 将附件存入消息的 metadata
       const metadata =
         payload.attachments.length > 0
@@ -169,6 +195,44 @@ export const ChatPane = ({
     stop();
   }, [stop]);
 
+  const handleToolApproval = useCallback(
+    async (input: { approvalId: string; remember: 'once' | 'always' }) => {
+      if (!input.approvalId || typeof window === 'undefined' || !window.desktopAPI?.chat) {
+        return;
+      }
+      try {
+        await window.desktopAPI.chat.approveTool({
+          approvalId: input.approvalId,
+          remember: input.remember,
+        });
+        addToolApprovalResponse({
+          id: input.approvalId,
+          approved: true,
+          reason: input.remember === 'always' ? 'always' : undefined,
+        });
+      } catch (error) {
+        console.error(error);
+        toast.error(t('approvalFailed'));
+      }
+    },
+    [addToolApprovalResponse, t]
+  );
+
+  const handleModeChange = useCallback(
+    async (mode: 'agent' | 'full_access') => {
+      if (!activeSessionId) {
+        return;
+      }
+      try {
+        await updateSessionMode(activeSessionId, mode);
+      } catch (error) {
+        console.error('[chat-pane] failed to update session mode', error);
+        toast.error(t('updateModeFailed'));
+      }
+    },
+    [activeSessionId, updateSessionMode, t]
+  );
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       <TasksPanel open={tasksOpen} onOpenChange={setTasksOpen} activeSessionId={activeSessionId} />
@@ -199,6 +263,7 @@ export const ChatPane = ({
               getMessageLayout={getMessageLayout}
               registerMessageRef={registerMessageRef}
               messageActions={messageActions}
+              onToolApproval={handleToolApproval}
             />
           </div>
         </CardContent>
@@ -218,6 +283,8 @@ export const ChatPane = ({
           onOpenSettings={onOpenSettings}
           tokenUsage={activeSession?.tokenUsage}
           contextWindow={getModelContextWindow(selectedModelId)}
+          mode={activeSession?.mode ?? 'agent'}
+          onModeChange={handleModeChange}
         />
       </div>
     </div>

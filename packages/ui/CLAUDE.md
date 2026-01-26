@@ -46,6 +46,8 @@ import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
 
 ## 近期变更
 
+- ToolOutput：打开完整输出时补齐错误边界
+- ToolOutput：新增截断输出标识与完整输出打开入口
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
 - MessageList：新增通用消息列表封装，统一占位与滚动布局并补齐稳定 key

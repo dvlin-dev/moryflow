@@ -42,12 +42,14 @@ interface MessageBubbleProps {
   isStreaming?: boolean;
   /** 是否是最后一条消息 */
   isLastMessage?: boolean;
+  onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
 }
 
 export const MessageBubble = React.memo(function MessageBubble({
   message,
   isStreaming = false,
   isLastMessage = false,
+  onToolApproval,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
@@ -56,7 +58,12 @@ export const MessageBubble = React.memo(function MessageBubble({
   }
 
   return (
-    <AssistantMessage message={message} isStreaming={isStreaming} isLastMessage={isLastMessage} />
+    <AssistantMessage
+      message={message}
+      isStreaming={isStreaming}
+      isLastMessage={isLastMessage}
+      onToolApproval={onToolApproval}
+    />
   );
 });
 
@@ -134,12 +141,14 @@ interface AssistantMessageProps {
   message: UIMessage;
   isStreaming: boolean;
   isLastMessage?: boolean;
+  onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
 }
 
 function AssistantMessage({
   message,
   isStreaming: _isStreaming,
   isLastMessage: _isLastMessage = false,
+  onToolApproval,
 }: AssistantMessageProps) {
   const parts = message.parts ?? [];
   const { shouldAnimate, markAnimated, lastUserMessageAnimated } = useMessageAnimation();
@@ -207,7 +216,11 @@ function AssistantMessage({
       <View className="flex-row justify-start">
         <View className="w-[85%]">
           {parts.map((part, index) => (
-            <MessagePart key={`${message.id}-part-${index}`} part={part} />
+            <MessagePart
+              key={`${message.id}-part-${index}`}
+              part={part}
+              onToolApproval={onToolApproval}
+            />
           ))}
         </View>
       </View>
@@ -219,9 +232,10 @@ function AssistantMessage({
 
 interface MessagePartProps {
   part: UIMessage['parts'][number];
+  onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
 }
 
-function MessagePart({ part }: MessagePartProps) {
+function MessagePart({ part, onToolApproval }: MessagePartProps) {
   if (isTextUIPart(part)) {
     return <MessageContent content={part.text ?? ''} />;
   }
@@ -246,6 +260,8 @@ function MessagePart({ part }: MessagePartProps) {
         input={toolPart.input as Record<string, unknown> | undefined}
         output={toolPart.output}
         errorText={toolPart.errorText}
+        approval={toolPart.approval}
+        onToolApproval={onToolApproval}
       />
     );
   }

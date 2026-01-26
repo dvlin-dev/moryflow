@@ -2,12 +2,14 @@
  * Mobile Agent Runtime 类型定义
  */
 
-import type { Agent, RunStreamEvent } from '@openai/agents-core';
+import type { Agent, RunStreamEvent, RunState, AgentInputItem } from '@openai/agents-core';
 import type {
   AgentContext,
   AgentChatContext,
   AgentAttachmentContext,
   Session,
+  CompactionResult,
+  AgentAccessMode,
 } from '@anyhunt/agents-runtime';
 
 // ============ Runtime 选项 ============
@@ -21,6 +23,8 @@ export interface MobileAgentRuntimeOptions {
   preferredModelId?: string;
   /** 结构化上下文信息 */
   context?: AgentChatContext;
+  /** 会话级访问模式 */
+  mode?: AgentAccessMode;
   /** SDK Session 实例 */
   session: Session;
   /** 附件上下文 */
@@ -35,8 +39,10 @@ export interface MobileAgentRuntimeOptions {
  * 流式运行结果
  */
 export interface MobileAgentStreamResult extends AsyncIterable<RunStreamEvent> {
-  completed: Promise<void>;
-  finalOutput?: string;
+  readonly completed: Promise<void>;
+  readonly finalOutput?: unknown;
+  readonly state: RunState<AgentContext, Agent<AgentContext>>;
+  readonly output: AgentInputItem[];
 }
 
 /**
@@ -56,6 +62,12 @@ export interface MobileChatTurnResult {
 export interface MobileAgentRuntime {
   /** 执行单轮对话 */
   runChatTurn(options: MobileAgentRuntimeOptions): Promise<MobileChatTurnResult>;
+  /** 预处理会话压缩（用于发送前同步 UI 状态） */
+  prepareCompaction(options: {
+    chatId: string;
+    preferredModelId?: string;
+    session: Session;
+  }): Promise<CompactionResult>;
   /** 获取 Vault 根目录 */
   getVaultRoot(): Promise<string>;
   /** 当前是否已初始化 */

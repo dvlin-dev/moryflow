@@ -120,6 +120,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - PC 可直接打开完整输出；Mobile 可在聊天内弹层查看。
 - UI 清晰标识“已截断”，并提供可追踪路径。
 
+**进度**
+
+- 2026-01-25：已完成 Moryflow PC + Mobile 落地（统一后处理截断、Vault/应用目录落盘、聊天内“查看完整输出”、TTL 清理）。
+
 ### P0-2 工具权限系统扩展（Permission）
 
 **任务**
@@ -136,6 +140,11 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - `always` 规则用户级生效；会话内可复用。
 - 审批走中断/恢复，流程可追踪且不会卡死会话。
 
+**进度**
+
+- 2026-01-26：确认审批 UI 放在工具卡内（once/always），权限规则直接写入用户级 JSONC（不做运行时存储过渡），Mobile 审计路径为 `Paths.document/agent-audit`。
+- 2026-01-26：完成 PC + Mobile 权限落地（RunState 中断/恢复、tool-approval-request、审批卡与 JSONC 规则持久化、审计记录）。
+
 ### P1-3 会话压缩（Compaction）
 
 **任务**
@@ -150,6 +159,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - 长对话接近阈值时触发压缩，避免上下文溢出。
 - 重写历史后可继续对话，摘要可被 UI/日志验证。
 
+**进度**
+
+- 2026-01-26：完成 PC + Mobile Compaction 落地（阈值判断、旧工具输出裁剪、摘要重写与统计记录）。
+
 ### P1-4 Doom Loop 检测
 
 **任务**
@@ -157,6 +170,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 1. 追踪单次 run 的工具调用序列、总次数、连续重复次数。
 2. 命中阈值时触发 `doom_loop` 审批（only once/always）。
 3. 用户选择继续时重置计数并进入冷却窗口；选择停止时终止 run。
+
+**进度**
+
+- 2026-01-27：完成 PC + Mobile Doom Loop 落地（重复检测、审批接入、冷却与会话级 always）。
 
 **验收**
 
@@ -175,6 +192,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 
 - 模式切换仅影响当前会话，且有明确提示。
 - 全权限模式无审批卡片，但审计可追踪。
+
+**进度**
+
+- 2026-01-28：完成 PC + Mobile 模式切换落地（会话级模式存储、全权限确认、审计记录与自动批准）。
 
 ### P1-6 系统提示词与参数设置（桌面端 UI）
 
@@ -203,6 +224,78 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - 用户级 agent 文件可识别并用于运行。
 - Tool 动态加载仅在 desktop 环境生效。
 
+**进度**
+
+- 2026-01-29：完成 PC + Mobile 用户级 JSONC 配置读取与 Agent Markdown 支持；桌面端按开关加载外部 tools。
+
+**示例**
+
+**1) 用户级 JSONC（配置 + Hook）**
+
+> 路径：PC `~/.moryflow/config.jsonc`；Mobile `Paths.document/.moryflow/config.jsonc`  
+> 说明：`tools.external` 仅 PC 生效，Mobile 忽略。
+
+```jsonc
+{
+  // 用户级配置
+  "agents": {
+    "runtime": {
+      "mode": { "default": "agent" },
+      "agent": { "id": "writer" },
+      "tools": { "external": { "enabled": true } },
+      "hooks": {
+        "chat": {
+          "system": { "mode": "append", "text": "You must reply in short bullet points." },
+          "params": { "temperature": 0.2, "maxTokens": 512 },
+        },
+        "tool": {
+          "before": [{ "tool": "read", "mergeInput": { "encoding": "utf-8" } }],
+          "after": [{ "tool": "read", "prependText": "[preview]\\n" }],
+        },
+      },
+    },
+  },
+}
+```
+
+**2) Agent Markdown**
+
+> 路径：PC `~/.moryflow/agents/*.md`；Mobile `Paths.document/.moryflow/agents/*.md`
+
+```markdown
+---
+{
+  'id': 'writer',
+  'name': 'Writer',
+  'description': 'Short, factual answers.',
+  'modelSettings': { 'temperature': 0.2, 'maxTokens': 512 },
+}
+---
+
+You are a concise writing assistant. Always respond with short bullet points.
+```
+
+**3) 外部工具模块（仅 PC）**
+
+> 路径：`~/.moryflow/tools/*.ts|*.js`  
+> 说明：支持 `default` / `createTools` / `tools` 导出。
+
+```ts
+import { tool } from '@openai/agents-core';
+import { z } from 'zod';
+
+export const createTools = () => [
+  tool({
+    name: 'hello',
+    description: 'Say hello to a name.',
+    parameters: z.object({ name: z.string() }),
+    async execute({ name }) {
+      return `Hello ${name}`;
+    },
+  }),
+];
+```
+
 ### P2-8 Plugin Hook 接口
 
 **任务**
@@ -217,6 +310,10 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - Hook 失败不会中断主流程。
 - 输出可被 Hook 后处理并正确返回。
 
+**进度**
+
+- 2026-01-29：完成 `chat.params`/`chat.system`/`tool.before`/`tool.after` hook，顺序内置→用户，失败不阻断。
+
 ## 策略细则（执行基线）
 
 > 本节用于锁定默认策略与阈值，后续实现按此执行；若需调整，走 ADR 更新。
@@ -227,6 +324,9 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   - 若可拿到模型 context window：当「历史近似 token > 0.8 × usable」触发。
   - `usable = contextWindow - outputBudget`，默认 `outputBudget = min(4096, contextWindow × 0.2)`。
   - 无法拿到 context window 时，按 **120k 字符**阈值触发（可配置）。
+- **上下文窗口来源**：
+  - 优先使用用户配置的 `customContext`（模型自定义上下文）。
+  - 会员模型不读取自定义上下文，仅使用模型注册表限制。
 - **近似 token 估算**：默认按 `字符数 / 4` 估算；可替换为真实 tokenizer。
 - **保护策略**：
   - 保护最近 **3 轮 user/assistant**。
@@ -234,10 +334,33 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - 受保护的工具输出（默认）：`task`、`tasks_*`、`write`、`edit`、`move`、`delete`。
 - **摘要重写**：
   - 使用 compaction agent 生成摘要，要求包含：已完成事项、当前进度、涉及文件、下一步。
+  - 摘要输入优先使用未裁剪历史，按 prompt 上限截断；若超限或为空则降级使用已裁剪历史。
   - 历史重写为 `[summaryItem, ...recentTurns]`。
   - summaryItem 使用 system 消息落地，前缀固定为 `【会话摘要】`，内容语言与对话一致。
 - **失败兜底**：摘要失败时仅执行 pruning，不阻断本次 run。
 - **可观测性**：记录压缩前/后体积、摘要长度、被丢弃工具类型统计。
+- **发送前预处理**：
+  - PC/Mobile 在发送前执行 compaction，并同步 UI 消息列表。
+  - 本回合 runtime 识别已预处理状态，避免重复压缩导致 UI/历史错位。
+
+**示例（理解“裁剪旧工具输出”）**
+
+假设一段对话如下（简化）：
+
+1. 用户：请统计本仓库待办列表并汇总。
+2. Agent 调用 `grep` → 输出 2 万行（已截断，完整输出落盘到 `Vault/.agent-output/2026-01-26-todo.jsonl`）。
+3. Agent 基于结果生成汇总并给出结论。
+4. 又经过多轮工具调用（read/ls/search_in_file）持续堆积输出，历史体积触发阈值。
+
+触发 compaction 后的处理：
+
+- **旧的 tool output items 会从上下文中移除**（只影响下一次 `run()` 的输入，不删除落盘文件）。
+- **tool input 与结果摘要会保留**，并生成一条系统摘要写入历史：
+  - `【会话摘要】已完成：扫描待办并分类；当前进度：已标注高优先级 12 项；涉及文件：docs/index.md、apps/...；下一步：逐条确认待办归属并分配负责人。`
+- 最近 3 轮 user/assistant 对话完整保留，保证上下文连续。
+- 若要回溯完整输出，仍可通过 `Vault/.agent-output/2026-01-26-todo.jsonl` 查看（UI 也保留“查看完整输出”入口）。
+
+结论：**裁剪的是“上下文负载”，不是“历史文件”**；核心信息通过摘要与保护策略保留，完整输出仍可追溯。
 
 ### B. Doom Loop 策略
 
@@ -245,10 +368,12 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   - `maxAttempts = 3`（单次 run 内的重试循环）
   - `maxToolCalls = 60`（单次 run 工具调用上限）
   - `sameToolThreshold = 5`（相同 tool + 相同 args 连续次数）
+  - `maxSignatureBytes = 8KB`（参数哈希上限；超限仅按 toolName 计数）
+  - `cooldownToolCalls = 3`（审批通过后跳过 3 次工具检测）
 - **判定与处理**：
   - 命中阈值 → 标记 `doom_loop`。
   - 若 UI/IPC 可用：`ask` 用户继续（once/always）；中止通过全局 Stop/Cancel。
-  - `always` 仅本次会话生效，不做持久化。
+  - `always` 仅本次会话生效，不做持久化；触发后自动跳过审批并重置计数。
   - 无 UI 时默认 **终止** 并返回可读错误（提示用户调整指令）。
 - **计数口径**：
   - `sameToolThreshold` 使用稳定化后的参数哈希（stable JSON），参数超限时仅按 toolName 计数。
@@ -291,7 +416,8 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 - **配置层级**：
   - 用户级：`~/.moryflow/config.jsonc` / `~/.anyhunt/config.jsonc`
   - 内联：UI/CLI 传入配置（最高优先级）
-- **Agent 外部化**：`~/.moryflow/agents/*.md`。
+- **移动端路径**：`Paths.document/.moryflow/`（`config.jsonc`、`agents/`）。
+- **Agent 外部化**：`~/.moryflow/agents/*.md`（JSONC frontmatter + prompt body）。
 - **Tool 外部化**：`~/.moryflow/tools/*.ts`（仅桌面端启用，需显式开关）。
 - **Hook 顺序**：内置 → 用户；失败不阻断主流程（fail-safe）。
 
@@ -315,10 +441,22 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
 {
   "agents": {
     "runtime": {
+      "agent": { "id": "writer" },
       "mode": { "default": "agent" },
-      "compaction": { "maxChars": 120000, "recentTurns": 3 },
+      "compaction": { "fallbackCharLimit": 120000, "protectedTurns": 3 },
       "truncation": { "maxLines": 2000, "maxBytes": 51200, "ttlDays": 7 },
       "doomLoop": { "maxAttempts": 3, "maxToolCalls": 60, "sameToolThreshold": 5 },
+      "tools": { "external": { "enabled": true } },
+      "hooks": {
+        "chat": {
+          "system": { "mode": "append", "text": "You must reply in Markdown." },
+          "params": { "temperature": 0.2, "maxTokens": 2048 },
+        },
+        "tool": {
+          "before": [{ "tool": "read", "mergeInput": { "offset": 1 } }],
+          "after": [{ "tool": "read", "appendText": "\\n[read completed]" }],
+        },
+      },
       "permission": {
         "rules": [
           { "domain": "read", "pattern": "vault:**/*.md", "decision": "allow" },
@@ -330,6 +468,28 @@ OpenCode 已在运行时层建立 **Compaction / Permission / Truncation** 控�
   },
 }
 ```
+
+**Agent Markdown 示例（JSONC frontmatter）**
+
+```md
+---
+{
+  'id': 'writer',
+  'name': 'Writer',
+  'description': 'Write succinctly',
+  'modelSettings': { 'temperature': 0.2 },
+}
+---
+
+You are a writing assistant. Keep responses short and clear.
+```
+
+**Hook 规则说明**
+
+- `chat.system`：`append|prepend|replace`（默认 append）。
+- `chat.params`：覆盖 ModelSettings（仅允许已知字段）。
+- `tool.before.mergeInput`：仅对可解析为 JSON object 的输入生效；作为默认值，**不会覆盖已有输入参数**。
+- `tool.after.prependText/appendText`：仅对字符串输出生效。
 
 ### H. 审批与审计落地
 

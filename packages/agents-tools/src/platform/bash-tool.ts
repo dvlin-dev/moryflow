@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: createBashTool - 非沙盒化的 bash 工具
  * [DEPENDS]: @openai/agents-core, @anyhunt/agents-adapter, @anyhunt/agents-runtime
- * [POS]: 基础 bash 工具实现，目前未被使用
+ * [POS]: 基础 bash 工具实现（输出交由 runtime 统一截断）
  *
  * [NOTE]: 当前未被任何平台调用：
  *   - PC 端使用 /agents-sandbox 的沙盒化版本
@@ -12,7 +12,7 @@ import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
 import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
 import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
-import { toolSummarySchema, trimPreview } from '../shared';
+import { toolSummarySchema } from '../shared';
 
 const DEFAULT_TIMEOUT = 120_000; // 2 分钟
 const MAX_TIMEOUT = 600_000; // 10 分钟
@@ -86,18 +86,13 @@ export const createBashTool = (capabilities: PlatformCapabilities, vaultUtils?: 
         const result = await executeShell(command, workDir, timeout);
         const durationMs = Date.now() - startedAt;
 
-        const stdoutPreview = trimPreview(result.stdout);
-        const stderrPreview = trimPreview(result.stderr);
-
         return {
           command,
           cwd: relativeCwd,
           exitCode: result.exitCode,
           durationMs,
-          stdout: stdoutPreview.text,
-          stdoutTruncated: stdoutPreview.truncated,
-          stderr: stderrPreview.text,
-          stderrTruncated: stderrPreview.truncated,
+          stdout: result.stdout,
+          stderr: result.stderr,
         };
       } catch (error) {
         logger.error('[bash] Command failed:', error);

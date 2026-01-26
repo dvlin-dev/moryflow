@@ -1,5 +1,5 @@
 /**
- * [PROVIDES]: Renderer IPC bridge (desktopAPI, membership auth storage)
+ * [PROVIDES]: Renderer IPC bridge (desktopAPI + membership auth storage + 会话/工具输出能力)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
  *
@@ -113,6 +113,7 @@ const api: DesktopApi = {
     move: (input) => ipcRenderer.invoke('files:move', input),
     delete: (input) => ipcRenderer.invoke('files:delete', input),
     showInFinder: (input) => ipcRenderer.invoke('files:showInFinder', input),
+    openPath: (input) => ipcRenderer.invoke('files:openPath', input),
   },
   events: {
     onVaultFsEvent: (handler) => {
@@ -129,6 +130,7 @@ const api: DesktopApi = {
   chat: {
     send: (payload) => ipcRenderer.invoke('chat:agent-request', payload ?? {}),
     stop: (payload) => ipcRenderer.invoke('chat:agent-stop', payload ?? {}),
+    approveTool: (payload) => ipcRenderer.invoke('chat:approve-tool', payload ?? {}),
     onChunk: (channel, handler) => {
       const listener = (_event: Electron.IpcRendererEvent, chunk: UIMessageChunk | null) =>
         handler(chunk);
@@ -141,6 +143,9 @@ const api: DesktopApi = {
     generateSessionTitle: (input) => ipcRenderer.invoke('chat:sessions:generateTitle', input ?? {}),
     deleteSession: (input) => ipcRenderer.invoke('chat:sessions:delete', input ?? {}),
     getSessionMessages: (input) => ipcRenderer.invoke('chat:sessions:getMessages', input ?? {}),
+    updateSessionMode: (input) => ipcRenderer.invoke('chat:sessions:updateMode', input ?? {}),
+    prepareCompaction: (input) =>
+      ipcRenderer.invoke('chat:sessions:prepareCompaction', input ?? {}),
     truncateSession: (input) => ipcRenderer.invoke('chat:sessions:truncate', input ?? {}),
     replaceMessage: (input) => ipcRenderer.invoke('chat:sessions:replaceMessage', input ?? {}),
     forkSession: (input) => ipcRenderer.invoke('chat:sessions:fork', input ?? {}),

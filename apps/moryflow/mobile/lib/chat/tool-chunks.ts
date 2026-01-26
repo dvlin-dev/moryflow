@@ -219,24 +219,7 @@ export function mapRunToolEventToChunk(
 
   // Tool 审批请求
   if (event.name === 'tool_approval_requested' && itemType === 'tool_approval_item') {
-    const raw = (rawItem ?? {}) as Record<string, unknown>;
-    const callId =
-      typeof raw.callId === 'string'
-        ? raw.callId
-        : typeof raw.id === 'string'
-          ? raw.id
-          : generateUUID();
-    const providerExecuted =
-      typeof raw.providerExecuted === 'boolean' ? raw.providerExecuted : undefined;
-
-    return {
-      type: 'tool-input-available',
-      toolCallId: callId,
-      toolName: 'await_human_confirmation',
-      input: raw.input ?? null,
-      providerExecuted,
-      dynamic: true,
-    };
+    return null;
   }
 
   return null;

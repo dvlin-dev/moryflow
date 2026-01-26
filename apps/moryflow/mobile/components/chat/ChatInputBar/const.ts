@@ -7,45 +7,49 @@
 // ==================== 类型定义 ====================
 
 export interface ModelOption {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 /** 发送消息的 payload */
 export interface SendMessagePayload {
   /** 处理后的文本（含 [Referenced files: ...] 标记） */
-  text: string
+  text: string;
   /** 附件元数据（用于存储和展示） */
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>;
 }
 
 export interface ChatInputBarProps {
-  input: string
-  onInputChange: (text: string) => void
+  input: string;
+  onInputChange: (text: string) => void;
   /** 发送消息 */
-  onSend: (payload: SendMessagePayload) => void
-  onStop?: () => void
-  isLoading?: boolean
-  isInitialized?: boolean
-  onAddContext?: () => void
+  onSend: (payload: SendMessagePayload) => void;
+  onStop?: () => void;
+  isLoading?: boolean;
+  isInitialized?: boolean;
+  onAddContext?: () => void;
+  /** 会话级访问模式 */
+  mode: import('@anyhunt/agents-runtime').AgentAccessMode;
+  /** 切换访问模式 */
+  onModeChange: (mode: import('@anyhunt/agents-runtime').AgentAccessMode) => void;
   /** 模型列表 */
-  models?: ModelOption[]
+  models?: ModelOption[];
   /** 当前选中的模型 ID */
-  currentModelId?: string
+  currentModelId?: string;
   /** 模型名称（显示用） */
-  currentModel?: string
+  currentModel?: string;
   /** 模型变更回调 */
-  onModelChange?: (modelId: string) => void
+  onModelChange?: (modelId: string) => void;
   /** 是否在 Sheet 中使用（不需要底部安全区域） */
-  isInSheet?: boolean
+  isInSheet?: boolean;
   /** 禁用底部内边距（当使用外部容器管理布局时） */
-  disableBottomPadding?: boolean
+  disableBottomPadding?: boolean;
 }
 
 export interface VoiceState {
-  isVoiceMode: boolean
-  isTranscribing: boolean
-  isRecording: boolean
-  meteringLevels: number[]
-  formattedDuration: string
+  isVoiceMode: boolean;
+  isTranscribing: boolean;
+  isRecording: boolean;
+  meteringLevels: number[];
+  formattedDuration: string;
 }

@@ -1,3 +1,11 @@
+/**
+ * [DEFINES]: Agent Runtime 核心类型与上下文协议
+ * [USED_BY]: agents-runtime 全模块与多端运行时
+ * [POS]: 运行时类型中心
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import type { RunContext, Model } from '@openai/agents-core';
 
 /**
@@ -27,10 +35,17 @@ export interface AgentChatContext {
 export type ModelBuilder = (modelId?: string) => { modelId: string; baseModel: Model };
 
 /**
+ * 会话级访问模式
+ */
+export type AgentAccessMode = 'agent' | 'full_access';
+
+/**
  * Agent 运行时上下文
  * 通过 RunContext 注入到所有工具中
  */
 export interface AgentContext {
+  /** 会话级访问模式 */
+  mode?: AgentAccessMode;
   /** 当前 Vault 的根目录绝对路径 */
   vaultRoot: string;
   /** 当前会话 ID */

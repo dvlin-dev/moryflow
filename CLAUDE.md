@@ -1,9 +1,11 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-01-27（Agent Runtime Doom Loop 落地完成（PC + Mobile）；OpenCode 对标与控制面实施路径持续更新）
 > 最近更新：2026-02-01（Anyhunt Console 公共 API 化 + API Key 明文存储 + Console Playground 清理）
 > 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 > 最近更新：2026-01-27（RFC7807 错误体边界完善、请求 Origin 缺失统一返回问题详情、API 客户端非 JSON 响应保护、ProblemDetails 类型统一、补齐 test:unit 与回归测试；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
+> 最近更新：2026-01-25（Moryflow Agent Tasks 系统：TasksStore 显式 chatId + Mobile SQLite 路径修正 + 只读 IPC + PC/Mobile UI + 单元测试覆盖 + 子代理同步测试 + 执行清单完成；Agent Runtime 控制面 ADR：用户级配置 + 审批仅 once/always + Agent/全权限模式（静默记录）+ 范围/实施原则明确；OpenCode 落地范围确认（P0/P1/P2 全量、Vault 外 read=ask、截断入口）；OpenAI Agents 迁移 + AI SDK 版本统一 + tsc-multi 阶段命名修正 + packages/agents\* Code Review）
 > 最近更新：2026-01-25（构建链路修复：tsc-multi stage1 补齐 packages/types；typecheck/test:unit 前置 build:packages）
 
 ## 项目概述

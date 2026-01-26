@@ -1,5 +1,9 @@
 /**
- * Tool Output 类型定义和工具函数
+ * [DEFINES]: Tool Output 类型与类型守卫
+ * [USED_BY]: ToolOutput/CommandOutput/DiffOutput/TodoOutput/TruncatedOutput
+ * [POS]: Mobile Tool 输出渲染的类型入口
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { isValidElement, type ReactNode } from 'react'
@@ -44,6 +48,21 @@ export interface TodoResult {
   hint?: string
 }
 
+/** 截断输出结果 */
+export interface TruncatedOutputResult {
+  kind: 'truncated_output'
+  truncated: true
+  preview: string
+  fullPath: string
+  hint?: string
+  metadata?: {
+    lines?: number
+    bytes?: number
+    maxLines?: number
+    maxBytes?: number
+  }
+}
+
 /** ToolOutput Props */
 export interface ToolOutputProps {
   output?: unknown
@@ -77,4 +96,12 @@ export function isTodoResult(value: unknown): value is TodoResult {
     return false
   }
   return Array.isArray((value as Record<string, unknown>).tasks)
+}
+
+export function isTruncatedOutput(value: unknown): value is TruncatedOutputResult {
+  if (!value || typeof value !== 'object' || isValidElement(value as ReactNode)) {
+    return false
+  }
+  const record = value as Record<string, unknown>
+  return record.kind === 'truncated_output' && typeof record.preview === 'string'
 }

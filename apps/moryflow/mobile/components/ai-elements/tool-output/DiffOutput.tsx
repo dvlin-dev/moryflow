@@ -1,23 +1,29 @@
 /**
- * Diff 输出组件
+ * [PROPS]: DiffOutputProps
+ * [POS]: Mobile 端 Diff 结果展示
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import * as React from 'react'
 import { View, ScrollView } from 'react-native'
 import { Text } from '@/components/ui/text'
 import type { DiffResult } from './const'
+import { useTranslation } from '@/lib/i18n'
 
 interface DiffOutputProps {
   result: DiffResult
 }
 
 export function DiffOutput({ result }: DiffOutputProps) {
+  const { t } = useTranslation('chat')
+
   return (
     <View className="rounded-lg border border-border/60 bg-muted/30 p-3 gap-3">
       {/* 目标文件 */}
       {result.path && (
         <Text className="text-xs text-muted-foreground">
-          目标文件：<Text className="font-mono">{result.path}</Text>
+          {t('targetFile')}: <Text className="font-mono">{result.path}</Text>
         </Text>
       )}
 
@@ -47,7 +53,7 @@ export function DiffOutput({ result }: DiffOutputProps) {
       {/* 截断提示 */}
       {result.truncated && (
         <Text className="text-xs text-muted-foreground">
-          内容太长，已截断，在本地文件查看完整版。
+          {t('contentTooLong')}
         </Text>
       )}
     </View>
