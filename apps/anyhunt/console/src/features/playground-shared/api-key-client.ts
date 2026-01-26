@@ -25,7 +25,7 @@ export class ApiKeyClient {
   async request<T>(
     endpoint: string,
     options: {
-      method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+      method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
       body?: unknown;
       headers?: Record<string, string>;
     } = {}
