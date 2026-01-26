@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { open, onOpenChange, activeSessionId } - Tasks 面板开关与会话上下文
  * [EMITS]: onOpenChange(open)
- * [POS]: ChatPane Tasks 面板（列表 + 详情）
+ * [POS]: ChatPane Tasks 面板（列表 + 详情，使用 browser-safe 标签）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */

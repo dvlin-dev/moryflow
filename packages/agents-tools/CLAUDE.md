@@ -38,6 +38,7 @@
 
 ## 近期变更
 
+- 新增 browser 入口导出，renderer 使用包根导入也不会打包 fast-glob（2026-01-27）
 - write 工具参数 schema 去除 transform，避免 JSON Schema 转换报错（2026-01-27）
 - bash 工具移除本地输出截断，统一交由 runtime 后处理
 - 修复 dist 声明缺失 Tasks Store 导出，保障下游类型检查（2026-01-25）

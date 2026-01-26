@@ -7,6 +7,11 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "browser": {
+        "types": "./dist/index.browser.d.ts",
+        "require": "./dist/index.browser.js",
+        "import": "./dist/index.browser.mjs"
+      },
       "react-native": {
         "types": "./dist/index.react-native.d.ts",
         "require": "./dist/index.react-native.js",
