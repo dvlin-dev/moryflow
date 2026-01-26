@@ -1,10 +1,10 @@
 name: CI
 
 on:
-  # push:
-  #   branches: [main, develop]
-  # pull_request:
-  #   branches: [main, develop]
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
   workflow_dispatch:
 
 env:
@@ -14,8 +14,15 @@ env:
 jobs:
   lint-typecheck:
     name: Lint & Typecheck
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, x64, railway, default]
     steps:
+      - name: Runner info
+        run: |
+          echo "RUNNER_NAME=$RUNNER_NAME"
+          echo "RUNNER_OS=$RUNNER_OS"
+          echo "RUNNER_ARCH=$RUNNER_ARCH"
+          uname -a
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -26,7 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -39,9 +46,16 @@ jobs:
 
   test:
     name: Test
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, x64, railway, default]
     needs: lint-typecheck
     steps:
+      - name: Runner info
+        run: |
+          echo "RUNNER_NAME=$RUNNER_NAME"
+          echo "RUNNER_OS=$RUNNER_OS"
+          echo "RUNNER_ARCH=$RUNNER_ARCH"
+          uname -a
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -52,7 +66,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -62,9 +76,16 @@ jobs:
 
   build:
     name: Build
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, x64, railway, default]
     needs: [lint-typecheck, test]
     steps:
+      - name: Runner info
+        run: |
+          echo "RUNNER_NAME=$RUNNER_NAME"
+          echo "RUNNER_OS=$RUNNER_OS"
+          echo "RUNNER_ARCH=$RUNNER_ARCH"
+          uname -a
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -75,7 +96,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
