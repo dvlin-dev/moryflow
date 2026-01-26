@@ -38,7 +38,7 @@ describe('ExtractLlmClient', () => {
     const client = createClient();
     const error = await captureError(
       client.completeParsed(
-        { model: {} as any, upstreamModelId: 'gpt-4o' },
+        { model: {} as any, upstreamModelId: 'gpt-4o', maxOutputTokens: 4096 },
         {
           systemPrompt: 'sys',
           userPrompt: 'user',
@@ -60,7 +60,11 @@ describe('ExtractLlmClient', () => {
     const client = createClient();
     const error = await captureError(
       client.completeParsed(
-        { model: {} as any, upstreamModelId: 'gpt-4o-mini' },
+        {
+          model: {} as any,
+          upstreamModelId: 'gpt-4o-mini',
+          maxOutputTokens: 4096,
+        },
         {
           systemPrompt: 'sys',
           userPrompt: 'user',

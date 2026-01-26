@@ -43,6 +43,7 @@ export class LlmRoutingService {
         baseUrl: resolved.provider.baseUrl,
       },
       upstreamModelId: resolved.upstreamModelId,
+      modelConfig: resolved.modelConfig,
       modelProvider,
       model,
     };

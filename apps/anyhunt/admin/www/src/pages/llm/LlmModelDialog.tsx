@@ -1,7 +1,7 @@
 /**
  * [PROPS]: LlmModelDialogProps - open/mode/model/defaults/providers
  * [EMITS]: onClose/onSubmit - Model 创建/更新动作
- * [POS]: Admin LLM Models 映射的创建/编辑弹窗（完整能力配置）
+ * [POS]: Admin LLM Models 映射的创建/编辑弹窗（完整能力配置 + reasoning raw config 校验）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -198,13 +198,19 @@ export function LlmModelDialog({
   const submit = async (values: FormValues) => {
     let rawConfig: Record<string, unknown> | undefined;
     if (rawConfigText.trim()) {
+      let parsed: unknown;
       try {
-        rawConfig = JSON.parse(rawConfigText) as Record<string, unknown>;
-        setRawConfigError(false);
+        parsed = JSON.parse(rawConfigText) as unknown;
       } catch {
         setRawConfigError(true);
         return;
       }
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        setRawConfigError(true);
+        return;
+      }
+      rawConfig = parsed as Record<string, unknown>;
+      setRawConfigError(false);
     }
 
     const reasoning: ReasoningConfig = {
@@ -573,7 +579,7 @@ export function LlmModelDialog({
                   rows={4}
                 />
                 {rawConfigError ? (
-                  <p className="text-xs text-destructive">Invalid JSON format.</p>
+                  <p className="text-xs text-destructive">Invalid JSON object.</p>
                 ) : null}
               </div>
             </div>

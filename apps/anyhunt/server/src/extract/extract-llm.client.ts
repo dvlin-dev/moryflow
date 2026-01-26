@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: resolve(), complete(), completeParsed(), stream() - Extract 用 LLM 能力
  * [DEPENDS]: llm/LlmLanguageModelService + ai - AI SDK LanguageModel
- * [POS]: Extract 的 LLM 调用边界：只负责 Extract 场景的 prompt/structured-output 调用，不负责 provider 路由/密钥管理（统一抛出 LlmError）
+ * [POS]: Extract 的 LLM 调用边界：只负责 Extract 场景的 prompt/structured-output 调用，不负责 provider 路由/密钥管理（输出上限使用模型 maxOutputTokens）
  *
  * [PROTOCOL]: When this file changes, update this header and src/extract/CLAUDE.md
  */
@@ -21,6 +21,7 @@ import { LlmError } from './extract.errors';
 export type ExtractResolvedLlm = {
   model: LanguageModel;
   upstreamModelId: string;
+  maxOutputTokens: number;
 };
 
 interface CompletionOptions {
@@ -50,6 +51,7 @@ export class ExtractLlmClient {
     return {
       model: resolved.model,
       upstreamModelId: resolved.upstreamModelId,
+      maxOutputTokens: resolved.modelConfig.maxOutputTokens,
     };
   }
 
@@ -72,6 +74,7 @@ export class ExtractLlmClient {
     const result = await generateText({
       model: resolved.model,
       messages,
+      maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
     });
 
     return result.text ?? '';
@@ -100,6 +103,7 @@ export class ExtractLlmClient {
         model: resolved.model,
         schema,
         messages,
+        maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
       });
 
       if (!result.object) {
@@ -141,6 +145,7 @@ export class ExtractLlmClient {
     const streamResult = streamText({
       model: resolved.model,
       messages,
+      maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
     });
 
     for await (const delta of streamResult.textStream) {

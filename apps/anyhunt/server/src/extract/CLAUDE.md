@@ -8,6 +8,7 @@ AI-powered structured data extraction API. Scrapes web pages and uses LLM to ext
 
 ## 最近更新
 
+- Extract LLM 调用统一透传模型 maxOutputTokens
 - Extract 错误响应统一为 RFC7807（移除 success/data 包装）
 - Extract LLM 调用改为 AI SDK（支持多 Provider）
 - Extract LLM client 移除无效 responseFormat 选项（日志改为只记录 model）

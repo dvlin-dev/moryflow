@@ -21,6 +21,15 @@ describe('CreateAgentTaskSchema', () => {
     expect(parsed.messages?.length).toBe(2);
   });
 
+  it('rejects prompt and messages together', () => {
+    const result = CreateAgentTaskSchema.safeParse({
+      prompt: 'hello',
+      messages: [{ role: 'user', content: 'hi' }],
+      stream: false,
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects missing prompt and messages', () => {
     const result = CreateAgentTaskSchema.safeParse({
       stream: false,

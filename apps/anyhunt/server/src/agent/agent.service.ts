@@ -3,7 +3,7 @@
  *
  * [INPUT]: Agent 任务请求（可选 model；未传使用 Admin 默认）+ Browser ports
  * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
- * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（Runner 使用动态 provider）
+ * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（输出上限遵循模型 maxOutputTokens）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -151,12 +151,14 @@ export class AgentService {
 
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
+    let maxOutputTokens = 4096;
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
       );
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
+      maxOutputTokens = llmRoute.modelConfig.maxOutputTokens;
     } catch (error) {
       const llmConfigError =
         error instanceof Error ? error.message : String(error);
@@ -221,7 +223,7 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input, llmModel);
+      const agent = this.buildAgent(input, llmModel, maxOutputTokens);
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -469,12 +471,14 @@ export class AgentService {
 
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
+    let maxOutputTokens = 4096;
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
       );
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
+      maxOutputTokens = llmRoute.modelConfig.maxOutputTokens;
     } catch (error) {
       const llmConfigError =
         error instanceof Error ? error.message : String(error);
@@ -524,7 +528,7 @@ export class AgentService {
         throw new TaskCancelledError();
       }
 
-      const agent = this.buildAgent(input, llmModel);
+      const agent = this.buildAgent(input, llmModel, maxOutputTokens);
 
       const context: BrowserAgentContext = {
         browser: browserPort,
@@ -728,7 +732,11 @@ export class AgentService {
     }
   }
 
-  private buildAgent(input: CreateAgentTaskInput, model: Model): BrowserAgent {
+  private buildAgent(
+    input: CreateAgentTaskInput,
+    model: Model,
+    maxOutputTokens: number,
+  ): BrowserAgent {
     // AI SDK 适配的模型可能会携带 response_format；部分网关会对此报错。
     // 在“纯文本输出”场景下显式移除它（通过 providerData 覆盖为 undefined，使 JSON.stringify 丢弃字段）。
     const providerData: Record<string, unknown> | undefined =
@@ -744,7 +752,7 @@ export class AgentService {
       outputType: buildAgentOutputType(input.output),
       modelSettings: {
         temperature: 0.7,
-        maxTokens: 4096,
+        maxTokens: Math.max(1, maxOutputTokens),
         ...(providerData ? { providerData } : {}),
       },
     });

@@ -59,6 +59,10 @@ export type ResolvedLlmRoute = {
     baseUrl: string | null;
   };
   upstreamModelId: string;
+  modelConfig: {
+    maxContextTokens: number;
+    maxOutputTokens: number;
+  };
   modelProvider: ModelProvider;
   model: Model;
 };

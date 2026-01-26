@@ -31,6 +31,10 @@ describe('LlmRoutingService', () => {
         model: {} as any,
         requestedModelId: 'gpt-4o',
         upstreamModelId: 'gpt-4o',
+        modelConfig: {
+          maxContextTokens: 128000,
+          maxOutputTokens: 4096,
+        },
         provider: {
           id: 'p1',
           providerType: 'openai',
@@ -54,6 +58,10 @@ describe('LlmRoutingService', () => {
         model: {} as any,
         requestedModelId: 'gpt-4o',
         upstreamModelId: 'gpt-4o',
+        modelConfig: {
+          maxContextTokens: 128000,
+          maxOutputTokens: 4096,
+        },
         provider: {
           id: 'p2',
           providerType: 'openai',
@@ -101,6 +109,10 @@ describe('LlmRoutingService', () => {
         model: {} as any,
         requestedModelId: 'gpt-4o-mini',
         upstreamModelId: 'gpt-4o-mini',
+        modelConfig: {
+          maxContextTokens: 128000,
+          maxOutputTokens: 4096,
+        },
         provider: {
           id: 'p1',
           providerType: 'openai',

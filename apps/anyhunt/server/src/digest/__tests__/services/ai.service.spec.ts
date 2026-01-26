@@ -33,6 +33,10 @@ describe('DigestAiService', () => {
         model: {} as any,
         requestedModelId: 'gpt-4o',
         upstreamModelId: 'gpt-4o',
+        modelConfig: {
+          maxContextTokens: 128000,
+          maxOutputTokens: 4096,
+        },
         provider: {
           id: 'lp_test',
           providerType: 'openai',

@@ -60,5 +60,6 @@ describe('LlmLanguageModelService', () => {
     );
     expect(result.upstreamModelId).toBe('gpt-4o');
     expect(result.provider.id).toBe('p1');
+    expect(result.modelConfig.maxOutputTokens).toBe(4096);
   });
 });

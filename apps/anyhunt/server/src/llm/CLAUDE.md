@@ -54,6 +54,7 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
 
 ## 最近更新
 
+- 2026-01-27：LlmLanguageModelService 透传模型上下限（maxContext/maxOutput），供调用侧统一裁剪
 - 2026-01-26：运行时解析器补齐默认 `LlmSettings` 兜底（避免首次请求 500）；新增单测覆盖
 - 2026-01-26：LLM 运行时改为 AI SDK 工厂（支持 openai/openrouter/anthropic/google）
 - 2026-01-27：LlmRoutingService 固化 AI SDK ModelProvider 行为（静态模型适配）

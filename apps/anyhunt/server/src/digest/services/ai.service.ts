@@ -3,7 +3,7 @@
  *
  * [INPUT]: 内容全文、订阅上下文、语言设置
  * [OUTPUT]: AI 生成的摘要、叙事稿、评分解释
- * [POS]: 处理所有 AI 调用，负责 LLM 交互和结果缓存（统一走 AI SDK）
+ * [POS]: 处理所有 AI 调用，负责 LLM 交互和结果缓存（统一走 AI SDK，输出上限使用模型 maxOutputTokens）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -63,6 +63,7 @@ export interface AiGenerationResult<T> {
 
 type DigestResolvedLlm = {
   model: LanguageModel;
+  maxOutputTokens: number;
 };
 
 @Injectable()
@@ -78,6 +79,7 @@ export class DigestAiService {
 
     return {
       model: resolved.model,
+      maxOutputTokens: resolved.modelConfig.maxOutputTokens,
     };
   }
 
@@ -93,6 +95,7 @@ export class DigestAiService {
     const result = await generateText({
       model: resolved.model,
       messages,
+      maxOutputTokens: Math.max(1, resolved.maxOutputTokens),
     });
 
     return result.text ?? '';

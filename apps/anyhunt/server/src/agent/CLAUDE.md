@@ -59,6 +59,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 
 ## 最近更新
 
+- 2026-01-27：Agent 运行时使用模型 maxOutputTokens 作为输出上限；prompt/messages 互斥校验
 - 2026-01-26：CreateAgentTaskSchema 拆分 Base/Console 版本，支持 console 复用且保留 refine 校验
 - 2026-01-26：Agent cancel 状态映射为 204/404/409，并统一 RFC7807 错误体
 - 2026-01-26：修复流式任务在 LLM 路由失败时清理 Redis 进度；补充对应单测

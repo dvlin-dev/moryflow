@@ -1,7 +1,7 @@
 /**
  * Agent DTO - Zod Schemas
  *
- * [DEFINES]: L3 Agent API 请求/响应/Param Schema（含 CreateAgentTaskBaseSchema；model 可选，不传使用 Admin 默认）
+ * [DEFINES]: L3 Agent API 请求/响应/Param Schema（含 CreateAgentTaskBaseSchema；prompt/messages 互斥；model 可选，不传使用 Admin 默认）
  * [USED_BY]: agent.controller.ts, agent.service.ts
  * [POS]: Zod schemas + 推断类型（单一数据源）
  *
@@ -316,7 +316,19 @@ const refineAgentTaskInput = (
   data: z.infer<typeof CreateAgentTaskBaseSchema>,
   ctx: z.RefinementCtx,
 ) => {
-  if (!data.prompt && (!data.messages || data.messages.length === 0)) {
+  const hasPrompt = Boolean(data.prompt);
+  const hasMessages = Boolean(data.messages && data.messages.length > 0);
+
+  if (hasPrompt && hasMessages) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'prompt and messages cannot be used together',
+      path: ['messages'],
+    });
+    return;
+  }
+
+  if (!hasPrompt && !hasMessages) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'prompt or messages is required',

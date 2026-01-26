@@ -81,7 +81,7 @@ export const UpdateLlmModelSchema = z.object({
   minTier: SubscriptionTierSchema.optional(),
   maxContextTokens: z.number().int().positive().optional(),
   maxOutputTokens: z.number().int().positive().optional(),
-  capabilities: LlmModelCapabilitiesSchema,
+  capabilities: LlmModelCapabilitiesSchema.optional(),
   reasoning: ReasoningConfigSchema.optional(),
   sortOrder: z.number().int().min(0).max(10000).optional(),
 });

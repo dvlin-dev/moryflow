@@ -14,6 +14,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - LLM 配置对齐 Moryflow：Provider presets + Model 价格/等级/上下文/能力/Reasoning
 - LLM Provider/Model 弹窗扩展能力字段（raw config、tiers、token limits）
 - LLM Model 弹窗修复 reasoning raw config 状态初始化与格式化
+- LLM Model 弹窗补齐 raw config JSON object 校验
 
 ## 职责
 
