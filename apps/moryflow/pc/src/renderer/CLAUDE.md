@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Providers 设置页补齐 Base URL 默认填充与输入项展示
 - useWorkspaceFiles 增加请求去重/过期保护，避免工作区切换时旧请求覆盖
 - Chat 输入框重排为左右工具区，@ 引用支持 MRU + 全量搜索且附件/引用胶囊统一
 - Tasks Panel 使用 agents-tools browser 入口标签，避免 renderer 打包 fast-glob

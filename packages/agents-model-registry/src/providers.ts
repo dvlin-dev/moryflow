@@ -3,7 +3,7 @@
  * 包含所有主流 AI 服务商的配置
  */
 
-import type { ProviderRegistry } from './types'
+import type { ProviderRegistry } from './types';
 
 /**
  * 服务商注册表
@@ -43,6 +43,7 @@ export const providerRegistry: ProviderRegistry = {
     name: 'Anthropic',
     icon: 'anthropic',
     docUrl: 'https://docs.anthropic.com/en/docs/models',
+    defaultBaseUrl: 'https://api.anthropic.com/v1',
     authType: 'api-key',
     sdkType: 'anthropic',
     sortOrder: 95,
@@ -72,6 +73,7 @@ export const providerRegistry: ProviderRegistry = {
     name: 'Google',
     icon: 'google',
     docUrl: 'https://ai.google.dev/gemini-api/docs/pricing',
+    defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     authType: 'api-key',
     sdkType: 'google',
     sortOrder: 90,
@@ -107,6 +109,7 @@ export const providerRegistry: ProviderRegistry = {
     name: 'xAI',
     icon: 'xai',
     docUrl: 'https://xai.com/docs/models',
+    defaultBaseUrl: 'https://api.x.ai/v1',
     authType: 'api-key',
     sdkType: 'xai',
     sortOrder: 80,
@@ -273,7 +276,13 @@ export const providerRegistry: ProviderRegistry = {
     authType: 'api-key',
     sdkType: 'openai',
     sortOrder: 65,
-    modelIds: ['kimi-k2', 'kimi-k2-turbo', 'kimi-k2-0905', 'kimi-k2-thinking', 'kimi-k2-thinking-turbo'],
+    modelIds: [
+      'kimi-k2',
+      'kimi-k2-turbo',
+      'kimi-k2-0905',
+      'kimi-k2-thinking',
+      'kimi-k2-thinking-turbo',
+    ],
     modelIdMapping: {
       'kimi-k2-0711-preview': 'kimi-k2',
       'kimi-k2-0905-preview': 'kimi-k2-0905',
@@ -291,7 +300,13 @@ export const providerRegistry: ProviderRegistry = {
     sdkType: 'openai',
     sortOrder: 64,
     description: 'Moonshot 国内版',
-    modelIds: ['kimi-k2', 'kimi-k2-turbo', 'kimi-k2-0905', 'kimi-k2-thinking', 'kimi-k2-thinking-turbo'],
+    modelIds: [
+      'kimi-k2',
+      'kimi-k2-turbo',
+      'kimi-k2-0905',
+      'kimi-k2-thinking',
+      'kimi-k2-thinking-turbo',
+    ],
     modelIdMapping: {
       'kimi-k2-0711-preview': 'kimi-k2',
       'kimi-k2-0905-preview': 'kimi-k2-0905',
@@ -313,7 +328,16 @@ export const providerRegistry: ProviderRegistry = {
     sortOrder: 60,
     allowCustomModels: true,
     description: '开源模型托管平台',
-    modelIds: ['qwen3-235b', 'qwen3-coder', 'kimi-k2', 'kimi-k2-0905', 'deepseek-r1', 'deepseek-v3.1', 'deepseek-v3', 'glm-4.5'],
+    modelIds: [
+      'qwen3-235b',
+      'qwen3-coder',
+      'kimi-k2',
+      'kimi-k2-0905',
+      'deepseek-r1',
+      'deepseek-v3.1',
+      'deepseek-v3',
+      'glm-4.5',
+    ],
     modelIdMapping: {
       'Qwen/Qwen3-235B-A22B-Instruct-2507': 'qwen3-235b',
       'Qwen/Qwen3-Coder-480B-A35B-Instruct': 'qwen3-coder',
@@ -337,7 +361,16 @@ export const providerRegistry: ProviderRegistry = {
     sortOrder: 59,
     allowCustomModels: true,
     description: 'SiliconFlow 国内版',
-    modelIds: ['qwen3-235b', 'qwen3-coder', 'kimi-k2', 'kimi-k2-0905', 'deepseek-r1', 'deepseek-v3.1', 'deepseek-v3', 'glm-4.5'],
+    modelIds: [
+      'qwen3-235b',
+      'qwen3-coder',
+      'kimi-k2',
+      'kimi-k2-0905',
+      'deepseek-r1',
+      'deepseek-v3.1',
+      'deepseek-v3',
+      'glm-4.5',
+    ],
     modelIdMapping: {
       'Qwen/Qwen3-235B-A22B-Instruct-2507': 'qwen3-235b',
       'Qwen/Qwen3-Coder-480B-A35B-Instruct': 'qwen3-coder',
@@ -503,29 +536,29 @@ export const providerRegistry: ProviderRegistry = {
       'claude-3.7-sonnet': 'claude-3-7-sonnet',
     },
   },
-}
+};
 
 /**
  * 获取服务商列表（按 sortOrder 排序，排除隐藏的服务商）
  */
-export function getSortedProviders(): typeof providerRegistry[string][] {
+export function getSortedProviders(): (typeof providerRegistry)[string][] {
   return Object.values(providerRegistry)
     .filter((p) => !p.hidden)
-    .sort((a, b) => (b.sortOrder ?? 0) - (a.sortOrder ?? 0))
+    .sort((a, b) => (b.sortOrder ?? 0) - (a.sortOrder ?? 0));
 }
 
 /**
  * 获取服务商 ID 列表
  */
 export function getAllProviderIds(): string[] {
-  return Object.keys(providerRegistry)
+  return Object.keys(providerRegistry);
 }
 
 /**
  * 获取服务商
  */
 export function getProviderById(id: string) {
-  return providerRegistry[id] ?? null
+  return providerRegistry[id] ?? null;
 }
 
 /**
@@ -533,58 +566,58 @@ export function getProviderById(id: string) {
  * 返回的是 API 调用时使用的实际模型 ID
  */
 export function getProviderModelApiIds(providerId: string): string[] {
-  const provider = providerRegistry[providerId]
-  if (!provider) return []
+  const provider = providerRegistry[providerId];
+  if (!provider) return [];
 
   // 如果有映射，返回映射的 key（API 使用的 ID）
   if (provider.modelIdMapping) {
-    return Object.keys(provider.modelIdMapping)
+    return Object.keys(provider.modelIdMapping);
   }
 
   // 否则直接返回 modelIds（API ID 和标准 ID 相同）
-  return provider.modelIds
+  return provider.modelIds;
 }
 
 /**
  * 将服务商特定的模型 ID 转换为标准模型 ID
  */
 export function normalizeModelId(providerId: string, apiModelId: string): string {
-  const provider = providerRegistry[providerId]
-  if (!provider) return apiModelId
+  const provider = providerRegistry[providerId];
+  if (!provider) return apiModelId;
 
   // 检查映射
   if (provider.modelIdMapping?.[apiModelId]) {
-    return provider.modelIdMapping[apiModelId]
+    return provider.modelIdMapping[apiModelId];
   }
 
   // 如果在 modelIds 中直接存在，说明没有映射
   if (provider.modelIds.includes(apiModelId)) {
-    return apiModelId
+    return apiModelId;
   }
 
-  return apiModelId
+  return apiModelId;
 }
 
 /**
  * 将标准模型 ID 转换为服务商特定的 API 模型 ID
  */
 export function toApiModelId(providerId: string, standardModelId: string): string {
-  const provider = providerRegistry[providerId]
-  if (!provider) return standardModelId
+  const provider = providerRegistry[providerId];
+  if (!provider) return standardModelId;
 
   // 检查反向映射
   if (provider.modelIdMapping) {
     for (const [apiId, stdId] of Object.entries(provider.modelIdMapping)) {
       if (stdId === standardModelId) {
-        return apiId
+        return apiId;
       }
     }
   }
 
   // 如果在 modelIds 中直接存在，说明没有映射
   if (provider.modelIds.includes(standardModelId)) {
-    return standardModelId
+    return standardModelId;
   }
 
-  return standardModelId
+  return standardModelId;
 }

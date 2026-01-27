@@ -26,6 +26,7 @@
 
 ## 近期变更
 
+- 补齐 Anthropic/Google/xAI 默认 Base URL
 - 模型/服务商注册表基线整理
 
 ---

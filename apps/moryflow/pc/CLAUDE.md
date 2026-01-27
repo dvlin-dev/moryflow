@@ -83,6 +83,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Providers 设置页补齐 Base URL 默认值与覆盖测试
 - useWorkspaceFiles 增加请求过期保护并补充测试，避免工作区切换时展示错误文件
 - PC Chat 输入框改为左右分区（Mode/Model/MCP + Attach/@/Primary），语音/发送合并并隐藏上下文进度
 - @ 引用改为 MRU 3 个 + 全量搜索，引用/上传文件统一胶囊样式且 Full Access 切换无确认

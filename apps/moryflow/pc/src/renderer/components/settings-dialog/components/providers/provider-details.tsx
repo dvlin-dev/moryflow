@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { providers, form }
  * [EMITS]: 通过 react-hook-form setValue 修改 settings 表单；通过 desktopAPI 触发 provider 测试
- * [POS]: 设置弹窗 - AI Providers 详情页（预设/自定义服务商配置、模型启用与连接测试）
+ * [POS]: 设置弹窗 - AI Providers 详情页（预设/自定义服务商配置、Base URL 默认填充、模型启用与连接测试）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -216,6 +216,14 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
             defaultModelId: null,
           },
         ]);
+        return;
+      }
+
+      if (preset.defaultBaseUrl) {
+        const existingBaseUrl = currentProviders[existingIndex]?.baseUrl ?? '';
+        if (!existingBaseUrl.trim()) {
+          setValue(`providers.${existingIndex}.baseUrl`, preset.defaultBaseUrl);
+        }
       }
     }
   }, [isCustom, activeProviderId, getValues, setValue, preset]);
@@ -603,17 +611,15 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
           </div>
 
           {/* 自定义 Base URL */}
-          {preset.defaultBaseUrl && (
-            <div className="space-y-2">
-              <Label htmlFor="base-url">{t('apiAddressOptional')}</Label>
-              <Input
-                id="base-url"
-                placeholder={preset.defaultBaseUrl}
-                {...register(`providers.${presetIndex}.baseUrl` as const)}
-              />
-              <p className="text-xs text-muted-foreground">{t('baseUrlHint')}</p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="base-url">{t('apiAddressOptional')}</Label>
+            <Input
+              id="base-url"
+              placeholder={preset.defaultBaseUrl || 'https://api.example.com/v1'}
+              {...register(`providers.${presetIndex}.baseUrl` as const)}
+            />
+            <p className="text-xs text-muted-foreground">{t('baseUrlHint')}</p>
+          </div>
 
           {/* 模型列表 */}
           <div className="space-y-3">
