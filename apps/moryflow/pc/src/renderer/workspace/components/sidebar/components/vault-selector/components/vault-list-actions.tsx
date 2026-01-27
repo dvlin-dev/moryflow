@@ -1,12 +1,11 @@
 /**
  * [PROPS]: VaultListActionsProps
  * [EMITS]: onStartCreate, onConfirmCreate, onOpenFolder
- * [POS]: Vault 列表操作区组件（新建/打开文件夹）
+ * [POS]: Vault 列表操作区组件（新建/打开文件夹，Lucide 图标）
  */
 
-import { Add01Icon, FolderAddIcon } from '@hugeicons/core-free-icons';
+import { Plus, FolderPlus } from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Input } from '@anyhunt/ui/components/input';
 import { useTranslation } from '@/lib/i18n';
 import type { VaultListActionsProps } from '../const';
@@ -52,7 +51,7 @@ export const VaultListActions = ({
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
         onClick={onStartCreate}
       >
-        <Icon icon={FolderAddIcon} className="size-4 text-muted-foreground" />
+        <FolderPlus className="size-4 text-muted-foreground" />
         {t('newWorkspace')}
       </button>
       <button
@@ -60,7 +59,7 @@ export const VaultListActions = ({
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
         onClick={onOpenFolder}
       >
-        <Icon icon={Add01Icon} className="size-4 text-muted-foreground" />
+        <Plus className="size-4 text-muted-foreground" />
         {t('openExistingFolder')}
       </button>
     </>

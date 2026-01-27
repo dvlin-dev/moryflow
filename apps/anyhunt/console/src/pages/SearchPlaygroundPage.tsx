@@ -1,18 +1,14 @@
 /**
- * Search Playground 页面
- * 使用 react-hook-form + zod 验证
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Search Playground 页面（react-hook-form + zod，Lucide icons direct render）
  */
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import {
-  Search01Icon,
-  Loading01Icon,
-  CheckmarkCircle01Icon,
-  Globe02Icon,
-} from '@hugeicons/core-free-icons';
+import { Search, Loader, CircleCheck, Globe } from 'lucide-react';
 import {
   Button,
   Card,
@@ -27,7 +23,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Icon,
   Input,
 } from '@anyhunt/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
@@ -132,9 +127,9 @@ export default function SearchPlaygroundPage() {
                           </FormControl>
                           <Button type="submit" disabled={isPending || !selectedKey?.isActive}>
                             {isPending ? (
-                              <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
+                              <Loader className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Icon icon={Search01Icon} className="h-4 w-4" />
+                              <Search className="h-4 w-4" />
                             )}
                             <span className="ml-2">Search</span>
                           </Button>
@@ -203,7 +198,7 @@ export default function SearchPlaygroundPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+                  <CircleCheck className="h-5 w-5 text-green-600" />
                   {data.results.length} Results
                 </CardTitle>
               </CardHeader>
@@ -221,7 +216,7 @@ export default function SearchPlaygroundPage() {
                           {result.title}
                         </a>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Icon icon={Globe02Icon} className="h-3 w-3" />
+                          <Globe className="h-3 w-3" />
                           <span className="truncate">{result.url}</span>
                         </div>
                         {result.description && (

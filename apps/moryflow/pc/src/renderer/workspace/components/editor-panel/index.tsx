@@ -1,9 +1,8 @@
 import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
-import { Share01Icon, ViewSidebarRightIcon } from '@hugeicons/core-free-icons';
+import { Share, PanelRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
@@ -150,7 +149,7 @@ export const EditorPanel = ({
             onNavigateToSites={onNavigateToSites}
           >
             <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
-              <Icon icon={Share01Icon} className="size-3.5" />
+              <Share className="size-3.5" />
               Share
             </Button>
           </SharePopover>
@@ -165,7 +164,7 @@ export const EditorPanel = ({
                   className="text-muted-foreground transition-colors hover:text-foreground"
                   onClick={onToggleChat}
                 >
-                  <Icon icon={ViewSidebarRightIcon} className="size-4" />
+                  <PanelRight className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left">{t('expand')}</TooltipContent>

@@ -36,8 +36,7 @@ import {
   CancelSubscriptionDialog,
 } from '@/features/payment';
 import type { Subscription } from '@/types/payment';
-import { CancelCircleIcon, ViewIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { CircleX, View } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -142,7 +141,7 @@ export default function SubscriptionsPage() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" onClick={() => handleViewDetail(sub)}>
-                        <Icon icon={ViewIcon} className="h-4 w-4" />
+                        <View className="h-4 w-4" />
                       </Button>
                       {(sub.status === 'active' || sub.status === 'trialing') && (
                         <Button
@@ -151,7 +150,7 @@ export default function SubscriptionsPage() {
                           onClick={() => handleCancel(sub)}
                           className="text-destructive hover:text-destructive"
                         >
-                          <Icon icon={CancelCircleIcon} className="h-4 w-4" />
+                          <CircleX className="h-4 w-4" />
                         </Button>
                       )}
                     </div>

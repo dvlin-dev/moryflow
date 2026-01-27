@@ -2,10 +2,9 @@
 
 import * as React from 'react';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -68,7 +67,7 @@ function SheetContent({
       >
         {children}
         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-          <Icon icon={Cancel01Icon} className="size-4" />
+          <X className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>

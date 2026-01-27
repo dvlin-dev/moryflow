@@ -2,12 +2,11 @@
  * Topic List Item Component
  *
  * [PROPS]: DigestTopicSummary
- * [POS]: Displays a single topic in the topics listing page
+ * [POS]: Displays a single topic in the topics listing page (Lucide icons direct render)
  */
 
 import { Link } from '@tanstack/react-router';
-import { Calendar01Icon, UserMultipleIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { Calendar, Users } from 'lucide-react';
 import type { DigestTopicSummary } from '@/lib/digest-api';
 
 interface TopicListItemProps {
@@ -31,12 +30,12 @@ export function TopicListItem({ topic }: TopicListItemProps) {
           )}
           <div className="flex items-center gap-4 pt-2 text-xs text-neutral-500">
             <span className="flex items-center gap-1">
-              <HugeiconsIcon icon={UserMultipleIcon} className="h-3.5 w-3.5" />
+              <Users className="h-3.5 w-3.5" />
               {topic.subscriberCount} subscribers
             </span>
             {topic.lastEditionAt && (
               <span className="flex items-center gap-1">
-                <HugeiconsIcon icon={Calendar01Icon} className="h-3.5 w-3.5" />
+                <Calendar className="h-3.5 w-3.5" />
                 Last edition{' '}
                 {new Date(topic.lastEditionAt).toLocaleDateString('en-US', {
                   month: 'short',

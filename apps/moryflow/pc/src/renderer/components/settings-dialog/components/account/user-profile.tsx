@@ -3,19 +3,12 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@anyhunt/ui/components/avatar';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { Separator } from '@anyhunt/ui/components/separator';
-import {
-  Add01Icon,
-  ArrowUp01Icon,
-  CreditCardIcon,
-  CrownIcon,
-  Logout01Icon,
-} from '@hugeicons/core-free-icons';
+import { Plus, ArrowUp, CreditCard, Crown, LogOut } from 'lucide-react';
 import { useAuth, type UserInfo, TIER_DISPLAY_NAMES, TIER_COLORS } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import { SubscriptionDialog } from './subscription-dialog';
 import { CreditPacksDialog } from './credit-packs-dialog';
 import { DeleteAccountDialog } from './delete-account-dialog';
-import { Icon } from '@anyhunt/ui/components/icon';
 
 type UserProfileProps = {
   user: UserInfo;
@@ -57,7 +50,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-medium">{user.name || t('noNicknameSet')}</h3>
             <Badge variant="secondary" className={tierColor}>
-              <Icon icon={CrownIcon} className="mr-1 h-3 w-3" />
+              <Crown className="mr-1 h-3 w-3" />
               {tierDisplayName}
             </Badge>
           </div>
@@ -69,7 +62,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
           )}
         </div>
         <Button variant="outline" size="sm" onClick={() => logout()} disabled={isLoading}>
-          <Icon icon={Logout01Icon} className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 h-4 w-4" />
           {t('logout')}
         </Button>
       </div>
@@ -79,7 +72,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
       {/* 积分余额 */}
       <div className="space-y-3">
         <h4 className="flex items-center gap-2 text-sm font-medium">
-          <Icon icon={CreditCardIcon} className="h-4 w-4" />
+          <CreditCard className="h-4 w-4" />
           {t('creditsBalance')}
         </h4>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -107,7 +100,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
           className="mt-2"
           onClick={() => setCreditPacksOpen(true)}
         >
-          <Icon icon={Add01Icon} className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4" />
           {t('purchaseCredits')}
         </Button>
       </div>
@@ -117,7 +110,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
       {/* 会员权益 */}
       <div className="space-y-3">
         <h4 className="flex items-center gap-2 text-sm font-medium">
-          <Icon icon={CrownIcon} className="h-4 w-4" />
+          <Crown className="h-4 w-4" />
           {t('membershipBenefits')}
         </h4>
         <div className="rounded-lg border p-4">
@@ -130,7 +123,7 @@ export const UserProfile = ({ user }: UserProfileProps) => {
                 size="sm"
                 onClick={() => setSubscriptionOpen(true)}
               >
-                <Icon icon={ArrowUp01Icon} className="mr-2 h-4 w-4" />
+                <ArrowUp className="mr-2 h-4 w-4" />
                 {t('upgrade')}
               </Button>
             )}

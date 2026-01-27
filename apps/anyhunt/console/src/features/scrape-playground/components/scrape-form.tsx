@@ -3,7 +3,7 @@
  *
  * [PROPS]: ScrapeFormProps
  * [EMITS]: onSubmit, onKeyChange
- * [POS]: Scrape Playground 主表单入口
+ * [POS]: Scrape Playground 主表单入口（Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Search01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
+import { Search, Loader } from 'lucide-react';
 import {
   Button,
   Checkbox,
@@ -22,7 +22,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Icon,
   Input,
   Select,
   SelectContent,
@@ -188,9 +187,9 @@ export function ScrapeForm({
                 </FormControl>
                 <Button type="submit" disabled={isLoading || !hasActiveKey || formats.length === 0}>
                   {isLoading ? (
-                    <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
+                    <Loader className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Icon icon={Search01Icon} className="h-4 w-4" />
+                    <Search className="h-4 w-4" />
                   )}
                   <span className="ml-2">Scrape</span>
                 </Button>

@@ -2,12 +2,11 @@
  * Edition List Item Component
  *
  * [PROPS]: DigestEditionSummary, topicSlug
- * [POS]: Displays a single edition in the topic detail page
+ * [POS]: Displays a single edition in the topic detail page (Lucide icons direct render)
  */
 
 import { Link } from '@tanstack/react-router';
-import { Calendar01Icon, News01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { Calendar, Newspaper } from 'lucide-react';
 import type { DigestEditionSummary } from '@/lib/digest-api';
 
 interface EditionListItemProps {
@@ -29,7 +28,7 @@ export function EditionListItem({ edition, topicSlug }: EditionListItemProps) {
           <h4 className="font-medium text-neutral-900 group-hover:text-neutral-700">Edition</h4>
           <div className="flex items-center gap-4 text-xs text-neutral-500">
             <span className="flex items-center gap-1">
-              <HugeiconsIcon icon={Calendar01Icon} className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5" />
               {new Date(displayDate).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -37,7 +36,7 @@ export function EditionListItem({ edition, topicSlug }: EditionListItemProps) {
               })}
             </span>
             <span className="flex items-center gap-1">
-              <HugeiconsIcon icon={News01Icon} className="h-3.5 w-3.5" />
+              <Newspaper className="h-3.5 w-3.5" />
               {edition.itemCount} items
             </span>
           </div>

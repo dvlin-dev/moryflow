@@ -8,14 +8,14 @@ Moryflow 官网（营销站），部署于 `www.moryflow.com`。
 
 ## 技术栈
 
-| 项目   | 技术                       |
-| ------ | -------------------------- |
-| 框架   | TanStack Start (SSR)       |
-| 运行时 | React 19 + Nitro           |
-| 构建   | Vite 7                     |
-| 样式   | Tailwind CSS v4            |
-| UI 库  | /ui                        |
-| 图标   | @hugeicons/core-free-icons |
+| 项目   | 技术                 |
+| ------ | -------------------- |
+| 框架   | TanStack Start (SSR) |
+| 运行时 | React 19 + Nitro     |
+| 构建   | Vite 7               |
+| 样式   | Tailwind CSS v4      |
+| UI 库  | /ui                  |
+| 图标   | lucide-react         |
 
 ## 项目结构
 
@@ -115,33 +115,16 @@ docker run -p 3000:3000 moryflow-www
 | `/robots.txt`  | server/routes/robots.txt.ts  | Robots                                                               |
 | `/api/health`  | server/routes/api/health.ts  | 健康检查                                                             |
 
-## 图标映射
+## 图标规范
 
-使用 `@hugeicons/core-free-icons` 替代 `lucide-react`：
-
-| 用途    | Hugeicons             |
-| ------- | --------------------- |
-| 下载    | Download01Icon        |
-| macOS   | AppleIcon             |
-| Windows | ComputerIcon          |
-| 加载    | Loading01Icon         |
-| 成功    | CheckmarkCircle01Icon |
-| 勾选    | Tick02Icon            |
-| 特效    | SparklesIcon          |
-| 安全    | Shield01Icon          |
-| 闪电    | FlashIcon             |
-| 解锁    | SquareUnlock01Icon    |
-| 硬盘    | HardDriveIcon         |
-| 大脑    | BrainIcon             |
-| 地球    | Globe02Icon           |
-| 编辑    | PencilEdit01Icon      |
-| 文档    | Book01Icon            |
-| 邮件    | Mail01Icon            |
-| 爱心    | FavouriteIcon         |
-| 目标    | Target01Icon          |
-| 用户组  | UserGroupIcon         |
+- 统一使用 `lucide-react`，业务直接组件调用（如 `<ChevronDown />`）
+- 使用 `className` 或 `size` 控制尺寸，不引入额外 `Icon` 包装层
+- 禁止 `@hugeicons/*` 与 `@tabler/icons-react`
+  | 目标 | Target01Icon |
+  | 用户组 | UserGroupIcon |
 
 ## 近期变更
 
+- 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - 健康检查迁移到 Nitro `server/routes`，并补齐 robots/sitemap/health 单测
 - SEO 主域名统一为 `https://www.moryflow.com`，OG/JSON-LD 资源对齐

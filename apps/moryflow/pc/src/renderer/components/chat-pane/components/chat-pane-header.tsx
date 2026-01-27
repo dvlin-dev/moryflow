@@ -10,15 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@anyhunt/ui/components/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
-import {
-  Add01Icon,
-  Delete02Icon,
-  MoreHorizontalIcon,
-  Tick02Icon,
-  ViewSidebarRightIcon,
-} from '@hugeicons/core-free-icons';
+import { Plus, Delete, Ellipsis, Check, PanelRight } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
-import { Icon } from '@anyhunt/ui/components/icon';
 
 type ChatPaneHeaderProps = {
   sessions: ChatSessionSummary[];
@@ -58,7 +51,7 @@ export const ChatPaneHeader = memo(
               onClick={onToggleCollapse}
               aria-label={collapsed ? t('expand') : t('collapse')}
             >
-              <Icon icon={ViewSidebarRightIcon} className="size-4" />
+              <PanelRight className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">{collapsed ? t('expand') : t('collapse')}</TooltipContent>
@@ -79,7 +72,7 @@ export const ChatPaneHeader = memo(
                   onClick={onOpenTasks}
                   aria-label="Tasks"
                 >
-                  <Icon icon={Tick02Icon} className="size-4" />
+                  <Check className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Tasks</TooltipContent>
@@ -103,7 +96,7 @@ export const ChatPaneHeader = memo(
                 disabled={!isSessionReady}
                 aria-label={t('newConversation')}
               >
-                <Icon icon={Add01Icon} className="size-4" />
+                <Plus className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('newConversation')}</TooltipContent>
@@ -169,7 +162,7 @@ const HistoryDropdown = ({
               disabled={disabled}
               aria-label={t('history')}
             >
-              <Icon icon={MoreHorizontalIcon} className="size-4" />
+              <Ellipsis className="size-4" />
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
@@ -217,13 +210,11 @@ const HistoryDropdown = ({
                     className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                     aria-label={t('deleteChat')}
                   >
-                    <Icon icon={Delete02Icon} className="size-3.5" />
+                    <Delete className="size-3.5" />
                   </button>
                 )}
                 {/* 当前对话对号 */}
-                {isActive && (
-                  <Icon icon={Tick02Icon} className="size-4 shrink-0 text-muted-foreground" />
-                )}
+                {isActive && <Check className="size-4 shrink-0 text-muted-foreground" />}
               </DropdownMenuItem>
             );
           })}

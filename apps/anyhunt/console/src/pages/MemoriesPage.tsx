@@ -1,10 +1,12 @@
 /**
- * Memories 页面 - 记忆列表与管理
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Memories 页面 - 记忆列表与管理（Lucide icons direct render）
  */
 
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Brain02Icon, Download01Icon } from '@hugeicons/core-free-icons';
+import { Brain, Download } from 'lucide-react';
 import {
   Button,
   Card,
@@ -12,7 +14,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Icon,
   Select,
   SelectContent,
   SelectItem,
@@ -97,7 +98,7 @@ export default function MemoriesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Icon icon={Brain02Icon} className="h-6 w-6" />
+            <Brain className="h-6 w-6" />
             Memories
           </h1>
           <p className="text-muted-foreground mt-1">View Mem0-style memories for a user.</p>
@@ -110,7 +111,7 @@ export default function MemoriesPage() {
             onClick={handleExport}
             disabled={exportMutation.isPending || memories.length === 0}
           >
-            <Icon icon={Download01Icon} className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4 mr-2" />
             Export JSON
           </Button>
         </div>
@@ -195,7 +196,7 @@ export default function MemoriesPage() {
       ) : memories.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <Icon icon={Brain02Icon} className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <Brain className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <CardDescription>No memories found.</CardDescription>
             <p className="text-sm text-muted-foreground mt-2">
               Memories are created via the Memox API.

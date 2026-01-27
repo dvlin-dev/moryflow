@@ -1,11 +1,10 @@
 /**
  * [PROPS]: { tab, isActive, showSaveIndicator, saveState, onSelect, onClose }
  * [EMITS]: onSelect, onClose
- * [POS]: 单个 Tab 项组件
+ * [POS]: 单个 Tab 项组件（Lucide 图标）
  */
 
-import { Cancel01Icon, File01Icon, GlobeIcon, SparklesIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { X, File, Globe, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SaveState, SelectedFile } from '@/workspace/const';
 import { AI_TAB_ID, SITES_TAB_ID, formatTabLabel, isToolTab } from '../helper';
@@ -33,12 +32,12 @@ export const TabItem = ({
 
   const renderIcon = () => {
     if (isAITab) {
-      return <Icon icon={SparklesIcon} className="size-3.5 shrink-0 text-violet-500" />;
+      return <Sparkles className="size-3.5 shrink-0 text-violet-500" />;
     }
     if (isSitesTab) {
-      return <Icon icon={GlobeIcon} className="size-3.5 shrink-0 text-blue-500" />;
+      return <Globe className="size-3.5 shrink-0 text-blue-500" />;
     }
-    return <Icon icon={File01Icon} className="size-3.5 shrink-0 opacity-60" />;
+    return <File className="size-3.5 shrink-0 opacity-60" />;
   };
 
   return (
@@ -90,7 +89,7 @@ export const TabItem = ({
           }
         }}
       >
-        <Icon icon={Cancel01Icon} className="size-3" />
+        <X className="size-3" />
       </span>
     </button>
   );

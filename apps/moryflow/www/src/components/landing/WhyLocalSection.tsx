@@ -1,36 +1,29 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Grid explaining the local-first design philosophy
+ * [POS]: Grid explaining the local-first design philosophy (Lucide icons direct render)
  */
 
-import type { HugeIcon } from '@anyhunt/ui';
-import { Icon } from '@anyhunt/ui';
-import {
-  Shield01Icon,
-  FlashIcon,
-  SquareUnlock01Icon,
-  HardDriveIcon,
-} from '@hugeicons/core-free-icons';
+import { Shield, Zap, LockOpen, HardDrive, type LucideIcon } from 'lucide-react';
 
-const reasons: { icon: HugeIcon; title: string; desc: string }[] = [
+const reasons: { icon: LucideIcon; title: string; desc: string }[] = [
   {
-    icon: Shield01Icon,
+    icon: Shield,
     title: 'Your memory, your secret',
     desc: "Mory's memory only exists on your computer. Your habits, preferences, and secrets always belong to you. Never uploaded, never shared.",
   },
   {
-    icon: SquareUnlock01Icon,
+    icon: LockOpen,
     title: "Your data won't disappear",
     desc: 'Even offline, even if the company shuts down, your notes are still there. Standard formats that any software can open.',
   },
   {
-    icon: FlashIcon,
+    icon: Zap,
     title: 'Fast, no waiting',
     desc: 'No uploading or downloading - open and use. Mory is always by your side. Want to sync with cloud storage? Your choice.',
   },
   {
-    icon: HardDriveIcon,
+    icon: HardDrive,
     title: 'Use it your way',
     desc: 'Open with other software, sync with cloud storage - completely free. Your stuff, your rules.',
   },
@@ -59,28 +52,30 @@ export function WhyLocalSection() {
 
         {/* Reasons Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          {reasons.map((reason, index) => (
-            <div key={index} className="group relative">
-              <div className="flex flex-col sm:flex-row gap-6 p-8 bg-mory-bg rounded-3xl border-2 border-transparent hover:border-mory-orange/20 transition-all duration-300">
-                {/* Icon */}
-                <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border border-white/80 shadow-sm shadow-gray-200/30 flex items-center justify-center group-hover:bg-orange-50/80 transition-all">
-                  <Icon
-                    icon={reason.icon}
-                    size={32}
-                    className="text-mory-text-primary group-hover:text-mory-orange transition-colors"
-                  />
-                </div>
+          {reasons.map((reason, index) => {
+            const IconComponent = reason.icon;
+            return (
+              <div key={index} className="group relative">
+                <div className="flex flex-col sm:flex-row gap-6 p-8 bg-mory-bg rounded-3xl border-2 border-transparent hover:border-mory-orange/20 transition-all duration-300">
+                  {/* Icon */}
+                  <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border border-white/80 shadow-sm shadow-gray-200/30 flex items-center justify-center group-hover:bg-orange-50/80 transition-all">
+                    <IconComponent
+                      size={32}
+                      className="text-mory-text-primary group-hover:text-mory-orange transition-colors"
+                    />
+                  </div>
 
-                {/* Content */}
-                <div className="flex-1">
-                  <h3 className="text-2xl font-serif font-bold text-mory-text-primary mb-3">
-                    {reason.title}
-                  </h3>
-                  <p className="text-mory-text-secondary leading-relaxed">{reason.desc}</p>
+                  {/* Content */}
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-serif font-bold text-mory-text-primary mb-3">
+                      {reason.title}
+                    </h3>
+                    <p className="text-mory-text-secondary leading-relaxed">{reason.desc}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

@@ -1,14 +1,13 @@
 /**
  * [PROPS]: none
  * [EMITS]: none
- * [POS]: 语言切换组件，用于设置页面通用 tab
+ * [POS]: 语言切换组件，用于设置页面通用 tab（Lucide 图标）
  */
 
 import { useLanguage, useTranslation } from '@/lib/i18n';
 import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
 import { Label } from '@anyhunt/ui/components/label';
-import { GlobeIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Globe } from 'lucide-react';
 
 export function LanguageSwitcher() {
   const { t } = useTranslation('settings');
@@ -41,7 +40,7 @@ export function LanguageSwitcher() {
                     isSelected ? 'bg-foreground text-background' : 'bg-muted'
                   }`}
                 >
-                  {isSelected ? lang.flag : <Icon icon={GlobeIcon} className="size-3.5" />}
+                  {isSelected ? lang.flag : <Globe className="size-3.5" />}
                 </div>
                 <span className="font-medium">{lang.name}</span>
               </div>

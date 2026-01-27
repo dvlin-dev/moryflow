@@ -1,7 +1,7 @@
 /**
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
- * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择
+ * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -38,23 +38,22 @@ import {
   ModelSelectorFooter,
 } from '@anyhunt/ui/ai/model-selector';
 import {
-  Add01Icon,
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  ArrowUpRight01Icon,
-  CheckmarkCircle01Icon,
-  File01Icon,
-  Image01Icon,
-  Mic01Icon,
-  Settings02Icon,
-  SparklesIcon,
-  StopIcon,
-} from '@hugeicons/core-free-icons';
+  Plus,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpRight,
+  CircleCheck,
+  File,
+  Image,
+  Mic,
+  Settings,
+  Sparkles,
+  SquareStop,
+} from 'lucide-react';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { TIER_DISPLAY_NAMES } from '@/lib/server';
 import { McpSelector } from '@/components/ai-elements/mcp-selector';
 import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
-import { Icon } from '@anyhunt/ui/components/icon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -242,7 +241,7 @@ const ChatPromptInputInner = ({
     return (
       <FileChip
         key={file.id}
-        icon={isImage ? Image01Icon : File01Icon}
+        icon={isImage ? Image : File}
         label={label}
         tooltip={file.filename ?? undefined}
         removeLabel={t('removeFile')}
@@ -280,7 +279,7 @@ const ChatPromptInputInner = ({
   const renderActionMenu = () => (
     <PromptInputActionMenu>
       <PromptInputActionMenuTrigger aria-label={t('addFile')} disabled={isDisabled}>
-        <Icon icon={Add01Icon} className="size-4" />
+        <Plus className="size-4" />
       </PromptInputActionMenuTrigger>
       <PromptInputActionMenuContent>
         <PromptInputActionAddAttachments />
@@ -300,7 +299,7 @@ const ChatPromptInputInner = ({
           disabled={isDisabled}
           className="rounded-full bg-white text-black hover:bg-gray-100"
         >
-          <Icon icon={StopIcon} className="size-4 fill-current" />
+          <SquareStop className="size-4 fill-current" />
         </InputGroupButton>
       );
     }
@@ -319,7 +318,7 @@ const ChatPromptInputInner = ({
             isSpeechActive && 'bg-black/40 text-white hover:bg-black/50'
           )}
         >
-          <Icon icon={StopIcon} className="size-4 fill-current" />
+          <SquareStop className="size-4 fill-current" />
         </InputGroupButton>
       );
     }
@@ -327,7 +326,7 @@ const ChatPromptInputInner = ({
     if (hasTextInput) {
       return (
         <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full">
-          <Icon icon={ArrowUp01Icon} className="size-4" />
+          <ArrowUp className="size-4" />
         </PromptInputSubmit>
       );
     }
@@ -342,7 +341,7 @@ const ChatPromptInputInner = ({
         disabled={isDisabled || isProcessing}
         className="rounded-full"
       >
-        <Icon icon={Mic01Icon} className="size-4" />
+        <Mic className="size-4" />
       </InputGroupButton>
     );
   };
@@ -372,12 +371,12 @@ const ChatPromptInputInner = ({
                     variant="outline"
                     className="ml-auto shrink-0 text-xs px-1.5 py-0 h-5 gap-0.5"
                   >
-                    <Icon icon={ArrowUpRight01Icon} className="size-3" />
+                    <ArrowUpRight className="size-3" />
                     {TIER_DISPLAY_NAMES[option.requiredTier as keyof typeof TIER_DISPLAY_NAMES] ||
                       t('upgrade')}
                   </Badge>
                 ) : selectedModelId === option.id ? (
-                  <Icon icon={CheckmarkCircle01Icon} className="ml-auto size-4 shrink-0" />
+                  <CircleCheck className="ml-auto size-4 shrink-0" />
                 ) : null}
               </ModelSelectorItem>
             ))}
@@ -395,7 +394,7 @@ const ChatPromptInputInner = ({
             onOpenSettings?.('providers');
           }}
         >
-          <Icon icon={Settings02Icon} className="mr-2 size-3.5" />
+          <Settings className="mr-2 size-3.5" />
           {t('modelSettings')}
         </Button>
       </ModelSelectorFooter>
@@ -408,7 +407,7 @@ const ChatPromptInputInner = ({
         <ModelSelectorTrigger asChild>
           <PromptInputButton aria-label={t('switchModel')} disabled={isDisabled}>
             <span>{selectedModel?.name ?? t('selectModel')}</span>
-            <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
+            <ArrowDown className="size-3 opacity-50" />
           </PromptInputButton>
         </ModelSelectorTrigger>
         {renderModelSelectorList()}
@@ -420,7 +419,7 @@ const ChatPromptInputInner = ({
         disabled={isDisabled}
         onClick={() => onOpenSettings?.('providers')}
       >
-        <Icon icon={SparklesIcon} className="size-4" />
+        <Sparkles className="size-4" />
         <span>{t('setupModel')}</span>
       </PromptInputButton>
     );
@@ -437,9 +436,9 @@ const ChatPromptInputInner = ({
             accessMode === 'full_access' && 'border-orange-200 text-orange-600'
           )}
         >
-          <Icon icon={SparklesIcon} className="size-4" />
+          <Sparkles className="size-4" />
           <span>{accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}</span>
-          <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
+          <ArrowDown className="size-3 opacity-50" />
         </PromptInputButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

@@ -1,18 +1,17 @@
 /**
  * [PROPS]: RegisterFormProps
  * [EMITS]: onSuccess
- * [POS]: 注册表单组件（支持 Email OTP 验证）
+ * [POS]: 注册表单组件（支持 Email OTP 验证，Lucide icons direct render）
  */
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import { Link02Icon, Loading01Icon, Mail01Icon } from '@hugeicons/core-free-icons';
+import { Link, Loader, Mail } from 'lucide-react';
 import {
   Button,
   Card,
   CardContent,
-  Icon,
   Input,
   Form,
   FormControl,
@@ -159,7 +158,7 @@ export function RegisterForm({
           {variant === 'page' ? (
             <div className="flex flex-col items-center gap-2 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Icon icon={Mail01Icon} className="h-6 w-6 text-primary" />
+                <Mail className="h-6 w-6 text-primary" />
               </div>
               <h1 className="font-mono text-2xl font-bold">Check your email</h1>
               <p className="text-balance text-sm text-muted-foreground">
@@ -205,7 +204,7 @@ export function RegisterForm({
             <Button type="submit" className="w-full font-mono" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
                   Verifying...
                 </>
               ) : (
@@ -249,7 +248,7 @@ export function RegisterForm({
         {variant === 'page' && (
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-2">
-              <Icon icon={Link02Icon} className="size-8" />
+              <Link className="size-8" />
               <h1 className="font-mono text-2xl font-bold">Anyhunt</h1>
             </div>
             <p className="text-balance text-sm text-muted-foreground">Create your account</p>
@@ -324,7 +323,7 @@ export function RegisterForm({
           <Button type="submit" className="w-full font-mono" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
               </>
             ) : (

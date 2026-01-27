@@ -1,21 +1,14 @@
 /**
  * [PROPS]: { site, onBack, onPublish, onUpdate, onUnpublish, onSettingsChange, onDelete }
  * [EMITS]: onBack(), onPublish(), onUpdate(), onUnpublish(), onSettingsChange(settings), onDelete()
- * [POS]: Sites CMS 的站点详情页组件
+ * [POS]: Sites CMS 的站点详情页组件（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useState, useEffect } from 'react';
-import {
-  ArrowLeft01Icon,
-  ArrowUpRight01Icon,
-  Copy01Icon,
-  Loading03Icon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { ArrowLeft, ArrowUpRight, Copy, Loader, Check } from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Input } from '@anyhunt/ui/components/input';
 import { Label } from '@anyhunt/ui/components/label';
 import { Textarea } from '@anyhunt/ui/components/textarea';
@@ -102,7 +95,7 @@ export function SiteDetail({
       {/* Header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-4">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
-          <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-semibold">{site.subdomain}</h1>
       </div>
@@ -136,9 +129,9 @@ export function SiteDetail({
                     onClick={handleCopyLink}
                   >
                     {copied ? (
-                      <Icon icon={Tick02Icon} className="h-3.5 w-3.5 text-green-500" />
+                      <Check className="h-3.5 w-3.5 text-green-500" />
                     ) : (
-                      <Icon icon={Copy01Icon} className="h-3.5 w-3.5" />
+                      <Copy className="h-3.5 w-3.5" />
                     )}
                   </Button>
                   <Button
@@ -147,7 +140,7 @@ export function SiteDetail({
                     className="h-6 w-6 shrink-0"
                     onClick={handleOpenSite}
                   >
-                    <Icon icon={ArrowUpRight01Icon} className="h-3.5 w-3.5" />
+                    <ArrowUpRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -217,7 +210,7 @@ export function SiteDetail({
                 <Button onClick={handleSave} disabled={saving} className="w-full">
                   {saving ? (
                     <>
-                      <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (

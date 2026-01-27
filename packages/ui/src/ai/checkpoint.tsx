@@ -1,8 +1,7 @@
 'use client';
 
-import { Bookmark01Icon } from '@hugeicons/core-free-icons';
+import { Bookmark, type LucideIcon, type LucideProps } from 'lucide-react';
 import { Button } from '../components/button';
-import { Icon, type HugeIcon } from '../components/icon';
 import { Separator } from '../components/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip';
 import { cn } from '../lib/utils';
@@ -20,14 +19,14 @@ export const Checkpoint = ({ className, children, ...props }: CheckpointProps) =
   </div>
 );
 
-export type CheckpointIconProps = Omit<ComponentProps<typeof Icon>, 'icon'> & {
-  icon?: HugeIcon;
+export type CheckpointIconProps = Omit<LucideProps, 'ref'> & {
+  icon?: LucideIcon;
 };
 
-export const CheckpointIcon = ({ className, children, icon, ...props }: CheckpointIconProps) =>
-  children ?? (
-    <Icon icon={icon ?? Bookmark01Icon} className={cn('size-4 shrink-0', className)} {...props} />
-  );
+export const CheckpointIcon = ({ className, children, icon, ...props }: CheckpointIconProps) => {
+  const IconComponent = icon ?? Bookmark;
+  return children ?? <IconComponent className={cn('size-4 shrink-0', className)} {...props} />;
+};
 
 export type CheckpointTriggerProps = ComponentProps<typeof Button> & {
   tooltip?: string;

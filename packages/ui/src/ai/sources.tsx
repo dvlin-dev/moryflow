@@ -1,8 +1,7 @@
 'use client';
 
-import { ArrowDown01Icon, Book01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown, Book } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon } from '../components/icon';
 import { cn } from '../lib/utils';
 import type { ComponentProps } from 'react';
 
@@ -31,7 +30,7 @@ export const SourcesTrigger = ({
     {children ?? (
       <>
         <p className="font-medium">{formatLabel(count)}</p>
-        <Icon icon={ArrowDown01Icon} className="h-4 w-4" />
+        <ArrowDown className="h-4 w-4" />
       </>
     )}
   </CollapsibleTrigger>
@@ -62,7 +61,7 @@ export const Source = ({ href, title, children, ...props }: SourceProps) => (
   >
     {children ?? (
       <>
-        <Icon icon={Book01Icon} className="h-4 w-4" />
+        <Book className="h-4 w-4" />
         <span className="block font-medium">{title}</span>
       </>
     )}

@@ -1,7 +1,7 @@
 /**
  * [PROPS]: AgentRunPanelProps
  * [EMITS]: None
- * [POS]: Agent Playground 聊天面板（共享输入框 + 消息列表）
+ * [POS]: Agent Playground 聊天面板（共享输入框 + 消息列表，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，必须更新 src/features/CLAUDE.md
  */
@@ -10,15 +10,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-  InputGroupButton,
-  Icon,
-} from '@anyhunt/ui';
+import { Form, FormControl, FormField, FormItem, FormMessage, InputGroupButton } from '@anyhunt/ui';
 import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
 import {
   PromptInput,
@@ -38,7 +30,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from '@anyhunt/ui/ai/model-selector';
-import { ArrowDown01Icon, CheckmarkCircle01Icon, StopIcon } from '@hugeicons/core-free-icons';
+import { ArrowDown, CircleCheck, SquareStop } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
@@ -139,7 +131,7 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
         <ModelSelectorTrigger asChild>
           <PromptInputButton aria-label="Switch model" disabled={isDisabled}>
             <span>{selectedModel?.displayName ?? selectedModel?.modelId ?? 'Select model'}</span>
-            <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
+            <ArrowDown className="size-3 opacity-50" />
           </PromptInputButton>
         </ModelSelectorTrigger>
         <ModelSelectorContent>
@@ -156,7 +148,7 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
               >
                 <ModelSelectorName>{model.displayName || model.modelId}</ModelSelectorName>
                 {activeModelId === model.modelId ? (
-                  <Icon icon={CheckmarkCircle01Icon} className="ml-auto size-4 shrink-0" />
+                  <CircleCheck className="ml-auto size-4 shrink-0" />
                 ) : null}
               </ModelSelectorItem>
             ))}
@@ -214,7 +206,7 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
                   onClick={stop}
                   className="rounded-full bg-white text-black hover:bg-gray-100"
                 >
-                  <Icon icon={StopIcon} className="size-4" />
+                  <SquareStop className="size-4" />
                 </InputGroupButton>
               ) : (
                 <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full" />

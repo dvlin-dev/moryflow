@@ -1,6 +1,6 @@
 /**
  * [PROPS]: open, onOpenChange, onSuccess
- * [POS]: Dialog for creating new subscriptions with advanced settings
+ * [POS]: Dialog for creating new subscriptions with advanced settings (Lucide icons direct render)
  * Renders as Dialog on desktop, Drawer on mobile
  */
 
@@ -40,9 +40,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   Separator,
-  Icon,
 } from '@anyhunt/ui';
-import { ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useCreateSubscription } from '@/features/digest/hooks';
 import { CRON_PRESETS, TIMEZONES, DEFAULT_SUBSCRIPTION } from '@/features/digest/constants';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -86,6 +85,7 @@ export function CreateSubscriptionDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const createMutation = useCreateSubscription();
   const isMobile = useIsMobile();
+  const AdvancedToggleIcon = showAdvanced ? ArrowDown : ArrowRight;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -221,7 +221,7 @@ export function CreateSubscriptionDialog({
         <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-start gap-2 px-0">
-              <Icon icon={showAdvanced ? ArrowDown01Icon : ArrowRight01Icon} className="size-4" />
+              <AdvancedToggleIcon className="size-4" />
               <span>Advanced Settings</span>
             </Button>
           </CollapsibleTrigger>

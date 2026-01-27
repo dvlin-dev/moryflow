@@ -3,14 +3,8 @@ import { Controller } from 'react-hook-form';
 import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
 import { Label } from '@anyhunt/ui/components/label';
 import { Button } from '@anyhunt/ui/components/button';
-import {
-  ComputerIcon,
-  Loading03Icon,
-  Moon01Icon,
-  RefreshIcon,
-  Sun01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
+import { Computer, Loader, Moon, RefreshCw, Sun } from 'lucide-react';
 import { previewTheme, type ThemePreference } from '@/theme';
 import { LanguageSwitcher } from './language-switcher';
 import { SandboxSettings } from './sandbox-settings';
@@ -22,17 +16,17 @@ type ThemeOption = {
   value: ThemePreference;
   labelKey: 'light' | 'dark' | 'system';
   descriptionKey: 'lightModeDescription' | 'darkModeDescription' | 'systemModeDescription';
-  icon: HugeIcon;
+  icon: LucideIcon;
 };
 
 const THEME_OPTIONS: ThemeOption[] = [
-  { value: 'light', labelKey: 'light', descriptionKey: 'lightModeDescription', icon: Sun01Icon },
-  { value: 'dark', labelKey: 'dark', descriptionKey: 'darkModeDescription', icon: Moon01Icon },
+  { value: 'light', labelKey: 'light', descriptionKey: 'lightModeDescription', icon: Sun },
+  { value: 'dark', labelKey: 'dark', descriptionKey: 'darkModeDescription', icon: Moon },
   {
     value: 'system',
     labelKey: 'system',
     descriptionKey: 'systemModeDescription',
-    icon: ComputerIcon,
+    icon: Computer,
   },
 ];
 
@@ -117,7 +111,7 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
                           isSelected ? 'bg-foreground text-background' : 'bg-muted'
                         }`}
                       >
-                        <Icon icon={ThemeIcon} className="size-3.5" />
+                        <ThemeIcon className="size-3.5" />
                       </div>
                       <span className="font-medium">{t(option.labelKey)}</span>
                     </div>
@@ -155,9 +149,9 @@ export const GeneralSection = ({ control }: GeneralSectionProps) => {
           className="text-destructive hover:text-destructive"
         >
           {resetting ? (
-            <Icon icon={Loading03Icon} className="mr-1.5 size-3.5 animate-spin" />
+            <Loader className="mr-1.5 size-3.5 animate-spin" />
           ) : (
-            <Icon icon={RefreshIcon} className="mr-1.5 size-3.5" />
+            <RefreshCw className="mr-1.5 size-3.5" />
           )}
           {t('resetButton')}
         </Button>

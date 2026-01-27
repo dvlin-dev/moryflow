@@ -1,24 +1,24 @@
 /**
  * [PROPS]: vaultPath
  * [EMITS]: none
- * [POS]: 云同步设置区块（主开关 + 状态 + Advanced）
+ * [POS]: 云同步设置区块（主开关 + 状态 + Advanced，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertCircleIcon,
-  CheckmarkCircle01Icon,
-  ChevronDown as ChevronDownIcon,
-  CloudIcon,
-  FolderSyncIcon,
-  HardDriveIcon,
-  Loading03Icon,
-  RefreshIcon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+  CircleAlert,
+  CircleCheck,
+  ChevronDown,
+  Cloud,
+  FolderSync,
+  HardDrive,
+  Loader,
+  RefreshCw,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@anyhunt/ui/components/switch';
 import { Button } from '@anyhunt/ui/components/button';
@@ -128,7 +128,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <Icon icon={CloudIcon} className="h-12 w-12 text-muted-foreground/50" />
+        <Cloud className="h-12 w-12 text-muted-foreground/50" />
         <div className="space-y-1">
           <p className="font-medium">{t('cloudSyncNeedLogin')}</p>
           <p className="text-sm text-muted-foreground">{t('cloudSyncNeedLoginDescription')}</p>
@@ -141,7 +141,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   if (!vaultPath) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <Icon icon={FolderSyncIcon} className="h-12 w-12 text-muted-foreground/50" />
+        <FolderSync className="h-12 w-12 text-muted-foreground/50" />
         <div className="space-y-1">
           <p className="font-medium">{t('cloudSyncNeedVault')}</p>
           <p className="text-sm text-muted-foreground">{t('cloudSyncNeedVaultDescription')}</p>
@@ -159,20 +159,20 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const statusSummary = useMemo(
     () =>
       isSyncing
-        ? { icon: Loading03Icon, label: t('cloudSyncSyncing'), colorClass: 'text-primary' }
+        ? { icon: Loader, label: t('cloudSyncSyncing'), colorClass: 'text-primary' }
         : needsAttention
           ? {
-              icon: AlertCircleIcon,
+              icon: CircleAlert,
               label: t('cloudSyncNeedsAttention'),
               colorClass: 'text-amber-500',
             }
           : {
-              icon: CheckmarkCircle01Icon,
+              icon: CircleCheck,
               label: t('cloudSyncSynced'),
               colorClass: 'text-success',
             },
     [isSyncing, needsAttention, t]
-  );
+  ) as { icon: LucideIcon; label: string; colorClass: string };
 
   const lastSyncLabel = useMemo(() => {
     if (!status?.lastSyncAt) return t('cloudSyncNeverSynced');
@@ -192,8 +192,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
                 isEnabled ? 'bg-primary/10' : 'bg-muted'
               }`}
             >
-              <Icon
-                icon={CloudIcon}
+              <Cloud
                 className={`h-5 w-5 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`}
               />
             </div>
@@ -215,10 +214,18 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
         {/* 同步状态 */}
         {status && (
           <div className="mt-4 flex items-center gap-2 border-t pt-4 text-xs text-muted-foreground">
-            <Icon
-              icon={statusSummary.icon}
-              className={cn('h-3.5 w-3.5', statusSummary.colorClass, isSyncing && 'animate-spin')}
-            />
+            {(() => {
+              const StatusIcon = statusSummary.icon;
+              return (
+                <StatusIcon
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    statusSummary.colorClass,
+                    isSyncing && 'animate-spin'
+                  )}
+                />
+              );
+            })()}
             <span className={cn('font-medium', statusSummary.colorClass)}>
               {statusSummary.label}
             </span>
@@ -236,8 +243,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
             className="mt-2 w-full justify-between px-2 text-sm"
           >
             <span className="text-sm font-medium">{t('advanced')}</span>
-            <Icon
-              icon={ChevronDownIcon}
+            <ChevronDown
               className={cn('h-4 w-4 transition-transform', showAdvanced && 'rotate-180')}
             />
           </Button>
@@ -247,7 +253,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
           <div className="flex items-center justify-between rounded-xl bg-background p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                <Icon icon={SparklesIcon} className="h-4 w-4 text-muted-foreground" />
+                <Sparkles className="h-4 w-4 text-muted-foreground" />
               </div>
               <div>
                 <Label htmlFor="vectorize-enabled" className="text-sm font-medium">
@@ -278,9 +284,9 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
                   className="h-7 px-2 text-xs"
                 >
                   {usageLoading ? (
-                    <Icon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
+                    <Loader className="h-3 w-3 animate-spin" />
                   ) : (
-                    <Icon icon={RefreshIcon} className="h-3 w-3" />
+                    <RefreshCw className="h-3 w-3" />
                   )}
                 </Button>
               </div>
@@ -295,7 +301,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
                   <div className="rounded-xl bg-background p-4">
                     <div className="mb-2 flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <Icon icon={HardDriveIcon} className="h-4 w-4 text-muted-foreground" />
+                        <HardDrive className="h-4 w-4 text-muted-foreground" />
                         <span>{t('storageSpace')}</span>
                       </div>
                       <span className="text-muted-foreground">
@@ -308,7 +314,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
                   <div className="rounded-xl bg-background p-4">
                     <div className="mb-2 flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <Icon icon={SparklesIcon} className="h-4 w-4 text-muted-foreground" />
+                        <Sparkles className="h-4 w-4 text-muted-foreground" />
                         <span>{t('smartIndex')}</span>
                       </div>
                       <span className="text-muted-foreground">
@@ -337,7 +343,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
               <div className="rounded-xl bg-background p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                    <Icon icon={HardDriveIcon} className="h-4 w-4 text-muted-foreground" />
+                    <HardDrive className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">{settings.deviceName}</p>

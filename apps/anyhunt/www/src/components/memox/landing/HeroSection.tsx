@@ -1,6 +1,12 @@
-import { ArrowRight01Icon, BrainIcon, GithubIcon } from '@hugeicons/core-free-icons';
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Memox landing hero section (Lucide icons direct render)
+ */
+
+import { ArrowRight, Brain, Github } from 'lucide-react';
 import { Container } from '@/components/layout';
-import { Button, Icon } from '@anyhunt/ui';
+import { Button } from '@anyhunt/ui';
 
 export function HeroSection() {
   return (
@@ -12,7 +18,7 @@ export function HeroSection() {
         <div className="flex flex-col items-center py-24 text-center md:py-32 lg:py-40">
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 border border-border bg-muted/50 px-3 py-1 font-mono text-xs">
-            <Icon icon={BrainIcon} className="h-3 w-3" />
+            <Brain className="h-3 w-3" />
             <span>Semantic Memory API for AI Agents</span>
           </div>
 
@@ -34,7 +40,7 @@ export function HeroSection() {
             <a href="https://console.anyhunt.app/signup">
               <Button size="lg" className="font-mono">
                 Get Started Free
-                <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <a href="https://server.anyhunt.app/api-docs" target="_blank" rel="noopener noreferrer">
@@ -52,7 +58,7 @@ export function HeroSection() {
               rel="noopener noreferrer"
               className="flex items-center gap-2 transition-colors hover:text-foreground"
             >
-              <Icon icon={GithubIcon} className="h-4 w-4" />
+              <Github className="h-4 w-4" />
               <span className="font-mono">Open Source</span>
             </a>
             <div className="flex items-center gap-2">

@@ -18,9 +18,8 @@ import { Separator } from './separator';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './sheet';
 import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
-import { Icon } from './icon';
 import { useIsMobile } from '../hooks/use-mobile';
-import { SidebarLeftIcon } from '@hugeicons/core-free-icons';
+import { PanelLeft } from 'lucide-react';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -261,7 +260,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       }}
       {...props}
     >
-      <Icon icon={SidebarLeftIcon} strokeWidth={2} />
+      <PanelLeft strokeWidth={2} />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

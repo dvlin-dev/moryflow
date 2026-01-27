@@ -1,10 +1,10 @@
 /**
  * [PROPS]: SidebarFilesProps - 文件树相关 props
  * [EMITS]: 文件操作事件（选择、打开、重命名、删除等）
- * [POS]: 侧边栏文件列表区组件
+ * [POS]: 侧边栏文件列表区组件（Lucide 图标）
  */
 
-import { FileAddIcon, FolderAddIcon } from '@hugeicons/core-free-icons';
+import { FilePlus, FolderPlus } from 'lucide-react';
 import type { VaultTreeNode } from '@shared/ipc';
 import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
 import {
@@ -13,7 +13,6 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@anyhunt/ui/components/context-menu';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { VaultFiles } from '@/components/vault-files';
 import { useTranslation } from '@/lib/i18n';
@@ -88,11 +87,11 @@ export const SidebarFiles = ({
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={onCreateFileInRoot}>
-          <Icon icon={FileAddIcon} className="mr-2 h-4 w-4" />
+          <FilePlus className="mr-2 h-4 w-4" />
           {t('newNote')}
         </ContextMenuItem>
         <ContextMenuItem onClick={onCreateFolderInRoot}>
-          <Icon icon={FolderAddIcon} className="mr-2 h-4 w-4" />
+          <FolderPlus className="mr-2 h-4 w-4" />
           {t('newFolder')}
         </ContextMenuItem>
       </ContextMenuContent>

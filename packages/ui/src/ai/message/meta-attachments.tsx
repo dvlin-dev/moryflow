@@ -1,6 +1,6 @@
 /**
  * [PROPS]: MessageMetaAttachmentsProps - 结构化附件列表
- * [POS]: 用于展示 file-ref / image 等结构化附件
+ * [POS]: 用于展示 file-ref / image 等结构化附件（Lucide icon map）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -9,15 +9,14 @@
 
 import type { HTMLAttributes } from 'react';
 import {
-  DocumentCodeIcon,
-  File01Icon,
-  FileAudioIcon,
-  FileZipIcon,
-  Video01Icon,
-  Xls01Icon,
-} from '@hugeicons/core-free-icons';
-
-import { Icon, type HugeIcon } from '../../components/icon';
+  FileCode,
+  File,
+  FileMusic,
+  FileArchive,
+  Video,
+  FileSpreadsheet,
+  type LucideIcon,
+} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/tooltip';
 import { cn } from '../../lib/utils';
 import type { ChatAttachment } from '@anyhunt/types';
@@ -29,71 +28,71 @@ export type MessageMetaAttachmentsProps = HTMLAttributes<HTMLDivElement> & {
 type FileRefAttachment = Extract<ChatAttachment, { type: 'file-ref' }>;
 type ImageAttachment = Extract<ChatAttachment, { type: 'image' }>;
 
-const EXTENSION_ICON_MAP: Record<string, HugeIcon> = {
-  md: File01Icon,
-  txt: File01Icon,
-  doc: File01Icon,
-  docx: File01Icon,
-  pdf: File01Icon,
-  rtf: File01Icon,
-  json: DocumentCodeIcon,
-  yaml: DocumentCodeIcon,
-  yml: DocumentCodeIcon,
-  toml: DocumentCodeIcon,
-  xml: DocumentCodeIcon,
-  ts: DocumentCodeIcon,
-  tsx: DocumentCodeIcon,
-  js: DocumentCodeIcon,
-  jsx: DocumentCodeIcon,
-  py: DocumentCodeIcon,
-  go: DocumentCodeIcon,
-  rs: DocumentCodeIcon,
-  java: DocumentCodeIcon,
-  c: DocumentCodeIcon,
-  cpp: DocumentCodeIcon,
-  h: DocumentCodeIcon,
-  hpp: DocumentCodeIcon,
-  cs: DocumentCodeIcon,
-  rb: DocumentCodeIcon,
-  php: DocumentCodeIcon,
-  swift: DocumentCodeIcon,
-  kt: DocumentCodeIcon,
-  scala: DocumentCodeIcon,
-  vue: DocumentCodeIcon,
-  svelte: DocumentCodeIcon,
-  html: DocumentCodeIcon,
-  htm: DocumentCodeIcon,
-  css: DocumentCodeIcon,
-  scss: DocumentCodeIcon,
-  sass: DocumentCodeIcon,
-  less: DocumentCodeIcon,
-  sql: DocumentCodeIcon,
-  sh: DocumentCodeIcon,
-  bash: DocumentCodeIcon,
-  zsh: DocumentCodeIcon,
-  fish: DocumentCodeIcon,
-  ps1: DocumentCodeIcon,
-  csv: Xls01Icon,
-  xls: Xls01Icon,
-  xlsx: Xls01Icon,
-  mp3: FileAudioIcon,
-  wav: FileAudioIcon,
-  ogg: FileAudioIcon,
-  flac: FileAudioIcon,
-  aac: FileAudioIcon,
-  m4a: FileAudioIcon,
-  mp4: Video01Icon,
-  mkv: Video01Icon,
-  avi: Video01Icon,
-  mov: Video01Icon,
-  webm: Video01Icon,
-  wmv: Video01Icon,
-  zip: FileZipIcon,
-  rar: FileZipIcon,
-  '7z': FileZipIcon,
-  tar: FileZipIcon,
-  gz: FileZipIcon,
-  bz2: FileZipIcon,
+const EXTENSION_ICON_MAP: Record<string, LucideIcon> = {
+  md: File,
+  txt: File,
+  doc: File,
+  docx: File,
+  pdf: File,
+  rtf: File,
+  json: FileCode,
+  yaml: FileCode,
+  yml: FileCode,
+  toml: FileCode,
+  xml: FileCode,
+  ts: FileCode,
+  tsx: FileCode,
+  js: FileCode,
+  jsx: FileCode,
+  py: FileCode,
+  go: FileCode,
+  rs: FileCode,
+  java: FileCode,
+  c: FileCode,
+  cpp: FileCode,
+  h: FileCode,
+  hpp: FileCode,
+  cs: FileCode,
+  rb: FileCode,
+  php: FileCode,
+  swift: FileCode,
+  kt: FileCode,
+  scala: FileCode,
+  vue: FileCode,
+  svelte: FileCode,
+  html: FileCode,
+  htm: FileCode,
+  css: FileCode,
+  scss: FileCode,
+  sass: FileCode,
+  less: FileCode,
+  sql: FileCode,
+  sh: FileCode,
+  bash: FileCode,
+  zsh: FileCode,
+  fish: FileCode,
+  ps1: FileCode,
+  csv: FileSpreadsheet,
+  xls: FileSpreadsheet,
+  xlsx: FileSpreadsheet,
+  mp3: FileMusic,
+  wav: FileMusic,
+  ogg: FileMusic,
+  flac: FileMusic,
+  aac: FileMusic,
+  m4a: FileMusic,
+  mp4: Video,
+  mkv: Video,
+  avi: Video,
+  mov: Video,
+  webm: Video,
+  wmv: Video,
+  zip: FileArchive,
+  rar: FileArchive,
+  '7z': FileArchive,
+  tar: FileArchive,
+  gz: FileArchive,
+  bz2: FileArchive,
 };
 
 const isFileRef = (attachment: ChatAttachment): attachment is FileRefAttachment =>
@@ -102,9 +101,9 @@ const isFileRef = (attachment: ChatAttachment): attachment is FileRefAttachment 
 const isImage = (attachment: ChatAttachment): attachment is ImageAttachment =>
   attachment.type === 'image';
 
-const getFileIcon = (extension: string): HugeIcon => {
+const getFileIcon = (extension: string): LucideIcon => {
   const key = extension.toLowerCase();
-  return EXTENSION_ICON_MAP[key] ?? File01Icon;
+  return EXTENSION_ICON_MAP[key] ?? File;
 };
 
 export const MessageMetaAttachments = ({
@@ -138,7 +137,7 @@ const FileRefItem = ({ attachment }: { attachment: FileRefAttachment }) => {
     <Tooltip>
       <TooltipTrigger asChild>
         <div className="flex w-fit max-w-full items-center gap-2 text-sm text-muted-foreground">
-          <Icon icon={IconComponent} className="size-4 shrink-0" />
+          <IconComponent className="size-4 shrink-0" />
           <span className="truncate">{attachment.name}</span>
         </div>
       </TooltipTrigger>

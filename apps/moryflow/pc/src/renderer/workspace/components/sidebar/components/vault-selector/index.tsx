@@ -1,14 +1,13 @@
 /**
  * [PROPS]: VaultSelectorProps
  * [EMITS]: onVaultChange, onCreateFile, onCreateFolder
- * [POS]: Vault 选择器主组件，整合列表、操作和对话框
+ * [POS]: Vault 选择器主组件，整合列表、操作和对话框（Lucide 图标）
  */
 
 import { useState, useCallback } from 'react';
-import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { useTranslation } from '@/lib/i18n';
@@ -206,7 +205,7 @@ export const VaultSelector = ({
             type="button"
             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
-            <Icon icon={ArrowDown01Icon} className="size-4" />
+            <ArrowDown className="size-4" />
           </button>
         </PopoverTrigger>
 

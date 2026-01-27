@@ -1,8 +1,8 @@
-import { memo } from "react"
+import { memo } from 'react';
 
-type SvgProps = React.ComponentPropsWithoutRef<"svg">
+type SvgProps = React.ComponentPropsWithoutRef<'svg'>;
 
-export const MoreVerticalIcon = memo(({ className, ...props }: SvgProps) => {
+export const MoreVertical = memo(({ className, ...props }: SvgProps) => {
   return (
     <svg
       width="24"
@@ -32,7 +32,7 @@ export const MoreVerticalIcon = memo(({ className, ...props }: SvgProps) => {
         fill="currentColor"
       />
     </svg>
-  )
-})
+  );
+});
 
-MoreVerticalIcon.displayName = "MoreVerticalIcon"
+MoreVertical.displayName = 'MoreVertical';

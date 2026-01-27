@@ -1,9 +1,10 @@
 /**
- * Orders 页面
- * 订单管理
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Orders 页面 - 订单管理（Lucide icons direct render）
  */
 import { useState } from 'react';
-import { Search01Icon } from '@hugeicons/core-free-icons';
+import { Search } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -18,7 +19,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Input,
   Button,
   Select,
@@ -146,7 +146,7 @@ export default function OrdersPage() {
                 className="w-48"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Icon icon={Search01Icon} className="h-4 w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>

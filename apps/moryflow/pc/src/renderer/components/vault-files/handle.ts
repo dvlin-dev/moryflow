@@ -4,13 +4,7 @@
  * [POS]: 文件树操作的纯函数工具集
  */
 
-import {
-  ArrowUpRight01Icon,
-  Delete02Icon,
-  Edit01Icon,
-  File01Icon,
-  GlobeIcon,
-} from '@hugeicons/core-free-icons';
+import { ArrowUpRight, Delete, Pencil, File, Globe } from 'lucide-react';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuItem, DragData, DropValidation } from './const';
 
@@ -25,19 +19,19 @@ export const sortNodes = (nodes: VaultTreeNode[]): VaultTreeNode[] =>
 
 // 文件右键菜单配置（labelKey 对应 i18n key）
 export const FILE_MENU_ITEMS: ContextMenuItem[] = [
-  { action: 'rename', labelKey: 'renameMenu', icon: Edit01Icon },
-  { action: 'showInFinder', labelKey: 'showInFinderMac', icon: ArrowUpRight01Icon },
-  { action: 'publish', labelKey: 'publishMenu', icon: GlobeIcon },
-  { action: 'delete', labelKey: 'deleteMenu', icon: Delete02Icon, dangerous: true },
+  { action: 'rename', labelKey: 'renameMenu', icon: Pencil },
+  { action: 'showInFinder', labelKey: 'showInFinderMac', icon: ArrowUpRight },
+  { action: 'publish', labelKey: 'publishMenu', icon: Globe },
+  { action: 'delete', labelKey: 'deleteMenu', icon: Delete, dangerous: true },
 ];
 
 // 文件夹右键菜单配置
 export const FOLDER_MENU_ITEMS: ContextMenuItem[] = [
-  { action: 'rename', labelKey: 'renameMenu', icon: Edit01Icon },
-  { action: 'createFile', labelKey: 'newFileMenu', icon: File01Icon },
-  { action: 'showInFinder', labelKey: 'showInFinderMac', icon: ArrowUpRight01Icon },
-  { action: 'publish', labelKey: 'publishMenu', icon: GlobeIcon },
-  { action: 'delete', labelKey: 'deleteMenu', icon: Delete02Icon, dangerous: true },
+  { action: 'rename', labelKey: 'renameMenu', icon: Pencil },
+  { action: 'createFile', labelKey: 'newFileMenu', icon: File },
+  { action: 'showInFinder', labelKey: 'showInFinderMac', icon: ArrowUpRight },
+  { action: 'publish', labelKey: 'publishMenu', icon: Globe },
+  { action: 'delete', labelKey: 'deleteMenu', icon: Delete, dangerous: true },
 ];
 
 // 创建拖拽数据

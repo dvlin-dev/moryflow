@@ -1,12 +1,11 @@
 /**
  * NavUser - 用户菜单组件
  */
-import { Logout01Icon, MoreVerticalIcon } from '@hugeicons/core-free-icons';
+import { LogOut, EllipsisVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Icon } from '@/components/ui/icon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +64,7 @@ export function NavUser({ user }: NavUserProps) {
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="text-muted-foreground truncate text-xs">{user.email}</span>
               </div>
-              <Icon icon={MoreVerticalIcon} className="ml-auto size-4" />
+              <EllipsisVertical className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -88,7 +87,7 @@ export function NavUser({ user }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <Icon icon={Logout01Icon} />
+              <LogOut />
               退出登录
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -7,10 +7,9 @@
 import * as React from 'react';
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
 import { cva } from 'class-variance-authority';
-import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function NavigationMenu({
   className,
@@ -78,8 +77,7 @@ function NavigationMenuTrigger({
       {...props}
     >
       {children}{' '}
-      <Icon
-        icon={ArrowDown01Icon}
+      <ArrowDown
         className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180"
         aria-hidden="true"
       />

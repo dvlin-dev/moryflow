@@ -2,11 +2,10 @@
  * Edition Content Item Component
  *
  * [PROPS]: DigestEditionItem
- * [POS]: Displays a single content item within an edition
+ * [POS]: Displays a single content item within an edition (Lucide icons direct render)
  */
 
-import { LinkSquare01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { SquareArrowUpRight } from 'lucide-react';
 import type { DigestEditionItem } from '@/lib/digest-api';
 
 interface EditionContentItemProps {
@@ -52,7 +51,7 @@ export function EditionContentItem({ item }: EditionContentItemProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
             >
-              <HugeiconsIcon icon={LinkSquare01Icon} className="h-3 w-3" />
+              <SquareArrowUpRight className="h-3 w-3" />
               Read original
             </a>
           </div>

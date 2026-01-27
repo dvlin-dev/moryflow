@@ -6,8 +6,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { CheckmarkCircle01Icon, Copy01Icon } from '@hugeicons/core-free-icons';
+import { CircleCheck, Copy } from 'lucide-react';
 import { formatDateTime, formatDuration } from '@/lib/format';
 import { SpanStatusBadge, ErrorTypeBadge } from './trace-status-badge';
 import type { AgentSpan } from '../types';
@@ -78,12 +77,12 @@ export function SpanDetailDialog({ span, open, onOpenChange }: SpanDetailDialogP
             <Button variant="outline" size="sm" onClick={handleCopy} className="ml-4">
               {copied ? (
                 <>
-                  <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4 mr-1.5 text-green-500" />
+                  <CircleCheck className="h-4 w-4 mr-1.5 text-green-500" />
                   Copied
                 </>
               ) : (
                 <>
-                  <Icon icon={Copy01Icon} className="h-4 w-4 mr-1.5" />
+                  <Copy className="h-4 w-4 mr-1.5" />
                   Copy
                 </>
               )}

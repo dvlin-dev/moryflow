@@ -8,14 +8,8 @@ import {
 } from '@anyhunt/ui/components/dialog';
 import { Button } from '@anyhunt/ui/components/button';
 import { Badge } from '@anyhunt/ui/components/badge';
-import {
-  AlertCircleIcon,
-  Coins01Icon,
-  GemIcon,
-  Loading03Icon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
+import { CircleAlert, Coins, Gem, Loader, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchProducts } from '@/lib/server/api';
 import { usePurchase } from '@/lib/server/hooks';
@@ -31,7 +25,7 @@ type CreditPacksDialogProps = {
 /** 积分包配置 */
 const CREDIT_PACKS_CONFIG: Array<{
   credits: number;
-  icon: HugeIcon;
+  icon: LucideIcon;
   color: string;
   bgColor: string;
   borderColor: string;
@@ -39,14 +33,14 @@ const CREDIT_PACKS_CONFIG: Array<{
 }> = [
   {
     credits: 5000,
-    icon: Coins01Icon,
+    icon: Coins,
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/30',
   },
   {
     credits: 10000,
-    icon: SparklesIcon,
+    icon: Sparkles,
     color: 'text-blue-500',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/30',
@@ -54,7 +48,7 @@ const CREDIT_PACKS_CONFIG: Array<{
   },
   {
     credits: 50000,
-    icon: GemIcon,
+    icon: Gem,
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/30',
@@ -127,7 +121,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12">
-          <Icon icon={Loading03Icon} className="size-6 animate-spin text-muted-foreground" />
+          <Loader className="size-6 animate-spin text-muted-foreground" />
         </div>
       );
     }
@@ -135,7 +129,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center py-12 gap-2 text-destructive">
-          <Icon icon={AlertCircleIcon} className="size-6" />
+          <CircleAlert className="size-6" />
           <p className="text-sm">{error}</p>
         </div>
       );
@@ -163,7 +157,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
 
               <div className="flex items-center justify-center mb-4">
                 <div className={`rounded-full p-4 ${pack.bgColor}`}>
-                  <Icon icon={PackIcon} className={`size-8 ${pack.color}`} />
+                  <PackIcon className={`size-8 ${pack.color}`} />
                 </div>
               </div>
 
@@ -183,7 +177,7 @@ export const CreditPacksDialog = ({ open, onOpenChange }: CreditPacksDialogProps
                 disabled={isPurchasing || !product}
                 onClick={() => handlePurchase(pack.credits)}
               >
-                {isPurchasing && <Icon icon={Loading03Icon} className="mr-2 size-4 animate-spin" />}
+                {isPurchasing && <Loader className="mr-2 size-4 animate-spin" />}
                 Buy now
               </Button>
             </div>

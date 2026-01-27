@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Add01Icon, ArrowReloadHorizontalIcon } from '@hugeicons/core-free-icons';
+import { Plus, RefreshCw } from 'lucide-react';
 import { usePagination } from '@/hooks';
 import { toast } from 'sonner';
 import {
@@ -29,7 +29,6 @@ import {
   type AlertRule,
   type AlertLevel,
 } from '@/features/alerts';
-import { Icon } from '@/components/ui/icon';
 
 const PAGE_SIZE = 20;
 
@@ -114,15 +113,14 @@ export default function AlertsPage() {
               onClick={handleTriggerDetection}
               disabled={triggerMutation.isPending}
             >
-              <Icon
-                icon={ArrowReloadHorizontalIcon}
+              <RefreshCw
                 className={`h-4 w-4 mr-2 ${triggerMutation.isPending ? 'animate-spin' : ''}`}
               />
               执行检测
             </Button>
 
             <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-2" />
               新建规则
             </Button>
           </div>

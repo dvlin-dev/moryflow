@@ -11,9 +11,8 @@ import {
   CardTitle,
 } from '../components/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon } from '../components/icon';
 import { cn } from '../lib/utils';
-import { ArrowUpDownIcon } from '@hugeicons/core-free-icons';
+import { ArrowUpDown } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { createContext, useContext } from 'react';
 import { Shimmer } from './shimmer';
@@ -117,7 +116,7 @@ export const PlanTrigger = ({ className, ...props }: PlanTriggerProps) => (
       variant="ghost"
       {...props}
     >
-      <Icon icon={ArrowUpDownIcon} className="size-4" />
+      <ArrowUpDown className="size-4" />
       <span className="sr-only">Toggle plan</span>
     </Button>
   </CollapsibleTrigger>

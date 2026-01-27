@@ -1,15 +1,14 @@
 /**
  * [PROPS]: vaultPath, onOpenSettings, compact
  * [EMITS]: onOpenSettings? - 点击时触发
- * [POS]: 云同步状态指示器（顶部/列表状态展示）
+ * [POS]: 云同步状态指示器（顶部/列表状态展示，Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useCallback, useMemo } from 'react';
-import { AlertCircleIcon, CloudIcon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { CircleAlert, Cloud, Loader } from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import {
   Tooltip,
   TooltipContent,
@@ -18,10 +17,10 @@ import {
 } from '@anyhunt/ui/components/tooltip';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
-import type { HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
 
 type StatusConfig = {
-  icon: HugeIcon;
+  icon: LucideIcon;
   label: string;
   description: string;
   className: string;
@@ -32,20 +31,20 @@ type DisplayStatusKey = 'synced' | 'syncing' | 'needsAttention';
 
 const getStatusConfig = (t: any): Record<DisplayStatusKey, StatusConfig> => ({
   synced: {
-    icon: CloudIcon,
+    icon: Cloud,
     label: t('synced'),
     description: t('allChangesSynced'),
     className: 'text-success',
   },
   syncing: {
-    icon: Loading03Icon,
+    icon: Loader,
     label: t('syncing'),
     description: t('syncingChanges'),
     className: 'text-primary',
     animate: true,
   },
   needsAttention: {
-    icon: AlertCircleIcon,
+    icon: CircleAlert,
     label: t('needsAttention'),
     description: t('syncPausedDescription'),
     className: 'text-amber-500',
@@ -88,7 +87,7 @@ export const SyncStatusIndicator = ({
     onOpenSettings?.();
   }, [onOpenSettings]);
 
-  const statusIcon = displayStatus.icon;
+  const StatusIcon = displayStatus.icon;
 
   // 构建完整描述
   const tooltipContent = useMemo(() => {
@@ -106,8 +105,7 @@ export const SyncStatusIndicator = ({
   if (compact) {
     return (
       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClick}>
-        <Icon
-          icon={statusIcon}
+        <StatusIcon
           className={`h-4 w-4 ${displayStatus.className} ${displayStatus.animate ? 'animate-spin' : ''}`}
         />
       </Button>
@@ -123,8 +121,7 @@ export const SyncStatusIndicator = ({
             className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors hover:bg-muted/50"
             onClick={handleClick}
           >
-            <Icon
-              icon={statusIcon}
+            <StatusIcon
               className={`h-3.5 w-3.5 ${displayStatus.className} ${displayStatus.animate ? 'animate-spin' : ''}`}
             />
             <span className="text-muted-foreground">{displayStatus.label}</span>

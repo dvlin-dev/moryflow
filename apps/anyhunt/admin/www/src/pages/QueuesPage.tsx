@@ -1,21 +1,22 @@
 /**
- * Queues 页面
- * 队列监控
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Queues 页面 - 队列监控（Lucide icons direct render）
  */
 import { useState } from 'react';
 import {
-  Alert01Icon,
-  CancelCircleIcon,
-  CheckmarkCircle01Icon,
-  Clock01Icon,
-  Delete02Icon,
-  Loading01Icon,
-  PauseIcon,
-  PlayIcon,
-  RefreshIcon,
-  RotateLeft01Icon,
-  Timer01Icon,
-} from '@hugeicons/core-free-icons';
+  TriangleAlert,
+  CircleX,
+  CircleCheck,
+  Clock,
+  Delete,
+  Loader,
+  Pause,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Timer,
+} from 'lucide-react';
 import { PageHeader } from '@anyhunt/ui';
 import {
   Card,
@@ -31,7 +32,6 @@ import {
   Badge,
   Skeleton,
   Button,
-  Icon,
   Tabs,
   TabsContent,
   TabsList,
@@ -63,15 +63,15 @@ const QUEUE_LABELS: Record<QueueName, string> = {
 };
 
 const STATUS_TABS: { value: QueueJobStatus; label: string; icon: React.ReactNode }[] = [
-  { value: 'waiting', label: '等待中', icon: <Icon icon={Clock01Icon} className="h-4 w-4" /> },
-  { value: 'active', label: '处理中', icon: <Icon icon={Loading01Icon} className="h-4 w-4" /> },
+  { value: 'waiting', label: '等待中', icon: <Clock className="h-4 w-4" /> },
+  { value: 'active', label: '处理中', icon: <Loader className="h-4 w-4" /> },
   {
     value: 'completed',
     label: '已完成',
-    icon: <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4" />,
+    icon: <CircleCheck className="h-4 w-4" />,
   },
-  { value: 'failed', label: '失败', icon: <Icon icon={CancelCircleIcon} className="h-4 w-4" /> },
-  { value: 'delayed', label: '延迟', icon: <Icon icon={Timer01Icon} className="h-4 w-4" /> },
+  { value: 'failed', label: '失败', icon: <CircleX className="h-4 w-4" /> },
+  { value: 'delayed', label: '延迟', icon: <Timer className="h-4 w-4" /> },
 ];
 
 /** 队列状态卡片 */
@@ -220,11 +220,11 @@ export default function QueuesPage() {
             onClick={() => setConfirmDialog({ open: true, action: 'cleanup-stale' })}
             disabled={isCleaningStale}
           >
-            <Icon icon={Alert01Icon} className="mr-2 h-4 w-4" />
+            <TriangleAlert className="mr-2 h-4 w-4" />
             清理卡住任务
           </Button>
           <Button variant="outline" onClick={() => refetch()}>
-            <Icon icon={RefreshIcon} className="mr-2 h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             刷新
           </Button>
         </div>
@@ -294,12 +294,12 @@ export default function QueuesPage() {
               >
                 {isPaused ? (
                   <>
-                    <Icon icon={PlayIcon} className="mr-2 h-4 w-4" />
+                    <Play className="mr-2 h-4 w-4" />
                     恢复
                   </>
                 ) : (
                   <>
-                    <Icon icon={PauseIcon} className="mr-2 h-4 w-4" />
+                    <Pause className="mr-2 h-4 w-4" />
                     暂停
                   </>
                 )}
@@ -310,7 +310,7 @@ export default function QueuesPage() {
                 onClick={() => setConfirmDialog({ open: true, action: 'retry' })}
                 disabled={isRetrying || (selectedStats?.failed ?? 0) === 0}
               >
-                <Icon icon={RotateLeft01Icon} className="mr-2 h-4 w-4" />
+                <RotateCcw className="mr-2 h-4 w-4" />
                 重试全部失败
               </Button>
               <Button
@@ -319,7 +319,7 @@ export default function QueuesPage() {
                 onClick={() => setConfirmDialog({ open: true, action: 'clean-completed' })}
                 disabled={isCleaning}
               >
-                <Icon icon={Delete02Icon} className="mr-2 h-4 w-4" />
+                <Delete className="mr-2 h-4 w-4" />
                 清理已完成
               </Button>
             </div>

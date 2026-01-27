@@ -1,15 +1,16 @@
 /**
- * Entities 页面 - 实体列表与管理
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Entities 页面 - 实体列表与管理（Lucide icons direct render）
  */
 
 import { useMemo, useState } from 'react';
-import { Group01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
+import { Group, Calendar } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Icon,
   Select,
   SelectContent,
   SelectItem,
@@ -48,7 +49,7 @@ function EntityCard({ entity }: { entity: Entity }) {
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
-              <Icon icon={Calendar03Icon} className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5" />
               <span>{createdAt}</span>
             </div>
             <span>Total memories: {entity.total_memories}</span>
@@ -83,7 +84,7 @@ export default function EntitiesPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Icon icon={Group01Icon} className="h-6 w-6" />
+          <Group className="h-6 w-6" />
           Entities
         </h1>
         <p className="text-muted-foreground mt-1">View Mem0-style entities for your API key.</p>

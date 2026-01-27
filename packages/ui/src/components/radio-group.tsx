@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
-import { RadioButtonIcon } from '@hugeicons/core-free-icons';
+import { CircleDot } from 'lucide-react';
 
 import { cn } from '../lib/utils';
-import { Icon } from './icon';
 
 const RadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,
@@ -27,7 +26,7 @@ const RadioGroupItem = React.forwardRef<
       {...props}
     >
       <RadioGroupPrimitive.Indicator className="flex items-center justify-center animate-scale-in">
-        <Icon icon={RadioButtonIcon} className="size-2" />
+        <CircleDot className="size-2" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   );

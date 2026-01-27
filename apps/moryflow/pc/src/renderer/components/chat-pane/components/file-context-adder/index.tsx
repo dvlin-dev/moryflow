@@ -1,14 +1,13 @@
 /**
  * [PROPS]: FileContextAdderProps - @ 引用入口与列表控制
  * [EMITS]: onAddFile/onRefreshRecent - 添加引用/刷新 MRU
- * [POS]: Chat Prompt 输入框的文件引用入口
+ * [POS]: Chat Prompt 输入框的文件引用入口（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { AtIcon, File01Icon, Search01Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { AtSign, File, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 import {
   Command,
@@ -102,7 +101,7 @@ export const FileContextAdder = ({
         iconOnly || hasFiles ? 'size-7 justify-center' : 'h-7 px-3 text-sm'
       )}
     >
-      <Icon icon={AtIcon} className="size-4 shrink-0" />
+      <AtSign className="size-4 shrink-0" />
       {!iconOnly && !hasFiles && <span>{t('addContext')}</span>}
     </button>
   );
@@ -138,7 +137,7 @@ export const FileContextAdder = ({
                     onSelect={() => handleSelectFile(file)}
                     className="flex items-center gap-2"
                   >
-                    <Icon icon={File01Icon} className="size-4 shrink-0 text-muted-foreground" />
+                    <File className="size-4 shrink-0 text-muted-foreground" />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm">{file.name}</span>
                       <span className="truncate text-xs text-muted-foreground">{file.path}</span>
@@ -150,7 +149,7 @@ export const FileContextAdder = ({
               <>
                 <CommandEmpty>
                   <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
-                    <Icon icon={Search01Icon} className="size-8 opacity-50" />
+                    <Search className="size-8 opacity-50" />
                     <span className="text-sm">
                       {hasQuery
                         ? t('notFound')

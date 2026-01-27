@@ -1,9 +1,11 @@
 /**
- * Settings 页面 - 账户设置
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Settings 页面 - 账户设置（Lucide icons direct render）
  */
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Key01Icon, Shield01Icon, UserIcon } from '@hugeicons/core-free-icons';
+import { Key, Shield, User } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -11,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
   Button,
-  Icon,
   Input,
   Label,
   Separator,
@@ -32,11 +33,11 @@ export default function SettingsPage() {
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
           <TabsTrigger value="profile" className="gap-2">
-            <Icon icon={UserIcon} className="h-4 w-4" />
+            <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
-            <Icon icon={Shield01Icon} className="h-4 w-4" />
+            <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
         </TabsList>
@@ -170,7 +171,7 @@ function SecuritySettings() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Icon icon={Key01Icon} className="h-5 w-5" />
+          <Key className="h-5 w-5" />
           Change Password
         </CardTitle>
         <CardDescription>

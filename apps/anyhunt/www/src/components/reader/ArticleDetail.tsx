@@ -1,6 +1,6 @@
 /**
  * [PROPS]: item, onSave, onNotInterested, fullContent, isLoadingContent
- * [POS]: Right column article detail with actions and content
+ * [POS]: Right column article detail with actions and content (Lucide icons direct render)
  */
 
 import { lazy, Suspense } from 'react';
@@ -12,9 +12,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  Icon,
 } from '@anyhunt/ui';
-import { StarIcon, ThumbsDownIcon, SquareArrowUpRightIcon } from '@hugeicons/core-free-icons';
+import { Star, ThumbsDown, SquareArrowUpRight } from 'lucide-react';
 import { AISummaryCard } from './AISummaryCard';
 import { formatDate } from '@/lib/date';
 import type { InboxItem } from '@/features/digest/types';
@@ -121,10 +120,7 @@ export function ArticleDetail({
                   onClick={() => onSave(item)}
                   disabled={isSaving}
                 >
-                  <Icon
-                    icon={StarIcon}
-                    className={`size-4 ${isSaved ? 'fill-yellow-500 text-yellow-500' : ''}`}
-                  />
+                  <Star className={`size-4 ${isSaved ? 'fill-yellow-500 text-yellow-500' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{isSaved ? 'Unsave' : 'Save'}</TooltipContent>
@@ -139,7 +135,7 @@ export function ArticleDetail({
                   className="size-8"
                   onClick={() => onNotInterested(item)}
                 >
-                  <Icon icon={ThumbsDownIcon} className="size-4" />
+                  <ThumbsDown className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Not Interested</TooltipContent>
@@ -150,7 +146,7 @@ export function ArticleDetail({
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8" asChild>
                   <a href={item.urlSnapshot} target="_blank" rel="noopener noreferrer">
-                    <Icon icon={SquareArrowUpRightIcon} className="size-4" />
+                    <SquareArrowUpRight className="size-4" />
                   </a>
                 </Button>
               </TooltipTrigger>

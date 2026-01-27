@@ -1,22 +1,17 @@
 /**
- * Crawl 结果展示组件
+ * [PROPS]: data
+ * [EMITS]: none
+ * [POS]: Crawl 结果展示组件（Lucide icons direct render）
  * Console Playground 强制同步模式，无需进度显示
  */
 
-import {
-  CheckmarkCircle01Icon,
-  Cancel01Icon,
-  Globe02Icon,
-  File01Icon,
-  Link01Icon,
-} from '@hugeicons/core-free-icons';
+import { CircleCheck, X, Globe, File, Link } from 'lucide-react';
 import {
   Badge,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Icon,
   Tabs,
   TabsContent,
   TabsList,
@@ -35,7 +30,7 @@ export function CrawlResult({ data }: CrawlResultProps) {
       <Card className="border-destructive">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base text-destructive">
-            <Icon icon={Cancel01Icon} className="h-5 w-5" />
+            <X className="h-5 w-5" />
             Crawl Failed
           </CardTitle>
         </CardHeader>
@@ -58,7 +53,7 @@ export function CrawlResult({ data }: CrawlResultProps) {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+            <CircleCheck className="h-5 w-5 text-green-600" />
             Crawl Completed
             <Badge variant="secondary" className="ml-2">
               {pages.length} pages
@@ -75,7 +70,7 @@ export function CrawlResult({ data }: CrawlResultProps) {
                 <TabsList className="w-auto">
                   {pages.slice(0, 10).map((page, index) => (
                     <TabsTrigger key={page.url} value={page.url} className="gap-1 max-w-48">
-                      <Icon icon={File01Icon} className="h-3 w-3 shrink-0" />
+                      <File className="h-3 w-3 shrink-0" />
                       <span className="truncate">Page {index + 1}</span>
                     </TabsTrigger>
                   ))}
@@ -92,7 +87,7 @@ export function CrawlResult({ data }: CrawlResultProps) {
               {pages.slice(0, 10).map((page) => (
                 <TabsContent key={page.url} value={page.url} className="m-0 space-y-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <Icon icon={Globe02Icon} className="h-4 w-4 text-muted-foreground" />
+                    <Globe className="h-4 w-4 text-muted-foreground" />
                     <a
                       href={page.url}
                       target="_blank"
@@ -115,7 +110,7 @@ export function CrawlResult({ data }: CrawlResultProps) {
                   {page.links && page.links.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium flex items-center gap-2">
-                        <Icon icon={Link01Icon} className="h-4 w-4" />
+                        <Link className="h-4 w-4" />
                         Links ({page.links.length})
                       </h4>
                       <div className="overflow-auto max-h-48 space-y-1">

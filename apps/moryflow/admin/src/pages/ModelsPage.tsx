@@ -41,16 +41,7 @@ import {
 } from '@/features/models';
 import { useProviders } from '@/features/providers';
 import type { AiModel } from '@/types/api';
-import {
-  Add01Icon,
-  CodeIcon,
-  Delete01Icon,
-  PencilEdit01Icon,
-  Robot01Icon,
-  ViewIcon,
-  Wrench01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { Plus, Code, Delete, Pencil, Bot, View, Wrench } from 'lucide-react';
 
 export default function ModelsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -98,7 +89,7 @@ export default function ModelsPage() {
         description="管理 AI 模型配置（定价、权限、能力等）"
         action={
           <Button onClick={handleAdd} disabled={providers.length === 0}>
-            <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             添加 Model
           </Button>
         }
@@ -188,17 +179,17 @@ export default function ModelsPage() {
                       <div className="flex gap-1">
                         {caps.vision && (
                           <Badge variant="secondary" className="px-1.5">
-                            <Icon icon={ViewIcon} className="h-3 w-3" />
+                            <View className="h-3 w-3" />
                           </Badge>
                         )}
                         {caps.tools && (
                           <Badge variant="secondary" className="px-1.5">
-                            <Icon icon={Wrench01Icon} className="h-3 w-3" />
+                            <Wrench className="h-3 w-3" />
                           </Badge>
                         )}
                         {caps.json && (
                           <Badge variant="secondary" className="px-1.5">
-                            <Icon icon={CodeIcon} className="h-3 w-3" />
+                            <Code className="h-3 w-3" />
                           </Badge>
                         )}
                       </div>
@@ -213,7 +204,7 @@ export default function ModelsPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(model)}>
-                          <Icon icon={PencilEdit01Icon} className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -221,7 +212,7 @@ export default function ModelsPage() {
                           className="text-destructive hover:text-destructive"
                           onClick={() => setDeleteModel(model)}
                         >
-                          <Icon icon={Delete01Icon} className="h-4 w-4" />
+                          <Delete className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -231,10 +222,7 @@ export default function ModelsPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-12">
-                  <Icon
-                    icon={Robot01Icon}
-                    className="h-12 w-12 mx-auto text-muted-foreground mb-4"
-                  />
+                  <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
                     暂无 Model 配置
                     {providers.length === 0 && '，请先添加 Provider'}

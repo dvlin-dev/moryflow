@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { Command as CommandPrimitive } from 'cmdk';
-import { Search01Icon } from '@hugeicons/core-free-icons';
+import { Search } from 'lucide-react';
 
 import { cn } from '../lib/utils';
-import { Icon } from './icon';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './dialog';
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
@@ -59,7 +58,7 @@ function CommandInput({
       data-slot="command-input-wrapper"
       className="flex h-10 items-center gap-2 border-b border-border-muted px-3 outline-hidden shadow-none focus-within:outline-hidden focus-within:shadow-none [&:has(:focus)]:outline-hidden"
     >
-      <Icon icon={Search01Icon} className="size-4 shrink-0 text-muted-foreground" />
+      <Search className="size-4 shrink-0 text-muted-foreground" />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(

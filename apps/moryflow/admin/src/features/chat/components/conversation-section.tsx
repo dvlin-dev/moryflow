@@ -4,8 +4,7 @@
  */
 import { useRef, useEffect } from 'react';
 import { Message } from './message';
-import { Icon } from '@/components/ui/icon';
-import { Message01Icon } from '@hugeicons/core-free-icons';
+import { MessageSquare } from 'lucide-react';
 
 type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
@@ -34,7 +33,7 @@ export function ConversationSection({ messages, status }: ConversationSectionPro
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
         <div className="rounded-full bg-muted p-3">
-          <Icon icon={Message01Icon} className="size-6 text-muted-foreground" />
+          <MessageSquare className="size-6 text-muted-foreground" />
         </div>
         <div className="space-y-1">
           <h3 className="font-medium text-sm">开始聊天测试</h3>

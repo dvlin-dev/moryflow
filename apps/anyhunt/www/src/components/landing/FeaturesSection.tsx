@@ -1,54 +1,50 @@
-import {
-  Book01Icon,
-  Cursor01Icon,
-  File01Icon,
-  GitBranchIcon,
-  Shield01Icon,
-  Tag01Icon,
-  WebhookIcon,
-  ZapIcon,
-} from '@hugeicons/core-free-icons';
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Anyhunt landing features section (Lucide icons direct render)
+ */
+
+import { Book, MousePointer2, File, GitBranch, Shield, Tag, Webhook, Zap } from 'lucide-react';
 import { Container } from '@/components/layout';
-import { Icon } from '@anyhunt/ui';
 
 const features = [
   {
-    icon: File01Icon,
+    icon: File,
     title: 'HTML to Markdown',
     description: 'Convert HTML to clean GitHub-flavored Markdown with code blocks preserved.',
   },
   {
-    icon: Book01Icon,
+    icon: Book,
     title: 'Content Extraction',
     description: 'Extract main content using Readability, filtering ads and navigation.',
   },
   {
-    icon: Tag01Icon,
+    icon: Tag,
     title: 'Metadata Parsing',
     description: 'Extract Open Graph, Twitter Cards, favicon, and structured data.',
   },
   {
-    icon: Cursor01Icon,
+    icon: MousePointer2,
     title: 'Page Actions',
     description: 'Click, scroll, type, and wait before scraping for dynamic content.',
   },
   {
-    icon: ZapIcon,
+    icon: Zap,
     title: 'Smart Caching',
     description: 'Configurable caching with SHA-256 request hashing for fast repeats.',
   },
   {
-    icon: GitBranchIcon,
+    icon: GitBranch,
     title: 'Async Processing',
     description: 'BullMQ-powered queue with retries and exponential backoff.',
   },
   {
-    icon: WebhookIcon,
+    icon: Webhook,
     title: 'Webhook Callbacks',
     description: 'Get notified when crawl and batch jobs complete via webhooks.',
   },
   {
-    icon: Shield01Icon,
+    icon: Shield,
     title: 'SSRF Protection',
     description: 'Built-in URL validation prevents internal network access.',
   },
@@ -68,18 +64,21 @@ export function FeaturesSection() {
 
         {/* Features Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="border border-border bg-card p-5 transition-colors hover:border-foreground/20"
-            >
-              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center border border-border bg-background">
-                <Icon icon={feature.icon} className="h-4 w-4" />
+          {features.map((feature) => {
+            const IconComponent = feature.icon;
+            return (
+              <div
+                key={feature.title}
+                className="border border-border bg-card p-5 transition-colors hover:border-foreground/20"
+              >
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center border border-border bg-background">
+                  <IconComponent className="h-4 w-4" />
+                </div>
+                <h3 className="font-mono text-sm font-semibold">{feature.title}</h3>
+                <p className="mt-1.5 text-xs text-muted-foreground">{feature.description}</p>
               </div>
-              <h3 className="font-mono text-sm font-semibold">{feature.title}</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground">{feature.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Container>
     </section>

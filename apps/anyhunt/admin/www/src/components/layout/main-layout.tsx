@@ -1,85 +1,80 @@
 /**
  * [PROPS]: 无
  * [EMITS]: logout (click)
- * [POS]: Admin 主布局与导航壳（Access Token 登出）
+ * [POS]: Admin 主布局与导航壳（Access Token 登出，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
-  Alert01Icon,
-  AiBrowserIcon,
-  AiBrain02Icon,
-  ArrowDown01Icon,
-  Cancel01Icon,
-  CreditCardIcon,
-  DashboardSquare01Icon,
-  LayersIcon,
+  TriangleAlert,
+  Globe,
+  Brain,
+  ArrowDown,
+  X,
+  CreditCard,
+  LayoutDashboard,
+  Layers,
   ListTodo,
-  Logout01Icon,
-  Menu01Icon,
+  LogOut,
+  Menu,
   Receipt,
-  UserGroupIcon,
-  Flag01Icon,
-  News01Icon,
-  Edit01Icon,
-} from '@hugeicons/core-free-icons';
+  Users,
+  Flag,
+  Newspaper,
+  Pencil,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@anyhunt/ui/lib';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Icon,
-  type HugeIcon,
-} from '@anyhunt/ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anyhunt/ui';
 import { useAuthStore } from '@/stores/auth';
 
-type NavItem = { path: string; label: string; icon: HugeIcon };
-type NavGroup = { id: string; label: string; icon: HugeIcon; items: NavItem[] };
+type NavItem = { path: string; label: string; icon: LucideIcon };
+type NavGroup = { id: string; label: string; icon: LucideIcon; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
   {
     id: 'overview',
     label: 'Overview',
-    icon: DashboardSquare01Icon,
-    items: [{ path: '/', label: 'Dashboard', icon: DashboardSquare01Icon }],
+    icon: LayoutDashboard,
+    items: [{ path: '/', label: 'Dashboard', icon: LayoutDashboard }],
   },
   {
     id: 'users-billing',
     label: 'Users & Billing',
-    icon: UserGroupIcon,
+    icon: Users,
     items: [
-      { path: '/users', label: 'Users', icon: UserGroupIcon },
+      { path: '/users', label: 'Users', icon: Users },
       { path: '/orders', label: 'Orders', icon: Receipt },
-      { path: '/subscriptions', label: 'Subscriptions', icon: CreditCardIcon },
+      { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard },
     ],
   },
   {
     id: 'operations',
     label: 'Operations',
-    icon: LayersIcon,
+    icon: Layers,
     items: [
       { path: '/jobs', label: 'Jobs', icon: ListTodo },
-      { path: '/queues', label: 'Queues', icon: LayersIcon },
-      { path: '/browser', label: 'Browser Pool', icon: AiBrowserIcon },
-      { path: '/errors', label: 'Errors', icon: Alert01Icon },
+      { path: '/queues', label: 'Queues', icon: Layers },
+      { path: '/browser', label: 'Browser Pool', icon: Globe },
+      { path: '/errors', label: 'Errors', icon: TriangleAlert },
     ],
   },
   {
     id: 'ai',
     label: 'AI',
-    icon: AiBrain02Icon,
-    items: [{ path: '/llm', label: 'LLM', icon: AiBrain02Icon }],
+    icon: Brain,
+    items: [{ path: '/llm', label: 'LLM', icon: Brain }],
   },
   {
     id: 'digest',
     label: 'Digest',
-    icon: News01Icon,
+    icon: Newspaper,
     items: [
-      { path: '/digest/topics', label: 'Topics', icon: News01Icon },
-      { path: '/digest/reports', label: 'Reports', icon: Flag01Icon },
-      { path: '/digest/welcome', label: 'Welcome', icon: Edit01Icon },
+      { path: '/digest/topics', label: 'Topics', icon: Newspaper },
+      { path: '/digest/reports', label: 'Reports', icon: Flag },
+      { path: '/digest/welcome', label: 'Welcome', icon: Pencil },
     ],
   },
 ];
@@ -140,7 +135,7 @@ export function MainLayout() {
         <div className="flex h-16 items-center justify-between border-b border-border px-6">
           <span className="text-lg font-bold">Anyhunt Admin</span>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
-            <Icon icon={Cancel01Icon} className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
         <nav className="p-4">
@@ -150,6 +145,7 @@ export function MainLayout() {
                 isPathActive(location.pathname, item.path)
               );
               const open = openGroups[group.id] ?? false;
+              const GroupIcon = group.icon;
 
               return (
                 <li key={group.id} className="pt-1">
@@ -170,11 +166,10 @@ export function MainLayout() {
                         type="button"
                       >
                         <span className="flex items-center gap-3">
-                          <Icon icon={group.icon} className="h-4 w-4" />
+                          <GroupIcon className="h-4 w-4" />
                           {group.label}
                         </span>
-                        <Icon
-                          icon={ArrowDown01Icon}
+                        <ArrowDown
                           className={cn(
                             'h-4 w-4 transition-transform',
                             open ? 'rotate-0' : '-rotate-90'
@@ -187,6 +182,7 @@ export function MainLayout() {
                       <ul className="mt-1 space-y-1 pl-3">
                         {group.items.map((item) => {
                           const active = isPathActive(location.pathname, item.path);
+                          const ItemIcon = item.icon;
                           return (
                             <li key={item.path}>
                               <Link
@@ -199,7 +195,7 @@ export function MainLayout() {
                                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                                 )}
                               >
-                                <Icon icon={item.icon} className="h-4 w-4 opacity-80" />
+                                <ItemIcon className="h-4 w-4 opacity-80" />
                                 {item.label}
                               </Link>
                             </li>
@@ -221,7 +217,7 @@ export function MainLayout() {
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
-              <Icon icon={Menu01Icon} className="h-5 w-5" />
+              <Menu className="h-5 w-5" />
             </button>
             <h1 className="text-lg font-semibold">Admin Panel</h1>
           </div>
@@ -231,7 +227,7 @@ export function MainLayout() {
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm text-destructive hover:underline"
             >
-              <Icon icon={Logout01Icon} className="h-3.5 w-3.5" />
+              <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>

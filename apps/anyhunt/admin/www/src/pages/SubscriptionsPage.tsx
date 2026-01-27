@@ -1,9 +1,10 @@
 /**
- * Subscriptions 页面
- * 订阅管理
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Subscriptions 页面 - 订阅管理（Lucide icons direct render）
  */
 import { useState } from 'react';
-import { Edit01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Pencil, Search } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -18,7 +19,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Input,
   Button,
   Select,
@@ -178,7 +178,7 @@ export default function SubscriptionsPage() {
                 className="w-48"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Icon icon={Search01Icon} className="h-4 w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -253,7 +253,7 @@ export default function SubscriptionsPage() {
                           size="icon"
                           onClick={() => handleEdit(subscription)}
                         >
-                          <Icon icon={Edit01Icon} className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

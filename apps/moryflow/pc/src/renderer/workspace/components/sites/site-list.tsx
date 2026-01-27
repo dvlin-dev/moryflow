@@ -1,14 +1,13 @@
 /**
  * [PROPS]: { sites, loading, onSiteClick, onSiteAction, onPublishClick }
  * [EMITS]: onSiteClick(site), onSiteAction(siteId, action), onPublishClick()
- * [POS]: Sites CMS 的站点列表组件
+ * [POS]: Sites CMS 的站点列表组件（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Add01Icon } from '@hugeicons/core-free-icons';
+import { Plus } from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { SiteCard } from './site-card';
@@ -55,7 +54,7 @@ export function SiteList({
         <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
           <h1 className="text-lg font-semibold">Sites</h1>
           <Button size="sm" onClick={onPublishClick}>
-            <Icon icon={Add01Icon} className="mr-1.5 h-4 w-4" />
+            <Plus className="mr-1.5 h-4 w-4" />
             Publish
           </Button>
         </div>
@@ -73,7 +72,7 @@ export function SiteList({
       <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
         <h1 className="text-lg font-semibold">Sites</h1>
         <Button size="sm" onClick={onPublishClick}>
-          <Icon icon={Add01Icon} className="mr-1.5 h-4 w-4" />
+          <Plus className="mr-1.5 h-4 w-4" />
           Publish
         </Button>
       </div>

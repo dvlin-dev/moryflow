@@ -1,11 +1,11 @@
 /**
  * [PROPS]: CreateApiKeyDialogProps
- * [POS]: 创建 API Key 并展示可复制的明文密钥
+ * [POS]: 创建 API Key 并展示可复制的明文密钥（Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
 import { useState } from 'react';
-import { Alert01Icon, Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { TriangleAlert, Copy, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
   Button,
-  Icon,
   Input,
   Label,
 } from '@anyhunt/ui';
@@ -79,7 +78,7 @@ export function CreateApiKeyDialog({ open, onOpenChange }: CreateApiKeyDialogPro
         {createdKey ? (
           <div className="space-y-4">
             <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-              <Icon icon={Alert01Icon} className="h-5 w-5 shrink-0" />
+              <TriangleAlert className="h-5 w-5 shrink-0" />
               <p className="text-sm">
                 Keep this key secret. You can copy it later from the API Keys list.
               </p>
@@ -89,9 +88,9 @@ export function CreateApiKeyDialog({ open, onOpenChange }: CreateApiKeyDialogPro
               <Input value={createdKey} readOnly className="font-mono text-sm" />
               <Button type="button" variant="outline" size="icon" onClick={handleCopy}>
                 {copied ? (
-                  <Icon icon={Tick02Icon} className="h-4 w-4 text-green-600" />
+                  <Check className="h-4 w-4 text-green-600" />
                 ) : (
-                  <Icon icon={Copy01Icon} className="h-4 w-4" />
+                  <Copy className="h-4 w-4" />
                 )}
               </Button>
             </div>

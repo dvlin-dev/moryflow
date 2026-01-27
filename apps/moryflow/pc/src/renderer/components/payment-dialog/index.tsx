@@ -7,8 +7,7 @@ import {
   DialogDescription,
 } from '@anyhunt/ui/components/dialog';
 import { Button } from '@anyhunt/ui/components/button';
-import { ArrowUpRight01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { ArrowUpRight, Loader } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 
 type PaymentDialogProps = {
@@ -66,7 +65,7 @@ export const PaymentDialog = ({
 
         <div className="flex flex-col items-center gap-6 py-8">
           <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-            <Icon icon={Loading03Icon} className="size-8 animate-spin text-primary" />
+            <Loader className="size-8 animate-spin text-primary" />
           </div>
 
           <div className="space-y-2 text-center">
@@ -75,7 +74,7 @@ export const PaymentDialog = ({
           </div>
 
           <Button variant="outline" onClick={handleOpenCheckout} className="gap-2">
-            <Icon icon={ArrowUpRight01Icon} className="size-4" />
+            <ArrowUpRight className="size-4" />
             {t('reopenPaymentPage')}
           </Button>
         </div>

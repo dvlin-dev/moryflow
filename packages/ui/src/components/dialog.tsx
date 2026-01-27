@@ -2,10 +2,9 @@
 
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { X } from 'lucide-react';
 
 import { cn } from '../lib/utils';
-import { Icon } from './icon';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -64,7 +63,7 @@ function DialogContent({
             data-slot="dialog-close"
             className="absolute top-4 right-4 rounded-lg p-1.5 opacity-70 transition-all duration-fast hover:opacity-100 hover:bg-accent focus-visible:ring-ring/50 focus-visible:ring-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
-            <Icon icon={Cancel01Icon} />
+            <X />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

@@ -20,20 +20,19 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  AlertCircleIcon,
-  ArrowReloadHorizontalIcon,
-  BarChartIcon,
-  CancelCircleIcon,
-  CheckmarkCircle01Icon,
-  Clock01Icon,
-  DatabaseIcon,
-  Delete01Icon,
-  Layers01Icon,
-} from '@hugeicons/core-free-icons';
+  CircleAlert,
+  RefreshCw,
+  ChartBar,
+  CircleX,
+  CircleCheck,
+  Clock,
+  Database,
+  Delete,
+  Layers,
+} from 'lucide-react';
 import { useStorageStats, useTriggerCleanup } from '@/features/agent-traces';
 import { formatDateTime } from '@/lib/format';
 import { toast } from 'sonner';
-import { Icon } from '@/components/ui/icon';
 
 export default function AgentTraceStoragePage() {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -62,10 +61,7 @@ export default function AgentTraceStoragePage() {
         description="查看存储统计和管理日志清理"
         action={
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <Icon
-              icon={ArrowReloadHorizontalIcon}
-              className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
-            />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             刷新
           </Button>
         }
@@ -76,7 +72,7 @@ export default function AgentTraceStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Trace 总数</CardTitle>
-            <Icon icon={DatabaseIcon} className="h-4 w-4 text-muted-foreground" />
+            <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -90,7 +86,7 @@ export default function AgentTraceStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Span 总数</CardTitle>
-            <Icon icon={Layers01Icon} className="h-4 w-4 text-muted-foreground" />
+            <Layers className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -104,7 +100,7 @@ export default function AgentTraceStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">预估大小</CardTitle>
-            <Icon icon={BarChartIcon} className="h-4 w-4 text-muted-foreground" />
+            <ChartBar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -118,7 +114,7 @@ export default function AgentTraceStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">待清理</CardTitle>
-            <Icon icon={Delete01Icon} className="h-4 w-4 text-muted-foreground" />
+            <Delete className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -149,7 +145,7 @@ export default function AgentTraceStoragePage() {
             <div className="grid gap-4 md:grid-cols-4">
               <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
                 <div className="flex items-center gap-2">
-                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-500" />
+                  <CircleCheck className="h-5 w-5 text-green-500" />
                   <span className="font-medium">完成</span>
                 </div>
                 <span className="text-lg font-bold">
@@ -159,7 +155,7 @@ export default function AgentTraceStoragePage() {
 
               <div className="flex items-center justify-between p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
                 <div className="flex items-center gap-2">
-                  <Icon icon={CancelCircleIcon} className="h-5 w-5 text-red-500" />
+                  <CircleX className="h-5 w-5 text-red-500" />
                   <span className="font-medium">失败</span>
                 </div>
                 <span className="text-lg font-bold">
@@ -169,7 +165,7 @@ export default function AgentTraceStoragePage() {
 
               <div className="flex items-center justify-between p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
                 <div className="flex items-center gap-2">
-                  <Icon icon={AlertCircleIcon} className="h-5 w-5 text-yellow-500" />
+                  <CircleAlert className="h-5 w-5 text-yellow-500" />
                   <span className="font-medium">中断</span>
                 </div>
                 <span className="text-lg font-bold">
@@ -179,7 +175,7 @@ export default function AgentTraceStoragePage() {
 
               <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <div className="flex items-center gap-2">
-                  <Icon icon={Clock01Icon} className="h-5 w-5 text-blue-500" />
+                  <Clock className="h-5 w-5 text-blue-500" />
                   <span className="font-medium">进行中</span>
                 </div>
                 <span className="text-lg font-bold">
@@ -301,7 +297,7 @@ export default function AgentTraceStoragePage() {
               onClick={() => setShowConfirm(true)}
               disabled={cleanupMutation.isPending || pendingTotal === 0}
             >
-              <Icon icon={Delete01Icon} className="h-4 w-4 mr-2" />
+              <Delete className="h-4 w-4 mr-2" />
               {cleanupMutation.isPending ? '清理中...' : '立即清理'}
             </Button>
           </div>

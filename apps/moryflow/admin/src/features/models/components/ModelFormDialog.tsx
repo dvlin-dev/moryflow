@@ -8,7 +8,6 @@ import { useState, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import {
   Dialog,
   DialogContent,
@@ -52,7 +51,7 @@ import { useCreateModel, useUpdateModel } from '../hooks';
 import { parseCapabilities } from '../utils';
 import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data';
 import type { AiModel, AiProvider, UserTier, ReasoningEffort } from '@/types/api';
-import { ArrowDown01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown, Search } from 'lucide-react';
 
 /** 思考强度选项 */
 const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
@@ -184,7 +183,7 @@ function ModelFormDialogContent({ onOpenChange, model, providers }: ModelFormDia
               <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start">
-                    <Icon icon={Search01Icon} className="mr-2 h-4 w-4" />
+                    <Search className="mr-2 h-4 w-4" />
                     搜索模型（{getModelCount()} 个可用）...
                   </Button>
                 </PopoverTrigger>
@@ -563,7 +562,7 @@ function ModelFormDialogContent({ onOpenChange, model, providers }: ModelFormDia
                 {/* 高级选项：原生配置覆盖 */}
                 <Collapsible className="col-span-2">
                   <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                    <Icon icon={ArrowDown01Icon} className="h-4 w-4" />
+                    <ArrowDown className="h-4 w-4" />
                     高级选项
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-3">

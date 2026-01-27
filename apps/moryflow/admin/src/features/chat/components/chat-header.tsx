@@ -12,8 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Icon } from '@/components/ui/icon';
-import { Add01Icon, More01Icon } from '@hugeicons/core-free-icons';
+import { Plus, Ellipsis } from 'lucide-react';
 
 export function ChatHeader() {
   return (
@@ -32,7 +31,7 @@ export function ChatHeader() {
                     className="size-8 text-muted-foreground hover:text-foreground"
                     aria-label="历史对话"
                   >
-                    <Icon icon={More01Icon} className="size-4" />
+                    <Ellipsis className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -59,7 +58,7 @@ export function ChatHeader() {
                 aria-label="新对话"
                 disabled
               >
-                <Icon icon={Add01Icon} className="size-4" />
+                <Plus className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>新对话（暂未实现）</TooltipContent>

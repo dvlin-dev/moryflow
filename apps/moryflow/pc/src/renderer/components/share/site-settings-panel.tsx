@@ -1,15 +1,14 @@
 /**
  * [PROPS]: { site, onBack, onSettingsChange }
  * [EMITS]: onBack() - 返回上一面板, onSettingsChange(settings) - 设置变更
- * [POS]: Share Popover 的站点设置面板
+ * [POS]: Share Popover 的站点设置面板（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft, Loader } from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Input } from '@anyhunt/ui/components/input';
 import { Label } from '@anyhunt/ui/components/label';
 import { Textarea } from '@anyhunt/ui/components/textarea';
@@ -67,7 +66,7 @@ export function SiteSettingsPanel({ site, onBack, onSettingsChange }: SiteSettin
       {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onBack} disabled={saving}>
-          <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium">Site settings</span>
       </div>
@@ -128,7 +127,7 @@ export function SiteSettingsPanel({ site, onBack, onSettingsChange }: SiteSettin
       <Button className="w-full" onClick={handleSave} disabled={!hasChanges || saving}>
         {saving ? (
           <>
-            <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
             Saving...
           </>
         ) : (

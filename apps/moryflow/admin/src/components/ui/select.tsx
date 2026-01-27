@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import { ArrowDown01Icon, ArrowUp01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown, ArrowUp, Check } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot="select" {...props} />;
@@ -37,7 +36,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <Icon icon={ArrowDown01Icon} className="size-4 opacity-50" />
+        <ArrowDown className="size-4 opacity-50" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -106,7 +105,7 @@ function SelectItem({
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Icon icon={Tick02Icon} className="size-4" />
+          <Check className="size-4" />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -137,7 +136,7 @@ function SelectScrollUpButton({
       className={cn('flex cursor-default items-center justify-center py-1', className)}
       {...props}
     >
-      <Icon icon={ArrowUp01Icon} className="size-4" />
+      <ArrowUp className="size-4" />
     </SelectPrimitive.ScrollUpButton>
   );
 }
@@ -152,7 +151,7 @@ function SelectScrollDownButton({
       className={cn('flex cursor-default items-center justify-center py-1', className)}
       {...props}
     >
-      <Icon icon={ArrowDown01Icon} className="size-4" />
+      <ArrowDown className="size-4" />
     </SelectPrimitive.ScrollDownButton>
   );
 }

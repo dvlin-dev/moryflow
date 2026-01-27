@@ -1,18 +1,14 @@
 /**
  * [PROPS]: slug, followedTopicIds, onFollowTopic
- * [POS]: Reader 右栏 - Topic 预览（不跳转到 /topics/*）
+ * [POS]: Reader 右栏 - Topic 预览（不跳转到 /topics/*，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
  */
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, CardContent, Icon, ScrollArea, Skeleton } from '@anyhunt/ui';
-import {
-  SquareArrowUpRightIcon,
-  UserMultiple02Icon,
-  Calendar01Icon,
-} from '@hugeicons/core-free-icons';
+import { Button, Card, CardContent, ScrollArea, Skeleton } from '@anyhunt/ui';
+import { SquareArrowUpRight, Users, Calendar } from 'lucide-react';
 import { usePublicEnv } from '@/lib/public-env-context';
 import {
   getTopicBySlug,
@@ -123,7 +119,7 @@ export function TopicPreviewDetail({
           </Button>
           <Button variant="ghost" size="icon" className="size-8" asChild>
             <a href={`/topics/${data.topic.slug}`} target="_blank" rel="noopener noreferrer">
-              <Icon icon={SquareArrowUpRightIcon} className="size-4" />
+              <SquareArrowUpRight className="size-4" />
             </a>
           </Button>
         </div>
@@ -137,12 +133,12 @@ export function TopicPreviewDetail({
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <Icon icon={UserMultiple02Icon} className="size-4" />
+              <Users className="size-4" />
               {data.topic.subscriberCount.toLocaleString()} subscribers
             </span>
             {data.topic.lastEditionAt && (
               <span className="inline-flex items-center gap-1">
-                <Icon icon={Calendar01Icon} className="size-4" />
+                <Calendar className="size-4" />
                 Updated {formatDate(data.topic.lastEditionAt)}
               </span>
             )}
@@ -181,10 +177,7 @@ export function TopicPreviewDetail({
                       <span className="truncate">
                         {formatDate(edition.scheduledAt)} · {edition.itemCount} items
                       </span>
-                      <Icon
-                        icon={SquareArrowUpRightIcon}
-                        className="size-4 text-muted-foreground"
-                      />
+                      <SquareArrowUpRight className="size-4 text-muted-foreground" />
                     </a>
                   ))}
                 </div>

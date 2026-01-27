@@ -1,7 +1,7 @@
 /**
  * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
- * [POS]: Chat Pane 消息内容渲染
+ * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,13 +10,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { isFileUIPart, isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
 import type { FileUIPart, ToolUIPart, UIMessage } from 'ai';
-import {
-  Cancel01Icon,
-  Edit01Icon,
-  GitBranchIcon,
-  RefreshIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { X, Pencil, GitBranch, RefreshCw, Check } from 'lucide-react';
 
 import {
   Message,
@@ -28,7 +22,6 @@ import {
   MessageMetaAttachments,
   MessageResponse,
 } from '@anyhunt/ui/ai/message';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
 import { Shimmer } from '@anyhunt/ui/ai/shimmer';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
@@ -356,17 +349,17 @@ export const ChatMessage = ({
       >
         {actions.onEditAndResend ? (
           <MessageAction onClick={startEdit} size="icon-xs">
-            <Icon icon={Edit01Icon} className="size-3" />
+            <Pencil className="size-3" />
           </MessageAction>
         ) : null}
         {actions.onResend ? (
           <MessageAction onClick={handleResend} size="icon-xs">
-            <Icon icon={RefreshIcon} className="size-3" />
+            <RefreshCw className="size-3" />
           </MessageAction>
         ) : null}
         {actions.onFork ? (
           <MessageAction onClick={handleFork} size="icon-xs">
-            <Icon icon={GitBranchIcon} className="size-3" />
+            <GitBranch className="size-3" />
           </MessageAction>
         ) : null}
       </MessageActions>
@@ -385,7 +378,7 @@ export const ChatMessage = ({
         }`}
       >
         <MessageAction onClick={handleRetry} size="icon-xs">
-          <Icon icon={RefreshIcon} className="size-3" />
+          <RefreshCw className="size-3" />
         </MessageAction>
       </MessageActions>
     );
@@ -407,10 +400,10 @@ export const ChatMessage = ({
   const renderEditActions = () => (
     <MessageActions className="ml-auto">
       <MessageAction onClick={cancelEdit} size="icon-xs">
-        <Icon icon={Cancel01Icon} className="size-3" />
+        <X className="size-3" />
       </MessageAction>
       <MessageAction onClick={confirmEdit} size="icon-xs">
-        <Icon icon={Tick02Icon} className="size-3" />
+        <Check className="size-3" />
       </MessageAction>
     </MessageActions>
   );

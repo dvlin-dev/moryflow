@@ -12,8 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { CancelCircleIcon, ViewIcon } from '@hugeicons/core-free-icons';
+import { CircleX, View } from 'lucide-react';
 import { formatDateTime, formatDuration } from '@/lib/format';
 import { ErrorTypeBadge } from './trace-status-badge';
 import type { AgentSpan } from '../types';
@@ -77,7 +76,7 @@ export function FailedToolTable({ spans, isLoading, onViewDetail }: FailedToolTa
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => onViewDetail(span)}>
-                    <Icon icon={ViewIcon} className="h-4 w-4" />
+                    <View className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -85,10 +84,7 @@ export function FailedToolTable({ spans, isLoading, onViewDetail }: FailedToolTa
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-12">
-                <Icon
-                  icon={CancelCircleIcon}
-                  className="h-12 w-12 mx-auto text-muted-foreground mb-4"
-                />
+                <CircleX className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">暂无失败记录</p>
               </TableCell>
             </TableRow>

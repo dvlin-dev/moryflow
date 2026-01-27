@@ -1,14 +1,12 @@
 /**
  * [PROPS]: 无
  * [EMITS]: 无
- * [POS]: 关于页面
+ * [POS]: 关于页面（Lucide icons direct render）
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import type { HugeIcon } from '@anyhunt/ui';
-import { Icon } from '@anyhunt/ui';
-import { FavouriteIcon, Target01Icon, UserGroupIcon } from '@hugeicons/core-free-icons';
+import { Heart, Target, Users, type LucideIcon } from 'lucide-react';
 
 export const Route = createFileRoute('/about')({
   head: () => ({
@@ -23,21 +21,21 @@ export const Route = createFileRoute('/about')({
   component: AboutPage,
 });
 
-const values: { icon: HugeIcon; title: string; description: string }[] = [
+const values: { icon: LucideIcon; title: string; description: string }[] = [
   {
-    icon: FavouriteIcon,
+    icon: Heart,
     title: 'User First',
     description:
       'Everything we build starts with understanding what users truly need. No dark patterns, no hidden agendas.',
   },
   {
-    icon: Target01Icon,
+    icon: Target,
     title: 'Privacy by Design',
     description:
       'Your data belongs to you. Local-first architecture ensures your information never leaves your device without consent.',
   },
   {
-    icon: UserGroupIcon,
+    icon: Users,
     title: 'Open & Honest',
     description:
       'We believe in transparency. Clear communication about what we do and why we do it.',
@@ -87,17 +85,20 @@ function AboutPage() {
             Our Values
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {values.map((value, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 mx-auto mb-6 bg-mory-orange/10 rounded-2xl flex items-center justify-center">
-                  <Icon icon={value.icon} size={32} className="text-mory-orange" />
+            {values.map((value, index) => {
+              const IconComponent = value.icon;
+              return (
+                <div key={index} className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-6 bg-mory-orange/10 rounded-2xl flex items-center justify-center">
+                    <IconComponent size={32} className="text-mory-orange" />
+                  </div>
+                  <h3 className="text-xl font-serif font-bold text-mory-text-primary mb-3">
+                    {value.title}
+                  </h3>
+                  <p className="text-mory-text-secondary">{value.description}</p>
                 </div>
-                <h3 className="text-xl font-serif font-bold text-mory-text-primary mb-3">
-                  {value.title}
-                </h3>
-                <p className="text-mory-text-secondary">{value.description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

@@ -1,11 +1,11 @@
 /**
  * [PROPS]: NavUserProps
  * [EMITS]: logout (click)
- * [POS]: Console 用户菜单与登出入口（Access Token）
+ * [POS]: Console 用户菜单与登出入口（Access Token，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { Logout01Icon, MoreVerticalIcon } from '@hugeicons/core-free-icons';
+import { LogOut, EllipsisVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
 
@@ -19,7 +19,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Icon,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -70,7 +69,7 @@ export function NavUser({ user }: NavUserProps) {
                 <span className="truncate font-medium">{displayName}</span>
                 <span className="text-muted-foreground truncate text-xs">{user.email ?? ''}</span>
               </div>
-              <Icon icon={MoreVerticalIcon} className="ml-auto size-4" />
+              <EllipsisVertical className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -93,7 +92,7 @@ export function NavUser({ user }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <Icon icon={Logout01Icon} className="size-4" />
+              <LogOut className="size-4" />
               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>

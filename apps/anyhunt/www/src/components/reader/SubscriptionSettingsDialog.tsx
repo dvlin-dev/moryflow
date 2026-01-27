@@ -1,6 +1,6 @@
 /**
  * [PROPS]: subscription, open, onOpenChange
- * [POS]: Settings dialog with tabs for basic settings, run history, and learning suggestions
+ * [POS]: Settings dialog with tabs for basic settings, run history, and learning suggestions (Lucide icons direct render)
  * Renders as Dialog on desktop, Drawer on mobile
  */
 
@@ -37,9 +37,8 @@ import {
   TabsList,
   TabsTrigger,
   Separator,
-  Icon,
 } from '@anyhunt/ui';
-import { PlayIcon, Share01Icon } from '@hugeicons/core-free-icons';
+import { Play, Share } from 'lucide-react';
 import { useUpdateSubscription, useTriggerManualRun } from '@/features/digest/hooks';
 import { CRON_PRESETS, TIMEZONES } from '@/features/digest/constants';
 import { RunHistoryTab } from './RunHistoryTab';
@@ -401,11 +400,11 @@ export function SubscriptionSettingsDialog({
             onClick={handleRunNow}
             disabled={triggerRun.isPending}
           >
-            <Icon icon={PlayIcon} className="mr-2 size-4" />
+            <Play className="mr-2 size-4" />
             Run Now
           </Button>
           <Button variant="outline" size="sm" onClick={onPublishClick}>
-            <Icon icon={Share01Icon} className="mr-2 size-4" />
+            <Share className="mr-2 size-4" />
             Publish as Topic
           </Button>
         </div>

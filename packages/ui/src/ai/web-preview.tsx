@@ -1,9 +1,8 @@
 'use client';
 
-import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown } from 'lucide-react';
 import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon } from '../components/icon';
 import { Input } from '../components/input';
 import { ScrollArea } from '../components/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip';
@@ -203,8 +202,7 @@ export const WebPreviewConsole = ({
           variant="ghost"
         >
           Console
-          <Icon
-            icon={ArrowDown01Icon}
+          <ArrowDown
             className={cn(
               'h-4 w-4 transition-transform duration-normal',
               consoleOpen && 'rotate-180'

@@ -1,9 +1,10 @@
 /**
- * API Keys 页面
- * P0 MVP 核心功能 - 管理 API 密钥
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: API Keys 页面 - 管理 API 密钥（Lucide icons direct render）
  */
 import { useState } from 'react';
-import { Add01Icon, Copy01Icon, Delete02Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { Plus, Copy, Delete, Check } from 'lucide-react';
 import { PageHeader } from '@anyhunt/ui';
 import {
   Button,
@@ -12,7 +13,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Icon,
   Table,
   TableBody,
   TableCell,
@@ -72,7 +72,7 @@ export default function ApiKeysPage() {
         description="Manage your API keys for calling the Anyhunt Screenshot API"
         action={
           <Button onClick={() => setCreateDialogOpen(true)}>
-            <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             Create API Key
           </Button>
         }
@@ -96,7 +96,7 @@ export default function ApiKeysPage() {
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">You haven't created any API Keys yet</p>
               <Button onClick={() => setCreateDialogOpen(true)}>
-                <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 mr-2" />
                 Create your first API Key
               </Button>
             </div>
@@ -123,9 +123,9 @@ export default function ApiKeysPage() {
                       >
                         {maskApiKey(apiKey.key)}
                         {copiedId === apiKey.id ? (
-                          <Icon icon={Tick02Icon} className="h-3.5 w-3.5 text-green-600" />
+                          <Check className="h-3.5 w-3.5 text-green-600" />
                         ) : (
-                          <Icon icon={Copy01Icon} className="h-3.5 w-3.5 opacity-50" />
+                          <Copy className="h-3.5 w-3.5 opacity-50" />
                         )}
                       </button>
                     </TableCell>
@@ -172,7 +172,7 @@ export default function ApiKeysPage() {
                         onClick={() => handleDelete(apiKey)}
                         className="text-destructive hover:text-destructive"
                       >
-                        <Icon icon={Delete02Icon} className="h-4 w-4" />
+                        <Delete className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

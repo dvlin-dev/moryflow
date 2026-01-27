@@ -1,11 +1,11 @@
 /**
  * [PROPS]: pathname, search
- * [POS]: SidePanel 顶部 Header（Logo / Explore / User）
+ * [POS]: SidePanel 顶部 Header（Logo / Explore / User, Lucide icons direct render）
  */
 
 import { Link } from '@tanstack/react-router';
-import { Button, Icon } from '@anyhunt/ui';
-import { Add01Icon, UserCircleIcon } from '@hugeicons/core-free-icons';
+import { Button } from '@anyhunt/ui';
+import { Plus, CircleUser } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { SidePanelUserMenu } from './SidePanelUserMenu';
 
@@ -29,7 +29,7 @@ export function SidePanelHeader({ pathname, search }: SidePanelHeaderProps) {
       <div className="flex items-center gap-1">
         <Button asChild variant="ghost" size="icon" className="size-8">
           <Link to="/explore">
-            <Icon icon={Add01Icon} className="size-4" />
+            <Plus className="size-4" />
             <span className="sr-only">Explore topics</span>
           </Link>
         </Button>
@@ -39,7 +39,7 @@ export function SidePanelHeader({ pathname, search }: SidePanelHeaderProps) {
         ) : (
           <Button asChild variant="ghost" size="icon" className="size-8">
             <Link to="/login" search={{ redirect: pathname + search }}>
-              <Icon icon={UserCircleIcon} className="size-4" />
+              <CircleUser className="size-4" />
               <span className="sr-only">Sign in</span>
             </Link>
           </Button>

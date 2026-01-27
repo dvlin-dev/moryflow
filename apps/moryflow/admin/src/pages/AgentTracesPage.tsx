@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { X, Search } from 'lucide-react';
 import { usePagination } from '@/hooks';
 import {
   useAgentTraceStats,
@@ -24,7 +24,6 @@ import {
   TraceDetailSheet,
 } from '@/features/agent-traces';
 import type { AgentTrace, TraceStatus } from '@/features/agent-traces';
-import { Icon } from '@/components/ui/icon';
 
 const PAGE_SIZE = 20;
 
@@ -108,7 +107,7 @@ export default function AgentTracesPage() {
       {/* 筛选条件 */}
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2">
-          <Icon icon={Search01Icon} className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索 Agent 名称..."
             value={agentName}
@@ -139,7 +138,7 @@ export default function AgentTracesPage() {
         </Select>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <Icon icon={Cancel01Icon} className="h-4 w-4 mr-1" />
+            <X className="h-4 w-4 mr-1" />
             清除筛选
           </Button>
         )}

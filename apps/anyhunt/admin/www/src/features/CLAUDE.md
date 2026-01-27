@@ -8,6 +8,7 @@
 
 ## 最近更新
 
+- Admin Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - LLM Feature：新增 presets API + model capabilities/reasoning/tiers 支持
 - Feature types 与 API 返回结构改为 raw JSON + RFC7807（移除 success/data 包装）
 - LLM Feature：capabilities/Reasoning 解析工具补齐格式化与校验规则
@@ -57,4 +58,4 @@ export function useJobs() {
 - `/ui` - UI 组件
 - `../lib/api-client` - HTTP 客户端
 - `../lib/api-paths` - API 常量
-- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
+- 图标统一 Lucide（`lucide-react`），直接组件调用

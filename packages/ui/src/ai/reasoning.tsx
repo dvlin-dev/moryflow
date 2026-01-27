@@ -1,9 +1,8 @@
 'use client';
 
-import { BrainIcon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { Brain, ArrowDown } from 'lucide-react';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon } from '../components/icon';
 import { cn } from '../lib/utils';
 import type { ComponentProps } from 'react';
 import { createContext, memo, useContext, useEffect, useState } from 'react';
@@ -146,10 +145,9 @@ export const ReasoningTrigger = memo(
       >
         {children ?? (
           <>
-            <Icon icon={BrainIcon} className="size-4" />
+            <Brain className="size-4" />
             {getThinkingMessage(isStreaming, duration, thinkingLabel, thoughtLabel)}
-            <Icon
-              icon={ArrowDown01Icon}
+            <ArrowDown
               className={cn(
                 'size-4 transition-transform duration-fast',
                 isOpen ? 'rotate-180' : 'rotate-0'

@@ -1,17 +1,10 @@
 'use client';
 
-import {
-  Add01Icon,
-  ArrowTurnDownIcon,
-  Cancel01Icon,
-  Loading01Icon,
-  StopIcon,
-} from '@hugeicons/core-free-icons';
+import { Plus, CornerDownLeft, X, Loader, SquareStop } from 'lucide-react';
 import type { ChatStatus } from 'ai';
 import { type ComponentProps, Children } from 'react';
 
 import { InputGroupButton } from '../../components/input-group';
-import { Icon } from '../../components/icon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,7 +52,7 @@ export const PromptInputActionMenuTrigger = ({
 }: PromptInputActionMenuTriggerProps) => (
   <DropdownMenuTrigger asChild>
     <PromptInputButton className={className} {...props}>
-      {children ?? <Icon icon={Add01Icon} className="size-4" />}
+      {children ?? <Plus className="size-4" />}
     </PromptInputButton>
   </DropdownMenuTrigger>
 );
@@ -92,14 +85,14 @@ export const PromptInputSubmit = ({
   children,
   ...props
 }: PromptInputSubmitProps) => {
-  let iconNode = <Icon icon={ArrowTurnDownIcon} className="size-4" />;
+  let iconNode = <CornerDownLeft className="size-4" />;
 
   if (status === 'submitted') {
-    iconNode = <Icon icon={Loading01Icon} className="size-4 animate-spin" />;
+    iconNode = <Loader className="size-4 animate-spin" />;
   } else if (status === 'streaming') {
-    iconNode = <Icon icon={StopIcon} className="size-4" />;
+    iconNode = <SquareStop className="size-4" />;
   } else if (status === 'error') {
-    iconNode = <Icon icon={Cancel01Icon} className="size-4" />;
+    iconNode = <X className="size-4" />;
   }
 
   return (

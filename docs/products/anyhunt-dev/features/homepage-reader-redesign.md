@@ -1082,8 +1082,8 @@ apps/anyhunt/www/src/
 - 状态管理：TanStack Query (React Query)
 - 样式：Tailwind CSS v4
 - 动画：Framer Motion
-- 图标：Hugeicons
+- 图标：Lucide（`lucide-react`）
 
 ---
 
-_文档版本: 2.2 | 更新日期: 2026-01-15_
+_文档版本: 2.3 | 更新日期: 2026-01-27_

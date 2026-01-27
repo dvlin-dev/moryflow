@@ -1,12 +1,13 @@
 /**
- * Digest Reports 页面
- * 举报管理
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Digest Reports 页面 - 举报管理（Lucide icons direct render）
  */
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import { CheckmarkSquare01Icon, Cancel01Icon, ViewIcon } from '@hugeicons/core-free-icons';
+import { SquareCheck, X, View } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -21,7 +22,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Button,
   Select,
   SelectContent,
@@ -239,7 +239,7 @@ export default function DigestReportsPage() {
                                 }
                                 title="View Topic"
                               >
-                                <Icon icon={ViewIcon} className="h-4 w-4" />
+                                <View className="h-4 w-4" />
                               </Button>
                             )}
                             {report.status === 'PENDING' && (
@@ -249,7 +249,7 @@ export default function DigestReportsPage() {
                                 onClick={() => handleResolve(report)}
                                 title="Resolve"
                               >
-                                <Icon icon={CheckmarkSquare01Icon} className="h-4 w-4" />
+                                <SquareCheck className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -364,11 +364,11 @@ export default function DigestReportsPage() {
                   onClick={() => setResolveDialogOpen(false)}
                   disabled={resolveMutation.isPending}
                 >
-                  <Icon icon={Cancel01Icon} className="mr-2 h-4 w-4" />
+                  <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
                 <Button type="submit" disabled={resolveMutation.isPending}>
-                  <Icon icon={CheckmarkSquare01Icon} className="mr-2 h-4 w-4" />
+                  <SquareCheck className="mr-2 h-4 w-4" />
                   {resolveMutation.isPending ? 'Resolving...' : 'Resolve'}
                 </Button>
               </DialogFooter>

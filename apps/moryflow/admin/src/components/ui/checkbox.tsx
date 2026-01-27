@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
-import { Tick02Icon } from '@hugeicons/core-free-icons';
+import { Check } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
   return (
@@ -19,7 +18,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
         data-slot="checkbox-indicator"
         className="grid place-content-center text-current transition-none"
       >
-        <Icon icon={Tick02Icon} className="size-3.5" />
+        <Check className="size-3.5" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

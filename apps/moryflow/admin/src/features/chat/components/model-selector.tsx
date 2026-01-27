@@ -10,8 +10,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Icon } from '@/components/ui/icon';
-import { AiMagicIcon, ArrowDown01Icon, CheckmarkSquare01Icon } from '@hugeicons/core-free-icons';
+import { Sparkles, ArrowDown, SquareCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { ModelGroup } from '../types';
 
@@ -37,7 +36,7 @@ export function ModelSelector({
   if (!hasModels) {
     return (
       <Button variant="ghost" size="sm" disabled className="h-8 gap-1.5 text-muted-foreground">
-        <Icon icon={AiMagicIcon} className="size-3.5" />
+        <Sparkles className="size-3.5" />
         <span>无可用模型</span>
       </Button>
     );
@@ -53,7 +52,7 @@ export function ModelSelector({
           className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
         >
           <span className="max-w-32 truncate">{selectedModel?.name ?? '选择模型'}</span>
-          <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
+          <ArrowDown className="size-3 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="start" side="top">
@@ -73,9 +72,7 @@ export function ModelSelector({
                     className="gap-2 text-sm"
                   >
                     <span className="flex-1 truncate">{option.name}</span>
-                    {selectedModelId === option.id && (
-                      <Icon icon={CheckmarkSquare01Icon} className="size-4 shrink-0" />
-                    )}
+                    {selectedModelId === option.id && <SquareCheck className="size-4 shrink-0" />}
                   </CommandItem>
                 ))}
               </CommandGroup>

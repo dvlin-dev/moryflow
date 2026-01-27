@@ -1,10 +1,10 @@
 /**
  * [DEFINES]: VaultFilesProps, ContextMenuAction, ContextMenuItem, DragData, DropValidation
  * [USED_BY]: vault-files 组件系列
- * [POS]: 文件树组件的类型定义和常量
+ * [POS]: 文件树组件的类型定义和常量（Lucide 图标类型）
  */
 
-import type { HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
 import type { VaultTreeNode } from '@shared/ipc';
 
 // 右键菜单动作类型
@@ -14,7 +14,7 @@ export type ContextMenuItem = {
   action: ContextMenuAction;
   /** i18n key for menu item label */
   labelKey: string;
-  icon?: HugeIcon;
+  icon?: LucideIcon;
   dangerous?: boolean;
 };
 

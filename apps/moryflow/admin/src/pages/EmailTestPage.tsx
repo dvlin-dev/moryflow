@@ -10,10 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TiptapEditor, isEditorEmpty } from '@/components/ui/tiptap-editor';
 import { toast } from 'sonner';
-import { Loading01Icon, Mail01Icon, MailSend01Icon } from '@hugeicons/core-free-icons';
+import { Loader, Mail, Send } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { ADMIN_API } from '@/lib/api-paths';
-import { Icon } from '@/components/ui/icon';
 
 export default function EmailTestPage() {
   const [to, setTo] = useState('');
@@ -58,7 +57,7 @@ export default function EmailTestPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Icon icon={Mail01Icon} className="h-5 w-5" />
+            <Mail className="h-5 w-5" />
             发送邮件
           </CardTitle>
           <CardDescription>
@@ -111,9 +110,9 @@ export default function EmailTestPage() {
           <div className="flex justify-end">
             <Button onClick={handleSend} disabled={isSending || !isFormValid}>
               {isSending ? (
-                <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Icon icon={MailSend01Icon} className="mr-2 h-4 w-4" />
+                <Send className="mr-2 h-4 w-4" />
               )}
               发送邮件
             </Button>

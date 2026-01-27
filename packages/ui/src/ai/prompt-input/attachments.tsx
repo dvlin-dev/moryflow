@@ -9,11 +9,10 @@
 
 import type { FileUIPart } from 'ai';
 import { type ComponentProps, Fragment, type HTMLAttributes, type ReactNode } from 'react';
-import { Attachment01Icon, Cancel01Icon, Image01Icon } from '@hugeicons/core-free-icons';
+import { Paperclip, X, Image } from 'lucide-react';
 
 import { Button } from '../../components/button';
 import { DropdownMenuItem } from '../../components/dropdown-menu';
-import { Icon } from '../../components/icon';
 import { cn } from '../../lib/utils';
 
 import {
@@ -59,7 +58,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
                 />
               ) : (
                 <div className="flex size-5 items-center justify-center text-muted-foreground">
-                  <Icon icon={Attachment01Icon} className="size-3" />
+                  <Paperclip className="size-3" />
                 </div>
               )}
             </div>
@@ -73,7 +72,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
               type="button"
               variant="ghost"
             >
-              <Icon icon={Cancel01Icon} className="size-2.5" />
+              <X className="size-2.5" />
               <span className="sr-only">Remove</span>
             </Button>
           </div>
@@ -152,7 +151,7 @@ export const PromptInputActionAddAttachments = ({
         attachments.openFileDialog();
       }}
     >
-      <Icon icon={Image01Icon} className="mr-2 size-4" /> {label}
+      <Image className="mr-2 size-4" /> {label}
     </DropdownMenuItem>
   );
 };

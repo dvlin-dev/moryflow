@@ -1,13 +1,14 @@
 /**
- * Extract Playground 页面
- * 使用 react-hook-form + zod 验证
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Extract Playground 页面（react-hook-form + zod，Lucide icons direct render）
  */
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { AiCloud02Icon, Loading01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import { Sparkles, Loader, CircleCheck } from 'lucide-react';
 import {
   Button,
   Card,
@@ -22,7 +23,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Icon,
   Input,
   Textarea,
 } from '@anyhunt/ui';
@@ -155,9 +155,9 @@ export default function ExtractPlaygroundPage() {
                           </FormControl>
                           <Button type="submit" disabled={isPending || !selectedKey?.isActive}>
                             {isPending ? (
-                              <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
+                              <Loader className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Icon icon={AiCloud02Icon} className="h-4 w-4" />
+                              <Sparkles className="h-4 w-4" />
                             )}
                             <span className="ml-2">Extract</span>
                           </Button>
@@ -274,7 +274,7 @@ export default function ExtractPlaygroundPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+                  <CircleCheck className="h-5 w-5 text-green-600" />
                   Extraction Successful
                 </CardTitle>
               </CardHeader>

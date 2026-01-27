@@ -1,26 +1,26 @@
 /**
- * [PROVIDES]: Mobile 端 Hugeicons 统一导出与类型
- * [DEPENDS]: @hugeicons/core-free-icons, @hugeicons/react-native
- * [POS]: 替换 lucide-react-native 的唯一入口，保证图标一致性
+ * [PROVIDES]: Mobile 端 Lucide 统一导出与类型
+ * [DEPENDS]: lucide-react-native
+ * [POS]: Mobile 端 Lucide 唯一入口，保证图标一致性
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { IconSvgElement } from '@hugeicons/react-native';
+import type { LucideIcon } from 'lucide-react-native';
 
-export type AppIcon = IconSvgElement;
+export type AppIcon = LucideIcon;
 
 export {
-  AlertCircleIcon,
-  AlertTriangle as AlertTriangleIcon,
+  CircleAlert as AlertCircleIcon,
+  TriangleAlert as AlertTriangleIcon,
   ArrowRight,
-  ArrowUpIcon,
+  ArrowUp as ArrowUpIcon,
   AtSign as AtSignIcon,
   Bold,
   Brain,
   Check,
-  CheckCircle,
-  CheckCircle as CheckCircleIcon,
+  CircleCheck as CheckCircle,
+  CircleCheck as CheckCircleIcon,
   Check as CheckIcon,
   CheckSquare,
   ChevronDown,
@@ -32,37 +32,37 @@ export {
   ChevronUp as ChevronUpIcon,
   Circle,
   Clock,
-  ClockIcon,
-  CloudIcon,
+  Clock as ClockIcon,
+  Cloud as CloudIcon,
   CloudOff as CloudOffIcon,
   Code,
-  CrownIcon,
+  Crown as CrownIcon,
   FileCode as FileCodeIcon,
-  FileIcon,
+  File as FileIcon,
   FileText,
   FileText as FileTextIcon,
-  FolderIcon,
-  GlobeIcon,
-  HardDriveIcon,
+  Folder as FolderIcon,
+  Globe as GlobeIcon,
+  HardDrive as HardDriveIcon,
   Heading1,
   Heading2,
   Heading3,
-  HomeIcon,
+  Home as HomeIcon,
   Image,
-  ImageIcon,
+  Image as ImageIcon,
   Italic,
-  KeyIcon,
+  Key as KeyIcon,
   List,
   ListOrdered,
   LoaderCircle as Loader2,
-  LockIcon,
+  Lock as LockIcon,
   LogIn as LogInIcon,
   LogOut as LogOutIcon,
-  MailIcon,
-  MicIcon,
+  Mail as MailIcon,
+  Mic as MicIcon,
   Monitor as MonitorIcon,
-  MoonIcon,
-  MoreHorizontalIcon,
+  Moon as MoonIcon,
+  Ellipsis as MoreHorizontalIcon,
   Palette as PaletteIcon,
   Paperclip as PaperclipIcon,
   Plus as PlusIcon,
@@ -71,18 +71,18 @@ export {
   RefreshCw as RefreshCwIcon,
   Search as SearchIcon,
   Settings as SettingsIcon,
-  SparklesIcon,
-  SquareIcon,
+  Sparkles as SparklesIcon,
+  Square as SquareIcon,
   SquarePen as SquarePenIcon,
   Strikethrough,
-  SunIcon,
+  Sun as SunIcon,
   Table,
   Terminal,
   Trash2 as Trash2Icon,
   Underline,
   Undo,
-  UserIcon,
+  User as UserIcon,
   X,
-  XCircle,
+  CircleX as XCircle,
   X as XIcon,
-} from '@hugeicons/core-free-icons';
+} from 'lucide-react-native';

@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { ArrowRight01Icon, More01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight, Ellipsis } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
@@ -72,7 +71,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
       className={cn('[&>svg]:size-3.5', className)}
       {...props}
     >
-      {children ?? <Icon icon={ArrowRight01Icon} />}
+      {children ?? <ArrowRight />}
     </li>
   );
 }
@@ -86,7 +85,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'
       className={cn('flex size-9 items-center justify-center', className)}
       {...props}
     >
-      <Icon icon={More01Icon} className="size-4" />
+      <Ellipsis className="size-4" />
       <span className="sr-only">More</span>
     </span>
   );

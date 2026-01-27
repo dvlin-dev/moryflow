@@ -1,7 +1,6 @@
 import { Button } from '@anyhunt/ui/components/button';
 import { Badge } from '@anyhunt/ui/components/badge';
-import { Add01Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Plus } from 'lucide-react';
 import { MCP_PRESETS, type McpPreset } from './mcp-presets';
 
 type McpEmptyStateProps = {
@@ -19,7 +18,7 @@ export const McpEmptyState = ({ onAdd, onAddPreset }: McpEmptyStateProps) => (
     </div>
 
     <Button type="button" onClick={onAdd}>
-      <Icon icon={Add01Icon} className="mr-2 size-4" />
+      <Plus className="mr-2 size-4" />
       Add server
     </Button>
 

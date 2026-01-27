@@ -1,15 +1,14 @@
 /**
  * [PROPS]: { fileTitle, onBack, onPublished, subdomain, setSubdomain, ... }
  * [EMITS]: onBack() - 返回上一面板, onPublished(site) - 发布成功
- * [POS]: Share Popover 的发布面板
+ * [POS]: Share Popover 的发布面板（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useState } from 'react';
-import { ArrowLeft01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft, Loader } from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Label } from '@anyhunt/ui/components/label';
 import { Progress } from '@anyhunt/ui/components/progress';
 import { SubdomainInput } from './subdomain-input';
@@ -73,7 +72,7 @@ export function PublishPanel({
           onClick={onBack}
           disabled={publishing}
         >
-          <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium">Publish</span>
       </div>
@@ -111,7 +110,7 @@ export function PublishPanel({
       <Button className="w-full" onClick={handlePublish} disabled={!canPublish}>
         {publishing ? (
           <>
-            <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
             Publishing...
           </>
         ) : (

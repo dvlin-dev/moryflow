@@ -8,11 +8,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Attachment01Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
+import { Paperclip, X } from 'lucide-react';
 
 import { Badge } from '../../components/badge';
 import { Button } from '../../components/button';
-import { Icon } from '../../components/icon';
 import { ScrollArea } from '../../components/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/tooltip';
 import { cn } from '../../lib/utils';
@@ -61,7 +60,7 @@ export function MessageAttachment({
                 type="button"
                 variant="ghost"
               >
-                <Icon icon={Cancel01Icon} className="size-3" />
+                <X className="size-3" />
                 <span className="sr-only">{labels?.remove ?? 'Remove'}</span>
               </Button>
             )}
@@ -71,7 +70,7 @@ export function MessageAttachment({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex size-full shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  <Icon icon={Attachment01Icon} className="size-4" />
+                  <Paperclip className="size-4" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -89,7 +88,7 @@ export function MessageAttachment({
                 type="button"
                 variant="ghost"
               >
-                <Icon icon={Cancel01Icon} className="size-3" />
+                <X className="size-3" />
                 <span className="sr-only">{labels?.remove ?? 'Remove'}</span>
               </Button>
             )}

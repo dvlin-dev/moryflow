@@ -3,9 +3,8 @@
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Badge } from '../components/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon, type HugeIcon } from '../components/icon';
 import { cn } from '../lib/utils';
-import { ArrowDown01Icon, Brain01Icon, RecordIcon } from '@hugeicons/core-free-icons';
+import { ArrowDown, Brain, Circle, type LucideIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { createContext, memo, useContext, useMemo } from 'react';
 
@@ -72,10 +71,9 @@ export const ChainOfThoughtHeader = memo(
           )}
           {...props}
         >
-          <Icon icon={Brain01Icon} className="size-4" />
+          <Brain className="size-4" />
           <span className="flex-1 text-left">{children ?? 'Chain of Thought'}</span>
-          <Icon
-            icon={ArrowDown01Icon}
+          <ArrowDown
             className={cn(
               'size-4 transition-transform duration-fast',
               isOpen ? 'rotate-180' : 'rotate-0'
@@ -88,7 +86,7 @@ export const ChainOfThoughtHeader = memo(
 );
 
 export type ChainOfThoughtStepProps = ComponentProps<'div'> & {
-  icon?: HugeIcon;
+  icon?: LucideIcon;
   label: ReactNode;
   description?: ReactNode;
   status?: 'complete' | 'active' | 'pending';
@@ -97,13 +95,14 @@ export type ChainOfThoughtStepProps = ComponentProps<'div'> & {
 export const ChainOfThoughtStep = memo(
   ({
     className,
-    icon = RecordIcon,
+    icon = Circle,
     label,
     description,
     status = 'complete',
     children,
     ...props
   }: ChainOfThoughtStepProps) => {
+    const IconComponent = icon;
     const statusStyles = {
       complete: 'text-muted-foreground',
       active: 'text-foreground',
@@ -121,7 +120,7 @@ export const ChainOfThoughtStep = memo(
         {...props}
       >
         <div className="relative mt-0.5">
-          <Icon icon={icon} className="size-4" />
+          <IconComponent className="size-4" />
           <div className="-mx-px absolute top-7 bottom-0 left-1/2 w-px bg-border" />
         </div>
         <div className="flex-1 space-y-2">

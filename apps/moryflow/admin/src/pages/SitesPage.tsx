@@ -52,15 +52,14 @@ import {
   type SiteListItem,
 } from '@/features/sites';
 import {
-  Delete01Icon,
-  LinkSquare02Icon,
-  More01Icon,
-  Search01Icon,
-  ToggleOffIcon,
-  ToggleOnIcon,
-  ViewIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+  Delete,
+  SquareArrowUpRight,
+  Ellipsis,
+  Search,
+  ToggleLeft,
+  ToggleRight,
+  View,
+} from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -183,7 +182,7 @@ export default function SitesPage() {
             className="w-64"
           />
           <Button variant="outline" size="icon" onClick={handleSearch}>
-            <Icon icon={Search01Icon} className="h-4 w-4" />
+            <Search className="h-4 w-4" />
           </Button>
         </div>
 
@@ -306,7 +305,7 @@ export default function SitesPage() {
                         rel="noopener noreferrer"
                         className="text-muted-foreground hover:text-foreground"
                       >
-                        <Icon icon={LinkSquare02Icon} className="h-3 w-3" />
+                        <SquareArrowUpRight className="h-3 w-3" />
                       </a>
                     </div>
                     {site.title && (
@@ -338,26 +337,26 @@ export default function SitesPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
-                          <Icon icon={More01Icon} className="h-4 w-4" />
+                          <Ellipsis className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link to={`/sites/${site.id}`}>
-                            <Icon icon={ViewIcon} className="mr-2 h-4 w-4" />
+                            <View className="mr-2 h-4 w-4" />
                             查看详情
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {site.status === 'ACTIVE' && (
                           <DropdownMenuItem onClick={() => handleAction(site, 'offline')}>
-                            <Icon icon={ToggleOffIcon} className="mr-2 h-4 w-4" />
+                            <ToggleLeft className="mr-2 h-4 w-4" />
                             强制下线
                           </DropdownMenuItem>
                         )}
                         {site.status === 'OFFLINE' && (
                           <DropdownMenuItem onClick={() => handleAction(site, 'online')}>
-                            <Icon icon={ToggleOnIcon} className="mr-2 h-4 w-4" />
+                            <ToggleRight className="mr-2 h-4 w-4" />
                             恢复上线
                           </DropdownMenuItem>
                         )}
@@ -365,7 +364,7 @@ export default function SitesPage() {
                           className="text-red-600"
                           onClick={() => handleAction(site, 'delete')}
                         >
-                          <Icon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+                          <Delete className="mr-2 h-4 w-4" />
                           删除站点
                         </DropdownMenuItem>
                       </DropdownMenuContent>

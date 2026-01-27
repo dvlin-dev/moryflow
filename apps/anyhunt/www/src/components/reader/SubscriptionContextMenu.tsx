@@ -1,6 +1,6 @@
 /**
  * [PROPS]: subscription, children
- * [POS]: Right-click context menu for subscription actions
+ * [POS]: Right-click context menu for subscription actions (Lucide icons direct render)
  */
 
 import { type ReactNode, useState } from 'react';
@@ -18,17 +18,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Icon,
 } from '@anyhunt/ui';
-import {
-  PlayIcon,
-  Settings01Icon,
-  Clock01Icon,
-  BulbIcon,
-  Share01Icon,
-  PauseIcon,
-  Delete01Icon,
-} from '@hugeicons/core-free-icons';
+import { Play, Settings, Clock, Lightbulb, Share, Pause, Delete } from 'lucide-react';
 import {
   useTriggerManualRun,
   useToggleSubscription,
@@ -74,7 +65,7 @@ export function SubscriptionContextMenu({
         <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
         <ContextMenuContent className="w-56">
           <ContextMenuItem onClick={handleRunNow} disabled={triggerRun.isPending}>
-            <Icon icon={PlayIcon} className="mr-2 size-4" />
+            <Play className="mr-2 size-4" />
             <span>Run Now</span>
           </ContextMenuItem>
 
@@ -84,12 +75,12 @@ export function SubscriptionContextMenu({
             onClick={() => onAction?.('settings', subscription)}
             disabled={!onAction}
           >
-            <Icon icon={Settings01Icon} className="mr-2 size-4" />
+            <Settings className="mr-2 size-4" />
             <span>Settings</span>
           </ContextMenuItem>
 
           <ContextMenuItem onClick={() => onAction?.('history', subscription)} disabled={!onAction}>
-            <Icon icon={Clock01Icon} className="mr-2 size-4" />
+            <Clock className="mr-2 size-4" />
             <span>Run History</span>
           </ContextMenuItem>
 
@@ -97,21 +88,21 @@ export function SubscriptionContextMenu({
             onClick={() => onAction?.('suggestions', subscription)}
             disabled={!onAction}
           >
-            <Icon icon={BulbIcon} className="mr-2 size-4" />
+            <Lightbulb className="mr-2 size-4" />
             <span>Learning Suggestions</span>
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
           <ContextMenuItem onClick={() => onAction?.('publish', subscription)} disabled={!onAction}>
-            <Icon icon={Share01Icon} className="mr-2 size-4" />
+            <Share className="mr-2 size-4" />
             <span>Publish as Topic</span>
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
           <ContextMenuItem onClick={handleToggle} disabled={toggleSubscription.isPending}>
-            <Icon icon={PauseIcon} className="mr-2 size-4" />
+            <Pause className="mr-2 size-4" />
             <span>{subscription.enabled ? 'Pause Subscription' : 'Enable Subscription'}</span>
           </ContextMenuItem>
 
@@ -119,7 +110,7 @@ export function SubscriptionContextMenu({
             className="text-destructive focus:text-destructive"
             onClick={() => setShowDeleteAlert(true)}
           >
-            <Icon icon={Delete01Icon} className="mr-2 size-4" />
+            <Delete className="mr-2 size-4" />
             <span>Delete</span>
           </ContextMenuItem>
         </ContextMenuContent>

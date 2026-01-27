@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- 图标库回退方案（Hugeicons → Lucide）：`docs/guides/frontend/icon-library-migration-lucide.md`（2026-01-27：implemented）
 - Moryflow PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`（2026-01-27：proposal update）
 - ADR-0002：补充外部化/Hook 示例（JSONC/Agent/Tool）（2026-01-30）
 - ADR-0002：P2-7/P2-8 外部化与 Hook 落地完成（2026-01-29）
@@ -70,7 +71,6 @@
 - Auth access token 设备端方案补充（PC/移动端安全存储 + Device refresh）：`docs/architecture/auth/access-token-storage-plan.md`（2026-01-25）
 - Moryflow PC/Mobile Access Token 持久化升级方案：`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`（2026-01-25：draft）
 - Moryflow PC/Mobile Access Token 升级方案明确决策与执行清单：`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`（2026-01-25）
-- 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`（2026-01-25：implemented）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（2026-01-25：review）
 - Moryflow 云同步文档收敛为单一方案（统一技术方案/绑定/实施现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`（2026-01-25）
 - ADR-0002：P0-1 工具输出截断落地进度更新（2026-01-25）
@@ -92,7 +92,7 @@
 - packages/types + packages/api + packages/config Code Review：`docs/code-review/packages-types-api-config.md`（2026-01-26：修复完成）
 - Moryflow PC Code Review：修复 preload 在 sandbox 下的 ESM 兼容问题（2026-01-26）
 - Moryflow PC Code Review：补齐 React 单测稳定性（i18n mock + React 版本对齐）（2026-01-26）
-- Moryflow PC Code Review：修复完成（外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测、E2E 基线）（2026-01-25）
+- Moryflow PC Code Review：修复完成（外链/导航安全、sandbox、英文文案、Lucide、hooks 单测、E2E 基线）（2026-01-25）
 - ADR：Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`（2026-01-24）
 - ADR-0002：补充截断展示入口要求（2026-01-24）
 - ADR-0002：补充 Agent/全权限模式切换与审批最小化（2026-01-24）

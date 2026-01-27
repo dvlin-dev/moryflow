@@ -5,14 +5,7 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { Progress } from '@anyhunt/ui/components/progress';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import {
-  Download01Icon,
-  LinkSquare01Icon,
-  Loading03Icon,
-  RefreshIcon,
-  Search01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Download, SquareArrowUpRight, Loader, RefreshCw, Search } from 'lucide-react';
 import type { OllamaPullProgressEvent, OllamaLibraryModel } from '@shared/ipc';
 
 type ModelLibraryDialogProps = {
@@ -157,7 +150,7 @@ export const ModelLibraryDialog = ({
               rel="noopener noreferrer"
               className="text-sm font-normal text-primary hover:underline flex items-center gap-1"
             >
-              Browse all <Icon icon={LinkSquare01Icon} className="h-3 w-3" />
+              Browse all <SquareArrowUpRight className="h-3 w-3" />
             </a>
           </DialogTitle>
         </DialogHeader>
@@ -166,10 +159,7 @@ export const ModelLibraryDialog = ({
           {/* 搜索 */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Icon
-                icon={Search01Icon}
-                className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-              />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search models..."
                 className="pl-8"
@@ -184,7 +174,7 @@ export const ModelLibraryDialog = ({
               onClick={() => fetchLibraryModels(searchQuery.trim() || undefined)}
               disabled={isLoading}
             >
-              <Icon icon={RefreshIcon} className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
 
@@ -206,10 +196,7 @@ export const ModelLibraryDialog = ({
             <div className="space-y-2 pr-4">
               {isLoading && libraryModels.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
-                  <Icon
-                    icon={Loading03Icon}
-                    className="h-6 w-6 animate-spin text-muted-foreground"
-                  />
+                  <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <>
@@ -241,9 +228,9 @@ export const ModelLibraryDialog = ({
                               onClick={() => !pullingModel && handlePullModel(fullName)}
                             >
                               {isPulling ? (
-                                <Icon icon={Loading03Icon} className="h-3 w-3 animate-spin mr-1" />
+                                <Loader className="h-3 w-3 animate-spin mr-1" />
                               ) : (
-                                <Icon icon={Download01Icon} className="h-3 w-3 mr-1" />
+                                <Download className="h-3 w-3 mr-1" />
                               )}
                               {size}
                             </Badge>
@@ -277,11 +264,7 @@ export const ModelLibraryDialog = ({
                 onClick={handleManualPull}
                 disabled={!manualInput.trim() || !!pullingModel}
               >
-                {pullingModel ? (
-                  <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Download'
-                )}
+                {pullingModel ? <Loader className="h-4 w-4 animate-spin" /> : 'Download'}
               </Button>
             </div>
           </div>

@@ -8,8 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Icon } from '@/components/ui/icon';
-import { CheckmarkCircle01Icon, Copy01Icon } from '@hugeicons/core-free-icons';
+import { CircleCheck, Copy } from 'lucide-react';
 import { formatDateTime, formatDuration, formatTokens } from '@/lib/format';
 import { TraceStatusBadge, SpanStatusBadge, ErrorTypeBadge } from './trace-status-badge';
 import { SpanTree } from './span-tree';
@@ -33,11 +32,7 @@ function CopyButton({ text }: { text: string }) {
 
   return (
     <Button variant="ghost" size="sm" onClick={handleCopy}>
-      {copied ? (
-        <Icon icon={CheckmarkCircle01Icon} className="h-4 w-4" />
-      ) : (
-        <Icon icon={Copy01Icon} className="h-4 w-4" />
-      )}
+      {copied ? <CircleCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
     </Button>
   );
 }

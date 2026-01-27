@@ -1,8 +1,7 @@
 'use client';
 
-import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { Copy, Check } from 'lucide-react';
 import { Button } from '../components/button';
-import { Icon } from '../components/icon';
 import { cn } from '../lib/utils';
 import {
   type ComponentProps,
@@ -228,7 +227,7 @@ export const CodeBlockCopyButton = ({
     }
   };
 
-  const icon = isCopied ? Tick02Icon : Copy01Icon;
+  const IconComponent = isCopied ? Check : Copy;
 
   return (
     <Button
@@ -238,7 +237,7 @@ export const CodeBlockCopyButton = ({
       variant="ghost"
       {...props}
     >
-      {children ?? <Icon icon={icon} className="size-3.5" />}
+      {children ?? <IconComponent className="size-3.5" />}
     </Button>
   );
 };

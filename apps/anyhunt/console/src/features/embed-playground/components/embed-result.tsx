@@ -1,8 +1,10 @@
 /**
- * Embed 结果展示组件
+ * [PROPS]: result
+ * [EMITS]: none
+ * [POS]: Embed 结果展示组件（Lucide icons direct render）
  */
 import { useState, useRef, useEffect } from 'react';
-import { CodeIcon, ViewIcon } from '@hugeicons/core-free-icons';
+import { Code, View } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -13,7 +15,6 @@ import {
   TabsList,
   TabsTrigger,
   Badge,
-  Icon,
 } from '@anyhunt/ui';
 import type { EmbedResult } from '../types';
 
@@ -137,11 +138,11 @@ export function EmbedResultDisplay({ result }: EmbedResultProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="preview" className="flex items-center gap-2">
-              <Icon icon={ViewIcon} className="h-4 w-4" />
+              <View className="h-4 w-4" />
               Preview
             </TabsTrigger>
             <TabsTrigger value="html" className="flex items-center gap-2">
-              <Icon icon={CodeIcon} className="h-4 w-4" />
+              <Code className="h-4 w-4" />
               HTML
             </TabsTrigger>
           </TabsList>

@@ -26,14 +26,7 @@ import { usePagination } from '@/hooks';
 import { formatDateTime } from '@/lib/format';
 import { useActivityLogs, useExportActivityLogs } from '@/features/admin-logs';
 import type { ActivityLog } from '@/types/api';
-import {
-  Cancel01Icon,
-  Download01Icon,
-  File01Icon,
-  Search01Icon,
-  ViewIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { X, Download, File, Search, View } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
@@ -231,7 +224,7 @@ export default function LogsPage() {
               onClick={() => handleExport('csv')}
               disabled={exportMutation.isPending}
             >
-              <Icon icon={Download01Icon} className="h-4 w-4 mr-1" />
+              <Download className="h-4 w-4 mr-1" />
               导出 CSV
             </Button>
             <Button
@@ -240,7 +233,7 @@ export default function LogsPage() {
               onClick={() => handleExport('json')}
               disabled={exportMutation.isPending}
             >
-              <Icon icon={Download01Icon} className="h-4 w-4 mr-1" />
+              <Download className="h-4 w-4 mr-1" />
               导出 JSON
             </Button>
           </div>
@@ -250,7 +243,7 @@ export default function LogsPage() {
       {/* 筛选条件 */}
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2">
-          <Icon icon={Search01Icon} className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索邮箱..."
             value={email}
@@ -299,7 +292,7 @@ export default function LogsPage() {
         </Select>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <Icon icon={Cancel01Icon} className="h-4 w-4 mr-1" />
+            <X className="h-4 w-4 mr-1" />
             清除筛选
           </Button>
         )}
@@ -343,7 +336,7 @@ export default function LogsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
-                      <Icon icon={ViewIcon} className="h-4 w-4 mr-1" />
+                      <View className="h-4 w-4 mr-1" />
                       详情
                     </Button>
                   </TableCell>
@@ -352,10 +345,7 @@ export default function LogsPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12">
-                  <Icon
-                    icon={File01Icon}
-                    className="h-12 w-12 mx-auto text-muted-foreground mb-4"
-                  />
+                  <File className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
                     {hasFilters ? '没有符合条件的日志' : '暂无活动日志'}
                   </p>

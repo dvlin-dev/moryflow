@@ -9,15 +9,8 @@ import {
 import { Button } from '@anyhunt/ui/components/button';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { Tabs, TabsList, TabsTrigger } from '@anyhunt/ui/components/tabs';
-import {
-  AlertCircleIcon,
-  CheckmarkCircle01Icon,
-  CrownIcon,
-  Loading03Icon,
-  SparklesIcon,
-  ZapIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
+import { CircleAlert, CircleCheck, Crown, Loader, Sparkles, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchProducts } from '@/lib/server/api';
 import { usePurchase } from '@/lib/server/hooks';
@@ -43,7 +36,7 @@ const SUBSCRIPTION_PLANS = [
   {
     tier: 'starter' as const,
     nameKey: 'starterPlan' as const,
-    icon: ZapIcon,
+    icon: Zap,
     color: 'text-green-500',
     bgColor: 'bg-green-500/10',
     borderColor: 'border-green-500/30',
@@ -51,7 +44,7 @@ const SUBSCRIPTION_PLANS = [
   {
     tier: 'basic' as const,
     nameKey: 'basicPlan' as const,
-    icon: SparklesIcon,
+    icon: Sparkles,
     color: 'text-blue-500',
     bgColor: 'bg-blue-500/10',
     borderColor: 'border-blue-500/30',
@@ -59,7 +52,7 @@ const SUBSCRIPTION_PLANS = [
   {
     tier: 'pro' as const,
     nameKey: 'proPlan' as const,
-    icon: CrownIcon,
+    icon: Crown,
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/30',
@@ -68,7 +61,7 @@ const SUBSCRIPTION_PLANS = [
 ] satisfies Array<{
   tier: SubscriptionTier;
   nameKey: string;
-  icon: HugeIcon;
+  icon: LucideIcon;
   color: string;
   bgColor: string;
   borderColor: string;
@@ -155,7 +148,7 @@ export const SubscriptionDialog = ({
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12">
-          <Icon icon={Loading03Icon} className="size-6 animate-spin text-muted-foreground" />
+          <Loader className="size-6 animate-spin text-muted-foreground" />
         </div>
       );
     }
@@ -163,7 +156,7 @@ export const SubscriptionDialog = ({
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center py-12 gap-2 text-destructive">
-          <Icon icon={AlertCircleIcon} className="size-6" />
+          <CircleAlert className="size-6" />
           <p className="text-sm">{error}</p>
         </div>
       );
@@ -193,7 +186,7 @@ export const SubscriptionDialog = ({
 
               <div className="flex items-center gap-2 mb-3">
                 <div className={`rounded-lg p-2 ${plan.bgColor}`}>
-                  <Icon icon={PlanIcon} className={`size-5 ${plan.color}`} />
+                  <PlanIcon className={`size-5 ${plan.color}`} />
                 </div>
                 <h3 className="font-semibold">{t(plan.nameKey)}</h3>
               </div>
@@ -212,7 +205,7 @@ export const SubscriptionDialog = ({
               <ul className="space-y-2 mb-6">
                 {tierInfo.features.map((feature, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-sm">
-                    <Icon icon={CheckmarkCircle01Icon} className={`size-4 ${plan.color}`} />
+                    <CircleCheck className={`size-4 ${plan.color}`} />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -225,7 +218,7 @@ export const SubscriptionDialog = ({
                 disabled={isCurrentPlan || isPurchasing || !product}
                 onClick={() => handleSubscribe(plan.tier)}
               >
-                {isPurchasing && <Icon icon={Loading03Icon} className="mr-2 size-4 animate-spin" />}
+                {isPurchasing && <Loader className="mr-2 size-4 animate-spin" />}
                 {isCurrentPlan ? t('currentPlanBadge') : t('subscribeNow')}
               </Button>
             </div>

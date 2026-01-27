@@ -1,14 +1,13 @@
 /**
  * [PROPS]: SettingsDialogProps
  * [EMITS]: onOpenChange
- * [POS]: 设置对话框入口
+ * [POS]: 设置对话框入口（Lucide 图标）
  */
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@anyhunt/ui/components/dialog';
 import { Button } from '@anyhunt/ui/components/button';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { Loading03Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Loader } from 'lucide-react';
 import { sectionContentLayout, settingsSections, type SettingsDialogProps } from './const';
 import { useSettingsDialogState } from './use-settings-dialog';
 import { SectionNavigation } from './components/section-navigation';
@@ -88,7 +87,7 @@ export const SettingsDialog = ({
               {t('cancel')}
             </Button>
             <Button type="submit" disabled={meta.isSaving || meta.isLoading}>
-              {meta.isSaving && <Icon icon={Loading03Icon} className="mr-2 size-4 animate-spin" />}
+              {meta.isSaving && <Loader className="mr-2 size-4 animate-spin" />}
               {t('saveSettings')}
             </Button>
           </div>

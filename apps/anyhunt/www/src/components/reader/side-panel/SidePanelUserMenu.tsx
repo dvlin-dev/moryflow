@@ -1,6 +1,6 @@
 /**
  * [PROPS]: user
- * [POS]: SidePanel Header - icon-only avatar menu
+ * [POS]: SidePanel Header - icon-only avatar menu (Lucide icons direct render)
  */
 
 import { useState } from 'react';
@@ -26,17 +26,9 @@ import {
   DropdownMenuSubContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  Icon,
   Button,
 } from '@anyhunt/ui';
-import {
-  Settings01Icon,
-  PaintBrushIcon,
-  Logout01Icon,
-  Sun01Icon,
-  Moon01Icon,
-  ComputerIcon,
-} from '@hugeicons/core-free-icons';
+import { Settings, Paintbrush, LogOut, Sun, Moon, Computer } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme, type Theme } from '@/hooks/useTheme';
 import type { User } from '@/lib/auth-client';
@@ -46,10 +38,10 @@ interface SidePanelUserMenuProps {
   user: User;
 }
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun01Icon }[] = [
-  { value: 'light', label: 'Light', icon: Sun01Icon },
-  { value: 'dark', label: 'Dark', icon: Moon01Icon },
-  { value: 'system', label: 'System', icon: ComputerIcon },
+const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Computer },
 ];
 
 export function SidePanelUserMenu({ user }: SidePanelUserMenuProps) {
@@ -92,27 +84,30 @@ export function SidePanelUserMenu({ user }: SidePanelUserMenuProps) {
             className="flex items-center gap-2"
             onSelect={() => setSettingsOpen(true)}
           >
-            <Icon icon={Settings01Icon} className="size-4" />
+            <Settings className="size-4" />
             <span>Account Settings</span>
           </DropdownMenuItem>
 
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="flex items-center gap-2">
-              <Icon icon={PaintBrushIcon} className="size-4" />
+              <Paintbrush className="size-4" />
               <span>Appearance</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as Theme)}>
-                {THEME_OPTIONS.map((option) => (
-                  <DropdownMenuRadioItem
-                    key={option.value}
-                    value={option.value}
-                    className="flex items-center gap-2"
-                  >
-                    <Icon icon={option.icon} className="size-4" />
-                    <span>{option.label}</span>
-                  </DropdownMenuRadioItem>
-                ))}
+                {THEME_OPTIONS.map((option) => {
+                  const IconComponent = option.icon;
+                  return (
+                    <DropdownMenuRadioItem
+                      key={option.value}
+                      value={option.value}
+                      className="flex items-center gap-2"
+                    >
+                      <IconComponent className="size-4" />
+                      <span>{option.label}</span>
+                    </DropdownMenuRadioItem>
+                  );
+                })}
               </DropdownMenuRadioGroup>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
@@ -126,7 +121,7 @@ export function SidePanelUserMenu({ user }: SidePanelUserMenuProps) {
               setSignOutConfirmOpen(true);
             }}
           >
-            <Icon icon={Logout01Icon} className="size-4" />
+            <LogOut className="size-4" />
             <span>Sign Out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

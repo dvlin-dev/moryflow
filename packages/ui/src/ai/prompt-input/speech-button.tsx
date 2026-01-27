@@ -9,9 +9,8 @@
 
 import type { ComponentProps, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Mic01Icon } from '@hugeicons/core-free-icons';
+import { Mic } from 'lucide-react';
 
-import { Icon } from '../../components/icon';
 import { cn } from '../../lib/utils';
 
 import { PromptInputButton } from './buttons';
@@ -161,7 +160,7 @@ export const PromptInputSpeechButton = ({
       onClick={toggleListening}
       {...props}
     >
-      <Icon icon={Mic01Icon} className="size-4" />
+      <Mic className="size-4" />
     </PromptInputButton>
   );
 };

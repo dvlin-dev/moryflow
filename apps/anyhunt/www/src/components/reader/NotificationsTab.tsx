@@ -1,6 +1,6 @@
 /**
  * [PROPS]: subscription, form
- * [POS]: Notifications settings tab for subscription delivery preferences
+ * [POS]: Notifications settings tab for subscription delivery preferences (Lucide icons direct render)
  */
 
 import { UseFormReturn } from 'react-hook-form';
@@ -14,9 +14,8 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-  Icon,
 } from '@anyhunt/ui';
-import { InboxIcon, Mail01Icon, WebhookIcon } from '@hugeicons/core-free-icons';
+import { Inbox, Mail, Webhook } from 'lucide-react';
 
 interface NotificationsTabProps {
   form: UseFormReturn<any>;
@@ -40,7 +39,7 @@ export function NotificationsTab({ form }: NotificationsTabProps) {
         <div className="rounded-md border p-4">
           <div className="flex items-start gap-3">
             <div className="rounded-full bg-primary/10 p-2">
-              <Icon icon={InboxIcon} className="size-5 text-primary" />
+              <Inbox className="size-5 text-primary" />
             </div>
             <div className="flex-1">
               <FormField
@@ -68,7 +67,7 @@ export function NotificationsTab({ form }: NotificationsTabProps) {
         <div className="rounded-md border p-4">
           <div className="flex items-start gap-3">
             <div className="rounded-full bg-blue-500/10 p-2">
-              <Icon icon={Mail01Icon} className="size-5 text-blue-500" />
+              <Mail className="size-5 text-blue-500" />
             </div>
             <div className="flex-1 space-y-3">
               <FormField
@@ -117,7 +116,7 @@ export function NotificationsTab({ form }: NotificationsTabProps) {
         <div className="rounded-md border p-4">
           <div className="flex items-start gap-3">
             <div className="rounded-full bg-orange-500/10 p-2">
-              <Icon icon={WebhookIcon} className="size-5 text-orange-500" />
+              <Webhook className="size-5 text-orange-500" />
             </div>
             <div className="flex-1 space-y-3">
               <FormField

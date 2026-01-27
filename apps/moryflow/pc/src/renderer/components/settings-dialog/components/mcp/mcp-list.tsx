@@ -1,7 +1,6 @@
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { Button } from '@anyhunt/ui/components/button';
-import { Add01Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { McpServerState } from '@shared/ipc';
 import type { McpServerEntry } from './constants';
@@ -40,7 +39,7 @@ export const McpList = ({
       <div className="flex items-center justify-between px-3 py-3">
         <p className="text-sm font-medium">MCP Servers</p>
         <Button type="button" size="sm" variant="ghost" onClick={onAdd} className="h-7 px-2">
-          <Icon icon={Add01Icon} className="mr-1 size-3.5" />
+          <Plus className="mr-1 size-3.5" />
           Add
         </Button>
       </div>

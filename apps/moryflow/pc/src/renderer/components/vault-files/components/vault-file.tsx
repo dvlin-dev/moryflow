@@ -1,13 +1,12 @@
 /**
  * [PROPS]: { node } - 文件节点数据
  * [EMITS]: 通过 context 触发选择、重命名、删除等操作
- * [POS]: 文件树中的文件节点组件，支持拖拽和右键菜单
+ * [POS]: 文件树中的文件节点组件，支持拖拽和右键菜单（Lucide 图标）
  */
 
 import type { DragEvent } from 'react';
-import { File01Icon } from '@hugeicons/core-free-icons';
+import { File } from 'lucide-react';
 import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
-import { Icon } from '@anyhunt/ui/components/icon';
 import {
   FileHighlight as FileHighlightPrimitive,
   File as FilePrimitive,
@@ -85,7 +84,7 @@ export const VaultFile = ({ node }: VaultFileProps) => {
               )}
             >
               <FileIconPrimitive className="shrink-0">
-                <Icon icon={File01Icon} className="size-4 text-muted-foreground" />
+                <File className="size-4 text-muted-foreground" />
               </FileIconPrimitive>
               <FileLabelPrimitive className="min-w-0 flex-1 truncate text-sm">
                 {node.name}

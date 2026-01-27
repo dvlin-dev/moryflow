@@ -9,13 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Icon } from '@/components/ui/icon';
-import {
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  Image01Icon,
-  Loading01Icon,
-} from '@hugeicons/core-free-icons';
+import { ArrowDown, ArrowUp, Image, Loader } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -125,7 +119,7 @@ export function ImageGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Icon icon={Image01Icon} className="h-5 w-5" />
+            <Image className="h-5 w-5" />
             生成参数
           </CardTitle>
         </CardHeader>
@@ -272,7 +266,7 @@ export function ImageGenerator() {
           <Button onClick={handleSubmit} disabled={loading || !prompt.trim()} className="w-full">
             {loading ? (
               <>
-                <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
                 生成中...
               </>
             ) : (
@@ -296,7 +290,7 @@ export function ImageGenerator() {
 
           {loading && (
             <div className="flex h-64 items-center justify-center">
-              <Icon icon={Loading01Icon} className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
 
@@ -338,9 +332,9 @@ export function ImageGenerator() {
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full">
                     {rawResponseOpen ? (
-                      <Icon icon={ArrowUp01Icon} className="mr-2 h-4 w-4" />
+                      <ArrowUp className="mr-2 h-4 w-4" />
                     ) : (
-                      <Icon icon={ArrowDown01Icon} className="mr-2 h-4 w-4" />
+                      <ArrowDown className="mr-2 h-4 w-4" />
                     )}
                     原始响应
                   </Button>

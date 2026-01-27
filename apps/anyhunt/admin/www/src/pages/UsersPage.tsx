@@ -1,15 +1,10 @@
 /**
- * Users 页面
- * 用户管理
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Users 页面 - 用户管理（Lucide icons direct render）
  */
 import { useState } from 'react';
-import {
-  Delete02Icon,
-  MoreHorizontalIcon,
-  Search01Icon,
-  Shield01Icon,
-  Coins01Icon,
-} from '@hugeicons/core-free-icons';
+import { Delete, Ellipsis, Search, Shield, Coins } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -24,7 +19,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Input,
   Button,
   Switch,
@@ -126,7 +120,7 @@ export default function UsersPage() {
                 className="w-64"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Icon icon={Search01Icon} className="h-4 w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -211,16 +205,16 @@ export default function UsersPage() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
-                              <Icon icon={MoreHorizontalIcon} className="h-4 w-4" />
+                              <Ellipsis className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
-                              <Icon icon={Shield01Icon} className="h-4 w-4 mr-2" />
+                              <Shield className="h-4 w-4 mr-2" />
                               {user.isAdmin ? '移除管理员' : '设为管理员'}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleGrantCredits(user)}>
-                              <Icon icon={Coins01Icon} className="h-4 w-4 mr-2" />
+                              <Coins className="h-4 w-4 mr-2" />
                               Grant credits
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -228,7 +222,7 @@ export default function UsersPage() {
                               onClick={() => handleDelete(user)}
                               className="text-destructive focus:text-destructive"
                             >
-                              <Icon icon={Delete02Icon} className="h-4 w-4 mr-2" />
+                              <Delete className="h-4 w-4 mr-2" />
                               删除用户
                             </DropdownMenuItem>
                           </DropdownMenuContent>

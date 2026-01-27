@@ -3,14 +3,7 @@
  */
 
 import { Badge } from '@/components/ui/badge';
-import { Icon } from '@/components/ui/icon';
-import {
-  Alert01Icon,
-  CancelCircleIcon,
-  CheckmarkCircle01Icon,
-  Clock01Icon,
-  StopIcon,
-} from '@hugeicons/core-free-icons';
+import { TriangleAlert, CircleX, CircleCheck, Clock, SquareStop } from 'lucide-react';
 import type { TraceStatus, SpanStatus } from '../types';
 
 interface TraceStatusBadgeProps {
@@ -23,22 +16,22 @@ const TRACE_STATUS_CONFIG: Record<
 > = {
   completed: {
     label: '完成',
-    icon: <Icon icon={CheckmarkCircle01Icon} className="h-3 w-3" />,
+    icon: <CircleCheck className="h-3 w-3" />,
     className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   },
   failed: {
     label: '失败',
-    icon: <Icon icon={CancelCircleIcon} className="h-3 w-3" />,
+    icon: <CircleX className="h-3 w-3" />,
     className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   },
   pending: {
     label: '进行中',
-    icon: <Icon icon={Clock01Icon} className="h-3 w-3" />,
+    icon: <Clock className="h-3 w-3" />,
     className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
   },
   interrupted: {
     label: '中断',
-    icon: <Icon icon={Alert01Icon} className="h-3 w-3" />,
+    icon: <TriangleAlert className="h-3 w-3" />,
     className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
   },
 };
@@ -63,22 +56,22 @@ const SPAN_STATUS_CONFIG: Record<
 > = {
   success: {
     label: '成功',
-    icon: <Icon icon={CheckmarkCircle01Icon} className="h-3 w-3" />,
+    icon: <CircleCheck className="h-3 w-3" />,
     className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   },
   failed: {
     label: '失败',
-    icon: <Icon icon={CancelCircleIcon} className="h-3 w-3" />,
+    icon: <CircleX className="h-3 w-3" />,
     className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   },
   pending: {
     label: '进行中',
-    icon: <Icon icon={Clock01Icon} className="h-3 w-3" />,
+    icon: <Clock className="h-3 w-3" />,
     className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
   },
   cancelled: {
     label: '已取消',
-    icon: <Icon icon={StopIcon} className="h-3 w-3" />,
+    icon: <SquareStop className="h-3 w-3" />,
     className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
   },
 };

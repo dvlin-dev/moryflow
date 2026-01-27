@@ -27,7 +27,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 - Public + Auth（Reader/Digest/Inbox 需要登录）
 - Cloudflare Turnstile for captcha
 - Demo API has rate limits
-- 组件统一从 `/ui` 导入，图标统一 Hugeicons
+- 组件统一从 `/ui` 导入，图标统一 Lucide（`lucide-react`，直接组件调用）
 - 全局样式仅引入 `/ui/styles`，`@source` 只扫描本应用源码
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
@@ -37,6 +37,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - Dockerfile 补齐 `packages/types` 的 workspace package 依赖拷贝，避免 pnpm install 报 `WORKSPACE_PKG_NOT_FOUND`
 - www API client + Digest API 切换 raw JSON + RFC7807 错误体解析
 - www API client/公有 API 调用对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
@@ -225,7 +226,7 @@ www/
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth store + persistence
 ├── /ui - UI components
-├── @hugeicons/core-free-icons - Icon library
+├── lucide-react - Icon library
 ├── turnstile - Cloudflare captcha
 └── tailwindcss - Styling
 ```

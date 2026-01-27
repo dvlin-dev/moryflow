@@ -1,60 +1,53 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import type { Editor } from "@tiptap/react"
+import { useEffect, useState } from 'react';
+import type { Editor } from '@tiptap/react';
 
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
-import type { Mark } from "../mark-button"
-import { canToggleMark, MarkButton } from "../mark-button"
-import type { TextAlign } from "../text-align-button"
-import { canSetTextAlign, TextAlignButton } from "../text-align-button"
-import { Button } from "../../ui-primitive/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../ui-primitive/popover"
-import {
-  ToolbarGroup,
-  ToolbarSeparator,
-} from "../../ui-primitive/toolbar"
-import { MoreVerticalIcon } from "@anyhunt/ui/icons/more-vertical-icon"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
+import type { Mark } from '../mark-button';
+import { canToggleMark, MarkButton } from '../mark-button';
+import type { TextAlign } from '../text-align-button';
+import { canSetTextAlign, TextAlignButton } from '../text-align-button';
+import { Button } from '../../ui-primitive/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../../ui-primitive/popover';
+import { ToolbarGroup, ToolbarSeparator } from '../../ui-primitive/toolbar';
+import { MoreVertical } from '@anyhunt/ui/icons/more-vertical-icon';
 
-import type { MoreOptionsProps } from "./types"
+import type { MoreOptionsProps } from './types';
 
 /**
  * 检查是否有可用的 more options
  */
 function canMoreOptions(editor: Editor | null): boolean {
-  if (!editor) return false
+  if (!editor) return false;
 
-  const canTextAlignAny = (["left", "center", "right", "justify"] as const).some(
-    (align) => canSetTextAlign(editor, align as TextAlign)
-  )
+  const canTextAlignAny = (['left', 'center', 'right', 'justify'] as const).some((align) =>
+    canSetTextAlign(editor, align as TextAlign)
+  );
 
-  const canMarkAny = (["superscript", "subscript"] as const).some((type) =>
+  const canMarkAny = (['superscript', 'subscript'] as const).some((type) =>
     canToggleMark(editor, type as Mark)
-  )
+  );
 
-  return canMarkAny || canTextAlignAny
+  return canMarkAny || canTextAlignAny;
 }
 
 /**
  * 判断 MoreOptions 是否应该显示
  */
 function shouldShowMoreOptions(params: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  const { editor, hideWhenUnavailable } = params
+  const { editor, hideWhenUnavailable } = params;
 
-  if (!editor?.isEditable) return false
+  if (!editor?.isEditable) return false;
 
-  if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canMoreOptions(editor)
+  if (hideWhenUnavailable && !editor.isActive('code')) {
+    return canMoreOptions(editor);
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -64,26 +57,26 @@ export function MoreOptions({
   editor: providedEditor,
   hideWhenUnavailable = false,
 }: MoreOptionsProps) {
-  const { editor } = useTiptapEditor(providedEditor)
-  const [show, setShow] = useState(false)
+  const { editor } = useTiptapEditor(providedEditor);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
-      setShow(shouldShowMoreOptions({ editor, hideWhenUnavailable }))
-    }
+      setShow(shouldShowMoreOptions({ editor, hideWhenUnavailable }));
+    };
 
-    handleSelectionUpdate()
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    handleSelectionUpdate();
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable]);
 
   if (!show) {
-    return null
+    return null;
   }
 
   return (
@@ -99,7 +92,7 @@ export function MoreOptions({
               tabIndex={-1}
               tooltip="More options"
             >
-              <MoreVerticalIcon className="tiptap-button-icon" />
+              <MoreVertical className="tiptap-button-icon" />
             </Button>
           </PopoverTrigger>
 
@@ -121,5 +114,5 @@ export function MoreOptions({
         </Popover>
       </ToolbarGroup>
     </>
-  )
+  );
 }

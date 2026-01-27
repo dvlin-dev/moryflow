@@ -1,6 +1,6 @@
 /**
  * [PROPS]: subscription, open, onOpenChange, callbacks
- * [POS]: Mobile action sheet for subscription actions (bottom drawer)
+ * [POS]: Mobile action sheet for subscription actions (bottom drawer, Lucide icons direct render)
  */
 
 import { useState } from 'react';
@@ -17,19 +17,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Icon,
   cn,
-  type HugeIcon,
 } from '@anyhunt/ui';
 import {
-  PlayIcon,
-  Settings01Icon,
-  Clock01Icon,
-  BulbIcon,
-  Share01Icon,
-  PauseIcon,
-  Delete01Icon,
-} from '@hugeicons/core-free-icons';
+  Play,
+  Settings,
+  Clock,
+  Lightbulb,
+  Share,
+  Pause,
+  Delete,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   useTriggerManualRun,
   useToggleSubscription,
@@ -39,14 +38,20 @@ import type { Subscription } from '@/features/digest/types';
 import type { SubscriptionAction } from './subscriptions/subscriptionActions';
 
 interface ActionItemProps {
-  icon: HugeIcon;
+  icon: LucideIcon;
   label: string;
   onClick: () => void;
   destructive?: boolean;
   disabled?: boolean;
 }
 
-function ActionItem({ icon, label, onClick, destructive, disabled }: ActionItemProps) {
+function ActionItem({
+  icon: IconComponent,
+  label,
+  onClick,
+  destructive,
+  disabled,
+}: ActionItemProps) {
   return (
     <button
       type="button"
@@ -59,7 +64,7 @@ function ActionItem({ icon, label, onClick, destructive, disabled }: ActionItemP
       onClick={onClick}
       disabled={disabled}
     >
-      <Icon icon={icon} className="size-5" />
+      <IconComponent className="size-5" />
       <span className="text-base">{label}</span>
     </button>
   );
@@ -141,7 +146,7 @@ export function MobileActionSheet({
           </DrawerHeader>
           <div className="pb-6">
             <ActionItem
-              icon={PlayIcon}
+              icon={Play}
               label="Run Now"
               onClick={handleRunNow}
               disabled={triggerRun.isPending}
@@ -149,24 +154,24 @@ export function MobileActionSheet({
 
             <Divider />
 
-            <ActionItem icon={Settings01Icon} label="Settings" onClick={handleSettings} />
-            <ActionItem icon={Clock01Icon} label="Run History" onClick={handleHistory} />
-            <ActionItem icon={BulbIcon} label="Learning Suggestions" onClick={handleSuggestions} />
+            <ActionItem icon={Settings} label="Settings" onClick={handleSettings} />
+            <ActionItem icon={Clock} label="Run History" onClick={handleHistory} />
+            <ActionItem icon={Lightbulb} label="Learning Suggestions" onClick={handleSuggestions} />
 
             <Divider />
 
-            <ActionItem icon={Share01Icon} label="Publish as Topic" onClick={handlePublish} />
+            <ActionItem icon={Share} label="Publish as Topic" onClick={handlePublish} />
 
             <Divider />
 
             <ActionItem
-              icon={PauseIcon}
+              icon={Pause}
               label={subscription.enabled ? 'Pause Subscription' : 'Enable Subscription'}
               onClick={handleToggle}
               disabled={toggleSubscription.isPending}
             />
             <ActionItem
-              icon={Delete01Icon}
+              icon={Delete}
               label="Delete"
               onClick={() => {
                 closeSheet();

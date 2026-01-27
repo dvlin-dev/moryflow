@@ -7,9 +7,8 @@ import { useState } from 'react';
 import { PageHeader, SimplePagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { X, Search } from 'lucide-react';
 import { usePagination } from '@/hooks';
-import { Icon } from '@/components/ui/icon';
 import { useFailedTools, FailedToolTable, SpanDetailDialog } from '@/features/agent-traces';
 import type { AgentSpan } from '@/features/agent-traces';
 
@@ -56,7 +55,7 @@ export default function AgentTracesFailedPage() {
       {/* 筛选条件 */}
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2">
-          <Icon icon={Search01Icon} className="h-4 w-4 text-muted-foreground" />
+          <Search className="h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索 Tool 名称..."
             value={toolName}
@@ -78,7 +77,7 @@ export default function AgentTracesFailedPage() {
         />
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <Icon icon={Cancel01Icon} className="h-4 w-4 mr-1" />
+            <X className="h-4 w-4 mr-1" />
             清除筛选
           </Button>
         )}

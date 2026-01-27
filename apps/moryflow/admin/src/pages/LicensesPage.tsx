@@ -37,8 +37,7 @@ import {
   RevokeLicenseDialog,
 } from '@/features/payment';
 import type { License } from '@/types/payment';
-import { BlockedIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { Ban } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -146,7 +145,7 @@ export default function LicensesPage() {
                         onClick={() => handleRevoke(license)}
                         className="text-destructive hover:text-destructive"
                       >
-                        <Icon icon={BlockedIcon} className="h-4 w-4 mr-1" />
+                        <Ban className="h-4 w-4 mr-1" />
                         撤销
                       </Button>
                     )}

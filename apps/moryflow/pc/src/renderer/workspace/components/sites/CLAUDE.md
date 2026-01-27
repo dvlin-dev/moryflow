@@ -67,3 +67,7 @@ SitesPage
 
 - 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
 - Share 组件：`components/share/CLAUDE.md`
+
+## 近期变更
+
+- Sites CMS 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖

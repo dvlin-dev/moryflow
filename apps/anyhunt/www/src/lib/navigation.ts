@@ -4,16 +4,10 @@
  * [POS]: 导航菜单配置 - Developers 下拉面板数据
  */
 
-import {
-  Globe02Icon,
-  Database01Icon,
-  BookOpen01Icon,
-  CodeIcon,
-  Settings01Icon,
-} from '@hugeicons/core-free-icons';
+import { Globe, Database, BookOpen, Code, Settings } from 'lucide-react';
 
 export interface NavMenuItem {
-  icon: typeof Globe02Icon;
+  icon: typeof Globe;
   title: string;
   description: string;
   href: string;
@@ -23,14 +17,14 @@ export interface NavMenuItem {
 // Developers 面板 - 产品列表
 export const DEVELOPER_PRODUCTS: NavMenuItem[] = [
   {
-    icon: Globe02Icon,
+    icon: Globe,
     title: 'Fetchx',
     description: 'Web scraping & data extraction API',
     href: '/fetchx',
     internal: true,
   },
   {
-    icon: Database01Icon,
+    icon: Database,
     title: 'Memox',
     description: 'Long-term memory for AI applications',
     href: '/memox',
@@ -41,21 +35,21 @@ export const DEVELOPER_PRODUCTS: NavMenuItem[] = [
 // Developers 面板 - 资源列表
 export const DEVELOPER_RESOURCES: NavMenuItem[] = [
   {
-    icon: BookOpen01Icon,
+    icon: BookOpen,
     title: 'Documentation',
     description: 'API references and guides',
     href: 'https://docs.anyhunt.app',
     internal: false,
   },
   {
-    icon: CodeIcon,
+    icon: Code,
     title: 'API Reference',
     description: 'OpenAPI specs and playground',
     href: 'https://server.anyhunt.app/api-docs',
     internal: false,
   },
   {
-    icon: Settings01Icon,
+    icon: Settings,
     title: 'Console',
     description: 'Manage API keys & usage',
     href: 'https://console.anyhunt.app',

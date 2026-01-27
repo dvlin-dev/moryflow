@@ -2,10 +2,9 @@
 
 import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon } from '../components/icon';
 import { ScrollArea } from '../components/scroll-area';
 import { cn } from '../lib/utils';
-import { ArrowDown01Icon, Attachment01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown, Paperclip } from 'lucide-react';
 import type { ComponentProps } from 'react';
 
 export type QueueMessagePart = {
@@ -148,7 +147,7 @@ export const QueueItemFile = ({ children, className, ...props }: QueueItemFilePr
     )}
     {...props}
   >
-    <Icon icon={Attachment01Icon} className="size-3" />
+    <Paperclip className="size-3" />
     <span className="max-w-[100px] truncate">{children}</span>
   </span>
 );
@@ -207,10 +206,7 @@ export const QueueSectionLabel = ({
   ...props
 }: QueueSectionLabelProps) => (
   <span className={cn('flex items-center gap-2', className)} {...props}>
-    <Icon
-      icon={ArrowDown01Icon}
-      className="group-data-[state=closed]:-rotate-90 size-4 transition-transform duration-fast"
-    />
+    <ArrowDown className="group-data-[state=closed]:-rotate-90 size-4 transition-transform duration-fast" />
     {icon}
     <span>
       {count} {label}

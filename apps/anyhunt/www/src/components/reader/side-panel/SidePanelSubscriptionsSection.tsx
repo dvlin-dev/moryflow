@@ -1,11 +1,11 @@
 /**
  * [PROPS]: subscriptions, isLoading, onCreateSubscription, onOpenSubscriptionSettings
- * [POS]: SidePanel - Subscriptions list (authed)
+ * [POS]: SidePanel - Subscriptions list (authed, Lucide icons direct render)
  */
 
 import { Link } from '@tanstack/react-router';
-import { Button, Icon, cn } from '@anyhunt/ui';
-import { Add01Icon, Settings01Icon } from '@hugeicons/core-free-icons';
+import { Button, cn } from '@anyhunt/ui';
+import { Plus, Settings } from 'lucide-react';
 import type { Subscription } from '@/features/digest/types';
 
 interface SidePanelSubscriptionsSectionProps {
@@ -36,7 +36,7 @@ export function SidePanelSubscriptionsSection({
           className="size-7"
           onClick={onCreateSubscription}
         >
-          <Icon icon={Add01Icon} className="size-4" />
+          <Plus className="size-4" />
           <span className="sr-only">New subscription</span>
         </Button>
       </div>
@@ -80,7 +80,7 @@ export function SidePanelSubscriptionsSection({
                 className="size-7 shrink-0"
                 onClick={() => onOpenSubscriptionSettings(subscription)}
               >
-                <Icon icon={Settings01Icon} className="size-4" />
+                <Settings className="size-4" />
                 <span className="sr-only">Subscription settings</span>
               </Button>
             </div>

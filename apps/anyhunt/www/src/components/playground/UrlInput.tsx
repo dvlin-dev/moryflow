@@ -1,6 +1,12 @@
+/**
+ * [PROPS]: onSubmit, isLoading, disabled
+ * [EMITS]: onSubmit(url)
+ * [POS]: Playground URL input (Lucide icons direct render)
+ */
+
 import { useState } from 'react';
-import { ArrowRight01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
-import { Button, Icon } from '@anyhunt/ui';
+import { ArrowRight, Loader } from 'lucide-react';
+import { Button } from '@anyhunt/ui';
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;
@@ -42,11 +48,11 @@ export function UrlInput({ onSubmit, isLoading, disabled }: UrlInputProps) {
         className="h-11 font-mono"
       >
         {isLoading ? (
-          <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
+          <Loader className="h-4 w-4 animate-spin" />
         ) : (
           <>
             Capture
-            <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-4 w-4" />
           </>
         )}
       </Button>

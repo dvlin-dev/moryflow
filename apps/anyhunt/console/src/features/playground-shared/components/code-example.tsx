@@ -2,8 +2,8 @@
  * 代码示例展示组件
  */
 import { useState } from 'react';
-import { Copy01Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
-import { Button, Icon, Tabs, TabsContent, TabsList, TabsTrigger } from '@anyhunt/ui';
+import { Copy, CircleCheck } from 'lucide-react';
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@anyhunt/ui';
 
 interface CodeExampleProps {
   endpoint: string;
@@ -89,6 +89,7 @@ function CodeBlock({
   copied: boolean;
   onCopy: () => void;
 }) {
+  const IconComponent = copied ? CircleCheck : Copy;
   return (
     <div className="relative">
       <pre className="overflow-x-auto p-4 text-xs font-mono text-muted-foreground">
@@ -100,10 +101,7 @@ function CodeBlock({
         className="absolute right-2 top-2 h-7 w-7 p-0"
         onClick={onCopy}
       >
-        <Icon
-          icon={copied ? CheckmarkCircle02Icon : Copy01Icon}
-          className={`h-4 w-4 ${copied ? 'text-green-500' : ''}`}
-        />
+        <IconComponent className={`h-4 w-4 ${copied ? 'text-green-500' : ''}`} />
       </Button>
     </div>
   );

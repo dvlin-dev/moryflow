@@ -1,13 +1,12 @@
 /**
  * [PROPS]: 无
  * [EMITS]: 无
- * [POS]: 定价页面
+ * [POS]: 定价页面（Lucide icons direct render）
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import { Icon } from '@anyhunt/ui';
-import { Tick02Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { Check, Sparkles } from 'lucide-react';
 
 export const Route = createFileRoute('/pricing')({
   head: () => ({
@@ -39,7 +38,7 @@ function PricingPage() {
       <section className="px-4 sm:px-6 py-16 sm:py-24">
         <div className="container mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-200 mb-6">
-            <Icon icon={SparklesIcon} size={16} className="text-green-600" />
+            <Sparkles size={16} className="text-green-600" />
             <span className="text-sm font-medium text-green-700">Currently Free</span>
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-mory-text-primary mb-6">
@@ -71,11 +70,7 @@ function PricingPage() {
             <ul className="space-y-4 mb-8">
               {freeFeatures.map((feature, index) => (
                 <li key={index} className="flex items-start gap-3">
-                  <Icon
-                    icon={Tick02Icon}
-                    size={20}
-                    className="text-mory-orange flex-shrink-0 mt-0.5"
-                  />
+                  <Check size={20} className="text-mory-orange flex-shrink-0 mt-0.5" />
                   <span className="text-mory-text-primary">{feature}</span>
                 </li>
               ))}

@@ -1,6 +1,12 @@
-import { Tick02Icon } from '@hugeicons/core-free-icons';
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Anyhunt landing pricing section (Lucide icons direct render)
+ */
+
+import { Check } from 'lucide-react';
 import { Container } from '@/components/layout';
-import { Button, Icon } from '@anyhunt/ui';
+import { Button } from '@anyhunt/ui';
 import { cn } from '@anyhunt/ui/lib';
 import { PRICING_TIERS } from '@/lib/pricing';
 
@@ -40,7 +46,7 @@ export function PricingSection() {
               <ul className="mt-6 flex-1 space-y-3">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Icon icon={Tick02Icon} className="mt-0.5 h-4 w-4 shrink-0" />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}

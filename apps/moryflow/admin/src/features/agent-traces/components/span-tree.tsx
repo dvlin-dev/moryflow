@@ -5,16 +5,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
-import {
-  ArrowDown01Icon,
-  ArrowLeftRightIcon,
-  ArrowRight01Icon,
-  Robot01Icon,
-  Shield01Icon,
-  Wrench01Icon,
-  ZapIcon,
-} from '@hugeicons/core-free-icons';
+import { ArrowDown, ArrowLeftRight, ArrowRight, Bot, Shield, Wrench, Zap } from 'lucide-react';
 import { formatDuration } from '@/lib/format';
 import { SpanStatusBadge } from './trace-status-badge';
 import type { AgentSpan, SpanType } from '../types';
@@ -31,12 +22,12 @@ interface SpanNode extends AgentSpan {
 
 // Span 类型图标
 const SPAN_TYPE_ICONS: Record<SpanType, React.ReactNode> = {
-  agent: <Icon icon={Robot01Icon} className="h-4 w-4 text-blue-500" />,
-  function: <Icon icon={Wrench01Icon} className="h-4 w-4 text-cyan-500" />,
-  generation: <Icon icon={ZapIcon} className="h-4 w-4 text-purple-500" />,
-  handoff: <Icon icon={ArrowLeftRightIcon} className="h-4 w-4 text-orange-500" />,
-  guardrail: <Icon icon={Shield01Icon} className="h-4 w-4 text-yellow-500" />,
-  custom: <Icon icon={Wrench01Icon} className="h-4 w-4 text-gray-500" />,
+  agent: <Bot className="h-4 w-4 text-blue-500" />,
+  function: <Wrench className="h-4 w-4 text-cyan-500" />,
+  generation: <Zap className="h-4 w-4 text-purple-500" />,
+  handoff: <ArrowLeftRight className="h-4 w-4 text-orange-500" />,
+  guardrail: <Shield className="h-4 w-4 text-yellow-500" />,
+  custom: <Wrench className="h-4 w-4 text-gray-500" />,
 };
 
 // 构建树形结构
@@ -95,11 +86,7 @@ function SpanNodeItem({ node, depth, onSelect, selectedSpanId }: SpanNodeItemPro
               setExpanded(!expanded);
             }}
           >
-            {expanded ? (
-              <Icon icon={ArrowDown01Icon} className="h-3 w-3" />
-            ) : (
-              <Icon icon={ArrowRight01Icon} className="h-3 w-3" />
-            )}
+            {expanded ? <ArrowDown className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
           </button>
         ) : (
           <span className="w-4" />

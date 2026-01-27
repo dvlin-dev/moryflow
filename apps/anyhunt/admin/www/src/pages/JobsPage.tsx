@@ -1,10 +1,11 @@
 /**
- * Jobs 页面
- * 任务列表
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Jobs 页面 - 任务列表（Lucide icons direct render）
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight01Icon, Search01Icon, ZapIcon } from '@hugeicons/core-free-icons';
+import { ArrowUpRight, Search, Zap } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -19,7 +20,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Input,
   Button,
   Select,
@@ -110,7 +110,7 @@ export default function JobsPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-1 text-2xl font-bold">
-                <Icon icon={ZapIcon} className="h-5 w-5 text-yellow-500" />
+                <Zap className="h-5 w-5 text-yellow-500" />
                 {formatMs(stats.avgProcessingMs)}
               </div>
               <p className="text-xs text-muted-foreground">平均耗时</p>
@@ -145,7 +145,7 @@ export default function JobsPage() {
                 className="w-64"
               />
               <Button variant="outline" onClick={handleSearch}>
-                <Icon icon={Search01Icon} className="h-4 w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function JobsPage() {
                             navigate(`/jobs/${job.id}`);
                           }}
                         >
-                          <Icon icon={ArrowUpRight01Icon} className="h-4 w-4" />
+                          <ArrowUpRight className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

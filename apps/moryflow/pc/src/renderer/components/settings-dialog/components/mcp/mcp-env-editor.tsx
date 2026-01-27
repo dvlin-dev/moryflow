@@ -2,8 +2,7 @@ import { useFieldArray, type Control } from 'react-hook-form';
 import { Button } from '@anyhunt/ui/components/button';
 import { Input } from '@anyhunt/ui/components/input';
 import { Label } from '@anyhunt/ui/components/label';
-import { Add01Icon, Delete01Icon, ViewIcon, ViewOffIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Plus, Delete, View, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { FormValues } from '../../const';
 
@@ -47,7 +46,7 @@ export const McpEnvEditor = ({
           variant="outline"
           onClick={() => append({ key: '', value: '' })}
         >
-          <Icon icon={Add01Icon} className="mr-1 size-3" />
+          <Plus className="mr-1 size-3" />
           Add
         </Button>
       </div>
@@ -84,17 +83,14 @@ export const McpEnvEditor = ({
                     onClick={() => toggleVisibility(index)}
                   >
                     {isVisible ? (
-                      <Icon icon={ViewOffIcon} className="size-4 text-muted-foreground" />
+                      <EyeOff className="size-4 text-muted-foreground" />
                     ) : (
-                      <Icon icon={ViewIcon} className="size-4 text-muted-foreground" />
+                      <View className="size-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
                 <Button type="button" size="icon" variant="ghost" onClick={() => remove(index)}>
-                  <Icon
-                    icon={Delete01Icon}
-                    className="size-4 text-muted-foreground hover:text-destructive"
-                  />
+                  <Delete className="size-4 text-muted-foreground hover:text-destructive" />
                 </Button>
               </div>
             );

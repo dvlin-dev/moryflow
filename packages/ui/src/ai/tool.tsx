@@ -1,6 +1,6 @@
 /**
  * [PROPS]: Tool* - 工具调用展示组件
- * [POS]: 聊天消息中工具输入/输出的通用 UI（含状态、结果与截断预览）
+ * [POS]: 聊天消息中工具输入/输出的通用 UI（含状态、结果与截断预览，Lucide 直渲染）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,20 +10,10 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { isValidElement, useMemo, useState } from 'react';
 import type { ToolUIPart } from 'ai';
-import {
-  ArrowDown01Icon,
-  Cancel01Icon,
-  Clock01Icon,
-  ComputerTerminal01Icon,
-  DocumentAttachmentIcon,
-  Loading01Icon,
-  RecordIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { ArrowDown, X, Clock, Terminal, FileText, Loader, Circle, Check } from 'lucide-react';
 
 import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
-import { Icon } from '../components/icon';
 import { ScrollArea, ScrollBar } from '../components/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/tooltip';
 import { cn } from '../lib/utils';
@@ -122,13 +112,13 @@ const DEFAULT_STATUS_LABELS: Record<ToolState, string> = {
 };
 
 const DEFAULT_STATUS_ICONS: Record<ToolState, ReactNode> = {
-  'input-streaming': <Icon icon={RecordIcon} className="size-3.5 text-muted-foreground" />,
-  'input-available': <Icon icon={Loading01Icon} className="size-3.5 animate-spin text-blue-500" />,
-  'approval-requested': <Icon icon={Clock01Icon} className="size-3.5 text-warning" />,
-  'approval-responded': <Icon icon={Tick02Icon} className="size-3.5 text-blue-500" />,
-  'output-available': <Icon icon={Tick02Icon} className="size-3.5 text-success" />,
-  'output-error': <Icon icon={Cancel01Icon} className="size-3.5 text-destructive" />,
-  'output-denied': <Icon icon={Cancel01Icon} className="size-3.5 text-warning" />,
+  'input-streaming': <Circle className="size-3.5 text-muted-foreground" />,
+  'input-available': <Loader className="size-3.5 animate-spin text-blue-500" />,
+  'approval-requested': <Clock className="size-3.5 text-warning" />,
+  'approval-responded': <Check className="size-3.5 text-blue-500" />,
+  'output-available': <Check className="size-3.5 text-success" />,
+  'output-error': <X className="size-3.5 text-destructive" />,
+  'output-denied': <X className="size-3.5 text-warning" />,
 };
 
 /**
@@ -184,10 +174,7 @@ export const ToolHeader = ({
       <span className="truncate font-medium text-sm">{getToolDisplayName(type, input, title)}</span>
       {getStatusBadge(state, statusLabels, statusIcons)}
     </div>
-    <Icon
-      icon={ArrowDown01Icon}
-      className="size-4 shrink-0 text-muted-foreground transition-transform duration-fast group-data-[state=open]:rotate-180"
-    />
+    <ArrowDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-fast group-data-[state=open]:rotate-180" />
   </CollapsibleTrigger>
 );
 
@@ -395,8 +382,7 @@ const TruncatedOutput = ({
       <CodeBlock code={result.preview} language="markdown" className="text-xs" />
       {hasPath && (
         <div className="text-xs text-muted-foreground">
-          {labels.fullOutputPath}:{' '}
-          <span className="font-mono break-all">{result.fullPath}</span>
+          {labels.fullOutputPath}: <span className="font-mono break-all">{result.fullPath}</span>
         </div>
       )}
       {result.hint && <p className="text-xs text-muted-foreground">{result.hint}</p>}
@@ -467,12 +453,12 @@ const CommandOutput = ({
         </dl>
       )}
       <CommandStream
-        icon={<Icon icon={ComputerTerminal01Icon} className="size-3.5" />}
+        icon={<Terminal className="size-3.5" />}
         label={labels.stdout}
         value={result.stdout}
       />
       <CommandStream
-        icon={<Icon icon={DocumentAttachmentIcon} className="size-3.5" />}
+        icon={<FileText className="size-3.5" />}
         label={labels.stderr}
         value={result.stderr}
         muted
@@ -576,7 +562,7 @@ const DiffOutput = ({
             onClick={handleApply}
             type="button"
           >
-            {applying && <Icon icon={Loading01Icon} className="size-4 animate-spin" />}
+            {applying && <Loader className="size-4 animate-spin" />}
             {finished ? labels.applied : applying ? labels.applying : labels.applyToFile}
           </Button>
         </div>
@@ -638,11 +624,11 @@ const TodoOutput = ({
           return (
             <div key={`${title}-${index}`} className="flex items-center gap-2 text-sm">
               {isCompleted ? (
-                <Icon icon={Tick02Icon} className="size-4 shrink-0 text-emerald-500" />
+                <Check className="size-4 shrink-0 text-emerald-500" />
               ) : isInProgress ? (
-                <Icon icon={Loading01Icon} className="size-4 shrink-0 animate-spin text-blue-500" />
+                <Loader className="size-4 shrink-0 animate-spin text-blue-500" />
               ) : (
-                <Icon icon={RecordIcon} className="size-4 shrink-0 text-muted-foreground/50" />
+                <Circle className="size-4 shrink-0 text-muted-foreground/50" />
               )}
               <span className={cn('truncate', isCompleted && 'text-muted-foreground line-through')}>
                 {title}

@@ -1,11 +1,10 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Card grid showcasing Mory usage scenarios
+ * [POS]: Card grid showcasing Mory usage scenarios (Lucide icons direct render)
  */
 
-import { Icon } from '@anyhunt/ui';
-import { CheckmarkCircle01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { CircleCheck, Sparkles } from 'lucide-react';
 
 const scenarios = [
   {
@@ -78,7 +77,7 @@ export function AgentShowcase() {
         {/* Header */}
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/95 backdrop-blur-md rounded-full border border-white/80 shadow-sm shadow-gray-200/30 mb-6">
-            <Icon icon={SparklesIcon} size={16} className="text-mory-orange" />
+            <Sparkles size={16} className="text-mory-orange" />
             <span className="text-sm font-medium text-mory-text-primary">A thinking companion</span>
           </div>
 
@@ -120,7 +119,7 @@ export function AgentShowcase() {
               {/* Mory's Thinking Process */}
               <div className="mb-6">
                 <p className="text-sm text-mory-text-tertiary mb-3 flex items-center gap-2">
-                  <Icon icon={SparklesIcon} size={14} className="text-mory-orange" />
+                  <Sparkles size={14} className="text-mory-orange" />
                   Mory's thinking:
                 </p>
                 <ul className="space-y-2.5">
@@ -135,8 +134,7 @@ export function AgentShowcase() {
                         </>
                       ) : (
                         <>
-                          <Icon
-                            icon={CheckmarkCircle01Icon}
+                          <CircleCheck
                             size={16}
                             className="text-mory-orange mt-0.5 flex-shrink-0"
                           />

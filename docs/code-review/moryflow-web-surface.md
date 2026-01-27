@@ -85,12 +85,12 @@ status: done
   - 关联改动：
     - `apps/moryflow/site-template/CLAUDE.md`
 
-- [P3] 管理后台仍使用 `lucide-react` 图标库
+- [P3] 管理后台仍使用 `@hugeicons/*` 图标库
   - 调研：
-    - UI/UX 规范要求统一 Hugeicons，避免混用图标库
+    - UI/UX 规范要求统一 Lucide，避免混用图标库
   - 解决方案（已落地）：
-    - 迁移到 `@hugeicons/core-free-icons` + `@hugeicons/react`，统一使用 `Icon` 组件渲染
-    - 清理 `lucide-react` 与 `@tabler/icons-react` 依赖
+    - 迁移到 `lucide-react`，直接使用组件渲染（如 `<ChevronDown />`）
+    - 清理 `@hugeicons/*` 依赖
   - 关联改动：
     - `apps/moryflow/admin/src/components/ui/icon.tsx`
     - `apps/moryflow/admin/src/pages/*`
@@ -119,7 +119,7 @@ status: done
   - 官网 SEO 主域名与 OG 资源修复
   - 健康检查改为 Nitro server route + 单测
   - Site Template 文档占位符补齐
-  - Admin 全量 Hugeicons 图标迁移
+  - Admin 全量 Lucide 图标迁移
   - 站点模板补齐 `lang` + `description` 占位符并同步发布链路
 - 验证记录（2026-01-24）：
   - `pnpm lint`

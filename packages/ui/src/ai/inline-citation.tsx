@@ -3,8 +3,7 @@
 import { Badge } from '../components/badge';
 import { Carousel, type CarouselApi, CarouselContent, CarouselItem } from '../components/carousel';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../components/hover-card';
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '../components/icon';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import {
   type ComponentProps,
@@ -178,7 +177,7 @@ export const InlineCitationCarouselPrev = ({
       type="button"
       {...props}
     >
-      <Icon icon={ArrowLeft01Icon} className="size-4 text-muted-foreground" />
+      <ArrowLeft className="size-4 text-muted-foreground" />
     </button>
   );
 };
@@ -205,7 +204,7 @@ export const InlineCitationCarouselNext = ({
       type="button"
       {...props}
     >
-      <Icon icon={ArrowRight01Icon} className="size-4 text-muted-foreground" />
+      <ArrowRight className="size-4 text-muted-foreground" />
     </button>
   );
 };

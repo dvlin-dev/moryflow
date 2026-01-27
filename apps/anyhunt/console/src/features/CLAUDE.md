@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API Key Create Dialog 文案与 ApiKeyClient 校验对齐（空 key 阻断请求）
 - Agent Browser Playground：Agent Chat 支持单页多轮对话 + 模型选择（对齐 Moryflow）
 - Agent Browser Playground：默认模型选择改为派生值，避免 effect 内 setState
@@ -93,4 +94,4 @@ export function useApiKeys() {
 - `../lib/api-client` - HTTP 客户端
 - `../lib/api-paths` - API 常量
 - `better-auth` - Better Auth 官方客户端
-- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
+- 图标统一 Lucide（`lucide-react`），直接组件调用

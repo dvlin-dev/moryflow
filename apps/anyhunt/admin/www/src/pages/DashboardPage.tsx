@@ -1,18 +1,14 @@
 /**
- * Admin Dashboard - 系统统计概览
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Admin Dashboard - 系统统计概览（Lucide icons direct render）
  */
 import { useDashboardStats, useChartData } from '@/features/dashboard';
-import {
-  Camera01Icon,
-  CreditCardIcon,
-  Dollar01Icon,
-  UserGroupIcon,
-} from '@hugeicons/core-free-icons';
+import { Camera, CreditCard, DollarSign, Users } from 'lucide-react';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  Icon,
   Skeleton,
   type ChartConfig,
 } from '@anyhunt/ui';
@@ -54,7 +50,7 @@ export default function DashboardPage() {
       label: 'Total Users',
       value: statsData?.totalUsers ?? 0,
       format: formatNumber,
-      icon: UserGroupIcon,
+      icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
@@ -62,7 +58,7 @@ export default function DashboardPage() {
       label: 'Active Subscriptions',
       value: statsData?.activeSubscriptions ?? 0,
       format: formatNumber,
-      icon: CreditCardIcon,
+      icon: CreditCard,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
@@ -70,7 +66,7 @@ export default function DashboardPage() {
       label: 'Screenshots Today',
       value: statsData?.screenshotsToday ?? 0,
       format: formatNumber,
-      icon: Camera01Icon,
+      icon: Camera,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },
@@ -78,7 +74,7 @@ export default function DashboardPage() {
       label: 'Revenue (MTD)',
       value: statsData?.revenueMTD ?? 0,
       format: formatCurrency,
-      icon: Dollar01Icon,
+      icon: DollarSign,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
     },
@@ -93,21 +89,24 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <Icon icon={stat.icon} className={`h-4 w-4 ${stat.color}`} />
+        {stats.map((stat) => {
+          const IconComponent = stat.icon;
+          return (
+            <div key={stat.label} className="rounded-xl border border-border bg-card p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <IconComponent className={`h-4 w-4 ${stat.color}`} />
+                </div>
               </div>
+              {statsLoading ? (
+                <Skeleton className="mt-2 h-9 w-24" />
+              ) : (
+                <p className="mt-2 text-3xl font-bold">{stat.format(stat.value)}</p>
+              )}
             </div>
-            {statsLoading ? (
-              <Skeleton className="mt-2 h-9 w-24" />
-            ) : (
-              <p className="mt-2 text-3xl font-bold">{stat.format(stat.value)}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Charts */}

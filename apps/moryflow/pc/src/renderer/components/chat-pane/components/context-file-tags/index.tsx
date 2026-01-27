@@ -1,13 +1,13 @@
 /**
  * [PROPS]: ContextFileTagsProps/FileChipProps - 引用/附件胶囊渲染
  * [EMITS]: onRemove - 移除引用/附件
- * [POS]: Chat Prompt 输入框的文件胶囊列表
+ * [POS]: Chat Prompt 输入框的文件胶囊列表（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Cancel01Icon, File01Icon } from '@hugeicons/core-free-icons';
-import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
+import { X, File } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ type ContextFileTagsProps = {
 };
 
 type FileChipProps = {
-  icon: HugeIcon;
+  icon: LucideIcon;
   label: string;
   tooltip?: string;
   onRemove?: () => void;
@@ -35,6 +35,7 @@ type FileChipProps = {
 const FileChip = ({ icon, label, tooltip, onRemove, removeLabel, className }: FileChipProps) => {
   const { t } = useTranslation('chat');
   const resolvedRemoveLabel = removeLabel ?? t('removeReference');
+  const IconComponent = icon;
   const content = (
     <div
       className={cn(
@@ -42,7 +43,7 @@ const FileChip = ({ icon, label, tooltip, onRemove, removeLabel, className }: Fi
         className
       )}
     >
-      <Icon icon={icon} className="size-3.5 shrink-0 text-muted-foreground" />
+      <IconComponent className="size-3.5 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {onRemove && (
         <button
@@ -51,7 +52,7 @@ const FileChip = ({ icon, label, tooltip, onRemove, removeLabel, className }: Fi
           onClick={onRemove}
           aria-label={resolvedRemoveLabel}
         >
-          <Icon icon={Cancel01Icon} className="size-3.5" />
+          <X className="size-3.5" />
         </button>
       )}
     </div>
@@ -81,7 +82,7 @@ export const ContextFileTags = ({ files, onRemove }: ContextFileTagsProps) => {
       {files.map((file) => (
         <FileChip
           key={file.id}
-          icon={File01Icon}
+          icon={File}
           label={file.name}
           tooltip={file.path}
           onRemove={onRemove ? () => onRemove(file.id) : undefined}

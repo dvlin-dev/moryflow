@@ -9,11 +9,10 @@
 
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
-import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 import { Button } from '../../components/button';
 import { ButtonGroup, ButtonGroupText } from '../../components/button-group';
-import { Icon } from '../../components/icon';
 import { cn } from '../../lib/utils';
 
 import type {
@@ -122,7 +121,7 @@ export const MessageBranchPrevious = ({ children, ...props }: MessageBranchPrevi
       variant="ghost"
       {...props}
     >
-      {children ?? <Icon icon={ArrowLeft01Icon} className="size-3.5" />}
+      {children ?? <ArrowLeft className="size-3.5" />}
     </Button>
   );
 };
@@ -140,7 +139,7 @@ export const MessageBranchNext = ({ children, ...props }: MessageBranchNextProps
       variant="ghost"
       {...props}
     >
-      {children ?? <Icon icon={ArrowRight01Icon} className="size-3.5" />}
+      {children ?? <ArrowRight className="size-3.5" />}
     </Button>
   );
 };

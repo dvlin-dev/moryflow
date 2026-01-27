@@ -1,54 +1,50 @@
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Memox landing features section (Lucide icons direct render)
+ */
+
 import { Container } from '@/components/layout';
-import {
-  BrainIcon,
-  CodeIcon,
-  GitBranchIcon,
-  LayersIcon,
-  Link02Icon,
-  Search01Icon,
-  Shield01Icon,
-  ZapIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui';
+import { Brain, Code, GitBranch, Layers, Link, Search, Shield, Zap } from 'lucide-react';
 
 const features = [
   {
-    icon: Search01Icon,
+    icon: Search,
     title: 'Semantic Search',
     description: 'Vector-powered search finds relevant memories based on meaning, not keywords.',
   },
   {
-    icon: Link02Icon,
+    icon: Link,
     title: 'Knowledge Graph',
     description: 'Automatic entity extraction and relationship mapping for connected memories.',
   },
   {
-    icon: Shield01Icon,
+    icon: Shield,
     title: 'Multi-tenant Isolation',
     description: 'API Key-based data isolation ensures complete separation between users.',
   },
   {
-    icon: LayersIcon,
+    icon: Layers,
     title: 'Rich Metadata',
     description: 'Store custom metadata, tags, and timestamps with each memory.',
   },
   {
-    icon: BrainIcon,
+    icon: Brain,
     title: 'LLM Integration',
     description: 'Built-in entity and relation extraction using state-of-the-art language models.',
   },
   {
-    icon: ZapIcon,
+    icon: Zap,
     title: 'Fast & Scalable',
     description: 'Sub-100ms search latency with pgvector-powered vector similarity.',
   },
   {
-    icon: CodeIcon,
+    icon: Code,
     title: 'Developer First',
     description: 'RESTful API with webhooks, comprehensive docs, and easy integration.',
   },
   {
-    icon: GitBranchIcon,
+    icon: GitBranch,
     title: 'Graph Traversal',
     description: 'Navigate relationships, find paths, and explore connected knowledge.',
   },
@@ -68,18 +64,21 @@ export function FeaturesSection() {
 
         {/* Features Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="border border-border bg-card p-5 transition-colors hover:border-foreground/20"
-            >
-              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center border border-border bg-background">
-                <Icon icon={feature.icon} className="h-4 w-4" />
+          {features.map((feature) => {
+            const IconComponent = feature.icon;
+            return (
+              <div
+                key={feature.title}
+                className="border border-border bg-card p-5 transition-colors hover:border-foreground/20"
+              >
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center border border-border bg-background">
+                  <IconComponent className="h-4 w-4" />
+                </div>
+                <h3 className="font-mono text-sm font-semibold">{feature.title}</h3>
+                <p className="mt-1.5 text-xs text-muted-foreground">{feature.description}</p>
               </div>
-              <h3 className="font-mono text-sm font-semibold">{feature.title}</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground">{feature.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Container>
     </section>

@@ -30,13 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Icon } from '@/components/ui/icon';
-import {
-  Delete01Icon,
-  More01Icon,
-  Notification01Icon,
-  PencilEdit01Icon,
-} from '@hugeicons/core-free-icons';
+import { Delete, Ellipsis, Bell, Pencil } from 'lucide-react';
 import { AlertLevelBadge, AlertTypeBadge } from './alert-badges';
 import { useUpdateAlertRule, useDeleteAlertRule } from '../hooks';
 import type { AlertRule } from '../types';
@@ -117,7 +111,7 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
   if (rules.length === 0) {
     return (
       <div className="rounded-lg border p-12 text-center">
-        <Icon icon={Notification01Icon} className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <Bell className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <p className="text-muted-foreground">暂无告警规则</p>
         <p className="text-sm text-muted-foreground mt-1">创建第一个告警规则开始监控</p>
       </div>
@@ -160,19 +154,19 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
-                        <Icon icon={More01Icon} className="h-4 w-4" />
+                        <Ellipsis className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onEdit(rule)}>
-                        <Icon icon={PencilEdit01Icon} className="mr-2 h-4 w-4" />
+                        <Pencil className="mr-2 h-4 w-4" />
                         编辑
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => setDeleteRule(rule)}
                       >
-                        <Icon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+                        <Delete className="mr-2 h-4 w-4" />
                         删除
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -22,7 +22,6 @@ export * from './empty';
 export * from './field';
 export * from './form';
 export * from './hover-card';
-export * from './icon';
 export * from './input';
 export * from './input-group';
 export * from './input-otp';

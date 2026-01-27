@@ -125,11 +125,11 @@ status: done
     - `apps/moryflow/pc/src/renderer/workspace/hooks/use-document-state.test.tsx`
     - `apps/moryflow/pc/src/renderer/workspace/hooks/use-vault-tree.test.tsx`
 
-- [P3] 图标库不符合规范（`lucide-react`）
+- [P3] 图标库不符合规范（`@hugeicons/*`）
   - 调研：
-    - UI/UX 规范要求统一 Hugeicons（`@hugeicons/core-free-icons` + `Icon`）
+    - UI/UX 规范要求统一 Lucide（`lucide-react`，直接组件渲染）
   - 解决方案（已落地）：
-    - 全量替换 Hugeicons；更新 `components.json`；移除 `lucide-react` 依赖
+    - 全量替换 Lucide；更新 `components.json`；移除 `@hugeicons/*` 依赖
   - 关联改动（节选）：
     - `apps/moryflow/pc/components.json`
     - `apps/moryflow/pc/package.json`
@@ -143,7 +143,7 @@ status: done
   - preload CJS 构建与路径解析修复（sandbox 兼容）
   - Renderer 文案英文化 + `zod/v3` 对齐
   - 文件树展开路径并发加载
-  - Hugeicons 全量替换 + 依赖清理
+  - Lucide 全量替换 + 依赖清理
   - Renderer hooks 单测
   - Electron E2E：打开 Vault、编辑自动保存、站点发布入口、设置页加载
 - 验证方式：

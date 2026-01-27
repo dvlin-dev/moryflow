@@ -29,7 +29,7 @@ const VENDOR_CHUNKS: Record<string, string[]> = {
     '@radix-ui/react-tooltip',
   ],
   'vendor-ui': ['framer-motion', 'react-hook-form', '@hookform/resolvers', 'zod'],
-  'vendor-icons': ['@hugeicons/core-free-icons'],
+  'vendor-icons': ['lucide-react'],
 };
 
 // SSR 必须保证 React 相关依赖为 external：否则会在不同 chunks 中重复打包 React，导致 hooks dispatcher 不一致（`useRef` 读到 null）。

@@ -1,6 +1,6 @@
 ---
 title: Moryflow（内部方案）
-date: 2026-01-25
+date: 2026-01-27
 scope: moryflow.com, moryflow.app
 status: draft
 ---
@@ -22,7 +22,6 @@ status: draft
 ## Features（内部技术方案）
 
 - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
-- 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`
 - 站点发布（技术方案）：`docs/products/moryflow/features/site-publish/tech.md`
 - 站点模板系统：`docs/products/moryflow/features/site-publish/template-system.md`
 - 积分系统：`docs/products/moryflow/features/credits-system/tech.md`

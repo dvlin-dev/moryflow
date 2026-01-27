@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { providers, form }
  * [EMITS]: 通过 setValue 修改 settings 表单；通过 desktopAPI 调用 ollama IPC
- * [POS]: 设置弹窗 - Ollama 面板（本地模型管理与启用状态配置）
+ * [POS]: 设置弹窗 - Ollama 面板（本地模型管理与启用状态配置，Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,15 +13,7 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Switch } from '@anyhunt/ui/components/switch';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import {
-  Delete01Icon,
-  Download01Icon,
-  LinkSquare01Icon,
-  Loading03Icon,
-  RefreshIcon,
-  Search01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Delete, Download, SquareArrowUpRight, Loader, RefreshCw, Search } from 'lucide-react';
 import { getProviderById } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { OllamaLocalModel, OllamaConnectionResult } from '@shared/ipc';
@@ -214,7 +206,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
             rel="noopener noreferrer"
             className="text-primary hover:underline flex items-center gap-1 text-sm"
           >
-            Model Library <Icon icon={LinkSquare01Icon} className="h-3 w-3" />
+            Model Library <SquareArrowUpRight className="h-3 w-3" />
           </a>
         </div>
 
@@ -229,7 +221,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
               onClick={handleRefresh}
               disabled={isLoading}
             >
-              <Icon icon={RefreshIcon} className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
           <div className="flex items-center gap-2 p-3 rounded-md border bg-muted/30">
@@ -268,10 +260,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
           {/* 搜索和下载 */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Icon
-                icon={Search01Icon}
-                className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-              />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search models..."
                 className="pl-8"
@@ -280,7 +269,7 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
               />
             </div>
             <Button type="button" variant="outline" onClick={() => setLibraryOpen(true)}>
-              <Icon icon={Download01Icon} className="h-4 w-4 mr-1" />
+              <Download className="h-4 w-4 mr-1" />
               Download models
             </Button>
           </div>
@@ -327,9 +316,9 @@ export const OllamaPanel = ({ providers, form }: OllamaPanelProps) => {
                           disabled={isDeleting}
                         >
                           {isDeleting ? (
-                            <Icon icon={Loading03Icon} className="h-3 w-3 animate-spin" />
+                            <Loader className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Icon icon={Delete01Icon} className="h-3 w-3" />
+                            <Delete className="h-3 w-3" />
                           )}
                         </button>
                       </div>

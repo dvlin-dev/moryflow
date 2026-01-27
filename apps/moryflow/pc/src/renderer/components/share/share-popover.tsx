@@ -1,23 +1,15 @@
 /**
  * [PROPS]: { filePath, fileTitle, publishedSite, onPublished, onNavigateToSites, children }
  * [EMITS]: onPublished(site) - 发布成功回调, onNavigateToSites() - 导航到 Sites
- * [POS]: Share 弹出层主组件，Notion 风格轻量 Popover
+ * [POS]: Share 弹出层主组件，Notion 风格轻量 Popover（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  ArrowRight01Icon,
-  ArrowUpRight01Icon,
-  Copy01Icon,
-  FolderOpenIcon,
-  GlobeIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { ArrowRight, ArrowUpRight, Copy, FolderOpen, Globe, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PublishPanel } from './publish-panel';
@@ -140,13 +132,13 @@ export function SharePopover({
         onClick={() => setPanel('publish')}
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <Icon icon={GlobeIcon} className="h-4 w-4 text-primary" />
+          <Globe className="h-4 w-4 text-primary" />
         </div>
         <div className="flex-1">
           <div className="text-sm font-medium">Publish this page</div>
           <div className="text-xs text-muted-foreground">Publish to the web</div>
         </div>
-        <Icon icon={ArrowRight01Icon} className="h-4 w-4 text-muted-foreground" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
       </button>
 
       {/* 分隔线 */}
@@ -157,9 +149,9 @@ export function SharePopover({
         className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-accent transition-colors"
         onClick={handleNavigateToSites}
       >
-        <Icon icon={FolderOpenIcon} className="h-4 w-4 text-muted-foreground" />
+        <FolderOpen className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm">Publish more files</span>
-        <Icon icon={ArrowRight01Icon} className="ml-auto h-4 w-4 text-muted-foreground" />
+        <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
       </button>
     </div>
   );
@@ -170,7 +162,7 @@ export function SharePopover({
       {/* 已发布状态 */}
       <div className="flex items-center gap-3 rounded-lg bg-accent/50 px-3 py-2.5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
-          <Icon icon={GlobeIcon} className="h-4 w-4 text-green-500" />
+          <Globe className="h-4 w-4 text-green-500" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-green-600">Published</div>
@@ -185,7 +177,7 @@ export function SharePopover({
           className="h-8 w-8 shrink-0"
           onClick={() => window.open(publishedSite?.url, '_blank')}
         >
-          <Icon icon={ArrowUpRight01Icon} className="h-4 w-4" />
+          <ArrowUpRight className="h-4 w-4" />
         </Button>
       </div>
 
@@ -198,7 +190,7 @@ export function SharePopover({
         onClick={() => setPanel('settings')}
       >
         <span className="text-sm">Site settings</span>
-        <Icon icon={ArrowRight01Icon} className="h-4 w-4 text-muted-foreground" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
       </button>
 
       {/* Unpublish */}
@@ -224,9 +216,9 @@ export function SharePopover({
         onClick={handleCopyLink}
       >
         {copied ? (
-          <Icon icon={Tick02Icon} className="h-4 w-4 text-green-500" />
+          <Check className="h-4 w-4 text-green-500" />
         ) : (
-          <Icon icon={Copy01Icon} className="h-4 w-4 text-muted-foreground" />
+          <Copy className="h-4 w-4 text-muted-foreground" />
         )}
         <span className="text-sm">Copy link & open</span>
       </button>

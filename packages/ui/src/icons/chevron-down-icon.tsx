@@ -1,8 +1,8 @@
-import { memo } from "react"
+import { memo } from 'react';
 
-type SvgProps = React.ComponentPropsWithoutRef<"svg">
+type SvgProps = React.ComponentPropsWithoutRef<'svg'>;
 
-export const ChevronDownIcon = memo(({ className, ...props }: SvgProps) => {
+export const ChevronDown = memo(({ className, ...props }: SvgProps) => {
   return (
     <svg
       width="24"
@@ -20,7 +20,7 @@ export const ChevronDownIcon = memo(({ className, ...props }: SvgProps) => {
         fill="currentColor"
       />
     </svg>
-  )
-})
+  );
+});
 
-ChevronDownIcon.displayName = "ChevronDownIcon"
+ChevronDown.displayName = 'ChevronDown';

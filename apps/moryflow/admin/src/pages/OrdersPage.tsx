@@ -37,8 +37,7 @@ import {
   OrderDetailDialog,
 } from '@/features/payment';
 import type { PaymentOrder } from '@/types/payment';
-import { ViewIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { View } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -144,7 +143,7 @@ export default function OrdersPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleViewDetail(order)}>
-                      <Icon icon={ViewIcon} className="h-4 w-4" />
+                      <View className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>

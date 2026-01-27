@@ -1,26 +1,25 @@
 /**
  * [PROPS]: AppSidebarProps
  * [EMITS]: None
- * [POS]: Anyhunt 控制台侧边栏
+ * [POS]: Anyhunt 控制台侧边栏（Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 import {
-  DashboardSquare01Icon,
-  PlayIcon,
-  Key01Icon,
-  WebhookIcon,
-  Settings01Icon,
-  Link02Icon,
-  Brain02Icon,
-  Mail01Icon,
-  AiBrowserIcon,
-} from '@hugeicons/core-free-icons';
+  LayoutDashboard,
+  Play,
+  Key,
+  Webhook,
+  Settings,
+  Link,
+  Brain,
+  Mail,
+  Globe,
+} from 'lucide-react';
 
 import { NavMain, type NavGroup } from '@/components/layout/nav-main';
 import { NavUser } from '@/components/layout/nav-user';
 import {
-  Icon,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -35,10 +34,10 @@ const navGroups: NavGroup[] = [
   {
     // 概览 - 无分组标签
     items: [
-      { title: 'Dashboard', url: '/', icon: DashboardSquare01Icon },
+      { title: 'Dashboard', url: '/', icon: LayoutDashboard },
       {
         title: 'Fetchx',
-        icon: PlayIcon,
+        icon: Play,
         items: [
           { title: 'Playground', url: '/fetchx/playground' },
           { title: 'Scrape', url: '/fetchx/scrape' },
@@ -51,7 +50,7 @@ const navGroups: NavGroup[] = [
       },
       {
         title: 'Agent Browser',
-        icon: AiBrowserIcon,
+        icon: Globe,
         items: [
           { title: 'Overview', url: '/agent-browser/overview' },
           { title: 'Browser', url: '/agent-browser/browser' },
@@ -66,7 +65,7 @@ const navGroups: NavGroup[] = [
       },
       {
         title: 'Memox',
-        icon: Brain02Icon,
+        icon: Brain,
         items: [
           { title: 'Playground', url: '/memox/playground' },
           { title: 'Memories', url: '/memox/memories' },
@@ -79,8 +78,8 @@ const navGroups: NavGroup[] = [
   {
     label: 'API',
     items: [
-      { title: 'API Keys', url: '/api-keys', icon: Key01Icon },
-      { title: 'Webhooks', url: '/webhooks', icon: WebhookIcon },
+      { title: 'API Keys', url: '/api-keys', icon: Key },
+      { title: 'Webhooks', url: '/webhooks', icon: Webhook },
     ],
   },
   {
@@ -89,14 +88,14 @@ const navGroups: NavGroup[] = [
       {
         title: 'Digest',
         url: 'https://anyhunt.app/dashboard',
-        icon: Mail01Icon,
+        icon: Mail,
         external: true,
       },
     ],
   },
   {
     label: 'Account',
-    items: [{ title: 'Settings', url: '/settings', icon: Settings01Icon }],
+    items: [{ title: 'Settings', url: '/settings', icon: Settings }],
   },
 ];
 
@@ -125,7 +124,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="/">
-                <Icon icon={Link02Icon} className="!size-5" />
+                <Link className="!size-5" />
                 <span className="text-base font-semibold">Anyhunt</span>
               </a>
             </SidebarMenuButton>

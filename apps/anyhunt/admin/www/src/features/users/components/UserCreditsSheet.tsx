@@ -1,7 +1,7 @@
 /**
  * [PROPS]: UserCreditsSheetProps - open/onOpenChange/userId
  * [EMITS]: onOpenChange(open) - 控制 Sheet 开关
- * [POS]: Admin Users 页的“Grant credits”侧边面板（仅增不减）
+ * [POS]: Admin Users 页的“Grant credits”侧边面板（仅增不减，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import { Coins01Icon, ArrowRight01Icon, ArrowUp01Icon } from '@hugeicons/core-free-icons';
+import { Coins, ArrowRight, ArrowUp } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -24,7 +24,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Icon,
   Input,
   Sheet,
   SheetContent,
@@ -129,7 +128,7 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
       <SheetContent side="right" className="w-[520px] sm:max-w-none">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <Icon icon={Coins01Icon} className="h-5 w-5" />
+            <Coins className="h-5 w-5" />
             Credits
           </SheetTitle>
           <SheetDescription>
@@ -183,7 +182,7 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon icon={ArrowUp01Icon} className="h-4 w-4" />
+                <ArrowUp className="h-4 w-4" />
                 Grant credits
               </CardTitle>
             </CardHeader>
@@ -219,7 +218,7 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
                   />
 
                   <Button type="submit" disabled={!userId || grantMutation.isPending}>
-                    <Icon icon={ArrowRight01Icon} className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" />
                     {grantMutation.isPending ? 'Granting…' : 'Grant'}
                   </Button>
                 </form>

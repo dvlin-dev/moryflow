@@ -8,16 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { formatBytes, formatNumber, calculateUsagePercent, getUsageColorClass } from '../const';
 import { useUserStorageDetail } from '../hooks';
 import type { UserVault } from '@/types/storage';
-import {
-  ArrowRight01Icon,
-  DatabaseIcon,
-  FolderOpenIcon,
-  HardDriveIcon,
-} from '@hugeicons/core-free-icons';
+import { ArrowRight, Database, FolderOpen, HardDrive } from 'lucide-react';
 
 interface UserStorageCardProps {
   userId: string;
@@ -31,7 +25,7 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Icon icon={HardDriveIcon} className="h-4 w-4" />
+            <HardDrive className="h-4 w-4" />
             云存储
           </CardTitle>
         </CardHeader>
@@ -49,7 +43,7 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Icon icon={HardDriveIcon} className="h-4 w-4" />
+            <HardDrive className="h-4 w-4" />
             云存储
           </CardTitle>
         </CardHeader>
@@ -68,7 +62,7 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Icon icon={HardDriveIcon} className="h-4 w-4" />
+          <HardDrive className="h-4 w-4" />
           云存储
         </CardTitle>
       </CardHeader>
@@ -89,7 +83,7 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-1 text-muted-foreground">
-              <Icon icon={DatabaseIcon} className="h-3 w-3" />
+              <Database className="h-3 w-3" />
               向量化用量
             </span>
             <span className={getUsageColorClass(vectorizedPercent)}>
@@ -103,7 +97,7 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
         {/* Vault 列表 */}
         <div className="space-y-3">
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Icon icon={FolderOpenIcon} className="h-3 w-3" />
+            <FolderOpen className="h-3 w-3" />
             Vault 列表 ({vaults.length})
           </div>
           {vaults.length > 0 ? (
@@ -121,7 +115,7 @@ export function UserStorageCard({ userId }: UserStorageCardProps) {
         <Button variant="outline" size="sm" asChild className="w-full">
           <Link to={`/storage?userId=${userId}`}>
             查看存储详情
-            <Icon icon={ArrowRight01Icon} className="h-4 w-4 ml-1" />
+            <ArrowRight className="h-4 w-4 ml-1" />
           </Link>
         </Button>
       </CardContent>
@@ -136,7 +130,7 @@ function VaultItem({ vault }: { vault: UserVault }) {
   return (
     <div className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
       <div className="flex items-center gap-2 min-w-0">
-        <Icon icon={FolderOpenIcon} className="h-4 w-4 text-muted-foreground shrink-0" />
+        <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="truncate font-medium">{vault.name}</span>
       </div>
       <div className="flex items-center gap-3 text-muted-foreground shrink-0">

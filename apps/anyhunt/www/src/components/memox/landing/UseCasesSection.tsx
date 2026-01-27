@@ -1,28 +1,33 @@
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Memox landing use cases section (Lucide icons direct render)
+ */
+
 import { Container } from '@/components/layout';
-import { BrainIcon, Link02Icon, Search01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui';
+import { Brain, Link, Search, Sparkles } from 'lucide-react';
 
 const useCases = [
   {
-    icon: BrainIcon,
+    icon: Brain,
     title: 'AI Agent Memory',
     description:
       'Give your AI assistants persistent memory across sessions. Remember user preferences, past conversations, and context.',
   },
   {
-    icon: Link02Icon,
+    icon: Link,
     title: 'Knowledge Graphs',
     description:
       'Automatically build and query knowledge graphs from stored memories. Understand relationships between entities.',
   },
   {
-    icon: Search01Icon,
+    icon: Search,
     title: 'Semantic Search',
     description:
       'Find relevant memories using natural language queries. Vector embeddings for accurate similarity matching.',
   },
   {
-    icon: SparklesIcon,
+    icon: Sparkles,
     title: 'Entity Extraction',
     description:
       'Automatically extract people, places, dates, and concepts from text. Structured data from unstructured content.',
@@ -43,18 +48,21 @@ export function UseCasesSection() {
 
         {/* Use Case Grid */}
         <div className="grid gap-6 md:grid-cols-2">
-          {useCases.map((useCase) => (
-            <div
-              key={useCase.title}
-              className="group border border-border bg-card p-6 transition-colors hover:border-foreground/20 hover:bg-muted/50"
-            >
-              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center border border-border bg-background">
-                <Icon icon={useCase.icon} className="h-5 w-5" />
+          {useCases.map((useCase) => {
+            const IconComponent = useCase.icon;
+            return (
+              <div
+                key={useCase.title}
+                className="group border border-border bg-card p-6 transition-colors hover:border-foreground/20 hover:bg-muted/50"
+              >
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center border border-border bg-background">
+                  <IconComponent className="h-5 w-5" />
+                </div>
+                <h3 className="font-mono text-lg font-semibold">{useCase.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{useCase.description}</p>
               </div>
-              <h3 className="font-mono text-lg font-semibold">{useCase.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{useCase.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Container>
     </section>

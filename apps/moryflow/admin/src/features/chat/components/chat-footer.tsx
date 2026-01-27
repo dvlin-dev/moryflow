@@ -7,8 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ModelSelector } from './model-selector';
 import { TokenUsageIndicator } from './token-usage-indicator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Icon } from '@/components/ui/icon';
-import { ArrowUp01Icon, ClipIcon, StopIcon } from '@hugeicons/core-free-icons';
+import { ArrowUp, Paperclip, SquareStop } from 'lucide-react';
 import type { ModelGroup } from '../types';
 
 type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
@@ -88,7 +87,7 @@ export function ChatFooter({
                       className="size-8 text-muted-foreground"
                       disabled
                     >
-                      <Icon icon={ClipIcon} className="size-4" />
+                      <Paperclip className="size-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>附件（暂未实现）</TooltipContent>
@@ -116,7 +115,7 @@ export function ChatFooter({
                     onClick={onStop}
                     className="size-8 rounded-full bg-foreground text-background hover:bg-foreground/90"
                   >
-                    <Icon icon={StopIcon} className="size-3 fill-current" />
+                    <SquareStop className="size-3 fill-current" />
                   </Button>
                 ) : (
                   <Button
@@ -125,7 +124,7 @@ export function ChatFooter({
                     disabled={!canSubmit}
                     className="size-8 rounded-full"
                   >
-                    <Icon icon={ArrowUp01Icon} className="size-4" />
+                    <ArrowUp className="size-4" />
                   </Button>
                 )}
               </div>

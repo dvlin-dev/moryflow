@@ -1,6 +1,6 @@
 # /ui
 
-> 统一 UI 组件库，采用 Moryflow 风格与 Hugeicons
+> 统一 UI 组件库，采用 Moryflow 风格与 Lucide
 
 ## 目录结构
 
@@ -20,19 +20,21 @@ styles/                 # 全局样式
 ## 导入方式
 
 ```tsx
-import { Button, Card, Icon } from '@anyhunt/ui';
+import { Button, Card } from '@anyhunt/ui';
 import { DataTable, PageHeader } from '@anyhunt/ui/composed';
 import { CodeBlock } from '@anyhunt/ui/ai/code-block';
 import { Highlight } from '@anyhunt/ui/animate/primitives/effects/highlight';
 import { cn } from '@anyhunt/ui/lib';
 import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
+import { ChevronDown } from 'lucide-react';
 ```
 
 ## 图标规范
 
-- 统一使用 `@hugeicons/react` + `@hugeicons/core-free-icons`
-- 禁止使用 `lucide-react`、`@tabler/icons-react`
-- 组件内默认使用 `Icon` 封装（`size=18`，`strokeWidth=1.5`）
+- 统一使用 `lucide-react`（Web/PC）与 `lucide-react-native`（Mobile）
+- 组件内直接使用 Lucide 组件，不新增 `Icon` 包装层
+- 动态 icon 通过 `LucideIcon` 类型 + `<IconComponent />` 渲染
+- 禁止 `@hugeicons/*`、`@tabler/icons-react`
 
 ## 主题与样式
 
@@ -46,6 +48,8 @@ import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
 
 ## 近期变更
 
+- UI 包图标回退到 Lucide，移除 Icon 包装与 Hugeicons 依赖
+- 类型映射统一为 Record，移除 Circle 泛型依赖
 - ToolOutput：打开完整输出时补齐错误边界
 - ToolOutput：新增截断输出标识与完整输出打开入口
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME

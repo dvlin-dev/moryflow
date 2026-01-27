@@ -1,8 +1,7 @@
 import * as React from 'react';
-import { ViewSidebarLeftIcon } from '@hugeicons/core-free-icons';
+import { PanelLeft } from 'lucide-react';
 
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { Input } from '@anyhunt/ui/components/input';
 import { Separator } from '@anyhunt/ui/components/separator';
 import {
@@ -130,7 +129,7 @@ const SidebarTrigger = React.forwardRef<HTMLButtonElement, React.ComponentProps<
         }}
         {...props}
       >
-        <Icon icon={ViewSidebarLeftIcon} className="size-4" />
+        <PanelLeft className="size-4" />
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     );

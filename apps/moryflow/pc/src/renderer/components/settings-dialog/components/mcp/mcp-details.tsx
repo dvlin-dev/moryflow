@@ -28,14 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@anyhunt/ui/components/alert-dialog';
-import {
-  CancelCircleIcon,
-  CheckmarkCircle01Icon,
-  Delete01Icon,
-  Loading03Icon,
-  TestTubeIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { CircleX, CircleCheck, Delete, Loader, TestTube } from 'lucide-react';
 import type { FormValues } from '../../const';
 import type { McpServerEntry, McpServerType } from './constants';
 import type { McpTestInput, McpTestResult } from '@shared/ipc';
@@ -170,9 +163,9 @@ export const McpDetails = ({
           className="h-7 px-2"
         >
           {testing ? (
-            <Icon icon={Loading03Icon} className="mr-1 size-3.5 animate-spin" />
+            <Loader className="mr-1 size-3.5 animate-spin" />
           ) : (
-            <Icon icon={TestTubeIcon} className="mr-1 size-3.5" />
+            <TestTube className="mr-1 size-3.5" />
           )}
           Test
         </Button>
@@ -183,7 +176,7 @@ export const McpDetails = ({
           onClick={onRemove}
           className="h-7 px-2 text-muted-foreground hover:text-destructive"
         >
-          <Icon icon={Delete01Icon} className="mr-1 size-3.5" />
+          <Delete className="mr-1 size-3.5" />
           Delete
         </Button>
       </div>
@@ -338,12 +331,12 @@ export const McpDetails = ({
           <AlertDialogTitle className="flex items-center gap-2">
             {testResult?.success ? (
               <>
-                <Icon icon={CheckmarkCircle01Icon} className="size-5 text-green-600" />
+                <CircleCheck className="size-5 text-green-600" />
                 Test succeeded
               </>
             ) : (
               <>
-                <Icon icon={CancelCircleIcon} className="size-5 text-red-600" />
+                <CircleX className="size-5 text-red-600" />
                 Test failed
               </>
             )}

@@ -2,14 +2,14 @@
  * Report Topic Dialog
  *
  * [PROPS]: topicSlug, open state, onOpenChange callback
- * [POS]: Modal dialog for reporting a public topic
+ * [POS]: Modal dialog for reporting a public topic (Lucide icons direct render)
  */
 
 import { useEffect, useState } from 'react';
 import { z } from 'zod/v3';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Flag01Icon } from '@hugeicons/core-free-icons';
+import { Flag } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
   Button,
-  Icon,
   Textarea,
   Form,
   FormControl,
@@ -92,7 +91,7 @@ export function ReportTopicDialog({
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon icon={Flag01Icon} className="h-4 w-4" />
+            <Flag className="h-4 w-4" />
             Report Topic
           </DialogTitle>
           <DialogDescription>Help us maintain community standards.</DialogDescription>

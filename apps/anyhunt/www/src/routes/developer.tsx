@@ -7,14 +7,8 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Icon } from '@anyhunt/ui';
-import {
-  ArrowLeft02Icon,
-  ApiIcon,
-  Book02Icon,
-  Key01Icon,
-  CodeIcon,
-} from '@hugeicons/core-free-icons';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
+import { ArrowLeft, Server, Book, Key, Code } from 'lucide-react';
 import { Header, Footer } from '@/components/layout';
 
 export const Route = createFileRoute('/developer')({
@@ -35,28 +29,28 @@ const RESOURCES = [
   {
     title: 'API Documentation',
     description: 'Complete API reference for Fetchx, Memox, and Digest APIs',
-    icon: Book02Icon,
+    icon: Book,
     href: 'https://docs.anyhunt.app',
     external: true,
   },
   {
     title: 'API Keys',
     description: 'Manage your API keys and access tokens',
-    icon: Key01Icon,
+    icon: Key,
     href: 'https://console.anyhunt.app',
     external: true,
   },
   {
     title: 'Fetchx API',
     description: 'Web scraping, crawling, and data extraction API',
-    icon: ApiIcon,
+    icon: Server,
     href: '/fetchx',
     external: false,
   },
   {
     title: 'Memox API',
     description: 'Long-term memory and knowledge graph API for AI',
-    icon: CodeIcon,
+    icon: Code,
     href: '/memox',
     external: false,
   },
@@ -73,7 +67,7 @@ function DeveloperPage() {
             to="/"
             className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            <Icon icon={ArrowLeft02Icon} className="size-4" />
+            <ArrowLeft className="size-4" />
             Back to Digest
           </Link>
 
@@ -83,30 +77,33 @@ function DeveloperPage() {
           </p>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {RESOURCES.map((resource) => (
-              <Card key={resource.title} className="transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon icon={resource.icon} className="size-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{resource.title}</CardTitle>
-                  <CardDescription>{resource.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild variant="outline" className="w-full">
-                    {resource.external ? (
-                      <a href={resource.href} target="_blank" rel="noopener noreferrer">
-                        Open
-                      </a>
-                    ) : (
-                      <Link to={resource.href}>
-                        {resource.title === 'Fetchx API' ? 'Learn More' : 'Learn More'}
-                      </Link>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {RESOURCES.map((resource) => {
+              const IconComponent = resource.icon;
+              return (
+                <Card key={resource.title} className="transition-shadow hover:shadow-md">
+                  <CardHeader>
+                    <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                      <IconComponent className="size-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-lg">{resource.title}</CardTitle>
+                    <CardDescription>{resource.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild variant="outline" className="w-full">
+                      {resource.external ? (
+                        <a href={resource.href} target="_blank" rel="noopener noreferrer">
+                          Open
+                        </a>
+                      ) : (
+                        <Link to={resource.href}>
+                          {resource.title === 'Fetchx API' ? 'Learn More' : 'Learn More'}
+                        </Link>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Quick start section */}

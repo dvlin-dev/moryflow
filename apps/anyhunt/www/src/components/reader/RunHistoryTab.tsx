@@ -1,6 +1,6 @@
 /**
  * [PROPS]: subscriptionId
- * [POS]: Run history list tab in subscription settings
+ * [POS]: Run history list tab in subscription settings (Lucide icons direct render)
  */
 
 import { useState } from 'react';
@@ -12,9 +12,8 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  Icon,
 } from '@anyhunt/ui';
-import { CheckmarkCircle02Icon, Cancel01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { CircleCheck, X, ArrowDown } from 'lucide-react';
 import { useRuns } from '@/features/digest/hooks';
 import { formatDate } from '@/lib/date';
 import type { Run } from '@/features/digest/types';
@@ -34,9 +33,9 @@ function RunItem({ run }: { run: Run }) {
         <CollapsibleTrigger className="flex w-full items-start justify-between text-left">
           <div className="flex items-center gap-2">
             {isSuccess ? (
-              <Icon icon={CheckmarkCircle02Icon} className="size-4 text-green-500" />
+              <CircleCheck className="size-4 text-green-500" />
             ) : isFailed ? (
-              <Icon icon={Cancel01Icon} className="size-4 text-destructive" />
+              <X className="size-4 text-destructive" />
             ) : (
               <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             )}
@@ -45,10 +44,7 @@ function RunItem({ run }: { run: Run }) {
               {run.status}
             </Badge>
           </div>
-          <Icon
-            icon={ArrowDown01Icon}
-            className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          />
+          <ArrowDown className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </CollapsibleTrigger>
 
         {isSuccess && run.result && (

@@ -267,7 +267,7 @@ status: draft
 | 2026-01-26 | tooling-config               | 完成 review + 修复（React 规则补齐、Prettier 依赖、Vitest 全局、移除 tailwind-config） | -                     | done        |
 | 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                             | -                     | done        |
 | 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                            | -                     | in_progress |
-| 2026-01-25 | moryflow-pc                  | 修复完成：外链/导航安全、sandbox、英文文案、Hugeicons、hooks 单测；E2E 待补            | -                     | in_progress |
+| 2026-01-25 | moryflow-pc                  | 修复完成：外链/导航安全、sandbox、英文文案、Lucide、hooks 单测；E2E 待补               | -                     | in_progress |
 | 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流             | -                     | in_progress |
 | 2026-01-24 | moryflow-pc                  | 完成 review 并补充修复方案；存在外链导航安全、Zod 规范、性能与测试缺口等问题           | -                     | in_progress |
 | 2026-01-24 | packages-embed-i18n          | 完成 review + 修复（Embed fallback、client 边界、i18n 常量清理、单测补齐）             | ecdb3b5               | done        |

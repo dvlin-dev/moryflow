@@ -1,20 +1,13 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Download section with Mac/Windows download cards
+ * [POS]: Download section with Mac/Windows download cards (Lucide icons direct render)
  */
 
 'use client';
 
 import { useState } from 'react';
-import { Icon } from '@anyhunt/ui';
-import {
-  Download01Icon,
-  AppleIcon,
-  ComputerIcon,
-  Loading01Icon,
-  CheckmarkCircle01Icon,
-} from '@hugeicons/core-free-icons';
+import { Download, Apple, Computer, Loader, CircleCheck } from 'lucide-react';
 import { useDownload } from '../../hooks/useDownload';
 
 type Platform = 'mac' | 'win';
@@ -54,7 +47,7 @@ export function DownloadCTA() {
     if (isLoading) {
       return (
         <>
-          <Icon icon={Loading01Icon} size={20} className="animate-spin" />
+          <Loader size={20} className="animate-spin" />
           Loading...
         </>
       );
@@ -64,21 +57,21 @@ export function DownloadCTA() {
       case 'preparing':
         return (
           <>
-            <Icon icon={Loading01Icon} size={20} className="animate-spin" />
+            <Loader size={20} className="animate-spin" />
             Preparing...
           </>
         );
       case 'downloading':
         return (
           <>
-            <Icon icon={CheckmarkCircle01Icon} size={20} className="text-green-400" />
+            <CircleCheck size={20} className="text-green-400" />
             Download started
           </>
         );
       default:
         return (
           <>
-            <Icon icon={Download01Icon} size={20} />
+            <Download size={20} />
             {label}
           </>
         );
@@ -121,7 +114,7 @@ export function DownloadCTA() {
 
             <div className="relative bg-gradient-to-br from-white/96 to-white/92 backdrop-blur-lg rounded-3xl p-10 border border-white/85 hover:border-white/90 transition-all hover:-translate-y-2 shadow-[0_4px_24px_0_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] shadow-gray-200/50 flex flex-col items-center text-center">
               <div className="w-20 h-20 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-50/80 transition-colors border border-white/80 shadow-sm shadow-gray-200/30">
-                <Icon icon={AppleIcon} size={40} className="text-mory-text-primary" />
+                <Apple size={40} className="text-mory-text-primary" />
               </div>
               <h3 className="text-3xl font-serif font-bold text-mory-text-primary mb-8">macOS</h3>
               <button
@@ -141,7 +134,7 @@ export function DownloadCTA() {
 
             <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-10 border-2 border-white/50 hover:border-white/70 transition-all hover:-translate-y-2 shadow-xl hover:shadow-2xl flex flex-col items-center text-center">
               <div className="w-20 h-20 bg-white/60 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-50/80 transition-colors border border-white/40">
-                <Icon icon={ComputerIcon} size={40} className="text-mory-text-primary" />
+                <Computer size={40} className="text-mory-text-primary" />
               </div>
               <h3 className="text-3xl font-serif font-bold text-mory-text-primary mb-8">Windows</h3>
               <button

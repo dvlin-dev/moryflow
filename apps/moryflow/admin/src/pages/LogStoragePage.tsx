@@ -18,14 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useActivityLogStorageStats, useCleanupActivityLogs } from '@/features/admin-logs';
 import { formatDateTime } from '@/lib/format';
-import {
-  Alert01Icon,
-  Chart01Icon,
-  Clock01Icon,
-  DatabaseIcon,
-  Delete01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { TriangleAlert, ChartLine, Clock, Database, Delete } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LogStoragePage() {
@@ -60,7 +53,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">总日志数</CardTitle>
-            <Icon icon={DatabaseIcon} className="h-4 w-4 text-muted-foreground" />
+            <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -72,7 +65,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">估算存储</CardTitle>
-            <Icon icon={Chart01Icon} className="h-4 w-4 text-muted-foreground" />
+            <ChartLine className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -84,7 +77,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">最早日志</CardTitle>
-            <Icon icon={Clock01Icon} className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-sm font-medium">
@@ -100,7 +93,7 @@ export default function LogStoragePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">错误日志</CardTitle>
-            <Icon icon={Alert01Icon} className="h-4 w-4 text-red-500" />
+            <TriangleAlert className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
@@ -191,7 +184,7 @@ export default function LogStoragePage() {
               onClick={() => setShowConfirm(true)}
               disabled={cleanupMutation.isPending}
             >
-              <Icon icon={Delete01Icon} className="h-4 w-4 mr-2" />
+              <Delete className="h-4 w-4 mr-2" />
               清理日志
             </Button>
           </div>

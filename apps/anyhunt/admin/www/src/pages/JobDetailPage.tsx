@@ -1,16 +1,10 @@
 /**
- * Job Detail 页面
- * 任务详情
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Job Detail 页面 - 任务详情（Lucide icons direct render）
  */
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft01Icon,
-  ArrowUpRight01Icon,
-  Clock01Icon,
-  Image01Icon,
-  Key01Icon,
-  UserIcon,
-} from '@hugeicons/core-free-icons';
+import { ArrowLeft, ArrowUpRight, Clock, Image, Key, User } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -18,7 +12,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Icon,
   PageHeader,
   Skeleton,
 } from '@anyhunt/ui';
@@ -112,7 +105,7 @@ export default function JobDetailPage() {
     return (
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => navigate(-1)}>
-          <Icon icon={ArrowLeft01Icon} className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           返回
         </Button>
         <div className="py-12 text-center">
@@ -126,7 +119,7 @@ export default function JobDetailPage() {
     <div className="min-w-0 space-y-6">
       <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
-          <Icon icon={ArrowLeft01Icon} className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           返回
         </Button>
         <PageHeader title="任务详情" description={job.id} />
@@ -150,7 +143,7 @@ export default function JobDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Icon icon={UserIcon} className="h-4 w-4" />
+              <User className="h-4 w-4" />
               用户
             </CardTitle>
           </CardHeader>
@@ -163,7 +156,7 @@ export default function JobDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Icon icon={Key01Icon} className="h-4 w-4" />
+              <Key className="h-4 w-4" />
               API Key
             </CardTitle>
           </CardHeader>
@@ -195,7 +188,7 @@ export default function JobDetailPage() {
               className="shrink-0"
               onClick={() => window.open(job.url, '_blank')}
             >
-              <Icon icon={ArrowUpRight01Icon} className="h-4 w-4" />
+              <ArrowUpRight className="h-4 w-4" />
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground break-all">Hash: {job.requestHash}</p>
@@ -221,7 +214,7 @@ export default function JobDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
-            <Icon icon={Clock01Icon} className="h-4 w-4" />
+            <Clock className="h-4 w-4" />
             耗时分解
           </CardTitle>
         </CardHeader>
@@ -258,7 +251,7 @@ export default function JobDetailPage() {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Icon icon={Image01Icon} className="h-4 w-4" />
+              <Image className="h-4 w-4" />
               截图
             </CardTitle>
           </CardHeader>
@@ -284,7 +277,7 @@ export default function JobDetailPage() {
                   size="sm"
                   onClick={() => window.open(job.screenshot!.url, '_blank')}
                 >
-                  <Icon icon={ArrowUpRight01Icon} className="mr-2 h-4 w-4" />
+                  <ArrowUpRight className="mr-2 h-4 w-4" />
                   查看原图
                 </Button>
               </div>

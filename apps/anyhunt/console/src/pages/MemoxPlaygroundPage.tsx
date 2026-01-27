@@ -1,7 +1,7 @@
 /**
- * Memox Playground 页面
- *
- * 测试 Memox Memory API：创建记忆和语义搜索。
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Memox Playground 页面（创建记忆/语义搜索，Lucide icons direct render）
  */
 
 import { useState, type ChangeEvent } from 'react';
@@ -9,20 +9,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3'; // 使用 v3 兼容层，解决 @hookform/resolvers 类型兼容问题
 import { toast } from 'sonner';
-import {
-  Brain02Icon,
-  Add01Icon,
-  Search01Icon,
-  Loading03Icon,
-  CheckmarkCircle01Icon,
-} from '@hugeicons/core-free-icons';
+import { Brain, Plus, Search, Loader, CircleCheck } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Icon,
   Button,
   Input,
   Textarea,
@@ -314,7 +307,7 @@ export default function MemoxPlaygroundPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Icon icon={Brain02Icon} className="h-6 w-6" />
+          <Brain className="h-6 w-6" />
           Memox Playground
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -381,11 +374,11 @@ export default function MemoxPlaygroundPage() {
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'create' | 'search')}>
                 <TabsList className="w-full">
                   <TabsTrigger value="create" className="flex-1">
-                    <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2" />
                     Create
                   </TabsTrigger>
                   <TabsTrigger value="search" className="flex-1">
-                    <Icon icon={Search01Icon} className="h-4 w-4 mr-2" />
+                    <Search className="h-4 w-4 mr-2" />
                     Search
                   </TabsTrigger>
                 </TabsList>
@@ -622,12 +615,12 @@ export default function MemoxPlaygroundPage() {
                       >
                         {createMemoryMutation.isPending ? (
                           <>
-                            <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin mr-2" />
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
                             Creating...
                           </>
                         ) : (
                           <>
-                            <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+                            <Plus className="h-4 w-4 mr-2" />
                             Create Memory
                           </>
                         )}
@@ -832,7 +825,7 @@ export default function MemoxPlaygroundPage() {
                         render={({ field }) => (
                           <FormItem className="flex items-center justify-between rounded-md border px-3 py-2">
                             <div className="space-y-1">
-                              <FormLabel>Filter Memories</FormLabel>
+                              <FormLabel>ListFilter Memories</FormLabel>
                               <FormDescription>
                                 Apply filters and metadata constraints
                               </FormDescription>
@@ -869,12 +862,12 @@ export default function MemoxPlaygroundPage() {
                       >
                         {searchMemoriesMutation.isPending ? (
                           <>
-                            <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin mr-2" />
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
                             Searching...
                           </>
                         ) : (
                           <>
-                            <Icon icon={Search01Icon} className="h-4 w-4 mr-2" />
+                            <Search className="h-4 w-4 mr-2" />
                             Search Memories
                           </>
                         )}
@@ -1000,7 +993,7 @@ export default function MemoxPlaygroundPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-500" />
+                  <CircleCheck className="h-5 w-5 text-green-500" />
                   Memory Created
                 </CardTitle>
               </CardHeader>
@@ -1022,7 +1015,7 @@ export default function MemoxPlaygroundPage() {
               <CardContent>
                 {searchResults.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <Icon icon={Search01Icon} className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
                     <p>No memories found matching your query.</p>
                   </div>
                 ) : (
@@ -1042,10 +1035,7 @@ export default function MemoxPlaygroundPage() {
           {activeTab === 'create' && !createdMemory && (
             <Card>
               <CardContent className="py-16 text-center">
-                <Icon
-                  icon={Add01Icon}
-                  className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30"
-                />
+                <Plus className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
                 <p className="text-muted-foreground">
                   Fill out the form and click "Create Memory" to store a new memory.
                 </p>
@@ -1056,10 +1046,7 @@ export default function MemoxPlaygroundPage() {
           {activeTab === 'search' && !searchResults && (
             <Card>
               <CardContent className="py-16 text-center">
-                <Icon
-                  icon={Search01Icon}
-                  className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30"
-                />
+                <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
                 <p className="text-muted-foreground">
                   Enter a query and click "Search Memories" to find relevant memories.
                 </p>

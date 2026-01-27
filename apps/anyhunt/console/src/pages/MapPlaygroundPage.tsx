@@ -1,18 +1,14 @@
 /**
- * Map Playground 页面
- * 使用 react-hook-form + zod 验证
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Map Playground 页面（react-hook-form + zod，Lucide icons direct render）
  */
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import {
-  MapsGlobal01Icon,
-  Loading01Icon,
-  Link01Icon,
-  CheckmarkCircle01Icon,
-} from '@hugeicons/core-free-icons';
+import { Map, Loader, Link, CircleCheck } from 'lucide-react';
 import {
   Button,
   Card,
@@ -27,7 +23,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Icon,
   Input,
   Switch,
 } from '@anyhunt/ui';
@@ -136,9 +131,9 @@ export default function MapPlaygroundPage() {
                           </FormControl>
                           <Button type="submit" disabled={isPending || !selectedKey?.isActive}>
                             {isPending ? (
-                              <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
+                              <Loader className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Icon icon={MapsGlobal01Icon} className="h-4 w-4" />
+                              <Map className="h-4 w-4" />
                             )}
                             <span className="ml-2">Map</span>
                           </Button>
@@ -159,7 +154,7 @@ export default function MapPlaygroundPage() {
                         name="search"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Search Filter</FormLabel>
+                            <FormLabel>Search ListFilter</FormLabel>
                             <FormControl>
                               <Input placeholder="blog" disabled={isPending} {...field} />
                             </FormControl>
@@ -245,7 +240,7 @@ export default function MapPlaygroundPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+                  <CircleCheck className="h-5 w-5 text-green-600" />
                   Found {data.links.length} URLs
                 </CardTitle>
               </CardHeader>
@@ -260,7 +255,7 @@ export default function MapPlaygroundPage() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 p-2 rounded hover:bg-muted text-xs"
                       >
-                        <Icon icon={Link01Icon} className="h-3 w-3 shrink-0" />
+                        <Link className="h-3 w-3 shrink-0" />
                         <span className="truncate">{link}</span>
                       </a>
                     ))}

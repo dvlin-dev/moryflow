@@ -25,15 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import {
-  Alert01Icon,
-  AnalyticsDownIcon,
-  AnalyticsUpIcon,
-  Clock01Icon,
-  ViewIcon,
-  Wrench01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { TriangleAlert, TrendingDown, TrendingUp, Clock, View, Wrench } from 'lucide-react';
 import { usePagination } from '@/hooks';
 import { useToolStats, useFailedTools, SpanDetailDialog } from '@/features/agent-traces';
 import type { AgentSpan } from '@/features/agent-traces';
@@ -126,7 +118,7 @@ export default function ToolAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tool 总数</CardTitle>
-            <Icon icon={Wrench01Icon} className="h-4 w-4 text-muted-foreground" />
+            <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {toolsLoading ? (
@@ -140,7 +132,7 @@ export default function ToolAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">调用总数</CardTitle>
-            <Icon icon={AnalyticsUpIcon} className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {toolsLoading ? (
@@ -154,7 +146,7 @@ export default function ToolAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">失败率</CardTitle>
-            <Icon icon={Alert01Icon} className="h-4 w-4 text-muted-foreground" />
+            <TriangleAlert className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {toolsLoading ? (
@@ -168,7 +160,7 @@ export default function ToolAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">平均耗时</CardTitle>
-            <Icon icon={Clock01Icon} className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {toolsLoading ? (
@@ -185,7 +177,7 @@ export default function ToolAnalyticsPage() {
         <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2 text-yellow-800">
-              <Icon icon={Alert01Icon} className="h-4 w-4" />
+              <TriangleAlert className="h-4 w-4" />
               {problemTools.length} 个 Tool 失败率较高
             </CardTitle>
           </CardHeader>
@@ -215,7 +207,7 @@ export default function ToolAnalyticsPage() {
             </div>
           ) : tools.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <Icon icon={Wrench01Icon} className="mx-auto h-12 w-12 mb-4" />
+              <Wrench className="mx-auto h-12 w-12 mb-4" />
               <p>暂无 Tool 数据</p>
             </div>
           ) : (
@@ -272,7 +264,7 @@ export default function ToolAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Icon icon={AnalyticsDownIcon} className="h-5 w-5 text-red-500" />
+            <TrendingDown className="h-5 w-5 text-red-500" />
             最近失败记录
           </CardTitle>
         </CardHeader>
@@ -285,7 +277,7 @@ export default function ToolAnalyticsPage() {
             </div>
           ) : failedTools.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <Icon icon={Alert01Icon} className="mx-auto h-12 w-12 mb-4" />
+              <TriangleAlert className="mx-auto h-12 w-12 mb-4" />
               <p>暂无失败记录</p>
             </div>
           ) : (
@@ -321,7 +313,7 @@ export default function ToolAnalyticsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" onClick={() => setSelectedSpan(span)}>
-                          <Icon icon={ViewIcon} className="h-4 w-4" />
+                          <View className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { open, onOpenChange, onSelect, currentVaultPath, currentTree }
  * [EMITS]: onSelect(paths) - 选择文件后回调
- * [POS]: Sites CMS 的文件选择对话框，支持多工作区选择
+ * [POS]: Sites CMS 的文件选择对话框，支持多工作区选择（Lucide 图标）
  *
  * 混合模式：
  * - 当前工作区：使用传入的 currentTree（已验证可用）
@@ -11,13 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  File01Icon,
-  Folder01Icon,
-  FolderOpenIcon,
-} from '@hugeicons/core-free-icons';
+import { ArrowDown, ArrowRight, File, Folder, FolderOpen } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +21,6 @@ import {
 } from '@anyhunt/ui/components/dialog';
 import { Button } from '@anyhunt/ui/components/button';
 import { Checkbox } from '@anyhunt/ui/components/checkbox';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import type { VaultTreeNode, VaultItem } from '../../../../shared/ipc/vault';
@@ -100,7 +93,7 @@ function FileNode({
         onCheckedChange={() => onToggle(node.path)}
         onClick={(e) => e.stopPropagation()}
       />
-      <Icon icon={File01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <File className="h-4 w-4 shrink-0 text-muted-foreground" />
       <span className="truncate text-sm">{node.name.replace(/\.md$/, '')}</span>
     </div>
   );
@@ -157,11 +150,11 @@ function FolderNode({
           disabled={mdFiles.length === 0}
         />
         {expanded ? (
-          <Icon icon={ArrowDown01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         ) : (
-          <Icon icon={ArrowRight01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
-        <Icon icon={Folder01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm font-medium">{node.name}</span>
         {selectedCount > 0 && (
           <span className="ml-auto text-xs text-muted-foreground">{selectedCount}</span>
@@ -277,12 +270,12 @@ function VaultNode({
           disabled={loading}
         />
         {expanded ? (
-          <Icon icon={ArrowDown01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         ) : (
-          <Icon icon={ArrowRight01Icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-          <Icon icon={FolderOpenIcon} className="h-3.5 w-3.5 text-primary" />
+          <FolderOpen className="h-3.5 w-3.5 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">

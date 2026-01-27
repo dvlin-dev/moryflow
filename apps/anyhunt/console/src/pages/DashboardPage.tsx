@@ -1,16 +1,11 @@
 /**
  * [PROPS]: None
  * [EMITS]: Navigation to external docs
- * [POS]: 控制台 Dashboard（配额概览 + 快速上手）
+ * [POS]: 控制台 Dashboard（配额概览 + 快速上手，Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 apps/anyhunt/console/CLAUDE.md。
  */
-import {
-  ArrowUpRight01Icon,
-  Book01Icon,
-  Camera01Icon,
-  Key01Icon,
-} from '@hugeicons/core-free-icons';
+import { ArrowUpRight, Book, Camera, Key } from 'lucide-react';
 import { PageHeader } from '@anyhunt/ui';
 import {
   Button,
@@ -19,7 +14,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Icon,
   Progress,
   Skeleton,
 } from '@anyhunt/ui';
@@ -146,7 +140,7 @@ export default function DashboardPage() {
         <CardContent className="space-y-4">
           <div className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="p-2">
-              <Icon icon={Key01Icon} className="h-5 w-5 text-primary" />
+              <Key className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <h4 className="font-medium">1. Create API Key</h4>
@@ -161,7 +155,7 @@ export default function DashboardPage() {
 
           <div className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="p-2">
-              <Icon icon={Camera01Icon} className="h-5 w-5 text-primary" />
+              <Camera className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <h4 className="font-medium">2. Call Scrape API</h4>
@@ -179,7 +173,7 @@ export default function DashboardPage() {
 
           <div className="flex items-start gap-4 p-4 border rounded-lg">
             <div className="p-2">
-              <Icon icon={Book01Icon} className="h-5 w-5 text-primary" />
+              <Book className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <h4 className="font-medium">3. Read Documentation</h4>
@@ -188,7 +182,7 @@ export default function DashboardPage() {
               </p>
               <Button variant="link" className="px-0 h-auto mt-1" asChild>
                 <a href="https://docs.anyhunt.app" target="_blank" rel="noopener noreferrer">
-                  View docs <Icon icon={ArrowUpRight01Icon} className="h-3 w-3 ml-1" />
+                  View docs <ArrowUpRight className="h-3 w-3 ml-1" />
                 </a>
               </Button>
             </div>

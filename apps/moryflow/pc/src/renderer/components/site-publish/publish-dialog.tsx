@@ -16,14 +16,7 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Input } from '@anyhunt/ui/components/input';
 import { Label } from '@anyhunt/ui/components/label';
 import { Progress } from '@anyhunt/ui/components/progress';
-import {
-  AlertCircleIcon,
-  CheckmarkCircle01Icon,
-  File01Icon,
-  GlobeIcon,
-  Loading03Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { CircleAlert, CircleCheck, File, Globe, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BuildSiteInput, BuildProgressEvent } from '../../../shared/ipc/site-publish';
 import { useSitePublish } from './use-site-publish';
@@ -156,7 +149,7 @@ export function PublishDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon icon={GlobeIcon} className="size-5" />
+            <Globe className="size-5" />
             Publish to Website
           </DialogTitle>
           <DialogDescription>Publish selected documents as a public site.</DialogDescription>
@@ -167,7 +160,7 @@ export function PublishDialog({
             {/* 源文件预览 */}
             <div className="rounded-lg bg-muted/50 p-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <Icon icon={File01Icon} className="size-4" />
+                <File className="size-4" />
                 <span>Content to publish</span>
               </div>
               <div className="text-sm">
@@ -196,22 +189,13 @@ export function PublishDialog({
                     )}
                   />
                   {checkingSubdomain && (
-                    <Icon
-                      icon={Loading03Icon}
-                      className="absolute right-2 top-2.5 size-4 animate-spin text-muted-foreground"
-                    />
+                    <Loader className="absolute right-2 top-2.5 size-4 animate-spin text-muted-foreground" />
                   )}
                   {!checkingSubdomain && subdomainValid === true && (
-                    <Icon
-                      icon={CheckmarkCircle01Icon}
-                      className="absolute right-2 top-2.5 size-4 text-green-500"
-                    />
+                    <CircleCheck className="absolute right-2 top-2.5 size-4 text-green-500" />
                   )}
                   {!checkingSubdomain && subdomainValid === false && (
-                    <Icon
-                      icon={AlertCircleIcon}
-                      className="absolute right-2 top-2.5 size-4 text-red-500"
-                    />
+                    <CircleAlert className="absolute right-2 top-2.5 size-4 text-red-500" />
                   )}
                 </div>
                 <span className="text-sm text-muted-foreground">.moryflow.app</span>
@@ -255,7 +239,7 @@ export function PublishDialog({
         {step === 'publishing' && (
           <div className="py-8 space-y-4">
             <div className="flex flex-col items-center gap-4">
-              <Icon icon={Loading03Icon} className="size-8 animate-spin text-primary" />
+              <Loader className="size-8 animate-spin text-primary" />
               <div className="text-center">
                 <p className="font-medium">{progress?.message || 'Publishing...'}</p>
                 <p className="text-sm text-muted-foreground">
@@ -273,7 +257,7 @@ export function PublishDialog({
           <div className="py-8 space-y-4">
             <div className="flex flex-col items-center gap-4">
               <div className="size-12 rounded-full bg-green-100 flex items-center justify-center">
-                <Icon icon={CheckmarkCircle01Icon} className="size-6 text-green-600" />
+                <CircleCheck className="size-6 text-green-600" />
               </div>
               <div className="text-center">
                 <p className="font-medium">Published successfully!</p>
@@ -294,7 +278,7 @@ export function PublishDialog({
           <div className="py-8 space-y-4">
             <div className="flex flex-col items-center gap-4">
               <div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-                <Icon icon={AlertCircleIcon} className="size-6 text-red-600" />
+                <CircleAlert className="size-6 text-red-600" />
               </div>
               <div className="text-center">
                 <p className="font-medium text-red-600">Publishing failed</p>

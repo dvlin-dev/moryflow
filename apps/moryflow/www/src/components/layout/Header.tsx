@@ -1,15 +1,14 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Website top navigation bar with Logo, docs link, and download button
+ * [POS]: Website top navigation bar with Logo, docs link, and download button (Lucide icons direct render)
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Icon } from '@anyhunt/ui';
-import { Download01Icon, Book01Icon } from '@hugeicons/core-free-icons';
+import { Download, Book } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
 export function Header() {
@@ -66,14 +65,14 @@ export function Header() {
             className="flex items-center gap-1.5 text-sm font-medium text-mory-text-secondary hover:text-mory-orange transition-colors p-2 sm:p-0"
             title="Documentation"
           >
-            <Icon icon={Book01Icon} size={18} className="sm:w-4 sm:h-4" />
+            <Book size={18} className="sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Docs</span>
           </a>
           <button
             onClick={scrollToDownload}
             className="flex items-center gap-1.5 sm:gap-2 bg-mory-text-primary text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-medium hover:bg-black transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
           >
-            <Icon icon={Download01Icon} size={16} />
+            <Download size={16} />
             <span className="hidden sm:inline">Download</span>
           </button>
         </div>

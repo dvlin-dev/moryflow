@@ -81,7 +81,7 @@ const colors = useThemeColors()
 - Chat hook 发送前加入 compaction 预处理，避免消息列表与历史错位
 - AI Tool 新增权限审批卡（once/always）
 - AI ToolOutput 新增截断输出组件与完整内容弹层
-- Mobile 图标库切换为 Hugeicons，新增 `ui/icons.ts` 统一出口与 `ui/icon.tsx` 封装
+- Mobile 图标库切换为 Lucide（`lucide-react-native`），新增 `ui/icons.ts` 统一出口与 `ui/icon.tsx` 封装
 - 云同步相关组件状态文案统一为 Syncing/Synced/Needs attention，移除 raw error 展示
 - Workspace Sheet 保留唯一 Sync now 入口，状态卡仅展示状态与最后同步时间
 - Workspace Sheet 最后同步时间改为 i18n 格式化，避免硬编码中文

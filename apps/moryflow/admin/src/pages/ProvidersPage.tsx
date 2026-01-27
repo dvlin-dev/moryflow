@@ -26,8 +26,7 @@ import {
 } from '@/features/providers';
 import { ProviderFormDialog } from '@/features/providers/components';
 import type { AiProvider } from '@/types/api';
-import { Add01Icon, CloudServerIcon, Delete01Icon, PencilIcon } from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+import { Plus, Server, Delete, Pencil } from 'lucide-react';
 
 export default function ProvidersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -77,7 +76,7 @@ export default function ProvidersPage() {
         description="管理 AI 服务提供商配置（API Key、Base URL 等）"
         action={
           <Button onClick={handleAdd}>
-            <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             添加 Provider
           </Button>
         }
@@ -104,7 +103,7 @@ export default function ProvidersPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    <Icon icon={CloudServerIcon} className="h-5 w-5 text-muted-foreground" />
+                    <Server className="h-5 w-5 text-muted-foreground" />
                     <CardTitle className="text-base">{provider.name}</CardTitle>
                   </div>
                   <Switch
@@ -134,7 +133,7 @@ export default function ProvidersPage() {
 
                 <div className="flex gap-2 pt-2 border-t">
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(provider)}>
-                    <Icon icon={PencilIcon} className="h-4 w-4 mr-1" />
+                    <Pencil className="h-4 w-4 mr-1" />
                     编辑
                   </Button>
                   <Button
@@ -143,7 +142,7 @@ export default function ProvidersPage() {
                     className="text-destructive hover:text-destructive"
                     onClick={() => setDeleteProvider(provider)}
                   >
-                    <Icon icon={Delete01Icon} className="h-4 w-4 mr-1" />
+                    <Delete className="h-4 w-4 mr-1" />
                     删除
                   </Button>
                 </div>
@@ -153,10 +152,10 @@ export default function ProvidersPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Icon icon={CloudServerIcon} className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground mb-4">暂无 Provider 配置，请点击上方按钮添加</p>
           <Button onClick={handleAdd}>
-            <Icon icon={Add01Icon} className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             添加 Provider
           </Button>
         </div>

@@ -2,10 +2,9 @@
 
 import * as React from 'react';
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
-import { RadioButtonIcon } from '@hugeicons/core-free-icons';
+import { CircleDot } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function RadioGroup({
   className,
@@ -37,10 +36,7 @@ function RadioGroupItem({
         data-slot="radio-group-indicator"
         className="relative flex items-center justify-center"
       >
-        <Icon
-          icon={RadioButtonIcon}
-          className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2"
-        />
+        <CircleDot className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   );

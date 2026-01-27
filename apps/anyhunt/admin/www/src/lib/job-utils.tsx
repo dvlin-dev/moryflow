@@ -1,13 +1,10 @@
 /**
- * Job 相关共享工具函数和组件
+ * [PROVIDES]: formatMs, truncateUrl, getStatusBadge, ERROR_LABELS, ERROR_COLORS
+ * [DEPENDS]: none
+ * [POS]: Job 相关共享工具函数和组件（Lucide icons direct render）
  */
-import {
-  CancelCircleIcon,
-  CheckmarkCircle01Icon,
-  Clock01Icon,
-  Loading01Icon,
-} from '@hugeicons/core-free-icons';
-import { Badge, Icon } from '@anyhunt/ui';
+import { CircleX, CircleCheck, Clock, Loader } from 'lucide-react';
+import { Badge } from '@anyhunt/ui';
 import type { JobStatus, JobErrorCode } from '@/features/jobs';
 
 /**
@@ -35,28 +32,28 @@ export function getStatusBadge(status: JobStatus) {
     case 'PENDING':
       return (
         <Badge variant="outline" className="gap-1">
-          <Icon icon={Clock01Icon} className="h-3 w-3" />
+          <Clock className="h-3 w-3" />
           等待中
         </Badge>
       );
     case 'PROCESSING':
       return (
         <Badge variant="secondary" className="gap-1">
-          <Icon icon={Loading01Icon} className="h-3 w-3 animate-spin" />
+          <Loader className="h-3 w-3 animate-spin" />
           处理中
         </Badge>
       );
     case 'COMPLETED':
       return (
         <Badge variant="default" className="gap-1 bg-green-600">
-          <Icon icon={CheckmarkCircle01Icon} className="h-3 w-3" />
+          <CircleCheck className="h-3 w-3" />
           成功
         </Badge>
       );
     case 'FAILED':
       return (
         <Badge variant="destructive" className="gap-1">
-          <Icon icon={CancelCircleIcon} className="h-3 w-3" />
+          <CircleX className="h-3 w-3" />
           失败
         </Badge>
       );

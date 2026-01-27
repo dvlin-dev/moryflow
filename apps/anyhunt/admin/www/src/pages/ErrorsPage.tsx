@@ -1,15 +1,11 @@
 /**
- * Errors 页面
- * 错误分析
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Errors 页面 - 错误分析（Lucide icons direct render）
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Alert01Icon,
-  AnalyticsDownIcon,
-  ArrowUpRight01Icon,
-  PieChart01Icon,
-} from '@hugeicons/core-free-icons';
+import { TriangleAlert, TrendingDown, ArrowUpRight, ChartPie } from 'lucide-react';
 import { PageHeader } from '@anyhunt/ui';
 import {
   Card,
@@ -24,7 +20,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Select,
   SelectContent,
   SelectItem,
@@ -99,7 +94,7 @@ export default function ErrorsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Icon icon={Alert01Icon} className="h-5 w-5 text-red-500" />
+              <TriangleAlert className="h-5 w-5 text-red-500" />
               <span className="text-3xl font-bold text-red-600">{totalErrors}</span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{days} 天内总错误数</p>
@@ -131,7 +126,7 @@ export default function ErrorsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <Icon icon={PieChart01Icon} className="h-4 w-4" />
+                <ChartPie className="h-4 w-4" />
                 错误分布
               </CardTitle>
             </CardHeader>
@@ -168,7 +163,7 @@ export default function ErrorsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                <Icon icon={AnalyticsDownIcon} className="h-4 w-4" />
+                <TrendingDown className="h-4 w-4" />
                 错误趋势
               </CardTitle>
             </CardHeader>
@@ -296,7 +291,7 @@ export default function ErrorsPage() {
                         size="icon"
                         onClick={() => navigate(`/jobs/${error.id}`)}
                       >
-                        <Icon icon={ArrowUpRight01Icon} className="h-4 w-4" />
+                        <ArrowUpRight className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

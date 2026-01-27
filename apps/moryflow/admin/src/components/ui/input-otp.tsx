@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { OTPInput, OTPInputContext } from 'input-otp';
-import { RecordIcon } from '@hugeicons/core-free-icons';
+import { Circle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function InputOTP({
   className,
@@ -61,7 +60,7 @@ function InputOTPSlot({
 function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
   return (
     <div data-slot="input-otp-separator" role="separator" {...props}>
-      <Icon icon={RecordIcon} className="size-2" />
+      <Circle className="size-2" />
     </div>
   );
 }

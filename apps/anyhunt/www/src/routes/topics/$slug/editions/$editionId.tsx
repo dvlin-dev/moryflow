@@ -3,13 +3,12 @@
  *
  * [INPUT]: slug, editionId params
  * [OUTPUT]: Full edition content with all items
- * [POS]: /topics/:slug/editions/:editionId - Single edition page for SEO
+ * [POS]: /topics/:slug/editions/:editionId - Single edition page for SEO (Lucide icons direct render)
  */
 
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft01Icon, Calendar01Icon, News01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft, Calendar, Newspaper } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
 import { EditionContentItem } from '@/components/digest';
 import { getEditionById, type DigestEditionDetail } from '@/lib/digest-api';
@@ -71,7 +70,7 @@ function EditionDetailPage() {
                 params={{ slug }}
                 className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to topic
               </Link>
             </div>
@@ -96,7 +95,7 @@ function EditionDetailPage() {
               params={{ slug }}
               className="mb-4 inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700"
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               Back to topic
             </Link>
 
@@ -104,7 +103,7 @@ function EditionDetailPage() {
 
             <div className="mt-3 flex items-center gap-4 text-sm text-neutral-500">
               <span className="flex items-center gap-1">
-                <HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4" />
+                <Calendar className="h-4 w-4" />
                 {new Date(displayDate).toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
@@ -113,7 +112,7 @@ function EditionDetailPage() {
                 })}
               </span>
               <span className="flex items-center gap-1">
-                <HugeiconsIcon icon={News01Icon} className="h-4 w-4" />
+                <Newspaper className="h-4 w-4" />
                 {edition.itemCount} items
               </span>
             </div>

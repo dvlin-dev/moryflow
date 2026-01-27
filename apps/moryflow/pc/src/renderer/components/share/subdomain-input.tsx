@@ -1,13 +1,12 @@
 /**
  * [PROPS]: { value, onChange, status, message, disabled }
  * [EMITS]: onChange(value) - 输入变更时触发
- * [POS]: 子域名输入组件，用于 PublishPanel
+ * [POS]: 子域名输入组件，用于 PublishPanel（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Cancel01Icon, Loading03Icon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { X, Loader, Check } from 'lucide-react';
 import { Input } from '@anyhunt/ui/components/input';
 import { cn } from '@/lib/utils';
 import type { SubdomainInputProps, SubdomainStatus } from './const';
@@ -16,10 +15,10 @@ import { SUBDOMAIN_SUFFIX } from './const';
 /** 状态图标映射 */
 const StatusIcon: Record<SubdomainStatus, React.ReactNode> = {
   idle: null,
-  checking: <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin text-muted-foreground" />,
-  available: <Icon icon={Tick02Icon} className="h-4 w-4 text-green-500" />,
-  taken: <Icon icon={Cancel01Icon} className="h-4 w-4 text-destructive" />,
-  invalid: <Icon icon={Cancel01Icon} className="h-4 w-4 text-destructive" />,
+  checking: <Loader className="h-4 w-4 animate-spin text-muted-foreground" />,
+  available: <Check className="h-4 w-4 text-green-500" />,
+  taken: <X className="h-4 w-4 text-destructive" />,
+  invalid: <X className="h-4 w-4 text-destructive" />,
 };
 
 /** 状态颜色映射 */

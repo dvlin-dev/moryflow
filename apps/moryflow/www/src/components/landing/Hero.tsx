@@ -1,14 +1,13 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Homepage Hero section with scenario demo animation
+ * [POS]: Homepage Hero section with scenario demo animation (Lucide icons direct render)
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Icon } from '@anyhunt/ui';
-import { CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import { CircleCheck } from 'lucide-react';
 
 const scenarios = [
   {
@@ -162,8 +161,7 @@ export function Hero() {
                       </>
                     ) : (
                       <>
-                        <Icon
-                          icon={CheckmarkCircle01Icon}
+                        <CircleCheck
                           size={16}
                           className="text-mory-orange flex-shrink-0 mt-0.5 sm:w-5 sm:h-5"
                         />

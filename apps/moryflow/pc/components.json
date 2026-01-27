@@ -9,7 +9,7 @@
     "baseColor": "slate",
     "cssVariables": true
   },
-  "iconLibrary": "hugeicons",
+  "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils"

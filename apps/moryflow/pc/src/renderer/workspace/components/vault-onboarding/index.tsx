@@ -1,20 +1,14 @@
 /**
  * [PROPS]: VaultOnboardingProps
  * [EMITS]: onOpenVault/onSelectDirectory/onCreateVault
- * [POS]: 首次进入的 Vault 选择与创建引导
+ * [POS]: 首次进入的 Vault 选择与创建引导（Lucide 图标）
  */
 
 import { useState, useCallback } from 'react';
 import { Button } from '@anyhunt/ui/components/button';
 import { Input } from '@anyhunt/ui/components/input';
-import {
-  ArrowLeft01Icon,
-  CloudIcon,
-  FolderAddIcon,
-  FolderOpenIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
-import type { HugeIcon } from '@anyhunt/ui/components/icon';
+import type { LucideIcon } from 'lucide-react';
+import { ArrowLeft, Cloud, FolderPlus, FolderOpen } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import type { VaultOnboardingProps, OnboardingView } from './const';
 import { getOpenButtonLabel, getCreateButtonLabel } from './handle';
@@ -33,7 +27,7 @@ const OptionRow = ({
   comingSoon,
   comingSoonLabel,
 }: {
-  icon: HugeIcon;
+  icon: LucideIcon;
   title: string;
   description: string;
   action?: () => void;
@@ -42,33 +36,37 @@ const OptionRow = ({
   disabled?: boolean;
   comingSoon?: boolean;
   comingSoonLabel?: string;
-}) => (
-  <div className="flex items-center justify-between py-4 border-b border-border/50 last:border-b-0">
-    <div className="flex items-center gap-4">
-      <Icon icon={icon} className="h-5 w-5 text-muted-foreground" />
-      <div>
-        <h3 className="text-sm font-medium">{title}</h3>
-        <p className="text-xs text-muted-foreground">{description}</p>
+}) => {
+  const IconComponent = icon;
+
+  return (
+    <div className="flex items-center justify-between py-4 border-b border-border/50 last:border-b-0">
+      <div className="flex items-center gap-4">
+        <IconComponent className="h-5 w-5 text-muted-foreground" />
+        <div>
+          <h3 className="text-sm font-medium">{title}</h3>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
       </div>
+      {comingSoon ? (
+        <span className="text-xs text-muted-foreground px-3 py-1.5 rounded-md bg-muted">
+          {comingSoonLabel}
+        </span>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={action}
+          disabled={disabled}
+          className="min-w-[72px]"
+          data-testid={buttonTestId}
+        >
+          {actionLabel}
+        </Button>
+      )}
     </div>
-    {comingSoon ? (
-      <span className="text-xs text-muted-foreground px-3 py-1.5 rounded-md bg-muted">
-        {comingSoonLabel}
-      </span>
-    ) : (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={action}
-        disabled={disabled}
-        className="min-w-[72px]"
-        data-testid={buttonTestId}
-      >
-        {actionLabel}
-      </Button>
-    )}
-  </div>
-);
+  );
+};
 
 /** 主视图 - 选项列表 */
 const MainView = ({
@@ -84,7 +82,7 @@ const MainView = ({
 }) => (
   <div className="space-y-1">
     <OptionRow
-      icon={FolderAddIcon}
+      icon={FolderPlus}
       title={t('createVaultTitle')}
       description={t('createVaultDescription')}
       action={onCreateClick}
@@ -93,7 +91,7 @@ const MainView = ({
       disabled={isPickingVault}
     />
     <OptionRow
-      icon={FolderOpenIcon}
+      icon={FolderOpen}
       title={t('openLocalVaultTitle')}
       description={t('openLocalVaultDescription')}
       action={() => void onOpenVault()}
@@ -102,7 +100,7 @@ const MainView = ({
       disabled={isPickingVault}
     />
     <OptionRow
-      icon={CloudIcon}
+      icon={Cloud}
       title={t('syncRemoteVaultTitle')}
       description={t('syncRemoteVaultDescription')}
       comingSoon
@@ -136,7 +134,7 @@ const CreateView = ({
       onClick={onBack}
       className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
-      <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
+      <ArrowLeft className="h-4 w-4" />
       {t('back')}
     </button>
     <h2 className="text-base font-medium">{t('createLocalVault')}</h2>

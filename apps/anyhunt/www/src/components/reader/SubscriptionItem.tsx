@@ -1,11 +1,11 @@
 /**
  * [PROPS]: subscription, isSelected, onSelect, callbacks
- * [POS]: Single subscription item with hover menu, context menu, and long press on mobile
+ * [POS]: Single subscription item with hover menu, context menu, and long press on mobile (Lucide icons direct render)
  */
 
 import { useState, type MouseEvent, useCallback } from 'react';
-import { Badge, Button, Icon, cn } from '@anyhunt/ui';
-import { MoreHorizontalIcon, RssIcon } from '@hugeicons/core-free-icons';
+import { Badge, Button, cn } from '@anyhunt/ui';
+import { Ellipsis, Rss } from 'lucide-react';
 import { SubscriptionContextMenu } from './SubscriptionContextMenu';
 import { MobileActionSheet } from './MobileActionSheet';
 import { useLongPress } from '@/hooks/useLongPress';
@@ -86,7 +86,7 @@ export function SubscriptionItem({
       }}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <Icon icon={RssIcon} className="size-4 shrink-0" />
+        <Rss className="size-4 shrink-0" />
         <span className="truncate">{subscription.name}</span>
         {!subscription.enabled && (
           <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
@@ -106,7 +106,7 @@ export function SubscriptionItem({
             setMenuOpen(true);
           }}
         >
-          <Icon icon={MoreHorizontalIcon} className="size-4" />
+          <Ellipsis className="size-4" />
         </Button>
       )}
     </div>

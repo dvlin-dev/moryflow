@@ -3,18 +3,12 @@
  *
  * [INPUT]: slug param
  * [OUTPUT]: Topic detail with editions list
- * [POS]: /topics/:slug - Single topic page for SEO
+ * [POS]: /topics/:slug - Single topic page for SEO (Lucide icons direct render)
  */
 
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import {
-  ArrowLeft01Icon,
-  UserMultipleIcon,
-  Calendar01Icon,
-  Flag01Icon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft, Users, Calendar, Flag } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
 import { EditionListItem, ReportTopicDialog } from '@/components/digest';
 import {
@@ -109,7 +103,7 @@ function TopicDetailPage() {
                 to="/topics"
                 className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to topics
               </Link>
             </div>
@@ -131,7 +125,7 @@ function TopicDetailPage() {
               to="/topics"
               className="mb-4 inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700"
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               Back to topics
             </Link>
 
@@ -143,12 +137,12 @@ function TopicDetailPage() {
                 )}
                 <div className="flex items-center gap-4 text-sm text-neutral-500">
                   <span className="flex items-center gap-1">
-                    <HugeiconsIcon icon={UserMultipleIcon} className="h-4 w-4" />
+                    <Users className="h-4 w-4" />
                     {topic.subscriberCount} subscribers
                   </span>
                   {topic.lastEditionAt && (
                     <span className="flex items-center gap-1">
-                      <HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4" />
+                      <Calendar className="h-4 w-4" />
                       Last updated{' '}
                       {new Date(topic.lastEditionAt).toLocaleDateString('en-US', {
                         month: 'short',
@@ -185,7 +179,7 @@ function TopicDetailPage() {
                   className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900"
                   title="Report this topic"
                 >
-                  <HugeiconsIcon icon={Flag01Icon} className="h-4 w-4" />
+                  <Flag className="h-4 w-4" />
                   <span className="sr-only">Report</span>
                 </button>
               </div>

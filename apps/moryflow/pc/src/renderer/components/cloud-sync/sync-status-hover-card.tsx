@@ -1,24 +1,22 @@
 /**
  * [PROPS]: children, vaultPath, onOpenSettings
  * [EMITS]: onOpenSettings? - 需要跳转设置时触发
- * [POS]: 云同步状态 HoverCard，展示摘要状态与单一操作入口
+ * [POS]: 云同步状态 HoverCard，展示摘要状态与单一操作入口（Lucide icons direct render）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useMemo, type ReactNode } from 'react';
-import { AlertCircleIcon, CloudIcon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { CircleAlert, Cloud, Loader, type LucideIcon } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@anyhunt/ui/components/hover-card';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
-import type { HugeIcon } from '@anyhunt/ui/components/icon';
 
 type DisplayStatusKey = 'synced' | 'syncing' | 'needsAttention';
 
 type StatusConfig = {
-  icon: HugeIcon;
+  icon: LucideIcon;
   title: string;
   description: string;
   colorClass: string;
@@ -28,14 +26,14 @@ type StatusConfig = {
 
 const getStatusConfig = (t: any): Record<DisplayStatusKey, StatusConfig> => ({
   synced: {
-    icon: CloudIcon,
+    icon: Cloud,
     title: t('synced'),
     description: t('allChangesSynced'),
     colorClass: 'text-emerald-500',
     bgClass: 'bg-emerald-500/10',
   },
   syncing: {
-    icon: Loading03Icon,
+    icon: Loader,
     title: t('syncing'),
     description: t('syncingChanges'),
     colorClass: 'text-primary',
@@ -43,7 +41,7 @@ const getStatusConfig = (t: any): Record<DisplayStatusKey, StatusConfig> => ({
     animate: true,
   },
   needsAttention: {
-    icon: AlertCircleIcon,
+    icon: CircleAlert,
     title: t('needsAttention'),
     description: t('syncPausedDescription'),
     colorClass: 'text-amber-500',
@@ -107,6 +105,7 @@ export const SyncStatusHoverCard = ({
     if (needsAttention) return STATUS_CONFIG.needsAttention;
     return STATUS_CONFIG.synced;
   }, [STATUS_CONFIG, isSyncing, needsAttention]);
+  const StatusIcon = displayStatus.icon;
 
   const lastSyncLabel = useMemo(
     () => formatLastSyncTime(status?.lastSyncAt ?? null, t),
@@ -135,8 +134,7 @@ export const SyncStatusHoverCard = ({
         <div className="space-y-3">
           <div className="flex items-start gap-3">
             <div className={`rounded-lg p-2 ${displayStatus.bgClass}`}>
-              <Icon
-                icon={displayStatus.icon}
+              <StatusIcon
                 className={`h-5 w-5 ${displayStatus.colorClass} ${displayStatus.animate ? 'animate-spin' : ''}`}
               />
             </div>

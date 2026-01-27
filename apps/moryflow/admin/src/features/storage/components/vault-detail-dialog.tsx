@@ -15,15 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatBytes, getTierDisplayName } from '../const';
 import { formatDate } from '@/lib/format';
-import { Icon } from '@/components/ui/icon';
 import type { VaultDetailResponse, VaultDevice, VaultFile } from '@/types/storage';
-import {
-  File01Icon,
-  FolderOpenIcon,
-  HardDriveIcon,
-  MobileNavigator01Icon,
-  UserIcon,
-} from '@hugeicons/core-free-icons';
+import { File, FolderOpen, HardDrive, Smartphone, User } from 'lucide-react';
 
 interface VaultDetailDialogProps {
   open: boolean;
@@ -55,7 +48,7 @@ export function VaultDetailDialog({
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <Icon icon={FolderOpenIcon} className="h-4 w-4" />
+          <FolderOpen className="h-4 w-4" />
           基本信息
         </h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -78,7 +71,7 @@ export function VaultDetailDialog({
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <Icon icon={UserIcon} className="h-4 w-4" />
+          <User className="h-4 w-4" />
           所属用户
         </h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -107,7 +100,7 @@ export function VaultDetailDialog({
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <Icon icon={HardDriveIcon} className="h-4 w-4" />
+          <HardDrive className="h-4 w-4" />
           统计信息
         </h4>
         <div className="grid grid-cols-3 gap-4">
@@ -134,7 +127,7 @@ export function VaultDetailDialog({
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <Icon icon={MobileNavigator01Icon} className="h-4 w-4" />
+          <Smartphone className="h-4 w-4" />
           已注册设备 ({data.devices.length})
         </h4>
         {data.devices.length > 0 ? (
@@ -164,7 +157,7 @@ export function VaultDetailDialog({
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-medium flex items-center gap-2">
-          <Icon icon={File01Icon} className="h-4 w-4" />
+          <File className="h-4 w-4" />
           最近文件 ({data.recentFiles.length})
         </h4>
         {data.recentFiles.length > 0 ? (
@@ -213,7 +206,7 @@ export function VaultDetailDialog({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon icon={FolderOpenIcon} className="h-5 w-5" />
+            <FolderOpen className="h-5 w-5" />
             Vault 详情
           </DialogTitle>
         </DialogHeader>

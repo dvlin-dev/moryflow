@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- 控制台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，避免静默失败
 - 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本
 - Memox Playground 表单修复 FormField 上下文错误，并补齐回归测试
@@ -44,7 +45,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Zustand 管理登录状态，React Query 管理数据
 - UI 风格：Moryflow 圆角 + 柔和层级
 - 组件统一从 `/ui` 导入
-- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
+- 图标统一 Lucide（`lucide-react`），直接组件调用
 - 全局样式仅引入 `/ui/styles`，`@source` 只扫描本应用源码
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - Vite 需 `resolve.dedupe` React 依赖，避免生产环境 hooks 异常
@@ -204,7 +205,7 @@ export function useScrape(apiKey: string) {
 ```
 console/
 ├── /ui - UI components
-├── @hugeicons/core-free-icons - Icon library
+├── lucide-react - Icon library
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

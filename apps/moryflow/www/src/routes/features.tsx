@@ -1,21 +1,12 @@
 /**
  * [PROPS]: 无
  * [EMITS]: 无
- * [POS]: 功能特性页面
+ * [POS]: 功能特性页面（Lucide icons direct render）
  */
 
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import type { HugeIcon } from '@anyhunt/ui';
-import { Icon } from '@anyhunt/ui';
-import {
-  BrainIcon,
-  Globe02Icon,
-  PencilEdit01Icon,
-  Shield01Icon,
-  FlashIcon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
+import { Brain, Globe, Pencil, Shield, Zap, Sparkles, type LucideIcon } from 'lucide-react';
 
 export const Route = createFileRoute('/features')({
   head: () => ({
@@ -30,43 +21,43 @@ export const Route = createFileRoute('/features')({
   component: FeaturesPage,
 });
 
-const features: { icon: HugeIcon; title: string; description: string; color: string }[] = [
+const features: { icon: LucideIcon; title: string; description: string; color: string }[] = [
   {
-    icon: BrainIcon,
+    icon: Brain,
     title: 'Long-term Memory',
     description:
       'Mory remembers your notes, habits, and preferences. The more you use it, the better it understands you.',
     color: 'from-orange-500 to-amber-500',
   },
   {
-    icon: Globe02Icon,
+    icon: Globe,
     title: 'Web Search',
     description:
       'When needed, Mory searches the web for the latest information - exam tips, creative ideas, travel guides.',
     color: 'from-blue-500 to-cyan-500',
   },
   {
-    icon: PencilEdit01Icon,
+    icon: Pencil,
     title: 'Content Creation',
     description:
       'Not just answering questions - Mory generates content. Study plans, proposals, work summaries.',
     color: 'from-purple-500 to-pink-500',
   },
   {
-    icon: Shield01Icon,
+    icon: Shield,
     title: 'Local-first Privacy',
     description:
       'Your data stays on your device by default. No cloud uploads unless you choose to sync.',
     color: 'from-green-500 to-emerald-500',
   },
   {
-    icon: FlashIcon,
+    icon: Zap,
     title: 'Instant Response',
     description: 'No network latency for local operations. Mory is always ready, always fast.',
     color: 'from-yellow-500 to-orange-500',
   },
   {
-    icon: SparklesIcon,
+    icon: Sparkles,
     title: 'Continuous Evolution',
     description: 'Mory is constantly improving with new capabilities being added regularly.',
     color: 'from-indigo-500 to-purple-500',
@@ -93,27 +84,30 @@ function FeaturesPage() {
       <section className="px-4 sm:px-6 py-16">
         <div className="container mx-auto max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group relative bg-white rounded-3xl p-8 border border-gray-100 hover:border-mory-orange/30 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md"
-              >
-                {/* Icon */}
-                <div className="mb-6">
-                  <div
-                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center`}
-                  >
-                    <Icon icon={feature.icon} size={28} className="text-white" />
+            {features.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <div
+                  key={index}
+                  className="group relative bg-white rounded-3xl p-8 border border-gray-100 hover:border-mory-orange/30 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md"
+                >
+                  {/* Icon */}
+                  <div className="mb-6">
+                    <div
+                      className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center`}
+                    >
+                      <IconComponent size={28} className="text-white" />
+                    </div>
                   </div>
-                </div>
 
-                {/* Content */}
-                <h3 className="text-xl font-serif font-bold text-mory-text-primary mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-mory-text-secondary leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+                  {/* Content */}
+                  <h3 className="text-xl font-serif font-bold text-mory-text-primary mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-mory-text-secondary leading-relaxed">{feature.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

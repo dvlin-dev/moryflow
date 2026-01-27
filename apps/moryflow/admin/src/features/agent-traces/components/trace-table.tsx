@@ -12,8 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { File01Icon, ViewIcon } from '@hugeicons/core-free-icons';
+import { File, View } from 'lucide-react';
 import { formatDateTime, formatDuration, formatTokens } from '@/lib/format';
 import { TraceStatusBadge } from './trace-status-badge';
 import type { AgentTrace } from '../types';
@@ -80,7 +79,7 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => onViewDetail(trace)}>
-                    <Icon icon={ViewIcon} className="h-4 w-4" />
+                    <View className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -88,7 +87,7 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
           ) : (
             <TableRow>
               <TableCell colSpan={8} className="text-center py-12">
-                <Icon icon={File01Icon} className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <File className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">暂无执行记录</p>
               </TableCell>
             </TableRow>

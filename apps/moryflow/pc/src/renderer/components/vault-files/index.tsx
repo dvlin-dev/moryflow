@@ -1,14 +1,13 @@
 /**
  * [PROPS]: VaultFilesProps - 文件树数据和操作回调
  * [EMITS]: 多个回调用于文件/文件夹操作
- * [POS]: 文件树根组件，管理拖拽状态和 Context（含 E2E 选择器）
+ * [POS]: 文件树根组件，管理拖拽状态和 Context（含 E2E 选择器，Lucide 图标）
  */
 
 import { useState, useMemo, type DragEvent } from 'react';
-import { FileAddIcon } from '@hugeicons/core-free-icons';
+import { FilePlus } from 'lucide-react';
 import { Files, FilesHighlight } from '@anyhunt/ui/animate/primitives/base/files';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { ROOT_DROP_TARGET_ID, type VaultFilesProps } from './const';
@@ -117,7 +116,7 @@ export const VaultFiles = ({
           onClick={onCreateFileInRoot}
           data-testid="vault-empty-create-note"
         >
-          <Icon icon={FileAddIcon} className="mr-2 size-4" />
+          <FilePlus className="mr-2 size-4" />
           {t('newNote')}
         </Button>
       </div>

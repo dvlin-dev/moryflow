@@ -1,4 +1,4 @@
-import { File01Icon, Folder01Icon, FolderOpenIcon } from '@hugeicons/core-free-icons';
+import { File, Folder, FolderOpen, type LucideIcon } from 'lucide-react';
 
 import {
   Files as FilesPrimitive,
@@ -20,7 +20,6 @@ import {
   type FileProps as FilePrimitiveProps,
   type FileLabelProps as FileLabelPrimitiveProps,
 } from '../../primitives/base/files';
-import { Icon, type HugeIcon } from '../../../components/icon';
 import { cn } from '../../../lib/utils';
 
 type GitStatus = 'untracked' | 'modified' | 'deleted';
@@ -68,8 +67,8 @@ function FolderTrigger({ children, className, gitStatus, ...props }: FolderTrigg
               )}
             >
               <FolderIconPrimitive
-                closeIcon={<Icon icon={Folder01Icon} className="size-4.5" />}
-                openIcon={<Icon icon={FolderOpenIcon} className="size-4.5" />}
+                closeIcon={<Folder className="size-4.5" />}
+                openIcon={<FolderOpen className="size-4.5" />}
               />
               <FileLabelPrimitive className={cn('text-sm', className)} {...props}>
                 {children}
@@ -104,11 +103,12 @@ function FolderPanel(props: FolderPanelProps) {
 }
 
 type FileItemProps = FilePrimitiveProps & {
-  icon?: HugeIcon;
+  icon?: LucideIcon;
   gitStatus?: GitStatus;
 };
 
-function FileItem({ icon = File01Icon, className, children, gitStatus, ...props }: FileItemProps) {
+function FileItem({ icon = File, className, children, gitStatus, ...props }: FileItemProps) {
+  const IconComponent = icon;
   return (
     <FileHighlightPrimitive>
       <FilePrimitive
@@ -121,7 +121,7 @@ function FileItem({ icon = File01Icon, className, children, gitStatus, ...props 
       >
         <div className="flex items-center gap-2">
           <FileIconPrimitive>
-            <Icon icon={icon} className="size-4.5" />
+            <IconComponent className="size-4.5" />
           </FileIconPrimitive>
           <FileLabelPrimitive className={cn('text-sm', className)} {...props}>
             {children}

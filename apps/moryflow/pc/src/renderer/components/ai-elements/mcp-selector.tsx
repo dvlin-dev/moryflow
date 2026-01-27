@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 import { Button } from '@anyhunt/ui/components/button';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import {
-  Add01Icon,
-  LegalHammerIcon,
-  Loading03Icon,
-  RefreshIcon,
-  Settings02Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Plus, Gavel, Loader, RefreshCw, Settings } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { useMcpStatus } from '@/hooks/use-mcp-status';
 import type { SettingsSection } from '@/components/settings-dialog/const';
@@ -49,7 +42,7 @@ export const McpSelector = ({ disabled, onOpenSettings }: McpSelectorProps) => {
           className="h-8 gap-1.5 px-2 text-xs transition-colors duration-fast"
           disabled={disabled}
         >
-          <Icon icon={LegalHammerIcon} className="size-4" />
+          <Gavel className="size-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="center" side="top" sideOffset={8}>
@@ -66,9 +59,9 @@ export const McpSelector = ({ disabled, onOpenSettings }: McpSelectorProps) => {
               title={t('reconnectAllServers')}
             >
               {isReloading ? (
-                <Icon icon={Loading03Icon} className="size-4 animate-spin" />
+                <Loader className="size-4 animate-spin" />
               ) : (
-                <Icon icon={RefreshIcon} className="size-4" />
+                <RefreshCw className="size-4" />
               )}
             </Button>
           )}
@@ -108,7 +101,7 @@ export const McpSelector = ({ disabled, onOpenSettings }: McpSelectorProps) => {
                     }}
                     title={t('manageServer')}
                   >
-                    <Icon icon={Settings02Icon} className="size-3.5" />
+                    <Settings className="size-3.5" />
                   </Button>
                 </div>
               ))}
@@ -129,7 +122,7 @@ export const McpSelector = ({ disabled, onOpenSettings }: McpSelectorProps) => {
                 onOpenSettings?.('mcp');
               }}
             >
-              <Icon icon={Add01Icon} className="mr-2 size-3.5" />
+              <Plus className="mr-2 size-3.5" />
               {t('addMcpServer')}
             </Button>
           </div>

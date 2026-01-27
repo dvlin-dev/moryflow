@@ -1,18 +1,17 @@
 /**
  * [PROPS]: LoginFormProps
  * [EMITS]: onSuccess
- * [POS]: 统一登录表单组件
+ * [POS]: 统一登录表单组件（Lucide icons direct render）
  */
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import { Link02Icon, Loading01Icon } from '@hugeicons/core-free-icons';
+import { Link, Loader } from 'lucide-react';
 import {
   Button,
   Card,
   CardContent,
-  Icon,
   Input,
   Form,
   FormControl,
@@ -95,7 +94,7 @@ export function LoginForm({
         {variant === 'page' && (
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-2">
-              <Icon icon={Link02Icon} className="size-8" />
+              <Link className="size-8" />
               <h1 className="font-mono text-2xl font-bold">Anyhunt</h1>
             </div>
             <p className="text-balance text-sm text-muted-foreground">Sign in to your account</p>
@@ -160,7 +159,7 @@ export function LoginForm({
           <Button type="submit" className="w-full font-mono" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
                 Signing in...
               </>
             ) : (

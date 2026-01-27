@@ -2,15 +2,13 @@
  * NavMain - 主导航组件（支持二级菜单）
  * 基于 shadcn sidebar collapsible 模式
  */
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  Icon,
-  type HugeIcon,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -32,7 +30,7 @@ export interface NavSubItem {
 export interface NavItem {
   title: string;
   url?: string;
-  icon: HugeIcon;
+  icon: LucideIcon;
   items?: NavSubItem[];
   external?: boolean;
 }
@@ -73,6 +71,7 @@ export function NavMain({ groups }: NavMainProps) {
             {group.items.map((item) => {
               // 有子菜单的项目 - 使用 Collapsible
               if (item.items && item.items.length > 0) {
+                const IconComponent = item.icon;
                 return (
                   <Collapsible
                     key={item.title}
@@ -83,12 +82,9 @@ export function NavMain({ groups }: NavMainProps) {
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton tooltip={item.title}>
-                          <Icon icon={item.icon} className="size-4" />
+                          <IconComponent className="size-4" />
                           <span>{item.title}</span>
-                          <Icon
-                            icon={ArrowRight01Icon}
-                            className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                          />
+                          <ArrowRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
@@ -110,14 +106,15 @@ export function NavMain({ groups }: NavMainProps) {
               }
 
               // 无子菜单的项目 - 直接链接
+              const IconComponent = item.icon;
               const LinkComponent = item.external ? (
                 <a href={item.url || '#'} target="_blank" rel="noopener noreferrer">
-                  <Icon icon={item.icon} className="size-4" />
+                  <IconComponent className="size-4" />
                   <span>{item.title}</span>
                 </a>
               ) : (
                 <Link to={item.url || '#'}>
-                  <Icon icon={item.icon} className="size-4" />
+                  <IconComponent className="size-4" />
                   <span>{item.title}</span>
                 </Link>
               );

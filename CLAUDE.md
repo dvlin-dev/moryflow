@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-01-27（CI：Vitest 单测限制 maxWorkers=2，平衡稳定性与速度）
 > 最近更新：2026-01-27（CI：Turbo 并发参数改为直接传给 turbo，避免透传到 vitest）
 > 最近更新：2026-01-27（CI：PR 仅跑变更单测，build 仅在非 PR 触发）
@@ -607,7 +608,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 - 留白即设计，避免拥挤
 - 阴影微妙克制
 - 动效自然流畅
-- 图标统一使用 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`），禁止 `lucide-react` / `@tabler/icons-react`
+- 图标统一使用 Lucide（`lucide-react`），直接组件调用，禁止 `@hugeicons/*` / `@tabler/icons-react`
 
 ### 主题色变量
 

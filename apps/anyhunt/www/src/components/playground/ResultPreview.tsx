@@ -1,10 +1,11 @@
-import {
-  AlertCircleIcon,
-  ArrowUpRight01Icon,
-  Download01Icon,
-  Loading01Icon,
-} from '@hugeicons/core-free-icons';
-import { Button, Icon } from '@anyhunt/ui';
+/**
+ * [PROPS]: isLoading, error, imageUrl
+ * [EMITS]: none
+ * [POS]: Playground result preview (Lucide icons direct render)
+ */
+
+import { CircleAlert, ArrowUpRight, Download, Loader } from 'lucide-react';
+import { Button } from '@anyhunt/ui';
 
 interface ResultPreviewProps {
   isLoading: boolean;
@@ -17,7 +18,7 @@ export function ResultPreview({ isLoading, error, imageUrl }: ResultPreviewProps
     return (
       <div className="flex h-[400px] items-center justify-center border border-border bg-muted/30">
         <div className="flex flex-col items-center gap-3">
-          <Icon icon={Loading01Icon} className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
           <span className="font-mono text-sm text-muted-foreground">Capturing screenshot...</span>
         </div>
       </div>
@@ -28,7 +29,7 @@ export function ResultPreview({ isLoading, error, imageUrl }: ResultPreviewProps
     return (
       <div className="flex h-[400px] items-center justify-center border border-destructive/50 bg-destructive/5">
         <div className="flex flex-col items-center gap-3 px-4 text-center">
-          <Icon icon={AlertCircleIcon} className="h-8 w-8 text-destructive" />
+          <CircleAlert className="h-8 w-8 text-destructive" />
           <span className="font-mono text-sm text-destructive">{error}</span>
         </div>
       </div>
@@ -44,13 +45,13 @@ export function ResultPreview({ isLoading, error, imageUrl }: ResultPreviewProps
         <div className="flex gap-2">
           <a href={imageUrl} download="screenshot.png">
             <Button variant="outline" size="sm" className="font-mono">
-              <Icon icon={Download01Icon} className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
           </a>
           <a href={imageUrl} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm" className="font-mono">
-              <Icon icon={ArrowUpRight01Icon} className="mr-2 h-4 w-4" />
+              <ArrowUpRight className="mr-2 h-4 w-4" />
               Open Full Size
             </Button>
           </a>

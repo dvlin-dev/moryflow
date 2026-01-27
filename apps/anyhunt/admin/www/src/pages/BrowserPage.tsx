@@ -1,17 +1,11 @@
 /**
- * Admin Browser Pool Status - 浏览器池状态监控
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Admin Browser Pool Status - 浏览器池状态监控（Lucide icons direct render）
  */
 import { useBrowserStatus, type BrowserPoolDetailedStatus } from '@/features/browser';
-import {
-  Activity01Icon,
-  AlertCircleIcon,
-  Clock01Icon,
-  ComputerIcon,
-  CpuIcon,
-  HardDriveIcon,
-  ServerStack01Icon,
-} from '@hugeicons/core-free-icons';
-import { Icon, Progress, Skeleton } from '@anyhunt/ui';
+import { Activity, CircleAlert, Clock, Computer, Cpu, HardDrive, Server } from 'lucide-react';
+import { Progress, Skeleton } from '@anyhunt/ui';
 
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -54,7 +48,7 @@ function ErrorState({ message }: { message: string }) {
     <div className="space-y-6">
       <PageHeader />
       <div className="flex flex-col items-center justify-center h-64 border border-destructive/20 bg-destructive/5 rounded-xl">
-        <Icon icon={AlertCircleIcon} className="h-12 w-12 text-destructive mb-4" />
+        <CircleAlert className="h-12 w-12 text-destructive mb-4" />
         <p className="text-destructive font-medium">Failed to load browser status</p>
         <p className="text-muted-foreground text-sm mt-1">{message}</p>
       </div>
@@ -68,7 +62,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
       label: 'Active Instances',
       value: `${status.total} / ${status.config.maxPoolSize}`,
       subValue: `${status.healthy} healthy`,
-      icon: ComputerIcon,
+      icon: Computer,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
@@ -76,7 +70,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
       label: 'Active Pages',
       value: `${status.totalPages} / ${status.config.maxConcurrentPages}`,
       subValue: `${status.waitingCount} waiting`,
-      icon: Activity01Icon,
+      icon: Activity,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
@@ -84,7 +78,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
       label: 'Pool Utilization',
       value: `${status.utilization.poolUtilization}%`,
       subValue: `Page: ${status.utilization.pageUtilization}%`,
-      icon: ServerStack01Icon,
+      icon: Server,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
     },
@@ -92,7 +86,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
       label: 'System Resources',
       value: `${status.system.cpuCount} CPU`,
       subValue: `${formatMemory(status.system.freeMemoryGB)} free`,
-      icon: CpuIcon,
+      icon: Cpu,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
     },
@@ -100,18 +94,21 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat) => (
-        <div key={stat.label} className="rounded-xl border border-border bg-card p-6">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-            <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-              <Icon icon={stat.icon} className={`h-4 w-4 ${stat.color}`} />
+      {stats.map((stat) => {
+        const IconComponent = stat.icon;
+        return (
+          <div key={stat.label} className="rounded-xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <IconComponent className={`h-4 w-4 ${stat.color}`} />
+              </div>
             </div>
+            <p className="mt-2 text-3xl font-bold">{stat.value}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{stat.subValue}</p>
           </div>
-          <p className="mt-2 text-3xl font-bold">{stat.value}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{stat.subValue}</p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -120,7 +117,7 @@ function ConfigurationCard({ status }: { status: BrowserPoolDetailedStatus }) {
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h3 className="font-semibold flex items-center gap-2">
-        <Icon icon={HardDriveIcon} className="h-4 w-4" />
+        <HardDrive className="h-4 w-4" />
         Pool Configuration
       </h3>
       <div className="mt-4 space-y-3">
@@ -153,7 +150,7 @@ function SystemResourcesCard({ status }: { status: BrowserPoolDetailedStatus }) 
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h3 className="font-semibold flex items-center gap-2">
-        <Icon icon={CpuIcon} className="h-4 w-4" />
+        <Cpu className="h-4 w-4" />
         System Resources
       </h3>
       <div className="mt-4 space-y-3">
@@ -185,7 +182,7 @@ function InstancesCard({ status }: { status: BrowserPoolDetailedStatus }) {
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h3 className="font-semibold flex items-center gap-2 mb-4">
-        <Icon icon={ComputerIcon} className="h-4 w-4" />
+        <Computer className="h-4 w-4" />
         Browser Instances ({status.instances.length})
       </h3>
       {status.instances.length === 0 ? (
@@ -221,7 +218,7 @@ function InstancesCard({ status }: { status: BrowserPoolDetailedStatus }) {
                 <div className="flex justify-between text-muted-foreground">
                   <span>Idle</span>
                   <span className="font-medium text-foreground flex items-center gap-1">
-                    <Icon icon={Clock01Icon} className="h-3 w-3" />
+                    <Clock className="h-3 w-3" />
                     {formatTime(instance.idleSeconds)}
                   </span>
                 </div>

@@ -9,16 +9,15 @@ import { PageHeader } from '@/components/shared';
 import { useStats, useHealth, StatsCard, HealthCard, TierDistribution } from '@/features/dashboard';
 import { useStorageStats, formatBytes } from '@/features/storage';
 import {
-  Activity01Icon,
-  CloudIcon,
-  CreditCardIcon,
-  DatabaseIcon,
-  FileSyncIcon,
-  HardDriveIcon,
-  UserCheck01Icon,
-  UserMultipleIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@/components/ui/icon';
+  Activity,
+  Cloud,
+  CreditCard,
+  Database,
+  RefreshCw,
+  HardDrive,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useStats();
@@ -39,25 +38,25 @@ export default function DashboardPage() {
         <StatsCard
           title="总用户数"
           value={stats?.totalUsers ?? 0}
-          icon={<Icon icon={UserMultipleIcon} className="h-4 w-4" />}
+          icon={<Users className="h-4 w-4" />}
           isLoading={statsLoading}
         />
         <StatsCard
           title="总积分消耗"
           value={stats?.totalCreditsUsed ?? 0}
-          icon={<Icon icon={CreditCardIcon} className="h-4 w-4" />}
+          icon={<CreditCard className="h-4 w-4" />}
           isLoading={statsLoading}
         />
         <StatsCard
           title="API 调用量"
           value={stats?.totalApiCalls ?? 0}
-          icon={<Icon icon={Activity01Icon} className="h-4 w-4" />}
+          icon={<Activity className="h-4 w-4" />}
           isLoading={statsLoading}
         />
         <StatsCard
           title="付费用户"
           value={paidUsers}
-          icon={<Icon icon={UserCheck01Icon} className="h-4 w-4" />}
+          icon={<UserCheck className="h-4 w-4" />}
           isLoading={statsLoading}
         />
       </div>
@@ -71,7 +70,7 @@ export default function DashboardPage() {
       {/* 云同步统计 */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium flex items-center gap-2">
-          <Icon icon={CloudIcon} className="h-5 w-5" />
+          <Cloud className="h-5 w-5" />
           云同步概览
         </h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -79,27 +78,27 @@ export default function DashboardPage() {
             title="存储使用"
             value={storageStats ? formatBytes(storageStats.storage.totalUsed) : '0 B'}
             description={`${storageStats?.storage.userCount ?? 0} 个用户`}
-            icon={<Icon icon={HardDriveIcon} className="h-4 w-4" />}
+            icon={<HardDrive className="h-4 w-4" />}
             isLoading={storageLoading}
           />
           <StatsCard
             title="Vault 数量"
             value={storageStats?.storage.vaultCount ?? 0}
             description={`${storageStats?.storage.deviceCount ?? 0} 台设备`}
-            icon={<Icon icon={CloudIcon} className="h-4 w-4" />}
+            icon={<Cloud className="h-4 w-4" />}
             isLoading={storageLoading}
           />
           <StatsCard
             title="同步文件数"
             value={storageStats?.storage.fileCount ?? 0}
-            icon={<Icon icon={FileSyncIcon} className="h-4 w-4" />}
+            icon={<RefreshCw className="h-4 w-4" />}
             isLoading={storageLoading}
           />
           <StatsCard
             title="向量化文件"
             value={storageStats?.vectorize.totalCount ?? 0}
             description={`${storageStats?.vectorize.userCount ?? 0} 个用户`}
-            icon={<Icon icon={DatabaseIcon} className="h-4 w-4" />}
+            icon={<Database className="h-4 w-4" />}
             isLoading={storageLoading}
           />
         </div>

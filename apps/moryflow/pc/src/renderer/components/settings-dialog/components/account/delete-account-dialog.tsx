@@ -19,12 +19,11 @@ import { Input } from '@anyhunt/ui/components/input';
 import { Label } from '@anyhunt/ui/components/label';
 import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
 import { Textarea } from '@anyhunt/ui/components/textarea';
-import { Alert01Icon, Delete01Icon, Loading03Icon } from '@hugeicons/core-free-icons';
+import { TriangleAlert, Delete, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { deleteAccount } from '@/lib/server/api';
 import { DELETION_REASONS, type DeletionReasonCode } from '@anyhunt/api';
 import { useTranslation } from '@/lib/i18n';
-import { Icon } from '@anyhunt/ui/components/icon';
 import type { UserInfo } from '@/lib/server/types';
 
 type DeleteAccountDialogProps = {
@@ -76,14 +75,14 @@ export const DeleteAccountDialog = ({ user, onDeleted }: DeleteAccountDialogProp
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-          <Icon icon={Delete01Icon} className="mr-2 h-4 w-4" />
+          <Delete className="mr-2 h-4 w-4" />
           {t('deleteAccount')}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <Icon icon={Alert01Icon} className="h-5 w-5 text-destructive" />
+            <TriangleAlert className="h-5 w-5 text-destructive" />
             {t('deleteAccountTitle')}
           </AlertDialogTitle>
           <AlertDialogDescription>{t('deleteAccountWarning')}</AlertDialogDescription>
@@ -144,7 +143,7 @@ export const DeleteAccountDialog = ({ user, onDeleted }: DeleteAccountDialogProp
             disabled={!isValid || isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting && <Icon icon={Loading03Icon} className="mr-2 h-4 w-4 animate-spin" />}
+            {isDeleting && <Loader className="mr-2 h-4 w-4 animate-spin" />}
             {isDeleting ? t('deleting') : t('confirmDeleteAccount')}
           </AlertDialogAction>
         </AlertDialogFooter>

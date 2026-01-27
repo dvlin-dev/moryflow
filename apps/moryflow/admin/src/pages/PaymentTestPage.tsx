@@ -11,16 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import {
-  Coins01Icon,
-  CreditCardIcon,
-  Key01Icon,
-  LinkSquare02Icon,
-  Loading01Icon,
-} from '@hugeicons/core-free-icons';
+import { Coins, CreditCard, Key, SquareArrowUpRight, Loader } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { ADMIN_API } from '@/lib/api-paths';
-import { Icon } from '@/components/ui/icon';
 
 // 产品配置（与后端保持一致）
 const PRODUCTS = {
@@ -118,11 +111,11 @@ function ProductCard({ product, type, testUserId, onCheckout, isLoading }: Produ
   const getTypeIcon = () => {
     switch (type) {
       case 'subscription':
-        return <Icon icon={CreditCardIcon} className="h-5 w-5" />;
+        return <CreditCard className="h-5 w-5" />;
       case 'credits':
-        return <Icon icon={Coins01Icon} className="h-5 w-5" />;
+        return <Coins className="h-5 w-5" />;
       case 'license':
-        return <Icon icon={Key01Icon} className="h-5 w-5" />;
+        return <Key className="h-5 w-5" />;
     }
   };
 
@@ -175,9 +168,9 @@ function ProductCard({ product, type, testUserId, onCheckout, isLoading }: Produ
             disabled={!testUserId || isLoading}
           >
             {isLoading ? (
-              <Icon icon={Loading01Icon} className="h-4 w-4 mr-2 animate-spin" />
+              <Loader className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <Icon icon={LinkSquare02Icon} className="h-4 w-4 mr-2" />
+              <SquareArrowUpRight className="h-4 w-4 mr-2" />
             )}
             {!testUserId ? '请先输入用户 ID' : '测试购买'}
           </Button>

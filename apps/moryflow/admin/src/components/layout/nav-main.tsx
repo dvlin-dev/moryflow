@@ -1,12 +1,12 @@
 /**
- * NavMain - 主导航组件（支持二级菜单）
- * 基于 shadcn sidebar collapsible 模式
+ * [PROPS]: groups
+ * [EMITS]: none
+ * [POS]: NavMain - 主导航组件（支持二级菜单，Lucide icons direct render）
  */
 import { useLocation, Link } from 'react-router-dom';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight, type LucideIcon } from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Icon, type HugeIcon } from '@/components/ui/icon';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -28,7 +28,7 @@ export interface NavSubItem {
 export interface NavItem {
   title: string;
   url?: string;
-  icon: HugeIcon;
+  icon: LucideIcon;
   items?: NavSubItem[];
 }
 
@@ -66,6 +66,7 @@ export function NavMain({ groups }: NavMainProps) {
           {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
           <SidebarMenu>
             {group.items.map((item) => {
+              const IconComponent = item.icon;
               // 有子菜单的项目 - 使用 Collapsible
               if (item.items && item.items.length > 0) {
                 return (
@@ -78,12 +79,9 @@ export function NavMain({ groups }: NavMainProps) {
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton tooltip={item.title}>
-                          <Icon icon={item.icon} />
+                          <IconComponent />
                           <span>{item.title}</span>
-                          <Icon
-                            icon={ArrowRight01Icon}
-                            className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                          />
+                          <ArrowRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
@@ -113,7 +111,7 @@ export function NavMain({ groups }: NavMainProps) {
                     isActive={item.url ? isActive(item.url) : false}
                   >
                     <Link to={item.url || '#'}>
-                      <Icon icon={item.icon} />
+                      <IconComponent />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>

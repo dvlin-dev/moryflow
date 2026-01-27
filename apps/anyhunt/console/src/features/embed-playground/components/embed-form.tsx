@@ -1,5 +1,7 @@
 /**
- * Embed 参数表单组件
+ * [PROPS]: apiKeys, selectedKeyId, onKeyChange, onSubmit, isLoading
+ * [EMITS]: onSubmit(data)
+ * [POS]: Embed 参数表单组件（Lucide icons direct render）
  *
  * 测试 URL:
  * - Twitter/X: https://x.com/OpenAI/status/2003594025098785145
@@ -9,10 +11,9 @@
  * - SoundCloud: https://soundcloud.com/flume/smoke-and-retribution-feat-vince-staples-kucka
  */
 import { useState } from 'react';
-import { Link01Icon, Loading01Icon } from '@hugeicons/core-free-icons';
+import { Link, Loader } from 'lucide-react';
 import {
   Button,
-  Icon,
   Input,
   Label,
   Select,
@@ -140,12 +141,12 @@ export function EmbedForm({
       <Button type="submit" className="w-full" disabled={isLoading || !url.trim()}>
         {isLoading ? (
           <>
-            <Icon icon={Loading01Icon} className="mr-2 h-4 w-4 animate-spin" />
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
             Fetching...
           </>
         ) : (
           <>
-            <Icon icon={Link01Icon} className="mr-2 h-4 w-4" />
+            <Link className="mr-2 h-4 w-4" />
             Fetch Embed
           </>
         )}

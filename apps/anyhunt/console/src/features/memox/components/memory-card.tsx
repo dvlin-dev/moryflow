@@ -1,9 +1,11 @@
 /**
- * Memory 卡片组件 - 用于 Memories 列表页
+ * [PROPS]: memory
+ * [EMITS]: none
+ * [POS]: Memory 卡片组件 - 用于 Memories 列表页（Lucide icons direct render）
  */
 
-import { Calendar03Icon, Tag01Icon } from '@hugeicons/core-free-icons';
-import { Card, CardContent, Icon, Badge } from '@anyhunt/ui';
+import { Calendar, Tag } from 'lucide-react';
+import { Card, CardContent, Badge } from '@anyhunt/ui';
 import type { Memory } from '../types';
 
 interface MemoryListCardProps {
@@ -25,7 +27,7 @@ export function MemoryListCard({ memory }: MemoryListCardProps) {
           {/* Tags */}
           {(categories.length > 0 || keywords.length > 0) && (
             <div className="flex items-center gap-2 flex-wrap">
-              <Icon icon={Tag01Icon} className="h-3.5 w-3.5 text-muted-foreground" />
+              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
               {categories.map((category) => (
                 <Badge key={category} variant="secondary" className="text-xs">
                   {category}
@@ -42,7 +44,7 @@ export function MemoryListCard({ memory }: MemoryListCardProps) {
           {/* Metadata */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
-              <Icon icon={Calendar03Icon} className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5" />
               <span>{createdAt}</span>
             </div>
             {memory.user_id && <span>User: {memory.user_id}</span>}

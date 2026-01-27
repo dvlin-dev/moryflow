@@ -1,7 +1,7 @@
 /**
  * [PROPS]: { models, onAddModel, onToggleModel, onDeleteModel }
  * [EMITS]: onAddModel({ id, name }), onToggleModel(modelId, enabled), onDeleteModel(modelId)
- * [POS]: Custom Provider 的模型列表 UI（不直接读写表单，仅负责展示和交互）
+ * [POS]: Custom Provider 的模型列表 UI（不直接读写表单，仅负责展示和交互，Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,8 +10,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@anyhunt/ui/components/button';
 import { Label } from '@anyhunt/ui/components/label';
 import { Switch } from '@anyhunt/ui/components/switch';
-import { Add01Icon, Delete01Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Plus, Delete } from 'lucide-react';
 import { AddCustomProviderModelDialog } from './add-custom-provider-model-dialog';
 
 export type CustomProviderModel = {
@@ -42,7 +41,7 @@ export const CustomProviderModels = ({
       <div className="flex items-center justify-between">
         <Label>Models</Label>
         <Button type="button" variant="outline" size="icon" onClick={() => setAddOpen(true)}>
-          <Icon icon={Add01Icon} className="h-4 w-4" />
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
 
@@ -75,7 +74,7 @@ export const CustomProviderModels = ({
                   }}
                   aria-label="Delete model"
                 >
-                  <Icon icon={Delete01Icon} className="h-4 w-4" />
+                  <Delete className="h-4 w-4" />
                 </Button>
                 <Switch
                   checked={model.enabled}

@@ -1,19 +1,11 @@
 /**
  * [PROPS]: subscriptionId
- * [POS]: Learning suggestions tab showing feedback patterns and recommendations
+ * [POS]: Learning suggestions tab showing feedback patterns and recommendations (Lucide icons direct render)
  */
 
 import { useState } from 'react';
-import { ScrollArea, Button, Card, CardContent, Skeleton, Icon, Checkbox, Badge } from '@anyhunt/ui';
-import {
-  ArrowUp02Icon,
-  ArrowDown02Icon,
-  Add01Icon,
-  Remove01Icon,
-  Link01Icon,
-  UserIcon,
-  Tag01Icon,
-} from '@hugeicons/core-free-icons';
+import { ScrollArea, Button, Card, CardContent, Skeleton, Checkbox, Badge } from '@anyhunt/ui';
+import { ArrowUp, ArrowDown, Plus, Minus, Link, User, Tag } from 'lucide-react';
 import {
   useFeedbackSuggestions,
   useApplyFeedbackSuggestions,
@@ -28,36 +20,36 @@ interface LearningSuggestionsTabProps {
 function getPatternIcon(patternType: FeedbackPatternType) {
   switch (patternType) {
     case 'KEYWORD':
-      return Tag01Icon;
+      return Tag;
     case 'DOMAIN':
-      return Link01Icon;
+      return Link;
     case 'AUTHOR':
-      return UserIcon;
+      return User;
     default:
-      return Tag01Icon;
+      return Tag;
   }
 }
 
 function getSuggestionTypeInfo(type: FeedbackSuggestion['type']) {
   switch (type) {
     case 'add_interest':
-      return { icon: Add01Icon, label: 'Add to interests', color: 'text-green-600 bg-green-100' };
+      return { icon: Plus, label: 'Add to interests', color: 'text-green-600 bg-green-100' };
     case 'remove_interest':
       return {
-        icon: Remove01Icon,
+        icon: Minus,
         label: 'Remove from interests',
         color: 'text-orange-600 bg-orange-100',
       };
     case 'add_negative':
       return {
-        icon: ArrowDown02Icon,
+        icon: ArrowDown,
         label: 'Add to blocklist',
         color: 'text-red-600 bg-red-100',
       };
     case 'adjust_score':
-      return { icon: ArrowUp02Icon, label: 'Adjust scoring', color: 'text-blue-600 bg-blue-100' };
+      return { icon: ArrowUp, label: 'Adjust scoring', color: 'text-blue-600 bg-blue-100' };
     default:
-      return { icon: Tag01Icon, label: 'Suggestion', color: 'text-gray-600 bg-gray-100' };
+      return { icon: Tag, label: 'Suggestion', color: 'text-gray-600 bg-gray-100' };
   }
 }
 
@@ -169,6 +161,7 @@ export function LearningSuggestionsTab({ subscriptionId }: LearningSuggestionsTa
               {suggestions.map((suggestion) => {
                 const typeInfo = getSuggestionTypeInfo(suggestion.type);
                 const PatternIcon = getPatternIcon(suggestion.patternType);
+                const TypeIcon = typeInfo.icon;
                 const isSelected = selectedIds.has(suggestion.id);
 
                 return (
@@ -181,12 +174,12 @@ export function LearningSuggestionsTab({ subscriptionId }: LearningSuggestionsTa
                           className="mt-1"
                         />
                         <div className={`rounded-full p-1.5 ${typeInfo.color}`}>
-                          <Icon icon={typeInfo.icon} className="size-4" />
+                          <TypeIcon className="size-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="secondary" className="gap-1">
-                              <Icon icon={PatternIcon} className="size-3" />
+                              <PatternIcon className="size-3" />
                               {suggestion.patternType.toLowerCase()}
                             </Badge>
                             <span className="font-medium text-sm">{suggestion.value}</span>

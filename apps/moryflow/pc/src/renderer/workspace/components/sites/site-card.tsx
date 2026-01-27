@@ -1,21 +1,21 @@
 /**
  * [PROPS]: { site, onClick, onAction }
  * [EMITS]: onClick() - 点击卡片, onAction(action) - 触发操作
- * [POS]: Sites CMS 的站点卡片组件
+ * [POS]: Sites CMS 的站点卡片组件（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import {
-  ArrowUpRight01Icon,
-  Copy01Icon,
-  Delete02Icon,
-  GlobeIcon,
-  MoreHorizontalIcon,
-  PowerServiceIcon,
-  RefreshIcon,
-  Settings02Icon,
-} from '@hugeicons/core-free-icons';
+  ArrowUpRight,
+  Copy,
+  Delete,
+  Globe,
+  Ellipsis,
+  Power,
+  RefreshCw,
+  Settings,
+} from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
 import {
   DropdownMenu,
@@ -24,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@anyhunt/ui/components/dropdown-menu';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { cn } from '@/lib/utils';
 import type { SiteCardProps, SiteAction } from './const';
 import { formatRelativeTime, isSiteOnline } from './const';
@@ -51,10 +50,7 @@ export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
             isOnline ? 'bg-primary/10' : 'bg-muted'
           )}
         >
-          <Icon
-            icon={GlobeIcon}
-            className={cn('h-5 w-5', isOnline ? 'text-primary' : 'text-muted-foreground')}
-          />
+          <Globe className={cn('h-5 w-5', isOnline ? 'text-primary' : 'text-muted-foreground')} />
         </div>
 
         {/* 信息 */}
@@ -85,38 +81,38 @@ export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
               className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
-              <Icon icon={MoreHorizontalIcon} className="h-4 w-4" />
+              <Ellipsis className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={(e) => handleAction('open', e)}>
-              <Icon icon={ArrowUpRight01Icon} className="mr-2 h-4 w-4" />
+              <ArrowUpRight className="mr-2 h-4 w-4" />
               Open site
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => handleAction('copy', e)}>
-              <Icon icon={Copy01Icon} className="mr-2 h-4 w-4" />
+              <Copy className="mr-2 h-4 w-4" />
               Copy link
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={(e) => handleAction('settings', e)}>
-              <Icon icon={Settings02Icon} className="mr-2 h-4 w-4" />
+              <Settings className="mr-2 h-4 w-4" />
               Site settings
             </DropdownMenuItem>
             {isOnline && (
               <DropdownMenuItem onClick={(e) => handleAction('update', e)}>
-                <Icon icon={RefreshIcon} className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Update
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             {isOnline ? (
               <DropdownMenuItem onClick={(e) => handleAction('unpublish', e)}>
-                <Icon icon={PowerServiceIcon} className="mr-2 h-4 w-4" />
+                <Power className="mr-2 h-4 w-4" />
                 Unpublish
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem onClick={(e) => handleAction('publish', e)}>
-                <Icon icon={PowerServiceIcon} className="mr-2 h-4 w-4" />
+                <Power className="mr-2 h-4 w-4" />
                 Publish
               </DropdownMenuItem>
             )}
@@ -124,7 +120,7 @@ export function SiteCard({ site, onClick, onAction }: SiteCardProps) {
               onClick={(e) => handleAction('delete', e)}
               className="text-destructive focus:text-destructive"
             >
-              <Icon icon={Delete02Icon} className="mr-2 h-4 w-4" />
+              <Delete className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

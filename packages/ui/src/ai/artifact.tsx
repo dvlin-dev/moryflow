@@ -1,8 +1,7 @@
 'use client';
 
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { X, type LucideIcon } from 'lucide-react';
 import { Button } from '../components/button';
-import { Icon, type HugeIcon } from '../components/icon';
 import { ScrollArea } from '../components/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/tooltip';
 import { cn } from '../lib/utils';
@@ -51,7 +50,7 @@ export const ArtifactClose = ({
     variant={variant}
     {...props}
   >
-    {children ?? <Icon icon={Cancel01Icon} className="size-4" />}
+    {children ?? <X className="size-4" />}
     <span className="sr-only">Close</span>
   </Button>
 );
@@ -77,7 +76,7 @@ export const ArtifactActions = ({ className, ...props }: ArtifactActionsProps) =
 export type ArtifactActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
   label?: string;
-  icon?: HugeIcon;
+  icon?: LucideIcon;
 };
 
 export const ArtifactAction = ({
@@ -90,6 +89,7 @@ export const ArtifactAction = ({
   variant = 'ghost',
   ...props
 }: ArtifactActionProps) => {
+  const IconComponent = icon;
   const button = (
     <Button
       className={cn(
@@ -101,7 +101,7 @@ export const ArtifactAction = ({
       variant={variant}
       {...props}
     >
-      {icon ? <Icon icon={icon} className="size-4" /> : children}
+      {IconComponent ? <IconComponent className="size-4" /> : children}
       <span className="sr-only">{label || tooltip}</span>
     </Button>
   );

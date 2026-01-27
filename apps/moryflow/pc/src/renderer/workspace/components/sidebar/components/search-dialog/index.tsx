@@ -1,11 +1,11 @@
 /**
  * [PROPS]: SearchDialogProps
  * [EMITS]: onOpenChange, onSelectFile
- * [POS]: Notion 风格搜索对话框，固定高度
+ * [POS]: Notion 风格搜索对话框，固定高度（Lucide 图标）
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { File01Icon, FolderOpenIcon, Search01Icon } from '@hugeicons/core-free-icons';
+import { File, FolderOpen, Search } from 'lucide-react';
 import { Command as CommandPrimitive } from 'cmdk';
 import {
   Dialog,
@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@anyhunt/ui/components/dialog';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { SearchDialogProps } from './const';
@@ -91,7 +90,7 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
         <CommandPrimitive className="flex h-full flex-col" shouldFilter={false}>
           {/* 搜索输入框 */}
           <div className="flex h-12 items-center gap-2 border-b border-border/40 px-3">
-            <Icon icon={Search01Icon} className="size-4 shrink-0 text-muted-foreground" />
+            <Search className="size-4 shrink-0 text-muted-foreground" />
             <CommandPrimitive.Input
               ref={inputRef}
               value={query}
@@ -119,12 +118,12 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
                       'transition-colors duration-fast'
                     )}
                   >
-                    <Icon icon={File01Icon} className="size-4 shrink-0 text-muted-foreground" />
+                    <File className="size-4 shrink-0 text-muted-foreground" />
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="truncate">{formatDisplayName(result.node.name)}</span>
                       {result.relativePath && (
                         <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                          <Icon icon={FolderOpenIcon} className="size-3" />
+                          <FolderOpen className="size-3" />
                           {result.relativePath}
                         </span>
                       )}
@@ -135,7 +134,7 @@ export const SearchDialog = ({ open, onOpenChange, tree, onSelectFile }: SearchD
             ) : (
               <CommandPrimitive.Empty className="py-6 text-center">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Icon icon={File01Icon} className="size-8 opacity-50" />
+                  <File className="size-8 opacity-50" />
                   <span className="text-sm">{hasQuery ? t('noSearchResults') : t('noFiles')}</span>
                 </div>
               </CommandPrimitive.Empty>

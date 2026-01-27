@@ -1,9 +1,8 @@
 import * as React from 'react';
-import { ArrowLeft01Icon, ArrowRight01Icon, More01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft, ArrowRight, Ellipsis } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 import { buttonVariants, type ButtonProps } from './button';
-import { Icon } from './icon';
 
 const Pagination = ({ className, ...props }: React.ComponentProps<'nav'>) => (
   <nav
@@ -57,7 +56,7 @@ const PaginationPrevious = ({
     className={cn('gap-1 pl-2.5', className)}
     {...props}
   >
-    <Icon icon={ArrowLeft01Icon} className="h-4 w-4" />
+    <ArrowLeft className="h-4 w-4" />
     <span>Previous</span>
   </PaginationLink>
 );
@@ -71,7 +70,7 @@ const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof Pag
     {...props}
   >
     <span>Next</span>
-    <Icon icon={ArrowRight01Icon} className="h-4 w-4" />
+    <ArrowRight className="h-4 w-4" />
   </PaginationLink>
 );
 PaginationNext.displayName = 'PaginationNext';
@@ -82,7 +81,7 @@ const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<'span'
     className={cn('flex h-9 w-9 items-center justify-center', className)}
     {...props}
   >
-    <Icon icon={More01Icon} className="h-4 w-4" />
+    <Ellipsis className="h-4 w-4" />
     <span className="sr-only">More pages</span>
   </span>
 );

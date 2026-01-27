@@ -1,11 +1,10 @@
 /**
  * [PROPS]: { vault, onSettingsOpen }
  * [EMITS]: onSettingsOpen - 设置按钮点击事件
- * [POS]: 侧边栏工具区组件（仅图标，一行两个，含 E2E 选择器）
+ * [POS]: 侧边栏工具区组件（仅图标，一行两个，含 E2E 选择器，Lucide 图标）
  */
 
-import { Settings02Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Settings } from 'lucide-react';
 import { SyncStatusIndicator, SyncStatusHoverCard } from '@/components/cloud-sync';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
 import { useTranslation } from '@/lib/i18n';
@@ -39,7 +38,7 @@ export const SidebarTools = ({ vault, onSettingsOpen }: SidebarToolsProps) => {
             onClick={() => onSettingsOpen('account')}
             data-testid="sidebar-settings-button"
           >
-            <Icon icon={Settings02Icon} className="size-4" />
+            <Settings className="size-4" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top">{t('settingsLabel')}</TooltipContent>

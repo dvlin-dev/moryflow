@@ -1,7 +1,7 @@
 /**
  * [PROPS]: none (uses global state)
  * [EMITS]: none
- * [POS]: 沙盒设置组件，用于切换沙盒模式和管理授权路径
+ * [POS]: 沙盒设置组件，用于切换沙盒模式和管理授权路径（Lucide 图标）
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -18,15 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@anyhunt/ui/components/alert-dialog';
-import {
-  Cancel01Icon,
-  Delete02Icon,
-  Folder01Icon,
-  Shield01Icon,
-  Shield02Icon,
-} from '@hugeicons/core-free-icons';
+import type { LucideIcon } from 'lucide-react';
+import { X, Delete, Folder, Shield } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
-import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
 import type { SandboxMode } from '@anyhunt/agents-sandbox';
 import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc';
 
@@ -34,7 +28,7 @@ type ModeOption = {
   value: SandboxMode;
   labelKey: 'sandboxModeNormal' | 'sandboxModeUnrestricted';
   descriptionKey: 'sandboxModeNormalDescription' | 'sandboxModeUnrestrictedDescription';
-  icon: HugeIcon;
+  icon: LucideIcon;
 };
 
 const MODE_OPTIONS: ModeOption[] = [
@@ -42,13 +36,13 @@ const MODE_OPTIONS: ModeOption[] = [
     value: 'normal',
     labelKey: 'sandboxModeNormal',
     descriptionKey: 'sandboxModeNormalDescription',
-    icon: Shield01Icon,
+    icon: Shield,
   },
   {
     value: 'unrestricted',
     labelKey: 'sandboxModeUnrestricted',
     descriptionKey: 'sandboxModeUnrestrictedDescription',
-    icon: Shield02Icon,
+    icon: Shield,
   },
 ];
 
@@ -162,7 +156,7 @@ export const SandboxSettings = () => {
                       isSelected ? 'bg-foreground text-background' : 'bg-muted'
                     }`}
                   >
-                    <Icon icon={OptionIcon} className="size-3.5" />
+                    <OptionIcon className="size-3.5" />
                   </div>
                   <span className="font-medium">{t(option.labelKey)}</span>
                 </div>
@@ -192,7 +186,7 @@ export const SandboxSettings = () => {
               onClick={() => setShowClearConfirm(true)}
               className="text-destructive hover:text-destructive"
             >
-              <Icon icon={Delete02Icon} className="mr-1.5 size-3.5" />
+              <Delete className="mr-1.5 size-3.5" />
               {t('sandboxClearAllPaths')}
             </Button>
           )}
@@ -206,7 +200,7 @@ export const SandboxSettings = () => {
           <div className="space-y-2">
             {settings.authorizedPaths.map((path) => (
               <div key={path} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
-                <Icon icon={Folder01Icon} className="size-4 shrink-0 text-muted-foreground" />
+                <Folder className="size-4 shrink-0 text-muted-foreground" />
                 <code className="flex-1 truncate text-xs">{path}</code>
                 <Button
                   type="button"
@@ -215,7 +209,7 @@ export const SandboxSettings = () => {
                   className="size-6 shrink-0"
                   onClick={() => handleRemovePath(path)}
                 >
-                  <Icon icon={Cancel01Icon} className="size-3.5" />
+                  <X className="size-3.5" />
                 </Button>
               </div>
             ))}

@@ -1,7 +1,12 @@
-import { Globe02Icon } from '@hugeicons/core-free-icons';
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Anyhunt landing hero section (Lucide icons direct render)
+ */
+
+import { Globe } from 'lucide-react';
 import { Container } from '@/components/layout';
 import { HeroPlayground } from '@/components/playground/HeroPlayground';
-import { Icon } from '@anyhunt/ui';
 
 export function HeroSection() {
   return (
@@ -13,7 +18,7 @@ export function HeroSection() {
         <div className="flex flex-col items-center py-16 text-center md:py-20 lg:py-24">
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 border border-border bg-muted/50 px-3 py-1 font-mono text-xs">
-            <Icon icon={Globe02Icon} className="h-3 w-3" />
+            <Globe className="h-3 w-3" />
             <span>Any topic. AI hunts</span>
           </div>
 
@@ -26,8 +31,8 @@ export function HeroSection() {
 
           {/* Subheadline */}
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Always-on updates from across the web. Crawl, extract, and transform web data with a powerful API.
-            Built for LLMs, RAG pipelines, and AI applications.
+            Always-on updates from across the web. Crawl, extract, and transform web data with a
+            powerful API. Built for LLMs, RAG pipelines, and AI applications.
           </p>
 
           {/* Playground */}

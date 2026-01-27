@@ -2,17 +2,11 @@
  * Digest Topics Page
  *
  * [PROPS]: None
- * [POS]: Admin topic management with featured configuration
+ * [POS]: Admin topic management with featured configuration (Lucide icons direct render)
  */
 
 import { useState } from 'react';
-import {
-  Search01Icon,
-  StarIcon,
-  ArrowUp01Icon,
-  ArrowDown01Icon,
-  ViewIcon,
-} from '@hugeicons/core-free-icons';
+import { Search, Star, ArrowUp, ArrowDown, View } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -27,7 +21,6 @@ import {
   TableRow,
   Badge,
   Skeleton,
-  Icon,
   Input,
   Button,
   Select,
@@ -255,7 +248,7 @@ function AllTopicsTab({
               className="w-40"
             />
             <Button variant="outline" size="icon" onClick={onSearch}>
-              <Icon icon={Search01Icon} className="h-4 w-4" />
+              <Search className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -310,8 +303,7 @@ function AllTopicsTab({
                     <TableCell>
                       {topic.featured ? (
                         <Badge variant="default" className="gap-1">
-                          <Icon icon={StarIcon} className="h-3 w-3" />#
-                          {(topic.featuredOrder ?? 0) + 1}
+                          <Star className="h-3 w-3" />#{(topic.featuredOrder ?? 0) + 1}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>
@@ -325,7 +317,7 @@ function AllTopicsTab({
                           onClick={() => window.open(`${WWW_URL}/topics/${topic.slug}`, '_blank')}
                           title="View Topic"
                         >
-                          <Icon icon={ViewIcon} className="h-4 w-4" />
+                          <View className="h-4 w-4" />
                         </Button>
                         <Button
                           variant={topic.featured ? 'default' : 'outline'}
@@ -334,7 +326,7 @@ function AllTopicsTab({
                           disabled={isToggling}
                           title={topic.featured ? 'Remove from Featured' : 'Add to Featured'}
                         >
-                          <Icon icon={StarIcon} className="h-4 w-4" />
+                          <Star className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -430,7 +422,7 @@ function FeaturedTopicsTab({
                         disabled={index === 0 || isReordering}
                         title="Move Up"
                       >
-                        <Icon icon={ArrowUp01Icon} className="h-4 w-4" />
+                        <ArrowUp className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
@@ -439,7 +431,7 @@ function FeaturedTopicsTab({
                         disabled={index === topics.length - 1 || isReordering}
                         title="Move Down"
                       >
-                        <Icon icon={ArrowDown01Icon} className="h-4 w-4" />
+                        <ArrowDown className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -447,7 +439,7 @@ function FeaturedTopicsTab({
                         onClick={() => window.open(`${WWW_URL}/topics/${topic.slug}`, '_blank')}
                         title="View Topic"
                       >
-                        <Icon icon={ViewIcon} className="h-4 w-4" />
+                        <View className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"
@@ -456,7 +448,7 @@ function FeaturedTopicsTab({
                         disabled={isRemoving}
                         title="Remove from Featured"
                       >
-                        <Icon icon={StarIcon} className="h-4 w-4" />
+                        <Star className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

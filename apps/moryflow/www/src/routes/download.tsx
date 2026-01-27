@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: 无
- * [POS]: 下载页面
+ * [POS]: 下载页面（Lucide icons direct render）
  */
 
 'use client';
@@ -9,14 +9,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { generateMeta, siteConfig } from '@/lib/seo';
-import { Icon } from '@anyhunt/ui';
-import {
-  Download01Icon,
-  AppleIcon,
-  ComputerIcon,
-  Loading01Icon,
-  CheckmarkCircle01Icon,
-} from '@hugeicons/core-free-icons';
+import { Download, Apple, Computer, Loader, CircleCheck } from 'lucide-react';
 import { useDownload } from '@/hooks/useDownload';
 
 export const Route = createFileRoute('/download')({
@@ -64,7 +57,7 @@ function DownloadPage() {
     if (isLoading) {
       return (
         <>
-          <Icon icon={Loading01Icon} size={20} className="animate-spin" />
+          <Loader size={20} className="animate-spin" />
           Loading...
         </>
       );
@@ -73,21 +66,21 @@ function DownloadPage() {
       case 'preparing':
         return (
           <>
-            <Icon icon={Loading01Icon} size={20} className="animate-spin" />
+            <Loader size={20} className="animate-spin" />
             Preparing...
           </>
         );
       case 'downloading':
         return (
           <>
-            <Icon icon={CheckmarkCircle01Icon} size={20} className="text-green-400" />
+            <CircleCheck size={20} className="text-green-400" />
             Download started
           </>
         );
       default:
         return (
           <>
-            <Icon icon={Download01Icon} size={20} />
+            <Download size={20} />
             {label}
           </>
         );
@@ -121,7 +114,7 @@ function DownloadPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-purple-400/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative bg-white rounded-3xl p-10 border border-gray-100 hover:border-mory-orange/30 transition-all hover:-translate-y-2 shadow-sm hover:shadow-lg flex flex-col items-center text-center">
                 <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-50 transition-colors">
-                  <Icon icon={AppleIcon} size={40} className="text-mory-text-primary" />
+                  <Apple size={40} className="text-mory-text-primary" />
                 </div>
                 <h3 className="text-3xl font-serif font-bold text-mory-text-primary mb-2">macOS</h3>
                 <p className="text-sm text-mory-text-tertiary mb-8">Apple Silicon (M1/M2/M3/M4)</p>
@@ -140,7 +133,7 @@ function DownloadPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-orange-400/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative bg-white rounded-3xl p-10 border border-gray-100 hover:border-mory-orange/30 transition-all hover:-translate-y-2 shadow-sm hover:shadow-lg flex flex-col items-center text-center">
                 <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-50 transition-colors">
-                  <Icon icon={ComputerIcon} size={40} className="text-mory-text-primary" />
+                  <Computer size={40} className="text-mory-text-primary" />
                 </div>
                 <h3 className="text-3xl font-serif font-bold text-mory-text-primary mb-2">
                   Windows
@@ -175,7 +168,7 @@ function DownloadPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
               <h3 className="font-bold text-mory-text-primary mb-4 flex items-center gap-2">
-                <Icon icon={AppleIcon} size={20} /> macOS
+                <Apple size={20} /> macOS
               </h3>
               <ul className="space-y-2 text-sm text-mory-text-secondary">
                 <li>macOS 12.0 (Monterey) or later</li>
@@ -186,7 +179,7 @@ function DownloadPage() {
             </div>
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
               <h3 className="font-bold text-mory-text-primary mb-4 flex items-center gap-2">
-                <Icon icon={ComputerIcon} size={20} /> Windows
+                <Computer size={20} /> Windows
               </h3>
               <ul className="space-y-2 text-sm text-mory-text-secondary">
                 <li>Windows 10/11 (64-bit)</li>

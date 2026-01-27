@@ -1,24 +1,24 @@
 /**
  * [PROPS]: SiteListProps - 站点列表与发布入口回调
  * [EMITS]: onPublishNew() - 发布新站点
- * [POS]: 站点发布列表与管理入口
+ * [POS]: 站点发布列表与管理入口（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useState, useMemo } from 'react';
 import {
-  ArrowUpRight01Icon,
-  Calendar01Icon,
-  Copy01Icon,
-  Delete02Icon,
-  File01Icon,
-  GlobeIcon,
-  Loading03Icon,
-  MoreHorizontalIcon,
-  PowerServiceIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+  ArrowUpRight,
+  Calendar,
+  Copy,
+  Delete,
+  File,
+  Globe,
+  Loader,
+  Ellipsis,
+  Power,
+  Check,
+} from 'lucide-react';
 import { Button } from '@anyhunt/ui/components/button';
 import {
   DropdownMenu,
@@ -37,7 +37,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@anyhunt/ui/components/alert-dialog';
-import { Icon } from '@anyhunt/ui/components/icon';
 import { cn } from '@/lib/utils';
 import type { Site } from '../../../shared/ipc/site-publish';
 import { useSitePublish } from './use-site-publish';
@@ -97,7 +96,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
   if (loading && sites.length === 0) {
     return (
       <div className={cn('flex items-center justify-center py-12', className)}>
-        <Icon icon={Loading03Icon} className="size-6 animate-spin text-muted-foreground" />
+        <Loader className="size-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -117,7 +116,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
     return (
       <div className={cn('flex flex-col items-center justify-center py-12 gap-4', className)}>
         <div className="size-12 rounded-full bg-muted flex items-center justify-center">
-          <Icon icon={GlobeIcon} className="size-6 text-muted-foreground" />
+          <Globe className="size-6 text-muted-foreground" />
         </div>
         <div className="text-center">
           <p className="font-medium">No sites published yet</p>
@@ -192,7 +191,7 @@ export function SiteList({ className, onPublishNew }: SiteListProps) {
               disabled={deleting}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleting ? <Icon icon={Loading03Icon} className="size-4 animate-spin mr-2" /> : null}
+              {deleting ? <Loader className="size-4 animate-spin mr-2" /> : null}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -228,10 +227,7 @@ function SiteCard({ site, copiedId, onCopyLink, onToggleStatus, onDelete }: Site
           isOffline ? 'bg-muted' : 'bg-primary/10'
         )}
       >
-        <Icon
-          icon={GlobeIcon}
-          className={cn('size-5', isOffline ? 'text-muted-foreground' : 'text-primary')}
-        />
+        <Globe className={cn('size-5', isOffline ? 'text-muted-foreground' : 'text-primary')} />
       </div>
 
       {/* 信息 */}
@@ -250,11 +246,11 @@ function SiteCard({ site, copiedId, onCopyLink, onToggleStatus, onDelete }: Site
             {site.url.replace('https://', '')}
           </a>
           <span className="flex items-center gap-1">
-            <Icon icon={File01Icon} className="size-3" />
+            <File className="size-3" />
             {site.pageCount === 1 ? '1 page' : `${site.pageCount} pages`}
           </span>
           <span className="flex items-center gap-1">
-            <Icon icon={Calendar01Icon} className="size-3" />
+            <Calendar className="size-3" />
             {formatDate(site.updatedAt)}
           </span>
         </div>
@@ -264,41 +260,41 @@ function SiteCard({ site, copiedId, onCopyLink, onToggleStatus, onDelete }: Site
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={onCopyLink} className="size-8">
           {copiedId === site.id ? (
-            <Icon icon={Tick02Icon} className="size-4 text-green-500" />
+            <Check className="size-4 text-green-500" />
           ) : (
-            <Icon icon={Copy01Icon} className="size-4" />
+            <Copy className="size-4" />
           )}
         </Button>
 
         <Button variant="ghost" size="icon" asChild className="size-8">
           <a href={site.url} target="_blank" rel="noopener noreferrer">
-            <Icon icon={ArrowUpRight01Icon} className="size-4" />
+            <ArrowUpRight className="size-4" />
           </a>
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="size-8">
-              <Icon icon={MoreHorizontalIcon} className="size-4" />
+              <Ellipsis className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onToggleStatus}>
               {isOffline ? (
                 <>
-                  <Icon icon={PowerServiceIcon} className="size-4 mr-2" />
+                  <Power className="size-4 mr-2" />
                   Go online
                 </>
               ) : (
                 <>
-                  <Icon icon={PowerServiceIcon} className="size-4 mr-2" />
+                  <Power className="size-4 mr-2" />
                   Take offline
                 </>
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="text-red-600">
-              <Icon icon={Delete02Icon} className="size-4 mr-2" />
+              <Delete className="size-4 mr-2" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

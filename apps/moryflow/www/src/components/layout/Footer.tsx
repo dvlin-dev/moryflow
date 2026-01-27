@@ -1,12 +1,11 @@
 /**
  * [PROPS]: None
  * [EMITS]: None
- * [POS]: Website footer with brand info, navigation links, and copyright
+ * [POS]: Website footer with brand info, navigation links, and copyright (Lucide icons direct render)
  */
 
 import { Link } from '@tanstack/react-router';
-import { Icon } from '@anyhunt/ui';
-import { Mail01Icon, FavouriteIcon } from '@hugeicons/core-free-icons';
+import { Mail, Heart } from 'lucide-react';
 
 const productLinks = [
   { href: '/features', label: 'Features' },
@@ -99,7 +98,7 @@ export function Footer() {
                     href="mailto:hello@moryflow.com"
                     className="flex items-center gap-2 text-sm text-mory-text-secondary hover:text-mory-orange transition-colors"
                   >
-                    <Icon icon={Mail01Icon} size={14} />
+                    <Mail size={14} />
                     Contact
                   </a>
                 </li>
@@ -114,9 +113,8 @@ export function Footer() {
             <span>&copy; 2025 Moryflow</span>
             <span className="text-gray-300">&middot;</span>
             <span className="flex items-center gap-1">
-              Made with{' '}
-              <Icon icon={FavouriteIcon} size={14} className="text-mory-orange fill-mory-orange" />{' '}
-              for everyone
+              Made with <Heart size={14} className="text-mory-orange fill-mory-orange" /> for
+              everyone
             </span>
           </div>
 

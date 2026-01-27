@@ -1,5 +1,7 @@
 /**
- * Graph 页面 - 知识图谱可视化
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Graph 页面 - 知识图谱可视化（Lucide icons direct render）
  *
  * 使用 react-force-graph-2d 进行力导向图谱渲染。
  * 需要输入 API Key 与实体过滤条件（user_id/agent_id/app_id/run_id）。
@@ -10,18 +12,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3'; // 使用 v3 兼容层，解决 @hookform/resolvers 类型兼容问题
 import ForceGraph2D, { type ForceGraphMethods, type NodeObject } from 'react-force-graph-2d';
-import {
-  FlowConnectionIcon,
-  Loading03Icon,
-  InformationCircleIcon,
-} from '@hugeicons/core-free-icons';
+import { Workflow, Loader, Info } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Icon,
   Alert,
   AlertDescription,
   Button,
@@ -220,7 +217,7 @@ export default function GraphPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Icon icon={FlowConnectionIcon} className="h-6 w-6" />
+          <Workflow className="h-6 w-6" />
           Knowledge Graph
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -330,7 +327,7 @@ export default function GraphPage() {
                   >
                     {isLoadingGraph ? (
                       <>
-                        <Icon icon={Loading03Icon} className="h-4 w-4 animate-spin mr-2" />
+                        <Loader className="h-4 w-4 animate-spin mr-2" />
                         Loading...
                       </>
                     ) : (
@@ -341,7 +338,7 @@ export default function GraphPage() {
               </Form>
 
               <Alert>
-                <Icon icon={InformationCircleIcon} className="h-4 w-4" />
+                <Info className="h-4 w-4" />
                 <AlertDescription>
                   Graph data is derived from entities and relations stored on memories.
                 </AlertDescription>
@@ -373,7 +370,7 @@ export default function GraphPage() {
 
               {isLoadingGraph ? (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
-                  <Icon icon={Loading03Icon} className="h-5 w-5 animate-spin mr-2" />
+                  <Loader className="h-5 w-5 animate-spin mr-2" />
                   Loading graph...
                 </div>
               ) : forceGraphData && forceGraphData.nodes.length > 0 ? (

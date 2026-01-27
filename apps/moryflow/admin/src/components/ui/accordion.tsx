@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
 
 function Accordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
@@ -38,10 +37,7 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <Icon
-          icon={ArrowDown01Icon}
-          className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200"
-        />
+        <ArrowDown className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );

@@ -1,13 +1,13 @@
 /**
  * [PROPS]: None
  * [EMITS]: Navigation to signup / contact
- * [POS]: Anyhunt Dev Pricing 页面 - 定价方案展示
+ * [POS]: Anyhunt Dev Pricing 页面 - 定价方案展示（Lucide icons direct render）
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { Tick02Icon, ArrowRight01Icon, QuestionIcon } from '@hugeicons/core-free-icons';
+import { Check, ArrowRight, CircleQuestionMark } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
-import { Button, Icon } from '@anyhunt/ui';
+import { Button } from '@anyhunt/ui';
 import { cn } from '@anyhunt/ui/lib';
 import { PRICING_TIERS, PRICING_FAQS } from '@/lib/pricing';
 
@@ -69,7 +69,7 @@ function PricingPage() {
                   <ul className="mt-6 flex-1 space-y-3">
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2 text-sm">
-                        <Icon icon={Tick02Icon} className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -82,7 +82,7 @@ function PricingPage() {
                       className="w-full font-mono"
                     >
                       {tier.cta}
-                      <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </a>
                 </div>
@@ -102,7 +102,7 @@ function PricingPage() {
                 {PRICING_FAQS.map((faq) => (
                   <div key={faq.question} className="border border-border rounded-lg p-5">
                     <h3 className="flex items-center gap-2 font-medium">
-                      <Icon icon={QuestionIcon} className="h-4 w-4 text-muted-foreground" />
+                      <CircleQuestionMark className="h-4 w-4 text-muted-foreground" />
                       {faq.question}
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">{faq.answer}</p>
@@ -131,7 +131,7 @@ function PricingPage() {
                     rel="noopener noreferrer"
                   >
                     Start for Free
-                    <Icon icon={ArrowRight01Icon} className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
                 <Button asChild variant="outline" className="font-mono">

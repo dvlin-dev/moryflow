@@ -1,18 +1,11 @@
 /**
- * Scrape 结果展示组件
+ * [PROPS]: data
+ * [EMITS]: none
+ * [POS]: Scrape 结果展示组件（Lucide icons direct render）
  */
 
 import { useState } from 'react';
-import {
-  ArrowUpRight01Icon,
-  CheckmarkCircle01Icon,
-  Cancel01Icon,
-  Timer01Icon,
-  Globe02Icon,
-  Image01Icon,
-  File01Icon,
-  Link01Icon,
-} from '@hugeicons/core-free-icons';
+import { ArrowUpRight, CircleCheck, X, Timer, Globe, Image, File, Link } from 'lucide-react';
 import {
   Badge,
   Card,
@@ -21,7 +14,6 @@ import {
   CardTitle,
   Dialog,
   DialogContent,
-  Icon,
   Tabs,
   TabsContent,
   TabsList,
@@ -42,7 +34,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
       <Card className="border-destructive">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base text-destructive">
-            <Icon icon={Cancel01Icon} className="h-5 w-5" />
+            <X className="h-5 w-5" />
             Scrape Failed
           </CardTitle>
         </CardHeader>
@@ -76,7 +68,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Icon icon={CheckmarkCircle01Icon} className="h-5 w-5 text-green-600" />
+              <CircleCheck className="h-5 w-5 text-green-600" />
               Scrape Successful
               {data.fromCache && (
                 <Badge variant="secondary" className="ml-2">
@@ -87,7 +79,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Icon icon={Globe02Icon} className="h-4 w-4" />
+              <Globe className="h-4 w-4" />
               <a
                 href={data.url}
                 target="_blank"
@@ -107,37 +99,37 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
               <TabsList>
                 {hasScreenshot && (
                   <TabsTrigger value="screenshot" className="gap-1">
-                    <Icon icon={Image01Icon} className="h-3.5 w-3.5" />
+                    <Image className="h-3.5 w-3.5" />
                     Screenshot
                   </TabsTrigger>
                 )}
                 {hasMarkdown && (
                   <TabsTrigger value="markdown" className="gap-1">
-                    <Icon icon={File01Icon} className="h-3.5 w-3.5" />
+                    <File className="h-3.5 w-3.5" />
                     Markdown
                   </TabsTrigger>
                 )}
                 {hasHtml && (
                   <TabsTrigger value="html" className="gap-1">
-                    <Icon icon={File01Icon} className="h-3.5 w-3.5" />
+                    <File className="h-3.5 w-3.5" />
                     HTML
                   </TabsTrigger>
                 )}
                 {hasRawHtml && (
                   <TabsTrigger value="rawHtml" className="gap-1">
-                    <Icon icon={File01Icon} className="h-3.5 w-3.5" />
+                    <File className="h-3.5 w-3.5" />
                     Raw HTML
                   </TabsTrigger>
                 )}
                 {hasLinks && (
                   <TabsTrigger value="links" className="gap-1">
-                    <Icon icon={Link01Icon} className="h-3.5 w-3.5" />
+                    <Link className="h-3.5 w-3.5" />
                     Links ({data.links?.length})
                   </TabsTrigger>
                 )}
                 {hasPdf && (
                   <TabsTrigger value="pdf" className="gap-1">
-                    <Icon icon={File01Icon} className="h-3.5 w-3.5" />
+                    <File className="h-3.5 w-3.5" />
                     PDF
                   </TabsTrigger>
                 )}
@@ -163,7 +155,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-xs text-primary hover:underline"
                       >
-                        <Icon icon={ArrowUpRight01Icon} className="h-3 w-3" />
+                        <ArrowUpRight className="h-3 w-3" />
                         Open in new tab
                       </a>
                     )}
@@ -232,7 +224,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 p-2 rounded hover:bg-muted text-xs truncate"
                       >
-                        <Icon icon={Link01Icon} className="h-3 w-3 shrink-0" />
+                        <Link className="h-3 w-3 shrink-0" />
                         <span className="truncate">{link}</span>
                       </a>
                     ))}
@@ -249,7 +241,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 p-4 rounded-lg border hover:bg-muted"
                     >
-                      <Icon icon={File01Icon} className="h-8 w-8" />
+                      <File className="h-8 w-8" />
                       <div>
                         <p className="font-medium">Download PDF</p>
                         <p className="text-xs text-muted-foreground">Click to open</p>
@@ -269,7 +261,7 @@ export function ScrapeResult({ data }: ScrapeResultProps) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Icon icon={Timer01Icon} className="h-4 w-4" />
+                <Timer className="h-4 w-4" />
                 Timing Breakdown
                 <span className="text-muted-foreground font-normal text-sm ml-auto">
                   Total: {data.timings.totalMs}ms

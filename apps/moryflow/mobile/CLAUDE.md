@@ -66,12 +66,13 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- 移除 Hugeicons 依赖，icons.ts/icon.tsx 改为 lucide-react-native 输出
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）
 - Chat 会话模式切换补齐审计与会话 mode 归一化
 - AI 工具输出新增统一截断与完整输出弹层（Mobile）
 - TasksSheet 移除未使用 TaskStatus 导入，修复 lint
 - 云同步 UI 精简（状态卡 + 主开关 + Advanced），同步入口统一到 Workspace Sheet
-- 图标库统一为 Hugeicons（Mobile 端唯一出口在 `components/ui/icons.ts`）
+- 图标库统一为 Lucide（`lucide-react-native`，Mobile 唯一出口在 `components/ui/icons.ts`）
 - Agent Runtime 切换为 `@openai/agents-core`，新增 RN shim 与 streams polyfill
 - RN shim 移除 `any` 类型，遵循移动端 lint 规则
 - Polyfills 改为同步加载，补齐 streams 兜底

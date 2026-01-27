@@ -1,19 +1,14 @@
 /**
  * [PROPS]: None
  * [EMITS]: Navigation events (client routing / external links)
- * [POS]: Anyhunt 官网全局顶部导航 - Notion 风格，C 端优先 + Developers 下拉
+ * [POS]: Anyhunt 官网全局顶部导航 - Notion 风格，C 端优先 + Developers 下拉（Lucide icons direct render）
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import {
-  Menu01Icon,
-  Cancel01Icon,
-  ArrowRight01Icon,
-  ArrowDown01Icon,
-} from '@hugeicons/core-free-icons';
+import { Menu, X, ArrowRight, ArrowDown } from 'lucide-react';
 import { Container } from './Container';
-import { Button, Icon, Skeleton, cn } from '@anyhunt/ui';
+import { Button, Skeleton, cn } from '@anyhunt/ui';
 import { useAuth } from '@/lib/auth-context';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { DEVELOPER_PRODUCTS, DEVELOPER_RESOURCES, type NavMenuItem } from '@/lib/navigation';
@@ -28,6 +23,7 @@ export function Header() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const developerMenuId = 'developer-mega-menu';
+  const MobileMenuIcon = mobileMenuOpen ? X : Menu;
 
   // 处理 hover 开启
   const handleMouseEnter = () => {
@@ -138,8 +134,7 @@ export function Header() {
                 )}
               >
                 Developers
-                <Icon
-                  icon={ArrowDown01Icon}
+                <ArrowDown
                   className={cn(
                     'h-4 w-4 transition-transform duration-150',
                     developerMenuOpen && 'rotate-180'
@@ -207,7 +202,7 @@ export function Header() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                          <Icon icon={ArrowRight01Icon} className="h-4 w-4" />
+                          <ArrowRight className="h-4 w-4" />
                         </div>
                         <div>
                           <div className="text-sm font-medium">Get Started</div>
@@ -216,10 +211,7 @@ export function Header() {
                           </div>
                         </div>
                       </div>
-                      <Icon
-                        icon={ArrowRight01Icon}
-                        className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform"
-                      />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                     </a>
                   </div>
                 </div>
@@ -253,7 +245,7 @@ export function Header() {
             className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <Icon icon={mobileMenuOpen ? Cancel01Icon : Menu01Icon} className="h-5 w-5" />
+            <MobileMenuIcon className="h-5 w-5" />
           </button>
         </div>
 
@@ -294,8 +286,7 @@ export function Header() {
                 onClick={() => setMobileDevOpen(!mobileDevOpen)}
               >
                 Developers
-                <Icon
-                  icon={ArrowDown01Icon}
+                <ArrowDown
                   className={cn('h-4 w-4 transition-transform', mobileDevOpen && 'rotate-180')}
                 />
               </button>
@@ -380,13 +371,11 @@ interface MenuItemProps {
 }
 
 function MenuItemLink({ item, onClose }: MenuItemProps) {
+  const IconComponent = item.icon;
   const content = (
     <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted transition-colors group">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background group-hover:border-primary/50 transition-colors">
-        <Icon
-          icon={item.icon}
-          className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors"
-        />
+        <IconComponent className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
       </div>
       <div className="min-w-0">
         <div className="text-sm font-medium">{item.title}</div>
@@ -412,9 +401,10 @@ function MenuItemLink({ item, onClose }: MenuItemProps) {
 
 // Mobile Menu Item
 function MobileMenuItem({ item, onClose }: MenuItemProps) {
+  const IconComponent = item.icon;
   const content = (
     <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors">
-      <Icon icon={item.icon} className="h-4 w-4 text-muted-foreground" />
+      <IconComponent className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm">{item.title}</span>
     </div>
   );

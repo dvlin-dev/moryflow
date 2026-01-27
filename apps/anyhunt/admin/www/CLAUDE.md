@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
 - Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
 - 补齐 API client 非 JSON 回归测试，新增 `test:unit`
@@ -43,8 +44,8 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - 列表分页统一使用 `page/limit`（不使用 `cursor/nextCursor`），UI 统一使用 `/ui` 的 `SimplePagination`
 - UI 风格：Moryflow 圆角 + 柔和层级
 - 组件统一从 `/ui` 导入
-- 图标统一 Hugeicons（`@hugeicons/react` + `@hugeicons/core-free-icons`）
-- 图标名称必须来自 Hugeicons 实际导出（避免不存在的 Icon 名称）
+- 图标统一 Lucide（`lucide-react`），直接组件调用
+- 图标名称必须来自 Lucide 实际导出（避免不存在的 Icon 名称）
 - 全局样式仅引入 `/ui/styles`，`@source` 只扫描本应用源码
 - 时间展示统一使用 `/ui/lib` 的 `formatRelativeTime`
 
@@ -161,7 +162,7 @@ export function useJobs() {
 ```
 admin/
 ├── /ui - UI components
-├── @hugeicons/core-free-icons - Icon library
+├── lucide-react - Icon library
 ├── @tanstack/react-query - Data fetching
 ├── zustand - Auth state
 ├── react-router-dom - Routing

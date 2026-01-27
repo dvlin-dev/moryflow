@@ -28,7 +28,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - 全局样式引入 `/ui/styles`，Electron 专属样式保留在 `src/renderer/global.css`
 - `electron.vite.config.ts` 需为 `/ui/styles` 设置别名，避免解析到 `packages/ui/src`
 - 外链打开与窗口导航必须走主进程 allowlist 校验（`MORYFLOW_EXTERNAL_HOST_ALLOWLIST` 可扩展）
-- 图标库统一 Hugeicons（`@hugeicons/core-free-icons` + `Icon` 组件）
+- 图标库统一 Lucide（`lucide-react`，直接组件调用）
 - Renderer 使用 Vitest + RTL 补齐核心 hooks 单测
 - Vitest 配置需确保 React 单实例（alias/dedupe），hooks 单测可 mock i18n
 - E2E 基线使用 Playwright（Electron），核心流程需覆盖创建 Vault/笔记与入口页
@@ -83,6 +83,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- PC 端图标回退到 Lucide，移除 Hugeicons 依赖并更新组件调用方式
 - Providers 设置页补齐 Base URL 默认值与覆盖测试
 - useWorkspaceFiles 增加请求过期保护并补充测试，避免工作区切换时展示错误文件
 - PC Chat 输入框改为左右分区（Mode/Model/MCP + Attach/@/Primary），语音/发送合并并隐藏上下文进度
@@ -101,7 +102,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - Auth：access token 持久化（Zustand + IPC），支持预刷新/Resume 校验与网络失败不清理
 - 统一登录/注册为 email + OTP 验证流程，移除 pre-register
 - 主窗口安全收敛：启用 sandbox + 外链 allowlist + 导航拦截
-- Renderer 文案英文化与 Hugeicons 替换；补充 hooks 单测
+- Renderer 文案英文化与 Lucide 替换；补充 hooks 单测
 - 补齐 Playwright E2E 基线与核心流程覆盖
 - Vitest 单测对齐 React 19.2.3，并移除 i18n 依赖避免重复 React
 - Playwright E2E 适配 ESM（使用 import.meta.url 获取路径）

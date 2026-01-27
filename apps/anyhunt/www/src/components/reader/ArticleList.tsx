@@ -1,6 +1,6 @@
 /**
  * [PROPS]: items, selectedId, onSelect, subscriptionName, filter, onFilterChange, onRefresh, onMarkAllRead
- * [POS]: Middle column article list with header actions
+ * [POS]: Middle column article list with header actions (Lucide icons direct render)
  */
 
 import {
@@ -12,13 +12,12 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  Icon,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@anyhunt/ui';
-import { RefreshIcon, FilterIcon, CheckmarkSquare01Icon } from '@hugeicons/core-free-icons';
+import { RefreshCw, ListFilter, SquareCheck } from 'lucide-react';
 import { ArticleCard } from './ArticleCard';
 import type { InboxItem } from '@/features/digest/types';
 
@@ -119,26 +118,23 @@ export function ArticleList({
                   onClick={onRefresh}
                   disabled={isRefreshing}
                 >
-                  <Icon
-                    icon={RefreshIcon}
-                    className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`}
-                  />
+                  <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Refresh</TooltipContent>
             </Tooltip>
 
-            {/* Filter dropdown */}
+            {/* ListFilter dropdown */}
             <DropdownMenu>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="size-8">
-                      <Icon icon={FilterIcon} className="size-4" />
+                      <ListFilter className="size-4" />
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>Filter</TooltipContent>
+                <TooltipContent>ListFilter</TooltipContent>
               </Tooltip>
               <DropdownMenuContent align="end">
                 <DropdownMenuRadioGroup
@@ -158,7 +154,7 @@ export function ArticleList({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8" onClick={onMarkAllRead}>
-                  <Icon icon={CheckmarkSquare01Icon} className="size-4" />
+                  <SquareCheck className="size-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Mark All Read</TooltipContent>

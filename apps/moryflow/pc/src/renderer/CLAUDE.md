@@ -22,7 +22,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - 聊天消息扩展字段统一使用 `metadata.chat`；文件附件预览统一使用 `providerMetadata.chat`
 - 聊天消息列表与输入框 UI 统一使用 `@anyhunt/ui/ai/*` 组件
 - 所有用户可见文案必须为英文
-- 图标统一使用 Hugeicons（`@hugeicons/core-free-icons` + `Icon` 组件），禁止 `lucide-react`
+- 图标统一使用 Lucide（`lucide-react`，直接组件调用），禁止 `@hugeicons/*`
 - 前端表单必须使用 `zod/v3`（RHF 兼容层）
 - 核心 hooks 需有 Vitest 单测覆盖（jsdom + RTL）
 - E2E 测试使用 `data-testid` 作为稳定选择器（避免依赖文案）
@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Renderer 全量回退 Lucide 图标，移除 Icon 包装与 Hugeicons 依赖
 - Providers 设置页补齐 Base URL 默认填充与输入项展示
 - useWorkspaceFiles 增加请求去重/过期保护，避免工作区切换时旧请求覆盖
 - Chat 输入框重排为左右工具区，@ 引用支持 MRU + 全量搜索且附件/引用胶囊统一
@@ -106,7 +107,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - 设置弹窗 System Prompt：高级参数可选覆盖（Use model default）
 - 设置弹窗 System Prompt 改用 `@anyhunt/agents-runtime/prompt`，避免引入 server 依赖
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
-- Chat Pane 消息列表：ToolInput 空输入保护、Hugeicons 替换、渲染性能优化与条件渲染收敛
+- Chat Pane 消息列表：ToolInput 空输入保护、Lucide 替换、渲染性能优化与条件渲染收敛
 - Auth 改为 access 内存 + refresh 轮换，移除 pre-register
 - Auth 表单：FormProvider props 做类型桥接，规避 react-hook-form 重复安装的类型冲突
 - 模型选择禁用项移除占位日志，保持交互收敛

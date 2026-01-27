@@ -1,3 +1,9 @@
+/**
+ * [PROPS]: none
+ * [EMITS]: none
+ * [POS]: Landing playground tabs + preview (Lucide icons direct render)
+ */
+
 import { useState, useCallback } from 'react';
 import {
   Button,
@@ -20,20 +26,19 @@ import {
   AccordionTrigger,
   AccordionContent,
   Badge,
-  Icon,
-  type HugeIcon,
 } from '@anyhunt/ui';
 import {
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  Download01Icon,
-  Globe02Icon,
-  LayersIcon,
-  Loading01Icon,
-  MapsGlobal01Icon,
-  Search01Icon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
+  ArrowDown,
+  ArrowRight,
+  Download,
+  Globe,
+  Layers,
+  Loader,
+  Map,
+  Search,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { Turnstile } from './Turnstile';
 import { usePublicEnv } from '@/lib/public-env-context';
 import { useCaptchaVerification } from '@/hooks/useCaptchaVerification';
@@ -64,12 +69,12 @@ type ResultType =
 
 // ============== Constants ==============
 
-const TABS: { id: TabType; label: string; icon: HugeIcon }[] = [
-  { id: 'scrape', label: 'Scrape', icon: Globe02Icon },
-  { id: 'crawl', label: 'Crawl', icon: LayersIcon },
-  { id: 'map', label: 'Map', icon: MapsGlobal01Icon },
-  { id: 'extract', label: 'Extract', icon: SparklesIcon },
-  { id: 'search', label: 'Search', icon: Search01Icon },
+const TABS: { id: TabType; label: string; icon: LucideIcon }[] = [
+  { id: 'scrape', label: 'Scrape', icon: Globe },
+  { id: 'crawl', label: 'Crawl', icon: Layers },
+  { id: 'map', label: 'Map', icon: Map },
+  { id: 'extract', label: 'Extract', icon: Sparkles },
+  { id: 'search', label: 'Search', icon: Search },
 ];
 
 const FORMAT_OPTIONS: { value: FormatType; label: string }[] = [
@@ -128,7 +133,7 @@ function ScrapeParams({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs">
               {formats.length === 0 ? 'Select formats' : formats.join(', ')}
-              <Icon icon={ArrowDown01Icon} className="h-3 w-3" />
+              <ArrowDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -174,7 +179,7 @@ function MapParams({
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="flex items-center gap-2">
-        <Label className="text-xs text-muted-foreground">Filter</Label>
+        <Label className="text-xs text-muted-foreground">ListFilter</Label>
         <input
           type="text"
           value={search}
@@ -388,7 +393,7 @@ function PdfRenderer({ pdf }: { pdf: NonNullable<ScrapeResult['pdf']> }) {
         className="inline-flex items-center gap-2 border border-border bg-muted/50 px-3 py-2 font-mono text-xs hover:bg-muted"
       >
         <span>Download PDF</span>
-        <Icon icon={Download01Icon} className="h-3 w-3" />
+        <Download className="h-3 w-3" />
       </a>
     </div>
   );
@@ -402,7 +407,7 @@ interface ScrapeResultContentProps {
 }
 
 function ScrapeResultContent({ data, formats }: ScrapeResultContentProps) {
-  // Filter to only formats that have data
+  // ListFilter to only formats that have data
   const availableFormats = formats.filter((format) => {
     switch (format) {
       case 'markdown':
@@ -802,7 +807,7 @@ export function HeroPlayground() {
                 value={tab.id}
                 className="gap-1.5 px-4 py-2 font-mono text-xs data-[state=active]:border-b-2 data-[state=active]:border-foreground"
               >
-                <Icon icon={TabIcon} className="h-3.5 w-3.5" />
+                <TabIcon className="h-3.5 w-3.5" />
                 {tab.label}
               </TabsTrigger>
             );
@@ -836,9 +841,9 @@ export function HeroPlayground() {
             className="font-mono"
           >
             {isLoading ? (
-              <Icon icon={Loading01Icon} className="h-4 w-4 animate-spin" />
+              <Loader className="h-4 w-4 animate-spin" />
             ) : (
-              <Icon icon={ArrowRight01Icon} className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             )}
           </Button>
         </div>
@@ -916,7 +921,7 @@ export function HeroPlayground() {
       {/* Loading State */}
       {isLoading && (
         <div className="mt-4 flex min-h-32 items-center justify-center border border-border bg-card p-4">
-          <Icon icon={Loading01Icon} className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
     </div>

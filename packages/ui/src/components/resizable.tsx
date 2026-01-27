@@ -1,10 +1,9 @@
 'use client';
 
-import { Drag01Icon } from '@hugeicons/core-free-icons';
+import { GripVertical } from 'lucide-react';
 import * as ResizablePrimitive from 'react-resizable-panels';
 
 import { cn } from '../lib/utils';
-import { Icon } from './icon';
 
 const ResizablePanelGroup = ({
   className,
@@ -34,7 +33,7 @@ const ResizableHandle = ({
   >
     {withHandle && (
       <div className="z-10 flex h-4 w-3 items-center justify-center rounded-md border border-border-muted bg-background opacity-0 shadow-xs transition-opacity duration-fast group-hover:opacity-100">
-        <Icon icon={Drag01Icon} className="size-2.5 text-muted-foreground" />
+        <GripVertical className="size-2.5 text-muted-foreground" />
       </div>
     )}
   </ResizablePrimitive.PanelResizeHandle>

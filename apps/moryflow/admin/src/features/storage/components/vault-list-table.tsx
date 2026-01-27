@@ -12,8 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { TableSkeleton } from '@/components/shared';
-import { Icon } from '@/components/ui/icon';
-import { Delete01Icon, ViewIcon } from '@hugeicons/core-free-icons';
+import { Delete, View } from 'lucide-react';
 import { formatBytes } from '../const';
 import { formatDate } from '@/lib/format';
 import type { VaultListItem } from '@/types/storage';
@@ -82,7 +81,7 @@ export function VaultListTable({ vaults, isLoading, onViewDetail, onDelete }: Va
                   onClick={() => onViewDetail(vault)}
                   title="查看详情"
                 >
-                  <Icon icon={ViewIcon} className="h-4 w-4" />
+                  <View className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -91,7 +90,7 @@ export function VaultListTable({ vaults, isLoading, onViewDetail, onDelete }: Va
                   title="删除"
                   className="text-destructive hover:text-destructive"
                 >
-                  <Icon icon={Delete01Icon} className="h-4 w-4" />
+                  <Delete className="h-4 w-4" />
                 </Button>
               </div>
             </TableCell>

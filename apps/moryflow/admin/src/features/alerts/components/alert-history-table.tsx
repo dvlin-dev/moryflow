@@ -11,8 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Icon } from '@/components/ui/icon';
-import { AlertCircleIcon } from '@hugeicons/core-free-icons';
+import { CircleAlert } from 'lucide-react';
 import { formatDateTime } from '@/lib/format';
 import { AlertLevelBadge, AlertTypeBadge } from './alert-badges';
 import type { AlertHistory } from '../types';
@@ -61,7 +60,7 @@ export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps
   if (history.length === 0) {
     return (
       <div className="rounded-lg border p-12 text-center">
-        <Icon icon={AlertCircleIcon} className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <CircleAlert className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <p className="text-muted-foreground">暂无告警记录</p>
         <p className="text-sm text-muted-foreground mt-1">当告警触发时会显示在这里</p>
       </div>

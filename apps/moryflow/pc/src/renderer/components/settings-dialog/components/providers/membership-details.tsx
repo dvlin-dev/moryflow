@@ -1,13 +1,6 @@
 import { Badge } from '@anyhunt/ui/components/badge';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import {
-  CrownIcon,
-  InformationCircleIcon,
-  LockIcon,
-  SparklesIcon,
-  ZapIcon,
-} from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Crown, Info, Lock, Sparkles, Zap } from 'lucide-react';
 import { useAuth, TIER_DISPLAY_NAMES, type MembershipModel } from '@/lib/server';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { cn } from '@/lib/utils';
@@ -24,7 +17,7 @@ export const MembershipDetails = () => {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div className="space-y-2">
-          <Icon icon={CrownIcon} className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <Crown className="mx-auto h-12 w-12 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">Sign in to access membership models</p>
         </div>
       </div>
@@ -37,7 +30,7 @@ export const MembershipDetails = () => {
       <div className="shrink-0 border-b p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Icon icon={CrownIcon} className="h-5 w-5 text-primary" />
+            <Crown className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 className="font-medium">Membership models</h3>
@@ -51,7 +44,7 @@ export const MembershipDetails = () => {
       {/* 提示信息 */}
       <div className="shrink-0 border-b bg-muted/30 px-4 py-3">
         <div className="flex gap-2 text-xs text-muted-foreground">
-          <Icon icon={InformationCircleIcon} className="h-4 w-4 shrink-0" />
+          <Info className="h-4 w-4 shrink-0" />
           <p>
             Membership models are provided by the platform. Usage consumes credits, no API key
             required.
@@ -104,7 +97,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
   if (models.length === 0) {
     return (
       <div className="py-12 text-center">
-        <Icon icon={SparklesIcon} className="mx-auto h-10 w-10 text-muted-foreground/50" />
+        <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
         <p className="mt-3 text-sm text-muted-foreground">No membership models yet</p>
       </div>
     );
@@ -116,7 +109,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
       {availableModels.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Icon icon={ZapIcon} className="h-4 w-4 text-primary" />
+            <Zap className="h-4 w-4 text-primary" />
             <span>Available models</span>
             {availableModels.length > 1 && (
               <Badge variant="secondary" className="text-xs">
@@ -136,7 +129,7 @@ const ModelList = ({ models, userTier }: { models: MembershipModel[]; userTier: 
       {lockedModels.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Icon icon={LockIcon} className="h-4 w-4" />
+            <Lock className="h-4 w-4" />
             <span>Unlocked with higher tier</span>
             {lockedModels.length > 1 && (
               <Badge variant="outline" className="text-xs">
@@ -173,12 +166,12 @@ const ModelItem = ({ model, locked }: { model: MembershipModel; locked?: boolean
         </span>
         {locked ? (
           <Badge variant="outline" className="shrink-0 text-xs">
-            <Icon icon={LockIcon} className="mr-1 h-3 w-3" />
+            <Lock className="mr-1 h-3 w-3" />
             {tierName}
           </Badge>
         ) : (
           <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-xs">
-            <Icon icon={ZapIcon} className="mr-1 h-3 w-3" />
+            <Zap className="mr-1 h-3 w-3" />
             Available
           </Badge>
         )}

@@ -1,10 +1,10 @@
 /**
  * [PROPS]: open, path, onResponse
  * [EMITS]: onResponse(choice) - 用户选择授权选项时触发
- * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问 Vault 外路径时弹出
+ * [POS]: 沙盒授权弹窗组件，当 Agent 需要访问 Vault 外路径时弹出（Lucide 图标）
  */
 
-import { FolderOpenIcon } from '@hugeicons/core-free-icons';
+import { FolderOpen } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
 } from '@anyhunt/ui/components/alert-dialog';
 import { Button } from '@anyhunt/ui/components/button';
-import { Icon } from '@anyhunt/ui/components/icon';
 import type { AuthChoice } from '@anyhunt/agents-sandbox';
 
 interface SandboxAuthDialogProps {
@@ -30,7 +29,7 @@ export function SandboxAuthDialog({ open, path, onResponse }: SandboxAuthDialogP
         <AlertDialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-              <Icon icon={FolderOpenIcon} className="h-5 w-5 text-muted-foreground" />
+              <FolderOpen className="h-5 w-5 text-muted-foreground" />
             </div>
             <AlertDialogTitle>Access External File</AlertDialogTitle>
           </div>

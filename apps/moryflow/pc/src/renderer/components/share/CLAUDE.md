@@ -45,3 +45,7 @@ SharePopover
 
 - 设计文档：`docs/products/moryflow/features/site-publish/publish-ux-redesign.md`
 - Sites CMS：`workspace/components/sites/CLAUDE.md`
+
+## 近期变更
+
+- Share 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
