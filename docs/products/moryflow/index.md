@@ -28,6 +28,7 @@ status: draft
 - 积分系统：`docs/products/moryflow/features/credits-system/tech.md`
 - 语音转写：`docs/products/moryflow/features/speech-to-text/tech.md`
 - Mobile 设计系统：`docs/products/moryflow/features/mobile-design-system/proposal.md`
+- PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`
 
 ## Runbooks（发布/签名）
 

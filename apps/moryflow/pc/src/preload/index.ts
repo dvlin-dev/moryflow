@@ -97,6 +97,11 @@ const api: DesktopApi = {
     getOpenTabs: (vaultPath) => ipcRenderer.invoke('workspace:getOpenTabs', { vaultPath }),
     setOpenTabs: (vaultPath, tabs) =>
       ipcRenderer.invoke('workspace:setOpenTabs', { vaultPath, tabs }),
+    getRecentFiles: (vaultPath) => ipcRenderer.invoke('workspace:getRecentFiles', { vaultPath }),
+    recordRecentFile: (vaultPath, filePath) =>
+      ipcRenderer.invoke('workspace:recordRecentFile', { vaultPath, filePath }),
+    removeRecentFile: (vaultPath, filePath) =>
+      ipcRenderer.invoke('workspace:removeRecentFile', { vaultPath, filePath }),
   },
   preload: {
     getCache: () => ipcRenderer.invoke('preload:getCache'),

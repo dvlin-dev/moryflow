@@ -14,14 +14,15 @@ import {
   PromptInputActionMenu,
   PromptInputActionMenuContent,
   PromptInputActionMenuTrigger,
-  PromptInputAttachment,
-  PromptInputAttachments,
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
+  PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
+  usePromptInputAttachments,
+  usePromptInputController,
 } from '@anyhunt/ui/ai/prompt-input';
 import { InputGroupButton } from '@anyhunt/ui/components/input-group';
 import { Button } from '@anyhunt/ui/components/button';
@@ -37,11 +38,13 @@ import {
   ModelSelectorFooter,
 } from '@anyhunt/ui/ai/model-selector';
 import {
+  Add01Icon,
   ArrowDown01Icon,
   ArrowUp01Icon,
   ArrowUpRight01Icon,
-  Attachment01Icon,
   CheckmarkCircle01Icon,
+  File01Icon,
+  Image01Icon,
   Mic01Icon,
   Settings02Icon,
   SparklesIcon,
@@ -53,24 +56,21 @@ import { McpSelector } from '@/components/ai-elements/mcp-selector';
 import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
 import { Icon } from '@anyhunt/ui/components/icon';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@anyhunt/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useTranslation } from '@/lib/i18n';
 
-import { ContextFileTags, type ContextFileTag } from '../context-file-tags';
+import { ContextFileTags, FileChip, type ContextFileTag } from '../context-file-tags';
 import { FileContextAdder } from '../file-context-adder';
 import { TokenUsageIndicator } from '../token-usage-indicator';
-import { useWorkspaceFiles } from '../../hooks';
+import { useRecentFiles, useWorkspaceFiles } from '../../hooks';
 import { createFileRefAttachment } from '../../types/attachment';
 import { buildAIRequest } from '../../utils';
 
@@ -80,7 +80,13 @@ import { enrichFileMetadata, findModel } from './handle';
 /** 默认 context window 大小 */
 const DEFAULT_CONTEXT_WINDOW = 128000;
 
-export const ChatPromptInput = ({
+export const ChatPromptInput = (props: ChatPromptInputProps) => (
+  <PromptInputProvider>
+    <ChatPromptInputInner {...props} />
+  </PromptInputProvider>
+);
+
+const ChatPromptInputInner = ({
   status,
   onSubmit,
   onStop,
@@ -102,10 +108,14 @@ export const ChatPromptInput = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([]);
-  const [modeConfirmOpen, setModeConfirmOpen] = useState(false);
+  const promptController = usePromptInputController();
+  const attachments = usePromptInputAttachments();
 
   // 获取工作区所有文件
-  const { files: workspaceFiles } = useWorkspaceFiles(vaultPath ?? null);
+  const { files: workspaceFiles, refresh: refreshWorkspaceFiles } = useWorkspaceFiles(
+    vaultPath ?? null
+  );
+  const { recentFiles, refreshRecentFiles } = useRecentFiles(vaultPath ?? null, workspaceFiles);
 
   const selectedModel = useMemo(
     () => findModel(modelGroups, selectedModelId),
@@ -118,19 +128,18 @@ export const ChatPromptInput = ({
   const canStop = status === 'submitted' || status === 'streaming';
   const isDisabled = Boolean(disabled);
   const accessMode = mode;
+  const hasTextInput = promptController.textInput.value.trim().length > 0;
 
   // 语音录制 hook
-  const handleTranscribed = useCallback((text: string) => {
-    if (textareaRef.current) {
-      const textarea = textareaRef.current;
-      const currentValue = textarea.value;
+  const handleTranscribed = useCallback(
+    (text: string) => {
+      const currentValue = promptController.textInput.value;
       const newValue = currentValue ? `${currentValue} ${text}` : text;
-
-      textarea.value = newValue;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      textarea.focus();
-    }
-  }, []);
+      promptController.textInput.setInput(newValue);
+      textareaRef.current?.focus();
+    },
+    [promptController.textInput]
+  );
 
   const handleSpeechError = useCallback(
     (error: Error) => {
@@ -206,10 +215,10 @@ export const ChatPromptInput = ({
       }
 
       // 构建结构化附件列表
-      const attachments = contextFiles.map(createFileRefAttachment);
+      const contextAttachments = contextFiles.map(createFileRefAttachment);
 
       // 转换为 AI 请求格式（file-ref 拼接到文本，file-embed/image-embed 放入 files）
-      const aiRequest = buildAIRequest(payload.text, attachments);
+      const aiRequest = buildAIRequest(payload.text, contextAttachments);
 
       // 合并原有上传文件和嵌入附件
       const allFiles = [...payload.files.map(enrichFileMetadata), ...aiRequest.files];
@@ -218,7 +227,7 @@ export const ChatPromptInput = ({
       onSubmit({
         text: aiRequest.text,
         files: allFiles,
-        attachments,
+        attachments: contextAttachments,
       });
 
       // 清空已选文件
@@ -227,26 +236,34 @@ export const ChatPromptInput = ({
     [isDisabled, onSubmit, contextFiles]
   );
 
-  // 渲染文件引用区域：@ 按钮 + 已引用文件标签
-  const renderFileReferenceArea = () => (
-    <div className="flex w-full flex-wrap items-center justify-start gap-1.5 px-3 pt-2">
-      <FileContextAdder
-        disabled={isDisabled}
-        allFiles={workspaceFiles}
-        existingFiles={contextFiles}
-        onAddFile={handleAddContextFile}
+  const renderAttachmentChip = (file: (typeof attachments.files)[number]) => {
+    const isImage = Boolean(file.mediaType?.startsWith('image/'));
+    const label = file.filename || (isImage ? 'Image' : 'Attachment');
+    return (
+      <FileChip
+        key={file.id}
+        icon={isImage ? Image01Icon : File01Icon}
+        label={label}
+        tooltip={file.filename ?? undefined}
+        removeLabel={t('removeFile')}
+        onRemove={() => attachments.remove(file.id)}
       />
-      {contextFiles.length > 0 && (
-        <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />
-      )}
-    </div>
-  );
+    );
+  };
 
-  const renderAttachments = () => (
-    <PromptInputAttachments className="flex-wrap gap-2 px-3 pt-2">
-      {(file) => <PromptInputAttachment key={file.id} data={file} />}
-    </PromptInputAttachments>
-  );
+  const renderFileChipsRow = () => {
+    if (contextFiles.length === 0 && attachments.files.length === 0) {
+      return null;
+    }
+    return (
+      <div className="flex w-full flex-wrap items-center gap-2 px-3 pt-2">
+        {contextFiles.length > 0 && (
+          <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />
+        )}
+        {attachments.files.map((file) => renderAttachmentChip(file))}
+      </div>
+    );
+  };
 
   const renderTextarea = () => (
     <PromptInputBody>
@@ -260,38 +277,75 @@ export const ChatPromptInput = ({
     </PromptInputBody>
   );
 
-  // 渲染语音按钮
-  const renderSpeechButton = () => (
-    <InputGroupButton
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      onClick={handleSpeechToggle}
-      disabled={isDisabled || isProcessing || canStop}
-      aria-label={isRecording ? t('stopRecording') : t('startRecording')}
-      className={cn(
-        'rounded-full transition-colors',
-        isSpeechActive && 'bg-black/40 text-white hover:bg-black/50'
-      )}
-    >
-      {isSpeechActive ? (
-        <Icon icon={StopIcon} className="size-3.5 fill-current" />
-      ) : (
-        <Icon icon={Mic01Icon} className="size-4" />
-      )}
-    </InputGroupButton>
-  );
-
   const renderActionMenu = () => (
     <PromptInputActionMenu>
       <PromptInputActionMenuTrigger aria-label={t('addFile')} disabled={isDisabled}>
-        <Icon icon={Attachment01Icon} className="size-4" />
+        <Icon icon={Add01Icon} className="size-4" />
       </PromptInputActionMenuTrigger>
       <PromptInputActionMenuContent>
         <PromptInputActionAddAttachments />
       </PromptInputActionMenuContent>
     </PromptInputActionMenu>
   );
+
+  const renderPrimaryAction = () => {
+    if (canStop) {
+      return (
+        <InputGroupButton
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onStop}
+          aria-label={t('stopGenerating')}
+          disabled={isDisabled}
+          className="rounded-full bg-white text-black hover:bg-gray-100"
+        >
+          <Icon icon={StopIcon} className="size-4 fill-current" />
+        </InputGroupButton>
+      );
+    }
+
+    if (isSpeechActive) {
+      return (
+        <InputGroupButton
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={handleSpeechToggle}
+          aria-label={t('stopRecording')}
+          disabled={isDisabled}
+          className={cn(
+            'rounded-full transition-colors',
+            isSpeechActive && 'bg-black/40 text-white hover:bg-black/50'
+          )}
+        >
+          <Icon icon={StopIcon} className="size-4 fill-current" />
+        </InputGroupButton>
+      );
+    }
+
+    if (hasTextInput) {
+      return (
+        <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full">
+          <Icon icon={ArrowUp01Icon} className="size-4" />
+        </PromptInputSubmit>
+      );
+    }
+
+    return (
+      <InputGroupButton
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={handleSpeechToggle}
+        aria-label={t('startRecording')}
+        disabled={isDisabled || isProcessing}
+        className="rounded-full"
+      >
+        <Icon icon={Mic01Icon} className="size-4" />
+      </InputGroupButton>
+    );
+  };
 
   const renderModelSelectorList = () => (
     <ModelSelectorContent>
@@ -371,52 +425,39 @@ export const ChatPromptInput = ({
       </PromptInputButton>
     );
 
-  const handleModeToggle = useCallback(() => {
-    if (isDisabled) {
-      return;
-    }
-    if (accessMode === 'full_access') {
-      onModeChange('agent');
-      return;
-    }
-    setModeConfirmOpen(true);
-  }, [accessMode, isDisabled, onModeChange]);
-
-  const confirmFullAccess = useCallback(() => {
-    setModeConfirmOpen(false);
-    onModeChange('full_access');
-  }, [onModeChange]);
-
   const renderModeSwitch = () => (
-    <PromptInputButton
-      type="button"
-      aria-label={accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}
-      disabled={isDisabled}
-      onClick={handleModeToggle}
-      className={cn('gap-1.5', accessMode === 'full_access' && 'border-orange-200 text-orange-600')}
-    >
-      <span>{accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}</span>
-    </PromptInputButton>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <PromptInputButton
+          type="button"
+          aria-label={accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}
+          disabled={isDisabled}
+          className={cn(
+            'gap-1.5',
+            accessMode === 'full_access' && 'border-orange-200 text-orange-600'
+          )}
+        >
+          <Icon icon={SparklesIcon} className="size-4" />
+          <span>{accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}</span>
+          <Icon icon={ArrowDown01Icon} className="size-3 opacity-50" />
+        </PromptInputButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup
+          value={accessMode}
+          onValueChange={(value) => {
+            if (isDisabled) {
+              return;
+            }
+            onModeChange(value as ChatPromptInputProps['mode']);
+          }}
+        >
+          <DropdownMenuRadioItem value="agent">{t('agentMode')}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="full_access">{t('fullAccessMode')}</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-
-  const renderSubmitAction = () =>
-    canStop ? (
-      <InputGroupButton
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={onStop}
-        aria-label={t('stopGenerating')}
-        disabled={isDisabled}
-        className="rounded-full bg-white text-black hover:bg-gray-100"
-      >
-        <Icon icon={StopIcon} className="size-4 fill-current" />
-      </InputGroupButton>
-    ) : (
-      <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full">
-        <Icon icon={ArrowUp01Icon} className="size-4" />
-      </PromptInputSubmit>
-    );
 
   const renderFooterActions = () => (
     <PromptInputFooter>
@@ -443,17 +484,30 @@ export const ChatPromptInput = ({
       ) : (
         <PromptInputTools>
           {renderModeSwitch()}
-          {renderActionMenu()}
           {renderModelSelector()}
           <McpSelector disabled={isDisabled} onOpenSettings={onOpenSettings} />
         </PromptInputTools>
       )}
       <div className="flex items-center gap-2">
-        {!isSpeechActive && (
+        <div className="sr-only">
           <TokenUsageIndicator usage={tokenUsage} contextWindow={contextWindow} />
+        </div>
+        {!isSpeechActive && renderActionMenu()}
+        {!isSpeechActive && (
+          <FileContextAdder
+            disabled={isDisabled}
+            allFiles={workspaceFiles}
+            recentFiles={recentFiles}
+            existingFiles={contextFiles}
+            onAddFile={handleAddContextFile}
+            onRefreshRecent={() => {
+              refreshRecentFiles();
+              refreshWorkspaceFiles();
+            }}
+            iconOnly
+          />
         )}
-        {renderSpeechButton()}
-        {!isSpeechActive && renderSubmitAction()}
+        {renderPrimaryAction()}
       </div>
     </PromptInputFooter>
   );
@@ -466,23 +520,9 @@ export const ChatPromptInput = ({
       multiple
       className="**:data-[slot=input-group]:rounded-xl **:data-[slot=input-group]:shadow-lg **:data-[slot=input-group]:border-border-muted **:data-[slot=input-group]:overflow-hidden"
     >
-      {/* 只在对话进行中显示 plan 面板 */}
-      {renderFileReferenceArea()}
-      {renderAttachments()}
+      {renderFileChipsRow()}
       {renderTextarea()}
       {renderFooterActions()}
-      <AlertDialog open={modeConfirmOpen} onOpenChange={setModeConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('fullAccessConfirmTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('fullAccessConfirmDescription')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmFullAccess}>{t('confirmSwitch')}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </PromptInput>
   );
 };

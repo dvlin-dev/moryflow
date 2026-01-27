@@ -45,6 +45,9 @@ import {
   setLastOpenedFile,
   getOpenTabs,
   setOpenTabs,
+  getRecentFiles,
+  recordRecentFile,
+  removeRecentFile,
   type PersistedTab,
 } from '../workspace-settings.js';
 import { getTreeCache, setTreeCache } from '../tree-cache.js';
@@ -226,6 +229,23 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     const tabs = Array.isArray(payload?.tabs) ? (payload.tabs as PersistedTab[]) : [];
     if (!vaultPath) return;
     setOpenTabs(vaultPath, tabs);
+  });
+  ipcMain.handle('workspace:getRecentFiles', (_event, payload) => {
+    const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
+    if (!vaultPath) return [];
+    return getRecentFiles(vaultPath);
+  });
+  ipcMain.handle('workspace:recordRecentFile', (_event, payload) => {
+    const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
+    const filePath = typeof payload?.filePath === 'string' ? payload.filePath : null;
+    if (!vaultPath) return;
+    recordRecentFile(vaultPath, filePath);
+  });
+  ipcMain.handle('workspace:removeRecentFile', (_event, payload) => {
+    const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
+    const filePath = typeof payload?.filePath === 'string' ? payload.filePath : null;
+    if (!vaultPath) return;
+    removeRecentFile(vaultPath, filePath);
   });
   ipcMain.handle('preload:getCache', () => getAllPreloadCache());
   ipcMain.handle('preload:setCache', (_event, payload) => {

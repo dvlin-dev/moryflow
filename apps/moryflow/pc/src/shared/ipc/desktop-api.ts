@@ -144,6 +144,12 @@ export type DesktopApi = {
       vaultPath: string,
       tabs: { id: string; name: string; path: string; pinned?: boolean }[]
     ) => Promise<void>;
+    /** 获取最近操作的文件路径（按 Vault） */
+    getRecentFiles: (vaultPath: string) => Promise<string[]>;
+    /** 记录最近操作的文件（按 Vault） */
+    recordRecentFile: (vaultPath: string, filePath: string | null) => Promise<void>;
+    /** 移除最近操作的文件（按 Vault） */
+    removeRecentFile: (vaultPath: string, filePath: string | null) => Promise<void>;
   };
   preload: {
     getCache: () => Promise<

@@ -1,13 +1,22 @@
-import type { VaultInfo, VaultTreeNode } from '@shared/ipc'
+/**
+ * [PROVIDES]: Workspace 工具函数（扁平化/路径处理）
+ * [DEPENDS]: VaultTreeNode
+ * [POS]: workspace 文件树与路径通用工具
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 
-const ILLEGAL_NAME_PATTERN = /[\\/:*?"<>|]/g
+import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
+
+const ILLEGAL_NAME_PATTERN = /[\\/:*?"<>|]/g;
 
 /** 扁平化文件信息 */
 export type FlatFile = {
-  path: string
-  name: string
-  extension: string
-}
+  path: string;
+  name: string;
+  extension: string;
+  mtime?: number;
+};
 
 /**
  * 从文件名提取扩展名
@@ -15,11 +24,11 @@ export type FlatFile = {
  * @returns 小写扩展名，无扩展名返回空字符串
  */
 const getExtension = (name: string): string => {
-  const lastDot = name.lastIndexOf('.')
+  const lastDot = name.lastIndexOf('.');
   // 无点号或点号在开头（隐藏文件如 .gitignore）
-  if (lastDot <= 0) return ''
-  return name.slice(lastDot + 1).toLowerCase()
-}
+  if (lastDot <= 0) return '';
+  return name.slice(lastDot + 1).toLowerCase();
+};
 
 /**
  * 将目录树扁平化为文件列表
@@ -27,7 +36,7 @@ const getExtension = (name: string): string => {
  * @returns 扁平化的文件列表
  */
 export const flattenTreeToFiles = (nodes: VaultTreeNode[]): FlatFile[] => {
-  const files: FlatFile[] = []
+  const files: FlatFile[] = [];
 
   const traverse = (list: VaultTreeNode[]) => {
     for (const node of list) {
@@ -36,20 +45,20 @@ export const flattenTreeToFiles = (nodes: VaultTreeNode[]): FlatFile[] => {
           path: node.path,
           name: node.name,
           extension: getExtension(node.name),
-        })
+          mtime: node.mtime,
+        });
       }
       if (node.children?.length) {
-        traverse(node.children)
+        traverse(node.children);
       }
     }
-  }
+  };
 
-  traverse(nodes)
-  return files
-}
+  traverse(nodes);
+  return files;
+};
 
-export const sanitizeEntryName = (value: string) =>
-  value.trim().replace(ILLEGAL_NAME_PATTERN, '');
+export const sanitizeEntryName = (value: string) => value.trim().replace(ILLEGAL_NAME_PATTERN, '');
 
 export const ensureMarkdownExtension = (value: string) =>
   value.toLowerCase().endsWith('.md') ? value : `${value}.md`;
@@ -76,7 +85,7 @@ export const getParentDirectoryPath = (fullPath: string) => {
 
 export const findNodeByPath = (
   nodes: VaultTreeNode[],
-  targetPath: string,
+  targetPath: string
 ): VaultTreeNode | null => {
   for (const node of nodes) {
     if (node.path === targetPath) {
@@ -94,7 +103,7 @@ export const findNodeByPath = (
 
 export const resolveParentPath = (
   vault: VaultInfo | null,
-  selectedEntry: VaultTreeNode | null,
+  selectedEntry: VaultTreeNode | null
 ): string => {
   if (selectedEntry?.type === 'folder') {
     return selectedEntry.path;
@@ -108,7 +117,7 @@ export const resolveParentPath = (
 export const mergeChildrenIntoTree = (
   nodes: VaultTreeNode[],
   targetPath: string,
-  children: VaultTreeNode[],
+  children: VaultTreeNode[]
 ): VaultTreeNode[] => {
   return nodes.map((node) => {
     if (node.path === targetPath) {

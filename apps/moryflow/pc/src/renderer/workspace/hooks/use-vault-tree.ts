@@ -200,6 +200,10 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
         event.type === 'file-removed' ||
         event.type === 'file-changed';
 
+      if (event.type === 'file-removed') {
+        void window.desktopAPI.workspace.removeRecentFile(vault.path, event.path);
+      }
+
       if (dirEvent) {
         // dir-removed 需要刷新父目录（被删除的目录已不存在）
         // dir-added 刷新新增目录本身

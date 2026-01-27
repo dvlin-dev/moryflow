@@ -1,7 +1,16 @@
+/**
+ * [PROPS]: ContextFileTagsProps/FileChipProps - 引用/附件胶囊渲染
+ * [EMITS]: onRemove - 移除引用/附件
+ * [POS]: Chat Prompt 输入框的文件胶囊列表
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { Cancel01Icon, File01Icon } from '@hugeicons/core-free-icons';
-import { Icon } from '@anyhunt/ui/components/icon';
+import { Icon, type HugeIcon } from '@anyhunt/ui/components/icon';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 type ContextFileTag = {
   id: string;
@@ -14,6 +23,54 @@ type ContextFileTagsProps = {
   onRemove?: (id: string) => void;
 };
 
+type FileChipProps = {
+  icon: HugeIcon;
+  label: string;
+  tooltip?: string;
+  onRemove?: () => void;
+  removeLabel?: string;
+  className?: string;
+};
+
+const FileChip = ({ icon, label, tooltip, onRemove, removeLabel, className }: FileChipProps) => {
+  const { t } = useTranslation('chat');
+  const resolvedRemoveLabel = removeLabel ?? t('removeReference');
+  const content = (
+    <div
+      className={cn(
+        'group flex h-7 w-36 items-center gap-1.5 rounded-full border border-border-muted bg-muted/50 px-2 text-xs font-medium text-foreground transition-colors duration-fast hover:bg-muted',
+        className
+      )}
+    >
+      <Icon icon={icon} className="size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {onRemove && (
+        <button
+          type="button"
+          className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all duration-fast hover:bg-muted-foreground/20 hover:text-foreground group-hover:opacity-100"
+          onClick={onRemove}
+          aria-label={resolvedRemoveLabel}
+        >
+          <Icon icon={Cancel01Icon} className="size-3.5" />
+        </button>
+      )}
+    </div>
+  );
+
+  if (!tooltip) {
+    return content;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        <p className="truncate text-xs">{tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 export const ContextFileTags = ({ files, onRemove }: ContextFileTagsProps) => {
   if (files.length === 0) {
     return null;
@@ -22,42 +79,17 @@ export const ContextFileTags = ({ files, onRemove }: ContextFileTagsProps) => {
   return (
     <>
       {files.map((file) => (
-        <ContextFileTagItem key={file.id} file={file} onRemove={onRemove} />
+        <FileChip
+          key={file.id}
+          icon={File01Icon}
+          label={file.name}
+          tooltip={file.path}
+          onRemove={onRemove ? () => onRemove(file.id) : undefined}
+        />
       ))}
     </>
   );
 };
 
-type ContextFileTagItemProps = {
-  file: ContextFileTag;
-  onRemove?: (id: string) => void;
-};
-
-const ContextFileTagItem = ({ file, onRemove }: ContextFileTagItemProps) => {
-  const { t } = useTranslation('chat');
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="group relative flex h-7 cursor-default items-center gap-1.5 rounded-full border border-border-muted bg-muted/50 pl-2 pr-1.5 text-xs font-medium text-foreground transition-colors duration-fast hover:bg-muted">
-          <Icon icon={File01Icon} className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className="max-w-32 truncate">{file.name}</span>
-          {onRemove && (
-            <button
-              type="button"
-              className="ml-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-transparent text-muted-foreground opacity-0 transition-all duration-fast hover:bg-muted-foreground/20 hover:text-foreground group-hover:opacity-100"
-              onClick={() => onRemove(file.id)}
-              aria-label={t('removeReference')}
-            >
-              <Icon icon={Cancel01Icon} className="size-3.5" />
-            </button>
-          )}
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
-        <p className="truncate text-xs">{file.path}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-};
-
-export type { ContextFileTag, ContextFileTagsProps };
+export type { ContextFileTag, ContextFileTagsProps, FileChipProps };
+export { FileChip };

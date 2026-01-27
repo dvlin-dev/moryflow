@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Moryflow PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`（2026-01-27：proposal update）
 - ADR-0002：补充外部化/Hook 示例（JSONC/Agent/Tool）（2026-01-30）
 - ADR-0002：P2-7/P2-8 外部化与 Hook 落地完成（2026-01-29）
 - ADR-0002：P1-5 模式切换落地完成（PC + Mobile）（2026-01-28）

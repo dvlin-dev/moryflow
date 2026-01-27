@@ -72,6 +72,7 @@ status: active
   - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
   - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
   - 云同步 UI 精简计划与 Hugeicons RN 调研：`docs/products/moryflow/features/cloud-sync/ui-plan-and-icon-research.md`
+  - PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`
 
 ## Code Review（全量评审计划与进度）
 

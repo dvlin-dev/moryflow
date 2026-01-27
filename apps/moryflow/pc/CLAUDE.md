@@ -83,6 +83,9 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- useWorkspaceFiles 增加请求过期保护并补充测试，避免工作区切换时展示错误文件
+- PC Chat 输入框改为左右分区（Mode/Model/MCP + Attach/@/Primary），语音/发送合并并隐藏上下文进度
+- @ 引用改为 MRU 3 个 + 全量搜索，引用/上传文件统一胶囊样式且 Full Access 切换无确认
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook；桌面端可按开关加载外部工具
 - Chat 会话模式切换补齐审计与 mode 归一化，避免缺失字段导致异常
 - Chat 会话模式切换：IPC/存储/渲染联动，全权限模式自动放行且保留审计

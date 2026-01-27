@@ -27,6 +27,7 @@ describe('useDocumentState', () => {
         getLastOpenedFile: vi.fn().mockResolvedValue(null),
         setOpenTabs: vi.fn(),
         setLastOpenedFile: vi.fn(),
+        recordRecentFile: vi.fn(),
       },
       events: {},
     } as unknown as DesktopApi;
@@ -48,6 +49,10 @@ describe('useDocumentState', () => {
     });
 
     expect(readFile).toHaveBeenCalledWith('/vault/note.md');
+    expect(window.desktopAPI.workspace.recordRecentFile).toHaveBeenCalledWith(
+      '/vault',
+      '/vault/note.md'
+    );
     await waitFor(() => expect(result.current.activeDoc).not.toBeNull());
 
     act(() => {
