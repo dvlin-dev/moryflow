@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-01-27（CI：Vitest 单测限制 maxWorkers=2，平衡稳定性与速度）
 > 最近更新：2026-01-27（CI：Turbo 并发参数改为直接传给 turbo，避免透传到 vitest）
