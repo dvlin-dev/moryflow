@@ -7,13 +7,17 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
-  lint-typecheck:
-    name: Lint & Typecheck
+  ci:
+    name: CI
     runs-on: [self-hosted, linux, x64, railway, default]
     steps:
       - name: Runner info
@@ -25,9 +29,13 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,7 +44,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Lint
         run: pnpm lint
@@ -44,62 +52,18 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-  test:
-    name: Test
-    runs-on: [self-hosted, linux, x64, railway, default]
-    needs: lint-typecheck
-    steps:
-      - name: Runner info
-        run: |
-          echo "RUNNER_NAME=$RUNNER_NAME"
-          echo "RUNNER_OS=$RUNNER_OS"
-          echo "RUNNER_ARCH=$RUNNER_ARCH"
-          uname -a
+      - name: Fetch base branch (PR only)
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.base_ref }} --depth=1
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Run tests (changed packages)
+        if: github.event_name == 'pull_request'
+        run: pnpm test:unit -- --concurrency=4 --filter=...[origin/${{ github.base_ref }}]
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run tests
-        run: pnpm test:unit
-
-  build:
-    name: Build
-    runs-on: [self-hosted, linux, x64, railway, default]
-    needs: [lint-typecheck, test]
-    steps:
-      - name: Runner info
-        run: |
-          echo "RUNNER_NAME=$RUNNER_NAME"
-          echo "RUNNER_OS=$RUNNER_OS"
-          echo "RUNNER_ARCH=$RUNNER_ARCH"
-          uname -a
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Run tests (full)
+        if: github.event_name != 'pull_request'
+        run: pnpm test:unit -- --concurrency=4
 
       - name: Build
+        if: github.event_name != 'pull_request'
         run: pnpm build
