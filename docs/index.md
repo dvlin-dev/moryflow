@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-01
+date: 2026-01-27
 scope: monorepo
 status: active
 ---
@@ -108,6 +108,7 @@ status: active
 
 ## Research（调研 / 功能需求）
 
+- 调研：Clawdbot 架构与功能拆解（可借鉴点汇总）：`docs/research/clawdbot-architecture-review.md`（更新：2026-01-27，补充约束/错误码表/实施里程碑）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-26）
 - 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）

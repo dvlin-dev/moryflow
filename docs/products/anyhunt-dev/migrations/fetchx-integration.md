@@ -1,12 +1,12 @@
 ---
 title: Fetchx 接入方案（Anyhunt Dev 试点）
-date: 2026-01-23
+date: 2026-01-27
 scope: anyhunt.app, server.anyhunt.app
 status: active
 ---
 
 <!--
-[INPUT]: 现有 Anyhunt monorepo + archive/external-repos/fetchx；两条业务线独立 Auth；零兼容改造
+[INPUT]: 现有 Anyhunt monorepo + external-repos/fetchx；两条业务线独立 Auth；零兼容改造
 [OUTPUT]: Fetchx 官网/Console/Admin 的接入方案（含 apps 目录重构、Auth 方案、部署与验收）
 [POS]: Anyhunt Dev 产品线内迁移方案（Fetchx 试点）
 
@@ -39,10 +39,10 @@ status: active
 
 ### 2) 外部仓库快照（可复用）
 
-- `archive/external-repos/fetchx/apps/console`：Fetchx 控制台（可作为 console 基础模板）
-- `archive/external-repos/fetchx/apps/admin`：Fetchx 管理后台（已迁入 `apps/anyhunt/admin/www`）
-- `archive/external-repos/fetchx/apps/www`：Fetchx 官网（已合并到 `apps/anyhunt/www`）
-- `archive/external-repos/fetchx/apps/server`：Fetchx 服务端（已迁入 `apps/anyhunt/server`）
+- `external-repos/fetchx/apps/console`：Fetchx 控制台（可作为 console 基础模板）
+- `external-repos/fetchx/apps/admin`：Fetchx 管理后台（已迁入 `apps/anyhunt/admin/www`）
+- `external-repos/fetchx/apps/www`：Fetchx 官网（已合并到 `apps/anyhunt/www`）
+- `external-repos/fetchx/apps/server`：Fetchx 服务端（已迁入 `apps/anyhunt/server`）
 
 ### 3) 风险提示（当前差距）
 

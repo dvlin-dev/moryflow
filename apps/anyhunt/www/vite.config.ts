@@ -65,7 +65,7 @@ export default defineConfig({
   plugins: [
     tsconfigPaths({
       ignoreConfigErrors: true,
-      skip: (dir) => dir.includes('archive/external-repos'),
+      skip: (dir) => dir.includes('external-repos'),
     }),
     tailwindcss(),
     tanstackStart({

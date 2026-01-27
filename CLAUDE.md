@@ -247,9 +247,10 @@ Anyhunt/
 
 ## 外部仓库快照（仅查阅）
 
-- `archive/external-repos/moryflow/`：原 `/Users/bowling/code/me/moryflow`
-- `archive/external-repos/fetchx/`：原 `/Users/bowling/code/me/fetchx`
-- `archive/external-repos/memai/`：原 `/Users/bowling/code/me/memai`
+- `external-repos/moryflow/`：原 `/Users/bowling/code/me/moryflow`
+- `external-repos/fetchx/`：原 `/Users/bowling/code/me/fetchx`
+- `external-repos/memai/`：原 `/Users/bowling/code/me/memai`
+- `external-repos/clawdbot/`：Clawdbot 调研仓库（仅查阅）
 
 ---
 

@@ -72,8 +72,7 @@ sandbox-runtime/
 *.gz
 
 # 外部参考仓库
-archive/external-repos/agent-browser/
-archive/external-repos/firecrawl/
+external-repos/
 
 # Reference repos (not tracked)
 aigc-weekly-ref/

@@ -1,6 +1,6 @@
 ---
 title: Moryflow（内部方案）
-date: 2026-01-25
+date: 2026-01-27
 scope: moryflow.com, moryflow.app
 status: draft
 ---
@@ -44,6 +44,6 @@ status: draft
 
 若需要继续迁移旧文档，请优先从：
 
-- `archive/external-repos/moryflow/docs/`
+- `external-repos/moryflow/docs/`
 
 开始抽取“仍然有效”的部分，按主题归位到本目录。
