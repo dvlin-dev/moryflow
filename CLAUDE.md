@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-01-27（CI：Turbo 并发参数改为直接传给 turbo，避免透传到 vitest）
 > 最近更新：2026-01-27（CI：PR 仅跑变更单测，build 仅在非 PR 触发）
 > 最近更新：2026-01-27（CI 追加并发取消、浅克隆与 pnpm 版本固定，缩短流水线耗时）
 > 最近更新：2026-01-27（CI 合并为单一 job，统一 lint/typecheck/test/build 流程）
