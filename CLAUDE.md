@@ -206,6 +206,7 @@ Anyhunt/
 - pnpm 版本固定为 `9.12.2`（Docker/CI 避免 corepack pnpm@9.14+ 的 depNode.fetching 报错）
 - Docker 安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - `onlyBuiltDependencies` 允许 `better-sqlite3` 与 `keytar` 构建脚本执行（Electron native module 需要）
+- 使用 `@biomejs/biome` 提供 JSON/JS LSP 与格式化能力
 - Docker 构建上下文使用 `.dockerignore` 排除 `node_modules/`、`dist/`、`generated/` 等产物，避免镜像污染与缓存失效
 
 ---

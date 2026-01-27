@@ -8,6 +8,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "postinstall": "electron-rebuild -f -w better-sqlite3,keytar",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "install:electron": "pnpm exec node node_modules/electron/install.js",
@@ -65,6 +66,7 @@
     "@ai-sdk/provider-utils": "4.0.9",
     "@ai-sdk/react": "3.0.51",
     "@ariakit/react": "^0.4.19",
+    "@electron/rebuild": "^3.7.2",
     "@floating-ui/react": "^0.27.16",
     "@hookform/resolvers": "^5.2.1",
     "@playwright/test": "^1.49.0",

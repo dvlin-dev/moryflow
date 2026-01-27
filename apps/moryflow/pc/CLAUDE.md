@@ -34,6 +34,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - E2E 基线使用 Playwright（Electron），核心流程需覆盖创建 Vault/笔记与入口页
 - E2E 运行可使用 `MORYFLOW_E2E_USER_DATA`/`MORYFLOW_E2E_RESET` 隔离与重置数据
 - preload 构建需输出 CJS（sandbox 下 ESM preload 会报错）
+- `postinstall` 会执行 `electron-rebuild`，确保 `better-sqlite3`/`keytar` 与 Electron ABI 匹配
 
 ## 技术栈
 
