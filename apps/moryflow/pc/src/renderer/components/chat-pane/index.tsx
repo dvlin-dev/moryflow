@@ -1,3 +1,11 @@
+/**
+ * [PROPS]: ChatPaneProps - 会话、消息、输入框与任务 UI
+ * [EMITS]: onToggleCollapse/onOpenSettings + chat/session actions
+ * [POS]: ChatPane 容器（消息流 + 输入区 + Tasks 面板）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { CardContent } from '@anyhunt/ui/components/card';
@@ -18,7 +26,6 @@ import {
 } from './hooks';
 import { ChatFooter } from './components/chat-footer';
 import { ConversationSection } from './components/conversation-section';
-import { TasksPanel } from './components/tasks-panel';
 import { buildMembershipModelGroup } from './models';
 import type { ChatSubmitPayload } from './components/chat-prompt-input/const';
 import { createMessageMetadata } from './types/message';
@@ -85,7 +92,6 @@ export const ChatPane = ({
     id: activeSessionId ?? 'pending',
     transport,
   });
-  const [tasksOpen, setTasksOpen] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
   // 追踪错误是否由于模型未设置引起，用于后续清理
   const [isModelSetupError, setIsModelSetupError] = useState(false);
@@ -235,7 +241,6 @@ export const ChatPane = ({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
-      <TasksPanel open={tasksOpen} onOpenChange={setTasksOpen} activeSessionId={activeSessionId} />
       <ChatPaneHeader
         sessions={sessions}
         activeSession={activeSession}
@@ -245,7 +250,6 @@ export const ChatPane = ({
         isSessionReady={sessionsReady}
         collapsed={collapsed}
         onToggleCollapse={onToggleCollapse}
-        onOpenTasks={() => setTasksOpen((prev) => !prev)}
       />
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden transition-opacity duration-200 ${
@@ -276,6 +280,7 @@ export const ChatPane = ({
           activeFilePath={activeFilePath}
           activeFileContent={activeFileContent}
           vaultPath={vaultPath}
+          activeSessionId={activeSessionId}
           modelGroups={modelGroups}
           selectedModelId={selectedModelId}
           onSelectModel={setSelectedModelId}

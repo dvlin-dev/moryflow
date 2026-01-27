@@ -110,6 +110,11 @@ const en = {
 
   // Todo panel
   tasksCompleted: '{{completed}} of {{total}} tasks completed',
+  taskPanelIdle: 'Idle',
+  taskPanelAllCompleted: 'All tasks completed',
+  taskPanelShowMore: 'Show more',
+  taskPanelShowLess: 'Show less',
+  taskPanelLoadFailed: 'Failed to load tasks',
 
   // Message
   thinkingText: 'thinking...',

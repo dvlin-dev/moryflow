@@ -249,6 +249,10 @@ Anyhunt/
 | `apps/*/CLAUDE.md`                                                                                                                         | 各应用的详细文档                                          |
 | `packages/*/CLAUDE.md`                                                                                                                     | 各包的详细文档                                            |
 
+## 变更日志
+
+- 2026-01-27：新增 PC Chat Pane 任务悬浮面板说明（`apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md`）。
+
 ## 外部仓库快照（仅查阅）
 
 - `archive/external-repos/moryflow/`：原 `/Users/bowling/code/me/moryflow`

@@ -1,3 +1,11 @@
+/**
+ * [PROPS]: ChatPaneHeaderProps - 会话切换/新建/历史入口
+ * [EMITS]: onSelectSession/onCreateSession/onDeleteSession/onToggleCollapse
+ * [POS]: ChatPane 顶部工具栏
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { memo, useMemo, useState } from 'react';
 import type { ChatSessionSummary } from '@shared/ipc';
 import { Button } from '@anyhunt/ui/components/button';
@@ -22,7 +30,6 @@ type ChatPaneHeaderProps = {
   isSessionReady: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  onOpenTasks?: () => void;
 };
 
 export const ChatPaneHeader = memo(
@@ -35,7 +42,6 @@ export const ChatPaneHeader = memo(
     isSessionReady,
     collapsed,
     onToggleCollapse,
-    onOpenTasks,
   }: ChatPaneHeaderProps) => {
     const { t } = useTranslation('chat');
 
@@ -62,22 +68,6 @@ export const ChatPaneHeader = memo(
             collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
           }`}
         >
-          {onOpenTasks && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-muted-foreground transition-colors duration-fast hover:text-foreground"
-                  onClick={onOpenTasks}
-                  aria-label="Tasks"
-                >
-                  <Check className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Tasks</TooltipContent>
-            </Tooltip>
-          )}
           <HistoryDropdown
             sessions={sessions}
             activeSession={activeSession}

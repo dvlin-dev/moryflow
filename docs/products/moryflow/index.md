@@ -1,6 +1,6 @@
 ---
 title: Moryflow（内部方案）
-date: 2026-01-27
+date: 2026-02-02
 scope: moryflow.com, moryflow.app
 status: draft
 ---
@@ -28,6 +28,7 @@ status: draft
 - 语音转写：`docs/products/moryflow/features/speech-to-text/tech.md`
 - Mobile 设计系统：`docs/products/moryflow/features/mobile-design-system/proposal.md`
 - PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`
+- PC 悬浮任务面板改造方案：`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`
 
 ## Runbooks（发布/签名）
 
