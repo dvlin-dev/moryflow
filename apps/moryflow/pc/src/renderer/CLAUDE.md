@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- useSpeechRecording：disabled 强制清理时保证 stopRecording Promise 正常收敛
 - 侧边栏云同步 icon 仅在登录后显示，未登录时隐藏
 - useSpeechRecording：disabled 为 true 时强制终止录音并清理资源，补充单测覆盖
 - Providers 详情面板移除右侧 Provider Enable 开关

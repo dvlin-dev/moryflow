@@ -3,6 +3,7 @@
  * [DEPENDS]: MediaRecorder / speech-helper
  * [POS]: ChatPromptInput 语音录制基础能力
  * [UPDATE]: 2026-01-28 - disabled 变为 true 时强制终止录音并清理资源
+ * [UPDATE]: 2026-01-28 - disabled 处理中确保 stopRecording Promise 可收敛
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -83,6 +84,8 @@ export function useSpeechRecording(
   const sessionIdRef = useRef(0);
   /** stopRecording 的稳定引用，用于计时器回调 */
   const stopRecordingRef = useRef<() => void>(() => {});
+  /** stopRecording 的 Promise 控制，避免强制清理时悬挂 */
+  const stopPromiseRef = useRef<{ resolve: () => void; settled: boolean } | null>(null);
 
   // -------------------- 派生状态 --------------------
   const isRecording = recordingState === 'recording';
@@ -98,6 +101,17 @@ export function useSpeechRecording(
       clearInterval(durationIntervalRef.current);
       durationIntervalRef.current = null;
     }
+  }, []);
+
+  /** 确保 stopRecording Promise 收敛 */
+  const finalizeStopPromise = useCallback(() => {
+    const pending = stopPromiseRef.current;
+    if (!pending || pending.settled) {
+      return;
+    }
+    pending.settled = true;
+    pending.resolve();
+    stopPromiseRef.current = null;
   }, []);
 
   /** 开始录音计时器（带时长上限保护） */
@@ -218,6 +232,7 @@ export function useSpeechRecording(
     }
 
     return new Promise<void>((resolve) => {
+      stopPromiseRef.current = { resolve, settled: false };
       recorder.onstop = async () => {
         try {
           const mimeType = recorder.mimeType || getSupportedMimeType();
@@ -251,13 +266,20 @@ export function useSpeechRecording(
         } finally {
           cleanupRecording();
           setRecordingState('idle');
-          resolve();
+          finalizeStopPromise();
         }
       };
 
       recorder.stop();
     });
-  }, [recordingState, stopDurationTimer, cleanupRecording, onTranscribed, onError]);
+  }, [
+    recordingState,
+    stopDurationTimer,
+    cleanupRecording,
+    onTranscribed,
+    onError,
+    finalizeStopPromise,
+  ]);
 
   // 保持 stopRecording 的稳定引用
   stopRecordingRef.current = stopRecording;
@@ -283,10 +305,13 @@ export function useSpeechRecording(
   // disabled 变为 true 时强制终止录音（防止登出后仍占用麦克风）
   useEffect(() => {
     if (!disabled || recordingState === 'idle') return;
+    if (recordingState === 'processing') {
+      finalizeStopPromise();
+    }
     cleanupRecording();
     setRecordingState('idle');
     setRecordingDuration(0);
-  }, [cleanupRecording, disabled, recordingState]);
+  }, [cleanupRecording, disabled, finalizeStopPromise, recordingState]);
 
   // -------------------- 返回值 --------------------
 
