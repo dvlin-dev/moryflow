@@ -3,7 +3,7 @@
  *
  * [PROVIDES]: 智能内容订阅系统 v2.0
  * [POS]: NestJS 模块定义，整合服务、处理器、控制器
- * [DEPENDS]: PrismaModule/RedisModule/SearchModule/ScraperModule/BillingModule/LlmModule/MapModule
+ * [DEPENDS]: PrismaModule/RedisModule/SearchModule/ScraperModule/BillingModule/LlmModule/MapModule/AuthModule
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -75,6 +75,7 @@ import { ScraperModule } from '../scraper/scraper.module';
 import { BillingModule } from '../billing/billing.module';
 import { LlmModule } from '../llm/llm.module';
 import { MapModule } from '../map/map.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { MapModule } from '../map/map.module';
     BillingModule,
     LlmModule, // 提供 LlmLanguageModelService
     MapModule, // 提供 MapService
+    AuthModule, // 提供 OptionalAuthGuard 依赖
 
     // BullMQ 队列
     BullModule.registerQueue(

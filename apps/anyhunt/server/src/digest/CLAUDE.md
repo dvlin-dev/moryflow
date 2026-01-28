@@ -16,6 +16,7 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 - Digest 订阅/反馈控制器文档路径统一为 `/api/v1/app/*`
 - Public 举报接口支持可选 session 解析（记录登录用户）
 - DigestPublicTopicController 举报记录单测补齐（userId/IP 透传）
+- DigestModule 引入 AuthModule 以解析 OptionalAuthGuard 依赖
 - Digest LLM 调用统一透传模型 maxOutputTokens
 - Console/Admin Digest 写操作统一返回 204，错误体按 RFC7807 输出
 - Digest LLM 调用改为 AI SDK（`generateText`）
