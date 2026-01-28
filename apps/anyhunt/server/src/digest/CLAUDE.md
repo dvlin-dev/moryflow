@@ -22,6 +22,7 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 - Digest LLM 调用改为 AI SDK（`generateText`）
 - Digest LLM resolved payload 移除未使用 upstreamModelId
 - DigestAiService 单测改为 hoisted mock + 动态导入（避免 ai mock 失效）
+- DigestAiService 单测 beforeEach 强制 resetModules，避免 mock 污染导致 AI 调用未被替换
 
 ## 职责边界
 

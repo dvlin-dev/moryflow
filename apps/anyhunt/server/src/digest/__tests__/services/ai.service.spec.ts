@@ -21,12 +21,11 @@ describe('DigestAiService', () => {
   let mockLlmLanguageModelService: { resolveModel: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    vi.resetModules();
     vi.clearAllMocks();
     mockGenerateText.mockReset();
-    if (!DigestAiServiceRef) {
-      ({ DigestAiService: DigestAiServiceRef } =
-        await import('../../services/ai.service'));
-    }
+    ({ DigestAiService: DigestAiServiceRef } =
+      await import('../../services/ai.service'));
 
     mockLlmLanguageModelService = {
       resolveModel: vi.fn().mockResolvedValue({
