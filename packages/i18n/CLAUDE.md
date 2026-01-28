@@ -20,6 +20,8 @@ Anyhunt/Moryflow 共享多语言资源与 i18n 工具包。
 
 ## 近期变更
 
+- chat 命名空间新增任务加载失败提示文案
+- chat 命名空间新增任务悬浮面板 Idle/All completed/Show more/Show less 文案
 - chat 命名空间新增 Recent/All files/Remove file 等输入框重构文案
 - chat 命名空间新增会话模式切换与确认文案
 - chat 命名空间新增工具审批卡相关文案

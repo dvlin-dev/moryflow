@@ -110,6 +110,11 @@ const ja = {
 
   // Todo panel
   tasksCompleted: '{{total}}件中{{completed}}件完了',
+  taskPanelIdle: '待機中',
+  taskPanelAllCompleted: 'すべてのタスクが完了しました',
+  taskPanelShowMore: 'もっと見る',
+  taskPanelShowLess: '折りたたむ',
+  taskPanelLoadFailed: 'タスクの読み込みに失敗しました',
 
   // Message
   thinkingText: '考え中...',

@@ -111,6 +111,11 @@ const ar = {
 
   // Todo panel
   tasksCompleted: '{{completed}} من {{total}} مهام مكتملة',
+  taskPanelIdle: 'خامل',
+  taskPanelAllCompleted: 'اكتملت جميع المهام',
+  taskPanelShowMore: 'عرض المزيد',
+  taskPanelShowLess: 'عرض أقل',
+  taskPanelLoadFailed: 'فشل تحميل المهام',
 
   // Message
   thinkingText: 'يفكر...',

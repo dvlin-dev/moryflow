@@ -112,6 +112,11 @@ const de = {
 
   // Todo panel
   tasksCompleted: '{{completed}} von {{total}} Aufgaben erledigt',
+  taskPanelIdle: 'Leerlauf',
+  taskPanelAllCompleted: 'Alle Aufgaben abgeschlossen',
+  taskPanelShowMore: 'Mehr anzeigen',
+  taskPanelShowLess: 'Weniger anzeigen',
+  taskPanelLoadFailed: 'Aufgaben konnten nicht geladen werden',
 
   // Message
   thinkingText: 'denkt nach...',

@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-01-27
+date: 2026-02-02
 scope: monorepo
 status: active
 ---
@@ -73,6 +73,7 @@ status: active
   - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
   - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
   - PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`
+  - PC 悬浮任务面板改造方案：`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`（更新：2026-02-02：悬停箭头/详情示意/行态说明）
 
 ## Code Review（全量评审计划与进度）
 

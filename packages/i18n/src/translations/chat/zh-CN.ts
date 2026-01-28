@@ -109,6 +109,11 @@ const zhCN = {
 
   // Todo panel
   tasksCompleted: '已完成 {{completed}}/{{total}} 个任务',
+  taskPanelIdle: '空闲',
+  taskPanelAllCompleted: '任务已全部完成',
+  taskPanelShowMore: '展开更多',
+  taskPanelShowLess: '收起',
+  taskPanelLoadFailed: '任务加载失败',
 
   // Message
   thinkingText: '思考中...',
