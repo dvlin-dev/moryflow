@@ -4,6 +4,7 @@
  * [INPUT]: layout slots (sidebar/list/detail)
  * [OUTPUT]: Desktop Reader shell + shared dialogs
  * [POS]: Reader 路由统一壳层（/welcome, /explore, /topic/*, /inbox/*）
+ * [UPDATE]: 2026-01-28 修复创建订阅时点击事件误传导致初始主题异常
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
  */
@@ -15,6 +16,7 @@ import { ReaderTwoColumnLayout } from '@/components/reader/ReaderTwoColumnLayout
 import { SidePanel } from '@/components/reader/SidePanel';
 import { ReaderDialogs } from './ReaderDialogs';
 import type { Subscription } from '@/features/digest/types';
+import { normalizeInitialTopic } from './initialTopic';
 
 type ReaderShellLayout = 'three-pane' | 'two-pane';
 
@@ -35,7 +37,7 @@ export function ReaderShell({ layout, list, detail }: ReaderShellProps) {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
 
   const openCreateSubscription = (initialTopic?: string) => {
-    setCreateDialogInitialTopic(initialTopic);
+    setCreateDialogInitialTopic(normalizeInitialTopic(initialTopic));
     setCreateDialogOpen(true);
   };
 

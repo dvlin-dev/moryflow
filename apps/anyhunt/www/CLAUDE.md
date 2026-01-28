@@ -45,6 +45,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 - Welcome API 复用 `parseJsonResponse`，移除重复错误解析逻辑
 - 新增 `parseJsonResponse` 非 JSON/无效 JSON 单元测试
 - Digest/Demo 调用改为 app/public 前缀（移除旧 `/api/v1/console/*` 与 `/api/v1/digest/*`）
+- 修复 Reader 新建订阅点击事件误传导致初始主题异常，新增初始主题归一化回归测试
 
 ## 环境变量
 
