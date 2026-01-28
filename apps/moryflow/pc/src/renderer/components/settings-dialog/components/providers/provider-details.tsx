@@ -2,6 +2,7 @@
  * [PROPS]: { providers, form }
  * [EMITS]: 通过 react-hook-form setValue 修改 settings 表单；通过 desktopAPI 触发 provider 测试
  * [POS]: 设置弹窗 - AI Providers 详情页（预设/自定义服务商配置、Base URL 默认填充、模型启用与连接测试，Lucide 图标）
+ * [UPDATE]: 2026-02-02 - 移除右侧 Provider Enable 开关区域
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -45,7 +46,6 @@ import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { CustomProviderModels } from './custom-provider-models';
 import { findFirstEnabledModelId, isModelEnabledWithDefaultFirst } from './provider-models';
-import { ProviderEnabledToggle } from './provider-enabled-toggle';
 
 type ProviderDetailsProps = {
   providers: SettingsDialogState['providers'];
@@ -564,12 +564,6 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
-              <ProviderEnabledToggle
-                enabled={Boolean(providerValues[presetIndex]?.enabled)}
-                onEnabledChange={(enabled) => setValue(`providers.${presetIndex}.enabled`, enabled)}
-                label="Provider enabled"
-                hint="Auto-enabled when you add an API key or enable a model."
-              />
               <a
                 href={preset.docUrl}
                 target="_blank"
@@ -767,15 +761,6 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
     return (
       <ScrollArea className="h-full">
         <div className="space-y-6 p-4">
-          <ProviderEnabledToggle
-            enabled={Boolean(config.enabled)}
-            onEnabledChange={(enabled) =>
-              setValue(`customProviders.${customIndex}.enabled`, enabled)
-            }
-            label="Provider enabled"
-            hint="Auto-enabled when you add an API key or enable a model."
-          />
-
           {/* 服务商名称 */}
           <div className="space-y-2">
             <Label htmlFor="custom-name">{t('customProviderNameLabel')}</Label>

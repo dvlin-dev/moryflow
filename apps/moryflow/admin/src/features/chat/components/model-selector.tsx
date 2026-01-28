@@ -10,7 +10,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sparkles, ArrowDown, SquareCheck } from 'lucide-react';
+import { Sparkles, ChevronDown, SquareCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { ModelGroup } from '../types';
 
@@ -52,7 +52,7 @@ export function ModelSelector({
           className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
         >
           <span className="max-w-32 truncate">{selectedModel?.name ?? '选择模型'}</span>
-          <ArrowDown className="size-3 opacity-50" />
+          <ChevronDown className="size-3 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="start" side="top">

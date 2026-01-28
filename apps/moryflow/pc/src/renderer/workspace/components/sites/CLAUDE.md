@@ -71,3 +71,4 @@ SitesPage
 ## 近期变更
 
 - Sites CMS 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
+- FilePickerDialog 下拉指示图标改为无中轴样式（ChevronDown）

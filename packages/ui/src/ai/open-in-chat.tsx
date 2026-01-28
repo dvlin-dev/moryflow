@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ExternalLink, MessageSquare } from 'lucide-react';
+import { ChevronDown, ExternalLink, MessageSquare } from 'lucide-react';
 import { Button } from '../components/button';
 import {
   DropdownMenu,
@@ -208,7 +208,7 @@ export const OpenInTrigger = ({ children, ...props }: OpenInTriggerProps) => (
     {children ?? (
       <Button type="button" variant="outline">
         Open in chat
-        <ArrowDown className="size-4" />
+        <ChevronDown className="size-4" />
       </Button>
     )}
   </DropdownMenuTrigger>

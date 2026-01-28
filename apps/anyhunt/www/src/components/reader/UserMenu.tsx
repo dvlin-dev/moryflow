@@ -28,7 +28,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@anyhunt/ui';
-import { Settings, Paintbrush, Code, LogOut, ArrowDown, Sun, Moon, Computer } from 'lucide-react';
+import { Settings, Paintbrush, Code, LogOut, ChevronDown, Sun, Moon, Computer } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme, type Theme } from '@/hooks/useTheme';
 import type { User } from '@/lib/auth-client';
@@ -81,7 +81,7 @@ export function UserMenu({ user, stats }: UserMenuProps) {
               )}
             </div>
           </div>
-          <ArrowDown className="size-4 text-muted-foreground" />
+          <ChevronDown className="size-4 text-muted-foreground" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" className="w-56">

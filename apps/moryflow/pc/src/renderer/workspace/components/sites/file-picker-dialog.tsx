@@ -7,11 +7,12 @@
  * - 当前工作区：使用传入的 currentTree（已验证可用）
  * - 其他工作区：展开时调用 readTree 加载
  *
+ * [UPDATE]: 2026-02-02 - 下拉指示 icon 改为无中轴样式
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ArrowDown, ArrowRight, File, Folder, FolderOpen } from 'lucide-react';
+import { ChevronDown, ArrowRight, File, Folder, FolderOpen } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -150,7 +151,7 @@ function FolderNode({
           disabled={mdFiles.length === 0}
         />
         {expanded ? (
-          <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         ) : (
           <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}
@@ -270,7 +271,7 @@ function VaultNode({
           disabled={loading}
         />
         {expanded ? (
-          <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         ) : (
           <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         )}

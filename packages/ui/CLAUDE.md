@@ -48,6 +48,11 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- Select/Accordion/NavigationMenu/Calendar 等下拉/折叠箭头统一改为 ChevronDown（无中轴）
+- Tool：折叠箭头改为 ChevronDown（无中轴）
+- DropdownMenu：子菜单指示箭头改为 ChevronRight（无中轴）
+- RadioGroup/ContextMenu/Menubar：单选指示图标统一为实心圆（移除空心外环）
+- DropdownMenu：单选指示图标改为实心圆，保持选中态更清晰
 - UI 包图标回退到 Lucide，移除 Icon 包装与 Hugeicons 依赖
 - 类型映射统一为 Record，移除 Circle 泛型依赖
 - ToolOutput：打开完整输出时补齐错误边界
@@ -84,4 +89,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.6 | 更新日期: 2026-01-24_
+_版本: 4.6 | 更新日期: 2026-01-28_

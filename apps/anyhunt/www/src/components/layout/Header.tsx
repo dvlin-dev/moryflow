@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Menu, X, ArrowRight, ArrowDown } from 'lucide-react';
+import { Menu, X, ArrowRight, ChevronDown } from 'lucide-react';
 import { Container } from './Container';
 import { Button, Skeleton, cn } from '@anyhunt/ui';
 import { useAuth } from '@/lib/auth-context';
@@ -134,7 +134,7 @@ export function Header() {
                 )}
               >
                 Developers
-                <ArrowDown
+                <ChevronDown
                   className={cn(
                     'h-4 w-4 transition-transform duration-150',
                     developerMenuOpen && 'rotate-180'
@@ -286,7 +286,7 @@ export function Header() {
                 onClick={() => setMobileDevOpen(!mobileDevOpen)}
               >
                 Developers
-                <ArrowDown
+                <ChevronDown
                   className={cn('h-4 w-4 transition-transform', mobileDevOpen && 'rotate-180')}
                 />
               </button>

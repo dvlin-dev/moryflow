@@ -4,7 +4,7 @@ import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { ScrollArea } from '../components/scroll-area';
 import { cn } from '../lib/utils';
-import { ArrowDown, Paperclip } from 'lucide-react';
+import { ChevronDown, Paperclip } from 'lucide-react';
 import type { ComponentProps } from 'react';
 
 export type QueueMessagePart = {
@@ -206,7 +206,7 @@ export const QueueSectionLabel = ({
   ...props
 }: QueueSectionLabelProps) => (
   <span className={cn('flex items-center gap-2', className)} {...props}>
-    <ArrowDown className="group-data-[state=closed]:-rotate-90 size-4 transition-transform duration-fast" />
+    <ChevronDown className="group-data-[state=closed]:-rotate-90 size-4 transition-transform duration-fast" />
     {icon}
     <span>
       {count} {label}

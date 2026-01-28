@@ -3,11 +3,13 @@
  * [EMITS]: onSelect(taskId) via useTasks
  * [POS]: ChatFooter 悬浮任务面板（点击展开 + hover 箭头）
  * [UPDATE]: 2026-02-02 - 列表项改为外边距控制 + 错误状态提示
+ * [UPDATE]: 2026-01-28 - 任务列表改为仅状态 icon + 标题，隐藏子项详情与交互视觉
+ * [UPDATE]: 2026-02-02 - Header 全区域可展开收起 + 子项改为非交互展示
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useEffect, useId, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
@@ -15,7 +17,6 @@ import type { TaskRecord, TaskStatus } from '@shared/ipc';
 import {
   AlertTriangle,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
   Circle,
   CircleCheck,
@@ -49,28 +50,15 @@ const STATUS_ICONS: Record<TaskStatus, typeof Circle> = {
   archived: CircleDashed,
 };
 
-const DESCRIPTION_CLAMP_STYLES: CSSProperties = {
-  display: '-webkit-box',
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-};
-
 export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
   const { t } = useTranslation('chat');
   const { t: tCommon } = useTranslation('common');
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
-  const {
-    tasks,
-    detail,
-    selectedTaskId,
-    isLoading,
-    isDetailLoading,
-    selectTask,
-    clearSelection,
-    error,
-  } = useTasks({ activeSessionId, enabled: Boolean(activeSessionId) });
+  const { tasks, isLoading, clearSelection, error } = useTasks({
+    activeSessionId,
+    enabled: Boolean(activeSessionId),
+  });
 
   useEffect(() => {
     setExpanded(false);
@@ -141,14 +129,6 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
     });
   };
 
-  const handleSelectTask = async (task: TaskRecord) => {
-    if (selectedTaskId === task.id) {
-      clearSelection();
-      return;
-    }
-    await selectTask(task.id);
-  };
-
   return (
     <div className="pointer-events-auto w-full">
       <div
@@ -158,9 +138,14 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
           expanded && 'shadow-md'
         )}
       >
-        <div
+        <button
+          type="button"
+          onClick={handleToggleExpanded}
+          aria-label={expanded ? t('collapse') : t('expand')}
+          aria-expanded={expanded}
+          aria-controls={listId}
           className={cn(
-            'flex items-center gap-2 px-2.5 py-2 text-xs',
+            'group flex w-full items-center gap-2 px-2.5 py-2 text-xs text-left',
             expanded && 'border-b border-border/60'
           )}
         >
@@ -184,17 +169,10 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
           <div className="w-16 shrink-0 text-right text-[10px] text-muted-foreground tabular-nums">
             {progressText}
           </div>
-          <button
-            type="button"
-            onClick={handleToggleExpanded}
-            aria-label={expanded ? t('collapse') : t('expand')}
-            aria-expanded={expanded}
-            aria-controls={listId}
-            className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <span className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors group-hover:text-foreground">
             {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-          </button>
-        </div>
+          </span>
+        </button>
 
         <div
           id={listId}
@@ -223,16 +201,7 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
                   </div>
                 ) : null}
                 {sortedTasks.length > 0
-                  ? sortedTasks.map((task) => (
-                      <TaskListItem
-                        key={task.id}
-                        task={task}
-                        selected={task.id === selectedTaskId}
-                        detail={detail?.task.id === task.id ? detail : null}
-                        isDetailLoading={task.id === selectedTaskId && isDetailLoading}
-                        onSelect={() => void handleSelectTask(task)}
-                      />
-                    ))
+                  ? sortedTasks.map((task) => <TaskListItem key={task.id} task={task} />)
                   : null}
               </div>
             </ScrollArea>
@@ -245,124 +214,39 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
 
 type TaskListItemProps = {
   task: TaskRecord;
-  selected: boolean;
-  detail: ReturnType<typeof useTasks>['detail'];
-  isDetailLoading: boolean;
-  onSelect: () => void;
 };
 
-const TaskListItem = ({ task, selected, detail, isDetailLoading, onSelect }: TaskListItemProps) => {
+const TaskListItem = ({ task }: TaskListItemProps) => {
   const StatusIcon = STATUS_ICONS[task.status];
   const isCompleted = task.status === 'done';
   const isInactive = task.status === 'cancelled' || task.status === 'archived';
   const isFailed = task.status === 'failed';
-  const isExpanded = selected;
 
   return (
-    <div className="rounded-lg">
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-expanded={isExpanded}
+    <div className="mx-2.5 flex w-full items-center gap-2 rounded-lg px-0 py-2 text-left text-xs">
+      <StatusIcon
         className={cn(
-          'group flex w-full items-center gap-2 rounded-lg px-0 py-2 text-left text-xs transition-colors',
-          'cursor-pointer hover:bg-accent/30',
-          isExpanded && 'bg-accent/30',
-          'mx-2.5'
+          'size-3',
+          task.status === 'in_progress' && 'animate-spin',
+          isFailed
+            ? 'text-destructive'
+            : isCompleted || isInactive
+              ? 'text-muted-foreground'
+              : 'text-foreground'
+        )}
+      />
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-xs font-medium',
+          isFailed
+            ? 'text-destructive'
+            : isCompleted || isInactive
+              ? 'text-muted-foreground'
+              : 'text-foreground'
         )}
       >
-        <StatusIcon
-          className={cn(
-            'size-3',
-            task.status === 'in_progress' && 'animate-spin',
-            isFailed
-              ? 'text-destructive'
-              : isCompleted || isInactive
-                ? 'text-muted-foreground'
-                : 'text-foreground'
-          )}
-        />
-        <span
-          className={cn(
-            'min-w-0 flex-1 truncate text-xs font-medium',
-            isFailed
-              ? 'text-destructive'
-              : isCompleted || isInactive
-                ? 'text-muted-foreground'
-                : 'text-foreground'
-          )}
-        >
-          {task.title}
-        </span>
-        <span
-          className={cn(
-            'flex w-6 items-center justify-center text-muted-foreground opacity-0 transition-opacity',
-            'group-hover:opacity-100',
-            isExpanded && 'opacity-100'
-          )}
-        >
-          {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-        </span>
-      </button>
-
-      <div
-        className={cn(
-          'grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        )}
-      >
-        <div className="overflow-hidden">
-          <div className="mx-2.5 py-1">
-            <TaskDetailInline detail={detail} isLoading={isDetailLoading} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-type TaskDetailInlineProps = {
-  detail: ReturnType<typeof useTasks>['detail'];
-  isLoading: boolean;
-};
-
-const TaskDetailInline = ({ detail, isLoading }: TaskDetailInlineProps) => {
-  const { t } = useTranslation('chat');
-  const { t: tCommon } = useTranslation('common');
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-
-  useEffect(() => {
-    setIsDescriptionExpanded(false);
-  }, [detail?.task.id]);
-
-  if (isLoading) {
-    return <div className="text-[10px] text-muted-foreground">{tCommon('loading')}</div>;
-  }
-  if (!detail) {
-    return null;
-  }
-
-  const description = detail.task.description?.trim();
-  if (!description) {
-    return null;
-  }
-
-  const shouldClamp = description.length > 120;
-
-  return (
-    <div className="rounded-lg border border-border/60 bg-muted/20 px-2 py-1.5 text-xs text-foreground">
-      <div style={isDescriptionExpanded || !shouldClamp ? undefined : DESCRIPTION_CLAMP_STYLES}>
-        {description}
-      </div>
-      {shouldClamp ? (
-        <button
-          type="button"
-          onClick={() => setIsDescriptionExpanded((prev) => !prev)}
-          className="mt-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {isDescriptionExpanded ? t('taskPanelShowLess') : t('taskPanelShowMore')}
-        </button>
-      ) : null}
+        {task.title}
+      </span>
     </div>
   );
 };

@@ -8,21 +8,24 @@ import { Settings } from 'lucide-react';
 import { SyncStatusIndicator, SyncStatusHoverCard } from '@/components/cloud-sync';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
 import { useTranslation } from '@/lib/i18n';
+import { useAuth } from '@/lib/server';
 import type { SidebarToolsProps } from '../const';
 
 export const SidebarTools = ({ vault, onSettingsOpen }: SidebarToolsProps) => {
   const { t } = useTranslation('workspace');
+  const { isAuthenticated } = useAuth();
+  const vaultPath = vault?.path;
 
   return (
     <div className="flex shrink-0 items-center justify-between py-1.5 pl-2.5 pr-2">
       {/* 同步状态 - 左侧对齐基准线 */}
-      {vault ? (
+      {vaultPath && isAuthenticated ? (
         <SyncStatusHoverCard
-          vaultPath={vault.path}
+          vaultPath={vaultPath}
           onOpenSettings={() => onSettingsOpen('cloud-sync')}
         >
           <div className="text-muted-foreground transition-colors hover:text-foreground">
-            <SyncStatusIndicator vaultPath={vault.path} compact />
+            <SyncStatusIndicator vaultPath={vaultPath} compact />
           </div>
         </SyncStatusHoverCard>
       ) : (

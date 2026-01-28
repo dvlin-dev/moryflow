@@ -93,6 +93,9 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 侧边栏云同步 icon 仅在登录后显示，未登录时隐藏
+- useSpeechRecording：disabled 为 true 时强制终止录音并清理资源，补充单测覆盖
+- Providers 详情面板移除右侧 Provider Enable 开关
 - Renderer 全量回退 Lucide 图标，移除 Icon 包装与 Hugeicons 依赖
 - Providers 设置页补齐 Base URL 默认填充与输入项展示
 - useWorkspaceFiles 增加请求去重/过期保护，避免工作区切换时旧请求覆盖

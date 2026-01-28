@@ -51,7 +51,7 @@ import { useCreateModel, useUpdateModel } from '../hooks';
 import { parseCapabilities } from '../utils';
 import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data';
 import type { AiModel, AiProvider, UserTier, ReasoningEffort } from '@/types/api';
-import { ArrowDown, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 
 /** 思考强度选项 */
 const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
@@ -562,7 +562,7 @@ function ModelFormDialogContent({ onOpenChange, model, providers }: ModelFormDia
                 {/* 高级选项：原生配置覆盖 */}
                 <Collapsible className="col-span-2">
                   <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                    <ArrowDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4" />
                     高级选项
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-3">
