@@ -13,7 +13,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@anyhunt/ui';
-import { CircleCheck, X, ArrowDown } from 'lucide-react';
+import { CircleCheck, X, ChevronDown } from 'lucide-react';
 import { useRuns } from '@/features/digest/hooks';
 import { formatDate } from '@/lib/date';
 import type { Run } from '@/features/digest/types';
@@ -44,7 +44,7 @@ function RunItem({ run }: { run: Run }) {
               {run.status}
             </Badge>
           </div>
-          <ArrowDown className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </CollapsibleTrigger>
 
         {isSuccess && run.result && (

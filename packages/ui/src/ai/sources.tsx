@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, Book } from 'lucide-react';
+import { ChevronDown, Book } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { cn } from '../lib/utils';
 import type { ComponentProps } from 'react';
@@ -30,7 +30,7 @@ export const SourcesTrigger = ({
     {children ?? (
       <>
         <p className="font-medium">{formatLabel(count)}</p>
-        <ArrowDown className="h-4 w-4" />
+        <ChevronDown className="h-4 w-4" />
       </>
     )}
   </CollapsibleTrigger>

@@ -1,30 +1,27 @@
 /**
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
- * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（Lucide 图标）
+ * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
+ * [UPDATE]: 2026-02-02 - 语音入口仅对登录用户开放
+ * [UPDATE]: 2026-01-28 - 模型选择箭头尺寸放大提升可读性
+ * [UPDATE]: 2026-01-28 - 提交后保留 active 引用，@ 触发索引随文本变更更新
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
 import {
   PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
   PromptInputProvider,
-  PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
   usePromptInputAttachments,
   usePromptInputController,
 } from '@anyhunt/ui/ai/prompt-input';
-import { InputGroupButton } from '@anyhunt/ui/components/input-group';
 import { Button } from '@anyhunt/ui/components/button';
 import {
   ModelSelector,
@@ -38,36 +35,23 @@ import {
   ModelSelectorFooter,
 } from '@anyhunt/ui/ai/model-selector';
 import {
-  Plus,
-  ArrowDown,
-  ArrowUp,
   ArrowUpRight,
+  ChevronDown,
   CircleCheck,
   File,
   Image,
-  Mic,
   Settings,
   Sparkles,
-  SquareStop,
 } from 'lucide-react';
 import { Badge } from '@anyhunt/ui/components/badge';
-import { TIER_DISPLAY_NAMES } from '@/lib/server';
-import { McpSelector } from '@/components/ai-elements/mcp-selector';
+import { TIER_DISPLAY_NAMES, useAuth } from '@/lib/server';
 import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useTranslation } from '@/lib/i18n';
+import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 
 import { ContextFileTags, FileChip, type ContextFileTag } from '../context-file-tags';
-import { FileContextAdder } from '../file-context-adder';
 import { TokenUsageIndicator } from '../token-usage-indicator';
 import { useRecentFiles, useWorkspaceFiles } from '../../hooks';
 import { createFileRefAttachment } from '../../types/attachment';
@@ -75,9 +59,50 @@ import { buildAIRequest } from '../../utils';
 
 import type { ChatPromptInputProps } from './const';
 import { enrichFileMetadata, findModel } from './handle';
+import { detectAtTrigger, removeAtTrigger } from './at-mention';
+import { ChatPromptInputPlusMenu } from './plus-menu';
+import { ChatPromptInputPrimaryAction } from './primary-action';
+import { FileContextPanel } from './file-context-panel';
 
 /** 默认 context window 大小 */
 const DEFAULT_CONTEXT_WINDOW = 128000;
+
+const updateAtTriggerIndex = (
+  previousValue: string,
+  nextValue: string,
+  currentIndex: number | null
+): number | null => {
+  if (currentIndex === null || previousValue === nextValue) {
+    return currentIndex;
+  }
+
+  let start = 0;
+  const minLength = Math.min(previousValue.length, nextValue.length);
+  while (start < minLength && previousValue[start] === nextValue[start]) {
+    start += 1;
+  }
+
+  let prevEnd = previousValue.length - 1;
+  let nextEnd = nextValue.length - 1;
+  while (prevEnd >= start && nextEnd >= start && previousValue[prevEnd] === nextValue[nextEnd]) {
+    prevEnd -= 1;
+    nextEnd -= 1;
+  }
+
+  const removedCount = Math.max(0, prevEnd - start + 1);
+  const addedCount = Math.max(0, nextEnd - start + 1);
+
+  if (currentIndex < start) {
+    return currentIndex;
+  }
+  if (currentIndex >= start + removedCount) {
+    return currentIndex + (addedCount - removedCount);
+  }
+
+  const insertedSegment = nextValue.slice(start, start + addedCount);
+  const insertedAtOffset = insertedSegment.indexOf('@');
+  return insertedAtOffset === -1 ? null : start + insertedAtOffset;
+};
 
 export const ChatPromptInput = (props: ChatPromptInputProps) => (
   <PromptInputProvider>
@@ -104,9 +129,13 @@ const ChatPromptInputInner = ({
   onModeChange,
 }: ChatPromptInputProps) => {
   const { t } = useTranslation('chat');
+  const { isAuthenticated } = useAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([]);
+  const [atPanelOpen, setAtPanelOpen] = useState(false);
+  const [atTriggerIndex, setAtTriggerIndex] = useState<number | null>(null);
+  const previousTextRef = useRef('');
   const promptController = usePromptInputController();
   const attachments = usePromptInputAttachments();
 
@@ -126,8 +155,11 @@ const ChatPromptInputInner = ({
   );
   const canStop = status === 'submitted' || status === 'streaming';
   const isDisabled = Boolean(disabled);
+  const canUseVoice = isAuthenticated;
   const accessMode = mode;
   const hasTextInput = promptController.textInput.value.trim().length > 0;
+  const hasSendableContent =
+    hasTextInput || attachments.files.length > 0 || contextFiles.length > 0;
 
   // 语音录制 hook
   const handleTranscribed = useCallback(
@@ -165,7 +197,7 @@ const ChatPromptInputInner = ({
     onTranscribed: handleTranscribed,
     onError: handleSpeechError,
     onMaxDuration: handleMaxDuration,
-    disabled: isDisabled,
+    disabled: isDisabled || !canUseVoice,
   });
 
   // 同步当前活跃文件到引用列表
@@ -204,8 +236,14 @@ const ChatPromptInputInner = ({
   useEffect(() => {
     if (isDisabled) {
       setModelSelectorOpen(false);
+      setAtPanelOpen(false);
+      setAtTriggerIndex(null);
     }
   }, [isDisabled]);
+
+  useEffect(() => {
+    previousTextRef.current = promptController.textInput.value;
+  }, [promptController.textInput.value]);
 
   const handleSubmit = useCallback(
     (payload: PromptInputMessage) => {
@@ -230,9 +268,61 @@ const ChatPromptInputInner = ({
       });
 
       // 清空已选文件
-      setContextFiles([]);
+      setContextFiles((prev) => prev.filter((file) => file.id.startsWith('active-')));
     },
     [isDisabled, onSubmit, contextFiles]
+  );
+
+  const handleTextChange = useCallback(
+    (event: ChangeEvent<HTMLTextAreaElement>) => {
+      if (isDisabled) {
+        return;
+      }
+      const nextValue = event.currentTarget.value;
+      const previousValue = previousTextRef.current;
+      const syncedAtIndex = updateAtTriggerIndex(previousValue, nextValue, atTriggerIndex);
+      previousTextRef.current = nextValue;
+      const nativeEvent = event.nativeEvent as InputEvent | undefined;
+      const caret = event.currentTarget.selectionStart ?? nextValue.length;
+      const triggerIndex = detectAtTrigger({
+        previousValue,
+        nextValue,
+        caretIndex: caret,
+        insertedData: nativeEvent?.data,
+      });
+      const nextTriggerIndex = triggerIndex ?? syncedAtIndex;
+      if (nextTriggerIndex === null) {
+        setAtPanelOpen(false);
+      } else if (triggerIndex !== null) {
+        setAtPanelOpen(true);
+      }
+      if (nextTriggerIndex !== atTriggerIndex) {
+        setAtTriggerIndex(nextTriggerIndex);
+      }
+    },
+    [atTriggerIndex, isDisabled]
+  );
+
+  const handleAddContextFileFromAt = useCallback(
+    (file: ContextFileTag) => {
+      handleAddContextFile(file);
+      if (atTriggerIndex === null) {
+        setAtPanelOpen(false);
+        return;
+      }
+      const currentValue = promptController.textInput.value;
+      if (
+        atTriggerIndex >= 0 &&
+        atTriggerIndex < currentValue.length &&
+        currentValue[atTriggerIndex] === '@'
+      ) {
+        promptController.textInput.setInput(removeAtTrigger(currentValue, atTriggerIndex));
+      }
+      setAtPanelOpen(false);
+      setAtTriggerIndex(null);
+      textareaRef.current?.focus();
+    },
+    [atTriggerIndex, handleAddContextFile, promptController.textInput]
   );
 
   const renderAttachmentChip = (file: (typeof attachments.files)[number]) => {
@@ -272,79 +362,10 @@ const ChatPromptInputInner = ({
         name="message"
         autoComplete="off"
         disabled={isDisabled}
+        onChange={handleTextChange}
       />
     </PromptInputBody>
   );
-
-  const renderActionMenu = () => (
-    <PromptInputActionMenu>
-      <PromptInputActionMenuTrigger aria-label={t('addFile')} disabled={isDisabled}>
-        <Plus className="size-4" />
-      </PromptInputActionMenuTrigger>
-      <PromptInputActionMenuContent>
-        <PromptInputActionAddAttachments />
-      </PromptInputActionMenuContent>
-    </PromptInputActionMenu>
-  );
-
-  const renderPrimaryAction = () => {
-    if (canStop) {
-      return (
-        <InputGroupButton
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={onStop}
-          aria-label={t('stopGenerating')}
-          disabled={isDisabled}
-          className="rounded-full bg-white text-black hover:bg-gray-100"
-        >
-          <SquareStop className="size-4 fill-current" />
-        </InputGroupButton>
-      );
-    }
-
-    if (isSpeechActive) {
-      return (
-        <InputGroupButton
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleSpeechToggle}
-          aria-label={t('stopRecording')}
-          disabled={isDisabled}
-          className={cn(
-            'rounded-full transition-colors',
-            isSpeechActive && 'bg-black/40 text-white hover:bg-black/50'
-          )}
-        >
-          <SquareStop className="size-4 fill-current" />
-        </InputGroupButton>
-      );
-    }
-
-    if (hasTextInput) {
-      return (
-        <PromptInputSubmit status={status} disabled={isDisabled} className="rounded-full">
-          <ArrowUp className="size-4" />
-        </PromptInputSubmit>
-      );
-    }
-
-    return (
-      <InputGroupButton
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={handleSpeechToggle}
-        aria-label={t('startRecording')}
-        disabled={isDisabled || isProcessing}
-        className="rounded-full"
-      >
-        <Mic className="size-4" />
-      </InputGroupButton>
-    );
-  };
 
   const renderModelSelectorList = () => (
     <ModelSelectorContent>
@@ -407,7 +428,7 @@ const ChatPromptInputInner = ({
         <ModelSelectorTrigger asChild>
           <PromptInputButton aria-label={t('switchModel')} disabled={isDisabled}>
             <span>{selectedModel?.name ?? t('selectModel')}</span>
-            <ArrowDown className="size-3 opacity-50" />
+            <ChevronDown className="size-4.5 opacity-50" />
           </PromptInputButton>
         </ModelSelectorTrigger>
         {renderModelSelectorList()}
@@ -424,42 +445,8 @@ const ChatPromptInputInner = ({
       </PromptInputButton>
     );
 
-  const renderModeSwitch = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <PromptInputButton
-          type="button"
-          aria-label={accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}
-          disabled={isDisabled}
-          className={cn(
-            'gap-1.5',
-            accessMode === 'full_access' && 'border-orange-200 text-orange-600'
-          )}
-        >
-          <Sparkles className="size-4" />
-          <span>{accessMode === 'full_access' ? t('fullAccessMode') : t('agentMode')}</span>
-          <ArrowDown className="size-3 opacity-50" />
-        </PromptInputButton>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuRadioGroup
-          value={accessMode}
-          onValueChange={(value) => {
-            if (isDisabled) {
-              return;
-            }
-            onModeChange(value as ChatPromptInputProps['mode']);
-          }}
-        >
-          <DropdownMenuRadioItem value="agent">{t('agentMode')}</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="full_access">{t('fullAccessMode')}</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
   const renderFooterActions = () => (
-    <PromptInputFooter>
+    <PromptInputFooter className="relative">
       {/* 录音时左侧显示波形，否则显示工具按钮 */}
       {isSpeechActive ? (
         <div className="flex items-center gap-3">
@@ -482,32 +469,79 @@ const ChatPromptInputInner = ({
         </div>
       ) : (
         <PromptInputTools>
-          {renderModeSwitch()}
+          <ChatPromptInputPlusMenu
+            disabled={isDisabled}
+            mode={accessMode}
+            onModeChange={onModeChange}
+            onOpenSettings={onOpenSettings}
+            onOpenFileDialog={attachments.openFileDialog}
+            allFiles={workspaceFiles}
+            recentFiles={recentFiles}
+            existingFiles={contextFiles}
+            onAddContextFile={handleAddContextFile}
+            onRefreshRecent={() => {
+              refreshRecentFiles();
+              refreshWorkspaceFiles();
+            }}
+          />
           {renderModelSelector()}
-          <McpSelector disabled={isDisabled} onOpenSettings={onOpenSettings} />
         </PromptInputTools>
       )}
       <div className="flex items-center gap-2">
         <div className="sr-only">
           <TokenUsageIndicator usage={tokenUsage} contextWindow={contextWindow} />
         </div>
-        {!isSpeechActive && renderActionMenu()}
-        {!isSpeechActive && (
-          <FileContextAdder
+        <ChatPromptInputPrimaryAction
+          canStop={canStop}
+          canUseVoice={canUseVoice}
+          isSpeechActive={isSpeechActive}
+          isProcessing={isProcessing}
+          hasSendableContent={hasSendableContent}
+          disabled={isDisabled}
+          onStop={onStop}
+          onToggleRecording={handleSpeechToggle}
+          labels={{
+            stopGenerating: t('stopGenerating'),
+            stopRecording: t('stopRecording'),
+            send: t('sendMessage'),
+            startRecording: t('startRecording'),
+          }}
+        />
+      </div>
+      <Popover
+        open={atPanelOpen}
+        onOpenChange={(next) => {
+          setAtPanelOpen(next);
+          if (!next) {
+            setAtTriggerIndex(null);
+          }
+        }}
+      >
+        <PopoverTrigger asChild>
+          <span aria-hidden className="absolute left-3 top-0 h-0 w-0" />
+        </PopoverTrigger>
+        <PopoverContent align="start" side="top" sideOffset={8} className="w-72 p-0">
+          <FileContextPanel
+            autoFocus
             disabled={isDisabled}
             allFiles={workspaceFiles}
             recentFiles={recentFiles}
             existingFiles={contextFiles}
-            onAddFile={handleAddContextFile}
+            onAddFile={handleAddContextFileFromAt}
             onRefreshRecent={() => {
               refreshRecentFiles();
               refreshWorkspaceFiles();
             }}
-            iconOnly
+            searchPlaceholder={t('searchDocs')}
+            recentLabel={t('recentFiles')}
+            allFilesLabel={t('allFiles')}
+            emptySearchLabel={t('notFound')}
+            emptyNoFilesLabel={t('noOpenDocs')}
+            emptyAllAddedLabel={t('allDocsAdded')}
+            emptyNoRecentLabel={t('noRecentFiles')}
           />
-        )}
-        {renderPrimaryAction()}
-      </div>
+        </PopoverContent>
+      </Popover>
     </PromptInputFooter>
   );
 

@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ArrowDown, ArrowLeftRight, ArrowRight, Bot, Shield, Wrench, Zap } from 'lucide-react';
+import { ChevronDown, ChevronRight, ArrowLeftRight, Bot, Shield, Wrench, Zap } from 'lucide-react';
 import { formatDuration } from '@/lib/format';
 import { SpanStatusBadge } from './trace-status-badge';
 import type { AgentSpan, SpanType } from '../types';
@@ -86,7 +86,7 @@ function SpanNodeItem({ node, depth, onSelect, selectedSpanId }: SpanNodeItemPro
               setExpanded(!expanded);
             }}
           >
-            {expanded ? <ArrowDown className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           </button>
         ) : (
           <span className="w-4" />

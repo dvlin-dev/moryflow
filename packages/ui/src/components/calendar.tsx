@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
 
 import { cn } from '../lib/utils';
@@ -117,7 +117,7 @@ function Calendar({
             return <ArrowRight className={cn('size-4', className)} {...props} />;
           }
 
-          return <ArrowDown className={cn('size-4', className)} {...props} />;
+          return <ChevronDown className={cn('size-4', className)} {...props} />;
         },
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {

@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: useWorkspaceFiles - 获取工作区所有文件的 hook
  * [DEPENDS]: flattenTreeToFiles, desktopAPI.vault.readTree
- * [POS]: 为 FileContextAdder 提供工作区文件列表
+ * [POS]: 为引用文件面板提供工作区文件列表
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */

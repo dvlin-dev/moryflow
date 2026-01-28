@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TaskDetailResult, TaskRecord } from '@shared/ipc';
+import type { TaskRecord } from '@shared/ipc';
 import { TaskHoverPanel } from './task-hover-panel';
 import { useTasks } from '../hooks';
 
@@ -40,16 +40,6 @@ const doneTask: TaskRecord = {
   createdAt: now,
   updatedAt: now,
   version: 1,
-};
-
-const detail: TaskDetailResult = {
-  task: {
-    ...doneTask,
-    description: 'This is a longer task description that should overflow the clamp size.'.repeat(4),
-  },
-  dependencies: [],
-  notes: [],
-  files: [],
 };
 
 const buildUseTasksState = (overrides: Partial<ReturnType<typeof useTasks>> = {}) => ({
@@ -95,13 +85,8 @@ describe('TaskHoverPanel', () => {
     expect(screen.getAllByText('taskPanelLoadFailed').length).toBeGreaterThan(0);
   });
 
-  it('expands list and toggles description', () => {
-    mockUseTasks.mockReturnValue(
-      buildUseTasksState({
-        detail,
-        selectedTaskId: 'task-2',
-      })
-    );
+  it('expands list and shows task titles only', () => {
+    mockUseTasks.mockReturnValue(buildUseTasksState());
 
     render(<TaskHoverPanel activeSessionId="chat-1" />);
 
@@ -117,10 +102,7 @@ describe('TaskHoverPanel', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(list?.className).toContain('max-h-80');
     expect(screen.getAllByText('Preliminary Research').length).toBeGreaterThan(0);
-    expect(screen.getByText('taskPanelShowMore')).not.toBeNull();
-
-    fireEvent.click(screen.getByText('taskPanelShowMore'));
-
-    expect(screen.getByText('taskPanelShowLess')).not.toBeNull();
+    expect(screen.queryByText('taskPanelShowMore')).toBeNull();
+    expect(screen.queryByText('taskPanelShowLess')).toBeNull();
   });
 });

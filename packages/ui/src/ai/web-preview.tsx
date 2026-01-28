@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { Input } from '../components/input';
@@ -202,7 +202,7 @@ export const WebPreviewConsole = ({
           variant="ghost"
         >
           Console
-          <ArrowDown
+          <ChevronDown
             className={cn(
               'h-4 w-4 transition-transform duration-normal',
               consoleOpen && 'rotate-180'

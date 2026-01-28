@@ -11,7 +11,7 @@ import {
   TriangleAlert,
   Globe,
   Brain,
-  ArrowDown,
+  ChevronDown,
   X,
   CreditCard,
   LayoutDashboard,
@@ -169,7 +169,7 @@ export function MainLayout() {
                           <GroupIcon className="h-4 w-4" />
                           {group.label}
                         </span>
-                        <ArrowDown
+                        <ChevronDown
                           className={cn(
                             'h-4 w-4 transition-transform',
                             open ? 'rotate-0' : '-rotate-90'

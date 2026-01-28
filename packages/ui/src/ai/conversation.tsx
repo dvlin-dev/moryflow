@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '../components/button';
 import { cn } from '../lib/utils';
 import type { ComponentProps } from 'react';
@@ -75,7 +75,7 @@ export const ConversationScrollButton = ({
         variant="outline"
         {...props}
       >
-        <ArrowDown className="size-4" />
+        <ChevronDown className="size-4" />
       </Button>
     )
   );

@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）
 - 控制台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，避免静默失败
 - 补齐 API client 非 JSON 响应回归测试，新增 `test:unit` 脚本

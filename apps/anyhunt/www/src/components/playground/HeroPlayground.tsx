@@ -28,7 +28,7 @@ import {
   Badge,
 } from '@anyhunt/ui';
 import {
-  ArrowDown,
+  ChevronDown,
   ArrowRight,
   Download,
   Globe,
@@ -133,7 +133,7 @@ function ScrapeParams({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 gap-1 font-mono text-xs">
               {formats.length === 0 ? 'Select formats' : formats.join(', ')}
-              <ArrowDown className="h-3 w-3" />
+              <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">

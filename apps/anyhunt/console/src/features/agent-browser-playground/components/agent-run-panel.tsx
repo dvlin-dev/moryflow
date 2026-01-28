@@ -30,7 +30,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from '@anyhunt/ui/ai/model-selector';
-import { ArrowDown, CircleCheck, SquareStop } from 'lucide-react';
+import { ChevronDown, CircleCheck, SquareStop } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentChatTransport } from '../transport/agent-chat-transport';
 import { agentPromptSchema, type AgentPromptValues } from '../schemas';
@@ -131,7 +131,7 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
         <ModelSelectorTrigger asChild>
           <PromptInputButton aria-label="Switch model" disabled={isDisabled}>
             <span>{selectedModel?.displayName ?? selectedModel?.modelId ?? 'Select model'}</span>
-            <ArrowDown className="size-3 opacity-50" />
+            <ChevronDown className="size-3 opacity-50" />
           </PromptInputButton>
         </ModelSelectorTrigger>
         <ModelSelectorContent>

@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）
 - Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`

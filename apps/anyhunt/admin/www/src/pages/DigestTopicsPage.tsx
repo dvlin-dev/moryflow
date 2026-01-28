@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { Search, Star, ArrowUp, ArrowDown, View } from 'lucide-react';
+import { Search, Star, ArrowUp, ChevronDown, View } from 'lucide-react';
 import { PageHeader, SimplePagination } from '@anyhunt/ui';
 import {
   Card,
@@ -431,7 +431,7 @@ function FeaturedTopicsTab({
                         disabled={index === topics.length - 1 || isReordering}
                         title="Move Down"
                       >
-                        <ArrowDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"

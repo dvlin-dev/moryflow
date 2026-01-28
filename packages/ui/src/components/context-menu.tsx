@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu';
-import { ArrowRight, CircleDot, Check } from 'lucide-react';
+import { ArrowRight, Circle, Check } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
@@ -124,7 +124,7 @@ const ContextMenuRadioItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <ContextMenuPrimitive.ItemIndicator>
-        <CircleDot className="h-2 w-2" />
+        <Circle className="h-2 w-2 fill-current" strokeWidth={0} />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}

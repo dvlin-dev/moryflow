@@ -10,7 +10,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { isValidElement, useMemo, useState } from 'react';
 import type { ToolUIPart } from 'ai';
-import { ArrowDown, X, Clock, Terminal, FileText, Loader, Circle, Check } from 'lucide-react';
+import { ChevronDown, X, Clock, Terminal, FileText, Loader, Circle, Check } from 'lucide-react';
 
 import { Button } from '../components/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
@@ -174,7 +174,7 @@ export const ToolHeader = ({
       <span className="truncate font-medium text-sm">{getToolDisplayName(type, input, title)}</span>
       {getStatusBadge(state, statusLabels, statusIcons)}
     </div>
-    <ArrowDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-fast group-data-[state=open]:rotate-180" />
+    <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-fast group-data-[state=open]:rotate-180" />
   </CollapsibleTrigger>
 );
 

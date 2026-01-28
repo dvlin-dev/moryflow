@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { ScrollArea, Button, Card, CardContent, Skeleton, Checkbox, Badge } from '@anyhunt/ui';
-import { ArrowUp, ArrowDown, Plus, Minus, Link, User, Tag } from 'lucide-react';
+import { ArrowUp, ChevronDown, Plus, Minus, Link, User, Tag } from 'lucide-react';
 import {
   useFeedbackSuggestions,
   useApplyFeedbackSuggestions,
@@ -42,7 +42,7 @@ function getSuggestionTypeInfo(type: FeedbackSuggestion['type']) {
       };
     case 'add_negative':
       return {
-        icon: ArrowDown,
+        icon: ChevronDown,
         label: 'Add to blocklist',
         color: 'text-red-600 bg-red-100',
       };

@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, ArrowDown } from 'lucide-react';
+import { Brain, ChevronDown } from 'lucide-react';
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/collapsible';
 import { cn } from '../lib/utils';
@@ -147,7 +147,7 @@ export const ReasoningTrigger = memo(
           <>
             <Brain className="size-4" />
             {getThinkingMessage(isStreaming, duration, thinkingLabel, thoughtLabel)}
-            <ArrowDown
+            <ChevronDown
               className={cn(
                 'size-4 transition-transform duration-fast',
                 isOpen ? 'rotate-180' : 'rotate-0'

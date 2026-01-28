@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { ArrowDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
@@ -205,7 +205,7 @@ export const VaultSelector = ({
             type="button"
             className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
-            <ArrowDown className="size-4" />
+            <ChevronDown className="size-4" />
           </button>
         </PopoverTrigger>
 

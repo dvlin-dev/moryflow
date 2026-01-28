@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowDown, ArrowUp, Image, Loader } from 'lucide-react';
+import { ChevronDown, ChevronUp, Image, Loader } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -332,9 +332,9 @@ export function ImageGenerator() {
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full">
                     {rawResponseOpen ? (
-                      <ArrowUp className="mr-2 h-4 w-4" />
+                      <ChevronUp className="mr-2 h-4 w-4" />
                     ) : (
-                      <ArrowDown className="mr-2 h-4 w-4" />
+                      <ChevronDown className="mr-2 h-4 w-4" />
                     )}
                     原始响应
                   </Button>
