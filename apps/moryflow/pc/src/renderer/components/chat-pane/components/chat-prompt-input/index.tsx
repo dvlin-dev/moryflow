@@ -4,6 +4,7 @@
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
  * [UPDATE]: 2026-02-02 - 语音入口仅对登录用户开放
  * [UPDATE]: 2026-01-28 - 模型选择箭头尺寸放大提升可读性
+ * [UPDATE]: 2026-01-28 - 提交后保留 active 引用，@ 触发索引随文本变更更新
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -65,6 +66,43 @@ import { FileContextPanel } from './file-context-panel';
 
 /** 默认 context window 大小 */
 const DEFAULT_CONTEXT_WINDOW = 128000;
+
+const updateAtTriggerIndex = (
+  previousValue: string,
+  nextValue: string,
+  currentIndex: number | null
+): number | null => {
+  if (currentIndex === null || previousValue === nextValue) {
+    return currentIndex;
+  }
+
+  let start = 0;
+  const minLength = Math.min(previousValue.length, nextValue.length);
+  while (start < minLength && previousValue[start] === nextValue[start]) {
+    start += 1;
+  }
+
+  let prevEnd = previousValue.length - 1;
+  let nextEnd = nextValue.length - 1;
+  while (prevEnd >= start && nextEnd >= start && previousValue[prevEnd] === nextValue[nextEnd]) {
+    prevEnd -= 1;
+    nextEnd -= 1;
+  }
+
+  const removedCount = Math.max(0, prevEnd - start + 1);
+  const addedCount = Math.max(0, nextEnd - start + 1);
+
+  if (currentIndex < start) {
+    return currentIndex;
+  }
+  if (currentIndex >= start + removedCount) {
+    return currentIndex + (addedCount - removedCount);
+  }
+
+  const insertedSegment = nextValue.slice(start, start + addedCount);
+  const insertedAtOffset = insertedSegment.indexOf('@');
+  return insertedAtOffset === -1 ? null : start + insertedAtOffset;
+};
 
 export const ChatPromptInput = (props: ChatPromptInputProps) => (
   <PromptInputProvider>
@@ -230,7 +268,7 @@ const ChatPromptInputInner = ({
       });
 
       // 清空已选文件
-      setContextFiles([]);
+      setContextFiles((prev) => prev.filter((file) => file.id.startsWith('active-')));
     },
     [isDisabled, onSubmit, contextFiles]
   );
@@ -242,6 +280,7 @@ const ChatPromptInputInner = ({
       }
       const nextValue = event.currentTarget.value;
       const previousValue = previousTextRef.current;
+      const syncedAtIndex = updateAtTriggerIndex(previousValue, nextValue, atTriggerIndex);
       previousTextRef.current = nextValue;
       const nativeEvent = event.nativeEvent as InputEvent | undefined;
       const caret = event.currentTarget.selectionStart ?? nextValue.length;
@@ -251,13 +290,17 @@ const ChatPromptInputInner = ({
         caretIndex: caret,
         insertedData: nativeEvent?.data,
       });
-
-      if (triggerIndex !== null) {
-        setAtTriggerIndex(triggerIndex);
+      const nextTriggerIndex = triggerIndex ?? syncedAtIndex;
+      if (nextTriggerIndex === null) {
+        setAtPanelOpen(false);
+      } else if (triggerIndex !== null) {
         setAtPanelOpen(true);
       }
+      if (nextTriggerIndex !== atTriggerIndex) {
+        setAtTriggerIndex(nextTriggerIndex);
+      }
     },
-    [isDisabled]
+    [atTriggerIndex, isDisabled]
   );
 
   const handleAddContextFileFromAt = useCallback(
@@ -268,7 +311,11 @@ const ChatPromptInputInner = ({
         return;
       }
       const currentValue = promptController.textInput.value;
-      if (atTriggerIndex >= 0 && atTriggerIndex < currentValue.length) {
+      if (
+        atTriggerIndex >= 0 &&
+        atTriggerIndex < currentValue.length &&
+        currentValue[atTriggerIndex] === '@'
+      ) {
         promptController.textInput.setInput(removeAtTrigger(currentValue, atTriggerIndex));
       }
       setAtPanelOpen(false);
