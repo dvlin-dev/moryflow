@@ -1,12 +1,12 @@
 /**
  * [PROPS]: FileContextPanelProps - 引用文件面板数据与行为
  * [EMITS]: onAddFile/onRefreshRecent/onClose - 添加引用/刷新最近/关闭面板
- * [POS]: Chat Prompt 输入框引用文件面板（@ 与 + 菜单复用）
+ * [POS]: Chat Prompt 输入框引用文件面板（@ 与 + 菜单复用，挂载时刷新最近文件）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { File, Search } from 'lucide-react';
 import {
   Command,
@@ -60,10 +60,15 @@ export const FileContextPanel = ({
   searchPlaceholder,
 }: FileContextPanelProps) => {
   const [query, setQuery] = useState('');
+  const refreshRecentRef = useRef(onRefreshRecent);
 
   useEffect(() => {
-    onRefreshRecent?.();
+    refreshRecentRef.current = onRefreshRecent;
   }, [onRefreshRecent]);
+
+  useEffect(() => {
+    refreshRecentRef.current?.();
+  }, []);
 
   // 过滤掉已经添加的文件
   const availableFiles = useMemo(() => {
