@@ -298,16 +298,16 @@ Locale 选择与回退（推荐规则）：
 
 Explore 第一阶段建议复用：
 
-- Trending（Explore 空态）：`GET /api/v1/digest/topics?sort=trending&limit=...`
-- Search（Explore 搜索）：`GET /api/v1/digest/topics?q=...&sort=trending`
-- Recommended（未登录 SidePanel）：`GET /api/v1/digest/topics?featured=true&limit=...`
+- Trending（Explore 空态）：`GET /api/v1/public/digest/topics?sort=trending&limit=...`
+- Search（Explore 搜索）：`GET /api/v1/public/digest/topics?q=...&sort=trending`
+- Recommended（未登录 SidePanel）：`GET /api/v1/public/digest/topics?featured=true&limit=...`
 
 ## Welcome Config 的接口（需要新增，但很小）
 
 Welcome 必须“后台改完立即生效”，因此需要一条 public read + 一条 admin update：
 
-- Public（未登录可读）：`GET /api/v1/digest/welcome`
-- Public（可选 locale）：`GET /api/v1/digest/welcome?locale=zh-CN`（可选；默认由前端决定）
+- Public（未登录可读）：`GET /api/v1/public/digest/welcome`
+- Public（可选 locale）：`GET /api/v1/public/digest/welcome?locale=zh-CN`（可选；默认由前端决定）
 - Admin（运营配置）：`PUT /api/v1/admin/digest/welcome`
 
 > WelcomeConfig 的存储建议走一张独立表（单条记录），避免和 Topic/Subscription 语义耦合。
@@ -321,11 +321,11 @@ Welcome 必须“后台改完立即生效”，因此需要一条 public read + 
 
 后端已存在的能力可以直接串起来：
 
-- 搜索：`GET /api/v1/digest/topics?q=<query>&sort=trending`
-- Follow（存在时）：`POST /api/v1/digest/topics/:slug/follow`
+- 搜索：`GET /api/v1/public/digest/topics?q=<query>&sort=trending`
+- Follow（存在时）：`POST /api/v1/app/digest/topics/:slug/follow`
 - 创建（不存在时，一键创建）：
-  1. `POST /api/v1/digest/subscriptions`（创建一个用户订阅）
-  2. `POST /api/v1/digest/topics`（从该 subscription 发布为 public topic）
+  1. `POST /api/v1/app/digest/subscriptions`（创建一个用户订阅）
+  2. `POST /api/v1/app/digest/topics`（从该 subscription 发布为 public topic）
 
 发布建议（默认值）：
 
@@ -394,7 +394,7 @@ Welcome 必须“后台改完立即生效”，因此需要一条 public read + 
 ## 2) 后端（`apps/anyhunt/server`）
 
 - 若 Reader 不再使用 Discover feed：可以删除 `GET /api/v1/discover/*` 相关模块（discover.controller/service、缓存 key、无效化逻辑）
-- 新增 WelcomeConfig 的存储与 Admin 配置接口（见上文 `GET /api/v1/digest/welcome` / `PUT /api/v1/admin/digest/welcome`）
+- 新增 WelcomeConfig 的存储与 Admin 配置接口（见上文 `GET /api/v1/public/digest/welcome` / `PUT /api/v1/admin/digest/welcome`）
 - 若引入 RSS 作为订阅来源：补齐“创建/绑定 DigestSource(rss)”的写入链路（目前只有 worker 侧读取/刷新能力）
 
 ## 3) 文档（本仓库）

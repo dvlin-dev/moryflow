@@ -3,7 +3,7 @@
  *
  * [INPUT]: 收件箱查询/操作请求
  * [OUTPUT]: Inbox 条目列表、统计、操作结果
- * [POS]: Digest 收件箱管理 API（ApiKey 认证）
+ * [POS]: Digest 收件箱管理 API（Session 认证）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,7 +16,6 @@ import {
   Param,
   Query,
   Body,
-  UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -27,10 +26,9 @@ import {
   ApiOkResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser, Public } from '../../auth';
+import { CurrentUser } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
-import { ApiKeyGuard } from '../../api-key';
 import { DigestInboxService } from '../services/inbox.service';
 import { DigestContentService } from '../services/content.service';
 import {
@@ -41,10 +39,8 @@ import {
 } from '../dto';
 
 @ApiTags('Digest Inbox')
-@ApiSecurity('apiKey')
-@Public()
-@Controller({ path: 'digest/inbox', version: '1' })
-@UseGuards(ApiKeyGuard)
+@ApiSecurity('session')
+@Controller({ path: 'app/digest/inbox', version: '1' })
 export class DigestInboxController {
   constructor(
     private readonly inboxService: DigestInboxService,
@@ -53,7 +49,7 @@ export class DigestInboxController {
 
   /**
    * 获取收件箱条目列表
-   * GET /api/digest/inbox
+   * GET /api/v1/app/digest/inbox
    */
   @Get()
   @ApiOperation({ summary: 'List inbox items' })
@@ -76,7 +72,7 @@ export class DigestInboxController {
 
   /**
    * 获取收件箱统计
-   * GET /api/digest/inbox/stats
+   * GET /api/v1/app/digest/inbox/stats
    */
   @Get('stats')
   @ApiOperation({ summary: 'Get inbox statistics' })
@@ -87,7 +83,7 @@ export class DigestInboxController {
 
   /**
    * 更新条目状态（已读/收藏/不感兴趣）
-   * PATCH /api/digest/inbox/:id
+   * PATCH /api/v1/app/digest/inbox/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update inbox item state' })
@@ -106,7 +102,7 @@ export class DigestInboxController {
 
   /**
    * 批量标记已读
-   * POST /api/digest/inbox/mark-all-read
+   * POST /api/v1/app/digest/inbox/mark-all-read
    */
   @Post('mark-all-read')
   @ApiOperation({ summary: 'Mark all inbox items as read' })
@@ -121,7 +117,7 @@ export class DigestInboxController {
 
   /**
    * 获取条目全文内容
-   * GET /api/digest/inbox/:id/content
+   * GET /api/v1/app/digest/inbox/:id/content
    */
   @Get(':id/content')
   @ApiOperation({ summary: 'Get inbox item full content' })

@@ -23,7 +23,7 @@ Payment processing integration with Creem. Handles subscriptions, tier upgrades,
 
 - Uses Creem as payment provider
 - Webhook endpoint must be VERSION_NEUTRAL for Creem callbacks
-- Console endpoints use AuthGuard
+- App endpoints use AuthGuard
 - Quota updates must be atomic
 - Webhook 事件必须落库去重（eventId 唯一）
 - 未知产品 ID 必须拒绝处理（不允许默认授予）
@@ -34,7 +34,7 @@ Payment processing integration with Creem. Handles subscriptions, tier upgrades,
 | File                            | Type       | Description                          |
 | ------------------------------- | ---------- | ------------------------------------ |
 | `payment.service.ts`            | Service    | Payment logic, Creem API integration |
-| `payment.controller.ts`         | Controller | Console endpoints for subscriptions  |
+| `payment.controller.ts`         | Controller | App endpoints for subscriptions      |
 | `payment-webhook.controller.ts` | Controller | Creem webhook handler                |
 | `payment.module.ts`             | Module     | NestJS module definition             |
 | `payment.constants.ts`          | Constants  | Tier configs, prices                 |

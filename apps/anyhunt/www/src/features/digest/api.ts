@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: Digest API functions
- * [POS]: API calls for subscriptions, inbox, runs, topics (Session auth)
+ * [POS]: API calls for app (session) + public digest routes
  */
 
 import { apiClient } from '@/lib/api-client';
@@ -197,17 +197,19 @@ export async function deleteTopic(id: string): Promise<void> {
   await apiClient.delete(`${DIGEST_API.TOPICS}/${id}`);
 }
 
-// ========== Public Topics API (for Follow) ==========
+// ========== Public Topics API (read only) ==========
 
 export async function fetchPublicTopicBySlug(slug: string): Promise<PublicTopic> {
   return apiClient.get<PublicTopic>(`${DIGEST_PUBLIC_API.TOPICS}/${slug}`);
 }
 
+// ========== App Topics API (follow/unfollow) ==========
+
 export async function followTopic(
   slug: string,
   data: FollowTopicInput
 ): Promise<FollowTopicResponse> {
-  return apiClient.post<FollowTopicResponse>(`${DIGEST_PUBLIC_API.TOPICS}/${slug}/follow`, data);
+  return apiClient.post<FollowTopicResponse>(`${DIGEST_API.TOPICS}/${slug}/follow`, data);
 }
 
 // ========== Feedback API ==========

@@ -19,6 +19,10 @@ status: active
 
 注意：本目录只记录“怎么 review / review 什么 / 进度与结果”；具体的 code review 结论与修复进展，按模块分别写到对应文档（见下方模块清单的 `Doc` 列）。
 
+## 近期更新
+
+- 2026-02-02：Anyhunt Server Auth/Billing/API Key Review 文档路径示例更新为 `/api/v1/app/*`。
+
 ## 仓库模块地图（按目录）
 
 - Anyhunt Dev（开发者平台）

@@ -30,6 +30,7 @@ status: active
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
 - Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`
+- Anyhunt app/public/apikey 通道路由规范（implemented）：`docs/architecture/anyhunt-api-channel-routing.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
@@ -81,7 +82,7 @@ status: active
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
-- Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-01-25，修复完成）
+- Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-02-02，路径对齐）
 - Anyhunt Server API Key & Quota Code Review：`docs/code-review/anyhunt-server-api-key-quota.md`（更新：2026-01-25，修复完成）
 - Anyhunt Server Billing & Payment Code Review：`docs/code-review/anyhunt-server-billing-payment.md`（更新：2026-01-25，修复完成）
 - Anyhunt Server SSRF & Network Isolation Code Review：`docs/code-review/anyhunt-server-ssrf-sandbox.md`（更新：2026-01-26，修复完成）

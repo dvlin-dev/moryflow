@@ -3,7 +3,7 @@
  *
  * [INPUT]: 订阅管理请求（CRUD、启用/禁用、手动运行）
  * [OUTPUT]: DigestSubscription 响应
- * [POS]: Digest 订阅管理 API（ApiKey 认证）
+ * [POS]: Digest 订阅管理 API（Session 认证）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,7 +17,6 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -33,10 +32,9 @@ import {
 } from '@nestjs/swagger';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { CurrentUser, Public } from '../../auth';
+import { CurrentUser } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
-import { ApiKeyGuard } from '../../api-key';
 import { DigestSubscriptionService } from '../services/subscription.service';
 import { DigestRunService } from '../services/run.service';
 import { DigestPreviewService } from '../services/preview.service';
@@ -61,10 +59,8 @@ import {
 } from '../../queue/queue.constants';
 
 @ApiTags('Digest Subscriptions')
-@ApiSecurity('apiKey')
-@Public()
-@Controller({ path: 'digest/subscriptions', version: '1' })
-@UseGuards(ApiKeyGuard)
+@ApiSecurity('session')
+@Controller({ path: 'app/digest/subscriptions', version: '1' })
 export class DigestSubscriptionController {
   constructor(
     private readonly subscriptionService: DigestSubscriptionService,
@@ -77,7 +73,7 @@ export class DigestSubscriptionController {
 
   /**
    * 获取当前用户的订阅列表
-   * GET /api/digest/subscriptions
+   * GET /api/v1/app/digest/subscriptions
    */
   @Get()
   @ApiOperation({ summary: 'List user subscriptions' })
@@ -101,7 +97,7 @@ export class DigestSubscriptionController {
 
   /**
    * 获取单个订阅详情
-   * GET /api/digest/subscriptions/:id
+   * GET /api/v1/app/digest/subscriptions/:id
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get subscription by ID' })
@@ -119,7 +115,7 @@ export class DigestSubscriptionController {
 
   /**
    * 创建新订阅
-   * POST /api/digest/subscriptions
+   * POST /api/v1/app/digest/subscriptions
    */
   @Post()
   @ApiOperation({ summary: 'Create a new subscription' })
@@ -135,7 +131,7 @@ export class DigestSubscriptionController {
 
   /**
    * 更新订阅
-   * PATCH /api/digest/subscriptions/:id
+   * PATCH /api/v1/app/digest/subscriptions/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update subscription' })
@@ -157,7 +153,7 @@ export class DigestSubscriptionController {
 
   /**
    * 删除订阅
-   * DELETE /api/digest/subscriptions/:id
+   * DELETE /api/v1/app/digest/subscriptions/:id
    */
   @Delete(':id')
   @ApiOperation({ summary: 'Delete subscription' })
@@ -173,7 +169,7 @@ export class DigestSubscriptionController {
 
   /**
    * 启用/禁用订阅
-   * POST /api/digest/subscriptions/:id/toggle
+   * POST /api/v1/app/digest/subscriptions/:id/toggle
    */
   @Post(':id/toggle')
   @ApiOperation({ summary: 'Toggle subscription enabled state' })
@@ -201,7 +197,7 @@ export class DigestSubscriptionController {
 
   /**
    * 手动触发运行
-   * POST /api/digest/subscriptions/:id/run
+   * POST /api/v1/app/digest/subscriptions/:id/run
    */
   @Post(':id/run')
   @ApiOperation({ summary: 'Trigger a manual run' })
@@ -257,7 +253,7 @@ export class DigestSubscriptionController {
 
   /**
    * 预览订阅
-   * POST /api/digest/subscriptions/:id/preview
+   * POST /api/v1/app/digest/subscriptions/:id/preview
    *
    * 执行搜索、评分、AI 摘要流程，但不写入数据库
    * 用于用户在保存前预览订阅效果
@@ -279,7 +275,7 @@ export class DigestSubscriptionController {
 
   /**
    * 获取学习建议
-   * GET /api/digest/subscriptions/:id/feedback/suggestions
+   * GET /api/v1/app/digest/subscriptions/:id/feedback/suggestions
    *
    * 基于用户反馈（save/notInterested）生成兴趣词建议
    */
@@ -305,7 +301,7 @@ export class DigestSubscriptionController {
 
   /**
    * 应用学习建议
-   * POST /api/digest/subscriptions/:id/feedback/apply
+   * POST /api/v1/app/digest/subscriptions/:id/feedback/apply
    *
    * 将选中的建议应用到订阅配置（添加到 interests 或 negativeInterests）
    */
@@ -338,7 +334,7 @@ export class DigestSubscriptionController {
 
   /**
    * 获取反馈统计
-   * GET /api/digest/subscriptions/:id/feedback/stats
+   * GET /api/v1/app/digest/subscriptions/:id/feedback/stats
    */
   @Get(':id/feedback/stats')
   @ApiOperation({ summary: 'Get feedback statistics' })
@@ -359,7 +355,7 @@ export class DigestSubscriptionController {
 
   /**
    * 获取反馈模式列表
-   * GET /api/digest/subscriptions/:id/feedback/patterns
+   * GET /api/v1/app/digest/subscriptions/:id/feedback/patterns
    */
   @Get(':id/feedback/patterns')
   @ApiOperation({ summary: 'Get feedback patterns' })
@@ -399,7 +395,7 @@ export class DigestSubscriptionController {
 
   /**
    * 清除反馈模式
-   * DELETE /api/digest/subscriptions/:id/feedback/patterns
+   * DELETE /api/v1/app/digest/subscriptions/:id/feedback/patterns
    */
   @Delete(':id/feedback/patterns')
   @ApiOperation({ summary: 'Clear all feedback patterns' })

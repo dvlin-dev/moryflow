@@ -3,7 +3,7 @@
  *
  * [INPUT]: API Key CRUD 请求
  * [OUTPUT]: API Key 数据
- * [POS]: 控制台 API Key 管理接口（Session 认证）
+ * [POS]: App API Key 管理接口（Session 认证）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -43,13 +43,13 @@ import {
 
 @ApiTags('ApiKey')
 @ApiSecurity('session')
-@Controller({ path: 'console/api-keys', version: '1' })
+@Controller({ path: 'app/api-keys', version: '1' })
 export class ApiKeyController {
   constructor(private readonly apiKeyService: ApiKeyService) {}
 
   /**
    * Create a new API key
-   * POST /api/v1/console/api-keys
+   * POST /api/v1/app/api-keys
    */
   @Post()
   @Header('Cache-Control', 'no-store')
@@ -64,7 +64,7 @@ export class ApiKeyController {
 
   /**
    * List all API keys for current user
-   * GET /api/v1/console/api-keys
+   * GET /api/v1/app/api-keys
    */
   @Get()
   @Header('Cache-Control', 'no-store')
@@ -76,7 +76,7 @@ export class ApiKeyController {
 
   /**
    * Update an API key
-   * PATCH /api/v1/console/api-keys/:id
+   * PATCH /api/v1/app/api-keys/:id
    */
   @Patch(':id')
   @Header('Cache-Control', 'no-store')
@@ -94,7 +94,7 @@ export class ApiKeyController {
 
   /**
    * Delete an API key
-   * DELETE /api/v1/console/api-keys/:id
+   * DELETE /api/v1/app/api-keys/:id
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

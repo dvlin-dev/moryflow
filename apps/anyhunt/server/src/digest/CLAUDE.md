@@ -12,17 +12,22 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 ## 最近更新
 
-- DigestModule 显式导入 ApiKeyModule，避免 ApiKeyGuard 依赖缺失导致启动失败
+- Digest 路由拆分为 app/public 通道，移除 ApiKeyGuard 依赖
+- Digest 订阅/反馈控制器文档路径统一为 `/api/v1/app/*`
+- Public 举报接口支持可选 session 解析（记录登录用户）
+- DigestPublicTopicController 举报记录单测补齐（userId/IP 透传）
+- DigestModule 引入 AuthModule 以解析 OptionalAuthGuard 依赖
 - Digest LLM 调用统一透传模型 maxOutputTokens
 - Console/Admin Digest 写操作统一返回 204，错误体按 RFC7807 输出
 - Digest LLM 调用改为 AI SDK（`generateText`）
 - Digest LLM resolved payload 移除未使用 upstreamModelId
 - DigestAiService 单测改为 hoisted mock + 动态导入（避免 ai mock 失效）
+- DigestAiService 单测 beforeEach 强制 resetModules，避免 mock 污染导致 AI 调用未被替换
 
 ## 职责边界
 
 - **本模块负责**
-  - 订阅管理（ApiKeyGuard）
+  - 订阅管理（Session app 通道）
   - Run 执行与去重/二次投递策略（Processor + Service）
   - Inbox 管理（已投递内容的状态：已读/收藏/不感兴趣）
   - Public Topics（SEO 展示、Edition 列表与详情）
@@ -35,24 +40,30 @@ Digest 是 Anyhunt Dev 的核心能力：智能内容订阅系统（订阅 → �
 
 > 统一版本：所有 Controller 必须使用 `version: '1'`。
 
-### ApiKeyGuard（公网 API）
+### App（Session）
 
-- `GET /api/v1/digest/subscriptions`：订阅列表（`page/limit`）
-- `GET /api/v1/digest/subscriptions/:id`：订阅详情
-- `GET /api/v1/digest/subscriptions/:subscriptionId/runs`：运行历史（`page/limit`）
-- `GET /api/v1/digest/inbox`：Inbox 列表（`page/limit`）
-- `GET /api/v1/digest/inbox/stats`：Inbox 统计
-- `GET /api/v1/digest/inbox/:id/content`：Inbox 条目全文（`markdown` + `titleSnapshot/urlSnapshot`）
+- `GET /api/v1/app/digest/subscriptions`：订阅列表（`page/limit`）
+- `GET /api/v1/app/digest/subscriptions/:id`：订阅详情
+- `GET /api/v1/app/digest/subscriptions/:subscriptionId/runs`：运行历史（`page/limit`）
+- `GET /api/v1/app/digest/inbox`：Inbox 列表（`page/limit`）
+- `GET /api/v1/app/digest/inbox/stats`：Inbox 统计
+- `GET /api/v1/app/digest/inbox/:id/content`：Inbox 条目全文（`markdown` + `titleSnapshot/urlSnapshot`）
+- `GET /api/v1/app/digest/topics`：用户 Topics 列表
+- `POST /api/v1/app/digest/topics`：创建 Topic
+- `PATCH /api/v1/app/digest/topics/:id`：更新 Topic
+- `DELETE /api/v1/app/digest/topics/:id`：删除 Topic
+- `POST /api/v1/app/digest/topics/:slug/follow`：关注 Topic
+- `DELETE /api/v1/app/digest/topics/:slug/follow`：取消关注
 
-### Public（部分匿名）
+### Public（匿名）
 
-- `GET /api/v1/digest/topics`：公开 Topics 列表（`page/limit`）
-- `GET /api/v1/digest/welcome`：Welcome overview（config + pages list，按 locale 解析）
-- `GET /api/v1/digest/welcome/pages/:slug`：Welcome Page 详情（按 locale 解析）
-- `GET /api/v1/digest/topics/:slug`：Topic 详情
-- `GET /api/v1/digest/topics/:slug/editions`：Edition 列表（`page/limit`）
-- `GET /api/v1/digest/topics/:slug/editions/:editionId`：Edition + Items
-- `POST /api/v1/digest/topics/:slug/report`：匿名/登录用户举报
+- `GET /api/v1/public/digest/topics`：公开 Topics 列表（`page/limit`）
+- `GET /api/v1/public/digest/welcome`：Welcome overview（config + pages list，按 locale 解析）
+- `GET /api/v1/public/digest/welcome/pages/:slug`：Welcome Page 详情（按 locale 解析）
+- `GET /api/v1/public/digest/topics/:slug`：Topic 详情
+- `GET /api/v1/public/digest/topics/:slug/editions`：Edition 列表（`page/limit`）
+- `GET /api/v1/public/digest/topics/:slug/editions/:editionId`：Edition + Items
+- `POST /api/v1/public/digest/topics/:slug/report`：匿名/登录用户举报
 
 ### Admin（RequireAdmin）
 

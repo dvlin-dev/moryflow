@@ -1,7 +1,7 @@
 /**
  * [INPUT]: 当前登录用户
  * [OUTPUT]: 订阅与配额状态
- * [POS]: Payment API 入口（Console 查询）
+ * [POS]: Payment API 入口（app Session 查询）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +13,7 @@ import { PrismaService } from '../prisma';
 import type { CurrentUserDto } from '../types';
 
 @ApiTags('Payment')
-@Controller({ path: 'payment', version: '1' })
+@Controller({ path: 'app/payment', version: '1' })
 export class PaymentController {
   constructor(private readonly prisma: PrismaService) {}
 

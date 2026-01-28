@@ -352,61 +352,52 @@ scoreOverall = 0.5 * relevance + 0.3 * impact + 0.2 * quality
 
 > 完整路由表。详细参数见 Zod schema。
 
-### 7.1 Console API（AuthGuard）
+### 7.1 App API（Session）
 
 **订阅管理**：
 
-| 方法   | 路径                                       | 说明                 |
-| ------ | ------------------------------------------ | -------------------- |
-| POST   | `/api/v1/digest/subscriptions`             | 创建订阅             |
-| GET    | `/api/v1/digest/subscriptions`             | 列表                 |
-| GET    | `/api/v1/digest/subscriptions/:id`         | 详情                 |
-| PATCH  | `/api/v1/digest/subscriptions/:id`         | 更新/启停            |
-| DELETE | `/api/v1/digest/subscriptions/:id`         | 软删除               |
-| POST   | `/api/v1/digest/subscriptions/:id/run`     | 手动触发             |
-| POST   | `/api/v1/digest/subscriptions/:id/preview` | 预览（不写入 Inbox） |
-| GET    | `/api/v1/digest/subscriptions/:id/runs`    | 运行历史             |
+| 方法   | 路径                                           | 说明                 |
+| ------ | ---------------------------------------------- | -------------------- |
+| POST   | `/api/v1/app/digest/subscriptions`             | 创建订阅             |
+| GET    | `/api/v1/app/digest/subscriptions`             | 列表                 |
+| GET    | `/api/v1/app/digest/subscriptions/:id`         | 详情                 |
+| PATCH  | `/api/v1/app/digest/subscriptions/:id`         | 更新/启停            |
+| DELETE | `/api/v1/app/digest/subscriptions/:id`         | 软删除               |
+| POST   | `/api/v1/app/digest/subscriptions/:id/run`     | 手动触发             |
+| POST   | `/api/v1/app/digest/subscriptions/:id/preview` | 预览（不写入 Inbox） |
+| GET    | `/api/v1/app/digest/subscriptions/:id/runs`    | 运行历史             |
 
 **Web Inbox**：
 
-| 方法  | 路径                                 | 说明          |
-| ----- | ------------------------------------ | ------------- |
-| GET   | `/api/v1/digest/inbox/items`         | 条目列表      |
-| PATCH | `/api/v1/digest/inbox/items/:itemId` | 更新状态      |
-| GET   | `/api/v1/digest/inbox/stats`         | 未读/收藏计数 |
+| 方法  | 路径                             | 说明          |
+| ----- | -------------------------------- | ------------- |
+| GET   | `/api/v1/app/digest/inbox`       | 条目列表      |
+| PATCH | `/api/v1/app/digest/inbox/:id`   | 更新状态      |
+| GET   | `/api/v1/app/digest/inbox/stats` | 未读/收藏计数 |
 
 **Topic 管理**：
 
-| 方法   | 路径                                 | 说明             |
-| ------ | ------------------------------------ | ---------------- |
-| POST   | `/api/v1/digest/topics`              | 发布 Topic       |
-| GET    | `/api/v1/digest/topics`              | 我的 Topics      |
-| PATCH  | `/api/v1/digest/topics/:id`          | 更新             |
-| DELETE | `/api/v1/digest/topics/:id`          | 删除（下架）     |
-| POST   | `/api/v1/digest/topics/:slug/follow` | 创建 Follow 订阅 |
+| 方法   | 路径                                     | 说明             |
+| ------ | ---------------------------------------- | ---------------- |
+| POST   | `/api/v1/app/digest/topics`              | 发布 Topic       |
+| GET    | `/api/v1/app/digest/topics`              | 我的 Topics      |
+| PATCH  | `/api/v1/app/digest/topics/:id`          | 更新             |
+| DELETE | `/api/v1/app/digest/topics/:id`          | 删除（下架）     |
+| POST   | `/api/v1/app/digest/topics/:slug/follow` | 创建 Follow 订阅 |
 
-### 7.2 Public API（ApiKeyGuard）
+### 7.2 ApiKey API（不提供 Digest）
 
-| 方法   | 路径                          | 说明       |
-| ------ | ----------------------------- | ---------- |
-| POST   | `/api/v1/digests`             | 创建订阅   |
-| GET    | `/api/v1/digests`             | 列表       |
-| GET    | `/api/v1/digests/:id`         | 详情       |
-| PATCH  | `/api/v1/digests/:id`         | 更新       |
-| DELETE | `/api/v1/digests/:id`         | 删除       |
-| POST   | `/api/v1/digests/:id/run`     | 触发运行   |
-| POST   | `/api/v1/digests/:id/preview` | 预览       |
-| GET    | `/api/v1/digests/inbox/items` | Inbox 列表 |
+- Digest 不提供 ApiKey API；对外仅保留 public/app 通道。
 
 ### 7.3 Public Topics API（无鉴权，SEO）
 
-| 方法 | 路径                                       | 说明         |
-| ---- | ------------------------------------------ | ------------ |
-| GET  | `/api/v1/digest/topics`                    | 公开话题列表 |
-| GET  | `/api/v1/digest/topics/:slug`              | 话题详情     |
-| GET  | `/api/v1/digest/topics/:slug/editions`     | 历史期刊     |
-| GET  | `/api/v1/digest/topics/:slug/editions/:id` | 单期详情     |
-| POST | `/api/v1/digest/topics/:slug/report`       | 举报         |
+| 方法 | 路径                                              | 说明         |
+| ---- | ------------------------------------------------- | ------------ |
+| GET  | `/api/v1/public/digest/topics`                    | 公开话题列表 |
+| GET  | `/api/v1/public/digest/topics/:slug`              | 话题详情     |
+| GET  | `/api/v1/public/digest/topics/:slug/editions`     | 历史期刊     |
+| GET  | `/api/v1/public/digest/topics/:slug/editions/:id` | 单期详情     |
+| POST | `/api/v1/public/digest/topics/:slug/report`       | 举报         |
 
 ### 7.4 Admin API（RequireAdmin）
 
@@ -623,11 +614,11 @@ model DigestTopic {
 
 **新增 API**：
 
-| 方法  | 路径                                  | Guard        | 说明             |
-| ----- | ------------------------------------- | ------------ | ---------------- |
-| GET   | `/api/v1/digest/topics?featured=true` | 无（公开）   | 获取精选话题列表 |
-| PATCH | `/api/v1/admin/digest/topics/:id`     | RequireAdmin | 设置/取消精选    |
-| POST  | `/api/v1/admin/digest/topics/reorder` | RequireAdmin | 调整精选排序     |
+| 方法  | 路径                                         | Guard        | 说明             |
+| ----- | -------------------------------------------- | ------------ | ---------------- |
+| GET   | `/api/v1/public/digest/topics?featured=true` | 无（公开）   | 获取精选话题列表 |
+| PATCH | `/api/v1/admin/digest/topics/:id`            | RequireAdmin | 设置/取消精选    |
+| POST  | `/api/v1/admin/digest/topics/reorder`        | RequireAdmin | 调整精选排序     |
 
 **验收标准**：
 

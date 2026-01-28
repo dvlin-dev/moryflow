@@ -27,6 +27,7 @@
 - `auth/moryflow-pc-mobile-access-token-upgrade.md`：Moryflow PC/Mobile Access Token 持久化升级方案（draft）。
 - `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
 - `anyhunt-console-public-api-key-plan.md`：Console 公共 API 化与 API Key 明文存储方案（active）。
+- `anyhunt-api-channel-routing.md`：Anyhunt app/public/apikey 通道路由规范与迁移清单（implemented）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
@@ -38,6 +39,8 @@
 
 ## 近期更新
 
+- `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
+- `anyhunt-api-channel-routing.md`：补充 apps/anyhunt 修改清单与执行计划（2026-01-28）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充外部化/Hook 示例（JSONC/Agent/Tool）（2026-01-30）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P2-7/P2-8 外部化与 Hook 落地完成（2026-01-29）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P1-5 模式切换落地完成（PC + Mobile）（2026-01-28）。

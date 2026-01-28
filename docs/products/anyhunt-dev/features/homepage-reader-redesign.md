@@ -998,7 +998,7 @@ apps/anyhunt/www/src/
 
 **已实现部分**：
 
-- 后端 `GET /api/v1/digest/inbox/:id/content` 端点
+- 后端 `GET /api/v1/app/digest/inbox/:id/content` 端点
 - 前端 `useInboxItemContent` hook
 - `ArticleDetail` 组件支持显示全文
 

@@ -29,7 +29,7 @@ API key management for authenticating public API requests. Handles creation, val
 | File                        | Type       | Description                      |
 | --------------------------- | ---------- | -------------------------------- |
 | `api-key.service.ts`        | Service    | Key generation, validation, CRUD |
-| `api-key.controller.ts`     | Controller | Console API for key management   |
+| `api-key.controller.ts`     | Controller | App API for key management       |
 | `api-key.guard.ts`          | Guard      | Request authentication guard     |
 | `api-key.module.ts`         | Module     | NestJS module definition         |
 | `api-key.constants.ts`      | Constants  | Key prefix, hash algorithm       |

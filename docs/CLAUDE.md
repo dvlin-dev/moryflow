@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-01（Anyhunt Console 公共 API 化与 API Key 明文存储方案落地）
+> 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Anyhunt app/public/apikey 通道路由规范与迁移清单（含模块进度）：`docs/architecture/anyhunt-api-channel-routing.md`（2026-02-02：implemented）
 - Moryflow PC 悬浮任务面板改造方案：补充悬停箭头/行态/详情展开示意（`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`，2026-02-02：proposal update）
 - 图标库回退方案（Hugeicons → Lucide）：`docs/guides/frontend/icon-library-migration-lucide.md`（2026-01-27：implemented）
 - Moryflow PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`（2026-01-27：proposal update）

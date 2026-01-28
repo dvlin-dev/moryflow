@@ -25,6 +25,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 - Server-side rendering (SSR)
 - Public + Auth（Reader/Digest/Inbox 需要登录）
+- Session 相关 API 统一走 `/api/v1/app/*`，public 内容统一走 `/api/v1/public/*`
 - Cloudflare Turnstile for captcha
 - Demo API has rate limits
 - 组件统一从 `/ui` 导入，图标统一 Lucide（`lucide-react`，直接组件调用）
@@ -43,6 +44,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 - www API client/公有 API 调用对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`
 - Welcome API 复用 `parseJsonResponse`，移除重复错误解析逻辑
 - 新增 `parseJsonResponse` 非 JSON/无效 JSON 单元测试
+- Digest/Demo 调用改为 app/public 前缀（移除旧 `/api/v1/console/*` 与 `/api/v1/digest/*`）
 
 ## 环境变量
 

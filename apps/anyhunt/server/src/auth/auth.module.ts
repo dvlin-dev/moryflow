@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AdminGuard } from './admin.guard';
+import { OptionalAuthGuard } from './optional-auth.guard';
 import { AuthTokensController } from './auth.tokens.controller';
 import { AuthTokensService } from './auth.tokens.service';
 import { RedisModule } from '../redis';
@@ -14,6 +15,7 @@ import { RedisModule } from '../redis';
   providers: [
     AuthService,
     AuthTokensService,
+    OptionalAuthGuard,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
@@ -23,6 +25,6 @@ import { RedisModule } from '../redis';
       useClass: AdminGuard,
     },
   ],
-  exports: [AuthService, AuthTokensService],
+  exports: [AuthService, AuthTokensService, OptionalAuthGuard],
 })
 export class AuthModule {}

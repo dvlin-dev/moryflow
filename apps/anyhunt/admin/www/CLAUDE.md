@@ -16,6 +16,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - LLM Provider/Model 弹窗扩展能力字段（raw config、tiers、token limits）
 - LLM Model 弹窗修复 reasoning raw config 状态初始化与格式化
 - LLM Model 弹窗补齐 raw config JSON object 校验
+- Session 路由统一改为 `/api/v1/app/user/me`
 
 ## 职责
 
@@ -32,7 +33,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - 仅管理员可访问
 - Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
 - refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
-- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/user/me` 同步用户档案（含 isAdmin）
+- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/app/user/me` 同步用户档案（含 isAdmin）
 - `401 token_expired` 只允许刷新一次并重试原请求
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/tiptap`（Welcome Markdown Editor）
 - TipTap 统一从 `@anyhunt/tiptap` 根入口导入；样式仅引入 `@anyhunt/tiptap/styles/notion-editor.scss`（禁止深路径导入）

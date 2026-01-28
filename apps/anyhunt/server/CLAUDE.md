@@ -16,7 +16,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - LLM：扩展 Model 字段（displayName/pricing/tier/limits/capabilitiesJson），支持 OpenRouter reasoning 配置
 - LLM/Extract/Digest：清理未使用配置项（responseFormat/upstreamModelId）
 - API Key：改为明文 `keyValue` 存储 + Bearer 鉴权（列表返回 key，响应 no-store）
-- Digest/Webhook/oEmbed：Console 专用路由下线，统一为 ApiKeyGuard 公网接口
+- Digest：路由拆分为 app/public 前缀，移除旧 `/api/v1/console/*` 与 `/api/v1/digest/*`
+- Demo：公开接口迁移至 `/api/v1/public/demo/*`
 - Browser CDP 连接新增白名单/私网策略环境变量（`.env.example`）
 - Browser Streaming/Provider 环境变量补齐（`.env.example`）
 - Memox Memory 对齐 Mem0：新增 filters DSL（AND/OR/NOT + gte/lte/in/contains/icontains）、导出/历史/反馈与 Token 认证一致
@@ -36,9 +37,10 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 ## Constraints
 
 - All controllers must use `version: '1'` for API versioning
-- Console Session 认证接口统一走 `/api/v1/console/*`（例如 `/console/api-keys`，禁止无版本路径）
+- App Session 认证接口统一走 `/api/v1/app/*`（例如 `/app/api-keys`，禁止无版本路径）
 - API Key 认证统一使用 `Authorization: Bearer <apiKey>`
-- Public API endpoints must use `@Public()` + `ApiKeyGuard` (avoid Better Auth session guard)
+- Public 端点必须使用 `@Public()`（不可挂 Session guard）
+- ApiKey API 必须使用 `@UseGuards(ApiKeyGuard)`
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
 - Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/auth/refresh` 使用
 - Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/auth/jwks`
@@ -172,7 +174,7 @@ module-name/
 
 ```typescript
 @Controller({ path: 'endpoint', version: '1' })
-@UseGuards(ApiKeyGuard) // For public API
+@UseGuards(ApiKeyGuard) // For ApiKey API
 export class ModuleController {
   @Get()
   @ApiOperation({ summary: 'Description' })
@@ -353,19 +355,19 @@ RUN_INTEGRATION_TESTS=1 pnpm --filter @anyhunt/anyhunt-server test
 
 ## API 端点概览
 
-| 端点                   | 方法 | 认证            | 说明         |
-| ---------------------- | ---- | --------------- | ------------ |
-| `/health`              | GET  | 无              | 健康检查     |
-| `/api/v1/scrape`       | POST | API Key         | 单页抓取     |
-| `/api/v1/crawl`        | POST | API Key         | 多页爬取     |
-| `/api/v1/map`          | POST | API Key         | URL 发现     |
-| `/api/v1/extract`      | POST | API Key         | AI 数据提取  |
-| `/api/v1/search`       | POST | API Key         | 网页搜索     |
-| `/api/v1/batch/scrape` | POST | API Key         | 批量抓取     |
-| `/api/v1/oembed`       | POST | Session         | oEmbed 获取  |
-| `/api/v1/console/*`    | \*   | Session         | 控制台 API   |
-| `/api/v1/admin/*`      | \*   | Session + Admin | 管理后台 API |
-| `/api/v1/demo/*`       | POST | Captcha         | 演示 API     |
+| 端点                    | 方法 | 认证            | 说明         |
+| ----------------------- | ---- | --------------- | ------------ |
+| `/health`               | GET  | 无              | 健康检查     |
+| `/api/v1/scrape`        | POST | API Key         | 单页抓取     |
+| `/api/v1/crawl`         | POST | API Key         | 多页爬取     |
+| `/api/v1/map`           | POST | API Key         | URL 发现     |
+| `/api/v1/extract`       | POST | API Key         | AI 数据提取  |
+| `/api/v1/search`        | POST | API Key         | 网页搜索     |
+| `/api/v1/batch/scrape`  | POST | API Key         | 批量抓取     |
+| `/api/v1/oembed`        | POST | Session         | oEmbed 获取  |
+| `/api/v1/app/*`         | \*   | Session         | App API      |
+| `/api/v1/admin/*`       | \*   | Session + Admin | 管理后台 API |
+| `/api/v1/public/demo/*` | POST | Captcha         | 演示 API     |
 
 ---
 

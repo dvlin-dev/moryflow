@@ -3,7 +3,7 @@
  *
  * [INPUT]: 话题管理请求（创建、更新、删除）
  * [OUTPUT]: DigestTopic 响应
- * [POS]: Digest 话题管理 API（ApiKey 认证）
+ * [POS]: Digest 话题管理 API（Session 认证）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,7 +16,6 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -30,29 +29,28 @@ import {
   ApiNoContentResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser, Public } from '../../auth';
+import { CurrentUser } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
-import { ApiKeyGuard } from '../../api-key';
 import { DigestTopicService } from '../services/topic.service';
 import {
   CreateTopicSchema,
   UpdateTopicSchema,
+  FollowTopicSchema,
   type CreateTopicInput,
   type UpdateTopicInput,
+  type FollowTopicInput,
 } from '../dto';
 
 @ApiTags('Digest Topics')
-@ApiSecurity('apiKey')
-@Public()
-@Controller({ path: 'digest/topics', version: '1' })
-@UseGuards(ApiKeyGuard)
+@ApiSecurity('session')
+@Controller({ path: 'app/digest/topics', version: '1' })
 export class DigestTopicController {
   constructor(private readonly topicService: DigestTopicService) {}
 
   /**
    * 获取用户创建的话题
-   * GET /api/digest/topics
+   * GET /api/v1/app/digest/topics
    */
   @Get()
   @ApiOperation({ summary: 'List user created topics' })
@@ -66,7 +64,7 @@ export class DigestTopicController {
 
   /**
    * 获取单个话题详情
-   * GET /api/digest/topics/:id
+   * GET /api/v1/app/digest/topics/:id
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get topic by ID' })
@@ -84,7 +82,7 @@ export class DigestTopicController {
 
   /**
    * 创建公开话题（从订阅发布）
-   * POST /api/digest/topics
+   * POST /api/v1/app/digest/topics
    */
   @Post()
   @ApiOperation({ summary: 'Create a public topic from subscription' })
@@ -99,7 +97,7 @@ export class DigestTopicController {
 
   /**
    * 更新话题
-   * PATCH /api/digest/topics/:id
+   * PATCH /api/v1/app/digest/topics/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: 'Update topic' })
@@ -116,7 +114,7 @@ export class DigestTopicController {
 
   /**
    * 删除话题
-   * DELETE /api/digest/topics/:id
+   * DELETE /api/v1/app/digest/topics/:id
    */
   @Delete(':id')
   @ApiOperation({ summary: 'Delete topic' })
@@ -128,5 +126,58 @@ export class DigestTopicController {
     @Param('id') id: string,
   ): Promise<void> {
     await this.topicService.delete(user.id, id);
+  }
+
+  /**
+   * 关注话题
+   * POST /api/v1/app/digest/topics/:slug/follow
+   */
+  @Post(':slug/follow')
+  @ApiOperation({ summary: 'Follow a topic' })
+  @ApiParam({ name: 'slug', description: 'Topic slug' })
+  @ApiCreatedResponse({ description: 'Subscription created' })
+  async followTopic(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('slug') slug: string,
+    @Body(new ZodValidationPipe(FollowTopicSchema)) input: FollowTopicInput,
+  ) {
+    const topic = await this.topicService.findBySlug(slug);
+
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    const subscription = await this.topicService.followTopic(
+      user.id,
+      topic.id,
+      input,
+    );
+
+    return {
+      subscriptionId: subscription.id,
+      message: 'Successfully followed topic',
+    };
+  }
+
+  /**
+   * 取消关注话题
+   * DELETE /api/v1/app/digest/topics/:slug/follow
+   */
+  @Delete(':slug/follow')
+  @ApiOperation({ summary: 'Unfollow a topic' })
+  @ApiParam({ name: 'slug', description: 'Topic slug' })
+  @ApiNoContentResponse({ description: 'Unfollowed' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async unfollowTopic(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('slug') slug: string,
+  ): Promise<void> {
+    const topic = await this.topicService.findBySlug(slug);
+
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    await this.topicService.unfollowTopic(user.id, topic.id);
   }
 }

@@ -10,7 +10,7 @@ import { API_BASE_URL } from '@/lib/api-base';
 import { USER_API } from '@/lib/api-paths';
 import type { ProblemDetails } from '@anyhunt/types';
 
-/** Admin 用户信息（来自 /api/v1/user/me） */
+/** Admin 用户信息（来自 /api/v1/app/user/me） */
 export interface AuthUser {
   id: string;
   email: string;

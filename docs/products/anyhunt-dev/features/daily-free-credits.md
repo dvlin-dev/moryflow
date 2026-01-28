@@ -109,7 +109,7 @@ TTL（清理历史 key）：
 
 需要让前端能展示“每日剩余”，并保证刷新可恢复：
 
-- `GET /api/v1/user/me`（session）返回 `quota` 时增加：
+- `GET /api/v1/app/user/me`（session）返回 `quota` 时增加：
   - `dailyLimit/dailyUsed/dailyRemaining`
   - `dailyResetsAt`（UTC 的 next midnight ISO string，便于 UI 展示）
 - `GET /api/v1/quota`（apiKey）建议同样增加 daily 字段（同一 userId 维度）
@@ -124,5 +124,5 @@ Admin：
 1. `FREE.monthlyQuota = 0`，`FREE.dailyCredits = 100`（UTC 天）
 2. `QuotaSource` 新增 `DAILY`
 3. `QuotaService.deductOrThrow` 返回 `breakdown`，并在异步任务表写入 `quotaBreakdown` 用于失败退费
-4. `GET /api/v1/user/me` 与 `GET /api/v1/quota` 输出 daily 字段
+4. `GET /api/v1/app/user/me` 与 `GET /api/v1/quota` 输出 daily 字段
 5. 文档口径更新：FREE 不再是 100/月，而是 100/天
