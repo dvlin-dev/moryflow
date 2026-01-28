@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { ArrowRight, Loader } from 'lucide-react';
+import { ChevronRight, Loader } from 'lucide-react';
 import { Button } from '@anyhunt/ui';
 
 interface UrlInputProps {
@@ -52,7 +52,7 @@ export function UrlInput({ onSubmit, isLoading, disabled }: UrlInputProps) {
         ) : (
           <>
             Capture
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ChevronRight className="ml-2 h-4 w-4" />
           </>
         )}
       </Button>

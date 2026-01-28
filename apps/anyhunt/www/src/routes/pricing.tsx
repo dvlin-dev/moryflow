@@ -5,7 +5,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { Check, ArrowRight, CircleQuestionMark } from 'lucide-react';
+import { Check, ChevronRight, CircleQuestionMark } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
 import { Button } from '@anyhunt/ui';
 import { cn } from '@anyhunt/ui/lib';
@@ -82,7 +82,7 @@ function PricingPage() {
                       className="w-full font-mono"
                     >
                       {tier.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </a>
                 </div>
@@ -131,7 +131,7 @@ function PricingPage() {
                     rel="noopener noreferrer"
                   >
                     Start for Free
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ChevronRight className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
                 <Button asChild variant="outline" className="font-mono">

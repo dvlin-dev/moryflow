@@ -41,7 +41,7 @@ import {
   CollapsibleTrigger,
   Separator,
 } from '@anyhunt/ui';
-import { ChevronDown, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useCreateSubscription } from '@/features/digest/hooks';
 import { CRON_PRESETS, TIMEZONES, DEFAULT_SUBSCRIPTION } from '@/features/digest/constants';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -85,7 +85,7 @@ export function CreateSubscriptionDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const createMutation = useCreateSubscription();
   const isMobile = useIsMobile();
-  const AdvancedToggleIcon = showAdvanced ? ChevronDown : ArrowRight;
+  const AdvancedToggleIcon = showAdvanced ? ChevronDown : ChevronRight;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

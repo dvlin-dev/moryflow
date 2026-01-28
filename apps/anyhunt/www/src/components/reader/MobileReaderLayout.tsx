@@ -7,7 +7,7 @@ import { type ReactNode, useRef } from 'react';
 import { useDrag } from '@use-gesture/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@anyhunt/ui';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 interface MobileReaderLayoutProps {
   /** Sidebar content (subscription list) */
@@ -84,7 +84,7 @@ export function MobileReaderLayout({
             {/* Mobile header with back button */}
             <div className="flex h-12 shrink-0 items-center border-b border-border px-2">
               <Button variant="ghost" size="icon" className="size-9" onClick={onBack}>
-                <ArrowLeft className="size-5" />
+                <ChevronLeft className="size-5" />
               </Button>
               <span className="ml-2 text-xs text-muted-foreground">Swipe right to go back</span>
             </div>

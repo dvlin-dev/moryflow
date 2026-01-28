@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - Admin API client 切换 raw JSON + RFC7807 错误体解析（移除 success/data 包装）

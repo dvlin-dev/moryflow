@@ -8,7 +8,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
-import { ArrowLeft, Server, Book, Key, Code } from 'lucide-react';
+import { ChevronLeft, Server, Book, Key, Code } from 'lucide-react';
 import { Header, Footer } from '@/components/layout';
 
 export const Route = createFileRoute('/developer')({
@@ -67,7 +67,7 @@ function DeveloperPage() {
             to="/"
             className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="size-4" />
+            <ChevronLeft className="size-4" />
             Back to Digest
           </Link>
 

@@ -38,6 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- www 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Header/Reader/Playground 下拉箭头改为 ChevronDown（无中轴）
 - 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - Dockerfile 补齐 `packages/types` 的 workspace package 依赖拷贝，避免 pnpm install 报 `WORKSPACE_PKG_NOT_FOUND`

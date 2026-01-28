@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Calendar, Newspaper } from 'lucide-react';
+import { ChevronLeft, Calendar, Newspaper } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
 import { EditionContentItem } from '@/components/digest';
 import { getEditionById, type DigestEditionDetail } from '@/lib/digest-api';
@@ -70,7 +70,7 @@ function EditionDetailPage() {
                 params={{ slug }}
                 className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
                 Back to topic
               </Link>
             </div>
@@ -95,7 +95,7 @@ function EditionDetailPage() {
               params={{ slug }}
               className="mb-4 inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
               Back to topic
             </Link>
 

@@ -1,8 +1,9 @@
 /**
- * NavMain - 主导航组件（支持二级菜单）
- * 基于 shadcn sidebar collapsible 模式
+ * [PROPS]: groups
+ * [EMITS]: none
+ * [POS]: Console 主导航（Sidebar + Collapsible，Lucide icons direct render）
  */
-import { ArrowRight, type LucideIcon } from 'lucide-react';
+import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 
 import {
@@ -84,7 +85,7 @@ export function NavMain({ groups }: NavMainProps) {
                         <SidebarMenuButton tooltip={item.title}>
                           <IconComponent className="size-4" />
                           <span>{item.title}</span>
-                          <ArrowRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>

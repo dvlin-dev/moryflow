@@ -4,7 +4,7 @@
  * [POS]: 分页组件（Lucide icons direct render）
  */
 
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@anyhunt/ui';
 
 interface PaginationProps {
@@ -20,7 +20,7 @@ export function Pagination({ currentPage, totalPages, onPrevious, onNext }: Pagi
   return (
     <div className="flex items-center justify-center gap-4">
       <Button variant="outline" size="sm" onClick={onPrevious} disabled={currentPage <= 1}>
-        <ArrowLeft className="h-4 w-4 mr-1" />
+        <ChevronLeft className="h-4 w-4 mr-1" />
         Previous
       </Button>
       <span className="text-sm text-muted-foreground">
@@ -28,7 +28,7 @@ export function Pagination({ currentPage, totalPages, onPrevious, onNext }: Pagi
       </span>
       <Button variant="outline" size="sm" onClick={onNext} disabled={currentPage >= totalPages}>
         Next
-        <ArrowRight className="h-4 w-4 ml-1" />
+        <ChevronRight className="h-4 w-4 ml-1" />
       </Button>
     </div>
   );

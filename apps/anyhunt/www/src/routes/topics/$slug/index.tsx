@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Users, Calendar, Flag } from 'lucide-react';
+import { ChevronLeft, Users, Calendar, Flag } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
 import { EditionListItem, ReportTopicDialog } from '@/components/digest';
 import {
@@ -103,7 +103,7 @@ function TopicDetailPage() {
                 to="/topics"
                 className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
                 Back to topics
               </Link>
             </div>
@@ -125,7 +125,7 @@ function TopicDetailPage() {
               to="/topics"
               className="mb-4 inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
               Back to topics
             </Link>
 

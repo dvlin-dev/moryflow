@@ -4,7 +4,7 @@
  * [POS]: Memox landing hero section (Lucide icons direct render)
  */
 
-import { ArrowRight, Brain, Github } from 'lucide-react';
+import { ChevronRight, Brain, Github } from 'lucide-react';
 import { Container } from '@/components/layout';
 import { Button } from '@anyhunt/ui';
 
@@ -40,7 +40,7 @@ export function HeroSection() {
             <a href="https://console.anyhunt.app/signup">
               <Button size="lg" className="font-mono">
                 Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <a href="https://server.anyhunt.app/api-docs" target="_blank" rel="noopener noreferrer">

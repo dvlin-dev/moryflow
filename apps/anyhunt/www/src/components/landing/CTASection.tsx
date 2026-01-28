@@ -4,7 +4,7 @@
  * [POS]: Anyhunt landing CTA section (Lucide icons direct render)
  */
 
-import { ArrowRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Container } from '@/components/layout';
 import { Button } from '@anyhunt/ui';
 
@@ -23,7 +23,7 @@ export function CTASection() {
             <a href="https://console.anyhunt.app/signup">
               <Button size="lg" className="font-mono">
                 Create Free Account
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <a href="https://server.anyhunt.app/api-docs" target="_blank" rel="noopener noreferrer">

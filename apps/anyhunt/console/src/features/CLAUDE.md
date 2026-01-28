@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Playground Shared/Memox 分页箭头统一改为 ChevronRight/ChevronLeft（无中轴）
 - Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API Key Create Dialog 文案与 ApiKeyClient 校验对齐（空 key 阻断请求）
 - Agent Browser Playground：Agent Chat 支持单页多轮对话 + 模型选择（对齐 Moryflow）

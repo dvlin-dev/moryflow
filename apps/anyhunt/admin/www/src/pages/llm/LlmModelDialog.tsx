@@ -1,7 +1,7 @@
 /**
  * [PROPS]: LlmModelDialogProps - open/mode/model/defaults/providers
  * [EMITS]: onClose/onSubmit - Model 创建/更新动作
- * [POS]: Admin LLM Models 映射的创建/编辑弹窗（完整能力配置 + reasoning raw config 校验）
+ * [POS]: Admin LLM Models 映射的创建/编辑弹窗（完整能力配置 + reasoning raw config 校验/编辑）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -23,6 +23,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  Label,
   FormMessage,
   Input,
   Select,
@@ -576,7 +577,7 @@ export function LlmModelDialog({
               />
 
               <div className="space-y-2">
-                <FormLabel>Raw config (optional JSON)</FormLabel>
+                <Label>Raw config (optional JSON)</Label>
                 <Textarea
                   value={rawConfigText}
                   onChange={(event) => {

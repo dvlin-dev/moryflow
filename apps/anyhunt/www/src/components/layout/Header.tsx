@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Menu, X, ArrowRight, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronRight, ChevronDown } from 'lucide-react';
 import { Container } from './Container';
 import { Button, Skeleton, cn } from '@anyhunt/ui';
 import { useAuth } from '@/lib/auth-context';
@@ -202,7 +202,7 @@ export function Header() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                          <ArrowRight className="h-4 w-4" />
+                          <ChevronRight className="h-4 w-4" />
                         </div>
                         <div>
                           <div className="text-sm font-medium">Get Started</div>
@@ -211,7 +211,7 @@ export function Header() {
                           </div>
                         </div>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                     </a>
                   </div>
                 </div>

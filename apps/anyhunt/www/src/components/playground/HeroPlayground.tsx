@@ -29,7 +29,7 @@ import {
 } from '@anyhunt/ui';
 import {
   ChevronDown,
-  ArrowRight,
+  ChevronRight,
   Download,
   Globe,
   Layers,
@@ -843,7 +843,7 @@ export function HeroPlayground() {
             {isLoading ? (
               <Loader className="h-4 w-4 animate-spin" />
             ) : (
-              <ArrowRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             )}
           </Button>
         </div>
