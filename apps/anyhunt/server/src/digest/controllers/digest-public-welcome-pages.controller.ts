@@ -21,7 +21,7 @@ import { DigestWelcomePagesService } from '../services';
 import { PublicWelcomeQuerySchema, type PublicWelcomeQuery } from '../dto';
 
 @ApiTags('Public - Digest Welcome')
-@Controller({ path: 'digest/welcome/pages', version: '1' })
+@Controller({ path: 'public/digest/welcome/pages', version: '1' })
 export class DigestPublicWelcomePagesController {
   constructor(
     private readonly welcomePagesService: DigestWelcomePagesService,
@@ -29,7 +29,7 @@ export class DigestPublicWelcomePagesController {
 
   /**
    * 获取 Welcome Page 详情（已按 locale 解析）
-   * GET /api/v1/digest/welcome/pages/:slug
+   * GET /api/v1/public/digest/welcome/pages/:slug
    */
   @Get(':slug')
   @Public()

@@ -8,18 +8,18 @@
 
 // 用户 API
 export const USER_API = {
-  ME: '/api/v1/user/me',
+  ME: '/api/v1/app/user/me',
 } as const;
 
 // 支付 API
 export const PAYMENT_API = {
-  SUBSCRIPTION: '/api/v1/payment/subscription',
-  QUOTA: '/api/v1/payment/quota',
+  SUBSCRIPTION: '/api/v1/app/payment/subscription',
+  QUOTA: '/api/v1/app/payment/quota',
 } as const;
 
-// Console 管理 API（Session 认证）
+// App 管理 API（Session 认证）
 export const CONSOLE_API = {
-  API_KEYS: '/api/v1/console/api-keys',
+  API_KEYS: '/api/v1/app/api-keys',
 } as const;
 
 // Webhook API（API Key 认证）

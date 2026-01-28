@@ -3,12 +3,12 @@
  *
  * [INPUT]: 运行历史查询请求
  * [OUTPUT]: DigestRun, DigestRunItem 列表
- * [POS]: Digest 运行历史 API（ApiKey 认证）
+ * [POS]: Digest 运行历史 API（Session 认证）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiSecurity,
@@ -16,27 +16,24 @@ import {
   ApiOkResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser, Public } from '../../auth';
+import { CurrentUser } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import type { CurrentUserDto } from '../../types';
-import { ApiKeyGuard } from '../../api-key';
 import { DigestRunService } from '../services/run.service';
 import { ListRunsQuerySchema, type ListRunsQuery } from '../dto';
 
 @ApiTags('Digest Runs')
-@ApiSecurity('apiKey')
-@Public()
+@ApiSecurity('session')
 @Controller({
-  path: 'digest/subscriptions/:subscriptionId/runs',
+  path: 'app/digest/subscriptions/:subscriptionId/runs',
   version: '1',
 })
-@UseGuards(ApiKeyGuard)
 export class DigestRunController {
   constructor(private readonly runService: DigestRunService) {}
 
   /**
    * 获取订阅的运行历史
-   * GET /api/digest/subscriptions/:subscriptionId/runs
+   * GET /api/v1/app/digest/subscriptions/:subscriptionId/runs
    */
   @Get()
   @ApiOperation({ summary: 'List subscription runs' })
@@ -73,7 +70,7 @@ export class DigestRunController {
 
   /**
    * 获取单个运行详情
-   * GET /api/digest/subscriptions/:subscriptionId/runs/:runId
+   * GET /api/v1/app/digest/subscriptions/:subscriptionId/runs/:runId
    */
   @Get(':runId')
   @ApiOperation({ summary: 'Get run details' })

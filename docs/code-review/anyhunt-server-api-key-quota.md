@@ -23,7 +23,7 @@ status: done
 
 主要入口：
 
-- 控制台 API Key 管理：`/api/v1/console/api-keys/*`（Session）
+- 控制台 API Key 管理：`/api/v1/app/api-keys/*`（Session）
 - 公共配额查询：`/api/v1/quota`（ApiKeyGuard）
 
 ## 结论摘要

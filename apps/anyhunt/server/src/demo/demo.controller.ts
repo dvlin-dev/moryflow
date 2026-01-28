@@ -29,10 +29,10 @@ import {
 
 /**
  * Demo 控制器
- * 提供官网 Playground 的演示 API
+ * 提供官网 Playground 的演示 API（public）
  */
 @ApiTags('Demo')
-@Controller({ path: 'demo', version: '1' })
+@Controller({ path: 'public/demo', version: '1' })
 @Public()
 export class DemoController {
   constructor(private readonly demoService: DemoService) {}

@@ -1,23 +1,23 @@
 /**
  * Digest Public Topic Controller
  *
- * [INPUT]: 公开话题浏览/关注请求
+ * [INPUT]: 公开话题浏览/举报请求
  * [OUTPUT]: DigestTopic, Edition 列表
- * [POS]: Public 话题 API（部分需要认证）
+ * [POS]: Public 话题 API（公开浏览 + 举报）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import {
   Controller,
   Get,
   Post,
-  Delete,
   Param,
   Query,
   Body,
   Req,
-  HttpCode,
-  HttpStatus,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import {
@@ -25,28 +25,23 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiNoContentResponse,
   ApiParam,
-  ApiCookieAuth,
 } from '@nestjs/swagger';
-import { CurrentUser, Public } from '../../auth';
+import { OptionalAuthGuard, Public } from '../../auth';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import type { CurrentUserDto } from '../../types';
 import { DigestTopicService } from '../services/topic.service';
 import { DigestReportService } from '../services/report.service';
 import {
   PublicTopicsQuerySchema,
   EditionsQuerySchema,
-  FollowTopicSchema,
   CreateReportSchema,
   type PublicTopicsQuery,
   type EditionsQuery,
-  type FollowTopicInput,
   type CreateReportInput,
 } from '../dto';
 
 @ApiTags('Public - Digest Topics')
-@Controller({ path: 'digest/topics', version: '1' })
+@Controller({ path: 'public/digest/topics', version: '1' })
 export class DigestPublicTopicController {
   constructor(
     private readonly topicService: DigestTopicService,
@@ -55,7 +50,7 @@ export class DigestPublicTopicController {
 
   /**
    * 获取公开话题列表
-   * GET /api/v1/digest/topics
+   * GET /api/v1/public/digest/topics
    */
   @Get()
   @Public()
@@ -79,7 +74,7 @@ export class DigestPublicTopicController {
 
   /**
    * 获取话题详情（通过 Slug）
-   * GET /api/v1/digest/topics/:slug
+   * GET /api/v1/public/digest/topics/:slug
    */
   @Get(':slug')
   @Public()
@@ -98,7 +93,7 @@ export class DigestPublicTopicController {
 
   /**
    * 获取话题的 Edition 列表
-   * GET /api/v1/digest/topics/:slug/editions
+   * GET /api/v1/public/digest/topics/:slug/editions
    */
   @Get(':slug/editions')
   @Public()
@@ -129,7 +124,7 @@ export class DigestPublicTopicController {
 
   /**
    * 获取 Edition 详情
-   * GET /api/v1/digest/topics/:slug/editions/:editionId
+   * GET /api/v1/public/digest/topics/:slug/editions/:editionId
    */
   @Get(':slug/editions/:editionId')
   @Public()
@@ -162,67 +157,13 @@ export class DigestPublicTopicController {
   }
 
   /**
-   * 关注话题
-   * POST /api/v1/digest/topics/:slug/follow
-   */
-  @Post(':slug/follow')
-  @ApiCookieAuth()
-  @ApiOperation({ summary: 'Follow a topic' })
-  @ApiParam({ name: 'slug', description: 'Topic slug' })
-  @ApiCreatedResponse({ description: 'Subscription created' })
-  async followTopic(
-    @CurrentUser() user: CurrentUserDto,
-    @Param('slug') slug: string,
-    @Body(new ZodValidationPipe(FollowTopicSchema)) input: FollowTopicInput,
-  ) {
-    const topic = await this.topicService.findBySlug(slug);
-
-    if (!topic) {
-      throw new NotFoundException('Topic not found');
-    }
-
-    const subscription = await this.topicService.followTopic(
-      user.id,
-      topic.id,
-      input,
-    );
-
-    return {
-      subscriptionId: subscription.id,
-      message: 'Successfully followed topic',
-    };
-  }
-
-  /**
-   * 取消关注话题
-   * DELETE /api/v1/digest/topics/:slug/follow
-   */
-  @Delete(':slug/follow')
-  @ApiCookieAuth()
-  @ApiOperation({ summary: 'Unfollow a topic' })
-  @ApiParam({ name: 'slug', description: 'Topic slug' })
-  @ApiNoContentResponse({ description: 'Unfollowed' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async unfollowTopic(
-    @CurrentUser() user: CurrentUserDto,
-    @Param('slug') slug: string,
-  ): Promise<void> {
-    const topic = await this.topicService.findBySlug(slug);
-
-    if (!topic) {
-      throw new NotFoundException('Topic not found');
-    }
-
-    await this.topicService.unfollowTopic(user.id, topic.id);
-  }
-
-  /**
    * 举报话题
-   * POST /api/v1/digest/topics/:slug/report
-   * 支持匿名或登录用户举报
+   * POST /api/v1/public/digest/topics/:slug/report
+   * 支持匿名或登录用户举报（若带 access token 会记录 userId）
    */
   @Post(':slug/report')
   @Public()
+  @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: 'Report a topic for spam/copyright/etc' })
   @ApiParam({ name: 'slug', description: 'Topic slug' })
   @ApiCreatedResponse({ description: 'Report created' })

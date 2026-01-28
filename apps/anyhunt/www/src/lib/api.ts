@@ -165,7 +165,7 @@ export async function parseJsonResponse<T>(response: Response): Promise<T> {
  */
 export async function checkVerifyStatus(apiUrl: string): Promise<{ verified: boolean }> {
   try {
-    const response = await fetch(`${apiUrl}/api/v1/demo/verify-status`, {
+    const response = await fetch(`${apiUrl}/api/v1/public/demo/verify-status`, {
       method: 'GET',
     });
     if (!response.ok) {
@@ -190,7 +190,7 @@ export async function captureScreenshot(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/demo/screenshot`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/demo/screenshot`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -242,7 +242,7 @@ export async function scrapeUrl(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/demo/scrape`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/demo/scrape`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -272,7 +272,7 @@ export async function mapSite(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/demo/map`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/demo/map`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -302,7 +302,7 @@ export async function crawlSite(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/demo/crawl`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/demo/crawl`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -332,7 +332,7 @@ export async function extractData(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/demo/extract`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/demo/extract`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -360,7 +360,7 @@ export async function searchWeb(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/demo/search`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/demo/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

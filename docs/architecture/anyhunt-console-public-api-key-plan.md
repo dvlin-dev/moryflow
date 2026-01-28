@@ -7,9 +7,9 @@ status: active
 
 ## 背景与现状
 
-- Console 既有 Session 管理接口（`/api/v1/console/*`）用于 API Key 管理。
+- Console 既有 Session 管理接口（`/api/v1/app/*`）用于 API Key 管理。
 - Console 之前存在专用代理（Console Playground）转发公网能力，前端以 `apiKeyId` 调用。
-- 公网能力已覆盖 Fetchx/Memox/Agent/Browser/Digest/OEmbed 等模块。
+- 公网能力已覆盖 Fetchx/Memox/Agent/Browser/OEmbed 等模块。
 - API Key 之前仅存 hash/prefix，前端无法复制完整 Key。
 
 ## 目标
@@ -32,16 +32,15 @@ status: active
 ### API 路由与鉴权
 
 - **管理面（Session）**
-  - `POST /api/v1/console/api-keys`
-  - `GET /api/v1/console/api-keys`
-  - `PATCH /api/v1/console/api-keys/:id`
-  - `DELETE /api/v1/console/api-keys/:id`
+  - `POST /api/v1/app/api-keys`
+  - `GET /api/v1/app/api-keys`
+  - `PATCH /api/v1/app/api-keys/:id`
+  - `DELETE /api/v1/app/api-keys/:id`
 
 - **公网 API（ApiKeyGuard）**
   - Fetchx：`/api/v1/scrape`、`/api/v1/crawl`、`/api/v1/map`、`/api/v1/extract`、`/api/v1/search`、`/api/v1/batch/scrape`
   - Browser：`/api/v1/browser/session/*`
   - Agent：`/api/v1/agent/*`（含 `/api/v1/agent/models`）
-  - Digest：`/api/v1/digest/*`
   - Webhooks：`/api/v1/webhooks`
   - OEmbed：`/api/v1/oembed`
 

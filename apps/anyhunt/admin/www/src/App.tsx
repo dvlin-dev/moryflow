@@ -1,7 +1,7 @@
 /**
  * [PROPS]: 无
  * [EMITS]: route change
- * [POS]: Admin 应用入口与路由保护（基于 /api/v1/user/me 进行会话引导）
+ * [POS]: Admin 应用入口与路由保护（基于 /api/v1/app/user/me 进行会话引导）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */

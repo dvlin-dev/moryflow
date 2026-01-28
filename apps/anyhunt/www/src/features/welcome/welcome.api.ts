@@ -17,7 +17,7 @@ export async function getWelcomeOverview(apiUrl: string): Promise<WelcomeOvervie
   const params = new URLSearchParams();
   params.set('locale', getClientLocale());
 
-  const response = await fetch(`${apiUrl}/api/v1/digest/welcome?${params.toString()}`, {
+  const response = await fetch(`${apiUrl}/api/v1/public/digest/welcome?${params.toString()}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -30,7 +30,7 @@ export async function getWelcomePage(apiUrl: string, slug: string): Promise<Welc
   params.set('locale', getClientLocale());
 
   const response = await fetch(
-    `${apiUrl}/api/v1/digest/welcome/pages/${encodeURIComponent(slug)}?${params.toString()}`,
+    `${apiUrl}/api/v1/public/digest/welcome/pages/${encodeURIComponent(slug)}?${params.toString()}`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

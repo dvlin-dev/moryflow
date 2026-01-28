@@ -21,7 +21,7 @@ feature-name/
 
 | 功能                        | 说明                 | API 入口                                      |
 | --------------------------- | -------------------- | --------------------------------------------- |
-| `api-keys/`                 | API Key 管理         | `/api/v1/console/api-keys`                    |
+| `api-keys/`                 | API Key 管理         | `/api/v1/app/api-keys`                        |
 | `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth）                  |
 | `playground-shared/`        | Playground 共享组件  | —                                             |
 | `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`                              |
@@ -32,7 +32,7 @@ feature-name/
 | `embed-playground/`         | Embed 测试           | Demo-only                                     |
 | `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/agent` + `/api/v1/browser/session/*` |
 | `memox/`                    | Memox 记忆管理       | `/api/v1/memories`（API Key）                 |
-| `settings/`                 | 账户设置             | `/api/v1/console/*`                           |
+| `settings/`                 | 账户设置             | `/api/v1/app/*`                               |
 | `webhooks/`                 | Webhook 管理         | `/api/v1/webhooks`                            |
 
 ## 常用模式

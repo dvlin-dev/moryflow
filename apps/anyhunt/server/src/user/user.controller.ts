@@ -1,7 +1,7 @@
 /**
  * [INPUT]: HTTP requests for user profile management, password change, account deletion
  * [OUTPUT]: User profile data, success responses, or validation errors
- * [POS]: User API controller, handles /api/v1/user/* endpoints
+ * [POS]: User API controller, handles /api/v1/app/user/* endpoints
  *
  * [PROTOCOL]: When this file changes, you MUST update this header and apps/server/CLAUDE.md
  */
@@ -38,7 +38,7 @@ import {
 
 @ApiTags('User')
 @ApiSecurity('session')
-@Controller({ path: 'user', version: '1' })
+@Controller({ path: 'app/user', version: '1' })
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

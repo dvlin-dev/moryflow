@@ -10,6 +10,7 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 
 - Auth refresh/logout 接口改为 raw JSON 响应，错误统一为 RFC7807
 - 注册流程不再自动创建默认 API Key（由 Console 手动创建）
+- 新增 OptionalAuthGuard：public 路由可选解析 access token（记录登录用户）
 
 ## 职责范围
 
@@ -51,6 +52,7 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 | `auth.controller.ts`        | Controller | Better Auth handler 透传        |
 | `auth.tokens.controller.ts` | Controller | refresh/logout/sign-out 接口    |
 | `auth.guard.ts`             | Guard      | Access Token 鉴权               |
+| `optional-auth.guard.ts`    | Guard      | Public 路由可选鉴权             |
 | `admin.guard.ts`            | Guard      | Admin 权限校验                  |
 | `better-auth.ts`            | Config     | Better Auth 配置                |
 | `auth.constants.ts`         | Constants  | Token/Cookie 常量               |
@@ -128,6 +130,7 @@ export { AuthModule } from './auth.module';
 export { AuthService } from './auth.service';
 export { AuthTokensService } from './auth.tokens.service';
 export { AuthGuard } from './auth.guard';
+export { OptionalAuthGuard } from './optional-auth.guard';
 export { AdminGuard } from './admin.guard';
 export { CurrentUser } from './decorators';
 ```

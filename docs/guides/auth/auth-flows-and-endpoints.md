@@ -61,7 +61,7 @@ status: active
 - `POST /api/auth/sign-out`
   - 行为：同 `/api/auth/logout`，同时失效 refresh + session（Better Auth 默认出口）
   - 原生端必须携带 `X-App-Platform` 并在 body 传 refresh token
-- `GET /api/v1/user/me`
+- `GET /api/v1/app/user/me`
   - 行为：返回当前用户（需 Bearer access token）
 - `GET /api/auth/jwks`
   - 行为：提供 JWKS，用于服务端离线验签

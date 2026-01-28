@@ -15,6 +15,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 测试环境补齐 ResizeObserver/matchMedia mock，避免 UI 组件报错
 - Playground/管理页统一改为 API Key 直连公网 API（Bearer）
 - API Key 列表返回明文 key，前端统一脱敏展示与复制
+- Session 路由统一改为 `/api/v1/app/*`（API Keys/User/Payment）
 
 ## 职责
 
@@ -31,13 +32,14 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 - Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
 - refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
-- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/user/me` 同步用户档案
+- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/app/user/me` 同步用户档案
 - `401 token_expired` 只允许刷新一次并重试原请求
 - `/login` 仅作为统一登录跳转入口：未登录时跳转 `anyhunt.app/login`；已登录时直接跳回 `next`（默认 `/`），避免登录死循环
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/embed`、`packages/embed-react`
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
-- API 路径统一走 `/api/v1/*`；生产环境默认请求 `https://server.anyhunt.app`（可用 `VITE_API_URL` 覆盖）
+- Session 相关 API 统一走 `/api/v1/app/*`；公网能力走 `/api/v1/*`
+- 生产环境默认请求 `https://server.anyhunt.app`（可用 `VITE_API_URL` 覆盖）
 - Playground/管理页默认选中第一把 active API Key
 - Agent Playground：统一 `POST /api/v1/agent`（默认 SSE，`stream=false` 返回 JSON）
 - Agent Playground 入参使用 `output`（`text`/`json_schema`），不再发送旧的 `schema` 字段；模型/Provider 由 API Key 策略决定（不允许请求侧选择）
@@ -163,9 +165,9 @@ feature-name/
 
 ```typescript
 // lib/api-paths.ts
-// Console 管理 API（Session 认证）
+// App 管理 API（Session 认证）
 export const CONSOLE_API = {
-  API_KEYS: '/api/v1/console/api-keys',
+  API_KEYS: '/api/v1/app/api-keys',
 } as const;
 
 // Webhook API（API Key 认证）

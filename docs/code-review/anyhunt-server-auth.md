@@ -25,7 +25,7 @@ status: done
 主要入口：
 
 - `/api/auth/*`（Better Auth handler，VERSION_NEUTRAL）
-- `/api/v1/user/*`
+- `/api/v1/app/user/*`
 
 ## 结论摘要
 

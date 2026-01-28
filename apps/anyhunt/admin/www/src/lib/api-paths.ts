@@ -28,5 +28,5 @@ export const ADMIN_API = {
 } as const;
 
 export const USER_API = {
-  ME: '/api/v1/user/me',
+  ME: '/api/v1/app/user/me',
 } as const;
