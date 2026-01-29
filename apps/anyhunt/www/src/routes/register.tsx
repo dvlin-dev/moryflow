@@ -1,5 +1,6 @@
 /**
  * [POS]: 注册页面路由
+ * [UPDATE]: 2026-01-28 移动端注册完成/关闭返回 /inbox
  *
  * 支持 redirect 参数：
  * - /register?redirect=https://console.anyhunt.app
@@ -13,6 +14,7 @@ import { getRedirectUrl } from '@/lib/redirect';
 import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
 import { WelcomeListPane } from '@/features/welcome/WelcomeListPane';
 import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
+import { getIsMobileViewport } from '@/hooks/useIsMobile';
 
 const registerSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -48,11 +50,13 @@ function RegisterPage() {
       return;
     }
 
+    const fallbackPath = getIsMobileViewport() ? '/inbox' : '/welcome';
+
     openAuthModal({
       mode: 'register',
       redirectTo: redirectTo === '/' ? null : redirectTo,
-      afterAuth: redirectTo === '/' ? () => navigate({ to: '/welcome' }) : null,
-      onClose: () => navigate({ to: '/welcome' }),
+      afterAuth: redirectTo === '/' ? () => navigate({ to: fallbackPath }) : null,
+      onClose: () => navigate({ to: fallbackPath }),
     });
   }, [isLoading, isAuthenticated, openAuthModal, redirectTo, navigate]);
 

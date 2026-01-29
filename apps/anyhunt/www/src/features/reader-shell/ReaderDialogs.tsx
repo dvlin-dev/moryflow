@@ -1,6 +1,7 @@
 /**
  * [PROPS]: create/settings/publish dialogs state
  * [POS]: Reader 内所有“操作型”弹窗统一渲染出口（避免在页面里散落）
+ * [UPDATE]: 2026-01-28 设置弹窗支持默认 Tab
  *
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
  */
@@ -35,6 +36,7 @@ interface ReaderDialogsProps {
 
   settingsDialogOpen: boolean;
   onSettingsDialogOpenChange: (open: boolean) => void;
+  settingsDialogTab?: 'basic' | 'history' | 'suggestions' | 'notifications';
 
   publishDialogOpen: boolean;
   onPublishDialogOpenChange: (open: boolean) => void;
@@ -69,6 +71,7 @@ export function ReaderDialogs({
   onCreateDialogOpenChange,
   settingsDialogOpen,
   onSettingsDialogOpenChange,
+  settingsDialogTab = 'basic',
   publishDialogOpen,
   onPublishDialogOpenChange,
   selectedSubscription,
@@ -125,6 +128,7 @@ export function ReaderDialogs({
             open={settingsDialogOpen}
             onOpenChange={onSettingsDialogOpenChange}
             onPublishClick={onPublishClick}
+            defaultTab={settingsDialogTab}
           />
         </Suspense>
       )}

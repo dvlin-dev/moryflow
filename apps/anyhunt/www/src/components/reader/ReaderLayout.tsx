@@ -1,6 +1,7 @@
 /**
  * [PROPS]: children (slot for content)
  * [POS]: Three-column reader layout (sidebar | article list | article detail)
+ * [UPDATE]: 2026-01-28 移动端布局改由 ReaderShell 统一接管
  */
 
 import { type ReactNode } from 'react';
@@ -21,7 +22,7 @@ interface ReaderLayoutProps {
  * Three-column reader layout
  *
  * Desktop: sidebar (200px) | list (320px) | detail (flex)
- * Mobile: Single column with swipe navigation
+ * Mobile: Handled by ReaderShell mobile scaffold
  */
 export function ReaderLayout({ sidebar, list, detail, className }: ReaderLayoutProps) {
   return (

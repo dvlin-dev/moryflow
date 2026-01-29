@@ -1,6 +1,7 @@
 /**
  * [PROPS]: subscriptions, isLoading, onCreateSubscription, onOpenSubscriptionSettings
  * [POS]: SidePanel - Subscriptions list (authed, Lucide icons direct render)
+ * [UPDATE]: 2026-01-28 支持可选 header 以复用到移动端订阅页
  */
 
 import { Link } from '@tanstack/react-router';
@@ -14,6 +15,7 @@ interface SidePanelSubscriptionsSectionProps {
   isLoading: boolean;
   onCreateSubscription: () => void;
   onOpenSubscriptionSettings: (subscription: Subscription) => void;
+  showHeader?: boolean;
 }
 
 export function SidePanelSubscriptionsSection({
@@ -22,24 +24,27 @@ export function SidePanelSubscriptionsSection({
   isLoading,
   onCreateSubscription,
   onOpenSubscriptionSettings,
+  showHeader = true,
 }: SidePanelSubscriptionsSectionProps) {
   const isInboxActive = pathname.startsWith('/inbox');
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between px-1">
-        <div className="text-xs font-medium text-muted-foreground">Subscriptions</div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={onCreateSubscription}
-        >
-          <Plus className="size-4" />
-          <span className="sr-only">New subscription</span>
-        </Button>
-      </div>
+      {showHeader ? (
+        <div className="flex items-center justify-between px-1">
+          <div className="text-xs font-medium text-muted-foreground">Subscriptions</div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={onCreateSubscription}
+          >
+            <Plus className="size-4" />
+            <span className="sr-only">New subscription</span>
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="px-2 py-2 text-xs text-muted-foreground">Loading…</div>

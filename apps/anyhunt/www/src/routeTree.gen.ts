@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MemoxRouteImport } from './routes/memox'
@@ -30,6 +31,11 @@ import { Route as TopicSlugEditionsEditionIdRouteImport } from './routes/topic/$
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionsRoute = SubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/memox': typeof MemoxRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/welcome': typeof WelcomeRoute
   '/inbox': typeof InboxIndexRoute
   '/topics': typeof TopicsIndexRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/memox': typeof MemoxRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/welcome': typeof WelcomeRoute
   '/inbox': typeof InboxIndexRoute
   '/topics': typeof TopicsIndexRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/memox': typeof MemoxRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/welcome': typeof WelcomeRoute
   '/inbox/': typeof InboxIndexRoute
   '/topics/': typeof TopicsIndexRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/memox'
     | '/pricing'
     | '/register'
+    | '/subscriptions'
     | '/welcome'
     | '/inbox'
     | '/topics'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/memox'
     | '/pricing'
     | '/register'
+    | '/subscriptions'
     | '/welcome'
     | '/inbox'
     | '/topics'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/memox'
     | '/pricing'
     | '/register'
+    | '/subscriptions'
     | '/welcome'
     | '/inbox/'
     | '/topics/'
@@ -243,6 +255,7 @@ export interface RootRouteChildren {
   MemoxRoute: typeof MemoxRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
+  SubscriptionsRoute: typeof SubscriptionsRoute
   WelcomeRoute: typeof WelcomeRoute
   InboxIndexRoute: typeof InboxIndexRoute
   TopicsIndexRoute: typeof TopicsIndexRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscriptions': {
+      id: '/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof SubscriptionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -387,6 +407,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemoxRoute: MemoxRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
+  SubscriptionsRoute: SubscriptionsRoute,
   WelcomeRoute: WelcomeRoute,
   InboxIndexRoute: InboxIndexRoute,
   TopicsIndexRoute: TopicsIndexRoute,

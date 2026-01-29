@@ -1,5 +1,6 @@
 /**
  * [POS]: 统一登录页面路由
+ * [UPDATE]: 2026-01-28 移动端登录完成/关闭返回 /inbox
  *
  * 支持 redirect 参数：
  * - /login?redirect=https://console.anyhunt.app
@@ -13,6 +14,7 @@ import { getRedirectUrl } from '@/lib/redirect';
 import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
 import { WelcomeListPane } from '@/features/welcome/WelcomeListPane';
 import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
+import { getIsMobileViewport } from '@/hooks/useIsMobile';
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -48,11 +50,13 @@ function LoginPage() {
       return;
     }
 
+    const fallbackPath = getIsMobileViewport() ? '/inbox' : '/welcome';
+
     openAuthModal({
       mode: 'login',
       redirectTo: redirectTo === '/' ? null : redirectTo,
-      afterAuth: redirectTo === '/' ? () => navigate({ to: '/welcome' }) : null,
-      onClose: () => navigate({ to: '/welcome' }),
+      afterAuth: redirectTo === '/' ? () => navigate({ to: fallbackPath }) : null,
+      onClose: () => navigate({ to: fallbackPath }),
     });
   }, [isLoading, isAuthenticated, openAuthModal, redirectTo, navigate]);
 

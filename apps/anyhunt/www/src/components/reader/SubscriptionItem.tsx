@@ -1,6 +1,7 @@
 /**
  * [PROPS]: subscription, isSelected, onSelect, callbacks
  * [POS]: Single subscription item with hover menu, context menu, and long press on mobile (Lucide icons direct render)
+ * [UPDATE]: 2026-01-28 支持移动端显式动作入口
  */
 
 import { useState, type MouseEvent, useCallback } from 'react';
@@ -19,6 +20,7 @@ interface SubscriptionItemProps {
   onSelect: () => void;
   /** Open modal/drawer inside Reader for a specific action */
   onAction?: (action: SubscriptionAction, subscription: Subscription) => void;
+  showMobileActions?: boolean;
 }
 
 export function SubscriptionItem({
@@ -26,6 +28,7 @@ export function SubscriptionItem({
   isSelected,
   onSelect,
   onAction,
+  showMobileActions = false,
 }: SubscriptionItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -96,7 +99,7 @@ export function SubscriptionItem({
       </div>
 
       {/* More button - show on hover (desktop only) */}
-      {!isMobile && (isHovered || menuOpen) && (
+      {(!isMobile && (isHovered || menuOpen)) || (isMobile && showMobileActions) ? (
         <Button
           variant="ghost"
           size="icon"
@@ -104,11 +107,15 @@ export function SubscriptionItem({
           onClick={(e: MouseEvent) => {
             e.stopPropagation();
             setMenuOpen(true);
+            if (isMobile) {
+              setMobileSheetOpen(true);
+            }
           }}
+          aria-label="Subscription actions"
         >
           <Ellipsis className="size-4" />
         </Button>
-      )}
+      ) : null}
     </div>
   );
 

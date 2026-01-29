@@ -38,6 +38,12 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- 移动端 Reader 底部导航（Inbox/Explore/Subscriptions）落地，移除左右滑动布局
+- ReaderShell 改为响应式渲染（CSS 控制显示），避免移动端首屏闪烁
+- Subscriptions 列表跳转 Inbox 时保留 URL search 参数
+- 新增 `/subscriptions` 路由（订阅管理页）
+- 移动端 `/welcome` 跳转到 `/inbox`，登录/注册/忘记密码关闭后回到移动端默认入口
+- 移动端详情页顶部返回条 + Subscriptions 列表动作入口（长按/更多）
 - www 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Header/Reader/Playground 下拉箭头改为 ChevronDown（无中轴）
 - 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -85,7 +91,10 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 | Component               | Description                                                    |
 | ----------------------- | -------------------------------------------------------------- |
 | `ReaderLayout`          | Three-column layout container                                  |
-| `MobileReaderLayout`    | Mobile-optimized layout                                        |
+| `MobileReaderScaffold`  | Mobile reader scaffold + bottom navigation                     |
+| `MobileReaderPane`      | Mobile list/detail pane switcher                               |
+| `MobileBottomNav`       | Mobile bottom navigation (Inbox/Explore/Subscriptions)         |
+| `MobileDetailHeader`    | Mobile detail back bar (Notion-style)                          |
 | `ReaderTwoColumnLayout` | Two-column layout container (sidebar + main)                   |
 | `SidePanel`             | Left sidebar (Header actions + Welcome/Recommended/Inbox/Subs) |
 | `MarkdownView`          | Lazy markdown renderer (react-markdown chunk)                  |
@@ -135,6 +144,7 @@ routes/
 ├── index.tsx       # Redirect `/` -> `/welcome`
 ├── welcome.tsx     # Reader welcome page (/welcome)
 ├── explore.tsx     # Reader explore page (/explore)
+├── subscriptions.tsx # Reader subscriptions page (/subscriptions)
 ├── topic/          # Reader topic routes (/topic/*)
 ├── inbox/          # Reader inbox routes (/inbox/*)
 ├── fetchx.tsx      # Fetchx module page (/fetchx)
@@ -169,15 +179,18 @@ routes/
 
 ```
 未登录用户:
-  默认显示 /welcome（Welcome + Recommended）
+  桌面端默认显示 /welcome（Welcome + Recommended）
+  移动端默认显示 /inbox（Sign in 引导）
   可进入 /explore 搜索/浏览 Trending
 
 已登录用户（有订阅）:
-  默认显示 /welcome
+  桌面端默认显示 /welcome
+  移动端默认显示 /inbox
   Inbox：/inbox（支持 subscriptionId/state 过滤，状态同步到 URL）
 
 已登录用户（无订阅）:
-  默认显示 /welcome → 引导进入 /explore 创建订阅
+  桌面端默认显示 /welcome → 引导进入 /explore 创建订阅
+  移动端默认显示 /inbox → 引导进入 /explore 创建订阅
 ```
 
 ## 交互与架构规范（Notion 风格 / 强约束）

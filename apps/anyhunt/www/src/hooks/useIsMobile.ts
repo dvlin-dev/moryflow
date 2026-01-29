@@ -2,6 +2,7 @@
  * [INPUT]: breakpoint (default: 768)
  * [OUTPUT]: boolean indicating if viewport is mobile width
  * [POS]: Hook for responsive mobile detection
+ * [UPDATE]: 2026-01-28 补充同步检测工具用于路由回退
  */
 
 import { useState, useEffect } from 'react';
@@ -34,4 +35,9 @@ export function useIsMobile(breakpoint: number = 768): boolean {
   }, [breakpoint]);
 
   return isMobile;
+}
+
+export function getIsMobileViewport(breakpoint: number = 768): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(`(max-width: ${breakpoint - 1}px)`).matches;
 }

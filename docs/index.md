@@ -61,6 +61,7 @@ status: active
 
 - Anyhunt Dev
   - 入口：`docs/products/anyhunt-dev/index.md`
+  - Anyhunt WWW 移动端底部导航方案（implemented）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`
   - Reader 顶部导航 + Explore Topics 专用页（提案）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`
   - Admin：手动充值 Credits（已落地）：`docs/products/anyhunt-dev/features/admin-credits-and-entitlements.md`
   - Agent Browser 架构：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`

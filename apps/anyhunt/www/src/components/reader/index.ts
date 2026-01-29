@@ -4,7 +4,10 @@
  */
 
 export { ReaderLayout } from './ReaderLayout';
-export { MobileReaderLayout } from './MobileReaderLayout';
+export { MobileBottomNav } from './MobileBottomNav';
+export { MobileDetailHeader } from './MobileDetailHeader';
+export { MobileReaderPane } from './MobileReaderPane';
+export { MobileReaderScaffold } from './MobileReaderScaffold';
 export { ReaderTwoColumnLayout } from './ReaderTwoColumnLayout';
 export { SidePanel } from './SidePanel';
 export { SubscriptionItem } from './SubscriptionItem';

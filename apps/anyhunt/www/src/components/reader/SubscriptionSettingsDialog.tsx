@@ -1,7 +1,8 @@
 /**
- * [PROPS]: subscription, open, onOpenChange
+ * [PROPS]: subscription, open, onOpenChange, defaultTab
  * [POS]: Settings dialog with tabs for basic settings, run history, and learning suggestions (Lucide icons direct render)
  * Renders as Dialog on desktop, Drawer on mobile
+ * [UPDATE]: 2026-01-28 支持指定默认 Tab（history/suggestions 等）
  */
 
 import { useEffect } from 'react';
@@ -75,6 +76,7 @@ interface SubscriptionSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPublishClick?: () => void;
+  defaultTab?: 'basic' | 'history' | 'suggestions' | 'notifications';
 }
 
 export function SubscriptionSettingsDialog({
@@ -82,6 +84,7 @@ export function SubscriptionSettingsDialog({
   open,
   onOpenChange,
   onPublishClick,
+  defaultTab = 'basic',
 }: SubscriptionSettingsDialogProps) {
   const updateMutation = useUpdateSubscription();
   const triggerRun = useTriggerManualRun();
@@ -188,7 +191,7 @@ export function SubscriptionSettingsDialog({
   if (!subscription) return null;
 
   const tabsContent = (
-    <Tabs defaultValue="basic" className="flex h-full flex-col">
+    <Tabs defaultValue={defaultTab} className="flex h-full flex-col">
       <div className="border-b px-6">
         <TabsList className="h-10 w-full justify-start rounded-none border-b-0 bg-transparent p-0">
           <TabsTrigger

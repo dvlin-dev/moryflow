@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）
 - Anyhunt app/public/apikey 通道路由规范与迁移清单（含模块进度）：`docs/architecture/anyhunt-api-channel-routing.md`（2026-02-02：implemented）
 - Moryflow PC 悬浮任务面板改造方案：补充悬停箭头/行态/详情展开示意（`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`，2026-02-02：proposal update）
 - Moryflow PC 输入框改造方案（+ 菜单 / @ 引用 / 主按钮统一）：`docs/products/moryflow/features/chat-input/pc-prompt-input-plus-menu.md`（2026-01-28：proposal update，二级面板对齐到对应项）
