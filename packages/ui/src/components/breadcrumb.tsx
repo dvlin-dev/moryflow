@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { ArrowRight, Ellipsis } from 'lucide-react';
+import { ChevronRight, Ellipsis } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
@@ -72,7 +72,7 @@ const BreadcrumbSeparator = ({ children, className, ...props }: React.ComponentP
     className={cn('[&>svg]:w-3.5 [&>svg]:h-3.5', className)}
     {...props}
   >
-    {children ?? <ArrowRight />}
+    {children ?? <ChevronRight />}
   </li>
 );
 BreadcrumbSeparator.displayName = 'BreadcrumbSeparator';

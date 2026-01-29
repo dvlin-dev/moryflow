@@ -3,7 +3,7 @@
 import { Badge } from '../components/badge';
 import { Carousel, type CarouselApi, CarouselContent, CarouselItem } from '../components/carousel';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../components/hover-card';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import {
   type ComponentProps,
@@ -177,7 +177,7 @@ export const InlineCitationCarouselPrev = ({
       type="button"
       {...props}
     >
-      <ArrowLeft className="size-4 text-muted-foreground" />
+      <ChevronLeft className="size-4 text-muted-foreground" />
     </button>
   );
 };
@@ -204,7 +204,7 @@ export const InlineCitationCarouselNext = ({
       type="button"
       {...props}
     >
-      <ArrowRight className="size-4 text-muted-foreground" />
+      <ChevronRight className="size-4 text-muted-foreground" />
     </button>
   );
 };

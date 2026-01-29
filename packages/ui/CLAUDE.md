@@ -48,6 +48,9 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
+- Form：回退场景使用稳定 id，避免 aria 关联错位
+- Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
 - Select/Accordion/NavigationMenu/Calendar 等下拉/折叠箭头统一改为 ChevronDown（无中轴）
 - Tool：折叠箭头改为 ChevronDown（无中轴）
 - DropdownMenu：子菜单指示箭头改为 ChevronRight（无中轴）

@@ -1,6 +1,8 @@
 /**
  * [PROPS]: Form* - react-hook-form wrappers
  * [POS]: Form field composition (labels/messages/control)
+ * [UPDATE]: 2026-01-28 生产环境缺失上下文时回退渲染，避免白屏
+ * [UPDATE]: 2026-01-28 回退场景共享稳定 id，避免 aria 关联错位
  *
  * [PROTOCOL]: This header and the related CLAUDE.md must be updated on change.
  */
@@ -28,6 +30,7 @@ type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = {
+  id: string;
   name: TName;
 };
 
@@ -39,8 +42,10 @@ const FormField = <
 >({
   ...props
 }: ControllerProps<TFieldValues, TName>) => {
+  const id = React.useId();
+
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
+    <FormFieldContext.Provider value={{ id, name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
@@ -49,18 +54,42 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
+  const fallbackId = React.useId();
   const { getFieldState, formState } = useFormContext();
 
   if (!fieldContext) {
-    throw new Error('useFormField should be used within <FormField>');
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error('useFormField should be used within <FormField>');
+    }
+
+    const id = itemContext?.id ?? fallbackId;
+    return {
+      id,
+      name: '',
+      formItemId: `${id}-form-item`,
+      formDescriptionId: `${id}-form-item-description`,
+      formMessageId: `${id}-form-item-message`,
+      error: undefined,
+    };
   }
 
   if (!itemContext) {
-    throw new Error('useFormField should be used within <FormItem>');
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error('useFormField should be used within <FormItem>');
+    }
+
+    const id = fieldContext.id ?? fallbackId;
+    return {
+      id,
+      name: fieldContext.name,
+      formItemId: `${id}-form-item`,
+      formDescriptionId: `${id}-form-item-description`,
+      formMessageId: `${id}-form-item-message`,
+      error: undefined,
+    };
   }
 
   const fieldState = getFieldState(fieldContext.name, formState);
-
   const { id } = itemContext;
 
   return {

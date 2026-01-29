@@ -9,7 +9,7 @@
 
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '../../components/button';
 import { ButtonGroup, ButtonGroupText } from '../../components/button-group';
@@ -121,7 +121,7 @@ export const MessageBranchPrevious = ({ children, ...props }: MessageBranchPrevi
       variant="ghost"
       {...props}
     >
-      {children ?? <ArrowLeft className="size-3.5" />}
+      {children ?? <ChevronLeft className="size-3.5" />}
     </Button>
   );
 };
@@ -139,7 +139,7 @@ export const MessageBranchNext = ({ children, ...props }: MessageBranchNextProps
       variant="ghost"
       {...props}
     >
-      {children ?? <ArrowRight className="size-3.5" />}
+      {children ?? <ChevronRight className="size-3.5" />}
     </Button>
   );
 };

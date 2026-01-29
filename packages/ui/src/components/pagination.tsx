@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ArrowLeft, ArrowRight, Ellipsis } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 import { buttonVariants, type ButtonProps } from './button';
@@ -56,7 +56,7 @@ const PaginationPrevious = ({
     className={cn('gap-1 pl-2.5', className)}
     {...props}
   >
-    <ArrowLeft className="h-4 w-4" />
+    <ChevronLeft className="h-4 w-4" />
     <span>Previous</span>
   </PaginationLink>
 );
@@ -70,7 +70,7 @@ const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof Pag
     {...props}
   >
     <span>Next</span>
-    <ArrowRight className="h-4 w-4" />
+    <ChevronRight className="h-4 w-4" />
   </PaginationLink>
 );
 PaginationNext.displayName = 'PaginationNext';
