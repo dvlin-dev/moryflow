@@ -55,9 +55,9 @@ const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
   const fallbackId = React.useId();
-  const { getFieldState, formState } = useFormContext();
+  const formContext = useFormContext();
 
-  if (!fieldContext) {
+  if (!fieldContext || !formContext) {
     const id = itemContext?.id ?? fallbackId;
     return {
       id,
@@ -81,6 +81,7 @@ const useFormField = () => {
     };
   }
 
+  const { getFieldState, formState } = formContext;
   const fieldState = getFieldState(fieldContext.name, formState);
   const { id } = itemContext;
 
