@@ -8,7 +8,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
-    "postinstall": "electron-rebuild -f -w better-sqlite3,keytar",
+    "postinstall": "test -n \"$CI\" || electron-rebuild -f -w better-sqlite3,keytar",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "install:electron": "pnpm exec node node_modules/electron/install.js",
