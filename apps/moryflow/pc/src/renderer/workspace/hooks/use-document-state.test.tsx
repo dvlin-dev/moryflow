@@ -62,6 +62,6 @@ describe('useDocumentState', () => {
     expect(result.current.saveState).toBe('dirty');
 
     await waitFor(() => expect(writeFile).toHaveBeenCalled());
-    expect(result.current.saveState).toBe('idle');
+    await waitFor(() => expect(result.current.saveState).toBe('idle'));
   });
 });
