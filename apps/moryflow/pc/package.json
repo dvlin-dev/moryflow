@@ -13,7 +13,7 @@
     "preview": "electron-vite preview",
     "install:electron": "pnpm exec node node_modules/electron/install.js",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.json --noEmit",
-    "pretest:unit": "pnpm rebuild better-sqlite3",
+    "pretest:unit": "test -n \"$CI\" || pnpm rebuild better-sqlite3",
     "test:unit": "vitest run",
     "test:e2e": "pnpm build && playwright test",
     "test:tools": "node --import tsx/esm --import ./src/main/agent-runtime/tools/__tests__/setup.ts --test src/main/agent-runtime/tools/__tests__/*.test.ts",
