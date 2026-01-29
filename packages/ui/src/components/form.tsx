@@ -58,10 +58,6 @@ const useFormField = () => {
   const { getFieldState, formState } = useFormContext();
 
   if (!fieldContext) {
-    if (process.env.NODE_ENV !== 'production') {
-      throw new Error('useFormField should be used within <FormField>');
-    }
-
     const id = itemContext?.id ?? fallbackId;
     return {
       id,
@@ -74,10 +70,6 @@ const useFormField = () => {
   }
 
   if (!itemContext) {
-    if (process.env.NODE_ENV !== 'production') {
-      throw new Error('useFormField should be used within <FormItem>');
-    }
-
     const id = fieldContext.id ?? fallbackId;
     return {
       id,
