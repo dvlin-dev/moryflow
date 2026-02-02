@@ -18,6 +18,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Playground/管理页统一改为 API Key 直连公网 API（Bearer）
 - API Key 列表返回明文 key，前端统一脱敏展示与复制
 - Session 路由统一改为 `/api/v1/app/*`（API Keys/User/Payment）
+- Agent Browser Playground 消息列表切换为 Viewport/Slack 交互，统一交互与滚动行为
 
 ## 职责
 

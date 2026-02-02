@@ -62,8 +62,10 @@ import { ChevronDown } from 'lucide-react';
 - ToolOutput：新增截断输出标识与完整输出打开入口
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
-- MessageList：新增通用消息列表封装，统一占位与滚动布局并补齐稳定 key
-- useConversationLayout：优化最新消息查找与渲染路径，避免多余数组反转
+- MessageList：切换为 Viewport/Slack 交互，移除占位逻辑与消息高度外置计算
+- ConversationViewport：新增滚动状态与高度测量 primitives（Viewport/Footer/Slack/ScrollButton）
+- TurnAnchor 交互固定为 top，移除 turnAnchor/autoScroll 对外配置
+- ConversationViewport：Slack 仅在有效测量后生效，避免首帧大空白
 - Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
 - Accordion/Highlight：状态派生与 ref 清理，补齐 client 边界
 - Chart：Tooltip 支持 `0` 值展示并补充单测

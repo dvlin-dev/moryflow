@@ -51,20 +51,10 @@ export const ChatMessage = ({
   message,
   messageIndex,
   status,
-  registerRef,
-  minHeight,
-  isPlaceholder,
   isLastAssistant,
   actions,
   onToolApproval,
 }: ChatMessageProps) => {
-  const handleRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      registerRef?.(message.id, node);
-    },
-    [message.id, registerRef]
-  );
-
   // 原有的文件附件（图片等，来自 AI SDK）
   const fileParts = useMemo<FileUIPart[]>(() => getFileParts(message) as FileUIPart[], [message]);
 
@@ -422,14 +412,7 @@ export const ChatMessage = ({
   };
 
   return (
-    <Message
-      key={message.id}
-      ref={handleRef}
-      from={message.role}
-      data-message-id={message.id}
-      style={minHeight ? ({ minHeight } as CSSProperties) : undefined}
-      data-placeholder={isPlaceholder ? 'true' : undefined}
-    >
+    <Message from={message.role} data-message-id={message.id}>
       <MessageContent ref={isUser ? contentRef : undefined} style={editContentStyle}>
         {renderMessageBody()}
       </MessageContent>

@@ -12,9 +12,6 @@ export type ChatMessageProps = {
   message: UIMessage;
   messageIndex: number;
   status: ChatStatus;
-  registerRef?: (id: string, node: HTMLElement | null) => void;
-  minHeight?: string;
-  isPlaceholder?: boolean;
   /** 是否是最后一条 assistant 消息（用于显示重试按钮） */
   isLastAssistant?: boolean;
   /** 消息操作回调 */

@@ -29,14 +29,7 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
           title: 'Waiting for you',
           description: 'Send a prompt to start a run.',
         }}
-        renderMessage={({ message, isPlaceholder, minHeight, registerRef }) => (
-          <MessageRow
-            message={message}
-            isPlaceholder={isPlaceholder}
-            minHeight={minHeight}
-            registerRef={registerRef}
-          />
-        )}
+        renderMessage={({ message }) => <MessageRow message={message} />}
       />
       {error ? (
         <div className="px-4 pb-4">

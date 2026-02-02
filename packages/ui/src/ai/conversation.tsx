@@ -1,33 +1,40 @@
 'use client';
 
+/**
+ * [PROPS]: ConversationProps/ConversationContentProps/ConversationScrollButtonProps
+ * [EMITS]: None
+ * [POS]: 消息列表滚动容器与基础布局组件
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import type { ComponentProps, ComponentPropsWithoutRef, ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
+
 import { Button } from '../components/button';
 import { cn } from '../lib/utils';
-import type { ComponentProps } from 'react';
-import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
+import { ConversationViewport, useConversationViewport } from './conversation-viewport';
 
-export type ConversationProps = ComponentProps<typeof StickToBottom>;
+export type ConversationProps = ComponentPropsWithoutRef<'div'>;
 
 export const Conversation = ({ className, ...props }: ConversationProps) => (
-  <StickToBottom
-    className={cn('relative flex-1 overflow-y-auto', className)}
-    initial="smooth"
-    resize="smooth"
-    role="log"
-    {...props}
-  />
+  <ConversationViewport className={className} role={props.role ?? 'log'} {...props} />
 );
 
-export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>;
+export type ConversationContentProps = ComponentPropsWithoutRef<'div'>;
 
 export const ConversationContent = ({ className, ...props }: ConversationContentProps) => (
-  <StickToBottom.Content className={cn('flex flex-col gap-1 p-4 h-full', className)} {...props} />
+  <div
+    data-slot="conversation-content"
+    className={cn('flex h-full flex-col gap-1 p-4', className)}
+    {...props}
+  />
 );
 
 export type ConversationEmptyStateProps = ComponentProps<'div'> & {
   title?: string;
   description?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 };
 
 export const ConversationEmptyState = ({
@@ -63,13 +70,14 @@ export const ConversationScrollButton = ({
   className,
   ...props
 }: ConversationScrollButtonProps) => {
-  const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+  const isAtBottom = useConversationViewport((state) => state.isAtBottom);
+  const scrollToBottom = useConversationViewport((state) => state.scrollToBottom);
 
   return (
     !isAtBottom && (
       <Button
         className={cn('absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full', className)}
-        onClick={() => scrollToBottom()}
+        onClick={() => scrollToBottom({ behavior: 'auto' })}
         size="icon"
         type="button"
         variant="outline"

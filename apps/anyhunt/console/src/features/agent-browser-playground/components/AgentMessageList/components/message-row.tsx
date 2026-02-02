@@ -6,7 +6,6 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { CSSProperties } from 'react';
 import {
   Message,
   MessageAttachment,
@@ -45,9 +44,6 @@ const ATTACHMENT_LABELS: MessageAttachmentLabels = {
 
 type MessageRowProps = {
   message: UIMessage;
-  isPlaceholder: boolean;
-  minHeight?: string;
-  registerRef: (node: HTMLElement | null) => void;
 };
 
 const cleanFileRefMarker = (text: string): string => text.replace(FILE_REF_REGEX, '');
@@ -86,12 +82,11 @@ const splitMessageParts = (parts: UIMessage['parts'] | undefined): SplitMessageP
   return { fileParts, orderedParts, messageText: textParts.join('\n') };
 };
 
-export function MessageRow({ message, isPlaceholder, minHeight, registerRef }: MessageRowProps) {
+export function MessageRow({ message }: MessageRowProps) {
   const { fileParts, orderedParts, messageText } = splitMessageParts(message.parts);
   const { attachments: chatAttachments = [] } = getMessageMeta(message);
 
   const displayText = message.role === 'user' ? cleanFileRefMarker(messageText) : messageText;
-  const style = minHeight ? ({ minHeight } as CSSProperties) : undefined;
   const shouldShowMetaAttachments = message.role === 'user' && chatAttachments.length > 0;
 
   const renderMessageBody = () => {
@@ -128,13 +123,7 @@ export function MessageRow({ message, isPlaceholder, minHeight, registerRef }: M
   };
 
   return (
-    <Message
-      ref={registerRef}
-      from={message.role}
-      data-message-id={message.id}
-      data-placeholder={isPlaceholder ? 'true' : undefined}
-      style={style}
-    >
+    <Message from={message.role} data-message-id={message.id}>
       <MessageContent>{renderMessageBody()}</MessageContent>
       {fileParts.length > 0 ? (
         <MessageAttachments>

@@ -22,6 +22,7 @@ export * from './node';
 export * from './confirmation';
 export * from './conversation';
 export * from './message-list';
+export * from './conversation-viewport';
 export * from './open-in-chat';
 export * from './chain-of-thought';
 export * from './web-preview';
@@ -31,7 +32,6 @@ export * from './reasoning';
 export * from './code-block';
 export * from './context';
 export * from './tool';
-export * from './use-conversation-layout';
 
 // Submodules
 export * from './prompt-input';

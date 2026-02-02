@@ -20,7 +20,6 @@ import { ChatPaneHeader } from './components/chat-pane-header';
 import {
   useChatModelSelection,
   useChatSessions,
-  useConversationLayout,
   useMessageActions,
   useStoredMessages,
 } from './hooks';
@@ -95,8 +94,6 @@ export const ChatPane = ({
   const [inputError, setInputError] = useState<string | null>(null);
   // 追踪错误是否由于模型未设置引起，用于后续清理
   const [isModelSetupError, setIsModelSetupError] = useState(false);
-  const { conversationContextRef, registerMessageRef, renderMessages, getMessageLayout } =
-    useConversationLayout(messages, status);
   useStoredMessages({ activeSessionId, setMessages });
 
   // 消息操作（重发、重试、编辑重发、分支）
@@ -262,35 +259,34 @@ export const ChatPane = ({
               messages={messages}
               status={status}
               error={error}
-              conversationContextRef={conversationContextRef}
-              renderMessages={renderMessages}
-              getMessageLayout={getMessageLayout}
-              registerMessageRef={registerMessageRef}
               messageActions={messageActions}
               onToolApproval={handleToolApproval}
+              threadId={activeSessionId}
+              footer={
+                <ChatFooter
+                  status={status}
+                  inputError={inputError}
+                  onInputError={setInputError}
+                  onSubmit={handlePromptSubmit}
+                  onStop={handleStop}
+                  activeFilePath={activeFilePath}
+                  activeFileContent={activeFileContent}
+                  vaultPath={vaultPath}
+                  activeSessionId={activeSessionId}
+                  modelGroups={modelGroups}
+                  selectedModelId={selectedModelId}
+                  onSelectModel={setSelectedModelId}
+                  disabled={!sessionsReady || !activeSessionId}
+                  onOpenSettings={onOpenSettings}
+                  tokenUsage={activeSession?.tokenUsage}
+                  contextWindow={getModelContextWindow(selectedModelId)}
+                  mode={activeSession?.mode ?? 'agent'}
+                  onModeChange={handleModeChange}
+                />
+              }
             />
           </div>
         </CardContent>
-        <ChatFooter
-          status={status}
-          inputError={inputError}
-          onInputError={setInputError}
-          onSubmit={handlePromptSubmit}
-          onStop={handleStop}
-          activeFilePath={activeFilePath}
-          activeFileContent={activeFileContent}
-          vaultPath={vaultPath}
-          activeSessionId={activeSessionId}
-          modelGroups={modelGroups}
-          selectedModelId={selectedModelId}
-          onSelectModel={setSelectedModelId}
-          disabled={!sessionsReady || !activeSessionId}
-          onOpenSettings={onOpenSettings}
-          tokenUsage={activeSession?.tokenUsage}
-          contextWindow={getModelContextWindow(selectedModelId)}
-          mode={activeSession?.mode ?? 'agent'}
-          onModeChange={handleModeChange}
-        />
       </div>
     </div>
   );

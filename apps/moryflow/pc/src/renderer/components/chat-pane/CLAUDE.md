@@ -9,6 +9,7 @@
 
 - `index.tsx`：ChatPane 容器与数据协调
 - `components/chat-footer.tsx`：输入区 + 悬浮任务面板
+- `components/conversation-section.tsx`：消息列表渲染（MessageList + 错误提示）
 - `components/chat-prompt-input/index.tsx`：输入框主体（+ 菜单 / @ 引用 / 主操作按钮）
 - `components/task-hover-panel.tsx`：任务悬浮面板 UI/交互
 - `hooks/use-tasks.ts`：Tasks 数据拉取/订阅
@@ -32,6 +33,8 @@
 - 2026-02-02：任务列表子项改为非交互展示，移除 hover 选中状态。
 - 2026-02-02：主操作终止图标缩小并保持与发送图标同色。
 - 2026-02-02：语音入口仅对登录用户开放，未登录显示不可用发送态。
+- 2026-02-02：消息列表切换到 Viewport/Slack 交互，输入区作为 MessageList footer 注入。
+- 2026-02-02：消息列表渲染简化为 index 驱动，移除冗余索引映射。
 - 2026-01-28：引用文件面板挂载时仅触发一次最近文件刷新，避免重复请求。
 - 2026-01-27：新增输入框上方 hover 展开任务悬浮面板，移除右上角 Tasks 入口。
 
