@@ -116,6 +116,7 @@ status: active
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-26）
 - 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）
 - 调研：AI SDK 版本统一（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（更新：2026-01-26）
+- 草图：Sandx（PC）适配 Apple Container + Docker 隔离方案：`docs/research/sandx-apple-container-adaptation.md`（更新：2026-02-02）
 
 ## Skills（内部协作 / Prompt 规范）
 
