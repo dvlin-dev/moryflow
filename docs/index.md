@@ -34,6 +34,7 @@ status: active
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
+- Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`
 - Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`
 - ADR（架构决策记录）：`docs/architecture/adr/`
 - ADR-0002 Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`

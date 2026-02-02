@@ -236,6 +236,7 @@ Anyhunt/
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案        |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
+| [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制）   |
 | [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                                     | Moryflow Agent Tasks 系统方案（替代 Plan）                |
 | [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)                           | ADR：两条业务线永不互通                                   |
 | [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                                     | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |

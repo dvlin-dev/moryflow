@@ -33,6 +33,7 @@
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
 - `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（Compaction/Permission/Truncation）决策。
 - `ui-message-list-unification.md`：消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一，先对齐样式再统一抽象）。
+- `ui-message-list-turn-anchor-adoption.md`：Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制，proposal）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（含 OpenCode 对标与落地路径）。
 
 > 说明：部署/操作类文档已迁移到 `docs/runbooks/`；开发指南类文档已迁移到 `docs/guides/`；旧计划文档归档于 `docs/_archived/`。
@@ -40,6 +41,11 @@
 ## 近期更新
 
 - `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
+- `ui-message-list-turn-anchor-adoption.md`：新增 TurnAnchor 交互复用改造方案草案（2026-02-02）。
+- `ui-message-list-turn-anchor-adoption.md`：确认决策并补充可跟踪执行计划（2026-02-02）。
+- `ui-message-list-turn-anchor-adoption.md`：统一 PC/Console 默认交互为 turnAnchor=top（2026-02-02）。
+- `ui-message-list-turn-anchor-adoption.md`：补充风险/错误边界/滚动策略验收清单（2026-02-02）。
+- `ui-message-list-turn-anchor-adoption.md`：明确最佳实践写法（显式 props + 内部 wrapper + 统一 Conversation 体系）（2026-02-02）。
 - `anyhunt-api-channel-routing.md`：补充 apps/anyhunt 修改清单与执行计划（2026-01-28）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充外部化/Hook 示例（JSONC/Agent/Tool）（2026-01-30）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：P2-7/P2-8 外部化与 Hook 落地完成（2026-01-29）。
