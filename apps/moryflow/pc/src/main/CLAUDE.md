@@ -99,6 +99,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Chat 流追加 start chunk，保证 assistant 消息持久化与 ID 稳定
 - workspace recentFiles 读写增加类型守卫，避免存储异常污染
 - workspace-settings 新增 recentFiles 存储与 get/record/remove IPC 接口
 - Agent Markdown 去重移除时补齐索引守卫，runtime config 仅保留必要导出

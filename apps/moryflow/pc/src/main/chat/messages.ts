@@ -103,6 +103,8 @@ export const streamAgentRun = async ({
     toolCallId: string;
   } | null;
 }): Promise<StreamAgentRunResult> => {
+  // 避免持久化漏写：首次输出前注入 start chunk 以获得稳定 messageId
+  let messageStarted = false;
   // 使用固定的消息 ID，整轮对话只用一个
   const textMessageId = messageId ?? randomUUID();
   const reasoningMessageId = randomUUID();
@@ -114,8 +116,21 @@ export const streamAgentRun = async ({
   const totalUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   const isAborted = () => signal?.aborted === true;
 
+  const ensureMessageStarted = () => {
+    if (messageStarted) return true;
+    messageStarted = true;
+    try {
+      writer.write({ type: 'start' });
+      return true;
+    } catch (error) {
+      console.error('[chat] failed to write message start', error);
+      return false;
+    }
+  };
+
   const ensureReasoningStarted = () => {
     if (reasoningSegmentStarted) return true;
+    if (!ensureMessageStarted()) return false;
     try {
       writer.write({ type: 'reasoning-start', id: reasoningMessageId });
       reasoningSegmentStarted = true;
@@ -152,6 +167,7 @@ export const streamAgentRun = async ({
     if (reasoningSegmentStarted) {
       emitReasoningEnd();
     }
+    if (!ensureMessageStarted()) return false;
     try {
       writer.write({ type: 'text-start', id: textMessageId });
       textSegmentStarted = true;
@@ -206,6 +222,7 @@ export const streamAgentRun = async ({
           if (!approval) {
             continue;
           }
+          ensureMessageStarted();
           const toolCallId = approval.toolCallId ?? resolveToolCallId(event.item);
           const approvalId = approval.approvalId ?? randomUUID();
           try {
@@ -221,6 +238,7 @@ export const streamAgentRun = async ({
         }
         const chunk = mapRunToolEventToChunk(event, toolNames);
         if (chunk) {
+          ensureMessageStarted();
           try {
             writer.write(chunk);
           } catch (error) {
