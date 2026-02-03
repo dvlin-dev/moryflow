@@ -2,6 +2,7 @@
  * [PROPS]: MessageRowProps - 单条消息渲染参数
  * [EMITS]: None
  * [POS]: AgentMessageList 的单条消息展示
+ * [UPDATE]: 2026-02-02 - 移除默认 thinking 文案，loading 由列表占位负责
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,7 +17,6 @@ import {
   type MessageAttachmentLabels,
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
-import { Shimmer } from '@anyhunt/ui/ai/shimmer';
 import {
   isFileUIPart,
   isReasoningUIPart,
@@ -94,7 +94,7 @@ export function MessageRow({ message }: MessageRowProps) {
       return <MessageResponse>{displayText}</MessageResponse>;
     }
     if (orderedParts.length === 0) {
-      return <ThinkingContent />;
+      return null;
     }
     return orderedParts.map((part, index) => {
       if (isTextUIPart(part)) {
@@ -141,8 +141,4 @@ export function MessageRow({ message }: MessageRowProps) {
   );
 }
 
-const ThinkingContent = () => (
-  <Shimmer className="text-sm font-medium text-muted-foreground" as="span" duration={3} spread={3}>
-    Thinking...
-  </Shimmer>
-);
+// Loading 由 MessageList 统一插入，避免重复渲染
