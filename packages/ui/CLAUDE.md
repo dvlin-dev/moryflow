@@ -63,7 +63,16 @@ import { ChevronDown } from 'lucide-react';
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
 - MessageList：切换为 Viewport/Slack 交互，移除占位逻辑与消息高度外置计算
+- MessageList：footer 移至列表外，保证输入区固定且列表可滚动
+- MessageList：新增 loading 占位，发送后用户消息顶到顶部
+- MessageList：新增 autoScrollEnabled 与 smooth 滚动策略，支持用户手动停滚与会话切换定位
+- MessageList：会话切换初始滚动改为多次确认，保证定位到最新消息
+- MessageList：发送新消息时平滑滚动并等待测量完成，避免闪动与二次跳动
+- ConversationViewport：支持跳过自动滚动并由上层手动恢复
+- useSizeHandle：改为 layout effect 预先测量高度，减少首帧闪动
 - ConversationViewport：新增滚动状态与高度测量 primitives（Viewport/Footer/Slack/ScrollButton）
+- ConversationViewport：滚动容器补齐 min-h-0，避免历史消息阻塞滚动
+- ConversationViewport：自动滚动加入用户意图锁与 near-bottom 阈值
 - TurnAnchor 交互固定为 top，移除 turnAnchor/autoScroll 对外配置
 - ConversationViewport：Slack 仅在有效测量后生效，避免首帧大空白
 - Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
@@ -94,4 +103,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.6 | 更新日期: 2026-01-28_
+_版本: 4.6 | 更新日期: 2026-02-02_

@@ -2,6 +2,8 @@
  * [PROVIDES]: ConversationViewport Store - 滚动状态与高度测量
  * [DEPENDS]: zustand/vanilla
  * [POS]: Conversation Viewport 交互与布局的核心状态
+ * [UPDATE]: 2026-02-02 - 追加自动滚动锁与恢复控制
+ * [UPDATE]: 2026-02-02 - 支持跳过自动滚动并手动恢复
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -53,16 +55,22 @@ const createSizeRegistry = (onChange: (total: number) => void): SizeRegistry => 
 
 export type ConversationViewportState = {
   isAtBottom: boolean;
+  autoScrollEnabled: boolean;
   height: {
     viewport: number;
     inset: number;
     userMessage: number;
   };
+  skipNextAutoScroll: boolean;
   scrollToBottom: (config?: { behavior?: ScrollBehavior }) => void;
   onScrollToBottom: (callback: ({ behavior }: { behavior: ScrollBehavior }) => void) => () => void;
   registerViewport: () => SizeHandle;
   registerContentInset: () => SizeHandle;
   registerUserMessageHeight: () => SizeHandle;
+  enableAutoScroll: () => void;
+  disableAutoScroll: () => void;
+  skipAutoScrollOnce: () => void;
+  clearSkipAutoScroll: () => void;
 };
 
 export const createConversationViewportStore = () => {
@@ -70,11 +78,13 @@ export const createConversationViewportStore = () => {
 
   const store = createStore<ConversationViewportState>(() => ({
     isAtBottom: true,
+    autoScrollEnabled: true,
     height: {
       viewport: 0,
       inset: 0,
       userMessage: 0,
     },
+    skipNextAutoScroll: false,
     scrollToBottom: ({ behavior = 'auto' } = {}) => {
       for (const listener of scrollListeners) {
         listener({ behavior });
@@ -98,6 +108,10 @@ export const createConversationViewportStore = () => {
       setHeight: () => {},
       unregister: () => {},
     }),
+    enableAutoScroll: () => {},
+    disableAutoScroll: () => {},
+    skipAutoScrollOnce: () => {},
+    clearSkipAutoScroll: () => {},
   }));
 
   const viewportRegistry = createSizeRegistry((total) => {
@@ -131,6 +145,18 @@ export const createConversationViewportStore = () => {
     registerViewport: viewportRegistry.register,
     registerContentInset: insetRegistry.register,
     registerUserMessageHeight: userMessageRegistry.register,
+    enableAutoScroll: () => {
+      store.setState({ autoScrollEnabled: true });
+    },
+    disableAutoScroll: () => {
+      store.setState({ autoScrollEnabled: false });
+    },
+    skipAutoScrollOnce: () => {
+      store.setState({ skipNextAutoScroll: true });
+    },
+    clearSkipAutoScroll: () => {
+      store.setState({ skipNextAutoScroll: false });
+    },
   });
 
   return store;

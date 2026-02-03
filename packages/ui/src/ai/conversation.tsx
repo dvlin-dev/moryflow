@@ -4,6 +4,7 @@
  * [PROPS]: ConversationProps/ConversationContentProps/ConversationScrollButtonProps
  * [EMITS]: None
  * [POS]: 消息列表滚动容器与基础布局组件
+ * [UPDATE]: 2026-02-02 - 滚动按钮触发恢复自动滚动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -72,12 +73,16 @@ export const ConversationScrollButton = ({
 }: ConversationScrollButtonProps) => {
   const isAtBottom = useConversationViewport((state) => state.isAtBottom);
   const scrollToBottom = useConversationViewport((state) => state.scrollToBottom);
+  const enableAutoScroll = useConversationViewport((state) => state.enableAutoScroll);
 
   return (
     !isAtBottom && (
       <Button
         className={cn('absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full', className)}
-        onClick={() => scrollToBottom({ behavior: 'auto' })}
+        onClick={() => {
+          enableAutoScroll();
+          scrollToBottom({ behavior: 'smooth' });
+        }}
         size="icon"
         type="button"
         variant="outline"

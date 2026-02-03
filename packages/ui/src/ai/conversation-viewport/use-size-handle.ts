@@ -2,13 +2,14 @@
  * [PROVIDES]: useSizeHandle - 元素高度测量与注册
  * [DEPENDS]: React, ResizeObserver
  * [POS]: Conversation Viewport 高度测量工具
+ * [UPDATE]: 2026-02-02 - 使用 layout effect 预先测量高度，减少闪动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 
 import type { SizeHandle } from './store';
 
@@ -21,7 +22,7 @@ export const useSizeHandle = (register: RegisterFn, getHeight?: GetHeight) => {
   const resolvedGetHeight = getHeight ?? defaultGetHeight;
   const [node, setNode] = useState<HTMLElement | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!register || !node) {
       return;
     }
