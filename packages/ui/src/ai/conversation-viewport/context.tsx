@@ -44,6 +44,8 @@ export const useConversationViewportStore = () => {
   return store;
 };
 
+export const useConversationViewportStoreOptional = () => useContext(ConversationViewportContext);
+
 export const useConversationViewport = <T,>(selector: (state: ConversationViewportState) => T) => {
   const store = useConversationViewportStore();
   return useStore(store, selector);

@@ -2,7 +2,7 @@
  * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
- * [UPDATE]: 2026-02-02 - 移除默认 thinking 文案，loading 由列表占位负责
+ * [UPDATE]: 2026-02-03 - Thinking 反馈改为 loading icon
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -24,6 +24,7 @@ import {
   MessageResponse,
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
+import { Loader } from '@anyhunt/ui/ai/loader';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
 import {
   Confirmation,
@@ -406,7 +407,7 @@ export const ChatMessage = ({
       return renderUserContent();
     }
     if (orderedParts.length === 0) {
-      return null;
+      return <ThinkingContent />;
     }
     return orderedParts.map(renderPart);
   };
@@ -425,4 +426,20 @@ export const ChatMessage = ({
   );
 };
 
-// Loading 由 MessageList 统一插入，避免重复渲染
+const ThinkingContent = () => {
+  const { t } = useTranslation('chat');
+  return (
+    <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+      <Loader className="text-muted-foreground" size={14} />
+      <span className="sr-only">{t('thinkingText')}</span>
+    </span>
+  );
+};
+
+export const ThinkingMessage = () => (
+  <Message from="assistant">
+    <MessageContent>
+      <ThinkingContent />
+    </MessageContent>
+  </Message>
+);

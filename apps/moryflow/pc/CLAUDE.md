@@ -84,6 +84,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk
+- Chat IPC 移除 `chat:sessions:syncMessages`，避免 Renderer 覆盖会话持久化
 - 消息列表交互切换为 Viewport/Slack 机制，并移除 use-stick-to-bottom 依赖
 - 单测前强制重建 better-sqlite3，避免 CI Node ABI 不匹配导致 TasksStore 测试失败
 - PC 端图标回退到 Lucide，移除 Hugeicons 依赖并更新组件调用方式

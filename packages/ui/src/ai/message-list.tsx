@@ -2,26 +2,16 @@
  * [PROPS]: MessageListProps - 消息列表渲染配置
  * [EMITS]: None
  * [POS]: AI 会话列表的通用布局封装
- * [UPDATE]: 2026-02-02 - footer 移至列表外，确保输入区固定底部
- * [UPDATE]: 2026-02-02 - 支持 loading 占位，发送后用户消息顶到顶部
- * [UPDATE]: 2026-02-02 - 追加自动滚动策略与新消息平滑滚动
- * [UPDATE]: 2026-02-02 - 会话切换时反复确认滚动到底部
- * [UPDATE]: 2026-02-02 - 发送消息时平滑滚动并避免自动滚动干扰
+ * [UPDATE]: 2026-02-03 - 补齐历史滚动、run start 采用 scroll-smooth 曲线与 streaming 占位消息
+ * [UPDATE]: 2026-02-03 - 支持顶部 inset，对齐外部 header
+ * [UPDATE]: 2026-02-03 - Slack/锚点回到列表层，避免 Message 依赖 Viewport
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  type HTMLAttributes,
-  type ReactNode,
-} from 'react';
+import { Fragment, useEffect, useMemo, useRef, type HTMLAttributes, type ReactNode } from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { cn } from '../lib/utils';
@@ -31,7 +21,11 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from './conversation';
-import { ConversationViewportSlack, useConversationViewport } from './conversation-viewport';
+import {
+  ConversationViewportFooter,
+  ConversationViewportSlack,
+  useConversationViewport,
+} from './conversation-viewport';
 import { useSizeHandle } from './conversation-viewport/use-size-handle';
 
 export type MessageListEmptyState = {
@@ -54,8 +48,8 @@ export type MessageListProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> 
   conversationClassName?: string;
   showScrollButton?: boolean;
   footer?: ReactNode;
-  loading?: ReactNode;
   threadId?: string | null;
+  topInset?: number;
 };
 
 type MessageListInnerProps = Pick<
@@ -66,7 +60,7 @@ type MessageListInnerProps = Pick<
   | 'emptyState'
   | 'contentClassName'
   | 'showScrollButton'
-  | 'loading'
+  | 'footer'
   | 'threadId'
 >;
 
@@ -83,190 +77,82 @@ const MessageListInner = ({
   emptyState,
   contentClassName,
   showScrollButton = true,
-  loading,
+  footer,
   threadId,
 }: MessageListInnerProps) => {
   const scrollToBottom = useConversationViewport((state) => state.scrollToBottom);
-  const autoScrollEnabled = useConversationViewport((state) => state.autoScrollEnabled);
-  const enableAutoScroll = useConversationViewport((state) => state.enableAutoScroll);
-  const skipAutoScrollOnce = useConversationViewport((state) => state.skipAutoScrollOnce);
-  const clearSkipAutoScroll = useConversationViewport((state) => state.clearSkipAutoScroll);
-  const isAtBottom = useConversationViewport((state) => state.isAtBottom);
-  const viewportHeight = useConversationViewport((state) => state.height.viewport);
-  const insetHeight = useConversationViewport((state) => state.height.inset);
-  const userMessageHeight = useConversationViewport((state) => state.height.userMessage);
 
   const conversationKey = threadId ?? messages[0]?.id ?? 'empty';
   const previousStatusRef = useRef<ChatStatus | null>(null);
-  const previousConversationKeyRef = useRef<string | null>(null);
-  const previousCountRef = useRef(0);
-  const previousLastIdRef = useRef<string | null>(null);
-  const pendingInitialScrollRef = useRef(false);
-  const initialScrollAttemptsRef = useRef(0);
-  const pendingUserScrollRef = useRef(false);
-  const pendingUserScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastMessageIndex = messages.length - 1;
-  const lastMessage = messages[lastMessageIndex];
-  const isLoadingStatus = status === 'submitted' || status === 'streaming';
-  const lastIsUser = lastMessage?.role === 'user';
-  const lastIsAssistant = lastMessage?.role === 'assistant';
-  const lastAssistantEmpty = lastIsAssistant && (lastMessage?.parts?.length ?? 0) === 0;
-  const injectLoadingAfter = Boolean(loading) && isLoadingStatus && lastIsUser;
-  const replaceLastWithLoading = Boolean(loading) && isLoadingStatus && lastAssistantEmpty;
-  const shouldApplySlack =
-    (lastMessageIndex >= 1 && lastIsAssistant && messages[lastMessageIndex - 1]?.role === 'user') ||
-    injectLoadingAfter;
-  const anchorUserIndex = lastIsUser
-    ? lastMessageIndex
-    : lastIsAssistant && messages[lastMessageIndex - 1]?.role === 'user'
-      ? lastMessageIndex - 1
-      : -1;
+  const previousLastMessageIdRef = useRef<string | null>(null);
+  const previousKeyRef = useRef(conversationKey);
+  const didInitialScrollRef = useRef(false);
 
-  const clearPendingUserScrollTimeout = useCallback(() => {
-    if (pendingUserScrollTimeoutRef.current) {
-      clearTimeout(pendingUserScrollTimeoutRef.current);
-      pendingUserScrollTimeoutRef.current = null;
+  const shouldShowThinking =
+    (status === 'submitted' || status === 'streaming') &&
+    messages.length > 0 &&
+    messages[messages.length - 1]?.role === 'user';
+
+  const renderMessages = useMemo(() => {
+    if (!shouldShowThinking) {
+      return messages;
     }
-  }, []);
+    const anchorId = messages[messages.length - 1]?.id ?? 'thinking';
+    const thinkingMessage: UIMessage = {
+      id: `${anchorId}-thinking`,
+      role: 'assistant',
+      parts: [],
+    };
+    return [...messages, thinkingMessage];
+  }, [messages, shouldShowThinking]);
+
+  const lastMessageIndex = renderMessages.length - 1;
+  const shouldApplySlack =
+    lastMessageIndex >= 1 &&
+    renderMessages[lastMessageIndex]?.role === 'assistant' &&
+    renderMessages[lastMessageIndex - 1]?.role === 'user';
+  const anchorUserIndex = shouldApplySlack ? lastMessageIndex - 1 : -1;
 
   useEffect(() => {
-    pendingInitialScrollRef.current = true;
-    initialScrollAttemptsRef.current = 0;
-    pendingUserScrollRef.current = false;
-    clearPendingUserScrollTimeout();
-    clearSkipAutoScroll();
-    enableAutoScroll();
-  }, [clearSkipAutoScroll, conversationKey, enableAutoScroll, scrollToBottom]);
+    if (previousKeyRef.current !== conversationKey) {
+      previousKeyRef.current = conversationKey;
+      didInitialScrollRef.current = false;
+      previousStatusRef.current = null;
+      previousLastMessageIdRef.current = null;
+    }
+  }, [conversationKey]);
+
+  useEffect(() => {
+    if (didInitialScrollRef.current || messages.length === 0) {
+      return;
+    }
+    didInitialScrollRef.current = true;
+    requestAnimationFrame(() => {
+      scrollToBottom({ behavior: 'instant' });
+    });
+  }, [messages.length, scrollToBottom]);
 
   useEffect(() => {
     const prevStatus = previousStatusRef.current;
-    previousStatusRef.current = status;
+    const prevLastMessageId = previousLastMessageIdRef.current;
 
-    if (status === 'submitted' && prevStatus !== 'submitted') {
-      enableAutoScroll();
-    }
-  }, [enableAutoScroll, status]);
+    const wasRunning = prevStatus === 'submitted' || prevStatus === 'streaming';
+    const isRunning = status === 'submitted' || status === 'streaming';
+    const lastMessage = messages[messages.length - 1];
+    const lastMessageId = lastMessage?.id ?? null;
+    const lastMessageRole = lastMessage?.role;
+    const hasNewUserMessage =
+      isRunning && lastMessageRole === 'user' && lastMessageId !== prevLastMessageId;
 
-  useEffect(() => {
-    if (!pendingInitialScrollRef.current) {
-      return;
-    }
-    if (messages.length === 0) {
-      return;
-    }
-    if (!autoScrollEnabled) {
-      return;
-    }
-
-    if (initialScrollAttemptsRef.current > 0 && isAtBottom) {
-      pendingInitialScrollRef.current = false;
-      return;
-    }
-
-    initialScrollAttemptsRef.current += 1;
-    scrollToBottom({ behavior: 'auto' });
-  }, [
-    autoScrollEnabled,
-    conversationKey,
-    insetHeight,
-    isAtBottom,
-    messages.length,
-    scrollToBottom,
-    userMessageHeight,
-    viewportHeight,
-  ]);
-
-  useEffect(() => {
-    if (!autoScrollEnabled || status !== 'streaming') return;
-    if (pendingUserScrollRef.current) return;
-    scrollToBottom({ behavior: 'auto' });
-  }, [autoScrollEnabled, messages, scrollToBottom, status]);
-
-  useLayoutEffect(() => {
-    if (previousConversationKeyRef.current !== conversationKey) {
-      previousConversationKeyRef.current = conversationKey;
-      previousCountRef.current = messages.length;
-      previousLastIdRef.current = lastMessage?.id ?? null;
-      return;
-    }
-    const prevCount = previousCountRef.current;
-    const prevLastId = previousLastIdRef.current;
-    previousCountRef.current = messages.length;
-    previousLastIdRef.current = lastMessage?.id ?? null;
-
-    if (prevCount === 0) {
-      return;
-    }
-    if (!lastMessage || lastMessage.role !== 'user') {
-      return;
-    }
-    if (prevLastId === lastMessage.id) {
-      return;
-    }
-    enableAutoScroll();
-    pendingUserScrollRef.current = true;
-    skipAutoScrollOnce();
-    clearPendingUserScrollTimeout();
-    pendingUserScrollTimeoutRef.current = setTimeout(() => {
-      if (!pendingUserScrollRef.current) {
-        return;
-      }
-      pendingUserScrollRef.current = false;
-      clearSkipAutoScroll();
-      scrollToBottom({ behavior: 'auto' });
-      pendingUserScrollTimeoutRef.current = null;
-    }, 200);
-  }, [
-    clearSkipAutoScroll,
-    conversationKey,
-    enableAutoScroll,
-    lastMessage,
-    messages.length,
-    scrollToBottom,
-    skipAutoScrollOnce,
-  ]);
-
-  useEffect(() => {
-    if (!pendingUserScrollRef.current) {
-      return;
-    }
-    if (!lastMessage || lastMessage.role !== 'user') {
-      return;
-    }
-    if (userMessageHeight <= 0 || viewportHeight <= 0) {
-      return;
-    }
-
-    const runScroll = () => {
-      clearPendingUserScrollTimeout();
-      pendingUserScrollRef.current = false;
-      scrollToBottom({ behavior: 'smooth' });
-      clearSkipAutoScroll();
-    };
-
-    if (typeof requestAnimationFrame === 'function') {
+    if (hasNewUserMessage || (!wasRunning && isRunning)) {
       requestAnimationFrame(() => {
-        runScroll();
+        scrollToBottom({ behavior: 'auto' });
       });
-      return;
     }
 
-    setTimeout(runScroll, 0);
-  }, [
-    clearSkipAutoScroll,
-    clearPendingUserScrollTimeout,
-    insetHeight,
-    lastMessage?.id,
-    scrollToBottom,
-    userMessageHeight,
-    viewportHeight,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      clearPendingUserScrollTimeout();
-    };
-  }, [clearPendingUserScrollTimeout]);
+    previousStatusRef.current = status;
+    previousLastMessageIdRef.current = lastMessageId;
+  }, [messages, scrollToBottom, status]);
 
   return (
     <>
@@ -278,27 +164,28 @@ const MessageListInner = ({
         />
       ) : (
         <ConversationContent className={cn('min-w-0', contentClassName)}>
-          {messages.map((message, index) => {
-            const shouldReplace = replaceLastWithLoading && index === lastMessageIndex;
-            let node = shouldReplace && loading ? loading : renderMessage({ message, index });
+          {renderMessages.map((message, index) => {
+            let node = renderMessage({ message, index });
 
             if (index === anchorUserIndex) {
               node = <AnchorUserMessage>{node}</AnchorUserMessage>;
             }
 
-            if (!injectLoadingAfter && index === lastMessageIndex && shouldApplySlack) {
+            if (index === lastMessageIndex && shouldApplySlack) {
               node = <ConversationViewportSlack enabled>{node}</ConversationViewportSlack>;
             }
 
             return <Fragment key={message.id}>{node}</Fragment>;
           })}
-          {injectLoadingAfter && loading ? (
-            <ConversationViewportSlack enabled>{loading}</ConversationViewportSlack>
-          ) : null}
         </ConversationContent>
       )}
 
-      {showScrollButton ? <ConversationScrollButton /> : null}
+      {footer || showScrollButton ? (
+        <ConversationViewportFooter className="sticky bottom-0">
+          {showScrollButton ? <ConversationScrollButton /> : null}
+          {footer}
+        </ConversationViewportFooter>
+      ) : null}
     </>
   );
 };
@@ -313,13 +200,13 @@ export const MessageList = ({
   conversationClassName,
   showScrollButton = true,
   footer,
-  loading,
   threadId,
+  topInset,
   ...props
 }: MessageListProps) => {
   return (
-    <div className={cn('flex min-h-0 min-w-0 flex-col overflow-hidden', className)} {...props}>
-      <Conversation className={conversationClassName}>
+    <div className={cn('flex min-w-0 min-h-0 flex-col overflow-hidden', className)} {...props}>
+      <Conversation className={conversationClassName} topInset={topInset}>
         <MessageListInner
           messages={messages}
           status={status}
@@ -327,11 +214,10 @@ export const MessageList = ({
           emptyState={emptyState}
           contentClassName={contentClassName}
           showScrollButton={showScrollButton}
-          loading={loading}
+          footer={footer}
           threadId={threadId}
         />
       </Conversation>
-      {footer ? <div className="shrink-0">{footer}</div> : null}
     </div>
   );
 };

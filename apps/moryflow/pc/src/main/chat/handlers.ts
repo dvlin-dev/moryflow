@@ -2,6 +2,7 @@
  * [INPUT]: Chat IPC 请求与会话管理指令（含 runtime 默认 mode）
  * [OUTPUT]: 会话变更事件/执行结果
  * [POS]: PC 端聊天 IPC handlers
+ * [UPDATE]: 2026-02-03 - 移除 chat:sessions:syncMessages IPC
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */

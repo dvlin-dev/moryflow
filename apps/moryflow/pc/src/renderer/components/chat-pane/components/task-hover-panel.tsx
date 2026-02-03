@@ -1,10 +1,11 @@
 /**
- * [PROPS]: { activeSessionId } - 当前会话 ID
+ * [PROPS]: { activeSessionId, isSessionRunning } - 当前会话 ID + 会话运行态
  * [EMITS]: onSelect(taskId) via useTasks
  * [POS]: ChatFooter 悬浮任务面板（点击展开 + hover 箭头）
  * [UPDATE]: 2026-02-02 - 列表项改为外边距控制 + 错误状态提示
  * [UPDATE]: 2026-01-28 - 任务列表改为仅状态 icon + 标题，隐藏子项详情与交互视觉
  * [UPDATE]: 2026-02-02 - Header 全区域可展开收起 + 子项改为非交互展示
+ * [UPDATE]: 2026-02-03 - 仅会话运行且任务执行中时展示面板
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -28,6 +29,7 @@ import { useTasks } from '../hooks';
 
 type TaskHoverPanelProps = {
   activeSessionId: string | null;
+  isSessionRunning: boolean;
 };
 
 const STATUS_ORDER: Record<TaskStatus, number> = {
@@ -50,20 +52,22 @@ const STATUS_ICONS: Record<TaskStatus, typeof Circle> = {
   archived: CircleDashed,
 };
 
-export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
+const ACTIVE_TASK_STATUSES: TaskStatus[] = ['in_progress', 'blocked', 'failed'];
+
+export const TaskHoverPanel = ({ activeSessionId, isSessionRunning }: TaskHoverPanelProps) => {
   const { t } = useTranslation('chat');
   const { t: tCommon } = useTranslation('common');
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
   const { tasks, isLoading, clearSelection, error } = useTasks({
     activeSessionId,
-    enabled: Boolean(activeSessionId),
+    enabled: Boolean(activeSessionId) && isSessionRunning,
   });
 
   useEffect(() => {
     setExpanded(false);
     clearSelection();
-  }, [activeSessionId, clearSelection]);
+  }, [activeSessionId, isSessionRunning, clearSelection]);
 
   const sortedTasks = useMemo(() => {
     return [...tasks].sort((left, right) => {
@@ -74,7 +78,7 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
   }, [tasks]);
 
   const activeTasks = useMemo(
-    () => sortedTasks.filter((task) => task.status === 'in_progress'),
+    () => sortedTasks.filter((task) => ACTIVE_TASK_STATUSES.includes(task.status)),
     [sortedTasks]
   );
   const completedCount = useMemo(
@@ -82,42 +86,20 @@ export const TaskHoverPanel = ({ activeSessionId }: TaskHoverPanelProps) => {
     [sortedTasks]
   );
 
-  const hasTasks = tasks.length > 0;
-  const hasError = Boolean(error);
-  const showPanel = Boolean(activeSessionId) && (hasTasks || isLoading || hasError);
+  const hasActiveTasks = activeTasks.length > 0;
+  const showPanel = Boolean(activeSessionId) && isSessionRunning && hasActiveTasks;
   const activeTask = activeTasks[0] ?? null;
-  const isAllDone = hasTasks && completedCount === tasks.length;
   const hasActiveTask = Boolean(activeTask);
-  const isBusy = hasActiveTask || isLoading;
+  const isBusy = activeTask?.status === 'in_progress';
 
   if (!showPanel) {
     return null;
   }
 
-  const summaryText = activeTask
-    ? activeTask.title
-    : hasError && !hasTasks
-      ? t('taskPanelLoadFailed')
-      : isAllDone
-        ? t('taskPanelAllCompleted')
-        : hasTasks
-          ? t('taskPanelIdle')
-          : tCommon('loading');
+  const summaryText = activeTask?.title ?? t('taskPanelIdle');
 
-  const SummaryIcon =
-    hasError && !hasTasks
-      ? AlertTriangle
-      : isBusy
-        ? LoaderCircle
-        : isAllDone
-          ? CircleCheck
-          : CircleDashed;
-  const progressText =
-    tasks.length === 0
-      ? isLoading || hasError
-        ? '--/--'
-        : '0/0'
-      : `${completedCount}/${tasks.length}`;
+  const SummaryIcon = activeTask ? STATUS_ICONS[activeTask.status] : CircleDashed;
+  const progressText = `${completedCount}/${tasks.length}`;
 
   const handleToggleExpanded = () => {
     setExpanded((prev) => {

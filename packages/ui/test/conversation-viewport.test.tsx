@@ -1,19 +1,32 @@
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import { ConversationViewport } from '../src/ai/conversation-viewport';
 import { ConversationViewportSlack } from '../src/ai/conversation-viewport/slack';
 import { useConversationViewportStore } from '../src/ai/conversation-viewport/context';
 
+const noop = () => {};
+
+class ResizeObserverMock {
+  observe() {}
+  disconnect() {}
+}
+
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = ResizeObserverMock as typeof ResizeObserver;
+}
+
 const StoreSeed = ({
   viewport,
   inset,
   userMessage,
+  topInset = 0,
 }: {
   viewport: number;
   inset: number;
   userMessage: number;
+  topInset?: number;
 }) => {
   const store = useConversationViewportStore();
 
@@ -23,171 +36,60 @@ const StoreSeed = ({
         viewport,
         inset,
         userMessage,
+        topInset,
       },
     });
-  }, [inset, store, userMessage, viewport]);
+  }, [inset, store, topInset, userMessage, viewport]);
 
   return null;
 };
 
 describe('ConversationViewportSlack', () => {
-  it('applies minHeight by default', () => {
+  it('applies minHeight by default', async () => {
     render(
       <ConversationViewport>
         <StoreSeed viewport={400} inset={80} userMessage={120} />
-        <ConversationViewportSlack data-testid="slack">
-          <div>content</div>
+        <ConversationViewportSlack>
+          <div data-testid="slack">content</div>
         </ConversationViewportSlack>
       </ConversationViewport>
     );
 
     const slack = screen.getByTestId('slack');
-    expect(slack.style.minHeight).toBe('200px');
+    await waitFor(() => {
+      expect(slack.style.minHeight).toBe('200px');
+    });
   });
 
-  it('does not apply minHeight when disabled', () => {
+  it('does not apply minHeight when disabled', async () => {
     render(
       <ConversationViewport>
         <StoreSeed viewport={400} inset={80} userMessage={120} />
-        <ConversationViewportSlack enabled={false} data-testid="slack">
-          <div>content</div>
+        <ConversationViewportSlack enabled={false}>
+          <div data-testid="slack">content</div>
         </ConversationViewportSlack>
       </ConversationViewport>
     );
 
     const slack = screen.getByTestId('slack');
-    expect(slack.style.minHeight).toBe('');
+    await waitFor(() => {
+      expect(slack.style.minHeight).toBe('');
+    });
   });
-});
 
-describe('ConversationViewport auto scroll', () => {
-  it('disables auto scroll on user scroll up and restores at bottom', async () => {
-    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
-
-    const StoreProbe = () => {
-      const store = useConversationViewportStore();
-      useEffect(() => {
-        storeRef = store;
-      }, [store]);
-      return null;
-    };
-
+  it('subtracts topInset from minHeight', async () => {
     render(
       <ConversationViewport>
-        <StoreProbe />
-        <div style={{ height: 400 }} />
+        <StoreSeed viewport={400} inset={80} userMessage={120} topInset={40} />
+        <ConversationViewportSlack>
+          <div data-testid="slack">content</div>
+        </ConversationViewportSlack>
       </ConversationViewport>
     );
 
-    const viewport = screen.getByRole('log') as HTMLDivElement;
-
-    Object.defineProperty(viewport, 'clientHeight', { value: 100, configurable: true });
-    Object.defineProperty(viewport, 'scrollHeight', { value: 300, configurable: true });
-
-    await new Promise<void>((resolve) => {
-      if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => resolve());
-      } else {
-        setTimeout(() => resolve(), 0);
-      }
+    const slack = screen.getByTestId('slack');
+    await waitFor(() => {
+      expect(slack.style.minHeight).toBe('160px');
     });
-
-    viewport.scrollTop = 200;
-    fireEvent.scroll(viewport);
-    expect(storeRef?.getState().autoScrollEnabled).toBe(true);
-
-    viewport.scrollTop = 120;
-    fireEvent.scroll(viewport);
-    expect(storeRef?.getState().autoScrollEnabled).toBe(false);
-
-    viewport.scrollTop = 200;
-    fireEvent.scroll(viewport);
-    expect(storeRef?.getState().autoScrollEnabled).toBe(true);
-  });
-
-  it('skips the next auto scroll when requested', async () => {
-    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
-    let scrollCalls = 0;
-
-    const StoreProbe = () => {
-      const store = useConversationViewportStore();
-
-      useEffect(() => {
-        storeRef = store;
-        const unsubscribe = store.getState().onScrollToBottom(() => {
-          scrollCalls += 1;
-        });
-        return () => {
-          unsubscribe();
-        };
-      }, [store]);
-
-      return null;
-    };
-
-    const HeightSetter = ({ viewport }: { viewport: number }) => {
-      const store = useConversationViewportStore();
-      useEffect(() => {
-        store.setState({
-          height: {
-            viewport,
-            inset: 0,
-            userMessage: 0,
-          },
-        });
-      }, [store, viewport]);
-      return null;
-    };
-
-    const { rerender } = render(
-      <ConversationViewport>
-        <StoreProbe />
-        <HeightSetter viewport={200} />
-        <div style={{ height: 400 }} />
-      </ConversationViewport>
-    );
-
-    const nextFrame = () =>
-      new Promise<void>((resolve) => {
-        if (typeof requestAnimationFrame === 'function') {
-          requestAnimationFrame(() => resolve());
-        } else {
-          setTimeout(() => resolve(), 0);
-        }
-      });
-
-    await act(async () => {
-      await nextFrame();
-    });
-
-    const baselineCalls = scrollCalls;
-
-    await act(async () => {
-      storeRef?.getState().skipAutoScrollOnce();
-      rerender(
-        <ConversationViewport>
-          <StoreProbe />
-          <HeightSetter viewport={240} />
-          <div style={{ height: 400 }} />
-        </ConversationViewport>
-      );
-      await nextFrame();
-    });
-
-    expect(scrollCalls).toBe(baselineCalls);
-
-    await act(async () => {
-      storeRef?.getState().clearSkipAutoScroll();
-      rerender(
-        <ConversationViewport>
-          <StoreProbe />
-          <HeightSetter viewport={280} />
-          <div style={{ height: 400 }} />
-        </ConversationViewport>
-      );
-      await nextFrame();
-    });
-
-    expect(scrollCalls).toBe(baselineCalls + 1);
   });
 });

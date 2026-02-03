@@ -2,6 +2,7 @@
  * [PROVIDES]: useTasks - Tasks 列表/详情拉取与订阅
  * [DEPENDS]: desktopAPI.tasks, React hooks
  * [POS]: ChatPane Tasks 面板数据层
+ * [UPDATE]: 2026-02-03 - 非运行态时清理任务状态，避免残留面板
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -40,7 +41,7 @@ export const useTasks = ({ activeSessionId, enabled }: UseTasksOptions): UseTask
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!activeSessionId) {
+    if (!activeSessionId || !enabled) {
       setTasks([]);
       clearSelection();
       return;
@@ -69,7 +70,7 @@ export const useTasks = ({ activeSessionId, enabled }: UseTasksOptions): UseTask
       setIsLoading(false);
       setIsDetailLoading(false);
     }
-  }, [activeSessionId, selectedTaskId, clearSelection]);
+  }, [activeSessionId, enabled, selectedTaskId, clearSelection]);
 
   const selectTask = useCallback(
     async (taskId: string) => {
@@ -115,6 +116,15 @@ export const useTasks = ({ activeSessionId, enabled }: UseTasksOptions): UseTask
     clearSelection();
     setError(null);
   }, [activeSessionId, clearSelection]);
+
+  useEffect(() => {
+    if (enabled) return;
+    setTasks([]);
+    clearSelection();
+    setError(null);
+    setIsLoading(false);
+    setIsDetailLoading(false);
+  }, [enabled, clearSelection]);
 
   return useMemo(
     () => ({

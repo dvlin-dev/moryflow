@@ -2,6 +2,7 @@
  * [PROPS]: ConversationViewportFooterProps - 底部区域测量
  * [EMITS]: None
  * [POS]: Conversation Viewport 底部区域高度注册
+ * [UPDATE]: 2026-02-03 - Footer 去除 relative，恢复 sticky 生效
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -41,7 +42,11 @@ export const ConversationViewportFooter = forwardRef<
   );
 
   return (
-    <div {...props} ref={setRef} className={cn('sticky bottom-0 z-10 bg-background', className)} />
+    <div
+      {...props}
+      ref={setRef}
+      className={cn('sticky bottom-0 z-10 mt-auto bg-background', className)}
+    />
   );
 });
 

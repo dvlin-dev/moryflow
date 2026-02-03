@@ -1,123 +1,155 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { useLayoutEffect } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ChatStatus, UIMessage } from 'ai';
 
+import { useConversationViewportStore } from '../src/ai/conversation-viewport/context';
 import { MessageList } from '../src/ai/message-list';
 
-const originalScrollTo = HTMLElement.prototype.scrollTo;
+class ResizeObserverMock {
+  observe() {}
+  disconnect() {}
+}
 
-afterEach(() => {
-  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
-    value: originalScrollTo,
-    configurable: true,
-    writable: true,
-  });
-  vi.useRealTimers();
-});
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = ResizeObserverMock as typeof ResizeObserver;
+}
+
+class MutationObserverMock {
+  observe() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+
+if (!globalThis.MutationObserver) {
+  globalThis.MutationObserver = MutationObserverMock as typeof MutationObserver;
+}
+
+let originalRaf: typeof globalThis.requestAnimationFrame | undefined;
+let rafSpy: ReturnType<typeof vi.spyOn> | null = null;
+
+const ScrollSpyMessage = ({
+  messageId,
+  onCall,
+}: {
+  messageId: string;
+  onCall?: ReturnType<typeof vi.fn>;
+}) => {
+  const store = useConversationViewportStore();
+
+  useLayoutEffect(() => {
+    if (!onCall) return;
+    return store.getState().onScrollToBottom(({ behavior }) => onCall({ behavior }));
+  }, [onCall, store]);
+
+  return <div data-testid={`message-${messageId}`} />;
+};
+
+const createRenderMessage =
+  (onCall?: ReturnType<typeof vi.fn>) =>
+  ({ message }: { message: UIMessage }) => (
+    <ScrollSpyMessage messageId={message.id} onCall={onCall} />
+  );
 
 describe('MessageList', () => {
-  it('keeps the footer outside the scroll viewport', () => {
-    const messages: UIMessage[] = [
-      {
-        id: 'm1',
-        role: 'user',
-        parts: [{ type: 'text', text: 'Hello' }],
-      },
-    ];
-
-    render(
-      <MessageList
-        messages={messages}
-        status={'ready' as ChatStatus}
-        footer={<div data-testid="footer">footer</div>}
-        renderMessage={({ message }) => (
-          <div data-testid={`message-${message.id}`}>{message.id}</div>
-        )}
-      />
-    );
-
-    const viewport = screen.getByRole('log');
-    expect(within(viewport).queryByTestId('footer')).toBeNull();
-    expect(screen.queryByTestId('footer')).not.toBeNull();
-    expect(viewport.className).toContain('min-h-0');
-  });
-
-  it('renders loading placeholder when waiting for assistant', () => {
-    const messages: UIMessage[] = [
-      {
-        id: 'm1',
-        role: 'user',
-        parts: [{ type: 'text', text: 'Hello' }],
-      },
-    ];
-
-    render(
-      <MessageList
-        messages={messages}
-        status={'submitted' as ChatStatus}
-        loading={<div data-testid="loading">loading</div>}
-        renderMessage={({ message }) => (
-          <div data-testid={`message-${message.id}`}>{message.id}</div>
-        )}
-      />
-    );
-
-    expect(screen.queryByTestId('loading')).not.toBeNull();
-  });
-
-  it('falls back to auto scroll when user message height is not measured', async () => {
-    vi.useFakeTimers();
-
-    const scrollTo = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
-      value: scrollTo,
-      configurable: true,
-      writable: true,
+  beforeEach(() => {
+    originalRaf = globalThis.requestAnimationFrame;
+    if (!originalRaf) {
+      globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => {
+        callback(0);
+        return 0;
+      };
+    }
+    rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 0;
     });
+  });
 
+  afterEach(() => {
+    rafSpy?.mockRestore();
+    rafSpy = null;
+    if (!originalRaf) {
+      // @ts-expect-error - 清理测试环境注入
+      delete globalThis.requestAnimationFrame;
+    } else {
+      globalThis.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  it('renders thinking placeholder while streaming after user message', () => {
     const messages: UIMessage[] = [
       {
-        id: 'm1',
+        id: 'user-1',
         role: 'user',
-        parts: [{ type: 'text', text: 'Hello' }],
+        parts: [{ type: 'text', text: 'hi' }],
       },
     ];
+
+    render(
+      <MessageList messages={messages} status="streaming" renderMessage={createRenderMessage()} />
+    );
+
+    expect(screen.queryByTestId('message-user-1')).not.toBeNull();
+    expect(screen.queryByTestId('message-user-1-thinking')).not.toBeNull();
+  });
+
+  it('scrolls to bottom on initial render with messages', async () => {
+    const messages: UIMessage[] = [
+      {
+        id: 'user-1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'hi' }],
+      },
+    ];
+    const scrollSpy = vi.fn();
+
+    render(
+      <MessageList
+        messages={messages}
+        status="ready"
+        renderMessage={createRenderMessage(scrollSpy)}
+      />
+    );
+
+    await waitFor(() => {
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'instant' });
+    });
+  });
+
+  it('scrolls to bottom when run starts with new user message', async () => {
+    const initialMessages: UIMessage[] = [];
+    const nextMessages: UIMessage[] = [
+      {
+        id: 'user-1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'hi' }],
+      },
+    ];
+    const scrollSpy = vi.fn();
 
     const { rerender } = render(
       <MessageList
-        messages={messages}
-        status={'ready' as ChatStatus}
-        renderMessage={({ message }) => (
-          <div data-testid={`message-${message.id}`}>{message.id}</div>
-        )}
+        messages={initialMessages}
+        status="ready"
+        renderMessage={createRenderMessage(scrollSpy)}
       />
     );
 
-    const initialCalls = scrollTo.mock.calls.length;
-
-    const nextMessages: UIMessage[] = [
-      ...messages,
-      {
-        id: 'm2',
-        role: 'user',
-        parts: [{ type: 'text', text: 'Second' }],
-      },
-    ];
+    scrollSpy.mockClear();
 
     rerender(
       <MessageList
         messages={nextMessages}
-        status={'submitted' as ChatStatus}
-        renderMessage={({ message }) => (
-          <div data-testid={`message-${message.id}`}>{message.id}</div>
-        )}
+        status="submitted"
+        renderMessage={createRenderMessage(scrollSpy)}
       />
     );
 
-    await act(async () => {
-      vi.advanceTimersByTime(250);
+    await waitFor(() => {
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'auto' });
     });
-
-    expect(scrollTo.mock.calls.length).toBeGreaterThan(initialCalls);
   });
 });

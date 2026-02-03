@@ -82,6 +82,7 @@ export function useApiKeys() {
 - Agent Browser Playground：Tool 消息兼容 dynamic-tool 类型，修复构建类型报错
 - Agent Browser Playground：输入提交失败保留内容，交由上层提示错误
 - Agent Browser Playground：消息列表组件拆分与渲染性能优化（单次遍历 + 子组件化）
+- Agent Browser Playground：loading 改为占位消息渲染，MessageList 不再接收 loading prop
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
 - Playground 类型与 API 解包统一为 raw JSON + RFC7807（移除 success/data 包装）
 - Console Playground/管理页统一改为 API Key 直连公网 API

@@ -48,6 +48,19 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- ConversationViewport/Slack：新增顶部 inset 计算，避免顶部 header 遮挡最新消息
+- ConversationViewport：启用 scroll-smooth 曲线并记录距底距离/滚动中状态
+- ScrollButton：仅在上滚超过一屏时显示，自动滚动期间隐藏
+- MessageList/Viewport：移除 content/emptyState 的 full height，Footer 使用 mt-auto，恢复 sticky 正常贴底
+- MessageList：初次加载自动滚动、run start/新 user 消息触发滚动、流式时插入 thinking 占位
+- MessageList/Viewport：补齐 min-h-0，避免 Slack 拉高容器导致输入区不可见
+- MessageList：锚点与 Slack 逻辑回到列表层，避免 Message 依赖 Viewport
+- MessageList：Slack 仅作用于最后一条消息，减少订阅与 DOM 更新
+- ConversationViewport：AutoScroll/ResizeObserver/MutationObserver 对齐 assistant-ui，top anchor 滚动锁覆盖内容扩展
+- ConversationViewport：Resize/Mutation 触发使用 rAF 节流，降低 streaming 抖动
+- ConversationViewport：useSizeHandle 改为受控 ref 测量与清理
+- ConversationViewportSlack：订阅式 min-height + em/rem clamp，避免首帧闪烁
+- ScrollButton：迁移到 ViewportFooter，固定在输入框上方
 - Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
 - Form：回退场景使用稳定 id，避免 aria 关联错位
 - Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
@@ -63,16 +76,7 @@ import { ChevronDown } from 'lucide-react';
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
 - MessageList：切换为 Viewport/Slack 交互，移除占位逻辑与消息高度外置计算
-- MessageList：footer 移至列表外，保证输入区固定且列表可滚动
-- MessageList：新增 loading 占位，发送后用户消息顶到顶部
-- MessageList：新增 autoScrollEnabled 与 smooth 滚动策略，支持用户手动停滚与会话切换定位
-- MessageList：会话切换初始滚动改为多次确认，保证定位到最新消息
-- MessageList：发送新消息时平滑滚动并等待测量完成，避免闪动与二次跳动
-- ConversationViewport：支持跳过自动滚动并由上层手动恢复
-- useSizeHandle：改为 layout effect 预先测量高度，减少首帧闪动
 - ConversationViewport：新增滚动状态与高度测量 primitives（Viewport/Footer/Slack/ScrollButton）
-- ConversationViewport：滚动容器补齐 min-h-0，避免历史消息阻塞滚动
-- ConversationViewport：自动滚动加入用户意图锁与 near-bottom 阈值
 - TurnAnchor 交互固定为 top，移除 turnAnchor/autoScroll 对外配置
 - ConversationViewport：Slack 仅在有效测量后生效，避免首帧大空白
 - Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
@@ -103,4 +107,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.6 | 更新日期: 2026-02-02_
+_版本: 4.6 | 更新日期: 2026-02-03_

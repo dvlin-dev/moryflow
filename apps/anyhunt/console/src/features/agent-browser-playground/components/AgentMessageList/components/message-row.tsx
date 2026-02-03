@@ -2,7 +2,7 @@
  * [PROPS]: MessageRowProps - 单条消息渲染参数
  * [EMITS]: None
  * [POS]: AgentMessageList 的单条消息展示
- * [UPDATE]: 2026-02-02 - 移除默认 thinking 文案，loading 由列表占位负责
+ * [UPDATE]: 2026-02-03 - thinking 占位改为 loading icon（由空消息触发）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,6 +16,7 @@ import {
   MessageResponse,
   type MessageAttachmentLabels,
 } from '@anyhunt/ui/ai/message';
+import { Loader } from '@anyhunt/ui/ai/loader';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
 import {
   isFileUIPart,
@@ -94,7 +95,7 @@ export function MessageRow({ message }: MessageRowProps) {
       return <MessageResponse>{displayText}</MessageResponse>;
     }
     if (orderedParts.length === 0) {
-      return null;
+      return <ThinkingContent />;
     }
     return orderedParts.map((part, index) => {
       if (isTextUIPart(part)) {
@@ -141,4 +142,9 @@ export function MessageRow({ message }: MessageRowProps) {
   );
 }
 
-// Loading 由 MessageList 统一插入，避免重复渲染
+const ThinkingContent = () => (
+  <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+    <Loader className="text-muted-foreground" size={14} />
+    <span className="sr-only">Thinking</span>
+  </span>
+);

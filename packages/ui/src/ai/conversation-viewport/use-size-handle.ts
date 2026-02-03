@@ -2,57 +2,44 @@
  * [PROVIDES]: useSizeHandle - 元素高度测量与注册
  * [DEPENDS]: React, ResizeObserver
  * [POS]: Conversation Viewport 高度测量工具
- * [UPDATE]: 2026-02-02 - 使用 layout effect 预先测量高度，减少闪动
+ * [UPDATE]: 2026-02-03 - 使用受控 ref 统一测量与清理
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { SizeHandle } from './store';
+import { useManagedRef } from './use-managed-ref';
 
-type RegisterFn = (() => SizeHandle) | null;
+type RegisterFn = (() => SizeHandle) | null | undefined;
 
 type GetHeight = (el: HTMLElement) => number;
 
 export const useSizeHandle = (register: RegisterFn, getHeight?: GetHeight) => {
-  const defaultGetHeight = useCallback((el: HTMLElement) => el.offsetHeight, []);
-  const resolvedGetHeight = getHeight ?? defaultGetHeight;
-  const [node, setNode] = useState<HTMLElement | null>(null);
+  const callbackRef = useCallback(
+    (el: HTMLElement) => {
+      if (!register) return;
 
-  useLayoutEffect(() => {
-    if (!register || !node) {
-      return;
-    }
-
-    const handle = register();
-    const updateHeight = () => {
-      handle.setHeight(resolvedGetHeight(node));
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return () => {
-        handle.unregister();
+      const sizeHandle = register();
+      const updateHeight = () => {
+        const height = getHeight ? getHeight(el) : el.offsetHeight;
+        sizeHandle.setHeight(height);
       };
-    }
 
-    const observer = new ResizeObserver(() => {
+      const observer = new ResizeObserver(updateHeight);
+      observer.observe(el);
       updateHeight();
-    });
 
-    observer.observe(node);
+      return () => {
+        observer.disconnect();
+        sizeHandle.unregister();
+      };
+    },
+    [register, getHeight]
+  );
 
-    return () => {
-      observer.disconnect();
-      handle.unregister();
-    };
-  }, [register, node, resolvedGetHeight]);
-
-  return useCallback((nextNode: HTMLElement | null) => {
-    setNode(nextNode);
-  }, []);
+  return useManagedRef(callbackRef);
 };

@@ -40,6 +40,7 @@
 
 ## 近期更新
 
+- `ui-message-list-turn-anchor-adoption.md`：补充对齐 assistant-ui 的二次改造计划、强制改造原则、逐文件删除清单与执行顺序（2026-02-03）。
 - `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
 - `ui-message-list-turn-anchor-adoption.md`：新增 TurnAnchor 交互复用改造方案草案（2026-02-02）。
 - `ui-message-list-turn-anchor-adoption.md`：确认决策并补充可跟踪执行计划（2026-02-02）。

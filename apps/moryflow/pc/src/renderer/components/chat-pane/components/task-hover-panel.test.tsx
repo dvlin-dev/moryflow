@@ -63,7 +63,7 @@ describe('TaskHoverPanel', () => {
   it('renders collapsed summary with active task and progress', () => {
     mockUseTasks.mockReturnValue(buildUseTasksState());
 
-    render(<TaskHoverPanel activeSessionId="chat-1" />);
+    render(<TaskHoverPanel activeSessionId="chat-1" isSessionRunning />);
 
     const toggle = screen.getByLabelText('expand');
 
@@ -72,23 +72,22 @@ describe('TaskHoverPanel', () => {
     expect(screen.getByText('1/2')).not.toBeNull();
   });
 
-  it('renders error summary when tasks fail to load', () => {
+  it('does not render when there are no active tasks', () => {
     mockUseTasks.mockReturnValue(
       buildUseTasksState({
-        tasks: [],
-        error: 'boom',
+        tasks: [doneTask],
       })
     );
 
-    render(<TaskHoverPanel activeSessionId="chat-1" />);
+    render(<TaskHoverPanel activeSessionId="chat-1" isSessionRunning />);
 
-    expect(screen.getAllByText('taskPanelLoadFailed').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('expand')).toBeNull();
   });
 
   it('expands list and shows task titles only', () => {
     mockUseTasks.mockReturnValue(buildUseTasksState());
 
-    render(<TaskHoverPanel activeSessionId="chat-1" />);
+    render(<TaskHoverPanel activeSessionId="chat-1" isSessionRunning />);
 
     const toggle = screen.getByLabelText('expand');
     const listId = toggle.getAttribute('aria-controls');
@@ -104,5 +103,13 @@ describe('TaskHoverPanel', () => {
     expect(screen.getAllByText('Preliminary Research').length).toBeGreaterThan(0);
     expect(screen.queryByText('taskPanelShowMore')).toBeNull();
     expect(screen.queryByText('taskPanelShowLess')).toBeNull();
+  });
+
+  it('does not render when session is not running', () => {
+    mockUseTasks.mockReturnValue(buildUseTasksState());
+
+    render(<TaskHoverPanel activeSessionId="chat-1" isSessionRunning={false} />);
+
+    expect(screen.queryByLabelText('expand')).toBeNull();
   });
 });

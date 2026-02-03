@@ -1,6 +1,15 @@
+/**
+ * [INPUT]: AgentStreamResult/RunStreamEvent + UIMessageStreamWriter + UIMessage[]
+ * [OUTPUT]: UIMessageChunk 流转换/消息提取工具
+ * [POS]: Chat 主进程流式消息转换与辅助函数
+ * [UPDATE]: 2026-02-03 - 输出 start/finish chunk，移除 UIMessageStream 持久化逻辑
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { randomUUID } from 'node:crypto';
-import type { UIMessage, UIMessageChunk, UIMessageStreamWriter, FileUIPart } from 'ai';
-import { isFileUIPart, isTextUIPart, readUIMessageStream } from 'ai';
+import type { FinishReason, UIMessage, UIMessageStreamWriter, FileUIPart } from 'ai';
+import { isFileUIPart, isTextUIPart } from 'ai';
 import {
   RunItemStreamEvent,
   RunRawModelStreamEvent,
@@ -36,47 +45,9 @@ export const extractUserAttachments = (message: UIMessage): FileUIPart[] => {
   return message.parts?.filter(isFileUIPart) ?? [];
 };
 
-export const cloneUIMessages = (messages: UIMessage[]): UIMessage[] => {
-  try {
-    return structuredClone(messages);
-  } catch (error) {
-    console.warn('[chat] structuredClone failed, falling back to shallow copy', error);
-    return messages.map((message) => ({
-      ...message,
-      parts: message.parts ? message.parts.map((part) => ({ ...part })) : [],
-    }));
-  }
-};
-
-export const collectUiMessages = async (
-  initialMessages: UIMessage[],
-  stream: ReadableStream<UIMessageChunk>
-): Promise<UIMessage[]> => {
-  const restored = cloneUIMessages(initialMessages);
-  try {
-    const iterable = readUIMessageStream<UIMessage>({
-      stream,
-      onError: (error) => {
-        console.error('[chat] readUIMessageStream onError (storage):', error);
-      },
-    });
-    for await (const message of iterable) {
-      const index = restored.findIndex((item) => item.id === message.id);
-      if (index >= 0) {
-        restored[index] = message;
-      } else {
-        restored.push(message);
-      }
-    }
-  } catch (error) {
-    console.error('[chat] collectUiMessages error:', error);
-  }
-  return restored;
-};
-
 /** 流式处理结果 */
 export type StreamAgentRunResult = {
-  finishReason?: string;
+  finishReason?: FinishReason;
   usage?: TokenUsage;
 };
 
@@ -89,15 +60,12 @@ export const streamAgentRun = async ({
   result,
   toolNames,
   signal,
-  messageId,
   onToolApprovalRequest,
 }: {
   writer: UIMessageStreamWriter<UIMessage>;
   result: AgentStreamResult;
   toolNames?: string[];
   signal?: AbortSignal;
-  /** 消息 ID，整轮对话使用同一个 ID */
-  messageId?: string;
   onToolApprovalRequest?: (item: RunToolApprovalItem) => {
     approvalId: string;
     toolCallId: string;
@@ -106,12 +74,12 @@ export const streamAgentRun = async ({
   // 避免持久化漏写：首次输出前注入 start chunk 以获得稳定 messageId
   let messageStarted = false;
   // 使用固定的消息 ID，整轮对话只用一个
-  const textMessageId = messageId ?? randomUUID();
+  const textMessageId = randomUUID();
   const reasoningMessageId = randomUUID();
   // 跟踪当前文本段落状态（可以有多个 text-start/text-end 循环，但 ID 不变）
   let textSegmentStarted = false;
   let reasoningSegmentStarted = false;
-  let finishReason: string | undefined;
+  let finishReason: FinishReason | undefined;
   // 累积 token 使用量（一次请求可能触发多次 LLM 调用）
   const totalUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   const isAborted = () => signal?.aborted === true;
@@ -212,6 +180,12 @@ export const streamAgentRun = async ({
   };
 
   try {
+    try {
+      writer.write({ type: 'start' });
+    } catch (error) {
+      console.warn('[chat] failed to write start chunk', error);
+    }
+
     for await (const event of result) {
       if (isAborted()) break;
 
@@ -288,6 +262,17 @@ export const streamAgentRun = async ({
   if (!isAborted()) {
     emitReasoningEnd();
     emitTextEnd();
+    try {
+      writer.write({ type: 'finish', finishReason });
+    } catch (error) {
+      console.warn('[chat] failed to write finish chunk', error);
+    }
+  } else {
+    try {
+      writer.write({ type: 'abort', reason: 'aborted' });
+    } catch (error) {
+      console.warn('[chat] failed to write abort chunk', error);
+    }
   }
 
   // 等待流完成
@@ -308,7 +293,7 @@ type StreamEventResult = {
   deltaText: string;
   reasoningDelta: string;
   isDone: boolean;
-  finishReason?: string;
+  finishReason?: FinishReason;
   usage?: TokenUsage;
 };
 
@@ -364,7 +349,7 @@ const extractStreamEvent = (data: unknown): StreamEventResult => {
 
     // finish 事件
     if (event.type === 'finish') {
-      const reason = (event.finishReason as string) || 'stop';
+      const reason = (event.finishReason as FinishReason | undefined) || 'stop';
       return { deltaText: '', reasoningDelta: '', isDone: true, finishReason: reason };
     }
   }
