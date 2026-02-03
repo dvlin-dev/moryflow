@@ -2,6 +2,7 @@
  * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
+ * [UPDATE]: 2026-02-02 - 移除默认 thinking 文案，loading 由列表占位负责
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -23,7 +24,6 @@ import {
   MessageResponse,
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
-import { Shimmer } from '@anyhunt/ui/ai/shimmer';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
 import {
   Confirmation,
@@ -406,7 +406,7 @@ export const ChatMessage = ({
       return renderUserContent();
     }
     if (orderedParts.length === 0) {
-      return <ThinkingContent />;
+      return null;
     }
     return orderedParts.map(renderPart);
   };
@@ -425,24 +425,4 @@ export const ChatMessage = ({
   );
 };
 
-const ThinkingContent = () => {
-  const { t } = useTranslation('chat');
-  return (
-    <Shimmer
-      className="text-sm font-medium text-muted-foreground"
-      as="span"
-      duration={3}
-      spread={3}
-    >
-      {t('thinkingText')}
-    </Shimmer>
-  );
-};
-
-export const ThinkingMessage = () => (
-  <Message from="assistant">
-    <MessageContent>
-      <ThinkingContent />
-    </MessageContent>
-  </Message>
-);
+// Loading 由 MessageList 统一插入，避免重复渲染
