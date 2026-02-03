@@ -159,12 +159,14 @@ describe('MessageList', () => {
       },
     ];
     const scrollSpy = vi.fn();
+    const footer = <ViewportStateInitializer viewport={400} inset={0} userMessage={100} />;
 
     const { rerender } = render(
       <MessageList
         messages={initialMessages}
         status="ready"
         renderMessage={createRenderMessage(scrollSpy)}
+        footer={footer}
       />
     );
 
@@ -175,6 +177,7 @@ describe('MessageList', () => {
         messages={nextMessages}
         status="submitted"
         renderMessage={createRenderMessage(scrollSpy)}
+        footer={footer}
       />
     );
 

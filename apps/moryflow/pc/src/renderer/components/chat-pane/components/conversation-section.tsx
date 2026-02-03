@@ -3,7 +3,7 @@
  * [EMITS]: None
  * [POS]: Chat Pane 消息列表与错误提示渲染
  * [UPDATE]: 2026-02-03 - 让 MessageList 充满容器，确保 Footer 贴底
- * [UPDATE]: 2026-02-03 - 传递顶部 inset，避免 header 遮挡消息
+ * [UPDATE]: 2026-02-03 - 移除顶部 inset 传递，避免二次扣减导致下沉
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -24,7 +24,6 @@ type Props = {
   onToolApproval?: (input: { approvalId: string; remember: 'once' | 'always' }) => void;
   footer?: ReactNode;
   threadId?: string | null;
-  topInset?: number;
 };
 
 /**
@@ -38,7 +37,6 @@ export const ConversationSection = ({
   onToolApproval,
   footer,
   threadId,
-  topInset,
 }: Props) => {
   const { t } = useTranslation('chat');
 
@@ -59,7 +57,6 @@ export const ConversationSection = ({
         messages={messages}
         status={status}
         threadId={threadId ?? undefined}
-        topInset={topInset}
         emptyState={{
           title: t('waitingForYou'),
           description: t('startChatPrompt'),

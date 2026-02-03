@@ -49,13 +49,14 @@ import { ChevronDown } from 'lucide-react';
 ## 近期变更
 
 - ConversationViewport/Slack：新增顶部 inset 计算，避免顶部 header 遮挡最新消息
-- ConversationViewport：启用 scroll-smooth 曲线并记录距底距离/滚动中状态
+- ConversationViewport：移除 scroll-smooth，滚动曲线由行为控制并记录距底距离/滚动中状态
 - ScrollButton：仅在上滚超过一屏时显示，自动滚动期间隐藏
 - MessageList/Viewport：移除 content/emptyState 的 full height，Footer 使用 mt-auto，恢复 sticky 正常贴底
 - MessageList：初次加载自动滚动、run start/新 user 消息触发滚动、流式时插入 thinking 占位
 - MessageList/Viewport：补齐 min-h-0，避免 Slack 拉高容器导致输入区不可见
 - MessageList：锚点与 Slack 逻辑回到列表层，避免 Message 依赖 Viewport
 - MessageList：Slack 仅作用于最后一条消息，减少订阅与 DOM 更新
+- MessageList：滚动触发等待 Slack 就绪，减少双滚动抖动
 - ConversationViewport：AutoScroll/ResizeObserver/MutationObserver 对齐 assistant-ui，top anchor 滚动锁覆盖内容扩展
 - ConversationViewport：Resize/Mutation 触发使用 rAF 节流，降低 streaming 抖动
 - ConversationViewport：MutationObserver 放开子节点 style 变更，Slack 变化可触发滚动修正

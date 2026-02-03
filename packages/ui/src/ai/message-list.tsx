@@ -6,13 +6,22 @@
  * [UPDATE]: 2026-02-03 - 支持顶部 inset，对齐外部 header
  * [UPDATE]: 2026-02-03 - Slack/锚点回到列表层，避免 Message 依赖 Viewport
  * [UPDATE]: 2026-02-03 - Slack 包裹补充 DOM 容器，确保 min-height 可写入
+ * [UPDATE]: 2026-02-03 - 滚动触发等待 Slack 就绪，避免双重滚动抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import { Fragment, useEffect, useMemo, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { cn } from '../lib/utils';
@@ -26,8 +35,10 @@ import {
   ConversationViewportFooter,
   ConversationViewportSlack,
   useConversationViewport,
+  useConversationViewportStore,
 } from './conversation-viewport';
 import { useSizeHandle } from './conversation-viewport/use-size-handle';
+import type { ConversationViewportState } from './conversation-viewport/store';
 
 export type MessageListEmptyState = {
   title?: string;
@@ -82,12 +93,14 @@ const MessageListInner = ({
   threadId,
 }: MessageListInnerProps) => {
   const scrollToBottom = useConversationViewport((state) => state.scrollToBottom);
+  const viewportStore = useConversationViewportStore();
 
   const conversationKey = threadId ?? messages[0]?.id ?? 'empty';
   const previousStatusRef = useRef<ChatStatus | null>(null);
   const previousLastMessageIdRef = useRef<string | null>(null);
   const previousKeyRef = useRef(conversationKey);
   const didInitialScrollRef = useRef(false);
+  const pendingScrollRef = useRef<(() => void) | null>(null);
 
   const shouldShowThinking =
     (status === 'submitted' || status === 'streaming') &&
@@ -114,12 +127,72 @@ const MessageListInner = ({
     renderMessages[lastMessageIndex - 1]?.role === 'user';
   const anchorUserIndex = shouldApplySlack ? lastMessageIndex - 1 : -1;
 
+  const scheduleScrollToBottom = useCallback(
+    (behavior: ScrollBehavior, waitForSlack: boolean) => {
+      if (pendingScrollRef.current) {
+        pendingScrollRef.current();
+        pendingScrollRef.current = null;
+      }
+
+      const invoke = () => {
+        requestAnimationFrame(() => {
+          scrollToBottom({ behavior });
+        });
+      };
+
+      if (!waitForSlack) {
+        invoke();
+        return;
+      }
+
+      const state = viewportStore.getState();
+      const isReady = state.height.viewport > 0 && state.height.userMessage > 0;
+      if (isReady) {
+        invoke();
+        return;
+      }
+
+      let settled = false;
+      const finalize = () => {
+        if (settled) return;
+        settled = true;
+        pendingScrollRef.current = null;
+        invoke();
+      };
+
+      const unsubscribe = viewportStore.subscribe((nextState: ConversationViewportState) => {
+        if (nextState.height.viewport > 0 && nextState.height.userMessage > 0) {
+          unsubscribe();
+          finalize();
+        }
+      });
+
+      const fallbackId = requestAnimationFrame(() => {
+        if (!settled) {
+          unsubscribe();
+          finalize();
+        }
+      });
+
+      pendingScrollRef.current = () => {
+        settled = true;
+        unsubscribe();
+        cancelAnimationFrame(fallbackId);
+      };
+    },
+    [scrollToBottom, viewportStore]
+  );
+
   useEffect(() => {
     if (previousKeyRef.current !== conversationKey) {
       previousKeyRef.current = conversationKey;
       didInitialScrollRef.current = false;
       previousStatusRef.current = null;
       previousLastMessageIdRef.current = null;
+      if (pendingScrollRef.current) {
+        pendingScrollRef.current();
+        pendingScrollRef.current = null;
+      }
     }
   }, [conversationKey]);
 
@@ -128,10 +201,17 @@ const MessageListInner = ({
       return;
     }
     didInitialScrollRef.current = true;
-    requestAnimationFrame(() => {
-      scrollToBottom({ behavior: 'instant' });
-    });
-  }, [messages.length, scrollToBottom]);
+    scheduleScrollToBottom('instant', shouldApplySlack);
+  }, [messages.length, scheduleScrollToBottom, shouldApplySlack]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingScrollRef.current) {
+        pendingScrollRef.current();
+        pendingScrollRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const prevStatus = previousStatusRef.current;
@@ -146,14 +226,12 @@ const MessageListInner = ({
       isRunning && lastMessageRole === 'user' && lastMessageId !== prevLastMessageId;
 
     if (hasNewUserMessage || (!wasRunning && isRunning)) {
-      requestAnimationFrame(() => {
-        scrollToBottom({ behavior: 'auto' });
-      });
+      scheduleScrollToBottom('auto', shouldApplySlack);
     }
 
     previousStatusRef.current = status;
     previousLastMessageIdRef.current = lastMessageId;
-  }, [messages, scrollToBottom, status]);
+  }, [messages, scheduleScrollToBottom, shouldApplySlack, status]);
 
   return (
     <>

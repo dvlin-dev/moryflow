@@ -3,12 +3,12 @@
  * [EMITS]: onToggleCollapse/onOpenSettings + chat/session actions
  * [POS]: ChatPane 容器（消息流 + 输入区 + Tasks 面板）
  * [UPDATE]: 2026-02-03 - 移除 Renderer 侧强制同步，避免覆盖主进程持久化
- * [UPDATE]: 2026-02-03 - 记录 Header 高度，避免滚动遮挡
+ * [UPDATE]: 2026-02-03 - 移除 Header inset 注入，避免锚点下沉
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { CardContent } from '@anyhunt/ui/components/card';
 import { IpcChatTransport } from '@/transport/ipc-chat-transport';
@@ -96,8 +96,6 @@ export const ChatPane = ({
   const [inputError, setInputError] = useState<string | null>(null);
   // 追踪错误是否由于模型未设置引起，用于后续清理
   const [isModelSetupError, setIsModelSetupError] = useState(false);
-  const headerRef = useRef<HTMLDivElement | null>(null);
-  const [headerInset, setHeaderInset] = useState(0);
   useStoredMessages({ activeSessionId, setMessages });
 
   // 消息操作（重发、重试、编辑重发、分支）
@@ -122,23 +120,6 @@ export const ChatPane = ({
       setIsModelSetupError(false);
     }
   }, [requireModelSetup, isModelSetupError]);
-
-  useLayoutEffect(() => {
-    const node = headerRef.current;
-    if (!node || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    const update = () => {
-      const next = Math.round(node.getBoundingClientRect().height);
-      setHeaderInset((prev) => (prev === next ? prev : next));
-    };
-
-    update();
-    const observer = new ResizeObserver(() => update());
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
 
   const handlePromptSubmit = useCallback(
     async (payload: ChatSubmitPayload) => {
@@ -259,7 +240,7 @@ export const ChatPane = ({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
-      <div ref={headerRef} className="shrink-0">
+      <div className="shrink-0">
         <ChatPaneHeader
           sessions={sessions}
           activeSession={activeSession}
@@ -285,7 +266,6 @@ export const ChatPane = ({
               messageActions={messageActions}
               onToolApproval={handleToolApproval}
               threadId={activeSessionId}
-              topInset={headerInset}
               footer={
                 <ChatFooter
                   status={status}

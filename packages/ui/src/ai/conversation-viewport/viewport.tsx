@@ -3,7 +3,7 @@
  * [EMITS]: None
  * [POS]: Conversation Viewport 容器
  * [UPDATE]: 2026-02-03 - 视口改为纵向 flex，支持 Footer 下沉
- * [UPDATE]: 2026-02-03 - 启用 scroll-smooth，匹配 assistant-ui 滚动曲线
+ * [UPDATE]: 2026-02-03 - 移除 scroll-smooth，滚动曲线由触发行为控制
  * [UPDATE]: 2026-02-03 - 支持顶部 inset，避免消息被 header 遮挡
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -59,10 +59,7 @@ const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewpor
       <div
         {...props}
         ref={setRef}
-        className={cn(
-          'relative flex flex-1 min-h-0 flex-col overflow-y-auto scroll-smooth',
-          className
-        )}
+        className={cn('relative flex flex-1 min-h-0 flex-col overflow-y-auto', className)}
         style={{
           scrollPaddingTop: topInset ?? undefined,
           ...style,
