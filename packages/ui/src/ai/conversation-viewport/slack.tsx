@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-03 - 计算 min-height 时扣除顶部 inset
  * [UPDATE]: 2026-02-03 - 禁用状态短路订阅，避免无用更新
  * [UPDATE]: 2026-02-03 - 仅在测量有效时写入 min-height，避免闪烁
+ * [UPDATE]: 2026-02-03 - userMessage 未就绪时保持当前 min-height，降低跳变
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -71,10 +72,13 @@ export const ConversationViewportSlack = ({
         const state = store.getState();
         if (state.turnAnchor === 'top') {
           const { viewport, inset, userMessage, topInset } = state.height;
-          if (viewport <= 0 || userMessage <= 0) {
+          if (viewport <= 0) {
             if (el.style.minHeight !== '') el.style.minHeight = '';
             if (el.style.flexShrink !== '') el.style.flexShrink = '';
             if (el.style.transition !== '') el.style.transition = '';
+            return;
+          }
+          if (userMessage <= 0) {
             return;
           }
           const threshold = parseCssLength(fillClampThreshold, el);

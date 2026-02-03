@@ -47,6 +47,36 @@ const ScrollSpyMessage = ({
   return <div data-testid={`message-${messageId}`} />;
 };
 
+const ViewportStateInitializer = ({
+  viewport,
+  inset,
+  userMessage,
+  topInset = 0,
+}: {
+  viewport: number;
+  inset: number;
+  userMessage: number;
+  topInset?: number;
+}) => {
+  const store = useConversationViewportStore();
+
+  useLayoutEffect(() => {
+    store.setState((state) => ({
+      ...state,
+      height: {
+        ...state.height,
+        viewport,
+        inset,
+        userMessage,
+        topInset,
+      },
+      turnAnchor: 'top',
+    }));
+  }, [inset, store, topInset, userMessage, viewport]);
+
+  return null;
+};
+
 const createRenderMessage =
   (onCall?: ReturnType<typeof vi.fn>) =>
   ({ message }: { message: UIMessage }) => (
@@ -150,6 +180,36 @@ describe('MessageList', () => {
 
     await waitFor(() => {
       expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'auto' });
+    });
+  });
+
+  it('applies slack min-height on last assistant message', async () => {
+    const messages: UIMessage[] = [
+      {
+        id: 'user-1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'hi' }],
+      },
+      {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'hello' }],
+      },
+    ];
+
+    render(
+      <MessageList
+        messages={messages}
+        status="ready"
+        renderMessage={createRenderMessage()}
+        footer={<ViewportStateInitializer viewport={400} inset={0} userMessage={100} />}
+      />
+    );
+
+    const assistantNode = screen.getByTestId('message-assistant-1');
+
+    await waitFor(() => {
+      expect(assistantNode.parentElement?.style.minHeight).toBe('300px');
     });
   });
 });

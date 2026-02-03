@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-03 - 补齐历史滚动、run start 采用 scroll-smooth 曲线与 streaming 占位消息
  * [UPDATE]: 2026-02-03 - 支持顶部 inset，对齐外部 header
  * [UPDATE]: 2026-02-03 - Slack/锚点回到列表层，避免 Message 依赖 Viewport
+ * [UPDATE]: 2026-02-03 - Slack 包裹补充 DOM 容器，确保 min-height 可写入
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -172,7 +173,11 @@ const MessageListInner = ({
             }
 
             if (index === lastMessageIndex && shouldApplySlack) {
-              node = <ConversationViewportSlack enabled>{node}</ConversationViewportSlack>;
+              node = (
+                <ConversationViewportSlack enabled>
+                  <div className="min-w-0">{node}</div>
+                </ConversationViewportSlack>
+              );
             }
 
             return <Fragment key={message.id}>{node}</Fragment>;

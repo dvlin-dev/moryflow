@@ -62,7 +62,10 @@ import { ChevronDown } from 'lucide-react';
 - ConversationViewport：useSizeHandle 改为受控 ref 测量与清理
 - ConversationViewportSlack：订阅式 min-height + em/rem clamp，避免首帧闪烁
 - ConversationViewportSlack：仅在测量有效时写入 min-height，减少闪动
+- ConversationViewportSlack：userMessage 未就绪时保留 min-height，避免切换时跳变
 - ScrollButton：迁移到 ViewportFooter，固定在输入框上方
+- MessageList：Slack 包裹补充 DOM 容器，避免渲染组件无法写入 min-height
+- Testing：MessageList 补齐 Slack min-height 回归用例
 - Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
 - Form：回退场景使用稳定 id，避免 aria 关联错位
 - Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
