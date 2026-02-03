@@ -58,8 +58,10 @@ import { ChevronDown } from 'lucide-react';
 - MessageList：Slack 仅作用于最后一条消息，减少订阅与 DOM 更新
 - ConversationViewport：AutoScroll/ResizeObserver/MutationObserver 对齐 assistant-ui，top anchor 滚动锁覆盖内容扩展
 - ConversationViewport：Resize/Mutation 触发使用 rAF 节流，降低 streaming 抖动
+- ConversationViewport：MutationObserver 放开子节点 style 变更，Slack 变化可触发滚动修正
 - ConversationViewport：useSizeHandle 改为受控 ref 测量与清理
 - ConversationViewportSlack：订阅式 min-height + em/rem clamp，避免首帧闪烁
+- ConversationViewportSlack：仅在测量有效时写入 min-height，减少闪动
 - ScrollButton：迁移到 ViewportFooter，固定在输入框上方
 - Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
 - Form：回退场景使用稳定 id，避免 aria 关联错位

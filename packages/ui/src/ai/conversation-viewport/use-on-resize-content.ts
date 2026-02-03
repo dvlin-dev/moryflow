@@ -3,6 +3,7 @@
  * [DEPENDS]: React, ResizeObserver, MutationObserver
  * [POS]: Conversation Viewport 内容变化回调
  * [UPDATE]: 2026-02-03 - Resize/Mutation 回调使用 rAF 节流
+ * [UPDATE]: 2026-02-03 - 放开子节点样式变更，确保 Slack 触发滚动修正
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -37,9 +38,19 @@ export const useOnResizeContent = (callback: () => void) => {
     });
 
     const mutationObserver = new MutationObserver((mutations) => {
-      const hasRelevantMutation = mutations.some(
-        (mutation) => mutation.type !== 'attributes' || mutation.attributeName !== 'style'
-      );
+      const hasRelevantMutation = mutations.some((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          if (mutation.target === el) {
+            return false;
+          }
+          if (mutation.target instanceof HTMLElement) {
+            const { minHeight, height } = mutation.target.style;
+            return Boolean(minHeight || height);
+          }
+          return false;
+        }
+        return true;
+      });
       if (hasRelevantMutation) {
         schedule();
       }
