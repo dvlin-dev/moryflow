@@ -3,15 +3,14 @@
  * [EMITS]: None
  * [POS]: Conversation Viewport 容器
  * [UPDATE]: 2026-02-03 - 视口改为纵向 flex，支持 Footer 下沉
- * [UPDATE]: 2026-02-03 - 移除 scroll-smooth，滚动曲线由触发行为控制
- * [UPDATE]: 2026-02-03 - 支持顶部 inset，避免消息被 header 遮挡
+ * [UPDATE]: 2026-02-04 - 移除顶部 inset 与滚动条固定策略，严格对齐 assistant-ui
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import { forwardRef, useCallback, useEffect } from 'react';
+import { forwardRef, useCallback } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 
 import { cn } from '../../lib/utils';
@@ -19,9 +18,7 @@ import { useSizeHandle } from './use-size-handle';
 import { ConversationViewportProvider, useConversationViewport } from './context';
 import { useConversationViewportAutoScroll } from './use-auto-scroll';
 
-export type ConversationViewportProps = ComponentPropsWithoutRef<'div'> & {
-  topInset?: number;
-};
+export type ConversationViewportProps = ComponentPropsWithoutRef<'div'>;
 
 const useViewportSizeRef = () => {
   const register = useConversationViewport((state) => state.registerViewport);
@@ -30,17 +27,9 @@ const useViewportSizeRef = () => {
 };
 
 const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewportProps>(
-  ({ className, topInset, style, ...props }, ref) => {
+  ({ className, style, ...props }, ref) => {
     const autoScrollRef = useConversationViewportAutoScroll();
     const viewportRef = useViewportSizeRef();
-    const setTopInset = useConversationViewport((state) => state.setTopInset);
-
-    useEffect(() => {
-      if (topInset === undefined) {
-        return;
-      }
-      setTopInset(topInset);
-    }, [setTopInset, topInset]);
 
     const setRef = useCallback(
       (node: HTMLDivElement | null) => {
@@ -59,9 +48,11 @@ const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewpor
       <div
         {...props}
         ref={setRef}
-        className={cn('relative flex flex-1 min-h-0 flex-col overflow-y-auto', className)}
+        className={cn(
+          'relative flex flex-1 min-h-0 flex-col overflow-x-auto overflow-y-scroll',
+          className
+        )}
         style={{
-          scrollPaddingTop: topInset ?? undefined,
           ...style,
         }}
         role={props.role ?? 'log'}

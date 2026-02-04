@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地）
+> 最近更新：2026-02-04（TurnAnchor 滚动调研新增“无法向上滚动”问题记录）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`（2026-02-04：active，新增“无法向上滚动”问题记录）
 - Moryflow PC 消息列表交互复用改造方案：补充对齐 assistant-ui 的二次改造计划、强制改造原则、逐文件删除清单与执行顺序（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-03：proposal update）
 - Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）
 - Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（2026-02-02：implemented，交互固定为 top 且去参数化）

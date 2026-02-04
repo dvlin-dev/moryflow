@@ -6,7 +6,8 @@
  * [POS]: 消息列表滚动容器与基础布局组件
  * [UPDATE]: 2026-02-03 - 调整内容/空态高度，保证 Footer 始终可见
  * [UPDATE]: 2026-02-03 - ScrollButton 按距底阈值与滚动状态显隐
- * [UPDATE]: 2026-02-03 - 顶部 inset 对齐 header，避免内容遮挡
+ * [UPDATE]: 2026-02-04 - 移除顶部 inset 与 overflow-anchor，严格对齐 assistant-ui
+ * [UPDATE]: 2026-02-04 - ScrollButton 改为 smooth 行为，恢复用户触发滚动动画
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -18,34 +19,20 @@ import { Button } from '../components/button';
 import { cn } from '../lib/utils';
 import { ConversationViewport, useConversationViewport } from './conversation-viewport';
 
-export type ConversationProps = ComponentPropsWithoutRef<'div'> & {
-  topInset?: number;
-};
+export type ConversationProps = ComponentPropsWithoutRef<'div'>;
 
-export const Conversation = ({ className, topInset, ...props }: ConversationProps) => (
-  <ConversationViewport
-    className={className}
-    topInset={topInset}
-    role={props.role ?? 'log'}
-    {...props}
-  />
+export const Conversation = ({ className, ...props }: ConversationProps) => (
+  <ConversationViewport className={className} role={props.role ?? 'log'} {...props} />
 );
 
 export type ConversationContentProps = ComponentPropsWithoutRef<'div'>;
 
 export const ConversationContent = ({ className, style, ...props }: ConversationContentProps) => {
-  const topInset = useConversationViewport((state) => state.height.topInset);
-  const basePaddingTop =
-    typeof style?.paddingTop === 'number' ? `${style.paddingTop}px` : (style?.paddingTop ?? '1rem');
-
   return (
     <div
       data-slot="conversation-content"
       className={cn('flex flex-col gap-1 px-4 pb-4', className)}
-      style={{
-        ...style,
-        paddingTop: topInset > 0 ? `calc(${topInset}px + ${basePaddingTop})` : basePaddingTop,
-      }}
+      style={style}
       {...props}
     />
   );
@@ -102,7 +89,7 @@ export const ConversationScrollButton = ({
     shouldShow && (
       <Button
         className={cn('absolute -top-12 left-[50%] translate-x-[-50%] rounded-full', className)}
-        onClick={() => scrollToBottom({ behavior: 'auto' })}
+        onClick={() => scrollToBottom({ behavior: 'smooth' })}
         size="icon"
         type="button"
         variant="outline"

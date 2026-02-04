@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-02
+date: 2026-02-04
 scope: monorepo
 status: active
 ---
@@ -113,6 +113,7 @@ status: active
 
 ## Research（调研 / 功能需求）
 
+- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`（更新：2026-02-04：新增“无法向上滚动”问题记录）
 - 方案：API Key 级别 LLM 策略 + 输出 Schema 入参收紧：`docs/research/agent-llm-policy-and-output-schema.md`（更新：2026-01-20）
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-26）
 - 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）

@@ -48,25 +48,18 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
-- ConversationViewport/Slack：新增顶部 inset 计算，避免顶部 header 遮挡最新消息
-- ConversationViewport：移除 scroll-smooth，滚动曲线由行为控制并记录距底距离/滚动中状态
-- ScrollButton：仅在上滚超过一屏时显示，自动滚动期间隐藏
+- ConversationViewport/Content/Slack：移除 topInset/overflow-anchor/scrollbar-gutter，严格对齐 assistant-ui
+- ConversationViewport：记录距底距离与滚动中状态，控制滚动按钮显隐
+- MessageRoot：runStart 触发延后到 assistant 渲染后，避免列表层过早触发
+- MessageRoot：锚点高度注册与 Slack 逻辑内聚，避免列表层处理
+- MessageList：移除 thinking 占位，滚动触发迁移为事件驱动
+- ScrollButton：仅在上滚超过一屏时显示，用户点击使用 smooth 动画
 - MessageList/Viewport：移除 content/emptyState 的 full height，Footer 使用 mt-auto，恢复 sticky 正常贴底
-- MessageList：初次加载自动滚动、run start/新 user 消息触发滚动、流式时插入 thinking 占位
 - MessageList/Viewport：补齐 min-h-0，避免 Slack 拉高容器导致输入区不可见
-- MessageList：锚点与 Slack 逻辑回到列表层，避免 Message 依赖 Viewport
 - MessageList：Slack 仅作用于最后一条消息，减少订阅与 DOM 更新
-- MessageList：滚动触发等待 Slack 就绪，减少双滚动抖动
 - ConversationViewport：AutoScroll/ResizeObserver/MutationObserver 对齐 assistant-ui，top anchor 滚动锁覆盖内容扩展
-- ConversationViewport：Resize/Mutation 触发使用 rAF 节流，降低 streaming 抖动
-- ConversationViewport：MutationObserver 放开子节点 style 变更，Slack 变化可触发滚动修正
-- ConversationViewport：useSizeHandle 改为受控 ref 测量与清理
 - ConversationViewportSlack：订阅式 min-height + em/rem clamp，避免首帧闪烁
-- ConversationViewportSlack：仅在测量有效时写入 min-height，减少闪动
-- ConversationViewportSlack：userMessage 未就绪时保留 min-height，避免切换时跳变
 - ScrollButton：迁移到 ViewportFooter，固定在输入框上方
-- MessageList：Slack 包裹补充 DOM 容器，避免渲染组件无法写入 min-height
-- Testing：MessageList 补齐 Slack min-height 回归用例
 - Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
 - Form：回退场景使用稳定 id，避免 aria 关联错位
 - Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
@@ -113,4 +106,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.6 | 更新日期: 2026-02-03_
+_版本: 4.7 | 更新日期: 2026-02-04_

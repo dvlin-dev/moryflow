@@ -5,6 +5,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { ConversationViewport } from '../src/ai/conversation-viewport';
 import { ConversationViewportSlack } from '../src/ai/conversation-viewport/slack';
 import { useConversationViewportStore } from '../src/ai/conversation-viewport/context';
+import { ConversationMessageProvider } from '../src/ai/message/context';
+import type { UIMessage } from 'ai';
 
 const noop = () => {};
 
@@ -21,12 +23,10 @@ const StoreSeed = ({
   viewport,
   inset,
   userMessage,
-  topInset = 0,
 }: {
   viewport: number;
   inset: number;
   userMessage: number;
-  topInset?: number;
 }) => {
   const store = useConversationViewportStore();
 
@@ -36,22 +36,30 @@ const StoreSeed = ({
         viewport,
         inset,
         userMessage,
-        topInset,
       },
     });
-  }, [inset, store, topInset, userMessage, viewport]);
+  }, [inset, store, userMessage, viewport]);
 
   return null;
 };
 
+const makeMessage = (id: string, role: UIMessage['role']): UIMessage => ({
+  id,
+  role,
+  parts: [{ type: 'text', text: 'hi' }],
+});
+
 describe('ConversationViewportSlack', () => {
   it('applies minHeight by default', async () => {
+    const messages = [makeMessage('user-1', 'user'), makeMessage('assistant-1', 'assistant')];
     render(
       <ConversationViewport>
         <StoreSeed viewport={400} inset={80} userMessage={120} />
-        <ConversationViewportSlack>
-          <div data-testid="slack">content</div>
-        </ConversationViewportSlack>
+        <ConversationMessageProvider message={messages[1]!} messages={messages} index={1}>
+          <ConversationViewportSlack>
+            <div data-testid="slack">content</div>
+          </ConversationViewportSlack>
+        </ConversationMessageProvider>
       </ConversationViewport>
     );
 
@@ -61,35 +69,22 @@ describe('ConversationViewportSlack', () => {
     });
   });
 
-  it('does not apply minHeight when disabled', async () => {
+  it('does not apply minHeight when message is not last assistant', async () => {
+    const messages = [makeMessage('user-1', 'user')];
     render(
       <ConversationViewport>
         <StoreSeed viewport={400} inset={80} userMessage={120} />
-        <ConversationViewportSlack enabled={false}>
-          <div data-testid="slack">content</div>
-        </ConversationViewportSlack>
+        <ConversationMessageProvider message={messages[0]!} messages={messages} index={0}>
+          <ConversationViewportSlack>
+            <div data-testid="slack">content</div>
+          </ConversationViewportSlack>
+        </ConversationMessageProvider>
       </ConversationViewport>
     );
 
     const slack = screen.getByTestId('slack');
     await waitFor(() => {
       expect(slack.style.minHeight).toBe('');
-    });
-  });
-
-  it('subtracts topInset from minHeight', async () => {
-    render(
-      <ConversationViewport>
-        <StoreSeed viewport={400} inset={80} userMessage={120} topInset={40} />
-        <ConversationViewportSlack>
-          <div data-testid="slack">content</div>
-        </ConversationViewportSlack>
-      </ConversationViewport>
-    );
-
-    const slack = screen.getByTestId('slack');
-    await waitFor(() => {
-      expect(slack.style.minHeight).toBe('160px');
     });
   });
 });

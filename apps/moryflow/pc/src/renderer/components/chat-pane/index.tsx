@@ -3,7 +3,8 @@
  * [EMITS]: onToggleCollapse/onOpenSettings + chat/session actions
  * [POS]: ChatPane 容器（消息流 + 输入区 + Tasks 面板）
  * [UPDATE]: 2026-02-03 - 移除 Renderer 侧强制同步，避免覆盖主进程持久化
- * [UPDATE]: 2026-02-03 - 移除 Header inset 注入，避免锚点下沉
+ * [UPDATE]: 2026-02-04 - 移除 Header inset 参与滚动逻辑，严格对齐 assistant-ui
+ * [UPDATE]: 2026-02-04 - 清理 scrollReady 状态，交由 UI 包滚动逻辑接管
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */

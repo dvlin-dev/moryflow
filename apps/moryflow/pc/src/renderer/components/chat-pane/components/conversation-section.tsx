@@ -3,7 +3,8 @@
  * [EMITS]: None
  * [POS]: Chat Pane 消息列表与错误提示渲染
  * [UPDATE]: 2026-02-03 - 让 MessageList 充满容器，确保 Footer 贴底
- * [UPDATE]: 2026-02-03 - 移除顶部 inset 传递，避免二次扣减导致下沉
+ * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
+ * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
