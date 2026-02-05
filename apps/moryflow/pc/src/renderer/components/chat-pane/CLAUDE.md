@@ -16,8 +16,11 @@
 
 ## 近期变更
 
+- 2026-02-05：取消 Header 高度透传，顶部 padding 变量在 PC 侧归零。
+- 2026-02-04：移除 assistant-ui 直连 adapter，滚动交互继续由 UI 包实现。
 - 2026-02-04：移除 header inset 与 topInset 透传，滚动行为严格对齐 assistant-ui。
 - 2026-02-04：移除 scrollReady 透传，滚动时机交由 UI 包的 AutoScroll 处理。
+- 2026-02-04：ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐。
 - 2026-02-03：ChatMessage 切换为 MessageRoot，锚点/Slack 逻辑由 UI 包处理。
 - 2026-02-03：ChatPaneHeader 高度参与消息列表顶部 inset，避免最新消息被 header 遮挡。
 - 2026-02-03：会话切换先清空 UI 消息，历史落盘由主进程流持久化，避免 Renderer 覆盖最后回复。

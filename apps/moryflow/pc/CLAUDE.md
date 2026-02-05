@@ -84,6 +84,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐
+- 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
 - Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk
 - Chat IPC 移除 `chat:sessions:syncMessages`，避免 Renderer 覆盖会话持久化
 - 消息列表交互切换为 Viewport/Slack 机制，并移除 use-stick-to-bottom 依赖

@@ -5,6 +5,17 @@
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地，app/public 路由完成迁移）
 > 最近更新：2026-02-02（消息列表交互复用落地：TurnAnchor 固定 top、Viewport/Slack 统一）
+> 最近更新：2026-02-05（TurnAnchor：runStart 滚动锁 + scroll-smooth 修复）
+> 最近更新：2026-02-05（TurnAnchor：assistant-ui v0.12.6 同步 + Slack/size handle/aui-event）
+> 最近更新：2026-02-05（TurnAnchor：AutoScroll 改为内容尾部可见性门控，避免首屏下坠）
+> 最近更新：2026-02-05（TurnAnchor：userSubmit 对齐用户消息顶部，避免提交期未上滚）
+> 最近更新：2026-02-05（TurnAnchor：userSubmit pin 直到溢出后再自动跟随）
+> 最近更新：2026-02-05（TurnAnchor：assistant-ui 最新版全量移植计划）
+> 最近更新：2026-02-05（TurnAnchor：确认 assistant-ui 版本 0.12.6）
+> 最近更新：2026-02-05（TurnAnchor：assistant-ui 源码已拷贝）
+> 最近更新：2026-02-05（TurnAnchor：assistant-ui v0.12.6 对齐（恢复 Slack/事件驱动/size handle）+ 单测更新）
+> 最近更新：2026-02-05（TurnAnchor：assistant-ui 全量移植校验完成（lint/typecheck/test:unit））
+> 最近更新：2026-02-05（TurnAnchor：Slack 扣除顶部 padding + 用户消息高度忽略 0 值回调）
 > 最近更新：2026-01-27（CI：Vitest 单测限制 maxWorkers=2，平衡稳定性与速度）
 > 最近更新：2026-01-27（CI：Turbo 并发参数改为直接传给 turbo，避免透传到 vitest）
 > 最近更新：2026-01-27（CI：PR 仅跑变更单测，build 仅在非 PR 触发）

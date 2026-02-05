@@ -1,10 +1,7 @@
 /**
- * [PROPS]: ConversationViewportSlackProps - Slack 计算配置
+ * [PROPS]: ConversationViewportSlackProps - Slack 占位容器
  * [EMITS]: None
- * [POS]: Conversation Viewport Slack 补位容器
- * [UPDATE]: 2026-02-03 - 禁用状态短路订阅，避免无用更新
- * [UPDATE]: 2026-02-03 - 仅在测量有效时写入 min-height，避免闪烁
- * [UPDATE]: 2026-02-04 - 移除顶部 inset 与 enabled 参数，严格对齐 assistant-ui
+ * [POS]: Conversation Viewport Slack（对齐 assistant-ui ThreadViewportSlack）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -14,9 +11,9 @@
 import { Slot } from '@radix-ui/react-slot';
 import { createContext, type ReactNode, useCallback, useContext } from 'react';
 
-import { useConversationViewportStoreOptional } from './context';
-import { useManagedRef } from './use-managed-ref';
+import { useManagedRef } from '../assistant-ui/utils/hooks/useManagedRef';
 import { useConversationMessage } from '../message/context';
+import { useConversationViewportStore } from './context';
 
 const SlackNestingContext = createContext(false);
 
@@ -24,7 +21,7 @@ const parseCssLength = (value: string, element: HTMLElement): number => {
   const match = value.match(/^([\d.]+)(em|px|rem)$/);
   if (!match) return 0;
 
-  const num = parseFloat(match[1]!);
+  const num = parseFloat(match[1] ?? '0');
   const unit = match[2];
 
   if (unit === 'px') return num;
@@ -33,80 +30,66 @@ const parseCssLength = (value: string, element: HTMLElement): number => {
     return num * fontSize;
   }
   if (unit === 'rem') {
-    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const rootFontSize =
+      parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     return num * rootFontSize;
   }
   return 0;
 };
 
 export type ConversationViewportSlackProps = {
+  /** Threshold at which the user message height clamps to the offset */
   fillClampThreshold?: string;
+  /** Offset used when clamping large user messages */
   fillClampOffset?: string;
   children: ReactNode;
 };
 
-const DEFAULT_THRESHOLD = '10em';
-const DEFAULT_OFFSET = '6em';
-
 export const ConversationViewportSlack = ({
-  fillClampThreshold = DEFAULT_THRESHOLD,
-  fillClampOffset = DEFAULT_OFFSET,
   children,
+  fillClampThreshold = '10em',
+  fillClampOffset = '6em',
 }: ConversationViewportSlackProps) => {
-  const store = useConversationViewportStoreOptional();
-  const isNested = useContext(SlackNestingContext);
   const messageContext = useConversationMessage({ optional: true });
-  const shouldApplySlack = Boolean(
-    messageContext &&
+  const viewportStore = useConversationViewportStore({ optional: true });
+  const isNested = useContext(SlackNestingContext);
+
+  const shouldApplySlack = !!messageContext &&
     messageContext.message.role === 'assistant' &&
     messageContext.index >= 1 &&
     messageContext.index === messageContext.messages.length - 1 &&
-    messageContext.messages[messageContext.index - 1]?.role === 'user'
-  );
+    messageContext.messages.at(messageContext.index - 1)?.role === 'user';
 
   const callback = useCallback(
     (el: HTMLElement) => {
-      if (!store || isNested) return;
+      if (!viewportStore || isNested) return;
 
       const updateMinHeight = () => {
-        const state = store.getState();
+        const state = viewportStore.getState();
         if (state.turnAnchor === 'top' && shouldApplySlack) {
           const { viewport, inset, userMessage } = state.height;
-          if (viewport <= 0) {
-            if (el.style.minHeight !== '') el.style.minHeight = '';
-            if (el.style.flexShrink !== '') el.style.flexShrink = '';
-            if (el.style.transition !== '') el.style.transition = '';
-            return;
-          }
           const threshold = parseCssLength(fillClampThreshold, el);
           const offset = parseCssLength(fillClampOffset, el);
           const clampAdjustment = userMessage <= threshold ? userMessage : offset;
 
           const minHeight = Math.max(0, viewport - inset - clampAdjustment);
-          const nextMinHeight = `${minHeight}px`;
-          if (el.style.minHeight !== nextMinHeight) {
-            el.style.minHeight = nextMinHeight;
-          }
-          if (el.style.flexShrink !== '0') {
-            el.style.flexShrink = '0';
-          }
-          if (el.style.transition !== 'min-height 0s') {
-            el.style.transition = 'min-height 0s';
-          }
+          el.style.minHeight = `${minHeight}px`;
+          el.style.flexShrink = '0';
+          el.style.transition = 'min-height 0s';
         } else {
-          if (el.style.minHeight !== '') el.style.minHeight = '';
-          if (el.style.flexShrink !== '') el.style.flexShrink = '';
-          if (el.style.transition !== '') el.style.transition = '';
+          el.style.minHeight = '';
+          el.style.flexShrink = '';
+          el.style.transition = '';
         }
       };
 
       updateMinHeight();
-      return store.subscribe(updateMinHeight);
+      return viewportStore.subscribe(updateMinHeight);
     },
-    [store, isNested, shouldApplySlack, fillClampThreshold, fillClampOffset]
+    [viewportStore, shouldApplySlack, isNested, fillClampThreshold, fillClampOffset]
   );
 
-  const ref = useManagedRef(callback);
+  const ref = useManagedRef<HTMLElement>(callback);
 
   return (
     <SlackNestingContext.Provider value={true}>

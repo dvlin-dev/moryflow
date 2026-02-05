@@ -5,9 +5,10 @@
  * [EMITS]: None
  * [POS]: 消息列表滚动容器与基础布局组件
  * [UPDATE]: 2026-02-03 - 调整内容/空态高度，保证 Footer 始终可见
- * [UPDATE]: 2026-02-03 - ScrollButton 按距底阈值与滚动状态显隐
  * [UPDATE]: 2026-02-04 - 移除顶部 inset 与 overflow-anchor，严格对齐 assistant-ui
- * [UPDATE]: 2026-02-04 - ScrollButton 改为 smooth 行为，恢复用户触发滚动动画
+ * [UPDATE]: 2026-02-04 - ConversationContent 顶部 padding 使用 header 变量，避免首条消息被覆盖
+ * [UPDATE]: 2026-02-05 - 顶部 padding 额外预留改为可配置变量，默认 1rem
+ * [UPDATE]: 2026-02-05 - ScrollButton 回退 assistant-ui 行为，仅依赖 isAtBottom
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,9 +18,10 @@ import { ChevronDown } from 'lucide-react';
 
 import { Button } from '../components/button';
 import { cn } from '../lib/utils';
-import { ConversationViewport, useConversationViewport } from './conversation-viewport';
+import type { ConversationViewportProps } from './conversation-viewport';
+import { ConversationViewport, useConversationViewport, useConversationViewportStore } from './conversation-viewport';
 
-export type ConversationProps = ComponentPropsWithoutRef<'div'>;
+export type ConversationProps = ConversationViewportProps;
 
 export const Conversation = ({ className, ...props }: ConversationProps) => (
   <ConversationViewport className={className} role={props.role ?? 'log'} {...props} />
@@ -28,11 +30,15 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
 export type ConversationContentProps = ComponentPropsWithoutRef<'div'>;
 
 export const ConversationContent = ({ className, style, ...props }: ConversationContentProps) => {
+  const paddingTop =
+    style?.paddingTop ??
+    'calc(var(--ai-conversation-top-padding, 0px) + var(--ai-conversation-top-padding-extra, 1rem))';
+
   return (
     <div
       data-slot="conversation-content"
       className={cn('flex flex-col gap-1 px-4 pb-4', className)}
-      style={style}
+      style={{ ...style, paddingTop }}
       {...props}
     />
   );
@@ -78,18 +84,14 @@ export const ConversationScrollButton = ({
   ...props
 }: ConversationScrollButtonProps) => {
   const isAtBottom = useConversationViewport((state) => state.isAtBottom);
-  const isScrollingToBottom = useConversationViewport((state) => state.isScrollingToBottom);
-  const distanceToBottom = useConversationViewport((state) => state.distanceToBottom);
-  const viewportHeight = useConversationViewport((state) => state.height.viewport);
-  const scrollToBottom = useConversationViewport((state) => state.scrollToBottom);
-  const threshold = Math.max(1, viewportHeight);
-  const shouldShow = !isAtBottom && !isScrollingToBottom && distanceToBottom >= threshold;
+  const viewportStore = useConversationViewportStore();
+  const shouldShow = !isAtBottom;
 
   return (
     shouldShow && (
       <Button
         className={cn('absolute -top-12 left-[50%] translate-x-[-50%] rounded-full', className)}
-        onClick={() => scrollToBottom({ behavior: 'smooth' })}
+        onClick={() => viewportStore.getState().scrollToBottom({ behavior: 'auto' })}
         size="icon"
         type="button"
         variant="outline"

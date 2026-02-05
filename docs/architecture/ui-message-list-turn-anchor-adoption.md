@@ -1,13 +1,13 @@
 ---
 title: Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制）
-date: 2026-02-03
+date: 2026-02-05
 scope: ui
-status: implemented
+status: active
 ---
 
 <!--
 [INPUT]: Moryflow PC 现有消息列表实现 + @anyhunt/ui 组件库封装现状 + 参考项目 TurnAnchor 交互
-[OUTPUT]: 在 @anyhunt/ui 内落地可复用的 TurnAnchor（固定为 top）机制与组件分层，并记录对齐 assistant-ui 的二次改造方案
+[OUTPUT]: 在 @anyhunt/ui 内复刻 assistant-ui 的 TurnAnchor（固定为 top）交互机制与组件分层（不引入依赖），并记录执行清单
 [POS]: 消息列表交互复用与组件库演进的执行结果与后续改造规范
 
 [PROTOCOL]: 本文为最终落地文档；如继续调整需同步更新相关 CLAUDE.md 与 docs/CLAUDE.md 索引。
@@ -22,17 +22,111 @@ status: implemented
 - 完全替换旧方案：移除 `useConversationLayout` 与 `use-stick-to-bottom`，不做历史兼容。
 - PC 与 Console 共用同一套 `@anyhunt/ui` 交互层，滚动与布局行为一致。
 
+> 2026-02-05 更新：当前已切换为 **assistant-ui 最新版全量移植** 路线，以下“修复方案/决策”仅保留历史记录；以文末“最新版 assistant-ui 全量移植”章节为最终实现准则。
+
+## 最新决策（2026-02-05）
+
+- **AutoScroll 触发条件改为“内容尾部不可见”**：仅当最后一条 assistant 消息的内容尾部离开视口时才滚动。
+- **禁用 `scrollHeight` 作为自动滚动判断**：Slack 占位会抬高 `scrollHeight`，导致“内容仍可见但被强拉到底”的误判。
+- **保持 smooth 行为不变**：滚动行为仍为平滑，但改为“需要时才滚”，避免首屏/短内容下坠。
+
+## 本轮排查与执行计划（2026-02-05）
+
+### 排查结论
+
+- **下坠原因**：`thread.runStart` 的滚动在 Slack/min-height 与 ResizeObserver 更新之前完成，`scrollingToBottomBehaviorRef` 被提前清空，导致后续高度变化不再跟随，用户消息出现下坠。
+- **无滚动动画**：Viewport 未开启 `scroll-behavior: smooth`，runStart 的 `behavior: auto` 直接变为瞬移。
+- **对齐原则**：保持 assistant-ui v0.12.6 基线结构，只在“事件时序”与“平滑滚动”上做最小补齐。
+
+### 执行计划（需逐步同步进度）
+
+| 步骤 | 事项 | 状态 | 完成日期 |
+| --- | --- | --- | --- |
+| 1 | 在 `useThreadViewportAutoScroll` 增加 **runStart 滚动锁**：滚动完成后跳过一次清空 `scrollingToBottomBehaviorRef`，确保下一次 ResizeObserver 仍能触发对齐，避免 Slack 后置更新导致下坠 | 已完成 | 2026-02-05 |
+| 2 | Viewport 增加 `scroll-smooth`（仅影响 `behavior: auto`），恢复“向上滚动动画” | 已完成 | 2026-02-05 |
+| 3 | 运行 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 并记录结果 | 已完成 | 2026-02-05 |
+| 4 | 同步 `packages/ui/CLAUDE.md` / docs 索引，更新本节步骤状态 | 已完成 | 2026-02-05 |
+
+> 执行记录（2026-02-05）：`pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 全部通过；`better-sqlite3` 编译存在上游警告，`turbo` 仍提示 `outputs` 未配置（沿用现状）。
+
+## 最新决策（2026-02-04）
+
+- **不接入 assistant-ui 依赖**：删除直连方案与相关依赖/适配器，只保留“源码级参考”。
+- **唯一基线不变**：继续以 assistant-ui 源码为交互基线，在 `@anyhunt/ui` 内复刻结构与职责。
+- **runStart 触发下沉到列表层**：通过“新 assistant 消息出现”触发滚动，避免短回复漏滚动。
+- **runStart 平滑滚动 + 保持滚动意图**：短内容场景持续锁定底部，避免首轮下坠。
+- **runStart 等待 footer inset 就绪**：避免首轮 inset 延迟导致 Slack 回落。
+- **ScrollToBottom 规则保留**：仍采用“上滚超过一屏才显示”，不改为 assistant-ui 默认策略。
+- **ConversationContent 顶部 padding 由 Header 高度驱动**：通过 CSS 变量动态避让顶部 Header。
+- **Slack 计算扣除顶部 padding**：确保用户消息顶到顶部时不被 Header 遮挡。
+- **Anchor 高度忽略 0 值回调**：避免首屏高度测量抖动导致下坠。
+- **TurnAnchor 调试日志开关**：提供本地开关打印 scroll/Slack 关键指标，便于回归定位。
+
+## 当前问题与修复方案（2026-02-05）
+
+### 现象（问题）
+
+- 用户发送消息后，**第二条用户消息不滚动**，停在中间位置。
+- 为了“强制提交期溢出”而绕开 `inset`/`clamp` 后，出现**滚动过头**：用户消息被滚出屏幕顶部。
+- 日志显示 `scrollToBottom` 触发，但滚动结果不稳定（与 Slack 计算时机相互干扰）。
+- 新对话前 1~2 条消息时，内容从“未溢出”到“刚溢出”会被**强拉到底**，视觉上像消息整体下跌。
+
+### 期望（效果）
+
+- **提交后立即 smooth 滚动**（带动画），用户消息固定在顶部锚点可见。
+- AI 回复期间滚动行为保持一致（继续按 TurnAnchor 规则展开）。
+- 不再出现“滚过头看不到用户消息”的情况。
+- 当消息仍在屏幕内时**不强制滚动**，只有“尾部不可见”时才滚。
+
+### 修复方案（最终版，回归 assistant-ui 基线 + 追加滚动门控）
+
+1. **回退到 assistant-ui 的 Slack 公式**  
+   - Slack **只作用于“最后一条 assistant 且上一条为 user”** 的消息。
+   - `minHeight = max(0, viewport - inset - clampAdjustment)`，仅保留 userMessage 高度 clamp。
+   - 删除提交期专用公式、topPadding/contentSpacing/overflow 修正等自研逻辑。
+2. **锚点高度只测“用户消息气泡”**  
+   - MessageRoot 内部改为优先测量 `MessageContent`（气泡）高度。
+   - 避免 actions/attachments/编辑态等引发的高度变化，导致 Slack 回缩 → 用户消息下跌。
+3. **滚动条稳定宽度**  
+   - Viewport 添加 `scrollbar-gutter: stable`，防止首轮出现滚动条导致文本换行、气泡高度变化。
+4. **AutoScroll 保留 runStart/initialize/threadSwitch/userSubmit**  
+   - `userSubmit` 仅负责“用户消息对齐顶部”，不进入尾部跟随。
+   - runStart 使用 smooth（由滚动容器平滑行为提供），其他保持 instant。
+5. **（兜底，必要时才启用）assistant 占位**  
+   - 若 runStart 未及时产生 assistant 消息导致无法滚动，才引入最小化占位。
+   - 默认不启用，避免过度设计。
+6. **自动滚动改为“内容尾部可见性”**  
+   - 在最后一条 assistant 消息内容末尾添加尾部锚点（零高度）。
+   - 仅当尾部锚点离开视口时触发滚动；尾部仍可见时不滚动。
+   - 避免 `scrollHeight` 被 Slack 占位抬高导致的误判下坠。
+7. **用户消息对齐顶部（userSubmit）**  
+   - 用户提交新消息时触发一次对齐：将最新 user 消息顶到可视区域顶部（考虑内容 padding）。
+   - 解决“用户消息未上滚到顶部”的首屏/短内容场景问题。
+   - 对齐后进入“pin until overflow”：尾部仍可见时不滚动；尾部溢出时才恢复自动跟随（instant）。
+   - 用户手动滚动立即解除 pin，尊重阅读位置。
+
+### 决策原因
+
+- 现状偏离 assistant-ui 基线，新增提交期公式与事件后，滚动时机变复杂，易产生**过滚/卡顿**。
+- 用户消息高度在 runStart 后变化（actions/attachments/滚动条宽度变化）会触发 Slack 回缩，导致**用户消息下跌**。
+- 只测气泡高度 + 固定滚动条宽度属于最小差异修复，不引入新状态，仍保持 assistant-ui 的主策略不变。
+- 保留“兜底占位”作为第二阶段手段，避免一步过度设计。
+- `scrollHeight` 包含 Slack 占位高度，短内容刚溢出时会被误判为“需要滚动到底”，导致首屏大幅下坠。
+- 使用“尾部可见性”作为滚动门控，符合“内容仍可见就不滚”的交互预期。
+- userSubmit 后先对齐用户消息，再按“溢出才跟随”避免 AI 回复阶段强行拉到底。
+
 ## 复盘与二次改造计划（对齐 assistant-ui，2026-02-03）
 
 ### 改造原则（强制）
 
-- **唯一基线**：完全以 `@assistant-ui` 源码实现为准（结构、职责、交互策略）。不引入自研差异化实现。
+- **唯一基线**：以 `@assistant-ui` 源码实现为准（结构、职责、交互策略），但不引入依赖，仅在 `@anyhunt/ui` 内复刻。
 - **零兼容**：不做历史兼容，旧的自研逻辑直接删除。
 - **单一职责**：Viewport/Message/Slack/Footer/AutoScroll 严格按 assistant-ui 的职责边界拆分。
 - **模块化**：以 primitives + hooks + store 组合，避免跨层耦合与隐式依赖。
 
 ### 已暴露的问题（需要修复）
 
+- 用户消息发送后无法自动上滚，最新 1~3 条消息常被压在滚动条下方。
 - 发送新消息后滚动存在跳变：Slack 瞬间归零 → 内容瞬移到顶部 → 再滚动回顶部。
 - 消息数量变多后滚动动画消失，偶发抖动/闪烁。
 - “滚动到底部”按钮位置不稳定：会随列表滚动出现在中间，而不是输入框上方。
@@ -63,8 +157,10 @@ status: implemented
   - 引入 `scrollingToBottomBehaviorRef`，避免按钮 disabled 状态切换打断滚动。
   - `handleScroll` 逻辑对齐：仅在必要时更新 `isAtBottom`，忽略“非底部向下滚动”导致的频繁切换。
   - 引入 `useOnResizeContent`（`ResizeObserver` + `MutationObserver`）监听内容变化，流式输出时保持锚定。
-- 把 `MessageList` 内部的 `scrollToBottom` `useEffect` 迁移到 Viewport AutoScroll：
-  - `status === submitted` → 对齐 `thread.runStart` 行为。
+- `ConversationViewport` 添加 `scroll-smooth`，仅作用于 runStart 的 `auto` 滚动（初始化仍为 `instant`）。
+- `ConversationContent` 补齐 `pt-4`，避免首条消息贴顶造成“被 Header 盖住”的观感。
+- 把 `MessageList` 内部的滚动触发迁移为事件驱动：
+  - **runStart**：由列表层识别“新 assistant 消息且前一条为 user”触发，避免短回复漏滚动。
   - `threadId` 变化 → 对齐 `threadListItem.switchedTo` 行为。
   - 首次加载消息 → 对齐 `thread.initialize` 行为。
 
@@ -100,7 +196,7 @@ status: implemented
 - `packages/ui/src/ai/conversation-viewport/use-size-handle.ts`：替换为 `useManagedRef` 风格。
 - `packages/ui/src/ai/conversation-viewport/slack.tsx`：改为订阅式 min-height 注入。
 - `packages/ui/src/ai/message/base.tsx`（或新增 `message/root.tsx`）：承载 anchor/slack。
-- `packages/ui/src/ai/message-list.tsx`：提供消息上下文，移除 Slack/Anchor wrapper。
+- `packages/ui/src/ai/message-list.tsx`：提供消息上下文，并在列表层触发 runStart（新 assistant 消息出现）。
 - `packages/ui/src/ai/conversation.tsx`：ScrollButton 迁移到 Footer。
 - `apps/moryflow/pc` / `apps/anyhunt/console`：无 API 变更，仅验证视觉与交互。
 
@@ -111,11 +207,25 @@ status: implemented
 - ScrollToBottom 永远出现在输入框上方，不随列表滚动。
 - `isAtBottom` 不再抖动，按钮显隐稳定。
 
+### 执行清单（2026-02-04）
+
+| 步骤 | 事项 | 状态 | 完成日期 |
+| --- | --- | --- | --- |
+| 1 | 删除 assistant-ui 直连方案文档与索引引用 | 已完成 | 2026-02-04 |
+| 2 | 移除 assistant-ui 依赖与 adapter 文件 | 已完成 | 2026-02-04 |
+| 3 | 列表层触发 runStart + MessageRoot 清理 | 已完成 | 2026-02-04 |
+| 4 | 更新 UI 单测（MessageList/MessageRoot） | 已完成 | 2026-02-04 |
+| 5 | 更新 CLAUDE 与调研文档引用 | 已完成 | 2026-02-04 |
+| 6 | 运行 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit` | 已完成 | 2026-02-04 |
+| 7 | runStart 平滑滚动 + 保持滚动意图 + 顶部 padding 提升 | 已完成 | 2026-02-04 |
+| 8 | runStart 等待 footer inset + Header 高度变量 + 调试日志 | 已完成 | 2026-02-04 |
+
 ### 测试建议
 
 - UI 单测：Slack min-height 计算 + 消息锚点注册条件。
 - 交互回归：发送消息/流式输出/滚动历史/切换线程/输入区高度变化。
 - Console 与 PC 双端对齐验证（同一交互体验）。
+- 调试日志：`localStorage.setItem('anyhunt:turn-anchor-debug','1')` 或 `window.__ANYHUNT_TURN_ANCHOR_DEBUG__ = true`。
 
 ### 逐文件删除清单（强制）
 
@@ -124,6 +234,8 @@ status: implemented
 - `packages/ui/src/ai/message-list.tsx`
   - 删除：`AnchorUserMessage` wrapper、`ConversationViewportSlack` 包裹、基于 `status/threadId/messages` 的滚动 `useEffect`。
   - 删除：`showScrollButton` 在列表内的绝对定位按钮（迁移到 Footer）。
+- `packages/ui/src/ai/message/root.tsx`
+  - 删除：runStart 触发逻辑（改由列表层事件驱动）。
 - `packages/ui/src/ai/conversation-viewport/use-auto-scroll.ts`
   - 删除：当前 `handleScroll` 简化逻辑与 `useEffect` 滚动触发。
   - 删除：依赖 `isAtBottom` 立即滚动的副作用（改为内容变化驱动）。
@@ -145,10 +257,10 @@ status: implemented
 
 2. **改造 Viewport AutoScroll**
    - `useConversationViewportAutoScroll` 完整对齐 `useThreadViewportAutoScroll`：
-     - 维护 `scrollingToBottomBehaviorRef`。
-     - 引入 `ResizeObserver + MutationObserver` 的内容变化监听。
-     - `handleScroll` 逻辑对齐：仅在允许的条件下更新 `isAtBottom`。
-     - 将 `status/threadId` 触发的滚动事件迁移到 Viewport 层（或对齐事件触发入口）。
+    - 维护 `scrollingToBottomBehaviorRef`。
+    - 引入 `ResizeObserver + MutationObserver` 的内容变化监听。
+    - `handleScroll` 逻辑对齐：仅在允许的条件下更新 `isAtBottom`。
+    - `runStart/initialize/threadSwitch` 由列表层事件驱动触发，Viewport 仅负责响应滚动。
 
 3. **迁移 Anchor/Slack 到 Message Root**
    - 新增 `ConversationMessageContext`，由 `MessageList` 注入 `message/index/messages`。
@@ -164,6 +276,31 @@ status: implemented
    - 删除 MessageList 内 `useEffect` 滚动触发。
    - 删除 Slack wrapper、Anchor wrapper。
    - 清理无用 import、类型与测试用例。
+
+---
+
+## 最新问题排查与计划（2026-02-05）
+
+### 背景
+
+- 用户反馈：**最新接入后用户消息不再上滚**，滚动体验明显变差。
+- 此前实现基于 `@assistant-ui/react@0.10.50` 的局部移植，现已同步至 `@assistant-ui/react@0.12.6`。
+
+### 目标
+
+- 完全对齐 **最新版本** `@assistant-ui/react` 的 Thread/Message 行为。
+- 确保用户消息提交后滚动行为恢复正常（可见、可预测、不卡住）。
+- 若仍异常，提供可控日志开关用于精准定位。
+
+### 执行计划（滚动排查 & 最新版同步）
+
+| 步骤 | 事项 | 状态 | 备注 |
+| --- | --- | --- | --- |
+| 1 | 拉取 `@assistant-ui/react@latest` 源码并对照 Thread/Message 实现差异 | 已完成 | 已确认最新版本 `0.12.6` |
+| 2 | 按最新版同步 `packages/ui/src/ai/assistant-ui/**` 与适配层（viewport/message-list/root） | 已完成 | 已对齐 v0.12.6 store/viewport/auto-scroll/Slack/size handle |
+| 3 | 增加可控调试日志开关（仅在本地/显式开启时打印） | 已完成 | 追加 aui-event 触发日志（anyhunt:turn-anchor-debug） |
+| 4 | 更新/补齐 UI 单测覆盖新的滚动行为 | 已完成 | 新增 viewport 高度注册与 aui-event 测试 |
+| 5 | 执行 lint/typecheck/test:unit + PC/Console 手动回归 | 进行中 | lint/typecheck/test:unit 通过；手动回归待确认 |
 
 6. **验证与收敛**
    - 通过 UI 单测与交互回归。
@@ -282,3 +419,22 @@ clamp: userMessageHeight <= 160 ? userMessageHeight : 96
 8. [x] **测试补齐**：新增 Slack minHeight 单测。
 9. [x] **依赖清理**：移除 `use-stick-to-bottom`，引入 Zustand。
 10. [x] **文档同步**：更新 CLAUDE.md 与架构说明。
+
+## 最新版 assistant-ui 全量移植（进行中，2026-02-05）
+
+### 任务背景
+
+- 现有滚动修复多次调整仍出现下坠/抖动。
+- 需要**完全对齐 assistant-ui 最新版**的 Thread/Message primitives，避免自研偏差。
+- 本任务以“直接移植 + 适配层包装”为准，禁止继续叠加自研滚动补丁。
+
+### 执行计划（逐步同步进度）
+
+1. [x] **确认最新版 assistant-ui 版本**：`@assistant-ui/react@0.12.6`（npm，2026-02-05）。
+2. [x] **拉取核心源码**：ThreadViewport/useThreadViewportAutoScroll + 相关 hooks（已拷贝至 `packages/ui/src/ai/assistant-ui/`）。
+3. [x] **新增镜像目录**：在 `packages/ui/src/ai/assistant-ui/` 保留原样实现与来源注释。
+4. [x] **替换现有 primitives**：ConversationViewport/MessageRoot/MessageList 对齐 assistant-ui v0.12.6（恢复 Slack/size handle/aui-event，API 形状不变）。
+5. [x] **桥接样式与布局**：仅在 wrapper 层处理 padding/header/footer，不改核心滚动逻辑。
+6. [x] **更新/移除单测**：以 assistant-ui 行为为准，删除自研滚动补丁相关断言。
+7. [x] **同步文档与 CLAUDE**：记录移植范围、关键差异与后续约束。
+8. [x] **全量校验**：运行 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit`。

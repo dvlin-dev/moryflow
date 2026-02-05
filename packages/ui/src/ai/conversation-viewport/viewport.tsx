@@ -1,24 +1,32 @@
 /**
  * [PROPS]: ConversationViewportProps - 滚动容器与 Viewport 配置
  * [EMITS]: None
- * [POS]: Conversation Viewport 容器
- * [UPDATE]: 2026-02-03 - 视口改为纵向 flex，支持 Footer 下沉
- * [UPDATE]: 2026-02-04 - 移除顶部 inset 与滚动条固定策略，严格对齐 assistant-ui
+ * [POS]: Conversation Viewport 容器（对齐 assistant-ui ThreadPrimitive.Viewport）
+ * [UPDATE]: 2026-02-05 - 移除高度注册与自研滚动状态，改为 assistant-ui auto-scroll
+ * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版 Viewport 结构（turnAnchor + size handle）
+ * [UPDATE]: 2026-02-05 - 开启 scroll-smooth，恢复 runStart 滚动动画
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
 import { forwardRef, useCallback } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 
 import { cn } from '../../lib/utils';
-import { useSizeHandle } from './use-size-handle';
+import { useSizeHandle } from '../assistant-ui/utils/hooks/useSizeHandle';
 import { ConversationViewportProvider, useConversationViewport } from './context';
 import { useConversationViewportAutoScroll } from './use-auto-scroll';
 
-export type ConversationViewportProps = ComponentPropsWithoutRef<'div'>;
+export type ConversationViewportProps = ComponentPropsWithoutRef<'div'> & {
+  autoScroll?: boolean;
+  turnAnchor?: 'top' | 'bottom';
+  scrollToBottomOnRunStart?: boolean;
+  scrollToBottomOnInitialize?: boolean;
+  scrollToBottomOnThreadSwitch?: boolean;
+};
 
 const useViewportSizeRef = () => {
   const register = useConversationViewport((state) => state.registerViewport);
@@ -27,34 +35,35 @@ const useViewportSizeRef = () => {
 };
 
 const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewportProps>(
-  ({ className, style, ...props }, ref) => {
-    const autoScrollRef = useConversationViewportAutoScroll();
-    const viewportRef = useViewportSizeRef();
-
-    const setRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-        viewportRef(node);
-        autoScrollRef(node);
-      },
-      [autoScrollRef, ref, viewportRef]
-    );
+  (
+    {
+      className,
+      autoScroll,
+      scrollToBottomOnRunStart,
+      scrollToBottomOnInitialize,
+      scrollToBottomOnThreadSwitch,
+      ...props
+    },
+    ref
+  ) => {
+    const autoScrollRef = useConversationViewportAutoScroll({
+      autoScroll,
+      scrollToBottomOnRunStart,
+      scrollToBottomOnInitialize,
+      scrollToBottomOnThreadSwitch,
+    });
+    const viewportSizeRef = useViewportSizeRef();
+    const composedRef = useComposedRefs(ref, autoScrollRef, viewportSizeRef);
 
     return (
       <div
         {...props}
-        ref={setRef}
+        ref={composedRef}
+        data-slot="conversation-viewport"
         className={cn(
-          'relative flex flex-1 min-h-0 flex-col overflow-x-auto overflow-y-scroll',
+          'relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-auto scroll-smooth',
           className
         )}
-        style={{
-          ...style,
-        }}
         role={props.role ?? 'log'}
       />
     );
@@ -64,8 +73,8 @@ const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewpor
 ConversationViewportInner.displayName = 'ConversationViewportInner';
 
 export const ConversationViewport = forwardRef<HTMLDivElement, ConversationViewportProps>(
-  ({ children, ...props }, ref) => (
-    <ConversationViewportProvider>
+  ({ children, turnAnchor = 'top', ...props }, ref) => (
+    <ConversationViewportProvider options={{ turnAnchor }}>
       <ConversationViewportInner ref={ref} {...props}>
         {children}
       </ConversationViewportInner>

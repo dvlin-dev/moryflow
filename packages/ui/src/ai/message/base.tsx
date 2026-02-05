@@ -3,6 +3,7 @@
  * [EMITS]: None
  * [POS]: 消息基础原语（内容布局）
  * [UPDATE]: 2026-02-03 - 移除 Viewport 依赖，保持基础组件可复用
+ * [UPDATE]: 2026-02-05 - MessageContent 添加 data-slot，保持结构对齐
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -45,6 +46,7 @@ export const MessageContent = forwardRef<HTMLDivElement, MessageContentProps>(
     return (
       <div
         ref={ref}
+        data-slot="message-content"
         className={cn(
           'is-user:dark flex flex-col gap-2 text-sm wrap-break-word',
           'min-w-0',

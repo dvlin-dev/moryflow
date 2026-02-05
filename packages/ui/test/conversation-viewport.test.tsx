@@ -1,17 +1,24 @@
-import { useEffect } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { useLayoutEffect } from 'react';
 
 import { ConversationViewport } from '../src/ai/conversation-viewport';
-import { ConversationViewportSlack } from '../src/ai/conversation-viewport/slack';
 import { useConversationViewportStore } from '../src/ai/conversation-viewport/context';
-import { ConversationMessageProvider } from '../src/ai/message/context';
-import type { UIMessage } from 'ai';
 
-const noop = () => {};
+const resizeCallbacks: Array<() => void> = [];
 
 class ResizeObserverMock {
-  observe() {}
+  private callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    resizeCallbacks.push(() => this.callback([], this as unknown as ResizeObserver));
+  }
+
+  observe() {
+    this.callback([], this as unknown as ResizeObserver);
+  }
+
   disconnect() {}
 }
 
@@ -19,72 +26,172 @@ if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = ResizeObserverMock as typeof ResizeObserver;
 }
 
-const StoreSeed = ({
-  viewport,
-  inset,
-  userMessage,
+class MutationObserverMock {
+  observe() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+
+if (!globalThis.MutationObserver) {
+  globalThis.MutationObserver = MutationObserverMock as typeof MutationObserver;
+}
+
+const triggerResizeObservers = () => {
+  resizeCallbacks.forEach((callback) => callback());
+};
+
+const StoreSpy = ({
+  onStore,
 }: {
-  viewport: number;
-  inset: number;
-  userMessage: number;
+  onStore: (store: ReturnType<typeof useConversationViewportStore>) => void;
 }) => {
   const store = useConversationViewportStore();
 
-  useEffect(() => {
-    store.setState({
-      height: {
-        viewport,
-        inset,
-        userMessage,
-      },
-    });
-  }, [inset, store, userMessage, viewport]);
+  useLayoutEffect(() => {
+    onStore(store);
+  }, [onStore, store]);
 
   return null;
 };
 
-const makeMessage = (id: string, role: UIMessage['role']): UIMessage => ({
-  id,
-  role,
-  parts: [{ type: 'text', text: 'hi' }],
-});
+let originalRaf: typeof globalThis.requestAnimationFrame | undefined;
+let rafSpy: ReturnType<typeof vi.spyOn> | null = null;
 
-describe('ConversationViewportSlack', () => {
-  it('applies minHeight by default', async () => {
-    const messages = [makeMessage('user-1', 'user'), makeMessage('assistant-1', 'assistant')];
-    render(
-      <ConversationViewport>
-        <StoreSeed viewport={400} inset={80} userMessage={120} />
-        <ConversationMessageProvider message={messages[1]!} messages={messages} index={1}>
-          <ConversationViewportSlack>
-            <div data-testid="slack">content</div>
-          </ConversationViewportSlack>
-        </ConversationMessageProvider>
-      </ConversationViewport>
-    );
-
-    const slack = screen.getByTestId('slack');
-    await waitFor(() => {
-      expect(slack.style.minHeight).toBe('200px');
+describe('ConversationViewport', () => {
+  beforeEach(() => {
+    resizeCallbacks.length = 0;
+    originalRaf = globalThis.requestAnimationFrame;
+    if (!originalRaf) {
+      globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => {
+        callback(0);
+        return 0;
+      };
+    }
+    rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 0;
     });
   });
 
-  it('does not apply minHeight when message is not last assistant', async () => {
-    const messages = [makeMessage('user-1', 'user')];
+  afterEach(() => {
+    rafSpy?.mockRestore();
+    rafSpy = null;
+    if (!originalRaf) {
+      // @ts-expect-error - 清理测试环境注入
+      delete globalThis.requestAnimationFrame;
+    } else {
+      globalThis.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  it('updates isAtBottom when user scrolls up', async () => {
+    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
+
     render(
-      <ConversationViewport>
-        <StoreSeed viewport={400} inset={80} userMessage={120} />
-        <ConversationMessageProvider message={messages[0]!} messages={messages} index={0}>
-          <ConversationViewportSlack>
-            <div data-testid="slack">content</div>
-          </ConversationViewportSlack>
-        </ConversationMessageProvider>
+      <ConversationViewport data-testid="viewport">
+        <StoreSpy onStore={(store) => (storeRef = store)} />
+        <div>content</div>
       </ConversationViewport>
     );
 
-    const slack = screen.getByTestId('slack');
     await waitFor(() => {
-      expect(slack.style.minHeight).toBe('');
+      expect(storeRef).not.toBeNull();
     });
+
+    const viewport = screen.getByTestId('viewport') as HTMLDivElement;
+    let scrollTop = 0;
+    Object.defineProperty(viewport, 'scrollTop', {
+      get: () => scrollTop,
+      set: (value) => {
+        scrollTop = value;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'scrollHeight', {
+      value: 500,
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'clientHeight', {
+      value: 100,
+      configurable: true,
+    });
+
+    scrollTop = 400;
+    viewport.dispatchEvent(new Event('scroll'));
+    expect(storeRef?.getState().isAtBottom).toBe(true);
+
+    scrollTop = 300;
+    viewport.dispatchEvent(new Event('scroll'));
+    expect(storeRef?.getState().isAtBottom).toBe(false);
+  });
+
+  it('scrolls to bottom when scrollToBottom is triggered', async () => {
+    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
+
+    render(
+      <ConversationViewport data-testid="viewport">
+        <StoreSpy onStore={(store) => (storeRef = store)} />
+        <div>content</div>
+      </ConversationViewport>
+    );
+
+    await waitFor(() => {
+      expect(storeRef).not.toBeNull();
+    });
+
+    const viewport = screen.getByTestId('viewport') as HTMLDivElement;
+    let scrollTop = 0;
+    Object.defineProperty(viewport, 'scrollTop', {
+      get: () => scrollTop,
+      set: (value) => {
+        scrollTop = value;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'scrollHeight', {
+      value: 900,
+      configurable: true,
+    });
+    Object.defineProperty(viewport, 'clientHeight', {
+      value: 300,
+      configurable: true,
+    });
+    const scrollToSpy = vi.fn(({ top }: { top: number }) => {
+      scrollTop = top;
+    });
+    Object.defineProperty(viewport, 'scrollTo', {
+      value: scrollToSpy,
+      configurable: true,
+    });
+
+    storeRef?.getState().scrollToBottom();
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 900, behavior: 'auto' });
+  });
+
+  it('registers viewport height for slack calculations', async () => {
+    let storeRef: ReturnType<typeof useConversationViewportStore> | null = null;
+
+    render(
+      <ConversationViewport data-testid="viewport">
+        <StoreSpy onStore={(store) => (storeRef = store)} />
+        <div>content</div>
+      </ConversationViewport>
+    );
+
+    await waitFor(() => {
+      expect(storeRef).not.toBeNull();
+    });
+
+    const viewport = screen.getByTestId('viewport') as HTMLDivElement;
+    Object.defineProperty(viewport, 'clientHeight', {
+      value: 240,
+      configurable: true,
+    });
+
+    triggerResizeObservers();
+
+    expect(storeRef?.getState().height.viewport).toBe(240);
   });
 });

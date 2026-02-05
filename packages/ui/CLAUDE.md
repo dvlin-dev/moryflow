@@ -48,18 +48,15 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
-- ConversationViewport/Content/Slack：移除 topInset/overflow-anchor/scrollbar-gutter，严格对齐 assistant-ui
-- ConversationViewport：记录距底距离与滚动中状态，控制滚动按钮显隐
-- MessageRoot：runStart 触发延后到 assistant 渲染后，避免列表层过早触发
-- MessageRoot：锚点高度注册与 Slack 逻辑内聚，避免列表层处理
-- MessageList：移除 thinking 占位，滚动触发迁移为事件驱动
-- ScrollButton：仅在上滚超过一屏时显示，用户点击使用 smooth 动画
-- MessageList/Viewport：移除 content/emptyState 的 full height，Footer 使用 mt-auto，恢复 sticky 正常贴底
-- MessageList/Viewport：补齐 min-h-0，避免 Slack 拉高容器导致输入区不可见
-- MessageList：Slack 仅作用于最后一条消息，减少订阅与 DOM 更新
-- ConversationViewport：AutoScroll/ResizeObserver/MutationObserver 对齐 assistant-ui，top anchor 滚动锁覆盖内容扩展
-- ConversationViewportSlack：订阅式 min-height + em/rem clamp，避免首帧闪烁
-- ScrollButton：迁移到 ViewportFooter，固定在输入框上方
+- AutoScroll：runStart 增加滚动锁，确保 Slack/min-height 更新后仍能对齐顶部
+- ConversationViewport：启用 scroll-smooth，恢复 runStart 向上滚动动画
+- ConversationViewport：对齐 assistant-ui v0.12.6（turnAnchor + size handle + auto-scroll 选项）
+- ConversationViewportSlack：恢复 Slack 占位机制，支持 top anchor 对齐
+- MessageList：引入 aui-event（initialize/runStart/threadSwitch）触发自动滚动
+- MessageRoot：恢复用户消息锚点高度注册，配合 Slack 计算
+- MessageContent：移除尾部锚点占位，保留 data-slot 用于样式定位
+- ScrollButton：仅依赖 isAtBottom，触发 store.scrollToBottom（assistant-ui 行为）
+- ConversationContent：顶部 padding 使用 CSS 变量（Header 高度 + extra 变量，默认 1rem）
 - Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
 - Form：回退场景使用稳定 id，避免 aria 关联错位
 - Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
@@ -74,10 +71,6 @@ import { ChevronDown } from 'lucide-react';
 - ToolOutput：新增截断输出标识与完整输出打开入口
 - PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
 - ToolOutput：允许渲染 `0`/`false` 等非空输出
-- MessageList：切换为 Viewport/Slack 交互，移除占位逻辑与消息高度外置计算
-- ConversationViewport：新增滚动状态与高度测量 primitives（Viewport/Footer/Slack/ScrollButton）
-- TurnAnchor 交互固定为 top，移除 turnAnchor/autoScroll 对外配置
-- ConversationViewport：Slack 仅在有效测量后生效，避免首帧大空白
 - Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
 - Accordion/Highlight：状态派生与 ref 清理，补齐 client 边界
 - Chart：Tooltip 支持 `0` 值展示并补充单测
@@ -106,4 +99,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.7 | 更新日期: 2026-02-04_
+_版本: 4.10 | 更新日期: 2026-02-05_

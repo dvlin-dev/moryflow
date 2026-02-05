@@ -1,20 +1,22 @@
 /**
- * [PROPS]: ConversationViewportFooterProps - 底部区域测量
+ * [PROPS]: ConversationViewportFooterProps - 底部区域容器
  * [EMITS]: None
- * [POS]: Conversation Viewport 底部区域高度注册
- * [UPDATE]: 2026-02-03 - Footer 去除 relative，恢复 sticky 生效
+ * [POS]: Conversation Viewport 底部区域容器（布局 + inset 高度注册）
+ * [UPDATE]: 2026-02-05 - 移除自研 inset 测量，保持 assistant-ui 视口纯净
+ * [UPDATE]: 2026-02-05 - 采用 assistant-ui ViewportFooter height 注册
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
 import { forwardRef, useCallback } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 
 import { cn } from '../../lib/utils';
+import { useSizeHandle } from '../assistant-ui/utils/hooks/useSizeHandle';
 import { useConversationViewport } from './context';
-import { useSizeHandle } from './use-size-handle';
 
 export type ConversationViewportFooterProps = ComponentPropsWithoutRef<'div'>;
 
@@ -27,24 +29,13 @@ export const ConversationViewportFooter = forwardRef<
     const marginTop = parseFloat(getComputedStyle(el).marginTop) || 0;
     return el.offsetHeight + marginTop;
   }, []);
-  const sizeRef = useSizeHandle(register, getHeight);
-
-  const setRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (typeof ref === 'function') {
-        ref(node);
-      } else if (ref) {
-        ref.current = node;
-      }
-      sizeRef(node);
-    },
-    [ref, sizeRef]
-  );
+  const resizeRef = useSizeHandle(register, getHeight);
+  const composedRef = useComposedRefs(ref, resizeRef);
 
   return (
     <div
       {...props}
-      ref={setRef}
+      ref={composedRef}
       className={cn('sticky bottom-0 z-10 mt-auto bg-background', className)}
     />
   );

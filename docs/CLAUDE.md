@@ -8,7 +8,17 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-04（TurnAnchor 滚动调研新增“无法向上滚动”问题记录）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：runStart 滚动锁 + scroll-smooth）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui v0.12.6 同步 + Slack/size handle/aui-event 进度）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：确认 assistant-ui 版本 0.12.6）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui 全量移植校验完成（lint/typecheck/test:unit））
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui primitives 对齐（移除 Slack/事件驱动））
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：AutoScroll 改为内容尾部可见性门控）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：userSubmit 对齐用户消息顶部）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：userSubmit pin 直到溢出后再自动跟随）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui 全量移植计划）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：确认 assistant-ui 版本 0.12.6）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui 源码已拷贝）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,8 +51,23 @@
 
 ## 最近更新
 
-- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`（2026-02-04：active，新增“无法向上滚动”问题记录）
-- Moryflow PC 消息列表交互复用改造方案：补充对齐 assistant-ui 的二次改造计划、强制改造原则、逐文件删除清单与执行顺序（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-03：proposal update）
+- Moryflow PC 消息列表交互复用改造方案：runStart 滚动锁 + scroll-smooth 修复记录（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：同步 assistant-ui v0.12.6 + Slack/size handle/aui-event（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：assistant-ui 全量移植校验完成（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：assistant-ui primitives 对齐（移除 Slack/事件驱动 + 更新单测）（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：userSubmit 对齐用户消息顶部（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：userSubmit pin 直到溢出后再自动跟随（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：assistant-ui 全量移植计划（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：确认 assistant-ui 版本 0.12.6（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：assistant-ui 源码已拷贝（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：AutoScroll 改为内容尾部可见性门控（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：锚点测量改为消息气泡 + scrollbar-gutter: stable（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：回退至 assistant-ui 基线（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：补充提交期标记与 assistant 占位阶段滚动修复方案（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：补充用户提交阶段滚动问题与修复方案（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：Slack 扣除顶部 padding + 用户消息高度忽略 0 值回调（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：补充 Slack 顶部 padding 扣除与 0 值回调规避（`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`，2026-02-05）
+- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`（2026-02-04：active，补充上滚修复与回归记录）
 - Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）
 - Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（2026-02-02：implemented，交互固定为 top 且去参数化）
 - Anyhunt app/public/apikey 通道路由规范与迁移清单（含模块进度）：`docs/architecture/anyhunt-api-channel-routing.md`（2026-02-02：implemented）

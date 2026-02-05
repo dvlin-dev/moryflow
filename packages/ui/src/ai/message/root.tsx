@@ -1,134 +1,50 @@
 /**
  * [PROPS]: MessageRootProps - 会话消息 Root 组件
  * [EMITS]: None
- * [POS]: 对话场景消息锚点/Slack 注入层（对齐 assistant-ui）
- * [UPDATE]: 2026-02-03 - 锚点高度注册与 Slack 逻辑内聚到 Root
- * [UPDATE]: 2026-02-04 - 仅保留锚点注册逻辑，Slack 由内部判断条件
- * [UPDATE]: 2026-02-04 - runStart 触发延后至 assistant 渲染后执行
+ * [POS]: 对话场景消息容器（对齐 assistant-ui MessagePrimitive.Root）
+ * [UPDATE]: 2026-02-05 - 移除 Slack/锚点注册，仅保留基础容器
+ * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版锚点/Slack 机制
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import { forwardRef, useCallback, useLayoutEffect, useRef } from 'react';
-import type { UIMessage } from 'ai';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import { forwardRef, useCallback } from 'react';
 
-import { ConversationViewportSlack } from '../conversation-viewport';
-import { useConversationViewportStoreOptional } from '../conversation-viewport/context';
-import { useSizeHandle } from '../conversation-viewport/use-size-handle';
-import { Message } from './base';
+import { useSizeHandle } from '../assistant-ui/utils/hooks/useSizeHandle';
+import { ConversationViewportSlack, useConversationViewport } from '../conversation-viewport';
 import { useConversationMessage } from './context';
+import { Message } from './base';
 import type { MessageProps } from './const';
 
 export type MessageRootProps = MessageProps;
 
-type ViewportFlagsInput = {
-  hasViewport: boolean;
-  turnAnchor?: 'top';
-  messageRole?: UIMessage['role'];
-  messages: UIMessage[];
-  index: number;
-};
+const useMessageViewportRef = () => {
+  const turnAnchor = useConversationViewport((state) => state.turnAnchor);
+  const registerUserHeight = useConversationViewport((state) => state.registerUserMessageHeight);
+  const messageContext = useConversationMessage({ optional: true });
 
-export const getMessageViewportFlags = ({
-  hasViewport,
-  turnAnchor,
-  messageRole,
-  messages,
-  index,
-}: ViewportFlagsInput) => {
-  const lastIndex = messages.length - 1;
-  const lastMessage = messages[lastIndex];
-  const isLastMessageUser = lastMessage?.role === 'user';
-  const isLastMessageAssistant = lastMessage?.role === 'assistant';
-
-  const shouldRegisterUser =
-    hasViewport &&
+  const shouldRegisterAsInset =
     turnAnchor === 'top' &&
-    messageRole === 'user' &&
-    ((isLastMessageAssistant && index === lastIndex - 1) ||
-      (isLastMessageUser && index === lastIndex));
+    messageContext?.message.role === 'user' &&
+    messageContext.index === messageContext.messages.length - 2 &&
+    messageContext.messages.at(-1)?.role === 'assistant';
 
-  return { shouldRegisterUser };
+  const getHeight = useCallback((el: HTMLElement) => el.offsetHeight, []);
+
+  return useSizeHandle(shouldRegisterAsInset ? registerUserHeight : null, getHeight);
 };
 
 export const MessageRoot = forwardRef<HTMLDivElement, MessageRootProps>(
   ({ className, ...props }, ref) => {
-    const messageContext = useConversationMessage({ optional: true });
-    const viewportStore = useConversationViewportStoreOptional();
-    const runStartEmittedRef = useRef<string | null>(null);
-
-    const turnAnchor = viewportStore?.getState().turnAnchor;
-    const messages = messageContext?.messages ?? [];
-    const message = messageContext?.message;
-    const index = messageContext?.index ?? -1;
-    const status = messageContext?.status;
-
-    const { shouldRegisterUser } = getMessageViewportFlags({
-      hasViewport: Boolean(viewportStore),
-      turnAnchor,
-      messageRole: message?.role,
-      messages,
-      index,
-    });
-
-    const register = shouldRegisterUser
-      ? viewportStore?.getState().registerUserMessageHeight
-      : null;
-    const anchorRef = useSizeHandle(register);
-
-    const isRunning = status === 'submitted' || status === 'streaming';
-    const shouldEmitRunStart = Boolean(
-      viewportStore &&
-      message &&
-      isRunning &&
-      message.role === 'assistant' &&
-      index >= 1 &&
-      index === messages.length - 1 &&
-      messages[index - 1]?.role === 'user'
-    );
-
-    useLayoutEffect(() => {
-      if (!viewportStore || !shouldEmitRunStart || !message) return;
-
-      if (runStartEmittedRef.current === message.id) return;
-      runStartEmittedRef.current = message.id;
-
-      let attempts = 0;
-      let rafId: number | null = null;
-      const tryEmit = () => {
-        const height = viewportStore.getState().height;
-        const isReady = height.viewport > 0 && height.userMessage > 0;
-        if (isReady || attempts >= 2) {
-          viewportStore.getState().emitAutoScrollEvent('runStart');
-          return;
-        }
-        attempts += 1;
-        rafId = requestAnimationFrame(tryEmit);
-      };
-
-      rafId = requestAnimationFrame(tryEmit);
-      return () => {
-        if (rafId !== null) cancelAnimationFrame(rafId);
-      };
-    }, [message, shouldEmitRunStart, viewportStore]);
-
-    const setRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-        anchorRef(node);
-      },
-      [anchorRef, ref]
-    );
+    const anchorUserMessageRef = useMessageViewportRef();
+    const composedRef = useComposedRefs(ref, anchorUserMessageRef);
 
     return (
       <ConversationViewportSlack>
-        <Message ref={setRef} className={className} {...props} />
+        <Message ref={composedRef} className={className} {...props} />
       </ConversationViewportSlack>
     );
   }

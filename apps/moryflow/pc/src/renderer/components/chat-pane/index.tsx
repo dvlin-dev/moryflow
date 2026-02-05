@@ -5,11 +5,14 @@
  * [UPDATE]: 2026-02-03 - 移除 Renderer 侧强制同步，避免覆盖主进程持久化
  * [UPDATE]: 2026-02-04 - 移除 Header inset 参与滚动逻辑，严格对齐 assistant-ui
  * [UPDATE]: 2026-02-04 - 清理 scrollReady 状态，交由 UI 包滚动逻辑接管
+ * [UPDATE]: 2026-02-04 - Header 高度写入 CSS 变量，避免消息被覆盖
+ * [UPDATE]: 2026-02-05 - 取消 Header 高度透传，顶部 padding 归零避免冗余留白
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { CardContent } from '@anyhunt/ui/components/card';
 import { IpcChatTransport } from '@/transport/ipc-chat-transport';
@@ -46,6 +49,7 @@ export const ChatPane = ({
   onOpenSettings,
 }: ChatPaneProps) => {
   const { t } = useTranslation('chat');
+  const headerRef = useRef<HTMLDivElement | null>(null);
   const {
     sessions,
     activeSession,
@@ -114,6 +118,11 @@ export const ChatPane = ({
     [modelGroups]
   );
   const requireModelSetup = !hasModelOptions || !selectedModelId;
+
+  const conversationStyle = {
+    '--ai-conversation-top-padding': '0px',
+    '--ai-conversation-top-padding-extra': '0px',
+  } as CSSProperties;
 
   useEffect(() => {
     if (!requireModelSetup && isModelSetupError) {
@@ -240,8 +249,8 @@ export const ChatPane = ({
   );
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden">
-      <div className="shrink-0">
+    <div className="relative flex h-full flex-col overflow-hidden" style={conversationStyle}>
+      <div className="shrink-0" ref={headerRef}>
         <ChatPaneHeader
           sessions={sessions}
           activeSession={activeSession}

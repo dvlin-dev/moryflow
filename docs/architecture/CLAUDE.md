@@ -33,13 +33,29 @@
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
 - `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（Compaction/Permission/Truncation）决策。
 - `ui-message-list-unification.md`：消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一，先对齐样式再统一抽象）。
-- `ui-message-list-turn-anchor-adoption.md`：Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制，implemented）。
+- `ui-message-list-turn-anchor-adoption.md`：Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制，active）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（含 OpenCode 对标与落地路径）。
 
 > 说明：部署/操作类文档已迁移到 `docs/runbooks/`；开发指南类文档已迁移到 `docs/guides/`；旧计划文档归档于 `docs/_archived/`。
 
 ## 近期更新
 
+- `ui-message-list-turn-anchor-adoption.md`：补充 runStart 滚动锁 + scroll-smooth 修复记录（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：同步 assistant-ui v0.12.6 + Slack/size handle/aui-event（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：标记全量校验完成（lint/typecheck/test:unit）（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：完成 assistant-ui primitives 对齐（移除 Slack/事件驱动）并更新单测（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：新增 userSubmit 对齐用户消息顶部（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：userSubmit pin 直到溢出后再自动跟随（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：记录最新版 assistant-ui 全量移植计划（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：确认 assistant-ui 最新版 0.12.6（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：assistant-ui 核心源码已拷贝到 `packages/ui/src/ai/assistant-ui/`（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：AutoScroll 改为内容尾部可见性门控，避免 Slack 占位误判（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：锚点改为测量消息气泡 + scrollbar-gutter: stable（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：回退至 assistant-ui 基线（移除提交期特殊逻辑，保留最简 Slack + AutoScroll）（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：补充提交期标记与 assistant 占位阶段滚动修复方案（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：补充用户提交阶段滚动问题与修复方案（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：Slack 扣除顶部 padding + 用户消息高度忽略 0 值回调（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：runStart 等待 inset + 保持滚动意图 + Header 高度变量 + 调试日志（2026-02-04）。
 - `ui-message-list-turn-anchor-adoption.md`：补充对齐 assistant-ui 的二次改造计划、强制改造原则、逐文件删除清单与执行顺序（2026-02-03）。
 - `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
 - `ui-message-list-turn-anchor-adoption.md`：新增 TurnAnchor 交互复用改造方案草案（2026-02-02）。

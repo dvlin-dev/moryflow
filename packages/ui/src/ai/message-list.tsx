@@ -3,28 +3,23 @@
  * [EMITS]: None
  * [POS]: AI 会话列表的通用布局封装
  * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
- * [UPDATE]: 2026-02-03 - 锚点/Slack 内聚到 MessageRoot，对齐 assistant-ui
- * [UPDATE]: 2026-02-03 - 滚动触发迁移到 Viewport AutoScroll 事件
- * [UPDATE]: 2026-02-03 - 移除 thinking 占位，避免 DOM 替换导致锚点跳变
- * [UPDATE]: 2026-02-04 - runStart 触发迁移到 MessageRoot，避免列表层过早触发
+ * [UPDATE]: 2026-02-05 - 移除自研事件驱动，改为 assistant-ui Resize/Mutation 自动滚动
+ * [UPDATE]: 2026-02-05 - threadId 仅用于重建 Conversation，确保视口状态重置
+ * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版事件触发（initialize/runStart/threadSwitch）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import { Fragment, useEffect, useRef } from 'react';
 import type { HTMLAttributes, ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { cn } from '../lib/utils';
-import {
-  Conversation,
-  ConversationContent,
-  ConversationEmptyState,
-  ConversationScrollButton,
-} from './conversation';
-import { ConversationViewportFooter, useConversationViewport } from './conversation-viewport';
+import { Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton } from './conversation';
+import { ConversationViewportFooter } from './conversation-viewport';
+import { emitAuiEvent } from './assistant-ui/utils/hooks/useAuiEvent';
 import { ConversationMessageProvider } from './message/context';
 
 export type MessageListEmptyState = {
@@ -59,7 +54,6 @@ type MessageListInnerProps = Pick<
   | 'contentClassName'
   | 'showScrollButton'
   | 'footer'
-  | 'threadId'
 >;
 
 const MessageListInner = ({
@@ -70,29 +64,7 @@ const MessageListInner = ({
   contentClassName,
   showScrollButton = true,
   footer,
-  threadId,
 }: MessageListInnerProps) => {
-  const emitAutoScrollEvent = useConversationViewport((state) => state.emitAutoScrollEvent);
-
-  const conversationKey = threadId ?? messages[0]?.id ?? 'empty';
-  const previousKeyRef = useRef(conversationKey);
-  const didInitializeRef = useRef(false);
-
-  useEffect(() => {
-    if (previousKeyRef.current !== conversationKey) {
-      previousKeyRef.current = conversationKey;
-      didInitializeRef.current = false;
-      emitAutoScrollEvent('threadSwitch');
-    }
-  }, [conversationKey, emitAutoScrollEvent]);
-
-  useEffect(() => {
-    if (!didInitializeRef.current && messages.length > 0) {
-      didInitializeRef.current = true;
-      emitAutoScrollEvent('initialize');
-    }
-  }, [emitAutoScrollEvent, messages.length]);
-
   return (
     <>
       {messages.length === 0 ? (
@@ -111,7 +83,7 @@ const MessageListInner = ({
               messages={messages}
               status={status}
             >
-              <Fragment>{renderMessage({ message, index })}</Fragment>
+              {renderMessage({ message, index })}
             </ConversationMessageProvider>
           ))}
         </ConversationContent>
@@ -140,9 +112,46 @@ export const MessageList = ({
   threadId,
   ...props
 }: MessageListProps) => {
+  const conversationKey = threadId ?? messages[0]?.id ?? 'empty';
+  const prevLengthRef = useRef<number>(messages.length);
+  const prevThreadIdRef = useRef<string | null | undefined>(threadId);
+  const lastMessageRef = useRef<{ id: string; role: UIMessage['role'] } | null>(null);
+
+  useEffect(() => {
+    const previousLength = prevLengthRef.current;
+    if (previousLength === 0 && messages.length > 0) {
+      emitAuiEvent('thread.initialize');
+    }
+    prevLengthRef.current = messages.length;
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (prevThreadIdRef.current && threadId && prevThreadIdRef.current !== threadId) {
+      emitAuiEvent('threadListItem.switchedTo');
+    }
+    prevThreadIdRef.current = threadId;
+  }, [threadId]);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastMessage = messages[messages.length - 1];
+    const prevLast = lastMessageRef.current;
+    const previousRole = messages.length >= 2 ? messages[messages.length - 2]?.role : null;
+
+    const isNewAssistantMessage =
+      lastMessage.role === 'assistant' &&
+      (!prevLast || prevLast.id !== lastMessage.id || prevLast.role !== lastMessage.role);
+
+    if (isNewAssistantMessage && previousRole === 'user') {
+      emitAuiEvent('thread.runStart');
+    }
+
+    lastMessageRef.current = { id: lastMessage.id, role: lastMessage.role };
+  }, [messages]);
+
   return (
     <div className={cn('flex min-w-0 min-h-0 flex-col overflow-hidden', className)} {...props}>
-      <Conversation className={conversationClassName}>
+      <Conversation key={conversationKey} className={conversationClassName}>
         <MessageListInner
           messages={messages}
           status={status}
@@ -151,7 +160,6 @@ export const MessageList = ({
           contentClassName={contentClassName}
           showScrollButton={showScrollButton}
           footer={footer}
-          threadId={threadId}
         />
       </Conversation>
     </div>
