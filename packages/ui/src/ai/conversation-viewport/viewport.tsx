@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-05 - 移除高度注册与自研滚动状态，改为 assistant-ui auto-scroll
  * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版 Viewport 结构（turnAnchor + size handle）
  * [UPDATE]: 2026-02-05 - 开启 scroll-smooth，恢复 runStart 滚动动画
+ * [UPDATE]: 2026-02-05 - scrollbar-gutter stable，避免滚动条引发消息高度抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +14,7 @@
 
 import { useComposedRefs } from '@radix-ui/react-compose-refs';
 import { forwardRef, useCallback } from 'react';
-import type { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
 
 import { cn } from '../../lib/utils';
 import { useSizeHandle } from '../assistant-ui/utils/hooks/useSizeHandle';
@@ -54,12 +55,17 @@ const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewpor
     });
     const viewportSizeRef = useViewportSizeRef();
     const composedRef = useComposedRefs(ref, autoScrollRef, viewportSizeRef);
+    const mergedStyle: CSSProperties = {
+      scrollbarGutter: 'stable',
+      ...(props.style ?? {}),
+    };
 
     return (
       <div
         {...props}
         ref={composedRef}
         data-slot="conversation-viewport"
+        style={mergedStyle}
         className={cn(
           'relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-auto scroll-smooth',
           className

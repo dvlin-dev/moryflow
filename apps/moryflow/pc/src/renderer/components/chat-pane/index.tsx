@@ -7,11 +7,12 @@
  * [UPDATE]: 2026-02-04 - 清理 scrollReady 状态，交由 UI 包滚动逻辑接管
  * [UPDATE]: 2026-02-04 - Header 高度写入 CSS 变量，避免消息被覆盖
  * [UPDATE]: 2026-02-05 - 取消 Header 高度透传，顶部 padding 归零避免冗余留白
+ * [UPDATE]: 2026-02-05 - 恢复 Header 高度透传，修复自动滚动时顶部遮挡
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { CardContent } from '@anyhunt/ui/components/card';
@@ -50,6 +51,7 @@ export const ChatPane = ({
 }: ChatPaneProps) => {
   const { t } = useTranslation('chat');
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const {
     sessions,
     activeSession,
@@ -119,10 +121,37 @@ export const ChatPane = ({
   );
   const requireModelSetup = !hasModelOptions || !selectedModelId;
 
-  const conversationStyle = {
-    '--ai-conversation-top-padding': '0px',
-    '--ai-conversation-top-padding-extra': '0px',
-  } as CSSProperties;
+  const conversationStyle = useMemo(
+    () =>
+      ({
+        '--ai-conversation-top-padding': `${headerHeight}px`,
+        '--ai-conversation-top-padding-extra': '0px',
+      }) as CSSProperties,
+    [headerHeight]
+  );
+
+  useLayoutEffect(() => {
+    const headerEl = headerRef.current;
+    if (!headerEl) return;
+
+    const updateHeight = () => {
+      const nextHeight = Math.round(headerEl.getBoundingClientRect().height);
+      setHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => {
+        window.removeEventListener('resize', updateHeight);
+      };
+    }
+
+    const observer = new ResizeObserver(() => updateHeight());
+    observer.observe(headerEl);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!requireModelSetup && isModelSetupError) {

@@ -48,6 +48,16 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- Slack：计算扣除顶部 padding，避免用户消息被 header 遮挡
+- AutoScroll：移除 namespace，符合 lint 规则
+- AutoScroll：用户上滚立即取消 runStart 自动滚动，避免手动滚动抖动
+- ConversationViewport：启用 scrollbar-gutter: stable，避免滚动条引发消息高度抖动
+- ConversationViewportSlack：忽略 0 高度测量，避免短列表抖动
+- AutoScroll：runStart 测量未就绪时延后滚动，避免短列表抖动
+- ScrollButton：新增距离阈值控制显示（默认 200px）
+- MessageRoot：锚点高度始终绑定最后一条 user，避免短列表闪烁
+- TurnAnchor：移除滚动/Slack/列表事件日志，恢复默认静默
+- AUI Event：移除 TurnAnchor 调试日志，避免噪音
 - AutoScroll：runStart 增加滚动锁，确保 Slack/min-height 更新后仍能对齐顶部
 - ConversationViewport：启用 scroll-smooth，恢复 runStart 向上滚动动画
 - ConversationViewport：对齐 assistant-ui v0.12.6（turnAnchor + size handle + auto-scroll 选项）
@@ -99,4 +109,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.10 | 更新日期: 2026-02-05_
+_版本: 4.13 | 更新日期: 2026-02-05_

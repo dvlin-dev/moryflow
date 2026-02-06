@@ -4,6 +4,7 @@
  * [POS]: 对话场景消息容器（对齐 assistant-ui MessagePrimitive.Root）
  * [UPDATE]: 2026-02-05 - 移除 Slack/锚点注册，仅保留基础容器
  * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版锚点/Slack 机制
+ * [UPDATE]: 2026-02-05 - 锚点高度始终绑定最后一条 user，避免短列表闪烁
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -26,11 +27,20 @@ const useMessageViewportRef = () => {
   const registerUserHeight = useConversationViewport((state) => state.registerUserMessageHeight);
   const messageContext = useConversationMessage({ optional: true });
 
+  let lastUserIndex = -1;
+  if (messageContext) {
+    for (let i = messageContext.messages.length - 1; i >= 0; i -= 1) {
+      if (messageContext.messages[i]?.role === 'user') {
+        lastUserIndex = i;
+        break;
+      }
+    }
+  }
+
   const shouldRegisterAsInset =
     turnAnchor === 'top' &&
     messageContext?.message.role === 'user' &&
-    messageContext.index === messageContext.messages.length - 2 &&
-    messageContext.messages.at(-1)?.role === 'assistant';
+    messageContext.index === lastUserIndex;
 
   const getHeight = useCallback((el: HTMLElement) => el.offsetHeight, []);
 

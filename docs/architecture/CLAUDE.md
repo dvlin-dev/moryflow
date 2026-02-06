@@ -40,6 +40,12 @@
 
 ## 近期更新
 
+- `ui-message-list-turn-anchor-adoption.md`：重写现状/分支目标/未来需求/未完成清单（2026-02-06）。
+- `ui-message-list-turn-anchor-adoption.md`：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：header 遮挡修复 + ScrollButton 阈值（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：用户上滚取消自动滚动 + scrollbar-gutter stable（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：短列表抖动追加修复（Slack 忽略 0 高度 + runStart 延后滚动）（2026-02-05）。
+- `ui-message-list-turn-anchor-adoption.md`：锚点高度始终绑定最后一条 user，避免短列表闪烁（2026-02-05）。
 - `ui-message-list-turn-anchor-adoption.md`：补充 runStart 滚动锁 + scroll-smooth 修复记录（2026-02-05）。
 - `ui-message-list-turn-anchor-adoption.md`：同步 assistant-ui v0.12.6 + Slack/size handle/aui-event（2026-02-05）。
 - `ui-message-list-turn-anchor-adoption.md`：标记全量校验完成（lint/typecheck/test:unit）（2026-02-05）。

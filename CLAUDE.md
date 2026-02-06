@@ -1,10 +1,16 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-06（TurnAnchor 文档重写：现状/分支目标/未来需求/未完成清单）
 > 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地，app/public 路由完成迁移）
 > 最近更新：2026-02-02（消息列表交互复用落地：TurnAnchor 固定 top、Viewport/Slack 统一）
+> 最近更新：2026-02-05（TurnAnchor：锚点高度始终绑定最后一条 user）
+> 最近更新：2026-02-05（TurnAnchor：用户上滚取消自动滚动 + scrollbar-gutter stable）
+> 最近更新：2026-02-05（TurnAnchor：header 遮挡修复 + ScrollButton 阈值）
+> 最近更新：2026-02-05（TurnAnchor：移除滚动/Slack/事件日志；PC ChatPane 恢复 Header 高度透传）
+> 最近更新：2026-02-05（TurnAnchor：短列表抖动追加修复（Slack 忽略 0 高度 + runStart 延后滚动））
 > 最近更新：2026-02-05（TurnAnchor：runStart 滚动锁 + scroll-smooth 修复）
 > 最近更新：2026-02-05（TurnAnchor：assistant-ui v0.12.6 同步 + Slack/size handle/aui-event）
 > 最近更新：2026-02-05（TurnAnchor：AutoScroll 改为内容尾部可见性门控，避免首屏下坠）

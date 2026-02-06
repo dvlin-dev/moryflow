@@ -16,6 +16,7 @@
 
 ## 近期变更
 
+- 2026-02-05：恢复 Header 高度透传，修复自动滚动时顶部遮挡。
 - 2026-02-05：取消 Header 高度透传，顶部 padding 变量在 PC 侧归零。
 - 2026-02-04：移除 assistant-ui 直连 adapter，滚动交互继续由 UI 包实现。
 - 2026-02-04：移除 header inset 与 topInset 透传，滚动行为严格对齐 assistant-ui。

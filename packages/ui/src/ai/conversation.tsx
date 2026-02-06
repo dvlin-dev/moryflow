@@ -9,6 +9,7 @@
  * [UPDATE]: 2026-02-04 - ConversationContent 顶部 padding 使用 header 变量，避免首条消息被覆盖
  * [UPDATE]: 2026-02-05 - 顶部 padding 额外预留改为可配置变量，默认 1rem
  * [UPDATE]: 2026-02-05 - ScrollButton 回退 assistant-ui 行为，仅依赖 isAtBottom
+ * [UPDATE]: 2026-02-05 - ScrollButton 基于距离阈值控制显示（默认 200px）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,7 +20,11 @@ import { ChevronDown } from 'lucide-react';
 import { Button } from '../components/button';
 import { cn } from '../lib/utils';
 import type { ConversationViewportProps } from './conversation-viewport';
-import { ConversationViewport, useConversationViewport, useConversationViewportStore } from './conversation-viewport';
+import {
+  ConversationViewport,
+  useConversationViewport,
+  useConversationViewportStore,
+} from './conversation-viewport';
 
 export type ConversationProps = ConversationViewportProps;
 
@@ -77,15 +82,18 @@ export const ConversationEmptyState = ({
   </div>
 );
 
-export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
+export type ConversationScrollButtonProps = ComponentProps<typeof Button> & {
+  distanceThreshold?: number;
+};
 
 export const ConversationScrollButton = ({
   className,
+  distanceThreshold = 200,
   ...props
 }: ConversationScrollButtonProps) => {
-  const isAtBottom = useConversationViewport((state) => state.isAtBottom);
+  const distanceFromBottom = useConversationViewport((state) => state.distanceFromBottom);
   const viewportStore = useConversationViewportStore();
-  const shouldShow = !isAtBottom;
+  const shouldShow = distanceFromBottom > distanceThreshold;
 
   return (
     shouldShow && (

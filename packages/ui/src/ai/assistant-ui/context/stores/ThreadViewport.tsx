@@ -2,14 +2,15 @@
  * [PROVIDES]: ThreadViewportStore - assistant-ui 视口状态
  * [DEPENDS]: zustand
  * [POS]: mirror @assistant-ui/react ThreadViewport store（v0.12.6）
+ * [UPDATE]: 2026-02-05 - 新增 distanceFromBottom 供滚动按钮阈值判定
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-"use client";
+'use client';
 
-import { create } from "zustand";
-import type { Unsubscribe } from "../../types/Unsubscribe";
+import { create } from 'zustand';
+import type { Unsubscribe } from '../../types/Unsubscribe';
 
 export type SizeHandle = {
   /** Update the height */
@@ -22,9 +23,7 @@ type SizeRegistry = {
   register: () => SizeHandle;
 };
 
-const createSizeRegistry = (
-  onChange: (total: number) => void,
-): SizeRegistry => {
+const createSizeRegistry = (onChange: (total: number) => void): SizeRegistry => {
   const entries = new Map<symbol, number>();
 
   const recalculate = () => {
@@ -58,15 +57,16 @@ const createSizeRegistry = (
 
 export type ThreadViewportState = {
   readonly isAtBottom: boolean;
-  readonly scrollToBottom: (config?: {
-    behavior?: ScrollBehavior | undefined;
-  }) => void;
+  readonly scrollToBottom: (config?: { behavior?: ScrollBehavior | undefined }) => void;
   readonly onScrollToBottom: (
-    callback: ({ behavior }: { behavior: ScrollBehavior }) => void,
+    callback: ({ behavior }: { behavior: ScrollBehavior }) => void
   ) => Unsubscribe;
 
   /** Controls scroll anchoring: "top" anchors user messages at top, "bottom" is classic behavior */
-  readonly turnAnchor: "top" | "bottom";
+  readonly turnAnchor: 'top' | 'bottom';
+
+  /** Current distance to the bottom of the scroll container */
+  readonly distanceFromBottom: number;
 
   /** Raw height values from registered elements */
   readonly height: {
@@ -89,15 +89,11 @@ export type ThreadViewportState = {
 };
 
 export type ThreadViewportStoreOptions = {
-  turnAnchor?: "top" | "bottom" | undefined;
+  turnAnchor?: 'top' | 'bottom' | undefined;
 };
 
-export const makeThreadViewportStore = (
-  options: ThreadViewportStoreOptions = {},
-) => {
-  const scrollToBottomListeners = new Set<
-    (config: { behavior: ScrollBehavior }) => void
-  >();
+export const makeThreadViewportStore = (options: ThreadViewportStoreOptions = {}) => {
+  const scrollToBottomListeners = new Set<(config: { behavior: ScrollBehavior }) => void>();
 
   const viewportRegistry = createSizeRegistry((total) => {
     store.setState({
@@ -126,7 +122,7 @@ export const makeThreadViewportStore = (
 
   const store = create<ThreadViewportState>(() => ({
     isAtBottom: true,
-    scrollToBottom: ({ behavior = "auto" } = {}) => {
+    scrollToBottom: ({ behavior = 'auto' } = {}) => {
       for (const listener of scrollToBottomListeners) {
         listener({ behavior });
       }
@@ -138,7 +134,9 @@ export const makeThreadViewportStore = (
       };
     },
 
-    turnAnchor: options.turnAnchor ?? "bottom",
+    turnAnchor: options.turnAnchor ?? 'bottom',
+
+    distanceFromBottom: 0,
 
     height: {
       viewport: 0,

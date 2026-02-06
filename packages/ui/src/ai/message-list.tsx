@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-05 - 移除自研事件驱动，改为 assistant-ui Resize/Mutation 自动滚动
  * [UPDATE]: 2026-02-05 - threadId 仅用于重建 Conversation，确保视口状态重置
  * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版事件触发（initialize/runStart/threadSwitch）
+ * [UPDATE]: 2026-02-05 - 移除 TurnAnchor 事件日志，避免噪音
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,7 +18,12 @@ import { useEffect, useRef } from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { cn } from '../lib/utils';
-import { Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton } from './conversation';
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from './conversation';
 import { ConversationViewportFooter } from './conversation-viewport';
 import { emitAuiEvent } from './assistant-ui/utils/hooks/useAuiEvent';
 import { ConversationMessageProvider } from './message/context';

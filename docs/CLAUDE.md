@@ -8,6 +8,12 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-06（TurnAnchor 机制文档重写：现状/分支目标/未来需求/未完成清单）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：用户上滚取消自动滚动 + scrollbar-gutter stable）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：header 遮挡修复 + ScrollButton 阈值）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复）
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：短列表抖动追加修复（Slack 忽略 0 高度 + runStart 延后滚动））
+> 最近更新：2026-02-05（TurnAnchor 机制文档更新：锚点高度始终绑定最后一条 user）
 > 最近更新：2026-02-05（TurnAnchor 机制文档更新：runStart 滚动锁 + scroll-smooth）
 > 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui v0.12.6 同步 + Slack/size handle/aui-event 进度）
 > 最近更新：2026-02-05（TurnAnchor 机制文档更新：确认 assistant-ui 版本 0.12.6）
@@ -51,6 +57,12 @@
 
 ## 最近更新
 
+- Moryflow PC 消息列表交互复用改造方案：重写现状/分支目标/未来需求/未完成清单（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-06）
+- Moryflow PC 消息列表交互复用改造方案：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：header 遮挡修复 + ScrollButton 阈值（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：用户上滚取消自动滚动 + scrollbar-gutter stable（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：短列表抖动追加修复（Slack 忽略 0 高度 + runStart 延后滚动）（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
+- Moryflow PC 消息列表交互复用改造方案：锚点高度始终绑定最后一条 user（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
 - Moryflow PC 消息列表交互复用改造方案：runStart 滚动锁 + scroll-smooth 修复记录（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
 - Moryflow PC 消息列表交互复用改造方案：同步 assistant-ui v0.12.6 + Slack/size handle/aui-event（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
 - Moryflow PC 消息列表交互复用改造方案：assistant-ui 全量移植校验完成（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
