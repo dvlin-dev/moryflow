@@ -1,6 +1,6 @@
 ---
 title: Moryflow PC 消息列表交互复用改造方案（Following 模式）
-date: 2026-02-07
+date: 2026-02-08
 scope: ui
 status: active
 ---
@@ -164,7 +164,11 @@ TurnAnchor=top 的目标是“发送后当前轮 user 尽量贴顶，assistant �
 
 ### Commit 列表（`origin/main..docs/turn-anchor-adoption`）
 
+> 注：此处为快照，用于快速 review；不要求严格包含“本文档后续小修”的 commit。
+
 ```text
+f65ee2bc refactor(ui): stabilize MessageList key
+7cb3178a docs(architecture): add main diff and code review for message list
 a444fda8 refactor(ui): simplify message list auto-scroll and remove assistant-ui copy
 3c755873 fix(ui): stabilize TurnAnchor top autoscroll
 be181bbf feat(ui): 对齐 TurnAnchor 自动滚动
@@ -238,7 +242,7 @@ M	pnpm-lock.yaml
 ### 统计（`git diff --stat origin/main...HEAD`）
 
 ```text
-47 files changed, 2421 insertions(+), 647 deletions(-)
+47 files changed, 2423 insertions(+), 647 deletions(-)
 ```
 
 ---
@@ -269,8 +273,6 @@ M	pnpm-lock.yaml
 ### 问题与建议（按优先级，偏“简化/可维护”）
 
 - P1（文档一致性）：需要持续避免在各端 `CLAUDE.md` 中残留 “Slack/发送贴顶/TurnAnchor=top” 的描述，防止协作误解。建议后续只保留“Following + runStart smooth + 160ms 入场”的单一事实来源（本文）。
-- P2（可预期性）：`MessageList` 的 `conversationKey` 在未传 `threadId` 时会回退为 `messages[0]?.id`，可能在“压缩/截断/重建消息数组”场景触发 remount 并重置视口状态。
-  - 建议：对需要稳定视口状态的场景（例如 Console 多轮会话/多 run 切换），上层尽量显式传入 `threadId`（类似 PC 的 `activeSessionId`）。
-- P2（小冗余，可选清理）：`MessageListInner` 传入的 `ConversationViewportFooter className="sticky bottom-0"` 与 `ConversationViewportFooter` 内部自带的 sticky class 重复；不影响行为，但可以删掉以减少噪音。
+- P2（可预期性）：`MessageList` 未传 `threadId` 时使用稳定的默认 key，避免消息数组“压缩/截断”导致意外 remount；但如果业务存在线程切换，上层仍应显式传入 `threadId` 作为唯一事实来源（类似 PC 的 `activeSessionId`）。
 - P3（重复逻辑，可接受但需意识到）：PC 的 `ChatMessage` 与 Console 的 `MessageRow` 都实现了“拆分 parts + 清理 file ref marker”的逻辑。
   - 建议：短期不抽象（避免过度设计）；如果未来两端继续扩展消息解析规则，再考虑抽一个**纯函数级**的小 util（不引入 context/hook），避免语义漂移。
