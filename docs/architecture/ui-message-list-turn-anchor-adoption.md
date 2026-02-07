@@ -272,7 +272,6 @@ M	pnpm-lock.yaml
 
 ### 问题与建议（按优先级，偏“简化/可维护”）
 
-- P1（文档一致性）：需要持续避免在各端 `CLAUDE.md` 中残留 “Slack/发送贴顶/TurnAnchor=top” 的描述，防止协作误解。建议后续只保留“Following + runStart smooth + 160ms 入场”的单一事实来源（本文）。
+- P1（文档一致性）：已清理各端 `CLAUDE.md` 中旧的 TurnAnchor/发送贴顶描述；后续以本文作为单一事实来源（Following + runStart smooth + 160ms 入场）。
 - P2（可预期性）：`MessageList` 未传 `threadId` 时使用稳定的默认 key，避免消息数组“压缩/截断”导致意外 remount；但如果业务存在线程切换，上层仍应显式传入 `threadId` 作为唯一事实来源（类似 PC 的 `activeSessionId`）。
-- P3（重复逻辑，可接受但需意识到）：PC 的 `ChatMessage` 与 Console 的 `MessageRow` 都实现了“拆分 parts + 清理 file ref marker”的逻辑。
-  - 建议：短期不抽象（避免过度设计）；如果未来两端继续扩展消息解析规则，再考虑抽一个**纯函数级**的小 util（不引入 context/hook），避免语义漂移。
+- P3（重复逻辑）：已抽出纯函数级 util（`@anyhunt/ui/ai/message/parts.ts`：`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。

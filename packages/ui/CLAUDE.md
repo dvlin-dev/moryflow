@@ -48,6 +48,8 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-02-08：Message parts 解析抽为纯函数（`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。
+- 2026-02-08：MessageList：未传 threadId 时使用稳定默认 key，避免消息数组截断/压缩导致的意外 remount。
 - 2026-02-07：消息列表交互回归经典 chat（bottom-anchor Following）：AI 流式输出自动追随；用户任意上滑暂停；滚回底部/按钮恢复。
 - 2026-02-07：AutoScroll：改为纯滚动指标判定上滑取消；同时过滤 layout shrink / viewport resize 造成的 scrollTop 回退，避免 following 被误关（导致“滚动条拖不动/追随失效”）。
 - 2026-02-07：ConversationViewport：禁用 `overflow-anchor` + `scrollbar-gutter: stable`，降低滚动抖动与闪烁。
@@ -79,4 +81,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.16 | 更新日期: 2026-02-07_
+_版本: 4.16 | 更新日期: 2026-02-08_

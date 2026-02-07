@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：MessageRow parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
 - Playground Shared/Memox 分页箭头统一改为 ChevronRight/ChevronLeft（无中轴）
 - Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API Key Create Dialog 文案与 ApiKeyClient 校验对齐（空 key 阻断请求）

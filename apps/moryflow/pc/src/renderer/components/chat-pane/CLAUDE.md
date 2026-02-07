@@ -16,7 +16,9 @@
 
 ## 近期变更
 
-- 2026-02-07：ChatMessage 统一使用 Message（移除 MessageRoot），消息容器不再承担锚点/Slack 逻辑。
+- 2026-02-08：ChatMessage parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移。
+- 2026-02-08：ChatPane `handle.ts` 清理未使用的 message parts 工具函数，仅保留 `computeAgentOptions`（单一职责）。
+- 2026-02-07：ChatMessage 统一使用 Message（移除 MessageRoot），消息容器不再承担锚点相关逻辑。
 - 2026-02-05：恢复 Header 高度透传，修复自动滚动时顶部遮挡。
 - 2026-02-05：取消 Header 高度透传，顶部 padding 变量在 PC 侧归零。
 - 2026-02-04：移除 assistant-ui 直连 adapter，滚动交互继续由 UI 包实现。

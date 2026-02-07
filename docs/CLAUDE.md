@@ -8,30 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-07（消息列表自动滚动：回归 Following 模式，删除 TurnAnchor/TurnTail/slack（不再发送贴顶）；runStart `behavior:'smooth'`（一次）确保用户消息 + AI loading 可见；新增 user + AI loading `160ms` 入场动效（向上滑入 + 淡入）；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录；补齐与 `main` 分支差异与 Code Review 附录；AutoScroll 调试日志可选开启：`globalThis.__AUI_DEBUG_AUTO_SCROLL__=true`）
-> 最近更新：2026-02-06（TurnAnchor 机制文档重写：现状/分支目标/未来需求/未完成清单）
-> 最近更新：2026-02-06（TurnAnchor 机制文档补充 AI 跟随实现方案（待评审））
-> 最近更新：2026-02-06（TurnAnchor 机制：AI 跟随落地与单测/验证记录更新）
-> 最近更新：2026-02-06（TurnAnchor 机制：补充抖动/提前滚动排查方案（临时日志））
-> 最近更新：2026-02-06（TurnAnchor 机制：修复无操作抖动/提前跟随（tail 边界 + layout shrink + init 竞争））
-> 最近更新：2026-02-06（TurnAnchor 机制：修复 user submit 间隙全量跌落（TurnTail 稳定 Slack 宿主））
-> 最近更新：2026-02-06（TurnAnchor 机制：TurnAnchor=top runStart 到底后释放 scrollBehavior，避免 streaming 过早滚动）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：用户上滚取消自动滚动 + scrollbar-gutter stable）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：header 遮挡修复 + ScrollButton 阈值）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：短列表抖动追加修复（Slack 忽略 0 高度 + runStart 延后滚动））
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：锚点高度始终绑定最后一条 user）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：runStart 滚动锁 + scroll-smooth）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui v0.12.6 同步 + Slack/size handle/aui-event 进度）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：确认 assistant-ui 版本 0.12.6）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui 全量移植校验完成（lint/typecheck/test:unit））
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui primitives 对齐（移除 Slack/事件驱动））
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：AutoScroll 改为内容尾部可见性门控）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：userSubmit 对齐用户消息顶部）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：userSubmit pin 直到溢出后再自动跟随）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui 全量移植计划）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：确认 assistant-ui 版本 0.12.6）
-> 最近更新：2026-02-05（TurnAnchor 机制文档更新：assistant-ui 源码已拷贝）
+> 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录；补齐与 `main` 分支差异与 Code Review 附录）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -64,31 +41,9 @@
 
 ## 最近更新
 
-- Moryflow PC 消息列表交互复用改造方案：重写现状/分支目标/未来需求/未完成清单（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-06）
-- Moryflow PC 消息列表交互复用改造方案：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：header 遮挡修复 + ScrollButton 阈值（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：用户上滚取消自动滚动 + scrollbar-gutter stable（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：短列表抖动追加修复（Slack 忽略 0 高度 + runStart 延后滚动）（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：锚点高度始终绑定最后一条 user（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：runStart 滚动锁 + scroll-smooth 修复记录（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：同步 assistant-ui v0.12.6 + Slack/size handle/aui-event（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：assistant-ui 全量移植校验完成（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：assistant-ui primitives 对齐（移除 Slack/事件驱动 + 更新单测）（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：userSubmit 对齐用户消息顶部（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：userSubmit pin 直到溢出后再自动跟随（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：assistant-ui 全量移植计划（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：确认 assistant-ui 版本 0.12.6（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：assistant-ui 源码已拷贝（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：AutoScroll 改为内容尾部可见性门控（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：锚点测量改为消息气泡 + scrollbar-gutter: stable（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：回退至 assistant-ui 基线（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：补充提交期标记与 assistant 占位阶段滚动修复方案（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：补充用户提交阶段滚动问题与修复方案（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- Moryflow PC 消息列表交互复用改造方案：Slack 扣除顶部 padding + 用户消息高度忽略 0 值回调（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-05）
-- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：补充 Slack 顶部 padding 扣除与 0 值回调规避（`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`，2026-02-05）
-- 调研：Moryflow PC TurnAnchor 滚动问题跟踪与方案：`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`（2026-02-04：active，补充上滚修复与回归记录）
+- Moryflow PC 消息列表交互复用改造方案：Following 模式定稿（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-08）
+- 调研（已废弃方案，不再采用）：Moryflow PC TurnAnchor 滚动问题跟踪与记录（`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`，最后更新：2026-02-05）
 - Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）
-- Moryflow PC 消息列表交互复用改造方案（TurnAnchor 机制）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（2026-02-02：implemented，交互固定为 top 且去参数化）
 - Anyhunt app/public/apikey 通道路由规范与迁移清单（含模块进度）：`docs/architecture/anyhunt-api-channel-routing.md`（2026-02-02：implemented）
 - Moryflow PC 悬浮任务面板改造方案：补充悬停箭头/行态/详情展开示意（`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`，2026-02-02：proposal update）
 - Moryflow PC 输入框改造方案（+ 菜单 / @ 引用 / 主按钮统一）：`docs/products/moryflow/features/chat-input/pc-prompt-input-plus-menu.md`（2026-01-28：proposal update，二级面板对齐到对应项）
