@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useLayoutEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { cn } from '../lib/utils';
@@ -185,7 +185,7 @@ const MessageListInner = ({
       )}
 
       {footer || showScrollButton ? (
-        <ConversationViewportFooter className="sticky bottom-0">
+        <ConversationViewportFooter>
           {showScrollButton ? <ConversationScrollButton /> : null}
           {footer}
         </ConversationViewportFooter>
@@ -209,7 +209,9 @@ export const MessageList = ({
   threadId,
   ...props
 }: MessageListProps) => {
-  const conversationKey = threadId ?? messages[0]?.id ?? 'empty';
+  // 未提供 threadId 时保持 viewport store 稳定，避免消息数组截断/压缩导致的意外 remount。
+  const defaultConversationKey = useId();
+  const conversationKey = threadId ?? defaultConversationKey;
 
   return (
     <div className={cn('flex min-w-0 min-h-0 flex-col overflow-hidden', className)} {...props}>
