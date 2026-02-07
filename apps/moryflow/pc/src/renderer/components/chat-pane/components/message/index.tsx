@@ -3,7 +3,7 @@
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
  * [UPDATE]: 2026-02-03 - Thinking 反馈改为 loading icon
- * [UPDATE]: 2026-02-03 - MessageRoot 对齐 Slack/锚点处理
+ * [UPDATE]: 2026-02-07 - 统一使用 Message（移除 MessageRoot/锚点相关逻辑）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,6 +15,7 @@ import type { FileUIPart, ToolUIPart, UIMessage } from 'ai';
 import { X, Pencil, GitBranch, RefreshCw, Check } from 'lucide-react';
 
 import {
+  Message,
   MessageAction,
   MessageActions,
   MessageAttachment,
@@ -22,7 +23,6 @@ import {
   MessageContent,
   MessageMetaAttachments,
   MessageResponse,
-  MessageRoot,
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
 import { Loader } from '@anyhunt/ui/ai/loader';
@@ -414,7 +414,7 @@ export const ChatMessage = ({
   };
 
   return (
-    <MessageRoot from={message.role} data-message-id={message.id}>
+    <Message from={message.role} data-message-id={message.id}>
       <MessageContent ref={isUser ? contentRef : undefined} style={editContentStyle}>
         {renderMessageBody()}
       </MessageContent>
@@ -423,7 +423,7 @@ export const ChatMessage = ({
       {isEditing ? renderEditActions() : null}
       {!isEditing && isUser ? renderUserActions() : null}
       {!isEditing && !isUser ? renderAssistantActions() : null}
-    </MessageRoot>
+    </Message>
   );
 };
 

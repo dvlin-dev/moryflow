@@ -1,18 +1,54 @@
 /**
- * [PROVIDES]: ConversationViewport Store - assistant-ui 对齐
- * [DEPENDS]: assistant-ui ThreadViewport store
- * [POS]: Conversation Viewport 交互状态（对齐 assistant-ui）
+ * [PROVIDES]: ConversationViewportStore - 会话视口状态（isAtBottom/distanceFromBottom/scrollToBottom）
+ * [DEPENDS]: zustand
+ * [POS]: ConversationViewport 的最小状态：用于 scroll button 判定 + runStart/手动滚底触发
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import type { ThreadViewportState, ThreadViewportStoreOptions } from '../assistant-ui/context/stores/ThreadViewport';
-import { makeThreadViewportStore } from '../assistant-ui/context/stores/ThreadViewport';
+import { create } from 'zustand';
 
-export type ConversationViewportState = ThreadViewportState;
-export type ConversationViewportStoreOptions = ThreadViewportStoreOptions;
+export type ConversationViewportState = {
+  readonly isAtBottom: boolean;
+  /** Distance to the bottom of the scroll container (px, rounded). */
+  readonly distanceFromBottom: number;
 
-export const createConversationViewportStore = (options?: ConversationViewportStoreOptions) =>
-  makeThreadViewportStore(options);
+  readonly scrollToBottom: (config?: { behavior?: ScrollBehavior | undefined }) => void;
+  readonly onScrollToBottom: (
+    callback: ({ behavior }: { behavior: ScrollBehavior }) => void
+  ) => () => void;
+};
+
+export const makeConversationViewportStore = () => {
+  const scrollToBottomListeners = new Set<(config: { behavior: ScrollBehavior }) => void>();
+  let pendingScrollToBottom: { behavior: ScrollBehavior } | null = null;
+
+  const store = create<ConversationViewportState>(() => ({
+    isAtBottom: true,
+    distanceFromBottom: 0,
+    scrollToBottom: ({ behavior = 'auto' } = {}) => {
+      if (scrollToBottomListeners.size === 0) {
+        pendingScrollToBottom = { behavior };
+        return;
+      }
+      for (const listener of scrollToBottomListeners) {
+        listener({ behavior });
+      }
+    },
+    onScrollToBottom: (callback) => {
+      scrollToBottomListeners.add(callback);
+      if (pendingScrollToBottom) {
+        const pending = pendingScrollToBottom;
+        pendingScrollToBottom = null;
+        callback(pending);
+      }
+      return () => {
+        scrollToBottomListeners.delete(callback);
+      };
+    },
+  }));
+
+  return store;
+};

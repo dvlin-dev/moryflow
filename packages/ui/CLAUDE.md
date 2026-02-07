@@ -48,50 +48,13 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
-- Slack：重构为 `ConversationViewportTurnTail`（稳定 Slack 宿主 + 内置 tail sentinel），修复 user submit scrollTop clamp 跌落
-- Slack：TurnTail 计算扣除 ConversationContent 的 gap/padding-bottom，修复短列表额外 overflow 导致 runStart 贴顶偏移
-- ConversationContent：gap/padding-bottom 改为 CSS 变量单一数据源（避免 computedStyle race 造成固定 20px 回弹）
-- AutoScroll：TurnAnchor=top 仅在尾部不可见时跟随，上滑 10px 取消，ScrollButton/滚到底部恢复
-- Slack：计算扣除顶部 padding，避免用户消息被 header 遮挡
-- AutoScroll：移除 namespace，符合 lint 规则
-- AutoScroll：用户上滚立即取消 runStart 自动滚动，避免手动滚动抖动
-- AutoScroll：调试日志默认开启（用于抖动/提前滚动排查）
-- ConversationViewport：启用 scrollbar-gutter: stable，避免滚动条引发消息高度抖动
-- ConversationViewportTurnTail：userMessage=0 时使用 offset 兜底，避免 slack 断档
-- AutoScroll：runStart 测量未就绪时延后滚动，避免短列表抖动
-- ScrollButton：新增距离阈值控制显示（默认 200px）
-- MessageRoot：锚点高度始终绑定最后一条 user，避免短列表闪烁
-- TurnAnchor：移除滚动/Slack/列表事件日志，恢复默认静默
-- AUI Event：移除 TurnAnchor 调试日志，避免噪音
-- AutoScroll：runStart 增加滚动锁，确保 Slack/min-height 更新后仍能对齐顶部
-- AutoScroll：TurnAnchor=top runStart 到底后立刻释放 scrollBehavior，避免 assistant 内容过早被 resize.behavior 追底
-- AutoScroll：TurnAnchor=top runStart 改为“单次对齐到底部”，避免 resize.behavior 持续追底导致提前滚动
-- ConversationViewport：启用 scroll-smooth，恢复 runStart 向上滚动动画
-- ConversationViewport：对齐 assistant-ui v0.12.6（turnAnchor + size handle + auto-scroll 选项）
-- ConversationViewportTurnTail：作为唯一 slack 宿主，对齐 TurnAnchor=top 的 min-height 语义
-- MessageList：引入 aui-event（initialize/runStart/threadSwitch）触发自动滚动
-- MessageRoot：恢复用户消息锚点高度注册，配合 Slack 计算
-- MessageContent：移除尾部锚点占位，保留 data-slot 用于样式定位
-- ScrollButton：仅依赖 isAtBottom，触发 store.scrollToBottom（assistant-ui 行为）
-- ConversationContent：顶部 padding 使用 CSS 变量（Header 高度 + extra 变量，默认 1rem）
-- Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
-- Form：回退场景使用稳定 id，避免 aria 关联错位
-- Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
-- Select/Accordion/NavigationMenu/Calendar 等下拉/折叠箭头统一改为 ChevronDown（无中轴）
-- Tool：折叠箭头改为 ChevronDown（无中轴）
-- DropdownMenu：子菜单指示箭头改为 ChevronRight（无中轴）
-- RadioGroup/ContextMenu/Menubar：单选指示图标统一为实心圆（移除空心外环）
-- DropdownMenu：单选指示图标改为实心圆，保持选中态更清晰
-- UI 包图标回退到 Lucide，移除 Icon 包装与 Hugeicons 依赖
-- 类型映射统一为 Record，移除 Circle 泛型依赖
-- ToolOutput：打开完整输出时补齐错误边界
-- ToolOutput：新增截断输出标识与完整输出打开入口
-- PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
-- ToolOutput：允许渲染 `0`/`false` 等非空输出
-- Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
-- Accordion/Highlight：状态派生与 ref 清理，补齐 client 边界
-- Chart：Tooltip 支持 `0` 值展示并补充单测
-- Testing：新增 packages/ui 单元测试配置与基础用例
+- 2026-02-07：消息列表交互回归经典 chat（bottom-anchor Following）：AI 流式输出自动追随；用户任意上滑暂停；滚回底部/按钮恢复。
+- 2026-02-07：AutoScroll：改为纯滚动指标判定上滑取消；同时过滤 layout shrink / viewport resize 造成的 scrollTop 回退，避免 following 被误关（导致“滚动条拖不动/追随失效”）。
+- 2026-02-07：ConversationViewport：禁用 `overflow-anchor` + `scrollbar-gutter: stable`，降低滚动抖动与闪烁。
+- 2026-02-07：移除 `packages/ui/src/ai/assistant-ui` 目录；AutoScroll/Store 内聚到 `packages/ui/src/ai/conversation-viewport/*`。
+- 2026-02-07：runStart：进入 running 时触发一次 `scrollToBottom({ behavior: 'smooth' })`，让“用户消息 + AI loading”在底部可见（不再发送贴顶）。
+- 2026-02-07：runStart：新增消息入场动效（user + AI loading，`160ms` 向上滑入 + 淡入），增强“向上出现”的反馈。
+- 2026-02-01：图标库回退 Lucide（`lucide-react` / `lucide-react-native`），移除 Hugeicons 依赖与 Icon 包装层。
 
 ## 技术栈
 

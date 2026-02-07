@@ -2,21 +2,18 @@
  * [PROPS]: MessageListProps - 消息列表渲染配置
  * [EMITS]: None
  * [POS]: AI 会话列表的通用布局封装
- * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
- * [UPDATE]: 2026-02-05 - 移除自研事件驱动，改为 assistant-ui Resize/Mutation 自动滚动
+ * [UPDATE]: 2026-02-04 - 移除顶部 inset，减少布局抖动来源
+ * [UPDATE]: 2026-02-05 - 移除事件总线式滚动；改为 Viewport Following 自动滚动（Resize/Mutation + scroll metrics）
  * [UPDATE]: 2026-02-05 - threadId 仅用于重建 Conversation，确保视口状态重置
- * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版事件触发（initialize/runStart/threadSwitch）
- * [UPDATE]: 2026-02-05 - 移除 TurnAnchor 事件日志，避免噪音
- * [UPDATE]: 2026-02-06 - TurnTail：固定 slack 宿主 + 内置 tail sentinel，避免 scrollTop clamp 跌落
- * [UPDATE]: 2026-02-07 - runStart：进入 running（submitted/streaming）触发，滚动细节由 auto-scroll 内部处理
+ * [UPDATE]: 2026-02-07 - 采用经典 chat 交互：默认底部锚定，AI 流式输出在底部追随；用户上滑则暂停追随；runStart 使用 `behavior:'smooth'`（一次）保证用户消息 + AI loading 可见
+ * [UPDATE]: 2026-02-07 - runStart 增加消息入场动效（user + AI loading，160ms），增强“向上出现”的反馈（不影响初始化/切会话：仍为 auto）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 'use client';
 
-import type { HTMLAttributes, ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { cn } from '../lib/utils';
@@ -26,9 +23,7 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from './conversation';
-import { ConversationViewportFooter, ConversationViewportTurnTail } from './conversation-viewport';
-import { emitAuiEvent } from './assistant-ui/utils/hooks/useAuiEvent';
-import { ConversationMessageProvider } from './message/context';
+import { ConversationViewportFooter, useConversationViewportStore } from './conversation-viewport';
 
 export type MessageListEmptyState = {
   title?: string;
@@ -64,12 +59,18 @@ type MessageListInnerProps = Pick<
   | 'footer'
 >;
 
-const findLastUserIndex = (messages: UIMessage[]): number => {
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    if (messages[i]?.role === 'user') return i;
-  }
-  return -1;
-};
+const RUN_START_ENTER_ANIMATION_MS = 160;
+// RunStart 后的短窗口：用于捕获“AI loading 占位消息”可能的延迟插入。
+const RUN_START_ENTER_WINDOW_MS = 500;
+
+const RUN_START_ENTER_ANIMATION_CLASSNAME = cn(
+  // Respect prefers-reduced-motion.
+  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2',
+  `motion-safe:duration-[${RUN_START_ENTER_ANIMATION_MS}ms] motion-safe:ease-out`
+);
+
+const isAssistantLoadingMessage = (message: UIMessage) =>
+  message.role === 'assistant' && (!message.parts || message.parts.length === 0);
 
 const MessageListInner = ({
   messages,
@@ -80,20 +81,83 @@ const MessageListInner = ({
   showScrollButton = true,
   footer,
 }: MessageListInnerProps) => {
-  const lastIndex = messages.length - 1;
-  const lastMessage = lastIndex >= 0 ? messages[lastIndex] : null;
-  const lastUserIndex = lastMessage ? findLastUserIndex(messages) : -1;
+  const viewportStore = useConversationViewportStore();
+  const prevStatusRef = useRef<ChatStatus>(status);
+  const prevMessagesRef = useRef<UIMessage[]>(messages);
+  const runStartUserIdRef = useRef<string | null>(null);
+  const runStartAssistantIdRef = useRef<string | null>(null);
+  const runStartAnimationUntilRef = useRef<number>(0);
 
-  const shouldRenderAssistantTail =
-    !!lastMessage &&
-    lastMessage.role === 'assistant' &&
-    lastUserIndex >= 0 &&
-    lastUserIndex < lastIndex;
+  const prevStatus = prevStatusRef.current;
+  const shouldScrollOnRunStart = isRunningStatus(status) && !isRunningStatus(prevStatus);
 
-  const shouldApplyTurnAnchorSlack =
-    messages.length > 0 && (lastMessage?.role === 'user' || shouldRenderAssistantTail);
+  const prevMessages = prevMessagesRef.current;
+  const appendedMessages =
+    messages.length > prevMessages.length ? messages.slice(prevMessages.length) : [];
 
-  const assistantTailMessage = shouldRenderAssistantTail ? lastMessage : null;
+  // Only animate on user runStart (not on first mount / thread switch).
+  const appendedUserId = appendedMessages.find((m) => m.role === 'user')?.id ?? null;
+  const runStartUserId = shouldScrollOnRunStart ? appendedUserId : null;
+
+  // Animate "user message + AI loading" during a short runStart window so the animation doesn't get
+  // interrupted by quick rerenders (e.g. submitted -> streaming).
+  const now = typeof performance === 'undefined' ? Date.now() : performance.now();
+  const hasRunStartWindow = now < runStartAnimationUntilRef.current;
+  const runStartUserIdForWindow =
+    runStartUserId ?? (hasRunStartWindow ? (runStartUserIdRef.current ?? appendedUserId) : null);
+  const runStartUserIndex = runStartUserIdForWindow
+    ? messages.findIndex((m) => m.id === runStartUserIdForWindow)
+    : -1;
+  const runStartAssistantLoadingIdForRender =
+    runStartUserIndex >= 0 &&
+    runStartUserIndex + 1 < messages.length &&
+    isAssistantLoadingMessage(messages[runStartUserIndex + 1]!)
+      ? messages[runStartUserIndex + 1]!.id
+      : null;
+
+  const runStartAssistantIdForWindow = shouldScrollOnRunStart
+    ? runStartAssistantLoadingIdForRender
+    : (runStartAssistantIdRef.current ?? runStartAssistantLoadingIdForRender);
+
+  const shouldAnimateMessageIdSet =
+    shouldScrollOnRunStart || hasRunStartWindow
+      ? new Set<string>(
+          [runStartUserIdForWindow, runStartAssistantIdForWindow].filter((id): id is string =>
+            Boolean(id)
+          )
+        )
+      : null;
+
+  // When the user submits a new message (run start), always bring them to the bottom.
+  // This is the expected behavior in classic chat UIs and avoids "my message is not visible".
+  useLayoutEffect(() => {
+    const now = typeof performance === 'undefined' ? Date.now() : performance.now();
+
+    if (shouldScrollOnRunStart) {
+      runStartAnimationUntilRef.current = now + RUN_START_ENTER_WINDOW_MS;
+      runStartUserIdRef.current = runStartUserId;
+      runStartAssistantIdRef.current = runStartAssistantLoadingIdForRender;
+
+      // 只在 runStart（用户发送）时 smooth；流式追随仍用 auto（instant）。
+      viewportStore.getState().scrollToBottom({ behavior: 'smooth' });
+    } else if (now < runStartAnimationUntilRef.current) {
+      // status 可能先进入 running、消息后插入；在窗口期内捕获一次 userId/assistantId，确保动画不被 rerender 截断。
+      if (!runStartUserIdRef.current && appendedUserId) {
+        runStartUserIdRef.current = appendedUserId;
+      }
+
+      if (!runStartAssistantIdRef.current && runStartUserIdRef.current) {
+        const userIndex = messages.findIndex((m) => m.id === runStartUserIdRef.current);
+        const next = userIndex >= 0 ? messages[userIndex + 1] : undefined;
+        if (next && isAssistantLoadingMessage(next)) {
+          runStartAssistantIdRef.current = next.id;
+        }
+      }
+    }
+
+    prevMessagesRef.current = messages;
+    prevStatusRef.current = status;
+  }, [appendedUserId, messages, runStartUserId, shouldScrollOnRunStart, status, viewportStore]);
 
   return (
     <>
@@ -106,34 +170,17 @@ const MessageListInner = ({
       ) : (
         <ConversationContent className={cn('min-w-0', contentClassName)}>
           {messages.map((message, index) => {
-            if (assistantTailMessage && index === lastIndex) return null;
-
+            const shouldAnimate = shouldAnimateMessageIdSet?.has(message.id) === true;
             return (
-              <ConversationMessageProvider
+              <div
                 key={message.id}
-                message={message}
-                index={index}
-                messages={messages}
-                status={status}
+                data-slot={shouldAnimate ? 'message-enter' : undefined}
+                className={shouldAnimate ? RUN_START_ENTER_ANIMATION_CLASSNAME : undefined}
               >
                 {renderMessage({ message, index })}
-              </ConversationMessageProvider>
+              </div>
             );
           })}
-
-          <ConversationViewportTurnTail enabled={shouldApplyTurnAnchorSlack}>
-            {assistantTailMessage ? (
-              <ConversationMessageProvider
-                key={assistantTailMessage.id}
-                message={assistantTailMessage}
-                index={lastIndex}
-                messages={messages}
-                status={status}
-              >
-                {renderMessage({ message: assistantTailMessage, index: lastIndex })}
-              </ConversationMessageProvider>
-            ) : null}
-          </ConversationViewportTurnTail>
         </ConversationContent>
       )}
 
@@ -163,41 +210,6 @@ export const MessageList = ({
   ...props
 }: MessageListProps) => {
   const conversationKey = threadId ?? messages[0]?.id ?? 'empty';
-  const prevLengthRef = useRef<number>(messages.length);
-  const prevThreadIdRef = useRef<string | null | undefined>(threadId);
-  const prevStatusRef = useRef<ChatStatus>(status);
-
-  useEffect(() => {
-    const previousLength = prevLengthRef.current;
-    if (previousLength === 0 && messages.length > 0) {
-      emitAuiEvent('thread.initialize');
-    }
-    prevLengthRef.current = messages.length;
-  }, [messages.length]);
-
-  useEffect(() => {
-    if (prevThreadIdRef.current && threadId && prevThreadIdRef.current !== threadId) {
-      emitAuiEvent('threadListItem.switchedTo');
-    }
-
-    if (prevThreadIdRef.current !== threadId) {
-      // 切换 thread 时重置 status 基线，避免误触发 runStart。
-      prevStatusRef.current = status;
-    }
-
-    prevThreadIdRef.current = threadId;
-  }, [threadId, status]);
-
-  useEffect(() => {
-    const prev = prevStatusRef.current;
-    const shouldEmitRunStart = isRunningStatus(status) && !isRunningStatus(prev);
-
-    if (shouldEmitRunStart) {
-      emitAuiEvent('thread.runStart');
-    }
-
-    prevStatusRef.current = status;
-  }, [status]);
 
   return (
     <div className={cn('flex min-w-0 min-h-0 flex-col overflow-hidden', className)} {...props}>
