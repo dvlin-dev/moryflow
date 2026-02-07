@@ -8,7 +8,14 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-07（TurnAnchor 机制：修复固定 20px 回弹/闪烁（gap/pb CSS vars 单一数据源 + TurnTail 扣除 + runStart deferAlign））
 > 最近更新：2026-02-06（TurnAnchor 机制文档重写：现状/分支目标/未来需求/未完成清单）
+> 最近更新：2026-02-06（TurnAnchor 机制文档补充 AI 跟随实现方案（待评审））
+> 最近更新：2026-02-06（TurnAnchor 机制：AI 跟随落地与单测/验证记录更新）
+> 最近更新：2026-02-06（TurnAnchor 机制：补充抖动/提前滚动排查方案（临时日志））
+> 最近更新：2026-02-06（TurnAnchor 机制：修复无操作抖动/提前跟随（tail 边界 + layout shrink + init 竞争））
+> 最近更新：2026-02-06（TurnAnchor 机制：修复 user submit 间隙全量跌落（TurnTail 稳定 Slack 宿主））
+> 最近更新：2026-02-06（TurnAnchor 机制：TurnAnchor=top runStart 到底后释放 scrollBehavior，避免 streaming 过早滚动）
 > 最近更新：2026-02-05（TurnAnchor 机制文档更新：用户上滚取消自动滚动 + scrollbar-gutter stable）
 > 最近更新：2026-02-05（TurnAnchor 机制文档更新：header 遮挡修复 + ScrollButton 阈值）
 > 最近更新：2026-02-05（TurnAnchor 机制文档更新：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复）

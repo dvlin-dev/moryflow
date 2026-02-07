@@ -40,6 +40,14 @@
 
 ## 近期更新
 
+- `ui-message-list-turn-anchor-adoption.md`：AutoScroll 调试日志默认开启（无需开关）（2026-02-07）。
+- `ui-message-list-turn-anchor-adoption.md`：修复固定 20px 回弹/闪烁（gap/padding-bottom CSS vars 单一数据源 + TurnTail 扣除 + runStart deferAlign）（2026-02-07）。
+- `ui-message-list-turn-anchor-adoption.md`：引入 TurnTail 稳定 slack 宿主，修复 user submit scrollTop clamp 跌落（2026-02-06）。
+- `ui-message-list-turn-anchor-adoption.md`：TurnAnchor=top runStart 到底后释放 scrollBehavior，避免 streaming 过早滚动（2026-02-06）。
+- `ui-message-list-turn-anchor-adoption.md`：修复无操作抖动/提前跟随（tail 边界 + layout shrink 过滤 + init 竞争）（2026-02-06）。
+- `ui-message-list-turn-anchor-adoption.md`：AI 跟随落地（tail 门控 + 10px 取消/恢复）并补齐单测与验证记录（2026-02-06）。
+- `ui-message-list-turn-anchor-adoption.md`：补充抖动/提前滚动排查方案（临时 console 日志）（2026-02-06）。
+- `ui-message-list-turn-anchor-adoption.md`：补充 AI 跟随实现方案（待评审）（2026-02-06）。
 - `ui-message-list-turn-anchor-adoption.md`：重写现状/分支目标/未来需求/未完成清单（2026-02-06）。
 - `ui-message-list-turn-anchor-adoption.md`：移除滚动/Slack/事件日志 + ChatPane Header 高度透传恢复（2026-02-05）。
 - `ui-message-list-turn-anchor-adoption.md`：header 遮挡修复 + ScrollButton 阈值（2026-02-05）。

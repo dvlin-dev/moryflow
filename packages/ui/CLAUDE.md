@@ -48,20 +48,27 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- Slack：重构为 `ConversationViewportTurnTail`（稳定 Slack 宿主 + 内置 tail sentinel），修复 user submit scrollTop clamp 跌落
+- Slack：TurnTail 计算扣除 ConversationContent 的 gap/padding-bottom，修复短列表额外 overflow 导致 runStart 贴顶偏移
+- ConversationContent：gap/padding-bottom 改为 CSS 变量单一数据源（避免 computedStyle race 造成固定 20px 回弹）
+- AutoScroll：TurnAnchor=top 仅在尾部不可见时跟随，上滑 10px 取消，ScrollButton/滚到底部恢复
 - Slack：计算扣除顶部 padding，避免用户消息被 header 遮挡
 - AutoScroll：移除 namespace，符合 lint 规则
 - AutoScroll：用户上滚立即取消 runStart 自动滚动，避免手动滚动抖动
+- AutoScroll：调试日志默认开启（用于抖动/提前滚动排查）
 - ConversationViewport：启用 scrollbar-gutter: stable，避免滚动条引发消息高度抖动
-- ConversationViewportSlack：忽略 0 高度测量，避免短列表抖动
+- ConversationViewportTurnTail：userMessage=0 时使用 offset 兜底，避免 slack 断档
 - AutoScroll：runStart 测量未就绪时延后滚动，避免短列表抖动
 - ScrollButton：新增距离阈值控制显示（默认 200px）
 - MessageRoot：锚点高度始终绑定最后一条 user，避免短列表闪烁
 - TurnAnchor：移除滚动/Slack/列表事件日志，恢复默认静默
 - AUI Event：移除 TurnAnchor 调试日志，避免噪音
 - AutoScroll：runStart 增加滚动锁，确保 Slack/min-height 更新后仍能对齐顶部
+- AutoScroll：TurnAnchor=top runStart 到底后立刻释放 scrollBehavior，避免 assistant 内容过早被 resize.behavior 追底
+- AutoScroll：TurnAnchor=top runStart 改为“单次对齐到底部”，避免 resize.behavior 持续追底导致提前滚动
 - ConversationViewport：启用 scroll-smooth，恢复 runStart 向上滚动动画
 - ConversationViewport：对齐 assistant-ui v0.12.6（turnAnchor + size handle + auto-scroll 选项）
-- ConversationViewportSlack：恢复 Slack 占位机制，支持 top anchor 对齐
+- ConversationViewportTurnTail：作为唯一 slack 宿主，对齐 TurnAnchor=top 的 min-height 语义
 - MessageList：引入 aui-event（initialize/runStart/threadSwitch）触发自动滚动
 - MessageRoot：恢复用户消息锚点高度注册，配合 Slack 计算
 - MessageContent：移除尾部锚点占位，保留 data-slot 用于样式定位
@@ -109,4 +116,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.13 | 更新日期: 2026-02-05_
+_版本: 4.16 | 更新日期: 2026-02-07_

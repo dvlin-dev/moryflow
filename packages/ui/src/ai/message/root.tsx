@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-05 - 移除 Slack/锚点注册，仅保留基础容器
  * [UPDATE]: 2026-02-05 - 对齐 assistant-ui 最新版锚点/Slack 机制
  * [UPDATE]: 2026-02-05 - 锚点高度始终绑定最后一条 user，避免短列表闪烁
+ * [UPDATE]: 2026-02-06 - 重构：移除 per-message Slack 包裹，Slack 统一由 MessageList 的 TurnTail 宿主负责
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,7 +16,7 @@ import { useComposedRefs } from '@radix-ui/react-compose-refs';
 import { forwardRef, useCallback } from 'react';
 
 import { useSizeHandle } from '../assistant-ui/utils/hooks/useSizeHandle';
-import { ConversationViewportSlack, useConversationViewport } from '../conversation-viewport';
+import { useConversationViewport } from '../conversation-viewport';
 import { useConversationMessage } from './context';
 import { Message } from './base';
 import type { MessageProps } from './const';
@@ -52,11 +53,7 @@ export const MessageRoot = forwardRef<HTMLDivElement, MessageRootProps>(
     const anchorUserMessageRef = useMessageViewportRef();
     const composedRef = useComposedRefs(ref, anchorUserMessageRef);
 
-    return (
-      <ConversationViewportSlack>
-        <Message ref={composedRef} className={className} {...props} />
-      </ConversationViewportSlack>
-    );
+    return <Message ref={composedRef} className={className} {...props} />;
   }
 );
 

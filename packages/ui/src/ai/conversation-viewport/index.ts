@@ -1,8 +1,8 @@
 export { ConversationViewport } from './viewport';
 export { ConversationViewportFooter } from './footer';
-export { ConversationViewportSlack } from './slack';
+export { ConversationViewportTurnTail } from './turn-tail';
 export { useConversationViewportAutoScroll } from './use-auto-scroll';
 export { useConversationViewport, useConversationViewportStore } from './context';
 export type { ConversationViewportProps } from './viewport';
 export type { ConversationViewportFooterProps } from './footer';
-export type { ConversationViewportSlackProps } from './slack';
+export type { ConversationViewportTurnTailProps } from './turn-tail';
