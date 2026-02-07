@@ -152,3 +152,125 @@ TurnAnchor=top 的目标是“发送后当前轮 user 尽量贴顶，assistant �
 ## 调试
 
 - 默认不输出 AutoScroll 日志；如需排查滚动边界，可在 DevTools Console 执行：`globalThis.__AUI_DEBUG_AUTO_SCROLL__ = true`（关闭设为 `false`）。
+
+---
+
+## 附录 A：与 `main` 分支差异（用于合并/回滚）
+
+### 对比基线
+
+- 远端主分支：`origin/main`（当前为 `fa1cfe10`）
+- 当前分支：`docs/turn-anchor-adoption`
+
+### Commit 列表（`origin/main..docs/turn-anchor-adoption`）
+
+```text
+a444fda8 refactor(ui): simplify message list auto-scroll and remove assistant-ui copy
+3c755873 fix(ui): stabilize TurnAnchor top autoscroll
+be181bbf feat(ui): 对齐 TurnAnchor 自动滚动
+474b70c4 fix(ui): enhance TurnAnchor mechanism and stabilize auto-scroll behavior
+0a99b62b fix(ui): align viewport auto-scroll and docs
+a38c4a01 fix(ui): stabilize turn anchor scroll
+8156ebfe fix(ui): stabilize slack anchor updates
+62c21c17 fix(ui): stabilize slack resize auto-scroll
+23337461 fix(ui): align conversation viewport and message list
+9f92ed7f chore(repo): ignore archive my-app
+0c898d0a fix(moryflow/pc): persist assistant stream start
+3a483f73 feat(moryflow/pc): align chat loading
+6e94f916 feat(console): align agent message loading
+da327cba feat(ui): refine message list auto-scroll
+c7d20f70 refactor(ui): unify message list viewport and turn anchor
+70271241 docs(architecture): add turnAnchor adoption plan
+```
+
+### 文件级差异（`git diff --name-status origin/main...HEAD`）
+
+```text
+M	.gitignore
+M	CLAUDE.md
+M	apps/anyhunt/console/CLAUDE.md
+M	apps/anyhunt/console/src/features/CLAUDE.md
+M	apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/AgentMessageList.tsx
+M	apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/components/message-row.tsx
+M	apps/moryflow/admin/package.json
+M	apps/moryflow/pc/CLAUDE.md
+M	apps/moryflow/pc/package.json
+M	apps/moryflow/pc/src/main/CLAUDE.md
+A	apps/moryflow/pc/src/main/chat/__tests__/stream-agent-run.test.ts
+M	apps/moryflow/pc/src/main/chat/chat-request.ts
+M	apps/moryflow/pc/src/main/chat/handlers.ts
+M	apps/moryflow/pc/src/main/chat/messages.ts
+M	apps/moryflow/pc/src/renderer/components/chat-pane/CLAUDE.md
+M	apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-footer.tsx
+M	apps/moryflow/pc/src/renderer/components/chat-pane/components/conversation-section.tsx
+M	apps/moryflow/pc/src/renderer/components/chat-pane/components/message/const.ts
+M	apps/moryflow/pc/src/renderer/components/chat-pane/components/message/index.tsx
+M	apps/moryflow/pc/src/renderer/components/chat-pane/components/task-hover-panel.test.tsx
+M	apps/moryflow/pc/src/renderer/components/chat-pane/components/task-hover-panel.tsx
+M	apps/moryflow/pc/src/renderer/components/chat-pane/hooks/index.ts
+M	apps/moryflow/pc/src/renderer/components/chat-pane/hooks/use-stored-messages.ts
+M	apps/moryflow/pc/src/renderer/components/chat-pane/hooks/use-tasks.ts
+M	apps/moryflow/pc/src/renderer/components/chat-pane/index.tsx
+M	docs/CLAUDE.md
+M	docs/architecture/CLAUDE.md
+A	docs/architecture/ui-message-list-turn-anchor-adoption.md
+M	docs/index.md
+A	docs/research/moryflow-pc-turn-anchor-scroll-tracking.md
+M	packages/ui/CLAUDE.md
+M	packages/ui/package.json
+A	packages/ui/src/ai/conversation-viewport/context.tsx
+A	packages/ui/src/ai/conversation-viewport/footer.tsx
+A	packages/ui/src/ai/conversation-viewport/index.ts
+A	packages/ui/src/ai/conversation-viewport/store.ts
+A	packages/ui/src/ai/conversation-viewport/use-auto-scroll.ts
+A	packages/ui/src/ai/conversation-viewport/viewport.tsx
+M	packages/ui/src/ai/conversation.tsx
+M	packages/ui/src/ai/index.ts
+M	packages/ui/src/ai/message-list.tsx
+M	packages/ui/src/ai/message/base.tsx
+D	packages/ui/src/ai/use-conversation-layout.ts
+A	packages/ui/test/conversation-viewport.test.tsx
+A	packages/ui/test/message-list.test.tsx
+A	packages/ui/test/message.test.tsx
+M	pnpm-lock.yaml
+```
+
+### 统计（`git diff --stat origin/main...HEAD`）
+
+```text
+47 files changed, 2421 insertions(+), 647 deletions(-)
+```
+
+---
+
+## 附录 B：Code Review（相关模块）
+
+### 范围
+
+- UI 包（跨端复用）：`packages/ui/src/ai/message-list.tsx`、`packages/ui/src/ai/conversation.tsx`、`packages/ui/src/ai/conversation-viewport/*`、`packages/ui/src/ai/message/*`
+- PC（Renderer）：`apps/moryflow/pc/src/renderer/components/chat-pane/components/conversation-section.tsx`、`apps/moryflow/pc/src/renderer/components/chat-pane/components/message/index.tsx`
+- Anyhunt Console（Web）：`apps/anyhunt/console/src/features/agent-browser-playground/components/AgentMessageList/*`
+
+### 结论（总体）
+
+- 当前实现符合“**经典 chat + Following 模式 + 发送不贴顶**”的最终交互目标，结构相对清晰，跨端复用路径明确（PC/Console 同用 `@anyhunt/ui/ai/message-list` + `@anyhunt/ui/ai/message`）。
+- 删除 `packages/ui/src/ai/assistant-ui/**` 后，滚动相关逻辑内聚到 `ConversationViewport` 子模块，复杂度显著下降，维护面更可控。
+
+### 做得好的点（保持即可）
+
+- **模块职责清晰**：
+  - `MessageList` 只负责布局 + runStart 触发（一次 smooth）+ 入场动画（`160ms`），不再承担测量/贴顶策略。
+  - `ConversationViewportAutoScroll` 只负责 Following 状态机（滚动指标 + Resize/Mutation coalesce），避免 rect 测量与 slack 体系。
+- **多端复用合理**：
+  - PC/Console 的“消息样式原语”统一走 `@anyhunt/ui/ai/message/*`，业务差异（工具审批、打开文件、i18n）留在各自应用层，UI 包不绑定 `desktopAPI`。
+- **测试覆盖对关键语义有效**：
+  - UI 包覆盖 following on/off、layout shrink rollback、不被 smooth 中断、runStart 触发与入场动效等关键路径。
+
+### 问题与建议（按优先级，偏“简化/可维护”）
+
+- P1（文档一致性）：需要持续避免在各端 `CLAUDE.md` 中残留 “Slack/发送贴顶/TurnAnchor=top” 的描述，防止协作误解。建议后续只保留“Following + runStart smooth + 160ms 入场”的单一事实来源（本文）。
+- P2（可预期性）：`MessageList` 的 `conversationKey` 在未传 `threadId` 时会回退为 `messages[0]?.id`，可能在“压缩/截断/重建消息数组”场景触发 remount 并重置视口状态。
+  - 建议：对需要稳定视口状态的场景（例如 Console 多轮会话/多 run 切换），上层尽量显式传入 `threadId`（类似 PC 的 `activeSessionId`）。
+- P2（小冗余，可选清理）：`MessageListInner` 传入的 `ConversationViewportFooter className="sticky bottom-0"` 与 `ConversationViewportFooter` 内部自带的 sticky class 重复；不影响行为，但可以删掉以减少噪音。
+- P3（重复逻辑，可接受但需意识到）：PC 的 `ChatMessage` 与 Console 的 `MessageRow` 都实现了“拆分 parts + 清理 file ref marker”的逻辑。
+  - 建议：短期不抽象（避免过度设计）；如果未来两端继续扩展消息解析规则，再考虑抽一个**纯函数级**的小 util（不引入 context/hook），避免语义漂移。

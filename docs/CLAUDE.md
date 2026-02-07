@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-07（消息列表自动滚动：回归 Following 模式，删除 TurnAnchor/TurnTail/slack（不再发送贴顶）；runStart `behavior:'smooth'`（一次）确保用户消息 + AI loading 可见；新增 user + AI loading `160ms` 入场动效（向上滑入 + 淡入）；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录；AutoScroll 调试日志可选开启：`globalThis.__AUI_DEBUG_AUTO_SCROLL__=true`）
+> 最近更新：2026-02-07（消息列表自动滚动：回归 Following 模式，删除 TurnAnchor/TurnTail/slack（不再发送贴顶）；runStart `behavior:'smooth'`（一次）确保用户消息 + AI loading 可见；新增 user + AI loading `160ms` 入场动效（向上滑入 + 淡入）；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录；补齐与 `main` 分支差异与 Code Review 附录；AutoScroll 调试日志可选开启：`globalThis.__AUI_DEBUG_AUTO_SCROLL__=true`）
 > 最近更新：2026-02-06（TurnAnchor 机制文档重写：现状/分支目标/未来需求/未完成清单）
 > 最近更新：2026-02-06（TurnAnchor 机制文档补充 AI 跟随实现方案（待评审））
 > 最近更新：2026-02-06（TurnAnchor 机制：AI 跟随落地与单测/验证记录更新）

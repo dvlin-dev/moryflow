@@ -40,7 +40,7 @@
 
 ## 近期更新
 
-- `ui-message-list-turn-anchor-adoption.md`：回归经典 chat（Following 模式）：删除 TurnAnchor/TurnTail/slack（不再发送贴顶）；runStart `behavior:'smooth'`（一次）确保用户消息 + AI loading 可见，并为“新增 user + AI loading”增加 `160ms` 入场动效；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录（AutoScroll/Store 内聚到 ConversationViewport）；AutoScroll 调试日志可选开启（`globalThis.__AUI_DEBUG_AUTO_SCROLL__=true`，2026-02-07）。
+- `ui-message-list-turn-anchor-adoption.md`：回归经典 chat（Following 模式）：删除 TurnAnchor/TurnTail/slack（不再发送贴顶）；runStart `behavior:'smooth'`（一次）确保用户消息 + AI loading 可见，并为“新增 user + AI loading”增加 `160ms` 入场动效；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录（AutoScroll/Store 内聚到 ConversationViewport）；补齐与 `main` 分支差异与 Code Review 附录；AutoScroll 调试日志可选开启（`globalThis.__AUI_DEBUG_AUTO_SCROLL__=true`，2026-02-07）。
 - `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
 - `anyhunt-api-channel-routing.md`：补充 apps/anyhunt 修改清单与执行计划（2026-01-28）。
 - `adr/adr-0002-agent-runtime-control-plane.md`：补充外部化/Hook 示例（JSONC/Agent/Tool）（2026-01-30）。
