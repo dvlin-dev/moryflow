@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, useRef } from 'react'
-import type { SettingsSection } from '@/components/settings-dialog/const'
+import { Suspense, lazy, useEffect, useRef } from 'react';
+import type { SettingsSection } from '@/components/settings-dialog/const';
 
 /**
  * 预加载聊天所需的重依赖（streamdown 包含 mermaid/cytoscape，shiki 代码高亮）
@@ -8,37 +8,39 @@ import type { SettingsSection } from '@/components/settings-dialog/const'
 function preloadChatDeps() {
   const preload = () => {
     // 预加载 streamdown（包含 mermaid/cytoscape）
-    import('streamdown').catch(() => {})
+    import('streamdown').catch(() => {});
     // 预加载 shiki（代码高亮）
-    import('shiki').catch(() => {})
-  }
+    import('shiki').catch(() => {});
+  };
 
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(preload, { timeout: 3000 })
+    requestIdleCallback(preload, { timeout: 3000 });
   } else {
-    setTimeout(preload, 1000)
+    setTimeout(preload, 1000);
   }
 }
 
 type ChatPaneWrapperProps = {
-  fallback: React.ReactNode
-  activeFilePath?: string | null
-  activeFileContent?: string | null
-  vaultPath?: string | null
-  onReady?: () => void
-  collapsed?: boolean
-  onToggleCollapse?: () => void
-  onOpenSettings?: (section?: SettingsSection) => void
-}
+  fallback: React.ReactNode;
+  variant?: 'panel' | 'mode';
+  activeFilePath?: string | null;
+  activeFileContent?: string | null;
+  vaultPath?: string | null;
+  onReady?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  onOpenSettings?: (section?: SettingsSection) => void;
+};
 
 const LazyChatPane = lazy(() =>
   import('@/components/chat-pane').then((mod) => ({
-    default: mod.ChatPane
+    default: mod.ChatPane,
   }))
-)
+);
 
 export const ChatPaneWrapper = ({
   fallback,
+  variant,
   activeFilePath,
   activeFileContent,
   vaultPath,
@@ -47,23 +49,24 @@ export const ChatPaneWrapper = ({
   onToggleCollapse,
   onOpenSettings,
 }: ChatPaneWrapperProps) => {
-  const preloaded = useRef(false)
+  const preloaded = useRef(false);
 
   useEffect(() => {
-    onReady?.()
-  }, [onReady])
+    onReady?.();
+  }, [onReady]);
 
   // 聊天面板加载后，空闲时预加载重依赖
   useEffect(() => {
     if (!preloaded.current) {
-      preloaded.current = true
-      preloadChatDeps()
+      preloaded.current = true;
+      preloadChatDeps();
     }
-  }, [])
+  }, []);
 
   return (
     <Suspense fallback={fallback}>
       <LazyChatPane
+        variant={variant}
         activeFilePath={activeFilePath ?? undefined}
         activeFileContent={activeFileContent ?? null}
         vaultPath={vaultPath ?? null}
@@ -72,5 +75,5 @@ export const ChatPaneWrapper = ({
         onOpenSettings={onOpenSettings}
       />
     </Suspense>
-  )
-}
+  );
+};

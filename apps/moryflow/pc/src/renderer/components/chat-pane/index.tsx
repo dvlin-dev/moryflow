@@ -42,6 +42,7 @@ export const CHAT_CHUNK_HASH =
     : undefined;
 
 export const ChatPane = ({
+  variant = 'panel',
   activeFilePath,
   activeFileContent,
   vaultPath,
@@ -52,6 +53,7 @@ export const ChatPane = ({
   const { t } = useTranslation('chat');
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const isCollapsed = variant === 'panel' ? Boolean(collapsed) : false;
   const {
     sessions,
     activeSession,
@@ -279,21 +281,23 @@ export const ChatPane = ({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden" style={conversationStyle}>
-      <div className="shrink-0" ref={headerRef}>
-        <ChatPaneHeader
-          sessions={sessions}
-          activeSession={activeSession}
-          onSelectSession={selectSession}
-          onCreateSession={createSession}
-          onDeleteSession={deleteSession}
-          isSessionReady={sessionsReady}
-          collapsed={collapsed}
-          onToggleCollapse={onToggleCollapse}
-        />
-      </div>
+      {variant === 'panel' && (
+        <div className="shrink-0" ref={headerRef}>
+          <ChatPaneHeader
+            sessions={sessions}
+            activeSession={activeSession}
+            onSelectSession={selectSession}
+            onCreateSession={createSession}
+            onDeleteSession={deleteSession}
+            isSessionReady={sessionsReady}
+            collapsed={isCollapsed}
+            onToggleCollapse={onToggleCollapse}
+          />
+        </div>
+      )}
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden transition-opacity duration-200 ${
-          collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+          isCollapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
         }`}
       >
         <CardContent className="flex-1 overflow-hidden p-0">

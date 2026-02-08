@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { DesktopApi } from '@shared/ipc';
-import { useChatSessions } from './use-chat-sessions';
+import { __resetChatSessionsStoreForTest, useChatSessions } from './use-chat-sessions';
 
 const session = {
   id: 'session-1',
@@ -11,6 +11,7 @@ const session = {
 
 describe('useChatSessions', () => {
   beforeEach(() => {
+    __resetChatSessionsStoreForTest();
     window.desktopAPI = {
       chat: {
         listSessions: vi.fn().mockResolvedValue([]),
