@@ -1,7 +1,7 @@
 /**
  * [PROPS]: VaultSelectorProps
- * [EMITS]: onVaultChange, onCreateFile, onCreateFolder
- * [POS]: Vault 选择器主组件，整合列表、操作和对话框（Lucide 图标）
+ * [EMITS]: onVaultChange
+ * [POS]: Workspace/Vault 选择器主组件（仅负责切换/创建/移除，不承载“新建文件”职责）
  */
 
 import { useState, useCallback } from 'react';
@@ -11,19 +11,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { useTranslation } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { useVaultManager } from '@/hooks/use-vault-manager';
 import type { VaultItem } from '@shared/ipc';
 import { VaultListItem } from './components/vault-list-item';
 import { VaultListActions } from './components/vault-list-actions';
 import { VaultRemoveDialog } from './components/vault-remove-dialog';
-import { CreateMenu } from './components/create-menu';
 import type { VaultSelectorProps } from './const';
 
-export const VaultSelector = ({
-  onVaultChange,
-  onCreateFile,
-  onCreateFolder,
-}: VaultSelectorProps) => {
+export const VaultSelector = ({ onVaultChange, triggerClassName }: VaultSelectorProps) => {
   const { t } = useTranslation('workspace');
   const {
     vaults,
@@ -185,27 +181,32 @@ export const VaultSelector = ({
   // 加载状态
   if (isLoading) {
     return (
-      <div className="px-2 py-2">
+      <div className="py-2">
         <Skeleton className="h-6 w-32" />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1 px-2.5">
-      {/* Vault 名称 */}
-      <span className="flex-1 truncate text-sm font-medium">
-        {activeVault?.name || t('selectWorkspace')}
-      </span>
-
-      {/* Vault 切换下拉 */}
+    <>
+      {/* Vault 切换下拉（整行可点，符合 Notion-ish 交互） */}
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            className={cn(
+              // Use inline-flex so the trigger/hover background fits the content width.
+              // Cap at the available left area so long names still truncate nicely.
+              'inline-flex w-fit max-w-full min-w-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm transition-colors',
+              'hover:bg-muted/40 data-[state=open]:bg-muted/40 focus-visible:outline-hidden',
+              triggerClassName
+            )}
+            aria-label="Workspace"
           >
-            <ChevronDown className="size-4" />
+            <span className="min-w-0 truncate text-left font-medium">
+              {activeVault?.name || t('selectWorkspace')}
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
           </button>
         </PopoverTrigger>
 
@@ -261,9 +262,6 @@ export const VaultSelector = ({
         onConfirm={handleConfirmRemove}
         onCancel={() => setVaultToRemove(null)}
       />
-
-      {/* 新建文件/文件夹菜单 */}
-      <CreateMenu onCreateFile={onCreateFile} onCreateFolder={onCreateFolder} />
-    </div>
+    </>
   );
 };

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, lazy, memo, useState, useEffect, useRef, useCallback } from 'react';
 import { Share, PanelRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
@@ -22,7 +22,7 @@ const extractTitle = (name: string): string => name.replace(/\.md$/, '');
 /** 防抖延迟（毫秒） */
 const RENAME_DEBOUNCE_MS = 300;
 
-export const EditorPanel = ({
+export const EditorPanel = memo(function EditorPanel({
   activeDoc,
   selectedFile,
   docState,
@@ -36,7 +36,7 @@ export const EditorPanel = ({
   onToggleChat,
   onPublished,
   onNavigateToSites,
-}: EditorPanelProps) => {
+}: EditorPanelProps) {
   const { t } = useTranslation('workspace');
 
   // 标题编辑状态
@@ -233,4 +233,6 @@ export const EditorPanel = ({
       </div>
     </section>
   );
-};
+});
+
+EditorPanel.displayName = 'EditorPanel';

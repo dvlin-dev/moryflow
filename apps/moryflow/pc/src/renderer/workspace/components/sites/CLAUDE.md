@@ -1,6 +1,6 @@
 # Sites CMS 组件
 
-> 站点管理 CMS 界面，从侧边栏入口访问
+> 站点管理 CMS 界面，作为 Workspace Shell 的 `Sites` Mode 主视图渲染（入口来自左侧 Mode Switcher）。
 
 ## 组件结构
 
@@ -26,7 +26,8 @@
 | `open`      | 在浏览器打开站点   |
 | `copy`      | 复制站点链接       |
 | `settings`  | 进入详情页编辑设置 |
-| `republish` | 重新发布（TODO）   |
+| `publish`   | 上线站点           |
+| `update`    | 更新内容           |
 | `unpublish` | 下线站点           |
 | `delete`    | 删除站点           |
 
@@ -42,7 +43,7 @@ SitesPage
   │
   ├─ SiteDetail (detail 视图)
   │   ├─ 设置编辑 (title, description, watermark)
-  │   └─ 操作按钮 (Republish, Unpublish, Delete)
+  │   └─ 操作按钮 (Publish/Update, Unpublish, Delete)
   │
   └─ 发布流程
       ├─ FilePickerDialog (两级选择)

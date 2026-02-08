@@ -4,8 +4,8 @@
  * [POS]: 侧边栏文件列表区组件（Lucide 图标）
  */
 
+import { memo } from 'react';
 import { FilePlus, FolderPlus } from 'lucide-react';
-import type { VaultTreeNode } from '@shared/ipc';
 import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
 import {
   ContextMenu,
@@ -26,7 +26,7 @@ const LoadingPlaceholder = () => (
   </div>
 );
 
-export const SidebarFiles = ({
+export const SidebarFiles = memo(function SidebarFiles({
   vault,
   tree,
   expandedPaths,
@@ -44,7 +44,7 @@ export const SidebarFiles = ({
   onCreateFileInRoot,
   onCreateFolderInRoot,
   onPublish,
-}: SidebarFilesProps) => {
+}: SidebarFilesProps) {
   const { t } = useTranslation('workspace');
 
   if (treeState === 'loading') {
@@ -97,4 +97,6 @@ export const SidebarFiles = ({
       </ContextMenuContent>
     </ContextMenu>
   );
-};
+});
+
+SidebarFiles.displayName = 'SidebarFiles';

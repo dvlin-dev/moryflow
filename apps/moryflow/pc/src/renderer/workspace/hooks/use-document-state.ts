@@ -17,10 +17,6 @@ import {
 import type { VaultTreeNode, VaultFsEvent, VaultInfo } from '@shared/ipc';
 import { useTranslation } from '@/lib/i18n';
 import type { ActiveDocument, RequestState, SaveState, SelectedFile } from '../const';
-import { AI_TAB_ID, SITES_TAB_ID } from '../components/unified-top-bar/helper';
-
-/** 判断是否为特殊 tab（AI 或 Sites） */
-const isSpecialTab = (path: string): boolean => path === AI_TAB_ID || path === SITES_TAB_ID;
 
 type UseDocumentStateOptions = {
   vault: VaultInfo | null;
@@ -148,15 +144,6 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   const handleSelectTab = useCallback(
     (tab: SelectedFile) => {
       if (selectedFile?.path === tab.path) return;
-
-      // 特殊 tab（AI、Sites）不需要加载文档
-      if (isSpecialTab(tab.path)) {
-        setSelectedFile(tab);
-        setActiveDoc(null);
-        setDocState('idle');
-        setDocError(null);
-        return;
-      }
 
       void loadDocument(tab);
     },

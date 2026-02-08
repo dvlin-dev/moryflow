@@ -1,10 +1,11 @@
 /**
  * [PROPS]: DesktopWorkspaceProps
  * [EMITS]: 多个回调用于文件/文档/树操作
- * [POS]: 桌面工作区主组件，包含 UnifiedTopBar、Sidebar、Editor、Chat（含 E2E 选择器）
+ * [POS]: 桌面工作区主组件（Mode-aware）：Shell（Sidebar + Main）+ Workspace 内部分栏（Editor + Chat）
+ * [UPDATE]: 2026-02-08 - 修复 Chat/Sites 主视图容器布局语义，确保占满主内容区（避免被 flex row + sibling 占位挤到右侧）
  */
 
-import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommandPalette } from '@/components/command-palette';
 import { InputDialog } from '@/components/input-dialog';
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
@@ -18,7 +19,6 @@ import { type SettingsSection } from '@/components/settings-dialog/const';
 import { DesktopWorkspaceProps, SelectedFile } from './const';
 import { EditorPanel } from './components/editor-panel';
 import { UnifiedTopBar, SIDEBAR_MIN_WIDTH } from './components/unified-top-bar';
-import { AI_TAB_ID, SITES_TAB_ID } from './components/unified-top-bar/helper';
 import { Sidebar } from './components/sidebar';
 import { SitesPage } from './components/sites';
 import { VaultOnboarding } from './components/vault-onboarding';
@@ -27,7 +27,8 @@ import {
   useStartupPerfMarks,
   useWorkspaceChunkPreload,
 } from './hooks/use-startup-perf';
-import { ChatPaneWrapper } from './components/chat-pane-wrapper';
+import { ChatPanePortal } from './components/chat-pane-portal';
+import { useAppMode } from './hooks/use-app-mode';
 
 const SettingsDialog = lazy(() =>
   import('@/components/settings-dialog').then((mod) => ({ default: mod.SettingsDialog }))
@@ -75,13 +76,12 @@ export const DesktopWorkspace = ({
   onCreateFileInRoot,
   onCreateFolderInRoot,
   onToggleSidebar,
-  onOpenAITab,
-  onOpenSites,
 }: DesktopWorkspaceProps) => {
   const markOnce = usePerfMarker();
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
-  const chatPanelRef = useRef<ImperativePanelHandle>(null);
+  const workspaceChatPanelRef = useRef<ImperativePanelHandle>(null);
   const panelGroupRef = useRef<HTMLDivElement>(null);
+  const sidebarSizeRef = useRef<number | null>(null);
 
   const handleChatReady = useCallback(() => {
     markOnce('chat:ready');
@@ -89,18 +89,61 @@ export const DesktopWorkspace = ({
 
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN_WIDTH);
+  const { mode, setMode } = useAppMode();
+
+  // Keep-alive main views so switching modes is instant after the first mount.
+  const [workspaceMainMounted, setWorkspaceMainMounted] = useState(mode === 'workspace');
+  const [sitesMainMounted, setSitesMainMounted] = useState(mode === 'sites');
+
+  useEffect(() => {
+    if (mode === 'workspace') {
+      setWorkspaceMainMounted(true);
+    }
+    if (mode === 'sites') {
+      setSitesMainMounted(true);
+    }
+  }, [mode]);
+
+  // Warm up heavy views in idle so first-time switching feels instant.
+  useEffect(() => {
+    if (!vault) return;
+    if (treeState !== 'idle') return;
+    if (workspaceMainMounted && sitesMainMounted) return;
+
+    const warm = () => {
+      setWorkspaceMainMounted(true);
+      setSitesMainMounted(true);
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(warm, { timeout: 1500 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+
+    const timer = window.setTimeout(warm, 600);
+    return () => window.clearTimeout(timer);
+  }, [vault, treeState, workspaceMainMounted, sitesMainMounted]);
+
+  // ChatPane portal targets:
+  // - Chat Mode: render in main area
+  // - Workspace Mode: render in right assistant panel
+  // - Sites Mode: keep alive in a hidden parking host (not visible)
+  const [chatMainHost, setChatMainHost] = useState<HTMLElement | null>(null);
+  const [chatPanelHost, setChatPanelHost] = useState<HTMLElement | null>(null);
+  const [chatParkingHost, setChatParkingHost] = useState<HTMLElement | null>(null);
 
   // 侧边栏尺寸变化时更新宽度
   const handleSidebarResize = useCallback((size: number) => {
+    sidebarSizeRef.current = size;
     if (!panelGroupRef.current) return;
     const containerWidth = panelGroupRef.current.offsetWidth;
     const pixelWidth = (size / 100) * containerWidth;
     setSidebarWidth(pixelWidth);
   }, []);
 
-  // 使用 imperative handle 控制 chat 面板折叠/展开
+  // 使用 imperative handle 控制 Workspace 内 assistant panel 折叠/展开
   const handleToggleChatPanel = useCallback(() => {
-    const panel = chatPanelRef.current;
+    const panel = workspaceChatPanelRef.current;
     if (!panel) return;
     if (chatCollapsed) {
       panel.expand();
@@ -143,10 +186,6 @@ export const DesktopWorkspace = ({
   const selectedId = selectedEntry?.id ?? selectedFile?.id ?? null;
   // 当前激活的 tab 路径
   const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
-
-  // 判断当前是否在特殊视图
-  const isInSitesView = selectedFile?.path === SITES_TAB_ID;
-  const isInAIView = selectedFile?.path === AI_TAB_ID;
 
   // 处理 Tab 选择
   const handleSelectTab = useCallback(
@@ -199,62 +238,18 @@ export const DesktopWorkspace = ({
     []
   );
 
-  // 渲染主内容区（Editor、AI Chat 或 Sites）
-  const renderMainContent = () => {
-    // Sites 视图
-    if (isInSitesView) {
-      return (
-        <SitesPage
-          onBack={() => onCloseTab(SITES_TAB_ID)}
-          currentVaultPath={vault?.path ?? ''}
-          currentTree={tree}
-        />
-      );
-    }
-
-    // AI Tab 激活时显示全屏 Chat
-    if (isInAIView) {
-      return (
-        <ChatPaneWrapper
-          fallback={chatFallback}
-          activeFilePath={activeDoc?.path ?? null}
-          activeFileContent={activeDoc?.content ?? null}
-          vaultPath={vault?.path ?? null}
-          onReady={handleChatReady}
-          collapsed={false}
-          onToggleCollapse={handleToggleChatPanel}
-          onOpenSettings={handleOpenSettings}
-        />
-      );
-    }
-
-    // 普通文件编辑模式
-    return (
-      <EditorPanel
-        activeDoc={activeDoc}
-        selectedFile={selectedFile}
-        docState={docState}
-        docError={docError}
-        hasFiles={tree.length > 0}
-        onEditorChange={onEditorChange}
-        onRetryLoad={onRetryLoad}
-        onRename={onRenameByTitle}
-        chatCollapsed={chatCollapsed}
-        onToggleChat={handleToggleChatPanel}
-        onNavigateToSites={onOpenSites}
-      />
-    );
-  };
-
   const renderVaultWorkspace = () => {
     if (!vault) return null;
+
+    const shouldMountWorkspaceMain = workspaceMainMounted || mode === 'workspace';
+    const shouldMountSitesMain = sitesMainMounted || mode === 'sites';
 
     return (
       <div className="flex h-full w-full flex-col overflow-hidden">
         {/* 统一顶部栏 - 横跨整个窗口 */}
         <UnifiedTopBar
-          tabs={openTabs}
-          activePath={activePath}
+          tabs={mode === 'workspace' ? openTabs : []}
+          activePath={mode === 'workspace' ? activePath : null}
           saveState={saveState}
           sidebarCollapsed={sidebarCollapsed}
           sidebarWidth={sidebarWidth}
@@ -267,7 +262,7 @@ export const DesktopWorkspace = ({
         <div ref={panelGroupRef} className="flex flex-1 overflow-hidden">
           <ResizablePanelGroup
             direction="horizontal"
-            autoSaveId="desktop-workspace-panels"
+            autoSaveId="desktop-workspace-shell-panels"
             className="flex h-full w-full"
           >
             {/* 侧边栏区域 */}
@@ -281,11 +276,14 @@ export const DesktopWorkspace = ({
               onCollapse={() => !sidebarCollapsed && onToggleSidebar()}
               onExpand={() => sidebarCollapsed && onToggleSidebar()}
               onResize={handleSidebarResize}
-              className={`flex min-w-0 flex-col overflow-hidden transition-all duration-200 ${
+              className={`flex min-w-0 flex-col overflow-hidden ${
                 sidebarCollapsed ? 'max-w-0' : 'min-w-[180px] max-w-[400px]'
               }`}
             >
               <Sidebar
+                mode={mode}
+                onModeChange={setMode}
+                onOpenCommandPalette={() => onCommandOpenChange(true)}
                 vault={vault}
                 tree={tree}
                 expandedPaths={expandedPaths}
@@ -303,8 +301,6 @@ export const DesktopWorkspace = ({
                 onMove={onTreeNodeMove}
                 onCreateFileInRoot={onCreateFileInRoot}
                 onCreateFolderInRoot={onCreateFolderInRoot}
-                onOpenAITab={onOpenAITab}
-                onOpenSites={onOpenSites}
               />
             </ResizablePanel>
 
@@ -312,46 +308,100 @@ export const DesktopWorkspace = ({
 
             {/* 主内容区 */}
             <ResizablePanel
-              defaultSize={isInAIView ? 85 : chatCollapsed ? 85 : 57}
-              minSize={20}
-              className="flex flex-col overflow-hidden"
+              defaultSize={85}
+              minSize={50}
+              className="flex min-w-0 flex-col overflow-hidden"
             >
               <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
-                {renderMainContent()}
+                {/* Chat Mode 主视图容器（ChatPane 通过 Portal 渲染到这里） */}
+                <div
+                  ref={setChatMainHost}
+                  className={mode === 'chat' ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
+                />
+
+                {/* Parking host: keep ChatPane mounted when in Sites mode (not visible, no layout impact). */}
+                <div ref={setChatParkingHost} className="hidden" />
+
+                {/* Workspace Mode：Editor + Assistant panel（可 resize/collapse） */}
+                {shouldMountWorkspaceMain && (
+                  <div
+                    className={
+                      mode === 'workspace' ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
+                    }
+                  >
+                    <ResizablePanelGroup
+                      direction="horizontal"
+                      autoSaveId="desktop-workspace-workspace-panels"
+                      className="flex h-full w-full"
+                    >
+                      <ResizablePanel defaultSize={72} minSize={30} className="min-w-0">
+                        <EditorPanel
+                          activeDoc={activeDoc}
+                          selectedFile={selectedFile}
+                          docState={docState}
+                          docError={docError}
+                          hasFiles={tree.length > 0}
+                          onEditorChange={onEditorChange}
+                          onRetryLoad={onRetryLoad}
+                          onRename={onRenameByTitle}
+                          chatCollapsed={chatCollapsed}
+                          onToggleChat={handleToggleChatPanel}
+                          onNavigateToSites={() => setMode('sites')}
+                        />
+                      </ResizablePanel>
+
+                      <ResizableHandle />
+
+                      <ResizablePanel
+                        ref={workspaceChatPanelRef}
+                        defaultSize={28}
+                        minSize={0}
+                        maxSize={70}
+                        collapsible
+                        collapsedSize={0}
+                        onCollapse={() => !chatCollapsed && setChatCollapsed(true)}
+                        onExpand={() => chatCollapsed && setChatCollapsed(false)}
+                        className="flex flex-col overflow-hidden min-w-[360px] data-[panel-size=0.0]:min-w-0"
+                      >
+                        <div className="flex h-full flex-col overflow-hidden border-l border-border/40 bg-background">
+                          <div
+                            ref={setChatPanelHost}
+                            className="min-h-0 flex-1 min-w-0 overflow-hidden"
+                          />
+                        </div>
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </div>
+                )}
+
+                {/* Sites Mode */}
+                {shouldMountSitesMain && (
+                  <div
+                    className={
+                      mode === 'sites' ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
+                    }
+                  >
+                    <SitesPage currentVaultPath={vault?.path ?? ''} currentTree={tree} />
+                  </div>
+                )}
               </div>
             </ResizablePanel>
-
-            {/* Chat 面板（非 AI Tab 模式且非 Sites 视图时显示） */}
-            {!isInAIView && !isInSitesView && (
-              <>
-                <ResizableHandle />
-                <ResizablePanel
-                  ref={chatPanelRef}
-                  defaultSize={28}
-                  minSize={20}
-                  maxSize={70}
-                  collapsible
-                  collapsedSize={0}
-                  onCollapse={() => !chatCollapsed && setChatCollapsed(true)}
-                  onExpand={() => chatCollapsed && setChatCollapsed(false)}
-                  className="flex min-w-0 flex-col overflow-hidden transition-[flex] duration-200"
-                >
-                  <div className="flex h-full flex-col overflow-hidden border-l border-border/40 bg-background">
-                    <ChatPaneWrapper
-                      fallback={chatFallback}
-                      activeFilePath={activePath}
-                      activeFileContent={activeDoc?.content ?? null}
-                      vaultPath={vault?.path ?? null}
-                      onReady={handleChatReady}
-                      collapsed={chatCollapsed}
-                      onToggleCollapse={handleToggleChatPanel}
-                      onOpenSettings={handleOpenSettings}
-                    />
-                  </div>
-                </ResizablePanel>
-              </>
-            )}
           </ResizablePanelGroup>
+
+          <ChatPanePortal
+            mode={mode}
+            fallback={chatFallback}
+            mainHost={chatMainHost}
+            panelHost={chatPanelHost}
+            parkingHost={chatParkingHost}
+            activeFilePath={activePath}
+            activeFileContent={activeDoc?.content ?? null}
+            vaultPath={vault?.path ?? null}
+            chatCollapsed={chatCollapsed}
+            onToggleCollapse={handleToggleChatPanel}
+            onOpenSettings={handleOpenSettings}
+            onReady={handleChatReady}
+          />
         </div>
       </div>
     );
