@@ -84,6 +84,8 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），用于后续 Mode（Chat/Workspace/Sites）改造
+- workspace-settings：新增 lastMode 持久化与 `workspace:getLastMode/setLastMode` IPC，用于 App Mode（Chat/Workspace/Sites）
 - ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐
 - 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
 - Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk

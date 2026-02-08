@@ -2,6 +2,8 @@
  * [DEFINES]: DesktopApi IPC 类型定义（含会话压缩预处理/模式更新等渲染端契约）
  * [USED_BY]: preload/index.ts, renderer components, main IPC handlers
  * [POS]: PC IPC 类型入口
+ * [UPDATE]: 2026-02-08 - 新增 `vault.ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
+ * [UPDATE]: 2026-02-08 - 新增 `workspace.getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -104,8 +106,9 @@ export type DesktopApi = {
   vault: {
     open: (options?: VaultOpenOptions) => Promise<VaultInfo | null>;
     create?: (options: VaultCreateOptions) => Promise<VaultInfo | null>;
+    /** 确保存在默认 Workspace（用于首次启动自动创建） */
+    ensureDefaultWorkspace: () => Promise<VaultItem | null>;
     selectDirectory?: () => Promise<string | null>;
-    getRecent: () => Promise<VaultInfo | null>;
     readTree: (path: string) => Promise<VaultTreeNode[]>;
     readTreeRoot: (path: string) => Promise<VaultTreeNode[]>;
     readTreeChildren: (path: string) => Promise<VaultTreeNode[]>;
@@ -135,6 +138,10 @@ export type DesktopApi = {
   workspace: {
     getExpandedPaths: (vaultPath: string) => Promise<string[]>;
     setExpandedPaths: (vaultPath: string, paths: string[]) => Promise<void>;
+    /** 获取上次使用的 App Mode（全局） */
+    getLastMode: () => Promise<'chat' | 'workspace' | 'sites'>;
+    /** 写入上次使用的 App Mode（全局） */
+    setLastMode: (mode: 'chat' | 'workspace' | 'sites') => Promise<void>;
     getLastOpenedFile: (vaultPath: string) => Promise<string | null>;
     setLastOpenedFile: (vaultPath: string, filePath: string | null) => Promise<void>;
     getOpenTabs: (
