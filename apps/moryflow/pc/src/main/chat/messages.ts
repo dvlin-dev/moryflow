@@ -3,6 +3,8 @@
  * [OUTPUT]: UIMessageChunk 流转换/消息提取工具
  * [POS]: Chat 主进程流式消息转换与辅助函数
  * [UPDATE]: 2026-02-03 - 输出 start/finish chunk，移除 UIMessageStream 持久化逻辑
+ * [UPDATE]: 2026-02-07 - 移除未处理事件类型调试日志，避免无用噪音
+ * [UPDATE]: 2026-02-08 - streamAgentRun 避免重复写入 start chunk，防止空 assistant 消息
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -86,9 +88,9 @@ export const streamAgentRun = async ({
 
   const ensureMessageStarted = () => {
     if (messageStarted) return true;
-    messageStarted = true;
     try {
       writer.write({ type: 'start' });
+      messageStarted = true;
       return true;
     } catch (error) {
       console.error('[chat] failed to write message start', error);
@@ -180,11 +182,7 @@ export const streamAgentRun = async ({
   };
 
   try {
-    try {
-      writer.write({ type: 'start' });
-    } catch (error) {
-      console.warn('[chat] failed to write start chunk', error);
-    }
+    ensureMessageStarted();
 
     for await (const event of result) {
       if (isAborted()) break;
@@ -244,11 +242,6 @@ export const streamAgentRun = async ({
           emitReasoningEnd();
           emitTextEnd();
         }
-      }
-
-      // 调试：打印未处理的事件类型
-      if (!(event instanceof RunItemStreamEvent) && !(event instanceof RunRawModelStreamEvent)) {
-        console.log('[chat] unhandled event type:', event?.constructor?.name, event);
       }
     }
   } catch (error) {

@@ -43,6 +43,7 @@ describe('streamAgentRun', () => {
     await streamAgentRun({ writer, result: createResult(events) });
 
     expect(chunks[0]?.type).toBe('start');
+    expect(chunks.filter((chunk) => chunk.type === 'start')).toHaveLength(1);
     expect(chunks.some((chunk) => chunk.type === 'text-start')).toBe(true);
     expect(chunks.some((chunk) => chunk.type === 'finish')).toBe(true);
   });

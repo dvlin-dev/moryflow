@@ -3,6 +3,7 @@
  * [OUTPUT]: UIMessageChunk 流 + 会话持久化更新
  * [POS]: Chat 主进程请求入口（流式处理 + 持久化）
  * [UPDATE]: 2026-02-03 - 使用 UIMessageStream onFinish 统一持久化
+ * [UPDATE]: 2026-02-07 - 移除截断续写调试日志，避免无用噪音
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -201,7 +202,6 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
             ) {
               truncateContinueCount++;
               currentInput = buildTruncateContinuePrompt();
-              console.log(`[chat] 截断续写 #${truncateContinueCount}`);
               // 清空附件，续写时不需要重复发送
               attachmentContexts.length = 0;
               continue;

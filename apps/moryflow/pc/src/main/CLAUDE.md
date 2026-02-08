@@ -118,6 +118,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Agent Runtime 接入 Compaction：运行前裁剪旧工具输出并写入会话摘要
 - 修复审批续跑输出持久化，避免多轮 run 丢失输出
 - AgentStreamResult 增补 RunState/输出只读字段，保障审批恢复与输出持久化
+- Chat：移除截断续写/未处理事件类型的调试日志输出，减少噪音
+- Chat：streamAgentRun 避免重复 start chunk，防止出现空的 assistant 消息
 - Chat Tool 权限审批：支持 RunState 中断/恢复、JSONC 规则落地与审计
 - Agent Runtime tool-output storage 移除未使用导出
 - Agent Runtime 新增工具输出统一截断与落盘清理；IPC 增加 `files:openPath`
