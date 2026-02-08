@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-07 - 回归经典 chat：移除 turnAnchor/size handle，滚动动画由 scrollTo({behavior:'smooth'}) 显式控制
  * [UPDATE]: 2026-02-07 - 禁用 overflow-anchor，避免浏览器滚动锚定与 AutoScroll 冲突导致闪烁
  * [UPDATE]: 2026-02-05 - scrollbar-gutter stable，避免滚动条引发消息高度抖动
+ * [UPDATE]: 2026-02-08 - 仅消息区域滚动：滚动条不覆盖 Footer 输入框
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +14,7 @@
 'use client';
 
 import { useComposedRefs } from '@radix-ui/react-compose-refs';
-import { forwardRef } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import type { ComponentPropsWithoutRef, CSSProperties } from 'react';
 
 import { cn } from '../../lib/utils';
@@ -22,10 +23,11 @@ import { useConversationViewportAutoScroll } from './use-auto-scroll';
 
 export type ConversationViewportProps = ComponentPropsWithoutRef<'div'> & {
   autoScroll?: boolean;
+  footer?: ReactNode;
 };
 
 const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewportProps>(
-  ({ className, autoScroll, ...props }, ref) => {
+  ({ className, autoScroll, footer, children, ...props }, ref) => {
     const autoScrollRef = useConversationViewportAutoScroll({ autoScroll });
     const composedRef = useComposedRefs(ref, autoScrollRef);
     const mergedStyle: CSSProperties = {
@@ -36,16 +38,24 @@ const ConversationViewportInner = forwardRef<HTMLDivElement, ConversationViewpor
 
     return (
       <div
-        {...props}
-        ref={composedRef}
-        data-slot="conversation-viewport"
-        style={mergedStyle}
-        className={cn(
-          'relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-auto',
-          className
-        )}
-        role={props.role ?? 'log'}
-      />
+        data-slot="conversation-viewport-root"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <div
+          {...props}
+          ref={composedRef}
+          data-slot="conversation-viewport"
+          style={mergedStyle}
+          className={cn(
+            'relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-auto',
+            className
+          )}
+          role={props.role ?? 'log'}
+        >
+          {children}
+        </div>
+        {footer ?? null}
+      </div>
     );
   }
 );

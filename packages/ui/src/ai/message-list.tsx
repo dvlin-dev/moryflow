@@ -7,6 +7,7 @@
  * [UPDATE]: 2026-02-05 - threadId 仅用于重建 Conversation，确保视口状态重置
  * [UPDATE]: 2026-02-07 - 采用经典 chat 交互：默认底部锚定，AI 流式输出在底部追随；用户上滑则暂停追随；runStart 使用 `behavior:'smooth'`（一次）保证用户消息 + AI loading 可见
  * [UPDATE]: 2026-02-07 - runStart 增加消息入场动效（user + AI loading，160ms），增强“向上出现”的反馈（不影响初始化/切会话：仍为 auto）
+ * [UPDATE]: 2026-02-08 - Footer 脱离滚动容器：滚动条仅在消息区域（不覆盖输入框）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -50,13 +51,7 @@ export type MessageListProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> 
 
 type MessageListInnerProps = Pick<
   MessageListProps,
-  | 'messages'
-  | 'status'
-  | 'renderMessage'
-  | 'emptyState'
-  | 'contentClassName'
-  | 'showScrollButton'
-  | 'footer'
+  'messages' | 'status' | 'renderMessage' | 'emptyState' | 'contentClassName'
 >;
 
 const RUN_START_ENTER_ANIMATION_MS = 160;
@@ -78,8 +73,6 @@ const MessageListInner = ({
   renderMessage,
   emptyState,
   contentClassName,
-  showScrollButton = true,
-  footer,
 }: MessageListInnerProps) => {
   const viewportStore = useConversationViewportStore();
   const prevStatusRef = useRef<ChatStatus>(status);
@@ -183,13 +176,6 @@ const MessageListInner = ({
           })}
         </ConversationContent>
       )}
-
-      {footer || showScrollButton ? (
-        <ConversationViewportFooter>
-          {showScrollButton ? <ConversationScrollButton /> : null}
-          {footer}
-        </ConversationViewportFooter>
-      ) : null}
     </>
   );
 };
@@ -213,17 +199,27 @@ export const MessageList = ({
   const defaultConversationKey = useId();
   const conversationKey = threadId ?? defaultConversationKey;
 
+  const conversationFooter =
+    footer || showScrollButton ? (
+      <ConversationViewportFooter>
+        {showScrollButton ? <ConversationScrollButton /> : null}
+        {footer}
+      </ConversationViewportFooter>
+    ) : null;
+
   return (
     <div className={cn('flex min-w-0 min-h-0 flex-col overflow-hidden', className)} {...props}>
-      <Conversation key={conversationKey} className={conversationClassName}>
+      <Conversation
+        key={conversationKey}
+        className={conversationClassName}
+        footer={conversationFooter}
+      >
         <MessageListInner
           messages={messages}
           status={status}
           renderMessage={renderMessage}
           emptyState={emptyState}
           contentClassName={contentClassName}
-          showScrollButton={showScrollButton}
-          footer={footer}
         />
       </Conversation>
     </div>

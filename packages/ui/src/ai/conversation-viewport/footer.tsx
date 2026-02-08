@@ -2,7 +2,8 @@
  * [PROPS]: ConversationViewportFooterProps - 底部区域容器
  * [EMITS]: None
  * [POS]: Conversation Viewport 底部区域容器（布局 + inset 高度注册）
- * [UPDATE]: 2026-02-07 - 回归经典 chat：移除 inset 高度注册，Footer 只负责 sticky 布局
+ * [UPDATE]: 2026-02-07 - 回归经典 chat：移除 inset 高度注册，Footer 只负责底部布局
+ * [UPDATE]: 2026-02-08 - Footer 与消息区域分离：滚动条仅在消息区域，不覆盖输入框
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,7 +26,7 @@ export const ConversationViewportFooter = forwardRef<
       {...props}
       ref={ref}
       data-slot="conversation-viewport-footer"
-      className={cn('sticky bottom-0 z-10 mt-auto bg-background', className)}
+      className={cn('relative z-10 shrink-0 bg-background', className)}
     />
   );
 });
