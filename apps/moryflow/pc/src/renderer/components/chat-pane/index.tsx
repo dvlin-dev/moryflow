@@ -8,6 +8,8 @@
  * [UPDATE]: 2026-02-04 - Header 高度写入 CSS 变量，避免消息被覆盖
  * [UPDATE]: 2026-02-05 - 取消 Header 高度透传，顶部 padding 归零避免冗余留白
  * [UPDATE]: 2026-02-05 - 恢复 Header 高度透传，修复自动滚动时顶部遮挡
+ * [UPDATE]: 2026-02-08 - 支持 variant 切换时重算 headerHeight，避免 mode/workspace 切换出现留白或遮挡
+ * [UPDATE]: 2026-02-08 - Chat Mode 视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 p-3，避免叠加过大）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -53,6 +55,7 @@ export const ChatPane = ({
   const { t } = useTranslation('chat');
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const isModeVariant = variant === 'mode';
   const isCollapsed = variant === 'panel' ? Boolean(collapsed) : false;
   const {
     sessions,
@@ -134,7 +137,11 @@ export const ChatPane = ({
 
   useLayoutEffect(() => {
     const headerEl = headerRef.current;
-    if (!headerEl) return;
+    // Chat Mode（variant=mode）没有 header，需要把 padding 归零并跳过测量。
+    if (variant !== 'panel' || !headerEl) {
+      setHeaderHeight(0);
+      return;
+    }
 
     const updateHeight = () => {
       const nextHeight = Math.round(headerEl.getBoundingClientRect().height);
@@ -153,7 +160,7 @@ export const ChatPane = ({
     const observer = new ResizeObserver(() => updateHeight());
     observer.observe(headerEl);
     return () => observer.disconnect();
-  }, []);
+  }, [variant]);
 
   useEffect(() => {
     if (!requireModelSetup && isModelSetupError) {
@@ -301,37 +308,53 @@ export const ChatPane = ({
         }`}
       >
         <CardContent className="flex-1 overflow-hidden p-0">
-          <div className="flex h-full flex-col overflow-hidden">
-            <ConversationSection
-              messages={messages}
-              status={status}
-              error={error}
-              messageActions={messageActions}
-              onToolApproval={handleToolApproval}
-              threadId={activeSessionId}
-              footer={
-                <ChatFooter
-                  status={status}
-                  inputError={inputError}
-                  onInputError={setInputError}
-                  onSubmit={handlePromptSubmit}
-                  onStop={handleStop}
-                  activeFilePath={activeFilePath}
-                  activeFileContent={activeFileContent}
-                  vaultPath={vaultPath}
-                  activeSessionId={activeSessionId}
-                  modelGroups={modelGroups}
-                  selectedModelId={selectedModelId}
-                  onSelectModel={setSelectedModelId}
-                  disabled={!sessionsReady || !activeSessionId}
-                  onOpenSettings={onOpenSettings}
-                  tokenUsage={activeSession?.tokenUsage}
-                  contextWindow={getModelContextWindow(selectedModelId)}
-                  mode={activeSession?.mode ?? 'agent'}
-                  onModeChange={handleModeChange}
-                />
+          <div
+            className={
+              isModeVariant
+                ? // Keep a consistent "2em" visual padding, but subtract footer's inner padding (p-3)
+                  // so the input doesn't end up too far from the bottom edge.
+                  'flex h-full min-h-0 flex-col overflow-hidden px-[2em] pt-[2em] pb-[calc(2em-0.75rem)]'
+                : 'flex h-full flex-col overflow-hidden'
+            }
+          >
+            <div
+              className={
+                isModeVariant
+                  ? 'mx-auto flex h-full min-h-0 w-full max-w-[720px] flex-col overflow-hidden'
+                  : 'flex h-full flex-col overflow-hidden'
               }
-            />
+            >
+              <ConversationSection
+                messages={messages}
+                status={status}
+                error={error}
+                messageActions={messageActions}
+                onToolApproval={handleToolApproval}
+                threadId={activeSessionId}
+                footer={
+                  <ChatFooter
+                    status={status}
+                    inputError={inputError}
+                    onInputError={setInputError}
+                    onSubmit={handlePromptSubmit}
+                    onStop={handleStop}
+                    activeFilePath={activeFilePath}
+                    activeFileContent={activeFileContent}
+                    vaultPath={vaultPath}
+                    activeSessionId={activeSessionId}
+                    modelGroups={modelGroups}
+                    selectedModelId={selectedModelId}
+                    onSelectModel={setSelectedModelId}
+                    disabled={!sessionsReady || !activeSessionId}
+                    onOpenSettings={onOpenSettings}
+                    tokenUsage={activeSession?.tokenUsage}
+                    contextWindow={getModelContextWindow(selectedModelId)}
+                    mode={activeSession?.mode ?? 'agent'}
+                    onModeChange={handleModeChange}
+                  />
+                }
+              />
+            </div>
           </div>
         </CardContent>
       </div>

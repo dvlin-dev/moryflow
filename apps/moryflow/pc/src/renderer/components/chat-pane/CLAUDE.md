@@ -20,6 +20,8 @@
 
 - 2026-02-08：useChatSessions 改为共享 store，供 Chat Mode Sidebar 与 ChatPane 复用（activeSession 单一事实来源）。
 - 2026-02-08：ChatPane 新增 `variant`（`panel`/`mode`），Chat Mode 主视图隐藏 Header/折叠按钮，避免语义不一致。
+- 2026-02-08：Chat Mode 主视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 `p-3`，避免叠加过大）。
+- 2026-02-08：ChatPane 在 `variant` 切换时重算 headerHeight，避免 mode/workspace 切换出现留白或遮挡。
 - 2026-02-08：ChatMessage parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移。
 - 2026-02-08：ChatPane `handle.ts` 清理未使用的 message parts 工具函数，仅保留 `computeAgentOptions`（单一职责）。
 - 2026-02-07：ChatMessage 统一使用 Message（移除 MessageRoot），消息容器不再承担锚点相关逻辑。
