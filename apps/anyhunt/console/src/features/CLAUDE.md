@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：MessageRow parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
 - Playground Shared/Memox 分页箭头统一改为 ChevronRight/ChevronLeft（无中轴）
 - Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API Key Create Dialog 文案与 ApiKeyClient 校验对齐（空 key 阻断请求）
@@ -82,6 +83,7 @@ export function useApiKeys() {
 - Agent Browser Playground：Tool 消息兼容 dynamic-tool 类型，修复构建类型报错
 - Agent Browser Playground：输入提交失败保留内容，交由上层提示错误
 - Agent Browser Playground：消息列表组件拆分与渲染性能优化（单次遍历 + 子组件化）
+- Agent Browser Playground：loading 改为占位消息渲染，MessageList 不再接收 loading prop
 - Scrape Playground 表单改用 `useWatch` 订阅字段，避免 `form.watch()` 与 React Compiler 冲突
 - Playground 类型与 API 解包统一为 raw JSON + RFC7807（移除 success/data 包装）
 - Console Playground/管理页统一改为 API Key 直连公网 API

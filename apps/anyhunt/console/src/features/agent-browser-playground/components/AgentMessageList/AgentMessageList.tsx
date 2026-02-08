@@ -2,6 +2,7 @@
  * [PROPS]: AgentMessageListProps
  * [EMITS]: None
  * [POS]: Agent Playground 对话消息渲染（复用共享消息列表 UI）
+ * [UPDATE]: 2026-02-03 - loading 由占位消息渲染，MessageList 不再额外接入
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -29,14 +30,7 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
           title: 'Waiting for you',
           description: 'Send a prompt to start a run.',
         }}
-        renderMessage={({ message, isPlaceholder, minHeight, registerRef }) => (
-          <MessageRow
-            message={message}
-            isPlaceholder={isPlaceholder}
-            minHeight={minHeight}
-            registerRef={registerRef}
-          />
-        )}
+        renderMessage={({ message }) => <MessageRow message={message} />}
       />
       {error ? (
         <div className="px-4 pb-4">

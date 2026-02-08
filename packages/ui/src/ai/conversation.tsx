@@ -1,33 +1,62 @@
 'use client';
 
+/**
+ * [PROPS]: ConversationProps/ConversationContentProps/ConversationScrollButtonProps
+ * [EMITS]: None
+ * [POS]: 消息列表滚动容器与基础布局组件
+ * [UPDATE]: 2026-02-03 - 调整内容/空态高度，保证 Footer 始终可见
+ * [UPDATE]: 2026-02-04 - 移除顶部 inset 与 overflow-anchor，避免滚动锚定导致闪烁
+ * [UPDATE]: 2026-02-04 - ConversationContent 顶部 padding 使用 header 变量，避免首条消息被覆盖
+ * [UPDATE]: 2026-02-05 - 顶部 padding 额外预留改为可配置变量，默认 1rem
+ * [UPDATE]: 2026-02-07 - ConversationContent：移除 TurnAnchor=top 相关 CSS vars，回归静态 gap/pb（更简单）
+ * [UPDATE]: 2026-02-05 - ScrollButton：仅依赖 distanceFromBottom 阈值 + scrollToBottom
+ * [UPDATE]: 2026-02-05 - ScrollButton 基于距离阈值控制显示（默认 200px）
+ * [UPDATE]: 2026-02-07 - 回归经典 chat：滚动动画由 scrollTo({behavior:'smooth'}) 显式控制
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import type { ComponentProps, ComponentPropsWithoutRef, CSSProperties, ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
+
 import { Button } from '../components/button';
 import { cn } from '../lib/utils';
-import type { ComponentProps } from 'react';
-import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
+import type { ConversationViewportProps } from './conversation-viewport';
+import {
+  ConversationViewport,
+  useConversationViewport,
+  useConversationViewportStore,
+} from './conversation-viewport';
 
-export type ConversationProps = ComponentProps<typeof StickToBottom>;
+export type ConversationProps = ConversationViewportProps;
 
 export const Conversation = ({ className, ...props }: ConversationProps) => (
-  <StickToBottom
-    className={cn('relative flex-1 overflow-y-auto', className)}
-    initial="smooth"
-    resize="smooth"
-    role="log"
-    {...props}
-  />
+  <ConversationViewport className={className} role={props.role ?? 'log'} {...props} />
 );
 
-export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>;
+export type ConversationContentProps = ComponentPropsWithoutRef<'div'>;
 
-export const ConversationContent = ({ className, ...props }: ConversationContentProps) => (
-  <StickToBottom.Content className={cn('flex flex-col gap-1 p-4 h-full', className)} {...props} />
-);
+export const ConversationContent = ({ className, style, ...props }: ConversationContentProps) => {
+  const paddingTop =
+    style?.paddingTop ??
+    'calc(var(--ai-conversation-top-padding, 0px) + var(--ai-conversation-top-padding-extra, 1rem))';
+
+  const mergedStyle = { ...style, paddingTop } as CSSProperties;
+
+  return (
+    <div
+      data-slot="conversation-content"
+      className={cn('flex flex-col gap-1 px-4 pb-4', className)}
+      style={mergedStyle}
+      {...props}
+    />
+  );
+};
 
 export type ConversationEmptyStateProps = ComponentProps<'div'> & {
   title?: string;
   description?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 };
 
 export const ConversationEmptyState = ({
@@ -40,7 +69,7 @@ export const ConversationEmptyState = ({
 }: ConversationEmptyStateProps) => (
   <div
     className={cn(
-      'flex size-full flex-col items-center justify-center gap-3 p-8 text-center',
+      'flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center',
       className
     )}
     {...props}
@@ -57,19 +86,24 @@ export const ConversationEmptyState = ({
   </div>
 );
 
-export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
+export type ConversationScrollButtonProps = ComponentProps<typeof Button> & {
+  distanceThreshold?: number;
+};
 
 export const ConversationScrollButton = ({
   className,
+  distanceThreshold = 200,
   ...props
 }: ConversationScrollButtonProps) => {
-  const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+  const distanceFromBottom = useConversationViewport((state) => state.distanceFromBottom);
+  const viewportStore = useConversationViewportStore();
+  const shouldShow = distanceFromBottom > distanceThreshold;
 
   return (
-    !isAtBottom && (
+    shouldShow && (
       <Button
-        className={cn('absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full', className)}
-        onClick={() => scrollToBottom()}
+        className={cn('absolute -top-12 left-[50%] translate-x-[-50%] rounded-full', className)}
+        onClick={() => viewportStore.getState().scrollToBottom({ behavior: 'smooth' })}
         size="icon"
         type="button"
         variant="outline"

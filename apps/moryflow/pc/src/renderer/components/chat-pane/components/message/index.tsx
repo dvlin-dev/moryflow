@@ -2,14 +2,17 @@
  * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
+ * [UPDATE]: 2026-02-03 - Thinking 反馈改为 loading icon
+ * [UPDATE]: 2026-02-07 - 统一使用 Message（移除 MessageRoot/锚点相关逻辑）
+ * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免 PC/Web 重复实现导致语义漂移
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { isFileUIPart, isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
-import type { FileUIPart, ToolUIPart, UIMessage } from 'ai';
+import { isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
+import type { ToolUIPart, UIMessage } from 'ai';
 import { X, Pencil, GitBranch, RefreshCw, Check } from 'lucide-react';
 
 import {
@@ -21,9 +24,11 @@ import {
   MessageContent,
   MessageMetaAttachments,
   MessageResponse,
+  cleanFileRefMarker,
+  splitMessageParts,
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
-import { Shimmer } from '@anyhunt/ui/ai/shimmer';
+import { Loader } from '@anyhunt/ui/ai/loader';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
 import {
   Confirmation,
@@ -37,62 +42,32 @@ import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 import type { ToolDiffResult, ToolState } from '@anyhunt/ui/ai/tool';
 
-import { getFileParts } from '../../handle';
 import { getMessageMeta } from '../../types/message';
 import type { ChatMessageProps } from './const';
 import { useMessageEdit } from './use-message-edit';
-
-/** 移除消息文本末尾的文件引用标记 */
-const FILE_REF_REGEX = /\n\n\[Referenced files: [^\]]+\]$/;
-
-const cleanFileRefMarker = (text: string): string => text.replace(FILE_REF_REGEX, '');
 
 export const ChatMessage = ({
   message,
   messageIndex,
   status,
-  registerRef,
-  minHeight,
-  isPlaceholder,
   isLastAssistant,
   actions,
   onToolApproval,
 }: ChatMessageProps) => {
-  const handleRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      registerRef?.(message.id, node);
-    },
-    [message.id, registerRef]
+  const { fileParts, orderedParts, messageText } = useMemo(
+    () => splitMessageParts(message.parts),
+    [message.parts]
   );
-
-  // 原有的文件附件（图片等，来自 AI SDK）
-  const fileParts = useMemo<FileUIPart[]>(() => getFileParts(message) as FileUIPart[], [message]);
 
   // 从 metadata 读取结构化附件
   const { attachments: chatAttachments = [] } = useMemo(() => getMessageMeta(message), [message]);
 
-  const orderedParts = useMemo(() => {
-    const parts = message.parts ?? [];
-    return parts.filter((part) => !isFileUIPart(part));
-  }, [message]);
-
-  // 提取消息文本，用户消息需要移除文件引用标记
-  const { messageText, cleanMessageText } = useMemo(() => {
-    const textParts = orderedParts.filter(isTextUIPart);
-    const rawText = textParts.map((p) => p.text).join('\n');
-
+  const cleanMessageText = useMemo(() => {
     if (message.role === 'user') {
-      return {
-        messageText: rawText,
-        cleanMessageText: cleanFileRefMarker(rawText),
-      };
+      return cleanFileRefMarker(messageText);
     }
-
-    return {
-      messageText: rawText,
-      cleanMessageText: rawText,
-    };
-  }, [orderedParts, message.role]);
+    return messageText;
+  }, [message.role, messageText]);
 
   const handleEditConfirm = useCallback(
     (newContent: string) => {
@@ -422,14 +397,7 @@ export const ChatMessage = ({
   };
 
   return (
-    <Message
-      key={message.id}
-      ref={handleRef}
-      from={message.role}
-      data-message-id={message.id}
-      style={minHeight ? ({ minHeight } as CSSProperties) : undefined}
-      data-placeholder={isPlaceholder ? 'true' : undefined}
-    >
+    <Message from={message.role} data-message-id={message.id}>
       <MessageContent ref={isUser ? contentRef : undefined} style={editContentStyle}>
         {renderMessageBody()}
       </MessageContent>
@@ -445,21 +413,9 @@ export const ChatMessage = ({
 const ThinkingContent = () => {
   const { t } = useTranslation('chat');
   return (
-    <Shimmer
-      className="text-sm font-medium text-muted-foreground"
-      as="span"
-      duration={3}
-      spread={3}
-    >
-      {t('thinkingText')}
-    </Shimmer>
+    <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+      <Loader className="text-muted-foreground" size={14} />
+      <span className="sr-only">{t('thinkingText')}</span>
+    </span>
   );
 };
-
-export const ThinkingMessage = () => (
-  <Message from="assistant">
-    <MessageContent>
-      <ThinkingContent />
-    </MessageContent>
-  </Message>
-);

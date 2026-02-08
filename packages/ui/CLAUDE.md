@@ -48,26 +48,17 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
-- Breadcrumb/Pagination/Carousel/Calendar/ContextMenu/Menubar/AI 导航箭头统一改为 ChevronLeft/ChevronRight（无中轴）
-- Form：回退场景使用稳定 id，避免 aria 关联错位
-- Form：生产环境缺失 FormField/FormItem 上下文时回退渲染，避免白屏
-- Select/Accordion/NavigationMenu/Calendar 等下拉/折叠箭头统一改为 ChevronDown（无中轴）
-- Tool：折叠箭头改为 ChevronDown（无中轴）
-- DropdownMenu：子菜单指示箭头改为 ChevronRight（无中轴）
-- RadioGroup/ContextMenu/Menubar：单选指示图标统一为实心圆（移除空心外环）
-- DropdownMenu：单选指示图标改为实心圆，保持选中态更清晰
-- UI 包图标回退到 Lucide，移除 Icon 包装与 Hugeicons 依赖
-- 类型映射统一为 Record，移除 Circle 泛型依赖
-- ToolOutput：打开完整输出时补齐错误边界
-- ToolOutput：新增截断输出标识与完整输出打开入口
-- PromptInput：附件转换失败/提交失败通过 `onError` 反馈，`accept` 规则支持扩展名与 MIME
-- ToolOutput：允许渲染 `0`/`false` 等非空输出
-- MessageList：新增通用消息列表封装，统一占位与滚动布局并补齐稳定 key
-- useConversationLayout：优化最新消息查找与渲染路径，避免多余数组反转
-- Sidebar：统一 `offcanvas` 命名与 Slot 引用，移除 `radix-ui` 依赖
-- Accordion/Highlight：状态派生与 ref 清理，补齐 client 边界
-- Chart：Tooltip 支持 `0` 值展示并补充单测
-- Testing：新增 packages/ui 单元测试配置与基础用例
+- 2026-02-08：Message parts 解析抽为纯函数（`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。
+- 2026-02-08：MessageList：未传 threadId 时使用稳定默认 key，避免消息数组截断/压缩导致的意外 remount。
+- 2026-02-08：ConversationViewport：消息区域与 Footer 分离，滚动条仅出现在消息区域（不覆盖输入框）。
+- 2026-02-07：消息列表交互回归经典 chat（bottom-anchor Following）：AI 流式输出自动追随；用户任意上滑暂停；滚回底部/按钮恢复。
+- 2026-02-07：AutoScroll：改为纯滚动指标判定上滑取消；同时过滤 layout shrink / viewport resize 造成的 scrollTop 回退，避免 following 被误关（导致“滚动条拖不动/追随失效”）。
+- 2026-02-07：AutoScroll：移除调试日志输出，避免无用噪音。
+- 2026-02-07：ConversationViewport：禁用 `overflow-anchor` + `scrollbar-gutter: stable`，降低滚动抖动与闪烁。
+- 2026-02-07：移除 `packages/ui/src/ai/assistant-ui` 目录；AutoScroll/Store 内聚到 `packages/ui/src/ai/conversation-viewport/*`。
+- 2026-02-07：runStart：进入 running 时触发一次 `scrollToBottom({ behavior: 'smooth' })`，让“用户消息 + AI loading”在底部可见（不再发送贴顶）。
+- 2026-02-07：runStart：新增消息入场动效（user + AI loading，`160ms` 向上滑入 + 淡入），增强“向上出现”的反馈。
+- 2026-02-01：图标库回退 Lucide（`lucide-react` / `lucide-react-native`），移除 Hugeicons 依赖与 Icon 包装层。
 
 ## 技术栈
 
@@ -92,4 +83,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.6 | 更新日期: 2026-01-28_
+_版本: 4.16 | 更新日期: 2026-02-08_

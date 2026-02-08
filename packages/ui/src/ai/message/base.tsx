@@ -1,17 +1,27 @@
-'use client'
+/**
+ * [PROPS]: MessageProps/MessageContentProps/MessageActionProps/MessageActionsProps
+ * [EMITS]: None
+ * [POS]: 消息基础原语（内容布局）
+ * [UPDATE]: 2026-02-03 - 移除 Viewport 依赖，保持基础组件可复用
+ * [UPDATE]: 2026-02-05 - MessageContent 添加 data-slot，保持结构对齐
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
 
-import { forwardRef } from 'react'
+'use client';
 
-import { Button } from '../../components/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/tooltip'
-import { cn } from '../../lib/utils'
+import { forwardRef } from 'react';
+
+import { Button } from '../../components/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/tooltip';
+import { cn } from '../../lib/utils';
 
 import type {
   MessageActionProps,
   MessageActionsProps,
   MessageContentProps,
   MessageProps,
-} from './const'
+} from './const';
 
 export const Message = forwardRef<HTMLDivElement, MessageProps>(function Message(
   { className, from, ...props },
@@ -28,37 +38,37 @@ export const Message = forwardRef<HTMLDivElement, MessageProps>(function Message
       ref={ref}
       {...props}
     />
-  )
-})
+  );
+});
 
-export const MessageContent = forwardRef<HTMLDivElement, MessageContentProps>(function MessageContent(
-  { children, className, ...props },
-  ref
-) {
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'is-user:dark flex flex-col gap-2 text-sm wrap-break-word',
-        'min-w-0',
-        'group-[.is-assistant]:w-full group-[.is-assistant]:max-w-full',
-        'group-[.is-user]:w-fit group-[.is-user]:max-w-full',
-        'group-[.is-user]:ml-auto group-[.is-user]:rounded-xl group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground',
-        'group-[.is-assistant]:text-foreground',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  )
-})
+export const MessageContent = forwardRef<HTMLDivElement, MessageContentProps>(
+  function MessageContent({ children, className, ...props }, ref) {
+    return (
+      <div
+        ref={ref}
+        data-slot="message-content"
+        className={cn(
+          'is-user:dark flex flex-col gap-2 text-sm wrap-break-word',
+          'min-w-0',
+          'group-[.is-assistant]:w-full group-[.is-assistant]:max-w-full',
+          'group-[.is-user]:w-fit group-[.is-user]:max-w-full',
+          'group-[.is-user]:ml-auto group-[.is-user]:rounded-xl group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground',
+          'group-[.is-assistant]:text-foreground',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
+);
 
 export const MessageActions = ({ className, children, ...props }: MessageActionsProps) => (
   <div className={cn('flex items-center gap-1', className)} {...props}>
     {children}
   </div>
-)
+);
 
 export const MessageAction = ({
   tooltip,
@@ -73,7 +83,7 @@ export const MessageAction = ({
       {children}
       <span className="sr-only">{label || tooltip}</span>
     </Button>
-  )
+  );
 
   if (tooltip) {
     return (
@@ -85,8 +95,8 @@ export const MessageAction = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    )
+    );
   }
 
-  return button
-}
+  return button;
+};

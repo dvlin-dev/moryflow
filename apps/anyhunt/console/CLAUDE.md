@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
 - Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）
 - 控制台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -18,6 +19,8 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Playground/管理页统一改为 API Key 直连公网 API（Bearer）
 - API Key 列表返回明文 key，前端统一脱敏展示与复制
 - Session 路由统一改为 `/api/v1/app/*`（API Keys/User/Payment）
+- Agent Browser Playground 消息列表回归经典 chat（Viewport Following）：发送仅保证“用户消息 + AI loading”在底部可见（一次 smooth），不再发送贴顶
+- Agent Browser Playground loading 图标与 AI 文案起始对齐，模拟消息气泡
 
 ## 职责
 

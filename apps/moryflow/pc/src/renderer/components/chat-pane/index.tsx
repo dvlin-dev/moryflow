@@ -2,11 +2,18 @@
  * [PROPS]: ChatPaneProps - 会话、消息、输入框与任务 UI
  * [EMITS]: onToggleCollapse/onOpenSettings + chat/session actions
  * [POS]: ChatPane 容器（消息流 + 输入区 + Tasks 面板）
+ * [UPDATE]: 2026-02-03 - 移除 Renderer 侧强制同步，避免覆盖主进程持久化
+ * [UPDATE]: 2026-02-04 - 移除 Header inset 参与滚动逻辑，严格对齐 assistant-ui
+ * [UPDATE]: 2026-02-04 - 清理 scrollReady 状态，交由 UI 包滚动逻辑接管
+ * [UPDATE]: 2026-02-04 - Header 高度写入 CSS 变量，避免消息被覆盖
+ * [UPDATE]: 2026-02-05 - 取消 Header 高度透传，顶部 padding 归零避免冗余留白
+ * [UPDATE]: 2026-02-05 - 恢复 Header 高度透传，修复自动滚动时顶部遮挡
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { CardContent } from '@anyhunt/ui/components/card';
 import { IpcChatTransport } from '@/transport/ipc-chat-transport';
@@ -20,7 +27,6 @@ import { ChatPaneHeader } from './components/chat-pane-header';
 import {
   useChatModelSelection,
   useChatSessions,
-  useConversationLayout,
   useMessageActions,
   useStoredMessages,
 } from './hooks';
@@ -44,6 +50,8 @@ export const ChatPane = ({
   onOpenSettings,
 }: ChatPaneProps) => {
   const { t } = useTranslation('chat');
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const {
     sessions,
     activeSession,
@@ -95,8 +103,6 @@ export const ChatPane = ({
   const [inputError, setInputError] = useState<string | null>(null);
   // 追踪错误是否由于模型未设置引起，用于后续清理
   const [isModelSetupError, setIsModelSetupError] = useState(false);
-  const { conversationContextRef, registerMessageRef, renderMessages, getMessageLayout } =
-    useConversationLayout(messages, status);
   useStoredMessages({ activeSessionId, setMessages });
 
   // 消息操作（重发、重试、编辑重发、分支）
@@ -114,6 +120,38 @@ export const ChatPane = ({
     [modelGroups]
   );
   const requireModelSetup = !hasModelOptions || !selectedModelId;
+
+  const conversationStyle = useMemo(
+    () =>
+      ({
+        '--ai-conversation-top-padding': `${headerHeight}px`,
+        '--ai-conversation-top-padding-extra': '0px',
+      }) as CSSProperties,
+    [headerHeight]
+  );
+
+  useLayoutEffect(() => {
+    const headerEl = headerRef.current;
+    if (!headerEl) return;
+
+    const updateHeight = () => {
+      const nextHeight = Math.round(headerEl.getBoundingClientRect().height);
+      setHeaderHeight((prev) => (prev === nextHeight ? prev : nextHeight));
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => {
+        window.removeEventListener('resize', updateHeight);
+      };
+    }
+
+    const observer = new ResizeObserver(() => updateHeight());
+    observer.observe(headerEl);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!requireModelSetup && isModelSetupError) {
@@ -240,17 +278,19 @@ export const ChatPane = ({
   );
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden">
-      <ChatPaneHeader
-        sessions={sessions}
-        activeSession={activeSession}
-        onSelectSession={selectSession}
-        onCreateSession={createSession}
-        onDeleteSession={deleteSession}
-        isSessionReady={sessionsReady}
-        collapsed={collapsed}
-        onToggleCollapse={onToggleCollapse}
-      />
+    <div className="relative flex h-full flex-col overflow-hidden" style={conversationStyle}>
+      <div className="shrink-0" ref={headerRef}>
+        <ChatPaneHeader
+          sessions={sessions}
+          activeSession={activeSession}
+          onSelectSession={selectSession}
+          onCreateSession={createSession}
+          onDeleteSession={deleteSession}
+          isSessionReady={sessionsReady}
+          collapsed={collapsed}
+          onToggleCollapse={onToggleCollapse}
+        />
+      </div>
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden transition-opacity duration-200 ${
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
@@ -262,35 +302,34 @@ export const ChatPane = ({
               messages={messages}
               status={status}
               error={error}
-              conversationContextRef={conversationContextRef}
-              renderMessages={renderMessages}
-              getMessageLayout={getMessageLayout}
-              registerMessageRef={registerMessageRef}
               messageActions={messageActions}
               onToolApproval={handleToolApproval}
+              threadId={activeSessionId}
+              footer={
+                <ChatFooter
+                  status={status}
+                  inputError={inputError}
+                  onInputError={setInputError}
+                  onSubmit={handlePromptSubmit}
+                  onStop={handleStop}
+                  activeFilePath={activeFilePath}
+                  activeFileContent={activeFileContent}
+                  vaultPath={vaultPath}
+                  activeSessionId={activeSessionId}
+                  modelGroups={modelGroups}
+                  selectedModelId={selectedModelId}
+                  onSelectModel={setSelectedModelId}
+                  disabled={!sessionsReady || !activeSessionId}
+                  onOpenSettings={onOpenSettings}
+                  tokenUsage={activeSession?.tokenUsage}
+                  contextWindow={getModelContextWindow(selectedModelId)}
+                  mode={activeSession?.mode ?? 'agent'}
+                  onModeChange={handleModeChange}
+                />
+              }
             />
           </div>
         </CardContent>
-        <ChatFooter
-          status={status}
-          inputError={inputError}
-          onInputError={setInputError}
-          onSubmit={handlePromptSubmit}
-          onStop={handleStop}
-          activeFilePath={activeFilePath}
-          activeFileContent={activeFileContent}
-          vaultPath={vaultPath}
-          activeSessionId={activeSessionId}
-          modelGroups={modelGroups}
-          selectedModelId={selectedModelId}
-          onSelectModel={setSelectedModelId}
-          disabled={!sessionsReady || !activeSessionId}
-          onOpenSettings={onOpenSettings}
-          tokenUsage={activeSession?.tokenUsage}
-          contextWindow={getModelContextWindow(selectedModelId)}
-          mode={activeSession?.mode ?? 'agent'}
-          onModeChange={handleModeChange}
-        />
       </div>
     </div>
   );

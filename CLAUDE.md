@@ -1,6 +1,8 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
+> 最近更新：2026-02-07（协作总则：补充“最佳实践优先/允许破坏性重构”行为准则）
 > 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地，app/public 路由完成迁移）
@@ -236,6 +238,7 @@ Anyhunt/
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案        |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
+| [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）    |
 | [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                                     | Moryflow Agent Tasks 系统方案（替代 Plan）                |
 | [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)                           | ADR：两条业务线永不互通                                   |
 | [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                                     | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |
@@ -272,6 +275,7 @@ Anyhunt/
 - **不定义业务语义**：产品/数据含义先确认需求方
 - **复用优先**：现有接口、类型、工具优先复用
 - **参考源仓库**：不确定时查看上面列出的原始仓库
+- **最佳实践优先**：为可维护性允许破坏性重构（不考虑历史兼容），优先模块化/单一职责；无用代码直接删除
 
 ---
 
@@ -797,4 +801,4 @@ pnpm typecheck
 
 ---
 
-_版本: 1.1 | 更新日期: 2026-01-16_
+_版本: 1.2 | 更新日期: 2026-02-07_

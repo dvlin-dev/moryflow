@@ -2,11 +2,12 @@
  * [PROPS]: MessageRowProps - 单条消息渲染参数
  * [EMITS]: None
  * [POS]: AgentMessageList 的单条消息展示
+ * [UPDATE]: 2026-02-03 - thinking 占位改为 loading icon（由空消息触发）
+ * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { CSSProperties } from 'react';
 import {
   Message,
   MessageAttachment,
@@ -14,24 +15,16 @@ import {
   MessageContent,
   MessageMetaAttachments,
   MessageResponse,
+  cleanFileRefMarker,
+  splitMessageParts,
   type MessageAttachmentLabels,
 } from '@anyhunt/ui/ai/message';
+import { Loader } from '@anyhunt/ui/ai/loader';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
-import { Shimmer } from '@anyhunt/ui/ai/shimmer';
-import {
-  isFileUIPart,
-  isReasoningUIPart,
-  isTextUIPart,
-  isToolUIPart,
-  type FileUIPart,
-  type UIMessage,
-} from 'ai';
+import { isReasoningUIPart, isTextUIPart, isToolUIPart, type UIMessage } from 'ai';
 import type { ChatMessageMeta, ChatMessageMetadata } from '@anyhunt/types';
 
 import { MessageTool } from './message-tool';
-
-/** 移除消息文本末尾的文件引用标记 */
-const FILE_REF_REGEX = /\n\n\[Referenced files: [^\]]+\]$/;
 
 const ATTACHMENT_LABELS: MessageAttachmentLabels = {
   image: 'Image',
@@ -45,53 +38,18 @@ const ATTACHMENT_LABELS: MessageAttachmentLabels = {
 
 type MessageRowProps = {
   message: UIMessage;
-  isPlaceholder: boolean;
-  minHeight?: string;
-  registerRef: (node: HTMLElement | null) => void;
 };
-
-const cleanFileRefMarker = (text: string): string => text.replace(FILE_REF_REGEX, '');
 
 const getMessageMeta = (message: UIMessage): ChatMessageMeta => {
   const meta = message.metadata as ChatMessageMetadata | undefined;
   return meta?.chat ?? {};
 };
 
-type SplitMessageParts = {
-  fileParts: FileUIPart[];
-  orderedParts: UIMessage['parts'][number][];
-  messageText: string;
-};
-
-const splitMessageParts = (parts: UIMessage['parts'] | undefined): SplitMessageParts => {
-  const fileParts: FileUIPart[] = [];
-  const orderedParts: UIMessage['parts'][number][] = [];
-  const textParts: string[] = [];
-
-  if (!parts || parts.length === 0) {
-    return { fileParts, orderedParts, messageText: '' };
-  }
-
-  for (const part of parts) {
-    if (isFileUIPart(part)) {
-      fileParts.push(part);
-      continue;
-    }
-    orderedParts.push(part);
-    if (isTextUIPart(part)) {
-      textParts.push(part.text ?? '');
-    }
-  }
-
-  return { fileParts, orderedParts, messageText: textParts.join('\n') };
-};
-
-export function MessageRow({ message, isPlaceholder, minHeight, registerRef }: MessageRowProps) {
+export function MessageRow({ message }: MessageRowProps) {
   const { fileParts, orderedParts, messageText } = splitMessageParts(message.parts);
   const { attachments: chatAttachments = [] } = getMessageMeta(message);
 
   const displayText = message.role === 'user' ? cleanFileRefMarker(messageText) : messageText;
-  const style = minHeight ? ({ minHeight } as CSSProperties) : undefined;
   const shouldShowMetaAttachments = message.role === 'user' && chatAttachments.length > 0;
 
   const renderMessageBody = () => {
@@ -128,13 +86,7 @@ export function MessageRow({ message, isPlaceholder, minHeight, registerRef }: M
   };
 
   return (
-    <Message
-      ref={registerRef}
-      from={message.role}
-      data-message-id={message.id}
-      data-placeholder={isPlaceholder ? 'true' : undefined}
-      style={style}
-    >
+    <Message from={message.role} data-message-id={message.id}>
       <MessageContent>{renderMessageBody()}</MessageContent>
       {fileParts.length > 0 ? (
         <MessageAttachments>
@@ -153,7 +105,8 @@ export function MessageRow({ message, isPlaceholder, minHeight, registerRef }: M
 }
 
 const ThinkingContent = () => (
-  <Shimmer className="text-sm font-medium text-muted-foreground" as="span" duration={3} spread={3}>
-    Thinking...
-  </Shimmer>
+  <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+    <Loader className="text-muted-foreground" size={14} />
+    <span className="sr-only">Thinking</span>
+  </span>
 );

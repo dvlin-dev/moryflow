@@ -1,3 +1,13 @@
+/**
+ * [INPUT]: ChatRequestPayload - IPC 聊天请求负载
+ * [OUTPUT]: UIMessageChunk 流 + 会话持久化更新
+ * [POS]: Chat 主进程请求入口（流式处理 + 持久化）
+ * [UPDATE]: 2026-02-03 - 使用 UIMessageStream onFinish 统一持久化
+ * [UPDATE]: 2026-02-07 - 移除截断续写调试日志，避免无用噪音
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { createUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai';
 import type { IpcMainInvokeEvent } from 'electron';
 
@@ -11,7 +21,6 @@ import {
   findLatestUserMessage,
   extractUserAttachments,
   extractUserText,
-  collectUiMessages,
   streamAgentRun,
 } from './messages.js';
 import { getRuntime } from './runtime.js';
@@ -193,7 +202,6 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
             ) {
               truncateContinueCount++;
               currentInput = buildTruncateContinuePrompt();
-              console.log(`[chat] 截断续写 #${truncateContinueCount}`);
               // 清空附件，续写时不需要重复发送
               attachmentContexts.length = 0;
               continue;
@@ -212,24 +220,34 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
           clearApprovalGate(channel);
         }
       },
+      onFinish: async ({ messages: nextMessages }) => {
+        try {
+          const hasUsage = requestUsage.totalTokens > 0;
+          const summary = chatSessionStore.updateSessionMeta(chatId, {
+            uiMessages: nextMessages,
+            preferredModelId,
+            tokenUsage: hasUsage ? requestUsage : undefined,
+          });
+          broadcastSessionEvent({ type: 'updated', session: summary });
+        } catch (error) {
+          console.error('[chat] failed to persist chat session', error);
+        }
+      },
       onError: (error) => String(error),
     });
 
-    const [rendererStream, storageStream] = stream.tee();
-    const persistedMessagesPromise = collectUiMessages(messages, storageStream);
-
     sessions.set(channel, {
-      stream: rendererStream,
+      stream,
       cancel: async () => {
         abortController.abort();
         try {
-          await rendererStream.cancel('aborted');
+          await stream.cancel('aborted');
         } catch {
           // ignore
         }
       },
     });
-    const reader = rendererStream.getReader();
+    const reader = stream.getReader();
 
     (async () => {
       try {
@@ -244,22 +262,6 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
       } finally {
         event.sender.send(channel, null);
         sessions.delete(channel);
-      }
-    })();
-
-    void (async () => {
-      try {
-        const uiMessages = await persistedMessagesPromise;
-        // 仅当有 token 使用时才传递 usage
-        const hasUsage = requestUsage.totalTokens > 0;
-        const summary = chatSessionStore.updateSessionMeta(chatId, {
-          uiMessages,
-          preferredModelId,
-          tokenUsage: hasUsage ? requestUsage : undefined,
-        });
-        broadcastSessionEvent({ type: 'updated', session: summary });
-      } catch (error) {
-        console.error('[chat] failed to persist chat session', error);
       }
     })();
 
