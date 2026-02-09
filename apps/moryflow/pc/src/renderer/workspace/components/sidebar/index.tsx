@@ -2,6 +2,8 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: 侧边栏主组件（Notion-ish skeleton）：WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools（就地读取 workspace contexts）
+ *
+ * [UPDATE]: 2026-02-09 - Publish 入口未登录时不再触发后台请求，改为引导登录（Account 设置页）
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -20,6 +22,7 @@ import { SidebarTools } from './components/sidebar-tools';
 import { SidebarCreateMenu } from './components/sidebar-create-menu';
 import { VaultSelector } from './components/vault-selector';
 import { cn } from '@/lib/utils';
+import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
 import {
   useWorkspaceCommand,
   useWorkspaceDoc,
@@ -72,11 +75,28 @@ export const Sidebar = () => {
   const [publishSourcePaths, setPublishSourcePaths] = useState<string[]>([]);
   const [publishTitle, setPublishTitle] = useState<string | undefined>();
 
-  const handlePublish = useCallback((node: VaultTreeNode) => {
-    setPublishSourcePaths([node.path]);
-    setPublishTitle(node.name.replace(/\.md$/, ''));
-    setPublishDialogOpen(true);
-  }, []);
+  const { authLoading, isAuthenticated, requireLoginForSitePublish } =
+    useRequireLoginForSitePublish(openSettings);
+
+  const handlePublish = useCallback(
+    (node: VaultTreeNode) => {
+      if (!requireLoginForSitePublish()) return;
+      setPublishSourcePaths([node.path]);
+      setPublishTitle(node.name.replace(/\.md$/, ''));
+      setPublishDialogOpen(true);
+    },
+    [requireLoginForSitePublish]
+  );
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (isAuthenticated) return;
+    if (!publishDialogOpen) return;
+
+    setPublishDialogOpen(false);
+    setPublishSourcePaths([]);
+    setPublishTitle(undefined);
+  }, [authLoading, isAuthenticated, publishDialogOpen]);
 
   const handleSearchSelect = useCallback(
     (node: VaultTreeNode) => {
@@ -199,12 +219,14 @@ export const Sidebar = () => {
         />
 
         {/* 发布对话框 */}
-        <PublishDialog
-          open={publishDialogOpen}
-          onOpenChange={setPublishDialogOpen}
-          sourcePaths={publishSourcePaths}
-          title={publishTitle}
-        />
+        {publishDialogOpen ? (
+          <PublishDialog
+            open={publishDialogOpen}
+            onOpenChange={setPublishDialogOpen}
+            sourcePaths={publishSourcePaths}
+            title={publishTitle}
+          />
+        ) : null}
       </aside>
     </TooltipProvider>
   );

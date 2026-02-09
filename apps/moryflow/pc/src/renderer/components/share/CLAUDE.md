@@ -49,3 +49,4 @@ SharePopover
 ## 近期变更
 
 - Share 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
+- `extractErrorMessage` 复用 Renderer 通用 IPC 错误提取工具，避免重复实现

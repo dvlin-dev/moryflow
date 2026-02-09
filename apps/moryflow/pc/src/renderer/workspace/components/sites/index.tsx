@@ -4,10 +4,13 @@
  * [POS]: Sites CMS 主页面（就地读取 workspace contexts），整合列表和详情视图
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [UPDATE]: 2026-02-09 - 未登录时不请求站点列表/不弹循环 toast，改为显示登录提示空态并引导到 Account 设置页
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { Lock } from 'lucide-react';
+import { Button } from '@anyhunt/ui/components/button';
 import type { Site } from '../../../../shared/ipc/site-publish';
 import { PublishDialog } from '@/components/site-publish';
 import { SiteList } from './site-list';
@@ -15,9 +18,19 @@ import { SiteDetail } from './site-detail';
 import { FilePickerDialog } from './file-picker-dialog';
 import type { SitesView, SiteAction, SiteSettings } from './const';
 import { extractErrorMessage } from './const';
-import { useWorkspaceTree, useWorkspaceVault } from '../../context';
+import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
+import {
+  useWorkspaceMode,
+  useWorkspaceShell,
+  useWorkspaceTree,
+  useWorkspaceVault,
+} from '../../context';
 
 export function SitesPage() {
+  const { mode } = useWorkspaceMode();
+  const { openSettings } = useWorkspaceShell();
+  const { isAuthenticated, authLoading, openAccountSettings, requireLoginForSitePublish } =
+    useRequireLoginForSitePublish(openSettings);
   const { vault } = useWorkspaceVault();
   const { tree: currentTree } = useWorkspaceTree();
   const currentVaultPath = vault?.path ?? '';
@@ -58,10 +71,23 @@ export function SitesPage() {
     }
   }, [sites, selectedSite]);
 
-  // 初始化加载
+  // 初始化加载（仅在已登录且处于 Sites Mode 时请求）
   useEffect(() => {
-    loadSites();
-  }, [loadSites]);
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      setSites((prev) => (prev.length === 0 ? prev : []));
+      setSelectedSite((prev) => (prev ? null : prev));
+      setView((prev) => (prev === 'list' ? prev : 'list'));
+      setFilePickerOpen(false);
+      setPublishDialogOpen(false);
+      setPublishSourcePaths((prev) => (prev.length === 0 ? prev : []));
+      return;
+    }
+
+    if (mode !== 'sites') return;
+    void loadSites();
+  }, [authLoading, isAuthenticated, mode, loadSites]);
 
   // 点击站点卡片
   const handleSiteClick = useCallback((site: Site) => {
@@ -146,8 +172,9 @@ export function SitesPage() {
 
   // 发布按钮点击 - 打开文件选择器
   const handlePublishClick = useCallback(() => {
+    if (!requireLoginForSitePublish()) return;
     setFilePickerOpen(true);
-  }, []);
+  }, [requireLoginForSitePublish]);
 
   // 文件选择完成 - 打开发布对话框
   const handleFilesSelected = useCallback((paths: string[]) => {
@@ -160,11 +187,13 @@ export function SitesPage() {
     (open: boolean) => {
       setPublishDialogOpen(open);
       if (!open) {
-        // 刷新站点列表
-        loadSites();
+        // 刷新站点列表（仅在已登录且处于 Sites Mode 时）
+        if (isAuthenticated && mode === 'sites') {
+          void loadSites();
+        }
       }
     },
-    [loadSites]
+    [isAuthenticated, mode, loadSites]
   );
 
   // 返回列表
@@ -228,21 +257,50 @@ export function SitesPage() {
       />
     );
 
+  if (authLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-sm text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+          <Lock className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-medium">Log in required</h3>
+          <p className="text-sm text-muted-foreground">
+            Please log in to publish and manage sites.
+          </p>
+        </div>
+        <Button onClick={openAccountSettings}>Log in</Button>
+      </div>
+    );
+  }
+
   return (
     <>
       {mainView}
-      <FilePickerDialog
-        open={filePickerOpen}
-        onOpenChange={setFilePickerOpen}
-        onSelect={handleFilesSelected}
-        currentVaultPath={currentVaultPath}
-        currentTree={currentTree}
-      />
-      <PublishDialog
-        open={publishDialogOpen}
-        onOpenChange={handlePublishDialogClose}
-        sourcePaths={publishSourcePaths}
-      />
+      {filePickerOpen ? (
+        <FilePickerDialog
+          open={filePickerOpen}
+          onOpenChange={setFilePickerOpen}
+          onSelect={handleFilesSelected}
+          currentVaultPath={currentVaultPath}
+          currentTree={currentTree}
+        />
+      ) : null}
+      {publishDialogOpen ? (
+        <PublishDialog
+          open={publishDialogOpen}
+          onOpenChange={handlePublishDialogClose}
+          sourcePaths={publishSourcePaths}
+        />
+      ) : null}
     </>
   );
 }

@@ -33,4 +33,6 @@
 - Sidebar 创建动作按 Mode 收敛：Chat 仅 New thread；Workspace 仅 New page/folder；Sites 无创建入口（交由主面板）
 - Workspace selector 行支持整行点击打开下拉，并提供一致的 hover 背景与 padding
 - 云同步 icon 仅在用户登录后显示，未登录时隐藏
+- Publish 入口未登录时不再触发站点发布请求，改为引导打开 Account 设置页登录（PublishDialog 仅在打开时挂载）
+- Publish 登录校验逻辑收敛到 `workspace/hooks/use-require-login-for-site-publish.ts`
 - Vault 切换下拉箭头改为 ChevronDown（无中轴）
