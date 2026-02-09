@@ -126,6 +126,8 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Desktop Auth Session：access token 持久化存储 + ensureAccessToken 单测使用长过期窗口
 - Desktop Auth Session：网络失败不清理 token，窗口恢复触发 ensureAccessToken
 - Desktop Auth Session：keytar 不可用时提示启用系统凭据
+- Sites/Publish：未登录或未打开 Sites 页面时不再隐式请求站点列表，避免启动时 toast 循环与主进程 IPC error 噪音
+- 新增通用 IPC 错误提取工具（`lib/ipc-errors.ts`），避免在各组件重复实现错误消息解析
 
 ## 依赖关系
 

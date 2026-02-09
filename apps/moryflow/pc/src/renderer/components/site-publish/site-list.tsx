@@ -4,6 +4,7 @@
  * [POS]: 站点发布列表与管理入口（Lucide 图标）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ * [UPDATE]: 2026-02-09 - 显式启用 autoRefresh，避免 hook 默认在后台隐式拉取站点列表
  */
 
 import { useState, useMemo } from 'react';
@@ -48,7 +49,7 @@ interface SiteListProps {
 
 export function SiteList({ className, onPublishNew }: SiteListProps) {
   const { sites, loading, error, refreshSites, deleteSite, offlineSite, onlineSite } =
-    useSitePublish();
+    useSitePublish({ autoRefresh: true });
 
   // 删除确认
   const [deleteTarget, setDeleteTarget] = useState<Site | null>(null);
