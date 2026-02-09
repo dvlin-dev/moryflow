@@ -1,3 +1,12 @@
+/**
+ * [PROPS]: LoginPanelProps
+ * [EMITS]: onSuccess
+ * [POS]: 设置弹窗 - Account 登录/注册面板（邮箱密码 + 注册验证码）
+ * [UPDATE]: 2026-02-09 - 阻止 submit 事件冒泡到 SettingsDialog，避免设置弹窗意外保存/关闭
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -132,7 +141,13 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
       </div>
 
       <Form {...formProviderProps}>
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleSubmit(e);
+          }}
+        >
           <FieldGroup>
             {/* OAuth 登录按钮 - 暂时禁用 */}
             <Field>

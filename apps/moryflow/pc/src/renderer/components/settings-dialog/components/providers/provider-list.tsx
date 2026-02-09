@@ -1,3 +1,12 @@
+/**
+ * [PROPS]: ProviderListProps - { providers, form, isLoading }
+ * [EMITS]: providers.setActiveProviderId / providers.handleAddCustomProvider / form.setValue
+ * [POS]: 设置弹窗 - AI Providers 左侧列表（预设 + 自定义 + 会员模型入口）
+ * [UPDATE]: 2026-02-09 - 修复“添加自定义服务商”按钮误触发表单 submit 导致设置弹窗关闭
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { cn } from '@/lib/utils';
 import { Switch } from '@anyhunt/ui/components/switch';
 import { Button } from '@anyhunt/ui/components/button';
@@ -219,6 +228,7 @@ export const ProviderList = ({ providers, form, isLoading }: ProviderListProps) 
       {/* 添加自定义服务商按钮 */}
       <div className="border-t p-2">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-2"
