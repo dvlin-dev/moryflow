@@ -13,6 +13,7 @@ export const ADMIN_API = {
   DASHBOARD: '/api/v1/admin/dashboard',
   JOBS: '/api/v1/admin/jobs',
   QUEUES: '/api/v1/admin/queues',
+  VIDEO_TRANSCRIPTS: '/api/v1/admin/video-transcripts',
   BROWSER: '/api/v1/admin/browser',
   // LLM
   LLM_SETTINGS: '/api/v1/admin/llm/settings',

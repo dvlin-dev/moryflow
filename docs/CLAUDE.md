@@ -8,7 +8,20 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-09（Anyhunt 视频转写方案补充上线前执行清单（Checklist）：T-1/T-0、联调验收、回滚预案、24h 观察）
+> 最近更新：2026-02-09（Anyhunt 视频转写补充本地一键部署脚本：`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`）
+> 最近更新：2026-02-09（Anyhunt 视频转写新增“三节点部署详细流程（公网简化版）”：VPS1 API + VPS2 cloud fallback worker + Mac mini local worker）
+> 最近更新：2026-02-09（Anyhunt 视频转写四轮可靠性修复：cloud 接管后 workspace 失败兜底、local 启动顺序严格对齐 10 分钟窗口起点、duration probe 解析增强、补充对应回归测试）
+> 最近更新：2026-02-09（Anyhunt 视频转写三轮可靠性修复：timeout pre-check 不误杀 local、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）
+> 最近更新：2026-02-09（Anyhunt 视频转写二轮可靠性修复：fallback 补偿扫描（30s）+ DB 时间裁决 + Admin today 指标与 runtime switch 审计）
+> 最近更新：2026-02-09（Anyhunt 视频转写方案执行进度同步：Step 1~6 已完成代码落地（server + console + admin + 单测），Step 7 待压测/上线演练）
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录；补齐与 `main` 分支差异与 Code Review 附录）
+> 最近更新：2026-02-08（Anyhunt 视频转写事件一致性定案：QueueEvents 仅观测，DB 字段裁决超时/接管；fallback 到点查库；新增执行时序图）
+> 最近更新：2026-02-08（Anyhunt 视频转写部署交互定案：Queue Pull；VPS Dokploy 双服务；Mac mini `launchd` 常驻；Tailscale 内网边界；`VIDEO_TRANSCRIPT_LOCAL_ENABLED` 应急切换）
+> 最近更新：2026-02-08（Anyhunt 视频转写方案升级：仅 local 开始后计时 10 分钟；超时先 preempt local 再 cloud fallback；预算 20 USD/日（Asia/Shanghai，按音频时长估算）；cloud 重试 2 次 + 告警阈值）
+> 最近更新：2026-02-08（Anyhunt 视频转写方案定案：固定技术路线 + 分步执行计划 + 强制进度同步准则）
+> 最近更新：2026-02-08（Anyhunt 视频转写方案文档收敛：字段最小化 + 复用现有 server 模块 + Console 测试页设计）
+> 最近更新：2026-02-08（新增 Anyhunt 视频链接下载 + Mac mini Whisper 转写架构方案，落地路径指向 `apps/anyhunt/server`）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +54,16 @@
 
 ## 最近更新
 
+- Anyhunt 视频链接下载 + 双模式转写架构方案：新增上线前执行清单（Checklist），用于生产上线前固定打勾执行（T-1/T-0、联调验收、回滚预案、24h 观察）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：补充本地一键部署脚本（`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`），用于 Mac mini local-worker 环境初始化、`launchd` 注册与启动（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：新增“三节点部署详细流程（公网简化版）”，明确 `VPS1(API)+VPS2(cloud fallback)+Mac mini(local)` 的部署步骤、角色开关矩阵与联调验收顺序（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：同步四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败终态；local 启动顺序改为先写 `localStartedAt` 再调度 fallback；`duration probe` 解析增强；新增对应回归测试）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：同步三轮可靠性修复（timeout pre-check 失败不误写 FAILED、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：同步二轮可靠性修复（移除队列全局 5 分钟超时、fallback 补偿扫描 30s、Admin today 指标与运行时开关审计）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：执行进度同步（Step 1~6 已完成代码落地并回填进度看板；Step 7 待压测/上线演练）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：补充事件一致性定案（QueueEvents 仅用于实时看板；DB 字段作为超时与接管裁决源；fallback 到点查库决策；新增执行时序图）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-08：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：补充部署交互定案（Queue Pull；VPS Dokploy 拆分 API/cloud fallback worker；Mac mini `launchd` 常驻 local-worker；Tailscale 内网边界；`VIDEO_TRANSCRIPT_LOCAL_ENABLED` 应急切换）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-08：active）
+- Anyhunt 视频链接下载 + 双模式转写架构方案：升级为高可用定案（仅 local 开始后计时 10 分钟；超时先 preempt local 再 cloud fallback；冲突落库 LOCAL 优先；Cloudflare Workers AI 模型固定为 `@cf/openai/whisper-large-v3-turbo`；预算 20 USD/日（Asia/Shanghai，按音频时长估算）；cloud 重试 2 次 + Admin 可观测与告警）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-08：active）
 - Moryflow PC 消息列表交互复用改造方案：Following 模式定稿（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-08）
 - 调研（已废弃方案，不再采用）：Moryflow PC TurnAnchor 滚动问题跟踪与记录（`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`，最后更新：2026-02-05）
 - Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）

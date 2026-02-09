@@ -5,6 +5,8 @@ import {
   SCRAPE_QUEUE,
   CRAWL_QUEUE,
   BATCH_SCRAPE_QUEUE,
+  VIDEO_TRANSCRIPT_LOCAL_QUEUE,
+  VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE,
 } from './queue.constants';
 import { parseRedisUrl } from './queue.utils';
 
@@ -27,7 +29,6 @@ import { parseRedisUrl } from './queue.utils';
               type: 'exponential',
               delay: 2000, // 初始延迟 2 秒
             },
-            timeout: 5 * 60 * 1000, // 任务超时 5 分钟
           },
         };
       },
@@ -40,6 +41,12 @@ import { parseRedisUrl } from './queue.utils';
     }),
     BullModule.registerQueue({
       name: BATCH_SCRAPE_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: VIDEO_TRANSCRIPT_LOCAL_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE,
     }),
   ],
   exports: [BullModule],

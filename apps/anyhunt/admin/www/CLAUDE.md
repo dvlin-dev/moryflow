@@ -8,6 +8,8 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- 新增 Video Transcripts 页面（`/video-transcripts`）：展示执行概览、today 指标、local 节点资源、预算闸门与任务列表
+- Video Transcripts 新增运行时开关（`VIDEO_TRANSCRIPT_LOCAL_ENABLED`）与审计记录展示
 - LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -74,19 +76,20 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 功能列表
 
-| 功能              | 路径              | 说明                       |
-| ----------------- | ----------------- | -------------------------- |
-| `dashboard/`      | `/`               | 系统概览与统计             |
-| `users/`          | `/users`          | 用户管理                   |
-| `subscriptions/`  | `/subscriptions`  | Subscription list          |
-| `orders/`         | `/orders`         | Order history              |
-| `jobs/`           | `/jobs`           | Crawl/batch job monitoring |
-| `queues/`         | `/queues`         | BullMQ queue status        |
-| `browser/`        | `/browser`        | Browser pool instances     |
-| `digest-topics/`  | `/digest/topics`  | Digest Topics 精选管理     |
-| `digest-reports/` | `/digest/reports` | Digest 举报管理            |
-| `digest-welcome/` | `/digest/welcome` | Digest Welcome 配置与页面  |
-| `llm/`            | `/llm`            | LLM Providers/Models 配置  |
+| 功能                 | 路径                 | 说明                       |
+| -------------------- | -------------------- | -------------------------- |
+| `dashboard/`         | `/`                  | 系统概览与统计             |
+| `users/`             | `/users`             | 用户管理                   |
+| `subscriptions/`     | `/subscriptions`     | Subscription list          |
+| `orders/`            | `/orders`            | Order history              |
+| `jobs/`              | `/jobs`              | Crawl/batch job monitoring |
+| `queues/`            | `/queues`            | BullMQ queue status        |
+| `video-transcripts/` | `/video-transcripts` | 视频转写执行/配置/资源看板 |
+| `browser/`           | `/browser`           | Browser pool instances     |
+| `digest-topics/`     | `/digest/topics`     | Digest Topics 精选管理     |
+| `digest-reports/`    | `/digest/reports`    | Digest 举报管理            |
+| `digest-welcome/`    | `/digest/welcome`    | Digest Welcome 配置与页面  |
+| `llm/`               | `/llm`               | LLM Providers/Models 配置  |
 
 ## Feature Module Structure
 

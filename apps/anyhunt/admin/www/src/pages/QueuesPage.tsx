@@ -55,11 +55,13 @@ import {
 import { useCleanupStaleJobs } from '@/features/jobs';
 import type { QueueName, QueueJobStatus, QueueStats } from '@/features/queues';
 
-const QUEUE_LABELS: Record<QueueName, string> = {
+const QUEUE_LABELS: Record<string, string> = {
   screenshot: 'Screenshot',
   scrape: 'Scrape',
   crawl: 'Crawl',
   'batch-scrape': 'Batch Scrape',
+  VIDEO_TRANSCRIPT_LOCAL_QUEUE: 'Video Transcript (Local)',
+  VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE: 'Video Transcript (Cloud Fallback)',
 };
 
 const STATUS_TABS: { value: QueueJobStatus; label: string; icon: React.ReactNode }[] = [
@@ -93,7 +95,7 @@ function QueueCard({
     >
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-sm">
-          <span>{QUEUE_LABELS[stats.name as QueueName] || stats.name}</span>
+          <span>{QUEUE_LABELS[stats.name] || stats.name}</span>
           {isPaused && (
             <Badge variant="outline" className="text-yellow-600">
               已暂停

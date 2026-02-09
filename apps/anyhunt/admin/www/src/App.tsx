@@ -19,6 +19,7 @@ import OrdersPage from './pages/OrdersPage';
 import JobsPage from './pages/JobsPage';
 import JobDetailPage from './pages/JobDetailPage';
 import QueuesPage from './pages/QueuesPage';
+import VideoTranscriptsPage from './pages/VideoTranscriptsPage';
 import ErrorsPage from './pages/ErrorsPage';
 import BrowserPage from './pages/BrowserPage';
 import DigestReportsPage from './pages/DigestReportsPage';
@@ -101,6 +102,9 @@ function App() {
 
             {/* Queues - 队列监控 */}
             <Route path="queues" element={<QueuesPage />} />
+
+            {/* Video Transcripts - 双模式转写可观测 */}
+            <Route path="video-transcripts" element={<VideoTranscriptsPage />} />
 
             {/* Errors - 错误分析 */}
             <Route path="errors" element={<ErrorsPage />} />

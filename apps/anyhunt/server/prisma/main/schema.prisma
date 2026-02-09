@@ -36,6 +36,7 @@ model User {
   webhooks              Webhook[]
   accountDeletionRecord AccountDeletionRecord?
   scrapeJobs            ScrapeJob[]
+  videoTranscriptTasks  VideoTranscriptTask[]
   batchScrapeJobs       BatchScrapeJob[]
   crawlJobs             CrawlJob[]
   agentTasks            AgentTask[]
@@ -482,6 +483,22 @@ enum ScrapeStatus {
   FAILED
 }
 
+enum VideoTranscriptTaskStatus {
+  PENDING
+  DOWNLOADING
+  EXTRACTING_AUDIO
+  TRANSCRIBING
+  UPLOADING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum VideoTranscriptExecutor {
+  LOCAL
+  CLOUD_FALLBACK
+}
+
 enum AgentTaskStatus {
   PENDING
   PROCESSING
@@ -572,6 +589,31 @@ model ScrapeJob {
   @@index([status])
   @@index([url])
   @@index([createdAt])
+}
+
+model VideoTranscriptTask {
+  id             String                    @id @default(cuid())
+  userId         String
+  platform       String
+  sourceUrl      String
+  status         VideoTranscriptTaskStatus @default(PENDING)
+  executor       VideoTranscriptExecutor?
+  localStartedAt DateTime?
+  artifacts      Json?
+  result         Json?
+  error          String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([executor, createdAt])
+  @@index([localStartedAt])
+  @@index([sourceUrl])
 }
 
 // =============================================

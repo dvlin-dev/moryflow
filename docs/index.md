@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-08
+date: 2026-02-09
 scope: monorepo
 status: active
 ---
@@ -31,6 +31,7 @@ status: active
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
 - Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`
 - Anyhunt app/public/apikey 通道路由规范（implemented）：`docs/architecture/anyhunt-api-channel-routing.md`
+- Anyhunt 视频链接下载 + 双模式转写方案（active，2026-02-09：Step 1~6 已完成代码落地并同步进度看板；四轮可靠性修复已完成；新增“三节点部署详细流程（公网简化版）”：VPS1 API + VPS2 cloud fallback worker + Mac mini local worker；补充本地一键部署脚本 `apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`；新增“上线前执行清单（Checklist）”；Step 7 待压测/上线演练）：`docs/architecture/anyhunt-video-transcript-pipeline.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`

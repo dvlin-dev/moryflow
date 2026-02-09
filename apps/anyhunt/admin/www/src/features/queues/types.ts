@@ -5,7 +5,7 @@ export type { Pagination } from '@/lib/types';
 import type { Pagination } from '@/lib/types';
 
 /** 队列名称 */
-export type QueueName = 'screenshot' | 'scrape' | 'crawl' | 'batch-scrape';
+export type QueueName = string;
 
 /** 队列任务状态 */
 export type QueueJobStatus = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed';
