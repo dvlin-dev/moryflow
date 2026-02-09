@@ -93,6 +93,8 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Workspace Shell：引入 App Mode（Chat/Workspace/Sites），默认 Chat，并支持 `Cmd+1/2/3` 快捷键切换
+- Workspace Shell：修复 ChatPanePortal 渲染容器与主视图容器语义，避免 Chat/Sites 初始错位（内容靠右/不占满）并提升模式切换流畅度
 - useSpeechRecording：disabled 强制清理时保证 stopRecording Promise 正常收敛
 - 侧边栏云同步 icon 仅在登录后显示，未登录时隐藏
 - useSpeechRecording：disabled 为 true 时强制终止录音并清理资源，补充单测覆盖

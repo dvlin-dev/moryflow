@@ -4,10 +4,10 @@
  * [POS]: 单个 Tab 项组件（Lucide 图标）
  */
 
-import { X, File, Globe, Sparkles } from 'lucide-react';
+import { X, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SaveState, SelectedFile } from '@/workspace/const';
-import { AI_TAB_ID, SITES_TAB_ID, formatTabLabel, isToolTab } from '../helper';
+import { formatTabLabel } from '../helper';
 
 type TabItemProps = {
   tab: SelectedFile;
@@ -26,20 +26,6 @@ export const TabItem = ({
   onSelect,
   onClose,
 }: TabItemProps) => {
-  const isAITab = tab.path === AI_TAB_ID;
-  const isSitesTab = tab.path === SITES_TAB_ID;
-  const isTool = isToolTab(tab.path);
-
-  const renderIcon = () => {
-    if (isAITab) {
-      return <Sparkles className="size-3.5 shrink-0 text-violet-500" />;
-    }
-    if (isSitesTab) {
-      return <Globe className="size-3.5 shrink-0 text-blue-500" />;
-    }
-    return <File className="size-3.5 shrink-0 opacity-60" />;
-  };
-
   return (
     <button
       type="button"
@@ -51,8 +37,8 @@ export const TabItem = ({
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
       )}
     >
-      {/* 保存状态指示器（工具 tab 不显示） */}
-      {showSaveIndicator && !isTool && (
+      {/* 保存状态指示器 */}
+      {showSaveIndicator && (
         <span
           className={cn(
             'absolute left-1 top-1/2 size-1.5 -translate-y-1/2 rounded-full',
@@ -63,9 +49,9 @@ export const TabItem = ({
         />
       )}
 
-      {renderIcon()}
+      <File className="size-3.5 shrink-0 opacity-60" />
 
-      <span className={cn('max-w-[120px] truncate', !tab.pinned && !isTool && 'italic')}>
+      <span className={cn('max-w-[120px] truncate', !tab.pinned && 'italic')}>
         {formatTabLabel(tab.name)}
       </span>
 

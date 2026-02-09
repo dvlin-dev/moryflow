@@ -2,6 +2,7 @@
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
+> 最近更新：2026-02-08（协作总则：新增“AI Agent 禁止擅自提交 commit/push，需用户批准”规则）
 > 最近更新：2026-02-07（协作总则：补充“最佳实践优先/允许破坏性重构”行为准则）
 > 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
@@ -276,6 +277,7 @@ Anyhunt/
 - **复用优先**：现有接口、类型、工具优先复用
 - **参考源仓库**：不确定时查看上面列出的原始仓库
 - **最佳实践优先**：为可维护性允许破坏性重构（不考虑历史兼容），优先模块化/单一职责；无用代码直接删除
+- **AI 提交约束**：AI Agent 不得擅自执行 `git commit` / `git push` / `git tag` 等提交/发布操作；除非用户明确批准可以自主提交代码，否则所有改动必须保持为未提交状态（允许放入暂存区供 review）
 
 ---
 

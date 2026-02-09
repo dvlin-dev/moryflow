@@ -1,28 +1,26 @@
 /**
- * [PROPS]: UnifiedTopBarProps
- * [EMITS]: onToggleSidebar, onSelectTab, onCloseTab
+ * [PROPS]: -
+ * [EMITS]: -
  * [POS]: 统一顶部栏，横跨整个窗口宽度
  */
 
-import type { UnifiedTopBarProps } from './const'
-import { SIDEBAR_MIN_WIDTH, TRAFFIC_LIGHTS_WIDTH, SIDEBAR_TOGGLE_WIDTH } from './const'
-import { SidebarToggle } from './components/sidebar-toggle'
-import { TabList } from './components/tab-list'
+import { SIDEBAR_MIN_WIDTH, TRAFFIC_LIGHTS_WIDTH, SIDEBAR_TOGGLE_WIDTH } from './const';
+import { SidebarToggle } from './components/sidebar-toggle';
+import { TabList } from './components/tab-list';
+import { useWorkspaceDoc, useWorkspaceMode, useWorkspaceShell } from '../../context';
 
-export const UnifiedTopBar = ({
-  tabs,
-  activePath,
-  saveState,
-  sidebarCollapsed,
-  sidebarWidth,
-  onToggleSidebar,
-  onSelectTab,
-  onCloseTab,
-}: UnifiedTopBarProps) => {
+export const UnifiedTopBar = () => {
+  const { mode } = useWorkspaceMode();
+  const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel } = useWorkspaceShell();
+  const { openTabs, activeDoc, selectedFile, saveState, selectTab, closeTab } = useWorkspaceDoc();
+
+  const tabs = mode === 'workspace' ? openTabs : [];
+  const activePath = mode === 'workspace' ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
+
   // 左侧区域宽度：与侧边栏对齐，收起时使用最小宽度
   const leftWidth = sidebarCollapsed
     ? TRAFFIC_LIGHTS_WIDTH + SIDEBAR_TOGGLE_WIDTH
-    : Math.max(sidebarWidth, SIDEBAR_MIN_WIDTH)
+    : Math.max(sidebarWidth, SIDEBAR_MIN_WIDTH);
 
   return (
     <header className="window-drag-region flex h-10 w-full shrink-0 items-center">
@@ -32,10 +30,7 @@ export const UnifiedTopBar = ({
         style={{ width: leftWidth, paddingLeft: TRAFFIC_LIGHTS_WIDTH }}
       >
         <div className="window-no-drag">
-          <SidebarToggle
-            collapsed={sidebarCollapsed}
-            onToggle={onToggleSidebar}
-          />
+          <SidebarToggle collapsed={sidebarCollapsed} onToggle={toggleSidebarPanel} />
         </div>
       </div>
 
@@ -45,13 +40,12 @@ export const UnifiedTopBar = ({
           tabs={tabs}
           activePath={activePath}
           saveState={saveState}
-          onSelect={onSelectTab}
-          onClose={onCloseTab}
+          onSelect={selectTab}
+          onClose={closeTab}
         />
       </div>
     </header>
-  )
-}
+  );
+};
 
-export type { UnifiedTopBarProps } from './const'
-export { SIDEBAR_MIN_WIDTH } from './const'
+export { SIDEBAR_MIN_WIDTH } from './const';
