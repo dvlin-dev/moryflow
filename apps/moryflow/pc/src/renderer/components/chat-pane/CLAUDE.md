@@ -19,6 +19,7 @@
 ## 近期变更
 
 - 2026-02-08：useChatSessions 改为共享 store，供 Chat Mode Sidebar 与 ChatPane 复用（activeSession 单一事实来源）。
+- 2026-02-09：useChatSessions 增加订阅引用计数，最后一个订阅者卸载时释放 session 事件监听，避免潜在资源泄露或重复监听。
 - 2026-02-08：ChatPane 新增 `variant`（`panel`/`mode`），Chat Mode 主视图隐藏 Header/折叠按钮，避免语义不一致。
 - 2026-02-08：Chat Mode 主视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 `p-3`，避免叠加过大）。
 - 2026-02-08：ChatPane 在 `variant` 切换时重算 headerHeight，避免 mode/workspace 切换出现留白或遮挡。
