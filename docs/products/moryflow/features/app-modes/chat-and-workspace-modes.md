@@ -173,31 +173,32 @@ status: implemented
 
 > 规则：每完成一个 Step，必须更新本表的 `Status/Done at/Git/Notes`。Status 只能取：`TODO` / `DOING` / `DONE` / `SKIPPED`。`Git` 列建议填：`staged` / `committed` / `pushed`（或填写 commit hash）。
 
-| Step | Scope    | Deliverable（验收标准）                                                                             | Status | Done at    | Git    | Notes                                                                           |
-| ---- | -------- | --------------------------------------------------------------------------------------------------- | ------ | ---------- | ------ | ------------------------------------------------------------------------------- |
-| 0    | Docs     | 本文补齐技术方案 + 执行计划表（含行为准则与进度同步规则）                                           | DONE   | 2026-02-08 | staged | -                                                                               |
-| 1    | Main     | 新增 `vault:ensureDefaultWorkspace`（macOS 默认 `~/Documents/Moryflow/workspace`），幂等可重复调用  | DONE   | 2026-02-08 | staged | IPC + preload + renderer hydrate                                                |
-| 2    | Main     | `vault:ensureDefaultWorkspace` 完成激活副作用：broadcast + watcher + cloudSync init                 | DONE   | 2026-02-08 | staged | broadcast + watcher + cloudSyncEngine.init                                      |
-| 3    | Renderer | 引入 `AppMode`（chat/workspace/sites）+ 快捷键 `Cmd+1/2/3` + 持久化 `lastMode`                      | DONE   | 2026-02-08 | staged | main store + IPC + preload + renderer hook                                      |
-| 4    | Renderer | Shell 改造：以 Mode 渲染三套主视图；删除 `AI_TAB_ID`/`SITES_TAB_ID` 入口与逻辑                      | DONE   | 2026-02-08 | staged | 移除工具 tab；Workspace Mode 才显示右侧面板                                     |
-| 5    | Renderer | Sidebar 重构为“骨架 + 内容区”（WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools）          | DONE   | 2026-02-08 | staged | skeleton 落地；按 Mode 切换 Section 框架                                        |
-| 6    | Renderer | Chat Mode：Sidebar Threads 列表（select/rename/delete/new）+ 主区对话（隐藏不合语义的折叠按钮）     | DONE   | 2026-02-08 | staged | 线程列表 + ChatPane `variant=mode`（无 Header）                                 |
-| 7    | Renderer | Workspace Mode：Pages tree 挂载到新 Sidebar；Editor+Assistant 复用并通过回归检查                    | DONE   | 2026-02-08 | staged | 回归：`pnpm --filter @anyhunt/moryflow-pc test:unit` 通过                       |
-| 8    | Renderer | Sites Mode：提升 `SitesPage` 为 Mode 主视图；处理 `onBack`（optional 或切回 Workspace）             | DONE   | 2026-02-08 | staged | Sites Mode 去除无意义 back 语义；Sidebar 创建动作按 Mode 收敛                   |
-| 9    | Cleanup  | 删除旧组件与死代码（旧 SidebarNav、旧工具 Tab、旧 helper 常量等），不留兼容层                       | DONE   | 2026-02-08 | staged | 清理确认：旧 Tab/nav/helper 无引用；同步更新相关 CLAUDE.md                      |
-| 10   | Tests    | 补齐/更新 Vitest 用例；`pnpm lint/typecheck/test:unit` 全通过                                       | DONE   | 2026-02-08 | staged | 新增单测 + 全仓 `pnpm lint/typecheck/test:unit` 通过                            |
-| 11   | Docs     | 文档与实现一致：threads 全局共享；补充“AI 提交约束（需用户批准）”准则                               | DONE   | 2026-02-08 | staged | threads 不按 workspace 隔离；提交约束与根 CLAUDE.md 对齐                        |
-| 12   | Main     | 安全边界：修复 `ensureWithinVault()` 路径校验（防 startsWith 绕过）                                 | DONE   | 2026-02-08 | staged | 使用 `path.relative` 方案，阻止 Vault 外读写/移动/删除                          |
-| 13   | Renderer | A11y/HTML：修复 Threads 列表的嵌套交互元素（button/input 嵌套）                                     | DONE   | 2026-02-08 | staged | 改为 row 容器 + 主按钮 + actions 按钮，不嵌套                                   |
-| 14   | Main     | 行为一致：`vault:ensureDefaultWorkspace` 在 active 分支也启动 watcher（与 doc 一致）                | DONE   | 2026-02-08 | staged | active 存在时也 `scheduleStart(active.path)`                                    |
-| 15   | Cleanup  | 删除无用 IPC：移除 `vault:getRecent` handler + preload bridge + DesktopApi typing                   | DONE   | 2026-02-08 | staged | 确认无引用后删除，减少 IPC 面积                                                 |
-| 16   | Cleanup  | 代码清理：import 顺序、无用 props（SitesPageProps.onBack）、用户可见中文文案转英文                  | DONE   | 2026-02-08 | staged | 遵循 SRP；不做过度设计                                                          |
-| 17   | QA       | 回归校验：`pnpm lint` + `pnpm typecheck` + `pnpm test:unit` 全通过                                  | DONE   | 2026-02-08 | staged | 全绿（本地非 CI 环境会触发 better-sqlite3 rebuild）                             |
-| 18   | Renderer | Sidebar 状态统一：宽度/收起状态在 Chat/Workspace/Sites 间共享（不因 mode 切换重置）                 | DONE   | 2026-02-08 | staged | Resizable panels 结构常驻；非 Workspace 时折叠右侧 panel                        |
-| 19   | Renderer | Sidebar 只保留一个 `+`：移除顶部 `+`；Chat=New thread；Workspace=New page/folder 菜单；Sites 无 `+` | DONE   | 2026-02-08 | staged | 创建入口收敛到 Section Header；按 mode 渲染 actions                             |
-| 20   | Renderer | Mode Switcher 交互复刻参考图：segmented pill（选中态浮起、hover 轻背景），与项目圆角规范一致        | DONE   | 2026-02-08 | staged | `ToggleGroup` 自定义样式；不随 mode 切换抖动                                    |
-| 21   | Renderer | 修复 Chat/Sites 初始布局错位与切换卡顿：Portal 渲染目标 + 主视图容器语义（占满主内容区）            | DONE   | 2026-02-08 | staged | `createPortal -> portalRoot`；Chat/Sites wrapper 不再 flex row                  |
-| 22   | Renderer | Chat Mode 内容列最大宽度 720px：超出居中，小屏撑满；外层 2em padding（底部扣除 Footer `p-3`）       | DONE   | 2026-02-08 | staged | ChatPane `variant=mode`：`max-w-[720px]` + `px/pt=2em` + `pb=calc(2em-0.75rem)` |
+| Step | Scope    | Deliverable（验收标准）                                                                             | Status | Done at    | Git         | Notes                                                                                            |
+| ---- | -------- | --------------------------------------------------------------------------------------------------- | ------ | ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| 0    | Docs     | 本文补齐技术方案 + 执行计划表（含行为准则与进度同步规则）                                           | DONE   | 2026-02-08 | staged      | -                                                                                                |
+| 1    | Main     | 新增 `vault:ensureDefaultWorkspace`（macOS 默认 `~/Documents/Moryflow/workspace`），幂等可重复调用  | DONE   | 2026-02-08 | staged      | IPC + preload + renderer hydrate                                                                 |
+| 2    | Main     | `vault:ensureDefaultWorkspace` 完成激活副作用：broadcast + watcher + cloudSync init                 | DONE   | 2026-02-08 | staged      | broadcast + watcher + cloudSyncEngine.init                                                       |
+| 3    | Renderer | 引入 `AppMode`（chat/workspace/sites）+ 快捷键 `Cmd+1/2/3` + 持久化 `lastMode`                      | DONE   | 2026-02-08 | staged      | main store + IPC + preload + renderer hook                                                       |
+| 4    | Renderer | Shell 改造：以 Mode 渲染三套主视图；删除 `AI_TAB_ID`/`SITES_TAB_ID` 入口与逻辑                      | DONE   | 2026-02-08 | staged      | 移除工具 tab；Workspace Mode 才显示右侧面板                                                      |
+| 5    | Renderer | Sidebar 重构为“骨架 + 内容区”（WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools）          | DONE   | 2026-02-08 | staged      | skeleton 落地；按 Mode 切换 Section 框架                                                         |
+| 6    | Renderer | Chat Mode：Sidebar Threads 列表（select/rename/delete/new）+ 主区对话（隐藏不合语义的折叠按钮）     | DONE   | 2026-02-08 | staged      | 线程列表 + ChatPane `variant=mode`（无 Header）                                                  |
+| 7    | Renderer | Workspace Mode：Pages tree 挂载到新 Sidebar；Editor+Assistant 复用并通过回归检查                    | DONE   | 2026-02-08 | staged      | 回归：`pnpm --filter @anyhunt/moryflow-pc test:unit` 通过                                        |
+| 8    | Renderer | Sites Mode：提升 `SitesPage` 为 Mode 主视图；处理 `onBack`（optional 或切回 Workspace）             | DONE   | 2026-02-08 | staged      | Sites Mode 去除无意义 back 语义；Sidebar 创建动作按 Mode 收敛                                    |
+| 9    | Cleanup  | 删除旧组件与死代码（旧 SidebarNav、旧工具 Tab、旧 helper 常量等），不留兼容层                       | DONE   | 2026-02-08 | staged      | 清理确认：旧 Tab/nav/helper 无引用；同步更新相关 CLAUDE.md                                       |
+| 10   | Tests    | 补齐/更新 Vitest 用例；`pnpm lint/typecheck/test:unit` 全通过                                       | DONE   | 2026-02-08 | staged      | 新增单测 + 全仓 `pnpm lint/typecheck/test:unit` 通过                                             |
+| 11   | Docs     | 文档与实现一致：threads 全局共享；补充“AI 提交约束（需用户批准）”准则                               | DONE   | 2026-02-08 | staged      | threads 不按 workspace 隔离；提交约束与根 CLAUDE.md 对齐                                         |
+| 12   | Main     | 安全边界：修复 `ensureWithinVault()` 路径校验（防 startsWith 绕过）                                 | DONE   | 2026-02-08 | staged      | 使用 `path.relative` 方案，阻止 Vault 外读写/移动/删除                                           |
+| 13   | Renderer | A11y/HTML：修复 Threads 列表的嵌套交互元素（button/input 嵌套）                                     | DONE   | 2026-02-08 | staged      | 改为 row 容器 + 主按钮 + actions 按钮，不嵌套                                                    |
+| 14   | Main     | 行为一致：`vault:ensureDefaultWorkspace` 在 active 分支也启动 watcher（与 doc 一致）                | DONE   | 2026-02-08 | staged      | active 存在时也 `scheduleStart(active.path)`                                                     |
+| 15   | Cleanup  | 删除无用 IPC：移除 `vault:getRecent` handler + preload bridge + DesktopApi typing                   | DONE   | 2026-02-08 | staged      | 确认无引用后删除，减少 IPC 面积                                                                  |
+| 16   | Cleanup  | 代码清理：import 顺序、无用 props（SitesPageProps.onBack）、用户可见中文文案转英文                  | DONE   | 2026-02-08 | staged      | 遵循 SRP；不做过度设计                                                                           |
+| 17   | QA       | 回归校验：`pnpm lint` + `pnpm typecheck` + `pnpm test:unit` 全通过                                  | DONE   | 2026-02-08 | staged      | 全绿（本地非 CI 环境会触发 better-sqlite3 rebuild）                                              |
+| 18   | Renderer | Sidebar 状态统一：宽度/收起状态在 Chat/Workspace/Sites 间共享（不因 mode 切换重置）                 | DONE   | 2026-02-08 | staged      | Resizable panels 结构常驻；非 Workspace 时折叠右侧 panel                                         |
+| 19   | Renderer | Sidebar 只保留一个 `+`：移除顶部 `+`；Chat=New thread；Workspace=New page/folder 菜单；Sites 无 `+` | DONE   | 2026-02-08 | staged      | 创建入口收敛到 Section Header；按 mode 渲染 actions                                              |
+| 20   | Renderer | Mode Switcher 交互复刻参考图：segmented pill（选中态浮起、hover 轻背景），与项目圆角规范一致        | DONE   | 2026-02-08 | staged      | `ToggleGroup` 自定义样式；不随 mode 切换抖动                                                     |
+| 21   | Renderer | 修复 Chat/Sites 初始布局错位与切换卡顿：Portal 渲染目标 + 主视图容器语义（占满主内容区）            | DONE   | 2026-02-08 | staged      | `createPortal -> portalRoot`；Chat/Sites wrapper 不再 flex row                                   |
+| 22   | Renderer | Chat Mode 内容列最大宽度 720px：超出居中，小屏撑满；外层 2em padding（底部扣除 Footer `p-3`）       | DONE   | 2026-02-08 | staged      | ChatPane `variant=mode`：`max-w-[720px]` + `px/pt=2em` + `pb=calc(2em-0.75rem)`                  |
+| 23   | Renderer | DesktopWorkspace A+B 重构：Hook 下沉 + contexts 分片，消除巨型 props 透传（模块化/SRP）             | DONE   | 2026-02-09 | uncommitted | `DesktopWorkspace=Provider+Shell`；Sidebar/TopBar/Editor/Sites/Onboarding 就地 `useWorkspace*()` |
 
 ### Step 细化说明（按此执行）
 
