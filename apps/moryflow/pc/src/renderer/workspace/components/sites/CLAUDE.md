@@ -4,15 +4,15 @@
 
 ## 组件结构
 
-| 文件                     | 职责                                      |
-| ------------------------ | ----------------------------------------- |
-| `index.tsx`              | Sites 主页面，整合列表和详情视图          |
-| `site-list.tsx`          | 站点列表组件，包含 Header 和卡片网格      |
-| `site-card.tsx`          | 站点卡片组件，显示状态、URL、操作菜单     |
-| `site-detail.tsx`        | 站点详情页，设置编辑、操作按钮            |
-| `site-empty-state.tsx`   | 空状态组件（含 E2E 选择器）               |
-| `file-picker-dialog.tsx` | 文件选择对话框，两级结构（工作区 → 文件） |
-| `const.ts`               | 类型定义、辅助函数                        |
+| 文件                     | 职责                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| `index.tsx`              | Sites 主页面（就地读取 workspace contexts），整合列表和详情视图 |
+| `site-list.tsx`          | 站点列表组件，包含 Header 和卡片网格                            |
+| `site-card.tsx`          | 站点卡片组件，显示状态、URL、操作菜单                           |
+| `site-detail.tsx`        | 站点详情页，设置编辑、操作按钮                                  |
+| `site-empty-state.tsx`   | 空状态组件（含 E2E 选择器）                                     |
+| `file-picker-dialog.tsx` | 文件选择对话框，两级结构（工作区 → 文件）                       |
+| `const.ts`               | 类型定义、辅助函数                                              |
 
 ## 视图模式
 
@@ -35,6 +35,7 @@
 
 ```
 SitesPage
+  ├─ 从 workspace contexts 读取 currentVaultPath/currentTree（用于 FilePickerDialog 的“当前工作区”快速路径）
   ├─ loadSites() → desktopAPI.sitePublish.list()
   │
   ├─ SiteList (list 视图)

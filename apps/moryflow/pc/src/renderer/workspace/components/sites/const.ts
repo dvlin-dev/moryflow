@@ -7,7 +7,6 @@
  */
 
 import type { Site } from '../../../../shared/ipc/site-publish';
-import type { VaultTreeNode } from '../../../../shared/ipc/vault';
 import type { SiteSettings } from '@/components/share/const';
 
 // 复用 share 组件的类型和工具函数
@@ -32,14 +31,6 @@ export type SiteAction =
   | 'delete';
 
 // ── 组件 Props ───────────────────────────────────────────────
-
-/** SitesPage 组件 Props */
-export interface SitesPageProps {
-  /** 当前工作区路径 */
-  currentVaultPath: string;
-  /** 当前工作区文件树 */
-  currentTree: VaultTreeNode[];
-}
 
 /** SiteList 组件 Props */
 export interface SiteListProps {

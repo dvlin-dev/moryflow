@@ -1,5 +1,6 @@
 import type { CommandAction } from '@/components/command-palette/const';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
+import type { AppMode } from './hooks/use-app-mode';
 
 type InputDialogState = {
   open: boolean;
@@ -27,7 +28,12 @@ export type ActiveDocument = SelectedFile & {
   mtime: number | null;
 };
 
-export type DesktopWorkspaceProps = {
+/**
+ * Workspace feature 的 Controller（Renderer 单例状态）。
+ * - 由 `useDesktopWorkspace()` 产出
+ * - 通过 Provider 拆分为多个 Context，供 UI 组件就地取值（避免巨型 props 透传）
+ */
+export type DesktopWorkspaceController = {
   vault: VaultInfo | null;
   vaultMessage: string | null;
   isPickingVault: boolean;
@@ -45,8 +51,6 @@ export type DesktopWorkspaceProps = {
   commandOpen: boolean;
   commandActions: CommandAction[];
   inputDialogState: InputDialogState;
-  /** 侧边栏是否收起 */
-  sidebarCollapsed: boolean;
   onInputDialogConfirm: (value: string) => void;
   onInputDialogCancel: () => void;
   onCommandOpenChange: (open: boolean) => void;
@@ -70,6 +74,66 @@ export type DesktopWorkspaceProps = {
   onTreeNodeMove: (sourcePath: string, targetDir: string) => void | Promise<void>;
   onCreateFileInRoot: () => void;
   onCreateFolderInRoot: () => void;
-  /** 切换侧边栏收起状态 */
-  onToggleSidebar: () => void;
+};
+
+export type DesktopWorkspaceModeController = {
+  mode: AppMode;
+  setMode: (mode: AppMode) => void;
+  /** 是否已完成 lastMode 的读取（用于避免首次渲染闪烁） */
+  isModeReady: boolean;
+};
+
+export type DesktopWorkspaceVaultController = {
+  vault: VaultInfo | null;
+  vaultMessage: string | null;
+  isPickingVault: boolean;
+  openVault: () => Promise<void>;
+  selectDirectory: () => Promise<string | null>;
+  createVault: (name: string, parentPath: string) => Promise<void>;
+};
+
+export type DesktopWorkspaceTreeController = {
+  tree: VaultTreeNode[];
+  expandedPaths: string[];
+  treeState: RequestState;
+  treeError: string | null;
+  selectedEntry: VaultTreeNode | null;
+  refreshTree: () => void;
+  selectTreeNode: (node: VaultTreeNode) => void;
+  setExpandedPaths: (paths: string[]) => void;
+  openFileFromTree: (node: VaultTreeNode) => void;
+  renameTreeNode: (node: VaultTreeNode) => void;
+  deleteTreeNode: (node: VaultTreeNode) => void;
+  createFileInTree: (node: VaultTreeNode) => void;
+  showInFinder: (node: VaultTreeNode) => void;
+  moveTreeNode: (sourcePath: string, targetDir: string) => void | Promise<void>;
+  createFileInRoot: () => void;
+  createFolderInRoot: () => void;
+};
+
+export type DesktopWorkspaceDocController = {
+  selectedFile: SelectedFile | null;
+  activeDoc: ActiveDocument | null;
+  openTabs: SelectedFile[];
+  docState: RequestState;
+  docError: string | null;
+  saveState: SaveState;
+  selectTab: (tab: SelectedFile) => void;
+  closeTab: (path: string) => void;
+  editorChange: (markdown: string) => void;
+  retryLoad: () => void;
+  renameByTitle: (path: string, newName: string) => Promise<{ path: string; name: string }>;
+};
+
+export type DesktopWorkspaceCommandController = {
+  commandOpen: boolean;
+  setCommandOpen: (open: boolean) => void;
+  commandActions: CommandAction[];
+  openCommandPalette: () => void;
+};
+
+export type DesktopWorkspaceDialogController = {
+  inputDialogState: InputDialogState;
+  confirmInputDialog: (value: string) => void;
+  cancelInputDialog: () => void;
 };

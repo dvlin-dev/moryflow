@@ -1,7 +1,7 @@
 /**
- * [PROPS]: { currentVaultPath, currentTree }
+ * [PROPS]: -
  * [EMITS]: -
- * [POS]: Sites CMS 主页面，整合列表和详情视图
+ * [POS]: Sites CMS 主页面（就地读取 workspace contexts），整合列表和详情视图
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -13,10 +13,14 @@ import { PublishDialog } from '@/components/site-publish';
 import { SiteList } from './site-list';
 import { SiteDetail } from './site-detail';
 import { FilePickerDialog } from './file-picker-dialog';
-import type { SitesPageProps, SitesView, SiteAction, SiteSettings } from './const';
+import type { SitesView, SiteAction, SiteSettings } from './const';
 import { extractErrorMessage } from './const';
+import { useWorkspaceTree, useWorkspaceVault } from '../../context';
 
-export function SitesPage({ currentVaultPath, currentTree }: SitesPageProps) {
+export function SitesPage() {
+  const { vault } = useWorkspaceVault();
+  const { tree: currentTree } = useWorkspaceTree();
+  const currentVaultPath = vault?.path ?? '';
   const [view, setView] = useState<SitesView>('list');
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
@@ -203,39 +207,18 @@ export function SitesPage({ currentVaultPath, currentTree }: SitesPageProps) {
     [selectedSite, loadSites]
   );
 
-  // 渲染视图
-  if (view === 'detail' && selectedSite) {
-    return (
-      <>
-        <SiteDetail
-          site={selectedSite}
-          onBack={handleBackToList}
-          onPublish={handlePublish}
-          onUpdate={handleUpdate}
-          onUnpublish={handleUnpublish}
-          onSettingsChange={handleSettingsChange}
-          onDelete={handleDelete}
-        />
-        {/* 文件选择对话框 */}
-        <FilePickerDialog
-          open={filePickerOpen}
-          onOpenChange={setFilePickerOpen}
-          onSelect={handleFilesSelected}
-          currentVaultPath={currentVaultPath}
-          currentTree={currentTree}
-        />
-        {/* 发布对话框 */}
-        <PublishDialog
-          open={publishDialogOpen}
-          onOpenChange={handlePublishDialogClose}
-          sourcePaths={publishSourcePaths}
-        />
-      </>
-    );
-  }
-
-  return (
-    <>
+  const mainView =
+    view === 'detail' && selectedSite ? (
+      <SiteDetail
+        site={selectedSite}
+        onBack={handleBackToList}
+        onPublish={handlePublish}
+        onUpdate={handleUpdate}
+        onUnpublish={handleUnpublish}
+        onSettingsChange={handleSettingsChange}
+        onDelete={handleDelete}
+      />
+    ) : (
       <SiteList
         sites={sites}
         loading={loading}
@@ -243,7 +226,11 @@ export function SitesPage({ currentVaultPath, currentTree }: SitesPageProps) {
         onSiteAction={handleSiteAction}
         onPublishClick={handlePublishClick}
       />
-      {/* 文件选择对话框 */}
+    );
+
+  return (
+    <>
+      {mainView}
       <FilePickerDialog
         open={filePickerOpen}
         onOpenChange={setFilePickerOpen}
@@ -251,7 +238,6 @@ export function SitesPage({ currentVaultPath, currentTree }: SitesPageProps) {
         currentVaultPath={currentVaultPath}
         currentTree={currentTree}
       />
-      {/* 发布对话框 */}
       <PublishDialog
         open={publishDialogOpen}
         onOpenChange={handlePublishDialogClose}

@@ -1,7 +1,7 @@
 /**
- * [PROPS]: SidebarProps - 侧边栏完整 props
- * [EMITS]: 各类交互事件
- * [POS]: 侧边栏主组件（Notion-ish skeleton）：WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools
+ * [PROPS]: -
+ * [EMITS]: -
+ * [POS]: 侧边栏主组件（Notion-ish skeleton）：WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools（就地读取 workspace contexts）
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -19,31 +19,41 @@ import { SidebarSectionHeader } from './components/sidebar-section-header';
 import { SidebarTools } from './components/sidebar-tools';
 import { SidebarCreateMenu } from './components/sidebar-create-menu';
 import { VaultSelector } from './components/vault-selector';
-import type { SidebarProps } from './const';
 import { cn } from '@/lib/utils';
+import {
+  useWorkspaceCommand,
+  useWorkspaceDoc,
+  useWorkspaceMode,
+  useWorkspaceShell,
+  useWorkspaceTree,
+  useWorkspaceVault,
+} from '../../context';
 
-export const Sidebar = ({
-  mode,
-  onModeChange,
-  onOpenCommandPalette,
-  vault,
-  tree,
-  expandedPaths,
-  treeState,
-  treeError,
-  selectedId,
-  onSettingsOpen,
-  onSelectNode,
-  onExpandedPathsChange,
-  onOpenFile,
-  onRename,
-  onDelete,
-  onCreateFile,
-  onShowInFinder,
-  onMove,
-  onCreateFileInRoot,
-  onCreateFolderInRoot,
-}: SidebarProps) => {
+export const Sidebar = () => {
+  const { mode, setMode } = useWorkspaceMode();
+  const { vault } = useWorkspaceVault();
+  const {
+    tree,
+    expandedPaths,
+    treeState,
+    treeError,
+    selectedEntry,
+    selectTreeNode,
+    setExpandedPaths,
+    openFileFromTree,
+    renameTreeNode,
+    deleteTreeNode,
+    createFileInTree,
+    showInFinder,
+    moveTreeNode,
+    createFileInRoot,
+    createFolderInRoot,
+  } = useWorkspaceTree();
+  const { selectedFile } = useWorkspaceDoc();
+  const { openCommandPalette } = useWorkspaceCommand();
+  const { openSettings } = useWorkspaceShell();
+
+  const selectedId = selectedEntry?.id ?? selectedFile?.id ?? null;
   const { createSession } = useChatSessions();
 
   // 文件搜索对话框状态（仅 Workspace Mode 使用）
@@ -70,9 +80,9 @@ export const Sidebar = ({
 
   const handleSearchSelect = useCallback(
     (node: VaultTreeNode) => {
-      onOpenFile(node);
+      openFileFromTree(node);
     },
-    [onOpenFile]
+    [openFileFromTree]
   );
 
   const sectionTitle = mode === 'chat' ? 'Threads' : mode === 'sites' ? 'Sites' : 'Pages';
@@ -84,9 +94,9 @@ export const Sidebar = ({
     if (mode === 'workspace') {
       setSearchOpen(true);
     } else {
-      onOpenCommandPalette();
+      openCommandPalette();
     }
-  }, [mode, onOpenCommandPalette]);
+  }, [mode, openCommandPalette]);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -112,7 +122,7 @@ export const Sidebar = ({
           </div>
 
           <div className="px-1.5">
-            <ModeSwitcher mode={mode} onModeChange={onModeChange} />
+            <ModeSwitcher mode={mode} onModeChange={setMode} />
           </div>
         </div>
 
@@ -127,8 +137,8 @@ export const Sidebar = ({
             addControl={
               mode === 'workspace' ? (
                 <SidebarCreateMenu
-                  onCreatePage={onCreateFileInRoot}
-                  onCreateFolder={onCreateFolderInRoot}
+                  onCreatePage={createFileInRoot}
+                  onCreateFolder={createFolderInRoot}
                 />
               ) : undefined
             }
@@ -149,16 +159,16 @@ export const Sidebar = ({
                   treeState={treeState}
                   treeError={treeError}
                   selectedId={selectedId}
-                  onSelectNode={onSelectNode}
-                  onExpandedPathsChange={onExpandedPathsChange}
-                  onOpenFile={onOpenFile}
-                  onRename={onRename}
-                  onDelete={onDelete}
-                  onCreateFile={onCreateFile}
-                  onShowInFinder={onShowInFinder}
-                  onMove={onMove}
-                  onCreateFileInRoot={onCreateFileInRoot}
-                  onCreateFolderInRoot={onCreateFolderInRoot}
+                  onSelectNode={selectTreeNode}
+                  onExpandedPathsChange={setExpandedPaths}
+                  onOpenFile={openFileFromTree}
+                  onRename={renameTreeNode}
+                  onDelete={deleteTreeNode}
+                  onCreateFile={createFileInTree}
+                  onShowInFinder={showInFinder}
+                  onMove={moveTreeNode}
+                  onCreateFileInRoot={createFileInRoot}
+                  onCreateFolderInRoot={createFolderInRoot}
                   onPublish={handlePublish}
                 />
               )}
@@ -177,7 +187,7 @@ export const Sidebar = ({
 
         {/* 工具区（固定在底部） */}
         <div className="shrink-0">
-          <SidebarTools vault={vault} onSettingsOpen={onSettingsOpen} />
+          <SidebarTools vault={vault} onSettingsOpen={openSettings} />
         </div>
 
         {/* Workspace 搜索对话框 */}
@@ -199,5 +209,3 @@ export const Sidebar = ({
     </TooltipProvider>
   );
 };
-
-export type { SidebarProps } from './const';

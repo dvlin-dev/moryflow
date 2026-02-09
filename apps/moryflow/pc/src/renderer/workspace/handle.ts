@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
 import type { CommandAction } from '@/components/command-palette/const';
-import type { DesktopWorkspaceProps, SelectedFile } from './const';
+import type { DesktopWorkspaceController, SelectedFile } from './const';
 import { useInputDialog } from '@/components/input-dialog/handle';
 import { useVaultFileOperations } from './file-operations';
 import { useVaultTreeState } from './hooks/use-vault-tree';
@@ -9,13 +9,12 @@ import { useDocumentState } from './hooks/use-document-state';
 import { findNodeByPath, ensureMarkdownExtension, sanitizeEntryName } from './utils';
 import { useTranslation } from '@/lib/i18n';
 
-export const useDesktopWorkspace = (): DesktopWorkspaceProps => {
+export const useDesktopWorkspace = (): DesktopWorkspaceController => {
   const { t } = useTranslation('workspace');
   const [vault, setVault] = useState<VaultInfo | null>(null);
   const [isPickingVault, setIsPickingVault] = useState(false);
   const [vaultMessage, setVaultMessage] = useState<string | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { inputDialogState, showInputDialog, handleConfirm, handleCancel } = useInputDialog();
 
@@ -324,11 +323,6 @@ export const useDesktopWorkspace = (): DesktopWorkspaceProps => {
     [vault, fetchTree, setOpenTabs, setActiveDoc, setSelectedFile]
   );
 
-  // 切换侧边栏收起状态
-  const handleToggleSidebar = useCallback(() => {
-    setSidebarCollapsed((prev) => !prev);
-  }, []);
-
   return {
     vault,
     vaultMessage,
@@ -347,7 +341,6 @@ export const useDesktopWorkspace = (): DesktopWorkspaceProps => {
     commandOpen,
     commandActions,
     inputDialogState,
-    sidebarCollapsed,
     onInputDialogConfirm: handleConfirm,
     onInputDialogCancel: handleCancel,
     onCommandOpenChange: setCommandOpen,
@@ -374,6 +367,5 @@ export const useDesktopWorkspace = (): DesktopWorkspaceProps => {
     onTreeNodeMove: handleMoveByDrag,
     onCreateFileInRoot,
     onCreateFolderInRoot,
-    onToggleSidebar: handleToggleSidebar,
   };
 };
