@@ -1,27 +1,44 @@
 /**
- * [PROPS]: { models, onAddModel, onToggleModel, onDeleteModel }
- * [EMITS]: onAddModel({ id, name }), onToggleModel(modelId, enabled), onDeleteModel(modelId)
- * [POS]: Custom Provider 的模型列表 UI（不直接读写表单，仅负责展示和交互，Lucide 图标）
+ * [PROPS]: { models, onAddModel, onUpdateModel, onToggleModel, onDeleteModel }
+ * [EMITS]: onAddModel(formData), onUpdateModel(formData), onToggleModel(modelId, enabled), onDeleteModel(modelId)
+ * [POS]: Custom Provider 的模型列表 UI（复用 AddModelDialog/EditModelDialog，保证与预设服务商一致）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useMemo, useState } from 'react';
+import { Input } from '@anyhunt/ui/components/input';
 import { Button } from '@anyhunt/ui/components/button';
 import { Label } from '@anyhunt/ui/components/label';
 import { Switch } from '@anyhunt/ui/components/switch';
-import { Plus, Delete } from 'lucide-react';
-import { AddCustomProviderModelDialog } from './add-custom-provider-model-dialog';
+import { Badge } from '@anyhunt/ui/components/badge';
+import { Plus, Delete, Search, Settings } from 'lucide-react';
+import { AddModelDialog, type AddModelFormData } from './add-model-dialog';
+import {
+  EditModelDialog,
+  type EditModelFormData,
+  type EditModelInitialData,
+} from './edit-model-dialog';
+import type { ModelModality } from '@shared/model-registry';
+import type { CustomCapabilities } from './add-model-dialog';
 
 export type CustomProviderModel = {
   id: string;
-  name: string;
   enabled: boolean;
+  isCustom?: boolean;
+  customName?: string;
+  customContext?: number;
+  customOutput?: number;
+  customCapabilities?: Partial<CustomCapabilities>;
+  customInputModalities?: ModelModality[];
+  /** legacy */
+  name?: string;
 };
 
 type CustomProviderModelsProps = {
   models: CustomProviderModel[];
-  onAddModel: (data: { id: string; name: string }) => void;
+  onAddModel: (data: AddModelFormData) => void;
+  onUpdateModel: (data: EditModelFormData) => void;
   onToggleModel: (modelId: string, enabled: boolean) => void;
   onDeleteModel: (modelId: string) => void;
 };
@@ -29,12 +46,61 @@ type CustomProviderModelsProps = {
 export const CustomProviderModels = ({
   models,
   onAddModel,
+  onUpdateModel,
   onToggleModel,
   onDeleteModel,
 }: CustomProviderModelsProps) => {
   const [addOpen, setAddOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editInitialData, setEditInitialData] = useState<EditModelInitialData | null>(null);
 
   const existingModelIds = useMemo(() => models.map((m) => m.id), [models]);
+
+  const filteredModels = useMemo(() => {
+    if (!searchQuery.trim()) return models;
+    const query = searchQuery.trim().toLowerCase();
+    return models.filter((m) => {
+      const name = (m.customName || m.name || '').toLowerCase();
+      return m.id.toLowerCase().includes(query) || name.includes(query);
+    });
+  }, [models, searchQuery]);
+
+  const resolveModelName = (model: CustomProviderModel): string => {
+    return model.customName || model.name || model.id;
+  };
+
+  const resolveModelLimits = (model: CustomProviderModel) => {
+    return {
+      context: model.customContext || 128000,
+      output: model.customOutput || 16384,
+    };
+  };
+
+  const resolveModelCapabilities = (
+    model: CustomProviderModel
+  ): EditModelInitialData['capabilities'] | undefined => {
+    if (!model.customCapabilities) return undefined;
+    return {
+      reasoning: model.customCapabilities.reasoning ?? false,
+      attachment: model.customCapabilities.attachment ?? false,
+      toolCall: model.customCapabilities.toolCall ?? false,
+      temperature: model.customCapabilities.temperature ?? true,
+    };
+  };
+
+  const handleEdit = (model: CustomProviderModel) => {
+    setEditInitialData({
+      id: model.id,
+      name: resolveModelName(model),
+      isPreset: false,
+      isCustom: true,
+      capabilities: resolveModelCapabilities(model),
+      limits: resolveModelLimits(model),
+      inputModalities: model.customInputModalities || ['text'],
+    });
+    setEditOpen(true);
+  };
 
   return (
     <div className="space-y-3">
@@ -51,46 +117,97 @@ export const CustomProviderModels = ({
             No models yet. Add one to enable testing and model selection.
           </div>
         ) : (
-          models.map((model) => (
-            <div
-              key={model.id}
-              className="flex items-center justify-between py-2 px-3 rounded-md border"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">{model.name}</span>
-                </div>
-                <div className="text-xs text-muted-foreground font-mono truncate">{model.id}</div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    const ok = window.confirm(`Delete model "${model.name}"?`);
-                    if (ok) onDeleteModel(model.id);
-                  }}
-                  aria-label="Delete model"
-                >
-                  <Delete className="h-4 w-4" />
-                </Button>
-                <Switch
-                  checked={model.enabled}
-                  onCheckedChange={(checked) => onToggleModel(model.id, checked)}
-                />
-              </div>
+          <>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search models..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          ))
+
+            {filteredModels.map((model) => (
+              <div
+                key={model.id}
+                className="flex items-center justify-between py-2 px-3 rounded-md border"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate">{resolveModelName(model)}</span>
+                    {model.customCapabilities?.reasoning && (
+                      <Badge variant="secondary" className="text-xs">
+                        Reasoning
+                      </Badge>
+                    )}
+                    {model.customCapabilities?.attachment && (
+                      <Badge variant="secondary" className="text-xs">
+                        Multimodal
+                      </Badge>
+                    )}
+                    {model.customCapabilities?.toolCall && (
+                      <Badge variant="secondary" className="text-xs">
+                        Tools
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                    <span className="font-mono truncate">{model.id}</span>
+                    <span>Context: {Math.round(resolveModelLimits(model).context / 1000)}K</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    onClick={() => handleEdit(model)}
+                    title="Configure model"
+                  >
+                    <Settings className="size-4" />
+                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const ok = window.confirm(`Delete model "${resolveModelName(model)}"?`);
+                      if (ok) onDeleteModel(model.id);
+                    }}
+                    aria-label="Delete model"
+                  >
+                    <Delete className="h-4 w-4" />
+                  </Button>
+                  <Switch
+                    checked={model.enabled}
+                    onCheckedChange={(checked) => onToggleModel(model.id, checked)}
+                  />
+                </div>
+              </div>
+            ))}
+
+            {filteredModels.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground py-4">
+                No matching models found
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      <AddCustomProviderModelDialog
+      <AddModelDialog
         open={addOpen}
         onOpenChange={setAddOpen}
         existingModelIds={existingModelIds}
         onAdd={onAddModel}
+      />
+
+      <EditModelDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={onUpdateModel}
+        initialData={editInitialData}
       />
     </div>
   );

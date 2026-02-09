@@ -96,6 +96,34 @@ export const userModelConfigSchema = z.object({
   customInputModalities: z.array(modelModalitySchema).optional(),
 });
 
+/**
+ * 自定义服务商模型条目兼容层：
+ * - 新结构：UserModelConfig（customName/customContext/...）
+ * - 旧结构：{ id, name, enabled }（将 name 迁移到 customName）
+ */
+export const customProviderModelSchema = z.preprocess((input) => {
+  if (!input || typeof input !== 'object') {
+    return input;
+  }
+  const raw = input as Record<string, unknown> & { name?: unknown; customName?: unknown };
+
+  const enabled = typeof raw.enabled === 'boolean' ? raw.enabled : true;
+  const customName =
+    typeof raw.customName === 'string'
+      ? raw.customName
+      : typeof raw.name === 'string'
+        ? raw.name
+        : undefined;
+  const isCustom = typeof raw.isCustom === 'boolean' ? raw.isCustom : true;
+
+  return {
+    ...raw,
+    enabled,
+    isCustom,
+    customName,
+  };
+}, userModelConfigSchema);
+
 /** 预设服务商配置 Schema */
 export const userProviderConfigSchema = z.object({
   providerId: z.string(),
@@ -119,13 +147,7 @@ export const customProviderConfigSchema = z.object({
   sdkType: z
     .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
     .default('openai-compatible'),
-  models: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string().min(1, 'Name is required'),
-      enabled: z.boolean().default(true),
-    })
-  ),
+  models: z.array(customProviderModelSchema).optional().default([]),
   defaultModelId: z.string().nullable().optional().default(null),
 });
 

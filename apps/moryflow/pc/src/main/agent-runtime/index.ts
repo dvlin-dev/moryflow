@@ -224,7 +224,8 @@ const resolveCompactionContextWindow = (
   const normalized = isMembership ? extractMembershipModelId(modelId) : modelId;
   return resolveContextWindow({
     modelId: normalized,
-    providers: isMembership ? [] : settings.providers,
+    // 自定义服务商也可能包含 customContext（来自 AddModelDialog 的参数面板）
+    providers: isMembership ? [] : [...settings.providers, ...(settings.customProviders || [])],
     getDefaultContext: (id) => getModelById(id)?.limits?.context,
   });
 };

@@ -3,6 +3,7 @@
  * [EMITS]: 通过 react-hook-form setValue 修改 settings 表单；通过 desktopAPI 触发 provider 测试
  * [POS]: 设置弹窗 - AI Providers 详情页（预设/自定义服务商配置、Base URL 默认填充、模型启用与连接测试，Lucide 图标）
  * [UPDATE]: 2026-02-02 - 移除右侧 Provider Enable 开关区域
+ * [UPDATE]: 2026-02-09 - 自定义服务商模型添加流程复用 AddModelDialog（含 model library 搜索与参数面板）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -482,15 +483,49 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
 
   // 自定义服务商模型管理
   const handleAddCustomProviderModel = useCallback(
-    (data: { id: string; name: string }) => {
+    (data: AddModelFormData) => {
       if (customIndex < 0) return;
       const current = customProviderValues[customIndex];
       const currentModels = Array.isArray(current?.models) ? current.models : [];
       setValue(`customProviders.${customIndex}.models`, [
-        { id: data.id, name: data.name, enabled: true },
+        {
+          id: data.id,
+          enabled: true,
+          isCustom: true,
+          customName: data.name,
+          customContext: data.contextSize,
+          customOutput: data.outputSize,
+          customCapabilities: data.capabilities,
+          customInputModalities: data.inputModalities,
+        },
         ...currentModels,
       ]);
       setValue(`customProviders.${customIndex}.enabled`, true);
+    },
+    [customIndex, customProviderValues, setValue]
+  );
+
+  const handleUpdateCustomProviderModel = useCallback(
+    (data: EditModelFormData) => {
+      if (customIndex < 0) return;
+      const current = customProviderValues[customIndex];
+      const currentModels = Array.isArray(current?.models) ? current.models : [];
+      const modelIndex = currentModels.findIndex((m) => m.id === data.id);
+      if (modelIndex < 0) return;
+
+      const prev = currentModels[modelIndex];
+
+      setValue(`customProviders.${customIndex}.models.${modelIndex}`, {
+        ...prev,
+        id: data.id,
+        enabled: prev?.enabled ?? true,
+        isCustom: true,
+        customName: data.name,
+        customContext: data.contextSize,
+        customOutput: data.outputSize,
+        customCapabilities: data.capabilities,
+        customInputModalities: data.inputModalities,
+      });
     },
     [customIndex, customProviderValues, setValue]
   );
@@ -835,6 +870,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
           <CustomProviderModels
             models={config.models || []}
             onAddModel={handleAddCustomProviderModel}
+            onUpdateModel={handleUpdateCustomProviderModel}
             onToggleModel={handleToggleCustomProviderModel}
             onDeleteModel={handleDeleteCustomProviderModel}
           />

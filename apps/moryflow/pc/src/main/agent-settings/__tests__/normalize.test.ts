@@ -44,4 +44,31 @@ describe('agent-settings normalize', () => {
       maxTokens: { mode: 'custom', value: 1 },
     });
   });
+
+  it('migrates legacy custom provider model shape', () => {
+    const normalized = normalizeAgentSettings({
+      customProviders: [
+        {
+          providerId: 'custom-abc',
+          name: 'Custom provider',
+          enabled: true,
+          apiKey: 'test',
+          baseUrl: null,
+          sdkType: 'openai-compatible',
+          models: [{ id: 'gpt-4o', name: 'GPT-4o', enabled: true }],
+          defaultModelId: null,
+        },
+      ],
+    });
+
+    expect(normalized.customProviders).toHaveLength(1);
+    expect(normalized.customProviders[0].models[0]).toEqual(
+      expect.objectContaining({
+        id: 'gpt-4o',
+        enabled: true,
+        isCustom: true,
+        customName: 'GPT-4o',
+      })
+    );
+  });
 });

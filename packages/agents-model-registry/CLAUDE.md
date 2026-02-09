@@ -28,6 +28,7 @@
 
 - 补齐 Anthropic/Google/xAI 默认 Base URL
 - 模型/服务商注册表基线整理
+- CustomProviderConfig.models 与 UserProviderConfig.models 结构对齐（支持 customName/customContext 等）
 
 ---
 
