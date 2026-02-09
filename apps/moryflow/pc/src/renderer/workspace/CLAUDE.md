@@ -49,3 +49,7 @@ pnpm lint
 pnpm typecheck
 pnpm test:unit
 ```
+
+## 近期变更
+
+- 2026-02-09：恢复工作区持久化的 `openTabs/lastOpenedFile` 时增加过滤（仅保留 Vault 内的绝对路径），避免旧版特殊 tab/非法路径被当作文件加载导致报错。

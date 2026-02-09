@@ -2,6 +2,7 @@
  * [PROVIDES]: useDocumentState - 文档打开/保存/Tab 管理
  * [DEPENDS]: desktopAPI.files, desktopAPI.workspace, desktopAPI.events
  * [POS]: Workspace 文档状态核心（编辑器/标签页）
+ * [UPDATE]: 2026-02-09 - 恢复 tabs 时过滤非法/旧版特殊 tab，避免误读不存在路径
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -54,6 +55,40 @@ const isSelfSaveEvent = (lastSaveTime: number): boolean => {
 
 /** 持久化状态的防抖延迟（毫秒） */
 const PERSIST_DELAY = 300;
+
+const stripTrailingSeparators = (value: string) => value.replace(/[\\/]+$/, '');
+
+const isProbablyAbsolutePath = (value: string) =>
+  value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value) || value.startsWith('\\\\');
+
+const isPathWithinVault = (vaultPath: string, filePath: string) => {
+  const root = stripTrailingSeparators(vaultPath);
+  return filePath.startsWith(`${root}/`) || filePath.startsWith(`${root}\\`);
+};
+
+const sanitizeLastOpenedFile = (vaultPath: string, filePath: string | null): string | null => {
+  if (!filePath) return null;
+  if (!isProbablyAbsolutePath(filePath)) return null;
+  if (!isPathWithinVault(vaultPath, filePath)) return null;
+  return filePath;
+};
+
+const sanitizePersistedTabs = (vaultPath: string, tabs: SelectedFile[]): SelectedFile[] => {
+  const seen = new Set<string>();
+  const next: SelectedFile[] = [];
+
+  for (const tab of tabs) {
+    const path = tab?.path;
+    if (typeof path !== 'string' || path.length === 0) continue;
+    if (!isProbablyAbsolutePath(path)) continue;
+    if (!isPathWithinVault(vaultPath, path)) continue;
+    if (seen.has(path)) continue;
+    seen.add(path);
+    next.push(tab);
+  }
+
+  return next;
+};
 
 export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentState => {
   const { t } = useTranslation('workspace');
@@ -281,13 +316,16 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
           window.desktopAPI.workspace.getLastOpenedFile(vaultPath),
         ]);
 
+        const safeTabs = sanitizePersistedTabs(vaultPath, savedTabs);
+        const safeLastFile = sanitizeLastOpenedFile(vaultPath, lastFile);
+
         // 恢复标签页
-        if (savedTabs.length > 0) {
-          setOpenTabs(savedTabs);
+        if (safeTabs.length > 0) {
+          setOpenTabs(safeTabs);
 
           // 恢复最后打开的文件
-          if (lastFile) {
-            const targetTab = savedTabs.find((tab) => tab.path === lastFile);
+          if (safeLastFile) {
+            const targetTab = safeTabs.find((tab) => tab.path === safeLastFile);
             if (targetTab) {
               // 直接加载文档
               setSelectedFile(targetTab);
@@ -298,7 +336,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
                 setDocState('idle');
               } catch {
                 // 文件可能已被删除，从 tabs 中移除
-                setOpenTabs((tabs) => tabs.filter((t) => t.path !== lastFile));
+                setOpenTabs((tabs) => tabs.filter((t) => t.path !== safeLastFile));
                 setSelectedFile(null);
                 setDocState('idle');
               }
