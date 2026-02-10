@@ -32,7 +32,7 @@ describe('VideoTranscriptService', () => {
       findFirst: Mock;
       findMany: Mock;
       count: Mock;
-      update: Mock;
+      updateMany: Mock;
     };
   };
 
@@ -66,7 +66,7 @@ describe('VideoTranscriptService', () => {
         findFirst: vi.fn(),
         findMany: vi.fn(),
         count: vi.fn(),
-        update: vi.fn(),
+        updateMany: vi.fn(),
       },
     };
 
@@ -196,21 +196,28 @@ describe('VideoTranscriptService', () => {
         userId: 'user_1',
         status: 'TRANSCRIBING',
       });
-      mockPrisma.videoTranscriptTask.update.mockResolvedValue({
-        id: 'task_3',
+      mockPrisma.videoTranscriptTask.updateMany.mockResolvedValue({
+        count: 1,
       });
 
       const result = await service.cancelTask('user_1', 'task_3');
 
       expect(result).toEqual({ ok: true });
       expect(mockRedisService.set).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.videoTranscriptTask.update).toHaveBeenCalledWith(
+      expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'task_3' },
-          data: expect.objectContaining({
+          where: {
+            id: 'task_3',
+            userId: 'user_1',
+            status: {
+              notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+            },
+          },
+          data: {
             status: 'CANCELLED',
             error: 'Cancelled by user',
-          }),
+            completedAt: expect.any(Date),
+          },
         }),
       );
       expect(mockLocalQueue.remove).toHaveBeenCalledWith('task_3');
@@ -219,6 +226,29 @@ describe('VideoTranscriptService', () => {
       );
       expect(mockCloudQueue.remove).toHaveBeenCalledWith(
         buildVideoTranscriptCloudRunJobId('task_3'),
+      );
+    });
+
+    it('should not overwrite terminal state when cancellation loses the race', async () => {
+      mockPrisma.videoTranscriptTask.findFirst.mockResolvedValue({
+        id: 'task_4',
+        userId: 'user_1',
+        status: 'TRANSCRIBING',
+      });
+      mockPrisma.videoTranscriptTask.updateMany.mockResolvedValue({
+        count: 0,
+      });
+
+      const result = await service.cancelTask('user_1', 'task_4');
+
+      expect(result).toEqual({ ok: true });
+      expect(mockRedisService.set).not.toHaveBeenCalled();
+      expect(mockLocalQueue.remove).toHaveBeenCalledWith('task_4');
+      expect(mockCloudQueue.remove).toHaveBeenCalledWith(
+        buildVideoTranscriptFallbackCheckJobId('task_4'),
+      );
+      expect(mockCloudQueue.remove).toHaveBeenCalledWith(
+        buildVideoTranscriptCloudRunJobId('task_4'),
       );
     });
 

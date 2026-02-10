@@ -11,6 +11,7 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 最近更新
 
+- cancelTask 竞态修复：改为 `updateMany + terminal guard` 并仅在取消写入成功后再设置 preempt signal，避免并发完成时被错误标记为 `CANCELLED`；预算闸门 Lua `EVAL` 入参显式 `String()` 化，避免浮点参数隐式转换边界
 - worker 进程启动方式收敛：`worker.ts` 改为 `createApplicationContext`（不提供 HTTP），避免 worker 暴露无关 controllers；同时将 `VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER` / `VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER` 默认值调整为 `false`（必须显式启用），并补齐 URL http(s) 协议校验
 - 新增 Video Transcript worker 独立启动入口 `worker.ts` + 最小启动模块 `video-transcript-worker-app.module.ts`，用于 VPS2/Mac mini worker 进程避免加载全量 `AppModule`（防止误消费其他队列与全局定时任务）
 - LOCAL/CLOUD_FALLBACK 状态推进改为 `updateMany + terminal guard + executor guard`，避免 CANCELLED/接管竞态下被覆盖

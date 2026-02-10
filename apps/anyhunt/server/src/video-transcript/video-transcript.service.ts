@@ -165,20 +165,29 @@ export class VideoTranscriptService {
     }
 
     if (!this.isTerminalStatus(task.status)) {
-      await this.redisService.set(
-        buildVideoTranscriptPreemptKey(taskId),
-        '1',
-        VIDEO_TRANSCRIPT_PREEMPT_TTL_SECONDS,
-      );
-
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
+      const now = new Date();
+      const cancelled = await this.prisma.videoTranscriptTask.updateMany({
+        where: {
+          id: taskId,
+          userId,
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
+        },
         data: {
           status: 'CANCELLED',
           error: 'Cancelled by user',
-          completedAt: new Date(),
+          completedAt: now,
         },
       });
+
+      if (cancelled.count > 0) {
+        await this.redisService.set(
+          buildVideoTranscriptPreemptKey(taskId),
+          '1',
+          VIDEO_TRANSCRIPT_PREEMPT_TTL_SECONDS,
+        );
+      }
     }
 
     await Promise.allSettled([

@@ -72,9 +72,9 @@ export class VideoTranscriptBudgetService {
       BUDGET_RESERVE_LUA,
       1,
       key,
-      estimatedCostUsd,
-      dailyBudgetUsd,
-      ttlSeconds,
+      String(estimatedCostUsd),
+      String(dailyBudgetUsd),
+      String(ttlSeconds),
     );
 
     const result = Array.isArray(raw) ? raw : [];
