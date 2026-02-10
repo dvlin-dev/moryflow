@@ -86,14 +86,20 @@ export const modelModalitySchema = z.enum(['text', 'image', 'audio', 'video', 'p
 
 /** 用户模型配置 Schema */
 export const userModelConfigSchema = z.object({
-  id: z.string(),
-  enabled: z.boolean(),
+  id: z.string().min(1),
+  enabled: z.boolean().default(true),
   isCustom: z.boolean().optional(),
   customName: z.string().optional(),
   customContext: z.number().optional(),
   customOutput: z.number().optional(),
   customCapabilities: customModelCapabilitiesSchema.optional(),
   customInputModalities: z.array(modelModalitySchema).optional(),
+});
+
+/** 自定义服务商的 models：新用户最佳实践（不做 legacy 兼容） */
+export const customProviderModelSchema = userModelConfigSchema.extend({
+  isCustom: z.literal(true).default(true),
+  customName: z.string().min(1, 'Model name is required'),
 });
 
 /** 预设服务商配置 Schema */
@@ -119,13 +125,7 @@ export const customProviderConfigSchema = z.object({
   sdkType: z
     .enum(['openai', 'anthropic', 'google', 'xai', 'openrouter', 'openai-compatible'])
     .default('openai-compatible'),
-  models: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string().min(1, 'Name is required'),
-      enabled: z.boolean().default(true),
-    })
-  ),
+  models: z.array(customProviderModelSchema).optional().default([]),
   defaultModelId: z.string().nullable().optional().default(null),
 });
 

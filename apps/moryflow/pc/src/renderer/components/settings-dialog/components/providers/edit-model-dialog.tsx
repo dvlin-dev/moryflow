@@ -20,6 +20,7 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Checkbox } from '@anyhunt/ui/components/checkbox';
 import type { ModelModality } from '@shared/model-registry';
 import type { CustomCapabilities } from './add-model-dialog';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 
 export type EditModelFormData = {
   id: string;
@@ -103,8 +104,8 @@ export const EditModelDialog = ({
   initialData,
 }: EditModelDialogProps) => {
   const [modelName, setModelName] = useState('');
-  const [contextSize, setContextSize] = useState(128000);
-  const [outputSize, setOutputSize] = useState(16384);
+  const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
+  const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
   const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
   const [error, setError] = useState<string | null>(null);
@@ -214,7 +215,9 @@ export const EditModelDialog = ({
                   min={1000}
                   max={10000000}
                   value={contextSize}
-                  onChange={(e) => setContextSize(parseInt(e.target.value) || 128000)}
+                  onChange={(e) =>
+                    setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(contextSize / 1000)}K tokens
@@ -229,7 +232,9 @@ export const EditModelDialog = ({
                   min={1000}
                   max={1000000}
                   value={outputSize}
-                  onChange={(e) => setOutputSize(parseInt(e.target.value) || 16384)}
+                  onChange={(e) =>
+                    setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(outputSize / 1000)}K tokens

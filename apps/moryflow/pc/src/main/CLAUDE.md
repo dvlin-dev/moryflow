@@ -99,6 +99,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Settings：schema 校验失败时回退默认设置（新用户最佳实践：不做历史结构迁移）。
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`）并激活
 - workspace-settings：新增 lastMode 持久化与 `workspace:getLastMode/setLastMode` IPC，用于 App Mode（Chat/Workspace/Sites）
 - Chat 主进程持久化改为 UIMessageStream onFinish，并补齐 start/finish chunk，保证 assistant 消息持久化与 ID 稳定

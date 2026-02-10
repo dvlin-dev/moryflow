@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import {
   useFieldArray,
   useForm,
@@ -27,6 +28,56 @@ import {
 import { formToUpdate, settingsToForm } from './handle';
 
 type SettingsForm = ReturnType<typeof useForm<FormValues>>;
+
+type ZodIssueLike = {
+  message?: unknown;
+  path?: unknown;
+};
+
+const toDotPath = (path: unknown): string | null => {
+  if (!Array.isArray(path)) return null;
+  let result = '';
+  for (const segment of path) {
+    if (typeof segment === 'number') {
+      result += `[${segment}]`;
+      continue;
+    }
+    if (typeof segment === 'string') {
+      result += result.length === 0 ? segment : `.${segment}`;
+    }
+  }
+  return result.length > 0 ? result : null;
+};
+
+const toSaveSettingsToast = (error: unknown): { title: string; description?: string } => {
+  const fallback = { title: 'Failed to save settings' };
+  if (!(error instanceof Error)) return fallback;
+
+  // Electron IPC wraps main errors like:
+  // "Error invoking remote method 'agent:settings:update': <original>"
+  const match = error.message.match(/Error invoking remote method '[^']+':\s*(.*)$/s);
+  const raw = (match?.[1] ?? error.message).trim();
+
+  // ZodError message may be a JSON array of issues.
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0] as ZodIssueLike;
+        const message = typeof first?.message === 'string' ? first.message : raw;
+        const path = toDotPath(first?.path);
+        return {
+          title: 'Failed to save settings',
+          description: path ? `${path}: ${message}` : message,
+        };
+      }
+    } catch {
+      // fallthrough
+    }
+  }
+
+  return raw ? { title: 'Failed to save settings', description: raw } : fallback;
+};
 
 type ArrayControllers = {
   stdioArray: ReturnType<typeof useFieldArray<FormValues, 'mcp.stdio'>>;
@@ -237,6 +288,8 @@ export const useSettingsDialogState = ({
         await window.desktopAPI.agent.updateSettings(formToUpdate(values));
         onOpenChange(false);
       } catch (error) {
+        const built = toSaveSettingsToast(error);
+        toast.error(built.title, { description: built.description });
         console.error('[settings-dialog] failed to save settings', error);
       } finally {
         setIsSaving(false);

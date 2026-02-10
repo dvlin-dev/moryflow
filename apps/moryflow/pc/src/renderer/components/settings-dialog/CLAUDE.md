@@ -26,3 +26,8 @@
 ## 近期变更
 
 - Providers 详情面板移除右侧 Provider Enable 开关
+- 修复 Providers/Account 内部交互触发 submit 冒泡，导致 Settings Dialog 意外关闭/保存的问题
+- 自定义服务商模型添加流程复用 AddModelDialog（支持 model library 搜索与模型参数面板）
+- 保存设置失败时弹 toast，并尽量从主进程 Zod issues 中提取可读错误
+- 自定义模型默认 limits 统一使用 `components/providers/constants.ts`（`DEFAULT_CUSTOM_MODEL_CONTEXT/DEFAULT_CUSTOM_MODEL_OUTPUT`）
+- 自定义服务商模型仅使用 `customName`（必填），移除 legacy `name` 字段与 preprocess 迁移逻辑

@@ -44,4 +44,24 @@ describe('agent-settings normalize', () => {
       maxTokens: { mode: 'custom', value: 1 },
     });
   });
+
+  it('falls back to defaults when schema validation fails', () => {
+    // customProviders.models[0].customName is required by schema (new user best practice)
+    const normalized = normalizeAgentSettings({
+      customProviders: [
+        {
+          providerId: 'custom-abc',
+          name: 'Custom provider',
+          enabled: true,
+          apiKey: 'test',
+          baseUrl: null,
+          sdkType: 'openai-compatible',
+          models: [{ id: 'gpt-4o', enabled: true }],
+          defaultModelId: null,
+        },
+      ],
+    });
+
+    expect(normalized).toEqual(defaultAgentSettings);
+  });
 });
