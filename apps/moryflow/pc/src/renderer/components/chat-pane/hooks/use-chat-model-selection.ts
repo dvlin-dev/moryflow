@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
 
 import { computeAgentOptions } from '../handle';
-import { buildModelGroupsFromProviders, ensureModelIncluded, type ModelGroup } from '../models';
+import { buildModelGroupsFromSettings, ensureModelIncluded, type ModelGroup } from '../models';
 
 const MODEL_STORAGE_KEY = 'moryflow.chat.preferredModel';
 
@@ -79,7 +79,7 @@ export const useChatModelSelection = (activeFilePath?: string | null) => {
 
   const applySettings = useCallback(
     (settings: AgentSettings) => {
-      const baseGroups = buildModelGroupsFromProviders(settings);
+      const baseGroups = buildModelGroupsFromSettings(settings);
       const groupsWithSelection = ensureModelIncluded(
         baseGroups,
         selectedModelIdRef.current || settings.model?.defaultModel,

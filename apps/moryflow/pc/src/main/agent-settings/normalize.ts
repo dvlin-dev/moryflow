@@ -139,15 +139,20 @@ export const normalizeAgentSettings = (input: unknown): AgentSettings => {
   }
   const payload = input as Partial<AgentSettings>;
 
-  return agentSettingsSchema.parse({
-    model: coerceModel(payload.model),
-    systemPrompt: coerceSystemPrompt(payload.systemPrompt),
-    modelParams: coerceModelParams(payload.modelParams),
-    mcp: coerceMcpSettings(payload.mcp),
-    providers: coerceProviders(payload.providers),
-    customProviders: coerceCustomProviders(payload.customProviders),
-    ui: coerceUiSettings(payload.ui),
-  }) as AgentSettings;
+  try {
+    return agentSettingsSchema.parse({
+      model: coerceModel(payload.model),
+      systemPrompt: coerceSystemPrompt(payload.systemPrompt),
+      modelParams: coerceModelParams(payload.modelParams),
+      mcp: coerceMcpSettings(payload.mcp),
+      providers: coerceProviders(payload.providers),
+      customProviders: coerceCustomProviders(payload.customProviders),
+      ui: coerceUiSettings(payload.ui),
+    }) as AgentSettings;
+  } catch {
+    // 新用户最佳实践：不做历史结构迁移，遇到破损/旧结构直接回退到默认设置。
+    return defaultAgentSettings;
+  }
 };
 
 /**

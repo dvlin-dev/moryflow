@@ -45,7 +45,8 @@ describe('agent-settings normalize', () => {
     });
   });
 
-  it('migrates legacy custom provider model shape', () => {
+  it('falls back to defaults when schema validation fails', () => {
+    // customProviders.models[0].customName is required by schema (new user best practice)
     const normalized = normalizeAgentSettings({
       customProviders: [
         {
@@ -55,20 +56,12 @@ describe('agent-settings normalize', () => {
           apiKey: 'test',
           baseUrl: null,
           sdkType: 'openai-compatible',
-          models: [{ id: 'gpt-4o', name: 'GPT-4o', enabled: true }],
+          models: [{ id: 'gpt-4o', enabled: true }],
           defaultModelId: null,
         },
       ],
     });
 
-    expect(normalized.customProviders).toHaveLength(1);
-    expect(normalized.customProviders[0].models[0]).toEqual(
-      expect.objectContaining({
-        id: 'gpt-4o',
-        enabled: true,
-        isCustom: true,
-        customName: 'GPT-4o',
-      })
-    );
+    expect(normalized).toEqual(defaultAgentSettings);
   });
 });

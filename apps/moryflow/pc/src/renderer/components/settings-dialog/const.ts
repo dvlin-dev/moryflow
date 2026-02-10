@@ -8,7 +8,6 @@
 
 import type { ReactNode } from 'react';
 import { z, type ZodNumber } from 'zod/v3';
-import { preprocessCustomProviderModelEntry } from '@shared/ipc/agent-settings-legacy';
 
 export type SettingsSection =
   | 'account'
@@ -87,8 +86,8 @@ export const modelModalitySchema = z.enum(['text', 'image', 'audio', 'video', 'p
 
 /** 用户模型配置 Schema */
 export const userModelConfigSchema = z.object({
-  id: z.string(),
-  enabled: z.boolean(),
+  id: z.string().min(1),
+  enabled: z.boolean().default(true),
   isCustom: z.boolean().optional(),
   customName: z.string().optional(),
   customContext: z.number().optional(),
@@ -97,15 +96,11 @@ export const userModelConfigSchema = z.object({
   customInputModalities: z.array(modelModalitySchema).optional(),
 });
 
-/**
- * 自定义服务商模型条目兼容层：
- * - 新结构：UserModelConfig（customName/customContext/...）
- * - 旧结构：{ id, name, enabled }（将 name 迁移到 customName）
- */
-export const customProviderModelSchema = z.preprocess(
-  preprocessCustomProviderModelEntry,
-  userModelConfigSchema
-);
+/** 自定义服务商的 models：新用户最佳实践（不做 legacy 兼容） */
+export const customProviderModelSchema = userModelConfigSchema.extend({
+  isCustom: z.literal(true).default(true),
+  customName: z.string().min(1, 'Model name is required'),
+});
 
 /** 预设服务商配置 Schema */
 export const userProviderConfigSchema = z.object({

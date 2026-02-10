@@ -50,13 +50,13 @@ export const CustomProviderModels = ({
     if (!searchQuery.trim()) return models;
     const query = searchQuery.trim().toLowerCase();
     return models.filter((m) => {
-      const name = (m.customName || m.name || '').toLowerCase();
+      const name = (m.customName || '').toLowerCase();
       return m.id.toLowerCase().includes(query) || name.includes(query);
     });
   }, [models, searchQuery]);
 
   const resolveModelName = (model: CustomProviderModel): string => {
-    return model.customName || model.name || model.id;
+    return model.customName || model.id;
   };
 
   const resolveModelLimits = (model: CustomProviderModel) => {

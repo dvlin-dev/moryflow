@@ -1,7 +1,6 @@
 import { z, type ZodNumber } from 'zod';
 import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
 import type { AgentSettings } from '../../shared/ipc.js';
-import { preprocessCustomProviderModelEntry } from '../../shared/ipc/agent-settings-legacy.js';
 
 // MCP 服务器配置 Schema
 export const stdioSchema = z.object({
@@ -72,8 +71,8 @@ export const modelModalitySchema = z.enum(['text', 'image', 'audio', 'video', 'p
 
 // 用户模型配置 Schema
 export const userModelConfigSchema = z.object({
-  id: z.string(),
-  enabled: z.boolean(),
+  id: z.string().min(1),
+  enabled: z.boolean().default(true),
   isCustom: z.boolean().optional(),
   customName: z.string().optional(),
   customContext: z.number().optional(),
@@ -82,10 +81,11 @@ export const userModelConfigSchema = z.object({
   customInputModalities: z.array(modelModalitySchema).optional(),
 });
 
-const customProviderModelSchema = z.preprocess(
-  preprocessCustomProviderModelEntry,
-  userModelConfigSchema
-);
+const customProviderModelSchema = userModelConfigSchema.extend({
+  // 自定义服务商的 models 都是用户添加的自定义模型（新用户最佳实践：不做 legacy 兼容）
+  isCustom: z.literal(true).default(true),
+  customName: z.string().min(1),
+});
 
 // 预设服务商用户配置 Schema
 export const userProviderConfigSchema = z.object({

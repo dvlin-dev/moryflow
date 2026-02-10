@@ -137,7 +137,7 @@ const buildOptionsFromCustomProvider = (
     .filter((m) => m.enabled)
     .map((model) => ({
       id: model.id,
-      name: model.customName || model.name || model.id,
+      name: model.customName || model.id,
       provider: config.name,
       providerSlug,
       providers: providerSlug ? [providerSlug] : [],
@@ -229,9 +229,6 @@ export const ensureModelIncluded = (
     },
   ];
 };
-
-// 为了向后兼容，保留旧的函数名
-export const buildModelGroupsFromProviders = buildModelGroupsFromSettings;
 
 /**
  * 构建会员模型分组

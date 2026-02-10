@@ -3,7 +3,6 @@ import type {
   AgentSettingsUpdate,
   UserProviderConfig,
   CustomProviderConfig,
-  UserModelConfig,
 } from '@shared/ipc';
 import type { FormValues } from './const';
 
@@ -94,8 +93,8 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
     models: provider.models.map((model) => ({
       id: model.id,
       enabled: model.enabled,
-      isCustom: model.isCustom ?? true,
-      customName: model.customName ?? model.name,
+      isCustom: true,
+      customName: model.customName ?? model.id,
       customContext: model.customContext,
       customOutput: model.customOutput,
       customCapabilities: model.customCapabilities,
@@ -195,15 +194,13 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
         baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
         sdkType: provider.sdkType,
-        models: provider.models.map((model): UserModelConfig => {
-          const customName = model.customName?.trim() ? model.customName.trim() : undefined;
+        models: provider.models.map((model) => {
+          const customName = model.customName?.trim() ? model.customName.trim() : model.id;
           return {
             id: model.id,
             enabled: model.enabled,
-            isCustom: model.isCustom ?? true,
+            isCustom: true,
             customName,
-            // Backward compatibility: older desktop builds expect `customProviders[].models[].name`.
-            name: customName ?? model.id,
             customContext: model.customContext,
             customOutput: model.customOutput,
             customCapabilities: model.customCapabilities,
