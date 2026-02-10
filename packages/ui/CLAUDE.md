@@ -48,6 +48,7 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
+- 2026-02-10：Streamdown 升级至 v2.2：启用逐词流式动画；统一引入 `streamdown/styles.css` 并 `@source` 扫描 `streamdown/dist/*.js`（Tailwind v4 生成依赖类名）；新增 `findLastTextPartIndex` 供多端精确定位最后一个 text part。
 - 2026-02-08：Message parts 解析抽为纯函数（`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。
 - 2026-02-08：MessageList：未传 threadId 时使用稳定默认 key，避免消息数组截断/压缩导致的意外 remount。
 - 2026-02-08：ConversationViewport：消息区域与 Footer 分离，滚动条仅出现在消息区域（不覆盖输入框）。
@@ -83,4 +84,4 @@ pnpm typecheck
 
 ---
 
-_版本: 4.16 | 更新日期: 2026-02-08_
+_版本: 4.18 | 更新日期: 2026-02-10_

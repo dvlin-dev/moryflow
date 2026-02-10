@@ -5,8 +5,10 @@
 
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'streamdown/styles.css';
 
 @source '../src/**/*.{ts,tsx}';
+@source '../../../node_modules/streamdown/dist/*.js';
 
 @custom-variant dark (&:is(.dark *));
 

@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：Streamdown 升级至 v2.2，流式输出启用逐词动画（仅最后一条 assistant 文本段）
 - Agent Browser Playground：MessageRow parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
 - Playground Shared/Memox 分页箭头统一改为 ChevronRight/ChevronLeft（无中轴）
 - Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式

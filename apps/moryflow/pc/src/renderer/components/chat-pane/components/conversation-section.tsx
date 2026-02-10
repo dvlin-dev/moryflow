@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-03 - 让 MessageList 充满容器，确保 Footer 贴底
  * [UPDATE]: 2026-02-04 - 移除顶部 inset，严格对齐 assistant-ui
  * [UPDATE]: 2026-02-04 - 移除 scrollReady 透传，滚动时机交由 UI 包处理
+ * [UPDATE]: 2026-02-10 - 透传 isLastMessage 给 ChatMessage，用于精确启用 Streamdown 流式动画
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -65,6 +66,7 @@ export const ConversationSection = ({
         footer={footer}
         renderMessage={({ message, index }) => {
           const isLastAssistant = index === lastAssistantIndex;
+          const isLastMessage = index === messages.length - 1;
 
           return (
             <ChatMessage
@@ -72,6 +74,7 @@ export const ConversationSection = ({
               messageIndex={index}
               status={status}
               isLastAssistant={isLastAssistant}
+              isLastMessage={isLastMessage}
               actions={messageActions}
               onToolApproval={onToolApproval}
             />

@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-03 - Thinking 反馈改为 loading icon
  * [UPDATE]: 2026-02-07 - 统一使用 Message（移除 MessageRoot/锚点相关逻辑）
  * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免 PC/Web 重复实现导致语义漂移
+ * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,6 +26,7 @@ import {
   MessageMetaAttachments,
   MessageResponse,
   cleanFileRefMarker,
+  findLastTextPartIndex,
   splitMessageParts,
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
@@ -51,6 +53,7 @@ export const ChatMessage = ({
   messageIndex,
   status,
   isLastAssistant,
+  isLastMessage,
   actions,
   onToolApproval,
 }: ChatMessageProps) => {
@@ -93,6 +96,14 @@ export const ChatMessage = ({
 
   const isStreaming = status === 'streaming' || status === 'submitted';
   const isUser = message.role === 'user';
+  const isAssistant = message.role === 'assistant';
+  const streamdownAnimated = isAssistant && isLastMessage === true;
+  const streamdownIsAnimating = streamdownAnimated && isStreaming;
+
+  const lastTextPartIndex = useMemo(
+    () => (streamdownAnimated ? findLastTextPartIndex(orderedParts) : -1),
+    [orderedParts, streamdownAnimated]
+  );
   const [approvingIds, setApprovingIds] = useState<string[]>([]);
 
   const handleResend = useCallback(() => {
@@ -265,8 +276,14 @@ export const ChatMessage = ({
 
   const renderPart = (part: UIMessage['parts'][number], index: number) => {
     if (isTextUIPart(part)) {
+      const shouldAnimate = streamdownAnimated && index === lastTextPartIndex;
       return (
-        <MessageResponse key={`${message.id}-text-${index}`}>{part.text ?? ''}</MessageResponse>
+        <MessageResponse
+          key={`${message.id}-text-${index}`}
+          {...(shouldAnimate ? { animated: true, isAnimating: streamdownIsAnimating } : {})}
+        >
+          {part.text ?? ''}
+        </MessageResponse>
       );
     }
     if (isReasoningUIPart(part)) {

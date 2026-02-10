@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 注入）
 - Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
 - Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）

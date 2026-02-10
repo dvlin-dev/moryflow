@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Streamdown 升级至 v2.2：聊天流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 统一注入）
 - Workspace Shell：引入 App Mode（Chat/Workspace/Sites），默认 Chat，并支持 `Cmd+1/2/3` 快捷键切换
 - Workspace Shell：修复 ChatPanePortal 渲染容器与主视图容器语义，避免 Chat/Sites 初始错位（内容靠右/不占满）并提升模式切换流畅度
 - useSpeechRecording：disabled 强制清理时保证 stopRecording Promise 正常收敛
