@@ -3,7 +3,7 @@
  * [EMITS]: -
  * [POS]: Sites CMS 主页面（就地读取 workspace contexts），整合列表和详情视图
  *
- * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  * [UPDATE]: 2026-02-09 - 未登录时不请求站点列表/不弹循环 toast，改为显示登录提示空态并引导到 Account 设置页
  */
 
@@ -20,14 +20,14 @@ import type { SitesView, SiteAction, SiteSettings } from './const';
 import { extractErrorMessage } from './const';
 import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
 import {
-  useWorkspaceMode,
+  useWorkspaceNav,
   useWorkspaceShell,
   useWorkspaceTree,
   useWorkspaceVault,
 } from '../../context';
 
 export function SitesPage() {
-  const { mode } = useWorkspaceMode();
+  const { destination } = useWorkspaceNav();
   const { openSettings } = useWorkspaceShell();
   const { isAuthenticated, authLoading, openAccountSettings, requireLoginForSitePublish } =
     useRequireLoginForSitePublish(openSettings);
@@ -71,7 +71,7 @@ export function SitesPage() {
     }
   }, [sites, selectedSite]);
 
-  // 初始化加载（仅在已登录且处于 Sites Mode 时请求）
+  // 初始化加载（仅在已登录且处于 destination=sites 时请求）
   useEffect(() => {
     if (authLoading) return;
 
@@ -85,9 +85,9 @@ export function SitesPage() {
       return;
     }
 
-    if (mode !== 'sites') return;
+    if (destination !== 'sites') return;
     void loadSites();
-  }, [authLoading, isAuthenticated, mode, loadSites]);
+  }, [authLoading, isAuthenticated, destination, loadSites]);
 
   // 点击站点卡片
   const handleSiteClick = useCallback((site: Site) => {
@@ -187,13 +187,13 @@ export function SitesPage() {
     (open: boolean) => {
       setPublishDialogOpen(open);
       if (!open) {
-        // 刷新站点列表（仅在已登录且处于 Sites Mode 时）
-        if (isAuthenticated && mode === 'sites') {
+        // 刷新站点列表（仅在已登录且处于 destination=sites 时）
+        if (isAuthenticated && destination === 'sites') {
           void loadSites();
         }
       }
     },
-    [isAuthenticated, mode, loadSites]
+    [isAuthenticated, destination, loadSites]
   );
 
   // 返回列表

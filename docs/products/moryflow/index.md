@@ -1,6 +1,6 @@
 ---
 title: Moryflow（内部方案）
-date: 2026-02-02
+date: 2026-02-10
 scope: moryflow.com, moryflow.app
 status: draft
 ---
@@ -22,7 +22,8 @@ status: draft
 ## Features（内部技术方案）
 
 - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
-- PC App Modes 方案（Chat / Workspace / Sites）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`
+- PC 左侧 Sidebar 导航方案（Implicit Agent + Modules）：`docs/products/moryflow/features/app-modes/agent-sites-nav-hierarchy.md`（2026-02-10：implemented）
+- PC App Modes 方案（Legacy: Chat / Workspace / Sites；superseded）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`
 - 站点发布（技术方案）：`docs/products/moryflow/features/site-publish/tech.md`
 - 站点模板系统：`docs/products/moryflow/features/site-publish/template-system.md`
 - 积分系统：`docs/products/moryflow/features/credits-system/tech.md`

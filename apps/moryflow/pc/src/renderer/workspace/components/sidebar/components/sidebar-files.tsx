@@ -66,7 +66,7 @@ export const SidebarFiles = memo(function SidebarFiles({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="h-full overflow-hidden px-2.5 py-1">
+        <div className="h-full overflow-hidden px-2 py-1">
           <VaultFiles
             nodes={tree}
             vaultPath={vault?.path}

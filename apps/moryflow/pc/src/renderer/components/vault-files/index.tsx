@@ -6,7 +6,7 @@
 
 import { useState, useMemo, type DragEvent } from 'react';
 import { FilePlus } from 'lucide-react';
-import { Files, FilesHighlight } from '@anyhunt/ui/animate/primitives/base/files';
+import { Files } from '@anyhunt/ui/animate/primitives/base/files';
 import { Button } from '@anyhunt/ui/components/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -140,15 +140,13 @@ export const VaultFiles = ({
           open={expandedPaths}
           onOpenChange={onExpandedPathsChange}
         >
-          <FilesHighlight className="bg-accent rounded-md pointer-events-none">
-            {sortedNodes.map((node) =>
-              node.type === 'folder' ? (
-                <VaultFolder key={node.id} node={node} />
-              ) : (
-                <VaultFile key={node.id} node={node} />
-              )
-            )}
-          </FilesHighlight>
+          {sortedNodes.map((node) =>
+            node.type === 'folder' ? (
+              <VaultFolder key={node.id} node={node} />
+            ) : (
+              <VaultFile key={node.id} node={node} />
+            )
+          )}
         </Files>
       </div>
     </VaultFilesProvider>

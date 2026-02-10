@@ -1,6 +1,6 @@
 import type { CommandAction } from '@/components/command-palette/const';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
-import type { AppMode } from './hooks/use-app-mode';
+import type { AgentSub, Destination } from './navigation/state';
 
 type InputDialogState = {
   open: boolean;
@@ -76,11 +76,11 @@ export type DesktopWorkspaceController = {
   onCreateFolderInRoot: () => void;
 };
 
-export type DesktopWorkspaceModeController = {
-  mode: AppMode;
-  setMode: (mode: AppMode) => void;
-  /** 是否已完成 lastMode 的读取（用于避免首次渲染闪烁） */
-  isModeReady: boolean;
+export type DesktopWorkspaceNavigationController = {
+  destination: Destination;
+  agentSub: AgentSub;
+  go: (destination: Destination) => void;
+  setSub: (sub: AgentSub) => void;
 };
 
 export type DesktopWorkspaceVaultController = {

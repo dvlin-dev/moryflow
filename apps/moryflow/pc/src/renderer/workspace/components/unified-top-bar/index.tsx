@@ -7,15 +7,16 @@
 import { SIDEBAR_MIN_WIDTH, TRAFFIC_LIGHTS_WIDTH, SIDEBAR_TOGGLE_WIDTH } from './const';
 import { SidebarToggle } from './components/sidebar-toggle';
 import { TabList } from './components/tab-list';
-import { useWorkspaceDoc, useWorkspaceMode, useWorkspaceShell } from '../../context';
+import { useWorkspaceDoc, useWorkspaceNav, useWorkspaceShell } from '../../context';
 
 export const UnifiedTopBar = () => {
-  const { mode } = useWorkspaceMode();
+  const { destination, agentSub } = useWorkspaceNav();
   const { sidebarCollapsed, sidebarWidth, toggleSidebarPanel } = useWorkspaceShell();
   const { openTabs, activeDoc, selectedFile, saveState, selectTab, closeTab } = useWorkspaceDoc();
 
-  const tabs = mode === 'workspace' ? openTabs : [];
-  const activePath = mode === 'workspace' ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
+  const showTabs = destination === 'agent' && agentSub === 'workspace';
+  const tabs = showTabs ? openTabs : [];
+  const activePath = showTabs ? (activeDoc?.path ?? selectedFile?.path ?? null) : null;
 
   // 左侧区域宽度：与侧边栏对齐，收起时使用最小宽度
   const leftWidth = sidebarCollapsed

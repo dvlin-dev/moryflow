@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-07 - 统一使用 Message（移除 MessageRoot/锚点相关逻辑）
  * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免 PC/Web 重复实现导致语义漂移
  * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
+ * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -31,6 +32,7 @@ import {
 } from '@anyhunt/ui/ai/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
 import { Loader } from '@anyhunt/ui/ai/loader';
+import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@anyhunt/ui/ai/streamdown-anim';
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
 import {
   Confirmation,
@@ -97,6 +99,7 @@ export const ChatMessage = ({
   const isStreaming = status === 'streaming' || status === 'submitted';
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
+  // STREAMDOWN_ANIM: 只对最后一条 assistant 的最后一个 text part 启用 animated/isAnimating，避免整段消息反复卸载/重渲染。
   const streamdownAnimated = isAssistant && isLastMessage === true;
   const streamdownIsAnimating = streamdownAnimated && isStreaming;
 
@@ -280,7 +283,9 @@ export const ChatMessage = ({
       return (
         <MessageResponse
           key={`${message.id}-text-${index}`}
-          {...(shouldAnimate ? { animated: true, isAnimating: streamdownIsAnimating } : {})}
+          {...(shouldAnimate
+            ? { animated: STREAMDOWN_ANIM_STREAMING_OPTIONS, isAnimating: streamdownIsAnimating }
+            : {})}
         >
           {part.text ?? ''}
         </MessageResponse>

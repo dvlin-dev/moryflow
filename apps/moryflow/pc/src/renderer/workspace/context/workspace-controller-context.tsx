@@ -1,23 +1,23 @@
 /**
  * [PROVIDES]: WorkspaceControllerProvider - Workspace feature 的单例 Controller（hook 只调用一次）
- * [DEPENDS]: useDesktopWorkspace, useAppMode
+ * [DEPENDS]: useDesktopWorkspace, useNavigation
  * [POS]: 解决 DesktopWorkspace 巨型 props 透传：Controller 在 Provider 内创建，并拆分为多个 Context 供子组件就地取值
  */
 
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useAppMode } from '../hooks/use-app-mode';
+import { useNavigation } from '../hooks/use-navigation';
 import { useDesktopWorkspace } from '../handle';
 import type {
   DesktopWorkspaceController,
   DesktopWorkspaceDialogController,
-  DesktopWorkspaceModeController,
+  DesktopWorkspaceNavigationController,
   DesktopWorkspaceVaultController,
   DesktopWorkspaceTreeController,
   DesktopWorkspaceDocController,
   DesktopWorkspaceCommandController,
 } from '../const';
 
-const ModeContext = createContext<DesktopWorkspaceModeController | null>(null);
+const NavigationContext = createContext<DesktopWorkspaceNavigationController | null>(null);
 const VaultContext = createContext<DesktopWorkspaceVaultController | null>(null);
 const TreeContext = createContext<DesktopWorkspaceTreeController | null>(null);
 const DocContext = createContext<DesktopWorkspaceDocController | null>(null);
@@ -28,12 +28,13 @@ export type WorkspaceControllerProviderProps = {
   children: ReactNode;
 };
 
-const createModeController = (
-  modeState: ReturnType<typeof useAppMode>
-): DesktopWorkspaceModeController => ({
-  mode: modeState.mode,
-  setMode: modeState.setMode,
-  isModeReady: modeState.isReady,
+const createNavigationController = (
+  navigationState: ReturnType<typeof useNavigation>
+): DesktopWorkspaceNavigationController => ({
+  destination: navigationState.destination,
+  agentSub: navigationState.agentSub,
+  go: navigationState.go,
+  setSub: navigationState.setSub,
 });
 
 const createVaultController = (
@@ -102,12 +103,17 @@ const createDialogController = (
 });
 
 export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerProviderProps) => {
-  const modeState = useAppMode();
+  const navigationState = useNavigation();
   const controller = useDesktopWorkspace();
 
-  const mode = useMemo(
-    () => createModeController(modeState),
-    [modeState.mode, modeState.setMode, modeState.isReady]
+  const nav = useMemo(
+    () => createNavigationController(navigationState),
+    [
+      navigationState.destination,
+      navigationState.agentSub,
+      navigationState.go,
+      navigationState.setSub,
+    ]
   );
   const vault = useMemo(
     () => createVaultController(controller),
@@ -167,7 +173,7 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
   );
 
   return (
-    <ModeContext.Provider value={mode}>
+    <NavigationContext.Provider value={nav}>
       <VaultContext.Provider value={vault}>
         <TreeContext.Provider value={tree}>
           <DocContext.Provider value={doc}>
@@ -177,7 +183,7 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
           </DocContext.Provider>
         </TreeContext.Provider>
       </VaultContext.Provider>
-    </ModeContext.Provider>
+    </NavigationContext.Provider>
   );
 };
 
@@ -188,8 +194,8 @@ const useRequiredContext = <T,>(ctx: T | null, name: string): T => {
   return ctx;
 };
 
-export const useWorkspaceMode = () =>
-  useRequiredContext(useContext(ModeContext), 'useWorkspaceMode');
+export const useWorkspaceNav = () =>
+  useRequiredContext(useContext(NavigationContext), 'useWorkspaceNav');
 export const useWorkspaceVault = () =>
   useRequiredContext(useContext(VaultContext), 'useWorkspaceVault');
 export const useWorkspaceTree = () =>

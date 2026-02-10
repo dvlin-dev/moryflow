@@ -3,7 +3,7 @@
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
  * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
- * [UPDATE]: 2026-02-08 - 新增 `workspace:getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
+ * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
  * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -47,8 +47,8 @@ import {
   setLastOpenedFile,
   getOpenTabs,
   setOpenTabs,
-  getLastMode,
-  setLastMode,
+  getLastAgentSub,
+  setLastAgentSub,
   getRecentFiles,
   recordRecentFile,
   removeRecentFile,
@@ -231,13 +231,13 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     if (!vaultPath) return null;
     return getLastOpenedFile(vaultPath);
   });
-  ipcMain.handle('workspace:getLastMode', () => getLastMode());
-  ipcMain.handle('workspace:setLastMode', (_event, payload) => {
-    const mode = typeof payload?.mode === 'string' ? payload.mode : '';
-    if (mode !== 'chat' && mode !== 'workspace' && mode !== 'sites') {
+  ipcMain.handle('workspace:getLastAgentSub', () => getLastAgentSub());
+  ipcMain.handle('workspace:setLastAgentSub', (_event, payload) => {
+    const sub = typeof payload?.sub === 'string' ? payload.sub : '';
+    if (sub !== 'chat' && sub !== 'workspace') {
       return;
     }
-    setLastMode(mode);
+    setLastAgentSub(sub);
   });
   ipcMain.handle('workspace:setLastOpenedFile', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
