@@ -47,6 +47,7 @@ import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { CustomProviderModels } from './custom-provider-models';
 import { findFirstEnabledModelId, isModelEnabledWithDefaultFirst } from './provider-models';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 
 type ProviderDetailsProps = {
   providers: SettingsDialogState['providers'];
@@ -130,8 +131,8 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
             }
           : undefined,
         limits: {
-          context: userModel.customContext || 128000,
-          output: userModel.customOutput || 16384,
+          context: userModel.customContext || DEFAULT_CUSTOM_MODEL_CONTEXT,
+          output: userModel.customOutput || DEFAULT_CUSTOM_MODEL_OUTPUT,
         },
       });
     }

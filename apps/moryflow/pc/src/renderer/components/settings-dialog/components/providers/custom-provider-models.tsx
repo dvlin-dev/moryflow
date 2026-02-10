@@ -19,21 +19,10 @@ import {
   type EditModelFormData,
   type EditModelInitialData,
 } from './edit-model-dialog';
-import type { ModelModality } from '@shared/model-registry';
-import type { CustomCapabilities } from './add-model-dialog';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
+import type { UserModelConfig } from '@shared/ipc';
 
-export type CustomProviderModel = {
-  id: string;
-  enabled: boolean;
-  isCustom?: boolean;
-  customName?: string;
-  customContext?: number;
-  customOutput?: number;
-  customCapabilities?: Partial<CustomCapabilities>;
-  customInputModalities?: ModelModality[];
-  /** legacy */
-  name?: string;
-};
+export type CustomProviderModel = UserModelConfig;
 
 type CustomProviderModelsProps = {
   models: CustomProviderModel[];
@@ -72,8 +61,8 @@ export const CustomProviderModels = ({
 
   const resolveModelLimits = (model: CustomProviderModel) => {
     return {
-      context: model.customContext || 128000,
-      output: model.customOutput || 16384,
+      context: model.customContext || DEFAULT_CUSTOM_MODEL_CONTEXT,
+      output: model.customOutput || DEFAULT_CUSTOM_MODEL_OUTPUT,
     };
   };
 

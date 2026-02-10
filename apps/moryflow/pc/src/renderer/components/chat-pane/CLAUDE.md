@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-02-10：自定义服务商模型显示名兜底支持 legacy `name`（`customName` 优先），避免混用旧设置数据时 UI 显示为 ID。
 - 2026-02-08：useChatSessions 改为共享 store，供 Chat Mode Sidebar 与 ChatPane 复用（activeSession 单一事实来源）。
 - 2026-02-09：useChatSessions 增加订阅引用计数，最后一个订阅者卸载时释放 session 事件监听，避免潜在资源泄露或重复监听。
 - 2026-02-08：ChatPane 新增 `variant`（`panel`/`mode`），Chat Mode 主视图隐藏 Header/折叠按钮，避免语义不一致。

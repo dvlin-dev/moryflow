@@ -99,6 +99,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Settings：自定义服务商模型 legacy 字段迁移（`name` -> `customName`）抽到 shared helper，避免 main/renderer preprocess 行为漂移。
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`）并激活
 - workspace-settings：新增 lastMode 持久化与 `workspace:getLastMode/setLastMode` IPC，用于 App Mode（Chat/Workspace/Sites）
 - Chat 主进程持久化改为 UIMessageStream onFinish，并补齐 start/finish chunk，保证 assistant 消息持久化与 ID 稳定

@@ -8,6 +8,7 @@
 
 import type { ReactNode } from 'react';
 import { z, type ZodNumber } from 'zod/v3';
+import { preprocessCustomProviderModelEntry } from '@shared/ipc/agent-settings-legacy';
 
 export type SettingsSection =
   | 'account'
@@ -101,28 +102,10 @@ export const userModelConfigSchema = z.object({
  * - 新结构：UserModelConfig（customName/customContext/...）
  * - 旧结构：{ id, name, enabled }（将 name 迁移到 customName）
  */
-export const customProviderModelSchema = z.preprocess((input) => {
-  if (!input || typeof input !== 'object') {
-    return input;
-  }
-  const raw = input as Record<string, unknown> & { name?: unknown; customName?: unknown };
-
-  const enabled = typeof raw.enabled === 'boolean' ? raw.enabled : true;
-  const customName =
-    typeof raw.customName === 'string'
-      ? raw.customName
-      : typeof raw.name === 'string'
-        ? raw.name
-        : undefined;
-  const isCustom = typeof raw.isCustom === 'boolean' ? raw.isCustom : true;
-
-  return {
-    ...raw,
-    enabled,
-    isCustom,
-    customName,
-  };
-}, userModelConfigSchema);
+export const customProviderModelSchema = z.preprocess(
+  preprocessCustomProviderModelEntry,
+  userModelConfigSchema
+);
 
 /** 预设服务商配置 Schema */
 export const userProviderConfigSchema = z.object({

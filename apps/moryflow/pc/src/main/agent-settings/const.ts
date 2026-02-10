@@ -1,6 +1,7 @@
 import { z, type ZodNumber } from 'zod';
 import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
 import type { AgentSettings } from '../../shared/ipc.js';
+import { preprocessCustomProviderModelEntry } from '../../shared/ipc/agent-settings-legacy.js';
 
 // MCP 服务器配置 Schema
 export const stdioSchema = z.object({
@@ -81,35 +82,10 @@ export const userModelConfigSchema = z.object({
   customInputModalities: z.array(modelModalitySchema).optional(),
 });
 
-/**
- * CustomProviderConfig 的模型条目兼容层：
- * - 新结构：UserModelConfig（id/enabled/customName/...）
- * - 旧结构：{ id, name, enabled }（将 name 迁移到 customName）
- *
- * 注意：这是用户设置数据，必须兼容历史持久化结构。
- */
-const customProviderModelSchema = z.preprocess((input) => {
-  if (!input || typeof input !== 'object') {
-    return input;
-  }
-  const raw = input as Record<string, unknown> & { name?: unknown; customName?: unknown };
-
-  const enabled = typeof raw.enabled === 'boolean' ? raw.enabled : true;
-  const customName =
-    typeof raw.customName === 'string'
-      ? raw.customName
-      : typeof raw.name === 'string'
-        ? raw.name
-        : undefined;
-  const isCustom = typeof raw.isCustom === 'boolean' ? raw.isCustom : true;
-
-  return {
-    ...raw,
-    enabled,
-    isCustom,
-    customName,
-  };
-}, userModelConfigSchema);
+const customProviderModelSchema = z.preprocess(
+  preprocessCustomProviderModelEntry,
+  userModelConfigSchema
+);
 
 // 预设服务商用户配置 Schema
 export const userProviderConfigSchema = z.object({

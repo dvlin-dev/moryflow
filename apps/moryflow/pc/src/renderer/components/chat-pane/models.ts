@@ -137,7 +137,7 @@ const buildOptionsFromCustomProvider = (
     .filter((m) => m.enabled)
     .map((model) => ({
       id: model.id,
-      name: model.customName || (model as any).name || model.id,
+      name: model.customName || model.name || model.id,
       provider: config.name,
       providerSlug,
       providers: providerSlug ? [providerSlug] : [],

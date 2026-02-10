@@ -3,6 +3,7 @@ import type {
   AgentSettingsUpdate,
   UserProviderConfig,
   CustomProviderConfig,
+  UserModelConfig,
 } from '@shared/ipc';
 import type { FormValues } from './const';
 
@@ -94,7 +95,7 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       id: model.id,
       enabled: model.enabled,
       isCustom: model.isCustom ?? true,
-      customName: model.customName,
+      customName: model.customName ?? model.name,
       customContext: model.customContext,
       customOutput: model.customOutput,
       customCapabilities: model.customCapabilities,
@@ -194,7 +195,7 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
         apiKey: provider.apiKey?.trim() ? provider.apiKey.trim() : null,
         baseUrl: provider.baseUrl?.trim() ? provider.baseUrl.trim() : null,
         sdkType: provider.sdkType,
-        models: provider.models.map((model) => {
+        models: provider.models.map((model): UserModelConfig => {
           const customName = model.customName?.trim() ? model.customName.trim() : undefined;
           return {
             id: model.id,
@@ -207,7 +208,7 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
             customOutput: model.customOutput,
             customCapabilities: model.customCapabilities,
             customInputModalities: model.customInputModalities,
-          } as any;
+          };
         }),
         defaultModelId: provider.defaultModelId || null,
       })

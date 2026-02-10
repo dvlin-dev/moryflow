@@ -20,6 +20,7 @@ import { Button } from '@anyhunt/ui/components/button';
 import { Checkbox } from '@anyhunt/ui/components/checkbox';
 import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data';
 import type { ModelModality } from '@shared/model-registry';
+import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
 
 /** 自定义模型能力 */
 export type CustomCapabilities = {
@@ -97,8 +98,8 @@ export const AddModelDialog = ({
 }: AddModelDialogProps) => {
   const [modelId, setModelId] = useState('');
   const [modelName, setModelName] = useState('');
-  const [contextSize, setContextSize] = useState(128000);
-  const [outputSize, setOutputSize] = useState(16384);
+  const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
+  const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
   const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
   const [error, setError] = useState<string | null>(null);
@@ -116,8 +117,8 @@ export const AddModelDialog = ({
   const resetForm = () => {
     setModelId('');
     setModelName('');
-    setContextSize(128000);
-    setOutputSize(16384);
+    setContextSize(DEFAULT_CUSTOM_MODEL_CONTEXT);
+    setOutputSize(DEFAULT_CUSTOM_MODEL_OUTPUT);
     setCapabilities(DEFAULT_CAPABILITIES);
     setInputModalities(DEFAULT_INPUT_MODALITIES);
     setError(null);
@@ -319,7 +320,9 @@ export const AddModelDialog = ({
                   min={1000}
                   max={10000000}
                   value={contextSize}
-                  onChange={(e) => setContextSize(parseInt(e.target.value) || 128000)}
+                  onChange={(e) =>
+                    setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(contextSize / 1000)}K tokens
@@ -334,7 +337,9 @@ export const AddModelDialog = ({
                   min={1000}
                   max={1000000}
                   value={outputSize}
-                  onChange={(e) => setOutputSize(parseInt(e.target.value) || 16384)}
+                  onChange={(e) =>
+                    setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   {Math.round(outputSize / 1000)}K tokens
