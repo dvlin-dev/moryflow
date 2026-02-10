@@ -323,7 +323,7 @@ cd "${SERVER_DIR}"
 set -a
 source "${ENV_FILE}"
 set +a
-exec "${pnpm_bin}" start:prod
+exec "${pnpm_bin}" start:video-transcript-worker
 EOF
   chmod +x "${LAUNCH_SCRIPT_PATH}"
 

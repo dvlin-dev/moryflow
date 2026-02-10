@@ -9,7 +9,19 @@
 import { z } from 'zod';
 
 export const createVideoTranscriptTaskSchema = z.object({
-  url: z.string().url().max(2048),
+  url: z
+    .string()
+    .trim()
+    .url()
+    .max(2048)
+    .refine((value) => {
+      try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    }, 'Only http(s) URLs are supported'),
 });
 
 export type CreateVideoTranscriptTaskDto = z.infer<

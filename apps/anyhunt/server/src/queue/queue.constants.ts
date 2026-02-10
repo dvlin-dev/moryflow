@@ -56,20 +56,6 @@ export interface DigestSourceRefreshJobData {
   sourceType: 'RSS' | 'WEBPAGE' | 'API';
 }
 
-// ========== Video Transcript 任务数据类型 ==========
-
-/** 本地主机转写任务 */
-export interface VideoTranscriptLocalJobData {
-  taskId: string;
-}
-
-/** 云端兜底转写任务 */
-export interface VideoTranscriptCloudFallbackJobData {
-  kind: 'fallback-check' | 'cloud-run';
-  taskId: string;
-  reason?: 'timeout' | 'local-disabled';
-}
-
 // ========== Digest 通知投递任务数据类型 ==========
 
 /** Webhook 投递任务数据 */

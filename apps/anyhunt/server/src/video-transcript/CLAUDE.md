@@ -11,6 +11,9 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 最近更新
 
+- worker 进程启动方式收敛：`worker.ts` 改为 `createApplicationContext`（不提供 HTTP），避免 worker 暴露无关 controllers；同时将 `VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER` / `VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER` 默认值调整为 `false`（必须显式启用），并补齐 URL http(s) 协议校验
+- 新增 Video Transcript worker 独立启动入口 `worker.ts` + 最小启动模块 `video-transcript-worker-app.module.ts`，用于 VPS2/Mac mini worker 进程避免加载全量 `AppModule`（防止误消费其他队列与全局定时任务）
+- LOCAL/CLOUD_FALLBACK 状态推进改为 `updateMany + terminal guard + executor guard`，避免 CANCELLED/接管竞态下被覆盖
 - cloud 接管阶段可靠性补齐：workspace 初始化失败纳入失败终态兜底，避免任务停留在 `DOWNLOADING` 执行态
 - local 启动顺序收敛：先原子写入 `localStartedAt/startedAt`，再调度 fallback-check，严格对齐“执行开始后才计时”
 - `duration probe` 解析增强：从 `yt-dlp` 输出尾部提取有效数值，降低噪声输出导致的预算预估失败率
@@ -47,21 +50,23 @@ Video Transcript 模块提供四平台视频链接（抖音/Bilibili/小红书/Y
 
 ## 目录结构
 
-| 文件                                           | 说明                                |
-| ---------------------------------------------- | ----------------------------------- |
-| `video-transcript.module.ts`                   | 模块装配与 worker 按环境启停        |
-| `video-transcript.controller.ts`               | App API（任务创建/查询/取消）       |
-| `video-transcript-admin.controller.ts`         | Admin API（概览/资源/任务/配置）    |
-| `video-transcript.service.ts`                  | 任务编排、URL 规范化、队列投递      |
-| `video-transcript-local.processor.ts`          | LOCAL 执行路径                      |
-| `video-transcript-cloud-fallback.processor.ts` | CLOUD_FALLBACK 执行路径             |
-| `video-transcript-fallback-scanner.service.ts` | fallback 漏调度补偿扫描（30s）      |
-| `video-transcript-executor.service.ts`         | 下载/抽音频/转写执行器              |
-| `video-transcript-artifact.service.ts`         | R2 产物上传与元数据                 |
-| `video-transcript-budget.service.ts`           | 云端预算闸门                        |
-| `video-transcript-heartbeat.service.ts`        | local 节点心跳与资源上报            |
-| `video-transcript-runtime-config.service.ts`   | 运行时开关读取与覆盖（Redis + env） |
-| `video-transcript-command.service.ts`          | 外部命令执行封装                    |
-| `video-transcript.constants.ts`                | 常量与 key/job 规则                 |
-| `video-transcript.errors.ts`                   | 错误定义                            |
-| `video-transcript.types.ts`                    | 模块类型                            |
+| 文件                                           | 说明                                  |
+| ---------------------------------------------- | ------------------------------------- |
+| `video-transcript.module.ts`                   | 模块装配与 worker 按环境启停          |
+| `video-transcript-worker-app.module.ts`        | worker 最小启动模块（无 Controllers） |
+| `worker.ts`                                    | worker 入口（独立进程启动）           |
+| `video-transcript.controller.ts`               | App API（任务创建/查询/取消）         |
+| `video-transcript-admin.controller.ts`         | Admin API（概览/资源/任务/配置）      |
+| `video-transcript.service.ts`                  | 任务编排、URL 规范化、队列投递        |
+| `video-transcript-local.processor.ts`          | LOCAL 执行路径                        |
+| `video-transcript-cloud-fallback.processor.ts` | CLOUD_FALLBACK 执行路径               |
+| `video-transcript-fallback-scanner.service.ts` | fallback 漏调度补偿扫描（30s）        |
+| `video-transcript-executor.service.ts`         | 下载/抽音频/转写执行器                |
+| `video-transcript-artifact.service.ts`         | R2 产物上传与元数据                   |
+| `video-transcript-budget.service.ts`           | 云端预算闸门                          |
+| `video-transcript-heartbeat.service.ts`        | local 节点心跳与资源上报              |
+| `video-transcript-runtime-config.service.ts`   | 运行时开关读取与覆盖（Redis + env）   |
+| `video-transcript-command.service.ts`          | 外部命令执行封装                      |
+| `video-transcript.constants.ts`                | 常量与 key/job 规则                   |
+| `video-transcript.errors.ts`                   | 错误定义                              |
+| `video-transcript.types.ts`                    | 模块类型                              |

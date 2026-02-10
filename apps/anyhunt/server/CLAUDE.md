@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Video Transcript：新增独立 worker 启动入口（`src/video-transcript/worker.ts` + `src/video-transcript/video-transcript-worker-app.module.ts`），用于 VPS2/Mac mini 仅启动视频队列 worker（不加载全量 AppModule）；Docker 入口支持 `ANYHUNT_RUN_MODE` 与 `ANYHUNT_RUN_MIGRATIONS`，worker 跳过迁移；LOCAL/CLOUD_FALLBACK 状态推进改为 `updateMany + terminal/executor guard` 避免 CANCELLED/接管竞态覆盖
 - Video Transcript：新增 Mac mini local-worker 一键部署脚本（`scripts/video-transcript/setup-local-worker.sh`），统一依赖安装、环境文件写入、`launchd` 注册与启动流程
 - Video Transcript：四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败兜底；local 启动顺序调整为先写 `localStartedAt` 再调度 fallback；`duration probe` 解析增强；补充接管后 workspace 失败回归测试）
 - Video Transcript：三轮可靠性修复（timeout pre-check 失败不误写任务失败、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）

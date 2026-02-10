@@ -290,6 +290,10 @@ export class VideoTranscriptService {
       throw new InvalidVideoSourceUrlError(rawUrl);
     }
 
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new InvalidVideoSourceUrlError(rawUrl);
+    }
+
     parsed.hash = '';
     parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
 

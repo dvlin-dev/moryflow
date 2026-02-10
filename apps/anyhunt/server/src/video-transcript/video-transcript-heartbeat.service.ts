@@ -139,7 +139,7 @@ export class VideoTranscriptHeartbeatService
   private isLocalWorkerEnabled(): boolean {
     return parseBooleanEnv(
       this.configService.get<string>('VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER'),
-      true,
+      false,
     );
   }
 }

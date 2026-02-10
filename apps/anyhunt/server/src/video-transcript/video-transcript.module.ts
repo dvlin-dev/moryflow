@@ -24,22 +24,31 @@ import { VideoTranscriptLocalProcessor } from './video-transcript-local.processo
 import { VideoTranscriptCloudFallbackProcessor } from './video-transcript-cloud-fallback.processor';
 import { VideoTranscriptAdminService } from './video-transcript-admin.service';
 
+export interface VideoTranscriptModuleOptions {
+  /**
+   * 是否注册 HTTP Controllers。
+   * worker 进程不需要对外暴露 API，必须关闭以避免引入 Auth/Admin 等额外依赖。
+   */
+  enableControllers?: boolean;
+}
+
 @Module({})
 export class VideoTranscriptModule {
-  static register(): DynamicModule {
+  static register(options: VideoTranscriptModuleOptions = {}): DynamicModule {
     const enableLocalWorker = parseBooleanEnv(
       process.env.VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER,
-      true,
+      false,
     );
     const enableCloudWorker = parseBooleanEnv(
       process.env.VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER,
-      true,
+      false,
     );
     const enableFallbackScanner = parseBooleanEnv(
       process.env.VIDEO_TRANSCRIPT_ENABLE_FALLBACK_SCANNER,
       !enableLocalWorker && !enableCloudWorker,
     );
 
+    const enableControllers = options.enableControllers ?? true;
     const workerProviders: Provider[] = [
       ...(enableLocalWorker ? [VideoTranscriptLocalProcessor] : []),
       ...(enableCloudWorker ? [VideoTranscriptCloudFallbackProcessor] : []),
@@ -51,7 +60,9 @@ export class VideoTranscriptModule {
     return {
       module: VideoTranscriptModule,
       imports: [QueueModule, StorageModule],
-      controllers: [VideoTranscriptController, VideoTranscriptAdminController],
+      controllers: enableControllers
+        ? [VideoTranscriptController, VideoTranscriptAdminController]
+        : [],
       providers: [
         VideoTranscriptService,
         VideoTranscriptExecutorService,
