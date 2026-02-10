@@ -26,6 +26,7 @@ import {
   type SettingsSection,
 } from './const';
 import { formToUpdate, settingsToForm } from './handle';
+import { agentSettingsResource } from '@/lib/agent-settings-resource';
 
 type SettingsForm = ReturnType<typeof useForm<FormValues>>;
 
@@ -194,32 +195,38 @@ export const useSettingsDialogState = ({
   );
 
   useEffect(() => {
-    if (!open || !window.desktopAPI?.agent) {
+    if (!open) {
       return;
     }
-    const loadSettings = async () => {
-      try {
-        setIsLoading(true);
-        const settings = await window.desktopAPI.agent.getSettings();
-        reset(settingsToForm(settings as AgentSettings));
-      } catch (error) {
+    let cancelled = false;
+
+    setIsLoading(agentSettingsResource.getCached() === null);
+
+    agentSettingsResource
+      .load()
+      .catch((error) => {
         console.error('[settings-dialog] failed to load agent settings', error);
-      } finally {
+      })
+      .finally(() => {
+        if (cancelled) return;
         setIsLoading(false);
-      }
+      });
+
+    return () => {
+      cancelled = true;
     };
-    void loadSettings();
-  }, [open, reset]);
+  }, [open]);
 
   useEffect(() => {
-    if (!window.desktopAPI?.agent?.onSettingsChange) {
+    if (!open) {
       return;
     }
-    const dispose = window.desktopAPI.agent.onSettingsChange((settings: AgentSettings) => {
+    const dispose = agentSettingsResource.subscribe((settings) => {
       reset(settingsToForm(settings));
+      setIsLoading(false);
     });
     return () => dispose?.();
-  }, [reset]);
+  }, [open, reset]);
 
   useEffect(() => {
     let cancelled = false;

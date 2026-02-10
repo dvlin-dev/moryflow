@@ -3,6 +3,7 @@
  * [EMITS]: None
  * [POS]: Agent Playground 对话消息渲染（复用共享消息列表 UI）
  * [UPDATE]: 2026-02-03 - loading 由占位消息渲染，MessageList 不再额外接入
+ * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 文本段启用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,6 +21,8 @@ export interface AgentMessageListProps {
 }
 
 export function AgentMessageList({ messages, status, error }: AgentMessageListProps) {
+  const isRunning = status === 'submitted' || status === 'streaming';
+
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden">
       <MessageList
@@ -30,7 +33,18 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
           title: 'Waiting for you',
           description: 'Send a prompt to start a run.',
         }}
-        renderMessage={({ message }) => <MessageRow message={message} />}
+        renderMessage={({ message, index }) => {
+          const isLastMessage = index === messages.length - 1;
+          const streamdownAnimated = message.role === 'assistant' && isLastMessage;
+          const streamdownIsAnimating = streamdownAnimated && isRunning;
+          return (
+            <MessageRow
+              message={message}
+              streamdownAnimated={streamdownAnimated}
+              streamdownIsAnimating={streamdownIsAnimating}
+            />
+          );
+        }}
       />
       {error ? (
         <div className="px-4 pb-4">

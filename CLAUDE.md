@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-10（Streamdown 2.2 升级：逐词流式动画接入；Tailwind `@source` 扫描 streamdown dist；补齐 `@swc/core` darwin 二进制依赖，确保 `pnpm test:unit` 可运行）
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
 > 最近更新：2026-02-08（协作总则：新增“AI Agent 禁止擅自提交 commit/push，需用户批准”规则）
 > 最近更新：2026-02-07（协作总则：补充“最佳实践优先/允许破坏性重构”行为准则）
@@ -804,4 +805,3 @@ pnpm typecheck
 ---
 
 _版本: 1.2 | 更新日期: 2026-02-07_
-

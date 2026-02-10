@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cleanFileRefMarker, splitMessageParts } from '../src/ai/message';
+import { cleanFileRefMarker, findLastTextPartIndex, splitMessageParts } from '../src/ai/message';
 
 describe('cleanFileRefMarker', () => {
   it('strips referenced files marker at the end of the message', () => {
@@ -32,5 +32,26 @@ describe('splitMessageParts', () => {
     expect(fileParts).toHaveLength(1);
     expect(orderedParts.map((p) => p.type)).toEqual(['text', 'text']);
     expect(messageText).toBe('Hello\nWorld');
+  });
+});
+
+describe('findLastTextPartIndex', () => {
+  it('returns -1 when there are no text parts', () => {
+    expect(findLastTextPartIndex([])).toBe(-1);
+    expect(
+      findLastTextPartIndex([{ type: 'tool' }, { type: 'reasoning' }] as unknown as Parameters<
+        typeof findLastTextPartIndex
+      >[0])
+    ).toBe(-1);
+  });
+
+  it('returns the last text part index', () => {
+    expect(
+      findLastTextPartIndex([
+        { type: 'text', text: 'a' },
+        { type: 'tool' },
+        { type: 'text', text: 'b' },
+      ] as unknown as Parameters<typeof findLastTextPartIndex>[0])
+    ).toBe(2);
   });
 });

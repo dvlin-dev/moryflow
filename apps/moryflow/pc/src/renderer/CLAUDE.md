@@ -62,13 +62,13 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ### 工作区目录（workspace/）
 
-| 文件               | 说明                     |
-| ------------------ | ------------------------ |
-| `index.tsx`        | 工作区入口，管理面板布局 |
-| `components/`      | 工作区子组件             |
-| `hooks/`           | 工作区专用 Hooks         |
-| `file-operations/` | 文件操作相关             |
-| `preload-*.ts`     | 预加载配置               |
+| 文件                        | 说明                                                   |
+| --------------------------- | ------------------------------------------------------ |
+| `index.tsx`                 | 工作区入口，管理面板布局                               |
+| `components/`               | 工作区子组件                                           |
+| `hooks/`                    | 工作区专用 Hooks                                       |
+| `file-operations/`          | 文件操作相关                                           |
+| `hooks/use-startup-perf.ts` | 启动性能打点 + 轻量 warmup（仅 `import()` 预热重模块） |
 
 ### Hooks 目录（hooks/）
 
@@ -93,6 +93,8 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- 启动性能：移除 `preload:*` IPC/落盘缓存，warmup 回退为 Renderer 侧轻量 `import()`（仅 ChatPane/Shiki）；AgentSettings 读取收敛为单飞资源，修复设置弹窗偶发一直 Loading
+- Streamdown 升级至 v2.2：聊天流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 统一注入）
 - Workspace Shell：引入 App Mode（Chat/Workspace/Sites），默认 Chat，并支持 `Cmd+1/2/3` 快捷键切换
 - Workspace Shell：修复 ChatPanePortal 渲染容器与主视图容器语义，避免 Chat/Sites 初始错位（内容靠右/不占满）并提升模式切换流畅度
 - useSpeechRecording：disabled 强制清理时保证 stopRecording Promise 正常收敛

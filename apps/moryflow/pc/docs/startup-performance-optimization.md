@@ -1,6 +1,8 @@
 # 桌面端启动与首屏性能优化方案（建议稿）
 
 > 目标：减少“重新打开应用白屏 + 卡顿 3~5 秒”，让首屏尽快可交互，同时保持 Vault/聊天能力完整与一致性。
+>
+> 更新（2026-02-10）：原 `preloadRegistry + electron-store` 的跨重启预取元数据方案已回退，改为 Renderer 侧轻量 warmup（仅 `import()`，不走 IPC/落盘缓存），优先保证交互稳定与低维护。
 
 ## 现状与瓶颈
 
@@ -32,10 +34,10 @@
 
 ### 3) Editor/Chat 后台预加载与拆包
 
-- 首屏先渲染轻量占位；在 `requestIdleCallback` 或 `postMessage` 中 `import()` Editor/Chat chunk 并缓存模块引用（渲染进程单例）。
+- 首屏先渲染轻量占位；在「用户首次交互后」的 `requestIdleCallback` 中仅 `import()` 预热少量重模块（如 ChatPane/Shiki），避免与首屏竞争。
 - NotionEditor 拆分为「核心 + 扩展懒加载」（图片/表格/数学/AI 工具条按首次使用再拉取）。
 - Chat 同理：基础会话 UI 预取，shiki 语言包、MCP 设置等按需加载。
-- 依赖 Electron 自带缓存或 IndexedDB 记录预热结果，重启命中，避免重复下载。
+- 不做跨重启“预取元数据落盘”，降低维护成本并避免主进程写盘带来的抖动风险。
 
 ### 4) 首屏 Skeleton 与渐进填充
 
@@ -51,15 +53,15 @@
 ## 风险与对策
 
 - Watcher 范围收缩可能漏外部改动：通过根浅层 watcher 或周期性差异校验兜底。
-- 动态导入 hash 变化导致缓存失效：缓存 key 包含 chunk 路径 + mtime，失配时回退在线加载。
+- warmup 抢占主线程导致卡顿：仅在首次交互后触发、idle 串行执行、失败静默；可通过 `localStorage` 开关 `warmup:disable=1` 禁用。
 - 虚拟滚动与键盘导航/选中状态兼容性：采用「扁平化后虚拟化」策略，选中状态在扁平列表层维护。
 
 ## 第 3 周拆包与预取设计（部分落地）
 
 - **拆包**：DesktopWorkspace 中 Editor/Chat 已改为 `React.lazy` + `Suspense`，重组件不在入口直接 import；后续可继续拆 Editor 扩展/Chat 重块（shiki/设置）。
-- **预取**：Skeleton 渲染后 idle 阶段触发 `Promise.all([import(EditorChunk), import(ChatChunk)])` 预热，结果写入渲染进程 `preloadRegistry`，元数据落盘（electron-store，key+loadedAt+hash+appVersion），TTL 判定跳过重复预热；hash 变更或 appVersion 变更则强制重预热。完成时打点 `editor:chunk-loaded`、`chat:chunk-loaded`（start/end mark + measure）；shiki、Editor 扩展块、AI 工具栏、设置弹窗均纳入预取并缓存 hash。
+- **Warmup**：Skeleton 渲染后在「首次交互后」的 idle 阶段串行 `import()` 预热少量重模块（如 ChatPane/Shiki），不做 preload registry/落盘 cache，避免额外 IPC/写盘与策略维护。
 - **渲染切换**：Editor/Chat 区域用 `Suspense` 包裹，fallback 复用 Skeleton；预取后首次挂载不再阻塞。
-- **待补充**：缓存元数据（chunk 路径 + mtime）写入 IndexedDB/electron-store，跨重启命中预热；进一步拆 Editor 扩展与 Chat 重依赖。
+- **待补充**：进一步拆 Editor 扩展与 Chat 重依赖；仅在明确重且高频时考虑加入 warmup 任务表。
 
 ## 推进顺序（按周可执行计划）
 
@@ -81,22 +83,22 @@
 
 - [完成] 第 1 周：`readTreeRoot/Children` 拆分、默认折叠与展开记忆、骨架 UI。渲染层默认折叠 + 懒加载（受控展开、按需 `readTreeChildren`、展开路径存 electron-store），首屏 Skeleton 已接入。
 - [完成] 第 2 周：树扁平化 + 虚拟滚动；Watcher 深度 2、延迟 800ms 启动，展开目录白名单监听，兜底定时提醒已移除。
-- [完成] 第 3 周：Editor/Chat/shiki/编辑器扩展/AI 工具栏/设置弹窗全部 lazy + idle 预取，预取元数据（key+hash+appVersion+时间）落盘；hash 或 app 版本变更强制重预热；支持 `localStorage` 开关 `preload:disable` 跳过预取。
+- [完成] 第 3 周：Editor/Chat 等重组件 lazy + `Suspense`；warmup 回退为 Renderer 侧轻量 `import()`（仅 ChatPane/Shiki），支持 `localStorage` 开关 `warmup:disable` 禁用，优先保证交互稳定与低维护。
 - [进行中/收尾] 第 4 周：缓存树 + mtime 启动渲染已接入（缓存渲染 → 后台刷新 → 写回缓存）；Watcher ready 时对比缓存快照发现差异则触发刷新并更新缓存。后续可补：缓存树 mtime 细粒度增量、重依赖懒加载补完（如特定语言包/Math 渲染器）。
 - [待滚动推进] 持续调优 watcher 与预取参数（延时、TTL、白名单），按需扩展预取表。
 
 ## 第 4 周方案（分三个阶段）
 
-1) 缓存树 + mtime 启动渲染  
-   - 缓存结构：{ nodes: VaultTreeNode[], capturedAt, mtimeSnapshot: Record<path, mtime> }，按 Vault 路径分桶存 electron-store。  
-   - 启动：若有缓存，先用缓存树 + 展开状态渲染；后台并行 readTreeRoot/Children 拉最新，比对 mtimeSnapshot 有差异才局部 refresh；无缓存则正常全量。  
+1. 缓存树 + mtime 启动渲染
+   - 缓存结构：{ nodes: VaultTreeNode[], capturedAt, mtimeSnapshot: Record<path, mtime> }，按 Vault 路径分桶存 electron-store。
+   - 启动：若有缓存，先用缓存树 + 展开状态渲染；后台并行 readTreeRoot/Children 拉最新，比对 mtimeSnapshot 有差异才局部 refresh；无缓存则正常全量。
    - 更新：拉新成功后重写缓存（nodes + mtimeSnapshot）；失败回退缓存并提示刷新。
 
-2) chokidar ready 增量校验  
-   - watcher ready 后做一次增量对比（利用 chokidar 收集路径或自维护根快照 vs 缓存 mtimeSnapshot），差异路径触发小范围 readTreeChildren 更新。  
+2. chokidar ready 增量校验
+   - watcher ready 后做一次增量对比（利用 chokidar 收集路径或自维护根快照 vs 缓存 mtimeSnapshot），差异路径触发小范围 readTreeChildren 更新。
    - 文件 CRUD 成功后同步更新快照；增量失败则回退一次性 readTreeRoot/Children 全量更新并重建快照。
 
-3) 重依赖懒加载/延迟加载补全  
-   - 列出剩余重块（如 shiki 语言包子集、Math 渲染器、AI 提示重模块等），导出 hash 并注册到 preloadChunks 或保留按需 lazy。  
-   - 预取元数据继续落盘（key+hash+appVersion+时间），hash/app 变更强制预热；遵循 `preload:disable` 开关。  
-   - 验证：首次使用相关功能无明显卡顿，预取/懒加载行为一致。
+3. 重依赖懒加载/延迟加载补全
+
+- 列出剩余重块（如 shiki 语言包子集、Math 渲染器、AI 提示重模块等），优先保持按需 lazy；仅在明确“重且高频”时加入 warmup 任务表。
+- 验证：首次使用相关功能无明显卡顿，预取/懒加载行为一致。

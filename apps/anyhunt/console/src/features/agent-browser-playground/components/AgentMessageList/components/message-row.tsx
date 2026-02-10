@@ -4,6 +4,7 @@
  * [POS]: AgentMessageList 的单条消息展示
  * [UPDATE]: 2026-02-03 - thinking 占位改为 loading icon（由空消息触发）
  * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
+ * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,6 +17,7 @@ import {
   MessageMetaAttachments,
   MessageResponse,
   cleanFileRefMarker,
+  findLastTextPartIndex,
   splitMessageParts,
   type MessageAttachmentLabels,
 } from '@anyhunt/ui/ai/message';
@@ -38,6 +40,8 @@ const ATTACHMENT_LABELS: MessageAttachmentLabels = {
 
 type MessageRowProps = {
   message: UIMessage;
+  streamdownAnimated?: boolean;
+  streamdownIsAnimating?: boolean;
 };
 
 const getMessageMeta = (message: UIMessage): ChatMessageMeta => {
@@ -45,12 +49,17 @@ const getMessageMeta = (message: UIMessage): ChatMessageMeta => {
   return meta?.chat ?? {};
 };
 
-export function MessageRow({ message }: MessageRowProps) {
+export function MessageRow({
+  message,
+  streamdownAnimated,
+  streamdownIsAnimating,
+}: MessageRowProps) {
   const { fileParts, orderedParts, messageText } = splitMessageParts(message.parts);
   const { attachments: chatAttachments = [] } = getMessageMeta(message);
 
   const displayText = message.role === 'user' ? cleanFileRefMarker(messageText) : messageText;
   const shouldShowMetaAttachments = message.role === 'user' && chatAttachments.length > 0;
+  const lastTextPartIndex = streamdownAnimated ? findLastTextPartIndex(orderedParts) : -1;
 
   const renderMessageBody = () => {
     if (message.role === 'user') {
@@ -61,8 +70,16 @@ export function MessageRow({ message }: MessageRowProps) {
     }
     return orderedParts.map((part, index) => {
       if (isTextUIPart(part)) {
+        const shouldAnimate = streamdownAnimated && index === lastTextPartIndex;
         return (
-          <MessageResponse key={`${message.id}-text-${index}`}>{part.text ?? ''}</MessageResponse>
+          <MessageResponse
+            key={`${message.id}-text-${index}`}
+            {...(shouldAnimate
+              ? { animated: true, isAnimating: Boolean(streamdownIsAnimating) }
+              : {})}
+          >
+            {part.text ?? ''}
+          </MessageResponse>
         );
       }
       if (isReasoningUIPart(part)) {

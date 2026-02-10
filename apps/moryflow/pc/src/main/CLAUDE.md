@@ -47,8 +47,6 @@ PC 端 Electron 应用的主进程，负责系统级操作、文件访问、网�
 | `ollama-service/`             | 目录 | 本地 Ollama 服务                        |
 | `vault.ts`                    | 文件 | 知识库核心逻辑                          |
 | `tree-cache.ts`               | 文件 | 文件树缓存                              |
-| `preload-cache.ts`            | 文件 | 预加载缓存                              |
-| `preload-settings.ts`         | 文件 | 预加载设置                              |
 | `workspace-settings.ts`       | 文件 | 工作区设置                              |
 | `workspace-settings.utils.ts` | 文件 | 工作区 MRU 规则工具                     |
 | `membership-bridge.ts`        | 文件 | 会员状态桥接                            |
@@ -100,6 +98,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 ## 近期变更
 
 - Agent Settings：schema 校验失败时回退默认设置（新用户最佳实践：不做历史结构迁移）。
+- 启动性能：移除 `preload:*` IPC handlers 与预加载落盘缓存（避免主进程写盘抖动；预热回退为 Renderer 侧轻量 warmup）
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`）并激活
 - workspace-settings：新增 lastMode 持久化与 `workspace:getLastMode/setLastMode` IPC，用于 App Mode（Chat/Workspace/Sites）
 - Chat 主进程持久化改为 UIMessageStream onFinish，并补齐 start/finish chunk，保证 assistant 消息持久化与 ID 稳定

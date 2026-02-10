@@ -1,7 +1,8 @@
 /**
- * [PROVIDES]: splitMessageParts/cleanFileRefMarker - UIMessage parts 解析工具
+ * [PROVIDES]: splitMessageParts/cleanFileRefMarker/findLastTextPartIndex - UIMessage parts 解析工具
  * [DEPENDS]: ai（UIMessage + type guards）
  * [POS]: 共享“消息渲染前”的纯函数，避免 PC/Web 各自实现 parts 拆分与尾部标记清理导致语义漂移
+ * [UPDATE]: 2026-02-10 - 新增 findLastTextPartIndex：用于 Streamdown 流式动画精确定位最后一个 text part
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,6 +16,18 @@ import type { FileUIPart, UIMessage } from 'ai';
 const FILE_REF_REGEX = /\n\n\[Referenced files: [^\]]+\]$/;
 
 export const cleanFileRefMarker = (text: string): string => text.replace(FILE_REF_REGEX, '');
+
+/** 找出 orderedParts 中最后一个 text part 的索引；不存在则返回 -1 */
+export const findLastTextPartIndex = (orderedParts: UIMessage['parts'][number][]): number => {
+  for (let index = orderedParts.length - 1; index >= 0; index -= 1) {
+    const part = orderedParts[index];
+    if (part && isTextUIPart(part)) {
+      return index;
+    }
+  }
+
+  return -1;
+};
 
 export type SplitMessageParts = {
   fileParts: FileUIPart[];
