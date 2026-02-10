@@ -78,11 +78,6 @@ export interface UserModelConfig {
   enabled: boolean;
   /** 是否为用户自定义添加的模型（非预设） */
   isCustom?: boolean;
-  /**
-   * @deprecated Legacy display name for older desktop builds.
-   * Use `customName` instead.
-   */
-  name?: string;
   /** 自定义模型显示名称 */
   customName?: string;
   /** 自定义上下文窗口大小 */

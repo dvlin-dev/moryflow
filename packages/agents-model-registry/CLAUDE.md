@@ -29,7 +29,7 @@
 - 补齐 Anthropic/Google/xAI 默认 Base URL
 - 模型/服务商注册表基线整理
 - CustomProviderConfig.models 与 UserProviderConfig.models 结构对齐（支持 customName/customContext 等）
-- UserModelConfig 增加 deprecated `name?: string`：兼容旧版桌面端自定义服务商模型显示名（新字段为 `customName`）
+- 移除 UserModelConfig legacy `name` 字段，统一使用 `customName`
 
 ---
 
