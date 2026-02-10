@@ -4,6 +4,7 @@
  * [POS]: Agent Playground 对话消息渲染（复用共享消息列表 UI）
  * [UPDATE]: 2026-02-03 - loading 由占位消息渲染，MessageList 不再额外接入
  * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 文本段启用
+ * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（上层动画 gating）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -35,6 +36,7 @@ export function AgentMessageList({ messages, status, error }: AgentMessageListPr
         }}
         renderMessage={({ message, index }) => {
           const isLastMessage = index === messages.length - 1;
+          // STREAMDOWN_ANIM: 上层只把“是否最后一条 assistant + 是否 streaming”透传给 MessageRow。
           const streamdownAnimated = message.role === 'assistant' && isLastMessage;
           const streamdownIsAnimating = streamdownAnimated && isRunning;
           return (
