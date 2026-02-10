@@ -181,6 +181,12 @@ describe('VideoTranscriptService', () => {
         service.createTask('user_1', 'https://example.com/video/123'),
       ).rejects.toBeInstanceOf(UnsupportedVideoPlatformError);
     });
+
+    it('should reject hostnames that only suffix-match supported hosts', async () => {
+      await expect(
+        service.createTask('user_1', 'https://evilyoutube.com/watch?v=abc123'),
+      ).rejects.toBeInstanceOf(UnsupportedVideoPlatformError);
+    });
   });
 
   describe('cancelTask', () => {

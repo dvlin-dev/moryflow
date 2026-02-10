@@ -312,33 +312,34 @@ export class VideoTranscriptService {
   private detectPlatform(sourceUrl: string): VideoPlatform {
     let hostname = '';
     try {
-      hostname = new URL(sourceUrl).hostname.toLowerCase();
+      hostname = new URL(sourceUrl).hostname
+        .toLowerCase()
+        .replace(/\.$/, '')
+        .replace(/^www\./, '');
     } catch {
       throw new InvalidVideoSourceUrlError(sourceUrl);
     }
 
-    if (
-      !VIDEO_TRANSCRIPT_SUPPORTED_HOSTS.some((host) => hostname.endsWith(host))
-    ) {
+    const matchesHost = (host: string) =>
+      hostname === host || hostname.endsWith(`.${host}`);
+
+    if (!VIDEO_TRANSCRIPT_SUPPORTED_HOSTS.some(matchesHost)) {
       throw new UnsupportedVideoPlatformError(sourceUrl);
     }
 
-    if (hostname.endsWith('douyin.com') || hostname.endsWith('iesdouyin.com')) {
+    if (matchesHost('douyin.com') || matchesHost('iesdouyin.com')) {
       return 'douyin';
     }
 
-    if (hostname.endsWith('bilibili.com') || hostname.endsWith('b23.tv')) {
+    if (matchesHost('bilibili.com') || matchesHost('b23.tv')) {
       return 'bilibili';
     }
 
-    if (
-      hostname.endsWith('xiaohongshu.com') ||
-      hostname.endsWith('xhslink.com')
-    ) {
+    if (matchesHost('xiaohongshu.com') || matchesHost('xhslink.com')) {
       return 'xiaohongshu';
     }
 
-    if (hostname.endsWith('youtube.com') || hostname.endsWith('youtu.be')) {
+    if (matchesHost('youtube.com') || matchesHost('youtu.be')) {
       return 'youtube';
     }
 
