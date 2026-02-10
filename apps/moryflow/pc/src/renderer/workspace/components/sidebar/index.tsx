@@ -5,6 +5,7 @@
  *
  * [UPDATE]: 2026-02-09 - Publish 入口未登录时不再触发后台请求，改为引导登录（Account 设置页）
  * [UPDATE]: 2026-02-10 - destination!=agent 时 New thread/New file 作为 Open intent：回跳到 Agent 后再执行创建
+ * [UPDATE]: 2026-02-10 - 文件树内的新建文件也视为 Open intent：回跳到 Agent/Workspace 后再创建
  * [UPDATE]: 2026-02-10 - Sidebar 顶部布局调整：Sites 全局置顶；Workspace 行下移；去掉 Agent 文本标签；Pages 统一为 Files
  */
 
@@ -136,6 +137,15 @@ export const Sidebar = () => {
     createFileInRoot();
   }, [agent, createFileInRoot]);
 
+  const handleCreateFileInTree = useCallback(
+    (node: VaultTreeNode) => {
+      // Treat "create file" as an Open intent: user expects to land in Agent/Workspace.
+      agent.setSub('workspace');
+      createFileInTree(node);
+    },
+    [agent, createFileInTree]
+  );
+
   const handleCreateFolderInRoot = useCallback(() => {
     agent.setSub('workspace');
     createFolderInRoot();
@@ -237,11 +247,11 @@ export const Sidebar = () => {
                   onOpenFile={agent.openFile}
                   onRename={renameTreeNode}
                   onDelete={deleteTreeNode}
-                  onCreateFile={createFileInTree}
+                  onCreateFile={handleCreateFileInTree}
                   onShowInFinder={showInFinder}
                   onMove={moveTreeNode}
-                  onCreateFileInRoot={createFileInRoot}
-                  onCreateFolderInRoot={createFolderInRoot}
+                  onCreateFileInRoot={handleCreateFileInRoot}
+                  onCreateFolderInRoot={handleCreateFolderInRoot}
                   onPublish={handlePublish}
                 />
               )}
