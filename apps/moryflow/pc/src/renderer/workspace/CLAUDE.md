@@ -1,13 +1,13 @@
 # Workspace（Moryflow PC）
 
-> ⚠️ 本目录结构或关键状态流变更时必须同步更新本文件
+> 注意：本目录结构或关键状态流变更时必须同步更新本文件
 
 ## 定位
 
 Moryflow PC 的 “Workspace feature root”：
 
 - 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Command/Dialog）
-- 负责 Mode-aware 的窗口布局（Chat / Workspace / Sites）
+- 负责 Navigation-aware 的窗口布局（destination：Agent / Sites；AgentSub：Chat / Workspace）
 - 通过 **Context 分片**避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
@@ -27,8 +27,11 @@ Moryflow PC 的 “Workspace feature root”：
 - `desktop-workspace-shell.tsx`
   - `DesktopWorkspaceShell`：布局与 panel 行为（Resizable panels / portal hosts / keep-alive）
   - 只做 “Shell”，不承载业务状态（业务来自 contexts）
+- `navigation/`
+  - `navigation/state.ts`：NavigationState（destination + agentSub）与纯 transitions（SSOT，无副作用）
+  - `navigation/agent-actions.ts`：Coordinator（Open intents 回跳到 Agent；Inline actions 就地生效）
 - `context/`
-  - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useAppMode()`，拆分并提供多个 contexts
+  - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，拆分并提供多个 contexts
   - `workspace-shell-context.tsx`：提供 Shell UI 状态/动作（sidebarWidth/toggle panels/openSettings）
 - `const.ts`
   - Workspace 共享类型中心（SelectedFile/ActiveDocument/RequestState/Controller 类型等）
@@ -36,7 +39,7 @@ Moryflow PC 的 “Workspace feature root”：
 ## Context 边界（建议）
 
 - Controller contexts（全局业务状态）
-  - mode/vault/tree/doc/command/dialog
+  - navigation/vault/tree/doc/command/dialog
 - Shell context（仅布局层）
   - sidebarCollapsed、sidebarWidth、toggleSidebarPanel、chatCollapsed、toggleChatPanel、openSettings
 
@@ -55,5 +58,6 @@ pnpm test:unit
 - 2026-02-10：移除 `preload:*` IPC/落盘缓存与 Workspace preload service，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki；无额外 IPC/写盘）。
 - 2026-02-10：SettingsDialog/Theme/模型选择统一走 AgentSettings 单飞资源，降低重复 IPC，修复设置弹窗偶发一直 Loading。
 - 2026-02-09：恢复工作区持久化的 `openTabs/lastOpenedFile` 时增加过滤（仅保留 Vault 内的绝对路径），避免旧版特殊 tab/非法路径被当作文件加载导致报错。
-- 2026-02-09：Sites Mode 视图 keep-alive/预热挂载不再触发未登录的站点列表请求；发布入口未登录时引导到 Account 设置页登录。
+- 2026-02-09：Sites destination 视图 keep-alive/预热挂载不再触发未登录的站点列表请求；发布入口未登录时引导到 Account 设置页登录。
 - 2026-02-10：新增 `useRequireLoginForSitePublish`，统一 Sites/Publish 的登录校验与引导逻辑。
+- 2026-02-10：导航细节修复：移除未消费的 ready 字段；快捷键避开输入框/IME；AgentSubSwitcher 补齐 tab/tabpanel；New thread/New file 作为 Open intent 回跳到 Agent；ChatPanePortal portalRoot 初始化形式更纯。

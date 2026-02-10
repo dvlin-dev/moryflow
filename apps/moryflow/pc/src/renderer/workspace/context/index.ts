@@ -3,7 +3,7 @@ export {
   useWorkspaceCommand,
   useWorkspaceDialog,
   useWorkspaceDoc,
-  useWorkspaceMode,
+  useWorkspaceNav,
   useWorkspaceTree,
   useWorkspaceVault,
 } from './workspace-controller-context';

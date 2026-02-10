@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
+// STREAMDOWN_ANIM: 该测试只验证 ReasoningContent 是否在 streaming 时把 animated/isAnimating 透传给 Streamdown。
 vi.mock('streamdown', () => ({
   Streamdown: ({
     children,

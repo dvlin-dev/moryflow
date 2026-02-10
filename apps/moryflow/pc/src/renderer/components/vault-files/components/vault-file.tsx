@@ -7,12 +7,6 @@
 import type { DragEvent } from 'react';
 import { File } from 'lucide-react';
 import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
-import {
-  FileHighlight as FileHighlightPrimitive,
-  File as FilePrimitive,
-  FileIcon as FileIconPrimitive,
-  FileLabel as FileLabelPrimitive,
-} from '@anyhunt/ui/animate/primitives/base/files';
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuAction } from '../const';
@@ -73,24 +67,20 @@ export const VaultFile = ({ node }: VaultFileProps) => {
           draggable
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onClick={handleClick}
-          className={cn('w-full min-w-0 cursor-pointer select-none', isDragging && 'opacity-50')}
+          className={cn(
+            'group flex w-full min-w-0 items-center rounded-md text-sm transition-colors hover:bg-muted/40',
+            isSelected && 'bg-accent/60 text-foreground',
+            isDragging && 'opacity-50'
+          )}
         >
-          <FileHighlightPrimitive className="w-full min-w-0 overflow-hidden">
-            <FilePrimitive
-              className={cn(
-                'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-[18px] pr-2 pointer-events-none',
-                isSelected && 'bg-accent'
-              )}
-            >
-              <FileIconPrimitive className="shrink-0">
-                <File className="size-4 text-muted-foreground" />
-              </FileIconPrimitive>
-              <FileLabelPrimitive className="min-w-0 flex-1 truncate text-sm">
-                {node.name}
-              </FileLabelPrimitive>
-            </FilePrimitive>
-          </FileHighlightPrimitive>
+          <button
+            type="button"
+            onClick={handleClick}
+            className="flex w-full min-w-0 items-center gap-2 px-2.5 py-1.5 text-left outline-hidden"
+          >
+            <File className="size-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 truncate">{node.name}</span>
+          </button>
         </div>
       </ContextMenuTrigger>
       <NodeContextMenu items={FILE_MENU_ITEMS} onAction={handleMenuAction} />

@@ -1,6 +1,6 @@
 # Sites CMS 组件
 
-> 站点管理 CMS 界面，作为 Workspace Shell 的 `Sites` Mode 主视图渲染（入口来自左侧 Mode Switcher）。
+> 站点管理 CMS 界面，作为 Workspace Shell 的 `destination='sites'` 主视图渲染（入口来自 Sidebar 顶部 Modules：Sites）。
 
 ## 组件结构
 
@@ -36,7 +36,7 @@
 ```
 SitesPage
   ├─ 从 workspace contexts 读取 currentVaultPath/currentTree（用于 FilePickerDialog 的“当前工作区”快速路径）
-  ├─ loadSites()（仅在已登录且处于 Sites Mode 时）→ desktopAPI.sitePublish.list()
+  ├─ loadSites()（仅在已登录且 destination='sites' 时）→ desktopAPI.sitePublish.list()
   │
   ├─ SiteList (list 视图)
   │   ├─ SiteCard × N
@@ -74,5 +74,5 @@ SitesPage
 
 - Sites CMS 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
 - FilePickerDialog 下拉指示图标改为无中轴样式（ChevronDown）
-- 未登录时 Sites Mode 不再自动请求站点列表；Publish 入口改为引导到 Account 设置页登录
+- 未登录时 destination='sites' 不再自动请求站点列表；Publish 入口改为引导到 Account 设置页登录
 - Publish 登录校验逻辑收敛到 `workspace/hooks/use-require-login-for-site-publish.ts`

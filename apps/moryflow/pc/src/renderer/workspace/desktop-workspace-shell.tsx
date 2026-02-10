@@ -1,6 +1,6 @@
 /**
  * [INPUT]: workspace/controller contexts + shell UI state（panel refs）
- * [OUTPUT]: Mode-aware Workspace Shell（Sidebar + Main + Panels）
+ * [OUTPUT]: Navigation-aware Workspace Shell（Sidebar + Main + Panels）
  * [POS]: DesktopWorkspaceShell - 桌面工作区主视图壳层（负责布局与 panel 行为，不承载业务状态）
  */
 
@@ -41,7 +41,7 @@ import {
   useWorkspaceCommand,
   useWorkspaceDialog,
   useWorkspaceDoc,
-  useWorkspaceMode,
+  useWorkspaceNav,
   useWorkspaceTree,
   useWorkspaceVault,
 } from './context';
@@ -54,7 +54,7 @@ export const DesktopWorkspaceShell = () => {
   const markOnce = usePerfMarker();
   const hasInteracted = useFirstInteraction({ markOnce });
 
-  const { mode } = useWorkspaceMode();
+  const { destination, agentSub } = useWorkspaceNav();
   const { vault } = useWorkspaceVault();
   const { tree, treeState } = useWorkspaceTree();
   const { selectedFile, activeDoc, docState } = useWorkspaceDoc();
@@ -74,23 +74,23 @@ export const DesktopWorkspaceShell = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN_WIDTH);
 
-  // Keep-alive main views so switching modes is instant after the first mount.
-  const [workspaceMainMounted, setWorkspaceMainMounted] = useState(mode === 'workspace');
-  const [sitesMainMounted, setSitesMainMounted] = useState(mode === 'sites');
+  // Keep-alive main views so switching destination/agentSub is instant after the first mount.
+  const [workspaceMainMounted, setWorkspaceMainMounted] = useState(agentSub === 'workspace');
+  const [sitesMainMounted, setSitesMainMounted] = useState(destination === 'sites');
 
   useEffect(() => {
-    if (mode === 'workspace') {
+    if (agentSub === 'workspace') {
       setWorkspaceMainMounted(true);
     }
-    if (mode === 'sites') {
+    if (destination === 'sites') {
       setSitesMainMounted(true);
     }
-  }, [mode]);
+  }, [agentSub, destination]);
 
   // ChatPane portal targets:
-  // - Chat Mode: render in main area
-  // - Workspace Mode: render in right assistant panel
-  // - Sites Mode: keep alive in a hidden parking host (not visible)
+  // - destination=agent, agentSub=chat: render in main area
+  // - destination=agent, agentSub=workspace: render in right assistant panel
+  // - destination=sites: keep alive in a hidden parking host (not visible)
   const [chatMainHost, setChatMainHost] = useState<HTMLElement | null>(null);
   const [chatPanelHost, setChatPanelHost] = useState<HTMLElement | null>(null);
   const [chatParkingHost, setChatParkingHost] = useState<HTMLElement | null>(null);
@@ -263,8 +263,12 @@ export const DesktopWorkspaceShell = () => {
   const renderVaultWorkspace = () => {
     if (!vault) return null;
 
-    const shouldMountWorkspaceMain = workspaceMainMounted || mode === 'workspace';
-    const shouldMountSitesMain = sitesMainMounted || mode === 'sites';
+    const isChatView = destination === 'agent' && agentSub === 'chat';
+    const isWorkspaceView = destination === 'agent' && agentSub === 'workspace';
+    const isSitesView = destination === 'sites';
+
+    const shouldMountWorkspaceMain = workspaceMainMounted || isWorkspaceView;
+    const shouldMountSitesMain = sitesMainMounted || isSitesView;
 
     return (
       <WorkspaceShellProvider value={shellController}>
@@ -304,9 +308,7 @@ export const DesktopWorkspaceShell = () => {
                 <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
                   <div
                     ref={setChatMainHost}
-                    className={
-                      mode === 'chat' ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
-                    }
+                    className={isChatView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
                   />
 
                   <div ref={setChatParkingHost} className="hidden" />
@@ -314,7 +316,7 @@ export const DesktopWorkspaceShell = () => {
                   {shouldMountWorkspaceMain && (
                     <div
                       className={
-                        mode === 'workspace' ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
+                        isWorkspaceView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
                       }
                     >
                       <ResizablePanelGroup
@@ -352,9 +354,7 @@ export const DesktopWorkspaceShell = () => {
 
                   {shouldMountSitesMain && (
                     <div
-                      className={
-                        mode === 'sites' ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
-                      }
+                      className={isSitesView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
                     >
                       <SitesPage />
                     </div>
@@ -364,7 +364,8 @@ export const DesktopWorkspaceShell = () => {
             </ResizablePanelGroup>
 
             <ChatPanePortal
-              mode={mode}
+              destination={destination}
+              agentSub={agentSub}
               fallback={chatFallback}
               mainHost={chatMainHost}
               panelHost={chatPanelHost}

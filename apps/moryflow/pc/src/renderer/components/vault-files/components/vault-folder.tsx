@@ -11,10 +11,7 @@ import {
   FolderItem as FolderItemPrimitive,
   FolderHeader as FolderHeaderPrimitive,
   FolderTrigger as FolderTriggerPrimitive,
-  FolderHighlight as FolderHighlightPrimitive,
-  Folder as FolderPrimitive,
   FolderIcon as FolderIconPrimitive,
-  FileLabel as FileLabelPrimitive,
   FolderPanel as FolderPanelPrimitive,
 } from '@anyhunt/ui/animate/primitives/base/files';
 import { useTranslation } from '@/lib/i18n';
@@ -141,30 +138,26 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              className={cn(
-                'w-full min-w-0 cursor-pointer select-none',
-                isDragging && 'opacity-50'
-              )}
+              className={cn('w-full min-w-0 select-none', isDragging && 'opacity-50')}
             >
-              <FolderTriggerPrimitive className="w-full min-w-0 text-start" onClick={handleClick}>
-                <FolderHighlightPrimitive className="w-full min-w-0 overflow-hidden">
-                  <FolderPrimitive
-                    className={cn(
-                      'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-[18px] pr-2 pointer-events-none',
-                      isSelected && 'bg-accent',
-                      isDropTarget && 'bg-foreground/10 border border-primary/50'
-                    )}
-                  >
-                    <FolderIconPrimitive
-                      className="shrink-0"
-                      closeIcon={<Folder className="size-4 text-muted-foreground" />}
-                      openIcon={<FolderOpen className="size-4 text-muted-foreground" />}
-                    />
-                    <FileLabelPrimitive className="min-w-0 flex-1 truncate text-sm font-medium">
-                      {node.name}
-                    </FileLabelPrimitive>
-                  </FolderPrimitive>
-                </FolderHighlightPrimitive>
+              <FolderTriggerPrimitive
+                className={cn(
+                  'group flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
+                  'transition-colors hover:bg-muted/40',
+                  isDropTarget
+                    ? 'bg-foreground/10 border border-primary/50'
+                    : isSelected
+                      ? 'bg-accent/60 text-foreground'
+                      : 'text-foreground'
+                )}
+                onClick={handleClick}
+              >
+                <FolderIconPrimitive
+                  className="shrink-0"
+                  closeIcon={<Folder className="size-4 text-muted-foreground" />}
+                  openIcon={<FolderOpen className="size-4 text-muted-foreground" />}
+                />
+                <span className="min-w-0 flex-1 truncate font-medium">{node.name}</span>
               </FolderTriggerPrimitive>
             </div>
           </ContextMenuTrigger>

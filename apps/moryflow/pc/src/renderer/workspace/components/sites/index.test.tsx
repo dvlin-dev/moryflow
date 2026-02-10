@@ -6,7 +6,12 @@ import type { DesktopApi } from '@shared/ipc';
 const openSettingsMock = vi.fn();
 
 vi.mock('../../context', () => ({
-  useWorkspaceMode: () => ({ mode: 'sites', setMode: vi.fn() }),
+  useWorkspaceNav: () => ({
+    destination: 'sites',
+    agentSub: 'chat',
+    go: vi.fn(),
+    setSub: vi.fn(),
+  }),
   useWorkspaceShell: () => ({ openSettings: openSettingsMock }),
   useWorkspaceVault: () => ({ vault: null }),
   useWorkspaceTree: () => ({ tree: [] }),

@@ -10,7 +10,7 @@ import { SharePopover } from '@/components/share';
 import { useTranslation } from '@/lib/i18n';
 import {
   useWorkspaceDoc,
-  useWorkspaceMode,
+  useWorkspaceNav,
   useWorkspaceShell,
   useWorkspaceTree,
 } from '../../context';
@@ -29,7 +29,7 @@ const RENAME_DEBOUNCE_MS = 300;
 
 export const EditorPanel = memo(function EditorPanel() {
   const { t } = useTranslation('workspace');
-  const { setMode } = useWorkspaceMode();
+  const { go } = useWorkspaceNav();
   const { tree } = useWorkspaceTree();
   const { chatCollapsed, toggleChatPanel } = useWorkspaceShell();
   const { activeDoc, selectedFile, docState, docError, editorChange, retryLoad, renameByTitle } =
@@ -37,8 +37,8 @@ export const EditorPanel = memo(function EditorPanel() {
 
   const hasFiles = tree.length > 0;
   const onNavigateToSites = useCallback(() => {
-    setMode('sites');
-  }, [setMode]);
+    go('sites');
+  }, [go]);
 
   // 标题编辑状态
   const [editingTitle, setEditingTitle] = useState('');

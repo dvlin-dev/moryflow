@@ -52,14 +52,18 @@ export const VaultListItem = ({
 
   return (
     <div
-      className={`group flex items-center gap-2 rounded-md px-2 py-1.5 ${
+      className={`group flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 ${
         isActive ? 'bg-accent' : 'hover:bg-accent/50'
       }`}
     >
       {/* Vault 名称 */}
-      <button type="button" className="flex flex-1 items-center gap-2 text-left" onClick={onSelect}>
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        onClick={onSelect}
+      >
         <FolderOpen className="size-4 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate text-sm">{vault.name}</span>
+        <span className="min-w-0 flex-1 truncate text-sm">{vault.name}</span>
       </button>
 
       {/* 操作菜单 */}

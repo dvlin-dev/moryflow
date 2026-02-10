@@ -1,7 +1,9 @@
 /**
- * [PROVIDES]: ChatThreadsList - Chat Mode Threads 列表
+ * [PROVIDES]: ChatThreadsList - AgentSub=chat Threads 列表
  * [DEPENDS]: useChatSessions（共享 store）
- * [POS]: Sidebar Chat Mode 内容区（threads list + row actions）
+ * [POS]: Sidebar AgentSub=chat 内容区（threads list + row actions）
+ *
+ * [UPDATE]: 2026-02-10 - 修复标题截断：确保在可拖拽侧栏宽度变化时仍显示省略号（min-w-0 + span.truncate）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,7 +19,13 @@ import {
 import { cn } from '@/lib/utils';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 
-export const ChatThreadsList = memo(function ChatThreadsList() {
+type ChatThreadsListProps = {
+  onOpenThread?: (sessionId: string) => void;
+};
+
+export const ChatThreadsList = memo(function ChatThreadsList({
+  onOpenThread,
+}: ChatThreadsListProps) {
   const { sessions, activeSessionId, selectSession, renameSession, deleteSession, isReady } =
     useChatSessions();
 
@@ -56,6 +64,17 @@ export const ChatThreadsList = memo(function ChatThreadsList() {
     [deleteSession]
   );
 
+  const handleOpen = useCallback(
+    (sessionId: string) => {
+      if (onOpenThread) {
+        onOpenThread(sessionId);
+        return;
+      }
+      selectSession(sessionId);
+    },
+    [onOpenThread, selectSession]
+  );
+
   if (!isReady) {
     return <div className="px-3 py-3 text-sm text-muted-foreground">Preparing…</div>;
   }
@@ -74,13 +93,13 @@ export const ChatThreadsList = memo(function ChatThreadsList() {
           <div
             key={session.id}
             className={cn(
-              'group flex w-full items-center rounded-md text-sm',
+              'group flex w-full min-w-0 items-center rounded-md text-sm',
               'transition-colors hover:bg-muted/40',
               isActive && 'bg-accent/60 text-foreground'
             )}
           >
             {isEditing ? (
-              <div className="flex-1 px-2.5 py-1.5">
+              <div className="min-w-0 flex-1 px-2.5 py-1.5">
                 <input
                   value={editingTitle}
                   onChange={(e) => setEditingTitle(e.target.value)}
@@ -98,16 +117,16 @@ export const ChatThreadsList = memo(function ChatThreadsList() {
                     }
                   }}
                   autoFocus
-                  className="h-6 w-full bg-transparent outline-hidden"
+                  className="h-6 w-full min-w-0 bg-transparent outline-hidden"
                 />
               </div>
             ) : (
               <button
                 type="button"
-                className="flex-1 truncate px-2.5 py-1.5 text-left outline-hidden"
-                onClick={() => selectSession(session.id)}
+                className="min-w-0 flex-1 px-2.5 py-1.5 text-left outline-hidden"
+                onClick={() => handleOpen(session.id)}
               >
-                {session.title}
+                <span className="block truncate">{session.title}</span>
               </button>
             )}
 

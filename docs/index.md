@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-08
+date: 2026-02-10
 scope: monorepo
 status: active
 ---
@@ -46,6 +46,7 @@ status: active
 - Auth：流程与接口约定：`docs/guides/auth/auth-flows-and-endpoints.md`
 - 前端表单：Zod + RHF 兼容：`docs/guides/frontend/forms-zod-rhf.md`
 - 图标库回退方案（Hugeicons → Lucide）：`docs/guides/frontend/icon-library-migration-lucide.md`
+- 前端富文本渲染：Streamdown（Markdown + 流式 Token 动画）：`docs/guides/frontend/streamdown.md`
 - 开源拆分：Git Subtree 双向同步：`docs/guides/open-source-package-subtree.md`
 
 ## Runbooks（运维手册 / 照做即可）
@@ -75,7 +76,8 @@ status: active
   - 发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`
   - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
   - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
-  - PC App Modes 方案（Chat / Workspace / Sites）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`
+  - PC 左侧 Sidebar 导航方案（Implicit Agent + Modules）：`docs/products/moryflow/features/app-modes/agent-sites-nav-hierarchy.md`（2026-02-10：implemented）
+  - PC App Modes 方案（Legacy: Chat / Workspace / Sites；superseded）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`
   - PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`
   - PC 输入框改造方案（+ 菜单 / @ 引用 / 主按钮统一）：`docs/products/moryflow/features/chat-input/pc-prompt-input-plus-menu.md`（更新：2026-01-28：二级面板对齐到对应项）
   - PC 悬浮任务面板改造方案：`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`（更新：2026-02-02：悬停箭头/详情示意/行态说明）

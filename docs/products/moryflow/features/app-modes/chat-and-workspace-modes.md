@@ -1,8 +1,8 @@
 ---
-title: Moryflow PC App Modes 方案（Chat / Workspace / Sites）
-date: 2026-02-08
+title: Moryflow PC App Modes 方案（Legacy: Chat / Workspace / Sites）
+date: 2026-02-10
 scope: apps/moryflow/pc
-status: implemented
+status: superseded
 ---
 
 <!--
@@ -20,10 +20,13 @@ status: implemented
 
 [PROTOCOL]:
 - 本文为讨论稿；默认 Workspace 路径策略已确认（见“首次启动：自动创建默认 Workspace folder”）。
-- 落地时需同步更新相关 CLAUDE.md 与索引文档。
+- 本文记录 2026-02-08 版本的旧顶层 Mode 设计；已被新的导航层级替代（见 `docs/products/moryflow/features/app-modes/agent-sites-nav-hierarchy.md`）。
 -->
 
 # Moryflow PC App Modes 方案（Chat / Workspace / Sites）
+
+> 本文为历史实现记录：顶层 `Chat / Workspace / Sites` 已被新的导航层级替代（顶部 Modules（例如 Sites） + Agent 面板 implicit + Agent 内二级 `Chat / Workspace`）。
+> 最新方案见：`docs/products/moryflow/features/app-modes/agent-sites-nav-hierarchy.md`。
 
 ## TL;DR（你已确认的决策）
 
@@ -182,7 +185,7 @@ status: implemented
 | 4    | Renderer | Shell 改造：以 Mode 渲染三套主视图；删除 `AI_TAB_ID`/`SITES_TAB_ID` 入口与逻辑                      | DONE   | 2026-02-08 | staged      | 移除工具 tab；Workspace Mode 才显示右侧面板                                                      |
 | 5    | Renderer | Sidebar 重构为“骨架 + 内容区”（WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools）          | DONE   | 2026-02-08 | staged      | skeleton 落地；按 Mode 切换 Section 框架                                                         |
 | 6    | Renderer | Chat Mode：Sidebar Threads 列表（select/rename/delete/new）+ 主区对话（隐藏不合语义的折叠按钮）     | DONE   | 2026-02-08 | staged      | 线程列表 + ChatPane `variant=mode`（无 Header）                                                  |
-| 7    | Renderer | Workspace Mode：Pages tree 挂载到新 Sidebar；Editor+Assistant 复用并通过回归检查                    | DONE   | 2026-02-08 | staged      | 回归：`pnpm --filter @anyhunt/moryflow-pc test:unit` 通过                                        |
+| 7    | Renderer | Workspace Mode：Files tree 挂载到新 Sidebar；Editor+Assistant 复用并通过回归检查                    | DONE   | 2026-02-08 | staged      | 回归：`pnpm --filter @anyhunt/moryflow-pc test:unit` 通过                                        |
 | 8    | Renderer | Sites Mode：提升 `SitesPage` 为 Mode 主视图；处理 `onBack`（optional 或切回 Workspace）             | DONE   | 2026-02-08 | staged      | Sites Mode 去除无意义 back 语义；Sidebar 创建动作按 Mode 收敛                                    |
 | 9    | Cleanup  | 删除旧组件与死代码（旧 SidebarNav、旧工具 Tab、旧 helper 常量等），不留兼容层                       | DONE   | 2026-02-08 | staged      | 清理确认：旧 Tab/nav/helper 无引用；同步更新相关 CLAUDE.md                                       |
 | 10   | Tests    | 补齐/更新 Vitest 用例；`pnpm lint/typecheck/test:unit` 全通过                                       | DONE   | 2026-02-08 | staged      | 新增单测 + 全仓 `pnpm lint/typecheck/test:unit` 通过                                             |
@@ -194,7 +197,7 @@ status: implemented
 | 16   | Cleanup  | 代码清理：import 顺序、无用 props（SitesPageProps.onBack）、用户可见中文文案转英文                  | DONE   | 2026-02-08 | staged      | 遵循 SRP；不做过度设计                                                                           |
 | 17   | QA       | 回归校验：`pnpm lint` + `pnpm typecheck` + `pnpm test:unit` 全通过                                  | DONE   | 2026-02-08 | staged      | 全绿（本地非 CI 环境会触发 better-sqlite3 rebuild）                                              |
 | 18   | Renderer | Sidebar 状态统一：宽度/收起状态在 Chat/Workspace/Sites 间共享（不因 mode 切换重置）                 | DONE   | 2026-02-08 | staged      | Resizable panels 结构常驻；非 Workspace 时折叠右侧 panel                                         |
-| 19   | Renderer | Sidebar 只保留一个 `+`：移除顶部 `+`；Chat=New thread；Workspace=New page/folder 菜单；Sites 无 `+` | DONE   | 2026-02-08 | staged      | 创建入口收敛到 Section Header；按 mode 渲染 actions                                              |
+| 19   | Renderer | Sidebar 只保留一个 `+`：移除顶部 `+`；Chat=New thread；Workspace=New file/folder 菜单；Sites 无 `+` | DONE   | 2026-02-08 | staged      | 创建入口收敛到 Section Header；按 mode 渲染 actions                                              |
 | 20   | Renderer | Mode Switcher 交互复刻参考图：segmented pill（选中态浮起、hover 轻背景），与项目圆角规范一致        | DONE   | 2026-02-08 | staged      | `ToggleGroup` 自定义样式；不随 mode 切换抖动                                                     |
 | 21   | Renderer | 修复 Chat/Sites 初始布局错位与切换卡顿：Portal 渲染目标 + 主视图容器语义（占满主内容区）            | DONE   | 2026-02-08 | staged      | `createPortal -> portalRoot`；Chat/Sites wrapper 不再 flex row                                   |
 | 22   | Renderer | Chat Mode 内容列最大宽度 720px：超出居中，小屏撑满；外层 2em padding（底部扣除 Footer `p-3`）       | DONE   | 2026-02-08 | staged      | ChatPane `variant=mode`：`max-w-[720px]` + `px/pt=2em` + `pb=calc(2em-0.75rem)`                  |
@@ -286,13 +289,20 @@ status: implemented
 
 ## 总体信息架构（Modes 是顶层工作台）
 
-```mermaid
-flowchart TB
-  A["App Shell"] --> B["Workspace folder (one active)"]
-  B --> C{"Mode"}
-  C --> D["Chat Mode<br/>Threads + Conversation"]
-  C --> E["Workspace Mode<br/>Pages/Files + Editor + Assistant Panel"]
-  C --> F["Sites Mode<br/>Publishing dashboard"]
+```text
+App Shell
+  |
+  v
+Workspace folder (one active)
+  |
+  v
++----------------------+
+| Mode (top-level)     |
++----------------------+
+   |        |        |
+   v        v        v
+ Chat     Workspace   Sites
+ (Threads) (Files)    (Publish)
 ```
 
 核心原则：
@@ -369,7 +379,7 @@ flowchart TB
 ### Section Header Actions（按 Mode 决定）
 
 - `Chat Mode`：仅保留一个 `+`（New thread，直接创建新会话）
-- `Workspace Mode`：仅保留一个 `+`（下拉：New page / New folder）
+- `Workspace Mode`：仅保留一个 `+`（下拉：New file / New folder）
 - `Sites Mode`：不显示 `+`（发布/站点创建在主面板完成）
 
 ### Mode Switcher（icon pill 复刻）
@@ -475,14 +485,20 @@ flowchart TB
 
 你希望“不要再卡在创建/选择目录”，而是自动创建一个默认 workspace。建议流程如下：
 
-```mermaid
-flowchart TD
-  A["App launch"] --> B{"Has active workspace folder?"}
-  B -- "Yes" --> C["Enter Chat Mode"]
-  B -- "No" --> D["Create default workspace folder (name: workspace)"]
-  D --> E{"Create success?"}
-  E -- "Yes" --> F["Set as active workspace + enter Chat Mode"]
-  E -- "No" --> G["Fallback: show minimal picker (Open/Create)"]
+```text
+App launch
+  |
+  v
+Has active workspace folder?
+  |-- Yes --> Enter Chat Mode
+  |
+  `-- No --> Create default workspace folder (name: workspace)
+               |
+               v
+            Create success?
+               |-- Yes --> Set as active workspace + enter Chat Mode
+               |
+               `-- No --> Fallback: show minimal picker (Open/Create)
 ```
 
 ### 默认路径策略（已确认）

@@ -48,7 +48,8 @@ import { ChevronDown } from 'lucide-react';
 
 ## 近期变更
 
-- 2026-02-10：Streamdown 升级至 v2.2：启用逐词流式动画；统一引入 `streamdown/styles.css` 并 `@source` 扫描 `streamdown/dist/*.js`（Tailwind v4 生成依赖类名）；新增 `findLastTextPartIndex` 供多端精确定位最后一个 text part。
+- 2026-02-10：Streamdown 升级至 v2.2：启用逐词流式动画；`@source` 扫描 `streamdown/dist/*.js`（Tailwind v4 生成依赖类名）；Streamdown 动画基础样式改为在 `styles/index.css` 内联（避免部分 Vite/PostCSS 环境无法解析 `streamdown/styles.css` 导致 dev 崩溃）；新增 `findLastTextPartIndex` 供多端精确定位最后一个 text part；新增全局检索标记 `STREAMDOWN_ANIM` 便于定位动画链路与作用点；新增 `src/ai/streamdown-anim.ts` 作为动画参数单一事实来源（duration/easing/sep/animation）。
+- 2026-02-10：ScrollArea：修复可拖拽侧栏等窄容器内的列表省略号不生效问题（覆盖 Radix ScrollArea Viewport 默认 `display: table` 的内容容器为 `block + w-full`，避免宽度按内容扩张）。
 - 2026-02-08：Message parts 解析抽为纯函数（`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。
 - 2026-02-08：MessageList：未传 threadId 时使用稳定默认 key，避免消息数组截断/压缩导致的意外 remount。
 - 2026-02-08：ConversationViewport：消息区域与 Footer 分离，滚动条仅出现在消息区域（不覆盖输入框）。

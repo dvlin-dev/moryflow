@@ -14,9 +14,9 @@ export type WorkspaceShellController = {
   sidebarWidth: number;
   /** 通过 ResizablePanel imperative handle 折叠/展开 sidebar */
   toggleSidebarPanel: () => void;
-  /** Workspace Mode 右侧 Chat 面板是否收起 */
+  /** AgentSub=workspace 时右侧 Chat 面板是否收起 */
   chatCollapsed: boolean;
-  /** 折叠/展开 Workspace Mode 的右侧 Chat 面板 */
+  /** 折叠/展开 AgentSub=workspace 的右侧 Chat 面板 */
   toggleChatPanel: () => void;
   /** 打开设置对话框 */
   openSettings: (section?: SettingsSection) => void;

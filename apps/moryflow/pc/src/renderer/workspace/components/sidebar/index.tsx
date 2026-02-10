@@ -1,12 +1,15 @@
 /**
  * [PROPS]: -
  * [EMITS]: -
- * [POS]: 侧边栏主组件（Notion-ish skeleton）：WorkspaceSelector/Search/ModeSwitcher/Section/BottomTools（就地读取 workspace contexts）
+ * [POS]: 侧边栏主组件（Notion-ish skeleton）：WorkspaceSelector/Search/Modules/AgentSub/Section/BottomTools（就地读取 workspace contexts）
  *
  * [UPDATE]: 2026-02-09 - Publish 入口未登录时不再触发后台请求，改为引导登录（Account 设置页）
+ * [UPDATE]: 2026-02-10 - destination!=agent 时 New thread/New file 作为 Open intent：回跳到 Agent 后再执行创建
+ * [UPDATE]: 2026-02-10 - 文件树内的新建文件也视为 Open intent：回跳到 Agent/Workspace 后再创建
+ * [UPDATE]: 2026-02-10 - Sidebar 顶部布局调整：Sites 全局置顶；Workspace 行下移；去掉 Agent 文本标签；Pages 统一为 Files
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VaultTreeNode } from '@shared/ipc';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { TooltipProvider } from '@anyhunt/ui/components/tooltip';
@@ -14,7 +17,8 @@ import { Search } from 'lucide-react';
 import { PublishDialog } from '@/components/site-publish';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 import { ChatThreadsList } from './components/chat-threads-list';
-import { ModeSwitcher } from './components/mode-switcher';
+import { AgentSubSwitcher } from './components/agent-sub-switcher';
+import { ModulesNav } from './components/modules-nav';
 import { SearchDialog } from './components/search-dialog';
 import { SidebarFiles } from './components/sidebar-files';
 import { SidebarSectionHeader } from './components/sidebar-section-header';
@@ -23,17 +27,18 @@ import { SidebarCreateMenu } from './components/sidebar-create-menu';
 import { VaultSelector } from './components/vault-selector';
 import { cn } from '@/lib/utils';
 import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
+import { createAgentActions } from '../../navigation/agent-actions';
 import {
   useWorkspaceCommand,
   useWorkspaceDoc,
-  useWorkspaceMode,
+  useWorkspaceNav,
   useWorkspaceShell,
   useWorkspaceTree,
   useWorkspaceVault,
 } from '../../context';
 
 export const Sidebar = () => {
-  const { mode, setMode } = useWorkspaceMode();
+  const { destination, agentSub, go, setSub } = useWorkspaceNav();
   const { vault } = useWorkspaceVault();
   const {
     tree,
@@ -57,18 +62,22 @@ export const Sidebar = () => {
   const { openSettings } = useWorkspaceShell();
 
   const selectedId = selectedEntry?.id ?? selectedFile?.id ?? null;
-  const { createSession } = useChatSessions();
+  const { createSession, selectSession } = useChatSessions();
 
-  // 文件搜索对话框状态（仅 Workspace Mode 使用）
+  // 文件搜索对话框状态（仅 agentSub=workspace 使用）
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Keep-alive：避免 mode 切换时反复 mount 重组件（文件树/线程列表）。
-  const [workspacePaneMounted, setWorkspacePaneMounted] = useState(mode === 'workspace');
+  // Keep-alive：避免 agentSub 切换时反复 mount 重组件（文件树/线程列表）。
+  const [chatPaneMounted, setChatPaneMounted] = useState(agentSub === 'chat');
+  const [workspacePaneMounted, setWorkspacePaneMounted] = useState(agentSub === 'workspace');
   useEffect(() => {
-    if (mode === 'workspace') {
+    if (agentSub === 'chat') {
+      setChatPaneMounted(true);
+    }
+    if (agentSub === 'workspace') {
       setWorkspacePaneMounted(true);
     }
-  }, [mode]);
+  }, [agentSub]);
 
   // 发布对话框状态
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -77,6 +86,16 @@ export const Sidebar = () => {
 
   const { authLoading, isAuthenticated, requireLoginForSitePublish } =
     useRequireLoginForSitePublish(openSettings);
+
+  const agent = useMemo(
+    () =>
+      createAgentActions({
+        setSub,
+        selectThread: selectSession,
+        openFile: openFileFromTree,
+      }),
+    [setSub, selectSession, openFileFromTree]
+  );
 
   const handlePublish = useCallback(
     (node: VaultTreeNode) => {
@@ -100,30 +119,57 @@ export const Sidebar = () => {
 
   const handleSearchSelect = useCallback(
     (node: VaultTreeNode) => {
-      openFileFromTree(node);
+      agent.openFile(node);
     },
-    [openFileFromTree]
+    [agent]
   );
 
-  const sectionTitle = mode === 'chat' ? 'Threads' : mode === 'sites' ? 'Sites' : 'Pages';
+  const sectionTitle = agentSub === 'chat' ? 'Threads' : 'Files';
   const handleCreateThread = useCallback(() => {
+    // Treat "create thread" as an Open intent: user expects to land in Agent/Chat.
+    agent.setSub('chat');
     void createSession();
-  }, [createSession]);
+  }, [agent, createSession]);
+
+  const handleCreateFileInRoot = useCallback(() => {
+    // Treat "create file" as an Open intent: user expects to land in Agent/Workspace.
+    agent.setSub('workspace');
+    createFileInRoot();
+  }, [agent, createFileInRoot]);
+
+  const handleCreateFileInTree = useCallback(
+    (node: VaultTreeNode) => {
+      // Treat "create file" as an Open intent: user expects to land in Agent/Workspace.
+      agent.setSub('workspace');
+      createFileInTree(node);
+    },
+    [agent, createFileInTree]
+  );
+
+  const handleCreateFolderInRoot = useCallback(() => {
+    agent.setSub('workspace');
+    createFolderInRoot();
+  }, [agent, createFolderInRoot]);
 
   const handleOpenSearch = useCallback(() => {
-    if (mode === 'workspace') {
+    if (agentSub === 'workspace') {
       setSearchOpen(true);
     } else {
       openCommandPalette();
     }
-  }, [mode, openCommandPalette]);
+  }, [agentSub, openCommandPalette]);
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-muted/30">
-        {/* 顶部骨架：Workspace Selector + Search + Mode Switcher */}
+        {/* 顶部骨架：Modules（global） + Workspace row（vault/search） + AgentSub */}
         <div className="shrink-0 space-y-2 px-2 pt-2">
-          {/* 顶部 Workspace 行：左侧 Workspace 下拉，右侧统一 Search 入口 */}
+          {/* Modules（全局） */}
+          <div className="px-1.5">
+            <ModulesNav destination={destination} onGo={go} />
+          </div>
+
+          {/* Workspace 行：左侧 Workspace 下拉，右侧统一 Search 入口 */}
           <div className="flex w-full items-center gap-2">
             <div className="min-w-0 flex-1">
               <VaultSelector triggerClassName="focus-visible:ring-2 focus-visible:ring-ring/50" />
@@ -141,8 +187,13 @@ export const Sidebar = () => {
             </button>
           </div>
 
+          {/* AgentSub（二级） */}
           <div className="px-1.5">
-            <ModeSwitcher mode={mode} onModeChange={setMode} />
+            <AgentSubSwitcher
+              destination={destination}
+              agentSub={agentSub}
+              onChange={agent.setSub}
+            />
           </div>
         </div>
 
@@ -153,25 +204,37 @@ export const Sidebar = () => {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <SidebarSectionHeader
             title={sectionTitle}
-            onAdd={mode === 'chat' ? handleCreateThread : undefined}
+            onAdd={agentSub === 'chat' ? handleCreateThread : undefined}
             addControl={
-              mode === 'workspace' ? (
+              agentSub === 'workspace' ? (
                 <SidebarCreateMenu
-                  onCreatePage={createFileInRoot}
-                  onCreateFolder={createFolderInRoot}
+                  onCreateFile={handleCreateFileInRoot}
+                  onCreateFolder={handleCreateFolderInRoot}
                 />
               ) : undefined
             }
-            addLabel={mode === 'chat' ? 'New thread' : mode === 'workspace' ? 'New page' : 'New'}
+            addLabel={agentSub === 'chat' ? 'New thread' : 'New file'}
           />
 
           <ScrollArea className="min-h-0 flex-1">
-            <div className={mode === 'chat' ? 'block' : 'hidden'}>
-              <ChatThreadsList />
+            <div
+              id="agent-sub-panel-chat"
+              role="tabpanel"
+              aria-labelledby="agent-sub-tab-chat"
+              hidden={agentSub !== 'chat'}
+              className={agentSub === 'chat' ? 'block' : 'hidden'}
+            >
+              {chatPaneMounted && <ChatThreadsList onOpenThread={agent.openThread} />}
             </div>
 
-            <div className={mode === 'workspace' ? 'block' : 'hidden'}>
-              {(workspacePaneMounted || mode === 'workspace') && (
+            <div
+              id="agent-sub-panel-workspace"
+              role="tabpanel"
+              aria-labelledby="agent-sub-tab-workspace"
+              hidden={agentSub !== 'workspace'}
+              className={agentSub === 'workspace' ? 'block' : 'hidden'}
+            >
+              {workspacePaneMounted && (
                 <SidebarFiles
                   vault={vault}
                   tree={tree}
@@ -181,23 +244,17 @@ export const Sidebar = () => {
                   selectedId={selectedId}
                   onSelectNode={selectTreeNode}
                   onExpandedPathsChange={setExpandedPaths}
-                  onOpenFile={openFileFromTree}
+                  onOpenFile={agent.openFile}
                   onRename={renameTreeNode}
                   onDelete={deleteTreeNode}
-                  onCreateFile={createFileInTree}
+                  onCreateFile={handleCreateFileInTree}
                   onShowInFinder={showInFinder}
                   onMove={moveTreeNode}
-                  onCreateFileInRoot={createFileInRoot}
-                  onCreateFolderInRoot={createFolderInRoot}
+                  onCreateFileInRoot={handleCreateFileInRoot}
+                  onCreateFolderInRoot={handleCreateFolderInRoot}
                   onPublish={handlePublish}
                 />
               )}
-            </div>
-
-            <div className={mode === 'sites' ? 'block' : 'hidden'}>
-              <div className="px-3 py-3 text-sm text-muted-foreground">
-                Manage sites in the main panel.
-              </div>
             </div>
           </ScrollArea>
         </div>
