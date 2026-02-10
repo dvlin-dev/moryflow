@@ -1,27 +1,18 @@
-import { Suspense, lazy, useEffect, useRef } from 'react';
+/**
+ * [PROPS]: ChatPaneWrapperProps
+ * [EMITS]: onReady/onToggleCollapse/onOpenSettings
+ * [POS]: ChatPane 的懒加载包装层（Suspense + React.lazy），仅负责加载与 props 透传
+ * [UPDATE]: 2026-02-10 - 移除对 `streamdown` 的直接预加载（避免未声明直接依赖；预加载由 Workspace 统一的 preload service 负责）
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
+import { Suspense, lazy, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 
-/**
- * 预加载聊天所需的重依赖（streamdown 包含 mermaid/cytoscape，shiki 代码高亮）
- * 使用 requestIdleCallback 在浏览器空闲时加载，不影响首屏渲染
- */
-function preloadChatDeps() {
-  const preload = () => {
-    // 预加载 streamdown（包含 mermaid/cytoscape）
-    import('streamdown').catch(() => {});
-    // 预加载 shiki（代码高亮）
-    import('shiki').catch(() => {});
-  };
-
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(preload, { timeout: 3000 });
-  } else {
-    setTimeout(preload, 1000);
-  }
-}
-
 type ChatPaneWrapperProps = {
-  fallback: React.ReactNode;
+  fallback: ReactNode;
   variant?: 'panel' | 'mode';
   activeFilePath?: string | null;
   activeFileContent?: string | null;
@@ -49,19 +40,9 @@ export const ChatPaneWrapper = ({
   onToggleCollapse,
   onOpenSettings,
 }: ChatPaneWrapperProps) => {
-  const preloaded = useRef(false);
-
   useEffect(() => {
     onReady?.();
   }, [onReady]);
-
-  // 聊天面板加载后，空闲时预加载重依赖
-  useEffect(() => {
-    if (!preloaded.current) {
-      preloaded.current = true;
-      preloadChatDeps();
-    }
-  }, []);
 
   return (
     <Suspense fallback={fallback}>
