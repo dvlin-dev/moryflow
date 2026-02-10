@@ -161,4 +161,55 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
       }),
     );
   });
+
+  it('should not overwrite CANCELLED when cloud run completes', async () => {
+    const initialTask = {
+      id: 'task_1',
+      userId: 'user_1',
+      sourceUrl: 'https://youtube.com/watch?v=abc123',
+      status: 'TRANSCRIBING',
+      executor: 'LOCAL',
+      localStartedAt: new Date('2026-02-09T09:00:00.000Z'),
+      startedAt: null,
+    };
+
+    mockPrisma.videoTranscriptTask.findUnique = vi
+      .fn()
+      .mockResolvedValueOnce(initialTask)
+      .mockResolvedValueOnce({ status: 'CANCELLED' });
+
+    mockExecutorService.downloadVideo.mockResolvedValue('/tmp/video.mp4');
+    mockExecutorService.extractAudio.mockResolvedValue(undefined);
+    mockExecutorService.getAudioDurationSeconds.mockResolvedValue(123);
+    mockExecutorService.transcribeCloud.mockResolvedValue({
+      text: 'hello world',
+      segments: [],
+      languageDetected: 'en',
+      txtPath: '/tmp/transcript.txt',
+      jsonPath: '/tmp/transcript.json',
+      srtPath: '/tmp/transcript.srt',
+    });
+    mockArtifactService.uploadArtifacts.mockResolvedValue({
+      userId: 'user_1',
+      vaultId: 'video-transcripts',
+    });
+
+    await expect(
+      processor.process({
+        data: {
+          kind: 'cloud-run',
+          taskId: 'task_1',
+          reason: 'timeout',
+        },
+      } as any),
+    ).resolves.toBeUndefined();
+
+    expect(mockPrisma.videoTranscriptTask.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'COMPLETED',
+        }),
+      }),
+    );
+  });
 });

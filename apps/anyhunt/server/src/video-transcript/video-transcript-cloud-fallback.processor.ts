@@ -227,17 +227,19 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
 
       const latest = await this.prisma.videoTranscriptTask.findUnique({
         where: { id: taskId },
+        select: { status: true },
       });
-      if (!latest) {
+      if (!latest || this.transcriptService.isTerminalStatus(latest.status)) {
         return;
       }
 
-      if (latest.status === 'COMPLETED' && latest.executor === 'LOCAL') {
-        return;
-      }
-
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
+      const completed = await this.prisma.videoTranscriptTask.updateMany({
+        where: {
+          id: taskId,
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
+        },
         data: {
           status: 'COMPLETED',
           executor: 'CLOUD_FALLBACK',
@@ -247,6 +249,9 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
           completedAt: new Date(),
         },
       });
+      if (completed.count === 0) {
+        return;
+      }
 
       if (
         budgetReservation &&
