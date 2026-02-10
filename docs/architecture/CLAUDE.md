@@ -46,7 +46,7 @@
 - `anyhunt-video-transcript-pipeline.md`：新增“三节点部署详细流程（公网简化版）”，明确 `VPS1(API)+VPS2(cloud fallback)+Mac mini(local)` 的角色开关矩阵、部署步骤与联调验收顺序（2026-02-09）。
 - `anyhunt-video-transcript-pipeline.md`：同步四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败终态；local 启动顺序改为先写 `localStartedAt` 再调度 fallback-check；`duration probe` 解析增强；补充 cloud fallback 回归测试）（2026-02-09）。
 - `anyhunt-video-transcript-pipeline.md`：同步三轮可靠性修复（timeout pre-check 失败不误写 FAILED、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）（2026-02-09）。
-- `anyhunt-video-transcript-pipeline.md`：同步二轮可靠性修复（移除队列全局 5 分钟超时、fallback 补偿扫描 30s、Admin today 指标与 runtime switch + 审计落地）（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：同步二轮可靠性修复（队列策略调整：保留默认队列全局 5 分钟 timeout，并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h / CLOUD=2h）；fallback 补偿扫描 30s；Admin today 指标与 runtime switch + 审计落地）（2026-02-09）。
 - `anyhunt-video-transcript-pipeline.md`：执行进度同步（Step 1~6 代码落地完成，补齐 server/console/admin 与单测，Step 7 待上线演练）（2026-02-09）。
 - `anyhunt-video-transcript-pipeline.md`：补充事件一致性定案（QueueEvents 仅观测；DB 字段为超时/接管裁决源；fallback 到点查库决策；新增执行时序图）（2026-02-08）。
 - `anyhunt-video-transcript-pipeline.md`：补充部署交互定案（Queue Pull；VPS Dokploy 拆分 API/cloud fallback worker；Mac mini `launchd` 常驻 local-worker；Tailscale 内网边界；`VIDEO_TRANSCRIPT_LOCAL_ENABLED` 应急切换）（2026-02-08）。

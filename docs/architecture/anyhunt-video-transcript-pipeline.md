@@ -17,6 +17,7 @@ status: active
 
 ## 0. 最近执行同步
 
+- 2026-02-10：PR Review 修复：local workspace 创建失败不再导致 activeTasks 泄漏/任务卡死；平台域名白名单改为 domain-boundary 校验防止 suffix bypass；cloud fallback 完成态写入前增加终态保护（避免覆盖 CANCELLED/FAILED）；队列策略调整：保留默认队列全局 5 分钟 timeout（历史行为），并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h，CLOUD=2h）。
 - 2026-02-09：补充“17. 上线前执行清单（Checklist）”，覆盖 T-1 准备、T-0 部署、联调验收、回滚预案与 24h 观察项，作为生产上线前固定打勾清单。
 - 2026-02-09：新增 Mac mini local-worker 一键部署脚本 `apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`，统一依赖检查、`.env.local-worker` 写入、`launchd` 注册与启动；local 模式仅强制校验 DB/Redis/R2 变量，cloud fallback 变量改为告警提示。
 - 2026-02-09：补充部署定案附录（公网简化版）：新增 `VPS1 API + VPS2 cloud fallback worker + Mac mini local worker` 三节点详细部署流程、角色环境变量矩阵、`launchd` 常驻步骤与联调验收清单。

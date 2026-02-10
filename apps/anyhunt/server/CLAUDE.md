@@ -11,7 +11,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Video Transcript：新增 Mac mini local-worker 一键部署脚本（`scripts/video-transcript/setup-local-worker.sh`），统一依赖安装、环境文件写入、`launchd` 注册与启动流程
 - Video Transcript：四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败兜底；local 启动顺序调整为先写 `localStartedAt` 再调度 fallback；`duration probe` 解析增强；补充接管后 workspace 失败回归测试）
 - Video Transcript：三轮可靠性修复（timeout pre-check 失败不误写任务失败、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）
-- Video Transcript：二轮可靠性修复（fallback 补偿扫描 30s、localStartedAt/timeout 判定改用 DB 时间、Admin runtime switch + 审计 + today 指标补齐、移除队列全局 5 分钟 timeout）
+- Video Transcript：二轮可靠性修复（fallback 补偿扫描 30s、localStartedAt/timeout 判定改用 DB 时间、Admin runtime switch + 审计 + today 指标补齐、队列策略调整：保留默认队列全局 5 分钟 timeout，并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h / CLOUD=2h））
 - Video Transcript：新增双模式转写模块（LOCAL + CLOUD_FALLBACK）、任务模型与 `/api/v1/app/video-transcripts` + `/api/v1/admin/video-transcripts` 接口，并接入 Admin 队列监控
 - API Key：更新接口补齐 no-store，避免明文 key 被缓存
 - LLM：ModelProviderFactory 单测在 isolate=false 下 resetModules 确保 mock 生效
