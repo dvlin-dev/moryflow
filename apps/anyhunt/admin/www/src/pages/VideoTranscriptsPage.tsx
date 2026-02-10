@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from '@anyhunt/ui';
+import { formatRelativeTime } from '@anyhunt/ui/lib';
 import {
   useVideoTranscriptOverview,
   useVideoTranscriptRuntimeConfig,
@@ -271,7 +272,7 @@ export default function VideoTranscriptsPage() {
                   <TableBody>
                     {configQuery.data.audits.map((audit) => (
                       <TableRow key={audit.id}>
-                        <TableCell>{new Date(audit.createdAt).toLocaleString('zh-CN')}</TableCell>
+                        <TableCell>{formatRelativeTime(audit.createdAt)}</TableCell>
                         <TableCell>{audit.actorUserId}</TableCell>
                         <TableCell>{audit.reason}</TableCell>
                       </TableRow>
@@ -414,7 +415,7 @@ export default function VideoTranscriptsPage() {
                       {formatBytes(node.memoryFree)} / {formatBytes(node.memoryTotal)}
                     </TableCell>
                     <TableCell>{formatBytes(node.processRss)}</TableCell>
-                    <TableCell>{new Date(node.updatedAt).toLocaleString('zh-CN')}</TableCell>
+                    <TableCell>{formatRelativeTime(node.updatedAt)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -455,7 +456,7 @@ export default function VideoTranscriptsPage() {
                       <TableCell className="max-w-sm truncate" title={task.sourceUrl}>
                         {task.sourceUrl}
                       </TableCell>
-                      <TableCell>{new Date(task.createdAt).toLocaleString('zh-CN')}</TableCell>
+                      <TableCell>{formatRelativeTime(task.createdAt)}</TableCell>
                       <TableCell
                         className="max-w-xs truncate text-xs text-destructive"
                         title={task.error ?? ''}

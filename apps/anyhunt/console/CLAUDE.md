@@ -8,7 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
-- 新增 Video Transcript Playground（`/fetchx/video-transcript`）：支持提交 URL、轮询状态、取消任务、查看产物链接与转写预览
+- 新增 Video Transcript Playground（`/fetchx/video-transcript`）：支持提交 URL、轮询状态、取消任务、查看产物链接与转写预览；时间展示统一使用 `formatRelativeTime`
 - Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
 - Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）

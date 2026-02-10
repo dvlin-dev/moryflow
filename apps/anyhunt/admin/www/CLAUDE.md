@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- Queues 页面文案统一为英文，时间展示改为 `formatRelativeTime`（符合“用户可见英文”约束）
 - 新增 Video Transcripts 页面（`/video-transcripts`）：展示执行概览、today 指标、local 节点资源、预算闸门与任务列表
 - Video Transcripts 新增运行时开关（`VIDEO_TRANSCRIPT_LOCAL_ENABLED`）与审计记录展示
 - LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错

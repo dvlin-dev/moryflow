@@ -29,6 +29,7 @@ import {
   PageHeader,
   Skeleton,
 } from '@anyhunt/ui';
+import { formatRelativeTime } from '@anyhunt/ui/lib';
 import {
   videoTranscriptFormSchema,
   useCancelVideoTranscriptTask,
@@ -239,7 +240,7 @@ export default function VideoTranscriptPage() {
                       <p className="mt-2 line-clamp-2 break-all text-sm">{task.sourceUrl}</p>
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(task.createdAt).toLocaleString('zh-CN')}
+                          {formatRelativeTime(task.createdAt)}
                         </span>
                         {canCancel ? (
                           <Button
@@ -318,7 +319,7 @@ export default function VideoTranscriptPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Created At</p>
                     <p className="text-sm font-medium">
-                      {new Date(taskDetail.createdAt).toLocaleString('zh-CN')}
+                      {formatRelativeTime(taskDetail.createdAt)}
                     </p>
                   </div>
                 </div>
