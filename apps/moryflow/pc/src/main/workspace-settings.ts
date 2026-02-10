@@ -2,6 +2,7 @@
  * [INPUT]: vaultPath, filePath, PersistedTab
  * [OUTPUT]: 工作区持久化配置（展开路径/最近文件/打开标签）
  * [POS]: 主进程工作区设置存储（electron-store）
+ * [UPDATE]: 2026-02-08 - 新增 lastMode，用于持久化 App Mode（Chat/Workspace/Sites）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -25,6 +26,8 @@ type WorkspaceState = {
   openTabs: Record<string, PersistedTab[]>;
   /** 最近操作的文件（按 Vault） */
   recentFiles: Record<string, string[]>;
+  /** 上次使用的 App Mode（全局） */
+  lastMode: 'chat' | 'workspace' | 'sites';
 };
 
 const workspaceStore = new Store<WorkspaceState>({
@@ -34,8 +37,21 @@ const workspaceStore = new Store<WorkspaceState>({
     lastOpenedFile: {},
     openTabs: {},
     recentFiles: {},
+    lastMode: 'chat',
   },
 });
+
+const isValidMode = (mode: unknown): mode is WorkspaceState['lastMode'] =>
+  mode === 'chat' || mode === 'workspace' || mode === 'sites';
+
+export const getLastMode = (): WorkspaceState['lastMode'] => {
+  const stored = workspaceStore.get('lastMode');
+  return isValidMode(stored) ? stored : 'chat';
+};
+
+export const setLastMode = (mode: WorkspaceState['lastMode']): void => {
+  workspaceStore.set('lastMode', mode);
+};
 
 export const getExpandedPaths = (vaultPath: string): string[] => {
   const bucket = workspaceStore.get('expandedPaths');

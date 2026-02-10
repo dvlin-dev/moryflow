@@ -99,6 +99,8 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`）并激活
+- workspace-settings：新增 lastMode 持久化与 `workspace:getLastMode/setLastMode` IPC，用于 App Mode（Chat/Workspace/Sites）
 - Chat 主进程持久化改为 UIMessageStream onFinish，并补齐 start/finish chunk，保证 assistant 消息持久化与 ID 稳定
 - 移除 `chat:sessions:syncMessages` IPC，历史落盘仅由主进程流持久化
 - workspace recentFiles 读写增加类型守卫，避免存储异常污染

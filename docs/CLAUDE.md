@@ -65,6 +65,7 @@
 - Anyhunt 视频链接下载 + 双模式转写架构方案：补充部署交互定案（Queue Pull；VPS Dokploy 拆分 API/cloud fallback worker；Mac mini `launchd` 常驻 local-worker；Tailscale 内网边界；`VIDEO_TRANSCRIPT_LOCAL_ENABLED` 应急切换）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-08：active）
 - Anyhunt 视频链接下载 + 双模式转写架构方案：升级为高可用定案（仅 local 开始后计时 10 分钟；超时先 preempt local 再 cloud fallback；冲突落库 LOCAL 优先；Cloudflare Workers AI 模型固定为 `@cf/openai/whisper-large-v3-turbo`；预算 20 USD/日（Asia/Shanghai，按音频时长估算）；cloud 重试 2 次 + Admin 可观测与告警）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-08：active）
 - Moryflow PC 消息列表交互复用改造方案：Following 模式定稿（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-08）
+- Moryflow PC App Modes 方案（Chat / Workspace / Sites）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`（2026-02-08：proposal）
 - 调研（已废弃方案，不再采用）：Moryflow PC TurnAnchor 滚动问题跟踪与记录（`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`，最后更新：2026-02-05）
 - Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）
 - Anyhunt app/public/apikey 通道路由规范与迁移清单（含模块进度）：`docs/architecture/anyhunt-api-channel-routing.md`（2026-02-02：implemented）

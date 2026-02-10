@@ -1,6 +1,6 @@
 /**
- * [PROPS]: VaultOnboardingProps
- * [EMITS]: onOpenVault/onSelectDirectory/onCreateVault
+ * [PROPS]: -
+ * [EMITS]: -
  * [POS]: 首次进入的 Vault 选择与创建引导（Lucide 图标）
  */
 
@@ -10,8 +10,9 @@ import { Input } from '@anyhunt/ui/components/input';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowLeft, Cloud, FolderPlus, FolderOpen } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
-import type { VaultOnboardingProps, OnboardingView } from './const';
+import type { OnboardingView } from './const';
 import { getOpenButtonLabel, getCreateButtonLabel } from './handle';
+import { useWorkspaceVault } from '../../context';
 
 type TranslateFunction = (key: any) => string;
 
@@ -190,14 +191,10 @@ const CreateView = ({
   </div>
 );
 
-export const VaultOnboarding = ({
-  isPickingVault,
-  vaultMessage,
-  onOpenVault,
-  onSelectDirectory,
-  onCreateVault,
-}: VaultOnboardingProps) => {
+export const VaultOnboarding = () => {
   const { t } = useTranslation('workspace');
+  const { isPickingVault, vaultMessage, openVault, selectDirectory, createVault } =
+    useWorkspaceVault();
   const [view, setView] = useState<OnboardingView>('main');
   const [vaultName, setVaultName] = useState('');
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -213,16 +210,16 @@ export const VaultOnboarding = ({
   }, []);
 
   const handleBrowse = useCallback(async () => {
-    const path = await onSelectDirectory();
+    const path = await selectDirectory();
     if (path) {
       setSelectedPath(path);
     }
-  }, [onSelectDirectory]);
+  }, [selectDirectory]);
 
   const handleCreate = useCallback(async () => {
     if (!vaultName.trim() || !selectedPath) return;
-    await onCreateVault(vaultName.trim(), selectedPath);
-  }, [vaultName, selectedPath, onCreateVault]);
+    await createVault(vaultName.trim(), selectedPath);
+  }, [vaultName, selectedPath, createVault]);
 
   return (
     <section
@@ -244,7 +241,7 @@ export const VaultOnboarding = ({
             <MainView
               isPickingVault={isPickingVault}
               onCreateClick={handleCreateClick}
-              onOpenVault={onOpenVault}
+              onOpenVault={openVault}
               t={t}
             />
           ) : (

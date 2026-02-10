@@ -12,10 +12,14 @@ describe('useDocumentState', () => {
 
   let readFile: ReturnType<typeof vi.fn>;
   let writeFile: ReturnType<typeof vi.fn>;
+  let getOpenTabs: ReturnType<typeof vi.fn>;
+  let getLastOpenedFile: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     readFile = vi.fn().mockResolvedValue({ content: 'Hello', mtime: 100 });
     writeFile = vi.fn().mockResolvedValue({ mtime: 200 });
+    getOpenTabs = vi.fn().mockResolvedValue([]);
+    getLastOpenedFile = vi.fn().mockResolvedValue(null);
 
     window.desktopAPI = {
       files: {
@@ -23,8 +27,8 @@ describe('useDocumentState', () => {
         write: writeFile,
       },
       workspace: {
-        getOpenTabs: vi.fn().mockResolvedValue([]),
-        getLastOpenedFile: vi.fn().mockResolvedValue(null),
+        getOpenTabs,
+        getLastOpenedFile,
         setOpenTabs: vi.fn(),
         setLastOpenedFile: vi.fn(),
         recordRecentFile: vi.fn(),
@@ -63,5 +67,27 @@ describe('useDocumentState', () => {
 
     await waitFor(() => expect(writeFile).toHaveBeenCalled());
     await waitFor(() => expect(result.current.saveState).toBe('idle'));
+  });
+
+  it('filters persisted tabs outside vault and ignores invalid lastOpenedFile', async () => {
+    getOpenTabs.mockResolvedValue([
+      { id: 'ai', name: 'AI', path: '__ai__' },
+      { id: 'outside', name: 'outside.md', path: '/vault2/outside.md' },
+      { id: 'good', name: 'note.md', path: '/vault/note.md' },
+      { id: 'dup', name: 'note.md', path: '/vault/note.md' },
+    ]);
+    getLastOpenedFile.mockResolvedValue('/vault2/outside.md');
+
+    const { result } = renderHook(() => useDocumentState({ vault }));
+
+    await waitFor(() =>
+      expect(result.current.openTabs).toEqual([
+        { id: 'good', name: 'note.md', path: '/vault/note.md' },
+      ])
+    );
+
+    expect(readFile).not.toHaveBeenCalled();
+    expect(result.current.selectedFile).toBeNull();
+    expect(result.current.activeDoc).toBeNull();
   });
 });
