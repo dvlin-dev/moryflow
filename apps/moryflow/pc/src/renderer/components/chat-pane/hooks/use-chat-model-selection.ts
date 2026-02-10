@@ -11,6 +11,7 @@ import type { AgentChatRequestOptions, AgentSettings } from '@shared/ipc';
 
 import { computeAgentOptions } from '../handle';
 import { buildModelGroupsFromSettings, ensureModelIncluded, type ModelGroup } from '../models';
+import { agentSettingsResource } from '@/lib/agent-settings-resource';
 
 const MODEL_STORAGE_KEY = 'moryflow.chat.preferredModel';
 
@@ -110,33 +111,20 @@ export const useChatModelSelection = (activeFilePath?: string | null) => {
 
   useEffect(() => {
     let mounted = true;
-    const loadSettings = async () => {
-      if (!window.desktopAPI?.agent) {
-        return;
-      }
-      try {
-        const settings = await window.desktopAPI.agent.getSettings();
-        if (mounted && settings) {
-          applySettings(settings as AgentSettings);
-        }
-      } catch (error) {
-        console.error('[chat-pane] failed to load agent settings', error);
-      }
-    };
-    void loadSettings();
-    return () => {
-      mounted = false;
-    };
-  }, [applySettings]);
 
-  useEffect(() => {
-    if (!window.desktopAPI?.agent?.onSettingsChange) {
-      return;
-    }
-    const dispose = window.desktopAPI.agent.onSettingsChange((settings: AgentSettings) => {
+    const dispose = agentSettingsResource.subscribe((settings) => {
+      if (!mounted) return;
       applySettings(settings);
     });
-    return () => dispose?.();
+
+    agentSettingsResource.load().catch((error) => {
+      console.error('[chat-pane] failed to load agent settings', error);
+    });
+
+    return () => {
+      mounted = false;
+      dispose();
+    };
   }, [applySettings]);
 
   const setSelectedModelId = useCallback(

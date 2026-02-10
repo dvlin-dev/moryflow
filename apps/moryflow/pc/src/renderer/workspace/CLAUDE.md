@@ -52,7 +52,8 @@ pnpm test:unit
 
 ## 近期变更
 
-- 2026-02-10：ChatPaneWrapper 移除对 `streamdown` 的直接预加载（避免未声明直接依赖）；预加载统一由 Workspace preload service 负责。
+- 2026-02-10：移除 `preload:*` IPC/落盘缓存与 Workspace preload service，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki；无额外 IPC/写盘）。
+- 2026-02-10：SettingsDialog/Theme/模型选择统一走 AgentSettings 单飞资源，降低重复 IPC，修复设置弹窗偶发一直 Loading。
 - 2026-02-09：恢复工作区持久化的 `openTabs/lastOpenedFile` 时增加过滤（仅保留 Vault 内的绝对路径），避免旧版特殊 tab/非法路径被当作文件加载导致报错。
 - 2026-02-09：Sites Mode 视图 keep-alive/预热挂载不再触发未登录的站点列表请求；发布入口未登录时引导到 Account 设置页登录。
 - 2026-02-10：新增 `useRequireLoginForSitePublish`，统一 Sites/Publish 的登录校验与引导逻辑。
