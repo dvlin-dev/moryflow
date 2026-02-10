@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { DesktopApi } from '@shared/ipc';
-import { useChatSessions } from './use-chat-sessions';
+import { __resetChatSessionsStoreForTest, useChatSessions } from './use-chat-sessions';
 
 const session = {
   id: 'session-1',
@@ -10,14 +10,18 @@ const session = {
 };
 
 describe('useChatSessions', () => {
+  let disposeSessionListener: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
+    __resetChatSessionsStoreForTest();
+    disposeSessionListener = vi.fn();
     window.desktopAPI = {
       chat: {
         listSessions: vi.fn().mockResolvedValue([]),
         createSession: vi.fn().mockResolvedValue(session),
         renameSession: vi.fn(),
         deleteSession: vi.fn(),
-        onSessionEvent: vi.fn(() => () => {}),
+        onSessionEvent: vi.fn(() => disposeSessionListener),
       },
     } as unknown as DesktopApi;
   });
@@ -34,5 +38,28 @@ describe('useChatSessions', () => {
     expect(window.desktopAPI.chat.createSession).toHaveBeenCalled();
     expect(result.current.sessions).toHaveLength(1);
     expect(result.current.activeSessionId).toBe('session-1');
+  });
+
+  it('disposes the session listener when the last subscriber unmounts', async () => {
+    const { result, unmount } = renderHook(() => useChatSessions());
+
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+
+    unmount();
+    expect(disposeSessionListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the session listener while there are active subscribers', async () => {
+    const hook1 = renderHook(() => useChatSessions());
+    const hook2 = renderHook(() => useChatSessions());
+
+    await waitFor(() => expect(hook1.result.current.isReady).toBe(true));
+    await waitFor(() => expect(hook2.result.current.isReady).toBe(true));
+
+    hook1.unmount();
+    expect(disposeSessionListener).not.toHaveBeenCalled();
+
+    hook2.unmount();
+    expect(disposeSessionListener).toHaveBeenCalledTimes(1);
   });
 });

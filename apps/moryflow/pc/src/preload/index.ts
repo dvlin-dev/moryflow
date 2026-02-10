@@ -2,6 +2,8 @@
  * [PROVIDES]: Renderer IPC bridge (desktopAPI + membership auth storage + 会话/工具输出能力)
  * [DEPENDS]: electron ipcRenderer, shared IPC types
  * [POS]: Preload bridge (secure channel surface)
+ * [UPDATE]: 2026-02-08 - 暴露 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
+ * [UPDATE]: 2026-02-08 - 暴露 `workspace:getLastMode/setLastMode`，用于持久化 App Mode
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -53,8 +55,8 @@ const api: DesktopApi = {
   vault: {
     open: (options) => ipcRenderer.invoke('vault:open', options ?? {}),
     create: (options) => ipcRenderer.invoke('vault:create', options ?? {}),
+    ensureDefaultWorkspace: () => ipcRenderer.invoke('vault:ensureDefaultWorkspace'),
     selectDirectory: () => ipcRenderer.invoke('vault:selectDirectory'),
-    getRecent: () => ipcRenderer.invoke('vault:getRecent'),
     readTree: (path) => ipcRenderer.invoke('vault:readTree', { path }),
     readTreeRoot: (path) => ipcRenderer.invoke('vault:readTreeRoot', { path }),
     readTreeChildren: (path) => ipcRenderer.invoke('vault:readTreeChildren', { path }),
@@ -90,6 +92,8 @@ const api: DesktopApi = {
       ipcRenderer.invoke('workspace:getExpandedPaths', { vaultPath }),
     setExpandedPaths: (vaultPath, paths) =>
       ipcRenderer.invoke('workspace:setExpandedPaths', { vaultPath, paths }),
+    getLastMode: () => ipcRenderer.invoke('workspace:getLastMode'),
+    setLastMode: (mode) => ipcRenderer.invoke('workspace:setLastMode', { mode }),
     getLastOpenedFile: (vaultPath) =>
       ipcRenderer.invoke('workspace:getLastOpenedFile', { vaultPath }),
     setLastOpenedFile: (vaultPath, filePath) =>

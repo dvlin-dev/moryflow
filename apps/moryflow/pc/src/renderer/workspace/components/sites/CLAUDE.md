@@ -1,18 +1,18 @@
 # Sites CMS 组件
 
-> 站点管理 CMS 界面，从侧边栏入口访问
+> 站点管理 CMS 界面，作为 Workspace Shell 的 `Sites` Mode 主视图渲染（入口来自左侧 Mode Switcher）。
 
 ## 组件结构
 
-| 文件                     | 职责                                      |
-| ------------------------ | ----------------------------------------- |
-| `index.tsx`              | Sites 主页面，整合列表和详情视图          |
-| `site-list.tsx`          | 站点列表组件，包含 Header 和卡片网格      |
-| `site-card.tsx`          | 站点卡片组件，显示状态、URL、操作菜单     |
-| `site-detail.tsx`        | 站点详情页，设置编辑、操作按钮            |
-| `site-empty-state.tsx`   | 空状态组件（含 E2E 选择器）               |
-| `file-picker-dialog.tsx` | 文件选择对话框，两级结构（工作区 → 文件） |
-| `const.ts`               | 类型定义、辅助函数                        |
+| 文件                     | 职责                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| `index.tsx`              | Sites 主页面（就地读取 workspace contexts），整合列表和详情视图 |
+| `site-list.tsx`          | 站点列表组件，包含 Header 和卡片网格                            |
+| `site-card.tsx`          | 站点卡片组件，显示状态、URL、操作菜单                           |
+| `site-detail.tsx`        | 站点详情页，设置编辑、操作按钮                                  |
+| `site-empty-state.tsx`   | 空状态组件（含 E2E 选择器）                                     |
+| `file-picker-dialog.tsx` | 文件选择对话框，两级结构（工作区 → 文件）                       |
+| `const.ts`               | 类型定义、辅助函数                                              |
 
 ## 视图模式
 
@@ -26,7 +26,8 @@
 | `open`      | 在浏览器打开站点   |
 | `copy`      | 复制站点链接       |
 | `settings`  | 进入详情页编辑设置 |
-| `republish` | 重新发布（TODO）   |
+| `publish`   | 上线站点           |
+| `update`    | 更新内容           |
 | `unpublish` | 下线站点           |
 | `delete`    | 删除站点           |
 
@@ -34,7 +35,8 @@
 
 ```
 SitesPage
-  ├─ loadSites() → desktopAPI.sitePublish.list()
+  ├─ 从 workspace contexts 读取 currentVaultPath/currentTree（用于 FilePickerDialog 的“当前工作区”快速路径）
+  ├─ loadSites()（仅在已登录且处于 Sites Mode 时）→ desktopAPI.sitePublish.list()
   │
   ├─ SiteList (list 视图)
   │   ├─ SiteCard × N
@@ -42,13 +44,13 @@ SitesPage
   │
   ├─ SiteDetail (detail 视图)
   │   ├─ 设置编辑 (title, description, watermark)
-  │   └─ 操作按钮 (Republish, Unpublish, Delete)
+  │   └─ 操作按钮 (Publish/Update, Unpublish, Delete)
   │
   └─ 发布流程
       ├─ FilePickerDialog (两级选择)
       │   ├─ 工作区列表 → desktopAPI.vault.getVaults()
       │   └─ 文件树 → desktopAPI.vault.getTreeCache()
-      └─ PublishDialog → desktopAPI.sitePublish.publish()
+      └─ PublishDialog → desktopAPI.sitePublish.buildAndPublish()
 ```
 
 ## 依赖
@@ -72,3 +74,5 @@ SitesPage
 
 - Sites CMS 相关组件改为 Lucide 图标直连，移除 Icon 包装依赖
 - FilePickerDialog 下拉指示图标改为无中轴样式（ChevronDown）
+- 未登录时 Sites Mode 不再自动请求站点列表；Publish 入口改为引导到 Account 设置页登录
+- Publish 登录校验逻辑收敛到 `workspace/hooks/use-require-login-for-site-publish.ts`

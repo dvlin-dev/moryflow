@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, lazy, memo, useState, useEffect, useRef, useCallback } from 'react';
 import { Share, PanelRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
@@ -8,7 +8,12 @@ import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
 import { SharePopover } from '@/components/share';
 import { useTranslation } from '@/lib/i18n';
-import type { EditorPanelProps } from './const';
+import {
+  useWorkspaceDoc,
+  useWorkspaceMode,
+  useWorkspaceShell,
+  useWorkspaceTree,
+} from '../../context';
 
 const LazyNotionEditor = lazy(() =>
   import('@/components/editor').then((mod) => ({
@@ -22,22 +27,18 @@ const extractTitle = (name: string): string => name.replace(/\.md$/, '');
 /** 防抖延迟（毫秒） */
 const RENAME_DEBOUNCE_MS = 300;
 
-export const EditorPanel = ({
-  activeDoc,
-  selectedFile,
-  docState,
-  docError,
-  hasFiles = false,
-  chatCollapsed,
-  publishedSite,
-  onEditorChange,
-  onRetryLoad,
-  onRename,
-  onToggleChat,
-  onPublished,
-  onNavigateToSites,
-}: EditorPanelProps) => {
+export const EditorPanel = memo(function EditorPanel() {
   const { t } = useTranslation('workspace');
+  const { setMode } = useWorkspaceMode();
+  const { tree } = useWorkspaceTree();
+  const { chatCollapsed, toggleChatPanel } = useWorkspaceShell();
+  const { activeDoc, selectedFile, docState, docError, editorChange, retryLoad, renameByTitle } =
+    useWorkspaceDoc();
+
+  const hasFiles = tree.length > 0;
+  const onNavigateToSites = useCallback(() => {
+    setMode('sites');
+  }, [setMode]);
 
   // 标题编辑状态
   const [editingTitle, setEditingTitle] = useState('');
@@ -85,7 +86,7 @@ export const EditorPanel = ({
 
       setIsRenaming(true);
       try {
-        await onRename(activeDoc.path, trimmedTitle);
+        await renameByTitle(activeDoc.path, trimmedTitle);
         toast.success(t('renameSuccess'));
       } catch (err) {
         toast.error(err instanceof Error ? err.message : t('renameFailed'));
@@ -95,7 +96,7 @@ export const EditorPanel = ({
         setIsRenaming(false);
       }
     },
-    [activeDoc, isRenaming, onRename, t]
+    [activeDoc, isRenaming, renameByTitle, t]
   );
 
   // 标题变化处理（带防抖）
@@ -144,8 +145,6 @@ export const EditorPanel = ({
           <SharePopover
             filePath={selectedFile.path}
             fileTitle={editingTitle}
-            publishedSite={publishedSite}
-            onPublished={onPublished}
             onNavigateToSites={onNavigateToSites}
           >
             <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
@@ -155,14 +154,14 @@ export const EditorPanel = ({
           </SharePopover>
 
           {/* Chat 展开按钮 */}
-          {chatCollapsed && onToggleChat && (
+          {chatCollapsed && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   className="text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={onToggleChat}
+                  onClick={toggleChatPanel}
                 >
                   <PanelRight className="size-4" />
                 </Button>
@@ -189,7 +188,7 @@ export const EditorPanel = ({
             <Alert variant="destructive">
               <AlertDescription className="flex items-center justify-between gap-3">
                 <span>{docError}</span>
-                <Button variant="link" className="px-0 text-destructive" onClick={onRetryLoad}>
+                <Button variant="link" className="px-0 text-destructive" onClick={retryLoad}>
                   {t('retry')}
                 </Button>
               </AlertDescription>
@@ -223,7 +222,7 @@ export const EditorPanel = ({
                 <LazyNotionEditor
                   key={activeDoc.path}
                   value={activeDoc.content}
-                  onChange={onEditorChange}
+                  onChange={editorChange}
                   placeholder={t('startThinking')}
                 />
               </Suspense>
@@ -233,4 +232,6 @@ export const EditorPanel = ({
       </div>
     </section>
   );
-};
+});
+
+EditorPanel.displayName = 'EditorPanel';

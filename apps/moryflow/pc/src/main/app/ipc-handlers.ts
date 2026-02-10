@@ -2,6 +2,8 @@
  * [INPUT]: IPC payloads from renderer/preload（含外链与工具输出文件打开请求）
  * [OUTPUT]: IPC handler results (plain JSON, serializable)
  * [POS]: Main process IPC router (validation + orchestration only)
+ * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
+ * [UPDATE]: 2026-02-08 - 新增 `workspace:getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,6 +15,7 @@ import { getProviderById, toApiModelId } from '../../shared/model-registry/index
 import type { VaultTreeNode } from '../../shared/ipc.js';
 import {
   createVault,
+  ensureDefaultWorkspace,
   createVaultFile,
   createVaultFolder,
   deleteVaultEntry,
@@ -45,6 +48,8 @@ import {
   setLastOpenedFile,
   getOpenTabs,
   setOpenTabs,
+  getLastMode,
+  setLastMode,
   getRecentFiles,
   recordRecentFile,
   removeRecentFile,
@@ -110,9 +115,28 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     }
     await openExternalSafe(url, externalLinkPolicy);
   });
-  ipcMain.handle('vault:getRecent', () => getStoredVault());
   ipcMain.handle('vault:open', (_event, payload) => openVault(payload ?? {}));
   ipcMain.handle('vault:create', (_event, payload) => createVault(payload ?? {}));
+  ipcMain.handle('vault:ensureDefaultWorkspace', async () => {
+    const active = await getActiveVaultInfo();
+    if (active) {
+      vaultWatcherController.scheduleStart(active.path);
+      await cloudSyncEngine.init(active.path);
+      return active;
+    }
+
+    // 防止存在旧 active/旧引擎残留（不做历史兼容，但保证行为可解释）
+    cloudSyncEngine.stop();
+
+    const vault = await ensureDefaultWorkspace();
+    if (vault) {
+      broadcastToAllWindows('vault:vaultsChanged', getVaults());
+      broadcastToAllWindows('vault:activeVaultChanged', vault);
+      vaultWatcherController.scheduleStart(vault.path);
+      await cloudSyncEngine.init(vault.path);
+    }
+    return vault;
+  });
   ipcMain.handle('vault:selectDirectory', () => selectDirectory());
 
   // ── 多 Vault 支持 ────────────────────────────────────────────
@@ -207,6 +231,14 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';
     if (!vaultPath) return null;
     return getLastOpenedFile(vaultPath);
+  });
+  ipcMain.handle('workspace:getLastMode', () => getLastMode());
+  ipcMain.handle('workspace:setLastMode', (_event, payload) => {
+    const mode = typeof payload?.mode === 'string' ? payload.mode : '';
+    if (mode !== 'chat' && mode !== 'workspace' && mode !== 'sites') {
+      return;
+    }
+    setLastMode(mode);
   });
   ipcMain.handle('workspace:setLastOpenedFile', (_event, payload) => {
     const vaultPath = typeof payload?.vaultPath === 'string' ? payload.vaultPath : '';

@@ -76,6 +76,7 @@ status: active
   - 发布/签名 Runbooks：`docs/products/moryflow/runbooks/release/`
   - Moryflow PC 自动更新（R2-only）：`docs/products/moryflow/runbooks/release/electron-auto-update-r2.md`
   - 云同步（统一方案与现状）：`docs/products/moryflow/features/cloud-sync/unified-implementation.md`
+  - PC App Modes 方案（Chat / Workspace / Sites）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`
   - PC 输入框重构方案（执行级 + Notion 交互规范）：`docs/products/moryflow/features/chat-input/pc-prompt-input-refactor.md`
   - PC 输入框改造方案（+ 菜单 / @ 引用 / 主按钮统一）：`docs/products/moryflow/features/chat-input/pc-prompt-input-plus-menu.md`（更新：2026-01-28：二级面板对齐到对应项）
   - PC 悬浮任务面板改造方案：`docs/products/moryflow/features/chat-pane/task-hover-panel-redesign.md`（更新：2026-02-02：悬停箭头/详情示意/行态说明）
