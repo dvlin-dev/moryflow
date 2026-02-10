@@ -107,12 +107,6 @@ const api: DesktopApi = {
     removeRecentFile: (vaultPath, filePath) =>
       ipcRenderer.invoke('workspace:removeRecentFile', { vaultPath, filePath }),
   },
-  preload: {
-    getCache: () => ipcRenderer.invoke('preload:getCache'),
-    setCache: (input) => ipcRenderer.invoke('preload:setCache', input ?? {}),
-    getConfig: () => ipcRenderer.invoke('preload:getConfig'),
-    setConfig: (input) => ipcRenderer.invoke('preload:setConfig', input ?? {}),
-  },
   files: {
     read: (path) => ipcRenderer.invoke('files:read', { path }),
     write: (input) => ipcRenderer.invoke('files:write', input),

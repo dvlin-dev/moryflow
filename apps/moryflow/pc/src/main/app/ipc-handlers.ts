@@ -4,6 +4,7 @@
  * [POS]: Main process IPC router (validation + orchestration only)
  * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
  * [UPDATE]: 2026-02-08 - 新增 `workspace:getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
+ * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -38,8 +39,6 @@ import {
 } from '../vault.js';
 import { getAgentSettings, updateAgentSettings } from '../agent-settings/index.js';
 import { resetApp } from '../app-maintenance.js';
-import { getAllPreloadCache, setPreloadCache } from '../preload-cache.js';
-import { getPreloadConfig, setPreloadConfig } from '../preload-settings.js';
 import { isToolOutputPathAllowed } from '../agent-runtime/tool-output-storage.js';
 import {
   getExpandedPaths,
@@ -279,15 +278,6 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     if (!vaultPath) return;
     removeRecentFile(vaultPath, filePath);
   });
-  ipcMain.handle('preload:getCache', () => getAllPreloadCache());
-  ipcMain.handle('preload:setCache', (_event, payload) => {
-    const key = typeof payload?.key === 'string' ? payload.key : null;
-    const loadedAt = typeof payload?.loadedAt === 'number' ? payload.loadedAt : Date.now();
-    const hash = typeof payload?.hash === 'string' ? payload.hash : undefined;
-    const appVersion = typeof payload?.appVersion === 'string' ? payload.appVersion : undefined;
-    if (!key) return;
-    setPreloadCache(key, { key, loadedAt, hash, appVersion });
-  });
   ipcMain.handle('vault:readTree', async (_event, payload) => {
     const result = await readVaultTree(payload ?? {});
     if (payload?.path) {
@@ -309,13 +299,6 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
   ipcMain.handle('vault:updateWatchPaths', async (_event, payload) => {
     const paths = Array.isArray(payload?.paths) ? payload.paths : [];
     await vaultWatcherController.updateExpandedWatchers(paths);
-  });
-  ipcMain.handle('preload:getConfig', () => getPreloadConfig());
-  ipcMain.handle('preload:setConfig', (_event, payload) => {
-    setPreloadConfig({
-      disabled: typeof payload?.disabled === 'boolean' ? payload.disabled : undefined,
-      ttlMs: typeof payload?.ttlMs === 'number' ? payload.ttlMs : undefined,
-    });
   });
   ipcMain.handle('files:read', (_event, payload) => readVaultFile(payload ?? {}));
   ipcMain.handle('files:write', (_event, payload) => writeVaultFile(payload ?? {}));

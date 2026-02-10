@@ -38,11 +38,6 @@ import { buildMembershipModelGroup } from './models';
 import type { ChatSubmitPayload } from './components/chat-prompt-input/const';
 import { createMessageMetadata } from './types/message';
 
-export const CHAT_CHUNK_HASH =
-  typeof import.meta.url === 'string'
-    ? import.meta.url.match(/([A-Za-z0-9]{8,})\.(?:m?js|js)/)?.[1]
-    : undefined;
-
 export const ChatPane = ({
   variant = 'panel',
   activeFilePath,

@@ -31,8 +31,9 @@ import { VaultOnboarding } from './components/vault-onboarding';
 import { EditorPanel } from './components/editor-panel';
 import {
   usePerfMarker,
+  useFirstInteraction,
   useStartupPerfMarks,
-  useWorkspaceChunkPreload,
+  useWorkspaceWarmup,
 } from './hooks/use-startup-perf';
 import { ChatPanePortal } from './components/chat-pane-portal';
 import {
@@ -51,6 +52,7 @@ const SettingsDialog = lazy(() =>
 
 export const DesktopWorkspaceShell = () => {
   const markOnce = usePerfMarker();
+  const hasInteracted = useFirstInteraction({ markOnce });
 
   const { mode } = useWorkspaceMode();
   const { vault } = useWorkspaceVault();
@@ -84,26 +86,6 @@ export const DesktopWorkspaceShell = () => {
       setSitesMainMounted(true);
     }
   }, [mode]);
-
-  // Warm up heavy views in idle so first-time switching feels instant.
-  useEffect(() => {
-    if (!vault) return;
-    if (treeState !== 'idle') return;
-    if (workspaceMainMounted && sitesMainMounted) return;
-
-    const warm = () => {
-      setWorkspaceMainMounted(true);
-      setSitesMainMounted(true);
-    };
-
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(warm, { timeout: 1500 });
-      return () => window.cancelIdleCallback?.(id);
-    }
-
-    const timer = window.setTimeout(warm, 600);
-    return () => window.clearTimeout(timer);
-  }, [vault, treeState, workspaceMainMounted, sitesMainMounted]);
 
   // ChatPane portal targets:
   // - Chat Mode: render in main area
@@ -236,9 +218,9 @@ export const DesktopWorkspaceShell = () => {
     markOnce,
   });
 
-  useWorkspaceChunkPreload({
-    markOnce,
-    handleChatReady,
+  useWorkspaceWarmup({
+    enabled: Boolean(vault) && treeState === 'idle',
+    hasInteracted,
   });
 
   const activePath = activeDoc?.path ?? selectedFile?.path ?? null;

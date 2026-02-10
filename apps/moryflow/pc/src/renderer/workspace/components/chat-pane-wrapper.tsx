@@ -2,7 +2,7 @@
  * [PROPS]: ChatPaneWrapperProps
  * [EMITS]: onReady/onToggleCollapse/onOpenSettings
  * [POS]: ChatPane 的懒加载包装层（Suspense + React.lazy），仅负责加载与 props 透传
- * [UPDATE]: 2026-02-10 - 移除对 `streamdown` 的直接预加载（避免未声明直接依赖；预加载由 Workspace 统一的 preload service 负责）
+ * [UPDATE]: 2026-02-10 - 移除对 `streamdown` 的直接预加载（避免未声明直接依赖；预热由 Workspace Shell 的 warmup 在 idle 阶段统一处理）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */

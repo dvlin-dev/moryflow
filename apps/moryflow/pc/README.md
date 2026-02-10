@@ -188,7 +188,7 @@ Moryflow 采用「预设服务商 + 预设模型」的设计模式：
 
 - **树与 Watcher**：首屏仅拉 `readTreeRoot`（depth=0），展开节点才调 `readTreeChildren`。
 - **懒加载**：Editor/Chat/Shiki/编辑器扩展均 lazy chunk，Skeleton 兜底。
-- **预取**：idle 阶段通过 `preloadRegistry + preloadChunks` 预取常用模块。
+- **Warmup**：idle 阶段仅 `import()` 预热少量重模块（如 ChatPane/Shiki），不做 IPC/落盘缓存，保证交互稳定。
 
 ## 开发命令
 

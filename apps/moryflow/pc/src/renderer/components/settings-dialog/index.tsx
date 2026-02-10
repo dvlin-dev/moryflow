@@ -14,11 +14,6 @@ import { SectionNavigation } from './components/section-navigation';
 import { SectionContent } from './components/section-content';
 import { useTranslation } from '@/lib/i18n';
 
-export const SETTINGS_CHUNK_HASH =
-  typeof import.meta.url === 'string'
-    ? import.meta.url.match(/([A-Za-z0-9]{8,})\.(?:m?js|js)/)?.[1]
-    : undefined;
-
 export const SettingsDialog = ({
   open,
   onOpenChange,

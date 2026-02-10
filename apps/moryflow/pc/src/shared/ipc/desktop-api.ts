@@ -4,6 +4,7 @@
  * [POS]: PC IPC 类型入口
  * [UPDATE]: 2026-02-08 - 新增 `vault.ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
  * [UPDATE]: 2026-02-08 - 新增 `workspace.getLastMode/setLastMode`，用于持久化 App Mode（Chat/Workspace/Sites）
+ * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC 契约，预热改为 Renderer 侧轻量 warmup（避免额外 IPC/落盘缓存维护）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -157,19 +158,6 @@ export type DesktopApi = {
     recordRecentFile: (vaultPath: string, filePath: string | null) => Promise<void>;
     /** 移除最近操作的文件（按 Vault） */
     removeRecentFile: (vaultPath: string, filePath: string | null) => Promise<void>;
-  };
-  preload: {
-    getCache: () => Promise<
-      Record<string, { key: string; loadedAt: number; hash?: string; appVersion?: string }>
-    >;
-    setCache: (input: {
-      key: string;
-      loadedAt: number;
-      hash?: string;
-      appVersion?: string;
-    }) => Promise<void>;
-    getConfig: () => Promise<{ disabled: boolean; ttlMs: number }>;
-    setConfig: (input: { disabled?: boolean; ttlMs?: number }) => Promise<void>;
   };
   files: {
     read: (path: string) => Promise<{ content: string; mtime: number }>;
