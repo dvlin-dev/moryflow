@@ -47,11 +47,13 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
 
     this.heartbeatService.incrementActiveTasks();
     let workspaceDir: string | null = null;
+    let localStarted = false;
 
     try {
       workspaceDir = await this.executorService.createWorkspace(taskId);
 
       await this.markLocalStarted(taskId);
+      localStarted = true;
       await this.scheduleFallbackCheckSafely(taskId);
       await this.ensureNotPreempted(taskId);
 
@@ -61,19 +63,13 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
       );
 
       await this.ensureNotPreempted(taskId);
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
-        data: { status: 'EXTRACTING_AUDIO' },
-      });
+      await this.updateLocalStatus(taskId, 'EXTRACTING_AUDIO');
 
       const audioPath = `${workspaceDir}/audio.wav`;
       await this.executorService.extractAudio(videoPath, audioPath);
 
       await this.ensureNotPreempted(taskId);
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
-        data: { status: 'TRANSCRIBING' },
-      });
+      await this.updateLocalStatus(taskId, 'TRANSCRIBING');
 
       const localOutput = await this.executorService.transcribeLocal(
         audioPath,
@@ -83,10 +79,7 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
         await this.executorService.getAudioDurationSeconds(audioPath);
 
       await this.ensureNotPreempted(taskId);
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
-        data: { status: 'UPLOADING' },
-      });
+      await this.updateLocalStatus(taskId, 'UPLOADING');
 
       const result: VideoTranscriptResult = {
         text: localOutput.text,
@@ -106,8 +99,14 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
         result,
       });
 
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
+      const completed = await this.prisma.videoTranscriptTask.updateMany({
+        where: {
+          id: taskId,
+          executor: 'LOCAL',
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
+        },
         data: {
           status: 'COMPLETED',
           executor: 'LOCAL',
@@ -117,6 +116,9 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
           completedAt: new Date(),
         },
       });
+      if (completed.count === 0) {
+        return;
+      }
 
       await this.transcriptService.clearFallbackJobs(taskId);
     } catch (error) {
@@ -132,14 +134,47 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
         return;
       }
 
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
-        data: {
-          status: 'FAILED',
-          error: error instanceof Error ? error.message : String(error),
-          completedAt: new Date(),
-        },
-      });
+      if (localStarted) {
+        if (latest && latest.executor !== 'LOCAL') {
+          // 已被 cloud 接管或执行权已转移，local 失败不应覆盖任务状态
+          return;
+        }
+
+        const failed = await this.prisma.videoTranscriptTask.updateMany({
+          where: {
+            id: taskId,
+            executor: 'LOCAL',
+            status: {
+              notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+            },
+          },
+          data: {
+            status: 'FAILED',
+            error: error instanceof Error ? error.message : String(error),
+            completedAt: new Date(),
+          },
+        });
+        if (failed.count === 0) {
+          return;
+        }
+      } else {
+        const failed = await this.prisma.videoTranscriptTask.updateMany({
+          where: {
+            id: taskId,
+            status: {
+              notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+            },
+          },
+          data: {
+            status: 'FAILED',
+            error: error instanceof Error ? error.message : String(error),
+            completedAt: new Date(),
+          },
+        });
+        if (failed.count === 0) {
+          return;
+        }
+      }
 
       throw error;
     } finally {
@@ -158,10 +193,14 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
 
     const task = await this.prisma.videoTranscriptTask.findUnique({
       where: { id: taskId },
-      select: { status: true },
+      select: { status: true, executor: true },
     });
 
-    if (!task || this.transcriptService.isTerminalStatus(task.status)) {
+    if (
+      !task ||
+      task.executor !== 'LOCAL' ||
+      this.transcriptService.isTerminalStatus(task.status)
+    ) {
       throw new VideoTranscriptPreemptedError(taskId);
     }
   }
@@ -185,6 +224,28 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
     `;
 
     if (affected === 0) {
+      throw new VideoTranscriptPreemptedError(taskId);
+    }
+  }
+
+  private async updateLocalStatus(
+    taskId: string,
+    status: 'EXTRACTING_AUDIO' | 'TRANSCRIBING' | 'UPLOADING',
+  ): Promise<void> {
+    const updated = await this.prisma.videoTranscriptTask.updateMany({
+      where: {
+        id: taskId,
+        executor: 'LOCAL',
+        status: {
+          notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+        },
+      },
+      data: {
+        status,
+      },
+    });
+
+    if (updated.count === 0) {
       throw new VideoTranscriptPreemptedError(taskId);
     }
   }

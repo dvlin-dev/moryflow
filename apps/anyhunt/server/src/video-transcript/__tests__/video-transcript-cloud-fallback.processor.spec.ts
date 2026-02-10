@@ -33,7 +33,7 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     mockPrisma = {
       videoTranscriptTask: {
         findUnique: vi.fn().mockResolvedValue(task),
-        update: vi.fn().mockResolvedValue({}),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       $queryRaw: vi.fn().mockResolvedValue([{ due: true }]),
     };
@@ -98,7 +98,7 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     ).resolves.toBeUndefined();
 
     expect(mockTranscriptService.setPreemptSignal).not.toHaveBeenCalled();
-    expect(mockPrisma.videoTranscriptTask.update).not.toHaveBeenCalledWith(
+    expect(mockPrisma.videoTranscriptTask.updateMany).not.toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           status: 'FAILED',
@@ -109,6 +109,26 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
 
   it('should mark FAILED when timeout cloud run has already taken over', async () => {
     mockExecutorService.probeVideoDurationSeconds.mockResolvedValue(120);
+    mockPrisma.videoTranscriptTask.findUnique = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'task_1',
+        userId: 'user_1',
+        sourceUrl: 'https://youtube.com/watch?v=abc123',
+        status: 'TRANSCRIBING',
+        executor: 'LOCAL',
+        localStartedAt: new Date('2026-02-09T09:00:00.000Z'),
+        startedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'task_1',
+        userId: 'user_1',
+        sourceUrl: 'https://youtube.com/watch?v=abc123',
+        status: 'DOWNLOADING',
+        executor: 'CLOUD_FALLBACK',
+        localStartedAt: new Date('2026-02-09T09:00:00.000Z'),
+        startedAt: null,
+      });
 
     await expect(
       processor.process({
@@ -123,9 +143,8 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     expect(mockTranscriptService.setPreemptSignal).toHaveBeenCalledWith(
       'task_1',
     );
-    expect(mockPrisma.videoTranscriptTask.update).toHaveBeenCalledWith(
+    expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'task_1' },
         data: expect.objectContaining({
           status: 'FAILED',
         }),
@@ -138,6 +157,26 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     mockExecutorService.createWorkspace.mockRejectedValue(
       new Error('workspace unavailable'),
     );
+    mockPrisma.videoTranscriptTask.findUnique = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'task_1',
+        userId: 'user_1',
+        sourceUrl: 'https://youtube.com/watch?v=abc123',
+        status: 'TRANSCRIBING',
+        executor: 'LOCAL',
+        localStartedAt: new Date('2026-02-09T09:00:00.000Z'),
+        startedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'task_1',
+        userId: 'user_1',
+        sourceUrl: 'https://youtube.com/watch?v=abc123',
+        status: 'DOWNLOADING',
+        executor: 'CLOUD_FALLBACK',
+        localStartedAt: new Date('2026-02-09T09:00:00.000Z'),
+        startedAt: null,
+      });
 
     await expect(
       processor.process({
@@ -152,9 +191,8 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
     expect(mockTranscriptService.setPreemptSignal).toHaveBeenCalledWith(
       'task_1',
     );
-    expect(mockPrisma.videoTranscriptTask.update).toHaveBeenCalledWith(
+    expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'task_1' },
         data: expect.objectContaining({
           status: 'FAILED',
         }),
@@ -175,8 +213,14 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
 
     mockPrisma.videoTranscriptTask.findUnique = vi
       .fn()
-      .mockResolvedValueOnce(initialTask)
-      .mockResolvedValueOnce({ status: 'CANCELLED' });
+      .mockResolvedValueOnce(initialTask);
+
+    mockPrisma.videoTranscriptTask.updateMany = vi.fn((args: any) => {
+      if (args?.data?.status === 'COMPLETED') {
+        return Promise.resolve({ count: 0 });
+      }
+      return Promise.resolve({ count: 1 });
+    });
 
     mockExecutorService.downloadVideo.mockResolvedValue('/tmp/video.mp4');
     mockExecutorService.extractAudio.mockResolvedValue(undefined);
@@ -204,11 +248,15 @@ describe('VideoTranscriptCloudFallbackProcessor', () => {
       } as any),
     ).resolves.toBeUndefined();
 
-    expect(mockPrisma.videoTranscriptTask.update).not.toHaveBeenCalledWith(
+    expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          status: 'COMPLETED',
+        where: expect.objectContaining({
+          executor: 'CLOUD_FALLBACK',
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
         }),
+        data: expect.objectContaining({ status: 'COMPLETED' }),
       }),
     );
   });

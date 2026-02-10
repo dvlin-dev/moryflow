@@ -122,23 +122,16 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
     > | null = null;
     let budgetReservedByProbe = false;
     const startedAt = task.startedAt ?? new Date();
-    const markCloudOwnership = async (
-      status: 'DOWNLOADING' | 'EXTRACTING_AUDIO' | 'TRANSCRIBING' | 'UPLOADING',
-    ) => {
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
-        data: {
-          status,
-          executor: 'CLOUD_FALLBACK',
-          startedAt,
-          error: null,
-        },
-      });
-      cloudOwnershipAcquired = true;
-    };
 
     if (reason === 'local-disabled') {
-      await markCloudOwnership('DOWNLOADING');
+      cloudOwnershipAcquired = await this.acquireCloudOwnership(
+        taskId,
+        'DOWNLOADING',
+        startedAt,
+      );
+      if (!cloudOwnershipAcquired) {
+        return;
+      }
     }
 
     const probedDurationSec =
@@ -155,7 +148,14 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
       }
 
       if (reason === 'timeout') {
-        await markCloudOwnership('DOWNLOADING');
+        cloudOwnershipAcquired = await this.acquireCloudOwnership(
+          taskId,
+          'DOWNLOADING',
+          startedAt,
+        );
+        if (!cloudOwnershipAcquired) {
+          return;
+        }
         await this.transcriptService.setPreemptSignal(taskId);
         preemptSignaled = true;
       }
@@ -172,7 +172,13 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
       const audioPath = `${workspaceDir}/audio.wav`;
 
       if (cloudOwnershipAcquired) {
-        await markCloudOwnership('EXTRACTING_AUDIO');
+        const advanced = await this.advanceCloudStatus(
+          taskId,
+          'EXTRACTING_AUDIO',
+        );
+        if (!advanced) {
+          return;
+        }
       }
 
       await this.executorService.extractAudio(videoPath, audioPath);
@@ -193,19 +199,46 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
       }
 
       if (reason === 'timeout' && !preemptSignaled) {
-        await markCloudOwnership('DOWNLOADING');
+        cloudOwnershipAcquired = await this.acquireCloudOwnership(
+          taskId,
+          'DOWNLOADING',
+          startedAt,
+        );
+        if (!cloudOwnershipAcquired) {
+          return;
+        }
         await this.transcriptService.setPreemptSignal(taskId);
         preemptSignaled = true;
       }
 
-      await markCloudOwnership('TRANSCRIBING');
+      if (!cloudOwnershipAcquired) {
+        cloudOwnershipAcquired = await this.acquireCloudOwnership(
+          taskId,
+          'DOWNLOADING',
+          startedAt,
+        );
+        if (!cloudOwnershipAcquired) {
+          return;
+        }
+      }
+
+      const transcribing = await this.advanceCloudStatus(
+        taskId,
+        'TRANSCRIBING',
+      );
+      if (!transcribing) {
+        return;
+      }
 
       const cloudOutput = await this.executorService.transcribeCloud(
         audioPath,
         `${workspaceDir}/transcript`,
       );
 
-      await markCloudOwnership('UPLOADING');
+      const uploading = await this.advanceCloudStatus(taskId, 'UPLOADING');
+      if (!uploading) {
+        return;
+      }
 
       const result: VideoTranscriptResult = {
         text: cloudOutput.text,
@@ -225,17 +258,10 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
         result,
       });
 
-      const latest = await this.prisma.videoTranscriptTask.findUnique({
-        where: { id: taskId },
-        select: { status: true },
-      });
-      if (!latest || this.transcriptService.isTerminalStatus(latest.status)) {
-        return;
-      }
-
       const completed = await this.prisma.videoTranscriptTask.updateMany({
         where: {
           id: taskId,
+          executor: 'CLOUD_FALLBACK',
           status: {
             notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
           },
@@ -280,14 +306,28 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
         return;
       }
 
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
+      if (latest.executor !== 'CLOUD_FALLBACK') {
+        // 执行权已不在 cloud（可能被终态/其他执行器抢占），避免覆盖状态
+        return;
+      }
+
+      const failed = await this.prisma.videoTranscriptTask.updateMany({
+        where: {
+          id: taskId,
+          executor: 'CLOUD_FALLBACK',
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
+        },
         data: {
           status: 'FAILED',
           error: error instanceof Error ? error.message : String(error),
           completedAt: new Date(),
         },
       });
+      if (failed.count === 0) {
+        return;
+      }
 
       throw error;
     } finally {
@@ -303,8 +343,14 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
     cloudOwnershipAcquired: boolean,
   ): Promise<void> {
     if (reason === 'local-disabled' || cloudOwnershipAcquired) {
-      await this.prisma.videoTranscriptTask.update({
-        where: { id: taskId },
+      await this.prisma.videoTranscriptTask.updateMany({
+        where: {
+          id: taskId,
+          executor: 'CLOUD_FALLBACK',
+          status: {
+            notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+          },
+        },
         data: {
           status: 'FAILED',
           error: 'Cloud fallback daily budget exceeded',
@@ -314,12 +360,62 @@ export class VideoTranscriptCloudFallbackProcessor extends WorkerHost {
       return;
     }
 
-    await this.prisma.videoTranscriptTask.update({
-      where: { id: taskId },
+    await this.prisma.videoTranscriptTask.updateMany({
+      where: {
+        id: taskId,
+        executor: 'LOCAL',
+        status: {
+          notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+        },
+      },
       data: {
         error: 'Cloud fallback daily budget exceeded',
       },
     });
+  }
+
+  private async acquireCloudOwnership(
+    taskId: string,
+    status: 'DOWNLOADING',
+    startedAt: Date,
+  ): Promise<boolean> {
+    const acquired = await this.prisma.videoTranscriptTask.updateMany({
+      where: {
+        id: taskId,
+        status: {
+          notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+        },
+      },
+      data: {
+        status,
+        executor: 'CLOUD_FALLBACK',
+        startedAt,
+        error: null,
+      },
+    });
+
+    return acquired.count > 0;
+  }
+
+  private async advanceCloudStatus(
+    taskId: string,
+    status: 'EXTRACTING_AUDIO' | 'TRANSCRIBING' | 'UPLOADING',
+  ): Promise<boolean> {
+    const updated = await this.prisma.videoTranscriptTask.updateMany({
+      where: {
+        id: taskId,
+        executor: 'CLOUD_FALLBACK',
+        status: {
+          notIn: ['COMPLETED', 'FAILED', 'CANCELLED'],
+        },
+      },
+      data: {
+        status,
+        error: null,
+      },
+    });
+
+    return updated.count > 0;
   }
 
   private async isFallbackDue(taskId: string): Promise<boolean> {

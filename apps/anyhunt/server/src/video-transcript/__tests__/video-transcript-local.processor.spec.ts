@@ -23,16 +23,20 @@ describe('VideoTranscriptLocalProcessor', () => {
       videoTranscriptTask: {
         findUnique: vi.fn((args?: { select?: { status: true } }) => {
           if (args?.select?.status) {
-            return Promise.resolve({ status: 'DOWNLOADING' });
+            return Promise.resolve({
+              status: 'DOWNLOADING',
+              executor: 'LOCAL',
+            });
           }
           return Promise.resolve({
             id: 'task_1',
             userId: 'user_1',
             sourceUrl: 'https://youtube.com/watch?v=abc123',
             status: 'PENDING',
+            executor: null,
           });
         }),
-        update: vi.fn().mockResolvedValue({}),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       $executeRaw: vi.fn().mockResolvedValue(1),
     };
@@ -94,9 +98,8 @@ describe('VideoTranscriptLocalProcessor', () => {
       'task_1',
     );
     expect(mockExecutorService.downloadVideo).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.videoTranscriptTask.update).toHaveBeenCalledWith(
+    expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'task_1' },
         data: expect.objectContaining({
           status: 'COMPLETED',
           executor: 'LOCAL',
@@ -119,9 +122,8 @@ describe('VideoTranscriptLocalProcessor', () => {
     expect(mockHeartbeatService.incrementActiveTasks).toHaveBeenCalledTimes(1);
     expect(mockHeartbeatService.decrementActiveTasks).toHaveBeenCalledTimes(1);
     expect(mockExecutorService.cleanupWorkspace).not.toHaveBeenCalled();
-    expect(mockPrisma.videoTranscriptTask.update).toHaveBeenCalledWith(
+    expect(mockPrisma.videoTranscriptTask.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'task_1' },
         data: expect.objectContaining({
           status: 'FAILED',
           error: 'workspace unavailable',
