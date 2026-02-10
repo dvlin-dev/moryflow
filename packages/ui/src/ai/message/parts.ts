@@ -3,6 +3,7 @@
  * [DEPENDS]: ai（UIMessage + type guards）
  * [POS]: 共享“消息渲染前”的纯函数，避免 PC/Web 各自实现 parts 拆分与尾部标记清理导致语义漂移
  * [UPDATE]: 2026-02-10 - 新增 findLastTextPartIndex：用于 Streamdown 流式动画精确定位最后一个 text part
+ * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：统一标注动画依赖点，便于全局检索
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,6 +18,7 @@ const FILE_REF_REGEX = /\n\n\[Referenced files: [^\]]+\]$/;
 
 export const cleanFileRefMarker = (text: string): string => text.replace(FILE_REF_REGEX, '');
 
+// STREAMDOWN_ANIM: 仅对“最后一个 text part”启用 Streamdown token 动画，避免列表大段内容重复动画。
 /** 找出 orderedParts 中最后一个 text part 的索引；不存在则返回 -1 */
 export const findLastTextPartIndex = (orderedParts: UIMessage['parts'][number][]): number => {
   for (let index = orderedParts.length - 1; index >= 0; index -= 1) {

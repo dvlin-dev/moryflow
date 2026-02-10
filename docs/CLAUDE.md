@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录；补齐与 `main` 分支差异与 Code Review 附录）
+> 最近更新：2026-02-10（新增：Moryflow PC 左侧 Sidebar 导航方案：Implicit Agent + Modules；新增：Streamdown 使用指南（Markdown 渲染 + 流式 Token 动画））
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,8 +41,10 @@
 
 ## 最近更新
 
+- Moryflow PC 左侧 Sidebar 导航方案（Implicit Agent + Modules）：`docs/products/moryflow/features/app-modes/agent-sites-nav-hierarchy.md`（2026-02-10：implemented）
+- Streamdown 使用指南（Markdown 渲染 + 流式 Token 动画）：`docs/guides/frontend/streamdown.md`（2026-02-10：active）
 - Moryflow PC 消息列表交互复用改造方案：Following 模式定稿（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-08）
-- Moryflow PC App Modes 方案（Chat / Workspace / Sites）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`（2026-02-08：proposal）
+- Moryflow PC App Modes 方案（Legacy: Chat / Workspace / Sites；superseded）：`docs/products/moryflow/features/app-modes/chat-and-workspace-modes.md`（2026-02-10：superseded）
 - 调研（已废弃方案，不再采用）：Moryflow PC TurnAnchor 滚动问题跟踪与记录（`docs/research/moryflow-pc-turn-anchor-scroll-tracking.md`，最后更新：2026-02-05）
 - Anyhunt WWW 移动端底部导航方案（移动端优先 + 3 Tab（Inbox 优先） + 移动端不展示 Welcome + Notion 风格）：`docs/products/anyhunt-dev/anyhunt-www-mobile-bottom-nav.md`（2026-01-28：implemented）
 - Anyhunt app/public/apikey 通道路由规范与迁移清单（含模块进度）：`docs/architecture/anyhunt-api-channel-routing.md`（2026-02-02：implemented）

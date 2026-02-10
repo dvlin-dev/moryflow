@@ -2,6 +2,7 @@
  * [PROPS]: ReasoningProps/ReasoningTriggerProps/ReasoningContentProps
  * [POS]: Reasoning（thinking）渲染：支持流式 duration、折叠与 Markdown 展示（Streamdown）
  * [UPDATE]: 2026-02-10 - Streamdown v2.2：ReasoningContent 在 streaming 时启用逐词流式动画
+ * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：ReasoningContent 动画触发点
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -16,6 +17,7 @@ import type { ComponentProps } from 'react';
 import { createContext, memo, useContext, useEffect, useState } from 'react';
 import { Streamdown } from 'streamdown';
 import { Shimmer } from './shimmer';
+import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from './streamdown-anim';
 
 type ReasoningContextValue = {
   isStreaming: boolean;
@@ -184,7 +186,8 @@ export const ReasoningContent = memo(({ className, children, ...props }: Reasoni
       )}
       {...props}
     >
-      <Streamdown animated isAnimating={isStreaming}>
+      {/* STREAMDOWN_ANIM: Reasoning 内容在 streaming 时启用 token 动画（animated + isAnimating）。 */}
+      <Streamdown animated={STREAMDOWN_ANIM_STREAMING_OPTIONS} isAnimating={isStreaming}>
         {children}
       </Streamdown>
     </CollapsibleContent>

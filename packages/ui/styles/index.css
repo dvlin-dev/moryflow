@@ -5,7 +5,47 @@
 
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import 'streamdown/styles.css';
+
+/*
+ * Streamdown animations (inlined).
+ * Reason: Some Vite/PostCSS setups fail to resolve `streamdown/styles.css` via package exports.
+ * We keep the styles local to avoid dev-server breakage while still supporting Streamdown's data attributes.
+ */
+@keyframes sd-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sd-blurIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes sd-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* STREAMDOWN_ANIM: Streamdown 会在需要动画的 token 外包一层 `data-sd-animate` span；本规则是动画真正的 CSS 触发器。 */
+[data-sd-animate] {
+  animation: var(--sd-animation, sd-fadeIn) var(--sd-duration, 150ms) var(--sd-easing, ease) both;
+}
 
 @source '../src/**/*.{ts,tsx}';
 @source '../../../node_modules/streamdown/dist/*.js';
