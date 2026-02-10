@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-10（Anyhunt 视频转写补充 worker 独立启动入口 + Docker 角色开关：`ANYHUNT_RUN_MODE`/`ANYHUNT_RUN_MIGRATIONS`，并同步 terminal/executor guard）
 > 最近更新：2026-02-09（Anyhunt 视频转写方案补充上线前执行清单（Checklist）：T-1/T-0、联调验收、回滚预案、24h 观察）
 > 最近更新：2026-02-09（Anyhunt 视频转写补充本地一键部署脚本：`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`）
 > 最近更新：2026-02-09（Anyhunt 视频转写新增“三节点部署详细流程（公网简化版）”：VPS1 API + VPS2 cloud fallback worker + Mac mini local worker）
@@ -54,6 +55,7 @@
 
 ## 最近更新
 
+- Anyhunt 视频链接下载 + 双模式转写架构方案：补充 worker 独立启动入口与 Docker 角色开关（`ANYHUNT_RUN_MODE`/`ANYHUNT_RUN_MIGRATIONS`），并同步 local/cloud 状态推进增加 terminal/executor guard（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-10：active）
 - Anyhunt 视频链接下载 + 双模式转写架构方案：新增上线前执行清单（Checklist），用于生产上线前固定打勾执行（T-1/T-0、联调验收、回滚预案、24h 观察）（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
 - Anyhunt 视频链接下载 + 双模式转写架构方案：补充本地一键部署脚本（`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`），用于 Mac mini local-worker 环境初始化、`launchd` 注册与启动（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）
 - Anyhunt 视频链接下载 + 双模式转写架构方案：新增“三节点部署详细流程（公网简化版）”，明确 `VPS1(API)+VPS2(cloud fallback)+Mac mini(local)` 的部署步骤、角色开关矩阵与联调验收顺序（`docs/architecture/anyhunt-video-transcript-pipeline.md`，2026-02-09：active）

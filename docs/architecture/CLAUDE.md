@@ -41,6 +41,7 @@
 
 ## 近期更新
 
+- `anyhunt-video-transcript-pipeline.md`：补充“worker 独立启动入口 + Docker 角色开关”（`ANYHUNT_RUN_MODE` / `ANYHUNT_RUN_MIGRATIONS`），并明确 VPS2/Mac mini 采用最小 worker App 启动以避免误消费其他队列；同步 local/cloud 状态推进增加 terminal/executor guard（2026-02-10）。
 - `anyhunt-video-transcript-pipeline.md`：新增“上线前执行清单（Checklist）”章节，固化 T-1/T-0、联调验收、回滚预案与 24h 观察项（2026-02-09）。
 - `anyhunt-video-transcript-pipeline.md`：补充本地一键部署脚本（`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`）说明，统一 Mac mini local-worker 的依赖安装、环境文件写入、`launchd` 注册与启动（2026-02-09）。
 - `anyhunt-video-transcript-pipeline.md`：新增“三节点部署详细流程（公网简化版）”，明确 `VPS1(API)+VPS2(cloud fallback)+Mac mini(local)` 的角色开关矩阵、部署步骤与联调验收顺序（2026-02-09）。

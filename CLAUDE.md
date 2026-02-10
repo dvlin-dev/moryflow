@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-10（Anyhunt 视频转写：补充 worker 独立启动入口与 Docker 角色开关（`ANYHUNT_RUN_MODE`/`ANYHUNT_RUN_MIGRATIONS`），并同步 terminal/executor guard 防止终态覆盖）
 > 最近更新：2026-02-09（Anyhunt 视频转写补充本地一键部署脚本：`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`）
 > 最近更新：2026-02-09（Anyhunt 视频转写补充三节点部署定案（公网简化版）：VPS1 API + VPS2 cloud fallback worker + Mac mini local worker）
 > 最近更新：2026-02-09（Anyhunt 视频转写四轮可靠性修复：cloud 接管后 workspace 失败兜底、local 启动顺序严格对齐 10 分钟窗口起点、duration probe 解析增强、补充对应回归测试）

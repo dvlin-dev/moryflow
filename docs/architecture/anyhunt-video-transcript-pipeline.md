@@ -1,6 +1,6 @@
 ---
 title: Anyhunt 视频链接下载与双模式转写方案（定案）
-date: 2026-02-09
+date: 2026-02-10
 scope: anyhunt/server, anyhunt/console, anyhunt/admin, local-host, cloud-fallback, video-transcript
 status: active
 ---
@@ -18,6 +18,8 @@ status: active
 ## 0. 最近执行同步
 
 - 2026-02-10：PR Review 修复：local workspace 创建失败不再导致 activeTasks 泄漏/任务卡死；平台域名白名单改为 domain-boundary 校验防止 suffix bypass；cloud fallback 完成态写入前增加终态保护（避免覆盖 CANCELLED/FAILED）；队列策略调整：保留默认队列全局 5 分钟 timeout（历史行为），并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h，CLOUD=2h）。
+- 2026-02-10：部署架构补强（避免误消费其他队列）：新增 Video Transcript worker 独立启动入口 `apps/anyhunt/server/src/video-transcript/worker.ts` + 最小启动模块 `apps/anyhunt/server/src/video-transcript/video-transcript-worker-app.module.ts`，确保 `VPS2 cloud worker` / `Mac mini local worker` 不加载全量 `AppModule`，不会误消费 `scrape/crawl/digest` 等队列或执行全局定时任务；同时将 local/cloud 的状态推进改为 `updateMany + terminal guard + executor guard`，避免 CANCELLED/接管竞态下被覆盖；Docker 入口新增 `ANYHUNT_RUN_MODE` 与 `ANYHUNT_RUN_MIGRATIONS`（worker 跳过迁移），Mac mini 一键脚本改为启动 `start:video-transcript-worker`。
+- 2026-02-10：最佳实践补齐：URL 入参强制 http(s) 协议校验（DTO + normalize 双层兜底）；`VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER` / `VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER` 默认值改为 `false`（避免误启 worker）；Admin `Queues` 页面用户可见文案统一英文，时间展示改为 `formatRelativeTime`。
 - 2026-02-09：补充“17. 上线前执行清单（Checklist）”，覆盖 T-1 准备、T-0 部署、联调验收、回滚预案与 24h 观察项，作为生产上线前固定打勾清单。
 - 2026-02-09：新增 Mac mini local-worker 一键部署脚本 `apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`，统一依赖检查、`.env.local-worker` 写入、`launchd` 注册与启动；local 模式仅强制校验 DB/Redis/R2 变量，cloud fallback 变量改为告警提示。
 - 2026-02-09：补充部署定案附录（公网简化版）：新增 `VPS1 API + VPS2 cloud fallback worker + Mac mini local worker` 三节点详细部署流程、角色环境变量矩阵、`launchd` 常驻步骤与联调验收清单。
@@ -374,6 +376,10 @@ model VideoTranscriptTask {
 - 两个服务共享同一套数据库与 Redis。
 - 两个服务都必须加载相同的基础环境变量（DB/Redis/R2/Workers AI/预算）。
 - API 服务必须可水平扩容；cloud fallback worker 默认单副本，按成本策略再扩容。
+- 两个服务使用同一镜像（同 Dockerfile），通过 `ANYHUNT_RUN_MODE` 控制启动方式：
+  - `api`：启动全量 HTTP API（默认）
+  - `video-transcript-worker`：仅启动 Video Transcript worker（不加载全量 AppModule）
+- 仅允许 `anyhunt-server-api` 执行数据库迁移（默认行为）；worker 服务必须设置 `ANYHUNT_RUN_MIGRATIONS=false` 跳过迁移，避免多实例并发迁移与额外 DB 权限要求。
 
 ### 11.3 本地主机（Mac mini）
 
@@ -404,6 +410,9 @@ model VideoTranscriptTask {
 ### 11.6 环境变量
 
 - 基础：`DATABASE_URL`、`REDIS_URL`
+- 进程角色（Docker）：
+  - `ANYHUNT_RUN_MODE=api|video-transcript-worker`
+  - `ANYHUNT_RUN_MIGRATIONS=true|false`（worker 必须 `false`）
 - R2：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_PUBLIC_URL`
 - Workers AI：`CF_ACCOUNT_ID`、`CF_WORKERS_AI_API_TOKEN`
 - 预算：
@@ -598,6 +607,8 @@ model VideoTranscriptTask {
 2. 配置环境变量：
 
 ```env
+ANYHUNT_RUN_MODE=api
+ANYHUNT_RUN_MIGRATIONS=true
 VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER=false
 VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER=false
 VIDEO_TRANSCRIPT_ENABLE_FALLBACK_SCANNER=true
@@ -618,6 +629,8 @@ VIDEO_TRANSCRIPT_LOCAL_ENABLED=true
 2. 配置环境变量：
 
 ```env
+ANYHUNT_RUN_MODE=video-transcript-worker
+ANYHUNT_RUN_MIGRATIONS=false
 VIDEO_TRANSCRIPT_ENABLE_LOCAL_WORKER=false
 VIDEO_TRANSCRIPT_ENABLE_CLOUD_FALLBACK_WORKER=true
 VIDEO_TRANSCRIPT_ENABLE_FALLBACK_SCANNER=false
@@ -646,6 +659,7 @@ bash apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh \
    - 写入 local 角色变量（LOCAL 开关、命令路径、模型路径、nodeId）
    - 强制校验 local 必需变量（DB/Redis/R2）；cloud fallback 变量缺失仅告警不阻塞
    - 生成启动脚本与 `launchd plist`
+   - 启动命令固定为 `pnpm start:video-transcript-worker`（最小 worker App，不加载全量 `AppModule`）
    - 加载并启动 `com.anyhunt.video-transcript-local-worker`
 3. 脚本默认日志路径：
    - `~/Library/Logs/anyhunt/video-transcript-local-worker.log`
