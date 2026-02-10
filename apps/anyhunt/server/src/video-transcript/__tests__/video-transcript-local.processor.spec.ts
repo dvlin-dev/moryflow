@@ -106,4 +106,27 @@ describe('VideoTranscriptLocalProcessor', () => {
     expect(mockHeartbeatService.incrementActiveTasks).toHaveBeenCalledTimes(1);
     expect(mockHeartbeatService.decrementActiveTasks).toHaveBeenCalledTimes(1);
   });
+
+  it('should decrement activeTasks and mark FAILED when workspace creation fails', async () => {
+    mockExecutorService.createWorkspace.mockRejectedValue(
+      new Error('workspace unavailable'),
+    );
+
+    await expect(
+      processor.process({ data: { taskId: 'task_1' } } as any),
+    ).rejects.toThrow('workspace unavailable');
+
+    expect(mockHeartbeatService.incrementActiveTasks).toHaveBeenCalledTimes(1);
+    expect(mockHeartbeatService.decrementActiveTasks).toHaveBeenCalledTimes(1);
+    expect(mockExecutorService.cleanupWorkspace).not.toHaveBeenCalled();
+    expect(mockPrisma.videoTranscriptTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'task_1' },
+        data: expect.objectContaining({
+          status: 'FAILED',
+          error: 'workspace unavailable',
+        }),
+      }),
+    );
+  });
 });

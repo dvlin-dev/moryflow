@@ -46,9 +46,11 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
     }
 
     this.heartbeatService.incrementActiveTasks();
-    const workspaceDir = await this.executorService.createWorkspace(taskId);
+    let workspaceDir: string | null = null;
 
     try {
+      workspaceDir = await this.executorService.createWorkspace(taskId);
+
       await this.markLocalStarted(taskId);
       await this.scheduleFallbackCheckSafely(taskId);
       await this.ensureNotPreempted(taskId);
@@ -141,7 +143,9 @@ export class VideoTranscriptLocalProcessor extends WorkerHost {
 
       throw error;
     } finally {
-      await this.executorService.cleanupWorkspace(workspaceDir);
+      if (workspaceDir) {
+        await this.executorService.cleanupWorkspace(workspaceDir);
+      }
       this.heartbeatService.decrementActiveTasks();
     }
   }
