@@ -20,6 +20,7 @@ import MapPlaygroundPage from './pages/MapPlaygroundPage';
 import ExtractPlaygroundPage from './pages/ExtractPlaygroundPage';
 import SearchPlaygroundPage from './pages/SearchPlaygroundPage';
 import EmbedPlaygroundPage from './pages/EmbedPlaygroundPage';
+import VideoTranscriptPage from './pages/VideoTranscriptPage';
 import AgentBrowserLayoutPage from './pages/agent-browser/AgentBrowserLayoutPage';
 import AgentBrowserOverviewPage from './pages/agent-browser/AgentBrowserOverviewPage';
 import AgentBrowserBrowserPage from './pages/agent-browser/AgentBrowserBrowserPage';
@@ -106,6 +107,7 @@ function App() {
               <Route path="extract" element={<ExtractPlaygroundPage />} />
               <Route path="search" element={<SearchPlaygroundPage />} />
               <Route path="embed" element={<EmbedPlaygroundPage />} />
+              <Route path="video-transcript" element={<VideoTranscriptPage />} />
             </Route>
 
             {/* Agent Browser - Agent + Browser 测试 */}

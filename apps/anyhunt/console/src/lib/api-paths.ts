@@ -20,6 +20,7 @@ export const PAYMENT_API = {
 // App 管理 API（Session 认证）
 export const CONSOLE_API = {
   API_KEYS: '/api/v1/app/api-keys',
+  VIDEO_TRANSCRIPTS: '/api/v1/app/video-transcripts',
 } as const;
 
 // Webhook API（API Key 认证）

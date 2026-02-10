@@ -28,6 +28,7 @@
 - `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
 - `anyhunt-console-public-api-key-plan.md`：Console 公共 API 化与 API Key 明文存储方案（active）。
 - `anyhunt-api-channel-routing.md`：Anyhunt app/public/apikey 通道路由规范与迁移清单（implemented）。
+- `anyhunt-video-transcript-pipeline.md`：Anyhunt 视频链接下载 + 双模式高可用转写方案（active）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
@@ -40,6 +41,21 @@
 
 ## 近期更新
 
+- `anyhunt-video-transcript-pipeline.md`：补齐两处回归修复：`cancelTask` 改为 `updateMany + terminal guard` 避免并发完成被覆盖为 `CANCELLED`；预算闸门 Lua `EVAL` 参数显式 `String()` 化（2026-02-10）。
+- `anyhunt-video-transcript-pipeline.md`：补充“worker 独立启动入口 + Docker 角色开关”（`ANYHUNT_RUN_MODE` / `ANYHUNT_RUN_MIGRATIONS`），并明确 VPS2/Mac mini 采用最小 worker App 启动以避免误消费其他队列；同步 local/cloud 状态推进增加 terminal/executor guard（2026-02-10）。
+- `anyhunt-video-transcript-pipeline.md`：新增“上线前执行清单（Checklist）”章节，固化 T-1/T-0、联调验收、回滚预案与 24h 观察项（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：补充本地一键部署脚本（`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`）说明，统一 Mac mini local-worker 的依赖安装、环境文件写入、`launchd` 注册与启动（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：新增“三节点部署详细流程（公网简化版）”，明确 `VPS1(API)+VPS2(cloud fallback)+Mac mini(local)` 的角色开关矩阵、部署步骤与联调验收顺序（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：同步四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败终态；local 启动顺序改为先写 `localStartedAt` 再调度 fallback-check；`duration probe` 解析增强；补充 cloud fallback 回归测试）（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：同步三轮可靠性修复（timeout pre-check 失败不误写 FAILED、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：同步二轮可靠性修复（队列策略调整：保留默认队列全局 5 分钟 timeout，并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h / CLOUD=2h）；fallback 补偿扫描 30s；Admin today 指标与 runtime switch + 审计落地）（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：执行进度同步（Step 1~6 代码落地完成，补齐 server/console/admin 与单测，Step 7 待上线演练）（2026-02-09）。
+- `anyhunt-video-transcript-pipeline.md`：补充事件一致性定案（QueueEvents 仅观测；DB 字段为超时/接管裁决源；fallback 到点查库决策；新增执行时序图）（2026-02-08）。
+- `anyhunt-video-transcript-pipeline.md`：补充部署交互定案（Queue Pull；VPS Dokploy 拆分 API/cloud fallback worker；Mac mini `launchd` 常驻 local-worker；Tailscale 内网边界；`VIDEO_TRANSCRIPT_LOCAL_ENABLED` 应急切换）（2026-02-08）。
+- `anyhunt-video-transcript-pipeline.md`：升级为双模式高可用定案（仅 local 开始后计时 10 分钟；超时先 preempt local 再触发 cloud fallback；冲突落库 LOCAL 优先；Cloudflare Workers AI 指定模型；预算 20 USD/日（Asia/Shanghai，按音频时长估算）；cloud 重试 2 次指数退避；新增 Admin 可观测与告警阈值）（2026-02-08）。
+- `anyhunt-video-transcript-pipeline.md`：重写为定案版（固定技术路线 + 分步执行计划 + 强制进度同步准则 + 执行进度看板）（2026-02-08）。
+- `anyhunt-video-transcript-pipeline.md`：按现有模块重写（复用 storage/queue/app 路由规范），去除多 `*R2Key` 列设计并改为 `artifacts Json`，v1 不引入 internal callback API（2026-02-08）。
+- `anyhunt-video-transcript-pipeline.md`：新增视频链接下载与本地 Whisper（Mac mini）转写架构方案，明确 R2 存储、BullMQ 编排、Tailscale 内网与 10+ 并发目标（2026-02-08）。
 - `ui-message-list-turn-anchor-adoption.md`：回归经典 chat（Following 模式）：runStart 一次 `behavior:'smooth'` + `160ms` 入场动效；AI 流式追随使用 `auto`；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录（AutoScroll/Store 内聚到 ConversationViewport）；补齐与 `main` 分支差异与 Code Review 附录（2026-02-08）。
 - `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
 - `anyhunt-api-channel-routing.md`：补充 apps/anyhunt 修改清单与执行计划（2026-01-28）。

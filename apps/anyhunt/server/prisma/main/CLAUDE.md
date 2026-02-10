@@ -33,6 +33,7 @@
 
 ## 近期变更记录
 
+- 2026-02-09：新增 `VideoTranscriptTask` + `VideoTranscriptExecutor`（本地主执行 + 云端兜底）迁移：`20260209001000_add_video_transcript_task`。
 - 2026-01-25：重置数据库并生成 init 迁移作为新基线。
 - 2026-01-25：新增 PaymentWebhookEvent 表，用于 Creem webhook 幂等去重。
 - 2026-01-26：迁移脚本统一使用 `prisma.*.config.ts`，测试使用 migrate deploy 校验迁移。

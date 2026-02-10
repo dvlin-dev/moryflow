@@ -46,6 +46,7 @@ const navGroups: NavGroup[] = [
           { title: 'Extract', url: '/fetchx/extract' },
           { title: 'Search', url: '/fetchx/search' },
           { title: 'Embed', url: '/fetchx/embed' },
+          { title: 'Video Transcript', url: '/fetchx/video-transcript' },
         ],
       },
       {

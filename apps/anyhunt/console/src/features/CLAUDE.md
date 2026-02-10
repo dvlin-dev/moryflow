@@ -19,21 +19,22 @@ feature-name/
 
 ## 功能清单
 
-| 功能                        | 说明                 | API 入口                                      |
-| --------------------------- | -------------------- | --------------------------------------------- |
-| `api-keys/`                 | API Key 管理         | `/api/v1/app/api-keys`                        |
-| `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth）                  |
-| `playground-shared/`        | Playground 共享组件  | —                                             |
-| `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`                              |
-| `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`                               |
-| `map-playground/`           | URL 发现测试         | `/api/v1/map`                                 |
-| `extract-playground/`       | AI 数据提取测试      | `/api/v1/extract`                             |
-| `search-playground/`        | 网页搜索测试         | `/api/v1/search`                              |
-| `embed-playground/`         | Embed 测试           | Demo-only                                     |
-| `agent-browser-playground/` | Agent + Browser 测试 | `/api/v1/agent` + `/api/v1/browser/session/*` |
-| `memox/`                    | Memox 记忆管理       | `/api/v1/memories`（API Key）                 |
-| `settings/`                 | 账户设置             | `/api/v1/app/*`                               |
-| `webhooks/`                 | Webhook 管理         | `/api/v1/webhooks`                            |
+| 功能                           | 说明                 | API 入口                                      |
+| ------------------------------ | -------------------- | --------------------------------------------- |
+| `api-keys/`                    | API Key 管理         | `/api/v1/app/api-keys`                        |
+| `auth/`                        | 登录表单             | `/api/auth/*`（Better Auth）                  |
+| `playground-shared/`           | Playground 共享组件  | —                                             |
+| `scrape-playground/`           | 单页抓取测试         | `/api/v1/scrape`                              |
+| `crawl-playground/`            | 多页爬取测试         | `/api/v1/crawl`                               |
+| `map-playground/`              | URL 发现测试         | `/api/v1/map`                                 |
+| `extract-playground/`          | AI 数据提取测试      | `/api/v1/extract`                             |
+| `search-playground/`           | 网页搜索测试         | `/api/v1/search`                              |
+| `embed-playground/`            | Embed 测试           | Demo-only                                     |
+| `video-transcript-playground/` | 视频转写测试         | `/api/v1/app/video-transcripts`               |
+| `agent-browser-playground/`    | Agent + Browser 测试 | `/api/v1/agent` + `/api/v1/browser/session/*` |
+| `memox/`                       | Memox 记忆管理       | `/api/v1/memories`（API Key）                 |
+| `settings/`                    | 账户设置             | `/api/v1/app/*`                               |
+| `webhooks/`                    | Webhook 管理         | `/api/v1/webhooks`                            |
 
 ## 常用模式
 
@@ -60,6 +61,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- 新增 `video-transcript-playground/`：支持 Session 模式视频转写任务创建/轮询/取消
 - Agent Browser Playground：MessageRow parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
 - Playground Shared/Memox 分页箭头统一改为 ChevronRight/ChevronLeft（无中轴）
 - Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式

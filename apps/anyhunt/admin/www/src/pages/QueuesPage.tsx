@@ -2,6 +2,8 @@
  * [PROPS]: none
  * [EMITS]: none
  * [POS]: Queues 页面 - 队列监控（Lucide icons direct render）
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新 apps/anyhunt/admin/www/CLAUDE.md
  */
 import { useState } from 'react';
 import {
@@ -18,6 +20,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { PageHeader } from '@anyhunt/ui';
+import { formatRelativeTime } from '@anyhunt/ui/lib';
 import {
   Card,
   CardContent,
@@ -55,23 +58,25 @@ import {
 import { useCleanupStaleJobs } from '@/features/jobs';
 import type { QueueName, QueueJobStatus, QueueStats } from '@/features/queues';
 
-const QUEUE_LABELS: Record<QueueName, string> = {
+const QUEUE_LABELS: Record<string, string> = {
   screenshot: 'Screenshot',
   scrape: 'Scrape',
   crawl: 'Crawl',
   'batch-scrape': 'Batch Scrape',
+  VIDEO_TRANSCRIPT_LOCAL_QUEUE: 'Video Transcript (Local)',
+  VIDEO_TRANSCRIPT_CLOUD_FALLBACK_QUEUE: 'Video Transcript (Cloud Fallback)',
 };
 
 const STATUS_TABS: { value: QueueJobStatus; label: string; icon: React.ReactNode }[] = [
-  { value: 'waiting', label: '等待中', icon: <Clock className="h-4 w-4" /> },
-  { value: 'active', label: '处理中', icon: <Loader className="h-4 w-4" /> },
+  { value: 'waiting', label: 'Waiting', icon: <Clock className="h-4 w-4" /> },
+  { value: 'active', label: 'Active', icon: <Loader className="h-4 w-4" /> },
   {
     value: 'completed',
-    label: '已完成',
+    label: 'Completed',
     icon: <CircleCheck className="h-4 w-4" />,
   },
-  { value: 'failed', label: '失败', icon: <CircleX className="h-4 w-4" /> },
-  { value: 'delayed', label: '延迟', icon: <Timer className="h-4 w-4" /> },
+  { value: 'failed', label: 'Failed', icon: <CircleX className="h-4 w-4" /> },
+  { value: 'delayed', label: 'Delayed', icon: <Timer className="h-4 w-4" /> },
 ];
 
 /** 队列状态卡片 */
@@ -93,10 +98,10 @@ function QueueCard({
     >
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-sm">
-          <span>{QUEUE_LABELS[stats.name as QueueName] || stats.name}</span>
+          <span>{QUEUE_LABELS[stats.name] || stats.name}</span>
           {isPaused && (
             <Badge variant="outline" className="text-yellow-600">
-              已暂停
+              Paused
             </Badge>
           )}
         </CardTitle>
@@ -105,15 +110,15 @@ function QueueCard({
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="text-2xl font-bold text-yellow-600">{stats.waiting}</p>
-            <p className="text-xs text-muted-foreground">等待</p>
+            <p className="text-xs text-muted-foreground">Waiting</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-blue-600">{stats.active}</p>
-            <p className="text-xs text-muted-foreground">处理中</p>
+            <p className="text-xs text-muted-foreground">Active</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-            <p className="text-xs text-muted-foreground">失败</p>
+            <p className="text-xs text-muted-foreground">Failed</p>
           </div>
         </div>
       </CardContent>
@@ -138,7 +143,7 @@ function QueueJobList({ queueName, status }: { queueName: QueueName; status: Que
   if (!data?.items.length) {
     return (
       <div className="py-8 text-center">
-        <p className="text-muted-foreground">暂无任务</p>
+        <p className="text-muted-foreground">No jobs yet.</p>
       </div>
     );
   }
@@ -148,10 +153,10 @@ function QueueJobList({ queueName, status }: { queueName: QueueName; status: Que
       <TableHeader>
         <TableRow>
           <TableHead>ID</TableHead>
-          <TableHead>任务名</TableHead>
-          <TableHead>尝试次数</TableHead>
-          <TableHead>时间</TableHead>
-          {status === 'failed' && <TableHead>错误原因</TableHead>}
+          <TableHead>Name</TableHead>
+          <TableHead>Attempts</TableHead>
+          <TableHead>Time</TableHead>
+          {status === 'failed' && <TableHead>Failed Reason</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -161,7 +166,7 @@ function QueueJobList({ queueName, status }: { queueName: QueueName; status: Que
             <TableCell>{job.name}</TableCell>
             <TableCell>{job.attemptsMade}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
-              {new Date(job.timestamp).toLocaleTimeString('zh-CN')}
+              {formatRelativeTime(job.timestamp)}
             </TableCell>
             {status === 'failed' && (
               <TableCell className="max-w-xs truncate text-xs text-destructive">
@@ -213,7 +218,7 @@ export default function QueuesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <PageHeader title="Queues" description="BullMQ 队列监控" />
+        <PageHeader title="Queues" description="BullMQ queue monitor." />
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -221,11 +226,11 @@ export default function QueuesPage() {
             disabled={isCleaningStale}
           >
             <TriangleAlert className="mr-2 h-4 w-4" />
-            清理卡住任务
+            Cleanup stuck jobs
           </Button>
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            刷新
+            Refresh
           </Button>
         </div>
       </div>
@@ -236,19 +241,19 @@ export default function QueuesPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-yellow-600">{data.summary.totalWaiting}</div>
-              <p className="text-sm text-muted-foreground">总等待任务</p>
+              <p className="text-sm text-muted-foreground">Total waiting jobs</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-blue-600">{data.summary.totalActive}</div>
-              <p className="text-sm text-muted-foreground">正在处理</p>
+              <p className="text-sm text-muted-foreground">Active jobs</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-red-600">{data.summary.totalFailed}</div>
-              <p className="text-sm text-muted-foreground">失败任务</p>
+              <p className="text-sm text-muted-foreground">Failed jobs</p>
             </CardContent>
           </Card>
         </div>
@@ -279,10 +284,10 @@ export default function QueuesPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>
-              {QUEUE_LABELS[selectedQueue]} 队列
+              {QUEUE_LABELS[selectedQueue] || selectedQueue} Queue
               {isPaused && (
                 <Badge variant="outline" className="ml-2 text-yellow-600">
-                  已暂停
+                  Paused
                 </Badge>
               )}
             </CardTitle>
@@ -295,12 +300,12 @@ export default function QueuesPage() {
                 {isPaused ? (
                   <>
                     <Play className="mr-2 h-4 w-4" />
-                    恢复
+                    Resume
                   </>
                 ) : (
                   <>
                     <Pause className="mr-2 h-4 w-4" />
-                    暂停
+                    Pause
                   </>
                 )}
               </Button>
@@ -311,7 +316,7 @@ export default function QueuesPage() {
                 disabled={isRetrying || (selectedStats?.failed ?? 0) === 0}
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                重试全部失败
+                Retry all failed
               </Button>
               <Button
                 variant="outline"
@@ -320,7 +325,7 @@ export default function QueuesPage() {
                 disabled={isCleaning}
               >
                 <Delete className="mr-2 h-4 w-4" />
-                清理已完成
+                Clean completed
               </Button>
             </div>
           </div>
@@ -359,21 +364,21 @@ export default function QueuesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认操作</AlertDialogTitle>
+            <AlertDialogTitle>Confirm action</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDialog.action === 'retry' &&
-                `确定要重试 ${QUEUE_LABELS[selectedQueue]} 队列中所有失败的任务吗？`}
+                `Retry all failed jobs in "${QUEUE_LABELS[selectedQueue] || selectedQueue}"?`}
               {confirmDialog.action === 'clean-completed' &&
-                `确定要清理 ${QUEUE_LABELS[selectedQueue]} 队列中所有已完成的任务吗？`}
+                `Clean all completed jobs in "${QUEUE_LABELS[selectedQueue] || selectedQueue}"?`}
               {confirmDialog.action === 'clean-failed' &&
-                `确定要清理 ${QUEUE_LABELS[selectedQueue]} 队列中所有失败的任务吗？`}
+                `Clean all failed jobs in "${QUEUE_LABELS[selectedQueue] || selectedQueue}"?`}
               {confirmDialog.action === 'cleanup-stale' &&
-                '确定要清理所有卡住超过 30 分钟的任务吗？这些任务将被标记为失败。'}
+                'Cleanup all jobs stuck for more than 30 minutes? Those jobs will be marked as failed.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmAction}>确认</AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAction}>Confirm</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,7 +1,21 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-10（Anyhunt 视频转写：补充 worker 独立启动入口与 Docker 角色开关（`ANYHUNT_RUN_MODE`/`ANYHUNT_RUN_MIGRATIONS`），并同步 terminal/executor guard 防止终态覆盖）
+> 最近更新：2026-02-09（Anyhunt 视频转写补充本地一键部署脚本：`apps/anyhunt/server/scripts/video-transcript/setup-local-worker.sh`）
+> 最近更新：2026-02-09（Anyhunt 视频转写补充三节点部署定案（公网简化版）：VPS1 API + VPS2 cloud fallback worker + Mac mini local worker）
+> 最近更新：2026-02-09（Anyhunt 视频转写四轮可靠性修复：cloud 接管后 workspace 失败兜底、local 启动顺序严格对齐 10 分钟窗口起点、duration probe 解析增强、补充对应回归测试）
+> 最近更新：2026-02-09（Anyhunt 视频转写三轮可靠性修复：timeout pre-check 不误杀 local、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）
+> 最近更新：2026-02-09（Anyhunt 视频转写二轮可靠性修复：fallback 补偿扫描（30s）+ DB 时间裁决 + Admin today 指标与 runtime switch 审计）
+> 最近更新：2026-02-09（Anyhunt 视频转写方案执行进度同步：Step 1~6 已完成代码落地（server + console + admin + 单测），Step 7 待压测/上线演练）
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
+> 最近更新：2026-02-08（Anyhunt 视频转写事件一致性定案：QueueEvents 仅观测，DB 字段裁决超时/接管；fallback 到点查库；新增执行时序图）
+> 最近更新：2026-02-08（Anyhunt 视频转写部署交互定案：Queue Pull；VPS Dokploy 双服务；Mac mini `launchd` 常驻；Tailscale 内网边界；`VIDEO_TRANSCRIPT_LOCAL_ENABLED` 应急切换）
+> 最近更新：2026-02-08（Anyhunt 视频转写方案升级：仅 local 开始后计时 10 分钟；超时先 preempt local 再 cloud fallback；预算 20 USD/日（Asia/Shanghai，按音频时长估算）；cloud 重试 2 次 + 告警阈值）
+> 最近更新：2026-02-08（Anyhunt 视频转写方案定案：固定技术路线 + 分步执行计划 + 强制进度同步准则）
+> 最近更新：2026-02-08（Anyhunt 视频转写方案文档收敛：字段最小化 + 复用现有 server 模块 + Console 测试页设计）
+> 最近更新：2026-02-08（Anyhunt 视频链接下载 + Mac mini Whisper 转写方案按现有 server 模块复用重写，收敛为 `artifacts Json` 建模）
+> 最近更新：2026-02-08（新增 Anyhunt 视频链接下载 + Mac mini Whisper 转写架构方案，目标落地到 apps/anyhunt/server）
 > 最近更新：2026-02-08（协作总则：新增“AI Agent 禁止擅自提交 commit/push，需用户批准”规则）
 > 最近更新：2026-02-07（协作总则：补充“最佳实践优先/允许破坏性重构”行为准则）
 > 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
@@ -237,6 +251,7 @@ Anyhunt/
 | [`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`](./docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md) | Moryflow PC/Mobile Access Token 持久化升级方案            |
 | [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）             |
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案        |
+| [`docs/architecture/anyhunt-video-transcript-pipeline.md`](./docs/architecture/anyhunt-video-transcript-pipeline.md)                       | 视频链接下载与双模式高可用转写方案（Anyhunt）             |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
 | [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）    |
@@ -804,4 +819,3 @@ pnpm typecheck
 ---
 
 _版本: 1.2 | 更新日期: 2026-02-07_
-

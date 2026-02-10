@@ -24,6 +24,7 @@ import {
   Flag,
   Newspaper,
   Pencil,
+  Clapperboard,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@anyhunt/ui/lib';
@@ -57,6 +58,7 @@ const navGroups: NavGroup[] = [
     items: [
       { path: '/jobs', label: 'Jobs', icon: ListTodo },
       { path: '/queues', label: 'Queues', icon: Layers },
+      { path: '/video-transcripts', label: 'Video Transcripts', icon: Clapperboard },
       { path: '/browser', label: 'Browser Pool', icon: Globe },
       { path: '/errors', label: 'Errors', icon: TriangleAlert },
     ],

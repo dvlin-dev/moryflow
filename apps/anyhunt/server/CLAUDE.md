@@ -8,6 +8,12 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Video Transcript：新增独立 worker 启动入口（`src/video-transcript/worker.ts` + `src/video-transcript/video-transcript-worker-app.module.ts`），用于 VPS2/Mac mini 仅启动视频队列 worker（不加载全量 AppModule）；Docker 入口支持 `ANYHUNT_RUN_MODE` 与 `ANYHUNT_RUN_MIGRATIONS`，worker 跳过迁移；LOCAL/CLOUD_FALLBACK 状态推进改为 `updateMany + terminal/executor guard` 避免 CANCELLED/接管竞态覆盖
+- Video Transcript：新增 Mac mini local-worker 一键部署脚本（`scripts/video-transcript/setup-local-worker.sh`），统一依赖安装、环境文件写入、`launchd` 注册与启动流程
+- Video Transcript：四轮可靠性修复（cloud 接管后 workspace 初始化失败纳入失败兜底；local 启动顺序调整为先写 `localStartedAt` 再调度 fallback；`duration probe` 解析增强；补充接管后 workspace 失败回归测试）
+- Video Transcript：三轮可靠性修复（timeout pre-check 失败不误写任务失败、local fallback-check 调度失败降级、scanner 单角色启用、cloud duration probe 提前 preempt）
+- Video Transcript：二轮可靠性修复（fallback 补偿扫描 30s、localStartedAt/timeout 判定改用 DB 时间、Admin runtime switch + 审计 + today 指标补齐、队列策略调整：保留默认队列全局 5 分钟 timeout，并将 video transcript 队列切到独立 Bull configKey（不继承 5 分钟）；长视频上限由命令级 timeout 控制（LOCAL=4h / CLOUD=2h））
+- Video Transcript：新增双模式转写模块（LOCAL + CLOUD_FALLBACK）、任务模型与 `/api/v1/app/video-transcripts` + `/api/v1/admin/video-transcripts` 接口，并接入 Admin 队列监控
 - API Key：更新接口补齐 no-store，避免明文 key 被缓存
 - LLM：ModelProviderFactory 单测在 isolate=false 下 resetModules 确保 mock 生效
 - Agent：请求支持多轮消息（messages），计费估算基于 message 总量
@@ -114,41 +120,42 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 
 ## Module Structure
 
-| Module           | Files | Description                                  | CLAUDE.md                 |
-| ---------------- | ----- | -------------------------------------------- | ------------------------- |
-| `scraper/`       | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`   |
-| `common/`        | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`    |
-| `llm/`           | -     | Admin LLM Providers/Models + runtime routing | `src/llm/CLAUDE.md`       |
-| `agent/`         | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`     |
-| `digest/`        | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`    |
-| `admin/`         | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`     |
-| `oembed/`        | 18    | oEmbed provider support                      | `src/oembed/CLAUDE.md`    |
-| `billing/`       | 5     | Billing rules + deduct/refund                | -                         |
-| `quota/`         | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
-| `api-key/`       | 13    | API key management                           | `src/api-key/CLAUDE.md`   |
-| `memory/`        | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`    |
-| `entity/`        | 10    | Mem0 entities (user/agent/app/run)           | `src/entity/CLAUDE.md`    |
-| `embedding/`     | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md` |
-| `crawler/`       | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`   |
-| `auth/`          | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`      |
-| `payment/`       | 10    | Payment processing (Creem)                   | -                         |
-| `webhook/`       | 10    | Webhook notifications                        | `src/webhook/CLAUDE.md`   |
-| `extract/`       | 9     | AI-powered data extraction                   | -                         |
-| `batch-scrape/`  | 9     | Bulk URL processing                          | -                         |
-| `user/`          | 9     | User management                              | -                         |
-| `map/`           | 8     | URL discovery                                | -                         |
-| `storage/`       | 7     | Cloudflare R2 storage                        | -                         |
-| `search/`        | 6     | Web search API                               | -                         |
-| `browser/`       | 6     | Browser pool management                      | `src/browser/CLAUDE.md`   |
-| `demo/`          | 5     | Playground demo API                          | -                         |
-| `redis/`         | 4     | Redis caching                                | -                         |
-| `health/`        | 3     | Health check endpoints                       | -                         |
-| `email/`         | 3     | Email service                                | -                         |
-| `queue/`         | 3     | BullMQ queue config                          | -                         |
-| `prisma/`        | 3     | 主库连接（PrismaService）                    | -                         |
-| `vector-prisma/` | 3     | 向量库连接（VectorPrismaService）            | -                         |
-| `config/`        | 2     | Pricing configuration                        | -                         |
-| `types/`         | 6     | Shared type definitions                      | -                         |
+| Module              | Files | Description                                  | CLAUDE.md                        |
+| ------------------- | ----- | -------------------------------------------- | -------------------------------- |
+| `scraper/`          | 24    | Core scraping engine                         | `src/scraper/CLAUDE.md`          |
+| `common/`           | 22    | Shared guards, decorators, pipes, validators | `src/common/CLAUDE.md`           |
+| `llm/`              | -     | Admin LLM Providers/Models + runtime routing | `src/llm/CLAUDE.md`              |
+| `agent/`            | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`            |
+| `digest/`           | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`           |
+| `video-transcript/` | -     | Video transcript pipeline (local + fallback) | `src/video-transcript/CLAUDE.md` |
+| `admin/`            | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`            |
+| `oembed/`           | 18    | oEmbed provider support                      | `src/oembed/CLAUDE.md`           |
+| `billing/`          | 5     | Billing rules + deduct/refund                | -                                |
+| `quota/`            | 14    | Quota management                             | `src/quota/CLAUDE.md`            |
+| `api-key/`          | 13    | API key management                           | `src/api-key/CLAUDE.md`          |
+| `memory/`           | 10    | Semantic memory API (Memox)                  | `src/memory/CLAUDE.md`           |
+| `entity/`           | 10    | Mem0 entities (user/agent/app/run)           | `src/entity/CLAUDE.md`           |
+| `embedding/`        | 4     | Embeddings generation (Memox)                | `src/embedding/CLAUDE.md`        |
+| `crawler/`          | 11    | Multi-page crawling                          | `src/crawler/CLAUDE.md`          |
+| `auth/`             | 10    | Authentication (Better Auth)                 | `src/auth/CLAUDE.md`             |
+| `payment/`          | 10    | Payment processing (Creem)                   | -                                |
+| `webhook/`          | 10    | Webhook notifications                        | `src/webhook/CLAUDE.md`          |
+| `extract/`          | 9     | AI-powered data extraction                   | -                                |
+| `batch-scrape/`     | 9     | Bulk URL processing                          | -                                |
+| `user/`             | 9     | User management                              | -                                |
+| `map/`              | 8     | URL discovery                                | -                                |
+| `storage/`          | 7     | Cloudflare R2 storage                        | -                                |
+| `search/`           | 6     | Web search API                               | -                                |
+| `browser/`          | 6     | Browser pool management                      | `src/browser/CLAUDE.md`          |
+| `demo/`             | 5     | Playground demo API                          | -                                |
+| `redis/`            | 4     | Redis caching                                | -                                |
+| `health/`           | 3     | Health check endpoints                       | -                                |
+| `email/`            | 3     | Email service                                | -                                |
+| `queue/`            | 3     | BullMQ queue config                          | -                                |
+| `prisma/`           | 3     | 主库连接（PrismaService）                    | -                                |
+| `vector-prisma/`    | 3     | 向量库连接（VectorPrismaService）            | -                                |
+| `config/`           | 2     | Pricing configuration                        | -                                |
+| `types/`            | 6     | Shared type definitions                      | -                                |
 
 ## Common Patterns
 
