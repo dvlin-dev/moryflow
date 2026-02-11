@@ -1,14 +1,15 @@
 /**
  * [PROPS]: ChatPromptInputPlusMenuProps - + 菜单入口与子面板
  * [EMITS]: onModeChange/onAddContextFile/onOpenSettings - 切换模式/添加引用/打开设置
- * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Agent/引用/MCP）
+ * [POS]: Chat Prompt 输入框「+」菜单与二级面板（上传/Agent/Skills/引用/MCP）
  * [UPDATE]: 2026-01-28 - 二级面板底部对齐触发项，按项计算对齐偏移
+ * [UPDATE]: 2026-02-11 - 新增 Skills 子菜单，统一选择逻辑供输入框显式注入 skill
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import { Plus, Sparkles, AtSign, Gavel, Upload } from 'lucide-react';
+import { Plus, Sparkles, AtSign, Gavel, Upload, Wrench } from 'lucide-react';
 import { PromptInputButton } from '@anyhunt/ui/ai/prompt-input';
 import {
   DropdownMenu,
@@ -28,6 +29,8 @@ import type { ChatPromptInputProps } from './const';
 import type { ContextFileTag } from '../context-file-tags';
 import { FileContextPanel } from './file-context-panel';
 import { McpPanel } from './mcp-panel';
+import { SkillPanel } from './skill-panel';
+import type { SkillSummary } from '@shared/ipc';
 
 export type ChatPromptInputPlusMenuProps = {
   disabled?: boolean;
@@ -35,6 +38,9 @@ export type ChatPromptInputPlusMenuProps = {
   onModeChange: (mode: ChatPromptInputProps['mode']) => void;
   onOpenSettings?: (section?: SettingsSection) => void;
   onOpenFileDialog: () => void;
+  skills?: SkillSummary[];
+  onSelectSkill: (skill: SkillSummary) => void;
+  onRefreshSkills?: () => void;
   allFiles?: FlatFile[];
   recentFiles?: FlatFile[];
   existingFiles?: ContextFileTag[];
@@ -48,6 +54,9 @@ export const ChatPromptInputPlusMenu = ({
   onModeChange,
   onOpenSettings,
   onOpenFileDialog,
+  skills = [],
+  onSelectSkill,
+  onRefreshSkills,
   allFiles = [],
   recentFiles = [],
   existingFiles = [],
@@ -58,6 +67,7 @@ export const ChatPromptInputPlusMenu = ({
   const [open, setOpen] = useState(false);
   const [subOffsets, setSubOffsets] = useState({
     agent: { base: 0, alignOffset: 0 },
+    skills: { base: 0, alignOffset: 0 },
     reference: { base: 0, alignOffset: 0 },
     mcp: { base: 0, alignOffset: 0 },
   });
@@ -144,6 +154,43 @@ export const ChatPromptInputPlusMenu = ({
                 {t('agentModeFullAccess')}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub
+          onOpenChange={(next) => {
+            if (next) {
+              requestAnimationFrame(() => updateSubAlignOffset('skills'));
+            }
+          }}
+        >
+          <DropdownMenuSubTrigger
+            disabled={disabled}
+            onMouseEnter={updateSubBase('skills')}
+            onFocus={updateSubBase('skills')}
+          >
+            <Wrench className="size-4" />
+            <span>Skills</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent
+            className="p-0"
+            sideOffset={8}
+            alignOffset={subOffsets.skills.alignOffset}
+            avoidCollisions={false}
+            data-plus-sub="skills"
+          >
+            <SkillPanel
+              disabled={disabled}
+              skills={skills}
+              onSelectSkill={(skill) => {
+                onSelectSkill(skill);
+                setOpen(false);
+              }}
+              onRefresh={onRefreshSkills}
+              onClose={() => setOpen(false)}
+              searchPlaceholder="Search skills"
+              emptyLabel="No skills found"
+              headingLabel="Enabled Skills"
+            />
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSub

@@ -93,6 +93,11 @@ export const useNavigation = () => {
       }
       if (key === '3') {
         event.preventDefault();
+        goTo('skills');
+        return;
+      }
+      if (key === '4') {
+        event.preventDefault();
         goTo('sites');
       }
     };

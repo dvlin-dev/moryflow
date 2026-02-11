@@ -45,7 +45,7 @@ describe('useNavigation', () => {
     await waitFor(() => expect(setLastAgentSub).toHaveBeenCalledWith('chat'));
   });
 
-  it('supports Cmd/Ctrl+1/2/3 shortcuts', async () => {
+  it('supports Cmd/Ctrl+1/2/3/4 shortcuts', async () => {
     const { result } = renderHook(() => useNavigation());
     await waitFor(() => expect(getLastAgentSub).toHaveBeenCalledTimes(1));
 
@@ -56,6 +56,11 @@ describe('useNavigation', () => {
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: '3' }));
+    });
+    await waitFor(() => expect(result.current.destination).toBe('skills'));
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: '4' }));
     });
     await waitFor(() => expect(result.current.destination).toBe('sites'));
 

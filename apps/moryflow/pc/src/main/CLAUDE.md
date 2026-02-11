@@ -97,6 +97,16 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Skills 预设路径补齐 dev/build/package 多候选根（含 `resources/app.asar/dist/main/builtin`），并在预安装失败时降级为 warning，避免阻断 Agent 聊天链路。
+- Skills 解析链路修正 symlink 防护顺序（先 `lstat(skillDir)` 再 `realpath`），防止失效的“已解析后再判 symlink”伪防护。
+- `skill` tool/XML 注入转义补齐 `\"`/`'`，避免属性值场景下标签结构被破坏。
+- 新建会话默认标题固定为英文 `New thread`（不再使用中文序号），与 Renderer 侧新建入口文案一致。
+- 会话存储移除未使用的 `sequence` 持久化字段，数据层仅保留 `sessions`（简化状态面）。
+- 新增 Skills 注册中心（`main/skills`）：内置预设与兼容目录（`.agents/.claude/.codex/.clawdbot`）自动导入、启停状态持久化、目录级安全导入（忽略 symlink + realpath 边界校验）
+- Skills 改造为“推荐/预安装/兼容扫描”三条链路：固定推荐 `skill-creator`/`find-skills`/`baoyu-article-illustrator`，其中前两项首次启动自动预安装。
+- Agent Runtime 接入 `available_skills` 元信息注入与 `skill` tool（正文按需加载，返回 `base_dir` + `skill_files`）
+- Agent Runtime 在每轮 run 前比对 `available_skills` 快照，技能启停变化会自动失效 Agent 缓存，避免旧 system prompt 残留。
+- IPC 新增 `agent:skills:*`（list/refresh/get/setEnabled/uninstall/install/listRecommended/openDirectory）
 - Agent Settings：schema 校验失败时回退默认设置（新用户最佳实践：不做历史结构迁移）。
 - 启动性能：移除 `preload:*` IPC handlers 与预加载落盘缓存（避免主进程写盘抖动；预热回退为 Renderer 侧轻量 warmup）
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`）并激活

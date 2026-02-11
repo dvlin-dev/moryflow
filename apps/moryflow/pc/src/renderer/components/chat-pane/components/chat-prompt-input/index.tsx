@@ -5,6 +5,8 @@
  * [UPDATE]: 2026-02-02 - 语音入口仅对登录用户开放
  * [UPDATE]: 2026-01-28 - 模型选择箭头尺寸放大提升可读性
  * [UPDATE]: 2026-01-28 - 提交后保留 active 引用，@ 触发索引随文本变更更新
+ * [UPDATE]: 2026-02-11 - 新增 Skills 显式 chip、+ 子菜单与空输入 `/` 选择入口；不可用 skill 发送前软降级
+ * [UPDATE]: 2026-02-11 - 发送链路改为异步执行（fire-and-forget），确保发送后输入框/skill/context 立即清空
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,6 +44,7 @@ import {
   Image,
   Settings,
   Sparkles,
+  Wrench,
 } from 'lucide-react';
 import { Badge } from '@anyhunt/ui/components/badge';
 import { TIER_DISPLAY_NAMES, useAuth } from '@/lib/server';
@@ -50,6 +53,7 @@ import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useTranslation } from '@/lib/i18n';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
+import { useAgentSkills } from '@/hooks/use-agent-skills';
 
 import { ContextFileTags, FileChip, type ContextFileTag } from '../context-file-tags';
 import { TokenUsageIndicator } from '../token-usage-indicator';
@@ -63,6 +67,7 @@ import { detectAtTrigger, removeAtTrigger } from './at-mention';
 import { ChatPromptInputPlusMenu } from './plus-menu';
 import { ChatPromptInputPrimaryAction } from './primary-action';
 import { FileContextPanel } from './file-context-panel';
+import { SkillPanel } from './skill-panel';
 
 /** 默认 context window 大小 */
 const DEFAULT_CONTEXT_WINDOW = 128000;
@@ -127,6 +132,8 @@ const ChatPromptInputInner = ({
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   mode,
   onModeChange,
+  selectedSkillName,
+  onSelectSkillName,
 }: ChatPromptInputProps) => {
   const { t } = useTranslation('chat');
   const { isAuthenticated } = useAuth();
@@ -135,9 +142,11 @@ const ChatPromptInputInner = ({
   const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([]);
   const [atPanelOpen, setAtPanelOpen] = useState(false);
   const [atTriggerIndex, setAtTriggerIndex] = useState<number | null>(null);
+  const [slashSkillPanelOpen, setSlashSkillPanelOpen] = useState(false);
   const previousTextRef = useRef('');
   const promptController = usePromptInputController();
   const attachments = usePromptInputAttachments();
+  const { skills, enabledSkills, refresh: refreshSkills } = useAgentSkills();
 
   // 获取工作区所有文件
   const { files: workspaceFiles, refresh: refreshWorkspaceFiles } = useWorkspaceFiles(
@@ -160,6 +169,10 @@ const ChatPromptInputInner = ({
   const hasTextInput = promptController.textInput.value.trim().length > 0;
   const hasSendableContent =
     hasTextInput || attachments.files.length > 0 || contextFiles.length > 0;
+  const selectedSkill = useMemo(
+    () => skills.find((item) => item.name === selectedSkillName) ?? null,
+    [selectedSkillName, skills]
+  );
 
   // 语音录制 hook
   const handleTranscribed = useCallback(
@@ -237,6 +250,7 @@ const ChatPromptInputInner = ({
     if (isDisabled) {
       setModelSelectorOpen(false);
       setAtPanelOpen(false);
+      setSlashSkillPanelOpen(false);
       setAtTriggerIndex(null);
     }
   }, [isDisabled]);
@@ -251,6 +265,23 @@ const ChatPromptInputInner = ({
         return;
       }
 
+      let effectiveSelectedSkillName =
+        selectedSkillName && selectedSkillName.trim().length > 0 ? selectedSkillName.trim() : null;
+      let effectiveSelectedSkill: { name: string; title?: string } | null = null;
+      if (effectiveSelectedSkillName) {
+        const available = skills.find((item) => item.name === effectiveSelectedSkillName);
+        if (!available || !available.enabled) {
+          effectiveSelectedSkillName = null;
+          onSelectSkillName?.(null);
+          toast.warning('Selected skill is unavailable. Continuing without it.');
+        } else {
+          effectiveSelectedSkill = {
+            name: available.name,
+            title: available.title,
+          };
+        }
+      }
+
       // 构建结构化附件列表
       const contextAttachments = contextFiles.map(createFileRefAttachment);
 
@@ -260,17 +291,30 @@ const ChatPromptInputInner = ({
       // 合并原有上传文件和嵌入附件
       const allFiles = [...payload.files.map(enrichFileMetadata), ...aiRequest.files];
 
-      // 提交：text 已包含 [Referenced files: ...]，attachments 用于存储和展示
-      onSubmit({
-        text: aiRequest.text,
-        files: allFiles,
-        attachments: contextAttachments,
-      });
-
-      // 清空已选文件
+      // 发送发起后立即清理 skill 显示，避免等到 AI 回复完成才消失。
+      if (effectiveSelectedSkill) {
+        onSelectSkillName?.(null);
+      }
+      // 发送发起后立即清理 context 引用，避免等待 AI 回复结束。
       setContextFiles((prev) => prev.filter((file) => file.id.startsWith('active-')));
+
+      // 提交：text 已包含 [Referenced files: ...]，attachments 用于存储和展示
+      void Promise.resolve(
+        onSubmit({
+          text: aiRequest.text,
+          files: allFiles,
+          attachments: contextAttachments,
+          selectedSkillName: effectiveSelectedSkillName,
+          selectedSkill: effectiveSelectedSkill,
+        })
+      ).catch(() => {
+        onError?.({
+          code: 'submit',
+          message: 'Failed to submit message.',
+        });
+      });
     },
-    [isDisabled, onSubmit, contextFiles]
+    [isDisabled, onSubmit, contextFiles, selectedSkillName, skills, onSelectSkillName, onError]
   );
 
   const handleTextChange = useCallback(
@@ -291,10 +335,20 @@ const ChatPromptInputInner = ({
         insertedData: nativeEvent?.data,
       });
       const nextTriggerIndex = triggerIndex ?? syncedAtIndex;
+      const shouldOpenSlashSkillPanel =
+        nextValue === '/' && previousValue.length === 0 && caret === 1;
+      if (shouldOpenSlashSkillPanel) {
+        setSlashSkillPanelOpen(true);
+        setAtPanelOpen(false);
+      } else if (nextValue !== '/') {
+        setSlashSkillPanelOpen(false);
+      }
+
       if (nextTriggerIndex === null) {
         setAtPanelOpen(false);
       } else if (triggerIndex !== null) {
         setAtPanelOpen(true);
+        setSlashSkillPanelOpen(false);
       }
       if (nextTriggerIndex !== atTriggerIndex) {
         setAtTriggerIndex(nextTriggerIndex);
@@ -325,6 +379,31 @@ const ChatPromptInputInner = ({
     [atTriggerIndex, handleAddContextFile, promptController.textInput]
   );
 
+  const handleSelectSkill = useCallback(
+    (skillName: string) => {
+      onSelectSkillName?.(skillName);
+      setSlashSkillPanelOpen(false);
+      textareaRef.current?.focus();
+    },
+    [onSelectSkillName]
+  );
+
+  const handleSelectSkillFromSlash = useCallback(
+    (skillName: string) => {
+      onSelectSkillName?.(skillName);
+      promptController.textInput.clear();
+      previousTextRef.current = '';
+      setSlashSkillPanelOpen(false);
+      textareaRef.current?.focus();
+    },
+    [onSelectSkillName, promptController.textInput]
+  );
+
+  const handleClearSelectedSkill = useCallback(() => {
+    onSelectSkillName?.(null);
+    textareaRef.current?.focus();
+  }, [onSelectSkillName]);
+
   const renderAttachmentChip = (file: (typeof attachments.files)[number]) => {
     const isImage = Boolean(file.mediaType?.startsWith('image/'));
     const label = file.filename || (isImage ? 'Image' : 'Attachment');
@@ -341,11 +420,20 @@ const ChatPromptInputInner = ({
   };
 
   const renderFileChipsRow = () => {
-    if (contextFiles.length === 0 && attachments.files.length === 0) {
+    if (!selectedSkill && contextFiles.length === 0 && attachments.files.length === 0) {
       return null;
     }
     return (
       <div className="flex w-full flex-wrap items-center gap-2 px-3 pt-2">
+        {selectedSkill ? (
+          <FileChip
+            icon={Wrench}
+            label={selectedSkill.title}
+            tooltip={selectedSkill.description}
+            removeLabel="Remove selected skill"
+            onRemove={handleClearSelectedSkill}
+          />
+        ) : null}
         {contextFiles.length > 0 && (
           <ContextFileTags files={contextFiles} onRemove={handleRemoveContextFile} />
         )}
@@ -475,6 +563,11 @@ const ChatPromptInputInner = ({
             onModeChange={onModeChange}
             onOpenSettings={onOpenSettings}
             onOpenFileDialog={attachments.openFileDialog}
+            skills={enabledSkills}
+            onSelectSkill={(skill) => handleSelectSkill(skill.name)}
+            onRefreshSkills={() => {
+              void refreshSkills();
+            }}
             allFiles={workspaceFiles}
             recentFiles={recentFiles}
             existingFiles={contextFiles}
@@ -539,6 +632,32 @@ const ChatPromptInputInner = ({
             emptyNoFilesLabel={t('noOpenDocs')}
             emptyAllAddedLabel={t('allDocsAdded')}
             emptyNoRecentLabel={t('noRecentFiles')}
+          />
+        </PopoverContent>
+      </Popover>
+      <Popover
+        open={slashSkillPanelOpen}
+        onOpenChange={(next) => {
+          setSlashSkillPanelOpen(next);
+        }}
+      >
+        <PopoverTrigger asChild>
+          <span aria-hidden className="absolute left-10 top-0 h-0 w-0" />
+        </PopoverTrigger>
+        <PopoverContent align="start" side="top" sideOffset={8} className="w-72 p-0">
+          <SkillPanel
+            autoFocus
+            disabled={isDisabled}
+            skills={enabledSkills}
+            onSelectSkill={(skill) => {
+              handleSelectSkillFromSlash(skill.name);
+            }}
+            onRefresh={() => {
+              void refreshSkills();
+            }}
+            searchPlaceholder="Search skills"
+            emptyLabel="No skills found"
+            headingLabel="Enabled Skills"
           />
         </PopoverContent>
       </Popover>

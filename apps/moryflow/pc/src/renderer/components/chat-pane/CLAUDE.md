@@ -18,6 +18,10 @@
 
 ## 近期变更
 
+- 2026-02-11：提交链路改为异步发送与即时 UI 清理：发送发起后立即清空输入框文本、selected skill 与临时 context 引用，不再等待 AI 回复结束。
+- 2026-02-11：发送成功后自动清空输入区 selected skill；用户消息根据 `message.metadata.chat.selectedSkill` 渲染 skill tag，便于会话回看。
+- 2026-02-11：输入框新增 Skills 显式注入链路：`+` 二级菜单 Skills、空输入 `/` Skills 面板、selected skill chip（可移除）。
+- 2026-02-11：selected skill 发送前校验启用状态，不可用时英文提示并软降级为普通对话；请求级 agent options 覆盖避免携带旧 skill。
 - 2026-02-10：模型分组 helper 统一命名为 `buildModelGroupsFromSettings`，移除旧别名导出。
 - 2026-02-10：Streamdown 升级至 v2.2：ChatMessage 流式输出启用逐词动画（仅最后一条 assistant 文本段）。
 - 2026-02-10：新增全局检索标记 `STREAMDOWN_ANIM`，便于定位 Streamdown 动画 gating 与生效范围。

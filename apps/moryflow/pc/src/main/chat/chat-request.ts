@@ -129,6 +129,7 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   input: currentInput,
                   preferredModelId,
                   context: agentOptions?.context,
+                  selectedSkillName: agentOptions?.selectedSkill?.name,
                   session,
                   attachments: attachmentContexts,
                   mode: sessionMode,

@@ -4,6 +4,7 @@
  * [POS]: ChatPane 底部区域（任务悬浮条 + 输入框 + 错误提示）
  * [UPDATE]: 2026-02-02 - 对齐悬浮任务面板宽度与垂直间距
  * [UPDATE]: 2026-02-03 - 仅在会话运行时触发任务面板展示
+ * [UPDATE]: 2026-02-11 - 透传 selectedSkill 到输入框，支持显式 skill 注入
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -38,6 +39,8 @@ type Props = {
   mode: ChatSessionSummary['mode'];
   onModeChange: (mode: ChatSessionSummary['mode']) => void;
   activeSessionId: string | null;
+  selectedSkillName?: string | null;
+  onSelectSkillName?: (name: string | null) => void;
 };
 
 export const ChatFooter = ({
@@ -59,6 +62,8 @@ export const ChatFooter = ({
   mode,
   onModeChange,
   activeSessionId,
+  selectedSkillName,
+  onSelectSkillName,
 }: Props) => {
   const isSessionRunning = status === 'submitted' || status === 'streaming';
 
@@ -85,6 +90,8 @@ export const ChatFooter = ({
           contextWindow={contextWindow}
           mode={mode}
           onModeChange={onModeChange}
+          selectedSkillName={selectedSkillName}
+          onSelectSkillName={onSelectSkillName}
         />
       </div>
       {inputError && <p className="px-1 text-xs text-destructive">{inputError}</p>}

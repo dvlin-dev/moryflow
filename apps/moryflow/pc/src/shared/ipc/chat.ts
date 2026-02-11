@@ -17,6 +17,13 @@ export type AgentChatContext = {
   summary?: string;
 };
 
+export type AgentSelectedSkill = {
+  /**
+   * 选中的 skill 名称（kebab-case）。
+   */
+  name: string;
+};
+
 /**
  * Token 使用量信息
  */
@@ -32,6 +39,10 @@ export type AgentChatRequestOptions = {
    * 期望使用的模型 ID，若为空则使用默认配置。
    */
   preferredModelId?: string;
+  /**
+   * 输入框显式选中的 skill（可选）。
+   */
+  selectedSkill?: AgentSelectedSkill;
 };
 
 export type AgentAccessMode = 'agent' | 'full_access';

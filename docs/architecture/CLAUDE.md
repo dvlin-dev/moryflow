@@ -30,6 +30,7 @@
 - `anyhunt-api-channel-routing.md`：Anyhunt app/public/apikey 通道路由规范与迁移清单（implemented）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
+- `agent-skills.md`：Agent Skills（面向 C 端的“技能库”）接入方案（implemented）。
 - `adr/`：架构决策记录（ADR）。任何关键约束调整都应该新增 ADR，而不是在群聊里“口头改掉”。
 - `adr/adr-0002-agent-runtime-control-plane.md`：Agent Runtime 控制面（Compaction/Permission/Truncation）决策。
 - `ui-message-list-unification.md`：消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一，先对齐样式再统一抽象）。
@@ -40,6 +41,16 @@
 
 ## 近期更新
 
+- `agent-skills.md`：增量方案落地（固定推荐 3 项：Skill Creator / Find Skills / Article Illustrator；首次预安装前两项；`New skill` 复用 `Try Skill Creator`；`Try` 改为立即新建会话并生效），并回写 P0-12~P0-15 完成进度（2026-02-11）。
+- `agent-skills.md`：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` 注入与 `skill` tool 按需加载），并回写执行计划进度（2026-02-11）。
+- `agent-skills.md`：本期方案 1 落地（发送成功后清空 selected skill；用户消息渲染 skill tag），并在执行计划中新增 P0-11 进度（2026-02-11）。
+- `agent-skills.md`：固定兼容目录自动导入（`~/.agents/skills`、`~/.claude/skills`、`~/.codex/skills`、`~/.clawdbot/skills`）并支持 `Refresh` 重扫；`selectedSkill` 不可用改为提示后软降级继续对话；补充“执行计划 + 行为准则 + 强制进度同步”段落（2026-02-11）。
+- `agent-skills.md`：兼容扫描改为“按 skill 目录整体自动导入”（保留 scripts/templates/references），非仅导入单文件（2026-02-11）。
+- `agent-skills.md`：`skill` 改为白名单直通（不走权限审批/审计链路）（2026-02-11）。
+- `agent-skills.md`：去掉过度来源状态（移除 `SkillInstallState.source`）并收敛兼容来源描述（2026-02-11）。
+- `agent-skills.md`：兼容扫描改为默认自动导入（不做引导/提醒）（2026-02-11）。
+- `agent-skills.md`：补充输入框 tag 能力边界（仅外层 chip）、元信息最小注入（不含路径/状态）与 skill tool 单一数据源返回策略（2026-02-11）。
+- `agent-skills.md`：按已确认决策重写（默认全启用/可禁用不删除/`+` 与空输入 `/` 双入口 selectedSkill/OpenCode 注入策略对齐）（2026-02-11）。
 - `ui-message-list-turn-anchor-adoption.md`：回归经典 chat（Following 模式）：runStart 一次 `behavior:'smooth'` + `160ms` 入场动效；AI 流式追随使用 `auto`；上滑取消改为纯滚动指标判定；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录（AutoScroll/Store 内聚到 ConversationViewport）；补齐与 `main` 分支差异与 Code Review 附录（2026-02-08）。
 - `anyhunt-api-channel-routing.md`：标记 implemented 并补齐模块进度（2026-02-02）。
 - `anyhunt-api-channel-routing.md`：补充 apps/anyhunt 修改清单与执行计划（2026-01-28）。

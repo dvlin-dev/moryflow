@@ -7,7 +7,7 @@
 Moryflow PC 的 “Workspace feature root”：
 
 - 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Command/Dialog）
-- 负责 Navigation-aware 的窗口布局（destination：Agent / Sites；AgentSub：Chat / Workspace）
+- 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；AgentSub：Chat / Workspace）
 - 通过 **Context 分片**避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
@@ -55,7 +55,12 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-11：`New skill`/`Try` 成功后不再弹成功 toast（减少干扰）；仅保留失败提示，跳转行为保持即时生效。
+- 2026-02-11：Skills 页面新增“立即生效”链路：`Try` 与 `New skill` 统一走 `createSession -> selectedSkill -> setSub('chat')`，确保点击后立刻新建会话并携带 skill tag。
+- 2026-02-11：侧边栏默认宽度改为等于最小宽度（260px）；仍通过 `react-resizable-panels` 的 `autoSaveId` 记忆用户上次拖拽宽度。
+- 2026-02-11：侧边栏最小宽度调整为 260px（`SIDEBAR_MIN_WIDTH` + panel 百分比下限按容器动态换算），确保拖拽下限与像素最小宽度一致。
 - 2026-02-10：移除 `preload:*` IPC/落盘缓存与 Workspace preload service，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki；无额外 IPC/写盘）。
+- 2026-02-11：新增 `Skills` destination 与 `SkillsPage` keep-alive 挂载，导航快捷键调整为 `Cmd/Ctrl+3 => Skills`、`Cmd/Ctrl+4 => Sites`。
 - 2026-02-10：SettingsDialog/Theme/模型选择统一走 AgentSettings 单飞资源，降低重复 IPC，修复设置弹窗偶发一直 Loading。
 - 2026-02-09：恢复工作区持久化的 `openTabs/lastOpenedFile` 时增加过滤（仅保留 Vault 内的绝对路径），避免旧版特殊 tab/非法路径被当作文件加载导致报错。
 - 2026-02-09：Sites destination 视图 keep-alive/预热挂载不再触发未登录的站点列表请求；发布入口未登录时引导到 Account 设置页登录。

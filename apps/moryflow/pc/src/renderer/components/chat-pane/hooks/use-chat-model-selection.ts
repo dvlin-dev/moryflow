@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatModelSelection - 聊天模型选择与持久化
  * [DEPENDS]: desktopAPI.agent, model groups helpers
  * [POS]: Chat Pane 模型选择状态与同步
+ * [UPDATE]: 2026-02-11 - 支持 selectedSkillName 注入到 Agent options，和输入框显式 skill 选择对齐
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -41,12 +42,19 @@ const writeStoredModelId = (value: string) => {
   }
 };
 
-export const useChatModelSelection = (activeFilePath?: string | null) => {
+export const useChatModelSelection = (
+  activeFilePath?: string | null,
+  selectedSkillName?: string | null
+) => {
   const [selectedModelId, setSelectedModelIdState] = useState(() => readStoredModelId());
   const selectedModelIdRef = useRef(selectedModelId);
   const [modelGroups, setModelGroups] = useState<ModelGroup[]>([]);
   const agentOptionsRef = useRef<AgentChatRequestOptions | undefined>(
-    computeAgentOptions({ activeFilePath, preferredModelId: selectedModelId })
+    computeAgentOptions({
+      activeFilePath,
+      preferredModelId: selectedModelId,
+      selectedSkillName: selectedSkillName ?? null,
+    })
   );
 
   const updateSelection = useCallback((next: string, options?: { syncRemote?: boolean }) => {
@@ -71,8 +79,9 @@ export const useChatModelSelection = (activeFilePath?: string | null) => {
     agentOptionsRef.current = computeAgentOptions({
       activeFilePath,
       preferredModelId: selectedModelId,
+      selectedSkillName: selectedSkillName ?? null,
     });
-  }, [activeFilePath, selectedModelId]);
+  }, [activeFilePath, selectedModelId, selectedSkillName]);
 
   useEffect(() => {
     selectedModelIdRef.current = selectedModelId;

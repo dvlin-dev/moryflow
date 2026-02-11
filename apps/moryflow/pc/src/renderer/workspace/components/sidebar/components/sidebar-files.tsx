@@ -2,6 +2,9 @@
  * [PROPS]: SidebarFilesProps - 文件树相关 props
  * [EMITS]: 文件操作事件（选择、打开、重命名、删除等）
  * [POS]: 侧边栏文件列表区组件（Lucide 图标）
+ * [UPDATE]: 2026-02-11 - 横向间距收敛：移除外层容器额外 padding，保持左右对齐一致
+ * [UPDATE]: 2026-02-11 - 由文件列表子容器统一控制 inset，和 Threads 列表保持一致的背景分层
+ * [UPDATE]: 2026-02-11 - 文件列表 inset 改为复用 sidebar 常量（列表容器独立维护，不影响全局 gutter）
  */
 
 import { memo } from 'react';
@@ -16,10 +19,11 @@ import {
 import { Skeleton } from '@anyhunt/ui/components/skeleton';
 import { VaultFiles } from '@/components/vault-files';
 import { useTranslation } from '@/lib/i18n';
-import type { SidebarFilesProps } from '../const';
+import { cn } from '@/lib/utils';
+import { SIDEBAR_LIST_INSET_X_CLASS, type SidebarFilesProps } from '../const';
 
 const LoadingPlaceholder = () => (
-  <div className="space-y-2 px-3 pt-3">
+  <div className={cn('space-y-2 pt-3', SIDEBAR_LIST_INSET_X_CLASS)}>
     {[...Array(6)].map((_, index) => (
       <Skeleton key={index} className="h-4 w-full bg-muted/40" />
     ))}
@@ -66,7 +70,7 @@ export const SidebarFiles = memo(function SidebarFiles({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="h-full overflow-hidden px-2 py-1">
+        <div className={cn('h-full overflow-hidden py-1', SIDEBAR_LIST_INSET_X_CLASS)}>
           <VaultFiles
             nodes={tree}
             vaultPath={vault?.path}

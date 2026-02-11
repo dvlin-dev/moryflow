@@ -3,6 +3,7 @@
  * [DEPENDS]: agents, agents-runtime, agents-runtime/prompt, agents-tools - Agent 框架核心
  * [POS]: PC 主进程核心模块，提供 AI 对话执行、MCP 服务器管理、标题生成
  * [NOTE]: 会话历史由 SessionStore 组装输入，流完成后追加输出
+ * [UPDATE]: 2026-02-11 - skills 启用列表变化时自动失效 Agent 缓存，确保下一轮 system prompt 元信息与当前状态一致
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -72,6 +73,8 @@ import { findAgentById, loadAgentDefinitionsSync } from './agent-store.js';
 import { loadExternalTools } from './external-tools.js';
 import { getRuntimeConfigSync } from './runtime-config.js';
 import { getSharedTasksStore } from './shared-tasks-store.js';
+import { createSkillTool } from './skill-tool.js';
+import { getSkillsRegistry } from '../skills/index.js';
 
 export { createChatSession } from './core/chat-session.js';
 export type { AgentAttachmentContext, AgentContext };
@@ -102,6 +105,10 @@ export type AgentRuntimeOptions = {
    * 会话级访问模式。
    */
   mode?: AgentAccessMode;
+  /**
+   * 输入框显式选中的 skill（可选）。
+   */
+  selectedSkillName?: string;
   /**
    * SDK Session 实例，用于管理多轮对话历史。
    */
@@ -178,14 +185,24 @@ export type AgentRuntime = {
 const resolveSystemPrompt = (
   settings: AgentSettings,
   agentDefinition?: AgentMarkdownDefinition | null,
-  hook?: ChatSystemHook
+  hook?: ChatSystemHook,
+  availableSkillsBlock?: string
 ): string => {
   const base =
     agentDefinition?.systemPrompt ??
     (settings.systemPrompt?.mode === 'custom' && settings.systemPrompt.template.trim().length > 0
       ? settings.systemPrompt.template
       : getMorySystemPrompt());
-  return applyChatSystemHook(base, hook);
+  const withSkills = availableSkillsBlock
+    ? [
+        base,
+        '',
+        'You can use installed skills to solve user tasks when relevant.',
+        'Only load full skill content via the `skill` tool when needed.',
+        availableSkillsBlock,
+      ].join('\n')
+    : base;
+  return applyChatSystemHook(withSkills, hook);
 };
 
 const resolveModelSettings = (
@@ -250,6 +267,9 @@ export const createAgentRuntime = (): AgentRuntime => {
     return vaultInfo.path;
   });
   const tasksStore = getSharedTasksStore();
+  const skillsRegistry = getSkillsRegistry();
+  const skillTool = createSkillTool();
+  const readAvailableSkillsPrompt = () => skillsRegistry.getAvailableSkillsPrompt();
 
   const toolOutputConfig = {
     ...DEFAULT_TOOL_OUTPUT_TRUNCATION,
@@ -316,7 +336,7 @@ export const createAgentRuntime = (): AgentRuntime => {
   });
 
   const buildRuntimeTools = (extraTools: Tool<AgentContext>[] = []) => {
-    const base = [...baseTools, sandboxBashTool, ...extraTools];
+    const base = [...baseTools, sandboxBashTool, skillTool, ...extraTools];
     const withHooks = wrapToolsWithHooks(base, runtimeHooks);
     const withPermission = permissionRuntime.wrapTools(withHooks);
     const withDoomLoop = doomLoopRuntime.wrapTools(withPermission);
@@ -346,7 +366,12 @@ export const createAgentRuntime = (): AgentRuntime => {
         toolOutputPostProcessor
       ),
     getInstructions: () =>
-      resolveSystemPrompt(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.system),
+      resolveSystemPrompt(
+        getAgentSettings(),
+        selectedAgent,
+        runtimeHooks?.chat?.system,
+        readAvailableSkillsPrompt()
+      ),
     getModelSettings: () =>
       resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
   });
@@ -368,7 +393,12 @@ export const createAgentRuntime = (): AgentRuntime => {
             toolOutputPostProcessor
           ),
         getInstructions: () =>
-          resolveSystemPrompt(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.system),
+          resolveSystemPrompt(
+            getAgentSettings(),
+            selectedAgent,
+            runtimeHooks?.chat?.system,
+            readAvailableSkillsPrompt()
+          ),
         getModelSettings: () =>
           resolveModelSettings(getAgentSettings(), selectedAgent, runtimeHooks?.chat?.params),
       });
@@ -380,6 +410,7 @@ export const createAgentRuntime = (): AgentRuntime => {
 
   let externalToolsLoaded = false;
   let externalToolsLoading: Promise<void> | null = null;
+  let lastSkillsPromptSnapshot = '';
 
   const ensureExternalTools = async () => {
     if (!runtimeConfig.tools?.external?.enabled) return;
@@ -393,6 +424,9 @@ export const createAgentRuntime = (): AgentRuntime => {
   };
 
   void ensureExternalTools();
+  void skillsRegistry.refresh().catch((error) => {
+    console.warn('[agent-runtime] failed to load skills', error);
+  });
 
   mcpManager.setOnReload(() => agentFactory.invalidate());
   mcpManager.scheduleReload(initialSettings.mcp);
@@ -533,6 +567,7 @@ export const createAgentRuntime = (): AgentRuntime => {
       preferredModelId,
       context,
       mode,
+      selectedSkillName,
       session,
       attachments,
       signal,
@@ -545,8 +580,16 @@ export const createAgentRuntime = (): AgentRuntime => {
       if (!vaultInfo) {
         throw new Error('尚未选择 Vault，无法启动对话');
       }
+      await skillsRegistry.ensureReady();
       await mcpManager.ensureReady();
       await ensureExternalTools();
+
+      const currentSkillsPromptSnapshot = readAvailableSkillsPrompt();
+      if (currentSkillsPromptSnapshot !== lastSkillsPromptSnapshot) {
+        lastSkillsPromptSnapshot = currentSkillsPromptSnapshot;
+        agentFactory.invalidate();
+      }
+
       const { agent, modelId } = agentFactory.getAgent(preferredModelId);
       const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
         ? await session.getItems()
@@ -560,6 +603,13 @@ export const createAgentRuntime = (): AgentRuntime => {
           ).effectiveHistory;
 
       const inputWithContext = applyContextToInput(trimmed, context, attachments);
+      const selectedSkillBlock =
+        selectedSkillName && selectedSkillName.trim().length > 0
+          ? await skillsRegistry.resolveSelectedSkillInjection(selectedSkillName)
+          : null;
+      const finalInput = selectedSkillBlock
+        ? `${selectedSkillBlock}\n\n=== 用户输入 ===\n${inputWithContext}`
+        : inputWithContext;
 
       const effectiveMode = mode ?? runtimeConfig.mode?.default ?? 'agent';
       const agentContext: AgentContext = {
@@ -569,7 +619,7 @@ export const createAgentRuntime = (): AgentRuntime => {
         buildModel: modelFactory.buildModel,
       };
 
-      const userItem = user(inputWithContext);
+      const userItem = user(finalInput);
       const runInput = effectiveHistory.length > 0 ? [...effectiveHistory, userItem] : [userItem];
       await session.addItems([userItem]);
 

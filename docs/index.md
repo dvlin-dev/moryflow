@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-10
+date: 2026-02-11
 scope: monorepo
 status: active
 ---
@@ -36,6 +36,7 @@ status: active
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
 - Moryflow PC 消息列表交互复用改造方案（Following 模式）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（更新：2026-02-08：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；移除 `packages/ui/src/ai/assistant-ui` 目录）
 - Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`
+- Agent Skills（面向 C 端的“技能库”）接入方案：`docs/architecture/agent-skills.md`（更新：2026-02-11：增量方案已落地，固定推荐 3 项（Skill Creator / Find Skills / Article Illustrator）、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效）
 - ADR（架构决策记录）：`docs/architecture/adr/`
 - ADR-0002 Agent Runtime 控制面（Compaction/Permission/Truncation）：`docs/architecture/adr/adr-0002-agent-runtime-control-plane.md`
 
