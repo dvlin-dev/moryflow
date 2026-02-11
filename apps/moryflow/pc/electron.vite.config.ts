@@ -1,11 +1,26 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'node:path';
+import { cpSync, existsSync, rmSync } from 'node:fs';
 import { visualizer } from 'rollup-plugin-visualizer';
+
+const copyBuiltinSkillsPlugin = () => ({
+  name: 'copy-builtin-skills',
+  closeBundle() {
+    const sourceDir = resolve(__dirname, 'src/main/skills/builtin');
+    if (!existsSync(sourceDir)) {
+      return;
+    }
+
+    const targetDir = resolve(__dirname, 'dist/main/builtin');
+    rmSync(targetDir, { recursive: true, force: true });
+    cpSync(sourceDir, targetDir, { recursive: true });
+  },
+});
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin(), copyBuiltinSkillsPlugin()],
     build: {
       outDir: 'dist/main',
     },

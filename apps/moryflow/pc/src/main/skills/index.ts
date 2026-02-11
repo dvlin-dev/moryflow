@@ -2,7 +2,7 @@
  * [PROVIDES]: Desktop Skills 注册中心（扫描/导入/启停/卸载/详情与 runtime 注入）
  * [DEPENDS]: node:fs/node:path/node:os, shared/ipc/skills
  * [POS]: PC 主进程 Skills 单一事实来源（供 IPC 与 Agent Runtime 复用）
- * [UPDATE]: 2026-02-11 - 推荐/预安装/兼容扫描链路解耦：固定三项推荐，预安装两项，New skill 改走 Skill Creator
+ * [UPDATE]: 2026-02-11 - 预设技能路径支持 dev/build/package 多候选并在预安装失败时降级，避免阻断聊天链路
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,10 +17,6 @@ const MORYFLOW_DIR = path.join(os.homedir(), '.moryflow');
 const SKILLS_DIR = path.join(MORYFLOW_DIR, 'skills');
 const STATE_FILE = path.join(MORYFLOW_DIR, 'skills-state.json');
 const SKILLS_MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
-const CURATED_SKILL_ROOTS = [
-  path.resolve(process.cwd(), 'apps/moryflow/pc/src/main/skills/builtin'),
-  path.resolve(SKILLS_MODULE_DIR, 'builtin'),
-] as const;
 const COMPAT_SKILL_ROOTS = [
   path.join(os.homedir(), '.agents', 'skills'),
   path.join(os.homedir(), '.claude', 'skills'),
@@ -29,6 +25,7 @@ const COMPAT_SKILL_ROOTS = [
 ] as const;
 
 const MAX_SKILL_FILE_LIST = 200;
+const SKILLS_LOG_PREFIX = '[skills-registry]';
 
 type SkillStateFile = {
   disabled: string[];
@@ -89,7 +86,46 @@ const toKebabCase = (value: string): string =>
     .replace(/-+$/, '');
 
 const xmlEscape = (value: string): string =>
-  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+
+const resolveCuratedSkillRoots = (): string[] => {
+  const roots = new Set<string>();
+  const add = (candidate: string | null | undefined) => {
+    if (!candidate || candidate.trim().length === 0) {
+      return;
+    }
+    roots.add(path.resolve(candidate));
+  };
+
+  // 开发态：直接读取仓库内置 skill。
+  add(path.join(process.cwd(), 'apps/moryflow/pc/src/main/skills/builtin'));
+  // 构建态：electron-vite 将内置 skill 复制到 dist/main/builtin。
+  add(path.join(SKILLS_MODULE_DIR, 'builtin'));
+  // 兼容少数输出结构（保留历史构建路径容错）。
+  add(path.join(SKILLS_MODULE_DIR, 'skills', 'builtin'));
+
+  const processWithResourcesPath = process as NodeJS.Process & { resourcesPath?: string };
+  const resourcesPath =
+    typeof processWithResourcesPath.resourcesPath === 'string' &&
+    processWithResourcesPath.resourcesPath.trim().length > 0
+      ? processWithResourcesPath.resourcesPath
+      : null;
+  if (resourcesPath) {
+    // 打包态主路径（app.asar 内资源可直接读取）。
+    add(path.join(resourcesPath, 'app.asar', 'dist', 'main', 'builtin'));
+    // 打包态非 asar 资源兜底。
+    add(path.join(resourcesPath, 'app.asar.unpacked', 'dist', 'main', 'builtin'));
+    // 预留 extraResources 方案兜底。
+    add(path.join(resourcesPath, 'skills', 'builtin'));
+  }
+
+  return Array.from(roots);
+};
 
 const isInsidePath = (baseDir: string, targetPath: string): boolean => {
   const rel = path.relative(baseDir, targetPath);
@@ -179,11 +215,12 @@ const collectFiles = async (baseDir: string): Promise<string[]> => {
 };
 
 const parseSkillFromDirectory = async (skillDir: string): Promise<ParsedSkill | null> => {
-  const realBase = await fs.realpath(skillDir).catch(() => null);
-  if (!realBase) return null;
-  const stat = await fs.lstat(realBase).catch(() => null);
+  const stat = await fs.lstat(skillDir).catch(() => null);
   if (!stat || !stat.isDirectory()) return null;
   if (stat.isSymbolicLink()) return null;
+
+  const realBase = await fs.realpath(skillDir).catch(() => null);
+  if (!realBase) return null;
 
   const skillFile = path.join(realBase, 'SKILL.md');
   const raw = await readIfExists(skillFile);
@@ -327,7 +364,7 @@ class DesktopSkillsRegistry {
       return null;
     }
 
-    for (const rootPath of CURATED_SKILL_ROOTS) {
+    for (const rootPath of resolveCuratedSkillRoots()) {
       const rootStat = await fs.stat(rootPath).catch(() => null);
       if (!rootStat?.isDirectory()) {
         continue;
@@ -378,7 +415,12 @@ class DesktopSkillsRegistry {
   private async ensurePreinstalledSkills(): Promise<void> {
     const preinstallList = CURATED_SKILLS.filter((item) => item.preinstall);
     for (const item of preinstallList) {
-      await this.ensureCuratedSkillInstalled(item.name);
+      try {
+        await this.ensureCuratedSkillInstalled(item.name);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`${SKILLS_LOG_PREFIX} preinstall skipped for "${item.name}": ${message}`);
+      }
     }
   }
 
@@ -386,15 +428,6 @@ class DesktopSkillsRegistry {
     for (const root of COMPAT_SKILL_ROOTS) {
       await this.importFromRoot(root);
     }
-  }
-
-  private async resolveRecommendedSkill(item: CuratedSkill): Promise<RecommendedSkill> {
-    const located = await this.locateCuratedSkill(item.name);
-    return {
-      name: item.name,
-      title: located?.parsed.title ?? item.fallbackTitle,
-      description: located?.parsed.description ?? item.fallbackDescription,
-    };
   }
 
   private async scanInstalledSkills(): Promise<ParsedSkill[]> {
@@ -484,7 +517,20 @@ class DesktopSkillsRegistry {
     const installed = await this.list();
     const installedNames = new Set(installed.map((item) => item.name));
     const available = CURATED_SKILLS.filter((item) => !installedNames.has(item.name));
-    return Promise.all(available.map((item) => this.resolveRecommendedSkill(item)));
+    const resolved = await Promise.all(
+      available.map(async (item) => {
+        const located = await this.locateCuratedSkill(item.name);
+        if (!located) {
+          return null;
+        }
+        return {
+          name: item.name,
+          title: located.parsed.title ?? item.fallbackTitle,
+          description: located.parsed.description ?? item.fallbackDescription,
+        } satisfies RecommendedSkill;
+      })
+    );
+    return resolved.filter((item): item is RecommendedSkill => item !== null);
   }
 
   async getDetail(name: string): Promise<SkillDetail> {

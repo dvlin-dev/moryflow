@@ -97,6 +97,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Skills 预设路径补齐 dev/build/package 多候选根（含 `resources/app.asar/dist/main/builtin`），并在预安装失败时降级为 warning，避免阻断 Agent 聊天链路。
+- Skills 解析链路修正 symlink 防护顺序（先 `lstat(skillDir)` 再 `realpath`），防止失效的“已解析后再判 symlink”伪防护。
+- `skill` tool/XML 注入转义补齐 `\"`/`'`，避免属性值场景下标签结构被破坏。
 - 新建会话默认标题固定为英文 `New thread`（不再使用中文序号），与 Renderer 侧新建入口文案一致。
 - 会话存储移除未使用的 `sequence` 持久化字段，数据层仅保留 `sessions`（简化状态面）。
 - 新增 Skills 注册中心（`main/skills`）：内置预设与兼容目录（`.agents/.claude/.codex/.clawdbot`）自动导入、启停状态持久化、目录级安全导入（忽略 symlink + realpath 边界校验）
