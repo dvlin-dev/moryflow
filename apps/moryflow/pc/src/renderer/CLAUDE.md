@@ -96,6 +96,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - VaultFiles 与 Threads 列表基线对齐：文件/文件夹/线程行内水平 padding 统一为 `px-2.5`，统一使用 icon 槽位控制文字起始线；行背景采用 `-mx-1` 轻微外扩，保持两类列表间距一致。
 - VaultFiles/Threads 列表视觉层次收敛：通过列表容器 inset + 行内 padding 抵消，让激活背景内缩而文本左边线保持稳定对齐。
 - Workspace 导航新增 `Skills` destination（位于 Sites 上方），并在主视图新增 Skills 页面 keep-alive 挂载。
+- Skills 页交互更新：`New skill` 复用 `Try Skill Creator`，`Try` 改为立即新建会话并选中 skill（无需等待下个会话）。
 - Chat 输入框接入 Skills 显式注入：`+` 子菜单/空输入 `/` 双入口 + selected skill chip；失效 skill 发送前软降级。
 - 启动性能：移除 `preload:*` IPC/落盘缓存，warmup 回退为 Renderer 侧轻量 `import()`（仅 ChatPane/Shiki）；AgentSettings 读取收敛为单飞资源，修复设置弹窗偶发一直 Loading
 - Streamdown 升级至 v2.2：聊天流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 统一注入）

@@ -328,7 +328,7 @@ type SkillInstallState = {
 
 ### P1（可选）
 
-1. Recommended 区接远端推荐源。
+1. Recommended 先固定本地三项预设（`skill-creator`、`find-skills`、`baoyu-article-illustrator`）；远端推荐源后续单独提案，不在本期。
 2. Mobile UI 对齐与多端状态同步策略。
 
 ## 最终原则
@@ -397,6 +397,11 @@ type SkillInstallState = {
 - 2026-02-11：`pnpm test:unit` 通过
 - 2026-02-11：二次校验 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 全部通过（含新增单测）
 - 2026-02-11：三次校验 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 全部通过（含发送后清理与消息 skill tag 回归）
+- 2026-02-11：四次校验 `pnpm --filter @anyhunt/moryflow-pc typecheck` 与 `pnpm --filter @anyhunt/moryflow-pc test:unit` 全部通过（含 Skills 推荐/预安装/Try 立即生效改造）
+- 2026-02-11：五次校验 `pnpm --filter @anyhunt/moryflow-pc typecheck` 与 `CI=1 pnpm --filter @anyhunt/moryflow-pc test:unit` 全部通过（含“一次性预安装”状态标记修正）
+- 2026-02-11：六次校验 `pnpm --filter @anyhunt/moryflow-pc typecheck` 通过（最终收尾格式化与可读性调整后复核）
+- 2026-02-11：七次校验 `CI=1 pnpm --filter @anyhunt/moryflow-pc test:unit` 通过（最终提交前全量回归）
+- 2026-02-11：八次校验 `pnpm lint --filter @anyhunt/moryflow-pc` 通过（目标包 lint 流程通过）
 
 ## 行为准则（实施阶段）
 
@@ -407,3 +412,77 @@ type SkillInstallState = {
 5. 单一数据源：skill 元信息只从系统注入最小集合；正文与路径只从 `skill` tool 返回。
 6. C 端优先：默认路径以直觉交互为主（`+` 与空输入 `/`），高级命令不影响主路径。
 7. 不做历史兼容：按最佳实践直接收敛目标结构，不保留旧分支逻辑。
+
+## 增量方案（已实施）：推荐预设 + Try 立即生效
+
+> 目标：满足你最新确认的交互，不额外引入复杂配置层；保持单一数据源、易维护。
+
+### A. 推荐技能与预安装（固定三项）
+
+1. 推荐区固定展示 3 个技能（来自本地预设目录）：
+   - `skill-creator`（Skill Creator）
+   - `find-skills`（Find Skills）
+   - `baoyu-article-illustrator`（Article Illustrator）
+2. 首次启动自动预安装 2 个技能：
+   - `skill-creator`
+   - `find-skills`
+3. 预安装/安装动作统一为“按目录整体复制”：
+   - 从安装包预设目录复制到 `~/.moryflow/skills/<name>/`
+   - 保留 `scripts/`、`templates/`、`references/` 等子目录
+   - Prompt 不再额外硬编码，统一以 `SKILL.md` 正文为准（单一数据源）
+
+### B. `New skill` 行为改造（不再本地脚手架创建）
+
+1. `+ New skill` 按钮改为复用 `Try Skill Creator`：
+   - 不再调用 `createSkill()` 直接创建空目录模板
+   - 直接进入“Skill Creator 引导会话”路径
+2. 用户创建新技能的主路径收敛为：
+   - `Skills > New skill`（等价于 Try Skill Creator）
+   - `Skills > Skill Creator > Try`（同一行为）
+
+### C. `Try skill` 立即生效（修复“下个会话才生效”）
+
+1. 点击 `Try` 时立即执行：
+   - 新建会话（thread）
+   - 切换到新会话
+   - 将选中 skill 绑定到该新会话输入态（显示 skill tag）
+2. 生效时机：
+   - 不等待下一次会话切换
+   - 新会话第一条消息即可使用该 skill
+3. 发送后清理规则保持不变：
+   - 发送成功立即清空输入框 skill tag（以及输入框内容）
+   - 消息列表保留该条消息的 skill tag 回显
+
+### D. 实施边界（避免过度设计）
+
+1. 不新增“推荐源配置中心”或远端 CMS。
+2. 不引入第二套 prompt 存储；只认 `SKILL.md`。
+3. 不新增复杂状态机；仅补齐 “Try -> new thread -> selected skill draft” 这条最短链路。
+
+### E. 执行计划（本轮新增）
+
+> 进度同步规则沿用上文：每步完成后立刻回写本节状态，避免上下文压缩丢失。
+
+1. [x] P0-12：将 Recommended 收敛为本地三项（Skill Creator / Find Skills / Article Illustrator）
+   - 状态：Completed
+   - 完成时间：2026-02-11
+   - 验证：`main/skills/index.ts` 的 curated 推荐池固定为 `skill-creator`、`find-skills`、`baoyu-article-illustrator`；推荐区仅展示“未安装项”，文案优先读取对应预设 `SKILL.md`
+2. [x] P0-13：首次启动预安装 `skill-creator`、`find-skills`
+   - 状态：Completed
+   - 完成时间：2026-02-11
+   - 验证：`refresh()` 链路新增 `ensurePreinstalledSkills()`；仅预安装标记为 `preinstall: true` 的 skill（当前为前两项）
+3. [x] P0-14：`New skill` 改为复用 `Try Skill Creator` 行为
+   - 状态：Completed
+   - 完成时间：2026-02-11
+   - 验证：`SkillsPage` 的 `New skill` 不再调用 `createSkill`，改为 `startSkillThread('skill-creator', { autoInstall: true, autoEnable: true })`
+4. [x] P0-15：`Try skill` 改为“立即新建会话并生效”
+   - 状态：Completed
+   - 完成时间：2026-02-11
+   - 验证：`startSkillThread` 统一执行 `createSession -> setSelectedSkillName -> setSub('chat')`，详情弹层 `Try` 成功后立即关闭并跳转
+
+### F. 本轮行为准则（新增）
+
+1. 推荐、预安装、安装三者统一走“目录复制 + SKILL.md 解析”链路。
+2. “New skill”不再分叉实现，必须复用 `Try Skill Creator`，避免两套逻辑漂移。
+3. 用户视角下的生效必须“即时可见”：Try 后立刻看到新会话与 skill tag。
+4. 不做历史兼容保留：旧的 `createSkill` 脚手架路径在迁移后直接删除。

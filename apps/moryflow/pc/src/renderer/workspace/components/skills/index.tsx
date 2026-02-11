@@ -2,6 +2,7 @@
  * [PROPS]: -
  * [EMITS]: -
  * [POS]: Skills 主页面（Installed/Recommended + 详情弹层）
+ * [UPDATE]: 2026-02-11 - New skill 复用 Skill Creator；Try 行为改为立即新建会话并生效
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -10,7 +11,6 @@ import { Input } from '@anyhunt/ui/components/input';
 import { Button } from '@anyhunt/ui/components/button';
 import { RefreshCw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSelectedSkillStore } from '@/components/chat-pane/hooks';
 import { SkillsList } from './skills-list';
 import { SkillDetailModal } from './skill-detail-modal';
 import { useSkillsPageState } from './use-skills';
@@ -31,10 +31,9 @@ export const SkillsPage = () => {
     setEnabled,
     uninstall,
     openDirectory,
-    createSkill,
     handleInstallRecommended,
+    startSkillThread,
   } = useSkillsPageState();
-  const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -64,11 +63,14 @@ export const SkillsPage = () => {
             size="sm"
             onClick={async () => {
               try {
-                const created = await createSkill();
-                toast.success('Skill created');
-                await openDirectory(created.name);
+                await startSkillThread('skill-creator', {
+                  autoInstall: true,
+                  autoEnable: true,
+                });
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : 'Failed to create skill');
+                toast.error(
+                  error instanceof Error ? error.message : 'Failed to start Skill Creator'
+                );
               }
             }}
           >
@@ -100,12 +102,13 @@ export const SkillsPage = () => {
           }
         }}
         onLoadDetail={getDetail}
-        onTry={() => {
-          if (!selectedSkill) {
-            return;
+        onTry={async (skillName) => {
+          try {
+            await startSkillThread(skillName);
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to start skill');
+            throw error;
           }
-          setSelectedSkillName(selectedSkill.name);
-          toast.success('Skill selected for your next message');
         }}
         onToggleEnabled={async (name, enabled) => {
           try {

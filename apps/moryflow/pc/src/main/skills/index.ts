@@ -2,7 +2,7 @@
  * [PROVIDES]: Desktop Skills 注册中心（扫描/导入/启停/卸载/详情与 runtime 注入）
  * [DEPENDS]: node:fs/node:path/node:os, shared/ipc/skills
  * [POS]: PC 主进程 Skills 单一事实来源（供 IPC 与 Agent Runtime 复用）
- * [UPDATE]: 2026-02-11 - 内置 skill 导入支持 dev/package 双路径候选；create 时 title/description 规范为单行，避免 frontmatter 污染
+ * [UPDATE]: 2026-02-11 - 推荐/预安装/兼容扫描链路解耦：固定三项推荐，预安装两项，New skill 改走 Skill Creator
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,7 +17,7 @@ const MORYFLOW_DIR = path.join(os.homedir(), '.moryflow');
 const SKILLS_DIR = path.join(MORYFLOW_DIR, 'skills');
 const STATE_FILE = path.join(MORYFLOW_DIR, 'skills-state.json');
 const SKILLS_MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
-const BUILTIN_SKILL_ROOTS = [
+const CURATED_SKILL_ROOTS = [
   path.resolve(process.cwd(), 'apps/moryflow/pc/src/main/skills/builtin'),
   path.resolve(SKILLS_MODULE_DIR, 'builtin'),
 ] as const;
@@ -32,6 +32,7 @@ const MAX_SKILL_FILE_LIST = 200;
 
 type SkillStateFile = {
   disabled: string[];
+  curatedPreinstalled: boolean;
 };
 
 type ParsedSkill = {
@@ -44,30 +45,40 @@ type ParsedSkill = {
   files: string[];
 };
 
-const RECOMMENDED_SKILLS: RecommendedSkill[] = [
+type CuratedSkill = {
+  name: string;
+  fallbackTitle: string;
+  fallbackDescription: string;
+  preinstall: boolean;
+};
+
+const CURATED_SKILLS: CuratedSkill[] = [
   {
-    name: 'doc',
-    title: 'Doc',
-    description: 'Edit and review docx files.',
+    name: 'skill-creator',
+    fallbackTitle: 'Skill Creator',
+    fallbackDescription:
+      'Guide for creating effective skills with structured workflows and reusable resources.',
+    preinstall: true,
   },
   {
-    name: 'figma',
-    title: 'Figma',
-    description: 'Use Figma MCP for design-to-code workflows.',
+    name: 'find-skills',
+    fallbackTitle: 'Find Skills',
+    fallbackDescription:
+      'Discover and install agent skills from the open skills ecosystem based on user intent.',
+    preinstall: true,
   },
   {
-    name: 'gh-fix-ci',
-    title: 'GH Fix CI',
-    description: 'Debug failing GitHub Actions CI quickly.',
-  },
-  {
-    name: 'cloudflare-deploy',
-    title: 'Cloudflare Deploy',
-    description: 'Deploy Workers/Pages and related platform services.',
+    name: 'baoyu-article-illustrator',
+    fallbackTitle: 'Article Illustrator',
+    fallbackDescription:
+      'Analyze article structure and generate consistent illustrations with Type × Style controls.',
+    preinstall: false,
   },
 ];
 
-const defaultSkillState = (): SkillStateFile => ({ disabled: [] });
+const CURATED_SKILL_MAP = new Map(CURATED_SKILLS.map((item) => [item.name, item]));
+
+const defaultSkillState = (): SkillStateFile => ({ disabled: [], curatedPreinstalled: false });
 
 const toKebabCase = (value: string): string =>
   value
@@ -76,12 +87,6 @@ const toKebabCase = (value: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+/, '')
     .replace(/-+$/, '');
-
-const toSingleLine = (value: string): string =>
-  value
-    .replace(/\r?\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
 
 const xmlEscape = (value: string): string =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -101,6 +106,11 @@ const readIfExists = async (targetPath: string): Promise<string | null> => {
     }
     throw error;
   }
+};
+
+const directoryExists = async (targetPath: string): Promise<boolean> => {
+  const stat = await fs.stat(targetPath).catch(() => null);
+  return Boolean(stat?.isDirectory());
 };
 
 const parseFrontmatter = (raw: string): { attrs: Record<string, string>; body: string } => {
@@ -266,7 +276,10 @@ class DesktopSkillsRegistry {
             (item): item is string => typeof item === 'string' && item.length > 0
           )
         : [];
-      return { disabled };
+      return {
+        disabled,
+        curatedPreinstalled: data.curatedPreinstalled === true,
+      };
     } catch {
       return defaultSkillState();
     }
@@ -294,23 +307,94 @@ class DesktopSkillsRegistry {
       if (!parsed) {
         continue;
       }
-      const targetDir = path.join(SKILLS_DIR, parsed.name);
-      const exists = await fs.stat(targetDir).then(
-        () => true,
-        () => false
-      );
-      if (exists) {
+      await this.installParsedSkill(candidateDir, parsed);
+    }
+  }
+
+  private async installParsedSkill(sourceDir: string, parsed: ParsedSkill): Promise<void> {
+    const targetDir = path.join(SKILLS_DIR, parsed.name);
+    if (await directoryExists(targetDir)) {
+      return;
+    }
+    await copyDirectorySafely(sourceDir, targetDir);
+  }
+
+  private async locateCuratedSkill(
+    name: string
+  ): Promise<{ sourceDir: string; parsed: ParsedSkill } | null> {
+    const normalizedName = toKebabCase(name);
+    if (!normalizedName) {
+      return null;
+    }
+
+    for (const rootPath of CURATED_SKILL_ROOTS) {
+      const rootStat = await fs.stat(rootPath).catch(() => null);
+      if (!rootStat?.isDirectory()) {
         continue;
       }
-      await copyDirectorySafely(candidateDir, targetDir);
+
+      const directDir = path.join(rootPath, normalizedName);
+      const directParsed = await parseSkillFromDirectory(directDir);
+      if (directParsed?.name === normalizedName) {
+        return { sourceDir: directDir, parsed: directParsed };
+      }
+
+      const entries = await fs.readdir(rootPath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory() || entry.isSymbolicLink()) {
+          continue;
+        }
+        const candidateDir = path.join(rootPath, entry.name);
+        const parsed = await parseSkillFromDirectory(candidateDir);
+        if (!parsed || parsed.name !== normalizedName) {
+          continue;
+        }
+        return { sourceDir: candidateDir, parsed };
+      }
+    }
+
+    return null;
+  }
+
+  private async ensureCuratedSkillInstalled(name: string): Promise<void> {
+    const normalizedName = toKebabCase(name);
+    if (!normalizedName) {
+      throw new Error('Skill name is required.');
+    }
+
+    const targetDir = path.join(SKILLS_DIR, normalizedName);
+    if (await directoryExists(targetDir)) {
+      return;
+    }
+
+    const located = await this.locateCuratedSkill(normalizedName);
+    if (!located) {
+      throw new Error(`Skill preset "${normalizedName}" is not available.`);
+    }
+
+    await this.installParsedSkill(located.sourceDir, located.parsed);
+  }
+
+  private async ensurePreinstalledSkills(): Promise<void> {
+    const preinstallList = CURATED_SKILLS.filter((item) => item.preinstall);
+    for (const item of preinstallList) {
+      await this.ensureCuratedSkillInstalled(item.name);
     }
   }
 
   private async importCompatibilitySkills(): Promise<void> {
-    const roots = Array.from(new Set([...BUILTIN_SKILL_ROOTS, ...COMPAT_SKILL_ROOTS]));
-    for (const root of roots) {
+    for (const root of COMPAT_SKILL_ROOTS) {
       await this.importFromRoot(root);
     }
+  }
+
+  private async resolveRecommendedSkill(item: CuratedSkill): Promise<RecommendedSkill> {
+    const located = await this.locateCuratedSkill(item.name);
+    return {
+      name: item.name,
+      title: located?.parsed.title ?? item.fallbackTitle,
+      description: located?.parsed.description ?? item.fallbackDescription,
+    };
   }
 
   private async scanInstalledSkills(): Promise<ParsedSkill[]> {
@@ -352,15 +436,30 @@ class DesktopSkillsRegistry {
 
   async refresh(): Promise<SkillSummary[]> {
     await this.ensureStorage();
+    const state = await this.readState();
+    let nextState = state;
+    if (!state.curatedPreinstalled) {
+      await this.ensurePreinstalledSkills();
+      nextState = { ...state, curatedPreinstalled: true };
+    }
     await this.importCompatibilitySkills();
     const parsedSkills = await this.scanInstalledSkills();
-    const state = await this.readState();
     const installedNames = new Set(parsedSkills.map((skill) => skill.name));
-    const nextDisabled = state.disabled.filter((name) => installedNames.has(name));
-    if (nextDisabled.length !== state.disabled.length) {
-      await this.writeState({ disabled: nextDisabled });
+    const nextDisabled = nextState.disabled.filter((name) => installedNames.has(name));
+    const stateChanged =
+      nextDisabled.length !== nextState.disabled.length ||
+      nextState.curatedPreinstalled !== state.curatedPreinstalled;
+    if (stateChanged) {
+      nextState = {
+        disabled: nextDisabled,
+        curatedPreinstalled: nextState.curatedPreinstalled,
+      };
+      await this.writeState(nextState);
     }
-    const summaries = this.hydrateCache(parsedSkills, { disabled: nextDisabled });
+    const summaries = this.hydrateCache(parsedSkills, {
+      disabled: nextDisabled,
+      curatedPreinstalled: nextState.curatedPreinstalled,
+    });
     this.initialized = true;
     return summaries;
   }
@@ -384,7 +483,8 @@ class DesktopSkillsRegistry {
   async listRecommended(): Promise<RecommendedSkill[]> {
     const installed = await this.list();
     const installedNames = new Set(installed.map((item) => item.name));
-    return RECOMMENDED_SKILLS.filter((item) => !installedNames.has(item.name));
+    const available = CURATED_SKILLS.filter((item) => !installedNames.has(item.name));
+    return Promise.all(available.map((item) => this.resolveRecommendedSkill(item)));
   }
 
   async getDetail(name: string): Promise<SkillDetail> {
@@ -412,7 +512,10 @@ class DesktopSkillsRegistry {
     } else {
       disabled.add(normalized);
     }
-    await this.writeState({ disabled: Array.from(disabled).sort() });
+    await this.writeState({
+      disabled: Array.from(disabled).sort(),
+      curatedPreinstalled: state.curatedPreinstalled,
+    });
     await this.refresh();
 
     const updated = this.summaries.find((item) => item.name === normalized);
@@ -436,65 +539,30 @@ class DesktopSkillsRegistry {
     await fs.rm(targetDir, { recursive: true, force: true });
     const state = await this.readState();
     if (state.disabled.includes(normalized)) {
-      await this.writeState({ disabled: state.disabled.filter((item) => item !== normalized) });
+      await this.writeState({
+        disabled: state.disabled.filter((item) => item !== normalized),
+        curatedPreinstalled: state.curatedPreinstalled,
+      });
     }
     await this.refresh();
   }
 
-  async create(input?: {
-    name?: string;
-    title?: string;
-    description?: string;
-  }): Promise<SkillSummary> {
+  async install(name: string): Promise<SkillSummary> {
     await this.ensureReady();
-    const rawName = input?.name?.trim();
-    const baseName = toKebabCase(rawName || `skill-${Date.now()}`);
-    if (!baseName) {
-      throw new Error('Invalid skill name.');
+    const normalized = toKebabCase(name);
+    if (!normalized) {
+      throw new Error('Skill name is required.');
     }
-
-    let finalName = baseName;
-    let seq = 2;
-    while (true) {
-      const exists = await fs
-        .stat(path.join(SKILLS_DIR, finalName))
-        .then(() => true)
-        .catch(() => false);
-      if (!exists) break;
-      finalName = `${baseName}-${seq++}`;
+    if (!CURATED_SKILL_MAP.has(normalized)) {
+      throw new Error('Skill is not in curated recommendations.');
     }
-
-    const title = toSingleLine(input?.title?.trim() || finalName) || finalName;
-    const description =
-      toSingleLine(input?.description?.trim() || 'Describe when to use this skill.') ||
-      'Describe when to use this skill.';
-    const targetDir = path.join(SKILLS_DIR, finalName);
-    await fs.mkdir(targetDir, { recursive: true });
-    const skillContent = [
-      '---',
-      `name: ${finalName}`,
-      `title: ${title}`,
-      `description: ${description}`,
-      '---',
-      '',
-      `# ${title}`,
-      '',
-      description,
-      '',
-      '## Instructions',
-      '',
-      '- Add concrete steps and guardrails for the agent.',
-      '- Keep examples short and executable.',
-      '',
-    ].join('\n');
-    await fs.writeFile(path.join(targetDir, 'SKILL.md'), skillContent, 'utf-8');
-
+    await this.ensureCuratedSkillInstalled(normalized);
     await this.refresh();
-    const created = this.summaries.find((item) => item.name === finalName);
-    if (!created) {
-      throw new Error('Failed to create skill.');
+    const installed = this.summaries.find((item) => item.name === normalized);
+    if (!installed) {
+      throw new Error('Skill installed but failed to refresh cache.');
     }
-    return { ...created };
+    return { ...installed };
   }
 
   getAvailableSkillsPrompt(): string {

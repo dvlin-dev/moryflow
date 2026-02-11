@@ -1,8 +1,9 @@
 /**
- * [PROVIDES]: useAgentSkills - Skills 列表与操作（刷新/启停/卸载/创建）
+ * [PROVIDES]: useAgentSkills - Skills 列表与操作（刷新/启停/卸载/安装）
  * [DEPENDS]: desktopAPI.agent.skills IPC
  * [POS]: Renderer 侧 Skills 数据访问入口
  * [UPDATE]: 2026-02-11 - 操作接口补齐 desktopAPI 可用性边界，缺失时抛出明确错误而非空引用崩溃
+ * [UPDATE]: 2026-02-11 - createSkill 删除，推荐安装统一收敛为 installSkill（预设目录复制）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -19,11 +20,7 @@ export type UseAgentSkillsResult = {
   getDetail: (name: string) => Promise<SkillDetail>;
   setEnabled: (name: string, enabled: boolean) => Promise<void>;
   uninstall: (name: string) => Promise<void>;
-  createSkill: (input?: {
-    name?: string;
-    title?: string;
-    description?: string;
-  }) => Promise<SkillSummary>;
+  installSkill: (name: string) => Promise<SkillSummary>;
   openDirectory: (name: string) => Promise<void>;
 };
 
@@ -88,10 +85,10 @@ export const useAgentSkills = (): UseAgentSkillsResult => {
     [load, requireAgentApi]
   );
 
-  const createSkill = useCallback(
-    async (input?: { name?: string; title?: string; description?: string }) => {
+  const installSkill = useCallback(
+    async (name: string) => {
       const api = requireAgentApi();
-      const skill = await api.createSkill(input);
+      const skill = await api.installSkill({ name });
       await load('list');
       return skill;
     },
@@ -125,7 +122,7 @@ export const useAgentSkills = (): UseAgentSkillsResult => {
     getDetail,
     setEnabled,
     uninstall,
-    createSkill,
+    installSkill,
     openDirectory,
   };
 };

@@ -55,6 +55,8 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-11：`New skill`/`Try` 成功后不再弹成功 toast（减少干扰）；仅保留失败提示，跳转行为保持即时生效。
+- 2026-02-11：Skills 页面新增“立即生效”链路：`Try` 与 `New skill` 统一走 `createSession -> selectedSkill -> setSub('chat')`，确保点击后立刻新建会话并携带 skill tag。
 - 2026-02-11：侧边栏默认宽度改为等于最小宽度（260px）；仍通过 `react-resizable-panels` 的 `autoSaveId` 记忆用户上次拖拽宽度。
 - 2026-02-11：侧边栏最小宽度调整为 260px（`SIDEBAR_MIN_WIDTH` + panel 百分比下限按容器动态换算），确保拖拽下限与像素最小宽度一致。
 - 2026-02-10：移除 `preload:*` IPC/落盘缓存与 Workspace preload service，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki；无额外 IPC/写盘）。

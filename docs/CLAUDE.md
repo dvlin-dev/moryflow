@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Agent Skills（面向 C 端的“技能库”）接入方案：增量方案落地（固定推荐 3 项、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效），并回写 P0-12~P0-15 执行计划为完成状态（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：本期方案 1 落地（发送成功后清空 selected skill、用户消息渲染 skill tag），并在执行计划新增 P0-11 进度（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` + `skill` tool），并在文档内同步执行步骤进度（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：固定兼容目录自动导入（`~/.agents/skills`、`~/.claude/skills`、`~/.codex/skills`、`~/.clawdbot/skills`）并支持 `Refresh` 重扫；`selectedSkill` 不可用改为提示后软降级继续对话；补充“执行计划 + 行为准则 + 强制进度同步”段落（2026-02-11：proposal update）

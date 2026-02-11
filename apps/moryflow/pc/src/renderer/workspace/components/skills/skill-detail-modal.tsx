@@ -3,6 +3,7 @@
  * [EMITS]: onToggleEnabled/onUninstall/onTry/onOpenDirectory
  * [POS]: Skills 页面详情弹层
  * [UPDATE]: 2026-02-11 - 卸载失败时保持弹层不关闭，避免误导用户“已卸载成功”
+ * [UPDATE]: 2026-02-11 - Try 改为异步闭环：仅成功后关闭弹层，失败保持当前上下文
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -24,7 +25,7 @@ type SkillDetailModalProps = {
   open: boolean;
   skill: SkillSummary | null;
   onOpenChange: (open: boolean) => void;
-  onTry: (skillName: string) => void;
+  onTry: (skillName: string) => Promise<void>;
   onToggleEnabled: (skillName: string, enabled: boolean) => Promise<void>;
   onUninstall: (skillName: string) => Promise<void>;
   onOpenDirectory: (skillName: string) => Promise<void>;
@@ -125,10 +126,14 @@ export const SkillDetailModal = ({
             </Button>
           </div>
           <Button
-            onClick={() => {
+            onClick={async () => {
               if (!skill) return;
-              onTry(skill.name);
-              onOpenChange(false);
+              try {
+                await onTry(skill.name);
+                onOpenChange(false);
+              } catch {
+                // 错误提示由上层统一处理；失败时保持弹窗打开便于用户继续操作。
+              }
             }}
             disabled={!skill || !skill.enabled}
           >

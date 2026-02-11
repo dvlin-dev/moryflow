@@ -4,6 +4,7 @@
  * [POS]: Preload bridge (secure channel surface)
  * [UPDATE]: 2026-02-08 - 暴露 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
  * [UPDATE]: 2026-02-10 - 暴露 `workspace:getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
+ * [UPDATE]: 2026-02-11 - Skills API 将 createSkill 替换为 installSkill，和主进程推荐安装链路对齐
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -174,7 +175,7 @@ const api: DesktopApi = {
     getSkillDetail: (input) => ipcRenderer.invoke('agent:skills:get', input ?? {}),
     setSkillEnabled: (input) => ipcRenderer.invoke('agent:skills:setEnabled', input ?? {}),
     uninstallSkill: (input) => ipcRenderer.invoke('agent:skills:uninstall', input ?? {}),
-    createSkill: (input) => ipcRenderer.invoke('agent:skills:create', input ?? {}),
+    installSkill: (input) => ipcRenderer.invoke('agent:skills:install', input ?? {}),
     listRecommendedSkills: () => ipcRenderer.invoke('agent:skills:listRecommended'),
     openSkillDirectory: (input) => ipcRenderer.invoke('agent:skills:openDirectory', input ?? {}),
     getMcpStatus: () => ipcRenderer.invoke('agent:mcp:getStatus'),

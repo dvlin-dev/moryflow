@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-08 - 新增 `vault.ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace
  * [UPDATE]: 2026-02-10 - 新增 `workspace.getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
  * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC 契约，预热改为 Renderer 侧轻量 warmup（避免额外 IPC/落盘缓存维护）
+ * [UPDATE]: 2026-02-11 - Skills 契约移除 createSkill，新增 installSkill（预设安装）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -247,11 +248,7 @@ export type DesktopApi = {
     getSkillDetail: (input: { name: string }) => Promise<SkillDetail>;
     setSkillEnabled: (input: { name: string; enabled: boolean }) => Promise<SkillSummary>;
     uninstallSkill: (input: { name: string }) => Promise<{ ok: boolean }>;
-    createSkill: (input?: {
-      name?: string;
-      title?: string;
-      description?: string;
-    }) => Promise<SkillSummary>;
+    installSkill: (input: { name: string }) => Promise<SkillSummary>;
     listRecommendedSkills: () => Promise<RecommendedSkill[]>;
     openSkillDirectory: (input: { name: string }) => Promise<{ ok: boolean }>;
     /** 获取 MCP 服务器状态快照 */

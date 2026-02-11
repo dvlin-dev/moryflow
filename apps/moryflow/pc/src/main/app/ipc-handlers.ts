@@ -5,6 +5,7 @@
  * [UPDATE]: 2026-02-08 - 新增 `vault:ensureDefaultWorkspace`，用于首次启动自动创建默认 workspace 并激活
  * [UPDATE]: 2026-02-10 - 新增 `workspace:getLastAgentSub/setLastAgentSub`，用于全局记忆 AgentSub（Chat/Workspace）
  * [UPDATE]: 2026-02-10 - 移除 `preload:*` IPC handlers（预热改为 Renderer 侧 warmup，避免 IPC/落盘缓存带来的主进程抖动）
+ * [UPDATE]: 2026-02-11 - Skills IPC 将 create 收敛为 install，推荐安装统一走预设目录复制链路
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -374,13 +375,13 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
     await registry.uninstall(name);
     return { ok: true };
   });
-  ipcMain.handle('agent:skills:create', async (_event, payload) => {
+  ipcMain.handle('agent:skills:install', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
     const registry = getSkillsRegistry();
-    return registry.create({
-      name: typeof payload?.name === 'string' ? payload.name : undefined,
-      title: typeof payload?.title === 'string' ? payload.title : undefined,
-      description: typeof payload?.description === 'string' ? payload.description : undefined,
-    });
+    return registry.install(name);
   });
   ipcMain.handle('agent:skills:listRecommended', async () => {
     const registry = getSkillsRegistry();

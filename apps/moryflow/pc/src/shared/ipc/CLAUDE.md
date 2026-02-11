@@ -38,7 +38,7 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
 
 ## 近期变更
 
-- 新增 Skills IPC 契约：`agent.listSkills/refreshSkills/getSkillDetail/setSkillEnabled/uninstallSkill/createSkill/listRecommendedSkills/openSkillDirectory`
+- 新增 Skills IPC 契约：`agent.listSkills/refreshSkills/getSkillDetail/setSkillEnabled/uninstallSkill/installSkill/listRecommendedSkills/openSkillDirectory`
 - `chat.AgentChatRequestOptions` 新增 `selectedSkill`（结构化 skill 选择），避免纯文本协议
 
 ## 常见修改场景
