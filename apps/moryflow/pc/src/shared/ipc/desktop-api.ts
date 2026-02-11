@@ -17,6 +17,7 @@ import type {
   UIMessage,
   UIMessageChunk,
 } from './chat';
+import type { SkillSummary, SkillDetail, RecommendedSkill } from './skills';
 import type { AgentSettings, AgentSettingsUpdate } from './agent-settings';
 import type { ResetAppResult } from './maintenance';
 import type { McpStatusSnapshot, McpStatusEvent, McpTestInput, McpTestResult } from './mcp-status';
@@ -241,6 +242,18 @@ export type DesktopApi = {
     getSettings: () => Promise<AgentSettings>;
     updateSettings: (input: AgentSettingsUpdate) => Promise<AgentSettings>;
     onSettingsChange?: (handler: (settings: AgentSettings) => void) => () => void;
+    listSkills: () => Promise<SkillSummary[]>;
+    refreshSkills: () => Promise<SkillSummary[]>;
+    getSkillDetail: (input: { name: string }) => Promise<SkillDetail>;
+    setSkillEnabled: (input: { name: string; enabled: boolean }) => Promise<SkillSummary>;
+    uninstallSkill: (input: { name: string }) => Promise<{ ok: boolean }>;
+    createSkill: (input?: {
+      name?: string;
+      title?: string;
+      description?: string;
+    }) => Promise<SkillSummary>;
+    listRecommendedSkills: () => Promise<RecommendedSkill[]>;
+    openSkillDirectory: (input: { name: string }) => Promise<{ ok: boolean }>;
     /** 获取 MCP 服务器状态快照 */
     getMcpStatus: () => Promise<McpStatusSnapshot>;
     /** 订阅 MCP 状态变更事件 */

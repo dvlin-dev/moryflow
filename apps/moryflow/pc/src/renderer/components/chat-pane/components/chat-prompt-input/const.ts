@@ -3,6 +3,7 @@ import type { ChatStatus, FileUIPart } from 'ai';
 import type { PromptInputProps } from '@anyhunt/ui/ai/prompt-input';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import type { ChatSelectedSkill } from '@anyhunt/types';
 
 import type { ModelGroup } from '../../models';
 import type { MessageAttachment } from '../../types/attachment';
@@ -23,6 +24,14 @@ export type ChatSubmitPayload = {
   files: FileUIPart[];
   /** 结构化附件数据（用于存储到消息元数据） */
   attachments: MessageAttachment[];
+  /**
+   * 本次发送显式选择的 skill 名称。
+   * - `undefined`: 使用当前全局 selected skill
+   * - `null`: 强制本次不带 selected skill
+   */
+  selectedSkillName?: string | null;
+  /** 本次发送显式选择的 skill 元数据（用于消息渲染） */
+  selectedSkill?: ChatSelectedSkill | null;
 };
 
 export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
@@ -45,4 +54,8 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   mode: ChatSessionSummary['mode'];
   /** 切换访问模式 */
   onModeChange: (mode: ChatSessionSummary['mode']) => void;
+  /** 当前显式选中的 skill（输入框 chip） */
+  selectedSkillName?: string | null;
+  /** 选择或清空输入框显式 skill */
+  onSelectSkillName?: (name: string | null) => void;
 };

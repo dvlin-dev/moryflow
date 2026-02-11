@@ -85,6 +85,7 @@ import { handleBindingConflictResponse } from '../cloud-sync/binding-conflict.js
 import { fetchCurrentUserId } from '../cloud-sync/user-info.js';
 import { createExternalLinkPolicy, openExternalSafe } from './external-links.js';
 import { getTaskDetail, listTasks } from '../tasks/index.js';
+import { getSkillsRegistry, SKILLS_DIR } from '../skills/index.js';
 
 type RegisterIpcHandlersOptions = {
   vaultWatcherController: VaultWatcherController;
@@ -337,6 +338,65 @@ export const registerIpcHandlers = ({ vaultWatcherController }: RegisterIpcHandl
   });
   ipcMain.handle('agent:settings:get', () => getAgentSettings());
   ipcMain.handle('agent:settings:update', (_event, payload) => updateAgentSettings(payload ?? {}));
+  ipcMain.handle('agent:skills:list', async () => {
+    const registry = getSkillsRegistry();
+    return registry.list();
+  });
+  ipcMain.handle('agent:skills:refresh', async () => {
+    const registry = getSkillsRegistry();
+    return registry.refresh();
+  });
+  ipcMain.handle('agent:skills:get', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    const registry = getSkillsRegistry();
+    return registry.getDetail(name);
+  });
+  ipcMain.handle('agent:skills:setEnabled', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    if (typeof payload?.enabled !== 'boolean') {
+      throw new Error('Skill enabled flag is required.');
+    }
+    const registry = getSkillsRegistry();
+    return registry.setEnabled(name, payload.enabled);
+  });
+  ipcMain.handle('agent:skills:uninstall', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    if (!name) {
+      throw new Error('Skill name is required.');
+    }
+    const registry = getSkillsRegistry();
+    await registry.uninstall(name);
+    return { ok: true };
+  });
+  ipcMain.handle('agent:skills:create', async (_event, payload) => {
+    const registry = getSkillsRegistry();
+    return registry.create({
+      name: typeof payload?.name === 'string' ? payload.name : undefined,
+      title: typeof payload?.title === 'string' ? payload.title : undefined,
+      description: typeof payload?.description === 'string' ? payload.description : undefined,
+    });
+  });
+  ipcMain.handle('agent:skills:listRecommended', async () => {
+    const registry = getSkillsRegistry();
+    return registry.listRecommended();
+  });
+  ipcMain.handle('agent:skills:openDirectory', async (_event, payload) => {
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    const registry = getSkillsRegistry();
+    const targetPath =
+      name.trim().length > 0 ? (await registry.getDetail(name)).location : path.resolve(SKILLS_DIR);
+    const openError = await shell.openPath(targetPath);
+    if (openError) {
+      throw new Error(openError);
+    }
+    return { ok: true };
+  });
   ipcMain.handle('tasks:list', async (_event, payload) => {
     const chatId = typeof payload?.chatId === 'string' ? payload.chatId : '';
     if (!chatId) return [];

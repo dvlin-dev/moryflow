@@ -10,6 +10,7 @@ export type {
 export type {
   AgentChatContext,
   AgentChatRequestOptions,
+  AgentSelectedSkill,
   AgentAccessMode,
   ChatSessionSummary,
   ChatSessionEvent,
@@ -17,6 +18,8 @@ export type {
   UIMessageChunk,
   TokenUsage,
 } from './chat';
+
+export type { SkillSummary, SkillDetail, RecommendedSkill } from './skills';
 
 export type {
   MCPStdioServerSetting,

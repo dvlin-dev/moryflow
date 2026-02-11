@@ -2,6 +2,8 @@
  * [INPUT]: workspace/controller contexts + shell UI state（panel refs）
  * [OUTPUT]: Navigation-aware Workspace Shell（Sidebar + Main + Panels）
  * [POS]: DesktopWorkspaceShell - 桌面工作区主视图壳层（负责布局与 panel 行为，不承载业务状态）
+ * [UPDATE]: 2026-02-11 - 侧边栏最小宽度调整为 260px；默认宽度=最小宽度，后续沿用 react-resizable-panels 的持久化宽度
+ * [UPDATE]: 2026-02-11 - panel 百分比约束按容器宽度动态换算，确保拖拽下限与像素约束一致
  */
 
 import {
@@ -27,6 +29,7 @@ import { type SettingsSection } from '@/components/settings-dialog/const';
 import { UnifiedTopBar, SIDEBAR_MIN_WIDTH } from './components/unified-top-bar';
 import { Sidebar } from './components/sidebar';
 import { SitesPage } from './components/sites';
+import { SkillsPage } from './components/skills';
 import { VaultOnboarding } from './components/vault-onboarding';
 import { EditorPanel } from './components/editor-panel';
 import {
@@ -65,6 +68,7 @@ export const DesktopWorkspaceShell = () => {
   const workspaceChatPanelRef = useRef<ImperativePanelHandle>(null);
   const panelGroupRef = useRef<HTMLDivElement>(null);
   const sidebarSizePercentRef = useRef<number>(15);
+  const [panelGroupWidth, setPanelGroupWidth] = useState(0);
 
   const handleChatReady = useCallback(() => {
     markOnce('chat:ready');
@@ -76,11 +80,15 @@ export const DesktopWorkspaceShell = () => {
 
   // Keep-alive main views so switching destination/agentSub is instant after the first mount.
   const [workspaceMainMounted, setWorkspaceMainMounted] = useState(agentSub === 'workspace');
+  const [skillsMainMounted, setSkillsMainMounted] = useState(destination === 'skills');
   const [sitesMainMounted, setSitesMainMounted] = useState(destination === 'sites');
 
   useEffect(() => {
     if (agentSub === 'workspace') {
       setWorkspaceMainMounted(true);
+    }
+    if (destination === 'skills') {
+      setSkillsMainMounted(true);
     }
     if (destination === 'sites') {
       setSitesMainMounted(true);
@@ -95,12 +103,40 @@ export const DesktopWorkspaceShell = () => {
   const [chatPanelHost, setChatPanelHost] = useState<HTMLElement | null>(null);
   const [chatParkingHost, setChatParkingHost] = useState<HTMLElement | null>(null);
 
-  const updateSidebarWidthFromPercent = useCallback((sizePercent: number) => {
-    const containerWidth = panelGroupRef.current?.offsetWidth;
-    if (!containerWidth) return;
-    const pixelWidth = (sizePercent / 100) * containerWidth;
-    setSidebarWidth((prev) => (Math.abs(prev - pixelWidth) < 0.5 ? prev : pixelWidth));
-  }, []);
+  const getPanelGroupWidth = useCallback(() => panelGroupRef.current?.offsetWidth ?? 0, []);
+
+  const updateSidebarWidthFromPercent = useCallback(
+    (sizePercent: number) => {
+      const containerWidth = getPanelGroupWidth();
+      setPanelGroupWidth((prev) => (prev === containerWidth ? prev : containerWidth));
+      if (!containerWidth) return;
+      const pixelWidth = (sizePercent / 100) * containerWidth;
+      setSidebarWidth((prev) => (Math.abs(prev - pixelWidth) < 0.5 ? prev : pixelWidth));
+    },
+    [getPanelGroupWidth]
+  );
+
+  const sidebarMinSizePercent = useMemo(() => {
+    if (!panelGroupWidth) return 10;
+    return Math.min(90, Math.max(10, (SIDEBAR_MIN_WIDTH / panelGroupWidth) * 100));
+  }, [panelGroupWidth]);
+
+  const sidebarMaxSizePercent = useMemo(
+    () => Math.min(95, Math.max(sidebarMinSizePercent + 15, 65)),
+    [sidebarMinSizePercent]
+  );
+
+  const sidebarDefaultSizePercent = sidebarMinSizePercent;
+
+  const mainMinSizePercent = useMemo(
+    () => Math.max(5, 100 - sidebarMaxSizePercent),
+    [sidebarMaxSizePercent]
+  );
+
+  const syncPanelGroupWidth = useCallback(() => {
+    const nextWidth = getPanelGroupWidth();
+    setPanelGroupWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+  }, [getPanelGroupWidth]);
 
   const syncSidebarStateFromPanel = useCallback(() => {
     const panel = sidebarPanelRef.current;
@@ -125,10 +161,11 @@ export const DesktopWorkspaceShell = () => {
 
   // 首帧与恢复布局：同步 collapsed/width（避免重启后状态错位）
   useLayoutEffect(() => {
+    syncPanelGroupWidth();
     syncSidebarStateFromPanel();
     const id = window.requestAnimationFrame(syncSidebarStateFromPanel);
     return () => window.cancelAnimationFrame(id);
-  }, [syncSidebarStateFromPanel]);
+  }, [syncPanelGroupWidth, syncSidebarStateFromPanel]);
 
   // 窗口/容器宽度变化时重算 sidebarWidth（percent 不变，px 会变）
   useEffect(() => {
@@ -136,12 +173,13 @@ export const DesktopWorkspaceShell = () => {
     if (!el || typeof ResizeObserver === 'undefined') return;
 
     const ro = new ResizeObserver(() => {
+      syncPanelGroupWidth();
       const sizePercent = sidebarPanelRef.current?.getSize() ?? sidebarSizePercentRef.current;
       updateSidebarWidthFromPercent(sizePercent);
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [updateSidebarWidthFromPercent]);
+  }, [syncPanelGroupWidth, updateSidebarWidthFromPercent]);
 
   // 使用 imperative handle 控制 Workspace 内 assistant panel 折叠/展开
   const toggleChatPanel = useCallback(() => {
@@ -265,9 +303,11 @@ export const DesktopWorkspaceShell = () => {
 
     const isChatView = destination === 'agent' && agentSub === 'chat';
     const isWorkspaceView = destination === 'agent' && agentSub === 'workspace';
+    const isSkillsView = destination === 'skills';
     const isSitesView = destination === 'sites';
 
     const shouldMountWorkspaceMain = workspaceMainMounted || isWorkspaceView;
+    const shouldMountSkillsMain = skillsMainMounted || isSkillsView;
     const shouldMountSitesMain = sitesMainMounted || isSitesView;
 
     return (
@@ -283,17 +323,18 @@ export const DesktopWorkspaceShell = () => {
             >
               <ResizablePanel
                 ref={sidebarPanelRef}
-                defaultSize={15}
-                minSize={10}
-                maxSize={25}
+                defaultSize={sidebarDefaultSizePercent}
+                minSize={sidebarMinSizePercent}
+                maxSize={sidebarMaxSizePercent}
                 collapsible
                 collapsedSize={0}
                 onCollapse={() => setSidebarCollapsed(true)}
                 onExpand={() => setSidebarCollapsed(false)}
                 onResize={handleSidebarResize}
                 className={`flex min-w-0 flex-col overflow-hidden ${
-                  sidebarCollapsed ? 'max-w-0' : 'min-w-[180px] max-w-[400px]'
+                  sidebarCollapsed ? 'max-w-0' : 'max-w-[780px]'
                 }`}
+                style={sidebarCollapsed ? undefined : { minWidth: `${SIDEBAR_MIN_WIDTH}px` }}
               >
                 <Sidebar />
               </ResizablePanel>
@@ -301,8 +342,8 @@ export const DesktopWorkspaceShell = () => {
               {!sidebarCollapsed && <ResizableHandle />}
 
               <ResizablePanel
-                defaultSize={85}
-                minSize={50}
+                defaultSize={100 - sidebarDefaultSizePercent}
+                minSize={mainMinSizePercent}
                 className="flex min-w-0 flex-col overflow-hidden"
               >
                 <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
@@ -349,6 +390,14 @@ export const DesktopWorkspaceShell = () => {
                           </div>
                         </ResizablePanel>
                       </ResizablePanelGroup>
+                    </div>
+                  )}
+
+                  {shouldMountSkillsMain && (
+                    <div
+                      className={isSkillsView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
+                    >
+                      <SkillsPage />
                     </div>
                   )}
 

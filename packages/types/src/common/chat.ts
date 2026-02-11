@@ -29,8 +29,14 @@ export type ChatAttachment =
       filename?: string;
     };
 
+export type ChatSelectedSkill = {
+  name: string;
+  title?: string;
+};
+
 export type ChatMessageMeta = {
   attachments?: ChatAttachment[];
+  selectedSkill?: ChatSelectedSkill;
 };
 
 export type ChatMessageMetadata = {

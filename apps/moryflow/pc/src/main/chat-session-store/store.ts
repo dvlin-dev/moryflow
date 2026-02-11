@@ -2,6 +2,7 @@
  * [INPUT]: PersistedChatSession 映射与会话序列
  * [OUTPUT]: 本地聊天会话的读写操作
  * [POS]: Moryflow 桌面端聊天会话持久化
+ * [UPDATE]: 2026-02-11 - 移除未使用的 sequence 持久化字段与读取逻辑，收敛存储职责
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -52,13 +53,6 @@ export const writeSessions = (sessions: Record<string, PersistedChatSession>) =>
   store.set('sessions', sessions);
 };
 
-export const takeSequence = () => {
-  const current = store.get('sequence') ?? DEFAULT_STORE.sequence;
-  store.set('sequence', current + 1);
-  return current;
-};
-
 export const resetStore = () => {
   store.set('sessions', DEFAULT_STORE.sessions);
-  store.set('sequence', DEFAULT_STORE.sequence);
 };

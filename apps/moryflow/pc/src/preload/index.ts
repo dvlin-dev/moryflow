@@ -169,6 +169,14 @@ const api: DesktopApi = {
       ipcRenderer.on('agent:settings-changed', listener);
       return () => ipcRenderer.removeListener('agent:settings-changed', listener);
     },
+    listSkills: () => ipcRenderer.invoke('agent:skills:list'),
+    refreshSkills: () => ipcRenderer.invoke('agent:skills:refresh'),
+    getSkillDetail: (input) => ipcRenderer.invoke('agent:skills:get', input ?? {}),
+    setSkillEnabled: (input) => ipcRenderer.invoke('agent:skills:setEnabled', input ?? {}),
+    uninstallSkill: (input) => ipcRenderer.invoke('agent:skills:uninstall', input ?? {}),
+    createSkill: (input) => ipcRenderer.invoke('agent:skills:create', input ?? {}),
+    listRecommendedSkills: () => ipcRenderer.invoke('agent:skills:listRecommended'),
+    openSkillDirectory: (input) => ipcRenderer.invoke('agent:skills:openDirectory', input ?? {}),
     getMcpStatus: () => ipcRenderer.invoke('agent:mcp:getStatus'),
     onMcpStatusChange: (handler) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: McpStatusEvent) =>

@@ -7,6 +7,16 @@
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 
+/** 侧边栏全局横向 gutter（统一来源） */
+export const SIDEBAR_GUTTER_X_CLASS = 'px-3.5';
+
+/**
+ * 线程/文件列表 inset（独立维护）：
+ * - 列表项激活态背景可有单独视觉规则
+ * - 仅约束文本左对齐基线
+ */
+export const SIDEBAR_LIST_INSET_X_CLASS = 'px-3.5';
+
 /** 侧边栏工具区 Props */
 export type SidebarToolsProps = {
   vault: VaultInfo | null;

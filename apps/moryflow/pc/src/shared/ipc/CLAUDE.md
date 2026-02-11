@@ -28,10 +28,18 @@ Moryflow PC 主进程（main）与渲染进程（renderer）之间的 **IPC 类�
 - `desktop-api.ts`
   - `DesktopApi` 根类型（preload 暴露给 renderer 的接口面）
   - 近期：用 `workspace.getLastAgentSub/setLastAgentSub` 替代旧 `lastMode` 持久化（导航改为 destination + agentSub）
+- `skills.ts`
+  - Skills IPC 类型（`SkillSummary` / `SkillDetail` / `RecommendedSkill`）
+  - 与 `agent:skills:*` 通道配套，供 Skills 页面与输入框复用
 - `vault.ts` / `chat.ts` / `site-publish.ts` / `tasks.ts` / `sandbox.ts`
   - 各 domain 的 payload、event、实体类型
 - `index.ts`
   - 聚合导出（供 main/renderer 侧引用）
+
+## 近期变更
+
+- 新增 Skills IPC 契约：`agent.listSkills/refreshSkills/getSkillDetail/setSkillEnabled/uninstallSkill/createSkill/listRecommendedSkills/openSkillDirectory`
+- `chat.AgentChatRequestOptions` 新增 `selectedSkill`（结构化 skill 选择），避免纯文本协议
 
 ## 常见修改场景
 

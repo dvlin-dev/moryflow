@@ -15,7 +15,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
 import type { ToolUIPart, UIMessage } from 'ai';
-import { X, Pencil, GitBranch, RefreshCw, Check } from 'lucide-react';
+import { X, Pencil, GitBranch, RefreshCw, Check, Wrench } from 'lucide-react';
 
 import {
   Message,
@@ -64,8 +64,11 @@ export const ChatMessage = ({
     [message.parts]
   );
 
-  // 从 metadata 读取结构化附件
-  const { attachments: chatAttachments = [] } = useMemo(() => getMessageMeta(message), [message]);
+  // 从 metadata 读取结构化附件与 selected skill。
+  const { attachments: chatAttachments = [], selectedSkill } = useMemo(
+    () => getMessageMeta(message),
+    [message]
+  );
 
   const cleanMessageText = useMemo(() => {
     if (message.role === 'user') {
@@ -333,6 +336,21 @@ export const ChatMessage = ({
   const renderChatAttachments = () =>
     chatAttachments.length > 0 ? <MessageMetaAttachments attachments={chatAttachments} /> : null;
 
+  const renderSelectedSkill = () => {
+    if (!isUser || !selectedSkill) {
+      return null;
+    }
+    const label = selectedSkill.title?.trim() || selectedSkill.name;
+    return (
+      <div className="mt-1.5 flex items-center justify-end pr-2">
+        <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
+          <Wrench className="size-3.5 shrink-0" />
+          <span className="truncate">{label}</span>
+        </span>
+      </div>
+    );
+  };
+
   const renderUserActions = () => {
     if (!actions) {
       return null;
@@ -424,6 +442,7 @@ export const ChatMessage = ({
         {renderMessageBody()}
       </MessageContent>
       {renderFileParts()}
+      {renderSelectedSkill()}
       {isUser ? renderChatAttachments() : null}
       {isEditing ? renderEditActions() : null}
       {!isEditing && isUser ? renderUserActions() : null}

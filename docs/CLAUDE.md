@@ -41,6 +41,15 @@
 
 ## 最近更新
 
+- Agent Skills（面向 C 端的“技能库”）接入方案：本期方案 1 落地（发送成功后清空 selected skill、用户消息渲染 skill tag），并在执行计划新增 P0-11 进度（2026-02-11：implemented）
+- Agent Skills（面向 C 端的“技能库”）接入方案：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` + `skill` tool），并在文档内同步执行步骤进度（2026-02-11：implemented）
+- Agent Skills（面向 C 端的“技能库”）接入方案：固定兼容目录自动导入（`~/.agents/skills`、`~/.claude/skills`、`~/.codex/skills`、`~/.clawdbot/skills`）并支持 `Refresh` 重扫；`selectedSkill` 不可用改为提示后软降级继续对话；补充“执行计划 + 行为准则 + 强制进度同步”段落（2026-02-11：proposal update）
+- Agent Skills（面向 C 端的“技能库”）接入方案：兼容扫描改为“按 skill 目录整体自动导入”（保留 scripts/templates/references），非仅导入单文件（2026-02-11：proposal update）
+- Agent Skills（面向 C 端的“技能库”）接入方案：`skill` 改为白名单直通（不走权限审批/审计链路）（2026-02-11：proposal update）
+- Agent Skills（面向 C 端的“技能库”）接入方案：去掉过度来源状态（移除 `SkillInstallState.source`）并收敛兼容来源描述（2026-02-11：proposal update）
+- Agent Skills（面向 C 端的“技能库”）接入方案：兼容扫描改为默认自动导入（不做引导/提醒）（2026-02-11：proposal update）
+- Agent Skills（面向 C 端的“技能库”）接入方案：补充输入框 tag 能力边界（当前仅支持外层 chip）、统一元信息最小注入（不含路径/状态）与 skill tool 单一数据源返回（2026-02-11：proposal update）
+- Agent Skills（面向 C 端的“技能库”）接入方案：按已确认决策重写（默认全启用/可禁用不删除/`+` 与空输入 `/` 双入口 selectedSkill/OpenCode 对齐）（2026-02-11：proposal update）
 - Moryflow PC 左侧 Sidebar 导航方案（Implicit Agent + Modules）：`docs/products/moryflow/features/app-modes/agent-sites-nav-hierarchy.md`（2026-02-10：implemented）
 - Streamdown 使用指南（Markdown 渲染 + 流式 Token 动画）：`docs/guides/frontend/streamdown.md`（2026-02-10：active）
 - Moryflow PC 消息列表交互复用改造方案：Following 模式定稿（`docs/architecture/ui-message-list-turn-anchor-adoption.md`，2026-02-08）

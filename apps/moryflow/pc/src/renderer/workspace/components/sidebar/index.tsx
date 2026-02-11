@@ -7,13 +7,18 @@
  * [UPDATE]: 2026-02-10 - destination!=agent 时 New thread/New file 作为 Open intent：回跳到 Agent 后再执行创建
  * [UPDATE]: 2026-02-10 - 文件树内的新建文件也视为 Open intent：回跳到 Agent/Workspace 后再创建
  * [UPDATE]: 2026-02-10 - Sidebar 顶部布局调整：Sites 全局置顶；Workspace 行下移；去掉 Agent 文本标签；Pages 统一为 Files
+ * [UPDATE]: 2026-02-11 - 顶部结构微调：Search 并入 Modules 列表首项；Workspace 行保持左侧大区、右侧固定宽度胶囊切换
+ * [UPDATE]: 2026-02-11 - AgentSub 切换胶囊收敛为紧凑尺寸，避免最小宽度下占比过高
+ * [UPDATE]: 2026-02-11 - 侧边栏横向对齐收敛：统一父容器 gutter，消除顶部分组的嵌套 padding 偏移
+ * [UPDATE]: 2026-02-11 - 外层容器横向 gutter 调整为 px-3.5，收敛留白并保持全区对齐
+ * [UPDATE]: 2026-02-11 - 横向 gutter 收敛为单一来源：顶部/分隔线/标题/工具区统一复用 sidebar 常量，thread/file 列表保留独立 inset 规则
+ * [UPDATE]: 2026-02-11 - Modules 顶部新增 New thread 快捷入口，复用 Threads 区创建逻辑
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VaultTreeNode } from '@shared/ipc';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
 import { TooltipProvider } from '@anyhunt/ui/components/tooltip';
-import { Search } from 'lucide-react';
 import { PublishDialog } from '@/components/site-publish';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 import { ChatThreadsList } from './components/chat-threads-list';
@@ -25,7 +30,7 @@ import { SidebarSectionHeader } from './components/sidebar-section-header';
 import { SidebarTools } from './components/sidebar-tools';
 import { SidebarCreateMenu } from './components/sidebar-create-menu';
 import { VaultSelector } from './components/vault-selector';
-import { cn } from '@/lib/utils';
+import { SIDEBAR_GUTTER_X_CLASS } from './const';
 import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
 import { createAgentActions } from '../../navigation/agent-actions';
 import {
@@ -162,43 +167,30 @@ export const Sidebar = () => {
   return (
     <TooltipProvider delayDuration={0}>
       <aside className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-muted/30">
-        {/* 顶部骨架：Modules（global） + Workspace row（vault/search） + AgentSub */}
-        <div className="shrink-0 space-y-2 px-2 pt-2">
+        {/* 顶部骨架：Modules（含 Search） + Workspace row（vault/agent-sub） */}
+        <div className={`shrink-0 space-y-2 pt-2 ${SIDEBAR_GUTTER_X_CLASS}`}>
           {/* Modules（全局） */}
-          <div className="px-1.5">
-            <ModulesNav destination={destination} onGo={go} />
-          </div>
+          <ModulesNav
+            onCreateThread={handleCreateThread}
+            destination={destination}
+            onGo={go}
+            onSearch={handleOpenSearch}
+          />
 
-          {/* Workspace 行：左侧 Workspace 下拉，右侧统一 Search 入口 */}
+          {/* Workspace 行：左侧 Workspace，右侧固定宽度紧凑胶囊切换 */}
           <div className="flex w-full items-center gap-2">
             <div className="min-w-0 flex-1">
               <VaultSelector triggerClassName="focus-visible:ring-2 focus-visible:ring-ring/50" />
             </div>
-            <button
-              type="button"
-              onClick={handleOpenSearch}
-              className={cn(
-                'shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors',
-                'hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50'
-              )}
-              aria-label="Search"
-            >
-              <Search className="size-4" />
-            </button>
-          </div>
-
-          {/* AgentSub（二级） */}
-          <div className="px-1.5">
-            <AgentSubSwitcher
-              destination={destination}
-              agentSub={agentSub}
-              onChange={agent.setSub}
-            />
+            <div className="w-[84px] shrink-0">
+              <AgentSubSwitcher
+                destination={destination}
+                agentSub={agentSub}
+                onChange={agent.setSub}
+              />
+            </div>
           </div>
         </div>
-
-        {/* 分隔线 */}
-        <div className="mx-2 mt-2 shrink-0 border-t border-border/40" />
 
         {/* 内容区（独立滚动） */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -260,7 +252,7 @@ export const Sidebar = () => {
         </div>
 
         {/* 分隔线 */}
-        <div className="mx-2 shrink-0 border-t border-border/40" />
+        <div className={`shrink-0 border-t border-border/40 ${SIDEBAR_GUTTER_X_CLASS}`} />
 
         {/* 工具区（固定在底部） */}
         <div className="shrink-0">

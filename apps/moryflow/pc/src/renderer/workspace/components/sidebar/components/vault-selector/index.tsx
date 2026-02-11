@@ -2,10 +2,12 @@
  * [PROPS]: VaultSelectorProps
  * [EMITS]: onVaultChange
  * [POS]: Workspace/Vault 选择器主组件（仅负责切换/创建/移除，不承载“新建文件”职责）
+ * [UPDATE]: 2026-02-11 - Workspace trigger 交互减重：移除 hover 背景，仅保留 icon/text 颜色反馈
+ * [UPDATE]: 2026-02-11 - 横向间距收敛：由容器统一 gutter，trigger 移除额外左右 padding
  */
 
 import { useState, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Folder } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
 import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
@@ -195,18 +197,18 @@ export const VaultSelector = ({ onVaultChange, triggerClassName }: VaultSelector
           <button
             type="button"
             className={cn(
-              // Use inline-flex so the trigger/hover background fits the content width.
-              // Cap at the available left area so long names still truncate nicely.
-              'inline-flex w-fit max-w-full min-w-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm transition-colors',
-              'hover:bg-muted/40 data-[state=open]:bg-muted/40 focus-visible:outline-hidden',
+              // 左侧区域占满可用宽度，保证 icon + 文本稳定展示，超长名称按需截断。
+              'group flex w-full min-w-0 items-center gap-1 rounded-lg py-1.5 text-sm transition-colors',
+              'text-foreground/90 hover:text-foreground focus-visible:outline-hidden',
               triggerClassName
             )}
             aria-label="Workspace"
           >
+            <Folder className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
             <span className="min-w-0 truncate text-left font-medium">
               {activeVault?.name || t('selectWorkspace')}
             </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
           </button>
         </PopoverTrigger>
 

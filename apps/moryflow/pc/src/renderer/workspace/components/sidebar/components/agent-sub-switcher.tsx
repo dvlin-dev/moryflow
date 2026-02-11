@@ -1,8 +1,10 @@
 /**
  * [PROPS]: AgentSubSwitcherProps
  * [EMITS]: onChange(sub)
- * [POS]: Agent 面板二级入口 segmented（Chat / Workspace），复用现有 pill 视觉；destination!=agent 时选中态略变浅
+ * [POS]: Agent 面板二级入口 segmented（Chat / Workspace），复用胶囊视觉；destination!=agent 时选中态略变浅
  * [UPDATE]: 2026-02-10 - 补齐 tablist 语义：tab/tabpanel + keyboard navigation（Arrow/Home/End）
+ * [UPDATE]: 2026-02-11 - 恢复胶囊切换样式（右侧固定宽度容器内使用）
+ * [UPDATE]: 2026-02-11 - 收敛胶囊尺寸（h-8/h-7 + 小图标），改善最小宽度占比
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -76,7 +78,7 @@ export const AgentSubSwitcher = ({ destination, agentSub, onChange }: AgentSubSw
       aria-label="Agent view"
       onKeyDown={handleKeyDown}
       className={cn(
-        'relative mx-0 flex h-9 w-full shrink-0 items-center rounded-full p-[2px]',
+        'relative mx-0 flex h-8 w-full shrink-0 items-center rounded-full p-[2px]',
         'bg-secondary'
       )}
     >
@@ -109,7 +111,7 @@ export const AgentSubSwitcher = ({ destination, agentSub, onChange }: AgentSubSw
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(value)}
             className={cn(
-              'relative z-10 flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3',
+              'relative z-10 flex h-7 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-2',
               'transition-colors duration-200',
               'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50',
               active
@@ -119,7 +121,7 @@ export const AgentSubSwitcher = ({ destination, agentSub, onChange }: AgentSubSw
                 : 'text-muted-foreground hover:text-foreground/80'
             )}
           >
-            <Icon className="size-4" />
+            <Icon className="size-3.5" />
           </button>
         );
       })}

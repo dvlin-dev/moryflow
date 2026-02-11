@@ -10,6 +10,7 @@
  * [UPDATE]: 2026-02-05 - 恢复 Header 高度透传，修复自动滚动时顶部遮挡
  * [UPDATE]: 2026-02-08 - 支持 variant 切换时重算 headerHeight，避免 mode/workspace 切换出现留白或遮挡
  * [UPDATE]: 2026-02-08 - Chat Mode 视图内容最大宽度 720px，超出后居中；外层保留 2em padding（底部扣除 Footer 的 p-3，避免叠加过大）
+ * [UPDATE]: 2026-02-11 - 引入 selectedSkill 请求级覆盖，保证技能失效软降级后本次发送不携带旧 skill
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -20,6 +21,8 @@ import { useChat } from '@ai-sdk/react';
 import { CardContent } from '@anyhunt/ui/components/card';
 import { IpcChatTransport } from '@/transport/ipc-chat-transport';
 import { getModelContextWindow } from '@shared/model-registry';
+import type { AgentChatRequestOptions } from '@shared/ipc';
+import type { ChatMessageMeta } from '@anyhunt/types';
 import { useAuth } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
@@ -30,6 +33,7 @@ import {
   useChatModelSelection,
   useChatSessions,
   useMessageActions,
+  useSelectedSkillStore,
   useStoredMessages,
 } from './hooks';
 import { ChatFooter } from './components/chat-footer';
@@ -37,6 +41,7 @@ import { ConversationSection } from './components/conversation-section';
 import { buildMembershipModelGroup } from './models';
 import type { ChatSubmitPayload } from './components/chat-prompt-input/const';
 import { createMessageMetadata } from './types/message';
+import { computeAgentOptions } from './handle';
 
 export const ChatPane = ({
   variant = 'panel',
@@ -62,12 +67,17 @@ export const ChatPane = ({
     deleteSession,
     isReady: sessionsReady,
   } = useChatSessions();
+  const selectedSkillName = useSelectedSkillStore((state) => state.selectedSkillName);
+  const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
   const {
     agentOptionsRef,
     selectedModelId,
     setSelectedModelId,
     modelGroups: baseModelGroups,
-  } = useChatModelSelection(activeFilePath);
+  } = useChatModelSelection(activeFilePath, selectedSkillName);
+  const agentOptionsOverrideRef = useRef<AgentChatRequestOptions | Record<string, never> | null>(
+    null
+  );
 
   // 获取会员模型并合并到模型列表
   const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
@@ -84,7 +94,15 @@ export const ChatPane = ({
     return [membershipGroup, ...baseModelGroups];
   }, [baseModelGroups, membershipModels, membershipEnabled, isAuthenticated]);
   const transport = useMemo(
-    () => new IpcChatTransport(() => agentOptionsRef.current),
+    () =>
+      new IpcChatTransport(() => {
+        const override = agentOptionsOverrideRef.current;
+        if (override !== null) {
+          agentOptionsOverrideRef.current = null;
+          return Object.keys(override).length > 0 ? override : undefined;
+        }
+        return agentOptionsRef.current;
+      }),
     [agentOptionsRef]
   );
   const {
@@ -190,6 +208,15 @@ export const ChatPane = ({
 
       setInputError(null);
 
+      const selectedSkillForThisMessage =
+        payload.selectedSkillName === undefined ? selectedSkillName : payload.selectedSkillName;
+      agentOptionsOverrideRef.current =
+        computeAgentOptions({
+          activeFilePath,
+          preferredModelId: selectedModelId ?? null,
+          selectedSkillName: selectedSkillForThisMessage,
+        }) ?? {};
+
       if (activeSessionId && window.desktopAPI?.chat?.prepareCompaction) {
         try {
           const result = await window.desktopAPI.chat.prepareCompaction({
@@ -204,11 +231,16 @@ export const ChatPane = ({
         }
       }
 
-      // 将附件存入消息的 metadata
+      // 将结构化引用与 selected skill 存入消息 metadata，供消息列表显式渲染。
+      const chatMeta: ChatMessageMeta = {};
+      if (payload.attachments.length > 0) {
+        chatMeta.attachments = payload.attachments;
+      }
+      if (payload.selectedSkill) {
+        chatMeta.selectedSkill = payload.selectedSkill;
+      }
       const metadata =
-        payload.attachments.length > 0
-          ? createMessageMetadata({ attachments: payload.attachments })
-          : undefined;
+        Object.keys(chatMeta).length > 0 ? createMessageMetadata(chatMeta) : undefined;
 
       await sendMessage({
         text,
@@ -233,6 +265,8 @@ export const ChatPane = ({
       stop,
       requireModelSetup,
       messages.length,
+      activeFilePath,
+      selectedSkillName,
       selectedModelId,
       t,
       onOpenSettings,
@@ -346,6 +380,8 @@ export const ChatPane = ({
                     contextWindow={getModelContextWindow(selectedModelId)}
                     mode={activeSession?.mode ?? 'agent'}
                     onModeChange={handleModeChange}
+                    selectedSkillName={selectedSkillName}
+                    onSelectSkillName={setSelectedSkillName}
                   />
                 }
               />

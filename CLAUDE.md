@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-11（协作流程：校验改为风险分级；简单 UI/文案改动可跳过全量测试）
 > 最近更新：2026-02-10（Streamdown 2.2 升级：逐词流式动画接入；Tailwind `@source` 扫描 streamdown dist；补齐 `@swc/core` darwin 二进制依赖，确保 `pnpm test:unit` 可运行）
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
 > 最近更新：2026-02-08（协作总则：新增“AI Agent 禁止擅自提交 commit/push，需用户批准”规则）
@@ -317,13 +318,19 @@ Anyhunt/
 1. **计划**：改动前给出最小范围 plan，说明动机与风险, 在制定计划时存在不确定点,向我提问，需求完全确认之后才能去执行
 2. **实施**：聚焦单一问题，不盲改
 3. **测试**：新功能必须编写单元测试，修复 bug 需补充回归测试
-4. **校验**：完成后必须运行以下命令全部通过：
+4. **校验（风险分级）**：按变更风险执行，避免低风险改动重复跑全量流水线：
+   - **L0（低风险）**：纯样式/文案/布局微调、无状态流与业务逻辑变更  
+     可跳过全量 `lint/typecheck/test:unit`，按需做手工验证
+   - **L1（中风险）**：组件交互、状态管理、数据映射、非核心逻辑重构  
+     至少运行受影响包的 `typecheck` 与 `test:unit`
+   - **L2（高风险）**：核心业务逻辑、跨包接口、后端模块、构建/基础设施改动  
+     必须运行以下命令并全部通过：
 
-   ```bash
-   pnpm lint        # 代码规范检查
-   pnpm typecheck   # 类型检查
-   pnpm test:unit   # 单元测试
-   ```
+     ```bash
+     pnpm lint
+     pnpm typecheck
+     pnpm test:unit
+     ```
 
    - 注意：根 `eslint.config.mjs` 会 `import '@anyhunt/eslint-config/*'`，因此根 `package.json` 必须包含 `@anyhunt/eslint-config`（workspace 依赖），否则 monorepo lint 会直接报 `ERR_MODULE_NOT_FOUND`。
 

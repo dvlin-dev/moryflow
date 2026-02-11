@@ -22,6 +22,7 @@ import type { ChatAttachment, PaginationMeta, ProblemDetails } from '@anyhunt/ty
 ## 最近更新
 
 - 新增 ProblemDetails（RFC7807 错误结构）
+- 2026-02-11：`src/common/chat.ts` 新增 `ChatSelectedSkill`，并在 `ChatMessageMeta` 增加 `selectedSkill` 字段，支持消息级 skill 元信息回显。
 
 ## 类型规范
 

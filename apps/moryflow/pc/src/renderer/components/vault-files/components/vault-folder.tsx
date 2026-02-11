@@ -2,6 +2,10 @@
  * [PROPS]: { node } - 文件夹节点数据
  * [EMITS]: 通过 context 触发选择、重命名、删除、移动等操作
  * [POS]: 文件树中的文件夹节点组件，支持拖拽和右键菜单（Lucide 图标）
+ * [UPDATE]: 2026-02-11 - 行内 padding 调整为 px-2.5，提升激活态背景内边距并与侧栏项基线一致
+ * [UPDATE]: 2026-02-11 - 行内水平 padding 收敛为 0，和 Threads 列表共享同一文字起始线
+ * [UPDATE]: 2026-02-11 - 行背景轻微外扩（-mx-1 + px-1 抵消），保持文字对齐不变并允许背景略超出
+ * [UPDATE]: 2026-02-11 - 文件夹行内 padding 回调为 px-2.5（保留背景外扩），与文件/线程列表间距保持一致
  */
 
 import { useMemo, type DragEvent } from 'react';
@@ -142,7 +146,7 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
             >
               <FolderTriggerPrimitive
                 className={cn(
-                  'group flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
+                  'group -mx-1 flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
                   'transition-colors hover:bg-muted/40',
                   isDropTarget
                     ? 'bg-foreground/10 border border-primary/50'

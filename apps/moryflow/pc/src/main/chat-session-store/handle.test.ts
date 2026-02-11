@@ -10,7 +10,6 @@ vi.mock('./store.js', () => ({
   writeSessions: (next: Record<string, PersistedChatSession>) => {
     sessions = next;
   },
-  takeSequence: () => 1,
   resetStore: () => {
     sessions = {};
   },
@@ -70,5 +69,21 @@ describe('chatSessionStore.mode', () => {
   it('updates mode via updateSessionMeta', () => {
     chatSessionStore.updateSessionMeta('session', { mode: 'full_access' });
     expect(sessions.session.mode).toBe('full_access');
+  });
+});
+
+describe('chatSessionStore.create', () => {
+  beforeEach(() => {
+    sessions = {};
+  });
+
+  it('uses fixed english default title', () => {
+    const created = chatSessionStore.create();
+    expect(created.title).toBe('New thread');
+  });
+
+  it('keeps custom title when provided', () => {
+    const created = chatSessionStore.create({ title: 'My custom thread' });
+    expect(created.title).toBe('My custom thread');
   });
 });

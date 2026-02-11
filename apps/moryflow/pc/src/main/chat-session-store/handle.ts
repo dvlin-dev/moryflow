@@ -2,6 +2,7 @@
  * [INPUT]: 会话标题/历史/模式更新（含默认 mode 注入）
  * [OUTPUT]: 会话摘要与历史变更
  * [POS]: PC 聊天会话存储核心实现
+ * [UPDATE]: 2026-02-11 - 默认新会话标题固定为英文 "New thread"（不再使用中文序号）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,7 +14,9 @@ import type { AgentAccessMode } from '@anyhunt/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';
-import { readSessions, resetStore, takeSequence, writeSessions } from './store.js';
+import { readSessions, resetStore, writeSessions } from './store.js';
+
+const DEFAULT_SESSION_TITLE = 'New thread';
 
 const normalizeTitle = (raw?: string | null) => {
   const trimmed = raw?.trim() ?? '';
@@ -85,7 +88,7 @@ export const chatSessionStore = {
     mode?: AgentAccessMode;
   }): ChatSessionSummary {
     const now = Date.now();
-    const title = normalizeTitle(input?.title) ?? `对话 ${takeSequence()}`;
+    const title = normalizeTitle(input?.title) ?? DEFAULT_SESSION_TITLE;
     const mode = input?.mode === 'full_access' || input?.mode === 'agent' ? input?.mode : 'agent';
     const session: PersistedChatSession = {
       id: randomUUID(),

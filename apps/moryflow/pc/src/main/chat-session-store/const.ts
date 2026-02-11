@@ -9,7 +9,6 @@ export type PersistedChatSession = ChatSessionSummary & {
 
 export type ChatSessionStoreShape = {
   sessions: Record<string, PersistedChatSession>;
-  sequence: number;
 };
 
 export type AgentMessage = AgentInputItem & {
@@ -21,5 +20,4 @@ export const STORE_NAME = 'chat-sessions';
 
 export const DEFAULT_STORE: ChatSessionStoreShape = {
   sessions: {},
-  sequence: 1,
 };
