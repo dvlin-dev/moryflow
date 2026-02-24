@@ -3,6 +3,10 @@ import {
   BrowserNavigationError,
   NavigationRetryService,
 } from '../runtime/navigation-retry.service';
+import {
+  BrowserNavigationRateLimitError,
+  BrowserPolicyDeniedError,
+} from '../policy';
 
 const budget = {
   maxAttempts: 3,
@@ -84,5 +88,49 @@ describe('NavigationRetryService', () => {
       reason: 'challenge',
       statusCode: 403,
     });
+  });
+
+  it('passes through policy denied errors without reclassification', async () => {
+    const service = new NavigationRetryService();
+    const execute = vi
+      .fn()
+      .mockRejectedValue(
+        new BrowserPolicyDeniedError(
+          'blocked.example',
+          'blocked_policy',
+          'automation_disabled',
+        ),
+      );
+
+    await expect(
+      service.run({
+        host: 'example.com',
+        budget,
+        execute,
+      }),
+    ).rejects.toBeInstanceOf(BrowserPolicyDeniedError);
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes through rate limit errors without retry', async () => {
+    const service = new NavigationRetryService();
+    const execute = vi
+      .fn()
+      .mockRejectedValue(
+        new BrowserNavigationRateLimitError(
+          'example.com',
+          'default',
+          'rate_limit',
+        ),
+      );
+
+    await expect(
+      service.run({
+        host: 'example.com',
+        budget,
+        execute,
+      }),
+    ).rejects.toBeInstanceOf(BrowserNavigationRateLimitError);
+    expect(execute).toHaveBeenCalledTimes(1);
   });
 });

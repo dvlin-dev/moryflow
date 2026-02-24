@@ -182,7 +182,7 @@ export class BrowserSessionService {
     const context = this.sessionManager.getActiveContext(session);
     const page = this.sessionManager.getActivePage(session);
 
-    const host = new URL(url).hostname.toLowerCase();
+    const host = this.parseHost(url);
     const policy = this.sitePolicyService.resolve(host);
     try {
       this.sitePolicyService.assertNavigationAllowed({
@@ -203,46 +203,35 @@ export class BrowserSessionService {
       throw error;
     }
 
-    const releaseNavigationQuota = (() => {
-      try {
-        return this.siteRateLimiter.acquireNavigationQuota({
-          host,
-          policyId: policy.id,
-          maxRps: policy.maxRps,
-          maxBurst: policy.maxBurst,
-          maxConcurrentNavigationsPerHost:
-            policy.maxConcurrentNavigationsPerHost,
-        });
-      } catch (error) {
-        if (error instanceof BrowserNavigationRateLimitError) {
-          this.riskTelemetry.recordRateLimitBlock({
-            host,
-            reason: error.reason,
-            policyId: error.policyId,
-            sessionId,
-            class: 'access_control',
-          });
-        }
-        throw error;
-      }
-    })();
+    if (headers) {
+      await this.networkInterceptor.setScopedHeaders(
+        sessionId,
+        context,
+        url,
+        headers,
+      );
+    }
 
+    let navigationResult: {
+      title: string | null;
+      finalHost: string;
+      finalPolicyId: string;
+    };
     try {
-      if (headers) {
-        await this.networkInterceptor.setScopedHeaders(
-          sessionId,
-          context,
-          url,
-          headers,
-        );
-      }
+      navigationResult = await this.navigationRetry.run({
+        host,
+        budget: policy.retryBudget,
+        execute: async () => {
+          const releaseNavigationQuota = this.acquireNavigationQuota({
+            host,
+            policyId: policy.id,
+            maxRps: policy.maxRps,
+            maxBurst: policy.maxBurst,
+            maxConcurrentNavigationsPerHost:
+              policy.maxConcurrentNavigationsPerHost,
+          });
 
-      let navigationResult: { title: string | null };
-      try {
-        navigationResult = await this.navigationRetry.run({
-          host,
-          budget: policy.retryBudget,
-          execute: async () => {
+          try {
             const response = await page.goto(url, { waitUntil, timeout });
 
             let title: string | null = null;
@@ -252,10 +241,19 @@ export class BrowserSessionService {
               // 忽略
             }
 
+            const finalUrl = page.url();
+            const finalHost = this.parseHost(finalUrl, host);
+            const finalPolicy = this.sitePolicyService.resolve(finalHost);
+            this.sitePolicyService.assertNavigationAllowed({
+              sessionId,
+              host: finalHost,
+              url: finalUrl,
+            });
+
             const navigationError = this.navigationRetry.classifyResult({
-              host,
+              host: finalHost,
               responseStatus: response?.status() ?? null,
-              finalUrl: page.url(),
+              finalUrl,
               title,
             });
 
@@ -263,46 +261,99 @@ export class BrowserSessionService {
               throw navigationError;
             }
 
-            return { title };
-          },
-        });
-      } catch (error) {
-        const navigationError =
-          error instanceof BrowserNavigationError
-            ? error
-            : this.navigationRetry.classifyError(host, error);
-
-        this.riskTelemetry.recordNavigationResult({
-          host,
-          reason: navigationError.reason,
-          policyId: policy.id,
+            return {
+              title,
+              finalHost,
+              finalPolicyId: finalPolicy.id,
+            };
+          } finally {
+            releaseNavigationQuota();
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof BrowserPolicyDeniedError) {
+        this.riskTelemetry.recordPolicyBlock({
+          host: error.host,
+          reason: error.reason,
+          policyId: error.policyId,
           sessionId,
-          class: navigationError.failureClass,
-          success: false,
+          class: 'access_control',
         });
-        throw navigationError;
+        throw error;
       }
 
-      session.refs = new Map();
-      this.snapshotService.clearCache(sessionId);
+      if (error instanceof BrowserNavigationRateLimitError) {
+        this.riskTelemetry.recordRateLimitBlock({
+          host: error.host,
+          reason: error.reason,
+          policyId: error.policyId,
+          sessionId,
+          class: 'access_control',
+        });
+        throw error;
+      }
+
+      const navigationError =
+        error instanceof BrowserNavigationError
+          ? error
+          : this.navigationRetry.classifyError(host, error);
+      const failurePolicyId = this.sitePolicyService.resolve(
+        navigationError.host,
+      ).id;
 
       this.riskTelemetry.recordNavigationResult({
-        host,
-        reason: 'success',
-        policyId: policy.id,
+        host: navigationError.host,
+        reason: navigationError.reason,
+        policyId: failurePolicyId,
         sessionId,
-        class: 'none',
-        success: true,
+        class: navigationError.failureClass,
+        success: false,
       });
-
-      return {
-        success: true,
-        url: page.url(),
-        title: navigationResult.title,
-      };
-    } finally {
-      releaseNavigationQuota();
+      throw navigationError;
     }
+
+    session.refs = new Map();
+    this.snapshotService.clearCache(sessionId);
+
+    this.riskTelemetry.recordNavigationResult({
+      host: navigationResult.finalHost,
+      reason: 'success',
+      policyId: navigationResult.finalPolicyId,
+      sessionId,
+      class: 'none',
+      success: true,
+    });
+
+    return {
+      success: true,
+      url: page.url(),
+      title: navigationResult.title,
+    };
+  }
+
+  private parseHost(url: string, fallback = 'unknown'): string {
+    try {
+      return new URL(url).hostname.toLowerCase();
+    } catch {
+      return fallback;
+    }
+  }
+
+  private acquireNavigationQuota(input: {
+    host: string;
+    policyId: string;
+    maxRps: number;
+    maxBurst: number;
+    maxConcurrentNavigationsPerHost: number;
+  }): () => void {
+    return this.siteRateLimiter.acquireNavigationQuota({
+      host: input.host,
+      policyId: input.policyId,
+      maxRps: input.maxRps,
+      maxBurst: input.maxBurst,
+      maxConcurrentNavigationsPerHost: input.maxConcurrentNavigationsPerHost,
+    });
   }
 
   /**

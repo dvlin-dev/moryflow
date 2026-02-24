@@ -8,6 +8,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 
 ## 最近更新
 
+- PR 复审修复：`openUrl` 在重定向后按 `finalUrl` 重新执行站点策略校验；导航配额按“每次重试尝试”计费（非每次 openUrl 一次）
 - 合规治理复审加固：`openUrl` 先校验会话归属再申请 host 配额；风险成功事件 `class='none'`；限流/节奏内存状态新增 TTL+容量清理；风险摘要无导航数据时成功率返回 `0` 且 TopN 仅统计风险事件
 - 合规自动化风险治理（Step 0~7）落地：新增策略匹配、host 级速率/并发预算、动作节奏、导航分类重试、统一遥测与 `/session/:id/risk` 诊断接口
 - Streaming token/stream 过期与会话清理，空闲时释放 CDP session

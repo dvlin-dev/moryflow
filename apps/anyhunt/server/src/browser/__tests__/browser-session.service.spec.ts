@@ -112,13 +112,20 @@ describe('BrowserSessionService.openUrl', () => {
       timeout: 2000,
     });
 
-    expect(deps.sitePolicyService.assertNavigationAllowed).toHaveBeenCalledWith(
-      {
-        sessionId: 'bs_test',
-        host: 'example.com',
-        url: 'https://Example.COM/path',
-      },
-    );
+    expect(
+      deps.sitePolicyService.assertNavigationAllowed,
+    ).toHaveBeenNthCalledWith(1, {
+      sessionId: 'bs_test',
+      host: 'example.com',
+      url: 'https://Example.COM/path',
+    });
+    expect(
+      deps.sitePolicyService.assertNavigationAllowed,
+    ).toHaveBeenNthCalledWith(2, {
+      sessionId: 'bs_test',
+      host: 'example.com',
+      url: 'https://example.com',
+    });
     expect(deps.sessionManager.assertSessionOwnership).toHaveBeenCalledWith(
       'bs_test',
       'user_1',
@@ -151,6 +158,64 @@ describe('BrowserSessionService.openUrl', () => {
       success: true,
     });
     expect(result.success).toBe(true);
+  });
+
+  it('rechecks redirected host policy and blocks denied redirect target', async () => {
+    const { service, deps } = createService();
+    deps.page.url
+      .mockReturnValueOnce('https://blocked.example/landing')
+      .mockReturnValue('https://blocked.example/landing');
+    deps.sitePolicyService.resolve.mockImplementation((targetHost: string) => {
+      if (targetHost === 'blocked.example') {
+        return {
+          ...DEFAULT_SITE_POLICY,
+          id: 'blocked_policy',
+        };
+      }
+      return DEFAULT_SITE_POLICY;
+    });
+    deps.sitePolicyService.assertNavigationAllowed.mockImplementation(
+      ({ host: targetHost }: { host: string }) => {
+        if (targetHost === 'blocked.example') {
+          throw new BrowserPolicyDeniedError(
+            'blocked.example',
+            'blocked_policy',
+            'automation_disabled',
+          );
+        }
+      },
+    );
+
+    await expect(
+      service.openUrl('user_1', 'bs_test', {
+        url: 'https://example.com/path',
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      }),
+    ).rejects.toBeInstanceOf(BrowserPolicyDeniedError);
+
+    expect(deps.page.goto).toHaveBeenCalledTimes(1);
+    expect(
+      deps.sitePolicyService.assertNavigationAllowed,
+    ).toHaveBeenNthCalledWith(1, {
+      sessionId: 'bs_test',
+      host: 'example.com',
+      url: 'https://example.com/path',
+    });
+    expect(
+      deps.sitePolicyService.assertNavigationAllowed,
+    ).toHaveBeenNthCalledWith(2, {
+      sessionId: 'bs_test',
+      host: 'blocked.example',
+      url: 'https://blocked.example/landing',
+    });
+    expect(deps.riskTelemetry.recordPolicyBlock).toHaveBeenCalledWith({
+      host: 'blocked.example',
+      reason: 'automation_disabled',
+      policyId: 'blocked_policy',
+      sessionId: 'bs_test',
+      class: 'access_control',
+    });
   });
 
   it('throws policy denied error and skips navigation', async () => {
@@ -254,6 +319,32 @@ describe('BrowserSessionService.openUrl', () => {
       class: 'network',
       success: false,
     });
+  });
+
+  it('consumes host quota per retry attempt', async () => {
+    const { service, deps } = createService();
+    deps.navigationRetry.run.mockImplementation(
+      async ({
+        execute,
+      }: {
+        execute: (attempt: number) => Promise<unknown>;
+      }) => {
+        await execute(1);
+        return execute(2);
+      },
+    );
+
+    await service.openUrl('user_1', 'bs_test', {
+      url: 'https://example.com/path',
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+
+    expect(deps.siteRateLimiter.acquireNavigationQuota).toHaveBeenCalledTimes(
+      2,
+    );
+    expect(deps.releaseNavigationQuota).toHaveBeenCalledTimes(2);
+    expect(deps.page.goto).toHaveBeenCalledTimes(2);
   });
 
   it('returns detection risk summary for owned session', () => {

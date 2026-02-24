@@ -9,6 +9,10 @@
 import { Injectable } from '@nestjs/common';
 import type { RetryBudget } from '../policy';
 import type { BrowserFailureClass } from '../observability/risk-contract';
+import {
+  BrowserNavigationRateLimitError,
+  BrowserPolicyDeniedError,
+} from '../policy';
 
 export type NavigationFailureReason =
   | 'http_403'
@@ -55,6 +59,13 @@ export class NavigationRetryService {
       try {
         return await input.execute(attempt);
       } catch (error) {
+        if (
+          error instanceof BrowserPolicyDeniedError ||
+          error instanceof BrowserNavigationRateLimitError
+        ) {
+          throw error;
+        }
+
         const navigationError = this.classifyError(input.host, error);
         const shouldRetry =
           navigationError.failureClass === 'network' &&
