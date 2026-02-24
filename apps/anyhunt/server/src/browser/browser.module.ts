@@ -22,6 +22,7 @@ import { BrowserPool } from './browser-pool';
 import { SessionManager } from './session';
 import { SnapshotService } from './snapshot';
 import { ActionHandler } from './handlers';
+import { ActionPacingService, NavigationRetryService } from './runtime';
 import { CdpConnectorService } from './cdp';
 import { NetworkInterceptorService } from './network';
 import {
@@ -29,7 +30,9 @@ import {
   ProfilePersistenceService,
 } from './persistence';
 import { BrowserDiagnosticsService } from './diagnostics';
+import { BrowserRiskTelemetryService } from './observability';
 import { BrowserStreamService } from './streaming';
+import { SitePolicyService, SiteRateLimiterService } from './policy';
 import { BrowserSessionService } from './browser-session.service';
 import { BrowserSessionController } from './browser-session.controller';
 import { BrowserAgentPortService } from './ports';
@@ -47,13 +50,18 @@ import { StorageModule } from '../storage';
     SessionManager,
     SnapshotService,
     ActionHandler,
+    ActionPacingService,
+    NavigationRetryService,
     // P2 扩展服务
     CdpConnectorService,
     NetworkInterceptorService,
     StoragePersistenceService,
     ProfilePersistenceService,
     BrowserDiagnosticsService,
+    BrowserRiskTelemetryService,
     BrowserStreamService,
+    SitePolicyService,
+    SiteRateLimiterService,
     // 聚合服务
     BrowserSessionService,
     // Agent 端口（隔离 Playwright 类型）
@@ -64,12 +72,17 @@ import { StorageModule } from '../storage';
     SessionManager,
     SnapshotService,
     ActionHandler,
+    ActionPacingService,
+    NavigationRetryService,
     CdpConnectorService,
     NetworkInterceptorService,
     StoragePersistenceService,
     ProfilePersistenceService,
     BrowserDiagnosticsService,
+    BrowserRiskTelemetryService,
     BrowserStreamService,
+    SitePolicyService,
+    SiteRateLimiterService,
     BrowserSessionService,
     BrowserAgentPortService,
   ],

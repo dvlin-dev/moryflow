@@ -51,6 +51,7 @@ import type {
   BrowserActionBatchResponse,
   BrowserActionResponse,
   BrowserConsoleMessage,
+  BrowserDetectionRiskSummary,
   BrowserDeltaSnapshotResponse,
   BrowserHarStopResult,
   BrowserHeadersResult,
@@ -1547,12 +1548,14 @@ type DiagnosticsSectionProps = {
   onOpenChange: (open: boolean) => void;
   consoleMessages: BrowserConsoleMessage[] | null;
   pageErrors: BrowserPageError[] | null;
+  detectionRisk: BrowserDetectionRiskSummary | null;
   traceResult: BrowserTraceStopResult | null;
   harResult: BrowserHarStopResult | null;
   onFetchConsole: (values: BrowserDiagnosticsLogValues) => void;
   onClearConsole: () => void;
   onFetchErrors: (values: BrowserDiagnosticsLogValues) => void;
   onClearErrors: () => void;
+  onFetchRisk: () => void;
   onStartTrace: (values: BrowserDiagnosticsTraceValues) => void;
   onStopTrace: (values: BrowserDiagnosticsTraceValues) => void;
   onStartHar: (values: BrowserDiagnosticsHarValues) => void;
@@ -1568,12 +1571,14 @@ function DiagnosticsSection({
   onOpenChange,
   consoleMessages,
   pageErrors,
+  detectionRisk,
   traceResult,
   harResult,
   onFetchConsole,
   onClearConsole,
   onFetchErrors,
   onClearErrors,
+  onFetchRisk,
   onStartTrace,
   onStopTrace,
   onStartHar,
@@ -1727,6 +1732,28 @@ function DiagnosticsSection({
             {harResult && <CodeBlock code={formatJson(harResult)} language="json" />}
           </form>
         </Form>
+        <div className="space-y-3 rounded-md border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-sm font-medium">Detection Risk</h4>
+            <Button type="button" variant="outline" onClick={onFetchRisk} disabled={!apiKey}>
+              Refresh Risk
+            </Button>
+          </div>
+          {detectionRisk ? (
+            <div className="space-y-2">
+              {detectionRisk.navigation.total > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  24h Success Rate: {(detectionRisk.navigation.successRate * 100).toFixed(2)}%
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">24h Success Rate: No data</p>
+              )}
+              <CodeBlock code={formatJson(detectionRisk)} language="json" />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">No risk summary loaded yet.</p>
+          )}
+        </div>
       </div>
     </CollapsibleSection>
   );
