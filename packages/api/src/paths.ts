@@ -9,7 +9,7 @@
 // ── API 基础 URL ──────────────────────────────────────────
 
 /** 会员服务 API 基础 URL */
-export const MEMBERSHIP_API_URL = 'https://app.moryflow.com';
+export const MEMBERSHIP_API_URL = 'https://server.moryflow.com';
 
 // ── 认证模块 ──────────────────────────────────────────────
 

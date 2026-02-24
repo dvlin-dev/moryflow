@@ -2,6 +2,8 @@
  * [PROVIDES]: access token store + refresh 轮换与预刷新（网络失败不清理）
  * [DEPENDS]: /api/auth/refresh, desktopAPI, auth-store
  * [POS]: Desktop 端 Auth Session 管理
+ * [UPDATE]: 2026-02-24 - fail-fast（无 refresh token 不请求）+ refresh 请求超时（10s）+ shouldClearAuthSessionAfterEnsureFailure
+ * [UPDATE]: 2026-02-24 - 新增 allowCookieFallback：显式登录场景可在无本地 refresh token 时走 Cookie 刷新
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
@@ -16,9 +18,14 @@ import {
 } from './auth-store';
 
 const DEVICE_PLATFORM = 'desktop';
+const REFRESH_REQUEST_TIMEOUT_MS = 10_000;
 let refreshPromise: Promise<boolean> | null = null;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingRefresh = false;
+
+type RefreshAccessTokenOptions = {
+  allowCookieFallback?: boolean;
+};
 
 const syncAccessToken = (token: string | null) => {
   if (window.desktopAPI?.membership?.syncToken) {
@@ -75,6 +82,11 @@ const getStoredRefreshToken = async (): Promise<string | null> => {
   return window.desktopAPI.membership.getRefreshToken();
 };
 
+export const shouldClearAuthSessionAfterEnsureFailure = async (): Promise<boolean> => {
+  const refreshToken = await getStoredRefreshToken();
+  return !refreshToken;
+};
+
 const setStoredRefreshToken = async (token: string | null) => {
   if (!window.desktopAPI?.membership?.setRefreshToken) {
     return;
@@ -92,15 +104,29 @@ export const clearAuthSession = async () => {
   await setStoredRefreshToken(null);
 };
 
-export const refreshAccessToken = async (): Promise<boolean> => {
+export const refreshAccessToken = async (
+  options: RefreshAccessTokenOptions = {}
+): Promise<boolean> => {
+  const { allowCookieFallback = false } = options;
+
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const refreshToken = await getStoredRefreshToken();
+      if (!refreshToken && !allowCookieFallback) {
+        pendingRefresh = false;
+        return false;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => {
+        controller.abort();
+      }, REFRESH_REQUEST_TIMEOUT_MS);
 
       try {
         const response = await fetch(`${MEMBERSHIP_API_URL}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
+          signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
             'X-App-Platform': DEVICE_PLATFORM,
@@ -135,6 +161,8 @@ export const refreshAccessToken = async (): Promise<boolean> => {
       } catch {
         pendingRefresh = true;
         return false;
+      } finally {
+        clearTimeout(timeout);
       }
     })().finally(() => {
       refreshPromise = null;

@@ -1,3 +1,12 @@
+/**
+ * [PROPS]: OTPFormProps - { email, onSuccess, onBack }
+ * [EMITS]: onSuccess, onBack
+ * [POS]: 邮箱验证码验证表单（设置弹窗 Account 注册第二步）
+ * [UPDATE]: 2026-02-24 - 移除内层 form，改为显式提交 + Enter 捕获；onSuccess 改为 await 防止未处理 Promise
+ *
+ * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
+ */
+
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod/v3';
@@ -74,7 +83,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
         return;
       }
 
-      onSuccess?.();
+      await onSuccess?.();
     } catch (err) {
       form.setError('otp', { message: err instanceof Error ? err.message : t('verifyFailed') });
     } finally {
@@ -108,11 +117,26 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
 
   const canResend = countdown <= 0 && !isResending;
 
+  const handleEnterSubmit = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void handleVerify();
+  };
+
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <div>
         <Form {...formProviderProps}>
-          <form onSubmit={handleVerify}>
+          <div onKeyDownCapture={handleEnterSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-xl font-bold">{t('verifyEmail')}</h1>
@@ -171,7 +195,11 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
                 )}
               />
               <Field>
-                <Button type="submit" disabled={isVerifying || form.getValues('otp').length !== 6}>
+                <Button
+                  type="button"
+                  onClick={() => void handleVerify()}
+                  disabled={isVerifying || form.getValues('otp').length !== 6}
+                >
                   {isVerifying && (
                     <span className="mr-2 size-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
                   )}
@@ -186,7 +214,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
                 </Field>
               )}
             </FieldGroup>
-          </form>
+          </div>
         </Form>
       </div>
     </div>

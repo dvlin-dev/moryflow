@@ -3,6 +3,8 @@
  * [EMITS]: onSuccess
  * [POS]: 设置弹窗 - Account 登录/注册面板（邮箱密码 + 注册验证码）
  * [UPDATE]: 2026-02-09 - 阻止 submit 事件冒泡到 SettingsDialog，避免设置弹窗意外保存/关闭
+ * [UPDATE]: 2026-02-24 - 移除嵌套 form，改为显式提交 + Enter 捕获，规避外层 Settings form 被意外触发
+ * [UPDATE]: 2026-02-24 - 登录仅按钮级 loading；验证码成功后登录对 EMAIL_NOT_VERIFIED 做短重试
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -42,9 +44,10 @@ type AuthFormValues = {
  */
 export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const { t } = useTranslation('auth');
-  const { login, isLoading, refresh } = useAuth();
+  const { login, refresh } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showOTP, setShowOTP] = useState(false);
+  const RETRY_DELAYS_MS = [300, 600, 1000] as const;
 
   const schema = useMemo(
     () =>
@@ -64,10 +67,10 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const formProviderProps = form as unknown as React.ComponentProps<typeof Form>;
   const formControl = form.control as unknown as React.ComponentProps<typeof FormField>['control'];
 
-  const isSubmitting = isLoading || form.formState.isSubmitting;
+  const isSubmitting = form.formState.isSubmitting;
   const rootError = form.formState.errors.root?.message;
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  const submitAuth = form.handleSubmit(async (values) => {
     form.clearErrors('root');
 
     try {
@@ -103,15 +106,55 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
     }
   });
 
+  const isEmailNotVerifiedError = (error: unknown) => {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+    const message = error.message.toLowerCase();
+    return message.includes('email_not_verified') || message.includes('email not verified');
+  };
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const loginAfterOtpVerification = async (email: string, password: string) => {
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        await login(email, password);
+        return;
+      } catch (error) {
+        const isLastAttempt = attempt === RETRY_DELAYS_MS.length;
+        if (!isEmailNotVerifiedError(error) || isLastAttempt) {
+          throw error;
+        }
+        await sleep(RETRY_DELAYS_MS[attempt]);
+      }
+    }
+  };
+
   const handleOTPSuccess = async () => {
     const values = form.getValues();
-    await login(values.email.trim(), values.password);
+    await loginAfterOtpVerification(values.email.trim(), values.password);
     await refresh();
     onSuccess?.();
   };
 
   const handleOTPBack = () => {
     setShowOTP(false);
+  };
+
+  const handleEnterSubmit = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void submitAuth();
   };
 
   const isFormValid = form.watch('email').trim() && form.watch('password').trim();
@@ -141,13 +184,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
       </div>
 
       <Form {...formProviderProps}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void handleSubmit(e);
-          }}
-        >
+        <div onKeyDownCapture={handleEnterSubmit}>
           <FieldGroup>
             {/* OAuth 登录按钮 - 暂时禁用 */}
             <Field>
@@ -257,7 +294,12 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
             {rootError && <p className="text-sm text-destructive">{rootError}</p>}
 
             <Field>
-              <Button type="submit" disabled={isSubmitting || !isFormValid} className="w-full">
+              <Button
+                type="button"
+                disabled={isSubmitting || !isFormValid}
+                className="w-full"
+                onClick={() => void submitAuth()}
+              >
                 {isSubmitting && (
                   <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
                 )}
@@ -290,7 +332,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
               </FieldDescription>
             </Field>
           </FieldGroup>
-        </form>
+        </div>
       </Form>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">

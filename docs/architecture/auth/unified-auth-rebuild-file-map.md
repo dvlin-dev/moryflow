@@ -59,7 +59,7 @@ status: done
 - 入口路由：`apps/anyhunt/www/src/routes/inbox/*`、`apps/anyhunt/www/src/routes/explore.tsx`、`apps/anyhunt/www/src/routes/welcome.tsx`
 - 单测：`apps/anyhunt/www/src/lib/__tests__/auth-session.spec.ts`
 
-## Moryflow Server（app.moryflow.com）
+## Moryflow Server（server.moryflow.com）
 
 - Auth 核心：`apps/moryflow/server/src/auth/*`
 - Token 入口：`apps/moryflow/server/src/auth/auth.tokens.controller.ts`

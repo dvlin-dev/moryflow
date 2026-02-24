@@ -2,6 +2,8 @@
  * [PROVIDES]: AuthProvider 与会员/模型状态 hooks（含 Resume 校验）
  * [DEPENDS]: server/api, auth-session, auth-store, sonner toast
  * [POS]: PC 端会员认证与模型状态中心
+ * [UPDATE]: 2026-02-24 - 初始化先渲染缓存用户；仅在明确未授权时清理会话，网络异常保留当前状态
+ * [UPDATE]: 2026-02-24 - 登录链路 refresh 支持 Cookie fallback，避免首次登录因无本地 refresh token 失败
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
@@ -13,11 +15,12 @@ import { signIn } from './client';
 import {
   ensureAccessToken,
   refreshAccessToken,
+  shouldClearAuthSessionAfterEnsureFailure,
   getAccessToken,
   clearAuthSession,
   logoutFromServer,
 } from './auth-session';
-import { fetchCurrentUser, fetchMembershipModels } from './api';
+import { fetchCurrentUser, fetchMembershipModels, ServerApiError } from './api';
 import type { UserInfo, MembershipModel, MembershipAuthState } from './types';
 import { waitForAuthHydration } from './auth-store';
 
@@ -132,20 +135,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cachedUser = getStoredUserInfo();
     console.log('[AuthProvider] loadUser called, hasCachedUser:', !!cachedUser);
 
-    const refreshed = await ensureAccessToken();
-    const token = getAccessToken();
-    if (!refreshed || !token) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
-    // 如果有缓存的用户信息，先使用缓存，立即同步 token 到 main
+    // 有缓存用户时先渲染，避免网络抖动下设置页长时间 loading
     if (cachedUser) {
       console.log('[AuthProvider] Using cached user info');
       setUser(cachedUser);
       loadModels();
       setIsLoading(false);
+    }
+
+    const refreshed = await ensureAccessToken();
+    const token = getAccessToken();
+    if (!refreshed || !token) {
+      const shouldClear = await shouldClearAuthSessionAfterEnsureFailure();
+      if (shouldClear) {
+        await clearAuthSession();
+        setUser(null);
+        setModels([]);
+      }
+      setIsLoading(false);
+      return;
     }
 
     // 后台请求 /me 接口同步最新用户信息
@@ -160,10 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('[AuthProvider] Failed to load user info:', error);
-      // Token 过期，清除所有状态
-      await clearAuthSession();
-      setUser(null);
-      setModels([]);
+      if (error instanceof ServerApiError && error.isUnauthorized) {
+        // 仅在明确鉴权失败时清理会话；网络错误保留现有状态
+        await clearAuthSession();
+        setUser(null);
+        setModels([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -212,7 +222,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      setIsLoading(true);
       try {
         console.log('[AuthProvider] Starting login...');
         const result = await signIn.email({ email, password });
@@ -229,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!result?.error) {
           console.log('[AuthProvider] Login successful, loading user info...');
-          const refreshed = await refreshAccessToken();
+          const refreshed = await refreshAccessToken({ allowCookieFallback: true });
           if (!refreshed) {
             throw new Error('Unable to establish session');
           }
@@ -237,7 +246,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('[AuthProvider] Login failed:', error);
-        setIsLoading(false);
         throw error;
       }
     },

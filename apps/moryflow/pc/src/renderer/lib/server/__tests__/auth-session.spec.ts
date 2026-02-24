@@ -2,6 +2,8 @@
  * [INPUT]: refresh/ensure 调用
  * [OUTPUT]: access token 持久化与同步行为
  * [POS]: Desktop Auth Session 单元测试
+ * [UPDATE]: 2026-02-24 - 补充无 refresh token fail-fast 与 shouldClearAuthSessionAfterEnsureFailure 回归用例
+ * [UPDATE]: 2026-02-24 - 补充 allowCookieFallback 场景回归（首次登录无本地 refresh token）
  */
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
@@ -17,6 +19,7 @@ const jsonResponse = (data: unknown, status = 200) =>
 const setupDesktopApi = () => {
   let storedAccessToken: string | null = null;
   let storedAccessTokenExpiresAt: string | null = null;
+  let storedRefreshToken: string | null = 'rt';
 
   const membership = {
     syncToken: vi.fn(async () => undefined),
@@ -36,7 +39,7 @@ const setupDesktopApi = () => {
     clearAccessTokenExpiresAt: vi.fn(async () => {
       storedAccessTokenExpiresAt = null;
     }),
-    getRefreshToken: vi.fn(async () => 'rt'),
+    getRefreshToken: vi.fn(async () => storedRefreshToken),
     setRefreshToken: vi.fn(async () => undefined),
     clearRefreshToken: vi.fn(async () => undefined),
   };
@@ -52,6 +55,9 @@ const setupDesktopApi = () => {
     setStoredAccessToken: (token: string | null, expiresAt: string | null) => {
       storedAccessToken = token;
       storedAccessTokenExpiresAt = expiresAt;
+    },
+    setStoredRefreshToken: (token: string | null) => {
+      storedRefreshToken = token;
     },
   };
 };
@@ -127,5 +133,51 @@ describe('auth-session (desktop)', () => {
     expect(result).toBe(true);
     expect(getAccessToken()).toBe('persisted');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refreshAccessToken 在 refresh token 缺失时直接返回 false 且不请求网络', async () => {
+    const { setStoredRefreshToken } = setupDesktopApi();
+    setStoredRefreshToken(null);
+
+    const { refreshAccessToken } = await import('../auth-session');
+    const result = await refreshAccessToken();
+
+    expect(result).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refreshAccessToken 在无 refresh token 且启用 cookie fallback 时会发起请求', async () => {
+    const { setStoredRefreshToken } = setupDesktopApi();
+    setStoredRefreshToken(null);
+    const expiresAt = new Date(Date.now() + 60_000).toISOString();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ accessToken: 'access-cookie', accessTokenExpiresAt: expiresAt })
+    );
+
+    const { refreshAccessToken, getAccessToken } = await import('../auth-session');
+    const result = await refreshAccessToken({ allowCookieFallback: true });
+
+    expect(result).toBe(true);
+    expect(getAccessToken()).toBe('access-cookie');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 存在时返回 false', async () => {
+    setupDesktopApi();
+
+    const { shouldClearAuthSessionAfterEnsureFailure } = await import('../auth-session');
+    const result = await shouldClearAuthSessionAfterEnsureFailure();
+
+    expect(result).toBe(false);
+  });
+
+  it('shouldClearAuthSessionAfterEnsureFailure 在 refresh token 缺失时返回 true', async () => {
+    const { setStoredRefreshToken } = setupDesktopApi();
+    setStoredRefreshToken(null);
+
+    const { shouldClearAuthSessionAfterEnsureFailure } = await import('../auth-session');
+    const result = await shouldClearAuthSessionAfterEnsureFailure();
+
+    expect(result).toBe(true);
   });
 });

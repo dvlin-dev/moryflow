@@ -58,7 +58,7 @@ Cookie domain 规则：
 - 只允许 `POST`
 - 仅校验 `Origin`（无 Origin 且携带 Cookie 会被拒绝）
 - 校验 `Origin` 必须是：
-  - Moryflow：`https://app.moryflow.com`
+  - Moryflow：`https://server.moryflow.com`
   - Anyhunt Dev：`https://console.anyhunt.app` / `https://admin.anyhunt.app`
 - `/api/auth/logout` 与 `/api/auth/sign-out` 同样要求 Origin 校验
 

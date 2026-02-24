@@ -12,7 +12,7 @@ describe('payment.utils', () => {
       const result = resolveSuccessUrl(
         undefined,
         'https://server.moryflow.com',
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
       );
 
       expect(result).toBe('https://server.moryflow.com/payment/success');
@@ -22,7 +22,7 @@ describe('payment.utils', () => {
       const result = resolveSuccessUrl(
         '/payment/success?from=checkout',
         'https://server.moryflow.com',
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
       );
 
       expect(result).toBe(
@@ -32,12 +32,12 @@ describe('payment.utils', () => {
 
     it('允许白名单域名', () => {
       const result = resolveSuccessUrl(
-        'https://app.moryflow.com/payment/success',
+        'https://server.moryflow.com/payment/success',
         'https://server.moryflow.com',
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
       );
 
-      expect(result).toBe('https://app.moryflow.com/payment/success');
+      expect(result).toBe('https://server.moryflow.com/payment/success');
     });
 
     it('拒绝不受信域名', () => {
@@ -45,7 +45,7 @@ describe('payment.utils', () => {
         resolveSuccessUrl(
           'https://evil.com/payment/success',
           'https://server.moryflow.com',
-          ['https://app.moryflow.com'],
+          ['https://server.moryflow.com'],
         ),
       ).toThrow('Untrusted successUrl origin');
     });
@@ -55,7 +55,7 @@ describe('payment.utils', () => {
         resolveSuccessUrl(
           'javascript:alert(1)',
           'https://server.moryflow.com',
-          ['https://app.moryflow.com'],
+          ['https://server.moryflow.com'],
         ),
       ).toThrow('Invalid successUrl protocol');
     });
@@ -112,22 +112,22 @@ describe('payment.utils', () => {
   describe('resolvePostMessageOrigin', () => {
     it('使用可信 referrer origin', () => {
       const result = resolvePostMessageOrigin(
-        ['https://app.moryflow.com'],
-        'https://app.moryflow.com/path',
+        ['https://server.moryflow.com'],
+        'https://server.moryflow.com/path',
         'https://server.moryflow.com',
       );
 
-      expect(result).toBe('https://app.moryflow.com');
+      expect(result).toBe('https://server.moryflow.com');
     });
 
     it('不可信 referrer 回退到唯一允许域名', () => {
       const result = resolvePostMessageOrigin(
-        ['https://app.moryflow.com'],
+        ['https://server.moryflow.com'],
         'https://evil.com/path',
         'https://server.moryflow.com',
       );
 
-      expect(result).toBe('https://app.moryflow.com');
+      expect(result).toBe('https://server.moryflow.com');
     });
 
     it('无 referrer 时使用 fallback', () => {

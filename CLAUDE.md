@@ -116,7 +116,7 @@ pnpm --filter @anyhunt/console test:e2e
 | ------------------------ | ------------------- | ---------------------------- |
 | **Moryflow 主站**        | www.moryflow.com    | 核心产品主入口               |
 | **Moryflow Docs**        | docs.moryflow.com   | 产品文档（独立 Docs 项目）   |
-| **Moryflow 应用**        | app.moryflow.com    | 主应用（Web + API）          |
+| **Moryflow 应用**        | server.moryflow.com | 主应用（Web + API）          |
 | **Moryflow 发布站**      | moryflow.app        | 用户发布的网站               |
 | **Anyhunt 官网**         | anyhunt.app         | Anyhunt Dev 官网（模块导航） |
 | **Anyhunt Dev API**      | server.anyhunt.app  | 统一 API 入口（`/api/v1`）   |
@@ -136,7 +136,7 @@ pnpm --filter @anyhunt/console test:e2e
 
 | 类型            | 前缀  | 说明                                                       |
 | --------------- | ----- | ---------------------------------------------------------- |
-| Moryflow Key    | `mf_` | Moryflow（app.moryflow.com）                               |
+| Moryflow Key    | `mf_` | Moryflow（server.moryflow.com）                            |
 | Anyhunt Dev Key | `ah_` | Anyhunt Dev（console.anyhunt.app；Agentsbox/Memox 等能力） |
 
 ### 目标 Monorepo 结构
@@ -222,7 +222,7 @@ Anyhunt/
 
 当前架构为 **两条业务线**，永不互通（不共享账号/Token/数据库）：
 
-- **Moryflow**：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）
+- **Moryflow**：`www.moryflow.com`（营销）+ `server.moryflow.com`（应用+API）
 - **Anyhunt Dev**：`console.anyhunt.app`（控制台+API；Agentsbox/Memox 等能力）
 
 计费/订阅暂不作为默认架构约束；Anyhunt Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/architecture/auth/quota-and-api-keys.md`）。

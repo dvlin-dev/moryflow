@@ -55,6 +55,7 @@ status: active
 - Anyhunt Dev（8c16g / Dokploy）：`docs/runbooks/deploy/anyhunt-dokploy.md`
 - megaboxpro（1panel）反代路由：`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`
 - Moryflow（4c6g / docker compose）：`docs/runbooks/deploy/moryflow-compose.md`
+- Moryflow PC Auth 连接关闭排障：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-24，已补充“最新版仍复现”进度、OTP 二步修复、登录 Cookie fallback、未登录不走全局 skeleton，以及 `moryflow-pc`/`packages/api` 目标单测结果）
 
 ## Migrations（迁移方案 / 一次性执行）
 

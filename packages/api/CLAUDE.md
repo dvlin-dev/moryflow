@@ -35,7 +35,7 @@ const client = createServerApiClient({
 
 - 增加 `onUnauthorized` 重试回调（用于刷新 access）
 - 会员展示文案统一为英文，移除未使用的会员比较/错误映射导出
-- `MEMBERSHIP_API_URL` 默认值对齐 `app.moryflow.com`
+- `MEMBERSHIP_API_URL` 默认值对齐 `server.moryflow.com`
 - FileIndex 类型收敛为 v2（向量时钟），移除旧版兼容结构
 - FileIndex 增加 `lastSyncedSize/lastSyncedMtime` 字段用于本地变更预过滤
 - 错误解析统一为 RFC7807（ProblemDetails），补齐 requestId 与 errors 透传

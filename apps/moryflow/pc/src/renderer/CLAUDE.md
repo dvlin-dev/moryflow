@@ -93,6 +93,10 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Desktop Auth：`refreshAccessToken` 增加 fail-fast（初始化无 refresh token 不发请求）与 10s 超时；登录链路启用 Cookie fallback（无本地 refresh token 仍可建会话）；`AuthProvider` 仅在明确未授权时清理会话，网络异常保留当前状态
+- Settings Account 登录：移除内层 form，提交改为显式点击/Enter 捕获，避免触发外层 Settings form 导致弹窗关闭；OTP 验证步骤同样移除内层 form，并修复 `onSuccess` 未等待导致的未处理 Promise
+- Settings Account：未登录 + loading 状态不再展示全局 skeleton，保持登录面板可交互（仅按钮级 loading）
+- AuthProvider 登录流程不再触发全局 loading（保留按钮级 loading + 错误回显）
 - VaultFiles 与 Threads 列表基线对齐：文件/文件夹/线程行内水平 padding 统一为 `px-2.5`，统一使用 icon 槽位控制文字起始线；行背景采用 `-mx-1` 轻微外扩，保持两类列表间距一致。
 - VaultFiles/Threads 列表视觉层次收敛：通过列表容器 inset + 行内 padding 抵消，让激活背景内缩而文本左边线保持稳定对齐。
 - Workspace 导航新增 `Skills` destination（位于 Sites 上方），并在主视图新增 Skills 页面 keep-alive 挂载。

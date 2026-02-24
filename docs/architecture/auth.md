@@ -17,7 +17,7 @@ status: active
 
 本仓库不再使用 “UIP（统一身份平台，跨产品统一账号/计费）” 作为默认目标；当前架构明确为 **两条互不互通的业务线**：
 
-1. **Moryflow（主产品）**：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用 + API）
+1. **Moryflow（主产品）**：`www.moryflow.com`（营销）+ `server.moryflow.com`（应用 + API）
 2. **Anyhunt Dev（开发者平台）**：`anyhunt.app`（官网；模块：Fetchx、Memox）+ `server.anyhunt.app`（API）+ `console.anyhunt.app` / `admin.anyhunt.app`（Web 前端）
 
 两条业务线：
@@ -28,10 +28,10 @@ status: active
 ## 已定稿的关键约束（不要再发散）
 
 - 域名：
-  - Moryflow：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用 + API）+ `moryflow.app`（发布站）
+  - Moryflow：`www.moryflow.com`（营销）+ `server.moryflow.com`（应用 + API）+ `moryflow.app`（发布站）
   - Anyhunt Dev：`anyhunt.app`（官网）+ `server.anyhunt.app`（API；不做旧子域名兼容）
 - API：
-  - Moryflow：`https://app.moryflow.com/api/v1/...`
+  - Moryflow：`https://server.moryflow.com/api/v1/...`
   - Anyhunt Dev：`https://server.anyhunt.app/api/v1/...`（console/admin 为独立 Web，需要 CORS/CSRF 白名单）
 - Token（两套 Auth，各自独立）：
   - `accessTokenTtl=6h`，`refreshTokenTtl=90d`，`refreshRotation=on`

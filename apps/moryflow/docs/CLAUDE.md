@@ -8,7 +8,7 @@
 
 # Moryflow Docs
 
-Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.com`（营销）和 `app.moryflow.com`（应用+API）解耦。
+Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.com`（营销）和 `server.moryflow.com`（应用+API）解耦。
 
 ## 技术栈
 

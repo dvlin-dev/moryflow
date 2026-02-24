@@ -19,7 +19,7 @@ status: active
 
 - `www.moryflow.com`：营销入口（落地页）。
 - `docs.moryflow.com`：产品文档（独立 Docs 项目）。
-- `app.moryflow.com`：主应用（Web UI）+ API（同域）。
+- `server.moryflow.com`：主应用（Web UI）+ API（同域）。
 - `moryflow.app`：用户发布站（Cloudflare Worker + R2）。
 
 ### Anyhunt Dev
@@ -32,7 +32,7 @@ status: active
 
 ## API 规范（固定）
 
-- Moryflow API base：`https://app.moryflow.com/api/v1`
+- Moryflow API base：`https://server.moryflow.com/api/v1`
 - Anyhunt Dev API base：`https://server.anyhunt.app/api/v1`
 
 约束：
@@ -52,7 +52,7 @@ status: active
 最小规则（按 Host 分流）：
 
 - `www.moryflow.com` → 4c6g（moryflow-www）
-- `app.moryflow.com` → 4c6g（moryflow-app，包含 `/api/v1`）
+- `server.moryflow.com` → 4c6g（moryflow-app，包含 `/api/v1`）
 - `anyhunt.app` → 8c16g（anyhunt-web）
 - `server.anyhunt.app` → 8c16g（anyhunt-api，包含 `/api/v1`）
 - `console.anyhunt.app` → 8c16g（anyhunt-console-web）

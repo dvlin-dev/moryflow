@@ -179,7 +179,7 @@ status: done
 - Anyhunt/Moryflow：init 迁移已生成并应用（DB 已重置）
 - Moryflow Vectorize Worker：接入 JWKS 验签 access JWT（业务服务按 JWKS 校验）
 - 测试门禁：`pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 已复跑通过（lint 仍有 Moryflow Server `no-unsafe-assignment` 警告；test:unit 有 Redis/Turnstile 等预期日志警告）
-- 环境变量核对：两端 `.env` 已包含 Auth 必需项（`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`TRUSTED_ORIGINS`、`ALLOWED_ORIGINS`、`ADMIN_EMAILS`、`SERVER_URL`）；`BETTER_AUTH_URL`/`SERVER_URL` 已对齐 `https://server.anyhunt.app` 与 `https://app.moryflow.com`，`ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 已覆盖 `moryflow.com` 系列域名（无需新增 Auth env）
+- 环境变量核对：两端 `.env` 已包含 Auth 必需项（`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`TRUSTED_ORIGINS`、`ALLOWED_ORIGINS`、`ADMIN_EMAILS`、`SERVER_URL`）；`BETTER_AUTH_URL`/`SERVER_URL` 已对齐 `https://server.anyhunt.app` 与 `https://server.moryflow.com`，`ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 已覆盖 `moryflow.com` 系列域名（无需新增 Auth env）
 - 数据库重置：已按 init 迁移重置 Anyhunt main/vector 与 Moryflow 主库（基于各自 prisma config）
 - 测试补齐：JWKS 端点验签用例已落地（Anyhunt 集成 / Moryflow E2E）
 - 测试补齐：Anyhunt www `auth-session` 单测已落地（refresh/logout）

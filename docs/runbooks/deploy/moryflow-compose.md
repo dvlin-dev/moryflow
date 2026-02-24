@@ -39,8 +39,8 @@ docker compose -f deploy/moryflow/docker-compose.yml logs -f --tail=200
 
 > 具体以服务实际读取的变量为准；这里作为“需要哪些类别”的清单。
 
-- `PUBLIC_BASE_URL=https://app.moryflow.com`
-- `ALLOWED_ORIGINS=https://www.moryflow.com,https://admin.moryflow.com,https://app.moryflow.com`
+- `PUBLIC_BASE_URL=https://server.moryflow.com`
+- `ALLOWED_ORIGINS=https://www.moryflow.com,https://admin.moryflow.com,https://server.moryflow.com`
 - `COOKIE_DOMAIN=.moryflow.com`
 - `POSTGRES_URL=...`
 - `REDIS_URL=...`

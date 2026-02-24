@@ -82,7 +82,7 @@ export function createBetterAuth(
     trustedOrigins,
     advanced: {
       useSecureCookies: isProduction,
-      // 跨子域 Cookie 共享：moryflow.com / app.moryflow.com
+      // 跨子域 Cookie 共享：moryflow.com / server.moryflow.com
       ...(isProduction && {
         crossSubDomainCookies: {
           enabled: true,

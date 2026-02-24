@@ -33,7 +33,7 @@ status: active
 
 - `www.moryflow.com`：营销入口（落地页）。
 - `docs.moryflow.com`：产品文档（独立 Docs 项目）。
-- `app.moryflow.com`：主应用（Web UI）+ API（同域，`/api/v1`）。
+- `server.moryflow.com`：主应用（Web UI）+ API（同域，`/api/v1`）。
 - `moryflow.app`：用户发布站（Cloudflare Worker + R2，按 `*.moryflow.app` 映射）。
 
 #### `moryflow.app` 发布站点约定（固定）
@@ -65,7 +65,7 @@ status: active
 
 ## 对外 API 规范（固定）
 
-- Moryflow API base：`https://app.moryflow.com/api/v1`
+- Moryflow API base：`https://server.moryflow.com/api/v1`
 - Anyhunt Dev API base：`https://server.anyhunt.app/api/v1`
 
 约定：
@@ -74,7 +74,7 @@ status: active
 - Auth：`/api/auth/*`（支持 Google/Apple 登录）
 - Anyhunt Dev API Key：`Authorization: Bearer <apiKey>`
 - 生产环境 CORS：两条业务线服务端都要求配置 `TRUSTED_ORIGINS`（逗号分隔），按业务线分别填：
-  - Moryflow：至少包含 `https://www.moryflow.com`、`https://admin.moryflow.com`、`https://app.moryflow.com`
+  - Moryflow：至少包含 `https://www.moryflow.com`、`https://admin.moryflow.com`、`https://server.moryflow.com`
   - Anyhunt：至少包含 `https://anyhunt.app`、`https://console.anyhunt.app`、`https://admin.anyhunt.app`
 
 ## 三机部署拓扑（当前默认）
@@ -95,7 +95,7 @@ status: active
 - `moryflow-www`：`www.moryflow.com`（占位页）
 - `moryflow-docs`：`docs.moryflow.com`（Docs 项目）
 - `moryflow-admin`：后台（独立 Web 前端）
-- `moryflow-app`：`app.moryflow.com`（占位页；未来 Web App）
+- `moryflow-app`：`server.moryflow.com`（占位页；未来 Web App）
 - `moryflow-postgres` / `moryflow-redis`：仅服务于 Moryflow 这一套
 
 端口分配（固定）：
@@ -131,8 +131,8 @@ status: active
 
 - `www.moryflow.com` → `http://<4c6g-ip>:3102`
 - `docs.moryflow.com` → `http://<4c6g-ip>:3103`
-- `app.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
-- `app.moryflow.com` 的 `/api/*` → `http://<4c6g-ip>:3100`（API，占位页不影响 API）
+- `server.moryflow.com` → `http://<4c6g-ip>:3105`（当前占位页）
+- `server.moryflow.com` 的 `/api/*` → `http://<4c6g-ip>:3100`（API，占位页不影响 API）
 - `anyhunt.app` → `http://<8c16g-ip>:3103`（官网）
 - `server.anyhunt.app` → `http://<8c16g-ip>:3100`（统一 API）
 - `docs.anyhunt.app` → `http://<8c16g-ip>:3110`

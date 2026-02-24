@@ -28,7 +28,7 @@ status: active
 
 ## 服务形态（如何“复用但不复杂”）
 
-- **Moryflow Auth**：只服务 `app.moryflow.com`（cookie `Domain=.moryflow.com`）。
+- **Moryflow Auth**：只服务 `server.moryflow.com`（cookie `Domain=.moryflow.com`）。
 - **Anyhunt Dev Auth**：只服务 `server.anyhunt.app`（cookie `Domain=.anyhunt.app`，平台内模块共享；console/admin 为独立 Web 前端）。
 - 两条 Auth **共享代码**（抽到 `packages/*`），但 **不共享数据库/密钥**。
 - User/Profile/Session 等核心数据各自独立，禁止跨业务线关联。
@@ -37,7 +37,7 @@ status: active
 
 > 这些路由在各自业务线的应用域名下保持一致：
 >
-> - Moryflow：`https://app.moryflow.com/api/auth/*`
+> - Moryflow：`https://server.moryflow.com/api/auth/*`
 > - Anyhunt Dev：`https://server.anyhunt.app/api/auth/*`（console/admin 跨域调用）
 
 - `POST /api/auth/sign-up/email`
@@ -109,14 +109,14 @@ status: active
 ### 总原则（固定）
 
 1. **两套 Auth**：
-   - Moryflow Auth：仅服务 `app.moryflow.com`
+   - Moryflow Auth：仅服务 `server.moryflow.com`
    - Anyhunt Dev Auth：仅服务 `server.anyhunt.app`
 2. **永不互通**：不共享账号/Token/数据库；OAuth 仅限业务线内。
 3. **Anyhunt Dev API 固定入口**：`https://server.anyhunt.app/api/v1`；console/admin 为独立 Web，需要 CORS 与 CSRF 白名单。
 
 ### 域名与路由
 
-- Moryflow（应用 + API）：`https://app.moryflow.com/api/v1/...`
+- Moryflow（应用 + API）：`https://server.moryflow.com/api/v1/...`
 - Anyhunt Dev（API）：`https://server.anyhunt.app/api/v1/...`
 - Anyhunt Dev（Web）：`https://console.anyhunt.app`、`https://admin.anyhunt.app`
 
@@ -149,7 +149,7 @@ status: active
 - 只允许 `POST`
 - 仅校验 `Origin`（无 Origin 且携带 Cookie 会被拒绝）
 - 校验 `Origin`：
-  - Moryflow：必须是 `https://app.moryflow.com`
+  - Moryflow：必须是 `https://server.moryflow.com`
   - Anyhunt Dev：必须是 `https://console.anyhunt.app` / `https://admin.anyhunt.app`
 - `POST /api/auth/logout` 与 `POST /api/auth/sign-out` 同样要求 Origin 校验
 

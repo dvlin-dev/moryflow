@@ -31,10 +31,10 @@ status: done
 
 - [P1] Membership API base did not match the domain plan (hard-coded to `server.moryflow.com`)
   - Research:
-    - Architecture docs require Moryflow API at `https://app.moryflow.com` (domain plan + auth guides).
+    - Architecture docs require Moryflow API at `https://server.moryflow.com` (domain plan + auth guides).
     - `MEMBERSHIP_API_URL` is consumed by PC/Mobile clients and auth helpers.
   - Fix (implemented):
-    - Update default `MEMBERSHIP_API_URL` to `https://app.moryflow.com`.
+    - Update default `MEMBERSHIP_API_URL` to `https://server.moryflow.com`.
   - Files:
     - `packages/api/src/paths.ts`
     - `packages/api/CLAUDE.md`
