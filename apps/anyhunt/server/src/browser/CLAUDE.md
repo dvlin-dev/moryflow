@@ -8,6 +8,8 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 
 ## 最近更新
 
+- 合规治理复审加固：`openUrl` 先校验会话归属再申请 host 配额；风险成功事件 `class='none'`；限流/节奏内存状态新增 TTL+容量清理；风险摘要无导航数据时成功率返回 `0` 且 TopN 仅统计风险事件
+- 合规自动化风险治理（Step 0~7）落地：新增策略匹配、host 级速率/并发预算、动作节奏、导航分类重试、统一遥测与 `/session/:id/risk` 诊断接口
 - Streaming token/stream 过期与会话清理，空闲时释放 CDP session
 - Trace 结束后清理本地文件，不返回内部路径
 - Tabs/Windows 索引参数使用 400 返回（ParseIntPipe + SessionOperationNotAllowedError）
@@ -24,6 +26,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - 快照/动作执行（SnapshotService、ActionHandler）
 - 语义定位/批量动作（role/text/label/placeholder/alt/title/testId + ActionBatch）
 - P2 扩展：CDP、网络拦截、会话持久化、Profile、诊断、Streaming、增量快照
+- 合规治理：policy（站点准入）+ runtime（动作节奏/导航重试）+ observability（风险遥测）
 - Agent 端口：`BrowserAgentPortService`（禁止暴露 Playwright 类型）
 
 ## Constraints
@@ -43,6 +46,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - **Profile 持久化依赖 R2 配置**：未配置 R2 时禁用 Profile 保存/加载
 - **上传限制**：`upload` 动作仅接受 Base64 payload，禁止服务器本地路径
 - **下载限制**：受 `BROWSER_DOWNLOAD_MAX_MB` 约束，超限直接失败并清理临时文件
+- **合规边界**：仅允许“合规自动化 + 风险治理”，禁止伪装真人与绕过验证码/反爬机制
 
 ## File Structure
 
@@ -57,6 +61,9 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 | `ports/`                        | Agent 端口（BrowserAgentPort）        |
 | `cdp/`                          | CDP 连接                              |
 | `network/`                      | 网络拦截                              |
+| `policy/`                       | 站点策略 + host 级速率/并发预算       |
+| `runtime/`                      | 动作节奏与导航重试分类                |
+| `observability/`                | 风险遥测契约与聚合摘要                |
 | `diagnostics/`                  | console/pageerror/trace               |
 | `streaming/`                    | WebSocket screencast + 输入注入       |
 | `persistence/`                  | storage/profile 持久化                |

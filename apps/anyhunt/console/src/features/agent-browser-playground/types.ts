@@ -101,6 +101,23 @@ export type BrowserPageError = {
   timestamp: number;
 };
 
+export type BrowserDetectionRiskSummary = {
+  windowMs: number;
+  navigation: {
+    total: number;
+    success: number;
+    failed: number;
+    successRate: number;
+  };
+  topReasons: Array<{ reason: string; count: number }>;
+  topHosts: Array<{ host: string; count: number }>;
+  actionPacing: {
+    delayedActions: number;
+    avgDelayMs: number;
+  };
+  recommendations: string[];
+};
+
 export type BrowserTraceStartResult = {
   started: boolean;
 };

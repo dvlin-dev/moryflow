@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { SessionManager } from '../session';
+import type { ActionPacingService } from '../runtime';
 
 const loadHandler = async () => {
   const module = await import('../handlers/action.handler');
@@ -8,7 +9,39 @@ const loadHandler = async () => {
 
 const createHandler = async () => {
   const ActionHandler = await loadHandler();
-  return new ActionHandler({} as SessionManager);
+  return new ActionHandler(
+    {} as SessionManager,
+    {
+      beforeAction: vi.fn().mockResolvedValue({ applied: false, delayMs: 0 }),
+    } as unknown as ActionPacingService,
+    {
+      recordActionPacing: vi.fn(),
+    } as any,
+  );
+};
+
+const createHandlerWithMocks = async () => {
+  const ActionHandler = await loadHandler();
+  const page = {
+    goBack: vi.fn().mockResolvedValue(undefined),
+    url: vi.fn().mockReturnValue('https://example.com/path'),
+  };
+  const sessionManager = {
+    getActivePage: vi.fn().mockReturnValue(page),
+    getActiveContext: vi.fn().mockReturnValue({}),
+  };
+  const actionPacing = {
+    beforeAction: vi.fn().mockResolvedValue({ applied: false, delayMs: 0 }),
+  };
+  const riskTelemetry = {
+    recordActionPacing: vi.fn(),
+  };
+  const handler = new ActionHandler(
+    sessionManager as unknown as SessionManager,
+    actionPacing as unknown as ActionPacingService,
+    riskTelemetry as any,
+  );
+  return { handler, page, actionPacing, riskTelemetry };
 };
 
 describe('ActionHandler', () => {
@@ -57,5 +90,35 @@ describe('ActionHandler', () => {
     expect(() => (handler as any).buildUploadPayloads(payload)).toThrow(
       'Upload file too large',
     );
+  });
+
+  it('calls action pacing before executing action', async () => {
+    const { handler, page, actionPacing, riskTelemetry } =
+      await createHandlerWithMocks();
+    await handler.execute({ id: 'bs_1' } as any, { type: 'back' } as any);
+    expect(actionPacing.beforeAction).toHaveBeenCalledWith({
+      sessionId: 'bs_1',
+      actionType: 'back',
+    });
+    expect(riskTelemetry.recordActionPacing).not.toHaveBeenCalled();
+    expect(page.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('records pacing telemetry when delay is applied', async () => {
+    const { handler, page, actionPacing, riskTelemetry } =
+      await createHandlerWithMocks();
+    actionPacing.beforeAction.mockResolvedValueOnce({
+      applied: true,
+      delayMs: 180,
+    });
+
+    await handler.execute({ id: 'bs_1' } as any, { type: 'back' } as any);
+
+    expect(riskTelemetry.recordActionPacing).toHaveBeenCalledWith({
+      sessionId: 'bs_1',
+      host: 'example.com',
+      actionType: 'back',
+      delayMs: 180,
+    });
   });
 });

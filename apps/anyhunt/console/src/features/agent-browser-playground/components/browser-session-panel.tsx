@@ -72,6 +72,7 @@ import {
   executeBrowserActionBatch,
   exportBrowserStorage,
   getBrowserConsoleMessages,
+  getBrowserDetectionRisk,
   getBrowserDeltaSnapshot,
   getBrowserPageErrors,
   getBrowserScreenshot,
@@ -100,6 +101,7 @@ import type {
   BrowserActionBatchResponse,
   BrowserActionResponse,
   BrowserConsoleMessage,
+  BrowserDetectionRiskSummary,
   BrowserDeltaSnapshotResponse,
   BrowserHarStopResult,
   BrowserHeadersResult,
@@ -229,6 +231,7 @@ export function BrowserSessionPanel({
   const [networkHistory, setNetworkHistory] = useState<BrowserNetworkRequestRecord[] | null>(null);
   const [consoleMessages, setConsoleMessages] = useState<BrowserConsoleMessage[] | null>(null);
   const [pageErrors, setPageErrors] = useState<BrowserPageError[] | null>(null);
+  const [detectionRisk, setDetectionRisk] = useState<BrowserDetectionRiskSummary | null>(null);
   const [traceResult, setTraceResult] = useState<BrowserTraceStopResult | null>(null);
   const [harResult, setHarResult] = useState<BrowserHarStopResult | null>(null);
   const [storageExport, setStorageExport] = useState<BrowserStorageExportResult | null>(null);
@@ -543,6 +546,7 @@ export function BrowserSessionPanel({
       setNetworkHistory(null);
       setConsoleMessages(null);
       setPageErrors(null);
+      setDetectionRisk(null);
       setTraceResult(null);
       setHarResult(null);
       setStorageExport(null);
@@ -1041,6 +1045,18 @@ export function BrowserSessionPanel({
     }
   };
 
+  const handleFetchDetectionRisk = async () => {
+    const sessionId = requireSession();
+    if (!sessionId || !apiKey) return;
+    try {
+      const summary = await getBrowserDetectionRisk(apiKey, sessionId);
+      setDetectionRisk(summary);
+      toast.success('Detection risk loaded');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load detection risk');
+    }
+  };
+
   const handleStartTrace = async (values: BrowserDiagnosticsTraceValues) => {
     const sessionId = requireSession();
     if (!sessionId || !apiKey) return;
@@ -1357,12 +1373,14 @@ export function BrowserSessionPanel({
             onOpenChange={setDiagnosticsOpen}
             consoleMessages={consoleMessages}
             pageErrors={pageErrors}
+            detectionRisk={detectionRisk}
             traceResult={traceResult}
             harResult={harResult}
             onFetchConsole={handleFetchConsoleMessages}
             onClearConsole={handleClearConsoleMessages}
             onFetchErrors={handleFetchPageErrors}
             onClearErrors={handleClearPageErrors}
+            onFetchRisk={handleFetchDetectionRisk}
             onStartTrace={handleStartTrace}
             onStopTrace={handleStopTrace}
             onStartHar={handleStartHar}

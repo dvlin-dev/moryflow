@@ -21,7 +21,18 @@ import {
   ProfilePersistenceService,
 } from './persistence';
 import { BrowserDiagnosticsService } from './diagnostics';
+import {
+  BrowserRiskTelemetryService,
+  type BrowserRiskSummary,
+} from './observability';
 import { BrowserStreamService } from './streaming';
+import {
+  SitePolicyService,
+  SiteRateLimiterService,
+  BrowserPolicyDeniedError,
+  BrowserNavigationRateLimitError,
+} from './policy';
+import { NavigationRetryService, BrowserNavigationError } from './runtime';
 import type {
   CreateSessionInput,
   CreateWindowInput,
@@ -79,7 +90,11 @@ export class BrowserSessionService {
     private readonly storagePersistence: StoragePersistenceService,
     private readonly profilePersistence: ProfilePersistenceService,
     private readonly diagnosticsService: BrowserDiagnosticsService,
+    private readonly riskTelemetry: BrowserRiskTelemetryService,
     private readonly streamService: BrowserStreamService,
+    private readonly sitePolicyService: SitePolicyService,
+    private readonly siteRateLimiter: SiteRateLimiterService,
+    private readonly navigationRetry: NavigationRetryService,
   ) {}
 
   private assertSessionAccess(userId: string, sessionId: string): void {
@@ -167,31 +182,127 @@ export class BrowserSessionService {
     const context = this.sessionManager.getActiveContext(session);
     const page = this.sessionManager.getActivePage(session);
 
-    if (headers) {
-      await this.networkInterceptor.setScopedHeaders(
-        sessionId,
-        context,
-        url,
-        headers,
-      );
-    }
-
-    await page.goto(url, { waitUntil, timeout });
-    session.refs = new Map();
-    this.snapshotService.clearCache(sessionId);
-
-    let title: string | null = null;
+    const host = new URL(url).hostname.toLowerCase();
+    const policy = this.sitePolicyService.resolve(host);
     try {
-      title = await page.title();
-    } catch {
-      // 忽略
+      this.sitePolicyService.assertNavigationAllowed({
+        sessionId,
+        host,
+        url,
+      });
+    } catch (error) {
+      if (error instanceof BrowserPolicyDeniedError) {
+        this.riskTelemetry.recordPolicyBlock({
+          host,
+          reason: error.reason,
+          policyId: error.policyId,
+          sessionId,
+          class: 'access_control',
+        });
+      }
+      throw error;
     }
 
-    return {
-      success: true,
-      url: page.url(),
-      title,
-    };
+    const releaseNavigationQuota = (() => {
+      try {
+        return this.siteRateLimiter.acquireNavigationQuota({
+          host,
+          policyId: policy.id,
+          maxRps: policy.maxRps,
+          maxBurst: policy.maxBurst,
+          maxConcurrentNavigationsPerHost:
+            policy.maxConcurrentNavigationsPerHost,
+        });
+      } catch (error) {
+        if (error instanceof BrowserNavigationRateLimitError) {
+          this.riskTelemetry.recordRateLimitBlock({
+            host,
+            reason: error.reason,
+            policyId: error.policyId,
+            sessionId,
+            class: 'access_control',
+          });
+        }
+        throw error;
+      }
+    })();
+
+    try {
+      if (headers) {
+        await this.networkInterceptor.setScopedHeaders(
+          sessionId,
+          context,
+          url,
+          headers,
+        );
+      }
+
+      let navigationResult: { title: string | null };
+      try {
+        navigationResult = await this.navigationRetry.run({
+          host,
+          budget: policy.retryBudget,
+          execute: async () => {
+            const response = await page.goto(url, { waitUntil, timeout });
+
+            let title: string | null = null;
+            try {
+              title = await page.title();
+            } catch {
+              // 忽略
+            }
+
+            const navigationError = this.navigationRetry.classifyResult({
+              host,
+              responseStatus: response?.status() ?? null,
+              finalUrl: page.url(),
+              title,
+            });
+
+            if (navigationError) {
+              throw navigationError;
+            }
+
+            return { title };
+          },
+        });
+      } catch (error) {
+        const navigationError =
+          error instanceof BrowserNavigationError
+            ? error
+            : this.navigationRetry.classifyError(host, error);
+
+        this.riskTelemetry.recordNavigationResult({
+          host,
+          reason: navigationError.reason,
+          policyId: policy.id,
+          sessionId,
+          class: navigationError.failureClass,
+          success: false,
+        });
+        throw navigationError;
+      }
+
+      session.refs = new Map();
+      this.snapshotService.clearCache(sessionId);
+
+      this.riskTelemetry.recordNavigationResult({
+        host,
+        reason: 'success',
+        policyId: policy.id,
+        sessionId,
+        class: 'none',
+        success: true,
+      });
+
+      return {
+        success: true,
+        url: page.url(),
+        title: navigationResult.title,
+      };
+    } finally {
+      releaseNavigationQuota();
+    }
   }
 
   /**
@@ -719,6 +830,11 @@ export class BrowserSessionService {
   clearPageErrors(userId: string, sessionId: string): void {
     this.assertSessionAccess(userId, sessionId);
     this.diagnosticsService.clearPageErrors(sessionId);
+  }
+
+  getDetectionRisk(userId: string, sessionId: string): BrowserRiskSummary {
+    this.assertSessionAccess(userId, sessionId);
+    return this.riskTelemetry.getSessionSummary(sessionId);
   }
 
   async startTrace(

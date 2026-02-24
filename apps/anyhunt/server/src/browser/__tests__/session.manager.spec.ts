@@ -15,6 +15,8 @@ import type { BrowserPool } from '../browser-pool';
 import type { NetworkInterceptorService } from '../network/interceptor.service';
 import type { SnapshotService } from '../snapshot/snapshot.service';
 import type { BrowserDiagnosticsService } from '../diagnostics/diagnostics.service';
+import type { BrowserRiskTelemetryService } from '../observability/browser-risk-telemetry.service';
+import type { ActionPacingService } from '../runtime/action-pacing.service';
 
 describe('SessionManager', () => {
   it('cleans up network interceptor and snapshot cache on close', async () => {
@@ -31,12 +33,20 @@ describe('SessionManager', () => {
       registerPage: vi.fn(),
       cleanupSession: vi.fn(),
     } as unknown as BrowserDiagnosticsService;
+    const riskTelemetry = {
+      cleanupSession: vi.fn(),
+    } as unknown as BrowserRiskTelemetryService;
+    const actionPacing = {
+      cleanupSession: vi.fn(),
+    } as unknown as ActionPacingService;
 
     const manager = new SessionManager(
       browserPool,
       networkInterceptor,
       snapshotService,
       diagnosticsService,
+      riskTelemetry,
+      actionPacing,
     );
 
     const context = {} as BrowserContext;
@@ -69,6 +79,8 @@ describe('SessionManager', () => {
     expect(networkInterceptor.cleanupSession).toHaveBeenCalledWith('session-1');
     expect(snapshotService.clearCache).toHaveBeenCalledWith('session-1');
     expect(diagnosticsService.cleanupSession).toHaveBeenCalledWith('session-1');
+    expect(riskTelemetry.cleanupSession).toHaveBeenCalledWith('session-1');
+    expect(actionPacing.cleanupSession).toHaveBeenCalledWith('session-1');
 
     await manager.onModuleDestroy();
   });
@@ -84,6 +96,8 @@ describe('SessionManager', () => {
         registerPage: vi.fn(),
         cleanupSession: vi.fn(),
       } as unknown as BrowserDiagnosticsService,
+      { cleanupSession: vi.fn() } as unknown as BrowserRiskTelemetryService,
+      { cleanupSession: vi.fn() } as unknown as ActionPacingService,
     );
 
     const page = {
@@ -132,6 +146,8 @@ describe('SessionManager', () => {
         registerPage: vi.fn(),
         cleanupSession: vi.fn(),
       } as unknown as BrowserDiagnosticsService,
+      { cleanupSession: vi.fn() } as unknown as BrowserRiskTelemetryService,
+      { cleanupSession: vi.fn() } as unknown as ActionPacingService,
     );
 
     const page = {

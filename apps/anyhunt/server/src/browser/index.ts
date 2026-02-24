@@ -23,6 +23,16 @@ export {
 } from './session';
 export { SnapshotService } from './snapshot';
 export { ActionHandler } from './handlers';
+export {
+  ActionPacingService,
+  NavigationRetryService,
+  BrowserNavigationError,
+  type BeforeActionInput,
+  type BeforeActionResult,
+  type NavigationFailureReason,
+  type NavigationRetryInput,
+  type NavigationResultCheckInput,
+} from './runtime';
 export { BrowserAgentPortService } from './ports';
 export type {
   BrowserAgentPort,
@@ -45,6 +55,19 @@ export {
   InvalidInterceptRuleError,
 } from './network';
 
+// P2: 站点策略
+export {
+  SitePolicyService,
+  BrowserPolicyDeniedError,
+  SiteRateLimiterService,
+  BrowserNavigationRateLimitError,
+  type BrowserSitePolicy,
+  type PolicyDecision,
+  type RetryBudget,
+  type NavigationQuotaInput,
+  type RateLimitReason,
+} from './policy';
+
 // P2: 会话持久化 / Profile
 export {
   StoragePersistenceService,
@@ -56,6 +79,18 @@ export {
 
 // P2: 诊断与 Streaming
 export { BrowserDiagnosticsService } from './diagnostics';
+export {
+  BrowserRiskTelemetryService,
+  BROWSER_FAILURE_CLASSES,
+  BROWSER_RISK_TELEMETRY_FIELDS,
+  BROWSER_RISK_BASELINE_SAMPLES,
+  type BrowserFailureClass,
+  type BrowserRiskTelemetryField,
+  type BrowserRiskTelemetryPayload,
+  type BrowserRiskBaselineSample,
+  type BrowserRiskEvent,
+  type BrowserRiskSummary,
+} from './observability';
 export { BrowserStreamService, StreamNotConfiguredError } from './streaming';
 
 // DTOs
