@@ -119,6 +119,8 @@ export class AgentController {
     response.headers.forEach((value, key) => {
       res.setHeader(key, value);
     });
+    // 显式关闭反向代理缓冲（如 nginx/1panel），确保流式分片实时下发。
+    res.setHeader('X-Accel-Buffering', 'no');
 
     if (!response.body) {
       res.end();

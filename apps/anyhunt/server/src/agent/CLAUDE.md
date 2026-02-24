@@ -19,7 +19,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 ## Constraints
 
 - **Ports 边界**：Agent 只能依赖 `src/browser/ports/*`（禁止直接依赖 Playwright 类型）
-- **SDK 依赖**：统一使用 `@openai/agents-core@0.4.3`，不引入 realtime
+- **SDK 依赖**：统一使用 `@openai/agents-core@0.5.1`，不引入 realtime
 - **ApiKeyGuard 依赖**：Agent L3 API 使用 `ApiKeyGuard`，对应模块必须导入 `ApiKeyModule`，否则会导致 Nest 启动失败
 - **工具收敛**：仅保留 `browser_open`、`browser_snapshot`、`browser_action`、`browser_action_batch`、`web_search`，不保留 click/fill/type 等旧工具
 - **LLM API 约束**：只允许使用 `/chat/completions`（`useResponses=false`），禁止 Responses API（避免网关不兼容导致 400）
@@ -62,6 +62,7 @@ Agent 模块提供 `/api/v1/agent` 能力：将用户的自然语言需求编排
 
 ## 最近更新
 
+- 2026-02-24：修复 `executeTaskStream` 早期失败分支（任务创建失败/LLM 路由失败）的 abort listener 清理遗漏，并恢复 `X-Accel-Buffering: no` 头，确保反向代理下流式分片实时输出
 - 2026-02-24：流式协议切换到官方 `ai-sdk-ui`，移除私有 SSE 事件映射与类型定义
 - 2026-01-27：Agent 运行时使用模型 maxOutputTokens 作为输出上限；prompt/messages 互斥校验
 - 2026-01-26：CreateAgentTaskSchema 拆分 Base/Console 版本，支持 console 复用且保留 refine 校验

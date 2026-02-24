@@ -448,6 +448,7 @@ export class AgentService {
         status: 'PENDING',
       });
     } catch (error) {
+      detachAbortSignal();
       this.runningTasks.delete(taskId);
       throw error;
     }
@@ -491,6 +492,7 @@ export class AgentService {
           completedAt: new Date(),
         });
       } finally {
+        detachAbortSignal();
         await this.safeProgressOperation(
           () => this.progressStore.clearCancel(taskId),
           'clear cancel',
