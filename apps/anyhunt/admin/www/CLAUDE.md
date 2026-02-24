@@ -8,6 +8,8 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- Logs：筛选时间统一转 ISO UTC（带时区），补齐查询失败错误态展示，避免“请求失败显示为空数据”
+- 新增 Unified Logs 模块：`/logs/requests`、`/logs/users`、`/logs/ip`（请求明细、用户分析、IP 监控）
 - LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -29,6 +31,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - 任务监控（crawl、batch-scrape）
 - 队列状态监控
 - 浏览器池管理
+- 统一请求日志（行为分析 / 错误排查 / IP 监控）
 
 ## 约束
 
@@ -83,6 +86,9 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 | `jobs/`           | `/jobs`           | Crawl/batch job monitoring |
 | `queues/`         | `/queues`         | BullMQ queue status        |
 | `browser/`        | `/browser`        | Browser pool instances     |
+| `logs/requests`   | `/logs/requests`  | Unified request logs       |
+| `logs/users`      | `/logs/users`     | User behavior from logs    |
+| `logs/ip`         | `/logs/ip`        | IP monitoring from logs    |
 | `digest-topics/`  | `/digest/topics`  | Digest Topics 精选管理     |
 | `digest-reports/` | `/digest/reports` | Digest 举报管理            |
 | `digest-welcome/` | `/digest/welcome` | Digest Welcome 配置与页面  |
@@ -123,6 +129,9 @@ feature-name/
 | `QueuesPage`        | Queue health and metrics           |
 | `BrowserPage`       | Browser instance status            |
 | `ErrorsPage`        | System error logs                  |
+| `LogsRequestsPage`  | Unified request log list           |
+| `LogsUsersPage`     | User behavior analysis from logs   |
+| `LogsIpPage`        | IP monitoring from request logs    |
 | `DigestTopicsPage`  | Digest Topics featured management  |
 | `DigestReportsPage` | Digest report moderation           |
 | `DigestWelcomePage` | Digest welcome configuration       |

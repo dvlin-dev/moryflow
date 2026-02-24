@@ -1,5 +1,5 @@
 /**
- * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/ADMIN_EMAILS
+ * [INPUT]: PrismaClient/OTP 发送器/secondaryStorage/ADMIN_EMAILS/BETTER_AUTH_RATE_LIMIT_*
  * [OUTPUT]: Better Auth 实例（Anyhunt Dev 专用配置，OTP 验证后自动登录）
  * [POS]: Auth 配置入口
  *
@@ -29,6 +29,44 @@ const TIER_MONTHLY_QUOTA = {
   PRO: 20000,
   TEAM: 60000,
 } as const;
+
+const DEFAULT_AUTH_RATE_LIMIT_WINDOW_SECONDS = 60;
+const DEFAULT_AUTH_RATE_LIMIT_MAX = 120;
+
+const parsePositiveIntEnv = (
+  key: string,
+  fallback: number,
+  opts: { min?: number } = {},
+): number => {
+  const raw = process.env[key];
+  if (!raw || raw.trim().length === 0) {
+    return fallback;
+  }
+
+  const value = Number.parseInt(raw, 10);
+  const min = opts.min ?? 1;
+  if (!Number.isInteger(value) || value < min) {
+    console.warn(
+      `[BetterAuth] Invalid ${key}="${raw}", fallback to ${fallback}`,
+    );
+    return fallback;
+  }
+
+  return value;
+};
+
+export function getAuthRateLimitConfig(): { window: number; max: number } {
+  return {
+    window: parsePositiveIntEnv(
+      'BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS',
+      DEFAULT_AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    ),
+    max: parsePositiveIntEnv(
+      'BETTER_AUTH_RATE_LIMIT_MAX',
+      DEFAULT_AUTH_RATE_LIMIT_MAX,
+    ),
+  };
+}
 
 export function isAdminEmail(
   email: string | null | undefined,
@@ -88,6 +126,7 @@ export function createBetterAuth(
   const baseURL = getAuthBaseUrl();
   const trustedOrigins = getTrustedOrigins();
   const jwtOptions = getJwtPluginOptions(baseURL);
+  const authRateLimit = getAuthRateLimitConfig();
 
   return betterAuth({
     database: prismaAdapter(prisma, {
@@ -127,8 +166,8 @@ export function createBetterAuth(
     },
     rateLimit: {
       enabled: true,
-      window: 10,
-      max: 20,
+      window: authRateLimit.window,
+      max: authRateLimit.max,
       storage: secondaryStorage ? 'secondary-storage' : 'memory',
     },
     // 数据库钩子

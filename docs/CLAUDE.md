@@ -8,7 +8,7 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-10（新增：Moryflow PC 左侧 Sidebar 导航方案：Implicit Agent + Modules；新增：Streamdown 使用指南（Markdown 渲染 + 流式 Token 动画））
+> 最近更新：2026-02-24（落地：Anyhunt 统一请求日志模块（明文 IP + 30 天保留））
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +41,7 @@
 
 ## 最近更新
 
+- Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控，30 天保留）：`docs/architecture/anyhunt-request-log-module-plan.md`（2026-02-24：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：增量方案落地（固定推荐 3 项、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效），并回写 P0-12~P0-15 执行计划为完成状态（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：本期方案 1 落地（发送成功后清空 selected skill、用户消息渲染 skill tag），并在执行计划新增 P0-11 进度（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` + `skill` tool），并在文档内同步执行步骤进度（2026-02-11：implemented）
