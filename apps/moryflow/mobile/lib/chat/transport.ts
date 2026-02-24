@@ -6,19 +6,26 @@
  */
 
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import type { Agent, RunItemStreamEvent, RunState, RunToolApprovalItem } from '@openai/agents-core';
+import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
 import { run } from '@openai/agents-core';
-import { createSessionAdapter } from '@anyhunt/agents-runtime';
+import {
+  createSessionAdapter,
+  extractRunRawModelStreamEvent,
+  isRunItemStreamEvent,
+  isRunRawModelStreamEvent,
+  mapRunToolEventToChunk,
+  resolveToolCallIdFromRawItem,
+} from '@anyhunt/agents-runtime';
 import type {
   AgentChatContext,
   AgentAttachmentContext,
   AgentContext,
   AgentAccessMode,
+  RunItemStreamEventLike,
 } from '@anyhunt/agents-runtime';
 import { getAgentRuntime, mobileSessionStore, createLogger } from '@/lib/agent-runtime';
 import { generateUUID } from '@/lib/utils/uuid';
 import { extractTextFromParts } from './utils';
-import { mapRunToolEventToChunk } from './tool-chunks';
 import {
   createApprovalGate,
   registerApprovalRequest,
@@ -62,6 +69,7 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
     }
 
     const session = createSessionAdapter(chatId, mobileSessionStore);
+    const transportOptions = this.options;
 
     // 生成固定的消息 ID，整轮对话使用同一个
     const textMessageId = generateUUID();
@@ -76,16 +84,7 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
         let closed = false;
 
         const resolveToolCallId = (item: RunToolApprovalItem): string => {
-          const raw = item.rawItem as Record<string, unknown> | undefined;
-          const callId =
-            typeof raw?.callId === 'string' && raw.callId.length > 0 ? raw.callId : undefined;
-          const rawId = typeof raw?.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
-          const providerData = raw?.providerData as Record<string, unknown> | undefined;
-          const providerId =
-            typeof providerData?.id === 'string' && providerData.id.length > 0
-              ? providerData.id
-              : undefined;
-          return callId ?? rawId ?? providerId ?? generateUUID();
+          return resolveToolCallIdFromRawItem(item.rawItem, generateUUID);
         };
 
         try {
@@ -109,10 +108,10 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
               : await runtime.runChatTurn({
                   chatId,
                   input,
-                  preferredModelId: this.options.preferredModelId,
-                  context: this.options.context,
-                  attachments: this.options.attachments,
-                  mode: this.options.mode,
+                  preferredModelId: transportOptions.preferredModelId,
+                  context: transportOptions.context,
+                  attachments: transportOptions.attachments,
+                  mode: transportOptions.mode,
                   session,
                   signal: abortSignal,
                 });
@@ -130,31 +129,11 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
               if (abortSignal?.aborted) {
                 break;
               }
-              const eventType = getEventType(event);
-
-              // 检测事件类型（优先使用 type 属性，fallback 到构造函数名）
-              const isToolEvent = isEventType(
-                event,
-                eventType,
-                'run_item_stream_event',
-                'RunItemStreamEvent'
-              );
-              const isModelEvent = isEventType(
-                event,
-                eventType,
-                'raw_model_stream_event',
-                'RunRawModelStreamEvent'
-              );
 
               // 处理工具事件
-              if (isToolEvent) {
-                const itemEvent = event as RunItemStreamEvent;
-                const itemType = getRunItemType(itemEvent.item);
-                if (
-                  itemEvent.name === 'tool_approval_requested' &&
-                  itemType === 'tool_approval_item'
-                ) {
-                  const approvalItem = itemEvent.item as RunToolApprovalItem;
+              if (isRunItemStreamEvent(event)) {
+                if (event.name === 'tool_approval_requested') {
+                  const approvalItem = event.item as RunToolApprovalItem;
                   const toolCallId = resolveToolCallId(approvalItem);
                   const approvalId = registerApprovalRequest(approvalGate, {
                     toolCallId,
@@ -169,9 +148,9 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
                 }
 
                 if (__DEV__) {
-                  logToolEvent(itemEvent, eventType);
+                  logToolEvent(event);
                 }
-                const chunk = mapRunToolEventToChunk(itemEvent, toolNames);
+                const chunk = mapRunToolEventToChunk(event, toolNames, generateUUID);
                 if (__DEV__) {
                   logger.debug('Tool chunk:', chunk ? JSON.stringify(chunk).slice(0, 200) : 'null');
                 }
@@ -182,8 +161,8 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
               }
 
               // 处理 Model 流事件
-              if (isModelEvent) {
-                const extracted = extractModelStreamEvent(event);
+              if (isRunRawModelStreamEvent(event)) {
+                const extracted = extractRunRawModelStreamEvent(event.data);
 
                 // reasoning 增量
                 if (extracted.reasoningDelta) {
@@ -298,69 +277,11 @@ export class MobileChatTransport implements ChatTransport<UIMessage> {
 // ============ 工具函数 ============
 
 /**
- * 获取事件类型（使用 type 属性而不是 instanceof）
- */
-function getEventType(event: unknown): string | undefined {
-  if (!event || typeof event !== 'object') return undefined;
-  return (event as { type?: string }).type;
-}
-
-type RunItemType =
-  | 'tool_call_item'
-  | 'tool_call_output_item'
-  | 'tool_approval_item'
-  | 'message_output_item'
-  | 'reasoning_item'
-  | 'handoff_call_item'
-  | 'handoff_output_item';
-
-function getRunItemType(item: unknown): RunItemType | undefined {
-  if (!item || typeof item !== 'object') return undefined;
-  const typeFromProp = (item as { type?: RunItemType }).type;
-  if (typeFromProp) return typeFromProp;
-  if (__DEV__) {
-    const ctorName = (item as object).constructor?.name;
-    const ctorToType: Record<string, RunItemType> = {
-      RunToolCallItem: 'tool_call_item',
-      RunToolCallOutputItem: 'tool_call_output_item',
-      RunToolApprovalItem: 'tool_approval_item',
-      RunMessageOutputItem: 'message_output_item',
-      RunReasoningItem: 'reasoning_item',
-      RunHandoffCallItem: 'handoff_call_item',
-      RunHandoffOutputItem: 'handoff_output_item',
-    };
-    return ctorToType[ctorName ?? ''];
-  }
-  return undefined;
-}
-
-/**
- * 检测事件类型
- *
- * 优先使用 type 属性，fallback 到构造函数名（仅开发环境有效）
- */
-function isEventType(
-  event: unknown,
-  eventType: string | undefined,
-  expectedType: string,
-  expectedCtorName: string
-): boolean {
-  if (eventType === expectedType) return true;
-  // 构造函数名 fallback（生产环境可能被混淆）
-  if (__DEV__) {
-    const ctorName = (event as object)?.constructor?.name;
-    if (ctorName === expectedCtorName) return true;
-  }
-  return false;
-}
-
-/**
  * 记录工具事件详情（仅开发环境使用）
  */
-function logToolEvent(itemEvent: RunItemStreamEvent, eventType: string | undefined): void {
+function logToolEvent(itemEvent: RunItemStreamEventLike): void {
   const itemObj = itemEvent.item as { type?: string; constructor?: { name?: string } };
   logger.debug('Tool event:', {
-    eventType,
     name: itemEvent.name,
     itemType: itemObj?.type,
     itemCtor: itemObj?.constructor?.name,
@@ -374,61 +295,3 @@ const isAbortError = (error: unknown): boolean => {
   }
   return error instanceof Error && error.name === 'AbortError';
 };
-
-/** 流事件提取结果 */
-interface StreamEventResult {
-  deltaText: string;
-  reasoningDelta: string;
-  isDone: boolean;
-}
-
-const EMPTY_RESULT: StreamEventResult = { deltaText: '', reasoningDelta: '', isDone: false };
-
-/**
- * 从 Agent 流事件中提取文本和 reasoning
- *
- * 事件类型（参考 PC 端 messages.ts）：
- * - { type: 'output_text_delta', delta: '...' } - 文本增量
- * - { type: 'response_done', response: {...} } - 响应完成
- * - { type: 'model', event: {...} } - 底层模型事件
- *   - event.type === 'reasoning-delta' - reasoning 增量
- *   - event.type === 'finish' - 完成事件
- */
-function extractModelStreamEvent(event: unknown): StreamEventResult {
-  if (!event || typeof event !== 'object') return EMPTY_RESULT;
-
-  const record = event as { data?: unknown };
-  const data = record.data;
-  if (!data || typeof data !== 'object') return EMPTY_RESULT;
-
-  const dataRecord = data as Record<string, unknown>;
-  const eventType = dataRecord.type as string | undefined;
-
-  // 文本增量事件（主要来源）
-  if (eventType === 'output_text_delta' && typeof dataRecord.delta === 'string') {
-    return { deltaText: dataRecord.delta, reasoningDelta: '', isDone: false };
-  }
-
-  // 响应完成事件
-  if (eventType === 'response_done') {
-    return { deltaText: '', reasoningDelta: '', isDone: true };
-  }
-
-  // 底层模型事件
-  if (eventType === 'model') {
-    const modelEvent = dataRecord.event as Record<string, unknown> | undefined;
-    if (!modelEvent) return EMPTY_RESULT;
-
-    // reasoning-delta 事件 - 思考过程增量
-    if (modelEvent.type === 'reasoning-delta' && typeof modelEvent.delta === 'string') {
-      return { deltaText: '', reasoningDelta: modelEvent.delta, isDone: false };
-    }
-
-    // finish 事件
-    if (modelEvent.type === 'finish') {
-      return { deltaText: '', reasoningDelta: '', isDone: true };
-    }
-  }
-
-  return EMPTY_RESULT;
-}

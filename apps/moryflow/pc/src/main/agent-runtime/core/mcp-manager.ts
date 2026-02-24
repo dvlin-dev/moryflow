@@ -1,4 +1,11 @@
-import { setTracingDisabled, type MCPServer, type Tool } from '@openai/agents-core';
+import {
+  setTracingDisabled,
+  MCPServerStdio,
+  MCPServerStreamableHttp,
+  type MCPServer,
+  type MCPServers,
+  type Tool,
+} from '@openai/agents-core';
 import type { AgentContext } from '@anyhunt/agents-runtime';
 import {
   type McpServerState,
@@ -8,15 +15,11 @@ import {
   type McpTestResult,
   type McpSettings,
   type McpManager,
-  connectServer,
-  closeServers,
+  closeMcpServers,
+  openMcpServers,
   getToolsFromServers,
   createServersFromSettings,
 } from '@anyhunt/agents-mcp';
-import { MCPServerStdio, MCPServerStreamableHttp } from '@openai/agents-core';
-
-// 从 PC 端 ipc 导入 AgentSettings（包含完整的配置结构）
-import type { AgentSettings } from '../../../shared/ipc.js';
 
 // 永久禁用 SDK 追踪功能
 setTracingDisabled(true);
@@ -34,7 +37,7 @@ type StatusListener = (event: McpStatusEvent) => void;
  * 4. 状态跟踪与广播
  */
 export const createMcpManager = (): McpManager<AgentContext> => {
-  let connectedServers: MCPServer[] = [];
+  let managedServers: MCPServers | null = null;
   let mcpTools: Tool<AgentContext>[] = [];
   let pendingReload: Promise<void> | null = null;
   let reloadCallback: ReloadCallback | null = null;
@@ -73,8 +76,8 @@ export const createMcpManager = (): McpManager<AgentContext> => {
     emitStatusEvent({ type: 'reloading' });
 
     // 1. 关闭现有服务器
-    await closeServers(connectedServers);
-    connectedServers = [];
+    await closeMcpServers(managedServers);
+    managedServers = null;
     mcpTools = [];
     serverStates.clear();
 
@@ -98,52 +101,57 @@ export const createMcpManager = (): McpManager<AgentContext> => {
       return;
     }
 
-    // 3. 并行连接所有服务器
-    const results = await Promise.all(
-      serverConfigs.map(async ({ server, id, type, name }) => {
-        const result = await connectServer(server);
-        if (result.status === 'connected') {
-          updateServerState({
-            id,
-            name,
-            type,
-            status: 'connected',
-            connectedAt: Date.now(),
-          });
-        } else {
-          updateServerState({
-            id,
-            name,
-            type,
-            status: 'failed',
-            error: result.error?.message || '连接失败',
-          });
-        }
-        return { server, result, id };
-      })
-    );
-
-    // 4. 收集成功连接的服务器并获取每个服务器的工具
-    connectedServers = [];
+    // 3. 使用官方 MCPServers 生命周期托管连接与失败状态
+    managedServers = await openMcpServers(serverConfigs.map((config) => config.server));
+    const activeSet = new Set(managedServers.active);
+    const failedSet = new Set(managedServers.failed);
     mcpTools = [];
 
-    for (const { server, result, id } of results) {
-      if (result.status === 'connected') {
-        connectedServers.push(server);
-        // 为每个服务器单独获取工具
+    // 4. 收集成功连接的服务器并获取每个服务器的工具
+    for (const { server, id, name, type } of serverConfigs) {
+      if (activeSet.has(server)) {
+        updateServerState({
+          id,
+          name,
+          type,
+          status: 'connected',
+          connectedAt: Date.now(),
+        });
+
         const serverTools = await getToolsFromServers<AgentContext>([{ server, id }]);
         mcpTools.push(...serverTools);
 
-        // 更新服务器状态，包含工具名称
-        const state = serverStates.get(id);
-        if (state) {
-          updateServerState({
-            ...state,
-            toolCount: serverTools.length,
-            toolNames: serverTools.map((t) => t.name),
-          });
-        }
+        updateServerState({
+          id,
+          name,
+          type,
+          status: 'connected',
+          connectedAt: Date.now(),
+          toolCount: serverTools.length,
+          toolNames: serverTools.map((tool) => tool.name),
+        });
+        continue;
       }
+
+      if (failedSet.has(server)) {
+        const error = managedServers.errors.get(server);
+        updateServerState({
+          id,
+          name,
+          type,
+          status: 'failed',
+          error: error?.message ?? '连接失败',
+        });
+        continue;
+      }
+
+      updateServerState({
+        id,
+        name,
+        type,
+        status: 'failed',
+        error: '连接状态未知',
+      });
     }
 
     isReloading = false;
@@ -152,10 +160,12 @@ export const createMcpManager = (): McpManager<AgentContext> => {
   };
 
   const scheduleReload = (settings: McpSettings) => {
-    const reloadPromise = doReload(settings).catch((error) => {
+    const reloadPromise = doReload(settings).catch(async (error) => {
       console.error('[mcp-manager] 重载失败', error);
-      connectedServers = [];
+      await closeMcpServers(managedServers);
+      managedServers = null;
       mcpTools = [];
+      serverStates.clear();
       isReloading = false;
       emitStatusEvent({ type: 'reload-complete', snapshot: getStatus() });
       notifyReload();
@@ -210,6 +220,7 @@ export const createMcpManager = (): McpManager<AgentContext> => {
     console.log('[mcp-manager] testServer 输入配置:', JSON.stringify(safeInput, null, 2));
 
     let server: MCPServer | null = null;
+    let testServers: MCPServers | null = null;
 
     try {
       if (input.type === 'stdio') {
@@ -244,18 +255,30 @@ export const createMcpManager = (): McpManager<AgentContext> => {
         });
       }
 
-      // 连接服务器（带超时）
+      // 使用官方 MCPServers 建立连接与错误收敛
       console.log('[mcp-manager] 开始连接服务器...');
-      const timeoutMs = 15_000;
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('连接超时')), timeoutMs)
-      );
-      await Promise.race([server.connect(), timeoutPromise]);
+      testServers = await openMcpServers([server], {
+        connectTimeoutMs: 15_000,
+        closeTimeoutMs: 15_000,
+        strict: false,
+        dropFailed: false,
+        connectInParallel: false,
+      });
+      const connectedServer = testServers.active[0];
+      if (!connectedServer) {
+        const error =
+          testServers.errors.get(server)?.message ??
+          (testServers.failed.length > 0 ? '连接失败' : '连接状态未知');
+        return {
+          success: false,
+          error,
+        };
+      }
       console.log('[mcp-manager] 服务器连接成功');
 
-      // 获取工具列表（直接使用 listTools 避免追踪问题）
+      // 获取工具列表（直接使用 listTools）
       console.log('[mcp-manager] 获取工具列表...');
-      const tools = await server.listTools();
+      const tools = await connectedServer.listTools();
       console.log('[mcp-manager] 获取到', tools.length, '个工具');
 
       return {
@@ -271,7 +294,14 @@ export const createMcpManager = (): McpManager<AgentContext> => {
         error: errorMessage,
       };
     } finally {
-      if (server) {
+      if (testServers) {
+        try {
+          await closeMcpServers(testServers);
+          console.log('[mcp-manager] 服务器已关闭');
+        } catch {
+          // 忽略关闭错误
+        }
+      } else if (server) {
         try {
           await server.close();
           console.log('[mcp-manager] 服务器已关闭');

@@ -475,15 +475,16 @@ describe('AgentService', () => {
       createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
 
-    const events = [];
-    for await (const event of service.executeTaskStream(
-      { prompt: 'test', stream: true, output: { type: 'text' } },
-      'user_1',
-    )) {
-      events.push(event);
-    }
+    const consume = async () => {
+      for await (const _event of service.executeTaskStream(
+        { prompt: 'test', stream: true, output: { type: 'text' } },
+        'user_1',
+      )) {
+        // no-op
+      }
+    };
 
-    expect(events.some((event) => event.type === 'failed')).toBe(true);
+    await expect(consume()).rejects.toThrow(/Model is not available/);
     expect(mockProgressStore.setProgress).toHaveBeenCalled();
     expect(mockProgressStore.clearProgress).toHaveBeenCalled();
   });

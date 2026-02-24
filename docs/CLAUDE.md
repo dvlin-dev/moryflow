@@ -8,7 +8,15 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-10（新增：Moryflow PC 左侧 Sidebar 导航方案：Implicit Agent + Modules；新增：Streamdown 使用指南（Markdown 渲染 + 流式 Token 动画））
+> 最近更新：2026-02-24（OpenAI Agents JS 根因修复补充：Gemini function schema 兼容层（`enum` 缺失 `type` 递归补齐）+ PC ABI 双态修复（pretest Node ABI / posttest Electron ABI）；P0-24 全量 L2 闸门通过）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级 lint 兼容修复：`agent.controller` 区分 Express/Web `Response` 类型，清除 `unbound-method` 与剩余 `no-unsafe-*`）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级 Runtime 修复：为 `@openai/agents-core run()` 统一绑定默认 `ModelProvider`，修复 PC/Mobile `No default model provider set`）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级补充 TS 修复：Console `AgentChatTransport.headers` 固定返回 `Headers`；Mobile `ReadableStream.start` 通过外提 `transportOptions` 消除 `this` 上下文误判）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级构建链路兼容修复：`LlmRoutingService` `aisdk` 回退顶层导出 + `agent.controller` 显式 helper 类型，修复 lint `no-unsafe-*`）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级环境修复：`pnpm install` 恢复 + review 修复扩展到 P0-12，补齐 Console transport Headers 断言）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级 review 修复完成：P0-8~P0-10，覆盖 mock 路径、UIMessage reasoning 字段、MCP 重载失败状态清理）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级进入实施：P0-1~P0-6 已落地并同步进度，P0-7 因 node_modules 缺失待补跑）
+> 最近更新：2026-02-24（OpenAI Agents JS 升级评估第三次复核：按“官方协议唯一实现 + 无历史兼容”重写，补齐 Anyhunt/PC/Mobile/MCP 的重构边界、必删清单与 DoD）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -41,6 +49,7 @@
 
 ## 最近更新
 
+- OpenAI Agents JS 升级评估与重构建议（`0.4.3 -> 0.5.1`）：`docs/research/openai-agents-js-upgrade-impact-2026-02.md`（2026-02-24：实施进度已回写至 P0-24；新增 Gemini function schema 兼容层、PC ABI 双态修复；`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过）
 - Agent Skills（面向 C 端的“技能库”）接入方案：增量方案落地（固定推荐 3 项、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效），并回写 P0-12~P0-15 执行计划为完成状态（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：本期方案 1 落地（发送成功后清空 selected skill、用户消息渲染 skill tag），并在执行计划新增 P0-11 进度（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` + `skill` tool），并在文档内同步执行步骤进度（2026-02-11：implemented）

@@ -84,6 +84,7 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- `test:unit` 脚本改为 ABI 双态：`pretest:unit` 先执行 `pnpm rebuild better-sqlite3` 切换 Node ABI，`posttest:unit` 再执行 `electron-rebuild -f -w better-sqlite3,keytar` 恢复 Electron ABI，避免单测与桌面运行互相污染（2026-02-24）
 - `electron.vite` 主进程构建新增 `copy-builtin-skills`：将 `src/main/skills/builtin` 复制到 `dist/main/builtin`，确保打包后预设 skills 可被主进程文件扫描链路读取。
 - 启动性能：移除 `preload:*` IPC/预加载落盘缓存，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki）；AgentSettings 读取收敛单飞资源，修复设置弹窗偶发一直 Loading
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），使进入主界面（Agent）不再被 onboarding 阻塞
@@ -93,7 +94,6 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 - Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk
 - Chat IPC 移除 `chat:sessions:syncMessages`，避免 Renderer 覆盖会话持久化
 - 消息列表自动滚动回归经典 chat（Viewport Following）：发送一次 smooth 到底部；流式输出 instant 追随；上滑暂停
-- 单测前强制重建 better-sqlite3，避免 CI Node ABI 不匹配导致 TasksStore 测试失败
 - PC 端图标回退到 Lucide，移除 Hugeicons 依赖并更新组件调用方式
 - Providers 设置页补齐 Base URL 默认值与覆盖测试
 - useWorkspaceFiles 增加请求过期保护并补充测试，避免工作区切换时展示错误文件

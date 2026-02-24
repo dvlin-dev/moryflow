@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Agent Browser Playground 聊天 transport 改为官方 `DefaultChatTransport`，删除自定义 SSE parser 与 `eventsource-parser` 依赖
 - Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 注入）
 - Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
 - Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
@@ -117,7 +118,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Agent Browser Agent 页面消息列表与输入框切换为 `@anyhunt/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
 - Agent Browser Agent 输入提交失败时保留文本并交由上层提示
 - Fetchx Playground 路由调整为 `/fetchx/*` 结构
-- Console 构建统一使用 eventsource-parser v3 API，避免 SSE 解析类型不一致
+- Console Agent Browser 聊天流切换为官方 transport 协议栈（`ai`），不再维护本地 SSE 解析器
 - Memox/Graph 表单使用 zod input/output 区分，修复 RHF resolver 类型冲突
 - Graph 可视化回调统一为 NodeObject 入参，避免强类型不匹配
 - Memox threshold 数字输入显式归一，避免 unknown value 类型报错
