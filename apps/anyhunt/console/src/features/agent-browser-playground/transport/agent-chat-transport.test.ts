@@ -1,7 +1,7 @@
 /**
- * [INPUT]: Agent SSE events
- * [OUTPUT]: UIMessageChunk stream
- * [POS]: AgentChatTransport 单元测试
+ * [INPUT]: UIMessage + 标准 UIMessage stream SSE 响应
+ * [OUTPUT]: 请求体构造与 stream 解析结果
+ * [POS]: AgentChatTransport 单元测试（官方协议）
  */
 
 import { ReadableStream as NodeReadableStream } from 'stream/web';
@@ -24,11 +24,13 @@ const buildSseStream = (events: unknown[]) => {
 };
 
 describe('AgentChatTransport', () => {
-  it('maps AgentStreamEvent payloads into UIMessageChunk stream', async () => {
+  it('sends official request body and parses official UIMessage stream chunks', async () => {
     const stream = buildSseStream([
-      { type: 'started', id: 'task-1' },
-      { type: 'textDelta', delta: 'Hello' },
-      { type: 'complete' },
+      { type: 'start', messageId: 'msg_1' },
+      { type: 'text-start', id: 'text_1' },
+      { type: 'text-delta', id: 'text_1', delta: 'Hello' },
+      { type: 'text-end', id: 'text_1' },
+      { type: 'finish', finishReason: 'stop' },
     ]);
 
     const fetchMock = vi.fn().mockResolvedValue(
@@ -40,7 +42,9 @@ describe('AgentChatTransport', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      const optionsRef = { current: { apiKey: 'key-1', output: { type: 'text' } } };
+      const optionsRef = {
+        current: { apiKey: 'key-1', output: { type: 'text' }, modelId: 'gpt-4o' },
+      };
       const transport = new AgentChatTransport(optionsRef);
 
       const messages: UIMessage[] = [
@@ -59,8 +63,16 @@ describe('AgentChatTransport', () => {
       });
 
       const [, requestInit] = fetchMock.mock.calls[0] ?? [];
-      const headers = (requestInit?.headers ?? {}) as Record<string, string>;
-      expect(headers.Authorization).toBe('Bearer key-1');
+      const headers = new Headers(requestInit?.headers as HeadersInit | undefined);
+      expect(headers.get('authorization')).toBe('Bearer key-1');
+
+      const body = JSON.parse(String(requestInit?.body)) as Record<string, unknown>;
+      expect(body).toMatchObject({
+        model: 'gpt-4o',
+        output: { type: 'text' },
+        stream: true,
+      });
+      expect(body.messages).toEqual([{ role: 'user', content: 'Hello' }]);
 
       const reader = resultStream.getReader();
       const chunks: UIMessageChunk[] = [];
@@ -70,11 +82,43 @@ describe('AgentChatTransport', () => {
         chunks.push(value);
       }
 
-      expect(chunks[0]).toEqual({ type: 'start', messageId: 'task-1' });
-      expect(chunks[1]).toEqual({ type: 'text-start', id: 'task-1-text' });
-      expect(chunks[2]).toEqual({ type: 'text-delta', id: 'task-1-text', delta: 'Hello' });
-      expect(chunks[3]).toEqual({ type: 'text-end', id: 'task-1-text' });
-      expect(chunks[4]).toEqual({ type: 'finish', finishReason: 'stop' });
+      expect(chunks).toEqual([
+        { type: 'start', messageId: 'msg_1' },
+        { type: 'text-start', id: 'text_1' },
+        { type: 'text-delta', id: 'text_1', delta: 'Hello' },
+        { type: 'text-end', id: 'text_1' },
+        { type: 'finish', finishReason: 'stop' },
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('throws when prompt is empty', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const optionsRef = { current: { apiKey: 'key-1', output: { type: 'text' } } };
+      const transport = new AgentChatTransport(optionsRef);
+
+      const messages: UIMessage[] = [
+        {
+          id: 'u1',
+          role: 'user',
+          parts: [{ type: 'reasoning', text: 'no text' }],
+        },
+      ];
+
+      await expect(
+        transport.sendMessages({
+          chatId: 'chat-1',
+          messages,
+          trigger: 'submit-message',
+          abortSignal: undefined,
+        })
+      ).rejects.toThrow('Prompt is empty');
+      expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllGlobals();
     }

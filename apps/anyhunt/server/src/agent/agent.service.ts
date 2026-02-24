@@ -2,7 +2,7 @@
  * Agent Service
  *
  * [INPUT]: Agent 任务请求（可选 model；未传使用 Admin 默认）+ Browser ports
- * [OUTPUT]: 任务结果、SSE 事件流（含进度/计费）
+ * [OUTPUT]: 任务结果、RunStreamEvent 流（含进度/计费）
  * [POS]: L3 Agent 核心业务逻辑，整合 @openai/agents-core、Browser ports 与任务管理；LLM provider/model 由 Admin 动态配置决定（输出上限遵循模型 maxOutputTokens）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -18,6 +18,7 @@ import {
   type AgentOutputType,
   type JsonSchemaDefinition,
   type StreamedRunResult,
+  type RunStreamEvent,
 } from '@openai/agents-core';
 import type { AgentTask } from '../../generated/prisma-main/client';
 import {
@@ -41,7 +42,6 @@ import type {
   AgentChatMessage,
   AgentOutput,
   AgentTaskResult,
-  AgentStreamEvent,
   AgentTaskProgress,
 } from './dto';
 
@@ -72,7 +72,6 @@ interface RunningTask {
   sessionId?: string;
 }
 
-const PROGRESS_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_AGENT_TURNS = 100;
 
 type BrowserAgent = Agent<BrowserAgentContext, AgentOutputType>;
@@ -430,10 +429,15 @@ export class AgentService {
   async *executeTaskStream(
     input: CreateAgentTaskInput,
     userId: string,
-  ): AsyncGenerator<AgentStreamEvent, void, unknown> {
+    streamAbortSignal?: AbortSignal,
+  ): AsyncGenerator<RunStreamEvent, void, unknown> {
     const taskId = this.generateTaskId();
     const now = new Date();
     const abortController = new AbortController();
+    const detachAbortSignal = this.attachAbortSignal(
+      streamAbortSignal,
+      abortController,
+    );
     this.runningTasks.set(taskId, { abortController });
 
     try {
@@ -444,6 +448,7 @@ export class AgentService {
         status: 'PENDING',
       });
     } catch (error) {
+      detachAbortSignal();
       this.runningTasks.delete(taskId);
       throw error;
     }
@@ -462,12 +467,6 @@ export class AgentService {
     );
     const browserPort = this.browserAgentPort.forUser(userId);
     let sessionPromise: Promise<BrowserAgentSession> | null = null;
-
-    yield {
-      type: 'started',
-      id: taskId,
-      expiresAt: new Date(now.getTime() + PROGRESS_TTL_MS).toISOString(),
-    };
 
     let llmModel: Model;
     let llmModelProvider: ModelProvider;
@@ -493,6 +492,7 @@ export class AgentService {
           completedAt: new Date(),
         });
       } finally {
+        detachAbortSignal();
         await this.safeProgressOperation(
           () => this.progressStore.clearCancel(taskId),
           'clear cancel',
@@ -504,13 +504,7 @@ export class AgentService {
         this.runningTasks.delete(taskId);
       }
 
-      yield {
-        type: 'failed',
-        error: llmConfigError,
-        creditsUsed: 0,
-        progress,
-      };
-      return;
+      throw new Error(llmConfigError);
     }
 
     try {
@@ -554,8 +548,6 @@ export class AgentService {
       }
 
       const runInput = this.buildRunInput(input);
-
-      yield { type: 'textDelta', delta: '正在分析任务需求...\n' };
 
       const runner = this.buildRunner(llmModelProvider);
       const streamResult: AgentStreamedResult = await runner.run(
@@ -619,12 +611,6 @@ export class AgentService {
         () => this.progressStore.clearProgress(taskId),
         'clear progress',
       );
-
-      yield {
-        type: 'complete',
-        data: finalOutput,
-        creditsUsed,
-      };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -665,12 +651,6 @@ export class AgentService {
           () => this.progressStore.clearCancel(taskId),
           'clear cancel',
         );
-        yield {
-          type: 'failed',
-          error: 'Task cancelled by user',
-          creditsUsed,
-          progress,
-        };
         return;
       }
 
@@ -706,14 +686,9 @@ export class AgentService {
         () => this.progressStore.clearProgress(taskId),
         'clear progress',
       );
-
-      yield {
-        type: 'failed',
-        error: errorMessage,
-        creditsUsed,
-        progress,
-      };
+      throw error instanceof Error ? error : new Error(errorMessage);
     } finally {
+      detachAbortSignal();
       const runtime = this.runningTasks.get(taskId);
       if (runtime?.sessionId) {
         try {
@@ -903,6 +878,28 @@ export class AgentService {
     if (task?.status === 'CANCELLED') {
       throw new TaskCancelledError();
     }
+  }
+
+  private attachAbortSignal(
+    source: AbortSignal | undefined,
+    target: AbortController,
+  ): () => void {
+    if (!source) {
+      return () => {};
+    }
+
+    if (source.aborted) {
+      target.abort(new TaskCancelledError());
+      return () => {};
+    }
+
+    const handleAbort = () => {
+      target.abort(new TaskCancelledError());
+    };
+    source.addEventListener('abort', handleAbort, { once: true });
+    return () => {
+      source.removeEventListener('abort', handleAbort);
+    };
   }
 
   async getTaskStatus(

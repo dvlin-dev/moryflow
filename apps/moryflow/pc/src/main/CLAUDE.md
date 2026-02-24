@@ -97,6 +97,9 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 ## 近期变更
 
+- Agent Runtime 初始化后统一绑定默认 `ModelProvider`（基于 `ModelFactory`），修复 `@openai/agents-core run()` 的 `No default model provider set`
+- MCP Manager 生命周期改为官方 `MCPServers/connectMcpServers` 托管，移除自研连接重试/超时编排
+- Chat 流事件映射改为复用 `@anyhunt/agents-runtime` 的 `ui-stream` 共享模块，删除本地重复映射逻辑
 - Skills 预设路径补齐 dev/build/package 多候选根（含 `resources/app.asar/dist/main/builtin`），并在预安装失败时降级为 warning，避免阻断 Agent 聊天链路。
 - Skills 解析链路修正 symlink 防护顺序（先 `lstat(skillDir)` 再 `realpath`），防止失效的“已解析后再判 symlink”伪防护。
 - `skill` tool/XML 注入转义补齐 `\"`/`'`，避免属性值场景下标签结构被破坏。

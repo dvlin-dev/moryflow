@@ -6,6 +6,7 @@
 
 - 运行时核心：`createAgentFactory`、`createModelFactory`
 - 会话适配：`createSessionAdapter`
+- 流式协议适配：`src/ui-stream.ts`（`RunStreamEvent -> UIMessageChunk`）
 - Vault 工具：路径解析、读文件与 SHA256
 - Prompt/上下文拼装、自动续写与标题生成
 
@@ -14,6 +15,7 @@
 - `src/index.ts`：对外导出入口
 - `src/agent-factory.ts`：Agent 实例管理与缓存
 - `src/model-factory.ts`：多服务商模型构建与 reasoning 配置
+- `src/ui-stream.ts`：跨平台流事件识别与映射（tool/model/approval）
 - `src/vault-utils.ts`：Vault 路径与文件访问边界
 
 ## 约束与约定
@@ -30,6 +32,10 @@
 
 ## 近期变更
 
+- 新增 `tool-schema-compat` 共享模块：递归补齐 function tool JSON schema 中 `enum` 节点缺失的 `type`，并在 `agent-factory` 统一接入，修复 Gemini 严格校验下的 400（2026-02-24）
+- `parseRuntimeConfig` 新增空白内容短路（返回空配置且无错误），修复首次启动 `config.jsonc` 缺失时的 `ValueExpected` 噪音告警（2026-02-24）
+- 新增 `default-model-provider` 共享模块：将运行时 `ModelFactory` 绑定为 `@openai/agents-core` 默认 `ModelProvider`，修复 `run()` 构造默认 Runner 时的 `No default model provider set`
+- 新增 `ui-stream` 共享模块：统一 PC/Mobile 的 tool/model 流事件提取与 `UIMessageChunk` 映射，并补充单元测试
 - Hook 工具合并单测改用宽松参数 schema，避免注入字段被 Zod 默认剥离
 - 新增运行时 JSONC 配置解析（runtime-config）、Agent Markdown 解析与 Hook 包装器（chat/system/params + tool before/after）
 - 新增会话模式切换审计事件类型（ModeSwitchAuditEvent），会话 mode 改为必填
@@ -52,4 +58,4 @@
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-01-26_
+_版本: 1.0 | 更新日期: 2026-02-24_

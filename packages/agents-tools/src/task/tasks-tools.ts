@@ -304,14 +304,17 @@ export const createTasksTools = (store: TasksStore): Tool<AgentContext>[] => {
     parameters: z.object({
       summary: toolSummarySchema.default('tasks_delete'),
       taskId: z.string().min(1),
-      confirm: z.literal(true),
+      confirm: z.boolean(),
     }),
     async execute({ taskId, confirm }, runContext?: RunContext<AgentContext>) {
       const context = requireContext(runContext);
       if ('error' in context) return context;
+      if (confirm !== true) {
+        return { error: 'confirm_required' };
+      }
       try {
         await store.init({ vaultRoot: context.vaultRoot });
-        await store.deleteTask(context.chatId, taskId, { confirm });
+        await store.deleteTask(context.chatId, taskId, { confirm: true });
         return { success: true };
       } catch (error) {
         return mapError(error);

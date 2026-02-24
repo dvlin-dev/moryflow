@@ -32,7 +32,7 @@
   "dependencies": {
     "@anyhunt/agents-adapter": "workspace:*",
     "@anyhunt/agents-runtime": "workspace:*",
-    "@openai/agents-core": "0.4.3",
+    "@openai/agents-core": "0.5.1",
     "diff": "^7.0.0",
     "fast-glob": "^3.3.3",
     "zod": "4.3.6"

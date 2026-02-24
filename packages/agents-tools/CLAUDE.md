@@ -38,6 +38,8 @@
 
 ## 近期变更
 
+- `task` 子代理创建前统一调用 `normalizeToolSchemasForInterop`，保证跨模型（尤其 Gemini）函数 schema 兼容（2026-02-24）
+- `tasks_delete` 参数 schema 从 `z.literal(true)` 调整为 `z.boolean()`，执行期强制 `confirm===true`；规避 Google function declaration 布尔 enum 兼容问题（2026-02-24）
 - 新增 browser 入口导出，renderer 使用包根导入也不会打包 fast-glob（2026-01-27）
 - write 工具参数 schema 去除 transform，避免 JSON Schema 转换报错（2026-01-27）
 - bash 工具移除本地输出截断，统一交由 runtime 后处理
@@ -51,4 +53,4 @@
 
 ---
 
-_版本: 1.0 | 更新日期: 2026-01-25_
+_版本: 1.0 | 更新日期: 2026-02-24_

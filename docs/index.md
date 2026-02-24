@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-11
+date: 2026-02-24
 scope: monorepo
 status: active
 ---
@@ -123,6 +123,7 @@ status: active
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-26）
 - 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）
 - 调研：AI SDK 版本统一（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（更新：2026-01-26）
+- 调研：OpenAI Agents JS 升级评估与重构建议（`0.4.3 -> 0.5.1`）：`docs/research/openai-agents-js-upgrade-impact-2026-02.md`（更新：2026-02-24，P0-1~P0-24 已回写；新增 Gemini function schema 兼容层（`enum` 缺失 `type` 递归补齐）、PC ABI 双态修复（pretest Node ABI / posttest Electron ABI）；`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过）
 
 ## Skills（内部协作 / Prompt 规范）
 

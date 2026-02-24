@@ -11,6 +11,8 @@ export * from './types';
 
 // 核心模块
 export { createAgentFactory, type AgentFactory } from './agent-factory';
+export { bindDefaultModelProvider } from './default-model-provider';
+export { normalizeFunctionToolSchema, normalizeToolSchemasForInterop } from './tool-schema-compat';
 export {
   createModelFactory,
   type ModelFactory,
@@ -104,6 +106,17 @@ export {
 export { type ModeSwitchAuditEvent } from './mode-audit';
 
 export { parseJsonc, updateJsoncValue, type JsoncParseResult } from './jsonc';
+export {
+  isRunItemStreamEvent,
+  isRunRawModelStreamEvent,
+  resolveToolCallIdFromRawItem,
+  mapRunToolEventToChunk,
+  extractRunRawModelStreamEvent,
+  type RunItemStreamEventLike,
+  type RunRawModelStreamEventLike,
+  type UiStreamUsage,
+  type ExtractedRunModelStreamEvent,
+} from './ui-stream';
 
 // Runtime Config / Hooks / Agent Markdown
 export {

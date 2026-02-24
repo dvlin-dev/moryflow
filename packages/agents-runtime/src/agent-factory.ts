@@ -2,6 +2,7 @@ import { Agent, type ModelSettings, type Tool } from '@openai/agents-core';
 
 import type { ModelFactory } from './model-factory';
 import { getMorySystemPrompt } from './prompt';
+import { normalizeToolSchemasForInterop } from './tool-schema-compat';
 import type { AgentContext } from './types';
 
 export interface AgentFactoryOptions {
@@ -34,11 +35,12 @@ export const createAgentFactory = ({
     const { baseModel } = getModelFactory().buildModel(modelId);
     const instructions = getInstructions?.() ?? getMorySystemPrompt();
     const modelSettings = getModelSettings?.();
+    const runtimeTools = normalizeToolSchemasForInterop([...baseTools, ...getMcpTools()]);
     const config = {
       name: 'Mory',
       instructions,
       model: baseModel,
-      tools: [...baseTools, ...getMcpTools()],
+      tools: runtimeTools,
       ...(modelSettings ? { modelSettings } : {}),
     };
     return new Agent(config);

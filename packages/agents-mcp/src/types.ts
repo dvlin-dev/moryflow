@@ -125,14 +125,6 @@ export interface McpTestResult {
 }
 
 /**
- * 服务器连接结果
- */
-export interface ServerConnectionResult {
-  status: 'connected' | 'failed';
-  error?: Error;
-}
-
-/**
  * MCP Manager 接口
  * PC 和 Mobile 各自实现
  */
