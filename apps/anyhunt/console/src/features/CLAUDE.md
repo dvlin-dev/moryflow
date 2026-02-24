@@ -60,6 +60,9 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：`AgentChatTransport.headers` 固定返回 `Headers`，修复 `Authorization?: undefined` 导致的 `TS2322`
+- Agent Browser Playground：聊天 transport 切换为官方 `DefaultChatTransport`，移除手写 SSE parser 与 `eventsource-parser` 依赖
+- Agent Browser Playground：Diagnostics 新增 Detection Risk 只读区块，接入 `/api/v1/browser/session/:id/risk`，展示 24h 成功率、Top 原因与建议动作
 - Agent Browser Playground：Streamdown 升级至 v2.2，流式输出启用逐词动画（仅最后一条 assistant 文本段）
 - Agent Browser Playground：新增全局检索标记 `STREAMDOWN_ANIM`，便于定位动画链路与作用点
 - Agent Browser Playground：MessageRow parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移

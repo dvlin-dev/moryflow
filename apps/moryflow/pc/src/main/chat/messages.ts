@@ -12,15 +12,17 @@
 import { randomUUID } from 'node:crypto';
 import type { FinishReason, UIMessage, UIMessageStreamWriter, FileUIPart } from 'ai';
 import { isFileUIPart, isTextUIPart } from 'ai';
+import type { RunToolApprovalItem } from '@openai/agents-core';
 import {
-  RunItemStreamEvent,
-  RunRawModelStreamEvent,
-  RunToolApprovalItem,
-} from '@openai/agents-core';
+  extractRunRawModelStreamEvent,
+  isRunItemStreamEvent,
+  isRunRawModelStreamEvent,
+  mapRunToolEventToChunk,
+  resolveToolCallIdFromRawItem,
+} from '@anyhunt/agents-runtime';
 
 import type { TokenUsage } from '../../shared/ipc.js';
 import type { AgentStreamResult } from '../agent-runtime/index.js';
-import { mapRunToolEventToChunk } from './tool-calls.js';
 
 export const findLatestUserMessage = (messages: UIMessage[]): UIMessage | null => {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -169,16 +171,7 @@ export const streamAgentRun = async ({
   };
 
   const resolveToolCallId = (item: RunToolApprovalItem): string => {
-    const raw = item.rawItem as Record<string, unknown> | undefined;
-    const callId =
-      typeof raw?.callId === 'string' && raw.callId.length > 0 ? raw.callId : undefined;
-    const rawId = typeof raw?.id === 'string' && raw.id.length > 0 ? raw.id : undefined;
-    const providerData = raw?.providerData as Record<string, unknown> | undefined;
-    const providerId =
-      typeof providerData?.id === 'string' && providerData.id.length > 0
-        ? providerData.id
-        : undefined;
-    return callId ?? rawId ?? providerId ?? randomUUID();
+    return resolveToolCallIdFromRawItem(item.rawItem, randomUUID);
   };
 
   try {
@@ -188,14 +181,15 @@ export const streamAgentRun = async ({
       if (isAborted()) break;
 
       // 处理工具调用事件
-      if (event instanceof RunItemStreamEvent) {
-        if (event.name === 'tool_approval_requested' && event.item instanceof RunToolApprovalItem) {
-          const approval = onToolApprovalRequest?.(event.item);
+      if (isRunItemStreamEvent(event)) {
+        if (event.name === 'tool_approval_requested') {
+          const approvalItem = event.item as RunToolApprovalItem;
+          const approval = onToolApprovalRequest?.(approvalItem);
           if (!approval) {
             continue;
           }
           ensureMessageStarted();
-          const toolCallId = approval.toolCallId ?? resolveToolCallId(event.item);
+          const toolCallId = approval.toolCallId ?? resolveToolCallId(approvalItem);
           const approvalId = approval.approvalId ?? randomUUID();
           try {
             writer.write({
@@ -208,7 +202,7 @@ export const streamAgentRun = async ({
           }
           continue;
         }
-        const chunk = mapRunToolEventToChunk(event, toolNames);
+        const chunk = mapRunToolEventToChunk(event, toolNames, randomUUID);
         if (chunk) {
           ensureMessageStarted();
           try {
@@ -221,8 +215,8 @@ export const streamAgentRun = async ({
       }
 
       // 处理模型流事件
-      if (event instanceof RunRawModelStreamEvent) {
-        const extracted = extractStreamEvent(event.data);
+      if (isRunRawModelStreamEvent(event)) {
+        const extracted = extractRunRawModelStreamEvent(event.data);
         if (extracted.reasoningDelta) {
           emitReasoningDelta(extracted.reasoningDelta);
         }
@@ -279,75 +273,6 @@ export const streamAgentRun = async ({
   // 返回结果（仅当有 token 使用时才包含 usage）
   const hasUsage = totalUsage.totalTokens > 0;
   return { finishReason, usage: hasUsage ? totalUsage : undefined };
-};
-
-/** 流事件提取结果 */
-type StreamEventResult = {
-  deltaText: string;
-  reasoningDelta: string;
-  isDone: boolean;
-  finishReason?: FinishReason;
-  usage?: TokenUsage;
-};
-
-const EMPTY_RESULT: StreamEventResult = { deltaText: '', reasoningDelta: '', isDone: false };
-
-/**
- * 从 /agents-extensions aisdk 流事件中提取文本和 reasoning
- *
- * aisdk 会 yield 以下事件类型：
- * - { type: 'output_text_delta', delta: '...' } - 文本增量
- * - { type: 'response_done', response: {...} } - 响应完成
- * - { type: 'model', event: {...} } - 底层模型原始事件
- *   - event.type === 'reasoning-delta' - reasoning 增量
- *   - event.type === 'finish' - 完成事件
- */
-const extractStreamEvent = (data: unknown): StreamEventResult => {
-  if (!data || typeof data !== 'object') return EMPTY_RESULT;
-
-  const record = data as Record<string, unknown>;
-  const eventType = record.type as string | undefined;
-
-  // 文本增量事件（主要来源）
-  if (eventType === 'output_text_delta' && typeof record.delta === 'string') {
-    return { deltaText: record.delta, reasoningDelta: '', isDone: false };
-  }
-
-  // 响应完成事件（包含 usage 信息）
-  if (eventType === 'response_done') {
-    const response = record.response as Record<string, unknown> | undefined;
-    const rawUsage = response?.usage as Record<string, number> | undefined;
-    const usage: TokenUsage | undefined = rawUsage
-      ? {
-          // 兼容驼峰和下划线两种命名
-          promptTokens:
-            rawUsage.inputTokens ?? rawUsage.input_tokens ?? rawUsage.prompt_tokens ?? 0,
-          completionTokens:
-            rawUsage.outputTokens ?? rawUsage.output_tokens ?? rawUsage.completion_tokens ?? 0,
-          totalTokens: rawUsage.totalTokens ?? rawUsage.total_tokens ?? 0,
-        }
-      : undefined;
-    return { deltaText: '', reasoningDelta: '', isDone: true, finishReason: 'stop', usage };
-  }
-
-  // 底层模型事件
-  if (eventType === 'model') {
-    const event = record.event as Record<string, unknown> | undefined;
-    if (!event) return EMPTY_RESULT;
-
-    // reasoning-delta 事件 - 思考过程增量
-    if (event.type === 'reasoning-delta' && typeof event.delta === 'string') {
-      return { deltaText: '', reasoningDelta: event.delta, isDone: false };
-    }
-
-    // finish 事件
-    if (event.type === 'finish') {
-      const reason = (event.finishReason as FinishReason | undefined) || 'stop';
-      return { deltaText: '', reasoningDelta: '', isDone: true, finishReason: reason };
-    }
-  }
-
-  return EMPTY_RESULT;
 };
 
 const isAbortError = (error: unknown): boolean => {

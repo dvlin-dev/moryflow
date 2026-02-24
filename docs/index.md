@@ -70,6 +70,7 @@ status: active
   - Admin：手动充值 Credits（已落地）：`docs/products/anyhunt-dev/features/admin-credits-and-entitlements.md`
   - Agent Browser 架构：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`
   - Agent 与 Browser 交互规范：`docs/products/anyhunt-dev/features/agent-browser/agent-interaction.md`
+  - Agent Browser 合规自动化与检测风险治理方案（已落地 Step 0~7）：`docs/products/anyhunt-dev/features/agent-browser/compliance-automation-and-detection-risk-plan.md`
   - 免费用户每日赠送 100 Credits（方案）：`docs/products/anyhunt-dev/features/daily-free-credits.md`
   - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
   - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
@@ -123,6 +124,7 @@ status: active
 - 梳理：apps/anyhunt 大模型调用逻辑（Agent / LLM / Embedding）：`docs/research/apps-anyhunt-llm-call-map.md`（更新：2026-01-26）
 - 调研：OpenAI Agents SDK RN 兼容性（仅 Core 兼容）：`docs/research/openai-agents-react-native-compatibility.md`（更新：2026-01-26，补充 alias 与 shim 实装）
 - 调研：AI SDK 版本统一（现状 + 最新版本 + 兼容性）：`docs/research/ai-sdk-version-audit.md`（更新：2026-01-26）
+- 调研：OpenAI Agents JS 升级评估与重构建议（`0.4.3 -> 0.5.1`）：`docs/research/openai-agents-js-upgrade-impact-2026-02.md`（更新：2026-02-24，P0-1~P0-24 已回写；新增 Gemini function schema 兼容层（`enum` 缺失 `type` 递归补齐）、PC ABI 双态修复（pretest Node ABI / posttest Electron ABI）；`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过）
 
 ## Skills（内部协作 / Prompt 规范）
 

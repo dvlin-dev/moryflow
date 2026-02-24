@@ -71,7 +71,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.1.0",
     "@xyflow/react": "^12.9.3",
-    "ai": "6.0.49",
+    "ai": "6.0.97",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

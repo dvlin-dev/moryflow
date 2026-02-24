@@ -2,7 +2,7 @@
  * Agent Controller
  *
  * [INPUT]: HTTP 请求
- * [OUTPUT]: JSON 响应或 SSE 事件流
+ * [OUTPUT]: JSON 响应或 AI SDK UI stream
  * [POS]: L3 Agent API 入口，处理任务创建和状态查询（含用户上下文与 taskId 参数校验）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -29,7 +29,11 @@ import {
   ApiConflictResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Response as ExpressResponse } from 'express';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import type { RunStreamEvent } from '@openai/agents-core';
+import { createAiSdkUiMessageStreamResponse } from '@openai/agents-extensions/ai-sdk-ui';
 import { CurrentUser, Public } from '../auth';
 import { ApiKeyGuard } from '../api-key';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
@@ -39,9 +43,15 @@ import {
   AgentTaskIdParamSchema,
   type AgentTaskIdParamDto,
   CreateAgentTaskSchema,
-  type AgentStreamEvent,
 } from './dto';
 import type { CurrentUserDto } from '../types';
+
+type CreateAiSdkUiMessageStreamResponseFn = (
+  source: AsyncIterable<RunStreamEvent>,
+) => globalThis.Response;
+
+const createAiSdkUiMessageStreamResponseSafe =
+  createAiSdkUiMessageStreamResponse as CreateAiSdkUiMessageStreamResponseFn;
 
 @ApiTags('Agent')
 @ApiSecurity('apiKey')
@@ -58,19 +68,19 @@ export class AgentController {
    * 创建 Agent 任务
    * POST /api/v1/agent
    *
-   * 默认返回 SSE 流；设置 stream=false 返回 JSON
+   * 默认返回 AI SDK UI stream；设置 stream=false 返回 JSON
    */
   @Post()
   @ApiOperation({
     summary: 'Create a new Agent task',
     description:
-      'Execute an AI agent task. Returns SSE stream by default, or JSON if stream=false.',
+      'Execute an AI agent task. Returns AI SDK UI stream by default, or JSON if stream=false.',
   })
   @ApiOkResponse({ description: 'Task result or SSE event stream' })
   async createTask(
     @CurrentUser() user: CurrentUserDto,
     @Body() body: unknown,
-    @Res() res: Response,
+    @Res() res: ExpressResponse,
   ): Promise<void> {
     const parseResult = CreateAgentTaskSchema.safeParse(body);
     if (!parseResult.success) {
@@ -91,41 +101,41 @@ export class AgentController {
       return;
     }
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    let connectionClosed = false;
+    const streamAbortController = new AbortController();
     res.on('close', () => {
-      connectionClosed = true;
+      if (!streamAbortController.signal.aborted) {
+        streamAbortController.abort();
+      }
     });
 
-    const sendEvent = (event: AgentStreamEvent) => {
-      res.write(`event: ${event.type}\n`);
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
+    const runEventStream = this.agentService.executeTaskStream(
+      input,
+      user.id,
+      streamAbortController.signal,
+    );
+    const response = createAiSdkUiMessageStreamResponseSafe(runEventStream);
 
-    try {
-      for await (const event of this.agentService.executeTaskStream(
-        input,
-        user.id,
-      )) {
-        if (!connectionClosed) {
-          sendEvent(event);
-        }
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (!connectionClosed) {
-        sendEvent({
-          type: 'failed',
-          error: errorMessage,
-        });
-      }
-    } finally {
+    res.status(response.status);
+    response.headers.forEach((value, key) => {
+      res.setHeader(key, value);
+    });
+    // 显式关闭反向代理缓冲（如 nginx/1panel），确保流式分片实时下发。
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    if (!response.body) {
       res.end();
+      return;
     }
+
+    const nodeStream = Readable.fromWeb(
+      response.body as unknown as NodeReadableStream<Uint8Array>,
+    );
+    nodeStream.on('error', () => {
+      if (!res.writableEnded) {
+        res.end();
+      }
+    });
+    nodeStream.pipe(res);
   }
 
   /**

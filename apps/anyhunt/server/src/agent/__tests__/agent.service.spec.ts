@@ -204,6 +204,18 @@ const createMockLlmRoutingService = (): LlmRoutingService =>
     }),
   }) as unknown as LlmRoutingService;
 
+const createMockAbortSignal = () => {
+  const addEventListener = vi.fn();
+  const removeEventListener = vi.fn();
+  const signal = {
+    aborted: false,
+    addEventListener,
+    removeEventListener,
+  } as unknown as AbortSignal;
+
+  return { signal, addEventListener, removeEventListener };
+};
+
 describe('AgentService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -474,18 +486,69 @@ describe('AgentService', () => {
       mockProgressStore,
       createMockStreamProcessor(mockProgressStore, mockBillingService),
     );
+    const { signal, addEventListener, removeEventListener } =
+      createMockAbortSignal();
 
-    const events = [];
-    for await (const event of service.executeTaskStream(
-      { prompt: 'test', stream: true, output: { type: 'text' } },
-      'user_1',
-    )) {
-      events.push(event);
-    }
+    const consume = async () => {
+      for await (const _event of service.executeTaskStream(
+        { prompt: 'test', stream: true, output: { type: 'text' } },
+        'user_1',
+        signal,
+      )) {
+        // no-op
+      }
+    };
 
-    expect(events.some((event) => event.type === 'failed')).toBe(true);
+    await expect(consume()).rejects.toThrow(/Model is not available/);
     expect(mockProgressStore.setProgress).toHaveBeenCalled();
     expect(mockProgressStore.clearProgress).toHaveBeenCalled();
+    expect(addEventListener).toHaveBeenCalledWith(
+      'abort',
+      expect.any(Function),
+      { once: true },
+    );
+    expect(removeEventListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('detaches abort listener when task creation fails before stream setup', async () => {
+    const mockBrowserPort = createMockBrowserPortService();
+    const mockBillingService = createMockBillingService();
+    const mockTaskRepository = createMockTaskRepository();
+    vi.mocked(mockTaskRepository.createTask).mockRejectedValue(
+      new Error('Failed to create task'),
+    );
+    const mockProgressStore = createMockProgressStore();
+    const mockRouting = createMockLlmRoutingService();
+
+    const service = new AgentService(
+      mockBrowserPort,
+      mockRouting,
+      mockBillingService,
+      mockTaskRepository,
+      mockProgressStore,
+      createMockStreamProcessor(mockProgressStore, mockBillingService),
+    );
+    const { signal, addEventListener, removeEventListener } =
+      createMockAbortSignal();
+
+    const consume = async () => {
+      for await (const _event of service.executeTaskStream(
+        { prompt: 'test', stream: true, output: { type: 'text' } },
+        'user_1',
+        signal,
+      )) {
+        // no-op
+      }
+    };
+
+    await expect(consume()).rejects.toThrow(/Failed to create task/);
+    expect(addEventListener).toHaveBeenCalledWith(
+      'abort',
+      expect.any(Function),
+      { once: true },
+    );
+    expect(removeEventListener).toHaveBeenCalledTimes(1);
+    expect(mockRouting.resolveAgentModel).not.toHaveBeenCalled();
   });
 
   it('requests cancel and returns latest progress credits', async () => {

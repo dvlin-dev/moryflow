@@ -15,6 +15,8 @@ import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import type { Locator, Page, Download } from 'playwright';
 import { SessionManager, type BrowserSession } from '../session';
+import { BrowserRiskTelemetryService } from '../observability';
+import { ActionPacingService } from '../runtime';
 import {
   BROWSER_DOWNLOAD_MAX_BYTES,
   BROWSER_UPLOAD_MAX_BYTES,
@@ -30,7 +32,11 @@ import type {
 export class ActionHandler {
   private readonly logger = new Logger(ActionHandler.name);
 
-  constructor(private readonly sessionManager: SessionManager) {}
+  constructor(
+    private readonly sessionManager: SessionManager,
+    private readonly actionPacing: ActionPacingService,
+    private readonly riskTelemetry: BrowserRiskTelemetryService,
+  ) {}
 
   /**
    * 执行动作
@@ -44,6 +50,19 @@ export class ActionHandler {
     const context = this.sessionManager.getActiveContext(session);
 
     try {
+      const pacing = await this.actionPacing.beforeAction({
+        sessionId: session.id,
+        actionType: type,
+      });
+      if (pacing.applied) {
+        this.riskTelemetry.recordActionPacing({
+          sessionId: session.id,
+          host: extractHost(page.url()),
+          actionType: type,
+          delayMs: pacing.delayMs,
+        });
+      }
+
       const requiresTarget = new Set<ActionInput['type']>([
         'click',
         'dblclick',
@@ -742,3 +761,12 @@ export class ActionHandler {
     };
   }
 }
+
+const extractHost = (url: string): string => {
+  if (!url) return 'unknown';
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return 'unknown';
+  }
+};

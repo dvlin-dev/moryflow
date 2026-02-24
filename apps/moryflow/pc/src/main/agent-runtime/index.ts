@@ -26,6 +26,7 @@ import {
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
+  bindDefaultModelProvider,
   createModelFactory,
   resolveContextWindow,
   generateCompactionSummary,
@@ -353,6 +354,7 @@ export const createAgentRuntime = (): AgentRuntime => {
     toApiModelId,
     membership: membershipBridge.getConfig(),
   });
+  bindDefaultModelProvider(() => modelFactory);
 
   // 创建 Agent 工厂
   let agentFactory = createAgentFactory({

@@ -6,12 +6,13 @@
 
 // 重新导出共享函数
 export {
-  connectServer,
-  closeServers,
+  openMcpServers,
+  closeMcpServers,
   getToolsFromServers,
   createStdioServers,
   createHttpServers,
   createServersFromSettings,
-  type ServerConnectionResult,
+  DEFAULT_MCP_SERVERS_OPTIONS,
+  type OpenMcpServersOptions,
   type ServerWithConfig,
-} from '@anyhunt/agents-mcp'
+} from '@anyhunt/agents-mcp';

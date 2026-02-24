@@ -1,6 +1,6 @@
 import { Agent, run, tool, type RunContext, type Tool } from '@openai/agents-core';
 import { z } from 'zod';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import { normalizeToolSchemasForInterop, type AgentContext } from '@anyhunt/agents-runtime';
 import { toolSummarySchema } from '../shared';
 
 const taskParams = z.object({
@@ -72,13 +72,14 @@ export const createTaskTool = (subAgentTools?: SubAgentToolsConfig) => {
 
       const tools = subAgentTools[type];
       const instructions = SUB_AGENT_INSTRUCTIONS[type];
+      const normalizedTools = normalizeToolSchemasForInterop([...tools]);
 
       const { baseModel } = buildModel();
       const subAgent = new Agent({
         name: `${type}-agent`,
         instructions: `${instructions}\n\n当前任务：${prompt}`,
         model: baseModel,
-        tools: [...tools],
+        tools: normalizedTools,
       });
 
       try {

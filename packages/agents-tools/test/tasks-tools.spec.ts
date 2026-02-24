@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RunContext } from '@openai/agents-core';
 import { createTasksTools } from '../src/task/tasks-tools';
+import { normalizeToolSchemasForInterop } from '@anyhunt/agents-runtime';
 import type {
   TasksStore,
   TasksStoreContext,
@@ -161,5 +162,65 @@ describe('createTasksTools', () => {
     expect(label).not.toContain(']');
     expect(label).not.toContain('|');
     expect(label).not.toContain('\\n');
+  });
+
+  it('requires confirm=true for tasks_delete', async () => {
+    let deleteCalled = false;
+    const store = createMockStore({
+      deleteTask: async () => {
+        deleteCalled = true;
+      },
+    });
+    const tools = createTasksTools(store);
+    const deleteTool = tools.find((tool) => tool.name === 'tasks_delete');
+    if (!deleteTool) {
+      throw new Error('tasks_delete_not_found');
+    }
+
+    const context = new RunContext<AgentContext>({ chatId: 'chat-a', vaultRoot: '/vault' });
+    const result = (await deleteTool.invoke(
+      context,
+      JSON.stringify({ taskId: 'tsk_1', confirm: false })
+    )) as { error?: string };
+
+    expect(result.error).toBe('confirm_required');
+    expect(deleteCalled).toBe(false);
+  });
+
+  it('normalizes tasks_list status enum schema for strict providers', () => {
+    const store = createMockStore();
+    const tools = createTasksTools(store);
+    const normalizedTools = normalizeToolSchemasForInterop(tools);
+    const listTool = normalizedTools.find((tool) => tool.name === 'tasks_list');
+    if (!listTool || listTool.type !== 'function') {
+      throw new Error('tasks_list_not_found');
+    }
+
+    const parameters = listTool.parameters as Record<string, unknown>;
+    const properties = parameters.properties as Record<string, unknown>;
+    const status = properties.status as Record<string, unknown>;
+    const statusAnyOf = status.anyOf as unknown[] | undefined;
+    const statusItems = ((status.items as Record<string, unknown> | undefined) ??
+      (
+        (statusAnyOf ?? []).find(
+          (candidate) =>
+            typeof candidate === 'object' &&
+            candidate !== null &&
+            'items' in (candidate as Record<string, unknown>)
+        ) as Record<string, unknown> | undefined
+      )?.items) as Record<string, unknown> | undefined;
+    if (!statusItems) {
+      throw new Error('tasks_list_status_items_not_found');
+    }
+
+    const enumValues = statusItems.enum as unknown[];
+    expect(Array.isArray(enumValues)).toBe(true);
+    expect(enumValues).toContain('todo');
+    const enumType = statusItems.type;
+    if (Array.isArray(enumType)) {
+      expect(enumType).toContain('string');
+      return;
+    }
+    expect(enumType).toBe('string');
   });
 });

@@ -98,6 +98,11 @@ import {
 import { CdpConnectionError, CdpEndpointError, CdpPolicyError } from './cdp';
 import { InvalidInterceptRuleError } from './network';
 import {
+  BrowserPolicyDeniedError,
+  BrowserNavigationRateLimitError,
+} from './policy';
+import { BrowserNavigationError } from './runtime';
+import {
   StorageImportError,
   StorageExportError,
   ProfilePersistenceNotConfiguredError,
@@ -676,6 +681,20 @@ export class BrowserSessionController {
     }
   }
 
+  @Get(':id/risk')
+  @ApiOperation({ summary: 'Get detection risk summary' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  getDetectionRisk(
+    @CurrentUser() user: CurrentUserDto,
+    @Param('id') sessionId: string,
+  ) {
+    try {
+      return this.browserSessionService.getDetectionRisk(user.id, sessionId);
+    } catch (error) {
+      this.handleSessionError(error);
+    }
+  }
+
   @Post(':id/trace/start')
   @ApiOperation({ summary: 'Start tracing' })
   @ApiParam({ name: 'id', description: 'Session ID' })
@@ -918,6 +937,27 @@ export class BrowserSessionController {
 
     if (error instanceof UrlNotAllowedError) {
       throw new HttpException('URL not allowed', HttpStatus.FORBIDDEN);
+    }
+
+    if (error instanceof BrowserPolicyDeniedError) {
+      throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+    }
+
+    if (error instanceof BrowserNavigationRateLimitError) {
+      throw new HttpException(error.message, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    if (error instanceof BrowserNavigationError) {
+      if (error.statusCode === 429) {
+        throw new HttpException(error.message, HttpStatus.TOO_MANY_REQUESTS);
+      }
+      if (error.failureClass === 'access_control') {
+        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+      }
+      if (error.failureClass === 'network') {
+        throw new HttpException(error.message, HttpStatus.SERVICE_UNAVAILABLE);
+      }
+      throw new HttpException(error.message, HttpStatus.BAD_GATEWAY);
     }
 
     if (error instanceof BrowserUnavailableError) {

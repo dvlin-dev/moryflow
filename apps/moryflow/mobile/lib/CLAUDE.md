@@ -52,6 +52,9 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Mobile Agent Runtime 初始化后统一绑定默认 `ModelProvider`（基于 `ModelFactory`），修复 `@openai/agents-core run()` 的 `No default model provider set`
+- Chat Transport：`ReadableStream.start` 回调不再直接引用 `this.options`，改为外提 `transportOptions`，修复 `UnderlyingDefaultSource.options` 类型报错（TS2339）
+- Chat Transport 流事件映射改为复用 `@anyhunt/agents-runtime` 的 `ui-stream` 共享模块，删除 `lib/chat/tool-chunks.ts` 本地重复实现
 - Mobile Runtime 读取 JSONC 配置增加容错降级，创建会话前确保加载默认 mode
 - Agent Runtime 支持用户级 JSONC 配置/Agent Markdown/Hook，创建会话读取默认 mode
 - Chat 会话模式切换补齐审计写入，SessionStore 读写时归一化 mode

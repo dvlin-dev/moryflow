@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@anyhunt/agents-runtime": "workspace:*",
-    "@openai/agents-core": "0.4.3"
+    "@openai/agents-core": "0.5.1"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

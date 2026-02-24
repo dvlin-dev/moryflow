@@ -146,6 +146,9 @@ const extractRuntimeConfig = (data: unknown): AgentRuntimeConfig => {
 };
 
 export const parseRuntimeConfig = (content: string): RuntimeConfigParseResult => {
+  if (content.trim().length === 0) {
+    return { config: {}, errors: [] };
+  }
   const { data, errors } = parseJsonc(content);
   return { config: extractRuntimeConfig(data), errors };
 };

@@ -16,6 +16,7 @@ import type {
   BrowserActionResponse,
   BrowserActionBatchResponse,
   BrowserConsoleMessage,
+  BrowserDetectionRiskSummary,
   BrowserDeltaSnapshotResponse,
   BrowserHarStartResult,
   BrowserHarStopResult,
@@ -303,6 +304,14 @@ export async function getBrowserPageErrors(
 export async function clearBrowserPageErrors(apiKey: string, sessionId: string) {
   const client = createClient(apiKey);
   return client.delete(`${BROWSER_API.SESSION}/${sessionId}/errors`);
+}
+
+export async function getBrowserDetectionRisk(
+  apiKey: string,
+  sessionId: string
+): Promise<BrowserDetectionRiskSummary> {
+  const client = createClient(apiKey);
+  return client.get(`${BROWSER_API.SESSION}/${sessionId}/risk`);
 }
 
 export async function startBrowserTrace(

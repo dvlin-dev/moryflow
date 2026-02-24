@@ -23,6 +23,7 @@ import {
   compactHistory,
   createCompactionPreflightGate,
   createAgentFactory,
+  bindDefaultModelProvider,
   createModelFactory,
   createSessionAdapter,
   createToolOutputPostProcessor,
@@ -121,6 +122,7 @@ const applyCompactionIfNeeded = async (input: {
   if (!agentFactory || !modelFactory) {
     throw new Error('Agent Runtime 未初始化');
   }
+  const activeModelFactory = modelFactory;
   const { chatId, session, preferredModelId, modelId } = input;
   const resolvedModelId = modelId ?? agentFactory.getAgent(preferredModelId).modelId;
   const history = await session.getItems();
@@ -136,7 +138,7 @@ const applyCompactionIfNeeded = async (input: {
       contextWindow,
     },
     summaryBuilder: async (items) => {
-      const { model } = modelFactory.buildRawModel(resolvedModelId);
+      const { model } = activeModelFactory.buildRawModel(resolvedModelId);
       return generateCompactionSummary(model, items);
     },
   });
@@ -249,6 +251,12 @@ export async function initAgentRuntime(): Promise<MobileAgentRuntime> {
     toApiModelId,
     membership: getMembershipConfig,
     customFetch: mobileFetch,
+  });
+  bindDefaultModelProvider(() => {
+    if (!modelFactory) {
+      throw new Error('Model factory is not initialized');
+    }
+    return modelFactory;
   });
 
   agentFactory = createAgentFactory({
