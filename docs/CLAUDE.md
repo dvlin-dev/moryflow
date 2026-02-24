@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-24（落地：Anyhunt 统一请求日志模块（明文 IP + 30 天保留））
 > 最近更新：2026-02-24（OpenAI Agents JS 根因修复补充：Gemini function schema 兼容层（`enum` 缺失 `type` 递归补齐）+ PC ABI 双态修复（pretest Node ABI / posttest Electron ABI）；P0-24 全量 L2 闸门通过）
 > 最近更新：2026-02-24（OpenAI Agents JS 升级 lint 兼容修复：`agent.controller` 区分 Express/Web `Response` 类型，清除 `unbound-method` 与剩余 `no-unsafe-*`）
 > 最近更新：2026-02-24（OpenAI Agents JS 升级 Runtime 修复：为 `@openai/agents-core run()` 统一绑定默认 `ModelProvider`，修复 PC/Mobile `No default model provider set`）
@@ -50,6 +51,7 @@
 
 ## 最近更新
 
+- Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控，30 天保留）：`docs/architecture/anyhunt-request-log-module-plan.md`（2026-02-24：implemented）
 - OpenAI Agents JS 升级评估与重构建议（`0.4.3 -> 0.5.1`）：`docs/research/openai-agents-js-upgrade-impact-2026-02.md`（2026-02-24：实施进度已回写至 P0-24；新增 Gemini function schema 兼容层、PC ABI 双态修复；`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过）
 - Agent Browser 合规自动化与检测风险治理方案（implemented）：已完成 Step 0~7（策略匹配、速率/并发预算、动作节奏、导航重试分类、风险遥测、Console Detection Risk 面板）（2026-02-24：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：增量方案落地（固定推荐 3 项、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效），并回写 P0-12~P0-15 执行计划为完成状态（2026-02-11：implemented）

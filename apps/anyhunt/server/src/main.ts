@@ -1,5 +1,5 @@
 /**
- * [INPUT]: 环境变量（PORT/ALLOWED_ORIGINS/...）与反代请求头（X-Forwarded-Proto/Host）
+ * [INPUT]: 环境变量（PORT/TRUST_PROXY/ALLOWED_ORIGINS/...）与反代请求头（X-Forwarded-Proto/Host）
  * [OUTPUT]: 启动 NestJS HTTP 服务并挂载全局中间件/拦截器/Swagger
  * [POS]: Anyhunt Dev Server 入口（反代部署必须启用 trust proxy）
  * [NOTE]: 启动期仅初始化 Demo 用户，管理员权限由注册后 ADMIN_EMAILS 白名单授予
@@ -25,6 +25,29 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { buildProblemDetails, getRequestId, matchOrigin } from './common/utils';
 import { DEVICE_PLATFORM_ALLOWLIST } from './auth/auth.constants';
 import { getTrustedOrigins } from './auth/auth.config';
+
+function resolveTrustProxyConfig(logger: Logger): boolean | number {
+  const raw = process.env.TRUST_PROXY;
+  if (!raw || raw.trim().length === 0) {
+    return 1;
+  }
+
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+  if (normalized === 'false') {
+    return false;
+  }
+
+  const hops = Number.parseInt(raw, 10);
+  if (Number.isInteger(hops) && hops >= 0) {
+    return hops;
+  }
+
+  logger.warn(`Invalid TRUST_PROXY="${raw}", fallback to 1 (single proxy hop)`);
+  return 1;
+}
 
 async function ensureDemoPlaygroundUser(prisma: PrismaService, logger: Logger) {
   const demoUserId = 'demo-playground-user';
@@ -106,8 +129,13 @@ async function bootstrap() {
   });
 
   // 反代部署必须启用 trust proxy，否则 req.protocol/secure cookie 等会被错误识别为 http。
-  // 单层反代（megaboxpro/1panel）默认设置为 1；如未来有多层代理再按 hop 数调整。
-  (app.getHttpAdapter().getInstance() as Application).set('trust proxy', 1);
+  // 默认值 1（单层反代）；多层反代可通过 TRUST_PROXY=true 或具体 hop 数调整。
+  const trustProxy = resolveTrustProxyConfig(logger);
+  (app.getHttpAdapter().getInstance() as Application).set(
+    'trust proxy',
+    trustProxy,
+  );
+  logger.log(`Express trust proxy set to: ${String(trustProxy)}`);
 
   // 增加请求体大小限制（默认 100kb，增加到 50mb）
   app.use(json({ limit: '50mb' }));

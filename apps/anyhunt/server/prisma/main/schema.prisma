@@ -235,6 +235,55 @@ model AdminAuditLog {
 }
 
 // =============================================
+// Request 日志（用户行为分析 + 错误排查 + IP 监控）
+// =============================================
+
+model RequestLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // 链路
+  requestId  String?
+  method     String
+  path       String
+  routeGroup String?
+  statusCode Int
+  durationMs Int
+
+  // 认证主体
+  authType String?
+  userId   String?
+  apiKeyId String?
+
+  // 来源
+  clientIp     String // 明文 IP（仅 Admin 可见）
+  forwardedFor String?
+  origin       String?
+  referer      String?
+  userAgent    String?
+
+  // 错误与限流上下文
+  errorCode          String?
+  errorMessage       String?
+  retryAfter         String?
+  rateLimitLimit     String?
+  rateLimitRemaining String?
+  rateLimitReset     String?
+
+  // 体积（可选）
+  requestBytes  Int?
+  responseBytes Int?
+
+  @@index([createdAt])
+  @@index([requestId])
+  @@index([statusCode, createdAt])
+  @@index([routeGroup, createdAt])
+  @@index([userId, createdAt])
+  @@index([apiKeyId, createdAt])
+  @@index([clientIp, createdAt])
+}
+
+// =============================================
 // 支付订单
 // =============================================
 
