@@ -10,8 +10,10 @@ function createMockResponse(statusCode = 200): Response {
 
   const res = {
     statusCode,
-    json: vi.fn(function json(this: Response) {
-      return this;
+    json: vi.fn(function json(this: Response, body?: unknown) {
+      return this.send(
+        typeof body === 'string' ? body : JSON.stringify(body),
+      ) as unknown as Response;
     }),
     send: vi.fn(function send(this: Response) {
       return this;
@@ -133,6 +135,30 @@ describe('RequestLogMiddleware', () => {
     } as unknown as Request;
 
     const res = createMockResponse(200);
+    const next = vi.fn() as unknown as NextFunction;
+
+    middleware.use(req, res, next);
+    (res as unknown as { emit: (event: string) => void }).emit('finish');
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(writeAsync).not.toHaveBeenCalled();
+  });
+
+  it('should skip preflight options request logging', () => {
+    const writeAsync = vi.fn();
+    const middleware = new RequestLogMiddleware({
+      writeAsync,
+    } as unknown as RequestLogService);
+
+    const req = {
+      method: 'OPTIONS',
+      path: '/api/v1/agent',
+      originalUrl: '/api/v1/agent',
+      headers: {},
+      ip: '127.0.0.1',
+    } as unknown as Request;
+
+    const res = createMockResponse(204);
     const next = vi.fn() as unknown as NextFunction;
 
     middleware.use(req, res, next);

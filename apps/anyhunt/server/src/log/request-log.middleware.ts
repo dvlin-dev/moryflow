@@ -37,6 +37,7 @@ const ROUTE_GROUP_PREFIXES: Array<{ prefix: string; group: string }> = [
 ];
 
 const REQUEST_LOG_SKIP_PREFIXES = ['/api/v1/admin/logs'];
+const REQUEST_LOG_SKIP_METHODS = new Set(['OPTIONS', 'HEAD']);
 
 @Injectable()
 export class RequestLogMiddleware implements NestMiddleware {
@@ -44,6 +45,11 @@ export class RequestLogMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction): void {
     const start = process.hrtime.bigint();
+
+    if (this.shouldSkipMethod(req.method)) {
+      next();
+      return;
+    }
 
     const path = this.resolvePath(req);
     if (this.shouldSkip(path)) {
@@ -108,7 +114,11 @@ export class RequestLogMiddleware implements NestMiddleware {
 
     const originalSend = res.send.bind(res);
     res.send = ((body?: unknown) => {
-      if (res.statusCode >= 400 && typeof body === 'string') {
+      if (
+        res.statusCode >= 400 &&
+        typeof body === 'string' &&
+        !capturedErrorMessage
+      ) {
         capturedErrorMessage = body
           .trim()
           .slice(0, REQUEST_LOG_MAX_ERROR_MESSAGE_LENGTH);
@@ -180,6 +190,10 @@ export class RequestLogMiddleware implements NestMiddleware {
     return REQUEST_LOG_SKIP_PREFIXES.some((prefix) =>
       normalized.startsWith(prefix),
     );
+  }
+
+  private shouldSkipMethod(method?: string): boolean {
+    return REQUEST_LOG_SKIP_METHODS.has((method ?? '').toUpperCase());
   }
 
   private resolvePath(req: Request): string {
