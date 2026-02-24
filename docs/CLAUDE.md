@@ -17,6 +17,7 @@
 > 最近更新：2026-02-24（OpenAI Agents JS 升级 review 修复完成：P0-8~P0-10，覆盖 mock 路径、UIMessage reasoning 字段、MCP 重载失败状态清理）
 > 最近更新：2026-02-24（OpenAI Agents JS 升级进入实施：P0-1~P0-6 已落地并同步进度，P0-7 因 node_modules 缺失待补跑）
 > 最近更新：2026-02-24（OpenAI Agents JS 升级评估第三次复核：按“官方协议唯一实现 + 无历史兼容”重写，补齐 Anyhunt/PC/Mobile/MCP 的重构边界、必删清单与 DoD）
+> 最近更新：2026-02-24（Agent Browser 合规自动化与检测风险治理方案：Step 0~7 已落地）
 
 > 本目录存放面向开发与协作的项目文档（非产品对外文档站点实现）。
 
@@ -50,6 +51,7 @@
 ## 最近更新
 
 - OpenAI Agents JS 升级评估与重构建议（`0.4.3 -> 0.5.1`）：`docs/research/openai-agents-js-upgrade-impact-2026-02.md`（2026-02-24：实施进度已回写至 P0-24；新增 Gemini function schema 兼容层、PC ABI 双态修复；`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过）
+- Agent Browser 合规自动化与检测风险治理方案（implemented）：已完成 Step 0~7（策略匹配、速率/并发预算、动作节奏、导航重试分类、风险遥测、Console Detection Risk 面板）（2026-02-24：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：增量方案落地（固定推荐 3 项、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效），并回写 P0-12~P0-15 执行计划为完成状态（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：本期方案 1 落地（发送成功后清空 selected skill、用户消息渲染 skill tag），并在执行计划新增 P0-11 进度（2026-02-11：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` + `skill` tool），并在文档内同步执行步骤进度（2026-02-11：implemented）
