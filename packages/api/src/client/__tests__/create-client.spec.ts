@@ -127,4 +127,62 @@ describe('createApiClient', () => {
       message: 'Invalid password',
     });
   });
+
+  it('parses error body when content-type is text/plain but payload is json string', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many requests. Please try again later.',
+          }),
+          {
+            status: 429,
+            headers: { 'content-type': 'text/plain; charset=utf-8' },
+          }
+        )
+      )
+    );
+
+    const client = createApiClient({
+      baseUrl: 'https://example.com',
+      getAccessToken: vi.fn().mockResolvedValue('token'),
+    });
+
+    const error = await client
+      .post('/api/v1/auth/sign-in', { body: { email: 'demo@example.com' } })
+      .catch((err) => err);
+    expect(error).toBeInstanceOf(ServerApiError);
+    expect(error).toMatchObject({
+      status: 429,
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many requests. Please try again later.',
+    });
+  });
+
+  it('falls back to plain text body for non-json error response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('Service temporarily unavailable', {
+          status: 503,
+          headers: { 'content-type': 'text/plain; charset=utf-8' },
+        })
+      )
+    );
+
+    const client = createApiClient({
+      baseUrl: 'https://example.com',
+      getAccessToken: vi.fn().mockResolvedValue('token'),
+    });
+
+    const error = await client.get('/api/v1/ping').catch((err) => err);
+    expect(error).toBeInstanceOf(ServerApiError);
+    expect(error).toMatchObject({
+      status: 503,
+      code: 'UNKNOWN_ERROR',
+      message: 'Service temporarily unavailable',
+    });
+  });
 });
