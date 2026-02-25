@@ -1,6 +1,7 @@
 # model-registry-data
 
 > LiteLLM 模型数据注册表，提供模型搜索和自动填充功能
+> 最近更新：2026-02-25（修复 dist 运行时读取 data JSON 失败导致模型数为 0；改为静态 JSON 导入并新增构建产物回归测试）
 
 ## 概述
 
@@ -16,6 +17,8 @@
 packages/model-registry-data/
 ├── scripts/
 │   └── sync.ts          # 构建时同步脚本
+├── test/
+│   └── dist-data.test.mjs # 构建产物回归测试（避免 runtime require data 文件）
 ├── src/
 │   ├── types.ts         # 类型定义
 │   ├── transformer.ts   # 数据转换
@@ -51,9 +54,13 @@ pnpm --filter @moryflow/model-registry-data sync
 
 # 构建时自动同步（prebuild 钩子）
 pnpm --filter @moryflow/model-registry-data build
+
+# 回归测试（包含构建）
+pnpm --filter @moryflow/model-registry-data test:unit
 ```
 
 - 同步脚本通过 `node --import tsx scripts/sync.ts` 运行；在网络受限/上游不可用时应使用缓存数据继续构建（不要让构建因同步失败而失败）。
+- 搜索模块使用静态 JSON 导入（`models/providers/meta`）参与打包，禁止回退到运行时 `require('./data/*.json')`，避免 renderer 环境出现 `Search 0 models`。
 
 ## 数据源
 

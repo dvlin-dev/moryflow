@@ -18,6 +18,7 @@
     "sync": "node --import tsx scripts/sync.ts",
     "prebuild": "pnpm sync",
     "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test:unit": "pnpm build && node --test test/*.test.mjs",
     "clean": "rm -rf dist"
   },
   "dependencies": {
