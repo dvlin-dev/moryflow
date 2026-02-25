@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-26（CI 安装阶段构建防护：`build:packages` 前新增 `prepare:model-registry-data`，确保 `packages/model-registry-data/src/data/*.json` 在干净环境存在，避免 postinstall `TS2307`）
 > 最近更新：2026-02-11（协作流程：校验改为风险分级；简单 UI/文案改动可跳过全量测试）
 > 最近更新：2026-02-10（Streamdown 2.2 升级：逐词流式动画接入；Tailwind `@source` 扫描 streamdown dist；补齐 `@swc/core` darwin 二进制依赖，确保 `pnpm test:unit` 可运行）
 > 最近更新：2026-02-08（消息列表自动滚动：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；AI 流式追随使用 `auto`；禁用 `overflow-anchor`；移除 `packages/ui/src/ai/assistant-ui` 目录）
