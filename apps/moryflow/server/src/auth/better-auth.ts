@@ -24,6 +24,7 @@ import { isDisposableEmail } from './email-validator';
 import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
 import {
   getAuthBaseUrl,
+  getBetterAuthRateLimitOptions,
   getJwtPluginOptions,
   getTrustedOrigins,
 } from './auth.config';
@@ -57,6 +58,7 @@ export function createBetterAuth(
   const baseURL = getAuthBaseUrl();
   const trustedOrigins = getTrustedOrigins();
   const jwtOptions = getJwtPluginOptions(baseURL);
+  const rateLimitOptions = getBetterAuthRateLimitOptions();
 
   return betterAuth({
     database: prismaAdapter(prisma, {
@@ -91,9 +93,7 @@ export function createBetterAuth(
       }),
     },
     rateLimit: {
-      enabled: true,
-      window: 10,
-      max: 20,
+      ...rateLimitOptions,
       storage: secondaryStorage ? 'secondary-storage' : 'memory',
     },
     // 数据库钩子

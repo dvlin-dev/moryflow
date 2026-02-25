@@ -29,6 +29,7 @@ status: active
 - Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`
 - 统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active）：`docs/architecture/auth/unified-token-auth-v2-plan.md`（2026-02-24：follow-up 已补充 1h 预刷新策略、线上 DB migrate deploy 记录与 Console/Admin/Moryflow Admin 网络失败回退策略）
 - Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client，completed）：`docs/architecture/auth/auth-zustand-method-refactor-plan.md`（2026-02-24：完成 Step 1~13；客户端 + 服务端出站 HTTP + WebSocket 全链路统一；旧客户端范式清理完成；受影响包 typecheck/test 回归完成，`moryflow-mobile check:type` 保留既有基线问题记录）
+- Moryflow Server 分层限流方案（Auth + 全局，Redis 存储，active）：`docs/architecture/auth/auth-and-global-rate-limit-defense-plan.md`（2026-02-25：Auth `60s/20` + 全局 `60s/300` 已落地，补齐 Better Auth `/**` 规则与 Redis Lua 原子限流实现对齐；Step 1~5 完成，Step 6 灰度待执行）
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
 - Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`

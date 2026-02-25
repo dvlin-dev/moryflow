@@ -24,6 +24,7 @@
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/unified-token-auth-v2-plan.md`：统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active，Step 1~7 已完成）。
+- `auth/auth-and-global-rate-limit-defense-plan.md`：Moryflow Server 分层限流方案（Auth + 全局双层，Redis 存储，active；Step 1~5 完成，Step 6 灰度待执行）。
 - `auth/auth-zustand-method-refactor-plan.md`：Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client，completed；2026-02-24 完成 Step 1~13，覆盖客户端 + 服务端出站 HTTP + WebSocket，全量请求统一与旧范式清理落地）。
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
 - `auth/moryflow-pc-mobile-access-token-upgrade.md`：Moryflow PC/Mobile Access Token 持久化升级方案（draft）。
@@ -44,6 +45,8 @@
 
 ## 近期更新
 
+- `auth/auth-and-global-rate-limit-defense-plan.md`：按当前实现对齐技术细节（Better Auth `/**` 路径规则、全局 `forRootAsync` 装配、Redis Lua 原子限流、默认 skip paths、模块级校验命令）（2026-02-25，active）。
+- `auth/auth-and-global-rate-limit-defense-plan.md`：Moryflow Server 分层限流方案进入执行状态（Auth `60s/20` + 全局 `60s/300` 已落地，Step 1~5 完成，Step 6 灰度待执行）（2026-02-25，active）。
 - `auth/auth-zustand-method-refactor-plan.md`：完成八次评审修订后已执行落地（Step 1~13 全部回写 done），完成客户端/服务端出站 HTTP/WebSocket 统一、旧范式清理与受影响包回归验证（2026-02-24）。
 - `auth/unified-token-auth-v2-plan.md`：补充 follow-up 进度（access token 预刷新窗口统一 1h；Anyhunt/Moryflow 线上 `prisma migrate deploy` 已执行且无待迁移；Console/Admin/Moryflow Admin 网络失败回退策略与回归测试已补齐）（2026-02-24）。
 - `auth/unified-token-auth-v2-plan.md`：统一 Token-first Auth 改造已完成（跨 Anyhunt + Moryflow，零兼容；登录直接返回 access+refresh，refresh 轮换；Step 1~8 完成并补齐上线/回滚演练记录）（2026-02-24）。
