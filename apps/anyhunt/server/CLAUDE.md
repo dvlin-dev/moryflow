@@ -8,6 +8,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Webhook：签名与发送体统一为同一 `JSON.stringify` 字符串（Digest Processor + Common WebhookService），避免签名材料与实际请求体潜在不一致
+- Demo：Turnstile 校验改为 `serverHttpRaw` 解析，放宽对响应 `content-type` 的依赖并保留非 2xx 快速失败
 - OpenAPI 文档改为 Scalar 双入口：`/api-reference`（public）与 `/api-reference/internal`（internal），并提供 `/openapi.json` 与 `/openapi-internal.json`
 - 修复文档访问 403：`Missing origin` 检查对 OpenAPI/Scalar 路径放行（公网可直接访问，无额外防护）
 - Log：修复错误判定与观测质量（仅 4xx/5xx 记录 error 字段、跳过 `/api/v1/admin/logs` 自采集、查询 SQL 统一改为 `$queryRaw + Prisma.sql`、时间参数强制 ISO8601+时区）

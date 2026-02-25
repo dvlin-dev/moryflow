@@ -200,6 +200,31 @@ describe('DemoService', () => {
       expect(result).toBe(false);
     });
 
+    it('should parse captcha response even when content-type is non-json', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        json: () => Promise.resolve({ success: true }),
+      });
+
+      const result = await service.verifyCaptcha('valid_token');
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when turnstile endpoint responds non-2xx', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({ success: true }),
+      });
+
+      const result = await service.verifyCaptcha('valid_token');
+
+      expect(result).toBe(false);
+    });
+
     it('should return true when secret not configured', async () => {
       mockConfig.get.mockReturnValue(undefined);
 

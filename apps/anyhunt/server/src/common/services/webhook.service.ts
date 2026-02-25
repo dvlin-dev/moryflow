@@ -54,7 +54,7 @@ export class WebhookService {
           'X-Webhook-Signature': signature,
           'X-Webhook-Event': payload.event,
         },
-        body,
+        body: bodyString,
         redirect: 'manual',
         timeoutMs: 10000,
       });

@@ -89,7 +89,7 @@ export class WebhookDeliveryProcessor extends WorkerHost {
           [NOTIFICATION.eventHeader]: event,
           [NOTIFICATION.timestampHeader]: timestamp,
         },
-        body: payload,
+        body: bodyString,
         redirect: 'manual',
         timeoutMs: NOTIFICATION.webhookTimeoutMs,
       });

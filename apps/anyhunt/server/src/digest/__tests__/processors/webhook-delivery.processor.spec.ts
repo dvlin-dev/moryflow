@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UnrecoverableError } from 'bullmq';
+import { createHmac } from 'crypto';
 import { WebhookDeliveryProcessor } from '../../processors/webhook-delivery.processor';
 import { createMockPrisma } from '../mocks';
 
@@ -121,6 +122,36 @@ describe('WebhookDeliveryProcessor', () => {
       const fetchCall = (global.fetch as any).mock.calls[0];
       const headers = fetchCall[1].headers;
       expect(getHeader(headers, 'X-Digest-Signature')).toMatch(/^sha256=/);
+    });
+
+    it('should sign the exact JSON string sent in request body', async () => {
+      const webhookSecret = 'my-secret';
+      mockUrlValidator.isAllowed.mockResolvedValue(true);
+      mockPrisma.digestSubscription.findUnique.mockResolvedValue({
+        webhookSecret,
+      });
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+      });
+
+      await processor.process(mockJob as any);
+
+      const fetchCall = (global.fetch as any).mock.calls[0];
+      const headers = fetchCall[1].headers as HeadersInit;
+      const timestamp = getHeader(headers, 'X-Digest-Timestamp');
+      const signature = getHeader(headers, 'X-Digest-Signature');
+      const bodyString = fetchCall[1].body as string;
+
+      expect(typeof bodyString).toBe('string');
+      expect(timestamp).toBeTruthy();
+      expect(signature).toBeTruthy();
+
+      const expected = createHmac('sha256', webhookSecret)
+        .update(`${timestamp}.${bodyString}`)
+        .digest('hex');
+
+      expect(signature).toBe(`sha256=${expected}`);
     });
 
     it('should return "none" signature when no webhookSecret', async () => {
