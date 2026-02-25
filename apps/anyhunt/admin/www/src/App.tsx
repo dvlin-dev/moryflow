@@ -26,6 +26,9 @@ import DigestReportsPage from './pages/DigestReportsPage';
 import DigestTopicsPage from './pages/DigestTopicsPage';
 import DigestWelcomePage from './pages/DigestWelcomePage';
 import LlmPage from './pages/LlmPage';
+import LogsRequestsPage from './pages/logs/LogsRequestsPage';
+import LogsUsersPage from './pages/logs/LogsUsersPage';
+import LogsIpPage from './pages/logs/LogsIpPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -104,6 +107,11 @@ function App() {
 
             {/* Errors - 错误分析 */}
             <Route path="errors" element={<ErrorsPage />} />
+
+            {/* Logs - 统一请求日志 */}
+            <Route path="logs/requests" element={<LogsRequestsPage />} />
+            <Route path="logs/users" element={<LogsUsersPage />} />
+            <Route path="logs/ip" element={<LogsIpPage />} />
 
             {/* Browser - 浏览器池监控 */}
             <Route path="browser" element={<BrowserPage />} />

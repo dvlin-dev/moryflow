@@ -32,6 +32,7 @@ Auth 模块基于 Better Auth，负责账号登录/注册、会话基础能力�
 - refreshToken 必须每次 refresh 轮换（rotation on）
 - `POST /api/v1/auth/logout` 与 `POST /api/v1/auth/sign-out` 均只撤销业务 refresh token（幂等）
 - 生产环境必须设置 `BETTER_AUTH_URL` 与 `TRUSTED_ORIGINS`
+- Better Auth 限流默认 `60s / 120 requests`，可通过 `BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS`、`BETTER_AUTH_RATE_LIMIT_MAX` 覆盖
 - 生产环境启用 `useSecureCookies` 与跨子域 Cookie（`.anyhunt.app`）
 - 管理员权限通过 `ADMIN_EMAILS` 邮箱白名单授予（注册后自动标记 `isAdmin`）
 - 已有账号命中 `ADMIN_EMAILS` 时，在 refresh/access 校验阶段补写 `isAdmin=true`

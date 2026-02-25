@@ -63,6 +63,16 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: 'logs',
+    label: 'Logs',
+    icon: TriangleAlert,
+    items: [
+      { path: '/logs/requests', label: 'Requests', icon: ListTodo },
+      { path: '/logs/users', label: 'Users', icon: Users },
+      { path: '/logs/ip', label: 'IP Monitor', icon: Globe },
+    ],
+  },
+  {
     id: 'ai',
     label: 'AI',
     icon: Brain,

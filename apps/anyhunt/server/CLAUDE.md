@@ -10,6 +10,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 - OpenAPI 文档改为 Scalar 双入口：`/api-reference`（public）与 `/api-reference/internal`（internal），并提供 `/openapi.json` 与 `/openapi-internal.json`
 - 修复文档访问 403：`Missing origin` 检查对 OpenAPI/Scalar 路径放行（公网可直接访问，无额外防护）
+- Log：修复错误判定与观测质量（仅 4xx/5xx 记录 error 字段、跳过 `/api/v1/admin/logs` 自采集、查询 SQL 统一改为 `$queryRaw + Prisma.sql`、时间参数强制 ISO8601+时区）
+- Log：新增统一请求日志模块（`RequestLog` 单表 + 全局采集中间件 + Admin 查询接口 + 30 天清理任务）
 - API Key：更新接口补齐 no-store，避免明文 key 被缓存
 - LLM：ModelProviderFactory 单测在 isolate=false 下 resetModules 确保 mock 生效
 - Agent：请求支持多轮消息（messages），计费估算基于 message 总量
@@ -124,6 +126,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | `agent/`         | -     | L3 Agent API + Browser Tools                 | `src/agent/CLAUDE.md`     |
 | `digest/`        | -     | Intelligent Digest (subscriptions/inbox)     | `src/digest/CLAUDE.md`    |
 | `admin/`         | 16    | Admin dashboard APIs                         | `src/admin/CLAUDE.md`     |
+| `log/`           | 8     | Unified request logs + analytics + cleanup   | -                         |
 | `oembed/`        | 18    | oEmbed provider support                      | `src/oembed/CLAUDE.md`    |
 | `billing/`       | 5     | Billing rules + deduct/refund                | -                         |
 | `quota/`         | 14    | Quota management                             | `src/quota/CLAUDE.md`     |
@@ -291,27 +294,31 @@ curl http://localhost:3000/openapi-internal.json
 
 ### 环境变量说明
 
-| 变量                          | 必需 | 说明                                                                             |
-| ----------------------------- | ---- | -------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | ✅   | 主库 PostgreSQL 连接字符串                                                       |
-| `VECTOR_DATABASE_URL`         | ✅   | 向量库 PostgreSQL（pgvector）连接字符串                                          |
-| `REDIS_URL`                   | ✅   | Redis 连接字符串                                                                 |
-| `BETTER_AUTH_SECRET`          | ✅   | Better Auth 密钥                                                                 |
-| `BETTER_AUTH_URL`             | ✅   | 服务公网 URL（生产建议 `https://server.anyhunt.app`）                            |
-| `ADMIN_EMAILS`                | ✅   | 管理员邮箱白名单（逗号分隔，注册后自动授予管理员权限）                           |
-| `ALLOWED_ORIGINS`             | ✅   | CORS 允许来源（逗号分隔）                                                        |
-| `TRUSTED_ORIGINS`             | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
-| `SERVER_URL`                  | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
-| `ANYHUNT_LLM_SECRET_KEY`      | ❌   | 用于加密存储在 DB 的 provider apiKey（Admin LLM 配置必需；base64(32 bytes)）     |
-| `EMBEDDING_OPENAI_API_KEY`    | ✅   | Embedding 模块 OpenAI-compatible API Key（未配置则 embedding 会失败）            |
-| `EMBEDDING_OPENAI_BASE_URL`   | ❌   | Embedding 模块 OpenAI-compatible baseURL（空字符串视为未配置）                   |
-| `EMBEDDING_OPENAI_MODEL`      | ❌   | Embedding 模块默认模型（默认 `text-embedding-3-small`）                          |
-| `R2_*`                        | ❌   | 云存储配置（可选）                                                               |
-| `R2_PUBLIC_URL`               | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
-| `RESEND_API_KEY`              | ❌   | Resend API Key（不启用邮件可留空）                                               |
-| `EMAIL_FROM`                  | ❌   | 发件人地址（默认 `Anyhunt <noreply@anyhunt.app>`）                               |
-| `BILLING_RULE_OVERRIDES_JSON` | ❌   | 扣费规则覆盖（JSON，对应 `src/billing/billing.rules.ts`）                        |
-| `BROWSER_*`                   | ❌   | 浏览器池配置（池大小/预热/空闲回收）                                             |
+| 变量                                    | 必需 | 说明                                                                             |
+| --------------------------------------- | ---- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`                          | ✅   | 主库 PostgreSQL 连接字符串                                                       |
+| `VECTOR_DATABASE_URL`                   | ✅   | 向量库 PostgreSQL（pgvector）连接字符串                                          |
+| `REDIS_URL`                             | ✅   | Redis 连接字符串                                                                 |
+| `BETTER_AUTH_SECRET`                    | ✅   | Better Auth 密钥                                                                 |
+| `BETTER_AUTH_URL`                       | ✅   | 服务公网 URL（生产建议 `https://server.anyhunt.app`）                            |
+| `BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` | ❌   | Better Auth 限流窗口（秒，默认 `60`）                                            |
+| `BETTER_AUTH_RATE_LIMIT_MAX`            | ❌   | Better Auth 限流次数（默认 `120`）                                               |
+| `ADMIN_EMAILS`                          | ✅   | 管理员邮箱白名单（逗号分隔，注册后自动授予管理员权限）                           |
+| `ALLOWED_ORIGINS`                       | ✅   | CORS 允许来源（逗号分隔）                                                        |
+| `TRUSTED_ORIGINS`                       | ✅   | Better Auth 信任来源（逗号分隔）                                                 |
+| `TRUST_PROXY`                           | ❌   | Express trust proxy 设置（默认 `1`；支持 `true/false/数字`）                     |
+| `REQUEST_LOG_RETENTION_DAYS`            | ❌   | 请求日志保留天数（默认 `30`）                                                    |
+| `SERVER_URL`                            | ✅   | 服务公网 URL（用于预签名 URL 与回调地址，生产建议 `https://server.anyhunt.app`） |
+| `ANYHUNT_LLM_SECRET_KEY`                | ❌   | 用于加密存储在 DB 的 provider apiKey（Admin LLM 配置必需；base64(32 bytes)）     |
+| `EMBEDDING_OPENAI_API_KEY`              | ✅   | Embedding 模块 OpenAI-compatible API Key（未配置则 embedding 会失败）            |
+| `EMBEDDING_OPENAI_BASE_URL`             | ❌   | Embedding 模块 OpenAI-compatible baseURL（空字符串视为未配置）                   |
+| `EMBEDDING_OPENAI_MODEL`                | ❌   | Embedding 模块默认模型（默认 `text-embedding-3-small`）                          |
+| `R2_*`                                  | ❌   | 云存储配置（可选）                                                               |
+| `R2_PUBLIC_URL`                         | ❌   | CDN Base URL（生产固定 `https://cdn.anyhunt.app`）                               |
+| `RESEND_API_KEY`                        | ❌   | Resend API Key（不启用邮件可留空）                                               |
+| `EMAIL_FROM`                            | ❌   | 发件人地址（默认 `Anyhunt <noreply@anyhunt.app>`）                               |
+| `BILLING_RULE_OVERRIDES_JSON`           | ❌   | 扣费规则覆盖（JSON，对应 `src/billing/billing.rules.ts`）                        |
+| `BROWSER_*`                             | ❌   | 浏览器池配置（池大小/预热/空闲回收）                                             |
 
 ---
 
