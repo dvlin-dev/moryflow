@@ -26,7 +26,7 @@ export {
   parseAuthError,
   // API URL
   MEMBERSHIP_API_URL,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 export type {
   UserTier,
@@ -42,7 +42,7 @@ export type {
   MembershipModelsResponse,
   MembershipAuthState,
   BetterAuthError,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // ── Mobile 特有导出 ──────────────────────────────────────
 

@@ -9,7 +9,7 @@
     "dev:anyhunt:www": "pnpm --filter @anyhunt/anyhunt-www dev",
     "dev:console": "pnpm --filter @anyhunt/console dev",
     "dev:admin": "pnpm --filter @anyhunt/admin dev",
-    "dev:moryflow:pc": "pnpm --filter @anyhunt/moryflow-pc dev",
+    "dev:moryflow:pc": "pnpm --filter @moryflow/pc dev",
     "build": "turbo run build",
     "build:agents": "tsc-multi --config tsc-multi.stage1.json && tsc-multi --config tsc-multi.stage2.json",
     "build:packages": "pnpm run build:agents",
@@ -30,7 +30,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@anyhunt/eslint-config": "workspace:*",
+    "@moryflow/eslint-config": "workspace:*",
     "@biomejs/biome": "^2.3.13",
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",

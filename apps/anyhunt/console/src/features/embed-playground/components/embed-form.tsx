@@ -21,10 +21,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { ApiKey } from '@/features/api-keys';
 import type { EmbedFormData } from '../types';
-import type { EmbedTheme } from '@anyhunt/embed-react';
+import type { EmbedTheme } from '@moryflow/embed-react';
 
 interface EmbedFormProps {
   apiKeys: ApiKey[];

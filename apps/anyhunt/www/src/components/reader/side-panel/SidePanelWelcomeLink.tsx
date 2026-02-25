@@ -4,7 +4,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 
 interface SidePanelWelcomeLinkProps {
   pathname: string;

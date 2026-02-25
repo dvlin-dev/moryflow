@@ -20,12 +20,12 @@ styles/                 # 全局样式
 ## 导入方式
 
 ```tsx
-import { Button, Card } from '@anyhunt/ui';
-import { DataTable, PageHeader } from '@anyhunt/ui/composed';
-import { CodeBlock } from '@anyhunt/ui/ai/code-block';
-import { Highlight } from '@anyhunt/ui/animate/primitives/effects/highlight';
-import { cn } from '@anyhunt/ui/lib';
-import { useIsMobile } from '@anyhunt/ui/hooks/use-mobile';
+import { Button, Card } from '@moryflow/ui';
+import { DataTable, PageHeader } from '@moryflow/ui/composed';
+import { CodeBlock } from '@moryflow/ui/ai/code-block';
+import { Highlight } from '@moryflow/ui/animate/primitives/effects/highlight';
+import { cn } from '@moryflow/ui/lib';
+import { useIsMobile } from '@moryflow/ui/hooks/use-mobile';
 import { ChevronDown } from 'lucide-react';
 ```
 
@@ -39,7 +39,7 @@ import { ChevronDown } from 'lucide-react';
 ## 主题与样式
 
 - 统一 Token 与基础样式来自 `styles/index.css`（含 `tailwindcss` + `tw-animate-css`）
-- 业务侧只需 `@import '@anyhunt/ui/styles'`，再为自身代码声明 `@source`
+- 业务侧只需 `@import '@moryflow/ui/styles'`，再为自身代码声明 `@source`
 - 应用专属样式（Electron/编辑器等）仅放在应用内，不放入 UI 包
 
 ## 约束

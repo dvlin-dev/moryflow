@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createGenerateImageTool - AI 图片生成工具
- * [DEPENDS]: @openai/agents-core, @anyhunt/agents-adapter
+ * [DEPENDS]: @openai/agents-core, @moryflow/agents-adapter
  * [POS]: Agent 工具，调用后端 /v1/images/generations 生成图片
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -8,7 +8,7 @@
 
 import { tool } from '@openai/agents-core';
 import { z } from 'zod';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
 import { toolSummarySchema } from '../shared';
 
 const MAX_IMAGES = 10;

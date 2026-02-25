@@ -18,7 +18,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { isScrapeError, type ScrapeResponse } from '@/features/playground-shared';
 
 interface ScrapeResultProps {

@@ -16,7 +16,7 @@ importers:
 
   .:
     devDependencies:
-      '@anyhunt/eslint-config':
+      '@moryflow/eslint-config':
         specifier: workspace:*
         version: link:tooling/eslint-config
       '@biomejs/biome':
@@ -91,16 +91,16 @@ importers:
 
   apps/anyhunt/admin/www:
     dependencies:
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../../packages/api
-      '@anyhunt/tiptap':
+      '@moryflow/tiptap':
         specifier: workspace:*
         version: link:../../../../packages/tiptap
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../../../../packages/types
-      '@anyhunt/ui':
+      '@moryflow/ui':
         specifier: workspace:*
         version: link:../../../../packages/ui
       '@tanstack/react-query':
@@ -221,16 +221,16 @@ importers:
       '@ai-sdk/react':
         specifier: 3.0.99
         version: 3.0.99(react@19.2.3)(zod@4.3.6)
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/embed-react':
+      '@moryflow/embed-react':
         specifier: workspace:*
         version: link:../../../packages/embed-react
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../../../packages/types
-      '@anyhunt/ui':
+      '@moryflow/ui':
         specifier: workspace:*
         version: link:../../../packages/ui
       '@radix-ui/react-alert-dialog':
@@ -502,7 +502,7 @@ importers:
       '@ai-sdk/openai':
         specifier: 3.0.31
         version: 3.0.31(zod@4.3.6)
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
       '@aws-sdk/client-s3':
@@ -749,13 +749,13 @@ importers:
 
   apps/anyhunt/www:
     dependencies:
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../../../packages/types
-      '@anyhunt/ui':
+      '@moryflow/ui':
         specifier: workspace:*
         version: link:../../../packages/ui
       '@hookform/resolvers':
@@ -840,13 +840,13 @@ importers:
       '@ai-sdk/react':
         specifier: 3.0.99
         version: 3.0.99(react@19.2.3)(zod@4.3.6)
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/model-registry-data':
+      '@moryflow/model-registry-data':
         specifier: workspace:*
         version: link:../../../packages/model-registry-data
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../../../packages/types
       '@dnd-kit/core':
@@ -1096,7 +1096,7 @@ importers:
 
   apps/moryflow/docs:
     dependencies:
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
       '@content-collections/core':
@@ -1178,31 +1178,31 @@ importers:
       '@ai-sdk/react':
         specifier: 3.0.99
         version: 3.0.99(react@19.1.0)(zod@4.3.6)
-      '@anyhunt/agents-adapter':
+      '@moryflow/agents-adapter':
         specifier: workspace:*
         version: link:../../../packages/agents-adapter
-      '@anyhunt/agents-model-registry':
+      '@moryflow/agents-model-registry':
         specifier: workspace:*
         version: link:../../../packages/agents-model-registry
-      '@anyhunt/agents-runtime':
+      '@moryflow/agents-runtime':
         specifier: workspace:*
         version: link:../../../packages/agents-runtime
-      '@anyhunt/agents-tools':
+      '@moryflow/agents-tools':
         specifier: workspace:*
         version: link:../../../packages/agents-tools
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/i18n':
+      '@moryflow/i18n':
         specifier: workspace:*
         version: link:../../../packages/i18n
-      '@anyhunt/sync':
+      '@moryflow/sync':
         specifier: workspace:*
         version: link:../../../packages/sync
-      '@anyhunt/tiptap':
+      '@moryflow/tiptap':
         specifier: workspace:*
         version: link:../../../packages/tiptap
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../../../packages/types
       '@better-auth/expo':
@@ -1611,43 +1611,43 @@ importers:
       '@ai-sdk/xai':
         specifier: 3.0.57
         version: 3.0.57(zod@4.3.6)
-      '@anyhunt/agents-adapter':
+      '@moryflow/agents-adapter':
         specifier: workspace:*
         version: link:../../../packages/agents-adapter
-      '@anyhunt/agents-mcp':
+      '@moryflow/agents-mcp':
         specifier: workspace:*
         version: link:../../../packages/agents-mcp
-      '@anyhunt/agents-model-registry':
+      '@moryflow/agents-model-registry':
         specifier: workspace:*
         version: link:../../../packages/agents-model-registry
-      '@anyhunt/agents-runtime':
+      '@moryflow/agents-runtime':
         specifier: workspace:*
         version: link:../../../packages/agents-runtime
-      '@anyhunt/agents-sandbox':
+      '@moryflow/agents-sandbox':
         specifier: workspace:*
         version: link:../../../packages/agents-sandbox
-      '@anyhunt/agents-tools':
+      '@moryflow/agents-tools':
         specifier: workspace:*
         version: link:../../../packages/agents-tools
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/i18n':
+      '@moryflow/i18n':
         specifier: workspace:*
         version: link:../../../packages/i18n
-      '@anyhunt/model-registry-data':
+      '@moryflow/model-registry-data':
         specifier: workspace:*
         version: link:../../../packages/model-registry-data
-      '@anyhunt/sync':
+      '@moryflow/sync':
         specifier: workspace:*
         version: link:../../../packages/sync
-      '@anyhunt/tiptap':
+      '@moryflow/tiptap':
         specifier: workspace:*
         version: link:../../../packages/tiptap
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../../../packages/types
-      '@anyhunt/ui':
+      '@moryflow/ui':
         specifier: workspace:*
         version: link:../../../packages/ui
       '@base-ui-components/react':
@@ -2086,10 +2086,10 @@ importers:
       '@ai-sdk/provider-utils':
         specifier: 4.0.15
         version: 4.0.15(zod@4.3.6)
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/sync':
+      '@moryflow/sync':
         specifier: workspace:*
         version: link:../../../packages/sync
       '@aws-sdk/client-s3':
@@ -2371,10 +2371,10 @@ importers:
 
   apps/moryflow/www:
     dependencies:
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../../../packages/api
-      '@anyhunt/ui':
+      '@moryflow/ui':
         specifier: workspace:*
         version: link:../../../packages/ui
       '@tanstack/react-router':
@@ -2432,7 +2432,7 @@ importers:
 
   packages/agents-mcp:
     dependencies:
-      '@anyhunt/agents-runtime':
+      '@moryflow/agents-runtime':
         specifier: workspace:*
         version: link:../agents-runtime
       '@openai/agents-core':
@@ -2469,10 +2469,10 @@ importers:
       '@ai-sdk/xai':
         specifier: 3.0.57
         version: 3.0.57(zod@4.3.6)
-      '@anyhunt/agents-adapter':
+      '@moryflow/agents-adapter':
         specifier: workspace:*
         version: link:../agents-adapter
-      '@anyhunt/api':
+      '@moryflow/api':
         specifier: workspace:*
         version: link:../api
       '@openai/agents-core':
@@ -2525,10 +2525,10 @@ importers:
 
   packages/agents-tools:
     dependencies:
-      '@anyhunt/agents-adapter':
+      '@moryflow/agents-adapter':
         specifier: workspace:*
         version: link:../agents-adapter
-      '@anyhunt/agents-runtime':
+      '@moryflow/agents-runtime':
         specifier: workspace:*
         version: link:../agents-runtime
       '@openai/agents-core':
@@ -2559,10 +2559,10 @@ importers:
 
   packages/api:
     dependencies:
-      '@anyhunt/sync':
+      '@moryflow/sync':
         specifier: workspace:*
         version: link:../sync
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../types
     devDependencies:
@@ -2579,10 +2579,10 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
-      '@anyhunt/eslint-config':
+      '@moryflow/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint-config
-      '@anyhunt/typescript-config':
+      '@moryflow/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript-config
       tsc-multi:
@@ -2600,7 +2600,7 @@ importers:
 
   packages/embed-react:
     dependencies:
-      '@anyhunt/embed':
+      '@moryflow/embed':
         specifier: workspace:*
         version: link:../embed
       react:
@@ -2809,10 +2809,10 @@ importers:
 
   packages/types:
     devDependencies:
-      '@anyhunt/eslint-config':
+      '@moryflow/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint-config
-      '@anyhunt/typescript-config':
+      '@moryflow/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript-config
       tsc-multi:
@@ -2824,7 +2824,7 @@ importers:
 
   packages/ui:
     dependencies:
-      '@anyhunt/types':
+      '@moryflow/types':
         specifier: workspace:*
         version: link:../types
       '@base-ui-components/react':

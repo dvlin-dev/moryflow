@@ -12,8 +12,8 @@ import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 import type { Tool } from '@openai/agents-core';
 import { tsImport } from 'tsx/esm/api';
-import type { CryptoUtils, PlatformCapabilities } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { CryptoUtils, PlatformCapabilities } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 
 const TOOLS_DIR = path.join(os.homedir(), '.moryflow', 'tools');
 

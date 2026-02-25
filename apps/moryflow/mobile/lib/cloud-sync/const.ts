@@ -9,7 +9,7 @@
 import { Platform } from 'react-native';
 import { Paths } from 'expo-file-system';
 import { randomUUID } from 'expo-crypto';
-import { formatSmartRelativeTime } from '@anyhunt/i18n';
+import { formatSmartRelativeTime } from '@moryflow/i18n';
 
 // ── 同步配置 ────────────────────────────────────────────────
 

@@ -20,16 +20,16 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { Button } from '@anyhunt/ui/components/button';
+import { Switch } from '@moryflow/ui/components/switch';
+import { Button } from '@moryflow/ui/components/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@anyhunt/ui/components/collapsible';
-import { Label } from '@anyhunt/ui/components/label';
-import { Progress } from '@anyhunt/ui/components/progress';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
+} from '@moryflow/ui/components/collapsible';
+import { Label } from '@moryflow/ui/components/label';
+import { Progress } from '@moryflow/ui/components/progress';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
 import { useAuth } from '@/lib/server';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';

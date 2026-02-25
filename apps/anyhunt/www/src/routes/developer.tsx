@@ -7,7 +7,7 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
 import { ChevronLeft, Server, Book, Key, Code } from 'lucide-react';
 import { Header, Footer } from '@/components/layout';
 

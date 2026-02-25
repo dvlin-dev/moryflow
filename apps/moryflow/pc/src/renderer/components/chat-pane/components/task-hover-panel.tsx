@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useId, useMemo, useState } from 'react';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { TaskRecord, TaskStatus } from '@shared/ipc';

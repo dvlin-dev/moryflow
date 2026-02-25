@@ -21,7 +21,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { authMethods } from '@/lib/auth/auth-methods';
 import { useAuthStore } from '@/stores/auth-store';
 import { ResponsiveDialog } from './ResponsiveDialog';

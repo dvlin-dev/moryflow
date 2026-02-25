@@ -21,7 +21,7 @@ import {
   RadioGroup,
   RadioGroupItem,
   Label,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { ApiClientError } from '@/lib/api-client';

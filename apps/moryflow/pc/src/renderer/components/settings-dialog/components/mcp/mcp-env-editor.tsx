@@ -1,7 +1,7 @@
 import { useFieldArray, type Control } from 'react-hook-form';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
 import { Plus, Delete, View, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import type { FormValues } from '../../const';

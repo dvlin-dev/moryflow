@@ -6,7 +6,7 @@
 
 import { ChevronRight } from 'lucide-react';
 import { Container } from '@/components/layout';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 
 export function CTASection() {
   return (

@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
 
-import { createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { BetterAuthError } from './types';
 import { authClient } from './client';
 import { MEMBERSHIP_API_URL } from './const';

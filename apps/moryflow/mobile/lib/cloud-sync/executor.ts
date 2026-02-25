@@ -7,9 +7,9 @@
  */
 
 import { File, Directory, Paths } from 'expo-file-system';
-import type { SyncActionDto, CompletedFileDto } from '@anyhunt/api/cloud-sync';
-import type { VectorClock } from '@anyhunt/sync';
-import { createEmptyClock, incrementClock, mergeVectorClocks } from '@anyhunt/sync';
+import type { SyncActionDto, CompletedFileDto } from '@moryflow/api/cloud-sync';
+import type { VectorClock } from '@moryflow/sync';
+import { createEmptyClock, incrementClock, mergeVectorClocks } from '@moryflow/sync';
 import {
   getEntry,
   updateEntry,

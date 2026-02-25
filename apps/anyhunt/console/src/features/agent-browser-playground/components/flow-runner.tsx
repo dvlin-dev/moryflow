@@ -23,8 +23,8 @@ import {
   FormLabel,
   FormMessage,
   Input,
-} from '@anyhunt/ui';
-import { CodeBlock } from '@anyhunt/ui/ai/code-block';
+} from '@moryflow/ui';
+import { CodeBlock } from '@moryflow/ui/ai/code-block';
 import { parseSchemaJsonToAgentOutput } from '../agent-output';
 import { flowRunnerSchema, type FlowRunnerValues } from '../schemas';
 import {

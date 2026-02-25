@@ -17,7 +17,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface ResponsiveDialogProps {

@@ -9,7 +9,7 @@
 import { getStoredRefreshToken, setStoredRefreshToken, clearStoredRefreshToken } from './storage';
 import { AUTH_BASE_URL } from './auth-client';
 import { DEVICE_PLATFORM } from './auth-platform';
-import { createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import {
   ACCESS_TOKEN_SKEW_MS,
   authStore,

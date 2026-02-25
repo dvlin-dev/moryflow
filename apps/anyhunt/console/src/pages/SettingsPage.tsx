@@ -21,8 +21,8 @@ import {
   TabsList,
   TabsTrigger,
   Skeleton,
-} from '@anyhunt/ui';
-import { PageHeader } from '@anyhunt/ui';
+} from '@moryflow/ui';
+import { PageHeader } from '@moryflow/ui';
 import { useProfile, useUpdateProfile, useChangePassword } from '@/features/settings';
 
 export default function SettingsPage() {

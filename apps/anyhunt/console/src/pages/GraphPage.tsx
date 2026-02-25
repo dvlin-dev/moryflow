@@ -35,7 +35,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useGraph, type GraphNode, type GraphEdge, type GraphQueryParams } from '@/features/memox';
 

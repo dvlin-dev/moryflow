@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment } from 'react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,14 +8,14 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from '@anyhunt/ui/components/command'
-import { useTranslation } from '@/lib/i18n'
-import type { CommandPaletteProps } from './const'
-import { groupActions } from './handle'
+} from '@moryflow/ui/components/command';
+import { useTranslation } from '@/lib/i18n';
+import type { CommandPaletteProps } from './const';
+import { groupActions } from './handle';
 
 export const CommandPalette = ({ open, onOpenChange, actions }: CommandPaletteProps) => {
-  const { t } = useTranslation('workspace')
-  const groupedActions = groupActions(actions)
+  const { t } = useTranslation('workspace');
+  const groupedActions = groupActions(actions);
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
@@ -32,10 +32,10 @@ export const CommandPalette = ({ open, onOpenChange, actions }: CommandPalettePr
                   disabled={action.disabled}
                   onSelect={() => {
                     if (action.disabled) {
-                      return
+                      return;
                     }
-                    void action.handler()
-                    onOpenChange(false)
+                    void action.handler();
+                    onOpenChange(false);
                   }}
                 >
                   <div className="flex flex-1 flex-col">
@@ -53,6 +53,5 @@ export const CommandPalette = ({ open, onOpenChange, actions }: CommandPalettePr
         ))}
       </CommandList>
     </CommandDialog>
-  )
-}
-
+  );
+};

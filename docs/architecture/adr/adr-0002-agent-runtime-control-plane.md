@@ -401,7 +401,7 @@ export const createTools = () => [
   - **web_fetch/web_search**：默认 `allow`（依赖 SSRF 防护与协议限制）。
   - **mcp**：仅允许已配置服务器；新增服务器需 `ask`。
 - **审批最小化原则**：仅对高风险操作触发审批（Vault 外读、敏感文件、bash、未知 MCP），低风险操作默认不弹。
-- **审批交互**：UI 仅提供 `once / always` 继续；拒绝通过全局 Stop/Cancel。UI 可复用 `@anyhunt/ui/ai/confirmation`（不满足时允许改造）。
+- **审批交互**：UI 仅提供 `once / always` 继续；拒绝通过全局 Stop/Cancel。UI 可复用 `@moryflow/ui/ai/confirmation`（不满足时允许改造）。
 - **规则持久化**：`always` 仅写入用户级存储（不分项目）。
 - **评估规则**：按 `permission + pattern` 进行匹配，后写优先。
 - **匹配对象**：

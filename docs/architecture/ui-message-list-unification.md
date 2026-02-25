@@ -7,7 +7,7 @@ status: completed
 
 <!--
 [INPUT]: Moryflow PC 与 Anyhunt Console 的消息列表/输入框渲染与消息结构现状
-[OUTPUT]: 抽离到 @anyhunt/ui 的组件分层与改造方案（含输入与数据结构统一）
+[OUTPUT]: 抽离到 @moryflow/ui 的组件分层与改造方案（含输入与数据结构统一）
 [POS]: 统一消息列表与输入框渲染的实施路线图（先对齐样式再统一结构）
 
 [PROTOCOL]: 本文为方案草案，落地时需同步更新相关 CLAUDE.md 文档索引。
@@ -18,8 +18,8 @@ status: completed
 ## 目标
 
 - 让 `console.anyhunt.app/agent-browser/agent` 的消息列表渲染与 Moryflow PC 右侧消息列表一致。
-- 把可复用的消息列表 UI 组件抽离到 `@anyhunt/ui`，形成跨产品统一的基础能力。
-- 保持 `@anyhunt/ui` 纯 UI：不包含业务逻辑、不依赖业务文案、不触发平台副作用（如 Electron API / toast）。
+- 把可复用的消息列表 UI 组件抽离到 `@moryflow/ui`，形成跨产品统一的基础能力。
+- 保持 `@moryflow/ui` 纯 UI：不包含业务逻辑、不依赖业务文案、不触发平台副作用（如 Electron API / toast）。
 - 先让 Console 追随 Moryflow 现有样式，再统一调整样式。
 
 ## 范围
@@ -34,14 +34,14 @@ status: completed
 
 ## 进度
 
-- ✅ 已完成：消息列表 UI 组件与输入框 UI 抽离到 `@anyhunt/ui`
-- ✅ 已完成：Moryflow PC 已切换使用 `@anyhunt/ui/ai/*` 组件
+- ✅ 已完成：消息列表 UI 组件与输入框 UI 抽离到 `@moryflow/ui`
+- ✅ 已完成：Moryflow PC 已切换使用 `@moryflow/ui/ai/*` 组件
 - ✅ 已完成：清理占位逻辑并补齐 PromptInput 错误边界
 - ✅ 已完成：Anyhunt Console 切换与样式对齐（消息列表 + 输入框）
 
 ## 现状梳理（高层）
 
-**已在 `@anyhunt/ui` 抽离的基础组件**
+**已在 `@moryflow/ui` 抽离的基础组件**
 
 - `packages/ui/src/ai/conversation.tsx`：Conversation 容器 + EmptyState + ScrollButton
 - `packages/ui/src/ai/message/*`：Message 容器 + Response + Attachments + Branch + MetaAttachments
@@ -71,9 +71,9 @@ status: completed
 
 ## 设计原则
 
-1. `@anyhunt/ui` 只提供 UI 能力，不耦合业务数据和副作用。
+1. `@moryflow/ui` 只提供 UI 能力，不耦合业务数据和副作用。
 2. 文案/翻译统一由业务层注入，UI 层只接受 props。
-3. 所有跨产品一致的 UI 逻辑都尽量放入 `@anyhunt/ui`（包括滚动/占位等布局策略）。
+3. 所有跨产品一致的 UI 逻辑都尽量放入 `@moryflow/ui`（包括滚动/占位等布局策略）。
 4. 保留“插槽/回调/renderer”扩展机制，允许业务层注入特殊渲染或行为。
 5. 消息结构统一为跨产品共享的 metadata 规范，避免 UI 依赖产品私有字段。
 6. 遵循最佳实践：单一职责、模块化、错误边界明确、易读易维护。
@@ -85,7 +85,7 @@ status: completed
 
 - **基础消息结构仍以 `ai` 的 `UIMessage` 为准**（`role/id/parts` 等不改动）。
 - 统一扩展字段到 **中立的 metadata 命名空间**，避免产品名耦合，建议使用：`UIMessage.metadata.chat`。
-- 统一附件结构，作为跨产品共享类型放入 `@anyhunt/types`。
+- 统一附件结构，作为跨产品共享类型放入 `@moryflow/types`。
 - Moryflow PC/移动端与 Anyhunt Console 统一采用同一套 metadata 规范。
 
 ### 建议的共享类型（示意）
@@ -142,7 +142,7 @@ export type ChatMessageMetadata = {
 - 业务层负责组装 `ChatMessageMeta`，并在发送/存储时写入。
 - 各产品只保留一个数据源，避免同一语义写在多个 metadata 节点。
 
-## 目标结构（@anyhunt/ui）
+## 目标结构（@moryflow/ui）
 
 > 目标是把 Moryflow PC 的消息列表渲染“形态”抽离出来，但通过参数控制“业务行为”。
 
@@ -197,14 +197,14 @@ export type ChatMessageMetadata = {
 
 已完成：
 
-- `@anyhunt/ui/ai/tool` 仅保留 UI + callback（`onApplyDiff` 等）
+- `@moryflow/ui/ai/tool` 仅保留 UI + callback（`onApplyDiff` 等）
 - 文案与副作用由业务层注入
 
 ### Attachment 去业务化
 
 已完成：
 
-- `@anyhunt/ui/ai/message` 仅依赖 `providerMetadata.chat` 并通过 `labels` 注入文案
+- `@moryflow/ui/ai/message` 仅依赖 `providerMetadata.chat` 并通过 `labels` 注入文案
 - 元数据与翻译由业务层处理
 
 ### Reasoning/Message 文案
@@ -214,26 +214,26 @@ export type ChatMessageMetadata = {
 ### Prompt Input 去业务化
 
 - 输入框 UI 只负责布局与交互外观，不处理提交、附件选择、模型数据来源。
-- `@anyhunt/ui` 提供可控的 `onSubmit`/`onAction`/`renderers`，业务层实现副作用。
+- `@moryflow/ui` 提供可控的 `onSubmit`/`onAction`/`renderers`，业务层实现副作用。
 
 ## 分阶段落地建议
 
 ### Phase 1：抽离 UI 基座（消息列表 + 输入框）
 
-1. ✅ 在 `@anyhunt/ui` 添加 message/attachments/branch/response/tool 组件与 hook。
+1. ✅ 在 `@moryflow/ui` 添加 message/attachments/branch/response/tool 组件与 hook。
 2. ✅ 保持 API 通用，避免 Moryflow 专属字段进入 UI。
-3. ✅ 扩展 `@anyhunt/ui` 的 prompt-input 组件，迁移输入框 UI 结构。
+3. ✅ 扩展 `@moryflow/ui` 的 prompt-input 组件，迁移输入框 UI 结构。
 4. ✅ 在 Moryflow PC 内用业务层适配现有行为。
 
 ### Phase 2：迁移 Moryflow PC
 
-1. ✅ 用 `@anyhunt/ui` 替换 `apps/moryflow/pc` 的 UI 实现。
+1. ✅ 用 `@moryflow/ui` 替换 `apps/moryflow/pc` 的 UI 实现。
 2. ✅ 保持行为不变（编辑/重发/工具输出/附件展示）。
 3. ✅ 删除 `apps/moryflow/pc/src/renderer/components/ai-elements/*` 中的 UI 代码。
 
 ### Phase 3：迁移 Anyhunt Console
 
-1. ✅ 用同一套 `@anyhunt/ui` 组件替换 `AgentMessageList` 与输入区。
+1. ✅ 用同一套 `@moryflow/ui` 组件替换 `AgentMessageList` 与输入区。
 2. ✅ 默认渲染对齐 Moryflow 样式，保留可选插槽用于差异化需求。
 
 ## 风险与对策
@@ -250,7 +250,7 @@ export type ChatMessageMetadata = {
 ## 交付验收（定义对齐）
 
 - Console 的消息列表在布局、气泡、Tool 卡、Reasoning 展开等视觉与交互上与 Moryflow PC 对齐。
-- `@anyhunt/ui` 中无业务依赖与副作用（i18n、API、Electron、toast）。
+- `@moryflow/ui` 中无业务依赖与副作用（i18n、API、Electron、toast）。
 - Moryflow PC 依然具备原有功能（编辑/重发/工具输出/附件展示）。
 - Console 输入框结构与样式对齐 Moryflow，但业务行为仍由 Console 管理。
 - 两端消息 metadata 统一为 `metadata.chat`，无 `metadata.moryflow` 残留。

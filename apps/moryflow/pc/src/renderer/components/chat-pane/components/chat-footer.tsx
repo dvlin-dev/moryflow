@@ -11,7 +11,7 @@
 
 import type { ChatStatus } from 'ai';
 
-import { CardFooter } from '@anyhunt/ui/components/card';
+import { CardFooter } from '@moryflow/ui/components/card';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 

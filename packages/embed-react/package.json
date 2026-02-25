@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/embed-react",
+  "name": "@moryflow/embed-react",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/embed": "workspace:*"
+    "@moryflow/embed": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18 || ^19",

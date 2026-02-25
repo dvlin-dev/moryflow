@@ -11,7 +11,7 @@ import {
   compareVectorClocks,
   type VectorClock,
   type ClockRelation,
-} from '@anyhunt/sync';
+} from '@moryflow/sync';
 import type { LocalFileDto, SyncActionDto } from './dto';
 
 export interface RemoteFile {

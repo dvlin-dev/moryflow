@@ -1,4 +1,4 @@
-import type { ProblemDetails } from '@anyhunt/types';
+import type { ProblemDetails } from '@moryflow/types';
 import { getPublicApiClient } from './public-api-client';
 
 // ============== Types ==============

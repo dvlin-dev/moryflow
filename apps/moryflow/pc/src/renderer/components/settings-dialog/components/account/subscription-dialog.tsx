@@ -5,10 +5,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@anyhunt/ui/components/dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import { Badge } from '@anyhunt/ui/components/badge';
-import { Tabs, TabsList, TabsTrigger } from '@anyhunt/ui/components/tabs';
+} from '@moryflow/ui/components/dialog';
+import { Button } from '@moryflow/ui/components/button';
+import { Badge } from '@moryflow/ui/components/badge';
+import { Tabs, TabsList, TabsTrigger } from '@moryflow/ui/components/tabs';
 import type { LucideIcon } from 'lucide-react';
 import { CircleAlert, CircleCheck, Crown, Loader, Sparkles, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,7 +16,7 @@ import { fetchProducts } from '@/lib/server/api';
 import { usePurchase } from '@/lib/server/hooks';
 import { useAuth } from '@/lib/server';
 import { PaymentDialog } from '@/components/payment-dialog';
-import { getTierInfo } from '@anyhunt/api';
+import { getTierInfo } from '@moryflow/api';
 import { useTranslation } from '@/lib/i18n';
 import type { ProductInfo, UserTier } from '@/lib/server/types';
 

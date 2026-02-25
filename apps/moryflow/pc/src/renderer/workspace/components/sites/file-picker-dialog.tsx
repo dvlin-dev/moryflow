@@ -19,11 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
+} from '@moryflow/ui/components/dialog';
+import { Button } from '@moryflow/ui/components/button';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
 import type { VaultTreeNode, VaultItem } from '../../../../shared/ipc/vault';
 import { SKELETON_PLACEHOLDER_COUNT } from './const';
 

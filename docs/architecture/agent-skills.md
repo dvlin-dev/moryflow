@@ -397,11 +397,11 @@ type SkillInstallState = {
 - 2026-02-11：`pnpm test:unit` 通过
 - 2026-02-11：二次校验 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 全部通过（含新增单测）
 - 2026-02-11：三次校验 `pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 全部通过（含发送后清理与消息 skill tag 回归）
-- 2026-02-11：四次校验 `pnpm --filter @anyhunt/moryflow-pc typecheck` 与 `pnpm --filter @anyhunt/moryflow-pc test:unit` 全部通过（含 Skills 推荐/预安装/Try 立即生效改造）
-- 2026-02-11：五次校验 `pnpm --filter @anyhunt/moryflow-pc typecheck` 与 `CI=1 pnpm --filter @anyhunt/moryflow-pc test:unit` 全部通过（含“一次性预安装”状态标记修正）
-- 2026-02-11：六次校验 `pnpm --filter @anyhunt/moryflow-pc typecheck` 通过（最终收尾格式化与可读性调整后复核）
-- 2026-02-11：七次校验 `CI=1 pnpm --filter @anyhunt/moryflow-pc test:unit` 通过（最终提交前全量回归）
-- 2026-02-11：八次校验 `pnpm lint --filter @anyhunt/moryflow-pc` 通过（目标包 lint 流程通过）
+- 2026-02-11：四次校验 `pnpm --filter @moryflow/pc typecheck` 与 `pnpm --filter @moryflow/pc test:unit` 全部通过（含 Skills 推荐/预安装/Try 立即生效改造）
+- 2026-02-11：五次校验 `pnpm --filter @moryflow/pc typecheck` 与 `CI=1 pnpm --filter @moryflow/pc test:unit` 全部通过（含“一次性预安装”状态标记修正）
+- 2026-02-11：六次校验 `pnpm --filter @moryflow/pc typecheck` 通过（最终收尾格式化与可读性调整后复核）
+- 2026-02-11：七次校验 `CI=1 pnpm --filter @moryflow/pc test:unit` 通过（最终提交前全量回归）
+- 2026-02-11：八次校验 `pnpm lint --filter @moryflow/pc` 通过（目标包 lint 流程通过）
 
 ## 行为准则（实施阶段）
 

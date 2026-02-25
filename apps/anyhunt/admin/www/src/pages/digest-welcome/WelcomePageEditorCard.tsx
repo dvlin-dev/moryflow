@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { NotionMarkdownEditor } from '@/components/markdown/NotionMarkdownEditor';
 import type { DigestWelcomePage, UpdateWelcomePageInput } from '@/features/digest-welcome';
 import { ensureLocaleRecordValue, toSlug } from './digest-welcome.utils';

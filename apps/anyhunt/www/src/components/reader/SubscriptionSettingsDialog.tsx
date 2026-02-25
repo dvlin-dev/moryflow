@@ -38,7 +38,7 @@ import {
   TabsList,
   TabsTrigger,
   Separator,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { Play, Share } from 'lucide-react';
 import { useUpdateSubscription, useTriggerManualRun } from '@/features/digest/hooks';
 import { CRON_PRESETS, TIMEZONES } from '@/features/digest/constants';

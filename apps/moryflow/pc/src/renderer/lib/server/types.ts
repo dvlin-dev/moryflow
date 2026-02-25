@@ -23,7 +23,7 @@ export type {
   CreateCheckoutRequest,
   CreateCheckoutResponse,
   DeleteAccountRequest,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // 本地类型别名（保持向后兼容）
 export type {
@@ -32,4 +32,4 @@ export type {
   MembershipUserProfile as UserProfile,
   MembershipModelsResponse as ModelsResponse,
   MembershipAuthState as AuthState,
-} from '@anyhunt/api';
+} from '@moryflow/api';

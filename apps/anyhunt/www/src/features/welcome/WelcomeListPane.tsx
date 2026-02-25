@@ -6,7 +6,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Badge, cn } from '@anyhunt/ui';
+import { Badge, cn } from '@moryflow/ui';
 import { useWelcomeOverview } from './welcome.hooks';
 
 interface WelcomeListPaneProps {

@@ -7,7 +7,7 @@
  */
 
 import type { FunctionTool, RunContext, Tool } from '@openai/agents-core';
-import type { PathUtils } from '@anyhunt/agents-adapter';
+import type { PathUtils } from '@moryflow/agents-adapter';
 import type { AgentContext } from './types';
 
 export type PermissionDomain = 'read' | 'edit' | 'bash' | 'web_fetch' | 'web_search' | 'mcp';

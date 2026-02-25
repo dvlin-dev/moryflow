@@ -32,7 +32,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useCreateTopic } from '@/features/digest/hooks';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Subscription } from '@/features/digest/types';

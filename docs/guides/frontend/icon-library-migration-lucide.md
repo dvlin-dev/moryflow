@@ -38,7 +38,7 @@ status: implemented
 
 - Web 端存在两种使用方式：
   - 直接从 `@hugeicons/core-free-icons` 引入图标组件
-  - 使用 `@anyhunt/ui` 或本地 `Icon` 组件包裹（依赖 Hugeicons API）
+  - 使用 `@moryflow/ui` 或本地 `Icon` 组件包裹（依赖 Hugeicons API）
 - Mobile 端已封装统一入口（`components/ui/icons.ts` + `components/ui/icon.tsx`），但与 Hugeicons 绑定紧密
 - `packages/ui` 是 Anyhunt 系 UI 的中心点，Icon API 变更会影响 console/admin/www 等多处调用
 

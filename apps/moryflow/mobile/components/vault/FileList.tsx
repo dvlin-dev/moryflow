@@ -22,7 +22,7 @@ import {
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { useThemeColors } from '@/lib/theme';
-import { useTranslation } from '@anyhunt/i18n';
+import { useTranslation } from '@moryflow/i18n';
 import {
   FileIcon,
   FolderIcon,

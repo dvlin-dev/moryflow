@@ -24,8 +24,8 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from '@anyhunt/ui';
-import { CodeBlock } from '@anyhunt/ui/ai/code-block';
+} from '@moryflow/ui';
+import { CodeBlock } from '@moryflow/ui/ai/code-block';
 import type {
   BrowserSessionValues,
   BrowserOpenValues,

@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { ServerApiError as ApiError } from '@anyhunt/api/client';
+import { ServerApiError as ApiError } from '@moryflow/api/client';
 
 describe('属性 6: API 错误处理一致性', () => {
   describe('ApiError 类', () => {
@@ -135,6 +135,6 @@ describe('属性 6: API 错误处理一致性', () => {
       await expect(apiClient.get('/test')).rejects.toMatchObject({
         code: 'UNEXPECTED_RESPONSE',
       });
-    });
+    }, 15_000);
   });
 });

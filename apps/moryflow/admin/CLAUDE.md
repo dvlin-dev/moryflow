@@ -23,7 +23,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
-- Docker 构建补齐 @anyhunt/types 与 typescript-config 依赖，避免 build 缺失
+- Docker 构建补齐 @moryflow/types 与 typescript-config 依赖，避免 build 缺失
 - Admin API client 对非 JSON 响应抛出 `UNEXPECTED_RESPONSE`，并统一 ProblemDetails 类型来源
 - 补齐 API client 非 JSON 回归测试，新增 `test:unit`
 

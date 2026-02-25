@@ -5,7 +5,7 @@
  */
 
 // 复用 tiptap 包的核心转换函数
-export { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
+export { markdownToHtml, htmlToMarkdown } from '@moryflow/tiptap';
 
 /**
  * 规范化 Markdown

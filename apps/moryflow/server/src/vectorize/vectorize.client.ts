@@ -24,7 +24,7 @@ import {
   serverHttpRaw,
   ServerApiError,
 } from '../common/http/server-http-client';
-import type { ApiClientRequestOptions } from '@anyhunt/api';
+import type { ApiClientRequestOptions } from '@moryflow/api';
 @Injectable()
 export class VectorizeClient implements OnModuleInit {
   private readonly logger = new Logger(VectorizeClient.name);

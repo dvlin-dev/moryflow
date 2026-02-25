@@ -6,13 +6,13 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import { MEMBERSHIP_API_URL } from '@moryflow/api';
 import {
   createApiClient,
   createApiTransport,
   ServerApiError,
   type ApiClientRequestOptions,
-} from '@anyhunt/api/client';
+} from '@moryflow/api/client';
 import type {
   VaultDto,
   VaultListDto,
@@ -27,7 +27,7 @@ import type {
   SearchRequest,
   SearchResponse,
   UsageResponse,
-} from '@anyhunt/api/cloud-sync';
+} from '@moryflow/api/cloud-sync';
 import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 import { FETCH_TIMEOUT } from './const';
 

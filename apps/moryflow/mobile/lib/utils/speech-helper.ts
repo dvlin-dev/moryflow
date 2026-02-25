@@ -4,8 +4,8 @@
  * [POS]: 语音转录辅助函数，将本地音频文件上传到服务端进行转录
  */
 
-import { MEMBERSHIP_API_URL } from '@anyhunt/api';
-import { createApiClient, createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { MEMBERSHIP_API_URL } from '@moryflow/api';
+import { createApiClient, createApiTransport, ServerApiError } from '@moryflow/api/client';
 import { getAccessToken, refreshAccessToken } from '@/lib/server/auth-session';
 
 // ==================== 类型定义 ====================

@@ -6,7 +6,7 @@ import { NodeSelection } from '@tiptap/pm/state';
 import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Icons ---
-import { ChevronDown } from '@anyhunt/ui/icons/chevron-down-icon';
+import { ChevronDown } from '@moryflow/ui/icons/chevron-down-icon';
 
 // --- Tiptap UI ---
 import type { Level } from '../heading-button';

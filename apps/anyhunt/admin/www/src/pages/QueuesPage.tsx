@@ -17,7 +17,7 @@ import {
   RotateCcw,
   Timer,
 } from 'lucide-react';
-import { PageHeader } from '@anyhunt/ui';
+import { PageHeader } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -44,7 +44,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import {
   useAllQueueStats,
   useQueueJobs,

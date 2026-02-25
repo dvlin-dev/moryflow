@@ -7,7 +7,7 @@
  */
 
 import { BrowserWindow } from 'electron';
-import type { TasksStore } from '@anyhunt/agents-tools';
+import type { TasksStore } from '@moryflow/agents-tools';
 import { createDesktopCapabilities, createDesktopCrypto } from './desktop-adapter.js';
 import { createDesktopTasksStore } from './tasks-store.js';
 

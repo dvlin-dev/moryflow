@@ -33,4 +33,4 @@ export type {
 
   // Usage API
   UsageResponse,
-} from '@anyhunt/api/cloud-sync'
+} from '@moryflow/api/cloud-sync';

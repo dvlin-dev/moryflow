@@ -58,7 +58,7 @@ export default defineConfig({
         { find: '@', replacement: resolve(__dirname, 'src/renderer') },
         { find: '@shared', replacement: resolve(__dirname, 'src/shared') },
         {
-          find: '@anyhunt/ui/styles',
+          find: '@moryflow/ui/styles',
           replacement: resolve(__dirname, '../../../packages/ui/styles/index.css'),
         },
         {
@@ -78,9 +78,9 @@ export default defineConfig({
           find: /^@anyhunt\/tiptap\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/src/$1'),
         },
-        { find: '@anyhunt/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
+        { find: '@moryflow/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
         {
-          find: '@anyhunt/tiptap',
+          find: '@moryflow/tiptap',
           replacement: resolve(__dirname, '../../../packages/tiptap/src'),
         },
       ],

@@ -12,9 +12,9 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/api": "workspace:*",
-    "@anyhunt/types": "workspace:*",
-    "@anyhunt/ui": "workspace:*",
+    "@moryflow/api": "workspace:*",
+    "@moryflow/types": "workspace:*",
+    "@moryflow/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-router": "^1.144.0",

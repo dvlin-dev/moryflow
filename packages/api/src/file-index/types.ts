@@ -8,7 +8,7 @@
  * - apps/moryflow/mobile/lib/vault/file-index/
  */
 
-import type { VectorClock } from '@anyhunt/sync';
+import type { VectorClock } from '@moryflow/sync';
 
 export type { VectorClock };
 

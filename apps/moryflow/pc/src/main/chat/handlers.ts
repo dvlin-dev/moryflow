@@ -12,8 +12,8 @@ import { ipcMain } from 'electron';
 import type { UIMessageChunk } from 'ai';
 
 import type { AgentApplyEditInput } from '../../shared/ipc.js';
-import { applyWriteOperation, writeOperationSchema } from '@anyhunt/agents-tools';
-import { createVaultUtils } from '@anyhunt/agents-runtime';
+import { applyWriteOperation, writeOperationSchema } from '@moryflow/agents-tools';
+import { createVaultUtils } from '@moryflow/agents-runtime';
 import {
   createDesktopCapabilities,
   createDesktopCrypto,

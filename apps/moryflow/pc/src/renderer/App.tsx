@@ -1,7 +1,7 @@
 import { DesktopWorkspace } from '@/workspace';
 import { authMethods } from '@/lib/server';
 import { I18nProvider } from '@/lib/i18n';
-import { Toaster } from '@anyhunt/ui/components/sonner';
+import { Toaster } from '@moryflow/ui/components/sonner';
 import { SandboxAuthProvider } from '@/components/sandbox';
 import { BindingConflictProvider } from '@/components/cloud-sync';
 import { useEffect } from 'react';

@@ -10,7 +10,7 @@
 
 import type { DragEvent } from 'react';
 import { File } from 'lucide-react';
-import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
+import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context-menu';
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuAction } from '../const';

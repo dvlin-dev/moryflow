@@ -1,6 +1,6 @@
 import { tool } from '@openai/agents-core';
 import { z } from 'zod';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
 import { toolSummarySchema } from '../shared';
 
 const MAX_CONTENT_LENGTH = 100 * 1024; // 100KB

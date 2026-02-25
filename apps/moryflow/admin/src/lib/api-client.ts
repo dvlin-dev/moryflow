@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: 函数式 apiClient, ApiError
- * [DEPENDS]: @anyhunt/api/client, auth-methods
+ * [DEPENDS]: @moryflow/api/client, auth-methods
  * [POS]: Moryflow Admin API 请求统一封装（bearer + 401 单次重试）
  */
 
@@ -10,7 +10,7 @@ import {
   type ApiClientRequestOptions,
   type QueryParams,
   ServerApiError,
-} from '@anyhunt/api/client';
+} from '@moryflow/api/client';
 import { API_BASE_URL } from './api-base';
 import { authMethods } from './auth/auth-methods';
 import { getAccessToken } from '@/stores/auth';

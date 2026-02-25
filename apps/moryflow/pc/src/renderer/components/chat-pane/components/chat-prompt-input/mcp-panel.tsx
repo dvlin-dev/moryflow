@@ -7,8 +7,8 @@
  */
 
 import { Plus, Loader, RefreshCw, Settings } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Button } from '@moryflow/ui/components/button';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import { useMcpStatus } from '@/hooks/use-mcp-status';

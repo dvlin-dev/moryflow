@@ -18,13 +18,13 @@ import {
 } from 'react';
 import { CommandPalette } from '@/components/command-palette';
 import { InputDialog } from '@/components/input-dialog';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   type ImperativePanelHandle,
-} from '@anyhunt/ui/components/resizable';
+} from '@moryflow/ui/components/resizable';
 import { type SettingsSection } from '@/components/settings-dialog/const';
 import { UnifiedTopBar, SIDEBAR_MIN_WIDTH } from './components/unified-top-bar';
 import { Sidebar } from './components/sidebar';

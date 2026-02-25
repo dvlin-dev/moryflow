@@ -21,7 +21,7 @@ import {
   SelectValue,
   Input,
   Label,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useMemories, useExportMemories, MemoryListCard } from '@/features/memox';
 

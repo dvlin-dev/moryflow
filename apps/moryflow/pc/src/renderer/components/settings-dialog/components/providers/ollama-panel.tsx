@@ -7,12 +7,12 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { Badge } from '@anyhunt/ui/components/badge';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
+import { Switch } from '@moryflow/ui/components/switch';
+import { Badge } from '@moryflow/ui/components/badge';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { Delete, Download, SquareArrowUpRight, Loader, RefreshCw, Search } from 'lucide-react';
 import { getProviderById } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';

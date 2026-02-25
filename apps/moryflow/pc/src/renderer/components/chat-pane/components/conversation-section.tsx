@@ -11,8 +11,8 @@
  */
 
 import { useMemo, type ReactNode } from 'react';
-import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
-import { MessageList } from '@anyhunt/ui/ai/message-list';
+import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
+import { MessageList } from '@moryflow/ui/ai/message-list';
 import { useTranslation } from '@/lib/i18n';
 import { ChatMessage } from './message';
 import type { ChatStatus, UIMessage } from 'ai';

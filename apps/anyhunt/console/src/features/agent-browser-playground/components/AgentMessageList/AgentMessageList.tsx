@@ -9,8 +9,8 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Alert, AlertDescription } from '@anyhunt/ui';
-import { MessageList } from '@anyhunt/ui/ai/message-list';
+import { Alert, AlertDescription } from '@moryflow/ui';
+import { MessageList } from '@moryflow/ui/ai/message-list';
 import type { ChatStatus, UIMessage } from 'ai';
 
 import { MessageRow } from './components/message-row';

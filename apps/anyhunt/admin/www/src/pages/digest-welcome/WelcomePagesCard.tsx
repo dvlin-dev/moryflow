@@ -7,7 +7,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@anyhunt/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@moryflow/ui';
 import type { DigestWelcomePage } from '@/features/digest-welcome';
 
 interface WelcomePagesCardProps {

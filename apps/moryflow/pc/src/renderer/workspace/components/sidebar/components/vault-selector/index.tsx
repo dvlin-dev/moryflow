@@ -9,9 +9,9 @@
 import { useState, useCallback } from 'react';
 import { ChevronDown, Folder } from 'lucide-react';
 import { toast } from 'sonner';
-import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@moryflow/ui/components/popover';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useVaultManager } from '@/hooks/use-vault-manager';

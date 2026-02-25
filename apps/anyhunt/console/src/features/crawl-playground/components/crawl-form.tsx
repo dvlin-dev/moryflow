@@ -18,7 +18,7 @@ import {
   FormMessage,
   Input,
   Switch,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { ApiKey } from '@/features/api-keys';
 import {
   ApiKeySelector,

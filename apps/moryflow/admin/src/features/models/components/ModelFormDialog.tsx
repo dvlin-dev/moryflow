@@ -49,7 +49,7 @@ import { createModelSchema, type CreateModelFormData } from '@/lib/validations/m
 import { TIER_OPTIONS } from '@/constants/tier';
 import { useCreateModel, useUpdateModel } from '../hooks';
 import { parseCapabilities } from '../utils';
-import { searchModels, getModelCount, type ModelInfo } from '@anyhunt/model-registry-data';
+import { searchModels, getModelCount, type ModelInfo } from '@moryflow/model-registry-data';
 import type { AiModel, AiProvider, UserTier, ReasoningEffort } from '@/types/api';
 import { ChevronDown, Search } from 'lucide-react';
 

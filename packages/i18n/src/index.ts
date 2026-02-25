@@ -1,7 +1,7 @@
 /**
  * [PROVIDES]: i18n 初始化、Hooks、翻译资源与工具函数
  * [DEPENDS]: ./core, ./hooks, ./translations, ./utils
- * [POS]: @anyhunt/i18n 包入口
+ * [POS]: @moryflow/i18n 包入口
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 packages/i18n/CLAUDE.md
  */

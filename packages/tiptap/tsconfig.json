@@ -16,7 +16,7 @@
     "noUnusedParameters": false,
     "baseUrl": ".",
     "paths": {
-      "@anyhunt/ui/*": ["../ui/src/*"]
+      "@moryflow/ui/*": ["../ui/src/*"]
     }
   },
   "include": ["src/**/*"],

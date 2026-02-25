@@ -23,7 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
+} from '@moryflow/ui/components/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 import { SIDEBAR_LIST_INSET_X_CLASS } from '../const';

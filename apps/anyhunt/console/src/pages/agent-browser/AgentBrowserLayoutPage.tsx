@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Outlet, useMatch } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
 import { useApiKeys } from '@/features/api-keys';
 import { ApiKeySelector } from '@/features/playground-shared';
 import { PlaygroundErrorBoundary } from '@/features/agent-browser-playground';

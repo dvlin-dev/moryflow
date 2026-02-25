@@ -6,7 +6,7 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 import { ArticleCard } from './ArticleCard';
 import type { InboxItem } from '@/features/digest/types';
 

@@ -8,7 +8,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { Logger } from '@anyhunt/agents-adapter';
+import type { Logger } from '@moryflow/agents-adapter';
 
 const LOG_PREFIX = '[MobileAdapter]';
 

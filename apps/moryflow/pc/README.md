@@ -153,7 +153,7 @@ agent-runtime/
 - `@ai-sdk/react` / `ai` 对话 SDK 核心
 - `@ai-sdk/openai` / `@ai-sdk/anthropic` / `@ai-sdk/google` / `@ai-sdk/xai` 等多服务商 SDK
 - `@openrouter/ai-sdk-provider` / `@aihubmix/ai-sdk-provider` 聚合服务商
-- `@openai/agents-core` + `@anyhunt/agents-runtime` 推理与工具系统
+- `@openai/agents-core` + `@moryflow/agents-runtime` 推理与工具系统
 - UI 组件主要来自 shadcn/ui
 - 编辑器依赖 Tiptap 扩展
 

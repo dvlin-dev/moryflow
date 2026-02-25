@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
 import { SquareCheck, X, View } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@anyhunt/ui';
+import { PageHeader, SimplePagination } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -42,8 +42,8 @@ import {
   FormMessage,
   Textarea,
   Checkbox,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useReports, useResolveReport } from '@/features/digest-reports';
 import type { Report, ReportStatus, ReportReason, ReportQuery } from '@/features/digest-reports';
 

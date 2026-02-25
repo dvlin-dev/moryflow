@@ -14,7 +14,7 @@ import {
   CardTitle,
   PageHeader,
   Skeleton,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useJob } from '@/features/jobs';
 import type { JobTiming } from '@/features/jobs';
 import { formatMs, getStatusBadge } from '@/lib/job-utils';

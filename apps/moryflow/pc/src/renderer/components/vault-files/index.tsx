@@ -6,8 +6,8 @@
 
 import { useState, useMemo, type DragEvent } from 'react';
 import { FilePlus } from 'lucide-react';
-import { Files } from '@anyhunt/ui/animate/primitives/base/files';
-import { Button } from '@anyhunt/ui/components/button';
+import { Files } from '@moryflow/ui/animate/primitives/base/files';
+import { Button } from '@moryflow/ui/components/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { ROOT_DROP_TARGET_ID, type VaultFilesProps } from './const';

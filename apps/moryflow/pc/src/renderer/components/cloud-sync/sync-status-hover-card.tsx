@@ -8,8 +8,8 @@
 
 import { useMemo, type ReactNode } from 'react';
 import { CircleAlert, Cloud, Loader, type LucideIcon } from 'lucide-react';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@anyhunt/ui/components/hover-card';
-import { Button } from '@anyhunt/ui/components/button';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@moryflow/ui/components/hover-card';
+import { Button } from '@moryflow/ui/components/button';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
 

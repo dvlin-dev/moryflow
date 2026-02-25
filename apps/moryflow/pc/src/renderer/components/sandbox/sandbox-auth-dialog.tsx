@@ -12,9 +12,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import type { AuthChoice } from '@anyhunt/agents-sandbox';
+} from '@moryflow/ui/components/alert-dialog';
+import { Button } from '@moryflow/ui/components/button';
+import type { AuthChoice } from '@moryflow/agents-sandbox';
 
 interface SandboxAuthDialogProps {
   open: boolean;

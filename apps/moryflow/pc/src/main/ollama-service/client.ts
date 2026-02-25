@@ -3,7 +3,7 @@
  * 封装与 Ollama 服务的 HTTP 通信（函数式 client）
  */
 
-import { createApiClient, createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiClient, createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type {
   OllamaTagsResponse,
   OllamaVersionResponse,

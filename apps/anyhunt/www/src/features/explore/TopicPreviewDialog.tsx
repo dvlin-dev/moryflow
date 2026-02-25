@@ -7,7 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
 import { getTopicBySlug, getTopicEditions } from '@/lib/digest-api';
 import { usePublicEnv } from '@/lib/public-env-context';

@@ -51,16 +51,16 @@ status: done
     - `packages/api/src/membership/const.ts`
     - `packages/api/src/account.ts`
 
-- [P2] `@anyhunt/config` depended on Zod v3 in a server-only package
+- [P2] `@moryflow/config` depended on Zod v3 in a server-only package
   - Research:
     - Project standard: backend packages must use Zod v4 (`import { z } from 'zod'`).
     - `apps/*/server` already uses Zod v4.
   - Fix (implemented):
-    - Upgrade `@anyhunt/config` to Zod v4.
+    - Upgrade `@moryflow/config` to Zod v4.
   - Files:
     - `packages/config/package.json`
 
-- [P3] `@anyhunt/types` included unused product/business configs and stale API metadata
+- [P3] `@moryflow/types` included unused product/business configs and stale API metadata
   - Research:
     - `product/subscription/user/wallet/fetchx` types were unused across the repo.
     - These files contained hard-coded product metadata that drifted from architecture docs.

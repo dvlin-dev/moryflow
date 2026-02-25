@@ -8,7 +8,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { X, File } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@moryflow/ui/components/tooltip';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 

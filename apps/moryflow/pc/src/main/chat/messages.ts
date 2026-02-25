@@ -19,7 +19,7 @@ import {
   isRunRawModelStreamEvent,
   mapRunToolEventToChunk,
   resolveToolCallIdFromRawItem,
-} from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
 
 import type { TokenUsage } from '../../shared/ipc.js';
 import type { AgentStreamResult } from '../agent-runtime/index.js';

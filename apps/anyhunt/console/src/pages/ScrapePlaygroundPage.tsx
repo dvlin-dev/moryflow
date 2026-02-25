@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { ScrapeForm, ScrapeResult, useScrape } from '@/features/scrape-playground';
 import { CodeExample, isScrapeError } from '@/features/playground-shared';

@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/agents-sandbox",
+  "name": "@moryflow/agents-sandbox",
   "version": "0.1.0",
   "description": "Local sandbox execution for Moryflow Agent",
   "main": "dist/index.js",

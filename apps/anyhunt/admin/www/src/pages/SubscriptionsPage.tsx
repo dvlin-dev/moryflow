@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { Pencil, Search } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@anyhunt/ui';
+import { PageHeader, SimplePagination } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -32,8 +32,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useSubscriptions, useUpdateSubscription } from '@/features/subscriptions';
 import type {
   SubscriptionListItem,

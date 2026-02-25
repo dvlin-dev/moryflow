@@ -46,8 +46,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useUser, useCreditGrants, useGrantCredits } from '../hooks';
 
 const grantCreditsFormSchema = z.object({

@@ -6,7 +6,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { Inbox, Compass, Layers } from 'lucide-react';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 import { MOBILE_TAB_ITEMS, type MobileTabId } from '@/features/reader-shell/mobile-reader-state';
 
 interface MobileBottomNavProps {

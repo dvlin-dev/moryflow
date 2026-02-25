@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
   Badge,
   Button,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { LlmModelListItem } from '@/features/llm';
 
 export interface LlmModelsCardProps {

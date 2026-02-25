@@ -39,7 +39,7 @@ import {
   Badge,
   ScrollArea,
   Switch,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import {
   useCreateMemory,

@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
+import type { PromptInputMessage } from '@moryflow/ui/ai/prompt-input';
 import {
   PromptInput,
   PromptInputBody,
@@ -23,8 +23,8 @@ import {
   PromptInputTools,
   usePromptInputAttachments,
   usePromptInputController,
-} from '@anyhunt/ui/ai/prompt-input';
-import { Button } from '@anyhunt/ui/components/button';
+} from '@moryflow/ui/ai/prompt-input';
+import { Button } from '@moryflow/ui/components/button';
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -35,7 +35,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
   ModelSelectorFooter,
-} from '@anyhunt/ui/ai/model-selector';
+} from '@moryflow/ui/ai/model-selector';
 import {
   ArrowUpRight,
   ChevronDown,
@@ -46,13 +46,13 @@ import {
   Sparkles,
   Wrench,
 } from 'lucide-react';
-import { Badge } from '@anyhunt/ui/components/badge';
+import { Badge } from '@moryflow/ui/components/badge';
 import { TIER_DISPLAY_NAMES, useAuth } from '@/lib/server';
-import { LiveWaveform } from '@anyhunt/ui/components/live-waveform';
+import { LiveWaveform } from '@moryflow/ui/components/live-waveform';
 import { toast } from 'sonner';
 import { useSpeechRecording } from '@/hooks/use-speech-recording';
 import { useTranslation } from '@/lib/i18n';
-import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@moryflow/ui/components/popover';
 import { useAgentSkills } from '@/hooks/use-agent-skills';
 
 import { ContextFileTags, FileChip, type ContextFileTag } from '../context-file-tags';

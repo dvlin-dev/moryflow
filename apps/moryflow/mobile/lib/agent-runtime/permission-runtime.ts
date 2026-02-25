@@ -8,7 +8,7 @@
 
 import { randomUUID } from 'expo-crypto';
 import type { Tool, RunContext } from '@openai/agents-core';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
 import {
   buildDefaultPermissionRules,
   createPermissionDeniedOutput,
@@ -18,8 +18,8 @@ import {
   type PermissionDecision,
   type PermissionDecisionInfo,
   type PermissionRule,
-} from '@anyhunt/agents-runtime';
-import type { AgentAccessMode, AgentContext } from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
+import type { AgentAccessMode, AgentContext } from '@moryflow/agents-runtime';
 import { createMobilePermissionRuleStore } from './permission-store';
 import { createMobilePermissionAuditWriter } from './permission-audit';
 

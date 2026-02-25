@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { FileEntry } from '@anyhunt/api';
-import { createEmptyClock } from '@anyhunt/sync';
+import type { FileEntry } from '@moryflow/api';
+import { createEmptyClock } from '@moryflow/sync';
 import { buildLocalChanges } from '../file-collector-core';
 
 const deviceId = 'device-1';

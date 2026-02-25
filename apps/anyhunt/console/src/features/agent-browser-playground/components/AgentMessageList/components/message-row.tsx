@@ -3,7 +3,7 @@
  * [EMITS]: None
  * [POS]: AgentMessageList 的单条消息展示
  * [UPDATE]: 2026-02-03 - thinking 占位改为 loading icon（由空消息触发）
- * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
+ * [UPDATE]: 2026-02-08 - parts 解析复用 `@moryflow/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
  * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
  *
@@ -21,12 +21,12 @@ import {
   findLastTextPartIndex,
   splitMessageParts,
   type MessageAttachmentLabels,
-} from '@anyhunt/ui/ai/message';
-import { Loader } from '@anyhunt/ui/ai/loader';
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
-import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@anyhunt/ui/ai/streamdown-anim';
+} from '@moryflow/ui/ai/message';
+import { Loader } from '@moryflow/ui/ai/loader';
+import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
+import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@moryflow/ui/ai/streamdown-anim';
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, type UIMessage } from 'ai';
-import type { ChatMessageMeta, ChatMessageMetadata } from '@anyhunt/types';
+import type { ChatMessageMeta, ChatMessageMetadata } from '@moryflow/types';
 
 import { MessageTool } from './message-tool';
 

@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@anyhunt/ui';
+import { PageHeader, SimplePagination } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -26,8 +26,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useOrders } from '@/features/orders';
 import type { OrderQuery, OrderStatus, OrderType } from '@/features/orders';
 

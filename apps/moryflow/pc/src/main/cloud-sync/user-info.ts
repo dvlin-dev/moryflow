@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { createApiClient, MEMBERSHIP_API_URL, USER_API } from '@anyhunt/api';
+import { createApiClient, MEMBERSHIP_API_URL, USER_API } from '@moryflow/api';
 import { membershipBridge } from '../membership-bridge.js';
 import { createLogger } from './logger.js';
 

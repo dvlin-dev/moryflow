@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
+} from '@moryflow/ui/components/dropdown-menu';
 
 type SidebarCreateMenuProps = {
   onCreateFile?: () => void;

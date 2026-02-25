@@ -7,7 +7,7 @@
  */
 
 import { Globe } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import type { SiteEmptyStateProps } from './const';
 
 export function SiteEmptyState({ onPublishClick }: SiteEmptyStateProps) {

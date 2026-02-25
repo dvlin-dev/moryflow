@@ -11,4 +11,4 @@ export type {
   McpStatusEvent,
   McpTestInput,
   McpTestResult,
-} from '@anyhunt/agents-mcp'
+} from '@moryflow/agents-mcp';

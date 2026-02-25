@@ -1,11 +1,11 @@
-import type { Orientation } from "../../lib/tiptap-table-utils"
+import type { Orientation } from '../../lib/tiptap-table-utils';
 
 // --- UI ---
-import { useTableAlignCell } from "../table-align-cell-button"
+import { useTableAlignCell } from '../table-align-cell-button';
 
 // --- Icons ---
-import { AlignmentIcon } from "@anyhunt/ui/icons/alignment-icon"
-import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
+import { AlignmentIcon } from '@moryflow/ui/icons/alignment-icon';
+import { ChevronRightIcon } from '@moryflow/ui/icons/chevron-right-icon';
 
 // --- UI Primitives ---
 import {
@@ -15,71 +15,71 @@ import {
   MenuContent,
   MenuGroup,
   MenuItem,
-} from "../../../../ui-primitive/menu"
-import { Button } from "../../../../ui-primitive/button"
-import { ComboboxList } from "../../../../ui-primitive/combobox"
-import { Separator } from "../../../../ui-primitive/separator"
+} from '../../../../ui-primitive/menu';
+import { Button } from '../../../../ui-primitive/button';
+import { ComboboxList } from '../../../../ui-primitive/combobox';
+import { Separator } from '../../../../ui-primitive/separator';
 
 export interface ActionItemProps {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
-  label: string
-  onClick: () => void
-  disabled?: boolean
-  isActive?: boolean
-  shortcutBadge?: React.ReactNode
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  isActive?: boolean;
+  shortcutBadge?: React.ReactNode;
 }
 
 export const TableAlignMenu = ({
   index,
   orientation,
 }: {
-  index?: number
-  orientation?: Orientation
+  index?: number;
+  orientation?: Orientation;
 }) => {
   const textAlign = {
     left: useTableAlignCell({
-      alignmentType: "text",
-      alignment: "left",
+      alignmentType: 'text',
+      alignment: 'left',
       index,
       orientation,
     }),
     center: useTableAlignCell({
-      alignmentType: "text",
-      alignment: "center",
+      alignmentType: 'text',
+      alignment: 'center',
       index,
       orientation,
     }),
     right: useTableAlignCell({
-      alignmentType: "text",
-      alignment: "right",
+      alignmentType: 'text',
+      alignment: 'right',
       index,
       orientation,
     }),
-  }
+  };
 
   const verticalAlign = {
     top: useTableAlignCell({
-      alignmentType: "vertical",
-      alignment: "top",
+      alignmentType: 'vertical',
+      alignment: 'top',
       index,
       orientation,
     }),
     middle: useTableAlignCell({
-      alignmentType: "vertical",
-      alignment: "middle",
+      alignmentType: 'vertical',
+      alignment: 'middle',
       index,
       orientation,
     }),
     bottom: useTableAlignCell({
-      alignmentType: "vertical",
-      alignment: "bottom",
+      alignmentType: 'vertical',
+      alignment: 'bottom',
       index,
       orientation,
     }),
-  }
+  };
 
   if (!textAlign.left.canAlignCell()) {
-    return null
+    return null;
   }
 
   return (
@@ -129,8 +129,8 @@ export const TableAlignMenu = ({
         </ComboboxList>
       </MenuContent>
     </Menu>
-  )
-}
+  );
+};
 
 const ActionItem = ({
   icon: Icon,
@@ -141,9 +141,7 @@ const ActionItem = ({
   shortcutBadge,
 }: ActionItemProps) => (
   <MenuItem
-    render={
-      <Button data-style="ghost" data-active-state={isActive ? "on" : "off"} />
-    }
+    render={<Button data-style="ghost" data-active-state={isActive ? 'on' : 'off'} />}
     onClick={onClick}
     disabled={disabled}
   >
@@ -151,6 +149,6 @@ const ActionItem = ({
     <span className="tiptap-button-text">{label}</span>
     {shortcutBadge}
   </MenuItem>
-)
+);
 
-ActionItem.displayName = "ActionItem"
+ActionItem.displayName = 'ActionItem';

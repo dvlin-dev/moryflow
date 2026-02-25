@@ -155,7 +155,7 @@ export const useWorkspaceWarmup = ({
       try {
         await waitForIdle({ timeoutMs: 5000, fallbackMs: 2000 });
         if (cancelled) return;
-        await import('@anyhunt/ui/ai/code-block');
+        await import('@moryflow/ui/ai/code-block');
       } catch {
         // warmup should be silent and never block the user
       }

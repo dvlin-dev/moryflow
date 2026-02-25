@@ -8,7 +8,7 @@
 
 import { MEMBERSHIP_API_URL } from '@/lib/server/const';
 import { getAccessToken, refreshAccessToken } from '@/lib/server';
-import { createApiClient, createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiClient, createApiTransport, ServerApiError } from '@moryflow/api/client';
 
 /** 支持的音频 MIME 类型 */
 const SUPPORTED_MIME_TYPES = [

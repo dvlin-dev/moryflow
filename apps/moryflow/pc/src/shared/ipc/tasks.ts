@@ -14,7 +14,7 @@ import type {
   TaskNote,
   TaskFile,
   ListTasksQuery,
-} from '@anyhunt/agents-tools';
+} from '@moryflow/agents-tools';
 
 export type { TaskStatus, TaskPriority, TaskRecord, TaskDependency, TaskNote, TaskFile };
 

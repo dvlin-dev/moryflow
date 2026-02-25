@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Search, Zap } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@anyhunt/ui';
+import { PageHeader, SimplePagination } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -27,8 +27,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useJobs, useJobStats } from '@/features/jobs';
 import type { JobsQuery, JobStatus, JobListItem } from '@/features/jobs';
 import { formatMs, truncateUrl, getStatusBadge } from '@/lib/job-utils';

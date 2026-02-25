@@ -341,15 +341,15 @@ pnpm test:unit
 ### P0-19 实施记录（2026-02-24）
 
 - 环境恢复（运行时）：
-  - 已执行：`pnpm --filter @anyhunt/moryflow-pc exec electron-rebuild -f -w better-sqlite3,keytar`
+  - 已执行：`pnpm --filter @moryflow/pc exec electron-rebuild -f -w better-sqlite3,keytar`
   - 结果：`Rebuild Complete`
 
 ### P0-20 校验结果（2026-02-24）
 
 - 已执行命令：
-  - `pnpm --filter @anyhunt/agents-tools test:unit`
-  - `pnpm --filter @anyhunt/agents-runtime test:unit`
-  - `pnpm --filter @anyhunt/moryflow-pc typecheck`
+  - `pnpm --filter @moryflow/agents-tools test:unit`
+  - `pnpm --filter @moryflow/agents-runtime test:unit`
+  - `pnpm --filter @moryflow/pc typecheck`
 - 结果：
   - `agents-tools`：2 files / 7 tests 全通过
   - `agents-runtime`：12 files / 41 tests 全通过
@@ -401,4 +401,4 @@ pnpm test:unit
 - 结果：
   - lint：通过
   - typecheck：通过
-  - test:unit：通过（包含 `@anyhunt/moryflow-pc`，并在结束后自动恢复 Electron ABI）
+  - test:unit：通过（包含 `@moryflow/pc`，并在结束后自动恢复 Electron ABI）

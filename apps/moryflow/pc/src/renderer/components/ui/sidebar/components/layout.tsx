@@ -1,16 +1,16 @@
 import * as React from 'react';
 import { PanelLeft } from 'lucide-react';
 
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Separator } from '@anyhunt/ui/components/separator';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Separator } from '@moryflow/ui/components/separator';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@anyhunt/ui/components/sheet';
+} from '@moryflow/ui/components/sheet';
 import { cn } from '@/lib/utils';
 
 import type { SidebarProps } from '../const';

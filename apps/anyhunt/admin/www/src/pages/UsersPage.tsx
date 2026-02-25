@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { Delete, Ellipsis, Search, Shield, Coins } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@anyhunt/ui';
+import { PageHeader, SimplePagination } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -35,8 +35,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useUsers, useUpdateUser, useDeleteUser, UserCreditsSheet } from '@/features/users';
 import type { UserListItem, UserQuery } from '@/features/users';
 

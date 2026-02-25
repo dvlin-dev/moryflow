@@ -13,8 +13,8 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { XIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
-import type { TaskRecord } from '@anyhunt/agents-tools';
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '@anyhunt/agents-tools';
+import type { TaskRecord } from '@moryflow/agents-tools';
+import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '@moryflow/agents-tools';
 import { useTasks } from '@/lib/hooks/use-tasks';
 import type { TaskDetailResult } from '@/lib/agent-runtime/tasks-service';
 

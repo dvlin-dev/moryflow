@@ -9,7 +9,7 @@
 'use client';
 
 import { useMemo, type ReactNode } from 'react';
-import { createEmbedClient, type EmbedTheme } from '@anyhunt/embed';
+import { createEmbedClient, type EmbedTheme } from '@moryflow/embed';
 import { EmbedContext, type EmbedContextValue } from '../context';
 
 export interface EmbedProviderProps {

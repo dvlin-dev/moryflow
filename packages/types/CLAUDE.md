@@ -16,7 +16,7 @@ src/
 ## 导入方式
 
 ```typescript
-import type { ChatAttachment, PaginationMeta, ProblemDetails } from '@anyhunt/types';
+import type { ChatAttachment, PaginationMeta, ProblemDetails } from '@moryflow/types';
 ```
 
 ## 最近更新

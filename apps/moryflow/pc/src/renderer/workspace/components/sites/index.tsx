@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import type { Site } from '../../../../shared/ipc/site-publish';
 import { PublishDialog } from '@/components/site-publish';
 import { SiteList } from './site-list';

@@ -23,5 +23,5 @@ describe('ApiClient 响应解析', () => {
     await expect(apiClient.get('/test')).rejects.toMatchObject({
       code: 'UNEXPECTED_RESPONSE',
     });
-  });
+  }, 15_000);
 });

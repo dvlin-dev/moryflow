@@ -18,11 +18,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { CardContent } from '@anyhunt/ui/components/card';
+import { CardContent } from '@moryflow/ui/components/card';
 import { IpcChatTransport } from '@/transport/ipc-chat-transport';
 import { getModelContextWindow } from '@shared/model-registry';
 import type { AgentChatRequestOptions } from '@shared/ipc';
-import type { ChatMessageMeta } from '@anyhunt/types';
+import type { ChatMessageMeta } from '@moryflow/types';
 import { useAuth } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';

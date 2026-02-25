@@ -4,8 +4,8 @@
  * [POS]: Mobile 端 PlatformCapabilities 统一入口
  */
 
-import type { PlatformCapabilities, CryptoUtils, AuthCapabilities } from '@anyhunt/agents-adapter';
-import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import type { PlatformCapabilities, CryptoUtils, AuthCapabilities } from '@moryflow/agents-adapter';
+import { MEMBERSHIP_API_URL } from '@moryflow/api';
 import {
   pathUtils,
   createFileSystem,

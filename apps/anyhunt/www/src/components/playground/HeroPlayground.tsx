@@ -26,7 +26,7 @@ import {
   AccordionTrigger,
   AccordionContent,
   Badge,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import {
   ChevronDown,
   ChevronRight,

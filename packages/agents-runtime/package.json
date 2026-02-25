@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/agents-runtime",
+  "name": "@moryflow/agents-runtime",
   "version": "0.1.0",
   "description": "Core runtime for Moryflow Agent",
   "main": "dist/index.js",
@@ -24,8 +24,8 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/agents-adapter": "workspace:*",
-    "@anyhunt/api": "workspace:*",
+    "@moryflow/agents-adapter": "workspace:*",
+    "@moryflow/api": "workspace:*",
     "@openai/agents-core": "0.5.1",
     "@openai/agents-extensions": "0.5.1",
     "@ai-sdk/openai": "3.0.31",

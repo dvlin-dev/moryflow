@@ -121,8 +121,8 @@ curl -i -X POST https://server.moryflow.com/api/v1/auth/refresh \
 - [x] Auth 错误解析增强：`parseAuthError` 支持 JSON 字符串/嵌套 error，避免显示原始 `{"code":"EMAIL_NOT_VERIFIED"...}`。
 - [x] 回归测试已补充并执行：覆盖无 refresh token 不触发 fetch、`shouldClearAuthSessionAfterEnsureFailure`、LoginPanel/OTPForm 提交不冒泡外层 form、OTP `onSuccess` 失败错误回显（`submit-bubbling.test.tsx` / `auth-session.spec.ts` / `otp-form.test.tsx`）。
 - [x] 回归测试增补：Token-first `auth-session`（body refreshToken + 无 Cookie fallback）、未登录 loading 不走全局 skeleton（`account-section.test.tsx`）、Auth 错误解析（`parse-auth-error.spec.ts`）。
-- [x] 影响包类型检查已执行：`pnpm --filter @anyhunt/moryflow-pc typecheck` 通过。
-- [x] 影响包单测已执行：`pnpm --filter @anyhunt/moryflow-pc test:unit -- src/renderer/lib/server/__tests__/auth-session.spec.ts src/renderer/components/auth/otp-form.test.tsx` 通过。
+- [x] 影响包类型检查已执行：`pnpm --filter @moryflow/pc typecheck` 通过。
+- [x] 影响包单测已执行：`pnpm --filter @moryflow/pc test:unit -- src/renderer/lib/server/__tests__/auth-session.spec.ts src/renderer/components/auth/otp-form.test.tsx` 通过。
 - [x] 长任务预刷新策略更新：`ACCESS_TOKEN_SKEW_MS` 已统一调整为 1h，并修正 PC `ensureAccessToken` 持久化 token 用例为 >1h 场景（`auth-session.spec.ts`）。
 - [x] PC AuthProvider 副作用收敛：`loadUser` 与 `membershipEnabled` 同步副作用拆分，避免切换会员开关时重复触发会话加载。
 - [x] Web/Admin 网络失败兜底补齐：Console/Admin/Moryflow Admin 在 refresh 网络失败时回退未过期 access token，不再把用户强制回登录态；并将 `user` 纳入持久化以覆盖刷新页瞬时抖动场景；已补充 store 回归测试。
@@ -140,11 +140,11 @@ curl -i -X POST https://server.moryflow.com/api/v1/auth/refresh \
 - [x] Moryflow 业务路由统一：`/api/v1/usage`、`/api/v1/payment/*`、`/api/v1/license/*`、`/api/v1/admin/*`、`/api/v1/storage/*`、`/api/v1/webhooks/creem` 已统一并完成调用侧同步。
 - [x] Anyhunt 同步统一：`/api/v1/auth/*` 与 `/api/v1/webhooks/creem` 改为 `version: '1'`，`main.ts` 不再保留 webhook 版本中立排除。
 - [x] 回归测试通过：
-  - `pnpm --filter @anyhunt/moryflow-pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts src/renderer/lib/server/__tests__/auth-methods.spec.ts src/renderer/lib/server/__tests__/auth-session.spec.ts`
-  - `pnpm --filter @anyhunt/moryflow-mobile exec vitest run lib/server/__tests__/auth-api.spec.ts lib/server/__tests__/auth-session.spec.ts`
+  - `pnpm --filter @moryflow/pc exec vitest run src/renderer/lib/server/__tests__/auth-api.spec.ts src/renderer/lib/server/__tests__/auth-methods.spec.ts src/renderer/lib/server/__tests__/auth-session.spec.ts`
+  - `pnpm --filter @moryflow/mobile exec vitest run lib/server/__tests__/auth-api.spec.ts lib/server/__tests__/auth-session.spec.ts`
 - [x] 服务端回归补跑通过：
   - `pnpm --filter @anyhunt/anyhunt-server exec vitest run src/auth/__tests__/auth.controller.spec.ts src/auth/__tests__/auth.tokens.controller.spec.ts`
-  - `pnpm --filter @anyhunt/moryflow-server exec vitest run src/auth/__tests__/auth.controller.spec.ts src/auth/__tests__/auth.tokens.controller.spec.ts src/payment/payment.utils.spec.ts`
+  - `pnpm --filter @moryflow/server exec vitest run src/auth/__tests__/auth.controller.spec.ts src/auth/__tests__/auth.tokens.controller.spec.ts src/payment/payment.utils.spec.ts`
 - [x] 请求传输层语义修复：`packages/api` `raw/stream` 在非 `ok` 响应时保持返回原始 `Response`，由调用方显式判断 `response.ok`，避免误抛异常破坏重定向/状态码判断链路。
 - [x] Server 出站请求客户端修复：`apps/anyhunt/server` 与 `apps/moryflow/server` 的 `server-http-client` 改为“每次请求读取当前 `globalThis.fetch`”并支持显式 `fetcher` 注入，消除模块加载时固化 fetch 带来的 mock/运行时 hook 失效问题。
 - [x] 受影响回归测试补齐并通过：

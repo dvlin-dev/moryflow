@@ -1,21 +1,15 @@
-"use client"
+'use client';
 
-import { Button } from "../../../ui-primitive/button"
-import {
-  ToolbarGroup,
-  ToolbarSeparator,
-} from "../../../ui-primitive/toolbar"
-import { ArrowLeftIcon } from "@anyhunt/ui/icons/arrow-left-icon"
+import { Button } from '../../../ui-primitive/button';
+import { ToolbarGroup, ToolbarSeparator } from '../../../ui-primitive/toolbar';
+import { ArrowLeftIcon } from '@moryflow/ui/icons/arrow-left-icon';
 
-import type { SpecializedToolbarContentProps } from "../types"
+import type { SpecializedToolbarContentProps } from '../types';
 
 /**
  * 专门视图内容（如高亮、链接编辑等）
  */
-export function SpecializedToolbarContent({
-  view,
-  onBack,
-}: SpecializedToolbarContentProps) {
+export function SpecializedToolbarContent({ view, onBack }: SpecializedToolbarContentProps) {
   return (
     <>
       <ToolbarGroup>
@@ -29,5 +23,5 @@ export function SpecializedToolbarContent({
 
       {view.renderContent()}
     </>
-  )
+  );
 }

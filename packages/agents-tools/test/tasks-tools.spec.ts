@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RunContext } from '@openai/agents-core';
 import { createTasksTools } from '../src/task/tasks-tools';
-import { normalizeToolSchemasForInterop } from '@anyhunt/agents-runtime';
+import { normalizeToolSchemasForInterop } from '@moryflow/agents-runtime';
 import type {
   TasksStore,
   TasksStoreContext,
@@ -10,7 +10,7 @@ import type {
   TaskNote,
   TaskFile,
 } from '../src/task/tasks-store';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 
 const createMockStore = (overrides: Partial<TasksStore> = {}): TasksStore => {
   const noop = async () => {};

@@ -44,9 +44,9 @@ import {
   type AgentRuntimeConfig,
   type RuntimeHooksConfig,
   type AgentMarkdownDefinition,
-} from '@anyhunt/agents-runtime';
-import { createMobileTools } from '@anyhunt/agents-tools';
-import { getModelById, providerRegistry, toApiModelId } from '@anyhunt/agents-model-registry';
+} from '@moryflow/agents-runtime';
+import { createMobileTools } from '@moryflow/agents-tools';
+import { getModelById, providerRegistry, toApiModelId } from '@moryflow/agents-model-registry';
 
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { mobileFetch, createLogger } from './adapters';
@@ -411,9 +411,9 @@ export async function runChatTurn(params: {
   chatId: string;
   input: string;
   preferredModelId?: string;
-  context?: import('@anyhunt/agents-runtime').AgentChatContext;
-  attachments?: import('@anyhunt/agents-runtime').AgentAttachmentContext[];
-  mode?: import('@anyhunt/agents-runtime').AgentAccessMode;
+  context?: import('@moryflow/agents-runtime').AgentChatContext;
+  attachments?: import('@moryflow/agents-runtime').AgentAttachmentContext[];
+  mode?: import('@moryflow/agents-runtime').AgentAccessMode;
   signal?: AbortSignal;
 }): Promise<MobileChatTurnResult> {
   const rt = await getAgentRuntime();

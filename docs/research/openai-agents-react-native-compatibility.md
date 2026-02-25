@@ -191,7 +191,7 @@ if (!global.TransformStream) {
 
 并移除对 `@anyhunt/agents` 的依赖（已切换到 `@openai/agents-core`）。
 
-> 说明：当前 mobile 还依赖 `@anyhunt/agents-runtime` / `@anyhunt/agents-tools` / `@anyhunt/agents-adapter`。
+> 说明：当前 mobile 还依赖 `@moryflow/agents-runtime` / `@moryflow/agents-tools` / `@moryflow/agents-adapter`。
 > `@openai/agents-extensions` 依赖 `@openai/agents`（peer），RN 端需通过 Metro alias 将 `@openai/agents` 指向 `@openai/agents-core`，避免引入 realtime。
 
 # 日志系统接入（不 fork）

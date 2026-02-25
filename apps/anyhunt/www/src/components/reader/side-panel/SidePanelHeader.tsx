@@ -4,7 +4,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 import { Plus, CircleUser } from 'lucide-react';
 import { SidePanelUserMenu } from './SidePanelUserMenu';
 import { useAuthStore } from '@/stores/auth-store';

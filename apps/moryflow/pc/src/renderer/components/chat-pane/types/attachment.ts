@@ -6,9 +6,9 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { ChatAttachment } from '@anyhunt/types';
+import type { ChatAttachment } from '@moryflow/types';
 
-/** 联合附件类型（统一为 @anyhunt/types） */
+/** 联合附件类型（统一为 @moryflow/types） */
 export type MessageAttachment = ChatAttachment;
 
 export type FileRefAttachment = Extract<ChatAttachment, { type: 'file-ref' }>;

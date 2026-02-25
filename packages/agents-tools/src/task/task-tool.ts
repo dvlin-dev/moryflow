@@ -1,6 +1,6 @@
 import { Agent, run, tool, type RunContext, type Tool } from '@openai/agents-core';
 import { z } from 'zod';
-import { normalizeToolSchemasForInterop, type AgentContext } from '@anyhunt/agents-runtime';
+import { normalizeToolSchemasForInterop, type AgentContext } from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 
 const taskParams = z.object({

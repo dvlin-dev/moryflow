@@ -33,7 +33,7 @@ import {
   SelectValue,
   Switch,
   Textarea,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type {
   CreateLlmModelInput,
   LlmModelListItem,

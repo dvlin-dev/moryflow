@@ -10,7 +10,7 @@ import {
   createApiTransport,
   ServerApiError,
   type ApiClientRequestOptions,
-} from '@anyhunt/api/client';
+} from '@moryflow/api/client';
 import type {
   VaultDto,
   VaultListDto,

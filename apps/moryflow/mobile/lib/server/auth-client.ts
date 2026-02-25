@@ -8,7 +8,7 @@ import { createAuthClient } from 'better-auth/react';
 import { emailOTPClient } from 'better-auth/client/plugins';
 import { expoClient } from '@better-auth/expo/client';
 import * as SecureStore from 'expo-secure-store';
-import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import { MEMBERSHIP_API_URL } from '@moryflow/api';
 import { DEVICE_PLATFORM } from './auth-platform';
 
 const AUTH_STORAGE_PREFIX = 'moryflow';

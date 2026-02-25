@@ -39,7 +39,7 @@ import {
   shouldContinueForTruncation,
   buildTruncateContinuePrompt,
   type AgentContext,
-} from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
 
 type ChatSessionStream = {
   stream: ReadableStream<UIMessageChunk>;

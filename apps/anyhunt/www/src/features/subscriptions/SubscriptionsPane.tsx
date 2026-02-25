@@ -5,7 +5,7 @@
  */
 
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Button, Separator } from '@anyhunt/ui';
+import { Button, Separator } from '@moryflow/ui';
 import { useSubscriptions } from '@/features/digest/hooks';
 import { SidePanelRecommendedSection } from '@/components/reader/side-panel/SidePanelRecommendedSection';
 import { useReaderActions } from '@/features/reader-shell/reader-actions';

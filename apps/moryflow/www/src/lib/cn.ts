@@ -4,4 +4,4 @@
  * [POS]: 样式工具
  */
 
-export { cn } from '@anyhunt/ui/lib';
+export { cn } from '@moryflow/ui/lib';

@@ -5,7 +5,7 @@
  */
 import { useMemo, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { PageHeader, Card, CardContent, Skeleton, Alert, AlertDescription } from '@anyhunt/ui';
+import { PageHeader, Card, CardContent, Skeleton, Alert, AlertDescription } from '@moryflow/ui';
 import { useApiKeys } from '@/features/api-keys';
 import {
   EmbedForm,

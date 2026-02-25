@@ -13,7 +13,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { type VectorClock } from '@anyhunt/sync';
+import { type VectorClock } from '@moryflow/sync';
 import { PrismaService } from '../prisma';
 import { VaultService } from '../vault';
 import { QuotaService } from '../quota';

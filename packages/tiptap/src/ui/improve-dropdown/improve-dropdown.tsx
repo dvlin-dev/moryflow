@@ -1,34 +1,31 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { type Editor } from "@tiptap/react"
-import type { Language, TextOptions, Tone } from "../ai-types"
-import { NodeSelection } from "@tiptap/pm/state"
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type Editor } from '@tiptap/react';
+import type { Language, TextOptions, Tone } from '../ai-types';
+import { NodeSelection } from '@tiptap/pm/state';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Icons ---
-import { MicAiIcon } from "@anyhunt/ui/icons/mic-ai-icon"
-import { AiSparklesIcon } from "@anyhunt/ui/icons/ai-sparkles-icon"
-import { CheckAiIcon } from "@anyhunt/ui/icons/check-ai-icon"
-import { TextExtendIcon } from "@anyhunt/ui/icons/text-extend-icon"
-import { TextReduceIcon } from "@anyhunt/ui/icons/text-reduce-icon"
-import { Simplify2Icon } from "@anyhunt/ui/icons/simplify-2-icon"
-import { SmileAiIcon } from "@anyhunt/ui/icons/smile-ai-icon"
-import { CompleteSentenceIcon } from "@anyhunt/ui/icons/complete-sentence-icon"
-import { SummarizeTextIcon } from "@anyhunt/ui/icons/summarize-text-icon"
-import { LanguagesIcon } from "@anyhunt/ui/icons/languages-icon"
-import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
+import { MicAiIcon } from '@moryflow/ui/icons/mic-ai-icon';
+import { AiSparklesIcon } from '@moryflow/ui/icons/ai-sparkles-icon';
+import { CheckAiIcon } from '@moryflow/ui/icons/check-ai-icon';
+import { TextExtendIcon } from '@moryflow/ui/icons/text-extend-icon';
+import { TextReduceIcon } from '@moryflow/ui/icons/text-reduce-icon';
+import { Simplify2Icon } from '@moryflow/ui/icons/simplify-2-icon';
+import { SmileAiIcon } from '@moryflow/ui/icons/smile-ai-icon';
+import { CompleteSentenceIcon } from '@moryflow/ui/icons/complete-sentence-icon';
+import { SummarizeTextIcon } from '@moryflow/ui/icons/summarize-text-icon';
+import { LanguagesIcon } from '@moryflow/ui/icons/languages-icon';
+import { ChevronRightIcon } from '@moryflow/ui/icons/chevron-right-icon';
 
 // --- Tiptap UI ---
-import {
-  SUPPORTED_LANGUAGES,
-  SUPPORTED_TONES,
-} from "../ai-menu"
-import { AiAskButton } from "../ai-ask-button"
+import { SUPPORTED_LANGUAGES, SUPPORTED_TONES } from '../ai-menu';
+import { AiAskButton } from '../ai-ask-button';
 
 // --- UI Primitives ---
-import type { ButtonProps } from "../../ui-primitive/button"
-import { Button, ButtonGroup } from "../../ui-primitive/button"
+import type { ButtonProps } from '../../ui-primitive/button';
+import { Button, ButtonGroup } from '../../ui-primitive/button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -37,144 +34,144 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-} from "../../ui-primitive/dropdown-menu"
-import { Card, CardBody } from "../../ui-primitive/card"
-import { Separator } from "../../ui-primitive/separator"
-import { isNodeTypeSelected } from "../../utils/tiptap-utils"
+} from '../../ui-primitive/dropdown-menu';
+import { Card, CardBody } from '../../ui-primitive/card';
+import { Separator } from '../../ui-primitive/separator';
+import { isNodeTypeSelected } from '../../utils/tiptap-utils';
 
 export interface ToneOption {
-  label: string
-  value: Tone
-  icon?: React.ComponentType<{ className?: string }>
+  label: string;
+  value: Tone;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
-export interface ImproveDropdownProps extends Omit<ButtonProps, "type"> {
+export interface ImproveDropdownProps extends Omit<ButtonProps, 'type'> {
   /**
    * Optional editor instance. If not provided, will use editor from context
    */
-  editor?: Editor
+  editor?: Editor;
   /**
    * List of AI command types to show in the dropdown.
    */
-  types?: Tone[]
+  types?: Tone[];
   /**
    * Optional text options for AI commands
    * @default { stream: true, format: "rich-text" }
    */
-  textOptions?: TextOptions
+  textOptions?: TextOptions;
   /**
    * Whether to hide the dropdown when AI features are not available
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Whether to render the dropdown menu in a portal
    * @default false
    */
-  portal?: boolean
+  portal?: boolean;
 }
 
 type AICommand =
-  | "fixSpellingAndGrammar"
-  | "extend"
-  | "shorten"
-  | "simplify"
-  | "emojify"
-  | "complete"
-  | "summarize"
+  | 'fixSpellingAndGrammar'
+  | 'extend'
+  | 'shorten'
+  | 'simplify'
+  | 'emojify'
+  | 'complete'
+  | 'summarize';
 
 interface MenuAction {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  command: AICommand
-  onClick: () => void
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  command: AICommand;
+  onClick: () => void;
 }
 
 interface SubMenuAction {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
   items: Array<{
-    label: string
-    value: string
-    icon?: React.ComponentType<{ className?: string }>
-    onClick: () => void
-  }>
+    label: string;
+    value: string;
+    icon?: React.ComponentType<{ className?: string }>;
+    onClick: () => void;
+  }>;
 }
 
 const AI_EXCLUDED_BLOCKS = [
-  "image",
-  "imageUpload",
-  "video",
-  "audio",
-  "table",
-  "codeBlock",
-  "horizontalRule",
-  "hardBreak",
-]
+  'image',
+  'imageUpload',
+  'video',
+  'audio',
+  'table',
+  'codeBlock',
+  'horizontalRule',
+  'hardBreak',
+];
 
 export function canUseAi(editor: Editor | null): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  const { selection } = editor.state
+  const { selection } = editor.state;
 
   if (selection.empty) {
-    return false
+    return false;
   }
 
   if (selection instanceof NodeSelection) {
     if (!selection.node.content.size) {
-      return false
+      return false;
     }
 
-    const node = selection.node
+    const node = selection.node;
     if (AI_EXCLUDED_BLOCKS.includes(node.type.name)) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 export function shouldShowImproveDropdown(params: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  const { editor, hideWhenUnavailable } = params
+  const { editor, hideWhenUnavailable } = params;
 
   if (!editor || !editor.isEditable) {
-    return false
+    return false;
   }
 
   // The third argument 'true' checks whether the current selection is inside an image caption, and prevents showing AI features (improve dropdown) there
   // If the selection is inside an image caption, we can't show the improve dropdown (AI features)
-  if (isNodeTypeSelected(editor, ["image"], true)) return false
+  if (isNodeTypeSelected(editor, ['image'], true)) return false;
 
-  if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canUseAi(editor)
+  if (hideWhenUnavailable && !editor.isActive('code')) {
+    return canUseAi(editor);
   }
 
-  return true
+  return true;
 }
 
 export function useImproveDropdownState(
   editor: Editor | null,
   hideWhenUnavailable: boolean = false
 ) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [show, setShow] = useState(false)
-  const isDisabled = !canUseAi(editor)
+  const [isOpen, setIsOpen] = useState(false);
+  const [show, setShow] = useState(false);
+  const isDisabled = !canUseAi(editor);
 
   const handleOpenChange = useCallback(
     (open: boolean, callback?: (isOpen: boolean) => void) => {
-      if (!editor || isDisabled) return
-      setIsOpen(open)
-      callback?.(open)
+      if (!editor || isDisabled) return;
+      setIsOpen(open);
+      callback?.(open);
     },
     [editor, isDisabled]
-  )
+  );
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
       setShow(
@@ -182,16 +179,16 @@ export function useImproveDropdownState(
           editor,
           hideWhenUnavailable,
         })
-      )
-    }
+      );
+    };
 
-    handleSelectionUpdate()
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    handleSelectionUpdate();
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable]);
 
   return {
     isDisabled,
@@ -199,83 +196,83 @@ export function useImproveDropdownState(
     setIsOpen,
     handleOpenChange,
     show,
-  }
+  };
 }
 
 function useAICommands(editor: Editor | null, textOptions?: TextOptions) {
   const defaultOptions = useMemo(
     () => ({
       stream: true,
-      format: "rich-text" as const,
+      format: 'rich-text' as const,
       ...textOptions,
     }),
     [textOptions]
-  )
+  );
 
   const executeAICommand = useCallback(
     (command: AICommand) => {
-      if (!editor) return
+      if (!editor) return;
 
-      editor.chain().focus().aiGenerationShow().run()
+      editor.chain().focus().aiGenerationShow().run();
 
       setTimeout(() => {
         switch (command) {
-          case "fixSpellingAndGrammar":
-            editor.commands.aiFixSpellingAndGrammar(defaultOptions)
-            break
-          case "extend":
-            editor.commands.aiExtend(defaultOptions)
-            break
-          case "shorten":
-            editor.commands.aiShorten(defaultOptions)
-            break
-          case "simplify":
-            editor.commands.aiSimplify(defaultOptions)
-            break
-          case "emojify":
-            editor.commands.aiEmojify(defaultOptions)
-            break
-          case "complete":
-            editor.commands.aiComplete(defaultOptions)
-            break
-          case "summarize":
-            editor.commands.aiSummarize(defaultOptions)
-            break
+          case 'fixSpellingAndGrammar':
+            editor.commands.aiFixSpellingAndGrammar(defaultOptions);
+            break;
+          case 'extend':
+            editor.commands.aiExtend(defaultOptions);
+            break;
+          case 'shorten':
+            editor.commands.aiShorten(defaultOptions);
+            break;
+          case 'simplify':
+            editor.commands.aiSimplify(defaultOptions);
+            break;
+          case 'emojify':
+            editor.commands.aiEmojify(defaultOptions);
+            break;
+          case 'complete':
+            editor.commands.aiComplete(defaultOptions);
+            break;
+          case 'summarize':
+            editor.commands.aiSummarize(defaultOptions);
+            break;
         }
-      }, 0)
+      }, 0);
     },
     [editor, defaultOptions]
-  )
+  );
 
   const adjustTone = useCallback(
     (tone: Tone) => {
-      if (!editor) return
-      editor.chain().focus().aiGenerationShow().run()
+      if (!editor) return;
+      editor.chain().focus().aiGenerationShow().run();
 
       setTimeout(() => {
-        editor.commands.aiAdjustTone(tone, defaultOptions)
-      }, 0)
+        editor.commands.aiAdjustTone(tone, defaultOptions);
+      }, 0);
     },
     [editor, defaultOptions]
-  )
+  );
 
   const translate = useCallback(
     (language: Language) => {
-      if (!editor) return
-      editor.chain().focus().aiGenerationShow().run()
+      if (!editor) return;
+      editor.chain().focus().aiGenerationShow().run();
 
       setTimeout(() => {
-        editor.commands.aiTranslate(language, defaultOptions)
-      }, 0)
+        editor.commands.aiTranslate(language, defaultOptions);
+      }, 0);
     },
     [editor, defaultOptions]
-  )
+  );
 
   return {
     executeAICommand,
     adjustTone,
     translate,
-  }
+  };
 }
 
 function SubMenuButton({ action }: { action: SubMenuAction }) {
@@ -294,11 +291,7 @@ function SubMenuButton({ action }: { action: SubMenuAction }) {
             <ButtonGroup>
               {action.items.map((item) => (
                 <DropdownMenuItem key={item.value} asChild>
-                  <Button
-                    type="button"
-                    data-style="ghost"
-                    onClick={item.onClick}
-                  >
+                  <Button type="button" data-style="ghost" onClick={item.onClick}>
                     {item.icon && <item.icon className="tiptap-button-icon" />}
                     <span className="tiptap-button-text">{item.label}</span>
                   </Button>
@@ -309,7 +302,7 @@ function SubMenuButton({ action }: { action: SubMenuAction }) {
         </Card>
       </DropdownMenuSubContent>
     </DropdownMenuSub>
-  )
+  );
 }
 
 export function ImproveDropdown({
@@ -319,73 +312,72 @@ export function ImproveDropdown({
   portal = false,
   ...props
 }: ImproveDropdownProps) {
-  const { editor } = useTiptapEditor(providedEditor)
-  const { executeAICommand, adjustTone, translate } = useAICommands(
+  const { editor } = useTiptapEditor(providedEditor);
+  const { executeAICommand, adjustTone, translate } = useAICommands(editor, textOptions);
+  const { isDisabled, isOpen, handleOpenChange, show } = useImproveDropdownState(
     editor,
-    textOptions
-  )
-  const { isDisabled, isOpen, handleOpenChange, show } =
-    useImproveDropdownState(editor, hideWhenUnavailable)
+    hideWhenUnavailable
+  );
 
   const menuActions: MenuAction[] = useMemo(
     () => [
       {
         icon: CheckAiIcon,
-        label: "Fix spelling & grammar",
-        command: "fixSpellingAndGrammar",
-        onClick: () => executeAICommand("fixSpellingAndGrammar"),
+        label: 'Fix spelling & grammar',
+        command: 'fixSpellingAndGrammar',
+        onClick: () => executeAICommand('fixSpellingAndGrammar'),
       },
       {
         icon: TextExtendIcon,
-        label: "Extend text",
-        command: "extend",
-        onClick: () => executeAICommand("extend"),
+        label: 'Extend text',
+        command: 'extend',
+        onClick: () => executeAICommand('extend'),
       },
       {
         icon: TextReduceIcon,
-        label: "Reduce text",
-        command: "shorten",
-        onClick: () => executeAICommand("shorten"),
+        label: 'Reduce text',
+        command: 'shorten',
+        onClick: () => executeAICommand('shorten'),
       },
       {
         icon: Simplify2Icon,
-        label: "Simplify text",
-        command: "simplify",
-        onClick: () => executeAICommand("simplify"),
+        label: 'Simplify text',
+        command: 'simplify',
+        onClick: () => executeAICommand('simplify'),
       },
       {
         icon: SmileAiIcon,
-        label: "Emojify",
-        command: "emojify",
-        onClick: () => executeAICommand("emojify"),
+        label: 'Emojify',
+        command: 'emojify',
+        onClick: () => executeAICommand('emojify'),
       },
     ],
     [executeAICommand]
-  )
+  );
 
   const secondaryActions: MenuAction[] = useMemo(
     () => [
       {
         icon: CompleteSentenceIcon,
-        label: "Complete sentence",
-        command: "complete",
-        onClick: () => executeAICommand("complete"),
+        label: 'Complete sentence',
+        command: 'complete',
+        onClick: () => executeAICommand('complete'),
       },
       {
         icon: SummarizeTextIcon,
-        label: "Summarize",
-        command: "summarize",
-        onClick: () => executeAICommand("summarize"),
+        label: 'Summarize',
+        command: 'summarize',
+        onClick: () => executeAICommand('summarize'),
       },
     ],
     [executeAICommand]
-  )
+  );
 
   const subMenuActions: SubMenuAction[] = useMemo(
     () => [
       {
         icon: MicAiIcon,
-        label: "Adjust tone",
+        label: 'Adjust tone',
         items: SUPPORTED_TONES.map((option) => ({
           label: option.label,
           value: option.value,
@@ -394,12 +386,12 @@ export function ImproveDropdown({
       },
     ],
     [adjustTone]
-  )
+  );
 
   const translateSubMenu: SubMenuAction = useMemo(
     () => ({
       icon: LanguagesIcon,
-      label: "Translate",
+      label: 'Translate',
       items: SUPPORTED_LANGUAGES.map((option) => ({
         label: option.label,
         value: option.value,
@@ -408,10 +400,10 @@ export function ImproveDropdown({
       })),
     }),
     [translate]
-  )
+  );
 
   if (!show || !editor || !editor.isEditable) {
-    return null
+    return null;
   }
 
   return (
@@ -443,11 +435,7 @@ export function ImproveDropdown({
 
               {menuActions.map((action, index) => (
                 <DropdownMenuItem key={index} asChild>
-                  <Button
-                    type="button"
-                    data-style="ghost"
-                    onClick={action.onClick}
-                  >
+                  <Button type="button" data-style="ghost" onClick={action.onClick}>
                     <action.icon className="tiptap-button-icon" />
                     <span className="tiptap-button-text">{action.label}</span>
                   </Button>
@@ -464,11 +452,7 @@ export function ImproveDropdown({
 
               {secondaryActions.map((action, index) => (
                 <DropdownMenuItem key={index} asChild>
-                  <Button
-                    type="button"
-                    data-style="ghost"
-                    onClick={action.onClick}
-                  >
+                  <Button type="button" data-style="ghost" onClick={action.onClick}>
                     <action.icon className="tiptap-button-icon" />
                     <span className="tiptap-button-text">{action.label}</span>
                   </Button>
@@ -481,7 +465,7 @@ export function ImproveDropdown({
         </Card>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
 
-export default ImproveDropdown
+export default ImproveDropdown;

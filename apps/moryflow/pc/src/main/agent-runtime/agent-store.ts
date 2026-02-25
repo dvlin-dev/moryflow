@@ -9,7 +9,7 @@
 import { promises as fs, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { parseAgentMarkdown, type AgentMarkdownDefinition } from '@anyhunt/agents-runtime';
+import { parseAgentMarkdown, type AgentMarkdownDefinition } from '@moryflow/agents-runtime';
 
 const AGENTS_DIR = path.join(os.homedir(), '.moryflow', 'agents');
 

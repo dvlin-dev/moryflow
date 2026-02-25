@@ -1,14 +1,14 @@
 /**
  * [PROVIDES]: buildLocalChanges, 本地变更差异计算（基于快照 hash/size/mtime/skipped）
- * [DEPENDS]: @anyhunt/sync（向量时钟）
+ * [DEPENDS]: @moryflow/sync（向量时钟）
  * [POS]: Cloud Sync 纯逻辑模块（不依赖 RN/Expo）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { LocalFileDto } from '@anyhunt/api/cloud-sync';
-import type { FileEntry } from '@anyhunt/api';
-import { incrementClock } from '@anyhunt/sync';
+import type { LocalFileDto } from '@moryflow/api/cloud-sync';
+import type { FileEntry } from '@moryflow/api';
+import { incrementClock } from '@moryflow/sync';
 
 // ── 类型定义 ────────────────────────────────────────────────
 

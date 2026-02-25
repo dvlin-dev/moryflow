@@ -14,8 +14,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
-import { Button } from '@anyhunt/ui/components/button';
+} from '@moryflow/ui/components/alert-dialog';
+import { Button } from '@moryflow/ui/components/button';
 import type { BindingConflictChoice } from '@shared/ipc';
 
 interface BindingConflictDialogProps {

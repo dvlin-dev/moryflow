@@ -27,7 +27,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   Button,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { Settings, Paintbrush, LogOut, Sun, Moon, Computer } from 'lucide-react';
 import { authMethods } from '@/lib/auth/auth-methods';
 import { useTheme, type Theme } from '@/hooks/useTheme';

@@ -1,32 +1,28 @@
-import type { Editor } from "@tiptap/react"
+import type { Editor } from '@tiptap/react';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import { isNodeTypeSelected } from "../../utils/tiptap-utils"
+import { isNodeTypeSelected } from '../../utils/tiptap-utils';
 
 // --- Tiptap UI ---
-import { DeleteNodeButton } from "../../ui/delete-node-button"
-import { ImageDownloadButton } from "../../ui/image-download-button"
-import { ImageAlignButton } from "../../ui/image-align-button"
+import { DeleteNodeButton } from '../../ui/delete-node-button';
+import { ImageDownloadButton } from '../../ui/image-download-button';
+import { ImageAlignButton } from '../../ui/image-align-button';
 
 // --- UI Primitive ---
-import { Separator } from "../../ui-primitive/separator"
-import { ImageCaptionButton } from "../../ui/image-caption-button"
-import { ImageUploadButton } from "../../ui/image-upload-button"
-import { RefreshCcwIcon } from "@anyhunt/ui/icons/refresh-ccw-icon"
+import { Separator } from '../../ui-primitive/separator';
+import { ImageCaptionButton } from '../../ui/image-caption-button';
+import { ImageUploadButton } from '../../ui/image-upload-button';
+import { RefreshCcwIcon } from '@moryflow/ui/icons/refresh-ccw-icon';
 
-export function ImageNodeFloating({
-  editor: providedEditor,
-}: {
-  editor?: Editor | null
-}) {
-  const { editor } = useTiptapEditor(providedEditor)
-  const visible = isNodeTypeSelected(editor, ["image"])
+export function ImageNodeFloating({ editor: providedEditor }: { editor?: Editor | null }) {
+  const { editor } = useTiptapEditor(providedEditor);
+  const visible = isNodeTypeSelected(editor, ['image']);
 
   if (!editor || !visible) {
-    return null
+    return null;
   }
 
   return (
@@ -42,5 +38,5 @@ export function ImageNodeFloating({
       <Separator />
       <DeleteNodeButton />
     </>
-  )
+  );
 }

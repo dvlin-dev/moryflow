@@ -8,7 +8,7 @@ Moryflow 官网（营销站），部署于 `www.moryflow.com`。
 
 ## 近期变更
 
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@anyhunt/api/client` 在构建期无法解析的问题
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 在构建期无法解析的问题
 - Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免 `packages/sync` 在容器内构建时报 `TS5083`
 
 ## 技术栈

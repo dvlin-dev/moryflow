@@ -19,7 +19,7 @@ import {
   Badge,
   Input,
   Label,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useEntities, useEntityTypes, type Entity } from '@/features/memox';
 

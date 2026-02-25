@@ -7,7 +7,7 @@
  */
 import { UrlValidator } from '../validators/url.validator';
 import { serverHttpRaw } from '../http/server-http-client';
-import type { ApiClientRequestOptions } from '@anyhunt/api';
+import type { ApiClientRequestOptions } from '@moryflow/api';
 
 export interface SafeFetchOptions extends RequestInit {
   maxRedirects?: number;

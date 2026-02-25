@@ -16,7 +16,7 @@ import {
   Button,
   Input,
   Label,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { toast } from 'sonner';
 import { useCreateApiKey } from '../hooks';
 
