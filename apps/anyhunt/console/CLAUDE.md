@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - Console Auth 切换为 Token-first：`/login` 本地表单直连 `POST /api/v1/auth/sign-in/email`，本地持久化 `access+refresh`
 - `stores/auth.ts` 引入 refresh mutex 与 body refresh（`POST /api/v1/auth/refresh` 传 `refreshToken`），移除 Cookie 会话依赖
 - Agent Browser Playground 聊天 transport 改为官方 `DefaultChatTransport`，删除自定义 SSE parser 与 `eventsource-parser` 依赖

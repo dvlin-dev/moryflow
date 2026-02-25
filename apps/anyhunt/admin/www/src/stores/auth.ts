@@ -45,6 +45,11 @@ type PersistedAuthState = Pick<
   'user' | 'accessToken' | 'accessTokenExpiresAt' | 'refreshToken' | 'refreshTokenExpiresAt'
 >;
 
+type RehydratedAuthState = Pick<
+  AuthState,
+  'accessToken' | 'accessTokenExpiresAt' | 'refreshToken' | 'refreshTokenExpiresAt' | 'clearSession'
+>;
+
 export const AUTH_STORAGE_KEY = 'ah_admin_auth';
 export const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000;
 
@@ -85,6 +90,23 @@ export const hasUsableAccessToken = (
   token: string | null,
   expiresAt: string | null
 ): token is string => Boolean(token && !isExpired(expiresAt));
+
+export const reconcileRehydratedAuthState = (
+  state: RehydratedAuthState,
+  setState: (partial: Partial<AuthState>) => void
+): void => {
+  if (!state.refreshToken || isExpired(state.refreshTokenExpiresAt)) {
+    state.clearSession();
+    return;
+  }
+
+  if (isExpired(state.accessTokenExpiresAt)) {
+    setState({
+      accessToken: null,
+      accessTokenExpiresAt: null,
+    });
+  }
+};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -130,21 +152,7 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-
-        if (!state.refreshToken || isExpired(state.refreshTokenExpiresAt)) {
-          state.user = null;
-          state.accessToken = null;
-          state.accessTokenExpiresAt = null;
-          state.refreshToken = null;
-          state.refreshTokenExpiresAt = null;
-          state.isAuthenticated = false;
-          return;
-        }
-
-        if (isExpired(state.accessTokenExpiresAt)) {
-          state.accessToken = null;
-          state.accessTokenExpiresAt = null;
-        }
+        reconcileRehydratedAuthState(state, set);
       },
     }
   )

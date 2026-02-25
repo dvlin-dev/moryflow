@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - Admin Auth 切换为 Token-first：登录直接拿 `access+refresh`，refresh/logout 改为 body `refreshToken`
 - `stores/auth.ts` 升级为 localStorage 持久化 + refresh mutex，移除 Cookie 会话依赖
 - Logs：筛选时间统一转 ISO UTC（带时区），补齐查询失败错误态展示，避免“请求失败显示为空数据”

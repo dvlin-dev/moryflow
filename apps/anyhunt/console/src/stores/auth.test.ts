@@ -6,12 +6,13 @@
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   hasUsableAccessToken,
   isAccessTokenExpiringSoon,
   isExpired,
   parseExpiresAt,
+  reconcileRehydratedAuthState,
   type AuthTokenBundle,
   useAuthStore,
 } from './auth';
@@ -82,5 +83,46 @@ describe('console auth store', () => {
     expect(hasUsableAccessToken('token', validExpiresAt)).toBe(true);
     expect(hasUsableAccessToken('token', expired)).toBe(false);
     expect(hasUsableAccessToken(null, validExpiresAt)).toBe(false);
+  });
+
+  it('rehydrate 时 refresh 失效应调用 clearSession（并持久化清理）', () => {
+    const clearSession = vi.fn();
+    const setState = vi.fn();
+
+    reconcileRehydratedAuthState(
+      {
+        accessToken: 'access',
+        accessTokenExpiresAt: futureIso(10 * 60 * 1000),
+        refreshToken: null,
+        refreshTokenExpiresAt: null,
+        clearSession,
+      },
+      setState
+    );
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(setState).not.toHaveBeenCalled();
+  });
+
+  it('rehydrate 时 access 过期应仅清理 access 字段', () => {
+    const clearSession = vi.fn();
+    const setState = vi.fn();
+
+    reconcileRehydratedAuthState(
+      {
+        accessToken: 'access',
+        accessTokenExpiresAt: pastIso(1000),
+        refreshToken: 'refresh',
+        refreshTokenExpiresAt: futureIso(24 * 60 * 60 * 1000),
+        clearSession,
+      },
+      setState
+    );
+
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(setState).toHaveBeenCalledWith({
+      accessToken: null,
+      accessTokenExpiresAt: null,
+    });
   });
 });
