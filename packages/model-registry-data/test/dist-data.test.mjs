@@ -10,11 +10,14 @@ const packageRoot = resolve(__dirname, '..');
 test('dist model count should match source models.json count', async () => {
   const sourceModelsPath = resolve(packageRoot, 'src/data/models.json');
   const sourceCount = JSON.parse(readFileSync(sourceModelsPath, 'utf8')).length;
+  assert.ok(sourceCount > 0, 'source model snapshot must not be empty');
 
   const distEntryPath = resolve(packageRoot, 'dist/index.mjs');
   const distModule = await import(pathToFileURL(distEntryPath).href);
+  const distCount = distModule.getModelCount();
 
-  assert.equal(distModule.getModelCount(), sourceCount);
+  assert.ok(distCount > 0, 'dist model registry must not be empty');
+  assert.equal(distCount, sourceCount);
 });
 
 test('dist search bundle should not require runtime data files', () => {

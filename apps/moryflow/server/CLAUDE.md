@@ -52,6 +52,8 @@ module-name/
 
 ## 近期变更
 
+- 限流：接入全局 Throttler（Redis 存储，默认 `60s/300`，可由 `GLOBAL_THROTTLE_*` 覆盖）并注册 `UserThrottlerGuard` 为全局 `APP_GUARD`；新增 `RedisThrottlerStorageService` 与限流配置解析/回归测试；Redis `eval` 异常场景改为 fail-open（避免全局 500）
+- Auth：Better Auth rateLimit 改为可配置默认值（`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX`，默认 `60s/20`）并通过 `customRules` 覆盖登录/注册/改密/OTP 相关路径，避免默认 `10s/3` 过严策略
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
 - Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
 - Build：构建阶段补齐根 `tsconfig.base.json`（workspace 包构建必需），避免容器内 `packages/sync` 编译报 `TS5083`
