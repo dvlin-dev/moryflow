@@ -21,6 +21,11 @@ status: active
 
 ## 近期更新
 
+- 2026-02-25：Anyhunt Console 模块 B 修复闭环：B-4/B-5/B-6 完成（统一 API Key 选择收敛、新增共享页面壳层 `PlaygroundPageShell`、模块级回归通过）：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 B 修复推进：B-3 完成（`ExtractPlaygroundPage` 拆分为 container/request/result 结构）并通过模块级校验：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 B 修复推进：B-2 完成（`ScrapeResult` 拆分为 cards/tabs/view-model，移除默认 Tab 链式三元），并通过模块级校验：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 B 启动修复，已完成 B-1（`ScrapeForm` 拆分为 mapper + sections，并通过模块级校验）：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 B（`scrape/crawl/search/map/extract`）完成预扫描并输出问题分级（`S1x3 / S2x2`）：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 A 按“状态片段化 + `renderContentByState` + 禁止链式三元”完成变更区补扫修复并回写台账：`docs/code-review/anyhunt-console.md`、`docs/code-review/frontend-component-optimization-rollout.md`。
 - 2026-02-25：Anyhunt Console 模块 A（`api-keys/settings/webhooks`）完成修复并通过模块级校验（`typecheck` + `test:unit`）；新增 `webhooks/utils.test.ts` 回归测试：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 A（`api-keys/settings/webhooks`）完成预扫描并输出问题分级（`S1x3 / S2x2`）：`docs/code-review/anyhunt-console.md`。
@@ -178,7 +183,7 @@ status: active
 
 | Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
 | -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | in_progress（模块 A 修复完成，模块 B 待扫） |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | in_progress（模块 A/B 修复完成，待进入模块 C） |
 | P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
 | P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
 | P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |

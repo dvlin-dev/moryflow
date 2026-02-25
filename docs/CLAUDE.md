@@ -8,6 +8,11 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-4/B-5/B-6 完成（统一 API Key 选择收敛 + 共享页面壳层 + 模块级回归））
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-3（ExtractPlaygroundPage 拆分）完成并通过模块级校验）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-2（ScrapeResult 拆分）完成并通过模块级校验）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B 修复启动，B-1（ScrapeForm 拆分）完成并通过模块级校验）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B（scrape/crawl/search/map/extract）完成预扫描，产出 `S1x3 / S2x2`）
 > 最近更新：2026-02-25（前端组件准则补充：新增“状态片段化 + renderContentByState + 禁止链式三元”，并完成 Anyhunt Console 模块 A 变更区补扫修复）
 > 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 A（api-keys/settings/webhooks）完成修复并通过 `typecheck` + `test:unit`，补充回归测试）
 > 最近更新：2026-02-25（Anyhunt Console 组件优化专项启动：模块 A（api-keys/settings/webhooks）完成预扫描，产出 `S1x3 / S2x2`）
@@ -65,6 +70,10 @@
 
 ## 最近更新
 
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B 完成（B-1~B-6）：新增共享页面壳层、统一 API Key 收敛、模块级回归通过）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B B-2 完成：`ScrapeResult` 拆分为 cards/tabs/view-model，移除默认 Tab 链式三元）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B B-1 完成：`ScrapeForm` 拆分为 mapper + sections，校验通过）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B（scrape/crawl/search/map/extract）预扫描完成，识别 `S1x3 / S2x2`）
 - Anyhunt Console 组件优化专项补扫：按“状态片段化 + `renderContentByState` + 禁止链式三元”修复模块 A 变更区同类问题，并回写执行台账：`docs/code-review/anyhunt-console.md`、`docs/code-review/frontend-component-optimization-rollout.md`（2026-02-25）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 A 修复完成并通过 `typecheck` + `test:unit`，新增 `webhooks/utils.test.ts` 回归测试）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 A 预扫描完成，`S1x3 / S2x2`）
