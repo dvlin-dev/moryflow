@@ -7,6 +7,7 @@
 
 import { addTraceProcessor, setTracingDisabled } from '@openai/agents-core';
 import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import { createApiClient, createApiTransport, ServerApiError } from '@anyhunt/api/client';
 import { membershipBridge } from '../membership-bridge.js';
 import { ServerTracingProcessor, type TraceBatchPayload } from './server-tracing-processor.js';
 
@@ -17,17 +18,21 @@ let failedTraces: TraceBatchPayload[] = [];
  * 发送 traces 到后端（底层 API）
  */
 async function postTraces(payload: TraceBatchPayload, token: string): Promise<void> {
-  const response = await fetch(`${MEMBERSHIP_API_URL}/v1/agent-traces`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
+  const client = createApiClient({
+    transport: createApiTransport({
+      baseUrl: MEMBERSHIP_API_URL,
+    }),
+    defaultAuthMode: 'bearer',
+    getAccessToken: () => token,
   });
 
-  if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+  try {
+    await client.post<void>('/v1/agent-traces', { body: payload });
+  } catch (error) {
+    if (error instanceof ServerApiError) {
+      throw new Error(`Upload failed: ${error.status} ${error.message}`);
+    }
+    throw error;
   }
 }
 

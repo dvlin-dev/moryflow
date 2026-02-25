@@ -52,6 +52,8 @@ module-name/
 
 ## 近期变更
 
+- 路由治理统一：`main.ts` 启用 `setGlobalPrefix('api') + URI versioning(v1)`，Controller 统一改为 `@Controller({ path, version: '1' })`，移除硬编码 `api/v1` 字面量
+- Health 路由改为 `VERSION_NEUTRAL` 并通过全局前缀排除，保持 `/health*` 不变
 - Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307
 - Build：移除 sync 包 node_modules 的 COPY（hoisted 模式下路径不存在），避免 Docker 构建失败
 - Build：构建阶段直接继承 deps 并在 runner 使用 prod-deps，减少 node_modules 复制与镜像体积
@@ -77,7 +79,7 @@ module-name/
 - Pricing：空产品 ID 不再进入 tier/credits/license 映射并补齐单测
 - Tests：Pricing/Credit/Payment/AiProxy 单测补齐事务与依赖 mock，日积分断言改为使用常量
 - Vectorize：Worker 改为 JWKS 验签 access JWT，Server 调用改为按 userId 签发 access token
-- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `app.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
+- 环境变量：BETTER_AUTH_URL/SERVER_URL 切换为 `server.moryflow.com`，`ADMIN_EMAILS=dvlindev@qq.com`，移除 `VECTORIZE_API_SECRET`/`PRE_REGISTER_ENCRYPTION_KEY`
 - E2E 测试 setup 补充默认环境变量（BETTER_AUTH_SECRET、VECTORIZE_API_URL），避免缺失配置阻断启动
 - 管理端站点筛选与更新使用 Prisma 类型约束，避免 `any` 与不安全访问
 - 用户限流 Guard 改为同步返回 `Promise.resolve` 避免无用 `async`

@@ -8,10 +8,10 @@
 
 import { Link } from '@tanstack/react-router';
 import { Button, cn } from '@anyhunt/ui';
-import { useAuth } from '@/lib/auth-context';
 import { useInboxItems, useInboxItemContent } from '@/features/digest/hooks';
 import type { InboxItemState } from '@/features/digest/types';
 import { MarkdownView } from '@/components/reader/MarkdownView';
+import { useAuthStore } from '@/stores/auth-store';
 
 type InboxPaneKind = 'list' | 'empty' | 'detail';
 
@@ -23,7 +23,7 @@ type InboxPaneProps =
   | { kind: 'detail'; itemId: string; filters: InboxFilters };
 
 export function InboxPane(props: InboxPaneProps) {
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const subscriptionId = props.kind === 'empty' ? undefined : props.filters.subscriptionId;
   const state = props.kind === 'empty' ? undefined : props.filters.state;
 

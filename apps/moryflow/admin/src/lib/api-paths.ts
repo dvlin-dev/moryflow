@@ -6,16 +6,16 @@
  */
 
 export const ADMIN_API = {
-  BASE: '/api/admin',
-  ME: '/api/admin/me',
-  STATS: '/api/admin/stats',
-  LOGS: '/api/admin/logs',
-  USERS: '/api/admin/users',
-  PAYMENT: '/api/admin/payment',
-  EMAIL: '/api/admin/email',
-  AI_MODELS: '/api/admin/ai/models',
-  AI_PROVIDERS: '/api/admin/ai/providers',
-  AI_PRESET_PROVIDERS: '/api/admin/ai/preset-providers',
+  BASE: '/api/v1/admin',
+  ME: '/api/v1/admin/me',
+  STATS: '/api/v1/admin/stats',
+  LOGS: '/api/v1/admin/logs',
+  USERS: '/api/v1/admin/users',
+  PAYMENT: '/api/v1/admin/payment',
+  EMAIL: '/api/v1/admin/email',
+  AI_MODELS: '/api/v1/admin/ai/models',
+  AI_PROVIDERS: '/api/v1/admin/ai/providers',
+  AI_PRESET_PROVIDERS: '/api/v1/admin/ai/preset-providers',
 } as const;
 
 /** AI Proxy API 路径 (OpenAI 兼容) */

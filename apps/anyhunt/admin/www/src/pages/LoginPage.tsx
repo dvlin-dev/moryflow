@@ -1,11 +1,13 @@
 /**
  * [PROPS]: 无
- * [EMITS]: submit (form)
- * [POS]: Admin 登录页面（Better Auth + 管理员校验）
+ * [EMITS]: submit (RHF)
+ * [POS]: Admin 登录页面（Token-first + 管理员校验）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod/v3';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -16,33 +18,47 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
-  Label,
 } from '@anyhunt/ui';
-import { useAuthStore } from '@/stores/auth';
+import { authMethods } from '@/lib/auth/auth-methods';
+
+const loginFormSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const signIn = useAuthStore((state) => state.signIn);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+  const onSubmit = form.handleSubmit(async (values) => {
+    form.clearErrors('root');
     try {
-      await signIn(email, password);
+      await authMethods.signIn(values.email, values.password);
       navigate('/');
     } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      form.setError('root', {
+        message: err instanceof Error ? err.message : 'Sign in failed',
+      });
     }
-  };
+  });
+
+  const isSubmitting = form.formState.isSubmitting;
+  const rootError = form.formState.errors.root?.message;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -52,39 +68,52 @@ export default function LoginPage() {
           <CardDescription>Sign in to access the admin panel</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+          <Form {...form}>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" autoComplete="email" disabled={isSubmitting} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        autoComplete="current-password"
+                        disabled={isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+              {rootError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{rootError}</AlertDescription>
+                </Alert>
+              )}
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

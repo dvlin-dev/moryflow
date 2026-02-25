@@ -20,13 +20,13 @@ import type { UsageResponseDto } from './dto';
 @ApiBearerAuth('bearer')
 @ApiCookieAuth('better-auth.session_token')
 @UseGuards(AuthGuard)
-@Controller('api/usage')
+@Controller({ path: 'usage', version: '1' })
 export class QuotaController {
   constructor(private readonly quotaService: QuotaService) {}
 
   /**
    * 获取用户用量和额度
-   * GET /api/usage
+   * GET /api/v1/usage
    */
   @Get()
   @ApiOperation({ summary: '获取用户用量和额度' })

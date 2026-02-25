@@ -9,6 +9,15 @@
 # docs/ 目录指南
 
 > 最近更新：2026-02-25（Agent Browser Stealth 能力引入与改造方案：基于 agent-browser-stealth 外部项目，输出完整差异分析与 11 步执行计划；废除旧"禁止伪装"约束）
+> 最近更新：2026-02-25（Moryflow PC Auth 排障补充：新增 transport `raw/stream` 语义修复、server-http-client fetch 绑定修复、全仓 `lint/typecheck/test:unit` 校验记录）
+> 最近更新：2026-02-25（Moryflow PC Auth 排障补充：`/api/v1` 全量统一（Auth + 业务 + webhook）；PC/Mobile 认证接口改为显式 `/api/v1/auth/*`，并完成回归测试）
+> 最近更新：2026-02-24（Auth 与全量请求统一改造计划执行完成：Step 1~13 全部完成并回写，覆盖客户端 + 服务端出站 HTTP + WebSocket；旧客户端范式清理完成，受影响包完成回归验证，`moryflow-mobile check:type` 仅保留既有基线问题）
+> 最近更新：2026-02-24（统一 Token Auth V2 follow-up：access token 预刷新窗口统一为 1h；Anyhunt/Moryflow 线上 `prisma migrate deploy` 已执行且无待迁移）
+> 最近更新：2026-02-24（统一 Token Auth V2 follow-up-2：Console/Admin/Moryflow Admin 补齐 refresh 网络失败回退未过期 access token 策略与 store 回归测试）
+> 最近更新：2026-02-24（统一 Token Auth V2 改造执行完成：Step 1~8 全部完成，并补充上线/回滚演练记录）
+> 最近更新：2026-02-24（Moryflow PC Auth 排障 Runbook：补充客户端最新进度（OTP 二步修复、Token-first 登录/验证、未登录不走全局 skeleton、Auth 错误解析增强）与新增回归测试结果）
+> 最近更新：2026-02-24（新增统一 Token Auth V2 改造方案：跨 Anyhunt + Moryflow 统一 Token-first（登录直接返回 access+refresh，refresh 轮换），并附强制进度回写执行计划）
+> 最近更新：2026-02-24（落地：Anyhunt 统一请求日志模块（明文 IP + 30 天保留））
 > 最近更新：2026-02-24（OpenAI Agents JS 根因修复补充：Gemini function schema 兼容层（`enum` 缺失 `type` 递归补齐）+ PC ABI 双态修复（pretest Node ABI / posttest Electron ABI）；P0-24 全量 L2 闸门通过）
 > 最近更新：2026-02-24（OpenAI Agents JS 升级 lint 兼容修复：`agent.controller` 区分 Express/Web `Response` 类型，清除 `unbound-method` 与剩余 `no-unsafe-*`）
 > 最近更新：2026-02-24（OpenAI Agents JS 升级 Runtime 修复：为 `@openai/agents-core run()` 统一绑定默认 `ModelProvider`，修复 PC/Mobile `No default model provider set`）
@@ -52,6 +61,14 @@
 ## 最近更新
 
 - Agent Browser Stealth 能力引入与改造方案（proposal）：基于 agent-browser-stealth 外部项目完成差异分析与 11 步执行计划；废除旧"禁止伪装"约束（2026-02-25：proposal）
+- Moryflow PC Auth 排障 Runbook：补充 transport `raw/stream` 语义修复、server-http-client fetch 绑定修复与全仓 `lint/typecheck/test:unit` 校验记录：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-25）
+- 全量 Code Review 索引回写：Anyhunt/Moryflow Auth/Webhook 路由口径统一为 `/api/v1/*`，移除 `VERSION_NEUTRAL` 旧描述：`docs/code-review/index.md`（2026-02-25）
+- Moryflow PC Auth 路径修复：确认 Moryflow/Anyhunt 均统一到 `/api/v1`（含 auth 与 webhook），并将 PC/Mobile 登录/验证/刷新/登出请求统一改为显式 `/api/v1/auth/*`；相关回归测试通过：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-25）
+- Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client，completed）：`docs/architecture/auth/auth-zustand-method-refactor-plan.md`（2026-02-24：Step 1~13 全部完成，客户端 + 服务端出站 HTTP + WebSocket 全链路统一，旧客户端范式清理完成，受影响包完成回归验证）
+- 统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active）：`docs/architecture/auth/unified-token-auth-v2-plan.md`（2026-02-24：零兼容；登录直接返回 access+refresh；refresh 轮换；按步骤执行 + 强制进度回写）
+- Moryflow PC 登录/注册触发 refresh 连接关闭（`ERR_CONNECTION_CLOSED`）排障 Runbook：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-24：active，含根因、分层修复与验收标准）
+- Moryflow PC Auth 排障进度更新：确认“最新包仍复现”，补充客户端修复进度（LoginPanel/OTPForm 移除内层 form、OTP `onSuccess` await、Auth fail-fast、Token-first 登录/验证、未登录不走全局 skeleton、登录仅按钮级 loading、Auth 错误解析增强）并回写 `moryflow-pc`/`packages/api` 目标单测结果：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-24）
+- Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控，30 天保留）：`docs/architecture/anyhunt-request-log-module-plan.md`（2026-02-24：implemented）
 - OpenAI Agents JS 升级评估与重构建议（`0.4.3 -> 0.5.1`）：`docs/research/openai-agents-js-upgrade-impact-2026-02.md`（2026-02-24：实施进度已回写至 P0-24；新增 Gemini function schema 兼容层、PC ABI 双态修复；`pnpm lint && pnpm typecheck && pnpm test:unit` 全通过）
 - Agent Browser 合规自动化与检测风险治理方案（implemented；2026-02-25 已修订"禁止伪装"约束）：已完成 Step 0~7（策略匹配、速率/并发预算、动作节奏、导航重试分类、风险遥测、Console Detection Risk 面板）（2026-02-24：implemented）
 - Agent Skills（面向 C 端的“技能库”）接入方案：增量方案落地（固定推荐 3 项、预安装 2 项、`New skill` 复用 `Try Skill Creator`、`Try` 立即新建会话并生效），并回写 P0-12~P0-15 执行计划为完成状态（2026-02-11：implemented）

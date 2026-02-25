@@ -1,4 +1,5 @@
 import type { ProblemDetails } from '@anyhunt/types';
+import { getPublicApiClient } from './public-api-client';
 
 // ============== Types ==============
 
@@ -164,14 +165,11 @@ export async function parseJsonResponse<T>(response: Response): Promise<T> {
  * Check if current IP is verified
  */
 export async function checkVerifyStatus(apiUrl: string): Promise<{ verified: boolean }> {
+  const client = getPublicApiClient(apiUrl);
   try {
-    const response = await fetch(`${apiUrl}/api/v1/public/demo/verify-status`, {
-      method: 'GET',
+    return await client.get<{ verified: boolean }>('/api/v1/public/demo/verify-status', {
+      authMode: 'public',
     });
-    if (!response.ok) {
-      return { verified: false };
-    }
-    return parseJsonResponse<{ verified: boolean }>(response);
   } catch {
     return { verified: false };
   }
@@ -185,16 +183,11 @@ export async function captureScreenshot(
   captcha: string | null,
   apiUrl: string
 ): Promise<CaptureResult> {
+  const client = getPublicApiClient(apiUrl);
   const body: Record<string, unknown> = { url };
   if (captcha) {
     body.captcha = captcha;
   }
-
-  const response = await fetch(`${apiUrl}/api/v1/public/demo/screenshot`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
 
   interface ScreenshotData {
     imageDataUrl: string;
@@ -204,7 +197,10 @@ export async function captureScreenshot(
     height?: number;
   }
 
-  const data = await parseJsonResponse<ScreenshotData>(response);
+  const data = await client.post<ScreenshotData>('/api/v1/public/demo/screenshot', {
+    body,
+    authMode: 'public',
+  });
 
   if (!data.imageDataUrl) {
     throw new ApiError('No screenshot data returned', 500);
@@ -233,6 +229,7 @@ export async function scrapeUrl(
     onlyMainContent?: boolean;
   }
 ): Promise<ScrapeResult> {
+  const client = getPublicApiClient(apiUrl);
   const body: Record<string, unknown> = {
     url,
     formats: options?.formats || ['markdown'],
@@ -242,13 +239,10 @@ export async function scrapeUrl(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/public/demo/scrape`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return client.post<ScrapeResult>('/api/v1/public/demo/scrape', {
+    body,
+    authMode: 'public',
   });
-
-  return parseJsonResponse<ScrapeResult>(response);
 }
 
 /**
@@ -263,6 +257,7 @@ export async function mapSite(
     includeSubdomains?: boolean;
   }
 ): Promise<MapResult> {
+  const client = getPublicApiClient(apiUrl);
   const body: Record<string, unknown> = {
     url,
     search: options?.search,
@@ -272,13 +267,10 @@ export async function mapSite(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/public/demo/map`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return client.post<MapResult>('/api/v1/public/demo/map', {
+    body,
+    authMode: 'public',
   });
-
-  return parseJsonResponse<MapResult>(response);
 }
 
 /**
@@ -293,6 +285,7 @@ export async function crawlSite(
     limit?: number;
   }
 ): Promise<CrawlResult> {
+  const client = getPublicApiClient(apiUrl);
   const body: Record<string, unknown> = {
     url,
     maxDepth: options?.maxDepth ?? 1,
@@ -302,13 +295,10 @@ export async function crawlSite(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/public/demo/crawl`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return client.post<CrawlResult>('/api/v1/public/demo/crawl', {
+    body,
+    authMode: 'public',
   });
-
-  return parseJsonResponse<CrawlResult>(response);
 }
 
 /**
@@ -323,6 +313,7 @@ export async function extractData(
     schema?: Record<string, unknown>;
   }
 ): Promise<ExtractResult> {
+  const client = getPublicApiClient(apiUrl);
   const body: Record<string, unknown> = {
     url,
     prompt: options.prompt,
@@ -332,13 +323,10 @@ export async function extractData(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/public/demo/extract`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return client.post<ExtractResult>('/api/v1/public/demo/extract', {
+    body,
+    authMode: 'public',
   });
-
-  return parseJsonResponse<ExtractResult>(response);
 }
 
 /**
@@ -352,6 +340,7 @@ export async function searchWeb(
     limit?: number;
   }
 ): Promise<SearchResult> {
+  const client = getPublicApiClient(apiUrl);
   const body: Record<string, unknown> = {
     query,
     limit: options?.limit ?? 5,
@@ -360,11 +349,8 @@ export async function searchWeb(
     body.captcha = captcha;
   }
 
-  const response = await fetch(`${apiUrl}/api/v1/public/demo/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  return client.post<SearchResult>('/api/v1/public/demo/search', {
+    body,
+    authMode: 'public',
   });
-
-  return parseJsonResponse<SearchResult>(response);
 }

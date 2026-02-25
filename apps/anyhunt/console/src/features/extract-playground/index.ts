@@ -5,7 +5,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { FETCHX_API } from '@/lib/api-paths';
-import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
+import { createApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type { ExtractRequest, ExtractResponse } from '@/features/playground-shared';
 
 /**
@@ -13,7 +13,7 @@ import type { ExtractRequest, ExtractResponse } from '@/features/playground-shar
  * @param apiKey - 完整 API Key
  */
 export async function extract(apiKey: string, request: ExtractRequest): Promise<ExtractResponse> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   return client.post<ExtractResponse>(FETCHX_API.EXTRACT, request);
 }
 

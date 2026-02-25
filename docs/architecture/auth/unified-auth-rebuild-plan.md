@@ -21,7 +21,7 @@ status: done
 
 ## 统一范围（本次纳入）
 
-1. 认证交互模型与路由语义：`/api/auth/*`（refresh/logout/sign-out/jwks）
+1. 认证交互模型与路由语义：`/api/v1/auth/*`（refresh/logout/sign-out/jwks）
 2. Web / Device 的刷新与退出规则
 3. Guard 统一（业务接口只认 `Authorization: Bearer <accessToken>`）
 4. 认证相关数据模型（User/Account/Session/RefreshToken/Jwks/Subscription）
@@ -73,7 +73,7 @@ status: done
 - **Web refresh**：refresh 放 HttpOnly Cookie，强制 Origin 校验
 - **Device refresh**：refresh 放请求体，强制 `X-App-Platform`
 - **登出**：`/logout` 与 `/sign-out` 行为一致，撤销 refresh + session
-- **JWKS**：`GET /api/auth/jwks` 提供验签公钥，服务端缓存按 `kid` 更新
+- **JWKS**：`GET /api/v1/auth/jwks` 提供验签公钥，服务端缓存按 `kid` 更新
 
 ## Token 策略（体验优先 + 安全）
 
@@ -93,10 +93,10 @@ status: done
 
 ## 统一路由语义
 
-- `POST /api/auth/refresh` → 轮换 refresh + 下发 access
-- `POST /api/auth/logout` → 撤销 refresh + session + 清理 cookie
-- `POST /api/auth/sign-out` → 与 logout 等价（Better Auth 默认出口）
-- `GET /api/auth/jwks` → JWKS
+- `POST /api/v1/auth/refresh` → 轮换 refresh + 下发 access
+- `POST /api/v1/auth/logout` → 撤销 refresh + session + 清理 cookie
+- `POST /api/v1/auth/sign-out` → 与 logout 等价（Better Auth 默认出口）
+- `GET /api/v1/auth/jwks` → JWKS
 
 ## 业务流程对齐（保持简化）
 
@@ -107,7 +107,7 @@ status: done
 
 ### Web（浏览器）
 
-1. 登录/注册成功后，调用 `POST /api/auth/refresh`
+1. 登录/注册成功后，调用 `POST /api/v1/auth/refresh`
 2. 服务端读取 **HttpOnly refresh Cookie**，签发 access
 3. 前端把 access 放内存
 4. 访问业务接口：`Authorization: Bearer <accessToken>`
@@ -115,13 +115,13 @@ status: done
 
 ### Desktop/Mobile/CLI
 
-1. 登录/注册成功后，调用 `POST /api/auth/refresh`（body 传 refresh）
+1. 登录/注册成功后，调用 `POST /api/v1/auth/refresh`（body 传 refresh）
 2. 必须携带 `X-App-Platform`（ios/android/desktop/electron/cli）
 3. 返回 `access + refresh`，refresh 存 Secure Storage
-4. 启动时调用 `POST /api/auth/refresh` 获取 access（refresh 从安全存储读取）
+4. 启动时调用 `POST /api/v1/auth/refresh` 获取 access（refresh 从安全存储读取）
 5. `401 token_expired` 仅重试一次，失败则清空 refresh 并提示重新登录
 
-## /api/auth/refresh 流程（服务端）
+## /api/v1/auth/refresh 流程（服务端）
 
 1. 判定 Web/Device：
    - Web：要求 `Origin` 在 allowlist
@@ -135,7 +135,7 @@ status: done
 
 ## 后端（Moryflow/Anyhunt）
 
-- 删除旧 PreRegister/Admin 登录入口；统一使用 `/api/auth/*`
+- 删除旧 PreRegister/Admin 登录入口；统一使用 `/api/v1/auth/*`
 - AuthGuard 只认 `Authorization: Bearer <accessToken>`
 - 统一 `RefreshToken/JWKS` 模型与轮换策略
 - 订阅/权限以 `SubscriptionTier` 为唯一来源（移除 `user.tier`）
@@ -145,7 +145,7 @@ status: done
 
 ## 前端（Admin/Web）
 
-- 登录/注册后调用 `/api/auth/refresh` 获取 access
+- 登录/注册后调用 `/api/v1/auth/refresh` 获取 access
 - access 仅内存，refresh 由 Cookie 持久化
 - `401` 触发一次 refresh + retry
 - 无管理员权限时明确提示（AdminGuard 403）
@@ -160,7 +160,7 @@ status: done
 ## 执行要求（防止上下文丢失）
 
 1. **先写文档再改代码**：方案文档更新到位后再开始实施
-2. **全量替换调用点**：所有调用 `/auth`、旧 token、旧 refresh 的地方必须统一到 `/api/auth/*`
+2. **全量替换调用点**：所有调用 `/auth`、旧 token、旧 refresh 的地方必须统一到 `/api/v1/auth/*`
 3. **删除无用模块**：pre-register/旧 bearer/旧 session 逻辑应彻底移除
 4. **数据库重置清理**：删除历史 migrations，生成 init 并重新生成 Prisma client
 5. **统一错误边界**：刷新失败统一清理本地态并返回登录
@@ -172,14 +172,14 @@ status: done
 
 - Anyhunt：删除 `prisma/*/migrations` 历史迁移，按重置策略保留初始化流程
 - Moryflow：Auth 统一为 access JWT + refresh rotation + JWKS
-- Moryflow：`/api/auth/*` 路由统一，刷新/登出与 Better Auth handler 入口对齐
+- Moryflow：`/api/v1/auth/*` 路由统一，刷新/登出与 Better Auth handler 入口对齐
 - Moryflow：PreRegister 与忘记密码入口移除（Web/PC/Mobile 同步）
 - 端侧接入：Web/PC/Mobile 改为 access 内存 + refresh 安全存储/HttpOnly Cookie
 - 订阅字段：`user.tier` 已移除，统一输出 `subscriptionTier`
 - Anyhunt/Moryflow：init 迁移已生成并应用（DB 已重置）
 - Moryflow Vectorize Worker：接入 JWKS 验签 access JWT（业务服务按 JWKS 校验）
 - 测试门禁：`pnpm lint` / `pnpm typecheck` / `pnpm test:unit` 已复跑通过（lint 仍有 Moryflow Server `no-unsafe-assignment` 警告；test:unit 有 Redis/Turnstile 等预期日志警告）
-- 环境变量核对：两端 `.env` 已包含 Auth 必需项（`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`TRUSTED_ORIGINS`、`ALLOWED_ORIGINS`、`ADMIN_EMAILS`、`SERVER_URL`）；`BETTER_AUTH_URL`/`SERVER_URL` 已对齐 `https://server.anyhunt.app` 与 `https://app.moryflow.com`，`ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 已覆盖 `moryflow.com` 系列域名（无需新增 Auth env）
+- 环境变量核对：两端 `.env` 已包含 Auth 必需项（`BETTER_AUTH_SECRET`、`BETTER_AUTH_URL`、`TRUSTED_ORIGINS`、`ALLOWED_ORIGINS`、`ADMIN_EMAILS`、`SERVER_URL`）；`BETTER_AUTH_URL`/`SERVER_URL` 已对齐 `https://server.anyhunt.app` 与 `https://server.moryflow.com`，`ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 已覆盖 `moryflow.com` 系列域名（无需新增 Auth env）
 - 数据库重置：已按 init 迁移重置 Anyhunt main/vector 与 Moryflow 主库（基于各自 prisma config）
 - 测试补齐：JWKS 端点验签用例已落地（Anyhunt 集成 / Moryflow E2E）
 - 测试补齐：Anyhunt www `auth-session` 单测已落地（refresh/logout）
@@ -198,7 +198,7 @@ status: done
 
 > 失败必须修复后再继续；不允许跳过。
 
-## /api/auth/logout / sign-out
+## /api/v1/auth/logout / sign-out
 
 - Web：要求 `Origin` 校验，通过后撤销 refresh + session
 - Device：要求 `X-App-Platform` + body refresh，仅撤销 refresh
@@ -206,7 +206,7 @@ status: done
 
 ## JWKS 使用（业务服务）
 
-- 业务服务在启动时拉取 `GET /api/auth/jwks`
+- 业务服务在启动时拉取 `GET /api/v1/auth/jwks`
 - 缓存公钥，按 `kid` 选择
 - 验签失败时刷新 JWKS 再验一次
 
@@ -250,19 +250,19 @@ status: done
 
 ## Web（浏览器）
 
-- 页面初始化调用一次 `POST /api/auth/refresh`
+- 页面初始化调用一次 `POST /api/v1/auth/refresh`
 - access 放内存；`401 token_expired` 时刷新并重试一次
 - 不存储 access 到 localStorage/sessionStorage
 
 ## Desktop/Mobile/CLI
 
 - refresh 存 Secure Storage/Keychain
-- 启动时调用 `POST /api/auth/refresh` 获取 access
+- 启动时调用 `POST /api/v1/auth/refresh` 获取 access
 - 请求头统一 `Authorization: Bearer <accessToken>`
 
 ## 端侧实现要点（防上下文丢失）
 
-- 登录/注册成功后必须调用一次 `POST /api/auth/refresh`，拿到 access 后仅存内存
+- 登录/注册成功后必须调用一次 `POST /api/v1/auth/refresh`，拿到 access 后仅存内存
 - 移动端遇到 `EMAIL_NOT_VERIFIED` 必须引导到验证码页，并在进入时自动触发一次 resend（仅 signin 模式）
 - 所有客户端 `401 token_expired` 只允许刷新重试一次
 - refresh 失效时必须清理本地 refresh + 用户缓存，避免“看起来已登录但请求全 401”

@@ -73,8 +73,8 @@ status: draft
    - 网络超时/断网**不清空 refresh**，只标记“需刷新”，在网络恢复/下次唤醒时重试。
 
 3. **预刷新窗口与唤醒策略**
-   - **决定：默认预刷新窗口 60s，并在 App Resume 时强制执行一次 `ensureAccessToken()`**。
-   - 理由：移动端/桌面端存在长时间后台 + 时钟偏差场景，Resume 时补一次校验可避免 401 风暴。
+   - **决定：默认预刷新窗口 1h，并在 App Resume 时强制执行一次 `ensureAccessToken()`**。
+   - 理由：移动端/桌面端存在长时间后台 + 单次任务执行时间长的场景，提前 1h 刷新可避免任务中途 401。
 
 ## 升级后设计（统一模型）
 
@@ -112,7 +112,7 @@ isHydrated: boolean;
 
 ### 3) Refresh 结果写入 store
 
-- `POST /api/auth/refresh` 返回：
+- `POST /api/v1/auth/refresh` 返回：
   - `accessToken`
   - `accessTokenExpiresAt`
   - `refreshToken`（device only）
@@ -219,7 +219,7 @@ if (!refreshPromise) {
   refreshPromise = (async () => {
     const refreshToken = await getStoredRefreshToken();
     try {
-      const res = await fetch('/api/auth/refresh', {
+      const res = await fetch('/api/v1/auth/refresh', {
         method: 'POST',
         headers: { 'X-App-Platform': DEVICE_PLATFORM, 'Content-Type': 'application/json' },
         body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,

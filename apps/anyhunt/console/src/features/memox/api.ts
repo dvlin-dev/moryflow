@@ -4,7 +4,7 @@
  * 仅使用公开 API（API Key 认证）
  */
 import { MEMOX_API } from '@/lib/api-paths';
-import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
+import { createApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type {
   MemoriesQueryParams,
   EntitiesQueryParams,
@@ -101,7 +101,7 @@ export async function fetchMemories(
   apiKey: string,
   params?: MemoriesQueryParams
 ): Promise<Memory[]> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   const query = buildMemoryQuery(params);
   const url = query ? `${MEMOX_API.MEMORIES}?${query}` : MEMOX_API.MEMORIES;
   return client.get<Memory[]>(url);
@@ -113,7 +113,7 @@ export async function fetchEntities(
   apiKey: string,
   params?: EntitiesQueryParams
 ): Promise<Entity[]> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   const searchParams = new URLSearchParams();
   if (params?.org_id) searchParams.set('org_id', params.org_id);
   if (params?.project_id) searchParams.set('project_id', params.project_id);
@@ -124,7 +124,7 @@ export async function fetchEntities(
 }
 
 export async function fetchEntityTypes(apiKey: string): Promise<EntityType[]> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   return client.get<EntityType[]>(MEMOX_API.ENTITY_FILTERS);
 }
 
@@ -149,7 +149,7 @@ export async function createMemory(
   apiKey: string,
   data: CreateMemoryRequest
 ): Promise<CreateMemoryResponse> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   const result = await client.post<unknown>(MEMOX_API.MEMORIES, data);
   return Array.isArray(result)
     ? { results: result as CreateMemoryResponse['results'] }
@@ -160,23 +160,23 @@ export async function searchMemories(
   apiKey: string,
   data: SearchMemoryRequest
 ): Promise<MemorySearchResult[]> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   const result = await client.post<unknown>(MEMOX_API.MEMORIES_SEARCH, data);
   return normalizeResults<MemorySearchResult>(result);
 }
 
 export async function getMemory(apiKey: string, id: string): Promise<Memory> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   return client.get<Memory>(`${MEMOX_API.MEMORIES}/${id}`);
 }
 
 export async function deleteMemory(apiKey: string, id: string): Promise<void> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   await client.request(`${MEMOX_API.MEMORIES}/${id}`, { method: 'DELETE' });
 }
 
 export async function exportMemories(apiKey: string, payload: Record<string, unknown>) {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   const createResult = await client.post<{ id: string }>(MEMOX_API.EXPORTS, payload);
   const exportData = await client.post<Record<string, unknown>>(MEMOX_API.EXPORTS_GET, {
     memory_export_id: createResult.id,

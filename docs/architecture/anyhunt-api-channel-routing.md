@@ -54,10 +54,10 @@ status: implemented
 2. **app 通道**：所有 Session 鉴权接口必须放入 `/api/v1/app/*`。
 3. **apikey 通道**：对外 API 服务保持在 `/api/v1/*`，不再与 public/app 混用。
 4. **特殊路径保留**：
-   - `/api/auth/*`：认证相关（版本中立）。
+   - `/api/v1/auth/*`：认证相关（`version: '1'`）。
    - `/api/v1/admin/*`：后台管理（AdminGuard）。
    - `/health`：健康检查（版本中立）。
-   - `/webhooks/creem`：支付回调（版本中立）。
+   - `/api/v1/webhooks/creem`：支付回调（`version: '1'`）。
 
 ## Digest 路由拆分（核心修复点）
 

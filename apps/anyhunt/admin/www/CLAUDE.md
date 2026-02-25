@@ -8,6 +8,11 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
+- Admin Auth 切换为 Token-first：登录直接拿 `access+refresh`，refresh/logout 改为 body `refreshToken`
+- `stores/auth.ts` 升级为 localStorage 持久化 + refresh mutex，移除 Cookie 会话依赖
+- Logs：筛选时间统一转 ISO UTC（带时区），补齐查询失败错误态展示，避免“请求失败显示为空数据”
+- 新增 Unified Logs 模块：`/logs/requests`、`/logs/users`、`/logs/ip`（请求明细、用户分析、IP 监控）
 - LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -29,13 +34,16 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - 任务监控（crawl、batch-scrape）
 - 队列状态监控
 - 浏览器池管理
+- 统一请求日志（行为分析 / 错误排查 / IP 监控）
 
 ## 约束
 
 - 仅管理员可访问
-- Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
-- refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
-- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/app/user/me` 同步用户档案（含 isAdmin）
+- Auth 使用 access JWT + refresh rotation（`/api/v1/auth/*`，不带版本号）
+- 登录通过 `POST /api/v1/auth/sign-in/email` 直接获取 `accessToken + refreshToken`
+- refresh 仅通过 body `refreshToken` 调用 `POST /api/v1/auth/refresh`，并启用 refresh rotation
+- access/refresh 与过期时间持久化到 localStorage（Zustand persist）
+- 启动优先复用本地 access；仅在 access 过期或临近过期时刷新，再通过 `/api/v1/app/user/me` 同步用户档案（含 isAdmin）
 - `401 token_expired` 只允许刷新一次并重试原请求
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/tiptap`（Welcome Markdown Editor）
 - TipTap 统一从 `@anyhunt/tiptap` 根入口导入；样式仅引入 `@anyhunt/tiptap/styles/notion-editor.scss`（禁止深路径导入）
@@ -83,6 +91,9 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 | `jobs/`           | `/jobs`           | Crawl/batch job monitoring |
 | `queues/`         | `/queues`         | BullMQ queue status        |
 | `browser/`        | `/browser`        | Browser pool instances     |
+| `logs/requests`   | `/logs/requests`  | Unified request logs       |
+| `logs/users`      | `/logs/users`     | User behavior from logs    |
+| `logs/ip`         | `/logs/ip`        | IP monitoring from logs    |
 | `digest-topics/`  | `/digest/topics`  | Digest Topics 精选管理     |
 | `digest-reports/` | `/digest/reports` | Digest 举报管理            |
 | `digest-welcome/` | `/digest/welcome` | Digest Welcome 配置与页面  |
@@ -123,6 +134,9 @@ feature-name/
 | `QueuesPage`        | Queue health and metrics           |
 | `BrowserPage`       | Browser instance status            |
 | `ErrorsPage`        | System error logs                  |
+| `LogsRequestsPage`  | Unified request log list           |
+| `LogsUsersPage`     | User behavior analysis from logs   |
+| `LogsIpPage`        | IP monitoring from request logs    |
 | `DigestTopicsPage`  | Digest Topics featured management  |
 | `DigestReportsPage` | Digest report moderation           |
 | `DigestWelcomePage` | Digest welcome configuration       |

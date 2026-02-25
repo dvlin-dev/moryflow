@@ -5,6 +5,7 @@ import { ScraperService } from '../scraper/scraper.service';
 import { MapService } from '../map/map.service';
 import { ExtractService } from '../extract/extract.service';
 import { SearchService } from '../search/search.service';
+import { serverHttpRaw } from '../common/http/server-http-client';
 import type {
   DemoScreenshotResponse,
   DemoScrapeResponse,
@@ -119,20 +120,25 @@ export class DemoService {
     }
 
     try {
-      const response = await fetch(
-        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            secret: secretKey,
-            response: token,
-          }),
-        },
-      );
+      const response = await serverHttpRaw({
+        url: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: secretKey,
+          response: token,
+        }).toString(),
+        timeoutMs: 10000,
+      });
 
-      const data = (await response.json()) as { success?: boolean };
-      return data.success === true;
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+      } | null;
+      return data?.success === true;
     } catch (error) {
       this.logger.error('Turnstile verification failed', error);
       return false;

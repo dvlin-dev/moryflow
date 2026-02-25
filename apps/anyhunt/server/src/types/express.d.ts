@@ -4,6 +4,7 @@
  */
 
 import type { CurrentUserDto } from './user.types';
+import type { ApiKeyValidationResult } from '../api-key/api-key.types';
 
 declare global {
   namespace Express {
@@ -16,6 +17,10 @@ declare global {
         tokenType?: 'access';
         expiresAt: Date;
       };
+      /** Public API Key 验证结果（ApiKeyGuard 注入） */
+      apiKey?: ApiKeyValidationResult;
+      /** 链路请求 ID */
+      requestId?: string;
       /** 原始请求体（用于 webhook 签名验证） */
       rawBody?: Buffer;
     }

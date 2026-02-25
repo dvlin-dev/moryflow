@@ -1,8 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createApiClient, createApiTransport } from '@anyhunt/api/client';
 
 const DOWNLOAD_BASE = 'https://download.moryflow.com';
+const downloadClient = createApiClient({
+  transport: createApiTransport({
+    baseUrl: DOWNLOAD_BASE,
+  }),
+  defaultAuthMode: 'public',
+});
 
 interface Manifest {
   version: string;
@@ -53,8 +60,8 @@ export function DownloadButtons({ locale = 'en' }: DownloadButtonsProps) {
   const t = texts[locale];
 
   useEffect(() => {
-    fetch(`${DOWNLOAD_BASE}/manifest.json?_t=${Date.now()}`)
-      .then((res) => res.json())
+    downloadClient
+      .get<Manifest>('/manifest.json', { query: { _t: Date.now() } })
       .then((data) => setManifest(data))
       .catch(console.error)
       .finally(() => setIsLoading(false));

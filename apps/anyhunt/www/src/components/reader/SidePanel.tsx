@@ -8,13 +8,13 @@
 import { Separator } from '@anyhunt/ui';
 import { useRouterState } from '@tanstack/react-router';
 import type { Subscription } from '@/features/digest/types';
-import { useAuth } from '@/lib/auth-context';
 import { useInboxStats, useSubscriptions } from '@/features/digest/hooks';
 import { SidePanelHeader } from './side-panel/SidePanelHeader';
 import { SidePanelInboxSection } from './side-panel/SidePanelInboxSection';
 import { SidePanelRecommendedSection } from './side-panel/SidePanelRecommendedSection';
 import { SidePanelSubscriptionsSection } from './side-panel/SidePanelSubscriptionsSection';
 import { SidePanelWelcomeLink } from './side-panel/SidePanelWelcomeLink';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface SidePanelProps {
   onCreateSubscription: (initialTopic?: string) => void;
@@ -24,7 +24,7 @@ interface SidePanelProps {
 export function SidePanel({ onCreateSubscription, onOpenSubscriptionSettings }: SidePanelProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useRouterState({ select: (s) => s.location.searchStr });
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const subscriptionsQuery = useSubscriptions(undefined, { enabled: isAuthenticated });
   const inboxStatsQuery = useInboxStats({ enabled: isAuthenticated });

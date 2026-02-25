@@ -16,17 +16,20 @@
 ## 文档清单
 
 - `domains-and-deployment.md`：域名职责 + 三机部署（megaboxpro/4c6g/8c16g）+ 反代路由的可执行方案（含 OAuth 登录）。
-  - Moryflow：`www.moryflow.com`（营销）+ `docs.moryflow.com`（文档）+ `app.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
+  - Moryflow：`www.moryflow.com`（营销）+ `docs.moryflow.com`（文档）+ `server.moryflow.com`（应用+API）+ `moryflow.app`（发布站）
   - Anyhunt Dev：`anyhunt.app`（官网）+ `server.anyhunt.app`（API `/api/v1`）+ `docs.anyhunt.app`（文档）+ `console.anyhunt.app` / `admin.anyhunt.app`（Web 前端）
 - `admin-llm-provider-config.md`：Admin 动态配置 LLM Providers/Models（入库 baseUrl/apiKey，加密存储；Agent/Playground 运行时路由）。
 - `llm-admin-provider-rollout.md`：LLM Admin 配置改造进度（Agent + Extract；含 DB 升级要点与部署清单）。
 - `anyhunt-llm-provider-alignment.md`：Anyhunt LLM Provider 对齐进度（AI SDK + Console 模型选择）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
+- `auth/unified-token-auth-v2-plan.md`：统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active，Step 1~7 已完成）。
+- `auth/auth-zustand-method-refactor-plan.md`：Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client，completed；2026-02-24 完成 Step 1~13，覆盖客户端 + 服务端出站 HTTP + WebSocket，全量请求统一与旧范式清理落地）。
 - `auth/access-token-storage-plan.md`：Access Token 本地存储方案（Zustand + Persist，draft）。
 - `auth/moryflow-pc-mobile-access-token-upgrade.md`：Moryflow PC/Mobile Access Token 持久化升级方案（draft）。
 - `api-client-unification.md`：API Client 统一封装方案（Anyhunt + Moryflow，draft）。
 - `anyhunt-console-public-api-key-plan.md`：Console 公共 API 化与 API Key 明文存储方案（active）。
+- `anyhunt-request-log-module-plan.md`：Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控，30 天保留，implemented）。
 - `anyhunt-api-channel-routing.md`：Anyhunt app/public/apikey 通道路由规范与迁移清单（implemented）。
 - `auth/unified-auth-rebuild-file-map.md`：Auth 统一改造涉及文件与模块清单（含潜在漏改提示）。
 - `agent-tasks-system.md`：Moryflow Agent Tasks 系统方案（替代 Plan）。
@@ -41,6 +44,11 @@
 
 ## 近期更新
 
+- `auth/auth-zustand-method-refactor-plan.md`：完成八次评审修订后已执行落地（Step 1~13 全部回写 done），完成客户端/服务端出站 HTTP/WebSocket 统一、旧范式清理与受影响包回归验证（2026-02-24）。
+- `auth/unified-token-auth-v2-plan.md`：补充 follow-up 进度（access token 预刷新窗口统一 1h；Anyhunt/Moryflow 线上 `prisma migrate deploy` 已执行且无待迁移；Console/Admin/Moryflow Admin 网络失败回退策略与回归测试已补齐）（2026-02-24）。
+- `auth/unified-token-auth-v2-plan.md`：统一 Token-first Auth 改造已完成（跨 Anyhunt + Moryflow，零兼容；登录直接返回 access+refresh，refresh 轮换；Step 1~8 完成并补齐上线/回滚演练记录）（2026-02-24）。
+- `anyhunt-request-log-module-plan.md`：升级为统一日志系统方案（用户行为分析 + 错误排查 + IP 监控，单表全量入库 + 30 天清理，明文 IP）（2026-02-24）。
+- `anyhunt-request-log-module-plan.md`：实施完成（RequestLog 单表、全局采集、Admin Logs 页面、30 天清理任务）（2026-02-24）。
 - `agent-skills.md`：增量方案落地（固定推荐 3 项：Skill Creator / Find Skills / Article Illustrator；首次预安装前两项；`New skill` 复用 `Try Skill Creator`；`Try` 改为立即新建会话并生效），并回写 P0-12~P0-15 完成进度（2026-02-11）。
 - `agent-skills.md`：PC 端 P0 落地完成（Sidebar Skills 入口、输入框 `+` 与空输入 `/` 双入口、selected skill chip、`available_skills` 注入与 `skill` tool 按需加载），并回写执行计划进度（2026-02-11）。
 - `agent-skills.md`：本期方案 1 落地（发送成功后清空 selected skill；用户消息渲染 skill tag），并在执行计划中新增 P0-11 进度（2026-02-11）。

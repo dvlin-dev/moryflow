@@ -27,7 +27,7 @@ Admin 模块提供运营管理后台接口（统计、用户、订单、队列�
 - 所有接口必须走 `AuthGuard` + `RequireAdmin`
 - 路由统一 `version: '1'`（`/api/v1/admin/*`）
 - 无公共接口（禁止 `@Public()`）
-- 不提供独立 Admin 登录入口，统一走 `/api/auth/*`
+- 不提供独立 Admin 登录入口，统一走 `/api/v1/auth/*`
 - 用户列表中的 `subscriptionTier` 基于有效订阅（仅 ACTIVE 计入付费 tier）
 - 统计口径统一使用 UTC（按天/按月）
 

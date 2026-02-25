@@ -29,6 +29,7 @@ import {
 import { cn } from '@anyhunt/ui/lib';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anyhunt/ui';
 import { useAuthStore } from '@/stores/auth';
+import { authMethods } from '@/lib/auth/auth-methods';
 
 type NavItem = { path: string; label: string; icon: LucideIcon };
 type NavGroup = { id: string; label: string; icon: LucideIcon; items: NavItem[] };
@@ -62,6 +63,16 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: 'logs',
+    label: 'Logs',
+    icon: TriangleAlert,
+    items: [
+      { path: '/logs/requests', label: 'Requests', icon: ListTodo },
+      { path: '/logs/users', label: 'Users', icon: Users },
+      { path: '/logs/ip', label: 'IP Monitor', icon: Globe },
+    ],
+  },
+  {
     id: 'ai',
     label: 'AI',
     icon: Brain,
@@ -87,7 +98,7 @@ function isPathActive(pathname: string, itemPath: string): boolean {
 
 export function MainLayout() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const pathname = location.pathname;
@@ -112,7 +123,7 @@ export function MainLayout() {
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    await logout();
+    await authMethods.logout();
   };
 
   return (

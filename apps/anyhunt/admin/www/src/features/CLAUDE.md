@@ -8,6 +8,8 @@
 
 ## 最近更新
 
+- Logs Feature：补齐查询错误态文案、筛选时间统一 ISO UTC 转换、`errorOnly` 请求参数显式映射为 `'true'`
+- Logs Feature：新增统一请求日志能力（requests/overview/users/ip）
 - Admin Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - LLM Feature：新增 presets API + model capabilities/reasoning/tiers 支持
 - Feature types 与 API 返回结构改为 raw JSON + RFC7807（移除 success/data 包装）
@@ -35,6 +37,7 @@ feature-name/
 | `jobs/`           | 任务监控                    | `/api/v1/admin/jobs`           |
 | `queues/`         | 队列监控                    | `/api/v1/admin/queues`         |
 | `browser/`        | 浏览器池状态                | `/api/v1/admin/browser`        |
+| `logs/`           | 请求日志与行为分析          | `/api/v1/admin/logs/*`         |
 | `llm/`            | LLM Providers/Models 配置   | `/api/v1/admin/llm/*`          |
 | `digest-topics/`  | Digest 话题管理             | `/api/v1/admin/digest/topics`  |
 | `digest-reports/` | Digest 举报管理             | `/api/v1/admin/digest/reports` |

@@ -29,13 +29,13 @@ import {
   Button,
 } from '@anyhunt/ui';
 import { Settings, Paintbrush, LogOut, Sun, Moon, Computer } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
+import { authMethods } from '@/lib/auth/auth-methods';
 import { useTheme, type Theme } from '@/hooks/useTheme';
-import type { User } from '@/lib/auth-client';
 import { AccountSettingsDialog } from '../AccountSettingsDialog';
+import type { AuthUser } from '@/stores/auth-store';
 
 interface SidePanelUserMenuProps {
-  user: User;
+  user: AuthUser;
 }
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -45,7 +45,6 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
 ];
 
 export function SidePanelUserMenu({ user }: SidePanelUserMenuProps) {
-  const { signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
@@ -140,7 +139,9 @@ export function SidePanelUserMenu({ user }: SidePanelUserMenuProps) {
             <AlertDialogAction
               onClick={() => {
                 setSignOutConfirmOpen(false);
-                void signOut();
+                void authMethods.logout().then(() => {
+                  window.location.href = '/welcome';
+                });
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

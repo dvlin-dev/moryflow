@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
+import { authMethods } from './lib/auth/auth-methods';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -25,6 +26,9 @@ import DigestReportsPage from './pages/DigestReportsPage';
 import DigestTopicsPage from './pages/DigestTopicsPage';
 import DigestWelcomePage from './pages/DigestWelcomePage';
 import LlmPage from './pages/LlmPage';
+import LogsRequestsPage from './pages/logs/LogsRequestsPage';
+import LogsUsersPage from './pages/logs/LogsUsersPage';
+import LogsIpPage from './pages/logs/LogsIpPage';
 
 // React Query 客户端
 const queryClient = new QueryClient({
@@ -61,13 +65,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
-  const bootstrap = useAuthStore((state) => state.bootstrap);
 
   useEffect(() => {
     if (!isBootstrapped) {
-      void bootstrap();
+      void authMethods.bootstrapAuth();
     }
-  }, [bootstrap, isBootstrapped]);
+  }, [isBootstrapped]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -104,6 +107,11 @@ function App() {
 
             {/* Errors - 错误分析 */}
             <Route path="errors" element={<ErrorsPage />} />
+
+            {/* Logs - 统一请求日志 */}
+            <Route path="logs/requests" element={<LogsRequestsPage />} />
+            <Route path="logs/users" element={<LogsUsersPage />} />
+            <Route path="logs/ip" element={<LogsIpPage />} />
 
             {/* Browser - 浏览器池监控 */}
             <Route path="browser" element={<BrowserPage />} />

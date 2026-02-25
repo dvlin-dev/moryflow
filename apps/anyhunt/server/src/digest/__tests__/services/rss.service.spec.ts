@@ -379,15 +379,13 @@ describe('DigestRssService', () => {
 
       await service.fetchAndParse({ feedUrl: 'https://example.com/feed.xml' });
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.com/feed.xml',
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'User-Agent': expect.stringContaining('Anyhunt-Digest'),
-            Accept: expect.stringContaining('application/rss+xml'),
-          }),
-        }),
-      );
+      const fetchCall = mockFetch.mock.calls[0];
+      expect(fetchCall[0]).toBe('https://example.com/feed.xml');
+
+      const headers = fetchCall[1].headers;
+      expect(headers).toBeInstanceOf(Headers);
+      expect(headers.get('User-Agent')).toContain('Anyhunt-Digest');
+      expect(headers.get('Accept')).toContain('application/rss+xml');
     });
   });
 });

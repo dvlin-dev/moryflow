@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
+import { createApiKeyClient } from '@/features/playground-shared/api-key-client';
 import { AGENT_API, BROWSER_API } from '@/lib/api-paths';
 import type {
   AgentCancelResponse,
@@ -48,7 +48,7 @@ const withQuery = (endpoint: string, query: Record<string, string | undefined>) 
   return queryString ? `${endpoint}?${queryString}` : endpoint;
 };
 
-const createClient = (apiKey: string) => new ApiKeyClient({ apiKey });
+const createClient = (apiKey: string) => createApiKeyClient({ apiKey });
 
 const AGENT_TASK_ID_PATTERN = /^at_[a-z0-9]+_[a-z0-9]+$/;
 

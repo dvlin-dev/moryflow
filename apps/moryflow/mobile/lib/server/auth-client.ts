@@ -12,7 +12,7 @@ import { MEMBERSHIP_API_URL } from '@anyhunt/api';
 import { DEVICE_PLATFORM } from './auth-platform';
 
 const AUTH_STORAGE_PREFIX = 'moryflow';
-const AUTH_BASE_PATH = '/api/auth';
+const AUTH_BASE_PATH = '/api/v1/auth';
 
 const normalizeBaseUrl = (baseUrl: string): string => baseUrl.replace(/\/+$/, '');
 

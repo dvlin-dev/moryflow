@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, VersioningType } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -27,6 +27,13 @@ describe('License Controller (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api', {
+      exclude: ['health', 'health/(.*)'],
+    });
+    app.enableVersioning({
+      type: VersioningType.URI,
+      defaultVersion: '1',
+    });
     await app.init();
 
     prisma = app.get(PrismaService);
@@ -77,10 +84,10 @@ describe('License Controller (e2e)', () => {
     await app.close();
   });
 
-  describe('POST /license/validate', () => {
+  describe('POST /api/v1/license/validate', () => {
     it('应该验证有效的 License', async () => {
       const response = await request(app.getHttpServer())
-        .post('/license/validate')
+        .post('/api/v1/license/validate')
         .send({ licenseKey: testLicenseKey })
         .expect(201);
 
@@ -91,7 +98,7 @@ describe('License Controller (e2e)', () => {
 
     it('应该返回 not_found 对于无效的 License Key', async () => {
       const response = await request(app.getHttpServer())
-        .post('/license/validate')
+        .post('/api/v1/license/validate')
         .send({ licenseKey: 'INVALID-LICENSE-KEY' })
         .expect(201);
 
@@ -100,10 +107,10 @@ describe('License Controller (e2e)', () => {
     });
   });
 
-  describe('POST /license/activate', () => {
+  describe('POST /api/v1/license/activate', () => {
     it('应该激活 License', async () => {
       const response = await request(app.getHttpServer())
-        .post('/license/activate')
+        .post('/api/v1/license/activate')
         .send({
           licenseKey: testLicenseKey,
           instanceName: 'E2E Test Device',
@@ -117,14 +124,14 @@ describe('License Controller (e2e)', () => {
 
     it('达到激活限制时应该返回 limit_exceeded', async () => {
       // 激活第二个设备
-      await request(app.getHttpServer()).post('/license/activate').send({
+      await request(app.getHttpServer()).post('/api/v1/license/activate').send({
         licenseKey: testLicenseKey,
         instanceName: 'E2E Test Device 2',
       });
 
       // 尝试激活第三个设备
       const response = await request(app.getHttpServer())
-        .post('/license/activate')
+        .post('/api/v1/license/activate')
         .send({
           licenseKey: testLicenseKey,
           instanceName: 'E2E Test Device 3',
@@ -136,7 +143,7 @@ describe('License Controller (e2e)', () => {
     });
   });
 
-  describe('POST /license/deactivate', () => {
+  describe('POST /api/v1/license/deactivate', () => {
     it('应该停用 License 激活', async () => {
       // 获取激活信息
       const license = await prisma.license.findUnique({
@@ -146,7 +153,7 @@ describe('License Controller (e2e)', () => {
 
       if (license?.activations[0]) {
         await request(app.getHttpServer())
-          .post('/license/deactivate')
+          .post('/api/v1/license/deactivate')
           .send({
             licenseKey: testLicenseKey,
             instanceId: license.activations[0].instanceId,

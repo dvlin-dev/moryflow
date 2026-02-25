@@ -16,6 +16,7 @@ import {
   type WheelEvent,
 } from 'react';
 import type { BrowserStreamFrame, BrowserStreamStatus, BrowserStreamTokenResult } from '../types';
+import { createBrowserStreamConnection, type BrowserStreamConnection } from '../realtime';
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -59,55 +60,27 @@ export const useBrowserStream = () => {
   const [streamStatus, setStreamStatus] = useState<BrowserStreamStatus | null>(null);
   const [streamFrame, setStreamFrame] = useState<BrowserStreamFrame | null>(null);
   const [streamError, setStreamError] = useState<string | null>(null);
-  const streamSocketRef = useRef<WebSocket | null>(null);
+  const streamSocketRef = useRef<BrowserStreamConnection | null>(null);
   const streamImageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!streamToken?.wsUrl) return;
 
-    const ws = new WebSocket(streamToken.wsUrl);
-    streamSocketRef.current = ws;
-
-    ws.onopen = () => {
-      setStreamStatus({ connected: true, screencasting: false });
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data as string) as {
-          type?: string;
-          connected?: boolean;
-          screencasting?: boolean;
-          data?: string;
-          metadata?: Record<string, unknown>;
-        };
-        if (payload.type === 'status') {
-          setStreamStatus({
-            connected: Boolean(payload.connected),
-            screencasting: Boolean(payload.screencasting),
-          });
-        }
-        if (payload.type === 'frame' && payload.data) {
-          setStreamFrame({ data: payload.data, metadata: payload.metadata });
-        }
-      } catch {
-        // ignore malformed messages
-      }
-    };
-
-    ws.onerror = () => {
-      setStreamError('Streaming connection error');
-    };
-
-    ws.onclose = () => {
-      setStreamStatus((prev) =>
-        prev ? { ...prev, connected: false } : { connected: false, screencasting: false }
-      );
-      setStreamFrame(null);
-    };
+    const connection = createBrowserStreamConnection(streamToken.wsUrl, {
+      onStatus: setStreamStatus,
+      onFrame: setStreamFrame,
+      onError: setStreamError,
+      onClose: () => {
+        setStreamStatus((prev) =>
+          prev ? { ...prev, connected: false } : { connected: false, screencasting: false }
+        );
+        setStreamFrame(null);
+      },
+    });
+    streamSocketRef.current = connection;
 
     return () => {
-      ws.close();
+      connection.close();
     };
   }, [streamToken?.wsUrl]);
 
@@ -129,9 +102,7 @@ export const useBrowserStream = () => {
   }, []);
 
   const sendStreamMessage = useCallback((message: Record<string, unknown>) => {
-    const ws = streamSocketRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify(message));
+    streamSocketRef.current?.send(message);
   }, []);
 
   const resolveStreamCoordinates = useCallback(

@@ -33,6 +33,8 @@ import { AgentModule } from './agent';
 import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
 import { LlmModule } from './llm';
+import { OpenApiModule } from './openapi';
+import { LogModule, RequestLogMiddleware } from './log';
 
 @Module({
   imports: [
@@ -40,11 +42,13 @@ import { LlmModule } from './llm';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    OpenApiModule,
     PrismaModule,
     VectorPrismaModule,
     RedisModule,
     QueueModule,
     CommonModule,
+    LogModule,
     EmailModule,
     AuthModule,
     UserModule,
@@ -93,5 +97,7 @@ export class AppModule implements NestModule {
         urlencoded({ extended: true, verify: captureRawBody, limit: '50mb' }),
       )
       .forRoutes('*');
+
+    consumer.apply(RequestLogMiddleware).forRoutes('*');
   }
 }

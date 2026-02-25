@@ -15,7 +15,7 @@ status: active
 
 ## 服务边界
 
-- **Moryflow Auth**：只服务 `app.moryflow.com`（不与 Anyhunt Dev 互通）。
+- **Moryflow Auth**：只服务 `server.moryflow.com`（不与 Anyhunt Dev 互通）。
 - **Anyhunt Dev Auth**：只服务 `server.anyhunt.app`（平台内模块共享登录态；console/admin 为独立 Web 前端）。
 - **Anyhunt Dev API（Memox/Agentsbox）**：统一在 `server.anyhunt.app/api/v1/*` 下暴露，对外通过 API key 鉴权。
 - **入口反代（megaboxpro/1panel）**：对外收敛域名入口，按 Host 转发到 4c6g/8c16g。
@@ -35,7 +35,7 @@ status: active
 ## 机器拓扑（当前默认）
 
 - megaboxpro（入口反代，1panel/Nginx）：
-  - `www.moryflow.com`、`app.moryflow.com` → 4c6g
+  - `www.moryflow.com`、`server.moryflow.com` → 4c6g
   - `anyhunt.app`、`server.anyhunt.app`、`console.anyhunt.app`、`admin.anyhunt.app` → 8c16g
 - 4c6g（Moryflow 线）：
   - moryflow app/api + moryflow-postgres + moryflow-redis

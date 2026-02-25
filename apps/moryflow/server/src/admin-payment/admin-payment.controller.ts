@@ -32,7 +32,7 @@ import {
 
 @ApiTags('Admin - Payment')
 @ApiBearerAuth('bearer')
-@Controller('api/admin/payment')
+@Controller({ path: 'admin/payment', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminPaymentController {
   constructor(private readonly adminPaymentService: AdminPaymentService) {}

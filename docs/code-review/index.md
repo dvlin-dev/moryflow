@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-25：Anyhunt/Moryflow 路由口径统一回写：Auth 与 Webhook 文档示例统一为 `/api/v1/*`（移除 VERSION_NEUTRAL 旧描述）。
 - 2026-02-02：Anyhunt Server Auth/Billing/API Key Review 文档路径示例更新为 `/api/v1/app/*`。
 
 ## 仓库模块地图（按目录）

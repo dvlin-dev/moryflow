@@ -41,7 +41,7 @@ status: done
 ## Anyhunt Console（console.anyhunt.app）
 
 - 认证状态：`apps/anyhunt/console/src/stores/auth.ts`
-- 登录跳转：`apps/anyhunt/console/src/pages/LoginRedirect.tsx`
+- 登录页：`apps/anyhunt/console/src/pages/LoginPage.tsx`
 - API 封装：`apps/anyhunt/console/src/lib/api-base.ts`、`apps/anyhunt/console/src/lib/api-client.ts`
 - 业务入口：`apps/anyhunt/console/src/App.tsx`
 - E2E：`apps/anyhunt/console/tests/*`
@@ -59,7 +59,7 @@ status: done
 - 入口路由：`apps/anyhunt/www/src/routes/inbox/*`、`apps/anyhunt/www/src/routes/explore.tsx`、`apps/anyhunt/www/src/routes/welcome.tsx`
 - 单测：`apps/anyhunt/www/src/lib/__tests__/auth-session.spec.ts`
 
-## Moryflow Server（app.moryflow.com）
+## Moryflow Server（server.moryflow.com）
 
 - Auth 核心：`apps/moryflow/server/src/auth/*`
 - Token 入口：`apps/moryflow/server/src/auth/auth.tokens.controller.ts`
@@ -174,12 +174,12 @@ status: done
 
 ### CLI/脚本入口
 
-- **结论**：仓库内未发现 CLI/脚本调用 `/api/auth/refresh` 或传递 `X-App-Platform` 的实现。
+- **结论**：仓库内未发现 CLI/脚本调用 `/api/v1/auth/refresh` 或传递 `X-App-Platform` 的实现。
 - **处理建议**：无需改动；如未来新增 CLI，必须使用 device refresh 规则并显式设置 `X-App-Platform: cli`。
 
 ### 外部服务 JWKS 验签
 
-- **结论**：当前仅发现 Moryflow Vectorize Worker 通过 `GET /api/auth/jwks` 验签 access JWT。
+- **结论**：当前仅发现 Moryflow Vectorize Worker 通过 `GET /api/v1/auth/jwks` 验签 access JWT。
 - **涉及文件**：`apps/moryflow/vectorize/src/middleware/auth.ts`
 - **处理建议**：保持现状，无需新增兼容层。
 

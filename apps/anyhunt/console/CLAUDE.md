@@ -8,6 +8,9 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
+- Console Auth 切换为 Token-first：`/login` 本地表单直连 `POST /api/v1/auth/sign-in/email`，本地持久化 `access+refresh`
+- `stores/auth.ts` 引入 refresh mutex 与 body refresh（`POST /api/v1/auth/refresh` 传 `refreshToken`），移除 Cookie 会话依赖
 - Agent Browser Playground 聊天 transport 改为官方 `DefaultChatTransport`，删除自定义 SSE parser 与 `eventsource-parser` 依赖
 - Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 注入）
 - Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
@@ -37,11 +40,13 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 约束
 
-- Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
-- refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
-- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/app/user/me` 同步用户档案
+- Auth 使用 access JWT + refresh rotation（`/api/v1/auth/*`，不带版本号）
+- 登录通过 `POST /api/v1/auth/sign-in/email` 直接获取 `accessToken + refreshToken`
+- refresh 仅通过 body `refreshToken` 调用 `POST /api/v1/auth/refresh`，并启用 refresh rotation
+- access/refresh 与过期时间持久化到 localStorage（Zustand persist）
+- 启动优先复用本地 access；仅在 access 过期或临近过期时刷新
 - `401 token_expired` 只允许刷新一次并重试原请求
-- `/login` 仅作为统一登录跳转入口：未登录时跳转 `anyhunt.app/login`；已登录时直接跳回 `next`（默认 `/`），避免登录死循环
+- `/login` 为控制台本地登录页，支持 `next` 回跳（禁止回跳 `/login`）
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/embed`、`packages/embed-react`
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
@@ -68,7 +73,6 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 ## 环境变量
 
 - `VITE_API_URL`：后端 API 地址（生产必填）
-- `VITE_E2E_DISABLE_LOGIN_REDIRECT`：E2E 环境禁用 `/login` 自动跳转（Playwright 使用）
 - 示例文件：`.env.example`
 
 ## 测试

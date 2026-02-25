@@ -7,7 +7,7 @@
  */
 
 import { NestFactory } from '@nestjs/core';
-import { Logger, type INestApplication } from '@nestjs/common';
+import { Logger, VersioningType, type INestApplication } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import {
   json,
@@ -128,6 +128,17 @@ async function bootstrap() {
     next();
   });
 
+  // 全局 API 前缀
+  app.setGlobalPrefix('api', {
+    exclude: ['health', 'health/(.*)'],
+  });
+
+  // URI 版本控制
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
   // 全局异常过滤器
   app.useGlobalFilters(new HttpExceptionFilter());
 
@@ -156,7 +167,7 @@ async function bootstrap() {
         return;
       }
 
-      // 移动端/桌面端无 Origin，允许通过；鉴权在 /api/auth/refresh 中使用 X-App-Platform 校验
+      // 移动端/桌面端无 Origin，允许通过；鉴权在 /api/v1/auth/refresh 中使用 X-App-Platform 校验
       if (!origin) {
         callback(null, true);
         return;

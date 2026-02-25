@@ -1,33 +1,58 @@
 /**
- * [PROVIDES]: serverApi, fetchCurrentUser, fetchCredits, fetchProfile, updateProfile, fetchMembershipModels, deleteAccount
- * [DEPENDS]: /api/client, auth-session.ts
- * [POS]: Mobile 端 Server API 封装，使用统一客户端
+ * [PROVIDES]: fetchCurrentUser/fetchCredits/fetchProfile/updateProfile/fetchMembershipModels/deleteAccount
+ * [DEPENDS]: @anyhunt/api client + paths, auth-session
+ * [POS]: Mobile 业务 API 函数层（Promise 风格）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { createServerApiClient, ServerApiError } from '@anyhunt/api/client';
-import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import {
+  createApiClient,
+  ServerApiError,
+  MEMBERSHIP_API_URL,
+  USER_API,
+  OPENAI_API,
+  getTierInfo,
+} from '@anyhunt/api';
 import { getAccessToken, refreshAccessToken } from './auth-session';
+import type {
+  CreditsInfo,
+  DeleteAccountRequest,
+  ModelsResponse,
+  UserInfo,
+  UserProfile,
+} from './types';
 
-// ── 创建 API 客户端 ──────────────────────────────────────
-
-export const serverApi = createServerApiClient({
+const apiClient = createApiClient({
   baseUrl: MEMBERSHIP_API_URL,
-  tokenProvider: { getToken: getAccessToken },
+  defaultAuthMode: 'bearer',
+  getAccessToken,
   onUnauthorized: refreshAccessToken,
 });
 
-// ── 重导出 ServerApiError ───────────────────────────────
-
 export { ServerApiError };
 
-// 便捷函数（保持向后兼容）
-export const fetchCurrentUser = () => serverApi.user.fetchCurrent();
-export const fetchCredits = () => serverApi.user.fetchCredits();
-export const fetchProfile = () => serverApi.user.fetchProfile();
-export const updateProfile = (data: Parameters<typeof serverApi.user.updateProfile>[0]) =>
-  serverApi.user.updateProfile(data);
-export const fetchMembershipModels = () => serverApi.models.fetch();
-export const deleteAccount = (data: Parameters<typeof serverApi.user.deleteAccount>[0]) =>
-  serverApi.user.deleteAccount(data);
+export async function fetchCurrentUser(): Promise<UserInfo> {
+  const user = await apiClient.get<Omit<UserInfo, 'tierInfo'>>(USER_API.ME);
+  return { ...user, tierInfo: getTierInfo(user.subscriptionTier) };
+}
+
+export async function fetchCredits(): Promise<CreditsInfo> {
+  return apiClient.get<CreditsInfo>(USER_API.CREDITS);
+}
+
+export async function fetchProfile(): Promise<UserProfile> {
+  return apiClient.get<UserProfile>(USER_API.PROFILE);
+}
+
+export async function updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
+  return apiClient.patch<UserProfile>(USER_API.PROFILE, { body: data });
+}
+
+export async function fetchMembershipModels(): Promise<ModelsResponse> {
+  return apiClient.get<ModelsResponse>(OPENAI_API.MODELS);
+}
+
+export async function deleteAccount(data: DeleteAccountRequest): Promise<void> {
+  return apiClient.del<void>(USER_API.DELETE_ACCOUNT, { body: data });
+}

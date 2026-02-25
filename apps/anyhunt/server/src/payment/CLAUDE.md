@@ -22,7 +22,7 @@ Payment processing integration with Creem. Handles subscriptions, tier upgrades,
 ## Constraints
 
 - Uses Creem as payment provider
-- Webhook endpoint must be VERSION_NEUTRAL for Creem callbacks
+- Webhook endpoint must be fixed to `/api/v1/webhooks/creem`
 - App endpoints use AuthGuard
 - Quota updates must be atomic
 - Webhook 事件必须落库去重（eventId 唯一）
@@ -81,7 +81,7 @@ Creem webhook (payment.success) → Add quota to user balance
 ## Webhook Handling
 
 ```typescript
-@Controller({ path: 'webhooks/creem', version: VERSION_NEUTRAL })
+@Controller({ path: 'webhooks/creem', version: '1' })
 export class PaymentWebhookController {
   @Post()
   async handleWebhook(@Body() payload: CreemWebhookPayload) {

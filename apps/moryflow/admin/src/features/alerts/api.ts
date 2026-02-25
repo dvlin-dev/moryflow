@@ -14,7 +14,7 @@ import type {
   AlertHistoryQuery,
 } from './types';
 
-const BASE_PATH = '/api/admin/alerts';
+const BASE_PATH = '/api/v1/admin/alerts';
 
 /**
  * 构建查询字符串

@@ -50,7 +50,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://www.moryflow.com,https://admin.moryflow.com,https://app.moryflow.com}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://www.moryflow.com,https://admin.moryflow.com,https://server.moryflow.com}
       DATABASE_URL: ${DATABASE_URL:-postgresql://moryflow:change_me@moryflow-postgres:5432/moryflow?schema=public}
       REDIS_URL: ${REDIS_URL:-redis://moryflow-redis:6379}
     ports:
@@ -98,13 +98,13 @@ services:
       context: ../..
       dockerfile: apps/moryflow/admin/Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://app.moryflow.com}
+        VITE_API_URL: ${VITE_API_URL:-https://server.moryflow.com}
     container_name: moryflow-admin
     restart: unless-stopped
     ports:
       - "${MORYFLOW_ADMIN_PORT:-3101}:80"
 
-  # app.moryflow.com（当前占位，后续替换为 Web App）
+  # server.moryflow.com（当前占位，后续替换为 Web App）
   moryflow-app:
     image: nginx:alpine
     container_name: moryflow-app

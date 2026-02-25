@@ -25,11 +25,11 @@ status: done
 
 主要入口：
 
-- `/api/auth/*`
-- `/api/usage`
-- `/api/payment/*`
-- `/webhooks/creem`
-- `/api/admin/payment/*`
+- `/api/v1/auth/*`
+- `/api/v1/usage`
+- `/api/v1/payment/*`
+- `/api/v1/webhooks/creem`
+- `/api/v1/admin/payment/*`
 
 ## 结论摘要
 

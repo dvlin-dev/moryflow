@@ -7,6 +7,12 @@
  */
 
 import { MEMBERSHIP_API_URL } from '@anyhunt/api';
+import {
+  createApiClient,
+  createApiTransport,
+  ServerApiError,
+  type ApiClientRequestOptions,
+} from '@anyhunt/api/client';
 import type {
   VaultDto,
   VaultListDto,
@@ -59,93 +65,90 @@ interface RequestConfig extends RequestInit {
   raw?: boolean;
 }
 
-const request = async <T>(path: string, options: RequestConfig = {}, attempt = 0): Promise<T> => {
-  const { fullUrl, raw, ...fetchOptions } = options;
+const authedClient = createApiClient({
+  transport: createApiTransport({
+    baseUrl: MEMBERSHIP_API_URL,
+    timeoutMs: FETCH_TIMEOUT,
+  }),
+  defaultAuthMode: 'bearer',
+  getAccessToken,
+  onUnauthorized: refreshAccessToken,
+});
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+const publicTransport = createApiTransport({
+  baseUrl: 'http://localhost',
+  timeoutMs: FETCH_TIMEOUT,
+});
+
+type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+const request = async <T>(path: string, options: RequestConfig = {}): Promise<T> => {
+  const { fullUrl, raw, ...fetchOptions } = options;
+  const method = (fetchOptions.method?.toUpperCase() ?? 'GET') as RequestMethod;
+  const body = fetchOptions.body as ApiClientRequestOptions['body'];
 
   try {
-    let url: string;
-    let headers: HeadersInit;
-
     if (fullUrl) {
-      // 预签名 URL：不需要鉴权
-      url = fullUrl;
-      headers = { ...fetchOptions.headers };
-    } else {
-      // API 请求：需要鉴权
-      let token = getAccessToken();
-      if (!token) {
-        const refreshed = await refreshAccessToken();
-        token = refreshed ? getAccessToken() : null;
-      }
-      if (!token) {
-        throw new CloudSyncApiError('Please log in first', 401, 'UNAUTHORIZED');
-      }
-      url = `${MEMBERSHIP_API_URL}${path}`;
-      headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...fetchOptions.headers,
-      };
+      return await publicTransport.request<T>({
+        path: fullUrl,
+        method,
+        headers: fetchOptions.headers,
+        body,
+        signal: fetchOptions.signal ?? undefined,
+        responseType: raw ? 'raw' : 'json',
+      });
     }
 
-    const res = await fetch(url, {
-      ...fetchOptions,
-      signal: controller.signal,
-      headers,
-    });
-
-    if (!res.ok) {
-      if (res.status === 401 && attempt === 0) {
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-          return request<T>(path, options, attempt + 1);
+    switch (method) {
+      case 'POST':
+        return await authedClient.post<T>(path, {
+          headers: fetchOptions.headers,
+          body,
+          signal: fetchOptions.signal ?? undefined,
+        });
+      case 'PUT':
+        return await authedClient.put<T>(path, {
+          headers: fetchOptions.headers,
+          body,
+          signal: fetchOptions.signal ?? undefined,
+        });
+      case 'PATCH':
+        return await authedClient.patch<T>(path, {
+          headers: fetchOptions.headers,
+          body,
+          signal: fetchOptions.signal ?? undefined,
+        });
+      case 'DELETE':
+        return await authedClient.del<T>(path, {
+          headers: fetchOptions.headers,
+          body,
+          signal: fetchOptions.signal ?? undefined,
+        });
+      default:
+        if (raw) {
+          return (await authedClient.raw(path, {
+            headers: fetchOptions.headers,
+            signal: fetchOptions.signal ?? undefined,
+          })) as T;
         }
-      }
-      const errorText = await res.text().catch(() => '');
-      let error: { message?: string; code?: string } = { message: `Request failed: ${res.status}` };
-      try {
-        if (errorText) {
-          error = JSON.parse(errorText);
-        }
-      } catch {
-        error.message = errorText || `Request failed: ${res.status}`;
-      }
-      console.error(`[CloudSync] ${fullUrl || path} failed:`, res.status, errorText);
-      throw new CloudSyncApiError(
-        error.message || `Request failed: ${res.status}`,
-        res.status,
-        error.code
-      );
+        return await authedClient.get<T>(path, {
+          headers: fetchOptions.headers,
+          signal: fetchOptions.signal ?? undefined,
+        });
     }
-
-    // 返回原始 Response
-    if (raw) {
-      return res as unknown as T;
+  } catch (error) {
+    if (error instanceof ServerApiError) {
+      console.error(`[CloudSync] ${fullUrl || path} failed:`, error.status, error.message);
+      throw new CloudSyncApiError(error.message, error.status, error.code);
     }
-
-    // 204 No Content
-    if (res.status === 204) {
-      return undefined as T;
-    }
-
-    return res.json();
-  } catch (err) {
-    if (err instanceof CloudSyncApiError) {
-      throw err;
-    }
-    if (err instanceof Error && err.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new CloudSyncApiError('Request timeout', 408, 'TIMEOUT');
     }
     throw new CloudSyncApiError(
-      err instanceof Error ? err.message : 'Network error',
+      error instanceof Error ? error.message : 'Network error',
       0,
       'NETWORK_ERROR'
     );
-  } finally {
-    clearTimeout(timeoutId);
   }
 };
 
@@ -154,68 +157,68 @@ const request = async <T>(path: string, options: RequestConfig = {}, attempt = 0
 export const cloudSyncApi = {
   // ── Vault ─────────────────────────────────────────────────
 
-  listVaults: (): Promise<VaultListDto> => request('/api/vaults'),
+  listVaults: (): Promise<VaultListDto> => request('/api/v1/vaults'),
 
   createVault: (name: string): Promise<VaultDto> =>
-    request('/api/vaults', {
+    request('/api/v1/vaults', {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: { name },
     }),
 
-  getVault: (vaultId: string): Promise<VaultDto> => request(`/api/vaults/${vaultId}`),
+  getVault: (vaultId: string): Promise<VaultDto> => request(`/api/v1/vaults/${vaultId}`),
 
   deleteVault: (vaultId: string): Promise<void> =>
-    request(`/api/vaults/${vaultId}`, { method: 'DELETE' }),
+    request(`/api/v1/vaults/${vaultId}`, { method: 'DELETE' }),
 
   registerDevice: (
     vaultId: string,
     deviceId: string,
     deviceName: string
   ): Promise<VaultDeviceDto> =>
-    request(`/api/vaults/${vaultId}/devices`, {
+    request(`/api/v1/vaults/${vaultId}/devices`, {
       method: 'POST',
-      body: JSON.stringify({ deviceId, deviceName }),
+      body: { deviceId, deviceName },
     }),
 
   // ── Sync ──────────────────────────────────────────────────
 
   syncDiff: (payload: SyncDiffRequest): Promise<SyncDiffResponse> =>
-    request('/api/sync/diff', {
+    request('/api/v1/sync/diff', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   syncCommit: (payload: SyncCommitRequest): Promise<SyncCommitResponse> =>
-    request('/api/sync/commit', {
+    request('/api/v1/sync/commit', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // ── Vectorize ─────────────────────────────────────────────
 
   vectorizeFile: (payload: VectorizeFileRequest): Promise<VectorizeResponse> =>
-    request('/api/vectorize/file', {
+    request('/api/v1/vectorize/file', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   deleteVector: (fileId: string): Promise<void> =>
-    request(`/api/vectorize/file/${fileId}`, { method: 'DELETE' }),
+    request(`/api/v1/vectorize/file/${fileId}`, { method: 'DELETE' }),
 
   getVectorizeStatus: (fileId: string): Promise<VectorizeStatusResponse> =>
-    request(`/api/vectorize/status/${fileId}`),
+    request(`/api/v1/vectorize/status/${fileId}`),
 
   // ── Search ────────────────────────────────────────────────
 
   search: (payload: SearchRequest): Promise<SearchResponse> =>
-    request('/api/search', {
+    request('/api/v1/search', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // ── Usage ─────────────────────────────────────────────────
 
-  getUsage: (): Promise<UsageResponse> => request('/api/usage'),
+  getUsage: (): Promise<UsageResponse> => request('/api/v1/usage'),
 
   // ── File Operations（预签名 URL）─────────────────────────────
 

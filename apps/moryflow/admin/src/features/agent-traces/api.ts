@@ -2,7 +2,7 @@
  * Agent Traces API
  */
 
-import { apiClient } from '../../lib/api-client'
+import { apiClient } from '../../lib/api-client';
 import type {
   TracesResponse,
   FailedToolsResponse,
@@ -15,22 +15,22 @@ import type {
   StatsQuery,
   StorageStatsResponse,
   CleanupResponse,
-} from './types'
+} from './types';
 
-const BASE_PATH = '/api/admin/agent-traces'
+const BASE_PATH = '/api/v1/admin/agent-traces';
 
 /**
  * 构建查询字符串
  */
 function buildQueryString<T extends object>(params: T): string {
-  const searchParams = new URLSearchParams()
+  const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, String(value))
+      searchParams.append(key, String(value));
     }
   }
-  const qs = searchParams.toString()
-  return qs ? `?${qs}` : ''
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : '';
 }
 
 export const agentTracesApi = {
@@ -67,18 +67,15 @@ export const agentTracesApi = {
   /**
    * 获取 Trace 详情
    */
-  getTraceDetail: (traceId: string) =>
-    apiClient.get<AgentTrace>(`${BASE_PATH}/${traceId}`),
+  getTraceDetail: (traceId: string) => apiClient.get<AgentTrace>(`${BASE_PATH}/${traceId}`),
 
   /**
    * 获取存储统计
    */
-  getStorageStats: () =>
-    apiClient.get<StorageStatsResponse>(`${BASE_PATH}/storage/stats`),
+  getStorageStats: () => apiClient.get<StorageStatsResponse>(`${BASE_PATH}/storage/stats`),
 
   /**
    * 触发清理
    */
-  triggerCleanup: () =>
-    apiClient.post<CleanupResponse>(`${BASE_PATH}/storage/cleanup`),
-}
+  triggerCleanup: () => apiClient.post<CleanupResponse>(`${BASE_PATH}/storage/cleanup`),
+};

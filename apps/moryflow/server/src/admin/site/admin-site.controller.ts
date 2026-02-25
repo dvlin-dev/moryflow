@@ -42,7 +42,7 @@ import {
 
 @ApiTags('Admin Sites')
 @ApiCookieAuth()
-@Controller('api/admin/sites')
+@Controller({ path: 'admin/sites', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminSiteController {
   constructor(private readonly adminSiteService: AdminSiteService) {}

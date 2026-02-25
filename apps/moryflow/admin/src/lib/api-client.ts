@@ -1,215 +1,92 @@
 /**
- * API 客户端
- * 使用 Bearer Token 认证，统一错误处理
+ * [PROVIDES]: 函数式 apiClient, ApiError
+ * [DEPENDS]: @anyhunt/api/client, auth-methods
+ * [POS]: Moryflow Admin API 请求统一封装（bearer + 401 单次重试）
  */
-import { useAuthStore, getAccessToken } from '../stores/auth';
+
+import {
+  createApiClient,
+  createApiTransport,
+  type ApiClientRequestOptions,
+  type QueryParams,
+  ServerApiError,
+} from '@anyhunt/api/client';
 import { API_BASE_URL } from './api-base';
-import type { ProblemDetails } from '@anyhunt/types';
+import { authMethods } from './auth/auth-methods';
+import { getAccessToken } from '@/stores/auth';
 
-/**
- * API 错误类
- * 用于统一处理 API 请求错误
- */
-export class ApiError extends Error {
-  status: number;
-  code: string;
-  details?: unknown;
-  requestId?: string;
-  errors?: Array<{ field?: string; message: string }>;
+export { ServerApiError as ApiError };
 
-  constructor(
-    status: number,
-    code: string,
-    message: string,
-    details?: unknown,
-    requestId?: string,
-    errors?: Array<{ field?: string; message: string }>
-  ) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.code = code;
-    this.details = details;
-    this.requestId = requestId;
-    this.errors = errors;
-  }
+const resolvedBaseUrl =
+  API_BASE_URL || (typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
 
-  /** 是否为认证错误 */
-  get isUnauthorized(): boolean {
-    return this.status === 401;
-  }
+const coreClient = createApiClient({
+  transport: createApiTransport({
+    baseUrl: resolvedBaseUrl,
+  }),
+  defaultAuthMode: 'bearer',
+  getAccessToken: () => getAccessToken(),
+  onUnauthorized: async () => {
+    const refreshed = await authMethods.refreshAccessToken();
+    if (!refreshed) {
+      await authMethods.logout();
+    }
+    return refreshed;
+  },
+});
 
-  /** 是否为权限错误 */
-  get isForbidden(): boolean {
-    return this.status === 403;
-  }
-
-  /** 是否为未找到错误 */
-  get isNotFound(): boolean {
-    return this.status === 404;
-  }
-
-  /** 是否为服务器错误 */
-  get isServerError(): boolean {
-    return this.status >= 500;
-  }
+interface JsonRequestOptions {
+  headers?: HeadersInit;
+  query?: QueryParams;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
-class ApiClient {
-  private baseURL: string;
+const toRequestOptions = (
+  options?: JsonRequestOptions & { body?: unknown; method?: ApiClientRequestOptions['method'] }
+): ApiClientRequestOptions => ({
+  headers: options?.headers,
+  query: options?.query,
+  signal: options?.signal,
+  timeoutMs: options?.timeoutMs,
+  body: options?.body,
+  method: options?.method,
+});
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
-  }
+export const apiClient = {
+  get<T>(endpoint: string, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.get<T>(endpoint, toRequestOptions(options));
+  },
 
-  /**
-   * 处理响应
-   * 统一错误处理，401/403 自动登出
-   */
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (response.status === 204) {
-      return undefined as T;
-    }
+  post<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.post<T>(endpoint, toRequestOptions({ ...options, body: data }));
+  },
 
-    const contentType = response.headers.get('content-type') ?? '';
-    const isJson =
-      contentType.includes('application/json') || contentType.includes('application/problem+json');
-    const requestId = response.headers.get('x-request-id') ?? undefined;
-    let parsed: { parsed: boolean; value: unknown } | undefined;
-    if (isJson) {
-      try {
-        parsed = { parsed: true, value: await response.json() };
-      } catch {
-        parsed = { parsed: false, value: undefined };
-      }
-    }
+  patch<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.patch<T>(endpoint, toRequestOptions({ ...options, body: data }));
+  },
 
-    if (!response.ok) {
-      const problem = parsed?.parsed ? (parsed.value as ProblemDetails) : undefined;
-      const message =
-        typeof problem?.detail === 'string'
-          ? problem.detail
-          : `Request failed (${response.status})`;
-      const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
-      throw new ApiError(
-        response.status,
-        code,
-        message,
-        problem?.details,
-        problem?.requestId ?? requestId,
-        problem?.errors
-      );
-    }
+  put<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.put<T>(endpoint, toRequestOptions({ ...options, body: data }));
+  },
 
-    if (!isJson || !parsed?.parsed) {
-      throw new ApiError(
-        response.status,
-        'UNEXPECTED_RESPONSE',
-        'Unexpected response format',
-        undefined,
-        requestId
-      );
-    }
+  delete<T>(endpoint: string, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.del<T>(endpoint, toRequestOptions(options));
+  },
 
-    return parsed.value as T;
-  }
+  getBlob(endpoint: string, options?: JsonRequestOptions): Promise<Blob> {
+    return coreClient.blob(endpoint, toRequestOptions(options));
+  },
 
-  /**
-   * 发送请求
-   * 使用 Bearer Token 认证
-   */
-  private async request<T>(endpoint: string, options?: RequestInit, attempt = 0): Promise<T> {
-    const token = getAccessToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    };
+  postBlob(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<Blob> {
+    return coreClient.blob(endpoint, toRequestOptions({ ...options, body: data, method: 'POST' }));
+  },
 
-    // 添加 Authorization header
-    if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-    }
+  raw(endpoint: string, options?: ApiClientRequestOptions): Promise<Response> {
+    return coreClient.raw(endpoint, options);
+  },
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (response.status === 401) {
-      const refreshed = await useAuthStore.getState().refreshAccessToken();
-      if (refreshed && attempt === 0) {
-        return this.request<T>(endpoint, options, attempt + 1);
-      }
-      await useAuthStore.getState().logout();
-    }
-
-    return this.handleResponse<T>(response);
-  }
-
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint);
-  }
-
-  async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  async put<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'DELETE',
-    });
-  }
-
-  /**
-   * POST 请求返回 Blob（用于文件下载）
-   */
-  async postBlob(endpoint: string, data?: unknown, attempt = 0): Promise<Blob> {
-    const token = getAccessToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: data ? JSON.stringify(data) : undefined,
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        const refreshed = await useAuthStore.getState().refreshAccessToken();
-        if (refreshed && attempt === 0) {
-          return this.postBlob(endpoint, data, attempt + 1);
-        }
-        await useAuthStore.getState().logout();
-      }
-      throw new ApiError(response.status, 'DOWNLOAD_ERROR', '下载失败');
-    }
-
-    return response.blob();
-  }
-}
-
-// 单例实例
-export const apiClient = new ApiClient(API_BASE_URL);
+  stream(endpoint: string, options?: ApiClientRequestOptions): Promise<Response> {
+    return coreClient.stream(endpoint, options);
+  },
+};

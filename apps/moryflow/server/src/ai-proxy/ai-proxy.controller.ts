@@ -1,7 +1,7 @@
 /**
  * [INPUT]: OpenAI 兼容请求（Bearer access token）
  * [OUTPUT]: 模型列表与对话补全响应
- * [POS]: AI Proxy 控制器（/v1）
+ * [POS]: AI Proxy 控制器（/api/v1）
  *
  * 认证说明：
  * - 使用 access JWT（Authorization: Bearer <accessToken>）
@@ -37,7 +37,7 @@ import { AiProxyExceptionFilter, InvalidRequestException } from './exceptions';
 
 @ApiTags('AI Proxy')
 @ApiBearerAuth('bearer')
-@Controller('v1')
+@Controller({ path: '', version: '1' })
 @UseFilters(AiProxyExceptionFilter)
 export class AiProxyController {
   private readonly logger = new Logger(AiProxyController.name);
@@ -45,7 +45,7 @@ export class AiProxyController {
   constructor(private readonly aiProxyService: AiProxyService) {}
 
   /**
-   * GET /v1/models
+   * GET /api/v1/models
    * 获取所有模型列表
    */
   @ApiOperation({
@@ -68,7 +68,7 @@ export class AiProxyController {
   }
 
   /**
-   * POST /v1/chat/completions
+   * POST /api/v1/chat/completions
    * Chat Completions（支持流式）
    */
   @ApiOperation({

@@ -9,10 +9,9 @@ import { ChatHeader } from './chat-header';
 import { ConversationSection } from './conversation-section';
 import { ChatFooter } from './chat-footer';
 import { useChatModels } from '../hooks/use-chat-models';
+import { createChatCompletionStream } from '../api';
 import type { ModelOption } from '../types';
 import { useAuthStore } from '@/stores/auth';
-import { API_BASE_URL } from '@/lib/api-base';
-import { AI_PROXY_API } from '@/lib/api-paths';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CircleAlert } from 'lucide-react';
 
@@ -76,50 +75,17 @@ export function ChatPane() {
       abortControllerRef.current = new AbortController();
 
       try {
-        const accessToken = await useAuthStore.getState().ensureAccessToken();
-        if (!accessToken) {
-          throw new Error('Authentication required');
-        }
-
-        let response = await fetch(`${API_BASE_URL}${AI_PROXY_API.CHAT_COMPLETIONS}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
+        const response = await createChatCompletionStream(
+          {
             model: selectedModelId,
             messages: [...messages, userMessage].map((m) => ({
               role: m.role,
               content: m.content,
             })),
             stream: true,
-          }),
-          signal: abortControllerRef.current.signal,
-        });
-
-        if (response.status === 401) {
-          const refreshed = await useAuthStore.getState().refreshAccessToken();
-          const retryToken = useAuthStore.getState().accessToken;
-          if (refreshed && retryToken) {
-            response = await fetch(`${API_BASE_URL}${AI_PROXY_API.CHAT_COMPLETIONS}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${retryToken}`,
-              },
-              body: JSON.stringify({
-                model: selectedModelId,
-                messages: [...messages, userMessage].map((m) => ({
-                  role: m.role,
-                  content: m.content,
-                })),
-                stream: true,
-              }),
-              signal: abortControllerRef.current.signal,
-            });
-          }
-        }
+          },
+          abortControllerRef.current.signal
+        );
 
         if (!response.ok) {
           const errorData = await response.json();

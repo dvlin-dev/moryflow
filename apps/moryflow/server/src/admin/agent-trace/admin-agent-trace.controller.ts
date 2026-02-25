@@ -28,7 +28,7 @@ import {
 } from './admin-agent-trace.dto';
 
 @ApiTags('Admin - Agent Traces')
-@Controller('api/admin/agent-traces')
+@Controller({ path: 'admin/agent-traces', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminAgentTraceController {
   constructor(
