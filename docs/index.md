@@ -51,6 +51,7 @@ status: active
 - 前端表单：Zod + RHF 兼容：`docs/guides/frontend/forms-zod-rhf.md`
 - 图标库回退方案（Hugeicons → Lucide）：`docs/guides/frontend/icon-library-migration-lucide.md`
 - 前端富文本渲染：Streamdown（Markdown + 流式 Token 动画）：`docs/guides/frontend/streamdown.md`
+- 前端组件设计质量索引（拆分与收敛准则）：`docs/guides/frontend/component-design-quality-index.md`（2026-02-25：补充“状态片段化 + `renderContentByState` + 禁止链式三元”）
 - 开源拆分：Git Subtree 双向同步：`docs/guides/open-source-package-subtree.md`
 
 ## Runbooks（运维手册 / 照做即可）
@@ -92,6 +93,8 @@ status: active
 ## Code Review（全量评审计划与进度）
 
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-25，补充 `/api/v1` 路由口径统一回写记录）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-25，active；模块 A 新增状态渲染准则补扫修复记录）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-25，in_progress：模块 A 修复完成，模块 B 待扫）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）

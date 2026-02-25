@@ -60,6 +60,9 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- 状态渲染一致性收敛：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 的多状态 UI 改为“状态片段 + 渲染方法（`renderByState/switch`）”，清理状态渲染型三元表达式
+- Webhooks 视图渲染收敛：`webhook-list-card` 将 loading/missing-key/empty/ready 四态拆为独立 UI 片段，并通过中间 `renderContentByState` 统一调度，避免链式三元降低可读性
+- Webhooks/Settings/API Keys 结构收敛：Webhooks 新增 `resolveActiveApiKeySelection`（active key only）并补齐回归测试；`WebhooksPage` 拆分 `WebhookApiKeyCard`/`WebhookListCard`，dialog 状态改为判别式；`settings`、`api-keys`、`webhooks` 表单统一迁移到 `react-hook-form + zod/v3`，新增 `schemas.ts` 与 `webhook-form-fields.tsx`
 - Agent Browser Playground：`AgentChatTransport.headers` 固定返回 `Headers`，修复 `Authorization?: undefined` 导致的 `TS2322`
 - Agent Browser Playground：聊天 transport 切换为官方 `DefaultChatTransport`，移除手写 SSE parser 与 `eventsource-parser` 依赖
 - Agent Browser Playground：Diagnostics 新增 Detection Risk 只读区块，接入 `/api/v1/browser/session/:id/risk`，展示 24h 成功率、Top 原因与建议动作

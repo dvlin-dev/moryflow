@@ -8,6 +8,9 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- 组件状态渲染规范落地：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 等按“状态片段化 + `renderByState/switch`”重构，移除状态渲染型三元表达式
+- Webhooks 组件可读性优化：`webhook-list-card` 将四种页面状态（loading/no-key/empty/ready）拆分为独立 UI 片段，并通过中间方法统一渲染，移除链式三元
+- Webhooks/Settings/API Keys 组件优化：`WebhooksPage` 拆分为 key/list 子组件并改为判别式 dialog 状态；修复 Webhook API Key 失效选中漏洞（仅允许 active key）；`settings`、`api-keys create dialog`、`webhooks create/edit dialog` 统一迁移到 `react-hook-form + zod/v3`；新增 `webhooks/utils.test.ts` 回归测试并通过 `typecheck/test:unit`
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 容器构建时 `TS5083`（缺少 `tsconfig.agents.json`）报错
 - Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常

@@ -3,7 +3,9 @@
  * [EMITS]: none
  * [POS]: Settings 页面 - 账户设置（Lucide icons direct render）
  */
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Key, Shield, User } from 'lucide-react';
 import {
@@ -13,6 +15,12 @@ import {
   CardHeader,
   CardTitle,
   Button,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
   Label,
   Separator,
@@ -23,7 +31,31 @@ import {
   Skeleton,
 } from '@moryflow/ui';
 import { PageHeader } from '@moryflow/ui';
-import { useProfile, useUpdateProfile, useChangePassword } from '@/features/settings';
+import {
+  useProfile,
+  useUpdateProfile,
+  useChangePassword,
+  profileSettingsSchema,
+  profileSettingsDefaults,
+  securitySettingsSchema,
+  securitySettingsDefaults,
+  type ProfileSettingsFormValues,
+  type SecuritySettingsFormValues,
+} from '@/features/settings';
+
+function getProfileSubmitLabel(isPending: boolean): string {
+  if (isPending) {
+    return 'Saving...';
+  }
+  return 'Save Changes';
+}
+
+function getPasswordSubmitLabel(isPending: boolean): string {
+  if (isPending) {
+    return 'Changing...';
+  }
+  return 'Change Password';
+}
 
 export default function SettingsPage() {
   return (
@@ -57,21 +89,28 @@ export default function SettingsPage() {
 function ProfileSettings() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
-  const [nameOverride, setNameOverride] = useState<string | null>(null);
-  const nameValue = nameOverride ?? profile?.name ?? '';
+  const form = useForm<ProfileSettingsFormValues>({
+    resolver: zodResolver(profileSettingsSchema),
+    defaultValues: profileSettingsDefaults,
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    form.reset({
+      name: profile?.name ?? '',
+    });
+  }, [form, profile?.name]);
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const trimmedName = values.name.trim();
 
     try {
-      const trimmedName = nameValue.trim();
       await updateProfile.mutateAsync({ name: trimmedName || undefined });
       toast.success('Profile updated');
-      setNameOverride(null);
+      form.reset({ name: trimmedName });
     } catch {
       toast.error('Update failed');
     }
-  };
+  });
 
   if (isLoading) {
     return (
@@ -95,40 +134,46 @@ function ProfileSettings() {
         <CardDescription>Update your personal information</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={profile?.email ?? ''}
-              disabled
-              className="bg-muted"
+        <Form {...form}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={profile?.email ?? ''}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="name">Display Name</FormLabel>
+                  <FormControl>
+                    <Input id="name" placeholder="Enter your name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Display Name</Label>
-            <Input
-              id="name"
-              value={nameValue}
-              onChange={(e) => setNameOverride(e.target.value)}
-              placeholder="Enter your name"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label>Current Plan</Label>
+              <Input value={profile?.subscriptionTier ?? ''} disabled className="bg-muted" />
+            </div>
 
-          <div className="space-y-2">
-            <Label>Current Plan</Label>
-            <Input value={profile?.subscriptionTier ?? ''} disabled className="bg-muted" />
-          </div>
+            <Separator />
 
-          <Separator />
-
-          <Button type="submit" disabled={updateProfile.isPending}>
-            {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </form>
+            <Button type="submit" disabled={updateProfile.isPending}>
+              {getProfileSubmitLabel(updateProfile.isPending)}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
@@ -136,22 +181,13 @@ function ProfileSettings() {
 
 function SecuritySettings() {
   const changePassword = useChangePassword();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const form = useForm<SecuritySettingsFormValues>({
+    resolver: zodResolver(securitySettingsSchema),
+    defaultValues: securitySettingsDefaults,
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const { currentPassword, newPassword } = values;
 
     try {
       await changePassword.mutateAsync({
@@ -159,13 +195,11 @@ function SecuritySettings() {
         newPassword,
       });
       toast.success('Password changed successfully');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      form.reset(securitySettingsDefaults);
     } catch {
       toast.error('Failed to change password');
     }
-  };
+  });
 
   return (
     <Card>
@@ -179,48 +213,58 @@ function SecuritySettings() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <Input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
+        <Form {...form}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="currentPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="currentPassword">Current Password</FormLabel>
+                  <FormControl>
+                    <Input id="currentPassword" type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              minLength={8}
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="newPassword">New Password</FormLabel>
+                  <FormControl>
+                    <Input id="newPassword" type="password" {...field} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">At least 8 characters</p>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground">At least 8 characters</p>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="confirmPassword">Confirm New Password</FormLabel>
+                  <FormControl>
+                    <Input id="confirmPassword" type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <Separator />
+            <Separator />
 
-          <Button type="submit" disabled={changePassword.isPending}>
-            {changePassword.isPending ? 'Changing...' : 'Change Password'}
-          </Button>
-        </form>
+            <Button type="submit" disabled={changePassword.isPending}>
+              {getPasswordSubmitLabel(changePassword.isPending)}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

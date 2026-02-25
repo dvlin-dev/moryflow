@@ -1,68 +1,53 @@
 /**
  * 创建 Webhook 对话框
  */
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Button,
-  Input,
-  Label,
-  Checkbox,
-} from '@moryflow/ui';
-import { useCreateWebhook } from '../hooks';
-import { WEBHOOK_EVENTS, DEFAULT_WEBHOOK_EVENTS } from '../constants';
-import type { WebhookEvent } from '../types';
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@moryflow/ui'
+import { useCreateWebhook } from '../hooks'
+import { getWebhookFormDefaults, webhookFormSchema, type WebhookFormValues } from '../schemas'
+import { WebhookFormFields } from './webhook-form-fields'
 
 interface CreateWebhookDialogProps {
-  apiKey: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  apiKey: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+function getCreateWebhookSubmitLabel(isPending: boolean): string {
+  if (isPending) {
+    return 'Creating...'
+  }
+  return 'Create'
 }
 
 export function CreateWebhookDialog({ apiKey, open, onOpenChange }: CreateWebhookDialogProps) {
-  const [name, setName] = useState('');
-  const [url, setUrl] = useState('');
-  const [events, setEvents] = useState<WebhookEvent[]>(DEFAULT_WEBHOOK_EVENTS);
+  const { mutate: create, isPending } = useCreateWebhook(apiKey)
 
-  const { mutate: create, isPending } = useCreateWebhook(apiKey);
+  const form = useForm<WebhookFormValues>({
+    resolver: zodResolver(webhookFormSchema),
+    defaultValues: getWebhookFormDefaults(),
+  })
 
-  const handleEventToggle = (event: WebhookEvent, checked: boolean) => {
-    if (checked) {
-      setEvents((prev) => [...prev, event]);
-    } else {
-      setEvents((prev) => prev.filter((e) => e !== event));
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      form.reset(getWebhookFormDefaults())
     }
-  };
+    onOpenChange(nextOpen)
+  }
 
-  const handleCreate = () => {
-    if (!apiKey || !name.trim() || !url.trim() || events.length === 0) return;
+  const handleCreate = form.handleSubmit((values) => {
+    if (!apiKey) return
 
-    create(
-      { name: name.trim(), url: url.trim(), events },
-      {
-        onSuccess: () => {
-          handleClose();
-        },
-      }
-    );
-  };
-
-  const handleClose = () => {
-    setName('');
-    setUrl('');
-    setEvents(DEFAULT_WEBHOOK_EVENTS);
-    onOpenChange(false);
-  };
-
-  const isValid = name.trim() && url.trim() && events.length > 0;
+    create(values, {
+      onSuccess: () => {
+        handleOpenChange(false)
+      },
+    })
+  })
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Webhook</DialogTitle>
@@ -71,65 +56,19 @@ export function CreateWebhookDialog({ apiKey, open, onOpenChange }: CreateWebhoo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Notification Service, Data Sync"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-            />
-          </div>
+        <form onSubmit={handleCreate} className="space-y-4">
+          <WebhookFormFields form={form} disabled={isPending} idPrefix="create-webhook" />
 
-          <div className="space-y-2">
-            <Label htmlFor="url">Callback URL</Label>
-            <Input
-              id="url"
-              type="url"
-              placeholder="https://your-server.com/webhook"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              maxLength={500}
-            />
-            <p className="text-xs text-muted-foreground">Must be an HTTPS URL</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Subscribe to Events</Label>
-            <div className="space-y-2">
-              {WEBHOOK_EVENTS.map((event) => (
-                <div key={event.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={event.value}
-                    checked={events.includes(event.value)}
-                    onCheckedChange={(checked) =>
-                      handleEventToggle(event.value, checked as boolean)
-                    }
-                  />
-                  <label htmlFor={event.value} className="text-sm cursor-pointer">
-                    {event.label}
-                    <span className="text-muted-foreground ml-1">({event.value})</span>
-                  </label>
-                </div>
-              ))}
-            </div>
-            {events.length === 0 && (
-              <p className="text-xs text-destructive">Please select at least one event</p>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleCreate} disabled={!isValid || isPending}>
-            {isPending ? 'Creating...' : 'Create'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {getCreateWebhookSubmitLabel(isPending)}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

@@ -8,6 +8,11 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-25（前端组件准则补充：新增“状态片段化 + renderContentByState + 禁止链式三元”，并完成 Anyhunt Console 模块 A 变更区补扫修复）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 A（api-keys/settings/webhooks）完成修复并通过 `typecheck` + `test:unit`，补充回归测试）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项启动：模块 A（api-keys/settings/webhooks）完成预扫描，产出 `S1x3 / S2x2`）
+> 最近更新：2026-02-25（新增前端组件优化专项执行计划：10 个前端项目按项目/模块拆分推进，要求每步回写执行台账）
+> 最近更新：2026-02-25（新增前端组件设计质量索引：统一组件拆分/合并判定、Props drilling 限制、复杂度预算与审查分级）
 > 最近更新：2026-02-25（Agent Browser Stealth 能力引入与改造方案：基于 agent-browser-stealth 外部项目，输出完整差异分析与 11 步执行计划；废除旧"禁止伪装"约束）
 > 最近更新：2026-02-25（Moryflow PC Auth 排障补充：新增 transport `raw/stream` 语义修复、server-http-client fetch 绑定修复、全仓 `lint/typecheck/test:unit` 校验记录）
 > 最近更新：2026-02-25（Moryflow PC Auth 排障补充：`/api/v1` 全量统一（Auth + 业务 + webhook）；PC/Mobile 认证接口改为显式 `/api/v1/auth/*`，并完成回归测试）
@@ -60,6 +65,11 @@
 
 ## 最近更新
 
+- Anyhunt Console 组件优化专项补扫：按“状态片段化 + `renderContentByState` + 禁止链式三元”修复模块 A 变更区同类问题，并回写执行台账：`docs/code-review/anyhunt-console.md`、`docs/code-review/frontend-component-optimization-rollout.md`（2026-02-25）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 A 修复完成并通过 `typecheck` + `test:unit`，新增 `webhooks/utils.test.ts` 回归测试）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 A 预扫描完成，`S1x3 / S2x2`）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（2026-02-25：active）
+- 前端组件设计质量索引（拆分与收敛准则）：`docs/guides/frontend/component-design-quality-index.md`（2026-02-25：active）
 - Agent Browser Stealth 能力引入与改造方案（proposal）：基于 agent-browser-stealth 外部项目完成差异分析与 11 步执行计划；废除旧"禁止伪装"约束（2026-02-25：proposal）
 - Moryflow PC Auth 排障 Runbook：补充 transport `raw/stream` 语义修复、server-http-client fetch 绑定修复与全仓 `lint/typecheck/test:unit` 校验记录：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-25）
 - 全量 Code Review 索引回写：Anyhunt/Moryflow Auth/Webhook 路由口径统一为 `/api/v1/*`，移除 `VERSION_NEUTRAL` 旧描述：`docs/code-review/index.md`（2026-02-25）

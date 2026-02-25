@@ -21,6 +21,10 @@ status: active
 
 ## 近期更新
 
+- 2026-02-25：Anyhunt Console 模块 A 按“状态片段化 + `renderContentByState` + 禁止链式三元”完成变更区补扫修复并回写台账：`docs/code-review/anyhunt-console.md`、`docs/code-review/frontend-component-optimization-rollout.md`。
+- 2026-02-25：Anyhunt Console 模块 A（`api-keys/settings/webhooks`）完成修复并通过模块级校验（`typecheck` + `test:unit`）；新增 `webhooks/utils.test.ts` 回归测试：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 A（`api-keys/settings/webhooks`）完成预扫描并输出问题分级（`S1x3 / S2x2`）：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：新增前端组件优化专项执行计划（按项目/按模块，要求每步回写执行台账）：`docs/code-review/frontend-component-optimization-rollout.md`。
 - 2026-02-25：Anyhunt/Moryflow 路由口径统一回写：Auth 与 Webhook 文档示例统一为 `/api/v1/*`（移除 VERSION_NEUTRAL 旧描述）。
 - 2026-02-02：Anyhunt Server Auth/Billing/API Key Review 文档路径示例更新为 `/api/v1/app/*`。
 
@@ -174,7 +178,7 @@ status: active
 
 | Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
 | -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | todo                           |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | in_progress（模块 A 修复完成，模块 B 待扫） |
 | P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
 | P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
 | P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |
