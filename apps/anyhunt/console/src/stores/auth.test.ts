@@ -1,110 +1,128 @@
 /**
- * [INPUT]: refresh/logout/bootstrap 调用
- * [OUTPUT]: AuthStore 状态更新断言
- * [POS]: Console Auth Store 单元测试（access/refresh 交互）
+ * [INPUT]: auth store setter/helpers
+ * [OUTPUT]: 状态更新与过期判断断言
+ * [POS]: Console Auth Store 单元测试（仅状态，不包含网络）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
-import { describe, it, beforeEach, afterEach, vi, expect } from 'vitest';
-import { useAuthStore } from './auth';
 
-const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  hasUsableAccessToken,
+  isAccessTokenExpiringSoon,
+  isExpired,
+  parseExpiresAt,
+  reconcileRehydratedAuthState,
+  type AuthTokenBundle,
+  useAuthStore,
+} from './auth';
 
-const jsonResponse = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
+const futureIso = (ms: number) => new Date(Date.now() + ms).toISOString();
+const pastIso = (ms: number) => new Date(Date.now() - ms).toISOString();
 
-describe('AuthStore', () => {
+const bundle: AuthTokenBundle = {
+  accessToken: 'access_1',
+  accessTokenExpiresAt: futureIso(2 * 60 * 60 * 1000),
+  refreshToken: 'refresh_1',
+  refreshTokenExpiresAt: futureIso(24 * 60 * 60 * 1000),
+};
+
+describe('console auth store', () => {
   beforeEach(() => {
-    fetchMock.mockReset();
-    vi.stubGlobal('fetch', fetchMock);
     useAuthStore.setState({
       user: null,
       accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshToken: null,
+      refreshTokenExpiresAt: null,
       isAuthenticated: false,
       isBootstrapped: false,
     });
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('refreshAccessToken 应在成功时写入 accessToken', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ accessToken: 'token_123' }));
-
-    const result = await useAuthStore.getState().refreshAccessToken();
-
-    expect(result).toBe(true);
-    expect(useAuthStore.getState().accessToken).toBe('token_123');
-  });
-
-  it('refreshAccessToken 应在失败时清空 accessToken', async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse(
-        {
-          type: 'https://anyhunt.app/errors/UNAUTHORIZED',
-          title: 'Unauthorized',
-          status: 401,
-          detail: 'Unauthorized',
-          code: 'UNAUTHORIZED',
-        },
-        401
-      )
-    );
-
-    const result = await useAuthStore.getState().refreshAccessToken();
-
-    expect(result).toBe(false);
-    expect(useAuthStore.getState().accessToken).toBeNull();
-  });
-
-  it('bootstrap 应在 refresh 成功后设置 user 与认证状态', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ accessToken: 'token_abc' }))
-      .mockResolvedValueOnce(
-        jsonResponse({
-          id: 'user_1',
-          email: 'user@example.com',
-          name: null,
-          subscriptionTier: 'FREE',
-          isAdmin: false,
-        })
-      );
-
-    await useAuthStore.getState().bootstrap();
+  it('setTokenBundle 应写入 access/refresh 并标记 isAuthenticated', () => {
+    useAuthStore.getState().setTokenBundle(bundle);
 
     const state = useAuthStore.getState();
-    expect(state.isBootstrapped).toBe(true);
+    expect(state.accessToken).toBe(bundle.accessToken);
+    expect(state.refreshToken).toBe(bundle.refreshToken);
     expect(state.isAuthenticated).toBe(true);
-    expect(state.user?.email).toBe('user@example.com');
-    expect(state.user?.subscriptionTier).toBe('FREE');
   });
 
-  it('logout 应清空用户状态，即使请求失败', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('network'));
-
-    useAuthStore.setState({
-      user: {
-        id: 'user_1',
-        email: 'user@example.com',
-        name: null,
-        subscriptionTier: 'PRO',
-        isAdmin: false,
-      },
-      accessToken: 'token_abc',
-      isAuthenticated: true,
-      isBootstrapped: false,
+  it('clearSession 应清空会话状态', () => {
+    useAuthStore.getState().setTokenBundle(bundle);
+    useAuthStore.getState().setUser({
+      id: 'u_1',
+      email: 'dev@anyhunt.app',
+      name: 'dev',
+      subscriptionTier: 'PRO',
+      isAdmin: false,
     });
 
-    await useAuthStore.getState().logout();
+    useAuthStore.getState().clearSession();
 
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
+    expect(state.refreshToken).toBeNull();
     expect(state.isAuthenticated).toBe(false);
-    expect(state.isBootstrapped).toBe(true);
+  });
+
+  it('token 过期工具函数行为正确', () => {
+    const validExpiresAt = futureIso(2 * 60 * 60 * 1000);
+    const expiringSoon = futureIso(10 * 60 * 1000);
+    const expired = pastIso(1000);
+
+    expect(parseExpiresAt(validExpiresAt)).not.toBeNull();
+    expect(isExpired(validExpiresAt)).toBe(false);
+    expect(isExpired(expired)).toBe(true);
+
+    expect(isAccessTokenExpiringSoon(validExpiresAt)).toBe(false);
+    expect(isAccessTokenExpiringSoon(expiringSoon)).toBe(true);
+
+    expect(hasUsableAccessToken('token', validExpiresAt)).toBe(true);
+    expect(hasUsableAccessToken('token', expired)).toBe(false);
+    expect(hasUsableAccessToken(null, validExpiresAt)).toBe(false);
+  });
+
+  it('rehydrate 时 refresh 失效应调用 clearSession（并持久化清理）', () => {
+    const clearSession = vi.fn();
+    const setState = vi.fn();
+
+    reconcileRehydratedAuthState(
+      {
+        accessToken: 'access',
+        accessTokenExpiresAt: futureIso(10 * 60 * 1000),
+        refreshToken: null,
+        refreshTokenExpiresAt: null,
+        clearSession,
+      },
+      setState
+    );
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(setState).not.toHaveBeenCalled();
+  });
+
+  it('rehydrate 时 access 过期应仅清理 access 字段', () => {
+    const clearSession = vi.fn();
+    const setState = vi.fn();
+
+    reconcileRehydratedAuthState(
+      {
+        accessToken: 'access',
+        accessTokenExpiresAt: pastIso(1000),
+        refreshToken: 'refresh',
+        refreshTokenExpiresAt: futureIso(24 * 60 * 60 * 1000),
+        clearSession,
+      },
+      setState
+    );
+
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(setState).toHaveBeenCalledWith({
+      accessToken: null,
+      accessTokenExpiresAt: null,
+    });
   });
 });

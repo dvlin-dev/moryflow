@@ -9,18 +9,30 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import type { MembershipModel, UserInfo } from './types';
 
 export const AUTH_STORAGE_KEY = 'mf_auth_session';
-export const ACCESS_TOKEN_SKEW_MS = 60 * 1000;
+export const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000;
 
 type AuthState = {
   accessToken: string | null;
   accessTokenExpiresAt: string | null;
   lastUpdatedAt: string | null;
   isHydrated: boolean;
+  user: UserInfo | null;
+  isLoading: boolean;
+  models: MembershipModel[];
+  modelsLoading: boolean;
+  membershipEnabled: boolean;
   setAccessToken: (token: string, expiresAt: string | null) => void;
   clearAccessToken: () => void;
   setHydrated: (hydrated: boolean) => void;
+  setUser: (user: UserInfo | null) => void;
+  setLoading: (loading: boolean) => void;
+  setModels: (models: MembershipModel[]) => void;
+  setModelsLoading: (loading: boolean) => void;
+  setMembershipEnabled: (enabled: boolean) => void;
+  clearMembershipState: () => void;
 };
 
 type PersistedAuthState = Pick<AuthState, 'accessToken' | 'accessTokenExpiresAt'>;
@@ -119,6 +131,11 @@ export const authStore = createStore<AuthState>()(
       accessTokenExpiresAt: null,
       lastUpdatedAt: null,
       isHydrated: false,
+      user: null,
+      isLoading: true,
+      models: [],
+      modelsLoading: false,
+      membershipEnabled: true,
       setAccessToken: (token, expiresAt) =>
         set({
           accessToken: token,
@@ -132,6 +149,16 @@ export const authStore = createStore<AuthState>()(
           lastUpdatedAt: null,
         }),
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+      setUser: (user) => set({ user }),
+      setLoading: (loading) => set({ isLoading: loading }),
+      setModels: (models) => set({ models }),
+      setModelsLoading: (loading) => set({ modelsLoading: loading }),
+      setMembershipEnabled: (enabled) => set({ membershipEnabled: enabled }),
+      clearMembershipState: () =>
+        set({
+          user: null,
+          models: [],
+        }),
     }),
     {
       name: AUTH_STORAGE_KEY,

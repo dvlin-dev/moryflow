@@ -7,7 +7,8 @@
  */
 
 import { MEMBERSHIP_API_URL } from '@/lib/server/const';
-import { getAccessToken } from '@/lib/server';
+import { getAccessToken, refreshAccessToken } from '@/lib/server';
+import { createApiClient, createApiTransport, ServerApiError } from '@anyhunt/api/client';
 
 /** 支持的音频 MIME 类型 */
 const SUPPORTED_MIME_TYPES = [
@@ -66,6 +67,17 @@ function getApiBaseUrl(): string {
   return MEMBERSHIP_API_URL;
 }
 
+function createSpeechApiClient() {
+  return createApiClient({
+    transport: createApiTransport({
+      baseUrl: getApiBaseUrl(),
+    }),
+    defaultAuthMode: 'bearer',
+    getAccessToken,
+    onUnauthorized: refreshAccessToken,
+  });
+}
+
 /** 转录请求超时时间（60秒，考虑大文件上传和处理时间） */
 const TRANSCRIBE_TIMEOUT_MS = 60_000;
 
@@ -105,33 +117,23 @@ export async function transcribeAudio(options: TranscribeOptions): Promise<Trans
     throw new SpeechError('Please sign in to use voice transcription.', 'AUTH_ERROR');
   }
 
-  const baseUrl = getApiBaseUrl();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TRANSCRIBE_TIMEOUT_MS);
+  const speechApiClient = createSpeechApiClient();
 
   try {
-    const response = await fetch(`${baseUrl}/api/speech/transcribe`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+    return await speechApiClient.post<TranscribeResponse>('/api/v1/speech/transcribe', {
       body: formData,
-      signal: controller.signal,
+      timeoutMs: TRANSCRIBE_TIMEOUT_MS,
     });
-
-    if (!response.ok) {
-      // 认证错误
-      if (response.status === 401) {
-        throw new SpeechError('Your session expired. Please sign in again.', 'AUTH_ERROR');
-      }
-      // 业务错误
-      const error = await response.json().catch(() => ({ message: 'Transcription failed' }));
-      throw new SpeechError(error.message || 'Transcription failed', 'TRANSCRIPTION_ERROR');
-    }
-
-    return response.json();
   } catch (error) {
     // 已经是 SpeechError 直接抛出
     if (error instanceof SpeechError) {
       throw error;
+    }
+    if (error instanceof ServerApiError) {
+      if (error.status === 401) {
+        throw new SpeechError('Your session expired. Please sign in again.', 'AUTH_ERROR', error);
+      }
+      throw new SpeechError(error.message || 'Transcription failed', 'TRANSCRIPTION_ERROR', error);
     }
     // 超时错误
     if (error instanceof DOMException && error.name === 'AbortError') {
@@ -150,8 +152,6 @@ export async function transcribeAudio(options: TranscribeOptions): Promise<Trans
       'TRANSCRIPTION_ERROR',
       error
     );
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 

@@ -1,14 +1,13 @@
 /**
- * [PROVIDES]: useAuthStore, getAuthUser, getAccessToken
- * [DEPENDS]: zustand, fetch
- * [POS]: Admin 端认证状态管理（access token 内存 + refresh cookie）
+ * [PROVIDES]: useAuthStore, getAuthUser, getAccessToken, auth state setters/helpers
+ * [DEPENDS]: zustand
+ * [POS]: Admin 端认证状态单一数据源（仅状态，不包含网络请求）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
+
 import { create } from 'zustand';
-import { API_BASE_URL } from '@/lib/api-base';
-import { USER_API } from '@/lib/api-paths';
-import type { ProblemDetails } from '@anyhunt/types';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
 /** Admin 用户信息（来自 /api/v1/app/user/me） */
 export interface AuthUser {
@@ -19,151 +18,145 @@ export interface AuthUser {
   isAdmin: boolean;
 }
 
-/** 认证状态 */
+export type AuthTokenBundle = {
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+};
+
 interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
+  accessTokenExpiresAt: string | null;
+  refreshToken: string | null;
+  refreshTokenExpiresAt: string | null;
   isAuthenticated: boolean;
   isBootstrapped: boolean;
-  bootstrap: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  refreshAccessToken: () => Promise<boolean>;
-  ensureAccessToken: () => Promise<string | null>;
-  logout: () => Promise<void>;
+  setUser: (user: AuthUser | null) => void;
+  setTokenBundle: (bundle: AuthTokenBundle) => void;
+  clearSession: () => void;
+  setBootstrapped: (bootstrapped: boolean) => void;
+  setAuthenticated: (authenticated: boolean) => void;
 }
 
-type AuthResponse = {
-  accessToken?: string;
+type PersistedAuthState = Pick<
+  AuthState,
+  'user' | 'accessToken' | 'accessTokenExpiresAt' | 'refreshToken' | 'refreshTokenExpiresAt'
+>;
+
+type RehydratedAuthState = Pick<
+  AuthState,
+  'accessToken' | 'accessTokenExpiresAt' | 'refreshToken' | 'refreshTokenExpiresAt' | 'clearSession'
+>;
+
+export const AUTH_STORAGE_KEY = 'ah_admin_auth';
+export const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000;
+
+const noopStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
 };
 
-let refreshPromise: Promise<boolean> | null = null;
-
-const getProblemMessage = (payload: unknown, fallback: string): string => {
-  const problem = payload as ProblemDetails;
-  return typeof problem?.detail === 'string' ? problem.detail : fallback;
-};
-
-const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
-  const response = await fetch(input, init);
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = getProblemMessage(data, 'Request failed');
-    throw new Error(message);
+const resolveStorage = (): StateStorage => {
+  if (typeof window === 'undefined') {
+    return noopStorage;
   }
-  return data as T;
+  return window.localStorage;
 };
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
-  isBootstrapped: false,
+const storage = createJSONStorage<PersistedAuthState>(resolveStorage);
 
-  bootstrap: async () => {
-    if (get().isBootstrapped) return;
+export const parseExpiresAt = (expiresAt: string | null): number | null => {
+  if (!expiresAt) return null;
+  const timestamp = Date.parse(expiresAt);
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
 
-    try {
-      const refreshed = await get().refreshAccessToken();
-      if (!refreshed) {
-        set({ user: null, accessToken: null, isAuthenticated: false, isBootstrapped: true });
-        return;
-      }
+export const isExpired = (expiresAt: string | null): boolean => {
+  const timestamp = parseExpiresAt(expiresAt);
+  if (!timestamp) return true;
+  return timestamp <= Date.now();
+};
 
-      const token = get().accessToken;
-      if (!token) {
-        set({ user: null, accessToken: null, isAuthenticated: false, isBootstrapped: true });
-        return;
-      }
+export const isAccessTokenExpiringSoon = (expiresAt: string | null): boolean => {
+  const timestamp = parseExpiresAt(expiresAt);
+  if (!timestamp) return true;
+  return timestamp - Date.now() <= ACCESS_TOKEN_SKEW_MS;
+};
 
-      const user = await fetchJson<AuthUser>(`${API_BASE_URL}${USER_API.ME}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+export const hasUsableAccessToken = (
+  token: string | null,
+  expiresAt: string | null
+): token is string => Boolean(token && !isExpired(expiresAt));
 
-      set({ user, isAuthenticated: true, isBootstrapped: true });
-    } catch {
-      set({ user: null, accessToken: null, isAuthenticated: false, isBootstrapped: true });
-    }
-  },
+export const reconcileRehydratedAuthState = (
+  state: RehydratedAuthState,
+  setState: (partial: Partial<AuthState>) => void
+): void => {
+  if (!state.refreshToken || isExpired(state.refreshTokenExpiresAt)) {
+    state.clearSession();
+    return;
+  }
 
-  signIn: async (email: string, password: string) => {
-    await fetchJson(`${API_BASE_URL}/api/auth/sign-in/email`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+  if (isExpired(state.accessTokenExpiresAt)) {
+    setState({
+      accessToken: null,
+      accessTokenExpiresAt: null,
     });
+  }
+};
 
-    const refreshed = await get().refreshAccessToken();
-    if (!refreshed) {
-      throw new Error('Unable to establish session');
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshToken: null,
+      refreshTokenExpiresAt: null,
+      isAuthenticated: false,
+      isBootstrapped: false,
+      setUser: (user) => set({ user }),
+      setTokenBundle: (bundle) =>
+        set({
+          accessToken: bundle.accessToken,
+          accessTokenExpiresAt: bundle.accessTokenExpiresAt,
+          refreshToken: bundle.refreshToken,
+          refreshTokenExpiresAt: bundle.refreshTokenExpiresAt,
+          isAuthenticated: true,
+        }),
+      clearSession: () =>
+        set({
+          user: null,
+          accessToken: null,
+          accessTokenExpiresAt: null,
+          refreshToken: null,
+          refreshTokenExpiresAt: null,
+          isAuthenticated: false,
+        }),
+      setBootstrapped: (bootstrapped) => set({ isBootstrapped: bootstrapped }),
+      setAuthenticated: (authenticated) => set({ isAuthenticated: authenticated }),
+    }),
+    {
+      name: AUTH_STORAGE_KEY,
+      version: 1,
+      storage,
+      partialize: (state): PersistedAuthState => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        accessTokenExpiresAt: state.accessTokenExpiresAt,
+        refreshToken: state.refreshToken,
+        refreshTokenExpiresAt: state.refreshTokenExpiresAt,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        reconcileRehydratedAuthState(state, set);
+      },
     }
+  )
+);
 
-    const token = get().accessToken;
-    if (!token) {
-      throw new Error('Access token missing');
-    }
-
-    const user = await fetchJson<AuthUser>(`${API_BASE_URL}${USER_API.ME}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!user.isAdmin) {
-      await get().logout();
-      throw new Error('Admin access required');
-    }
-
-    set({ user, isAuthenticated: true, isBootstrapped: true });
-  },
-
-  refreshAccessToken: async () => {
-    if (!refreshPromise) {
-      refreshPromise = (async () => {
-        try {
-          const data = await fetchJson<AuthResponse>(`${API_BASE_URL}/api/auth/refresh`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-          });
-
-          if (!data.accessToken) {
-            set({ accessToken: null });
-            return false;
-          }
-
-          set({ accessToken: data.accessToken });
-          return true;
-        } catch {
-          set({ accessToken: null });
-          return false;
-        }
-      })().finally(() => {
-        refreshPromise = null;
-      });
-    }
-
-    return refreshPromise;
-  },
-
-  ensureAccessToken: async () => {
-    const token = get().accessToken;
-    if (token) return token;
-    const refreshed = await get().refreshAccessToken();
-    return refreshed ? get().accessToken : null;
-  },
-
-  logout: async () => {
-    await fetch(`${API_BASE_URL}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch(() => undefined);
-
-    set({ user: null, accessToken: null, isAuthenticated: false, isBootstrapped: true });
-  },
-}));
-
-/** 获取当前用户 */
 export const getAuthUser = () => useAuthStore.getState().user;
-
-/** 获取当前 access token */
 export const getAccessToken = () => useAuthStore.getState().accessToken;

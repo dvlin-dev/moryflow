@@ -33,6 +33,7 @@ import { AgentModule } from './agent';
 import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
 import { LlmModule } from './llm';
+import { OpenApiModule } from './openapi';
 import { LogModule, RequestLogMiddleware } from './log';
 
 @Module({
@@ -41,6 +42,7 @@ import { LogModule, RequestLogMiddleware } from './log';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    OpenApiModule,
     PrismaModule,
     VectorPrismaModule,
     RedisModule,

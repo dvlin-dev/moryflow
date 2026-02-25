@@ -14,6 +14,7 @@
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { readFile, writeFile, stat, mkdir, unlink, rename } from 'node:fs/promises';
+import { fetchRaw } from '@anyhunt/api/client';
 import type { VectorClock } from '@anyhunt/sync';
 import type { SyncActionDto, CompletedFileDto, LocalFileDto } from '../api/types.js';
 import type { SyncDirection } from '../const.js';
@@ -46,19 +47,10 @@ const fetchWithTimeout = async (
   options?: RequestInit,
   timeout: number = FETCH_TIMEOUT
 ): Promise<Response> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`请求超时 (${timeout}ms)`);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  return fetchRaw(url, {
+    ...options,
+    timeoutMs: timeout,
+  });
 };
 
 // ── 工具函数 ────────────────────────────────────────────────

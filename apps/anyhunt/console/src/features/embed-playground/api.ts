@@ -2,7 +2,7 @@
  * Embed API 调用
  */
 import { OEMBED_API } from '@/lib/api-paths';
-import { ApiKeyClient } from '@/features/playground-shared/api-key-client';
+import { createApiKeyClient } from '@/features/playground-shared/api-key-client';
 import type { EmbedFormData, EmbedResult } from './types';
 
 interface EmbedApiResponse {
@@ -17,7 +17,7 @@ interface EmbedApiResponse {
  * 获取 oEmbed 数据
  */
 export async function fetchEmbed(apiKey: string, request: EmbedFormData): Promise<EmbedResult> {
-  const client = new ApiKeyClient({ apiKey });
+  const client = createApiKeyClient({ apiKey });
   const response = await client.post<EmbedApiResponse>(OEMBED_API.BASE, {
     url: request.url,
     maxwidth: request.maxWidth,

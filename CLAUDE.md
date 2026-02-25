@@ -7,6 +7,8 @@
 > 最近更新：2026-02-08（协作总则：新增“AI Agent 禁止擅自提交 commit/push，需用户批准”规则）
 > 最近更新：2026-02-07（协作总则：补充“最佳实践优先/允许破坏性重构”行为准则）
 > 最近更新：2026-02-10（协作总则：交互设计做减法，尽量减少交互，通过符合用户直觉的设计保持界面简洁）
+> 最近更新：2026-02-24（请求与状态管理统一规范：全仓请求统一为函数式客户端与方法编排；前端统一 Zustand + Methods；禁用 Context 顶层透传、Class ApiClient、`createServerApiClient`、`serverApi.user.xxx`；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket）
+> 最近更新：2026-02-24（Auth 与全量请求统一改造计划执行完成：Step 1~13 全部回写，客户端/服务端出站 HTTP/WebSocket 统一落地；旧客户端范式清理完成）
 > 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地，app/public 路由完成迁移）
@@ -116,7 +118,7 @@ pnpm --filter @anyhunt/console test:e2e
 | ------------------------ | ------------------- | ---------------------------- |
 | **Moryflow 主站**        | www.moryflow.com    | 核心产品主入口               |
 | **Moryflow Docs**        | docs.moryflow.com   | 产品文档（独立 Docs 项目）   |
-| **Moryflow 应用**        | app.moryflow.com    | 主应用（Web + API）          |
+| **Moryflow 应用**        | server.moryflow.com | 主应用（Web + API）          |
 | **Moryflow 发布站**      | moryflow.app        | 用户发布的网站               |
 | **Anyhunt 官网**         | anyhunt.app         | Anyhunt Dev 官网（模块导航） |
 | **Anyhunt Dev API**      | server.anyhunt.app  | 统一 API 入口（`/api/v1`）   |
@@ -136,7 +138,7 @@ pnpm --filter @anyhunt/console test:e2e
 
 | 类型            | 前缀  | 说明                                                       |
 | --------------- | ----- | ---------------------------------------------------------- |
-| Moryflow Key    | `mf_` | Moryflow（app.moryflow.com）                               |
+| Moryflow Key    | `mf_` | Moryflow（server.moryflow.com）                            |
 | Anyhunt Dev Key | `ah_` | Anyhunt Dev（console.anyhunt.app；Agentsbox/Memox 等能力） |
 
 ### 目标 Monorepo 结构
@@ -222,7 +224,7 @@ Anyhunt/
 
 当前架构为 **两条业务线**，永不互通（不共享账号/Token/数据库）：
 
-- **Moryflow**：`www.moryflow.com`（营销）+ `app.moryflow.com`（应用+API）
+- **Moryflow**：`www.moryflow.com`（营销）+ `server.moryflow.com`（应用+API）
 - **Anyhunt Dev**：`console.anyhunt.app`（控制台+API；Agentsbox/Memox 等能力）
 
 计费/订阅暂不作为默认架构约束；Anyhunt Dev 对外能力以 **API Key + 动态限流策略** 为主（详见 `docs/architecture/auth/quota-and-api-keys.md`）。
@@ -231,32 +233,34 @@ Anyhunt/
 
 ## 文档索引
 
-| 文档                                                                                                                                       | 说明                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| [`docs/index.md`](./docs/index.md)                                                                                                         | docs/ 统一入口索引（内部协作）                            |
-| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                                                 | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录） |
-| [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)                             | Auth 交互统一与数据库重置改造方案                         |
-| [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md)                     | Auth 统一改造涉及文件与模块清单                           |
-| [`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`](./docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md) | Moryflow PC/Mobile Access Token 持久化升级方案            |
-| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）             |
-| [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案        |
-| [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）       |
-| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）  |
-| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一） |
-| [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）    |
-| [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                                     | Moryflow Agent Tasks 系统方案（替代 Plan）                |
-| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)                           | ADR：两条业务线永不互通                                   |
-| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                                     | Runbook：Anyhunt Dev Dokploy 多项目部署清单               |
-| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md)                     | Runbook：megaboxpro（1panel）反代路由配置                 |
-| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                                                   | Runbook：Moryflow docker compose 部署                     |
-| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                                           | Guide：Auth 流程与接口约定                                |
-| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                                         | Guide：Zod + RHF 兼容性（zod/v3）                         |
-| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                                               | Guide：从 Monorepo 开源拆分单个包（Git Subtree）          |
-| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                                             | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）     |
-| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                                               | Anyhunt Dev：内部方案入口                                 |
-| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                                     | Moryflow：内部方案入口                                    |
-| `apps/*/CLAUDE.md`                                                                                                                         | 各应用的详细文档                                          |
-| `packages/*/CLAUDE.md`                                                                                                                     | 各包的详细文档                                            |
+| 文档                                                                                                                                       | 说明                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [`docs/index.md`](./docs/index.md)                                                                                                         | docs/ 统一入口索引（内部协作）                                           |
+| [`docs/architecture/auth.md`](./docs/architecture/auth.md)                                                                                 | Auth 系统入口与关键约束（两条业务线 + Google/Apple 登录）                |
+| [`docs/architecture/auth/unified-auth-rebuild-plan.md`](./docs/architecture/auth/unified-auth-rebuild-plan.md)                             | Auth 交互统一与数据库重置改造方案                                        |
+| [`docs/architecture/auth/unified-auth-rebuild-file-map.md`](./docs/architecture/auth/unified-auth-rebuild-file-map.md)                     | Auth 统一改造涉及文件与模块清单                                          |
+| [`docs/architecture/auth/unified-token-auth-v2-plan.md`](./docs/architecture/auth/unified-token-auth-v2-plan.md)                           | 统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow）                     |
+| [`docs/architecture/auth/auth-zustand-method-refactor-plan.md`](./docs/architecture/auth/auth-zustand-method-refactor-plan.md)             | Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client） |
+| [`docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md`](./docs/architecture/auth/moryflow-pc-mobile-access-token-upgrade.md) | Moryflow PC/Mobile Access Token 持久化升级方案                           |
+| [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）                            |
+| [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案                       |
+| [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）                      |
+| [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）                 |
+| [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）                |
+| [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）                   |
+| [`docs/architecture/agent-tasks-system.md`](./docs/architecture/agent-tasks-system.md)                                                     | Moryflow Agent Tasks 系统方案（替代 Plan）                               |
+| [`docs/architecture/adr/adr-0001-two-business-lines.md`](./docs/architecture/adr/adr-0001-two-business-lines.md)                           | ADR：两条业务线永不互通                                                  |
+| [`docs/runbooks/deploy/anyhunt-dokploy.md`](./docs/runbooks/deploy/anyhunt-dokploy.md)                                                     | Runbook：Anyhunt Dev Dokploy 多项目部署清单                              |
+| [`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`](./docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md)                     | Runbook：megaboxpro（1panel）反代路由配置                                |
+| [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                                                   | Runbook：Moryflow docker compose 部署                                    |
+| [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                                           | Guide：Auth 流程与接口约定                                               |
+| [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                                         | Guide：Zod + RHF 兼容性（zod/v3）                                        |
+| [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                                               | Guide：从 Monorepo 开源拆分单个包（Git Subtree）                         |
+| [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                                             | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）                    |
+| [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                                               | Anyhunt Dev：内部方案入口                                                |
+| [`docs/products/moryflow/index.md`](./docs/products/moryflow/index.md)                                                                     | Moryflow：内部方案入口                                                   |
+| `apps/*/CLAUDE.md`                                                                                                                         | 各应用的详细文档                                                         |
+| `packages/*/CLAUDE.md`                                                                                                                     | 各包的详细文档                                                           |
 
 ## 变更日志
 
@@ -282,6 +286,7 @@ Anyhunt/
 - **参考源仓库**：不确定时查看上面列出的原始仓库
 - **最佳实践优先**：为可维护性允许破坏性重构（不考虑历史兼容），优先模块化/单一职责；无用代码直接删除
 - **交互设计做减法**：尽量减少交互步骤，通过符合用户直觉的设计让界面简洁
+- **请求与状态统一（强制）**：统一采用 `Zustand Store + Methods + Functional API Client`；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket；具体执行与验收以 `docs/architecture/auth/auth-zustand-method-refactor-plan.md` 为准
 - **AI 提交约束**：AI Agent 不得擅自执行 `git commit` / `git push` / `git tag` 等提交/发布操作；除非用户明确批准可以自主提交代码，否则所有改动必须保持为未提交状态（允许放入暂存区供 review）
 
 ---
@@ -463,6 +468,34 @@ ComponentName/
 ├── components/           # 子组件
 └── hooks/                # 组件专属 Hooks
 ```
+
+### 请求与状态管理规范（强制）
+
+#### 前端（Web/PC/Mobile）
+
+1. **状态分层固定**：
+   - `store` 仅负责状态与纯 setter（禁止网络请求）
+   - `methods` 负责业务编排（登录/刷新/登出/初始化/重试）
+   - `api` 仅负责请求与响应解析（不改 UI 状态）
+2. **状态容器固定**：全局认证与会话状态统一使用 `zustand`；禁止通过 React Context 在顶层透传 `auth/membership` 状态。
+3. **调用方式固定**：组件仅读取 `useXxxStore(selector)` + 调用 `xxxMethods.*`；避免在页面组件里散落请求逻辑。
+4. **Hook 使用边界**：尽量少做“业务编排型自定义 Hook”；除组件局部 UI 复用外，业务流程优先用显式 methods。
+5. **API 风格固定**：业务 API 统一使用函数导出：
+   - `export async function getJob(id: string): Promise<JobDetail> { ... }`
+   - 禁止 Class 风格 `new ApiClient(...)`
+   - 禁止 `createServerApiClient` 与 `serverApi.user.xxx` 调用链
+6. **鉴权模式显式声明**：请求必须显式区分 `public | bearer | apiKey`，禁止隐式猜测鉴权方式。
+
+#### 服务端（Anyhunt Server / Moryflow Server）
+
+1. **出站 HTTP 统一入口**：业务 service 禁止直写 `fetch`，统一走函数式 `server-http-client`。
+2. **SSRF 场景受控**：保留单一安全入口并接入统一请求客户端策略，不允许绕过。
+3. **错误与超时统一**：统一 RFC7807 解析、`requestId` 透传、`AbortController` 超时控制；禁止隐式无限重试。
+
+#### 实时通道（WebSocket/SSE）
+
+1. 实时连接统一放在 `features/*/realtime.ts`（或 `lib/<domain>/realtime.ts`）并由 `methods` 编排生命周期。
+2. 页面/组件层禁止直接 `new WebSocket(...)`。
 
 ### 前端表单规范（强制）
 

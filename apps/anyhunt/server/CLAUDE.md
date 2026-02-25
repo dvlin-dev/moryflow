@@ -8,6 +8,10 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Webhook：签名与发送体统一为同一 `JSON.stringify` 字符串（Digest Processor + Common WebhookService），避免签名材料与实际请求体潜在不一致
+- Demo：Turnstile 校验改为 `serverHttpRaw` 解析，放宽对响应 `content-type` 的依赖并保留非 2xx 快速失败
+- OpenAPI 文档改为 Scalar 双入口：`/api-reference`（public）与 `/api-reference/internal`（internal），并提供 `/openapi.json` 与 `/openapi-internal.json`
+- 修复文档访问 403：`Missing origin` 检查对 OpenAPI/Scalar 路径放行（公网可直接访问，无额外防护）
 - Log：修复错误判定与观测质量（仅 4xx/5xx 记录 error 字段、跳过 `/api/v1/admin/logs` 自采集、查询 SQL 统一改为 `$queryRaw + Prisma.sql`、时间参数强制 ISO8601+时区）
 - Log：新增统一请求日志模块（`RequestLog` 单表 + 全局采集中间件 + Admin 查询接口 + 30 天清理任务）
 - API Key：更新接口补齐 no-store，避免明文 key 被缓存
@@ -44,8 +48,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Public 端点必须使用 `@Public()`（不可挂 Session guard）
 - ApiKey API 必须使用 `@UseGuards(ApiKeyGuard)`
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
-- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/auth/refresh` 使用
-- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/auth/jwks`
+- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/v1/auth/refresh` 使用
+- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/v1/auth/jwks`
 - 本次重置后仅保留 init 迁移（不保留历史迁移文件）
 - URL validation required for SSRF protection
 - `ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 必须覆盖 Console/Admin 域名（`console.anyhunt.app`/`admin.anyhunt.app`）
@@ -152,6 +156,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | `vector-prisma/` | 3     | 向量库连接（VectorPrismaService）            | -                         |
 | `config/`        | 2     | Pricing configuration                        | -                         |
 | `types/`         | 6     | Shared type definitions                      | -                         |
+| `openapi/`       | 6     | OpenAPI 配置与 Scalar 文档入口               | -                         |
 
 ## Common Patterns
 
@@ -282,8 +287,11 @@ curl http://localhost:3000/health
 # 3. 检查部署版本（用于排查“线上仍是旧版本导致 404”）
 curl http://localhost:3000/health/version
 
-# 4. 检查 Swagger 文档
-open http://localhost:3000/api-docs
+# 4. 检查 API 文档（Scalar）
+open http://localhost:3000/api-reference
+open http://localhost:3000/api-reference/internal
+curl http://localhost:3000/openapi.json
+curl http://localhost:3000/openapi-internal.json
 ```
 
 ### 环境变量说明

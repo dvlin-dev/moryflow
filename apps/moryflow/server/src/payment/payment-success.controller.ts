@@ -17,10 +17,10 @@ import {
 } from './payment.utils';
 
 @ApiTags('Payment')
-@Controller('payment')
+@Controller({ path: 'payment', version: '1' })
 export class PaymentSuccessController {
   /**
-   * GET /payment/success
+   * GET /api/v1/payment/success
    * 支付成功页面（公开接口）
    * 返回 HTML 页面，通过 postMessage 通知父窗口（用于 iframe 嵌入支付场景）
    */

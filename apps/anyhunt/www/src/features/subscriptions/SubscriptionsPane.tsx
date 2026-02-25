@@ -6,15 +6,15 @@
 
 import { Link, useRouterState } from '@tanstack/react-router';
 import { Button, Separator } from '@anyhunt/ui';
-import { useAuth } from '@/lib/auth-context';
 import { useSubscriptions } from '@/features/digest/hooks';
 import { SidePanelRecommendedSection } from '@/components/reader/side-panel/SidePanelRecommendedSection';
 import { useReaderActions } from '@/features/reader-shell/reader-actions';
 import { SubscriptionsList } from './SubscriptionsList';
+import { useAuthStore } from '@/stores/auth-store';
 
 export function SubscriptionsPane() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const subscriptionsQuery = useSubscriptions(undefined, { enabled: isAuthenticated });
   const { openCreateSubscription } = useReaderActions();
 

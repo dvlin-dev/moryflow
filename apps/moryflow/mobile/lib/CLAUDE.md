@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- Auth API/Session 路径修复：登录/验证/刷新/登出统一显式请求 `/api/v1/auth/*`，消除 `baseUrl + path` 拼接差异导致的路径丢失（新增 auth-api/auth-session 回归测试）
 - Mobile Agent Runtime 初始化后统一绑定默认 `ModelProvider`（基于 `ModelFactory`），修复 `@openai/agents-core run()` 的 `No default model provider set`
 - Chat Transport：`ReadableStream.start` 回调不再直接引用 `this.options`，改为外提 `transportOptions`，修复 `UnderlyingDefaultSource.options` 类型报错（TS2339）
 - Chat Transport 流事件映射改为复用 `@anyhunt/agents-runtime` 的 `ui-stream` 共享模块，删除 `lib/chat/tool-chunks.ts` 本地重复实现
@@ -90,7 +91,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 - Mobile TasksStore 增加 openDatabase 路径单测（2026-01-25）
 - Mobile Tasks Hook 协议标注统一为 CLAUDE.md
 - Auth 相关请求改为 access 内存 + refresh 安全存储，新增 `lib/server/auth-session.ts`
-- Auth：接入 `@better-auth/expo`（新增 `auth-client.ts`/`auth-platform.ts`），refresh 使用 SecureStore cookie + `X-App-Platform`
+- Auth：接入 `@better-auth/expo`（新增 `auth-client.ts`/`auth-platform.ts`），refresh 改为 body `refreshToken`（refresh token 存储于 SecureStore）并携带 `X-App-Platform`
 - Auth Session refresh 改为网络失败不清理，保留 refresh 并等待恢复
 - Auth Session 单元测试新增（`lib/server/__tests__/auth-session.spec.ts`）
 - Auth Store：access token 允许空 expiresAt，保持持久化一致

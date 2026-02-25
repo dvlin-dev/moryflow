@@ -1,8 +1,9 @@
 /**
  * Ollama API 客户端
- * 封装与 Ollama 服务的 HTTP 通信
+ * 封装与 Ollama 服务的 HTTP 通信（函数式 client）
  */
 
+import { createApiClient, createApiTransport, ServerApiError } from '@anyhunt/api/client';
 import type {
   OllamaTagsResponse,
   OllamaVersionResponse,
@@ -12,23 +13,33 @@ import type {
   OllamaLocalModel,
   OllamaLibraryModel,
   OllamaLibrarySearchParams,
-} from './types.js'
-import { convertToLocalModel } from './model-capabilities.js'
+} from './types.js';
+import { convertToLocalModel } from './model-capabilities.js';
 
 /** 默认 Ollama API 地址 */
-export const DEFAULT_OLLAMA_BASE_URL = 'http://localhost:11434'
+export const DEFAULT_OLLAMA_BASE_URL = 'http://localhost:11434';
 
 /** OllamaDB API 地址 */
-const OLLAMADB_API_URL = 'https://ollamadb.dev/api/v1'
+const OLLAMADB_API_URL = 'https://ollamadb.dev/api/v1';
 
 /** 请求超时时间（毫秒） */
-const REQUEST_TIMEOUT = 10_000
+const REQUEST_TIMEOUT = 10_000;
 
 /**
  * 创建 AbortSignal 超时
  */
 function createTimeoutSignal(ms: number): AbortSignal {
-  return AbortSignal.timeout(ms)
+  return AbortSignal.timeout(ms);
+}
+
+function createPublicClient(baseUrl: string, timeoutMs = REQUEST_TIMEOUT) {
+  return createApiClient({
+    transport: createApiTransport({
+      baseUrl,
+      timeoutMs,
+    }),
+    defaultAuthMode: 'public',
+  });
 }
 
 /**
@@ -38,27 +49,25 @@ export async function checkConnection(
   baseUrl = DEFAULT_OLLAMA_BASE_URL
 ): Promise<OllamaConnectionResult> {
   try {
-    const response = await fetch(`${baseUrl}/api/version`, {
+    const client = createPublicClient(baseUrl, REQUEST_TIMEOUT);
+    const data = await client.get<OllamaVersionResponse>('/api/version', {
       signal: createTimeoutSignal(REQUEST_TIMEOUT),
-    })
-
-    if (!response.ok) {
-      return {
-        connected: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
-      }
-    }
-
-    const data = (await response.json()) as OllamaVersionResponse
+    });
     return {
       connected: true,
       version: data.version,
-    }
+    };
   } catch (error) {
+    if (error instanceof ServerApiError) {
+      return {
+        connected: false,
+        error: `HTTP ${error.status}: ${error.message}`,
+      };
+    }
     return {
       connected: false,
       error: error instanceof Error ? error.message : String(error),
-    }
+    };
   }
 }
 
@@ -68,16 +77,11 @@ export async function checkConnection(
 export async function getLocalModels(
   baseUrl = DEFAULT_OLLAMA_BASE_URL
 ): Promise<OllamaLocalModel[]> {
-  const response = await fetch(`${baseUrl}/api/tags`, {
+  const client = createPublicClient(baseUrl, REQUEST_TIMEOUT);
+  const data = await client.get<OllamaTagsResponse>('/api/tags', {
     signal: createTimeoutSignal(REQUEST_TIMEOUT),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch models: HTTP ${response.status}`)
-  }
-
-  const data = (await response.json()) as OllamaTagsResponse
-  return data.models.map(convertToLocalModel)
+  });
+  return data.models.map(convertToLocalModel);
 }
 
 /**
@@ -91,38 +95,34 @@ export async function pullModel(
   onProgress: (progress: OllamaPullProgress) => void,
   baseUrl = DEFAULT_OLLAMA_BASE_URL
 ): Promise<void> {
-  const response = await fetch(`${baseUrl}/api/pull`, {
+  const client = createPublicClient(baseUrl);
+  const response = await client.stream('/api/pull', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, stream: true }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to pull model: HTTP ${response.status}`)
-  }
+    body: { name, stream: true },
+  });
 
   if (!response.body) {
-    throw new Error('Response body is empty')
+    throw new Error('Response body is empty');
   }
 
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
 
   try {
     while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
         if (line.trim()) {
           try {
-            const progress = JSON.parse(line) as OllamaPullProgress
-            onProgress(progress)
+            const progress = JSON.parse(line) as OllamaPullProgress;
+            onProgress(progress);
           } catch {
             // 忽略解析错误的行
           }
@@ -133,14 +133,14 @@ export async function pullModel(
     // 处理剩余的 buffer
     if (buffer.trim()) {
       try {
-        const progress = JSON.parse(buffer) as OllamaPullProgress
-        onProgress(progress)
+        const progress = JSON.parse(buffer) as OllamaPullProgress;
+        onProgress(progress);
       } catch {
         // 忽略
       }
     }
   } finally {
-    reader.releaseLock()
+    reader.releaseLock();
   }
 }
 
@@ -148,15 +148,11 @@ export async function pullModel(
  * 删除本地模型
  */
 export async function deleteModel(name: string, baseUrl = DEFAULT_OLLAMA_BASE_URL): Promise<void> {
-  const response = await fetch(`${baseUrl}/api/delete`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to delete model: HTTP ${response.status}`)
-  }
+  const client = createPublicClient(baseUrl, REQUEST_TIMEOUT);
+  await client.del<void>('/api/delete', {
+    body: { name },
+    signal: createTimeoutSignal(REQUEST_TIMEOUT),
+  });
 }
 
 /**
@@ -166,18 +162,11 @@ export async function showModel(
   name: string,
   baseUrl = DEFAULT_OLLAMA_BASE_URL
 ): Promise<OllamaShowResponse> {
-  const response = await fetch(`${baseUrl}/api/show`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
+  const client = createPublicClient(baseUrl, REQUEST_TIMEOUT);
+  return client.post<OllamaShowResponse>('/api/show', {
+    body: { name },
     signal: createTimeoutSignal(REQUEST_TIMEOUT),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to show model: HTTP ${response.status}`)
-  }
-
-  return (await response.json()) as OllamaShowResponse
+  });
 }
 
 /** 默认热门模型列表（当 API 不可用时的 fallback） */
@@ -270,7 +259,7 @@ const DEFAULT_LIBRARY_MODELS: OllamaLibraryModel[] = [
     capabilities: ['vision', 'tools'],
     sizes: ['1b', '4b', '12b', '27b'],
   },
-]
+];
 
 /**
  * 从 OllamaDB API 获取模型库列表
@@ -278,60 +267,58 @@ const DEFAULT_LIBRARY_MODELS: OllamaLibraryModel[] = [
 export async function getLibraryModels(
   params: OllamaLibrarySearchParams = {}
 ): Promise<OllamaLibraryModel[]> {
-  const { search, capability, sortBy = 'pulls', order = 'desc', limit = 20 } = params
+  const { search, capability, sortBy = 'pulls', order = 'desc', limit = 20 } = params;
 
   try {
-    const url = new URL(`${OLLAMADB_API_URL}/models`)
-    if (search) url.searchParams.set('search', search)
-    if (capability) url.searchParams.set('capability', capability)
-    url.searchParams.set('sort_by', sortBy)
-    url.searchParams.set('order', order)
-    url.searchParams.set('limit', String(limit))
-
-    const response = await fetch(url.toString(), {
+    const client = createPublicClient(OLLAMADB_API_URL, REQUEST_TIMEOUT);
+    const data = await client.get<OllamaLibraryModel[]>('/models', {
+      query: {
+        search,
+        capability,
+        sort_by: sortBy,
+        order,
+        limit,
+      },
       signal: createTimeoutSignal(REQUEST_TIMEOUT),
-    })
-
-    if (!response.ok) {
-      console.warn(`[ollama] Library API returned ${response.status}, using fallback`)
-      return filterDefaultModels(params)
-    }
-
-    const data = (await response.json()) as OllamaLibraryModel[]
-    return data
+    });
+    return data;
   } catch (error) {
-    console.warn('[ollama] Failed to fetch library models, using fallback:', error)
-    return filterDefaultModels(params)
+    if (error instanceof ServerApiError) {
+      console.warn(`[ollama] Library API returned ${error.status}, using fallback`);
+      return filterDefaultModels(params);
+    }
+    console.warn('[ollama] Failed to fetch library models, using fallback:', error);
+    return filterDefaultModels(params);
   }
 }
 
 /** 过滤默认模型列表 */
 function filterDefaultModels(params: OllamaLibrarySearchParams): OllamaLibraryModel[] {
-  let models = [...DEFAULT_LIBRARY_MODELS]
+  let models = [...DEFAULT_LIBRARY_MODELS];
 
   // 搜索过滤
   if (params.search) {
-    const query = params.search.toLowerCase()
+    const query = params.search.toLowerCase();
     models = models.filter(
       (m) => m.name.toLowerCase().includes(query) || m.description.toLowerCase().includes(query)
-    )
+    );
   }
 
   // 能力过滤
   if (params.capability) {
-    models = models.filter((m) => m.capabilities.includes(params.capability!))
+    models = models.filter((m) => m.capabilities.includes(params.capability!));
   }
 
   // 排序
-  const sortBy = params.sortBy || 'pulls'
-  const order = params.order || 'desc'
+  const sortBy = params.sortBy || 'pulls';
+  const order = params.order || 'desc';
   models.sort((a, b) => {
-    const aVal = sortBy === 'pulls' ? a.pulls : new Date(a.last_updated).getTime()
-    const bVal = sortBy === 'pulls' ? b.pulls : new Date(b.last_updated).getTime()
-    return order === 'desc' ? bVal - aVal : aVal - bVal
-  })
+    const aVal = sortBy === 'pulls' ? a.pulls : new Date(a.last_updated).getTime();
+    const bVal = sortBy === 'pulls' ? b.pulls : new Date(b.last_updated).getTime();
+    return order === 'desc' ? bVal - aVal : aVal - bVal;
+  });
 
   // 限制数量
-  const limit = params.limit || 20
-  return models.slice(0, limit)
+  const limit = params.limit || 20;
+  return models.slice(0, limit);
 }

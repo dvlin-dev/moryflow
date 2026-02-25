@@ -14,7 +14,7 @@ export function resolveSuccessUrl(
   allowedOrigins: string[],
 ): string {
   const base = new URL(baseUrl);
-  const fallbackUrl = new URL('/payment/success', base).toString();
+  const fallbackUrl = new URL('/api/v1/payment/success', base).toString();
   const origins =
     allowedOrigins.length > 0
       ? Array.from(new Set([...allowedOrigins, base.origin]))

@@ -7,7 +7,7 @@
 
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { Test, type TestingModule } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
+import { type INestApplication, VersioningType } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import request from 'supertest';
 import { createPublicKey, verify } from 'crypto';
@@ -67,6 +67,13 @@ describe('Auth JWKS (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api', {
+      exclude: ['health', 'health/(.*)'],
+    });
+    app.enableVersioning({
+      type: VersioningType.URI,
+      defaultVersion: '1',
+    });
     await app.init();
 
     tokensService = moduleFixture.get(AuthTokensService);
@@ -89,7 +96,7 @@ describe('Auth JWKS (e2e)', () => {
     expect(header.kid).toBeTruthy();
 
     const response = await request(app.getHttpServer())
-      .get('/api/auth/jwks')
+      .get('/api/v1/auth/jwks')
       .expect(200);
 
     const jwks = readJwks(response.body);

@@ -89,7 +89,7 @@ Anyhunt 当前业务接口仅接受 `Authorization: Bearer <accessToken>`。acce
 #### Device Refresh 请求约定
 
 ```text
-POST /api/auth/refresh
+POST /api/v1/auth/refresh
 Headers:
   X-App-Platform: ios | android | mobile | desktop | electron | cli
 Body:
@@ -173,7 +173,7 @@ Response:
 ### 1) 未登录（无 refresh token）
 
 - Web 无法读取 HttpOnly cookie，所以只能通过 refresh 接口结果判断。
-- `POST /api/auth/refresh` 返回 401/403 时，认为「未登录或 refresh 失效」：
+- `POST /api/v1/auth/refresh` 返回 401/403 时，认为「未登录或 refresh 失效」：
   - 清空 store（`clearAccessToken`）。
   - UI 进入未登录态（可引导登录弹窗/页面）。
 
@@ -187,7 +187,7 @@ Response:
 ### 3) access token 过期或即将过期
 
 - access token TTL 为 6 小时（服务端固定）。
-- 设置 **过期缓冲窗口**（如 60 秒）：
+- 设置 **过期缓冲窗口**（如 1 小时）：
   - `expiresAt - now <= skewMs` 视为“即将过期”。
   - `bootstrapAuth` 或定时器触发刷新。
 - 若请求时仍使用旧 token，接口返回 401，则走 refresh + retry 一次。
@@ -206,11 +206,11 @@ Response:
 ## 过期处理建议参数
 
 ```ts
-const ACCESS_TOKEN_SKEW_MS = 60 * 1000; // 60 秒缓冲
+const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000; // 1 小时缓冲
 ```
 
-如果你关心“还有 6 秒就过期怎么办”，可以把 `skew` 调整为 10 秒或 30 秒，
-让 refresh 更频繁但可控。
+如果你关心“长任务中途 token 过期”，建议把 `skew` 维持在 1 小时，
+让 refresh 提前完成，避免任务执行过程中因过期触发 401。
 
 ## 风险与缓解
 

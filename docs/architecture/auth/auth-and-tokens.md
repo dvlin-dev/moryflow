@@ -40,31 +40,31 @@ Cookie domain 规则：
 
 1. 业务请求只带 `Authorization: Bearer <accessToken>`
 2. accessToken 过期/收到 `401 token_expired`：
-   - 调 `POST /api/auth/refresh`
+   - 调 `POST /api/v1/auth/refresh`
    - 成功后更新 refreshToken（Web 写 Cookie；Electron/RN 写 Secure Storage）
    - 更新内存 accessToken
 3. 原请求仅重试一次
 
 ## 登出（必须实现）
 
-- `POST /api/auth/logout` 或 `POST /api/auth/sign-out`
+- `POST /api/v1/auth/logout` 或 `POST /api/v1/auth/sign-out`
 - 同步失效 refresh token 与 session，并清理相关 Cookie
 - 原生端传 refreshToken 必须携带 `X-App-Platform`
 
 ## Web refresh 的 CSRF 约束（必须实现）
 
-因为 refreshToken 在 Cookie 中，`POST /api/auth/refresh` 必须：
+因为 refreshToken 在 Cookie 中，`POST /api/v1/auth/refresh` 必须：
 
 - 只允许 `POST`
 - 仅校验 `Origin`（无 Origin 且携带 Cookie 会被拒绝）
 - 校验 `Origin` 必须是：
-  - Moryflow：`https://app.moryflow.com`
+  - Moryflow：`https://server.moryflow.com`
   - Anyhunt Dev：`https://console.anyhunt.app` / `https://admin.anyhunt.app`
-- `/api/auth/logout` 与 `/api/auth/sign-out` 同样要求 Origin 校验
+- `/api/v1/auth/logout` 与 `/api/v1/auth/sign-out` 同样要求 Origin 校验
 
 ## 产品服务端校验 accessToken（固定规则）
 
-- Auth 服务暴露 JWKS：`GET /api/auth/jwks`
+- Auth 服务暴露 JWKS：`GET /api/v1/auth/jwks`
 
 ### 原生端 refresh 约束（必须）
 

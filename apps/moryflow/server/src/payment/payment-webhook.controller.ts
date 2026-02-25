@@ -30,7 +30,7 @@ import { getCreditPacks, getLicenseConfig } from '../config';
 import { resolveCheckoutProductType } from './payment.utils';
 
 @ApiTags('Payment')
-@Controller('webhooks/creem')
+@Controller({ path: 'webhooks/creem', version: '1' })
 export class PaymentWebhookController {
   private readonly logger = new Logger(PaymentWebhookController.name);
 

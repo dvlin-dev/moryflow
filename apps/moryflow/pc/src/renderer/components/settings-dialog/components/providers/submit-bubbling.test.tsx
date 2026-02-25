@@ -1,9 +1,16 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { AddModelDialog } from './add-model-dialog';
 import { ProviderList } from './provider-list';
+import { LoginPanel } from '../account/login-panel';
+
+const mocks = vi.hoisted(() => ({
+  login: vi.fn(),
+  refresh: vi.fn(),
+  signUpEmail: vi.fn(),
+}));
 
 vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -16,10 +23,15 @@ vi.mock('@/lib/server', () => ({
     membershipEnabled: false,
     setMembershipEnabled: vi.fn(),
     isLoading: false,
-    login: vi.fn(),
-    refresh: vi.fn(),
+    login: mocks.login,
+    refresh: mocks.refresh,
   }),
+  signUp: { email: mocks.signUpEmail },
   MEMBERSHIP_PROVIDER_ID: 'membership',
+}));
+
+vi.mock('@/components/auth', () => ({
+  OTPForm: () => null,
 }));
 
 vi.mock('@shared/model-registry', () => ({
@@ -32,6 +44,15 @@ vi.mock('@anyhunt/model-registry-data', () => ({
 }));
 
 describe('settings-dialog: prevent submit bubbling', () => {
+  beforeEach(() => {
+    mocks.login.mockReset();
+    mocks.refresh.mockReset();
+    mocks.signUpEmail.mockReset();
+    mocks.login.mockResolvedValue(undefined);
+    mocks.refresh.mockResolvedValue(undefined);
+    mocks.signUpEmail.mockResolvedValue({ error: null });
+  });
+
   it('AddModelDialog should not submit ancestor form', async () => {
     const outerSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
     const onAdd = vi.fn();
@@ -91,6 +112,54 @@ describe('settings-dialog: prevent submit bubbling', () => {
     fireEvent.click(screen.getByRole('button', { name: 'addCustomProvider' }));
 
     expect(handleAddCustomProvider).toHaveBeenCalledTimes(1);
+    expect(outerSubmit).not.toHaveBeenCalled();
+  });
+
+  it('LoginPanel submit button should not submit ancestor form', async () => {
+    const outerSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+
+    render(
+      <form onSubmit={outerSubmit}>
+        <LoginPanel />
+      </form>
+    );
+
+    fireEvent.change(screen.getByLabelText('email'), {
+      target: { value: 'demo@moryflow.com' },
+    });
+    fireEvent.change(screen.getByLabelText('password'), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'signIn' }));
+
+    await waitFor(() => {
+      expect(mocks.login).toHaveBeenCalledWith('demo@moryflow.com', '123456');
+    });
+
+    expect(outerSubmit).not.toHaveBeenCalled();
+  });
+
+  it('LoginPanel Enter key submit should not submit ancestor form', async () => {
+    const outerSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+
+    render(
+      <form onSubmit={outerSubmit}>
+        <LoginPanel />
+      </form>
+    );
+
+    fireEvent.change(screen.getByLabelText('email'), {
+      target: { value: 'demo2@moryflow.com' },
+    });
+    fireEvent.change(screen.getByLabelText('password'), {
+      target: { value: 'abcdef' },
+    });
+    fireEvent.keyDown(screen.getByLabelText('password'), { key: 'Enter', code: 'Enter' });
+
+    await waitFor(() => {
+      expect(mocks.login).toHaveBeenCalledWith('demo2@moryflow.com', 'abcdef');
+    });
+
     expect(outerSubmit).not.toHaveBeenCalled();
   });
 });

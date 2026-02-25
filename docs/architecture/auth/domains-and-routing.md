@@ -19,7 +19,7 @@ status: active
 
 - `www.moryflow.com`：营销入口（落地页）。
 - `docs.moryflow.com`：产品文档（独立 Docs 项目）。
-- `app.moryflow.com`：主应用（Web UI）+ API（同域）。
+- `server.moryflow.com`：主应用（Web UI）+ API（同域）。
 - `moryflow.app`：用户发布站（Cloudflare Worker + R2）。
 
 ### Anyhunt Dev
@@ -32,14 +32,14 @@ status: active
 
 ## API 规范（固定）
 
-- Moryflow API base：`https://app.moryflow.com/api/v1`
+- Moryflow API base：`https://server.moryflow.com/api/v1`
 - Anyhunt Dev API base：`https://server.anyhunt.app/api/v1`
 
 约束：
 
 - Moryflow Web 端只请求同源 API（不做跨域 CORS 方案）。
 - Anyhunt Dev 的 Web（console/admin）跨域调用 `server.anyhunt.app/api/v1`：必须配置 CORS 与 refresh CSRF 白名单。
-- Auth 路由固定：`/api/auth/*`（包含 Google/Apple 登录）。
+- Auth 路由固定：`/api/v1/auth/*`（包含 Google/Apple 登录）。
 - Anyhunt Dev 能力路由按功能资源组织（不再使用 memox 前缀）：
   - Memox：`/api/v1/memories`、`/api/v1/entities`、`/api/v1/relations`、`/api/v1/graph`
   - Fetchx Search：`/api/v1/search`
@@ -52,7 +52,7 @@ status: active
 最小规则（按 Host 分流）：
 
 - `www.moryflow.com` → 4c6g（moryflow-www）
-- `app.moryflow.com` → 4c6g（moryflow-app，包含 `/api/v1`）
+- `server.moryflow.com` → 4c6g（moryflow-app，包含 `/api/v1`）
 - `anyhunt.app` → 8c16g（anyhunt-web）
 - `server.anyhunt.app` → 8c16g（anyhunt-api，包含 `/api/v1`）
 - `console.anyhunt.app` → 8c16g（anyhunt-console-web）

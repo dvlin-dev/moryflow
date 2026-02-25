@@ -11,8 +11,9 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
+import { authMethods } from './lib/auth/auth-methods';
 import { MainLayout } from './components/layout';
-import LoginRedirect from './pages/LoginRedirect';
+import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ScrapePlaygroundPage from './pages/ScrapePlaygroundPage';
 import CrawlPlaygroundPage from './pages/CrawlPlaygroundPage';
@@ -72,19 +73,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
-  const bootstrap = useAuthStore((state) => state.bootstrap);
 
   useEffect(() => {
     if (!isBootstrapped) {
-      void bootstrap();
+      void authMethods.bootstrapAuth();
     }
-  }, [bootstrap, isBootstrapped]);
+  }, [isBootstrapped]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginRedirect />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route
             path="/"
             element={

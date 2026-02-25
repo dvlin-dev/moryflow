@@ -66,6 +66,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Mobile Auth API 修复：`AUTH_BASE_URL`（`.../api/v1/auth`）下请求路径改为相对路径（`sign-in/email`、`email-otp/verify-email`、`refresh`、`logout`），避免 URL 解析覆盖 `/api/v1/auth` 导致 404
 - 移除 Hugeicons 依赖，icons.ts/icon.tsx 改为 lucide-react-native 输出
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）
 - Chat 会话模式切换补齐审计与会话 mode 归一化
@@ -86,8 +87,8 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 - Chat Header 新增 Tasks 入口与 TasksSheet（列表 + 详情）
 - Auth 交互改为 access 内存 + refresh 安全存储，移除 pre-register 与忘记密码入口
 - Auth：access token 持久化（Zustand + SecureStore），启动直用并支持预刷新
-- Auth：接入 `@better-auth/expo`，移动端 Cookie/Session 由 SecureStore 管理
-- Auth Session refresh 增加网络失败清理，避免初始化阶段因网络异常中断
+- Auth：接入 `@better-auth/expo` 仅用于注册/发码等身份能力；业务会话改为 access+refresh token（refresh token 安全存储）
+- Auth Session refresh 改为网络失败不清理本地 token，避免离线/弱网场景误登出
 - Auth Session 单元测试补齐（vitest）
 - Vitest 增加 react-native alias + mock，避免解析 Flow 语法失败
 

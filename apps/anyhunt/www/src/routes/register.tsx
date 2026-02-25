@@ -8,13 +8,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod/v3';
 import { useEffect, useRef } from 'react';
-import { useAuth } from '@/lib/auth-context';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { getRedirectUrl } from '@/lib/redirect';
 import { ReaderThreePane } from '@/features/reader-shell/ReaderThreePane';
 import { WelcomeListPane } from '@/features/welcome/WelcomeListPane';
 import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
 import { getIsMobileViewport } from '@/hooks/useIsMobile';
+import { useAuthStore } from '@/stores/auth-store';
 
 const registerSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -35,7 +35,10 @@ function RegisterPage() {
   const { redirect: searchRedirect } = Route.useSearch();
   const redirectTo = getRedirectUrl(searchRedirect);
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = !isHydrated || !isBootstrapped;
   const { openAuthModal } = useAuthModal();
   const openedRef = useRef(false);
 

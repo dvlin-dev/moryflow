@@ -40,13 +40,13 @@ import { PaginationSchema, PAGINATION_MAX_LIMIT } from '../admin/dto/admin.dto';
 import type { LicenseStatus } from '../../generated/prisma/client';
 
 @ApiTags('License')
-@Controller('license')
+@Controller({ path: 'license', version: '1' })
 export class LicenseController {
   constructor(private readonly licenseService: LicenseService) {}
 
   /**
    * 验证 License
-   * POST /license/validate
+   * POST /api/v1/license/validate
    * M6 Fix: 添加严格的速率限制防止暴力破解
    */
   @ApiOperation({
@@ -73,7 +73,7 @@ export class LicenseController {
 
   /**
    * 激活 License
-   * POST /license/activate
+   * POST /api/v1/license/activate
    * M6 Fix: 添加严格的速率限制防止暴力破解
    */
   @ApiOperation({
@@ -97,7 +97,7 @@ export class LicenseController {
 
   /**
    * 停用 License
-   * POST /license/deactivate
+   * POST /api/v1/license/deactivate
    * M6 Fix: 添加严格的速率限制防止暴力破解
    */
   @ApiOperation({

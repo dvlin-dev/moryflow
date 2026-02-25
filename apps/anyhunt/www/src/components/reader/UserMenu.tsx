@@ -29,14 +29,14 @@ import {
   DropdownMenuRadioItem,
 } from '@anyhunt/ui';
 import { Settings, Paintbrush, Code, LogOut, ChevronDown, Sun, Moon, Computer } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
+import { authMethods } from '@/lib/auth/auth-methods';
 import { useTheme, type Theme } from '@/hooks/useTheme';
-import type { User } from '@/lib/auth-client';
 import type { InboxStats } from '@/features/digest/types';
 import { AccountSettingsDialog } from './AccountSettingsDialog';
+import type { AuthUser } from '@/stores/auth-store';
 
 interface UserMenuProps {
-  user: User;
+  user: AuthUser;
   stats: InboxStats | null;
 }
 
@@ -47,7 +47,6 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
 ];
 
 export function UserMenu({ user, stats }: UserMenuProps) {
-  const { signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
@@ -161,7 +160,9 @@ export function UserMenu({ user, stats }: UserMenuProps) {
             <AlertDialogAction
               onClick={() => {
                 setSignOutConfirmOpen(false);
-                void signOut();
+                void authMethods.logout().then(() => {
+                  window.location.href = '/welcome';
+                });
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

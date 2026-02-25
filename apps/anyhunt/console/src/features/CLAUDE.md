@@ -22,7 +22,7 @@ feature-name/
 | 功能                        | 说明                 | API 入口                                      |
 | --------------------------- | -------------------- | --------------------------------------------- |
 | `api-keys/`                 | API Key 管理         | `/api/v1/app/api-keys`                        |
-| `auth/`                     | 登录表单             | `/api/auth/*`（Better Auth）                  |
+| `auth/`                     | 登录表单             | `/api/v1/auth/*`（Better Auth）               |
 | `playground-shared/`        | Playground 共享组件  | —                                             |
 | `scrape-playground/`        | 单页抓取测试         | `/api/v1/scrape`                              |
 | `crawl-playground/`         | 多页爬取测试         | `/api/v1/crawl`                               |

@@ -21,8 +21,7 @@ import {
   FormMessage,
 } from '@anyhunt/ui';
 import { cn } from '@anyhunt/ui/lib';
-import { authClient } from '@/lib/auth-client';
-import { refreshAccessToken } from '@/lib/auth-session';
+import { signInWithEmail } from '@/lib/token-auth-api';
 
 const loginFormSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -66,19 +65,7 @@ export function LoginForm({
     setIsLoading(true);
 
     try {
-      const { error: authError } = await authClient.signIn.email({
-        email: values.email,
-        password: values.password,
-      });
-
-      if (authError) {
-        throw new Error(authError.message ?? 'Login failed');
-      }
-
-      const refreshed = await refreshAccessToken();
-      if (!refreshed) {
-        throw new Error('Failed to refresh session');
-      }
+      await signInWithEmail(values.email, values.password);
 
       onSuccess?.();
     } catch (err) {

@@ -1,13 +1,13 @@
 /**
  * LoginForm - 管理员登录表单组件
- * 通过 /api/auth/* 完成登录与刷新
+ * 通过 /api/v1/auth/* 完成登录与刷新
  */
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuthStore } from '@/stores/auth';
+import { authMethods } from '@/lib/auth/auth-methods';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,6 @@ import {
 export type LoginFormProps = React.ComponentProps<'div'>;
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
-  const signIn = useAuthStore((state) => state.signIn);
   const navigate = useNavigate();
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -43,7 +42,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
 
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      await signIn(values.email.trim(), values.password.trim());
+      await authMethods.signIn(values.email.trim(), values.password.trim());
       toast.success('Signed in successfully');
       navigate('/');
     } catch (error) {

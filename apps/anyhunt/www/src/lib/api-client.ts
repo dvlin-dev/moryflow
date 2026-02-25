@@ -1,191 +1,87 @@
 /**
  * [PROVIDES]: apiClient, ApiClientError
- * [DEPENDS]: fetch, auth-session
+ * [DEPENDS]: @anyhunt/api/client, auth-methods
  * [POS]: www API client for authenticated requests (Bearer + refresh)
  */
 
+import {
+  createApiClient,
+  createApiTransport,
+  type ApiClientRequestOptions,
+  type QueryParams,
+  ServerApiError,
+} from '@anyhunt/api/client';
 import { API_BASE_URL } from './api-base';
-import { refreshAccessToken, logout } from './auth-session';
-import { authStore, isAccessTokenExpiringSoon } from '@/stores/auth-store';
-import type { ProblemDetails } from '@anyhunt/types';
+import { authMethods } from './auth/auth-methods';
+import { authStore } from '@/stores/auth-store';
 
-/**
- * API Error
- */
-export class ApiClientError extends Error {
-  status: number;
-  code: string;
-  details?: unknown;
-  requestId?: string;
-  errors?: Array<{ field?: string; message: string }>;
+export { ServerApiError as ApiClientError };
 
-  constructor(
-    status: number,
-    code: string,
-    message: string,
-    details?: unknown,
-    requestId?: string,
-    errors?: Array<{ field?: string; message: string }>
-  ) {
-    super(message);
-    this.name = 'ApiClientError';
-    this.status = status;
-    this.code = code;
-    this.details = details;
-    this.requestId = requestId;
-    this.errors = errors;
-  }
+const resolvedBaseUrl =
+  API_BASE_URL || (typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
 
-  get isUnauthorized(): boolean {
-    return this.status === 401;
-  }
+const coreClient = createApiClient({
+  transport: createApiTransport({
+    baseUrl: resolvedBaseUrl,
+  }),
+  defaultAuthMode: 'bearer',
+  getAccessToken: () => authStore.getState().accessToken,
+  onUnauthorized: async () => {
+    const refreshed = await authMethods.refreshAccessToken();
+    if (!refreshed && !authStore.getState().refreshToken) {
+      await authMethods.logout();
+    }
+    return refreshed;
+  },
+});
 
-  get isForbidden(): boolean {
-    return this.status === 403;
-  }
-
-  get isNotFound(): boolean {
-    return this.status === 404;
-  }
+interface JsonRequestOptions {
+  headers?: HeadersInit;
+  query?: QueryParams;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
-class ApiClient {
-  private baseURL: string;
-
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+const toRequestOptions = (
+  options?: JsonRequestOptions & {
+    body?: unknown;
+    method?: ApiClientRequestOptions['method'];
   }
+): ApiClientRequestOptions => ({
+  headers: options?.headers,
+  query: options?.query,
+  signal: options?.signal,
+  timeoutMs: options?.timeoutMs,
+  body: options?.body as ApiClientRequestOptions['body'],
+  method: options?.method,
+});
 
-  private buildHeaders(additionalHeaders?: HeadersInit, token?: string | null): HeadersInit {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(additionalHeaders as Record<string, string>),
-    };
+export const apiClient = {
+  get<T>(endpoint: string, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.get<T>(endpoint, toRequestOptions(options));
+  },
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+  post<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.post<T>(endpoint, toRequestOptions({ ...options, body: data }));
+  },
 
-    return headers;
-  }
+  patch<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.patch<T>(endpoint, toRequestOptions({ ...options, body: data }));
+  },
 
-  private async safeParseJson(response: Response): Promise<{
-    parsed: boolean;
-    value: unknown;
-  }> {
-    try {
-      return { parsed: true, value: await response.json() };
-    } catch {
-      return { parsed: false, value: undefined };
-    }
-  }
+  put<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.put<T>(endpoint, toRequestOptions({ ...options, body: data }));
+  },
 
-  private throwApiError(status: number, json: unknown, requestId?: string): never {
-    const problem = json as ProblemDetails;
-    const message =
-      typeof problem?.detail === 'string' ? problem.detail : `Request failed (${status})`;
-    const code = typeof problem?.code === 'string' ? problem.code : 'UNKNOWN_ERROR';
-    throw new ApiClientError(
-      status,
-      code,
-      message,
-      problem?.details,
-      problem?.requestId ?? requestId,
-      problem?.errors
-    );
-  }
+  delete<T>(endpoint: string, options?: JsonRequestOptions): Promise<T> {
+    return coreClient.del<T>(endpoint, toRequestOptions(options));
+  },
 
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (response.status === 204) {
-      return undefined as T;
-    }
+  raw(endpoint: string, options?: ApiClientRequestOptions): Promise<Response> {
+    return coreClient.raw(endpoint, options);
+  },
 
-    const contentType = response.headers.get('content-type') ?? '';
-    const isJson =
-      contentType.includes('application/json') || contentType.includes('application/problem+json');
-    const requestId = response.headers.get('x-request-id') ?? undefined;
-    const parsed = isJson ? await this.safeParseJson(response) : undefined;
-
-    if (!response.ok) {
-      this.throwApiError(response.status, parsed?.value, requestId);
-    }
-
-    if (!isJson || !parsed?.parsed) {
-      throw new ApiClientError(
-        response.status,
-        'UNEXPECTED_RESPONSE',
-        'Unexpected response format',
-        undefined,
-        requestId
-      );
-    }
-
-    return parsed.value as T;
-  }
-
-  private async fetchWithAuth(
-    endpoint: string,
-    options?: RequestInit,
-    attempt = 0
-  ): Promise<Response> {
-    const { accessToken, accessTokenExpiresAt } = authStore.getState();
-    if (accessToken && isAccessTokenExpiringSoon(accessTokenExpiresAt)) {
-      await refreshAccessToken();
-    }
-
-    const token = authStore.getState().accessToken;
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      ...options,
-      headers: this.buildHeaders(options?.headers, token),
-      credentials: 'include',
-    });
-
-    if (response.status === 401) {
-      const refreshed = await refreshAccessToken();
-      if (refreshed && attempt === 0) {
-        return this.fetchWithAuth(endpoint, options, attempt + 1);
-      }
-      await logout();
-    }
-
-    return response;
-  }
-
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await this.fetchWithAuth(endpoint, options);
-    return this.handleResponse<T>(response);
-  }
-
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint);
-  }
-
-  async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  async put<T>(endpoint: string, data?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'DELETE',
-    });
-  }
-}
-
-export const apiClient = new ApiClient(API_BASE_URL);
+  stream(endpoint: string, options?: ApiClientRequestOptions): Promise<Response> {
+    return coreClient.stream(endpoint, options);
+  },
+};

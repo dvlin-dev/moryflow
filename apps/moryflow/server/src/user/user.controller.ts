@@ -20,7 +20,7 @@ import type { CurrentUserDto } from '../types';
 import { UserService } from './user.service';
 import { deleteAccountSchema, type DeleteAccountDto } from './dto';
 
-@Controller('api/user')
+@Controller({ path: 'user', version: '1' })
 export class UserController {
   constructor(
     private readonly creditService: CreditService,

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "3.0.99",
+    "@anyhunt/api": "workspace:*",
     "@anyhunt/embed-react": "workspace:*",
     "@anyhunt/types": "workspace:*",
     "@anyhunt/ui": "workspace:*",

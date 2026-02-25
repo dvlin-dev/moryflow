@@ -19,6 +19,7 @@ import {
   type DigestWebhookDeliveryJobData,
 } from '../../queue/queue.constants';
 import { NOTIFICATION } from '../digest.constants';
+import { serverHttpRaw } from '../../common/http/server-http-client';
 
 /** Webhook 投递结果 */
 interface DeliveryResult {
@@ -79,7 +80,8 @@ export class WebhookDeliveryProcessor extends WorkerHost {
       );
 
       // 4. 发送 HTTP POST
-      const response = await fetch(webhookUrl, {
+      const response = await serverHttpRaw({
+        url: webhookUrl,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,27 +91,29 @@ export class WebhookDeliveryProcessor extends WorkerHost {
         },
         body: bodyString,
         redirect: 'manual',
-        signal: AbortSignal.timeout(NOTIFICATION.webhookTimeoutMs),
+        timeoutMs: NOTIFICATION.webhookTimeoutMs,
       });
 
-      const latencyMs = Date.now() - startTime;
+      const statusCode = response.status;
       const success = response.ok;
+
+      const latencyMs = Date.now() - startTime;
 
       // 5. 记录投递结果（无论成功失败都记录）
       const result: DeliveryResult = {
         success,
-        statusCode: response.status,
+        statusCode,
         latencyMs,
-        error: success ? undefined : `HTTP ${response.status}`,
+        error: success ? undefined : `HTTP ${statusCode ?? 500}`,
       };
       await this.recordDelivery(job.data, result);
 
       if (!success) {
         this.logger.warn(
-          `Webhook delivery failed: ${webhookUrl} returned ${response.status}`,
+          `Webhook delivery failed: ${webhookUrl} returned ${statusCode ?? 500}`,
         );
         // 抛出错误触发重试（已记录，不会再记录）
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(`HTTP ${statusCode ?? 500}`);
       }
 
       this.logger.log(

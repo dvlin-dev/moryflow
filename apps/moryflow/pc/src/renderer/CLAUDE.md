@@ -93,6 +93,14 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Desktop Auth API 修复：登录/验证码验证/刷新/登出请求统一为显式 `/api/v1/auth/*`，彻底消除 `baseUrl + path` 拼接语义差异带来的 404
+- Desktop Better Auth Client 修复：`createAuthClient.baseURL` 统一为 `.../api/v1/auth`，避免注册与 OTP 发码误打到根路径
+- Desktop Auth：`authMethods.login` 在登录后强校验会话建立结果；若 refresh 后仍无法建立会话，则立即清理本地会话并返回 `Failed to establish session`，避免登录假成功
+- Desktop Auth：统一 Token-first（登录/验证码验证成功即落库 access+refresh），`refreshAccessToken` 仅使用 body refreshToken（无 cookie fallback）；保留 fail-fast（无 refresh token 不发请求）与 10s 超时；`AuthProvider` 仅在明确未授权时清理会话，网络异常保留当前状态
+- Desktop Auth：access token 预刷新窗口统一为 1h（覆盖长时单次 Agent 任务），`ensureAccessToken` 仅在剩余有效期 >1h 时跳过 refresh
+- Settings Account 登录：移除内层 form，提交改为显式点击/Enter 捕获，避免触发外层 Settings form 导致弹窗关闭；OTP 验证步骤同样移除内层 form，并修复 `onSuccess` 未等待导致的未处理 Promise
+- Settings Account：未登录 + loading 状态不再展示全局 skeleton，保持登录面板可交互（仅按钮级 loading）
+- AuthProvider 登录流程不再触发全局 loading（保留按钮级 loading + 错误回显）
 - VaultFiles 与 Threads 列表基线对齐：文件/文件夹/线程行内水平 padding 统一为 `px-2.5`，统一使用 icon 槽位控制文字起始线；行背景采用 `-mx-1` 轻微外扩，保持两类列表间距一致。
 - VaultFiles/Threads 列表视觉层次收敛：通过列表容器 inset + 行内 padding 抵消，让激活背景内缩而文本左边线保持稳定对齐。
 - Workspace 导航新增 `Skills` destination（位于 Sites 上方），并在主视图新增 Skills 页面 keep-alive 挂载。

@@ -9,12 +9,15 @@ import { Link } from '@tanstack/react-router';
 import { Menu, X, ChevronRight, ChevronDown } from 'lucide-react';
 import { Container } from './Container';
 import { Button, Skeleton, cn } from '@anyhunt/ui';
-import { useAuth } from '@/lib/auth-context';
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { DEVELOPER_PRODUCTS, DEVELOPER_RESOURCES, type NavMenuItem } from '@/lib/navigation';
+import { useAuthStore } from '@/stores/auth-store';
 
 export function Header() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = !isHydrated || !isBootstrapped;
   const { openAuthModal } = useAuthModal();
   const [developerMenuOpen, setDeveloperMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

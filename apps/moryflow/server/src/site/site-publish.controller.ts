@@ -55,7 +55,7 @@ interface PublishRequestBody {
 @ApiTags('Site')
 @ApiBearerAuth('bearer')
 @ApiCookieAuth('better-auth.session_token')
-@Controller('api/sites')
+@Controller({ path: 'sites', version: '1' })
 export class SitePublishController {
   private readonly logger = new Logger(SitePublishController.name);
 
@@ -63,7 +63,7 @@ export class SitePublishController {
 
   /**
    * 发布站点内容
-   * POST /api/sites/:id/publish
+   * POST /api/v1/sites/:id/publish
    *
    * 支持两种方式：
    * 1. JSON body 带 Base64 编码的文件（小文件）

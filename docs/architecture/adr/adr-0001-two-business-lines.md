@@ -19,7 +19,7 @@ status: active
 
 当前仓库的默认架构是 **两条互不互通的业务线**：
 
-1. Moryflow：`www.moryflow.com` / `app.moryflow.com`
+1. Moryflow：`www.moryflow.com` / `server.moryflow.com`
 2. Anyhunt Dev：`anyhunt.app` / `server.anyhunt.app` / `console.anyhunt.app` / `admin.anyhunt.app`
 
 两条业务线：

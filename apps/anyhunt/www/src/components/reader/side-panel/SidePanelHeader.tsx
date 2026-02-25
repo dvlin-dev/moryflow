@@ -6,8 +6,8 @@
 import { Link } from '@tanstack/react-router';
 import { Button } from '@anyhunt/ui';
 import { Plus, CircleUser } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
 import { SidePanelUserMenu } from './SidePanelUserMenu';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface SidePanelHeaderProps {
   pathname: string;
@@ -15,7 +15,8 @@ interface SidePanelHeaderProps {
 }
 
 export function SidePanelHeader({ pathname, search }: SidePanelHeaderProps) {
-  const { user, isAuthenticated } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <div className="flex items-center justify-between">

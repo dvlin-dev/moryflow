@@ -38,13 +38,13 @@ import {
 @ApiBearerAuth('bearer')
 @ApiCookieAuth('better-auth.session_token')
 @UseGuards(AuthGuard)
-@Controller('api/sync')
+@Controller({ path: 'sync', version: '1' })
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 
   /**
    * 计算同步差异
-   * POST /api/sync/diff
+   * POST /api/v1/sync/diff
    */
   @Post('diff')
   @ApiOperation({ summary: '计算同步差异' })
@@ -58,7 +58,7 @@ export class SyncController {
 
   /**
    * 提交同步结果
-   * POST /api/sync/commit
+   * POST /api/v1/sync/commit
    */
   @Post('commit')
   @ApiOperation({ summary: '提交同步结果' })
@@ -72,7 +72,7 @@ export class SyncController {
 
   /**
    * 获取 Vault 文件列表（支持分页）
-   * GET /api/sync/files/:vaultId?limit=100&offset=0
+   * GET /api/v1/sync/files/:vaultId?limit=100&offset=0
    */
   @Get('files/:vaultId')
   @ApiOperation({ summary: '获取 Vault 文件列表' })

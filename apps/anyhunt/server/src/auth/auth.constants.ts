@@ -10,7 +10,7 @@ export const REFRESH_TOKEN_TTL_SECONDS = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60;
 
 export const REFRESH_TOKEN_BYTES = 48;
 export const REFRESH_TOKEN_COOKIE_NAME = 'ah_refresh_token';
-export const REFRESH_TOKEN_COOKIE_PATH = '/api/auth';
+export const REFRESH_TOKEN_COOKIE_PATH = '/api/v1/auth';
 
 export const DEVICE_PLATFORM_HEADER = 'x-app-platform';
 export const DEVICE_PLATFORM_ALLOWLIST = new Set([

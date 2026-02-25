@@ -3,6 +3,8 @@
  * [EMITS]: onSuccess
  * [POS]: 设置弹窗 - Account 登录/注册面板（邮箱密码 + 注册验证码）
  * [UPDATE]: 2026-02-09 - 阻止 submit 事件冒泡到 SettingsDialog，避免设置弹窗意外保存/关闭
+ * [UPDATE]: 2026-02-24 - 移除嵌套 form，改为显式提交 + Enter 捕获，规避外层 Settings form 被意外触发
+ * [UPDATE]: 2026-02-24 - 登录仅按钮级 loading；验证码成功后直接 refresh 当前用户（不再二次登录）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -21,10 +23,9 @@ import {
   FieldSeparator,
 } from '@anyhunt/ui/components/field';
 import { Form, FormField, FormItem, FormControl, FormMessage } from '@anyhunt/ui/components/form';
-import { useAuth, signUp } from '@/lib/server';
+import { useAuth, signUpWithEmail } from '@/lib/server';
 import { OTPForm } from '@/components/auth';
 import { useTranslation } from '@/lib/i18n';
-import { parseAuthError } from '@anyhunt/api';
 
 type LoginPanelProps = {
   onSuccess?: () => void;
@@ -42,7 +43,7 @@ type AuthFormValues = {
  */
 export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const { t } = useTranslation('auth');
-  const { login, isLoading, refresh } = useAuth();
+  const { login, refresh } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showOTP, setShowOTP] = useState(false);
 
@@ -64,10 +65,10 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   const formProviderProps = form as unknown as React.ComponentProps<typeof Form>;
   const formControl = form.control as unknown as React.ComponentProps<typeof FormField>['control'];
 
-  const isSubmitting = isLoading || form.formState.isSubmitting;
+  const isSubmitting = form.formState.isSubmitting;
   const rootError = form.formState.errors.root?.message;
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  const submitAuth = form.handleSubmit(async (values) => {
     form.clearErrors('root');
 
     try {
@@ -82,18 +83,18 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
         return;
       }
 
-      const result = await signUp.email({
-        email: values.email.trim(),
-        password: values.password,
-        name: values.name.trim(),
-      });
+      const result = await signUpWithEmail(
+        values.email.trim(),
+        values.password,
+        values.name.trim()
+      );
 
       if (!result) {
         throw new Error('Sign up failed');
       }
 
       if (result.error) {
-        throw new Error(parseAuthError(result.error));
+        throw new Error(result.error.message || t('operationFailed'));
       }
 
       setShowOTP(true);
@@ -104,14 +105,30 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
   });
 
   const handleOTPSuccess = async () => {
-    const values = form.getValues();
-    await login(values.email.trim(), values.password);
-    await refresh();
+    const established = await refresh();
+    if (!established) {
+      throw new Error(t('operationFailed'));
+    }
     onSuccess?.();
   };
 
   const handleOTPBack = () => {
     setShowOTP(false);
+  };
+
+  const handleEnterSubmit = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void submitAuth();
   };
 
   const isFormValid = form.watch('email').trim() && form.watch('password').trim();
@@ -141,13 +158,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
       </div>
 
       <Form {...formProviderProps}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void handleSubmit(e);
-          }}
-        >
+        <div onKeyDownCapture={handleEnterSubmit}>
           <FieldGroup>
             {/* OAuth 登录按钮 - 暂时禁用 */}
             <Field>
@@ -257,7 +268,12 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
             {rootError && <p className="text-sm text-destructive">{rootError}</p>}
 
             <Field>
-              <Button type="submit" disabled={isSubmitting || !isFormValid} className="w-full">
+              <Button
+                type="button"
+                disabled={isSubmitting || !isFormValid}
+                className="w-full"
+                onClick={() => void submitAuth()}
+              >
                 {isSubmitting && (
                   <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-transparent" />
                 )}
@@ -290,7 +306,7 @@ export const LoginPanel = ({ onSuccess }: LoginPanelProps) => {
               </FieldDescription>
             </Field>
           </FieldGroup>
-        </form>
+        </div>
       </Form>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">

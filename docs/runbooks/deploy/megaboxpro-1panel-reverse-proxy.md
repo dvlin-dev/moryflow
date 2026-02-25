@@ -23,16 +23,16 @@ status: active
 
 ## Host → 上游（固定口径）
 
-| Host                           | Upstream                 |
-| ------------------------------ | ------------------------ |
-| `www.moryflow.com`             | `http://<4c6g-ip>:3102`  |
-| `docs.moryflow.com`            | `http://<4c6g-ip>:3103`  |
-| `app.moryflow.com`             | `http://<4c6g-ip>:3105`  |
-| `app.moryflow.com` 的 `/api/*` | `http://<4c6g-ip>:3100`  |
-| `anyhunt.app`                  | `http://<8c16g-ip>:3103` |
-| `server.anyhunt.app`           | `http://<8c16g-ip>:3100` |
-| `docs.anyhunt.app`             | `http://<8c16g-ip>:3110` |
-| `console.anyhunt.app`          | `http://<8c16g-ip>:3102` |
-| `admin.anyhunt.app`            | `http://<8c16g-ip>:3101` |
+| Host                              | Upstream                 |
+| --------------------------------- | ------------------------ |
+| `www.moryflow.com`                | `http://<4c6g-ip>:3102`  |
+| `docs.moryflow.com`               | `http://<4c6g-ip>:3103`  |
+| `server.moryflow.com`             | `http://<4c6g-ip>:3105`  |
+| `server.moryflow.com` 的 `/api/*` | `http://<4c6g-ip>:3100`  |
+| `anyhunt.app`                     | `http://<8c16g-ip>:3103` |
+| `server.anyhunt.app`              | `http://<8c16g-ip>:3100` |
+| `docs.anyhunt.app`                | `http://<8c16g-ip>:3110` |
+| `console.anyhunt.app`             | `http://<8c16g-ip>:3102` |
+| `admin.anyhunt.app`               | `http://<8c16g-ip>:3101` |
 
 > 端口与职责的“最终真相”仍以 `docs/architecture/domains-and-deployment.md` 为准；本 runbook 只负责“怎么配”。
