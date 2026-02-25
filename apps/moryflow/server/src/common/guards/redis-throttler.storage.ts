@@ -4,7 +4,7 @@
  * [POS]: 全局限流 Redis 存储实现（多实例共享计数）
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { ThrottlerStorage } from '@nestjs/throttler';
 import { RedisService } from '../../redis';
 
@@ -49,6 +49,13 @@ return { totalHits, counterTtlMs, 0, 0 }
 
 const toSeconds = (ms: number): number => Math.max(0, Math.ceil(ms / 1000));
 
+const createFailOpenRecord = (ttlMs: number) => ({
+  totalHits: 0,
+  timeToExpire: toSeconds(ttlMs),
+  isBlocked: false,
+  timeToBlockExpire: 0,
+});
+
 const resolvePositiveMs = (value: number, fallback: number): number => {
   if (Number.isFinite(value) && value > 0) {
     return Math.floor(value);
@@ -80,6 +87,8 @@ const toNumber = (value: unknown, fallback: number): number => {
 
 @Injectable()
 export class RedisThrottlerStorageService implements ThrottlerStorage {
+  private readonly logger = new Logger(RedisThrottlerStorageService.name);
+
   constructor(private readonly redis: RedisService) {}
 
   async increment(
@@ -100,15 +109,25 @@ export class RedisThrottlerStorageService implements ThrottlerStorage {
     const counterKey = `${THROTTLE_KEY_PREFIX}:${throttlerName}:${key}`;
     const blockedKey = `${counterKey}:blocked`;
     const client = this.redis.client;
-    const raw = await client.eval(
-      REDIS_THROTTLE_LUA,
-      REDIS_THROTTLE_EVAL_KEYS_COUNT,
-      counterKey,
-      blockedKey,
-      ttlMs,
-      limitValue,
-      blockDurationMs,
-    );
+    let raw: unknown;
+    try {
+      raw = await client.eval(
+        REDIS_THROTTLE_LUA,
+        REDIS_THROTTLE_EVAL_KEYS_COUNT,
+        counterKey,
+        blockedKey,
+        ttlMs,
+        limitValue,
+        blockDurationMs,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Redis throttler eval failed, fallback to fail-open: ${message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      return createFailOpenRecord(ttlMs);
+    }
     const [
       totalHitsRaw,
       timeToExpireMsRaw,

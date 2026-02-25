@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { RedisThrottlerStorageService } from './redis-throttler.storage';
 import type { RedisService } from '../../redis';
 
@@ -127,5 +128,35 @@ describe('RedisThrottlerStorageService', () => {
     }
 
     expect(blockedAt).toBe(301);
+  });
+
+  it('should fail open when redis eval throws', async () => {
+    const loggerErrorSpy = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    const client: MockRedisClient = {
+      eval: vi.fn().mockRejectedValue(new Error('redis unavailable')),
+    };
+    const service = createService(client);
+
+    try {
+      const result = await service.increment(
+        'api-v1-user-me',
+        60_000,
+        300,
+        60_000,
+        'default',
+      );
+
+      expect(result).toEqual({
+        totalHits: 0,
+        timeToExpire: 60,
+        isBlocked: false,
+        timeToBlockExpire: 0,
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      loggerErrorSpy.mockRestore();
+    }
   });
 });
