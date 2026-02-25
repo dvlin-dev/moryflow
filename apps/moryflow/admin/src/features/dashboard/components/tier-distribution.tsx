@@ -4,15 +4,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatNumber } from '@/lib/format';
+import type { UserTier } from '@/types/api';
 
-const TIERS = [
-  { key: 'free', label: '免费用户', color: 'bg-gray-500' },
-  { key: 'basic', label: '基础会员', color: 'bg-blue-500' },
-  { key: 'pro', label: '专业会员', color: 'bg-purple-500' },
-] as const;
+const TIER_KEYS: UserTier[] = ['free', 'starter', 'basic', 'pro'];
+const TIER_CONFIG: Record<UserTier, { label: string; color: string }> = {
+  free: { label: '免费用户', color: 'bg-gray-500' },
+  starter: { label: '入门会员', color: 'bg-green-500' },
+  basic: { label: '基础会员', color: 'bg-blue-500' },
+  pro: { label: '专业会员', color: 'bg-purple-500' },
+};
 
 interface TierDistributionProps {
-  usersByTier: Record<string, number> | undefined;
+  usersByTier: Record<UserTier, number> | undefined;
   isLoading: boolean;
 }
 
@@ -24,9 +27,9 @@ export function TierDistribution({ usersByTier, isLoading }: TierDistributionPro
           <Skeleton className="h-5 w-32" />
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {TIERS.map((tier) => (
-              <Skeleton key={tier.key} className="h-16 w-full" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {TIER_KEYS.map((tierKey) => (
+              <Skeleton key={tierKey} className="h-16 w-full" />
             ))}
           </div>
         </CardContent>
@@ -36,7 +39,7 @@ export function TierDistribution({ usersByTier, isLoading }: TierDistributionPro
 
   if (!usersByTier) return null;
 
-  const total = Object.values(usersByTier).reduce((sum, count) => sum + count, 0);
+  const total = TIER_KEYS.reduce((sum, tierKey) => sum + (usersByTier[tierKey] || 0), 0);
 
   return (
     <Card className="col-span-full">
@@ -44,12 +47,13 @@ export function TierDistribution({ usersByTier, isLoading }: TierDistributionPro
         <CardTitle className="text-sm font-medium">用户等级分布</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {TIERS.map((tier) => {
-            const count = usersByTier[tier.key] || 0;
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {TIER_KEYS.map((tierKey) => {
+            const tier = TIER_CONFIG[tierKey];
+            const count = usersByTier[tierKey] || 0;
             const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
             return (
-              <div key={tier.key} className="space-y-2">
+              <div key={tierKey} className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className={`h-3 w-3 rounded-full ${tier.color}`} />
                   <span className="text-sm text-muted-foreground">{tier.label}</span>
