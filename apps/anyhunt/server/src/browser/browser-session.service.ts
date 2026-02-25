@@ -217,7 +217,10 @@ export class BrowserSessionService {
     const navigationScopedHeaders: Record<string, string> = {
       ...(headers ?? {}),
     };
-    if (region) {
+    const hasExplicitAcceptLanguage = Object.keys(navigationScopedHeaders).some(
+      (header) => header.toLowerCase() === 'accept-language',
+    );
+    if (region && !hasExplicitAcceptLanguage) {
       // 通过 scoped headers 合并写入，避免覆盖会话已有全局 headers
       navigationScopedHeaders['Accept-Language'] = region.acceptLanguage;
     }

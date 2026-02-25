@@ -372,6 +372,42 @@ describe('BrowserSessionService.openUrl', () => {
     );
   });
 
+  it('keeps caller accept-language header when region is resolved', async () => {
+    const { service, deps } = createService();
+    deps.stealthRegion.resolveRegion.mockReturnValueOnce({
+      locale: 'ja-JP',
+      timezone: 'Asia/Tokyo',
+      acceptLanguage: 'ja-JP,ja;q=0.9,en;q=0.8',
+    });
+    deps.networkInterceptor.getScopedHeaders.mockReturnValueOnce([
+      {
+        origin: 'example.com',
+        headers: { Authorization: 'Bearer existing' },
+      },
+    ]);
+
+    await service.openUrl('user_1', 'bs_test', {
+      url: 'https://example.com/path',
+      waitUntil: 'domcontentloaded',
+      timeout: 2000,
+      headers: {
+        'accept-language': 'fr-FR,fr;q=0.9',
+        'X-Trace-Id': 'trace-2',
+      },
+    });
+
+    expect(deps.networkInterceptor.setScopedHeaders).toHaveBeenCalledWith(
+      'bs_test',
+      expect.any(Object),
+      'https://example.com/path',
+      {
+        Authorization: 'Bearer existing',
+        'accept-language': 'fr-FR,fr;q=0.9',
+        'X-Trace-Id': 'trace-2',
+      },
+    );
+  });
+
   it('retries navigation when risk signals are detected and records recovery telemetry', async () => {
     const { service, deps } = createService();
     deps.riskDetectionService.detect
