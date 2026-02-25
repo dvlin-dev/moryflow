@@ -35,8 +35,8 @@ export const UserProfile = ({ user }: UserProfileProps) => {
     .map((s) => s[0].toUpperCase())
     .join('');
 
-  // 是否可以升级（非 license 用户）
-  const canUpgrade = user.subscriptionTier !== 'license' && user.subscriptionTier !== 'pro';
+  // 是否可以升级（非 pro 用户）
+  const canUpgrade = user.subscriptionTier !== 'pro';
 
   return (
     <div className="space-y-6">

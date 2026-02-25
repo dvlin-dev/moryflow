@@ -24,11 +24,11 @@ import {
 } from '@/components/ui/icons';
 
 // 会员等级配置
-type TierKey = 'free' | 'basic' | 'pro' | 'license';
+type TierKey = 'free' | 'basic' | 'pro';
 
 interface TierConfig {
   icon: AppIcon;
-  colorKey: 'tierFree' | 'tierBasic' | 'tierPro' | 'tierLicense';
+  colorKey: 'tierFree' | 'tierBasic' | 'tierPro';
   bgClass: string;
   textClass: string;
 }
@@ -51,12 +51,6 @@ const TIER_CONFIG: Record<TierKey, TierConfig> = {
     colorKey: 'tierPro',
     bgClass: 'bg-tier-pro-bg',
     textClass: 'text-tier-pro',
-  },
-  license: {
-    icon: CrownIcon,
-    colorKey: 'tierLicense',
-    bgClass: 'bg-tier-license-bg',
-    textClass: 'text-tier-license',
   },
 };
 
