@@ -8,7 +8,6 @@
 import { PageHeader } from '@/components/shared';
 import { useStats, useHealth, StatsCard, HealthCard, TierDistribution } from '@/features/dashboard';
 import { useStorageStats, formatBytes } from '@/features/storage';
-import type { SystemStats } from '@/types/api';
 import {
   Activity,
   Cloud,
@@ -19,13 +18,7 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
-
-export function getPaidUsers(usersByTier?: SystemStats['usersByTier']): number {
-  if (!usersByTier) {
-    return 0;
-  }
-  return (usersByTier.starter || 0) + (usersByTier.basic || 0) + (usersByTier.pro || 0);
-}
+import { getPaidUsers } from './dashboard-metrics';
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useStats();

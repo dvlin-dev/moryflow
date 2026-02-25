@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPaidUsers } from './DashboardPage';
+import { getPaidUsers } from './dashboard-metrics';
 
 describe('getPaidUsers', () => {
   it('should include starter/basic/pro in paid users total', () => {
