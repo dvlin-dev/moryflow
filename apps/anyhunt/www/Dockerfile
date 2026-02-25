@@ -13,7 +13,7 @@ WORKDIR /app
 # =============================================================================
 FROM base AS deps
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
 COPY packages/api/package.json ./packages/api/
 COPY packages/sync/package.json ./packages/sync/
@@ -29,13 +29,8 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hois
 FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/anyhunt/www/node_modules ./apps/anyhunt/www/node_modules
-COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
-COPY --from=deps /app/packages/sync/node_modules ./packages/sync/node_modules
-COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
-COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 COPY apps/anyhunt/www ./apps/anyhunt/www
 COPY packages/api ./packages/api
 COPY packages/sync ./packages/sync
@@ -78,7 +73,6 @@ FROM node:22-slim AS runner
 WORKDIR /app
 
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/apps/anyhunt/www/node_modules ./apps/anyhunt/www/node_modules
 COPY --from=builder /app/packages/types/dist ./packages/types/dist
 COPY --from=builder /app/packages/types/package.json ./packages/types/
 COPY --from=builder /app/packages/sync/dist ./packages/sync/dist

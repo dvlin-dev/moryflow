@@ -6,12 +6,12 @@
 FROM node:20-alpine AS builder
 
 # 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 WORKDIR /app
 
 # 复制依赖文件
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json .npmrc ./
 COPY apps/moryflow/admin/package.json ./apps/moryflow/admin/
 COPY packages/api/package.json ./packages/api/
 COPY packages/model-registry-data/package.json ./packages/model-registry-data/

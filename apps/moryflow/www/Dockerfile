@@ -11,7 +11,7 @@ WORKDIR /app
 
 # 依赖安装阶段
 FROM base AS deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json .npmrc ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json .npmrc ./
 COPY apps/moryflow/www/package.json ./apps/moryflow/www/
 COPY packages/api/package.json ./packages/api/
 COPY packages/sync/package.json ./packages/sync/
@@ -27,11 +27,6 @@ FROM base AS builder
 
 # 复制依赖
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/moryflow/www/node_modules ./apps/moryflow/www/node_modules
-COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
-COPY --from=deps /app/packages/sync/node_modules ./packages/sync/node_modules
-COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
-COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
 # 复制源代码
 COPY apps/moryflow/www ./apps/moryflow/www
@@ -40,7 +35,7 @@ COPY packages/sync ./packages/sync
 COPY packages/types ./packages/types
 COPY packages/ui ./packages/ui
 COPY tooling/typescript-config ./tooling/typescript-config
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json .npmrc ./
 
 # 构建 api 依赖链（types -> sync -> api）
 WORKDIR /app/packages/types

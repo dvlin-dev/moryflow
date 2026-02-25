@@ -8,7 +8,7 @@ RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 COPY apps/anyhunt/admin/www/package.json ./apps/anyhunt/admin/www/
 COPY packages/api/package.json ./packages/api/
 COPY packages/sync/package.json ./packages/sync/
@@ -28,7 +28,7 @@ COPY packages/ui ./packages/ui
 COPY packages/tiptap ./packages/tiptap
 COPY tooling/typescript-config ./tooling/typescript-config
 COPY tooling/eslint-config ./tooling/eslint-config
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 
 WORKDIR /app/packages/types
 RUN pnpm build
