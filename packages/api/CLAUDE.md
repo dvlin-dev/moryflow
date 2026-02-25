@@ -34,6 +34,7 @@ const client = createApiClient({
 
 ## 最近变更
 
+- 修复包入口声明：CJS 导出统一指向 `.cjs` 产物（`main`/`exports.require`），避免 Node 运行期解析到不存在的 `dist/*.js` 报 `MODULE_NOT_FOUND`
 - 增加 `onUnauthorized` 重试回调（用于刷新 access）
 - 会员展示文案统一为英文，移除未使用的会员比较/错误映射导出
 - `MEMBERSHIP_API_URL` 默认值对齐 `server.moryflow.com`
