@@ -53,7 +53,7 @@ www/
 │   └── router.tsx            # 路由配置
 ├── server/
 │   └── routes/               # Nitro 服务器路由
-│       ├── api/health.ts     # 健康检查
+│       ├── api/v1/health.ts  # 健康检查
 │       ├── robots.txt.ts     # Robots
 │       └── sitemap.xml.ts    # Sitemap
 ├── public/                   # 静态资源
@@ -125,6 +125,7 @@ docker run -p 3000:3000 moryflow-www
 
 ## 近期变更
 
+- Nginx 健康检查探针路径对齐为 `/api/v1/health`，避免与 Nitro 路由版本前缀不一致
 - 官网图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - 健康检查迁移到 Nitro `server/routes`，并补齐 robots/sitemap/health 单测
 - SEO 主域名统一为 `https://www.moryflow.com`，OG/JSON-LD 资源对齐
