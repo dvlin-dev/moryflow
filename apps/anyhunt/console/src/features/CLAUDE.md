@@ -60,6 +60,10 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Playground 模块 B-4~B-6 收敛完成：统一 API Key 选择逻辑到 `resolveActiveApiKeySelection`，新增 `PlaygroundPageShell` 并接入 `Map/Search/Extract` 页面，`ApiKeySelector`/`CrawlForm`/`Map/Search` 页面残留状态三元改为命名片段渲染
+- Extract Playground B-3 结构收敛：`ExtractPlaygroundPage` 拆分为容器层（页面）+ 请求区组件（`extract-request-card.tsx`）+ 结果区组件（`extract-result-panel.tsx`）
+- Scrape Playground B-2 结构收敛：`scrape-result.tsx` 拆分为容器层（`scrape-result.tsx`）+ 视图模型（`scrape-result-view-model.ts`）+ 卡片片段（`scrape-result-cards.tsx`）+ 内容 Tabs（`scrape-result-content-tabs.tsx`），移除默认 Tab 的链式三元
+- Scrape Playground B-1 结构收敛：`scrape-form.tsx` 拆分为容器层（`scrape-form.tsx`）+ 请求映射（`scrape-form-request-mapper.ts`）+ 分段 UI（`scrape-form-sections.tsx`、`scrape-form-advanced-sections.tsx`、`scrape-form-screenshot-section.tsx`），并将折叠状态收敛为对象模型
 - 状态渲染一致性收敛：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 的多状态 UI 改为“状态片段 + 渲染方法（`renderByState/switch`）”，清理状态渲染型三元表达式
 - Webhooks 视图渲染收敛：`webhook-list-card` 将 loading/missing-key/empty/ready 四态拆为独立 UI 片段，并通过中间 `renderContentByState` 统一调度，避免链式三元降低可读性
 - Webhooks/Settings/API Keys 结构收敛：Webhooks 新增 `resolveActiveApiKeySelection`（active key only）并补齐回归测试；`WebhooksPage` 拆分 `WebhookApiKeyCard`/`WebhookListCard`，dialog 状态改为判别式；`settings`、`api-keys`、`webhooks` 表单统一迁移到 `react-hook-form + zod/v3`，新增 `schemas.ts` 与 `webhook-form-fields.tsx`

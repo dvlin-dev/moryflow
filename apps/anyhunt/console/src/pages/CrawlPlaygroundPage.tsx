@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
-import { useApiKeys, maskApiKey } from '@/features/api-keys';
+import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
 import { CrawlForm, CrawlResult, useCrawl } from '@/features/crawl-playground';
 import { CodeExample } from '@/features/playground-shared';
 import { FETCHX_API } from '@/lib/api-paths';
@@ -13,14 +13,13 @@ import type { CrawlRequest, CrawlResponse } from '@/features/playground-shared';
 
 export default function CrawlPlaygroundPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
+  const [selectedKeyId, setSelectedKeyId] = useState('');
   const [lastRequest, setLastRequest] = useState<CrawlRequest | null>(null);
 
-  // 如果用户未手动选择，使用第一个活跃的 API Key
-  const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
-  const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.key ?? '';
-  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedKeyId
+  );
 
   const { crawl, isLoading, data, error, reset } = useCrawl(apiKeyValue, {
     onSuccess: (result: CrawlResponse) => {

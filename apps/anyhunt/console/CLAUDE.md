@@ -8,6 +8,10 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Extract/Map/Search/Crawl/Scrape Playground B-4~B-6 修复完成：统一复用 `resolveActiveApiKeySelection`（active-key only），新增共享页面壳层 `PlaygroundPageShell`（Map/Search/Extract 接入），并完成模块级 `lint/typecheck/test:unit`
+- Extract Playground B-3 修复完成：`ExtractPlaygroundPage` 拆分为容器 + 请求区组件 + 结果区组件，并通过 `lint/typecheck/test:unit`
+- Scrape Playground B-2 修复完成：`ScrapeResult` 拆分为容器 + cards + tabs + view-model，移除默认 Tab 链式三元并通过 `lint/typecheck/test:unit`
+- Scrape Playground B-1 修复完成：`ScrapeForm` 从单文件 519 行拆分为容器 + mapper + sections，折叠状态改为对象化管理，提升可维护性并通过 `lint/typecheck/test:unit`
 - 组件状态渲染规范落地：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 等按“状态片段化 + `renderByState/switch`”重构，移除状态渲染型三元表达式
 - Webhooks 组件可读性优化：`webhook-list-card` 将四种页面状态（loading/no-key/empty/ready）拆分为独立 UI 片段，并通过中间方法统一渲染，移除链式三元
 - Webhooks/Settings/API Keys 组件优化：`WebhooksPage` 拆分为 key/list 子组件并改为判别式 dialog 状态；修复 Webhook API Key 失效选中漏洞（仅允许 active key）；`settings`、`api-keys create dialog`、`webhooks create/edit dialog` 统一迁移到 `react-hook-form + zod/v3`；新增 `webhooks/utils.test.ts` 回归测试并通过 `typecheck/test:unit`
