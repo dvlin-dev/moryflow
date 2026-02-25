@@ -12,7 +12,6 @@ import { CreditModule } from './credit';
 import { UserModule } from './user';
 import { PaymentModule } from './payment';
 import { AdminModule } from './admin';
-import { LicenseModule } from './license';
 import { AiProxyModule } from './ai-proxy';
 import { AiImageModule } from './ai-image';
 import { AiAdminModule } from './ai-admin';
@@ -81,7 +80,6 @@ import {
     UserModule,
     PaymentModule,
     AdminModule,
-    LicenseModule,
     AiProxyModule,
     AiImageModule,
     AiAdminModule,

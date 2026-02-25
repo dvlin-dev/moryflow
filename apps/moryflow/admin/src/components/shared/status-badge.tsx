@@ -39,8 +39,3 @@ export const SUBSCRIPTION_STATUS_CONFIG: Record<string, StatusConfig> = {
   scheduled_cancel: { label: '待取消', variant: 'outline' },
   trialing: { label: '试用中', variant: 'outline' },
 };
-
-export const LICENSE_STATUS_CONFIG: Record<string, StatusConfig> = {
-  active: { label: '有效', variant: 'default' },
-  revoked: { label: '已撤销', variant: 'destructive' },
-};

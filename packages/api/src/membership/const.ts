@@ -47,7 +47,6 @@ export const TIER_DISPLAY_NAMES: Record<UserTier, string> = {
   starter: 'Starter',
   basic: 'Basic',
   pro: 'Pro',
-  license: 'Lifetime',
 };
 
 /** 会员等级颜色（CSS class） */
@@ -56,7 +55,6 @@ export const TIER_COLORS: Record<UserTier, string> = {
   starter: 'text-green-500',
   basic: 'text-blue-500',
   pro: 'text-purple-500',
-  license: 'text-amber-500',
 };
 
 /** 会员等级详细信息配置 */
@@ -101,11 +99,6 @@ const TIER_INFO_CONFIG: Record<UserTier, TierInfo> = {
       'Priority support',
     ],
     creditsPerMonth: 20000,
-  },
-  license: {
-    displayName: 'Lifetime',
-    features: ['Lifetime access', 'All AI models', 'Dedicated support', 'All advanced features'],
-    creditsPerMonth: 0,
   },
 };
 

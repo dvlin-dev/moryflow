@@ -62,8 +62,6 @@
       --color-tier-basic-bg: rgba(59, 130, 246, 0.15);
       --color-tier-pro: #8b5cf6;
       --color-tier-pro-bg: rgba(139, 92, 246, 0.15);
-      --color-tier-license: #f59e0b;
-      --color-tier-license-bg: rgba(245, 158, 11, 0.15);
 
       /* Chart colors */
       --color-chart-1: #e45a3b;
@@ -124,8 +122,6 @@
       --color-tier-basic-bg: rgba(96, 165, 250, 0.2);
       --color-tier-pro: #a78bfa;
       --color-tier-pro-bg: rgba(167, 139, 250, 0.2);
-      --color-tier-license: #fbbf24;
-      --color-tier-license-bg: rgba(251, 191, 36, 0.2);
 
       /* Chart colors */
       --color-chart-1: #3b82f6;

@@ -28,7 +28,6 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 // 公开 API 模块
 import { HealthModule } from './health';
 import { AuthModule } from './auth';
-import { LicenseModule } from './license';
 import { PaymentModule } from './payment';
 import { AiProxyModule } from './ai-proxy';
 import { AiImageModule } from './ai-image';
@@ -57,7 +56,6 @@ import { VectorizeModule } from './vectorize';
 const PUBLIC_API_MODULES = [
   HealthModule,
   AuthModule,
-  LicenseModule,
   PaymentModule,
   AiProxyModule,
   AiImageModule,

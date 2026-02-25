@@ -9,8 +9,6 @@ import { randomUUID } from 'crypto';
 import type {
   User,
   Session,
-  License,
-  LicenseActivation,
   Subscription,
   SubscriptionCredits,
   PurchasedCredits,
@@ -22,9 +20,6 @@ import type {
 } from '../../generated/prisma/client';
 import {
   SubscriptionTier,
-  LicenseStatus,
-  LicenseTier,
-  LicenseActivationStatus,
   SubscriptionStatus,
   PaymentStatus,
   ProductType,
@@ -63,42 +58,6 @@ export function createMockSession(overrides: Partial<Session> = {}): Session {
     userAgent: null,
     createdAt: now,
     updatedAt: now,
-    ...overrides,
-  };
-}
-
-/**
- * License 测试数据工厂
- */
-export function createMockLicense(overrides: Partial<License> = {}): License {
-  return {
-    id: randomUUID(),
-    userId: randomUUID(),
-    licenseKey: `LIC-${randomUUID().slice(0, 8).toUpperCase()}`,
-    orderId: `order_${randomUUID().slice(0, 8)}`,
-    tier: LicenseTier.standard,
-    status: LicenseStatus.active,
-    activationCount: 0,
-    activationLimit: 2,
-    createdAt: new Date(),
-    ...overrides,
-  };
-}
-
-/**
- * License Activation 测试数据工厂
- */
-export function createMockLicenseActivation(
-  overrides: Partial<LicenseActivation> = {},
-): LicenseActivation {
-  return {
-    id: randomUUID(),
-    licenseId: randomUUID(),
-    instanceId: randomUUID(),
-    instanceName: 'Test Device',
-    status: LicenseActivationStatus.active,
-    activatedAt: new Date(),
-    deactivatedAt: null,
     ...overrides,
   };
 }
@@ -295,12 +254,4 @@ export function createMockCurrentUser(
 }
 
 // Re-export enums for convenience
-export {
-  SubscriptionTier,
-  LicenseStatus,
-  LicenseTier,
-  LicenseActivationStatus,
-  SubscriptionStatus,
-  PaymentStatus,
-  ProductType,
-};
+export { SubscriptionTier, SubscriptionStatus, PaymentStatus, ProductType };

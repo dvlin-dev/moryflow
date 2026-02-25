@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Coins, CreditCard, Key, SquareArrowUpRight, Loader } from 'lucide-react';
+import { Coins, CreditCard, SquareArrowUpRight, Loader } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { ADMIN_API } from '@/lib/api-paths';
 
@@ -69,24 +69,6 @@ const PRODUCTS = {
       credits: 50000,
     },
   ],
-  licenses: [
-    {
-      id: 'license_standard',
-      envKey: 'CREEM_PRODUCT_LICENSE_STANDARD',
-      name: 'License Standard',
-      description: '标准永久授权 - 2 台设备',
-      price: 49,
-      devices: 2,
-    },
-    {
-      id: 'license_pro',
-      envKey: 'CREEM_PRODUCT_LICENSE_PRO',
-      name: 'License Pro',
-      description: '专业永久授权 - 5 台设备',
-      price: 99,
-      devices: 5,
-    },
-  ],
 };
 
 interface ProductCardProps {
@@ -101,7 +83,7 @@ interface ProductCardProps {
     tier?: string;
     devices?: number;
   };
-  type: 'subscription' | 'credits' | 'license';
+  type: 'subscription' | 'credits';
   testUserId: string;
   onCheckout: (productEnvKey: string) => Promise<void>;
   isLoading: boolean;
@@ -114,8 +96,6 @@ function ProductCard({ product, type, testUserId, onCheckout, isLoading }: Produ
         return <CreditCard className="h-5 w-5" />;
       case 'credits':
         return <Coins className="h-5 w-5" />;
-      case 'license':
-        return <Key className="h-5 w-5" />;
     }
   };
 
@@ -125,8 +105,6 @@ function ProductCard({ product, type, testUserId, onCheckout, isLoading }: Produ
         return <Badge variant="default">订阅</Badge>;
       case 'credits':
         return <Badge variant="secondary">积分包</Badge>;
-      case 'license':
-        return <Badge className="bg-yellow-500">永久授权</Badge>;
     }
   };
 
@@ -273,7 +251,6 @@ export default function PaymentTestPage() {
         <TabsList>
           <TabsTrigger value="subscriptions">订阅产品</TabsTrigger>
           <TabsTrigger value="credits">积分包</TabsTrigger>
-          <TabsTrigger value="licenses">永久授权</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscriptions" className="mt-4">
@@ -305,21 +282,6 @@ export default function PaymentTestPage() {
             ))}
           </div>
         </TabsContent>
-
-        <TabsContent value="licenses" className="mt-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {PRODUCTS.licenses.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                type="license"
-                testUserId={testUserId}
-                onCheckout={handleCheckout}
-                isLoading={loadingProduct === product.envKey}
-              />
-            ))}
-          </div>
-        </TabsContent>
       </Tabs>
 
       {/* 使用说明 */}
@@ -332,7 +294,7 @@ export default function PaymentTestPage() {
           <p>2. 在上方输入框中粘贴用户 ID</p>
           <p>3. 点击任意产品的"测试购买"按钮</p>
           <p>4. 在新窗口中完成 Creem 测试支付（使用测试卡号：4242 4242 4242 4242）</p>
-          <p>5. 支付完成后，检查用户的等级、积分或 License 状态是否正确更新</p>
+          <p>5. 支付完成后，检查用户的等级或积分状态是否正确更新</p>
           <p className="text-yellow-600 dark:text-yellow-400 mt-4">
             ⚠️ 确保后端已配置 CREEM_TEST_MODE=true 和正确的产品 ID
           </p>

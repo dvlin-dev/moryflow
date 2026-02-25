@@ -20,7 +20,6 @@ enum SubscriptionTier {
   starter
   basic
   pro
-  license
 }
 
 enum SubscriptionStatus {
@@ -42,22 +41,6 @@ enum PaymentStatus {
 enum ProductType {
   subscription
   credits
-  license
-}
-
-enum LicenseStatus {
-  active
-  revoked
-}
-
-enum LicenseTier {
-  standard
-  pro
-}
-
-enum LicenseActivationStatus {
-  active
-  deactivated
 }
 
 // ==========================================
@@ -83,7 +66,6 @@ model User {
   purchasedCredits    PurchasedCredits[]
   subscription        Subscription?
   paymentOrders       PaymentOrder[]
-  licenses            License[]
   activityLogs        ActivityLog[]        @relation("UserActivityLogs")
   targetActivityLogs  ActivityLog[]        @relation("TargetActivityLogs")
   creditDebt          CreditDebt?
@@ -287,44 +269,6 @@ model PaymentOrder {
   @@index([status])
   @@index([productType])
   @@index([createdAt])
-}
-
-// ==========================================
-// License 表
-// ==========================================
-
-model License {
-  id              String        @id @default(cuid())
-  userId          String
-  licenseKey      String        @unique
-  orderId         String
-  tier            LicenseTier
-  status          LicenseStatus
-  activationCount Int           @default(0)
-  activationLimit Int
-  createdAt       DateTime      @default(now())
-
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activations LicenseActivation[]
-
-  @@index([userId])
-  @@index([status])
-}
-
-model LicenseActivation {
-  id            String                  @id @default(cuid())
-  licenseId     String
-  instanceName  String
-  instanceId    String
-  status        LicenseActivationStatus
-  activatedAt   DateTime                @default(now())
-  deactivatedAt DateTime?
-
-  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
-
-  @@unique([licenseId, instanceId])
-  @@index([licenseId])
-  @@index([status])
 }
 
 // ==========================================

@@ -46,8 +46,6 @@ interface ProductInfo {
   priceUsd: number;
   credits?: number;
   billingCycle?: string;
-  licenseTier?: string;
-  activationLimit?: number;
 }
 
 /** 创建 Checkout 请求 */
@@ -87,8 +85,6 @@ export class PaymentController {
         priceUsd: config.priceUsd,
         credits: config.credits,
         billingCycle: config.billingCycle,
-        licenseTier: config.licenseTier,
-        activationLimit: config.activationLimit,
       });
     });
 

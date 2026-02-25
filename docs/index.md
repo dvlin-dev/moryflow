@@ -32,6 +32,7 @@ status: active
 - Moryflow Server 分层限流方案（Auth + 全局，Redis 存储，active）：`docs/architecture/auth/auth-and-global-rate-limit-defense-plan.md`（2026-02-25：Auth `60s/20` + 全局 `60s/300` 已落地，补齐 Better Auth `/**` 规则与 Redis Lua 原子限流实现对齐；Step 1~5 完成，Step 6 灰度待执行）
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
+- Moryflow License 全量删除影响评估与执行清单（confirmed）：`docs/moryflow-license-removal-impact.md`（2026-02-25：零兼容、零迁移、一次性全删）
 - Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`
 - Anyhunt 统一日志系统方案（用户行为 + 错误排查 + IP 监控）：`docs/architecture/anyhunt-request-log-module-plan.md`
 - Anyhunt app/public/apikey 通道路由规范（implemented）：`docs/architecture/anyhunt-api-channel-routing.md`

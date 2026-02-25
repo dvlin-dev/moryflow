@@ -46,7 +46,6 @@ export const CreemWebhookSchema = z.object({
     metadata: z.record(z.string(), z.unknown()).optional(),
     current_period_start_date: z.string().optional(),
     current_period_end_date: z.string().optional(),
-    license_key: z.string().optional(),
   }),
 });
 
@@ -97,7 +96,7 @@ export type SubscriptionPausedParams = z.infer<
 /**
  * 产品类型
  */
-export const ProductTypeSchema = z.enum(['credits', 'license']);
+export const ProductTypeSchema = z.enum(['credits']);
 export type ProductType = z.infer<typeof ProductTypeSchema>;
 
 /**
@@ -111,7 +110,6 @@ export const CheckoutCompletedParamsSchema = z.object({
   amount: z.number(),
   currency: z.string(),
   productType: ProductTypeSchema,
-  licenseKey: z.string().optional(),
 });
 
 export type CheckoutCompletedParams = z.infer<

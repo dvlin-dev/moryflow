@@ -32,8 +32,6 @@ export interface MockPrismaService {
   session: ModelMock;
   account: ModelMock;
   verification: ModelMock;
-  license: ModelMock;
-  licenseActivation: ModelMock;
   subscription: ModelMock;
   subscriptionCredits: ModelMock;
   purchasedCredits: ModelMock;
@@ -86,8 +84,6 @@ export function createPrismaMock(): MockPrismaService {
     session: createModelMock(),
     account: createModelMock(),
     verification: createModelMock(),
-    license: createModelMock(),
-    licenseActivation: createModelMock(),
     subscription: createModelMock(),
     subscriptionCredits: createModelMock(),
     purchasedCredits: createModelMock(),

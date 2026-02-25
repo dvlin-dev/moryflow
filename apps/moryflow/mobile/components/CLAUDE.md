@@ -76,6 +76,7 @@ const colors = useThemeColors()
 
 ## 近期变更
 
+- MembershipCard 修复 starter 等级展示：从共享 tier 配置读取，避免 starter 回退为 free 样式
 - Chat 输入工具栏修复 mode 解构，模式切换确认弹窗稳定可用
 - Chat 输入工具栏新增会话模式切换与全权限确认弹窗
 - Chat hook 发送前加入 compaction 预处理，避免消息列表与历史错位

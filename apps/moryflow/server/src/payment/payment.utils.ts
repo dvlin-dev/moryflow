@@ -42,16 +42,11 @@ export function resolveSuccessUrl(
 export function resolveCheckoutProductType(
   productId: string,
   creditPacks: Record<string, number>,
-  licenseConfig: Record<
-    string,
-    { tier: 'standard' | 'pro'; activationLimit: number }
-  >,
-): 'credits' | 'license' {
+): 'credits' {
   if (!productId) {
     throw new Error('Missing productId');
   }
 
-  if (licenseConfig[productId]) return 'license';
   if (creditPacks[productId]) return 'credits';
 
   throw new Error('Unknown productId');
