@@ -8,6 +8,7 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 
 ## 最近更新
 
+- Stealth 反检测能力落地：26 个 init-script 补丁、CDP UA/元数据覆写、Chromium 反检测启动参数、URL TLD 区域信号对齐、风险信号检测、Bezier 鼠标曲线 + 打字抖动；BrowserPool/ActionHandler/BrowserSessionService 接入；详见 `stealth/` 和 `runtime/human-behavior.service.ts`、`runtime/risk-detection.service.ts`
 - PR 复审修复：`openUrl` 在重定向后按 `finalUrl` 重新执行站点策略校验；导航配额按“每次重试尝试”计费（非每次 openUrl 一次）
 - 合规治理复审加固：`openUrl` 先校验会话归属再申请 host 配额；风险成功事件 `class='none'`；限流/节奏内存状态新增 TTL+容量清理；风险摘要无导航数据时成功率返回 `0` 且 TopN 仅统计风险事件
 - 合规自动化风险治理（Step 0~7）落地：新增策略匹配、host 级速率/并发预算、动作节奏、导航分类重试、统一遥测与 `/session/:id/risk` 诊断接口
@@ -47,27 +48,29 @@ Browser 模块负责 Playwright 浏览器池、会话管理、快照与动作执
 - **Profile 持久化依赖 R2 配置**：未配置 R2 时禁用 Profile 保存/加载
 - **上传限制**：`upload` 动作仅接受 Base64 payload，禁止服务器本地路径
 - **下载限制**：受 `BROWSER_DOWNLOAD_MAX_MB` 约束，超限直接失败并清理临时文件
-- **合规边界**：仅允许“合规自动化 + 风险治理”，禁止伪装真人与绕过验证码/反爬机制
+- **Stealth 无条件启用**：所有 stealth 层（启动参数/CDP 覆写/init-scripts/行为人性化）默认全部启用，无运行时开关
+- **合规边界**：允许反检测指纹伪装以提升可用性；禁止验证码自动破解（CAPTCHA solving）
 
 ## File Structure
 
-| File/Dir                        | Description                           |
-| ------------------------------- | ------------------------------------- |
-| `browser-pool.ts`               | Playwright 浏览器池                   |
-| `browser-session.service.ts`    | L2 API 核心聚合服务                   |
-| `browser-session.controller.ts` | L2 API HTTP 入口                      |
-| `session/`                      | SessionManager + BrowserSession 结构  |
-| `snapshot/`                     | 页面快照与 refs 管理                  |
-| `handlers/`                     | 动作执行（click/fill/scroll/wait 等） |
-| `ports/`                        | Agent 端口（BrowserAgentPort）        |
-| `cdp/`                          | CDP 连接                              |
-| `network/`                      | 网络拦截                              |
-| `policy/`                       | 站点策略 + host 级速率/并发预算       |
-| `runtime/`                      | 动作节奏与导航重试分类                |
-| `observability/`                | 风险遥测契约与聚合摘要                |
-| `diagnostics/`                  | console/pageerror/trace               |
-| `streaming/`                    | WebSocket screencast + 输入注入       |
-| `persistence/`                  | storage/profile 持久化                |
+| File/Dir                        | Description                              |
+| ------------------------------- | ---------------------------------------- |
+| `browser-pool.ts`               | Playwright 浏览器池                      |
+| `browser-session.service.ts`    | L2 API 核心聚合服务                      |
+| `browser-session.controller.ts` | L2 API HTTP 入口                         |
+| `session/`                      | SessionManager + BrowserSession 结构     |
+| `snapshot/`                     | 页面快照与 refs 管理                     |
+| `handlers/`                     | 动作执行（click/fill/scroll/wait 等）    |
+| `ports/`                        | Agent 端口（BrowserAgentPort）           |
+| `cdp/`                          | CDP 连接                                 |
+| `network/`                      | 网络拦截                                 |
+| `policy/`                       | 站点策略 + host 级速率/并发预算          |
+| `stealth/`                      | 反检测核心（补丁/CDP/启动参数/区域）     |
+| `runtime/`                      | 动作节奏、导航重试、风险检测、行为人性化 |
+| `observability/`                | 风险遥测契约与聚合摘要                   |
+| `diagnostics/`                  | console/pageerror/trace                  |
+| `streaming/`                    | WebSocket screencast + 输入注入          |
+| `persistence/`                  | storage/profile 持久化                   |
 
 ## Ports
 

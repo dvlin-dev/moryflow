@@ -27,12 +27,25 @@ export {
   ActionPacingService,
   NavigationRetryService,
   BrowserNavigationError,
+  RiskDetectionService,
+  HumanBehaviorService,
   type BeforeActionInput,
   type BeforeActionResult,
   type NavigationFailureReason,
   type NavigationRetryInput,
   type NavigationResultCheckInput,
 } from './runtime';
+
+// Stealth
+export {
+  StealthCdpService,
+  StealthRegionService,
+  buildStealthScript,
+  STEALTH_CHROMIUM_ARGS,
+  type StealthScriptOptions,
+  type RiskSignal,
+  type RegionSignal,
+} from './stealth';
 export { BrowserAgentPortService } from './ports';
 export type {
   BrowserAgentPort,

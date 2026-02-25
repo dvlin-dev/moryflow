@@ -18,3 +18,7 @@ export {
   type NavigationRetryInput,
   type NavigationResultCheckInput,
 } from './navigation-retry.service';
+
+export { RiskDetectionService } from './risk-detection.service';
+
+export { HumanBehaviorService } from './human-behavior.service';
