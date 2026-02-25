@@ -125,4 +125,29 @@ describe('console auth store', () => {
       accessTokenExpiresAt: null,
     });
   });
+
+  it('rehydrate 回调可通过 store setState 应用补丁', () => {
+    useAuthStore.setState({
+      accessToken: 'access',
+      accessTokenExpiresAt: pastIso(1000),
+      refreshToken: 'refresh',
+      refreshTokenExpiresAt: futureIso(24 * 60 * 60 * 1000),
+      isAuthenticated: true,
+    });
+
+    const state = useAuthStore.getState();
+    reconcileRehydratedAuthState(
+      {
+        accessToken: state.accessToken,
+        accessTokenExpiresAt: state.accessTokenExpiresAt,
+        refreshToken: state.refreshToken,
+        refreshTokenExpiresAt: state.refreshTokenExpiresAt,
+        clearSession: state.clearSession,
+      },
+      (partial) => useAuthStore.setState(partial)
+    );
+
+    expect(useAuthStore.getState().accessToken).toBeNull();
+    expect(useAuthStore.getState().refreshToken).toBe('refresh');
+  });
 });

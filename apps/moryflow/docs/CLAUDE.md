@@ -10,6 +10,11 @@
 
 Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.com`（营销）和 `server.moryflow.com`（应用+API）解耦。
 
+## 近期变更
+
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@anyhunt/api/client` 在 Vite/Rollup 阶段解析失败
+- Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免容器内 `packages/sync` 编译时报 `TS5083`
+
 ## 技术栈
 
 - TanStack Start（SSR）

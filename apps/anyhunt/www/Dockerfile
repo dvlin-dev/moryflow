@@ -13,10 +13,13 @@ WORKDIR /app
 # =============================================================================
 FROM base AS deps
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
+COPY packages/api/package.json ./packages/api/
+COPY packages/sync/package.json ./packages/sync/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/types/package.json ./packages/types/
+COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-www...
 
@@ -27,12 +30,27 @@ FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/anyhunt/www/node_modules ./apps/anyhunt/www/node_modules
+COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=deps /app/packages/sync/node_modules ./packages/sync/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/www ./apps/anyhunt/www
+COPY packages/api ./packages/api
+COPY packages/sync ./packages/sync
 COPY packages/ui ./packages/ui
 COPY packages/types ./packages/types
+COPY tooling/typescript-config ./tooling/typescript-config
+
+WORKDIR /app/packages/types
+RUN pnpm build
+
+WORKDIR /app/packages/sync
+RUN pnpm build
+
+WORKDIR /app/packages/api
+RUN pnpm build
 
 WORKDIR /app/apps/anyhunt/www
 
@@ -45,6 +63,8 @@ FROM base AS prod-deps
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/www/package.json ./apps/anyhunt/www/
+COPY packages/api/package.json ./packages/api/
+COPY packages/sync/package.json ./packages/sync/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/types/package.json ./packages/types/
 
@@ -59,6 +79,12 @@ WORKDIR /app
 
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/anyhunt/www/node_modules ./apps/anyhunt/www/node_modules
+COPY --from=builder /app/packages/types/dist ./packages/types/dist
+COPY --from=builder /app/packages/types/package.json ./packages/types/
+COPY --from=builder /app/packages/sync/dist ./packages/sync/dist
+COPY --from=builder /app/packages/sync/package.json ./packages/sync/
+COPY --from=builder /app/packages/api/dist ./packages/api/dist
+COPY --from=builder /app/packages/api/package.json ./packages/api/
 
 COPY --from=builder /app/apps/anyhunt/www/.output ./apps/anyhunt/www/.output
 

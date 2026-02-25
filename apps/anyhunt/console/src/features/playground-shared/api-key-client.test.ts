@@ -62,4 +62,20 @@ describe('createApiKeyClient', () => {
       })
     );
   });
+
+  it('rethrows ServerApiError as ApiKeyClientError in delete path', async () => {
+    const { createApiKeyClient, ApiKeyClientError } = await import('./api-key-client');
+    const { ServerApiError } = await import('@anyhunt/api/client');
+    mocks.requestDelete.mockRejectedValue(new ServerApiError('Denied', 403, 'FORBIDDEN'));
+
+    const client = createApiKeyClient({ apiKey: 'ah_test_key' });
+
+    await expect(client.delete('/api/v1/memox/memories/test')).rejects.toBeInstanceOf(
+      ApiKeyClientError
+    );
+    await expect(client.delete('/api/v1/memox/memories/test')).rejects.toMatchObject({
+      status: 403,
+      code: 'FORBIDDEN',
+    });
+  });
 });

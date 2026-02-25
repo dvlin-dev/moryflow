@@ -45,7 +45,10 @@ interface JsonRequestOptions {
 }
 
 const toRequestOptions = (
-  options?: JsonRequestOptions & { body?: unknown; method?: ApiClientRequestOptions['method'] }
+  options?: JsonRequestOptions & {
+    body?: ApiClientRequestOptions['body'];
+    method?: ApiClientRequestOptions['method'];
+  }
 ): ApiClientRequestOptions => ({
   headers: options?.headers,
   query: options?.query,
@@ -60,15 +63,27 @@ export const apiClient = {
     return coreClient.get<T>(endpoint, toRequestOptions(options));
   },
 
-  post<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+  post<T>(
+    endpoint: string,
+    data?: ApiClientRequestOptions['body'],
+    options?: JsonRequestOptions
+  ): Promise<T> {
     return coreClient.post<T>(endpoint, toRequestOptions({ ...options, body: data }));
   },
 
-  patch<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+  patch<T>(
+    endpoint: string,
+    data?: ApiClientRequestOptions['body'],
+    options?: JsonRequestOptions
+  ): Promise<T> {
     return coreClient.patch<T>(endpoint, toRequestOptions({ ...options, body: data }));
   },
 
-  put<T>(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<T> {
+  put<T>(
+    endpoint: string,
+    data?: ApiClientRequestOptions['body'],
+    options?: JsonRequestOptions
+  ): Promise<T> {
     return coreClient.put<T>(endpoint, toRequestOptions({ ...options, body: data }));
   },
 
@@ -80,7 +95,11 @@ export const apiClient = {
     return coreClient.blob(endpoint, toRequestOptions(options));
   },
 
-  postBlob(endpoint: string, data?: unknown, options?: JsonRequestOptions): Promise<Blob> {
+  postBlob(
+    endpoint: string,
+    data?: ApiClientRequestOptions['body'],
+    options?: JsonRequestOptions
+  ): Promise<Blob> {
     return coreClient.blob(endpoint, toRequestOptions({ ...options, body: data, method: 'POST' }));
   },
 

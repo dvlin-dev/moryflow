@@ -172,7 +172,7 @@ export async function getMemory(apiKey: string, id: string): Promise<Memory> {
 
 export async function deleteMemory(apiKey: string, id: string): Promise<void> {
   const client = createApiKeyClient({ apiKey });
-  await client.request(`${MEMOX_API.MEMORIES}/${id}`, { method: 'DELETE' });
+  await client.delete<void>(`${MEMOX_API.MEMORIES}/${id}`);
 }
 
 export async function exportMemories(apiKey: string, payload: Record<string, unknown>) {

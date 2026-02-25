@@ -22,6 +22,10 @@ FROM base AS builder
 # 先复制 manifests 以最大化 Docker layer cache（源码变更不会导致依赖层失效）
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 COPY apps/anyhunt/server/package.json ./apps/anyhunt/server/
+COPY packages/api/package.json ./packages/api/
+COPY packages/sync/package.json ./packages/sync/
+COPY packages/types/package.json ./packages/types/
+COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
 # 注意：不要在 stage 之间 COPY node_modules（workspace symlink 会被 Docker 解引用，导致 @anyhunt/* 变成“只剩 package.json”的空壳包）。
 # 正确做法是在同一个 stage 内安装依赖，让 pnpm 生成的 workspace links 指向最终的 /app/packages/*。
@@ -29,6 +33,19 @@ RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted
 
 # 再复制源码（依赖已缓存）
 COPY apps/anyhunt/server ./apps/anyhunt/server
+COPY packages/api ./packages/api
+COPY packages/sync ./packages/sync
+COPY packages/types ./packages/types
+COPY tooling/typescript-config ./tooling/typescript-config
+
+WORKDIR /app/packages/types
+RUN pnpm build
+
+WORKDIR /app/packages/sync
+RUN pnpm build
+
+WORKDIR /app/packages/api
+RUN pnpm build
 
 WORKDIR /app/apps/anyhunt/server
 
@@ -99,6 +116,9 @@ WORKDIR /app
 # 安装生产依赖（避免跨 stage COPY node_modules 导致 workspace symlink 被解引用）
 COPY --chown=nestjs:nodejs pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY --chown=nestjs:nodejs apps/anyhunt/server/package.json ./apps/anyhunt/server/
+COPY --chown=nestjs:nodejs packages/api/package.json ./packages/api/
+COPY --chown=nestjs:nodejs packages/sync/package.json ./packages/sync/
+COPY --chown=nestjs:nodejs packages/types/package.json ./packages/types/
 
 RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server... --prod \
     # 重建 Sharp 以获取正确的原生模块（WebP/SVG 支持）
@@ -108,6 +128,12 @@ RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/dist ./apps/anyhunt/server/dist
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/generated ./apps/anyhunt/server/generated
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma ./apps/anyhunt/server/prisma
+COPY --from=builder --chown=nestjs:nodejs /app/packages/types/dist ./packages/types/dist
+COPY --from=builder --chown=nestjs:nodejs /app/packages/types/package.json ./packages/types/
+COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/dist ./packages/sync/dist
+COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/package.json ./packages/sync/
+COPY --from=builder --chown=nestjs:nodejs /app/packages/api/dist ./packages/api/dist
+COPY --from=builder --chown=nestjs:nodejs /app/packages/api/package.json ./packages/api/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/package.json ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.main.config.ts ./apps/anyhunt/server/
 COPY --from=builder --chown=nestjs:nodejs /app/apps/anyhunt/server/prisma.vector.config.ts ./apps/anyhunt/server/

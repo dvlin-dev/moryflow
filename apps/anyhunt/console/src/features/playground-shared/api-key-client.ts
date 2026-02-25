@@ -21,9 +21,9 @@ export interface ApiKeyClientOptions {
 
 export interface ApiKeyClient {
   get<T>(endpoint: string): Promise<T>;
-  post<T>(endpoint: string, body?: unknown): Promise<T>;
-  put<T>(endpoint: string, body?: unknown): Promise<T>;
-  patch<T>(endpoint: string, body?: unknown): Promise<T>;
+  post<T>(endpoint: string, body?: ApiClientRequestOptions['body']): Promise<T>;
+  put<T>(endpoint: string, body?: ApiClientRequestOptions['body']): Promise<T>;
+  patch<T>(endpoint: string, body?: ApiClientRequestOptions['body']): Promise<T>;
   delete<T>(endpoint: string): Promise<T>;
 }
 
@@ -39,7 +39,7 @@ export class ApiKeyClientError extends Error {
   }
 }
 
-const toBody = (body: unknown): ApiClientRequestOptions['body'] =>
+const toBody = (body: ApiClientRequestOptions['body']): ApiClientRequestOptions['body'] =>
   body as ApiClientRequestOptions['body'];
 
 const resolveBaseUrl = (): string => {
@@ -98,31 +98,31 @@ export function createApiKeyClient(options: ApiKeyClientOptions): ApiKeyClient {
       try {
         return await client.get<T>(endpoint);
       } catch (error) {
-        wrapServerError(error);
+        return wrapServerError(error);
       }
     },
 
-    async post<T>(endpoint: string, body?: unknown): Promise<T> {
+    async post<T>(endpoint: string, body?: ApiClientRequestOptions['body']): Promise<T> {
       try {
         return await client.post<T>(endpoint, { body: toBody(body) });
       } catch (error) {
-        wrapServerError(error);
+        return wrapServerError(error);
       }
     },
 
-    async put<T>(endpoint: string, body?: unknown): Promise<T> {
+    async put<T>(endpoint: string, body?: ApiClientRequestOptions['body']): Promise<T> {
       try {
         return await client.put<T>(endpoint, { body: toBody(body) });
       } catch (error) {
-        wrapServerError(error);
+        return wrapServerError(error);
       }
     },
 
-    async patch<T>(endpoint: string, body?: unknown): Promise<T> {
+    async patch<T>(endpoint: string, body?: ApiClientRequestOptions['body']): Promise<T> {
       try {
         return await client.patch<T>(endpoint, { body: toBody(body) });
       } catch (error) {
-        wrapServerError(error);
+        return wrapServerError(error);
       }
     },
 
@@ -130,7 +130,7 @@ export function createApiKeyClient(options: ApiKeyClientOptions): ApiKeyClient {
       try {
         return await client.del<T>(endpoint);
       } catch (error) {
-        wrapServerError(error);
+        return wrapServerError(error);
       }
     },
   };

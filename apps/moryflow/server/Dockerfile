@@ -13,24 +13,40 @@ WORKDIR /app
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/moryflow/server/package.json ./apps/moryflow/server/
+COPY packages/api/package.json ./packages/api/
+COPY packages/types/package.json ./packages/types/
 COPY packages/sync/package.json ./packages/sync/
+COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server...
 
 # 生产依赖阶段 - 仅安装生产依赖
 FROM base AS prod-deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/moryflow/server/package.json ./apps/moryflow/server/
+COPY packages/api/package.json ./packages/api/
+COPY packages/types/package.json ./packages/types/
 COPY packages/sync/package.json ./packages/sync/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server... --prod
 
 # 构建阶段
 FROM deps AS builder
 COPY apps/moryflow/server ./apps/moryflow/server
+COPY packages/api ./packages/api
+COPY packages/types ./packages/types
 COPY packages/sync ./packages/sync
+COPY tooling/typescript-config ./tooling/typescript-config
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc tsconfig.base.json tsconfig.agents.json ./
+
+# 构建 types 包（api 构建前置）
+WORKDIR /app/packages/types
+RUN pnpm build
 
 # 构建 sync 包
 WORKDIR /app/packages/sync
+RUN pnpm build
+
+# 构建 api 包（server 构建前置）
+WORKDIR /app/packages/api
 RUN pnpm build
 
 WORKDIR /app/apps/moryflow/server
@@ -72,6 +88,10 @@ COPY --from=prod-deps --chown=nestjs:nodejs /app/apps/moryflow/server/node_modul
 # 复制 sync 包（运行时依赖）
 COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/dist ./packages/sync/dist
 COPY --from=builder --chown=nestjs:nodejs /app/packages/sync/package.json ./packages/sync/
+COPY --from=builder --chown=nestjs:nodejs /app/packages/types/dist ./packages/types/dist
+COPY --from=builder --chown=nestjs:nodejs /app/packages/types/package.json ./packages/types/
+COPY --from=builder --chown=nestjs:nodejs /app/packages/api/dist ./packages/api/dist
+COPY --from=builder --chown=nestjs:nodejs /app/packages/api/package.json ./packages/api/
 
 # 复制构建产物
 COPY --from=builder --chown=nestjs:nodejs /app/apps/moryflow/server/dist ./apps/moryflow/server/dist

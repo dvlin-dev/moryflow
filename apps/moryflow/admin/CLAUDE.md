@@ -17,6 +17,9 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Auth Store：修复 `onRehydrateStorage` 回调中 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 期间运行时异常
+- API Client：请求 body 类型与 `ApiClientRequestOptions['body']` 对齐，消除 Auth 重构后的类型回归
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，并补齐根 `tsconfig.base.json` 复制避免 `TS5083`
 - Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式

@@ -8,6 +8,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@anyhunt/api` 解析失败（TS2307）
+- Build：容器构建显式复制根 `tsconfig.base.json`，避免 workspace 包构建时报 `TS5083`
 - Webhook：签名与发送体统一为同一 `JSON.stringify` 字符串（Digest Processor + Common WebhookService），避免签名材料与实际请求体潜在不一致
 - Demo：Turnstile 校验改为 `serverHttpRaw` 解析，放宽对响应 `content-type` 的依赖并保留非 2xx 快速失败
 - OpenAPI 文档改为 Scalar 双入口：`/api-reference`（public）与 `/api-reference/internal`（internal），并提供 `/openapi.json` 与 `/openapi-internal.json`

@@ -152,7 +152,9 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        reconcileRehydratedAuthState(state, set);
+        reconcileRehydratedAuthState(state, (partial) => {
+          useAuthStore.setState(partial);
+        });
       },
     }
   )

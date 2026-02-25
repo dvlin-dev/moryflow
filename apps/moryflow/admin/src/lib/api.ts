@@ -4,6 +4,9 @@
  */
 import { apiClient } from './api-client';
 import { ADMIN_API } from './api-paths';
+import type { ApiClientRequestOptions } from '@anyhunt/api/client';
+
+type ApiBody = ApiClientRequestOptions['body'];
 
 /**
  * Admin API 客户端实例
@@ -16,17 +19,17 @@ export const adminApi = {
   },
 
   /** POST 请求 */
-  post: <T>(endpoint: string, data?: unknown): Promise<T> => {
+  post: <T>(endpoint: string, data?: ApiBody): Promise<T> => {
     return apiClient.post<T>(`${ADMIN_API.BASE}${endpoint}`, data);
   },
 
   /** PATCH 请求 */
-  patch: <T>(endpoint: string, data?: unknown): Promise<T> => {
+  patch: <T>(endpoint: string, data?: ApiBody): Promise<T> => {
     return apiClient.patch<T>(`${ADMIN_API.BASE}${endpoint}`, data);
   },
 
   /** PUT 请求 */
-  put: <T>(endpoint: string, data?: unknown): Promise<T> => {
+  put: <T>(endpoint: string, data?: ApiBody): Promise<T> => {
     return apiClient.put<T>(`${ADMIN_API.BASE}${endpoint}`, data);
   },
 

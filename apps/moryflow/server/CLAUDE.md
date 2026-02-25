@@ -52,6 +52,8 @@ module-name/
 
 ## 近期变更
 
+- Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@anyhunt/api` 解析失败（TS2307）
+- Build：构建阶段补齐根 `tsconfig.base.json`（workspace 包构建必需），避免容器内 `packages/sync` 编译报 `TS5083`
 - 路由治理统一：`main.ts` 启用 `setGlobalPrefix('api') + URI versioning(v1)`，Controller 统一改为 `@Controller({ path, version: '1' })`，移除硬编码 `api/v1` 字面量
 - Health 路由改为 `VERSION_NEUTRAL` 并通过全局前缀排除，保持 `/health*` 不变
 - Build：Dockerfile 固定 pnpm@9.12.2 并带入 .npmrc，避免依赖解析丢失导致 TS2307

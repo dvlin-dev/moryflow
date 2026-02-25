@@ -11,9 +11,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 # 复制依赖文件
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/moryflow/admin/package.json ./apps/moryflow/admin/
+COPY packages/api/package.json ./packages/api/
 COPY packages/model-registry-data/package.json ./packages/model-registry-data/
+COPY packages/sync/package.json ./packages/sync/
 COPY packages/types/package.json ./packages/types/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
@@ -25,7 +27,9 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts \
 
 # 复制源代码
 COPY apps/moryflow/admin ./apps/moryflow/admin
+COPY packages/api ./packages/api
 COPY packages/model-registry-data ./packages/model-registry-data
+COPY packages/sync ./packages/sync
 COPY packages/types ./packages/types
 COPY tooling/typescript-config ./tooling/typescript-config
 
@@ -34,6 +38,12 @@ WORKDIR /app/packages/model-registry-data
 RUN pnpm build
 
 WORKDIR /app/packages/types
+RUN pnpm build
+
+WORKDIR /app/packages/sync
+RUN pnpm build
+
+WORKDIR /app/packages/api
 RUN pnpm build
 
 WORKDIR /app/apps/moryflow/admin

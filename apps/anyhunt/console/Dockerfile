@@ -10,6 +10,8 @@ WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/anyhunt/console/package.json ./apps/anyhunt/console/
+COPY packages/api/package.json ./packages/api/
+COPY packages/sync/package.json ./packages/sync/
 COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/embed/package.json ./packages/embed/
@@ -20,6 +22,8 @@ COPY tooling/eslint-config/package.json ./tooling/eslint-config/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/console...
 
 COPY apps/anyhunt/console ./apps/anyhunt/console
+COPY packages/api ./packages/api
+COPY packages/sync ./packages/sync
 COPY packages/types ./packages/types
 COPY packages/ui ./packages/ui
 COPY packages/embed ./packages/embed
@@ -29,6 +33,12 @@ COPY tooling/eslint-config ./tooling/eslint-config
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 
 WORKDIR /app/packages/types
+RUN pnpm build
+
+WORKDIR /app/packages/sync
+RUN pnpm build
+
+WORKDIR /app/packages/api
 RUN pnpm build
 
 WORKDIR /app/apps/anyhunt/console
