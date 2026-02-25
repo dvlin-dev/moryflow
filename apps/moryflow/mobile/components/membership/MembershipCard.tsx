@@ -13,6 +13,10 @@ import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { useThemeColors } from '@/lib/theme';
 import { useMembershipUser, TIER_DISPLAY_NAMES } from '@/lib/server';
+import {
+  getMembershipTierConfig,
+  type MembershipTierConfig,
+} from '@/lib/utils/membership-tier-config';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import {
@@ -23,35 +27,9 @@ import {
   type AppIcon,
 } from '@/components/ui/icons';
 
-// 会员等级配置
-type TierKey = 'free' | 'basic' | 'pro';
-
-interface TierConfig {
-  icon: AppIcon;
-  colorKey: 'tierFree' | 'tierBasic' | 'tierPro';
-  bgClass: string;
-  textClass: string;
-}
-
-const TIER_CONFIG: Record<TierKey, TierConfig> = {
-  free: {
-    icon: SparklesIcon,
-    colorKey: 'tierFree',
-    bgClass: 'bg-tier-free-bg',
-    textClass: 'text-tier-free',
-  },
-  basic: {
-    icon: SparklesIcon,
-    colorKey: 'tierBasic',
-    bgClass: 'bg-tier-basic-bg',
-    textClass: 'text-tier-basic',
-  },
-  pro: {
-    icon: CrownIcon,
-    colorKey: 'tierPro',
-    bgClass: 'bg-tier-pro-bg',
-    textClass: 'text-tier-pro',
-  },
+const TIER_ICONS: Record<MembershipTierConfig['icon'], AppIcon> = {
+  sparkles: SparklesIcon,
+  crown: CrownIcon,
 };
 
 interface MembershipCardProps {
@@ -104,8 +82,9 @@ export function MembershipCard({ onUpgradePress }: MembershipCardProps) {
   }
 
   // 已登录状态
-  const tier = (user?.subscriptionTier || 'free') as TierKey;
-  const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
+  const tier = user?.subscriptionTier || 'free';
+  const config = getMembershipTierConfig(tier);
+  const tierIcon = TIER_ICONS[config.icon];
   const tierColor = colors[config.colorKey];
   const tierName = user?.tierInfo?.displayName || TIER_DISPLAY_NAMES[tier] || t('freeTier');
   const totalCredits = user?.credits?.total ?? 0;
@@ -116,7 +95,7 @@ export function MembershipCard({ onUpgradePress }: MembershipCardProps) {
       {/* 会员信息 */}
       <View className="flex-row items-center gap-3 p-4">
         <View className={cn('h-11 w-11 items-center justify-center rounded-xl', config.bgClass)}>
-          <Icon as={config.icon} size={20} color={tierColor} />
+          <Icon as={tierIcon} size={20} color={tierColor} />
         </View>
         <View className="flex-1">
           <Text className={cn('text-base font-semibold', config.textClass)}>{tierName}</Text>
