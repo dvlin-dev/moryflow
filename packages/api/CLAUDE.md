@@ -4,23 +4,24 @@
 
 ## 定位
 
-- 提供统一的 API Client（`createServerApiClient`）与类型定义
+- 提供统一的函数式 API Client（`createApiClient` / `createApiTransport`）与类型定义
 - 规范 token 注入、401 刷新重试、错误结构
 
 ## 关键文件
 
-- `src/client/create-client.ts`：统一请求入口，401 仅重试一次
-- `src/client/types.ts`：`TokenProvider` 与客户端接口类型
+- `src/client/create-api-client.ts`：统一请求入口，401 仅重试一次
+- `src/client/transport.ts`：纯传输层（query/body/timeout/response 解析）
+- `src/client/types.ts`：客户端与鉴权模式类型
 - `src/membership/*`：会员模型与错误码映射
 
 ## 使用方式
 
 ```ts
-import { createServerApiClient } from '@anyhunt/api/client';
+import { createApiClient } from '@anyhunt/api/client';
 
-const client = createServerApiClient({
+const client = createApiClient({
   baseUrl: MEMBERSHIP_API_URL,
-  tokenProvider: { getToken: getAccessToken },
+  getAccessToken,
   onUnauthorized: refreshAccessToken,
 });
 ```
@@ -41,3 +42,6 @@ const client = createServerApiClient({
 - 错误解析统一为 RFC7807（ProblemDetails），补齐 requestId 与 errors 透传
 - 非 JSON 成功响应视为异常（`UNEXPECTED_RESPONSE`）
 - 新增 create-client 非 JSON 回归测试，补齐 `test:unit`
+- 修复 raw/stream 响应被提前消费导致调用方二次读取 body 失败的问题
+- 错误消息回退增强：`detail -> message -> title -> Request failed`
+- `createApiTransport` 增加 `baseUrl` 归一化（自动补尾 `/`），避免 `new URL(path, baseUrl)` 在子路径场景下丢段

@@ -1,11 +1,12 @@
 /**
- * [DEFINES]: TokenProvider, ServerApiPlugin, ServerApiClientConfig, ServerApiClient
- * [USED_BY]: create-client.ts, 各端适配器
- * [POS]: 统一 API 客户端的类型定义
+ * [DEFINES]: AuthMode/ApiTransport/ApiClient 统一函数式请求类型
+ * [USED_BY]: transport.ts, create-api-client.ts, 各端请求封装
+ * [POS]: packages/api 客户端类型层（无业务语义）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
+import type { ProblemDetails } from '@anyhunt/types';
 import type {
   MembershipUserInfo,
   CreditsInfo,
@@ -17,71 +18,93 @@ import type {
 } from '../membership/types';
 import type { DeleteAccountRequest } from '../account';
 
-// ── 类型别名（统一为 Server 命名）─────────────────────────
+// ── 业务类型别名（供应用层复用）──────────────────────────
 
 export type UserInfo = MembershipUserInfo;
 export type UserProfile = MembershipUserProfile;
 export type ModelsResponse = MembershipModelsResponse;
 
-// ── Token 提供者接口 ─────────────────────────────────────
+// ── 通用请求类型 ─────────────────────────────────────────
 
-/** Token 提供者接口 - 各端实现 */
-export interface TokenProvider {
-  /** 获取 token（支持同步和异步） */
-  getToken(): Promise<string | null> | string | null;
+export type AuthMode = 'public' | 'bearer' | 'apiKey';
+
+export type QueryPrimitive = string | number | boolean | null | undefined;
+export type QueryValue = QueryPrimitive | QueryPrimitive[];
+export type QueryParams = Record<string, QueryValue>;
+
+export type ApiBody =
+  | string
+  | FormData
+  | Blob
+  | URLSearchParams
+  | ArrayBuffer
+  | ArrayBufferView
+  | null
+  | undefined
+  | object;
+
+export type ResponseType = 'json' | 'raw' | 'blob' | 'stream';
+
+export type ApiTokenGetter = () => string | null | Promise<string | null>;
+export type UnauthorizedHandler = () => boolean | Promise<boolean>;
+
+export interface TransportRequest {
+  path: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  headers?: HeadersInit;
+  query?: QueryParams;
+  body?: ApiBody;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  redirect?: RequestRedirect;
+  responseType?: ResponseType;
 }
 
-// ── 插件接口 ─────────────────────────────────────────────
-
-/** 插件接口 - 可选扩展 */
-export interface ServerApiPlugin {
-  name: string;
-  /** 请求前置处理 */
-  onRequest?: (url: string, options: RequestInit) => RequestInit;
-  /** 响应后置处理 */
-  onResponse?: (response: Response) => void;
-}
-
-// ── 客户端配置 ───────────────────────────────────────────
-
-/** 客户端配置 */
-export interface ServerApiClientConfig {
-  /** API 基础 URL */
+export interface ApiTransportConfig {
   baseUrl: string;
-  /** Token 提供者（必须） */
-  tokenProvider: TokenProvider;
-  /** 401 时的回调（返回 true 表示已刷新并允许重试） */
-  onUnauthorized?: () => boolean | Promise<boolean>;
-  /** 插件列表（可选） */
-  plugins?: ServerApiPlugin[];
+  fetcher?: typeof fetch;
+  defaultHeaders?: HeadersInit;
+  timeoutMs?: number;
 }
 
-// ── API 客户端实例 ───────────────────────────────────────
-
-/** API 客户端实例 */
-export interface ServerApiClient {
-  /** 用户相关 */
-  user: {
-    fetchCurrent(): Promise<UserInfo>;
-    fetchCredits(): Promise<CreditsInfo>;
-    fetchProfile(): Promise<UserProfile>;
-    updateProfile(data: Partial<UserProfile>): Promise<UserProfile>;
-    deleteAccount(data: DeleteAccountRequest): Promise<void>;
-  };
-
-  /** 模型相关 */
-  models: {
-    fetch(): Promise<ModelsResponse>;
-  };
-
-  /** 支付相关 */
-  payment: {
-    fetchProducts(): Promise<ProductsResponse>;
-    createCheckout(data: CreateCheckoutRequest): Promise<CreateCheckoutResponse>;
-  };
+export interface ApiTransport {
+  request<T>(request: TransportRequest): Promise<T>;
 }
 
-// ── 重导出类型（便于外部使用） ───────────────────────────
+export interface ApiClientRequestOptions {
+  method?: TransportRequest['method'];
+  headers?: HeadersInit;
+  query?: QueryParams;
+  body?: ApiBody;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  redirect?: RequestRedirect;
+  authMode?: AuthMode;
+}
+
+export interface ApiClientConfig {
+  baseUrl?: string;
+  transport?: ApiTransport;
+  defaultAuthMode?: AuthMode;
+  getAccessToken?: ApiTokenGetter;
+  getApiKey?: ApiTokenGetter;
+  onUnauthorized?: UnauthorizedHandler;
+}
+
+export interface ApiClient {
+  get<T>(path: string, options?: Omit<ApiClientRequestOptions, 'body'>): Promise<T>;
+  post<T>(path: string, options?: ApiClientRequestOptions): Promise<T>;
+  put<T>(path: string, options?: ApiClientRequestOptions): Promise<T>;
+  patch<T>(path: string, options?: ApiClientRequestOptions): Promise<T>;
+  del<T>(path: string, options?: ApiClientRequestOptions): Promise<T>;
+  raw(path: string, options?: ApiClientRequestOptions): Promise<Response>;
+  blob(path: string, options?: ApiClientRequestOptions): Promise<Blob>;
+  stream(path: string, options?: ApiClientRequestOptions): Promise<Response>;
+}
+
+export type ApiProblem = ProblemDetails;
+
+// ── 业务类型重导出（保留单一导出入口）────────────────────
 
 export type {
   CreditsInfo,
