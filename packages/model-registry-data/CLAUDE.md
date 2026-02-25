@@ -1,6 +1,7 @@
 # model-registry-data
 
 > LiteLLM 模型数据注册表，提供模型搜索和自动填充功能
+> 最近更新：2026-02-26（根构建链路 `prepare:model-registry-data` 升级为“强制 sync + 非空校验”；禁止无缓存时写入空快照，避免 0-model 静默退化）
 > 最近更新：2026-02-25（修复 dist 运行时读取 data JSON 失败导致模型数为 0；改为静态 JSON 导入并新增构建产物回归测试）
 
 ## 概述
@@ -59,8 +60,9 @@ pnpm --filter @moryflow/model-registry-data build
 pnpm --filter @moryflow/model-registry-data test:unit
 ```
 
-- 同步脚本通过 `node --import tsx scripts/sync.ts` 运行；在网络受限/上游不可用时应使用缓存数据继续构建（不要让构建因同步失败而失败）。
+- 同步脚本通过 `node --import tsx scripts/sync.ts` 运行；仅允许回退到“可用缓存快照（models/providers 非空）”，无可用缓存时必须失败，禁止写入空 JSON 快照。
 - 搜索模块使用静态 JSON 导入（`models/providers/meta`）参与打包，禁止回退到运行时 `require('./data/*.json')`，避免 renderer 环境出现 `Search 0 models`。
+- 根目录 `build:packages` 会先执行 `scripts/ensure-model-registry-data.cjs`；当快照缺失或无效时，脚本会强制执行 `pnpm --filter @moryflow/model-registry-data sync` 并校验非空快照，失败则中断构建。
 
 ## 数据源
 
