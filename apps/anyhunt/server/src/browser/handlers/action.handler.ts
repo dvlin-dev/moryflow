@@ -129,10 +129,7 @@ export class ActionHandler {
           if (action.value === undefined) {
             throw new Error('type requires a value');
           }
-          await locator!.pressSequentially(action.value, {
-            delay: this.humanBehavior.computeTypingDelay(50),
-            timeout,
-          });
+          await this.typeWithJitter(locator!, action.value, timeout);
           return { success: true };
 
         case 'press':
@@ -367,6 +364,23 @@ export class ActionHandler {
         (action.locator ? this.describeLocator(action.locator) : undefined) ??
         (action.type === 'press' ? action.key : undefined);
       return this.toAIFriendlyError(error, selectorLabel);
+    }
+  }
+
+  /**
+   * 处理打字操作（逐字符抖动，避免固定间隔）
+   */
+  private async typeWithJitter(
+    locator: Locator,
+    value: string,
+    timeout: number,
+  ): Promise<void> {
+    await locator.focus({ timeout });
+    for (const char of value) {
+      await locator.pressSequentially(char, {
+        delay: this.humanBehavior.computeTypingDelay(50),
+        timeout,
+      });
     }
   }
 

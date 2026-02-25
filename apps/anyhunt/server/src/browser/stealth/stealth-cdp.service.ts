@@ -235,8 +235,8 @@ function toCdpSessionLike(value: unknown): CdpSessionLike | null {
     return null;
   }
   return {
-    send: send as CdpSessionLike['send'],
-    detach: detach as CdpSessionLike['detach'],
+    send: send.bind(value) as CdpSessionLike['send'],
+    detach: detach.bind(value) as CdpSessionLike['detach'],
   };
 }
 

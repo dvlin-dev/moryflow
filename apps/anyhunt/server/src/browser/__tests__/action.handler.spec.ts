@@ -153,12 +153,13 @@ describe('ActionHandler', () => {
     expect(locator.click).toHaveBeenCalledTimes(1);
   });
 
-  it('uses typing jitter delay when executing type action', async () => {
+  it('types with per-character jitter delay when executing type action', async () => {
     const { handler, humanBehavior, actionPacing } =
       await createHandlerWithMocks();
     const pressSequentially = vi.fn().mockResolvedValue(undefined);
+    const focus = vi.fn().mockResolvedValue(undefined);
     const session = { id: 'bs_1' };
-    const locator = { pressSequentially };
+    const locator = { focus, pressSequentially };
 
     actionPacing.beforeAction.mockResolvedValueOnce({
       applied: false,
@@ -167,20 +168,35 @@ describe('ActionHandler', () => {
     (handler as any).sessionManager.resolveSelector = vi
       .fn()
       .mockReturnValue(locator);
-    humanBehavior.computeTypingDelay.mockReturnValueOnce(63);
+    humanBehavior.computeTypingDelay
+      .mockReturnValueOnce(61)
+      .mockReturnValueOnce(74)
+      .mockReturnValueOnce(58);
 
     await handler.execute(
       session as any,
       {
         type: 'type',
         selector: '#name',
-        value: 'hello',
+        value: 'hey',
       } as any,
     );
 
-    expect(humanBehavior.computeTypingDelay).toHaveBeenCalledWith(50);
-    expect(pressSequentially).toHaveBeenCalledWith('hello', {
-      delay: 63,
+    expect(focus).toHaveBeenCalledWith({ timeout: 5000 });
+    expect(humanBehavior.computeTypingDelay).toHaveBeenCalledTimes(3);
+    expect(humanBehavior.computeTypingDelay).toHaveBeenNthCalledWith(1, 50);
+    expect(humanBehavior.computeTypingDelay).toHaveBeenNthCalledWith(2, 50);
+    expect(humanBehavior.computeTypingDelay).toHaveBeenNthCalledWith(3, 50);
+    expect(pressSequentially).toHaveBeenNthCalledWith(1, 'h', {
+      delay: 61,
+      timeout: 5000,
+    });
+    expect(pressSequentially).toHaveBeenNthCalledWith(2, 'e', {
+      delay: 74,
+      timeout: 5000,
+    });
+    expect(pressSequentially).toHaveBeenNthCalledWith(3, 'y', {
+      delay: 58,
       timeout: 5000,
     });
   });

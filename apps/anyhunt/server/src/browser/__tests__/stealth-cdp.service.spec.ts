@@ -68,6 +68,50 @@ describe('StealthCdpService', () => {
       expect(cdp.detach).toHaveBeenCalled();
     });
 
+    it('绑定 CDP 方法 this 上下文，避免覆写流程被静默跳过', async () => {
+      const contextAwareSession = {
+        calls: [] as Array<[string, Record<string, unknown> | undefined]>,
+        detached: false,
+        async send(
+          this: {
+            calls: Array<[string, Record<string, unknown> | undefined]>;
+          },
+          method: string,
+          params?: Record<string, unknown>,
+        ) {
+          if (!Array.isArray(this.calls)) {
+            throw new Error('invalid this binding');
+          }
+          this.calls.push([method, params]);
+          if (method === 'Browser.getVersion') {
+            return { userAgent: 'Mozilla/5.0 HeadlessChrome/120.0.0.0' };
+          }
+          if (method === 'Target.getTargets') {
+            return { targetInfos: [{ targetId: 'target-1' }] };
+          }
+          if (method === 'Target.attachToTarget') {
+            return { sessionId: 'session-1' };
+          }
+          return {};
+        },
+        async detach(this: { detached: boolean }) {
+          this.detached = true;
+        },
+      };
+      const browser = {
+        newBrowserCDPSession: vi.fn().mockResolvedValue(contextAwareSession),
+      };
+
+      await service.applyBrowserLevelStealth(browser as any);
+
+      expect(
+        contextAwareSession.calls.some(
+          ([method]) => method === 'Target.sendMessageToTarget',
+        ),
+      ).toBe(true);
+      expect(contextAwareSession.detached).toBe(true);
+    });
+
     it('非 headless UA 时跳过覆写', async () => {
       const cdp = createMockCdpSession();
       const browser = createMockBrowser(cdp);
