@@ -22,7 +22,7 @@ status: done
 
 主要入口：
 
-- Webhook：`POST /webhooks/creem`（VERSION_NEUTRAL）
+- Webhook：`POST /api/v1/webhooks/creem`（`version: '1'`）
 - Console：`GET /api/v1/app/payment/subscription`、`GET /api/v1/app/payment/quota`
 
 ## 结论摘要

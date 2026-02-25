@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-24
+date: 2026-02-25
 scope: monorepo
 status: active
 ---
@@ -27,6 +27,8 @@ status: active
 - Auth 拆分文档：`docs/architecture/auth/`
 - Auth 交互统一与数据库重置方案：`docs/architecture/auth/unified-auth-rebuild-plan.md`
 - Auth 统一改造文件清单：`docs/architecture/auth/unified-auth-rebuild-file-map.md`
+- 统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active）：`docs/architecture/auth/unified-token-auth-v2-plan.md`（2026-02-24：follow-up 已补充 1h 预刷新策略、线上 DB migrate deploy 记录与 Console/Admin/Moryflow Admin 网络失败回退策略）
+- Auth 与全量请求统一改造计划（Zustand + Methods + Functional API Client，completed）：`docs/architecture/auth/auth-zustand-method-refactor-plan.md`（2026-02-24：完成 Step 1~13；客户端 + 服务端出站 HTTP + WebSocket 全链路统一；旧客户端范式清理完成；受影响包 typecheck/test 回归完成，`moryflow-mobile check:type` 保留既有基线问题记录）
 - Auth access token 本地存储方案（Zustand + Persist）：`docs/architecture/auth/access-token-storage-plan.md`
 - API Client 统一封装方案（Anyhunt + Moryflow）：`docs/architecture/api-client-unification.md`
 - Anyhunt Console 公共 API 化与 API Key 明文存储方案：`docs/architecture/anyhunt-console-public-api-key-plan.md`
@@ -55,7 +57,7 @@ status: active
 - Anyhunt Dev（8c16g / Dokploy）：`docs/runbooks/deploy/anyhunt-dokploy.md`
 - megaboxpro（1panel）反代路由：`docs/runbooks/deploy/megaboxpro-1panel-reverse-proxy.md`
 - Moryflow（4c6g / docker compose）：`docs/runbooks/deploy/moryflow-compose.md`
-- Moryflow PC Auth 连接关闭排障：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-24，已补充“最新版仍复现”进度、OTP 二步修复、登录 Cookie fallback、未登录不走全局 skeleton，以及 `moryflow-pc`/`packages/api` 目标单测结果）
+- Moryflow PC Auth 连接关闭排障：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-25：补充 `/api/v1` 全量统一进度（Auth + 业务 + webhook）；新增 transport `raw/stream` 语义修复、server-http-client fetch 绑定修复与全仓 L2 校验记录）
 
 ## Migrations（迁移方案 / 一次性执行）
 
@@ -87,7 +89,7 @@ status: active
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-01-26，packages/agents\* 清单调整 + 进度同步区合并）
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-25，补充 `/api/v1` 路由口径统一回写记录）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）

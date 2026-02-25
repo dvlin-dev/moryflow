@@ -71,7 +71,7 @@ status: active
 约定：
 
 - `app.setGlobalPrefix('api')`；对外统一 `/api/v1/...`
-- Auth：`/api/auth/*`（支持 Google/Apple 登录）
+- Auth：`/api/v1/auth/*`（支持 Google/Apple 登录）
 - Anyhunt Dev API Key：`Authorization: Bearer <apiKey>`
 - 生产环境 CORS：两条业务线服务端都要求配置 `TRUSTED_ORIGINS`（逗号分隔），按业务线分别填：
   - Moryflow：至少包含 `https://www.moryflow.com`、`https://admin.moryflow.com`、`https://server.moryflow.com`

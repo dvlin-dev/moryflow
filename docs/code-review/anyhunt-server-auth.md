@@ -24,7 +24,7 @@ status: done
 
 主要入口：
 
-- `/api/auth/*`（Better Auth handler，VERSION_NEUTRAL）
+- `/api/v1/auth/*`（Better Auth handler，`version: '1'`）
 - `/api/v1/app/user/*`
 
 ## 结论摘要
@@ -52,7 +52,7 @@ status: done
 
 - [P2] Session token 明文存储 → Session 改为 CookieCache（JWE）并关闭 DB 存储（`better-auth.ts`）。
 - [P2] Plugin 引用方式非最佳实践 → 改为 `better-auth/plugins/*` 直导。
-- [P2] Auth 路由文档未同步 → 全量文档收敛到 `/api/auth/*`。
+- [P2] Auth 路由文档未同步 → 全量文档收敛到 `/api/v1/auth/*`。
 - [P2] 模块文档漂移 → 重写 `auth/CLAUDE.md`、`admin/CLAUDE.md` 等相关文档。
 - [P2] rateLimit 未使用 secondary storage → 绑定 Redis secondaryStorage（`better-auth.ts`）。
 
