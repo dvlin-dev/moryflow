@@ -8,6 +8,9 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Memox/Embed 模块 review follow-up 修复完成：`MemoriesPage` 请求启用条件收敛为 `apiKey + userId`；`Memories/Entities/Graph/Embed` 的 API Key 下拉统一复用 `ApiKeySelector`；`MemoxGraphVisualizationCard` 继续拆分为 view-model + 状态片段 + container-dimensions hook + canvas hook（进一步收敛单一职责）
+- Memox/Embed Playground C-2~C-5 修复完成：`Memories`/`Entities`/`Graph`/`Embed` 页面统一复用 `resolveActiveApiKeySelection`；`GraphPage` 拆分为容器 + `memox-graph-query-card` + `memox-graph-visualization-card`（含 `graph-schemas` 与单测）；`EmbedForm` 迁移 `react-hook-form + zod/v3` 并收敛 active-key only；模块级 `lint/typecheck/test:unit` 通过（15 files / 55 tests）
+- Memox Playground C-1 修复完成：`MemoxPlaygroundPage` 从 1152 行拆分为容器层（192 行）+ 请求区/结果区组件，抽离 `playground-schemas` 与 `playground-request-mapper`（含 `playground-request-mapper.test.ts`），并通过模块级 `lint/typecheck/test:unit`
 - Extract/Map/Search/Crawl/Scrape Playground B-4~B-6 修复完成：统一复用 `resolveActiveApiKeySelection`（active-key only），新增共享页面壳层 `PlaygroundPageShell`（Map/Search/Extract 接入），并完成模块级 `lint/typecheck/test:unit`
 - Extract Playground B-3 修复完成：`ExtractPlaygroundPage` 拆分为容器 + 请求区组件 + 结果区组件，并通过 `lint/typecheck/test:unit`
 - Scrape Playground B-2 修复完成：`ScrapeResult` 拆分为容器 + cards + tabs + view-model，移除默认 Tab 链式三元并通过 `lint/typecheck/test:unit`

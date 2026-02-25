@@ -21,6 +21,10 @@ status: active
 
 ## 近期更新
 
+- 2026-02-25：Anyhunt Console 模块 C review follow-up 完成（修复 `Memories` 请求启用边界；统一 `Memories/Entities/Graph/Embed` API Key 选择复用；Graph 可视化继续拆分减责）：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 C 修复闭环：C-2~C-5 完成（统一 API Key 收敛、Graph 分层重构、Embed RHF+zod/v3 改造、模块级回归通过）：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 C 修复推进：C-1 完成（`MemoxPlaygroundPage` 拆分为容器 + request/result 组件，并抽离 request mapper + 单测）并通过模块级校验：`docs/code-review/anyhunt-console.md`。
+- 2026-02-25：Anyhunt Console 模块 C（`memox/embed playground`）完成预扫描并输出问题分级（`S1x3 / S2x3`），进入 C-1~C-5 分步修复准备：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 B 修复闭环：B-4/B-5/B-6 完成（统一 API Key 选择收敛、新增共享页面壳层 `PlaygroundPageShell`、模块级回归通过）：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 B 修复推进：B-3 完成（`ExtractPlaygroundPage` 拆分为 container/request/result 结构）并通过模块级校验：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 B 修复推进：B-2 完成（`ScrapeResult` 拆分为 cards/tabs/view-model，移除默认 Tab 链式三元），并通过模块级校验：`docs/code-review/anyhunt-console.md`。
@@ -183,7 +187,7 @@ status: active
 
 | Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
 | -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | in_progress（模块 A/B 修复完成，待进入模块 C） |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | in_progress（模块 A/B/C 修复完成，待项目复盘） |
 | P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
 | P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
 | P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |

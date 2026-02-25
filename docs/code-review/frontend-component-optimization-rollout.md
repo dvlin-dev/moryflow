@@ -138,6 +138,8 @@ status: active
 | 2-1 | anyhunt/console | 模块 A（api-keys/settings/webhooks） | 状态渲染规范补充 + 变更区同类问题补扫修复 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-25 | 新增“状态片段化 + `renderContentByState` + 禁止链式三元”并落地到已改组件 |
 | 3 | anyhunt/console | 模块 B（scrape/crawl/search/map/extract） | 预扫描（仅问题清单） | done | n/a | 2026-02-25 | 输出 `S1x3 / S2x2`，详见 `docs/code-review/anyhunt-console.md` |
 | 4 | anyhunt/console | 模块 B（scrape/crawl/search/map/extract） | 分步重构与修复 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-25 | B-1~B-6 全部完成：`ScrapeForm`/`ScrapeResult`/`ExtractPlaygroundPage` 拆分，统一 API Key 选择收敛，新增 `PlaygroundPageShell` 并接入 `Map/Search/Extract`，补扫并清理残留状态三元 |
+| 5 | anyhunt/console | 模块 C（memox/embed playground） | 预扫描（仅问题清单） | done | n/a | 2026-02-25 | 输出 `S1x3 / S2x3`，详见 `docs/code-review/anyhunt-console.md` |
+| 6 | anyhunt/console | 模块 C（memox/embed playground） | 分步重构与修复（C-1~C-5 + review follow-up） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-25 | C-1~C-5 全部完成，并在 follow-up 收敛：`Memories` 请求启用边界、`Memories/Entities/Graph/Embed` API Key 选择复用、Graph 可视化继续拆分减责；模块 C 回归 15 files / 55 tests 全通过 |
 
 ## 5. 回写格式（统一）
 

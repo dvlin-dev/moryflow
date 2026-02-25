@@ -60,6 +60,9 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Memox/Embed review follow-up 收敛：`Memories` 请求启用边界改为 `apiKey + userId`；`Memories/Entities/Graph/Embed` API Key 选择统一复用 `playground-shared/ApiKeySelector`；`memox-graph-visualization-card` 进一步拆分为 `graph-visualization-view-model.ts`、`memox-graph-visualization-states.tsx`、`use-graph-container-dimensions.ts`、`use-memox-graph-canvas.ts`
+- Memox/Embed Playground C-2~C-5 收敛完成：`memox` 新增 `graph-schemas.ts` + `memox-graph-query-card.tsx` + `memox-graph-visualization-card.tsx`（含 `graph-schemas.test.ts`）；`embed-playground` 新增 `schemas.ts`（含 `schemas.test.ts`）并将 `EmbedForm` 迁移到 `react-hook-form + zod/v3`；`memox/embed` 页面 API Key 选择统一复用 `resolveActiveApiKeySelection`
+- Memox Playground C-1 结构收敛：新增 `playground-schemas.ts` 与 `playground-request-mapper.ts`；`MemoxPlaygroundPage` 拆分为容器层（`pages/MemoxPlaygroundPage.tsx`）+ 请求区（`memox-playground-request-card.tsx`）+ 结果区（`memox-playground-result-panel.tsx`）+ create/search 子表单组件，并补齐 mapper 单测
 - Playground 模块 B-4~B-6 收敛完成：统一 API Key 选择逻辑到 `resolveActiveApiKeySelection`，新增 `PlaygroundPageShell` 并接入 `Map/Search/Extract` 页面，`ApiKeySelector`/`CrawlForm`/`Map/Search` 页面残留状态三元改为命名片段渲染
 - Extract Playground B-3 结构收敛：`ExtractPlaygroundPage` 拆分为容器层（页面）+ 请求区组件（`extract-request-card.tsx`）+ 结果区组件（`extract-result-panel.tsx`）
 - Scrape Playground B-2 结构收敛：`scrape-result.tsx` 拆分为容器层（`scrape-result.tsx`）+ 视图模型（`scrape-result-view-model.ts`）+ 卡片片段（`scrape-result-cards.tsx`）+ 内容 Tabs（`scrape-result-content-tabs.tsx`），移除默认 Tab 的链式三元

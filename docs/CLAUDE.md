@@ -8,6 +8,9 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 C C-2~C-5 完成（统一 API Key 收敛 + Graph 分层重构 + Embed RHF/zod 迁移 + 模块级回归通过））
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 C review follow-up 完成（`Memories` 请求启用边界修复 + API Key 选择复用收敛 + Graph 可视化继续减责拆分））
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 C（memox/embed playground）预扫描完成，产出 `S1x3 / S2x3`）
 > 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-4/B-5/B-6 完成（统一 API Key 选择收敛 + 共享页面壳层 + 模块级回归））
 > 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-3（ExtractPlaygroundPage 拆分）完成并通过模块级校验）
 > 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-2（ScrapeResult 拆分）完成并通过模块级校验）
@@ -70,6 +73,10 @@
 
 ## 最近更新
 
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C C-2~C-5 完成：统一 API Key 收敛、Graph 分层重构、Embed RHF/zod 迁移、模块 C 回归 15 files / 55 tests 通过）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C review follow-up 完成：`Memories` 请求启用边界修复、API Key 选择复用收敛、Graph 可视化继续减责拆分）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C C-1 完成：`MemoxPlaygroundPage` 拆分为容器 + request/result 组件，抽离 request mapper 并补齐单测）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C（memox/embed playground）预扫描完成，识别 `S1x3 / S2x3`）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B 完成（B-1~B-6）：新增共享页面壳层、统一 API Key 收敛、模块级回归通过）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B B-2 完成：`ScrapeResult` 拆分为 cards/tabs/view-model，移除默认 Tab 链式三元）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B B-1 完成：`ScrapeForm` 拆分为 mapper + sections，校验通过）
