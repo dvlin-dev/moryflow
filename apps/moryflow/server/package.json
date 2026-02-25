@@ -30,6 +30,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@anyhunt/api": "workspace:*",
     "@ai-sdk/anthropic": "3.0.46",
     "@ai-sdk/google": "3.0.30",
     "@ai-sdk/openai": "3.0.31",

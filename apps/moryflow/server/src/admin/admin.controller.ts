@@ -4,7 +4,7 @@
  * [POS]: 管理后台 API 入口（AdminGuard 统一鉴权）
  *
  * 认证机制：
- * - 统一走 /api/auth/* 登录与刷新（access JWT + refresh）
+ * - 统一走 /api/v1/auth/* 登录与刷新（access JWT + refresh）
  * - AdminGuard 负责管理员权限校验
  */
 
@@ -43,7 +43,7 @@ import {
 
 @ApiTags('Admin')
 @ApiBearerAuth()
-@Controller('api/admin')
+@Controller({ path: 'admin', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}

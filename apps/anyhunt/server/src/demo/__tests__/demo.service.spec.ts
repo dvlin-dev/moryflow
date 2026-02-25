@@ -178,6 +178,8 @@ describe('DemoService', () => {
   describe('verifyCaptcha', () => {
     it('should return true when verification succeeds', async () => {
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
         json: () => Promise.resolve({ success: true }),
       });
 
@@ -188,6 +190,8 @@ describe('DemoService', () => {
 
     it('should return false when verification fails', async () => {
       global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
         json: () => Promise.resolve({ success: false }),
       });
 

@@ -8,6 +8,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- OpenAPI 文档改为 Scalar 双入口：`/api-reference`（public）与 `/api-reference/internal`（internal），并提供 `/openapi.json` 与 `/openapi-internal.json`
+- 修复文档访问 403：`Missing origin` 检查对 OpenAPI/Scalar 路径放行（公网可直接访问，无额外防护）
 - API Key：更新接口补齐 no-store，避免明文 key 被缓存
 - LLM：ModelProviderFactory 单测在 isolate=false 下 resetModules 确保 mock 生效
 - Agent：请求支持多轮消息（messages），计费估算基于 message 总量
@@ -42,8 +44,8 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 - Public 端点必须使用 `@Public()`（不可挂 Session guard）
 - ApiKey API 必须使用 `@UseGuards(ApiKeyGuard)`
 - Any module that uses `@UseGuards(ApiKeyGuard)` must import `ApiKeyModule` (otherwise Nest will fail to bootstrap with UnknownDependenciesException)
-- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/auth/refresh` 使用
-- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/auth/jwks`
+- Console/Admin 统一使用 accessToken（JWT）鉴权，refreshToken 仅在 `/api/v1/auth/refresh` 使用
+- Auth Token 规则：access=6h（JWT），refresh=90d（轮换），JWKS=`/api/v1/auth/jwks`
 - 本次重置后仅保留 init 迁移（不保留历史迁移文件）
 - URL validation required for SSRF protection
 - `ALLOWED_ORIGINS`/`TRUSTED_ORIGINS` 必须覆盖 Console/Admin 域名（`console.anyhunt.app`/`admin.anyhunt.app`）
@@ -149,6 +151,7 @@ pnpm --filter @anyhunt/anyhunt-server prisma:studio:vector
 | `vector-prisma/` | 3     | 向量库连接（VectorPrismaService）            | -                         |
 | `config/`        | 2     | Pricing configuration                        | -                         |
 | `types/`         | 6     | Shared type definitions                      | -                         |
+| `openapi/`       | 6     | OpenAPI 配置与 Scalar 文档入口               | -                         |
 
 ## Common Patterns
 
@@ -279,8 +282,11 @@ curl http://localhost:3000/health
 # 3. 检查部署版本（用于排查“线上仍是旧版本导致 404”）
 curl http://localhost:3000/health/version
 
-# 4. 检查 Swagger 文档
-open http://localhost:3000/api-docs
+# 4. 检查 API 文档（Scalar）
+open http://localhost:3000/api-reference
+open http://localhost:3000/api-reference/internal
+curl http://localhost:3000/openapi.json
+curl http://localhost:3000/openapi-internal.json
 ```
 
 ### 环境变量说明

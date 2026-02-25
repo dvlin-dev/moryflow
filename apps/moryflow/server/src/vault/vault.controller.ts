@@ -30,13 +30,13 @@ import {
   type VaultListDto,
 } from './dto';
 
-@Controller('api/vaults')
+@Controller({ path: 'vaults', version: '1' })
 export class VaultController {
   constructor(private readonly vaultService: VaultService) {}
 
   /**
    * 获取 Vault 列表
-   * GET /api/vaults
+   * GET /api/v1/vaults
    */
   @Get()
   async listVaults(@CurrentUser() user: CurrentUserDto): Promise<VaultListDto> {
@@ -46,7 +46,7 @@ export class VaultController {
 
   /**
    * 获取单个 Vault
-   * GET /api/vaults/:id
+   * GET /api/v1/vaults/:id
    */
   @Get(':id')
   async getVault(
@@ -58,7 +58,7 @@ export class VaultController {
 
   /**
    * 创建 Vault
-   * POST /api/vaults
+   * POST /api/v1/vaults
    */
   @Post()
   async createVault(
@@ -74,7 +74,7 @@ export class VaultController {
 
   /**
    * 更新 Vault
-   * PUT /api/vaults/:id
+   * PUT /api/v1/vaults/:id
    */
   @Put(':id')
   async updateVault(
@@ -91,7 +91,7 @@ export class VaultController {
 
   /**
    * 删除 Vault
-   * DELETE /api/vaults/:id
+   * DELETE /api/v1/vaults/:id
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -104,7 +104,7 @@ export class VaultController {
 
   /**
    * 获取 Vault 设备列表
-   * GET /api/vaults/:id/devices
+   * GET /api/v1/vaults/:id/devices
    */
   @Get(':id/devices')
   async listDevices(
@@ -116,7 +116,7 @@ export class VaultController {
 
   /**
    * 注册设备到 Vault
-   * POST /api/vaults/:id/devices
+   * POST /api/v1/vaults/:id/devices
    */
   @Post(':id/devices')
   async registerDevice(
@@ -133,7 +133,7 @@ export class VaultController {
 
   /**
    * 移除设备
-   * DELETE /api/vaults/:id/devices/:deviceId
+   * DELETE /api/v1/vaults/:id/devices/:deviceId
    */
   @Delete(':id/devices/:deviceId')
   @HttpCode(HttpStatus.NO_CONTENT)

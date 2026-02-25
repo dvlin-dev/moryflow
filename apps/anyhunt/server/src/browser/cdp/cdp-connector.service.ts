@@ -17,6 +17,11 @@ import {
   BROWSER_CDP_ALLOW_PORT,
   BROWSER_CDP_ALLOW_PRIVATE_HOSTS,
 } from '../browser.constants';
+import {
+  serverHttpJson,
+  serverHttpRaw,
+  ServerApiError,
+} from '../../common/http/server-http-client';
 
 /** CDP 连接选项 */
 export interface CdpConnectOptions {
@@ -288,13 +293,10 @@ export class CdpConnectorService {
   private async getWsEndpointFromPort(port: number): Promise<string | null> {
     try {
       // Chrome DevTools Protocol 提供 /json/version 端点返回 wsEndpoint
-      const response = await fetch(`http://localhost:${port}/json/version`);
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = (await response.json()) as { webSocketDebuggerUrl?: string };
+      const data = await serverHttpJson<{ webSocketDebuggerUrl?: string }>({
+        url: `http://localhost:${port}/json/version`,
+        timeoutMs: 5000,
+      });
       return data.webSocketDebuggerUrl ?? null;
     } catch {
       return null;
@@ -311,25 +313,32 @@ export class CdpConnectorService {
       );
     }
 
-    const response = await fetch('https://api.browserbase.com/v1/sessions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-BB-API-Key': apiKey,
-      },
-      body: JSON.stringify({ projectId }),
-    });
-
-    if (!response.ok) {
-      throw new CdpConnectionError(
-        `Failed to create Browserbase session: ${response.statusText}`,
-      );
-    }
-
-    const session = (await response.json()) as {
+    let session: {
       id?: string;
       connectUrl?: string;
     };
+    try {
+      session = await serverHttpJson<{
+        id?: string;
+        connectUrl?: string;
+      }>({
+        url: 'https://api.browserbase.com/v1/sessions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-BB-API-Key': apiKey,
+        },
+        body: { projectId },
+        timeoutMs: 10000,
+      });
+    } catch (error) {
+      if (error instanceof ServerApiError) {
+        throw new CdpConnectionError(
+          `Failed to create Browserbase session: ${error.message}`,
+        );
+      }
+      throw error;
+    }
 
     if (!session.id || !session.connectUrl) {
       throw new CdpConnectionError('Invalid Browserbase session response.');
@@ -355,25 +364,26 @@ export class CdpConnectorService {
       );
     }
 
-    const response = await fetch(
-      'https://api.browser-use.com/api/v2/browsers',
-      {
+    let session: { id?: string; cdpUrl?: string };
+    try {
+      session = await serverHttpJson<{ id?: string; cdpUrl?: string }>({
+        url: 'https://api.browser-use.com/api/v2/browsers',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Browser-Use-API-Key': apiKey,
         },
-        body: JSON.stringify({}),
-      },
-    );
-
-    if (!response.ok) {
-      throw new CdpConnectionError(
-        `Failed to create Browser Use session: ${response.statusText}`,
-      );
+        body: {},
+        timeoutMs: 10000,
+      });
+    } catch (error) {
+      if (error instanceof ServerApiError) {
+        throw new CdpConnectionError(
+          `Failed to create Browser Use session: ${error.message}`,
+        );
+      }
+      throw error;
     }
-
-    const session = (await response.json()) as { id?: string; cdpUrl?: string };
 
     if (!session.id || !session.cdpUrl) {
       throw new CdpConnectionError('Invalid Browser Use session response.');
@@ -417,11 +427,13 @@ export class CdpConnectorService {
     apiKey?: string,
   ): Promise<void> {
     if (!apiKey) return;
-    await fetch(`https://api.browserbase.com/v1/sessions/${sessionId}`, {
+    await serverHttpRaw({
+      url: `https://api.browserbase.com/v1/sessions/${sessionId}`,
       method: 'DELETE',
       headers: {
         'X-BB-API-Key': apiKey,
       },
+      timeoutMs: 10000,
     }).catch(() => undefined);
   }
 
@@ -430,13 +442,15 @@ export class CdpConnectorService {
     apiKey?: string,
   ): Promise<void> {
     if (!apiKey) return;
-    await fetch(`https://api.browser-use.com/api/v2/browsers/${sessionId}`, {
+    await serverHttpRaw({
+      url: `https://api.browser-use.com/api/v2/browsers/${sessionId}`,
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'X-Browser-Use-API-Key': apiKey,
       },
-      body: JSON.stringify({ action: 'stop' }),
+      body: { action: 'stop' },
+      timeoutMs: 10000,
     }).catch(() => undefined);
   }
 

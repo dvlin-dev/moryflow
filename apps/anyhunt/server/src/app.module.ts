@@ -33,6 +33,7 @@ import { AgentModule } from './agent';
 import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
 import { LlmModule } from './llm';
+import { OpenApiModule } from './openapi';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { LlmModule } from './llm';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    OpenApiModule,
     PrismaModule,
     VectorPrismaModule,
     RedisModule,

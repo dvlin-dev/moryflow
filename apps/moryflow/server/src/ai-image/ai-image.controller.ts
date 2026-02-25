@@ -23,7 +23,7 @@ import { InvalidRequestException } from './exceptions';
 
 @ApiTags('AI Image')
 @ApiBearerAuth('bearer')
-@Controller('v1/images')
+@Controller({ path: 'images', version: '1' })
 @UseFilters(AiImageExceptionFilter)
 export class AiImageController {
   constructor(private readonly aiImageService: AiImageService) {}

@@ -42,13 +42,13 @@ import {
 @ApiTags('Site')
 @ApiBearerAuth('bearer')
 @ApiCookieAuth('better-auth.session_token')
-@Controller('api/sites')
+@Controller({ path: 'sites', version: '1' })
 export class SiteController {
   constructor(private readonly siteService: SiteService) {}
 
   /**
    * 获取用户的站点列表
-   * GET /api/sites
+   * GET /api/v1/sites
    */
   @Get()
   @ApiOperation({ summary: '获取用户的站点列表' })
@@ -62,7 +62,7 @@ export class SiteController {
 
   /**
    * 创建新站点
-   * POST /api/sites
+   * POST /api/v1/sites
    */
   @Post()
   @ApiOperation({ summary: '创建新站点' })
@@ -77,7 +77,7 @@ export class SiteController {
 
   /**
    * 检查子域名可用性
-   * GET /api/sites/subdomain/check?subdomain=xxx
+   * GET /api/v1/sites/subdomain/check?subdomain=xxx
    */
   @Get('subdomain/check')
   @ApiOperation({ summary: '检查子域名可用性' })
@@ -98,7 +98,7 @@ export class SiteController {
 
   /**
    * 推荐可用子域名
-   * GET /api/sites/subdomain/suggest?base=xxx
+   * GET /api/v1/sites/subdomain/suggest?base=xxx
    */
   @Get('subdomain/suggest')
   @ApiOperation({ summary: '推荐可用子域名' })
@@ -113,7 +113,7 @@ export class SiteController {
 
   /**
    * 根据子域名获取站点信息（Worker 回源使用）
-   * GET /api/sites/by-subdomain/:subdomain
+   * GET /api/v1/sites/by-subdomain/:subdomain
    * 这是公开接口，供 Worker 回源查询
    */
   @Public()
@@ -131,7 +131,7 @@ export class SiteController {
 
   /**
    * 获取站点页面列表（包含 localFilePath）
-   * GET /api/sites/:id/pages
+   * GET /api/v1/sites/:id/pages
    */
   @Get(':id/pages')
   @ApiOperation({ summary: '获取站点页面列表' })
@@ -146,7 +146,7 @@ export class SiteController {
 
   /**
    * 获取站点详情
-   * GET /api/sites/:id
+   * GET /api/v1/sites/:id
    */
   @Get(':id')
   @ApiOperation({ summary: '获取站点详情' })
@@ -161,7 +161,7 @@ export class SiteController {
 
   /**
    * 更新站点配置
-   * PATCH /api/sites/:id
+   * PATCH /api/v1/sites/:id
    */
   @Patch(':id')
   @ApiOperation({ summary: '更新站点配置' })
@@ -182,7 +182,7 @@ export class SiteController {
 
   /**
    * 下线站点
-   * POST /api/sites/:id/offline
+   * POST /api/v1/sites/:id/offline
    */
   @Post(':id/offline')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -198,7 +198,7 @@ export class SiteController {
 
   /**
    * 上线站点
-   * POST /api/sites/:id/online
+   * POST /api/v1/sites/:id/online
    */
   @Post(':id/online')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -214,7 +214,7 @@ export class SiteController {
 
   /**
    * 删除站点
-   * DELETE /api/sites/:id
+   * DELETE /api/v1/sites/:id
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

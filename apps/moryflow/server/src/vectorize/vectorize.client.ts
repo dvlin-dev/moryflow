@@ -19,6 +19,12 @@ import type {
   ApiErrorResponse,
 } from './types';
 import { AuthTokensService } from '../auth';
+import {
+  serverHttpJson,
+  serverHttpRaw,
+  ServerApiError,
+} from '../common/http/server-http-client';
+import type { ApiClientRequestOptions } from '@anyhunt/api';
 @Injectable()
 export class VectorizeClient implements OnModuleInit {
   private readonly logger = new Logger(VectorizeClient.name);
@@ -46,27 +52,38 @@ export class VectorizeClient implements OnModuleInit {
     const url = `${this.baseUrl}${path}`;
     const accessToken = await this.authTokensService.createAccessToken(userId);
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken.token}`,
-        ...options.headers,
-      },
-    });
-
-    const data = (await response.json()) as T | ApiErrorResponse;
-
-    if (!response.ok) {
-      const errorData = data as ApiErrorResponse;
+    try {
+      return await serverHttpJson<T>({
+        url,
+        method:
+          (options.method as
+            | 'GET'
+            | 'POST'
+            | 'PUT'
+            | 'PATCH'
+            | 'DELETE'
+            | undefined) ?? 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken.token}`,
+          ...options.headers,
+        },
+        body: options.body as ApiClientRequestOptions['body'],
+        signal: options.signal ?? undefined,
+        timeoutMs: 10000,
+      });
+    } catch (error) {
+      if (error instanceof ServerApiError) {
+        this.logger.error(`Vectorize API error: ${error.message}`);
+        throw new Error(error.message || `Request failed: ${error.status}`);
+      }
+      const errorData = error as ApiErrorResponse;
       this.logger.error(
         `Vectorize API error: ${errorData.error}`,
         errorData.details,
       );
-      throw new Error(errorData.error || `Request failed: ${response.status}`);
+      throw error;
     }
-
-    return data as T;
   }
 
   /**
@@ -81,7 +98,7 @@ export class VectorizeClient implements OnModuleInit {
     texts: string[],
     type: 'query' | 'document' = 'document',
   ): Promise<number[][]> {
-    const result = await this.request<EmbedResponse>(userId, '/api/embed', {
+    const result = await this.request<EmbedResponse>(userId, '/api/v1/embed', {
       method: 'POST',
       body: JSON.stringify({ texts, type }),
     });
@@ -99,7 +116,7 @@ export class VectorizeClient implements OnModuleInit {
     userId: string,
     vectors: UpsertVectorInput[],
   ): Promise<UpsertResponse> {
-    return this.request<UpsertResponse>(userId, '/api/vectors/upsert', {
+    return this.request<UpsertResponse>(userId, '/api/v1/vectors/upsert', {
       method: 'POST',
       body: JSON.stringify({ vectors }),
     });
@@ -120,7 +137,7 @@ export class VectorizeClient implements OnModuleInit {
   ): Promise<QueryMatch[]> {
     const result = await this.request<QueryResponse>(
       userId,
-      '/api/vectors/query',
+      '/api/v1/vectors/query',
       {
         method: 'POST',
         body: JSON.stringify({ text, ...options }),
@@ -135,7 +152,7 @@ export class VectorizeClient implements OnModuleInit {
    * @param ids - 要删除的向量 ID 列表
    */
   async delete(userId: string, ids: string[]): Promise<DeleteResponse> {
-    return this.request<DeleteResponse>(userId, '/api/vectors', {
+    return this.request<DeleteResponse>(userId, '/api/v1/vectors', {
       method: 'DELETE',
       body: JSON.stringify({ ids }),
     });
@@ -146,7 +163,11 @@ export class VectorizeClient implements OnModuleInit {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/health`);
+      const response = await serverHttpRaw({
+        url: `${this.baseUrl}/health`,
+        method: 'GET',
+        timeoutMs: 5000,
+      });
       return response.ok;
     } catch {
       return false;

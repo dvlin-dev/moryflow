@@ -1,6 +1,6 @@
 /**
  * Storage Client
- * 生成预签名 URL（指向本服务的 /api/storage 端点）
+ * 生成预签名 URL（指向本服务的 /api/v1/storage 端点）
  */
 
 import { Injectable } from '@nestjs/common';
@@ -72,7 +72,7 @@ export class StorageClient {
     );
 
     const url = new URL(this.serverUrl);
-    url.pathname = `/api/storage/${action}/${userId}/${vaultId}/${fileId}`;
+    url.pathname = `/api/v1/storage/${action}/${userId}/${vaultId}/${fileId}`;
     url.searchParams.set('expires', expiresAt.toString());
     url.searchParams.set('sig', signature);
     if (contentType) {

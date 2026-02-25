@@ -2,11 +2,16 @@
 
 > Moryflow 认证模块（Better Auth + access/refresh + JWKS）
 
+## 最近更新
+
+- 回归测试补齐：`auth.controller.spec.ts` 新增 `/api/v1/auth/email-otp/verify-email` token-first 响应覆盖
+- Auth handler 路由匹配统一为 `@All('*path')`，避免通配符匹配差异；并在 handler 内将外部 `/api/v1/auth/*` 映射到 Better Auth 内部 `/api/auth/*`
+
 ## 入口
 
-- `/api/auth/*`：Better Auth handler（`auth.controller.ts`）
-- `/api/auth/refresh`：刷新 access + 轮换 refresh
-- `/api/auth/logout` / `/api/auth/sign-out`：撤销 refresh + session
+- `/api/v1/auth/*`：Better Auth handler（`auth.controller.ts`，登录/验证码验证成功时改写为 Token-first 响应）
+- `/api/v1/auth/refresh`：刷新 access + 轮换 refresh
+- `/api/v1/auth/logout` / `/api/v1/auth/sign-out`：撤销 refresh token（幂等）
 
 ## 关键文件
 
@@ -22,11 +27,10 @@
 
 - access token 仅用于业务接口（6h，JWT）
 - refresh token 必须轮换，存库仅 hash
-- Web：HttpOnly Cookie；Device：body refresh + `X-App-Platform`
-- Web 必须校验 `Origin`（`TRUSTED_ORIGINS`）
-- `X-App-Platform` 存在时跳过 Origin 校验（避免 Electron/RN `Origin: null` 误判）
-- Origin 校验仅用于 Web 请求，Device 以 `X-App-Platform` 分流
-- `AuthTokensController` 必须先于 `AuthController` 注册，避免 `/api/auth/*` 被兜底 handler 拦截
+- `sign-in/email` 与 `email-otp/verify-email` 成功后必须直接返回 `accessToken + refreshToken`
+- `refresh/logout/sign-out` 仅接受 body `refreshToken`，不再读取 Cookie，不再依赖 session fallback
+- `AuthTokensController` 必须先于 `AuthController` 注册，避免 `/api/v1/auth/*` 被兜底 handler 拦截
+- `AuthController` 必须使用 `@All('*path')` 作为兜底路由，避免 `@All('*')` 在不同路由层实现下出现匹配边界差异
 - 内部服务可通过 `AuthTokensService` 签发 access JWT（Vectorize Worker 使用 JWKS 验签）
 - Expo 插件需显式声明 `BetterAuthPlugin` 类型，避免 `no-unsafe-call`
 
@@ -38,6 +42,7 @@
 
 ## 测试
 
+- `__tests__/auth.controller.spec.ts`
 - `__tests__/auth.guard.spec.ts`
 - `__tests__/auth.tokens.service.spec.ts`
 - `__tests__/auth.tokens.controller.spec.ts`

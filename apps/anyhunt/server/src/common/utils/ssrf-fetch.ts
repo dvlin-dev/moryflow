@@ -6,6 +6,8 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 import { UrlValidator } from '../validators/url.validator';
+import { serverHttpRaw } from '../http/server-http-client';
+import type { ApiClientRequestOptions } from '@anyhunt/api';
 
 export interface SafeFetchOptions extends RequestInit {
   maxRedirects?: number;
@@ -25,8 +27,19 @@ export async function fetchWithSsrGuard(
       throw new Error(`URL not allowed: ${currentUrl}`);
     }
 
-    const response = await fetch(currentUrl, {
-      ...fetchOptions,
+    const response = await serverHttpRaw({
+      url: currentUrl,
+      method:
+        (fetchOptions.method as
+          | 'GET'
+          | 'POST'
+          | 'PUT'
+          | 'PATCH'
+          | 'DELETE'
+          | undefined) ?? 'GET',
+      headers: fetchOptions.headers,
+      body: fetchOptions.body as ApiClientRequestOptions['body'],
+      signal: fetchOptions.signal ?? undefined,
       redirect: 'manual',
     });
 

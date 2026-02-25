@@ -15,35 +15,35 @@ describe('payment.utils', () => {
         ['https://server.moryflow.com'],
       );
 
-      expect(result).toBe('https://server.moryflow.com/payment/success');
+      expect(result).toBe('https://server.moryflow.com/api/v1/payment/success');
     });
 
     it('允许同源相对路径', () => {
       const result = resolveSuccessUrl(
-        '/payment/success?from=checkout',
+        '/api/v1/payment/success?from=checkout',
         'https://server.moryflow.com',
         ['https://server.moryflow.com'],
       );
 
       expect(result).toBe(
-        'https://server.moryflow.com/payment/success?from=checkout',
+        'https://server.moryflow.com/api/v1/payment/success?from=checkout',
       );
     });
 
     it('允许白名单域名', () => {
       const result = resolveSuccessUrl(
-        'https://server.moryflow.com/payment/success',
+        'https://server.moryflow.com/api/v1/payment/success',
         'https://server.moryflow.com',
         ['https://server.moryflow.com'],
       );
 
-      expect(result).toBe('https://server.moryflow.com/payment/success');
+      expect(result).toBe('https://server.moryflow.com/api/v1/payment/success');
     });
 
     it('拒绝不受信域名', () => {
       expect(() =>
         resolveSuccessUrl(
-          'https://evil.com/payment/success',
+          'https://evil.com/api/v1/payment/success',
           'https://server.moryflow.com',
           ['https://server.moryflow.com'],
         ),
