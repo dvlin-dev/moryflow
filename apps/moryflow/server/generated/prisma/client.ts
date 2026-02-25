@@ -103,16 +103,6 @@ export type Subscription = Prisma.SubscriptionModel
  */
 export type PaymentOrder = Prisma.PaymentOrderModel
 /**
- * Model License
- * 
- */
-export type License = Prisma.LicenseModel
-/**
- * Model LicenseActivation
- * 
- */
-export type LicenseActivation = Prisma.LicenseActivationModel
-/**
  * Model ActivityLog
  * 
  */

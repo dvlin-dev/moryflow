@@ -294,57 +294,6 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>
 }
 
-export type EnumLicenseTierFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseTier | Prisma.EnumLicenseTierFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseTierFilter<$PrismaModel> | $Enums.LicenseTier
-}
-
-export type EnumLicenseStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseStatus | Prisma.EnumLicenseStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseStatusFilter<$PrismaModel> | $Enums.LicenseStatus
-}
-
-export type EnumLicenseTierWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseTier | Prisma.EnumLicenseTierFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseTierWithAggregatesFilter<$PrismaModel> | $Enums.LicenseTier
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumLicenseTierFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumLicenseTierFilter<$PrismaModel>
-}
-
-export type EnumLicenseStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseStatus | Prisma.EnumLicenseStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseStatusWithAggregatesFilter<$PrismaModel> | $Enums.LicenseStatus
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumLicenseStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumLicenseStatusFilter<$PrismaModel>
-}
-
-export type EnumLicenseActivationStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseActivationStatus | Prisma.EnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseActivationStatusFilter<$PrismaModel> | $Enums.LicenseActivationStatus
-}
-
-export type EnumLicenseActivationStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseActivationStatus | Prisma.EnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseActivationStatusWithAggregatesFilter<$PrismaModel> | $Enums.LicenseActivationStatus
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumLicenseActivationStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumLicenseActivationStatusFilter<$PrismaModel>
-}
-
 export type IntNullableFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
   in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel> | null
@@ -860,57 +809,6 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
-}
-
-export type NestedEnumLicenseTierFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseTier | Prisma.EnumLicenseTierFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseTierFilter<$PrismaModel> | $Enums.LicenseTier
-}
-
-export type NestedEnumLicenseStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseStatus | Prisma.EnumLicenseStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseStatusFilter<$PrismaModel> | $Enums.LicenseStatus
-}
-
-export type NestedEnumLicenseTierWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseTier | Prisma.EnumLicenseTierFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseTier[] | Prisma.ListEnumLicenseTierFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseTierWithAggregatesFilter<$PrismaModel> | $Enums.LicenseTier
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumLicenseTierFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumLicenseTierFilter<$PrismaModel>
-}
-
-export type NestedEnumLicenseStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseStatus | Prisma.EnumLicenseStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseStatus[] | Prisma.ListEnumLicenseStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseStatusWithAggregatesFilter<$PrismaModel> | $Enums.LicenseStatus
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumLicenseStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumLicenseStatusFilter<$PrismaModel>
-}
-
-export type NestedEnumLicenseActivationStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseActivationStatus | Prisma.EnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseActivationStatusFilter<$PrismaModel> | $Enums.LicenseActivationStatus
-}
-
-export type NestedEnumLicenseActivationStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.LicenseActivationStatus | Prisma.EnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.LicenseActivationStatus[] | Prisma.ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumLicenseActivationStatusWithAggregatesFilter<$PrismaModel> | $Enums.LicenseActivationStatus
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumLicenseActivationStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumLicenseActivationStatusFilter<$PrismaModel>
 }
 
 export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
