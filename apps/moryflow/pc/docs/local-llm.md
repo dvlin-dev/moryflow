@@ -20,7 +20,7 @@
 
 - **模型管理**：一键下载、运行各类开源模型（Llama、Qwen、DeepSeek、Gemma 等）
 - **OpenAI 兼容 API**：`/v1/chat/completions`、`/v1/embeddings`
-- **原生 API**：模型下载（`/api/pull`）、列表（`/api/tags`）、删除（`/api/delete`）
+- **原生 API**：模型下载（`/api/v1/pull`）、列表（`/api/v1/tags`）、删除（`/api/v1/delete`）
 
 ### 1.2 与现有架构的契合点
 
@@ -82,10 +82,10 @@
 │                                                                 │
 │   /v1/chat/completions  ← OpenAI 兼容 (推理)                    │
 │   /v1/embeddings        ← OpenAI 兼容 (嵌入)                    │
-│   /api/tags             ← 列出本地模型                          │
-│   /api/pull             ← 下载模型 (流式进度)                    │
-│   /api/delete           ← 删除模型                              │
-│   /api/show             ← 模型详情                              │
+│   /api/v1/tags             ← 列出本地模型                          │
+│   /api/v1/pull             ← 下载模型 (流式进度)                    │
+│   /api/v1/delete           ← 删除模型                              │
+│   /api/v1/show             ← 模型详情                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -123,10 +123,10 @@ interface PresetProvider {
   // ... 现有字段
 
   /** 本地后端类型（仅本地服务商） */
-  localBackend?: 'ollama' | 'llama.cpp'
+  localBackend?: 'ollama' | 'llama.cpp';
 
   /** 原生 API 地址（用于模型管理等非推理功能） */
-  nativeApiBaseUrl?: string
+  nativeApiBaseUrl?: string;
 }
 ```
 
@@ -151,34 +151,34 @@ Ollama 预设配置：
 
 ### 3.2 Ollama API 数据结构
 
-**本地模型信息**（来自 `/api/tags`）：
+**本地模型信息**（来自 `/api/v1/tags`）：
 
 ```typescript
 interface OllamaModel {
-  name: string // "qwen2.5:7b"
-  model: string // 完整模型标识
-  modified_at: string // ISO 时间
-  size: number // 字节数
-  digest: string // SHA256
+  name: string; // "qwen2.5:7b"
+  model: string; // 完整模型标识
+  modified_at: string; // ISO 时间
+  size: number; // 字节数
+  digest: string; // SHA256
   details: {
-    parent_model?: string
-    format: string
-    family: string // "qwen2.5"
-    families?: string[]
-    parameter_size: string // "7B"
-    quantization_level: string // "Q4_K_M"
-  }
+    parent_model?: string;
+    format: string;
+    family: string; // "qwen2.5"
+    families?: string[];
+    parameter_size: string; // "7B"
+    quantization_level: string; // "Q4_K_M"
+  };
 }
 ```
 
-**下载进度**（来自 `/api/pull` 流式响应）：
+**下载进度**（来自 `/api/v1/pull` 流式响应）：
 
 ```typescript
 interface OllamaPullProgress {
-  status: string // "pulling manifest" | "downloading" | "verifying" | "success"
-  digest?: string
-  total?: number // 总字节数
-  completed?: number // 已完成字节数
+  status: string; // "pulling manifest" | "downloading" | "verifying" | "success"
+  digest?: string;
+  total?: number; // 总字节数
+  completed?: number; // 已完成字节数
 }
 ```
 
@@ -188,14 +188,14 @@ Ollama 模型转换为 Moryflow 内部格式：
 
 ```typescript
 interface OllamaLocalModel {
-  id: string // "qwen2.5:7b"
-  name: string // "Qwen 2.5 7B"（格式化显示名）
-  size: number
-  modifiedAt: string
-  capabilities: ModelCapabilities // 推断的能力
-  modalities: ModelModalities // 推断的模态
-  limits: ModelLimits // 推断的限制
-  details: OllamaModel['details']
+  id: string; // "qwen2.5:7b"
+  name: string; // "Qwen 2.5 7B"（格式化显示名）
+  size: number;
+  modifiedAt: string;
+  capabilities: ModelCapabilities; // 推断的能力
+  modalities: ModelModalities; // 推断的模态
+  limits: ModelLimits; // 推断的限制
+  details: OllamaModel['details'];
 }
 ```
 
@@ -205,13 +205,13 @@ interface OllamaLocalModel {
 
 ### 4.1 Ollama Service 职责
 
-| 方法                          | 功能                 | 对应 Ollama API      |
-| ----------------------------- | -------------------- | -------------------- |
-| `checkConnection()`           | 检测 Ollama 是否运行 | `GET /api/version`   |
-| `getLocalModels()`            | 获取本地已安装模型   | `GET /api/tags`      |
-| `pullModel(name, onProgress)` | 下载模型（流式进度） | `POST /api/pull`     |
-| `deleteModel(name)`           | 删除本地模型         | `DELETE /api/delete` |
-| `showModel(name)`             | 获取模型详情         | `POST /api/show`     |
+| 方法                          | 功能                 | 对应 Ollama API         |
+| ----------------------------- | -------------------- | ----------------------- |
+| `checkConnection()`           | 检测 Ollama 是否运行 | `GET /api/v1/version`   |
+| `getLocalModels()`            | 获取本地已安装模型   | `GET /api/v1/tags`      |
+| `pullModel(name, onProgress)` | 下载模型（流式进度） | `POST /api/v1/pull`     |
+| `deleteModel(name)`           | 删除本地模型         | `DELETE /api/v1/delete` |
+| `showModel(name)`             | 获取模型详情         | `POST /api/v1/show`     |
 
 > 📖 API 详情参考：[Ollama API 文档](https://github.com/ollama/ollama/blob/main/docs/api.md)
 
@@ -255,7 +255,7 @@ ipcMain.handle('ollama:show-model', async (_, name, baseUrl?) => {...})
 **下载进度事件**（主进程 → 渲染层）：
 
 ```typescript
-webContents.send('ollama:pull-progress', { name, progress: OllamaPullProgress })
+webContents.send('ollama:pull-progress', { name, progress: OllamaPullProgress });
 ```
 
 ### 4.4 Model Factory 集成
@@ -330,9 +330,9 @@ createOpenAICompatible({ baseURL: "http://localhost:11434/v1" })
 
 1. **打开设置** → 选择 Ollama 服务商
 2. **检测连接** → 自动检测 Ollama 是否运行，显示状态
-3. **查看本地模型** → 从 `/api/tags` 获取，显示能力标签
+3. **查看本地模型** → 从 `/api/v1/tags` 获取，显示能力标签
 4. **搜索模型库** → 显示热门模型列表，点击 tag 触发下载
-5. **下载模型** → 调用 `/api/pull`，实时显示进度
+5. **下载模型** → 调用 `/api/v1/pull`，实时显示进度
 6. **启用/禁用模型** → 更新用户配置，控制是否在模型选择器中显示
 
 ---

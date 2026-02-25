@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
+import { authMethods } from './lib/auth/auth-methods';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -61,13 +62,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
-  const bootstrap = useAuthStore((state) => state.bootstrap);
 
   useEffect(() => {
     if (!isBootstrapped) {
-      void bootstrap();
+      void authMethods.bootstrapAuth();
     }
-  }, [bootstrap, isBootstrapped]);
+  }, [isBootstrapped]);
 
   return (
     <QueryClientProvider client={queryClient}>

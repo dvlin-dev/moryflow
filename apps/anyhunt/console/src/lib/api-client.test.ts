@@ -3,9 +3,9 @@
  * **Feature: admin-shadcn-refactor, Property 6: API 错误处理一致性**
  * **Validates: Requirements 2.3, 10.2**
  */
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { apiClient, ApiError } from './api-client';
+import { ServerApiError as ApiError } from '@anyhunt/api/client';
 
 describe('属性 6: API 错误处理一致性', () => {
   describe('ApiError 类', () => {
@@ -16,13 +16,8 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (status, code, message) => {
-            const error = new ApiError(status, code, message);
-            return (
-              error.status === status &&
-              error.code === code &&
-              error.message === message &&
-              error.name === 'ApiError'
-            );
+            const error = new ApiError(status, message, code);
+            return error.status === status && error.code === code && error.message === message;
           }
         ),
         { numRuns: 100 }
@@ -35,7 +30,7 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (code, message) => {
-            const error = new ApiError(401, code, message);
+            const error = new ApiError(401, message, code);
             return error.isUnauthorized === true;
           }
         ),
@@ -50,7 +45,7 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (status, code, message) => {
-            const error = new ApiError(status, code, message);
+            const error = new ApiError(status, message, code);
             return error.isUnauthorized === false;
           }
         ),
@@ -64,7 +59,7 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (code, message) => {
-            const error = new ApiError(403, code, message);
+            const error = new ApiError(403, message, code);
             return error.isForbidden === true;
           }
         ),
@@ -78,7 +73,7 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (code, message) => {
-            const error = new ApiError(404, code, message);
+            const error = new ApiError(404, message, code);
             return error.isNotFound === true;
           }
         ),
@@ -93,7 +88,7 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (status, code, message) => {
-            const error = new ApiError(status, code, message);
+            const error = new ApiError(status, message, code);
             return error.isServerError === true;
           }
         ),
@@ -108,7 +103,7 @@ describe('属性 6: API 错误处理一致性', () => {
           fc.string({ minLength: 1, maxLength: 50 }),
           fc.string({ minLength: 1, maxLength: 200 }),
           (status, code, message) => {
-            const error = new ApiError(status, code, message);
+            const error = new ApiError(status, message, code);
             return error.isServerError === false;
           }
         ),
@@ -121,6 +116,7 @@ describe('属性 6: API 错误处理一致性', () => {
     afterEach(() => {
       vi.unstubAllGlobals();
       vi.restoreAllMocks();
+      vi.resetModules();
     });
 
     it('非 JSON 响应应抛出 UNEXPECTED_RESPONSE', async () => {
@@ -133,6 +129,8 @@ describe('属性 6: API 错误处理一致性', () => {
           })
         )
       );
+
+      const { apiClient } = await import('./api-client');
 
       await expect(apiClient.get('/test')).rejects.toMatchObject({
         code: 'UNEXPECTED_RESPONSE',

@@ -38,6 +38,8 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- www Auth 升级为 Token-first：登录/邮箱验证成功后直接写入本地 `access+refresh`，不再依赖 Cookie refresh
+- `auth-context` 改为基于本地 token + `/api/v1/app/user/me` 解析登录态，移除 Better Auth `useSession` 依赖
 - 移动端 Reader 底部导航（Inbox/Explore/Subscriptions）落地，移除左右滑动布局
 - ReaderShell 改为响应式渲染（CSS 控制显示），避免移动端首屏闪烁
 - Subscriptions 列表跳转 Inbox 时保留 URL search 参数
@@ -161,11 +163,12 @@ routes/
 | File                              | Description                               |
 | --------------------------------- | ----------------------------------------- |
 | `lib/api-base.ts`                 | API base URL 解析                         |
-| `lib/auth-session.ts`             | Access Token 生命周期（store + refresh）  |
+| `lib/auth-session.ts`             | Token Session 生命周期（access/refresh）  |
+| `lib/token-auth-api.ts`           | Token-first 登录/邮箱验证 API 封装        |
 | `lib/api-client.ts`               | API client（Bearer + refresh）            |
 | `lib/api-paths.ts`                | Centralized API path constants            |
 | `lib/env.ts`                      | Public environment config                 |
-| `stores/auth-store.ts`            | Access token store + persistence          |
+| `stores/auth-store.ts`            | access/refresh token store + persistence  |
 | `hooks/useCaptchaVerification.ts` | Turnstile captcha hook                    |
 | `hooks/useKeyboardShortcuts.ts`   | Reader keyboard shortcuts                 |
 | `hooks/useIsMobile.ts`            | Mobile detection hook                     |

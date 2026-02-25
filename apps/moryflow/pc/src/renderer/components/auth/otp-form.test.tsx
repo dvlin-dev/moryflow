@@ -4,8 +4,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OTPForm } from './otp-form';
 
 const mocks = vi.hoisted(() => ({
-  verifyEmail: vi.fn(),
-  sendVerificationOtp: vi.fn(),
+  verifyEmailOTP: vi.fn(),
+  sendVerificationOTP: vi.fn(),
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -14,11 +14,9 @@ vi.mock('@/lib/i18n', () => ({
   }),
 }));
 
-vi.mock('@/lib/server/client', () => ({
-  emailOtp: {
-    verifyEmail: mocks.verifyEmail,
-    sendVerificationOtp: mocks.sendVerificationOtp,
-  },
+vi.mock('@/lib/server/auth-api', () => ({
+  verifyEmailOTP: mocks.verifyEmailOTP,
+  sendVerificationOTP: mocks.sendVerificationOTP,
 }));
 
 describe('OTPForm', () => {
@@ -32,10 +30,10 @@ describe('OTPForm', () => {
       }
     );
 
-    mocks.verifyEmail.mockReset();
-    mocks.sendVerificationOtp.mockReset();
-    mocks.verifyEmail.mockResolvedValue({ error: null });
-    mocks.sendVerificationOtp.mockResolvedValue({ error: null });
+    mocks.verifyEmailOTP.mockReset();
+    mocks.sendVerificationOTP.mockReset();
+    mocks.verifyEmailOTP.mockResolvedValue({ error: null });
+    mocks.sendVerificationOTP.mockResolvedValue({ error: null });
   });
 
   afterEach(() => {
@@ -57,10 +55,7 @@ describe('OTPForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'verifyButton' }));
 
     await waitFor(() => {
-      expect(mocks.verifyEmail).toHaveBeenCalledWith({
-        email: 'demo@moryflow.com',
-        otp: '123456',
-      });
+      expect(mocks.verifyEmailOTP).toHaveBeenCalledWith('demo@moryflow.com', '123456');
     });
 
     expect(outerSubmit).not.toHaveBeenCalled();
@@ -80,10 +75,7 @@ describe('OTPForm', () => {
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
     await waitFor(() => {
-      expect(mocks.verifyEmail).toHaveBeenCalledWith({
-        email: 'demo2@moryflow.com',
-        otp: '654321',
-      });
+      expect(mocks.verifyEmailOTP).toHaveBeenCalledWith('demo2@moryflow.com', '654321');
     });
 
     expect(outerSubmit).not.toHaveBeenCalled();

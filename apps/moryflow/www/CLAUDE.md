@@ -102,18 +102,18 @@ docker run -p 3000:3000 moryflow-www
 
 ## 页面列表
 
-| 路径           | 组件                         | 说明                                                                 |
-| -------------- | ---------------------------- | -------------------------------------------------------------------- |
-| `/`            | index.tsx                    | 首页（Hero + AgentShowcase + WhyLocal + Capabilities + DownloadCTA） |
-| `/features`    | features.tsx                 | 功能特性                                                             |
-| `/pricing`     | pricing.tsx                  | 定价（Beta 免费）                                                    |
-| `/download`    | download.tsx                 | 下载页（macOS/Windows）                                              |
-| `/about`       | about.tsx                    | 关于我们                                                             |
-| `/privacy`     | privacy.tsx                  | 隐私政策                                                             |
-| `/terms`       | terms.tsx                    | 服务条款                                                             |
-| `/sitemap.xml` | server/routes/sitemap.xml.ts | Sitemap                                                              |
-| `/robots.txt`  | server/routes/robots.txt.ts  | Robots                                                               |
-| `/api/health`  | server/routes/api/health.ts  | 健康检查                                                             |
+| 路径             | 组件                           | 说明                                                                 |
+| ---------------- | ------------------------------ | -------------------------------------------------------------------- |
+| `/`              | index.tsx                      | 首页（Hero + AgentShowcase + WhyLocal + Capabilities + DownloadCTA） |
+| `/features`      | features.tsx                   | 功能特性                                                             |
+| `/pricing`       | pricing.tsx                    | 定价（Beta 免费）                                                    |
+| `/download`      | download.tsx                   | 下载页（macOS/Windows）                                              |
+| `/about`         | about.tsx                      | 关于我们                                                             |
+| `/privacy`       | privacy.tsx                    | 隐私政策                                                             |
+| `/terms`         | terms.tsx                      | 服务条款                                                             |
+| `/sitemap.xml`   | server/routes/sitemap.xml.ts   | Sitemap                                                              |
+| `/robots.txt`    | server/routes/robots.txt.ts    | Robots                                                               |
+| `/api/v1/health` | server/routes/api/v1/health.ts | 健康检查                                                             |
 
 ## 图标规范
 

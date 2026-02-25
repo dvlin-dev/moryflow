@@ -5,8 +5,15 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { createApiClient, createApiTransport } from '@anyhunt/api/client';
 
 const DOWNLOAD_BASE = 'https://download.moryflow.com';
+const downloadClient = createApiClient({
+  transport: createApiTransport({
+    baseUrl: DOWNLOAD_BASE,
+  }),
+  defaultAuthMode: 'public',
+});
 
 type Platform = 'mac' | 'win' | 'linux';
 
@@ -45,9 +52,9 @@ export function useDownload(): UseDownloadReturn {
   useEffect(() => {
     const fetchManifest = async () => {
       try {
-        const res = await fetch(`${DOWNLOAD_BASE}/manifest.json?_t=${Date.now()}`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
+        const data = await downloadClient.get<Manifest>('/manifest.json', {
+          query: { _t: Date.now() },
+        });
         setManifest(data);
       } catch (err) {
         console.error('Failed to fetch manifest:', err);

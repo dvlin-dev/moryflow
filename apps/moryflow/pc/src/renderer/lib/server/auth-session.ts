@@ -1,14 +1,16 @@
 /**
  * [PROVIDES]: access token store + refresh 轮换与预刷新（网络失败不清理）
- * [DEPENDS]: /api/auth/refresh, desktopAPI, auth-store
+ * [DEPENDS]: /api/v1/auth/refresh, desktopAPI, auth-store
  * [POS]: Desktop 端 Auth Session 管理
- * [UPDATE]: 2026-02-24 - fail-fast（无 refresh token 不请求）+ refresh 请求超时（10s）+ shouldClearAuthSessionAfterEnsureFailure
- * [UPDATE]: 2026-02-24 - 新增 allowCookieFallback：显式登录场景可在无本地 refresh token 时走 Cookie 刷新
+ * [UPDATE]: 2026-02-24 - refresh 改为仅接受 body refreshToken，删除 Cookie fallback 与 forceCookieSession
+ * [UPDATE]: 2026-02-24 - 新增 syncAuthSessionFromPayload，登录/验证码验证成功后直接写入 access+refresh
+ * [UPDATE]: 2026-02-24 - 保留 fail-fast（无 refresh token 不请求）+ 10s 超时 + 网络失败不清理 token
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
  */
 
 import { MEMBERSHIP_API_URL } from './const';
+import { createApiTransport, ServerApiError } from '@anyhunt/api/client';
 import {
   ACCESS_TOKEN_SKEW_MS,
   authStore,
@@ -23,8 +25,16 @@ let refreshPromise: Promise<boolean> | null = null;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingRefresh = false;
 
-type RefreshAccessTokenOptions = {
-  allowCookieFallback?: boolean;
+const authTransport = createApiTransport({
+  baseUrl: MEMBERSHIP_API_URL,
+  timeoutMs: REFRESH_REQUEST_TIMEOUT_MS,
+});
+
+type TokenPayload = {
+  accessToken?: string;
+  accessTokenExpiresAt?: string;
+  refreshToken?: string;
+  refreshTokenExpiresAt?: string;
 };
 
 const syncAccessToken = (token: string | null) => {
@@ -104,65 +114,61 @@ export const clearAuthSession = async () => {
   await setStoredRefreshToken(null);
 };
 
-export const refreshAccessToken = async (
-  options: RefreshAccessTokenOptions = {}
-): Promise<boolean> => {
-  const { allowCookieFallback = false } = options;
+const isTokenPayload = (payload: unknown): payload is Required<TokenPayload> => {
+  const data = payload as TokenPayload | null;
+  return Boolean(
+    data &&
+    typeof data.accessToken === 'string' &&
+    typeof data.accessTokenExpiresAt === 'string' &&
+    typeof data.refreshToken === 'string' &&
+    typeof data.refreshTokenExpiresAt === 'string'
+  );
+};
 
+export const syncAuthSessionFromPayload = async (payload: unknown): Promise<boolean> => {
+  if (!isTokenPayload(payload)) {
+    return false;
+  }
+
+  setAccessToken(payload.accessToken, payload.accessTokenExpiresAt);
+  await setStoredRefreshToken(payload.refreshToken);
+  pendingRefresh = false;
+  return true;
+};
+
+export const refreshAccessToken = async (): Promise<boolean> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const refreshToken = await getStoredRefreshToken();
-      if (!refreshToken && !allowCookieFallback) {
+      if (!refreshToken) {
         pendingRefresh = false;
         return false;
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => {
-        controller.abort();
-      }, REFRESH_REQUEST_TIMEOUT_MS);
-
       try {
-        const response = await fetch(`${MEMBERSHIP_API_URL}/api/auth/refresh`, {
+        const data = await authTransport.request<TokenPayload>({
+          path: '/api/v1/auth/refresh',
           method: 'POST',
-          credentials: 'include',
-          signal: controller.signal,
           headers: {
-            'Content-Type': 'application/json',
             'X-App-Platform': DEVICE_PLATFORM,
           },
-          body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,
+          body: { refreshToken },
+          timeoutMs: REFRESH_REQUEST_TIMEOUT_MS,
         });
-
-        if (response.status === 401 || response.status === 403) {
+        const synced = await syncAuthSessionFromPayload(data);
+        if (!synced) {
           await clearAuthSession();
           return false;
-        }
-
-        if (!response.ok) {
-          pendingRefresh = true;
-          return false;
-        }
-
-        const data = await response.json().catch(() => ({}));
-        if (!data?.accessToken || !data?.accessTokenExpiresAt) {
-          await clearAuthSession();
-          return false;
-        }
-
-        setAccessToken(data.accessToken, data.accessTokenExpiresAt);
-        pendingRefresh = false;
-
-        if (data.refreshToken) {
-          await setStoredRefreshToken(data.refreshToken);
         }
 
         return true;
-      } catch {
+      } catch (error) {
+        if (error instanceof ServerApiError && (error.status === 401 || error.status === 403)) {
+          await clearAuthSession();
+          return false;
+        }
         pendingRefresh = true;
         return false;
-      } finally {
-        clearTimeout(timeout);
       }
     })().finally(() => {
       refreshPromise = null;
@@ -193,12 +199,18 @@ export const ensureAccessToken = async (): Promise<boolean> => {
 
 export const logoutFromServer = async () => {
   const refreshToken = await getStoredRefreshToken();
-  await fetch(`${MEMBERSHIP_API_URL}/api/auth/logout`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-App-Platform': DEVICE_PLATFORM,
-    },
-    body: refreshToken ? JSON.stringify({ refreshToken }) : undefined,
-  }).catch(() => undefined);
+  if (!refreshToken) {
+    return;
+  }
+
+  await authTransport
+    .request<void>({
+      path: '/api/v1/auth/logout',
+      method: 'POST',
+      headers: {
+        'X-App-Platform': DEVICE_PLATFORM,
+      },
+      body: { refreshToken },
+    })
+    .catch(() => undefined);
 };

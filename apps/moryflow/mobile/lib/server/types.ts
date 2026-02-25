@@ -19,10 +19,11 @@ export type {
   MembershipModelsResponse,
   MembershipAuthState,
   BetterAuthError,
-} from '@anyhunt/api'
+  DeleteAccountRequest,
+} from '@anyhunt/api';
 
 // 本地类型别名（简化使用）
 export type {
   MembershipUserInfo as UserInfo,
   MembershipModelsResponse as ModelsResponse,
-} from '@anyhunt/api'
+} from '@anyhunt/api';

@@ -1,11 +1,11 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getPublicEnv, type PublicEnv } from '@/lib/env';
-import { AuthProvider } from '@/lib/auth-context';
 import { PublicEnvProvider } from '@/lib/public-env-context';
 import { AuthModalProvider } from '@/components/auth/auth-modal';
 import '../styles/globals.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { authMethods } from '@/lib/auth/auth-methods';
 
 function createAppQueryClient() {
   return new QueryClient({
@@ -95,22 +95,24 @@ function RootComponent() {
   const { env } = Route.useLoaderData();
   const [queryClient] = useState(() => createAppQueryClient());
 
+  useEffect(() => {
+    void authMethods.bootstrapAuth();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PublicEnvProvider env={env}>
-        <AuthProvider>
-          <AuthModalProvider>
-            <html lang="en" suppressHydrationWarning>
-              <head>
-                <HeadContent />
-              </head>
-              <body className="flex min-h-screen flex-col">
-                <Outlet />
-                <Scripts />
-              </body>
-            </html>
-          </AuthModalProvider>
-        </AuthProvider>
+        <AuthModalProvider>
+          <html lang="en" suppressHydrationWarning>
+            <head>
+              <HeadContent />
+            </head>
+            <body className="flex min-h-screen flex-col">
+              <Outlet />
+              <Scripts />
+            </body>
+          </html>
+        </AuthModalProvider>
       </PublicEnvProvider>
     </QueryClientProvider>
   );

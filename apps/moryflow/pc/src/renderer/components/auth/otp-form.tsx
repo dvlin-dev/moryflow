@@ -3,6 +3,7 @@
  * [EMITS]: onSuccess, onBack
  * [POS]: 邮箱验证码验证表单（设置弹窗 Account 注册第二步）
  * [UPDATE]: 2026-02-24 - 移除内层 form，改为显式提交 + Enter 捕获；onSuccess 改为 await 防止未处理 Promise
+ * [UPDATE]: 2026-02-24 - verify-email 改为 Token-first 接口（成功直接建立会话）
  *
  * [PROTOCOL]: 本文件变更时，需同步更新所属目录 CLAUDE.md
  */
@@ -23,7 +24,7 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from '@anyhunt/ui/components/input-otp';
-import { emailOtp } from '@/lib/server/client';
+import { sendVerificationOTP, verifyEmailOTP } from '@/lib/server/auth-api';
 
 interface OTPFormProps extends React.ComponentProps<'div'> {
   email: string;
@@ -73,10 +74,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
     form.clearErrors('otp');
 
     try {
-      const { error: verifyError } = await emailOtp.verifyEmail({
-        email,
-        otp: values.otp,
-      });
+      const { error: verifyError } = await verifyEmailOTP(email, values.otp);
 
       if (verifyError) {
         form.setError('otp', { message: verifyError.message || t('otpError') });
@@ -97,10 +95,7 @@ export function OTPForm({ className, email, onSuccess, onBack, ...props }: OTPFo
     form.clearErrors('otp');
 
     try {
-      const { error: sendError } = await emailOtp.sendVerificationOtp({
-        email,
-        type: 'email-verification',
-      });
+      const { error: sendError } = await sendVerificationOTP(email, 'email-verification');
 
       if (sendError) {
         form.setError('otp', { message: sendError.message || t('sendFailed') });

@@ -1,22 +1,12 @@
 /**
- * [PROVIDES]: useAuth/useSignIn/useUser 兼容接口
- * [DEPENDS]: MembershipProvider/useMembershipAuth
- * [POS]: 认证上下文兼容层
+ * [PROVIDES]: useAuth/useSignIn/useUser 兼容接口（无 Provider）
+ * [DEPENDS]: useMembership/useMembershipAuth
+ * [POS]: 认证 Hook 兼容层
  */
 
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { router } from 'expo-router';
 import { useMembership, useMembershipAuth, isAuthError, type UserInfo } from '@/lib/server';
-
-// ── Provider（兼容层）────────────────────────────────────
-
-/**
- * AuthProvider 兼容层
- * 实际的认证逻辑由外层的 MembershipProvider 处理
- */
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
 
 // ── 类型定义 ─────────────────────────────────────────────
 

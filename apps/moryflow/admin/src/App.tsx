@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
+import { authMethods } from './lib/auth/auth-methods';
 import { MainLayout } from './components/layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -35,9 +36,9 @@ import ToolAnalyticsPage from './pages/ToolAnalyticsPage';
 /** 受保护路由 */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
 
-  if (isBootstrapping) {
+  if (!isBootstrapped) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         Loading...
@@ -53,11 +54,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const bootstrap = useAuthStore((state) => state.bootstrap);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
 
   useEffect(() => {
-    bootstrap();
-  }, [bootstrap]);
+    if (!isBootstrapped) {
+      void authMethods.bootstrapAuth();
+    }
+  }, [isBootstrapped]);
 
   return (
     <>

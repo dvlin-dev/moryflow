@@ -29,6 +29,7 @@ import {
 import { cn } from '@anyhunt/ui/lib';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anyhunt/ui';
 import { useAuthStore } from '@/stores/auth';
+import { authMethods } from '@/lib/auth/auth-methods';
 
 type NavItem = { path: string; label: string; icon: LucideIcon };
 type NavGroup = { id: string; label: string; icon: LucideIcon; items: NavItem[] };
@@ -87,7 +88,7 @@ function isPathActive(pathname: string, itemPath: string): boolean {
 
 export function MainLayout() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const pathname = location.pathname;
@@ -112,7 +113,7 @@ export function MainLayout() {
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    await logout();
+    await authMethods.logout();
   };
 
   return (

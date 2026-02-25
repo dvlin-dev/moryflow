@@ -103,7 +103,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 - `src/features/` 与 `src/pages/` 避免在 `useEffect` 中设置派生状态，优先使用派生值
 - 表单内监听字段值优先使用 `useWatch`，避免 `form.watch()` 带来的编译器警告
 - 复杂弹窗表单通过 `key` 触发重挂载，替代 effect 内的状态重置
-- Auth 改为 access 内存 + refresh（/api/auth/refresh），移除 localStorage token
+- Auth 改为 access 内存 + refresh（/api/v1/auth/refresh），移除 localStorage token
 - 管理后台仅允许管理员登录（非管理员会被拒绝）
 - React Query 客户端统一在入口初始化，避免重复 Provider
 - Spinner 只接收样式类与尺寸参数，避免误传 icon

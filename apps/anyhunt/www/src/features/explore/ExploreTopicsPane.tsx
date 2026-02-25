@@ -12,12 +12,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Input } from '@anyhunt/ui';
 import { toast } from 'sonner';
 import { ApiClientError } from '@/lib/api-client';
-import { useAuth } from '@/lib/auth-context';
 import { getPublicTopics, type DigestTopicSummary } from '@/lib/digest-api';
 import { usePublicEnv } from '@/lib/public-env-context';
 import { ExploreCreateDialog } from './ExploreCreateDialog';
 import { TopicPreviewDialog } from './TopicPreviewDialog';
 import { followPublicTopic } from './explore.actions';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface ExploreTopicsPaneProps {
   query?: string;
@@ -63,7 +63,7 @@ function TopicCard({
 
 export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
   const env = usePublicEnv();
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });

@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anyhunt/api": "workspace:*",
     "@anyhunt/tiptap": "workspace:*",
     "@anyhunt/types": "workspace:*",
     "@anyhunt/ui": "workspace:*",

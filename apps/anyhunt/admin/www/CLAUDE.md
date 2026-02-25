@@ -8,6 +8,8 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- Admin Auth 切换为 Token-first：登录直接拿 `access+refresh`，refresh/logout 改为 body `refreshToken`
+- `stores/auth.ts` 升级为 localStorage 持久化 + refresh mutex，移除 Cookie 会话依赖
 - LLM Model 弹窗修复 Raw config 标签使用 Label，避免 useFormField 上下文报错
 - 管理后台下拉/折叠箭头改为 ChevronDown（无中轴）
 - 管理后台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -33,9 +35,11 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 ## 约束
 
 - 仅管理员可访问
-- Auth 使用 access JWT + refresh rotation（`/api/auth/*`，不带版本号）
-- refresh 通过 HttpOnly Cookie 承载，access 仅内存保存（Zustand）
-- 登录与启动时先 `POST /api/auth/refresh` 获取 access，再通过 `/api/v1/app/user/me` 同步用户档案（含 isAdmin）
+- Auth 使用 access JWT + refresh rotation（`/api/v1/auth/*`，不带版本号）
+- 登录通过 `POST /api/v1/auth/sign-in/email` 直接获取 `accessToken + refreshToken`
+- refresh 仅通过 body `refreshToken` 调用 `POST /api/v1/auth/refresh`，并启用 refresh rotation
+- access/refresh 与过期时间持久化到 localStorage（Zustand persist）
+- 启动优先复用本地 access；仅在 access 过期或临近过期时刷新，再通过 `/api/v1/app/user/me` 同步用户档案（含 isAdmin）
 - `401 token_expired` 只允许刷新一次并重试原请求
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/tiptap`（Welcome Markdown Editor）
 - TipTap 统一从 `@anyhunt/tiptap` 根入口导入；样式仅引入 `@anyhunt/tiptap/styles/notion-editor.scss`（禁止深路径导入）

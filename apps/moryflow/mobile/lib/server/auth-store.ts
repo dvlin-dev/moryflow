@@ -10,18 +10,32 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
+import type { MembershipModel, UserInfo } from './types';
 
 export const AUTH_STORAGE_KEY = 'mf_auth_session';
-export const ACCESS_TOKEN_SKEW_MS = 60 * 1000;
+export const ACCESS_TOKEN_SKEW_MS = 60 * 60 * 1000;
 
 type AuthState = {
   accessToken: string | null;
   accessTokenExpiresAt: string | null;
   lastUpdatedAt: string | null;
   isHydrated: boolean;
+  user: UserInfo | null;
+  isInitializing: boolean;
+  isSubmitting: boolean;
+  models: MembershipModel[];
+  modelsLoading: boolean;
+  pendingSignup: { email: string; password: string } | null;
   setAccessToken: (token: string, expiresAt: string | null) => void;
   clearAccessToken: () => void;
   setHydrated: (hydrated: boolean) => void;
+  setUser: (user: UserInfo | null) => void;
+  setInitializing: (value: boolean) => void;
+  setSubmitting: (value: boolean) => void;
+  setModels: (models: MembershipModel[]) => void;
+  setModelsLoading: (value: boolean) => void;
+  setPendingSignup: (value: { email: string; password: string } | null) => void;
+  clearMembershipState: () => void;
 };
 
 type PersistedAuthState = Pick<AuthState, 'accessToken' | 'accessTokenExpiresAt' | 'lastUpdatedAt'>;
@@ -62,6 +76,12 @@ export const authStore = createStore<AuthState>()(
       accessTokenExpiresAt: null,
       lastUpdatedAt: null,
       isHydrated: false,
+      user: null,
+      isInitializing: true,
+      isSubmitting: false,
+      models: [],
+      modelsLoading: false,
+      pendingSignup: null,
       setAccessToken: (token, expiresAt) =>
         set({
           accessToken: token,
@@ -75,6 +95,18 @@ export const authStore = createStore<AuthState>()(
           lastUpdatedAt: null,
         }),
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+      setUser: (user) => set({ user }),
+      setInitializing: (value) => set({ isInitializing: value }),
+      setSubmitting: (value) => set({ isSubmitting: value }),
+      setModels: (models) => set({ models }),
+      setModelsLoading: (value) => set({ modelsLoading: value }),
+      setPendingSignup: (value) => set({ pendingSignup: value }),
+      clearMembershipState: () =>
+        set({
+          user: null,
+          models: [],
+          pendingSignup: null,
+        }),
     }),
     {
       name: AUTH_STORAGE_KEY,

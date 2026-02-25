@@ -5,6 +5,12 @@
 
 import { membershipBridge } from '../../membership-bridge.js';
 import { createLogger } from '../logger.js';
+import {
+  createApiClient,
+  createApiTransport,
+  ServerApiError,
+  type ApiClientRequestOptions,
+} from '@anyhunt/api/client';
 import type {
   VaultDto,
   VaultListDto,
@@ -50,46 +56,53 @@ export class CloudSyncApiError extends Error {
 
 // ── 基础请求函数 ────────────────────────────────────────────
 
-const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
+const getAuthedClient = () => {
   const config = membershipBridge.getConfig();
   if (!config.token) {
     throw new CloudSyncApiError('Please log in first', 401, 'UNAUTHORIZED');
   }
 
-  const res = await fetch(`${config.apiUrl}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.token}`,
-      ...options.headers,
-    },
+  return createApiClient({
+    transport: createApiTransport({
+      baseUrl: config.apiUrl,
+    }),
+    defaultAuthMode: 'bearer',
+    getAccessToken: () => config.token,
   });
+};
 
-  if (!res.ok) {
-    const errorText = await res.text().catch(() => '');
-    let error: { message?: string; code?: string } = { message: `Request failed: ${res.status}` };
-    try {
-      if (errorText) {
-        error = JSON.parse(errorText);
-      }
-    } catch {
-      // If not JSON, use raw text
-      error.message = errorText || `Request failed: ${res.status}`;
+type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+const request = async <T>(
+  path: string,
+  options: { method?: RequestMethod; body?: unknown } = {}
+): Promise<T> => {
+  const client = getAuthedClient();
+  const method = options.method ?? 'GET';
+  const body = options.body as ApiClientRequestOptions['body'];
+
+  try {
+    switch (method) {
+      case 'POST':
+        return await client.post<T>(path, { body });
+      case 'PUT':
+        return await client.put<T>(path, { body });
+      case 'PATCH':
+        return await client.patch<T>(path, { body });
+      case 'DELETE':
+        return await client.del<T>(path, { body });
+      default:
+        return await client.get<T>(path);
     }
-    log.error(`${path} failed:`, res.status, errorText);
-    throw new CloudSyncApiError(
-      error.message || `Request failed: ${res.status}`,
-      res.status,
-      error.code
-    );
-  }
+  } catch (error) {
+    if (error instanceof ServerApiError) {
+      log.error(`${path} failed:`, error.status, error.message);
+      throw new CloudSyncApiError(error.message, error.status, error.code);
+    }
 
-  // 204 No Content
-  if (res.status === 204) {
-    return undefined as T;
+    log.error(`${path} failed with unknown error:`, error);
+    throw new CloudSyncApiError('Request failed', 500, 'UNKNOWN_ERROR');
   }
-
-  return res.json();
 };
 
 // ── API 方法（纯函数）────────────────────────────────────────
@@ -97,66 +110,66 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
 export const cloudSyncApi = {
   // ── Vault ─────────────────────────────────────────────────
 
-  listVaults: (): Promise<VaultListDto> => request('/api/vaults'),
+  listVaults: (): Promise<VaultListDto> => request('/api/v1/vaults'),
 
   createVault: (name: string): Promise<VaultDto> =>
-    request('/api/vaults', {
+    request('/api/v1/vaults', {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: { name },
     }),
 
-  getVault: (vaultId: string): Promise<VaultDto> => request(`/api/vaults/${vaultId}`),
+  getVault: (vaultId: string): Promise<VaultDto> => request(`/api/v1/vaults/${vaultId}`),
 
   deleteVault: (vaultId: string): Promise<void> =>
-    request(`/api/vaults/${vaultId}`, { method: 'DELETE' }),
+    request(`/api/v1/vaults/${vaultId}`, { method: 'DELETE' }),
 
   registerDevice: (
     vaultId: string,
     deviceId: string,
     deviceName: string
   ): Promise<VaultDeviceDto> =>
-    request(`/api/vaults/${vaultId}/devices`, {
+    request(`/api/v1/vaults/${vaultId}/devices`, {
       method: 'POST',
-      body: JSON.stringify({ deviceId, deviceName }),
+      body: { deviceId, deviceName },
     }),
 
   // ── Sync ──────────────────────────────────────────────────
 
   syncDiff: (payload: SyncDiffRequest): Promise<SyncDiffResponse> =>
-    request('/api/sync/diff', {
+    request('/api/v1/sync/diff', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   syncCommit: (payload: SyncCommitRequest): Promise<SyncCommitResponse> =>
-    request('/api/sync/commit', {
+    request('/api/v1/sync/commit', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // ── Vectorize ─────────────────────────────────────────────
 
   vectorizeFile: (payload: VectorizeFileRequest): Promise<VectorizeResponse> =>
-    request('/api/vectorize/file', {
+    request('/api/v1/vectorize/file', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   deleteVector: (fileId: string): Promise<void> =>
-    request(`/api/vectorize/file/${fileId}`, { method: 'DELETE' }),
+    request(`/api/v1/vectorize/file/${fileId}`, { method: 'DELETE' }),
 
   getVectorizeStatus: (fileId: string): Promise<VectorizeStatusResponse> =>
-    request(`/api/vectorize/status/${fileId}`),
+    request(`/api/v1/vectorize/status/${fileId}`),
 
   // ── Search ────────────────────────────────────────────────
 
   search: (payload: SearchRequest): Promise<SearchResponse> =>
-    request('/api/search', {
+    request('/api/v1/search', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     }),
 
   // ── Usage ─────────────────────────────────────────────────
 
-  getUsage: (): Promise<UsageResponse> => request('/api/usage'),
+  getUsage: (): Promise<UsageResponse> => request('/api/v1/usage'),
 } as const;

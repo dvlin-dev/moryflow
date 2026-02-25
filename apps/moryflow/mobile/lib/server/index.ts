@@ -63,7 +63,6 @@ export {
 
 // API 客户端和便捷函数
 export {
-  serverApi,
   ServerApiError,
   fetchCurrentUser,
   fetchCredits,
@@ -92,10 +91,11 @@ export {
   clearAuthSession,
   logoutFromServer,
 } from './auth-session';
+export { useAuthStore, waitForAuthHydration } from './auth-store';
+export { authMethods } from './auth-methods';
 
 // Context & Hooks
 export {
-  MembershipProvider,
   AuthError,
   isAuthError,
   useMembership,

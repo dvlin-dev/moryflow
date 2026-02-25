@@ -23,12 +23,12 @@ import {
   Label,
 } from '@anyhunt/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
-import { useAuth } from '@/lib/auth-context';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { ApiClientError } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { createSubscriptionForQuery, publishSubscriptionAsTopic } from './explore.actions';
 import type { TopicVisibility } from '@/features/digest/types';
+import { useAuthStore } from '@/stores/auth-store';
 
 const formSchema = z.object({
   query: z.string().min(1, 'Please enter a topic or keyword'),
@@ -50,7 +50,7 @@ export function ExploreCreateDialog({
   initialQuery,
   onCreated,
 }: ExploreCreateDialogProps) {
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });

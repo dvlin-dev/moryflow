@@ -7,7 +7,7 @@
  */
 import { LogOut, EllipsisVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/stores/auth';
+import { authMethods } from '@/lib/auth/auth-methods';
 
 import {
   Avatar,
@@ -36,10 +36,9 @@ export interface NavUserProps {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = async () => {
-    await logout();
+    await authMethods.logout();
     navigate('/login');
   };
 
