@@ -17,7 +17,10 @@ COPY packages/api/package.json ./packages/api/
 COPY packages/types/package.json ./packages/types/
 COPY packages/sync/package.json ./packages/sync/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/server...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts \
+  --filter @moryflow/server... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 # 生产依赖阶段 - 仅安装生产依赖
 FROM base AS prod-deps

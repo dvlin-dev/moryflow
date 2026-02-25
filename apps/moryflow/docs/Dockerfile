@@ -23,7 +23,10 @@ COPY packages/sync/package.json ./packages/sync/
 COPY packages/types/package.json ./packages/types/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/docs...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts \
+  --filter @moryflow/docs... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 # =============================================================================
 # Stage 3: 构建应用

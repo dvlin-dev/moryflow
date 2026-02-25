@@ -18,7 +18,10 @@ COPY packages/tiptap/package.json ./packages/tiptap/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 COPY tooling/eslint-config/package.json ./tooling/eslint-config/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/admin...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false \
+  --filter @anyhunt/admin... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 COPY apps/anyhunt/admin/www ./apps/anyhunt/admin/www
 COPY packages/api ./packages/api

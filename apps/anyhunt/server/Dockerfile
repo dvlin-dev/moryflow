@@ -29,7 +29,10 @@ COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
 # 注意：不要在 stage 之间 COPY node_modules（workspace symlink 会被 Docker 解引用，导致 @anyhunt/* 变成“只剩 package.json”的空壳包）。
 # 正确做法是在同一个 stage 内安装依赖，让 pnpm 生成的 workspace links 指向最终的 /app/packages/*。
-RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-server...
+RUN pnpm install --frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false \
+    --filter @anyhunt/anyhunt-server... \
+    --filter @moryflow/types... \
+    --filter @moryflow/typescript-config...
 
 # 再复制源码（依赖已缓存）
 COPY apps/anyhunt/server ./apps/anyhunt/server

@@ -20,7 +20,10 @@ COPY packages/ui/package.json ./packages/ui/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
 # 安装依赖（包含 /ui 组件库）
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/www...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts \
+  --filter @moryflow/www... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 # 构建阶段
 FROM base AS builder

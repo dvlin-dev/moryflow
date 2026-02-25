@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
 - Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
 - Build：容器构建显式复制根 `tsconfig.base.json`，避免 workspace 包构建时报 `TS5083`
 - Webhook：签名与发送体统一为同一 `JSON.stringify` 字符串（Digest Processor + Common WebhookService），避免签名材料与实际请求体潜在不一致

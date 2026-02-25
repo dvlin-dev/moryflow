@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 在容器内 `TS5083`（缺少 `tsconfig.agents.json`）导致的构建失败
 - Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常
 - API Client：请求 body 类型统一到 `ApiClientRequestOptions['body']`，避免 Auth 重构后的类型回归

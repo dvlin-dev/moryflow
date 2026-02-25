@@ -12,6 +12,7 @@ Moryflow 对外文档站点，部署到 `docs.moryflow.com`，与 `www.moryflow.
 
 ## 近期变更
 
+- Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 在 filtered install 下缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker 构建链路改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 与 `.npmrc` 复制，避免 `packages/api/sync` 在容器内缺配置或拷贝 `node_modules` 失败
 - Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 在 Vite/Rollup 阶段解析失败
 - Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免容器内 `packages/sync` 编译时报 `TS5083`

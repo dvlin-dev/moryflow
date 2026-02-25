@@ -19,7 +19,10 @@ COPY packages/embed-react/package.json ./packages/embed-react/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 COPY tooling/eslint-config/package.json ./tooling/eslint-config/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/console...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false \
+  --filter @anyhunt/console... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 COPY apps/anyhunt/console ./apps/anyhunt/console
 COPY packages/api ./packages/api

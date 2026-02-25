@@ -23,7 +23,8 @@ COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 RUN pnpm install --no-frozen-lockfile --ignore-scripts \
   --filter @moryflow/admin... \
   --filter @moryflow/model-registry-data... \
-  --filter @moryflow/types...
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 # 复制源代码
 COPY apps/moryflow/admin ./apps/moryflow/admin

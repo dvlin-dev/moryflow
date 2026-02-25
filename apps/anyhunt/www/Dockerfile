@@ -21,7 +21,10 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/types/package.json ./packages/types/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false --filter @anyhunt/anyhunt-www...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hoisted --config.shamefully-hoist=false \
+  --filter @anyhunt/anyhunt-www... \
+  --filter @moryflow/types... \
+  --filter @moryflow/typescript-config...
 
 # =============================================================================
 # builder
