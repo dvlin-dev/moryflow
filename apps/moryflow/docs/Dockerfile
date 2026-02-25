@@ -34,6 +34,9 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts \
 FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/moryflow/docs/node_modules ./apps/moryflow/docs/node_modules
+COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
 
 COPY scripts ./scripts
 COPY apps/moryflow/docs ./apps/moryflow/docs

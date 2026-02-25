@@ -32,6 +32,10 @@ RUN pnpm install --no-frozen-lockfile --ignore-scripts --config.node-linker=hois
 FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/anyhunt/www/node_modules ./apps/anyhunt/www/node_modules
+COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
+COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.agents.json ./
 COPY apps/anyhunt/www ./apps/anyhunt/www

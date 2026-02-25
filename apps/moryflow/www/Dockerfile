@@ -30,6 +30,10 @@ FROM base AS builder
 
 # 复制依赖
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/moryflow/www/node_modules ./apps/moryflow/www/node_modules
+COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
+COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 
 # 复制源代码
 COPY apps/moryflow/www ./apps/moryflow/www
