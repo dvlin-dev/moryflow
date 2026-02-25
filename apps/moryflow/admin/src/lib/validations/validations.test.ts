@@ -75,7 +75,7 @@ describe('属性 5: 表单验证正确性', () => {
   describe('用户等级设置验证', () => {
     it('对于任意有效等级，验证应通过', () => {
       fc.assert(
-        fc.property(fc.constantFrom('free', 'basic', 'pro'), (tier) => {
+        fc.property(fc.constantFrom('free', 'starter', 'basic', 'pro'), (tier) => {
           const result = setTierSchema.safeParse({ tier });
           return result.success === true;
         }),
@@ -86,7 +86,7 @@ describe('属性 5: 表单验证正确性', () => {
     it('对于任意无效等级字符串，验证应失败', () => {
       fc.assert(
         fc.property(
-          fc.string().filter((s) => !['free', 'basic', 'pro'].includes(s)),
+          fc.string().filter((s) => !['free', 'starter', 'basic', 'pro'].includes(s)),
           (invalidTier) => {
             const result = setTierSchema.safeParse({ tier: invalidTier });
             return result.success === false;
@@ -176,7 +176,7 @@ describe('属性 5: 表单验证正确性', () => {
           fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
           fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
           fc.stringMatching(/^[A-Z][a-zA-Z0-9 -]{0,49}$/),
-          fc.constantFrom('free', 'basic', 'pro'),
+          fc.constantFrom('free', 'starter', 'basic', 'pro'),
           fc.float({ min: 0, max: 1, noNaN: true }),
           fc.float({ min: 0, max: 1, noNaN: true }),
           fc.integer({ min: 1, max: 1000000 }),

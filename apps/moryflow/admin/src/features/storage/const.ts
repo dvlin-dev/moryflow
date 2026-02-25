@@ -69,6 +69,7 @@ export { formatNumber } from '@/lib/format';
 export function getTierDisplayName(tier: string): string {
   const tierMap: Record<string, string> = {
     free: '免费用户',
+    starter: '入门会员',
     basic: '基础会员',
     pro: 'Pro 会员',
   };
