@@ -23,7 +23,7 @@ describe('logs utils', () => {
   });
 
   it('should format api query error message', () => {
-    const err = new ApiError(429, 'TOO_MANY_REQUESTS', 'Too Many Requests');
+    const err = new ApiError(429, 'Too Many Requests', 'TOO_MANY_REQUESTS');
     expect(getQueryErrorMessage(err, 'fallback')).toBe('Too Many Requests');
     expect(getQueryErrorMessage(new Error('bad'), 'fallback')).toBe('bad');
     expect(getQueryErrorMessage(null, 'fallback')).toBe('fallback');
