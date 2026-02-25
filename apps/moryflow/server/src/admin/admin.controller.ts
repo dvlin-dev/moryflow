@@ -81,7 +81,7 @@ export class AdminController {
   @ApiQuery({
     name: 'tier',
     required: false,
-    enum: ['free', 'starter', 'basic', 'pro', 'license'],
+    enum: ['free', 'starter', 'basic', 'pro'],
     description: '用户等级筛选',
   })
   @ApiQuery({
