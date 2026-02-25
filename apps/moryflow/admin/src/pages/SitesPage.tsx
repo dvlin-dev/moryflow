@@ -82,7 +82,6 @@ const TIER_OPTIONS = [
   { value: 'starter', label: 'Starter' },
   { value: 'basic', label: 'Basic' },
   { value: 'pro', label: 'Pro' },
-  { value: 'license', label: 'License' },
 ];
 
 const EXPIRY_OPTIONS = [

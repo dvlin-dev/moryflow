@@ -20,7 +20,6 @@ import ChatPage from './pages/ChatPage';
 import { ImageGenerationTestPage } from './pages/ImageGenerationTestPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import OrdersPage from './pages/OrdersPage';
-import LicensesPage from './pages/LicensesPage';
 import PaymentTestPage from './pages/PaymentTestPage';
 import StoragePage from './pages/StoragePage';
 import LogStoragePage from './pages/LogStoragePage';
@@ -86,7 +85,6 @@ function App() {
             <Route path="image-generation" element={<ImageGenerationTestPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="orders" element={<OrdersPage />} />
-            <Route path="licenses" element={<LicensesPage />} />
             <Route path="storage" element={<StoragePage />} />
             <Route path="sites" element={<SitesPage />} />
             <Route path="sites/:id" element={<SiteDetailPage />} />

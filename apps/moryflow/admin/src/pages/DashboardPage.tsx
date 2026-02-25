@@ -24,10 +24,7 @@ export default function DashboardPage() {
   const { data: health, isLoading: healthLoading } = useHealth();
   const { data: storageStats, isLoading: storageLoading } = useStorageStats();
 
-  const paidUsers =
-    (stats?.usersByTier.basic || 0) +
-    (stats?.usersByTier.pro || 0) +
-    (stats?.usersByTier.license || 0);
+  const paidUsers = (stats?.usersByTier.basic || 0) + (stats?.usersByTier.pro || 0);
 
   return (
     <div className="space-y-6">

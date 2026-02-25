@@ -9,13 +9,7 @@ export type SubscriptionStatus = 'active' | 'canceled' | 'unpaid' | 'scheduled_c
 export type OrderStatus = 'pending' | 'completed' | 'refunded' | 'failed';
 
 // 产品类型
-export type ProductType = 'subscription' | 'credits' | 'license';
-
-// License 状态
-export type LicenseStatus = 'active' | 'revoked';
-
-// License 层级
-export type LicenseTier = 'standard' | 'pro';
+export type ProductType = 'subscription' | 'credits';
 
 /**
  * 订阅记录
@@ -54,34 +48,6 @@ export interface PaymentOrder {
 }
 
 /**
- * License 记录
- */
-export interface License {
-  id: string;
-  userId: string;
-  licenseKey: string;
-  orderId: string;
-  tier: LicenseTier;
-  status: LicenseStatus;
-  activationCount: number;
-  activationLimit: number;
-  createdAt: string;
-}
-
-/**
- * License 激活记录
- */
-export interface LicenseActivation {
-  id: string;
-  licenseId: string;
-  instanceName: string;
-  instanceId: string;
-  status: 'active' | 'deactivated';
-  activatedAt: string;
-  deactivatedAt: string | null;
-}
-
-/**
  * 分页信息
  */
 export interface Pagination {
@@ -104,10 +70,5 @@ export interface SubscriptionListResponse {
 
 export interface OrderListResponse {
   orders: PaymentOrder[];
-  pagination: Pagination;
-}
-
-export interface LicenseListResponse {
-  licenses: License[];
   pagination: Pagination;
 }
