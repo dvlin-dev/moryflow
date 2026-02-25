@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createApiKeyClient - API Key 认证请求封装（函数式）
- * [DEPENDS]: @anyhunt/api/client
+ * [DEPENDS]: @anyhunt/api/client, @/lib/api-base
  * [POS]: Console 调用公网 API 的基础客户端
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
@@ -12,8 +12,7 @@ import {
   ServerApiError,
   type ApiClientRequestOptions,
 } from '@anyhunt/api/client';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+import { API_BASE_URL } from '@/lib/api-base';
 
 export interface ApiKeyClientOptions {
   apiKey: string;
@@ -43,6 +42,22 @@ export class ApiKeyClientError extends Error {
 const toBody = (body: unknown): ApiClientRequestOptions['body'] =>
   body as ApiClientRequestOptions['body'];
 
+const resolveBaseUrl = (): string => {
+  const explicit = API_BASE_URL.trim();
+  if (explicit) {
+    return explicit;
+  }
+
+  if (typeof window !== 'undefined') {
+    const origin = window.location?.origin?.trim();
+    if (origin && origin !== 'null') {
+      return origin;
+    }
+  }
+
+  return 'http://localhost';
+};
+
 const wrapServerError = (error: unknown): never => {
   if (error instanceof ApiKeyClientError) {
     throw error;
@@ -71,7 +86,7 @@ export function createApiKeyClient(options: ApiKeyClientOptions): ApiKeyClient {
 
   const client = createApiClient({
     transport: createApiTransport({
-      baseUrl: API_BASE_URL,
+      baseUrl: resolveBaseUrl(),
       timeoutMs: options.timeout || 60_000,
     }),
     defaultAuthMode: 'apiKey',
