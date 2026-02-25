@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { useCallback } from "react"
-import type { Editor } from "@tiptap/react"
-import type { TableMap } from "@tiptap/pm/tables"
+import { useCallback } from 'react';
+import type { Editor } from '@tiptap/react';
+import type { TableMap } from '@tiptap/pm/tables';
 import {
   addRowBefore,
   addRowAfter,
@@ -11,93 +11,93 @@ import {
   CellSelection,
   rowIsHeader,
   columnIsHeader,
-} from "@tiptap/pm/tables"
-import type { Transaction } from "@tiptap/pm/state"
-import type { Node } from "@tiptap/pm/model"
+} from '@tiptap/pm/tables';
+import type { Transaction } from '@tiptap/pm/state';
+import type { Node } from '@tiptap/pm/model';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import { isExtensionAvailable } from "../../../../utils/tiptap-utils"
-import type { Orientation } from "../../lib/tiptap-table-utils"
+import { isExtensionAvailable } from '../../../../utils/tiptap-utils';
+import type { Orientation } from '../../lib/tiptap-table-utils';
 import {
   getTable,
   getTableSelectionType,
   selectCellsByCoords,
   updateSelectionAfterAction,
-} from "../../lib/tiptap-table-utils"
+} from '../../lib/tiptap-table-utils';
 
 // --- Icons ---
-import { AddColLeftIcon } from "@anyhunt/ui/icons/add-col-left-icon"
-import { AddColRightIcon } from "@anyhunt/ui/icons/add-col-right-icon"
-import { AddRowBottomIcon } from "@anyhunt/ui/icons/add-row-bottom-icon"
-import { AddRowTopIcon } from "@anyhunt/ui/icons/add-row-top-icon"
+import { AddColLeftIcon } from '@moryflow/ui/icons/add-col-left-icon';
+import { AddColRightIcon } from '@moryflow/ui/icons/add-col-right-icon';
+import { AddRowBottomIcon } from '@moryflow/ui/icons/add-row-bottom-icon';
+import { AddRowTopIcon } from '@moryflow/ui/icons/add-row-top-icon';
 
-export type RowSide = "above" | "below"
-export type ColSide = "left" | "right"
+export type RowSide = 'above' | 'below';
+export type ColSide = 'left' | 'right';
 
 export interface UseTableAddRowColumnConfig {
   /**
    * The Tiptap editor instance. If omitted, the hook will use
    * the context/editor from `useTiptapEditor`.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The index of the row or column to add relative to.
    * If omitted, will use the current selection.
    */
-  index?: number
+  index?: number;
   /**
    * Whether you're adding a row or a column.
    * If omitted, will use the current selection.
    */
-  orientation?: Orientation
+  orientation?: Orientation;
   /**
    * The side to add on - above/below for rows, left/right for columns.
    */
-  side: RowSide | ColSide
+  side: RowSide | ColSide;
   /**
    * The position of the table in the document.
    */
-  tablePos?: number
+  tablePos?: number;
   /**
    * Hide the button when addition isn't currently possible.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful addition.
    */
-  onAdded?: () => void
+  onAdded?: () => void;
 }
 
-const REQUIRED_EXTENSIONS = ["table"]
+const REQUIRED_EXTENSIONS = ['table'];
 
 export const tableAddRowColumnLabels = {
   row: {
-    above: "Insert row above",
-    below: "Insert row below",
+    above: 'Insert row above',
+    below: 'Insert row below',
   } as Record<RowSide, string>,
   column: {
-    left: "Insert column left",
-    right: "Insert column right",
+    left: 'Insert column left',
+    right: 'Insert column right',
   } as Record<ColSide, string>,
-} as const
+} as const;
 
 function safeColumnIsHeader(map: TableMap, node: Node, index: number): boolean {
   try {
-    return columnIsHeader(map, node, index)
+    return columnIsHeader(map, node, index);
   } catch {
-    return false
+    return false;
   }
 }
 
 function safeRowIsHeader(map: TableMap, node: Node, index: number): boolean {
   try {
-    return rowIsHeader(map, node, index)
+    return rowIsHeader(map, node, index);
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -112,46 +112,42 @@ function canAddRowColumn({
   tablePos,
   side,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  tablePos?: number
-  side: RowSide | ColSide
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  tablePos?: number;
+  side: RowSide | ColSide;
 }): boolean {
-  if (
-    !editor ||
-    !editor.isEditable ||
-    !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
-  ) {
-    return false
+  if (!editor || !editor.isEditable || !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) {
+    return false;
   }
 
-  const table = getTable(editor, tablePos)
-  if (!table) return false
+  const table = getTable(editor, tablePos);
+  if (!table) return false;
 
-  const selectionType = getTableSelectionType(editor, index, orientation)
-  if (!selectionType) return false
+  const selectionType = getTableSelectionType(editor, index, orientation);
+  if (!selectionType) return false;
 
-  const { map, node } = table
-  const selIndex = selectionType.index
-  const selOrient = selectionType.orientation
+  const { map, node } = table;
+  const selIndex = selectionType.index;
+  const selOrient = selectionType.orientation;
 
   // Bounds check
-  if (typeof selIndex !== "number" || selIndex < 0) return false
-  if (selOrient === "column" && selIndex >= map.width) return false
-  if (selOrient === "row" && selIndex >= map.height) return false
+  if (typeof selIndex !== 'number' || selIndex < 0) return false;
+  if (selOrient === 'column' && selIndex >= map.width) return false;
+  if (selOrient === 'row' && selIndex >= map.height) return false;
 
   // Block inserting to the LEFT of a header column
-  if (side === "left" && selOrient === "column") {
-    if (safeColumnIsHeader(map, node, selIndex)) return false
+  if (side === 'left' && selOrient === 'column') {
+    if (safeColumnIsHeader(map, node, selIndex)) return false;
   }
 
   // Block inserting ABOVE a header row
-  if (side === "above" && selOrient === "row") {
-    if (safeRowIsHeader(map, node, selIndex)) return false
+  if (side === 'above' && selOrient === 'row') {
+    if (safeRowIsHeader(map, node, selIndex)) return false;
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -162,14 +158,14 @@ function calculateNewIndex(
   orientation: Orientation,
   side: RowSide | ColSide
 ): number {
-  if (orientation === "row") {
+  if (orientation === 'row') {
     // For rows: above means the new row is at the same index (pushes original down)
     // below means the new row is at index + 1
-    return side === "above" ? index : index + 1
+    return side === 'above' ? index : index + 1;
   } else {
     // For columns: left means the new column is at the same index (pushes original right)
     // right means the new column is at index + 1
-    return side === "left" ? index : index + 1
+    return side === 'left' ? index : index + 1;
   }
 }
 
@@ -183,66 +179,61 @@ function tableAddRowColumn({
   side,
   tablePos,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  side: RowSide | ColSide
-  tablePos: number | undefined
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  side: RowSide | ColSide;
+  tablePos: number | undefined;
 }): boolean {
-  if (
-    !canAddRowColumn({ editor, index, orientation, tablePos, side }) ||
-    !editor
-  ) {
-    return false
+  if (!canAddRowColumn({ editor, index, orientation, tablePos, side }) || !editor) {
+    return false;
   }
 
-  const selectionType = getTableSelectionType(editor, index, orientation)
-  if (!selectionType) return false
+  const selectionType = getTableSelectionType(editor, index, orientation);
+  if (!selectionType) return false;
 
-  const { orientation: finalOrientation, index: finalIndex } = selectionType
+  const { orientation: finalOrientation, index: finalIndex } = selectionType;
 
-  const isRow = finalOrientation === "row"
-  const dispatch = (tr: Transaction) => editor.view.dispatch(tr)
+  const isRow = finalOrientation === 'row';
+  const dispatch = (tr: Transaction) => editor.view.dispatch(tr);
   const addOperation = isRow
-    ? side === "above"
+    ? side === 'above'
       ? addRowBefore
       : addRowAfter
-    : side === "left"
+    : side === 'left'
       ? addColumnBefore
-      : addColumnAfter
+      : addColumnAfter;
 
   try {
-    let success = false
+    let success = false;
 
     if (editor.state.selection instanceof CellSelection) {
-      success = addOperation(editor.state, dispatch)
+      success = addOperation(editor.state, dispatch);
     } else {
-      const table = getTable(editor, tablePos)
-      if (!table) return false
+      const table = getTable(editor, tablePos);
+      if (!table) return false;
 
       const cellCoords =
-        finalOrientation === "row"
-          ? { row: finalIndex, col: 0 }
-          : { row: 0, col: finalIndex }
+        finalOrientation === 'row' ? { row: finalIndex, col: 0 } : { row: 0, col: finalIndex };
 
       const cellState = selectCellsByCoords(editor, table.pos, [cellCoords], {
-        mode: "state",
-      })
+        mode: 'state',
+      });
 
-      if (!cellState) return false
+      if (!cellState) return false;
 
-      success = addOperation(cellState, dispatch)
+      success = addOperation(cellState, dispatch);
     }
 
     if (success) {
-      const newIndex = calculateNewIndex(finalIndex, finalOrientation, side)
-      updateSelectionAfterAction(editor, finalOrientation, newIndex, tablePos)
+      const newIndex = calculateNewIndex(finalIndex, finalOrientation, side);
+      updateSelectionAfterAction(editor, finalOrientation, newIndex, tablePos);
     }
 
-    return success
+    return success;
   } catch (error) {
-    console.error("Error adding row/column:", error)
-    return false
+    console.error('Error adding row/column:', error);
+    return false;
   }
 }
 
@@ -258,22 +249,22 @@ function shouldShowButton({
   side,
   hideWhenUnavailable,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  tablePos?: number
-  side: RowSide | ColSide
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  tablePos?: number;
+  side: RowSide | ColSide;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false;
 
   if (hideWhenUnavailable) {
-    return canAddRowColumn({ editor, index, orientation, tablePos, side })
+    return canAddRowColumn({ editor, index, orientation, tablePos, side });
   }
 
-  const selectionType = getTableSelectionType(editor, index, orientation)
-  return Boolean(selectionType)
+  const selectionType = getTableSelectionType(editor, index, orientation);
+  return Boolean(selectionType);
 }
 
 /**
@@ -289,11 +280,11 @@ export function useTableAddRowColumn(config: UseTableAddRowColumnConfig) {
     tablePos,
     hideWhenUnavailable = false,
     onAdded,
-  } = config
+  } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
+  const { editor } = useTiptapEditor(providedEditor);
 
-  const selectionType = getTableSelectionType(editor, index, orientation)
+  const selectionType = getTableSelectionType(editor, index, orientation);
 
   const isVisible = shouldShowButton({
     editor,
@@ -302,7 +293,7 @@ export function useTableAddRowColumn(config: UseTableAddRowColumnConfig) {
     tablePos,
     side,
     hideWhenUnavailable,
-  })
+  });
 
   const canPerformAdd = canAddRowColumn({
     editor,
@@ -310,7 +301,7 @@ export function useTableAddRowColumn(config: UseTableAddRowColumnConfig) {
     orientation,
     tablePos,
     side,
-  })
+  });
 
   const handleAdd = useCallback(() => {
     const success = tableAddRowColumn({
@@ -319,24 +310,24 @@ export function useTableAddRowColumn(config: UseTableAddRowColumnConfig) {
       orientation,
       tablePos,
       side,
-    })
-    if (success) onAdded?.()
-    return success
-  }, [editor, index, orientation, tablePos, side, onAdded])
+    });
+    if (success) onAdded?.();
+    return success;
+  }, [editor, index, orientation, tablePos, side, onAdded]);
 
   const label =
-    selectionType?.orientation === "row"
+    selectionType?.orientation === 'row'
       ? tableAddRowColumnLabels.row[side as RowSide]
-      : tableAddRowColumnLabels.column[side as ColSide]
+      : tableAddRowColumnLabels.column[side as ColSide];
 
   const Icon =
-    selectionType?.orientation === "row"
-      ? side === "above"
+    selectionType?.orientation === 'row'
+      ? side === 'above'
         ? AddRowTopIcon
         : AddRowBottomIcon
-      : side === "left"
+      : side === 'left'
         ? AddColLeftIcon
-        : AddColRightIcon
+        : AddColRightIcon;
 
   return {
     isVisible,
@@ -344,5 +335,5 @@ export function useTableAddRowColumn(config: UseTableAddRowColumnConfig) {
     handleAdd,
     label,
     Icon,
-  }
+  };
 }

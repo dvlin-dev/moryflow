@@ -5,14 +5,14 @@
  */
 
 import { Delete, Pencil, FolderOpen, Ellipsis, Check } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
-import { Input } from '@anyhunt/ui/components/input';
+} from '@moryflow/ui/components/dropdown-menu';
+import { Input } from '@moryflow/ui/components/input';
 import { useTranslation } from '@/lib/i18n';
 import type { VaultListItemProps } from '../const';
 

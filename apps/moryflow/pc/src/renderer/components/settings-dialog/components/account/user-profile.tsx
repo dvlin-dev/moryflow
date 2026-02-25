@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Button } from '@anyhunt/ui/components/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@anyhunt/ui/components/avatar';
-import { Badge } from '@anyhunt/ui/components/badge';
-import { Separator } from '@anyhunt/ui/components/separator';
+import { Button } from '@moryflow/ui/components/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@moryflow/ui/components/avatar';
+import { Badge } from '@moryflow/ui/components/badge';
+import { Separator } from '@moryflow/ui/components/separator';
 import { Plus, ArrowUp, CreditCard, Crown, LogOut } from 'lucide-react';
 import { useAuth, type UserInfo, TIER_DISPLAY_NAMES, TIER_COLORS } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';

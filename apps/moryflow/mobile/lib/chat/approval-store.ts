@@ -7,7 +7,7 @@
  */
 
 import type { Agent, RunState, RunToolApprovalItem } from '@openai/agents-core';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import { getPermissionRuntime } from '@/lib/agent-runtime/permission-runtime';
 import { getDoomLoopRuntime } from '@/lib/agent-runtime/doom-loop-runtime';
 import { generateUUID } from '@/lib/utils/uuid';

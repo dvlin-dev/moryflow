@@ -4,7 +4,7 @@
  */
 import { apiClient } from './api-client';
 import { ADMIN_API } from './api-paths';
-import type { ApiClientRequestOptions } from '@anyhunt/api/client';
+import type { ApiClientRequestOptions } from '@moryflow/api/client';
 
 type ApiBody = ApiClientRequestOptions['body'];
 

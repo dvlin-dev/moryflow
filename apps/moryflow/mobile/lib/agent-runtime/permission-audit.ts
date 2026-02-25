@@ -7,7 +7,7 @@
  */
 
 import { Directory, File, Paths } from 'expo-file-system';
-import type { PermissionAuditEvent } from '@anyhunt/agents-runtime';
+import type { PermissionAuditEvent } from '@moryflow/agents-runtime';
 
 const AUDIT_DIR = Paths.join(Paths.document.uri, 'agent-audit');
 

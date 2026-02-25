@@ -13,7 +13,7 @@ import {
   Input,
   Label,
   Checkbox,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useUpdateWebhook } from '../hooks';
 import { WEBHOOK_EVENTS } from '../constants';
 import type { Webhook, WebhookEvent } from '../types';

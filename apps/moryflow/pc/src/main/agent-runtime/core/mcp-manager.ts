@@ -6,7 +6,7 @@ import {
   type MCPServers,
   type Tool,
 } from '@openai/agents-core';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import {
   type McpServerState,
   type McpStatusSnapshot,
@@ -19,7 +19,7 @@ import {
   openMcpServers,
   getToolsFromServers,
   createServersFromSettings,
-} from '@anyhunt/agents-mcp';
+} from '@moryflow/agents-mcp';
 
 // 永久禁用 SDK 追踪功能
 setTracingDisabled(true);

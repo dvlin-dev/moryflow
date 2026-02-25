@@ -40,7 +40,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   Separator,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useCreateSubscription } from '@/features/digest/hooks';
 import { CRON_PRESETS, TIMEZONES, DEFAULT_SUBSCRIPTION } from '@/features/digest/constants';

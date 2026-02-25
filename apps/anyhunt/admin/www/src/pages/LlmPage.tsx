@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   PageHeader,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import {
   useAdminLlmModels,
   useAdminLlmProviders,

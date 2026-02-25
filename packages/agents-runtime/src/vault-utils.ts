@@ -1,4 +1,8 @@
-import type { PlatformCapabilities, ResolvedVaultPath, CryptoUtils } from '@anyhunt/agents-adapter';
+import type {
+  PlatformCapabilities,
+  ResolvedVaultPath,
+  CryptoUtils,
+} from '@moryflow/agents-adapter';
 
 /**
  * Vault 文件数据

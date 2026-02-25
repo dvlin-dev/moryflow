@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/agents-tools",
+  "name": "@moryflow/agents-tools",
   "version": "0.1.0",
   "description": "Tools for Moryflow Agent Runtime",
   "main": "dist/index.js",
@@ -30,8 +30,8 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/agents-adapter": "workspace:*",
-    "@anyhunt/agents-runtime": "workspace:*",
+    "@moryflow/agents-adapter": "workspace:*",
+    "@moryflow/agents-runtime": "workspace:*",
     "@openai/agents-core": "0.5.1",
     "diff": "^7.0.0",
     "fast-glob": "^3.3.3",

@@ -8,8 +8,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ArrowRight, ArrowUpRight, Copy, FolderOpen, Globe, Check } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@anyhunt/ui/components/popover';
-import { Button } from '@anyhunt/ui/components/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@moryflow/ui/components/popover';
+import { Button } from '@moryflow/ui/components/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PublishPanel } from './publish-panel';

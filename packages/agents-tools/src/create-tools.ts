@@ -1,6 +1,6 @@
 import type { Tool } from '@openai/agents-core';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 
 import { createReadTool } from './file/read-tool';
 import { createWriteTool } from './file/write-tool';

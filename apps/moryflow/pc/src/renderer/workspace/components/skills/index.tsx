@@ -7,8 +7,8 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { Input } from '@anyhunt/ui/components/input';
-import { Button } from '@anyhunt/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Button } from '@moryflow/ui/components/button';
 import { RefreshCw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { SkillsList } from './skills-list';

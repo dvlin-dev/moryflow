@@ -9,7 +9,7 @@
  */
 
 import { ArrowUp, Mic, Square } from 'lucide-react';
-import { InputGroupButton } from '@anyhunt/ui/components/input-group';
+import { InputGroupButton } from '@moryflow/ui/components/input-group';
 import { cn } from '@/lib/utils';
 
 export type ChatPromptInputPrimaryActionProps = {

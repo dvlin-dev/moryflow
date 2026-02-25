@@ -9,7 +9,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import type { PermissionAuditEvent } from '@anyhunt/agents-runtime';
+import type { PermissionAuditEvent } from '@moryflow/agents-runtime';
 
 const AUDIT_DIR = path.join(os.homedir(), '.moryflow', 'logs', 'agent-audit');
 

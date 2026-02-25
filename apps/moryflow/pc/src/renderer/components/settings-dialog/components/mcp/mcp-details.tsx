@@ -6,19 +6,19 @@ import {
   type FieldErrors,
   type UseFormRegister,
 } from 'react-hook-form';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Switch } from '@moryflow/ui/components/switch';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@anyhunt/ui/components/select';
+} from '@moryflow/ui/components/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
+} from '@moryflow/ui/components/alert-dialog';
 import { CircleX, CircleCheck, Delete, Loader, TestTube } from 'lucide-react';
 import type { FormValues } from '../../const';
 import type { McpServerEntry, McpServerType } from './constants';

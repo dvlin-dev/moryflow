@@ -19,8 +19,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@anyhunt/ui';
-import { cn } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { cn } from '@moryflow/ui/lib';
 import { signInWithEmail } from '@/lib/token-auth-api';
 
 const loginFormSchema = z.object({

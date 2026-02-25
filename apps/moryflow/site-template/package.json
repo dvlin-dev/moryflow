@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/moryflow-site-template",
+  "name": "@moryflow/site-template",
   "version": "0.1.0",
   "private": true,
   "description": "Moryflow Site Template - SSG templates for published sites",

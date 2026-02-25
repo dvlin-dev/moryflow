@@ -1,7 +1,7 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 import { getGlobImpl } from '../glob/glob-interface';
 

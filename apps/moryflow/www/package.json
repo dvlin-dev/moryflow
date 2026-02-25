@@ -12,8 +12,8 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@anyhunt/api": "workspace:*",
-    "@anyhunt/ui": "workspace:*",
+    "@moryflow/api": "workspace:*",
+    "@moryflow/ui": "workspace:*",
     "@tanstack/react-router": "^1.144.0",
     "@tanstack/react-start": "^1.144.0",
     "h3": "2.0.1-rc.7",

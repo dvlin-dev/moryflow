@@ -14,7 +14,7 @@ import type {
   TaskDependency,
   TaskNote,
   TaskFile,
-} from '@anyhunt/agents-tools';
+} from '@moryflow/agents-tools';
 import { createMobileCapabilities, createMobileCrypto } from './mobile-adapter';
 import { createMobileTasksStore } from './tasks-store';
 import { getVaultRoot } from '../vault';

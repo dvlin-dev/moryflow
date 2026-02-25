@@ -10,15 +10,15 @@
 
 import { useEffect, useState } from 'react';
 import type { SkillDetail, SkillSummary } from '@shared/ipc';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@anyhunt/ui/components/dialog';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
+} from '@moryflow/ui/components/dialog';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { toast } from 'sonner';
 
 type SkillDetailModalProps = {

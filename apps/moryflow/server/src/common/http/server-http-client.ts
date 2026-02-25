@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: serverHttpJson/serverHttpRaw - 统一出站 HTTP 请求函数（函数式）
- * [DEPENDS]: @anyhunt/api transport
+ * [DEPENDS]: @moryflow/api transport
  * [POS]: Moryflow Server 出站请求统一入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
@@ -12,7 +12,7 @@ import {
   type ApiClientRequestOptions,
   type ApiTransport,
   type ResponseType,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 const TRANSPORT_BASE_URL = 'http://localhost';
 

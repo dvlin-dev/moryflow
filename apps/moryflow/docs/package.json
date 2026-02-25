@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anyhunt/api": "workspace:*",
+    "@moryflow/api": "workspace:*",
     "@content-collections/core": "^0.13.0",
     "@content-collections/mdx": "^0.2.2",
     "@fumadocs/content-collections": "^1.2.5",

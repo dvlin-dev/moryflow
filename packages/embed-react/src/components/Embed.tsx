@@ -9,7 +9,7 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
-import type { EmbedData, EmbedOptions, EmbedError } from '@anyhunt/embed';
+import type { EmbedData, EmbedOptions, EmbedError } from '@moryflow/embed';
 import { useEmbed } from '../hooks/useEmbed';
 import { EmbedSkeleton } from './EmbedSkeleton';
 

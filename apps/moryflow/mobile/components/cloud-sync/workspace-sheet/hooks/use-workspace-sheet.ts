@@ -14,7 +14,7 @@ import { useTheme } from '@/lib/hooks/use-theme';
 import { useThemeColors } from '@/lib/theme';
 import { useCloudSync, formatLastSyncTime } from '@/lib/cloud-sync';
 import { useVaultManager, type ManagedVault } from '@/lib/vault';
-import { useTranslation } from '@anyhunt/i18n';
+import { useTranslation } from '@moryflow/i18n';
 import { RefreshCwIcon, AlertCircleIcon, CheckCircleIcon } from '@/components/ui/icons';
 import type { StatusInfo, WorkspaceSheetProps } from '../const';
 

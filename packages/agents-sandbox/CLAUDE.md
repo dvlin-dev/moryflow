@@ -26,7 +26,7 @@
 
 ## 测试
 
-- `pnpm --filter @anyhunt/agents-sandbox test:unit`
+- `pnpm --filter @moryflow/agents-sandbox test:unit`
 
 ## 变更同步
 

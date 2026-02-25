@@ -11,7 +11,7 @@ import {
   ChartTooltipContent,
   Skeleton,
   type ChartConfig,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 function formatNumber(num: number): string {

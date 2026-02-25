@@ -9,8 +9,8 @@
 import { tool, type RunContext } from '@openai/agents-core';
 import { applyPatch } from 'diff';
 import { z } from 'zod';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 import { toolSummarySchema, trimPreview } from '../shared';
 
 /**

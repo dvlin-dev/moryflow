@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@anyhunt/ui/components/dialog';
-import { Input } from '@anyhunt/ui/components/input';
+} from '@moryflow/ui/components/dialog';
+import { Input } from '@moryflow/ui/components/input';
 import { useTranslation } from '@/lib/i18n';
 import type { InputDialogProps } from './const';
 

@@ -6,7 +6,7 @@ status: active
 ---
 
 <!--
-[INPUT]: Moryflow PC 消息列表现状 + @anyhunt/ui Conversation/Viewport + Following AutoScroll（参考 assistant-ui 语义但不引入依赖/拷贝目录）
+[INPUT]: Moryflow PC 消息列表现状 + @moryflow/ui Conversation/Viewport + Following AutoScroll（参考 assistant-ui 语义但不引入依赖/拷贝目录）
 [OUTPUT]: 给出“低复杂度、可维护”的自动滚动最终交互（Following 模式 + 发送不贴顶）
 [POS]: 消息列表自动滚动的单一事实来源（最终交互 + 边界 + 职责分层）
 
@@ -257,7 +257,7 @@ M	pnpm-lock.yaml
 
 ### 结论（总体）
 
-- 当前实现符合“**经典 chat + Following 模式 + 发送不贴顶**”的最终交互目标，结构相对清晰，跨端复用路径明确（PC/Console 同用 `@anyhunt/ui/ai/message-list` + `@anyhunt/ui/ai/message`）。
+- 当前实现符合“**经典 chat + Following 模式 + 发送不贴顶**”的最终交互目标，结构相对清晰，跨端复用路径明确（PC/Console 同用 `@moryflow/ui/ai/message-list` + `@moryflow/ui/ai/message`）。
 - 删除 `packages/ui/src/ai/assistant-ui/**` 后，滚动相关逻辑内聚到 `ConversationViewport` 子模块，复杂度显著下降，维护面更可控。
 
 ### 做得好的点（保持即可）
@@ -266,7 +266,7 @@ M	pnpm-lock.yaml
   - `MessageList` 只负责布局 + runStart 触发（一次 smooth）+ 入场动画（`160ms`），不再承担测量/贴顶策略。
   - `ConversationViewportAutoScroll` 只负责 Following 状态机（滚动指标 + Resize/Mutation coalesce），避免 rect 测量与 slack 体系。
 - **多端复用合理**：
-  - PC/Console 的“消息样式原语”统一走 `@anyhunt/ui/ai/message/*`，业务差异（工具审批、打开文件、i18n）留在各自应用层，UI 包不绑定 `desktopAPI`。
+  - PC/Console 的“消息样式原语”统一走 `@moryflow/ui/ai/message/*`，业务差异（工具审批、打开文件、i18n）留在各自应用层，UI 包不绑定 `desktopAPI`。
 - **测试覆盖对关键语义有效**：
   - UI 包覆盖 following on/off、layout shrink rollback、不被 smooth 中断、runStart 触发与入场动效等关键路径。
 
@@ -274,4 +274,4 @@ M	pnpm-lock.yaml
 
 - P1（文档一致性）：已清理各端 `CLAUDE.md` 中旧的 TurnAnchor/发送贴顶描述；后续以本文作为单一事实来源（Following + runStart smooth + 160ms 入场）。
 - P2（可预期性）：`MessageList` 未传 `threadId` 时使用稳定的默认 key，避免消息数组“压缩/截断”导致意外 remount；但如果业务存在线程切换，上层仍应显式传入 `threadId` 作为唯一事实来源（类似 PC 的 `activeSessionId`）。
-- P3（重复逻辑）：已抽出纯函数级 util（`@anyhunt/ui/ai/message/parts.ts`：`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。
+- P3（重复逻辑）：已抽出纯函数级 util（`@moryflow/ui/ai/message/parts.ts`：`splitMessageParts/cleanFileRefMarker`），PC/Console 统一复用，避免语义漂移。

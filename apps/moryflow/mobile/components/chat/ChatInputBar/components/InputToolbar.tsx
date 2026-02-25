@@ -26,7 +26,7 @@ import { AttachmentButton } from './AttachmentButton';
 import { ModelSelector } from './ModelSelector';
 import { cn } from '@/lib/utils';
 import type { VoiceState, ModelOption } from '../const';
-import type { AgentAccessMode } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode } from '@moryflow/agents-runtime';
 
 interface InputToolbarProps {
   voiceState: VoiceState;

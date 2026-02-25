@@ -5,8 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@anyhunt/ui/components/dialog';
-import { Button } from '@anyhunt/ui/components/button';
+} from '@moryflow/ui/components/dialog';
+import { Button } from '@moryflow/ui/components/button';
 import { ArrowUpRight, Loader } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 

@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type {
   CreateLlmProviderInput,
   LlmProviderListItem,

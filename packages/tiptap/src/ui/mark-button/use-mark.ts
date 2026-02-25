@@ -1,29 +1,29 @@
-import { useCallback, useEffect, useState } from "react"
-import type { Editor } from "@tiptap/react"
+import { useCallback, useEffect, useState } from 'react';
+import type { Editor } from '@tiptap/react';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import { isMarkInSchema, isNodeTypeSelected } from "../../utils/tiptap-utils"
+import { isMarkInSchema, isNodeTypeSelected } from '../../utils/tiptap-utils';
 
 // --- Icons ---
-import { BoldIcon } from "@anyhunt/ui/icons/bold-icon"
-import { Code2Icon } from "@anyhunt/ui/icons/code2-icon"
-import { ItalicIcon } from "@anyhunt/ui/icons/italic-icon"
-import { StrikeIcon } from "@anyhunt/ui/icons/strike-icon"
-import { SubscriptIcon } from "@anyhunt/ui/icons/subscript-icon"
-import { SuperscriptIcon } from "@anyhunt/ui/icons/superscript-icon"
-import { UnderlineIcon } from "@anyhunt/ui/icons/underline-icon"
+import { BoldIcon } from '@moryflow/ui/icons/bold-icon';
+import { Code2Icon } from '@moryflow/ui/icons/code2-icon';
+import { ItalicIcon } from '@moryflow/ui/icons/italic-icon';
+import { StrikeIcon } from '@moryflow/ui/icons/strike-icon';
+import { SubscriptIcon } from '@moryflow/ui/icons/subscript-icon';
+import { SuperscriptIcon } from '@moryflow/ui/icons/superscript-icon';
+import { UnderlineIcon } from '@moryflow/ui/icons/underline-icon';
 
 export type Mark =
-  | "bold"
-  | "italic"
-  | "strike"
-  | "code"
-  | "underline"
-  | "superscript"
-  | "subscript"
+  | 'bold'
+  | 'italic'
+  | 'strike'
+  | 'code'
+  | 'underline'
+  | 'superscript'
+  | 'subscript';
 
 /**
  * Configuration for the mark functionality
@@ -32,20 +32,20 @@ export interface UseMarkConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The type of mark to toggle
    */
-  type: Mark
+  type: Mark;
   /**
    * Whether the button should hide when mark is not available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful mark toggle.
    */
-  onToggled?: () => void
+  onToggled?: () => void;
 }
 
 export const markIcons = {
@@ -56,72 +56,71 @@ export const markIcons = {
   code: Code2Icon,
   superscript: SuperscriptIcon,
   subscript: SubscriptIcon,
-}
+};
 
 export const MARK_SHORTCUT_KEYS: Record<Mark, string> = {
-  bold: "mod+b",
-  italic: "mod+i",
-  underline: "mod+u",
-  strike: "mod+shift+s",
-  code: "mod+e",
-  superscript: "mod+.",
-  subscript: "mod+,",
-}
+  bold: 'mod+b',
+  italic: 'mod+i',
+  underline: 'mod+u',
+  strike: 'mod+shift+s',
+  code: 'mod+e',
+  superscript: 'mod+.',
+  subscript: 'mod+,',
+};
 
 /**
  * Checks if a mark can be toggled in the current editor state
  */
 export function canToggleMark(editor: Editor | null, type: Mark): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isMarkInSchema(type, editor) || isNodeTypeSelected(editor, ["image"]))
-    return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isMarkInSchema(type, editor) || isNodeTypeSelected(editor, ['image'])) return false;
 
-  return editor.can().toggleMark(type)
+  return editor.can().toggleMark(type);
 }
 
 /**
  * Checks if a mark is currently active
  */
 export function isMarkActive(editor: Editor | null, type: Mark): boolean {
-  if (!editor || !editor.isEditable) return false
-  return editor.isActive(type)
+  if (!editor || !editor.isEditable) return false;
+  return editor.isActive(type);
 }
 
 /**
  * Toggles a mark in the editor
  */
 export function toggleMark(editor: Editor | null, type: Mark): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!canToggleMark(editor, type)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!canToggleMark(editor, type)) return false;
 
-  return editor.chain().focus().toggleMark(type).run()
+  return editor.chain().focus().toggleMark(type).run();
 }
 
 /**
  * Determines if the mark button should be shown
  */
 export function shouldShowButton(props: {
-  editor: Editor | null
-  type: Mark
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  type: Mark;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  const { editor, type, hideWhenUnavailable } = props
+  const { editor, type, hideWhenUnavailable } = props;
 
-  if (!editor || !editor.isEditable) return false
-  if (!isMarkInSchema(type, editor)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isMarkInSchema(type, editor)) return false;
 
-  if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canToggleMark(editor, type)
+  if (hideWhenUnavailable && !editor.isActive('code')) {
+    return canToggleMark(editor, type);
   }
 
-  return true
+  return true;
 }
 
 /**
  * Gets the formatted mark name
  */
 export function getFormattedMarkName(type: Mark): string {
-  return type.charAt(0).toUpperCase() + type.slice(1)
+  return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
 /**
@@ -162,43 +161,38 @@ export function getFormattedMarkName(type: Mark): string {
  * ```
  */
 export function useMark(config: UseMarkConfig) {
-  const {
-    editor: providedEditor,
-    type,
-    hideWhenUnavailable = false,
-    onToggled,
-  } = config
+  const { editor: providedEditor, type, hideWhenUnavailable = false, onToggled } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const canToggle = canToggleMark(editor, type)
-  const isActive = isMarkActive(editor, type)
+  const { editor } = useTiptapEditor(providedEditor);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const canToggle = canToggleMark(editor, type);
+  const isActive = isMarkActive(editor, type);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
-      setIsVisible(shouldShowButton({ editor, type, hideWhenUnavailable }))
-    }
+      setIsVisible(shouldShowButton({ editor, type, hideWhenUnavailable }));
+    };
 
-    handleSelectionUpdate()
+    handleSelectionUpdate();
 
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    editor.on('selectionUpdate', handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, type, hideWhenUnavailable])
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, type, hideWhenUnavailable]);
 
   const handleMark = useCallback(() => {
-    if (!editor) return false
+    if (!editor) return false;
 
-    const success = toggleMark(editor, type)
+    const success = toggleMark(editor, type);
     if (success) {
-      onToggled?.()
+      onToggled?.();
     }
-    return success
-  }, [editor, type, onToggled])
+    return success;
+  }, [editor, type, onToggled]);
 
   return {
     isVisible,
@@ -208,5 +202,5 @@ export function useMark(config: UseMarkConfig) {
     label: getFormattedMarkName(type),
     shortcutKeys: MARK_SHORTCUT_KEYS[type],
     Icon: markIcons[type],
-  }
+  };
 }

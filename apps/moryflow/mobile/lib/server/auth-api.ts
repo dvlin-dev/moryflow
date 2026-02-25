@@ -4,7 +4,7 @@
  * [POS]: Mobile 端 Better Auth API 封装
  */
 
-import { createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { BetterAuthError } from './types';
 import { AUTH_BASE_URL, authClient } from './auth-client';
 import { DEVICE_PLATFORM } from './auth-platform';

@@ -15,4 +15,4 @@ export {
   DEFAULT_MCP_SERVERS_OPTIONS,
   type OpenMcpServersOptions,
   type ServerWithConfig,
-} from '@anyhunt/agents-mcp';
+} from '@moryflow/agents-mcp';

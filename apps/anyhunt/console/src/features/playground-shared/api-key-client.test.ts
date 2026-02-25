@@ -14,7 +14,7 @@ vi.mock('@/lib/api-base', () => ({
   API_BASE_URL: '',
 }));
 
-vi.mock('@anyhunt/api/client', () => {
+vi.mock('@moryflow/api/client', () => {
   class MockServerApiError extends Error {
     status: number;
     code: string;
@@ -65,7 +65,7 @@ describe('createApiKeyClient', () => {
 
   it('rethrows ServerApiError as ApiKeyClientError in delete path', async () => {
     const { createApiKeyClient, ApiKeyClientError } = await import('./api-key-client');
-    const { ServerApiError } = await import('@anyhunt/api/client');
+    const { ServerApiError } = await import('@moryflow/api/client');
     mocks.requestDelete.mockRejectedValue(new ServerApiError('Denied', 403, 'FORBIDDEN'));
 
     const client = createApiKeyClient({ apiKey: 'ah_test_key' });

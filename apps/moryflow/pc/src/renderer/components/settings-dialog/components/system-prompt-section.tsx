@@ -12,14 +12,14 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@anyhunt/ui/components/accordion';
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
-import { Textarea } from '@anyhunt/ui/components/textarea';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
+} from '@moryflow/ui/components/accordion';
+import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
+import { Textarea } from '@moryflow/ui/components/textarea';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
+import { Switch } from '@moryflow/ui/components/switch';
+import { getMorySystemPrompt } from '@moryflow/agents-runtime/prompt';
 import { useTranslation } from '@/lib/i18n';
 import type { FormValues } from '../const';
 

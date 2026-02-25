@@ -7,7 +7,7 @@
  */
 
 import { AppState } from 'react-native';
-import { parseAuthError } from '@anyhunt/api';
+import { parseAuthError } from '@moryflow/api';
 import {
   getStoredRefreshToken,
   getStoredUserCache,

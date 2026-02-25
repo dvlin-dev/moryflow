@@ -5,9 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@anyhunt/ui/components/dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import { Badge } from '@anyhunt/ui/components/badge';
+} from '@moryflow/ui/components/dialog';
+import { Button } from '@moryflow/ui/components/button';
+import { Badge } from '@moryflow/ui/components/badge';
 import type { LucideIcon } from 'lucide-react';
 import { CircleAlert, Coins, Gem, Loader, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';

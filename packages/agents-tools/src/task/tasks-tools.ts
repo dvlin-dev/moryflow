@@ -9,7 +9,7 @@
 
 import { tool, type RunContext, type Tool } from '@openai/agents-core';
 import { z } from 'zod';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 import type {
   TasksStore,

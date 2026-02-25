@@ -58,29 +58,29 @@ export default defineConfig({
         { find: '@', replacement: resolve(__dirname, 'src/renderer') },
         { find: '@shared', replacement: resolve(__dirname, 'src/shared') },
         {
-          find: '@anyhunt/ui/styles',
+          find: '@moryflow/ui/styles',
           replacement: resolve(__dirname, '../../../packages/ui/styles/index.css'),
         },
         {
-          find: /^@anyhunt\/ui\/styles\/(.*)$/,
+          find: /^@moryflow\/ui\/styles\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/ui/styles/$1'),
         },
         {
-          find: /^@anyhunt\/ui\/(.*)$/,
+          find: /^@moryflow\/ui\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/ui/src/$1'),
         },
         // styles 目录在包根目录，需单独处理
         {
-          find: /^@anyhunt\/tiptap\/styles\/(.*)$/,
+          find: /^@moryflow\/tiptap\/styles\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/styles/$1'),
         },
         {
-          find: /^@anyhunt\/tiptap\/(.*)$/,
+          find: /^@moryflow\/tiptap\/(.*)$/,
           replacement: resolve(__dirname, '../../../packages/tiptap/src/$1'),
         },
-        { find: '@anyhunt/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
+        { find: '@moryflow/ui', replacement: resolve(__dirname, '../../../packages/ui/src') },
         {
-          find: '@anyhunt/tiptap',
+          find: '@moryflow/tiptap',
           replacement: resolve(__dirname, '../../../packages/tiptap/src'),
         },
       ],

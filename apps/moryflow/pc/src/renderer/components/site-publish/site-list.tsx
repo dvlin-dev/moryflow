@@ -20,14 +20,14 @@ import {
   Power,
   Check,
 } from 'lucide-react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
+} from '@moryflow/ui/components/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +37,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
+} from '@moryflow/ui/components/alert-dialog';
 import { cn } from '@/lib/utils';
 import type { Site } from '../../../shared/ipc/site-publish';
 import { useSitePublish } from './use-site-publish';

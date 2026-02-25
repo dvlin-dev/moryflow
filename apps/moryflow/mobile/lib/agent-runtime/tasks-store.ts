@@ -9,7 +9,7 @@
 
 import * as SQLite from 'expo-sqlite';
 import { AppState } from 'react-native';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 import type {
   TasksStore,
   TasksStoreContext,
@@ -27,12 +27,12 @@ import type {
   AddNoteInput,
   AddFilesInput,
   DeleteTaskInput,
-} from '@anyhunt/agents-tools';
+} from '@moryflow/agents-tools';
 import {
   TASKS_PRAGMAS,
   TASKS_SCHEMA_MIGRATIONS,
   TASKS_SCHEMA_VERSION,
-} from '@anyhunt/agents-tools';
+} from '@moryflow/agents-tools';
 
 type MobileTasksStoreOptions = {
   onDatabaseChange?: () => void;

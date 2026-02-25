@@ -2,27 +2,27 @@
  * Vault 服务类型定义
  */
 
-import type { VaultInfo, ResolvedVaultPath } from '@anyhunt/agents-adapter'
+import type { VaultInfo, ResolvedVaultPath } from '@moryflow/agents-adapter';
 
 // 重新导出类型
-export type { VaultInfo, ResolvedVaultPath }
+export type { VaultInfo, ResolvedVaultPath };
 
 /**
  * Vault 树节点
  */
 export interface VaultTreeNode {
   /** 节点名称 */
-  name: string
+  name: string;
   /** 相对于 Vault 的路径 */
-  path: string
+  path: string;
   /** 节点类型 */
-  type: 'file' | 'directory'
+  type: 'file' | 'directory';
   /** 子节点（仅目录有） */
-  children?: VaultTreeNode[]
+  children?: VaultTreeNode[];
   /** 文件大小（仅文件有） */
-  size?: number
+  size?: number;
   /** 修改时间（毫秒时间戳） */
-  mtime?: number
+  mtime?: number;
 }
 
 /**
@@ -30,27 +30,27 @@ export interface VaultTreeNode {
  */
 export interface VaultFileInfo {
   /** 相对路径 */
-  path: string
+  path: string;
   /** 文件名 */
-  name: string
+  name: string;
   /** 文件大小 */
-  size: number
+  size: number;
   /** 修改时间 */
-  mtime: number
+  mtime: number;
   /** 是否为目录 */
-  isDirectory: boolean
+  isDirectory: boolean;
 }
 
 /**
  * Vault 变更事件
  */
 export interface VaultChangeEvent {
-  type: 'created' | 'modified' | 'deleted' | 'renamed'
-  path: string
-  oldPath?: string // 仅 renamed 事件
+  type: 'created' | 'modified' | 'deleted' | 'renamed';
+  path: string;
+  oldPath?: string; // 仅 renamed 事件
 }
 
 /**
  * Vault 变更监听器
  */
-export type VaultChangeListener = (event: VaultChangeEvent) => void
+export type VaultChangeListener = (event: VaultChangeEvent) => void;

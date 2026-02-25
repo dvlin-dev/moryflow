@@ -1,72 +1,68 @@
-"use client"
+'use client';
 
-import { useCallback, useMemo } from "react"
-import type { Editor } from "@tiptap/react"
-import {
-  cellAround,
-  CellSelection,
-  deleteCellSelection,
-} from "@tiptap/pm/tables"
+import { useCallback, useMemo } from 'react';
+import type { Editor } from '@tiptap/react';
+import { cellAround, CellSelection, deleteCellSelection } from '@tiptap/pm/tables';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import { isExtensionAvailable } from "../../../../utils/tiptap-utils"
-import type { Orientation } from "../../lib/tiptap-table-utils"
+import { isExtensionAvailable } from '../../../../utils/tiptap-utils';
+import type { Orientation } from '../../lib/tiptap-table-utils';
 import {
   getTable,
   getTableSelectionType,
   getRowOrColumnCells,
   setCellAttr,
   isCellEmpty,
-} from "../../lib/tiptap-table-utils"
+} from '../../lib/tiptap-table-utils';
 
 // --- Icons ---
-import { SquareXIcon } from "@anyhunt/ui/icons/square-x-icon"
+import { SquareXIcon } from '@moryflow/ui/icons/square-x-icon';
 
 export interface UseTableClearRowColumnContentConfig {
   /**
    * The Tiptap editor instance. If omitted, the hook will use
    * the context/editor from `useTiptapEditor`.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The index of the row or column to clear.
    * If omitted, will clear the currently selected cells.
    */
-  index?: number
+  index?: number;
   /**
    * Whether you're clearing a row or a column.
    * If omitted, will clear the currently selected cells.
    */
-  orientation?: Orientation
+  orientation?: Orientation;
   /**
    * The position of the table in the document.
    */
-  tablePos?: number
+  tablePos?: number;
   /**
    * Hide the button when clearing isn't currently possible.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Whether to reset cell attributes (backgroundColor, nodeVerticalAlign, nodeTextAlign) when clearing.
    * @default false
    */
-  resetAttrs?: boolean
+  resetAttrs?: boolean;
   /**
    * Callback function called after a successful clear.
    */
-  onCleared?: () => void
+  onCleared?: () => void;
 }
 
-const REQUIRED_EXTENSIONS = ["table"]
+const REQUIRED_EXTENSIONS = ['table'];
 
 export const tableClearRowColumnContentLabels: Record<Orientation, string> = {
-  row: "Clear row contents",
-  column: "Clear column contents",
-}
+  row: 'Clear row contents',
+  column: 'Clear column contents',
+};
 
 /**
  * Default cell attributes to reset when clearing content
@@ -75,17 +71,17 @@ const DEFAULT_CELL_ATTRS = {
   backgroundColor: null,
   nodeVerticalAlign: null,
   nodeTextAlign: null,
-}
+};
 
 /**
  * Resets cell attributes to default values
  */
 function resetCellAttributes(editor: Editor): boolean {
   try {
-    return setCellAttr(DEFAULT_CELL_ATTRS)(editor.state, editor.view.dispatch)
+    return setCellAttr(DEFAULT_CELL_ATTRS)(editor.state, editor.view.dispatch);
   } catch (error) {
-    console.error("Error resetting cell attributes:", error)
-    return false
+    console.error('Error resetting cell attributes:', error);
+    return false;
   }
 }
 
@@ -99,29 +95,20 @@ function canClearRowColumnContent({
   orientation,
   tablePos,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  tablePos?: number
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  tablePos?: number;
 }): boolean {
-  if (
-    !editor ||
-    !editor.isEditable ||
-    !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
-  ) {
-    return false
+  if (!editor || !editor.isEditable || !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) {
+    return false;
   }
 
   try {
-    const table = getTable(editor, tablePos)
-    if (!table) return false
+    const table = getTable(editor, tablePos);
+    if (!table) return false;
 
-    const selectionType = getTableSelectionType(
-      editor,
-      index,
-      orientation,
-      tablePos
-    )
+    const selectionType = getTableSelectionType(editor, index, orientation, tablePos);
 
     if (selectionType) {
       const cellData = getRowOrColumnCells(
@@ -129,80 +116,75 @@ function canClearRowColumnContent({
         selectionType.index,
         selectionType.orientation,
         tablePos
-      )
-      if (cellData.cells.length === 0) return false
+      );
+      if (cellData.cells.length === 0) return false;
 
-      return cellData.cells.some(
-        (cellInfo) => cellInfo.node && !isCellEmpty(cellInfo.node)
-      )
+      return cellData.cells.some((cellInfo) => cellInfo.node && !isCellEmpty(cellInfo.node));
     } else {
-      const { selection } = editor.state
+      const { selection } = editor.state;
 
       if (selection instanceof CellSelection) {
-        let hasContent = false
+        let hasContent = false;
         selection.forEachCell((cell) => {
           if (!isCellEmpty(cell)) {
-            hasContent = true
+            hasContent = true;
           }
-        })
-        return hasContent
+        });
+        return hasContent;
       }
 
       // Single cell case
-      const { $anchor } = selection
-      const cell = cellAround($anchor)
-      if (!cell) return false
+      const { $anchor } = selection;
+      const cell = cellAround($anchor);
+      if (!cell) return false;
 
-      const cellNode = editor.state.doc.nodeAt(cell.pos)
-      return cellNode ? !isCellEmpty(cellNode) : false
+      const cellNode = editor.state.doc.nodeAt(cell.pos);
+      return cellNode ? !isCellEmpty(cellNode) : false;
     }
   } catch {
-    return false
+    return false;
   }
 }
 
 /**
  * Clears content from selected cells and optionally resets attributes.
  */
-function clearSelectedCells(
-  editor: Editor,
-  resetAttrs: boolean = false
-): boolean {
+function clearSelectedCells(editor: Editor, resetAttrs: boolean = false): boolean {
   try {
-    const { selection } = editor.state
+    const { selection } = editor.state;
 
     if (selection instanceof CellSelection) {
       if (resetAttrs) {
-        resetCellAttributes(editor)
+        resetCellAttributes(editor);
       }
 
-      deleteCellSelection(editor.state, editor.view.dispatch)
+      deleteCellSelection(editor.state, editor.view.dispatch);
 
-      return true
+      return true;
     }
 
     // Handle single cell
-    const { $anchor } = selection
-    const cell = cellAround($anchor)
-    if (!cell) return false
+    const { $anchor } = selection;
+    const cell = cellAround($anchor);
+    if (!cell) return false;
 
-    const cellNode = editor.state.doc.nodeAt(cell.pos)
-    if (!cellNode) return false
+    const cellNode = editor.state.doc.nodeAt(cell.pos);
+    if (!cellNode) return false;
 
-    const from = cell.pos + 1
-    const to = cell.pos + cellNode.nodeSize - 1
-    if (from >= to) return false
+    const from = cell.pos + 1;
+    const to = cell.pos + cellNode.nodeSize - 1;
+    if (from >= to) return false;
 
     if (resetAttrs) {
-      resetCellAttributes(editor)
+      resetCellAttributes(editor);
     }
 
-    editor.view.dispatch(editor.state.tr.delete(from, to))
+    editor.view.dispatch(editor.state.tr.delete(from, to));
 
-    return true
+    return true;
   } catch (error) {
-    console.error("Error clearing selected cells:", error)
-    return false
+    console.error('Error clearing selected cells:', error);
+    return false;
   }
 }
 
@@ -216,50 +198,50 @@ function clearRowColumnCells({
   tablePos,
   resetAttrs = false,
 }: {
-  editor: Editor
-  index: number
-  orientation: Orientation
-  tablePos?: number
-  resetAttrs?: boolean
+  editor: Editor;
+  index: number;
+  orientation: Orientation;
+  tablePos?: number;
+  resetAttrs?: boolean;
 }): boolean {
   try {
-    const { state, view } = editor
-    const tr = state.tr
+    const { state, view } = editor;
+    const tr = state.tr;
 
-    const cellData = getRowOrColumnCells(editor, index, orientation, tablePos)
+    const cellData = getRowOrColumnCells(editor, index, orientation, tablePos);
 
     if (cellData.cells.length === 0) {
-      return false
+      return false;
     }
 
-    const cellsToProcess = [...cellData.cells].reverse()
+    const cellsToProcess = [...cellData.cells].reverse();
 
     cellsToProcess.forEach((cellInfo) => {
       if (cellInfo.node && !isCellEmpty(cellInfo.node)) {
-        const from = cellInfo.pos + 1
-        const to = cellInfo.pos + cellInfo.node.nodeSize - 1
+        const from = cellInfo.pos + 1;
+        const to = cellInfo.pos + cellInfo.node.nodeSize - 1;
         if (from < to) {
-          tr.delete(from, to)
+          tr.delete(from, to);
         }
 
         if (resetAttrs) {
           tr.setNodeMarkup(cellInfo.pos, null, {
             ...cellInfo.node.attrs,
             ...DEFAULT_CELL_ATTRS,
-          })
+          });
         }
       }
-    })
+    });
 
     if (tr.docChanged) {
-      view.dispatch(tr)
-      return true
+      view.dispatch(tr);
+      return true;
     }
 
-    return false
+    return false;
   } catch (error) {
-    console.error(`Error clearing ${orientation} content:`, error)
-    return false
+    console.error(`Error clearing ${orientation} content:`, error);
+    return false;
   }
 }
 
@@ -273,26 +255,18 @@ function tableClearRowColumnContent({
   tablePos,
   resetAttrs = false,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  tablePos?: number
-  resetAttrs?: boolean
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  tablePos?: number;
+  resetAttrs?: boolean;
 }): boolean {
-  if (
-    !canClearRowColumnContent({ editor, index, orientation, tablePos }) ||
-    !editor
-  ) {
-    return false
+  if (!canClearRowColumnContent({ editor, index, orientation, tablePos }) || !editor) {
+    return false;
   }
 
   try {
-    const selectionType = getTableSelectionType(
-      editor,
-      index,
-      orientation,
-      tablePos
-    )
+    const selectionType = getTableSelectionType(editor, index, orientation, tablePos);
 
     if (selectionType) {
       return clearRowColumnCells({
@@ -301,13 +275,13 @@ function tableClearRowColumnContent({
         orientation: selectionType.orientation,
         resetAttrs,
         tablePos,
-      })
+      });
     } else {
-      return clearSelectedCells(editor, resetAttrs)
+      return clearSelectedCells(editor, resetAttrs);
     }
   } catch (error) {
-    console.error("Error clearing table content:", error)
-    return false
+    console.error('Error clearing table content:', error);
+    return false;
   }
 }
 
@@ -322,33 +296,27 @@ function shouldShowButton({
   tablePos,
   hideWhenUnavailable,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  tablePos?: number
-  hideWhenUnavailable: boolean
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  tablePos?: number;
+  hideWhenUnavailable: boolean;
 }): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false;
 
-  const table = getTable(editor, tablePos)
-  if (!table) return false
+  const table = getTable(editor, tablePos);
+  if (!table) return false;
 
-  const selectionType = getTableSelectionType(
-    editor,
-    index,
-    orientation,
-    tablePos
-  )
-  const { selection } = editor.state
-  const isInTableCell =
-    selection instanceof CellSelection || cellAround(selection.$anchor)
+  const selectionType = getTableSelectionType(editor, index, orientation, tablePos);
+  const { selection } = editor.state;
+  const isInTableCell = selection instanceof CellSelection || cellAround(selection.$anchor);
 
-  if (!selectionType && !isInTableCell) return false
+  if (!selectionType && !isInTableCell) return false;
 
   return hideWhenUnavailable
     ? canClearRowColumnContent({ editor, index, orientation, tablePos })
-    : true
+    : true;
 }
 
 /**
@@ -402,9 +370,7 @@ function shouldShowButton({
  * }
  * ```
  */
-export function useTableClearRowColumnContent(
-  config: UseTableClearRowColumnContentConfig = {}
-) {
+export function useTableClearRowColumnContent(config: UseTableClearRowColumnContentConfig = {}) {
   const {
     editor: providedEditor,
     index,
@@ -413,16 +379,11 @@ export function useTableClearRowColumnContent(
     hideWhenUnavailable = false,
     resetAttrs = false,
     onCleared,
-  } = config
+  } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
+  const { editor } = useTiptapEditor(providedEditor);
 
-  const selectionType = getTableSelectionType(
-    editor,
-    index,
-    orientation,
-    tablePos
-  )
+  const selectionType = getTableSelectionType(editor, index, orientation, tablePos);
 
   const isVisible = shouldShowButton({
     editor,
@@ -430,14 +391,14 @@ export function useTableClearRowColumnContent(
     orientation,
     tablePos,
     hideWhenUnavailable,
-  })
+  });
 
   const canPerformClear = canClearRowColumnContent({
     editor,
     index,
     orientation,
     tablePos,
-  })
+  });
 
   const handleClear = useCallback(() => {
     const success = tableClearRowColumnContent({
@@ -446,19 +407,19 @@ export function useTableClearRowColumnContent(
       orientation,
       tablePos,
       resetAttrs,
-    })
-    if (success) onCleared?.()
-    return success
-  }, [editor, index, orientation, tablePos, resetAttrs, onCleared])
+    });
+    if (success) onCleared?.();
+    return success;
+  }, [editor, index, orientation, tablePos, resetAttrs, onCleared]);
 
   const label = useMemo(() => {
     if (selectionType) {
-      return tableClearRowColumnContentLabels[selectionType.orientation]
+      return tableClearRowColumnContentLabels[selectionType.orientation];
     }
-    return "Clear contents"
-  }, [selectionType])
+    return 'Clear contents';
+  }, [selectionType]);
 
-  const Icon = SquareXIcon
+  const Icon = SquareXIcon;
 
   return {
     isVisible,
@@ -466,5 +427,5 @@ export function useTableClearRowColumnContent(
     handleClear,
     label,
     Icon,
-  }
+  };
 }

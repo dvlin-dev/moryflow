@@ -7,8 +7,8 @@
  */
 
 import { Directory, File, Paths } from 'expo-file-system';
-import type { CryptoUtils } from '@anyhunt/agents-adapter';
-import type { ToolOutputStorage } from '@anyhunt/agents-runtime';
+import type { CryptoUtils } from '@moryflow/agents-adapter';
+import type { ToolOutputStorage } from '@moryflow/agents-runtime';
 
 const OUTPUT_DIR = Paths.join(Paths.document.uri, 'agent-output');
 const DAY_MS = 24 * 60 * 60 * 1000;

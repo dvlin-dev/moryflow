@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@anyhunt/ui/ai/*": ["../../../packages/ui/src/ai/*"]
+      "@moryflow/ui/ai/*": ["../../../packages/ui/src/ai/*"]
     }
   },
   "files": [],

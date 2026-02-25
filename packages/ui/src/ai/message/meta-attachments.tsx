@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/tooltip';
 import { cn } from '../../lib/utils';
-import type { ChatAttachment } from '@anyhunt/types';
+import type { ChatAttachment } from '@moryflow/types';
 
 export type MessageMetaAttachmentsProps = HTMLAttributes<HTMLDivElement> & {
   attachments: ChatAttachment[];

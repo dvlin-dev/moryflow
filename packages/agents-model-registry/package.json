@@ -1,5 +1,5 @@
 {
-  "name": "@anyhunt/agents-model-registry",
+  "name": "@moryflow/agents-model-registry",
   "version": "0.1.0",
   "description": "Shared model and provider registry for agent runtime",
   "main": "dist/index.js",

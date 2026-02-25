@@ -5,7 +5,7 @@
 import { Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth';
 import { AppSidebar } from './app-sidebar';
-import { SidebarInset, SidebarProvider, SidebarTrigger, Separator } from '@anyhunt/ui';
+import { SidebarInset, SidebarProvider, SidebarTrigger, Separator } from '@moryflow/ui';
 
 export function MainLayout() {
   const user = useAuthStore((state) => state.user);

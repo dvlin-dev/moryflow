@@ -3,7 +3,7 @@
  * [POS]: Article card in the list with title, summary, and metadata
  */
 
-import { Badge, cn } from '@anyhunt/ui';
+import { Badge, cn } from '@moryflow/ui';
 import { formatRelativeTime } from '@/lib/date';
 import type { InboxItem } from '@/features/digest/types';
 

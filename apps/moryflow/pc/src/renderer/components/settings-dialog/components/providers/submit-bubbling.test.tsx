@@ -38,7 +38,7 @@ vi.mock('@shared/model-registry', () => ({
   getSortedProviders: () => [],
 }));
 
-vi.mock('@anyhunt/model-registry-data', () => ({
+vi.mock('@moryflow/model-registry-data', () => ({
   searchModels: () => [],
   getModelCount: () => 0,
 }));

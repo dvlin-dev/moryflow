@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
   Input,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useSearch, type SearchRequest, type SearchResponse } from '@/features/search-playground';
 import {

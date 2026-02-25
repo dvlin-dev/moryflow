@@ -11,13 +11,13 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常
 - API Client：`api-key-client` 的错误分支补齐返回路径（控制流闭合），并统一 body 类型到 `ApiClientRequestOptions['body']`
 - Memox：删除接口改用 `client.delete(...)`（不再调用不存在的 `request` 方法）
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@anyhunt/api/client` 解析失败
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 解析失败
 - Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - Console Auth 切换为 Token-first：`/login` 本地表单直连 `POST /api/v1/auth/sign-in/email`，本地持久化 `access+refresh`
 - `stores/auth.ts` 引入 refresh mutex 与 body refresh（`POST /api/v1/auth/refresh` 传 `refreshToken`），移除 Cookie 会话依赖
 - Agent Browser Playground 聊天 transport 改为官方 `DefaultChatTransport`，删除自定义 SSE parser 与 `eventsource-parser` 依赖
-- Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 注入）
-- Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
+- Streamdown 升级至 v2.2：Agent Browser Playground 流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@moryflow/ui/styles` 注入）
+- Console 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
 - Console 统一将 ArrowLeft/ArrowRight 替换为 ChevronLeft/ChevronRight（无中轴）
 - Agent Browser Playground 下拉箭头改为 ChevronDown（无中轴）
 - 控制台图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
@@ -67,7 +67,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - 全局样式仅引入 `/ui/styles`，`@source` 只扫描本应用源码
 - `src/components/ui` 允许多导出，`eslint.config.js` 已关闭 `react-refresh/only-export-components`
 - Vite 需 `resolve.dedupe` React 依赖，避免生产环境 hooks 异常
-- `@anyhunt/ui/ai/*` 通过 Vite/tsconfig alias 指向 `packages/ui/src/ai`，确保构建可解析
+- `@moryflow/ui/ai/*` 通过 Vite/tsconfig alias 指向 `packages/ui/src/ai`，确保构建可解析
 - 使用 TailwindCSS 4 + shadcn/ui 组件库
 - 状态管理使用 Zustand
 - 数据获取使用 TanStack Query
@@ -123,7 +123,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 - Agent Browser Agent 页面调整为纯聊天视图（消息列表 + 输入），API Key 自动选择并补充无 Key 引导
 - Agent Browser Agent SSE 改为 `ai` 的 `UIMessageChunk` 单协议（`start/finish` + `text-*` + `tool-*`），transport 透传，避免双状态机
 - Agent Browser 在 tool 边界结束当前文本段，形成多个 `text` part，与 tool part 按顺序交错展示
-- Agent Browser Agent 页面消息列表与输入框切换为 `@anyhunt/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
+- Agent Browser Agent 页面消息列表与输入框切换为 `@moryflow/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
 - Agent Browser Agent 输入提交失败时保留文本并交由上层提示
 - Fetchx Playground 路由调整为 `/fetchx/*` 结构
 - Console Agent Browser 聊天流切换为官方 transport 协议栈（`ai`），不再维护本地 SSE 解析器

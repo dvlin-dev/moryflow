@@ -16,8 +16,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@anyhunt/ui/components/command';
-import { Button } from '@anyhunt/ui/components/button';
+} from '@moryflow/ui/components/command';
+import { Button } from '@moryflow/ui/components/button';
 import { cn } from '@/lib/utils';
 
 export type SkillPanelProps = {

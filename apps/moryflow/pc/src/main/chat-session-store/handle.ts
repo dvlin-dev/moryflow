@@ -10,7 +10,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { AgentAccessMode } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode } from '@moryflow/agents-runtime';
 import type { ChatSessionSummary, TokenUsage } from '../../shared/ipc.js';
 import { agentHistoryToUiMessages } from './ui-message.js';
 import { type PersistedChatSession } from './const.js';

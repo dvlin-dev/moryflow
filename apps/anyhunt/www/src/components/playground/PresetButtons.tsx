@@ -1,4 +1,4 @@
-import { cn } from '@anyhunt/ui/lib';
+import { cn } from '@moryflow/ui/lib';
 
 interface PresetButtonsProps {
   onSelect: (url: string) => void;

@@ -5,7 +5,7 @@
  */
 import { useBrowserStatus, type BrowserPoolDetailedStatus } from '@/features/browser';
 import { Activity, CircleAlert, Clock, Computer, Cpu, HardDrive, Server } from 'lucide-react';
-import { Progress, Skeleton } from '@anyhunt/ui';
+import { Progress, Skeleton } from '@moryflow/ui';
 
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;

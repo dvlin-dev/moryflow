@@ -14,8 +14,8 @@
  */
 
 import * as Crypto from 'expo-crypto';
-import type { FileEntry, IFileIndexManager } from '@anyhunt/api';
-import { createEmptyClock } from '@anyhunt/sync';
+import type { FileEntry, IFileIndexManager } from '@moryflow/api';
+import { createEmptyClock } from '@moryflow/sync';
 import { loadStore, saveStore } from './store';
 import { scanMdFiles } from './scanner';
 

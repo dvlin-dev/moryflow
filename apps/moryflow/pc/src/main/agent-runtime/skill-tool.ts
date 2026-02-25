@@ -10,7 +10,7 @@
 
 import { tool } from '@openai/agents-core';
 import { z } from 'zod';
-import type { AgentContext } from '@anyhunt/agents-runtime';
+import type { AgentContext } from '@moryflow/agents-runtime';
 import { getSkillsRegistry } from '../skills/index.js';
 
 const skillInputSchema = z.object({

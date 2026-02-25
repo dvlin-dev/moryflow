@@ -11,11 +11,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Progress } from '@anyhunt/ui/components/progress';
+} from '@moryflow/ui/components/dialog';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Progress } from '@moryflow/ui/components/progress';
 import { CircleAlert, CircleCheck, File, Globe, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BuildSiteInput, BuildProgressEvent } from '../../../shared/ipc/site-publish';

@@ -13,7 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 
 export interface PlaygroundErrorBoundaryProps {
   children: ReactNode;

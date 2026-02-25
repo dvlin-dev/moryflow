@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
-import type { PlatformCapabilities, CryptoUtils } from '@anyhunt/agents-adapter';
+import type { PlatformCapabilities, CryptoUtils } from '@moryflow/agents-adapter';
 
 const { openDatabaseAsync, addEventListener } = vi.hoisted(() => ({
   openDatabaseAsync: vi.fn(),

@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Search, RotateCcw } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@anyhunt/ui';
+import { PageHeader, SimplePagination } from '@moryflow/ui';
 import {
   Badge,
   Button,
@@ -27,8 +27,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
   useRequestLogs,
   useRequestLogsOverview,

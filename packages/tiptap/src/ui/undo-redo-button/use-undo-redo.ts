@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useState } from "react"
-import { type Editor } from "@tiptap/react"
+import { useCallback, useEffect, useState } from 'react';
+import { type Editor } from '@tiptap/react';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import { isNodeTypeSelected } from "../../utils/tiptap-utils"
+import { isNodeTypeSelected } from '../../utils/tiptap-utils';
 
 // --- Icons ---
-import { Redo2Icon } from "@anyhunt/ui/icons/redo2-icon"
-import { Undo2Icon } from "@anyhunt/ui/icons/undo2-icon"
+import { Redo2Icon } from '@moryflow/ui/icons/redo2-icon';
+import { Undo2Icon } from '@moryflow/ui/icons/undo2-icon';
 
-export type UndoRedoAction = "undo" | "redo"
+export type UndoRedoAction = 'undo' | 'redo';
 
 /**
  * Configuration for the history functionality
@@ -20,81 +20,75 @@ export interface UseUndoRedoConfig {
   /**
    * The Tiptap editor instance.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The history action to perform (undo or redo).
    */
-  action: UndoRedoAction
+  action: UndoRedoAction;
   /**
    * Whether the button should hide when action is not available.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful action execution.
    */
-  onExecuted?: () => void
+  onExecuted?: () => void;
 }
 
 export const UNDO_REDO_SHORTCUT_KEYS: Record<UndoRedoAction, string> = {
-  undo: "mod+z",
-  redo: "mod+shift+z",
-}
+  undo: 'mod+z',
+  redo: 'mod+shift+z',
+};
 
 export const historyActionLabels: Record<UndoRedoAction, string> = {
-  undo: "Undo",
-  redo: "Redo",
-}
+  undo: 'Undo',
+  redo: 'Redo',
+};
 
 export const historyIcons = {
   undo: Undo2Icon,
   redo: Redo2Icon,
-}
+};
 
 /**
  * Checks if a history action can be executed
  */
-export function canExecuteUndoRedoAction(
-  editor: Editor | null,
-  action: UndoRedoAction
-): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (isNodeTypeSelected(editor, ["image"])) return false
+export function canExecuteUndoRedoAction(editor: Editor | null, action: UndoRedoAction): boolean {
+  if (!editor || !editor.isEditable) return false;
+  if (isNodeTypeSelected(editor, ['image'])) return false;
 
-  return action === "undo" ? editor.can().undo() : editor.can().redo()
+  return action === 'undo' ? editor.can().undo() : editor.can().redo();
 }
 
 /**
  * Executes a history action on the editor
  */
-export function executeUndoRedoAction(
-  editor: Editor | null,
-  action: UndoRedoAction
-): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!canExecuteUndoRedoAction(editor, action)) return false
+export function executeUndoRedoAction(editor: Editor | null, action: UndoRedoAction): boolean {
+  if (!editor || !editor.isEditable) return false;
+  if (!canExecuteUndoRedoAction(editor, action)) return false;
 
-  const chain = editor.chain().focus()
-  return action === "undo" ? chain.undo().run() : chain.redo().run()
+  const chain = editor.chain().focus();
+  return action === 'undo' ? chain.undo().run() : chain.redo().run();
 }
 
 /**
  * Determines if the history button should be shown
  */
 export function shouldShowButton(props: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
-  action: UndoRedoAction
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
+  action: UndoRedoAction;
 }): boolean {
-  const { editor, hideWhenUnavailable, action } = props
+  const { editor, hideWhenUnavailable, action } = props;
 
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canExecuteUndoRedoAction(editor, action)
+  if (hideWhenUnavailable && !editor.isActive('code')) {
+    return canExecuteUndoRedoAction(editor, action);
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -134,42 +128,37 @@ export function shouldShowButton(props: {
  * ```
  */
 export function useUndoRedo(config: UseUndoRedoConfig) {
-  const {
-    editor: providedEditor,
-    action,
-    hideWhenUnavailable = false,
-    onExecuted,
-  } = config
+  const { editor: providedEditor, action, hideWhenUnavailable = false, onExecuted } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const canExecute = canExecuteUndoRedoAction(editor, action)
+  const { editor } = useTiptapEditor(providedEditor);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const canExecute = canExecuteUndoRedoAction(editor, action);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleUpdate = () => {
-      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable, action }))
-    }
+      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable, action }));
+    };
 
-    handleUpdate()
+    handleUpdate();
 
-    editor.on("transaction", handleUpdate)
+    editor.on('transaction', handleUpdate);
 
     return () => {
-      editor.off("transaction", handleUpdate)
-    }
-  }, [editor, hideWhenUnavailable, action])
+      editor.off('transaction', handleUpdate);
+    };
+  }, [editor, hideWhenUnavailable, action]);
 
   const handleAction = useCallback(() => {
-    if (!editor) return false
+    if (!editor) return false;
 
-    const success = executeUndoRedoAction(editor, action)
+    const success = executeUndoRedoAction(editor, action);
     if (success) {
-      onExecuted?.()
+      onExecuted?.();
     }
-    return success
-  }, [editor, action, onExecuted])
+    return success;
+  }, [editor, action, onExecuted]);
 
   return {
     isVisible,
@@ -178,5 +167,5 @@ export function useUndoRedo(config: UseUndoRedoConfig) {
     label: historyActionLabels[action],
     shortcutKeys: UNDO_REDO_SHORTCUT_KEYS[action],
     Icon: historyIcons[action],
-  }
+  };
 }

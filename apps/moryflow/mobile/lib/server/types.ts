@@ -20,10 +20,10 @@ export type {
   MembershipAuthState,
   BetterAuthError,
   DeleteAccountRequest,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // 本地类型别名（简化使用）
 export type {
   MembershipUserInfo as UserInfo,
   MembershipModelsResponse as ModelsResponse,
-} from '@anyhunt/api';
+} from '@moryflow/api';

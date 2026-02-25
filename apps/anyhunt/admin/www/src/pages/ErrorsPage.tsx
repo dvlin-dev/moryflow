@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TriangleAlert, TrendingDown, ArrowUpRight, ChartPie } from 'lucide-react';
-import { PageHeader } from '@anyhunt/ui';
+import { PageHeader } from '@moryflow/ui';
 import {
   Card,
   CardContent,
@@ -26,8 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
   Button,
-} from '@anyhunt/ui';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
+} from '@moryflow/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
   PieChart as RechartsPC,
   Pie,

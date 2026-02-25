@@ -1,125 +1,122 @@
-"use client"
+'use client';
 
-import { useCallback, useMemo } from "react"
-import type { Editor } from "@tiptap/react"
-import type { Node } from "@tiptap/pm/model"
+import { useCallback, useMemo } from 'react';
+import type { Editor } from '@tiptap/react';
+import type { Node } from '@tiptap/pm/model';
 
 // --- Hooks ---
-import { useTiptapEditor } from "../../../../hooks/use-tiptap-editor"
+import { useTiptapEditor } from '../../../../hooks/use-tiptap-editor';
 
 // --- Lib ---
-import { isExtensionAvailable } from "../../../../utils/tiptap-utils"
-import type { Orientation } from "../../lib/tiptap-table-utils"
+import { isExtensionAvailable } from '../../../../utils/tiptap-utils';
+import type { Orientation } from '../../lib/tiptap-table-utils';
 import {
   type CellInfo,
   getTable,
   getTableSelectionType,
   getRowOrColumnCells,
   isCellEmpty,
-} from "../../lib/tiptap-table-utils"
+} from '../../lib/tiptap-table-utils';
 
 // --- Icons ---
-import { ArrowDownAZIcon } from "@anyhunt/ui/icons/arrow-down-a-z-icon"
-import { ArrowDownZAIcon } from "@anyhunt/ui/icons/arrow-down-z-a-icon"
+import { ArrowDownAZIcon } from '@moryflow/ui/icons/arrow-down-a-z-icon';
+import { ArrowDownZAIcon } from '@moryflow/ui/icons/arrow-down-z-a-icon';
 
-export type SortDirection = "asc" | "desc"
+export type SortDirection = 'asc' | 'desc';
 
 export interface UseTableSortRowColumnConfig {
   /**
    * The Tiptap editor instance. If omitted, the hook will use
    * the context/editor from `useTiptapEditor`.
    */
-  editor?: Editor | null
+  editor?: Editor | null;
   /**
    * The index of the row or column to sort.
    * If omitted, will use the current selection.
    */
-  index?: number
+  index?: number;
   /**
    * Whether you're sorting a row or a column.
    * If omitted, will use the current selection.
    */
-  orientation?: Orientation
+  orientation?: Orientation;
   /**
    * The position of the table in the document.
    */
-  tablePos?: number
+  tablePos?: number;
   /**
    * The sort direction (ascending or descending).
    */
-  direction: SortDirection
+  direction: SortDirection;
   /**
    * Hide the button when sorting isn't currently possible.
    * @default false
    */
-  hideWhenUnavailable?: boolean
+  hideWhenUnavailable?: boolean;
   /**
    * Callback function called after a successful sort.
    */
-  onSorted?: () => void
+  onSorted?: () => void;
 }
 
-const REQUIRED_EXTENSIONS = ["tableHandleExtension"]
+const REQUIRED_EXTENSIONS = ['tableHandleExtension'];
 
-export const tableSortRowColumnLabels: Record<
-  Orientation,
-  Record<SortDirection, string>
-> = {
+export const tableSortRowColumnLabels: Record<Orientation, Record<SortDirection, string>> = {
   row: {
-    asc: "Sort row A-Z",
-    desc: "Sort row Z-A",
+    asc: 'Sort row A-Z',
+    desc: 'Sort row Z-A',
   },
   column: {
-    asc: "Sort column A-Z",
-    desc: "Sort column Z-A",
+    asc: 'Sort column A-Z',
+    desc: 'Sort column Z-A',
   },
-}
+};
 
 export const tableSortRowColumnIcons = {
   asc: ArrowDownAZIcon,
   desc: ArrowDownZAIcon,
-}
+};
 
 /**
  * Check if a specific cell is a header cell
  */
 function isCellHeader(cellNode: Node | null): boolean {
-  if (!cellNode) return false
+  if (!cellNode) return false;
 
   return (
-    cellNode.type.name === "tableHeader" ||
-    cellNode.type.name === "table_header" ||
+    cellNode.type.name === 'tableHeader' ||
+    cellNode.type.name === 'table_header' ||
     cellNode.attrs?.header === true
-  )
+  );
 }
 
 /**
  * Extract text content from a cell node for sorting comparison
  */
 function getCellSortText(cellNode: Node | null): string {
-  if (!cellNode) return ""
+  if (!cellNode) return '';
 
-  let text = ""
+  let text = '';
   cellNode.descendants((node) => {
     if (node.isText) {
-      text += node.text || ""
+      text += node.text || '';
     }
-    return true
-  })
+    return true;
+  });
 
-  return text.trim().toLowerCase()
+  return text.trim().toLowerCase();
 }
 
 /**
  * Create a sortable item with all necessary data for restoration
  */
 interface SortableCell {
-  sortText: string
-  originalNode: Node | null
-  cellInfo: CellInfo
-  originalIndex: number
-  isHeader: boolean
-  isEmpty: boolean
+  sortText: string;
+  originalNode: Node | null;
+  cellInfo: CellInfo;
+  originalIndex: number;
+  isHeader: boolean;
+  isEmpty: boolean;
 }
 
 /**
@@ -132,51 +129,44 @@ function canSortRowColumn({
   orientation,
   tablePos,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  tablePos?: number
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  tablePos?: number;
 }): boolean {
-  if (
-    !editor ||
-    !editor.isEditable ||
-    !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)
-  ) {
-    return false
+  if (!editor || !editor.isEditable || !isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) {
+    return false;
   }
 
   try {
-    const table = getTable(editor, tablePos)
-    if (!table) return false
+    const table = getTable(editor, tablePos);
+    if (!table) return false;
 
-    const cellData = getRowOrColumnCells(editor, index, orientation, tablePos)
+    const cellData = getRowOrColumnCells(editor, index, orientation, tablePos);
 
     // Need at least 2 items to sort
-    if (cellData.orientation === "row") {
-      if (table.map.width < 2) return false
+    if (cellData.orientation === 'row') {
+      if (table.map.width < 2) return false;
     } else {
-      if (table.map.height < 2) return false
+      if (table.map.height < 2) return false;
     }
 
     if (cellData.mergedCells.length > 0) {
-      return false
+      return false;
     }
 
     // Check if there's actual content to sort (excluding headers)
     const hasContent = cellData.cells.some(
-      (cellInfo) =>
-        cellInfo.node &&
-        !isCellHeader(cellInfo.node) &&
-        !isCellEmpty(cellInfo.node)
-    )
+      (cellInfo) => cellInfo.node && !isCellHeader(cellInfo.node) && !isCellEmpty(cellInfo.node)
+    );
 
     if (!hasContent) {
-      return false
+      return false;
     }
 
-    return true
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -192,124 +182,121 @@ function tableSortRowColumn({
   direction,
   tablePos,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  direction: SortDirection
-  tablePos?: number
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  direction: SortDirection;
+  tablePos?: number;
 }): boolean {
-  if (!canSortRowColumn({ editor, index, orientation, tablePos }) || !editor)
-    return false
+  if (!canSortRowColumn({ editor, index, orientation, tablePos }) || !editor) return false;
 
   try {
-    const { state, view } = editor
-    const tr = state.tr
+    const { state, view } = editor;
+    const tr = state.tr;
 
-    const cellData = getRowOrColumnCells(editor, index, orientation, tablePos)
+    const cellData = getRowOrColumnCells(editor, index, orientation, tablePos);
 
     if (cellData.mergedCells.length > 0) {
-      console.warn(`Cannot sort ${orientation} ${index}: contains merged cells`)
-      return false
+      console.warn(`Cannot sort ${orientation} ${index}: contains merged cells`);
+      return false;
     }
 
     if (cellData.cells.length < 2) {
-      return false
+      return false;
     }
 
     // Create sortable items, marking headers, data cells, and empty cells
-    const allItems: SortableCell[] = cellData.cells.map(
-      (cellInfo, originalIndex) => {
-        const isHeader = isCellHeader(cellInfo.node)
-        const isEmpty = cellInfo.node ? isCellEmpty(cellInfo.node) : true
-        return {
-          sortText: getCellSortText(cellInfo.node),
-          originalNode: cellInfo.node,
-          cellInfo,
-          originalIndex,
-          isHeader,
-          isEmpty,
-        }
-      }
-    )
+    const allItems: SortableCell[] = cellData.cells.map((cellInfo, originalIndex) => {
+      const isHeader = isCellHeader(cellInfo.node);
+      const isEmpty = cellInfo.node ? isCellEmpty(cellInfo.node) : true;
+      return {
+        sortText: getCellSortText(cellInfo.node),
+        originalNode: cellInfo.node,
+        cellInfo,
+        originalIndex,
+        isHeader,
+        isEmpty,
+      };
+    });
 
-    const dataItems = allItems.filter((item) => !item.isHeader)
+    const dataItems = allItems.filter((item) => !item.isHeader);
 
     if (dataItems.length < 2) {
-      console.log("No sortable data cells found (excluding headers)")
-      return false
+      console.log('No sortable data cells found (excluding headers)');
+      return false;
     }
 
     // Sort data items with special handling for empty cells
     dataItems.sort((a, b) => {
       // Empty cells always go to the end, regardless of sort direction
-      if (a.isEmpty && !b.isEmpty) return 1
-      if (!a.isEmpty && b.isEmpty) return -1
-      if (a.isEmpty && b.isEmpty) return 0
+      if (a.isEmpty && !b.isEmpty) return 1;
+      if (!a.isEmpty && b.isEmpty) return -1;
+      if (a.isEmpty && b.isEmpty) return 0;
 
       // For non-empty cells, sort normally
       const comparison = a.sortText.localeCompare(b.sortText, undefined, {
-        sensitivity: "base",
-      })
-      return direction === "asc" ? comparison : -comparison
-    })
+        sensitivity: 'base',
+      });
+      return direction === 'asc' ? comparison : -comparison;
+    });
 
-    const newCellNodes: Node[] = []
-    let dataIndex = 0
+    const newCellNodes: Node[] = [];
+    let dataIndex = 0;
 
     for (let i = 0; i < allItems.length; i++) {
-      const originalItem = allItems[i]
-      const targetCell = cellData.cells[i]
+      const originalItem = allItems[i];
+      const targetCell = cellData.cells[i];
 
-      if (!targetCell || !originalItem) continue
+      if (!targetCell || !originalItem) continue;
 
-      let nodeToPlace: Node | null = null
+      let nodeToPlace: Node | null = null;
 
       if (originalItem.isHeader) {
         // Keep header in its original position
-        nodeToPlace = originalItem.originalNode
+        nodeToPlace = originalItem.originalNode;
       } else {
         // Use the next sorted data cell
-        const sortedDataItem = dataItems[dataIndex]
-        nodeToPlace = sortedDataItem?.originalNode || null
-        dataIndex++
+        const sortedDataItem = dataItems[dataIndex];
+        nodeToPlace = sortedDataItem?.originalNode || null;
+        dataIndex++;
       }
 
       if (nodeToPlace && targetCell.node) {
-        const cellType = targetCell.node.type
+        const cellType = targetCell.node.type;
         const newCellNode = cellType.create(
           nodeToPlace.attrs,
           nodeToPlace.content,
           nodeToPlace.marks
-        )
-        newCellNodes.push(newCellNode)
+        );
+        newCellNodes.push(newCellNode);
       } else {
-        newCellNodes.push(targetCell.node!)
+        newCellNodes.push(targetCell.node!);
       }
     }
 
     // Replace each cell with the new cell (headers preserved, data sorted)
     // We need to go in reverse order to maintain correct positions
-    const cellsToReplace = [...cellData.cells].reverse()
-    const newNodesToPlace = [...newCellNodes].reverse()
+    const cellsToReplace = [...cellData.cells].reverse();
+    const newNodesToPlace = [...newCellNodes].reverse();
 
     cellsToReplace.forEach((targetCell, reverseIndex) => {
-      const newNode = newNodesToPlace[reverseIndex]
+      const newNode = newNodesToPlace[reverseIndex];
       if (newNode && targetCell.node) {
         // Replace the entire cell node
-        const cellEnd = targetCell.pos + targetCell.node.nodeSize
-        tr.replaceWith(targetCell.pos, cellEnd, newNode)
+        const cellEnd = targetCell.pos + targetCell.node.nodeSize;
+        tr.replaceWith(targetCell.pos, cellEnd, newNode);
       }
-    })
+    });
 
     if (tr.docChanged) {
-      view.dispatch(tr)
-      return true
+      view.dispatch(tr);
+      return true;
     }
 
-    return false
+    return false;
   } catch (error) {
-    console.error(`Error sorting table ${orientation}:`, error)
-    return false
+    console.error(`Error sorting table ${orientation}:`, error);
+    return false;
   }
 }
 
@@ -324,29 +311,22 @@ function shouldShowButton({
   hideWhenUnavailable,
   tablePos,
 }: {
-  editor: Editor | null
-  index?: number
-  orientation?: Orientation
-  hideWhenUnavailable: boolean
-  tablePos: number | undefined
+  editor: Editor | null;
+  index?: number;
+  orientation?: Orientation;
+  hideWhenUnavailable: boolean;
+  tablePos: number | undefined;
 }): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false
+  if (!editor || !editor.isEditable) return false;
+  if (!isExtensionAvailable(editor, REQUIRED_EXTENSIONS)) return false;
 
-  const table = getTable(editor, tablePos)
-  if (!table) return false
+  const table = getTable(editor, tablePos);
+  if (!table) return false;
 
-  const selectionType = getTableSelectionType(
-    editor,
-    index,
-    orientation,
-    tablePos
-  )
-  if (!selectionType) return false
+  const selectionType = getTableSelectionType(editor, index, orientation, tablePos);
+  if (!selectionType) return false;
 
-  return hideWhenUnavailable
-    ? canSortRowColumn({ editor, index, orientation, tablePos })
-    : true
+  return hideWhenUnavailable ? canSortRowColumn({ editor, index, orientation, tablePos }) : true;
 }
 
 /**
@@ -411,9 +391,7 @@ function shouldShowButton({
  * }
  * ```
  */
-export function useTableSortRowColumn(
-  config: UseTableSortRowColumnConfig = { direction: "asc" }
-) {
+export function useTableSortRowColumn(config: UseTableSortRowColumnConfig = { direction: 'asc' }) {
   const {
     editor: providedEditor,
     index,
@@ -422,11 +400,11 @@ export function useTableSortRowColumn(
     direction,
     hideWhenUnavailable = false,
     onSorted,
-  } = config
+  } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
+  const { editor } = useTiptapEditor(providedEditor);
 
-  const selectionType = getTableSelectionType(editor, index, orientation)
+  const selectionType = getTableSelectionType(editor, index, orientation);
 
   const isVisible = shouldShowButton({
     editor,
@@ -434,14 +412,14 @@ export function useTableSortRowColumn(
     orientation,
     hideWhenUnavailable,
     tablePos,
-  })
+  });
 
   const canPerformSort = canSortRowColumn({
     editor,
     index,
     orientation,
     tablePos,
-  })
+  });
 
   const handleSort = useCallback(() => {
     const success = tableSortRowColumn({
@@ -450,23 +428,19 @@ export function useTableSortRowColumn(
       orientation,
       direction,
       tablePos,
-    })
-    if (success) onSorted?.()
-    return success
-  }, [editor, index, orientation, direction, tablePos, onSorted])
+    });
+    if (success) onSorted?.();
+    return success;
+  }, [editor, index, orientation, direction, tablePos, onSorted]);
 
   const label = useMemo(() => {
-    const orientationLabels =
-      tableSortRowColumnLabels[selectionType?.orientation || "row"]
-    return (
-      orientationLabels[direction] ||
-      `Sort ${selectionType?.orientation} ${direction}`
-    )
-  }, [selectionType, direction])
+    const orientationLabels = tableSortRowColumnLabels[selectionType?.orientation || 'row'];
+    return orientationLabels[direction] || `Sort ${selectionType?.orientation} ${direction}`;
+  }, [selectionType, direction]);
 
   const Icon = useMemo(() => {
-    return tableSortRowColumnIcons[direction] || ArrowDownAZIcon
-  }, [direction])
+    return tableSortRowColumnIcons[direction] || ArrowDownAZIcon;
+  }, [direction]);
 
   return {
     isVisible,
@@ -474,5 +448,5 @@ export function useTableSortRowColumn(
     handleSort,
     label,
     Icon,
-  }
+  };
 }

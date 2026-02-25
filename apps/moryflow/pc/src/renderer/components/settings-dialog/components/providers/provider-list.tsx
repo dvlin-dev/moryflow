@@ -8,9 +8,9 @@
  */
 
 import { cn } from '@/lib/utils';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { Button } from '@anyhunt/ui/components/button';
-import { Separator } from '@anyhunt/ui/components/separator';
+import { Switch } from '@moryflow/ui/components/switch';
+import { Button } from '@moryflow/ui/components/button';
+import { Separator } from '@moryflow/ui/components/separator';
 import { Plus } from 'lucide-react';
 import { getSortedProviders } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';

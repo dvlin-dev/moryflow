@@ -5,8 +5,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEmptyClock } from '@anyhunt/sync';
-import type { FileEntry } from '@anyhunt/api';
+import { createEmptyClock } from '@moryflow/sync';
+import type { FileEntry } from '@moryflow/api';
 
 const fileSystem = vi.hoisted(() => {
   const nodePath = require('node:path') as typeof import('node:path');

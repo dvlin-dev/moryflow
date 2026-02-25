@@ -23,7 +23,7 @@ import {
   SelectValue,
   Skeleton,
   Switch,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type {
   DigestWelcomePage,
   UpdateWelcomeConfigInput,

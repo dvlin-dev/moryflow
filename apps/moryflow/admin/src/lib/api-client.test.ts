@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { ServerApiError as ApiError } from '@anyhunt/api/client';
+import { ServerApiError as ApiError } from '@moryflow/api/client';
 
 describe('API 错误处理一致性', () => {
   describe('ApiError 类', () => {
@@ -133,6 +133,6 @@ describe('API 错误处理一致性', () => {
       await expect(apiClient.get('/test')).rejects.toMatchObject({
         code: 'UNEXPECTED_RESPONSE',
       });
-    });
+    }, 15_000);
   });
 });

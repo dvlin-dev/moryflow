@@ -13,17 +13,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog'
-import { useTranslation } from '@/lib/i18n'
-import type { VaultRemoveDialogProps } from '../const'
+} from '@moryflow/ui/components/alert-dialog';
+import { useTranslation } from '@/lib/i18n';
+import type { VaultRemoveDialogProps } from '../const';
 
-export const VaultRemoveDialog = ({
-  vault,
-  onConfirm,
-  onCancel,
-}: VaultRemoveDialogProps) => {
-  const { t } = useTranslation('workspace')
-  const { t: tCommon } = useTranslation('common')
+export const VaultRemoveDialog = ({ vault, onConfirm, onCancel }: VaultRemoveDialogProps) => {
+  const { t } = useTranslation('workspace');
+  const { t: tCommon } = useTranslation('common');
 
   return (
     <AlertDialog open={!!vault} onOpenChange={(open) => !open && onCancel()}>
@@ -38,11 +34,9 @@ export const VaultRemoveDialog = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
-            {tCommon('remove')}
-          </AlertDialogAction>
+          <AlertDialogAction onClick={onConfirm}>{tCommon('remove')}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
-}
+  );
+};

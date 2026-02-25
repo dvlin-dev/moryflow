@@ -22,8 +22,8 @@ COPY tooling/typescript-config/package.json ./tooling/typescript-config/
 # 安装依赖（使用 --ignore-scripts 跳过根目录的 postinstall，因为 admin 不依赖这些包）
 RUN pnpm install --no-frozen-lockfile --ignore-scripts \
   --filter @moryflow/admin... \
-  --filter @anyhunt/model-registry-data... \
-  --filter @anyhunt/types...
+  --filter @moryflow/model-registry-data... \
+  --filter @moryflow/types...
 
 # 复制源代码
 COPY apps/moryflow/admin ./apps/moryflow/admin

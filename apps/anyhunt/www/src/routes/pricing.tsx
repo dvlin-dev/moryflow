@@ -7,8 +7,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Check, ChevronRight, CircleQuestionMark } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
-import { Button } from '@anyhunt/ui';
-import { cn } from '@anyhunt/ui/lib';
+import { Button } from '@moryflow/ui';
+import { cn } from '@moryflow/ui/lib';
 import { PRICING_TIERS, PRICING_FAQS } from '@/lib/pricing';
 
 export const Route = createFileRoute('/pricing')({

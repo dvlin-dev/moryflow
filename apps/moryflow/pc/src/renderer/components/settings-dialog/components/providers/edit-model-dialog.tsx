@@ -13,11 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@anyhunt/ui/components/dialog';
-import { Input } from '@anyhunt/ui/components/input';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
-import { Checkbox } from '@anyhunt/ui/components/checkbox';
+} from '@moryflow/ui/components/dialog';
+import { Input } from '@moryflow/ui/components/input';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
+import { Checkbox } from '@moryflow/ui/components/checkbox';
 import type { ModelModality } from '@shared/model-registry';
 import type { CustomCapabilities } from './add-model-dialog';
 import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';

@@ -17,7 +17,7 @@ COPY packages/api/package.json ./packages/api/
 COPY packages/types/package.json ./packages/types/
 COPY packages/sync/package.json ./packages/sync/
 COPY tooling/typescript-config/package.json ./tooling/typescript-config/
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server...
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/server...
 
 # 生产依赖阶段 - 仅安装生产依赖
 FROM base AS prod-deps
@@ -26,7 +26,7 @@ COPY apps/moryflow/server/package.json ./apps/moryflow/server/
 COPY packages/api/package.json ./packages/api/
 COPY packages/types/package.json ./packages/types/
 COPY packages/sync/package.json ./packages/sync/
-RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @anyhunt/moryflow-server... --prod
+RUN pnpm install --no-frozen-lockfile --ignore-scripts --filter @moryflow/server... --prod
 
 # 构建阶段
 FROM deps AS builder

@@ -46,10 +46,10 @@ import {
   type ModelFactory,
   type CompactionResult,
   type Session,
-} from '@anyhunt/agents-runtime';
-import { getMorySystemPrompt } from '@anyhunt/agents-runtime/prompt';
-import { createBaseTools } from '@anyhunt/agents-tools';
-import { createSandboxBashTool } from '@anyhunt/agents-sandbox';
+} from '@moryflow/agents-runtime';
+import { getMorySystemPrompt } from '@moryflow/agents-runtime/prompt';
+import { createBaseTools } from '@moryflow/agents-tools';
+import { createSandboxBashTool } from '@moryflow/agents-sandbox';
 
 import type {
   AgentSettings,

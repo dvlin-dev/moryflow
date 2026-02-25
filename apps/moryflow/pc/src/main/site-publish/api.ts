@@ -9,7 +9,7 @@ import {
   createApiTransport,
   ServerApiError,
   type ApiClientRequestOptions,
-} from '@anyhunt/api/client';
+} from '@moryflow/api/client';
 import { membershipBridge } from '../membership-bridge.js';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'https://server.moryflow.com';

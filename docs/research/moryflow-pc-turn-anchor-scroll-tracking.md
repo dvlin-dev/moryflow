@@ -108,7 +108,7 @@ status: active
 - 修复方向：以 assistant-ui 作为唯一基线完成回归，runStart 由列表层识别“新 assistant 消息”触发，避免短回复漏滚动。
 - 最新问题：**出现“无法向上滚动”**（用户尝试上滚时无效/被立即拉回）。
 - 最新进展：AutoScroll 在用户上滚时清理滚动意图，恢复手动上滚；短内容下坠需回归确认。
-- 关键决策：为彻底消除滚动漂移与维护成本，**不接入 assistant-ui 依赖，改为参考其源码在 `@anyhunt/ui` 内复刻**（见 `docs/architecture/ui-message-list-turn-anchor-adoption.md`），保留现有 UI 但对齐结构/职责。
+- 关键决策：为彻底消除滚动漂移与维护成本，**不接入 assistant-ui 依赖，改为参考其源码在 `@moryflow/ui` 内复刻**（见 `docs/architecture/ui-message-list-turn-anchor-adoption.md`），保留现有 UI 但对齐结构/职责。
 - 最新修复：runStart 改为 smooth + 保持滚动意图（直到用户上滚）；ConversationContent 顶部 padding 提升，等待短内容回归验证。
 - 最新修复：runStart 等待 footer inset 就绪，ChatPaneHeader 高度写入 CSS 变量，追加 TurnAnchor 调试日志。
 - 最新修复：Slack 计算扣除顶部 padding + 用户消息高度忽略 0 值回调，目标修复 header 遮挡与首屏下坠。
@@ -162,7 +162,7 @@ status: active
 - 2026-02-04：runStart 触发增加视口/锚点高度就绪检查，Viewport 开启 scroll-smooth，Content 增加顶部 padding。
 - 2026-02-04：新增回归问题：出现“无法向上滚动”，需优先定位滚动被强制保持在底部的原因。
 - 2026-02-04：AutoScroll 增加“用户上滚清理滚动意图”，恢复手动上滚并补回归单测。
-- 2026-02-04：撤销 assistant-ui 直连改造，改为在 `@anyhunt/ui` 内复刻 assistant-ui 结构与交互。
+- 2026-02-04：撤销 assistant-ui 直连改造，改为在 `@moryflow/ui` 内复刻 assistant-ui 结构与交互。
 - 2026-02-04：runStart 平滑滚动 + 保持滚动意图（直到用户上滚）；ConversationContent 顶部 padding 提升，待回归。
 - 2026-02-05：Slack 计算扣除顶部 padding + 用户消息高度忽略 0 值回调，修复 header 遮挡与首屏下坠问题。
 - 2026-02-04：runStart 等待 footer inset + Header 高度 CSS 变量 + TurnAnchor 调试日志开关。

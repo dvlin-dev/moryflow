@@ -17,4 +17,4 @@ export {
   type SimplePaginationProps,
   type StatusBadgeProps,
   type StatusConfig,
-} from '@anyhunt/ui/composed'
+} from '@moryflow/ui/composed';

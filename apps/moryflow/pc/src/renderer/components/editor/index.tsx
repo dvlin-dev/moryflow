@@ -18,37 +18,37 @@ import { Mathematics } from '@tiptap/extension-mathematics';
 import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 
 // Custom Extensions
-import { HorizontalRule } from '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
-import { Image } from '@anyhunt/tiptap/nodes/image-node/image-node-extension';
-import { NodeBackground } from '@anyhunt/tiptap/extensions/node-background-extension';
-import { NodeAlignment } from '@anyhunt/tiptap/extensions/node-alignment-extension';
-import { UiState } from '@anyhunt/tiptap/extensions/ui-state-extension';
-import { ImageUploadNode } from '@anyhunt/tiptap/nodes/image-upload-node/image-upload-node-extension';
-import { TableKit } from '@anyhunt/tiptap/nodes/table-node/extensions/table-node-extension';
-import { TableHandleExtension } from '@anyhunt/tiptap/nodes/table-node/extensions/table-handle';
+import { HorizontalRule } from '@moryflow/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
+import { Image } from '@moryflow/tiptap/nodes/image-node/image-node-extension';
+import { NodeBackground } from '@moryflow/tiptap/extensions/node-background-extension';
+import { NodeAlignment } from '@moryflow/tiptap/extensions/node-alignment-extension';
+import { UiState } from '@moryflow/tiptap/extensions/ui-state-extension';
+import { ImageUploadNode } from '@moryflow/tiptap/nodes/image-upload-node/image-upload-node-extension';
+import { TableKit } from '@moryflow/tiptap/nodes/table-node/extensions/table-node-extension';
+import { TableHandleExtension } from '@moryflow/tiptap/nodes/table-node/extensions/table-handle';
 
 // Utils
-import { handleImageUpload, MAX_FILE_SIZE } from '@anyhunt/tiptap/utils/tiptap-utils';
-import { markdownToHtml, htmlToMarkdown } from '@anyhunt/tiptap';
+import { handleImageUpload, MAX_FILE_SIZE } from '@moryflow/tiptap/utils/tiptap-utils';
+import { markdownToHtml, htmlToMarkdown } from '@moryflow/tiptap';
 
 // Editor Components
-import { EditorRoot, EditorContentArea } from '@anyhunt/tiptap/editors/notion-editor';
-import { TableHandle } from '@anyhunt/tiptap/nodes/table-node/ui/table-handle/table-handle';
-import { TableSelectionOverlay } from '@anyhunt/tiptap/nodes/table-node/ui/table-selection-overlay';
-import { TableCellHandleMenu } from '@anyhunt/tiptap/nodes/table-node/ui/table-cell-handle-menu';
-import { TableExtendRowColumnButtons } from '@anyhunt/tiptap/nodes/table-node/ui/table-extend-row-column-button';
+import { EditorRoot, EditorContentArea } from '@moryflow/tiptap/editors/notion-editor';
+import { TableHandle } from '@moryflow/tiptap/nodes/table-node/ui/table-handle/table-handle';
+import { TableSelectionOverlay } from '@moryflow/tiptap/nodes/table-node/ui/table-selection-overlay';
+import { TableCellHandleMenu } from '@moryflow/tiptap/nodes/table-node/ui/table-cell-handle-menu';
+import { TableExtendRowColumnButtons } from '@moryflow/tiptap/nodes/table-node/ui/table-extend-row-column-button';
 
 // Styles
-import '@anyhunt/tiptap/nodes/table-node/styles/prosemirror-table.scss';
-import '@anyhunt/tiptap/nodes/table-node/styles/table-node.scss';
-import '@anyhunt/tiptap/nodes/blockquote-node/blockquote-node.scss';
-import '@anyhunt/tiptap/nodes/code-block-node/code-block-node.scss';
-import '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
-import '@anyhunt/tiptap/nodes/list-node/list-node.scss';
-import '@anyhunt/tiptap/nodes/image-node/image-node.scss';
-import '@anyhunt/tiptap/nodes/heading-node/heading-node.scss';
-import '@anyhunt/tiptap/nodes/paragraph-node/paragraph-node.scss';
-import '@anyhunt/tiptap/styles/notion-editor.scss';
+import '@moryflow/tiptap/nodes/table-node/styles/prosemirror-table.scss';
+import '@moryflow/tiptap/nodes/table-node/styles/table-node.scss';
+import '@moryflow/tiptap/nodes/blockquote-node/blockquote-node.scss';
+import '@moryflow/tiptap/nodes/code-block-node/code-block-node.scss';
+import '@moryflow/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
+import '@moryflow/tiptap/nodes/list-node/list-node.scss';
+import '@moryflow/tiptap/nodes/image-node/image-node.scss';
+import '@moryflow/tiptap/nodes/heading-node/heading-node.scss';
+import '@moryflow/tiptap/nodes/paragraph-node/paragraph-node.scss';
+import '@moryflow/tiptap/styles/notion-editor.scss';
 
 export interface NotionEditorProps {
   value: string;

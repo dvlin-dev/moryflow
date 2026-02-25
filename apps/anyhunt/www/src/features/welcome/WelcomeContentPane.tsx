@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 import { MarkdownView } from '@/components/reader/MarkdownView';
 import { useWelcomeOverview, useWelcomePage } from './welcome.hooks';
 

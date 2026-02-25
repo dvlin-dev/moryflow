@@ -6,8 +6,8 @@
 
 import { Check } from 'lucide-react';
 import { Container } from '@/components/layout';
-import { Button } from '@anyhunt/ui';
-import { cn } from '@anyhunt/ui/lib';
+import { Button } from '@moryflow/ui';
+import { cn } from '@moryflow/ui/lib';
 import { PRICING_TIERS } from '@/lib/pricing';
 
 export function PricingSection() {

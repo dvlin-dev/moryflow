@@ -17,8 +17,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VaultTreeNode } from '@shared/ipc';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { TooltipProvider } from '@anyhunt/ui/components/tooltip';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { TooltipProvider } from '@moryflow/ui/components/tooltip';
 import { PublishDialog } from '@/components/site-publish';
 import { useChatSessions } from '@/components/chat-pane/hooks';
 import { ChatThreadsList } from './components/chat-threads-list';

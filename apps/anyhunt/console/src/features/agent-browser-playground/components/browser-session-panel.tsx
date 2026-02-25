@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@anyhunt/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
 import {
   browserSessionSchema,
   browserOpenSchema,

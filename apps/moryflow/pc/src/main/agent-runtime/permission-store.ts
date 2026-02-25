@@ -15,7 +15,7 @@ import {
   parseJsonc,
   updateJsoncValue,
   type PermissionRule,
-} from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
 
 const CONFIG_DIR = path.join(os.homedir(), '.moryflow');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.jsonc');

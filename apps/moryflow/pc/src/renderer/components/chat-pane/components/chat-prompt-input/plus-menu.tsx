@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { Plus, Sparkles, AtSign, Gavel, Upload, Wrench } from 'lucide-react';
-import { PromptInputButton } from '@anyhunt/ui/ai/prompt-input';
+import { PromptInputButton } from '@moryflow/ui/ai/prompt-input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
+} from '@moryflow/ui/components/dropdown-menu';
 import { useTranslation } from '@/lib/i18n';
 import type { FlatFile } from '@/workspace/utils';
 import type { SettingsSection } from '@/components/settings-dialog/const';

@@ -7,7 +7,7 @@
  */
 
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Skeleton } from '@anyhunt/ui';
+import { Skeleton } from '@moryflow/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
 import type { Subscription } from '@/features/digest/types';
 

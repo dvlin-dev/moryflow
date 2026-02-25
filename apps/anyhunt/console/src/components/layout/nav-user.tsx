@@ -23,7 +23,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 
 export interface NavUserProps {
   user: {

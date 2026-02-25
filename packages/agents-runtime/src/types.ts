@@ -195,4 +195,4 @@ export {
   isMembershipModelId,
   extractMembershipModelId,
   buildMembershipModelId,
-} from '@anyhunt/api';
+} from '@moryflow/api';

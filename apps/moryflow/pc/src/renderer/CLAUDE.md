@@ -20,7 +20,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - 使用 TailwindCSS + shadcn/ui 进行样式开发
 - 重操作（网络请求、文件操作）需委托给主进程
 - 聊天消息扩展字段统一使用 `metadata.chat`；文件附件预览统一使用 `providerMetadata.chat`
-- 聊天消息列表与输入框 UI 统一使用 `@anyhunt/ui/ai/*` 组件
+- 聊天消息列表与输入框 UI 统一使用 `@moryflow/ui/ai/*` 组件
 - 所有用户可见文案必须为英文
 - 图标统一使用 Lucide（`lucide-react`，直接组件调用），禁止 `@hugeicons/*`
 - 前端表单必须使用 `zod/v3`（RHF 兼容层）
@@ -107,7 +107,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - Skills 页交互更新：`New skill` 复用 `Try Skill Creator`，`Try` 改为立即新建会话并选中 skill（无需等待下个会话）。
 - Chat 输入框接入 Skills 显式注入：`+` 子菜单/空输入 `/` 双入口 + selected skill chip；失效 skill 发送前软降级。
 - 启动性能：移除 `preload:*` IPC/落盘缓存，warmup 回退为 Renderer 侧轻量 `import()`（仅 ChatPane/Shiki）；AgentSettings 读取收敛为单飞资源，修复设置弹窗偶发一直 Loading
-- Streamdown 升级至 v2.2：聊天流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@anyhunt/ui/styles` 统一注入）
+- Streamdown 升级至 v2.2：聊天流式输出启用逐词动画（仅最后一条 assistant 文本段；样式由 `@moryflow/ui/styles` 统一注入）
 - Workspace Shell：导航改为 destination（Agent/Sites）+ agentSub（Chat/Workspace）；默认进入 Agent；支持 `Cmd+1/2/3` 快捷键（1/2 切 agentSub，3 打开 Sites）
 - Workspace Shell：修复 ChatPanePortal 渲染容器与主视图容器语义，避免 Agent/Sites 初始错位（内容靠右/不占满）并提升切换流畅度
 - useSpeechRecording：disabled 强制清理时保证 stopRecording Promise 正常收敛
@@ -126,7 +126,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 - ToolOutput 支持截断输出标识与“查看完整输出”入口
 - 云同步 UI 精简：HoverCard 只保留状态/描述/最后同步/单一操作入口；设置页主视图仅开关+状态
 - 设置弹窗 System Prompt：高级参数可选覆盖（Use model default）
-- 设置弹窗 System Prompt 改用 `@anyhunt/agents-runtime/prompt`，避免引入 server 依赖
+- 设置弹窗 System Prompt 改用 `@moryflow/agents-runtime/prompt`，避免引入 server 依赖
 - 会员常量导出收敛，移除未使用的等级比较/优先级常量
 - Chat Pane 消息列表：ToolInput 空输入保护、Lucide 替换、渲染性能优化与条件渲染收敛
 - Auth 改为 access 内存 + refresh 轮换，移除 pre-register

@@ -36,7 +36,7 @@ Anyhunt 与 Moryflow 的前端（Web/PC/React Native）目前存在多套 fetch 
 - `apps/moryflow/admin/src/features/chat/components/chat-pane.tsx`：直接 fetch（stream / retry）。
 - `apps/moryflow/mobile/lib/cloud-sync/api-client.ts`：移动端 Cloud Sync client（timeout + refresh）。
 - `apps/moryflow/mobile/lib/server/auth-session.ts`：移动端 refresh/session。
-- `apps/moryflow/pc/src/renderer/lib/server/api.ts`：使用 `@anyhunt/api` 的 client factory。
+- `apps/moryflow/pc/src/renderer/lib/server/api.ts`：使用 `@moryflow/api` 的 client factory。
 - `apps/moryflow/pc/src/renderer/lib/server/auth-session.ts`：桌面端 refresh/session。
 - `apps/moryflow/pc/src/main/cloud-sync/api/client.ts`：主进程 Cloud Sync client。
 - `packages/api/src/client/create-client.ts`：Moryflow Server API client factory（含 plugin）。

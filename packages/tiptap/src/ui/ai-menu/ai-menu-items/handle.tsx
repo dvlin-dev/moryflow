@@ -1,44 +1,34 @@
-"use client";
+'use client';
 
-import type { Editor } from "@tiptap/react";
-import type { TextOptions } from "../../ai-types";
+import type { Editor } from '@tiptap/react';
+import type { TextOptions } from '../../ai-types';
 
-import { getContextAndInsertAt } from "../ai-menu-utils";
-import {
-  SUPPORTED_LANGUAGES,
-  SUPPORTED_TONES,
-} from "./ai-menu-items-constants";
+import { getContextAndInsertAt } from '../ai-menu-utils';
+import { SUPPORTED_LANGUAGES, SUPPORTED_TONES } from './ai-menu-items-constants';
 import type {
   EditorMenuAction,
   ExecutableMenuAction,
   MenuActionIdentifier,
   NestedMenuAction,
-} from "./ai-menu-items-types";
-import { MicAiIcon } from "@anyhunt/ui/icons/mic-ai-icon";
-import { CheckAiIcon } from "@anyhunt/ui/icons/check-ai-icon";
-import { TextExtendIcon } from "@anyhunt/ui/icons/text-extend-icon";
-import { TextReduceIcon } from "@anyhunt/ui/icons/text-reduce-icon";
-import { Simplify2Icon } from "@anyhunt/ui/icons/simplify-2-icon";
-import { SmileAiIcon } from "@anyhunt/ui/icons/smile-ai-icon";
-import { CompleteSentenceIcon } from "@anyhunt/ui/icons/complete-sentence-icon";
-import { SummarizeTextIcon } from "@anyhunt/ui/icons/summarize-text-icon";
-import { LanguagesIcon } from "@anyhunt/ui/icons/languages-icon";
+} from './ai-menu-items-types';
+import { MicAiIcon } from '@moryflow/ui/icons/mic-ai-icon';
+import { CheckAiIcon } from '@moryflow/ui/icons/check-ai-icon';
+import { TextExtendIcon } from '@moryflow/ui/icons/text-extend-icon';
+import { TextReduceIcon } from '@moryflow/ui/icons/text-reduce-icon';
+import { Simplify2Icon } from '@moryflow/ui/icons/simplify-2-icon';
+import { SmileAiIcon } from '@moryflow/ui/icons/smile-ai-icon';
+import { CompleteSentenceIcon } from '@moryflow/ui/icons/complete-sentence-icon';
+import { SummarizeTextIcon } from '@moryflow/ui/icons/summarize-text-icon';
+import { LanguagesIcon } from '@moryflow/ui/icons/languages-icon';
 
-import { LanguageSelectionSubmenu } from "./components/language-selection-submenu";
-import { ToneSelectionSubmenu } from "./components/tone-selection-submenu";
+import { LanguageSelectionSubmenu } from './components/language-selection-submenu';
+import { ToneSelectionSubmenu } from './components/tone-selection-submenu';
 
 type MenuActionsMap = Record<MenuActionIdentifier, EditorMenuAction>;
 
 const createExecutableHandler =
   (command: (editor: Editor, options: TextOptions) => void) =>
-  ({
-    editor,
-    options,
-  }: {
-    editor: Editor | null;
-    onDone?: () => void;
-    options?: TextOptions;
-  }) => {
+  ({ editor, options }: { editor: Editor | null; onDone?: () => void; options?: TextOptions }) => {
     if (!editor) return;
 
     const { insertAt, isSelection, context } = getContextAndInsertAt(editor);
@@ -58,111 +48,109 @@ const createExecutableHandler =
 export function initializeEditorMenuActions(): MenuActionsMap {
   return {
     adjustTone: {
-      type: "nested",
+      type: 'nested',
       component: ToneSelectionSubmenu,
       filterItems: true,
       icon: <MicAiIcon className="tiptap-button-icon" />,
       items: SUPPORTED_TONES,
-      label: "Adjust tone",
-      value: "adjustTone",
+      label: 'Adjust tone',
+      value: 'adjustTone',
     },
     aiFixSpellingAndGrammar: {
-      type: "executable",
+      type: 'executable',
       icon: <CheckAiIcon className="tiptap-button-icon" />,
-      label: "Fix spelling & grammar",
-      value: "aiFixSpellingAndGrammar",
+      label: 'Fix spelling & grammar',
+      value: 'aiFixSpellingAndGrammar',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiFixSpellingAndGrammar(options).run()
       ),
     },
     aiExtend: {
-      type: "executable",
+      type: 'executable',
       icon: <TextExtendIcon className="tiptap-button-icon" />,
-      label: "Make longer",
-      value: "aiExtend",
+      label: 'Make longer',
+      value: 'aiExtend',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiExtend(options).run()
       ),
     },
     aiShorten: {
-      type: "executable",
+      type: 'executable',
       icon: <TextReduceIcon className="tiptap-button-icon" />,
-      label: "Make shorter",
-      value: "aiShorten",
+      label: 'Make shorter',
+      value: 'aiShorten',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiShorten(options).run()
       ),
     },
     simplifyLanguage: {
-      type: "executable",
+      type: 'executable',
       icon: <Simplify2Icon className="tiptap-button-icon" />,
-      label: "Simplify language",
-      value: "simplifyLanguage",
+      label: 'Simplify language',
+      value: 'simplifyLanguage',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiSimplify(options).run()
       ),
     },
     improveWriting: {
-      type: "executable",
+      type: 'executable',
       icon: <SmileAiIcon className="tiptap-button-icon" />,
-      label: "Improve writing",
-      value: "improveWriting",
+      label: 'Improve writing',
+      value: 'improveWriting',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiRephrase(options).run()
       ),
     },
     emojify: {
-      type: "executable",
+      type: 'executable',
       icon: <SmileAiIcon className="tiptap-button-icon" />,
-      label: "Emojify",
-      value: "emojify",
+      label: 'Emojify',
+      value: 'emojify',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiEmojify(options).run()
       ),
     },
     continueWriting: {
-      type: "executable",
+      type: 'executable',
       icon: <CompleteSentenceIcon className="tiptap-button-icon" />,
-      label: "Continue writing",
-      value: "continueWriting",
+      label: 'Continue writing',
+      value: 'continueWriting',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiComplete(options).run()
       ),
     },
     summarize: {
-      type: "executable",
+      type: 'executable',
       icon: <SummarizeTextIcon className="tiptap-button-icon" />,
-      label: "Add a summary",
-      value: "summarize",
+      label: 'Add a summary',
+      value: 'summarize',
       onSelect: createExecutableHandler((editor, options) =>
         editor.chain().aiSummarize(options).run()
       ),
     },
     translateTo: {
-      type: "nested",
+      type: 'nested',
       component: LanguageSelectionSubmenu,
       filterItems: true,
       icon: <LanguagesIcon className="tiptap-button-icon" />,
       items: SUPPORTED_LANGUAGES,
-      label: "Languages",
-      value: "translateTo",
+      label: 'Languages',
+      value: 'translateTo',
     },
   };
 }
 
-export function mapInteractionContextToActions(
-  menuActions: MenuActionsMap
-) {
+export function mapInteractionContextToActions(menuActions: MenuActionsMap) {
   const convertToMenuAction = (item: EditorMenuAction) => ({
     label: item.label,
     value: item.value,
     icon: item.icon,
-    filterItems: item.type === "nested" ? item.filterItems : undefined,
+    filterItems: item.type === 'nested' ? item.filterItems : undefined,
   });
 
   return [
     {
-      label: "Edit",
+      label: 'Edit',
       items: Object.values([
         menuActions.adjustTone,
         menuActions.aiFixSpellingAndGrammar,
@@ -174,7 +162,7 @@ export function mapInteractionContextToActions(
       ]).map(convertToMenuAction),
     },
     {
-      label: "Write",
+      label: 'Write',
       items: Object.values([
         menuActions.continueWriting,
         menuActions.summarize,
@@ -184,14 +172,10 @@ export function mapInteractionContextToActions(
   ];
 }
 
-export function isExecutableMenuItem(
-  item: EditorMenuAction
-): item is ExecutableMenuAction {
-  return item.type === "executable";
+export function isExecutableMenuItem(item: EditorMenuAction): item is ExecutableMenuAction {
+  return item.type === 'executable';
 }
 
-export function isNestedMenuItem(
-  item: EditorMenuAction
-): item is NestedMenuAction {
-  return item.type === "nested";
+export function isNestedMenuItem(item: EditorMenuAction): item is NestedMenuAction {
+  return item.type === 'nested';
 }

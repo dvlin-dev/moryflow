@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { ChevronRight, Loader } from 'lucide-react';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 
 interface UrlInputProps {
   onSubmit: (url: string) => void;

@@ -99,7 +99,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 
 - Agent Runtime 初始化后统一绑定默认 `ModelProvider`（基于 `ModelFactory`），修复 `@openai/agents-core run()` 的 `No default model provider set`
 - MCP Manager 生命周期改为官方 `MCPServers/connectMcpServers` 托管，移除自研连接重试/超时编排
-- Chat 流事件映射改为复用 `@anyhunt/agents-runtime` 的 `ui-stream` 共享模块，删除本地重复映射逻辑
+- Chat 流事件映射改为复用 `@moryflow/agents-runtime` 的 `ui-stream` 共享模块，删除本地重复映射逻辑
 - Skills 预设路径补齐 dev/build/package 多候选根（含 `resources/app.asar/dist/main/builtin`），并在预安装失败时降级为 warning，避免阻断 Agent 聊天链路。
 - Skills 解析链路修正 symlink 防护顺序（先 `lstat(skillDir)` 再 `realpath`），防止失效的“已解析后再判 symlink”伪防护。
 - `skill` tool/XML 注入转义补齐 `\"`/`'`，避免属性值场景下标签结构被破坏。
@@ -139,7 +139,7 @@ Agent 运行时，执行 AI 对话、工具调用等操作。
 - Agent Runtime tool-output storage 移除未使用导出
 - Agent Runtime 新增工具输出统一截断与落盘清理；IPC 增加 `files:openPath`
 - Agent Runtime 支持 system prompt/模型参数注入，参数改为可选覆盖并默认使用模型默认值
-- Agent Runtime/Agent 设置改用 `@anyhunt/agents-runtime/prompt` 读取 system prompt
+- Agent Runtime/Agent 设置改用 `@moryflow/agents-runtime/prompt` 读取 system prompt
 - Agent Runtime 切换为 `@openai/agents-core`，统一 Runner/Tool/类型入口
 - Agent Runtime 使用会话历史拼装输入，流完成后追加输出（移除 SDK Session 依赖）
 - TasksStore 单例化并新增 `tasks:list/get` IPC，变更通过 `tasks:changed` 广播

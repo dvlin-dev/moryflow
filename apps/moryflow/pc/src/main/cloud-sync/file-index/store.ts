@@ -8,7 +8,7 @@
 
 import path from 'node:path';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import type { FileIndexStore } from '@anyhunt/api';
+import type { FileIndexStore } from '@moryflow/api';
 import { FILE_INDEX_STORE_PATH } from '../const.js';
 import { createLogger } from '../logger.js';
 

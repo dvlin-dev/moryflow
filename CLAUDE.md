@@ -338,7 +338,7 @@ Anyhunt/
      pnpm test:unit
      ```
 
-   - 注意：根 `eslint.config.mjs` 会 `import '@anyhunt/eslint-config/*'`，因此根 `package.json` 必须包含 `@anyhunt/eslint-config`（workspace 依赖），否则 monorepo lint 会直接报 `ERR_MODULE_NOT_FOUND`。
+   - 注意：根 `eslint.config.mjs` 会 `import '@moryflow/eslint-config/*'`，因此根 `package.json` 必须包含 `@moryflow/eslint-config`（workspace 依赖），否则 monorepo lint 会直接报 `ERR_MODULE_NOT_FOUND`。
 
 5. **同步**：更新相关 CLAUDE.md（本条强制）
 
@@ -684,7 +684,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 1. **Data 属性变体**：Radix UI 使用 `data-[state=active]:` 而非 `data-active:`
 2. **颜色透明度**：oklch 修饰符可能不生效，使用内联样式
 3. **CSS 变量配置**：在 `globals.css` 的 `@theme inline` 块中定义
-4. **样式入口**：应用统一 `@import '@anyhunt/ui/styles'`，并在应用内补充 `@source` 扫描路径
+4. **样式入口**：应用统一 `@import '@moryflow/ui/styles'`，并在应用内补充 `@source` 扫描路径
 
 ---
 
@@ -703,7 +703,7 @@ export type CreateMemoryInput = z.infer<typeof CreateMemorySchema>;
 pnpm test
 
 # 运行特定产品测试
-pnpm --filter @anyhunt/moryflow-server test
+pnpm --filter @moryflow/server test
 pnpm --filter @anyhunt/anyhunt-server test
 pnpm --filter @anyhunt/sandx-server test
 
@@ -718,13 +718,13 @@ pnpm lint
 
 ## 包命名规范
 
-| 类型     | 模式                       | 示例                                                  |
-| -------- | -------------------------- | ----------------------------------------------------- |
-| 应用包   | `@anyhunt/{product}-{app}` | `@anyhunt/moryflow-server`、`@anyhunt/anyhunt-server` |
-| 共享包   | `@anyhunt/{name}`          | `@anyhunt/types`、`@anyhunt/api`、`@anyhunt/sync`     |
-| UI 包    | `@anyhunt/ui`              | 唯一                                                  |
-| 配置包   | `@anyhunt/{name}-config`   | `@anyhunt/eslint-config`                              |
-| Agent 包 | `@anyhunt/agents-{name}`   | `@anyhunt/agents-runtime`                             |
+| 类型     | 模式                       | 示例                                                 |
+| -------- | -------------------------- | ---------------------------------------------------- |
+| 应用包   | `@anyhunt/{product}-{app}` | `@moryflow/server`、`@anyhunt/anyhunt-server`        |
+| 共享包   | `@anyhunt/{name}`          | `@moryflow/types`、`@moryflow/api`、`@moryflow/sync` |
+| UI 包    | `@moryflow/ui`             | 唯一                                                 |
+| 配置包   | `@anyhunt/{name}-config`   | `@moryflow/eslint-config`                            |
+| Agent 包 | `@anyhunt/agents-{name}`   | `@moryflow/agents-runtime`                           |
 
 ---
 
@@ -742,7 +742,7 @@ pnpm lint
 
 ### CI 依赖说明
 
-`@anyhunt/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
+`@moryflow/model-registry-data` 仍使用 tsup 构建并依赖 Rollup 原生绑定；为避免 Linux CI 缺包，根 `optionalDependencies` 固定 `@rollup/rollup-linux-x64-gnu`。
 
 Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接依赖 `@electron/node-gyp`；为避免 CI 走 `git@github.com` 的 SSH clone（无 key 会失败），根 `pnpm.overrides` 固定 `@electron/node-gyp=10.2.0-electron.1`（从 npm registry 安装）。
 
@@ -797,7 +797,7 @@ Electron 相关依赖（`electron-builder` → `@electron/rebuild`）会间接�
 
 ```json
 {
-  "extends": "@anyhunt/typescript-config/base.json",
+  "extends": "@moryflow/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -836,7 +836,7 @@ import { ApiError } from './client.js';
 
 ```bash
 # 构建单个包
-pnpm --filter @anyhunt/types build
+pnpm --filter @moryflow/types build
 
 # 构建所有包
 pnpm -r build

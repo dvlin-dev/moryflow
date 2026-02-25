@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import type { ProblemDetails } from '@anyhunt/types';
+import type { ProblemDetails } from '@moryflow/types';
 import { ServerApiError } from './error';
 import type {
   ApiBody,

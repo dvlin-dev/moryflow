@@ -18,27 +18,27 @@ import { Mathematics } from '@tiptap/extension-mathematics';
 import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 
 // 自定义扩展
-import { HorizontalRule } from '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
-import { Image } from '@anyhunt/tiptap/nodes/image-node/image-node-extension';
-import { NodeBackground } from '@anyhunt/tiptap/extensions/node-background-extension';
-import { NodeAlignment } from '@anyhunt/tiptap/extensions/node-alignment-extension';
-import { UiState } from '@anyhunt/tiptap/extensions/ui-state-extension';
-import { TableKit } from '@anyhunt/tiptap/nodes/table-node/extensions/table-node-extension';
+import { HorizontalRule } from '@moryflow/tiptap/nodes/horizontal-rule-node/horizontal-rule-node-extension';
+import { Image } from '@moryflow/tiptap/nodes/image-node/image-node-extension';
+import { NodeBackground } from '@moryflow/tiptap/extensions/node-background-extension';
+import { NodeAlignment } from '@moryflow/tiptap/extensions/node-alignment-extension';
+import { UiState } from '@moryflow/tiptap/extensions/ui-state-extension';
+import { TableKit } from '@moryflow/tiptap/nodes/table-node/extensions/table-node-extension';
 
 // Bridge Client
 import { BridgeClient, type EditorCommand } from './bridge-client';
 
 // 样式
-import '@anyhunt/tiptap/nodes/blockquote-node/blockquote-node.scss';
-import '@anyhunt/tiptap/nodes/code-block-node/code-block-node.scss';
-import '@anyhunt/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
-import '@anyhunt/tiptap/nodes/list-node/list-node.scss';
-import '@anyhunt/tiptap/nodes/image-node/image-node.scss';
-import '@anyhunt/tiptap/nodes/heading-node/heading-node.scss';
-import '@anyhunt/tiptap/nodes/paragraph-node/paragraph-node.scss';
-import '@anyhunt/tiptap/nodes/table-node/styles/prosemirror-table.scss';
-import '@anyhunt/tiptap/nodes/table-node/styles/table-node.scss';
-import '@anyhunt/tiptap/styles/notion-editor.scss';
+import '@moryflow/tiptap/nodes/blockquote-node/blockquote-node.scss';
+import '@moryflow/tiptap/nodes/code-block-node/code-block-node.scss';
+import '@moryflow/tiptap/nodes/horizontal-rule-node/horizontal-rule-node.scss';
+import '@moryflow/tiptap/nodes/list-node/list-node.scss';
+import '@moryflow/tiptap/nodes/image-node/image-node.scss';
+import '@moryflow/tiptap/nodes/heading-node/heading-node.scss';
+import '@moryflow/tiptap/nodes/paragraph-node/paragraph-node.scss';
+import '@moryflow/tiptap/nodes/table-node/styles/prosemirror-table.scss';
+import '@moryflow/tiptap/nodes/table-node/styles/table-node.scss';
+import '@moryflow/tiptap/styles/notion-editor.scss';
 
 // ============ 初始化编辑器 ============
 

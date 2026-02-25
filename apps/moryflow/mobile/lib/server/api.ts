@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: fetchCurrentUser/fetchCredits/fetchProfile/updateProfile/fetchMembershipModels/deleteAccount
- * [DEPENDS]: @anyhunt/api client + paths, auth-session
+ * [DEPENDS]: @moryflow/api client + paths, auth-session
  * [POS]: Mobile 业务 API 函数层（Promise 风格）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
@@ -13,7 +13,7 @@ import {
   USER_API,
   OPENAI_API,
   getTierInfo,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 import { getAccessToken, refreshAccessToken } from './auth-session';
 import type {
   CreditsInfo,

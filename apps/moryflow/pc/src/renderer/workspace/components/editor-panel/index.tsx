@@ -1,11 +1,11 @@
 import { Suspense, lazy, memo, useState, useEffect, useRef, useCallback } from 'react';
 import { Share, PanelRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@anyhunt/ui/components/alert';
-import { Button } from '@anyhunt/ui/components/button';
-import { ScrollArea } from '@anyhunt/ui/components/scroll-area';
-import { Skeleton } from '@anyhunt/ui/components/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
+import { Button } from '@moryflow/ui/components/button';
+import { ScrollArea } from '@moryflow/ui/components/scroll-area';
+import { Skeleton } from '@moryflow/ui/components/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@moryflow/ui/components/tooltip';
 import { SharePopover } from '@/components/share';
 import { useTranslation } from '@/lib/i18n';
 import {

@@ -4,7 +4,7 @@
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
  * [UPDATE]: 2026-02-03 - Thinking 反馈改为 loading icon
  * [UPDATE]: 2026-02-07 - 统一使用 Message（移除 MessageRoot/锚点相关逻辑）
- * [UPDATE]: 2026-02-08 - parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免 PC/Web 重复实现导致语义漂移
+ * [UPDATE]: 2026-02-08 - parts 解析复用 `@moryflow/ui/ai/message`（split/clean），避免 PC/Web 重复实现导致语义漂移
  * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
  *
@@ -29,11 +29,11 @@ import {
   cleanFileRefMarker,
   findLastTextPartIndex,
   splitMessageParts,
-} from '@anyhunt/ui/ai/message';
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@anyhunt/ui/ai/reasoning';
-import { Loader } from '@anyhunt/ui/ai/loader';
-import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@anyhunt/ui/ai/streamdown-anim';
-import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@anyhunt/ui/ai/tool';
+} from '@moryflow/ui/ai/message';
+import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
+import { Loader } from '@moryflow/ui/ai/loader';
+import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@moryflow/ui/ai/streamdown-anim';
+import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@moryflow/ui/ai/tool';
 import {
   Confirmation,
   ConfirmationActions,
@@ -41,10 +41,10 @@ import {
   ConfirmationAccepted,
   ConfirmationRequest,
   ConfirmationTitle,
-} from '@anyhunt/ui/ai/confirmation';
+} from '@moryflow/ui/ai/confirmation';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
-import type { ToolDiffResult, ToolState } from '@anyhunt/ui/ai/tool';
+import type { ToolDiffResult, ToolState } from '@moryflow/ui/ai/tool';
 
 import { getMessageMeta } from '../../types/message';
 import type { ChatMessageProps } from './const';

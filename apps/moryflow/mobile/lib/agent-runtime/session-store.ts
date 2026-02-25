@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import type { AgentInputItem } from '@openai/agents-core';
 import type { UIMessage } from 'ai';
-import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { AgentAccessMode, SessionStore, ChatSessionSummary } from '@moryflow/agents-runtime';
 
 // ============ 常量 ============
 

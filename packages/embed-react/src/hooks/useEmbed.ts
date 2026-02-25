@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: useEmbed
- * [DEPENDS]: useEmbedContext, @anyhunt/embed
+ * [DEPENDS]: useEmbedContext, @moryflow/embed
  * [POS]: oEmbed 获取 Hook
  *
  * [PROTOCOL]: 本文件变更时，需同步更新 packages/embed-react/CLAUDE.md
@@ -9,7 +9,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { EmbedData, EmbedOptions, EmbedError } from '@anyhunt/embed';
+import type { EmbedData, EmbedOptions, EmbedError } from '@moryflow/embed';
 import { useEmbedContext } from './useEmbedContext';
 
 export interface UseEmbedOptions extends EmbedOptions {

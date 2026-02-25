@@ -25,7 +25,7 @@ import {
   FormMessage,
   Input,
   Textarea,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useExtract, type ExtractRequest } from '@/features/extract-playground';
 import {

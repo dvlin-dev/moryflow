@@ -13,16 +13,16 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v3';
-import { Button } from '@anyhunt/ui/components/button';
-import { Input } from '@anyhunt/ui/components/input';
+import { Button } from '@moryflow/ui/components/button';
+import { Input } from '@moryflow/ui/components/input';
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from '@anyhunt/ui/components/field';
-import { Form, FormField, FormItem, FormControl, FormMessage } from '@anyhunt/ui/components/form';
+} from '@moryflow/ui/components/field';
+import { Form, FormField, FormItem, FormControl, FormMessage } from '@moryflow/ui/components/form';
 import { useAuth, signUpWithEmail } from '@/lib/server';
 import { OTPForm } from '@/components/auth';
 import { useTranslation } from '@/lib/i18n';

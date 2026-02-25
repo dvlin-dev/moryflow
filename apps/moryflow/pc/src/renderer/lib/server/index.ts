@@ -19,7 +19,7 @@ export type {
   MembershipAuthState,
   BetterAuthError,
   MembershipApiError,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // ── 从共享包重新导出常量和工具函数 ────────────────────────
 export {
@@ -33,7 +33,7 @@ export {
   TIER_DISPLAY_NAMES,
   TIER_COLORS,
   parseAuthError,
-} from '@anyhunt/api';
+} from '@moryflow/api';
 
 // ── 本地类型别名（向后兼容） ──────────────────────────────
 export type { User, UserInfo, UserProfile, ModelsResponse, AuthState } from './types';

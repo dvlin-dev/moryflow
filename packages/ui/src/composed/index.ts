@@ -3,7 +3,7 @@
  * 基于 components 组合的更高级组件
  *
  * 使用方式:
- * import { DataTable, PageHeader, StatusBadge } from '@anyhunt/ui/composed'
+ * import { DataTable, PageHeader, StatusBadge } from '@moryflow/ui/composed'
  */
 
 export * from './data-table';

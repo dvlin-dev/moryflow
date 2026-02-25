@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   cn,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import {
   Play,
   Settings,

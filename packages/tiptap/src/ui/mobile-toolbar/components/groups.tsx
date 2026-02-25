@@ -1,37 +1,26 @@
-"use client"
+'use client';
 
-import { ChevronRightIcon } from "@anyhunt/ui/icons/chevron-right-icon"
-import { PaintBucketIcon } from "@anyhunt/ui/icons/paint-bucket-icon"
-import { Repeat2Icon } from "@anyhunt/ui/icons/repeat-2-icon"
-import { Button, ButtonGroup } from "../../../ui-primitive/button"
-import {
-  Card,
-  CardBody,
-  CardGroupLabel,
-  CardItemGroup,
-} from "../../../ui-primitive/card"
-import { Spacer } from "../../../ui-primitive/spacer"
-import { Separator } from "../../../ui-primitive/separator"
-import {
-  ToolbarGroup,
-  ToolbarSeparator,
-} from "../../../ui-primitive/toolbar"
+import { ChevronRightIcon } from '@moryflow/ui/icons/chevron-right-icon';
+import { PaintBucketIcon } from '@moryflow/ui/icons/paint-bucket-icon';
+import { Repeat2Icon } from '@moryflow/ui/icons/repeat-2-icon';
+import { Button, ButtonGroup } from '../../../ui-primitive/button';
+import { Card, CardBody, CardGroupLabel, CardItemGroup } from '../../../ui-primitive/card';
+import { Spacer } from '../../../ui-primitive/spacer';
+import { Separator } from '../../../ui-primitive/separator';
+import { ToolbarGroup, ToolbarSeparator } from '../../../ui-primitive/toolbar';
 import {
   DropdownMenuItem,
   DropdownMenuPortal,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from "../../../ui-primitive/dropdown-menu"
-import {
-  ColorHighlightButton,
-  HIGHLIGHT_COLORS,
-} from "../../color-highlight-button"
-import { ColorTextButton, TEXT_COLORS } from "../../color-text-button"
-import { useRecentColors } from "../../color-text-popover"
-import { MarkButton } from "../../mark-button"
-import { TextAlignButton } from "../../text-align-button"
-import { TurnIntoDropdownContent } from "../../turn-into-dropdown"
+} from '../../../ui-primitive/dropdown-menu';
+import { ColorHighlightButton, HIGHLIGHT_COLORS } from '../../color-highlight-button';
+import { ColorTextButton, TEXT_COLORS } from '../../color-text-button';
+import { useRecentColors } from '../../color-text-popover';
+import { MarkButton } from '../../mark-button';
+import { TextAlignButton } from '../../text-align-button';
+import { TurnIntoDropdownContent } from '../../turn-into-dropdown';
 
 /**
  * 对齐按钮组
@@ -48,7 +37,7 @@ export function AlignmentGroup() {
 
       <ToolbarSeparator />
     </>
-  )
+  );
 }
 
 /**
@@ -64,7 +53,7 @@ export function ScriptGroup() {
 
       <ToolbarSeparator />
     </>
-  )
+  );
 }
 
 /**
@@ -82,17 +71,17 @@ export function FormattingGroup() {
 
       <ToolbarSeparator />
     </>
-  )
+  );
 }
 
 /**
  * 颜色操作子菜单
  */
 export function ColorActionGroup() {
-  const { recentColors, isInitialized, addRecentColor } = useRecentColors()
+  const { recentColors, isInitialized, addRecentColor } = useRecentColors();
 
   const renderRecentColors = () => {
-    if (!isInitialized || recentColors.length === 0) return null
+    if (!isInitialized || recentColors.length === 0) return null;
 
     return (
       <>
@@ -100,18 +89,15 @@ export function ColorActionGroup() {
           <CardGroupLabel>Recent colors</CardGroupLabel>
           <ButtonGroup>
             {recentColors.map((colorObj) => (
-              <DropdownMenuItem
-                key={`${colorObj.type}-${colorObj.value}`}
-                asChild
-              >
-                {colorObj.type === "text" ? (
+              <DropdownMenuItem key={`${colorObj.type}-${colorObj.value}`} asChild>
+                {colorObj.type === 'text' ? (
                   <ColorTextButton
                     textColor={colorObj.value}
                     label={colorObj.label}
                     text={colorObj.label}
                     tooltip={colorObj.label}
                     onApplied={({ color, label }) =>
-                      addRecentColor({ type: "text", label, value: color })
+                      addRecentColor({ type: 'text', label, value: color })
                     }
                   />
                 ) : (
@@ -120,7 +106,7 @@ export function ColorActionGroup() {
                     text={colorObj.label}
                     tooltip={colorObj.label}
                     onApplied={({ color, label }) =>
-                      addRecentColor({ type: "highlight", label, value: color })
+                      addRecentColor({ type: 'highlight', label, value: color })
                     }
                   />
                 )}
@@ -130,8 +116,8 @@ export function ColorActionGroup() {
         </CardItemGroup>
         <Separator orientation="horizontal" />
       </>
-    )
-  }
+    );
+  };
 
   return (
     <DropdownMenuSub>
@@ -161,7 +147,7 @@ export function ColorActionGroup() {
                         text={textColor.label}
                         tooltip={textColor.label}
                         onApplied={({ color, label }) =>
-                          addRecentColor({ type: "text", label, value: color })
+                          addRecentColor({ type: 'text', label, value: color })
                         }
                       />
                     </DropdownMenuItem>
@@ -182,7 +168,7 @@ export function ColorActionGroup() {
                         tooltip={highlightColor.label}
                         onApplied={({ color, label }) =>
                           addRecentColor({
-                            type: "highlight",
+                            type: 'highlight',
                             label,
                             value: color,
                           })
@@ -197,7 +183,7 @@ export function ColorActionGroup() {
         </DropdownMenuSubContent>
       </DropdownMenuPortal>
     </DropdownMenuSub>
-  )
+  );
 }
 
 /**
@@ -219,5 +205,5 @@ export function TransformActionGroup() {
         <TurnIntoDropdownContent />
       </DropdownMenuSubContent>
     </DropdownMenuSub>
-  )
+  );
 }

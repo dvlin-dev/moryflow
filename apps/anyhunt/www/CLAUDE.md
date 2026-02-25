@@ -38,7 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@anyhunt/api/client` 在构建期解析失败
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 在构建期解析失败
 - Build：builder 阶段补齐根 `tsconfig.base.json` 复制，避免容器内 `packages/sync` 编译时报 `TS5083`
 - www Auth 升级为 Token-first：登录/邮箱验证成功后直接写入本地 `access+refresh`，不再依赖 Cookie refresh
 - `auth-context` 改为基于本地 token + `/api/v1/app/user/me` 解析登录态，移除 Better Auth `useSession` 依赖

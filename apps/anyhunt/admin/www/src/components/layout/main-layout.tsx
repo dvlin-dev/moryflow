@@ -26,8 +26,8 @@ import {
   Pencil,
   type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@anyhunt/ui/lib';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui/lib';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@moryflow/ui';
 import { useAuthStore } from '@/stores/auth';
 import { authMethods } from '@/lib/auth/auth-methods';
 

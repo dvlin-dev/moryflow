@@ -7,7 +7,7 @@
  */
 
 import { Directory, File, Paths } from 'expo-file-system';
-import { parseAgentMarkdown, type AgentMarkdownDefinition } from '@anyhunt/agents-runtime';
+import { parseAgentMarkdown, type AgentMarkdownDefinition } from '@moryflow/agents-runtime';
 
 const AGENTS_DIR = Paths.join(Paths.document.uri, '.moryflow', 'agents');
 

@@ -9,8 +9,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { formatRelativeTime } from '@anyhunt/ui/lib';
-import { Badge, Button, PageHeader } from '@anyhunt/ui';
+import { formatRelativeTime } from '@moryflow/ui/lib';
+import { Badge, Button, PageHeader } from '@moryflow/ui';
 import {
   useAdminWelcomeConfig,
   useAdminWelcomePages,

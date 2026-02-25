@@ -10,7 +10,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 - Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常
 - API Client：请求 body 类型统一到 `ApiClientRequestOptions['body']`，避免 Auth 重构后的类型回归
-- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@anyhunt/api/client` 解析失败
+- Build：Docker 构建补齐 `packages/types -> packages/sync -> packages/api` 预构建链路，修复 `@moryflow/api/client` 解析失败
 - Auth Store rehydrate 改为通过 store methods/setter 清理过期 token，确保清理结果持久化回 localStorage
 - Admin Auth 切换为 Token-first：登录直接拿 `access+refresh`，refresh/logout 改为 body `refreshToken`
 - `stores/auth.ts` 升级为 localStorage 持久化 + refresh mutex，移除 Cookie 会话依赖
@@ -49,7 +49,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 - 启动优先复用本地 access；仅在 access 过期或临近过期时刷新，再通过 `/api/v1/app/user/me` 同步用户档案（含 isAdmin）
 - `401 token_expired` 只允许刷新一次并重试原请求
 - Docker 构建依赖 `packages/types`、`packages/ui`、`packages/tiptap`（Welcome Markdown Editor）
-- TipTap 统一从 `@anyhunt/tiptap` 根入口导入；样式仅引入 `@anyhunt/tiptap/styles/notion-editor.scss`（禁止深路径导入）
+- TipTap 统一从 `@moryflow/tiptap` 根入口导入；样式仅引入 `@moryflow/tiptap/styles/notion-editor.scss`（禁止深路径导入）
 - Docker 构建固定使用 pnpm@9.12.2（避免 corepack pnpm@9.14+ 在容器内出现 depNode.fetching 报错）
 - Docker 构建安装依赖使用 `node-linker=hoisted` 且关闭 `shamefully-hoist`，避免 pnpm link 阶段崩溃
 - API 路径统一走 `/api/v1/admin/*`；生产环境默认请求 `https://server.anyhunt.app`（可用 `VITE_API_URL` 覆盖）

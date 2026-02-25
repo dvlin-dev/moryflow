@@ -7,7 +7,7 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Button, cn } from '@anyhunt/ui';
+import { Button, cn } from '@moryflow/ui';
 import { useInboxItems, useInboxItemContent } from '@/features/digest/hooks';
 import type { InboxItemState } from '@/features/digest/types';
 import { MarkdownView } from '@/components/reader/MarkdownView';

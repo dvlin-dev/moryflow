@@ -150,4 +150,4 @@ status: done
   - `pnpm lint`
   - `pnpm typecheck`
   - `pnpm test:unit`
-  - `pnpm --filter @anyhunt/moryflow-pc test:e2e`
+  - `pnpm --filter @moryflow/pc test:e2e`

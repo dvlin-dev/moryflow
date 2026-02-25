@@ -5,7 +5,7 @@
  * [PROTOCOL]: 本文件变更时，请同步更新 `apps/anyhunt/www/CLAUDE.md`
  */
 
-import { Separator } from '@anyhunt/ui';
+import { Separator } from '@moryflow/ui';
 import { useRouterState } from '@tanstack/react-router';
 import type { Subscription } from '@/features/digest/types';
 import { useInboxStats, useSubscriptions } from '@/features/digest/hooks';

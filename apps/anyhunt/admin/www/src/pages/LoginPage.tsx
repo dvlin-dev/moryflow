@@ -25,7 +25,7 @@ import {
   FormLabel,
   FormMessage,
   Input,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { authMethods } from '@/lib/auth/auth-methods';
 
 const loginFormSchema = z.object({

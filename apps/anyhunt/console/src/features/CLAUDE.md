@@ -65,7 +65,7 @@ export function useApiKeys() {
 - Agent Browser Playground：Diagnostics 新增 Detection Risk 只读区块，接入 `/api/v1/browser/session/:id/risk`，展示 24h 成功率、Top 原因与建议动作
 - Agent Browser Playground：Streamdown 升级至 v2.2，流式输出启用逐词动画（仅最后一条 assistant 文本段）
 - Agent Browser Playground：新增全局检索标记 `STREAMDOWN_ANIM`，便于定位动画链路与作用点
-- Agent Browser Playground：MessageRow parts 解析复用 `@anyhunt/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
+- Agent Browser Playground：MessageRow parts 解析复用 `@moryflow/ui/ai/message`（split/clean），避免多端重复实现导致语义漂移
 - Playground Shared/Memox 分页箭头统一改为 ChevronRight/ChevronLeft（无中轴）
 - Console Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式
 - API Key Create Dialog 文案与 ApiKeyClient 校验对齐（空 key 阻断请求）
@@ -84,7 +84,7 @@ export function useApiKeys() {
 - Agent Browser Playground：schemas/types/panel 等补齐 Header/PROTOCOL 规范
 - Agent Browser Playground：Agent Chat 改为纯消息 UI，SSE 流显式发送 `start` 以保证消息追加
 - Agent Browser Playground：`thinking/progress` 事件按文本输出，避免误入 Reasoning
-- Agent Browser Playground：消息列表与输入框切换为 `@anyhunt/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
+- Agent Browser Playground：消息列表与输入框切换为 `@moryflow/ui/ai/*` 组件，统一布局/Tool/Reasoning 渲染
 - Agent Browser Playground：Tool 消息兼容 dynamic-tool 类型，修复构建类型报错
 - Agent Browser Playground：输入提交失败保留内容，交由上层提示错误
 - Agent Browser Playground：消息列表组件拆分与渲染性能优化（单次遍历 + 子组件化）

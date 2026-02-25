@@ -38,7 +38,7 @@ status: active
 - `MessageResponseProps`：直接复用 Streamdown props（因此支持 `animated/isAnimating`）
   - 位置：`packages/ui/src/ai/message/const.ts`
 
-应用侧（PC/Console）不要直接 new 一套 Markdown renderer，统一复用 `@anyhunt/ui/ai/message` 的 `MessageResponse`。
+应用侧（PC/Console）不要直接 new 一套 Markdown renderer，统一复用 `@moryflow/ui/ai/message` 的 `MessageResponse`。
 
 ### 2) 流式 token 动画的参数（集中管理）
 
@@ -175,7 +175,7 @@ packages/ui/styles/index.css: [data-sd-animate] { animation: ... }
 
 1. 打开 DevTools，Elements 搜索 `data-sd-animate`
 2. 若不存在：优先检查 `isAnimating` 是否真的为 true（以及该段是否真的传了 `animated`）
-3. 若存在但没动画：检查 `@anyhunt/ui/styles` 是否被应用侧引入、`[data-sd-animate]` 规则是否在最终 CSS 内
+3. 若存在但没动画：检查 `@moryflow/ui/styles` 是否被应用侧引入、`[data-sd-animate]` 规则是否在最终 CSS 内
 
 ## 常见坑与建议
 

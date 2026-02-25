@@ -4,7 +4,7 @@
  * [POS]: Job 相关共享工具函数和组件（Lucide icons direct render）
  */
 import { CircleX, CircleCheck, Clock, Loader } from 'lucide-react';
-import { Badge } from '@anyhunt/ui';
+import { Badge } from '@moryflow/ui';
 import type { JobStatus, JobErrorCode } from '@/features/jobs';
 
 /**

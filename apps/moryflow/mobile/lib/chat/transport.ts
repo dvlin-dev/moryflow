@@ -15,14 +15,14 @@ import {
   isRunRawModelStreamEvent,
   mapRunToolEventToChunk,
   resolveToolCallIdFromRawItem,
-} from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
 import type {
   AgentChatContext,
   AgentAttachmentContext,
   AgentContext,
   AgentAccessMode,
   RunItemStreamEventLike,
-} from '@anyhunt/agents-runtime';
+} from '@moryflow/agents-runtime';
 import { getAgentRuntime, mobileSessionStore, createLogger } from '@/lib/agent-runtime';
 import { generateUUID } from '@/lib/utils/uuid';
 import { extractTextFromParts } from './utils';

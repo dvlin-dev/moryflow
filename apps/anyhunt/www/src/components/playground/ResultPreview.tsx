@@ -5,7 +5,7 @@
  */
 
 import { CircleAlert, ArrowUpRight, Download, Loader } from 'lucide-react';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 
 interface ResultPreviewProps {
   isLoading: boolean;

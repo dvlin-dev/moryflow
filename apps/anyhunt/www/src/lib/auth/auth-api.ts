@@ -5,7 +5,7 @@
  */
 
 import { API_BASE_URL } from '@/lib/api-base';
-import { createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import type { AuthTokenBundle, AuthUser } from '@/stores/auth-store';
 
 type TokenAuthPayload = Partial<AuthTokenBundle> & {

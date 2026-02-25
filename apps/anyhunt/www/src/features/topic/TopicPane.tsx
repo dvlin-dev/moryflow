@@ -9,7 +9,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { cn } from '@anyhunt/ui';
+import { cn } from '@moryflow/ui';
 import { MarkdownView } from '@/components/reader/MarkdownView';
 import { getEditionById, getTopicBySlug, getTopicEditions } from '@/lib/digest-api';
 import { usePublicEnv } from '@/lib/public-env-context';

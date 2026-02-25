@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { Controller } from 'react-hook-form';
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
+import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
 import type { LucideIcon } from 'lucide-react';
 import { Computer, Loader, Moon, RefreshCw, Sun } from 'lucide-react';
 import { previewTheme, type ThemePreference } from '@/theme';

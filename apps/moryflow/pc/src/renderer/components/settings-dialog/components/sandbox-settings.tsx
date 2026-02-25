@@ -5,9 +5,9 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { RadioGroup, RadioGroupItem } from '@anyhunt/ui/components/radio-group';
-import { Label } from '@anyhunt/ui/components/label';
-import { Button } from '@anyhunt/ui/components/button';
+import { RadioGroup, RadioGroupItem } from '@moryflow/ui/components/radio-group';
+import { Label } from '@moryflow/ui/components/label';
+import { Button } from '@moryflow/ui/components/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,11 +17,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@anyhunt/ui/components/alert-dialog';
+} from '@moryflow/ui/components/alert-dialog';
 import type { LucideIcon } from 'lucide-react';
 import { X, Delete, Folder, Shield } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
-import type { SandboxMode } from '@anyhunt/agents-sandbox';
+import type { SandboxMode } from '@moryflow/agents-sandbox';
 import type { SandboxSettings as SandboxSettingsType } from '@shared/ipc';
 
 type ModeOption = {

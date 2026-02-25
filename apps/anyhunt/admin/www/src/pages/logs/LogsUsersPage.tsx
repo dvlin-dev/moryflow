@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { PageHeader } from '@anyhunt/ui';
+import { PageHeader } from '@moryflow/ui';
 import {
   Badge,
   Button,
@@ -22,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import {
   getQueryErrorMessage,
   toIsoDateTimeOrUndefined,

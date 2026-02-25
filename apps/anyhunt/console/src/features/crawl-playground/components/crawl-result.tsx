@@ -16,7 +16,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import type { CrawlResponse } from '@/features/playground-shared';
 
 interface CrawlResultProps {

@@ -10,8 +10,15 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormMessage, InputGroupButton } from '@anyhunt/ui';
-import type { PromptInputMessage } from '@anyhunt/ui/ai/prompt-input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+  InputGroupButton,
+} from '@moryflow/ui';
+import type { PromptInputMessage } from '@moryflow/ui/ai/prompt-input';
 import {
   PromptInput,
   PromptInputBody,
@@ -20,7 +27,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from '@anyhunt/ui/ai/prompt-input';
+} from '@moryflow/ui/ai/prompt-input';
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -29,7 +36,7 @@ import {
   ModelSelectorList,
   ModelSelectorName,
   ModelSelectorTrigger,
-} from '@anyhunt/ui/ai/model-selector';
+} from '@moryflow/ui/ai/model-selector';
 import { ChevronDown, CircleCheck, SquareStop } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentChatTransport } from '../transport/agent-chat-transport';

@@ -25,7 +25,7 @@ import {
   FormMessage,
   Input,
   Switch,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 import { useMap, type MapRequest, type MapResponse } from '@/features/map-playground';
 import {

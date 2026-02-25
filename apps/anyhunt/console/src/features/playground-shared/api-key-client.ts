@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createApiKeyClient - API Key 认证请求封装（函数式）
- * [DEPENDS]: @anyhunt/api/client, @/lib/api-base
+ * [DEPENDS]: @moryflow/api/client, @/lib/api-base
  * [POS]: Console 调用公网 API 的基础客户端
  *
  * [PROTOCOL]: 本文件变更时，必须更新所属目录 CLAUDE.md
@@ -11,7 +11,7 @@ import {
   createApiTransport,
   ServerApiError,
   type ApiClientRequestOptions,
-} from '@anyhunt/api/client';
+} from '@moryflow/api/client';
 import { API_BASE_URL } from '@/lib/api-base';
 
 export interface ApiKeyClientOptions {

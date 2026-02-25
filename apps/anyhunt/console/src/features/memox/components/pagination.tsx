@@ -5,7 +5,7 @@
  */
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@anyhunt/ui';
+import { Button } from '@moryflow/ui';
 
 interface PaginationProps {
   currentPage: number;

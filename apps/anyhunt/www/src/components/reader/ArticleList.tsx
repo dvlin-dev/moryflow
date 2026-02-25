@@ -16,7 +16,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { RefreshCw, ListFilter, SquareCheck } from 'lucide-react';
 import { ArticleCard } from './ArticleCard';
 import type { InboxItem } from '@/features/digest/types';

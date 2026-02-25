@@ -18,7 +18,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 
 /** 子菜单项 */
 export interface NavSubItem {

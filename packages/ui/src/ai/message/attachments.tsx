@@ -15,7 +15,7 @@ import { Button } from '../../components/button';
 import { ScrollArea } from '../../components/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/tooltip';
 import { cn } from '../../lib/utils';
-import type { ChatFileProviderMetadata } from '@anyhunt/types';
+import type { ChatFileProviderMetadata } from '@moryflow/types';
 
 import type { MessageAttachmentProps, MessageAttachmentsProps } from './const';
 

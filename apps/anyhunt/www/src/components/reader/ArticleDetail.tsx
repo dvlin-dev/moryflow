@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { Star, ThumbsDown, SquareArrowUpRight } from 'lucide-react';
 import { AISummaryCard } from './AISummaryCard';
 import { formatDate } from '@/lib/date';

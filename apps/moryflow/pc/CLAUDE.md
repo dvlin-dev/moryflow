@@ -84,13 +84,14 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- `electron.vite.config.ts` 的 renderer alias 全量切换到 `@moryflow/*`（含 `@moryflow/tiptap/styles/*` 正则映射），避免样式导入错误落到 `packages/tiptap/src/styles/*` 不存在路径（2026-02-25）
 - `test:unit` 脚本改为 ABI 双态：`pretest:unit` 先执行 `pnpm rebuild better-sqlite3` 切换 Node ABI，`posttest:unit` 再执行 `electron-rebuild -f -w better-sqlite3,keytar` 恢复 Electron ABI，避免单测与桌面运行互相污染（2026-02-24）
 - `electron.vite` 主进程构建新增 `copy-builtin-skills`：将 `src/main/skills/builtin` 复制到 `dist/main/builtin`，确保打包后预设 skills 可被主进程文件扫描链路读取。
 - 启动性能：移除 `preload:*` IPC/预加载落盘缓存，预热回退为 Renderer 侧轻量 warmup（仅 idle `import()` ChatPane/Shiki）；AgentSettings 读取收敛单飞资源，修复设置弹窗偶发一直 Loading
 - Vault：新增 `vault:ensureDefaultWorkspace`，首次启动自动创建默认 workspace（`~/Documents/Moryflow/workspace`），使进入主界面（Agent）不再被 onboarding 阻塞
 - workspace-settings：用 `lastAgentSub` 替代旧 `lastMode`；新增 `workspace:getLastAgentSub/setLastAgentSub` IPC，用于全局记忆 Agent 面板二级入口（Chat/Workspace）
 - ChatPaneHeader 高度写入 CSS 变量，消息列表顶部 padding 动态对齐
-- 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@anyhunt/ui` 内复刻
+- 移除 assistant-ui 直连依赖与 adapter，滚动交互继续在 `@moryflow/ui` 内复刻
 - Chat 主进程持久化切换到 UIMessageStream onFinish，并补齐 start/finish chunk
 - Chat IPC 移除 `chat:sessions:syncMessages`，避免 Renderer 覆盖会话持久化
 - 消息列表自动滚动回归经典 chat（Viewport Following）：发送一次 smooth 到底部；流式输出 instant 追随；上滑暂停

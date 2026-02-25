@@ -5,8 +5,8 @@
  */
 
 import { getAccessToken } from '@/lib/server/auth-session';
-import { MEMBERSHIP_API_URL } from '@anyhunt/api';
-import type { MembershipConfig } from '@anyhunt/agents-runtime';
+import { MEMBERSHIP_API_URL } from '@moryflow/api';
+import type { MembershipConfig } from '@moryflow/agents-runtime';
 
 // 内存中的配置（运行时使用）
 let membershipConfig: MembershipConfig = {

@@ -8,7 +8,7 @@
 
 import type { RecommendedSkill, SkillSummary } from '@shared/ipc';
 import type { ReactNode } from 'react';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import { cn } from '@/lib/utils';
 import { Plus, Link as LinkIcon } from 'lucide-react';
 import type { SkillListProps } from './const';

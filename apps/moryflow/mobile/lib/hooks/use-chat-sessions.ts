@@ -13,7 +13,7 @@ import {
   recordModeSwitch,
 } from '@/lib/agent-runtime';
 import { randomUUID } from 'expo-crypto';
-import type { ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { ChatSessionSummary } from '@moryflow/agents-runtime';
 
 // 重新导出类型
 export type { ChatSessionSummary };

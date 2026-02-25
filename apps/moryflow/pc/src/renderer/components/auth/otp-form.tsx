@@ -15,15 +15,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { Button } from '@anyhunt/ui/components/button';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@anyhunt/ui/components/field';
-import { Form, FormField, FormItem, FormControl, FormMessage } from '@anyhunt/ui/components/form';
+import { Button } from '@moryflow/ui/components/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@moryflow/ui/components/field';
+import { Form, FormField, FormItem, FormControl, FormMessage } from '@moryflow/ui/components/form';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from '@anyhunt/ui/components/input-otp';
+} from '@moryflow/ui/components/input-otp';
 import { sendVerificationOTP, verifyEmailOTP } from '@/lib/server/auth-api';
 
 interface OTPFormProps extends React.ComponentProps<'div'> {

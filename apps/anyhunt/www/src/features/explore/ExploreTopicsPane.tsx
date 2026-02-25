@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Input } from '@anyhunt/ui';
+import { Button, Input } from '@moryflow/ui';
 import { toast } from 'sonner';
 import { ApiClientError } from '@/lib/api-client';
 import { getPublicTopics, type DigestTopicSummary } from '@/lib/digest-api';

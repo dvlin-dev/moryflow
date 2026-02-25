@@ -17,7 +17,7 @@
 ## 使用方式
 
 ```ts
-import { createApiClient } from '@anyhunt/api/client';
+import { createApiClient } from '@moryflow/api/client';
 
 const client = createApiClient({
   baseUrl: MEMBERSHIP_API_URL,

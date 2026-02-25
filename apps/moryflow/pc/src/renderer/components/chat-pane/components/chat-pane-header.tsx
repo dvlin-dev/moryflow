@@ -8,7 +8,7 @@
 
 import { memo, useMemo, useState } from 'react';
 import type { ChatSessionSummary } from '@shared/ipc';
-import { Button } from '@anyhunt/ui/components/button';
+import { Button } from '@moryflow/ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +16,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@anyhunt/ui/components/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@anyhunt/ui/components/tooltip';
+} from '@moryflow/ui/components/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@moryflow/ui/components/tooltip';
 import { Plus, Delete, Ellipsis, Check, PanelRight } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 

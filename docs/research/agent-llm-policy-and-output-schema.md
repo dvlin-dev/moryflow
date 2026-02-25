@@ -102,7 +102,7 @@ type AgentOutput =
 
 服务端实现一个“只读 registry”：
 
-- 基础数据来源：`@anyhunt/agents-model-registry` 的 `providerRegistry/modelRegistry`
+- 基础数据来源：`@moryflow/agents-model-registry` 的 `providerRegistry/modelRegistry`
 - 运行时配置来源：服务端环境变量（baseURL、鉴权 key、是否启用、允许模型集合）
 
 运行时解析规则：

@@ -1,7 +1,7 @@
 /**
  * API Key 选择器组件
  */
-import { Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@anyhunt/ui';
+import { Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@moryflow/ui';
 import type { ApiKey } from '@/features/api-keys';
 import { maskApiKey } from '@/features/api-keys';
 

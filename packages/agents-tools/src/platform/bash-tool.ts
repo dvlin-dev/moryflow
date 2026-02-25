@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: createBashTool - 非沙盒化的 bash 工具
- * [DEPENDS]: @openai/agents-core, @anyhunt/agents-adapter, @anyhunt/agents-runtime
+ * [DEPENDS]: @openai/agents-core, @moryflow/agents-adapter, @moryflow/agents-runtime
  * [POS]: 基础 bash 工具实现（输出交由 runtime 统一截断）
  *
  * [NOTE]: 当前未被任何平台调用：
@@ -10,8 +10,8 @@
  */
 import { tool, type RunContext } from '@openai/agents-core';
 import { z } from 'zod';
-import type { PlatformCapabilities } from '@anyhunt/agents-adapter';
-import type { AgentContext, VaultUtils } from '@anyhunt/agents-runtime';
+import type { PlatformCapabilities } from '@moryflow/agents-adapter';
+import type { AgentContext, VaultUtils } from '@moryflow/agents-runtime';
 import { toolSummarySchema } from '../shared';
 
 const DEFAULT_TIMEOUT = 120_000; // 2 分钟

@@ -10,7 +10,7 @@ import { promises as fs } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { parseRuntimeConfig, type AgentRuntimeConfig } from '@anyhunt/agents-runtime';
+import { parseRuntimeConfig, type AgentRuntimeConfig } from '@moryflow/agents-runtime';
 
 const CONFIG_DIR = path.join(os.homedir(), '.moryflow');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.jsonc');

@@ -1,6 +1,6 @@
 /**
  * [PROVIDES]: apiClient, ApiClientError
- * [DEPENDS]: @anyhunt/api/client, auth-methods
+ * [DEPENDS]: @moryflow/api/client, auth-methods
  * [POS]: www API client for authenticated requests (Bearer + refresh)
  */
 
@@ -10,7 +10,7 @@ import {
   type ApiClientRequestOptions,
   type QueryParams,
   ServerApiError,
-} from '@anyhunt/api/client';
+} from '@moryflow/api/client';
 import { API_BASE_URL } from './api-base';
 import { authMethods } from './auth/auth-methods';
 import { authStore } from '@/stores/auth-store';

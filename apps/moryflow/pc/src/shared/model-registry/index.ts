@@ -6,4 +6,4 @@
  */
 
 // 从共享包导出所有内容
-export * from '@anyhunt/agents-model-registry'
+export * from '@moryflow/agents-model-registry';

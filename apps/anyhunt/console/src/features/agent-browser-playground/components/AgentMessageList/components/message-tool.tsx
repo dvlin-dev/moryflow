@@ -15,7 +15,7 @@ import {
   type ToolOutputLabels,
   type ToolState,
   type ToolStatusLabels,
-} from '@anyhunt/ui/ai/tool';
+} from '@moryflow/ui/ai/tool';
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 
 const TOOL_STATUS_LABELS: ToolStatusLabels = {

@@ -10,14 +10,14 @@
 
 import { useMemo, type DragEvent } from 'react';
 import { Folder, FolderOpen } from 'lucide-react';
-import { ContextMenu, ContextMenuTrigger } from '@anyhunt/ui/components/context-menu';
+import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context-menu';
 import {
   FolderItem as FolderItemPrimitive,
   FolderHeader as FolderHeaderPrimitive,
   FolderTrigger as FolderTriggerPrimitive,
   FolderIcon as FolderIconPrimitive,
   FolderPanel as FolderPanelPrimitive,
-} from '@anyhunt/ui/animate/primitives/base/files';
+} from '@moryflow/ui/animate/primitives/base/files';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';

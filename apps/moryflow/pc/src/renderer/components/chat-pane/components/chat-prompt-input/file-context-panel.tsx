@@ -15,7 +15,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@anyhunt/ui/components/command';
+} from '@moryflow/ui/components/command';
 import { cn } from '@/lib/utils';
 import type { FlatFile } from '@/workspace/utils';
 import type { ContextFileTag } from '../context-file-tags';

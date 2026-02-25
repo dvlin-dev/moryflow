@@ -7,11 +7,11 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Input } from '@anyhunt/ui/components/input';
-import { Button } from '@anyhunt/ui/components/button';
-import { Label } from '@anyhunt/ui/components/label';
-import { Switch } from '@anyhunt/ui/components/switch';
-import { Badge } from '@anyhunt/ui/components/badge';
+import { Input } from '@moryflow/ui/components/input';
+import { Button } from '@moryflow/ui/components/button';
+import { Label } from '@moryflow/ui/components/label';
+import { Switch } from '@moryflow/ui/components/switch';
+import { Badge } from '@moryflow/ui/components/badge';
 import { Plus, Delete, Search, Settings } from 'lucide-react';
 import { AddModelDialog, type AddModelFormData } from './add-model-dialog';
 import {

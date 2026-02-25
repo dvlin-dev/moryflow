@@ -9,8 +9,8 @@
 ## 导出
 
 ```typescript
-import { EmbedClient } from '@anyhunt/embed';
-import { detectProvider } from '@anyhunt/embed/utils/provider-detect';
+import { EmbedClient } from '@moryflow/embed';
+import { detectProvider } from '@moryflow/embed/utils/provider-detect';
 ```
 
 ## 目录结构

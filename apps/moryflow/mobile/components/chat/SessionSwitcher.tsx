@@ -12,7 +12,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import type { ChatSessionSummary } from '@anyhunt/agents-runtime';
+import type { ChatSessionSummary } from '@moryflow/agents-runtime';
 
 interface SessionSwitcherProps {
   visible: boolean;

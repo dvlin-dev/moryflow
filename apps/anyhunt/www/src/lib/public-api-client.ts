@@ -1,10 +1,10 @@
 /**
  * [PROVIDES]: getPublicApiClient
- * [DEPENDS]: @anyhunt/api/client
+ * [DEPENDS]: @moryflow/api/client
  * [POS]: WWW 公共请求函数式客户端（public 模式）
  */
 
-import { createApiClient, createApiTransport, type ApiClient } from '@anyhunt/api/client';
+import { createApiClient, createApiTransport, type ApiClient } from '@moryflow/api/client';
 
 const clientCache = new Map<string, ApiClient>();
 

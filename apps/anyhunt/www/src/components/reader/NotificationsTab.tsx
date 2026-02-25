@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { Inbox, Mail, Webhook } from 'lucide-react';
 
 interface NotificationsTabProps {

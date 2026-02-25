@@ -28,7 +28,7 @@ import {
   FormMessage,
   RadioGroup,
   RadioGroupItem,
-} from '@anyhunt/ui';
+} from '@moryflow/ui';
 import { reportTopic, type ReportReason } from '@/lib/digest-api';
 
 const REPORT_REASONS: { value: ReportReason; label: string; description: string }[] = [

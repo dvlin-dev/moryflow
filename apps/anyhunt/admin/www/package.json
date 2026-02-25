@@ -13,10 +13,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anyhunt/api": "workspace:*",
-    "@anyhunt/tiptap": "workspace:*",
-    "@anyhunt/types": "workspace:*",
-    "@anyhunt/ui": "workspace:*",
+    "@moryflow/api": "workspace:*",
+    "@moryflow/tiptap": "workspace:*",
+    "@moryflow/types": "workspace:*",
+    "@moryflow/ui": "workspace:*",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/core": "^3.0.0",

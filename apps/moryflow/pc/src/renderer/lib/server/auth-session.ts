@@ -10,7 +10,7 @@
  */
 
 import { MEMBERSHIP_API_URL } from './const';
-import { createApiTransport, ServerApiError } from '@anyhunt/api/client';
+import { createApiTransport, ServerApiError } from '@moryflow/api/client';
 import {
   ACCESS_TOKEN_SKEW_MS,
   authStore,
