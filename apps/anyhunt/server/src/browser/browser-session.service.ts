@@ -32,7 +32,14 @@ import {
   BrowserPolicyDeniedError,
   BrowserNavigationRateLimitError,
 } from './policy';
-import { NavigationRetryService, BrowserNavigationError } from './runtime';
+import {
+  NavigationRetryService,
+  BrowserNavigationError,
+  RiskDetectionService,
+  HumanBehaviorService,
+} from './runtime';
+import { StealthRegionService } from './stealth';
+import type { RiskSignal } from './stealth';
 import type {
   CreateSessionInput,
   CreateWindowInput,
@@ -95,6 +102,9 @@ export class BrowserSessionService {
     private readonly sitePolicyService: SitePolicyService,
     private readonly siteRateLimiter: SiteRateLimiterService,
     private readonly navigationRetry: NavigationRetryService,
+    private readonly stealthRegion: StealthRegionService,
+    private readonly riskDetection: RiskDetectionService,
+    private readonly humanBehavior: HumanBehaviorService,
   ) {}
 
   private assertSessionAccess(userId: string, sessionId: string): void {
@@ -203,22 +213,41 @@ export class BrowserSessionService {
       throw error;
     }
 
-    if (headers) {
+    const region = this.stealthRegion.resolveRegion(url);
+    const navigationScopedHeaders: Record<string, string> = {
+      ...(headers ?? {}),
+    };
+    const hasExplicitAcceptLanguage = Object.keys(navigationScopedHeaders).some(
+      (header) => header.toLowerCase() === 'accept-language',
+    );
+    if (region && !hasExplicitAcceptLanguage) {
+      // 通过 scoped headers 合并写入，避免覆盖会话已有全局 headers
+      navigationScopedHeaders['Accept-Language'] = region.acceptLanguage;
+    }
+    if (Object.keys(navigationScopedHeaders).length > 0) {
+      const mergedScopedHeaders = this.mergeScopedHeadersForOrigin(
+        sessionId,
+        url,
+        navigationScopedHeaders,
+      );
       await this.networkInterceptor.setScopedHeaders(
         sessionId,
         context,
         url,
-        headers,
+        mergedScopedHeaders,
       );
     }
 
-    let navigationResult: {
+    // stealth: 导航前随机抖动（300~1000ms）
+    await this.sleep(this.humanBehavior.computeNavigationDelay());
+
+    const navigateWithRetry = async (): Promise<{
       title: string | null;
+      finalUrl: string;
       finalHost: string;
       finalPolicyId: string;
-    };
-    try {
-      navigationResult = await this.navigationRetry.run({
+    }> => {
+      return this.navigationRetry.run({
         host,
         budget: policy.retryBudget,
         execute: async () => {
@@ -263,6 +292,7 @@ export class BrowserSessionService {
 
             return {
               title,
+              finalUrl,
               finalHost,
               finalPolicyId: finalPolicy.id,
             };
@@ -271,6 +301,16 @@ export class BrowserSessionService {
           }
         },
       });
+    };
+
+    let navigationResult: {
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    };
+    try {
+      navigationResult = await navigateWithRetry();
     } catch (error) {
       if (error instanceof BrowserPolicyDeniedError) {
         this.riskTelemetry.recordPolicyBlock({
@@ -325,6 +365,42 @@ export class BrowserSessionService {
       success: true,
     });
 
+    // stealth: 风险信号检测（全局 warn 模式 — 仅记录遥测，不阻断导航）
+    let riskSignals = this.riskDetection.detect(
+      page.url(),
+      navigationResult.title ?? '',
+    );
+    if (riskSignals.length > 0) {
+      this.riskTelemetry.recordNavigationResult({
+        host: navigationResult.finalHost,
+        reason: `risk_signal:${riskSignals[0].code}`,
+        policyId: navigationResult.finalPolicyId,
+        sessionId,
+        class: 'access_control',
+        success: true,
+      });
+
+      const recovered = await this.recoverFromRiskSignals({
+        host,
+        policy,
+        sessionId,
+        navigateWithRetry,
+        originalSignals: riskSignals,
+      });
+      if (recovered) {
+        navigationResult = recovered.navigationResult;
+        riskSignals = recovered.riskSignals;
+        this.riskTelemetry.recordNavigationResult({
+          host: navigationResult.finalHost,
+          reason: `risk_recovered:${recovered.originalSignals[0]?.code ?? 'unknown'}`,
+          policyId: navigationResult.finalPolicyId,
+          sessionId,
+          class: 'none',
+          success: true,
+        });
+      }
+    }
+
     return {
       success: true,
       url: page.url(),
@@ -338,6 +414,98 @@ export class BrowserSessionService {
     } catch {
       return fallback;
     }
+  }
+
+  private async recoverFromRiskSignals(input: {
+    host: string;
+    policy: ReturnType<SitePolicyService['resolve']>;
+    sessionId: string;
+    originalSignals: RiskSignal[];
+    navigateWithRetry: () => Promise<{
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    }>;
+  }): Promise<{
+    navigationResult: {
+      title: string | null;
+      finalUrl: string;
+      finalHost: string;
+      finalPolicyId: string;
+    };
+    riskSignals: RiskSignal[];
+    originalSignals: RiskSignal[];
+  } | null> {
+    const maxRetryAttempts = 2;
+
+    for (let attempt = 1; attempt <= maxRetryAttempts; attempt++) {
+      await this.sleep(this.computeRiskRetryBackoffMs(attempt));
+
+      try {
+        const navigationResult = await input.navigateWithRetry();
+        const riskSignals = this.riskDetection.detect(
+          navigationResult.finalUrl,
+          navigationResult.title ?? '',
+        );
+        if (riskSignals.length === 0) {
+          return {
+            navigationResult,
+            riskSignals,
+            originalSignals: input.originalSignals,
+          };
+        }
+      } catch {
+        // warn 模式：风险恢复失败不阻断主流程
+      }
+    }
+
+    this.riskTelemetry.recordNavigationResult({
+      host: input.host,
+      reason: `risk_persisted:${input.originalSignals[0]?.code ?? 'unknown'}`,
+      policyId: input.policy.id,
+      sessionId: input.sessionId,
+      class: 'access_control',
+      success: true,
+    });
+
+    return null;
+  }
+
+  private mergeScopedHeadersForOrigin(
+    sessionId: string,
+    origin: string,
+    incoming: Record<string, string>,
+  ): Record<string, string> {
+    const normalizedHost = this.normalizeOriginHost(origin);
+    const existing = this.networkInterceptor
+      .getScopedHeaders(sessionId)
+      .find((entry) => entry.origin === normalizedHost)?.headers;
+    return {
+      ...(existing ?? {}),
+      ...incoming,
+    };
+  }
+
+  private normalizeOriginHost(origin: string): string {
+    try {
+      const parsed = origin.startsWith('http')
+        ? new URL(origin)
+        : new URL(`https://${origin}`);
+      return parsed.host.toLowerCase();
+    } catch {
+      return origin.toLowerCase();
+    }
+  }
+
+  private computeRiskRetryBackoffMs(attempt: number): number {
+    const baseDelay = 3000 + Math.floor(Math.random() * 4001);
+    return baseDelay + (attempt - 1) * 500;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    if (ms <= 0) return;
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private acquireNavigationQuota(input: {

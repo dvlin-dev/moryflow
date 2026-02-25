@@ -31,6 +31,8 @@ export interface BrowserContextOptions {
   locale?: string;
   /** 时区 */
   timezoneId?: string;
+  /** 区域提示（URL/TLD），用于 locale/timezone 自动对齐 */
+  regionHint?: string;
   /** 地理位置 */
   geolocation?: { latitude: number; longitude: number; accuracy?: number };
   /** 权限 */

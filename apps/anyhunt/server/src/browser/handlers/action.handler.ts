@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 import type { Locator, Page, Download } from 'playwright';
 import { SessionManager, type BrowserSession } from '../session';
 import { BrowserRiskTelemetryService } from '../observability';
-import { ActionPacingService } from '../runtime';
+import { ActionPacingService, HumanBehaviorService } from '../runtime';
 import {
   BROWSER_DOWNLOAD_MAX_BYTES,
   BROWSER_UPLOAD_MAX_BYTES,
@@ -36,6 +36,7 @@ export class ActionHandler {
     private readonly sessionManager: SessionManager,
     private readonly actionPacing: ActionPacingService,
     private readonly riskTelemetry: BrowserRiskTelemetryService,
+    private readonly humanBehavior: HumanBehaviorService,
   ) {}
 
   /**
@@ -111,7 +112,7 @@ export class ActionHandler {
 
         // ===== 交互 =====
         case 'click':
-          return await this.handleClick(locator!, action);
+          return await this.handleClick(locator!, action, page);
 
         case 'dblclick':
           await locator!.dblclick({ timeout });
@@ -128,10 +129,7 @@ export class ActionHandler {
           if (action.value === undefined) {
             throw new Error('type requires a value');
           }
-          await locator!.pressSequentially(action.value, {
-            delay: 50,
-            timeout,
-          });
+          await this.typeWithJitter(locator!, action.value, timeout);
           return { success: true };
 
         case 'press':
@@ -370,13 +368,43 @@ export class ActionHandler {
   }
 
   /**
+   * 处理打字操作（逐字符抖动，避免固定间隔）
+   */
+  private async typeWithJitter(
+    locator: Locator,
+    value: string,
+    timeout: number,
+  ): Promise<void> {
+    await locator.focus({ timeout });
+    for (const char of value) {
+      await locator.pressSequentially(char, {
+        delay: this.humanBehavior.computeTypingDelay(50),
+        timeout,
+      });
+    }
+  }
+
+  /**
    * 处理点击操作
    */
   private async handleClick(
     locator: Locator,
     action: ActionInput,
+    page: Page,
   ): Promise<ActionResponse> {
     const { clickOptions, timeout = 5000 } = action;
+
+    // stealth: Bezier 鼠标曲线移动到目标位置
+    try {
+      const box = await locator.boundingBox();
+      if (box) {
+        const targetX = box.x + box.width * (0.3 + Math.random() * 0.4);
+        const targetY = box.y + box.height * (0.3 + Math.random() * 0.4);
+        await this.humanBehavior.humanMouseMove(page, targetX, targetY);
+      }
+    } catch {
+      // Bezier 失败不影响点击
+    }
 
     await locator.click({
       button: clickOptions?.button ?? 'left',

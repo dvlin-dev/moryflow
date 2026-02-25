@@ -25,7 +25,8 @@ status: active
 - 统一登录与 Digest 前端架构（提案）：`docs/products/anyhunt-dev/features/unified-auth-and-digest-architecture.md`
 - Agent Browser 架构：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`
 - Agent 与 Browser 交互规范：`docs/products/anyhunt-dev/features/agent-browser/agent-interaction.md`
-- Agent Browser 合规自动化与检测风险治理方案（已落地 Step 0~7）：`docs/products/anyhunt-dev/features/agent-browser/compliance-automation-and-detection-risk-plan.md`
+- Agent Browser 合规自动化与检测风险治理方案（已落地 Step 0~7；2026-02-25 已修订"禁止伪装"约束）：`docs/products/anyhunt-dev/features/agent-browser/compliance-automation-and-detection-risk-plan.md`
+- Agent Browser Stealth 能力引入与改造方案（proposal）：`docs/products/anyhunt-dev/features/agent-browser/stealth-fork-gap-and-adoption-plan.md`
 - 首页 Reader 三栏布局设计（历史方案，已被替代）：`docs/products/anyhunt-dev/features/homepage-reader-redesign.md`
 - 首页 Discover 增强（历史方案，已被替代）：`docs/products/anyhunt-dev/features/homepage-redesign.md`
 - Reader 顶部导航 + Explore Topics 专用页（已实现）：`docs/products/anyhunt-dev/features/explore-topics-revamp.md`

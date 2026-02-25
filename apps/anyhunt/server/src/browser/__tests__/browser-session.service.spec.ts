@@ -31,6 +31,7 @@ const createService = () => {
 
   const networkInterceptor = {
     setScopedHeaders: vi.fn().mockResolvedValue(undefined),
+    getScopedHeaders: vi.fn().mockReturnValue([]),
   };
 
   const urlValidator = {
@@ -67,6 +68,16 @@ const createService = () => {
     cleanupSession: vi.fn(),
   };
 
+  const stealthRegion = {
+    resolveRegion: vi.fn().mockReturnValue(null),
+  };
+  const riskDetectionService = {
+    detect: vi.fn().mockReturnValue([]),
+  };
+  const humanBehavior = {
+    computeNavigationDelay: vi.fn().mockReturnValue(0),
+  };
+
   const service = new BrowserSessionService(
     sessionManager as never,
     snapshotService as never,
@@ -82,6 +93,9 @@ const createService = () => {
     sitePolicyService as never,
     siteRateLimiter as never,
     navigationRetry as never,
+    stealthRegion as never,
+    riskDetectionService as never,
+    humanBehavior as never,
   );
 
   return {
@@ -98,6 +112,9 @@ const createService = () => {
       releaseNavigationQuota,
       navigationRetry,
       riskTelemetry,
+      stealthRegion,
+      riskDetectionService,
+      humanBehavior,
     },
   };
 };
@@ -158,6 +175,7 @@ describe('BrowserSessionService.openUrl', () => {
       success: true,
     });
     expect(result.success).toBe(true);
+    expect(deps.humanBehavior.computeNavigationDelay).toHaveBeenCalledTimes(1);
   });
 
   it('rechecks redirected host policy and blocks denied redirect target', async () => {
@@ -319,6 +337,113 @@ describe('BrowserSessionService.openUrl', () => {
       class: 'network',
       success: false,
     });
+  });
+
+  it('merges Accept-Language into scoped headers without overriding existing scoped headers', async () => {
+    const { service, deps } = createService();
+    deps.stealthRegion.resolveRegion.mockReturnValueOnce({
+      locale: 'ja-JP',
+      timezone: 'Asia/Tokyo',
+      acceptLanguage: 'ja-JP,ja;q=0.9,en;q=0.8',
+    });
+    deps.networkInterceptor.getScopedHeaders.mockReturnValueOnce([
+      {
+        origin: 'example.com',
+        headers: { Authorization: 'Bearer existing' },
+      },
+    ]);
+
+    await service.openUrl('user_1', 'bs_test', {
+      url: 'https://example.com/path',
+      waitUntil: 'domcontentloaded',
+      timeout: 2000,
+      headers: { 'X-Trace-Id': 'trace-1' },
+    });
+
+    expect(deps.networkInterceptor.setScopedHeaders).toHaveBeenCalledWith(
+      'bs_test',
+      expect.any(Object),
+      'https://example.com/path',
+      {
+        Authorization: 'Bearer existing',
+        'X-Trace-Id': 'trace-1',
+        'Accept-Language': 'ja-JP,ja;q=0.9,en;q=0.8',
+      },
+    );
+  });
+
+  it('keeps caller accept-language header when region is resolved', async () => {
+    const { service, deps } = createService();
+    deps.stealthRegion.resolveRegion.mockReturnValueOnce({
+      locale: 'ja-JP',
+      timezone: 'Asia/Tokyo',
+      acceptLanguage: 'ja-JP,ja;q=0.9,en;q=0.8',
+    });
+    deps.networkInterceptor.getScopedHeaders.mockReturnValueOnce([
+      {
+        origin: 'example.com',
+        headers: { Authorization: 'Bearer existing' },
+      },
+    ]);
+
+    await service.openUrl('user_1', 'bs_test', {
+      url: 'https://example.com/path',
+      waitUntil: 'domcontentloaded',
+      timeout: 2000,
+      headers: {
+        'accept-language': 'fr-FR,fr;q=0.9',
+        'X-Trace-Id': 'trace-2',
+      },
+    });
+
+    expect(deps.networkInterceptor.setScopedHeaders).toHaveBeenCalledWith(
+      'bs_test',
+      expect.any(Object),
+      'https://example.com/path',
+      {
+        Authorization: 'Bearer existing',
+        'accept-language': 'fr-FR,fr;q=0.9',
+        'X-Trace-Id': 'trace-2',
+      },
+    );
+  });
+
+  it('retries navigation when risk signals are detected and records recovery telemetry', async () => {
+    const { service, deps } = createService();
+    deps.riskDetectionService.detect
+      .mockReturnValueOnce([
+        {
+          code: 'captcha_interstitial',
+          source: 'title',
+          evidence: 'captcha',
+          confidence: 0.98,
+        },
+      ])
+      .mockReturnValueOnce([]);
+
+    vi.spyOn(service as any, 'sleep').mockResolvedValue(undefined);
+
+    await service.openUrl('user_1', 'bs_test', {
+      url: 'https://example.com/path',
+      waitUntil: 'domcontentloaded',
+      timeout: 2000,
+    });
+
+    expect(deps.page.goto).toHaveBeenCalledTimes(2);
+    expect(deps.riskTelemetry.recordNavigationResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'risk_signal:captcha_interstitial',
+        class: 'access_control',
+        success: true,
+      }),
+    );
+    expect(deps.riskTelemetry.recordNavigationResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'risk_recovered:captcha_interstitial',
+        class: 'none',
+        success: true,
+      }),
+    );
   });
 
   it('consumes host quota per retry attempt', async () => {

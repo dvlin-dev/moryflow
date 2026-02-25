@@ -73,7 +73,8 @@ status: active
   - Admin：手动充值 Credits（已落地）：`docs/products/anyhunt-dev/features/admin-credits-and-entitlements.md`
   - Agent Browser 架构：`docs/products/anyhunt-dev/features/agent-browser/architecture.md`
   - Agent 与 Browser 交互规范：`docs/products/anyhunt-dev/features/agent-browser/agent-interaction.md`
-  - Agent Browser 合规自动化与检测风险治理方案（已落地 Step 0~7）：`docs/products/anyhunt-dev/features/agent-browser/compliance-automation-and-detection-risk-plan.md`
+  - Agent Browser 合规自动化与检测风险治理方案（已落地 Step 0~7；2026-02-25 已修订"禁止伪装"约束）：`docs/products/anyhunt-dev/features/agent-browser/compliance-automation-and-detection-risk-plan.md`
+  - Agent Browser Stealth 能力引入与改造方案（proposal）：`docs/products/anyhunt-dev/features/agent-browser/stealth-fork-gap-and-adoption-plan.md`
   - 免费用户每日赠送 100 Credits（方案）：`docs/products/anyhunt-dev/features/daily-free-credits.md`
   - www Reader/Developer 双模块布局方案：`docs/products/anyhunt-dev/features/www-reader-and-developer-split.md`
   - www Reader SRP 与 Props 收敛重构计划：`docs/products/anyhunt-dev/features/www-reader-srp-and-props-refactor.md`
