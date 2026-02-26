@@ -1,9 +1,10 @@
 /**
  * [PROPS]: none
  * [EMITS]: none
- * [POS]: Job Detail 页面 - 任务详情（Lucide icons direct render）
+ * [POS]: Job Detail 页面 - 任务详情（状态片段化 + 详情卡片装配）
  */
-import { useParams, useNavigate } from 'react-router-dom';
+
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Clock, Image, Key, User } from 'lucide-react';
 import {
   Badge,
@@ -15,117 +16,69 @@ import {
   PageHeader,
   Skeleton,
 } from '@moryflow/ui';
-import { useJob } from '@/features/jobs';
-import type { JobTiming } from '@/features/jobs';
-import { formatMs, getStatusBadge } from '@/lib/job-utils';
+import { ListErrorState } from '@/components/list-state';
+import {
+  formatJobDateTime,
+  JobJsonDisplay,
+  JobTimingBreakdown,
+  useJob,
+  type JobDetail,
+} from '@/features/jobs';
+import { getStatusBadge } from '@/lib/job-utils';
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('zh-CN');
+type JobDetailContentState = 'loading' | 'error' | 'ready';
+
+function resolveJobDetailContentState(params: {
+  isLoading: boolean;
+  hasError: boolean;
+  hasJob: boolean;
+}): JobDetailContentState {
+  if (params.isLoading) {
+    return 'loading';
+  }
+
+  if (params.hasError || !params.hasJob) {
+    return 'error';
+  }
+
+  return 'ready';
 }
 
-/** 耗时分解条形图 */
-function TimingBreakdown({ timing }: { timing: JobTiming }) {
-  const items = [
-    { label: '排队等待', value: timing.queueWait, color: 'bg-gray-400' },
-    { label: '页面加载', value: timing.fetch, color: 'bg-blue-500' },
-    { label: '页面渲染', value: timing.render, color: 'bg-green-500' },
-    { label: '内容转换', value: timing.transform, color: 'bg-yellow-500' },
-    { label: '截图捕获', value: timing.screenshot, color: 'bg-purple-500' },
-    { label: '图片处理', value: timing.imageProcess, color: 'bg-pink-500' },
-    { label: '文件上传', value: timing.upload, color: 'bg-orange-500' },
-  ].filter((item) => item.value !== null && item.value > 0);
-
-  const total = items.reduce((sum, item) => sum + (item.value ?? 0), 0);
-  if (total === 0) return <p className="text-muted-foreground">暂无耗时数据</p>;
-
+function JobDetailLoadingState() {
   return (
-    <div className="space-y-3">
-      {/* Bar */}
-      <div className="flex h-6 overflow-hidden rounded-md">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className={`${item.color} transition-all`}
-            style={{ width: `${((item.value ?? 0) / total) * 100}%` }}
-            title={`${item.label}: ${formatMs(item.value)}`}
-          />
-        ))}
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-48" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
       </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <div className={`h-3 w-3 rounded ${item.color}`} />
-            <span>
-              {item.label}: {formatMs(item.value)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Total */}
-      <div className="text-sm font-medium">总耗时: {formatMs(timing.total)}</div>
     </div>
   );
 }
 
-/** JSON 显示组件 */
-function JsonDisplay({ data, maxHeight = 300 }: { data: unknown; maxHeight?: number }) {
-  if (!data) return <p className="text-muted-foreground">无数据</p>;
-
+function JobDetailErrorState({ onBack }: { onBack: () => void }) {
   return (
-    <div className="overflow-x-auto">
-      <pre className="min-w-0 overflow-auto rounded-md bg-muted p-4 text-xs" style={{ maxHeight }}>
-        {JSON.stringify(data, null, 2)}
-      </pre>
+    <div className="space-y-6">
+      <Button variant="ghost" onClick={onBack}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        返回
+      </Button>
+      <ListErrorState message="任务不存在或加载失败" />
     </div>
   );
 }
 
-export default function JobDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { data: job, isLoading, error } = useJob(id ?? '');
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid gap-6 md:grid-cols-2">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !job) {
-    return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          返回
-        </Button>
-        <div className="py-12 text-center">
-          <p className="text-destructive">任务不存在或加载失败</p>
-        </div>
-      </div>
-    );
-  }
-
+function JobDetailContent({ job, onBack }: { job: JobDetail; onBack: () => void }) {
   return (
     <div className="min-w-0 space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
+        <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           返回
         </Button>
         <PageHeader title="任务详情" description={job.id} />
       </div>
 
-      {/* Status & Meta */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
@@ -134,8 +87,8 @@ export default function JobDetailPage() {
           <CardContent>
             <div className="flex items-center gap-4">
               {getStatusBadge(job.status)}
-              {job.fromCache && <Badge variant="outline">缓存命中</Badge>}
-              {job.quotaDeducted && <Badge variant="secondary">已扣配额</Badge>}
+              {job.fromCache ? <Badge variant="outline">缓存命中</Badge> : null}
+              {job.quotaDeducted ? <Badge variant="secondary">已扣配额</Badge> : null}
             </div>
           </CardContent>
         </Card>
@@ -170,7 +123,6 @@ export default function JobDetailPage() {
         </Card>
       </div>
 
-      {/* URL */}
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-medium">请求 URL</CardTitle>
@@ -191,12 +143,11 @@ export default function JobDetailPage() {
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground break-all">Hash: {job.requestHash}</p>
+          <p className="mt-2 break-all text-xs text-muted-foreground">Hash: {job.requestHash}</p>
         </CardContent>
       </Card>
 
-      {/* Error (if failed) */}
-      {job.status === 'FAILED' && job.error && (
+      {job.status === 'FAILED' && job.error ? (
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-destructive">错误信息</CardTitle>
@@ -208,9 +159,8 @@ export default function JobDetailPage() {
             <p className="text-sm">{job.error}</p>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {/* Timing */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
@@ -219,11 +169,10 @@ export default function JobDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <TimingBreakdown timing={job.timing} />
+          <JobTimingBreakdown timing={job.timing} />
         </CardContent>
       </Card>
 
-      {/* Timestamps */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-medium">时间线</CardTitle>
@@ -232,22 +181,21 @@ export default function JobDetailPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <p className="text-xs text-muted-foreground">创建时间</p>
-              <p className="font-mono text-sm">{formatDate(job.createdAt)}</p>
+              <p className="font-mono text-sm">{formatJobDateTime(job.createdAt)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">更新时间</p>
-              <p className="font-mono text-sm">{formatDate(job.updatedAt)}</p>
+              <p className="font-mono text-sm">{formatJobDateTime(job.updatedAt)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">完成时间</p>
-              <p className="font-mono text-sm">{formatDate(job.completedAt)}</p>
+              <p className="font-mono text-sm">{formatJobDateTime(job.completedAt)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Screenshot */}
-      {job.screenshot && (
+      {job.screenshot ? (
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
@@ -275,7 +223,7 @@ export default function JobDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(job.screenshot!.url, '_blank')}
+                  onClick={() => window.open(job.screenshot?.url, '_blank')}
                 >
                   <ArrowUpRight className="mr-2 h-4 w-4" />
                   查看原图
@@ -291,29 +239,56 @@ export default function JobDetailPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {/* Request Options */}
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-medium">请求参数</CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">
-          <JsonDisplay data={job.options} />
+          <JobJsonDisplay data={job.options} />
         </CardContent>
       </Card>
 
-      {/* Result */}
-      {job.result && (
+      {job.result ? (
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="text-sm font-medium">响应结果</CardTitle>
           </CardHeader>
           <CardContent className="min-w-0">
-            <JsonDisplay data={job.result} maxHeight={500} />
+            <JobJsonDisplay data={job.result} maxHeight={500} />
           </CardContent>
         </Card>
-      )}
+      ) : null}
     </div>
   );
+}
+
+export default function JobDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: job, isLoading, error } = useJob(id ?? '');
+
+  const state = resolveJobDetailContentState({
+    isLoading,
+    hasError: Boolean(error),
+    hasJob: Boolean(job),
+  });
+
+  const back = () => navigate(-1);
+
+  switch (state) {
+    case 'loading':
+      return <JobDetailLoadingState />;
+    case 'error':
+      return <JobDetailErrorState onBack={back} />;
+    case 'ready':
+      if (!job) {
+        return null;
+      }
+
+      return <JobDetailContent job={job} onBack={back} />;
+    default:
+      return null;
+  }
 }

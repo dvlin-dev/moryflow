@@ -4,11 +4,9 @@
  * [POS]: Request Logs 明细页（筛选 + 概览 + 分页）
  */
 
-import { useState } from 'react';
-import { Search, RotateCcw } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@moryflow/ui';
+import { RotateCcw, Search } from 'lucide-react';
+import { PageHeader } from '@moryflow/ui';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -20,123 +18,46 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from '@moryflow/ui';
-import { formatRelativeTime } from '@moryflow/ui/lib';
 import {
-  useRequestLogs,
-  useRequestLogsOverview,
-  type RequestLogListQuery,
+  RequestLogsListContent,
+  RequestLogsOverviewCards,
   getQueryErrorMessage,
-  toIsoDateTimeOrUndefined,
-  toStatusCodeOrUndefined,
+  resolveRequestLogsListState,
+  useRequestLogs,
+  useRequestLogsFilters,
+  useRequestLogsOverview,
 } from '@/features/logs';
-
-function statusVariant(statusCode: number): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (statusCode >= 500) return 'destructive';
-  if (statusCode >= 400) return 'secondary';
-  return 'default';
-}
+import { ListErrorState } from '@/components/list-state';
 
 export default function LogsRequestsPage() {
-  const [query, setQuery] = useState<RequestLogListQuery>({ page: 1, limit: 20 });
-  const [filters, setFilters] = useState({
-    from: '',
-    to: '',
-    routeGroup: '',
-    statusCode: '',
-    pathLike: '',
-    userId: '',
-    clientIp: '',
-    errorOnly: 'all',
-  });
-
-  const listQuery: RequestLogListQuery = query;
-
-  const { data, isLoading, isError, error } = useRequestLogs(listQuery);
-  const overviewQuery = {
+  const { query, filters, setFilters, applyFilters, resetFilters, setPage } =
+    useRequestLogsFilters();
+  const { data, isLoading, isError, error } = useRequestLogs(query);
+  const overview = useRequestLogsOverview({
     from: query.from,
     to: query.to,
-  };
-  const overview = useRequestLogsOverview(overviewQuery);
+  });
 
-  const handleApplyFilters = () => {
-    setQuery({
-      page: 1,
-      limit: query.limit,
-      from: toIsoDateTimeOrUndefined(filters.from),
-      to: toIsoDateTimeOrUndefined(filters.to),
-      routeGroup: filters.routeGroup || undefined,
-      statusCode: toStatusCodeOrUndefined(filters.statusCode),
-      pathLike: filters.pathLike || undefined,
-      userId: filters.userId || undefined,
-      clientIp: filters.clientIp || undefined,
-      errorOnly: filters.errorOnly === 'errors' ? true : undefined,
-    });
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      from: '',
-      to: '',
-      routeGroup: '',
-      statusCode: '',
-      pathLike: '',
-      userId: '',
-      clientIp: '',
-      errorOnly: 'all',
-    });
-    setQuery({ page: 1, limit: query.limit });
-  };
-
-  const handlePageChange = (page: number) => {
-    setQuery((prev) => ({ ...prev, page }));
-  };
+  const state = resolveRequestLogsListState({
+    isLoading,
+    hasError: isError,
+    itemCount: data?.items.length ?? 0,
+  });
 
   return (
     <div className="space-y-6">
       <PageHeader title="Request Logs" description="统一请求日志明细与错误排查（30 天保留）" />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Requests</p>
-            <p className="text-3xl font-bold">{overview.data?.totalRequests ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Errors</p>
-            <p className="text-3xl font-bold">{overview.data?.errorRequests ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Error Rate</p>
-            <p className="text-3xl font-bold">
-              {overview.data ? `${(overview.data.errorRate * 100).toFixed(2)}%` : '0.00%'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">P95 Duration</p>
-            <p className="text-3xl font-bold">{overview.data?.p95DurationMs ?? 0} ms</p>
-          </CardContent>
-        </Card>
-      </div>
+      <RequestLogsOverviewCards overview={overview.data} />
 
-      {overview.isError && (
-        <div className="text-sm text-destructive">
-          {getQueryErrorMessage(overview.error, 'Failed to load overview metrics')}
-        </div>
-      )}
+      {overview.isError ? (
+        <ListErrorState
+          message={getQueryErrorMessage(overview.error, 'Failed to load overview metrics')}
+          className="py-0"
+          messageClassName="text-sm text-destructive"
+        />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -147,28 +68,53 @@ export default function LogsRequestsPage() {
             <Input
               type="datetime-local"
               value={filters.from}
-              onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  from: event.target.value,
+                }))
+              }
               placeholder="From"
             />
             <Input
               type="datetime-local"
               value={filters.to}
-              onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  to: event.target.value,
+                }))
+              }
               placeholder="To"
             />
             <Input
               placeholder="Route Group"
               value={filters.routeGroup}
-              onChange={(e) => setFilters((prev) => ({ ...prev, routeGroup: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  routeGroup: event.target.value,
+                }))
+              }
             />
             <Input
               placeholder="Status Code"
               value={filters.statusCode}
-              onChange={(e) => setFilters((prev) => ({ ...prev, statusCode: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  statusCode: event.target.value,
+                }))
+              }
             />
             <Select
               value={filters.errorOnly}
-              onValueChange={(value) => setFilters((prev) => ({ ...prev, errorOnly: value }))}
+              onValueChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  errorOnly: value as 'all' | 'errors',
+                }))
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -181,23 +127,38 @@ export default function LogsRequestsPage() {
             <Input
               placeholder="Path Contains"
               value={filters.pathLike}
-              onChange={(e) => setFilters((prev) => ({ ...prev, pathLike: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  pathLike: event.target.value,
+                }))
+              }
             />
             <Input
               placeholder="User ID"
               value={filters.userId}
-              onChange={(e) => setFilters((prev) => ({ ...prev, userId: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  userId: event.target.value,
+                }))
+              }
             />
             <Input
               placeholder="Client IP"
               value={filters.clientIp}
-              onChange={(e) => setFilters((prev) => ({ ...prev, clientIp: e.target.value }))}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  clientIp: event.target.value,
+                }))
+              }
             />
             <div className="flex gap-2 md:col-span-2">
-              <Button variant="outline" onClick={handleApplyFilters} className="w-full">
+              <Button variant="outline" onClick={applyFilters} className="w-full">
                 <Search className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={handleResetFilters} className="w-full">
+              <Button variant="outline" onClick={resetFilters} className="w-full">
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
@@ -210,96 +171,7 @@ export default function LogsRequestsPage() {
           <CardTitle>Requests</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : isError ? (
-            <div className="py-12 text-center text-destructive">
-              {getQueryErrorMessage(error, 'Failed to load request logs')}
-            </div>
-          ) : !data?.items.length ? (
-            <div className="py-12 text-center text-muted-foreground">No request logs found</div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>IP</TableHead>
-                    <TableHead>Error</TableHead>
-                    <TableHead className="text-right">Duration</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatRelativeTime(item.createdAt)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusVariant(item.statusCode)}>{item.statusCode}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-xs">{item.method}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[380px]">
-                          <p className="truncate font-mono text-xs" title={item.path}>
-                            {item.path}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{item.routeGroup || '-'}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <p className="max-w-[180px] truncate text-xs" title={item.userId || ''}>
-                          {item.userId || '-'}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-xs">{item.clientIp}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[220px]">
-                          <p
-                            className="truncate text-xs text-foreground"
-                            title={item.errorCode || ''}
-                          >
-                            {item.errorCode || '-'}
-                          </p>
-                          <p
-                            className="truncate text-xs text-muted-foreground"
-                            title={item.errorMessage || ''}
-                          >
-                            {item.errorMessage || '-'}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-xs">
-                        {item.durationMs} ms
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {data.pagination.totalPages > 1 && (
-                <div className="mt-4 flex justify-center">
-                  <SimplePagination
-                    page={data.pagination.page}
-                    totalPages={data.pagination.totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <RequestLogsListContent state={state} data={data} error={error} onPageChange={setPage} />
         </CardContent>
       </Card>
     </div>

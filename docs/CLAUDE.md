@@ -93,6 +93,8 @@
 
 ## 最近更新
 
+- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 B（`jobs/queues/logs/browser/llm`）B-1~B-7 修复完成并通过模块级 `lint` + `typecheck` + `test:unit`，可进入模块 C）
+- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 B 预扫描完成：`jobs/queues/logs/browser/llm` 输出 `S1x7 / S2x4 / S3x3` 与 B-1~B-7 修复计划）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-3~A-6 完成：`UserCreditsSheet` 拆分、`Users/Subscriptions/Orders` 查询编排统一、badge/list-state/formatters 抽离，模块 A 全量校验通过）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-2 完成：`SubscriptionsPage` 拆分为容器 + 列表状态组件 + 编辑弹窗组件；编辑表单迁移到 `RHF + zod/v3` 并抽离 `schemas/constants`）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A 预扫描完成并完成 A-1：`UsersPage`/`SubscriptionsPage`/`OrdersPage`/`UserCreditsSheet` 多状态渲染统一为状态片段 + `render...ByState/switch`）

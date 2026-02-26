@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- 前端组件优化（模块 B / B-1~B-7）：`jobs/queues/logs/browser/llm` 全量收敛，恢复并拆分 `JobDetailPage`，`QueuesPage` 下沉到 `features/queues` 子组件，Logs 列表统一状态片段化与共享表格片段，Browser 格式化函数下沉到 `features/browser/formatters`，LLM 页面改为控制器 hook + dialog form mapper 下沉（`features/llm/forms/*`）；模块 B 回归 `lint` + `typecheck` + `test:unit` 通过
 - 前端组件优化（模块 A / A-3~A-6）：`UserCreditsSheet` 拆分为容器 + 子组件（`user-credits-sheet/*`），`Users/Subscriptions/Orders` 统一接入 `usePagedSearchQuery`，新增共享 `list-state`、`subscription-badges`、`orders/dashboard formatters`；模块 A 回归 `lint` + `typecheck` + `test:unit` 通过
 - 前端组件优化（模块 A / A-2）：`SubscriptionsPage` 拆分为容器层，列表状态分发与表格渲染下沉到 `SubscriptionsListContent/SubscriptionsTable`，编辑弹窗迁移到 `SubscriptionEditDialog`（`RHF + zod/v3` + `schemas.ts`）
 - 前端组件优化（模块 A / A-1）：`UsersPage`、`SubscriptionsPage`、`OrdersPage`、`UserCreditsSheet` 多状态 UI 统一为“状态片段化 + `render...ByState/switch`”，移除链式三元并通过 `lint` + `typecheck` + `test:unit`

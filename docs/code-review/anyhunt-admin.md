@@ -6,7 +6,7 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/anyhunt/admin/www（模块 A：dashboard/users/subscriptions/orders）
+[INPUT]: apps/anyhunt/admin/www（模块 A：dashboard/users/subscriptions/orders；模块 B：jobs/queues/logs/browser/llm）
 [OUTPUT]: 问题清单 + 分级 + 分步修复计划 + 进度记录
 [POS]: Phase 3 / P2 模块审查记录（Anyhunt Admin）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -17,7 +17,9 @@ status: in_progress
 ## 范围
 
 - 项目：`apps/anyhunt/admin/www`
-- 本轮模块：`dashboard / users / subscriptions / orders`
+- 本轮模块：
+  - 模块 A：`dashboard / users / subscriptions / orders`（已完成）
+  - 模块 B：`jobs / queues / logs / browser / llm`（已完成）
 - 页面入口：
   - `src/pages/DashboardPage.tsx`
   - `src/pages/UsersPage.tsx`
@@ -35,7 +37,7 @@ status: in_progress
 - `S1`（必须改）：4 项（4 项已修复）
 - `S2`（建议本轮改）：3 项（3 项已修复）
 - `S3`（可延后）：2 项（2 项已修复）
-- 当前状态：模块 A（`dashboard/users/subscriptions/orders`）已完成，待你确认后进入模块 B 预扫描
+- 当前状态：模块 A、模块 B 均已完成；可进入模块 C（`digest-*`）预扫描
 
 ## 发现（按严重度排序）
 
@@ -226,6 +228,177 @@ status: in_progress
 - 结论：
   - 模块 A（`dashboard/users/subscriptions/orders`）本轮计划项 A-1~A-6 全部完成，可进入模块 B 预扫描。
 
+## 模块 B 预扫描范围（仅扫描，不改代码）
+
+- 模块：`jobs / queues / logs / browser / llm`
+- 页面入口：
+  - `apps/anyhunt/admin/www/src/pages/JobsPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/BrowserPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/logs/LogsUsersPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/LlmPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/llm/LlmProviderDialog.tsx`
+  - `apps/anyhunt/admin/www/src/pages/llm/LlmModelDialog.tsx`
+- 特性目录：
+  - `apps/anyhunt/admin/www/src/features/jobs/*`
+  - `apps/anyhunt/admin/www/src/features/queues/*`
+  - `apps/anyhunt/admin/www/src/features/logs/*`
+  - `apps/anyhunt/admin/www/src/features/browser/*`
+  - `apps/anyhunt/admin/www/src/features/llm/*`
+
+## 结论摘要（模块 B：B-7 已完成）
+
+- `S1`（必须改）：7 项
+- `S2`（建议本轮改）：4 项
+- `S3`（可延后）：3 项
+- 当前状态：B-1~B-7 全部完成并通过模块级回归
+
+## 模块 B 发现（按严重度排序）
+
+- [S1] `LlmModelDialog` 单文件体量过大且职责耦合（schema/defaults/submit mapper/form rendering）
+  - 证据：单文件 `623` 行（>300 阈值），同时承担 schema、raw-config 解析、create/update payload 组装与完整 UI。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmModelDialog.tsx:68`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmModelDialog.tsx:120`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmModelDialog.tsx:199`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmModelDialog.tsx:284`
+
+- [S1] `QueuesPage` 超阈值且业务编排/展示/确认文案混杂
+  - 证据：单文件 `382` 行；页面同时内嵌 `QueueCard/QueueJobList`、操作 `switch`、确认弹窗文案分支。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:77`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:125`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:178`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:195`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:364`
+
+- [S1] `JobDetailPage` 超阈值且页面内塞入重型子组件
+  - 证据：单文件 `319` 行；`TimingBreakdown` 与 `JsonDisplay` 作为通用展示组件内嵌在页面，且页面承载大量 card 区块装配。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx:28`
+    - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx:75`
+    - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx:119`
+
+- [S1] `LogsRequestsPage` 超阈值且过滤器/query mapper/概览/列表渲染耦合
+  - 证据：单文件 `307` 行；同文件包含 filter state、query 组装、overview 查询与列表分页渲染。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:48`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:69`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:106`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:141`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:213`
+
+- [S1] 多状态 UI 仍存在链式三元，违反“状态片段化 + renderByState/switch”
+  - 证据：`loading/error/empty/ready` 在 Jobs/Logs 多页面使用链式三元渲染。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/JobsPage.tsx:154`
+    - `apps/anyhunt/admin/www/src/pages/JobsPage.tsx:160`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:213`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:219`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsUsersPage.tsx:71`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsUsersPage.tsx:77`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx:79`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx:85`
+
+- [S1] `LlmPage` 容器层过重，查询/弹窗状态/确认动作闭包耦合
+  - 证据：单文件 `338` 行；页面同时维护 7 个 mutation、多弹窗状态、删除确认回调与 toast 分支。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/LlmPage.tsx:49`
+    - `apps/anyhunt/admin/www/src/pages/LlmPage.tsx:89`
+    - `apps/anyhunt/admin/www/src/pages/LlmPage.tsx:102`
+    - `apps/anyhunt/admin/www/src/pages/LlmPage.tsx:242`
+    - `apps/anyhunt/admin/www/src/pages/LlmPage.tsx:296`
+
+- [S1] `LlmProviderDialog` 超阈值且 create/update 映射与 UI 混排
+  - 证据：单文件 `317` 行；同文件包含 preset 补全逻辑、create/update 输入映射与整表单渲染。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmProviderDialog.tsx:77`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmProviderDialog.tsx:133`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmProviderDialog.tsx:179`
+
+- [S2] 查询编排在 Jobs/Logs 场景重复（`query/search/filter/page`）
+  - 证据：`JobsPage` 和 `LogsRequestsPage` 均在页面层维护 query+handlers；`LogsUsers/LogsIp` 也重复 `submitted` 触发模式。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/JobsPage.tsx:46`
+    - `apps/anyhunt/admin/www/src/pages/JobsPage.tsx:53`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:48`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsRequestsPage.tsx:69`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsUsersPage.tsx:33`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx:29`
+
+- [S2] Logs 页面重复表格区块与错误率 badge 映射
+  - 证据：`LogsIpPage` 两个 Top IP 卡片结构几乎同构，`errorRate >= 0.2` badge 判定重复于 `LogsUsersPage`。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx:73`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx:120`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsIpPage.tsx:108`
+    - `apps/anyhunt/admin/www/src/pages/logs/LogsUsersPage.tsx:103`
+
+- [S2] 队列操作确认逻辑分散，`action` 映射重复维护
+  - 证据：`handleConfirmAction` 和确认文案区块按 action 重复分支，后续新增动作易漏改。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:195`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:364`
+
+- [S2] LLM 卡片组件存在重复“loading/error/table/empty”模板
+  - 证据：`LlmModelsCard` 与 `LlmProvidersCard` 状态骨架、error banner、empty row 模式高度重复。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmModelsCard.tsx:55`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmModelsCard.tsx:62`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmProvidersCard.tsx:55`
+    - `apps/anyhunt/admin/www/src/pages/llm/LlmProvidersCard.tsx:62`
+
+- [S3] 展示格式化函数分散在页面本地
+  - 证据：`formatDate`/`formatTime`/`formatMemory` 等页面级私有函数，缺少 feature 统一 formatter 入口。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx:22`
+    - `apps/anyhunt/admin/www/src/pages/BrowserPage.tsx:10`
+    - `apps/anyhunt/admin/www/src/pages/BrowserPage.tsx:16`
+
+- [S3] 页面级硬编码枚举与文案映射未沉淀到 feature constants
+  - 证据：`STATUS_OPTIONS`、`QUEUE_LABELS`、`STATUS_TABS` 全在页面内维护。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/JobsPage.tsx:36`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:58`
+    - `apps/anyhunt/admin/www/src/pages/QueuesPage.tsx:65`
+
+- [S3] 详情页公共展示片段可复用但仍内联
+  - 证据：`JsonDisplay`/`TimingBreakdown` 为可复用片段，当前仅内联于 `JobDetailPage`。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx:28`
+    - `apps/anyhunt/admin/www/src/pages/JobDetailPage.tsx:75`
+
+## 模块 B 分步修复计划（已完成）
+
+1. B-1：统一 Jobs/Logs 多状态渲染为“状态枚举 + `render...ByState/switch`”，消除链式三元。
+2. B-2：拆分 `QueuesPage`（容器层 + `QueueSummaryCards` + `QueueJobsPanel` + `QueueActionConfirmDialog`）。
+3. B-3：拆分 `JobDetailPage`（`TimingBreakdownCard`、`JsonDisplayCard`、`JobMetaCards`）。
+4. B-4：拆分 `LogsRequestsPage`，并抽离 Logs 查询编排 hook（filters/query/page）。
+5. B-5：抽离 Logs 共享片段（Top IP 表格、error-rate badge、loading/empty/error 片段）。
+6. B-6：拆分 `LlmPage` 与两大 Dialog（`LlmProviderDialog`/`LlmModelDialog`），把 form schema/default mapper/submit mapper 下沉到 `features/llm`。
+7. B-7：模块 B 回归校验（L1）。
+
+## 模块 B 执行结果（B-1~B-7）
+
+- B-1：Jobs/Logs 多状态渲染统一为状态枚举 + `switch`，移除链式三元渲染。
+- B-2：`QueuesPage` 拆分为容器 + `features/queues/components/*`，确认动作文案下沉到 `features/queues/constants.ts`。
+- B-3：恢复并重构 `JobDetailPage`，复用 `JobTimingBreakdown`、`JobJsonDisplay` 与 `formatJobDateTime`。
+- B-4：`LogsRequestsPage` 拆分并抽离查询编排 hook（`useRequestLogsFilters`）。
+- B-5：Logs 共享片段抽离（`LogErrorRateBadge`、`TopIpTableCard`、`RequestLogsListContent`、`RequestLogsTable`）。
+- B-6：`LlmPage` 改为容器装配层，新增 `useLlmPageController`；Dialog schema/default mapper/submit mapper 下沉到 `features/llm/forms/*`。
+- B-7：模块 B 回归通过：`pnpm --filter @anyhunt/admin lint`、`typecheck`、`test:unit` 全部 pass。
+
+### 建议验证命令（模块 B）
+
+```bash
+pnpm --filter @anyhunt/admin lint
+pnpm --filter @anyhunt/admin typecheck
+pnpm --filter @anyhunt/admin test:unit
+```
+
 ### 建议验证命令（模块 A）
 
 ```bash
@@ -245,3 +418,11 @@ pnpm --filter @anyhunt/admin test:unit
 | A-4 | dashboard/users/subscriptions/orders | 列表查询编排统一（`usePagedSearchQuery`） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `Users/Subscriptions/Orders` 三页统一 `search/keyDown/page/filter` 行为 |
 | A-5 | dashboard/users/subscriptions/orders | 映射与状态片段统一（badge + list-state + formatters） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `subscription-badges`、`orders/constants+formatters`、`dashboard/formatters`、`list-state` 复用 |
 | A-6 | dashboard/users/subscriptions/orders | 模块 A 回归校验与收口 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | A-1~A-6 全部完成，模块 A 可视为 closed |
+| B-0 | jobs/queues/logs/browser/llm | 预扫描（不改代码） | done | n/a | 2026-02-26 | 输出 `S1x7 / S2x4 / S3x3`，已给出 B-1~B-7 修复计划，待确认后执行 |
+| B-1 | jobs/queues/logs/browser/llm | Jobs/Logs 多状态渲染收敛（状态枚举 + `switch`） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | Jobs 与 Logs 页面消除链式三元多状态渲染 |
+| B-2 | jobs/queues/logs/browser/llm | `QueuesPage` 拆分（容器 + 组件 + 确认文案常量） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 队列卡片、任务面板、确认弹窗拆分到 `features/queues/components` |
+| B-3 | jobs/queues/logs/browser/llm | `JobDetailPage` 重构与片段复用 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 页面恢复可编译并下沉 JSON/耗时展示片段 |
+| B-4 | jobs/queues/logs/browser/llm | `LogsRequestsPage` 拆分 + 查询编排 hook 抽离 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `useRequestLogsFilters` 与 Requests 列表状态组件 |
+| B-5 | jobs/queues/logs/browser/llm | Logs 共享片段抽离（IP 表格 / 错误率 badge / 状态片段） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `LogsUsers`/`LogsIp` 复用 `LogErrorRateBadge` 与 `TopIpTableCard` |
+| B-6 | jobs/queues/logs/browser/llm | LLM 容器与 Dialog 表单逻辑下沉 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `useLlmPageController` 与 `features/llm/forms/*` |
+| B-7 | jobs/queues/logs/browser/llm | 模块 B 回归校验与收口 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 模块 B 全量修复完成，可进入模块 C |

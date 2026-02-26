@@ -8,6 +8,7 @@
 
 ## 最近更新
 
+- 模块 B 收敛：`jobs/queues/logs/browser/llm` 完成组件化拆分与状态片段化。新增 `jobs/components/*`（`JobsListContent`/`JobsTable`/`JobTimingBreakdown`/`JobJsonDisplay`）、`queues/constants.ts + components/*`、`logs/useRequestLogsFilters + components/*`、`browser/formatters.ts`、`llm/forms/* + useLlmPageController.ts`，并统一导出到各 feature `index.ts`
 - Users Feature：`UserCreditsSheet` 拆分为容器 + `user-credits-sheet/*` 子组件（`UserSummaryCard`/`GrantCreditsFormCard`/`CreditGrantsCard`/`GrantConfirmDialog` + `schemas/types`），并复用共享 `list-state` 片段
 - Users/Subscriptions/Orders：新增 `usePagedSearchQuery` 统一 `search/keyDown/page/filter` 编排，页面容器只保留查询与 mutation 编排
 - Dashboard/Orders：新增 `formatters.ts` 作为展示格式化统一入口；Orders 新增 `constants.ts`/`formatters.ts` 收敛 badge/label/金额格式化
