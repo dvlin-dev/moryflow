@@ -3,6 +3,7 @@
  * [EMITS]: 通过 react-hook-form setValue 修改 settings 表单；通过 desktopAPI 触发 provider 测试
  * [POS]: 设置弹窗 - AI Providers 详情页容器（状态分流 + 子组件装配）
  * [UPDATE]: 2026-02-26 - 拆分为容器 + useProviderDetailsController + 预设/自定义子组件
+ * [UPDATE]: 2026-02-26 - ProviderDetailsPreset props 收敛为 form/list/dialog 三段模型
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -51,30 +52,40 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
       );
     }
 
+    const formModel = {
+      preset: controller.preset,
+      presetIndex: controller.presetIndex,
+      register: form.register,
+      testStatus: controller.testStatus,
+      onTest: controller.handleTest,
+    };
+    const listModel = {
+      searchQuery: controller.searchQuery,
+      onSearchQueryChange: controller.setSearchQuery,
+      allModelsCount: controller.allModels.length,
+      filteredModels: controller.filteredModels,
+      isModelEnabled: controller.isModelEnabled,
+      onOpenAddModel: () => controller.setAddModelOpen(true),
+      onEditModel: controller.handleEditModel,
+      onToggleModel: controller.handleTogglePresetModel,
+      onRemoveCustomModel: controller.handleRemoveCustomModel,
+    };
+    const dialogModel = {
+      addModelOpen: controller.addModelOpen,
+      onAddModelOpenChange: controller.setAddModelOpen,
+      onAddModel: controller.handleAddModel,
+      existingModelIds: controller.existingModelIds,
+      editModelOpen: controller.editModelOpen,
+      onEditModelOpenChange: controller.setEditModelOpen,
+      onSaveModel: controller.handleSaveModel,
+      editModelData: controller.editModelData,
+    };
+
     return (
       <ProviderDetailsPreset
-        preset={controller.preset}
-        presetIndex={controller.presetIndex}
-        register={form.register}
-        testStatus={controller.testStatus}
-        onTest={controller.handleTest}
-        searchQuery={controller.searchQuery}
-        onSearchQueryChange={controller.setSearchQuery}
-        allModelsCount={controller.allModels.length}
-        filteredModels={controller.filteredModels}
-        isModelEnabled={controller.isModelEnabled}
-        onOpenAddModel={() => controller.setAddModelOpen(true)}
-        onEditModel={controller.handleEditModel}
-        onToggleModel={controller.handleTogglePresetModel}
-        onRemoveCustomModel={controller.handleRemoveCustomModel}
-        addModelOpen={controller.addModelOpen}
-        onAddModelOpenChange={controller.setAddModelOpen}
-        onAddModel={controller.handleAddModel}
-        existingModelIds={controller.existingModelIds}
-        editModelOpen={controller.editModelOpen}
-        onEditModelOpenChange={controller.setEditModelOpen}
-        onSaveModel={controller.handleSaveModel}
-        editModelData={controller.editModelData}
+        formModel={formModel}
+        listModel={listModel}
+        dialogModel={dialogModel}
       />
     );
   }

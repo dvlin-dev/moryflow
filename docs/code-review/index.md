@@ -21,6 +21,11 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow PC 完成 Store-first 二次改造执行（`SF-1~SF-4`）：新增 `chat-pane-footer-store/chat-prompt-overlay-store/workspace-shell-view-store/sidebar-panels-store`，并将 `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 切换为 selector 取数；`ProviderDetailsPreset` 收敛为 `form/list/dialog` 三段模型：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 提交 Store-first 二次改造方案（待审核）：明确“禁用新增 Context，仅 `Zustand Store + Methods`”，覆盖 `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/AgentSubPanels/ProviderDetailsPreset` 的 `SF-1~SF-4` 执行序列：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 模块 B follow-up 完成参数收敛复检：`ChatMessage` 新增 `MessageBodyModel`（`view/edit/tool`）并下沉 `useMessageToolModel`，`MessageBody/ToolPart` 改为对象化参数输入；同步完成 `apps/moryflow/pc/src/renderer` 同类 props 膨胀扫描：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 C（`editor / workspace`）一次性修复（`C-1~C-6`），完成 `DesktopWorkspaceShell/useDocumentState/handle/Sidebar/EditorPanel/useVaultTree/NotionEditor` 分层收敛；受本地依赖缺失影响，`typecheck/test:unit` 待补跑：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 B（`chat-pane / input-dialog / command-palette`）一次性修复（`B-1~B-6`）：完成 `ChatPane/ChatPromptInput/ChatMessage` 分层拆分、`PlusMenu` 配置化、`useChatSessions` 生命周期显式化、`InputDialog` 回归测试补齐，并清理 `McpPanel/TaskHoverPanel` 链式三元：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Moryflow PC 前端组件优化专项完成模块 A（`auth / settings-dialog / payment-dialog`）`A-1~A-6` 分步修复，已收敛 `ProviderDetails/LoginPanel/McpDetails` 结构与多状态渲染；受本地 `node_modules` 缺失影响，`typecheck/test:unit` 待补跑：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Anyhunt Console 完成首个项目闭环（模块 D D-6b~D-6c + 模块 E + 项目复盘全部完成），并补齐 `AgentBrowserLayoutPage` 布局状态片段化收口；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 进入 D-6 一致性复查，完成 D-6a（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离为 `use-browser-session-forms`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
@@ -205,7 +210,7 @@ status: active
 | P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | done（模块 A/B/C/D/E + 项目复盘全部完成） |
 | P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
 | P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
-| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | in_progress（2026-02-26：模块 A A-1~A-6 已修复，待依赖安装后补验证） |
+| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | in_progress（2026-02-26：模块 A/B/C + Store-first `SF-1~SF-4` 已完成；下一步模块 D 预扫描） |
 | P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                           |
 | P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | done (2026-01-24)              |
 
@@ -298,7 +303,7 @@ status: draft
 | 2026-01-26 | anyhunt-server-fetchx-core   | 修复完成（headers 合并/SSRF 403/syncTimeout/原子队列/敏感头不落库）                    | -                     | done        |
 | 2026-01-26 | packages-types-api-config    | 完成 review + 修复（类型包收敛、会员文案英文化、配置升级、协议标注）                   | -                     | done        |
 | 2026-01-26 | tooling-config               | 完成 review + 修复（React 规则补齐、Prettier 依赖、Vitest 全局、移除 tailwind-config） | -                     | done        |
-| 2026-02-26 | moryflow-pc                  | 前端组件优化专项模块 A 预扫描完成：`S1x4 / S2x2 / S3x2`，进入 A-1 分步修复待确认         | -                     | in_progress |
+| 2026-02-26 | moryflow-pc                  | 前端组件优化专项模块 A/B/C + Store-first `SF-1~SF-4` 已完成；下一步模块 D 预扫描         | -                     | in_progress |
 | 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                             | -                     | done        |
 | 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                            | -                     | in_progress |
 | 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流             | -                     | in_progress |

@@ -54,6 +54,27 @@ const STATUS_ICONS: Record<TaskStatus, typeof Circle> = {
 
 const ACTIVE_TASK_STATUSES: TaskStatus[] = ['in_progress', 'blocked', 'failed'];
 
+type TaskItemTone = 'default' | 'muted' | 'danger';
+
+const getTaskItemTone = (status: TaskStatus): TaskItemTone => {
+  switch (status) {
+    case 'failed':
+      return 'danger';
+    case 'done':
+    case 'cancelled':
+    case 'archived':
+      return 'muted';
+    default:
+      return 'default';
+  }
+};
+
+const TASK_TONE_CLASS: Record<TaskItemTone, string> = {
+  default: 'text-foreground',
+  muted: 'text-muted-foreground',
+  danger: 'text-destructive',
+};
+
 export const TaskHoverPanel = ({ activeSessionId, isSessionRunning }: TaskHoverPanelProps) => {
   const { t } = useTranslation('chat');
   const { t: tCommon } = useTranslation('common');
@@ -200,9 +221,7 @@ type TaskListItemProps = {
 
 const TaskListItem = ({ task }: TaskListItemProps) => {
   const StatusIcon = STATUS_ICONS[task.status];
-  const isCompleted = task.status === 'done';
-  const isInactive = task.status === 'cancelled' || task.status === 'archived';
-  const isFailed = task.status === 'failed';
+  const tone = getTaskItemTone(task.status);
 
   return (
     <div className="mx-2.5 flex w-full items-center gap-2 rounded-lg px-0 py-2 text-left text-xs">
@@ -210,22 +229,11 @@ const TaskListItem = ({ task }: TaskListItemProps) => {
         className={cn(
           'size-3',
           task.status === 'in_progress' && 'animate-spin',
-          isFailed
-            ? 'text-destructive'
-            : isCompleted || isInactive
-              ? 'text-muted-foreground'
-              : 'text-foreground'
+          TASK_TONE_CLASS[tone]
         )}
       />
       <span
-        className={cn(
-          'min-w-0 flex-1 truncate text-xs font-medium',
-          isFailed
-            ? 'text-destructive'
-            : isCompleted || isInactive
-              ? 'text-muted-foreground'
-              : 'text-foreground'
-        )}
+        className={cn('min-w-0 flex-1 truncate text-xs font-medium', TASK_TONE_CLASS[tone])}
       >
         {task.title}
       </span>

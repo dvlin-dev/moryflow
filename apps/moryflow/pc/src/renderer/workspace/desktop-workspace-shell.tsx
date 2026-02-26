@@ -1,44 +1,28 @@
 /**
  * [INPUT]: workspace/controller contexts + shell UI state（panel refs）
  * [OUTPUT]: Navigation-aware Workspace Shell（Sidebar + Main + Panels）
- * [POS]: DesktopWorkspaceShell - 桌面工作区主视图壳层（负责布局与 panel 行为，不承载业务状态）
+ * [POS]: DesktopWorkspaceShell - 桌面工作区主视图壳层（负责布局装配与 overlays，不承载业务状态）
  * [UPDATE]: 2026-02-11 - 侧边栏最小宽度调整为 260px；默认宽度=最小宽度，后续沿用 react-resizable-panels 的持久化宽度
  * [UPDATE]: 2026-02-11 - panel 百分比约束按容器宽度动态换算，确保拖拽下限与像素约束一致
+ * [UPDATE]: 2026-02-26 - 壳层拆分为 layout-state/main-content/overlays 三层，主区状态统一 renderContentByState 分发
+ * [UPDATE]: 2026-02-26 - main-content/overlays 切换到 workspace-shell-view-store 取数，移除装配层 props 平铺
  */
 
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { CommandPalette } from '@/components/command-palette';
-import { InputDialog } from '@/components/input-dialog';
+import { useCallback, useMemo, useState } from 'react';
 import { Skeleton } from '@moryflow/ui/components/skeleton';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  type ImperativePanelHandle,
-} from '@moryflow/ui/components/resizable';
 import { type SettingsSection } from '@/components/settings-dialog/const';
-import { UnifiedTopBar, SIDEBAR_MIN_WIDTH } from './components/unified-top-bar';
-import { Sidebar } from './components/sidebar';
-import { SitesPage } from './components/sites';
-import { SkillsPage } from './components/skills';
+import { UnifiedTopBar } from './components/unified-top-bar';
 import { VaultOnboarding } from './components/vault-onboarding';
-import { EditorPanel } from './components/editor-panel';
 import {
   usePerfMarker,
   useFirstInteraction,
   useStartupPerfMarks,
   useWorkspaceWarmup,
 } from './hooks/use-startup-perf';
-import { ChatPanePortal } from './components/chat-pane-portal';
+import { useShellLayoutState } from './hooks/use-shell-layout-state';
+import { WorkspaceShellMainContent } from './components/workspace-shell-main-content';
+import { WorkspaceShellOverlays } from './components/workspace-shell-overlays';
+import { useSyncWorkspaceShellViewStore } from './stores/workspace-shell-view-store';
 import {
   WorkspaceShellProvider,
   useWorkspaceCommand,
@@ -49,13 +33,14 @@ import {
   useWorkspaceVault,
 } from './context';
 
-const SettingsDialog = lazy(() =>
-  import('@/components/settings-dialog').then((mod) => ({ default: mod.SettingsDialog }))
-);
+type VaultShellState = 'without-vault' | 'with-vault';
 
 export const DesktopWorkspaceShell = () => {
   const markOnce = usePerfMarker();
   const hasInteracted = useFirstInteraction({ markOnce });
+  const handleChatReady = useCallback(() => {
+    markOnce('chat:ready');
+  }, [markOnce]);
 
   const { destination, agentSub } = useWorkspaceNav();
   const { vault } = useWorkspaceVault();
@@ -64,164 +49,6 @@ export const DesktopWorkspaceShell = () => {
   const { commandOpen, setCommandOpen, commandActions } = useWorkspaceCommand();
   const { inputDialogState, confirmInputDialog, cancelInputDialog } = useWorkspaceDialog();
 
-  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
-  const workspaceChatPanelRef = useRef<ImperativePanelHandle>(null);
-  const panelGroupRef = useRef<HTMLDivElement>(null);
-  const sidebarSizePercentRef = useRef<number>(15);
-  const [panelGroupWidth, setPanelGroupWidth] = useState(0);
-
-  const handleChatReady = useCallback(() => {
-    markOnce('chat:ready');
-  }, [markOnce]);
-
-  const [chatCollapsed, setChatCollapsed] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN_WIDTH);
-
-  // Keep-alive main views so switching destination/agentSub is instant after the first mount.
-  const [workspaceMainMounted, setWorkspaceMainMounted] = useState(agentSub === 'workspace');
-  const [skillsMainMounted, setSkillsMainMounted] = useState(destination === 'skills');
-  const [sitesMainMounted, setSitesMainMounted] = useState(destination === 'sites');
-
-  useEffect(() => {
-    if (agentSub === 'workspace') {
-      setWorkspaceMainMounted(true);
-    }
-    if (destination === 'skills') {
-      setSkillsMainMounted(true);
-    }
-    if (destination === 'sites') {
-      setSitesMainMounted(true);
-    }
-  }, [agentSub, destination]);
-
-  // ChatPane portal targets:
-  // - destination=agent, agentSub=chat: render in main area
-  // - destination=agent, agentSub=workspace: render in right assistant panel
-  // - destination=sites: keep alive in a hidden parking host (not visible)
-  const [chatMainHost, setChatMainHost] = useState<HTMLElement | null>(null);
-  const [chatPanelHost, setChatPanelHost] = useState<HTMLElement | null>(null);
-  const [chatParkingHost, setChatParkingHost] = useState<HTMLElement | null>(null);
-
-  const getPanelGroupWidth = useCallback(() => panelGroupRef.current?.offsetWidth ?? 0, []);
-
-  const updateSidebarWidthFromPercent = useCallback(
-    (sizePercent: number) => {
-      const containerWidth = getPanelGroupWidth();
-      setPanelGroupWidth((prev) => (prev === containerWidth ? prev : containerWidth));
-      if (!containerWidth) return;
-      const pixelWidth = (sizePercent / 100) * containerWidth;
-      setSidebarWidth((prev) => (Math.abs(prev - pixelWidth) < 0.5 ? prev : pixelWidth));
-    },
-    [getPanelGroupWidth]
-  );
-
-  const sidebarMinSizePercent = useMemo(() => {
-    if (!panelGroupWidth) return 10;
-    return Math.min(90, Math.max(10, (SIDEBAR_MIN_WIDTH / panelGroupWidth) * 100));
-  }, [panelGroupWidth]);
-
-  const sidebarMaxSizePercent = useMemo(
-    () => Math.min(95, Math.max(sidebarMinSizePercent + 15, 65)),
-    [sidebarMinSizePercent]
-  );
-
-  const sidebarDefaultSizePercent = sidebarMinSizePercent;
-
-  const mainMinSizePercent = useMemo(
-    () => Math.max(5, 100 - sidebarMaxSizePercent),
-    [sidebarMaxSizePercent]
-  );
-
-  const syncPanelGroupWidth = useCallback(() => {
-    const nextWidth = getPanelGroupWidth();
-    setPanelGroupWidth((prev) => (prev === nextWidth ? prev : nextWidth));
-  }, [getPanelGroupWidth]);
-
-  const syncSidebarStateFromPanel = useCallback(() => {
-    const panel = sidebarPanelRef.current;
-    if (!panel) return;
-
-    const isCollapsed = panel.isCollapsed();
-    setSidebarCollapsed((prev) => (prev === isCollapsed ? prev : isCollapsed));
-
-    const sizePercent = panel.getSize();
-    sidebarSizePercentRef.current = sizePercent;
-    updateSidebarWidthFromPercent(sizePercent);
-  }, [updateSidebarWidthFromPercent]);
-
-  // 侧边栏尺寸变化时更新宽度
-  const handleSidebarResize = useCallback(
-    (size: number) => {
-      sidebarSizePercentRef.current = size;
-      updateSidebarWidthFromPercent(size);
-    },
-    [updateSidebarWidthFromPercent]
-  );
-
-  // 首帧与恢复布局：同步 collapsed/width（避免重启后状态错位）
-  useLayoutEffect(() => {
-    syncPanelGroupWidth();
-    syncSidebarStateFromPanel();
-    const id = window.requestAnimationFrame(syncSidebarStateFromPanel);
-    return () => window.cancelAnimationFrame(id);
-  }, [syncPanelGroupWidth, syncSidebarStateFromPanel]);
-
-  // 窗口/容器宽度变化时重算 sidebarWidth（percent 不变，px 会变）
-  useEffect(() => {
-    const el = panelGroupRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-
-    const ro = new ResizeObserver(() => {
-      syncPanelGroupWidth();
-      const sizePercent = sidebarPanelRef.current?.getSize() ?? sidebarSizePercentRef.current;
-      updateSidebarWidthFromPercent(sizePercent);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [syncPanelGroupWidth, updateSidebarWidthFromPercent]);
-
-  // 使用 imperative handle 控制 Workspace 内 assistant panel 折叠/展开
-  const toggleChatPanel = useCallback(() => {
-    const panel = workspaceChatPanelRef.current;
-    if (!panel) return;
-    if (panel.isCollapsed()) {
-      panel.expand();
-      setChatCollapsed(false);
-    } else {
-      panel.collapse();
-      setChatCollapsed(true);
-    }
-  }, []);
-
-  const syncChatCollapsedFromPanel = useCallback(() => {
-    const panel = workspaceChatPanelRef.current;
-    if (!panel) return;
-    const isCollapsed = panel.isCollapsed();
-    setChatCollapsed((prev) => (prev === isCollapsed ? prev : isCollapsed));
-  }, []);
-
-  // 首次挂载 Workspace panel group / 恢复布局时，同步 chatCollapsed
-  useLayoutEffect(() => {
-    if (!workspaceMainMounted) return;
-    syncChatCollapsedFromPanel();
-    const id = window.requestAnimationFrame(syncChatCollapsedFromPanel);
-    return () => window.cancelAnimationFrame(id);
-  }, [workspaceMainMounted, syncChatCollapsedFromPanel]);
-
-  // 使用 imperative handle 控制侧边栏折叠/展开
-  const toggleSidebarPanel = useCallback(() => {
-    const panel = sidebarPanelRef.current;
-    if (!panel) return;
-    if (panel.isCollapsed()) {
-      panel.expand();
-      setSidebarCollapsed(false);
-    } else {
-      panel.collapse();
-      setSidebarCollapsed(true);
-    }
-  }, []);
-
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | undefined>(undefined);
   const openSettings = useCallback((section?: SettingsSection) => {
@@ -229,23 +56,20 @@ export const DesktopWorkspaceShell = () => {
     setSettingsOpen(true);
   }, []);
 
+  const layoutState = useShellLayoutState({
+    workspaceMainMounted: destination === 'agent' && agentSub === 'workspace',
+  });
+
   const shellController = useMemo(
     () => ({
-      sidebarCollapsed,
-      sidebarWidth,
-      toggleSidebarPanel,
-      chatCollapsed,
-      toggleChatPanel,
+      sidebarCollapsed: layoutState.sidebarCollapsed,
+      sidebarWidth: layoutState.sidebarWidth,
+      toggleSidebarPanel: layoutState.toggleSidebarPanel,
+      chatCollapsed: layoutState.chatCollapsed,
+      toggleChatPanel: layoutState.toggleChatPanel,
       openSettings,
     }),
-    [
-      sidebarCollapsed,
-      sidebarWidth,
-      toggleSidebarPanel,
-      chatCollapsed,
-      toggleChatPanel,
-      openSettings,
-    ]
+    [layoutState, openSettings]
   );
 
   useStartupPerfMarks({
@@ -261,8 +85,6 @@ export const DesktopWorkspaceShell = () => {
     hasInteracted,
   });
 
-  const activePath = activeDoc?.path ?? selectedFile?.path ?? null;
-
   const chatFallback = useMemo(
     () => (
       <div className="flex h-full flex-col gap-3 px-2 py-2">
@@ -275,7 +97,7 @@ export const DesktopWorkspaceShell = () => {
     []
   );
 
-  const renderStartupSkeleton = useMemo(
+  const startupSkeleton = useMemo(
     () => (
       <div className="flex flex-1 gap-4 bg-background px-4 py-6">
         <div className="w-1/5 space-y-3">
@@ -298,181 +120,61 @@ export const DesktopWorkspaceShell = () => {
     []
   );
 
-  const renderVaultWorkspace = () => {
-    if (!vault) return null;
+  const shellState: VaultShellState = vault ? 'with-vault' : 'without-vault';
+  useSyncWorkspaceShellViewStore({
+    destination,
+    agentSub,
+    vaultPath: vault?.path ?? '',
+    treeState,
+    treeLength: tree.length,
+    selectedFile,
+    activeDoc,
+    chatFallback,
+    startupSkeleton,
+    layoutState,
+    onToggleChatPanel: layoutState.toggleChatPanel,
+    onOpenSettings: openSettings,
+    onChatReady: handleChatReady,
+    commandOpen,
+    onCommandOpenChange: setCommandOpen,
+    commandActions,
+    inputDialogState,
+    onInputDialogConfirm: confirmInputDialog,
+    onInputDialogCancel: cancelInputDialog,
+    settingsOpen,
+    settingsSection,
+    onSettingsOpenChange: setSettingsOpen,
+  });
 
-    const isChatView = destination === 'agent' && agentSub === 'chat';
-    const isWorkspaceView = destination === 'agent' && agentSub === 'workspace';
-    const isSkillsView = destination === 'skills';
-    const isSitesView = destination === 'sites';
-
-    const shouldMountWorkspaceMain = workspaceMainMounted || isWorkspaceView;
-    const shouldMountSkillsMain = skillsMainMounted || isSkillsView;
-    const shouldMountSitesMain = sitesMainMounted || isSitesView;
+  const renderContentByState = () => {
+    if (shellState === 'without-vault') {
+      return (
+        <>
+          <header className="window-drag-region h-10 shrink-0" />
+          <div className="flex flex-1 overflow-hidden">
+            <VaultOnboarding />
+          </div>
+        </>
+      );
+    }
 
     return (
       <WorkspaceShellProvider value={shellController}>
         <div className="flex h-full w-full flex-col overflow-hidden">
           <UnifiedTopBar />
-
-          <div ref={panelGroupRef} className="flex flex-1 overflow-hidden">
-            <ResizablePanelGroup
-              direction="horizontal"
-              autoSaveId="desktop-workspace-shell-panels"
-              className="flex h-full w-full"
-            >
-              <ResizablePanel
-                ref={sidebarPanelRef}
-                defaultSize={sidebarDefaultSizePercent}
-                minSize={sidebarMinSizePercent}
-                maxSize={sidebarMaxSizePercent}
-                collapsible
-                collapsedSize={0}
-                onCollapse={() => setSidebarCollapsed(true)}
-                onExpand={() => setSidebarCollapsed(false)}
-                onResize={handleSidebarResize}
-                className={`flex min-w-0 flex-col overflow-hidden ${
-                  sidebarCollapsed ? 'max-w-0' : 'max-w-[780px]'
-                }`}
-                style={sidebarCollapsed ? undefined : { minWidth: `${SIDEBAR_MIN_WIDTH}px` }}
-              >
-                <Sidebar />
-              </ResizablePanel>
-
-              {!sidebarCollapsed && <ResizableHandle />}
-
-              <ResizablePanel
-                defaultSize={100 - sidebarDefaultSizePercent}
-                minSize={mainMinSizePercent}
-                className="flex min-w-0 flex-col overflow-hidden"
-              >
-                <div className="flex h-full flex-1 flex-col overflow-hidden border-l border-border/40 bg-background">
-                  <div
-                    ref={setChatMainHost}
-                    className={isChatView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
-                  />
-
-                  <div ref={setChatParkingHost} className="hidden" />
-
-                  {shouldMountWorkspaceMain && (
-                    <div
-                      className={
-                        isWorkspaceView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'
-                      }
-                    >
-                      <ResizablePanelGroup
-                        direction="horizontal"
-                        autoSaveId="desktop-workspace-workspace-panels"
-                        className="flex h-full w-full"
-                      >
-                        <ResizablePanel defaultSize={72} minSize={30} className="min-w-0">
-                          <EditorPanel />
-                        </ResizablePanel>
-
-                        <ResizableHandle />
-
-                        <ResizablePanel
-                          ref={workspaceChatPanelRef}
-                          defaultSize={28}
-                          minSize={0}
-                          maxSize={70}
-                          collapsible
-                          collapsedSize={0}
-                          onCollapse={() => setChatCollapsed(true)}
-                          onExpand={() => setChatCollapsed(false)}
-                          className="flex flex-col overflow-hidden min-w-[360px] data-[panel-size=0.0]:min-w-0"
-                        >
-                          <div className="flex h-full flex-col overflow-hidden border-l border-border/40 bg-background">
-                            <div
-                              ref={setChatPanelHost}
-                              className="min-h-0 flex-1 min-w-0 overflow-hidden"
-                            />
-                          </div>
-                        </ResizablePanel>
-                      </ResizablePanelGroup>
-                    </div>
-                  )}
-
-                  {shouldMountSkillsMain && (
-                    <div
-                      className={isSkillsView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
-                    >
-                      <SkillsPage />
-                    </div>
-                  )}
-
-                  {shouldMountSitesMain && (
-                    <div
-                      className={isSitesView ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden'}
-                    >
-                      <SitesPage />
-                    </div>
-                  )}
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-
-            <ChatPanePortal
-              destination={destination}
-              agentSub={agentSub}
-              fallback={chatFallback}
-              mainHost={chatMainHost}
-              panelHost={chatPanelHost}
-              parkingHost={chatParkingHost}
-              activeFilePath={activePath}
-              activeFileContent={activeDoc?.content ?? null}
-              vaultPath={vault?.path ?? null}
-              chatCollapsed={chatCollapsed}
-              onToggleCollapse={toggleChatPanel}
-              onOpenSettings={openSettings}
-              onReady={handleChatReady}
-            />
-          </div>
+          <WorkspaceShellMainContent />
+          <WorkspaceShellOverlays />
         </div>
-
-        <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} actions={commandActions} />
-        <InputDialog
-          open={inputDialogState.open}
-          title={inputDialogState.title}
-          description={inputDialogState.description}
-          defaultValue={inputDialogState.defaultValue}
-          placeholder={inputDialogState.placeholder}
-          onConfirm={confirmInputDialog}
-          onCancel={cancelInputDialog}
-        />
-        {settingsOpen && (
-          <Suspense fallback={null}>
-            <SettingsDialog
-              open={settingsOpen}
-              onOpenChange={setSettingsOpen}
-              initialSection={settingsSection}
-              vaultPath={vault?.path}
-            />
-          </Suspense>
-        )}
       </WorkspaceShellProvider>
     );
   };
-
-  const renderVaultWelcomeState = () => <VaultOnboarding />;
 
   return (
     <div
       className="flex h-screen w-screen flex-col bg-muted/30 text-foreground"
       data-testid="workspace-shell"
     >
-      {vault ? (
-        <div className="flex flex-1 overflow-hidden">
-          {treeState === 'loading' && tree.length === 0
-            ? renderStartupSkeleton
-            : renderVaultWorkspace()}
-        </div>
-      ) : (
-        <>
-          <header className="window-drag-region h-10 shrink-0" />
-          <div className="flex flex-1 overflow-hidden">{renderVaultWelcomeState()}</div>
-        </>
-      )}
+      {renderContentByState()}
     </div>
   );
 };

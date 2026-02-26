@@ -93,6 +93,9 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- Store-first 二次改造（`SF-1~SF-4`）完成：`chat-pane` 新增 `chat-pane-footer-store` 与 `chat-prompt-overlay-store`；`workspace` 新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`settings-dialog` 的 `ProviderDetailsPreset` 改为 `form/list/dialog` 三段模型（2026-02-26）
+- Workspace 模块 C（editor/workspace）完成一次性收敛：`DesktopWorkspaceShell` 三层拆分（layout-state/main-content/overlays）、`handle.ts` 下沉为编排层、`useDocumentState/useVaultTreeState` 副作用分段、`Sidebar/EditorPanel` 状态分发统一为状态片段 + `renderContentByState`（2026-02-26）
+- `components/editor` 结构收敛：`NotionEditor` 扩展工厂与加载态拆分到 `notion-editor-extensions.ts`、`notion-editor-loading.tsx`，主组件仅保留编辑器装配（2026-02-26）
 - Settings Dialog 模块 A 重构收口：`ProviderDetails` 拆分容器/hook/子组件；`LoginPanel` 与 `McpDetails` 进一步片段化；`McpSection/CloudSyncSection/SectionContent` 状态分发统一为方法化渲染
 - Payment Dialog 增加 checkout 打开失败态与重试状态机（`idle/opening/opened/failed`）
 - Desktop Auth API 修复：登录/验证码验证/刷新/登出请求统一为显式 `/api/v1/auth/*`，彻底消除 `baseUrl + path` 拼接语义差异带来的 404

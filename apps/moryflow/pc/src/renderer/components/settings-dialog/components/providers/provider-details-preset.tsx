@@ -23,12 +23,15 @@ type PresetProviderInfo = {
   defaultBaseUrl?: string;
 };
 
-type ProviderDetailsPresetProps = {
+export type ProviderDetailsPresetFormModel = {
   preset: PresetProviderInfo;
   presetIndex: number;
   register: UseFormRegister<FormValues>;
   testStatus: ProviderTestStatus;
   onTest: () => void;
+};
+
+export type ProviderDetailsPresetListModel = {
   searchQuery: string;
   onSearchQueryChange: (nextValue: string) => void;
   allModelsCount: number;
@@ -38,6 +41,9 @@ type ProviderDetailsPresetProps = {
   onEditModel: (model: EditModelInitialData) => void;
   onToggleModel: (modelId: string, enabled: boolean) => void;
   onRemoveCustomModel: (modelId: string) => void;
+};
+
+export type ProviderDetailsPresetDialogModel = {
   addModelOpen: boolean;
   onAddModelOpenChange: (open: boolean) => void;
   onAddModel: (data: AddModelFormData) => void;
@@ -48,30 +54,39 @@ type ProviderDetailsPresetProps = {
   editModelData: EditModelInitialData | null;
 };
 
+type ProviderDetailsPresetProps = {
+  formModel: ProviderDetailsPresetFormModel;
+  listModel: ProviderDetailsPresetListModel;
+  dialogModel: ProviderDetailsPresetDialogModel;
+};
+
 export const ProviderDetailsPreset = ({
-  preset,
-  presetIndex,
-  register,
-  testStatus,
-  onTest,
-  searchQuery,
-  onSearchQueryChange,
-  allModelsCount,
-  filteredModels,
-  isModelEnabled,
-  onOpenAddModel,
-  onEditModel,
-  onToggleModel,
-  onRemoveCustomModel,
-  addModelOpen,
-  onAddModelOpenChange,
-  onAddModel,
-  existingModelIds,
-  editModelOpen,
-  onEditModelOpenChange,
-  onSaveModel,
-  editModelData,
+  formModel,
+  listModel,
+  dialogModel,
 }: ProviderDetailsPresetProps) => {
+  const { preset, presetIndex, register, testStatus, onTest } = formModel;
+  const {
+    searchQuery,
+    onSearchQueryChange,
+    allModelsCount,
+    filteredModels,
+    isModelEnabled,
+    onOpenAddModel,
+    onEditModel,
+    onToggleModel,
+    onRemoveCustomModel,
+  } = listModel;
+  const {
+    addModelOpen,
+    onAddModelOpenChange,
+    onAddModel,
+    existingModelIds,
+    editModelOpen,
+    onEditModelOpenChange,
+    onSaveModel,
+    editModelData,
+  } = dialogModel;
   const { t } = useTranslation('settings');
 
   return (

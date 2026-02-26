@@ -17,6 +17,9 @@
 - `components/chat-threads-list.tsx`：AgentSub=chat 线程列表（select/rename/delete；可选 onOpenThread）
 - `components/sidebar-files.tsx`：文件快捷入口
 - `components/sidebar-tools.tsx`：工具区（云同步/设置）
+- `components/agent-sub-panels.tsx`：`agentSub` 面板分发与 keep-alive 渲染容器
+- `hooks/use-sidebar-publish-controller.ts`：发布入口状态与登录门禁（含 `useRequireLoginForSitePublish` 对接）
+- `hooks/use-sidebar-panels-store.ts`：`Sidebar -> AgentSubPanels` 面板状态桥接（store-first，selector 取数）
 - `components/search-dialog/`：文件搜索对话框（AgentSub=workspace）
 - `components/vault-selector/`：Vault 切换与创建
 
@@ -28,6 +31,8 @@
 
 ## 近期变更
 
+- 2026-02-26：Store-first 二次改造落地：新增 `use-sidebar-panels-store`，`AgentSubPanels` 改为 selector 取数，`Sidebar` 仅同步快照，不再向面板平铺 `tree/vault/actions` 大包 props。
+- 2026-02-26：模块 C 完成：`Sidebar` 拆分 `agentSub` 面板分发（`AgentSubPanels`）与发布门禁控制器（`useSidebarPublishController`），索引组件回归装配层。
 - Threads/Files 行内水平 padding 统一为 `px-2.5`（保留 icon/占位槽 + gap），让两块列表间距与文本起始线保持一致；并通过 `-mx-1` 让激活背景轻微外扩（2026-02-11）
 - Threads 列表移除空白前导占位槽（不再预留不可见 icon 位），避免视觉上左侧“假 padding”过大；Files 维持当前样式（2026-02-11）
 - 侧栏横向对齐规则进一步收敛：顶部/分隔线/标题/工具区统一复用 `SIDEBAR_GUTTER_X_CLASS`；`Threads/Files` 列表继续独立使用 `SIDEBAR_LIST_INSET_X_CLASS` 维护“文本对齐优先、激活背景可独立”的规则（2026-02-11）

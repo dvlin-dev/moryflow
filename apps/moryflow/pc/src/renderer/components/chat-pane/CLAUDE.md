@@ -18,6 +18,13 @@
 
 ## 近期变更
 
+- 2026-02-26：Store-first 二次改造落地（`SF-1/SF-2`）：新增 `hooks/use-chat-pane-footer-store.ts` 与 `components/chat-prompt-input/chat-prompt-overlay-store.ts`；`ChatFooter/ChatPromptInputOverlays` 改为 selector 就地取数；`FileContextPanel` 新增 `FileContextPanelFromOverlayStore` 包装层，`ChatPane/ChatPromptInput` 改为快照同步层。
+- 2026-02-26：模块 B 一次性重构完成：`ChatPane` 逻辑下沉到 `hooks/use-chat-pane-controller.ts`，容器层聚焦布局与组合。
+- 2026-02-26：`ChatPromptInput` 拆分为 `use-chat-prompt-input-controller` + `chat-prompt-input-model-selector` + `chat-prompt-input-overlays`，输入状态机与渲染片段解耦。
+- 2026-02-26：`ChatMessage` 拆分为 `message-body` / `tool-part` / `message-actions`，消息主体、工具审批、操作区职责分离。
+- 2026-02-26：`ChatMessage` 参数收敛：新增 `message-body-model.ts`（`view/edit/tool` 分组模型），`MessageBody` 改为单 `model` 输入，`ToolPart` 改为 `toolModel` 对象输入，减少 props 平铺。
+- 2026-02-26：`ChatMessage` 工具相关状态继续下沉到 `use-message-tool-model.ts`（统一 labels/callbacks/desktopAPI 调用），容器层只负责组合模型。
+- 2026-02-26：`plus-menu` 改为复用 `PlusSubmenu` 渲染器；`use-chat-sessions` 引入 `chatSessionsRuntime` 显式管理订阅生命周期；`mcp-panel`/`task-hover-panel` 状态渲染改为方法映射；`input-dialog` 增加关闭链路去重与回归测试。
 - 2026-02-11：提交链路改为异步发送与即时 UI 清理：发送发起后立即清空输入框文本、selected skill 与临时 context 引用，不再等待 AI 回复结束。
 - 2026-02-11：发送成功后自动清空输入区 selected skill；用户消息根据 `message.metadata.chat.selectedSkill` 渲染 skill tag，便于会话回看。
 - 2026-02-11：输入框新增 Skills 显式注入链路：`+` 二级菜单 Skills、空输入 `/` Skills 面板、selected skill chip（可移除）。

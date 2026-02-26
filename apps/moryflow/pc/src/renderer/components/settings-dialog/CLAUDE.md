@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Providers preset 细节页 props 收敛：`ProviderDetailsPreset` 改为 `formModel/listModel/dialogModel` 三段模型，减少大规模 props 平铺并固定容器装配边界（2026-02-26）
 - Providers 详情页重构为容器 + `use-provider-details-controller` + `preset/custom` 子组件，`provider-details.tsx` 收敛为状态分流层
 - MCP Section 清理渲染期 `setState`，多状态内容统一 `renderContentByState()` 分发
 - Add/Edit Model Dialog 统一迁移到 `react-hook-form + zod/v3`（含输入模态校验与重复 ID 表单错误）
