@@ -15,7 +15,11 @@
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 D（`sites/image-generation/shared`）完成修复闭环（D-1~D-7），`Sites`/`ImageGenerator` 统一 `ViewState + switch`，`SitesPage`/`SiteDetailPage`/`ImageGenerator` 全部收敛到 300 行内，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 B（`payment/providers/models/storage`）完成修复闭环（B-1~B-6），`ModelFormDialog` 完成片段化拆分，`Subscriptions/Orders/Providers/Models` 统一 `ViewState + switch` 并补齐错误态，模块级 `lint` + `typecheck` + `test:unit` 通过（21 files / 97 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 A（`auth/dashboard/users`）完成预扫描与修复闭环（A-1~A-5），`UsersPage` 完成状态片段化+职责拆分，`SetTierDialog` 切换用户状态同步修复，模块级 `lint` + `typecheck` + `test:unit` 通过）
+> 最近更新：2026-02-26（补充 PR#97 新评论修复闭环：REVIEW-02/FIX-08/FIX-09/TEST-04，完成 `supportsThinking` 默认判定修复与 `/v1/models` 重复查询移除，并通过受影响包 unit/typecheck）
+> 最近更新：2026-02-26（补充 PR#97 评论修复闭环：REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03，完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证）
+> 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全项 done，云端强契约 + 用户自定义 levelPatches 强类型落地，`pnpm lint/typecheck/test:unit` 已通过）
 > 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
+> 最近更新：2026-02-26（Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成，模块级审查文档 `docs/code-review/moryflow-site-template.md` 与专项台账已回写到 Step 20）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
@@ -105,6 +109,10 @@
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：done，项目复盘 R-0~R-4 完成，遗留 3 页问题全部收口并通过模块级校验）
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 D（sites/image-generation/shared）修复完成（D-1~D-7），`Sites`/`ImageGenerator` 统一状态片段化与职责拆分，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 B（payment/providers/models/storage）修复完成（B-1~B-6），通过 `lint` + `typecheck` + `test:unit`（21 files / 97 tests））
+- 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 新评论修复闭环，REVIEW-02/FIX-08/FIX-09/TEST-04 全部完成）
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 评论修复闭环，REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03 全部完成）
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：第二轮 DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全部完成，云端强契约与 levelPatches 全链路已落地）
  - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 A（auth/dashboard/users）已完成预扫描与修复闭环，A-1~A-5 done）

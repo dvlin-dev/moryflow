@@ -110,16 +110,16 @@ export class ModelProviderFactory {
     switch (sdkType) {
       case 'openai':
       case 'openai-compatible':
-        return this.createOpenAICompatible(modelId, options);
+        return this.createOpenAICompatible(modelId, options, reasoning);
 
       case 'openrouter':
         return this.createOpenRouter(modelId, options, reasoning);
 
       case 'anthropic':
-        return this.createAnthropic(modelId, options);
+        return this.createAnthropic(modelId, options, reasoning);
 
       case 'google':
-        return this.createGoogle(modelId, options);
+        return this.createGoogle(modelId, options, reasoning);
 
       default:
         throw new UnsupportedProviderException(sdkType);
@@ -133,10 +133,24 @@ export class ModelProviderFactory {
   private static createOpenAICompatible(
     modelId: string,
     options: ProviderOptions,
+    reasoning?: ReasoningOptions,
   ): AiSdkLanguageModel {
     // 明确使用 .chat() 调用 Chat Completions API
     // 默认的 (modelId) 调用会使用 Responses API，第三方服务不完全支持
-    return createOpenAI(options).chat(modelId);
+    const openaiFactory = createOpenAI(options) as {
+      chat: (
+        modelId: string,
+        settings?: Record<string, unknown>,
+      ) => AiSdkLanguageModel;
+    };
+    return openaiFactory.chat(
+      modelId,
+      reasoning?.enabled
+        ? {
+            reasoningEffort: reasoning.effort ?? 'medium',
+          }
+        : undefined,
+    );
   }
 
   /**
@@ -188,8 +202,23 @@ export class ModelProviderFactory {
   private static createAnthropic(
     modelId: string,
     options: ProviderOptions,
+    reasoning?: ReasoningOptions,
   ): AiSdkLanguageModel {
-    return createAnthropic(options)(modelId);
+    const anthropicFactory = createAnthropic(options) as (
+      modelId: string,
+      settings?: Record<string, unknown>,
+    ) => AiSdkLanguageModel;
+    return anthropicFactory(
+      modelId,
+      reasoning?.enabled
+        ? {
+            thinking: {
+              type: 'enabled',
+              budgetTokens: reasoning.maxTokens ?? 12000,
+            },
+          }
+        : undefined,
+    );
   }
 
   /**
@@ -198,7 +227,22 @@ export class ModelProviderFactory {
   private static createGoogle(
     modelId: string,
     options: ProviderOptions,
+    reasoning?: ReasoningOptions,
   ): AiSdkLanguageModel {
-    return createGoogleGenerativeAI(options)(modelId);
+    const googleFactory = createGoogleGenerativeAI(options) as (
+      modelId: string,
+      settings?: Record<string, unknown>,
+    ) => AiSdkLanguageModel;
+    return googleFactory(
+      modelId,
+      reasoning?.enabled
+        ? {
+            thinkingConfig: {
+              includeThoughts: true,
+              thinkingBudget: reasoning.maxTokens,
+            },
+          }
+        : undefined,
+    );
   }
 }

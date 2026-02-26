@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：修复 thinking=level 场景 200 SSE 流被 `clone().text()` 提前耗尽的问题；仅在 `400` 边界错误时读取响应体并触发单次降级重试（2026-02-26）
 - Agent Browser D-6c + 模块 E 收敛完成：`browser-session-panel.tsx` 收敛为 103 行容器层，新增 `browser-session-panel-content.tsx`；operation handlers 按域拆分为 `use-browser-session-open-actions.ts`、`use-browser-session-tab-window-actions.ts`、`use-browser-session-intercept-network-actions.ts`、`use-browser-session-diagnostics-actions.ts`、`use-browser-session-data-actions.ts`（聚合层 `use-browser-session-operation-actions.ts`）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 新增 `*-request-card` 与 `*-result-panel` 并迁移到 `PlaygroundPageShell`，`playground-shared` 新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`
 - Agent Browser 模块 D-6a 复查完成：新增 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`，`flow-runner.tsx` 收敛为编排层；新增 `hooks/use-browser-session-forms.ts`，将 `BrowserSessionPanel` 表单初始化与 session 同步副作用抽离
 - Agent Browser 模块 D-4e 修复完成：`components/browser-session-sections.tsx` 第五批拆分 `OpenUrlSection` / `SnapshotSection` / `DeltaSnapshotSection` / `ActionSection` / `ActionBatchSection` / `ScreenshotSection` 到 `components/browser-session-sections/*.tsx`，聚合文件收敛为 45 行导出层

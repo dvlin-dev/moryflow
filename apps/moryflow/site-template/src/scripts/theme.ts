@@ -1,18 +1,16 @@
 /**
- * Theme initialization script
- * Injected into <head> to prevent flash of wrong theme
+ * [PROVIDES]: THEME_INIT_SCRIPT/THEME_TOGGLE_SCRIPT + Theme helpers
+ * [DEPENDS]: browser localStorage + matchMedia
+ * [POS]: site-template 主题脚本真源（sync.ts 与开发预览共享）
  */
 
-export const themeScript = `
-(function() {
-  try {
-    const theme = localStorage.getItem('moryflow-theme') || 'system';
-    const isDark = theme === 'dark' ||
-      (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.classList.toggle('dark', isDark);
-  } catch (e) {}
-})();
-`;
+export const THEME_INIT_SCRIPT = `(function(){try{var theme=localStorage.getItem('moryflow-theme')||'system';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var isDark=theme==='dark'||(theme==='system'&&prefersDark);document.documentElement.classList.toggle('dark',isDark)}catch(_error){}})()`;
+
+export const THEME_TOGGLE_SCRIPT = `(function(){var btn=document.getElementById('theme-toggle');if(!btn)return;var media=matchMedia('(prefers-color-scheme:dark)');function getTheme(){return localStorage.getItem('moryflow-theme')||'system'}function isDarkTheme(theme){return theme==='dark'||(theme==='system'&&media.matches)}function applyTheme(theme){localStorage.setItem('moryflow-theme',theme);document.documentElement.classList.toggle('dark',isDarkTheme(theme))}function getNextTheme(current){switch(current){case'light':return'dark';case'dark':return'system';default:return'light'}}btn.onclick=function(){applyTheme(getNextTheme(getTheme()))};media.addEventListener('change',function(){if(getTheme()==='system'){applyTheme('system')}})})()`;
+
+// Backward-compatible alias for any preview-only imports.
+export const themeScript = THEME_INIT_SCRIPT;
+export const themeToggleScript = THEME_TOGGLE_SCRIPT;
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -52,7 +50,18 @@ export function applyTheme(theme: Theme): void {
  */
 export function toggleTheme(): Theme {
   const current = getTheme();
-  const next: Theme = current === 'light' ? 'dark' : current === 'dark' ? 'system' : 'light';
+  let next: Theme;
+  switch (current) {
+    case 'light':
+      next = 'dark';
+      break;
+    case 'dark':
+      next = 'system';
+      break;
+    default:
+      next = 'light';
+      break;
+  }
   setTheme(next);
   return next;
 }

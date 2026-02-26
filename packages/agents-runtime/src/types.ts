@@ -75,12 +75,112 @@ export type ProviderSdkType =
   | 'openai-compatible';
 
 /**
+ * 内置思考等级
+ */
+export type BuiltinThinkingLevelId =
+  | 'off'
+  | 'minimal'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'max'
+  | 'xhigh';
+
+/**
+ * 思考等级（支持扩展自定义等级）
+ */
+export type ThinkingLevelId = BuiltinThinkingLevelId | (string & {});
+
+/**
+ * 请求级思考选择
+ */
+export type ThinkingSelection = { mode: 'off' } | { mode: 'level'; level: ThinkingLevelId };
+
+/**
+ * 思考等级选项
+ */
+export interface ThinkingLevelOption {
+  id: ThinkingLevelId;
+  label: string;
+  description?: string;
+}
+
+/**
+ * 模型思考能力档案
+ */
+export interface ModelThinkingProfile {
+  supportsThinking: boolean;
+  defaultLevel: ThinkingLevelId;
+  levels: ThinkingLevelOption[];
+}
+
+/**
+ * OpenAI/OpenAI-compatible/xAI 思考 patch
+ */
+export interface ThinkingPatchOpenAICompatible {
+  reasoningEffort?: Exclude<ReasoningConfig['effort'], 'none'>;
+}
+
+/**
+ * OpenRouter 思考 patch
+ */
+export interface ThinkingPatchOpenRouter {
+  effort?: Exclude<ReasoningConfig['effort'], 'none'>;
+  maxTokens?: number;
+  exclude?: boolean;
+  rawConfig?: Record<string, unknown>;
+}
+
+/**
+ * Anthropic 思考 patch
+ */
+export interface ThinkingPatchAnthropic {
+  budgetTokens?: number;
+}
+
+/**
+ * Google 思考 patch
+ */
+export interface ThinkingPatchGoogle {
+  thinkingBudget?: number;
+  includeThoughts?: boolean;
+}
+
+/**
+ * 单个 level 在各 provider 的 patch 集合
+ */
+export interface ThinkingLevelProviderPatches {
+  openai?: ThinkingPatchOpenAICompatible;
+  'openai-compatible'?: ThinkingPatchOpenAICompatible;
+  xai?: ThinkingPatchOpenAICompatible;
+  openrouter?: ThinkingPatchOpenRouter;
+  anthropic?: ThinkingPatchAnthropic;
+  google?: ThinkingPatchGoogle;
+}
+
+/**
+ * 用户级模型思考覆写
+ */
+export interface ModelThinkingOverride {
+  defaultLevel?: ThinkingLevelId;
+  enabledLevels?: ThinkingLevelId[];
+  levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+}
+
+/**
  * 用户模型配置
  */
 export interface UserModelConfig {
   id: string;
   enabled: boolean;
   isCustom?: boolean;
+  customCapabilities?: {
+    reasoning?: boolean;
+    attachment?: boolean;
+    temperature?: boolean;
+    toolCall?: boolean;
+  };
+  thinking?: ModelThinkingOverride;
 }
 
 /**
@@ -175,6 +275,9 @@ export interface ReasoningConfig {
 
   /** 是否包含思考内容（Gemini 风格） */
   includeThoughts?: boolean;
+
+  /** 原生配置覆盖（OpenRouter 等 provider 的高级透传） */
+  rawConfig?: Record<string, unknown>;
 }
 
 /**
