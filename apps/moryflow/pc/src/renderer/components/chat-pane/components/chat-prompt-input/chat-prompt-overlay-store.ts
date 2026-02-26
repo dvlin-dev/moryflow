@@ -3,6 +3,7 @@
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: ChatPromptInput overlays 状态与行为桥接层，减少 props 平铺
  * [UPDATE]: 2026-02-26 - 新增 overlay store，overlays/file panel 改为就地 selector 取数
+ * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较（含 labels 字段级比较），减少重复同步
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -81,12 +82,45 @@ const chatPromptOverlayStore = createStore<ChatPromptOverlayStoreState>((set) =>
   setSnapshot: (snapshot) => set(snapshot),
 }));
 
-export const useChatPromptOverlayStore = <T,>(
+const shouldSyncSnapshot = (
+  current: ChatPromptOverlayStoreState,
+  next: ChatPromptOverlaySnapshot
+) =>
+  current.isDisabled !== next.isDisabled ||
+  current.atPanelOpen !== next.atPanelOpen ||
+  current.setAtPanelOpen !== next.setAtPanelOpen ||
+  current.setAtTriggerIndex !== next.setAtTriggerIndex ||
+  current.slashSkillPanelOpen !== next.slashSkillPanelOpen ||
+  current.setSlashSkillPanelOpen !== next.setSlashSkillPanelOpen ||
+  current.workspaceFiles !== next.workspaceFiles ||
+  current.recentFiles !== next.recentFiles ||
+  current.contextFiles !== next.contextFiles ||
+  current.onAddContextFileFromAt !== next.onAddContextFileFromAt ||
+  current.onRefreshFiles !== next.onRefreshFiles ||
+  current.skills !== next.skills ||
+  current.onSelectSkillFromSlash !== next.onSelectSkillFromSlash ||
+  current.onRefreshSkills !== next.onRefreshSkills ||
+  current.labels.searchDocs !== next.labels.searchDocs ||
+  current.labels.recentFiles !== next.labels.recentFiles ||
+  current.labels.allFiles !== next.labels.allFiles ||
+  current.labels.notFound !== next.labels.notFound ||
+  current.labels.noOpenDocs !== next.labels.noOpenDocs ||
+  current.labels.allDocsAdded !== next.labels.allDocsAdded ||
+  current.labels.noRecentFiles !== next.labels.noRecentFiles ||
+  current.labels.searchSkills !== next.labels.searchSkills ||
+  current.labels.noSkillsFound !== next.labels.noSkillsFound ||
+  current.labels.enabledSkills !== next.labels.enabledSkills;
+
+export const useChatPromptOverlayStore = <T>(
   selector: (state: ChatPromptOverlayStoreState) => T
 ): T => useStore(chatPromptOverlayStore, selector);
 
 export const useSyncChatPromptOverlayStore = (snapshot: ChatPromptOverlaySnapshot) => {
   useLayoutEffect(() => {
-    chatPromptOverlayStore.getState().setSnapshot(snapshot);
+    const state = chatPromptOverlayStore.getState();
+    if (!shouldSyncSnapshot(state, snapshot)) {
+      return;
+    }
+    state.setSnapshot(snapshot);
   }, [snapshot]);
 };

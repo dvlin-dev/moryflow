@@ -2,9 +2,10 @@
  * [PROVIDES]: WorkspaceControllerProvider + useWorkspace* hooks（store-first）
  * [DEPENDS]: useDesktopWorkspace, useNavigation, workspace-controller-store
  * [POS]: 解决 DesktopWorkspace 巨型 props 透传：Provider 只负责单例 controller 快照同步，子组件统一 store selector 就地取值
+ * [UPDATE]: 2026-02-26 - store 快照同步改为 useLayoutEffect，移除 render-phase 外部写入
  */
 
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigation } from '../hooks/use-navigation';
 import { useDesktopWorkspace } from '../handle';
 import {
@@ -101,6 +102,7 @@ const createDialogController = (
 });
 
 export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerProviderProps) => {
+  const [snapshotReady, setSnapshotReady] = useState(false);
   const navigationState = useNavigation();
   const controller = useDesktopWorkspace();
 
@@ -170,16 +172,32 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
     [controller.inputDialogState, controller.onInputDialogConfirm, controller.onInputDialogCancel]
   );
 
-  syncWorkspaceControllerStore({
-    nav,
-    vault,
-    tree,
-    doc,
-    command,
-    dialog,
-  });
+  const snapshot = useMemo(
+    () => ({
+      nav,
+      vault,
+      tree,
+      doc,
+      command,
+      dialog,
+    }),
+    [nav, vault, tree, doc, command, dialog]
+  );
 
-  useEffect(() => () => resetWorkspaceControllerStore(), []);
+  useLayoutEffect(() => {
+    syncWorkspaceControllerStore(snapshot);
+    setSnapshotReady((prev) => prev || true);
+  }, [snapshot]);
+
+  useEffect(() => {
+    return () => {
+      resetWorkspaceControllerStore();
+    };
+  }, []);
+
+  if (!snapshotReady) {
+    return null;
+  }
 
   return <>{children}</>;
 };

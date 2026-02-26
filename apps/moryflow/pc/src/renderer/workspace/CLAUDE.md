@@ -77,9 +77,10 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-26：分支全量 Code Review follow-up：`workspace-controller-context/workspace-shell-context` 的 store 同步改为 `useLayoutEffect`（移除 render-phase 外部写入）；`use-workspace-command-actions` 恢复 `workspace` 命名空间 key 强类型（移除 `any` 降级）。
 - 2026-02-26：项目复盘收口：`chat-pane-portal` 新增 `chat-pane-portal-model`（`main/panel/parking` 放置状态派生），移除链式三元并统一显式分发；补齐 `chat-pane-portal-model.test.ts`。
 - 2026-02-26：模块 E 去 Context 化：`workspace-controller-context/workspace-shell-context` 改为 store 同步层，新增 `workspace-controller-store/workspace-shell-controller-store`，业务/布局读取统一走 `useWorkspace*` selector（无 React Context 透传）。
-- 2026-02-26：修复 `@moryflow/pc typecheck` 阻塞项：`use-workspace-command-actions` 的 `t` 签名改为与 i18n 强类型兼容（`key:any + InterpolationParams`），避免 `useTranslation('workspace')` 赋值冲突。
+- 2026-02-26：修复 `@moryflow/pc typecheck` 阻塞项：`use-workspace-command-actions` 的 `t` 签名对齐 i18n 泛型返回类型（后续 follow-up 已恢复 `workspace` key 强类型，移除 `any`）。
 - 2026-02-26：Store-first 二次改造落地（`SF-3`）：新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 改为 selector 就地取数，`DesktopWorkspaceShell/Sidebar` 改为快照同步层。
 - 2026-02-26：模块 C 完成：`DesktopWorkspaceShell` 拆分为 `use-shell-layout-state + workspace-shell-main-content + workspace-shell-overlays`，主区统一显式 `renderContentByState` 分发。
 - 2026-02-26：模块 C 完成：`handle.ts` 下沉 `useWorkspaceVault/useWorkspaceCommandActions`；`useDocumentState` 与 `useVaultTreeState` 副作用按职责分段，降低单 hook 复杂度。

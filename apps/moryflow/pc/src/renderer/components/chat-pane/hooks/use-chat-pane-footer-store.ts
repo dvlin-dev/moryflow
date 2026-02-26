@@ -3,6 +3,7 @@
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: ChatPane -> ChatFooter 共享状态桥接层，避免巨型 props 透传
  * [UPDATE]: 2026-02-26 - 新增 footer store，同步 ChatPane 控制器快照并由 ChatFooter 就地 selector 取数
+ * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免无变化时重复 setSnapshot
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -78,11 +79,40 @@ const chatPaneFooterStore = createStore<ChatPaneFooterStoreState>((set) => ({
   setSnapshot: (snapshot) => set(snapshot),
 }));
 
-export const useChatPaneFooterStore = <T,>(selector: (state: ChatPaneFooterStoreState) => T): T =>
+const shouldSyncSnapshot = (current: ChatPaneFooterStoreState, next: ChatPaneFooterSnapshot) =>
+  current.status !== next.status ||
+  current.inputError !== next.inputError ||
+  current.activeFilePath !== next.activeFilePath ||
+  current.activeFileContent !== next.activeFileContent ||
+  current.vaultPath !== next.vaultPath ||
+  current.modelGroups !== next.modelGroups ||
+  current.selectedModelId !== next.selectedModelId ||
+  current.selectedThinkingLevel !== next.selectedThinkingLevel ||
+  current.selectedThinkingProfile !== next.selectedThinkingProfile ||
+  current.disabled !== next.disabled ||
+  current.tokenUsage !== next.tokenUsage ||
+  current.contextWindow !== next.contextWindow ||
+  current.mode !== next.mode ||
+  current.activeSessionId !== next.activeSessionId ||
+  current.selectedSkillName !== next.selectedSkillName ||
+  current.onSubmit !== next.onSubmit ||
+  current.onStop !== next.onStop ||
+  current.onInputError !== next.onInputError ||
+  current.onOpenSettings !== next.onOpenSettings ||
+  current.onSelectModel !== next.onSelectModel ||
+  current.onSelectThinkingLevel !== next.onSelectThinkingLevel ||
+  current.onModeChange !== next.onModeChange ||
+  current.onSelectSkillName !== next.onSelectSkillName;
+
+export const useChatPaneFooterStore = <T>(selector: (state: ChatPaneFooterStoreState) => T): T =>
   useStore(chatPaneFooterStore, selector);
 
 export const useSyncChatPaneFooterStore = (snapshot: ChatPaneFooterSnapshot) => {
   useLayoutEffect(() => {
-    chatPaneFooterStore.getState().setSnapshot(snapshot);
+    const state = chatPaneFooterStore.getState();
+    if (!shouldSyncSnapshot(state, snapshot)) {
+      return;
+    }
+    state.setSnapshot(snapshot);
   }, [snapshot]);
 };
