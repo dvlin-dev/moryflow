@@ -6,8 +6,8 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/moryflow/site-template（模块 A：layouts/templates；模块 B：components/styles）
-[OUTPUT]: 模块 A/B 问题清单（S1/S2/S3）+ 修复落地记录 + 进度台账
+[INPUT]: apps/moryflow/site-template（模块 A：layouts/templates；模块 B：components/styles；模块 C：scripts/生成逻辑）
+[OUTPUT]: 模块 A/B/C 问题清单（S1/S2/S3）+ 修复落地记录 + 进度台账
 [POS]: Phase 3 / P2 模块审查记录（Moryflow Site Template）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
 -->
@@ -17,7 +17,7 @@ status: in_progress
 ## 范围
 
 - 项目：`apps/moryflow/site-template`
-- 本轮模块：`src/layouts`、`src/templates`、`src/components`、`src/styles`
+- 本轮模块：`src/layouts`、`src/templates`、`src/components`、`src/styles`、`scripts`、`src/build.ts`、`src/scripts`
 - 约束：仅处理 `apps/moryflow/site-template`；`apps/anyhunt/docs` 与 `apps/moryflow/docs` 不纳入本轮
 
 ## 结论摘要（模块 A：修复完成）
@@ -180,11 +180,106 @@ rg -n "sidebar-overlay|pointer-events|menu-open|theme-toggle|toc-width" apps/mor
   - `sidebar-overlay` 默认不可交互、`.visible` 才可点击；
   - `--toc-width` 已清理。
 
+## 模块 C 预扫描范围（Step C-0）
+
+- 目录：`scripts`、`src/build.ts`、`src/scripts`
+- 目标：生成链路单一真源、可重复产出、同步流程可验证
+
+## 结论摘要（模块 C：修复完成）
+
+- `S1`（必须改）：2 项
+- `S2`（建议本轮改）：2 项
+- `S3`（可延后）：2 项
+- 当前状态：模块 C 已完成 C-1~C-5 修复落地与文档回写
+
+## 模块 C 发现与修复（按严重度排序）
+
+- [S1][已修复] 主题脚本存在“双真源”，易产生发布行为漂移
+  - 证据：
+    - 主题脚本真源收敛到 `src/scripts/theme.ts`：`src/scripts/theme.ts:7`、`src/scripts/theme.ts:9`
+    - `sync.ts` 改为导入主题脚本，而非内联重复定义：`scripts/sync.ts:12`
+    - 导出 `scripts.ts` 使用统一来源常量：`scripts/sync.ts:173`、`scripts/sync.ts:177`
+  - 修复：
+    - 去除主题脚本双轨维护，发布行为与源码保持一致
+
+- [S1][已修复] `sync` 产物非确定性（时间戳 + 非排序读取），引入无意义 diff
+  - 证据：
+    - 文件头移除动态时间戳：`scripts/sync.ts:26`
+    - 片段与模板读取均按字典序排序：`scripts/sync.ts:76`、`scripts/sync.ts:158`
+    - 两次 `sync` 定向输出哈希比对无差异（`diff -u /tmp/site-template-sync-hash-1.txt /tmp/site-template-sync-hash-2.txt` 空输出）
+  - 修复：
+    - `sync` 产物改为可重复、可比对，避免无意义 diff 噪音
+
+- [S2][已修复] `sync` 仅校验 `dist` 存在，不校验是否过期
+  - 证据：
+    - 新增新鲜度守卫：`scripts/sync.ts:113`
+    - 在主流程强制执行守卫：`scripts/sync.ts:147`
+    - 守卫失败时给出明确重建指令：`scripts/sync.ts:129`
+  - 修复：
+    - `sync` 对陈旧 `dist` 显式失败，阻止导出过期样式
+
+- [S2][已修复] `build` 的 CSS import 解析对非相对 import 静默丢弃
+  - 证据：
+    - import 解析覆盖所有 `@import`：`src/build.ts:84`
+    - 非支持 import 改为直接报错：`src/build.ts:90`、`src/build.ts:92`
+    - 残留非常规 `@import` 语法也会报错：`src/build.ts:101`、`src/build.ts:103`
+  - 修复：
+    - 构建阶段对不受支持 import 显式失败，禁止静默吞掉
+
+- [S3][已修复] `sync` 摘要统计的输出文件数量与真实产物不一致
+  - 证据：
+    - 可选 favicon 仍独立生成：`scripts/sync.ts:185`
+    - 摘要改为按可选文件动态统计：`scripts/sync.ts:251`
+  - 修复：
+    - 同步摘要与真实产物数量一致
+
+- [S3][已修复] `sync.ts` 的示例命令过滤器与包名口径不一致
+  - 证据：
+    - 注释命令已改为正确过滤器：`scripts/sync.ts:6`
+    - 包名仍为 `@moryflow/site-template`：`apps/moryflow/site-template/package.json:2`
+  - 修复：
+    - 命令口径与包名一致，降低协作噪音
+
+## 修复执行（模块 C）
+
+1. C-1：统一主题脚本真源（`src/scripts/theme.ts`），`sync.ts` 改为消费单一来源导出。
+2. C-2：改造 `sync` 为确定性产出（移除时间戳扰动 + 文件列表排序 + 稳定导出顺序）。
+3. C-3：增加 `sync` 的样式新鲜度守卫（过期 `dist` 直接失败并提示先执行 `build`）。
+4. C-4：收紧 `build` 的 `@import` 解析策略（对不支持来源显式报错，禁止静默吞掉）。
+5. C-5：修正摘要计数与命令注释，补充 `SITE_TEMPLATE_OUTPUT_DIR` 本地验证路径并同步 `site-template/CLAUDE.md`。
+
+## 模块 C 验证命令（修复阶段执行）
+
+```bash
+pnpm --filter @moryflow/site-template typecheck
+pnpm --filter @moryflow/site-template build
+SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview pnpm --filter @moryflow/site-template sync
+find apps/moryflow/site-template/dist/sync-preview -type f | sort | xargs shasum > /tmp/site-template-sync-hash-1.txt
+SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview pnpm --filter @moryflow/site-template sync
+find apps/moryflow/site-template/dist/sync-preview -type f | sort | xargs shasum > /tmp/site-template-sync-hash-2.txt
+diff -u /tmp/site-template-sync-hash-1.txt /tmp/site-template-sync-hash-2.txt
+```
+
+## 模块 C 验证结果
+
+- `pnpm --filter @moryflow/site-template typecheck`：**pass**
+- `pnpm --filter @moryflow/site-template build`：**pass**
+- `SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview pnpm --filter @moryflow/site-template sync`：**pass**
+- 确定性校验：**pass**（两次同步后产物哈希 `diff` 无输出）
+- 静态校验：**pass**
+  - 主题脚本由 `src/scripts/theme.ts` 单一来源导出；
+  - `sync` 已移除时间戳并启用稳定排序；
+  - `sync` 已接入 `dist` 新鲜度守卫；
+  - `build` 对不支持 `@import` 显式报错；
+  - `site-template/CLAUDE.md` 已同步更新。
+
 ## 进度记录
 
-| Step | Module            | Action                    | Status | Validation                                          | Updated At | Notes                                                                      |
-| ---- | ----------------- | ------------------------- | ------ | --------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
-| A-0  | layouts/templates | 预扫描（仅问题清单）      | done   | n/a                                                 | 2026-02-26 | 输出 `S1x2 / S2x3 / S3x1`，待确认后进入 A-1                                |
-| A-1  | layouts/templates | 分步重构与修复（A-1~A-5） | done   | `typecheck` pass + `build` pass；`sync` 按范围 skip | 2026-02-26 | 完成单一真源收敛、模板片段化、契约校验接入、`site-template/CLAUDE.md` 同步 |
-| B-0  | components/styles | 预扫描（仅问题清单）      | done   | n/a                                                 | 2026-02-26 | 输出 `S1x2 / S2x2 / S3x1`，待确认后进入 B-1                                |
-| B-1  | components/styles | 分步重构与修复（B-1~B-5） | done   | `typecheck` pass + `build` pass                     | 2026-02-26 | 完成组件孤岛层清理、样式分片收敛、移动端遮罩交互修复、死 token 清理        |
+| Step | Module            | Action                    | Status | Validation                                              | Updated At | Notes                                                                      |
+| ---- | ----------------- | ------------------------- | ------ | ------------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| A-0  | layouts/templates | 预扫描（仅问题清单）      | done   | n/a                                                     | 2026-02-26 | 输出 `S1x2 / S2x3 / S3x1`，待确认后进入 A-1                                |
+| A-1  | layouts/templates | 分步重构与修复（A-1~A-5） | done   | `typecheck` pass + `build` pass；`sync` 按范围 skip     | 2026-02-26 | 完成单一真源收敛、模板片段化、契约校验接入、`site-template/CLAUDE.md` 同步 |
+| B-0  | components/styles | 预扫描（仅问题清单）      | done   | n/a                                                     | 2026-02-26 | 输出 `S1x2 / S2x2 / S3x1`，待确认后进入 B-1                                |
+| B-1  | components/styles | 分步重构与修复（B-1~B-5） | done   | `typecheck` pass + `build` pass                         | 2026-02-26 | 完成组件孤岛层清理、样式分片收敛、移动端遮罩交互修复、死 token 清理        |
+| C-0  | scripts/生成逻辑  | 预扫描（仅问题清单）      | done   | n/a                                                     | 2026-02-26 | 输出 `S1x2 / S2x2 / S3x2`，待确认后进入 C-1                                |
+| C-1  | scripts/生成逻辑  | 分步重构与修复（C-1~C-5） | done   | `typecheck` pass + `build` pass + `sync`(定向输出) pass | 2026-02-26 | 完成脚本单一真源、确定性同步、新鲜度守卫与构建 import 显式失败策略         |

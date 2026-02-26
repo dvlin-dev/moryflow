@@ -82,19 +82,30 @@ function resolveStyleImports(filePath: string, visited = new Set<string>()): str
 
   const content = readFileSync(normalizedPath, 'utf-8');
   const importPattern = /@import\s+['"]([^'"]+)['"]\s*;?/g;
-
-  return content.replace(importPattern, (_match, specifier: string) => {
+  const resolvedContent = content.replace(importPattern, (_match, specifier: string) => {
     if (specifier === 'tailwindcss') {
       return '';
     }
 
-    if (specifier.startsWith('.')) {
-      const nestedPath = resolve(dirname(normalizedPath), specifier);
-      return '\n' + resolveStyleImports(nestedPath, visited) + '\n';
+    if (!specifier.startsWith('.')) {
+      throw new Error(
+        `Unsupported @import "${specifier}" in ${normalizedPath}. ` +
+          'Only relative imports and "tailwindcss" are allowed.'
+      );
     }
 
-    return '';
+    const nestedPath = resolve(dirname(normalizedPath), specifier);
+    return '\n' + resolveStyleImports(nestedPath, visited) + '\n';
   });
+
+  if (/@import\s+/i.test(resolvedContent)) {
+    throw new Error(
+      `Unsupported @import syntax found in ${normalizedPath}. ` +
+        'Use quoted relative imports only.'
+    );
+  }
+
+  return resolvedContent;
 }
 
 function validateTemplateContracts(): void {

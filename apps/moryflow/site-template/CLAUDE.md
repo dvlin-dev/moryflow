@@ -24,6 +24,8 @@ apps/moryflow/site-template/
 │   │       ├── theme-toggle-button.html
 │   │       └── brand-footer-link.html
 │   ├── build.ts          # SSG 构建脚本
+│   ├── scripts/
+│   │   └── theme.ts      # 主题脚本真源（sync 导出）
 │   └── main.tsx          # 开发预览入口
 ├── scripts/
 │   └── sync.ts           # 同步脚本
@@ -62,7 +64,7 @@ apps/moryflow/site-template/
 │  └── brand-footer-link ────────────────────────┼────────────┤   │
 │                                                │            │   │
 │  scripts/sync.ts                               │            │   │
-│  ├── THEME_* / MENU 脚本（硬编码） ─────────────┼────────────┤   │
+│  ├── 读取 src/scripts/theme.ts + MENU 脚本 ─────┼────────────┤   │
 │  └── 片段注入 + 默认占位符落地 ─────────────────┼────────────┤   │
 │                                                │            │   │
 └────────────────────────────────────────────────┼────────────┼───┘
@@ -73,7 +75,7 @@ apps/moryflow/site-template/
 ├─────────────────────────────────────────────────────────────────┤
 │  index.ts              ← 统一导出（自动生成）                    │
 │  styles.ts             ← dist/styles.min.css                    │
-│  scripts.ts            ← 主题脚本（硬编码在 sync.ts）            │
+│  scripts.ts            ← src/scripts/theme.ts + sync.ts         │
 │  page.ts               ← src/templates/page.html                │
 │  sidebar.ts            ← src/templates/sidebar.html             │
 │  index-page.ts         ← src/templates/index-page.html          │
@@ -99,24 +101,27 @@ pnpm build && pnpm sync
 # 2. 只修改 HTML 模板后（建议先做契约校验）
 pnpm build && pnpm sync
 
-# 3. 开发预览
+# 3. 仅在 site-template 内做同步验证（避免改动 PC 生成物）
+SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview pnpm sync
+
+# 4. 开发预览
 pnpm dev
 ```
 
 ## 文件对照表
 
-| 源文件                           | 生成文件                 | 导出常量                                   |
-| -------------------------------- | ------------------------ | ------------------------------------------ |
-| `dist/styles.min.css`            | `styles.ts`              | `STYLES`                                   |
-| sync.ts 硬编码                   | `scripts.ts`             | `THEME_INIT_SCRIPT`, `THEME_TOGGLE_SCRIPT` |
-| `src/templates/fragments/*.html` | 注入到 `page/index` 模板 | `THEME_TOGGLE_BUTTON`、`BRAND_FOOTER_LINK` |
-| `src/templates/page.html`        | `page.ts`                | `PAGE_TEMPLATE`                            |
-| `src/templates/sidebar.html`     | `sidebar.ts`             | `SIDEBAR_TEMPLATE`                         |
-| `src/templates/index-page.html`  | `index-page.ts`          | `INDEX_PAGE_TEMPLATE`                      |
-| `src/templates/index-page.css`   | `index-page-styles.ts`   | `INDEX_PAGE_STYLES`                        |
-| `src/templates/404.html`         | `404.ts`                 | `ERROR_404_TEMPLATE`                       |
-| `src/templates/404.css`          | `404-styles.ts`          | `ERROR_404_STYLES`                         |
-| 自动生成                         | `index.ts`               | 统一导出所有常量                           |
+| 源文件                             | 生成文件                 | 导出常量                                   |
+| ---------------------------------- | ------------------------ | ------------------------------------------ |
+| `dist/styles.min.css`              | `styles.ts`              | `STYLES`                                   |
+| `src/scripts/theme.ts` + `sync.ts` | `scripts.ts`             | `THEME_INIT_SCRIPT`, `THEME_TOGGLE_SCRIPT` |
+| `src/templates/fragments/*.html`   | 注入到 `page/index` 模板 | `THEME_TOGGLE_BUTTON`、`BRAND_FOOTER_LINK` |
+| `src/templates/page.html`          | `page.ts`                | `PAGE_TEMPLATE`                            |
+| `src/templates/sidebar.html`       | `sidebar.ts`             | `SIDEBAR_TEMPLATE`                         |
+| `src/templates/index-page.html`    | `index-page.ts`          | `INDEX_PAGE_TEMPLATE`                      |
+| `src/templates/index-page.css`     | `index-page-styles.ts`   | `INDEX_PAGE_STYLES`                        |
+| `src/templates/404.html`           | `404.ts`                 | `ERROR_404_TEMPLATE`                       |
+| `src/templates/404.css`            | `404-styles.ts`          | `ERROR_404_STYLES`                         |
+| 自动生成                           | `index.ts`               | 统一导出所有常量                           |
 
 ## 模板占位符
 
@@ -206,4 +211,5 @@ pnpm dev
 1. **生成文件禁止手动编辑**：`template/*.ts` 都有 `AUTO-GENERATED` 注释
 2. **样式修改需要 build**：修改 `src/styles/` 后必须先 `pnpm build`
 3. **模板修改建议先 build 再 sync**：`build` 会执行模板契约校验，随后 `pnpm sync`
-4. **主题脚本与片段注入在 sync.ts**：如需修改主题逻辑或模板片段替换，编辑 `scripts/sync.ts`
+4. **主题脚本真源在 `src/scripts/theme.ts`**：`sync.ts` 只负责导出与注入，不再重复维护主题脚本
+5. **`sync` 默认写入 PC 模板目录**：若只在本模块验证，可设置 `SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview`
