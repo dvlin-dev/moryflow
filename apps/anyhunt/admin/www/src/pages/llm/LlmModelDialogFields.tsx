@@ -1,5 +1,5 @@
 /**
- * [PROPS]: form/providers/capabilities/rawConfig
+ * [PROPS]: form + viewModel/actions（identity + capabilities）
  * [EMITS]: onRawConfigTextChange
  * [POS]: LlmModelDialog 字段装配层
  */
@@ -11,6 +11,11 @@ import { ModelIdentityFields } from './model-dialog-fields/ModelIdentityFields';
 
 export interface LlmModelDialogFieldsProps {
   form: UseFormReturn<LlmModelFormValues>;
+  viewModel: LlmModelDialogFieldsViewModel;
+  actions: LlmModelDialogFieldsActions;
+}
+
+export interface LlmModelDialogFieldsViewModel {
   providers: LlmProviderListItem[];
   model: LlmModelListItem | null;
   canSelectProvider: boolean;
@@ -18,20 +23,23 @@ export interface LlmModelDialogFieldsProps {
   isSubmitting: boolean;
   rawConfigText: string;
   rawConfigError: boolean;
+}
+
+export interface LlmModelDialogFieldsActions {
   onRawConfigTextChange: (value: string) => void;
 }
 
-export function LlmModelDialogFields({
-  form,
-  providers,
-  model,
-  canSelectProvider,
-  isCreate,
-  isSubmitting,
-  rawConfigText,
-  rawConfigError,
-  onRawConfigTextChange,
-}: LlmModelDialogFieldsProps) {
+export function LlmModelDialogFields({ form, viewModel, actions }: LlmModelDialogFieldsProps) {
+  const {
+    providers,
+    model,
+    canSelectProvider,
+    isCreate,
+    isSubmitting,
+    rawConfigText,
+    rawConfigError,
+  } = viewModel;
+  const { onRawConfigTextChange } = actions;
   return (
     <>
       <ModelIdentityFields

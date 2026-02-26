@@ -1,5 +1,5 @@
 /**
- * [PROPS]: selected queue/status/stats/actions
+ * [PROPS]: viewModel/actions（队列状态 + 操作回调）
  * [EMITS]: onStatusChange/onTogglePause/onRetry/onCleanCompleted
  * [POS]: 队列详情面板（操作栏 + 状态 tabs + 任务列表）
  */
@@ -41,30 +41,30 @@ const statusIcons: Record<QueueJobStatus, ReactNode> = {
 };
 
 export interface QueueJobsPanelProps {
+  viewModel: QueueJobsPanelViewModel;
+  actions: QueueJobsPanelActions;
+}
+
+export interface QueueJobsPanelViewModel {
   selectedQueue: QueueName;
   selectedStatus: QueueJobStatus;
   selectedStats: QueueStats | undefined;
   isPaused: boolean;
   isRetrying: boolean;
   isCleaning: boolean;
+}
+
+export interface QueueJobsPanelActions {
   onStatusChange: (status: QueueJobStatus) => void;
   onTogglePause: () => void;
   onRetry: () => void;
   onCleanCompleted: () => void;
 }
 
-export function QueueJobsPanel({
-  selectedQueue,
-  selectedStatus,
-  selectedStats,
-  isPaused,
-  isRetrying,
-  isCleaning,
-  onStatusChange,
-  onTogglePause,
-  onRetry,
-  onCleanCompleted,
-}: QueueJobsPanelProps) {
+export function QueueJobsPanel({ viewModel, actions }: QueueJobsPanelProps) {
+  const { selectedQueue, selectedStatus, selectedStats, isPaused, isRetrying, isCleaning } =
+    viewModel;
+  const { onStatusChange, onTogglePause, onRetry, onCleanCompleted } = actions;
   return (
     <Card>
       <CardHeader>

@@ -1,7 +1,7 @@
 /**
  * Welcome Page Editor Card
  *
- * [PROPS]: selectedPage, pageDraft, locale state, callbacks
+ * [PROPS]: viewModel/actions（pageDraft + locale + 保存动作）
  * [POS]: Digest Welcome - 单页编辑器（slug/enabled/i18n title + markdown）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -29,34 +29,31 @@ import { toSlug } from './digest-welcome.utils';
 import { resolveWelcomePageEditorState } from './welcome-card-states';
 
 interface WelcomePageEditorCardProps {
+  viewModel: WelcomePageEditorCardViewModel;
+  actions: WelcomePageEditorCardActions;
+}
+
+export interface WelcomePageEditorCardViewModel {
   selectedPage: DigestWelcomePage | null;
   pageDraft: UpdateWelcomePageInput | null;
-  setPageDraft: Dispatch<SetStateAction<UpdateWelcomePageInput | null>>;
   locales: string[];
   activeLocale: string;
-  onApplyLocale: (locale: string) => void;
   newLocale: string;
-  setNewLocale: Dispatch<SetStateAction<string>>;
-  onAddLocale: () => void;
-  onReset: () => void;
-  onSave: () => void;
   isSaving: boolean;
 }
 
-export function WelcomePageEditorCard({
-  selectedPage,
-  pageDraft,
-  setPageDraft,
-  locales,
-  activeLocale,
-  onApplyLocale,
-  newLocale,
-  setNewLocale,
-  onAddLocale,
-  onReset,
-  onSave,
-  isSaving,
-}: WelcomePageEditorCardProps) {
+export interface WelcomePageEditorCardActions {
+  setPageDraft: Dispatch<SetStateAction<UpdateWelcomePageInput | null>>;
+  onApplyLocale: (locale: string) => void;
+  onNewLocaleChange: (value: string) => void;
+  onAddLocale: () => void;
+  onReset: () => void;
+  onSave: () => void;
+}
+
+export function WelcomePageEditorCard({ viewModel, actions }: WelcomePageEditorCardProps) {
+  const { selectedPage, pageDraft, locales, activeLocale, newLocale, isSaving } = viewModel;
+  const { setPageDraft, onApplyLocale, onNewLocaleChange, onAddLocale, onReset, onSave } = actions;
   const state = resolveWelcomePageEditorState({
     hasSelectedPage: Boolean(selectedPage),
     hasPageDraft: Boolean(pageDraft),
@@ -133,7 +130,7 @@ export function WelcomePageEditorCard({
                 <Input
                   value={newLocale}
                   placeholder="e.g. zh-CN"
-                  onChange={(event) => setNewLocale(event.target.value)}
+                  onChange={(event) => onNewLocaleChange(event.target.value)}
                 />
               </div>
               <Button

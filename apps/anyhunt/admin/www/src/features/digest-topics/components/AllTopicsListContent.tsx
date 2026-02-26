@@ -1,5 +1,5 @@
 /**
- * [PROPS]: topics list state/data/filter/actions
+ * [PROPS]: viewModel/actions（列表状态 + 筛选/分页/行操作）
  * [EMITS]: query filter + row actions
  * [POS]: Digest topics all-list state dispatcher
  */
@@ -31,12 +31,16 @@ import type { Topic, TopicListResponse, TopicQuery } from '../types';
 import type { AllTopicsListState } from '../list-states';
 import { AllTopicsTable } from './AllTopicsTable';
 
-export interface AllTopicsListContentProps {
+export interface AllTopicsListContentViewModel {
   state: AllTopicsListState;
   data: TopicListResponse | undefined;
   error: unknown;
   query: TopicQuery;
   searchInput: string;
+  isToggling: boolean;
+}
+
+export interface AllTopicsListContentActions {
   onSearchInputChange: (value: string) => void;
   onSearch: () => void;
   onSearchKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
@@ -45,25 +49,25 @@ export interface AllTopicsListContentProps {
   onFilterStatus: (status: string) => void;
   onToggleFeatured: (topic: Topic) => void;
   onViewTopic: (slug: string) => void;
-  isToggling: boolean;
 }
 
-export function AllTopicsListContent({
-  state,
-  data,
-  error,
-  query,
-  searchInput,
-  onSearchInputChange,
-  onSearch,
-  onSearchKeyDown,
-  onPageChange,
-  onFilterVisibility,
-  onFilterStatus,
-  onToggleFeatured,
-  onViewTopic,
-  isToggling,
-}: AllTopicsListContentProps) {
+export interface AllTopicsListContentProps {
+  viewModel: AllTopicsListContentViewModel;
+  actions: AllTopicsListContentActions;
+}
+
+export function AllTopicsListContent({ viewModel, actions }: AllTopicsListContentProps) {
+  const { state, data, error, query, searchInput, isToggling } = viewModel;
+  const {
+    onSearchInputChange,
+    onSearch,
+    onSearchKeyDown,
+    onPageChange,
+    onFilterVisibility,
+    onFilterStatus,
+    onToggleFeatured,
+    onViewTopic,
+  } = actions;
   const renderContentByState = () => {
     switch (state) {
       case 'loading':

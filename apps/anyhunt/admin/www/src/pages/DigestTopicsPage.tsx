@@ -132,34 +132,42 @@ export default function DigestTopicsPage() {
 
         <TabsContent value="all" className="mt-4">
           <AllTopicsListContent
-            state={allTopicsState}
-            data={topicsQuery.data}
-            error={topicsQuery.error}
-            query={query}
-            searchInput={searchInput}
-            onSearchInputChange={setSearchInput}
-            onSearch={handleSearch}
-            onSearchKeyDown={handleSearchKeyDown}
-            onPageChange={handlePageChange}
-            onFilterVisibility={handleFilterVisibility}
-            onFilterStatus={handleFilterStatus}
-            onToggleFeatured={handleToggleFeatured}
-            onViewTopic={handleViewTopic}
-            isToggling={setFeaturedMutation.isPending}
+            viewModel={{
+              state: allTopicsState,
+              data: topicsQuery.data,
+              error: topicsQuery.error,
+              query,
+              searchInput,
+              isToggling: setFeaturedMutation.isPending,
+            }}
+            actions={{
+              onSearchInputChange: setSearchInput,
+              onSearch: handleSearch,
+              onSearchKeyDown: handleSearchKeyDown,
+              onPageChange: handlePageChange,
+              onFilterVisibility: handleFilterVisibility,
+              onFilterStatus: handleFilterStatus,
+              onToggleFeatured: handleToggleFeatured,
+              onViewTopic: handleViewTopic,
+            }}
           />
         </TabsContent>
 
         <TabsContent value="featured" className="mt-4">
           <FeaturedTopicsListContent
-            state={featuredTopicsState}
-            topics={featuredTopicsQuery.data}
-            error={featuredTopicsQuery.error}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-            onRemoveFeatured={handleToggleFeatured}
-            onViewTopic={handleViewTopic}
-            isReordering={reorderMutation.isPending}
-            isRemoving={setFeaturedMutation.isPending}
+            viewModel={{
+              state: featuredTopicsState,
+              topics: featuredTopicsQuery.data,
+              error: featuredTopicsQuery.error,
+              isReordering: reorderMutation.isPending,
+              isRemoving: setFeaturedMutation.isPending,
+            }}
+            actions={{
+              onMoveUp: handleMoveUp,
+              onMoveDown: handleMoveDown,
+              onRemoveFeatured: handleToggleFeatured,
+              onViewTopic: handleViewTopic,
+            }}
           />
         </TabsContent>
       </Tabs>

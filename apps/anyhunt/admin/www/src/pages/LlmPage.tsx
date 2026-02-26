@@ -86,25 +86,33 @@ export default function LlmPage() {
       />
 
       <LlmProviderDialog
-        open={controller.providerDialog.open}
-        mode={controller.providerDialog.mode}
-        provider={controller.providerDialog.provider}
-        presets={controller.providerPresets}
-        isSubmitting={controller.isMutating}
-        onClose={controller.closeProviderDialog}
-        onCreate={controller.createProvider}
-        onUpdate={controller.updateProvider}
+        viewModel={{
+          open: controller.providerDialog.open,
+          mode: controller.providerDialog.mode,
+          provider: controller.providerDialog.provider,
+          presets: controller.providerPresets,
+          isSubmitting: controller.isMutating,
+        }}
+        actions={{
+          onClose: controller.closeProviderDialog,
+          onCreate: controller.createProvider,
+          onUpdate: controller.updateProvider,
+        }}
       />
 
       <LlmModelDialog
-        open={controller.modelDialog.open}
-        mode={controller.modelDialog.mode}
-        model={controller.modelDialog.model}
-        providers={controller.providers}
-        isSubmitting={controller.isMutating}
-        onClose={controller.closeModelDialog}
-        onCreate={controller.createModel}
-        onUpdate={controller.updateModel}
+        viewModel={{
+          open: controller.modelDialog.open,
+          mode: controller.modelDialog.mode,
+          model: controller.modelDialog.model,
+          providers: controller.providers,
+          isSubmitting: controller.isMutating,
+        }}
+        actions={{
+          onClose: controller.closeModelDialog,
+          onCreate: controller.createModel,
+          onUpdate: controller.updateModel,
+        }}
       />
 
       <AlertDialog open={controller.confirmDialog.open} onOpenChange={controller.setConfirmOpen}>

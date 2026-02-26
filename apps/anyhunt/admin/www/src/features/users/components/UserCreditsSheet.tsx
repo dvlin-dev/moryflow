@@ -179,14 +179,18 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
         </div>
 
         <GrantConfirmDialog
-          open={confirmOpen}
-          pendingGrant={pendingGrant}
-          userEmail={userQuery.data?.email}
-          purchasedQuota={purchasedQuota}
-          pendingAfter={pendingAfter}
-          isPending={grantMutation.isPending}
-          onOpenChange={setConfirmOpen}
-          onConfirm={handleConfirmGrant}
+          viewModel={{
+            open: confirmOpen,
+            pendingGrant,
+            userEmail: userQuery.data?.email,
+            purchasedQuota,
+            pendingAfter,
+            isPending: grantMutation.isPending,
+          }}
+          actions={{
+            onOpenChange: setConfirmOpen,
+            onConfirm: handleConfirmGrant,
+          }}
         />
       </SheetContent>
     </Sheet>

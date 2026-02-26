@@ -1,5 +1,5 @@
 /**
- * [PROPS]: 确认弹窗状态、待充值数据与确认回调
+ * [PROPS]: viewModel/actions（确认弹窗状态 + 待充值数据）
  * [EMITS]: onOpenChange/onConfirm
  * [POS]: user credits 充值确认弹窗
  */
@@ -17,26 +17,27 @@ import {
 import type { GrantCreditsFormValues } from './schemas';
 
 export interface GrantConfirmDialogProps {
+  viewModel: GrantConfirmDialogViewModel;
+  actions: GrantConfirmDialogActions;
+}
+
+export interface GrantConfirmDialogViewModel {
   open: boolean;
   pendingGrant: GrantCreditsFormValues | null;
   userEmail: string | undefined;
   purchasedQuota: number;
   pendingAfter: number | null;
   isPending: boolean;
+}
+
+export interface GrantConfirmDialogActions {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => Promise<void>;
 }
 
-export function GrantConfirmDialog({
-  open,
-  pendingGrant,
-  userEmail,
-  purchasedQuota,
-  pendingAfter,
-  isPending,
-  onOpenChange,
-  onConfirm,
-}: GrantConfirmDialogProps) {
+export function GrantConfirmDialog({ viewModel, actions }: GrantConfirmDialogProps) {
+  const { open, pendingGrant, userEmail, purchasedQuota, pendingAfter, isPending } = viewModel;
+  const { onOpenChange, onConfirm } = actions;
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>

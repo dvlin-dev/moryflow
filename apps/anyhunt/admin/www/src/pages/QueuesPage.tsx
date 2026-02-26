@@ -105,16 +105,20 @@ export default function QueuesPage() {
       />
 
       <QueueJobsPanel
-        selectedQueue={selectedQueue}
-        selectedStatus={selectedStatus}
-        selectedStats={selectedStats}
-        isPaused={isPaused}
-        isRetrying={isRetrying}
-        isCleaning={isCleaning}
-        onStatusChange={setSelectedStatus}
-        onTogglePause={() => togglePause({ name: selectedQueue, pause: !isPaused })}
-        onRetry={() => openConfirmDialog('retry')}
-        onCleanCompleted={() => openConfirmDialog('clean-completed')}
+        viewModel={{
+          selectedQueue,
+          selectedStatus,
+          selectedStats,
+          isPaused,
+          isRetrying,
+          isCleaning,
+        }}
+        actions={{
+          onStatusChange: setSelectedStatus,
+          onTogglePause: () => togglePause({ name: selectedQueue, pause: !isPaused }),
+          onRetry: () => openConfirmDialog('retry'),
+          onCleanCompleted: () => openConfirmDialog('clean-completed'),
+        }}
       />
 
       <QueueActionConfirmDialog

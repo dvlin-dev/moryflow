@@ -1,7 +1,7 @@
 /**
  * Welcome Pages Card
  *
- * [PROPS]: pages, selectedPageId, callbacks
+ * [PROPS]: viewModel/actions（列表状态 + 选择/排序/删除动作）
  * [POS]: Digest Welcome - Welcome Pages 列表与排序/删除入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -12,28 +12,28 @@ import type { DigestWelcomePage } from '@/features/digest-welcome';
 import { resolveWelcomePagesCardState } from './welcome-card-states';
 
 interface WelcomePagesCardProps {
+  viewModel: WelcomePagesCardViewModel;
+  actions: WelcomePagesCardActions;
+}
+
+export interface WelcomePagesCardViewModel {
   isLoading: boolean;
   isError: boolean;
   pages: DigestWelcomePage[];
   selectedPageId: string | null;
-  onSelect: (id: string) => void;
-  onMove: (direction: 'up' | 'down') => void;
-  onDelete: () => void;
   isReordering: boolean;
   isDeleting: boolean;
 }
 
-export function WelcomePagesCard({
-  isLoading,
-  isError,
-  pages,
-  selectedPageId,
-  onSelect,
-  onMove,
-  onDelete,
-  isReordering,
-  isDeleting,
-}: WelcomePagesCardProps) {
+export interface WelcomePagesCardActions {
+  onSelect: (id: string) => void;
+  onMove: (direction: 'up' | 'down') => void;
+  onDelete: () => void;
+}
+
+export function WelcomePagesCard({ viewModel, actions }: WelcomePagesCardProps) {
+  const { isLoading, isError, pages, selectedPageId, isReordering, isDeleting } = viewModel;
+  const { onSelect, onMove, onDelete } = actions;
   const state = resolveWelcomePagesCardState({
     isLoading,
     hasError: isError,

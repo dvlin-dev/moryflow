@@ -1,5 +1,5 @@
 /**
- * [PROPS]: LlmProviderDialogProps - open/mode/provider/defaults
+ * [PROPS]: LlmProviderDialogProps - viewModel/actions
  * [EMITS]: onClose/onSubmit - Provider 创建/更新动作
  * [POS]: Admin LLM Providers 的创建/编辑弹窗
  *
@@ -45,26 +45,27 @@ import {
 } from '@/features/llm';
 
 export interface LlmProviderDialogProps {
+  viewModel: LlmProviderDialogViewModel;
+  actions: LlmProviderDialogActions;
+}
+
+export interface LlmProviderDialogViewModel {
   open: boolean;
   mode: 'create' | 'edit';
   provider: LlmProviderListItem | null;
   presets: LlmProviderPreset[];
-  onClose: () => void;
-  onCreate: (input: CreateLlmProviderInput) => Promise<void>;
-  onUpdate: (providerId: string, input: UpdateLlmProviderInput) => Promise<void>;
   isSubmitting: boolean;
 }
 
-export function LlmProviderDialog({
-  open,
-  mode,
-  provider,
-  presets,
-  onClose,
-  onCreate,
-  onUpdate,
-  isSubmitting,
-}: LlmProviderDialogProps) {
+export interface LlmProviderDialogActions {
+  onClose: () => void;
+  onCreate: (input: CreateLlmProviderInput) => Promise<void>;
+  onUpdate: (providerId: string, input: UpdateLlmProviderInput) => Promise<void>;
+}
+
+export function LlmProviderDialog({ viewModel, actions }: LlmProviderDialogProps) {
+  const { open, mode, provider, presets, isSubmitting } = viewModel;
+  const { onClose, onCreate, onUpdate } = actions;
   const isCreate = mode === 'create';
 
   const defaults = useMemo(

@@ -43,51 +43,63 @@ export default function DigestWelcomePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
           <WelcomeConfigCard
-            isLoading={controller.configQuery.isLoading}
-            isError={controller.configQuery.isError}
-            pages={controller.pages}
-            configDraft={controller.configDraft}
-            setConfigDraft={controller.setConfigDraft}
-            configActionLocale={controller.configActionLocale}
-            configActionNewLocale={controller.configActionNewLocale}
-            setConfigActionNewLocale={controller.setConfigActionNewLocale}
-            actionLocales={controller.actionLocales}
-            primaryActionLabel={controller.primaryActionLabel}
-            secondaryActionLabel={controller.secondaryActionLabel}
-            onApplyActionLocale={controller.applyActionLocale}
-            onAddActionLocale={controller.handleAddActionLocale}
-            onReset={controller.handleResetConfig}
-            onSave={controller.handleSaveConfig}
-            isSaving={controller.isSavingConfig}
+            viewModel={{
+              isLoading: controller.configQuery.isLoading,
+              isError: controller.configQuery.isError,
+              pages: controller.pages,
+              configDraft: controller.configDraft,
+              configActionLocale: controller.configActionLocale,
+              configActionNewLocale: controller.configActionNewLocale,
+              actionLocales: controller.actionLocales,
+              primaryActionLabel: controller.primaryActionLabel,
+              secondaryActionLabel: controller.secondaryActionLabel,
+              isSaving: controller.isSavingConfig,
+            }}
+            actions={{
+              setConfigDraft: controller.setConfigDraft,
+              onApplyActionLocale: controller.applyActionLocale,
+              onActionNewLocaleChange: controller.setConfigActionNewLocale,
+              onAddActionLocale: controller.handleAddActionLocale,
+              onReset: controller.handleResetConfig,
+              onSave: controller.handleSaveConfig,
+            }}
           />
 
           <WelcomePagesCard
-            isLoading={controller.pagesQuery.isLoading}
-            isError={controller.pagesQuery.isError}
-            pages={controller.pages}
-            selectedPageId={controller.selectedPageId}
-            onSelect={controller.setSelectedPageId}
-            onMove={controller.handleMovePage}
-            onDelete={controller.handleDeletePage}
-            isReordering={controller.isReorderingPages}
-            isDeleting={controller.isDeletingPage}
+            viewModel={{
+              isLoading: controller.pagesQuery.isLoading,
+              isError: controller.pagesQuery.isError,
+              pages: controller.pages,
+              selectedPageId: controller.selectedPageId,
+              isReordering: controller.isReorderingPages,
+              isDeleting: controller.isDeletingPage,
+            }}
+            actions={{
+              onSelect: controller.setSelectedPageId,
+              onMove: controller.handleMovePage,
+              onDelete: controller.handleDeletePage,
+            }}
           />
         </div>
 
         <div className="space-y-6 lg:col-span-2">
           <WelcomePageEditorCard
-            selectedPage={controller.selectedPage}
-            pageDraft={controller.pageDraft}
-            setPageDraft={controller.setPageDraft}
-            locales={controller.locales}
-            activeLocale={controller.activeLocale}
-            onApplyLocale={controller.applyLocale}
-            newLocale={controller.newLocale}
-            setNewLocale={controller.setNewLocale}
-            onAddLocale={controller.handleAddLocale}
-            onReset={controller.handleResetPage}
-            onSave={controller.handleSavePage}
-            isSaving={controller.isSavingPage}
+            viewModel={{
+              selectedPage: controller.selectedPage,
+              pageDraft: controller.pageDraft,
+              locales: controller.locales,
+              activeLocale: controller.activeLocale,
+              newLocale: controller.newLocale,
+              isSaving: controller.isSavingPage,
+            }}
+            actions={{
+              setPageDraft: controller.setPageDraft,
+              onApplyLocale: controller.applyLocale,
+              onNewLocaleChange: controller.setNewLocale,
+              onAddLocale: controller.handleAddLocale,
+              onReset: controller.handleResetPage,
+              onSave: controller.handleSavePage,
+            }}
           />
         </div>
       </div>

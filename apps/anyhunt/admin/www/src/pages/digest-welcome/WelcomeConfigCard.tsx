@@ -1,7 +1,7 @@
 /**
  * Welcome Config Card
  *
- * [PROPS]: configDraft, pages, callbacks/state setters
+ * [PROPS]: viewModel/actions（配置草稿 + locale + 保存动作）
  * [POS]: Digest Welcome - 全局配置卡片（enabled/defaultSlug/actions）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -33,42 +33,53 @@ import { WelcomeActionEditorSection } from './WelcomeActionEditorSection';
 import { resolveWelcomeConfigCardState } from './welcome-card-states';
 
 interface WelcomeConfigCardProps {
+  viewModel: WelcomeConfigCardViewModel;
+  actions: WelcomeConfigCardActions;
+}
+
+export interface WelcomeConfigCardViewModel {
   isLoading: boolean;
   isError: boolean;
   pages: DigestWelcomePage[];
   configDraft: UpdateWelcomeConfigInput | null;
-  setConfigDraft: Dispatch<SetStateAction<UpdateWelcomeConfigInput | null>>;
   configActionLocale: string;
   configActionNewLocale: string;
-  setConfigActionNewLocale: Dispatch<SetStateAction<string>>;
   actionLocales: string[];
   primaryActionLabel: string;
   secondaryActionLabel: string;
-  onApplyActionLocale: (locale: string) => void;
-  onAddActionLocale: () => void;
-  onReset: () => void;
-  onSave: () => void;
   isSaving: boolean;
 }
 
-export function WelcomeConfigCard({
-  isLoading,
-  isError,
-  pages,
-  configDraft,
-  setConfigDraft,
-  configActionLocale,
-  configActionNewLocale,
-  setConfigActionNewLocale,
-  actionLocales,
-  primaryActionLabel,
-  secondaryActionLabel,
-  onApplyActionLocale,
-  onAddActionLocale,
-  onReset,
-  onSave,
-  isSaving,
-}: WelcomeConfigCardProps) {
+export interface WelcomeConfigCardActions {
+  setConfigDraft: Dispatch<SetStateAction<UpdateWelcomeConfigInput | null>>;
+  onApplyActionLocale: (locale: string) => void;
+  onActionNewLocaleChange: (value: string) => void;
+  onAddActionLocale: () => void;
+  onReset: () => void;
+  onSave: () => void;
+}
+
+export function WelcomeConfigCard({ viewModel, actions }: WelcomeConfigCardProps) {
+  const {
+    isLoading,
+    isError,
+    pages,
+    configDraft,
+    configActionLocale,
+    configActionNewLocale,
+    actionLocales,
+    primaryActionLabel,
+    secondaryActionLabel,
+    isSaving,
+  } = viewModel;
+  const {
+    setConfigDraft,
+    onApplyActionLocale,
+    onActionNewLocaleChange,
+    onAddActionLocale,
+    onReset,
+    onSave,
+  } = actions;
   const state = resolveWelcomeConfigCardState({
     isLoading,
     hasError: isError,
@@ -189,7 +200,7 @@ export function WelcomeConfigCard({
                 <Input
                   value={configActionNewLocale}
                   placeholder="e.g. zh-CN"
-                  onChange={(event) => setConfigActionNewLocale(event.target.value)}
+                  onChange={(event) => onActionNewLocaleChange(event.target.value)}
                 />
               </div>
               <Button

@@ -1,5 +1,5 @@
 /**
- * [PROPS]: featured list state/data/actions
+ * [PROPS]: viewModel/actions（精选状态 + 排序/移除/查看动作）
  * [EMITS]: reorder/remove/view actions
  * [POS]: Digest featured list state dispatcher
  */
@@ -10,29 +10,29 @@ import type { Topic } from '../types';
 import type { FeaturedTopicsListState } from '../list-states';
 import { FeaturedTopicsTable } from './FeaturedTopicsTable';
 
-export interface FeaturedTopicsListContentProps {
+export interface FeaturedTopicsListContentViewModel {
   state: FeaturedTopicsListState;
   topics: Topic[] | undefined;
   error: unknown;
   isReordering: boolean;
   isRemoving: boolean;
+}
+
+export interface FeaturedTopicsListContentActions {
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
   onRemoveFeatured: (topic: Topic) => void;
   onViewTopic: (slug: string) => void;
 }
 
-export function FeaturedTopicsListContent({
-  state,
-  topics,
-  error,
-  isReordering,
-  isRemoving,
-  onMoveUp,
-  onMoveDown,
-  onRemoveFeatured,
-  onViewTopic,
-}: FeaturedTopicsListContentProps) {
+export interface FeaturedTopicsListContentProps {
+  viewModel: FeaturedTopicsListContentViewModel;
+  actions: FeaturedTopicsListContentActions;
+}
+
+export function FeaturedTopicsListContent({ viewModel, actions }: FeaturedTopicsListContentProps) {
+  const { state, topics, error, isReordering, isRemoving } = viewModel;
+  const { onMoveUp, onMoveDown, onRemoveFeatured, onViewTopic } = actions;
   const renderContentByState = () => {
     switch (state) {
       case 'loading':

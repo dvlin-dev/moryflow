@@ -1,5 +1,5 @@
 /**
- * [PROPS]: LlmModelDialogProps - open/mode/model/defaults/providers
+ * [PROPS]: LlmModelDialogProps - viewModel/actions
  * [EMITS]: onClose/onSubmit - Model 创建/更新动作
  * [POS]: Admin LLM Models 映射的创建/编辑弹窗
  *
@@ -36,26 +36,27 @@ import {
 import { LlmModelDialogFields } from './LlmModelDialogFields';
 
 export interface LlmModelDialogProps {
+  viewModel: LlmModelDialogViewModel;
+  actions: LlmModelDialogActions;
+}
+
+export interface LlmModelDialogViewModel {
   open: boolean;
   mode: 'create' | 'edit';
   model: LlmModelListItem | null;
   providers: LlmProviderListItem[];
-  onClose: () => void;
-  onCreate: (input: CreateLlmModelInput) => Promise<void>;
-  onUpdate: (llmModelId: string, input: UpdateLlmModelInput) => Promise<void>;
   isSubmitting: boolean;
 }
 
-export function LlmModelDialog({
-  open,
-  mode,
-  model,
-  providers,
-  onClose,
-  onCreate,
-  onUpdate,
-  isSubmitting,
-}: LlmModelDialogProps) {
+export interface LlmModelDialogActions {
+  onClose: () => void;
+  onCreate: (input: CreateLlmModelInput) => Promise<void>;
+  onUpdate: (llmModelId: string, input: UpdateLlmModelInput) => Promise<void>;
+}
+
+export function LlmModelDialog({ viewModel, actions }: LlmModelDialogProps) {
+  const { open, mode, model, providers, isSubmitting } = viewModel;
+  const { onClose, onCreate, onUpdate } = actions;
   const isCreate = mode === 'create';
   const canSelectProvider = isCreate || !model?.providerId;
 
@@ -128,16 +129,20 @@ export function LlmModelDialog({
           <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
             <LlmModelDialogFields
               form={form}
-              providers={providers}
-              model={model}
-              canSelectProvider={canSelectProvider}
-              isCreate={isCreate}
-              isSubmitting={isSubmitting}
-              rawConfigText={rawConfigText}
-              rawConfigError={rawConfigError}
-              onRawConfigTextChange={(value) => {
-                setRawConfigText(value);
-                setRawConfigError(false);
+              viewModel={{
+                providers,
+                model,
+                canSelectProvider,
+                isCreate,
+                isSubmitting,
+                rawConfigText,
+                rawConfigError,
+              }}
+              actions={{
+                onRawConfigTextChange: (value) => {
+                  setRawConfigText(value);
+                  setRawConfigError(false);
+                },
               }}
             />
 
