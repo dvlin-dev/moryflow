@@ -8,86 +8,23 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-} from '@moryflow/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
 import { CodeBlock } from '@moryflow/ui/ai/code-block';
 import { parseSchemaJsonToAgentOutput } from '../agent-output';
 import { flowRunnerSchema, type FlowRunnerValues } from '../schemas';
 import {
   createBrowserSession,
+  closeBrowserSession,
   openBrowserUrl,
   getBrowserSnapshot,
   getBrowserScreenshot,
-  closeBrowserSession,
-  estimateAgentCost,
-  executeAgentTask,
-  getAgentTaskStatus,
-} from '../api';
-import type {
-  AgentEstimateResponse,
-  AgentTaskResult,
-  BrowserOpenResponse,
-  BrowserScreenshotResponse,
-  BrowserSessionInfo,
-  BrowserSnapshotResponse,
-} from '../types';
-
-type FlowStepStatus = 'pending' | 'running' | 'success' | 'failed';
-
-type FlowStep = {
-  id: string;
-  label: string;
-  status: FlowStepStatus;
-  detail?: string;
-};
-
-type FlowRunnerResult = {
-  session?: BrowserSessionInfo;
-  open?: BrowserOpenResponse;
-  snapshot?: BrowserSnapshotResponse;
-  screenshot?: BrowserScreenshotResponse;
-  estimate?: AgentEstimateResponse;
-  agent?: AgentTaskResult;
-  status?: AgentTaskResult | null;
-};
-
-const parseUrls = (value?: string) =>
-  value
-    ?.split(/[\s,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean) ?? [];
-
-const stepDefinitions: FlowStep[] = [
-  { id: 'create', label: 'Create session', status: 'pending' },
-  { id: 'open', label: 'Open URL', status: 'pending' },
-  { id: 'snapshot', label: 'Snapshot', status: 'pending' },
-  { id: 'screenshot', label: 'Screenshot', status: 'pending' },
-  { id: 'estimate', label: 'Estimate credits', status: 'pending' },
-  { id: 'agent', label: 'Run agent', status: 'pending' },
-  { id: 'status', label: 'Check status', status: 'pending' },
-  { id: 'close', label: 'Close session', status: 'pending' },
-];
-
-const statusLabel: Record<FlowStepStatus, string> = {
-  pending: 'Pending',
-  running: 'Running',
-  success: 'Success',
-  failed: 'Failed',
-};
+} from '../browser-api';
+import { estimateAgentCost, executeAgentTask, getAgentTaskStatus } from '../agent-api';
+import type { BrowserSessionInfo } from '../types';
+import { createPendingSteps, parseUrls } from './flow-runner-helpers';
+import { FlowRunnerForm } from './flow-runner-form';
+import { FlowRunnerStepList } from './flow-runner-step-list';
+import type { FlowRunnerResult, FlowStep, FlowStepStatus } from './flow-runner-types';
 
 export interface FlowRunnerProps {
   apiKey: string;
@@ -105,7 +42,7 @@ export function FlowRunner({ apiKey, onSessionChange }: FlowRunnerProps) {
     },
   });
 
-  const [steps, setSteps] = useState<FlowStep[]>(stepDefinitions);
+  const [steps, setSteps] = useState<FlowStep[]>(createPendingSteps);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<FlowRunnerResult | null>(null);
 
@@ -114,7 +51,7 @@ export function FlowRunner({ apiKey, onSessionChange }: FlowRunnerProps) {
   };
 
   const resetSteps = () => {
-    setSteps(stepDefinitions.map((step) => ({ ...step, status: 'pending', detail: undefined })));
+    setSteps(createPendingSteps());
   };
 
   const resultJson = useMemo(() => {
@@ -206,7 +143,6 @@ export function FlowRunner({ apiKey, onSessionChange }: FlowRunnerProps) {
       if (activeStepId) {
         updateStep(activeStepId, 'failed', message);
       }
-      setResult((prev) => prev ?? null);
     } finally {
       if (session) {
         try {
@@ -229,87 +165,9 @@ export function FlowRunner({ apiKey, onSessionChange }: FlowRunnerProps) {
         <CardDescription>Run a full Browser → Agent → Cleanup flow.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(runFlow)} className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="targetUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="maxCredits"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max Credits</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="200" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="prompt"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Agent Prompt</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Describe the target task" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="schemaJson"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Output Schema (JSON)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='{"title":{"type":"string"},"price":{"type":"number"}}'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="md:col-span-2">
-              <Button type="submit" disabled={running || !apiKey}>
-                {running ? 'Running...' : 'Run Flow'}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        <FlowRunnerForm apiKey={apiKey} form={form} running={running} onSubmit={runFlow} />
 
-        <div className="grid gap-2 md:grid-cols-2">
-          {steps.map((step) => (
-            <div
-              key={step.id}
-              className="flex items-center justify-between rounded-lg border border-border-muted px-3 py-2 text-sm"
-            >
-              <span>{step.label}</span>
-              <Badge
-                variant={step.status === 'failed' ? 'destructive' : 'secondary'}
-                className="text-xs"
-              >
-                {statusLabel[step.status]}
-              </Badge>
-            </div>
-          ))}
-        </div>
+        <FlowRunnerStepList steps={steps} />
 
         {resultJson && (
           <div className="space-y-2">

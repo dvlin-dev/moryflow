@@ -29,3 +29,5 @@ export function useMap(apiKey: string) {
 
 // 导出类型
 export type { MapRequest, MapResponse };
+export { MapRequestCard } from './components/map-request-card';
+export { MapResultPanel } from './components/map-result-panel';

@@ -10,7 +10,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Card, CardContent } from '@moryflow/ui';
 import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
 import { useExtract, type ExtractRequest } from '@/features/extract-playground';
 import { ExtractRequestCard } from '@/features/extract-playground/components/extract-request-card';
@@ -18,6 +17,7 @@ import { ExtractResultPanel } from '@/features/extract-playground/components/ext
 import {
   extractFormSchema,
   extractFormDefaults,
+  PlaygroundLoadingState,
   PlaygroundPageShell,
   type ExtractFormValues,
 } from '@/features/playground-shared';
@@ -112,13 +112,7 @@ export default function ExtractPlaygroundPage() {
   };
 
   if (isLoadingKeys) {
-    return (
-      <div className="container py-6">
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
-        </Card>
-      </div>
-    );
+    return <PlaygroundLoadingState />;
   }
 
   const requestContent = (

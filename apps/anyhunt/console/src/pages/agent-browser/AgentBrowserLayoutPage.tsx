@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { Outlet, useMatch } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@moryflow/ui';
-import { useApiKeys } from '@/features/api-keys';
+import { resolveActiveApiKeySelection, useApiKeys } from '@/features/api-keys';
 import { ApiKeySelector } from '@/features/playground-shared';
 import { PlaygroundErrorBoundary } from '@/features/agent-browser-playground';
 
@@ -24,15 +24,23 @@ export default function AgentBrowserLayoutPage() {
   const [sessionId, setSessionId] = useState<string>('');
   const isAgentChat = useMatch('/agent-browser/agent');
 
-  const activeKeyId =
-    selectedKeyId || apiKeys.find((key) => key.isActive)?.id || apiKeys[0]?.id || '';
-  const activeKey = apiKeys.find((key) => key.id === activeKeyId) ?? null;
-  const apiKey = activeKey?.key ?? '';
-  const hasApiKeys = apiKeys.length > 0;
+  const { effectiveKeyId, apiKeyValue, hasActiveKey } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedKeyId
+  );
+  const apiKey = apiKeyValue;
+  const hasApiKeys = hasActiveKey;
 
   const handleKeyChange = (keyId: string) => {
     setSelectedKeyId(keyId);
     setSessionId('');
+  };
+
+  const outletContext: AgentBrowserOutletContext = {
+    apiKey,
+    hasApiKeys,
+    sessionId,
+    setSessionId,
   };
 
   if (isLoadingKeys) {
@@ -45,43 +53,42 @@ export default function AgentBrowserLayoutPage() {
     );
   }
 
+  if (isAgentChat) {
+    return (
+      <PlaygroundErrorBoundary>
+        <div className="h-full">
+          <Outlet context={outletContext} />
+        </div>
+      </PlaygroundErrorBoundary>
+    );
+  }
+
   return (
     <PlaygroundErrorBoundary>
-      <div className={isAgentChat ? 'h-full' : 'container py-6 space-y-6'}>
-        {!isAgentChat && (
-          <>
-            <div>
-              <h1 className="text-2xl font-semibold">Agent Browser</h1>
-              <p className="mt-1 text-muted-foreground">
-                Run browser sessions and agent tasks with public APIs.
-              </p>
-            </div>
+      <div className="container py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Agent Browser</h1>
+          <p className="mt-1 text-muted-foreground">
+            Run browser sessions and agent tasks with public APIs.
+          </p>
+        </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>API Key</CardTitle>
-                <CardDescription>Select an active API key to authorize requests.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ApiKeySelector
-                  apiKeys={apiKeys}
-                  selectedKeyId={activeKeyId}
-                  onKeyChange={handleKeyChange}
-                  disabled={apiKeys.length === 0}
-                />
-              </CardContent>
-            </Card>
-          </>
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>API Key</CardTitle>
+            <CardDescription>Select an active API key to authorize requests.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ApiKeySelector
+              apiKeys={apiKeys}
+              selectedKeyId={effectiveKeyId}
+              onKeyChange={handleKeyChange}
+              disabled={!hasActiveKey}
+            />
+          </CardContent>
+        </Card>
 
-        <Outlet
-          context={{
-            apiKey,
-            hasApiKeys,
-            sessionId,
-            setSessionId,
-          }}
-        />
+        <Outlet context={outletContext} />
       </div>
     </PlaygroundErrorBoundary>
   );
