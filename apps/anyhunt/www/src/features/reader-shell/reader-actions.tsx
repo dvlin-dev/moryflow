@@ -7,12 +7,13 @@
 
 import { createContext, useContext } from 'react';
 import type { Subscription } from '@/features/digest/types';
+import type { ReaderSettingsDialogTab } from './reader-dialog-state';
 
 interface ReaderActionsContextValue {
   openCreateSubscription: (initialTopic?: string) => void;
   openSubscriptionSettings: (
     subscription: Subscription,
-    tab?: 'basic' | 'history' | 'suggestions' | 'notifications'
+    tab?: ReaderSettingsDialogTab
   ) => void;
   openPublishTopic: (subscription?: Subscription) => void;
 }

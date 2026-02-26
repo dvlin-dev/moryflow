@@ -1,5 +1,5 @@
 /**
- * [PROPS]: create/settings/publish dialogs state
+ * [PROPS]: dialog state + selected subscription + callbacks
  * [POS]: Reader 内所有“操作型”弹窗统一渲染出口（避免在页面里散落）
  * [UPDATE]: 2026-01-28 设置弹窗支持默认 Tab
  *
@@ -10,38 +10,30 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@moryflow/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
 import type { Subscription } from '@/features/digest/types';
+import type { ReaderDialogState } from './reader-dialog-state';
 
 const LazyCreateSubscriptionDialog = lazy(() =>
-  import('@/components/reader/CreateSubscriptionDialog').then((m) => ({
-    default: m.CreateSubscriptionDialog,
+  import('@/components/reader/CreateSubscriptionDialog').then((moduleExports) => ({
+    default: moduleExports.CreateSubscriptionDialog,
   }))
 );
 
 const LazySubscriptionSettingsDialog = lazy(() =>
-  import('@/components/reader/SubscriptionSettingsDialog').then((m) => ({
-    default: m.SubscriptionSettingsDialog,
+  import('@/components/reader/SubscriptionSettingsDialog').then((moduleExports) => ({
+    default: moduleExports.SubscriptionSettingsDialog,
   }))
 );
 
 const LazyPublishTopicDialog = lazy(() =>
-  import('@/components/reader/PublishTopicDialog').then((m) => ({
-    default: m.PublishTopicDialog,
+  import('@/components/reader/PublishTopicDialog').then((moduleExports) => ({
+    default: moduleExports.PublishTopicDialog,
   }))
 );
 
 interface ReaderDialogsProps {
-  createDialogOpen: boolean;
-  createDialogInitialTopic?: string;
-  onCreateDialogOpenChange: (open: boolean) => void;
-
-  settingsDialogOpen: boolean;
-  onSettingsDialogOpenChange: (open: boolean) => void;
-  settingsDialogTab?: 'basic' | 'history' | 'suggestions' | 'notifications';
-
-  publishDialogOpen: boolean;
-  onPublishDialogOpenChange: (open: boolean) => void;
-
+  dialogState: ReaderDialogState;
   selectedSubscription: Subscription | null;
+  onDialogOpenChange: (open: boolean) => void;
   onPublishClick: () => void;
 }
 
@@ -65,91 +57,93 @@ function ReaderDialogFallback({
   );
 }
 
+function useLazyDialogMount(open: boolean): boolean {
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true);
+    }
+  }, [open]);
+
+  return shouldRender;
+}
+
 export function ReaderDialogs({
-  createDialogOpen,
-  createDialogInitialTopic,
-  onCreateDialogOpenChange,
-  settingsDialogOpen,
-  onSettingsDialogOpenChange,
-  settingsDialogTab = 'basic',
-  publishDialogOpen,
-  onPublishDialogOpenChange,
+  dialogState,
   selectedSubscription,
+  onDialogOpenChange,
   onPublishClick,
 }: ReaderDialogsProps) {
-  const [shouldRenderCreate, setShouldRenderCreate] = useState(false);
-  const [shouldRenderSettings, setShouldRenderSettings] = useState(false);
-  const [shouldRenderPublish, setShouldRenderPublish] = useState(false);
+  const createDialogOpen = dialogState.type === 'create';
+  const createDialogInitialTopic = dialogState.type === 'create' ? dialogState.initialTopic : undefined;
 
-  useEffect(() => {
-    if (createDialogOpen) setShouldRenderCreate(true);
-  }, [createDialogOpen]);
+  const settingsDialogOpen = dialogState.type === 'settings';
+  const settingsDialogTab = dialogState.type === 'settings' ? dialogState.tab : 'basic';
 
-  useEffect(() => {
-    if (settingsDialogOpen) setShouldRenderSettings(true);
-  }, [settingsDialogOpen]);
+  const publishDialogOpen = dialogState.type === 'publish';
 
-  useEffect(() => {
-    if (publishDialogOpen) setShouldRenderPublish(true);
-  }, [publishDialogOpen]);
+  const shouldRenderCreate = useLazyDialogMount(createDialogOpen);
+  const shouldRenderSettings = useLazyDialogMount(settingsDialogOpen);
+  const shouldRenderPublish = useLazyDialogMount(publishDialogOpen);
 
   return (
     <>
-      {shouldRenderCreate && (
+      {shouldRenderCreate ? (
         <Suspense
           fallback={
             <ReaderDialogFallback
               title="New subscription"
               open={createDialogOpen}
-              onOpenChange={onCreateDialogOpenChange}
+              onOpenChange={onDialogOpenChange}
             />
           }
         >
           <LazyCreateSubscriptionDialog
             open={createDialogOpen}
             initialTopic={createDialogInitialTopic}
-            onOpenChange={onCreateDialogOpenChange}
+            onOpenChange={onDialogOpenChange}
           />
         </Suspense>
-      )}
+      ) : null}
 
-      {shouldRenderSettings && (
+      {shouldRenderSettings ? (
         <Suspense
           fallback={
             <ReaderDialogFallback
               title="Subscription settings"
               open={settingsDialogOpen}
-              onOpenChange={onSettingsDialogOpenChange}
+              onOpenChange={onDialogOpenChange}
             />
           }
         >
           <LazySubscriptionSettingsDialog
             subscription={selectedSubscription}
             open={settingsDialogOpen}
-            onOpenChange={onSettingsDialogOpenChange}
+            onOpenChange={onDialogOpenChange}
             onPublishClick={onPublishClick}
             defaultTab={settingsDialogTab}
           />
         </Suspense>
-      )}
+      ) : null}
 
-      {shouldRenderPublish && (
+      {shouldRenderPublish ? (
         <Suspense
           fallback={
             <ReaderDialogFallback
               title="Publish topic"
               open={publishDialogOpen}
-              onOpenChange={onPublishDialogOpenChange}
+              onOpenChange={onDialogOpenChange}
             />
           }
         >
           <LazyPublishTopicDialog
             subscription={selectedSubscription}
             open={publishDialogOpen}
-            onOpenChange={onPublishDialogOpenChange}
+            onOpenChange={onDialogOpenChange}
           />
         </Suspense>
-      )}
+      ) : null}
     </>
   );
 }

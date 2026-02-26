@@ -95,9 +95,7 @@ function DeveloperPage() {
                           Open
                         </a>
                       ) : (
-                        <Link to={resource.href}>
-                          {resource.title === 'Fetchx API' ? 'Learn More' : 'Learn More'}
-                        </Link>
+                        <Link to={resource.href}>Learn More</Link>
                       )}
                     </Button>
                   </CardContent>

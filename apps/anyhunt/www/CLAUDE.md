@@ -38,6 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- Reader Shell / Layout / Routes（模块 A）完成结构收敛：`Header` 拆分为容器 + `header/*` 子模块；`topics/*` 请求编排下沉到 `features/public-topics`；认证路由复用 `AuthModalRouteShell`；`ReaderShell/ReaderDialogs` 改为判别状态模型；新增 `MarketingPageShell` 收敛 `fetchx/memox` 页面壳层
 - Build：builder 阶段恢复复制 `apps/anyhunt/www`、`packages/types`、`packages/api`、`packages/ui` 的 `node_modules`（不复制 `sync`），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker builder/runner 改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 复制，修复 `packages/*/node_modules` 缺失与 `packages/api` 容器编译配置缺失问题

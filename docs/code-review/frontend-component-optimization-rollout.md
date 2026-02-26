@@ -162,6 +162,8 @@ status: active
 | 10 | anyhunt/console | 项目复盘（整项目一致性） | 全项目 Review（A~E） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `anyhunt/console` 已完成首个项目闭环：模块 A~E 全部完成并回写；进入下一个项目时沿用同一流程模板 |
 | 11 | anyhunt/console | 项目收口（状态片段化补扫） | 补扫已改范围并修复同类问题 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AgentBrowserLayoutPage` 布局模式改为状态片段独立渲染，移除 UI 条件混排；总索引与专项台账同步为“1/2/3 全流程完成” |
 | 12 | anyhunt/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/anyhunt/docs` 从本轮组件优化专项中移除 |
+| 13 | anyhunt/www | 模块 A（reader-shell/layout/routes） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x2 / S3x2`，详见 `docs/code-review/anyhunt-www.md` |
+| 14 | anyhunt/www | 模块 A（reader-shell/layout/routes） | 分步重构与修复（A-1~A-6） | done | `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass）；`typecheck/test:unit/build`（fail，基线问题） | 2026-02-26 | 完成 Header 分层、Topics 请求编排下沉、Auth 路由壳层复用、Reader 对话框状态收敛与 S3 清理；全量校验受既有 `@moryflow/api/client` 解析失败与旧代码 TS 报错阻塞 |
 
 ## 5. 回写格式（统一）
 
