@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- Thinking 第二轮落地：新增 `thinking-profile`/`thinking-adapter`；`levelPatches` 升级为 provider 强类型；运行时合成顺序固定为 `base -> user patch -> clamp`；未知等级统一降级 `off`（2026-02-26）
 - 新增 `tool-schema-compat` 共享模块：递归补齐 function tool JSON schema 中 `enum` 节点缺失的 `type`，并在 `agent-factory` 统一接入，修复 Gemini 严格校验下的 400（2026-02-24）
 - `parseRuntimeConfig` 新增空白内容短路（返回空配置且无错误），修复首次启动 `config.jsonc` 缺失时的 `ValueExpected` 噪音告警（2026-02-24）
 - 新增 `default-model-provider` 共享模块：将运行时 `ModelFactory` 绑定为 `@openai/agents-core` 默认 `ModelProvider`，修复 `run()` 构造默认 Runner 时的 `No default model provider set`

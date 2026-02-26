@@ -3,7 +3,12 @@ import { Agent, type ModelSettings, type Tool } from '@openai/agents-core';
 import type { ModelFactory } from './model-factory';
 import { getMorySystemPrompt } from './prompt';
 import { normalizeToolSchemasForInterop } from './tool-schema-compat';
-import type { AgentContext } from './types';
+import {
+  isMembershipModelId,
+  type AgentContext,
+  type ModelThinkingProfile,
+  type ThinkingSelection,
+} from './types';
 
 export interface AgentFactoryOptions {
   getModelFactory(): ModelFactory;
@@ -14,7 +19,10 @@ export interface AgentFactoryOptions {
 }
 
 export interface AgentFactory {
-  getAgent(preferredModelId?: string): { agent: Agent<AgentContext>; modelId: string };
+  getAgent(
+    preferredModelId?: string,
+    options?: { thinking?: ThinkingSelection; thinkingProfile?: ModelThinkingProfile }
+  ): { agent: Agent<AgentContext>; modelId: string };
   invalidate(): void;
 }
 
@@ -31,8 +39,15 @@ export const createAgentFactory = ({
 }: AgentFactoryOptions): AgentFactory => {
   const agentCache = new Map<string, Agent<AgentContext>>();
 
-  const buildAgent = (modelId: string) => {
-    const { baseModel } = getModelFactory().buildModel(modelId);
+  const buildAgent = (
+    modelId: string,
+    thinking?: ThinkingSelection,
+    thinkingProfile?: ModelThinkingProfile
+  ) => {
+    const { baseModel } = getModelFactory().buildModel(modelId, {
+      thinking,
+      thinkingProfile,
+    });
     const instructions = getInstructions?.() ?? getMorySystemPrompt();
     const modelSettings = getModelSettings?.();
     const runtimeTools = normalizeToolSchemasForInterop([...baseTools, ...getMcpTools()]);
@@ -46,12 +61,46 @@ export const createAgentFactory = ({
     return new Agent(config);
   };
 
-  const getAgent = (preferredModelId?: string) => {
-    const { modelId } = getModelFactory().buildModel(preferredModelId);
-    let agent = agentCache.get(modelId);
+  const resolveThinkingCacheKey = (thinking?: ThinkingSelection): string => {
+    if (!thinking || thinking.mode === 'off') {
+      return 'off';
+    }
+    return `level:${thinking.level}`;
+  };
+
+  const resolveThinkingProfileCacheKey = (
+    profile?: ModelThinkingProfile
+  ): string => {
+    if (!profile) {
+      return 'none';
+    }
+    return JSON.stringify({
+      supportsThinking: profile.supportsThinking,
+      defaultLevel: profile.defaultLevel,
+      levels: profile.levels.map((level) => ({
+        id: level.id,
+        label: level.label,
+      })),
+    });
+  };
+
+  const getAgent = (
+    preferredModelId?: string,
+    options?: { thinking?: ThinkingSelection; thinkingProfile?: ModelThinkingProfile }
+  ) => {
+    const requestedThinkingProfile = options?.thinkingProfile
+    const { modelId } = getModelFactory().buildModel(preferredModelId, {
+      thinking: options?.thinking,
+      thinkingProfile: requestedThinkingProfile,
+    });
+    const effectiveThinkingProfile = isMembershipModelId(modelId)
+      ? requestedThinkingProfile
+      : undefined
+    const cacheKey = `${modelId}::${resolveThinkingCacheKey(options?.thinking)}::${resolveThinkingProfileCacheKey(effectiveThinkingProfile)}`;
+    let agent = agentCache.get(cacheKey);
     if (!agent) {
-      agent = buildAgent(modelId);
-      agentCache.set(modelId, agent);
+      agent = buildAgent(modelId, options?.thinking, effectiveThinkingProfile);
+      agentCache.set(cacheKey, agent);
     }
     return { agent, modelId };
   };

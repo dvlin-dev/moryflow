@@ -11,14 +11,20 @@ import {
   type AgentSettings,
   type UserProviderConfig,
   type CustomProviderConfig,
+  type UserModelConfig,
   type ProviderSdkType,
   type PresetProvider,
   type MembershipConfig,
+  type ModelThinkingProfile,
   type ReasoningConfig,
+  type ThinkingLevelId,
+  type ThinkingSelection,
   isMembershipModelId,
   extractMembershipModelId,
 } from './types';
 import { buildReasoningProviderOptions } from './reasoning-config';
+import { resolveThinkingToReasoning } from './thinking-adapter';
+import { buildThinkingProfile, createDefaultThinkingProfile } from './thinking-profile';
 
 /** 运行时服务商条目 */
 interface RuntimeProviderEntry {
@@ -28,6 +34,7 @@ interface RuntimeProviderEntry {
   apiKey: string;
   baseUrl?: string;
   modelIds: Set<string>;
+  modelConfigMap: Map<string, UserModelConfig>;
   defaultModelId: string | undefined;
   isCustom: boolean;
 }
@@ -55,8 +62,20 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
   const { sdkType, apiKey, baseUrl, modelId, providerId, reasoning } = options;
 
   switch (sdkType) {
-    case 'openai':
-      return createOpenAI({ apiKey, baseURL: baseUrl }).chat(modelId);
+    case 'openai': {
+      const openaiChat = createOpenAI({ apiKey, baseURL: baseUrl }).chat as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return openaiChat(
+        modelId,
+        reasoning?.enabled
+          ? {
+              reasoningEffort: reasoning.effort ?? 'medium',
+            }
+          : undefined
+      );
+    }
 
     case 'anthropic':
       return createAnthropic({ apiKey, baseURL: baseUrl }).chat(modelId);
@@ -64,8 +83,20 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
     case 'google':
       return createGoogleGenerativeAI({ apiKey, baseURL: baseUrl })(modelId);
 
-    case 'xai':
-      return createXai({ apiKey, baseURL: baseUrl }).chat(modelId);
+    case 'xai': {
+      const xaiChat = createXai({ apiKey, baseURL: baseUrl }).chat as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return xaiChat(
+        modelId,
+        reasoning?.enabled
+          ? {
+              reasoningEffort: reasoning.effort ?? 'medium',
+            }
+          : undefined
+      );
+    }
 
     case 'openrouter': {
       const openrouter = createOpenRouter({ apiKey, baseURL: baseUrl });
@@ -73,7 +104,7 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       if (reasoning?.enabled) {
         return openrouter.chat(modelId, {
           includeReasoning: true,
-          extraBody: {
+          extraBody: reasoning.rawConfig ?? {
             reasoning: {
               effort: reasoning.effort ?? 'medium',
               max_tokens: reasoning.maxTokens,
@@ -86,12 +117,24 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
     }
 
     case 'openai-compatible':
-    default:
-      return createOpenAICompatible({
+    default: {
+      const openAICompatible = createOpenAICompatible({
         name: providerId,
         apiKey,
         baseURL: baseUrl || 'https://api.openai.com/v1',
-      })(modelId);
+      }) as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return openAICompatible(
+        modelId,
+        reasoning?.enabled
+          ? {
+              reasoningEffort: reasoning.effort ?? 'medium',
+            }
+          : undefined
+      );
+    }
   }
 };
 
@@ -107,6 +150,7 @@ const buildPresetProviderEntry = (
   if (!apiKey) return null;
 
   const enabledModelIds = new Set<string>();
+  const modelConfigMap = new Map<string, UserModelConfig>();
 
   if (config.models.length === 0) {
     if (preset.modelIds.length > 0) {
@@ -114,6 +158,7 @@ const buildPresetProviderEntry = (
     }
   } else {
     for (const modelConfig of config.models) {
+      modelConfigMap.set(modelConfig.id, modelConfig);
       if (modelConfig.enabled) {
         if (preset.modelIds.includes(modelConfig.id) || modelConfig.isCustom) {
           enabledModelIds.add(modelConfig.id);
@@ -136,6 +181,7 @@ const buildPresetProviderEntry = (
     apiKey,
     baseUrl: trimOrNull(config.baseUrl) || preset.defaultBaseUrl,
     modelIds: enabledModelIds,
+    modelConfigMap,
     defaultModelId: resolvedDefaultModelId,
     isCustom: false,
   };
@@ -149,6 +195,9 @@ const buildCustomProviderEntry = (config: CustomProviderConfig): RuntimeProvider
   if (!apiKey) return null;
 
   const enabledModelIds = new Set(config.models.filter((m) => m.enabled).map((m) => m.id));
+  const modelConfigMap = new Map<string, UserModelConfig>(
+    config.models.map((modelConfig) => [modelConfig.id, modelConfig])
+  );
 
   if (enabledModelIds.size === 0) return null;
 
@@ -164,6 +213,7 @@ const buildCustomProviderEntry = (config: CustomProviderConfig): RuntimeProvider
     apiKey,
     baseUrl: trimOrNull(config.baseUrl) || undefined,
     modelIds: enabledModelIds,
+    modelConfigMap,
     defaultModelId: resolvedDefaultModelId,
     isCustom: true,
   };
@@ -185,6 +235,10 @@ export interface ModelFactoryOptions {
 export interface BuildModelOptions {
   /** Reasoning/思考模式配置 */
   reasoning?: ReasoningConfig;
+  /** 请求级思考模式（优先级高于 reasoning） */
+  thinking?: ThinkingSelection;
+  /** 请求级思考档案（优先级高于模型默认档案） */
+  thinkingProfile?: ModelThinkingProfile;
 }
 
 /** 模型构建结果 */
@@ -193,6 +247,9 @@ export interface BuildModelResult {
   baseModel: ReturnType<typeof aisdk>;
   /** Provider 特定选项（用于传递给 AI SDK） */
   providerOptions: Record<string, unknown>;
+  /** 最终应用的思考等级（含降级结果） */
+  resolvedThinkingLevel?: ThinkingLevelId;
+  thinkingDowngradedToOff?: boolean;
 }
 
 export interface ModelFactory {
@@ -267,7 +324,13 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
 
   /** 解析模型配置（公共逻辑） */
   type ResolvedModel =
-    | { type: 'membership'; modelId: string; actualModelId: string; apiKey: string; apiUrl: string }
+    | {
+        type: 'membership';
+        modelId: string;
+        actualModelId: string;
+        apiKey: string;
+        apiUrl: string;
+      }
     | { type: 'provider'; modelId: string; apiModelId: string; provider: RuntimeProviderEntry };
 
   const resolveModel = (modelId?: string): ResolvedModel => {
@@ -320,25 +383,89 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     };
   };
 
-  const buildModel = (modelId?: string, buildOptions?: BuildModelOptions): BuildModelResult => {
-    const resolved = resolveModel(modelId);
+  const resolveThinkingProfile = (
+    resolved: ResolvedModel,
+    requestProfile?: ModelThinkingProfile
+  ): ModelThinkingProfile => {
+    if (requestProfile && resolved.type === 'membership') {
+      return requestProfile
+    }
 
     if (resolved.type === 'membership') {
-      const chatModel = createOpenAICompatible({
+      return createDefaultThinkingProfile({
+        sdkType: 'openai-compatible',
+        supportsThinking: true,
+      })
+    }
+
+    const modelConfig = resolved.provider.modelConfigMap.get(resolved.modelId)
+    const hasOverrideLevels = Boolean(
+      modelConfig?.thinking?.enabledLevels?.some((level) => level !== 'off')
+    )
+    const supportsThinking =
+      modelConfig?.customCapabilities?.reasoning ?? hasOverrideLevels ?? true
+
+    return buildThinkingProfile({
+      sdkType: resolved.provider.sdkType,
+      supportsThinking,
+      override: modelConfig?.thinking,
+    })
+  }
+
+  const buildModel = (modelId?: string, buildOptions?: BuildModelOptions): BuildModelResult => {
+    const resolved = resolveModel(modelId);
+    const sdkType = resolved.type === 'membership' ? 'openai-compatible' : resolved.provider.sdkType
+    const thinkingProfile = resolveThinkingProfile(
+      resolved,
+      buildOptions?.thinkingProfile
+    )
+    const resolvedThinking = resolveThinkingToReasoning({
+      sdkType,
+      profile: thinkingProfile,
+      requested: buildOptions?.thinking,
+      override:
+        resolved.type === 'membership'
+          ? undefined
+          : resolved.provider.modelConfigMap.get(resolved.modelId)?.thinking,
+    })
+    const useLegacyReasoning = Boolean(buildOptions?.reasoning && !buildOptions?.thinking)
+    const effectiveReasoning = useLegacyReasoning
+      ? buildOptions?.reasoning
+      : resolvedThinking.reasoning
+
+    if (resolved.type === 'membership') {
+      const membershipModelFactory = createOpenAICompatible({
         name: 'membership',
         apiKey: resolved.apiKey,
         baseURL: `${resolved.apiUrl}/v1`,
         fetch: options.customFetch,
-      })(resolved.actualModelId);
+      }) as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3
+      const chatModel = membershipModelFactory(
+        resolved.actualModelId,
+        effectiveReasoning?.enabled
+          ? {
+              reasoningEffort: effectiveReasoning.effort ?? 'medium',
+            }
+          : undefined
+      );
 
-      const providerOptions = buildOptions?.reasoning
-        ? buildReasoningProviderOptions('openai-compatible', buildOptions.reasoning)
+      const providerOptions = effectiveReasoning
+        ? buildReasoningProviderOptions('openai-compatible', effectiveReasoning)
         : {};
 
       return {
         modelId: resolved.modelId,
         baseModel: aisdk(chatModel),
         providerOptions,
+        ...(useLegacyReasoning
+          ? {}
+          : {
+              resolvedThinkingLevel: resolvedThinking.level,
+              thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
+            }),
       };
     }
 
@@ -349,17 +476,23 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
       baseUrl: resolved.provider.baseUrl,
       modelId: resolved.apiModelId,
       providerId: resolved.provider.id,
-      reasoning: buildOptions?.reasoning,
+      reasoning: effectiveReasoning,
     });
 
-    const providerOptions = buildOptions?.reasoning
-      ? buildReasoningProviderOptions(resolved.provider.sdkType, buildOptions.reasoning)
+    const providerOptions = effectiveReasoning
+      ? buildReasoningProviderOptions(resolved.provider.sdkType, effectiveReasoning)
       : {};
 
     return {
       modelId: resolved.modelId,
       baseModel: aisdk(chatModel),
       providerOptions,
+      ...(useLegacyReasoning
+        ? {}
+        : {
+            resolvedThinkingLevel: resolvedThinking.level,
+            thinkingDowngradedToOff: resolvedThinking.downgradedToOff,
+          }),
     };
   };
 
