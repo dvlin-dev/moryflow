@@ -14,6 +14,7 @@ import type { ModelOption } from '../types';
 import { useAuthStore } from '@/stores/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CircleAlert } from 'lucide-react';
+import { parseChatStreamChunk } from '../stream-parser';
 
 interface Message {
   id: string;
@@ -35,6 +36,7 @@ export function ChatPane() {
 
   // 消息状态
   const [messages, setMessages] = useState<Message[]>([]);
+  const messagesRef = useRef<Message[]>([]);
   const [status, setStatus] = useState<ChatStatus>('ready');
   const [error, setError] = useState<Error | null>(null);
   const [tokenUsage, setTokenUsage] = useState({ prompt: 0, completion: 0 });
@@ -57,6 +59,14 @@ export function ChatPane() {
   // 计算已使用的总 token
   const usedTokens = tokenUsage.prompt + tokenUsage.completion;
 
+  const updateMessages = useCallback((updater: (prev: Message[]) => Message[]) => {
+    setMessages((prev) => {
+      const next = updater(prev);
+      messagesRef.current = next;
+      return next;
+    });
+  }, []);
+
   const handleSubmit = useCallback(
     async (text: string) => {
       if (!selectedModelId || !isAuthenticated) return;
@@ -67,7 +77,9 @@ export function ChatPane() {
         role: 'user',
         content: text,
       };
-      setMessages((prev) => [...prev, userMessage]);
+      const requestMessages = [...messagesRef.current, userMessage];
+      messagesRef.current = requestMessages;
+      setMessages(requestMessages);
       setStatus('submitted');
       setError(null);
 
@@ -78,7 +90,7 @@ export function ChatPane() {
         const response = await createChatCompletionStream(
           {
             model: selectedModelId,
-            messages: [...messages, userMessage].map((m) => ({
+            messages: requestMessages.map((m) => ({
               role: m.role,
               content: m.content,
             })),
@@ -101,7 +113,7 @@ export function ChatPane() {
           role: 'assistant',
           content: '',
         };
-        setMessages((prev) => [...prev, assistantMessage]);
+        updateMessages((prev) => [...prev, assistantMessage]);
 
         // 读取流式响应
         const reader = response.body?.getReader();
@@ -115,36 +127,23 @@ export function ChatPane() {
 
             if (value) {
               const chunk = decoder.decode(value, { stream: true });
-              // 解析 SSE 数据
-              const lines = chunk.split('\n');
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-                  if (data === '[DONE]') {
-                    done = true;
-                    break;
-                  }
-                  try {
-                    const parsed = JSON.parse(data);
-                    const content = parsed.choices?.[0]?.delta?.content;
-                    if (content) {
-                      setMessages((prev) =>
-                        prev.map((m) =>
-                          m.id === assistantMessageId ? { ...m, content: m.content + content } : m
-                        )
-                      );
-                    }
-                    // 提取 usage 信息
-                    if (parsed.usage) {
-                      setTokenUsage({
-                        prompt: parsed.usage.prompt_tokens || 0,
-                        completion: parsed.usage.completion_tokens || 0,
-                      });
-                    }
-                  } catch {
-                    // 忽略解析错误
-                  }
-                }
+              const parsedChunk = parseChatStreamChunk(chunk);
+
+              for (const content of parsedChunk.contentSegments) {
+                updateMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMessageId ? { ...m, content: m.content + content } : m
+                  )
+                );
+              }
+
+              if (parsedChunk.usage) {
+                setTokenUsage(parsedChunk.usage);
+              }
+
+              if (parsedChunk.done) {
+                done = true;
+                break;
               }
             }
           }
@@ -163,7 +162,7 @@ export function ChatPane() {
         abortControllerRef.current = null;
       }
     },
-    [messages, selectedModelId, isAuthenticated]
+    [selectedModelId, isAuthenticated, updateMessages]
   );
 
   const handleStop = useCallback(() => {

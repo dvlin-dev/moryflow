@@ -23,65 +23,22 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useCreateAlertRule, useUpdateAlertRule } from '../hooks';
-import type { AlertRule, AlertRuleType, AlertLevel, CreateAlertRuleDto } from '../types';
+import type { AlertRule, AlertRuleType, AlertLevel } from '../types';
+import {
+  ALERT_LEVEL_OPTIONS,
+  ALERT_RULE_COOLDOWN_OPTIONS,
+  ALERT_RULE_TIME_WINDOW_OPTIONS,
+  ALERT_RULE_TYPE_OPTIONS,
+  buildAlertRuleDto,
+  getAlertRuleFormValues,
+  type AlertRuleFormValues,
+} from '../alert-rule-form';
 
 interface AlertRuleDialogProps {
   rule: AlertRule | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-interface FormData {
-  name: string;
-  type: AlertRuleType;
-  level: AlertLevel;
-  threshold: number;
-  timeWindow: number;
-  minCount: number;
-  cooldown: number;
-  email: string;
-  enabled: boolean;
-}
-
-const TYPE_OPTIONS: { value: AlertRuleType; label: string; description: string }[] = [
-  {
-    value: 'tool_failure_rate',
-    label: 'Tool 失败率',
-    description: '当 Tool 失败率超过阈值时告警',
-  },
-  {
-    value: 'agent_consecutive',
-    label: 'Agent 连续失败',
-    description: '当 Agent 连续失败时告警',
-  },
-  {
-    value: 'system_failure_rate',
-    label: '系统失败率',
-    description: '当系统整体失败率超过阈值时告警',
-  },
-];
-
-const LEVEL_OPTIONS: { value: AlertLevel; label: string }[] = [
-  { value: 'warning', label: '警告' },
-  { value: 'critical', label: '严重' },
-];
-
-const COOLDOWN_OPTIONS = [
-  { value: 300, label: '5 分钟' },
-  { value: 900, label: '15 分钟' },
-  { value: 1800, label: '30 分钟' },
-  { value: 3600, label: '1 小时' },
-  { value: 7200, label: '2 小时' },
-  { value: 86400, label: '24 小时' },
-];
-
-const TIME_WINDOW_OPTIONS = [
-  { value: 300, label: '5 分钟' },
-  { value: 900, label: '15 分钟' },
-  { value: 1800, label: '30 分钟' },
-  { value: 3600, label: '1 小时' },
-  { value: 7200, label: '2 小时' },
-];
 
 export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogProps) {
   const createMutation = useCreateAlertRule();
@@ -95,18 +52,8 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
     setValue,
     control,
     formState: { errors },
-  } = useForm<FormData>({
-    defaultValues: {
-      name: '',
-      type: 'tool_failure_rate',
-      level: 'warning',
-      threshold: 10,
-      timeWindow: 3600,
-      minCount: 10,
-      cooldown: 3600,
-      email: 'zhangbaolin.work@foxmail.com',
-      enabled: true,
-    },
+  } = useForm<AlertRuleFormValues>({
+    defaultValues: getAlertRuleFormValues(null),
   });
 
   const ruleType = useWatch({ control, name: 'type' }) ?? 'tool_failure_rate';
@@ -116,51 +63,13 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
   const enabled = useWatch({ control, name: 'enabled' }) ?? true;
 
   useEffect(() => {
-    if (rule) {
-      reset({
-        name: rule.name,
-        type: rule.type,
-        level: rule.level,
-        threshold: rule.condition.threshold,
-        timeWindow: rule.condition.timeWindow,
-        minCount: rule.condition.minCount ?? 10,
-        cooldown: rule.cooldown,
-        email: rule.actions[0]?.target ?? 'zhangbaolin.work@foxmail.com',
-        enabled: rule.enabled,
-      });
-    } else {
-      reset({
-        name: '',
-        type: 'tool_failure_rate',
-        level: 'warning',
-        threshold: 10,
-        timeWindow: 3600,
-        minCount: 10,
-        cooldown: 3600,
-        email: 'zhangbaolin.work@foxmail.com',
-        enabled: true,
-      });
-    }
+    reset(getAlertRuleFormValues(rule));
   }, [rule, reset]);
 
-  const onSubmit = async (data: FormData) => {
-    const dto: CreateAlertRuleDto = {
-      name: data.name,
-      type: data.type,
-      level: data.level,
-      condition: {
-        metric: data.type === 'agent_consecutive' ? 'consecutive_failures' : 'failure_rate',
-        operator: 'gt',
-        threshold: data.threshold,
-        timeWindow: data.timeWindow,
-        minCount: data.minCount,
-      },
-      actions: [{ channel: 'email', target: data.email }],
-      cooldown: data.cooldown,
-      enabled: data.enabled,
-    };
+  const onSubmit = async (data: AlertRuleFormValues) => {
+    const dto = buildAlertRuleDto(data);
 
-    if (isEdit) {
+    if (isEdit && rule) {
       await updateMutation.mutateAsync({ id: rule.id, dto });
     } else {
       await createMutation.mutateAsync(dto);
@@ -170,6 +79,15 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const getSubmitLabel = () => {
+    if (isPending) {
+      return '保存中...';
+    }
+    if (isEdit) {
+      return '保存更改';
+    }
+    return '创建规则';
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -198,7 +116,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TYPE_OPTIONS.map((opt) => (
+                {ALERT_RULE_TYPE_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     <div>
                       <p>{opt.label}</p>
@@ -218,7 +136,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {LEVEL_OPTIONS.map((opt) => (
+                {ALERT_LEVEL_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
@@ -252,7 +170,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TIME_WINDOW_OPTIONS.map((opt) => (
+                {ALERT_RULE_TIME_WINDOW_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={String(opt.value)}>
                     {opt.label}
                   </SelectItem>
@@ -282,7 +200,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {COOLDOWN_OPTIONS.map((opt) => (
+                {ALERT_RULE_COOLDOWN_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={String(opt.value)}>
                     {opt.label}
                   </SelectItem>
@@ -299,8 +217,15 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
               id="email"
               type="email"
               placeholder="email@example.com"
-              {...register('email', { required: '请输入通知邮箱' })}
+              {...register('email', {
+                required: '请输入通知邮箱',
+                pattern: {
+                  value: /^\S+@\S+\.\S+$/,
+                  message: '请输入有效邮箱地址',
+                },
+              })}
             />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           {/* Enabled */}
@@ -318,7 +243,7 @@ export function AlertRuleDialog({ rule, open, onOpenChange }: AlertRuleDialogPro
               取消
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? '保存中...' : isEdit ? '保存更改' : '创建规则'}
+              {getSubmitLabel()}
             </Button>
           </DialogFooter>
         </form>

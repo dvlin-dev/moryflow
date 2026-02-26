@@ -44,6 +44,21 @@ status: in_progress
   - `apps/moryflow/admin/src/features/models`
   - `apps/moryflow/admin/src/features/storage`
 
+### 模块 C 预扫描范围（Step 18）
+
+- 本轮模块：`chat / agent-traces / alerts / admin-logs`
+- 页面入口：
+  - `apps/moryflow/admin/src/pages/ChatPage.tsx`
+  - `apps/moryflow/admin/src/pages/AgentTracesPage.tsx`
+  - `apps/moryflow/admin/src/pages/AgentTracesFailedPage.tsx`
+  - `apps/moryflow/admin/src/pages/AlertsPage.tsx`
+  - `apps/moryflow/admin/src/pages/LogsPage.tsx`
+- 特性目录：
+  - `apps/moryflow/admin/src/features/chat`
+  - `apps/moryflow/admin/src/features/agent-traces`
+  - `apps/moryflow/admin/src/features/alerts`
+  - `apps/moryflow/admin/src/features/admin-logs`
+
 ## 结论摘要（模块 A：修复完成）
 
 - `S1`（必须改）：1 项（已修复）
@@ -57,6 +72,13 @@ status: in_progress
 - `S2`（建议本轮改）：3 项（已修复）
 - `S3`（可延后）：1 项（已修复）
 - 当前状态：模块 B 已完成修复并通过模块级校验
+
+## 结论摘要（模块 C：修复完成）
+
+- `S1`（必须改）：3 项（已修复）
+- `S2`（建议本轮改）：2 项（已修复）
+- `S3`（可延后）：2 项（已修复）
+- 当前状态：模块 C 已完成修复并通过模块级校验
 
 ## 发现（按严重度排序）
 
@@ -188,6 +210,94 @@ status: in_progress
   - 结果：
     - query 映射与状态分发具备自动化回归防线
 
+## 模块 C 修复记录（按严重度排序）
+
+- [S1][已修复] 模块 C 多状态 UI 链式三元已统一为 `ViewState + renderByState/switch`
+  - 证据：
+    - `TraceTable`、`FailedToolTable`、`TraceDetailSheet`、`LogsPage` 均改为显式状态分发
+  - 定位：
+    - `apps/moryflow/admin/src/features/agent-traces/components/trace-table.tsx:40`
+    - `apps/moryflow/admin/src/features/agent-traces/components/trace-table.tsx:46`
+    - `apps/moryflow/admin/src/features/agent-traces/components/failed-tool-table.tsx:44`
+    - `apps/moryflow/admin/src/features/agent-traces/components/failed-tool-table.tsx:50`
+    - `apps/moryflow/admin/src/features/agent-traces/components/trace-detail-sheet.tsx:115`
+    - `apps/moryflow/admin/src/features/agent-traces/components/trace-detail-sheet.tsx:126`
+    - `apps/moryflow/admin/src/pages/LogsPage.tsx:101`
+  - 结果：
+    - 多状态渲染边界清晰，链式三元已从核心列表/详情链路清零
+
+- [S1][已修复] `AlertRuleDialog` 硬编码邮箱默认值已移除
+  - 证据：
+    - 默认值/回填策略抽离到 `alert-rule-form.ts`，邮箱缺省值改为 `''`，并增加邮箱格式校验
+  - 定位：
+    - `apps/moryflow/admin/src/features/alerts/alert-rule-form.ts:67`
+    - `apps/moryflow/admin/src/features/alerts/alert-rule-form.ts:83`
+    - `apps/moryflow/admin/src/features/alerts/components/alert-rule-dialog.tsx:56`
+    - `apps/moryflow/admin/src/features/alerts/components/alert-rule-dialog.tsx:66`
+    - `apps/moryflow/admin/src/features/alerts/components/alert-rule-dialog.tsx:228`
+  - 结果：
+    - 避免默认误发到固定邮箱，规则创建/编辑默认行为可控
+
+- [S1][已修复] `LogsPage` / `AlertRuleDialog` 超阈值组件已收敛到 300 行以内
+  - 证据：
+    - `LogsPage` 通过提取徽章与详情弹窗组件、列表状态分发后降至 `268` 行
+    - `AlertRuleDialog` 通过提取 form defaults/options/dto mapper 降至 `253` 行
+  - 定位：
+    - `apps/moryflow/admin/src/pages/LogsPage.tsx:1`
+    - `apps/moryflow/admin/src/features/admin-logs/components/log-detail-dialog.tsx:1`
+    - `apps/moryflow/admin/src/features/alerts/components/alert-rule-dialog.tsx:1`
+    - `apps/moryflow/admin/src/features/alerts/alert-rule-form.ts:1`
+  - 结果：
+    - 单文件职责收敛，改动面与 review 成本显著下降
+
+- [S2][已修复] `agent-traces/alerts/admin-logs` 显式错误态已补齐
+  - 证据：
+    - 列表/详情链路接入 `error` 并渲染独立失败片段，空态与失败态分离
+  - 定位：
+    - `apps/moryflow/admin/src/pages/AgentTracesPage.tsx:155`
+    - `apps/moryflow/admin/src/pages/AgentTracesFailedPage.tsx:90`
+    - `apps/moryflow/admin/src/features/alerts/components/alert-rules-table.tsx:112`
+    - `apps/moryflow/admin/src/features/alerts/components/alert-history-table.tsx:61`
+    - `apps/moryflow/admin/src/pages/AlertsPage.tsx:132`
+    - `apps/moryflow/admin/src/pages/LogsPage.tsx:108`
+  - 结果：
+    - 请求失败不会再误展示为“暂无数据”
+
+- [S2][已修复] `ChatPane` 流式编排已收敛，闭包消息组装风险已消除
+  - 证据：
+    - 增加 `messagesRef + updateMessages` 保证请求消息组装基于最新状态
+    - SSE 解析下沉到 `parseChatStreamChunk` helper 并补齐单测
+  - 定位：
+    - `apps/moryflow/admin/src/features/chat/components/chat-pane.tsx:39`
+    - `apps/moryflow/admin/src/features/chat/components/chat-pane.tsx:62`
+    - `apps/moryflow/admin/src/features/chat/components/chat-pane.tsx:80`
+    - `apps/moryflow/admin/src/features/chat/components/chat-pane.tsx:130`
+    - `apps/moryflow/admin/src/features/chat/stream-parser.ts:15`
+    - `apps/moryflow/admin/src/features/chat/stream-parser.test.ts:4`
+  - 结果：
+    - 流式解析可测试，消息上下文组装稳定性提升
+
+- [S3][已修复] `TokenUsageIndicator` 阈值颜色分发收敛为命名函数
+  - 证据：
+    - 颜色决策逻辑提取为 `resolveUsageColorClass`
+  - 定位：
+    - `apps/moryflow/admin/src/features/chat/components/token-usage-indicator.tsx:14`
+    - `apps/moryflow/admin/src/features/chat/components/token-usage-indicator.tsx:84`
+  - 结果：
+    - 阈值扩展可读性更高，样式逻辑更易维护
+
+- [S3][已修复] alerts/agent-traces 查询字符串构建已统一为共享工具
+  - 证据：
+    - 新增 `buildQuerySuffix` 并在两个 feature API 复用
+    - 补齐 `query-string` 单测覆盖空值过滤与空查询场景
+  - 定位：
+    - `apps/moryflow/admin/src/lib/query-string.ts:1`
+    - `apps/moryflow/admin/src/features/alerts/api.ts:6`
+    - `apps/moryflow/admin/src/features/agent-traces/api.ts:6`
+    - `apps/moryflow/admin/src/lib/query-string.test.ts:4`
+  - 结果：
+    - 查询参数编码策略单点收敛，后续调整无需双点改动
+
 ## 分步修复计划（模块 B）
 
 1. B-1：拆分 `ModelFormDialog`（搜索片段 / 基础字段片段 / reasoning 片段 / 提交映射），收敛容器职责。（已完成）
@@ -196,6 +306,22 @@ status: in_progress
 4. B-4：重构 `modelsApi.getAll` 查询参数为 `URLSearchParams`（或等价 query helper），统一路径构建策略。（已完成）
 5. B-5：抽离 `ProviderFormDialog` 默认值工厂函数，消除初始化与重置重复定义。（已完成）
 6. B-6：补齐模块 B 回归测试（至少覆盖页面状态分发与 query 构建路径），并执行模块级校验。（已完成）
+
+## 分步修复计划（模块 C）
+
+1. C-1：将 `TraceTable` / `FailedToolTable` / `TraceDetailSheet` / `LogsPage` 的多状态渲染统一改为 `ViewState + renderByState/switch`，移除链式三元。（已完成）
+2. C-2：移除 `AlertRuleDialog` 写死邮箱默认值，改为安全默认（空值 + 必填校验）并统一回填策略。（已完成）
+3. C-3：拆分 `LogsPage`（筛选栏、列表区、详情弹窗、页面容器）与 `AlertRuleDialog`（字段片段 + DTO 映射），收敛单文件复杂度。（已完成）
+4. C-4：补齐 `agent-traces/alerts/admin-logs` 的显式 `error` 状态片段，失败态与空态分离。（已完成）
+5. C-5：抽离 `ChatPane` 流式编排到 `methods`/helper，修复请求消息组装对闭包态的依赖。（已完成）
+6. C-6：收敛 `TokenUsageIndicator` 阈值颜色映射与重复 query builder，统一状态/请求工具约定。（已完成）
+7. C-7：补齐模块 C 回归测试（状态分发、AlertRule DTO 映射、chat streaming 关键路径）并执行模块级校验。（已完成）
+
+## 建议验证命令（模块 C）
+
+- `pnpm --filter @moryflow/admin lint`
+- `pnpm --filter @moryflow/admin typecheck`
+- `pnpm --filter @moryflow/admin test:unit`
 
 ## 建议验证命令（模块 B）
 
@@ -220,3 +346,11 @@ status: in_progress
 | B-4 | payment/providers/models/storage | query 参数构造收敛 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `models/orders/subscriptions/storage` 新增 query builder 并接入 API |
 | B-5 | payment/providers/models/storage | `ProviderFormDialog` 默认值工厂化 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `defaultValues` 与 `reset` 统一复用 `getProviderFormDefaultValues` |
 | B-6 | payment/providers/models/storage | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 8 个测试文件；模块单测通过：21 files / 97 tests |
+| C-0 | chat/agent-traces/alerts/admin-logs | 预扫描（不改代码） | done | n/a | 2026-02-26 | 识别 `S1x3 / S2x2 / S3x2`（链式三元、硬编码邮箱、超阈值大组件、错误态缺失、流式编排耦合） |
+| C-1 | chat/agent-traces/alerts/admin-logs | 多状态视图统一为 `ViewState + switch` | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `trace-table`/`failed-tool-table`/`trace-detail-sheet`/`LogsPage` 已移除链式三元 |
+| C-2 | chat/agent-traces/alerts/admin-logs | 移除告警规则硬编码邮箱默认值 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `alert-rule-form` 默认值与 DTO 映射；邮箱默认值改为空并加格式校验 |
+| C-3 | chat/agent-traces/alerts/admin-logs | 超阈值大组件拆分减责 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `LogsPage` 降至 268 行；`AlertRuleDialog` 降至 253 行 |
+| C-4 | chat/agent-traces/alerts/admin-logs | 补齐显式错误态 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | agent-traces/alerts/admin-logs 主链路失败态与空态已分离 |
+| C-5 | chat/agent-traces/alerts/admin-logs | Chat 流式编排收敛与闭包态修复 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `messagesRef + stream-parser` 落地，补齐 `stream-parser.test.ts` |
+| C-6 | chat/agent-traces/alerts/admin-logs | S3 收敛（token 阈值映射 + query builder 复用） | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `resolveUsageColorClass` 与 `buildQuerySuffix` 共享工具 |
+| C-7 | chat/agent-traces/alerts/admin-logs | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 模块单测通过：26 files / 117 tests |

@@ -17,6 +17,12 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- 模块 C：`trace-table` / `failed-tool-table` / `trace-detail-sheet` / `LogsPage` 多状态渲染统一为 `ViewState + renderByState/switch`，核心链路移除链式三元
+- 模块 C：`LogsPage` 拆分 `LogCategoryBadge` / `LogLevelBadge` / `LogDetailDialog` 并引入 `resolveActivityLogsListViewState`（文件收敛到 268 行）
+- 模块 C：`AlertRuleDialog` 默认值与 DTO 映射抽离到 `alert-rule-form.ts`，移除硬编码邮箱默认值并补齐邮箱格式校验（文件收敛到 253 行）
+- 模块 C：`alerts` / `agent-traces` API 查询字符串构建统一复用 `src/lib/query-string.ts#buildQuerySuffix`
+- 模块 C：`ChatPane` 引入 `messagesRef + stream-parser` 收敛流式编排，修复请求消息闭包态组装风险；新增 `stream-parser` 回归测试
+- 模块 C：补齐 `agent-traces` / `admin-logs` / `alerts` / `lib/query-string` 单测，`@moryflow/admin test:unit` 通过（26 files / 117 tests）
 - 模块 B：`ModelFormDialog` 拆分为容器 + 搜索片段 + 基础字段片段 + Reasoning 片段（容器降至 157 行），消除单文件职责混杂
 - 模块 B：`SubscriptionsPage` / `OrdersPage` / `ProvidersPage` / `ModelsPage` 列表区统一改为 `ViewState + renderByState/switch`，并补齐显式 `error` 状态片段（移除链式三元）
 - 模块 B：`models/orders/subscriptions/storage` 查询参数构造统一收敛到 query builder（`URLSearchParams`），并新增对应回归测试

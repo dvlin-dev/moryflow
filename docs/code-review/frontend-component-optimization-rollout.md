@@ -166,6 +166,8 @@ status: active
 | 15 | moryflow/admin | 模块 A（auth/dashboard/users） | 分步重构与修复（A-1~A-5） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x1 / S2x2 / S3x1` 修复；`UsersPage` 完成状态片段化与职责拆分，新增 `set-tier-dialog`/`api-paths` 回归测试 |
 | 16 | moryflow/admin | 模块 B（payment/providers/models/storage） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x2 / S2x3 / S3x1`，详见 `docs/code-review/moryflow-admin.md` |
 | 17 | moryflow/admin | 模块 B（payment/providers/models/storage） | 分步重构与修复（B-1~B-6） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x2 / S2x3 / S3x1` 修复；`ModelFormDialog` 拆分为状态片段，四个列表页统一 `ViewState + switch` 并补 error 片段，新增 query builder 与回归测试（21 files / 97 tests） |
+| 18 | moryflow/admin | 模块 C（chat/agent-traces/alerts/admin-logs） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x2 / S3x2`，详见 `docs/code-review/moryflow-admin.md` |
+| 19 | moryflow/admin | 模块 C（chat/agent-traces/alerts/admin-logs） | 分步重构与修复（C-1~C-7） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x3 / S2x2 / S3x2` 修复：多状态视图统一 `ViewState + switch`，`AlertRuleDialog` 去硬编码邮箱并拆分，`LogsPage`/`AlertRuleDialog` 均降至 `<300` 行，补齐错误态，chat 流式编排收敛并新增回归测试（26 files / 117 tests） |
 
 ## 5. 回写格式（统一）
 
