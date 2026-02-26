@@ -1,6 +1,29 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { sitesListMethods, syncSitesListQueryState } from './methods';
 import { useSitesListStore } from './store';
+import type { SiteListItem } from './types';
+
+const demoSite: SiteListItem = {
+  id: 'site_1',
+  subdomain: 'demo',
+  type: 'MARKDOWN',
+  status: 'ACTIVE',
+  title: 'Demo',
+  showWatermark: false,
+  publishedAt: null,
+  expiresAt: null,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  url: 'https://demo.moryflow.app',
+  pageCount: 1,
+  owner: {
+    id: 'user_1',
+    email: 'demo@example.com',
+    name: null,
+    subscriptionTier: 'free',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+};
 
 describe('sitesListMethods', () => {
   beforeEach(() => {
@@ -80,5 +103,35 @@ describe('sitesListMethods', () => {
     });
 
     expect(useSitesListStore.getState().listViewState).toBe('error');
+  });
+
+  it('confirmSiteAction 成功时关闭确认弹窗', async () => {
+    sitesListMethods.openSiteActionDialog(demoSite, 'offline');
+
+    const offline = async () => Promise.resolve();
+    const online = async () => Promise.resolve();
+    const remove = async () => Promise.resolve();
+
+    await sitesListMethods.confirmSiteAction({ offline, online, remove });
+
+    const next = useSitesListStore.getState();
+    expect(next.actionType).toBeNull();
+    expect(next.actionSite).toBeNull();
+  });
+
+  it('confirmSiteAction 失败时保持确认弹窗打开', async () => {
+    sitesListMethods.openSiteActionDialog(demoSite, 'offline');
+
+    await expect(
+      sitesListMethods.confirmSiteAction({
+        offline: async () => Promise.reject(new Error('offline failed')),
+        online: async () => Promise.resolve(),
+        remove: async () => Promise.resolve(),
+      })
+    ).rejects.toThrow('offline failed');
+
+    const next = useSitesListStore.getState();
+    expect(next.actionType).toBe('offline');
+    expect(next.actionSite?.id).toBe('site_1');
   });
 });

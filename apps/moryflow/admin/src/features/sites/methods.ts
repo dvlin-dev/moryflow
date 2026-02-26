@@ -89,21 +89,19 @@ export async function confirmSiteAction(
 
   const id = actionSite.id;
 
-  try {
-    switch (actionType) {
-      case 'offline':
-        await mutations.offline(id);
-        break;
-      case 'online':
-        await mutations.online(id);
-        break;
-      case 'delete':
-        await mutations.remove(id);
-        break;
-    }
-  } finally {
-    closeSiteActionDialog();
+  switch (actionType) {
+    case 'offline':
+      await mutations.offline(id);
+      break;
+    case 'online':
+      await mutations.online(id);
+      break;
+    case 'delete':
+      await mutations.remove(id);
+      break;
   }
+
+  closeSiteActionDialog();
 }
 
 export function resetSitesListState(): void {

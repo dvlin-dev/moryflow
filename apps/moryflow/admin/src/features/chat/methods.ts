@@ -56,6 +56,14 @@ export function resolveNextSelectedModelId(
   return modelGroups[0]?.options[0]?.id ?? null;
 }
 
+export function shouldPreserveStoredModelPreference(
+  modelGroups: ModelGroup[],
+  isLoading: boolean,
+  error: Error | null
+): boolean {
+  return modelGroups.length === 0 && (isLoading || Boolean(error));
+}
+
 function normalizeQueryError(error: unknown): Error | null {
   if (!error) return null;
   return error instanceof Error ? error : new Error(String(error));
@@ -192,12 +200,25 @@ export function useSyncChatModels(): void {
   useEffect(() => {
     const state = useChatSessionStore.getState();
     const normalizedError = normalizeQueryError(error);
-    const preferredModelId = (state.selectedModelId ?? readStoredModelId()) || null;
-    const nextModelId = resolveNextSelectedModelId(data, preferredModelId);
 
     state.setModelGroups(data);
     state.setModelsLoading(isLoading);
     state.setModelsError(normalizedError);
+
+    if (shouldPreserveStoredModelPreference(data, isLoading, normalizedError)) {
+      return;
+    }
+
+    if (data.length === 0) {
+      if (state.selectedModelId !== null) {
+        state.setSelectedModelId(null);
+      }
+      writeStoredModelId('');
+      return;
+    }
+
+    const preferredModelId = (state.selectedModelId ?? readStoredModelId()) || null;
+    const nextModelId = resolveNextSelectedModelId(data, preferredModelId);
 
     if (nextModelId !== state.selectedModelId) {
       state.setSelectedModelId(nextModelId);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveNextSelectedModelId } from './methods';
+import { resolveNextSelectedModelId, shouldPreserveStoredModelPreference } from './methods';
 
 describe('resolveNextSelectedModelId', () => {
   const groups = [
@@ -22,5 +22,19 @@ describe('resolveNextSelectedModelId', () => {
 
   it('无可用模型时返回 null', () => {
     expect(resolveNextSelectedModelId([], null)).toBeNull();
+  });
+});
+
+describe('shouldPreserveStoredModelPreference', () => {
+  it('初始加载且无模型数据时保留本地偏好', () => {
+    expect(shouldPreserveStoredModelPreference([], true, null)).toBe(true);
+  });
+
+  it('请求报错且无模型数据时保留本地偏好', () => {
+    expect(shouldPreserveStoredModelPreference([], false, new Error('boom'))).toBe(true);
+  });
+
+  it('空列表但加载完成无错误时允许清空无效选择', () => {
+    expect(shouldPreserveStoredModelPreference([], false, null)).toBe(false);
   });
 });

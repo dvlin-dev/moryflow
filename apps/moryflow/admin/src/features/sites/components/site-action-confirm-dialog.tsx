@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,21 +76,38 @@ export function SiteActionConfirmDialog(props: SiteActionConfirmDialogProps) {
 
   const description = getActionDescription(actionType, siteSubdomain);
   const isDelete = actionType === 'delete';
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
+    setConfirmError(null);
+
     if (props.onConfirm) {
-      await props.onConfirm();
+      try {
+        await props.onConfirm();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '操作失败，请稍后重试。';
+        setConfirmError(message || '操作失败，请稍后重试。');
+      }
       return;
     }
 
-    await sitesListMethods.confirmSiteAction({
-      offline: offlineMutation.mutateAsync,
-      online: onlineMutation.mutateAsync,
-      remove: deleteMutation.mutateAsync,
-    });
+    try {
+      await sitesListMethods.confirmSiteAction({
+        offline: offlineMutation.mutateAsync,
+        online: onlineMutation.mutateAsync,
+        remove: deleteMutation.mutateAsync,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '操作失败，请稍后重试。';
+      setConfirmError(message || '操作失败，请稍后重试。');
+    }
   };
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setConfirmError(null);
+    }
+
     if (props.onOpenChange) {
       props.onOpenChange(isOpen);
       return;
@@ -108,6 +126,7 @@ export function SiteActionConfirmDialog(props: SiteActionConfirmDialogProps) {
           <AlertDialogDescription>
             {isDelete ? <span className="text-red-600">{description}</span> : description}
           </AlertDialogDescription>
+          {confirmError ? <p className="text-sm text-red-600">{confirmError}</p> : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>

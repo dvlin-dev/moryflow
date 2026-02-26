@@ -173,6 +173,7 @@ status: active
 | 22 | moryflow/admin | 项目复盘（整项目一致性） | 复盘扫描 + 遗留收口（R-0~R-4） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成复盘遗留 `S2x3 / S3x1` 修复：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 全部收敛到 `<300` 行，移除链式三元并补齐 3 组回归测试（32 files / 147 tests） |
 | 23 | moryflow/admin | 追加修复（chat/sites/image-generation） | 一次性彻改（store + methods + 子组件就地取数） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass）；`build`（blocked：历史遗留 `agent-traces/alerts/models` 编译问题） | 2026-02-26 | 完成 props drilling 收敛与编排下沉：新增 `chat/sites/image-generation` 三组 store/methods；`ChatPane`/`SitesPage`/`ImageGenerator` 收敛为装配层；新增 `methods.test.ts` 回归测试 |
 | 24 | moryflow/admin | 追加修复（build 阻塞） | 收口 `agent-traces/alerts/models` 编译阻塞 | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit` + `build`（pass） | 2026-02-26 | 修复 `buildQuerySuffix` 类型约束、`ModelFormDialog` 布尔收敛，并为 `@moryflow/admin` 增加 `prebuild` 自动构建 `@moryflow/model-registry-data` |
+| 25 | moryflow/admin | PR #99 review follow-up | 修复评审意见（chat/sites 稳定性） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 修复 `useSyncChatModels` 在 loading/error 空数据时清空偏好；`SiteActionConfirmDialog` 捕获异步失败且失败不自动关窗；补齐 `chat/sites` 回归测试 |
 
 ## 5. 回写格式（统一）
 
