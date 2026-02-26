@@ -8,6 +8,7 @@
 
 ## 最近更新
 
+- 模块 C 收敛：`digest-topics/digest-reports/digest-welcome` 完成组件化拆分与状态片段化。新增 `digest-topics/constants.ts + list-states.ts + components/*`、`digest-reports/constants.ts + list-states.ts + forms/resolveReportForm.ts + components/*`，`DigestWelcomePage` 抽离 `useDigestWelcomePageController`，`WelcomeConfigCard` 抽离 `WelcomeActionEditorSection` 并统一 action 编辑逻辑；补齐 `digest-topics/list-states.test.ts`、`digest-reports/forms/resolveReportForm.test.ts`、`digest-welcome/welcome-card-states.test.ts`
 - 模块 B 收敛：`jobs/queues/logs/browser/llm` 完成组件化拆分与状态片段化。新增 `jobs/components/*`（`JobsListContent`/`JobsTable`/`JobTimingBreakdown`/`JobJsonDisplay`）、`queues/constants.ts + components/*`、`logs/useRequestLogsFilters + components/*`、`browser/formatters.ts`、`llm/forms/* + useLlmPageController.ts`，并统一导出到各 feature `index.ts`
 - Users Feature：`UserCreditsSheet` 拆分为容器 + `user-credits-sheet/*` 子组件（`UserSummaryCard`/`GrantCreditsFormCard`/`CreditGrantsCard`/`GrantConfirmDialog` + `schemas/types`），并复用共享 `list-state` 片段
 - Users/Subscriptions/Orders：新增 `usePagedSearchQuery` 统一 `search/keyDown/page/filter` 编排，页面容器只保留查询与 mutation 编排

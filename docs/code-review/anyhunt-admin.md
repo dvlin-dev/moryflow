@@ -6,7 +6,7 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/anyhunt/admin/www（模块 A：dashboard/users/subscriptions/orders；模块 B：jobs/queues/logs/browser/llm）
+[INPUT]: apps/anyhunt/admin/www（模块 A：dashboard/users/subscriptions/orders；模块 B：jobs/queues/logs/browser/llm；模块 C：digest-*）
 [OUTPUT]: 问题清单 + 分级 + 分步修复计划 + 进度记录
 [POS]: Phase 3 / P2 模块审查记录（Anyhunt Admin）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -20,16 +20,23 @@ status: in_progress
 - 本轮模块：
   - 模块 A：`dashboard / users / subscriptions / orders`（已完成）
   - 模块 B：`jobs / queues / logs / browser / llm`（已完成）
+  - 模块 C：`digest-* 系列`（已完成）
 - 页面入口：
   - `src/pages/DashboardPage.tsx`
   - `src/pages/UsersPage.tsx`
   - `src/pages/SubscriptionsPage.tsx`
   - `src/pages/OrdersPage.tsx`
+  - `src/pages/DigestTopicsPage.tsx`
+  - `src/pages/DigestReportsPage.tsx`
+  - `src/pages/DigestWelcomePage.tsx`
 - 特性目录：
   - `src/features/dashboard/*`
   - `src/features/users/*`
   - `src/features/subscriptions/*`
   - `src/features/orders/*`
+  - `src/features/digest-topics/*`
+  - `src/features/digest-reports/*`
+  - `src/features/digest-welcome*/*`
 - 审查基线：`docs/guides/frontend/component-design-quality-index.md`
 
 ## 结论摘要（模块 A：A-6 已完成）
@@ -37,7 +44,7 @@ status: in_progress
 - `S1`（必须改）：4 项（4 项已修复）
 - `S2`（建议本轮改）：3 项（3 项已修复）
 - `S3`（可延后）：2 项（2 项已修复）
-- 当前状态：模块 A、模块 B 均已完成；可进入模块 C（`digest-*`）预扫描
+- 当前状态：模块 A/B/C 已完成，可进入模块 D（`shared components / stores / 页面装配`）
 
 ## 发现（按严重度排序）
 
@@ -407,6 +414,152 @@ pnpm --filter @anyhunt/admin typecheck
 pnpm --filter @anyhunt/admin test:unit
 ```
 
+## 模块 C 预扫描范围（仅扫描，不改代码）
+
+- 模块：`digest-topics / digest-reports / digest-welcome`
+- 页面入口：
+  - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx`
+  - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx`
+  - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomePagesCard.tsx`
+  - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomePageEditorCard.tsx`
+- 特性目录：
+  - `apps/anyhunt/admin/www/src/features/digest-topics/*`
+  - `apps/anyhunt/admin/www/src/features/digest-reports/*`
+  - `apps/anyhunt/admin/www/src/features/digest-welcome*/*`
+
+## 结论摘要（模块 C：C-6 已完成）
+
+- `S1`（必须改）：5 项
+- `S2`（建议本轮改）：4 项
+- `S3`（可延后）：2 项
+- 当前状态：C-1~C-6 已完成（重构 + 回归 + 台账回写）
+
+## 模块 C 发现（按严重度排序）
+
+- [S1] `DigestTopicsPage` 单文件超阈值且承担容器+列表渲染+Featured 编排多职责
+  - 证据：单文件 `482` 行；页面内同时维护 query/search/filter handlers 与 `AllTopicsTab`/`FeaturedTopicsTab` 重型渲染片段。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:72`
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:197`
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:364`
+
+- [S1] `DigestReportsPage` 超阈值且“列表查询 + 解决弹窗 + RHF 表单渲染”耦合在单页
+  - 证据：单文件 `381` 行；`resolveFormSchema`、列表状态渲染、`Dialog` 表单均在同文件。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:78`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:86`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:277`
+
+- [S1] `DigestWelcomePage` 容器层过重，集中编排 5 个 mutation 与全部业务 handler
+  - 证据：单文件 `307` 行；页面内维护 config/page 两套 draft、locale 同步、create/update/delete/reorder/save 全部动作。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:37`
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:141`
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:157`
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:174`
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:192`
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:206`
+
+- [S1] 模块 C 多状态 UI 仍大量使用链式三元，违反“状态片段化 + renderByState/switch”
+  - 证据：`loading/error/empty/ready` 在 Topics/Reports/Welcome 组件均以链式三元呈现。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:257`
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:259`
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:379`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:177`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:183`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx:78`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomePagesCard.tsx:42`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomePageEditorCard.tsx:81`
+
+- [S1] `WelcomeConfigCard` 超阈值且 Primary/Secondary Action 编辑块高度重复
+  - 证据：单文件 `308` 行；两段 Action 配置结构几乎同构，后续变更易产生漂移。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx:52`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx:117`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx:188`
+
+- [S2] locale 草稿补齐逻辑在容器与子组件重复，存在行为分叉风险
+  - 证据：`DigestWelcomePage` 与 `WelcomePageEditorCard` 各自实现 `applyLocale`。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:104`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomePageEditorCard.tsx:62`
+
+- [S2] `DigestReportsPage` 解决弹窗 form 区块过长，条件字段渲染与提交映射未分层
+  - 证据：`form.watch('status')` 条件区块与 `DialogFooter` 提交区直接混排在页面。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:321`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:360`
+
+- [S2] 模块 C 缺少针对核心交互的回归测试覆盖（topics/reports/welcome）
+  - 证据：核心页面已有大量状态与 mutation handler，但未见对应组件测试入口。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:72`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:86`
+    - `apps/anyhunt/admin/www/src/pages/DigestWelcomePage.tsx:37`
+
+- [S2] `WelcomeConfigCard` Action locale 与字段写入逻辑过长，事件处理重复创建对象
+  - 证据：primary/secondary label 更新与 `labelByLocale` 合并逻辑重复。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx:166`
+    - `apps/anyhunt/admin/www/src/pages/digest-welcome/WelcomeConfigCard.tsx:235`
+
+- [S3] 页面级常量与文案映射仍在页面内定义，未沉淀到 feature constants
+  - 证据：`VISIBILITY_OPTIONS`/`STATUS_OPTIONS`/`statusConfig` 等定义在页面顶部。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:48`
+    - `apps/anyhunt/admin/www/src/pages/DigestReportsPage.tsx:72`
+
+- [S3] `WWW_URL` 与查看链接行为在页面内硬编码，后续环境切换成本高
+  - 定位：
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:52`
+    - `apps/anyhunt/admin/www/src/pages/DigestTopicsPage.tsx:439`
+
+## 模块 C 分步修复计划（已完成）
+
+1. C-1：先统一模块 C 多状态渲染为“状态片段 + `renderContentByState/switch`”，消除链式三元。
+2. C-2：拆分 `DigestTopicsPage`（容器 + `AllTopicsListContent` + `FeaturedTopicsListContent` + constants/formatters）。
+3. C-3：拆分 `DigestReportsPage`（容器 + 列表状态组件 + `ResolveReportDialog` + form schema/mappers）。
+4. C-4：拆分 `DigestWelcomePage` 为 controller hook（query/draft/mutations）+ 页面装配层。
+5. C-5：重构 `WelcomeConfigCard` 为可复用 `WelcomeActionEditorSection`，消除 Primary/Secondary 重复块，并收敛 locale 写入逻辑。
+6. C-6：模块 C 回归校验（L1）：`lint` + `typecheck` + `test:unit`，并补充至少 1 组 digest 回归测试（建议覆盖 reports resolve dialog 或 welcome locale 行为）。
+
+### 建议验证命令（模块 C）
+
+```bash
+pnpm --filter @anyhunt/admin lint
+pnpm --filter @anyhunt/admin typecheck
+pnpm --filter @anyhunt/admin test:unit
+```
+
+## 模块 C 执行结果（C-1~C-6）
+
+- C-1（多状态 UI 收敛）：
+  - `DigestTopics`、`DigestReports`、`WelcomeConfigCard`、`WelcomePagesCard`、`WelcomePageEditorCard` 全部改为“状态片段 + `switch`”渲染。
+  - 新增状态解析器：`features/digest-topics/list-states.ts`、`features/digest-reports/list-states.ts`、`pages/digest-welcome/welcome-card-states.ts`。
+- C-2（Topics 拆分）：
+  - `DigestTopicsPage` 收敛为容器层（`482 -> 168` 行）。
+  - 新增 `features/digest-topics/constants.ts`、`components/AllTopicsListContent.tsx`、`AllTopicsTable.tsx`、`FeaturedTopicsListContent.tsx`、`FeaturedTopicsTable.tsx`。
+  - `WWW_URL` 从页面内联下沉到 `DIGEST_TOPIC_PUBLIC_BASE_URL` 常量。
+- C-3（Reports 拆分）：
+  - `DigestReportsPage` 收敛为容器层（`381 -> 145` 行）。
+  - 新增 `features/digest-reports/constants.ts`、`forms/resolveReportForm.ts`、`components/DigestReportsListContent.tsx`、`DigestReportsTable.tsx`、`ResolveReportDialog.tsx`。
+  - 报告解决表单 schema/defaults/submit mapper 下沉，页面仅保留 query + selection + mutation 编排。
+- C-4（Welcome 容器抽离）：
+  - `DigestWelcomePage` 改为装配页（`307 -> 96` 行）。
+  - 新增 `pages/digest-welcome/useDigestWelcomePageController.ts`，承载 config/pages query、draft、locale 同步、create/update/delete/reorder/save 行为编排。
+- C-5（WelcomeConfigCard 去重）：
+  - 新增 `WelcomeActionEditorSection.tsx`，消除 Primary/Secondary Action 编辑块重复。
+  - `WelcomePageEditorCard` 移除本地 `applyLocale`，统一复用 controller 提供的 locale 应用逻辑，消除容器/子组件双实现。
+- C-6（回归与测试）：
+  - 新增回归测试：
+    - `features/digest-topics/list-states.test.ts`
+    - `features/digest-reports/forms/resolveReportForm.test.ts`
+    - `pages/digest-welcome/welcome-card-states.test.ts`
+  - 校验通过：`pnpm --filter @anyhunt/admin lint`、`typecheck`、`test:unit`（8 files / 20 tests）。
+
 ## 进度记录
 
 | Step | Module | Action | Status | Validation | Updated At | Notes |
@@ -426,3 +579,10 @@ pnpm --filter @anyhunt/admin test:unit
 | B-5 | jobs/queues/logs/browser/llm | Logs 共享片段抽离（IP 表格 / 错误率 badge / 状态片段） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `LogsUsers`/`LogsIp` 复用 `LogErrorRateBadge` 与 `TopIpTableCard` |
 | B-6 | jobs/queues/logs/browser/llm | LLM 容器与 Dialog 表单逻辑下沉 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `useLlmPageController` 与 `features/llm/forms/*` |
 | B-7 | jobs/queues/logs/browser/llm | 模块 B 回归校验与收口 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 模块 B 全量修复完成，可进入模块 C |
+| C-0 | digest-* | 预扫描（不改代码） | done | n/a | 2026-02-26 | 输出 `S1x5 / S2x4 / S3x2` 与 C-1~C-6 计划 |
+| C-1 | digest-* | 多状态 UI 片段化重构（禁止链式三元） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | Topics/Reports/Welcome 三组多状态区域统一改为状态解析 + `switch` |
+| C-2 | digest-* | `DigestTopicsPage` 容器拆分 + constants/components 下沉 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 页面 482 行降至 168 行，新增 topics 常量、列表状态组件、表格组件 |
+| C-3 | digest-* | `DigestReportsPage` 容器拆分 + Resolve Dialog 表单域下沉 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 页面 381 行降至 145 行，新增 reports constants/forms/components |
+| C-4 | digest-* | `DigestWelcomePage` 抽 controller hook + 页面装配收敛 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 页面 307 行降至 96 行，query/draft/mutation 编排下沉到 `useDigestWelcomePageController` |
+| C-5 | digest-* | `WelcomeConfigCard` 去重重构 + locale 逻辑单源化 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `WelcomeActionEditorSection`；移除 editor 本地 `applyLocale`，复用 controller |
+| C-6 | digest-* | 模块 C 回归校验与测试补齐 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 3 组回归测试，模块 C 全量修复完成，可进入模块 D |

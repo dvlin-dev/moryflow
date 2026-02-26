@@ -9,6 +9,7 @@
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@moryflow/ui';
 import type { DigestWelcomePage } from '@/features/digest-welcome';
+import { resolveWelcomePagesCardState } from './welcome-card-states';
 
 interface WelcomePagesCardProps {
   isLoading: boolean;
@@ -33,23 +34,27 @@ export function WelcomePagesCard({
   isReordering,
   isDeleting,
 }: WelcomePagesCardProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Welcome Pages</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {isLoading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : isError ? (
-          <div className="text-sm text-destructive">Failed to load pages.</div>
-        ) : pages.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No pages yet.</div>
-        ) : (
+  const state = resolveWelcomePagesCardState({
+    isLoading,
+    hasError: isError,
+    pageCount: pages.length,
+  });
+
+  const renderContentByState = () => {
+    switch (state) {
+      case 'loading':
+        return <Skeleton className="h-24 w-full" />;
+      case 'error':
+        return <div className="text-sm text-destructive">Failed to load pages.</div>;
+      case 'empty':
+        return <div className="text-sm text-muted-foreground">No pages yet.</div>;
+      case 'ready':
+        return (
           <div className="space-y-1">
             {pages.map((page) => {
               const isActive = page.id === selectedPageId;
               const title = page.titleByLocale?.en || page.slug;
+
               return (
                 <button
                   key={page.id}
@@ -73,7 +78,19 @@ export function WelcomePagesCard({
               );
             })}
           </div>
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Welcome Pages</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {renderContentByState()}
 
         <div className="flex items-center justify-between gap-2 pt-3">
           <div className="flex items-center gap-2">

@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（Anyhunt Admin 组件优化专项进展：模块 C（`digest-*`）C-1~C-6 全部完成（状态片段化 + topics/reports 拆分 + welcome controller hook/action section 去重 + 3 组回归测试））
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
@@ -93,6 +94,7 @@
 
 ## 最近更新
 
+- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 C（`digest-*`）C-1~C-6 完成：状态片段化、topics/reports 组件拆分、welcome controller hook + action section 去重、补齐回归测试）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 B（`jobs/queues/logs/browser/llm`）B-1~B-7 修复完成并通过模块级 `lint` + `typecheck` + `test:unit`，可进入模块 C）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 B 预扫描完成：`jobs/queues/logs/browser/llm` 输出 `S1x7 / S2x4 / S3x3` 与 B-1~B-7 修复计划）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-3~A-6 完成：`UserCreditsSheet` 拆分、`Users/Subscriptions/Orders` 查询编排统一、badge/list-state/formatters 抽离，模块 A 全量校验通过）

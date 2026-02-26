@@ -168,6 +168,8 @@ status: active
 | 16 | anyhunt/admin | 模块 A（dashboard/users/subscriptions/orders） | 分步重构与修复（A-3~A-6：`UserCreditsSheet` 拆分 + 查询编排统一 + 映射/片段抽离 + 模块回归） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `UsersPage`/`OrdersPage` 容器化接入完成；新增 `usePagedSearchQuery`、`subscription-badges`、`list-state`、`orders/dashboard` formatters；模块 A A-1~A-6 全部完成 |
 | 17 | anyhunt/admin | 模块 B（jobs/queues/logs/browser/llm） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x7 / S2x4 / S3x3`，详见 `docs/code-review/anyhunt-admin.md`，待确认后进入 B-1 |
 | 18 | anyhunt/admin | 模块 B（jobs/queues/logs/browser/llm） | 分步重构与修复（B-1~B-7） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 Jobs/Queues/Logs/Browser/LLM 全量收敛：状态片段化、容器拆分、query 编排抽离、LLM forms/controller 下沉；模块 B closed |
+| 19 | anyhunt/admin | 模块 C（digest-*） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x5 / S2x4 / S3x2`，详见 `docs/code-review/anyhunt-admin.md` |
+| 20 | anyhunt/admin | 模块 C（digest-*） | 分步重构与修复（C-1~C-6） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 digest topics/reports/welcome 全量收敛：状态片段化、topics/reports 组件拆分、welcome controller hook + action section 去重、补齐 3 组回归测试；模块 C closed |
 
 ## 5. 回写格式（统一）
 
