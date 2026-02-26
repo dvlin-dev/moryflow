@@ -164,6 +164,8 @@ status: active
 | 12 | anyhunt/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/anyhunt/docs` 从本轮组件优化专项中移除 |
 | 13 | anyhunt/admin | 模块 A（dashboard/users/subscriptions/orders） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x4 / S2x3 / S3x2`，详见 `docs/code-review/anyhunt-admin.md` |
 | 14 | anyhunt/admin | 模块 A（dashboard/users/subscriptions/orders） | 分步重构与修复（A-1：状态片段化） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `UsersPage`/`SubscriptionsPage`/`OrdersPage`/`UserCreditsSheet` 的多状态渲染收敛：统一 `render...ByState + switch`，移除链式三元并将状态计算改为显式 `if` 分支 |
+| 15 | anyhunt/admin | 模块 A（dashboard/users/subscriptions/orders） | 分步重构与修复（A-2：`SubscriptionsPage` 容器拆分 + RHF 迁移） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `SubscriptionsPage` 从 333 行收敛到 185 行；新增 `SubscriptionsListContent`/`SubscriptionsTable`/`SubscriptionEditDialog`/`schemas.ts`/`constants.ts`，编辑弹窗迁移到 `RHF + zod/v3` |
+| 16 | anyhunt/admin | 模块 A（dashboard/users/subscriptions/orders） | 分步重构与修复（A-3~A-6：`UserCreditsSheet` 拆分 + 查询编排统一 + 映射/片段抽离 + 模块回归） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `UsersPage`/`OrdersPage` 容器化接入完成；新增 `usePagedSearchQuery`、`subscription-badges`、`list-state`、`orders/dashboard` formatters；模块 A A-1~A-6 全部完成 |
 
 ## 5. 回写格式（统一）
 

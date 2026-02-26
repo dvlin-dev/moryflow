@@ -93,6 +93,8 @@
 
 ## 最近更新
 
+- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-3~A-6 完成：`UserCreditsSheet` 拆分、`Users/Subscriptions/Orders` 查询编排统一、badge/list-state/formatters 抽离，模块 A 全量校验通过）
+- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-2 完成：`SubscriptionsPage` 拆分为容器 + 列表状态组件 + 编辑弹窗组件；编辑表单迁移到 `RHF + zod/v3` 并抽离 `schemas/constants`）
 - Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A 预扫描完成并完成 A-1：`UsersPage`/`SubscriptionsPage`/`OrdersPage`/`UserCreditsSheet` 多状态渲染统一为状态片段 + `render...ByState/switch`）
 - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）

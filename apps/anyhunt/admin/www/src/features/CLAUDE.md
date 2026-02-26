@@ -8,6 +8,10 @@
 
 ## 最近更新
 
+- Users Feature：`UserCreditsSheet` 拆分为容器 + `user-credits-sheet/*` 子组件（`UserSummaryCard`/`GrantCreditsFormCard`/`CreditGrantsCard`/`GrantConfirmDialog` + `schemas/types`），并复用共享 `list-state` 片段
+- Users/Subscriptions/Orders：新增 `usePagedSearchQuery` 统一 `search/keyDown/page/filter` 编排，页面容器只保留查询与 mutation 编排
+- Dashboard/Orders：新增 `formatters.ts` 作为展示格式化统一入口；Orders 新增 `constants.ts`/`formatters.ts` 收敛 badge/label/金额格式化
+- Subscriptions Feature：`SubscriptionsPage` 拆分为容器 + `SubscriptionsListContent` + `SubscriptionsTable` + `SubscriptionEditDialog`，编辑表单迁移到 `RHF + zod/v3` 并新增 `schemas.ts`/`constants.ts`
 - Users Feature：`UserCreditsSheet` 多状态区域（用户摘要/充值记录）统一改为状态片段化 `render...ByState + switch`，移除链式三元
 - Logs Feature：补齐查询错误态文案、筛选时间统一 ISO UTC 转换、`errorOnly` 请求参数显式映射为 `'true'`
 - Logs Feature：新增统一请求日志能力（requests/overview/users/ip）

@@ -4,69 +4,54 @@
  * [POS]: Users 页面 - 用户管理（Lucide icons direct render）
  */
 import { useState } from 'react';
-import { Delete, Ellipsis, Search, Shield, Coins } from 'lucide-react';
-import { PageHeader, SimplePagination } from '@moryflow/ui';
+import { Search } from 'lucide-react';
+import { PageHeader } from '@moryflow/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@moryflow/ui';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Badge,
-  Skeleton,
-  Input,
-  Button,
-  Switch,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@moryflow/ui';
-import { formatRelativeTime } from '@moryflow/ui/lib';
-import { useUsers, useUpdateUser, useDeleteUser, UserCreditsSheet } from '@/features/users';
+  useDeleteUser,
+  UserCreditsSheet,
+  UserDeleteDialog,
+  UsersListContent,
+  type UsersContentState,
+  useUpdateUser,
+  useUsers,
+} from '@/features/users';
 import type { UserListItem, UserQuery } from '@/features/users';
+import { usePagedSearchQuery } from '@/lib/usePagedSearchQuery';
 
-type UsersContentState = 'loading' | 'empty' | 'ready';
+function resolveUsersContentState(params: {
+  isLoading: boolean;
+  itemCount: number;
+}): UsersContentState {
+  if (params.isLoading) {
+    return 'loading';
+  }
+
+  if (params.itemCount > 0) {
+    return 'ready';
+  }
+
+  return 'empty';
+}
 
 export default function UsersPage() {
-  const [query, setQuery] = useState<UserQuery>({ page: 1, limit: 20 });
-  const [searchInput, setSearchInput] = useState('');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
-  const [creditsSheetOpen, setCreditsSheetOpen] = useState(false);
-  const [creditsUserId, setCreditsUserId] = useState<string | null>(null);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<UserListItem | null>(null);
+  const [creditsTargetUserId, setCreditsTargetUserId] = useState<string | null>(null);
+
+  const {
+    query,
+    searchInput,
+    setSearchInput,
+    handleSearch,
+    handleSearchKeyDown,
+    handlePageChange,
+  } = usePagedSearchQuery<UserQuery>({
+    initialQuery: { page: 1, limit: 20 },
+  });
 
   const { data, isLoading } = useUsers(query);
   const { mutate: updateUser } = useUpdateUser();
   const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
-
-  const handleSearch = () => {
-    setQuery((prev) => ({ ...prev, page: 1, search: searchInput || undefined }));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handlePageChange = (page: number) => {
-    setQuery((prev) => ({ ...prev, page }));
-  };
 
   const handleToggleAdmin = (user: UserListItem) => {
     updateUser({
@@ -76,178 +61,39 @@ export default function UsersPage() {
   };
 
   const handleDelete = (user: UserListItem) => {
-    setSelectedUser(user);
-    setDeleteDialogOpen(true);
+    setDeleteTargetUser(user);
   };
 
   const handleGrantCredits = (user: UserListItem) => {
-    setCreditsUserId(user.id);
-    setCreditsSheetOpen(true);
+    setCreditsTargetUserId(user.id);
   };
 
   const handleConfirmDelete = () => {
-    if (selectedUser) {
-      deleteUser(selectedUser.id, {
-        onSuccess: () => setDeleteDialogOpen(false),
-      });
+    if (!deleteTargetUser) {
+      return;
+    }
+
+    deleteUser(deleteTargetUser.id, {
+      onSuccess: () => setDeleteTargetUser(null),
+    });
+  };
+
+  const handleDeleteDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setDeleteTargetUser(null);
     }
   };
 
-  const getTierBadgeVariant = (tier: string) => {
-    switch (tier) {
-      case 'PRO':
-      case 'TEAM':
-        return 'default';
-      case 'BASIC':
-        return 'secondary';
-      default:
-        return 'outline';
+  const handleCreditsSheetOpenChange = (open: boolean) => {
+    if (!open) {
+      setCreditsTargetUserId(null);
     }
   };
 
-  const resolveUsersContentState = (): UsersContentState => {
-    if (isLoading) {
-      return 'loading';
-    }
-
-    if (data?.items.length) {
-      return 'ready';
-    }
-
-    return 'empty';
-  };
-
-  const usersContentState = resolveUsersContentState();
-
-  const renderUsersContentByState = (): React.ReactNode => {
-    switch (usersContentState) {
-      case 'loading':
-        return (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        );
-      case 'empty':
-        return (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">没有找到用户</p>
-          </div>
-        );
-      case 'ready':
-        return (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>用户</TableHead>
-                  <TableHead>订阅</TableHead>
-                  <TableHead>配额</TableHead>
-                  <TableHead>截图数</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>注册时间</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.items.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {user.name || '未设置'}
-                          {user.isAdmin && (
-                            <Badge variant="destructive" className="ml-2 text-xs">
-                              Admin
-                            </Badge>
-                          )}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getTierBadgeVariant(user.subscriptionTier)}>
-                        {user.subscriptionTier}
-                      </Badge>
-                      {user.subscriptionStatus && user.subscriptionStatus !== 'ACTIVE' && (
-                        <Badge variant="secondary" className="ml-1 text-xs">
-                          {user.subscriptionStatus}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.quota ? (
-                        <span className="text-sm">
-                          {user.quota.monthlyUsed} / {user.quota.monthlyLimit}
-                          {user.quota.purchasedQuota > 0 && (
-                            <span className="text-muted-foreground">
-                              {' '}
-                              (+{user.quota.purchasedQuota})
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{user.screenshotCount}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={user.isAdmin}
-                        onCheckedChange={() => handleToggleAdmin(user)}
-                      />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatRelativeTime(user.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <Ellipsis className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
-                            <Shield className="h-4 w-4 mr-2" />
-                            {user.isAdmin ? '移除管理员' : '设为管理员'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleGrantCredits(user)}>
-                            <Coins className="h-4 w-4 mr-2" />
-                            Grant credits
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(user)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Delete className="h-4 w-4 mr-2" />
-                            删除用户
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {data && data.pagination.totalPages > 1 && (
-              <div className="mt-4 flex justify-center">
-                <SimplePagination
-                  page={data.pagination.page}
-                  totalPages={data.pagination.totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </div>
-            )}
-          </>
-        );
-      default:
-        return null;
-    }
-  };
+  const usersContentState = resolveUsersContentState({
+    isLoading,
+    itemCount: data?.items.length ?? 0,
+  });
 
   return (
     <div className="space-y-6">
@@ -262,7 +108,7 @@ export default function UsersPage() {
                 placeholder="搜索邮箱或名称..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onKeyDown={handleSearchKeyDown}
                 className="w-64"
               />
               <Button variant="outline" onClick={handleSearch}>
@@ -271,40 +117,30 @@ export default function UsersPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>{renderUsersContentByState()}</CardContent>
+        <CardContent>
+          <UsersListContent
+            state={usersContentState}
+            data={data}
+            onToggleAdmin={handleToggleAdmin}
+            onGrantCredits={handleGrantCredits}
+            onDelete={handleDelete}
+            onPageChange={handlePageChange}
+          />
+        </CardContent>
       </Card>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
-            <AlertDialogDescription>
-              此操作将软删除用户 <strong>{selectedUser?.email}</strong>
-              ，用户将无法登录，但数据会保留。此操作不可撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? '删除中...' : '删除'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <UserDeleteDialog
+        open={deleteTargetUser !== null}
+        user={deleteTargetUser}
+        isDeleting={isDeleting}
+        onOpenChange={handleDeleteDialogOpenChange}
+        onConfirm={handleConfirmDelete}
+      />
 
       <UserCreditsSheet
-        open={creditsSheetOpen}
-        onOpenChange={(open) => {
-          setCreditsSheetOpen(open);
-          if (!open) {
-            setCreditsUserId(null);
-          }
-        }}
-        userId={creditsUserId}
+        open={creditsTargetUserId !== null}
+        onOpenChange={handleCreditsSheetOpenChange}
+        userId={creditsTargetUserId}
       />
     </div>
   );
