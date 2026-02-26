@@ -199,8 +199,8 @@ function parseConfiguredLevel(input: {
   });
 
   const reasoning: Partial<ReasoningOptions> = {
-    ...(providerReasoning ?? {}),
     ...(genericReasoning ?? {}),
+    ...(providerReasoning ?? {}),
     ...(directReasoning ?? {}),
   };
 
