@@ -1,4 +1,4 @@
-export function buildQuerySuffix(params: Record<string, unknown>): string {
+export function buildQuerySuffix<T extends object>(params: T): string {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {

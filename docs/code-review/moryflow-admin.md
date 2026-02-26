@@ -130,6 +130,25 @@ status: done
 - `apps/moryflow/admin/src/features/sites/methods.test.ts`
 - `apps/moryflow/admin/src/features/chat/methods.test.ts`
 
+## 结论摘要（补充修复：build 阻塞收口）
+
+- `S1`（必须改）：2 项（已修复）
+- `S2`（建议本轮改）：1 项（已修复）
+- 当前状态：`@moryflow/admin` 已恢复单包 `build` 可用（含 `prebuild` 自动构建 model-registry-data）
+
+### 本轮关键改动
+
+- `buildQuerySuffix` 参数签名改为泛型对象，消除 `agent-traces/alerts` 查询对象类型不兼容。
+- `ModelFormDialog` 的 `reasoningEnabled` 收敛为显式 boolean（`useWatch(...) ?? false`）。
+- `@moryflow/admin` 新增 `prebuild`：自动执行 `pnpm --filter @moryflow/model-registry-data build`，修复 `@moryflow/model-registry-data` 缺失 dist 导致的 `TS2307`。
+
+### 本轮验证结果
+
+- `pnpm --filter @moryflow/admin lint`（pass）
+- `pnpm --filter @moryflow/admin typecheck`（pass）
+- `pnpm --filter @moryflow/admin test:unit`（pass，35 files / 156 tests）
+- `pnpm --filter @moryflow/admin build`（pass）
+
 ## 发现（按严重度排序）
 
 - [S1][已修复] `SetTierDialog` 在切换目标用户时可能保留旧等级，存在误提交风险

@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项 build 阻塞收口完成：修复 `agent-traces/alerts` 查询参数类型与 `ModelFormDialog` 布尔类型，`@moryflow/admin` 新增 `prebuild` 自动构建 `@moryflow/model-registry-data`，并通过 `lint` + `typecheck` + `test:unit` + `build`）
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项追加彻改完成：`chat/sites/image-generation` 全量迁移到 `store + methods + 子组件就地取数`，新增 3 组 methods 回归测试，模块级 `lint` + `typecheck` + `test:unit` 通过（35 files / 156 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项项目复盘完成：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 三个遗留页面已收口，页面超阈值与链式三元问题清零，并补齐 3 组回归测试，模块级 `lint` + `typecheck` + `test:unit` 通过（32 files / 147 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进入项目复盘阶段：静态扫描识别 3 个遗留页面待收口（`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage`），已回写 PR-1~PR-4 收口计划）

@@ -54,10 +54,11 @@ function ModelFormDialogContent({ onOpenChange, model, providers }: ModelFormDia
     defaultValues: getModelFormDefaultValues(model, providers),
   });
 
-  const reasoningEnabled = useWatch({
-    control: form.control,
-    name: 'reasoning.enabled',
-  });
+  const reasoningEnabled =
+    useWatch({
+      control: form.control,
+      name: 'reasoning.enabled',
+    }) ?? false;
 
   const createMutation = useCreateModel();
   const updateMutation = useUpdateModel();

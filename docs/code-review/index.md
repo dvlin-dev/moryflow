@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow Admin 完成 build 阻塞收口：修复 `agent-traces/alerts` 查询参数类型约束与 `ModelFormDialog` 布尔类型收敛，`@moryflow/admin` 新增 `prebuild` 自动构建 `@moryflow/model-registry-data`；模块级 `lint` + `typecheck` + `test:unit` + `build` 全通过：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Moryflow Admin 完成追加彻改（`chat/sites/image-generation`）：落地 `store + methods + 子组件就地取数`，移除核心 props drilling，新增 3 组 methods 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（35 files / 156 tests）：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Moryflow Admin 项目复盘完成（R-0~R-4）：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 遗留问题全部收口（超阈值大组件、链式三元、测试空白），并通过模块级 `lint` + `typecheck` + `test:unit`（32 files / 147 tests）：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Moryflow Admin 模块 D（`sites/image-generation/shared`）修复完成：`Sites/ImageGenerator` 统一 `ViewState + switch`、`SitesPage/SiteDetailPage/ImageGenerator` 拆分收敛到 `<300` 行、补齐错误态与 query builder 复用，并新增 `sites/image-generation` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests）：`docs/code-review/moryflow-admin.md`。

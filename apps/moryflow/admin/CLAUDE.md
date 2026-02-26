@@ -17,6 +17,8 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- 追加修复：`@moryflow/admin build` 阻塞收口：`src/lib/query-string.ts` 改为泛型参数签名，`ModelFormDialog` 的 `reasoningEnabled` 显式布尔收敛；`package.json` 增加 `prebuild` 自动构建 `@moryflow/model-registry-data`
+- 追加修复：`pnpm --filter @moryflow/admin lint/typecheck/test:unit/build` 全通过（包含 prebuild 自动同步模型注册包）
 - 追加修复：`chat/sites/image-generation` 完成 `store + methods + 子组件就地取数` 一次性重构，核心页面收敛为装配层，移除多层 props drilling
 - 追加修复：`ChatPane` 流式请求编排下沉到 `features/chat/methods.ts`，`ConversationSection/ChatFooter/ModelSelector` 统一 selector 取数
 - 追加修复：`SitesPage` 筛选/分页/操作状态迁移到 `features/sites/store.ts`，`SitesFilterBar/SitesTable/SiteActionConfirmDialog` 改为就地取数
