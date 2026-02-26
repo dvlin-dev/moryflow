@@ -14,6 +14,7 @@ import { TraceStatusBadge, SpanStatusBadge, ErrorTypeBadge } from './trace-statu
 import { SpanTree } from './span-tree';
 import { useTraceDetail } from '../hooks';
 import type { AgentSpan } from '../types';
+import { resolveTraceDetailViewState } from '../view-state';
 
 interface TraceDetailSheetProps {
   traceId: string | null;
@@ -109,29 +110,23 @@ function SpanDetailPanel({ span }: SpanDetailPanelProps) {
 }
 
 export function TraceDetailSheet({ traceId, open, onOpenChange }: TraceDetailSheetProps) {
-  const { data: trace, isLoading } = useTraceDetail(traceId);
+  const { data: trace, isLoading, error } = useTraceDetail(traceId);
   const [selectedSpan, setSelectedSpan] = useState<AgentSpan | null>(null);
+  const viewState = resolveTraceDetailViewState({
+    isLoading,
+    error,
+    hasTrace: !!trace,
+  });
 
   const handleClose = () => {
     setSelectedSpan(null);
     onOpenChange(false);
   };
 
-  return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent className="w-[720px] sm:max-w-[720px] p-0">
-        <SheetHeader className="px-6 py-4 border-b">
-          <SheetTitle className="flex items-center gap-2">
-            Trace 详情
-            {trace && (
-              <span className="font-mono text-sm text-muted-foreground">
-                {trace.traceId.slice(0, 16)}...
-              </span>
-            )}
-          </SheetTitle>
-        </SheetHeader>
-
-        {isLoading ? (
+  const renderContentByState = () => {
+    switch (viewState) {
+      case 'loading':
+        return (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-48" />
             <div className="grid grid-cols-2 gap-4">
@@ -141,7 +136,16 @@ export function TraceDetailSheet({ traceId, open, onOpenChange }: TraceDetailShe
               <Skeleton className="h-20" />
             </div>
           </div>
-        ) : trace ? (
+        );
+      case 'error':
+        return <div className="p-6 text-center text-destructive">Trace 详情加载失败，请稍后重试</div>;
+      case 'empty':
+        return <div className="p-6 text-center text-muted-foreground">Trace 不存在</div>;
+      case 'ready':
+        if (!trace) {
+          return null;
+        }
+        return (
           <Tabs defaultValue="overview" className="flex-1">
             <TabsList className="mx-6 mt-4">
               <TabsTrigger value="overview">概要</TabsTrigger>
@@ -231,9 +235,26 @@ export function TraceDetailSheet({ traceId, open, onOpenChange }: TraceDetailShe
               </TabsContent>
             </ScrollArea>
           </Tabs>
-        ) : (
-          <div className="p-6 text-center text-muted-foreground">Trace 不存在</div>
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={handleClose}>
+      <SheetContent className="w-[720px] sm:max-w-[720px] p-0">
+        <SheetHeader className="px-6 py-4 border-b">
+          <SheetTitle className="flex items-center gap-2">
+            Trace 详情
+            {trace && (
+              <span className="font-mono text-sm text-muted-foreground">
+                {trace.traceId.slice(0, 16)}...
+              </span>
+            )}
+          </SheetTitle>
+        </SheetHeader>
+        {renderContentByState()}
       </SheetContent>
     </Sheet>
   );

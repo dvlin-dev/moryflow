@@ -17,6 +17,39 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- PR #99 review follow-up：修复 `AlertDialogAction` 自动关窗导致的错误提示不可见问题，`SiteActionConfirmDialog` 确认按钮改为普通 `Button`
+- PR #99 review follow-up：`SiteDetailPage` 的站点上下线/删除改为 `mutateAsync`，仅成功后关闭对话框，失败时保留弹窗并展示错误
+- PR #99 review follow-up：`useSyncChatModels` 增加空数据 loading/error 保护，避免初始化阶段清空本地模型偏好（`admin.chat.preferredModel`）
+- PR #99 review follow-up：`confirmSiteAction` 改为仅成功后关窗；`SiteActionConfirmDialog` 捕获异步失败并展示错误信息，避免未处理 Promise 拒绝
+- 追加修复：`@moryflow/admin build` 阻塞收口：`src/lib/query-string.ts` 改为泛型参数签名，`ModelFormDialog` 的 `reasoningEnabled` 显式布尔收敛；`package.json` 增加 `prebuild` 自动构建 `@moryflow/model-registry-data`
+- 追加修复：`pnpm --filter @moryflow/admin lint/typecheck/test:unit/build` 全通过（包含 prebuild 自动同步模型注册包）
+- 追加修复：`chat/sites/image-generation` 完成 `store + methods + 子组件就地取数` 一次性重构，核心页面收敛为装配层，移除多层 props drilling
+- 追加修复：`ChatPane` 流式请求编排下沉到 `features/chat/methods.ts`，`ConversationSection/ChatFooter/ModelSelector` 统一 selector 取数
+- 追加修复：`SitesPage` 筛选/分页/操作状态迁移到 `features/sites/store.ts`，`SitesFilterBar/SitesTable/SiteActionConfirmDialog` 改为就地取数
+- 追加修复：`ImageGenerator` 状态迁移到 `features/image-generation/store.ts`，`ImageGeneratorForm/Result` 改为 methods 驱动
+- 追加修复：新增 `chat/sites/image-generation` 三组 `methods.test.ts` 回归测试，`@moryflow/admin test:unit` 通过（35 files / 156 tests）
+- 项目复盘：`ToolAnalyticsPage` 拆分为装配层（160 行），`ToolStatsTable` 状态渲染统一为 `ViewState + switch`，并抽离 `tool-analytics/metrics` 聚合逻辑与回归测试
+- 项目复盘：`AgentTraceStoragePage` 拆分为装配层（110 行），新增 `agent-trace-storage/*` 组件与 `resolveStorageStatsViewState`，补齐显式失败态
+- 项目复盘：`PaymentTestPage` 拆分产品卡片/配置区/说明区（235 行），移除链式三元并新增 `payment-test/cycle` 回归测试
+- 项目复盘：新增 `tool-analytics` / `agent-trace-storage` / `payment-test` 三组测试；`@moryflow/admin test:unit` 通过（32 files / 147 tests）
+- 模块 D：`SitesPage`/`SiteDetailPage`/`ImageGenerator` 完成拆分减责并统一状态片段化，主容器分别收敛至 151/177/180 行（移除多状态链式三元）
+- 模块 D：`sites` 新增 `view-state.ts`、`query-paths.ts` 并接入页面与 API；`SiteDetailPage` 补齐 `loading/error/not-found/ready` 显式分支
+- 模块 D：`image-generation` 新增 `view-state.ts`，结果区拆分 `ImageGeneratorResult` 并统一 `renderContentByState + switch`
+- 模块 D：`shared/data-table` 骨架屏实现统一复用 `TableSkeleton`，移除局部重复逻辑
+- 模块 D：补齐 `sites view-state` / `sites query-paths` / `image-generation view-state` 回归测试；`@moryflow/admin test:unit` 通过（29 files / 134 tests）
+- 模块 C：`trace-table` / `failed-tool-table` / `trace-detail-sheet` / `LogsPage` 多状态渲染统一为 `ViewState + renderByState/switch`，核心链路移除链式三元
+- 模块 C：`LogsPage` 拆分 `LogCategoryBadge` / `LogLevelBadge` / `LogDetailDialog` 并引入 `resolveActivityLogsListViewState`（文件收敛到 268 行）
+- 模块 C：`AlertRuleDialog` 默认值与 DTO 映射抽离到 `alert-rule-form.ts`，移除硬编码邮箱默认值并补齐邮箱格式校验（文件收敛到 253 行）
+- 模块 C：`alerts` / `agent-traces` API 查询字符串构建统一复用 `src/lib/query-string.ts#buildQuerySuffix`
+- 模块 C：`ChatPane` 引入 `messagesRef + stream-parser` 收敛流式编排，修复请求消息闭包态组装风险；新增 `stream-parser` 回归测试
+- 模块 C：补齐 `agent-traces` / `admin-logs` / `alerts` / `lib/query-string` 单测，`@moryflow/admin test:unit` 通过（26 files / 117 tests）
+- 模块 B：`ModelFormDialog` 拆分为容器 + 搜索片段 + 基础字段片段 + Reasoning 片段（容器降至 157 行），消除单文件职责混杂
+- 模块 B：`SubscriptionsPage` / `OrdersPage` / `ProvidersPage` / `ModelsPage` 列表区统一改为 `ViewState + renderByState/switch`，并补齐显式 `error` 状态片段（移除链式三元）
+- 模块 B：`models/orders/subscriptions/storage` 查询参数构造统一收敛到 query builder（`URLSearchParams`），并新增对应回归测试
+- 模块 B：`ProviderFormDialog` 默认值工厂化（`getProviderFormDefaultValues`），统一初始化与重置逻辑
+- Users 模块 A：`UsersPage` 拆分为 `UsersFilterBar` + `UsersTable`，列表区改为 `UsersTableViewState + renderRowsByState/switch`，移除链式三元
+- Users 模块 A：修复 `SetTierDialog` 切换目标用户时的等级残留（受控值 + `currentTier` 变化重置 + 关闭对话框清理 `selectedUser`）
+- Users 模块 A：`usersApi` 查询参数构造抽离到 `query-paths.ts`（`URLSearchParams`），并新增 `set-tier-dialog` / `api-paths` 回归测试
 - Dashboard：将 `getPaidUsers` 从 `DashboardPage.tsx` 拆分到 `src/pages/dashboard-metrics.ts`，避免页面文件导出非组件触发 `react-refresh/only-export-components` lint 失败
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/typescript-config...`，确保 `packages/types` 容器构建能解析 `@moryflow/typescript-config/base.json`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 与 `.npmrc`，并固定 pnpm `9.12.2`，修复 `packages/api` 在容器内 `TS5083`（缺少 `tsconfig.agents.json`）链路失败

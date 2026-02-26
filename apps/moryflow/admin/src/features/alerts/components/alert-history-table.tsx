@@ -19,9 +19,10 @@ import type { AlertHistory } from '../types';
 interface AlertHistoryTableProps {
   history: AlertHistory[];
   isLoading?: boolean;
+  error?: unknown;
 }
 
-export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps) {
+export function AlertHistoryTable({ history, isLoading, error }: AlertHistoryTableProps) {
   if (isLoading) {
     return (
       <div className="rounded-lg border">
@@ -53,6 +54,14 @@ export function AlertHistoryTable({ history, isLoading }: AlertHistoryTableProps
             ))}
           </TableBody>
         </Table>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border p-12 text-center text-destructive">
+        告警历史加载失败，请稍后重试
       </div>
     );
   }

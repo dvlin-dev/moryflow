@@ -34,6 +34,7 @@ import {
   SUBSCRIPTION_TABLE_COLUMNS,
   SubscriptionDetailDialog,
   CancelSubscriptionDialog,
+  resolveSubscriptionsListViewState,
 } from '@/features/payment';
 import type { Subscription } from '@/types/payment';
 import { CircleX, View } from 'lucide-react';
@@ -48,7 +49,7 @@ export default function SubscriptionsPage() {
 
   const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
-  const { data, isLoading } = useSubscriptions({
+  const { data, isLoading, error } = useSubscriptions({
     page,
     pageSize: PAGE_SIZE,
     status: selectedStatus,
@@ -58,6 +59,11 @@ export default function SubscriptionsPage() {
 
   const subscriptions = data?.subscriptions || [];
   const totalPages = getTotalPages(data?.pagination.count || 0);
+  const listViewState = resolveSubscriptionsListViewState({
+    isLoading,
+    error,
+    count: subscriptions.length,
+  });
 
   const handleViewDetail = (sub: Subscription) => {
     setSelectedSub(sub);
@@ -77,6 +83,61 @@ export default function SubscriptionsPage() {
           setSelectedSub(null);
         },
       });
+    }
+  };
+
+  const renderRowsByState = () => {
+    switch (listViewState) {
+      case 'loading':
+        return <TableSkeleton columns={SUBSCRIPTION_TABLE_COLUMNS} />;
+      case 'error':
+        return (
+          <TableRow>
+            <TableCell colSpan={7} className="text-center py-12 text-destructive">
+              订阅数据加载失败，请稍后重试
+            </TableCell>
+          </TableRow>
+        );
+      case 'empty':
+        return (
+          <TableRow>
+            <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+              暂无订阅数据
+            </TableCell>
+          </TableRow>
+        );
+      case 'ready':
+        return subscriptions.map((sub) => (
+          <TableRow key={sub.id}>
+            <TableCell className="font-mono text-xs">{sub.id}</TableCell>
+            <TableCell className="font-mono text-xs">{sub.userId}</TableCell>
+            <TableCell className="font-mono text-xs">{sub.productId}</TableCell>
+            <TableCell>
+              <StatusBadge status={sub.status} configMap={SUBSCRIPTION_STATUS_CONFIG} />
+            </TableCell>
+            <TableCell className="text-muted-foreground">{formatDate(sub.currentPeriodEnd)}</TableCell>
+            <TableCell className="text-muted-foreground">{formatDate(sub.createdAt)}</TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-1">
+                <Button variant="ghost" size="sm" onClick={() => handleViewDetail(sub)}>
+                  <View className="h-4 w-4" />
+                </Button>
+                {(sub.status === 'active' || sub.status === 'trialing') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCancel(sub)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <CircleX className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        ));
+      default:
+        return null;
     }
   };
 
@@ -120,56 +181,12 @@ export default function SubscriptionsPage() {
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableSkeleton columns={SUBSCRIPTION_TABLE_COLUMNS} />
-            ) : subscriptions.length > 0 ? (
-              subscriptions.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell className="font-mono text-xs">{sub.id}</TableCell>
-                  <TableCell className="font-mono text-xs">{sub.userId}</TableCell>
-                  <TableCell className="font-mono text-xs">{sub.productId}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={sub.status} configMap={SUBSCRIPTION_STATUS_CONFIG} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(sub.currentPeriodEnd)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(sub.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleViewDetail(sub)}>
-                        <View className="h-4 w-4" />
-                      </Button>
-                      {(sub.status === 'active' || sub.status === 'trialing') && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCancel(sub)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <CircleX className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                  暂无订阅数据
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+          <TableBody>{renderRowsByState()}</TableBody>
         </Table>
       </div>
 
       {/* 分页 */}
-      {subscriptions.length > 0 && (
+      {listViewState === 'ready' && (
         <SimplePagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 
