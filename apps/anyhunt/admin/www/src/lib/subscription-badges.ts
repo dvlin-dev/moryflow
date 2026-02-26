@@ -4,7 +4,9 @@
  * [POS]: users/subscriptions 场景共享，避免重复 switch 逻辑
  */
 
-export function getSubscriptionTierBadgeVariant(tier: string): string {
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning';
+
+export function getSubscriptionTierBadgeVariant(tier: string): BadgeVariant {
   switch (tier) {
     case 'PRO':
     case 'TEAM':
@@ -16,7 +18,7 @@ export function getSubscriptionTierBadgeVariant(tier: string): string {
   }
 }
 
-export function getSubscriptionStatusBadgeVariant(status: string): string {
+export function getSubscriptionStatusBadgeVariant(status: string): BadgeVariant {
   switch (status) {
     case 'ACTIVE':
       return 'default';

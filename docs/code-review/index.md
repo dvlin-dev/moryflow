@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Anyhunt Admin 项目复盘完成（A~D + 构建门禁）：模块级 `lint` + `typecheck` + `test:unit` + `build` 通过；复盘期修复既存构建类型问题（Badge variant 类型、subscriptions `z.enum` 元组、Browser status 收窄），当前项目状态 `done`：`docs/code-review/anyhunt-admin.md`。
 - 2026-02-26：Anyhunt Admin 模块 D 修复完成（D-1~D-6）：`shared components / stores / 页面装配` 完成路由/导航单源化、App 装配层拆分、MainLayout 分层、AuthGuard selector 化与 openGroups 更新优化，并补齐 `AppRouter` + `auth-methods` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-admin.md`。
 - 2026-02-26：Anyhunt Admin 模块 D 预扫描完成（`shared components / stores / 页面装配`），输出 `S1x3 / S2x3 / S3x2` 并形成 D-1~D-6 修复计划：`docs/code-review/anyhunt-admin.md`。
 - 2026-02-26：Anyhunt Admin 模块 C 修复完成（C-1~C-6）：`digest-*` 完成状态片段化、topics/reports 组件拆分、welcome controller hook + action section 去重，并补齐 3 组回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-admin.md`。
@@ -211,7 +212,7 @@ status: active
 | Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
 | -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
 | P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | done（模块 A/B/C/D/E + 项目复盘全部完成） |
-| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | in_progress（模块 A/B/C/D 已完成，待项目复盘） |
+| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | done（模块 A/B/C/D + 项目复盘全部完成） |
 | P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
 | P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |
 | P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                           |

@@ -9,7 +9,9 @@ import type { OrderStatus, OrderType } from './types';
 export const ORDER_STATUS_OPTIONS: OrderStatus[] = ['pending', 'completed', 'failed', 'refunded'];
 export const ORDER_TYPE_OPTIONS: OrderType[] = ['subscription', 'quota_purchase'];
 
-export function getOrderStatusBadgeVariant(status: string): string {
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning';
+
+export function getOrderStatusBadgeVariant(status: string): BadgeVariant {
   switch (status) {
     case 'completed':
       return 'default';
@@ -23,7 +25,7 @@ export function getOrderStatusBadgeVariant(status: string): string {
   }
 }
 
-export function getOrderTypeBadgeVariant(type: string): string {
+export function getOrderTypeBadgeVariant(type: string): BadgeVariant {
   switch (type) {
     case 'subscription':
       return 'default';

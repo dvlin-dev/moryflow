@@ -2,7 +2,7 @@
 title: Anyhunt Admin Code Review
 date: 2026-02-26
 scope: apps/anyhunt/admin/www
-status: in_progress
+status: done
 ---
 
 <!--
@@ -40,12 +40,12 @@ status: in_progress
   - `src/features/digest-welcome*/*`
 - 审查基线：`docs/guides/frontend/component-design-quality-index.md`
 
-## 结论摘要（模块 A：A-6 已完成）
+## 结论摘要（项目复盘：已完成）
 
-- `S1`（必须改）：4 项（4 项已修复）
-- `S2`（建议本轮改）：3 项（3 项已修复）
-- `S3`（可延后）：2 项（2 项已修复）
-- 当前状态：模块 A/B/C/D 已完成，可进入项目复盘
+- 模块 A/B/C/D 已全部完成并回写台账。
+- 质量门禁通过：`pnpm --filter @anyhunt/admin lint`、`typecheck`、`test:unit`、`build`。
+- 项目当前状态：`done`（专项完成，进入后续维护阶段）。
+- 复盘残留：生产构建存在 chunk 体积告警（`index` 与 `DigestWelcomePage`），不阻断发布，建议后续做手工分包优化。
 
 ## 发现（按严重度排序）
 
@@ -672,6 +672,21 @@ pnpm --filter @anyhunt/admin test:unit
 - D-6（模块校验）：
   - 校验通过：`pnpm --filter @anyhunt/admin lint`、`typecheck`、`test:unit`（10 files / 28 tests）。
 
+## 项目复盘（整项目一致性）
+
+- 复盘范围：
+  - 页面装配与路由：`src/App.tsx`、`src/app/*`、`src/components/layout/*`
+  - stores/methods：`src/stores/auth.ts`、`src/lib/auth/auth-methods.ts`
+  - 模块回归：A/B/C/D 变更区
+- 复盘结论：
+  - 多状态 UI 规范复查通过：未发现 `loading/error/empty/ready` 链式三元残留。
+  - 构建门禁补跑并通过：`pnpm --filter @anyhunt/admin build`。
+  - 复盘期间修复一组既存构建类型问题（不属于 D 模块新引入）：
+    - `Badge variant` 映射函数改为字面量联合类型（`subscription-badges.ts`、`orders/constants.ts`）。
+    - `subscriptions` 表单选项改为 `as const` 元组，修复 `z.enum` 类型不匹配。
+    - `BrowserPage` 改为 early-return 显式收窄 `status`，消除 `undefined` 传参风险。
+  - 残留风险（S3）：构建产物存在大 chunk 告警（`DigestWelcomePage`、`index`），建议下一阶段按路由/功能做 manual chunks。
+
 ## 进度记录
 
 | Step | Module | Action | Status | Validation | Updated At | Notes |
@@ -705,3 +720,4 @@ pnpm --filter @anyhunt/admin test:unit
 | D-4 | shared components/stores/page assembly | 订阅粒度与重渲染优化 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AuthGuard` selector 化；`openGroups` 无变化短路；按钮补齐 a11y 属性 |
 | D-5 | shared components/stores/page assembly | 模块 D 回归测试补齐 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `AppRouter.test.tsx` 与 `auth-methods.test.ts` |
 | D-6 | shared components/stores/page assembly | 模块 D 收口校验 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 10 files / 28 tests 通过，模块 D closed |
+| R-1 | all | 项目复盘（整项目一致性 + 构建门禁） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit` + `build`（pass） | 2026-02-26 | 完成全项目复盘并修复既存构建类型问题；保留 chunk 体积告警为后续优化项 |

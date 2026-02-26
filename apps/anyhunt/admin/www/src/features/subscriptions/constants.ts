@@ -10,12 +10,17 @@ import {
   getSubscriptionTierBadgeVariant,
 } from '@/lib/subscription-badges';
 
-export const SUBSCRIPTION_TIER_OPTIONS: SubscriptionTier[] = ['FREE', 'BASIC', 'PRO', 'TEAM'];
-export const SUBSCRIPTION_STATUS_OPTIONS: SubscriptionStatus[] = [
+export const SUBSCRIPTION_TIER_OPTIONS = [
+  'FREE',
+  'BASIC',
+  'PRO',
+  'TEAM',
+] as const satisfies readonly SubscriptionTier[];
+export const SUBSCRIPTION_STATUS_OPTIONS = [
   'ACTIVE',
   'CANCELED',
   'PAST_DUE',
   'EXPIRED',
-];
+] as const satisfies readonly SubscriptionStatus[];
 
 export { getSubscriptionTierBadgeVariant, getSubscriptionStatusBadgeVariant };

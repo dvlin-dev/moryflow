@@ -231,44 +231,30 @@ function InstancesCard({ status }: { status: BrowserPoolDetailedStatus }) {
 export default function BrowserPage() {
   const { data: status, isLoading, error } = useBrowserStatus();
 
-  const pageState = (() => {
-    if (isLoading) {
-      return 'loading' as const;
-    }
-
-    if (error || !status) {
-      return 'error' as const;
-    }
-
-    return 'ready' as const;
-  })();
-
-  switch (pageState) {
-    case 'loading':
-      return <LoadingSkeleton />;
-    case 'error': {
-      let errorMessage = 'Unknown error';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (!status) {
-        errorMessage = 'No data received';
-      }
-
-      return <ErrorState message={errorMessage} />;
-    }
-    case 'ready':
-      return (
-        <div className="space-y-6">
-          <PageHeader />
-          <StatsGrid status={status} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <ConfigurationCard status={status} />
-            <SystemResourcesCard status={status} />
-          </div>
-          <InstancesCard status={status} />
-        </div>
-      );
-    default:
-      return null;
+  if (isLoading) {
+    return <LoadingSkeleton />;
   }
+
+  if (error || !status) {
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (!status) {
+      errorMessage = 'No data received';
+    }
+
+    return <ErrorState message={errorMessage} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader />
+      <StatsGrid status={status} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <ConfigurationCard status={status} />
+        <SystemResourcesCard status={status} />
+      </div>
+      <InstancesCard status={status} />
+    </div>
+  );
 }
