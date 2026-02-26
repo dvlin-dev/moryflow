@@ -5,6 +5,7 @@
 
 import { apiClient } from '@/lib/api-client';
 import { DIGEST_API, DIGEST_PUBLIC_API } from '@/lib/api-paths';
+import { mapInboxItemsWithState } from './mappers/inbox-item-state';
 import type {
   Subscription,
   CreateSubscriptionInput,
@@ -15,7 +16,6 @@ import type {
   InboxStats,
   InboxQueryParams,
   InboxItemAction,
-  InboxItemState,
   Run,
   RunQueryParams,
   Topic,
@@ -87,17 +87,6 @@ export async function fetchInboxStats(): Promise<InboxStats> {
   return apiClient.get<InboxStats>(`${DIGEST_API.INBOX}/stats`);
 }
 
-function getInboxItemState(item: {
-  readAt: string | null;
-  savedAt: string | null;
-  notInterestedAt: string | null;
-}): InboxItemState {
-  if (item.savedAt) return 'SAVED';
-  if (item.notInterestedAt) return 'NOT_INTERESTED';
-  if (item.readAt) return 'READ';
-  return 'UNREAD';
-}
-
 export async function fetchInboxItems(
   params?: InboxQueryParams
 ): Promise<PaginatedResponse<InboxItem>> {
@@ -134,10 +123,7 @@ export async function fetchInboxItems(
 
   return {
     ...result,
-    items: result.items.map((item) => ({
-      ...item,
-      state: getInboxItemState(item),
-    })),
+    items: mapInboxItemsWithState(result.items),
   };
 }
 

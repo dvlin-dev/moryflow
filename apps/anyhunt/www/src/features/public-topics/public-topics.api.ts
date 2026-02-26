@@ -21,28 +21,35 @@ export type { DigestEditionDetail, DigestEditionSummary, DigestTopicDetail, Dige
 export async function fetchPublicTopicsPage(
   apiUrl: string,
   page: number,
-  limit: number
+  limit: number,
+  signal?: AbortSignal
 ): Promise<PaginatedResponse<DigestTopicSummary>> {
-  return getPublicTopics(apiUrl, { page, limit });
+  return getPublicTopics(apiUrl, { page, limit, signal });
 }
 
-export async function fetchTopicDetail(apiUrl: string, slug: string): Promise<DigestTopicDetail> {
-  return getTopicBySlug(apiUrl, slug);
+export async function fetchTopicDetail(
+  apiUrl: string,
+  slug: string,
+  signal?: AbortSignal
+): Promise<DigestTopicDetail> {
+  return getTopicBySlug(apiUrl, slug, { signal });
 }
 
 export async function fetchTopicEditionsPage(
   apiUrl: string,
   slug: string,
   page: number,
-  limit: number
+  limit: number,
+  signal?: AbortSignal
 ): Promise<PaginatedResponse<DigestEditionSummary>> {
-  return getTopicEditions(apiUrl, slug, { page, limit });
+  return getTopicEditions(apiUrl, slug, { page, limit, signal });
 }
 
 export async function fetchEditionDetail(
   apiUrl: string,
   slug: string,
-  editionId: string
+  editionId: string,
+  signal?: AbortSignal
 ): Promise<DigestEditionDetail> {
-  return getEditionById(apiUrl, slug, editionId);
+  return getEditionById(apiUrl, slug, editionId, { signal });
 }

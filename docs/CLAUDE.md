@@ -9,6 +9,8 @@
 # docs/ 目录指南
 
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
+> 最近更新：2026-02-26（Anyhunt WWW 组件优化专项完成项目复盘：模块 A/B/C/D 全部闭环，补充 B-6（`CreateSubscriptionDialogForm` 容器化拆分）与 D-7（`public-topics.hooks` 分域拆分）；`typecheck`/`test:unit`/`build` 全通过）
+> 最近更新：2026-02-26（Anyhunt WWW 组件优化专项进展：模块 D（stores/hooks/数据映射）分步修复完成（D-1~D-6）：`digest hooks/types` 分域拆分、Inbox mapper 统一、`public-topics` 异步竞态修复、`auth-api` unknown 错误收敛与回归测试补齐；后续已在项目复盘完成 D-7 收口）
 > 最近更新：2026-02-26（Anyhunt WWW 组件优化专项进展：模块 C（explore/topic/welcome）完成（TopicPane 条件 Hook 风险修复、Explore 容器/渲染拆分与状态片段化、Welcome 双栏状态收敛与 welcome 路由副作用解耦）；模块 A/B/C 台账已回写，进入模块 D）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
@@ -95,6 +97,7 @@
 ## 最近更新
 
  - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
+- Anyhunt WWW Code Review：`docs/code-review/anyhunt-www.md`（2026-02-26：done，模块 A/B/C/D + 项目复盘全部完成；含 B-6/D-7 收口与模块级 `typecheck`/`test:unit`/`build` 全通过）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-6a 完成：`flow-runner.tsx` 分层到 `flow-runner-form`/`flow-runner-step-list`/`flow-runner-types`/`flow-runner-helpers`，并将 `BrowserSessionPanel` 的 19 组表单初始化抽离到 `use-browser-session-forms`）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4e 完成：`browser-session-sections.tsx` 第五批分区拆分，新增 `open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件降至 45 行）

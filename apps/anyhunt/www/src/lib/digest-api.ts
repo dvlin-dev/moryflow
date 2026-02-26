@@ -88,6 +88,7 @@ export async function getPublicTopics(
     search?: string;
     sort?: TopicSort;
     featured?: boolean;
+    signal?: AbortSignal;
   }
 ): Promise<PaginatedResponse<DigestTopicSummary>> {
   const params = new URLSearchParams();
@@ -101,6 +102,7 @@ export async function getPublicTopics(
   return client.get<PaginatedResponse<DigestTopicSummary>>(`/api/v1/public/digest/topics`, {
     query: Object.fromEntries(params.entries()),
     authMode: 'public',
+    signal: options?.signal,
   });
 }
 
@@ -131,10 +133,15 @@ export async function getLatestTopics(apiUrl: string, limit = 8): Promise<Digest
 /**
  * Get single topic by slug
  */
-export async function getTopicBySlug(apiUrl: string, slug: string): Promise<DigestTopicDetail> {
+export async function getTopicBySlug(
+  apiUrl: string,
+  slug: string,
+  options?: { signal?: AbortSignal }
+): Promise<DigestTopicDetail> {
   const client = getPublicApiClient(apiUrl);
   return client.get<DigestTopicDetail>(`/api/v1/public/digest/topics/${slug}`, {
     authMode: 'public',
+    signal: options?.signal,
   });
 }
 
@@ -147,6 +154,7 @@ export async function getTopicEditions(
   options?: {
     page?: number;
     limit?: number;
+    signal?: AbortSignal;
   }
 ): Promise<PaginatedResponse<DigestEditionSummary>> {
   const params = new URLSearchParams();
@@ -159,6 +167,7 @@ export async function getTopicEditions(
     {
       query: Object.fromEntries(params.entries()),
       authMode: 'public',
+      signal: options?.signal,
     }
   );
 }
@@ -169,13 +178,17 @@ export async function getTopicEditions(
 export async function getEditionById(
   apiUrl: string,
   slug: string,
-  editionId: string
+  editionId: string,
+  options?: { signal?: AbortSignal }
 ): Promise<DigestEditionDetail> {
   const client = getPublicApiClient(apiUrl);
   const result = await client.get<{
     edition: DigestEditionSummary;
     items: DigestEditionItem[];
-  }>(`/api/v1/public/digest/topics/${slug}/editions/${editionId}`, { authMode: 'public' });
+  }>(`/api/v1/public/digest/topics/${slug}/editions/${editionId}`, {
+    authMode: 'public',
+    signal: options?.signal,
+  });
 
   return { ...result.edition, items: result.items };
 }

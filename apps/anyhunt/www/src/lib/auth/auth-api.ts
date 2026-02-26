@@ -5,8 +5,9 @@
  */
 
 import { API_BASE_URL } from '@/lib/api-base';
-import { createApiTransport, ServerApiError } from '@moryflow/api/client';
+import { createApiTransport } from '@moryflow/api/client';
 import type { AuthTokenBundle, AuthUser } from '@/stores/auth-store';
+import { isUnauthorizedLikeError, resolveErrorMessage } from './auth-error';
 
 type TokenAuthPayload = Partial<AuthTokenBundle> & {
   user?: Partial<AuthUser>;
@@ -23,12 +24,10 @@ const authTransport = createApiTransport({
   baseUrl: resolvedBaseUrl,
 });
 
-const getErrorMessage = (error: unknown, fallback: string): string => {
-  if (error instanceof ServerApiError && error.message.trim()) {
-    return error.message;
-  }
-  return fallback;
-};
+const INVALID_AUTH_RESPONSE_MESSAGE = 'Invalid authentication response';
+
+const isInvalidAuthResponseError = (error: unknown): error is Error =>
+  error instanceof Error && error.message === INVALID_AUTH_RESPONSE_MESSAGE;
 
 const isTokenBundle = (payload: unknown): payload is AuthTokenBundle => {
   const data = payload as TokenAuthPayload | null;
@@ -64,10 +63,10 @@ export async function fetchCurrentUser(token: string): Promise<AuthUser | null> 
     });
     return mapAuthUser(payload);
   } catch (error) {
-    if (error instanceof ServerApiError && (error.status === 401 || error.status === 403)) {
+    if (isUnauthorizedLikeError(error)) {
       return null;
     }
-    throw new Error(getErrorMessage(error, 'Failed to fetch user profile'));
+    throw new Error(resolveErrorMessage(error, 'Failed to fetch user profile'));
   }
 }
 
@@ -80,15 +79,15 @@ export async function signInWithEmail(email: string, password: string): Promise<
     });
 
     if (!isTokenBundle(payload)) {
-      throw new Error('Invalid authentication response');
+      throw new Error(INVALID_AUTH_RESPONSE_MESSAGE);
     }
 
     return payload;
   } catch (error) {
-    if (error instanceof Error && error.message === 'Invalid authentication response') {
+    if (isInvalidAuthResponseError(error)) {
       throw error;
     }
-    throw new Error(getErrorMessage(error, 'Login failed'));
+    throw new Error(resolveErrorMessage(error, 'Login failed'));
   }
 }
 
@@ -104,15 +103,15 @@ export async function verifyEmailOtpAndCreateSession(
     });
 
     if (!isTokenBundle(payload)) {
-      throw new Error('Invalid authentication response');
+      throw new Error(INVALID_AUTH_RESPONSE_MESSAGE);
     }
 
     return payload;
   } catch (error) {
-    if (error instanceof Error && error.message === 'Invalid authentication response') {
+    if (isInvalidAuthResponseError(error)) {
       throw error;
     }
-    throw new Error(getErrorMessage(error, 'Verification failed'));
+    throw new Error(resolveErrorMessage(error, 'Verification failed'));
   }
 }
 
@@ -130,10 +129,10 @@ export async function refreshByToken(refreshToken: string): Promise<AuthTokenBun
 
     return payload;
   } catch (error) {
-    if (error instanceof ServerApiError && (error.status === 401 || error.status === 403)) {
+    if (isUnauthorizedLikeError(error)) {
       return null;
     }
-    throw new Error(getErrorMessage(error, 'refresh_failed'));
+    throw new Error(resolveErrorMessage(error, 'refresh_failed'));
   }
 }
 

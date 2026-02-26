@@ -8,6 +8,11 @@ import { useState, useEffect, useCallback } from 'react';
 export type Theme = 'light' | 'dark' | 'system';
 
 const STORAGE_KEY = 'anyhunt-theme';
+const THEME_VALUES: Theme[] = ['light', 'dark', 'system'];
+
+function isThemeValue(value: string): value is Theme {
+  return THEME_VALUES.includes(value as Theme);
+}
 
 /**
  * 获取系统主题偏好
@@ -56,8 +61,11 @@ export function useTheme() {
   // 初始化时从 localStorage 读取，默认 system
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'system';
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    return stored || 'system';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && isThemeValue(stored)) {
+      return stored;
+    }
+    return 'system';
   });
 
   // 计算实际主题

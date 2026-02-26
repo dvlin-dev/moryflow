@@ -2,11 +2,11 @@
 title: Anyhunt WWW Code Review
 date: 2026-02-26
 scope: apps/anyhunt/www
-status: in_progress
+status: done
 ---
 
 <!--
-[INPUT]: apps/anyhunt/www（本轮聚焦：模块 A+B+C，reader-shell/layout/routes + inbox/digest/subscriptions + explore/topic/welcome）
+[INPUT]: apps/anyhunt/www（本轮聚焦：模块 A+B+C+D，reader-shell/layout/routes + inbox/digest/subscriptions + explore/topic/welcome + stores/hooks/数据映射）
 [OUTPUT]: 问题清单 + 分级 + 分步修复计划 + 进度记录
 [POS]: Phase 3 / P2 模块审查记录（Anyhunt WWW）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -20,7 +20,7 @@ status: in_progress
 - 本轮模块 A：`src/features/reader-shell`、`src/components/layout`、`src/routes`
 - 本轮模块 B：`src/features/inbox`、`src/components/digest`、`src/features/subscriptions`、`src/components/reader`
 - 本轮模块 C：`src/features/explore`、`src/features/topic`、`src/features/welcome`、`src/routes/welcome.tsx`
-- 说明：模块 D（`stores / hooks / 数据映射`）将在后续步骤单独展开
+- 本轮模块 D：`src/stores`、`src/hooks`、`src/features/*/*.hooks.ts`、`src/features/digest/{hooks.ts,types.ts,api.ts}`、`src/lib/{digest-api.ts,auth/auth-api.ts}`
 
 ## 结论摘要（模块 A 预扫描）
 
@@ -31,10 +31,10 @@ status: in_progress
 
 ## 结论摘要（模块 B 实施）
 
-- `S1`（必须改）：3 项
+- `S1`（必须改）：4 项
 - `S2`（建议本轮改）：1 项
 - `S3`（可延后）：1 项
-- 当前状态：模块 B 已完成修复（`B-1 ~ B-5`）
+- 当前状态：模块 B 已完成修复（`B-1 ~ B-6`）
 
 ## 结论摘要（模块 C 实施）
 
@@ -42,6 +42,23 @@ status: in_progress
 - `S2`（建议本轮改）：2 项
 - `S3`（可延后）：2 项
 - 当前状态：模块 C 已完成修复（`C-1 ~ C-5`）
+
+## 结论摘要（模块 D 实施）
+
+- `S1`（必须改）：4 项
+- `S2`（建议本轮改）：2 项
+- `S3`（可延后）：2 项
+- 当前状态：模块 D 已完成修复（`D-1 ~ D-7`）
+
+## 结论摘要（项目复盘）
+
+- 复盘范围：模块 A/B/C/D 改动区 + `apps/anyhunt/www` 模块级构建/测试基线
+- 复盘结论：Reader 专项已闭环（A/B/C/D + 项目复盘完成）
+- 关键收口：
+  - `@moryflow/api/client`、`@moryflow/types` 模块解析基线已修复（`tsconfig + vite + vitest` workspace alias）
+  - `public-topics.hooks.ts` 收敛为导出层并拆分到 `hooks/*`，模块 D 关键文件恢复到阈值内
+  - `CreateSubscriptionDialogForm` 改为容器层，字段片段拆分到 `create-subscription-form-sections.tsx`
+- 验证结果：`typecheck` / `test:unit` / `build` 全通过
 
 ## 发现（按严重度排序）
 
@@ -141,6 +158,17 @@ status: in_progress
     - `CreateSubscriptionDialog` 收敛为容器层，表单实现下沉到 `CreateSubscriptionDialogForm`
     - `SubscriptionSettingsDialog` 收敛为容器层，Tabs/基础表单下沉到 `subscriptions/*`
     - 文件长度收敛：`CreateSubscriptionDialog.tsx` `148` 行，`SubscriptionSettingsDialog.tsx` `167` 行
+
+- [S1][已修复] `CreateSubscriptionDialogForm` 再次超阈值（315 行），容器与字段片段耦合
+  - 证据：
+    - 单文件 `315` 行（阈值：`>300` 必须拆分）
+    - 基础字段、可折叠高级设置、提交动作集中在同一组件
+  - 定位：
+    - `apps/anyhunt/www/src/components/reader/CreateSubscriptionDialogForm.tsx:1`
+  - 修复：
+    - 新增 `create-subscription-form-sections.tsx`，拆分基础字段与高级设置片段
+    - `CreateSubscriptionDialogForm.tsx` 收敛为容器层（53 行）
+    - `create-subscription-form-sections.tsx` 收敛到 `298` 行（阈值内）
 
 - [S1][已修复] `InboxPane` 多状态 UI 采用链式三元，且渲染状态分支与请求状态耦合
   - 证据：
@@ -261,6 +289,105 @@ status: in_progress
   - 修复：
     - `openSignIn` 通过 `/login?redirect=/welcome?page=...` 回到当前 welcome 上下文
 
+## 发现（模块 D，按严重度排序）
+
+- [S1][已修复] `features/digest/hooks.ts` 超阈值且职责混杂（Query Keys + 订阅 + Inbox + Topics + Feedback + 乐观更新）
+  - 证据：
+    - 单文件 `460` 行（阈值：`> 300` 必须拆分）
+    - 同文件同时承载 keys 定义、多域 hook、缓存失效策略与乐观更新编排
+  - 定位：
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:96`
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:116`
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:214`
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:340`
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:422`
+  - 修复：
+    - 新增 `features/digest/hooks/*` 分域：`query-keys`、`subscription-hooks`、`inbox-hooks`、`run-hooks`、`topic-hooks`、`feedback-hooks`
+    - `hooks.ts` 收敛为导出层，现有调用路径保持不变
+
+- [S1][已修复] `features/digest/types.ts` 超阈值且跨 5 个子域类型耦合，数据映射边界不清晰
+  - 证据：
+    - 单文件 `353` 行（阈值：`> 300` 必须拆分）
+    - Subscription/Inbox/Run/Topic/Feedback 类型集中在单文件，维护成本高
+  - 定位：
+    - `apps/anyhunt/www/src/features/digest/types.ts:8`
+    - `apps/anyhunt/www/src/features/digest/types.ts:23`
+    - `apps/anyhunt/www/src/features/digest/types.ts:136`
+    - `apps/anyhunt/www/src/features/digest/types.ts:183`
+    - `apps/anyhunt/www/src/features/digest/types.ts:232`
+    - `apps/anyhunt/www/src/features/digest/types.ts:308`
+  - 修复：
+    - 新增 `features/digest/types/*` 分域：`common`、`subscriptions`、`inbox`、`runs`、`topics`、`feedback`
+    - `types.ts` 收敛为导出层；`PaginatedResponse` 与 Topic status/visibility 改为复用 `lib/digest-api` 类型源
+
+- [S1][已修复] `public-topics.hooks` 存在异步竞态风险且单文件超阈值（目录/详情请求缺少取消与结果新鲜度保护）
+  - 证据：
+    - `usePublicTopicsDirectory` 与 `usePublicTopicDetail` 的初始加载和分页请求都直接 `setState`，未做取消控制
+    - 快速切换 slug 或频繁触发 loadMore 时，旧请求返回可覆盖新状态
+    - 原文件 `public-topics.hooks.ts` 达到 `430` 行（阈值：`>300` 必须拆分）
+  - 定位：
+    - `apps/anyhunt/www/src/features/public-topics/public-topics.hooks.ts:1`
+    - `apps/anyhunt/www/src/features/public-topics/hooks/use-public-topics-directory.ts:1`
+    - `apps/anyhunt/www/src/features/public-topics/hooks/use-public-topic-detail.ts:1`
+    - `apps/anyhunt/www/src/features/public-topics/hooks/use-public-edition-detail.ts:1`
+  - 修复：
+    - 新增 `public-topics.request-guard.ts`（generation guard + pagination gate + abort error guard）
+    - `public-topics.hooks.ts` 收敛为导出层，并按目录/详情/edition 拆分到 `hooks/*`
+    - `hooks/*` 全部接入 `AbortController` + generation 校验，避免旧请求覆盖新状态
+    - `public-topics.api.ts` 与 `lib/digest-api.ts` 新增 `signal` 透传，支持请求取消
+
+- [S1][已修复] `auth-api` 存在 `unknown` 错误分支的类型收敛缺口（已清零 TS18046）
+  - 证据：
+    - 修复前 `pnpm --filter @anyhunt/anyhunt-www typecheck` 报 `TS18046: 'error' is of type 'unknown'`
+  - 定位：
+    - `apps/anyhunt/www/src/lib/auth/auth-api.ts:27`
+    - `apps/anyhunt/www/src/lib/auth/auth-api.ts:67`
+    - `apps/anyhunt/www/src/lib/auth/auth-api.ts:133`
+  - 修复：
+    - 新增 `lib/auth/auth-error.ts`（`resolveErrorStatus`/`isUnauthorizedLikeError`/`resolveErrorMessage`）
+    - `auth-api.ts` 改为 helper 收敛 unknown 错误分支，移除 `TS18046` 位点
+
+- [S2][已修复] Inbox 状态映射规则重复定义，易发生规则漂移
+  - 证据：
+    - `getInboxItemState` 在 `api.ts` 与 `hooks.ts` 各维护一份
+    - 同一业务规则跨文件分散，后续改动易出现不一致
+  - 定位：
+    - `apps/anyhunt/www/src/features/digest/api.ts:90`
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:26`
+  - 修复：
+    - 新增 `features/digest/mappers/inbox-item-state.ts` 作为单一规则源
+    - `digest/api.ts` 与 `hooks/inbox-hooks.ts` 统一复用 mapper
+
+- [S2][已修复] 公共 Digest 数据类型重复定义（`lib/digest-api` 与 `features/digest/types`），缺少单一类型源
+  - 证据：
+    - `PaginatedResponse`、Topic status/visibility 等核心模型双份定义
+    - 公共页和登录态页共享语义但类型源分裂，增加数据映射维护成本
+  - 定位：
+    - `apps/anyhunt/www/src/lib/digest-api.ts:12`
+    - `apps/anyhunt/www/src/lib/digest-api.ts:68`
+    - `apps/anyhunt/www/src/features/digest/types.ts:8`
+    - `apps/anyhunt/www/src/features/digest/types.ts:232`
+  - 修复：
+    - `features/digest/types/common.ts` 复用 `lib/digest-api` 的 `PaginatedResponse`
+    - `features/digest/types/topics.ts` 复用 `lib/digest-api` 的 `DigestTopicVisibility`/`DigestTopicStatus`
+
+- [S3][已修复] `useTheme` 本地存储值未做枚举校验，异常脏值会污染主题类名
+  - 证据：
+    - 读取 localStorage 后直接断言为 `Theme` 并使用
+  - 定位：
+    - `apps/anyhunt/www/src/hooks/useTheme.ts:59`
+  - 修复：
+    - 增加 `isThemeValue` 守卫，仅接受 `light/dark/system`，脏值回退 `system`
+
+- [S3][已修复] Inbox 乐观更新中存在无效引用比较，增加不必要缓存写入
+  - 证据：
+    - `map + filter` 总是产生新数组，`old.items === updatedItems` 永远为 `false`
+  - 定位：
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:271`
+    - `apps/anyhunt/www/src/features/digest/hooks.ts:281`
+  - 修复：
+    - `hooks/inbox-hooks.ts` 改为单次遍历更新：未命中目标项直接返回旧缓存，避免无效写入
+
 ## 分步修复计划（模块 A）
 
 1. A-1：拆分 `Header.tsx` 为容器层 + `desktop-nav`/`mobile-nav`/`auth-actions`/`menu-items` 子模块。（已完成）
@@ -284,6 +411,7 @@ status: in_progress
 3. B-3：`SubscriptionSettingsDialog` 收敛为容器层，Tabs 与基础表单拆分并统一表单上下文。（已完成）
 4. B-4：`InboxPane` 改为状态片段化（`resolve*State` + `render*ByState/switch`）。（已完成）
 5. B-5：收敛剩余中低优先级状态分发（`report-topic-dialog`、`SubscriptionsList`）并完成模块验证。（已完成）
+6. B-6：`CreateSubscriptionDialogForm` 再收敛（容器 + 字段片段拆分），消除 `>300` 行超阈值。（已完成）
 
 ## 分步修复计划（模块 C）
 
@@ -293,17 +421,35 @@ status: in_progress
 4. C-4：`WelcomeListPane` / `WelcomeContentPane` 状态渲染收敛到 `switch/renderContentByState`。（已完成）
 5. C-5：拆分 `WelcomeRoute` effect（移动端重定向与 page 归一化）并补 S3 噪声清理与验证。（已完成）
 
+## 分步修复计划（模块 D）
+
+1. D-1：拆分 `features/digest/hooks.ts`（按 `keys/subscriptions/inbox/runs/topics/feedback` 分域），保留统一导出层，消除 460 行混合职责。（已完成）
+2. D-2：拆分 `features/digest/types.ts`（按子域拆分为 `common + subscriptions + inbox + runs + topics + feedback`），统一入口导出。（已完成）
+3. D-3：抽离 Inbox 状态映射与动作映射到共享 mapper（`resolve/apply/filter`），消除 `api.ts` 与 `hooks.ts` 的重复规则。（已完成）
+4. D-4：为 `public-topics.hooks` 增加请求取消/新鲜度保护（或改为 `useQuery/useInfiniteQuery`），修复竞态覆盖风险。（已完成）
+5. D-5：`auth-api` 统一 `unknown` 错误收敛（type guard + normalize helper），消除 `TS18046` 报错位点。（已完成）
+6. D-6：补齐模块 D 回归测试（至少覆盖 inbox mapper、public-topics 异步状态边界、auth-api 错误归一化）。（已完成）
+7. D-7：`public-topics.hooks` 再拆分为 `hooks/*` 分域实现，导出层与实现层彻底解耦并收敛到阈值内。（已完成）
+
 ## 验证命令（模块 B）
 
-- `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题：`@moryflow/api/client`/`@moryflow/types` 解析失败 + auth 既有 `error is unknown`）
-- `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题：`@moryflow/api/client` 解析失败导致 `api.spec.ts` 与 `auth-session.spec.ts`）
+- `pnpm --filter @anyhunt/anyhunt-www typecheck`（pass）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit`（pass）
 - `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass）
 
 ## 验证命令（模块 C）
 
-- `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题：`@moryflow/api/client`/`@moryflow/types` 解析失败 + auth 既有 `error is unknown`）
-- `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题：`@moryflow/api/client` 解析失败导致 `api.spec.ts` 与 `auth-session.spec.ts`）
+- `pnpm --filter @anyhunt/anyhunt-www typecheck`（pass）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit`（pass）
 - `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass）
+
+## 验证命令（模块 D）
+
+- `pnpm --filter @anyhunt/anyhunt-www typecheck`（pass）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit`（pass）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/digest/__tests__/inbox-item-state.spec.ts src/features/public-topics/__tests__/public-topics.request-guard.spec.ts src/lib/auth/__tests__/auth-error.spec.ts`（pass）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass）
+- `pnpm --filter @anyhunt/anyhunt-www build`（pass）
 
 ## 进度记录
 
@@ -322,9 +468,25 @@ status: in_progress
 | B-3 | inbox/digest/subscriptions | Settings 弹窗容器/Tab 拆分与表单上下文收敛 | done | 同 B-5（汇总验证） | 2026-02-26 | 新增 `SubscriptionSettingsTabs`、`SubscriptionSettingsBasicTab`，Settings 主文件收敛为容器 |
 | B-4 | inbox/digest/subscriptions | InboxPane 状态片段化（列表/详情） | done | 同 B-5（汇总验证） | 2026-02-26 | 引入 `resolve*State` + `render*ByState`，移除多状态链式三元 |
 | B-5 | inbox/digest/subscriptions | 收敛 report/subscriptions 状态分发并完成验证 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass） | 2026-02-26 | `report-topic-dialog` 改 `renderContentByState`；`SubscriptionsList` 动作分发改 `switch` |
+| B-6 | inbox/digest/subscriptions | `CreateSubscriptionDialogForm` 容器/字段片段再拆分 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（pass）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（pass） | 2026-02-26 | 新增 `create-subscription-form-sections.tsx`；表单容器降到 53 行，字段片段收敛到 298 行 |
 | C-0 | explore/topic/welcome | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 识别 `S1x3 / S2x2 / S3x2` |
 | C-1 | explore/topic/welcome | `TopicPane` 条件 Hook 风险修复 + 分支状态收敛 | done | 同 C-5（汇总验证） | 2026-02-26 | `editionQuery` 改顶层统一调用 + `enabled` 控制，`list/edition` 状态统一 `switch` |
 | C-2 | explore/topic/welcome | Explore 多状态 UI 状态片段化 | done | 同 C-5（汇总验证） | 2026-02-26 | 搜索/Trending 状态改 `resolve*State + render*ByState`，移除链式三元 |
 | C-3 | explore/topic/welcome | Explore 容器/展示职责拆分 | done | 同 C-5（汇总验证） | 2026-02-26 | 新增 `ExploreTopicsContent.tsx`，`ExploreTopicsPane` 收敛为编排层 |
 | C-4 | explore/topic/welcome | Welcome 双栏状态分发收敛 + 动作分支补齐 | done | 同 C-5（汇总验证） | 2026-02-26 | `WelcomeListPane/WelcomeContentPane` 改 `switch`；补齐 `openSignIn` 动作 |
 | C-5 | explore/topic/welcome | `welcome` 路由副作用解耦 + C 模块验证 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass） | 2026-02-26 | `WelcomeRoute` 拆分双 effect；模块 C 全量修复完成 |
+| D-0 | stores/hooks/数据映射 | 预扫描（仅问题清单） | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题） | 2026-02-26 | 识别 `S1x4 / S2x2 / S3x2`，产出 `D-1 ~ D-6` 计划 |
+| D-1 | stores/hooks/数据映射 | 拆分 `digest hooks` 分域 | done | 同 D-6（汇总验证） | 2026-02-26 | 新增 `features/digest/hooks/*`，`hooks.ts` 收敛为导出层 |
+| D-2 | stores/hooks/数据映射 | 拆分 `digest types` 分域 | done | 同 D-6（汇总验证） | 2026-02-26 | 新增 `features/digest/types/*`，`types.ts` 收敛为导出层 |
+| D-3 | stores/hooks/数据映射 | 抽离 Inbox mapper 并统一复用 | done | 同 D-6（汇总验证） | 2026-02-26 | 新增 `mappers/inbox-item-state.ts`；`api/inbox-hooks` 去重并统一映射规则 |
+| D-4 | stores/hooks/数据映射 | 修复 `public-topics` 异步竞态 | done | 同 D-6（汇总验证） | 2026-02-26 | 新增 request guard + AbortController + signal 透传，旧请求不再覆盖新状态 |
+| D-5 | stores/hooks/数据映射 | `auth-api` unknown 错误收敛 | done | 同 D-6（汇总验证） | 2026-02-26 | 新增 `auth-error.ts`，移除 `TS18046` 位点 |
+| D-6 | stores/hooks/数据映射 | 模块 D 回归测试与验证 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/digest/__tests__/inbox-item-state.spec.ts src/features/public-topics/__tests__/public-topics.request-guard.spec.ts src/lib/auth/__tests__/auth-error.spec.ts`（pass）+ `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass） | 2026-02-26 | 模块 D 全量修复完成；解析基线问题已在 D-7 / P1-R 阶段完成修复 |
+| D-7 | stores/hooks/数据映射 | `public-topics.hooks` 分域拆分与导出层收敛 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（pass）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（pass） | 2026-02-26 | `public-topics.hooks.ts` 改导出层，新增 `hooks/use-public-topics-*` 并修复重复 `AbortError` 分支噪声 |
+| P1-R | anyhunt/www | 项目复盘（整项目一致性复查） | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（pass）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（pass）+ `pnpm --filter @anyhunt/anyhunt-www build`（pass） | 2026-02-26 | 模块 A/B/C/D 全部闭环；workspace 依赖解析基线已修复；Reader 专项范围完成项目复盘 |
+
+## 项目复盘（P1）
+
+- 结论：`apps/anyhunt/www` Reader 组件优化专项已闭环（模块 A/B/C/D + 项目复盘）。
+- 结果：模块范围内关键文件已收敛到结构阈值（`CreateSubscriptionDialogForm` 容器化、`public-topics.hooks` 分域拆分），多状态渲染统一为状态片段化分发。
+- 校验：`pnpm --filter @anyhunt/anyhunt-www typecheck`、`test:unit`、`build` 全部通过。

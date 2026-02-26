@@ -38,6 +38,8 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- Reader 专项项目复盘完成（A/B/C/D 闭环）：新增 workspace 源码别名（`tsconfig + vite + vitest`）修复 `@moryflow/api/client`/`@moryflow/types` 解析基线，`pnpm --filter @anyhunt/anyhunt-www typecheck` / `test:unit` / `build` 全通过；`public-topics.hooks.ts` 收敛为导出层并拆分到 `features/public-topics/hooks/*`；`CreateSubscriptionDialogForm` 再拆分为容器 + `create-subscription-form-sections`
+- Reader Stores/Hooks/数据映射（模块 D）完成收敛：`features/digest/hooks.ts` 与 `types.ts` 拆分为分域目录（subscriptions/inbox/runs/topics/feedback + query-keys）；新增 `mappers/inbox-item-state.ts` 统一 Inbox 状态映射与乐观更新规则；`public-topics` 引入 `AbortController + request generation guard` 解决异步竞态；`lib/auth/auth-api.ts` 新增 `auth-error` 归一化收敛 unknown 错误分支并清除 TS18046 位点；补充 `inbox-item-state`/`public-topics.request-guard`/`auth-error` 回归测试
 - Reader Explore / Topic / Welcome（模块 C）完成收敛：`TopicPane` 消除条件式 Hook（`editionQuery` 顶层统一 + enabled 控制），Explore 拆分为 `ExploreTopicsPane`（编排）+ `ExploreTopicsContent`（状态渲染），并在 `TopicPreviewDialog`、`WelcomeListPane`、`WelcomeContentPane` 全面落地“状态片段化 + renderByState/switch”；`WelcomeContentPane` 补齐 `openSignIn` 主动作；`routes/welcome.tsx` 拆分移动端重定向与 page 归一化副作用
 - Reader Inbox / Digest / Subscriptions（模块 B）完成组件收敛：`CreateSubscriptionDialog` 与 `SubscriptionSettingsDialog` 共享订阅表单契约（`subscription-form-schema`），并拆分为容器 + 表单/Tabs 子模块；`InboxPane` 改为状态片段化（`resolve*State + render*ByState/switch`）；`ReportTopicDialog` 与 `SubscriptionsList` 收敛状态分发逻辑（移除多状态链式三元与连续 if 分发）
 - Reader Shell / Layout / Routes（模块 A）完成结构收敛：`Header` 拆分为容器 + `header/*` 子模块；`topics/*` 请求编排下沉到 `features/public-topics`；认证路由复用 `AuthModalRouteShell`；`ReaderShell/ReaderDialogs` 改为判别状态模型；新增 `MarketingPageShell` 收敛 `fetchx/memox` 页面壳层
