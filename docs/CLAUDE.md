@@ -92,6 +92,7 @@
 
 ## 最近更新
 
+ - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-6a 完成：`flow-runner.tsx` 分层到 `flow-runner-form`/`flow-runner-step-list`/`flow-runner-types`/`flow-runner-helpers`，并将 `BrowserSessionPanel` 的 19 组表单初始化抽离到 `use-browser-session-forms`）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4e 完成：`browser-session-sections.tsx` 第五批分区拆分，新增 `open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件降至 45 行）
