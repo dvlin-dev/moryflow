@@ -2,53 +2,35 @@
  * [PROPS]: ChatMessageProps - 单条聊天消息渲染参数
  * [EMITS]: onEditAndResend/onResend/onRetry/onFork
  * [POS]: Chat Pane 消息内容渲染（Lucide 图标）
- * [UPDATE]: 2026-02-03 - Thinking 反馈改为 loading icon
- * [UPDATE]: 2026-02-07 - 统一使用 Message（移除 MessageRoot/锚点相关逻辑）
- * [UPDATE]: 2026-02-08 - parts 解析复用 `@moryflow/ui/ai/message`（split/clean），避免 PC/Web 重复实现导致语义漂移
- * [UPDATE]: 2026-02-10 - Streamdown v2.2 流式逐词动画：仅对最后一条 assistant 的最后一个 text part 启用
+ * [UPDATE]: 2026-02-26 - tool labels/callbacks 下沉到 useMessageToolModel
+ * [UPDATE]: 2026-02-26 - MessageBody 改为分组模型（view/edit/tool），降低 props 透传噪音
+ * [UPDATE]: 2026-02-26 - 拆分为 message-body/tool-part/message-actions，降低单文件职责耦合
  * [UPDATE]: 2026-02-10 - STREAMDOWN_ANIM 标记：全局检索点（动画 gating + 最后 text part 定位）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
-import { isReasoningUIPart, isTextUIPart, isToolUIPart } from 'ai';
-import type { ToolUIPart, UIMessage } from 'ai';
-import { X, Pencil, GitBranch, RefreshCw, Check, Wrench } from 'lucide-react';
-
+import { Wrench } from 'lucide-react';
 import {
   Message,
-  MessageAction,
-  MessageActions,
   MessageAttachment,
   MessageAttachments,
-  MessageContent,
   MessageMetaAttachments,
-  MessageResponse,
   cleanFileRefMarker,
   findLastTextPartIndex,
   splitMessageParts,
 } from '@moryflow/ui/ai/message';
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@moryflow/ui/ai/reasoning';
-import { Loader } from '@moryflow/ui/ai/loader';
-import { STREAMDOWN_ANIM_STREAMING_OPTIONS } from '@moryflow/ui/ai/streamdown-anim';
-import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@moryflow/ui/ai/tool';
-import {
-  Confirmation,
-  ConfirmationActions,
-  ConfirmationAction,
-  ConfirmationAccepted,
-  ConfirmationRequest,
-  ConfirmationTitle,
-} from '@moryflow/ui/ai/confirmation';
 import { useTranslation } from '@/lib/i18n';
-import { toast } from 'sonner';
-import type { ToolDiffResult, ToolState } from '@moryflow/ui/ai/tool';
 
 import { getMessageMeta } from '../../types/message';
 import type { ChatMessageProps } from './const';
 import { useMessageEdit } from './use-message-edit';
+import { MessageBody } from './message-body';
+import { MessageActionsLayer } from './message-actions';
+import type { MessageBodyModel } from './message-body-model';
+import { useMessageToolModel } from './use-message-tool-model';
 
 export const ChatMessage = ({
   message,
@@ -64,7 +46,6 @@ export const ChatMessage = ({
     [message.parts]
   );
 
-  // 从 metadata 读取结构化附件与 selected skill。
   const { attachments: chatAttachments = [], selectedSkill } = useMemo(
     () => getMessageMeta(message),
     [message]
@@ -102,7 +83,6 @@ export const ChatMessage = ({
   const isStreaming = status === 'streaming' || status === 'submitted';
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
-  // STREAMDOWN_ANIM: 只对最后一条 assistant 的最后一个 text part 启用 animated/isAnimating，避免整段消息反复卸载/重渲染。
   const streamdownAnimated = isAssistant && isLastMessage === true;
   const streamdownIsAnimating = streamdownAnimated && isStreaming;
 
@@ -110,7 +90,8 @@ export const ChatMessage = ({
     () => (streamdownAnimated ? findLastTextPartIndex(orderedParts) : -1),
     [orderedParts, streamdownAnimated]
   );
-  const [approvingIds, setApprovingIds] = useState<string[]>([]);
+
+  const toolModel = useMessageToolModel({ onToolApproval });
 
   const handleResend = useCallback(() => {
     actions?.onResend?.(messageIndex);
@@ -124,339 +105,99 @@ export const ChatMessage = ({
     actions?.onFork?.(messageIndex);
   }, [actions, messageIndex]);
 
-  const toolStatusLabels = useMemo(
-    () => ({
-      'input-streaming': t('statusPreparing'),
-      'input-available': t('statusExecuting'),
-      'approval-requested': t('statusWaitingConfirmation'),
-      'approval-responded': t('statusConfirmed'),
-      'output-available': t('statusCompleted'),
-      'output-error': t('statusError'),
-      'output-denied': t('statusSkipped'),
-    }),
-    [t]
-  );
-
-  const toolOutputLabels = useMemo(
-    () => ({
-      result: t('resultLabel'),
-      error: t('errorLabel'),
-      targetFile: t('targetFile'),
-      contentTooLong: t('contentTooLong'),
-      outputTruncated: t('outputTruncated'),
-      viewFullOutput: t('viewFullOutput'),
-      fullOutputPath: t('fullOutputPath'),
-      applyToFile: t('applyToFile'),
-      applied: t('written'),
-      applying: t('applyToFile'),
-      noTasks: t('noTasks'),
-      tasksCompleted: (completed: number, total: number) =>
-        t('tasksCompleted', { completed, total }),
-    }),
-    [t]
-  );
-
-  const handleOpenFullOutput = useCallback(
-    async (fullPath: string) => {
-      if (typeof window === 'undefined' || !window.desktopAPI?.files?.openPath) {
-        toast.error(t('openFileFailed'));
-        return;
-      }
-      try {
-        await window.desktopAPI.files.openPath({ path: fullPath });
-      } catch (error) {
-        console.error(error);
-        toast.error(error instanceof Error ? error.message : t('openFileFailed'));
-      }
-    },
-    [t]
-  );
-
-  const handleApplyDiff = useCallback(
-    async (result: ToolDiffResult) => {
-      if (typeof window === 'undefined' || !window.desktopAPI?.chat?.applyEdit) {
-        throw new Error(t('writeFailed'));
-      }
-      await window.desktopAPI.chat.applyEdit({
-        path: result.path!,
-        baseSha: result.baseSha!,
-        patch: result.patch,
-        content: result.content,
-        mode: result.mode ?? 'patch',
-      });
-    },
-    [t]
-  );
-
-  const canApplyDiff = typeof window !== 'undefined' && Boolean(window.desktopAPI?.chat?.applyEdit);
-
-  const handleApplyDiffSuccess = useCallback(() => {
-    toast.success(t('fileWritten'));
-  }, [t]);
-
-  const handleApplyDiffError = useCallback(
-    (error: unknown) => {
-      console.error(error);
-      toast.error(error instanceof Error ? error.message : t('writeFailed'));
-    },
-    [t]
-  );
-
-  const renderTool = (part: ToolUIPart, index: number) => {
-    const hasToolInput = part.input !== undefined;
-    const approvalId = part.approval?.id;
-    const approvalVisible =
-      part.state === 'approval-requested' || part.state === 'approval-responded';
-    const isApproving = approvalId ? approvingIds.includes(approvalId) : false;
-    const handleApproval = async (remember: 'once' | 'always') => {
-      if (!approvalId || !onToolApproval) {
-        return;
-      }
-      setApprovingIds((prev) => (prev.includes(approvalId) ? prev : [...prev, approvalId]));
-      try {
-        await Promise.resolve(onToolApproval({ approvalId, remember }));
-      } finally {
-        setApprovingIds((prev) => prev.filter((id) => id !== approvalId));
-      }
-    };
-    return (
-      <Tool key={`${message.id}-tool-${index}`} defaultOpen={false}>
-        <ToolHeader
-          type={part.type}
-          state={part.state as ToolState}
-          input={part.input as Record<string, unknown>}
-          statusLabels={toolStatusLabels}
-        />
-        <ToolContent>
-          {hasToolInput ? <ToolInput input={part.input} label={t('parameters')} /> : null}
-          {approvalVisible && approvalId ? (
-            <div className="px-4 pb-2">
-              <Confirmation
-                state={part.state as ToolState}
-                approval={part.approval}
-                className="border border-border-muted"
-              >
-                <ConfirmationTitle>{t('approvalRequired')}</ConfirmationTitle>
-                <ConfirmationRequest>
-                  <p className="text-sm text-muted-foreground">{t('approvalRequestHint')}</p>
-                </ConfirmationRequest>
-                <ConfirmationAccepted>
-                  <p className="text-sm text-muted-foreground">{t('approvalGranted')}</p>
-                </ConfirmationAccepted>
-                <ConfirmationActions>
-                  <ConfirmationAction
-                    variant="secondary"
-                    onClick={() => handleApproval('once')}
-                    disabled={isApproving}
-                  >
-                    {t('approveOnce')}
-                  </ConfirmationAction>
-                  <ConfirmationAction
-                    onClick={() => handleApproval('always')}
-                    disabled={isApproving}
-                  >
-                    {t('approveAlways')}
-                  </ConfirmationAction>
-                </ConfirmationActions>
-              </Confirmation>
-            </div>
-          ) : null}
-          <ToolOutput
-            output={part.output}
-            errorText={part.errorText}
-            labels={toolOutputLabels}
-            onOpenFullOutput={handleOpenFullOutput}
-            onApplyDiff={canApplyDiff ? handleApplyDiff : undefined}
-            onApplyDiffSuccess={canApplyDiff ? handleApplyDiffSuccess : undefined}
-            onApplyDiffError={canApplyDiff ? handleApplyDiffError : undefined}
-          />
-        </ToolContent>
-      </Tool>
-    );
-  };
-
-  // 用户消息内容渲染
-  const renderUserContent = () => (
-    <MessageResponse key={`${message.id}-text`}>{cleanMessageText}</MessageResponse>
-  );
-
-  const renderPart = (part: UIMessage['parts'][number], index: number) => {
-    if (isTextUIPart(part)) {
-      const shouldAnimate = streamdownAnimated && index === lastTextPartIndex;
-      return (
-        <MessageResponse
-          key={`${message.id}-text-${index}`}
-          {...(shouldAnimate
-            ? { animated: STREAMDOWN_ANIM_STREAMING_OPTIONS, isAnimating: streamdownIsAnimating }
-            : {})}
-        >
-          {part.text ?? ''}
-        </MessageResponse>
-      );
-    }
-    if (isReasoningUIPart(part)) {
-      return (
-        <Reasoning
-          key={`${message.id}-reasoning-${index}`}
-          isStreaming={part.state === 'streaming'}
-          defaultOpen={part.state === 'streaming'}
-          className="mt-3 rounded-md border border-border/50 bg-muted/20 p-3"
-        >
-          <ReasoningTrigger />
-          <ReasoningContent>{part.text ?? ''}</ReasoningContent>
-        </Reasoning>
-      );
-    }
-    if (isToolUIPart(part)) {
-      return renderTool(part as ToolUIPart, index);
-    }
-    return null;
-  };
-
-  // 渲染原有文件附件（图片等，来自 AI SDK）
-  const renderFileParts = () =>
-    fileParts.length > 0 ? (
-      <MessageAttachments>
-        {fileParts.map((file) => (
-          <MessageAttachment
-            key={file.url}
-            data={file}
-            labels={{
-              contextBadge: t('contextInjected'),
-              contextExpand: t('viewInjection'),
-              contextCollapse: t('collapseInjection'),
-              contextTruncated: t('contentTruncated'),
-            }}
-          />
-        ))}
-      </MessageAttachments>
-    ) : null;
-
-  // 渲染结构化附件（文件引用等，来自 chat metadata）
-  const renderChatAttachments = () =>
-    chatAttachments.length > 0 ? <MessageMetaAttachments attachments={chatAttachments} /> : null;
-
-  const renderSelectedSkill = () => {
-    if (!isUser || !selectedSkill) {
-      return null;
-    }
-    const label = selectedSkill.title?.trim() || selectedSkill.name;
-    return (
-      <div className="mt-1.5 flex items-center justify-end pr-2">
-        <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
-          <Wrench className="size-3.5 shrink-0" />
-          <span className="truncate">{label}</span>
-        </span>
-      </div>
-    );
-  };
-
-  const renderUserActions = () => {
-    if (!actions) {
-      return null;
-    }
-
-    return (
-      <MessageActions
-        className={`ml-auto transition-opacity ${
-          isStreaming ? 'pointer-events-none opacity-0' : 'opacity-0 group-hover:opacity-100'
-        }`}
-      >
-        {actions.onEditAndResend ? (
-          <MessageAction onClick={startEdit} size="icon-xs">
-            <Pencil className="size-3" />
-          </MessageAction>
-        ) : null}
-        {actions.onResend ? (
-          <MessageAction onClick={handleResend} size="icon-xs">
-            <RefreshCw className="size-3" />
-          </MessageAction>
-        ) : null}
-        {actions.onFork ? (
-          <MessageAction onClick={handleFork} size="icon-xs">
-            <GitBranch className="size-3" />
-          </MessageAction>
-        ) : null}
-      </MessageActions>
-    );
-  };
-
-  const renderAssistantActions = () => {
-    if (!isLastAssistant || !actions?.onRetry) {
-      return null;
-    }
-
-    return (
-      <MessageActions
-        className={`min-h-6 transition-opacity ${
-          isStreaming ? 'pointer-events-none opacity-0' : 'opacity-0 group-hover:opacity-100'
-        }`}
-      >
-        <MessageAction onClick={handleRetry} size="icon-xs">
-          <RefreshCw className="size-3" />
-        </MessageAction>
-      </MessageActions>
-    );
-  };
-
-  const renderEditContent = () => (
-    <textarea
-      ref={textareaRef}
-      value={editContent}
-      onChange={(e) => setEditContent(e.target.value)}
-      onKeyDown={handleKeyDown}
-      className="m-0 block size-full resize-none border-none bg-transparent p-0 text-sm leading-normal outline-hidden"
-    />
-  );
-
   const editContentStyle =
-    isEditing && editSize ? { minWidth: editSize.width, minHeight: editSize.height } : undefined;
+    isEditing && editSize ? ({ minWidth: editSize.width, minHeight: editSize.height } as CSSProperties) : undefined;
 
-  const renderEditActions = () => (
-    <MessageActions className="ml-auto">
-      <MessageAction onClick={cancelEdit} size="icon-xs">
-        <X className="size-3" />
-      </MessageAction>
-      <MessageAction onClick={confirmEdit} size="icon-xs">
-        <Check className="size-3" />
-      </MessageAction>
-    </MessageActions>
+  const messageBodyModel = useMemo<MessageBodyModel>(
+    () => ({
+      view: {
+        message,
+        orderedParts,
+        cleanMessageText,
+        isUser,
+        streamdownAnimated,
+        streamdownIsAnimating,
+        lastTextPartIndex,
+        thinkingText: t('thinkingText'),
+      },
+      edit: {
+        isEditing,
+        editContent,
+        textareaRef,
+        contentRef,
+        editContentStyle,
+        onEditContentChange: setEditContent,
+        onEditKeyDown: handleKeyDown,
+      },
+      tool: {
+        ...toolModel,
+      },
+    }),
+    [
+      message,
+      orderedParts,
+      cleanMessageText,
+      isUser,
+      streamdownAnimated,
+      streamdownIsAnimating,
+      lastTextPartIndex,
+      t,
+      isEditing,
+      editContent,
+      textareaRef,
+      contentRef,
+      editContentStyle,
+      setEditContent,
+      handleKeyDown,
+      toolModel,
+    ]
   );
-
-  const renderMessageBody = () => {
-    if (isEditing) {
-      return renderEditContent();
-    }
-    if (isUser) {
-      return renderUserContent();
-    }
-    if (orderedParts.length === 0) {
-      return <ThinkingContent />;
-    }
-    return orderedParts.map(renderPart);
-  };
 
   return (
     <Message from={message.role} data-message-id={message.id}>
-      <MessageContent ref={isUser ? contentRef : undefined} style={editContentStyle}>
-        {renderMessageBody()}
-      </MessageContent>
-      {renderFileParts()}
-      {renderSelectedSkill()}
-      {isUser ? renderChatAttachments() : null}
-      {isEditing ? renderEditActions() : null}
-      {!isEditing && isUser ? renderUserActions() : null}
-      {!isEditing && !isUser ? renderAssistantActions() : null}
-    </Message>
-  );
-};
+      <MessageBody model={messageBodyModel} />
 
-const ThinkingContent = () => {
-  const { t } = useTranslation('chat');
-  return (
-    <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-      <Loader className="text-muted-foreground" size={14} />
-      <span className="sr-only">{t('thinkingText')}</span>
-    </span>
+      {fileParts.length > 0 ? (
+        <MessageAttachments>
+          {fileParts.map((file) => (
+            <MessageAttachment
+              key={file.url}
+              data={file}
+              labels={{
+                contextBadge: t('contextInjected'),
+                contextExpand: t('viewInjection'),
+                contextCollapse: t('collapseInjection'),
+                contextTruncated: t('contentTruncated'),
+              }}
+            />
+          ))}
+        </MessageAttachments>
+      ) : null}
+
+      {isUser && selectedSkill ? (
+        <div className="mt-1.5 flex items-center justify-end pr-2">
+          <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
+            <Wrench className="size-3.5 shrink-0" />
+            <span className="truncate">{selectedSkill.title?.trim() || selectedSkill.name}</span>
+          </span>
+        </div>
+      ) : null}
+
+      {isUser && chatAttachments.length > 0 ? <MessageMetaAttachments attachments={chatAttachments} /> : null}
+
+      <MessageActionsLayer
+        isEditing={isEditing}
+        isUser={isUser}
+        isLastAssistant={Boolean(isLastAssistant)}
+        isStreaming={isStreaming}
+        actions={actions}
+        onStartEdit={startEdit}
+        onResend={handleResend}
+        onRetry={handleRetry}
+        onFork={handleFork}
+        onCancelEdit={cancelEdit}
+        onConfirmEdit={confirmEdit}
+      />
+    </Message>
   );
 };

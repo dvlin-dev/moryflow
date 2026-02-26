@@ -27,6 +27,7 @@ describe('normalizeAgentOptions', () => {
   it('prefers context object over legacy fields and ignores empty skill name', () => {
     const normalized = normalizeAgentOptions({
       preferredModelId: 'gpt-5-codex',
+      thinking: { mode: 'level', level: '  high  ' },
       selectedSkill: { name: '   ' },
       activeFilePath: 'legacy.md',
       contextSummary: 'legacy summary',
@@ -38,9 +39,44 @@ describe('normalizeAgentOptions', () => {
 
     expect(normalized).toEqual({
       preferredModelId: 'gpt-5-codex',
+      thinking: { mode: 'level', level: 'high' },
       context: {
         filePath: 'from-context.md',
         summary: 'from context',
+      },
+    });
+  });
+
+  it('normalizes thinking off selection', () => {
+    const normalized = normalizeAgentOptions({
+      thinking: { mode: 'off' },
+    });
+
+    expect(normalized).toEqual({
+      thinking: { mode: 'off' },
+    });
+  });
+
+  it('normalizes thinking profile and guarantees off level', () => {
+    const normalized = normalizeAgentOptions({
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'high',
+        levels: [
+          { id: 'high', label: 'High' },
+          { id: 'high', label: 'Duplicate' },
+        ],
+      },
+    });
+
+    expect(normalized).toEqual({
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'high',
+        levels: [
+          { id: 'off', label: 'Off' },
+          { id: 'high', label: 'High' },
+        ],
       },
     });
   });

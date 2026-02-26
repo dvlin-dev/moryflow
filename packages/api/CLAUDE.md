@@ -34,6 +34,7 @@ const client = createApiClient({
 
 ## 最近变更
 
+- Membership 模型类型契约升级：`thinking_profile` 改为强制字段（含 `supportsThinking/defaultLevel/levels`），与 Moryflow Server `/v1/models` 契约保持一致（2026-02-26）
 - 错误响应解析增强：非 JSON `content-type` 场景下，仍尝试解析 body（支持 `text/plain + JSON 字符串` 与纯文本错误消息），避免前端降级显示 `Request failed (status)`
 - 修复包入口声明：CJS 导出统一指向 `.cjs` 产物（`main`/`exports.require`），避免 Node 运行期解析到不存在的 `dist/*.js` 报 `MODULE_NOT_FOUND`
 - 增加 `onUnauthorized` 重试回调（用于刷新 access）

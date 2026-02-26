@@ -8,6 +8,13 @@
 
 import type { AgentSettings, UserProviderConfig, CustomProviderConfig } from '@shared/ipc';
 import { getProviderById, modelRegistry } from '@shared/model-registry';
+import type {
+  ModelThinkingOverride,
+  ModelThinkingProfile,
+  ProviderSdkType,
+  ThinkingLevelId,
+  ThinkingLevelOption,
+} from '@shared/model-registry';
 import {
   type MembershipModel,
   isMembershipModelId,
@@ -24,6 +31,7 @@ export type ModelOption = {
   providers: string[];
   description?: string;
   disabled?: boolean;
+  thinkingProfile: ModelThinkingProfile;
   /** 是否是会员模型 */
   isMembership?: boolean;
   /** 会员模型所需等级（用于显示升级提示） */
@@ -51,6 +59,111 @@ const KNOWN_PROVIDER_LOGOS = new Set([
   'moonshot',
   'zhipuai',
 ]);
+
+const DEFAULT_THINKING_LEVEL_LABELS: Record<string, string> = {
+  off: 'Off',
+  minimal: 'Minimal',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  max: 'Max',
+  xhigh: 'X-High',
+};
+
+const supportsThinkingForSdkType = (sdkType: ProviderSdkType): boolean => {
+  return (
+    sdkType === 'openai' ||
+    sdkType === 'openai-compatible' ||
+    sdkType === 'openrouter' ||
+    sdkType === 'anthropic' ||
+    sdkType === 'google' ||
+    sdkType === 'xai'
+  );
+};
+
+const getDefaultThinkingLevelsForSdkType = (sdkType: ProviderSdkType): ThinkingLevelId[] => {
+  switch (sdkType) {
+    case 'openrouter':
+      return ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+    case 'anthropic':
+      return ['off', 'low', 'medium', 'high', 'max'];
+    case 'google':
+      return ['off', 'low', 'medium', 'high'];
+    case 'openai':
+    case 'openai-compatible':
+    case 'xai':
+      return ['off', 'low', 'medium', 'high'];
+    default:
+      return ['off'];
+  }
+};
+
+const sanitizeThinkingLevels = (
+  levels: ThinkingLevelId[] | undefined,
+  fallback: ThinkingLevelId[]
+): ThinkingLevelId[] => {
+  const source = Array.isArray(levels) && levels.length > 0 ? levels : fallback;
+  const deduped = Array.from(
+    new Set(
+      source
+        .map((level) => (typeof level === 'string' ? level.trim() : ''))
+        .filter((level): level is ThinkingLevelId => level.length > 0)
+    )
+  );
+  if (!deduped.includes('off')) {
+    deduped.unshift('off');
+  }
+  return deduped.length > 0 ? deduped : ['off'];
+};
+
+const resolveThinkingLevelOption = (level: ThinkingLevelId): ThinkingLevelOption => ({
+  id: level,
+  label: DEFAULT_THINKING_LEVEL_LABELS[level] || level,
+});
+
+const buildThinkingProfile = (input: {
+  sdkType: ProviderSdkType;
+  supportsThinking: boolean;
+  override?: ModelThinkingOverride;
+  rawProfile?: ModelThinkingProfile;
+}): ModelThinkingProfile => {
+  const sdkSupportsThinking = supportsThinkingForSdkType(input.sdkType);
+  const rawProfile = input.rawProfile;
+  const fallbackLevels = getDefaultThinkingLevelsForSdkType(input.sdkType);
+  const rawLevels = rawProfile?.levels?.map((item) => item.id as ThinkingLevelId) ?? [];
+  const mergedLevels = sanitizeThinkingLevels(
+    input.override?.enabledLevels && input.override.enabledLevels.length > 0
+      ? input.override.enabledLevels
+      : rawLevels,
+    fallbackLevels
+  );
+
+  const effectiveSupportsThinking =
+    sdkSupportsThinking &&
+    (rawProfile?.supportsThinking ?? input.supportsThinking) &&
+    mergedLevels.some((level) => level !== 'off');
+
+  const effectiveLevels = effectiveSupportsThinking ? mergedLevels : (['off'] as ThinkingLevelId[]);
+  const defaultLevelCandidate =
+    input.override?.defaultLevel ?? rawProfile?.defaultLevel ?? 'off';
+  const defaultLevel = defaultLevelCandidate && effectiveLevels.includes(defaultLevelCandidate)
+    ? defaultLevelCandidate
+    : 'off';
+
+  const rawLevelMap = new Map<string, ThinkingLevelOption>();
+  for (const option of rawProfile?.levels ?? []) {
+    rawLevelMap.set(option.id, option);
+  }
+
+  return {
+    supportsThinking: effectiveLevels.some((level) => level !== 'off'),
+    defaultLevel,
+    levels: effectiveLevels.map((level) => {
+      const rawOption = rawLevelMap.get(level);
+      return rawOption ?? resolveThinkingLevelOption(level);
+    }),
+  };
+};
 
 const resolveProviderSlug = (id: string | undefined | null) => {
   if (!id) {
@@ -84,6 +197,7 @@ const buildOptionsFromPresetProvider = (
   const customModels = config.models.filter((m) => m.isCustom && m.enabled);
   for (let i = customModels.length - 1; i >= 0; i--) {
     const model = customModels[i];
+    const supportsThinking = model.customCapabilities?.reasoning ?? false;
     options.push({
       id: model.id,
       name: model.customName || model.id,
@@ -91,6 +205,11 @@ const buildOptionsFromPresetProvider = (
       providerSlug,
       providers: providerSlug ? [providerSlug] : [],
       disabled: false,
+      thinkingProfile: buildThinkingProfile({
+        sdkType: preset.sdkType,
+        supportsThinking,
+        override: model.thinking,
+      }),
     });
   }
 
@@ -108,6 +227,8 @@ const buildOptionsFromPresetProvider = (
     // 检查用户是否自定义了名称
     const userConfig = config.models.find((m) => m.id === modelId && !m.isCustom);
     const displayName = userConfig?.customName || modelDef.shortName || modelDef.name;
+    const supportsThinking =
+      userConfig?.customCapabilities?.reasoning ?? modelDef.capabilities.reasoning;
 
     options.push({
       id: modelId,
@@ -116,6 +237,11 @@ const buildOptionsFromPresetProvider = (
       providerSlug,
       providers: providerSlug ? [providerSlug] : [],
       disabled: false,
+      thinkingProfile: buildThinkingProfile({
+        sdkType: preset.sdkType,
+        supportsThinking,
+        override: userConfig?.thinking,
+      }),
     });
   }
 
@@ -142,6 +268,11 @@ const buildOptionsFromCustomProvider = (
       providerSlug,
       providers: providerSlug ? [providerSlug] : [],
       disabled: false,
+      thinkingProfile: buildThinkingProfile({
+        sdkType: config.sdkType,
+        supportsThinking: model.customCapabilities?.reasoning ?? false,
+        override: model.thinking,
+      }),
     }));
 
   if (options.length === 0) return null;
@@ -224,6 +355,10 @@ export const ensureModelIncluded = (
           provider: fallbackProvider,
           providerSlug: 'custom',
           providers: [],
+          thinkingProfile: buildThinkingProfile({
+            sdkType: 'openai-compatible',
+            supportsThinking: false,
+          }),
         },
       ],
     },
@@ -248,6 +383,11 @@ export const buildMembershipModelGroup = (
     providerSlug: MEMBERSHIP_PROVIDER_SLUG,
     providers: [MEMBERSHIP_PROVIDER_SLUG],
     disabled: !model.available,
+    thinkingProfile: buildThinkingProfile({
+      sdkType: 'openai-compatible',
+      supportsThinking: model.thinkingProfile.supportsThinking,
+      rawProfile: model.thinkingProfile,
+    }),
     isMembership: true,
     requiredTier: model.available ? undefined : model.minTier,
   }));

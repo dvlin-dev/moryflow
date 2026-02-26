@@ -84,6 +84,9 @@ Moryflow 桌面端应用，基于 Electron + React 构建。
 
 ## 近期变更
 
+- Renderer 组件优化专项（模块 D）完成一次性修复：`vault-files` 共享状态迁移到 store-first（移除 Context），`cloud-sync-section` 拆成容器 + ready 内容层，`site-list/publish-dialog` 拆分并统一状态分发 `switch`（2026-02-26）
+- Chat 模型思考等级第二轮落地：Membership 云端 `thinking_profile` 改为强契约（缺失即过滤并记录 error）；输入框与会话状态统一“首次 `off` + 按模型记忆 + 失效回退 `defaultLevel -> off`”；Settings 自定义模型新增 `levelPatches` 强类型编辑与校验（2026-02-26）
+- Renderer 组件优化专项（模块 A）完成代码改造：Settings Dialog（Providers/MCP/Cloud Sync/Account）与 Payment Dialog 的状态编排和组件分层已收敛，等待依赖安装后补跑模块级验证
 - `electron.vite.config.ts` 的 renderer alias 全量切换到 `@moryflow/*`（含 `@moryflow/tiptap/styles/*` 正则映射），避免样式导入错误落到 `packages/tiptap/src/styles/*` 不存在路径（2026-02-25）
 - `test:unit` 脚本改为 ABI 双态：`pretest:unit` 先执行 `pnpm rebuild better-sqlite3` 切换 Node ABI，`posttest:unit` 再执行 `electron-rebuild -f -w better-sqlite3,keytar` 恢复 Electron ABI，避免单测与桌面运行互相污染（2026-02-24）
 - `electron.vite` 主进程构建新增 `copy-builtin-skills`：将 `src/main/skills/builtin` 复制到 `dist/main/builtin`，确保打包后预设 skills 可被主进程文件扫描链路读取。

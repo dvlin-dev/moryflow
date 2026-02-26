@@ -1,12 +1,18 @@
 /**
- * [PROVIDES]: WorkspaceControllerProvider - Workspace feature 的单例 Controller（hook 只调用一次）
- * [DEPENDS]: useDesktopWorkspace, useNavigation
- * [POS]: 解决 DesktopWorkspace 巨型 props 透传：Controller 在 Provider 内创建，并拆分为多个 Context 供子组件就地取值
+ * [PROVIDES]: WorkspaceControllerProvider + useWorkspace* hooks（store-first）
+ * [DEPENDS]: useDesktopWorkspace, useNavigation, workspace-controller-store
+ * [POS]: 解决 DesktopWorkspace 巨型 props 透传：Provider 只负责单例 controller 快照同步，子组件统一 store selector 就地取值
+ * [UPDATE]: 2026-02-26 - store 快照同步改为 useLayoutEffect，移除 render-phase 外部写入
  */
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigation } from '../hooks/use-navigation';
 import { useDesktopWorkspace } from '../handle';
+import {
+  resetWorkspaceControllerStore,
+  syncWorkspaceControllerStore,
+  useWorkspaceControllerStore,
+} from '../stores/workspace-controller-store';
 import type {
   DesktopWorkspaceController,
   DesktopWorkspaceDialogController,
@@ -16,13 +22,6 @@ import type {
   DesktopWorkspaceDocController,
   DesktopWorkspaceCommandController,
 } from '../const';
-
-const NavigationContext = createContext<DesktopWorkspaceNavigationController | null>(null);
-const VaultContext = createContext<DesktopWorkspaceVaultController | null>(null);
-const TreeContext = createContext<DesktopWorkspaceTreeController | null>(null);
-const DocContext = createContext<DesktopWorkspaceDocController | null>(null);
-const CommandContext = createContext<DesktopWorkspaceCommandController | null>(null);
-const DialogContext = createContext<DesktopWorkspaceDialogController | null>(null);
 
 export type WorkspaceControllerProviderProps = {
   children: ReactNode;
@@ -103,6 +102,7 @@ const createDialogController = (
 });
 
 export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerProviderProps) => {
+  const [snapshotReady, setSnapshotReady] = useState(false);
   const navigationState = useNavigation();
   const controller = useDesktopWorkspace();
 
@@ -172,36 +172,62 @@ export const WorkspaceControllerProvider = ({ children }: WorkspaceControllerPro
     [controller.inputDialogState, controller.onInputDialogConfirm, controller.onInputDialogCancel]
   );
 
-  return (
-    <NavigationContext.Provider value={nav}>
-      <VaultContext.Provider value={vault}>
-        <TreeContext.Provider value={tree}>
-          <DocContext.Provider value={doc}>
-            <CommandContext.Provider value={command}>
-              <DialogContext.Provider value={dialog}>{children}</DialogContext.Provider>
-            </CommandContext.Provider>
-          </DocContext.Provider>
-        </TreeContext.Provider>
-      </VaultContext.Provider>
-    </NavigationContext.Provider>
+  const snapshot = useMemo(
+    () => ({
+      nav,
+      vault,
+      tree,
+      doc,
+      command,
+      dialog,
+    }),
+    [nav, vault, tree, doc, command, dialog]
   );
-};
 
-const useRequiredContext = <T,>(ctx: T | null, name: string): T => {
-  if (!ctx) {
-    throw new Error(`${name} must be used within <WorkspaceControllerProvider>`);
+  useLayoutEffect(() => {
+    syncWorkspaceControllerStore(snapshot);
+    setSnapshotReady((prev) => prev || true);
+  }, [snapshot]);
+
+  useEffect(() => {
+    return () => {
+      resetWorkspaceControllerStore();
+    };
+  }, []);
+
+  if (!snapshotReady) {
+    return null;
   }
-  return ctx;
+
+  return <>{children}</>;
 };
 
-export const useWorkspaceNav = () =>
-  useRequiredContext(useContext(NavigationContext), 'useWorkspaceNav');
+const useRequiredController = <T,>(
+  name: string,
+  selector: (state: {
+    ready: boolean;
+    nav: DesktopWorkspaceNavigationController;
+    vault: DesktopWorkspaceVaultController;
+    tree: DesktopWorkspaceTreeController;
+    doc: DesktopWorkspaceDocController;
+    command: DesktopWorkspaceCommandController;
+    dialog: DesktopWorkspaceDialogController;
+  }) => T
+): T =>
+  useWorkspaceControllerStore((state) => {
+    if (!state.ready) {
+      throw new Error(`${name} must be used within <WorkspaceControllerProvider>`);
+    }
+    return selector(state);
+  });
+
+export const useWorkspaceNav = () => useRequiredController('useWorkspaceNav', (state) => state.nav);
 export const useWorkspaceVault = () =>
-  useRequiredContext(useContext(VaultContext), 'useWorkspaceVault');
+  useRequiredController('useWorkspaceVault', (state) => state.vault);
 export const useWorkspaceTree = () =>
-  useRequiredContext(useContext(TreeContext), 'useWorkspaceTree');
-export const useWorkspaceDoc = () => useRequiredContext(useContext(DocContext), 'useWorkspaceDoc');
+  useRequiredController('useWorkspaceTree', (state) => state.tree);
+export const useWorkspaceDoc = () => useRequiredController('useWorkspaceDoc', (state) => state.doc);
 export const useWorkspaceCommand = () =>
-  useRequiredContext(useContext(CommandContext), 'useWorkspaceCommand');
+  useRequiredController('useWorkspaceCommand', (state) => state.command);
 export const useWorkspaceDialog = () =>
-  useRequiredContext(useContext(DialogContext), 'useWorkspaceDialog');
+  useRequiredController('useWorkspaceDialog', (state) => state.dialog);

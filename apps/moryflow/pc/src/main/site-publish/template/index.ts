@@ -4,8 +4,6 @@
  * 此文件由 site-template 的 sync 脚本自动生成
  * 如需修改，请编辑 apps/moryflow/site-template/src/ 下的源文件
  * 然后执行: cd apps/moryflow/site-template && pnpm build && pnpm sync
- *
- * Generated at: 2026-01-24T04:11:53.958Z
  */
 
 // 统一导出所有模板资源

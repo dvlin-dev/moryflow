@@ -6,6 +6,8 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
+import type { ModelThinkingProfile } from '../model-registry';
+
 export type AgentChatContext = {
   /**
    * 当前聚焦的文件路径（相对 Vault）。
@@ -24,6 +26,12 @@ export type AgentSelectedSkill = {
   name: string;
 };
 
+export type AgentThinkingSelection =
+  | { mode: 'off' }
+  | { mode: 'level'; level: string };
+
+export type AgentThinkingProfile = ModelThinkingProfile;
+
 /**
  * Token 使用量信息
  */
@@ -39,6 +47,14 @@ export type AgentChatRequestOptions = {
    * 期望使用的模型 ID，若为空则使用默认配置。
    */
   preferredModelId?: string;
+  /**
+   * 本轮显式思考等级选择。
+   */
+  thinking?: AgentThinkingSelection;
+  /**
+   * 本轮模型思考档案（用于主进程/运行时按同一 profile 校验）。
+   */
+  thinkingProfile?: AgentThinkingProfile;
   /**
    * 输入框显式选中的 skill（可选）。
    */

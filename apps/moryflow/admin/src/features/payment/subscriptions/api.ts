@@ -3,6 +3,7 @@
  */
 import { adminApi } from '@/lib/api';
 import type { SubscriptionListResponse, Subscription } from '@/types/payment';
+import { buildSubscriptionsListPath } from './query-paths';
 
 export interface SubscriptionsQueryParams {
   limit: number;
@@ -12,16 +13,8 @@ export interface SubscriptionsQueryParams {
 
 export const subscriptionsApi = {
   /** 获取订阅列表 */
-  getAll: (params: SubscriptionsQueryParams): Promise<SubscriptionListResponse> => {
-    const searchParams = new URLSearchParams({
-      limit: String(params.limit),
-      offset: String(params.offset),
-    });
-    if (params.status && params.status !== 'all') {
-      searchParams.set('status', params.status);
-    }
-    return adminApi.get(`/payment/subscriptions?${searchParams}`);
-  },
+  getAll: (params: SubscriptionsQueryParams): Promise<SubscriptionListResponse> =>
+    adminApi.get(buildSubscriptionsListPath(params)),
 
   /** 获取订阅详情 */
   getById: (id: string): Promise<{ subscription: Subscription }> =>

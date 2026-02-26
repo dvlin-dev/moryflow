@@ -3,6 +3,7 @@
  */
 
 import { apiClient } from '../../lib/api-client';
+import { buildQuerySuffix } from '../../lib/query-string';
 import type {
   TracesResponse,
   FailedToolsResponse,
@@ -19,50 +20,36 @@ import type {
 
 const BASE_PATH = '/api/v1/admin/agent-traces';
 
-/**
- * 构建查询字符串
- */
-function buildQueryString<T extends object>(params: T): string {
-  const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, String(value));
-    }
-  }
-  const qs = searchParams.toString();
-  return qs ? `?${qs}` : '';
-}
-
 export const agentTracesApi = {
   /**
    * 获取统计概览
    */
   getStats: (query: StatsQuery = {}) =>
-    apiClient.get<StatsResponse>(`${BASE_PATH}/stats${buildQueryString(query)}`),
+    apiClient.get<StatsResponse>(`${BASE_PATH}/stats${buildQuerySuffix(query)}`),
 
   /**
    * 获取 Tool 统计
    */
   getToolStats: (query: StatsQuery = {}) =>
-    apiClient.get<ToolStat[]>(`${BASE_PATH}/stats/tools${buildQueryString(query)}`),
+    apiClient.get<ToolStat[]>(`${BASE_PATH}/stats/tools${buildQuerySuffix(query)}`),
 
   /**
    * 获取 Agent 统计
    */
   getAgentStats: (query: StatsQuery = {}) =>
-    apiClient.get<AgentStat[]>(`${BASE_PATH}/stats/agents${buildQueryString(query)}`),
+    apiClient.get<AgentStat[]>(`${BASE_PATH}/stats/agents${buildQuerySuffix(query)}`),
 
   /**
    * 获取 Traces 列表
    */
   getTraces: (query: TracesQuery = {}) =>
-    apiClient.get<TracesResponse>(`${BASE_PATH}${buildQueryString(query)}`),
+    apiClient.get<TracesResponse>(`${BASE_PATH}${buildQuerySuffix(query)}`),
 
   /**
    * 获取失败的 Tool 列表
    */
   getFailedTools: (query: FailedToolsQuery = {}) =>
-    apiClient.get<FailedToolsResponse>(`${BASE_PATH}/failed-tools${buildQueryString(query)}`),
+    apiClient.get<FailedToolsResponse>(`${BASE_PATH}/failed-tools${buildQuerySuffix(query)}`),
 
   /**
    * 获取 Trace 详情

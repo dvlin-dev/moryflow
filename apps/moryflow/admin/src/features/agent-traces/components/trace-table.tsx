@@ -16,10 +16,12 @@ import { File, View } from 'lucide-react';
 import { formatDateTime, formatDuration, formatTokens } from '@/lib/format';
 import { TraceStatusBadge } from './trace-status-badge';
 import type { AgentTrace } from '../types';
+import { resolveAgentTraceListViewState } from '../view-state';
 
 interface TraceTableProps {
   traces: AgentTrace[];
   isLoading?: boolean;
+  error?: unknown;
   onViewDetail: (trace: AgentTrace) => void;
 }
 
@@ -34,7 +36,70 @@ const TABLE_COLUMNS = [
   { width: 'w-16' },
 ];
 
-export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps) {
+export function TraceTable({ traces, isLoading = false, error = null, onViewDetail }: TraceTableProps) {
+  const viewState = resolveAgentTraceListViewState({
+    isLoading,
+    error,
+    count: traces.length,
+  });
+
+  const renderRowsByState = () => {
+    switch (viewState) {
+      case 'loading':
+        return <TableSkeleton columns={TABLE_COLUMNS} rows={10} />;
+      case 'error':
+        return (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center py-12 text-destructive">
+              执行记录加载失败，请稍后重试
+            </TableCell>
+          </TableRow>
+        );
+      case 'empty':
+        return (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center py-12">
+              <File className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">暂无执行记录</p>
+            </TableCell>
+          </TableRow>
+        );
+      case 'ready':
+        return traces.map((trace) => (
+          <TableRow key={trace.id}>
+            <TableCell className="text-muted-foreground text-sm">
+              {formatDateTime(trace.startedAt)}
+            </TableCell>
+            <TableCell>
+              <span className="font-mono text-sm">{trace.agentName}</span>
+            </TableCell>
+            <TableCell>
+              <div className="truncate max-w-40" title={trace.user?.email}>
+                {trace.user?.email ?? '-'}
+              </div>
+            </TableCell>
+            <TableCell>
+              <TraceStatusBadge status={trace.status} />
+            </TableCell>
+            <TableCell className="text-right font-mono text-sm">{trace.turnCount}</TableCell>
+            <TableCell className="text-right font-mono text-sm">
+              {formatTokens(trace.totalTokens)}
+            </TableCell>
+            <TableCell className="text-right font-mono text-sm">
+              {formatDuration(trace.duration)}
+            </TableCell>
+            <TableCell className="text-right">
+              <Button variant="ghost" size="sm" onClick={() => onViewDetail(trace)}>
+                <View className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ));
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="rounded-lg border">
       <Table>
@@ -50,49 +115,7 @@ export function TraceTable({ traces, isLoading, onViewDetail }: TraceTableProps)
             <TableHead className="text-right">详情</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableSkeleton columns={TABLE_COLUMNS} rows={10} />
-          ) : traces.length > 0 ? (
-            traces.map((trace) => (
-              <TableRow key={trace.id}>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDateTime(trace.startedAt)}
-                </TableCell>
-                <TableCell>
-                  <span className="font-mono text-sm">{trace.agentName}</span>
-                </TableCell>
-                <TableCell>
-                  <div className="truncate max-w-40" title={trace.user?.email}>
-                    {trace.user?.email ?? '-'}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <TraceStatusBadge status={trace.status} />
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm">{trace.turnCount}</TableCell>
-                <TableCell className="text-right font-mono text-sm">
-                  {formatTokens(trace.totalTokens)}
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm">
-                  {formatDuration(trace.duration)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => onViewDetail(trace)}>
-                    <View className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={8} className="text-center py-12">
-                <File className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">暂无执行记录</p>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
+        <TableBody>{renderRowsByState()}</TableBody>
       </Table>
     </div>
   );

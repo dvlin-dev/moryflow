@@ -11,7 +11,7 @@ import { Button } from '@moryflow/ui/components/button';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { ROOT_DROP_TARGET_ID, type VaultFilesProps } from './const';
-import { VaultFilesProvider } from './context';
+import { useSyncVaultFilesStore } from './vault-files-store';
 import { isValidDrag, parseDragData, sortNodes } from './handle';
 import { VaultFolder } from './components/vault-folder';
 import { VaultFile } from './components/vault-file';
@@ -75,7 +75,7 @@ export const VaultFiles = ({
     }
   };
 
-  const contextValue = useMemo(
+  const storeSnapshot = useMemo(
     () => ({
       selectedId,
       onSelectFile,
@@ -105,6 +105,7 @@ export const VaultFiles = ({
       dropTargetId,
     ]
   );
+  useSyncVaultFilesStore(storeSnapshot);
 
   if (!nodes.length) {
     return (
@@ -124,32 +125,30 @@ export const VaultFiles = ({
   }
 
   return (
-    <VaultFilesProvider value={contextValue}>
-      <div
-        className={cn(
-          'min-h-full w-full overflow-hidden',
-          isRootDropTarget && 'bg-foreground/5 rounded-lg'
-        )}
-        onDragOver={handleContainerDragOver}
-        onDrop={handleContainerDrop}
-        onDragLeave={handleContainerDragLeave}
+    <div
+      className={cn(
+        'min-h-full w-full overflow-hidden',
+        isRootDropTarget && 'bg-foreground/5 rounded-lg'
+      )}
+      onDragOver={handleContainerDragOver}
+      onDrop={handleContainerDrop}
+      onDragLeave={handleContainerDragLeave}
+    >
+      <Files
+        className="w-full min-w-0"
+        defaultOpen={expandedPaths}
+        open={expandedPaths}
+        onOpenChange={onExpandedPathsChange}
       >
-        <Files
-          className="w-full min-w-0"
-          defaultOpen={expandedPaths}
-          open={expandedPaths}
-          onOpenChange={onExpandedPathsChange}
-        >
-          {sortedNodes.map((node) =>
-            node.type === 'folder' ? (
-              <VaultFolder key={node.id} node={node} />
-            ) : (
-              <VaultFile key={node.id} node={node} />
-            )
-          )}
-        </Files>
-      </div>
-    </VaultFilesProvider>
+        {sortedNodes.map((node) =>
+          node.type === 'folder' ? (
+            <VaultFolder key={node.id} node={node} />
+          ) : (
+            <VaultFile key={node.id} node={node} />
+          )
+        )}
+      </Files>
+    </div>
   );
 };
 

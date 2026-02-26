@@ -3,6 +3,7 @@
  */
 
 import { apiClient } from '../../lib/api-client';
+import { buildQuerySuffix } from '../../lib/query-string';
 import type {
   AlertRule,
   AlertRulesResponse,
@@ -16,20 +17,6 @@ import type {
 
 const BASE_PATH = '/api/v1/admin/alerts';
 
-/**
- * 构建查询字符串
- */
-function buildQueryString<T extends object>(params: T): string {
-  const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, String(value));
-    }
-  }
-  const qs = searchParams.toString();
-  return qs ? `?${qs}` : '';
-}
-
 export const alertsApi = {
   // ==========================================
   // 规则管理
@@ -39,7 +26,7 @@ export const alertsApi = {
    * 获取所有规则
    */
   getRules: (query: AlertRulesQuery = {}) =>
-    apiClient.get<AlertRulesResponse>(`${BASE_PATH}/rules${buildQueryString(query)}`),
+    apiClient.get<AlertRulesResponse>(`${BASE_PATH}/rules${buildQuerySuffix(query)}`),
 
   /**
    * 获取单个规则
@@ -71,7 +58,7 @@ export const alertsApi = {
    * 获取告警历史
    */
   getHistory: (query: AlertHistoryQuery = {}) =>
-    apiClient.get<AlertHistoryResponse>(`${BASE_PATH}/history${buildQueryString(query)}`),
+    apiClient.get<AlertHistoryResponse>(`${BASE_PATH}/history${buildQuerySuffix(query)}`),
 
   // ==========================================
   // 统计和操作

@@ -19,6 +19,39 @@ vi.mock('@/lib/server/auth-api', () => ({
   sendVerificationOTP: mocks.sendVerificationOTP,
 }));
 
+vi.mock('@moryflow/ui/components/input-otp', () => {
+  const InputOTP = ({
+    onChange,
+    children,
+    containerClassName: _containerClassName,
+    ...props
+  }: Record<string, unknown>) => (
+    <div data-testid="otp-input-wrapper">
+      <input
+        data-testid="otp-input"
+        onChange={(event) => {
+          if (typeof onChange === 'function') {
+            onChange((event.target as HTMLInputElement).value);
+          }
+        }}
+        {...props}
+      />
+      {children as React.ReactNode}
+    </div>
+  );
+
+  const PassThrough = ({ children, ...props }: Record<string, unknown>) => (
+    <div {...props}>{children as React.ReactNode}</div>
+  );
+
+  return {
+    InputOTP,
+    InputOTPGroup: PassThrough,
+    InputOTPSeparator: PassThrough,
+    InputOTPSlot: PassThrough,
+  };
+});
+
 describe('OTPForm', () => {
   beforeEach(() => {
     vi.stubGlobal(
