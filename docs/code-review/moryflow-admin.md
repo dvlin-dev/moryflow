@@ -2,7 +2,7 @@
 title: Moryflow Admin Code Review
 date: 2026-02-26
 scope: apps/moryflow/admin
-status: in_progress
+status: done
 ---
 
 <!--
@@ -98,6 +98,12 @@ status: in_progress
 - `S2`（建议本轮改）：2 项（已修复）
 - `S3`（可延后）：2 项（已修复）
 - 当前状态：模块 D 已完成修复并通过模块级校验
+
+## 结论摘要（项目复盘：完成）
+
+- `S2`（复盘遗留）：3 项（已修复）
+- `S3`（复盘遗留）：1 项（已修复）
+- 当前状态：项目复盘收口完成，`apps/moryflow/admin` 进入“可收尾”状态
 
 ## 发现（按严重度排序）
 
@@ -474,6 +480,71 @@ status: in_progress
   - 风险：
     - 统一表格 loading 体验时会出现重复改动点
 
+## 项目复盘（Step 22，完成）
+
+### 复盘结论
+
+- 模块 A/B/C/D 与复盘遗留项均已完成收口，`@moryflow/admin` 项目复盘闭环完成。
+- 复盘阶段识别的 `S2x3 / S3x1` 已全部修复；页面层超阈值文件（>300 行）已清零。
+
+### 复盘修复记录（按严重度排序）
+
+- [S2][已修复] `ToolAnalyticsPage` 超阈值与多状态链式三元已收敛
+  - 证据：
+    - 页面降至 `160` 行，改为容器装配层
+    - `ToolStatsTable` 接入 `resolveAgentTraceListViewState + switch`，失败列表复用 `FailedToolTable` 状态分发
+    - 统计计算下沉到 `calculateToolAnalyticsSummary`
+  - 定位：
+    - `apps/moryflow/admin/src/pages/ToolAnalyticsPage.tsx:41`
+    - `apps/moryflow/admin/src/pages/tool-analytics/components/tool-stats-table.tsx:93`
+    - `apps/moryflow/admin/src/pages/tool-analytics/metrics.ts:18`
+  - 结果：
+    - 页面状态边界与职责边界清晰，链式三元已移除
+
+- [S2][已修复] `AgentTraceStoragePage` 超阈值文件已拆分并接入 `view-state + switch`
+  - 证据：
+    - 页面降至 `110` 行，统计/状态分布/保留策略/手动清理/确认弹窗拆到独立组件
+    - 新增 `resolveStorageStatsViewState`，显式区分 `loading/error/ready`
+  - 定位：
+    - `apps/moryflow/admin/src/pages/AgentTraceStoragePage.tsx:40`
+    - `apps/moryflow/admin/src/pages/agent-trace-storage/metrics.ts:11`
+    - `apps/moryflow/admin/src/pages/agent-trace-storage/components/storage-overview-cards.tsx:1`
+  - 结果：
+    - 页面容器只保留编排职责，失败态独立渲染
+
+- [S2][已修复] `PaymentTestPage` 超阈值与链式三元已收敛
+  - 证据：
+    - 页面降至 `235` 行
+    - 产品卡片抽离为 `ProductCard`，周期文案改为 `getCreditsCycleSuffix`，移除链式三元
+  - 定位：
+    - `apps/moryflow/admin/src/pages/PaymentTestPage.tsx:152`
+    - `apps/moryflow/admin/src/pages/payment-test/components/product-card.tsx:49`
+    - `apps/moryflow/admin/src/pages/payment-test/cycle.ts:1`
+  - 结果：
+    - 计费周期文案分发可维护，页面职责收敛
+
+- [S3][已修复] 复盘遗留页面回归测试已补齐
+  - 证据：
+    - 新增 `tool-analytics` / `agent-trace-storage` / `payment-test` 三组单测
+  - 定位：
+    - `apps/moryflow/admin/src/pages/tool-analytics/metrics.test.ts:1`
+    - `apps/moryflow/admin/src/pages/agent-trace-storage/metrics.test.ts:1`
+    - `apps/moryflow/admin/src/pages/payment-test/cycle.test.ts:1`
+  - 结果：
+    - 复盘重构具备自动化回归防线
+
+### 项目复盘收口结果
+
+1. PR-1：`ToolAnalyticsPage` 状态片段化与组件拆分。（已完成）
+2. PR-2：`AgentTraceStoragePage` 组件拆分与状态分发收敛。（已完成）
+3. PR-3：`PaymentTestPage` 去链式三元与职责拆分。（已完成）
+4. PR-4：复盘三页回归测试补齐并通过模块级校验。（已完成）
+
+### 残余风险（已记录）
+
+- `apps/moryflow/admin/src/components/ui/sidebar.tsx`（704 行）与 `apps/moryflow/admin/src/components/ui/chart.tsx`（355 行）仍超 300 行。
+- 上述文件属于 shadcn 基础 UI 适配层，不在本轮业务页面收口范围；后续若进入 shared UI 专项再统一评估拆分收益。
+
 ## 分步修复计划（模块 B）
 
 1. B-1：拆分 `ModelFormDialog`（搜索片段 / 基础字段片段 / reasoning 片段 / 提交映射），收敛容器职责。（已完成）
@@ -554,3 +625,8 @@ status: in_progress
 | D-5 | sites/image-generation/shared | `sitesApi` query 构建收敛到共享工具 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `buildSitesListPath` 并复用 `buildQuerySuffix` |
 | D-6 | sites/image-generation/shared | `shared/data-table` skeleton 复用收敛 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 删除重复实现，统一复用 `TableSkeleton` |
 | D-7 | sites/image-generation/shared | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 3 个测试文件；模块单测通过：29 files / 134 tests |
+| R-0 | project review | 整项目一致性复盘扫描 | done | `wc -l` / `rg` 静态扫描 | 2026-02-26 | 完成复盘扫描并定位 3 个遗留页面问题 |
+| R-1 | project review | `ToolAnalyticsPage` 状态片段化 + 拆分减责 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 页面降至 160 行；`ToolStatsTable` 改为 `ViewState + switch` |
+| R-2 | project review | `AgentTraceStoragePage` 拆分减责 + 显式错误态 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 页面降至 110 行；接入 `resolveStorageStatsViewState` |
+| R-3 | project review | `PaymentTestPage` 去链式三元 + 拆分减责 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 页面降至 235 行；周期文案改为 helper 分发 |
+| R-4 | project review | 复盘遗留页回归测试与项目级校验 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 3 个测试文件；项目单测通过：32 files / 147 tests |
