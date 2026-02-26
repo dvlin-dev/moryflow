@@ -52,6 +52,15 @@ const reportSchema = z.object({
 });
 
 type ReportFormValues = z.infer<typeof reportSchema>;
+type ReportTopicDialogState = 'form' | 'success';
+
+function resolveReportTopicDialogState(success: boolean): ReportTopicDialogState {
+  if (success) {
+    return 'success';
+  }
+
+  return 'form';
+}
 
 export function ReportTopicDialog({
   topicSlug,
@@ -86,22 +95,18 @@ export function ReportTopicDialog({
     setTimeout(() => onOpenChange(false), 1200);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Flag className="h-4 w-4" />
-            Report Topic
-          </DialogTitle>
-          <DialogDescription>Help us maintain community standards.</DialogDescription>
-        </DialogHeader>
+  const dialogState = resolveReportTopicDialogState(success);
 
-        {success ? (
+  const renderContentByState = () => {
+    switch (dialogState) {
+      case 'success':
+        return (
           <div className="py-6 text-center text-sm text-muted-foreground">
             Report submitted successfully. Thank you for helping keep our community safe.
           </div>
-        ) : (
+        );
+      case 'form':
+        return (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -180,7 +185,23 @@ export function ReportTopicDialog({
               </DialogFooter>
             </form>
           </Form>
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Flag className="h-4 w-4" />
+            Report Topic
+          </DialogTitle>
+          <DialogDescription>Help us maintain community standards.</DialogDescription>
+        </DialogHeader>
+        {renderContentByState()}
       </DialogContent>
     </Dialog>
   );
