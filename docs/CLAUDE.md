@@ -8,6 +8,33 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-4e 完成（`browser-session-sections` 第五批分区拆分：OpenUrl/Snapshot/Delta/Action/ActionBatch/Screenshot；主文件 494 行降到 45 行并收敛为导出层））
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-4d 完成（`browser-session-sections` 第四批分区拆分：Session/Tabs/Windows；主文件 1299 行降到 494 行））
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-4c 完成（`browser-session-sections` 第三批分区拆分：Intercept/Headers/NetworkHistory/Diagnostics；主文件 1773 行降到 1299 行，Detection Risk 状态渲染改为方法化））
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-5 完成（API 分域拆分：`browser-api.ts` / `agent-api.ts` + `api.ts` 兼容导出层））
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-4b 完成（`browser-session-sections` 第二批分区拆分：Storage/Profile），D-4 继续推进）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-4a 完成（`browser-session-sections` 首批分区拆分：Streaming/CDP），D-4 继续推进）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-3 完成（section 状态容器 + 结果状态 + lifecycle handlers 抽离））
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-3b 完成（结果状态与 session lifecycle handlers 抽离为 hooks），D-3 继续推进）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-3a 完成（section 配置 + open-state hook 抽离，移除 17 个开关 `useState`），D-3 进行中）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-2 完成（Session/Window 参数 mapper 抽离 + `BrowserSessionPanel` 去重 + 单测通过），进入 D-3）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-1 完成（`AgentBrowserLayoutPage` active-key only 收敛 + 回归测试通过），进入 D-2）
+> 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D（agent-browser-playground）预扫描完成，识别 `S1x3 / S2x3`，进入 D-1 分步修复）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 C C-2~C-5 完成（统一 API Key 收敛 + Graph 分层重构 + Embed RHF/zod 迁移 + 模块级回归通过））
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 C review follow-up 完成（`Memories` 请求启用边界修复 + API Key 选择复用收敛 + Graph 可视化继续减责拆分））
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 C（memox/embed playground）预扫描完成，产出 `S1x3 / S2x3`）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-4/B-5/B-6 完成（统一 API Key 选择收敛 + 共享页面壳层 + 模块级回归））
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-3（ExtractPlaygroundPage 拆分）完成并通过模块级校验）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B B-2（ScrapeResult 拆分）完成并通过模块级校验）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B 修复启动，B-1（ScrapeForm 拆分）完成并通过模块级校验）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 B（scrape/crawl/search/map/extract）完成预扫描，产出 `S1x3 / S2x2`）
+> 最近更新：2026-02-25（前端组件准则补充：新增“状态片段化 + renderContentByState + 禁止链式三元”，并完成 Anyhunt Console 模块 A 变更区补扫修复）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项进展：模块 A（api-keys/settings/webhooks）完成修复并通过 `typecheck` + `test:unit`，补充回归测试）
+> 最近更新：2026-02-25（Anyhunt Console 组件优化专项启动：模块 A（api-keys/settings/webhooks）完成预扫描，产出 `S1x3 / S2x2`）
+> 最近更新：2026-02-25（新增前端组件优化专项执行计划：10 个前端项目按项目/模块拆分推进，要求每步回写执行台账）
+> 最近更新：2026-02-25（新增前端组件设计质量索引：统一组件拆分/合并判定、Props drilling 限制、复杂度预算与审查分级）
 > 最近更新：2026-02-25（新增 Moryflow Server 分层限流方案：Auth `60s/20` + 全局 `60s/300`，Redis 存储，含判定特征、执行步骤、验收与回滚）
 > 最近更新：2026-02-25（Moryflow Server 分层限流方案按实现对齐：Better Auth `/**` 路径规则、全局 `forRootAsync` 装配、Redis Lua 原子限流、默认 skip paths、模块级校验命令）
 > 最近更新：2026-02-25（Agent Browser Stealth 能力引入与改造方案：基于 agent-browser-stealth 外部项目，输出完整差异分析与 11 步执行计划；废除旧"禁止伪装"约束）
@@ -65,6 +92,33 @@
 
 ## 最近更新
 
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-6a 完成：`flow-runner.tsx` 分层到 `flow-runner-form`/`flow-runner-step-list`/`flow-runner-types`/`flow-runner-helpers`，并将 `BrowserSessionPanel` 的 19 组表单初始化抽离到 `use-browser-session-forms`）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4e 完成：`browser-session-sections.tsx` 第五批分区拆分，新增 `open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件降至 45 行）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4d 完成：`browser-session-sections.tsx` 第四批分区拆分，新增 `session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`，主文件降至 494 行）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4c 完成：`browser-session-sections.tsx` 第三批分区拆分，新增 `intercept-section.tsx`、`headers-section.tsx`、`network-history-section.tsx`、`diagnostics-section.tsx`，主文件降至 1299 行并收敛 Detection Risk 状态渲染）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-5 完成：新增 `browser-api.ts`、`agent-api.ts`，`api.ts` 改为兼容导出层并切换主要调用方为分域导入）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4b 完成：`browser-session-sections.tsx` 第二批分区拆分，新增 `storage-section.tsx`、`profile-section.tsx`）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4a 完成：`browser-session-sections.tsx` 首批分区拆分，新增 `streaming-section.tsx`、`cdp-section.tsx`）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-3 完成：section 状态容器 + 结果状态 + session lifecycle handlers 抽离）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-3b 完成：新增 `use-browser-session-panel-results.ts` 与 `use-browser-session-lifecycle-actions.ts`，`BrowserSessionPanel` 进一步收敛为装配层）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-3a 完成：新增 `browser-session-section-config.ts` 与 `use-browser-session-section-open-state.ts`，`BrowserSessionPanel` 移除 17 个 section 开关 `useState`）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-2 完成：新增 `browser-context-options.ts` + 单测，`BrowserSessionPanel` 的 Session/Window 参数构建改为共享 mapper）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-1 完成：`AgentBrowserLayoutPage` 改为 active-key only，新增 `AgentBrowserLayoutPage.test.tsx`，并通过 `typecheck` + `test:unit`）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D（agent-browser-playground）预扫描完成，识别 `S1x3 / S2x3`，进入 D-1 修复）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C C-2~C-5 完成：统一 API Key 收敛、Graph 分层重构、Embed RHF/zod 迁移、模块 C 回归 15 files / 55 tests 通过）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C review follow-up 完成：`Memories` 请求启用边界修复、API Key 选择复用收敛、Graph 可视化继续减责拆分）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C C-1 完成：`MemoxPlaygroundPage` 拆分为容器 + request/result 组件，抽离 request mapper 并补齐单测）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 C（memox/embed playground）预扫描完成，识别 `S1x3 / S2x3`）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B 完成（B-1~B-6）：新增共享页面壳层、统一 API Key 收敛、模块级回归通过）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B B-2 完成：`ScrapeResult` 拆分为 cards/tabs/view-model，移除默认 Tab 链式三元）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B B-1 完成：`ScrapeForm` 拆分为 mapper + sections，校验通过）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 B（scrape/crawl/search/map/extract）预扫描完成，识别 `S1x3 / S2x2`）
+- Anyhunt Console 组件优化专项补扫：按“状态片段化 + `renderContentByState` + 禁止链式三元”修复模块 A 变更区同类问题，并回写执行台账：`docs/code-review/anyhunt-console.md`、`docs/code-review/frontend-component-optimization-rollout.md`（2026-02-25）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 A 修复完成并通过 `typecheck` + `test:unit`，新增 `webhooks/utils.test.ts` 回归测试）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-25：in_progress，模块 A 预扫描完成，`S1x3 / S2x2`）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（2026-02-25：active）
+- 前端组件设计质量索引（拆分与收敛准则）：`docs/guides/frontend/component-design-quality-index.md`（2026-02-25：active）
 - Moryflow Server 分层限流方案（Auth + 全局，Redis 存储，active）：`docs/architecture/auth/auth-and-global-rate-limit-defense-plan.md`（2026-02-25：Auth `60s/20` + 全局 `60s/300` 已落地，Step 1~5 完成，Step 6 灰度待执行）
 - Agent Browser Stealth 能力引入与改造方案（proposal）：基于 agent-browser-stealth 外部项目完成差异分析与 11 步执行计划；废除旧"禁止伪装"约束（2026-02-25：proposal）
 - Moryflow PC Auth 排障 Runbook：补充 transport `raw/stream` 语义修复、server-http-client fetch 绑定修复与全仓 `lint/typecheck/test:unit` 校验记录：`docs/runbooks/troubleshooting/moryflow-pc-auth-refresh-connection-closed.md`（2026-02-25）

@@ -11,16 +11,17 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Badge,
+  Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Badge,
-  Input,
-  Label,
 } from '@moryflow/ui';
-import { useApiKeys, maskApiKey } from '@/features/api-keys';
+import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
+import { ApiKeySelector } from '@/features/playground-shared';
 import { useEntities, useEntityTypes, type Entity } from '@/features/memox';
 
 function EntityCard({ entity }: { entity: Entity }) {
@@ -60,16 +61,91 @@ function EntityCard({ entity }: { entity: Entity }) {
   );
 }
 
+type EntitiesViewState = 'no_key' | 'loading' | 'error' | 'empty' | 'ready';
+
+function resolveEntitiesViewState(params: {
+  apiKeyValue: string;
+  isLoading: boolean;
+  hasError: boolean;
+  entitiesLength: number;
+}): EntitiesViewState {
+  if (!params.apiKeyValue) {
+    return 'no_key';
+  }
+
+  if (params.isLoading) {
+    return 'loading';
+  }
+
+  if (params.hasError) {
+    return 'error';
+  }
+
+  if (params.entitiesLength === 0) {
+    return 'empty';
+  }
+
+  return 'ready';
+}
+
+function MissingApiKeyState() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-center text-muted-foreground">
+        Select an API key to load entities.
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoadingState() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
+    </Card>
+  );
+}
+
+function ErrorState() {
+  return (
+    <Card className="border-destructive">
+      <CardHeader>
+        <CardTitle className="text-destructive">Error</CardTitle>
+      </CardHeader>
+      <CardContent>Failed to load entities.</CardContent>
+    </Card>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-center text-muted-foreground">
+        No entities found for the selected filters.
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReadyState({ entities }: { entities: Entity[] }) {
+  return (
+    <div className="grid gap-4">
+      {entities.map((entity) => (
+        <EntityCard key={`${entity.type}-${entity.id}`} entity={entity} />
+      ))}
+    </div>
+  );
+}
+
 export default function EntitiesPage() {
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const activeKeys = apiKeys.filter((key) => key.isActive);
-  const effectiveKeyId = selectedApiKeyId || activeKeys[0]?.id || '';
-  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.key ?? '';
-  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
+  const { activeKeys, effectiveKeyId, apiKeyValue, apiKeyDisplay } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedApiKeyId
+  );
 
   const { data: entities = [], isLoading, error } = useEntities(apiKeyValue);
   const { data: entityTypes = [] } = useEntityTypes(apiKeyValue);
@@ -78,6 +154,30 @@ export default function EntitiesPage() {
     if (selectedType === 'all') return entities;
     return entities.filter((entity) => entity.type === selectedType);
   }, [entities, selectedType]);
+
+  const viewState = resolveEntitiesViewState({
+    apiKeyValue,
+    isLoading,
+    hasError: Boolean(error),
+    entitiesLength: filteredEntities.length,
+  });
+
+  const renderContentByState = () => {
+    switch (viewState) {
+      case 'no_key':
+        return <MissingApiKeyState />;
+      case 'loading':
+        return <LoadingState />;
+      case 'error':
+        return <ErrorState />;
+      case 'empty':
+        return <EmptyState />;
+      case 'ready':
+        return <ReadyState entities={filteredEntities} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="container py-6 space-y-6">
@@ -98,29 +198,12 @@ export default function EntitiesPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>API Key</Label>
-              <Select
-                value={effectiveKeyId}
-                onValueChange={setSelectedApiKeyId}
+              <ApiKeySelector
+                apiKeys={activeKeys}
+                selectedKeyId={effectiveKeyId}
+                onKeyChange={setSelectedApiKeyId}
                 disabled={isLoadingKeys}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select API Key" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeKeys.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No active API keys
-                    </SelectItem>
-                  ) : (
-                    activeKeys.map((key) => (
-                      <SelectItem key={key.id} value={key.id}>
-                        {key.name} ({maskApiKey(key.key)})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="space-y-2">
@@ -149,36 +232,7 @@ export default function EntitiesPage() {
       </Card>
 
       {/* Content */}
-      {!apiKeyValue ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Select an API key to load entities.
-          </CardContent>
-        </Card>
-      ) : isLoading ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
-        </Card>
-      ) : error ? (
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error</CardTitle>
-          </CardHeader>
-          <CardContent>Failed to load entities.</CardContent>
-        </Card>
-      ) : filteredEntities.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No entities found for the selected filters.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {filteredEntities.map((entity) => (
-            <EntityCard key={`${entity.type}-${entity.id}`} entity={entity} />
-          ))}
-        </div>
-      )}
+      {renderContentByState()}
 
       {apiKeyValue && filteredEntities.length > 0 && (
         <div className="text-sm text-muted-foreground">

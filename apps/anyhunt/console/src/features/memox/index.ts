@@ -3,7 +3,16 @@
  */
 
 // Components
-export { MemoryListCard, Pagination } from './components';
+export {
+  MemoryListCard,
+  Pagination,
+  MemoxPlaygroundCreateForm,
+  MemoxPlaygroundSearchForm,
+  MemoxPlaygroundRequestCard,
+  MemoxPlaygroundResultPanel,
+  MemoxGraphQueryCard,
+  MemoxGraphVisualizationCard,
+} from './components';
 
 // Types
 export type {
@@ -21,6 +30,30 @@ export type {
   MemorySearchResult,
   CreateMemoryResponse,
 } from './types';
+
+// Playground Schemas & Mappers
+export type {
+  MemoxPlaygroundTab,
+  CreateMemoryFormInput,
+  CreateMemoryFormValues,
+  SearchMemoryFormInput,
+  SearchMemoryFormValues,
+} from './playground-schemas';
+export {
+  createMemorySchema,
+  createMemoryDefaults,
+  searchMemorySchema,
+  searchMemoryDefaults,
+} from './playground-schemas';
+export type { GraphFormInput, GraphFormValues } from './graph-schemas';
+export { graphFormSchema, graphFormDefaults, buildGraphQueryParams } from './graph-schemas';
+export {
+  buildCreateMemoryRequest,
+  buildSearchMemoryRequest,
+  buildCreateCodeExampleBody,
+  buildSearchCodeExampleBody,
+  mapCreateMemoryResponseToMemory,
+} from './playground-request-mapper';
 
 // API
 export {

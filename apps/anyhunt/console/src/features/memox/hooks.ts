@@ -37,11 +37,11 @@ export const memoxKeys = {
 
 // ========== Memories Hooks ==========
 
-export function useMemories(apiKey: string, params?: MemoriesQueryParams) {
+export function useMemories(apiKey: string, params?: MemoriesQueryParams, enabled = true) {
   return useQuery({
     queryKey: memoxKeys.memoriesList(apiKey, params),
     queryFn: () => fetchMemories(apiKey, params),
-    enabled: !!apiKey,
+    enabled: enabled && !!apiKey,
   });
 }
 

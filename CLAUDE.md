@@ -1,6 +1,7 @@
 # Anyhunt 统一平台
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
+> 最近更新：2026-02-25（前端组件行为准则补充：多状态 UI 统一“状态片段化 + renderByState/switch”，禁止链式三元；Anyhunt Console 模块 A 变更区已完成补扫修复）
 > 最近更新：2026-02-26（CI 测试命令移除 `--maxWorkers=2` 透传参数；统一由默认并发策略执行，避免 `node --test` 脚本将参数误判为测试文件）
 > 最近更新：2026-02-26（CI 安装阶段构建防护升级：`build:packages` 前执行 `prepare:model-registry-data`，缺失/无效快照时强制 `@moryflow/model-registry-data sync` 且校验非空，避免 postinstall `TS2307` 与 0-model 静默退化）
 > 最近更新：2026-02-11（协作流程：校验改为风险分级；简单 UI/文案改动可跳过全量测试）
@@ -257,6 +258,8 @@ Anyhunt/
 | [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                                                   | Runbook：Moryflow docker compose 部署                                    |
 | [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                                           | Guide：Auth 流程与接口约定                                               |
 | [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                                         | Guide：Zod + RHF 兼容性（zod/v3）                                        |
+| [`docs/guides/frontend/component-design-quality-index.md`](./docs/guides/frontend/component-design-quality-index.md)                         | Guide：前端组件设计质量索引（拆分与收敛准则）                            |
+| [`docs/code-review/frontend-component-optimization-rollout.md`](./docs/code-review/frontend-component-optimization-rollout.md)               | Plan：前端组件优化专项执行计划（按项目/按模块）                          |
 | [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                                               | Guide：从 Monorepo 开源拆分单个包（Git Subtree）                         |
 | [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                                             | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）                    |
 | [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                                               | Anyhunt Dev：内部方案入口                                                |

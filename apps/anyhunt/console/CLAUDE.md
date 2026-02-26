@@ -8,6 +8,30 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Agent Browser 项目收口补扫：`AgentBrowserLayoutPage` 将布局模式分支改为独立状态片段渲染（显式 `if` 返回），移除 UI 条件混排；同步完成专项台账与总索引“1/2/3 全流程闭环”回写
+- Agent Browser 模块 D-6c + 模块 E + 项目复盘完成：`BrowserSessionPanel` 收敛为容器装配层（`103` 行）并拆出 `browser-session-panel-content.tsx`；operation handlers 拆分为按域 hooks（open/tab-window/intercept-network/diagnostics/data）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 页面迁移到 `PlaygroundPageShell`，新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`，补齐 `scrape/crawl` 请求区与结果区组件；模块级 `lint/typecheck/test:unit` 通过
+- Agent Browser 模块 D-6a 复查完成：`flow-runner.tsx` 分层为 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`；`BrowserSessionPanel` 的 19 组表单初始化与 session 同步副作用抽离到 `hooks/use-browser-session-forms.ts`
+- Agent Browser 模块 D-4e 修复完成：`browser-session-sections.tsx` 第五批分区拆分落地，新增 `components/browser-session-sections/open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件体量由 494 行降到 45 行并收敛为导出层
+- Agent Browser 模块 D-4d 修复完成：`browser-session-sections.tsx` 第四批分区拆分落地，新增 `components/browser-session-sections/session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`，主文件体量由 1299 行降到 494 行
+- Agent Browser 模块 D-4c 修复完成：`browser-session-sections.tsx` 第三批分区拆分落地，新增 `components/browser-session-sections/intercept-section.tsx`、`headers-section.tsx`、`network-history-section.tsx`、`diagnostics-section.tsx`；主文件体量由 1773 行降到 1299 行，并将 Detection Risk 状态渲染改为方法化
+- Agent Browser 模块 D-5 修复完成：API 分域拆分落地，新增 `browser-api.ts` 与 `agent-api.ts`，`api.ts` 改为兼容导出层；`browser-session-panel`、`flow-runner`、`use-agent-models` 已切到分域导入
+- Agent Browser 模块 D-4b 修复完成：`browser-session-sections.tsx` 第二批分区拆分，新增 `components/browser-session-sections/storage-section.tsx` 与 `profile-section.tsx`，继续收敛单文件体量与职责边界
+- Agent Browser 模块 D-4a 修复完成：`browser-session-sections.tsx` 首批分区拆分，新增 `components/browser-session-sections/streaming-section.tsx` 与 `cdp-section.tsx`，原文件改为聚合导出与装配
+- Agent Browser 模块 D-3 修复完成：`BrowserSessionPanel` 的分区开关状态、结果状态与 session lifecycle handlers 均已抽离为 hooks，组件主体聚焦分区装配
+- Agent Browser 模块 D-3b 修复完成：新增 `use-browser-session-panel-results.ts` 与 `use-browser-session-lifecycle-actions.ts`，`BrowserSessionPanel` 的结果状态与 session create/status/close 编排从页面组件内抽离，close 后重置逻辑统一为 hook 方法
+- Agent Browser 模块 D-3a 修复完成：新增 `browser-session-section-config.ts` 与 `use-browser-session-section-open-state.ts`，`BrowserSessionPanel` 的 17 个分区展开状态从散落 `useState` 收敛为统一状态容器
+- Agent Browser 模块 D-2 修复完成：抽离 Session/Window 共用参数映射 `browser-context-options.ts`，统一处理 permissions/headers/geolocation/httpCredentials 校验与 options 组装；`BrowserSessionPanel` 的 `handleCreateSession/handleCreateWindow` 全部改为复用 mapper，并新增 `browser-context-options.test.ts` 回归测试
+- Agent Browser 模块 D-1 修复完成：`AgentBrowserLayoutPage` API Key 选择改为复用 `resolveActiveApiKeySelection`（active-key only），移除 inactive key 回落与“有 key 但不可用”状态误导；新增 `src/pages/agent-browser/AgentBrowserLayoutPage.test.tsx` 回归覆盖（active/inactive 两种场景）
+- Memox/Embed 模块 review follow-up 修复完成：`MemoriesPage` 请求启用条件收敛为 `apiKey + userId`；`Memories/Entities/Graph/Embed` 的 API Key 下拉统一复用 `ApiKeySelector`；`MemoxGraphVisualizationCard` 继续拆分为 view-model + 状态片段 + container-dimensions hook + canvas hook（进一步收敛单一职责）
+- Memox/Embed Playground C-2~C-5 修复完成：`Memories`/`Entities`/`Graph`/`Embed` 页面统一复用 `resolveActiveApiKeySelection`；`GraphPage` 拆分为容器 + `memox-graph-query-card` + `memox-graph-visualization-card`（含 `graph-schemas` 与单测）；`EmbedForm` 迁移 `react-hook-form + zod/v3` 并收敛 active-key only；模块级 `lint/typecheck/test:unit` 通过（15 files / 55 tests）
+- Memox Playground C-1 修复完成：`MemoxPlaygroundPage` 从 1152 行拆分为容器层（192 行）+ 请求区/结果区组件，抽离 `playground-schemas` 与 `playground-request-mapper`（含 `playground-request-mapper.test.ts`），并通过模块级 `lint/typecheck/test:unit`
+- Extract/Map/Search/Crawl/Scrape Playground B-4~B-6 修复完成：统一复用 `resolveActiveApiKeySelection`（active-key only），新增共享页面壳层 `PlaygroundPageShell`（Map/Search/Extract 接入），并完成模块级 `lint/typecheck/test:unit`
+- Extract Playground B-3 修复完成：`ExtractPlaygroundPage` 拆分为容器 + 请求区组件 + 结果区组件，并通过 `lint/typecheck/test:unit`
+- Scrape Playground B-2 修复完成：`ScrapeResult` 拆分为容器 + cards + tabs + view-model，移除默认 Tab 链式三元并通过 `lint/typecheck/test:unit`
+- Scrape Playground B-1 修复完成：`ScrapeForm` 从单文件 519 行拆分为容器 + mapper + sections，折叠状态改为对象化管理，提升可维护性并通过 `lint/typecheck/test:unit`
+- 组件状态渲染规范落地：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 等按“状态片段化 + `renderByState/switch`”重构，移除状态渲染型三元表达式
+- Webhooks 组件可读性优化：`webhook-list-card` 将四种页面状态（loading/no-key/empty/ready）拆分为独立 UI 片段，并通过中间方法统一渲染，移除链式三元
+- Webhooks/Settings/API Keys 组件优化：`WebhooksPage` 拆分为 key/list 子组件并改为判别式 dialog 状态；修复 Webhook API Key 失效选中漏洞（仅允许 active key）；`settings`、`api-keys create dialog`、`webhooks create/edit dialog` 统一迁移到 `react-hook-form + zod/v3`；新增 `webhooks/utils.test.ts` 回归测试并通过 `typecheck/test:unit`
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 容器构建时 `TS5083`（缺少 `tsconfig.agents.json`）报错
 - Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常

@@ -12,6 +12,41 @@ interface ApiKeySelectorProps {
   disabled?: boolean;
 }
 
+function NoActiveApiKeyOption() {
+  return (
+    <SelectItem value="none" disabled>
+      No active API keys
+    </SelectItem>
+  );
+}
+
+function ActiveApiKeyOptions({ activeKeys }: { activeKeys: ApiKey[] }) {
+  return (
+    <>
+      {activeKeys.map((key) => (
+        <SelectItem key={key.id} value={key.id}>
+          <span className="flex items-center gap-2">
+            <span>{key.name}</span>
+            <span className="text-muted-foreground font-mono text-xs">{maskApiKey(key.key)}</span>
+          </span>
+        </SelectItem>
+      ))}
+    </>
+  );
+}
+
+function NoActiveApiKeyHint() {
+  return (
+    <p className="text-xs text-muted-foreground">
+      Create an API key in{' '}
+      <a href="/api-keys" className="text-primary hover:underline">
+        API Keys
+      </a>{' '}
+      to use the playground.
+    </p>
+  );
+}
+
 export function ApiKeySelector({
   apiKeys,
   selectedKeyId,
@@ -19,6 +54,15 @@ export function ApiKeySelector({
   disabled,
 }: ApiKeySelectorProps) {
   const activeKeys = apiKeys.filter((k) => k.isActive);
+  const hasActiveKeys = activeKeys.length > 0;
+
+  const renderKeyOptions = () => {
+    if (!hasActiveKeys) {
+      return <NoActiveApiKeyOption />;
+    }
+
+    return <ActiveApiKeyOptions activeKeys={activeKeys} />;
+  };
 
   return (
     <div className="space-y-2">
@@ -27,34 +71,9 @@ export function ApiKeySelector({
         <SelectTrigger>
           <SelectValue placeholder="Select API Key" />
         </SelectTrigger>
-        <SelectContent>
-          {activeKeys.length === 0 ? (
-            <SelectItem value="none" disabled>
-              No active API keys
-            </SelectItem>
-          ) : (
-            activeKeys.map((key) => (
-              <SelectItem key={key.id} value={key.id}>
-                <span className="flex items-center gap-2">
-                  <span>{key.name}</span>
-                  <span className="text-muted-foreground font-mono text-xs">
-                    {maskApiKey(key.key)}
-                  </span>
-                </span>
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
+        <SelectContent>{renderKeyOptions()}</SelectContent>
       </Select>
-      {activeKeys.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          Create an API key in{' '}
-          <a href="/api-keys" className="text-primary hover:underline">
-            API Keys
-          </a>{' '}
-          to use the playground.
-        </p>
-      )}
+      {!hasActiveKeys && <NoActiveApiKeyHint />}
     </div>
   );
 }
