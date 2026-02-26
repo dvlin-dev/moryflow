@@ -8,6 +8,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 
 ## 最近更新
 
+- 前端组件优化（模块 D / D-1~D-6）：`shared components / stores / 页面装配` 全量收敛。新增 `src/app/admin-routes.tsx` 统一路由/导航单源；`App.tsx` 收敛为入口壳并拆分 `AppProviders`/`AppRouter`/`AuthGuard`；`main-layout.tsx` 拆分为 `admin-sidebar.tsx` + `admin-header.tsx`，补齐 `path=\"*\"` fallback 与按钮可访问性；`AuthGuard` 订阅粒度 selector 化，`openGroups` 更新改为无变化短路；新增 `src/app/AppRouter.test.tsx` 与 `src/lib/auth/auth-methods.test.ts`，模块 D 回归 `lint` + `typecheck` + `test:unit` 通过（10 files / 28 tests）
 - 前端组件优化（模块 C / C-1~C-6）：`digest-*` 全量收敛。`DigestTopicsPage`/`DigestReportsPage`/`DigestWelcomePage` 分别下沉到 feature/page 组件与 controller，统一多状态 UI 为状态片段化 `switch`；`WelcomeConfigCard` 抽离 `WelcomeActionEditorSection` 去重；新增 `digest-topics/list-states.test.ts`、`digest-reports/forms/resolveReportForm.test.ts`、`digest-welcome/welcome-card-states.test.ts` 回归测试，模块 C 回归 `lint` + `typecheck` + `test:unit` 通过
 - 前端组件优化（模块 B / B-1~B-7）：`jobs/queues/logs/browser/llm` 全量收敛，恢复并拆分 `JobDetailPage`，`QueuesPage` 下沉到 `features/queues` 子组件，Logs 列表统一状态片段化与共享表格片段，Browser 格式化函数下沉到 `features/browser/formatters`，LLM 页面改为控制器 hook + dialog form mapper 下沉（`features/llm/forms/*`）；模块 B 回归 `lint` + `typecheck` + `test:unit` 通过
 - 前端组件优化（模块 A / A-3~A-6）：`UserCreditsSheet` 拆分为容器 + 子组件（`user-credits-sheet/*`），`Users/Subscriptions/Orders` 统一接入 `usePagedSearchQuery`，新增共享 `list-state`、`subscription-badges`、`orders/dashboard formatters`；模块 A 回归 `lint` + `typecheck` + `test:unit` 通过
@@ -85,6 +86,7 @@ Anyhunt Dev 管理后台，用于系统监控与运营管理，需管理员权�
 | 目录          | 说明                             |
 | ------------- | -------------------------------- |
 | `pages/`      | 页面级路由组件                   |
+| `app/`        | 应用装配层（providers/router/guard/routes） |
 | `features/`   | 功能模块（hooks/API/components） |
 | `components/` | 通用布局组件                     |
 | `lib/`        | 工具库、API 客户端               |
@@ -124,6 +126,9 @@ feature-name/
 
 | File                               | Description                       |
 | ---------------------------------- | --------------------------------- |
+| `app/admin-routes.tsx`             | Protected routes + sidebar nav 单一来源 |
+| `app/AppRouter.tsx`                | Router/Guard/Fallback 装配层      |
+| `app/AppProviders.tsx`             | 应用级 providers（Query + Toaster） |
 | `lib/api-base.ts`                  | API base URL resolver             |
 | `lib/api-client.ts`                | HTTP client with access/refresh   |
 | `lib/api-paths.ts`                 | Admin/user API endpoint constants |

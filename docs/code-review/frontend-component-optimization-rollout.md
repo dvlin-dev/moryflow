@@ -170,6 +170,8 @@ status: active
 | 18 | anyhunt/admin | 模块 B（jobs/queues/logs/browser/llm） | 分步重构与修复（B-1~B-7） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 Jobs/Queues/Logs/Browser/LLM 全量收敛：状态片段化、容器拆分、query 编排抽离、LLM forms/controller 下沉；模块 B closed |
 | 19 | anyhunt/admin | 模块 C（digest-*） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x5 / S2x4 / S3x2`，详见 `docs/code-review/anyhunt-admin.md` |
 | 20 | anyhunt/admin | 模块 C（digest-*） | 分步重构与修复（C-1~C-6） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 digest topics/reports/welcome 全量收敛：状态片段化、topics/reports 组件拆分、welcome controller hook + action section 去重、补齐 3 组回归测试；模块 C closed |
+| 21 | anyhunt/admin | 模块 D（shared components/stores/page assembly） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x3 / S3x2`，并给出 D-1~D-6 修复计划；详见 `docs/code-review/anyhunt-admin.md` |
+| 22 | anyhunt/admin | 模块 D（shared components/stores/page assembly） | 分步重构与修复（D-1~D-6） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成路由/导航单源化、App 装配层拆分、MainLayout 分层、AuthGuard selector 化与 openGroups 渲染优化，补齐 `AppRouter` + `auth-methods` 回归测试；模块 D closed |
 
 ## 5. 回写格式（统一）
 

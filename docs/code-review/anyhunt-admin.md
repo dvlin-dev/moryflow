@@ -21,6 +21,7 @@ status: in_progress
   - 模块 A：`dashboard / users / subscriptions / orders`（已完成）
   - 模块 B：`jobs / queues / logs / browser / llm`（已完成）
   - 模块 C：`digest-* 系列`（已完成）
+  - 模块 D：`shared components / stores / 页面装配`（已完成）
 - 页面入口：
   - `src/pages/DashboardPage.tsx`
   - `src/pages/UsersPage.tsx`
@@ -44,7 +45,7 @@ status: in_progress
 - `S1`（必须改）：4 项（4 项已修复）
 - `S2`（建议本轮改）：3 项（3 项已修复）
 - `S3`（可延后）：2 项（2 项已修复）
-- 当前状态：模块 A/B/C 已完成，可进入模块 D（`shared components / stores / 页面装配`）
+- 当前状态：模块 A/B/C/D 已完成，可进入项目复盘
 
 ## 发现（按严重度排序）
 
@@ -560,6 +561,117 @@ pnpm --filter @anyhunt/admin test:unit
     - `pages/digest-welcome/welcome-card-states.test.ts`
   - 校验通过：`pnpm --filter @anyhunt/admin lint`、`typecheck`、`test:unit`（8 files / 20 tests）。
 
+## 模块 D 预扫描范围（仅扫描，不改代码）
+
+- 模块：`shared components / stores / 页面装配`
+- 页面装配入口：
+  - `apps/anyhunt/admin/www/src/App.tsx`
+  - `apps/anyhunt/admin/www/src/main.tsx`
+- Shared Components：
+  - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx`
+  - `apps/anyhunt/admin/www/src/components/list-state/*`
+  - `apps/anyhunt/admin/www/src/components/markdown/NotionMarkdownEditor.tsx`
+- Stores / Auth 编排：
+  - `apps/anyhunt/admin/www/src/stores/auth.ts`
+  - `apps/anyhunt/admin/www/src/lib/auth/auth-methods.ts`
+
+## 结论摘要（模块 D：D-6 已完成）
+
+- `S1`（必须改）：3 项
+- `S2`（建议本轮改）：3 项
+- `S3`（可延后）：2 项
+- 当前状态：`D-1~D-6` 已完成（重构 + 回归 + 台账回写）
+
+## 模块 D 发现（按严重度排序）
+
+- [S1] 路由与侧边栏导航双份维护，页面装配不存在单一来源，新增路由时容易出现“可访问但不可导航/可导航但 404”
+  - 证据：`App.tsx` 与 `main-layout.tsx` 分别维护一套路径清单，模块边界不一致。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/App.tsx:89`
+    - `apps/anyhunt/admin/www/src/App.tsx:123`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:37`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:85`
+
+- [S1] 应用路由缺少 `*` 兜底，非法路径进入时会落入空白页，缺乏明确反馈
+  - 证据：顶层与子路由均未声明 `path="*"`，不存在 NotFound/redirect fallback。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/App.tsx:78`
+    - `apps/anyhunt/admin/www/src/App.tsx:131`
+
+- [S1] `MainLayout` 同时承担导航配置、折叠状态、响应式侧栏与 Header 操作，shared shell 单文件职责过载
+  - 证据：单文件 `254` 行，包含 nav schema + 渲染 + 交互状态机 + 用户操作入口。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:37`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:99`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:154`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:226`
+
+- [S2] `ProtectedRoute` 订阅整个 auth store，任何 auth 字段变更都会触发路由守卫重渲染
+  - 证据：`useAuthStore()` 无 selector，渲染订阅粒度过粗。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/App.tsx:45`
+
+- [S2] `App.tsx` 同步导入全部页面，首屏打包体积与路由切换分包能力受限
+  - 证据：路由页均在文件顶部静态 import，未做 route-level lazy。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/App.tsx:15`
+    - `apps/anyhunt/admin/www/src/App.tsx:31`
+
+- [S2] Auth 编排复杂但缺少对应回归测试，refresh/bootstrap 失败路径存在回归盲区
+  - 证据：`auth-methods.ts` 涵盖 refresh/bootstrap/signIn/logout 多分支；现有测试仅覆盖 `stores/auth.ts` rehydrate。
+  - 定位：
+    - `apps/anyhunt/admin/www/src/lib/auth/auth-methods.ts:28`
+    - `apps/anyhunt/admin/www/src/lib/auth/auth-methods.ts:73`
+    - `apps/anyhunt/admin/www/src/stores/auth.test.ts:7`
+
+- [S3] Header 与侧栏图标按钮未补齐 `type="button"` / `aria-label`，可访问性与可预测交互不足
+  - 定位：
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:148`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:230`
+
+- [S3] `openGroups` 同步逻辑每次路由变化都会克隆对象并触发 setState，存在可避免的重渲染
+  - 定位：
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:114`
+    - `apps/anyhunt/admin/www/src/components/layout/main-layout.tsx:121`
+
+## 模块 D 分步修复计划（已完成）
+
+1. D-1：抽离统一路由清单（路径 + 标题 + nav 分组元数据），消除 `App.tsx` 与 `main-layout.tsx` 双份定义。
+2. D-2：重组页面装配层（`AppProviders` / `AppRouter` / `AuthGuard`），补齐 `path="*"` fallback 与 unauthorized/not-found 路由。
+3. D-3：拆分 `MainLayout`（`AdminSidebar` / `AdminHeader` / `LayoutShell`），把 sidebar state 与 nav 渲染职责解耦。
+4. D-4：收敛 store 订阅粒度（selector 化）并优化 `openGroups` 更新条件，避免无效重渲染。
+5. D-5：补齐模块 D 回归测试（AuthGuard 分支 + 路由 fallback + auth-methods 关键分支）。
+6. D-6：模块 D 验证与台账收口（L1：`lint` + `typecheck` + `test:unit`）。
+
+### 建议验证命令（模块 D）
+
+```bash
+pnpm --filter @anyhunt/admin lint
+pnpm --filter @anyhunt/admin typecheck
+pnpm --filter @anyhunt/admin test:unit
+```
+
+## 模块 D 执行结果（D-1~D-6）
+
+- D-1（路由/导航单源）：
+  - 新增 `src/app/admin-routes.tsx`，集中维护 protected routes 与 sidebar nav 分组。
+  - `AppRouter` 与 `AdminSidebar` 统一消费同一份配置，消除双份路径定义。
+- D-2（页面装配收敛 + fallback）：
+  - `App.tsx` 收敛为入口壳；新增 `AppProviders`（React Query + Toaster）与 `AppRouter`（Router + Suspense + bootstrap）。
+  - 新增 `AuthGuard`，并在受保护路由补齐 `path="*"` NotFound fallback。
+- D-3（MainLayout 拆分）：
+  - `main-layout.tsx` 改为壳层装配，新增 `admin-sidebar.tsx` 与 `admin-header.tsx`。
+  - 导航渲染、header 行为、壳层状态职责分离。
+- D-4（订阅粒度与重渲染优化）：
+  - `AuthGuard` 改为 selector 订阅（`isBootstrapped/isAuthenticated/isAdmin`）。
+  - `openGroups` 路由同步改为“无变化返回 prev”，避免无效 `setState`。
+  - Header/Sidebar 图标按钮补齐 `type="button"` 与 `aria-label`。
+- D-5（回归测试补齐）：
+  - 新增 `src/app/AppRouter.test.tsx`：覆盖 unauthenticated redirect、non-admin redirect、unknown route fallback。
+  - 新增 `src/lib/auth/auth-methods.test.ts`：覆盖 `ensureAccessToken`、`refreshAccessToken`、`bootstrapAuth`、`signIn`、`logout` 关键分支。
+- D-6（模块校验）：
+  - 校验通过：`pnpm --filter @anyhunt/admin lint`、`typecheck`、`test:unit`（10 files / 28 tests）。
+
 ## 进度记录
 
 | Step | Module | Action | Status | Validation | Updated At | Notes |
@@ -586,3 +698,10 @@ pnpm --filter @anyhunt/admin test:unit
 | C-4 | digest-* | `DigestWelcomePage` 抽 controller hook + 页面装配收敛 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 页面 307 行降至 96 行，query/draft/mutation 编排下沉到 `useDigestWelcomePageController` |
 | C-5 | digest-* | `WelcomeConfigCard` 去重重构 + locale 逻辑单源化 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `WelcomeActionEditorSection`；移除 editor 本地 `applyLocale`，复用 controller |
 | C-6 | digest-* | 模块 C 回归校验与测试补齐 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 3 组回归测试，模块 C 全量修复完成，可进入模块 D |
+| D-0 | shared components/stores/page assembly | 预扫描（不改代码） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x3 / S3x2` 与 D-1~D-6 计划，待确认后执行 |
+| D-1 | shared components/stores/page assembly | 路由/导航单源化（`admin-routes.tsx`） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 统一 `AppRouter` 与 `MainLayout` 路由/导航定义，消除双份维护 |
+| D-2 | shared components/stores/page assembly | 页面装配层拆分（`AppProviders`/`AppRouter`/`AuthGuard`）+ fallback | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `App.tsx` 收敛为入口，补齐 `path=\"*\"` NotFound fallback |
+| D-3 | shared components/stores/page assembly | `MainLayout` 拆分（`admin-sidebar`/`admin-header`） | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 主布局降职责，导航渲染与头部行为独立 |
+| D-4 | shared components/stores/page assembly | 订阅粒度与重渲染优化 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AuthGuard` selector 化；`openGroups` 无变化短路；按钮补齐 a11y 属性 |
+| D-5 | shared components/stores/page assembly | 模块 D 回归测试补齐 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `AppRouter.test.tsx` 与 `auth-methods.test.ts` |
+| D-6 | shared components/stores/page assembly | 模块 D 收口校验 | done | `pnpm --filter @anyhunt/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 10 files / 28 tests 通过，模块 D closed |
