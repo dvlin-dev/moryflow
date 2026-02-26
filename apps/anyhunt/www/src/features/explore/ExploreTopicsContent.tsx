@@ -108,12 +108,35 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function renderSearchCreateRow(
+  createRowLabel: string | null,
+  onOpenCreateDialog: () => void
+) {
+  if (!createRowLabel) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border border-border p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{createRowLabel}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Publish as a topic so others can follow.
+          </div>
+        </div>
+        <Button type="button" onClick={onOpenCreateDialog}>
+          Create
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function renderSearchContentByState(props: {
   state: ExploreSearchContentState;
   topics: DigestTopicSummary[];
   error: unknown;
-  createRowLabel: string | null;
-  onOpenCreateDialog: () => void;
   onPreviewTopic: (slug: string) => void;
   onFollowTopic: (slug: string) => void;
 }) {
@@ -130,33 +153,16 @@ function renderSearchContentByState(props: {
       return <div className="text-sm text-muted-foreground">No results.</div>;
     case 'ready':
       return (
-        <>
-          {props.createRowLabel ? (
-            <div className="rounded-md border border-border p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{props.createRowLabel}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Publish as a topic so others can follow.
-                  </div>
-                </div>
-                <Button type="button" onClick={props.onOpenCreateDialog}>
-                  Create
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          <div className="space-y-2">
-            {props.topics.map((topic) => (
-              <TopicCard
-                key={topic.id}
-                topic={topic}
-                onPreview={() => props.onPreviewTopic(topic.slug)}
-                onFollow={() => props.onFollowTopic(topic.slug)}
-              />
-            ))}
-          </div>
-        </>
+        <div className="space-y-2">
+          {props.topics.map((topic) => (
+            <TopicCard
+              key={topic.id}
+              topic={topic}
+              onPreview={() => props.onPreviewTopic(topic.slug)}
+              onFollow={() => props.onFollowTopic(topic.slug)}
+            />
+          ))}
+        </div>
       );
     default:
       return null;
@@ -229,12 +235,11 @@ export function ExploreTopicsContent({
   if (hasSearch) {
     return (
       <div className="space-y-3">
+        {renderSearchCreateRow(createRowLabel, onOpenCreateDialog)}
         {renderSearchContentByState({
           state: searchState,
           topics: searchTopics,
           error: searchError,
-          createRowLabel,
-          onOpenCreateDialog,
           onPreviewTopic,
           onFollowTopic,
         })}

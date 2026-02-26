@@ -38,6 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- Reader 交互细节修复（2026-02-26）：`ExploreTopicsContent` 在搜索模式下（loading/error/empty）保持“Create subscription for ...”入口持续可见；`/topics/:slug/editions/:editionId` 详情页切换时新增 `edition-view-state` 统一状态决策并在 hook 请求开始时清空旧 edition，避免 URL 已切换但右栏短暂展示旧内容；补充 `explore-topics-content` 与 `edition-view-state` 回归测试
 - Reader 专项项目复盘完成（A/B/C/D 闭环）：新增 workspace 源码别名（`tsconfig + vite + vitest`）修复 `@moryflow/api/client`/`@moryflow/types` 解析基线，`pnpm --filter @anyhunt/anyhunt-www typecheck` / `test:unit` / `build` 全通过；`public-topics.hooks.ts` 收敛为导出层并拆分到 `features/public-topics/hooks/*`；`CreateSubscriptionDialogForm` 再拆分为容器 + `create-subscription-form-sections`
 - Reader Stores/Hooks/数据映射（模块 D）完成收敛：`features/digest/hooks.ts` 与 `types.ts` 拆分为分域目录（subscriptions/inbox/runs/topics/feedback + query-keys）；新增 `mappers/inbox-item-state.ts` 统一 Inbox 状态映射与乐观更新规则；`public-topics` 引入 `AbortController + request generation guard` 解决异步竞态；`lib/auth/auth-api.ts` 新增 `auth-error` 归一化收敛 unknown 错误分支并清除 TS18046 位点；补充 `inbox-item-state`/`public-topics.request-guard`/`auth-error` 回归测试
 - Reader Explore / Topic / Welcome（模块 C）完成收敛：`TopicPane` 消除条件式 Hook（`editionQuery` 顶层统一 + enabled 控制），Explore 拆分为 `ExploreTopicsPane`（编排）+ `ExploreTopicsContent`（状态渲染），并在 `TopicPreviewDialog`、`WelcomeListPane`、`WelcomeContentPane` 全面落地“状态片段化 + renderByState/switch”；`WelcomeContentPane` 补齐 `openSignIn` 主动作；`routes/welcome.tsx` 拆分移动端重定向与 page 归一化副作用

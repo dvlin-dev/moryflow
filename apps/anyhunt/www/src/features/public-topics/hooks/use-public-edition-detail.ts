@@ -35,6 +35,7 @@ export function usePublicEditionDetail(slug: string, editionId: string): PublicE
 
     setIsLoading(true);
     setError(null);
+    setEdition(null);
 
     const loadEditionDetail = async () => {
       try {

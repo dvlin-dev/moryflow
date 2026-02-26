@@ -11,24 +11,7 @@ import { ChevronLeft, Calendar, Newspaper } from 'lucide-react';
 import { Header, Footer, Container } from '@/components/layout';
 import { EditionContentItem } from '@/components/digest';
 import { usePublicEditionDetail } from '@/features/public-topics';
-
-type EditionDetailViewState = 'loading' | 'error' | 'ready';
-
-function resolveEditionDetailViewState(
-  editionExists: boolean,
-  isLoading: boolean,
-  error: string | null
-): EditionDetailViewState {
-  if (isLoading && !editionExists) {
-    return 'loading';
-  }
-
-  if (!editionExists || Boolean(error)) {
-    return 'error';
-  }
-
-  return 'ready';
-}
+import { resolveEditionDetailViewState } from '@/features/public-topics/edition-view-state';
 
 export const Route = createFileRoute('/topics/$slug/editions/$editionId')({
   component: EditionDetailPage,
@@ -38,7 +21,11 @@ function EditionDetailPage() {
   const { slug, editionId } = Route.useParams();
   const { edition, isLoading, error } = usePublicEditionDetail(slug, editionId);
 
-  const viewState = resolveEditionDetailViewState(Boolean(edition), isLoading, error);
+  const viewState = resolveEditionDetailViewState({
+    isLoading,
+    hasEdition: Boolean(edition),
+    hasError: Boolean(error),
+  });
 
   const renderContentByState = () => {
     switch (viewState) {
