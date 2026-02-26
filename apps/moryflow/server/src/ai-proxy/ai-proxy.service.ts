@@ -6,7 +6,12 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { streamText, generateText, type ModelMessage } from 'ai';
 import type { ProviderOptions } from '@ai-sdk/provider-utils';
 import { PrismaService } from '../prisma/prisma.service';
@@ -48,8 +53,18 @@ const MAX_CHOICE_COUNT_BY_TIER: Record<SubscriptionTier, number> = {
 };
 const MAX_PARALLEL_CHOICES = 2;
 
+const THINKING_LEVEL_LABELS: Record<string, string> = {
+  off: 'Off',
+  minimal: 'Minimal',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  max: 'Max',
+  xhigh: 'X-High',
+};
+
 @Injectable()
-export class AiProxyService {
+export class AiProxyService implements OnModuleInit {
   private readonly logger = new Logger(AiProxyService.name);
   private readonly sseStreamBuilder = new SSEStreamBuilder();
 
@@ -58,6 +73,10 @@ export class AiProxyService {
     private readonly creditService: CreditService,
     private readonly activityLogService: ActivityLogService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.assertModelsThinkingProfileContract();
+  }
 
   // ==================== 公共 API ====================
 
@@ -253,6 +272,7 @@ export class AiProxyService {
   async getAllModelsWithAccess(
     userTier: SubscriptionTier,
   ): Promise<ModelInfo[]> {
+    await this.assertModelsThinkingProfileContract();
     const userLevel = TIER_ORDER.indexOf(userTier);
 
     const models = await this.prisma.aiModel.findMany({
@@ -276,6 +296,7 @@ export class AiProxyService {
           permission: [],
           root: m.modelId,
           parent: null,
+          thinking_profile: this.resolveThinkingProfileForModel(m),
         };
       });
   }
@@ -385,6 +406,177 @@ export class AiProxyService {
     return Math.min(request.max_tokens, model.maxOutputTokens);
   }
 
+  private parseCapabilitiesJson(
+    capabilitiesJson: unknown,
+  ): Record<string, unknown> | null {
+    if (!capabilitiesJson) {
+      return null;
+    }
+    if (typeof capabilitiesJson === 'string') {
+      try {
+        const parsed = JSON.parse(capabilitiesJson) as Record<string, unknown>;
+        return parsed && typeof parsed === 'object' ? parsed : null;
+      } catch {
+        return null;
+      }
+    }
+    if (typeof capabilitiesJson === 'object') {
+      return capabilitiesJson as Record<string, unknown>;
+    }
+    return null;
+  }
+
+  private getDefaultThinkingLevelsByProviderType(
+    providerType: string,
+  ): string[] {
+    switch (providerType) {
+      case 'openrouter':
+        return ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+      case 'anthropic':
+        return ['off', 'low', 'medium', 'high', 'max'];
+      case 'google':
+        return ['off', 'low', 'medium', 'high'];
+      case 'openai':
+      case 'openai-compatible':
+      case 'xai':
+        return ['off', 'low', 'medium', 'high'];
+      default:
+        return ['off'];
+    }
+  }
+
+  private resolveThinkingProfileForModel(
+    model: AiModel & { provider: AiProvider },
+  ): ModelInfo['thinking_profile'] {
+    const capabilities = this.parseCapabilitiesJson(model.capabilitiesJson);
+    const reasoning = capabilities?.reasoning as
+      | Record<string, unknown>
+      | undefined;
+
+    const rawLevels = Array.isArray(reasoning?.levels)
+      ? reasoning.levels
+      : undefined;
+    const configuredLevels = (rawLevels ?? [])
+      .map((level) => {
+        if (typeof level === 'string') {
+          const trimmed = level.trim();
+          return trimmed.length > 0
+            ? { id: trimmed, label: THINKING_LEVEL_LABELS[trimmed] ?? trimmed }
+            : null;
+        }
+        if (!level || typeof level !== 'object') {
+          return null;
+        }
+        const id =
+          typeof (level as { id?: unknown }).id === 'string'
+            ? (level as { id: string }).id.trim()
+            : '';
+        if (!id) {
+          return null;
+        }
+        const label =
+          typeof (level as { label?: unknown }).label === 'string'
+            ? (level as { label: string }).label.trim()
+            : '';
+        const description =
+          typeof (level as { description?: unknown }).description === 'string'
+            ? (level as { description: string }).description.trim()
+            : '';
+        return {
+          id,
+          label: label || THINKING_LEVEL_LABELS[id] || id,
+          ...(description ? { description } : {}),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    const configuredSupport =
+      reasoning?.supportsThinking === true || reasoning?.enabled === true;
+    const hasConfiguredThinking = configuredLevels.some(
+      (level) => level.id !== 'off',
+    );
+    const supportsThinking = configuredSupport || hasConfiguredThinking;
+    const fallbackLevels = this.getDefaultThinkingLevelsByProviderType(
+      model.provider.providerType,
+    );
+    const effectiveLevels = supportsThinking
+      ? configuredLevels.length > 0
+        ? configuredLevels
+        : fallbackLevels.map((id) => ({
+            id,
+            label: THINKING_LEVEL_LABELS[id] ?? id,
+          }))
+      : [{ id: 'off', label: 'Off' }];
+
+    const uniqueLevels: typeof effectiveLevels = [];
+    for (const level of effectiveLevels) {
+      if (uniqueLevels.some((item) => item.id === level.id)) {
+        continue;
+      }
+      uniqueLevels.push(level);
+    }
+    if (!uniqueLevels.some((item) => item.id === 'off')) {
+      uniqueLevels.unshift({ id: 'off', label: 'Off' });
+    }
+
+    const requestedDefault =
+      typeof reasoning?.defaultLevel === 'string'
+        ? reasoning.defaultLevel.trim()
+        : '';
+    const defaultLevel = uniqueLevels.some(
+      (level) => level.id === requestedDefault,
+    )
+      ? requestedDefault
+      : 'off';
+
+    return this.assertThinkingProfileContract(
+      {
+        supportsThinking: uniqueLevels.some((level) => level.id !== 'off'),
+        defaultLevel,
+        levels: uniqueLevels,
+      },
+      model.modelId,
+    );
+  }
+
+  private assertThinkingProfileContract(
+    profile: ModelInfo['thinking_profile'],
+    modelId: string,
+  ): ModelInfo['thinking_profile'] {
+    const levels = Array.isArray(profile.levels) ? profile.levels : [];
+    if (levels.length === 0) {
+      throw new InternalServerErrorException(
+        `Model '${modelId}' missing thinking_profile.levels`,
+      );
+    }
+    if (!levels.some((level) => level.id === 'off')) {
+      throw new InternalServerErrorException(
+        `Model '${modelId}' thinking_profile.levels must include 'off'`,
+      );
+    }
+    if (!levels.some((level) => level.id === profile.defaultLevel)) {
+      throw new InternalServerErrorException(
+        `Model '${modelId}' thinking_profile.defaultLevel must exist in levels`,
+      );
+    }
+
+    return {
+      supportsThinking: levels.some((level) => level.id !== 'off'),
+      defaultLevel: profile.defaultLevel,
+      levels,
+    };
+  }
+
+  private async assertModelsThinkingProfileContract(): Promise<void> {
+    const enabledModels = await this.prisma.aiModel.findMany({
+      where: { enabled: true, provider: { enabled: true } },
+      include: { provider: true },
+    });
+    for (const model of enabledModels) {
+      this.resolveThinkingProfileForModel(model);
+    }
+  }
+
   /**
    * 解析 Reasoning 配置
    * 合并模型默认配置和请求覆盖配置
@@ -400,7 +592,7 @@ export class AiProxyService {
     }
 
     // 从模型 capabilitiesJson 中获取默认 reasoning 配置
-    const capabilities = model.capabilitiesJson as Record<string, unknown>;
+    const capabilities = this.parseCapabilitiesJson(model.capabilitiesJson);
     const modelReasoning = capabilities?.reasoning as
       | ReasoningOptions
       | undefined;

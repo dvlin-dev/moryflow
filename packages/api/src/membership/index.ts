@@ -16,6 +16,8 @@ export type {
   MembershipUser,
   MembershipUserInfo,
   MembershipUserProfile,
+  MembershipThinkingLevelOption,
+  MembershipThinkingProfile,
   MembershipModel,
   MembershipModelApiItem,
   MembershipModelsResponse,
