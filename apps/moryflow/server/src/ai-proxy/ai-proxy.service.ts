@@ -49,7 +49,6 @@ const MAX_CHOICE_COUNT_BY_TIER: Record<SubscriptionTier, number> = {
   starter: 1,
   basic: 2,
   pro: 4,
-  license: 4,
 };
 const MAX_PARALLEL_CHOICES = 2;
 

@@ -4,11 +4,10 @@ import { PaymentController } from './payment.controller';
 import { PaymentWebhookController } from './payment-webhook.controller';
 import { PaymentSuccessController } from './payment-success.controller';
 import { CreditModule } from '../credit';
-import { LicenseModule } from '../license';
 import { AuthModule } from '../auth';
 
 @Module({
-  imports: [CreditModule, LicenseModule, AuthModule],
+  imports: [CreditModule, AuthModule],
   controllers: [
     PaymentController,
     PaymentWebhookController,

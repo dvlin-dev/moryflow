@@ -4,67 +4,101 @@
  * [POS]: Webhooks 页面 - 管理 Webhook 通知设置（Lucide icons direct render）
  */
 import { useState } from 'react';
-import { Plus, Copy, Delete, Pencil, Ellipsis, RefreshCw, Check } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { PageHeader } from '@moryflow/ui';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Badge,
-  Skeleton,
-  Switch,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@moryflow/ui';
-import { formatRelativeTime } from '@moryflow/ui/lib';
+import { Button } from '@moryflow/ui';
 import { toast } from 'sonner';
 import {
+  MAX_WEBHOOKS_PER_USER,
   useWebhooks,
   useUpdateWebhook,
   CreateWebhookDialog,
   EditWebhookDialog,
   DeleteWebhookDialog,
   RegenerateSecretDialog,
-  MAX_WEBHOOKS_PER_USER,
+  WebhookApiKeyCard,
+  WebhookListCard,
+  resolveActiveApiKeySelection,
 } from '@/features/webhooks';
 import type { Webhook } from '@/features/webhooks';
 import { useApiKeys, maskApiKey } from '@/features/api-keys';
 
+type WebhookDialogState =
+  | { type: 'create' }
+  | { type: 'edit'; webhook: Webhook }
+  | { type: 'delete'; webhook: Webhook }
+  | { type: 'regenerate'; webhook: Webhook }
+  | null;
+
+interface WebhookDialogBindings {
+  create: { open: boolean };
+  edit: { open: boolean; webhook: Webhook | null };
+  delete: { open: boolean; webhook: Webhook | null };
+  regenerate: { open: boolean; webhook: Webhook | null };
+}
+
+function normalizeApiKeySelection(keyId: string): string {
+  if (keyId === 'none') {
+    return '';
+  }
+  return keyId;
+}
+
+function getApiKeyDisplay(apiKey: string | null): string {
+  if (!apiKey) {
+    return '';
+  }
+  return maskApiKey(apiKey);
+}
+
+function resolveDialogBindings(dialog: WebhookDialogState): WebhookDialogBindings {
+  const emptyBindings: WebhookDialogBindings = {
+    create: { open: false },
+    edit: { open: false, webhook: null },
+    delete: { open: false, webhook: null },
+    regenerate: { open: false, webhook: null },
+  };
+
+  if (!dialog) {
+    return emptyBindings;
+  }
+
+  switch (dialog.type) {
+    case 'create':
+      return {
+        ...emptyBindings,
+        create: { open: true },
+      };
+    case 'edit':
+      return {
+        ...emptyBindings,
+        edit: { open: true, webhook: dialog.webhook },
+      };
+    case 'delete':
+      return {
+        ...emptyBindings,
+        delete: { open: true, webhook: dialog.webhook },
+      };
+    case 'regenerate':
+      return {
+        ...emptyBindings,
+        regenerate: { open: true, webhook: dialog.webhook },
+      };
+    default:
+      return emptyBindings;
+  }
+}
+
 export default function WebhooksPage() {
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
-  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
+  const [dialog, setDialog] = useState<WebhookDialogState>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const activeKeys = apiKeys.filter((key) => key.isActive);
-  const effectiveKeyId = selectedKeyId || activeKeys[0]?.id || '';
-  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
+  const { activeKeys, selectedKey, effectiveKeyId } = resolveActiveApiKeySelection(apiKeys, selectedKeyId);
   const apiKeyValue = selectedKey?.key ?? '';
-  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
-  const hasActiveKey = Boolean(apiKeyValue);
+  const apiKeyDisplay = getApiKeyDisplay(selectedKey?.key ?? null);
+  const hasActiveKey = Boolean(selectedKey);
 
   const { data: webhooks = [], isLoading: isLoadingWebhooks } = useWebhooks(apiKeyValue);
   const { mutate: updateWebhook } = useUpdateWebhook(apiKeyValue);
@@ -80,6 +114,14 @@ export default function WebhooksPage() {
     }
   };
 
+  const closeDialog = () => {
+    setDialog(null);
+  };
+
+  const openCreateDialog = () => {
+    setDialog({ type: 'create' });
+  };
+
   const handleToggleActive = (webhook: Webhook) => {
     if (!apiKeyValue) {
       toast.error('Select an API key');
@@ -92,21 +134,30 @@ export default function WebhooksPage() {
   };
 
   const handleEdit = (webhook: Webhook) => {
-    setSelectedWebhook(webhook);
-    setEditDialogOpen(true);
+    setDialog({ type: 'edit', webhook });
   };
 
   const handleDelete = (webhook: Webhook) => {
-    setSelectedWebhook(webhook);
-    setDeleteDialogOpen(true);
+    setDialog({ type: 'delete', webhook });
   };
 
   const handleRegenerate = (webhook: Webhook) => {
-    setSelectedWebhook(webhook);
-    setRegenerateDialogOpen(true);
+    setDialog({ type: 'regenerate', webhook });
   };
 
   const canCreate = hasActiveKey && webhooks.length < MAX_WEBHOOKS_PER_USER;
+  const isLoadingList = isLoadingKeys || (hasActiveKey && isLoadingWebhooks);
+  const dialogBindings = resolveDialogBindings(dialog);
+
+  const handleApiKeyChange = (keyId: string) => {
+    setSelectedKeyId(normalizeApiKeySelection(keyId));
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      closeDialog();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -114,213 +165,60 @@ export default function WebhooksPage() {
         title="Webhooks"
         description="Configure webhooks to receive screenshot event notifications"
         action={
-          <Button onClick={() => setCreateDialogOpen(true)} disabled={!canCreate}>
+          <Button onClick={openCreateDialog} disabled={!canCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Create Webhook
           </Button>
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>API Key</CardTitle>
-          <CardDescription>Select the API key used to manage webhooks</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>API Key</Label>
-              <Select
-                value={effectiveKeyId}
-                onValueChange={setSelectedKeyId}
-                disabled={isLoadingKeys}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select API Key" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeKeys.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No active API keys
-                    </SelectItem>
-                  ) : (
-                    activeKeys.map((key) => (
-                      <SelectItem key={key.id} value={key.id}>
-                        {key.name} ({maskApiKey(key.key)})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+      <WebhookApiKeyCard
+        activeKeys={activeKeys}
+        effectiveKeyId={effectiveKeyId}
+        apiKeyDisplay={apiKeyDisplay}
+        hasActiveKey={hasActiveKey}
+        isLoadingKeys={isLoadingKeys}
+        onKeyChange={handleApiKeyChange}
+      />
 
-            <div className="space-y-2">
-              <Label>Selected Key</Label>
-              <Input placeholder="Select an API key" value={apiKeyDisplay} readOnly />
-            </div>
-          </div>
-
-          {!hasActiveKey && (
-            <p className="text-xs text-muted-foreground mt-3">
-              Create an API key in{' '}
-              <a href="/api-keys" className="text-primary hover:underline">
-                API Keys
-              </a>{' '}
-              to manage webhooks.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Webhook List</CardTitle>
-          <CardDescription>
-            We send POST requests to your configured URL when screenshot tasks complete or fail. You
-            can create up to {MAX_WEBHOOKS_PER_USER} webhooks.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingKeys || (hasActiveKey && isLoadingWebhooks) ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : !hasActiveKey ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                Select an API key to view and manage webhooks.
-              </p>
-            </div>
-          ) : webhooks.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">You haven't created any webhooks yet</p>
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create your first Webhook
-              </Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Secret</TableHead>
-                  <TableHead>Events</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {webhooks.map((webhook) => (
-                  <TableRow key={webhook.id}>
-                    <TableCell className="font-medium">{webhook.name}</TableCell>
-                    <TableCell>
-                      <span className="text-muted-foreground text-sm truncate max-w-[200px] block">
-                        {webhook.url}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        onClick={() => handleCopySecret(webhook)}
-                        className="inline-flex items-center gap-1.5 font-mono text-sm hover:text-primary transition-colors"
-                      >
-                        {webhook.secretPreview}
-                        {copiedId === webhook.id ? (
-                          <Check className="h-3.5 w-3.5 text-green-600" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5 opacity-50" />
-                        )}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1 flex-wrap">
-                        {webhook.events.map((event) => (
-                          <Badge key={event} variant="secondary" className="text-xs">
-                            {event}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={webhook.isActive}
-                          onCheckedChange={() => handleToggleActive(webhook)}
-                        />
-                        {webhook.isActive ? (
-                          <Badge variant="default">Active</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inactive</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatRelativeTime(webhook.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <Ellipsis className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(webhook)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleRegenerate(webhook)}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Regenerate Secret
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(webhook)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Delete className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <WebhookListCard
+        webhooks={webhooks}
+        hasActiveKey={hasActiveKey}
+        isLoading={isLoadingList}
+        copiedId={copiedId}
+        onCreate={openCreateDialog}
+        onCopySecret={handleCopySecret}
+        onToggleActive={handleToggleActive}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onRegenerate={handleRegenerate}
+      />
 
       <CreateWebhookDialog
         apiKey={apiKeyValue}
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
+        open={dialogBindings.create.open}
+        onOpenChange={handleDialogOpenChange}
       />
 
       <EditWebhookDialog
         apiKey={apiKeyValue}
-        webhook={selectedWebhook}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        webhook={dialogBindings.edit.webhook}
+        open={dialogBindings.edit.open}
+        onOpenChange={handleDialogOpenChange}
       />
 
       <DeleteWebhookDialog
         apiKey={apiKeyValue}
-        webhook={selectedWebhook}
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        webhook={dialogBindings.delete.webhook}
+        open={dialogBindings.delete.open}
+        onOpenChange={handleDialogOpenChange}
       />
 
       <RegenerateSecretDialog
         apiKey={apiKeyValue}
-        webhook={selectedWebhook}
-        open={regenerateDialogOpen}
-        onOpenChange={setRegenerateDialogOpen}
+        webhook={dialogBindings.regenerate.webhook}
+        open={dialogBindings.regenerate.open}
+        onOpenChange={handleDialogOpenChange}
       />
     </div>
   );

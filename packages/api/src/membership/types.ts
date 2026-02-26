@@ -9,7 +9,7 @@
 // ── 会员等级 ──────────────────────────────────────────────
 
 /** 用户会员等级 */
-export type UserTier = 'free' | 'starter' | 'basic' | 'pro' | 'license';
+export type UserTier = 'free' | 'starter' | 'basic' | 'pro';
 
 /** 会员等级详情 */
 export interface TierInfo {
@@ -140,7 +140,7 @@ export interface MembershipApiError {
 // ── 产品和支付 ──────────────────────────────────────────────
 
 /** 产品类型 */
-export type ProductType = 'subscription' | 'credits' | 'license';
+export type ProductType = 'subscription' | 'credits';
 
 /** 产品信息 */
 export interface ProductInfo {
@@ -150,8 +150,6 @@ export interface ProductInfo {
   priceUsd: number;
   credits?: number;
   billingCycle?: 'monthly' | 'yearly';
-  licenseTier?: 'standard' | 'pro';
-  activationLimit?: number;
 }
 
 /** 产品列表响应 */

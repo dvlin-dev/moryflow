@@ -397,8 +397,6 @@ export const ModelName = {
   CreditDebt: 'CreditDebt',
   Subscription: 'Subscription',
   PaymentOrder: 'PaymentOrder',
-  License: 'License',
-  LicenseActivation: 'LicenseActivation',
   ActivityLog: 'ActivityLog',
   AccountDeletionRecord: 'AccountDeletionRecord',
   AiProvider: 'AiProvider',
@@ -430,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "license" | "licenseActivation" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
+    modelProps: "user" | "session" | "refreshToken" | "jwks" | "account" | "verification" | "userProfile" | "subscriptionCredits" | "purchasedCredits" | "creditUsageDaily" | "creditDebt" | "subscription" | "paymentOrder" | "activityLog" | "accountDeletionRecord" | "aiProvider" | "aiModel" | "vault" | "vaultDevice" | "syncFile" | "vectorizedFile" | "userStorageUsage" | "audioFile" | "site" | "sitePage" | "agentTrace" | "agentSpan" | "alertRule" | "alertHistory"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1393,154 +1391,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PaymentOrderCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PaymentOrderCountAggregateOutputType> | number
-        }
-      }
-    }
-    License: {
-      payload: Prisma.$LicensePayload<ExtArgs>
-      fields: Prisma.LicenseFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.LicenseFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.LicenseFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>
-        }
-        findFirst: {
-          args: Prisma.LicenseFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.LicenseFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>
-        }
-        findMany: {
-          args: Prisma.LicenseFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>[]
-        }
-        create: {
-          args: Prisma.LicenseCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>
-        }
-        createMany: {
-          args: Prisma.LicenseCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.LicenseCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>[]
-        }
-        delete: {
-          args: Prisma.LicenseDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>
-        }
-        update: {
-          args: Prisma.LicenseUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>
-        }
-        deleteMany: {
-          args: Prisma.LicenseDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.LicenseUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.LicenseUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>[]
-        }
-        upsert: {
-          args: Prisma.LicenseUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicensePayload>
-        }
-        aggregate: {
-          args: Prisma.LicenseAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateLicense>
-        }
-        groupBy: {
-          args: Prisma.LicenseGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.LicenseGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.LicenseCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.LicenseCountAggregateOutputType> | number
-        }
-      }
-    }
-    LicenseActivation: {
-      payload: Prisma.$LicenseActivationPayload<ExtArgs>
-      fields: Prisma.LicenseActivationFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.LicenseActivationFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.LicenseActivationFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>
-        }
-        findFirst: {
-          args: Prisma.LicenseActivationFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.LicenseActivationFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>
-        }
-        findMany: {
-          args: Prisma.LicenseActivationFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>[]
-        }
-        create: {
-          args: Prisma.LicenseActivationCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>
-        }
-        createMany: {
-          args: Prisma.LicenseActivationCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.LicenseActivationCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>[]
-        }
-        delete: {
-          args: Prisma.LicenseActivationDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>
-        }
-        update: {
-          args: Prisma.LicenseActivationUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>
-        }
-        deleteMany: {
-          args: Prisma.LicenseActivationDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.LicenseActivationUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.LicenseActivationUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>[]
-        }
-        upsert: {
-          args: Prisma.LicenseActivationUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$LicenseActivationPayload>
-        }
-        aggregate: {
-          args: Prisma.LicenseActivationAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateLicenseActivation>
-        }
-        groupBy: {
-          args: Prisma.LicenseActivationGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.LicenseActivationGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.LicenseActivationCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.LicenseActivationCountAggregateOutputType> | number
         }
       }
     }
@@ -2949,34 +2799,6 @@ export const PaymentOrderScalarFieldEnum = {
 export type PaymentOrderScalarFieldEnum = (typeof PaymentOrderScalarFieldEnum)[keyof typeof PaymentOrderScalarFieldEnum]
 
 
-export const LicenseScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  licenseKey: 'licenseKey',
-  orderId: 'orderId',
-  tier: 'tier',
-  status: 'status',
-  activationCount: 'activationCount',
-  activationLimit: 'activationLimit',
-  createdAt: 'createdAt'
-} as const
-
-export type LicenseScalarFieldEnum = (typeof LicenseScalarFieldEnum)[keyof typeof LicenseScalarFieldEnum]
-
-
-export const LicenseActivationScalarFieldEnum = {
-  id: 'id',
-  licenseId: 'licenseId',
-  instanceName: 'instanceName',
-  instanceId: 'instanceId',
-  status: 'status',
-  activatedAt: 'activatedAt',
-  deactivatedAt: 'deactivatedAt'
-} as const
-
-export type LicenseActivationScalarFieldEnum = (typeof LicenseActivationScalarFieldEnum)[keyof typeof LicenseActivationScalarFieldEnum]
-
-
 export const ActivityLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -3400,48 +3222,6 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
- * Reference to a field of type 'LicenseTier'
- */
-export type EnumLicenseTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenseTier'>
-    
-
-
-/**
- * Reference to a field of type 'LicenseTier[]'
- */
-export type ListEnumLicenseTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenseTier[]'>
-    
-
-
-/**
- * Reference to a field of type 'LicenseStatus'
- */
-export type EnumLicenseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenseStatus'>
-    
-
-
-/**
- * Reference to a field of type 'LicenseStatus[]'
- */
-export type ListEnumLicenseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenseStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'LicenseActivationStatus'
- */
-export type EnumLicenseActivationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenseActivationStatus'>
-    
-
-
-/**
- * Reference to a field of type 'LicenseActivationStatus[]'
- */
-export type ListEnumLicenseActivationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LicenseActivationStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -3674,8 +3454,6 @@ export type GlobalOmitConfig = {
   creditDebt?: Prisma.CreditDebtOmit
   subscription?: Prisma.SubscriptionOmit
   paymentOrder?: Prisma.PaymentOrderOmit
-  license?: Prisma.LicenseOmit
-  licenseActivation?: Prisma.LicenseActivationOmit
   activityLog?: Prisma.ActivityLogOmit
   accountDeletionRecord?: Prisma.AccountDeletionRecordOmit
   aiProvider?: Prisma.AiProviderOmit

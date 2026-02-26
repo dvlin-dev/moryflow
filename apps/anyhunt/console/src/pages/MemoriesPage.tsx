@@ -7,23 +7,10 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Brain, Download } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Input,
-  Label,
-} from '@moryflow/ui';
-import { useApiKeys, maskApiKey } from '@/features/api-keys';
-import { useMemories, useExportMemories, MemoryListCard } from '@/features/memox';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@moryflow/ui';
+import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
+import { ApiKeySelector } from '@/features/playground-shared';
+import { useMemories, useExportMemories, MemoryListCard, type Memory } from '@/features/memox';
 
 const DEFAULT_EXPORT_SCHEMA = {
   type: 'object',
@@ -34,16 +21,112 @@ const DEFAULT_EXPORT_SCHEMA = {
   required: ['memory'],
 };
 
+type MemoriesViewState = 'no_key' | 'missing_user' | 'loading' | 'error' | 'empty' | 'ready';
+
+function resolveMemoriesViewState(params: {
+  apiKeyValue: string;
+  userId: string;
+  isLoading: boolean;
+  hasError: boolean;
+  memoriesLength: number;
+}): MemoriesViewState {
+  if (!params.apiKeyValue) {
+    return 'no_key';
+  }
+
+  if (!params.userId) {
+    return 'missing_user';
+  }
+
+  if (params.isLoading) {
+    return 'loading';
+  }
+
+  if (params.hasError) {
+    return 'error';
+  }
+
+  if (params.memoriesLength === 0) {
+    return 'empty';
+  }
+
+  return 'ready';
+}
+
+function MissingApiKeyState() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-center text-muted-foreground">
+        Select an API key to load memories.
+      </CardContent>
+    </Card>
+  );
+}
+
+function MissingUserState() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-center text-muted-foreground">
+        User ID is required for listing memories.
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoadingState() {
+  return (
+    <Card>
+      <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
+    </Card>
+  );
+}
+
+function ErrorState() {
+  return (
+    <Card className="border-destructive">
+      <CardHeader>
+        <CardTitle className="text-destructive">Error</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm">Failed to load memories.</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card>
+      <CardContent className="py-16 text-center">
+        <Brain className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+        <CardDescription>No memories found.</CardDescription>
+        <p className="text-sm text-muted-foreground mt-2">
+          Memories are created via the Memox API.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReadyState({ memories }: { memories: Memory[] }) {
+  return (
+    <div className="grid gap-4">
+      {memories.map((memory) => (
+        <MemoryListCard key={memory.id} memory={memory} />
+      ))}
+    </div>
+  );
+}
+
 export default function MemoriesPage() {
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('');
   const [userId, setUserId] = useState('');
 
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const activeKeys = apiKeys.filter((key) => key.isActive);
-  const effectiveKeyId = selectedApiKeyId || activeKeys[0]?.id || '';
-  const selectedKey = apiKeys.find((key) => key.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.key ?? '';
-  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
+  const { activeKeys, effectiveKeyId, apiKeyValue, apiKeyDisplay } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedApiKeyId
+  );
 
   const queryParams = useMemo(
     () => ({
@@ -54,8 +137,19 @@ export default function MemoriesPage() {
     [userId]
   );
 
-  const { data: memories = [], isLoading, error } = useMemories(apiKeyValue, queryParams);
+  const { data: memories = [], isLoading, error } = useMemories(
+    apiKeyValue,
+    queryParams,
+    Boolean(apiKeyValue && userId)
+  );
   const exportMutation = useExportMemories();
+  const viewState = resolveMemoriesViewState({
+    apiKeyValue,
+    userId,
+    isLoading,
+    hasError: Boolean(error),
+    memoriesLength: memories.length,
+  });
 
   const handleExport = async () => {
     if (!apiKeyValue) {
@@ -92,6 +186,25 @@ export default function MemoriesPage() {
     }
   };
 
+  const renderContentByState = () => {
+    switch (viewState) {
+      case 'no_key':
+        return <MissingApiKeyState />;
+      case 'missing_user':
+        return <MissingUserState />;
+      case 'loading':
+        return <LoadingState />;
+      case 'error':
+        return <ErrorState />;
+      case 'empty':
+        return <EmptyState />;
+      case 'ready':
+        return <ReadyState memories={memories} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="container py-6 space-y-6">
       {/* Header */}
@@ -125,29 +238,12 @@ export default function MemoriesPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>API Key</Label>
-              <Select
-                value={effectiveKeyId}
-                onValueChange={setSelectedApiKeyId}
+              <ApiKeySelector
+                apiKeys={activeKeys}
+                selectedKeyId={effectiveKeyId}
+                onKeyChange={setSelectedApiKeyId}
                 disabled={isLoadingKeys}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select API Key" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeKeys.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No active API keys
-                    </SelectItem>
-                  ) : (
-                    activeKeys.map((key) => (
-                      <SelectItem key={key.id} value={key.id}>
-                        {key.name} ({maskApiKey(key.key)})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="space-y-2">
@@ -168,48 +264,7 @@ export default function MemoriesPage() {
       </Card>
 
       {/* Content */}
-      {!apiKeyValue ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Select an API key to load memories.
-          </CardContent>
-        </Card>
-      ) : !userId ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            User ID is required for listing memories.
-          </CardContent>
-        </Card>
-      ) : isLoading ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
-        </Card>
-      ) : error ? (
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">Failed to load memories.</p>
-          </CardContent>
-        </Card>
-      ) : memories.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <Brain className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <CardDescription>No memories found.</CardDescription>
-            <p className="text-sm text-muted-foreground mt-2">
-              Memories are created via the Memox API.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {memories.map((memory) => (
-            <MemoryListCard key={memory.id} memory={memory} />
-          ))}
-        </div>
-      )}
+      {renderContentByState()}
     </div>
   );
 }

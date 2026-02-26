@@ -62,37 +62,21 @@ describe('payment.utils', () => {
   });
 
   describe('resolveCheckoutProductType', () => {
-    it('优先匹配 license 配置', () => {
-      const result = resolveCheckoutProductType(
-        'license_standard',
-        { credits_500: 500 },
-        { license_standard: { tier: 'standard', activationLimit: 2 } },
-      );
-
-      expect(result).toBe('license');
-    });
-
     it('匹配 credits 配置', () => {
-      const result = resolveCheckoutProductType(
-        'credits_500',
-        { credits_500: 500 },
-        {},
-      );
+      const result = resolveCheckoutProductType('credits_500', {
+        credits_500: 500,
+      });
 
       expect(result).toBe('credits');
     });
 
     it('缺失或未知产品应抛错', () => {
       expect(() =>
-        resolveCheckoutProductType('', { credits_500: 500 }, {}),
+        resolveCheckoutProductType('', { credits_500: 500 }),
       ).toThrow('Missing productId');
 
       expect(() =>
-        resolveCheckoutProductType(
-          'unknown',
-          { credits_500: 500 },
-          { license_standard: { tier: 'standard', activationLimit: 2 } },
-        ),
+        resolveCheckoutProductType('unknown', { credits_500: 500 }),
       ).toThrow('Unknown productId');
     });
   });

@@ -56,11 +56,11 @@ jobs:
 
       - name: Run tests (changed packages)
         if: github.event_name == 'pull_request'
-        run: pnpm turbo run test:unit --concurrency=4 --filter=...[origin/${{ github.base_ref }}] -- --maxWorkers=2
+        run: pnpm turbo run test:unit --concurrency=4 --filter=...[origin/${{ github.base_ref }}]
 
       - name: Run tests (full)
         if: github.event_name != 'pull_request'
-        run: pnpm turbo run test:unit --concurrency=4 -- --maxWorkers=2
+        run: pnpm turbo run test:unit --concurrency=4
 
       - name: Build
         if: github.event_name != 'pull_request'

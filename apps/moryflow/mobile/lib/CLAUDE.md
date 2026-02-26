@@ -52,6 +52,7 @@ Mobile 端业务逻辑层，提供状态管理、数据处理、API 调用等核
 
 ## 近期变更
 
+- 新增 `lib/utils/membership-tier-config.ts` 统一会员卡片等级视觉配置，并补齐 starter 专属样式回归测试
 - Auth API/Session 路径修复：登录/验证/刷新/登出统一显式请求 `/api/v1/auth/*`，消除 `baseUrl + path` 拼接差异导致的路径丢失（新增 auth-api/auth-session 回归测试）
 - Mobile Agent Runtime 初始化后统一绑定默认 `ModelProvider`（基于 `ModelFactory`），修复 `@openai/agents-core run()` 的 `No default model provider set`
 - Chat Transport：`ReadableStream.start` 回调不再直接引用 `this.options`，改为外提 `transportOptions`，修复 `UnderlyingDefaultSource.options` 类型报错（TS2339）

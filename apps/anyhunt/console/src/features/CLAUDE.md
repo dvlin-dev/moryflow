@@ -61,6 +61,28 @@ export function useApiKeys() {
 ## 近期变更
 
 - Agent Browser Playground：修复 thinking=level 场景 200 SSE 流被 `clone().text()` 提前耗尽的问题；仅在 `400` 边界错误时读取响应体并触发单次降级重试（2026-02-26）
+- Agent Browser D-6c + 模块 E 收敛完成：`browser-session-panel.tsx` 收敛为 103 行容器层，新增 `browser-session-panel-content.tsx`；operation handlers 按域拆分为 `use-browser-session-open-actions.ts`、`use-browser-session-tab-window-actions.ts`、`use-browser-session-intercept-network-actions.ts`、`use-browser-session-diagnostics-actions.ts`、`use-browser-session-data-actions.ts`（聚合层 `use-browser-session-operation-actions.ts`）；`browser-api.ts` 再拆分为 `browser-session-api.ts`、`browser-observability-api.ts`、`browser-storage-api.ts` + `browser-api-client.ts`；`Scrape/Crawl` 新增 `*-request-card` 与 `*-result-panel` 并迁移到 `PlaygroundPageShell`，`playground-shared` 新增 `PlaygroundLoadingState` 与 `PlaygroundCodeExampleCard`
+- Agent Browser 模块 D-6a 复查完成：新增 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`，`flow-runner.tsx` 收敛为编排层；新增 `hooks/use-browser-session-forms.ts`，将 `BrowserSessionPanel` 表单初始化与 session 同步副作用抽离
+- Agent Browser 模块 D-4e 修复完成：`components/browser-session-sections.tsx` 第五批拆分 `OpenUrlSection` / `SnapshotSection` / `DeltaSnapshotSection` / `ActionSection` / `ActionBatchSection` / `ScreenshotSection` 到 `components/browser-session-sections/*.tsx`，聚合文件收敛为 45 行导出层
+- Agent Browser 模块 D-4d 修复完成：`components/browser-session-sections.tsx` 第四批拆分 `SessionSection` / `TabsSection` / `WindowsSection` 到 `components/browser-session-sections/*.tsx`，聚合文件进一步收敛为导入装配层
+- Agent Browser 模块 D-4c 修复完成：`components/browser-session-sections.tsx` 第三批拆分 `InterceptSection` / `HeadersSection` / `NetworkHistorySection` / `DiagnosticsSection` 到 `components/browser-session-sections/*.tsx`，并将 Detection Risk 状态渲染收敛为方法调用
+- Agent Browser 模块 D-5 修复完成：新增 `browser-api.ts` 与 `agent-api.ts`，`api.ts` 改为兼容导出层；`browser-session-panel.tsx`、`flow-runner.tsx`、`use-agent-models.ts` 切换到分域 API 导入
+- Agent Browser 模块 D-4b 修复完成：`components/browser-session-sections.tsx` 第二批拆分 `StorageSection` / `ProfileSection` 到 `components/browser-session-sections/*.tsx`，继续推进多文件分区结构
+- Agent Browser 模块 D-4a 修复完成：`components/browser-session-sections.tsx` 首批拆分 `StreamingSection` / `CdpSection` 到 `components/browser-session-sections/*.tsx`，建立多文件分区结构
+- Agent Browser 模块 D-3 修复完成：`browser-session-panel.tsx` 的分区开关状态、结果状态与 session lifecycle handlers 抽离为 hooks，组件收敛为分区装配层
+- Agent Browser 模块 D-3b 修复完成：新增 `hooks/use-browser-session-panel-results.ts` 与 `hooks/use-browser-session-lifecycle-actions.ts`，`browser-session-panel.tsx` 的 session 生命周期与结果状态管理抽离为 hooks，组件收敛为装配层
+- Agent Browser 模块 D-3a 修复完成：新增 `browser-session-section-config.ts` 与 `hooks/use-browser-session-section-open-state.ts`，`browser-session-panel.tsx` 的分区展开状态改为统一状态容器（移除 17 个分散 `useState`）
+- Agent Browser 模块 D-2 修复完成：新增 `browser-context-options.ts` 统一 Session/Window 参数校验与 options 组装（permissions/headers/geolocation/httpCredentials），`browser-session-panel.tsx` 的 `handleCreateSession/handleCreateWindow` 统一复用 mapper，并补齐 `browser-context-options.test.ts`
+- Memox/Embed review follow-up 收敛：`Memories` 请求启用边界改为 `apiKey + userId`；`Memories/Entities/Graph/Embed` API Key 选择统一复用 `playground-shared/ApiKeySelector`；`memox-graph-visualization-card` 进一步拆分为 `graph-visualization-view-model.ts`、`memox-graph-visualization-states.tsx`、`use-graph-container-dimensions.ts`、`use-memox-graph-canvas.ts`
+- Memox/Embed Playground C-2~C-5 收敛完成：`memox` 新增 `graph-schemas.ts` + `memox-graph-query-card.tsx` + `memox-graph-visualization-card.tsx`（含 `graph-schemas.test.ts`）；`embed-playground` 新增 `schemas.ts`（含 `schemas.test.ts`）并将 `EmbedForm` 迁移到 `react-hook-form + zod/v3`；`memox/embed` 页面 API Key 选择统一复用 `resolveActiveApiKeySelection`
+- Memox Playground C-1 结构收敛：新增 `playground-schemas.ts` 与 `playground-request-mapper.ts`；`MemoxPlaygroundPage` 拆分为容器层（`pages/MemoxPlaygroundPage.tsx`）+ 请求区（`memox-playground-request-card.tsx`）+ 结果区（`memox-playground-result-panel.tsx`）+ create/search 子表单组件，并补齐 mapper 单测
+- Playground 模块 B-4~B-6 收敛完成：统一 API Key 选择逻辑到 `resolveActiveApiKeySelection`，新增 `PlaygroundPageShell` 并接入 `Map/Search/Extract` 页面，`ApiKeySelector`/`CrawlForm`/`Map/Search` 页面残留状态三元改为命名片段渲染
+- Extract Playground B-3 结构收敛：`ExtractPlaygroundPage` 拆分为容器层（页面）+ 请求区组件（`extract-request-card.tsx`）+ 结果区组件（`extract-result-panel.tsx`）
+- Scrape Playground B-2 结构收敛：`scrape-result.tsx` 拆分为容器层（`scrape-result.tsx`）+ 视图模型（`scrape-result-view-model.ts`）+ 卡片片段（`scrape-result-cards.tsx`）+ 内容 Tabs（`scrape-result-content-tabs.tsx`），移除默认 Tab 的链式三元
+- Scrape Playground B-1 结构收敛：`scrape-form.tsx` 拆分为容器层（`scrape-form.tsx`）+ 请求映射（`scrape-form-request-mapper.ts`）+ 分段 UI（`scrape-form-sections.tsx`、`scrape-form-advanced-sections.tsx`、`scrape-form-screenshot-section.tsx`），并将折叠状态收敛为对象模型
+- 状态渲染一致性收敛：`create-api-key-dialog`、`webhook-api-key-card`、`WebhooksPage` 的多状态 UI 改为“状态片段 + 渲染方法（`renderByState/switch`）”，清理状态渲染型三元表达式
+- Webhooks 视图渲染收敛：`webhook-list-card` 将 loading/missing-key/empty/ready 四态拆为独立 UI 片段，并通过中间 `renderContentByState` 统一调度，避免链式三元降低可读性
+- Webhooks/Settings/API Keys 结构收敛：Webhooks 新增 `resolveActiveApiKeySelection`（active key only）并补齐回归测试；`WebhooksPage` 拆分 `WebhookApiKeyCard`/`WebhookListCard`，dialog 状态改为判别式；`settings`、`api-keys`、`webhooks` 表单统一迁移到 `react-hook-form + zod/v3`，新增 `schemas.ts` 与 `webhook-form-fields.tsx`
 - Agent Browser Playground：`AgentChatTransport.headers` 固定返回 `Headers`，修复 `Authorization?: undefined` 导致的 `TS2322`
 - Agent Browser Playground：聊天 transport 切换为官方 `DefaultChatTransport`，移除手写 SSE parser 与 `eventsource-parser` 依赖
 - Agent Browser Playground：Diagnostics 新增 Detection Risk 只读区块，接入 `/api/v1/browser/session/:id/risk`，展示 24h 成功率、Top 原因与建议动作

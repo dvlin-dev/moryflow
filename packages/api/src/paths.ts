@@ -54,15 +54,6 @@ export const ADMIN_API = {
   PAYMENT: '/api/v1/admin/payment',
 } as const;
 
-// ── License 模块 ──────────────────────────────────────────
-
-export const LICENSE_API = {
-  BASE: '/api/v1/license',
-  VALIDATE: '/api/v1/license/validate',
-  ACTIVATE: '/api/v1/license/activate',
-  DEACTIVATE: '/api/v1/license/deactivate',
-} as const;
-
 // ── 支付模块 ──────────────────────────────────────────────
 
 export const PAYMENT_API = {
@@ -88,7 +79,6 @@ export const API = {
   USER: USER_API,
   OPENAI: OPENAI_API,
   ADMIN: ADMIN_API,
-  LICENSE: LICENSE_API,
   PAYMENT: PAYMENT_API,
   HEALTH: HEALTH_API,
 } as const;

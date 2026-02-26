@@ -8,16 +8,16 @@
  * 4. 暗黑适配：每个 token 都有 light/dark 两种值
  */
 
-export type ThemeMode = 'light' | 'dark'
+export type ThemeMode = 'light' | 'dark';
 
-type TokenFormat = 'hsl' | 'raw'
+type TokenFormat = 'hsl' | 'raw';
 
 type TokenDefinition = {
-  readonly cssVariable?: string
-  readonly format?: TokenFormat
-  readonly includeInTheme?: boolean
-  readonly values: Readonly<Record<ThemeMode, string>>
-}
+  readonly cssVariable?: string;
+  readonly format?: TokenFormat;
+  readonly includeInTheme?: boolean;
+  readonly values: Readonly<Record<ThemeMode, string>>;
+};
 
 const TOKEN_DEFINITIONS = {
   // ═══════════════════════════════════════════════════════════
@@ -309,14 +309,6 @@ const TOKEN_DEFINITIONS = {
     cssVariable: 'tier-pro-bg',
     values: { light: 'rgba(139, 92, 246, 0.15)', dark: 'rgba(167, 139, 250, 0.2)' },
   },
-  tierLicense: {
-    cssVariable: 'tier-license',
-    values: { light: '#f59e0b', dark: '#fbbf24' },
-  },
-  tierLicenseBg: {
-    cssVariable: 'tier-license-bg',
-    values: { light: 'rgba(245, 158, 11, 0.15)', dark: 'rgba(251, 191, 36, 0.2)' },
-  },
 
   // ═══════════════════════════════════════════════════════════
   // 代码/Markdown 样式
@@ -406,87 +398,85 @@ const TOKEN_DEFINITIONS = {
     includeInTheme: false,
     values: { light: '27 87% 67%', dark: '340 75% 55%' },
   },
-} as const
+} as const;
 
 // ═══════════════════════════════════════════════════════════
 // 类型和工具函数
 // ═══════════════════════════════════════════════════════════
 
-const tokenDefinitionsCheck: Record<string, TokenDefinition> = TOKEN_DEFINITIONS
-void tokenDefinitionsCheck
+const tokenDefinitionsCheck: Record<string, TokenDefinition> = TOKEN_DEFINITIONS;
+void tokenDefinitionsCheck;
 
-type TokenDefinitions = typeof TOKEN_DEFINITIONS
+type TokenDefinitions = typeof TOKEN_DEFINITIONS;
 
 type ThemeTokenName = {
-  [K in keyof TokenDefinitions]: TokenDefinitions[K] extends { includeInTheme: false }
-    ? never
-    : K
-}[keyof TokenDefinitions]
+  [K in keyof TokenDefinitions]: TokenDefinitions[K] extends { includeInTheme: false } ? never : K;
+}[keyof TokenDefinitions];
 
 type CssVariableName = {
   [K in keyof TokenDefinitions]: TokenDefinitions[K] extends { cssVariable: infer T extends string }
     ? T
-    : never
-}[keyof TokenDefinitions]
+    : never;
+}[keyof TokenDefinitions];
 
-export type ThemeTokens = { readonly [K in ThemeTokenName]: string }
+export type ThemeTokens = { readonly [K in ThemeTokenName]: string };
 
-type CssVariableTokens = { readonly [K in CssVariableName]: string }
+type CssVariableTokens = { readonly [K in CssVariableName]: string };
 
-const HSL_FORMAT: TokenFormat = 'hsl'
+const HSL_FORMAT: TokenFormat = 'hsl';
 
 function getTokenEntries() {
-  return Object.keys(TOKEN_DEFINITIONS) as Array<keyof TokenDefinitions>
+  return Object.keys(TOKEN_DEFINITIONS) as Array<keyof TokenDefinitions>;
 }
 
 function getDefinition(tokenKey: keyof TokenDefinitions): TokenDefinition {
-  return TOKEN_DEFINITIONS[tokenKey] as TokenDefinition
+  return TOKEN_DEFINITIONS[tokenKey] as TokenDefinition;
 }
 
 function buildThemeTokens(mode: ThemeMode): ThemeTokens {
-  const result: Record<string, string> = {}
+  const result: Record<string, string> = {};
 
   for (const tokenKey of getTokenEntries()) {
-    const definition = getDefinition(tokenKey)
+    const definition = getDefinition(tokenKey);
     if (definition.includeInTheme === false) {
-      continue
+      continue;
     }
 
-    const value = definition.values[mode]
+    const value = definition.values[mode];
     if ((definition.format ?? 'raw') === HSL_FORMAT) {
-      result[tokenKey as string] = `hsl(${value})`
+      result[tokenKey as string] = `hsl(${value})`;
     } else {
-      result[tokenKey as string] = value
+      result[tokenKey as string] = value;
     }
   }
 
-  return result as ThemeTokens
+  return result as ThemeTokens;
 }
 
 function buildCssVariables(mode: ThemeMode): CssVariableTokens {
-  const result: Record<string, string> = {}
+  const result: Record<string, string> = {};
 
   for (const tokenKey of getTokenEntries()) {
-    const definition = getDefinition(tokenKey)
-    const cssVariable = definition.cssVariable
+    const definition = getDefinition(tokenKey);
+    const cssVariable = definition.cssVariable;
     if (!cssVariable) {
-      continue
+      continue;
     }
 
-    result[cssVariable] = definition.values[mode]
+    result[cssVariable] = definition.values[mode];
   }
 
-  return result as CssVariableTokens
+  return result as CssVariableTokens;
 }
 
 export const themeTokensByMode = {
   light: buildThemeTokens('light'),
   dark: buildThemeTokens('dark'),
-} as const satisfies Record<ThemeMode, ThemeTokens>
+} as const satisfies Record<ThemeMode, ThemeTokens>;
 
 export const cssVariablesByMode = {
   light: buildCssVariables('light'),
   dark: buildCssVariables('dark'),
-} as const satisfies Record<ThemeMode, CssVariableTokens>
+} as const satisfies Record<ThemeMode, CssVariableTokens>;
 
-export { TOKEN_DEFINITIONS as tokenDefinitions }
+export { TOKEN_DEFINITIONS as tokenDefinitions };

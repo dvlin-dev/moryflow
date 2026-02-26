@@ -1,37 +1,21 @@
 /**
  * [PROPS]: none
  * [EMITS]: none
- * [POS]: Map Playground 页面（react-hook-form + zod，Lucide icons direct render）
+ * [POS]: Map Playground 页面（容器编排层）
  */
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Map, Loader, Link, CircleCheck } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Switch,
-} from '@moryflow/ui';
-import { useApiKeys, maskApiKey } from '@/features/api-keys';
+import { useApiKeys, resolveActiveApiKeySelection } from '@/features/api-keys';
 import { useMap, type MapRequest, type MapResponse } from '@/features/map-playground';
+import { MapRequestCard } from '@/features/map-playground/components/map-request-card';
+import { MapResultPanel } from '@/features/map-playground/components/map-result-panel';
 import {
-  ApiKeySelector,
-  CodeExample,
-  CollapsibleSection,
+  PlaygroundCodeExampleCard,
+  PlaygroundLoadingState,
+  PlaygroundPageShell,
   mapFormSchema,
   mapFormDefaults,
   type MapFormValues,
@@ -40,15 +24,14 @@ import { FETCHX_API } from '@/lib/api-paths';
 
 export default function MapPlaygroundPage() {
   const { data: apiKeys = [], isLoading: isLoadingKeys } = useApiKeys();
-  const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
+  const [selectedKeyId, setSelectedKeyId] = useState('');
   const [lastRequest, setLastRequest] = useState<MapRequest | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
 
-  // 如果用户未手动选择，使用第一个活跃的 API Key
-  const effectiveKeyId = selectedKeyId ?? apiKeys.find((k) => k.isActive)?.id ?? '';
-  const selectedKey = apiKeys.find((k) => k.id === effectiveKeyId);
-  const apiKeyValue = selectedKey?.key ?? '';
-  const apiKeyDisplay = selectedKey ? maskApiKey(selectedKey.key) : '';
+  const { effectiveKeyId, apiKeyValue, apiKeyDisplay, hasActiveKey } = resolveActiveApiKeySelection(
+    apiKeys,
+    selectedKeyId
+  );
 
   const { mutate, isPending, data, error, reset } = useMap(apiKeyValue);
 
@@ -78,206 +61,50 @@ export default function MapPlaygroundPage() {
   };
 
   if (isLoadingKeys) {
-    return (
-      <div className="container py-6">
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">Loading...</CardContent>
-        </Card>
-      </div>
-    );
+    return <PlaygroundLoadingState />;
   }
 
+  const requestContent = (
+    <MapRequestCard
+      apiKeys={apiKeys}
+      effectiveKeyId={effectiveKeyId}
+      hasActiveKey={hasActiveKey}
+      isPending={isPending}
+      optionsOpen={optionsOpen}
+      form={form}
+      onSubmit={handleFormSubmit}
+      onOptionsOpenChange={setOptionsOpen}
+      onKeyChange={setSelectedKeyId}
+    />
+  );
+
+  const renderCodeExampleContent = () => {
+    if (!lastRequest) {
+      return null;
+    }
+
+    return (
+      <PlaygroundCodeExampleCard
+        endpoint={FETCHX_API.MAP}
+        method="POST"
+        apiKey={apiKeyDisplay}
+        apiKeyValue={apiKeyValue}
+        body={lastRequest}
+      />
+    );
+  };
+
+  const codeExampleContent = renderCodeExampleContent();
+
+  const resultContent = <MapResultPanel data={data} error={error} />;
+
   return (
-    <div className="container py-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Map Playground</h1>
-        <p className="text-muted-foreground mt-1">
-          Discover all URLs on a website through sitemap and link discovery.
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Request</CardTitle>
-              <CardDescription>Configure map options and discover URLs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-                  <ApiKeySelector
-                    apiKeys={apiKeys}
-                    selectedKeyId={effectiveKeyId}
-                    onKeyChange={setSelectedKeyId}
-                    disabled={isPending}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website URL</FormLabel>
-                        <div className="flex gap-2">
-                          <FormControl>
-                            <Input
-                              type="url"
-                              placeholder="https://example.com"
-                              className="flex-1"
-                              disabled={isPending}
-                              {...field}
-                            />
-                          </FormControl>
-                          <Button type="submit" disabled={isPending || !selectedKey?.isActive}>
-                            {isPending ? (
-                              <Loader className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Map className="h-4 w-4" />
-                            )}
-                            <span className="ml-2">Map</span>
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <CollapsibleSection
-                    title="Options"
-                    open={optionsOpen}
-                    onOpenChange={setOptionsOpen}
-                  >
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="search"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Search ListFilter</FormLabel>
-                            <FormControl>
-                              <Input placeholder="blog" disabled={isPending} {...field} />
-                            </FormControl>
-                            <FormDescription>Only return URLs containing this text</FormDescription>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="limit"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Limit</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={5000}
-                                disabled={isPending}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="includeSubdomains"
-                        render={({ field }) => (
-                          <FormItem className="flex items-center gap-2">
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                disabled={isPending}
-                              />
-                            </FormControl>
-                            <FormLabel className="!mt-0">Include Subdomains</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CollapsibleSection>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-
-          {lastRequest && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Code Example</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CodeExample
-                  endpoint={FETCHX_API.MAP}
-                  method="POST"
-                  apiKey={apiKeyDisplay}
-                  apiKeyValue={apiKeyValue}
-                  body={lastRequest}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div>
-          {error && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive">Error</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{error.message}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {data && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <CircleCheck className="h-5 w-5 text-green-600" />
-                  Found {data.links.length} URLs
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {data.links.length > 0 ? (
-                  <div className="overflow-auto max-h-[500px] space-y-1">
-                    {data.links.map((link, i) => (
-                      <a
-                        key={i}
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 rounded hover:bg-muted text-xs"
-                      >
-                        <Link className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{link}</span>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No URLs found</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {!data && !error && (
-            <Card>
-              <CardContent className="py-16 text-center">
-                <p className="text-muted-foreground">
-                  Enter a URL and click "Map" to discover URLs.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
+    <PlaygroundPageShell
+      title="Map Playground"
+      description="Discover all URLs on a website through sitemap and link discovery."
+      request={requestContent}
+      codeExample={codeExampleContent}
+      result={resultContent}
+    />
   );
 }

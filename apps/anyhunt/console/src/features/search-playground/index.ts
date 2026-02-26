@@ -29,3 +29,5 @@ export function useSearch(apiKey: string) {
 
 // 导出类型
 export type { SearchRequest, SearchResponse };
+export { SearchRequestCard } from './components/search-request-card';
+export { SearchResultPanel } from './components/search-result-panel';

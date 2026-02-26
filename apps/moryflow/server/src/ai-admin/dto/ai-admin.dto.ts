@@ -61,7 +61,7 @@ export const CreateModelSchema = z.object({
   enabled: z.boolean().optional().default(true),
   inputTokenPrice: z.number().min(0, 'Price must be non-negative'),
   outputTokenPrice: z.number().min(0, 'Price must be non-negative'),
-  minTier: z.enum(['free', 'starter', 'basic', 'pro', 'license']),
+  minTier: z.enum(['free', 'starter', 'basic', 'pro']),
   maxContextTokens: z.number().positive('maxContextTokens must be positive'),
   maxOutputTokens: z.number().positive('maxOutputTokens must be positive'),
   capabilities: z
@@ -85,7 +85,7 @@ export const UpdateModelSchema = z.object({
   enabled: z.boolean().optional(),
   inputTokenPrice: z.number().min(0).optional(),
   outputTokenPrice: z.number().min(0).optional(),
-  minTier: z.enum(['free', 'starter', 'basic', 'pro', 'license']).optional(),
+  minTier: z.enum(['free', 'starter', 'basic', 'pro']).optional(),
   maxContextTokens: z.number().positive().optional(),
   maxOutputTokens: z.number().positive().optional(),
   capabilities: z

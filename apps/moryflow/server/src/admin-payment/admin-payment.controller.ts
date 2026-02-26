@@ -94,7 +94,7 @@ export class AdminPaymentController {
   @ApiQuery({
     name: 'productType',
     required: false,
-    enum: ['subscription', 'credits', 'license'],
+    enum: ['subscription', 'credits'],
   })
   @ApiResponse({ status: 200, description: '订单列表' })
   @Get('orders')
