@@ -32,6 +32,7 @@
 
 ## 近期变更
 
+- 修复 `model-factory` 思考能力默认判定：`supportsThinking` 仅以 `customCapabilities.reasoning` 显式值为准，未配置时默认 `true`；移除不可达回退分支，并补齐“未配置默认开启/显式 false 降级 off”回归测试（2026-02-26）
 - 修复 runtime thinking 实参注入链路：Anthropic/Google 在 `model-factory` 构建时显式注入 thinking 参数；`agent-factory` 将 `BuildModelResult.providerOptions` 合并到 `modelSettings.providerData.providerOptions`；补齐 `model-factory/agent-factory` 回归测试（2026-02-26）
 - Thinking 第二轮落地：新增 `thinking-profile`/`thinking-adapter`；`levelPatches` 升级为 provider 强类型；运行时合成顺序固定为 `base -> user patch -> clamp`；未知等级统一降级 `off`（2026-02-26）
 - 新增 `tool-schema-compat` 共享模块：递归补齐 function tool JSON schema 中 `enum` 节点缺失的 `type`，并在 `agent-factory` 统一接入，修复 Gemini 严格校验下的 400（2026-02-24）

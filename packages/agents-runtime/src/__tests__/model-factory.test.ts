@@ -24,6 +24,9 @@ import { createModelFactory } from '../model-factory';
 const createSettings = (
   providerId: string,
   modelId: string,
+  options?: {
+    reasoningCapability?: boolean;
+  },
 ): AgentSettings => ({
   model: {
     defaultModel: `${providerId}/${modelId}`,
@@ -38,9 +41,13 @@ const createSettings = (
         {
           id: modelId,
           enabled: true,
-          customCapabilities: {
-            reasoning: true,
-          },
+          ...(typeof options?.reasoningCapability === 'boolean'
+            ? {
+                customCapabilities: {
+                  reasoning: options.reasoningCapability,
+                },
+              }
+            : {}),
         },
       ],
       defaultModelId: modelId,
@@ -74,7 +81,9 @@ describe('model-factory reasoning mapping', () => {
 
     const modelId = 'claude-sonnet-4-5';
     const factory = createModelFactory({
-      settings: createSettings('anthropic', modelId),
+      settings: createSettings('anthropic', modelId, {
+        reasoningCapability: true,
+      }),
       providerRegistry: createRegistry('anthropic', 'anthropic', modelId),
       toApiModelId: (_, id) => id,
     });
@@ -91,13 +100,62 @@ describe('model-factory reasoning mapping', () => {
     });
   });
 
+  it('defaults to thinking support when reasoning capability is not configured', () => {
+    const anthropicChat = vi.fn().mockReturnValue({} as any);
+    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
+
+    const modelId = 'claude-sonnet-4-5';
+    const factory = createModelFactory({
+      settings: createSettings('anthropic', modelId),
+      providerRegistry: createRegistry('anthropic', 'anthropic', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    const result = factory.buildModel(modelId, {
+      thinking: { mode: 'level', level: 'high' },
+    });
+
+    expect(result.resolvedThinkingLevel).toBe('high');
+    expect(result.thinkingDowngradedToOff).toBe(false);
+    expect(anthropicChat).toHaveBeenCalledWith(modelId, {
+      thinking: {
+        type: 'enabled',
+        budgetTokens: 16384,
+      },
+    });
+  });
+
+  it('downgrades thinking to off when reasoning capability is explicitly disabled', () => {
+    const anthropicChat = vi.fn().mockReturnValue({} as any);
+    mocks.createAnthropic.mockReturnValue({ chat: anthropicChat });
+
+    const modelId = 'claude-sonnet-4-5';
+    const factory = createModelFactory({
+      settings: createSettings('anthropic', modelId, {
+        reasoningCapability: false,
+      }),
+      providerRegistry: createRegistry('anthropic', 'anthropic', modelId),
+      toApiModelId: (_, id) => id,
+    });
+
+    const result = factory.buildModel(modelId, {
+      thinking: { mode: 'level', level: 'high' },
+    });
+
+    expect(result.resolvedThinkingLevel).toBe('off');
+    expect(result.thinkingDowngradedToOff).toBe(true);
+    expect(anthropicChat).toHaveBeenCalledWith(modelId, undefined);
+  });
+
   it('passes google thinking settings when level thinking is enabled', () => {
     const googleChat = vi.fn().mockReturnValue({} as any);
     mocks.createGoogleGenerativeAI.mockReturnValue(googleChat);
 
     const modelId = 'gemini-2.5-pro';
     const factory = createModelFactory({
-      settings: createSettings('google', modelId),
+      settings: createSettings('google', modelId, {
+        reasoningCapability: true,
+      }),
       providerRegistry: createRegistry('google', 'google', modelId),
       toApiModelId: (_, id) => id,
     });

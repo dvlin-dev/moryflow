@@ -271,7 +271,6 @@ export class AiProxyService implements OnModuleInit {
   async getAllModelsWithAccess(
     userTier: SubscriptionTier,
   ): Promise<ModelInfo[]> {
-    await this.assertModelsThinkingProfileContract();
     const userLevel = TIER_ORDER.indexOf(userTier);
 
     const models = await this.prisma.aiModel.findMany({

@@ -429,11 +429,7 @@ export const createModelFactory = (options: ModelFactoryOptions): ModelFactory =
     }
 
     const modelConfig = resolved.provider.modelConfigMap.get(resolved.modelId)
-    const hasOverrideLevels = Boolean(
-      modelConfig?.thinking?.enabledLevels?.some((level) => level !== 'off')
-    )
-    const supportsThinking =
-      modelConfig?.customCapabilities?.reasoning ?? hasOverrideLevels ?? true
+    const supportsThinking = modelConfig?.customCapabilities?.reasoning ?? true
 
     return buildThinkingProfile({
       sdkType: resolved.provider.sdkType,

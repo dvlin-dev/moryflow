@@ -601,6 +601,10 @@ pnpm test:unit
 | FIX-06 | Server patch 优先级 | `generic -> provider -> direct` 固化合并顺序，保证 provider patch 不被覆盖 | `thinking-profile.util.ts` `thinking-profile.util.spec.ts` | REVIEW-01 | L2 | anyhunt-server unit + typecheck | ✅ 已完成 | 2026-02-26 | 与“provider 特化高于通用默认”契约一致 |
 | FIX-07 | Runtime thinking 下发 | Anthropic/Google 在 model 构建阶段注入 thinking 参数；Agent 调用链注入 providerOptions | `model-factory.ts` `agent-factory.ts` `model-factory.test.ts` `agent-factory.test.ts` | REVIEW-01 | L2 | agents-runtime unit + tsc | ✅ 已完成 | 2026-02-26 | 修复“计算了 reasoning 但调用未生效”风险 |
 | TEST-03 | PR 评论回归 | 聚焦回归执行（console/server/runtime）并确认修复闭环 | 相关测试目录 | FIX-05 FIX-06 FIX-07 | L2 | 受影响包 unit + typecheck | ✅ 已完成 | 2026-02-26 | 三端受影响用例全部通过 |
+| REVIEW-02 | PR 新评论核对 | 核对新增评论（dead fallback、重复查询）并输出修复方案 | PR#97 comments + 相关源码 | TEST-03 | L1 | 人工 review | ✅ 已完成 | 2026-02-26 | 结论：两条评论均成立且应修复 |
+| FIX-08 | Runtime 默认值修复 | `supportsThinking` 移除不可达回退，未配置 capability 默认 `true` | `model-factory.ts` `model-factory.test.ts` | REVIEW-02 | L2 | agents-runtime unit + tsc | ✅ 已完成 | 2026-02-26 | 显式 `false` 仍会降级 `off`，未配置保持可思考 |
+| FIX-09 | Server 查询去重 | 移除 `getAllModelsWithAccess` 内重复契约预检查询并补回归 | `ai-proxy.service.ts` `ai-proxy.service.spec.ts` | REVIEW-02 | L2 | moryflow-server unit + typecheck | ✅ 已完成 | 2026-02-26 | `/v1/models` 路径数据库查询降为一次 |
+| TEST-04 | 增量回归 | 执行本轮受影响包测试与类型检查，确认修复闭环 | 相关测试目录 | FIX-08 FIX-09 | L2 | 受影响包 unit + typecheck | ✅ 已完成 | 2026-02-26 | agents-runtime + moryflow/server 受影响用例通过 |
 
 ### 4.3 执行顺序与并行策略
 
@@ -656,6 +660,10 @@ pnpm test:unit
 34. `FIX-06`：✅ 已完成（2026-02-26）
 35. `FIX-07`：✅ 已完成（2026-02-26）
 36. `TEST-03`：✅ 已完成（2026-02-26）
+37. `REVIEW-02`：✅ 已完成（2026-02-26）
+38. `FIX-08`：✅ 已完成（2026-02-26）
+39. `FIX-09`：✅ 已完成（2026-02-26）
+40. `TEST-04`：✅ 已完成（2026-02-26）
 
 ### 4.6 最新执行记录（2026-02-26）
 
@@ -784,3 +792,31 @@ pnpm test:unit
 - 验证结果：本轮修复的 console/server/runtime 受影响测试与 typecheck 全部通过。
 - 影响范围：PR#97 评论涉及的三个模块。
 - 备注（风险/回滚点）：仍有 Redis 连接警告日志，但不影响单测通过与修复结论。
+
+- 模块 ID：`REVIEW-02`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：已核对 PR#97 新增两条评论与源码实现，确认“`supportsThinking` 不可达回退”与“`/v1/models` 重复查询”均为有效问题。
+- 影响范围：`packages/agents-runtime`、`apps/moryflow/server`。
+- 备注（风险/回滚点）：该模块仅做问题确认与修复方案冻结，不改业务行为。
+
+- 模块 ID：`FIX-08`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：`pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/model-factory.test.ts` 与 `pnpm --filter @moryflow/agents-runtime exec tsc --noEmit` 通过。
+- 影响范围：`packages/agents-runtime/src/model-factory.ts` 及其回归测试。
+- 备注（风险/回滚点）：`customCapabilities.reasoning` 未配置时默认 `true`，显式 `false` 仍按契约降级为 `off`。
+
+- 模块 ID：`FIX-09`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：`pnpm --filter @moryflow/server test -- src/ai-proxy/ai-proxy.service.spec.ts` 与 `pnpm --filter @moryflow/server typecheck` 通过。
+- 影响范围：`apps/moryflow/server/src/ai-proxy/ai-proxy.service.ts` 与 `ai-proxy.service.spec.ts`。
+- 备注（风险/回滚点）：移除方法内重复预检后，契约校验仍由启动期 `onModuleInit` 与模型解析路径守卫覆盖。
+
+- 模块 ID：`TEST-04`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：本轮受影响包（`agents-runtime`、`moryflow/server`）目标单测与 typecheck 均通过。
+- 影响范围：本轮 PR 评论增量修复闭环。
+- 备注（风险/回滚点）：`@moryflow/server typecheck` 含 `prisma:generate` 前置步骤，输出无错误即视为通过。

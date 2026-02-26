@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（补充 PR#97 新评论修复闭环：REVIEW-02/FIX-08/FIX-09/TEST-04，完成 `supportsThinking` 默认判定修复与 `/v1/models` 重复查询移除，并通过受影响包 unit/typecheck）
 > 最近更新：2026-02-26（补充 PR#97 评论修复闭环：REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03，完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证）
 > 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全项 done，云端强契约 + 用户自定义 levelPatches 强类型落地，`pnpm lint/typecheck/test:unit` 已通过）
 > 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
@@ -96,6 +97,7 @@
 
 ## 最近更新
 
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 新评论修复闭环，REVIEW-02/FIX-08/FIX-09/TEST-04 全部完成）
 - Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 评论修复闭环，REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03 全部完成）
 - Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：第二轮 DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全部完成，云端强契约与 levelPatches 全链路已落地）
  - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
