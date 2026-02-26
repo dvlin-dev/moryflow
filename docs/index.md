@@ -95,7 +95,7 @@ status: active
 ## Code Review（全量评审计划与进度）
 
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Anyhunt Console 完成首个项目闭环：模块 D D-6 全量完成 + 模块 E 完成 + 项目复盘完成）
-- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；已新增“对话启动前必读规范入口”）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；已新增“对话启动前必读规范入口”；`anyhunt/docs` 与 `moryflow/docs` 已标记忽略）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-26，done：模块 A/B/C/D/E 与项目复盘全部完成）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）

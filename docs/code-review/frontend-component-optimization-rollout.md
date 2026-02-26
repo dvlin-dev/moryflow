@@ -138,11 +138,10 @@ status: active
 - 按当前执行决策，本轮前端组件优化专项不覆盖 `apps/anyhunt/docs`。
 - 原因：优先收敛业务主项目（console/admin/www），docs 站点暂不纳入改造范围。
 
-### P10 - `apps/moryflow/docs`
+### P10 - `apps/moryflow/docs`（已忽略）
 
-1. 模块 A：`routes / docs 页面装配`
-2. 模块 B：`components / styles / lib`
-3. 项目复盘：整项目一致性复查
+- 按当前执行决策，本轮前端组件优化专项不覆盖 `apps/moryflow/docs`。
+- 原因：优先收敛业务主项目（pc/mobile/admin/www/site-template），docs 站点暂不纳入改造范围。
 
 ## 4. 执行进度台账（每步必回写）
 
@@ -162,6 +161,7 @@ status: active
 | 10 | anyhunt/console | 项目复盘（整项目一致性） | 全项目 Review（A~E） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `anyhunt/console` 已完成首个项目闭环：模块 A~E 全部完成并回写；进入下一个项目时沿用同一流程模板 |
 | 11 | anyhunt/console | 项目收口（状态片段化补扫） | 补扫已改范围并修复同类问题 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AgentBrowserLayoutPage` 布局模式改为状态片段独立渲染，移除 UI 条件混排；总索引与专项台账同步为“1/2/3 全流程完成” |
 | 12 | anyhunt/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/anyhunt/docs` 从本轮组件优化专项中移除 |
+| 13 | moryflow/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/moryflow/docs` 从本轮组件优化专项中移除 |
 
 ## 5. 回写格式（统一）
 
