@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 D（`sites/image-generation/shared`）完成修复闭环（D-1~D-7），`Sites`/`ImageGenerator` 统一 `ViewState + switch`，`SitesPage`/`SiteDetailPage`/`ImageGenerator` 全部收敛到 300 行内，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 B（`payment/providers/models/storage`）完成修复闭环（B-1~B-6），`ModelFormDialog` 完成片段化拆分，`Subscriptions/Orders/Providers/Models` 统一 `ViewState + switch` 并补齐错误态，模块级 `lint` + `typecheck` + `test:unit` 通过（21 files / 97 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 A（`auth/dashboard/users`）完成预扫描与修复闭环（A-1~A-5），`UsersPage` 完成状态片段化+职责拆分，`SetTierDialog` 切换用户状态同步修复，模块级 `lint` + `typecheck` + `test:unit` 通过）
 > 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
@@ -96,6 +97,7 @@
 
 ## 最近更新
 
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 D（sites/image-generation/shared）修复完成（D-1~D-7），`Sites`/`ImageGenerator` 统一状态片段化与职责拆分，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 B（payment/providers/models/storage）修复完成（B-1~B-6），通过 `lint` + `typecheck` + `test:unit`（21 files / 97 tests））
  - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）

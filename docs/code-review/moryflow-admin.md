@@ -6,7 +6,7 @@ status: in_progress
 ---
 
 <!--
-  [INPUT]: apps/moryflow/admin（模块 A/B：auth/dashboard/users + payment/providers/models/storage）组件与状态流实现
+  [INPUT]: apps/moryflow/admin（模块 A/B/C/D：auth/dashboard/users + payment/providers/models/storage + chat/agent-traces/alerts/admin-logs + sites/image-generation/shared）组件与状态流实现
 [OUTPUT]: 预扫描问题清单（S1/S2/S3）+ 分步修复计划 + 进度台账
 [POS]: Phase 3 / P6 模块审查记录（Moryflow Admin）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -17,13 +17,13 @@ status: in_progress
 ## 范围
 
 - 项目：`apps/moryflow/admin`
-- 本轮模块：`auth / dashboard / users`
-- 页面入口：
+- 当前项目模块：`auth / dashboard / users / payment / providers / models / storage / chat / agent-traces / alerts / admin-logs / sites / image-generation / shared`
+- 模块 A 页面入口：
   - `src/pages/LoginPage.tsx`
   - `src/pages/DashboardPage.tsx`
   - `src/pages/UsersPage.tsx`
   - `src/pages/UserDetailPage.tsx`
-- 特性目录：
+- 模块 A 特性目录：
   - `src/features/auth`
   - `src/features/dashboard`
   - `src/features/users`
@@ -59,6 +59,18 @@ status: in_progress
   - `apps/moryflow/admin/src/features/alerts`
   - `apps/moryflow/admin/src/features/admin-logs`
 
+### 模块 D 预扫描范围（Step 20）
+
+- 本轮模块：`sites / image-generation / shared`
+- 页面入口：
+  - `apps/moryflow/admin/src/pages/SitesPage.tsx`
+  - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx`
+  - `apps/moryflow/admin/src/pages/ImageGenerationTestPage.tsx`
+- 特性目录：
+  - `apps/moryflow/admin/src/features/sites`
+  - `apps/moryflow/admin/src/features/image-generation`
+  - `apps/moryflow/admin/src/components/shared`
+
 ## 结论摘要（模块 A：修复完成）
 
 - `S1`（必须改）：1 项（已修复）
@@ -79,6 +91,13 @@ status: in_progress
 - `S2`（建议本轮改）：2 项（已修复）
 - `S3`（可延后）：2 项（已修复）
 - 当前状态：模块 C 已完成修复并通过模块级校验
+
+## 结论摘要（模块 D：修复完成）
+
+- `S1`（必须改）：3 项（已修复）
+- `S2`（建议本轮改）：2 项（已修复）
+- `S3`（可延后）：2 项（已修复）
+- 当前状态：模块 D 已完成修复并通过模块级校验
 
 ## 发现（按严重度排序）
 
@@ -298,6 +317,163 @@ status: in_progress
   - 结果：
     - 查询参数编码策略单点收敛，后续调整无需双点改动
 
+## 模块 D 修复记录（按严重度排序）
+
+- [S1][已修复] `SitesPage` 列表区链式三元已改为显式状态片段 + `switch`
+  - 证据：
+    - 新增 `SitesListViewState` 判定，并在 `SitesTable` 使用 `renderRowsByState + switch`
+    - `SitesPage` 接入 query `error`，失败态不再落空态
+  - 定位：
+    - `apps/moryflow/admin/src/features/sites/view-state.ts:1`
+    - `apps/moryflow/admin/src/features/sites/components/sites-table.tsx:115`
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:36`
+  - 结果：
+    - `loading/error/empty/ready` 状态边界清晰，列表渲染符合统一规范
+
+- [S1][已修复] `ImageGenerator` 结果区多状态链式三元已移除
+  - 证据：
+    - 新增 `ImageGeneratorViewState` 与 `resolveGeneratedImageSource`
+    - 结果区抽离为 `ImageGeneratorResult`，统一使用 `renderContentByState + switch`
+  - 定位：
+    - `apps/moryflow/admin/src/features/image-generation/view-state.ts:3`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:80`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator-result.tsx:97`
+  - 结果：
+    - `idle/loading/error/ready` 分发显式化，结果区不再依赖链式条件混排
+
+- [S1][已修复] 模块 D 超阈值组件已拆分收敛（全部 < 300 行）
+  - 证据：
+    - `SitesPage` 拆分为筛选条/列表区/确认弹窗装配层，降至 `151` 行
+    - `SiteDetailPage` 抽离详情内容与动作确认弹窗，降至 `177` 行
+    - `ImageGenerator` 拆分 `image-generator-form` / `image-generator-result`，主组件降至 `180` 行
+  - 定位：
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:23`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:53`
+    - `apps/moryflow/admin/src/features/sites/components/site-detail-content.tsx:22`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:63`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator-form.tsx:50`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator-result.tsx:90`
+  - 结果：
+    - 页面容器职责显著收敛，维护与 review 成本下降
+
+- [S2][已修复] 站点详情页显式错误态已补齐，失败与 not-found 已分离
+  - 证据：
+    - `SiteDetailPage` 接入 `resolveSiteDetailViewState`
+    - `loading/error/not-found/ready` 分支独立渲染
+  - 定位：
+    - `apps/moryflow/admin/src/features/sites/view-state.ts:33`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:63`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:105`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:116`
+  - 结果：
+    - 失败场景不再误判为“站点不存在”
+
+- [S2][已修复] 模块 D 回归测试已补齐（view-state/query-path）
+  - 证据：
+    - 新增 `sites view-state`、`sites query-paths`、`image-generation view-state` 单测
+  - 定位：
+    - `apps/moryflow/admin/src/features/sites/view-state.test.ts:1`
+    - `apps/moryflow/admin/src/features/sites/query-paths.test.ts:1`
+    - `apps/moryflow/admin/src/features/image-generation/view-state.test.ts:1`
+  - 结果：
+    - 状态分发与 query 构建具备回归防线
+
+- [S3][已修复] `sitesApi.getAll` 查询构建已复用共享 `buildQuerySuffix`
+  - 证据：
+    - 新增 `buildSitesListPath` 并接入 `sitesApi.getAll`
+  - 定位：
+    - `apps/moryflow/admin/src/features/sites/query-paths.ts:1`
+    - `apps/moryflow/admin/src/features/sites/api.ts:13`
+  - 结果：
+    - 查询拼装逻辑单点收敛，扩参成本更低
+
+- [S3][已修复] `shared/data-table` 骨架屏实现已复用共享 `TableSkeleton`
+  - 证据：
+    - 移除局部重复实现，统一调用 `shared/table-skeleton`
+  - 定位：
+    - `apps/moryflow/admin/src/components/shared/data-table.tsx:15`
+    - `apps/moryflow/admin/src/components/shared/data-table.tsx:55`
+  - 结果：
+    - 表格 loading 视觉与实现路径统一
+
+## 模块 D 预扫描发现（历史记录，已全部修复）
+
+- [S1][待修复] `SitesPage` 列表区使用链式三元处理多状态，违反“状态片段化 + switch”硬约束
+  - 证据：
+    - `isLoading -> list -> empty` 直接写在 JSX `TableBody` 中，且未接入显式 `error` 分支
+  - 定位：
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:109`
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:285`
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:295`
+  - 风险：
+    - 请求失败时会落入空态/静默，状态扩展时分支冲突概率高
+
+- [S1][待修复] `ImageGenerator` 结果区存在多状态链式三元，状态边界未显式建模
+  - 证据：
+    - 图片渲染路径 `url -> b64 -> empty` 采用链式三元
+    - 原始响应折叠图标也以内联三元处理状态
+  - 定位：
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:303`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:309`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:334`
+  - 风险：
+    - 后续增加错误态/占位态时会继续堆叠条件，维护成本快速上升
+
+- [S1][待修复] 模块 D 存在 3 个超阈值大组件（>300 行）且职责耦合
+  - 证据：
+    - `SitesPage` 424 行、`SiteDetailPage` 356 行、`ImageGenerator` 354 行
+    - 单文件同时承载筛选编排、请求状态、动作确认、展示渲染等多职责
+  - 定位：
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:93`
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:424`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:51`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:356`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:40`
+    - `apps/moryflow/admin/src/features/image-generation/components/image-generator.tsx:354`
+  - 风险：
+    - 变更面过大导致 review/回归开销显著增加，易引入回归
+
+- [S2][待修复] 站点页面主链路缺少显式错误态，失败被折叠为“不存在/空数据”
+  - 证据：
+    - `SitesPage` 未消费 query `error`
+    - `SiteDetailPage` 仅用 `!site` 渲染“不存在”，未区分“请求失败”
+  - 定位：
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx:109`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:56`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx:97`
+  - 风险：
+    - 运维与客服无法快速区分数据缺失和接口异常
+
+- [S2][待修复] 模块 D 当前缺少回归测试覆盖（状态分发/查询构建/关键交互）
+  - 证据：
+    - `sites`、`image-generation`、相关页面与 shared 目录下未检出测试文件
+  - 定位：
+    - `apps/moryflow/admin/src/features/sites`
+    - `apps/moryflow/admin/src/features/image-generation`
+    - `apps/moryflow/admin/src/pages/SitesPage.tsx`
+    - `apps/moryflow/admin/src/pages/SiteDetailPage.tsx`
+  - 风险：
+    - 重构后缺少自动化回归防线
+
+- [S3][待修复] `sitesApi.getAll` 查询构建未复用共享 `buildQuerySuffix`
+  - 证据：
+    - `sites` 模块仍内联 `URLSearchParams` 构建
+    - 仓库已存在共享查询工具 `src/lib/query-string.ts`
+  - 定位：
+    - `apps/moryflow/admin/src/features/sites/api.ts:17`
+    - `apps/moryflow/admin/src/lib/query-string.ts:1`
+  - 风险：
+    - 查询参数规则升级时需多点维护
+
+- [S3][待修复] `components/shared/data-table.tsx` 内部重复定义骨架行逻辑
+  - 证据：
+    - 本地 `TableSkeleton` 与 `shared/table-skeleton.tsx` 职责重复
+  - 定位：
+    - `apps/moryflow/admin/src/components/shared/data-table.tsx:33`
+    - `apps/moryflow/admin/src/components/shared/table-skeleton.tsx:1`
+  - 风险：
+    - 统一表格 loading 体验时会出现重复改动点
+
 ## 分步修复计划（模块 B）
 
 1. B-1：拆分 `ModelFormDialog`（搜索片段 / 基础字段片段 / reasoning 片段 / 提交映射），收敛容器职责。（已完成）
@@ -317,7 +493,23 @@ status: in_progress
 6. C-6：收敛 `TokenUsageIndicator` 阈值颜色映射与重复 query builder，统一状态/请求工具约定。（已完成）
 7. C-7：补齐模块 C 回归测试（状态分发、AlertRule DTO 映射、chat streaming 关键路径）并执行模块级校验。（已完成）
 
+## 分步修复计划（模块 D）
+
+1. D-1：将 `SitesPage` 列表区重构为 `SitesListViewState + renderRowsByState/switch`，移除链式三元并补 `error` 片段。（已完成）
+2. D-2：将 `ImageGenerator` 结果区重构为显式 `ViewState`（idle/loading/error/ready）与状态片段渲染，移除链式三元。（已完成）
+3. D-3：拆分 `SitesPage`（筛选条、列表区、操作确认弹窗）与 `SiteDetailPage`（头部动作、信息卡、页面表），收敛单文件复杂度。（已完成）
+4. D-4：补齐 `SiteDetailPage` 显式错误态，区分 not-found 与 request-failed。（已完成）
+5. D-5：收敛 `sitesApi.getAll` 查询参数构建到共享 `buildQuerySuffix`。（已完成）
+6. D-6：收敛 `shared/data-table` 的 loading 骨架实现，复用统一 `TableSkeleton` 能力。（已完成）
+7. D-7：补齐模块 D 回归测试（view-state、query-path、关键渲染分发）并执行模块级校验。（已完成）
+
 ## 建议验证命令（模块 C）
+
+- `pnpm --filter @moryflow/admin lint`
+- `pnpm --filter @moryflow/admin typecheck`
+- `pnpm --filter @moryflow/admin test:unit`
+
+## 建议验证命令（模块 D）
 
 - `pnpm --filter @moryflow/admin lint`
 - `pnpm --filter @moryflow/admin typecheck`
@@ -354,3 +546,11 @@ status: in_progress
 | C-5 | chat/agent-traces/alerts/admin-logs | Chat 流式编排收敛与闭包态修复 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `messagesRef + stream-parser` 落地，补齐 `stream-parser.test.ts` |
 | C-6 | chat/agent-traces/alerts/admin-logs | S3 收敛（token 阈值映射 + query builder 复用） | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `resolveUsageColorClass` 与 `buildQuerySuffix` 共享工具 |
 | C-7 | chat/agent-traces/alerts/admin-logs | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 模块单测通过：26 files / 117 tests |
+| D-0 | sites/image-generation/shared | 预扫描（不改代码） | done | n/a | 2026-02-26 | 识别 `S1x3 / S2x2 / S3x2`（链式三元、多文件超阈值、错误态缺失、测试空白、query/build 重复） |
+| D-1 | sites/image-generation/shared | `SitesPage` 列表区状态片段化 + switch 分发 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `SitesTable` 接入 `SitesListViewState`，`loading/error/empty/ready` 显式分发 |
+| D-2 | sites/image-generation/shared | `ImageGenerator` 结果区状态片段化 + switch 分发 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `ImageGeneratorViewState` 与 `ImageGeneratorResult`，移除结果区链式三元 |
+| D-3 | sites/image-generation/shared | 大组件拆分减责（Sites/SiteDetail/ImageGenerator） | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `SitesPage(151)` / `SiteDetailPage(177)` / `ImageGenerator(180)` 均收敛到 300 行内 |
+| D-4 | sites/image-generation/shared | 站点详情显式错误态补齐 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `loading/error/not-found/ready` 分支拆分，失败与不存在分离 |
+| D-5 | sites/image-generation/shared | `sitesApi` query 构建收敛到共享工具 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `buildSitesListPath` 并复用 `buildQuerySuffix` |
+| D-6 | sites/image-generation/shared | `shared/data-table` skeleton 复用收敛 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 删除重复实现，统一复用 `TableSkeleton` |
+| D-7 | sites/image-generation/shared | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 3 个测试文件；模块单测通过：29 files / 134 tests |

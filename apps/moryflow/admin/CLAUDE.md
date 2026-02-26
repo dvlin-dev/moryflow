@@ -17,6 +17,11 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- 模块 D：`SitesPage`/`SiteDetailPage`/`ImageGenerator` 完成拆分减责并统一状态片段化，主容器分别收敛至 151/177/180 行（移除多状态链式三元）
+- 模块 D：`sites` 新增 `view-state.ts`、`query-paths.ts` 并接入页面与 API；`SiteDetailPage` 补齐 `loading/error/not-found/ready` 显式分支
+- 模块 D：`image-generation` 新增 `view-state.ts`，结果区拆分 `ImageGeneratorResult` 并统一 `renderContentByState + switch`
+- 模块 D：`shared/data-table` 骨架屏实现统一复用 `TableSkeleton`，移除局部重复逻辑
+- 模块 D：补齐 `sites view-state` / `sites query-paths` / `image-generation view-state` 回归测试；`@moryflow/admin test:unit` 通过（29 files / 134 tests）
 - 模块 C：`trace-table` / `failed-tool-table` / `trace-detail-sheet` / `LogsPage` 多状态渲染统一为 `ViewState + renderByState/switch`，核心链路移除链式三元
 - 模块 C：`LogsPage` 拆分 `LogCategoryBadge` / `LogLevelBadge` / `LogDetailDialog` 并引入 `resolveActivityLogsListViewState`（文件收敛到 268 行）
 - 模块 C：`AlertRuleDialog` 默认值与 DTO 映射抽离到 `alert-rule-form.ts`，移除硬编码邮箱默认值并补齐邮箱格式校验（文件收敛到 253 行）

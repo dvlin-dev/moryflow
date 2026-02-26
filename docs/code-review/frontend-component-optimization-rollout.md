@@ -168,6 +168,8 @@ status: active
 | 17 | moryflow/admin | 模块 B（payment/providers/models/storage） | 分步重构与修复（B-1~B-6） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x2 / S2x3 / S3x1` 修复；`ModelFormDialog` 拆分为状态片段，四个列表页统一 `ViewState + switch` 并补 error 片段，新增 query builder 与回归测试（21 files / 97 tests） |
 | 18 | moryflow/admin | 模块 C（chat/agent-traces/alerts/admin-logs） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x2 / S3x2`，详见 `docs/code-review/moryflow-admin.md` |
 | 19 | moryflow/admin | 模块 C（chat/agent-traces/alerts/admin-logs） | 分步重构与修复（C-1~C-7） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x3 / S2x2 / S3x2` 修复：多状态视图统一 `ViewState + switch`，`AlertRuleDialog` 去硬编码邮箱并拆分，`LogsPage`/`AlertRuleDialog` 均降至 `<300` 行，补齐错误态，chat 流式编排收敛并新增回归测试（26 files / 117 tests） |
+| 20 | moryflow/admin | 模块 D（sites/image-generation/shared） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x2 / S3x2`，详见 `docs/code-review/moryflow-admin.md` |
+| 21 | moryflow/admin | 模块 D（sites/image-generation/shared） | 分步重构与修复（D-1~D-7） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x3 / S2x2 / S3x2` 修复：`Sites`/`ImageGenerator` 统一状态片段化与 `switch` 分发，`SitesPage`/`SiteDetailPage`/`ImageGenerator` 拆分收敛至 `<300` 行，补齐错误态与 query builder 复用，新增 `sites/image-generation` 回归测试（29 files / 134 tests） |
 
 ## 5. 回写格式（统一）
 

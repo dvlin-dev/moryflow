@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow Admin 模块 D（`sites/image-generation/shared`）修复完成：`Sites/ImageGenerator` 统一 `ViewState + switch`、`SitesPage/SiteDetailPage/ImageGenerator` 拆分收敛到 `<300` 行、补齐错误态与 query builder 复用，并新增 `sites/image-generation` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests）：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Moryflow Admin 模块 B（`payment/providers/models/storage`）修复完成：`ModelFormDialog` 拆分为容器 + 状态片段、`Subscriptions/Orders/Providers/Models` 列表区统一 `ViewState + switch` 并补齐 `error` 片段、`models/orders/subscriptions/storage` query builder 收敛与回归测试补齐；模块级 `lint` + `typecheck` + `test:unit` 通过（21 files / 97 tests）：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Moryflow Admin 模块 B（`payment/providers/models/storage`）预扫描完成，输出 `S1x2 / S2x3 / S3x1`，已回写主文档与专项台账：`docs/code-review/moryflow-admin.md`、`docs/code-review/frontend-component-optimization-rollout.md`。
 - 2026-02-26：Moryflow Admin 模块 A（`auth/dashboard/users`）修复完成：`SetTierDialog` 目标用户切换状态同步修复、`UsersPage` 状态片段化与职责拆分、`usersApi` 查询参数收敛至 `URLSearchParams`，并新增 `set-tier-dialog`/`api-paths` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/moryflow-admin.md`。

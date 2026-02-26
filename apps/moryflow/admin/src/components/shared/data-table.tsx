@@ -11,8 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Empty } from '@/components/ui/empty'
+import { TableSkeleton } from './table-skeleton'
 
 export interface Column<T> {
   key: string
@@ -28,22 +28,6 @@ export interface DataTableProps<T> {
   emptyMessage?: string
   isLoading?: boolean
   onRowClick?: (item: T) => void
-}
-
-function TableSkeleton({ columns }: { columns: number }) {
-  return (
-    <>
-      {Array.from({ length: 5 }).map((_, rowIndex) => (
-        <TableRow key={rowIndex}>
-          {Array.from({ length: columns }).map((_, colIndex) => (
-            <TableCell key={colIndex}>
-              <Skeleton className="h-4 w-full" />
-            </TableCell>
-          ))}
-        </TableRow>
-      ))}
-    </>
-  )
 }
 
 export function DataTable<T>({
@@ -68,7 +52,7 @@ export function DataTable<T>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableSkeleton columns={columns.length} />
+            <TableSkeleton columns={columns.map(() => ({ width: 'w-full' }))} />
           </TableBody>
         </Table>
       </div>
