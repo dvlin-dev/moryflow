@@ -59,11 +59,9 @@ const TEMPLATE_CONTRACTS: Record<string, string[]> = {
 };
 
 function loadStyles(): string {
-  const appCss = readFileSync(resolve(__dirname, 'styles/app.css'), 'utf-8');
+  const appCss = resolveStyleImports(resolve(__dirname, 'styles/app.css'));
   const proseCss = readFileSync(resolve(__dirname, 'styles/prose.css'), 'utf-8');
-
-  // @import tailwindcss 由 Vite/Tailwind 构建处理，这里仅保留模板样式内容
-  return appCss.replace(/@import ['"]tailwindcss['"];?\n?/g, '') + '\n' + proseCss;
+  return appCss + '\n' + proseCss;
 }
 
 function minifyCss(css: string): string {
@@ -73,6 +71,30 @@ function minifyCss(css: string): string {
     .replace(/\s*([{}:;,])\s*/g, '$1')
     .replace(/;}/g, '}')
     .trim();
+}
+
+function resolveStyleImports(filePath: string, visited = new Set<string>()): string {
+  const normalizedPath = resolve(filePath);
+  if (visited.has(normalizedPath)) {
+    return '';
+  }
+  visited.add(normalizedPath);
+
+  const content = readFileSync(normalizedPath, 'utf-8');
+  const importPattern = /@import\s+['"]([^'"]+)['"]\s*;?/g;
+
+  return content.replace(importPattern, (_match, specifier: string) => {
+    if (specifier === 'tailwindcss') {
+      return '';
+    }
+
+    if (specifier.startsWith('.')) {
+      const nestedPath = resolve(dirname(normalizedPath), specifier);
+      return '\n' + resolveStyleImports(nestedPath, visited) + '\n';
+    }
+
+    return '';
+  });
 }
 
 function validateTemplateContracts(): void {

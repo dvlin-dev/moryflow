@@ -6,8 +6,8 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/moryflow/site-template（模块 A：layouts/templates）
-[OUTPUT]: 模块 A 问题清单（S1/S2/S3）+ 修复落地记录 + 进度台账
+[INPUT]: apps/moryflow/site-template（模块 A：layouts/templates；模块 B：components/styles）
+[OUTPUT]: 模块 A/B 问题清单（S1/S2/S3）+ 修复落地记录 + 进度台账
 [POS]: Phase 3 / P2 模块审查记录（Moryflow Site Template）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
 -->
@@ -17,7 +17,7 @@ status: in_progress
 ## 范围
 
 - 项目：`apps/moryflow/site-template`
-- 本轮模块：`src/layouts`、`src/templates`
+- 本轮模块：`src/layouts`、`src/templates`、`src/components`、`src/styles`
 - 约束：仅处理 `apps/moryflow/site-template`；`apps/anyhunt/docs` 与 `apps/moryflow/docs` 不纳入本轮
 
 ## 结论摘要（模块 A：修复完成）
@@ -99,9 +99,92 @@ rg -n "PAGE_TEMPLATE|SIDEBAR_TEMPLATE|INDEX_PAGE_TEMPLATE|ERROR_404_TEMPLATE|THE
   - `THEME_TOGGLE_BUTTON` / `BRAND_FOOTER_LINK` 片段占位已接入；
   - `build` 契约校验已生效。
 
+## 模块 B 预扫描范围（Step B-0）
+
+- 目录：`src/components`、`src/styles`
+- 目标：组件层与样式层职责收敛，清理死代码与交互样式风险
+
+## 结论摘要（模块 B：修复完成）
+
+- `S1`（必须改）：2 项
+- `S2`（建议本轮改）：2 项
+- `S3`（可延后）：1 项
+- 当前状态：模块 B 已完成 B-1~B-5 修复落地与文档回写
+
+## 模块 B 发现与修复（按严重度排序）
+
+- [S1][已修复] `components` 目录成为发布链路“孤岛层”，脚本真源分叉
+  - 证据：
+    - `src/components/*` 已删除；`src` 目录仅保留 `build.ts` / `main.tsx` / `scripts` / `styles` / `templates`
+    - 发布链路脚本真源仍收敛在 `sync.ts`：`scripts/sync.ts:33`、`scripts/sync.ts:35`、`scripts/sync.ts:37`
+    - 页面模板直接消费片段占位：`src/templates/page.html:26`、`src/templates/index-page.html:17`
+  - 修复：
+    - 删除无入口组件层，发布链路维护面收敛到 `templates + styles + sync` 单一真源
+
+- [S1][已修复] 移动端遮罩层默认可点击拦截，存在交互阻断风险
+  - 证据：
+    - 遮罩默认态改为不可交互：`src/styles/layout.css:172`、`src/styles/layout.css:180`
+    - 可见态才恢复交互：`src/styles/layout.css:184`、`src/styles/layout.css:187`
+    - 移动端仍按需显示遮罩层：`src/styles/layout.css:296`
+    - 模板始终输出遮罩节点：`src/templates/page.html:39`
+    - 菜单脚本只切换 `visible` 类，不控制 pointer-events：`scripts/sync.ts:37`
+  - 修复：
+    - 遮罩由“是否显示”和“是否可点击”双态一致控制，消除透明层误拦截
+
+- [S2][已修复] 组件内联样式与 `app.css` 类样式并存，样式职责双轨
+  - 证据：
+    - 组件目录移除后，布局样式仅由 `src/styles/*.css` 提供
+    - 样式入口文件仅保留 import manifest：`src/styles/app.css:10`、`src/styles/app.css:13`
+  - 修复：
+    - 删除组件内联样式路径，样式真源收敛为样式分片文件
+
+- [S2][已修复] `app.css` 文件规模过大且职责混排，变更定位成本高
+  - 证据：
+    - tokens 独立：`src/styles/tokens.css:5`
+    - base/utility 独立：`src/styles/base.css:5`
+    - layout/navigation/theme/responsive 独立：`src/styles/layout.css:10`
+    - `app.css` 收敛为入口 manifest：`src/styles/app.css:10`、`src/styles/app.css:13`
+  - 修复：
+    - 样式拆分为职责清晰分片，降低跨区块连带修改风险
+
+- [S3][已修复] 移除 TOC 布局后仍保留未使用设计 token
+  - 证据：
+    - `tokens.css` 中仅保留使用中的布局 token：`src/styles/tokens.css:90`、`src/styles/tokens.css:94`
+    - `rg -- "--toc-width" apps/moryflow/site-template/src/styles` 无匹配
+  - 修复：
+    - 移除未使用 token，减少样式认知噪音
+
+## 修复执行（模块 B）
+
+1. B-1：删除发布链路无入口的 `src/components/*`，移除组件孤岛层。
+2. B-2：修复移动端遮罩可点击拦截（默认 `pointer-events: none`，仅 `.visible` 启用）。
+3. B-3：统一样式真源（删除组件内联样式路径，样式仅保留 `src/styles/*`）。
+4. B-4：拆分 `app.css` 为 `tokens/base/layout` 分片并保留入口 manifest。
+5. B-5：清理无效 token（移除 `--toc-width`）并执行模块级验证。
+
+## 模块 B 验证命令（修复阶段执行）
+
+```bash
+pnpm --filter @moryflow/site-template typecheck
+pnpm --filter @moryflow/site-template build
+rg -n "sidebar-overlay|pointer-events|menu-open|theme-toggle|toc-width" apps/moryflow/site-template/src/styles apps/moryflow/site-template/src/templates/page.html
+```
+
+## 模块 B 验证结果
+
+- `pnpm --filter @moryflow/site-template typecheck`：**pass**
+- `pnpm --filter @moryflow/site-template build`：**pass**
+- 静态校验：**pass**
+  - `src/components` 已删除；
+  - `app.css` 已收敛为 import manifest；
+  - `sidebar-overlay` 默认不可交互、`.visible` 才可点击；
+  - `--toc-width` 已清理。
+
 ## 进度记录
 
 | Step | Module            | Action                    | Status | Validation                                          | Updated At | Notes                                                                      |
 | ---- | ----------------- | ------------------------- | ------ | --------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
 | A-0  | layouts/templates | 预扫描（仅问题清单）      | done   | n/a                                                 | 2026-02-26 | 输出 `S1x2 / S2x3 / S3x1`，待确认后进入 A-1                                |
 | A-1  | layouts/templates | 分步重构与修复（A-1~A-5） | done   | `typecheck` pass + `build` pass；`sync` 按范围 skip | 2026-02-26 | 完成单一真源收敛、模板片段化、契约校验接入、`site-template/CLAUDE.md` 同步 |
+| B-0  | components/styles | 预扫描（仅问题清单）      | done   | n/a                                                 | 2026-02-26 | 输出 `S1x2 / S2x2 / S3x1`，待确认后进入 B-1                                |
+| B-1  | components/styles | 分步重构与修复（B-1~B-5） | done   | `typecheck` pass + `build` pass                     | 2026-02-26 | 完成组件孤岛层清理、样式分片收敛、移动端遮罩交互修复、死 token 清理        |

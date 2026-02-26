@@ -7,15 +7,11 @@
 ```
 apps/moryflow/site-template/
 ├── src/
-│   ├── components/       # 共享组件（开发预览用）
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   ├── Navigation.tsx
-│   │   ├── TableOfContents.tsx
-│   │   ├── ThemeToggle.tsx
-│   │   └── MobileNav.tsx
 │   ├── styles/           # CSS 源文件
-│   │   ├── app.css          # 主样式 + CSS 变量
+│   │   ├── app.css          # 样式入口（import manifest）
+│   │   ├── tokens.css       # Design Tokens（light/dark）
+│   │   ├── base.css         # reset + utility
+│   │   ├── layout.css       # layout/navigation/theme/footer + responsive
 │   │   └── prose.css        # Markdown 排版
 │   ├── templates/        # HTML 模板源文件（手动维护）
 │   │   ├── page.html        # 页面模板
@@ -47,8 +43,11 @@ apps/moryflow/site-template/
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  src/styles/              pnpm build         dist/              │
-│  ├── app.css        ─────────────────→   styles.min.css         │
-│  └── prose.css                                 │                │
+│  ├── app.css (入口) ─┐                     styles.min.css       │
+│  ├── tokens.css      ├─ 内联聚合 ───────→      │                │
+│  ├── base.css        ┤                            │                │
+│  ├── layout.css      ┤                            │                │
+│  └── prose.css       ┘                            │                │
 │                                                │                │
 │  src/templates/           pnpm sync           │                │
 │  ├── page.html      ──────────────────────────┼────────────┐   │
