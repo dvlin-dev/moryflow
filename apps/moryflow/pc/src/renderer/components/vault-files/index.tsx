@@ -1,7 +1,7 @@
 /**
  * [PROPS]: VaultFilesProps - 文件树数据和操作回调
  * [EMITS]: 多个回调用于文件/文件夹操作
- * [POS]: 文件树根组件，管理拖拽状态和 Context（含 E2E 选择器，Lucide 图标）
+ * [POS]: 文件树根组件，管理拖拽状态和 store 快照同步（含 E2E 选择器，Lucide 图标）
  */
 
 import { useState, useMemo, type DragEvent } from 'react';

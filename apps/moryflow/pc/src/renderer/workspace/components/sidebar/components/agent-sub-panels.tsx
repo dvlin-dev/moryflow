@@ -3,6 +3,7 @@
  * [EMITS]: onOpenThread(), onSelectNode(), onOpenFile(), onExpandedPathsChange(), onRename(), onDelete(), onCreateFile(), onShowInFinder(), onMove(), onCreateFileInRoot(), onCreateFolderInRoot(), onPublish()
  * [POS]: Sidebar agent 子视图内容分发（Chat/Workspace keep-alive）
  * [UPDATE]: 2026-02-26 - 改为从 sidebar-panels-store 就地取数，移除上层 props 平铺
+ * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -15,47 +16,25 @@ import { useSidebarPanelsStore } from '../hooks/use-sidebar-panels-store';
 const getPanelClass = (active: boolean) => (active ? 'block' : 'hidden');
 
 export const AgentSubPanels = () => {
-  const {
-    agentSub,
-    vault,
-    tree,
-    expandedPaths,
-    treeState,
-    treeError,
-    selectedId,
-    onOpenThread,
-    onSelectNode,
-    onExpandedPathsChange,
-    onOpenFile,
-    onRename,
-    onDelete,
-    onCreateFile,
-    onShowInFinder,
-    onMove,
-    onCreateFileInRoot,
-    onCreateFolderInRoot,
-    onPublish,
-  } = useSidebarPanelsStore((state) => ({
-    agentSub: state.agentSub,
-    vault: state.vault,
-    tree: state.tree,
-    expandedPaths: state.expandedPaths,
-    treeState: state.treeState,
-    treeError: state.treeError,
-    selectedId: state.selectedId,
-    onOpenThread: state.onOpenThread,
-    onSelectNode: state.onSelectNode,
-    onExpandedPathsChange: state.onExpandedPathsChange,
-    onOpenFile: state.onOpenFile,
-    onRename: state.onRename,
-    onDelete: state.onDelete,
-    onCreateFile: state.onCreateFile,
-    onShowInFinder: state.onShowInFinder,
-    onMove: state.onMove,
-    onCreateFileInRoot: state.onCreateFileInRoot,
-    onCreateFolderInRoot: state.onCreateFolderInRoot,
-    onPublish: state.onPublish,
-  }));
+  const agentSub = useSidebarPanelsStore((state) => state.agentSub);
+  const vault = useSidebarPanelsStore((state) => state.vault);
+  const tree = useSidebarPanelsStore((state) => state.tree);
+  const expandedPaths = useSidebarPanelsStore((state) => state.expandedPaths);
+  const treeState = useSidebarPanelsStore((state) => state.treeState);
+  const treeError = useSidebarPanelsStore((state) => state.treeError);
+  const selectedId = useSidebarPanelsStore((state) => state.selectedId);
+  const onOpenThread = useSidebarPanelsStore((state) => state.onOpenThread);
+  const onSelectNode = useSidebarPanelsStore((state) => state.onSelectNode);
+  const onExpandedPathsChange = useSidebarPanelsStore((state) => state.onExpandedPathsChange);
+  const onOpenFile = useSidebarPanelsStore((state) => state.onOpenFile);
+  const onRename = useSidebarPanelsStore((state) => state.onRename);
+  const onDelete = useSidebarPanelsStore((state) => state.onDelete);
+  const onCreateFile = useSidebarPanelsStore((state) => state.onCreateFile);
+  const onShowInFinder = useSidebarPanelsStore((state) => state.onShowInFinder);
+  const onMove = useSidebarPanelsStore((state) => state.onMove);
+  const onCreateFileInRoot = useSidebarPanelsStore((state) => state.onCreateFileInRoot);
+  const onCreateFolderInRoot = useSidebarPanelsStore((state) => state.onCreateFolderInRoot);
+  const onPublish = useSidebarPanelsStore((state) => state.onPublish);
 
   const [chatPaneMounted, setChatPaneMounted] = useState(agentSub === 'chat');
   const [workspacePaneMounted, setWorkspacePaneMounted] = useState(agentSub === 'workspace');

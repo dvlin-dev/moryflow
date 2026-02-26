@@ -6,6 +6,7 @@
  * [UPDATE]: 2026-02-03 - 仅在会话运行时触发任务面板展示
  * [UPDATE]: 2026-02-11 - 透传 selectedSkill 到输入框，支持显式 skill 注入
  * [UPDATE]: 2026-02-26 - 改为就地读取 chat-pane-footer-store，移除上层 props 平铺
+ * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -17,57 +18,29 @@ import { TaskHoverPanel } from './task-hover-panel';
 import { useChatPaneFooterStore } from '../hooks/use-chat-pane-footer-store';
 
 export const ChatFooter = () => {
-  const {
-    status,
-    inputError,
-    activeFilePath,
-    activeFileContent,
-    vaultPath,
-    modelGroups,
-    selectedModelId,
-    selectedThinkingLevel,
-    selectedThinkingProfile,
-    disabled,
-    tokenUsage,
-    contextWindow,
-    mode,
-    activeSessionId,
-    selectedSkillName,
-    onSubmit,
-    onStop,
-    onInputError,
-    onOpenSettings,
-    onSelectModel,
-    onSelectThinkingLevel,
-    onModeChange,
-    onSelectSkillName,
-  } = useChatPaneFooterStore(
-    (state) => ({
-      status: state.status,
-      inputError: state.inputError,
-      activeFilePath: state.activeFilePath,
-      activeFileContent: state.activeFileContent,
-      vaultPath: state.vaultPath,
-      modelGroups: state.modelGroups,
-      selectedModelId: state.selectedModelId,
-      selectedThinkingLevel: state.selectedThinkingLevel,
-      selectedThinkingProfile: state.selectedThinkingProfile,
-      disabled: state.disabled,
-      tokenUsage: state.tokenUsage,
-      contextWindow: state.contextWindow,
-      mode: state.mode,
-      activeSessionId: state.activeSessionId,
-      selectedSkillName: state.selectedSkillName,
-      onSubmit: state.onSubmit,
-      onStop: state.onStop,
-      onInputError: state.onInputError,
-      onOpenSettings: state.onOpenSettings,
-      onSelectModel: state.onSelectModel,
-      onSelectThinkingLevel: state.onSelectThinkingLevel,
-      onModeChange: state.onModeChange,
-      onSelectSkillName: state.onSelectSkillName,
-    })
-  );
+  const status = useChatPaneFooterStore((state) => state.status);
+  const inputError = useChatPaneFooterStore((state) => state.inputError);
+  const activeFilePath = useChatPaneFooterStore((state) => state.activeFilePath);
+  const activeFileContent = useChatPaneFooterStore((state) => state.activeFileContent);
+  const vaultPath = useChatPaneFooterStore((state) => state.vaultPath);
+  const modelGroups = useChatPaneFooterStore((state) => state.modelGroups);
+  const selectedModelId = useChatPaneFooterStore((state) => state.selectedModelId);
+  const selectedThinkingLevel = useChatPaneFooterStore((state) => state.selectedThinkingLevel);
+  const selectedThinkingProfile = useChatPaneFooterStore((state) => state.selectedThinkingProfile);
+  const disabled = useChatPaneFooterStore((state) => state.disabled);
+  const tokenUsage = useChatPaneFooterStore((state) => state.tokenUsage);
+  const contextWindow = useChatPaneFooterStore((state) => state.contextWindow);
+  const mode = useChatPaneFooterStore((state) => state.mode);
+  const activeSessionId = useChatPaneFooterStore((state) => state.activeSessionId);
+  const selectedSkillName = useChatPaneFooterStore((state) => state.selectedSkillName);
+  const onSubmit = useChatPaneFooterStore((state) => state.onSubmit);
+  const onStop = useChatPaneFooterStore((state) => state.onStop);
+  const onInputError = useChatPaneFooterStore((state) => state.onInputError);
+  const onOpenSettings = useChatPaneFooterStore((state) => state.onOpenSettings);
+  const onSelectModel = useChatPaneFooterStore((state) => state.onSelectModel);
+  const onSelectThinkingLevel = useChatPaneFooterStore((state) => state.onSelectThinkingLevel);
+  const onModeChange = useChatPaneFooterStore((state) => state.onModeChange);
+  const onSelectSkillName = useChatPaneFooterStore((state) => state.onSelectSkillName);
   const isSessionRunning = status === 'submitted' || status === 'streaming';
 
   return (

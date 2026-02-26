@@ -3,6 +3,7 @@
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: DesktopWorkspaceShell 到 main-content/overlays 的 store-first 状态桥接
  * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免每次 render 无变化重复 setSnapshot
+ * [UPDATE]: 2026-02-26 - layoutState 比较下沉为字段级，避免对象引用变化导致误判需要同步
  * [UPDATE]: 2026-02-26 - 新增 view store，移除 main-content/overlays props 平铺
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -96,6 +97,25 @@ const workspaceShellViewStore = createStore<WorkspaceShellViewStoreState>((set) 
   setSnapshot: (snapshot) => set(snapshot),
 }));
 
+const isSameLayoutState = (current: ShellLayoutState, next: ShellLayoutState) =>
+  current.sidebarPanelRef === next.sidebarPanelRef &&
+  current.workspaceChatPanelRef === next.workspaceChatPanelRef &&
+  current.panelGroupRef === next.panelGroupRef &&
+  current.sidebarCollapsed === next.sidebarCollapsed &&
+  current.sidebarWidth === next.sidebarWidth &&
+  current.chatCollapsed === next.chatCollapsed &&
+  current.toggleSidebarPanel === next.toggleSidebarPanel &&
+  current.toggleChatPanel === next.toggleChatPanel &&
+  current.onSidebarCollapse === next.onSidebarCollapse &&
+  current.onSidebarExpand === next.onSidebarExpand &&
+  current.onChatCollapse === next.onChatCollapse &&
+  current.onChatExpand === next.onChatExpand &&
+  current.handleSidebarResize === next.handleSidebarResize &&
+  current.sidebarDefaultSizePercent === next.sidebarDefaultSizePercent &&
+  current.sidebarMinSizePercent === next.sidebarMinSizePercent &&
+  current.sidebarMaxSizePercent === next.sidebarMaxSizePercent &&
+  current.mainMinSizePercent === next.mainMinSizePercent;
+
 const shouldSyncSnapshot = (
   current: WorkspaceShellViewStoreState,
   next: WorkspaceShellViewSnapshot
@@ -109,7 +129,7 @@ const shouldSyncSnapshot = (
   current.activeDoc !== next.activeDoc ||
   current.chatFallback !== next.chatFallback ||
   current.startupSkeleton !== next.startupSkeleton ||
-  current.layoutState !== next.layoutState ||
+  !isSameLayoutState(current.layoutState, next.layoutState) ||
   current.onToggleChatPanel !== next.onToggleChatPanel ||
   current.onOpenSettings !== next.onOpenSettings ||
   current.onChatReady !== next.onChatReady ||

@@ -77,6 +77,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-26：修复 Workspace Shell 黑屏回归：`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 移除对象字面量 selector，统一改为原子 selector；`use-shell-layout-state` 返回值改为 `useMemo` 稳定引用；`workspace-shell-view-store` 的 `layoutState` 同步比较下沉到字段级；补充回归测试覆盖“layoutState 新对象但字段等价时不写入 store”。
 - 2026-02-26：修复 Store-first 同步层性能回归：`workspace-shell-view-store` 与 `sidebar-panels-store` 新增 `shouldSyncSnapshot`，等价快照不再重复 `setSnapshot`；补充两处回归测试覆盖“等价快照不写入 / 变更快照仍同步”。
 - 2026-02-26：PR #100 review follow-up：`use-document-state` 在 vault 切换时重置 `pendingSelectionPath/pendingOpenPath`，防止跨 vault 残留意图在后续树刷新时误触发。
 - 2026-02-26：分支全量 Code Review follow-up：`workspace-controller-context/workspace-shell-context` 的 store 同步改为 `useLayoutEffect`（移除 render-phase 外部写入）；`use-workspace-command-actions` 恢复 `workspace` 命名空间 key 强类型（移除 `any` 降级）。

@@ -2,6 +2,7 @@
 
 > 本文档是 AI Agent 的核心指南。遵循 [agents.md 规范](https://agents.md/)。
 > 最近更新：2026-02-26（前端组件状态规范升级：统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数）
+> 最近更新：2026-02-26（前端 Zustand 快照稳定性规范：禁止 selector 返回对象/数组字面量；`useSync*Store` 必须先做 `shouldSync` 等价判断再 `setSnapshot`，防止 `getSnapshot` 循环更新）
 > 最近更新：2026-02-25（前端组件行为准则补充：多状态 UI 统一“状态片段化 + renderByState/switch”，禁止链式三元；Anyhunt Console 模块 A 变更区已完成补扫修复）
 > 最近更新：2026-02-26（CI 测试命令移除 `--maxWorkers=2` 透传参数；统一由默认并发策略执行，避免 `node --test` 脚本将参数误判为测试文件）
 > 最近更新：2026-02-26（CI 安装阶段构建防护升级：`build:packages` 前执行 `prepare:model-registry-data`，缺失/无效快照时强制 `@moryflow/model-registry-data sync` 且校验非空，避免 postinstall `TS2307` 与 0-model 静默退化）
@@ -250,7 +251,7 @@ Anyhunt/
 | [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）                            |
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案                       |
 | [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）                      |
-| [`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`](./docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md)     | Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode）                  |
+| [`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`](./docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md)     | Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode）                   |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）                 |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）                |
 | [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）                   |
@@ -261,8 +262,8 @@ Anyhunt/
 | [`docs/runbooks/deploy/moryflow-compose.md`](./docs/runbooks/deploy/moryflow-compose.md)                                                   | Runbook：Moryflow docker compose 部署                                    |
 | [`docs/guides/auth/auth-flows-and-endpoints.md`](./docs/guides/auth/auth-flows-and-endpoints.md)                                           | Guide：Auth 流程与接口约定                                               |
 | [`docs/guides/frontend/forms-zod-rhf.md`](./docs/guides/frontend/forms-zod-rhf.md)                                                         | Guide：Zod + RHF 兼容性（zod/v3）                                        |
-| [`docs/guides/frontend/component-design-quality-index.md`](./docs/guides/frontend/component-design-quality-index.md)                         | Guide：前端组件设计质量索引（拆分与收敛准则）                            |
-| [`docs/code-review/frontend-component-optimization-rollout.md`](./docs/code-review/frontend-component-optimization-rollout.md)               | Plan：前端组件优化专项执行计划（按项目/按模块）                          |
+| [`docs/guides/frontend/component-design-quality-index.md`](./docs/guides/frontend/component-design-quality-index.md)                       | Guide：前端组件设计质量索引（拆分与收敛准则）                            |
+| [`docs/code-review/frontend-component-optimization-rollout.md`](./docs/code-review/frontend-component-optimization-rollout.md)             | Plan：前端组件优化专项执行计划（按项目/按模块）                          |
 | [`docs/guides/open-source-package-subtree.md`](./docs/guides/open-source-package-subtree.md)                                               | Guide：从 Monorepo 开源拆分单个包（Git Subtree）                         |
 | [`docs/migrations/aiget-to-anyhunt.md`](./docs/migrations/aiget-to-anyhunt.md)                                                             | Migration：Aiget → Anyhunt 全量品牌迁移（无历史兼容）                    |
 | [`docs/products/anyhunt-dev/index.md`](./docs/products/anyhunt-dev/index.md)                                                               | Anyhunt Dev：内部方案入口                                                |
@@ -487,13 +488,17 @@ ComponentName/
    - `api` 仅负责请求与响应解析（不改 UI 状态）
 2. **状态容器固定**：全局认证与会话状态统一使用 `zustand`；前端组件重构与新增共享业务状态时禁止新增 React Context（仅允许 Theme/i18n/运行时注入等非业务共享语义）。
 3. **取数方式固定**：子组件优先 `useXxxStore(selector)` 就地取数，禁止新增中间“胶水层”仅透传业务 props。
-4. **调用方式固定**：组件仅读取 `useXxxStore(selector)` + 调用 `xxxMethods.*`；避免在页面组件里散落请求逻辑。
-5. **Hook 使用边界**：尽量少做“业务编排型自定义 Hook”；除组件局部 UI 复用外，业务流程优先用显式 methods。
-6. **API 风格固定**：业务 API 统一使用函数导出：
+4. **Zustand 快照稳定性（强制）**：
+   - 禁止 `useXxxStore((state) => ({ ... }))`、`useXxxStore((state) => ([ ... ]))` 这类 selector 字面量返回新引用。
+   - 多字段取数必须改为原子 selector（每个字段单独 `useXxxStore((state) => state.xxx)`）或显式稳定化方案。
+   - `useSync*Store(snapshot)` 在 `useLayoutEffect/useEffect` 内写入 store 前，必须先做 `shouldSync(current, snapshot)` 等价判断；无变化禁止 `setSnapshot`。
+5. **调用方式固定**：组件仅读取 `useXxxStore(selector)` + 调用 `xxxMethods.*`；避免在页面组件里散落请求逻辑。
+6. **Hook 使用边界**：尽量少做“业务编排型自定义 Hook”；除组件局部 UI 复用外，业务流程优先用显式 methods。
+7. **API 风格固定**：业务 API 统一使用函数导出：
    - `export async function getJob(id: string): Promise<JobDetail> { ... }`
    - 禁止 Class 风格 `new ApiClient(...)`
    - 禁止 `createServerApiClient` 与 `serverApi.user.xxx` 调用链
-7. **鉴权模式显式声明**：请求必须显式区分 `public | bearer | apiKey`，禁止隐式猜测鉴权方式。
+8. **鉴权模式显式声明**：请求必须显式区分 `public | bearer | apiKey`，禁止隐式猜测鉴权方式。
 
 #### 服务端（Anyhunt Server / Moryflow Server）
 

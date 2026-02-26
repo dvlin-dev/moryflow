@@ -3,6 +3,7 @@
  * [EMITS]: onAddFile/onRefreshRecent/onClose - 添加引用/刷新最近/关闭面板
  * [POS]: Chat Prompt 输入框引用文件面板（@ 与 + 菜单复用，挂载时刷新最近文件）
  * [UPDATE]: 2026-02-26 - 新增 FileContextPanelFromOverlayStore，@ 面板改为就地 selector 取数
+ * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -175,23 +176,13 @@ export const FileContextPanelFromOverlayStore = ({
   autoFocus = false,
   onClose,
 }: FileContextPanelFromOverlayStoreProps) => {
-  const {
-    isDisabled,
-    workspaceFiles,
-    recentFiles,
-    contextFiles,
-    onAddContextFileFromAt,
-    onRefreshFiles,
-    labels,
-  } = useChatPromptOverlayStore((state) => ({
-    isDisabled: state.isDisabled,
-    workspaceFiles: state.workspaceFiles,
-    recentFiles: state.recentFiles,
-    contextFiles: state.contextFiles,
-    onAddContextFileFromAt: state.onAddContextFileFromAt,
-    onRefreshFiles: state.onRefreshFiles,
-    labels: state.labels,
-  }));
+  const isDisabled = useChatPromptOverlayStore((state) => state.isDisabled);
+  const workspaceFiles = useChatPromptOverlayStore((state) => state.workspaceFiles);
+  const recentFiles = useChatPromptOverlayStore((state) => state.recentFiles);
+  const contextFiles = useChatPromptOverlayStore((state) => state.contextFiles);
+  const onAddContextFileFromAt = useChatPromptOverlayStore((state) => state.onAddContextFileFromAt);
+  const onRefreshFiles = useChatPromptOverlayStore((state) => state.onRefreshFiles);
+  const labels = useChatPromptOverlayStore((state) => state.labels);
 
   return (
     <FileContextPanel

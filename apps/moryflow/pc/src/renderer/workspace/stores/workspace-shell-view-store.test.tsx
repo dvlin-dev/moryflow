@@ -80,6 +80,10 @@ describe('useSyncWorkspaceShellViewStore', () => {
       onSettingsOpenChange,
     };
     const equivalent: WorkspaceShellViewSnapshot = { ...initial };
+    const equivalentWithNewLayoutObject: WorkspaceShellViewSnapshot = {
+      ...initial,
+      layoutState: { ...layoutState },
+    };
     const changed: WorkspaceShellViewSnapshot = { ...initial, commandOpen: false };
 
     const stateHook = renderHook(() => useWorkspaceShellViewStore((state) => state));
@@ -99,6 +103,12 @@ describe('useSyncWorkspaceShellViewStore', () => {
 
     act(() => {
       sync.rerender({ snapshot: equivalent });
+    });
+
+    expect(setSnapshotSpy.mock.calls.length).toBe(writesAfterInitialSync);
+
+    act(() => {
+      sync.rerender({ snapshot: equivalentWithNewLayoutObject });
     });
 
     expect(setSnapshotSpy.mock.calls.length).toBe(writesAfterInitialSync);

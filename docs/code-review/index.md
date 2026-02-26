@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow PC Zustand `getSnapshot` 风险专项审计闭环：风险点清单已落文档并完成修复（selector 原子化 + `useSyncVaultFilesStore` `shouldSync`），补齐回归测试：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`。
 - 2026-02-26：Anyhunt WWW 组件优化专项完成项目复盘（P1-R）：模块 A/B/C/D 全部闭环，补充 `public-topics.hooks` 分域拆分与 `CreateSubscriptionDialogForm` 再收敛，`typecheck` + `test:unit` + `build` 全通过；详见 `docs/code-review/anyhunt-www.md`。
 - 2026-02-26：Anyhunt WWW 组件优化专项完成模块 D（`stores/hooks/数据映射`）分步修复（D-1~D-6）：`digest hooks/types` 分域拆分、Inbox mapper 统一、`public-topics` 异步竞态修复（AbortController + generation guard）、`auth-api` unknown 错误收敛、回归测试补齐；详见 `docs/code-review/anyhunt-www.md`。
 - 2026-02-26：Anyhunt WWW 组件优化专项完成模块 D 预扫描（`stores/hooks/数据映射`）：识别 `S1x4 / S2x2 / S3x2`，问题集中在 `digest hooks/types` 分层、`public-topics.hooks` 异步竞态保护、`auth-api` unknown 错误收敛；修复计划 `D-1~D-6` 已回写到 `docs/code-review/anyhunt-www.md`。
@@ -203,14 +204,14 @@ status: active
 - 官网：`apps/moryflow/www/`
 - 发布站点模板：`apps/moryflow/site-template/`
 
-| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
-| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
+| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                                    |
+| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------- |
 | P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | done（模块 A/B/C/D/E + 项目复盘全部完成） |
-| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
-| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | done（模块 A/B/C/D + 项目复盘全部完成） |
-| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |
-| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                           |
-| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | done (2026-01-24)              |
+| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                                      |
+| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | done（模块 A/B/C/D + 项目复盘全部完成）   |
+| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS)            |
+| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                                      |
+| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | done (2026-01-24)                         |
 
 ### Phase 4 - packages/_ 与 tooling/_（平台基建与复用质量）
 

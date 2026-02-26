@@ -3,12 +3,17 @@
  * [EMITS]: onToggleChatPanel(), onOpenSettings(section), onChatReady()
  * [POS]: DesktopWorkspaceShell 主内容渲染层（destination 分发 + panel 装配 + ChatPane portal host）
  * [UPDATE]: 2026-02-26 - 改为从 workspace-shell-view-store 就地取数，移除上层 props 平铺
+ * [UPDATE]: 2026-02-26 - 移除对象字面量 selector，改为原子 selector，避免 zustand v5 快照引用抖动
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@moryflow/ui/components/resizable';
+import { useEffect, useState } from 'react';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@moryflow/ui/components/resizable';
 import type { AgentSub, Destination } from '../navigation/state';
 import { SIDEBAR_MIN_WIDTH } from './unified-top-bar';
 import { Sidebar } from './sidebar';
@@ -31,51 +36,48 @@ const getMainViewClass = (visible: boolean) =>
   visible ? 'min-h-0 flex-1 min-w-0 overflow-hidden' : 'hidden';
 
 export const WorkspaceShellMainContent = () => {
-  const {
-    destination,
-    agentSub,
-    vaultPath,
-    treeState,
-    treeLength,
-    selectedFile,
-    activeDoc,
-    chatFallback,
-    startupSkeleton,
-    layoutState,
-    onToggleChatPanel,
-    onOpenSettings,
-    onChatReady,
-  } = useWorkspaceShellViewStore((state) => ({
-    destination: state.destination,
-    agentSub: state.agentSub,
-    vaultPath: state.vaultPath,
-    treeState: state.treeState,
-    treeLength: state.treeLength,
-    selectedFile: state.selectedFile,
-    activeDoc: state.activeDoc,
-    chatFallback: state.chatFallback,
-    startupSkeleton: state.startupSkeleton,
-    layoutState: state.layoutState,
-    onToggleChatPanel: state.onToggleChatPanel,
-    onOpenSettings: state.onOpenSettings,
-    onChatReady: state.onChatReady,
-  }));
-  const {
-    sidebarPanelRef,
-    workspaceChatPanelRef,
-    panelGroupRef,
-    sidebarCollapsed,
-    chatCollapsed,
-    onSidebarCollapse,
-    onSidebarExpand,
-    onChatCollapse,
-    onChatExpand,
-    handleSidebarResize,
-    sidebarDefaultSizePercent,
-    sidebarMinSizePercent,
-    sidebarMaxSizePercent,
-    mainMinSizePercent,
-  } = layoutState;
+  const destination = useWorkspaceShellViewStore((state) => state.destination);
+  const agentSub = useWorkspaceShellViewStore((state) => state.agentSub);
+  const vaultPath = useWorkspaceShellViewStore((state) => state.vaultPath);
+  const treeState = useWorkspaceShellViewStore((state) => state.treeState);
+  const treeLength = useWorkspaceShellViewStore((state) => state.treeLength);
+  const selectedFile = useWorkspaceShellViewStore((state) => state.selectedFile);
+  const activeDoc = useWorkspaceShellViewStore((state) => state.activeDoc);
+  const chatFallback = useWorkspaceShellViewStore((state) => state.chatFallback);
+  const startupSkeleton = useWorkspaceShellViewStore((state) => state.startupSkeleton);
+  const onToggleChatPanel = useWorkspaceShellViewStore((state) => state.onToggleChatPanel);
+  const onOpenSettings = useWorkspaceShellViewStore((state) => state.onOpenSettings);
+  const onChatReady = useWorkspaceShellViewStore((state) => state.onChatReady);
+  const sidebarPanelRef = useWorkspaceShellViewStore((state) => state.layoutState.sidebarPanelRef);
+  const workspaceChatPanelRef = useWorkspaceShellViewStore(
+    (state) => state.layoutState.workspaceChatPanelRef
+  );
+  const panelGroupRef = useWorkspaceShellViewStore((state) => state.layoutState.panelGroupRef);
+  const sidebarCollapsed = useWorkspaceShellViewStore(
+    (state) => state.layoutState.sidebarCollapsed
+  );
+  const chatCollapsed = useWorkspaceShellViewStore((state) => state.layoutState.chatCollapsed);
+  const onSidebarCollapse = useWorkspaceShellViewStore(
+    (state) => state.layoutState.onSidebarCollapse
+  );
+  const onSidebarExpand = useWorkspaceShellViewStore((state) => state.layoutState.onSidebarExpand);
+  const onChatCollapse = useWorkspaceShellViewStore((state) => state.layoutState.onChatCollapse);
+  const onChatExpand = useWorkspaceShellViewStore((state) => state.layoutState.onChatExpand);
+  const handleSidebarResize = useWorkspaceShellViewStore(
+    (state) => state.layoutState.handleSidebarResize
+  );
+  const sidebarDefaultSizePercent = useWorkspaceShellViewStore(
+    (state) => state.layoutState.sidebarDefaultSizePercent
+  );
+  const sidebarMinSizePercent = useWorkspaceShellViewStore(
+    (state) => state.layoutState.sidebarMinSizePercent
+  );
+  const sidebarMaxSizePercent = useWorkspaceShellViewStore(
+    (state) => state.layoutState.sidebarMaxSizePercent
+  );
+  const mainMinSizePercent = useWorkspaceShellViewStore(
+    (state) => state.layoutState.mainMinSizePercent
+  );
 
   const [workspaceMainMounted, setWorkspaceMainMounted] = useState(agentSub === 'workspace');
   const [skillsMainMounted, setSkillsMainMounted] = useState(destination === 'skills');

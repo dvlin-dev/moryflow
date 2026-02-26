@@ -31,6 +31,7 @@
 
 ## 近期变更
 
+- 2026-02-26：修复 `AgentSubPanels` 黑屏回归：移除对象字面量 selector，改为字段级原子 selector，避免 zustand v5 快照引用抖动触发无限更新。
 - 2026-02-26：修复 `use-sidebar-panels-store` 快照同步性能回归：新增 `shouldSyncSnapshot`，避免 `Sidebar` 每次 render 对等价快照重复 `setSnapshot`；新增 `use-sidebar-panels-store.test.tsx` 回归覆盖。
 - 2026-02-26：修复 `useSidebarPublishController` 的 `use-require-login-for-site-publish` 相对路径（`../../../hooks/...`），恢复 `@moryflow/pc typecheck`。
 - 2026-02-26：Store-first 二次改造落地：新增 `use-sidebar-panels-store`，`AgentSubPanels` 改为 selector 取数，`Sidebar` 仅同步快照，不再向面板平铺 `tree/vault/actions` 大包 props。
