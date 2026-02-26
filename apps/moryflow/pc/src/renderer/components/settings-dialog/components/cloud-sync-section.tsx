@@ -5,9 +5,10 @@
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  * [UPDATE]: 2026-02-26 - 拆分 ready 态渲染到 CloudSyncReadyContent，容器专注状态与行为
+ * [UPDATE]: 2026-02-26 - 状态派生迁移到 cloud-sync-section-model，移除条件 return 后 hook 调用风险
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CircleAlert, CircleCheck, Cloud, FolderSync, Loader, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@moryflow/ui/components/skeleton';
@@ -15,16 +16,16 @@ import { useAuth } from '@/lib/server';
 import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useTranslation } from '@/lib/i18n';
 import type { CloudUsageInfo } from '@shared/ipc';
+import { CloudSyncReadyContent, type CloudSyncStatusSummary } from './cloud-sync-section-ready';
 import {
-  CloudSyncReadyContent,
-  type CloudSyncStatusSummary,
-} from './cloud-sync-section-ready';
+  resolveCloudSyncSectionState,
+  resolveCloudSyncStatusTone,
+  type CloudSyncSectionState,
+} from './cloud-sync-section-model';
 
 type CloudSyncSectionProps = {
   vaultPath?: string | null;
 };
-
-type CloudSyncSectionState = 'auth-loading' | 'unauthenticated' | 'missing-vault' | 'ready';
 
 export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const { t } = useTranslation('settings');
@@ -99,12 +100,11 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     [updateSettings]
   );
 
-  const sectionState: CloudSyncSectionState = useMemo(() => {
-    if (authLoading) return 'auth-loading';
-    if (!isAuthenticated) return 'unauthenticated';
-    if (!vaultPath) return 'missing-vault';
-    return 'ready';
-  }, [authLoading, isAuthenticated, vaultPath]);
+  const sectionState: CloudSyncSectionState = resolveCloudSyncSectionState({
+    authLoading,
+    isAuthenticated,
+    vaultPath,
+  });
 
   const renderUnavailableStateBySection = () => {
     switch (sectionState) {
@@ -148,27 +148,40 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const isSyncing = status?.engineStatus === 'syncing';
   const isEnabled = Boolean(binding && settings?.syncEnabled);
   const engineStatus = status?.engineStatus ?? 'disabled';
-  const needsAttention =
-    !binding || engineStatus === 'offline' || engineStatus === 'disabled' || Boolean(status?.error);
+  const statusTone = resolveCloudSyncStatusTone({
+    isSyncing,
+    hasBinding: Boolean(binding),
+    engineStatus,
+    hasError: Boolean(status?.error),
+  });
 
-  const statusSummary = useMemo<CloudSyncStatusSummary>(() => {
-    if (isSyncing) {
-      return { icon: Loader as LucideIcon, label: t('cloudSyncSyncing'), colorClass: 'text-primary' };
+  const statusSummary: CloudSyncStatusSummary = (() => {
+    switch (statusTone) {
+      case 'syncing':
+        return {
+          icon: Loader as LucideIcon,
+          label: t('cloudSyncSyncing'),
+          colorClass: 'text-primary',
+        };
+      case 'needs-attention':
+        return {
+          icon: CircleAlert as LucideIcon,
+          label: t('cloudSyncNeedsAttention'),
+          colorClass: 'text-amber-500',
+        };
+      case 'synced':
+      default:
+        return {
+          icon: CircleCheck as LucideIcon,
+          label: t('cloudSyncSynced'),
+          colorClass: 'text-success',
+        };
     }
-    if (needsAttention) {
-      return { icon: CircleAlert as LucideIcon, label: t('cloudSyncNeedsAttention'), colorClass: 'text-amber-500' };
-    }
-    return { icon: CircleCheck as LucideIcon, label: t('cloudSyncSynced'), colorClass: 'text-success' };
-  }, [isSyncing, needsAttention, t]);
+  })();
 
-  const lastSyncLabel = useMemo(() => {
-    if (!status?.lastSyncAt) {
-      return t('cloudSyncNeverSynced');
-    }
-    return t('cloudSyncLastSync', {
-      time: new Date(status.lastSyncAt).toLocaleTimeString(),
-    });
-  }, [status?.lastSyncAt, t]);
+  const lastSyncLabel = status?.lastSyncAt
+    ? t('cloudSyncLastSync', { time: new Date(status.lastSyncAt).toLocaleTimeString() })
+    : t('cloudSyncNeverSynced');
 
   return (
     <CloudSyncReadyContent
@@ -202,4 +215,3 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     />
   );
 };
-

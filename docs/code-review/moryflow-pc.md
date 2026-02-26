@@ -183,6 +183,16 @@ status: in_progress
 - [done] `share` 模块复扫未发现新增 S1/S2：`share-popover` 已使用 `panel + switch`，维持现状避免无效重构
   - `apps/moryflow/pc/src/renderer/components/share/share-popover.tsx:228`
 
+### follow-up（稳定性回归）
+
+- [done] `cloud-sync-section` 修复“条件 `return` 后再调用 hook”风险：状态派生抽离为纯函数，容器层统一按 `sectionState` 分发，hook 顺序稳定
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/cloud-sync-section.tsx:1`
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/cloud-sync-section-model.ts:1`
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/cloud-sync-section-model.test.ts:1`
+
+- [done] `vault-files` 补齐 `handle` 纯函数回归测试，覆盖排序、拖拽解析与 drop 校验
+  - `apps/moryflow/pc/src/renderer/components/vault-files/handle.test.ts:1`
+
 ## Store-first 二次改造执行结果（已完成）
 
 > 执行约束：不新增/不扩散 Context；跨组件共享状态统一 `Zustand Store + Methods`。  
@@ -197,20 +207,23 @@ status: in_progress
 ### 执行项（Store-first）
 
 1. [done] `SF-1`（模块 B）：Chat 容器 store 化  
-变更：
+   变更：
+
 - 新增 `apps/moryflow/pc/src/renderer/components/chat-pane/hooks/use-chat-pane-footer-store.ts`（footer snapshot store）
 - `ChatFooter` 改为 selector 取数：`apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-footer.tsx`
 - `ChatPane` 改为同步快照并移除 footer 20+ props 平铺：`apps/moryflow/pc/src/renderer/components/chat-pane/index.tsx`
 
 2. [done] `SF-2`（模块 B）：输入浮层 store 化  
-变更：
+   变更：
+
 - 新增 `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/chat-prompt-overlay-store.ts`
 - `ChatPromptInputOverlays` 改为 selector 取数：`apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/chat-prompt-input-overlays.tsx`
 - `FileContextPanel` 新增 store 取数包装层 `FileContextPanelFromOverlayStore`：`apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/file-context-panel.tsx`
 - `ChatPromptInput` 改为同步 overlay snapshot 并移除 overlays props 平铺：`apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/index.tsx`
 
 3. [done] `SF-3`（模块 C/E）：Workspace 装配层去 props 平铺  
-变更：
+   变更：
+
 - 新增 `apps/moryflow/pc/src/renderer/workspace/stores/workspace-shell-view-store.ts`
 - 新增 `apps/moryflow/pc/src/renderer/workspace/components/sidebar/hooks/use-sidebar-panels-store.ts`
 - `WorkspaceShellMainContent` 改为 selector 取数：`apps/moryflow/pc/src/renderer/workspace/components/workspace-shell-main-content.tsx`
@@ -219,7 +232,8 @@ status: in_progress
 - `DesktopWorkspaceShell/Sidebar` 改为快照同步层：`apps/moryflow/pc/src/renderer/workspace/desktop-workspace-shell.tsx`、`apps/moryflow/pc/src/renderer/workspace/components/sidebar/index.tsx`
 
 4. [done] `SF-4`（模块 A follow-up）：设置页高 props 收口  
-变更：
+   变更：
+
 - `ProviderDetailsPresetProps` 收敛为 `formModel/listModel/dialogModel` 三段模型：`apps/moryflow/pc/src/renderer/components/settings-dialog/components/providers/provider-details-preset.tsx`
 - `ProviderDetails` 改为三段模型装配：`apps/moryflow/pc/src/renderer/components/settings-dialog/components/providers/provider-details.tsx`
 
@@ -241,6 +255,12 @@ status: in_progress
 
 ## 验证结果（本地）
 
+- `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/site-publish/use-site-publish.test.tsx src/renderer/components/settings-dialog/components/cloud-sync-section-model.test.ts src/renderer/components/vault-files/handle.test.ts`
+  - 结果：pass（`3 files / 13 tests`）
+
+- `pnpm --filter @moryflow/pc typecheck`
+  - 结果：pass
+
 - `pnpm --filter @moryflow/pc typecheck`
   - 结果：fail
   - 原因：本地缺少 `node_modules`，且大量 workspace 依赖未解析（输出包含 `Local package.json exists, but node_modules missing`）。
@@ -255,15 +275,16 @@ status: in_progress
 
 ## 进度记录
 
-| Date | Module | Action | Status | Notes |
-| --- | --- | --- | --- | --- |
-| 2026-02-26 | 模块 A（auth/settings-dialog/payment-dialog） | 预扫描 | done | 输出 `S1x4 / S2x2 / S3x2`，给出 `A-1~A-6` 计划 |
-| 2026-02-26 | 模块 A（auth/settings-dialog/payment-dialog） | 分步修复（A-1~A-6） | done | 全部代码改造落地，等待依赖安装后补齐 typecheck/test:unit 验证 |
-| 2026-02-26 | 模块 B（chat-pane/input-dialog/command-palette） | 预扫描 | done | 输出 `S1x3 / S2x3 / S3x2`，给出 `B-1~B-6` 计划 |
-| 2026-02-26 | 模块 B（chat-pane/input-dialog/command-palette） | 一次性修复（B-1~B-6） | done | `ChatPane/ChatPromptInput/ChatMessage` 完成拆分；`PlusMenu/useChatSessions/InputDialog/McpPanel/TaskHoverPanel` 收敛完成 |
-| 2026-02-26 | 模块 B（chat-pane/input-dialog/command-palette） | follow-up（参数收敛复检） | done | `ChatMessage` 继续收敛为 `MessageBodyModel + useMessageToolModel`；减少 `message-body/tool-part` 参数平铺，并完成同类问题扫描清单 |
-| 2026-02-26 | 模块 C（editor/workspace） | 预扫描 | done | 输出 `S1x3 / S2x3 / S3x2`，给出 `C-1~C-6` 一次性修复计划与验证命令 |
-| 2026-02-26 | 模块 C（editor/workspace） | 一次性修复（C-1~C-6） | done | `DesktopWorkspaceShell/useDocumentState/handle/Sidebar/EditorPanel/useVaultTree/NotionEditor` 完成分层收敛；待依赖安装后补齐验证 |
-| 2026-02-26 | 模块 B/C/E + 模块 A follow-up | Store-first 二次改造执行（SF-1~SF-4） | done | `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels/ProviderDetailsPreset` 已完成 store-first 或模型收口；`typecheck` 因依赖缺失未通过（非本次改动引入） |
-| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 预扫描 | done | 输出 `S1x3 / S2x3 / S3x1`，给出 `D-1~D-6` 一次性修复计划（含文件边界与验证命令） |
-| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 一次性修复（D-1~D-6） | done | 完成 `vault-files` store-first 迁移（移除 Context）、`cloud-sync/site-publish` 超阈值组件拆分、`site-list/publish-dialog` 状态分发统一为 `switch`；`share` 复扫维持现状 |
+| Date       | Module                                              | Action                                | Status | Notes                                                                                                                                                                                                            |
+| ---------- | --------------------------------------------------- | ------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-02-26 | 模块 A（auth/settings-dialog/payment-dialog）       | 预扫描                                | done   | 输出 `S1x4 / S2x2 / S3x2`，给出 `A-1~A-6` 计划                                                                                                                                                                   |
+| 2026-02-26 | 模块 A（auth/settings-dialog/payment-dialog）       | 分步修复（A-1~A-6）                   | done   | 全部代码改造落地，等待依赖安装后补齐 typecheck/test:unit 验证                                                                                                                                                    |
+| 2026-02-26 | 模块 B（chat-pane/input-dialog/command-palette）    | 预扫描                                | done   | 输出 `S1x3 / S2x3 / S3x2`，给出 `B-1~B-6` 计划                                                                                                                                                                   |
+| 2026-02-26 | 模块 B（chat-pane/input-dialog/command-palette）    | 一次性修复（B-1~B-6）                 | done   | `ChatPane/ChatPromptInput/ChatMessage` 完成拆分；`PlusMenu/useChatSessions/InputDialog/McpPanel/TaskHoverPanel` 收敛完成                                                                                         |
+| 2026-02-26 | 模块 B（chat-pane/input-dialog/command-palette）    | follow-up（参数收敛复检）             | done   | `ChatMessage` 继续收敛为 `MessageBodyModel + useMessageToolModel`；减少 `message-body/tool-part` 参数平铺，并完成同类问题扫描清单                                                                                |
+| 2026-02-26 | 模块 C（editor/workspace）                          | 预扫描                                | done   | 输出 `S1x3 / S2x3 / S3x2`，给出 `C-1~C-6` 一次性修复计划与验证命令                                                                                                                                               |
+| 2026-02-26 | 模块 C（editor/workspace）                          | 一次性修复（C-1~C-6）                 | done   | `DesktopWorkspaceShell/useDocumentState/handle/Sidebar/EditorPanel/useVaultTree/NotionEditor` 完成分层收敛；待依赖安装后补齐验证                                                                                 |
+| 2026-02-26 | 模块 B/C/E + 模块 A follow-up                       | Store-first 二次改造执行（SF-1~SF-4） | done   | `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels/ProviderDetailsPreset` 已完成 store-first 或模型收口；`typecheck` 因依赖缺失未通过（非本次改动引入） |
+| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 预扫描                                | done   | 输出 `S1x3 / S2x3 / S3x1`，给出 `D-1~D-6` 一次性修复计划（含文件边界与验证命令）                                                                                                                                 |
+| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 一次性修复（D-1~D-6）                 | done   | 完成 `vault-files` store-first 迁移（移除 Context）、`cloud-sync/site-publish` 超阈值组件拆分、`site-list/publish-dialog` 状态分发统一为 `switch`；`share` 复扫维持现状                                          |
+| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | follow-up（稳定性回归）               | done   | 修复 `cloud-sync-section` 条件 `return` 后 hook 顺序风险；新增 `cloud-sync-section-model` 与 `vault-files/handle` 回归测试；`typecheck` + 模块 D 定向 `vitest` 全通过                                            |

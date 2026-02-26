@@ -30,6 +30,7 @@
 - MCP Section 清理渲染期 `setState`，多状态内容统一 `renderContentByState()` 分发
 - Add/Edit Model Dialog 统一迁移到 `react-hook-form + zod/v3`（含输入模态校验与重复 ID 表单错误）
 - Cloud Sync Section 拆分为容器 + `cloud-sync-section-ready` 内容层；容器仅保留状态判定与行为编排（`sectionState + switch`），ready UI 与 usage 渲染下沉到片段组件（2026-02-26）
+- Cloud Sync Section 稳定性回归：新增 `cloud-sync-section-model` 纯函数状态派生（`sectionState/statusTone`），并修复条件 `return` 后 hook 顺序风险；补齐 `cloud-sync-section-model.test.ts`（2026-02-26）
 - MCP Details 拆分测试逻辑与展示层：新增 `use-mcp-details-test`、`mcp-test-result-dialog`、`mcp-verified-tools`
 - Account LoginPanel 拆分为流程容器 + `mode-header/auth-fields/terms` 子片段，主文件收敛为 login/register/OTP 状态编排
 - Account 登录面板移除内层 `form`，改为显式按钮提交 + Enter 捕获，避免嵌套 `form` 触发外层 Settings 提交导致弹窗异常关闭
