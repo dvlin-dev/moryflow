@@ -1,6 +1,7 @@
 /**
  * 设置用户等级对话框
  */
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,14 @@ export function SetTierDialog({
     onSubmit(data.tier)
   }
 
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    form.reset({ tier: currentTier })
+  }, [currentTier, open, form])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
@@ -75,7 +84,7 @@ export function SetTierDialog({
                   <FormLabel>用户等级</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>

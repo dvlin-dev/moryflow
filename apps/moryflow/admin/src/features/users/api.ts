@@ -11,16 +11,12 @@ import type {
   DeletionRecordListResponse,
   DeletionStats,
 } from '../../types/api';
+import { buildUsersListPath, buildDeletionRecordsPath } from './query-paths'
 
 export const usersApi = {
   /** 获取用户列表 */
-  getAll: (params: { limit: number; offset: number; tier?: string; deleted?: boolean }) => {
-    const tierParam = params.tier && params.tier !== 'all' ? `&tier=${params.tier}` : '';
-    const deletedParam = params.deleted !== undefined ? `&deleted=${params.deleted}` : '';
-    return adminApi.get<UserListResponse>(
-      `/users?limit=${params.limit}&offset=${params.offset}${tierParam}${deletedParam}`
-    );
-  },
+  getAll: (params: { limit: number; offset: number; tier?: string; deleted?: boolean }) =>
+    adminApi.get<UserListResponse>(buildUsersListPath(params)),
 
   /** 获取用户详情 */
   getById: (id: string) => adminApi.get<UserDetails>(`/users/${id}`),
@@ -38,12 +34,8 @@ export const usersApi = {
     adminApi.put<{ user: User }>(`/users/${userId}/admin`, { isAdmin }),
 
   /** 获取删除记录列表 */
-  getDeletionRecords: (params: { limit: number; offset: number; reason?: string }) => {
-    const reasonParam = params.reason ? `&reason=${params.reason}` : '';
-    return adminApi.get<DeletionRecordListResponse>(
-      `/deletions?limit=${params.limit}&offset=${params.offset}${reasonParam}`
-    );
-  },
+  getDeletionRecords: (params: { limit: number; offset: number; reason?: string }) =>
+    adminApi.get<DeletionRecordListResponse>(buildDeletionRecordsPath(params)),
 
   /** 获取删除统计 */
   getDeletionStats: () => adminApi.get<DeletionStats>('/deletions/stats'),

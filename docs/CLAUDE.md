@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 A（`auth/dashboard/users`）完成预扫描与修复闭环（A-1~A-5），`UsersPage` 完成状态片段化+职责拆分，`SetTierDialog` 切换用户状态同步修复，模块级 `lint` + `typecheck` + `test:unit` 通过）
 > 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
@@ -96,6 +97,7 @@
 
  - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 A（auth/dashboard/users）已完成预扫描与修复闭环，A-1~A-5 done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-6a 完成：`flow-runner.tsx` 分层到 `flow-runner-form`/`flow-runner-step-list`/`flow-runner-types`/`flow-runner-helpers`，并将 `BrowserSessionPanel` 的 19 组表单初始化抽离到 `use-browser-session-forms`）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4e 完成：`browser-session-sections.tsx` 第五批分区拆分，新增 `open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件降至 45 行）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4d 完成：`browser-session-sections.tsx` 第四批分区拆分，新增 `session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`，主文件降至 494 行）

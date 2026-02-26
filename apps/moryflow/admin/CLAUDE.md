@@ -17,6 +17,9 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Users 模块 A：`UsersPage` 拆分为 `UsersFilterBar` + `UsersTable`，列表区改为 `UsersTableViewState + renderRowsByState/switch`，移除链式三元
+- Users 模块 A：修复 `SetTierDialog` 切换目标用户时的等级残留（受控值 + `currentTier` 变化重置 + 关闭对话框清理 `selectedUser`）
+- Users 模块 A：`usersApi` 查询参数构造抽离到 `query-paths.ts`（`URLSearchParams`），并新增 `set-tier-dialog` / `api-paths` 回归测试
 - Dashboard：将 `getPaidUsers` 从 `DashboardPage.tsx` 拆分到 `src/pages/dashboard-metrics.ts`，避免页面文件导出非组件触发 `react-refresh/only-export-components` lint 失败
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/typescript-config...`，确保 `packages/types` 容器构建能解析 `@moryflow/typescript-config/base.json`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 与 `.npmrc`，并固定 pnpm `9.12.2`，修复 `packages/api` 在容器内 `TS5083`（缺少 `tsconfig.agents.json`）链路失败

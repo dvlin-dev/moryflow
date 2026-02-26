@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow Admin 模块 A（`auth/dashboard/users`）修复完成：`SetTierDialog` 目标用户切换状态同步修复、`UsersPage` 状态片段化与职责拆分、`usersApi` 查询参数收敛至 `URLSearchParams`，并新增 `set-tier-dialog`/`api-paths` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Anyhunt Console 完成首个项目闭环（模块 D D-6b~D-6c + 模块 E + 项目复盘全部完成），并补齐 `AgentBrowserLayoutPage` 布局状态片段化收口；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 进入 D-6 一致性复查，完成 D-6a（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离为 `use-browser-session-forms`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4e 完成（`browser-session-sections.tsx` 第五批分区拆分：`OpenUrl/Snapshot/Delta/Action/ActionBatch/Screenshot`，并收敛为 45 行导出层），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。

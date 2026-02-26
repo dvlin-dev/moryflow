@@ -162,6 +162,8 @@ status: active
 | 11 | anyhunt/console | 项目收口（状态片段化补扫） | 补扫已改范围并修复同类问题 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AgentBrowserLayoutPage` 布局模式改为状态片段独立渲染，移除 UI 条件混排；总索引与专项台账同步为“1/2/3 全流程完成” |
 | 12 | anyhunt/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/anyhunt/docs` 从本轮组件优化专项中移除 |
 | 13 | moryflow/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/moryflow/docs` 从本轮组件优化专项中移除 |
+| 14 | moryflow/admin | 模块 A（auth/dashboard/users） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x1 / S2x2 / S3x1`，详见 `docs/code-review/moryflow-admin.md` |
+| 15 | moryflow/admin | 模块 A（auth/dashboard/users） | 分步重构与修复（A-1~A-5） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x1 / S2x2 / S3x1` 修复；`UsersPage` 完成状态片段化与职责拆分，新增 `set-tier-dialog`/`api-paths` 回归测试 |
 
 ## 5. 回写格式（统一）
 
