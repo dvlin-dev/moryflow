@@ -8,6 +8,7 @@ Anyhunt Dev 用户控制台，用于管理 API Key、查看用量、测试抓取
 
 ## 最近更新
 
+- Agent Browser Playground 思考等级第二轮落地：模型级 thinking profile 显式驱动 UI；默认选择 `off`；请求体显式传 `thinking`；遇到 thinking 边界 `400` 自动单次降级重试 `off` 并同步面板状态（2026-02-26）
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 复制，修复 `packages/api` 容器构建时 `TS5083`（缺少 `tsconfig.agents.json`）报错
 - Auth Store：修复 `onRehydrateStorage` 回调中的 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 异常

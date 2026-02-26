@@ -8,6 +8,7 @@ Backend API + Web Data Engine built with NestJS. Core service for web scraping, 
 
 ## 最近更新
 
+- LLM thinking 第二轮收敛：`llm/thinking-profile.util.ts` 统一 profile 解析；未传 thinking 默认 `off`（不再隐式从 model capability 自动启用）；DTO/运行时与模型工厂保持同一 thinking 语义边界（2026-02-26）
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）
 - Build：Docker 构建补齐 `packages/api`/`packages/types`/`packages/sync` 依赖清单与源码复制，构建顺序统一为 `types -> sync -> api -> app`，修复 `@moryflow/api` 解析失败（TS2307）
 - Build：容器构建显式复制根 `tsconfig.base.json`，避免 workspace 包构建时报 `TS5083`

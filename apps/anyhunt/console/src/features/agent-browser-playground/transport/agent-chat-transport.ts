@@ -10,19 +10,50 @@ import { DefaultChatTransport, type UIMessage } from 'ai';
 import { API_BASE_URL } from '@/lib/api-base';
 import { AGENT_API } from '@/lib/api-paths';
 import { buildAgentChatMessages } from '../agent-streaming';
-import type { AgentOutput } from '../types';
+import type { AgentOutput, AgentThinkingSelection } from '../types';
 
 export type AgentChatOptions = {
   apiKey: string;
   output?: AgentOutput;
   maxCredits?: number;
   modelId?: string;
+  thinking?: AgentThinkingSelection;
 };
 
 type AgentChatOptionsRef = { current: AgentChatOptions };
 
+type AgentChatTransportOptions = {
+  onThinkingAutoDowngrade?: (modelId: string) => void;
+};
+
+const isThinkingBoundaryError = (status: number, responseText: string): boolean => {
+  if (status !== 400) {
+    return false;
+  }
+  const normalized = responseText.toLowerCase();
+  return (
+    normalized.includes('thinking') &&
+    (normalized.includes('level') || normalized.includes('not supported'))
+  );
+};
+
+const parseJsonBody = (value: BodyInit | null | undefined): Record<string, unknown> | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 export class AgentChatTransport extends DefaultChatTransport<UIMessage> {
-  constructor(optionsRef: AgentChatOptionsRef) {
+  constructor(
+    optionsRef: AgentChatOptionsRef,
+    transportOptions?: AgentChatTransportOptions,
+  ) {
     super({
       api: `${API_BASE_URL}${AGENT_API.BASE}`,
       headers: () => {
@@ -49,11 +80,42 @@ export class AgentChatTransport extends DefaultChatTransport<UIMessage> {
           body: {
             messages: chatMessages,
             model: options.modelId,
+            thinking: options.thinking,
             output: options.output ?? { type: 'text' },
             maxCredits: options.maxCredits,
             stream: true,
           },
         };
+      },
+      fetch: async (input, init) => {
+        const response = await globalThis.fetch(input, init);
+        const requestBody = parseJsonBody(init?.body);
+        const thinking = requestBody?.thinking as
+          | { mode?: string; level?: string }
+          | undefined;
+        if (!thinking || thinking.mode !== 'level') {
+          return response;
+        }
+
+        const responseText = await response.clone().text();
+        if (!isThinkingBoundaryError(response.status, responseText)) {
+          return response;
+        }
+
+        const retryBody = {
+          ...requestBody,
+          thinking: { mode: 'off' as const },
+        };
+        const modelId =
+          typeof requestBody?.model === 'string' ? requestBody.model.trim() : '';
+        if (modelId) {
+          transportOptions?.onThinkingAutoDowngrade?.(modelId);
+        }
+
+        return globalThis.fetch(input, {
+          ...init,
+          body: JSON.stringify(retryBody),
+        });
       },
     });
   }

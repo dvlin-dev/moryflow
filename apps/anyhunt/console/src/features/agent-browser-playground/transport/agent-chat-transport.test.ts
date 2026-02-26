@@ -123,4 +123,66 @@ describe('AgentChatTransport', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it('retries once with thinking off when server returns thinking 400', async () => {
+    const stream = buildSseStream([
+      { type: 'start', messageId: 'msg_1' },
+      { type: 'finish', finishReason: 'stop' },
+    ]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response("Invalid thinking level 'high'", {
+          status: 400,
+          headers: { 'Content-Type': 'text/plain' },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(stream, {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const onThinkingAutoDowngrade = vi.fn();
+      const optionsRef = {
+        current: {
+          apiKey: 'key-1',
+          output: { type: 'text' },
+          modelId: 'gpt-4o',
+          thinking: { mode: 'level' as const, level: 'high' },
+        },
+      };
+      const transport = new AgentChatTransport(optionsRef, {
+        onThinkingAutoDowngrade,
+      });
+
+      const messages: UIMessage[] = [
+        {
+          id: 'u1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ];
+
+      const resultStream = await transport.sendMessages({
+        chatId: 'chat-1',
+        messages,
+        trigger: 'submit-message',
+        abortSignal: undefined,
+      });
+      const reader = resultStream.getReader();
+      await reader.read();
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const [, retryInit] = fetchMock.mock.calls[1] ?? [];
+      const retryBody = JSON.parse(String(retryInit?.body)) as Record<string, unknown>;
+      expect(retryBody.thinking).toEqual({ mode: 'off' });
+      expect(onThinkingAutoDowngrade).toHaveBeenCalledWith('gpt-4o');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
