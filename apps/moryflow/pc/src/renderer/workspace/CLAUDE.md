@@ -8,11 +8,11 @@ Moryflow PC 的 “Workspace feature root”：
 
 - 负责 Renderer 侧的工作区状态编排（Vault/Tree/Doc/Command/Dialog）
 - 负责 Navigation-aware 的窗口布局（destination：Agent / Skills / Sites；AgentSub：Chat / Workspace）
-- 通过 **Context（业务状态）+ Store（装配状态）** 组合避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
+- 通过 **Store-first（业务状态 + 装配状态）** 避免 `DesktopWorkspace` 巨型 props 透传，保证模块化与单一职责
 
 ## 核心原则（强制）
 
-- 单例 Controller：`useDesktopWorkspace()` 只能在一个地方调用一次（Provider 内），避免多实例状态分裂
+- 单例 Controller：`useDesktopWorkspace()` 只能在一个地方调用一次（Provider 同步层内），避免多实例状态分裂
 - UI 组件就地取值：`Sidebar/UnifiedTopBar/EditorPanel/SitesPage/VaultOnboarding` 不接收“大包 props”，改为 `useWorkspace*()` 获取自己需要的数据与动作
 - 最佳实践优先：不考虑历史兼容，允许破坏式重构与删除死代码（但避免过度设计）
 - 用户可见文案必须为英文
@@ -49,19 +49,23 @@ Moryflow PC 的 “Workspace feature root”：
   - `navigation/state.ts`：NavigationState（destination + agentSub）与纯 transitions（SSOT，无副作用）
   - `navigation/agent-actions.ts`：Coordinator（Open intents 回跳到 Agent；Inline actions 就地生效）
 - `context/`
-  - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，拆分并提供多个 contexts
-  - `workspace-shell-context.tsx`：提供 Shell UI 状态/动作（sidebarWidth/toggle panels/openSettings）
+  - `workspace-controller-context.tsx`：调用 `useDesktopWorkspace()` + `useNavigation()`，仅负责把控制器快照同步到 store（保留 `useWorkspace*` API）
+  - `workspace-shell-context.tsx`：仅负责把 Shell UI 控制器同步到 store（sidebarWidth/toggle panels/openSettings）
+- `stores/workspace-controller-store.ts`
+  - Workspace 业务控制器 store（`nav/vault/tree/doc/command/dialog`）
+- `stores/workspace-shell-controller-store.ts`
+  - Workspace Shell 控制器 store（`sidebar/chat/settings`）
 - `const.ts`
   - Workspace 共享类型中心（SelectedFile/ActiveDocument/RequestState/Controller 类型等）
 
-## Context 边界（建议）
+## Store 边界（建议）
 
-- Controller contexts（全局业务状态）
+- Controller stores（全局业务状态）
   - navigation/vault/tree/doc/command/dialog
-- Shell context（仅布局层）
+- Shell store（仅布局层）
   - sidebarCollapsed、sidebarWidth、toggleSidebarPanel、chatCollapsed、toggleChatPanel、openSettings
 
-> 约束：Shell context 依赖 `ResizablePanel` 的 imperative handle，因此只能在 `DesktopWorkspaceShell` 内提供。
+> 约束：Shell store 依赖 `ResizablePanel` 的 imperative handle，因此只能在 `DesktopWorkspaceShell` 内同步快照。
 
 ## 回归验证（必跑）
 
@@ -73,6 +77,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-26：模块 E 去 Context 化：`workspace-controller-context/workspace-shell-context` 改为 store 同步层，新增 `workspace-controller-store/workspace-shell-controller-store`，业务/布局读取统一走 `useWorkspace*` selector（无 React Context 透传）。
 - 2026-02-26：修复 `@moryflow/pc typecheck` 阻塞项：`use-workspace-command-actions` 的 `t` 签名改为与 i18n 强类型兼容（`key:any + InterpolationParams`），避免 `useTranslation('workspace')` 赋值冲突。
 - 2026-02-26：Store-first 二次改造落地（`SF-3`）：新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 改为 selector 就地取数，`DesktopWorkspaceShell/Sidebar` 改为快照同步层。
 - 2026-02-26：模块 C 完成：`DesktopWorkspaceShell` 拆分为 `use-shell-layout-state + workspace-shell-main-content + workspace-shell-overlays`，主区统一显式 `renderContentByState` 分发。

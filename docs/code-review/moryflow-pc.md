@@ -6,8 +6,8 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/moryflow/pc（模块 A/B/C 已完成）
-[OUTPUT]: 模块 A/B/C 修复结果 + 当前模块推进与验证入口
+[INPUT]: apps/moryflow/pc（模块 A/B/C/D/E 已完成）
+[OUTPUT]: 模块 A/B/C/D/E 修复结果 + 当前模块推进与验证入口
 [POS]: Phase 3 / P2 模块审查记录（Moryflow PC）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
 -->
@@ -17,9 +17,9 @@ status: in_progress
 ## 当前范围
 
 - 项目：`apps/moryflow/pc`
-- 已完成模块：`A（auth / settings-dialog / payment-dialog）`、`B（chat-pane / input-dialog / command-palette）`、`C（editor / workspace）`、`D（cloud-sync / share / site-publish / vault-files）`
-- 当前模块：`E（renderer hooks / contexts / transport / stores）`（待预扫描）
-- 下一模块：`项目复盘`
+- 已完成模块：`A（auth / settings-dialog / payment-dialog）`、`B（chat-pane / input-dialog / command-palette）`、`C（editor / workspace）`、`D（cloud-sync / share / site-publish / vault-files）`、`E（renderer hooks / contexts / transport / stores）`
+- 当前模块：`项目复盘`
+- 下一模块：`收口验证与一致性复查`
 
 ## 模块 A 修复结果（已完成）
 
@@ -193,6 +193,28 @@ status: in_progress
 - [done] `vault-files` 补齐 `handle` 纯函数回归测试，覆盖排序、拖拽解析与 drop 校验
   - `apps/moryflow/pc/src/renderer/components/vault-files/handle.test.ts:1`
 
+## 模块 E 修复结果（renderer hooks / contexts / transport / stores，已完成）
+
+### S1
+
+- [done] `workspace-controller-context` 去 Context 化：Provider 仅做控制器快照同步，读取端统一切换到 `workspace-controller-store` selector（`nav/vault/tree/doc/command/dialog`）
+  - `apps/moryflow/pc/src/renderer/workspace/context/workspace-controller-context.tsx:1`
+  - `apps/moryflow/pc/src/renderer/workspace/stores/workspace-controller-store.ts:1`
+
+- [done] `workspace-shell-context` 去 Context 化：Shell 控制器（sidebar/chat/settings）改为 `workspace-shell-controller-store`，保留 `useWorkspaceShell` API 不变
+  - `apps/moryflow/pc/src/renderer/workspace/context/workspace-shell-context.tsx:1`
+  - `apps/moryflow/pc/src/renderer/workspace/stores/workspace-shell-controller-store.ts:1`
+
+### S2
+
+- [done] 删除未被引用的 `renderer/contexts/app-context.tsx`，清理模块 E 范围残留 Context 实现与死代码
+  - `apps/moryflow/pc/src/renderer/contexts/app-context.tsx`（deleted）
+
+### S3
+
+- [done] `workspace/CLAUDE.md` 同步为 Store-first 口径，补齐业务控制器与 Shell 控制器的 store 边界定义
+  - `apps/moryflow/pc/src/renderer/workspace/CLAUDE.md:1`
+
 ## Store-first 二次改造执行结果（已完成）
 
 > 执行约束：不新增/不扩散 Context；跨组件共享状态统一 `Zustand Store + Methods`。  
@@ -255,6 +277,12 @@ status: in_progress
 
 ## 验证结果（本地）
 
+- `pnpm --filter @moryflow/pc typecheck`
+  - 结果：pass（模块 E 修复后）
+
+- `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/sites/index.test.tsx src/renderer/workspace/hooks/use-navigation.test.tsx src/renderer/workspace/hooks/use-document-state.test.tsx src/renderer/workspace/hooks/use-vault-tree.test.tsx`
+  - 结果：pass（`4 files / 7 tests`）
+
 - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/site-publish/use-site-publish.test.tsx src/renderer/components/settings-dialog/components/cloud-sync-section-model.test.ts src/renderer/components/vault-files/handle.test.ts`
   - 结果：pass（`3 files / 13 tests`）
 
@@ -288,3 +316,5 @@ status: in_progress
 | 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 预扫描                                | done   | 输出 `S1x3 / S2x3 / S3x1`，给出 `D-1~D-6` 一次性修复计划（含文件边界与验证命令）                                                                                                                                 |
 | 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 一次性修复（D-1~D-6）                 | done   | 完成 `vault-files` store-first 迁移（移除 Context）、`cloud-sync/site-publish` 超阈值组件拆分、`site-list/publish-dialog` 状态分发统一为 `switch`；`share` 复扫维持现状                                          |
 | 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | follow-up（稳定性回归）               | done   | 修复 `cloud-sync-section` 条件 `return` 后 hook 顺序风险；新增 `cloud-sync-section-model` 与 `vault-files/handle` 回归测试；`typecheck` + 模块 D 定向 `vitest` 全通过                                            |
+| 2026-02-26 | 模块 E（renderer hooks/contexts/transport/stores）  | 预扫描                                | done   | 输出 `S1x2 / S2x1 / S3x1`：核心问题为 workspace controller/shell 仍使用 Context，且存在未引用 context 死代码                                                                                                     |
+| 2026-02-26 | 模块 E（renderer hooks/contexts/transport/stores）  | 一次性修复（E-1~E-4）                 | done   | 完成 workspace controller/shell 去 Context 化（store-first），删除 `renderer/contexts/app-context.tsx`，并通过 `typecheck` + workspace 定向 `vitest`                                                             |
