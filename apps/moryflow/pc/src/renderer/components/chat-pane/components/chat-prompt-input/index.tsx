@@ -2,6 +2,7 @@
  * [PROPS]: ChatPromptInputProps - 输入框状态/行为/可用模型/访问模式
  * [EMITS]: onSubmit/onStop/onError/onOpenSettings - 提交/中断/错误/打开设置
  * [POS]: Chat Pane 输入框，负责消息输入与上下文/模型选择（+ 菜单 / @ 引用）
+ * [UPDATE]: 2026-02-26 - 固定 overlay store 刷新回调引用，避免 `shouldSync` 在每次 render 误判触发
  * [UPDATE]: 2026-02-26 - 恢复 thinking 第二下拉渲染（仅支持模型展示），修复 thinking UI 入口回归
  * [UPDATE]: 2026-02-26 - 输入状态与提交编排拆分到 controller hook 与子片段组件
  * [UPDATE]: 2026-02-26 - 输入浮层改为 store-first：overlays/file-panel 就地 selector 取数
@@ -10,6 +11,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
+import { useCallback } from 'react';
 import { File, Image, Wrench } from 'lucide-react';
 import {
   PromptInput,
@@ -119,14 +121,14 @@ const ChatPromptInputInner = ({
     onSelectSkillName,
   });
 
-  const refreshFiles = () => {
+  const refreshFiles = useCallback(() => {
     refreshRecentFiles();
     refreshWorkspaceFiles();
-  };
+  }, [refreshRecentFiles, refreshWorkspaceFiles]);
 
-  const handleRefreshSkills = () => {
+  const handleRefreshSkills = useCallback(() => {
     void refreshSkills();
-  };
+  }, [refreshSkills]);
   useSyncChatPromptOverlayStore({
     isDisabled,
     atPanelOpen,

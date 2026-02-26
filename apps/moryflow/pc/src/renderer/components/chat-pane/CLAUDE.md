@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-02-26：修复 `chat-prompt-input` 浮层快照同步性能回归：`onRefreshFiles/onRefreshSkills` 改为 `useCallback` 稳定引用，避免 `chat-prompt-overlay-store` 的 `shouldSync` 每次 render 误判并重复 `setSnapshot`。
 - 2026-02-26：分支全量 Code Review follow-up：`chat-pane-footer-store` 与 `chat-prompt-overlay-store` 新增 `shouldSync` 快照比较（overlay labels 改为字段级比较），减少无变化时重复 `setSnapshot`。
 - 2026-02-26：修复 thinking UI 回归：`ChatPromptInput` 恢复第二下拉（仅模型支持多等级时显示），新增 `chat-prompt-input-thinking-selector` 子组件与 helper 回归测试，保持 store-first 编排不变。
 - 2026-02-26：Store-first 二次改造落地（`SF-1/SF-2`）：新增 `hooks/use-chat-pane-footer-store.ts` 与 `components/chat-prompt-input/chat-prompt-overlay-store.ts`；`ChatFooter/ChatPromptInputOverlays` 改为 selector 就地取数；`FileContextPanel` 新增 `FileContextPanelFromOverlayStore` 包装层，`ChatPane/ChatPromptInput` 改为快照同步层。
