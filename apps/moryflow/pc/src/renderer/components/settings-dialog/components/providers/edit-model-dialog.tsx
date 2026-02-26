@@ -2,11 +2,12 @@
  * [PROPS]: EditModelDialogProps - 编辑模型配置所需参数
  * [EMITS]: onSave(data) - 提交模型配置
  * [POS]: Providers 模型编辑弹窗
+ * [UPDATE]: 2026-02-26 - 修复 thinking level 可选项引用抖动导致的 useEffect 循环 setState（Maximum update depth）
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,10 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
-import type {
-  ModelModality,
-  ThinkingLevelProviderPatches,
-} from '@shared/model-registry';
+import type { ModelModality, ThinkingLevelProviderPatches } from '@shared/model-registry';
 import type { ProviderSdkType } from '@shared/ipc';
 import type { CustomCapabilities } from './add-model-dialog';
 import {
@@ -93,7 +91,7 @@ const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
 const EMPTY_LEVEL_PATCHES_TEXT = '{}';
 
 const parseLevelPatchesInput = (
-  value: string,
+  value: string
 ): Record<string, ThinkingLevelProviderPatches> | undefined => {
   const trimmed = value.trim();
   if (!trimmed || trimmed === '{}') {
@@ -147,7 +145,7 @@ export const EditModelDialog = ({
   initialData,
   sdkType = 'openai-compatible',
 }: EditModelDialogProps) => {
-  const availableThinkingLevels = getThinkingLevelsBySdkType(sdkType);
+  const availableThinkingLevels = useMemo(() => getThinkingLevelsBySdkType(sdkType), [sdkType]);
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
   const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
@@ -206,9 +204,7 @@ export const EditModelDialog = ({
       try {
         levelPatches = parseLevelPatchesInput(levelPatchesText);
       } catch (jsonError) {
-        setError(
-          jsonError instanceof Error ? jsonError.message : 'Level patches JSON is invalid',
-        );
+        setError(jsonError instanceof Error ? jsonError.message : 'Level patches JSON is invalid');
         return;
       }
     }
@@ -345,7 +341,9 @@ export const EditModelDialog = ({
                     setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
                   }
                 />
-                <p className="text-xs text-muted-foreground">{Math.round(contextSize / 1000)}K tokens</p>
+                <p className="text-xs text-muted-foreground">
+                  {Math.round(contextSize / 1000)}K tokens
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -360,7 +358,9 @@ export const EditModelDialog = ({
                     setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
                   }
                 />
-                <p className="text-xs text-muted-foreground">{Math.round(outputSize / 1000)}K tokens</p>
+                <p className="text-xs text-muted-foreground">
+                  {Math.round(outputSize / 1000)}K tokens
+                </p>
               </div>
             </div>
 

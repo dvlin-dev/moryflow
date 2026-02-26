@@ -120,27 +120,6 @@ app.on('open-url', (event, url) => {
   handleDeepLink(url);
 });
 
-// Windows/Linux: 通过 second-instance 事件接收 Deep Link
-const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  app.quit();
-} else {
-  app.on('second-instance', (_event, commandLine) => {
-    // 在 Windows 上，deep link 会作为命令行参数传入
-    const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL_NAME}://`));
-    if (url) {
-      handleDeepLink(url);
-    }
-
-    // 聚焦主窗口
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
-  });
-}
-
 // 监听会员状态变化：登录/登出时处理同步引擎
 membershipBridge.addListener(() => {
   const config = membershipBridge.getConfig();

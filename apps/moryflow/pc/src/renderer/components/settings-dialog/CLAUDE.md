@@ -25,6 +25,7 @@
 
 ## 近期变更
 
+- Providers 模型编辑弹窗稳定性修复：`edit-model-dialog.tsx` 将 `availableThinkingLevels` 改为 `useMemo`，避免 `useEffect` 依赖数组每次 render 变更引发 `Maximum update depth exceeded`；新增 `components/providers/edit-model-dialog.test.tsx` 回归测试（2026-02-26）
 - Providers review follow-up：修复 `use-provider-details-controller` 中 model `thinking` 丢失，补齐 preset/custom model 的 view/edit/save 全链路透传，并新增 `use-provider-details-controller.test.tsx` 回归测试（2026-02-26）
 - Providers preset 细节页 props 收敛：`ProviderDetailsPreset` 改为 `formModel/listModel/dialogModel` 三段模型，减少大规模 props 平铺并固定容器装配边界（2026-02-26）
 - Providers 详情页重构为容器 + `use-provider-details-controller` + `preset/custom` 子组件，`provider-details.tsx` 收敛为状态分流层
