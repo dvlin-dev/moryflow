@@ -97,6 +97,10 @@ export class AgentChatTransport extends DefaultChatTransport<UIMessage> {
           return response;
         }
 
+        if (response.status !== 400) {
+          return response;
+        }
+
         const responseText = await response.clone().text();
         if (!isThinkingBoundaryError(response.status, responseText)) {
           return response;

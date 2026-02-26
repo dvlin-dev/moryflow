@@ -94,6 +94,51 @@ describe('AgentChatTransport', () => {
     }
   });
 
+  it('does not drain successful SSE responses for thinking level requests', async () => {
+    const stream = buildSseStream([
+      { type: 'start', messageId: 'msg_1' },
+      { type: 'finish', finishReason: 'stop' },
+    ]);
+    const response = new Response(stream, {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    });
+    const cloneSpy = vi.spyOn(response, 'clone');
+    const fetchMock = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const optionsRef = {
+        current: {
+          apiKey: 'key-1',
+          output: { type: 'text' as const },
+          modelId: 'gpt-4o',
+          thinking: { mode: 'level' as const, level: 'high' },
+        },
+      };
+      const transport = new AgentChatTransport(optionsRef);
+      const messages: UIMessage[] = [
+        {
+          id: 'u1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ];
+      const resultStream = await transport.sendMessages({
+        chatId: 'chat-1',
+        messages,
+        trigger: 'submit-message',
+        abortSignal: undefined,
+      });
+      const reader = resultStream.getReader();
+      await reader.read();
+
+      expect(cloneSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('throws when prompt is empty', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

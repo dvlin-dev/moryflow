@@ -60,6 +60,7 @@ export function useApiKeys() {
 
 ## 近期变更
 
+- Agent Browser Playground：修复 thinking=level 场景 200 SSE 流被 `clone().text()` 提前耗尽的问题；仅在 `400` 边界错误时读取响应体并触发单次降级重试（2026-02-26）
 - Agent Browser Playground：`AgentChatTransport.headers` 固定返回 `Headers`，修复 `Authorization?: undefined` 导致的 `TS2322`
 - Agent Browser Playground：聊天 transport 切换为官方 `DefaultChatTransport`，移除手写 SSE parser 与 `eventsource-parser` 依赖
 - Agent Browser Playground：Diagnostics 新增 Detection Risk 只读区块，接入 `/api/v1/browser/session/:id/risk`，展示 24h 成功率、Top 原因与建议动作
