@@ -54,6 +54,7 @@ Anyhunt Dev 的 LLM 配置与运行时路由模块：管理员在后台动态维
 
 ## 最近更新
 
+- 2026-02-26：`thinking-profile.util` 合并顺序修正为 `generic -> provider -> direct`，确保 provider patch 不会被通用默认覆盖；新增 `thinking-profile.util.spec.ts` 回归
 - 2026-02-24：`aisdk` 导入改回 `@openai/agents-extensions` 顶层导出，以适配当前 `moduleResolution=node` 构建链路
 - 2026-02-01：ModelProviderFactory 单测在隔离关闭时通过 resetModules 确保 mock 生效
 - 2026-01-27：LlmLanguageModelService 透传模型上下限（maxContext/maxOutput），供调用侧统一裁剪

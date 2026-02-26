@@ -10,6 +10,8 @@ export type {
 export type {
   AgentChatContext,
   AgentChatRequestOptions,
+  AgentThinkingSelection,
+  AgentThinkingProfile,
   AgentSelectedSkill,
   AgentAccessMode,
   ChatSessionSummary,

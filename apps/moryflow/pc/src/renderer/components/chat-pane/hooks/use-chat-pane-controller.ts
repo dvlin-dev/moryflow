@@ -13,7 +13,7 @@ import type { ChatMessageMeta } from '@moryflow/types';
 import { toast } from 'sonner';
 import type { AgentChatRequestOptions } from '@shared/ipc';
 import { useTranslation } from '@/lib/i18n';
-import { useAuth } from '@/lib/server';
+import { extractMembershipModelId, isMembershipModelId, useAuth } from '@/lib/server';
 import { IpcChatTransport } from '@/transport/ipc-chat-transport';
 
 import { buildMembershipModelGroup } from '../models';
@@ -49,17 +49,38 @@ export const useChatPaneController = ({
   } = useChatSessions();
   const selectedSkillName = useSelectedSkillStore((state) => state.selectedSkillName);
   const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
+  const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
+  const membershipThinkingProfileByModelId = useMemo(() => {
+    const entries = membershipModels
+      .filter((model) => model.thinkingProfile)
+      .map((model) => [model.id, model.thinkingProfile] as const);
+    return new Map(entries);
+  }, [membershipModels]);
+  const resolveExternalThinkingProfile = useCallback(
+    (modelId?: string) => {
+      if (!modelId || !isAuthenticated || !membershipEnabled) {
+        return undefined;
+      }
+      if (!isMembershipModelId(modelId)) {
+        return undefined;
+      }
+      return membershipThinkingProfileByModelId.get(extractMembershipModelId(modelId));
+    },
+    [isAuthenticated, membershipEnabled, membershipThinkingProfileByModelId]
+  );
   const {
     agentOptionsRef,
     selectedModelId,
     setSelectedModelId,
+    selectedThinkingLevel,
+    selectedThinkingProfile,
+    setSelectedThinkingLevel,
     modelGroups: baseModelGroups,
-  } = useChatModelSelection(activeFilePath, selectedSkillName);
+  } = useChatModelSelection(activeFilePath, selectedSkillName, resolveExternalThinkingProfile);
   const agentOptionsOverrideRef = useRef<AgentChatRequestOptions | Record<string, never> | null>(
     null
   );
 
-  const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
   const modelGroups = useMemo(() => {
     if (!isAuthenticated || !membershipEnabled) {
       return baseModelGroups;
@@ -154,6 +175,8 @@ export const useChatPaneController = ({
         computeAgentOptions({
           activeFilePath,
           preferredModelId: selectedModelId ?? null,
+          thinkingLevel: selectedThinkingLevel,
+          thinkingProfile: selectedThinkingProfile ?? null,
           selectedSkillName: selectedSkillForThisMessage,
         }) ?? {};
 
@@ -206,6 +229,8 @@ export const useChatPaneController = ({
       selectedSkillName,
       activeFilePath,
       selectedModelId,
+      selectedThinkingLevel,
+      selectedThinkingProfile,
       t,
       onOpenSettings,
       setMessages,
@@ -264,6 +289,9 @@ export const useChatPaneController = ({
     modelGroups,
     selectedModelId,
     setSelectedModelId,
+    selectedThinkingLevel,
+    selectedThinkingProfile,
+    setSelectedThinkingLevel,
     messages,
     status,
     error,

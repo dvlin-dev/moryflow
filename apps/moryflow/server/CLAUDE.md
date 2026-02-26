@@ -52,6 +52,8 @@ module-name/
 
 ## 近期变更
 
+- AI Proxy `/v1/models` 查询路径移除重复契约预检：`getAllModelsWithAccess` 不再额外触发一次 `findMany`，保留启动期与模型解析期契约守卫；补齐“单次查询”回归测试（2026-02-26）
+- AI Proxy 模型契约升级：Membership `/v1/models` 的 `thinking_profile` 改为强制字段；服务端新增模型契约守卫（levels 必含 `off`、`defaultLevel` 合法），默认思考等级回退统一为 `off`（2026-02-26）
 - 限流：接入全局 Throttler（Redis 存储，默认 `60s/300`，可由 `GLOBAL_THROTTLE_*` 覆盖）并注册 `UserThrottlerGuard` 为全局 `APP_GUARD`；新增 `RedisThrottlerStorageService` 与限流配置解析/回归测试；Redis `eval` 异常场景改为 fail-open（避免全局 500）
 - Auth：Better Auth rateLimit 改为可配置默认值（`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX`，默认 `60s/20`）并通过 `customRules` 覆盖登录/注册/改密/OTP 相关路径，避免默认 `10s/3` 过严策略
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 filtered install 下 `packages/types` 缺少 `@moryflow/typescript-config` 导致 `TS6053`（extends 解析失败）

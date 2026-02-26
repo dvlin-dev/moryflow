@@ -25,6 +25,8 @@ export const ChatFooter = () => {
     vaultPath,
     modelGroups,
     selectedModelId,
+    selectedThinkingLevel,
+    selectedThinkingProfile,
     disabled,
     tokenUsage,
     contextWindow,
@@ -36,6 +38,7 @@ export const ChatFooter = () => {
     onInputError,
     onOpenSettings,
     onSelectModel,
+    onSelectThinkingLevel,
     onModeChange,
     onSelectSkillName,
   } = useChatPaneFooterStore(
@@ -47,6 +50,8 @@ export const ChatFooter = () => {
       vaultPath: state.vaultPath,
       modelGroups: state.modelGroups,
       selectedModelId: state.selectedModelId,
+      selectedThinkingLevel: state.selectedThinkingLevel,
+      selectedThinkingProfile: state.selectedThinkingProfile,
       disabled: state.disabled,
       tokenUsage: state.tokenUsage,
       contextWindow: state.contextWindow,
@@ -58,6 +63,7 @@ export const ChatFooter = () => {
       onInputError: state.onInputError,
       onOpenSettings: state.onOpenSettings,
       onSelectModel: state.onSelectModel,
+      onSelectThinkingLevel: state.onSelectThinkingLevel,
       onModeChange: state.onModeChange,
       onSelectSkillName: state.onSelectSkillName,
     })
@@ -81,6 +87,9 @@ export const ChatFooter = () => {
           modelGroups={modelGroups}
           selectedModelId={selectedModelId}
           onSelectModel={onSelectModel}
+          selectedThinkingLevel={selectedThinkingLevel}
+          selectedThinkingProfile={selectedThinkingProfile}
+          onSelectThinkingLevel={onSelectThinkingLevel}
           disabled={disabled}
           onOpenSettings={onOpenSettings}
           tokenUsage={tokenUsage}

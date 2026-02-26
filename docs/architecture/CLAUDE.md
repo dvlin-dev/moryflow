@@ -21,6 +21,7 @@
 - `admin-llm-provider-config.md`：Admin 动态配置 LLM Providers/Models（入库 baseUrl/apiKey，加密存储；Agent/Playground 运行时路由）。
 - `llm-admin-provider-rollout.md`：LLM Admin 配置改造进度（Agent + Extract；含 DB 升级要点与部署清单）。
 - `anyhunt-llm-provider-alignment.md`：Anyhunt LLM Provider 对齐进度（AI SDK + Console 模型选择）。
+- `moryflow-anyhunt-model-thinking-level-plan.md`：Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode；两轮均已完成，且已补齐 PR#97 增量评论修复，REVIEW-02/FIX-08/FIX-09/TEST-04 全部 done）。
 - `auth.md`：Auth 系统入口（支持 Google/Apple 登录、不做跨域互通），指向 `auth/` 拆分文档。
 - `auth/`：Auth 拆分文档目录（域名与路由、服务与网络、认证与 Token、数据库、配额与 API Keys）。
 - `auth/unified-token-auth-v2-plan.md`：统一 Token Auth V2 改造方案（跨 Anyhunt + Moryflow，active，Step 1~7 已完成）。
@@ -45,6 +46,9 @@
 
 ## 近期更新
 
+- `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 新评论修复闭环（REVIEW-02/FIX-08/FIX-09/TEST-04），修复 `supportsThinking` 不可达回退与 `/v1/models` 重复查询，并完成受影响包回归验证（2026-02-26，implemented）。
+- `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 评论修复闭环（REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03），完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证（2026-02-26，implemented）。
+- `moryflow-anyhunt-model-thinking-level-plan.md`：第二轮执行完成（thinking_profile 强制契约、levelPatches 强类型/运行时消费、Anyhunt 默认 off + 客户端单次降级重试、全仓 `lint/typecheck/test:unit` 闸门通过）（2026-02-26，implemented）。
 - `auth/auth-and-global-rate-limit-defense-plan.md`：按当前实现对齐技术细节（Better Auth `/**` 路径规则、全局 `forRootAsync` 装配、Redis Lua 原子限流、默认 skip paths、模块级校验命令）（2026-02-25，active）。
 - `auth/auth-and-global-rate-limit-defense-plan.md`：Moryflow Server 分层限流方案进入执行状态（Auth `60s/20` + 全局 `60s/300` 已落地，Step 1~5 完成，Step 6 灰度待执行）（2026-02-25，active）。
 - `auth/auth-zustand-method-refactor-plan.md`：完成八次评审修订后已执行落地（Step 1~13 全部回写 done），完成客户端/服务端出站 HTTP/WebSocket 统一、旧范式清理与受影响包回归验证（2026-02-24）。

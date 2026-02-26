@@ -98,6 +98,66 @@ const clearUserState = (): void => {
   authStore.getState().setModels([]);
 };
 
+const normalizeMembershipThinkingProfile = (input: {
+  modelId: string;
+  profile: unknown;
+}) => {
+  const record =
+    input.profile && typeof input.profile === 'object'
+      ? (input.profile as Record<string, unknown>)
+      : null;
+  if (!record) {
+    throw new Error(`Model '${input.modelId}' missing thinking_profile`);
+  }
+
+  const rawLevels = Array.isArray(record.levels) ? record.levels : [];
+  const levels: Array<{ id: string; label: string; description?: string }> = [];
+  const seen = new Set<string>();
+  for (const item of rawLevels) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+    const level = item as Record<string, unknown>;
+    const id = typeof level.id === 'string' ? level.id.trim() : '';
+    if (!id || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    const label =
+      typeof level.label === 'string' && level.label.trim().length > 0
+        ? level.label.trim()
+        : id;
+    const description =
+      typeof level.description === 'string' && level.description.trim().length > 0
+        ? level.description.trim()
+        : undefined;
+    levels.push({
+      id,
+      label,
+      ...(description ? { description } : {}),
+    });
+  }
+
+  if (!levels.some((level) => level.id === 'off')) {
+    throw new Error(`Model '${input.modelId}' thinking_profile.levels must include 'off'`);
+  }
+
+  const defaultLevel =
+    typeof record.defaultLevel === 'string' ? record.defaultLevel.trim() : '';
+  if (!defaultLevel || !levels.some((level) => level.id === defaultLevel)) {
+    throw new Error(
+      `Model '${input.modelId}' thinking_profile.defaultLevel is invalid`,
+    );
+  }
+
+  const supportsThinking = Boolean(record.supportsThinking);
+  return {
+    supportsThinking,
+    defaultLevel,
+    levels,
+  };
+};
+
 const loadModels = async (force = false): Promise<void> => {
   const { models } = authStore.getState();
   if (models.length > 0 && !force) {
@@ -107,13 +167,29 @@ const loadModels = async (force = false): Promise<void> => {
   authStore.getState().setModelsLoading(true);
   try {
     const response = await fetchMembershipModels();
-    const membershipModels: MembershipModel[] = response.data.map((model) => ({
-      id: model.id,
-      name: model.display_name || model.id,
-      ownedBy: model.owned_by,
-      minTier: model.min_tier,
-      available: model.available,
-    }));
+    const membershipModels: MembershipModel[] = response.data
+      .map((model) => {
+        try {
+          return {
+            id: model.id,
+            name: model.display_name || model.id,
+            ownedBy: model.owned_by,
+            minTier: model.min_tier,
+            available: model.available,
+            thinkingProfile: normalizeMembershipThinkingProfile({
+              modelId: model.id,
+              profile: model.thinking_profile,
+            }),
+          };
+        } catch (error) {
+          console.error('[auth-methods] Invalid membership model thinking_profile', {
+            modelId: model.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return null;
+        }
+      })
+      .filter((model): model is MembershipModel => model !== null);
     authStore.getState().setModels(membershipModels);
   } catch (error) {
     console.error('[auth-methods] Failed to load models:', error);

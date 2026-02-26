@@ -80,6 +80,7 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       customOutput: model.customOutput,
       customCapabilities: model.customCapabilities,
       customInputModalities: model.customInputModalities,
+      thinking: model.thinking,
     })),
     defaultModelId: provider.defaultModelId,
   })),
@@ -99,6 +100,7 @@ export const settingsToForm = (settings: AgentSettings): FormValues => ({
       customOutput: model.customOutput,
       customCapabilities: model.customCapabilities,
       customInputModalities: model.customInputModalities,
+      thinking: model.thinking,
     })),
     defaultModelId: provider.defaultModelId,
   })),
@@ -182,6 +184,7 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
           customOutput: model.customOutput,
           customCapabilities: model.customCapabilities,
           customInputModalities: model.customInputModalities,
+          thinking: model.thinking,
         })),
         defaultModelId: provider.defaultModelId || null,
       })
@@ -205,6 +208,7 @@ export const formToUpdate = (values: FormValues): AgentSettingsUpdate => {
             customOutput: model.customOutput,
             customCapabilities: model.customCapabilities,
             customInputModalities: model.customInputModalities,
+            thinking: model.thinking,
           };
         }),
         defaultModelId: provider.defaultModelId || null,

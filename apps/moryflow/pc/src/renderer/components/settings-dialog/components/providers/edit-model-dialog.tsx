@@ -6,10 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useEffect, type ComponentProps } from 'react';
-import { useForm, type Control } from 'react-hook-form';
-import { z } from 'zod/v3';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,10 +18,26 @@ import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
 import { Button } from '@moryflow/ui/components/button';
 import { Checkbox } from '@moryflow/ui/components/checkbox';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@moryflow/ui/components/form';
-import type { ModelModality } from '@shared/model-registry';
+import { Textarea } from '@moryflow/ui/components/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@moryflow/ui/components/select';
+import type {
+  ModelModality,
+  ThinkingLevelProviderPatches,
+} from '@shared/model-registry';
+import type { ProviderSdkType } from '@shared/ipc';
 import type { CustomCapabilities } from './add-model-dialog';
-import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
+import {
+  DEFAULT_CUSTOM_MODEL_CONTEXT,
+  DEFAULT_CUSTOM_MODEL_OUTPUT,
+  getThinkingLevelsBySdkType,
+  THINKING_LEVEL_LABELS,
+} from './constants';
 
 export type EditModelFormData = {
   id: string;
@@ -33,6 +46,11 @@ export type EditModelFormData = {
   outputSize: number;
   capabilities: CustomCapabilities;
   inputModalities: ModelModality[];
+  thinking?: {
+    defaultLevel: string;
+    enabledLevels: string[];
+    levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+  };
 };
 
 export type EditModelInitialData = {
@@ -48,6 +66,11 @@ export type EditModelInitialData = {
   };
   limits: { context: number; output: number };
   inputModalities?: ModelModality[];
+  thinking?: {
+    defaultLevel?: string;
+    enabledLevels?: string[];
+    levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+  };
 };
 
 type EditModelDialogProps = {
@@ -55,6 +78,7 @@ type EditModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSave: (data: EditModelFormData) => void;
   initialData: EditModelInitialData | null;
+  sdkType?: ProviderSdkType;
 };
 
 /** 默认能力 */
@@ -65,8 +89,22 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
   toolCall: true,
 };
 
-const MODALITY_VALUES = ['text', 'image', 'audio', 'video', 'pdf'] as const;
 const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
+const EMPTY_LEVEL_PATCHES_TEXT = '{}';
+
+const parseLevelPatchesInput = (
+  value: string,
+): Record<string, ThinkingLevelProviderPatches> | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '{}') {
+    return undefined;
+  }
+  const parsed = JSON.parse(trimmed) as unknown;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Level patches must be a JSON object');
+  }
+  return parsed as Record<string, ThinkingLevelProviderPatches>;
+};
 
 /** 输入模态选项 */
 const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
@@ -102,157 +140,153 @@ const CAPABILITY_OPTIONS: { key: keyof CustomCapabilities; label: string; descri
     },
   ];
 
-const editModelSchema = z.object({
-  name: z.string().trim().min(1, 'Model name is required'),
-  contextSize: z.number().int().min(1000).max(10000000),
-  outputSize: z.number().int().min(1000).max(1000000),
-  capabilities: z.object({
-    attachment: z.boolean(),
-    reasoning: z.boolean(),
-    temperature: z.boolean(),
-    toolCall: z.boolean(),
-  }),
-  inputModalities: z
-    .array(z.enum(MODALITY_VALUES))
-    .min(1, 'At least one input type is required')
-    .refine((modalities) => modalities.includes('text'), {
-      message: 'Text input is required',
-    }),
-});
-
-type EditModelFormValues = z.infer<typeof editModelSchema>;
-
-const DEFAULT_FORM_VALUES: EditModelFormValues = {
-  name: '',
-  contextSize: DEFAULT_CUSTOM_MODEL_CONTEXT,
-  outputSize: DEFAULT_CUSTOM_MODEL_OUTPUT,
-  capabilities: DEFAULT_CAPABILITIES,
-  inputModalities: DEFAULT_INPUT_MODALITIES,
-};
-
-const parseNumberOrDefault = (value: string, fallback: number): number => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const toggleModalityValue = (
-  current: ModelModality[],
-  modality: ModelModality,
-  isDisabled: boolean
-): ModelModality[] => {
-  if (isDisabled) {
-    return current;
-  }
-  if (current.includes(modality)) {
-    return current.filter((entry) => entry !== modality);
-  }
-  return [...current, modality];
-};
-
-type ModalitySelectorProps = {
-  control: Control<EditModelFormValues>;
-};
-
-const ModalitySelector = ({ control }: ModalitySelectorProps) => {
-  return (
-    <FormField
-      control={control}
-      name="inputModalities"
-      render={({ field }) => (
-        <div className="space-y-3">
-          <Label>Supported input types</Label>
-          <div className="flex flex-wrap gap-2">
-            {INPUT_MODALITY_OPTIONS.map((option) => {
-              const values = field.value ?? [];
-              const isDisabled = option.value === 'text' && values.length === 1;
-              return (
-                <div
-                  key={option.value}
-                  role="button"
-                  tabIndex={isDisabled ? -1 : 0}
-                  onClick={() => field.onChange(toggleModalityValue(values, option.value, isDisabled))}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      field.onChange(toggleModalityValue(values, option.value, isDisabled));
-                    }
-                  }}
-                  aria-disabled={isDisabled}
-                  className="flex items-center gap-2 rounded-md border px-3 py-2 transition-colors hover:bg-muted/50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent"
-                >
-                  <Checkbox
-                    checked={values.includes(option.value)}
-                    onCheckedChange={() =>
-                      field.onChange(toggleModalityValue(values, option.value, isDisabled))
-                    }
-                    disabled={isDisabled}
-                    onClick={(event) => event.stopPropagation()}
-                  />
-                  <span className="text-sm">{option.label}</span>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Select the input types supported by this model. Text is required.
-          </p>
-          <FormMessage />
-        </div>
-      )}
-    />
-  );
-};
-
 export const EditModelDialog = ({
   open,
   onOpenChange,
   onSave,
   initialData,
+  sdkType = 'openai-compatible',
 }: EditModelDialogProps) => {
-  const form = useForm<EditModelFormValues>({
-    resolver: zodResolver(editModelSchema),
-    defaultValues: DEFAULT_FORM_VALUES,
-  });
-  const formProviderProps = form as unknown as ComponentProps<typeof Form>;
-  const formControl = form.control as unknown as ComponentProps<typeof FormField>['control'];
-
-  const contextSize = form.watch('contextSize');
-  const outputSize = form.watch('outputSize');
+  const availableThinkingLevels = getThinkingLevelsBySdkType(sdkType);
+  const [modelName, setModelName] = useState('');
+  const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
+  const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
+  const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
+  const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
+  const [thinkingLevels, setThinkingLevels] = useState<string[]>(availableThinkingLevels);
+  const [defaultThinkingLevel, setDefaultThinkingLevel] = useState('off');
+  const [levelPatchesText, setLevelPatchesText] = useState(EMPTY_LEVEL_PATCHES_TEXT);
+  const [error, setError] = useState<string | null>(null);
 
   // 当初始数据变化时，重置表单
   useEffect(() => {
-    if (!initialData || !open) {
-      return;
-    }
-    form.reset({
-      name: initialData.name,
-      contextSize: initialData.limits.context,
-      outputSize: initialData.limits.output,
-      capabilities: {
+    if (initialData && open) {
+      setModelName(initialData.name);
+      setContextSize(initialData.limits.context);
+      setOutputSize(initialData.limits.output);
+      setCapabilities({
         attachment: initialData.capabilities?.attachment ?? false,
         reasoning: initialData.capabilities?.reasoning ?? false,
         temperature: initialData.capabilities?.temperature ?? true,
         toolCall: initialData.capabilities?.toolCall ?? true,
-      },
-      inputModalities: initialData.inputModalities ?? ['text'],
-    });
-  }, [initialData, open, form]);
+      });
+      setInputModalities(initialData.inputModalities || ['text']);
 
-  const handleSubmit = form.handleSubmit((values) => {
-    if (!initialData) {
+      const enabledLevels =
+        initialData.thinking?.enabledLevels && initialData.thinking.enabledLevels.length > 0
+          ? initialData.thinking.enabledLevels
+          : availableThinkingLevels;
+      const normalizedLevels = Array.from(new Set(['off', ...enabledLevels.filter(Boolean)]));
+      setThinkingLevels(normalizedLevels);
+
+      const defaultLevel = initialData.thinking?.defaultLevel || 'off';
+      setDefaultThinkingLevel(
+        normalizedLevels.includes(defaultLevel) ? defaultLevel : normalizedLevels[0] || 'off'
+      );
+      setLevelPatchesText(
+        initialData.thinking?.levelPatches
+          ? JSON.stringify(initialData.thinking.levelPatches, null, 2)
+          : EMPTY_LEVEL_PATCHES_TEXT
+      );
+      setError(null);
+    }
+  }, [availableThinkingLevels, initialData, open]);
+
+  const handleSubmit = () => {
+    setError(null);
+
+    const trimmedName = modelName.trim();
+    if (!trimmedName) {
+      setError('Model name is required');
       return;
     }
 
+    let levelPatches: Record<string, ThinkingLevelProviderPatches> | undefined;
+    if (capabilities.reasoning) {
+      try {
+        levelPatches = parseLevelPatchesInput(levelPatchesText);
+      } catch (jsonError) {
+        setError(
+          jsonError instanceof Error ? jsonError.message : 'Level patches JSON is invalid',
+        );
+        return;
+      }
+    }
+
     onSave({
-      id: initialData.id,
-      name: values.name.trim(),
-      contextSize: values.contextSize,
-      outputSize: values.outputSize,
-      capabilities: values.capabilities,
-      inputModalities: values.inputModalities,
+      id: initialData!.id,
+      name: trimmedName,
+      contextSize,
+      outputSize,
+      capabilities,
+      inputModalities,
+      ...(capabilities.reasoning
+        ? {
+            thinking: {
+              defaultLevel:
+                thinkingLevels.includes(defaultThinkingLevel) && defaultThinkingLevel !== 'off'
+                  ? defaultThinkingLevel
+                  : 'off',
+              enabledLevels: Array.from(
+                new Set(['off', ...thinkingLevels.filter((level) => level !== 'off')])
+              ),
+              ...(levelPatches ? { levelPatches } : {}),
+            },
+          }
+        : {}),
     });
 
     onOpenChange(false);
-  });
+  };
+
+  const toggleCapability = (key: keyof CustomCapabilities) => {
+    setCapabilities((prev) => {
+      const next = !prev[key];
+      if (key === 'reasoning' && !next) {
+        setThinkingLevels(['off']);
+        setDefaultThinkingLevel('off');
+        setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
+      }
+      if (key === 'reasoning' && next) {
+        setThinkingLevels(availableThinkingLevels);
+        setDefaultThinkingLevel('off');
+        setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
+      }
+      return { ...prev, [key]: next };
+    });
+  };
+
+  const toggleModality = (modality: ModelModality) => {
+    setInputModalities((prev) => {
+      if (prev.includes(modality)) {
+        if (modality === 'text' && prev.length === 1) return prev;
+        return prev.filter((m) => m !== modality);
+      }
+      return [...prev, modality];
+    });
+  };
+
+  const toggleThinkingLevel = (level: string) => {
+    if (level === 'off') {
+      return;
+    }
+    setThinkingLevels((prev) => {
+      const nextSet = new Set(prev);
+      if (nextSet.has(level)) {
+        nextSet.delete(level);
+      } else {
+        nextSet.add(level);
+      }
+      const next = Array.from(nextSet);
+      if (!next.includes('off')) {
+        next.unshift('off');
+      }
+      if (!next.includes(defaultThinkingLevel)) {
+        setDefaultThinkingLevel('off');
+      }
+      return next;
+    });
+  };
 
   if (!initialData) return null;
 
@@ -265,153 +299,199 @@ export const EditModelDialog = ({
           </DialogTitle>
         </DialogHeader>
         <div>
-          <Form {...formProviderProps}>
-            <div className="grid max-h-[60vh] gap-4 overflow-y-auto py-4 pr-2">
-              {/* 模型 ID（只读） */}
-              <div className="space-y-2">
-                <Label>Model ID</Label>
-                <Input value={initialData.id} disabled className="bg-muted" />
-                <p className="text-xs text-muted-foreground">
-                  {initialData.isPreset
-                    ? 'Preset model IDs cannot be changed'
-                    : 'Used as the model identifier in API calls'}
-                </p>
-              </div>
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+            {/* 模型 ID（只读） */}
+            <div className="space-y-2">
+              <Label>Model ID</Label>
+              <Input value={initialData.id} disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground">
+                {initialData.isPreset
+                  ? 'Preset model IDs cannot be changed'
+                  : 'Used as the model identifier in API calls'}
+              </p>
+            </div>
 
-              {/* 模型名称 */}
-              <FormField
-                control={formControl}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <Label htmlFor="edit-model-name">
-                      Display name <span className="text-destructive">*</span>
-                    </Label>
-                    <FormControl>
-                      <Input
-                        id="edit-model-name"
-                        placeholder="e.g. GPT-4o (2024-11)"
-                        {...field}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            void handleSubmit();
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground">Shown in the UI</p>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            {/* 模型名称 */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-model-name">
+                Display name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-model-name"
+                placeholder="e.g. GPT-4o (2024-11)"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
               />
+              <p className="text-xs text-muted-foreground">Shown in the UI</p>
+            </div>
 
-              {/* Token 限制 */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={formControl}
-                  name="contextSize"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <Label htmlFor="edit-context-size">Context window</Label>
-                      <FormControl>
-                        <Input
-                          id="edit-context-size"
-                          type="number"
-                          min={1000}
-                          max={10000000}
-                          value={field.value}
-                          onChange={(event) =>
-                            field.onChange(
-                              parseNumberOrDefault(event.target.value, DEFAULT_CUSTOM_MODEL_CONTEXT)
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        {Math.round(contextSize / 1000)}K tokens
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            {/* Token 限制 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-context-size">Context window</Label>
+                <Input
+                  id="edit-context-size"
+                  type="number"
+                  min={1000}
+                  max={10000000}
+                  value={contextSize}
+                  onChange={(e) =>
+                    setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
+                  }
                 />
-
-                <FormField
-                  control={formControl}
-                  name="outputSize"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <Label htmlFor="edit-output-size">Max output</Label>
-                      <FormControl>
-                        <Input
-                          id="edit-output-size"
-                          type="number"
-                          min={1000}
-                          max={1000000}
-                          value={field.value}
-                          onChange={(event) =>
-                            field.onChange(
-                              parseNumberOrDefault(event.target.value, DEFAULT_CUSTOM_MODEL_OUTPUT)
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        {Math.round(outputSize / 1000)}K tokens
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <p className="text-xs text-muted-foreground">{Math.round(contextSize / 1000)}K tokens</p>
               </div>
 
-              {/* 模型能力 */}
-              <div className="space-y-3">
-                <Label>Model capabilities</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {CAPABILITY_OPTIONS.map((option) => (
-                    <FormField
-                      key={option.key}
-                      control={formControl}
-                      name={`capabilities.${option.key}`}
-                      render={({ field }) => (
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => field.onChange(!field.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              field.onChange(!field.value);
-                            }
-                          }}
-                          className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
-                        >
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={() => field.onChange(!field.value)}
-                            onClick={(event) => event.stopPropagation()}
-                          />
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-medium">{option.label}</div>
-                            <p className="text-xs text-muted-foreground">{option.description}</p>
-                          </div>
-                        </div>
-                      )}
+              <div className="space-y-2">
+                <Label htmlFor="edit-output-size">Max output</Label>
+                <Input
+                  id="edit-output-size"
+                  type="number"
+                  min={1000}
+                  max={1000000}
+                  value={outputSize}
+                  onChange={(e) =>
+                    setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
+                  }
+                />
+                <p className="text-xs text-muted-foreground">{Math.round(outputSize / 1000)}K tokens</p>
+              </div>
+            </div>
+
+            {/* 模型能力 */}
+            <div className="space-y-3">
+              <Label>Model capabilities</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {CAPABILITY_OPTIONS.map((option) => (
+                  <div
+                    key={option.key}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleCapability(option.key)}
+                    onKeyDown={(e) => e.key === 'Enter' && toggleCapability(option.key)}
+                    className="flex items-center gap-3 rounded-md border p-3 text-left hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={capabilities[option.key]}
+                      onCheckedChange={() => toggleCapability(option.key)}
+                      onClick={(e) => e.stopPropagation()}
                     />
-                  ))}
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-medium">{option.label}</div>
+                      <p className="text-xs text-muted-foreground">{option.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {capabilities.reasoning && (
+              <div className="space-y-3 rounded-md border p-3">
+                <Label>Thinking levels</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {availableThinkingLevels.map((level) => {
+                    const checked = thinkingLevels.includes(level);
+                    const isOff = level === 'off';
+                    return (
+                      <div
+                        key={level}
+                        role="button"
+                        tabIndex={isOff ? -1 : 0}
+                        aria-disabled={isOff}
+                        onClick={() => !isOff && toggleThinkingLevel(level)}
+                        onKeyDown={(e) => e.key === 'Enter' && !isOff && toggleThinkingLevel(level)}
+                        className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm aria-disabled:opacity-70 aria-disabled:cursor-not-allowed"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          disabled={isOff}
+                          onCheckedChange={() => toggleThinkingLevel(level)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span>{THINKING_LEVEL_LABELS[level] ?? level}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="space-y-2">
+                  <Label>Default thinking level</Label>
+                  <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {thinkingLevels.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {THINKING_LEVEL_LABELS[level] ?? level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Level patches (JSON)</Label>
+                  <Textarea
+                    rows={6}
+                    value={levelPatchesText}
+                    onChange={(event) => setLevelPatchesText(event.target.value)}
+                    placeholder='{"high":{"openrouter":{"maxTokens":24576}}}'
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Optional per-level provider patch. Validated before save.
+                  </p>
                 </div>
               </div>
+            )}
 
-              {/* 输入模态 */}
-              <ModalitySelector control={formControl} />
+            {/* 输入模态 */}
+            <div className="space-y-3">
+              <Label>Supported input types</Label>
+              <div className="flex flex-wrap gap-2">
+                {INPUT_MODALITY_OPTIONS.map((option) => {
+                  const isDisabled = option.value === 'text' && inputModalities.length === 1;
+                  return (
+                    <div
+                      key={option.value}
+                      role="button"
+                      tabIndex={isDisabled ? -1 : 0}
+                      onClick={() => !isDisabled && toggleModality(option.value)}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && !isDisabled && toggleModality(option.value)
+                      }
+                      aria-disabled={isDisabled}
+                      className="flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-muted/50 transition-colors cursor-pointer aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent"
+                    >
+                      <Checkbox
+                        checked={inputModalities.includes(option.value)}
+                        onCheckedChange={() => toggleModality(option.value)}
+                        disabled={isDisabled}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="text-sm">{option.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select the input types supported by this model. Text is required.
+              </p>
             </div>
-          </Form>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={() => void handleSubmit()}>
+            <Button type="button" onClick={handleSubmit}>
               Save
             </Button>
           </DialogFooter>

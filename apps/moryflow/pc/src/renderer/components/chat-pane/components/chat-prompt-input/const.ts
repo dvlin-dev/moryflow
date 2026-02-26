@@ -4,6 +4,7 @@ import type { PromptInputProps } from '@moryflow/ui/ai/prompt-input';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
 import type { ChatSelectedSkill } from '@moryflow/types';
+import type { ModelThinkingProfile } from '@shared/model-registry';
 
 import type { ModelGroup } from '../../models';
 import type { MessageAttachment } from '../../types/attachment';
@@ -44,6 +45,9 @@ export type ChatPromptInputProps = Pick<PromptInputProps, 'onError'> & {
   modelGroups: ModelGroup[];
   selectedModelId?: string | null;
   onSelectModel: (modelId: string) => void;
+  selectedThinkingLevel?: string | null;
+  selectedThinkingProfile?: ModelThinkingProfile;
+  onSelectThinkingLevel: (level: string) => void;
   disabled?: boolean;
   onOpenSettings?: (section?: SettingsSection) => void;
   /** 当前会话的 token 使用量 */

@@ -13,6 +13,7 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import type { ModelThinkingProfile } from '@shared/model-registry';
 
 import type { ChatSubmitPayload } from '../components/chat-prompt-input/const';
 import type { ModelGroup } from '../models';
@@ -25,6 +26,8 @@ type ChatPaneFooterSnapshot = {
   vaultPath: string | null;
   modelGroups: ModelGroup[];
   selectedModelId: string | null;
+  selectedThinkingLevel: string | null;
+  selectedThinkingProfile?: ModelThinkingProfile;
   disabled: boolean;
   tokenUsage: TokenUsage | null;
   contextWindow: number | undefined;
@@ -36,6 +39,7 @@ type ChatPaneFooterSnapshot = {
   onInputError: (message: string) => void;
   onOpenSettings?: (section?: SettingsSection) => void;
   onSelectModel: (id: string) => void;
+  onSelectThinkingLevel: (level: string) => void;
   onModeChange: (mode: ChatSessionSummary['mode']) => void;
   onSelectSkillName?: (name: string | null) => void;
 };
@@ -55,6 +59,8 @@ const chatPaneFooterStore = createStore<ChatPaneFooterStoreState>((set) => ({
   vaultPath: null,
   modelGroups: [],
   selectedModelId: null,
+  selectedThinkingLevel: null,
+  selectedThinkingProfile: undefined,
   disabled: true,
   tokenUsage: null,
   contextWindow: undefined,
@@ -66,6 +72,7 @@ const chatPaneFooterStore = createStore<ChatPaneFooterStoreState>((set) => ({
   onInputError: noop,
   onOpenSettings: undefined,
   onSelectModel: noop,
+  onSelectThinkingLevel: noop,
   onModeChange: noop,
   onSelectSkillName: undefined,
   setSnapshot: (snapshot) => set(snapshot),

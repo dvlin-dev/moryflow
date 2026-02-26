@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成（模板/样式/脚本生成链路收敛，`sync` 确定性与新鲜度守卫落地），详见 `docs/code-review/moryflow-site-template.md` 与 `docs/code-review/frontend-component-optimization-rollout.md`。
 - 2026-02-26：Moryflow PC 完成 Store-first 二次改造执行（`SF-1~SF-4`）：新增 `chat-pane-footer-store/chat-prompt-overlay-store/workspace-shell-view-store/sidebar-panels-store`，并将 `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 切换为 selector 取数；`ProviderDetailsPreset` 收敛为 `form/list/dialog` 三段模型：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Moryflow PC 提交 Store-first 二次改造方案（待审核）：明确“禁用新增 Context，仅 `Zustand Store + Methods`”，覆盖 `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/AgentSubPanels/ProviderDetailsPreset` 的 `SF-1~SF-4` 执行序列：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Moryflow PC 模块 B follow-up 完成参数收敛复检：`ChatMessage` 新增 `MessageBodyModel`（`view/edit/tool`）并下沉 `useMessageToolModel`，`MessageBody/ToolPart` 改为对象化参数输入；同步完成 `apps/moryflow/pc/src/renderer` 同类 props 膨胀扫描：`docs/code-review/moryflow-pc.md`。
@@ -303,6 +304,7 @@ status: draft
 | 2026-01-26 | anyhunt-server-fetchx-core   | 修复完成（headers 合并/SSRF 403/syncTimeout/原子队列/敏感头不落库）                    | -                     | done        |
 | 2026-01-26 | packages-types-api-config    | 完成 review + 修复（类型包收敛、会员文案英文化、配置升级、协议标注）                   | -                     | done        |
 | 2026-01-26 | tooling-config               | 完成 review + 修复（React 规则补齐、Prettier 依赖、Vitest 全局、移除 tailwind-config） | -                     | done        |
+| 2026-02-26 | moryflow-site-template       | 组件优化专项结项：模块 A/B/C 与项目复盘完成，补齐 build/sync 回归单测                 | -                     | done        |
 | 2026-02-26 | moryflow-pc                  | 前端组件优化专项模块 A/B/C + Store-first `SF-1~SF-4` 已完成；下一步模块 D 预扫描         | -                     | in_progress |
 | 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                             | -                     | done        |
 | 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                            | -                     | in_progress |
