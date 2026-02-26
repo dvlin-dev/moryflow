@@ -10,6 +10,7 @@
 
 > 最近更新：2026-02-26（补充 PR#97 评论修复闭环：REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03，完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证）
 > 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全项 done，云端强契约 + 用户自定义 levelPatches 强类型落地，`pnpm lint/typecheck/test:unit` 已通过）
+> 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
