@@ -3,6 +3,8 @@
  * [DEPENDS]: desktopAPI.files, desktopAPI.workspace, desktopAPI.events
  * [POS]: Workspace 文档状态核心（编辑器/标签页）
  * [UPDATE]: 2026-02-09 - 恢复 tabs 时过滤非法/旧版特殊 tab，避免误读不存在路径
+ * [UPDATE]: 2026-02-26 - 副作用拆分为 tabs/load + auto-save + vault-restore + persistence 四段
+ * [UPDATE]: 2026-02-26 - 切换 vault 时重置 pendingSelectionPath/pendingOpenPath，避免跨 vault 残留意图触发
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -13,6 +15,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type MutableRefObject,
   type SetStateAction,
 } from 'react';
 import type { VaultTreeNode, VaultFsEvent, VaultInfo } from '@shared/ipc';
@@ -47,17 +50,12 @@ type DocumentState = {
 
 /** 自动保存延迟时间（毫秒） */
 const AUTO_SAVE_DELAY = 500;
-
 /** 判断是否为自身保存触发的事件 */
-const isSelfSaveEvent = (lastSaveTime: number): boolean => {
-  return Date.now() - lastSaveTime < 3000;
-};
-
+const isSelfSaveEvent = (lastSaveTime: number): boolean => Date.now() - lastSaveTime < 3000;
 /** 持久化状态的防抖延迟（毫秒） */
 const PERSIST_DELAY = 300;
 
 const stripTrailingSeparators = (value: string) => value.replace(/[\\/]+$/, '');
-
 const isProbablyAbsolutePath = (value: string) =>
   value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value) || value.startsWith('\\\\');
 
@@ -90,6 +88,229 @@ const sanitizePersistedTabs = (vaultPath: string, tabs: SelectedFile[]): Selecte
   return next;
 };
 
+type UseDocumentAutoSaveOptions = {
+  pendingSave: { path: string; content: string } | null;
+  activeDoc: ActiveDocument | null;
+  setActiveDoc: Dispatch<SetStateAction<ActiveDocument | null>>;
+  setSaveState: Dispatch<SetStateAction<SaveState>>;
+  setPendingSave: Dispatch<SetStateAction<{ path: string; content: string } | null>>;
+  lastSaveTimeRef: MutableRefObject<number>;
+};
+
+const useDocumentAutoSave = ({
+  pendingSave,
+  activeDoc,
+  setActiveDoc,
+  setSaveState,
+  setPendingSave,
+  lastSaveTimeRef,
+}: UseDocumentAutoSaveOptions) => {
+  useEffect(() => {
+    if (!pendingSave || !activeDoc || pendingSave.path !== activeDoc.path) return;
+
+    const timer = setTimeout(() => {
+      lastSaveTimeRef.current = Date.now();
+      setSaveState('saving');
+
+      void window.desktopAPI.files
+        .write({
+          path: pendingSave.path,
+          content: pendingSave.content,
+          clientMtime: activeDoc.mtime ?? undefined,
+        })
+        .then((result) => {
+          setActiveDoc((prev) =>
+            prev && prev.path === pendingSave.path ? { ...prev, mtime: result.mtime } : prev
+          );
+          setSaveState('idle');
+          setPendingSave(null);
+        })
+        .catch(() => {
+          setSaveState('error');
+        });
+    }, AUTO_SAVE_DELAY);
+
+    return () => clearTimeout(timer);
+  }, [pendingSave, activeDoc, lastSaveTimeRef, setActiveDoc, setPendingSave, setSaveState]);
+};
+
+type UseDocumentFsSyncOptions = {
+  activeDocPathRef: MutableRefObject<string | null>;
+  saveStateRef: MutableRefObject<SaveState>;
+  lastSaveTimeRef: MutableRefObject<number>;
+  setActiveDoc: Dispatch<SetStateAction<ActiveDocument | null>>;
+};
+
+const useDocumentFsSync = ({
+  activeDocPathRef,
+  saveStateRef,
+  lastSaveTimeRef,
+  setActiveDoc,
+}: UseDocumentFsSyncOptions) => {
+  useEffect(() => {
+    if (!window.desktopAPI.events?.onVaultFsEvent) return;
+
+    const dispose = window.desktopAPI.events.onVaultFsEvent((event: VaultFsEvent) => {
+      if (event.type !== 'file-changed') return;
+
+      const currentPath = activeDocPathRef.current;
+      if (!currentPath || event.path !== currentPath) return;
+
+      const currentSaveState = saveStateRef.current;
+      if (isSelfSaveEvent(lastSaveTimeRef.current) || currentSaveState === 'saving') return;
+      if (currentSaveState !== 'idle') return;
+
+      void (async () => {
+        try {
+          const response = await window.desktopAPI.files.read(currentPath);
+          setActiveDoc((prev) =>
+            prev && prev.path === currentPath
+              ? { ...prev, content: response.content, mtime: response.mtime }
+              : prev
+          );
+        } catch (error) {
+          console.error('[document] auto-reload failed', error);
+        }
+      })();
+    });
+
+    return () => dispose();
+  }, [activeDocPathRef, saveStateRef, lastSaveTimeRef, setActiveDoc]);
+};
+
+type UseDocumentVaultRestoreOptions = {
+  vaultPath: string | undefined;
+  vaultPathRef: MutableRefObject<string | null>;
+  setOpenTabs: Dispatch<SetStateAction<SelectedFile[]>>;
+  setSelectedFile: Dispatch<SetStateAction<SelectedFile | null>>;
+  setActiveDoc: Dispatch<SetStateAction<ActiveDocument | null>>;
+  setDocState: Dispatch<SetStateAction<RequestState>>;
+  setDocError: Dispatch<SetStateAction<string | null>>;
+  setSaveState: Dispatch<SetStateAction<SaveState>>;
+  setPendingSave: Dispatch<SetStateAction<{ path: string; content: string } | null>>;
+  setPendingSelectionPath: Dispatch<SetStateAction<string | null>>;
+  setPendingOpenPath: Dispatch<SetStateAction<string | null>>;
+  setIsRestoring: Dispatch<SetStateAction<boolean>>;
+};
+
+const useDocumentVaultRestore = ({
+  vaultPath,
+  vaultPathRef,
+  setOpenTabs,
+  setSelectedFile,
+  setActiveDoc,
+  setDocState,
+  setDocError,
+  setSaveState,
+  setPendingSave,
+  setPendingSelectionPath,
+  setPendingOpenPath,
+  setIsRestoring,
+}: UseDocumentVaultRestoreOptions) => {
+  useEffect(() => {
+    const prevVaultPath = vaultPathRef.current;
+    vaultPathRef.current = vaultPath ?? null;
+    if (!vaultPath || vaultPath === prevVaultPath) return;
+
+    setActiveDoc(null);
+    setSelectedFile(null);
+    setDocState('idle');
+    setDocError(null);
+    setSaveState('idle');
+    setPendingSave(null);
+    setPendingSelectionPath(null);
+    setPendingOpenPath(null);
+
+    setIsRestoring(true);
+    void (async () => {
+      try {
+        const [savedTabs, lastFile] = await Promise.all([
+          window.desktopAPI.workspace.getOpenTabs(vaultPath),
+          window.desktopAPI.workspace.getLastOpenedFile(vaultPath),
+        ]);
+
+        const safeTabs = sanitizePersistedTabs(vaultPath, savedTabs);
+        const safeLastFile = sanitizeLastOpenedFile(vaultPath, lastFile);
+
+        if (safeTabs.length > 0) {
+          setOpenTabs(safeTabs);
+
+          if (safeLastFile) {
+            const targetTab = safeTabs.find((tab) => tab.path === safeLastFile);
+            if (targetTab) {
+              setSelectedFile(targetTab);
+              setDocState('loading');
+              try {
+                const response = await window.desktopAPI.files.read(targetTab.path);
+                setActiveDoc({ ...targetTab, content: response.content, mtime: response.mtime });
+                setDocState('idle');
+              } catch {
+                setOpenTabs((tabs) => tabs.filter((tab) => tab.path !== safeLastFile));
+                setSelectedFile(null);
+                setDocState('idle');
+              }
+            }
+          }
+        } else {
+          setOpenTabs([]);
+        }
+      } catch (error) {
+        console.error('[document] restore state failed', error);
+        setOpenTabs([]);
+      } finally {
+        setIsRestoring(false);
+      }
+    })();
+  }, [
+    vaultPath,
+    vaultPathRef,
+    setOpenTabs,
+    setSelectedFile,
+    setActiveDoc,
+    setDocState,
+    setDocError,
+    setSaveState,
+    setPendingSave,
+    setPendingSelectionPath,
+    setPendingOpenPath,
+    setIsRestoring,
+  ]);
+};
+
+type UseDocumentPersistenceOptions = {
+  vaultPath: string | undefined;
+  isRestoring: boolean;
+  openTabs: SelectedFile[];
+  selectedFilePath: string | undefined;
+};
+
+const useDocumentPersistence = ({
+  vaultPath,
+  isRestoring,
+  openTabs,
+  selectedFilePath,
+}: UseDocumentPersistenceOptions) => {
+  useEffect(() => {
+    if (!vaultPath || isRestoring) return;
+
+    const timer = setTimeout(() => {
+      void window.desktopAPI.workspace.setOpenTabs(vaultPath, openTabs);
+    }, PERSIST_DELAY);
+
+    return () => clearTimeout(timer);
+  }, [vaultPath, openTabs, isRestoring]);
+
+  useEffect(() => {
+    if (!vaultPath || isRestoring) return;
+
+    const timer = setTimeout(() => {
+      void window.desktopAPI.workspace.setLastOpenedFile(vaultPath, selectedFilePath ?? null);
+    }, PERSIST_DELAY);
+
+    return () => clearTimeout(timer);
+  }, [vaultPath, selectedFilePath, isRestoring]);
+};
+
 export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentState => {
   const { t } = useTranslation('workspace');
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
@@ -103,13 +324,11 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   const [pendingOpenPath, setPendingOpenPath] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
 
-  // 用于跳过自身保存触发的 fs-event
   const lastSaveTimeRef = useRef<number>(0);
   const activeDocPathRef = useRef<string | null>(null);
   const saveStateRef = useRef<SaveState>('idle');
   const vaultPathRef = useRef<string | null>(null);
 
-  // 同步 ref
   useEffect(() => {
     activeDocPathRef.current = activeDoc?.path ?? null;
   }, [activeDoc?.path]);
@@ -146,9 +365,9 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
 
         const previewIndex = tabs.findIndex((tab) => !tab.pinned);
         if (previewIndex !== -1) {
-          const newTabs = [...tabs];
-          newTabs[previewIndex] = { ...node, pinned: false };
-          return newTabs;
+          const nextTabs = [...tabs];
+          nextTabs[previewIndex] = { ...node, pinned: false };
+          return nextTabs;
         }
 
         return [...tabs, { ...node, pinned: false }];
@@ -171,7 +390,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
 
   const handleSelectFile = useCallback(
     (node: VaultTreeNode) => {
-      loadDocument({ id: node.id, name: node.name, path: node.path });
+      void loadDocument({ id: node.id, name: node.name, path: node.path });
     },
     [loadDocument]
   );
@@ -179,10 +398,9 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
   const handleSelectTab = useCallback(
     (tab: SelectedFile) => {
       if (selectedFile?.path === tab.path) return;
-
       void loadDocument(tab);
     },
-    [selectedFile, loadDocument]
+    [selectedFile?.path, loadDocument]
   );
 
   const handleCloseTab = useCallback(
@@ -204,7 +422,7 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
         return filtered;
       });
     },
-    [selectedFile, loadDocument, resetEditorState]
+    [selectedFile?.path, loadDocument, resetEditorState]
   );
 
   const handleEditorChange = useCallback(
@@ -224,159 +442,43 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     [activeDoc]
   );
 
-  // 自动保存
-  useEffect(() => {
-    if (!pendingSave || !activeDoc || pendingSave.path !== activeDoc.path) return;
+  useDocumentAutoSave({
+    pendingSave,
+    activeDoc,
+    setActiveDoc,
+    setSaveState,
+    setPendingSave,
+    lastSaveTimeRef,
+  });
 
-    const timer = setTimeout(() => {
-      // 保存开始时记录时间
-      lastSaveTimeRef.current = Date.now();
-      setSaveState('saving');
+  useDocumentFsSync({
+    activeDocPathRef,
+    saveStateRef,
+    lastSaveTimeRef,
+    setActiveDoc,
+  });
 
-      void window.desktopAPI.files
-        .write({
-          path: pendingSave.path,
-          content: pendingSave.content,
-          clientMtime: activeDoc.mtime ?? undefined,
-        })
-        .then((result) => {
-          setActiveDoc((prev) =>
-            prev && prev.path === pendingSave.path ? { ...prev, mtime: result.mtime } : prev
-          );
-          setSaveState('idle');
-          setPendingSave(null);
-        })
-        .catch(() => {
-          setSaveState('error');
-        });
-    }, AUTO_SAVE_DELAY);
+  useDocumentVaultRestore({
+    vaultPath: vault?.path,
+    vaultPathRef,
+    setOpenTabs,
+    setSelectedFile,
+    setActiveDoc,
+    setDocState,
+    setDocError,
+    setSaveState,
+    setPendingSave,
+    setPendingSelectionPath,
+    setPendingOpenPath,
+    setIsRestoring,
+  });
 
-    return () => clearTimeout(timer);
-  }, [pendingSave, activeDoc]);
-
-  // 监听外部文件变更，自动刷新
-  useEffect(() => {
-    if (!window.desktopAPI.events?.onVaultFsEvent) return;
-
-    const dispose = window.desktopAPI.events.onVaultFsEvent((event: VaultFsEvent) => {
-      if (event.type !== 'file-changed') return;
-
-      const currentPath = activeDocPathRef.current;
-      if (!currentPath || event.path !== currentPath) return;
-
-      // 跳过自身保存或正在保存时的事件
-      const currentSaveState = saveStateRef.current;
-      if (isSelfSaveEvent(lastSaveTimeRef.current) || currentSaveState === 'saving') return;
-
-      // 只在空闲状态下自动刷新
-      if (currentSaveState === 'idle') {
-        void (async () => {
-          try {
-            const response = await window.desktopAPI.files.read(currentPath);
-            setActiveDoc((prev) =>
-              prev && prev.path === currentPath
-                ? { ...prev, content: response.content, mtime: response.mtime }
-                : prev
-            );
-          } catch (error) {
-            console.error('[document] auto-reload failed', error);
-          }
-        })();
-      }
-    });
-
-    return () => dispose();
-  }, []);
-
-  // Vault 变化时恢复之前保存的状态
-  useEffect(() => {
-    const vaultPath = vault?.path;
-    const prevVaultPath = vaultPathRef.current;
-
-    // 更新 ref
-    vaultPathRef.current = vaultPath ?? null;
-
-    // Vault 没变或没有 vault，不处理
-    if (!vaultPath || vaultPath === prevVaultPath) return;
-
-    // 清空当前状态
-    setActiveDoc(null);
-    setSelectedFile(null);
-    setDocState('idle');
-    setDocError(null);
-    setSaveState('idle');
-    setPendingSave(null);
-
-    // 从存储中恢复
-    setIsRestoring(true);
-    void (async () => {
-      try {
-        const [savedTabs, lastFile] = await Promise.all([
-          window.desktopAPI.workspace.getOpenTabs(vaultPath),
-          window.desktopAPI.workspace.getLastOpenedFile(vaultPath),
-        ]);
-
-        const safeTabs = sanitizePersistedTabs(vaultPath, savedTabs);
-        const safeLastFile = sanitizeLastOpenedFile(vaultPath, lastFile);
-
-        // 恢复标签页
-        if (safeTabs.length > 0) {
-          setOpenTabs(safeTabs);
-
-          // 恢复最后打开的文件
-          if (safeLastFile) {
-            const targetTab = safeTabs.find((tab) => tab.path === safeLastFile);
-            if (targetTab) {
-              // 直接加载文档
-              setSelectedFile(targetTab);
-              setDocState('loading');
-              try {
-                const response = await window.desktopAPI.files.read(targetTab.path);
-                setActiveDoc({ ...targetTab, content: response.content, mtime: response.mtime });
-                setDocState('idle');
-              } catch {
-                // 文件可能已被删除，从 tabs 中移除
-                setOpenTabs((tabs) => tabs.filter((t) => t.path !== safeLastFile));
-                setSelectedFile(null);
-                setDocState('idle');
-              }
-            }
-          }
-        } else {
-          setOpenTabs([]);
-        }
-      } catch (error) {
-        console.error('[document] restore state failed', error);
-        setOpenTabs([]);
-      } finally {
-        setIsRestoring(false);
-      }
-    })();
-  }, [vault?.path]);
-
-  // 持久化 openTabs（防抖）
-  useEffect(() => {
-    const vaultPath = vault?.path;
-    if (!vaultPath || isRestoring) return;
-
-    const timer = setTimeout(() => {
-      void window.desktopAPI.workspace.setOpenTabs(vaultPath, openTabs);
-    }, PERSIST_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [vault?.path, openTabs, isRestoring]);
-
-  // 持久化 lastOpenedFile（防抖）
-  useEffect(() => {
-    const vaultPath = vault?.path;
-    if (!vaultPath || isRestoring) return;
-
-    const timer = setTimeout(() => {
-      void window.desktopAPI.workspace.setLastOpenedFile(vaultPath, selectedFile?.path ?? null);
-    }, PERSIST_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [vault?.path, selectedFile?.path, isRestoring]);
+  useDocumentPersistence({
+    vaultPath: vault?.path,
+    isRestoring,
+    openTabs,
+    selectedFilePath: selectedFile?.path,
+  });
 
   return {
     selectedFile,

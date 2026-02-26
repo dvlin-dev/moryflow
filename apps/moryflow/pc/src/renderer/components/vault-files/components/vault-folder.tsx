@@ -22,7 +22,7 @@ import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuAction } from '../const';
-import { useVaultFiles } from '../context';
+import { useVaultFilesStore } from '../vault-files-store';
 import {
   createDragData,
   FOLDER_MENU_ITEMS,
@@ -36,6 +36,19 @@ import { VaultFile } from './vault-file';
 
 type VaultFolderProps = {
   node: VaultTreeNode;
+};
+
+const getFolderRowStateClass = (input: {
+  isDropTarget: boolean;
+  isSelected: boolean;
+}): string => {
+  if (input.isDropTarget) {
+    return 'bg-foreground/10 border border-primary/50';
+  }
+  if (input.isSelected) {
+    return 'bg-accent/60 text-foreground';
+  }
+  return 'text-foreground';
 };
 
 export const VaultFolder = ({ node }: VaultFolderProps) => {
@@ -53,7 +66,20 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
     setDraggedNodeId,
     dropTargetId,
     setDropTargetId,
-  } = useVaultFiles();
+  } = useVaultFilesStore((state) => ({
+    selectedId: state.selectedId,
+    onSelectNode: state.onSelectNode,
+    onRename: state.onRename,
+    onDelete: state.onDelete,
+    onCreateFile: state.onCreateFile,
+    onShowInFinder: state.onShowInFinder,
+    onPublish: state.onPublish,
+    onMove: state.onMove,
+    draggedNodeId: state.draggedNodeId,
+    setDraggedNodeId: state.setDraggedNodeId,
+    dropTargetId: state.dropTargetId,
+    setDropTargetId: state.setDropTargetId,
+  }));
 
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;
@@ -148,11 +174,7 @@ export const VaultFolder = ({ node }: VaultFolderProps) => {
                 className={cn(
                   'group -mx-1 flex w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm outline-hidden',
                   'transition-colors hover:bg-muted/40',
-                  isDropTarget
-                    ? 'bg-foreground/10 border border-primary/50'
-                    : isSelected
-                      ? 'bg-accent/60 text-foreground'
-                      : 'text-foreground'
+                  getFolderRowStateClass({ isDropTarget, isSelected })
                 )}
                 onClick={handleClick}
               >

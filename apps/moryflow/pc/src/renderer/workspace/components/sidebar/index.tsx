@@ -13,25 +13,26 @@
  * [UPDATE]: 2026-02-11 - 外层容器横向 gutter 调整为 px-3.5，收敛留白并保持全区对齐
  * [UPDATE]: 2026-02-11 - 横向 gutter 收敛为单一来源：顶部/分隔线/标题/工具区统一复用 sidebar 常量，thread/file 列表保留独立 inset 规则
  * [UPDATE]: 2026-02-11 - Modules 顶部新增 New thread 快捷入口，复用 Threads 区创建逻辑
+ * [UPDATE]: 2026-02-26 - AgentSubPanels 改为 sidebar-panels-store 就地取数，Sidebar 仅同步快照
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { VaultTreeNode } from '@shared/ipc';
 import { ScrollArea } from '@moryflow/ui/components/scroll-area';
 import { TooltipProvider } from '@moryflow/ui/components/tooltip';
 import { PublishDialog } from '@/components/site-publish';
 import { useChatSessions } from '@/components/chat-pane/hooks';
-import { ChatThreadsList } from './components/chat-threads-list';
 import { AgentSubSwitcher } from './components/agent-sub-switcher';
+import { AgentSubPanels } from './components/agent-sub-panels';
 import { ModulesNav } from './components/modules-nav';
 import { SearchDialog } from './components/search-dialog';
-import { SidebarFiles } from './components/sidebar-files';
 import { SidebarSectionHeader } from './components/sidebar-section-header';
 import { SidebarTools } from './components/sidebar-tools';
 import { SidebarCreateMenu } from './components/sidebar-create-menu';
 import { VaultSelector } from './components/vault-selector';
 import { SIDEBAR_GUTTER_X_CLASS } from './const';
-import { useRequireLoginForSitePublish } from '../../hooks/use-require-login-for-site-publish';
+import { useSidebarPublishController } from './hooks/use-sidebar-publish-controller';
+import { useSyncSidebarPanelsStore } from './hooks/use-sidebar-panels-store';
 import { createAgentActions } from '../../navigation/agent-actions';
 import {
   useWorkspaceCommand,
@@ -72,26 +73,6 @@ export const Sidebar = () => {
   // 文件搜索对话框状态（仅 agentSub=workspace 使用）
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Keep-alive：避免 agentSub 切换时反复 mount 重组件（文件树/线程列表）。
-  const [chatPaneMounted, setChatPaneMounted] = useState(agentSub === 'chat');
-  const [workspacePaneMounted, setWorkspacePaneMounted] = useState(agentSub === 'workspace');
-  useEffect(() => {
-    if (agentSub === 'chat') {
-      setChatPaneMounted(true);
-    }
-    if (agentSub === 'workspace') {
-      setWorkspacePaneMounted(true);
-    }
-  }, [agentSub]);
-
-  // 发布对话框状态
-  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [publishSourcePaths, setPublishSourcePaths] = useState<string[]>([]);
-  const [publishTitle, setPublishTitle] = useState<string | undefined>();
-
-  const { authLoading, isAuthenticated, requireLoginForSitePublish } =
-    useRequireLoginForSitePublish(openSettings);
-
   const agent = useMemo(
     () =>
       createAgentActions({
@@ -102,25 +83,13 @@ export const Sidebar = () => {
     [setSub, selectSession, openFileFromTree]
   );
 
-  const handlePublish = useCallback(
-    (node: VaultTreeNode) => {
-      if (!requireLoginForSitePublish()) return;
-      setPublishSourcePaths([node.path]);
-      setPublishTitle(node.name.replace(/\.md$/, ''));
-      setPublishDialogOpen(true);
-    },
-    [requireLoginForSitePublish]
-  );
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (isAuthenticated) return;
-    if (!publishDialogOpen) return;
-
-    setPublishDialogOpen(false);
-    setPublishSourcePaths([]);
-    setPublishTitle(undefined);
-  }, [authLoading, isAuthenticated, publishDialogOpen]);
+  const {
+    publishDialogOpen,
+    publishSourcePaths,
+    publishTitle,
+    handlePublish,
+    handlePublishDialogOpenChange,
+  } = useSidebarPublishController({ openSettings });
 
   const handleSearchSelect = useCallback(
     (node: VaultTreeNode) => {
@@ -163,6 +132,27 @@ export const Sidebar = () => {
       openCommandPalette();
     }
   }, [agentSub, openCommandPalette]);
+  useSyncSidebarPanelsStore({
+    agentSub,
+    vault,
+    tree,
+    expandedPaths,
+    treeState,
+    treeError,
+    selectedId,
+    onOpenThread: agent.openThread,
+    onSelectNode: selectTreeNode,
+    onExpandedPathsChange: setExpandedPaths,
+    onOpenFile: agent.openFile,
+    onRename: renameTreeNode,
+    onDelete: deleteTreeNode,
+    onCreateFile: handleCreateFileInTree,
+    onShowInFinder: showInFinder,
+    onMove: moveTreeNode,
+    onCreateFileInRoot: handleCreateFileInRoot,
+    onCreateFolderInRoot: handleCreateFolderInRoot,
+    onPublish: handlePublish,
+  });
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -209,45 +199,7 @@ export const Sidebar = () => {
           />
 
           <ScrollArea className="min-h-0 flex-1">
-            <div
-              id="agent-sub-panel-chat"
-              role="tabpanel"
-              aria-labelledby="agent-sub-tab-chat"
-              hidden={agentSub !== 'chat'}
-              className={agentSub === 'chat' ? 'block' : 'hidden'}
-            >
-              {chatPaneMounted && <ChatThreadsList onOpenThread={agent.openThread} />}
-            </div>
-
-            <div
-              id="agent-sub-panel-workspace"
-              role="tabpanel"
-              aria-labelledby="agent-sub-tab-workspace"
-              hidden={agentSub !== 'workspace'}
-              className={agentSub === 'workspace' ? 'block' : 'hidden'}
-            >
-              {workspacePaneMounted && (
-                <SidebarFiles
-                  vault={vault}
-                  tree={tree}
-                  expandedPaths={expandedPaths}
-                  treeState={treeState}
-                  treeError={treeError}
-                  selectedId={selectedId}
-                  onSelectNode={selectTreeNode}
-                  onExpandedPathsChange={setExpandedPaths}
-                  onOpenFile={agent.openFile}
-                  onRename={renameTreeNode}
-                  onDelete={deleteTreeNode}
-                  onCreateFile={handleCreateFileInTree}
-                  onShowInFinder={showInFinder}
-                  onMove={moveTreeNode}
-                  onCreateFileInRoot={handleCreateFileInRoot}
-                  onCreateFolderInRoot={handleCreateFolderInRoot}
-                  onPublish={handlePublish}
-                />
-              )}
-            </div>
+            <AgentSubPanels />
           </ScrollArea>
         </div>
 
@@ -271,7 +223,7 @@ export const Sidebar = () => {
         {publishDialogOpen ? (
           <PublishDialog
             open={publishDialogOpen}
-            onOpenChange={setPublishDialogOpen}
+            onOpenChange={handlePublishDialogOpenChange}
             sourcePaths={publishSourcePaths}
             title={publishTitle}
           />
