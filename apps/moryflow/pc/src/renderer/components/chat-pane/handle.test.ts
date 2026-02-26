@@ -19,6 +19,15 @@ describe('computeAgentOptions', () => {
         activeFilePath: 'notes/project.md',
         contextSummary: '  focus section A  ',
         preferredModelId: '  gpt-5-codex  ',
+        thinkingLevel: '  high ',
+        thinkingProfile: {
+          supportsThinking: true,
+          defaultLevel: 'medium',
+          levels: [
+            { id: 'off', label: 'Off' },
+            { id: 'high', label: 'High' },
+          ],
+        },
         selectedSkillName: '  better-auth-best-practices  ',
       })
     ).toEqual({
@@ -27,8 +36,32 @@ describe('computeAgentOptions', () => {
         summary: 'focus section A',
       },
       preferredModelId: 'gpt-5-codex',
+      thinking: {
+        mode: 'level',
+        level: 'high',
+      },
+      thinkingProfile: {
+        supportsThinking: true,
+        defaultLevel: 'medium',
+        levels: [
+          { id: 'off', label: 'Off' },
+          { id: 'high', label: 'High' },
+        ],
+      },
       selectedSkill: {
         name: 'better-auth-best-practices',
+      },
+    });
+  });
+
+  it('maps thinking off explicitly', () => {
+    expect(
+      computeAgentOptions({
+        thinkingLevel: 'off',
+      })
+    ).toEqual({
+      thinking: {
+        mode: 'off',
       },
     });
   });

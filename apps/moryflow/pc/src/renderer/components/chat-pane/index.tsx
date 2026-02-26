@@ -23,7 +23,7 @@ import { IpcChatTransport } from '@/transport/ipc-chat-transport';
 import { getModelContextWindow } from '@shared/model-registry';
 import type { AgentChatRequestOptions } from '@shared/ipc';
 import type { ChatMessageMeta } from '@moryflow/types';
-import { useAuth } from '@/lib/server';
+import { useAuth, extractMembershipModelId, isMembershipModelId } from '@/lib/server';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -67,20 +67,42 @@ export const ChatPane = ({
     deleteSession,
     isReady: sessionsReady,
   } = useChatSessions();
+  // 会员模型用于补齐 renderer 侧思考 profile（最终会透传到 main/runtime）
+  const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
+  const membershipThinkingProfileByModelId = useMemo(() => {
+    const entries = membershipModels
+      .filter((model) => model.thinkingProfile)
+      .map((model) => [model.id, model.thinkingProfile] as const);
+    return new Map(entries);
+  }, [membershipModels]);
+  const resolveExternalThinkingProfile = useCallback(
+    (modelId?: string) => {
+      if (!modelId || !isAuthenticated || !membershipEnabled) {
+        return undefined;
+      }
+      if (!isMembershipModelId(modelId)) {
+        return undefined;
+      }
+      return membershipThinkingProfileByModelId.get(extractMembershipModelId(modelId));
+    },
+    [isAuthenticated, membershipEnabled, membershipThinkingProfileByModelId]
+  );
   const selectedSkillName = useSelectedSkillStore((state) => state.selectedSkillName);
   const setSelectedSkillName = useSelectedSkillStore((state) => state.setSelectedSkillName);
   const {
     agentOptionsRef,
     selectedModelId,
     setSelectedModelId,
+    selectedThinkingLevel,
+    selectedThinkingProfile,
+    setSelectedThinkingLevel,
     modelGroups: baseModelGroups,
-  } = useChatModelSelection(activeFilePath, selectedSkillName);
+  } = useChatModelSelection(activeFilePath, selectedSkillName, resolveExternalThinkingProfile);
   const agentOptionsOverrideRef = useRef<AgentChatRequestOptions | Record<string, never> | null>(
     null
   );
 
   // 获取会员模型并合并到模型列表
-  const { models: membershipModels, membershipEnabled, isAuthenticated } = useAuth();
   const modelGroups = useMemo(() => {
     // 只有在登录且启用会员模型时才添加
     if (!isAuthenticated || !membershipEnabled) {
@@ -214,6 +236,8 @@ export const ChatPane = ({
         computeAgentOptions({
           activeFilePath,
           preferredModelId: selectedModelId ?? null,
+          thinkingLevel: selectedThinkingLevel,
+          thinkingProfile: selectedThinkingProfile ?? null,
           selectedSkillName: selectedSkillForThisMessage,
         }) ?? {};
 
@@ -374,6 +398,9 @@ export const ChatPane = ({
                     modelGroups={modelGroups}
                     selectedModelId={selectedModelId}
                     onSelectModel={setSelectedModelId}
+                    selectedThinkingLevel={selectedThinkingLevel}
+                    selectedThinkingProfile={selectedThinkingProfile}
+                    onSelectThinkingLevel={setSelectedThinkingLevel}
                     disabled={!sessionsReady || !activeSessionId}
                     onOpenSettings={onOpenSettings}
                     tokenUsage={activeSession?.tokenUsage}
