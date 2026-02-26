@@ -2,6 +2,7 @@
  * [PROVIDES]: useWorkspaceShellViewStore/useSyncWorkspaceShellViewStore - Workspace Shell 视图状态 store
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: DesktopWorkspaceShell 到 main-content/overlays 的 store-first 状态桥接
+ * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免每次 render 无变化重复 setSnapshot
  * [UPDATE]: 2026-02-26 - 新增 view store，移除 main-content/overlays props 平铺
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -12,11 +13,7 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { CommandAction } from '@/components/command-palette/const';
 import type { SettingsSection } from '@/components/settings-dialog/const';
-import type {
-  ActiveDocument,
-  DesktopWorkspaceDialogController,
-  SelectedFile,
-} from '../const';
+import type { ActiveDocument, DesktopWorkspaceDialogController, SelectedFile } from '../const';
 import type { ShellLayoutState } from '../hooks/use-shell-layout-state';
 import type { AgentSub, Destination } from '../navigation/state';
 
@@ -99,12 +96,43 @@ const workspaceShellViewStore = createStore<WorkspaceShellViewStoreState>((set) 
   setSnapshot: (snapshot) => set(snapshot),
 }));
 
-export const useWorkspaceShellViewStore = <T,>(
+const shouldSyncSnapshot = (
+  current: WorkspaceShellViewStoreState,
+  next: WorkspaceShellViewSnapshot
+) =>
+  current.destination !== next.destination ||
+  current.agentSub !== next.agentSub ||
+  current.vaultPath !== next.vaultPath ||
+  current.treeState !== next.treeState ||
+  current.treeLength !== next.treeLength ||
+  current.selectedFile !== next.selectedFile ||
+  current.activeDoc !== next.activeDoc ||
+  current.chatFallback !== next.chatFallback ||
+  current.startupSkeleton !== next.startupSkeleton ||
+  current.layoutState !== next.layoutState ||
+  current.onToggleChatPanel !== next.onToggleChatPanel ||
+  current.onOpenSettings !== next.onOpenSettings ||
+  current.onChatReady !== next.onChatReady ||
+  current.commandOpen !== next.commandOpen ||
+  current.onCommandOpenChange !== next.onCommandOpenChange ||
+  current.commandActions !== next.commandActions ||
+  current.inputDialogState !== next.inputDialogState ||
+  current.onInputDialogConfirm !== next.onInputDialogConfirm ||
+  current.onInputDialogCancel !== next.onInputDialogCancel ||
+  current.settingsOpen !== next.settingsOpen ||
+  current.settingsSection !== next.settingsSection ||
+  current.onSettingsOpenChange !== next.onSettingsOpenChange;
+
+export const useWorkspaceShellViewStore = <T>(
   selector: (state: WorkspaceShellViewStoreState) => T
 ): T => useStore(workspaceShellViewStore, selector);
 
 export const useSyncWorkspaceShellViewStore = (snapshot: WorkspaceShellViewSnapshot) => {
   useLayoutEffect(() => {
-    workspaceShellViewStore.getState().setSnapshot(snapshot);
+    const state = workspaceShellViewStore.getState();
+    if (!shouldSyncSnapshot(state, snapshot)) {
+      return;
+    }
+    state.setSnapshot(snapshot);
   }, [snapshot]);
 };

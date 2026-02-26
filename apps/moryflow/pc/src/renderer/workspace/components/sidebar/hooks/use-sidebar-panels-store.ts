@@ -2,6 +2,7 @@
  * [PROVIDES]: useSidebarPanelsStore/useSyncSidebarPanelsStore - Sidebar agent 子面板 store
  * [DEPENDS]: zustand (vanilla) + React useEffect
  * [POS]: Sidebar -> AgentSubPanels 状态桥接层，收敛 props 平铺
+ * [UPDATE]: 2026-02-26 - 新增 shouldSync 快照比较，避免每次 render 无变化重复 setSnapshot
  * [UPDATE]: 2026-02-26 - 新增 sidebar panels store，AgentSubPanels 改为就地 selector 取数
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -64,11 +65,36 @@ const sidebarPanelsStore = createStore<SidebarPanelsStoreState>((set) => ({
   setSnapshot: (snapshot) => set(snapshot),
 }));
 
-export const useSidebarPanelsStore = <T,>(selector: (state: SidebarPanelsStoreState) => T): T =>
+const shouldSyncSnapshot = (current: SidebarPanelsStoreState, next: SidebarPanelsSnapshot) =>
+  current.agentSub !== next.agentSub ||
+  current.vault !== next.vault ||
+  current.tree !== next.tree ||
+  current.expandedPaths !== next.expandedPaths ||
+  current.treeState !== next.treeState ||
+  current.treeError !== next.treeError ||
+  current.selectedId !== next.selectedId ||
+  current.onOpenThread !== next.onOpenThread ||
+  current.onSelectNode !== next.onSelectNode ||
+  current.onExpandedPathsChange !== next.onExpandedPathsChange ||
+  current.onOpenFile !== next.onOpenFile ||
+  current.onRename !== next.onRename ||
+  current.onDelete !== next.onDelete ||
+  current.onCreateFile !== next.onCreateFile ||
+  current.onShowInFinder !== next.onShowInFinder ||
+  current.onMove !== next.onMove ||
+  current.onCreateFileInRoot !== next.onCreateFileInRoot ||
+  current.onCreateFolderInRoot !== next.onCreateFolderInRoot ||
+  current.onPublish !== next.onPublish;
+
+export const useSidebarPanelsStore = <T>(selector: (state: SidebarPanelsStoreState) => T): T =>
   useStore(sidebarPanelsStore, selector);
 
 export const useSyncSidebarPanelsStore = (snapshot: SidebarPanelsSnapshot) => {
   useLayoutEffect(() => {
-    sidebarPanelsStore.getState().setSnapshot(snapshot);
+    const state = sidebarPanelsStore.getState();
+    if (!shouldSyncSnapshot(state, snapshot)) {
+      return;
+    }
+    state.setSnapshot(snapshot);
   }, [snapshot]);
 };
