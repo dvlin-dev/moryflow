@@ -56,6 +56,8 @@ const grantCreditsFormSchema = z.object({
 });
 
 type GrantCreditsFormValues = z.infer<typeof grantCreditsFormSchema>;
+type UserSummaryState = 'loading' | 'error' | 'not_found' | 'ready';
+type CreditGrantsState = 'loading' | 'error' | 'empty' | 'ready';
 
 export interface UserCreditsSheetProps {
   open: boolean;
@@ -123,6 +125,146 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
   const purchasedQuota = quota?.purchasedQuota ?? 0;
   const pendingAfter = pendingGrant ? purchasedQuota + pendingGrant.amount : null;
 
+  const resolveUserSummaryState = (): UserSummaryState => {
+    if (userQuery.isLoading) {
+      return 'loading';
+    }
+
+    if (userQuery.isError) {
+      return 'error';
+    }
+
+    if (userQuery.data) {
+      return 'ready';
+    }
+
+    return 'not_found';
+  };
+
+  const resolveCreditGrantsState = (): CreditGrantsState => {
+    if (grantsQuery.isLoading) {
+      return 'loading';
+    }
+
+    if (grantsQuery.isError) {
+      return 'error';
+    }
+
+    if (grantsQuery.data?.length) {
+      return 'ready';
+    }
+
+    return 'empty';
+  };
+
+  const userSummaryState = resolveUserSummaryState();
+  const creditGrantsState = resolveCreditGrantsState();
+
+  const renderUserSummaryByState = (): React.ReactNode => {
+    switch (userSummaryState) {
+      case 'loading':
+        return (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">Failed to load user.</div>
+            <Button variant="outline" size="sm" onClick={() => userQuery.refetch()}>
+              Retry
+            </Button>
+          </div>
+        );
+      case 'not_found':
+        return <div className="text-sm text-muted-foreground">User not found</div>;
+      case 'ready': {
+        const user = userQuery.data;
+        if (!user) return null;
+
+        return (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="font-medium">{user.email}</div>
+              {user.isAdmin && (
+                <Badge variant="destructive" className="text-xs">
+                  Admin
+                </Badge>
+              )}
+              <Badge variant="outline" className="text-xs">
+                {user.subscriptionTier}
+              </Badge>
+            </div>
+            <div className="text-sm text-muted-foreground">ID: {user.id}</div>
+            <div className="text-sm text-muted-foreground">
+              Purchased credits:{' '}
+              <span className="font-medium text-foreground">{purchasedQuota}</span>
+            </div>
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
+  };
+
+  const renderCreditGrantsByState = (): React.ReactNode => {
+    switch (creditGrantsState) {
+      case 'loading':
+        return (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">Failed to load grants.</div>
+            <Button variant="outline" size="sm" onClick={() => grantsQuery.refetch()}>
+              Retry
+            </Button>
+          </div>
+        );
+      case 'empty':
+        return <div className="text-sm text-muted-foreground">No grants yet.</div>;
+      case 'ready':
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Time</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Balance</TableHead>
+                <TableHead>Reason</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {grantsQuery.data?.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatRelativeTime(row.createdAt)}
+                  </TableCell>
+                  <TableCell className="font-medium">+{row.amount}</TableCell>
+                  <TableCell className="text-sm">
+                    {row.balanceBefore} → {row.balanceAfter}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {row.reason || '-'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[520px] sm:max-w-none">
@@ -141,42 +283,7 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
             <CardHeader>
               <CardTitle>User</CardTitle>
             </CardHeader>
-            <CardContent>
-              {userQuery.isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-64" />
-                  <Skeleton className="h-4 w-48" />
-                </div>
-              ) : userQuery.isError ? (
-                <div className="space-y-3">
-                  <div className="text-sm text-muted-foreground">Failed to load user.</div>
-                  <Button variant="outline" size="sm" onClick={() => userQuery.refetch()}>
-                    Retry
-                  </Button>
-                </div>
-              ) : userQuery.data ? (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="font-medium">{userQuery.data.email}</div>
-                    {userQuery.data.isAdmin && (
-                      <Badge variant="destructive" className="text-xs">
-                        Admin
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs">
-                      {userQuery.data.subscriptionTier}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-muted-foreground">ID: {userQuery.data.id}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Purchased credits:{' '}
-                    <span className="font-medium text-foreground">{purchasedQuota}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">User not found</div>
-              )}
-            </CardContent>
+            <CardContent>{renderUserSummaryByState()}</CardContent>
           </Card>
 
           <Card>
@@ -230,51 +337,7 @@ export function UserCreditsSheet({ open, onOpenChange, userId }: UserCreditsShee
             <CardHeader>
               <CardTitle>Recent grants</CardTitle>
             </CardHeader>
-            <CardContent>
-              {grantsQuery.isLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
-                  ))}
-                </div>
-              ) : grantsQuery.isError ? (
-                <div className="space-y-3">
-                  <div className="text-sm text-muted-foreground">Failed to load grants.</div>
-                  <Button variant="outline" size="sm" onClick={() => grantsQuery.refetch()}>
-                    Retry
-                  </Button>
-                </div>
-              ) : !grantsQuery.data?.length ? (
-                <div className="text-sm text-muted-foreground">No grants yet.</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Reason</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {grantsQuery.data.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {formatRelativeTime(row.createdAt)}
-                        </TableCell>
-                        <TableCell className="font-medium">+{row.amount}</TableCell>
-                        <TableCell className="text-sm">
-                          {row.balanceBefore} → {row.balanceAfter}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {row.reason || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
+            <CardContent>{renderCreditGrantsByState()}</CardContent>
           </Card>
         </div>
 

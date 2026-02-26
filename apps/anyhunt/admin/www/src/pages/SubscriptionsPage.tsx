@@ -45,6 +45,8 @@ import type {
 const TIER_OPTIONS: SubscriptionTier[] = ['FREE', 'BASIC', 'PRO', 'TEAM'];
 const STATUS_OPTIONS: SubscriptionStatus[] = ['ACTIVE', 'CANCELED', 'PAST_DUE', 'EXPIRED'];
 
+type SubscriptionsContentState = 'loading' | 'empty' | 'ready';
+
 export default function SubscriptionsPage() {
   const [query, setQuery] = useState<SubscriptionQuery>({ page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState('');
@@ -135,6 +137,116 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const resolveSubscriptionsContentState = (): SubscriptionsContentState => {
+    if (isLoading) {
+      return 'loading';
+    }
+
+    if (data?.items.length) {
+      return 'ready';
+    }
+
+    return 'empty';
+  };
+
+  const subscriptionsContentState = resolveSubscriptionsContentState();
+
+  const renderSubscriptionsContentByState = (): React.ReactNode => {
+    switch (subscriptionsContentState) {
+      case 'loading':
+        return (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        );
+      case 'empty':
+        return (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">没有找到订阅</p>
+          </div>
+        );
+      case 'ready':
+        return (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>用户</TableHead>
+                  <TableHead>层级</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>当前周期</TableHead>
+                  <TableHead>到期取消</TableHead>
+                  <TableHead>创建时间</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.items.map((subscription) => (
+                  <TableRow key={subscription.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{subscription.userName || '未设置'}</p>
+                        <p className="text-sm text-muted-foreground">{subscription.userEmail}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getTierBadgeVariant(subscription.tier)}>
+                        {subscription.tier}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(subscription.status)}>
+                        {subscription.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {subscription.currentPeriodEnd ? (
+                        <span>
+                          {new Date(subscription.currentPeriodStart).toLocaleDateString()} -{' '}
+                          {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">永久</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {subscription.cancelAtPeriodEnd ? (
+                        <Badge variant="secondary">是</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {formatRelativeTime(subscription.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(subscription)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {data && data.pagination.totalPages > 1 && (
+              <div className="mt-4 flex justify-center">
+                <SimplePagination
+                  page={data.pagination.page}
+                  totalPages={data.pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Subscriptions" description="管理用户订阅" />
@@ -183,96 +295,7 @@ export default function SubscriptionsPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : !data?.items.length ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">没有找到订阅</p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>用户</TableHead>
-                    <TableHead>层级</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>当前周期</TableHead>
-                    <TableHead>到期取消</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.items.map((subscription) => (
-                    <TableRow key={subscription.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{subscription.userName || '未设置'}</p>
-                          <p className="text-sm text-muted-foreground">{subscription.userEmail}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getTierBadgeVariant(subscription.tier)}>
-                          {subscription.tier}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(subscription.status)}>
-                          {subscription.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {subscription.currentPeriodEnd ? (
-                          <span>
-                            {new Date(subscription.currentPeriodStart).toLocaleDateString()} -{' '}
-                            {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">永久</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {subscription.cancelAtPeriodEnd ? (
-                          <Badge variant="secondary">是</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatRelativeTime(subscription.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(subscription)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {data.pagination.totalPages > 1 && (
-                <div className="mt-4 flex justify-center">
-                  <SimplePagination
-                    page={data.pagination.page}
-                    totalPages={data.pagination.totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
+        <CardContent>{renderSubscriptionsContentByState()}</CardContent>
       </Card>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

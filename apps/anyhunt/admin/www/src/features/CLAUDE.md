@@ -8,6 +8,7 @@
 
 ## 最近更新
 
+- Users Feature：`UserCreditsSheet` 多状态区域（用户摘要/充值记录）统一改为状态片段化 `render...ByState + switch`，移除链式三元
 - Logs Feature：补齐查询错误态文案、筛选时间统一 ISO UTC 转换、`errorOnly` 请求参数显式映射为 `'true'`
 - Logs Feature：新增统一请求日志能力（requests/overview/users/ip）
 - Admin Features 图标回退 Lucide，移除 Hugeicons 依赖并统一调用方式

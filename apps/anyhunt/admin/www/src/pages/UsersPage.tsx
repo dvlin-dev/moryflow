@@ -40,6 +40,8 @@ import { formatRelativeTime } from '@moryflow/ui/lib';
 import { useUsers, useUpdateUser, useDeleteUser, UserCreditsSheet } from '@/features/users';
 import type { UserListItem, UserQuery } from '@/features/users';
 
+type UsersContentState = 'loading' | 'empty' | 'ready';
+
 export default function UsersPage() {
   const [query, setQuery] = useState<UserQuery>({ page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState('');
@@ -103,6 +105,150 @@ export default function UsersPage() {
     }
   };
 
+  const resolveUsersContentState = (): UsersContentState => {
+    if (isLoading) {
+      return 'loading';
+    }
+
+    if (data?.items.length) {
+      return 'ready';
+    }
+
+    return 'empty';
+  };
+
+  const usersContentState = resolveUsersContentState();
+
+  const renderUsersContentByState = (): React.ReactNode => {
+    switch (usersContentState) {
+      case 'loading':
+        return (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        );
+      case 'empty':
+        return (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">没有找到用户</p>
+          </div>
+        );
+      case 'ready':
+        return (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>用户</TableHead>
+                  <TableHead>订阅</TableHead>
+                  <TableHead>配额</TableHead>
+                  <TableHead>截图数</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead>注册时间</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.items.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
+                          {user.name || '未设置'}
+                          {user.isAdmin && (
+                            <Badge variant="destructive" className="ml-2 text-xs">
+                              Admin
+                            </Badge>
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getTierBadgeVariant(user.subscriptionTier)}>
+                        {user.subscriptionTier}
+                      </Badge>
+                      {user.subscriptionStatus && user.subscriptionStatus !== 'ACTIVE' && (
+                        <Badge variant="secondary" className="ml-1 text-xs">
+                          {user.subscriptionStatus}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.quota ? (
+                        <span className="text-sm">
+                          {user.quota.monthlyUsed} / {user.quota.monthlyLimit}
+                          {user.quota.purchasedQuota > 0 && (
+                            <span className="text-muted-foreground">
+                              {' '}
+                              (+{user.quota.purchasedQuota})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{user.screenshotCount}</TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={user.isAdmin}
+                        onCheckedChange={() => handleToggleAdmin(user)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {formatRelativeTime(user.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Ellipsis className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            {user.isAdmin ? '移除管理员' : '设为管理员'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleGrantCredits(user)}>
+                            <Coins className="h-4 w-4 mr-2" />
+                            Grant credits
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(user)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Delete className="h-4 w-4 mr-2" />
+                            删除用户
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {data && data.pagination.totalPages > 1 && (
+              <div className="mt-4 flex justify-center">
+                <SimplePagination
+                  page={data.pagination.page}
+                  totalPages={data.pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Users" description="管理系统用户" />
@@ -125,126 +271,7 @@ export default function UsersPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : !data?.items.length ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">没有找到用户</p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>用户</TableHead>
-                    <TableHead>订阅</TableHead>
-                    <TableHead>配额</TableHead>
-                    <TableHead>截图数</TableHead>
-                    <TableHead>Admin</TableHead>
-                    <TableHead>注册时间</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.items.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">
-                            {user.name || '未设置'}
-                            {user.isAdmin && (
-                              <Badge variant="destructive" className="ml-2 text-xs">
-                                Admin
-                              </Badge>
-                            )}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getTierBadgeVariant(user.subscriptionTier)}>
-                          {user.subscriptionTier}
-                        </Badge>
-                        {user.subscriptionStatus && user.subscriptionStatus !== 'ACTIVE' && (
-                          <Badge variant="secondary" className="ml-1 text-xs">
-                            {user.subscriptionStatus}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {user.quota ? (
-                          <span className="text-sm">
-                            {user.quota.monthlyUsed} / {user.quota.monthlyLimit}
-                            {user.quota.purchasedQuota > 0 && (
-                              <span className="text-muted-foreground">
-                                {' '}
-                                (+{user.quota.purchasedQuota})
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{user.screenshotCount}</TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={user.isAdmin}
-                          onCheckedChange={() => handleToggleAdmin(user)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatRelativeTime(user.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Ellipsis className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
-                              <Shield className="h-4 w-4 mr-2" />
-                              {user.isAdmin ? '移除管理员' : '设为管理员'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGrantCredits(user)}>
-                              <Coins className="h-4 w-4 mr-2" />
-                              Grant credits
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(user)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Delete className="h-4 w-4 mr-2" />
-                              删除用户
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {data.pagination.totalPages > 1 && (
-                <div className="mt-4 flex justify-center">
-                  <SimplePagination
-                    page={data.pagination.page}
-                    totalPages={data.pagination.totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
+        <CardContent>{renderUsersContentByState()}</CardContent>
       </Card>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

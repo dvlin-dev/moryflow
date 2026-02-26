@@ -34,6 +34,8 @@ import type { OrderQuery, OrderStatus, OrderType } from '@/features/orders';
 const STATUS_OPTIONS: OrderStatus[] = ['pending', 'completed', 'failed', 'refunded'];
 const TYPE_OPTIONS: OrderType[] = ['subscription', 'quota_purchase'];
 
+type OrdersContentState = 'loading' | 'empty' | 'ready';
+
 export default function OrdersPage() {
   const [query, setQuery] = useState<OrderQuery>({ page: 1, limit: 20 });
   const [searchInput, setSearchInput] = useState('');
@@ -103,6 +105,105 @@ export default function OrdersPage() {
     }).format(amount / 100);
   };
 
+  const resolveOrdersContentState = (): OrdersContentState => {
+    if (isLoading) {
+      return 'loading';
+    }
+
+    if (data?.items.length) {
+      return 'ready';
+    }
+
+    return 'empty';
+  };
+
+  const ordersContentState = resolveOrdersContentState();
+
+  const renderOrdersContentByState = (): React.ReactNode => {
+    switch (ordersContentState) {
+      case 'loading':
+        return (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        );
+      case 'empty':
+        return (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">没有找到订单</p>
+          </div>
+        );
+      case 'ready':
+        return (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>订单号</TableHead>
+                  <TableHead>用户</TableHead>
+                  <TableHead>类型</TableHead>
+                  <TableHead>金额</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>配额数量</TableHead>
+                  <TableHead>创建时间</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.items.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <span className="font-mono text-sm">{order.creemOrderId}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{order.userName || '未设置'}</p>
+                        <p className="text-sm text-muted-foreground">{order.userEmail || '-'}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getTypeBadgeVariant(order.type)}>
+                        {order.type === 'subscription' ? '订阅' : '配额购买'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatAmount(order.amount, order.currency)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {order.quotaAmount ? (
+                        <span>{order.quotaAmount}</span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {formatRelativeTime(order.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {data && data.pagination.totalPages > 1 && (
+              <div className="mt-4 flex justify-center">
+                <SimplePagination
+                  page={data.pagination.page}
+                  totalPages={data.pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Orders" description="查看支付订单" />
@@ -151,81 +252,7 @@ export default function OrdersPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : !data?.items.length ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">没有找到订单</p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>订单号</TableHead>
-                    <TableHead>用户</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>金额</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>配额数量</TableHead>
-                    <TableHead>创建时间</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.items.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>
-                        <span className="font-mono text-sm">{order.creemOrderId}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{order.userName || '未设置'}</p>
-                          <p className="text-sm text-muted-foreground">{order.userEmail || '-'}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getTypeBadgeVariant(order.type)}>
-                          {order.type === 'subscription' ? '订阅' : '配额购买'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatAmount(order.amount, order.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {order.quotaAmount ? (
-                          <span>{order.quotaAmount}</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatRelativeTime(order.createdAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {data.pagination.totalPages > 1 && (
-                <div className="mt-4 flex justify-center">
-                  <SimplePagination
-                    page={data.pagination.page}
-                    totalPages={data.pagination.totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
+        <CardContent>{renderOrdersContentByState()}</CardContent>
       </Card>
     </div>
   );
