@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { Control, FieldErrors, UseFormRegister, UseFieldArrayReturn, UseFormSetValue } from 'react-hook-form'
 import { useWatch } from 'react-hook-form'
 import { useMcpStatus } from '@/hooks/use-mcp-status'
@@ -191,10 +191,43 @@ export const McpSection = ({
     [activeServer, stdioValues, httpValues, stdioArray, httpArray, serverList.length]
   )
 
-  // 限制 activeIndex 范围
-  const safeActiveIndex = Math.min(activeIndex, Math.max(0, serverList.length - 1))
-  if (safeActiveIndex !== activeIndex && serverList.length > 0) {
-    setActiveIndex(safeActiveIndex)
+  // 限制 activeIndex 范围（避免在渲染阶段 setState）
+  useEffect(() => {
+    if (serverList.length === 0) {
+      if (activeIndex !== 0) {
+        setActiveIndex(0)
+      }
+      return
+    }
+
+    const clamped = Math.min(activeIndex, serverList.length - 1)
+    if (clamped !== activeIndex) {
+      setActiveIndex(clamped)
+    }
+  }, [activeIndex, serverList.length])
+
+  const safeActiveIndex = serverList.length > 0 ? Math.min(activeIndex, serverList.length - 1) : 0
+
+  const renderContentByState = () => {
+    if (serverList.length === 0) {
+      return <McpEmptyState onAdd={handleAdd} onAddPreset={handleAddPreset} />
+    }
+
+    if (!activeServer) {
+      return null
+    }
+
+    return (
+      <McpDetails
+        server={activeServer}
+        control={control}
+        register={register}
+        errors={errors}
+        onRemove={handleRemove}
+        onTypeChange={handleTypeChange}
+        testServer={testServer}
+      />
+    )
   }
 
   if (isLoading) {
@@ -211,19 +244,7 @@ export const McpSection = ({
         getServerState={getServerById}
       />
       <div className="min-w-0 flex-1 overflow-hidden rounded-xl bg-background">
-        {serverList.length === 0 ? (
-          <McpEmptyState onAdd={handleAdd} onAddPreset={handleAddPreset} />
-        ) : activeServer ? (
-          <McpDetails
-            server={activeServer}
-            control={control}
-            register={register}
-            errors={errors}
-            onRemove={handleRemove}
-            onTypeChange={handleTypeChange}
-            testServer={testServer}
-          />
-        ) : null}
+        {renderContentByState()}
       </div>
     </div>
   )

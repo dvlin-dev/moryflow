@@ -115,39 +115,50 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
     [updateSettings]
   );
 
-  // 未登录状态
-  if (authLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
+  const sectionState = useMemo(() => {
+    if (authLoading) return 'auth-loading';
+    if (!isAuthenticated) return 'unauthenticated';
+    if (!vaultPath) return 'missing-vault';
+    return 'ready';
+  }, [authLoading, isAuthenticated, vaultPath]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <Cloud className="h-12 w-12 text-muted-foreground/50" />
-        <div className="space-y-1">
-          <p className="font-medium">{t('cloudSyncNeedLogin')}</p>
-          <p className="text-sm text-muted-foreground">{t('cloudSyncNeedLoginDescription')}</p>
-        </div>
-      </div>
-    );
-  }
+  const renderContentByState = () => {
+    switch (sectionState) {
+      case 'auth-loading':
+        return (
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        );
+      case 'unauthenticated':
+        return (
+          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <Cloud className="h-12 w-12 text-muted-foreground/50" />
+            <div className="space-y-1">
+              <p className="font-medium">{t('cloudSyncNeedLogin')}</p>
+              <p className="text-sm text-muted-foreground">{t('cloudSyncNeedLoginDescription')}</p>
+            </div>
+          </div>
+        );
+      case 'missing-vault':
+        return (
+          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <FolderSync className="h-12 w-12 text-muted-foreground/50" />
+            <div className="space-y-1">
+              <p className="font-medium">{t('cloudSyncNeedVault')}</p>
+              <p className="text-sm text-muted-foreground">{t('cloudSyncNeedVaultDescription')}</p>
+            </div>
+          </div>
+        );
+      case 'ready':
+      default:
+        return null;
+    }
+  };
 
-  // 未选择 vault 状态
-  if (!vaultPath) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <FolderSync className="h-12 w-12 text-muted-foreground/50" />
-        <div className="space-y-1">
-          <p className="font-medium">{t('cloudSyncNeedVault')}</p>
-          <p className="text-sm text-muted-foreground">{t('cloudSyncNeedVaultDescription')}</p>
-        </div>
-      </div>
-    );
+  if (sectionState !== 'ready') {
+    return renderContentByState();
   }
 
   const isSyncing = status?.engineStatus === 'syncing';
@@ -156,23 +167,25 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
   const needsAttention =
     !binding || engineStatus === 'offline' || engineStatus === 'disabled' || !!status?.error;
 
-  const statusSummary = useMemo(
-    () =>
-      isSyncing
-        ? { icon: Loader, label: t('cloudSyncSyncing'), colorClass: 'text-primary' }
-        : needsAttention
-          ? {
-              icon: CircleAlert,
-              label: t('cloudSyncNeedsAttention'),
-              colorClass: 'text-amber-500',
-            }
-          : {
-              icon: CircleCheck,
-              label: t('cloudSyncSynced'),
-              colorClass: 'text-success',
-            },
-    [isSyncing, needsAttention, t]
-  ) as { icon: LucideIcon; label: string; colorClass: string };
+  const statusSummary = useMemo(() => {
+    if (isSyncing) {
+      return { icon: Loader, label: t('cloudSyncSyncing'), colorClass: 'text-primary' };
+    }
+
+    if (needsAttention) {
+      return {
+        icon: CircleAlert,
+        label: t('cloudSyncNeedsAttention'),
+        colorClass: 'text-amber-500',
+      };
+    }
+
+    return {
+      icon: CircleCheck,
+      label: t('cloudSyncSynced'),
+      colorClass: 'text-success',
+    };
+  }, [isSyncing, needsAttention, t]) as { icon: LucideIcon; label: string; colorClass: string };
 
   const lastSyncLabel = useMemo(() => {
     if (!status?.lastSyncAt) return t('cloudSyncNeverSynced');
@@ -180,6 +193,58 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
       time: new Date(status.lastSyncAt).toLocaleTimeString(),
     });
   }, [status?.lastSyncAt, t]);
+
+  const renderUsageByState = () => {
+    if (usageLoading && !usage) {
+      return (
+        <div className="space-y-3">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      );
+    }
+
+    if (!usage) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="rounded-xl bg-background p-4">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-muted-foreground" />
+              <span>{t('storageSpace')}</span>
+            </div>
+            <span className="text-muted-foreground">
+              {formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}
+            </span>
+          </div>
+          <Progress value={usage.storage.percentage} className="h-2" />
+        </div>
+
+        <div className="rounded-xl bg-background p-4">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
+              <span>{t('smartIndex')}</span>
+            </div>
+            <span className="text-muted-foreground">
+              {t('filesCount', { count: usage.vectorized.count })} / {usage.vectorized.limit}
+            </span>
+          </div>
+          <Progress value={usage.vectorized.percentage} className="h-2" />
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          {t('currentPlan', {
+            plan: usage.plan,
+            size: formatBytes(usage.fileLimit.maxFileSize),
+          })}
+        </p>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -291,48 +356,7 @@ export const CloudSyncSection = ({ vaultPath }: CloudSyncSectionProps) => {
                 </Button>
               </div>
 
-              {usageLoading && !usage ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-16 w-full" />
-                  <Skeleton className="h-16 w-full" />
-                </div>
-              ) : usage ? (
-                <div className="space-y-3">
-                  <div className="rounded-xl bg-background p-4">
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="h-4 w-4 text-muted-foreground" />
-                        <span>{t('storageSpace')}</span>
-                      </div>
-                      <span className="text-muted-foreground">
-                        {formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}
-                      </span>
-                    </div>
-                    <Progress value={usage.storage.percentage} className="h-2" />
-                  </div>
-
-                  <div className="rounded-xl bg-background p-4">
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-muted-foreground" />
-                        <span>{t('smartIndex')}</span>
-                      </div>
-                      <span className="text-muted-foreground">
-                        {t('filesCount', { count: usage.vectorized.count })} /{' '}
-                        {usage.vectorized.limit}
-                      </span>
-                    </div>
-                    <Progress value={usage.vectorized.percentage} className="h-2" />
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    {t('currentPlan', {
-                      plan: usage.plan,
-                      size: formatBytes(usage.fileLimit.maxFileSize),
-                    })}
-                  </p>
-                </div>
-              ) : null}
+              {renderUsageByState()}
             </div>
           )}
 

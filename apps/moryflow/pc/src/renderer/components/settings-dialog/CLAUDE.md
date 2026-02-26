@@ -25,6 +25,12 @@
 
 ## 近期变更
 
+- Providers 详情页重构为容器 + `use-provider-details-controller` + `preset/custom` 子组件，`provider-details.tsx` 收敛为状态分流层
+- MCP Section 清理渲染期 `setState`，多状态内容统一 `renderContentByState()` 分发
+- Add/Edit Model Dialog 统一迁移到 `react-hook-form + zod/v3`（含输入模态校验与重复 ID 表单错误）
+- Cloud Sync Section 统一状态片段化渲染（`sectionState + renderContentByState + renderUsageByState`），移除链式三元
+- MCP Details 拆分测试逻辑与展示层：新增 `use-mcp-details-test`、`mcp-test-result-dialog`、`mcp-verified-tools`
+- Account LoginPanel 拆分为流程容器 + `mode-header/auth-fields/terms` 子片段，主文件收敛为 login/register/OTP 状态编排
 - Account 登录面板移除内层 `form`，改为显式按钮提交 + Enter 捕获，避免嵌套 `form` 触发外层 Settings 提交导致弹窗异常关闭
 - Account 验证码面板（OTPForm）移除内层 `form`，并将 `onSuccess` 改为 `await`，避免验证后登录失败时产生未处理 Promise 导致弹窗异常
 - Account 登录与验证码验证切换为 Token-first（成功即落库 access+refresh）；refresh 仅接受 body refreshToken，未登录 loading 不再显示全局 skeleton，仅保留按钮级 loading

@@ -162,6 +162,8 @@ status: active
 | 11 | anyhunt/console | 项目收口（状态片段化补扫） | 补扫已改范围并修复同类问题 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AgentBrowserLayoutPage` 布局模式改为状态片段独立渲染，移除 UI 条件混排；总索引与专项台账同步为“1/2/3 全流程完成” |
 | 12 | anyhunt/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/anyhunt/docs` 从本轮组件优化专项中移除 |
 | 13 | moryflow/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/moryflow/docs` 从本轮组件优化专项中移除 |
+| 14 | moryflow/pc | 模块 A（auth/settings-dialog/payment-dialog） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x4 / S2x2 / S3x2`，详见 `docs/code-review/moryflow-pc.md`；已给出 `A-1~A-6` 修复计划与验证命令 |
+| 15 | moryflow/pc | 模块 A（auth/settings-dialog/payment-dialog） | 分步重构与修复（A-1~A-6） | done | `pnpm --filter @moryflow/pc typecheck`（fail，缺少 node_modules） + `pnpm --filter @moryflow/pc test:unit`（fail，`vitest` 缺失） | 2026-02-26 | A-1~A-6 全部代码改造完成：`ProviderDetails/LoginPanel/McpDetails` 拆分，`McpSection/CloudSyncSection/SectionContent/PaymentDialog` 状态收敛，`AddModelDialog/EditModelDialog` 迁移到 RHF + zod/v3；待依赖安装后补齐验证 |
 
 ## 5. 回写格式（统一）
 
