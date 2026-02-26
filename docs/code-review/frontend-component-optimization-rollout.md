@@ -140,6 +140,11 @@ status: active
 | 4 | anyhunt/console | 模块 B（scrape/crawl/search/map/extract） | 分步重构与修复 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-25 | B-1~B-6 全部完成：`ScrapeForm`/`ScrapeResult`/`ExtractPlaygroundPage` 拆分，统一 API Key 选择收敛，新增 `PlaygroundPageShell` 并接入 `Map/Search/Extract`，补扫并清理残留状态三元 |
 | 5 | anyhunt/console | 模块 C（memox/embed playground） | 预扫描（仅问题清单） | done | n/a | 2026-02-25 | 输出 `S1x3 / S2x3`，详见 `docs/code-review/anyhunt-console.md` |
 | 6 | anyhunt/console | 模块 C（memox/embed playground） | 分步重构与修复（C-1~C-5 + review follow-up） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-25 | C-1~C-5 全部完成，并在 follow-up 收敛：`Memories` 请求启用边界、`Memories/Entities/Graph/Embed` API Key 选择复用、Graph 可视化继续拆分减责；模块 C 回归 15 files / 55 tests 全通过 |
+| 7 | anyhunt/console | 模块 D（agent-browser-playground） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x3`，详见 `docs/code-review/anyhunt-console.md` |
+| 8 | anyhunt/console | 模块 D（agent-browser-playground） | 分步重构与修复（D-1~D-6） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | D-1~D-6c 全部完成：`browser-session-sections` 17 分区拆分、`BrowserSessionPanel` 收敛为容器装配层、operation handlers 分域 hooks 化、`browser-api` 再拆分为 `session/observability/storage` 三域 + 客户端辅助层；模块 D 范围内单文件全部 `< 300` |
+| 9 | anyhunt/console | 模块 E（playground-shared/stores/页面编排） | 预扫描 + 分步重构与修复（E-0~E-2） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 新增 `PlaygroundLoadingState`、`PlaygroundCodeExampleCard`；`Scrape/Crawl` 页面迁移到 `PlaygroundPageShell`；新增 `scrape/crawl` 请求区与结果区组件并统一状态分发 |
+| 10 | anyhunt/console | 项目复盘（整项目一致性） | 全项目 Review（A~E） | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `anyhunt/console` 已完成首个项目闭环：模块 A~E 全部完成并回写；进入下一个项目时沿用同一流程模板 |
+| 11 | anyhunt/console | 项目收口（状态片段化补扫） | 补扫已改范围并修复同类问题 | done | `pnpm --filter @anyhunt/console lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | `AgentBrowserLayoutPage` 布局模式改为状态片段独立渲染，移除 UI 条件混排；总索引与专项台账同步为“1/2/3 全流程完成” |
 
 ## 5. 回写格式（统一）
 
@@ -152,4 +157,4 @@ status: active
 
 ---
 
-最后更新：2026-02-25
+最后更新：2026-02-26

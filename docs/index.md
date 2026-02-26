@@ -1,6 +1,6 @@
 ---
 title: 文档索引（内部协作）
-date: 2026-02-25
+date: 2026-02-26
 scope: monorepo
 status: active
 ---
@@ -92,9 +92,9 @@ status: active
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-25，Anyhunt Console 模块 C C-2~C-5 完成）
-- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-25，active；Anyhunt Console 模块 C C-1~C-5 完成）
-- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-25，in_progress：模块 A/B/C 完成 + review follow-up 修复完成，待项目复盘）
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Anyhunt Console 完成首个项目闭环：模块 D D-6 全量完成 + 模块 E 完成 + 项目复盘完成）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环，准备进入下一个项目）
+- Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-26，done：模块 A/B/C/D/E 与项目复盘全部完成）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）

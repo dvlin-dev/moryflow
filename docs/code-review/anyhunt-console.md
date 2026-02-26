@@ -2,7 +2,7 @@
 title: Anyhunt Console Code Review
 date: 2026-02-25
 scope: apps/anyhunt/console
-status: in_progress
+status: done
 ---
 
 <!--
@@ -48,6 +48,13 @@ status: in_progress
   - `src/pages/GraphPage.tsx`
   - `src/pages/EmbedPlaygroundPage.tsx`
 
+### 模块 D 预扫描范围（Step 7）
+
+- 特性目录：
+  - `src/features/agent-browser-playground`
+- 页面入口：
+  - `src/pages/agent-browser/*`
+
 ## 结论摘要（模块 A：修复完成）
 
 - `S1`（必须改）：3 项
@@ -69,6 +76,20 @@ status: in_progress
 - `S2`（建议本轮改）：3 项
 - `S3`（可延后）：0 项
 - 当前状态：模块 C 已完成修复并通过模块级校验（C-1~C-5）
+
+## 结论摘要（模块 D：修复完成）
+
+- `S1`（必须改）：3 项
+- `S2`（建议本轮改）：3 项
+- `S3`（可延后）：0 项
+- 当前状态：模块 D 已完成修复并通过模块级校验（D-1~D-6c 全部完成）
+
+## 结论摘要（模块 E：修复完成）
+
+- `S1`（必须改）：0 项
+- `S2`（建议本轮改）：3 项
+- `S3`（可延后）：0 项
+- 当前状态：模块 E 已完成修复并通过模块级校验（E-0~E-2 全部完成）
 
 ## 发现（按严重度排序）
 
@@ -298,6 +319,120 @@ status: in_progress
 4. C-4：重构 `Embed`（迁移到 RHF + zod/v3，收敛 active-key only，状态片段化）。（已完成）
 5. C-5：模块级回归（`@anyhunt/console` lint/typecheck/test:unit）与一致性复查。（已完成）
 
+## 模块 D 预扫描发现（按严重度排序）
+
+- [S1][已修复] `BrowserSessionPanel` 超大单体，表单/请求编排/状态/UI 装配强耦合
+  - 证据：
+    - `browser-session-panel.tsx` 已从 `1157` 行收敛到 `103` 行（容器装配层）
+    - 分区 JSX 抽离到 `browser-session-panel-content.tsx`（`288` 行）
+    - 业务 handler 拆分为按域 hooks：`open/tab-window/intercept-network/diagnostics/data`，单文件均 `< 300` 行
+  - 定位：
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-panel.tsx:1`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-panel-content.tsx:1`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/hooks/use-browser-session-operation-actions.ts:1`
+  - 风险：
+    - 已通过分层拆分显著降低回归面，后续变更可按域独立演进
+
+- [S1][已修复] `browser-session-sections.tsx` 单文件承载 17 个 UI 分区，语义边界过宽
+  - 证据：
+    - 历史文件行数 `2115`，经 D-4a~D-4e 五轮拆分后降至 `45`
+    - 17 个分区组件已全部迁移到 `components/browser-session-sections/*.tsx`，聚合文件仅保留导入导出
+  - 定位：
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-sections.tsx:1`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-sections.tsx:9`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-sections.tsx:28`
+  - 风险：
+    - 组件职责不清晰，难以按业务域演进与复用
+
+- [S1][已修复] `AgentBrowserLayoutPage` API Key 选择可回落到 inactive key，且上下文可用状态判断不一致
+  - 证据：
+    - 默认 key 使用 `selected || firstActive || apiKeys[0]`，会在无 active key 时回落到 inactive key
+    - `hasApiKeys` 使用 `apiKeys.length > 0`，与“仅 active key 可用”约束冲突
+  - 定位：
+    - `apps/anyhunt/console/src/pages/agent-browser/AgentBrowserLayoutPage.tsx:27`
+    - `apps/anyhunt/console/src/pages/agent-browser/AgentBrowserLayoutPage.tsx:31`
+  - 风险：
+    - UI 提示与真实请求能力不一致，可能出现“有 key 但不可执行”误导
+
+- [S2][已修复] `api.ts` 同时承载 Browser 与 Agent API，边界混合
+  - 证据：
+    - 文件行数 `440`，共 45 个导出函数
+    - `estimateAgentCost/listAgentModels/executeAgentTask` 与 Browser API 同文件并存
+  - 定位：
+    - `apps/anyhunt/console/src/features/agent-browser-playground/api.ts:61`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/api.ts:403`
+  - 风险：
+    - 变更影响面不透明，后续分域维护困难
+
+- [S2][已修复] Session/Window 参数构建逻辑重复，JSON 校验与 options 组装可复用性不足
+  - 证据：
+    - `handleCreateSession` 与 `handleCreateWindow` 重复处理 permissions/headers/geolocation/httpCredentials/recordVideo
+  - 定位：
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-panel.tsx:423`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/browser-session-panel.tsx:714`
+  - 风险：
+    - 双处演进容易漏改并引入行为漂移
+
+- [S2][已修复] `FlowRunner` 将流程状态机、请求编排与表单 UI 聚合在单组件
+  - 证据：
+    - `flow-runner.tsx` 从 `325` 行降到 `181` 行
+    - 表单/步骤展示/类型与纯函数分别拆分到 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`
+    - `BrowserSessionPanel` 的 19 组表单初始化与 session 同步副作用抽离到 `hooks/use-browser-session-forms.ts`
+  - 定位：
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/flow-runner.tsx:29`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/flow-runner-form.tsx:1`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/components/flow-runner-step-list.tsx:1`
+    - `apps/anyhunt/console/src/features/agent-browser-playground/hooks/use-browser-session-forms.ts:1`
+  - 风险：
+    - 测试粒度粗，步骤扩展时复杂度持续上升
+
+## 分步修复计划（模块 D）
+
+1. D-1：修复 `AgentBrowserLayoutPage` 的 key 选择收敛（active-key only）并补回归测试。（已完成）
+2. D-2：抽离 Session/Window 共用请求参数 mapper，去重 JSON 校验与 options 组装。（已完成）
+3. D-3：按域拆分 `BrowserSessionPanel`（状态容器/handler methods/section 装配）。（已完成：section 状态容器 + 结果状态 + lifecycle handlers 均已抽离）
+4. D-4：拆分 `browser-session-sections.tsx` 为多文件域组件并保留统一导出入口。（已完成：17 个分区组件全部独立文件化，聚合文件收敛为导出层）
+5. D-5：拆分 `api.ts` 为 `browser-api.ts` + `agent-api.ts`（保留兼容导出层）。（已完成）
+6. D-6：模块级回归（`@anyhunt/console` lint/typecheck/test:unit）与一致性复查。（已完成：D-6a~D-6c，含 `BrowserSessionPanel`/`browser-api`/Session&Windows 分区二次减责）
+
+## 模块 E 预扫描发现（按严重度排序）
+
+- [S2][已修复] `Scrape/Crawl` 页面仍保留旧版手工编排，未复用 `PlaygroundPageShell`
+  - 证据：
+    - `ScrapePlaygroundPage`、`CrawlPlaygroundPage` 手写双栏布局 + 请求区 + 结果区 + CodeExample 卡片
+    - 与 `Map/Search/Extract` 页面编排范式不一致
+  - 定位：
+    - `apps/anyhunt/console/src/pages/ScrapePlaygroundPage.tsx:1`
+    - `apps/anyhunt/console/src/pages/CrawlPlaygroundPage.tsx:1`
+  - 风险：
+    - 页面改版成本高，交互一致性易漂移
+
+- [S2][已修复] Playground loading 与 code-example 卡片重复实现
+  - 证据：
+    - 多页面重复 `Loading...` 容器卡片和 `Code Example` 卡片骨架
+  - 定位：
+    - `apps/anyhunt/console/src/pages/MapPlaygroundPage.tsx:1`
+    - `apps/anyhunt/console/src/pages/SearchPlaygroundPage.tsx:1`
+    - `apps/anyhunt/console/src/pages/ExtractPlaygroundPage.tsx:1`
+  - 风险：
+    - UI 一致性依赖人工同步，易出现细节漂移
+
+- [S2][已修复] `Scrape/Crawl` 结果区状态分发散落在页面层
+  - 证据：
+    - 页面中直接维护 error/empty/success 三态渲染
+    - 与“页面层只编排、状态分发收敛到 feature 组件”准则不一致
+  - 定位：
+    - `apps/anyhunt/console/src/pages/ScrapePlaygroundPage.tsx:1`
+    - `apps/anyhunt/console/src/pages/CrawlPlaygroundPage.tsx:1`
+  - 风险：
+    - 页面职责膨胀，复用困难
+
+## 分步修复计划（模块 E）
+
+1. E-0：模块 E 预扫描（`playground-shared / stores / 页面编排`）并产出问题分级。（已完成）
+2. E-1：统一 Playground 页面壳层与共享片段（loading/code example），并将 `Scrape/Crawl` 迁移到同一编排范式。（已完成）
+3. E-2：模块级回归与项目复盘前校验（`@anyhunt/console` lint/typecheck/test:unit）。（已完成）
+
 ## 进度记录
 
 | Step | Module | Action | Status | Validation | Updated At | Notes |
@@ -319,6 +454,32 @@ status: in_progress
 | C-4 | memox/embed playground | 重构 `Embed`（RHF + zod/v3 + active-key only + 状态片段化） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-25 | 新增 `embed-playground/schemas`（含单测）；`EmbedForm` 迁移 RHF；`EmbedPlaygroundPage` 改为 `switch` 状态渲染 |
 | C-5 | memox/embed playground | 模块级回归与一致性复查 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-25 | 模块 C 全量步骤闭环，测试 15 files / 55 tests 全通过 |
 | C-5b | memox/embed playground | review follow-up 修复（请求启用边界 + API Key 选择复用 + Graph 可视化继续减责） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-25 | `Memories` 列表请求改为 `apiKey + userId` 才启用；`Memories/Entities/Graph/Embed` 统一复用 `ApiKeySelector`；Graph 可视化拆为 view-model/states/hooks |
+| D-0 | agent-browser-playground | 预扫描（不改代码） | done | n/a | 2026-02-26 | 识别 `S1x3 / S2x3`，确认优先修复 active-key 选择一致性与超大组件分层 |
+| D-1 | agent-browser-playground | 修复 `AgentBrowserLayoutPage` active-key only + 回归测试 | done | `pnpm --filter @anyhunt/console typecheck` / `test:unit` | 2026-02-26 | `AgentBrowserLayoutPage` 改为复用 `resolveActiveApiKeySelection`，移除 inactive key 回落；新增 `AgentBrowserLayoutPage.test.tsx`（2 tests）回归覆盖 |
+| D-2 | agent-browser-playground | 抽离 Session/Window 参数 mapper，去重校验与 options 组装 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `browser-context-options.ts` + `browser-context-options.test.ts`；`BrowserSessionPanel` 的 `handleCreateSession/handleCreateWindow` 统一复用 mapper |
+| D-3a | agent-browser-playground | 抽离 BrowserSessionPanel 的 section 状态容器（配置 + open-state hook） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `browser-session-section-config.ts` 与 `use-browser-session-section-open-state.ts`；替换 `BrowserSessionPanel` 内 17 个 section 开关 `useState` |
+| D-3b | agent-browser-playground | 抽离 BrowserSessionPanel 结果状态与生命周期 handlers | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `use-browser-session-panel-results.ts` 与 `use-browser-session-lifecycle-actions.ts`；`BrowserSessionPanel` 改为装配层调用 hooks，会话 close 重置逻辑收敛为单一方法 |
+| D-4a | agent-browser-playground | 拆分 `browser-session-sections` 首批分区组件（Streaming/CDP） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `components/browser-session-sections/streaming-section.tsx` 与 `cdp-section.tsx`；`browser-session-sections.tsx` 改为聚合导出与装配 |
+| D-4b | agent-browser-playground | 拆分 `browser-session-sections` 第二批分区组件（Storage/Profile） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `components/browser-session-sections/storage-section.tsx` 与 `profile-section.tsx`；`browser-session-sections.tsx` 继续收敛为聚合装配层 |
+| D-4c | agent-browser-playground | 拆分 `browser-session-sections` 第三批分区组件（Intercept/Headers/NetworkHistory/Diagnostics） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `components/browser-session-sections/intercept-section.tsx`、`headers-section.tsx`、`network-history-section.tsx`、`diagnostics-section.tsx`；`browser-session-sections.tsx` 从 1773 行降到 1299 行，并将检测风险状态渲染改为方法化 |
+| D-4d | agent-browser-playground | 拆分 `browser-session-sections` 第四批分区组件（Session/Tabs/Windows） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `components/browser-session-sections/session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`；`browser-session-sections.tsx` 从 1299 行降到 494 行，进一步收敛为导入装配层 |
+| D-4e | agent-browser-playground | 拆分 `browser-session-sections` 第五批分区组件（OpenUrl/Snapshot/Delta/Action/ActionBatch/Screenshot）并收敛聚合入口 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`；`browser-session-sections.tsx` 从 494 行降到 45 行 |
+| D-5 | agent-browser-playground | 拆分 API 文件（Browser/Agent 分域 + 兼容导出层） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `browser-api.ts`、`agent-api.ts`，`api.ts` 改为兼容导出层；`browser-session-panel`/`flow-runner`/`use-agent-models` 改为分域导入 |
+| D-6a | agent-browser-playground | 一致性复查第一轮：`FlowRunner` 分层 + `BrowserSessionPanel` 表单初始化抽离 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `flow-runner-form.tsx`、`flow-runner-step-list.tsx`、`flow-runner-types.ts`、`flow-runner-helpers.ts`；`flow-runner.tsx` 收敛为编排层；新增 `hooks/use-browser-session-forms.ts` 抽离 19 组表单与 session 同步副作用 |
+| D-6b | agent-browser-playground | 一致性复查第二轮：`BrowserSessionPanel` JSX 装配抽离 + operation handlers 分域拆分 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `browser-session-panel-content.tsx`；`browser-session-panel.tsx` 收敛到 103 行；新增 `use-browser-session-open-actions.ts`、`use-browser-session-tab-window-actions.ts`、`use-browser-session-observability-actions.ts`、`use-browser-session-data-actions.ts` |
+| D-6c | agent-browser-playground | 一致性复查第三轮：超阈值残留清理（API 分层 + Session/Windows 分区再减责） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | `browser-api.ts` 拆分为 `browser-session-api.ts`/`browser-observability-api.ts`/`browser-storage-api.ts` + `browser-api-client.ts`；`session-section.tsx`/`windows-section.tsx` 二次拆分为 context 字段片段；模块 D 范围内文件全部收敛到 `< 300` 行 |
+| E-0 | playground-shared/stores/页面编排 | 预扫描（不改代码） | done | n/a | 2026-02-26 | 识别 `S2x3`（`Scrape/Crawl` 编排未统一、loading/code-example 重复、结果状态分发散落页面层） |
+| E-1 | playground-shared/stores/页面编排 | 分步重构与修复 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `PlaygroundLoadingState`、`PlaygroundCodeExampleCard`；`Scrape/Crawl` 页面迁移到 `PlaygroundPageShell`；新增 `scrape-request-card/scrape-result-panel`、`crawl-request-card/crawl-result-panel` |
+| E-2 | playground-shared/stores/页面编排 | 模块级回归与一致性复查 | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | 模块 E 修复闭环，页面编排范式在 `Scrape/Crawl/Map/Search/Extract` 达成一致 |
+| P1-R | anyhunt/console | 项目复盘（整项目一致性复查） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | A/B/C/D/E 全部完成；`agent-browser + playground-shared + 页面编排` 范围内无 `>300` 单文件残留，状态分发统一为片段化渲染方法 |
+| P1-R2 | anyhunt/console | 项目收口补扫（状态片段化） | done | `pnpm --filter @anyhunt/console lint` / `typecheck` / `test:unit` | 2026-02-26 | `AgentBrowserLayoutPage` 布局分支改为独立状态片段返回，移除 UI 条件混排；总索引与专项计划同步为“1/2/3 全流程完成” |
+
+## 项目复盘（P1）
+
+- 结论：`apps/anyhunt/console` 本轮组件优化专项已闭环（A~E + 项目复盘完成）。
+- 一致性：页面层统一“容器编排 + feature 请求区/结果区 + shared shell”，多状态 UI 统一“状态片段 + 渲染方法”。
+- 补扫：项目收口阶段已完成同类模式补扫，`AgentBrowserLayoutPage` 迁移为显式状态片段渲染。
+- 复杂度：`agent-browser + playground-shared + 页面编排` 范围内单文件阈值已收敛（无 `>300` 残留）。
 
 ## 验证记录
 

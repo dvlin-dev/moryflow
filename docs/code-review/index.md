@@ -21,6 +21,20 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Anyhunt Console 完成首个项目闭环（模块 D D-6b~D-6c + 模块 E + 项目复盘全部完成），并补齐 `AgentBrowserLayoutPage` 布局状态片段化收口；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 进入 D-6 一致性复查，完成 D-6a（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离为 `use-browser-session-forms`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4e 完成（`browser-session-sections.tsx` 第五批分区拆分：`OpenUrl/Snapshot/Delta/Action/ActionBatch/Screenshot`，并收敛为 45 行导出层），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4d 完成（`browser-session-sections.tsx` 第四批分区拆分：`Session/Tabs/Windows`；主文件 1299 行降到 494 行），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4c 完成（`browser-session-sections.tsx` 第三批分区拆分：`Intercept/Headers/NetworkHistory/Diagnostics`；主文件 1773 行降到 1299 行，并收敛 Detection Risk 状态渲染），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-5 完成（`api.ts` 拆分为 `browser-api.ts` 与 `agent-api.ts`，保留兼容导出层并切换主要调用方到分域导入），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4b 完成（`browser-session-sections.tsx` 第二批分区拆分，`StorageSection` 与 `ProfileSection` 独立文件化），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4a 完成（`browser-session-sections.tsx` 首批分区拆分，`StreamingSection` 与 `CdpSection` 独立文件化），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-3 完成（section 状态容器 + 结果状态 + session lifecycle handlers 抽离），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-3b 完成（抽离 `use-browser-session-panel-results` 与 `use-browser-session-lifecycle-actions`，`BrowserSessionPanel` 进一步收敛为装配层），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-3a 完成（抽离 section 配置与 open-state hook，`BrowserSessionPanel` 移除 17 个开关 `useState`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-2 完成（抽离 `browser-context-options` mapper，`BrowserSessionPanel` Session/Window 参数组装去重，并补齐 mapper 单测），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D 修复推进：D-1 完成（`AgentBrowserLayoutPage` 改为 active-key only，补齐 `AgentBrowserLayoutPage.test.tsx` 回归测试），并通过模块级 `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
+- 2026-02-26：Anyhunt Console 模块 D（`agent-browser-playground`）完成预扫描并输出问题分级（`S1x3 / S2x3`），进入 D-1 分步修复：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 C review follow-up 完成（修复 `Memories` 请求启用边界；统一 `Memories/Entities/Graph/Embed` API Key 选择复用；Graph 可视化继续拆分减责）：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 C 修复闭环：C-2~C-5 完成（统一 API Key 收敛、Graph 分层重构、Embed RHF+zod/v3 改造、模块级回归通过）：`docs/code-review/anyhunt-console.md`。
 - 2026-02-25：Anyhunt Console 模块 C 修复推进：C-1 完成（`MemoxPlaygroundPage` 拆分为容器 + request/result 组件，并抽离 request mapper + 单测）并通过模块级校验：`docs/code-review/anyhunt-console.md`。
@@ -187,7 +201,7 @@ status: active
 
 | Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
 | -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | in_progress（模块 A/B/C 修复完成，待项目复盘） |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | done（模块 A/B/C/D/E + 项目复盘全部完成） |
 | P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                           |
 | P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
 | P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |
