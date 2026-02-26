@@ -21,7 +21,7 @@ status: active
 
 ## 近期更新
 
-- 2026-02-26：Moryflow Site Template 组件优化专项进展：模块 A/B/C 完成（模板/样式/脚本生成链路收敛，`sync` 确定性与新鲜度守卫落地），详见 `docs/code-review/moryflow-site-template.md` 与 `docs/code-review/frontend-component-optimization-rollout.md`。
+- 2026-02-26：Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成（模板/样式/脚本生成链路收敛，`sync` 确定性与新鲜度守卫落地），详见 `docs/code-review/moryflow-site-template.md` 与 `docs/code-review/frontend-component-optimization-rollout.md`。
 - 2026-02-26：Anyhunt Console 完成首个项目闭环（模块 D D-6b~D-6c + 模块 E + 项目复盘全部完成），并补齐 `AgentBrowserLayoutPage` 布局状态片段化收口；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 进入 D-6 一致性复查，完成 D-6a（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离为 `use-browser-session-forms`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4e 完成（`browser-session-sections.tsx` 第五批分区拆分：`OpenUrl/Snapshot/Delta/Action/ActionBatch/Screenshot`，并收敛为 45 行导出层），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。

@@ -2,7 +2,7 @@
 title: Moryflow Site Template Code Review
 date: 2026-02-26
 scope: apps/moryflow/site-template
-status: in_progress
+status: done
 ---
 
 <!--
@@ -273,6 +273,33 @@ diff -u /tmp/site-template-sync-hash-1.txt /tmp/site-template-sync-hash-2.txt
   - `build` 对不支持 `@import` 显式报错；
   - `site-template/CLAUDE.md` 已同步更新。
 
+## 项目复盘（Step R-1）
+
+- 复盘范围：`apps/moryflow/site-template`（`templates/styles/scripts/build/sync` 全链路）
+- 复盘结果：未发现新增 `S1/S2/S3` 问题，模块 A/B/C 改造后结构与约束一致
+- 最终结论：
+  - 发布链路已收敛为 `templates + styles + scripts(theme) + sync/build` 单一真源；
+  - `sync` 具备确定性与新鲜度守卫，可避免陈旧样式与无意义 diff；
+  - 样式与脚本职责边界清晰，维护入口可预测。
+
+## 项目复盘验证命令
+
+```bash
+pnpm --filter @moryflow/site-template typecheck
+pnpm --filter @moryflow/site-template build
+SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview pnpm --filter @moryflow/site-template sync
+find apps/moryflow/site-template/dist/sync-preview -type f | sort | xargs shasum > /tmp/site-template-review-hash-1.txt
+SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview pnpm --filter @moryflow/site-template sync
+find apps/moryflow/site-template/dist/sync-preview -type f | sort | xargs shasum > /tmp/site-template-review-hash-2.txt
+diff -u /tmp/site-template-review-hash-1.txt /tmp/site-template-review-hash-2.txt
+```
+
+## 项目复盘验证结果
+
+- `typecheck/build/sync`：**pass**
+- 产物确定性：**pass**（两次哈希 `diff` 无输出）
+- 结项状态：**done**（`site-template` 模块 A/B/C + 项目复盘闭环）
+
 ## 进度记录
 
 | Step | Module            | Action                    | Status | Validation                                              | Updated At | Notes                                                                      |
@@ -283,3 +310,4 @@ diff -u /tmp/site-template-sync-hash-1.txt /tmp/site-template-sync-hash-2.txt
 | B-1  | components/styles | 分步重构与修复（B-1~B-5） | done   | `typecheck` pass + `build` pass                         | 2026-02-26 | 完成组件孤岛层清理、样式分片收敛、移动端遮罩交互修复、死 token 清理        |
 | C-0  | scripts/生成逻辑  | 预扫描（仅问题清单）      | done   | n/a                                                     | 2026-02-26 | 输出 `S1x2 / S2x2 / S3x2`，待确认后进入 C-1                                |
 | C-1  | scripts/生成逻辑  | 分步重构与修复（C-1~C-5） | done   | `typecheck` pass + `build` pass + `sync`(定向输出) pass | 2026-02-26 | 完成脚本单一真源、确定性同步、新鲜度守卫与构建 import 显式失败策略         |
+| R-1  | project-review    | 项目复盘与结项            | done   | `typecheck` + `build` + `sync` + 双次哈希比对 pass      | 2026-02-26 | `site-template` 模块 A/B/C 全部闭环，无新增问题                            |

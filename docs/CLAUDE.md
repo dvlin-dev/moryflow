@@ -9,7 +9,7 @@
 # docs/ 目录指南
 
 > 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
-> 最近更新：2026-02-26（Moryflow Site Template 组件优化专项进展：模块 A/B/C 已完成，新增模块级审查文档 `docs/code-review/moryflow-site-template.md` 并同步专项台账 Step 19）
+> 最近更新：2026-02-26（Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成，模块级审查文档 `docs/code-review/moryflow-site-template.md` 与专项台账已回写到 Step 20）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
