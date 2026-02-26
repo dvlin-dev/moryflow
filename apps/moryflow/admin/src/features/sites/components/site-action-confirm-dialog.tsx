@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -9,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { useDeleteSite, useOfflineSite, useOnlineSite } from '../hooks';
 import { sitesListMethods } from '../methods';
 import { useSitesListStore } from '../store';
@@ -49,13 +49,6 @@ function getActionDescription(actionType: SiteActionType | null, siteSubdomain?:
     default:
       return '请确认后继续。';
   }
-}
-
-function getConfirmButtonClass(actionType: SiteActionType | null): string | undefined {
-  if (actionType === 'delete') {
-    return 'bg-red-600 hover:bg-red-700';
-  }
-  return undefined;
 }
 
 export function SiteActionConfirmDialog(props: SiteActionConfirmDialogProps) {
@@ -130,15 +123,16 @@ export function SiteActionConfirmDialog(props: SiteActionConfirmDialogProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction
+          <Button
+            type="button"
             onClick={() => {
               void handleConfirm();
             }}
             disabled={isLoading}
-            className={getConfirmButtonClass(actionType)}
+            variant={isDelete ? 'destructive' : 'default'}
           >
             {isLoading ? '处理中...' : '确认'}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

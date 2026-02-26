@@ -675,3 +675,4 @@ status: done
 | R-3 | project review | `PaymentTestPage` 去链式三元 + 拆分减责 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 页面降至 235 行；周期文案改为 helper 分发 |
 | R-4 | project review | 复盘遗留页回归测试与项目级校验 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 3 个测试文件；项目单测通过：32 files / 147 tests |
 | F-1 | review follow-up | PR #99 评审意见收口（chat/sites） | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 修复 `useSyncChatModels` 在 loading/error 空数据时误清空模型偏好；`confirmSiteAction` 改为失败不关窗且 `SiteActionConfirmDialog` 捕获异步失败，补齐回归测试 |
+| F-2 | review follow-up | PR #99 评审意见收口（AlertDialogAction 自动关窗） | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | `SiteActionConfirmDialog` 确认按钮改为普通 `Button`，消除 Radix Action 自动关窗副作用；`SiteDetailPage` 切到 `mutateAsync` 并在成功后关闭，失败时保留弹窗错误提示 |

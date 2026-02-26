@@ -66,21 +66,20 @@ export default function SiteDetailPage() {
     hasSite: !!site,
   });
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (!id || !actionType) return;
 
     switch (actionType) {
       case 'offline':
-        offlineMutation.mutate(id);
+        await offlineMutation.mutateAsync(id);
         break;
       case 'online':
-        onlineMutation.mutate(id);
+        await onlineMutation.mutateAsync(id);
         break;
       case 'delete':
-        deleteMutation.mutate(id, {
-          onSuccess: () => navigate('/sites'),
-        });
-        break;
+        await deleteMutation.mutateAsync(id);
+        navigate('/sites');
+        return;
     }
 
     setActionType(null);
