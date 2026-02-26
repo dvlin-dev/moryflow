@@ -1,7 +1,7 @@
 /**
  * Welcome Pages Card
  *
- * [PROPS]: pages, selectedPageId, callbacks
+ * [PROPS]: viewModel/actions（列表状态 + 选择/排序/删除动作）
  * [POS]: Digest Welcome - Welcome Pages 列表与排序/删除入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -9,47 +9,52 @@
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@moryflow/ui';
 import type { DigestWelcomePage } from '@/features/digest-welcome';
+import { resolveWelcomePagesCardState } from './welcome-card-states';
 
 interface WelcomePagesCardProps {
+  viewModel: WelcomePagesCardViewModel;
+  actions: WelcomePagesCardActions;
+}
+
+export interface WelcomePagesCardViewModel {
   isLoading: boolean;
   isError: boolean;
   pages: DigestWelcomePage[];
   selectedPageId: string | null;
-  onSelect: (id: string) => void;
-  onMove: (direction: 'up' | 'down') => void;
-  onDelete: () => void;
   isReordering: boolean;
   isDeleting: boolean;
 }
 
-export function WelcomePagesCard({
-  isLoading,
-  isError,
-  pages,
-  selectedPageId,
-  onSelect,
-  onMove,
-  onDelete,
-  isReordering,
-  isDeleting,
-}: WelcomePagesCardProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Welcome Pages</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {isLoading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : isError ? (
-          <div className="text-sm text-destructive">Failed to load pages.</div>
-        ) : pages.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No pages yet.</div>
-        ) : (
+export interface WelcomePagesCardActions {
+  onSelect: (id: string) => void;
+  onMove: (direction: 'up' | 'down') => void;
+  onDelete: () => void;
+}
+
+export function WelcomePagesCard({ viewModel, actions }: WelcomePagesCardProps) {
+  const { isLoading, isError, pages, selectedPageId, isReordering, isDeleting } = viewModel;
+  const { onSelect, onMove, onDelete } = actions;
+  const state = resolveWelcomePagesCardState({
+    isLoading,
+    hasError: isError,
+    pageCount: pages.length,
+  });
+
+  const renderContentByState = () => {
+    switch (state) {
+      case 'loading':
+        return <Skeleton className="h-24 w-full" />;
+      case 'error':
+        return <div className="text-sm text-destructive">Failed to load pages.</div>;
+      case 'empty':
+        return <div className="text-sm text-muted-foreground">No pages yet.</div>;
+      case 'ready':
+        return (
           <div className="space-y-1">
             {pages.map((page) => {
               const isActive = page.id === selectedPageId;
               const title = page.titleByLocale?.en || page.slug;
+
               return (
                 <button
                   key={page.id}
@@ -73,7 +78,19 @@ export function WelcomePagesCard({
               );
             })}
           </div>
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Welcome Pages</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {renderContentByState()}
 
         <div className="flex items-center justify-between gap-2 pt-3">
           <div className="flex items-center gap-2">

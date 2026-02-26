@@ -53,14 +53,18 @@ describe('LlmModelDialog', () => {
       act(() => {
         root.render(
           <LlmModelDialog
-            open
-            mode="create"
-            model={null}
-            providers={providers}
-            onClose={onClose}
-            onCreate={onCreate}
-            onUpdate={onUpdate}
-            isSubmitting={false}
+            viewModel={{
+              open: true,
+              mode: 'create',
+              model: null,
+              providers,
+              isSubmitting: false,
+            }}
+            actions={{
+              onClose,
+              onCreate,
+              onUpdate,
+            }}
           />
         );
       });

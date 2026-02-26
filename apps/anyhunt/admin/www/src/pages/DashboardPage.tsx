@@ -3,7 +3,13 @@
  * [EMITS]: none
  * [POS]: Admin Dashboard - 系统统计概览（Lucide icons direct render）
  */
-import { useDashboardStats, useChartData } from '@/features/dashboard';
+import {
+  formatDashboardCurrency,
+  formatDashboardDateLabel,
+  formatDashboardNumber,
+  useChartData,
+  useDashboardStats,
+} from '@/features/dashboard';
 import { Camera, CreditCard, DollarSign, Users } from 'lucide-react';
 import {
   ChartContainer,
@@ -13,19 +19,6 @@ import {
   type ChartConfig,
 } from '@moryflow/ui';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-
-function formatNumber(num: number): string {
-  return num.toLocaleString('en-US');
-}
-
-function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 const screenshotChartConfig: ChartConfig = {
   value: {
@@ -49,7 +42,7 @@ export default function DashboardPage() {
     {
       label: 'Total Users',
       value: statsData?.totalUsers ?? 0,
-      format: formatNumber,
+      format: formatDashboardNumber,
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
@@ -57,7 +50,7 @@ export default function DashboardPage() {
     {
       label: 'Active Subscriptions',
       value: statsData?.activeSubscriptions ?? 0,
-      format: formatNumber,
+      format: formatDashboardNumber,
       icon: CreditCard,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -65,7 +58,7 @@ export default function DashboardPage() {
     {
       label: 'Screenshots Today',
       value: statsData?.screenshotsToday ?? 0,
-      format: formatNumber,
+      format: formatDashboardNumber,
       icon: Camera,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
@@ -73,7 +66,7 @@ export default function DashboardPage() {
     {
       label: 'Revenue (MTD)',
       value: statsData?.revenueMTD ?? 0,
-      format: formatCurrency,
+      format: formatDashboardCurrency,
       icon: DollarSign,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
@@ -129,14 +122,16 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={formatDate}
+                  tickFormatter={formatDashboardDateLabel}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis tickLine={false} axisLine={false} />
                 <ChartTooltip
                   content={
-                    <ChartTooltipContent labelFormatter={(value) => formatDate(value as string)} />
+                    <ChartTooltipContent
+                      labelFormatter={(value) => formatDashboardDateLabel(value as string)}
+                    />
                   }
                 />
                 <Area
@@ -163,7 +158,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={formatDate}
+                  tickFormatter={formatDashboardDateLabel}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -175,8 +170,8 @@ export default function DashboardPage() {
                 <ChartTooltip
                   content={
                     <ChartTooltipContent
-                      labelFormatter={(value) => formatDate(value as string)}
-                      formatter={(value) => formatCurrency(value as number)}
+                      labelFormatter={(value) => formatDashboardDateLabel(value as string)}
+                      formatter={(value) => formatDashboardCurrency(value as number)}
                     />
                   }
                 />

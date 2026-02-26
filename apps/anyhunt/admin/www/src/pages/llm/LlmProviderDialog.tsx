@@ -1,7 +1,7 @@
 /**
- * [PROPS]: LlmProviderDialogProps - open/mode/provider/defaults
+ * [PROPS]: LlmProviderDialogProps - viewModel/actions
  * [EMITS]: onClose/onSubmit - Provider 创建/更新动作
- * [POS]: Admin LLM Providers 的创建/编辑弹窗（支持 openai/openai-compatible/openrouter/anthropic/google）
+ * [POS]: Admin LLM Providers 的创建/编辑弹窗
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -9,7 +9,6 @@
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod/v3';
 import {
   Button,
   Dialog,
@@ -32,73 +31,64 @@ import {
   SelectValue,
   Switch,
 } from '@moryflow/ui';
-import type {
-  CreateLlmProviderInput,
-  LlmProviderListItem,
-  LlmProviderType,
-  UpdateLlmProviderInput,
-  LlmProviderPreset,
+import {
+  buildAvailableProviderPresets,
+  buildLlmProviderFormDefaults,
+  llmProviderFormSchema,
+  toCreateLlmProviderInput,
+  toUpdateLlmProviderInput,
+  type LlmProviderFormValues,
+  type CreateLlmProviderInput,
+  type LlmProviderListItem,
+  type LlmProviderPreset,
+  type UpdateLlmProviderInput,
 } from '@/features/llm';
 
-const formSchema = z.object({
-  providerType: z.string().trim().min(1),
-  name: z.string().trim().min(1).max(100),
-  apiKey: z.string().trim().max(5000),
-  baseUrl: z.string().trim().url().or(z.literal('')),
-  enabled: z.boolean(),
-  sortOrder: z.coerce.number().int().min(0).max(10000),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 export interface LlmProviderDialogProps {
+  viewModel: LlmProviderDialogViewModel;
+  actions: LlmProviderDialogActions;
+}
+
+export interface LlmProviderDialogViewModel {
   open: boolean;
   mode: 'create' | 'edit';
   provider: LlmProviderListItem | null;
   presets: LlmProviderPreset[];
-  onClose: () => void;
-  onCreate: (input: CreateLlmProviderInput) => Promise<void>;
-  onUpdate: (providerId: string, input: UpdateLlmProviderInput) => Promise<void>;
   isSubmitting: boolean;
 }
 
-export function LlmProviderDialog({
-  open,
-  mode,
-  provider,
-  presets,
-  onClose,
-  onCreate,
-  onUpdate,
-  isSubmitting,
-}: LlmProviderDialogProps) {
+export interface LlmProviderDialogActions {
+  onClose: () => void;
+  onCreate: (input: CreateLlmProviderInput) => Promise<void>;
+  onUpdate: (providerId: string, input: UpdateLlmProviderInput) => Promise<void>;
+}
+
+export function LlmProviderDialog({ viewModel, actions }: LlmProviderDialogProps) {
+  const { open, mode, provider, presets, isSubmitting } = viewModel;
+  const { onClose, onCreate, onUpdate } = actions;
   const isCreate = mode === 'create';
 
-  const defaults = useMemo<FormValues>(() => {
-    if (isCreate) {
-      const firstPreset = presets[0]?.id ?? 'openai';
-      return {
-        providerType: firstPreset,
-        name: '',
-        apiKey: '',
-        baseUrl: '',
-        enabled: true,
-        sortOrder: 0,
-      };
-    }
+  const defaults = useMemo(
+    () =>
+      buildLlmProviderFormDefaults({
+        mode,
+        provider,
+        presets,
+      }),
+    [mode, provider, presets]
+  );
 
-    return {
-      providerType: provider?.providerType ?? 'openai',
-      name: provider?.name ?? '',
-      apiKey: '',
-      baseUrl: provider?.baseUrl ?? '',
-      enabled: provider?.enabled ?? true,
-      sortOrder: provider?.sortOrder ?? 0,
-    };
-  }, [isCreate, provider, presets]);
+  const availablePresets = useMemo(
+    () =>
+      buildAvailableProviderPresets({
+        presets,
+        providerType: provider?.providerType,
+      }),
+    [presets, provider?.providerType]
+  );
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<LlmProviderFormValues>({
+    resolver: zodResolver(llmProviderFormSchema),
     values: defaults,
     mode: 'onChange',
   });
@@ -111,69 +101,38 @@ export function LlmProviderDialog({
 
   const watchedProviderType = form.watch('providerType');
   const watchedApiKey = form.watch('apiKey');
-  const selectedPreset = useMemo(() => {
-    return presets.find((preset) => preset.id === watchedProviderType);
-  }, [presets, watchedProviderType]);
-  const availablePresets = useMemo(() => {
-    const presetIds = new Set(presets.map((preset) => preset.id));
-    if (provider?.providerType && !presetIds.has(provider.providerType)) {
-      return [
-        ...presets,
-        {
-          id: provider.providerType,
-          name: provider.providerType,
-          sdkType: 'custom',
-          defaultBaseUrl: '',
-        },
-      ];
-    }
-    return presets;
-  }, [presets, provider?.providerType]);
+  const selectedPreset = useMemo(
+    () => availablePresets.find((preset) => preset.id === watchedProviderType),
+    [availablePresets, watchedProviderType]
+  );
 
-  const submit = async (values: FormValues) => {
+  const submit = async (values: LlmProviderFormValues) => {
     if (isCreate) {
-      const apiKey = values.apiKey.trim();
-      if (!apiKey) {
+      if (!values.apiKey.trim()) {
         form.setError('apiKey', { type: 'manual', message: 'API key is required' });
         return;
       }
-
-      const input: CreateLlmProviderInput = {
-        providerType: values.providerType as LlmProviderType,
-        name: values.name.trim(),
-        apiKey,
-        ...(values.baseUrl.trim() ? { baseUrl: values.baseUrl.trim() } : {}),
-        enabled: values.enabled,
-        sortOrder: values.sortOrder,
-      };
-      await onCreate(input);
+      await onCreate(toCreateLlmProviderInput(values));
       return;
     }
 
-    if (!provider) return;
+    if (!provider) {
+      return;
+    }
 
-    const input: UpdateLlmProviderInput = {
-      name: values.name.trim(),
-      enabled: values.enabled,
-      sortOrder: values.sortOrder,
-      baseUrl: values.baseUrl.trim() ? values.baseUrl.trim() : null,
-      ...(values.apiKey.trim() ? { apiKey: values.apiKey.trim() } : {}),
-    };
-
-    await onUpdate(provider.id, input);
+    await onUpdate(provider.id, toUpdateLlmProviderInput(values));
   };
-
-  const title = isCreate ? 'New provider' : 'Edit provider';
-  const description = isCreate
-    ? 'Create a provider configuration (apiKey is encrypted in the database).'
-    : 'Update provider settings. Current apiKey is never returned; setting a new apiKey is optional. Clear Base URL to use the provider default.';
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? null : onClose())}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{isCreate ? 'New provider' : 'Edit provider'}</DialogTitle>
+          <DialogDescription>
+            {isCreate
+              ? 'Create a provider configuration (apiKey is encrypted in the database).'
+              : 'Update provider settings. Current apiKey is never returned; setting a new apiKey is optional. Clear Base URL to use the provider default.'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

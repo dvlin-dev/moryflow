@@ -7,6 +7,7 @@
  */
 
 import type { LlmModelCapabilities, ReasoningConfig } from './types';
+import { ApiError } from '@/lib/api-client';
 
 export function parseLlmCapabilities(
   json: Record<string, unknown> | string | null | undefined
@@ -68,4 +69,12 @@ export function stringifyJsonSafe(value: unknown): string {
   } catch {
     return '';
   }
+}
+
+export function getLlmQueryErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError || error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
 }

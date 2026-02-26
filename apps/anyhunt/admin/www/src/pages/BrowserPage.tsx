@@ -3,19 +3,14 @@
  * [EMITS]: none
  * [POS]: Admin Browser Pool Status - 浏览器池状态监控（Lucide icons direct render）
  */
-import { useBrowserStatus, type BrowserPoolDetailedStatus } from '@/features/browser';
+import {
+  formatBrowserDuration,
+  formatBrowserMemory,
+  useBrowserStatus,
+  type BrowserPoolDetailedStatus,
+} from '@/features/browser';
 import { Activity, CircleAlert, Clock, Computer, Cpu, HardDrive, Server } from 'lucide-react';
 import { Progress, Skeleton } from '@moryflow/ui';
-
-function formatTime(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
-}
-
-function formatMemory(gb: number): string {
-  return `${gb.toFixed(2)} GB`;
-}
 
 function PageHeader() {
   return (
@@ -85,7 +80,7 @@ function StatsGrid({ status }: { status: BrowserPoolDetailedStatus }) {
     {
       label: 'System Resources',
       value: `${status.system.cpuCount} CPU`,
-      subValue: `${formatMemory(status.system.freeMemoryGB)} free`,
+      subValue: `${formatBrowserMemory(status.system.freeMemoryGB)} free`,
       icon: Cpu,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
@@ -135,7 +130,9 @@ function ConfigurationCard({ status }: { status: BrowserPoolDetailedStatus }) {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Idle Timeout</span>
-          <span className="font-medium">{formatTime(status.config.idleTimeoutSeconds)}</span>
+          <span className="font-medium">
+            {formatBrowserDuration(status.config.idleTimeoutSeconds)}
+          </span>
         </div>
       </div>
     </div>
@@ -160,11 +157,11 @@ function SystemResourcesCard({ status }: { status: BrowserPoolDetailedStatus }) 
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Total Memory</span>
-          <span className="font-medium">{formatMemory(status.system.totalMemoryGB)}</span>
+          <span className="font-medium">{formatBrowserMemory(status.system.totalMemoryGB)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Free Memory</span>
-          <span className="font-medium">{formatMemory(status.system.freeMemoryGB)}</span>
+          <span className="font-medium">{formatBrowserMemory(status.system.freeMemoryGB)}</span>
         </div>
         <div>
           <div className="flex justify-between mb-1">
@@ -219,7 +216,7 @@ function InstancesCard({ status }: { status: BrowserPoolDetailedStatus }) {
                   <span>Idle</span>
                   <span className="font-medium text-foreground flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {formatTime(instance.idleSeconds)}
+                    {formatBrowserDuration(instance.idleSeconds)}
                   </span>
                 </div>
               </div>

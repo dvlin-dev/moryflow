@@ -7,8 +7,6 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,165 +18,25 @@ import {
   AlertDialogTitle,
   PageHeader,
 } from '@moryflow/ui';
-import {
-  useAdminLlmModels,
-  useAdminLlmProviders,
-  useAdminLlmSettings,
-  useAdminLlmProviderPresets,
-  useCreateAdminLlmModel,
-  useCreateAdminLlmProvider,
-  useDeleteAdminLlmModel,
-  useDeleteAdminLlmProvider,
-  useUpdateAdminLlmModel,
-  useUpdateAdminLlmProvider,
-  useUpdateAdminLlmSettings,
-  type LlmModelListItem,
-  type LlmProviderListItem,
-  type UpdateLlmSettingsInput,
-} from '@/features/llm';
-import { LlmSettingsCard } from './llm/LlmSettingsCard';
-import { LlmProvidersCard } from './llm/LlmProvidersCard';
+import { getLlmQueryErrorMessage, useLlmPageController } from '@/features/llm';
+import { LlmModelDialog } from './llm/LlmModelDialog';
 import { LlmModelsCard } from './llm/LlmModelsCard';
 import { LlmProviderDialog } from './llm/LlmProviderDialog';
-import { LlmModelDialog } from './llm/LlmModelDialog';
-
-function uniqueStrings(values: string[]): string[] {
-  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
-}
+import { LlmProvidersCard } from './llm/LlmProvidersCard';
+import { LlmSettingsCard } from './llm/LlmSettingsCard';
 
 export default function LlmPage() {
-  const settingsQuery = useAdminLlmSettings();
-  const providersQuery = useAdminLlmProviders();
-  const providerPresetsQuery = useAdminLlmProviderPresets();
-  const modelsQuery = useAdminLlmModels();
+  const controller = useLlmPageController();
 
-  const updateSettingsMutation = useUpdateAdminLlmSettings();
-  const createProviderMutation = useCreateAdminLlmProvider();
-  const updateProviderMutation = useUpdateAdminLlmProvider();
-  const deleteProviderMutation = useDeleteAdminLlmProvider();
-  const createModelMutation = useCreateAdminLlmModel();
-  const updateModelMutation = useUpdateAdminLlmModel();
-  const deleteModelMutation = useDeleteAdminLlmModel();
-
-  const providers = providersQuery.data ?? [];
-  const models = modelsQuery.data ?? [];
-  const providerPresets = providerPresetsQuery.data?.providers ?? [];
-
-  const enabledProviderIds = useMemo(() => {
-    return new Set(providers.filter((p) => p.enabled).map((p) => p.id));
-  }, [providers]);
-
-  const modelOptions = useMemo(() => {
-    const available = models
-      .filter((m) => m.enabled && enabledProviderIds.has(m.providerId))
-      .map((m) => m.modelId);
-    const defaults = settingsQuery.data
-      ? [settingsQuery.data.defaultAgentModelId, settingsQuery.data.defaultExtractModelId]
-      : [];
-    return uniqueStrings([...available, ...defaults].filter(Boolean));
-  }, [enabledProviderIds, models, settingsQuery.data]);
-
-  const initialSettings = useMemo<UpdateLlmSettingsInput | null>(() => {
-    if (!settingsQuery.data) return null;
-    return {
-      defaultAgentModelId: settingsQuery.data.defaultAgentModelId,
-      defaultExtractModelId: settingsQuery.data.defaultExtractModelId,
-    };
-  }, [settingsQuery.data]);
-
-  const [providerDialogOpen, setProviderDialogOpen] = useState(false);
-  const [providerDialogMode, setProviderDialogMode] = useState<'create' | 'edit'>('create');
-  const [activeProvider, setActiveProvider] = useState<LlmProviderListItem | null>(null);
-
-  const [modelDialogOpen, setModelDialogOpen] = useState(false);
-  const [modelDialogMode, setModelDialogMode] = useState<'create' | 'edit'>('create');
-  const [activeModel, setActiveModel] = useState<LlmModelListItem | null>(null);
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState('');
-  const [confirmDescription, setConfirmDescription] = useState('');
-  const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void>)>(null);
-
-  const isMutating =
-    updateSettingsMutation.isPending ||
-    createProviderMutation.isPending ||
-    updateProviderMutation.isPending ||
-    deleteProviderMutation.isPending ||
-    createModelMutation.isPending ||
-    updateModelMutation.isPending ||
-    deleteModelMutation.isPending;
-
-  const handleResetSettings = () => {
-    void (async () => {
-      try {
-        await Promise.all([
-          settingsQuery.refetch(),
-          providersQuery.refetch(),
-          modelsQuery.refetch(),
-        ]);
-        toast.message('Synced from server');
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to sync');
-      }
-    })();
-  };
-
-  const handleSaveSettings = async (input: UpdateLlmSettingsInput) => {
-    try {
-      await updateSettingsMutation.mutateAsync(input);
-      toast.success('Saved');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to save');
-    }
-  };
-
-  const openCreateProvider = () => {
-    setProviderDialogMode('create');
-    setActiveProvider(null);
-    setProviderDialogOpen(true);
-  };
-
-  const openEditProvider = (provider: LlmProviderListItem) => {
-    setProviderDialogMode('edit');
-    setActiveProvider(provider);
-    setProviderDialogOpen(true);
-  };
-
-  const requestDeleteProvider = (provider: LlmProviderListItem) => {
-    setConfirmTitle('Delete provider');
-    setConfirmDescription(
-      `Delete provider "${provider.name}"? This will also delete its model mappings.`
-    );
-    setConfirmAction(() => async () => {
-      await deleteProviderMutation.mutateAsync(provider.id);
-    });
-    setConfirmOpen(true);
-  };
-
-  const openCreateModel = () => {
-    if (providers.length === 0) {
-      toast.message('Create a provider first');
-      return;
-    }
-    setModelDialogMode('create');
-    setActiveModel(null);
-    setModelDialogOpen(true);
-  };
-
-  const openEditModel = (model: LlmModelListItem) => {
-    setModelDialogMode('edit');
-    setActiveModel(model);
-    setModelDialogOpen(true);
-  };
-
-  const requestDeleteModel = (model: LlmModelListItem) => {
-    setConfirmTitle('Delete model mapping');
-    setConfirmDescription(`Delete model mapping "${model.modelId}"?`);
-    setConfirmAction(() => async () => {
-      await deleteModelMutation.mutateAsync(model.id);
-    });
-    setConfirmOpen(true);
-  };
+  const settingsErrorMessage = controller.settingsQuery.isError
+    ? getLlmQueryErrorMessage(controller.settingsQuery.error, 'Failed to load settings')
+    : null;
+  const providersErrorMessage = controller.providersQuery.isError
+    ? getLlmQueryErrorMessage(controller.providersQuery.error, 'Failed to load providers')
+    : null;
+  const modelsErrorMessage = controller.modelsQuery.isError
+    ? getLlmQueryErrorMessage(controller.modelsQuery.error, 'Failed to load models')
+    : null;
 
   return (
     <div className="space-y-6">
@@ -189,143 +47,88 @@ export default function LlmPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <LlmSettingsCard
-          isLoading={settingsQuery.isLoading || providersQuery.isLoading || modelsQuery.isLoading}
-          errorMessage={
-            settingsQuery.isError
-              ? settingsQuery.error instanceof Error
-                ? settingsQuery.error.message
-                : 'Failed to load settings'
-              : null
+          isLoading={
+            controller.settingsQuery.isLoading ||
+            controller.providersQuery.isLoading ||
+            controller.modelsQuery.isLoading
           }
-          isSaving={updateSettingsMutation.isPending}
-          initialValues={initialSettings}
-          modelOptions={modelOptions}
-          onSave={handleSaveSettings}
-          onReset={handleResetSettings}
+          errorMessage={settingsErrorMessage}
+          isSaving={controller.isSavingSettings}
+          initialValues={controller.initialSettings}
+          modelOptions={controller.modelOptions}
+          onSave={controller.saveSettings}
+          onReset={() => {
+            void controller.resetSettings();
+          }}
         />
 
         <div className="space-y-6">
           <LlmProvidersCard
-            isLoading={providersQuery.isLoading}
-            errorMessage={
-              providersQuery.isError
-                ? providersQuery.error instanceof Error
-                  ? providersQuery.error.message
-                  : 'Failed to load providers'
-                : null
-            }
-            isMutating={isMutating}
-            providers={providers}
-            onNew={openCreateProvider}
-            onEdit={openEditProvider}
-            onDelete={requestDeleteProvider}
+            isLoading={controller.providersQuery.isLoading}
+            errorMessage={providersErrorMessage}
+            isMutating={controller.isMutating}
+            providers={controller.providers}
+            onNew={controller.openCreateProvider}
+            onEdit={controller.openEditProvider}
+            onDelete={controller.requestDeleteProvider}
           />
         </div>
       </div>
 
       <LlmModelsCard
-        isLoading={modelsQuery.isLoading}
-        errorMessage={
-          modelsQuery.isError
-            ? modelsQuery.error instanceof Error
-              ? modelsQuery.error.message
-              : 'Failed to load models'
-            : null
-        }
-        isMutating={isMutating}
-        models={models}
-        onNew={openCreateModel}
-        onEdit={openEditModel}
-        onDelete={requestDeleteModel}
+        isLoading={controller.modelsQuery.isLoading}
+        errorMessage={modelsErrorMessage}
+        isMutating={controller.isMutating}
+        models={controller.models}
+        onNew={controller.openCreateModel}
+        onEdit={controller.openEditModel}
+        onDelete={controller.requestDeleteModel}
       />
 
       <LlmProviderDialog
-        open={providerDialogOpen}
-        mode={providerDialogMode}
-        provider={activeProvider}
-        presets={providerPresets}
-        isSubmitting={createProviderMutation.isPending || updateProviderMutation.isPending}
-        onClose={() => setProviderDialogOpen(false)}
-        onCreate={async (input) => {
-          try {
-            await createProviderMutation.mutateAsync(input);
-            toast.success('Created');
-            setProviderDialogOpen(false);
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to create');
-          }
+        viewModel={{
+          open: controller.providerDialog.open,
+          mode: controller.providerDialog.mode,
+          provider: controller.providerDialog.provider,
+          presets: controller.providerPresets,
+          isSubmitting: controller.isMutating,
         }}
-        onUpdate={async (providerId, input) => {
-          try {
-            await updateProviderMutation.mutateAsync({ providerId, input });
-            toast.success('Saved');
-            setProviderDialogOpen(false);
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to save');
-          }
+        actions={{
+          onClose: controller.closeProviderDialog,
+          onCreate: controller.createProvider,
+          onUpdate: controller.updateProvider,
         }}
       />
 
       <LlmModelDialog
-        open={modelDialogOpen}
-        mode={modelDialogMode}
-        model={activeModel}
-        providers={providers}
-        isSubmitting={createModelMutation.isPending || updateModelMutation.isPending}
-        onClose={() => setModelDialogOpen(false)}
-        onCreate={async (input) => {
-          try {
-            await createModelMutation.mutateAsync(input);
-            toast.success('Created');
-            setModelDialogOpen(false);
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to create');
-          }
+        viewModel={{
+          open: controller.modelDialog.open,
+          mode: controller.modelDialog.mode,
+          model: controller.modelDialog.model,
+          providers: controller.providers,
+          isSubmitting: controller.isMutating,
         }}
-        onUpdate={async (llmModelId, input) => {
-          try {
-            await updateModelMutation.mutateAsync({ llmModelId, input });
-            toast.success('Saved');
-            setModelDialogOpen(false);
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to save');
-          }
+        actions={{
+          onClose: controller.closeModelDialog,
+          onCreate: controller.createModel,
+          onUpdate: controller.updateModel,
         }}
       />
 
-      <AlertDialog
-        open={confirmOpen}
-        onOpenChange={(next) => {
-          setConfirmOpen(next);
-          if (!next) {
-            setConfirmAction(null);
-            setConfirmTitle('');
-            setConfirmDescription('');
-          }
-        }}
-      >
+      <AlertDialog open={controller.confirmDialog.open} onOpenChange={controller.setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
-            <AlertDialogDescription>{confirmDescription}</AlertDialogDescription>
+            <AlertDialogTitle>{controller.confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{controller.confirmDialog.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isMutating}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={controller.isMutating}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={!confirmAction || isMutating}
+              disabled={!controller.confirmDialog.action || controller.isMutating}
               onClick={(event) => {
                 event.preventDefault();
-                if (!confirmAction) return;
-                void (async () => {
-                  try {
-                    await confirmAction();
-                    toast.success('Deleted');
-                    setConfirmOpen(false);
-                  } catch (error) {
-                    toast.error(error instanceof Error ? error.message : 'Failed to delete');
-                  }
-                })();
+                void controller.confirmDelete();
               }}
             >
               Delete

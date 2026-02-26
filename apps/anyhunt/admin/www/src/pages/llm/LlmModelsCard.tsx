@@ -14,7 +14,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -23,6 +22,7 @@ import {
   TableRow,
 } from '@moryflow/ui';
 import type { LlmModelListItem } from '@/features/llm';
+import { LlmTableState } from './LlmTableState';
 
 export interface LlmModelsCardProps {
   isLoading: boolean;
@@ -52,14 +52,7 @@ export function LlmModelsCard({
         </Button>
       </CardHeader>
       <CardContent>
-        {errorMessage ? (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {errorMessage}
-          </div>
-        ) : null}
-        {isLoading ? <Skeleton className="h-40 w-full" /> : null}
-
-        {!isLoading ? (
+        <LlmTableState isLoading={isLoading} errorMessage={errorMessage}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -146,7 +139,7 @@ export function LlmModelsCard({
               })}
             </TableBody>
           </Table>
-        ) : null}
+        </LlmTableState>
       </CardContent>
     </Card>
   );
