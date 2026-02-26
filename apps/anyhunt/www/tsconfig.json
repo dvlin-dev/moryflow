@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
@@ -12,7 +13,10 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@moryflow/api/client": ["../../../packages/api/src/client/index.ts"],
+      "@moryflow/types": ["../../../packages/types/src/index.ts"],
+      "@moryflow/types/*": ["../../../packages/types/src/*"]
     }
   },
   "include": ["src/**/*", "vite.config.ts"]

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { defineConfig } from 'vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { nitro } from 'nitro/vite';
@@ -81,6 +82,14 @@ export default defineConfig({
     nitro(),
     viteReact(),
   ],
+  resolve: {
+    alias: {
+      '@moryflow/api/client': path.resolve(__dirname, '../../../packages/api/src/client/index.ts'),
+      '@moryflow/types': path.resolve(__dirname, '../../../packages/types/src/index.ts'),
+      '@moryflow/types/common': path.resolve(__dirname, '../../../packages/types/src/common/index.ts'),
+    },
+    dedupe: ['react', 'react-dom'],
+  },
   build: {
     rollupOptions: {
       output: {

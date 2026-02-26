@@ -38,6 +38,13 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- 前端组件 Props 收敛（2026-02-26）：`ExploreTopicsContent`、`DesktopNavigation`、`SubscriptionSettingsTabs`、`ArticleList` 统一改为 `model/state + actions` 输入契约，调用方（`ExploreTopicsPane` / `Header` / `SubscriptionSettingsDialog`）同步改造；`explore-topics-content` 回归测试改为基于 model/actions 校验，降低容器到展示层的参数耦合
+- Reader 交互细节修复（2026-02-26）：`ExploreTopicsContent` 在搜索模式下（loading/error/empty）保持“Create subscription for ...”入口持续可见；`/topics/:slug/editions/:editionId` 详情页切换时新增 `edition-view-state` 统一状态决策并在 hook 请求开始时清空旧 edition，避免 URL 已切换但右栏短暂展示旧内容；补充 `explore-topics-content` 与 `edition-view-state` 回归测试
+- Reader 专项项目复盘完成（A/B/C/D 闭环）：新增 workspace 源码别名（`tsconfig + vite + vitest`）修复 `@moryflow/api/client`/`@moryflow/types` 解析基线，`pnpm --filter @anyhunt/anyhunt-www typecheck` / `test:unit` / `build` 全通过；`public-topics.hooks.ts` 收敛为导出层并拆分到 `features/public-topics/hooks/*`；`CreateSubscriptionDialogForm` 再拆分为容器 + `create-subscription-form-sections`
+- Reader Stores/Hooks/数据映射（模块 D）完成收敛：`features/digest/hooks.ts` 与 `types.ts` 拆分为分域目录（subscriptions/inbox/runs/topics/feedback + query-keys）；新增 `mappers/inbox-item-state.ts` 统一 Inbox 状态映射与乐观更新规则；`public-topics` 引入 `AbortController + request generation guard` 解决异步竞态；`lib/auth/auth-api.ts` 新增 `auth-error` 归一化收敛 unknown 错误分支并清除 TS18046 位点；补充 `inbox-item-state`/`public-topics.request-guard`/`auth-error` 回归测试
+- Reader Explore / Topic / Welcome（模块 C）完成收敛：`TopicPane` 消除条件式 Hook（`editionQuery` 顶层统一 + enabled 控制），Explore 拆分为 `ExploreTopicsPane`（编排）+ `ExploreTopicsContent`（状态渲染），并在 `TopicPreviewDialog`、`WelcomeListPane`、`WelcomeContentPane` 全面落地“状态片段化 + renderByState/switch”；`WelcomeContentPane` 补齐 `openSignIn` 主动作；`routes/welcome.tsx` 拆分移动端重定向与 page 归一化副作用
+- Reader Inbox / Digest / Subscriptions（模块 B）完成组件收敛：`CreateSubscriptionDialog` 与 `SubscriptionSettingsDialog` 共享订阅表单契约（`subscription-form-schema`），并拆分为容器 + 表单/Tabs 子模块；`InboxPane` 改为状态片段化（`resolve*State + render*ByState/switch`）；`ReportTopicDialog` 与 `SubscriptionsList` 收敛状态分发逻辑（移除多状态链式三元与连续 if 分发）
+- Reader Shell / Layout / Routes（模块 A）完成结构收敛：`Header` 拆分为容器 + `header/*` 子模块；`topics/*` 请求编排下沉到 `features/public-topics`；认证路由复用 `AuthModalRouteShell`；`ReaderShell/ReaderDialogs` 改为判别状态模型；新增 `MarketingPageShell` 收敛 `fetchx/memox` 页面壳层
 - Build：builder 阶段恢复复制 `apps/anyhunt/www`、`packages/types`、`packages/api`、`packages/ui` 的 `node_modules`（不复制 `sync`），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/types... --filter @moryflow/typescript-config...`，修复 `packages/types` 容器构建缺少 tsconfig 基座包导致的 `TS6053`
 - Build：Docker builder/runner 改为仅复用根 `node_modules`（兼容 hoisted），并补齐 `tsconfig.agents.json` 复制，修复 `packages/*/node_modules` 缺失与 `packages/api` 容器编译配置缺失问题

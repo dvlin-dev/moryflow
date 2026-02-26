@@ -6,12 +6,40 @@
  * [POS]: /topics - Lists all public digest topics for SEO
  */
 
-import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Header, Footer, Container } from '@/components/layout';
 import { TopicsHero, TopicListItem } from '@/components/digest';
-import { getPublicTopics, type DigestTopicSummary } from '@/lib/digest-api';
-import { usePublicEnv } from '@/lib/public-env-context';
+import { usePublicTopicsDirectory } from '@/features/public-topics';
+
+type TopicsPageViewState = 'loading' | 'error' | 'empty' | 'ready';
+
+function resolveTopicsPageViewState(
+  isInitialLoading: boolean,
+  hasTopics: boolean,
+  error: string | null
+): TopicsPageViewState {
+  if (isInitialLoading && !hasTopics) {
+    return 'loading';
+  }
+
+  if (error && !hasTopics) {
+    return 'error';
+  }
+
+  if (!hasTopics) {
+    return 'empty';
+  }
+
+  return 'ready';
+}
+
+function renderLoadMoreLabel(isLoadingMore: boolean): string {
+  if (isLoadingMore) {
+    return 'Loading...';
+  }
+
+  return 'Load more';
+}
 
 export const Route = createFileRoute('/topics/')({
   component: TopicsPage,
@@ -34,35 +62,51 @@ export const Route = createFileRoute('/topics/')({
 });
 
 function TopicsPage() {
-  const env = usePublicEnv();
-  const [topics, setTopics] = useState<DigestTopicSummary[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { topics, page, totalPages, isInitialLoading, isLoadingMore, error, loadMore } =
+    usePublicTopicsDirectory();
 
-  useEffect(() => {
-    loadTopics(1);
-  }, []);
+  const hasTopics = topics.length > 0;
+  const hasMoreTopics = page < totalPages;
+  const viewState = resolveTopicsPageViewState(isInitialLoading, hasTopics, error);
 
-  async function loadTopics(pageToLoad: number) {
-    try {
-      setIsLoading(true);
-      const result = await getPublicTopics(env.apiUrl, {
-        page: pageToLoad,
-        limit: 20,
-      });
+  const renderContentByState = () => {
+    switch (viewState) {
+      case 'loading':
+        return (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900" />
+          </div>
+        );
+      case 'error':
+        return <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">{error}</div>;
+      case 'empty':
+        return <div className="py-12 text-center text-neutral-500">No topics available yet. Check back soon!</div>;
+      case 'ready':
+        return (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {topics.map((topic) => (
+                <TopicListItem key={topic.id} topic={topic} />
+              ))}
+            </div>
 
-      setTopics((prev) => (pageToLoad === 1 ? result.items : [...prev, ...result.items]));
-      setPage(result.page);
-      setTotalPages(result.totalPages);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load topics');
-    } finally {
-      setIsLoading(false);
+            {hasMoreTopics ? (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={() => void loadMore()}
+                  disabled={isLoadingMore}
+                  className="rounded-lg bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {renderLoadMoreLabel(isLoadingMore)}
+                </button>
+              </div>
+            ) : null}
+          </>
+        );
+      default:
+        return null;
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -71,37 +115,10 @@ function TopicsPage() {
         <TopicsHero />
         <section className="py-12">
           <Container>
-            {error && <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">{error}</div>}
-
-            {isLoading && topics.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900" />
-              </div>
-            ) : topics.length === 0 ? (
-              <div className="py-12 text-center text-neutral-500">
-                No topics available yet. Check back soon!
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {topics.map((topic) => (
-                    <TopicListItem key={topic.id} topic={topic} />
-                  ))}
-                </div>
-
-                {page < totalPages && (
-                  <div className="mt-8 flex justify-center">
-                    <button
-                      onClick={() => loadTopics(page + 1)}
-                      disabled={isLoading}
-                      className="rounded-lg bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:opacity-50"
-                    >
-                      {isLoading ? 'Loading...' : 'Load more'}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+            {error && hasTopics ? (
+              <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-600">{error}</div>
+            ) : null}
+            {renderContentByState()}
           </Container>
         </section>
       </main>

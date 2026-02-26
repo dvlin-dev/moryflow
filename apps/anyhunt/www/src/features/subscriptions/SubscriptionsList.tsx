@@ -26,23 +26,21 @@ export function SubscriptionsList({ subscriptions, isLoading }: SubscriptionsLis
   const { openSubscriptionSettings, openPublishTopic } = useReaderActions();
 
   const handleAction = (action: SubscriptionAction, subscription: Subscription) => {
-    if (action === 'settings') {
-      openSubscriptionSettings(subscription, 'basic');
-      return;
-    }
-
-    if (action === 'history') {
-      openSubscriptionSettings(subscription, 'history');
-      return;
-    }
-
-    if (action === 'suggestions') {
-      openSubscriptionSettings(subscription, 'suggestions');
-      return;
-    }
-
-    if (action === 'publish') {
-      openPublishTopic(subscription);
+    switch (action) {
+      case 'settings':
+        openSubscriptionSettings(subscription, 'basic');
+        return;
+      case 'history':
+        openSubscriptionSettings(subscription, 'history');
+        return;
+      case 'suggestions':
+        openSubscriptionSettings(subscription, 'suggestions');
+        return;
+      case 'publish':
+        openPublishTopic(subscription);
+        return;
+      default:
+        return;
     }
   };
 
