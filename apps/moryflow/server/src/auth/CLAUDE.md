@@ -4,6 +4,7 @@
 
 ## 最近更新
 
+- Auth 限流改造：`BETTER_AUTH_RATE_LIMIT_WINDOW_SECONDS` / `BETTER_AUTH_RATE_LIMIT_MAX` 改为可选配置并提供默认值（`60s/20`）；通过 `customRules` 覆盖 `/sign-in/**`、`/sign-up/**`、`/change-password/**`、`/change-email/**`、`/email-otp/**`、`/forget-password/**`，避免 Better Auth 默认 `10s/3` 误伤
 - 回归测试补齐：`auth.controller.spec.ts` 新增 `/api/v1/auth/email-otp/verify-email` token-first 响应覆盖
 - Auth handler 路由匹配统一为 `@All('*path')`，避免通配符匹配差异；并在 handler 内将外部 `/api/v1/auth/*` 映射到 Better Auth 内部 `/api/auth/*`
 
@@ -22,6 +23,8 @@
 - `auth.config.ts` / `auth.constants.ts`：配置与常量
 - `auth.handler.utils.ts`：Express ↔ Better Auth handler 适配
 - `dto/auth-token.dto.ts`：refresh/logout DTO
+- `auth.config.spec.ts`：Auth 限流配置默认值与 env 覆盖回归测试
+- `auth.rate-limit.spec.ts`：Auth 限流行为回归（`/sign-in/email` 第 21 次请求返回 429）
 
 ## 规则
 

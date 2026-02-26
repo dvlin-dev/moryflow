@@ -49,7 +49,6 @@ export const SubscriptionTierSchema = z.enum([
   'starter',
   'basic',
   'pro',
-  'license',
 ]);
 
 /**

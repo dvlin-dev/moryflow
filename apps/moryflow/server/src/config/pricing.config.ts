@@ -16,7 +16,6 @@ export const TIER_ORDER: SubscriptionTier[] = [
   'starter',
   'basic',
   'pro',
-  'license',
 ];
 
 /** 每个 Tier 的月度积分额度（按月费向上取整 × 1000 计算） */
@@ -25,13 +24,12 @@ export const TIER_CREDITS: Record<string, number> = {
   starter: 5000, // ceil($4.99) × 1000
   basic: 10000, // ceil($9.90) × 1000
   pro: 20000, // ceil($19.90) × 1000
-  license: 0, // License 用户使用购买的积分
 };
 
 // ==================== Creem 产品配置 ====================
 
 /** 产品类型 */
-export type ProductType = 'subscription' | 'credits' | 'license';
+export type ProductType = 'subscription' | 'credits';
 
 /** 产品配置（前端展示用） */
 export interface ProductConfig {
@@ -40,8 +38,6 @@ export interface ProductConfig {
   priceUsd: number;
   credits?: number;
   billingCycle?: 'monthly' | 'yearly';
-  licenseTier?: 'standard' | 'pro';
-  activationLimit?: number;
 }
 
 /** 获取 Creem 产品 ID */
@@ -60,9 +56,6 @@ export function getCreemProducts() {
     CREDITS_5000: process.env.CREEM_PRODUCT_CREDITS_5000 ?? '',
     CREDITS_10000: process.env.CREEM_PRODUCT_CREDITS_10000 ?? '',
     CREDITS_50000: process.env.CREEM_PRODUCT_CREDITS_50000 ?? '',
-    // License
-    LICENSE_STANDARD: process.env.CREEM_PRODUCT_LICENSE_STANDARD ?? '',
-    LICENSE_PRO: process.env.CREEM_PRODUCT_LICENSE_PRO ?? '',
   };
 }
 
@@ -160,26 +153,6 @@ export function getProductConfigs(): Map<string, ProductConfig> {
     });
   }
 
-  // License 产品
-  if (products.LICENSE_STANDARD) {
-    configs.set(products.LICENSE_STANDARD, {
-      name: 'License Standard',
-      type: 'license',
-      priceUsd: 49,
-      licenseTier: 'standard',
-      activationLimit: 2,
-    });
-  }
-  if (products.LICENSE_PRO) {
-    configs.set(products.LICENSE_PRO, {
-      name: 'License Pro',
-      type: 'license',
-      priceUsd: 99,
-      licenseTier: 'pro',
-      activationLimit: 5,
-    });
-  }
-
   return configs;
 }
 
@@ -219,32 +192,6 @@ export function getCreditPacks(): Record<string, number> {
   if (products.CREDITS_50000) packs[products.CREDITS_50000] = 50000;
 
   return packs;
-}
-
-// ==================== License 配置 ====================
-
-/** 获取 License 产品配置 - 产品 ID 到配置的映射 */
-export function getLicenseConfig(): Record<
-  string,
-  { tier: 'standard' | 'pro'; activationLimit: number }
-> {
-  const products = getCreemProducts();
-  const config: Record<
-    string,
-    { tier: 'standard' | 'pro'; activationLimit: number }
-  > = {};
-
-  if (products.LICENSE_STANDARD) {
-    config[products.LICENSE_STANDARD] = {
-      tier: 'standard',
-      activationLimit: 2,
-    };
-  }
-  if (products.LICENSE_PRO) {
-    config[products.LICENSE_PRO] = { tier: 'pro', activationLimit: 5 };
-  }
-
-  return config;
 }
 
 // ==================== 积分计算 ====================

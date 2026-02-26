@@ -2,6 +2,7 @@
  * [PROVIDES]: createApiTransport - 纯传输层（URL/query/body/timeout/response 解析）
  * [DEPENDS]: error.ts, types.ts
  * [POS]: 函数式 API 客户端底层，不包含认证语义
+ * [UPDATE]: 2026-02-25 - 错误响应支持 text/plain body 与 JSON 字符串兜底解析
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 AGENTS.md
  */
@@ -103,18 +104,41 @@ const parseJsonSafe = async (response: Response): Promise<{ ok: boolean; value: 
   }
 };
 
+const parseTextSafe = async (response: Response): Promise<string | undefined> => {
+  try {
+    return await response.text();
+  } catch {
+    return undefined;
+  }
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const readNonEmptyString = (value: unknown): string | null =>
   typeof value === 'string' && value.trim().length > 0 ? value : null;
 
+const parseJsonStringSafe = (value: string): unknown | undefined => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+};
+
 const toApiError = (status: number, payload: unknown, requestId?: string): ServerApiError => {
-  const problem = isRecord(payload) ? (payload as ProblemDetails & Record<string, unknown>) : null;
+  const textPayload = readNonEmptyString(payload);
+  const parsedPayload = textPayload !== null ? parseJsonStringSafe(textPayload) : undefined;
+  const problem = isRecord(parsedPayload)
+    ? (parsedPayload as ProblemDetails & Record<string, unknown>)
+    : isRecord(payload)
+      ? (payload as ProblemDetails & Record<string, unknown>)
+      : null;
   const message =
     readNonEmptyString(problem?.detail) ??
     readNonEmptyString(problem?.message) ??
     readNonEmptyString(problem?.title) ??
+    textPayload ??
     `Request failed (${status})`;
   const code = readNonEmptyString(problem?.code) ?? 'UNKNOWN_ERROR';
   const resolvedRequestId = readNonEmptyString(problem?.requestId) ?? requestId;
@@ -162,10 +186,17 @@ export function createApiTransport(config: ApiTransportConfig): ApiTransport {
       const isJson = isJsonContentType(contentType);
 
       if (!response.ok) {
-        const parsed = isJson
-          ? await parseJsonSafe(response.clone())
-          : { ok: false, value: undefined };
-        throw toApiError(response.status, parsed.value, requestId);
+        let payload: unknown = undefined;
+        if (isJson) {
+          const parsed = await parseJsonSafe(response.clone());
+          if (parsed.ok) {
+            payload = parsed.value;
+          }
+        }
+        if (payload === undefined) {
+          payload = await parseTextSafe(response.clone());
+        }
+        throw toApiError(response.status, payload, requestId);
       }
 
       if (responseType === 'blob') {

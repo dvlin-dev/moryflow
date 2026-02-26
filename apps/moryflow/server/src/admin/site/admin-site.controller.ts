@@ -63,7 +63,7 @@ export class AdminSiteController {
   @ApiQuery({
     name: 'userTier',
     required: false,
-    enum: ['free', 'starter', 'basic', 'pro', 'license'],
+    enum: ['free', 'starter', 'basic', 'pro'],
   })
   @ApiQuery({
     name: 'expiryFilter',

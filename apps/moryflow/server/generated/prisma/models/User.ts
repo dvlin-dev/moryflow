@@ -222,7 +222,6 @@ export type UserWhereInput = {
   purchasedCredits?: Prisma.PurchasedCreditsListRelationFilter
   subscription?: Prisma.XOR<Prisma.SubscriptionNullableScalarRelationFilter, Prisma.SubscriptionWhereInput> | null
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
-  licenses?: Prisma.LicenseListRelationFilter
   activityLogs?: Prisma.ActivityLogListRelationFilter
   targetActivityLogs?: Prisma.ActivityLogListRelationFilter
   creditDebt?: Prisma.XOR<Prisma.CreditDebtNullableScalarRelationFilter, Prisma.CreditDebtWhereInput> | null
@@ -252,7 +251,6 @@ export type UserOrderByWithRelationInput = {
   purchasedCredits?: Prisma.PurchasedCreditsOrderByRelationAggregateInput
   subscription?: Prisma.SubscriptionOrderByWithRelationInput
   paymentOrders?: Prisma.PaymentOrderOrderByRelationAggregateInput
-  licenses?: Prisma.LicenseOrderByRelationAggregateInput
   activityLogs?: Prisma.ActivityLogOrderByRelationAggregateInput
   targetActivityLogs?: Prisma.ActivityLogOrderByRelationAggregateInput
   creditDebt?: Prisma.CreditDebtOrderByWithRelationInput
@@ -285,7 +283,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   purchasedCredits?: Prisma.PurchasedCreditsListRelationFilter
   subscription?: Prisma.XOR<Prisma.SubscriptionNullableScalarRelationFilter, Prisma.SubscriptionWhereInput> | null
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
-  licenses?: Prisma.LicenseListRelationFilter
   activityLogs?: Prisma.ActivityLogListRelationFilter
   targetActivityLogs?: Prisma.ActivityLogListRelationFilter
   creditDebt?: Prisma.XOR<Prisma.CreditDebtNullableScalarRelationFilter, Prisma.CreditDebtWhereInput> | null
@@ -345,7 +342,6 @@ export type UserCreateInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -375,7 +371,6 @@ export type UserUncheckedCreateInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -405,7 +400,6 @@ export type UserUpdateInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -435,7 +429,6 @@ export type UserUncheckedUpdateInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -675,20 +668,6 @@ export type UserUpdateOneRequiredWithoutPaymentOrdersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPaymentOrdersInput, Prisma.UserUpdateWithoutPaymentOrdersInput>, Prisma.UserUncheckedUpdateWithoutPaymentOrdersInput>
 }
 
-export type UserCreateNestedOneWithoutLicensesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutLicensesInput, Prisma.UserUncheckedCreateWithoutLicensesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLicensesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutLicensesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutLicensesInput, Prisma.UserUncheckedCreateWithoutLicensesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutLicensesInput
-  upsert?: Prisma.UserUpsertWithoutLicensesInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutLicensesInput, Prisma.UserUpdateWithoutLicensesInput>, Prisma.UserUncheckedUpdateWithoutLicensesInput>
-}
-
 export type UserCreateNestedOneWithoutActivityLogsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutActivityLogsInput, Prisma.UserUncheckedCreateWithoutActivityLogsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityLogsInput
@@ -820,7 +799,6 @@ export type UserCreateWithoutSessionsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -849,7 +827,6 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -894,7 +871,6 @@ export type UserUpdateWithoutSessionsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -923,7 +899,6 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -952,7 +927,6 @@ export type UserCreateWithoutRefreshTokensInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -981,7 +955,6 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1026,7 +999,6 @@ export type UserUpdateWithoutRefreshTokensInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1055,7 +1027,6 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -1084,7 +1055,6 @@ export type UserCreateWithoutAccountsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -1113,7 +1083,6 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1158,7 +1127,6 @@ export type UserUpdateWithoutAccountsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1187,7 +1155,6 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -1216,7 +1183,6 @@ export type UserCreateWithoutProfileInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -1245,7 +1211,6 @@ export type UserUncheckedCreateWithoutProfileInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1290,7 +1255,6 @@ export type UserUpdateWithoutProfileInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1319,7 +1283,6 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -1348,7 +1311,6 @@ export type UserCreateWithoutSubscriptionCreditsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -1377,7 +1339,6 @@ export type UserUncheckedCreateWithoutSubscriptionCreditsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1422,7 +1383,6 @@ export type UserUpdateWithoutSubscriptionCreditsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1451,7 +1411,6 @@ export type UserUncheckedUpdateWithoutSubscriptionCreditsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -1480,7 +1439,6 @@ export type UserCreateWithoutPurchasedCreditsInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsCreateNestedOneWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -1509,7 +1467,6 @@ export type UserUncheckedCreateWithoutPurchasedCreditsInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedCreateNestedOneWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1554,7 +1511,6 @@ export type UserUpdateWithoutPurchasedCreditsInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUpdateOneWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1583,7 +1539,6 @@ export type UserUncheckedUpdateWithoutPurchasedCreditsInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedUpdateOneWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -1613,7 +1568,6 @@ export type UserCreateWithoutCreditDebtInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
@@ -1642,7 +1596,6 @@ export type UserUncheckedCreateWithoutCreditDebtInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
@@ -1687,7 +1640,6 @@ export type UserUpdateWithoutCreditDebtInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
@@ -1716,7 +1668,6 @@ export type UserUncheckedUpdateWithoutCreditDebtInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
@@ -1744,7 +1695,6 @@ export type UserCreateWithoutSubscriptionInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsCreateNestedOneWithoutUserInput
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -1773,7 +1723,6 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedCreateNestedOneWithoutUserInput
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1818,7 +1767,6 @@ export type UserUpdateWithoutSubscriptionInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUpdateOneWithoutUserNestedInput
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1847,7 +1795,6 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedUpdateOneWithoutUserNestedInput
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -1876,7 +1823,6 @@ export type UserCreateWithoutPaymentOrdersInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsCreateNestedOneWithoutUserInput
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -1905,7 +1851,6 @@ export type UserUncheckedCreateWithoutPaymentOrdersInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedCreateNestedOneWithoutUserInput
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -1950,7 +1895,6 @@ export type UserUpdateWithoutPaymentOrdersInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUpdateOneWithoutUserNestedInput
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -1979,139 +1923,6 @@ export type UserUncheckedUpdateWithoutPaymentOrdersInput = {
   subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedUpdateOneWithoutUserNestedInput
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
-  activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
-  targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
-  creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
-  vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedUpdateManyWithoutUserNestedInput
-  storageUsage?: Prisma.UserStorageUsageUncheckedUpdateOneWithoutUserNestedInput
-  sites?: Prisma.SiteUncheckedUpdateManyWithoutUserNestedInput
-  deletionRecord?: Prisma.AccountDeletionRecordUncheckedUpdateOneWithoutUserNestedInput
-  agentTraces?: Prisma.AgentTraceUncheckedUpdateManyWithoutUserNestedInput
-}
-
-export type UserCreateWithoutLicensesInput = {
-  id?: string
-  email: string
-  name?: string | null
-  emailVerified?: boolean
-  image?: string | null
-  isAdmin?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
-  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsCreateNestedOneWithoutUserInput
-  purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
-  subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
-  paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
-  targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
-  creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
-  vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileCreateNestedManyWithoutUserInput
-  storageUsage?: Prisma.UserStorageUsageCreateNestedOneWithoutUserInput
-  sites?: Prisma.SiteCreateNestedManyWithoutUserInput
-  deletionRecord?: Prisma.AccountDeletionRecordCreateNestedOneWithoutUserInput
-  agentTraces?: Prisma.AgentTraceCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutLicensesInput = {
-  id?: string
-  email: string
-  name?: string | null
-  emailVerified?: boolean
-  image?: string | null
-  isAdmin?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedCreateNestedOneWithoutUserInput
-  purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
-  subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
-  paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
-  targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
-  creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
-  vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
-  vectorizedFiles?: Prisma.VectorizedFileUncheckedCreateNestedManyWithoutUserInput
-  storageUsage?: Prisma.UserStorageUsageUncheckedCreateNestedOneWithoutUserInput
-  sites?: Prisma.SiteUncheckedCreateNestedManyWithoutUserInput
-  deletionRecord?: Prisma.AccountDeletionRecordUncheckedCreateNestedOneWithoutUserInput
-  agentTraces?: Prisma.AgentTraceUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutLicensesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutLicensesInput, Prisma.UserUncheckedCreateWithoutLicensesInput>
-}
-
-export type UserUpsertWithoutLicensesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutLicensesInput, Prisma.UserUncheckedUpdateWithoutLicensesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutLicensesInput, Prisma.UserUncheckedCreateWithoutLicensesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutLicensesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutLicensesInput, Prisma.UserUncheckedUpdateWithoutLicensesInput>
-}
-
-export type UserUpdateWithoutLicensesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
-  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsUpdateOneWithoutUserNestedInput
-  purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
-  paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
-  targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
-  creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
-  vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
-  vectorizedFiles?: Prisma.VectorizedFileUpdateManyWithoutUserNestedInput
-  storageUsage?: Prisma.UserStorageUsageUpdateOneWithoutUserNestedInput
-  sites?: Prisma.SiteUpdateManyWithoutUserNestedInput
-  deletionRecord?: Prisma.AccountDeletionRecordUpdateOneWithoutUserNestedInput
-  agentTraces?: Prisma.AgentTraceUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutLicensesInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  subscriptionCredits?: Prisma.SubscriptionCreditsUncheckedUpdateOneWithoutUserNestedInput
-  purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -2141,7 +1952,6 @@ export type UserCreateWithoutActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
@@ -2170,7 +1980,6 @@ export type UserUncheckedCreateWithoutActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
@@ -2204,7 +2013,6 @@ export type UserCreateWithoutTargetActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultCreateNestedManyWithoutUserInput
@@ -2233,7 +2041,6 @@ export type UserUncheckedCreateWithoutTargetActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
   vaults?: Prisma.VaultUncheckedCreateNestedManyWithoutUserInput
@@ -2278,7 +2085,6 @@ export type UserUpdateWithoutActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
@@ -2307,7 +2113,6 @@ export type UserUncheckedUpdateWithoutActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
@@ -2347,7 +2152,6 @@ export type UserUpdateWithoutTargetActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUpdateManyWithoutUserNestedInput
@@ -2376,7 +2180,6 @@ export type UserUncheckedUpdateWithoutTargetActivityLogsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
   vaults?: Prisma.VaultUncheckedUpdateManyWithoutUserNestedInput
@@ -2405,7 +2208,6 @@ export type UserCreateWithoutDeletionRecordInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -2434,7 +2236,6 @@ export type UserUncheckedCreateWithoutDeletionRecordInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -2479,7 +2280,6 @@ export type UserUpdateWithoutDeletionRecordInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -2508,7 +2308,6 @@ export type UserUncheckedUpdateWithoutDeletionRecordInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -2537,7 +2336,6 @@ export type UserCreateWithoutVaultsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -2566,7 +2364,6 @@ export type UserUncheckedCreateWithoutVaultsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -2611,7 +2408,6 @@ export type UserUpdateWithoutVaultsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -2640,7 +2436,6 @@ export type UserUncheckedUpdateWithoutVaultsInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -2669,7 +2464,6 @@ export type UserCreateWithoutVectorizedFilesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -2698,7 +2492,6 @@ export type UserUncheckedCreateWithoutVectorizedFilesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -2743,7 +2536,6 @@ export type UserUpdateWithoutVectorizedFilesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -2772,7 +2564,6 @@ export type UserUncheckedUpdateWithoutVectorizedFilesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -2801,7 +2592,6 @@ export type UserCreateWithoutStorageUsageInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -2830,7 +2620,6 @@ export type UserUncheckedCreateWithoutStorageUsageInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -2875,7 +2664,6 @@ export type UserUpdateWithoutStorageUsageInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -2904,7 +2692,6 @@ export type UserUncheckedUpdateWithoutStorageUsageInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -2933,7 +2720,6 @@ export type UserCreateWithoutSitesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -2962,7 +2748,6 @@ export type UserUncheckedCreateWithoutSitesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -3007,7 +2792,6 @@ export type UserUpdateWithoutSitesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -3036,7 +2820,6 @@ export type UserUncheckedUpdateWithoutSitesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -3065,7 +2848,6 @@ export type UserCreateWithoutAgentTracesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtCreateNestedOneWithoutUserInput
@@ -3094,7 +2876,6 @@ export type UserUncheckedCreateWithoutAgentTracesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.SubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutUserInput
-  licenses?: Prisma.LicenseUncheckedCreateNestedManyWithoutUserInput
   activityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutUserInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedCreateNestedManyWithoutTargetUserInput
   creditDebt?: Prisma.CreditDebtUncheckedCreateNestedOneWithoutUserInput
@@ -3139,7 +2920,6 @@ export type UserUpdateWithoutAgentTracesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUpdateOneWithoutUserNestedInput
@@ -3168,7 +2948,6 @@ export type UserUncheckedUpdateWithoutAgentTracesInput = {
   purchasedCredits?: Prisma.PurchasedCreditsUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.SubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutUserNestedInput
-  licenses?: Prisma.LicenseUncheckedUpdateManyWithoutUserNestedInput
   activityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutUserNestedInput
   targetActivityLogs?: Prisma.ActivityLogUncheckedUpdateManyWithoutTargetUserNestedInput
   creditDebt?: Prisma.CreditDebtUncheckedUpdateOneWithoutUserNestedInput
@@ -3190,7 +2969,6 @@ export type UserCountOutputType = {
   accounts: number
   purchasedCredits: number
   paymentOrders: number
-  licenses: number
   activityLogs: number
   targetActivityLogs: number
   vaults: number
@@ -3205,7 +2983,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   accounts?: boolean | UserCountOutputTypeCountAccountsArgs
   purchasedCredits?: boolean | UserCountOutputTypeCountPurchasedCreditsArgs
   paymentOrders?: boolean | UserCountOutputTypeCountPaymentOrdersArgs
-  licenses?: boolean | UserCountOutputTypeCountLicensesArgs
   activityLogs?: boolean | UserCountOutputTypeCountActivityLogsArgs
   targetActivityLogs?: boolean | UserCountOutputTypeCountTargetActivityLogsArgs
   vaults?: boolean | UserCountOutputTypeCountVaultsArgs
@@ -3257,13 +3034,6 @@ export type UserCountOutputTypeCountPurchasedCreditsArgs<ExtArgs extends runtime
  */
 export type UserCountOutputTypeCountPaymentOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.PaymentOrderWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountLicensesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.LicenseWhereInput
 }
 
 /**
@@ -3327,7 +3097,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   purchasedCredits?: boolean | Prisma.User$purchasedCreditsArgs<ExtArgs>
   subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
   paymentOrders?: boolean | Prisma.User$paymentOrdersArgs<ExtArgs>
-  licenses?: boolean | Prisma.User$licensesArgs<ExtArgs>
   activityLogs?: boolean | Prisma.User$activityLogsArgs<ExtArgs>
   targetActivityLogs?: boolean | Prisma.User$targetActivityLogsArgs<ExtArgs>
   creditDebt?: boolean | Prisma.User$creditDebtArgs<ExtArgs>
@@ -3386,7 +3155,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   purchasedCredits?: boolean | Prisma.User$purchasedCreditsArgs<ExtArgs>
   subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
   paymentOrders?: boolean | Prisma.User$paymentOrdersArgs<ExtArgs>
-  licenses?: boolean | Prisma.User$licensesArgs<ExtArgs>
   activityLogs?: boolean | Prisma.User$activityLogsArgs<ExtArgs>
   targetActivityLogs?: boolean | Prisma.User$targetActivityLogsArgs<ExtArgs>
   creditDebt?: boolean | Prisma.User$creditDebtArgs<ExtArgs>
@@ -3412,7 +3180,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     purchasedCredits: Prisma.$PurchasedCreditsPayload<ExtArgs>[]
     subscription: Prisma.$SubscriptionPayload<ExtArgs> | null
     paymentOrders: Prisma.$PaymentOrderPayload<ExtArgs>[]
-    licenses: Prisma.$LicensePayload<ExtArgs>[]
     activityLogs: Prisma.$ActivityLogPayload<ExtArgs>[]
     targetActivityLogs: Prisma.$ActivityLogPayload<ExtArgs>[]
     creditDebt: Prisma.$CreditDebtPayload<ExtArgs> | null
@@ -3835,7 +3602,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   purchasedCredits<T extends Prisma.User$purchasedCreditsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$purchasedCreditsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PurchasedCreditsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   subscription<T extends Prisma.User$subscriptionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$subscriptionArgs<ExtArgs>>): Prisma.Prisma__SubscriptionClient<runtime.Types.Result.GetResult<Prisma.$SubscriptionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   paymentOrders<T extends Prisma.User$paymentOrdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$paymentOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentOrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  licenses<T extends Prisma.User$licensesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$licensesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LicensePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   activityLogs<T extends Prisma.User$activityLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activityLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   targetActivityLogs<T extends Prisma.User$targetActivityLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$targetActivityLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   creditDebt<T extends Prisma.User$creditDebtArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$creditDebtArgs<ExtArgs>>): Prisma.Prisma__CreditDebtClient<runtime.Types.Result.GetResult<Prisma.$CreditDebtPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -4445,30 +4211,6 @@ export type User$paymentOrdersArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.PaymentOrderScalarFieldEnum | Prisma.PaymentOrderScalarFieldEnum[]
-}
-
-/**
- * User.licenses
- */
-export type User$licensesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the License
-   */
-  select?: Prisma.LicenseSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the License
-   */
-  omit?: Prisma.LicenseOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LicenseInclude<ExtArgs> | null
-  where?: Prisma.LicenseWhereInput
-  orderBy?: Prisma.LicenseOrderByWithRelationInput | Prisma.LicenseOrderByWithRelationInput[]
-  cursor?: Prisma.LicenseWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.LicenseScalarFieldEnum | Prisma.LicenseScalarFieldEnum[]
 }
 
 /**

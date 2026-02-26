@@ -1,10 +1,6 @@
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import {
-  SubscriptionTier,
-  LicenseStatus,
-  LicenseTier,
-} from '../generated/prisma/enums';
+import { SubscriptionTier } from '../generated/prisma/enums';
 import * as bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({
@@ -98,7 +94,7 @@ async function main() {
     {
       email: 'admin@example.com',
       name: '管理员',
-      tier: SubscriptionTier.license,
+      tier: SubscriptionTier.pro,
       isAdmin: true,
     },
     passwordHash,
@@ -138,17 +134,6 @@ async function main() {
     now,
   );
   console.log('✅ 创建专业会员:', proUser.email);
-
-  const licenseUser = await upsertUserWithSubscription(
-    {
-      email: 'license.user@example.com',
-      name: '永久授权用户',
-      tier: SubscriptionTier.license,
-    },
-    passwordHash,
-    now,
-  );
-  console.log('✅ 创建永久授权用户:', licenseUser.email);
 
   // ==========================================
   // 2. 订阅积分
@@ -209,25 +194,6 @@ async function main() {
   console.log('✅ 创建基础会员购买积分');
 
   // ==========================================
-  // 4. License
-  // ==========================================
-
-  await prisma.license.upsert({
-    where: { licenseKey: 'TEST-LICENSE-KEY-001' },
-    update: {},
-    create: {
-      userId: licenseUser.id,
-      licenseKey: 'TEST-LICENSE-KEY-001',
-      orderId: 'test_order_001',
-      tier: LicenseTier.pro,
-      status: LicenseStatus.active,
-      activationCount: 0,
-      activationLimit: 5,
-    },
-  });
-  console.log('✅ 创建测试 License');
-
-  // ==========================================
   // 完成
   // ==========================================
 
@@ -236,7 +202,6 @@ async function main() {
   console.log('  用户数:', await prisma.user.count());
   console.log('  订阅积分记录:', await prisma.subscriptionCredits.count());
   console.log('  购买积分记录:', await prisma.purchasedCredits.count());
-  console.log('  License 数:', await prisma.license.count());
 
   console.log('\n👤 测试账号（密码均为 test123456）：');
   const users = await prisma.user.findMany({

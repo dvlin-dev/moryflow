@@ -17,6 +17,7 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- Dashboard：将 `getPaidUsers` 从 `DashboardPage.tsx` 拆分到 `src/pages/dashboard-metrics.ts`，避免页面文件导出非组件触发 `react-refresh/only-export-components` lint 失败
 - Build：Docker 依赖安装显式追加 `--filter @moryflow/typescript-config...`，确保 `packages/types` 容器构建能解析 `@moryflow/typescript-config/base.json`
 - Build：Docker 构建补齐根 `tsconfig.agents.json` 与 `.npmrc`，并固定 pnpm `9.12.2`，修复 `packages/api` 在容器内 `TS5083`（缺少 `tsconfig.agents.json`）链路失败
 - Auth Store：修复 `onRehydrateStorage` 回调中 `set` 作用域问题，改为通过 `useAuthStore.setState` 回填状态，避免 rehydrate 期间运行时异常

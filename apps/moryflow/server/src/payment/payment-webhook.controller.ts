@@ -1,6 +1,6 @@
 /**
  * [INPUT]: Creem Webhook 回调（rawBody + signature + payload）
- * [OUTPUT]: 订阅/订单/积分/License 的发放或状态更新
+ * [OUTPUT]: 订阅/订单/积分的发放或状态更新
  * [POS]: Webhook 安全入口
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -26,7 +26,7 @@ import {
   type CreemWebhookPayload,
 } from './dto/payment.dto';
 import { DEFAULT_SUBSCRIPTION_PERIOD_MS } from '../config';
-import { getCreditPacks, getLicenseConfig } from '../config';
+import { getCreditPacks } from '../config';
 import { resolveCheckoutProductType } from './payment.utils';
 
 @ApiTags('Payment')
@@ -133,7 +133,6 @@ export class PaymentWebhookController {
             const productType = resolveCheckoutProductType(
               productId,
               getCreditPacks(),
-              getLicenseConfig(),
             );
             await this.paymentService.handleCheckoutCompleted({
               checkoutId: object.id,
@@ -143,7 +142,6 @@ export class PaymentWebhookController {
               amount: object.order.amount,
               currency: object.order.currency || 'USD',
               productType,
-              licenseKey: object.license_key,
             });
           }
           break;

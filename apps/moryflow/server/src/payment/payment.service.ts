@@ -1,7 +1,7 @@
 /**
  * [INPUT]: (Creem Webhook Events) - 订阅、一次性购买、退款、争议等支付事件
- * [OUTPUT]: (用户等级升降级、积分发放、许可证创建) - 支付后权益交付
- * [POS]: 支付核心服务，处理 Creem Webhook 回调，协调 CreditService/LicenseService 完成发货
+ * [OUTPUT]: (用户等级升降级、积分发放) - 支付后权益交付
+ * [POS]: 支付核心服务，处理 Creem Webhook 回调，协调 CreditService 完成发货
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma';
 import { CreditService } from '../credit';
-import { LicenseService } from '../license';
 import { ActivityLogService, ACTIVITY_CATEGORY } from '../activity-log';
 import type { Prisma } from '../../generated/prisma/client';
 import type {
@@ -20,12 +19,7 @@ import type {
   SubscriptionPausedParams,
   CheckoutCompletedParams,
 } from './dto/payment.dto';
-import {
-  TIER_CREDITS,
-  getCreditPacks,
-  getLicenseConfig,
-  getTierFromProductId,
-} from '../config';
+import { TIER_CREDITS, getCreditPacks, getTierFromProductId } from '../config';
 
 @Injectable()
 export class PaymentService {
@@ -34,7 +28,6 @@ export class PaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly creditService: CreditService,
-    private readonly licenseService: LicenseService,
     private readonly configService: ConfigService,
     private readonly activityLogService: ActivityLogService,
   ) {}
@@ -287,7 +280,6 @@ export class PaymentService {
       amount,
       currency,
       productType,
-      licenseKey,
     } = params;
 
     this.logger.log(`Checkout completed: ${checkoutId} for ${productType}`);
@@ -350,20 +342,6 @@ export class PaymentService {
             details: { productId, credits, amount, currency },
           });
         }
-      } else if (productType === 'license' && licenseKey) {
-        const config = getLicenseConfig()[productId] || {
-          tier: 'standard',
-          activationLimit: 2,
-        };
-        await this.licenseService.createLicense({
-          userId,
-          licenseKey,
-          orderId,
-          tier: config.tier,
-          activationLimit: config.activationLimit,
-          tx,
-        });
-        this.logger.log(`Created license for user ${userId}`);
       }
     });
   }
