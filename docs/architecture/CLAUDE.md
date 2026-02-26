@@ -46,6 +46,7 @@
 
 ## 近期更新
 
+- `moryflow-anyhunt-model-thinking-level-plan.md`：补充 PR#97 评论修复闭环（REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03），完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证（2026-02-26，implemented）。
 - `moryflow-anyhunt-model-thinking-level-plan.md`：第二轮执行完成（thinking_profile 强制契约、levelPatches 强类型/运行时消费、Anyhunt 默认 off + 客户端单次降级重试、全仓 `lint/typecheck/test:unit` 闸门通过）（2026-02-26，implemented）。
 - `auth/auth-and-global-rate-limit-defense-plan.md`：按当前实现对齐技术细节（Better Auth `/**` 路径规则、全局 `forRootAsync` 装配、Redis Lua 原子限流、默认 skip paths、模块级校验命令）（2026-02-25，active）。
 - `auth/auth-and-global-rate-limit-defense-plan.md`：Moryflow Server 分层限流方案进入执行状态（Auth `60s/20` + 全局 `60s/300` 已落地，Step 1~5 完成，Step 6 灰度待执行）（2026-02-25，active）。

@@ -596,6 +596,11 @@ pnpm test:unit
 | CORE-05 | levelPatches 运行时消费 | 实现 `base -> user patch -> clamp` 并统一注入 provider options | `thinking-adapter.ts` `reasoning-config.ts` `model-factory.ts` | CORE-04 | L2 | agents-runtime unit | ✅ 已完成 | 2026-02-26 | adapter 按 `base -> patch -> clamp` 固化 |
 | ANY-06 | Server 默认 off + 客户端重试 | Anyhunt 未传 thinking 默认 off；400 thinking 错误自动单次重试 off | `llm-language-model.service.ts` `agent-chat-transport.ts` | ANY-05 CORE-05 | L2 | anyhunt-server/console unit | ✅ 已完成 | 2026-02-26 | 未传 thinking 不再隐式启用，客户端单次降级重试 `off` |
 | TEST-02 | 全量回归 | 覆盖新契约、patch、降级与重试场景并跑全仓闸门 | 相关测试目录 | CLOUD-02 MORY-06 CORE-05 ANY-06 | L2 | `pnpm lint && pnpm typecheck && pnpm test:unit` | ✅ 已完成 | 2026-02-26 | 全仓三项闸门通过 |
+| REVIEW-01 | PR 评论分级 | 核对 PR#97 评论有效性并形成修复清单 | PR#97 comments + 相关源码 | TEST-02 | L1 | 人工 review | ✅ 已完成 | 2026-02-26 | 结论：SSE 阻塞/patch 优先级/runtime thinking 生效问题均需修复 |
+| FIX-05 | Console SSE 非阻塞 | thinking=level 场景仅在 `status=400` 读取 response body，避免 200 SSE 被 drain | `agent-chat-transport.ts` `agent-chat-transport.test.ts` | REVIEW-01 | L2 | console unit + typecheck | ✅ 已完成 | 2026-02-26 | 修复 realtime streaming 被阻塞问题 |
+| FIX-06 | Server patch 优先级 | `generic -> provider -> direct` 固化合并顺序，保证 provider patch 不被覆盖 | `thinking-profile.util.ts` `thinking-profile.util.spec.ts` | REVIEW-01 | L2 | anyhunt-server unit + typecheck | ✅ 已完成 | 2026-02-26 | 与“provider 特化高于通用默认”契约一致 |
+| FIX-07 | Runtime thinking 下发 | Anthropic/Google 在 model 构建阶段注入 thinking 参数；Agent 调用链注入 providerOptions | `model-factory.ts` `agent-factory.ts` `model-factory.test.ts` `agent-factory.test.ts` | REVIEW-01 | L2 | agents-runtime unit + tsc | ✅ 已完成 | 2026-02-26 | 修复“计算了 reasoning 但调用未生效”风险 |
+| TEST-03 | PR 评论回归 | 聚焦回归执行（console/server/runtime）并确认修复闭环 | 相关测试目录 | FIX-05 FIX-06 FIX-07 | L2 | 受影响包 unit + typecheck | ✅ 已完成 | 2026-02-26 | 三端受影响用例全部通过 |
 
 ### 4.3 执行顺序与并行策略
 
@@ -646,6 +651,11 @@ pnpm test:unit
 29. `CORE-05`：✅ 已完成（2026-02-26）
 30. `ANY-06`：✅ 已完成（2026-02-26）
 31. `TEST-02`：✅ 已完成（2026-02-26）
+32. `REVIEW-01`：✅ 已完成（2026-02-26）
+33. `FIX-05`：✅ 已完成（2026-02-26）
+34. `FIX-06`：✅ 已完成（2026-02-26）
+35. `FIX-07`：✅ 已完成（2026-02-26）
+36. `TEST-03`：✅ 已完成（2026-02-26）
 
 ### 4.6 最新执行记录（2026-02-26）
 
@@ -739,3 +749,38 @@ pnpm test:unit
 - 验证结果：全仓闸门通过：`pnpm lint`、`pnpm typecheck`、`pnpm test:unit`。
 - 影响范围：全仓受影响模块（Moryflow PC/Server、Anyhunt Console/Server、agents-runtime、api/types）。
 - 备注（风险/回滚点）：测试过程中有 Redis 连接警告与 native rebuild 警告，未导致失败。
+
+- 模块 ID：`REVIEW-01`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：已逐条核对 PR#97 机器人评论与源码，确认 3 类问题需要修复（SSE 阻塞、patch 优先级、runtime thinking 注入链路）。
+- 影响范围：`apps/anyhunt/console`、`apps/anyhunt/server`、`packages/agents-runtime`。
+- 备注（风险/回滚点）：该模块仅判定问题，不含代码变更。
+
+- 模块 ID：`FIX-05`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：`pnpm --filter @anyhunt/console test:unit -- src/features/agent-browser-playground/transport/agent-chat-transport.test.ts` + `pnpm --filter @anyhunt/console typecheck` 通过。
+- 影响范围：Anyhunt Console Agent Playground transport。
+- 备注（风险/回滚点）：仅在 `status=400` 才读取错误响应体，避免 200 SSE 流被阻塞。
+
+- 模块 ID：`FIX-06`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：`pnpm --filter @anyhunt/anyhunt-server test:unit -- src/llm/__tests__/thinking-profile.util.spec.ts src/llm/__tests__/llm-language-model.service.spec.ts` + `pnpm --filter @anyhunt/anyhunt-server typecheck` 通过。
+- 影响范围：Anyhunt Server thinking profile 合并逻辑与 LLM 路由。
+- 备注（风险/回滚点）：合并优先级固定为 `generic -> provider -> direct`，与 provider 特化契约对齐。
+
+- 模块 ID：`FIX-07`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：`pnpm --filter @moryflow/agents-runtime test:unit -- src/__tests__/model-factory.test.ts src/__tests__/agent-factory.test.ts` + `pnpm --filter @moryflow/agents-runtime exec tsc --noEmit` 通过。
+- 影响范围：`packages/agents-runtime` 的 `model-factory` 与 `agent-factory`。
+- 备注（风险/回滚点）：Anthropic/Google thinking 参数在模型构建即生效；providerOptions 通过 `modelSettings.providerData.providerOptions` 注入调用链。
+
+- 模块 ID：`TEST-03`
+- 状态：`✅ 已完成`
+- 完成日期：`2026-02-26`
+- 验证结果：本轮修复的 console/server/runtime 受影响测试与 typecheck 全部通过。
+- 影响范围：PR#97 评论涉及的三个模块。
+- 备注（风险/回滚点）：仍有 Redis 连接警告日志，但不影响单测通过与修复结论。

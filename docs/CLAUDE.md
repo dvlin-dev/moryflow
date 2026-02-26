@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（补充 PR#97 评论修复闭环：REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03，完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证）
 > 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全项 done，云端强契约 + 用户自定义 levelPatches 强类型落地，`pnpm lint/typecheck/test:unit` 已通过）
 > 最近更新：2026-02-25（新增 Moryflow Server 分层限流方案：Auth `60s/20` + 全局 `60s/300`，Redis 存储，含判定特征、执行步骤、验收与回滚）
 > 最近更新：2026-02-25（Moryflow Server 分层限流方案按实现对齐：Better Auth `/**` 路径规则、全局 `forRootAsync` 装配、Redis Lua 原子限流、默认 skip paths、模块级校验命令）
@@ -63,6 +64,7 @@
 
 ## 最近更新
 
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 评论修复闭环，REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03 全部完成）
 - Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：第二轮 DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全部完成，云端强契约与 levelPatches 全链路已落地）
 - Moryflow Server 分层限流方案（Auth + 全局，Redis 存储，active）：`docs/architecture/auth/auth-and-global-rate-limit-defense-plan.md`（2026-02-25：Auth `60s/20` + 全局 `60s/300` 已落地，Step 1~5 完成，Step 6 灰度待执行）
 - Agent Browser Stealth 能力引入与改造方案（proposal）：基于 agent-browser-stealth 外部项目完成差异分析与 11 步执行计划；废除旧"禁止伪装"约束（2026-02-25：proposal）
