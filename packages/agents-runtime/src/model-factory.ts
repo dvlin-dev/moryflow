@@ -77,11 +77,41 @@ const createLanguageModel = (options: CreateLanguageModelOptions): LanguageModel
       );
     }
 
-    case 'anthropic':
-      return createAnthropic({ apiKey, baseURL: baseUrl }).chat(modelId);
+    case 'anthropic': {
+      const anthropicChat = createAnthropic({ apiKey, baseURL: baseUrl }).chat as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return anthropicChat(
+        modelId,
+        reasoning?.enabled
+          ? {
+              thinking: {
+                type: 'enabled',
+                budgetTokens: reasoning.maxTokens ?? 12000,
+              },
+            }
+          : undefined
+      );
+    }
 
-    case 'google':
-      return createGoogleGenerativeAI({ apiKey, baseURL: baseUrl })(modelId);
+    case 'google': {
+      const googleChat = createGoogleGenerativeAI({ apiKey, baseURL: baseUrl }) as (
+        modelId: string,
+        settings?: Record<string, unknown>
+      ) => LanguageModelV3;
+      return googleChat(
+        modelId,
+        reasoning?.enabled
+          ? {
+              thinkingConfig: {
+                includeThoughts: reasoning.includeThoughts ?? true,
+                thinkingBudget: reasoning.maxTokens,
+              },
+            }
+          : undefined
+      );
+    }
 
     case 'xai': {
       const xaiChat = createXai({ apiKey, baseURL: baseUrl }).chat as (

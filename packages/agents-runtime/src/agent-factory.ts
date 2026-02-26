@@ -26,6 +26,35 @@ export interface AgentFactory {
   invalidate(): void;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const mergeModelSettingsWithProviderOptions = (
+  base: ModelSettings | undefined,
+  providerOptions: Record<string, unknown>,
+): ModelSettings | undefined => {
+  if (Object.keys(providerOptions).length === 0) {
+    return base;
+  }
+
+  const merged: ModelSettings = { ...(base ?? {}) };
+  const providerData = isRecord(merged.providerData)
+    ? { ...merged.providerData }
+    : {};
+  const existingProviderOptions = isRecord(providerData.providerOptions)
+    ? providerData.providerOptions
+    : {};
+
+  merged.providerData = {
+    ...providerData,
+    providerOptions: {
+      ...existingProviderOptions,
+      ...providerOptions,
+    },
+  };
+  return merged;
+};
+
 /**
  * 创建 Agent 工厂
  * 负责管理 Agent 实例与缓存，确保不同模型复用同一构建逻辑
@@ -44,12 +73,15 @@ export const createAgentFactory = ({
     thinking?: ThinkingSelection,
     thinkingProfile?: ModelThinkingProfile
   ) => {
-    const { baseModel } = getModelFactory().buildModel(modelId, {
+    const { baseModel, providerOptions } = getModelFactory().buildModel(modelId, {
       thinking,
       thinkingProfile,
     });
     const instructions = getInstructions?.() ?? getMorySystemPrompt();
-    const modelSettings = getModelSettings?.();
+    const modelSettings = mergeModelSettingsWithProviderOptions(
+      getModelSettings?.(),
+      providerOptions
+    );
     const runtimeTools = normalizeToolSchemasForInterop([...baseTools, ...getMcpTools()]);
     const config = {
       name: 'Mory',
