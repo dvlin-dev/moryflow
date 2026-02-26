@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const TEMPLATES_SRC = path.resolve(ROOT, 'src/templates');
+const TEMPLATE_FRAGMENTS_SRC = path.resolve(TEMPLATES_SRC, 'fragments');
 const TEMPLATE_OUTPUT = path.resolve(ROOT, '../pc/src/main/site-publish/template');
 
 // ── 文件头注释 ────────────────────────────────────────────────
@@ -37,6 +38,14 @@ const MENU_TOGGLE_SCRIPT = `(function(){var btn=document.getElementById('menu-to
 
 // ── Assets 路径 ────────────────────────────────────────────────
 const ASSETS_SRC = path.resolve(ROOT, 'assets');
+const FRAGMENT_PLACEHOLDER_PATTERN = /\{\{([A-Z_]+)\}\}/g;
+
+type FragmentMap = Record<string, string>;
+
+const FRAGMENT_FILES: Record<string, string> = {
+  THEME_TOGGLE_BUTTON: 'theme-toggle-button.html',
+  BRAND_FOOTER_LINK: 'brand-footer-link.html',
+};
 
 // ── 工具函数 ────────────────────────────────────────────────
 function toConstName(filename: string): string {
@@ -64,6 +73,44 @@ function toFileName(filename: string): string {
   return name + '.ts';
 }
 
+async function loadFragments(): Promise<FragmentMap> {
+  const entries = Object.entries(FRAGMENT_FILES);
+  const fragments = await Promise.all(
+    entries.map(async ([placeholder, file]) => {
+      const content = await fs.readFile(path.join(TEMPLATE_FRAGMENTS_SRC, file), 'utf-8');
+      return [placeholder, content.trim()] as const;
+    })
+  );
+
+  return Object.fromEntries(fragments);
+}
+
+function injectFragments(content: string, fragments: FragmentMap): string {
+  return content.replace(FRAGMENT_PLACEHOLDER_PATTERN, (fullMatch, placeholder: string) => {
+    return placeholder in fragments ? fragments[placeholder] : fullMatch;
+  });
+}
+
+function materializeTemplateDefaults(fileName: string, content: string): string {
+  // page.html 的 favicon 仍由渲染时动态注入；其余模板在导出阶段落地默认值
+  if (fileName !== 'page.html') {
+    return content.replace(/\{\{favicon\}\}/g, '/favicon.ico');
+  }
+  return content;
+}
+
+function assertNoUnresolvedFragmentPlaceholders(fileName: string, content: string): void {
+  const unresolved = Object.keys(FRAGMENT_FILES).filter((placeholder) =>
+    content.includes(`{{${placeholder}}}`)
+  );
+
+  if (unresolved.length > 0) {
+    throw new Error(
+      `Template ${fileName} still contains unresolved fragment placeholders: ${unresolved.join(', ')}`
+    );
+  }
+}
+
 // ── 主函数 ────────────────────────────────────────────────
 async function main() {
   console.log('🔄 Syncing site-template to PC app...\n');
@@ -88,6 +135,7 @@ async function main() {
   const templateFiles = await fs.readdir(TEMPLATES_SRC);
   const htmlFiles = templateFiles.filter((f) => f.endsWith('.html'));
   const cssFiles = templateFiles.filter((f) => f.endsWith('.css'));
+  const fragments = await loadFragments();
 
   console.log(`📄 Found ${htmlFiles.length} HTML templates, ${cssFiles.length} CSS files`);
 
@@ -142,7 +190,9 @@ export const ${constName} = ${JSON.stringify(content)}
 
   // 9. 生成各 HTML 模板文件
   for (const htmlFile of htmlFiles) {
-    const content = await fs.readFile(path.join(TEMPLATES_SRC, htmlFile), 'utf-8');
+    const rawContent = await fs.readFile(path.join(TEMPLATES_SRC, htmlFile), 'utf-8');
+    const content = materializeTemplateDefaults(htmlFile, injectFragments(rawContent, fragments));
+    assertNoUnresolvedFragmentPlaceholders(htmlFile, content);
     const constName = toConstName(htmlFile);
     const outputName = toFileName(htmlFile);
     const output = `${FILE_HEADER}/** ${htmlFile} 模板 */

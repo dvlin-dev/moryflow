@@ -7,9 +7,6 @@
 ```
 apps/moryflow/site-template/
 ├── src/
-│   ├── layouts/          # 布局组件（开发预览用）
-│   │   ├── SinglePage.tsx
-│   │   └── MultiPage.tsx
 │   ├── components/       # 共享组件（开发预览用）
 │   │   ├── Header.tsx
 │   │   ├── Footer.tsx
@@ -26,14 +23,15 @@ apps/moryflow/site-template/
 │   │   ├── index-page.html  # 目录页模板
 │   │   ├── index-page.css   # 目录页额外样式
 │   │   ├── 404.html         # 404 页面模板
-│   │   └── 404.css          # 404 页面额外样式
+│   │   ├── 404.css          # 404 页面额外样式
+│   │   └── fragments/       # 模板片段（sync 时注入）
+│   │       ├── theme-toggle-button.html
+│   │       └── brand-footer-link.html
 │   ├── build.ts          # SSG 构建脚本
 │   └── main.tsx          # 开发预览入口
 ├── scripts/
 │   └── sync.ts           # 同步脚本
 ├── dist/                 # 构建产物
-│   ├── single.html
-│   ├── multi.html
 │   ├── styles.css
 │   └── styles.min.css    # ← 同步到 PC 端
 └── index.html            # 开发入口
@@ -60,9 +58,13 @@ apps/moryflow/site-template/
 │  ├── 404.html       ──────────────────────────┼────────────┤   │
 │  └── 404.css        ──────────────────────────┼────────────┤   │
 │                                                │            │   │
+│  src/templates/fragments/   pnpm sync         │            │   │
+│  ├── theme-toggle-button ──────────────────────┼────────────┤   │
+│  └── brand-footer-link ────────────────────────┼────────────┤   │
+│                                                │            │   │
 │  scripts/sync.ts                               │            │   │
-│  ├── THEME_INIT_SCRIPT (硬编码) ───────────────┼────────────┤   │
-│  └── THEME_TOGGLE_SCRIPT (硬编码) ─────────────┼────────────┤   │
+│  ├── THEME_* / MENU 脚本（硬编码） ─────────────┼────────────┤   │
+│  └── 片段注入 + 默认占位符落地 ─────────────────┼────────────┤   │
 │                                                │            │   │
 └────────────────────────────────────────────────┼────────────┼───┘
                                                  │            │
@@ -84,10 +86,10 @@ apps/moryflow/site-template/
 
 ### 命令说明
 
-| 命令         | 作用           | 输入                                | 输出                                  |
-| ------------ | -------------- | ----------------------------------- | ------------------------------------- |
-| `pnpm build` | 构建模板 + CSS | `src/build.ts` + `src/styles/*.css` | `dist/*.html` + `dist/styles.min.css` |
-| `pnpm sync`  | 同步模板       | `dist/` + `src/templates/`          | `template/*.ts`                       |
+| 命令         | 作用                    | 输入                                                         | 输出                                      |
+| ------------ | ----------------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| `pnpm build` | 构建样式 + 模板契约校验 | `src/build.ts` + `src/styles/*.css` + `src/templates/*.html` | `dist/styles.css` + `dist/styles.min.css` |
+| `pnpm sync`  | 同步模板                | `dist/` + `src/templates/` + `src/templates/fragments/`      | `template/*.ts`                           |
 
 ### 开发流程
 
@@ -95,8 +97,8 @@ apps/moryflow/site-template/
 # 1. 修改样式后
 pnpm build && pnpm sync
 
-# 2. 只修改 HTML 模板后
-pnpm sync
+# 2. 只修改 HTML 模板后（建议先做契约校验）
+pnpm build && pnpm sync
 
 # 3. 开发预览
 pnpm dev
@@ -104,17 +106,18 @@ pnpm dev
 
 ## 文件对照表
 
-| 源文件                          | 生成文件               | 导出常量                                   |
-| ------------------------------- | ---------------------- | ------------------------------------------ |
-| `dist/styles.min.css`           | `styles.ts`            | `STYLES`                                   |
-| sync.ts 硬编码                  | `scripts.ts`           | `THEME_INIT_SCRIPT`, `THEME_TOGGLE_SCRIPT` |
-| `src/templates/page.html`       | `page.ts`              | `PAGE_TEMPLATE`                            |
-| `src/templates/sidebar.html`    | `sidebar.ts`           | `SIDEBAR_TEMPLATE`                         |
-| `src/templates/index-page.html` | `index-page.ts`        | `INDEX_PAGE_TEMPLATE`                      |
-| `src/templates/index-page.css`  | `index-page-styles.ts` | `INDEX_PAGE_STYLES`                        |
-| `src/templates/404.html`        | `404.ts`               | `ERROR_404_TEMPLATE`                       |
-| `src/templates/404.css`         | `404-styles.ts`        | `ERROR_404_STYLES`                         |
-| 自动生成                        | `index.ts`             | 统一导出所有常量                           |
+| 源文件                           | 生成文件                 | 导出常量                                   |
+| -------------------------------- | ------------------------ | ------------------------------------------ |
+| `dist/styles.min.css`            | `styles.ts`              | `STYLES`                                   |
+| sync.ts 硬编码                   | `scripts.ts`             | `THEME_INIT_SCRIPT`, `THEME_TOGGLE_SCRIPT` |
+| `src/templates/fragments/*.html` | 注入到 `page/index` 模板 | `THEME_TOGGLE_BUTTON`、`BRAND_FOOTER_LINK` |
+| `src/templates/page.html`        | `page.ts`                | `PAGE_TEMPLATE`                            |
+| `src/templates/sidebar.html`     | `sidebar.ts`             | `SIDEBAR_TEMPLATE`                         |
+| `src/templates/index-page.html`  | `index-page.ts`          | `INDEX_PAGE_TEMPLATE`                      |
+| `src/templates/index-page.css`   | `index-page-styles.ts`   | `INDEX_PAGE_STYLES`                        |
+| `src/templates/404.html`         | `404.ts`                 | `ERROR_404_TEMPLATE`                       |
+| `src/templates/404.css`          | `404-styles.ts`          | `ERROR_404_STYLES`                         |
+| 自动生成                         | `index.ts`               | 统一导出所有常量                           |
 
 ## 模板占位符
 
@@ -122,12 +125,14 @@ pnpm dev
 
 ### 通用占位符
 
-| 占位符                    | 说明           | 替换位置            |
-| ------------------------- | -------------- | ------------------- |
-| `{{STYLES}}`              | 核心 CSS 样式  | `renderer/index.ts` |
-| `{{THEME_INIT_SCRIPT}}`   | 主题初始化脚本 | `renderer/index.ts` |
-| `{{THEME_TOGGLE_SCRIPT}}` | 主题切换脚本   | `renderer/index.ts` |
-| `{{MENU_TOGGLE_SCRIPT}}`  | 菜单切换脚本   | `renderer/index.ts` |
+| 占位符                    | 说明           | 替换位置                        |
+| ------------------------- | -------------- | ------------------------------- |
+| `{{STYLES}}`              | 核心 CSS 样式  | `renderer/index.ts`             |
+| `{{THEME_INIT_SCRIPT}}`   | 主题初始化脚本 | `renderer/index.ts`             |
+| `{{THEME_TOGGLE_SCRIPT}}` | 主题切换脚本   | `renderer/index.ts`             |
+| `{{MENU_TOGGLE_SCRIPT}}`  | 菜单切换脚本   | `renderer/index.ts`             |
+| `{{THEME_TOGGLE_BUTTON}}` | 主题按钮片段   | `scripts/sync.ts`（导出前注入） |
+| `{{BRAND_FOOTER_LINK}}`   | 品牌页脚片段   | `scripts/sync.ts`（导出前注入） |
 
 ### 页面占位符 (page.html)
 
@@ -146,22 +151,24 @@ pnpm dev
 
 ### 目录页占位符 (index-page.html)
 
-| 占位符                  | 说明           |
-| ----------------------- | -------------- |
-| `{{INDEX_PAGE_STYLES}}` | 目录页额外样式 |
-| `{{lang}}`              | 语言代码       |
-| `{{siteTitle}}`         | 站点标题       |
-| `{{description}}`       | 页面描述       |
-| `{{navItems}}`          | 导航列表 HTML  |
+| 占位符                  | 说明                                       |
+| ----------------------- | ------------------------------------------ |
+| `{{INDEX_PAGE_STYLES}}` | 目录页额外样式                             |
+| `{{lang}}`              | 语言代码                                   |
+| `{{siteTitle}}`         | 站点标题                                   |
+| `{{description}}`       | 页面描述                                   |
+| `{{favicon}}`           | 网站图标（sync 默认落地为 `/favicon.ico`） |
+| `{{navItems}}`          | 导航列表 HTML                              |
 
 ### 404 页占位符 (404.html)
 
-| 占位符                  | 说明           |
-| ----------------------- | -------------- |
-| `{{ERROR_PAGE_STYLES}}` | 404 页额外样式 |
-| `{{lang}}`              | 语言代码       |
-| `{{siteTitle}}`         | 站点标题       |
-| `{{description}}`       | 页面描述       |
+| 占位符                  | 说明                                       |
+| ----------------------- | ------------------------------------------ |
+| `{{ERROR_PAGE_STYLES}}` | 404 页额外样式                             |
+| `{{lang}}`              | 语言代码                                   |
+| `{{siteTitle}}`         | 站点标题                                   |
+| `{{description}}`       | 页面描述                                   |
+| `{{favicon}}`           | 网站图标（sync 默认落地为 `/favicon.ico`） |
 
 ## 技术栈
 
@@ -199,5 +206,5 @@ pnpm dev
 
 1. **生成文件禁止手动编辑**：`template/*.ts` 都有 `AUTO-GENERATED` 注释
 2. **样式修改需要 build**：修改 `src/styles/` 后必须先 `pnpm build`
-3. **模板修改只需 sync**：修改 `src/templates/` 后只需 `pnpm sync`
-4. **主题脚本在 sync.ts**：如需修改主题逻辑，编辑 `scripts/sync.ts`
+3. **模板修改建议先 build 再 sync**：`build` 会执行模板契约校验，随后 `pnpm sync`
+4. **主题脚本与片段注入在 sync.ts**：如需修改主题逻辑或模板片段替换，编辑 `scripts/sync.ts`
