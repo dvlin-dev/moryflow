@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow PC PR #100 review 反馈修复完成：修复 vault 切换后 pending intent 残留、修复 provider-details `thinking` 字段在 view/edit/save 链路丢失，并新增回归测试；`@moryflow/pc typecheck` + 定向 `vitest` 通过：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Moryflow PC 分支全量 Code Review follow-up 完成：修复 workspace provider render-phase store 写入（迁移到 `useLayoutEffect`）、恢复 `useWorkspaceCommandActions` 的 workspace key 强类型、为 chat footer/overlay store 增加 `shouldSync` 快照比较；`typecheck` + `test:unit` 通过：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Moryflow PC 前端组件优化专项完成项目复盘（A/B/C/D/E 全部闭环）：复盘阶段新增 `chat-pane-portal-model` 并移除多状态链式三元；整包 `lint/typecheck/test:unit` 通过：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Moryflow PC 前端组件优化专项完成模块 E（`renderer hooks / contexts / transport / stores`）一次性修复：`workspace-controller/shell` 全量去 Context 化并迁移到 store，同步删除未引用 `app-context`；`typecheck` + workspace 定向 `vitest` 通过；进入项目复盘阶段：`docs/code-review/moryflow-pc.md`。

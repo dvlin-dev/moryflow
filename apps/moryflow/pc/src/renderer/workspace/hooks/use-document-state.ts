@@ -4,6 +4,7 @@
  * [POS]: Workspace 文档状态核心（编辑器/标签页）
  * [UPDATE]: 2026-02-09 - 恢复 tabs 时过滤非法/旧版特殊 tab，避免误读不存在路径
  * [UPDATE]: 2026-02-26 - 副作用拆分为 tabs/load + auto-save + vault-restore + persistence 四段
+ * [UPDATE]: 2026-02-26 - 切换 vault 时重置 pendingSelectionPath/pendingOpenPath，避免跨 vault 残留意图触发
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -187,6 +188,8 @@ type UseDocumentVaultRestoreOptions = {
   setDocError: Dispatch<SetStateAction<string | null>>;
   setSaveState: Dispatch<SetStateAction<SaveState>>;
   setPendingSave: Dispatch<SetStateAction<{ path: string; content: string } | null>>;
+  setPendingSelectionPath: Dispatch<SetStateAction<string | null>>;
+  setPendingOpenPath: Dispatch<SetStateAction<string | null>>;
   setIsRestoring: Dispatch<SetStateAction<boolean>>;
 };
 
@@ -200,6 +203,8 @@ const useDocumentVaultRestore = ({
   setDocError,
   setSaveState,
   setPendingSave,
+  setPendingSelectionPath,
+  setPendingOpenPath,
   setIsRestoring,
 }: UseDocumentVaultRestoreOptions) => {
   useEffect(() => {
@@ -213,6 +218,8 @@ const useDocumentVaultRestore = ({
     setDocError(null);
     setSaveState('idle');
     setPendingSave(null);
+    setPendingSelectionPath(null);
+    setPendingOpenPath(null);
 
     setIsRestoring(true);
     void (async () => {
@@ -264,6 +271,8 @@ const useDocumentVaultRestore = ({
     setDocError,
     setSaveState,
     setPendingSave,
+    setPendingSelectionPath,
+    setPendingOpenPath,
     setIsRestoring,
   ]);
 };
@@ -459,6 +468,8 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     setDocError,
     setSaveState,
     setPendingSave,
+    setPendingSelectionPath,
+    setPendingOpenPath,
     setIsRestoring,
   });
 
@@ -491,4 +502,3 @@ export const useDocumentState = ({ vault }: UseDocumentStateOptions): DocumentSt
     setSelectedFile,
   };
 };
-

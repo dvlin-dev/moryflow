@@ -1,3 +1,12 @@
+/**
+ * [PROVIDES]: useProviderDetailsController - Provider Details 的状态与行为编排
+ * [DEPENDS]: settings-dialog form state, model-registry, desktopAPI.testAgentProvider
+ * [POS]: settings-dialog/providers 的控制器层
+ * [UPDATE]: 2026-02-26 - 补齐 model thinking 字段在 view/edit/save/custom-provider 链路的透传
+ *
+ * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
+ */
+
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { getProviderById, modelRegistry } from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
@@ -69,8 +78,12 @@ export const useProviderDetailsController = ({
   const isCustom = activeProviderId?.startsWith('custom-') ?? false;
   const preset = !isCustom && activeProviderId ? getProviderById(activeProviderId) : null;
 
-  const presetIndex = providerValues.findIndex((provider) => provider.providerId === activeProviderId);
-  const customIndex = customProviderValues.findIndex((provider) => provider.providerId === activeProviderId);
+  const presetIndex = providerValues.findIndex(
+    (provider) => provider.providerId === activeProviderId
+  );
+  const customIndex = customProviderValues.findIndex(
+    (provider) => provider.providerId === activeProviderId
+  );
 
   const currentConfig = presetIndex >= 0 ? providerValues[presetIndex] : null;
   const userModels = currentConfig?.models || [];
@@ -102,6 +115,7 @@ export const useProviderDetailsController = ({
           context: userModel.customContext || DEFAULT_CUSTOM_MODEL_CONTEXT,
           output: userModel.customOutput || DEFAULT_CUSTOM_MODEL_OUTPUT,
         },
+        thinking: userModel.thinking,
       });
     }
 
@@ -125,7 +139,8 @@ export const useProviderDetailsController = ({
         capabilities:
           hasCustomConfig && userConfig.customCapabilities
             ? {
-                reasoning: userConfig.customCapabilities.reasoning ?? modelDef.capabilities.reasoning,
+                reasoning:
+                  userConfig.customCapabilities.reasoning ?? modelDef.capabilities.reasoning,
                 attachment:
                   userConfig.customCapabilities.attachment ?? modelDef.capabilities.attachment,
                 toolCall: userConfig.customCapabilities.toolCall ?? modelDef.capabilities.toolCall,
@@ -139,6 +154,7 @@ export const useProviderDetailsController = ({
               output: userConfig.customOutput || modelDef.limits.output,
             }
           : modelDef.limits,
+        thinking: userConfig?.thinking,
       });
     }
 
@@ -164,13 +180,18 @@ export const useProviderDetailsController = ({
     if (!preset) {
       return [];
     }
-    return [...preset.modelIds, ...userModels.filter((model) => model.isCustom).map((model) => model.id)];
+    return [
+      ...preset.modelIds,
+      ...userModels.filter((model) => model.isCustom).map((model) => model.id),
+    ];
   }, [preset, userModels]);
 
   useEffect(() => {
     if (!isCustom && activeProviderId && preset) {
       const currentProviders = getValues('providers');
-      const existingIndex = currentProviders.findIndex((provider) => provider.providerId === activeProviderId);
+      const existingIndex = currentProviders.findIndex(
+        (provider) => provider.providerId === activeProviderId
+      );
       if (existingIndex < 0) {
         setValue('providers', [
           ...currentProviders,
@@ -386,6 +407,7 @@ export const useProviderDetailsController = ({
           customOutput: data.outputSize,
           customCapabilities: data.capabilities,
           customInputModalities: data.inputModalities,
+          thinking: data.thinking,
         },
       ]);
       setValue(`providers.${presetIndex}.enabled`, true);
@@ -414,6 +436,7 @@ export const useProviderDetailsController = ({
       setEditModelData({
         ...model,
         inputModalities: userModel?.customInputModalities || ['text'],
+        thinking: userModel?.thinking ?? model.thinking,
       });
       setEditModelOpen(true);
     },
@@ -438,6 +461,7 @@ export const useProviderDetailsController = ({
         customOutput: data.outputSize,
         customCapabilities: data.capabilities,
         customInputModalities: data.inputModalities,
+        thinking: data.thinking,
       };
 
       if (existingIndex >= 0) {
@@ -495,6 +519,7 @@ export const useProviderDetailsController = ({
           customOutput: data.outputSize,
           customCapabilities: data.capabilities,
           customInputModalities: data.inputModalities,
+          thinking: data.thinking,
         },
         ...currentModels,
       ]);
@@ -528,6 +553,7 @@ export const useProviderDetailsController = ({
         customOutput: data.outputSize,
         customCapabilities: data.capabilities,
         customInputModalities: data.inputModalities,
+        thinking: data.thinking,
       });
     },
     [customIndex, customProviderValues, setValue]

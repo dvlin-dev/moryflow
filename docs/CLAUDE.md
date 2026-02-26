@@ -18,6 +18,7 @@
 > 最近更新：2026-02-26（补充 PR#97 新评论修复闭环：REVIEW-02/FIX-08/FIX-09/TEST-04，完成 `supportsThinking` 默认判定修复与 `/v1/models` 重复查询移除，并通过受影响包 unit/typecheck）
 > 最近更新：2026-02-26（补充 PR#97 评论修复闭环：REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03，完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证）
 > 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全项 done，云端强契约 + 用户自定义 levelPatches 强类型落地，`pnpm lint/typecheck/test:unit` 已通过）
+> 最近更新：2026-02-26（Moryflow PC PR #100 review 反馈修复完成：修复 vault 切换 pending intent 残留与 provider-details `thinking` 丢失；新增 `use-document-state`/`use-provider-details-controller` 回归测试并通过 `@moryflow/pc typecheck`）
 > 最近更新：2026-02-26（Moryflow PC 分支全量 Code Review follow-up 完成：修复 workspace provider render-phase store 写入、恢复 workspace i18n key 强类型、chat footer/overlay store 增加 `shouldSync` 快照比较；`@moryflow/pc typecheck + test:unit` 通过）
 > 最近更新：2026-02-26（Moryflow PC 项目复盘完成：模块 A/B/C/D/E 全部闭环；复盘收口新增 `chat-pane-portal-model` 并移除多状态链式三元；`lint/typecheck/test:unit` 通过）
 > 最近更新：2026-02-26（组件代码规范升级：前端组件统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数；已同步 `component-design-quality-index` 与根 `CLAUDE.md`）
@@ -123,7 +124,7 @@
 - Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 评论修复闭环，REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03 全部完成）
 - Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：第二轮 DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全部完成，云端强契约与 levelPatches 全链路已落地）
 - Moryflow Site Template Code Review：`docs/code-review/moryflow-site-template.md`（2026-02-26：done，模块 A/B/C + 项目复盘全部完成）
-- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up 完成；Store-first `SF-1~SF-4` 全部落地）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up + PR #100 review 反馈修复完成；Store-first `SF-1~SF-4` 全部落地）
 - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 A（auth/dashboard/users）已完成预扫描与修复闭环，A-1~A-5 done）
@@ -257,7 +258,7 @@
 - packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（2026-01-24：修复完成）
 - packages/ui Code Review：`docs/code-review/packages-ui.md`（2026-01-24：修复完成）
 - Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（2026-01-24：修复完成）
-- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-02-26：前端组件优化专项模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up 完成；Store-first `SF-1~SF-4` 全部落地）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-02-26：前端组件优化专项模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up + PR #100 review 反馈修复完成；Store-first `SF-1~SF-4` 全部落地）
 - Anyhunt Server API Key & Quota：修复完成（有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐）（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：标记修复完成（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：`docs/code-review/anyhunt-server-api-key-quota.md`（2026-01-25：review）

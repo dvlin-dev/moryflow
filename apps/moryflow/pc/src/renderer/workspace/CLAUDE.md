@@ -77,6 +77,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-26：PR #100 review follow-up：`use-document-state` 在 vault 切换时重置 `pendingSelectionPath/pendingOpenPath`，防止跨 vault 残留意图在后续树刷新时误触发。
 - 2026-02-26：分支全量 Code Review follow-up：`workspace-controller-context/workspace-shell-context` 的 store 同步改为 `useLayoutEffect`（移除 render-phase 外部写入）；`use-workspace-command-actions` 恢复 `workspace` 命名空间 key 强类型（移除 `any` 降级）。
 - 2026-02-26：项目复盘收口：`chat-pane-portal` 新增 `chat-pane-portal-model`（`main/panel/parking` 放置状态派生），移除链式三元并统一显式分发；补齐 `chat-pane-portal-model.test.ts`。
 - 2026-02-26：模块 E 去 Context 化：`workspace-controller-context/workspace-shell-context` 改为 store 同步层，新增 `workspace-controller-store/workspace-shell-controller-store`，业务/布局读取统一走 `useWorkspace*` selector（无 React Context 透传）。
