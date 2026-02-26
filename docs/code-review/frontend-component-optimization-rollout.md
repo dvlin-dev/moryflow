@@ -164,6 +164,8 @@ status: active
 | 13 | moryflow/docs | 项目范围调整 | 忽略本项目（不纳入本轮专项） | done | n/a | 2026-02-26 | 按用户确认，`apps/moryflow/docs` 从本轮组件优化专项中移除 |
 | 14 | moryflow/admin | 模块 A（auth/dashboard/users） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x1 / S2x2 / S3x1`，详见 `docs/code-review/moryflow-admin.md` |
 | 15 | moryflow/admin | 模块 A（auth/dashboard/users） | 分步重构与修复（A-1~A-5） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x1 / S2x2 / S3x1` 修复；`UsersPage` 完成状态片段化与职责拆分，新增 `set-tier-dialog`/`api-paths` 回归测试 |
+| 16 | moryflow/admin | 模块 B（payment/providers/models/storage） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x2 / S2x3 / S3x1`，详见 `docs/code-review/moryflow-admin.md` |
+| 17 | moryflow/admin | 模块 B（payment/providers/models/storage） | 分步重构与修复（B-1~B-6） | done | `pnpm --filter @moryflow/admin lint` + `typecheck` + `test:unit`（pass） | 2026-02-26 | 完成 `S1x2 / S2x3 / S3x1` 修复；`ModelFormDialog` 拆分为状态片段，四个列表页统一 `ViewState + switch` 并补 error 片段，新增 query builder 与回归测试（21 files / 97 tests） |
 
 ## 5. 回写格式（统一）
 

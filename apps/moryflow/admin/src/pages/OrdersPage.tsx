@@ -35,6 +35,7 @@ import {
   PRODUCT_TYPE_LABEL,
   ORDER_TABLE_COLUMNS,
   OrderDetailDialog,
+  resolveOrdersListViewState,
 } from '@/features/payment';
 import type { PaymentOrder } from '@/types/payment';
 import { View } from 'lucide-react';
@@ -49,7 +50,7 @@ export default function OrdersPage() {
 
   const { page, setPage, getTotalPages, resetPage } = usePagination({ pageSize: PAGE_SIZE });
 
-  const { data, isLoading } = useOrders({
+  const { data, isLoading, error } = useOrders({
     page,
     pageSize: PAGE_SIZE,
     status: selectedStatus,
@@ -58,6 +59,11 @@ export default function OrdersPage() {
 
   const orders = data?.orders || [];
   const totalPages = getTotalPages(data?.pagination.count || 0);
+  const listViewState = resolveOrdersListViewState({
+    isLoading,
+    error,
+    count: orders.length,
+  });
 
   const handleFilterChange = (type: 'status' | 'productType', value: string) => {
     if (type === 'status') setSelectedStatus(value);
@@ -68,6 +74,52 @@ export default function OrdersPage() {
   const handleViewDetail = (order: PaymentOrder) => {
     setSelectedOrder(order);
     setDetailOpen(true);
+  };
+
+  const renderRowsByState = () => {
+    switch (listViewState) {
+      case 'loading':
+        return <TableSkeleton columns={ORDER_TABLE_COLUMNS} />;
+      case 'error':
+        return (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center py-12 text-destructive">
+              订单数据加载失败，请稍后重试
+            </TableCell>
+          </TableRow>
+        );
+      case 'empty':
+        return (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+              暂无订单数据
+            </TableCell>
+          </TableRow>
+        );
+      case 'ready':
+        return orders.map((order) => (
+          <TableRow key={order.id}>
+            <TableCell className="font-mono text-xs">{order.id}</TableCell>
+            <TableCell className="font-mono text-xs">{order.userId}</TableCell>
+            <TableCell>
+              <Badge variant="outline">{PRODUCT_TYPE_LABEL[order.productType] || order.productType}</Badge>
+            </TableCell>
+            <TableCell className="font-medium">{formatCurrency(order.amount)}</TableCell>
+            <TableCell>
+              <StatusBadge status={order.status} configMap={ORDER_STATUS_CONFIG} />
+            </TableCell>
+            <TableCell className="text-muted-foreground">{order.discountCode || '-'}</TableCell>
+            <TableCell className="text-muted-foreground">{formatDate(order.createdAt)}</TableCell>
+            <TableCell className="text-right">
+              <Button variant="ghost" size="sm" onClick={() => handleViewDetail(order)}>
+                <View className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ));
+      default:
+        return null;
+    }
   };
 
   return (
@@ -118,49 +170,12 @@ export default function OrdersPage() {
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableSkeleton columns={ORDER_TABLE_COLUMNS} />
-            ) : orders.length > 0 ? (
-              orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono text-xs">{order.id}</TableCell>
-                  <TableCell className="font-mono text-xs">{order.userId}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {PRODUCT_TYPE_LABEL[order.productType] || order.productType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">{formatCurrency(order.amount)}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={order.status} configMap={ORDER_STATUS_CONFIG} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {order.discountCode || '-'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(order.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => handleViewDetail(order)}>
-                      <View className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                  暂无订单数据
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+          <TableBody>{renderRowsByState()}</TableBody>
         </Table>
       </div>
 
       {/* 分页 */}
-      {orders.length > 0 && (
+      {listViewState === 'ready' && (
         <SimplePagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 

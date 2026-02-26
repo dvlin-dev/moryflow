@@ -6,7 +6,7 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/moryflow/admin（模块 A：auth/dashboard/users）组件与状态流实现
+  [INPUT]: apps/moryflow/admin（模块 A/B：auth/dashboard/users + payment/providers/models/storage）组件与状态流实现
 [OUTPUT]: 预扫描问题清单（S1/S2/S3）+ 分步修复计划 + 进度台账
 [POS]: Phase 3 / P6 模块审查记录（Moryflow Admin）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -29,12 +29,34 @@ status: in_progress
   - `src/features/users`
 - 审查基线：`docs/guides/frontend/component-design-quality-index.md`
 
+### 模块 B 预扫描范围（Step 16）
+
+- 本轮模块：`payment / providers / models / storage`
+- 页面入口：
+  - `apps/moryflow/admin/src/pages/SubscriptionsPage.tsx`
+  - `apps/moryflow/admin/src/pages/OrdersPage.tsx`
+  - `apps/moryflow/admin/src/pages/ProvidersPage.tsx`
+  - `apps/moryflow/admin/src/pages/ModelsPage.tsx`
+  - `apps/moryflow/admin/src/pages/StoragePage.tsx`
+- 特性目录：
+  - `apps/moryflow/admin/src/features/payment`
+  - `apps/moryflow/admin/src/features/providers`
+  - `apps/moryflow/admin/src/features/models`
+  - `apps/moryflow/admin/src/features/storage`
+
 ## 结论摘要（模块 A：修复完成）
 
 - `S1`（必须改）：1 项（已修复）
 - `S2`（建议本轮改）：2 项（已修复）
 - `S3`（可延后）：1 项（已修复）
 - 当前状态：模块 A 已完成修复并通过模块级校验
+
+## 结论摘要（模块 B：修复完成）
+
+- `S1`（必须改）：2 项（已修复）
+- `S2`（建议本轮改）：3 项（已修复）
+- `S3`（可延后）：1 项（已修复）
+- 当前状态：模块 B 已完成修复并通过模块级校验
 
 ## 发现（按严重度排序）
 
@@ -96,7 +118,86 @@ status: in_progress
 4. A-4：重构 `usersApi` 查询参数构造为 `URLSearchParams`（或等价方法）统一编码。（已完成）
 5. A-5：模块级回归与一致性复查（组件边界、状态模型、请求参数映射）。（已完成）
 
-## 建议验证命令（执行修复后）
+## 模块 B 修复记录（按严重度排序）
+
+- [S1][已修复] `ModelFormDialog` 超阈值职责混杂已拆分为容器 + 状态片段
+  - 证据：
+    - 容器文件收敛到 `157` 行，聚焦提交编排与状态装配
+    - 表单主区/Reasoning 区/搜索区拆分到独立片段文件
+  - 定位：
+    - `apps/moryflow/admin/src/features/models/components/ModelFormDialog.tsx:38`
+    - `apps/moryflow/admin/src/features/models/components/ModelFormDialog.tsx:109`
+    - `apps/moryflow/admin/src/features/models/components/model-form-dialog/model-basic-fields-section.tsx:23`
+    - `apps/moryflow/admin/src/features/models/components/model-form-dialog/model-reasoning-section.tsx:36`
+  - 结果：
+    - 复杂度显著下降，后续字段调整可在独立片段内单点维护
+
+- [S1][已修复] 模块 B 页面链式三元已统一为“状态片段 + switch”
+  - 证据：
+    - `subscriptions/orders/providers/models` 页面全部改为 `resolve*ViewState + render*ByState/switch`
+  - 定位：
+    - `apps/moryflow/admin/src/pages/SubscriptionsPage.tsx:89`
+    - `apps/moryflow/admin/src/pages/OrdersPage.tsx:79`
+    - `apps/moryflow/admin/src/pages/ProvidersPage.tsx:79`
+    - `apps/moryflow/admin/src/pages/ModelsPage.tsx:92`
+  - 结果：
+    - 多状态渲染路径清晰，可扩展性与可读性达标
+
+- [S2][已修复] 列表页显式错误态已补齐，失败不再落空态
+  - 证据：
+    - 四个页面都纳入 `error` 状态分发，失败时展示独立错误片段
+  - 定位：
+    - `apps/moryflow/admin/src/pages/SubscriptionsPage.tsx:93`
+    - `apps/moryflow/admin/src/pages/OrdersPage.tsx:83`
+    - `apps/moryflow/admin/src/pages/ProvidersPage.tsx:97`
+    - `apps/moryflow/admin/src/pages/ModelsPage.tsx:123`
+  - 结果：
+    - 接口异常时不会误导为“暂无数据”，排障信号更明确
+
+- [S2][已修复] `modelsApi.getAll` 查询参数构建收敛为 `URLSearchParams`
+  - 证据：
+    - 新增 `buildModelsListPath`，`modelsApi` 改为复用 query builder
+  - 定位：
+    - `apps/moryflow/admin/src/features/models/query-paths.ts:5`
+    - `apps/moryflow/admin/src/features/models/api.ts:15`
+    - `apps/moryflow/admin/src/features/models/api-paths.test.ts:4`
+  - 结果：
+    - 参数编码统一，后续扩参不再分散拼接
+
+- [S2][已修复] `ProviderFormDialog` 默认值重复定义已收敛为工厂函数
+  - 证据：
+    - `defaultValues` 与 `form.reset` 统一复用 `getProviderFormDefaultValues`
+  - 定位：
+    - `apps/moryflow/admin/src/features/providers/components/provider-form-defaults.ts:4`
+    - `apps/moryflow/admin/src/features/providers/components/ProviderFormDialog.tsx:56`
+    - `apps/moryflow/admin/src/features/providers/components/ProviderFormDialog.tsx:62`
+  - 结果：
+    - 打开/重开行为一致，新增字段无需双点同步
+
+- [S3][已修复] payment/storage query 构建路径补齐回归测试
+  - 证据：
+    - 新增 `orders/subscriptions/storage/models` query builder 单测
+    - 新增 `orders/subscriptions/providers/models` 视图状态分发单测
+  - 定位：
+    - `apps/moryflow/admin/src/features/payment/orders/api-paths.test.ts:4`
+    - `apps/moryflow/admin/src/features/payment/subscriptions/api-paths.test.ts:4`
+    - `apps/moryflow/admin/src/features/storage/query-paths.test.ts:8`
+    - `apps/moryflow/admin/src/features/models/api-paths.test.ts:4`
+    - `apps/moryflow/admin/src/features/payment/orders/view-state.test.ts:4`
+    - `apps/moryflow/admin/src/features/payment/subscriptions/view-state.test.ts:4`
+  - 结果：
+    - query 映射与状态分发具备自动化回归防线
+
+## 分步修复计划（模块 B）
+
+1. B-1：拆分 `ModelFormDialog`（搜索片段 / 基础字段片段 / reasoning 片段 / 提交映射），收敛容器职责。（已完成）
+2. B-2：将 `SubscriptionsPage/OrdersPage/ProvidersPage/ModelsPage` 列表区统一改为“状态片段 + `renderContentByState/switch`”。（已完成）
+3. B-3：为上述页面补齐显式 `error` 状态片段，避免失败落空态。（已完成）
+4. B-4：重构 `modelsApi.getAll` 查询参数为 `URLSearchParams`（或等价 query helper），统一路径构建策略。（已完成）
+5. B-5：抽离 `ProviderFormDialog` 默认值工厂函数，消除初始化与重置重复定义。（已完成）
+6. B-6：补齐模块 B 回归测试（至少覆盖页面状态分发与 query 构建路径），并执行模块级校验。（已完成）
+
+## 建议验证命令（模块 B）
 
 - `pnpm --filter @moryflow/admin lint`
 - `pnpm --filter @moryflow/admin typecheck`
@@ -112,3 +213,10 @@ status: in_progress
 | A-3 | auth/dashboard/users | `UsersPage` 职责拆分（筛选/列表/弹窗编排） | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `UsersFilterBar` 与 `UsersTable`；`UsersPage` 收敛为容器编排层 |
 | A-4 | auth/dashboard/users | `usersApi` 查询参数构造收敛 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 新增 `query-paths.ts`；列表与删除记录查询改为 `URLSearchParams` |
 | A-5 | auth/dashboard/users | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 `set-tier-dialog.test.tsx` 与 `api-paths.test.ts`；全量单测 13 files / 69 tests 通过 |
+| B-0 | payment/providers/models/storage | 预扫描（不改代码） | done | n/a | 2026-02-26 | 识别 `S1x2 / S2x3 / S3x1` |
+| B-1 | payment/providers/models/storage | 拆分 `ModelFormDialog` 职责 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 拆分 `model-form-dialog/*` 片段，容器收敛为装配层（157 行） |
+| B-2 | payment/providers/models/storage | 列表区状态片段化 + switch 分发 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `Subscriptions/Orders/Providers/Models` 移除链式三元，改为 `resolve*ViewState + render*ByState` |
+| B-3 | payment/providers/models/storage | 补齐显式错误态 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | 四个列表页补齐 `error` 片段，失败不再落空态 |
+| B-4 | payment/providers/models/storage | query 参数构造收敛 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `models/orders/subscriptions/storage` 新增 query builder 并接入 API |
+| B-5 | payment/providers/models/storage | `ProviderFormDialog` 默认值工厂化 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit` | 2026-02-26 | `defaultValues` 与 `reset` 统一复用 `getProviderFormDefaultValues` |
+| B-6 | payment/providers/models/storage | 模块级回归与一致性复查 | done | `pnpm --filter @moryflow/admin lint` / `typecheck` / `test:unit`（pass） | 2026-02-26 | 新增 8 个测试文件；模块单测通过：21 files / 97 tests |

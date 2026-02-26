@@ -17,6 +17,10 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- 模块 B：`ModelFormDialog` 拆分为容器 + 搜索片段 + 基础字段片段 + Reasoning 片段（容器降至 157 行），消除单文件职责混杂
+- 模块 B：`SubscriptionsPage` / `OrdersPage` / `ProvidersPage` / `ModelsPage` 列表区统一改为 `ViewState + renderByState/switch`，并补齐显式 `error` 状态片段（移除链式三元）
+- 模块 B：`models/orders/subscriptions/storage` 查询参数构造统一收敛到 query builder（`URLSearchParams`），并新增对应回归测试
+- 模块 B：`ProviderFormDialog` 默认值工厂化（`getProviderFormDefaultValues`），统一初始化与重置逻辑
 - Users 模块 A：`UsersPage` 拆分为 `UsersFilterBar` + `UsersTable`，列表区改为 `UsersTableViewState + renderRowsByState/switch`，移除链式三元
 - Users 模块 A：修复 `SetTierDialog` 切换目标用户时的等级残留（受控值 + `currentTier` 变化重置 + 关闭对话框清理 `selectedUser`）
 - Users 模块 A：`usersApi` 查询参数构造抽离到 `query-paths.ts`（`URLSearchParams`），并新增 `set-tier-dialog` / `api-paths` 回归测试
