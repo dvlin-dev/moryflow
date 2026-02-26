@@ -11,6 +11,16 @@ interface TokenUsageIndicatorProps {
   className?: string
 }
 
+function resolveUsageColorClass(percentage: number): string {
+  if (percentage >= 90) {
+    return 'text-destructive'
+  }
+  if (percentage >= 70) {
+    return 'text-yellow-500'
+  }
+  return 'text-muted-foreground'
+}
+
 export function TokenUsageIndicator({
   usedTokens = 0,
   maxTokens = 0,
@@ -71,9 +81,7 @@ export function TokenUsageIndicator({
                 strokeLinecap="round"
                 className={cn(
                   'transition-all duration-300',
-                  percentage >= 90 ? 'text-destructive' :
-                  percentage >= 70 ? 'text-yellow-500' :
-                  'text-muted-foreground'
+                  resolveUsageColorClass(percentage)
                 )}
               />
             </svg>

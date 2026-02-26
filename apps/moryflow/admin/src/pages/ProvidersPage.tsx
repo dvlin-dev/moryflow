@@ -23,6 +23,7 @@ import {
   usePresetProviders,
   useDeleteProvider,
   useUpdateProvider,
+  resolveProvidersViewState,
 } from '@/features/providers';
 import { ProviderFormDialog } from '@/features/providers/components';
 import type { AiProvider } from '@/types/api';
@@ -34,11 +35,17 @@ export default function ProvidersPage() {
   const [deleteProvider, setDeleteProvider] = useState<AiProvider | null>(null);
 
   const { data: presetsData } = usePresetProviders();
-  const { data, isLoading } = useProviders();
+  const { data, isLoading, error, refetch } = useProviders();
   const deleteMutation = useDeleteProvider();
   const updateMutation = useUpdateProvider();
 
   const presets = presetsData?.providers || [];
+  const providers = data?.providers ?? [];
+  const viewState = resolveProvidersViewState({
+    isLoading,
+    error,
+    count: providers.length,
+  });
 
   const handleAdd = () => {
     setEditingProvider(undefined);
@@ -69,6 +76,106 @@ export default function ProvidersPage() {
     return presets.find((p) => p.id === providerType)?.name || providerType;
   };
 
+  const renderProvidersContentByState = () => {
+    switch (viewState) {
+      case 'loading':
+        return (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-5 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="text-center py-12">
+            <Server className="h-12 w-12 mx-auto text-destructive mb-4" />
+            <p className="text-destructive mb-4">Provider 数据加载失败，请稍后重试</p>
+            <Button variant="outline" onClick={() => void refetch()}>
+              重试
+            </Button>
+          </div>
+        );
+      case 'empty':
+        return (
+          <div className="text-center py-12">
+            <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">暂无 Provider 配置，请点击上方按钮添加</p>
+            <Button onClick={handleAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              添加 Provider
+            </Button>
+          </div>
+        );
+      case 'ready':
+        return (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {providers.map((provider) => (
+              <Card key={provider.id} className="relative">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <Server className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle className="text-base">{provider.name}</CardTitle>
+                    </div>
+                    <Switch
+                      checked={provider.enabled}
+                      onCheckedChange={() => handleToggleEnabled(provider)}
+                      disabled={updateMutation.isPending}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{getPresetName(provider.providerType)}</Badge>
+                    <span className="text-xs text-muted-foreground">排序: {provider.sortOrder}</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">API Key</p>
+                    <p className="font-mono text-xs truncate">{provider.apiKey}</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Base URL</p>
+                    <p className="text-xs truncate">
+                      {provider.baseUrl || <span className="italic text-muted-foreground">默认</span>}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(provider)}>
+                      <Pencil className="h-4 w-4 mr-1" />
+                      编辑
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteProvider(provider)}
+                    >
+                      <Delete className="h-4 w-4 mr-1" />
+                      删除
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -82,84 +189,7 @@ export default function ProvidersPage() {
         }
       />
 
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-5 w-32" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : data && data.providers.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {data.providers.map((provider) => (
-            <Card key={provider.id} className="relative">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <Server className="h-5 w-5 text-muted-foreground" />
-                    <CardTitle className="text-base">{provider.name}</CardTitle>
-                  </div>
-                  <Switch
-                    checked={provider.enabled}
-                    onCheckedChange={() => handleToggleEnabled(provider)}
-                    disabled={updateMutation.isPending}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{getPresetName(provider.providerType)}</Badge>
-                  <span className="text-xs text-muted-foreground">排序: {provider.sortOrder}</span>
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">API Key</p>
-                  <p className="font-mono text-xs truncate">{provider.apiKey}</p>
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Base URL</p>
-                  <p className="text-xs truncate">
-                    {provider.baseUrl || <span className="italic text-muted-foreground">默认</span>}
-                  </p>
-                </div>
-
-                <div className="flex gap-2 pt-2 border-t">
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(provider)}>
-                    <Pencil className="h-4 w-4 mr-1" />
-                    编辑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setDeleteProvider(provider)}
-                  >
-                    <Delete className="h-4 w-4 mr-1" />
-                    删除
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground mb-4">暂无 Provider 配置，请点击上方按钮添加</p>
-          <Button onClick={handleAdd}>
-            <Plus className="h-4 w-4 mr-2" />
-            添加 Provider
-          </Button>
-        </div>
-      )}
+      {renderProvidersContentByState()}
 
       {/* 表单对话框 */}
       <ProviderFormDialog

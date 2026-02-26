@@ -21,6 +21,13 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：Moryflow Admin 完成 build 阻塞收口：修复 `agent-traces/alerts` 查询参数类型约束与 `ModelFormDialog` 布尔类型收敛，`@moryflow/admin` 新增 `prebuild` 自动构建 `@moryflow/model-registry-data`；模块级 `lint` + `typecheck` + `test:unit` + `build` 全通过：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 完成追加彻改（`chat/sites/image-generation`）：落地 `store + methods + 子组件就地取数`，移除核心 props drilling，新增 3 组 methods 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（35 files / 156 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 项目复盘完成（R-0~R-4）：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 遗留问题全部收口（超阈值大组件、链式三元、测试空白），并通过模块级 `lint` + `typecheck` + `test:unit`（32 files / 147 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 模块 D（`sites/image-generation/shared`）修复完成：`Sites/ImageGenerator` 统一 `ViewState + switch`、`SitesPage/SiteDetailPage/ImageGenerator` 拆分收敛到 `<300` 行、补齐错误态与 query builder 复用，并新增 `sites/image-generation` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 模块 B（`payment/providers/models/storage`）修复完成：`ModelFormDialog` 拆分为容器 + 状态片段、`Subscriptions/Orders/Providers/Models` 列表区统一 `ViewState + switch` 并补齐 `error` 片段、`models/orders/subscriptions/storage` query builder 收敛与回归测试补齐；模块级 `lint` + `typecheck` + `test:unit` 通过（21 files / 97 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 模块 B（`payment/providers/models/storage`）预扫描完成，输出 `S1x2 / S2x3 / S3x1`，已回写主文档与专项台账：`docs/code-review/moryflow-admin.md`、`docs/code-review/frontend-component-optimization-rollout.md`。
+- 2026-02-26：Moryflow Admin 模块 A（`auth/dashboard/users`）修复完成：`SetTierDialog` 目标用户切换状态同步修复、`UsersPage` 状态片段化与职责拆分、`usersApi` 查询参数收敛至 `URLSearchParams`，并新增 `set-tier-dialog`/`api-paths` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/moryflow-admin.md`。
 - 2026-02-26：Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成（模板/样式/脚本生成链路收敛，`sync` 确定性与新鲜度守卫落地），详见 `docs/code-review/moryflow-site-template.md` 与 `docs/code-review/frontend-component-optimization-rollout.md`。
 - 2026-02-26：Anyhunt Console 完成首个项目闭环（模块 D D-6b~D-6c + 模块 E + 项目复盘全部完成），并补齐 `AgentBrowserLayoutPage` 布局状态片段化收口；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 进入 D-6 一致性复查，完成 D-6a（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离为 `use-browser-session-forms`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。

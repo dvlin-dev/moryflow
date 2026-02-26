@@ -58,7 +58,11 @@ export default function AgentTracesPage() {
     days: parseInt(days),
   });
 
-  const { data: tracesData, isLoading: tracesLoading } = useAgentTraces({
+  const {
+    data: tracesData,
+    isLoading: tracesLoading,
+    error: tracesError,
+  } = useAgentTraces({
     agentName: agentName || undefined,
     status: status || undefined,
     limit: PAGE_SIZE,
@@ -119,9 +123,9 @@ export default function AgentTracesPage() {
           />
         </div>
         <Select
-          value={status}
+          value={status || 'all'}
           onValueChange={(v) => {
-            setStatus(v as TraceStatus | '');
+            setStatus(v === 'all' ? '' : (v as TraceStatus));
             setPage(1);
           }}
         >
@@ -145,7 +149,12 @@ export default function AgentTracesPage() {
       </div>
 
       {/* Trace 列表 */}
-      <TraceTable traces={traces} isLoading={tracesLoading} onViewDetail={handleViewDetail} />
+      <TraceTable
+        traces={traces}
+        isLoading={tracesLoading}
+        error={tracesError}
+        onViewDetail={handleViewDetail}
+      />
 
       {/* 分页 */}
       {traces.length > 0 && (

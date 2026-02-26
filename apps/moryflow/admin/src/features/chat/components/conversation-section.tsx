@@ -5,24 +5,41 @@
 import { useRef, useEffect } from 'react';
 import { Message } from './message';
 import { MessageSquare } from 'lucide-react';
+import { selectIsStreaming, useChatSessionStore } from '../store';
 
-type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
-
-interface MessageItem {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
+function EmptyConversationState() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+      <div className="rounded-full bg-muted p-3">
+        <MessageSquare className="size-6 text-muted-foreground" />
+      </div>
+      <div className="space-y-1">
+        <h3 className="font-medium text-sm">开始聊天测试</h3>
+        <p className="text-muted-foreground text-sm">从用户视角测试 AI 聊天接口</p>
+      </div>
+    </div>
+  );
 }
 
-interface ConversationSectionProps {
-  messages: MessageItem[];
-  status: ChatStatus;
+function StreamingIndicator() {
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
+        <div className="flex items-center gap-1">
+          <span className="size-1.5 animate-pulse rounded-full bg-foreground/50" />
+          <span className="size-1.5 animate-pulse rounded-full bg-foreground/50 delay-150" />
+          <span className="size-1.5 animate-pulse rounded-full bg-foreground/50 delay-300" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export function ConversationSection({ messages, status }: ConversationSectionProps) {
+export function ConversationSection() {
+  const messages = useChatSessionStore((state) => state.messages);
+  const isStreaming = useChatSessionStore(selectIsStreaming);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 自动滚动到底部
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -30,17 +47,7 @@ export function ConversationSection({ messages, status }: ConversationSectionPro
   }, [messages]);
 
   if (messages.length === 0) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-        <div className="rounded-full bg-muted p-3">
-          <MessageSquare className="size-6 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <h3 className="font-medium text-sm">开始聊天测试</h3>
-          <p className="text-muted-foreground text-sm">从用户视角测试 AI 聊天接口</p>
-        </div>
-      </div>
-    );
+    return <EmptyConversationState />;
   }
 
   return (
@@ -49,17 +56,7 @@ export function ConversationSection({ messages, status }: ConversationSectionPro
         {messages.map((message) => (
           <Message key={message.id} message={message} />
         ))}
-        {status === 'streaming' && (
-          <div className="flex justify-start">
-            <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2.5">
-              <div className="flex items-center gap-1">
-                <span className="size-1.5 animate-pulse rounded-full bg-foreground/50" />
-                <span className="size-1.5 animate-pulse rounded-full bg-foreground/50 delay-150" />
-                <span className="size-1.5 animate-pulse rounded-full bg-foreground/50 delay-300" />
-              </div>
-            </div>
-          </div>
-        )}
+        {isStreaming && <StreamingIndicator />}
       </div>
     </div>
   );

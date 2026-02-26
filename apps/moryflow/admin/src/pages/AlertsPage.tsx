@@ -38,8 +38,8 @@ const DAYS_OPTIONS = [
   { value: '30', label: '最近 30 天' },
 ];
 
-const LEVEL_OPTIONS: Array<{ value: AlertLevel | ''; label: string }> = [
-  { value: '', label: '全部级别' },
+const LEVEL_OPTIONS: Array<{ value: AlertLevel | 'all'; label: string }> = [
+  { value: 'all', label: '全部级别' },
   { value: 'critical', label: '严重' },
   { value: 'warning', label: '警告' },
 ];
@@ -55,13 +55,13 @@ export default function AlertsPage() {
   const { page, setPage, getTotalPages } = usePagination({ pageSize: PAGE_SIZE });
 
   // 数据查询
-  const { data: rulesData, isLoading: rulesLoading } = useAlertRules();
-  const { data: historyData, isLoading: historyLoading } = useAlertHistory({
+  const { data: rulesData, isLoading: rulesLoading, error: rulesError } = useAlertRules();
+  const { data: historyData, isLoading: historyLoading, error: historyError } = useAlertHistory({
     level: level || undefined,
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
   });
-  const { data: stats, isLoading: statsLoading } = useAlertStats(parseInt(days));
+  const { data: stats, isLoading: statsLoading, error: statsError } = useAlertStats(parseInt(days));
 
   const triggerMutation = useTriggerDetection();
 
@@ -129,6 +129,7 @@ export default function AlertsPage() {
 
       {/* Stats */}
       <AlertStatsCards stats={stats} isLoading={statsLoading} />
+      {statsError && <p className="text-sm text-destructive">告警统计加载失败，请稍后重试</p>}
 
       {/* Tabs */}
       <Tabs defaultValue="rules" className="space-y-4">
@@ -139,7 +140,12 @@ export default function AlertsPage() {
 
         {/* Rules Tab */}
         <TabsContent value="rules" className="space-y-4">
-          <AlertRulesTable rules={rules} isLoading={rulesLoading} onEdit={handleEditRule} />
+          <AlertRulesTable
+            rules={rules}
+            isLoading={rulesLoading}
+            error={rulesError}
+            onEdit={handleEditRule}
+          />
         </TabsContent>
 
         {/* History Tab */}
@@ -147,9 +153,9 @@ export default function AlertsPage() {
           {/* Filters */}
           <div className="flex items-center gap-4">
             <Select
-              value={level}
+              value={level || 'all'}
               onValueChange={(v) => {
-                setLevel(v as AlertLevel | '');
+                setLevel(v === 'all' ? '' : (v as AlertLevel));
                 setPage(1);
               }}
             >
@@ -166,7 +172,7 @@ export default function AlertsPage() {
             </Select>
           </div>
 
-          <AlertHistoryTable history={history} isLoading={historyLoading} />
+          <AlertHistoryTable history={history} isLoading={historyLoading} error={historyError} />
 
           {totalPages > 1 && (
             <SimplePagination page={page} totalPages={totalPages} onPageChange={setPage} />

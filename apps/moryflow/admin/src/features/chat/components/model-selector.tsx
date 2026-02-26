@@ -1,6 +1,7 @@
 /**
  * 模型选择器组件
  */
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -11,33 +12,23 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sparkles, ChevronDown, SquareCheck } from 'lucide-react';
-import { useState } from 'react';
-import type { ModelGroup } from '../types';
+import { chatMethods } from '../methods';
+import { useChatSessionStore } from '../store';
 
-interface ModelSelectorProps {
-  modelGroups: ModelGroup[];
-  selectedModelId: string | null;
-  onSelectModel: (id: string) => void;
-  disabled?: boolean;
-}
-
-export function ModelSelector({
-  modelGroups,
-  selectedModelId,
-  onSelectModel,
-  disabled,
-}: ModelSelectorProps) {
+export function ModelSelector() {
   const [open, setOpen] = useState(false);
+  const modelGroups = useChatSessionStore((state) => state.modelGroups);
+  const selectedModelId = useChatSessionStore((state) => state.selectedModelId);
+  const modelsLoading = useChatSessionStore((state) => state.modelsLoading);
 
-  const selectedModel = modelGroups.flatMap((g) => g.options).find((m) => m.id === selectedModelId);
-
-  const hasModels = modelGroups.some((g) => g.options.length > 0);
+  const selectedModel = modelGroups.flatMap((group) => group.options).find((m) => m.id === selectedModelId);
+  const hasModels = modelGroups.some((group) => group.options.length > 0);
 
   if (!hasModels) {
     return (
       <Button variant="ghost" size="sm" disabled className="h-8 gap-1.5 text-muted-foreground">
         <Sparkles className="size-3.5" />
-        <span>无可用模型</span>
+        <span>{modelsLoading ? '模型加载中...' : '无可用模型'}</span>
       </Button>
     );
   }
@@ -48,7 +39,7 @@ export function ModelSelector({
         <Button
           variant="ghost"
           size="sm"
-          disabled={disabled}
+          disabled={modelsLoading}
           className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
         >
           <span className="max-w-32 truncate">{selectedModel?.name ?? '选择模型'}</span>
@@ -66,7 +57,7 @@ export function ModelSelector({
                     key={option.id}
                     value={option.id}
                     onSelect={() => {
-                      onSelectModel(option.id);
+                      chatMethods.selectChatModel(option.id);
                       setOpen(false);
                     }}
                     className="gap-2 text-sm"
