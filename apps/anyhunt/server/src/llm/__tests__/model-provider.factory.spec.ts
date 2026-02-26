@@ -48,7 +48,7 @@ describe('ModelProviderFactory', () => {
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
     });
-    expect(chat).toHaveBeenCalledWith('gpt-4o');
+    expect(chat).toHaveBeenCalledWith('gpt-4o', undefined);
     expect(model).toBe('openai-model');
   });
 
@@ -61,8 +61,25 @@ describe('ModelProviderFactory', () => {
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
     expect(model).toBe('compat-model');
+  });
+
+  it('creates openai model with reasoning config', () => {
+    const chat = vi.fn().mockReturnValue('openai-model');
+    mocks.createOpenAI.mockReturnValue({ chat } as any);
+
+    ModelProviderFactory.create(
+      { providerType: 'openai', ...provider },
+      {
+        upstreamId: 'gpt-4o',
+        reasoning: { enabled: true, effort: 'high' },
+      },
+    );
+
+    expect(chat).toHaveBeenCalledWith('gpt-4o', {
+      reasoningEffort: 'high',
+    });
   });
 
   it('creates openrouter model via chat', () => {
@@ -113,7 +130,7 @@ describe('ModelProviderFactory', () => {
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
     });
-    expect(anthropic).toHaveBeenCalledWith('claude-3-5-sonnet');
+    expect(anthropic).toHaveBeenCalledWith('claude-3-5-sonnet', undefined);
     expect(model).toBe('anthropic-model');
   });
 
@@ -130,7 +147,7 @@ describe('ModelProviderFactory', () => {
       apiKey: 'sk-test',
       baseURL: 'https://api.example.com',
     });
-    expect(google).toHaveBeenCalledWith('gemini-1.5-pro');
+    expect(google).toHaveBeenCalledWith('gemini-1.5-pro', undefined);
     expect(model).toBe('google-model');
   });
 
@@ -152,7 +169,7 @@ describe('ModelProviderFactory', () => {
       { upstreamId: 'gpt-4o-mini' },
     );
 
-    expect(chat).toHaveBeenCalledWith('gpt-4o-mini');
+    expect(chat).toHaveBeenCalledWith('gpt-4o-mini', undefined);
     expect(model).toBe('compat-model');
   });
 });

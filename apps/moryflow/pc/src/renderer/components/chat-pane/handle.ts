@@ -8,17 +8,25 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import type { AgentChatContext, AgentChatRequestOptions } from '@shared/ipc';
+import type {
+  AgentChatContext,
+  AgentChatRequestOptions,
+  AgentThinkingProfile,
+} from '@shared/ipc';
 
 export const computeAgentOptions = ({
   activeFilePath,
   contextSummary,
   preferredModelId,
+  thinkingLevel,
+  thinkingProfile,
   selectedSkillName,
 }: {
   activeFilePath?: string | null;
   contextSummary?: string | null;
   preferredModelId?: string | null;
+  thinkingLevel?: string | null;
+  thinkingProfile?: AgentThinkingProfile | null;
   selectedSkillName?: string | null;
 }): AgentChatRequestOptions | undefined => {
   const context: AgentChatContext = {};
@@ -39,6 +47,18 @@ export const computeAgentOptions = ({
 
   if (preferredModelId && preferredModelId.trim().length > 0) {
     options.preferredModelId = preferredModelId.trim();
+  }
+
+  if (typeof thinkingLevel === 'string' && thinkingLevel.trim().length > 0) {
+    const normalizedThinking = thinkingLevel.trim();
+    options.thinking =
+      normalizedThinking === 'off'
+        ? { mode: 'off' }
+        : { mode: 'level', level: normalizedThinking };
+  }
+
+  if (thinkingProfile && Array.isArray(thinkingProfile.levels)) {
+    options.thinkingProfile = thinkingProfile;
   }
 
   if (selectedSkillName && selectedSkillName.trim().length > 0) {

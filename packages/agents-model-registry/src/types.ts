@@ -6,6 +6,77 @@
 /** 模型输入输出模态 */
 export type ModelModality = 'text' | 'image' | 'audio' | 'video' | 'pdf';
 
+/** 思考等级 */
+export type BuiltinThinkingLevelId =
+  | 'off'
+  | 'minimal'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'max'
+  | 'xhigh';
+
+/** 思考等级（支持扩展） */
+export type ThinkingLevelId = BuiltinThinkingLevelId | (string & {});
+
+/** OpenAI/OpenAI-compatible/xAI 思考 patch */
+export interface ThinkingPatchOpenAICompatible {
+  reasoningEffort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal';
+}
+
+/** OpenRouter 思考 patch */
+export interface ThinkingPatchOpenRouter {
+  effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal';
+  maxTokens?: number;
+  exclude?: boolean;
+  rawConfig?: Record<string, unknown>;
+}
+
+/** Anthropic 思考 patch */
+export interface ThinkingPatchAnthropic {
+  budgetTokens?: number;
+}
+
+/** Google 思考 patch */
+export interface ThinkingPatchGoogle {
+  thinkingBudget?: number;
+  includeThoughts?: boolean;
+}
+
+/** 单个 level 在各 provider 的 patch 集合 */
+export interface ThinkingLevelProviderPatches {
+  openai?: ThinkingPatchOpenAICompatible;
+  'openai-compatible'?: ThinkingPatchOpenAICompatible;
+  xai?: ThinkingPatchOpenAICompatible;
+  openrouter?: ThinkingPatchOpenRouter;
+  anthropic?: ThinkingPatchAnthropic;
+  google?: ThinkingPatchGoogle;
+}
+
+/** 模型思考配置覆写（用户级） */
+export interface ModelThinkingOverride {
+  /** 默认思考等级 */
+  defaultLevel?: ThinkingLevelId;
+  /** 可选等级集合（必须包含 off） */
+  enabledLevels?: ThinkingLevelId[];
+  /** 等级到 provider patch 的可选覆写 */
+  levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+}
+
+/** 思考等级选项 */
+export interface ThinkingLevelOption {
+  id: ThinkingLevelId;
+  label: string;
+  description?: string;
+}
+
+/** 模型思考档案 */
+export interface ModelThinkingProfile {
+  supportsThinking: boolean;
+  defaultLevel: ThinkingLevelId;
+  levels: ThinkingLevelOption[];
+}
+
 export interface ModelModalities {
   input: ModelModality[];
   output: ModelModality[];
@@ -88,6 +159,8 @@ export interface UserModelConfig {
   customCapabilities?: CustomModelCapabilities;
   /** 自定义输入模态 */
   customInputModalities?: ModelModality[];
+  /** 自定义思考配置 */
+  thinking?: ModelThinkingOverride;
 }
 
 /** 服务商认证方式 */

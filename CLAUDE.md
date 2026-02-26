@@ -12,6 +12,7 @@
 > 最近更新：2026-02-10（协作总则：交互设计做减法，尽量减少交互，通过符合用户直觉的设计保持界面简洁）
 > 最近更新：2026-02-24（请求与状态管理统一规范：全仓请求统一为函数式客户端与方法编排；前端统一 Zustand + Methods；禁用 Context 顶层透传、Class ApiClient、`createServerApiClient`、`serverApi.user.xxx`；覆盖客户端 HTTP、服务端出站 HTTP 与 WebSocket）
 > 最近更新：2026-02-24（Auth 与全量请求统一改造计划执行完成：Step 1~13 全部回写，客户端/服务端出站 HTTP/WebSocket 统一落地；旧客户端范式清理完成）
+> 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：云端 `thinking_profile` 强契约、用户自定义 `levelPatches` 强类型与运行时消费、Anyhunt 默认 `off` + 单次降级重试落地；全仓 `lint/typecheck/test:unit` 通过）
 > 最近更新：2026-01-27（CI：Build 限制 Turbo 并发与 Node heap，降低 8C8G 机器 OOM 概率）
 > 最近更新：2026-02-01（图标库回退 Lucide，移除 Hugeicons 依赖并统一调用方式）
 > 最近更新：2026-02-02（Anyhunt app/public/apikey 通道路由规范落地，app/public 路由完成迁移）
@@ -248,6 +249,7 @@ Anyhunt/
 | [`docs/architecture/api-client-unification.md`](./docs/architecture/api-client-unification.md)                                             | API Client 统一封装方案（Anyhunt + Moryflow）                            |
 | [`docs/architecture/anyhunt-console-public-api-key-plan.md`](./docs/architecture/anyhunt-console-public-api-key-plan.md)                   | Anyhunt Console 公共 API 化与 API Key 明文存储方案                       |
 | [`docs/architecture/anyhunt-request-log-module-plan.md`](./docs/architecture/anyhunt-request-log-module-plan.md)                           | Anyhunt 统一日志系统方案（用户行为/错误/IP，30 天）                      |
+| [`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`](./docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md)     | Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode）                  |
 | [`docs/architecture/domains-and-deployment.md`](./docs/architecture/domains-and-deployment.md)                                             | 域名与三机部署架构（megaboxpro/4c6g/8c16g + OAuth 登录）                 |
 | [`docs/architecture/ui-message-list-unification.md`](./docs/architecture/ui-message-list-unification.md)                                   | 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）                |
 | [`docs/architecture/ui-message-list-turn-anchor-adoption.md`](./docs/architecture/ui-message-list-turn-anchor-adoption.md)                 | Moryflow PC 消息列表交互复用改造方案（Following 模式）                   |

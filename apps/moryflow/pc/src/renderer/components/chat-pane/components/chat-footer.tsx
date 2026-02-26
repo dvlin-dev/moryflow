@@ -14,6 +14,7 @@ import type { ChatStatus } from 'ai';
 import { CardFooter } from '@moryflow/ui/components/card';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { TokenUsage, ChatSessionSummary } from '@shared/ipc';
+import type { ModelThinkingProfile } from '@shared/model-registry';
 
 import { ChatPromptInput } from './chat-prompt-input';
 import { TaskHoverPanel } from './task-hover-panel';
@@ -33,6 +34,9 @@ type Props = {
   modelGroups: ModelGroup[];
   selectedModelId?: string | null;
   onSelectModel: (id: string) => void;
+  selectedThinkingLevel?: string | null;
+  selectedThinkingProfile?: ModelThinkingProfile;
+  onSelectThinkingLevel: (level: string) => void;
   disabled: boolean;
   tokenUsage?: TokenUsage | null;
   contextWindow?: number;
@@ -56,6 +60,9 @@ export const ChatFooter = ({
   modelGroups,
   selectedModelId,
   onSelectModel,
+  selectedThinkingLevel,
+  selectedThinkingProfile,
+  onSelectThinkingLevel,
   disabled,
   tokenUsage,
   contextWindow,
@@ -84,6 +91,9 @@ export const ChatFooter = ({
           modelGroups={modelGroups}
           selectedModelId={selectedModelId}
           onSelectModel={onSelectModel}
+          selectedThinkingLevel={selectedThinkingLevel}
+          selectedThinkingProfile={selectedThinkingProfile}
+          onSelectThinkingLevel={onSelectThinkingLevel}
           disabled={disabled}
           onOpenSettings={onOpenSettings}
           tokenUsage={tokenUsage}

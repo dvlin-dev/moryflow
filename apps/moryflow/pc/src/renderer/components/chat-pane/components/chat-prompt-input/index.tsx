@@ -126,6 +126,9 @@ const ChatPromptInputInner = ({
   modelGroups,
   selectedModelId,
   onSelectModel,
+  selectedThinkingLevel,
+  selectedThinkingProfile,
+  onSelectThinkingLevel,
   disabled,
   onOpenSettings,
   tokenUsage,
@@ -139,6 +142,7 @@ const ChatPromptInputInner = ({
   const { isAuthenticated } = useAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [thinkingSelectorOpen, setThinkingSelectorOpen] = useState(false);
   const [contextFiles, setContextFiles] = useState<ContextFileTag[]>([]);
   const [atPanelOpen, setAtPanelOpen] = useState(false);
   const [atTriggerIndex, setAtTriggerIndex] = useState<number | null>(null);
@@ -158,6 +162,19 @@ const ChatPromptInputInner = ({
     () => findModel(modelGroups, selectedModelId),
     [modelGroups, selectedModelId]
   );
+  const effectiveThinkingProfile = selectedThinkingProfile ?? selectedModel?.thinkingProfile;
+  const thinkingOptions = effectiveThinkingProfile?.levels ?? [];
+  const showThinkingSelector = thinkingOptions.length > 1;
+  const activeThinkingLevel = useMemo(() => {
+    if (!effectiveThinkingProfile) {
+      return 'off';
+    }
+    const normalized = selectedThinkingLevel?.trim();
+    if (normalized && thinkingOptions.some((option) => option.id === normalized)) {
+      return normalized;
+    }
+    return effectiveThinkingProfile.defaultLevel;
+  }, [effectiveThinkingProfile, selectedThinkingLevel, thinkingOptions]);
   const hasModelOptions = useMemo(
     () => modelGroups.some((group) => group.options.length > 0),
     [modelGroups]
@@ -249,11 +266,18 @@ const ChatPromptInputInner = ({
   useEffect(() => {
     if (isDisabled) {
       setModelSelectorOpen(false);
+      setThinkingSelectorOpen(false);
       setAtPanelOpen(false);
       setSlashSkillPanelOpen(false);
       setAtTriggerIndex(null);
     }
   }, [isDisabled]);
+
+  useEffect(() => {
+    if (!showThinkingSelector) {
+      setThinkingSelectorOpen(false);
+    }
+  }, [showThinkingSelector]);
 
   useEffect(() => {
     previousTextRef.current = promptController.textInput.value;
@@ -533,6 +557,51 @@ const ChatPromptInputInner = ({
       </PromptInputButton>
     );
 
+  const renderThinkingSelector = () => {
+    if (!showThinkingSelector || !effectiveThinkingProfile) {
+      return null;
+    }
+    return (
+      <ModelSelector onOpenChange={setThinkingSelectorOpen} open={thinkingSelectorOpen}>
+        <ModelSelectorTrigger asChild>
+          <PromptInputButton
+            type="button"
+            aria-label="Switch thinking level"
+            disabled={isDisabled || !selectedModelId}
+          >
+            <span>
+              {`Thinking: ${
+                thinkingOptions.find((option) => option.id === activeThinkingLevel)?.label ??
+                'Off'
+              }`}
+            </span>
+            <ChevronDown className="size-4.5 opacity-50" />
+          </PromptInputButton>
+        </ModelSelectorTrigger>
+        <ModelSelectorContent>
+          <ModelSelectorList>
+            <ModelSelectorEmpty>No level available</ModelSelectorEmpty>
+            {thinkingOptions.map((option) => (
+              <ModelSelectorItem
+                key={option.id}
+                value={option.id}
+                onSelect={() => {
+                  onSelectThinkingLevel(option.id);
+                  setThinkingSelectorOpen(false);
+                }}
+              >
+                <ModelSelectorName>{option.label}</ModelSelectorName>
+                {activeThinkingLevel === option.id ? (
+                  <CircleCheck className="ml-auto size-4 shrink-0" />
+                ) : null}
+              </ModelSelectorItem>
+            ))}
+          </ModelSelectorList>
+        </ModelSelectorContent>
+      </ModelSelector>
+    );
+  };
+
   const renderFooterActions = () => (
     <PromptInputFooter className="relative">
       {/* 录音时左侧显示波形，否则显示工具按钮 */}
@@ -578,6 +647,7 @@ const ChatPromptInputInner = ({
             }}
           />
           {renderModelSelector()}
+          {renderThinkingSelector()}
         </PromptInputTools>
       )}
       <div className="flex items-center gap-2">
