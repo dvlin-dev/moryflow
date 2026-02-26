@@ -73,6 +73,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-26：修复 `@moryflow/pc typecheck` 阻塞项：`use-workspace-command-actions` 的 `t` 签名改为与 i18n 强类型兼容（`key:any + InterpolationParams`），避免 `useTranslation('workspace')` 赋值冲突。
 - 2026-02-26：Store-first 二次改造落地（`SF-3`）：新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 改为 selector 就地取数，`DesktopWorkspaceShell/Sidebar` 改为快照同步层。
 - 2026-02-26：模块 C 完成：`DesktopWorkspaceShell` 拆分为 `use-shell-layout-state + workspace-shell-main-content + workspace-shell-overlays`，主区统一显式 `renderContentByState` 分发。
 - 2026-02-26：模块 C 完成：`handle.ts` 下沉 `useWorkspaceVault/useWorkspaceCommandActions`；`useDocumentState` 与 `useVaultTreeState` 副作用按职责分段，降低单 hook 复杂度。

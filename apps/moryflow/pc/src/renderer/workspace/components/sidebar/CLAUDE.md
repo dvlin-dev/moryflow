@@ -31,6 +31,7 @@
 
 ## 近期变更
 
+- 2026-02-26：修复 `useSidebarPublishController` 的 `use-require-login-for-site-publish` 相对路径（`../../../hooks/...`），恢复 `@moryflow/pc typecheck`。
 - 2026-02-26：Store-first 二次改造落地：新增 `use-sidebar-panels-store`，`AgentSubPanels` 改为 selector 取数，`Sidebar` 仅同步快照，不再向面板平铺 `tree/vault/actions` 大包 props。
 - 2026-02-26：模块 C 完成：`Sidebar` 拆分 `agentSub` 面板分发（`AgentSubPanels`）与发布门禁控制器（`useSidebarPublishController`），索引组件回归装配层。
 - Threads/Files 行内水平 padding 统一为 `px-2.5`（保留 icon/占位槽 + gap），让两块列表间距与文本起始线保持一致；并通过 `-mx-1` 让激活背景轻微外扩（2026-02-11）

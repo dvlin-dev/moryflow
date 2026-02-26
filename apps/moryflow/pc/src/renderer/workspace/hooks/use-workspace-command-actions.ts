@@ -2,15 +2,17 @@
  * [PROVIDES]: useWorkspaceCommandActions - 命令面板动作装配
  * [DEPENDS]: workspace actions + i18n
  * [POS]: 把 CommandPalette 动作构建从 handle.ts 拆出，避免控制器职责过载
+ * [UPDATE]: 2026-02-26 - t 函数签名改为兼容命名空间强类型，修复 workspace 控制器 typecheck
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
 import { useMemo } from 'react';
 import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
+import type { InterpolationParams } from '@moryflow/i18n';
 import type { CommandAction } from '@/components/command-palette/const';
 
-type Translate = (key: string, params?: Record<string, unknown>) => string;
+type Translate = (key: any, params?: InterpolationParams) => string;
 
 type UseWorkspaceCommandActionsOptions = {
   vault: VaultInfo | null;
