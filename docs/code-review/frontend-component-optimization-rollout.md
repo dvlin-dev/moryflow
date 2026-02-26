@@ -30,6 +30,23 @@ status: active
   9. `apps/moryflow/site-template`（`@moryflow/site-template`）
   10. `apps/moryflow/www`（`@moryflow/www`）
 
+## 0.1 对话启动前必读（规范入口）
+
+> 任何新对话在执行本专项前，必须先阅读以下文档并输出“规范对齐摘要”。
+
+1. 仓库协作总规范：`AGENTS.md`、`CLAUDE.md`
+2. 前端组件规范：`docs/guides/frontend/component-design-quality-index.md`
+3. 全量审查索引与状态口径：`docs/code-review/index.md`
+4. 本专项执行台账：`docs/code-review/frontend-component-optimization-rollout.md`
+5. 已完成示例（参考执行方式）：`docs/code-review/anyhunt-console.md`
+
+### 启动口径（建议直接复用到新对话）
+
+1. 先读上述文档，再开始扫描。
+2. 先做模块预扫描（不改代码），输出 `S1/S2/S3`（含文件与行号）。
+3. 回写台账后停下，等确认再进入分步修复。
+4. 多状态 UI 禁止链式三元，统一“状态片段 + `renderContentByState/switch`”。
+
 ## 1. 固定执行流程（每个项目都一样）
 
 1. **项目预扫描（不改代码）**：只产出模块问题清单（按 `S1/S2/S3` 分级）。
