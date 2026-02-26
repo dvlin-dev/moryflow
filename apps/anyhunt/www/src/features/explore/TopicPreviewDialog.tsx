@@ -18,6 +18,24 @@ interface TopicPreviewDialogProps {
   slug: string | null;
 }
 
+type TopicPreviewContentState = 'loading' | 'error' | 'ready';
+
+function resolveTopicPreviewContentState(params: {
+  isLoading: boolean;
+  isError: boolean;
+  hasData: boolean;
+}): TopicPreviewContentState {
+  if (params.isLoading) {
+    return 'loading';
+  }
+
+  if (params.isError || !params.hasData) {
+    return 'error';
+  }
+
+  return 'ready';
+}
+
 export function TopicPreviewDialog({ open, onOpenChange, slug }: TopicPreviewDialogProps) {
   const env = usePublicEnv();
 
@@ -33,6 +51,67 @@ export function TopicPreviewDialog({ open, onOpenChange, slug }: TopicPreviewDia
     },
     enabled: open && Boolean(slug),
   });
+
+  const contentState = resolveTopicPreviewContentState({
+    isLoading: topicQuery.isLoading,
+    isError: topicQuery.isError,
+    hasData: Boolean(topicQuery.data),
+  });
+
+  const renderContentByState = () => {
+    switch (contentState) {
+      case 'loading':
+        return <div className="py-6 text-sm text-muted-foreground">Loading…</div>;
+      case 'error':
+        return <div className="py-6 text-sm text-destructive">Failed to load preview.</div>;
+      case 'ready': {
+        const preview = topicQuery.data;
+        if (!preview) {
+          return null;
+        }
+
+        return (
+          <div className="space-y-4 py-2">
+            <div>
+              <div className="text-sm font-semibold">{preview.topic.title}</div>
+              {preview.topic.description ? (
+                <div className="mt-1 text-sm text-muted-foreground">{preview.topic.description}</div>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Recent editions</div>
+              {preview.editions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No editions yet.</div>
+              ) : (
+                <div className="space-y-1">
+                  {preview.editions.map((edition) => (
+                    <Link
+                      key={edition.id}
+                      to="/topic/$slug/editions/$editionId"
+                      params={{ slug: preview.topic.slug, editionId: edition.id }}
+                      className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/40"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      <span>
+                        {new Date(edition.finishedAt ?? edition.scheduledAt).toLocaleDateString(
+                          'en-US',
+                          { month: 'short', day: 'numeric' }
+                        )}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{edition.itemCount} items</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
+  };
 
   return (
     <ResponsiveDialog
@@ -55,49 +134,7 @@ export function TopicPreviewDialog({ open, onOpenChange, slug }: TopicPreviewDia
         ) : null
       }
     >
-      {topicQuery.isLoading ? (
-        <div className="py-6 text-sm text-muted-foreground">Loading…</div>
-      ) : topicQuery.isError || !topicQuery.data ? (
-        <div className="py-6 text-sm text-destructive">Failed to load preview.</div>
-      ) : (
-        <div className="space-y-4 py-2">
-          <div>
-            <div className="text-sm font-semibold">{topicQuery.data.topic.title}</div>
-            {topicQuery.data.topic.description ? (
-              <div className="mt-1 text-sm text-muted-foreground">
-                {topicQuery.data.topic.description}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-muted-foreground">Recent editions</div>
-            {topicQuery.data.editions.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No editions yet.</div>
-            ) : (
-              <div className="space-y-1">
-                {topicQuery.data.editions.map((edition) => (
-                  <Link
-                    key={edition.id}
-                    to="/topic/$slug/editions/$editionId"
-                    params={{ slug: topicQuery.data.topic.slug, editionId: edition.id }}
-                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/40"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    <span>
-                      {new Date(edition.finishedAt ?? edition.scheduledAt).toLocaleDateString(
-                        'en-US',
-                        { month: 'short', day: 'numeric' }
-                      )}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{edition.itemCount} items</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {renderContentByState()}
     </ResponsiveDialog>
   );
 }

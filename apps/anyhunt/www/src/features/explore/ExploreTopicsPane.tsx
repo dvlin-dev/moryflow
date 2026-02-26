@@ -6,59 +6,22 @@
  * [POS]: /explore 右侧主区域
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Input } from '@moryflow/ui';
 import { toast } from 'sonner';
-import { ApiClientError } from '@/lib/api-client';
-import { getPublicTopics, type DigestTopicSummary } from '@/lib/digest-api';
+import { getPublicTopics } from '@/lib/digest-api';
 import { usePublicEnv } from '@/lib/public-env-context';
+import { useAuthStore } from '@/stores/auth-store';
 import { ExploreCreateDialog } from './ExploreCreateDialog';
+import { ExploreTopicsContent } from './ExploreTopicsContent';
 import { TopicPreviewDialog } from './TopicPreviewDialog';
 import { followPublicTopic } from './explore.actions';
-import { useAuthStore } from '@/stores/auth-store';
+import { getErrorMessageOrFallback, isUnauthorizedApiError } from './explore-error-guards';
 
 interface ExploreTopicsPaneProps {
   query?: string;
-}
-
-function TopicCard({
-  topic,
-  onPreview,
-  onFollow,
-}: {
-  topic: DigestTopicSummary;
-  onPreview: () => void;
-  onFollow: () => void;
-}) {
-  return (
-    <div className="rounded-md border border-border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link to="/topic/$slug" params={{ slug: topic.slug }} className="text-sm font-medium">
-            {topic.title}
-          </Link>
-          {topic.description ? (
-            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-              {topic.description}
-            </div>
-          ) : null}
-          <div className="mt-2 text-xs text-muted-foreground">
-            {topic.subscriberCount} followers
-          </div>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onPreview}>
-            Preview
-          </Button>
-          <Button type="button" size="sm" onClick={onFollow}>
-            Follow
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
@@ -72,7 +35,9 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [previewSlug, setPreviewSlug] = useState<string | null>(null);
 
-  useEffect(() => setDraft(query ?? ''), [query]);
+  useEffect(() => {
+    setDraft(query ?? '');
+  }, [query]);
 
   const hasSearch = Boolean(query && query.trim());
   const normalizedQuery = useMemo(() => (query ?? '').trim(), [query]);
@@ -86,7 +51,7 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
     enabled: !hasSearch,
   });
 
-  const resultsQuery = useQuery({
+  const searchResultsQuery = useQuery({
     queryKey: ['digest', 'topics', 'search', normalizedQuery],
     queryFn: async () => {
       const result = await getPublicTopics(env.apiUrl, {
@@ -111,12 +76,18 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
       await followPublicTopic(slug);
       toast.success('Followed');
     } catch (error) {
-      if (error instanceof ApiClientError && error.isUnauthorized) {
+      if (isUnauthorizedApiError(error)) {
         await navigate({ to: '/login', search: { redirect: pathname + searchStr } });
         return;
       }
-      toast.error(error instanceof Error ? error.message : 'Failed to follow');
+
+      toast.error(getErrorMessageOrFallback(error, 'Failed to follow'));
     }
+  };
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void navigate({ to: '/explore', search: { q: draft.trim() || undefined } });
   };
 
   return (
@@ -127,16 +98,10 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
           Search topics to follow, or create your own subscription.
         </div>
 
-        <form
-          className="mt-4 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void navigate({ to: '/explore', search: { q: draft.trim() || undefined } });
-          }}
-        >
+        <form className="mt-4 flex gap-2" onSubmit={handleSearchSubmit}>
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(event) => setDraft(event.target.value)}
             placeholder="Search topics…"
           />
           <Button type="submit">Search</Button>
@@ -147,72 +112,21 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {hasSearch ? (
-          <div className="space-y-3">
-            {createRowLabel ? (
-              <div className="rounded-md border border-border p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{createRowLabel}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      Publish as a topic so others can follow.
-                    </div>
-                  </div>
-                  <Button type="button" onClick={() => setCreateOpen(true)}>
-                    Create
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-
-            {resultsQuery.isLoading ? (
-              <div className="text-sm text-muted-foreground">Loading…</div>
-            ) : resultsQuery.isError ? (
-              <div className="text-sm text-destructive">
-                {resultsQuery.error instanceof Error
-                  ? resultsQuery.error.message
-                  : 'Failed to load results.'}
-              </div>
-            ) : (resultsQuery.data ?? []).length === 0 ? (
-              <div className="text-sm text-muted-foreground">No results.</div>
-            ) : (
-              <div className="space-y-2">
-                {(resultsQuery.data ?? []).map((topic) => (
-                  <TopicCard
-                    key={topic.id}
-                    topic={topic}
-                    onPreview={() => setPreviewSlug(topic.slug)}
-                    onFollow={() => void handleFollow(topic.slug)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="text-sm font-semibold">Trending</div>
-            {trendingQuery.isLoading ? (
-              <div className="text-sm text-muted-foreground">Loading…</div>
-            ) : trendingQuery.isError ? (
-              <div className="text-sm text-destructive">
-                {trendingQuery.error instanceof Error
-                  ? trendingQuery.error.message
-                  : 'Failed to load topics.'}
-              </div>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {(trendingQuery.data ?? []).map((topic) => (
-                  <TopicCard
-                    key={topic.id}
-                    topic={topic}
-                    onPreview={() => setPreviewSlug(topic.slug)}
-                    onFollow={() => void handleFollow(topic.slug)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <ExploreTopicsContent
+          hasSearch={hasSearch}
+          createRowLabel={createRowLabel}
+          searchTopics={searchResultsQuery.data ?? []}
+          searchError={searchResultsQuery.error}
+          searchLoading={searchResultsQuery.isLoading}
+          searchErrorState={searchResultsQuery.isError}
+          trendingTopics={trendingQuery.data ?? []}
+          trendingError={trendingQuery.error}
+          trendingLoading={trendingQuery.isLoading}
+          trendingErrorState={trendingQuery.isError}
+          onOpenCreateDialog={() => setCreateOpen(true)}
+          onPreviewTopic={setPreviewSlug}
+          onFollowTopic={(slug) => void handleFollow(slug)}
+        />
       </div>
 
       <ExploreCreateDialog
@@ -224,7 +138,7 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
 
       <TopicPreviewDialog
         open={Boolean(previewSlug)}
-        onOpenChange={(open) => setPreviewSlug(open ? previewSlug : null)}
+        onOpenChange={(open) => setPreviewSlug((prev) => (open ? prev : null))}
         slug={previewSlug}
       />
     </div>

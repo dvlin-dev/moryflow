@@ -38,6 +38,7 @@ Anyhunt Dev 官网（`anyhunt.app`），C 端主战场，包含模块页 `/fetch
 
 ## 近期变更
 
+- Reader Explore / Topic / Welcome（模块 C）完成收敛：`TopicPane` 消除条件式 Hook（`editionQuery` 顶层统一 + enabled 控制），Explore 拆分为 `ExploreTopicsPane`（编排）+ `ExploreTopicsContent`（状态渲染），并在 `TopicPreviewDialog`、`WelcomeListPane`、`WelcomeContentPane` 全面落地“状态片段化 + renderByState/switch”；`WelcomeContentPane` 补齐 `openSignIn` 主动作；`routes/welcome.tsx` 拆分移动端重定向与 page 归一化副作用
 - Reader Inbox / Digest / Subscriptions（模块 B）完成组件收敛：`CreateSubscriptionDialog` 与 `SubscriptionSettingsDialog` 共享订阅表单契约（`subscription-form-schema`），并拆分为容器 + 表单/Tabs 子模块；`InboxPane` 改为状态片段化（`resolve*State + render*ByState/switch`）；`ReportTopicDialog` 与 `SubscriptionsList` 收敛状态分发逻辑（移除多状态链式三元与连续 if 分发）
 - Reader Shell / Layout / Routes（模块 A）完成结构收敛：`Header` 拆分为容器 + `header/*` 子模块；`topics/*` 请求编排下沉到 `features/public-topics`；认证路由复用 `AuthModalRouteShell`；`ReaderShell/ReaderDialogs` 改为判别状态模型；新增 `MarketingPageShell` 收敛 `fetchx/memox` 页面壳层
 - Build：builder 阶段恢复复制 `apps/anyhunt/www`、`packages/types`、`packages/api`、`packages/ui` 的 `node_modules`（不复制 `sync`），修复跨 stage 丢失 workspace 链接导致 `packages/types` 报 `TS6053`

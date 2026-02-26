@@ -6,7 +6,7 @@ status: in_progress
 ---
 
 <!--
-[INPUT]: apps/anyhunt/www（本轮聚焦：模块 A+B，reader-shell/layout/routes + inbox/digest/subscriptions）
+[INPUT]: apps/anyhunt/www（本轮聚焦：模块 A+B+C，reader-shell/layout/routes + inbox/digest/subscriptions + explore/topic/welcome）
 [OUTPUT]: 问题清单 + 分级 + 分步修复计划 + 进度记录
 [POS]: Phase 3 / P2 模块审查记录（Anyhunt WWW）
 [PROTOCOL]: 本文件变更时，需同步更新 docs/code-review/index.md、docs/index.md、docs/CLAUDE.md
@@ -19,7 +19,8 @@ status: in_progress
 - 项目：`apps/anyhunt/www`
 - 本轮模块 A：`src/features/reader-shell`、`src/components/layout`、`src/routes`
 - 本轮模块 B：`src/features/inbox`、`src/components/digest`、`src/features/subscriptions`、`src/components/reader`
-- 说明：模块 C/D（`explore / topic / welcome`、`stores / hooks / 数据映射`）将在后续步骤单独展开
+- 本轮模块 C：`src/features/explore`、`src/features/topic`、`src/features/welcome`、`src/routes/welcome.tsx`
+- 说明：模块 D（`stores / hooks / 数据映射`）将在后续步骤单独展开
 
 ## 结论摘要（模块 A 预扫描）
 
@@ -34,6 +35,13 @@ status: in_progress
 - `S2`（建议本轮改）：1 项
 - `S3`（可延后）：1 项
 - 当前状态：模块 B 已完成修复（`B-1 ~ B-5`）
+
+## 结论摘要（模块 C 实施）
+
+- `S1`（必须改）：3 项
+- `S2`（建议本轮改）：2 项
+- `S3`（可延后）：2 项
+- 当前状态：模块 C 已完成修复（`C-1 ~ C-5`）
 
 ## 发现（按严重度排序）
 
@@ -173,6 +181,86 @@ status: in_progress
   - 修复：
     - 统一改为 `switch(action)` 分发，分支语义更稳定
 
+## 发现（模块 C，按严重度排序）
+
+- [S1][已修复] `TopicPane` 条件式 Hook 调用风险已消除（`editionQuery` 改为统一调用 + `enabled` 控制）
+  - 证据：
+    - `topicQuery` / `editionsQuery` / `editionQuery` 均在顶层统一声明
+    - `editionQuery` 通过 `enabled: props.kind === 'edition'` 控制，避免按分支条件调用 Hook
+  - 定位：
+    - `apps/anyhunt/www/src/features/topic/TopicPane.tsx:185`
+    - `apps/anyhunt/www/src/features/topic/TopicPane.tsx:190`
+    - `apps/anyhunt/www/src/features/topic/TopicPane.tsx:198`
+  - 修复：
+    - `TopicPane` 改为 `switch(kind)` 渲染
+    - `editionId` 统一派生，`editionQuery` 全路径可预测
+
+- [S1][已修复] Explore 多状态 UI 收敛为状态片段化（搜索/Trending 全部改 `resolve + renderByState/switch`）
+  - 证据：
+    - 搜索区使用 `resolveSearchContentState + renderSearchContentByState`
+    - Trending 区使用 `resolveTrendingContentState + renderTrendingContentByState`
+  - 定位：
+    - `apps/anyhunt/www/src/features/explore/ExploreTopicsContent.tsx:63`
+    - `apps/anyhunt/www/src/features/explore/ExploreTopicsContent.tsx:111`
+    - `apps/anyhunt/www/src/features/explore/ExploreTopicsContent.tsx:166`
+  - 修复：
+    - 新增 `ExploreTopicsContent`，容器层不再内联多状态链式三元
+    - `TopicPreviewDialog` 也补齐状态分发（`resolveTopicPreviewContentState`）
+
+- [S1][已修复] Welcome 双栏统一改为显式状态片段 + `switch` 分发
+  - 证据：
+    - `WelcomeListPane` 使用 `resolveWelcomeListViewState + renderWelcomeListContentByState`
+    - `WelcomeContentPane` 使用 `resolveWelcomeContentViewState + renderWelcomeContentByState`
+  - 定位：
+    - `apps/anyhunt/www/src/features/welcome/WelcomeListPane.tsx:19`
+    - `apps/anyhunt/www/src/features/welcome/WelcomeListPane.tsx:39`
+    - `apps/anyhunt/www/src/features/welcome/WelcomeContentPane.tsx:21`
+    - `apps/anyhunt/www/src/features/welcome/WelcomeContentPane.tsx:70`
+  - 修复：
+    - 列表区与内容区均移除 `loading/error/empty/ready` 链式三元
+    - 状态分发逻辑可复用且可单测
+
+- [S2][已修复] Explore 容器职责分层（编排层与渲染层拆分）
+  - 证据：
+    - `ExploreTopicsPane` 仅保留 query/行为编排与弹窗控制
+    - 列表渲染与状态分发下沉到 `ExploreTopicsContent`
+  - 定位：
+    - `apps/anyhunt/www/src/features/explore/ExploreTopicsPane.tsx:27`
+    - `apps/anyhunt/www/src/features/explore/ExploreTopicsContent.tsx:202`
+  - 修复：
+    - 新增 `ExploreTopicsContent.tsx`，容器/展示职责清晰
+    - `ExploreTopicsPane` 文件从原 232 行收敛到 146 行
+
+- [S2][已修复] `WelcomeRoute` 副作用解耦（移动端重定向与 page 归一化拆分为双 effect）
+  - 证据：
+    - 移动端跳转与桌面 page 归一化分别由独立 `useEffect` 管理
+    - `resolveDesiredWelcomePage` 纯函数化，路由副作用边界更清晰
+  - 定位：
+    - `apps/anyhunt/www/src/routes/welcome.tsx:40`
+    - `apps/anyhunt/www/src/routes/welcome.tsx:57`
+    - `apps/anyhunt/www/src/routes/welcome.tsx:63`
+  - 修复：
+    - 新增 `resolveDesiredWelcomePage` 纯函数
+    - 拆分 effect，避免两类导航副作用耦合
+
+- [S3][已修复] `TopicPane` 恒等条件分支噪声已清理
+  - 证据：
+    - `isActive ? 'text-foreground' : 'text-foreground'` 已删除
+  - 定位：
+    - `apps/anyhunt/www/src/features/topic/TopicPane.tsx:90`
+  - 修复：
+    - `className` 分支仅保留真正差异项（active 背景）
+
+- [S3][已修复] `WelcomeContentPane` 已补齐 `openSignIn` 主动作分支
+  - 证据：
+    - 主动作渲染改为 `resolvePrimaryActionNode`，覆盖 `openExplore` 与 `openSignIn`
+  - 定位：
+    - `apps/anyhunt/www/src/features/welcome/welcome.types.ts:8`
+    - `apps/anyhunt/www/src/features/welcome/WelcomeContentPane.tsx:41`
+    - `apps/anyhunt/www/src/features/welcome/WelcomeContentPane.tsx:57`
+  - 修复：
+    - `openSignIn` 通过 `/login?redirect=/welcome?page=...` 回到当前 welcome 上下文
+
 ## 分步修复计划（模块 A）
 
 1. A-1：拆分 `Header.tsx` 为容器层 + `desktop-nav`/`mobile-nav`/`auth-actions`/`menu-items` 子模块。（已完成）
@@ -197,9 +285,23 @@ status: in_progress
 4. B-4：`InboxPane` 改为状态片段化（`resolve*State` + `render*ByState/switch`）。（已完成）
 5. B-5：收敛剩余中低优先级状态分发（`report-topic-dialog`、`SubscriptionsList`）并完成模块验证。（已完成）
 
+## 分步修复计划（模块 C）
+
+1. C-1：拆分 `TopicPane`（list/overview/edition）并消除条件式 Hook 调用；所有数据查询上提到容器层统一调用。（已完成）
+2. C-2：`ExploreTopicsPane` 改造为状态片段化（`resolveSearch/TrendingContentState` + `render*ByState`），移除多状态链式三元。（已完成）
+3. C-3：拆分 Explore 容器职责（query/follow/dialog 编排与列表展示分层）并补齐可复用 ViewModel。（已完成）
+4. C-4：`WelcomeListPane` / `WelcomeContentPane` 状态渲染收敛到 `switch/renderContentByState`。（已完成）
+5. C-5：拆分 `WelcomeRoute` effect（移动端重定向与 page 归一化）并补 S3 噪声清理与验证。（已完成）
+
 ## 验证命令（模块 B）
 
-- `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题：`@moryflow/api/client`/`@moryflow/types` 解析失败 + explore/auth 既有 `error is unknown`）
+- `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题：`@moryflow/api/client`/`@moryflow/types` 解析失败 + auth 既有 `error is unknown`）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题：`@moryflow/api/client` 解析失败导致 `api.spec.ts` 与 `auth-session.spec.ts`）
+- `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass）
+
+## 验证命令（模块 C）
+
+- `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题：`@moryflow/api/client`/`@moryflow/types` 解析失败 + auth 既有 `error is unknown`）
 - `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题：`@moryflow/api/client` 解析失败导致 `api.spec.ts` 与 `auth-session.spec.ts`）
 - `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass）
 
@@ -220,3 +322,9 @@ status: in_progress
 | B-3 | inbox/digest/subscriptions | Settings 弹窗容器/Tab 拆分与表单上下文收敛 | done | 同 B-5（汇总验证） | 2026-02-26 | 新增 `SubscriptionSettingsTabs`、`SubscriptionSettingsBasicTab`，Settings 主文件收敛为容器 |
 | B-4 | inbox/digest/subscriptions | InboxPane 状态片段化（列表/详情） | done | 同 B-5（汇总验证） | 2026-02-26 | 引入 `resolve*State` + `render*ByState`，移除多状态链式三元 |
 | B-5 | inbox/digest/subscriptions | 收敛 report/subscriptions 状态分发并完成验证 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass） | 2026-02-26 | `report-topic-dialog` 改 `renderContentByState`；`SubscriptionsList` 动作分发改 `switch` |
+| C-0 | explore/topic/welcome | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 识别 `S1x3 / S2x2 / S3x2` |
+| C-1 | explore/topic/welcome | `TopicPane` 条件 Hook 风险修复 + 分支状态收敛 | done | 同 C-5（汇总验证） | 2026-02-26 | `editionQuery` 改顶层统一调用 + `enabled` 控制，`list/edition` 状态统一 `switch` |
+| C-2 | explore/topic/welcome | Explore 多状态 UI 状态片段化 | done | 同 C-5（汇总验证） | 2026-02-26 | 搜索/Trending 状态改 `resolve*State + render*ByState`，移除链式三元 |
+| C-3 | explore/topic/welcome | Explore 容器/展示职责拆分 | done | 同 C-5（汇总验证） | 2026-02-26 | 新增 `ExploreTopicsContent.tsx`，`ExploreTopicsPane` 收敛为编排层 |
+| C-4 | explore/topic/welcome | Welcome 双栏状态分发收敛 + 动作分支补齐 | done | 同 C-5（汇总验证） | 2026-02-26 | `WelcomeListPane/WelcomeContentPane` 改 `switch`；补齐 `openSignIn` 动作 |
+| C-5 | explore/topic/welcome | `welcome` 路由副作用解耦 + C 模块验证 | done | `pnpm --filter @anyhunt/anyhunt-www typecheck`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit`（fail，基线问题）+ `pnpm --filter @anyhunt/anyhunt-www test:unit src/features/reader-shell/__tests__/mobile-reader-state.spec.ts src/features/reader-shell/__tests__/initialTopic.spec.ts`（pass） | 2026-02-26 | `WelcomeRoute` 拆分双 effect；模块 C 全量修复完成 |

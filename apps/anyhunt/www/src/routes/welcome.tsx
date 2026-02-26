@@ -17,6 +17,7 @@ import { WelcomeContentPane } from '@/features/welcome/WelcomeContentPane';
 import { useWelcomeOverview } from '@/features/welcome/welcome.hooks';
 import { getIsMobileViewport } from '@/hooks/useIsMobile';
 import { shouldRedirectWelcomeOnMobile } from '@/features/reader-shell/mobile-reader-state';
+import type { WelcomeOverviewPublic } from '@/features/welcome/welcome.types';
 
 const welcomeSearchSchema = z.object({
   page: z.string().optional(),
@@ -36,6 +37,18 @@ export const Route = createFileRoute('/welcome')({
   }),
 });
 
+function resolveDesiredWelcomePage(
+  overview: WelcomeOverviewPublic,
+  currentPage?: string
+): string | null {
+  return (
+    (currentPage && overview.pages.some((page) => page.slug === currentPage) ? currentPage : null) ||
+    overview.defaultSlug ||
+    overview.pages[0]?.slug ||
+    null
+  );
+}
+
 function WelcomeRoute() {
   const navigate = useNavigate();
   const { page } = Route.useSearch();
@@ -44,19 +57,24 @@ function WelcomeRoute() {
   useEffect(() => {
     if (getIsMobileViewport() && shouldRedirectWelcomeOnMobile('/welcome')) {
       navigate({ to: '/inbox', replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (getIsMobileViewport()) {
       return;
     }
 
-    if (!overviewQuery.data) return;
-
     const overview = overviewQuery.data;
-    const desired =
-      (page && overview.pages.some((p) => p.slug === page) ? page : null) ||
-      overview.defaultSlug ||
-      overview.pages[0]?.slug ||
-      null;
+    if (!overview) {
+      return;
+    }
 
-    if (!desired) return;
+    const desired = resolveDesiredWelcomePage(overview, page);
+
+    if (!desired) {
+      return;
+    }
 
     if (page !== desired) {
       navigate({

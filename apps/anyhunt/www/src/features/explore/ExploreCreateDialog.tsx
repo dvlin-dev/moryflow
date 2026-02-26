@@ -24,11 +24,11 @@ import {
 } from '@moryflow/ui';
 import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { ApiClientError } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { createSubscriptionForQuery, publishSubscriptionAsTopic } from './explore.actions';
 import type { TopicVisibility } from '@/features/digest/types';
 import { useAuthStore } from '@/stores/auth-store';
+import { getErrorMessageOrFallback, isUnauthorizedApiError } from './explore-error-guards';
 
 const formSchema = z.object({
   query: z.string().min(1, 'Please enter a topic or keyword'),
@@ -91,13 +91,13 @@ export function ExploreCreateDialog({
       onOpenChange(false);
       onCreated(slug);
     } catch (error) {
-      if (error instanceof ApiClientError && error.isUnauthorized) {
+      if (isUnauthorizedApiError(error)) {
         onOpenChange(false);
         await navigate({ to: '/login', search: { redirect: pathname + searchStr } });
         return;
       }
 
-      toast.error(error instanceof Error ? error.message : 'Failed to create');
+      toast.error(getErrorMessageOrFallback(error, 'Failed to create'));
     }
   };
 
