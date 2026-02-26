@@ -77,6 +77,7 @@ pnpm test:unit
 
 ## 近期变更
 
+- 2026-02-26：项目复盘收口：`chat-pane-portal` 新增 `chat-pane-portal-model`（`main/panel/parking` 放置状态派生），移除链式三元并统一显式分发；补齐 `chat-pane-portal-model.test.ts`。
 - 2026-02-26：模块 E 去 Context 化：`workspace-controller-context/workspace-shell-context` 改为 store 同步层，新增 `workspace-controller-store/workspace-shell-controller-store`，业务/布局读取统一走 `useWorkspace*` selector（无 React Context 透传）。
 - 2026-02-26：修复 `@moryflow/pc typecheck` 阻塞项：`use-workspace-command-actions` 的 `t` 签名改为与 i18n 强类型兼容（`key:any + InterpolationParams`），避免 `useTranslation('workspace')` 赋值冲突。
 - 2026-02-26：Store-first 二次改造落地（`SF-3`）：新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 改为 selector 就地取数，`DesktopWorkspaceShell/Sidebar` 改为快照同步层。

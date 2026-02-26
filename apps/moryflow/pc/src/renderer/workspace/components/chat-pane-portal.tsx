@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 import type { SettingsSection } from '@/components/settings-dialog/const';
 import type { AgentSub, Destination } from '@/workspace/navigation/state';
 import { ChatPaneWrapper } from './chat-pane-wrapper';
+import { resolveChatPanePlacement } from './chat-pane-portal-model';
 
 type ChatPanePortalProps = {
   destination: Destination;
@@ -47,8 +48,21 @@ export const ChatPanePortal = ({
   onOpenSettings,
   onReady,
 }: ChatPanePortalProps) => {
-  const desiredHost =
-    destination === 'agent' ? (agentSub === 'chat' ? mainHost : panelHost) : parkingHost;
+  const placement = resolveChatPanePlacement({ destination, agentSub });
+
+  const resolveDesiredHostByPlacement = () => {
+    switch (placement) {
+      case 'main':
+        return mainHost;
+      case 'panel':
+        return panelHost;
+      case 'parking':
+      default:
+        return parkingHost;
+    }
+  };
+
+  const desiredHost = resolveDesiredHostByPlacement();
   const fallbackHost = parkingHost ?? mainHost ?? panelHost;
   const host = desiredHost ?? fallbackHost;
 
@@ -82,17 +96,13 @@ export const ChatPanePortal = ({
   return createPortal(
     <ChatPaneWrapper
       fallback={fallback}
-      variant={destination === 'agent' && agentSub === 'workspace' ? 'panel' : 'mode'}
-      activeFilePath={destination === 'agent' && agentSub === 'workspace' ? activeFilePath : null}
-      activeFileContent={
-        destination === 'agent' && agentSub === 'workspace' ? activeFileContent : null
-      }
+      variant={placement === 'panel' ? 'panel' : 'mode'}
+      activeFilePath={placement === 'panel' ? activeFilePath : null}
+      activeFileContent={placement === 'panel' ? activeFileContent : null}
       vaultPath={vaultPath}
       onReady={onReady}
-      collapsed={destination === 'agent' && agentSub === 'workspace' ? chatCollapsed : false}
-      onToggleCollapse={
-        destination === 'agent' && agentSub === 'workspace' ? onToggleCollapse : undefined
-      }
+      collapsed={placement === 'panel' ? chatCollapsed : false}
+      onToggleCollapse={placement === 'panel' ? onToggleCollapse : undefined}
       onOpenSettings={onOpenSettings}
     />,
     portalRoot

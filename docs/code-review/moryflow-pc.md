@@ -2,7 +2,7 @@
 title: Moryflow PC Code Review
 date: 2026-02-26
 scope: apps/moryflow/pc
-status: in_progress
+status: done
 ---
 
 <!--
@@ -18,8 +18,8 @@ status: in_progress
 
 - 项目：`apps/moryflow/pc`
 - 已完成模块：`A（auth / settings-dialog / payment-dialog）`、`B（chat-pane / input-dialog / command-palette）`、`C（editor / workspace）`、`D（cloud-sync / share / site-publish / vault-files）`、`E（renderer hooks / contexts / transport / stores）`
-- 当前模块：`项目复盘`
-- 下一模块：`收口验证与一致性复查`
+- 当前模块：`项目复盘（已完成）`
+- 下一模块：`n/a`
 
 ## 模块 A 修复结果（已完成）
 
@@ -269,6 +269,23 @@ status: in_progress
 - `apps/moryflow/pc/src/renderer/components/chat-pane/components/chat-prompt-input/plus-menu.tsx`（13 fields）
 - `apps/moryflow/pc/src/renderer/workspace/components/chat-pane-portal.tsx`（13 fields）
 
+## 项目复盘结果（整项目一致性，已完成）
+
+### S1
+
+- [done] 未发现新增 S1（职责错位/跨层状态透传）问题；`workspace` 与 `vault-files` 均保持 store-first 边界
+
+### S2
+
+- [done] `chat-pane-portal` 清理多状态链式三元，统一为 `placement + switch` 分发，并抽离纯函数模型
+  - `apps/moryflow/pc/src/renderer/workspace/components/chat-pane-portal.tsx:1`
+  - `apps/moryflow/pc/src/renderer/workspace/components/chat-pane-portal-model.ts:1`
+  - `apps/moryflow/pc/src/renderer/workspace/components/chat-pane-portal-model.test.ts:1`
+
+### S3
+
+- [done] Context 残留复扫：仅保留 `components/ui/sidebar/handle.tsx` 的通用 UI 内部 Context 与 `lib/get-strict-context.tsx` 工具函数，无业务状态 Context 回流
+
 ## 模块 C 验证命令
 
 - `pnpm --filter @moryflow/pc typecheck`
@@ -277,29 +294,20 @@ status: in_progress
 
 ## 验证结果（本地）
 
+- `pnpm exec turbo run lint --filter=@moryflow/pc`
+  - 结果：pass
+
 - `pnpm --filter @moryflow/pc typecheck`
   - 结果：pass（模块 E 修复后）
+
+- `pnpm --filter @moryflow/pc test:unit`
+  - 结果：pass（`42 files / 133 tests`）
 
 - `pnpm --filter @moryflow/pc exec vitest run src/renderer/workspace/components/sites/index.test.tsx src/renderer/workspace/hooks/use-navigation.test.tsx src/renderer/workspace/hooks/use-document-state.test.tsx src/renderer/workspace/hooks/use-vault-tree.test.tsx`
   - 结果：pass（`4 files / 7 tests`）
 
 - `pnpm --filter @moryflow/pc exec vitest run src/renderer/components/site-publish/use-site-publish.test.tsx src/renderer/components/settings-dialog/components/cloud-sync-section-model.test.ts src/renderer/components/vault-files/handle.test.ts`
   - 结果：pass（`3 files / 13 tests`）
-
-- `pnpm --filter @moryflow/pc typecheck`
-  - 结果：pass
-
-- `pnpm --filter @moryflow/pc typecheck`
-  - 结果：fail
-  - 原因：本地缺少 `node_modules`，且大量 workspace 依赖未解析（输出包含 `Local package.json exists, but node_modules missing`）。
-
-- `pnpm --filter @moryflow/pc test:unit`
-  - 结果：fail
-  - 原因：`vitest: command not found`（同样由 `node_modules` 缺失导致）。
-
-- `pnpm --filter @moryflow/pc test:unit -- src/renderer/workspace`
-  - 结果：fail
-  - 原因：`vitest: command not found`（同样由 `node_modules` 缺失导致）。
 
 ## 进度记录
 
@@ -318,3 +326,4 @@ status: in_progress
 | 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | follow-up（稳定性回归）               | done   | 修复 `cloud-sync-section` 条件 `return` 后 hook 顺序风险；新增 `cloud-sync-section-model` 与 `vault-files/handle` 回归测试；`typecheck` + 模块 D 定向 `vitest` 全通过                                            |
 | 2026-02-26 | 模块 E（renderer hooks/contexts/transport/stores）  | 预扫描                                | done   | 输出 `S1x2 / S2x1 / S3x1`：核心问题为 workspace controller/shell 仍使用 Context，且存在未引用 context 死代码                                                                                                     |
 | 2026-02-26 | 模块 E（renderer hooks/contexts/transport/stores）  | 一次性修复（E-1~E-4）                 | done   | 完成 workspace controller/shell 去 Context 化（store-first），删除 `renderer/contexts/app-context.tsx`，并通过 `typecheck` + workspace 定向 `vitest`                                                             |
+| 2026-02-26 | 项目复盘（整项目一致性）                            | 复扫 + 收口修复                       | done   | 未发现新增 S1；完成 `chat-pane-portal` 状态分发收敛（移除链式三元 + 抽离模型）；整包 `lint/typecheck/test:unit` 通过                                                                                             |
