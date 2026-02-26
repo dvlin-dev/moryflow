@@ -4,7 +4,7 @@
  * [UPDATE]: 2026-02-26 收敛为容器层，表单与 Tabs 渲染拆分到子模块
  */
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -81,48 +81,51 @@ export function SubscriptionSettingsDialog({
     });
   }, [form, open, subscription]);
 
-  const handleSubmit = (values: UpdateSubscriptionFormValues) => {
-    if (!subscription) {
-      return;
-    }
-
-    updateMutation.mutate(
-      {
-        id: subscription.id,
-        data: {
-          name: values.name,
-          topic: values.topic,
-          interests: parseInterestsInput(values.interests),
-          cron: values.cron,
-          timezone: values.timezone,
-          outputLocale: values.outputLocale,
-          minItems: values.minItems,
-          minScore: values.minScore,
-          searchLimit: values.searchLimit,
-          generateItemSummaries: values.generateItemSummaries,
-          composeNarrative: values.composeNarrative,
-          tone: values.tone,
-          inboxEnabled: values.inboxEnabled,
-          emailEnabled: values.emailEnabled,
-          emailTo: values.emailTo || undefined,
-          webhookEnabled: values.webhookEnabled,
-          webhookUrl: values.webhookUrl || undefined,
-          enabled: values.enabled,
-        },
-      },
-      {
-        onSuccess: () => onOpenChange(false),
+  const handleSubmit = useCallback(
+    (values: UpdateSubscriptionFormValues) => {
+      if (!subscription) {
+        return;
       }
-    );
-  };
 
-  const handleRunNow = () => {
+      updateMutation.mutate(
+        {
+          id: subscription.id,
+          data: {
+            name: values.name,
+            topic: values.topic,
+            interests: parseInterestsInput(values.interests),
+            cron: values.cron,
+            timezone: values.timezone,
+            outputLocale: values.outputLocale,
+            minItems: values.minItems,
+            minScore: values.minScore,
+            searchLimit: values.searchLimit,
+            generateItemSummaries: values.generateItemSummaries,
+            composeNarrative: values.composeNarrative,
+            tone: values.tone,
+            inboxEnabled: values.inboxEnabled,
+            emailEnabled: values.emailEnabled,
+            emailTo: values.emailTo || undefined,
+            webhookEnabled: values.webhookEnabled,
+            webhookUrl: values.webhookUrl || undefined,
+            enabled: values.enabled,
+          },
+        },
+        {
+          onSuccess: () => onOpenChange(false),
+        }
+      );
+    },
+    [onOpenChange, subscription, updateMutation]
+  );
+
+  const handleRunNow = useCallback(() => {
     if (!subscription) {
       return;
     }
 
     triggerRun.mutate(subscription.id);
-  };
+  }, [subscription, triggerRun]);
 
   if (!subscription) {
     return null;
@@ -130,14 +133,20 @@ export function SubscriptionSettingsDialog({
 
   const tabsContent = (
     <SubscriptionSettingsTabs
-      subscriptionId={subscription.id}
-      defaultTab={defaultTab}
-      form={form}
-      onSubmit={handleSubmit}
-      onRunNow={handleRunNow}
-      onPublishClick={onPublishClick}
-      isRunning={triggerRun.isPending}
-      isSaving={updateMutation.isPending}
+      model={{
+        subscriptionId: subscription.id,
+        defaultTab,
+        form,
+        status: {
+          isRunning: triggerRun.isPending,
+          isSaving: updateMutation.isPending,
+        },
+      }}
+      actions={{
+        onSubmit: handleSubmit,
+        onRunNow: handleRunNow,
+        onPublishClick,
+      }}
     />
   );
 

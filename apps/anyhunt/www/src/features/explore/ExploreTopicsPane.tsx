@@ -6,7 +6,7 @@
  * [POS]: /explore 右侧主区域
  */
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Input } from '@moryflow/ui';
@@ -15,7 +15,11 @@ import { getPublicTopics } from '@/lib/digest-api';
 import { usePublicEnv } from '@/lib/public-env-context';
 import { useAuthStore } from '@/stores/auth-store';
 import { ExploreCreateDialog } from './ExploreCreateDialog';
-import { ExploreTopicsContent } from './ExploreTopicsContent';
+import {
+  ExploreTopicsContent,
+  type ExploreTopicsContentActions,
+  type ExploreTopicsContentModel,
+} from './ExploreTopicsContent';
 import { TopicPreviewDialog } from './TopicPreviewDialog';
 import { followPublicTopic } from './explore.actions';
 import { getErrorMessageOrFallback, isUnauthorizedApiError } from './explore-error-guards';
@@ -66,29 +70,87 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
 
   const createRowLabel = normalizedQuery ? `Create subscription for "${normalizedQuery}"` : null;
 
-  const handleFollow = async (slug: string) => {
-    if (!isAuthenticated) {
-      await navigate({ to: '/login', search: { redirect: pathname + searchStr } });
-      return;
-    }
+  const handleOpenCreateDialog = useCallback(() => {
+    setCreateOpen(true);
+  }, []);
 
-    try {
-      await followPublicTopic(slug);
-      toast.success('Followed');
-    } catch (error) {
-      if (isUnauthorizedApiError(error)) {
+  const handlePreviewTopic = useCallback((slug: string) => {
+    setPreviewSlug(slug);
+  }, []);
+
+  const handleFollow = useCallback(
+    async (slug: string) => {
+      if (!isAuthenticated) {
         await navigate({ to: '/login', search: { redirect: pathname + searchStr } });
         return;
       }
 
-      toast.error(getErrorMessageOrFallback(error, 'Failed to follow'));
-    }
-  };
+      try {
+        await followPublicTopic(slug);
+        toast.success('Followed');
+      } catch (error) {
+        if (isUnauthorizedApiError(error)) {
+          await navigate({ to: '/login', search: { redirect: pathname + searchStr } });
+          return;
+        }
+
+        toast.error(getErrorMessageOrFallback(error, 'Failed to follow'));
+      }
+    },
+    [isAuthenticated, navigate, pathname, searchStr]
+  );
+
+  const handleFollowTopic = useCallback(
+    (slug: string) => {
+      void handleFollow(slug);
+    },
+    [handleFollow]
+  );
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void navigate({ to: '/explore', search: { q: draft.trim() || undefined } });
   };
+
+  const contentModel = useMemo<ExploreTopicsContentModel>(
+    () => ({
+      mode: hasSearch ? 'search' : 'trending',
+      createRowLabel,
+      search: {
+        topics: searchResultsQuery.data ?? [],
+        error: searchResultsQuery.error,
+        isLoading: searchResultsQuery.isLoading,
+        isError: searchResultsQuery.isError,
+      },
+      trending: {
+        topics: trendingQuery.data ?? [],
+        error: trendingQuery.error,
+        isLoading: trendingQuery.isLoading,
+        isError: trendingQuery.isError,
+      },
+    }),
+    [
+      createRowLabel,
+      hasSearch,
+      searchResultsQuery.data,
+      searchResultsQuery.error,
+      searchResultsQuery.isError,
+      searchResultsQuery.isLoading,
+      trendingQuery.data,
+      trendingQuery.error,
+      trendingQuery.isError,
+      trendingQuery.isLoading,
+    ]
+  );
+
+  const contentActions = useMemo<ExploreTopicsContentActions>(
+    () => ({
+      onOpenCreateDialog: handleOpenCreateDialog,
+      onPreviewTopic: handlePreviewTopic,
+      onFollowTopic: handleFollowTopic,
+    }),
+    [handleFollowTopic, handleOpenCreateDialog, handlePreviewTopic]
+  );
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -105,28 +167,14 @@ export function ExploreTopicsPane({ query }: ExploreTopicsPaneProps) {
             placeholder="Search topics…"
           />
           <Button type="submit">Search</Button>
-          <Button type="button" variant="secondary" onClick={() => setCreateOpen(true)}>
+          <Button type="button" variant="secondary" onClick={handleOpenCreateDialog}>
             Create
           </Button>
         </form>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <ExploreTopicsContent
-          hasSearch={hasSearch}
-          createRowLabel={createRowLabel}
-          searchTopics={searchResultsQuery.data ?? []}
-          searchError={searchResultsQuery.error}
-          searchLoading={searchResultsQuery.isLoading}
-          searchErrorState={searchResultsQuery.isError}
-          trendingTopics={trendingQuery.data ?? []}
-          trendingError={trendingQuery.error}
-          trendingLoading={trendingQuery.isLoading}
-          trendingErrorState={trendingQuery.isError}
-          onOpenCreateDialog={() => setCreateOpen(true)}
-          onPreviewTopic={setPreviewSlug}
-          onFollowTopic={(slug) => void handleFollow(slug)}
-        />
+        <ExploreTopicsContent model={contentModel} actions={contentActions} />
       </div>
 
       <ExploreCreateDialog

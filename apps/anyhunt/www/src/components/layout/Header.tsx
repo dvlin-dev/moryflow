@@ -4,7 +4,7 @@
  * [POS]: Anyhunt 官网全局顶部导航（桌面/移动 + Developers 菜单 + Auth CTA）
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Menu, X } from 'lucide-react';
 import { useAuthModal } from '@/components/auth/auth-modal';
@@ -13,6 +13,7 @@ import { Container } from './Container';
 import { DesktopHeaderAuthActions } from './header/auth-actions';
 import { DesktopNavigation } from './header/desktop-navigation';
 import { MobileNavigation } from './header/mobile-navigation';
+import type { DesktopDeveloperMenuActions, DesktopDeveloperMenuState } from './header/desktop-navigation';
 import type { HeaderAuthViewState } from './header/types';
 
 function resolveHeaderAuthViewState(isLoading: boolean, isAuthenticated: boolean): HeaderAuthViewState {
@@ -47,28 +48,64 @@ export function Header() {
   const developerMenuId = 'developer-mega-menu';
   const MobileMenuIcon = mobileMenuOpen ? X : Menu;
 
-  const clearCloseTimeout = () => {
+  const clearCloseTimeout = useCallback(() => {
     if (!closeTimeoutRef.current) return;
     clearTimeout(closeTimeoutRef.current);
     closeTimeoutRef.current = null;
-  };
+  }, []);
 
-  const handleDeveloperMouseEnter = () => {
+  const handleDeveloperMouseEnter = useCallback(() => {
     clearCloseTimeout();
     setDeveloperMenuOpen(true);
-  };
+  }, [clearCloseTimeout]);
 
-  const handleDeveloperMouseLeave = () => {
+  const handleDeveloperMouseLeave = useCallback(() => {
     clearCloseTimeout();
     closeTimeoutRef.current = setTimeout(() => {
       setDeveloperMenuOpen(false);
     }, 100);
-  };
+  }, [clearCloseTimeout]);
 
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false);
     setMobileDevOpen(false);
-  };
+  }, []);
+
+  const closeDeveloperMenu = useCallback(() => {
+    setDeveloperMenuOpen(false);
+  }, []);
+
+  const toggleDeveloperMenu = useCallback(() => {
+    setDeveloperMenuOpen((open) => !open);
+  }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((open) => !open);
+  }, []);
+
+  const toggleMobileDeveloperSection = useCallback(() => {
+    setMobileDevOpen((open) => !open);
+  }, []);
+
+  const desktopDeveloperMenuState = useMemo<DesktopDeveloperMenuState>(
+    () => ({
+      open: developerMenuOpen,
+      id: developerMenuId,
+      menuRef,
+      triggerRef,
+    }),
+    [developerMenuId, developerMenuOpen]
+  );
+
+  const desktopDeveloperMenuActions = useMemo<DesktopDeveloperMenuActions>(
+    () => ({
+      onOpen: handleDeveloperMouseEnter,
+      onClose: handleDeveloperMouseLeave,
+      onToggle: toggleDeveloperMenu,
+      onSelectItem: closeDeveloperMenu,
+    }),
+    [closeDeveloperMenu, handleDeveloperMouseEnter, handleDeveloperMouseLeave, toggleDeveloperMenu]
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -86,7 +123,7 @@ export function Header() {
       document.removeEventListener('mousedown', handleClickOutside);
       clearCloseTimeout();
     };
-  }, []);
+  }, [clearCloseTimeout]);
 
   useEffect(() => {
     if (!developerMenuOpen && !mobileMenuOpen) return;
@@ -103,7 +140,7 @@ export function Header() {
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [developerMenuOpen, mobileMenuOpen]);
+  }, [closeMobileMenu, developerMenuOpen, mobileMenuOpen]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -114,14 +151,10 @@ export function Header() {
           </Link>
 
           <DesktopNavigation
-            developerMenuOpen={developerMenuOpen}
-            developerMenuId={developerMenuId}
-            menuRef={menuRef}
-            triggerRef={triggerRef}
-            onDeveloperMouseEnter={handleDeveloperMouseEnter}
-            onDeveloperMouseLeave={handleDeveloperMouseLeave}
-            onDeveloperToggle={() => setDeveloperMenuOpen((open) => !open)}
-            onDeveloperItemSelect={() => setDeveloperMenuOpen(false)}
+            developerMenu={{
+              state: desktopDeveloperMenuState,
+              actions: desktopDeveloperMenuActions,
+            }}
           />
 
           <div className="hidden items-center gap-3 md:flex">
@@ -135,7 +168,7 @@ export function Header() {
           <button
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             className="rounded-lg p-2 transition-colors hover:bg-muted md:hidden"
-            onClick={() => setMobileMenuOpen((open) => !open)}
+            onClick={toggleMobileMenu}
           >
             <MobileMenuIcon className="h-5 w-5" />
           </button>
@@ -146,7 +179,7 @@ export function Header() {
           mobileDevOpen={mobileDevOpen}
           authViewState={authViewState}
           onCloseMenu={closeMobileMenu}
-          onToggleDeveloperSection={() => setMobileDevOpen((open) => !open)}
+          onToggleDeveloperSection={toggleMobileDeveloperSection}
           onSignIn={() => openAuthModal({ mode: 'login' })}
           onRegister={() => openAuthModal({ mode: 'register' })}
         />

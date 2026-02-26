@@ -5,27 +5,30 @@ import { cn } from '@moryflow/ui';
 import { DEVELOPER_PRODUCTS, DEVELOPER_RESOURCES } from '@/lib/navigation';
 import { DesktopMenuItemLink } from './menu-items';
 
-interface DesktopNavigationProps {
-  developerMenuOpen: boolean;
-  developerMenuId: string;
+export interface DesktopDeveloperMenuState {
+  open: boolean;
+  id: string;
   menuRef: RefObject<HTMLDivElement | null>;
   triggerRef: RefObject<HTMLButtonElement | null>;
-  onDeveloperMouseEnter: () => void;
-  onDeveloperMouseLeave: () => void;
-  onDeveloperToggle: () => void;
-  onDeveloperItemSelect: () => void;
 }
 
-export function DesktopNavigation({
-  developerMenuOpen,
-  developerMenuId,
-  menuRef,
-  triggerRef,
-  onDeveloperMouseEnter,
-  onDeveloperMouseLeave,
-  onDeveloperToggle,
-  onDeveloperItemSelect,
-}: DesktopNavigationProps) {
+export interface DesktopDeveloperMenuActions {
+  onOpen: () => void;
+  onClose: () => void;
+  onToggle: () => void;
+  onSelectItem: () => void;
+}
+
+interface DesktopNavigationProps {
+  developerMenu: {
+    state: DesktopDeveloperMenuState;
+    actions: DesktopDeveloperMenuActions;
+  };
+}
+
+export function DesktopNavigation({ developerMenu }: DesktopNavigationProps) {
+  const { state, actions } = developerMenu;
+
   return (
     <nav className="hidden items-center gap-1 md:flex">
       <Link
@@ -47,43 +50,41 @@ export function DesktopNavigation({
         Pricing
       </Link>
 
-      <div className="relative" onMouseEnter={onDeveloperMouseEnter} onMouseLeave={onDeveloperMouseLeave}>
+      <div className="relative" onMouseEnter={actions.onOpen} onMouseLeave={actions.onClose}>
         <button
-          ref={triggerRef}
-          onClick={onDeveloperToggle}
+          ref={state.triggerRef}
+          onClick={actions.onToggle}
           aria-haspopup="menu"
-          aria-expanded={developerMenuOpen}
-          aria-controls={developerMenuId}
+          aria-expanded={state.open}
+          aria-controls={state.id}
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
-              onDeveloperMouseEnter();
+              actions.onOpen();
             }
           }}
           className={cn(
             'flex items-center gap-1 rounded-lg px-4 py-2 text-sm transition-colors',
-            developerMenuOpen
+            state.open
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
         >
           Developers
-          <ChevronDown
-            className={cn('h-4 w-4 transition-transform duration-150', developerMenuOpen && 'rotate-180')}
-          />
+          <ChevronDown className={cn('h-4 w-4 transition-transform duration-150', state.open && 'rotate-180')} />
         </button>
 
         <div
-          id={developerMenuId}
-          ref={menuRef}
+          id={state.id}
+          ref={state.menuRef}
           className={cn(
             'absolute left-1/2 top-full mt-2 w-[540px] -translate-x-1/2 origin-top transition-all duration-150',
-            developerMenuOpen
+            state.open
               ? 'pointer-events-auto scale-100 opacity-100'
               : 'pointer-events-none scale-95 opacity-0'
           )}
-          onMouseEnter={onDeveloperMouseEnter}
-          onMouseLeave={onDeveloperMouseLeave}
+          onMouseEnter={actions.onOpen}
+          onMouseLeave={actions.onClose}
         >
           <div
             role="menu"
@@ -97,11 +98,7 @@ export function DesktopNavigation({
                 </h3>
                 <div className="space-y-1">
                   {DEVELOPER_PRODUCTS.map((item) => (
-                    <DesktopMenuItemLink
-                      key={item.title}
-                      item={item}
-                      onSelect={onDeveloperItemSelect}
-                    />
+                    <DesktopMenuItemLink key={item.title} item={item} onSelect={actions.onSelectItem} />
                   ))}
                 </div>
               </div>
@@ -112,11 +109,7 @@ export function DesktopNavigation({
                 </h3>
                 <div className="space-y-1">
                   {DEVELOPER_RESOURCES.map((item) => (
-                    <DesktopMenuItemLink
-                      key={item.title}
-                      item={item}
-                      onSelect={onDeveloperItemSelect}
-                    />
+                    <DesktopMenuItemLink key={item.title} item={item} onSelect={actions.onSelectItem} />
                   ))}
                 </div>
               </div>

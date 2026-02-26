@@ -1,5 +1,5 @@
 /**
- * [PROPS]: items, selectedId, onSelect, subscriptionName, filter, onFilterChange, onRefresh, onMarkAllRead
+ * [PROPS]: model (items/state) + actions (callbacks)
  * [POS]: Middle column article list with header actions (Lucide icons direct render)
  */
 
@@ -24,26 +24,34 @@ import type { InboxItem } from '@/features/digest/types';
 export type FilterState = 'all' | 'unread' | 'saved' | 'not_interested';
 
 interface ArticleListProps {
+  model: ArticleListModel;
+  actions: ArticleListActions;
+}
+
+export interface ArticleListModel {
   /** Article items to display */
   items: InboxItem[];
   /** Currently selected article ID */
   selectedId: string | null;
-  /** Callback when selecting an article */
-  onSelect: (item: InboxItem) => void;
   /** Title to show in header */
   title: string;
   /** Current filter state */
   filter: FilterState;
+  /** Loading state */
+  isLoading?: boolean;
+  /** Refreshing state */
+  isRefreshing?: boolean;
+}
+
+export interface ArticleListActions {
+  /** Callback when selecting an article */
+  onSelect: (item: InboxItem) => void;
   /** Callback when filter changes */
   onFilterChange: (filter: FilterState) => void;
   /** Callback to refresh the list */
   onRefresh: () => void;
   /** Callback to mark all as read */
   onMarkAllRead: () => void;
-  /** Loading state */
-  isLoading?: boolean;
-  /** Refreshing state */
-  isRefreshing?: boolean;
 }
 
 const filterLabels: Record<FilterState, string> = {
@@ -53,20 +61,9 @@ const filterLabels: Record<FilterState, string> = {
   not_interested: 'Not Interested',
 };
 
-export function ArticleList({
-  items,
-  selectedId,
-  onSelect,
-  title,
-  filter,
-  onFilterChange,
-  onRefresh,
-  onMarkAllRead,
-  isLoading,
-  isRefreshing,
-}: ArticleListProps) {
+export function ArticleList({ model, actions }: ArticleListProps) {
   function renderContent() {
-    if (isLoading) {
+    if (model.isLoading) {
       return (
         <>
           {[1, 2, 3, 4, 5].map((i) => (
@@ -80,23 +77,23 @@ export function ArticleList({
       );
     }
 
-    if (items.length === 0) {
+    if (model.items.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-sm text-muted-foreground">No articles found</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {filter !== 'all' ? 'Try changing the filter' : 'Check back later for new content'}
+            {model.filter !== 'all' ? 'Try changing the filter' : 'Check back later for new content'}
           </p>
         </div>
       );
     }
 
-    return items.map((item) => (
+    return model.items.map((item) => (
       <ArticleCard
         key={item.id}
         item={item}
-        isSelected={selectedId === item.id}
-        onClick={() => onSelect(item)}
+        isSelected={model.selectedId === item.id}
+        onClick={() => actions.onSelect(item)}
       />
     ));
   }
@@ -105,7 +102,7 @@ export function ArticleList({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
-        <h2 className="truncate text-sm font-semibold">{title}</h2>
+        <h2 className="truncate text-sm font-semibold">{model.title}</h2>
         <div className="flex items-center gap-1">
           <TooltipProvider delayDuration={300}>
             {/* Refresh button */}
@@ -115,10 +112,10 @@ export function ArticleList({
                   variant="ghost"
                   size="icon"
                   className="size-8"
-                  onClick={onRefresh}
-                  disabled={isRefreshing}
+                  onClick={actions.onRefresh}
+                  disabled={model.isRefreshing}
                 >
-                  <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`size-4 ${model.isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Refresh</TooltipContent>
@@ -138,8 +135,8 @@ export function ArticleList({
               </Tooltip>
               <DropdownMenuContent align="end">
                 <DropdownMenuRadioGroup
-                  value={filter}
-                  onValueChange={(v: string) => onFilterChange(v as FilterState)}
+                  value={model.filter}
+                  onValueChange={(v: string) => actions.onFilterChange(v as FilterState)}
                 >
                   {Object.entries(filterLabels).map(([value, label]) => (
                     <DropdownMenuRadioItem key={value} value={value}>
@@ -153,7 +150,7 @@ export function ArticleList({
             {/* Mark all read button */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8" onClick={onMarkAllRead}>
+                <Button variant="ghost" size="icon" className="size-8" onClick={actions.onMarkAllRead}>
                   <SquareCheck className="size-4" />
                 </Button>
               </TooltipTrigger>

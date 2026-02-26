@@ -10,20 +10,29 @@ import type { DigestTopicSummary } from '@/lib/digest-api';
 type ExploreSearchContentState = 'loading' | 'error' | 'empty' | 'ready';
 type ExploreTrendingContentState = 'loading' | 'error' | 'empty' | 'ready';
 
-interface ExploreTopicsContentProps {
-  hasSearch: boolean;
+interface ExploreTopicsDataSegment {
+  topics: DigestTopicSummary[];
+  error: unknown;
+  isLoading: boolean;
+  isError: boolean;
+}
+
+export interface ExploreTopicsContentModel {
+  mode: 'search' | 'trending';
   createRowLabel: string | null;
-  searchTopics: DigestTopicSummary[];
-  searchError: unknown;
-  searchLoading: boolean;
-  searchErrorState: boolean;
-  trendingTopics: DigestTopicSummary[];
-  trendingError: unknown;
-  trendingLoading: boolean;
-  trendingErrorState: boolean;
+  search: ExploreTopicsDataSegment;
+  trending: ExploreTopicsDataSegment;
+}
+
+export interface ExploreTopicsContentActions {
   onOpenCreateDialog: () => void;
   onPreviewTopic: (slug: string) => void;
   onFollowTopic: (slug: string) => void;
+}
+
+interface ExploreTopicsContentProps {
+  model: ExploreTopicsContentModel;
+  actions: ExploreTopicsContentActions;
 }
 
 function TopicCard({
@@ -205,43 +214,29 @@ function renderTrendingContentByState(props: {
   }
 }
 
-export function ExploreTopicsContent({
-  hasSearch,
-  createRowLabel,
-  searchTopics,
-  searchError,
-  searchLoading,
-  searchErrorState,
-  trendingTopics,
-  trendingError,
-  trendingLoading,
-  trendingErrorState,
-  onOpenCreateDialog,
-  onPreviewTopic,
-  onFollowTopic,
-}: ExploreTopicsContentProps) {
+export function ExploreTopicsContent({ model, actions }: ExploreTopicsContentProps) {
   const searchState = resolveSearchContentState({
-    isLoading: searchLoading,
-    isError: searchErrorState,
-    count: searchTopics.length,
+    isLoading: model.search.isLoading,
+    isError: model.search.isError,
+    count: model.search.topics.length,
   });
 
   const trendingState = resolveTrendingContentState({
-    isLoading: trendingLoading,
-    isError: trendingErrorState,
-    count: trendingTopics.length,
+    isLoading: model.trending.isLoading,
+    isError: model.trending.isError,
+    count: model.trending.topics.length,
   });
 
-  if (hasSearch) {
+  if (model.mode === 'search') {
     return (
       <div className="space-y-3">
-        {renderSearchCreateRow(createRowLabel, onOpenCreateDialog)}
+        {renderSearchCreateRow(model.createRowLabel, actions.onOpenCreateDialog)}
         {renderSearchContentByState({
           state: searchState,
-          topics: searchTopics,
-          error: searchError,
-          onPreviewTopic,
-          onFollowTopic,
+          topics: model.search.topics,
+          error: model.search.error,
+          onPreviewTopic: actions.onPreviewTopic,
+          onFollowTopic: actions.onFollowTopic,
         })}
       </div>
     );
@@ -252,10 +247,10 @@ export function ExploreTopicsContent({
       <div className="text-sm font-semibold">Trending</div>
       {renderTrendingContentByState({
         state: trendingState,
-        topics: trendingTopics,
-        error: trendingError,
-        onPreviewTopic,
-        onFollowTopic,
+        topics: model.trending.topics,
+        error: model.trending.error,
+        onPreviewTopic: actions.onPreviewTopic,
+        onFollowTopic: actions.onFollowTopic,
       })}
     </div>
   );
