@@ -14,6 +14,7 @@ export interface ForceNode {
   type?: string;
   x?: number;
   y?: number;
+  [key: string]: unknown;
 }
 
 export interface ForceLink {
