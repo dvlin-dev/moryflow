@@ -1,34 +1,38 @@
 /**
- * Publish Dialog
- * 站点发布对话框
+ * [PROPS]: PublishDialogProps - 发布弹窗状态与输入源
+ * [EMITS]: onOpenChange(open)
+ * [POS]: 站点发布弹窗容器（步骤状态编排 + footer 动作）
+ * [UPDATE]: 2026-02-26 - 拆分步骤片段到 step-content，统一 step -> switch 渲染
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Globe, Loader } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@moryflow/ui/components/dialog';
 import { Button } from '@moryflow/ui/components/button';
-import { Input } from '@moryflow/ui/components/input';
-import { Label } from '@moryflow/ui/components/label';
-import { Progress } from '@moryflow/ui/components/progress';
-import { CircleAlert, CircleCheck, File, Globe, Loader } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { BuildSiteInput, BuildProgressEvent } from '../../../shared/ipc/site-publish';
+import type { BuildSiteInput } from '../../../shared/ipc/site-publish';
 import { useSitePublish } from './use-site-publish';
+import {
+  PublishConfigStep,
+  PublishErrorStep,
+  PublishProgressStep,
+  PublishSuccessStep,
+} from './publish-dialog-step-content';
 
-interface PublishDialogProps {
+type PublishDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sourcePaths: string[];
   title?: string;
-}
+};
 
-type Step = 'config' | 'publishing' | 'success' | 'error';
+type PublishStep = 'config' | 'publishing' | 'success' | 'error';
 
 export function PublishDialog({
   open,
@@ -38,23 +42,17 @@ export function PublishDialog({
 }: PublishDialogProps) {
   const { buildAndPublish, checkSubdomain, progress } = useSitePublish();
 
-  // 表单状态
   const [subdomain, setSubdomain] = useState('');
   const [title, setTitle] = useState(defaultTitle || '');
   const [description, setDescription] = useState('');
-
-  // 子域名校验
   const [subdomainValid, setSubdomainValid] = useState<boolean | null>(null);
   const [subdomainMessage, setSubdomainMessage] = useState('');
   const [checkingSubdomain, setCheckingSubdomain] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 发布状态
-  const [step, setStep] = useState<Step>('config');
+  const [step, setStep] = useState<PublishStep>('config');
   const [publishedUrl, setPublishedUrl] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 重置状态
   useEffect(() => {
     if (open) {
       setStep('config');
@@ -65,7 +63,7 @@ export function PublishDialog({
       setSubdomainMessage('');
       setErrorMessage('');
     }
-    // 清理防抖计时器
+
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -73,7 +71,6 @@ export function PublishDialog({
     };
   }, [open, defaultTitle]);
 
-  // 校验子域名
   const validateSubdomain = useCallback(
     async (value: string) => {
       if (value.length < 3) {
@@ -94,31 +91,31 @@ export function PublishDialog({
     [checkSubdomain]
   );
 
-  // 处理子域名输入
-  const handleSubdomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    setSubdomain(value);
-    setSubdomainValid(null);
+  const handleSubdomainChange = useCallback(
+    (rawValue: string) => {
+      const value = rawValue.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      setSubdomain(value);
+      setSubdomainValid(null);
 
-    // 清除之前的计时器
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (value.length >= 3) {
+        debounceTimerRef.current = setTimeout(() => {
+          void validateSubdomain(value);
+        }, 500);
+      }
+    },
+    [validateSubdomain]
+  );
+
+  const handlePublish = useCallback(async () => {
+    if (!subdomain || subdomainValid !== true) {
+      return;
     }
-
-    // 延迟校验
-    if (value.length >= 3) {
-      debounceTimerRef.current = setTimeout(() => {
-        validateSubdomain(value);
-      }, 500);
-    }
-  };
-
-  // 发布
-  const handlePublish = async () => {
-    if (!subdomain || subdomainValid !== true) return;
 
     setStep('publishing');
-
     try {
       const input: BuildSiteInput = {
         sourcePaths,
@@ -127,22 +124,80 @@ export function PublishDialog({
         title: title || undefined,
         description: description || undefined,
       };
-
       await buildAndPublish(input);
       setPublishedUrl(`https://${subdomain}.moryflow.app`);
       setStep('success');
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Publishing failed');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Publishing failed');
       setStep('error');
     }
-  };
+  }, [buildAndPublish, description, sourcePaths, subdomain, subdomainValid, title]);
 
-  // 计算进度百分比
   const progressPercent = progress
     ? progress.total > 0
       ? Math.round((progress.current / progress.total) * 100)
       : 0
     : 0;
+
+  const renderContentByStep = () => {
+    switch (step) {
+      case 'config':
+        return (
+          <PublishConfigStep
+            model={{
+              sourcePaths,
+              subdomain,
+              subdomainValid,
+              subdomainMessage,
+              checkingSubdomain,
+              title,
+              description,
+            }}
+            actions={{
+              onSubdomainChange: handleSubdomainChange,
+              onTitleChange: setTitle,
+              onDescriptionChange: setDescription,
+            }}
+          />
+        );
+      case 'publishing':
+        return <PublishProgressStep progress={progress} progressPercent={progressPercent} />;
+      case 'success':
+        return <PublishSuccessStep publishedUrl={publishedUrl} />;
+      case 'error':
+        return <PublishErrorStep errorMessage={errorMessage} />;
+      default:
+        return null;
+    }
+  };
+
+  const renderFooterByStep = () => {
+    switch (step) {
+      case 'config':
+        return (
+          <>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePublish} disabled={!subdomain || subdomainValid !== true}>
+              Publish
+            </Button>
+          </>
+        );
+      case 'publishing':
+        return (
+          <Button variant="outline" disabled>
+            <Loader className="mr-2 size-4 animate-spin" />
+            Publishing...
+          </Button>
+        );
+      case 'success':
+      case 'error':
+        return <Button onClick={() => onOpenChange(false)}>Done</Button>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,160 +210,11 @@ export function PublishDialog({
           <DialogDescription>Publish selected documents as a public site.</DialogDescription>
         </DialogHeader>
 
-        {step === 'config' && (
-          <div className="space-y-4 py-4">
-            {/* 源文件预览 */}
-            <div className="rounded-lg bg-muted/50 p-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <File className="size-4" />
-                <span>Content to publish</span>
-              </div>
-              <div className="text-sm">
-                {sourcePaths.length === 1 ? (
-                  <span className="font-medium">{sourcePaths[0].split('/').pop()}</span>
-                ) : (
-                  <span className="font-medium">{sourcePaths.length} files or folders</span>
-                )}
-              </div>
-            </div>
+        {renderContentByStep()}
 
-            {/* 子域名 */}
-            <div className="space-y-2">
-              <Label htmlFor="subdomain">Site address</Label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    id="subdomain"
-                    value={subdomain}
-                    onChange={handleSubdomainChange}
-                    placeholder="my-site"
-                    className={cn(
-                      'pr-8',
-                      subdomainValid === true && 'border-green-500',
-                      subdomainValid === false && 'border-red-500'
-                    )}
-                  />
-                  {checkingSubdomain && (
-                    <Loader className="absolute right-2 top-2.5 size-4 animate-spin text-muted-foreground" />
-                  )}
-                  {!checkingSubdomain && subdomainValid === true && (
-                    <CircleCheck className="absolute right-2 top-2.5 size-4 text-green-500" />
-                  )}
-                  {!checkingSubdomain && subdomainValid === false && (
-                    <CircleAlert className="absolute right-2 top-2.5 size-4 text-red-500" />
-                  )}
-                </div>
-                <span className="text-sm text-muted-foreground">.moryflow.app</span>
-              </div>
-              {subdomainMessage && (
-                <p
-                  className={cn(
-                    'text-xs',
-                    subdomainValid === true ? 'text-green-600' : 'text-red-600'
-                  )}
-                >
-                  {subdomainMessage}
-                </p>
-              )}
-            </div>
-
-            {/* 标题 */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Site title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="My site"
-              />
-            </div>
-
-            {/* 描述 */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Site description (optional)</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="A short description of your site..."
-              />
-            </div>
-          </div>
-        )}
-
-        {step === 'publishing' && (
-          <div className="py-8 space-y-4">
-            <div className="flex flex-col items-center gap-4">
-              <Loader className="size-8 animate-spin text-primary" />
-              <div className="text-center">
-                <p className="font-medium">{progress?.message || 'Publishing...'}</p>
-                <p className="text-sm text-muted-foreground">
-                  {progress?.phase === 'scanning' && 'Scanning files'}
-                  {progress?.phase === 'rendering' && 'Rendering pages'}
-                  {progress?.phase === 'uploading' && 'Uploading files'}
-                </p>
-              </div>
-            </div>
-            <Progress value={progressPercent} className="w-full" />
-          </div>
-        )}
-
-        {step === 'success' && (
-          <div className="py-8 space-y-4">
-            <div className="flex flex-col items-center gap-4">
-              <div className="size-12 rounded-full bg-green-100 flex items-center justify-center">
-                <CircleCheck className="size-6 text-green-600" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium">Published successfully!</p>
-                <a
-                  href={publishedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
-                >
-                  {publishedUrl}
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 'error' && (
-          <div className="py-8 space-y-4">
-            <div className="flex flex-col items-center gap-4">
-              <div className="size-12 rounded-full bg-red-100 flex items-center justify-center">
-                <CircleAlert className="size-6 text-red-600" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium text-red-600">Publishing failed</p>
-                <p className="text-sm text-muted-foreground">{errorMessage}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          {step === 'config' && (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handlePublish} disabled={!subdomain || subdomainValid !== true}>
-                Publish
-              </Button>
-            </>
-          )}
-          {step === 'publishing' && (
-            <Button variant="outline" disabled>
-              Publishing...
-            </Button>
-          )}
-          {(step === 'success' || step === 'error') && (
-            <Button onClick={() => onOpenChange(false)}>Done</Button>
-          )}
-        </DialogFooter>
+        <DialogFooter>{renderFooterByStep()}</DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

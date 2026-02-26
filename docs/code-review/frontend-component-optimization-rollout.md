@@ -179,6 +179,8 @@ status: active
 | 28 | moryflow/site-template | 模块 C（scripts/生成逻辑） | 分步重构与修复（C-1~C-5） | done | `pnpm --filter @moryflow/site-template typecheck`（pass） + `build`（pass） + `sync`（定向输出，pass） | 2026-02-26 | 完成主题脚本单一真源、`sync` 稳定排序与去时间戳、`dist` 新鲜度守卫、`build` import 显式失败策略、输出计数修正，并同步 `apps/moryflow/site-template/CLAUDE.md` |
 | 29 | moryflow/site-template | 项目复盘（整项目一致性） | 全项目 Review（A/B/C） | done | `pnpm --filter @moryflow/site-template typecheck`（pass） + `build`（pass） + `sync`（定向输出，双次哈希一致） | 2026-02-26 | `site-template` 已完成模块 A/B/C 与项目收口，专项结项 |
 | 30 | moryflow/site-template | 分支全量 review 回合 | 问题修复收口（R-2） | done | `pnpm --filter @moryflow/site-template typecheck` + `test:unit` + `build` + `sync`（pass） | 2026-02-26 | 修复全量 review 发现项：PC 模板生成物漂移、`sync` mtime 守卫脆弱；补齐 build/sync 回归单测并同步 `site-template/CLAUDE.md` |
+| 31 | moryflow/pc | 模块 D（cloud-sync/share/site-publish/vault-files） | 预扫描（仅问题清单） | done | n/a | 2026-02-26 | 输出 `S1x3 / S2x3 / S3x1`，详见 `docs/code-review/moryflow-pc.md`；给出 `D-1~D-6` 一次性修复计划 |
+| 32 | moryflow/pc | 模块 D（cloud-sync/share/site-publish/vault-files） | 一次性重构与修复（D-1~D-6） | done | `pnpm --filter @moryflow/pc typecheck`（fail，`node_modules` 缺失） | 2026-02-26 | 完成 `vault-files` store-first（移除 Context）、`cloud-sync` 容器化拆分、`site-list/publish-dialog` 状态机与大文件拆分；`share` 复扫无新增 S1/S2 问题 |
 
 ## 5. 回写格式（统一）
 

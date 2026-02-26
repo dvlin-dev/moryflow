@@ -95,8 +95,8 @@ status: active
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Moryflow PC 模块 A/B/C + Store-first `SF-1~SF-4` 已完成，下一步模块 D 预扫描）
-- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；已新增“对话启动前必读规范入口”；`anyhunt/docs` 与 `moryflow/docs` 已标记忽略）
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Moryflow PC 模块 A/B/C/D + Store-first `SF-1~SF-4` 已完成，下一步模块 E 预扫描）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；Moryflow PC 已完成模块 D；`anyhunt/docs` 与 `moryflow/docs` 已标记忽略）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-26，done：模块 A/B/C/D/E 与项目复盘全部完成）
 - Moryflow Site Template Code Review：`docs/code-review/moryflow-site-template.md`（更新：2026-02-26，done：模块 A/B/C + 项目复盘完成）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
@@ -113,7 +113,7 @@ status: active
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（更新：2026-01-26，修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Memox Core 对标 Mem0 改造计划：`docs/code-review/anyhunt-server-memox-core.md`（更新：2026-01-24；实施进度同步；Filters DSL；R2 导出；Token 认证一致；Graph/Relation 公共 API 删除；entities 语义替换）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
-- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（更新：2026-02-26，Store-first 二次改造 `SF-1~SF-4` 已执行完成：`ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels/ProviderDetailsPreset`）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（更新：2026-02-26，模块 A/B/C/D + Store-first `SF-1~SF-4` 已完成，下一步模块 E 预扫描）
 - Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（更新：2026-01-24，修复完成）
 - packages/ui Code Review：`docs/code-review/packages-ui.md`（更新：2026-01-24，修复完成）
 - packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（更新：2026-01-24，修复完成）

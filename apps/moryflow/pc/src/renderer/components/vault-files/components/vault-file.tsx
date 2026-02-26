@@ -14,7 +14,7 @@ import { ContextMenu, ContextMenuTrigger } from '@moryflow/ui/components/context
 import { cn } from '@/lib/utils';
 import type { VaultTreeNode } from '@shared/ipc';
 import type { ContextMenuAction } from '../const';
-import { useVaultFiles } from '../context';
+import { useVaultFilesStore } from '../vault-files-store';
 import { createDragData, FILE_MENU_ITEMS } from '../handle';
 import { NodeContextMenu } from './node-context-menu';
 
@@ -33,7 +33,17 @@ export const VaultFile = ({ node }: VaultFileProps) => {
     onPublish,
     draggedNodeId,
     setDraggedNodeId,
-  } = useVaultFiles();
+  } = useVaultFilesStore((state) => ({
+    selectedId: state.selectedId,
+    onSelectFile: state.onSelectFile,
+    onSelectNode: state.onSelectNode,
+    onRename: state.onRename,
+    onDelete: state.onDelete,
+    onShowInFinder: state.onShowInFinder,
+    onPublish: state.onPublish,
+    draggedNodeId: state.draggedNodeId,
+    setDraggedNodeId: state.setDraggedNodeId,
+  }));
 
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;

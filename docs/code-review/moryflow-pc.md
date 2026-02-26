@@ -17,9 +17,9 @@ status: in_progress
 ## 当前范围
 
 - 项目：`apps/moryflow/pc`
-- 已完成模块：`A（auth / settings-dialog / payment-dialog）`、`B（chat-pane / input-dialog / command-palette）`、`C（editor / workspace）`
-- 当前模块：`D（cloud-sync / share / site-publish / vault-files）`（待预扫描）
-- 下一模块：`E（renderer hooks / contexts / transport / stores）`
+- 已完成模块：`A（auth / settings-dialog / payment-dialog）`、`B（chat-pane / input-dialog / command-palette）`、`C（editor / workspace）`、`D（cloud-sync / share / site-publish / vault-files）`
+- 当前模块：`E（renderer hooks / contexts / transport / stores）`（待预扫描）
+- 下一模块：`项目复盘`
 
 ## 模块 A 修复结果（已完成）
 
@@ -147,6 +147,42 @@ status: in_progress
 5. C-5：改造 `EditorPanel` 为显式视图状态机（empty/loading/error/ready）+ `renderContentByState()`。
 6. C-6：轻量清理 `useVaultTreeState`/`NotionEditor` 的职责边界（effect 分段与配置外提），补齐必要回归测试。
 
+## 模块 D 修复结果（cloud-sync / share / site-publish / vault-files，已完成）
+
+### S1
+
+- [done] `VaultFiles` 共享业务状态从 Context 迁移到 store-first，子节点改为就地 selector 取数
+  - `apps/moryflow/pc/src/renderer/components/vault-files/vault-files-store.ts:1`
+  - `apps/moryflow/pc/src/renderer/components/vault-files/index.tsx:14`
+  - `apps/moryflow/pc/src/renderer/components/vault-files/components/vault-folder.tsx:25`
+  - `apps/moryflow/pc/src/renderer/components/vault-files/components/vault-file.tsx:17`
+
+- [done] `cloud-sync-section.tsx`（395 行）拆分为容器层 + ready 内容层，移除容器内大块 UI 条件编排
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/cloud-sync-section.tsx:1`
+  - `apps/moryflow/pc/src/renderer/components/settings-dialog/components/cloud-sync-section-ready.tsx:1`
+
+- [done] `site-publish` 两个超阈值组件（`site-list.tsx`/`publish-dialog.tsx`）拆分并降到 `< 300` 行
+  - `apps/moryflow/pc/src/renderer/components/site-publish/site-list.tsx:1`
+  - `apps/moryflow/pc/src/renderer/components/site-publish/site-list-card.tsx:1`
+  - `apps/moryflow/pc/src/renderer/components/site-publish/publish-dialog.tsx:1`
+  - `apps/moryflow/pc/src/renderer/components/site-publish/publish-dialog-step-content.tsx:1`
+
+### S2
+
+- [done] `VaultFolder` 文件夹行多状态 class 分发移除链式三元，改为 `getFolderRowStateClass()`
+  - `apps/moryflow/pc/src/renderer/components/vault-files/components/vault-folder.tsx:40`
+
+- [done] `SiteList` 列表态统一为 `viewState + renderContentByState/switch`
+  - `apps/moryflow/pc/src/renderer/components/site-publish/site-list.tsx:34`
+
+- [done] `PublishDialog` 步骤态统一为 `step + renderContentByStep/renderFooterByStep`
+  - `apps/moryflow/pc/src/renderer/components/site-publish/publish-dialog.tsx:33`
+
+### S3
+
+- [done] `share` 模块复扫未发现新增 S1/S2：`share-popover` 已使用 `panel + switch`，维持现状避免无效重构
+  - `apps/moryflow/pc/src/renderer/components/share/share-popover.tsx:228`
+
 ## Store-first 二次改造执行结果（已完成）
 
 > 执行约束：不新增/不扩散 Context；跨组件共享状态统一 `Zustand Store + Methods`。  
@@ -229,3 +265,5 @@ status: in_progress
 | 2026-02-26 | 模块 C（editor/workspace） | 预扫描 | done | 输出 `S1x3 / S2x3 / S3x2`，给出 `C-1~C-6` 一次性修复计划与验证命令 |
 | 2026-02-26 | 模块 C（editor/workspace） | 一次性修复（C-1~C-6） | done | `DesktopWorkspaceShell/useDocumentState/handle/Sidebar/EditorPanel/useVaultTree/NotionEditor` 完成分层收敛；待依赖安装后补齐验证 |
 | 2026-02-26 | 模块 B/C/E + 模块 A follow-up | Store-first 二次改造执行（SF-1~SF-4） | done | `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels/ProviderDetailsPreset` 已完成 store-first 或模型收口；`typecheck` 因依赖缺失未通过（非本次改动引入） |
+| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 预扫描 | done | 输出 `S1x3 / S2x3 / S3x1`，给出 `D-1~D-6` 一次性修复计划（含文件边界与验证命令） |
+| 2026-02-26 | 模块 D（cloud-sync/share/site-publish/vault-files） | 一次性修复（D-1~D-6） | done | 完成 `vault-files` store-first 迁移（移除 Context）、`cloud-sync/site-publish` 超阈值组件拆分、`site-list/publish-dialog` 状态分发统一为 `switch`；`share` 复扫维持现状 |
