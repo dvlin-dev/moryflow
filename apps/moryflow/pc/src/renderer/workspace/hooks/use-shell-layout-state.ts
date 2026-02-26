@@ -2,6 +2,7 @@
  * [PROVIDES]: useShellLayoutState - Workspace Shell 面板布局状态机
  * [DEPENDS]: ResizablePanel imperative handles
  * [POS]: DesktopWorkspaceShell 的布局层状态（sidebar/chat 折叠、宽度同步、拖拽约束）
+ * [UPDATE]: 2026-02-26 - 返回值改为 useMemo，稳定 layoutState 引用，避免 shell view store 快照误判变化
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
@@ -174,23 +175,44 @@ export const useShellLayoutState = ({
   const onChatCollapse = useCallback(() => setChatCollapsed(true), []);
   const onChatExpand = useCallback(() => setChatCollapsed(false), []);
 
-  return {
-    sidebarPanelRef,
-    workspaceChatPanelRef,
-    panelGroupRef,
-    sidebarCollapsed,
-    sidebarWidth,
-    chatCollapsed,
-    toggleSidebarPanel,
-    toggleChatPanel,
-    onSidebarCollapse,
-    onSidebarExpand,
-    onChatCollapse,
-    onChatExpand,
-    handleSidebarResize,
-    sidebarDefaultSizePercent,
-    sidebarMinSizePercent,
-    sidebarMaxSizePercent,
-    mainMinSizePercent,
-  };
+  return useMemo(
+    () => ({
+      sidebarPanelRef,
+      workspaceChatPanelRef,
+      panelGroupRef,
+      sidebarCollapsed,
+      sidebarWidth,
+      chatCollapsed,
+      toggleSidebarPanel,
+      toggleChatPanel,
+      onSidebarCollapse,
+      onSidebarExpand,
+      onChatCollapse,
+      onChatExpand,
+      handleSidebarResize,
+      sidebarDefaultSizePercent,
+      sidebarMinSizePercent,
+      sidebarMaxSizePercent,
+      mainMinSizePercent,
+    }),
+    [
+      sidebarPanelRef,
+      workspaceChatPanelRef,
+      panelGroupRef,
+      sidebarCollapsed,
+      sidebarWidth,
+      chatCollapsed,
+      toggleSidebarPanel,
+      toggleChatPanel,
+      onSidebarCollapse,
+      onSidebarExpand,
+      onChatCollapse,
+      onChatExpand,
+      handleSidebarResize,
+      sidebarDefaultSizePercent,
+      sidebarMinSizePercent,
+      sidebarMaxSizePercent,
+      mainMinSizePercent,
+    ]
+  );
 };

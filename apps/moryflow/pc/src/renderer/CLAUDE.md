@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- VaultFiles 稳定性修复：`vault-file/vault-folder` 改为原子 selector，`useSyncVaultFilesStore` 增加 `shouldSync` 快照等价判断，并补充 `vault-files-store.test.tsx` 回归测试，防止 `getSnapshot` 循环更新与黑屏（2026-02-26）
 - 模块 D（cloud-sync/share/site-publish/vault-files）完成一次性收敛：`VaultFiles` 迁移 store-first（移除 Context）、`cloud-sync-section` 拆成容器 + ready 内容层、`site-list/publish-dialog` 拆分并统一 `switch` 状态分发（2026-02-26）
 - Store-first 二次改造（`SF-1~SF-4`）完成：`chat-pane` 新增 `chat-pane-footer-store` 与 `chat-prompt-overlay-store`；`workspace` 新增 `workspace-shell-view-store` 与 `sidebar-panels-store`；`settings-dialog` 的 `ProviderDetailsPreset` 改为 `form/list/dialog` 三段模型（2026-02-26）
 - Workspace 模块 C（editor/workspace）完成一次性收敛：`DesktopWorkspaceShell` 三层拆分（layout-state/main-content/overlays）、`handle.ts` 下沉为编排层、`useDocumentState/useVaultTreeState` 副作用分段、`Sidebar/EditorPanel` 状态分发统一为状态片段 + `renderContentByState`（2026-02-26）

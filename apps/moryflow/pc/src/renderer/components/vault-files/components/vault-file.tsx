@@ -1,11 +1,12 @@
 /**
  * [PROPS]: { node } - 文件节点数据
- * [EMITS]: 通过 context 触发选择、重命名、删除等操作
+ * [EMITS]: 通过 vault-files store 触发选择、重命名、删除等操作
  * [POS]: 文件树中的文件节点组件，支持拖拽和右键菜单（Lucide 图标）
  * [UPDATE]: 2026-02-11 - 行内 padding 调整为 px-2.5，提升激活态背景内边距并与侧栏项基线一致
  * [UPDATE]: 2026-02-11 - 行内水平 padding 收敛为 0，和 Threads 列表共享同一文字起始线
  * [UPDATE]: 2026-02-11 - 行背景轻微外扩（-mx-1 + px-1 抵消），保持文字对齐不变并允许背景略超出
  * [UPDATE]: 2026-02-11 - 文件行内 padding 回调为 px-2.5（保留背景外扩），避免行内容过于贴边
+ * [UPDATE]: 2026-02-26 - selector 改为字段级原子订阅，避免对象字面量返回触发 getSnapshot 循环更新
  */
 
 import type { DragEvent } from 'react';
@@ -23,27 +24,15 @@ type VaultFileProps = {
 };
 
 export const VaultFile = ({ node }: VaultFileProps) => {
-  const {
-    selectedId,
-    onSelectFile,
-    onSelectNode,
-    onRename,
-    onDelete,
-    onShowInFinder,
-    onPublish,
-    draggedNodeId,
-    setDraggedNodeId,
-  } = useVaultFilesStore((state) => ({
-    selectedId: state.selectedId,
-    onSelectFile: state.onSelectFile,
-    onSelectNode: state.onSelectNode,
-    onRename: state.onRename,
-    onDelete: state.onDelete,
-    onShowInFinder: state.onShowInFinder,
-    onPublish: state.onPublish,
-    draggedNodeId: state.draggedNodeId,
-    setDraggedNodeId: state.setDraggedNodeId,
-  }));
+  const selectedId = useVaultFilesStore((state) => state.selectedId);
+  const onSelectFile = useVaultFilesStore((state) => state.onSelectFile);
+  const onSelectNode = useVaultFilesStore((state) => state.onSelectNode);
+  const onRename = useVaultFilesStore((state) => state.onRename);
+  const onDelete = useVaultFilesStore((state) => state.onDelete);
+  const onShowInFinder = useVaultFilesStore((state) => state.onShowInFinder);
+  const onPublish = useVaultFilesStore((state) => state.onPublish);
+  const draggedNodeId = useVaultFilesStore((state) => state.draggedNodeId);
+  const setDraggedNodeId = useVaultFilesStore((state) => state.setDraggedNodeId);
 
   const isSelected = selectedId === node.id;
   const isDragging = draggedNodeId === node.id;
