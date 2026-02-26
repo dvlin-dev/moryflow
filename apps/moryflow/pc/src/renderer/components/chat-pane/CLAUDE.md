@@ -18,6 +18,7 @@
 
 ## 近期变更
 
+- 2026-02-26：修复 thinking UI 回归：`ChatPromptInput` 恢复第二下拉（仅模型支持多等级时显示），新增 `chat-prompt-input-thinking-selector` 子组件与 helper 回归测试，保持 store-first 编排不变。
 - 2026-02-26：Store-first 二次改造落地（`SF-1/SF-2`）：新增 `hooks/use-chat-pane-footer-store.ts` 与 `components/chat-prompt-input/chat-prompt-overlay-store.ts`；`ChatFooter/ChatPromptInputOverlays` 改为 selector 就地取数；`FileContextPanel` 新增 `FileContextPanelFromOverlayStore` 包装层，`ChatPane/ChatPromptInput` 改为快照同步层。
 - 2026-02-26：模块 B 一次性重构完成：`ChatPane` 逻辑下沉到 `hooks/use-chat-pane-controller.ts`，容器层聚焦布局与组合。
 - 2026-02-26：`ChatPromptInput` 拆分为 `use-chat-prompt-input-controller` + `chat-prompt-input-model-selector` + `chat-prompt-input-overlays`，输入状态机与渲染片段解耦。
