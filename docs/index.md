@@ -101,6 +101,7 @@ status: active
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow PC Zustand `getSnapshot` 风险专项审计：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`（更新：2026-02-26，completed：同类无限重渲染风险点已定位并完成修复）
+- Multi-project（排除 Moryflow PC）Zustand/getSnapshot 风险专项审计：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`（更新：2026-02-26，completed：9 项全量扫描完成，命中项集中在 `moryflow/mobile` 并已修复，回归单测通过）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
 - Anyhunt Server Auth & Session Code Review：`docs/code-review/anyhunt-server-auth.md`（更新：2026-02-02，路径对齐）
 - Anyhunt Server API Key & Quota Code Review：`docs/code-review/anyhunt-server-api-key-quota.md`（更新：2026-01-25，修复完成）

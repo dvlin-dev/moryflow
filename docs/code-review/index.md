@@ -21,6 +21,7 @@ status: active
 
 ## 近期更新
 
+- 2026-02-26：完成 Multi-project（排除 Moryflow PC）Zustand/getSnapshot 风险专项审计：9 个前端项目全量扫描完成，命中项集中在 `apps/moryflow/mobile/lib/cloud-sync/sync-engine.ts`，已完成 `shouldSync` 等价判断与 `getSnapshot` 缓存稳定化修复，并新增 3 条回归测试：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`。
 - 2026-02-26：Moryflow PC Zustand `getSnapshot` 风险专项审计闭环：风险点清单已落文档并完成修复（selector 原子化 + `useSyncVaultFilesStore` `shouldSync`），补齐回归测试：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`。
 - 2026-02-26：Anyhunt WWW 组件优化专项完成项目复盘（P1-R）：模块 A/B/C/D 全部闭环，补充 `public-topics.hooks` 分域拆分与 `CreateSubscriptionDialogForm` 再收敛，`typecheck` + `test:unit` + `build` 全通过；详见 `docs/code-review/anyhunt-www.md`。
 - 2026-02-26：Anyhunt WWW 组件优化专项完成模块 D（`stores/hooks/数据映射`）分步修复（D-1~D-6）：`digest hooks/types` 分域拆分、Inbox mapper 统一、`public-topics` 异步竞态修复（AbortController + generation guard）、`auth-api` unknown 错误收敛、回归测试补齐；详见 `docs/code-review/anyhunt-www.md`。

@@ -66,6 +66,7 @@ Moryflow 移动端应用，基于 Expo + React Native 构建。
 
 ## 近期变更
 
+- Cloud Sync Zustand 稳定性专项：`lib/cloud-sync/sync-engine.ts` 增加 setter `shouldSync` 等价判断与 `getSnapshot` 缓存稳定化，新增 `lib/cloud-sync/__tests__/sync-engine-store.spec.ts` 回归测试（等价写入跳过 / 快照缓存 / 反馈循环防护）
 - Mobile Auth API 修复：`AUTH_BASE_URL`（`.../api/v1/auth`）下请求路径改为相对路径（`sign-in/email`、`email-otp/verify-email`、`refresh`、`logout`），避免 URL 解析覆盖 `/api/v1/auth` 导致 404
 - 移除 Hugeicons 依赖，icons.ts/icon.tsx 改为 lucide-react-native 输出
 - Agent Runtime 增加用户级 JSONC 配置、Agent Markdown 与 Hook（Mobile 读取 Paths.document/.moryflow）

@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（新增 Multi-project Zustand/getSnapshot 风险专项审计：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`；9 项目全量扫描，修复 `moryflow/mobile` `sync-engine` 的 `getSnapshot` 稳定性与 no-op 写入风险，新增回归测试）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（新增 Moryflow PC Zustand getSnapshot 风险专项审计文档：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`，集中列出同类无限重渲染风险点与证据）
 > 最近更新：2026-02-26（Anyhunt WWW 组件优化专项完成项目复盘：模块 A/B/C/D 全部闭环，补充 B-6（`CreateSubscriptionDialogForm` 容器化拆分）与 D-7（`public-topics.hooks` 分域拆分）；`typecheck`/`test:unit`/`build` 全通过）
@@ -97,6 +98,7 @@
 
 ## 最近更新
 
+- Multi-project Zustand/getSnapshot 风险专项审计（排除 Moryflow PC）：`docs/code-review/multi-project-zustand-getsnapshot-audit-2026-02-26.md`（2026-02-26：completed，9 项全量扫描完成；`moryflow/mobile` 命中项已修复并补齐 3 条回归测试；`test:unit` 通过，`check:type` 保留既有基线失败）
 - Moryflow PC Zustand getSnapshot 风险专项审计：`docs/code-review/moryflow-pc-zustand-getsnapshot-audit-2026-02-26.md`（2026-02-26：completed，同类无限重渲染风险点已修复并补齐回归测试）
 - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt WWW Code Review：`docs/code-review/anyhunt-www.md`（2026-02-26：done，模块 A/B/C/D + 项目复盘全部完成；含 B-6/D-7 收口与模块级 `typecheck`/`test:unit`/`build` 全通过）

@@ -55,6 +55,52 @@ interface SyncEngineActions {
 
 type SyncEngineStore = SyncEngineState & SyncEngineActions;
 
+const shouldSyncValue = <T>(prev: T, next: T): boolean => !Object.is(prev, next);
+
+const isSettingsEqual = (prev: CloudSyncSettings | null, next: CloudSyncSettings): boolean =>
+  Boolean(
+    prev &&
+    prev.syncEnabled === next.syncEnabled &&
+    prev.vectorizeEnabled === next.vectorizeEnabled &&
+    prev.deviceId === next.deviceId &&
+    prev.deviceName === next.deviceName
+  );
+
+const buildStatusSnapshot = (state: SyncEngineState): SyncStatusSnapshot => ({
+  status: state.status,
+  vaultId: state.vaultId,
+  vaultName: state.vaultName,
+  lastSyncAt: state.lastSyncAt,
+  error: state.error,
+  pendingCount: state.pendingCount,
+});
+
+const isStatusSnapshotEqual = (prev: SyncStatusSnapshot, next: SyncStatusSnapshot): boolean =>
+  prev.status === next.status &&
+  prev.vaultId === next.vaultId &&
+  prev.vaultName === next.vaultName &&
+  prev.lastSyncAt === next.lastSyncAt &&
+  prev.error === next.error &&
+  prev.pendingCount === next.pendingCount;
+
+let cachedSnapshot: SyncStatusSnapshot = {
+  status: 'disabled',
+  vaultId: null,
+  vaultName: null,
+  lastSyncAt: null,
+  error: null,
+  pendingCount: 0,
+};
+
+const getStableSnapshot = (state: SyncEngineState): SyncStatusSnapshot => {
+  const nextSnapshot = buildStatusSnapshot(state);
+  if (isStatusSnapshotEqual(cachedSnapshot, nextSnapshot)) {
+    return cachedSnapshot;
+  }
+  cachedSnapshot = nextSnapshot;
+  return cachedSnapshot;
+};
+
 // ── Zustand Store ────────────────────────────────────────────
 
 export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
@@ -69,24 +115,25 @@ export const useSyncEngineStore = create<SyncEngineStore>()((set, get) => ({
   settings: null,
 
   // Actions
-  setStatus: (status) => set({ status }),
-  setVault: (vaultPath, vaultId, vaultName) => set({ vaultPath, vaultId, vaultName }),
-  setLastSync: (time) => set({ lastSyncAt: time }),
-  setError: (error) => set({ error }),
-  setPendingCount: (count) => set({ pendingCount: count }),
-  setSettings: (settings) => set({ settings }),
+  setStatus: (status) =>
+    set((state) => (shouldSyncValue(state.status, status) ? { status } : state)),
+  setVault: (vaultPath, vaultId, vaultName) =>
+    set((state) =>
+      shouldSyncValue(state.vaultPath, vaultPath) ||
+      shouldSyncValue(state.vaultId, vaultId) ||
+      shouldSyncValue(state.vaultName, vaultName)
+        ? { vaultPath, vaultId, vaultName }
+        : state
+    ),
+  setLastSync: (time) =>
+    set((state) => (shouldSyncValue(state.lastSyncAt, time) ? { lastSyncAt: time } : state)),
+  setError: (error) => set((state) => (shouldSyncValue(state.error, error) ? { error } : state)),
+  setPendingCount: (count) =>
+    set((state) => (shouldSyncValue(state.pendingCount, count) ? { pendingCount: count } : state)),
+  setSettings: (settings) =>
+    set((state) => (isSettingsEqual(state.settings, settings) ? state : { settings })),
 
-  getSnapshot: () => {
-    const state = get();
-    return {
-      status: state.status,
-      vaultId: state.vaultId,
-      vaultName: state.vaultName,
-      lastSyncAt: state.lastSyncAt,
-      error: state.error,
-      pendingCount: state.pendingCount,
-    };
-  },
+  getSnapshot: () => getStableSnapshot(get()),
 }));
 
 // ── 同步锁 ────────────────────────────────────────────────────
