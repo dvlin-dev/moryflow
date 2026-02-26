@@ -17,6 +17,11 @@ Moryflow 后台管理系统，基于 Vite + React 构建的 Web 管理端。
 
 ## 近期变更
 
+- 追加修复：`chat/sites/image-generation` 完成 `store + methods + 子组件就地取数` 一次性重构，核心页面收敛为装配层，移除多层 props drilling
+- 追加修复：`ChatPane` 流式请求编排下沉到 `features/chat/methods.ts`，`ConversationSection/ChatFooter/ModelSelector` 统一 selector 取数
+- 追加修复：`SitesPage` 筛选/分页/操作状态迁移到 `features/sites/store.ts`，`SitesFilterBar/SitesTable/SiteActionConfirmDialog` 改为就地取数
+- 追加修复：`ImageGenerator` 状态迁移到 `features/image-generation/store.ts`，`ImageGeneratorForm/Result` 改为 methods 驱动
+- 追加修复：新增 `chat/sites/image-generation` 三组 `methods.test.ts` 回归测试，`@moryflow/admin test:unit` 通过（35 files / 156 tests）
 - 项目复盘：`ToolAnalyticsPage` 拆分为装配层（160 行），`ToolStatsTable` 状态渲染统一为 `ViewState + switch`，并抽离 `tool-analytics/metrics` 聚合逻辑与回归测试
 - 项目复盘：`AgentTraceStoragePage` 拆分为装配层（110 行），新增 `agent-trace-storage/*` 组件与 `resolveStorageStatsViewState`，补齐显式失败态
 - 项目复盘：`PaymentTestPage` 拆分产品卡片/配置区/说明区（235 行），移除链式三元并新增 `payment-test/cycle` 回归测试

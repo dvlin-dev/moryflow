@@ -8,15 +8,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useDeleteSite, useOfflineSite, useOnlineSite } from '../hooks';
+import { sitesListMethods } from '../methods';
+import { useSitesListStore } from '../store';
 import type { SiteActionType } from '../types';
 
 interface SiteActionConfirmDialogProps {
-  actionType: SiteActionType | null;
+  actionType?: SiteActionType | null;
   siteSubdomain?: string;
-  isLoading: boolean;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  isLoading?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onConfirm?: () => void | Promise<void>;
 }
 
 function getActionTitle(actionType: SiteActionType | null): string {
@@ -32,7 +35,7 @@ function getActionTitle(actionType: SiteActionType | null): string {
   }
 }
 
-function getActionDescription(actionType: SiteActionType | null, siteSubdomain?: string) {
+function getActionDescription(actionType: SiteActionType | null, siteSubdomain?: string): string {
   const target = siteSubdomain ?? '-';
 
   switch (actionType) {
@@ -54,19 +57,51 @@ function getConfirmButtonClass(actionType: SiteActionType | null): string | unde
   return undefined;
 }
 
-export function SiteActionConfirmDialog({
-  actionType,
-  siteSubdomain,
-  isLoading,
-  open,
-  onOpenChange,
-  onConfirm,
-}: SiteActionConfirmDialogProps) {
+export function SiteActionConfirmDialog(props: SiteActionConfirmDialogProps) {
+  const storeActionType = useSitesListStore((state) => state.actionType);
+  const storeSiteSubdomain = useSitesListStore((state) => state.actionSite?.subdomain);
+
+  const offlineMutation = useOfflineSite();
+  const onlineMutation = useOnlineSite();
+  const deleteMutation = useDeleteSite();
+
+  const fallbackLoading =
+    offlineMutation.isPending || onlineMutation.isPending || deleteMutation.isPending;
+
+  const actionType = props.actionType ?? storeActionType;
+  const siteSubdomain = props.siteSubdomain ?? storeSiteSubdomain;
+  const open = props.open ?? Boolean(actionType);
+  const isLoading = props.isLoading ?? fallbackLoading;
+
   const description = getActionDescription(actionType, siteSubdomain);
   const isDelete = actionType === 'delete';
 
+  const handleConfirm = async () => {
+    if (props.onConfirm) {
+      await props.onConfirm();
+      return;
+    }
+
+    await sitesListMethods.confirmSiteAction({
+      offline: offlineMutation.mutateAsync,
+      online: onlineMutation.mutateAsync,
+      remove: deleteMutation.mutateAsync,
+    });
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (props.onOpenChange) {
+      props.onOpenChange(isOpen);
+      return;
+    }
+
+    if (!isOpen) {
+      sitesListMethods.closeSiteActionDialog();
+    }
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{getActionTitle(actionType)}</AlertDialogTitle>
@@ -77,7 +112,9 @@ export function SiteActionConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={() => {
+              void handleConfirm();
+            }}
             disabled={isLoading}
             className={getConfirmButtonClass(actionType)}
           >

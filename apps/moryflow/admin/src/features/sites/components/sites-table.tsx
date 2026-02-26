@@ -20,14 +20,9 @@ import { formatDate } from '@/lib/format';
 import { Delete, Ellipsis, SquareArrowUpRight, ToggleLeft, ToggleRight, View } from 'lucide-react';
 import { SiteStatusBadge } from './SiteStatusBadge';
 import { SiteTypeBadge } from './SiteTypeBadge';
-import type { SiteActionType, SiteListItem } from '../types';
-import type { SitesListViewState } from '../view-state';
-
-interface SitesTableProps {
-  sites: SiteListItem[];
-  viewState: SitesListViewState;
-  onAction: (site: SiteListItem, action: SiteActionType) => void;
-}
+import { sitesListMethods } from '../methods';
+import { useSitesListStore } from '../store';
+import type { SiteListItem } from '../types';
 
 const SITES_TABLE_COLUMNS: ColumnConfig[] = [
   { width: 'w-full' },
@@ -40,7 +35,7 @@ const SITES_TABLE_COLUMNS: ColumnConfig[] = [
   { width: 'w-full' },
 ];
 
-function SitesTableRow({ site, onAction }: { site: SiteListItem; onAction: SitesTableProps['onAction'] }) {
+function SitesTableRow({ site }: { site: SiteListItem }) {
   return (
     <TableRow key={site.id}>
       <TableCell>
@@ -90,18 +85,21 @@ function SitesTableRow({ site, onAction }: { site: SiteListItem; onAction: Sites
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {site.status === 'ACTIVE' && (
-              <DropdownMenuItem onClick={() => onAction(site, 'offline')}>
+              <DropdownMenuItem onClick={() => sitesListMethods.openSiteActionDialog(site, 'offline')}>
                 <ToggleLeft className="mr-2 h-4 w-4" />
                 强制下线
               </DropdownMenuItem>
             )}
             {site.status === 'OFFLINE' && (
-              <DropdownMenuItem onClick={() => onAction(site, 'online')}>
+              <DropdownMenuItem onClick={() => sitesListMethods.openSiteActionDialog(site, 'online')}>
                 <ToggleRight className="mr-2 h-4 w-4" />
                 恢复上线
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem className="text-red-600" onClick={() => onAction(site, 'delete')}>
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => sitesListMethods.openSiteActionDialog(site, 'delete')}
+            >
               <Delete className="mr-2 h-4 w-4" />
               删除站点
             </DropdownMenuItem>
@@ -112,7 +110,10 @@ function SitesTableRow({ site, onAction }: { site: SiteListItem; onAction: Sites
   );
 }
 
-export function SitesTable({ sites, viewState, onAction }: SitesTableProps) {
+export function SitesTable() {
+  const sites = useSitesListStore((state) => state.sites);
+  const viewState = useSitesListStore((state) => state.listViewState);
+
   const renderRowsByState = () => {
     switch (viewState) {
       case 'loading':
@@ -134,7 +135,7 @@ export function SitesTable({ sites, viewState, onAction }: SitesTableProps) {
           </TableRow>
         );
       case 'ready':
-        return sites.map((site) => <SitesTableRow key={site.id} site={site} onAction={onAction} />);
+        return sites.map((site) => <SitesTableRow key={site.id} site={site} />);
       default:
         return null;
     }

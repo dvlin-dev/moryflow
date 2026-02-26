@@ -97,7 +97,7 @@ status: active
 - 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Anyhunt Console 完成首个项目闭环：模块 D D-6 全量完成 + 模块 E 完成 + 项目复盘完成）
 - 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；Moryflow Admin 已完成模块 A/B/C/D 与项目复盘（Step 14~22）；`anyhunt/docs` 与 `moryflow/docs` 已标记忽略）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-26，done：模块 A/B/C/D/E 与项目复盘全部完成）
-- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（更新：2026-02-26，done：模块 A/B/C/D 与项目复盘收口完成，遗留页面问题已清零）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（更新：2026-02-26，done：模块 A/B/C/D 与项目复盘收口完成；追加彻改已完成（`chat/sites/image-generation` 全量落地 `store + methods + 子组件就地取数`））
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）

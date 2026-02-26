@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -8,25 +9,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { sitesListMethods } from '../methods';
+import { useSitesListStore } from '../store';
 
 interface Option {
   value: string;
   label: string;
-}
-
-interface SitesFilterBarProps {
-  searchInput: string;
-  statusFilter: string;
-  typeFilter: string;
-  tierFilter: string;
-  expiryFilter: string;
-  onSearchInputChange: (value: string) => void;
-  onSearch: () => void;
-  onSearchKeyDown: (e: React.KeyboardEvent) => void;
-  onStatusFilterChange: (value: string) => void;
-  onTypeFilterChange: (value: string) => void;
-  onTierFilterChange: (value: string) => void;
-  onExpiryFilterChange: (value: string) => void;
 }
 
 const STATUS_OPTIONS: Option[] = [
@@ -78,45 +66,53 @@ function FilterSelect({ value, onValueChange, options }: FilterSelectProps) {
   );
 }
 
-export function SitesFilterBar({
-  searchInput,
-  statusFilter,
-  typeFilter,
-  tierFilter,
-  expiryFilter,
-  onSearchInputChange,
-  onSearch,
-  onSearchKeyDown,
-  onStatusFilterChange,
-  onTypeFilterChange,
-  onTierFilterChange,
-  onExpiryFilterChange,
-}: SitesFilterBarProps) {
+function handleSearchInputKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
+  if (event.key === 'Enter') {
+    sitesListMethods.applySitesSearch();
+  }
+}
+
+export function SitesFilterBar() {
+  const searchInput = useSitesListStore((state) => state.searchInput);
+  const statusFilter = useSitesListStore((state) => state.statusFilter);
+  const typeFilter = useSitesListStore((state) => state.typeFilter);
+  const tierFilter = useSitesListStore((state) => state.tierFilter);
+  const expiryFilter = useSitesListStore((state) => state.expiryFilter);
+  const setSearchInput = useSitesListStore((state) => state.setSearchInput);
+
   return (
     <div className="flex flex-wrap gap-2">
       <div className="flex gap-2">
         <Input
           placeholder="搜索子域名、标题、邮箱..."
           value={searchInput}
-          onChange={(e) => onSearchInputChange(e.target.value)}
-          onKeyDown={onSearchKeyDown}
+          onChange={(event) => setSearchInput(event.target.value)}
+          onKeyDown={handleSearchInputKeyDown}
           className="w-64"
         />
-        <Button variant="outline" size="icon" onClick={onSearch}>
+        <Button variant="outline" size="icon" onClick={sitesListMethods.applySitesSearch}>
           <Search className="h-4 w-4" />
         </Button>
       </div>
 
       <FilterSelect
         value={statusFilter}
-        onValueChange={onStatusFilterChange}
+        onValueChange={sitesListMethods.setSitesStatusFilter}
         options={STATUS_OPTIONS}
       />
-      <FilterSelect value={typeFilter} onValueChange={onTypeFilterChange} options={TYPE_OPTIONS} />
-      <FilterSelect value={tierFilter} onValueChange={onTierFilterChange} options={TIER_OPTIONS} />
+      <FilterSelect
+        value={typeFilter}
+        onValueChange={sitesListMethods.setSitesTypeFilter}
+        options={TYPE_OPTIONS}
+      />
+      <FilterSelect
+        value={tierFilter}
+        onValueChange={sitesListMethods.setSitesTierFilter}
+        options={TIER_OPTIONS}
+      />
       <FilterSelect
         value={expiryFilter}
-        onValueChange={onExpiryFilterChange}
+        onValueChange={sitesListMethods.setSitesExpiryFilter}
         options={EXPIRY_OPTIONS}
       />
     </div>

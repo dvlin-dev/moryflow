@@ -105,6 +105,31 @@ status: done
 - `S3`（复盘遗留）：1 项（已修复）
 - 当前状态：项目复盘收口完成，`apps/moryflow/admin` 进入“可收尾”状态
 
+## 结论摘要（补充修复：store + methods + 子组件就地取数）
+
+- `S1`（必须改）：3 项（已修复）
+- `S2`（建议本轮改）：4 项（已修复）
+- `S3`（可延后）：2 项（已修复）
+- 当前状态：`chat / sites / image-generation` 已完成“一次性彻改”，核心组件完成去 props drilling 与编排下沉
+
+### 本轮关键改动
+
+- `image-generation`：
+  - 新增 `store.ts`、`methods.ts`；`ImageGeneratorForm`/`ImageGeneratorResult` 改为 selector 就地取数
+  - `ImageGenerator` 收敛为装配层，仅保留布局与生命周期重置
+- `sites`：
+  - 新增 `store.ts`、`methods.ts`；`SitesFilterBar`/`SitesTable`/`SiteActionConfirmDialog` 改为“状态就地读取 + methods 触发”
+  - `SitesPage` 移除筛选与对话框胶水 props，页面层仅保留 query 同步与分页装配
+- `chat`：
+  - 新增 `store.ts`、`methods.ts`，流式请求编排下沉到 `submitChatMessage/stopChatStream`
+  - `ChatPane`/`ConversationSection`/`ChatFooter`/`ModelSelector` 去 props drilling，统一 selector + methods
+
+### 本轮新增回归测试
+
+- `apps/moryflow/admin/src/features/image-generation/methods.test.ts`
+- `apps/moryflow/admin/src/features/sites/methods.test.ts`
+- `apps/moryflow/admin/src/features/chat/methods.test.ts`
+
 ## 发现（按严重度排序）
 
 - [S1][已修复] `SetTierDialog` 在切换目标用户时可能保留旧等级，存在误提交风险

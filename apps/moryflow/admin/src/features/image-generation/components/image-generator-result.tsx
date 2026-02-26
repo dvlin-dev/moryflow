@@ -1,24 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronUp, Loader } from 'lucide-react';
-import type { ImageGenerationResponse } from '../api';
+import { resolveGeneratedImageSource } from '../view-state';
 import {
-  resolveGeneratedImageSource,
-  type ImageGeneratorViewState,
-} from '../view-state';
-
-export interface GenerationResult {
-  response: ImageGenerationResponse;
-  duration: number;
-}
-
-interface ImageGeneratorResultProps {
-  viewState: ImageGeneratorViewState;
-  result: GenerationResult | null;
-  error: string | null;
-  rawResponseOpen: boolean;
-  onRawResponseOpenChange: (open: boolean) => void;
-}
+  selectImageGeneratorViewState,
+  useImageGeneratorStore,
+  type ImageGenerationResult,
+} from '../store';
 
 function GeneratedImageCard({
   source,
@@ -28,11 +16,7 @@ function GeneratedImageCard({
   alt: string;
 }) {
   if (!source) {
-    return (
-      <div className="flex h-32 items-center justify-center text-muted-foreground">
-        无图片数据
-      </div>
-    );
+    return <div className="flex h-32 items-center justify-center text-muted-foreground">无图片数据</div>;
   }
 
   return <img src={source} alt={alt} className="h-auto w-full object-cover" />;
@@ -43,7 +27,7 @@ function ReadyStateResult({
   rawResponseOpen,
   onRawResponseOpenChange,
 }: {
-  result: GenerationResult;
+  result: ImageGenerationResult;
   rawResponseOpen: boolean;
   onRawResponseOpenChange: (open: boolean) => void;
 }) {
@@ -69,11 +53,7 @@ function ReadyStateResult({
       <Collapsible open={rawResponseOpen} onOpenChange={onRawResponseOpenChange}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="w-full">
-            {rawResponseOpen ? (
-              <ChevronUp className="mr-2 h-4 w-4" />
-            ) : (
-              <ChevronDown className="mr-2 h-4 w-4" />
-            )}
+            {rawResponseOpen ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
             原始响应
           </Button>
         </CollapsibleTrigger>
@@ -87,13 +67,13 @@ function ReadyStateResult({
   );
 }
 
-export function ImageGeneratorResult({
-  viewState,
-  result,
-  error,
-  rawResponseOpen,
-  onRawResponseOpenChange,
-}: ImageGeneratorResultProps) {
+export function ImageGeneratorResult() {
+  const viewState = useImageGeneratorStore(selectImageGeneratorViewState);
+  const result = useImageGeneratorStore((state) => state.result);
+  const error = useImageGeneratorStore((state) => state.error);
+  const rawResponseOpen = useImageGeneratorStore((state) => state.rawResponseOpen);
+  const setRawResponseOpen = useImageGeneratorStore((state) => state.setRawResponseOpen);
+
   const renderContentByState = () => {
     switch (viewState) {
       case 'loading':
@@ -116,20 +96,17 @@ export function ImageGeneratorResult({
             </div>
           );
         }
+
         return (
           <ReadyStateResult
             result={result}
             rawResponseOpen={rawResponseOpen}
-            onRawResponseOpenChange={onRawResponseOpenChange}
+            onRawResponseOpenChange={setRawResponseOpen}
           />
         );
       case 'idle':
       default:
-        return (
-          <div className="flex h-64 items-center justify-center text-muted-foreground">
-            点击"生成图片"开始
-          </div>
-        );
+        return <div className="flex h-64 items-center justify-center text-muted-foreground">点击"生成图片"开始</div>;
     }
   };
 

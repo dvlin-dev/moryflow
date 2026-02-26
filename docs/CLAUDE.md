@@ -8,6 +8,7 @@
 
 # docs/ 目录指南
 
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项追加彻改完成：`chat/sites/image-generation` 全量迁移到 `store + methods + 子组件就地取数`，新增 3 组 methods 回归测试，模块级 `lint` + `typecheck` + `test:unit` 通过（35 files / 156 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项项目复盘完成：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 三个遗留页面已收口，页面超阈值与链式三元问题清零，并补齐 3 组回归测试，模块级 `lint` + `typecheck` + `test:unit` 通过（32 files / 147 tests））
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进入项目复盘阶段：静态扫描识别 3 个遗留页面待收口（`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage`），已回写 PR-1~PR-4 收口计划）
 > 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 D（`sites/image-generation/shared`）完成修复闭环（D-1~D-7），`Sites`/`ImageGenerator` 统一 `ViewState + switch`，`SitesPage`/`SiteDetailPage`/`ImageGenerator` 全部收敛到 300 行内，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
@@ -99,6 +100,7 @@
 
 ## 最近更新
 
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：done，追加彻改完成：`chat/sites/image-generation` 一次性迁移到 `store + methods + selector`，新增 3 组 methods 回归测试）
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：done，项目复盘 R-0~R-4 完成，遗留 3 页问题全部收口并通过模块级校验）
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 D（sites/image-generation/shared）修复完成（D-1~D-7），`Sites`/`ImageGenerator` 统一状态片段化与职责拆分，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
 - Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 B（payment/providers/models/storage）修复完成（B-1~B-6），通过 `lint` + `typecheck` + `test:unit`（21 files / 97 tests））
