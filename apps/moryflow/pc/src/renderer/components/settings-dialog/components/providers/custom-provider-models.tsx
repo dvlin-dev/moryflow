@@ -20,12 +20,13 @@ import {
   type EditModelInitialData,
 } from './edit-model-dialog';
 import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
-import type { UserModelConfig } from '@shared/ipc';
+import type { ProviderSdkType, UserModelConfig } from '@shared/ipc';
 
 export type CustomProviderModel = UserModelConfig;
 
 type CustomProviderModelsProps = {
   models: CustomProviderModel[];
+  sdkType?: ProviderSdkType;
   onAddModel: (data: AddModelFormData) => void;
   onUpdateModel: (data: EditModelFormData) => void;
   onToggleModel: (modelId: string, enabled: boolean) => void;
@@ -34,6 +35,7 @@ type CustomProviderModelsProps = {
 
 export const CustomProviderModels = ({
   models,
+  sdkType = 'openai-compatible',
   onAddModel,
   onUpdateModel,
   onToggleModel,
@@ -87,6 +89,7 @@ export const CustomProviderModels = ({
       capabilities: resolveModelCapabilities(model),
       limits: resolveModelLimits(model),
       inputModalities: model.customInputModalities || ['text'],
+      thinking: model.thinking,
     });
     setEditOpen(true);
   };
@@ -189,6 +192,7 @@ export const CustomProviderModels = ({
         open={addOpen}
         onOpenChange={setAddOpen}
         existingModelIds={existingModelIds}
+        sdkType={sdkType}
         onAdd={onAddModel}
       />
 
@@ -197,6 +201,7 @@ export const CustomProviderModels = ({
         onOpenChange={setEditOpen}
         onSave={onUpdateModel}
         initialData={editInitialData}
+        sdkType={sdkType}
       />
     </div>
   );

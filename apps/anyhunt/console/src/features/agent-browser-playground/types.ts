@@ -190,6 +190,22 @@ export type AgentTaskProgress = {
   elapsedMs: number;
 };
 
+export type AgentThinkingSelection =
+  | { mode: 'off' }
+  | { mode: 'level'; level: string };
+
+export type AgentThinkingLevelOption = {
+  id: string;
+  label: string;
+  description?: string;
+};
+
+export type AgentThinkingProfile = {
+  supportsThinking: boolean;
+  defaultLevel: string;
+  levels: AgentThinkingLevelOption[];
+};
+
 export type AgentTaskResult = {
   id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
@@ -220,6 +236,7 @@ export type AgentModelOption = {
   maxContextTokens: number;
   maxOutputTokens: number;
   capabilitiesJson: Record<string, unknown> | string;
+  thinkingProfile: AgentThinkingProfile;
 };
 
 export type AgentModelListResponse = {

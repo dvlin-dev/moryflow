@@ -19,7 +19,25 @@ export {
   type BuildModelOptions,
   type BuildModelResult,
 } from './model-factory';
-export { buildReasoningProviderOptions } from './reasoning-config';
+export {
+  buildReasoningProviderOptions,
+  supportsThinkingForSdkType,
+  getDefaultThinkingLevelsForSdkType,
+  resolveReasoningConfigFromThinkingSelection,
+} from './reasoning-config';
+export {
+  buildThinkingProfile,
+  createDefaultThinkingProfile,
+  resolveDefaultThinkingLevel,
+  isThinkingLevelEnabled,
+  toThinkingSelection,
+  type RawThinkingProfileInput,
+} from './thinking-profile';
+export {
+  resolveThinkingToReasoning,
+  resolveThinkingSelectionForProfile,
+  type ResolvedThinkingResult,
+} from './thinking-adapter';
 export { applyContextToInput } from './context';
 export { getMorySystemPrompt } from './prompt';
 

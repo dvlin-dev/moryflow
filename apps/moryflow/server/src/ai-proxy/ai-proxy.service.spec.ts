@@ -119,6 +119,26 @@ describe('AiProxyService', () => {
       expect(proModelResult?.available).toBe(false);
     });
 
+    it('模型列表查询应只触发一次数据库读取', async () => {
+      const provider = createMockAiProvider({ providerType: 'openai' });
+      const model = createMockAiModel({
+        providerId: provider.id,
+        modelId: 'gpt-4o-mini',
+        minTier: SubscriptionTier.free,
+        enabled: true,
+      });
+
+      prismaMock.aiModel.findMany.mockResolvedValue([
+        { ...model, provider } as Parameters<
+          typeof prismaMock.aiModel.findMany.mockResolvedValue
+        >[0][0],
+      ]);
+
+      await service.getAllModelsWithAccess(SubscriptionTier.free);
+
+      expect(prismaMock.aiModel.findMany).toHaveBeenCalledTimes(1);
+    });
+
     it('Pro 用户应能访问所有模型', async () => {
       const provider = createMockAiProvider({ providerType: 'openai' });
       const models = [

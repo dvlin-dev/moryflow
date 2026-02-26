@@ -31,7 +31,11 @@ import {
   Search,
   Settings,
 } from 'lucide-react';
-import { getProviderById, modelRegistry } from '@shared/model-registry';
+import {
+  getProviderById,
+  modelRegistry,
+  type ThinkingLevelProviderPatches,
+} from '@shared/model-registry';
 import type { SettingsDialogState } from '../../use-settings-dialog';
 import type { AgentProviderTestInput, ProviderSdkType } from '@shared/ipc';
 import { AddModelDialog, type AddModelFormData } from './add-model-dialog';
@@ -104,6 +108,11 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
       shortName?: string;
       isPreset: boolean;
       isCustom?: boolean;
+      thinking?: {
+        defaultLevel?: string;
+        enabledLevels?: string[];
+        levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+      };
       capabilities?: {
         reasoning: boolean;
         attachment: boolean;
@@ -130,6 +139,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
               temperature: userModel.customCapabilities.temperature ?? true,
             }
           : undefined,
+        thinking: userModel.thinking,
         limits: {
           context: userModel.customContext || DEFAULT_CUSTOM_MODEL_CONTEXT,
           output: userModel.customOutput || DEFAULT_CUSTOM_MODEL_OUTPUT,
@@ -146,7 +156,10 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
         const hasCustomName = userConfig?.customName;
         const hasCustomConfig =
           userConfig &&
-          (userConfig.customName || userConfig.customContext || userConfig.customCapabilities);
+          (userConfig.customName ||
+            userConfig.customContext ||
+            userConfig.customCapabilities ||
+            userConfig.thinking);
 
         models.push({
           id: modelId,
@@ -167,6 +180,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
                     userConfig.customCapabilities.temperature ?? modelDef.capabilities.temperature,
                 }
               : modelDef.capabilities,
+          thinking: userConfig?.thinking,
           limits: hasCustomConfig
             ? {
                 context: userConfig.customContext || modelDef.limits.context,
@@ -409,6 +423,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
           customOutput: data.outputSize,
           customCapabilities: data.capabilities,
           customInputModalities: data.inputModalities,
+          thinking: data.thinking,
         },
       ]);
       // 添加模型意味着用户要用该服务商
@@ -437,6 +452,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
       setEditModelData({
         ...model,
         inputModalities: userModel?.customInputModalities || ['text'],
+        thinking: userModel?.thinking ?? model.thinking,
       });
       setEditModelOpen(true);
     },
@@ -461,6 +477,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
         customOutput: data.outputSize,
         customCapabilities: data.capabilities,
         customInputModalities: data.inputModalities,
+        thinking: data.thinking,
       };
 
       if (existingIndex >= 0) {
@@ -498,6 +515,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
           customOutput: data.outputSize,
           customCapabilities: data.capabilities,
           customInputModalities: data.inputModalities,
+          thinking: data.thinking,
         },
         ...currentModels,
       ]);
@@ -526,6 +544,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
         customOutput: data.outputSize,
         customCapabilities: data.capabilities,
         customInputModalities: data.inputModalities,
+        thinking: data.thinking,
       });
     },
     [customIndex, customProviderValues, setValue]
@@ -776,6 +795,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
             onOpenChange={setAddModelOpen}
             onAdd={handleAddModel}
             existingModelIds={existingModelIds}
+            sdkType={preset.sdkType}
           />
 
           {/* 编辑模型弹窗 */}
@@ -784,6 +804,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
             onOpenChange={setEditModelOpen}
             onSave={handleSaveModel}
             initialData={editModelData}
+            sdkType={preset.sdkType}
           />
         </div>
       </ScrollArea>
@@ -870,6 +891,7 @@ export const ProviderDetails = ({ providers, form }: ProviderDetailsProps) => {
           {/* Models */}
           <CustomProviderModels
             models={config.models || []}
+            sdkType={config.sdkType}
             onAddModel={handleAddCustomProviderModel}
             onUpdateModel={handleUpdateCustomProviderModel}
             onToggleModel={handleToggleCustomProviderModel}

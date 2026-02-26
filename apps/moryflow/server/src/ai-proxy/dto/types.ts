@@ -219,6 +219,18 @@ export interface ChatCompletionChunk {
 
 // ==================== 模型信息类型 ====================
 
+export interface ThinkingLevelOption {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export interface ThinkingProfile {
+  supportsThinking: boolean;
+  defaultLevel: string;
+  levels: ThinkingLevelOption[];
+}
+
 /** 模型信息 */
 export interface ModelInfo {
   id: string;
@@ -231,6 +243,7 @@ export interface ModelInfo {
   permission: unknown[];
   root: string;
   parent: null;
+  thinking_profile: ThinkingProfile;
 }
 
 /** 模型列表响应 */

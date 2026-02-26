@@ -302,11 +302,25 @@ export const AgentChatMessageSchema = z.object({
 });
 export type AgentChatMessage = z.infer<typeof AgentChatMessageSchema>;
 
+export const AgentThinkingSelectionSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('off'),
+  }),
+  z.object({
+    mode: z.literal('level'),
+    level: z.string().trim().min(1).max(50),
+  }),
+]);
+export type AgentThinkingSelection = z.infer<
+  typeof AgentThinkingSelectionSchema
+>;
+
 export const CreateAgentTaskBaseSchema = z.object({
   prompt: z.string().min(1).max(10000).optional(),
   messages: z.array(AgentChatMessageSchema).min(1).max(100).optional(),
   urls: z.array(z.string().url()).max(10).optional(),
   model: z.string().trim().min(1).max(200).optional(),
+  thinking: AgentThinkingSelectionSchema.optional(),
   output: AgentOutputSchema,
   maxCredits: z.number().int().positive().optional(),
   stream: z.boolean().default(true),

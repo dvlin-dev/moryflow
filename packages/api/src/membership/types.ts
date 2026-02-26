@@ -71,6 +71,18 @@ export interface MembershipUserProfile {
 
 // ── 模型 ──────────────────────────────────────────────────
 
+export interface MembershipThinkingLevelOption {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export interface MembershipThinkingProfile {
+  supportsThinking: boolean;
+  defaultLevel: string;
+  levels: MembershipThinkingLevelOption[];
+}
+
 /** 会员模型 */
 export interface MembershipModel {
   id: string;
@@ -80,6 +92,7 @@ export interface MembershipModel {
   available: boolean;
   contextLength?: number;
   maxOutput?: number;
+  thinkingProfile: MembershipThinkingProfile;
 }
 
 /** 会员模型 API 响应项 */
@@ -91,6 +104,7 @@ export interface MembershipModelApiItem {
   display_name: string;
   min_tier: string;
   available: boolean;
+  thinking_profile: MembershipThinkingProfile;
 }
 
 /** 会员模型列表 API 响应 */

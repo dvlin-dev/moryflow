@@ -49,6 +49,8 @@ interface AgentRunPanelProps {
   apiKey: string;
 }
 
+const FALLBACK_THINKING_OPTIONS = [{ id: 'off', label: 'Off' }];
+
 export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
   const promptForm = useForm<AgentPromptValues>({
     resolver: zodResolver(agentPromptSchema),
@@ -57,12 +59,17 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
 
   const modelsQuery = useAgentModels(apiKey);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [thinkingSelectorOpen, setThinkingSelectorOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [selectedThinkingByModelId, setSelectedThinkingByModelId] = useState<
+    Record<string, string>
+  >({});
 
   const optionsRef = useRef({
     apiKey,
     output: { type: 'text' } as AgentOutput,
     modelId: undefined as string | undefined,
+    thinking: { mode: 'off' } as { mode: 'off' } | { mode: 'level'; level: string },
   });
 
   const initialModelId = useMemo(() => {
@@ -86,23 +93,63 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
     selectedModelId && modelOptions.some((model) => model.modelId === selectedModelId)
       ? selectedModelId
       : initialModelId;
+  const selectedModel = modelOptions.find((model) => model.modelId === activeModelId) ?? null;
+  const selectedThinkingProfile = selectedModel?.thinkingProfile ?? null;
+  const thinkingOptions = useMemo(
+    () => selectedThinkingProfile?.levels ?? FALLBACK_THINKING_OPTIONS,
+    [selectedThinkingProfile],
+  );
+  const activeThinkingLevel = useMemo(() => {
+    if (!activeModelId || !selectedThinkingProfile) {
+      return 'off';
+    }
+    const offLevel = thinkingOptions.some((option) => option.id === 'off')
+      ? 'off'
+      : (thinkingOptions[0]?.id ?? 'off');
+    const stored = selectedThinkingByModelId[activeModelId];
+    if (stored && thinkingOptions.some((option) => option.id === stored)) {
+      return stored;
+    }
+    if (!(activeModelId in selectedThinkingByModelId)) {
+      return offLevel;
+    }
+    return thinkingOptions.some((option) => option.id === selectedThinkingProfile.defaultLevel)
+      ? selectedThinkingProfile.defaultLevel
+      : offLevel;
+  }, [activeModelId, selectedThinkingByModelId, selectedThinkingProfile, thinkingOptions]);
+  const showThinkingSelector = thinkingOptions.length > 1;
 
   useEffect(() => {
     optionsRef.current = {
       apiKey,
       output: { type: 'text' },
       modelId: activeModelId ?? undefined,
+      thinking:
+        activeThinkingLevel === 'off'
+          ? { mode: 'off' }
+          : { mode: 'level', level: activeThinkingLevel },
     };
-  }, [apiKey, activeModelId]);
+  }, [activeModelId, activeThinkingLevel, apiKey]);
 
-  const transport = useMemo(() => new AgentChatTransport(optionsRef), []);
+  const transport = useMemo(
+    () =>
+      new AgentChatTransport(optionsRef, {
+        onThinkingAutoDowngrade: (modelId) => {
+          setSelectedThinkingByModelId((prev) => ({
+            ...prev,
+            [modelId]: 'off',
+          }));
+          toast.warning('Selected thinking level is unsupported. Switched to Off.');
+        },
+      }),
+    [],
+  );
 
   const { messages, status, error, sendMessage, stop } = useChat({
     id: 'agent-browser-playground',
     transport,
   });
 
-  const selectedModel = modelOptions.find((model) => model.modelId === activeModelId) ?? null;
   const hasModelOptions = modelOptions.length > 0;
 
   const canStop = status === 'submitted' || status === 'streaming';
@@ -168,6 +215,64 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
       </PromptInputButton>
     );
 
+  const renderThinkingSelector = () => {
+    if (!showThinkingSelector) {
+      return null;
+    }
+    return (
+      <ModelSelector
+        onOpenChange={(open) => {
+          if (!showThinkingSelector && open) {
+            return;
+          }
+          setThinkingSelectorOpen(open);
+        }}
+        open={showThinkingSelector ? thinkingSelectorOpen : false}
+      >
+        <ModelSelectorTrigger asChild>
+          <PromptInputButton
+            aria-label="Switch thinking level"
+            disabled={isDisabled || !activeModelId}
+          >
+            <span>
+              {`Thinking: ${
+                thinkingOptions.find((option) => option.id === activeThinkingLevel)?.label ??
+                'Off'
+              }`}
+            </span>
+            <ChevronDown className="size-3 opacity-50" />
+          </PromptInputButton>
+        </ModelSelectorTrigger>
+        <ModelSelectorContent>
+          <ModelSelectorList>
+            <ModelSelectorEmpty>No level found</ModelSelectorEmpty>
+            {thinkingOptions.map((option) => (
+              <ModelSelectorItem
+                key={option.id}
+                value={option.id}
+                onSelect={() => {
+                  if (!activeModelId) {
+                    return;
+                  }
+                  setSelectedThinkingByModelId((prev) => ({
+                    ...prev,
+                    [activeModelId]: option.id,
+                  }));
+                  setThinkingSelectorOpen(false);
+                }}
+              >
+                <ModelSelectorName>{option.label}</ModelSelectorName>
+                {activeThinkingLevel === option.id ? (
+                  <CircleCheck className="ml-auto size-4 shrink-0" />
+                ) : null}
+              </ModelSelectorItem>
+            ))}
+          </ModelSelectorList>
+        </ModelSelectorContent>
+      </ModelSelector>
+    );
+  };
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="min-h-0 flex-1 rounded-lg border border-border-muted bg-background">
@@ -201,7 +306,10 @@ export function AgentRunPanel({ apiKey }: AgentRunPanelProps) {
             />
           </PromptInputBody>
           <PromptInputFooter>
-            <PromptInputTools>{renderModelSelector()}</PromptInputTools>
+            <PromptInputTools>
+              {renderModelSelector()}
+              {renderThinkingSelector()}
+            </PromptInputTools>
             <div className="flex items-center gap-2">
               {canStop ? (
                 <InputGroupButton

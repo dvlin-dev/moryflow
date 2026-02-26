@@ -93,6 +93,7 @@ PC 端 Electron 应用的渲染进程，负责所有 UI 交互与展示。
 
 ## 近期变更
 
+- OTPForm 单测稳定性修复：`otp-form.test.tsx` 对 `@moryflow/ui/components/input-otp` 使用本地 mock，隔离第三方组件定时器副作用，修复 CI 中 `window is not defined` 的 unhandled error
 - Desktop Auth API 修复：登录/验证码验证/刷新/登出请求统一为显式 `/api/v1/auth/*`，彻底消除 `baseUrl + path` 拼接语义差异带来的 404
 - Desktop Better Auth Client 修复：`createAuthClient.baseURL` 统一为 `.../api/v1/auth`，避免注册与 OTP 发码误打到根路径
 - Desktop Auth：`authMethods.login` 在登录后强校验会话建立结果；若 refresh 后仍无法建立会话，则立即清理本地会话并返回 `Failed to establish session`，避免登录假成功

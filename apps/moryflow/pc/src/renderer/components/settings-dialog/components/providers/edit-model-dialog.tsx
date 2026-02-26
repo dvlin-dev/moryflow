@@ -6,7 +6,7 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,26 @@ import { Input } from '@moryflow/ui/components/input';
 import { Label } from '@moryflow/ui/components/label';
 import { Button } from '@moryflow/ui/components/button';
 import { Checkbox } from '@moryflow/ui/components/checkbox';
-import type { ModelModality } from '@shared/model-registry';
+import { Textarea } from '@moryflow/ui/components/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@moryflow/ui/components/select';
+import type {
+  ModelModality,
+  ThinkingLevelProviderPatches,
+} from '@shared/model-registry';
+import type { ProviderSdkType } from '@shared/ipc';
 import type { CustomCapabilities } from './add-model-dialog';
-import { DEFAULT_CUSTOM_MODEL_CONTEXT, DEFAULT_CUSTOM_MODEL_OUTPUT } from './constants';
+import {
+  DEFAULT_CUSTOM_MODEL_CONTEXT,
+  DEFAULT_CUSTOM_MODEL_OUTPUT,
+  getThinkingLevelsBySdkType,
+  THINKING_LEVEL_LABELS,
+} from './constants';
 
 export type EditModelFormData = {
   id: string;
@@ -29,6 +46,11 @@ export type EditModelFormData = {
   outputSize: number;
   capabilities: CustomCapabilities;
   inputModalities: ModelModality[];
+  thinking?: {
+    defaultLevel: string;
+    enabledLevels: string[];
+    levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+  };
 };
 
 export type EditModelInitialData = {
@@ -44,6 +66,11 @@ export type EditModelInitialData = {
   };
   limits: { context: number; output: number };
   inputModalities?: ModelModality[];
+  thinking?: {
+    defaultLevel?: string;
+    enabledLevels?: string[];
+    levelPatches?: Record<string, ThinkingLevelProviderPatches>;
+  };
 };
 
 type EditModelDialogProps = {
@@ -51,6 +78,7 @@ type EditModelDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSave: (data: EditModelFormData) => void;
   initialData: EditModelInitialData | null;
+  sdkType?: ProviderSdkType;
 };
 
 /** 默认能力 */
@@ -62,6 +90,21 @@ const DEFAULT_CAPABILITIES: CustomCapabilities = {
 };
 
 const DEFAULT_INPUT_MODALITIES: ModelModality[] = ['text'];
+const EMPTY_LEVEL_PATCHES_TEXT = '{}';
+
+const parseLevelPatchesInput = (
+  value: string,
+): Record<string, ThinkingLevelProviderPatches> | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '{}') {
+    return undefined;
+  }
+  const parsed = JSON.parse(trimmed) as unknown;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Level patches must be a JSON object');
+  }
+  return parsed as Record<string, ThinkingLevelProviderPatches>;
+};
 
 /** 输入模态选项 */
 const INPUT_MODALITY_OPTIONS: { value: ModelModality; label: string }[] = [
@@ -102,12 +145,17 @@ export const EditModelDialog = ({
   onOpenChange,
   onSave,
   initialData,
+  sdkType = 'openai-compatible',
 }: EditModelDialogProps) => {
+  const availableThinkingLevels = getThinkingLevelsBySdkType(sdkType);
   const [modelName, setModelName] = useState('');
   const [contextSize, setContextSize] = useState(DEFAULT_CUSTOM_MODEL_CONTEXT);
   const [outputSize, setOutputSize] = useState(DEFAULT_CUSTOM_MODEL_OUTPUT);
   const [capabilities, setCapabilities] = useState<CustomCapabilities>(DEFAULT_CAPABILITIES);
   const [inputModalities, setInputModalities] = useState<ModelModality[]>(DEFAULT_INPUT_MODALITIES);
+  const [thinkingLevels, setThinkingLevels] = useState<string[]>(availableThinkingLevels);
+  const [defaultThinkingLevel, setDefaultThinkingLevel] = useState('off');
+  const [levelPatchesText, setLevelPatchesText] = useState(EMPTY_LEVEL_PATCHES_TEXT);
   const [error, setError] = useState<string | null>(null);
 
   // 当初始数据变化时，重置表单
@@ -123,9 +171,26 @@ export const EditModelDialog = ({
         toolCall: initialData.capabilities?.toolCall ?? true,
       });
       setInputModalities(initialData.inputModalities || ['text']);
+
+      const enabledLevels =
+        initialData.thinking?.enabledLevels && initialData.thinking.enabledLevels.length > 0
+          ? initialData.thinking.enabledLevels
+          : availableThinkingLevels;
+      const normalizedLevels = Array.from(new Set(['off', ...enabledLevels.filter(Boolean)]));
+      setThinkingLevels(normalizedLevels);
+
+      const defaultLevel = initialData.thinking?.defaultLevel || 'off';
+      setDefaultThinkingLevel(
+        normalizedLevels.includes(defaultLevel) ? defaultLevel : normalizedLevels[0] || 'off'
+      );
+      setLevelPatchesText(
+        initialData.thinking?.levelPatches
+          ? JSON.stringify(initialData.thinking.levelPatches, null, 2)
+          : EMPTY_LEVEL_PATCHES_TEXT
+      );
       setError(null);
     }
-  }, [initialData, open]);
+  }, [availableThinkingLevels, initialData, open]);
 
   const handleSubmit = () => {
     setError(null);
@@ -136,6 +201,18 @@ export const EditModelDialog = ({
       return;
     }
 
+    let levelPatches: Record<string, ThinkingLevelProviderPatches> | undefined;
+    if (capabilities.reasoning) {
+      try {
+        levelPatches = parseLevelPatchesInput(levelPatchesText);
+      } catch (jsonError) {
+        setError(
+          jsonError instanceof Error ? jsonError.message : 'Level patches JSON is invalid',
+        );
+        return;
+      }
+    }
+
     onSave({
       id: initialData!.id,
       name: trimmedName,
@@ -143,13 +220,40 @@ export const EditModelDialog = ({
       outputSize,
       capabilities,
       inputModalities,
+      ...(capabilities.reasoning
+        ? {
+            thinking: {
+              defaultLevel:
+                thinkingLevels.includes(defaultThinkingLevel) && defaultThinkingLevel !== 'off'
+                  ? defaultThinkingLevel
+                  : 'off',
+              enabledLevels: Array.from(
+                new Set(['off', ...thinkingLevels.filter((level) => level !== 'off')])
+              ),
+              ...(levelPatches ? { levelPatches } : {}),
+            },
+          }
+        : {}),
     });
 
     onOpenChange(false);
   };
 
   const toggleCapability = (key: keyof CustomCapabilities) => {
-    setCapabilities((prev) => ({ ...prev, [key]: !prev[key] }));
+    setCapabilities((prev) => {
+      const next = !prev[key];
+      if (key === 'reasoning' && !next) {
+        setThinkingLevels(['off']);
+        setDefaultThinkingLevel('off');
+        setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
+      }
+      if (key === 'reasoning' && next) {
+        setThinkingLevels(availableThinkingLevels);
+        setDefaultThinkingLevel('off');
+        setLevelPatchesText(EMPTY_LEVEL_PATCHES_TEXT);
+      }
+      return { ...prev, [key]: next };
+    });
   };
 
   const toggleModality = (modality: ModelModality) => {
@@ -159,6 +263,28 @@ export const EditModelDialog = ({
         return prev.filter((m) => m !== modality);
       }
       return [...prev, modality];
+    });
+  };
+
+  const toggleThinkingLevel = (level: string) => {
+    if (level === 'off') {
+      return;
+    }
+    setThinkingLevels((prev) => {
+      const nextSet = new Set(prev);
+      if (nextSet.has(level)) {
+        nextSet.delete(level);
+      } else {
+        nextSet.add(level);
+      }
+      const next = Array.from(nextSet);
+      if (!next.includes('off')) {
+        next.unshift('off');
+      }
+      if (!next.includes(defaultThinkingLevel)) {
+        setDefaultThinkingLevel('off');
+      }
+      return next;
     });
   };
 
@@ -219,9 +345,7 @@ export const EditModelDialog = ({
                     setContextSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_CONTEXT)
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  {Math.round(contextSize / 1000)}K tokens
-                </p>
+                <p className="text-xs text-muted-foreground">{Math.round(contextSize / 1000)}K tokens</p>
               </div>
 
               <div className="space-y-2">
@@ -236,9 +360,7 @@ export const EditModelDialog = ({
                     setOutputSize(parseInt(e.target.value) || DEFAULT_CUSTOM_MODEL_OUTPUT)
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  {Math.round(outputSize / 1000)}K tokens
-                </p>
+                <p className="text-xs text-muted-foreground">{Math.round(outputSize / 1000)}K tokens</p>
               </div>
             </div>
 
@@ -268,6 +390,65 @@ export const EditModelDialog = ({
                 ))}
               </div>
             </div>
+
+            {capabilities.reasoning && (
+              <div className="space-y-3 rounded-md border p-3">
+                <Label>Thinking levels</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {availableThinkingLevels.map((level) => {
+                    const checked = thinkingLevels.includes(level);
+                    const isOff = level === 'off';
+                    return (
+                      <div
+                        key={level}
+                        role="button"
+                        tabIndex={isOff ? -1 : 0}
+                        aria-disabled={isOff}
+                        onClick={() => !isOff && toggleThinkingLevel(level)}
+                        onKeyDown={(e) => e.key === 'Enter' && !isOff && toggleThinkingLevel(level)}
+                        className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm aria-disabled:opacity-70 aria-disabled:cursor-not-allowed"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          disabled={isOff}
+                          onCheckedChange={() => toggleThinkingLevel(level)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span>{THINKING_LEVEL_LABELS[level] ?? level}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="space-y-2">
+                  <Label>Default thinking level</Label>
+                  <Select value={defaultThinkingLevel} onValueChange={setDefaultThinkingLevel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {thinkingLevels.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {THINKING_LEVEL_LABELS[level] ?? level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Level patches (JSON)</Label>
+                  <Textarea
+                    rows={6}
+                    value={levelPatchesText}
+                    onChange={(event) => setLevelPatchesText(event.target.value)}
+                    placeholder='{"high":{"openrouter":{"maxTokens":24576}}}'
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Optional per-level provider patch. Validated before save.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* 输入模态 */}
             <div className="space-y-3">

@@ -154,6 +154,12 @@ export class AgentService {
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
+        {
+          thinking: input.thinking,
+        },
+      );
+      this.logger.debug(
+        `Resolved agent model: requested=${input.model ?? 'default'}, upstream=${llmRoute.upstreamModelId}, thinking=${JSON.stringify(input.thinking ?? { mode: 'off' })}`,
       );
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
@@ -474,6 +480,12 @@ export class AgentService {
     try {
       const llmRoute = await this.llmRoutingService.resolveAgentModel(
         input.model,
+        {
+          thinking: input.thinking,
+        },
+      );
+      this.logger.debug(
+        `Resolved stream model: requested=${input.model ?? 'default'}, upstream=${llmRoute.upstreamModelId}, thinking=${JSON.stringify(input.thinking ?? { mode: 'off' })}`,
       );
       llmModel = llmRoute.model;
       llmModelProvider = llmRoute.modelProvider;
