@@ -24,11 +24,13 @@ apps/moryflow/site-template/
 │   │       ├── theme-toggle-button.html
 │   │       └── brand-footer-link.html
 │   ├── build.ts          # SSG 构建脚本
+│   ├── build-utils.ts    # build/sync 共用工具（样式解析/压缩/契约校验）
 │   ├── scripts/
 │   │   └── theme.ts      # 主题脚本真源（sync 导出）
 │   └── main.tsx          # 开发预览入口
 ├── scripts/
-│   └── sync.ts           # 同步脚本
+│   ├── sync.ts           # 同步脚本
+│   └── sync-utils.ts     # sync 片段注入/默认值纯函数工具
 ├── dist/                 # 构建产物
 │   ├── styles.css
 │   └── styles.min.css    # ← 同步到 PC 端
@@ -87,10 +89,11 @@ apps/moryflow/site-template/
 
 ### 命令说明
 
-| 命令         | 作用                    | 输入                                                         | 输出                                      |
-| ------------ | ----------------------- | ------------------------------------------------------------ | ----------------------------------------- |
-| `pnpm build` | 构建样式 + 模板契约校验 | `src/build.ts` + `src/styles/*.css` + `src/templates/*.html` | `dist/styles.css` + `dist/styles.min.css` |
-| `pnpm sync`  | 同步模板                | `dist/` + `src/templates/` + `src/templates/fragments/`      | `template/*.ts`                           |
+| 命令             | 作用                    | 输入                                                         | 输出                                      |
+| ---------------- | ----------------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| `pnpm build`     | 构建样式 + 模板契约校验 | `src/build.ts` + `src/styles/*.css` + `src/templates/*.html` | `dist/styles.css` + `dist/styles.min.css` |
+| `pnpm test:unit` | 生成链路回归测试        | `src/build-utils.test.ts` + `scripts/sync-utils.test.ts`     | 6 个核心回归测试（build/sync 纯函数）     |
+| `pnpm sync`      | 同步模板                | `dist/` + `src/templates/` + `src/templates/fragments/`      | `template/*.ts`                           |
 
 ### 开发流程
 
@@ -212,4 +215,5 @@ pnpm dev
 2. **样式修改需要 build**：修改 `src/styles/` 后必须先 `pnpm build`
 3. **模板修改建议先 build 再 sync**：`build` 会执行模板契约校验，随后 `pnpm sync`
 4. **主题脚本真源在 `src/scripts/theme.ts`**：`sync.ts` 只负责导出与注入，不再重复维护主题脚本
-5. **`sync` 默认写入 PC 模板目录**：若只在本模块验证，可设置 `SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview`
+5. **`sync` 新鲜度守卫是内容校验**：`sync.ts` 会按 `build-utils` 重新计算期望 `styles.min.css`，内容不一致即失败
+6. **`sync` 默认写入 PC 模板目录**：若只在本模块验证，可设置 `SITE_TEMPLATE_OUTPUT_DIR=dist/sync-preview`

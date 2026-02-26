@@ -9,14 +9,21 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { loadStyles, minifyCss } from '../src/build-utils.ts';
 import { THEME_INIT_SCRIPT, THEME_TOGGLE_SCRIPT } from '../src/scripts/theme.ts';
+import {
+  assertNoUnresolvedFragmentPlaceholders,
+  injectFragments,
+  materializeTemplateDefaults,
+  type FragmentMap,
+} from './sync-utils.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const TEMPLATES_SRC = path.resolve(ROOT, 'src/templates');
 const TEMPLATE_FRAGMENTS_SRC = path.resolve(TEMPLATES_SRC, 'fragments');
-const STYLES_SRC = path.resolve(ROOT, 'src/styles');
-const BUILD_SCRIPT_PATH = path.resolve(ROOT, 'src/build.ts');
+const STYLES_ENTRY_PATH = path.resolve(ROOT, 'src/styles/app.css');
+const PROSE_STYLES_PATH = path.resolve(ROOT, 'src/styles/prose.css');
 const DEFAULT_TEMPLATE_OUTPUT = path.resolve(ROOT, '../pc/src/main/site-publish/template');
 const TEMPLATE_OUTPUT = process.env.SITE_TEMPLATE_OUTPUT_DIR
   ? path.resolve(ROOT, process.env.SITE_TEMPLATE_OUTPUT_DIR)
@@ -37,9 +44,6 @@ const MENU_TOGGLE_SCRIPT = `(function(){var btn=document.getElementById('menu-to
 
 // ── Assets 路径 ────────────────────────────────────────────────
 const ASSETS_SRC = path.resolve(ROOT, 'assets');
-const FRAGMENT_PLACEHOLDER_PATTERN = /\{\{([A-Z_]+)\}\}/g;
-
-type FragmentMap = Record<string, string>;
 
 const FRAGMENT_FILES: Record<string, string> = {
   THEME_TOGGLE_BUTTON: 'theme-toggle-button.html',
@@ -84,49 +88,12 @@ async function loadFragments(): Promise<FragmentMap> {
   return Object.fromEntries(fragments);
 }
 
-function injectFragments(content: string, fragments: FragmentMap): string {
-  return content.replace(FRAGMENT_PLACEHOLDER_PATTERN, (fullMatch, placeholder: string) => {
-    return placeholder in fragments ? fragments[placeholder] : fullMatch;
-  });
-}
-
-function materializeTemplateDefaults(fileName: string, content: string): string {
-  // page.html 的 favicon 仍由渲染时动态注入；其余模板在导出阶段落地默认值
-  if (fileName !== 'page.html') {
-    return content.replace(/\{\{favicon\}\}/g, '/favicon.ico');
-  }
-  return content;
-}
-
-function assertNoUnresolvedFragmentPlaceholders(fileName: string, content: string): void {
-  const unresolved = Object.keys(FRAGMENT_FILES).filter((placeholder) =>
-    content.includes(`{{${placeholder}}}`)
-  );
-
-  if (unresolved.length > 0) {
-    throw new Error(
-      `Template ${fileName} still contains unresolved fragment placeholders: ${unresolved.join(', ')}`
-    );
-  }
-}
-
 async function assertStylesArtifactFresh(stylesPath: string): Promise<void> {
-  const stylesArtifactStat = await fs.stat(stylesPath);
-  const styleEntries = await fs.readdir(STYLES_SRC);
-  const styleFiles = styleEntries.filter((fileName) => fileName.endsWith('.css')).sort();
-  const sourcePaths = [
-    ...styleFiles.map((fileName) => path.join(STYLES_SRC, fileName)),
-    BUILD_SCRIPT_PATH,
-  ];
-  const sourceStats = await Promise.all(sourcePaths.map((sourcePath) => fs.stat(sourcePath)));
-  const newestSourceMtimeMs = sourceStats.reduce(
-    (latest, currentStat) => Math.max(latest, currentStat.mtimeMs),
-    0
-  );
-
-  if (newestSourceMtimeMs > stylesArtifactStat.mtimeMs) {
+  const actualStyles = await fs.readFile(stylesPath, 'utf-8');
+  const expectedStyles = minifyCss(loadStyles(STYLES_ENTRY_PATH, PROSE_STYLES_PATH));
+  if (actualStyles !== expectedStyles) {
     throw new Error(
-      'dist/styles.min.css is stale. Run `pnpm --filter @moryflow/site-template build` before sync.'
+      'dist/styles.min.css content is stale. Run `pnpm --filter @moryflow/site-template build` before sync.'
     );
   }
 }
@@ -215,7 +182,7 @@ export const ${constName} = ${JSON.stringify(content)}
   for (const htmlFile of htmlFiles) {
     const rawContent = await fs.readFile(path.join(TEMPLATES_SRC, htmlFile), 'utf-8');
     const content = materializeTemplateDefaults(htmlFile, injectFragments(rawContent, fragments));
-    assertNoUnresolvedFragmentPlaceholders(htmlFile, content);
+    assertNoUnresolvedFragmentPlaceholders(htmlFile, content, Object.keys(FRAGMENT_FILES));
     const constName = toConstName(htmlFile);
     const outputName = toFileName(htmlFile);
     const output = `${FILE_HEADER}/** ${htmlFile} 模板 */

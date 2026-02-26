@@ -300,6 +300,36 @@ diff -u /tmp/site-template-review-hash-1.txt /tmp/site-template-review-hash-2.tx
 - 产物确定性：**pass**（两次哈希 `diff` 无输出）
 - 结项状态：**done**（`site-template` 模块 A/B/C + 项目复盘闭环）
 
+## 分支全量 Review 回合（Step R-2）
+
+- 触发背景：分支全量 code review 发现 1 个 P1 + 2 个 P2（生成物漂移、mtime 守卫脆弱、缺少回归测试）。
+- 修复动作：
+  1. 同步 `site-template -> pc` 生成物，消除运行时代码与模板真源漂移。
+  2. 将 `sync` 新鲜度守卫从 mtime 比较升级为内容比较（基于 `build-utils` 重新计算期望 `styles.min.css`）。
+  3. 抽取 `build-utils.ts` 与 `sync-utils.ts` 纯函数模块，并新增 6 条单测覆盖关键链路。
+- 关键变更：
+  - `apps/moryflow/site-template/src/build-utils.ts`
+  - `apps/moryflow/site-template/scripts/sync-utils.ts`
+  - `apps/moryflow/site-template/src/build-utils.test.ts`
+  - `apps/moryflow/site-template/scripts/sync-utils.test.ts`
+  - `apps/moryflow/pc/src/main/site-publish/template/*`（sync 后产物对齐）
+
+## Step R-2 验证命令
+
+```bash
+pnpm --filter @moryflow/site-template typecheck
+pnpm --filter @moryflow/site-template test:unit
+pnpm --filter @moryflow/site-template build
+pnpm --filter @moryflow/site-template sync
+```
+
+## Step R-2 验证结果
+
+- `typecheck`：**pass**
+- `test:unit`：**pass**（6/6）
+- `build`：**pass**
+- `sync`：**pass**（PC 模板目录已更新到当前真源）
+
 ## 进度记录
 
 | Step | Module            | Action                    | Status | Validation                                              | Updated At | Notes                                                                      |
@@ -311,3 +341,4 @@ diff -u /tmp/site-template-review-hash-1.txt /tmp/site-template-review-hash-2.tx
 | C-0  | scripts/生成逻辑  | 预扫描（仅问题清单）      | done   | n/a                                                     | 2026-02-26 | 输出 `S1x2 / S2x2 / S3x2`，待确认后进入 C-1                                |
 | C-1  | scripts/生成逻辑  | 分步重构与修复（C-1~C-5） | done   | `typecheck` pass + `build` pass + `sync`(定向输出) pass | 2026-02-26 | 完成脚本单一真源、确定性同步、新鲜度守卫与构建 import 显式失败策略         |
 | R-1  | project-review    | 项目复盘与结项            | done   | `typecheck` + `build` + `sync` + 双次哈希比对 pass      | 2026-02-26 | `site-template` 模块 A/B/C 全部闭环，无新增问题                            |
+| R-2  | branch-review     | 全量 review 问题修复收口  | done   | `typecheck` + `test:unit` + `build` + `sync` pass       | 2026-02-26 | 修复生成物漂移、内容级新鲜度守卫、补齐生成链路回归测试                     |
