@@ -96,6 +96,20 @@ describe('AI Proxy Controller (e2e)', () => {
       expect(response.body).toHaveProperty('object', 'list');
       expect(response.body).toHaveProperty('data');
       expect(Array.isArray(response.body.data)).toBe(true);
+      for (const model of response.body.data as Array<Record<string, unknown>>) {
+        expect(model).toHaveProperty('thinking_profile');
+        const thinkingProfile = model.thinking_profile as Record<string, unknown>;
+        expect(thinkingProfile).toBeTruthy();
+        expect(Array.isArray(thinkingProfile.levels)).toBe(true);
+        expect((thinkingProfile.levels as Array<{ id?: string }>).some((level) => level.id === 'off')).toBe(
+          true,
+        );
+        expect(
+          (thinkingProfile.levels as Array<{ id?: string }>).some(
+            (level) => level.id === thinkingProfile.defaultLevel,
+          ),
+        ).toBe(true);
+      }
     });
   });
 

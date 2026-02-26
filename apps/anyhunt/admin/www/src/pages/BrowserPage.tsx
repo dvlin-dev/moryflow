@@ -235,15 +235,12 @@ export default function BrowserPage() {
     return <LoadingSkeleton />;
   }
 
-  if (error || !status) {
-    let errorMessage = 'Unknown error';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (!status) {
-      errorMessage = 'No data received';
-    }
+  if (error) {
+    return <ErrorState message={error instanceof Error ? error.message : 'Unknown error'} />;
+  }
 
-    return <ErrorState message={errorMessage} />;
+  if (!status) {
+    return <ErrorState message="No data received" />;
   }
 
   return (

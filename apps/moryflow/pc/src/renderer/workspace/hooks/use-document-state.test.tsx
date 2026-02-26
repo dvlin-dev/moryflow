@@ -90,4 +90,30 @@ describe('useDocumentState', () => {
     expect(result.current.selectedFile).toBeNull();
     expect(result.current.activeDoc).toBeNull();
   });
+
+  it('clears pending intents when vault changes', async () => {
+    const { result, rerender } = renderHook(
+      ({ currentVault }) => useDocumentState({ vault: currentVault }),
+      {
+        initialProps: {
+          currentVault: { path: '/vault-a' },
+        },
+      }
+    );
+
+    act(() => {
+      result.current.setPendingSelectionPath('/vault-a/docs/a.md');
+      result.current.setPendingOpenPath('/vault-a/docs/a.md');
+    });
+
+    expect(result.current.pendingSelectionPath).toBe('/vault-a/docs/a.md');
+    expect(result.current.pendingOpenPath).toBe('/vault-a/docs/a.md');
+
+    rerender({ currentVault: { path: '/vault-b' } });
+
+    await waitFor(() => {
+      expect(result.current.pendingSelectionPath).toBeNull();
+      expect(result.current.pendingOpenPath).toBeNull();
+    });
+  });
 });

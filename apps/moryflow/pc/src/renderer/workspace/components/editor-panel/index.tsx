@@ -1,4 +1,14 @@
-import { Suspense, lazy, memo, useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Suspense,
+  lazy,
+  memo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from 'react';
 import { Share, PanelRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@moryflow/ui/components/alert';
@@ -26,6 +36,22 @@ const extractTitle = (name: string): string => name.replace(/\.md$/, '');
 
 /** 防抖延迟（毫秒） */
 const RENAME_DEBOUNCE_MS = 300;
+type EditorViewState = 'empty' | 'loading' | 'error' | 'ready';
+
+const resolveEditorViewState = ({
+  selectedFile,
+  activeDoc,
+  docState,
+}: {
+  selectedFile: { path: string } | null;
+  activeDoc: { path: string } | null;
+  docState: 'idle' | 'loading' | 'error';
+}): EditorViewState => {
+  if (!selectedFile) return 'empty';
+  if (docState === 'loading') return 'loading';
+  if (docState === 'error') return 'error';
+  return activeDoc ? 'ready' : 'empty';
+};
 
 export const EditorPanel = memo(function EditorPanel() {
   const { t } = useTranslation('workspace');
@@ -101,7 +127,7 @@ export const EditorPanel = memo(function EditorPanel() {
 
   // 标题变化处理（带防抖）
   const handleTitleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       const newTitle = e.target.value;
       setEditingTitle(newTitle);
 
@@ -120,7 +146,7 @@ export const EditorPanel = memo(function EditorPanel() {
 
   // 回车确认重命名（立即执行，不等防抖）
   const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         // 取消防抖定时器
@@ -136,54 +162,65 @@ export const EditorPanel = memo(function EditorPanel() {
     [doRename, editingTitle]
   );
 
-  return (
-    <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-      {/* 工具栏 - 始终显示 Share 按钮，Chat 收起时显示展开按钮 */}
-      {selectedFile && docState === 'idle' && (
-        <div className="flex h-10 shrink-0 items-center justify-end gap-1 px-3">
-          {/* Share 按钮 */}
-          <SharePopover
-            filePath={selectedFile.path}
-            fileTitle={editingTitle}
-            onNavigateToSites={onNavigateToSites}
-          >
-            <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
-              <Share className="size-3.5" />
-              Share
-            </Button>
-          </SharePopover>
+  const editorViewState = resolveEditorViewState({
+    selectedFile: selectedFile ? { path: selectedFile.path } : null,
+    activeDoc: activeDoc ? { path: activeDoc.path } : null,
+    docState,
+  });
+  const showToolbar = selectedFile !== null && editorViewState === 'ready';
 
-          {/* Chat 展开按钮 */}
-          {chatCollapsed && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={toggleChatPanel}
-                >
-                  <PanelRight className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">{t('expand')}</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      )}
-      <div className="flex-1 overflow-hidden">
-        {!selectedFile && (
+  const renderToolbar = () => {
+    if (!showToolbar || !selectedFile) return null;
+
+    return (
+      <div className="flex h-10 shrink-0 items-center justify-end gap-1 px-3">
+        <SharePopover
+          filePath={selectedFile.path}
+          fileTitle={editingTitle}
+          onNavigateToSites={onNavigateToSites}
+        >
+          <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2.5 text-xs font-medium">
+            <Share className="size-3.5" />
+            Share
+          </Button>
+        </SharePopover>
+
+        {chatCollapsed && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                onClick={toggleChatPanel}
+              >
+                <PanelRight className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">{t('expand')}</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    );
+  };
+
+  const renderContentByState = () => {
+    switch (editorViewState) {
+      case 'empty':
+        return (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
             <p className="text-base text-foreground">{t('readyToRecord')}</p>
             {!hasFiles && <p className="text-sm text-muted-foreground">{t('createFirstNote')}</p>}
           </div>
-        )}
-        {selectedFile && docState === 'loading' && (
+        );
+      case 'loading':
+        return (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-muted-foreground">{t('loadingNote')}</p>
           </div>
-        )}
-        {selectedFile && docState === 'error' && (
+        );
+      case 'error':
+        return (
           <div className="p-6">
             <Alert variant="destructive">
               <AlertDescription className="flex items-center justify-between gap-3">
@@ -194,11 +231,11 @@ export const EditorPanel = memo(function EditorPanel() {
               </AlertDescription>
             </Alert>
           </div>
-        )}
-        {activeDoc && docState === 'idle' && (
+        );
+      case 'ready':
+        return (
           <ScrollArea className="h-full">
             <div className="h-full">
-              {/* 标题输入框 - 和正文 h1 样式对齐 */}
               <div className="px-4 pt-4">
                 <input
                   type="text"
@@ -210,26 +247,36 @@ export const EditorPanel = memo(function EditorPanel() {
                   className="w-full bg-transparent text-[1.5em] font-bold outline-hidden placeholder:text-muted-foreground/50"
                 />
               </div>
-              <Suspense
-                fallback={
-                  <div className="space-y-3 p-4">
-                    <Skeleton className="h-5 w-28" />
-                    <Skeleton className="h-[320px] w-full" />
-                    <Skeleton className="h-10 w-32" />
-                  </div>
-                }
-              >
-                <LazyNotionEditor
-                  key={activeDoc.path}
-                  value={activeDoc.content}
-                  onChange={editorChange}
-                  placeholder={t('startThinking')}
-                />
-              </Suspense>
+              {activeDoc && (
+                <Suspense
+                  fallback={
+                    <div className="space-y-3 p-4">
+                      <Skeleton className="h-5 w-28" />
+                      <Skeleton className="h-[320px] w-full" />
+                      <Skeleton className="h-10 w-32" />
+                    </div>
+                  }
+                >
+                  <LazyNotionEditor
+                    key={activeDoc.path}
+                    value={activeDoc.content}
+                    onChange={editorChange}
+                    placeholder={t('startThinking')}
+                  />
+                </Suspense>
+              )}
             </div>
           </ScrollArea>
-        )}
-      </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+      {renderToolbar()}
+      <div className="flex-1 overflow-hidden">{renderContentByState()}</div>
     </section>
   );
 });

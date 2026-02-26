@@ -26,6 +26,7 @@
 
 ## 近期变更
 
+- Thinking override 类型升级：新增 provider 级 `ThinkingLevelProviderPatches`（openai/openrouter/anthropic/google/xai）并用于 `ModelThinkingOverride.levelPatches`，替代弱类型 record（2026-02-26）
 - 补齐 Anthropic/Google/xAI 默认 Base URL
 - 模型/服务商注册表基线整理
 - CustomProviderConfig.models 与 UserProviderConfig.models 结构对齐（支持 customName/customContext 等）

@@ -21,16 +21,25 @@ status: active
 
 ## 近期更新
 
-- 2026-02-26：Anyhunt Admin 项目复盘完成（A~D + 构建门禁）：模块级 `lint` + `typecheck` + `test:unit` + `build` 通过；复盘期修复既存构建类型问题（Badge variant 类型、subscriptions `z.enum` 元组、Browser status 收窄），当前项目状态 `done`：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 D 修复完成（D-1~D-6）：`shared components / stores / 页面装配` 完成路由/导航单源化、App 装配层拆分、MainLayout 分层、AuthGuard selector 化与 openGroups 更新优化，并补齐 `AppRouter` + `auth-methods` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 D 预扫描完成（`shared components / stores / 页面装配`），输出 `S1x3 / S2x3 / S3x2` 并形成 D-1~D-6 修复计划：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 C 修复完成（C-1~C-6）：`digest-*` 完成状态片段化、topics/reports 组件拆分、welcome controller hook + action section 去重，并补齐 3 组回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 C 预扫描完成（`digest-*`），输出 `S1x5 / S2x4 / S3x2` 与 C-1~C-6 修复计划：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 B 修复完成（B-1~B-7）：`jobs/queues/logs/browser/llm` 完成状态片段化、页面拆分与 LLM 表单逻辑下沉，并通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 B 预扫描完成（`jobs/queues/logs/browser/llm`），输出 `S1x7 / S2x4 / S3x3` 与 B-1~B-7 修复计划：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 A 收口完成（A-3~A-6）：`UserCreditsSheet` 拆分、`Users/Subscriptions/Orders` 查询编排统一、badge/list-state/formatters 抽离，并通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 A 修复推进，A-2 已完成（`SubscriptionsPage` 容器拆分 + 编辑弹窗迁移 `RHF + zod/v3`），并通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-admin.md`。
-- 2026-02-26：Anyhunt Admin 模块 A 进入修复阶段，A-1 已完成（`UsersPage`/`SubscriptionsPage`/`OrdersPage`/`UserCreditsSheet` 多状态 UI 统一为 `render...ByState + switch`），并通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-admin.md`。
+- 2026-02-26：Moryflow PC PR #100 review 反馈修复完成：修复 vault 切换后 pending intent 残留、修复 provider-details `thinking` 字段在 view/edit/save 链路丢失，并新增回归测试；`@moryflow/pc typecheck` + 定向 `vitest` 通过：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 分支全量 Code Review follow-up 完成：修复 workspace provider render-phase store 写入（迁移到 `useLayoutEffect`）、恢复 `useWorkspaceCommandActions` 的 workspace key 强类型、为 chat footer/overlay store 增加 `shouldSync` 快照比较；`typecheck` + `test:unit` 通过：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成项目复盘（A/B/C/D/E 全部闭环）：复盘阶段新增 `chat-pane-portal-model` 并移除多状态链式三元；整包 `lint/typecheck/test:unit` 通过：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 E（`renderer hooks / contexts / transport / stores`）一次性修复：`workspace-controller/shell` 全量去 Context 化并迁移到 store，同步删除未引用 `app-context`；`typecheck` + workspace 定向 `vitest` 通过；进入项目复盘阶段：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 D（`cloud-sync / share / site-publish / vault-files`）一次性修复：`vault-files` 迁移 store-first、`cloud-sync/site-publish` 超阈值组件拆分、状态分发统一 `switch`；下一步模块 E 预扫描：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow Admin 完成 build 阻塞收口：修复 `agent-traces/alerts` 查询参数类型约束与 `ModelFormDialog` 布尔类型收敛，`@moryflow/admin` 新增 `prebuild` 自动构建 `@moryflow/model-registry-data`；模块级 `lint` + `typecheck` + `test:unit` + `build` 全通过：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 完成追加彻改（`chat/sites/image-generation`）：落地 `store + methods + 子组件就地取数`，移除核心 props drilling，新增 3 组 methods 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（35 files / 156 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 项目复盘完成（R-0~R-4）：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 遗留问题全部收口（超阈值大组件、链式三元、测试空白），并通过模块级 `lint` + `typecheck` + `test:unit`（32 files / 147 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 模块 D（`sites/image-generation/shared`）修复完成：`Sites/ImageGenerator` 统一 `ViewState + switch`、`SitesPage/SiteDetailPage/ImageGenerator` 拆分收敛到 `<300` 行、补齐错误态与 query builder 复用，并新增 `sites/image-generation` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 模块 B（`payment/providers/models/storage`）修复完成：`ModelFormDialog` 拆分为容器 + 状态片段、`Subscriptions/Orders/Providers/Models` 列表区统一 `ViewState + switch` 并补齐 `error` 片段、`models/orders/subscriptions/storage` query builder 收敛与回归测试补齐；模块级 `lint` + `typecheck` + `test:unit` 通过（21 files / 97 tests）：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Admin 模块 B（`payment/providers/models/storage`）预扫描完成，输出 `S1x2 / S2x3 / S3x1`，已回写主文档与专项台账：`docs/code-review/moryflow-admin.md`、`docs/code-review/frontend-component-optimization-rollout.md`。
+- 2026-02-26：Moryflow Admin 模块 A（`auth/dashboard/users`）修复完成：`SetTierDialog` 目标用户切换状态同步修复、`UsersPage` 状态片段化与职责拆分、`usersApi` 查询参数收敛至 `URLSearchParams`，并新增 `set-tier-dialog`/`api-paths` 回归测试；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/moryflow-admin.md`。
+- 2026-02-26：Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成（模板/样式/脚本生成链路收敛，`sync` 确定性与新鲜度守卫落地），详见 `docs/code-review/moryflow-site-template.md` 与 `docs/code-review/frontend-component-optimization-rollout.md`。
+- 2026-02-26：Moryflow PC 完成 Store-first 二次改造执行（`SF-1~SF-4`）：新增 `chat-pane-footer-store/chat-prompt-overlay-store/workspace-shell-view-store/sidebar-panels-store`，并将 `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/WorkspaceShellOverlays/AgentSubPanels` 切换为 selector 取数；`ProviderDetailsPreset` 收敛为 `form/list/dialog` 三段模型：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 提交 Store-first 二次改造方案（待审核）：明确“禁用新增 Context，仅 `Zustand Store + Methods`”，覆盖 `ChatFooter/PromptOverlays/FileContextPanel/WorkspaceShellMainContent/AgentSubPanels/ProviderDetailsPreset` 的 `SF-1~SF-4` 执行序列：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 模块 B follow-up 完成参数收敛复检：`ChatMessage` 新增 `MessageBodyModel`（`view/edit/tool`）并下沉 `useMessageToolModel`，`MessageBody/ToolPart` 改为对象化参数输入；同步完成 `apps/moryflow/pc/src/renderer` 同类 props 膨胀扫描：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 C（`editor / workspace`）一次性修复（`C-1~C-6`），完成 `DesktopWorkspaceShell/useDocumentState/handle/Sidebar/EditorPanel/useVaultTree/NotionEditor` 分层收敛；后续补跑 `typecheck/test:unit` 已通过：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 B（`chat-pane / input-dialog / command-palette`）一次性修复（`B-1~B-6`）：完成 `ChatPane/ChatPromptInput/ChatMessage` 分层拆分、`PlusMenu` 配置化、`useChatSessions` 生命周期显式化、`InputDialog` 回归测试补齐，并清理 `McpPanel/TaskHoverPanel` 链式三元：`docs/code-review/moryflow-pc.md`。
+- 2026-02-26：Moryflow PC 前端组件优化专项完成模块 A（`auth / settings-dialog / payment-dialog`）`A-1~A-6` 分步修复，已收敛 `ProviderDetails/LoginPanel/McpDetails` 结构与多状态渲染；后续补跑 `typecheck/test:unit` 已通过：`docs/code-review/moryflow-pc.md`。
 - 2026-02-26：Anyhunt Console 完成首个项目闭环（模块 D D-6b~D-6c + 模块 E + 项目复盘全部完成），并补齐 `AgentBrowserLayoutPage` 布局状态片段化收口；模块级 `lint` + `typecheck` + `test:unit` 通过：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 进入 D-6 一致性复查，完成 D-6a（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离为 `use-browser-session-forms`），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
 - 2026-02-26：Anyhunt Console 模块 D 修复推进：D-4e 完成（`browser-session-sections.tsx` 第五批分区拆分：`OpenUrl/Snapshot/Delta/Action/ActionBatch/Screenshot`，并收敛为 45 行导出层），通过模块级 `lint` + `typecheck` + `test:unit`：`docs/code-review/anyhunt-console.md`。
@@ -209,14 +218,14 @@ status: active
 - 官网：`apps/moryflow/www/`
 - 发布站点模板：`apps/moryflow/site-template/`
 
-| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                         |
-| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------ |
-| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | done（模块 A/B/C/D/E + 项目复盘全部完成） |
-| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | done（模块 A/B/C/D + 项目复盘全部完成） |
-| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                           |
-| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done (2026-01-26, preload CJS) |
-| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                           |
-| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | done (2026-01-24)              |
+| Priority | Module                               | Scope                                                 | Directories / Key Files                                                      | Doc                                        | Status                                                                              |
+| -------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| P2       | Anyhunt Console（开发者控制台）      | 登录态、API Key 管理、核心工作台流程、E2E + 性能规范  | `apps/anyhunt/console/`                                                      | `docs/code-review/anyhunt-console.md`      | done（模块 A/B/C/D/E + 项目复盘全部完成）                                           |
+| P2       | Anyhunt Admin（运营后台）            | 权限边界、敏感操作审计、充值/配额管理 + 性能规范      | `apps/anyhunt/admin/www/`                                                    | `docs/code-review/anyhunt-admin.md`        | todo                                                                                |
+| P2       | Anyhunt WWW（官网/Reader/Developer） | SSR/SEO/跳转、读者流程、性能与稳定性（含 SSR 规范）   | `apps/anyhunt/www/`                                                          | `docs/code-review/anyhunt-www.md`          | todo                                                                                |
+| P2       | Moryflow PC                          | 桌面端主流程、性能、崩溃边界、打包产物 + 性能规范     | `apps/moryflow/pc/`                                                          | `docs/code-review/moryflow-pc.md`          | done（2026-02-26：模块 A/B/C/D/E + 项目复盘完成；Store-first `SF-1~SF-4` 全部落地） |
+| P2       | Moryflow Mobile                      | Expo/RN 关键流程、离线/同步、权限与隐私 + 性能规范    | `apps/moryflow/mobile/`                                                      | `docs/code-review/moryflow-mobile.md`      | todo                                                                                |
+| P2       | Moryflow Admin/WWW/Site Template     | 站点发布链路与模板安全、SEO 与构建策略（含 SSR 规范） | `apps/moryflow/admin/`, `apps/moryflow/www/`, `apps/moryflow/site-template/` | `docs/code-review/moryflow-web-surface.md` | done (2026-01-24)                                                                   |
 
 ### Phase 4 - packages/_ 与 tooling/_（平台基建与复用质量）
 
@@ -299,25 +308,25 @@ status: draft
 
 > 约定：每次 review 结束或修复落地后，在此追加一行，并同步模块 `Status`。
 
-| 日期       | 模块                         | 结论摘要                                                                               | 修复记录（PR/commit） | 状态        |
-| ---------- | ---------------------------- | -------------------------------------------------------------------------------------- | --------------------- | ----------- |
-| 2026-01-26 | anyhunt-server-prisma        | 完成 review 文档；记录多数据库边界与迁移一致性问题                                     | -                     | in_progress |
-| 2026-01-26 | anyhunt-server-prisma        | 修复完成（migrate deploy 对齐/环境校验/db push guard/测试重置）                        | -                     | done        |
-| 2026-01-26 | anyhunt-server-fetchx-core   | 完成 review 文档；列出 headers 覆盖/超时语义/SSRF 错误码/计费语义问题                  | -                     | in_progress |
-| 2026-01-26 | anyhunt-server-fetchx-core   | 修复完成（headers 合并/SSRF 403/syncTimeout/原子队列/敏感头不落库）                    | -                     | done        |
-| 2026-01-26 | packages-types-api-config    | 完成 review + 修复（类型包收敛、会员文案英文化、配置升级、协议标注）                   | -                     | done        |
-| 2026-01-26 | tooling-config               | 完成 review + 修复（React 规则补齐、Prettier 依赖、Vitest 全局、移除 tailwind-config） | -                     | done        |
-| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                             | -                     | done        |
-| 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                            | -                     | in_progress |
-| 2026-01-25 | moryflow-pc                  | 修复完成：外链/导航安全、sandbox、英文文案、Lucide、hooks 单测；E2E 待补               | -                     | in_progress |
-| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流             | -                     | in_progress |
-| 2026-01-24 | moryflow-pc                  | 完成 review 并补充修复方案；存在外链导航安全、Zod 规范、性能与测试缺口等问题           | -                     | in_progress |
-| 2026-01-24 | packages-embed-i18n          | 完成 review + 修复（Embed fallback、client 边界、i18n 常量清理、单测补齐）             | ecdb3b5               | done        |
-| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                            | -                     | in_progress |
-| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）                     | -                     | done        |
-| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                                          | -                     | in_progress |
-| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）                   | -                     | done        |
-| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）                     | -                     | in_progress |
-| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                            | -                     | done        |
-| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                                         | -                     | done        |
-| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）                        | -                     | done        |
+| 日期       | 模块                         | 结论摘要                                                                                               | 修复记录（PR/commit） | 状态        |
+| ---------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------- | ----------- |
+| 2026-01-26 | anyhunt-server-prisma        | 完成 review 文档；记录多数据库边界与迁移一致性问题                                                     | -                     | in_progress |
+| 2026-01-26 | anyhunt-server-prisma        | 修复完成（migrate deploy 对齐/环境校验/db push guard/测试重置）                                        | -                     | done        |
+| 2026-01-26 | anyhunt-server-fetchx-core   | 完成 review 文档；列出 headers 覆盖/超时语义/SSRF 错误码/计费语义问题                                  | -                     | in_progress |
+| 2026-01-26 | anyhunt-server-fetchx-core   | 修复完成（headers 合并/SSRF 403/syncTimeout/原子队列/敏感头不落库）                                    | -                     | done        |
+| 2026-01-26 | packages-types-api-config    | 完成 review + 修复（类型包收敛、会员文案英文化、配置升级、协议标注）                                   | -                     | done        |
+| 2026-01-26 | tooling-config               | 完成 review + 修复（React 规则补齐、Prettier 依赖、Vitest 全局、移除 tailwind-config）                 | -                     | done        |
+| 2026-02-26 | moryflow-site-template       | 组件优化专项结项：模块 A/B/C 与项目复盘完成，补齐 build/sync 回归单测                                  | -                     | done        |
+| 2026-02-26 | moryflow-pc                  | 前端组件优化专项模块 A/B/C/D/E + Store-first `SF-1~SF-4` + 项目复盘 + 分支全量 review follow-up 已完成 | -                     | done        |
+| 2026-01-25 | anyhunt-server-api-key-quota | 修复完成：有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐                                             | -                     | done        |
+| 2026-01-25 | anyhunt-server-billing       | 完成 review；存在 P0 幂等/权益授予/重放风险                                                            | -                     | in_progress |
+| 2026-01-24 | anyhunt-server-auth          | 完成复审（Better Auth best practices）；待修复 CSRF/Token/Origin/事务/限流                             | -                     | in_progress |
+| 2026-01-24 | packages-embed-i18n          | 完成 review + 修复（Embed fallback、client 边界、i18n 常量清理、单测补齐）                             | ecdb3b5               | done        |
+| 2026-01-23 | root-tooling                 | 完成 review；存在 P1 npmrc 冲突与脚本清理项                                                            | -                     | in_progress |
+| 2026-01-23 | root-tooling                 | 修复完成（npmrc 对齐/clean 跨平台；embedMeta 仅注入 name/version）                                     | -                     | done        |
+| 2026-01-23 | moryflow-auth-quota-payment  | 完成 review；存在 P1 安全问题与 P2 一致性问题                                                          | -                     | in_progress |
+| 2026-01-23 | moryflow-publish-ai-proxy    | 修复完成（欠费门禁/断连取消/Publish 容错/SSE backpressure/参数透传）                                   | -                     | done        |
+| 2026-01-22 | deploy/infra                 | 完成首轮 review；存在 P2 可靠性问题（healthcheck/等待/容器名冲突）                                     | -                     | in_progress |
+| 2026-01-22 | deploy/infra                 | 修复完成（healthcheck/健康轮询/容器名冲突）                                                            | -                     | done        |
+| 2026-01-22 | design-docs                  | 完成审查；存在 P2 文档索引/状态/域名规划不一致                                                         | -                     | done        |
+| 2026-01-22 | design-docs                  | 修复完成（补齐 frontmatter/清理索引/对齐域名规划/清理缺失引用）                                        | -                     | done        |

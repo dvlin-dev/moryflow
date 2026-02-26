@@ -38,6 +38,7 @@ status: active
 - Anyhunt app/public/apikey 通道路由规范（implemented）：`docs/architecture/anyhunt-api-channel-routing.md`
 - Admin 动态配置 LLM Providers/Models（参考 Moryflow）：`docs/architecture/admin-llm-provider-config.md`
 - Anyhunt LLM Provider 对齐进度（AI SDK / Anthropic / Google）：`docs/architecture/anyhunt-llm-provider-alignment.md`
+- Moryflow/Anyhunt 模型思考等级分层方案（对标 OpenCode，implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 新评论闭环，REVIEW-02/FIX-08/FIX-09/TEST-04 全部完成；修复 `supportsThinking` 不可达回退与 `/v1/models` 重复查询，受影响包 unit/typecheck 已通过）
 - 消息列表与输入框 UI 组件抽离方案（Moryflow/Anyhunt 统一）：`docs/architecture/ui-message-list-unification.md`
 - Moryflow PC 消息列表交互复用改造方案（Following 模式）：`docs/architecture/ui-message-list-turn-anchor-adoption.md`（更新：2026-02-08：Following 模式定稿；runStart 一次 smooth + `160ms` 入场动效；移除 `packages/ui/src/ai/assistant-ui` 目录）
 - Moryflow Agent Tasks 系统方案（替代 Plan）：`docs/architecture/agent-tasks-system.md`
@@ -53,7 +54,7 @@ status: active
 - 前端表单：Zod + RHF 兼容：`docs/guides/frontend/forms-zod-rhf.md`
 - 图标库回退方案（Hugeicons → Lucide）：`docs/guides/frontend/icon-library-migration-lucide.md`
 - 前端富文本渲染：Streamdown（Markdown + 流式 Token 动画）：`docs/guides/frontend/streamdown.md`
-- 前端组件设计质量索引（拆分与收敛准则）：`docs/guides/frontend/component-design-quality-index.md`（2026-02-25：补充“状态片段化 + `renderContentByState` + 禁止链式三元”）
+- 前端组件设计质量索引（拆分与收敛准则）：`docs/guides/frontend/component-design-quality-index.md`（2026-02-26：补充 Store-first（新增共享业务状态禁用 React Context、子组件优先 `useXxxStore(selector)` 就地取数）；2026-02-25：补充“状态片段化 + `renderContentByState` + 禁止链式三元”）
 - 开源拆分：Git Subtree 双向同步：`docs/guides/open-source-package-subtree.md`
 
 ## Runbooks（运维手册 / 照做即可）
@@ -94,10 +95,11 @@ status: active
 
 ## Code Review（全量评审计划与进度）
 
-- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Anyhunt Admin 项目复盘已完成）
-- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；Anyhunt Admin 已完成模块 A/B/C/D 与项目复盘）
+- 全量 Code Review（模块拆分 + 阶段顺序 + 统一审查标准 + 执行步骤清单 + 进度同步）：`docs/code-review/index.md`（更新：2026-02-26，Anyhunt Console 已完成首个项目闭环；Moryflow PC 模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up + PR #100 review 反馈修复完成）
+- 前端组件优化专项执行计划（按项目/按模块）：`docs/code-review/frontend-component-optimization-rollout.md`（更新：2026-02-26，active；Anyhunt Console 已完成 1/2/3 全流程闭环；Moryflow Admin 已完成模块 A/B/C/D 与项目复盘；Moryflow PC 已完成项目复盘、分支全量 review follow-up 与 PR #100 review 反馈修复；`anyhunt/docs` 与 `moryflow/docs` 已标记忽略）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（更新：2026-02-26，done：模块 A/B/C/D/E 与项目复盘全部完成）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（更新：2026-02-26，done：模块 A/B/C/D + 项目复盘全部完成）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（更新：2026-02-26，done：模块 A/B/C/D 与项目复盘收口完成；追加彻改 + build 阻塞收口完成，`@moryflow/admin` 的 `lint/typecheck/test:unit/build` 全通过）
+- Moryflow Site Template Code Review：`docs/code-review/moryflow-site-template.md`（更新：2026-02-26，done：模块 A/B/C + 项目复盘完成）
 - Moryflow Cloud Sync Code Review：`docs/code-review/moryflow-cloud-sync.md`（更新：2026-01-25：review）
 - 工程基线 / Root Tooling Code Review：`docs/code-review/root-tooling.md`（更新：2026-01-23，修复完成）
 - Moryflow Server Auth/Quota/Payment Code Review：`docs/code-review/moryflow-server-auth-quota-payment.md`（更新：2026-01-23，修复完成）
@@ -112,7 +114,7 @@ status: active
 - Anyhunt Server Agent/LLM/Embedding Code Review：`docs/code-review/anyhunt-server-agent-llm.md`（更新：2026-01-26，修复完成；EmbeddingService 保留确认）
 - Anyhunt Server Memox Core 对标 Mem0 改造计划：`docs/code-review/anyhunt-server-memox-core.md`（更新：2026-01-24；实施进度同步；Filters DSL；R2 导出；Token 认证一致；Graph/Relation 公共 API 删除；entities 语义替换）
 - Moryflow Publish/AI Proxy Code Review：`docs/code-review/moryflow-publish-vectorize-ai-proxy.md`（更新：2026-01-23，修复完成）
-- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（更新：2026-01-26，修复完成 + preload CJS）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（更新：2026-02-26，模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up + PR #100 review 反馈修复完成；Store-first `SF-1~SF-4` 全部落地）
 - Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（更新：2026-01-24，修复完成）
 - packages/ui Code Review：`docs/code-review/packages-ui.md`（更新：2026-01-24，修复完成）
 - packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（更新：2026-01-24，修复完成）

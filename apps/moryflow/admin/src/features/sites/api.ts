@@ -11,33 +11,12 @@ import type {
   SiteStats,
   SiteUpdateData,
 } from './types'
+import { buildSitesListPath } from './query-paths'
 
 export const sitesApi = {
   /** 获取站点列表 */
-  getAll: (params: SiteListParams): Promise<SiteListResponse> => {
-    const searchParams = new URLSearchParams()
-
-    searchParams.set('limit', params.limit.toString())
-    searchParams.set('offset', params.offset.toString())
-
-    if (params.search) {
-      searchParams.set('search', params.search)
-    }
-    if (params.status) {
-      searchParams.set('status', params.status)
-    }
-    if (params.type) {
-      searchParams.set('type', params.type)
-    }
-    if (params.userTier) {
-      searchParams.set('userTier', params.userTier)
-    }
-    if (params.expiryFilter) {
-      searchParams.set('expiryFilter', params.expiryFilter)
-    }
-
-    return adminApi.get<SiteListResponse>(`/sites?${searchParams.toString()}`)
-  },
+  getAll: (params: SiteListParams): Promise<SiteListResponse> =>
+    adminApi.get<SiteListResponse>(buildSitesListPath(params)),
 
   /** 获取站点统计 */
   getStats: (): Promise<SiteStats> => adminApi.get<SiteStats>('/sites/stats'),

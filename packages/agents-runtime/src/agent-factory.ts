@@ -3,7 +3,12 @@ import { Agent, type ModelSettings, type Tool } from '@openai/agents-core';
 import type { ModelFactory } from './model-factory';
 import { getMorySystemPrompt } from './prompt';
 import { normalizeToolSchemasForInterop } from './tool-schema-compat';
-import type { AgentContext } from './types';
+import {
+  isMembershipModelId,
+  type AgentContext,
+  type ModelThinkingProfile,
+  type ThinkingSelection,
+} from './types';
 
 export interface AgentFactoryOptions {
   getModelFactory(): ModelFactory;
@@ -14,9 +19,41 @@ export interface AgentFactoryOptions {
 }
 
 export interface AgentFactory {
-  getAgent(preferredModelId?: string): { agent: Agent<AgentContext>; modelId: string };
+  getAgent(
+    preferredModelId?: string,
+    options?: { thinking?: ThinkingSelection; thinkingProfile?: ModelThinkingProfile }
+  ): { agent: Agent<AgentContext>; modelId: string };
   invalidate(): void;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const mergeModelSettingsWithProviderOptions = (
+  base: ModelSettings | undefined,
+  providerOptions: Record<string, unknown>,
+): ModelSettings | undefined => {
+  if (Object.keys(providerOptions).length === 0) {
+    return base;
+  }
+
+  const merged: ModelSettings = { ...(base ?? {}) };
+  const providerData = isRecord(merged.providerData)
+    ? { ...merged.providerData }
+    : {};
+  const existingProviderOptions = isRecord(providerData.providerOptions)
+    ? providerData.providerOptions
+    : {};
+
+  merged.providerData = {
+    ...providerData,
+    providerOptions: {
+      ...existingProviderOptions,
+      ...providerOptions,
+    },
+  };
+  return merged;
+};
 
 /**
  * 创建 Agent 工厂
@@ -31,10 +68,20 @@ export const createAgentFactory = ({
 }: AgentFactoryOptions): AgentFactory => {
   const agentCache = new Map<string, Agent<AgentContext>>();
 
-  const buildAgent = (modelId: string) => {
-    const { baseModel } = getModelFactory().buildModel(modelId);
+  const buildAgent = (
+    modelId: string,
+    thinking?: ThinkingSelection,
+    thinkingProfile?: ModelThinkingProfile
+  ) => {
+    const { baseModel, providerOptions } = getModelFactory().buildModel(modelId, {
+      thinking,
+      thinkingProfile,
+    });
     const instructions = getInstructions?.() ?? getMorySystemPrompt();
-    const modelSettings = getModelSettings?.();
+    const modelSettings = mergeModelSettingsWithProviderOptions(
+      getModelSettings?.(),
+      providerOptions
+    );
     const runtimeTools = normalizeToolSchemasForInterop([...baseTools, ...getMcpTools()]);
     const config = {
       name: 'Mory',
@@ -46,12 +93,46 @@ export const createAgentFactory = ({
     return new Agent(config);
   };
 
-  const getAgent = (preferredModelId?: string) => {
-    const { modelId } = getModelFactory().buildModel(preferredModelId);
-    let agent = agentCache.get(modelId);
+  const resolveThinkingCacheKey = (thinking?: ThinkingSelection): string => {
+    if (!thinking || thinking.mode === 'off') {
+      return 'off';
+    }
+    return `level:${thinking.level}`;
+  };
+
+  const resolveThinkingProfileCacheKey = (
+    profile?: ModelThinkingProfile
+  ): string => {
+    if (!profile) {
+      return 'none';
+    }
+    return JSON.stringify({
+      supportsThinking: profile.supportsThinking,
+      defaultLevel: profile.defaultLevel,
+      levels: profile.levels.map((level) => ({
+        id: level.id,
+        label: level.label,
+      })),
+    });
+  };
+
+  const getAgent = (
+    preferredModelId?: string,
+    options?: { thinking?: ThinkingSelection; thinkingProfile?: ModelThinkingProfile }
+  ) => {
+    const requestedThinkingProfile = options?.thinkingProfile
+    const { modelId } = getModelFactory().buildModel(preferredModelId, {
+      thinking: options?.thinking,
+      thinkingProfile: requestedThinkingProfile,
+    });
+    const effectiveThinkingProfile = isMembershipModelId(modelId)
+      ? requestedThinkingProfile
+      : undefined
+    const cacheKey = `${modelId}::${resolveThinkingCacheKey(options?.thinking)}::${resolveThinkingProfileCacheKey(effectiveThinkingProfile)}`;
+    let agent = agentCache.get(cacheKey);
     if (!agent) {
-      agent = buildAgent(modelId);
-      agentCache.set(modelId, agent);
+      agent = buildAgent(modelId, options?.thinking, effectiveThinkingProfile);
+      agentCache.set(cacheKey, agent);
     }
     return { agent, modelId };
   };

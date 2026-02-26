@@ -7,6 +7,7 @@
  */
 
 import type { UseFieldArrayReturn } from 'react-hook-form';
+import type { ReactNode } from 'react';
 import type { FormValues, SettingsSection } from '../const';
 import type { SettingsDialogState } from '../use-settings-dialog';
 import { AccountSection } from './account-section';
@@ -46,41 +47,37 @@ export const SectionContent = ({
   vaultPath,
   setValue,
 }: SectionContentProps) => {
-  if (section === 'account') {
-    return <AccountSection />;
+  const renderSettingsGuard = (content: ReactNode) => {
+    if (meta.isLoading) {
+      return <LoadingHint text="Loading settings..." />;
+    }
+    return content;
+  };
+
+  switch (section) {
+    case 'account':
+      return <AccountSection />;
+    case 'general':
+      return renderSettingsGuard(<GeneralSection control={form.control} />);
+    case 'system-prompt':
+      return renderSettingsGuard(<SystemPromptSection control={form.control} setValue={setValue} />);
+    case 'providers':
+      return <ProvidersSection providers={providers} form={form} isLoading={meta.isLoading} />;
+    case 'mcp':
+      return (
+        <McpSection
+          control={form.control}
+          register={form.register}
+          errors={form.errors}
+          stdioArray={mcp.stdioArray}
+          httpArray={mcp.httpArray}
+          setValue={form.setValue}
+          isLoading={meta.isLoading}
+        />
+      );
+    case 'cloud-sync':
+      return <CloudSyncSection vaultPath={vaultPath} />;
+    default:
+      return <AboutSection appVersion={meta.appVersion} />;
   }
-  if (section === 'general') {
-    return meta.isLoading ? (
-      <LoadingHint text="Loading settings..." />
-    ) : (
-      <GeneralSection control={form.control} />
-    );
-  }
-  if (section === 'system-prompt') {
-    return meta.isLoading ? (
-      <LoadingHint text="Loading settings..." />
-    ) : (
-      <SystemPromptSection control={form.control} setValue={setValue} />
-    );
-  }
-  if (section === 'providers') {
-    return <ProvidersSection providers={providers} form={form} isLoading={meta.isLoading} />;
-  }
-  if (section === 'mcp') {
-    return (
-      <McpSection
-        control={form.control}
-        register={form.register}
-        errors={form.errors}
-        stdioArray={mcp.stdioArray}
-        httpArray={mcp.httpArray}
-        setValue={form.setValue}
-        isLoading={meta.isLoading}
-      />
-    );
-  }
-  if (section === 'cloud-sync') {
-    return <CloudSyncSection vaultPath={vaultPath} />;
-  }
-  return <AboutSection appVersion={meta.appVersion} />;
 };

@@ -2,6 +2,7 @@
  * [PROVIDES]: useChatSessions - Chat sessions 单一数据源（跨组件共享）
  * [DEPENDS]: zustand (vanilla), desktopAPI.chat IPC
  * [POS]: Chat session 状态与动作统一入口，供 ChatPane 与 Chat Mode Sidebar 复用
+ * [UPDATE]: 2026-02-26 - 生命周期运行时封装到 chatSessionsRuntime，显式管理订阅获取/释放
  * [UPDATE]: 2026-02-09 - 引入订阅引用计数，最后一个订阅者卸载时释放 session listener
  *
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
@@ -111,10 +112,6 @@ const chatSessionsStore = createStore<ChatSessionsState>((set, get) => ({
   },
 }));
 
-let hydratePromise: Promise<void> | null = null;
-let disposeSessionListener: (() => void) | null = null;
-let subscriberCount = 0;
-
 const applySessionEvent = (event: ChatSessionEvent) => {
   chatSessionsStore.setState((state) => {
     if (event.type === 'deleted') {
@@ -135,70 +132,91 @@ const applySessionEvent = (event: ChatSessionEvent) => {
   });
 };
 
-const ensureSessionListener = () => {
-  const api = window.desktopAPI?.chat;
-  if (!api) {
-    return;
-  }
-  if (subscriberCount > 0 && !disposeSessionListener) {
-    disposeSessionListener = api.onSessionEvent(applySessionEvent);
-  }
-};
+const chatSessionsRuntime = (() => {
+  let hydratePromise: Promise<void> | null = null;
+  let disposeSessionListener: (() => void) | null = null;
+  let subscriberCount = 0;
 
-const disposeSessionListenerIfIdle = () => {
-  if (subscriberCount === 0 && disposeSessionListener) {
+  const ensureSessionListener = () => {
+    const api = window.desktopAPI?.chat;
+    if (!api) {
+      return;
+    }
+    if (subscriberCount > 0 && !disposeSessionListener) {
+      disposeSessionListener = api.onSessionEvent(applySessionEvent);
+    }
+  };
+
+  const disposeSessionListenerIfIdle = () => {
+    if (subscriberCount !== 0 || !disposeSessionListener) {
+      return;
+    }
     disposeSessionListener();
     disposeSessionListener = null;
-  }
-};
+  };
 
-const ensureHydrated = async () => {
-  const state = chatSessionsStore.getState();
-  ensureSessionListener();
-  if (state.hydrated) {
-    return;
-  }
+  const ensureHydrated = async () => {
+    const state = chatSessionsStore.getState();
+    ensureSessionListener();
+    if (state.hydrated) {
+      return;
+    }
 
-  if (!hydratePromise) {
-    hydratePromise = (async () => {
-      const api = window.desktopAPI?.chat;
-      if (!api) {
-        chatSessionsStore.setState({ hydrated: true });
-        return;
-      }
-
-      try {
-        let list = await api.listSessions();
-        if (list.length === 0) {
-          const created = await api.createSession();
-          list = [created];
+    if (!hydratePromise) {
+      hydratePromise = (async () => {
+        const api = window.desktopAPI?.chat;
+        if (!api) {
+          chatSessionsStore.setState({ hydrated: true });
+          return;
         }
 
-        const sorted = sortSessions(list);
-        chatSessionsStore.setState((prev) => ({
-          sessions: sorted,
-          activeSessionId: resolveNextActiveId(sorted, prev.activeSessionId),
-          hydrated: true,
-        }));
+        try {
+          let list = await api.listSessions();
+          if (list.length === 0) {
+            const created = await api.createSession();
+            list = [created];
+          }
 
-        ensureSessionListener();
-      } catch (error) {
-        console.error('[chat-sessions] failed to hydrate sessions', error);
-        chatSessionsStore.setState({ hydrated: true });
-      }
-    })().finally(() => {
+          const sorted = sortSessions(list);
+          chatSessionsStore.setState((prev) => ({
+            sessions: sorted,
+            activeSessionId: resolveNextActiveId(sorted, prev.activeSessionId),
+            hydrated: true,
+          }));
+
+          ensureSessionListener();
+        } catch (error) {
+          console.error('[chat-sessions] failed to hydrate sessions', error);
+          chatSessionsStore.setState({ hydrated: true });
+        }
+      })().finally(() => {
+        hydratePromise = null;
+      });
+    }
+
+    await hydratePromise;
+  };
+
+  return {
+    acquireSubscriber: () => {
+      subscriberCount += 1;
+      void ensureHydrated();
+    },
+    releaseSubscriber: () => {
+      subscriberCount = Math.max(0, subscriberCount - 1);
+      disposeSessionListenerIfIdle();
+    },
+    reset: () => {
+      disposeSessionListener?.();
+      disposeSessionListener = null;
       hydratePromise = null;
-    });
-  }
-
-  await hydratePromise;
-};
+      subscriberCount = 0;
+    },
+  };
+})();
 
 export const __resetChatSessionsStoreForTest = () => {
-  disposeSessionListener?.();
-  disposeSessionListener = null;
-  hydratePromise = null;
-  subscriberCount = 0;
+  chatSessionsRuntime.reset();
   chatSessionsStore.setState({
     sessions: [],
     activeSessionId: null,
@@ -217,11 +235,9 @@ export const useChatSessions = () => {
   const deleteSession = useStore(chatSessionsStore, (s) => s.deleteSession);
 
   useEffect(() => {
-    subscriberCount += 1;
-    void ensureHydrated();
+    chatSessionsRuntime.acquireSubscriber();
     return () => {
-      subscriberCount = Math.max(0, subscriberCount - 1);
-      disposeSessionListenerIfIdle();
+      chatSessionsRuntime.releaseSubscriber();
     };
   }, []);
 

@@ -54,6 +54,8 @@ import { createSandboxBashTool } from '@moryflow/agents-sandbox';
 import type {
   AgentSettings,
   AgentChatContext,
+  AgentThinkingProfile,
+  AgentThinkingSelection,
   McpStatusSnapshot,
   McpStatusEvent,
   McpTestInput,
@@ -98,6 +100,14 @@ export type AgentRuntimeOptions = {
    * 指定首选模型，未传则使用默认配置。
    */
   preferredModelId?: string;
+  /**
+   * 本轮思考等级选择。
+   */
+  thinking?: AgentThinkingSelection;
+  /**
+   * 本轮模型思考档案（Renderer 显式透传，保证执行参数与 UI 一致）。
+   */
+  thinkingProfile?: AgentThinkingProfile;
   /**
    * 结构化上下文信息（当前文件、摘要等）。
    */
@@ -567,6 +577,8 @@ export const createAgentRuntime = (): AgentRuntime => {
       chatId,
       input,
       preferredModelId,
+      thinking,
+      thinkingProfile,
       context,
       mode,
       selectedSkillName,
@@ -592,7 +604,10 @@ export const createAgentRuntime = (): AgentRuntime => {
         agentFactory.invalidate();
       }
 
-      const { agent, modelId } = agentFactory.getAgent(preferredModelId);
+      const { agent, modelId } = agentFactory.getAgent(preferredModelId, {
+        thinking,
+        thinkingProfile,
+      });
       const effectiveHistory = compactionPreflightGate.consumePrepared(chatId, modelId)
         ? await session.getItems()
         : (
@@ -618,7 +633,11 @@ export const createAgentRuntime = (): AgentRuntime => {
         mode: effectiveMode,
         vaultRoot: vaultInfo.path,
         chatId,
-        buildModel: modelFactory.buildModel,
+        buildModel: (modelId) =>
+          modelFactory.buildModel(modelId, {
+            thinking,
+            thinkingProfile,
+          }),
       };
 
       const userItem = user(finalInput);

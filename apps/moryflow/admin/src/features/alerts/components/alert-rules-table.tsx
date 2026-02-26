@@ -38,10 +38,11 @@ import type { AlertRule } from '../types';
 interface AlertRulesTableProps {
   rules: AlertRule[];
   isLoading?: boolean;
+  error?: unknown;
   onEdit: (rule: AlertRule) => void;
 }
 
-export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTableProps) {
+export function AlertRulesTable({ rules, isLoading, error, onEdit }: AlertRulesTableProps) {
   const [deleteRule, setDeleteRule] = useState<AlertRule | null>(null);
   const updateMutation = useUpdateAlertRule();
   const deleteMutation = useDeleteAlertRule();
@@ -104,6 +105,14 @@ export function AlertRulesTable({ rules, isLoading, onEdit }: AlertRulesTablePro
             ))}
           </TableBody>
         </Table>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border p-12 text-center text-destructive">
+        告警规则加载失败，请稍后重试
       </div>
     );
   }

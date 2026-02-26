@@ -6,7 +6,15 @@
  * [PROTOCOL]: 本文件变更时，必须更新此 Header 及所属目录 CLAUDE.md
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from 'react';
 import type { VaultInfo, VaultTreeNode, VaultFsEvent } from '@shared/ipc';
 import { useTranslation } from '@/lib/i18n';
 import { mergeChildrenIntoTree } from '../utils';
@@ -26,6 +34,154 @@ export type VaultTreeState = {
   handleExpandedPathsChange: (newPaths: string[]) => void;
   handleSelectTreeNode: (node: VaultTreeNode) => void;
   handleRefreshTree: () => void;
+};
+
+type UseVaultTreeBootstrapOptions = {
+  vault: VaultInfo | null;
+  resetTreeState: () => void;
+  prevVaultPathRef: MutableRefObject<string | null>;
+  expandedPathsRef: MutableRefObject<Set<string>>;
+  setTree: Dispatch<SetStateAction<VaultTreeNode[]>>;
+  setExpandedPaths: Dispatch<SetStateAction<string[]>>;
+  setTreeState: Dispatch<SetStateAction<TreeState>>;
+  setSelectedEntry: Dispatch<SetStateAction<VaultTreeNode | null>>;
+  setTreeError: Dispatch<SetStateAction<string | null>>;
+  fetchTree: (targetPath: string) => Promise<void>;
+};
+
+const useVaultTreeBootstrap = ({
+  vault,
+  resetTreeState,
+  prevVaultPathRef,
+  expandedPathsRef,
+  setTree,
+  setExpandedPaths,
+  setTreeState,
+  setSelectedEntry,
+  setTreeError,
+  fetchTree,
+}: UseVaultTreeBootstrapOptions) => {
+  useEffect(() => {
+    if (!vault) {
+      resetTreeState();
+      prevVaultPathRef.current = null;
+      return;
+    }
+
+    const isVaultSwitch = prevVaultPathRef.current !== null && prevVaultPathRef.current !== vault.path;
+    if (isVaultSwitch) {
+      setTree([]);
+      setExpandedPaths([]);
+      expandedPathsRef.current = new Set();
+      setTreeState('loading');
+      setSelectedEntry(null);
+      setTreeError(null);
+    }
+    prevVaultPathRef.current = vault.path;
+
+    void window.desktopAPI.workspace
+      .getExpandedPaths(vault.path)
+      .then((paths) => {
+        if (Array.isArray(paths)) {
+          setExpandedPaths(paths);
+          expandedPathsRef.current = new Set(paths);
+          return;
+        }
+        setExpandedPaths([]);
+        expandedPathsRef.current = new Set();
+      })
+      .catch(() => {
+        setExpandedPaths([]);
+        expandedPathsRef.current = new Set();
+      });
+
+    if (!isVaultSwitch) {
+      void window.desktopAPI.vault
+        .getTreeCache(vault.path)
+        .then((cache) => {
+          if (cache?.nodes?.length) {
+            setTree(cache.nodes);
+            setTreeState('idle');
+          }
+        })
+        .catch(() => {});
+    }
+
+    void fetchTree(vault.path);
+    void window.desktopAPI.vault.updateWatchPaths(Array.from(expandedPathsRef.current));
+  }, [
+    vault,
+    resetTreeState,
+    prevVaultPathRef,
+    expandedPathsRef,
+    setTree,
+    setExpandedPaths,
+    setTreeState,
+    setSelectedEntry,
+    setTreeError,
+    fetchTree,
+  ]);
+};
+
+type UseVaultFsEventsOptions = {
+  vault: VaultInfo | null;
+  refreshSubtree: (targetPath: string) => Promise<void>;
+  updateExpandedPaths: (updater: (prev: string[]) => string[]) => void;
+  setFsEventTick: Dispatch<SetStateAction<number>>;
+  fsEventTick: number;
+  fetchTree: (targetPath: string) => Promise<void>;
+};
+
+const useVaultFsEvents = ({
+  vault,
+  refreshSubtree,
+  updateExpandedPaths,
+  setFsEventTick,
+  fsEventTick,
+  fetchTree,
+}: UseVaultFsEventsOptions) => {
+  useEffect(() => {
+    if (!window.desktopAPI.events?.onVaultFsEvent) return;
+
+    const dispose = window.desktopAPI.events.onVaultFsEvent((event: VaultFsEvent) => {
+      if (!vault) return;
+      const isDirectoryEvent =
+        event.type === 'dir-added' ||
+        event.type === 'dir-removed' ||
+        event.type === 'file-added' ||
+        event.type === 'file-removed' ||
+        event.type === 'file-changed';
+
+      if (event.type === 'file-removed') {
+        void window.desktopAPI.workspace.removeRecentFile(vault.path, event.path);
+      }
+
+      if (!isDirectoryEvent) {
+        setFsEventTick((tick) => tick + 1);
+        return;
+      }
+
+      const targetPath = event.type === 'dir-added' ? event.path : getParentDirectoryPath(event.path);
+      if (event.type === 'dir-removed') {
+        const removedPath = event.path;
+        updateExpandedPaths((prev) =>
+          prev.filter((path) => path !== removedPath && !path.startsWith(`${removedPath}/`))
+        );
+      }
+
+      void refreshSubtree(targetPath);
+    });
+
+    return () => dispose();
+  }, [vault, refreshSubtree, updateExpandedPaths, setFsEventTick]);
+
+  useEffect(() => {
+    if (!vault || fsEventTick === 0) return;
+    const timer = setTimeout(() => {
+      void fetchTree(vault.path);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [vault, fsEventTick, fetchTree]);
 };
 
 export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
@@ -115,59 +271,18 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
     setTreeError(null);
   }, []);
 
-  useEffect(() => {
-    if (!vault) {
-      resetTreeState();
-      prevVaultPathRef.current = null;
-      return;
-    }
-
-    // 检测工作区切换：vault path 变化时立即清空状态
-    const isVaultSwitch =
-      prevVaultPathRef.current !== null && prevVaultPathRef.current !== vault.path;
-    if (isVaultSwitch) {
-      // 工作区切换，立即清空旧状态避免显示错误数据
-      setTree([]);
-      setExpandedPaths([]);
-      expandedPathsRef.current = new Set();
-      setTreeState('loading');
-      setSelectedEntry(null);
-      setTreeError(null);
-    }
-    prevVaultPathRef.current = vault.path;
-
-    void window.desktopAPI.workspace
-      .getExpandedPaths(vault.path)
-      .then((paths) => {
-        if (Array.isArray(paths)) {
-          setExpandedPaths(paths);
-          expandedPathsRef.current = new Set(paths);
-        } else {
-          setExpandedPaths([]);
-          expandedPathsRef.current = new Set();
-        }
-      })
-      .catch(() => {
-        setExpandedPaths([]);
-        expandedPathsRef.current = new Set();
-      });
-
-    // 工作区切换时跳过缓存，直接获取最新数据
-    if (!isVaultSwitch) {
-      void window.desktopAPI.vault
-        .getTreeCache(vault.path)
-        .then((cache) => {
-          if (cache?.nodes?.length) {
-            setTree(cache.nodes);
-            setTreeState('idle');
-          }
-        })
-        .catch(() => {});
-    }
-
-    void fetchTree(vault.path);
-    void window.desktopAPI.vault.updateWatchPaths(Array.from(expandedPathsRef.current));
-  }, [vault, fetchTree, resetTreeState]);
+  useVaultTreeBootstrap({
+    vault,
+    resetTreeState,
+    prevVaultPathRef,
+    expandedPathsRef,
+    setTree,
+    setExpandedPaths,
+    setTreeState,
+    setSelectedEntry,
+    setTreeError,
+    fetchTree,
+  });
 
   const refreshSubtree = useCallback(
     async (targetPath: string) => {
@@ -187,54 +302,14 @@ export const useVaultTreeState = (vault: VaultInfo | null): VaultTreeState => {
     [vault, tree, fetchTree]
   );
 
-  useEffect(() => {
-    if (!window.desktopAPI.events?.onVaultFsEvent) {
-      return;
-    }
-    const dispose = window.desktopAPI.events.onVaultFsEvent((event: VaultFsEvent) => {
-      if (!vault) return;
-      const dirEvent =
-        event.type === 'dir-added' ||
-        event.type === 'dir-removed' ||
-        event.type === 'file-added' ||
-        event.type === 'file-removed' ||
-        event.type === 'file-changed';
-
-      if (event.type === 'file-removed') {
-        void window.desktopAPI.workspace.removeRecentFile(vault.path, event.path);
-      }
-
-      if (dirEvent) {
-        // dir-removed 需要刷新父目录（被删除的目录已不存在）
-        // dir-added 刷新新增目录本身
-        // file-added/removed/changed 刷新文件所在目录
-        const target = event.type === 'dir-added' ? event.path : getParentDirectoryPath(event.path);
-
-        // 当目录被删除时，清理 expandedPaths 中被删除目录及其子目录的路径
-        if (event.type === 'dir-removed') {
-          const removedPath = event.path;
-          updateExpandedPaths((prev) =>
-            prev.filter((p) => p !== removedPath && !p.startsWith(removedPath + '/'))
-          );
-        }
-
-        void refreshSubtree(target);
-      } else {
-        setFsEventTick((tick) => tick + 1);
-      }
-    });
-    return () => dispose();
-  }, [vault, refreshSubtree, updateExpandedPaths]);
-
-  useEffect(() => {
-    if (!vault || fsEventTick === 0) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      void fetchTree(vault.path);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [vault, fsEventTick, fetchTree]);
+  useVaultFsEvents({
+    vault,
+    refreshSubtree,
+    updateExpandedPaths,
+    setFsEventTick,
+    fsEventTick,
+    fetchTree,
+  });
 
   const handleSelectTreeNode = useCallback((node: VaultTreeNode) => {
     setSelectedEntry(node);

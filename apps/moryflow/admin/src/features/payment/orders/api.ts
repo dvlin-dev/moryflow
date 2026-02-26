@@ -3,6 +3,7 @@
  */
 import { adminApi } from '@/lib/api'
 import type { OrderListResponse, PaymentOrder } from '@/types/payment'
+import { buildOrdersListPath } from './query-paths'
 
 export interface OrdersQueryParams {
   limit: number
@@ -13,19 +14,8 @@ export interface OrdersQueryParams {
 
 export const ordersApi = {
   /** 获取订单列表 */
-  getAll: (params: OrdersQueryParams): Promise<OrderListResponse> => {
-    const searchParams = new URLSearchParams({
-      limit: String(params.limit),
-      offset: String(params.offset),
-    })
-    if (params.status && params.status !== 'all') {
-      searchParams.set('status', params.status)
-    }
-    if (params.productType && params.productType !== 'all') {
-      searchParams.set('productType', params.productType)
-    }
-    return adminApi.get(`/payment/orders?${searchParams}`)
-  },
+  getAll: (params: OrdersQueryParams): Promise<OrderListResponse> =>
+    adminApi.get(buildOrdersListPath(params)),
 
   /** 获取订单详情 */
   getById: (id: string): Promise<{ order: PaymentOrder }> =>

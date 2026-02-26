@@ -8,9 +8,28 @@
 
 # docs/ 目录指南
 
-> 最近更新：2026-02-26（Anyhunt Admin 组件优化专项进展：项目复盘完成（A~D + 构建门禁），模块级 `lint/typecheck/test:unit/build` 全通过；复盘期修复既存构建类型问题，保留 chunk 体积告警为后续优化项）
-> 最近更新：2026-02-26（Anyhunt Admin 组件优化专项进展：模块 D（`shared components / stores / 页面装配`）D-1~D-6 完成（路由/导航单源化 + App 装配层拆分 + MainLayout 分层 + AuthGuard selector 化 + 回归测试补齐））
-> 最近更新：2026-02-26（Anyhunt Admin 组件优化专项进展：模块 C（`digest-*`）C-1~C-6 全部完成（状态片段化 + topics/reports 拆分 + welcome controller hook/action section 去重 + 3 组回归测试））
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项 build 阻塞收口完成：修复 `agent-traces/alerts` 查询参数类型与 `ModelFormDialog` 布尔类型，`@moryflow/admin` 新增 `prebuild` 自动构建 `@moryflow/model-registry-data`，并通过 `lint` + `typecheck` + `test:unit` + `build`）
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项追加彻改完成：`chat/sites/image-generation` 全量迁移到 `store + methods + 子组件就地取数`，新增 3 组 methods 回归测试，模块级 `lint` + `typecheck` + `test:unit` 通过（35 files / 156 tests））
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项项目复盘完成：`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage` 三个遗留页面已收口，页面超阈值与链式三元问题清零，并补齐 3 组回归测试，模块级 `lint` + `typecheck` + `test:unit` 通过（32 files / 147 tests））
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项进入项目复盘阶段：静态扫描识别 3 个遗留页面待收口（`ToolAnalyticsPage`/`AgentTraceStoragePage`/`PaymentTestPage`），已回写 PR-1~PR-4 收口计划）
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 D（`sites/image-generation/shared`）完成修复闭环（D-1~D-7），`Sites`/`ImageGenerator` 统一 `ViewState + switch`，`SitesPage`/`SiteDetailPage`/`ImageGenerator` 全部收敛到 300 行内，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 B（`payment/providers/models/storage`）完成修复闭环（B-1~B-6），`ModelFormDialog` 完成片段化拆分，`Subscriptions/Orders/Providers/Models` 统一 `ViewState + switch` 并补齐错误态，模块级 `lint` + `typecheck` + `test:unit` 通过（21 files / 97 tests））
+> 最近更新：2026-02-26（Moryflow Admin 组件优化专项进展：模块 A（`auth/dashboard/users`）完成预扫描与修复闭环（A-1~A-5），`UsersPage` 完成状态片段化+职责拆分，`SetTierDialog` 切换用户状态同步修复，模块级 `lint` + `typecheck` + `test:unit` 通过）
+> 最近更新：2026-02-26（补充 PR#97 新评论修复闭环：REVIEW-02/FIX-08/FIX-09/TEST-04，完成 `supportsThinking` 默认判定修复与 `/v1/models` 重复查询移除，并通过受影响包 unit/typecheck）
+> 最近更新：2026-02-26（补充 PR#97 评论修复闭环：REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03，完成 SSE 非阻塞、provider patch 优先级修复、Anthropic/Google thinking 注入链路修复与回归验证）
+> 最近更新：2026-02-26（Moryflow/Anyhunt 模型思考等级分层方案第二轮执行完成：DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全项 done，云端强契约 + 用户自定义 levelPatches 强类型落地，`pnpm lint/typecheck/test:unit` 已通过）
+> 最近更新：2026-02-26（Moryflow PC PR #100 review 反馈修复完成：修复 vault 切换 pending intent 残留与 provider-details `thinking` 丢失；新增 `use-document-state`/`use-provider-details-controller` 回归测试并通过 `@moryflow/pc typecheck`）
+> 最近更新：2026-02-26（Moryflow PC 分支全量 Code Review follow-up 完成：修复 workspace provider render-phase store 写入、恢复 workspace i18n key 强类型、chat footer/overlay store 增加 `shouldSync` 快照比较；`@moryflow/pc typecheck + test:unit` 通过）
+> 最近更新：2026-02-26（Moryflow PC 项目复盘完成：模块 A/B/C/D/E 全部闭环；复盘收口新增 `chat-pane-portal-model` 并移除多状态链式三元；`lint/typecheck/test:unit` 通过）
+> 最近更新：2026-02-26（组件代码规范升级：前端组件统一 Store-first；新增共享业务状态禁用 React Context，子组件优先 `useXxxStore(selector)` 就地取数；已同步 `component-design-quality-index` 与根 `CLAUDE.md`）
+> 最近更新：2026-02-26（Moryflow PC 已提交 Store-first 二次改造方案待审核：禁用新增 Context，仅 `Zustand Store + Methods`，执行序列 `SF-1~SF-4`）
+> 最近更新：2026-02-26（Moryflow PC 模块 B follow-up：`ChatMessage` 参数收敛复检完成，新增 `MessageBodyModel + useMessageToolModel` 并完成同类 props 膨胀扫描）
+> 最近更新：2026-02-26（Moryflow PC 前端组件优化专项完成模块 C 一次性修复：`editor/workspace` 的 `C-1~C-6` 全部落地，下一步进入模块 D 预扫描）
+> 最近更新：2026-02-26（Moryflow PC 前端组件优化专项完成模块 B 一次性修复：`chat-pane/input-dialog/command-palette` 的 `B-1~B-6` 全部落地，下一步进入模块 C）
+> 最近更新：2026-02-26（Moryflow PC 前端组件优化专项模块 A 完成 `A-1~A-6` 代码修复：`ProviderDetails/LoginPanel/McpDetails` 拆分与状态渲染收敛已落地；后续补跑 `@moryflow/pc typecheck + test:unit` 已通过）
+> 最近更新：2026-02-26（Moryflow PC Code Review 文档收敛：模块 A/B/C 已统一标记为 done，仅保留当前模块推进口径）
+> 最近更新：2026-02-26（前端组件优化专项范围调整：按用户确认忽略 `apps/moryflow/docs`，台账新增 Step 13）
+> 最近更新：2026-02-26（Moryflow Site Template 组件优化专项结项：模块 A/B/C 与项目复盘全部完成，模块级审查文档 `docs/code-review/moryflow-site-template.md` 与专项台账已回写到 Step 20）
 > 最近更新：2026-02-26（前端组件优化专项台账补充“对话启动前必读规范入口”：强制先读 `AGENTS.md`/`CLAUDE.md`/组件规范/index/专项台账/console 示例，再开始扫描与修复）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6 全部完成（D-6a~D-6c：`BrowserSessionPanel` 收敛为容器层 + operation handlers/hooks 分域 + `browser-api` 三域拆分 + Session/Windows 分区二次减责），模块 E 完成（`Scrape/Crawl` 迁移 `PlaygroundPageShell` + shared loading/code-example 组件），`anyhunt/console` 项目复盘完成并闭环）
 > 最近更新：2026-02-26（Anyhunt Console 组件优化专项进展：模块 D D-6a 完成（`FlowRunner` 分层拆分 + `BrowserSessionPanel` 表单初始化抽离到 `use-browser-session-forms`），进入一致性复查收口）
@@ -96,16 +115,19 @@
 
 ## 最近更新
 
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：done，模块 A/B/C/D + 项目复盘全部完成；`lint/typecheck/test:unit/build` 通过，复盘期修复既存构建类型问题）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 D（`shared components / stores / 页面装配`）D-1~D-6 完成：路由/导航单源化、App 装配层拆分、MainLayout 分层、AuthGuard selector 化与回归测试补齐）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 C（`digest-*`）C-1~C-6 完成：状态片段化、topics/reports 组件拆分、welcome controller hook + action section 去重、补齐回归测试）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 B（`jobs/queues/logs/browser/llm`）B-1~B-7 修复完成并通过模块级 `lint` + `typecheck` + `test:unit`，可进入模块 C）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 B 预扫描完成：`jobs/queues/logs/browser/llm` 输出 `S1x7 / S2x4 / S3x3` 与 B-1~B-7 修复计划）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-3~A-6 完成：`UserCreditsSheet` 拆分、`Users/Subscriptions/Orders` 查询编排统一、badge/list-state/formatters 抽离，模块 A 全量校验通过）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A A-2 完成：`SubscriptionsPage` 拆分为容器 + 列表状态组件 + 编辑弹窗组件；编辑表单迁移到 `RHF + zod/v3` 并抽离 `schemas/constants`）
-- Anyhunt Admin Code Review：`docs/code-review/anyhunt-admin.md`（2026-02-26：in_progress，模块 A 预扫描完成并完成 A-1：`UsersPage`/`SubscriptionsPage`/`OrdersPage`/`UserCreditsSheet` 多状态渲染统一为状态片段 + `render...ByState/switch`）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：done，追加彻改完成：`chat/sites/image-generation` 一次性迁移到 `store + methods + selector`，新增 3 组 methods 回归测试）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：done，项目复盘 R-0~R-4 完成，遗留 3 页问题全部收口并通过模块级校验）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 D（sites/image-generation/shared）修复完成（D-1~D-7），`Sites`/`ImageGenerator` 统一状态片段化与职责拆分，模块级 `lint` + `typecheck` + `test:unit` 通过（29 files / 134 tests））
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 B（payment/providers/models/storage）修复完成（B-1~B-6），通过 `lint` + `typecheck` + `test:unit`（21 files / 97 tests））
+- 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 新评论修复闭环，REVIEW-02/FIX-08/FIX-09/TEST-04 全部完成）
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：补充 PR#97 评论修复闭环，REVIEW-01/FIX-05/FIX-06/FIX-07/TEST-03 全部完成）
+- Moryflow/Anyhunt 模型思考等级分层方案（implemented）：`docs/architecture/moryflow-anyhunt-model-thinking-level-plan.md`（2026-02-26：第二轮 DOC-04/CLOUD-02/MORY-06/CORE-04/CORE-05/ANY-06/TEST-02 全部完成，云端强契约与 levelPatches 全链路已落地）
+- Moryflow Site Template Code Review：`docs/code-review/moryflow-site-template.md`（2026-02-26：done，模块 A/B/C + 项目复盘全部完成）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up + PR #100 review 反馈修复完成；Store-first `SF-1~SF-4` 全部落地）
 - 前端组件优化专项范围调整：按用户确认忽略 `apps/anyhunt/docs`，台账新增 Step 12（项目范围调整，done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：done，模块 A/B/C/D/E + 项目复盘全部完成；收口补扫已将 `AgentBrowserLayoutPage` 布局分支改为状态片段渲染）
+- Moryflow Admin Code Review：`docs/code-review/moryflow-admin.md`（2026-02-26：in_progress，模块 A（auth/dashboard/users）已完成预扫描与修复闭环，A-1~A-5 done）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-6a 完成：`flow-runner.tsx` 分层到 `flow-runner-form`/`flow-runner-step-list`/`flow-runner-types`/`flow-runner-helpers`，并将 `BrowserSessionPanel` 的 19 组表单初始化抽离到 `use-browser-session-forms`）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4e 完成：`browser-session-sections.tsx` 第五批分区拆分，新增 `open-url-section.tsx`、`snapshot-section.tsx`、`delta-snapshot-section.tsx`、`action-section.tsx`、`action-batch-section.tsx`、`screenshot-section.tsx`，主文件降至 45 行）
 - Anyhunt Console Code Review：`docs/code-review/anyhunt-console.md`（2026-02-26：in_progress，模块 D D-4d 完成：`browser-session-sections.tsx` 第四批分区拆分，新增 `session-section.tsx`、`tabs-section.tsx`、`windows-section.tsx`，主文件降至 494 行）
@@ -236,7 +258,7 @@
 - packages/embed & packages/i18n Code Review：`docs/code-review/packages-embed-i18n.md`（2026-01-24：修复完成）
 - packages/ui Code Review：`docs/code-review/packages-ui.md`（2026-01-24：修复完成）
 - Moryflow Admin/WWW/Site Template Code Review：`docs/code-review/moryflow-web-surface.md`（2026-01-24：修复完成）
-- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-01-24：review + 方案）
+- Moryflow PC Code Review：`docs/code-review/moryflow-pc.md`（2026-02-26：前端组件优化专项模块 A/B/C/D/E + 项目复盘 + 分支全量 review follow-up + PR #100 review 反馈修复完成；Store-first `SF-1~SF-4` 全部落地）
 - Anyhunt Server API Key & Quota：修复完成（有效订阅 tier、扣减边界、退款/购买幂等、DTO 对齐）（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：标记修复完成（2026-01-25）
 - Anyhunt Server API Key & Quota Code Review：`docs/code-review/anyhunt-server-api-key-quota.md`（2026-01-25：review）

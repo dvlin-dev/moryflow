@@ -8,13 +8,11 @@ import type {
   CreateModelRequest,
   UpdateModelRequest,
 } from '../../types/api';
+import { buildModelsListPath } from './query-paths';
 
 export const modelsApi = {
   /** 获取所有 Model */
-  getAll: (providerId?: string) => {
-    const query = providerId ? `?providerId=${providerId}` : '';
-    return adminApi.get<ModelsResponse>(`/ai/models${query}`);
-  },
+  getAll: (providerId?: string) => adminApi.get<ModelsResponse>(buildModelsListPath(providerId)),
 
   /** 获取单个 Model */
   getById: (id: string) => adminApi.get<{ model: AiModel }>(`/ai/models/${id}`),

@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import {
   Controller,
   useWatch,
@@ -19,22 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@moryflow/ui/components/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@moryflow/ui/components/alert-dialog';
-import { CircleX, CircleCheck, Delete, Loader, TestTube } from 'lucide-react';
+import { Delete, Loader, TestTube } from 'lucide-react';
 import type { FormValues } from '../../const';
 import type { McpServerEntry, McpServerType } from './constants';
 import type { McpTestInput, McpTestResult } from '@shared/ipc';
 import { McpEnvEditor } from './mcp-env-editor';
-import { McpToolList } from './mcp-tool-list';
 import { ErrorText } from '../shared';
+import { useMcpDetailsTest } from './use-mcp-details-test';
+import { McpTestResultDialog } from './mcp-test-result-dialog';
+import { McpVerifiedTools } from './mcp-verified-tools';
 
 type McpDetailsProps = {
   server: McpServerEntry;
@@ -55,11 +47,6 @@ export const McpDetails = ({
   onTypeChange,
   testServer,
 }: McpDetailsProps) => {
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<McpTestResult | null>(null);
-  // 保存验证成功后的工具列表，用于在详情页底部显示
-  const [verifiedTools, setVerifiedTools] = useState<string[]>([]);
-
   // 根据类型获取表单数据
   const stdioData = useWatch({ control, name: `mcp.stdio.${server.index}` });
   const httpData = useWatch({ control, name: `mcp.streamableHttp.${server.index}` });
@@ -68,68 +55,11 @@ export const McpDetails = ({
   const stdioErrors = errors.mcp?.stdio?.[server.index];
   const httpErrors = errors.mcp?.streamableHttp?.[server.index];
 
-  const handleTest = useCallback(async () => {
-    if (!currentData) return;
-
-    setTesting(true);
-    setTestResult(null);
-
-    try {
-      let input: McpTestInput;
-      if (server.type === 'stdio') {
-        const data = currentData as FormValues['mcp']['stdio'][number];
-        input = {
-          type: 'stdio',
-          config: {
-            name: data.name || 'Test Server',
-            command: data.command,
-            args: data.args?.trim() ? data.args.trim().split(/\s+/) : undefined,
-            cwd: data.cwd || undefined,
-            env:
-              data.env && data.env.length > 0
-                ? Object.fromEntries(
-                    data.env.filter((e) => e.key.trim()).map((e) => [e.key, e.value])
-                  )
-                : undefined,
-          },
-        };
-      } else {
-        const data = currentData as FormValues['mcp']['streamableHttp'][number];
-        input = {
-          type: 'http',
-          config: {
-            name: data.name || 'Test Server',
-            url: data.url,
-            authorizationHeader: data.authorizationHeader || undefined,
-            headers:
-              data.headers && data.headers.length > 0
-                ? Object.fromEntries(
-                    data.headers.filter((h) => h.key.trim()).map((h) => [h.key, h.value])
-                  )
-                : undefined,
-          },
-        };
-      }
-
-      // 打印测试配置日志
-      console.log('[mcp-details] MCP test payload:', JSON.stringify(input, null, 2));
-
-      const result = await testServer(input);
-      console.log('[mcp-details] MCP test result:', result);
-      setTestResult(result);
-      // 验证成功后保存工具列表
-      if (result.success && result.toolNames) {
-        setVerifiedTools(result.toolNames);
-      }
-    } catch (error) {
-      setTestResult({
-        success: false,
-        error: error instanceof Error ? error.message : 'Test failed',
-      });
-    } finally {
-      setTesting(false);
-    }
-  }, [currentData, server.type, testServer]);
+  const { testing, testResult, verifiedTools, handleTest, closeTestResult } = useMcpDetailsTest({
+    currentData,
+    serverType: server.type,
+    testServer,
+  });
 
   const canTest =
     server.type === 'stdio'
@@ -324,67 +254,6 @@ export const McpDetails = ({
     </>
   );
 
-  const renderTestDialog = () => (
-    <AlertDialog open={!!testResult} onOpenChange={() => setTestResult(null)}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            {testResult?.success ? (
-              <>
-                <CircleCheck className="size-5 text-green-600" />
-                Test succeeded
-              </>
-            ) : (
-              <>
-                <CircleX className="size-5 text-red-600" />
-                Test failed
-              </>
-            )}
-          </AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="space-y-3">
-              {testResult?.success ? (
-                <>
-                  <p>Connected to the MCP server</p>
-                  {testResult.toolNames && testResult.toolNames.length > 0 && (
-                    <McpToolList toolNames={testResult.toolNames} />
-                  )}
-                </>
-              ) : (
-                <p className="whitespace-pre-wrap text-destructive">{testResult?.error}</p>
-              )}
-            </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction>OK</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-
-  const renderToolCards = () => {
-    if (verifiedTools.length === 0) return null;
-    return (
-      <div className="space-y-3 pt-4">
-        <p className="text-xs font-medium text-muted-foreground">
-          Verified tools ({verifiedTools.length})
-        </p>
-        <div className="grid gap-1.5 sm:grid-cols-2">
-          {verifiedTools.map((name) => (
-            <div
-              key={name}
-              className="flex items-center gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5"
-            >
-              <div className="size-1.5 shrink-0 rounded-full bg-success" />
-              <span className="truncate font-mono text-xs">{name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       <ScrollArea className="h-full">
@@ -394,10 +263,10 @@ export const McpDetails = ({
             {renderTypeSelector()}
             {server.type === 'stdio' ? renderStdioFields() : renderHttpFields()}
           </div>
-          {renderToolCards()}
+          <McpVerifiedTools toolNames={verifiedTools} />
         </div>
       </ScrollArea>
-      {renderTestDialog()}
+      <McpTestResultDialog result={testResult} onClose={closeTestResult} />
     </>
   );
 };

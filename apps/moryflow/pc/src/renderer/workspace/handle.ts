@@ -1,49 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { VaultInfo, VaultTreeNode } from '@shared/ipc';
-import type { CommandAction } from '@/components/command-palette/const';
+import { useCallback, useEffect, useState } from 'react';
+import type { VaultTreeNode } from '@shared/ipc';
 import type { DesktopWorkspaceController, SelectedFile } from './const';
 import { useInputDialog } from '@/components/input-dialog/handle';
 import { useVaultFileOperations } from './file-operations';
 import { useVaultTreeState } from './hooks/use-vault-tree';
 import { useDocumentState } from './hooks/use-document-state';
+import { useWorkspaceVault } from './hooks/use-workspace-vault';
+import { useWorkspaceCommandActions } from './hooks/use-workspace-command-actions';
 import { findNodeByPath, ensureMarkdownExtension, sanitizeEntryName } from './utils';
 import { useTranslation } from '@/lib/i18n';
 
 export const useDesktopWorkspace = (): DesktopWorkspaceController => {
   const { t } = useTranslation('workspace');
-  const [vault, setVault] = useState<VaultInfo | null>(null);
-  const [isPickingVault, setIsPickingVault] = useState(false);
-  const [vaultMessage, setVaultMessage] = useState<string | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
 
   const { inputDialogState, showInputDialog, handleConfirm, handleCancel } = useInputDialog();
-
-  const hydrateVault = useCallback(async () => {
-    // 首次启动：自动创建默认 workspace（不阻塞 UI；失败则回退到原有选择流程）
-    try {
-      await window.desktopAPI.vault.ensureDefaultWorkspace();
-    } catch (error) {
-      console.warn('[workspace] ensureDefaultWorkspace failed', error);
-    }
-
-    const info = await window.desktopAPI.vault.getActiveVault();
-    setVault(info ? { path: info.path } : null);
-  }, []);
-
-  useEffect(() => {
-    void hydrateVault();
-  }, [hydrateVault]);
-
-  // 监听活动工作区变更，更新 vault 状态
-  useEffect(() => {
-    if (!window.desktopAPI?.vault?.onActiveVaultChange) return;
-
-    const dispose = window.desktopAPI.vault.onActiveVaultChange((newVault) => {
-      setVault(newVault ? { path: newVault.path } : null);
-    });
-
-    return dispose;
-  }, []);
+  const { vault, isPickingVault, vaultMessage, handleVaultOpen, handleSelectDirectory, handleVaultCreate } =
+    useWorkspaceVault();
 
   const {
     tree,
@@ -140,126 +113,18 @@ export const useDesktopWorkspace = (): DesktopWorkspaceController => {
     showInputDialog,
   });
 
-  const handleVaultOpen = useCallback(async () => {
-    setIsPickingVault(true);
-    setVaultMessage(null);
-    try {
-      const info = await window.desktopAPI.vault.open({ askUser: true });
-      if (!info) {
-        return;
-      }
-      setVault(info);
-      await fetchTree(info.path);
-      setSelectedEntry(null);
-      setPendingSelectionPath(null);
-      setPendingOpenPath(null);
-    } finally {
-      setIsPickingVault(false);
-    }
-  }, [fetchTree, setPendingSelectionPath, setPendingOpenPath, setSelectedEntry]);
-
-  const handleSelectDirectory = useCallback(async () => {
-    setIsPickingVault(true);
-    try {
-      const path = await window.desktopAPI.vault.selectDirectory?.();
-      return path ?? null;
-    } finally {
-      setIsPickingVault(false);
-    }
-  }, []);
-
-  const handleVaultCreate = useCallback(
-    async (name: string, parentPath: string) => {
-      setIsPickingVault(true);
-      setVaultMessage(null);
-      try {
-        const info = await window.desktopAPI.vault.create?.({ name, parentPath });
-        if (!info) {
-          return;
-        }
-        setVault(info);
-        await fetchTree(info.path);
-        setSelectedEntry(null);
-        setPendingSelectionPath(null);
-        setPendingOpenPath(null);
-      } finally {
-        setIsPickingVault(false);
-      }
-    },
-    [fetchTree, setPendingSelectionPath, setPendingOpenPath, setSelectedEntry]
-  );
-
-  const commandActions = useMemo<CommandAction[]>(() => {
-    const actions: CommandAction[] = [
-      {
-        id: 'vault:open',
-        label: vault ? t('switchVault') : t('selectVault'),
-        description: vault ? t('currentVault', { path: vault.path }) : t('openFolderAsVault'),
-        shortcut: '⌘O',
-        handler: () => void handleVaultOpen(),
-      },
-      {
-        id: 'vault:refresh',
-        label: t('refreshFileTree'),
-        description: t('rescanMarkdownFiles'),
-        shortcut: '⌘R',
-        disabled: !vault,
-        handler: () => handleRefreshTree(),
-      },
-      {
-        id: 'files:new-markdown',
-        label: t('newMarkdownFile'),
-        description: t('createNoteInDir'),
-        shortcut: '⌘N',
-        disabled: !vault,
-        handler: () => void handleCreateFile(),
-      },
-      {
-        id: 'files:new-folder',
-        label: t('createFolderTitle'),
-        description: t('createSubfolder'),
-        disabled: !vault,
-        handler: () => void handleCreateFolder(),
-      },
-      {
-        id: 'files:rename',
-        label: t('renameFileOrFolder'),
-        description: t('renameCurrentSelection'),
-        disabled: !selectedEntry,
-        handler: () => void handleRenameEntry(),
-      },
-      {
-        id: 'files:delete',
-        label: t('deleteFileOrFolder'),
-        description: t('deleteCurrentSelection'),
-        disabled: !selectedEntry,
-        handler: () => void handleDeleteEntry(),
-      },
-      {
-        id: 'vault:show-in-finder',
-        label: t('showInFinder'),
-        description: t('locateInFileManager'),
-        disabled: !selectedEntry,
-        handler: () => {
-          if (selectedEntry) {
-            void handleShowInFinder(selectedEntry.path);
-          }
-        },
-      },
-    ];
-    return actions;
-  }, [
+  const commandActions = useWorkspaceCommandActions({
     vault,
     selectedEntry,
     t,
-    handleVaultOpen,
-    handleRefreshTree,
-    handleCreateFile,
-    handleCreateFolder,
-    handleRenameEntry,
-    handleDeleteEntry,
-    handleShowInFinder,
-  ]);
+    onVaultOpen: handleVaultOpen,
+    onRefreshTree: handleRefreshTree,
+    onCreateFile: handleCreateFile,
+    onCreateFolder: handleCreateFolder,
+    onRenameEntry: handleRenameEntry,
+    onDeleteEntry: handleDeleteEntry,
+    onShowInFinder: handleShowInFinder,
+  });
 
   const onCreateFileInRoot = useCallback(() => {
     void handleCreateFile({ forceRoot: true });

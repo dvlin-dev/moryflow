@@ -34,9 +34,30 @@ const getStatusDot = (status: string) => {
   }
 };
 
+const getStatusText = (
+  status: string,
+  labels: { toolCount: (count: number) => string; connecting: string; notConnected: string },
+  toolCount?: number,
+  error?: string
+) => {
+  switch (status) {
+    case 'connected':
+      return labels.toolCount(toolCount ?? 0);
+    case 'connecting':
+      return labels.connecting;
+    default:
+      return error || labels.notConnected;
+  }
+};
+
 export const McpPanel = ({ disabled, onOpenSettings, onClose, className }: McpPanelProps) => {
   const { t } = useTranslation('chat');
   const { servers, isReloading, reload } = useMcpStatus();
+  const statusLabels = {
+    toolCount: (count: number) => t('toolCount', { count }),
+    connecting: t('connecting'),
+    notConnected: t('notConnected'),
+  };
 
   const hasServers = servers.length > 0;
 
@@ -75,11 +96,12 @@ export const McpPanel = ({ disabled, onOpenSettings, onClose, className }: McpPa
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{server.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {server.status === 'connected'
-                        ? t('toolCount', { count: server.toolCount ?? 0 })
-                        : server.status === 'connecting'
-                          ? t('connecting')
-                          : server.error || t('notConnected')}
+                      {getStatusText(
+                        server.status,
+                        statusLabels,
+                        server.toolCount,
+                        server.error
+                      )}
                     </p>
                   </div>
                 </div>

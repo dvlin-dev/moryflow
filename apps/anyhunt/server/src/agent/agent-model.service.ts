@@ -9,6 +9,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DEFAULT_LLM_AGENT_MODEL_ID } from '../llm/llm.constants';
+import {
+  buildThinkingProfileFromCapabilities,
+  toPublicThinkingProfile,
+} from '../llm/thinking-profile.util';
 
 @Injectable()
 export class AgentModelService {
@@ -66,6 +70,12 @@ export class AgentModelService {
         maxContextTokens: model.maxContextTokens,
         maxOutputTokens: model.maxOutputTokens,
         capabilitiesJson: model.capabilitiesJson,
+        thinkingProfile: toPublicThinkingProfile(
+          buildThinkingProfileFromCapabilities({
+            providerType: model.provider.providerType,
+            capabilitiesJson: model.capabilitiesJson,
+          }),
+        ),
       })),
     };
   }

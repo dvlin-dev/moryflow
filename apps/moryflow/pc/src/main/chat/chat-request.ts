@@ -63,7 +63,15 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
     }
     const sessionSummary = chatSessionStore.getSummary(chatId);
     const preferredModelId = agentOptions?.preferredModelId ?? sessionSummary.preferredModelId;
+    const thinking = agentOptions?.thinking;
     const sessionMode = sessionSummary.mode;
+    if (thinking) {
+      console.debug('[chat] thinking selection resolved', {
+        chatId,
+        preferredModelId,
+        thinking,
+      });
+    }
 
     const latestUserMessage = findLatestUserMessage(messages);
     if (!latestUserMessage) {
@@ -128,6 +136,8 @@ export const createChatRequestHandler = (sessions: Map<string, ChatSessionStream
                   chatId,
                   input: currentInput,
                   preferredModelId,
+                  thinking,
+                  thinkingProfile: agentOptions?.thinkingProfile,
                   context: agentOptions?.context,
                   selectedSkillName: agentOptions?.selectedSkill?.name,
                   session,
